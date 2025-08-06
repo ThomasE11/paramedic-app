@@ -52,7 +52,7 @@ const RoleLoginPage = () => {
       icon: Shield,
       gradient: 'from-slate-600 to-slate-800',
       hoverGradient: 'from-slate-700 to-slate-900',
-      credentials: { email: 'john@doe.com', password: 'johndoe123' },
+      credentials: { email: 'admin@ems-training.com', password: 'admin123' },
       dashboardPath: '/skills/admin/dashboard'
     },
     {
@@ -62,7 +62,7 @@ const RoleLoginPage = () => {
       icon: Users,
       gradient: 'from-blue-500 to-indigo-600',
       hoverGradient: 'from-blue-600 to-indigo-700',
-      credentials: { email: 'lecturer@test.com', password: 'lecturer123' },
+      credentials: { email: 'lecturer@ems-training.com', password: 'lecturer123' },
       dashboardPath: '/skills/lecturer/dashboard'
     },
     {
@@ -72,7 +72,7 @@ const RoleLoginPage = () => {
       icon: Award,
       gradient: 'from-emerald-500 to-teal-600',
       hoverGradient: 'from-emerald-600 to-teal-700',
-      credentials: { email: 'student@test.com', password: 'student123' },
+      credentials: { email: 'student@ems-training.com', password: 'student123' },
       dashboardPath: '/skills/student/dashboard'
     }
   ];

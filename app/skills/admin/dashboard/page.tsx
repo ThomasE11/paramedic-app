@@ -178,8 +178,8 @@ export default function AdminDashboard() {
                 </div>
                 <span className="font-semibold text-purple-700 dark:text-purple-300">Admin</span>
               </div>
-              <p className="text-sm text-slate-600 dark:text-slate-300 mb-1">Email: john@doe.com</p>
-              <p className="text-sm text-slate-600 dark:text-slate-300">Password: johndoe123</p>
+              <p className="text-sm text-slate-600 dark:text-slate-300 mb-1">Email: admin@ems-training.com</p>
+              <p className="text-sm text-slate-600 dark:text-slate-300">Password: admin123</p>
             </div>
             
             <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-xl p-4 rounded-xl border border-white/30 dark:border-slate-700/50 hover:bg-white/80 dark:hover:bg-slate-700/60 transition-all duration-300">
@@ -189,7 +189,7 @@ export default function AdminDashboard() {
                 </div>
                 <span className="font-semibold text-blue-700 dark:text-blue-300">Lecturer</span>
               </div>
-              <p className="text-sm text-slate-600 dark:text-slate-300 mb-1">Email: lecturer@test.com</p>
+              <p className="text-sm text-slate-600 dark:text-slate-300 mb-1">Email: lecturer@ems-training.com</p>
               <p className="text-sm text-slate-600 dark:text-slate-300">Password: lecturer123</p>
             </div>
             
@@ -200,7 +200,7 @@ export default function AdminDashboard() {
                 </div>
                 <span className="font-semibold text-emerald-700 dark:text-emerald-300">Student</span>
               </div>
-              <p className="text-sm text-slate-600 dark:text-slate-300 mb-1">Email: student@test.com</p>
+              <p className="text-sm text-slate-600 dark:text-slate-300 mb-1">Email: student@ems-training.com</p>
               <p className="text-sm text-slate-600 dark:text-slate-300">Password: student123</p>
             </div>
           </div>
