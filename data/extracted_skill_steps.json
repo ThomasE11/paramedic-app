@@ -1,0 +1,389 @@
+[
+  {
+    "skillName": "Prediction of difficult bag valve mask ventilations",
+    "steps": [
+      {
+        "id": "bvm_pred_1",
+        "stepNumber": 1,
+        "title": "B – Beard and other mask seal issues",
+        "description": "Student examines patient and reports on finding on a thick beard or facial pathology (i.e. trauma) that may create difficulty when obtaining an adequate seal.",
+        "isRequired": true,
+        "keyPoints": [
+          "Examine for thick beard",
+          "Check for facial jewelry",
+          "Assess facial trauma or pathology",
+          "Identify potential seal issues"
+        ],
+        "timeEstimate": 2,
+        "isCritical": true
+      },
+      {
+        "id": "bvm_pred_2",
+        "stepNumber": 2,
+        "title": "O – Obesity assessment",
+        "description": "Student examines patient and reports on finding the patient's obese state may have the potential to decrease chest wall compliance, decreased ability to extend the head, and redundant soft tissue in pharynx.",
+        "isRequired": true,
+        "keyPoints": [
+          "Assess patient's body habitus",
+          "Evaluate chest wall compliance",
+          "Check head extension capability",
+          "Identify redundant soft tissue"
+        ],
+        "timeEstimate": 2,
+        "isCritical": true
+      },
+      {
+        "id": "bvm_pred_3",
+        "stepNumber": 3,
+        "title": "O – Old (>55 years) assessment",
+        "description": "Student examines patient and reports on finding that the patients age may affect the range of motion of the neck and temporo-mandibular joint, associated loss soft tissue elasticity that affect the architecture of the mouth.",
+        "isRequired": true,
+        "keyPoints": [
+          "Assess patient age (>55 years)",
+          "Check neck range of motion",
+          "Evaluate temporo-mandibular joint",
+          "Assess soft tissue elasticity"
+        ],
+        "timeEstimate": 2,
+        "isCritical": true
+      },
+      {
+        "id": "bvm_pred_4",
+        "stepNumber": 4,
+        "title": "T – Toothless assessment",
+        "description": "Student examines patient and reports on finding that missing teeth may affect the facial architecture causing tissue collapse around the corners of the mouth.",
+        "isRequired": true,
+        "keyPoints": [
+          "Check for missing teeth",
+          "Assess facial architecture",
+          "Identify tissue collapse",
+          "Evaluate mouth seal potential"
+        ],
+        "timeEstimate": 2,
+        "isCritical": true
+      },
+      {
+        "id": "bvm_pred_5",
+        "stepNumber": 5,
+        "title": "S – Sounds assessment",
+        "description": "Student examines patient and reports on finding that he hears snoring or stridor which may be associated with abnormal upper and lower airway sounds.",
+        "isRequired": true,
+        "keyPoints": [
+          "Listen for snoring",
+          "Identify stridor",
+          "Assess upper airway sounds",
+          "Evaluate lower airway sounds"
+        ],
+        "timeEstimate": 2,
+        "isCritical": true
+      }
+    ]
+  },
+  {
+    "skillName": "Adult CPR with Manual Defibrillator",
+    "steps": [
+      {
+        "id": "cpr_1",
+        "stepNumber": 1,
+        "title": "Scene Safety Assessment",
+        "description": "Ensure scene safety and check for hazards before approaching patient",
+        "isRequired": true,
+        "keyPoints": [
+          "Check for environmental hazards",
+          "Ensure personal safety",
+          "Use appropriate PPE",
+          "Call for additional help if needed"
+        ],
+        "timeEstimate": 1,
+        "isCritical": true
+      },
+      {
+        "id": "cpr_2",
+        "stepNumber": 2,
+        "title": "Check Responsiveness",
+        "description": "Tap shoulders firmly and shout to assess patient consciousness",
+        "isRequired": true,
+        "keyPoints": [
+          "Tap shoulders firmly",
+          "Shout 'Are you okay?'",
+          "Look for any response",
+          "Activate emergency response if unresponsive"
+        ],
+        "timeEstimate": 1,
+        "isCritical": true
+      },
+      {
+        "id": "cpr_3",
+        "stepNumber": 3,
+        "title": "Position Patient",
+        "description": "Place patient supine on firm surface with head tilt, chin lift",
+        "isRequired": true,
+        "keyPoints": [
+          "Position on firm, flat surface",
+          "Perform head tilt",
+          "Lift chin to open airway",
+          "Ensure proper alignment"
+        ],
+        "timeEstimate": 1,
+        "isCritical": true
+      },
+      {
+        "id": "cpr_4",
+        "stepNumber": 4,
+        "title": "Check Pulse",
+        "description": "Check carotid pulse for no more than 10 seconds",
+        "isRequired": true,
+        "keyPoints": [
+          "Locate carotid artery",
+          "Check for maximum 10 seconds",
+          "Feel for definite pulse",
+          "Begin CPR if no pulse or uncertain"
+        ],
+        "timeEstimate": 1,
+        "isCritical": true
+      },
+      {
+        "id": "cpr_5",
+        "stepNumber": 5,
+        "title": "Begin Chest Compressions",
+        "description": "Start high-quality chest compressions at 100-120/min, 2 inches deep",
+        "isRequired": true,
+        "keyPoints": [
+          "Place heel of hand on lower half of breastbone",
+          "Compress at least 2 inches deep",
+          "Rate of 100-120 compressions per minute",
+          "Allow complete chest recoil",
+          "Minimize interruptions"
+        ],
+        "timeEstimate": 2,
+        "isCritical": true
+      },
+      {
+        "id": "cpr_6",
+        "stepNumber": 6,
+        "title": "Attach Defibrillator",
+        "description": "Apply defibrillator pads and analyze rhythm",
+        "isRequired": true,
+        "keyPoints": [
+          "Turn on defibrillator",
+          "Apply pads to bare chest",
+          "Ensure proper pad placement",
+          "Clear patient for analysis",
+          "Follow device prompts"
+        ],
+        "timeEstimate": 2,
+        "isCritical": true
+      }
+    ]
+  },
+  {
+    "skillName": "Intravenous Access",
+    "steps": [
+      {
+        "id": "iv_1",
+        "stepNumber": 1,
+        "title": "Gather Equipment",
+        "description": "Prepare all necessary IV insertion equipment and supplies",
+        "isRequired": true,
+        "keyPoints": [
+          "Select appropriate catheter size",
+          "Check equipment expiration dates",
+          "Prepare saline flush",
+          "Gather tape and dressings"
+        ],
+        "timeEstimate": 2,
+        "isCritical": false
+      },
+      {
+        "id": "iv_2",
+        "stepNumber": 2,
+        "title": "Explain Procedure",
+        "description": "Explain the procedure to the patient and obtain consent",
+        "isRequired": true,
+        "keyPoints": [
+          "Explain what you will do",
+          "Obtain verbal consent",
+          "Address patient concerns",
+          "Position patient appropriately"
+        ],
+        "timeEstimate": 1,
+        "isCritical": false
+      },
+      {
+        "id": "iv_3",
+        "stepNumber": 3,
+        "title": "Select Vein",
+        "description": "Choose appropriate vein for IV insertion",
+        "isRequired": true,
+        "keyPoints": [
+          "Palpate for firm, bouncy vein",
+          "Avoid joints and tender areas",
+          "Consider vein accessibility",
+          "Choose most distal site first"
+        ],
+        "timeEstimate": 1,
+        "isCritical": true
+      },
+      {
+        "id": "iv_4",
+        "stepNumber": 4,
+        "title": "Apply Tourniquet",
+        "description": "Place tourniquet 4-6 inches above insertion site",
+        "isRequired": true,
+        "keyPoints": [
+          "Apply 4-6 inches above site",
+          "Not too tight to occlude arterial flow",
+          "Check distal pulse",
+          "Time limit of 2 minutes maximum"
+        ],
+        "timeEstimate": 1,
+        "isCritical": false
+      },
+      {
+        "id": "iv_5",
+        "stepNumber": 5,
+        "title": "Clean Insertion Site",
+        "description": "Cleanse insertion site with alcohol or chlorhexidine",
+        "isRequired": true,
+        "keyPoints": [
+          "Use circular motion from center outward",
+          "Allow to air dry completely",
+          "Do not touch site after cleaning",
+          "Use sterile technique"
+        ],
+        "timeEstimate": 1,
+        "isCritical": true
+      },
+      {
+        "id": "iv_6",
+        "stepNumber": 6,
+        "title": "Insert Catheter",
+        "description": "Insert IV catheter using proper technique",
+        "isRequired": true,
+        "keyPoints": [
+          "Insert at 15-30 degree angle",
+          "Watch for blood flashback",
+          "Advance catheter, not needle",
+          "Remove needle carefully"
+        ],
+        "timeEstimate": 2,
+        "isCritical": true
+      },
+      {
+        "id": "iv_7",
+        "stepNumber": 7,
+        "title": "Secure and Test",
+        "description": "Secure IV line and test patency",
+        "isRequired": true,
+        "keyPoints": [
+          "Release tourniquet",
+          "Connect IV tubing",
+          "Flush with saline",
+          "Secure with tape/dressing",
+          "Document procedure"
+        ],
+        "timeEstimate": 2,
+        "isCritical": true
+      }
+    ]
+  },
+  {
+    "skillName": "Adult Endotracheal Intubation",
+    "steps": [
+      {
+        "id": "ett_1",
+        "stepNumber": 1,
+        "title": "Pre-oxygenation",
+        "description": "Provide 100% oxygen for 3-5 minutes prior to intubation attempt",
+        "isRequired": true,
+        "keyPoints": [
+          "Use bag-valve-mask with 100% oxygen",
+          "Pre-oxygenate for 3-5 minutes",
+          "Monitor oxygen saturation",
+          "Ensure adequate ventilation"
+        ],
+        "timeEstimate": 3,
+        "isCritical": true
+      },
+      {
+        "id": "ett_2",
+        "stepNumber": 2,
+        "title": "Prepare Equipment",
+        "description": "Check laryngoscope and select appropriate ET tube size",
+        "isRequired": true,
+        "keyPoints": [
+          "Test laryngoscope light",
+          "Select appropriate tube size",
+          "Check ET tube cuff",
+          "Have backup equipment ready",
+          "Prepare suction"
+        ],
+        "timeEstimate": 1,
+        "isCritical": true
+      },
+      {
+        "id": "ett_3",
+        "stepNumber": 3,
+        "title": "Position Head",
+        "description": "Position head in optimal sniffing position",
+        "isRequired": true,
+        "keyPoints": [
+          "Flex neck, extend head",
+          "Align ear to sternal notch",
+          "Use towel under occiput if needed",
+          "Optimize laryngeal view"
+        ],
+        "timeEstimate": 1,
+        "isCritical": true
+      },
+      {
+        "id": "ett_4",
+        "stepNumber": 4,
+        "title": "Insert Laryngoscope",
+        "description": "Insert laryngoscope blade and visualize vocal cords",
+        "isRequired": true,
+        "keyPoints": [
+          "Insert blade to appropriate depth",
+          "Sweep tongue to the left",
+          "Lift blade, don't rock",
+          "Identify vocal cords",
+          "Use external laryngeal manipulation if needed"
+        ],
+        "timeEstimate": 1,
+        "isCritical": true
+      },
+      {
+        "id": "ett_5",
+        "stepNumber": 5,
+        "title": "Insert ET Tube",
+        "description": "Pass ET tube through vocal cords under direct visualization",
+        "isRequired": true,
+        "keyPoints": [
+          "Pass tube through vocal cords",
+          "Watch tube pass through cords",
+          "Stop when cuff just past cords",
+          "Inflate cuff with appropriate volume",
+          "Remove laryngoscope"
+        ],
+        "timeEstimate": 1,
+        "isCritical": true
+      },
+      {
+        "id": "ett_6",
+        "stepNumber": 6,
+        "title": "Confirm Placement",
+        "description": "Confirm proper tube placement using multiple methods",
+        "isRequired": true,
+        "keyPoints": [
+          "Auscultate bilateral breath sounds",
+          "Check for epigastric sounds",
+          "Confirm with capnography",
+          "Observe chest rise and fall",
+          "Secure tube appropriately"
+        ],
+        "timeEstimate": 2,
+        "isCritical": true
+      }
+    ]
+  }
+]

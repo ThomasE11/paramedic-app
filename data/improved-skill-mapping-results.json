@@ -1,0 +1,623 @@
+{
+  "matched": [
+    {
+      "pdfSkill": "Handwashing",
+      "dbSkill": "Hand Washing",
+      "dbSkillId": 260,
+      "hemCode": "HEM1103",
+      "category": "Medical Emergencies"
+    },
+    {
+      "pdfSkill": "Basic Airway Maneuver",
+      "dbSkill": "Basic Airway Maneuver",
+      "dbSkillId": 289,
+      "hemCode": "HEM1103",
+      "category": "Basic Life Support (BLS)"
+    },
+    {
+      "pdfSkill": "Oropharyngeal Suctioning",
+      "dbSkill": "Oropharyngeal Suctioning",
+      "dbSkillId": 315,
+      "hemCode": "HEM1103",
+      "category": "Medical Emergencies"
+    },
+    {
+      "pdfSkill": "Bag Valve Mask (BVM) Ventilation",
+      "dbSkill": "Bag Valve Mask Reservoir Ventilation – apneic patient",
+      "dbSkillId": 262,
+      "hemCode": "HEM1103",
+      "category": "Basic Life Support (BLS)"
+    },
+    {
+      "pdfSkill": "OP Airway Insertion",
+      "dbSkill": "Oropharyngeal Tube Insertion",
+      "dbSkillId": 309,
+      "hemCode": "HEM1103",
+      "category": "Medical Emergencies"
+    },
+    {
+      "pdfSkill": "NP Airway Insertion",
+      "dbSkill": "Insertion of Nasopharyngeal Airway",
+      "dbSkillId": 284,
+      "hemCode": "HEM1103",
+      "category": "Basic Life Support (BLS)"
+    },
+    {
+      "pdfSkill": "Choking – Adult",
+      "dbSkill": "Adult Choking without the use of equipment",
+      "dbSkillId": 297,
+      "hemCode": "HEM1103",
+      "category": "Basic Life Support (BLS)"
+    },
+    {
+      "pdfSkill": "Basic Life Support with AED",
+      "dbSkill": "Adult CPR with Manual defibrillator",
+      "dbSkillId": 265,
+      "hemCode": "HEM1103",
+      "category": "Basic Life Support (BLS)"
+    },
+    {
+      "pdfSkill": "Recovery Position",
+      "dbSkill": "Recovery Position",
+      "dbSkillId": 257,
+      "hemCode": "HEM1103",
+      "category": "Medical Emergencies"
+    },
+    {
+      "pdfSkill": "Nebulization",
+      "dbSkill": "Nebulization of Medication",
+      "dbSkillId": 279,
+      "hemCode": "HEM1103",
+      "category": "Advanced Life Support (ALS)"
+    },
+    {
+      "pdfSkill": "Baseline Observations",
+      "dbSkill": "Hgt",
+      "dbSkillId": 314,
+      "hemCode": "HEM1103",
+      "category": "Medical Emergencies"
+    },
+    {
+      "pdfSkill": "Hemoglucose Test (HGT)",
+      "dbSkill": "Hgt",
+      "dbSkillId": 314,
+      "hemCode": "HEM1103",
+      "category": "Medical Emergencies"
+    },
+    {
+      "pdfSkill": "Pre-Alert (ASHICE)",
+      "dbSkill": "Pre Hospital Update",
+      "dbSkillId": 293,
+      "hemCode": "HEM1103",
+      "category": "Medical Emergencies"
+    },
+    {
+      "pdfSkill": "Bandage Application",
+      "dbSkill": "Application of a bandage",
+      "dbSkillId": 278,
+      "hemCode": "HEM1103",
+      "category": "Trauma Care"
+    },
+    {
+      "pdfSkill": "Splinting a Fracture",
+      "dbSkill": "Splinting a fracture",
+      "dbSkillId": 291,
+      "hemCode": "HEM1103",
+      "category": "Medical Emergencies"
+    },
+    {
+      "pdfSkill": "Triangular Bandage Use",
+      "dbSkill": "Application of a Triangular Bandage",
+      "dbSkillId": 306,
+      "hemCode": "HEM1103",
+      "category": "Trauma Care"
+    },
+    {
+      "pdfSkill": "Exsanguinating Hemorrhage",
+      "dbSkill": "BLEEDING CONTROL/SHOCK MANAGEMENT",
+      "dbSkillId": 311,
+      "hemCode": "HEM1103",
+      "category": "Trauma Care"
+    },
+    {
+      "pdfSkill": "Supraglottic Airway Insertion (LMA/iGEL)",
+      "dbSkill": "Supraglottic Airway Insertion",
+      "dbSkillId": 298,
+      "hemCode": "HEM2105",
+      "category": "Basic Life Support (BLS)"
+    },
+    {
+      "pdfSkill": "Suctioning – ETT or SGA",
+      "dbSkill": "Suctioning of the Endotracheal Tube",
+      "dbSkillId": 312,
+      "hemCode": "HEM2105",
+      "category": "Advanced Life Support (ALS)"
+    },
+    {
+      "pdfSkill": "Intermediate Life Support – Adult",
+      "dbSkill": "Adult CPR with Manual defibrillator",
+      "dbSkillId": 265,
+      "hemCode": "HEM2105",
+      "category": "Basic Life Support (BLS)"
+    },
+    {
+      "pdfSkill": "Intravenous Cannulation (IV)",
+      "dbSkill": "Intravenous Cannulation",
+      "dbSkillId": 277,
+      "hemCode": "HEM2024",
+      "category": "Advanced Life Support (ALS)"
+    },
+    {
+      "pdfSkill": "Needle Thoracocentesis (Chest Decompression)",
+      "dbSkill": "Needle Thoracentesis",
+      "dbSkillId": 299,
+      "hemCode": "HEM2024",
+      "category": "Advanced Life Support (ALS)"
+    },
+    {
+      "pdfSkill": "Cervical Spine Clearance",
+      "dbSkill": "C Spine Clearance",
+      "dbSkillId": 276,
+      "hemCode": "HEM2024",
+      "category": "Trauma Care"
+    },
+    {
+      "pdfSkill": "Traction Splint",
+      "dbSkill": "Traction Splint",
+      "dbSkillId": 283,
+      "hemCode": "HEM2033",
+      "category": "Medical Emergencies"
+    },
+    {
+      "pdfSkill": "Drug Administration",
+      "dbSkill": "Drug Administration",
+      "dbSkillId": 271,
+      "hemCode": "HEM2033",
+      "category": "Advanced Life Support (ALS)"
+    },
+    {
+      "pdfSkill": "Predicting Difficult BVM Ventilations",
+      "dbSkill": "Prediction of difficult bag valve mask ventilations",
+      "dbSkillId": 254,
+      "hemCode": "HEM3006",
+      "category": "Basic Life Support (BLS)"
+    },
+    {
+      "pdfSkill": "Predicting Difficult Intubation",
+      "dbSkill": "Prediction of difficult direct endotracheal intubation",
+      "dbSkillId": 290,
+      "hemCode": "HEM3006",
+      "category": "Advanced Life Support (ALS)"
+    },
+    {
+      "pdfSkill": "Intubation – Adult",
+      "dbSkill": "Adult Endotracheal Intubation (ETT)",
+      "dbSkillId": 301,
+      "hemCode": "HEM3006",
+      "category": "Advanced Life Support (ALS)"
+    },
+    {
+      "pdfSkill": "Orogastric & Nasogastric tube insertion",
+      "dbSkill": "Orogastric and Nasogastric Tube Insertion",
+      "dbSkillId": 261,
+      "hemCode": "HEM3006",
+      "category": "Medical Emergencies"
+    },
+    {
+      "pdfSkill": "Surgical Cricothyroidotomy (Front of Neck Access)",
+      "dbSkill": "Surgical Crichothyroidotomy",
+      "dbSkillId": 296,
+      "hemCode": "HEM3006",
+      "category": "Medical Emergencies"
+    },
+    {
+      "pdfSkill": "External Jugular Vein Cannulation (EJVC)",
+      "dbSkill": "External Jugular Vein Cannulation (EJVC)",
+      "dbSkillId": 268,
+      "hemCode": "HEM3006",
+      "category": "Advanced Life Support (ALS)"
+    },
+    {
+      "pdfSkill": "Advanced Life Support Adult",
+      "dbSkill": "Adult CPR with Manual defibrillator",
+      "dbSkillId": 265,
+      "hemCode": "HEM3106",
+      "category": "Basic Life Support (BLS)"
+    },
+    {
+      "pdfSkill": "Advanced Life Support Infant",
+      "dbSkill": "INFANT CPR WITH MANUAL DEFIBRILLATOR",
+      "dbSkillId": 288,
+      "hemCode": "HEM3106",
+      "category": "Basic Life Support (BLS)"
+    },
+    {
+      "pdfSkill": "Advanced Life Support Child",
+      "dbSkill": "PAEDIATRIC CPR WITH MANUAL DEFIBRILLATOR",
+      "dbSkillId": 269,
+      "hemCode": "HEM3106",
+      "category": "Basic Life Support (BLS)"
+    },
+    {
+      "pdfSkill": "Intraosseous Access",
+      "dbSkill": "EZ-IO® Distal Tibia Insertion Technique",
+      "dbSkillId": 285,
+      "hemCode": "HEM3106",
+      "category": "Medical Emergencies"
+    },
+    {
+      "pdfSkill": "Carotid Sinus Massage",
+      "dbSkill": "CAROTID SINUS MASSAGE",
+      "dbSkillId": 294,
+      "hemCode": "HEM3106",
+      "category": "Advanced Life Support (ALS)"
+    },
+    {
+      "pdfSkill": "Valsalva Maneuver",
+      "dbSkill": "Modified Valsalva Maneuver",
+      "dbSkillId": 280,
+      "hemCode": "HEM3106",
+      "category": "Advanced Life Support (ALS)"
+    },
+    {
+      "pdfSkill": "Synchronized Cardioversion",
+      "dbSkill": "SYNCHRONISED CARDIOVERSION",
+      "dbSkillId": 302,
+      "hemCode": "HEM4106",
+      "category": "Medical Emergencies"
+    },
+    {
+      "pdfSkill": "Transcutaneous Pacing",
+      "dbSkill": "TRANSCUT ANEOUS PACING",
+      "dbSkillId": 300,
+      "hemCode": "HEM4106",
+      "category": "Medical Emergencies"
+    },
+    {
+      "pdfSkill": "CPAP",
+      "dbSkill": "CPAP",
+      "dbSkillId": 258,
+      "hemCode": "HEM4106",
+      "category": "Advanced Life Support (ALS)"
+    },
+    {
+      "pdfSkill": "EtCO2",
+      "dbSkill": "ETCO2 monitoring",
+      "dbSkillId": 313,
+      "hemCode": "HEM4106",
+      "category": "Advanced Life Support (ALS)"
+    },
+    {
+      "pdfSkill": "Transport Ventilator",
+      "dbSkill": "Use of a transport ventilator",
+      "dbSkillId": 270,
+      "hemCode": "HEM4106",
+      "category": "Medical Emergencies"
+    },
+    {
+      "pdfSkill": "Ventilator Alarm Troubleshooting",
+      "dbSkill": "Troubleshooting ventilator alarms",
+      "dbSkillId": 273,
+      "hemCode": "HEM4106",
+      "category": "Medical Emergencies"
+    }
+  ],
+  "unmatched": [
+    {
+      "pdfSkill": "Pelvic Binder Application",
+      "hemCode": "HEM2033"
+    }
+  ],
+  "subjectSkillMapping": {
+    "HEM1103": {
+      "matched": [
+        {
+          "pdfSkill": "Handwashing",
+          "dbSkillId": 260,
+          "dbSkillName": "Hand Washing"
+        },
+        {
+          "pdfSkill": "Basic Airway Maneuver",
+          "dbSkillId": 289,
+          "dbSkillName": "Basic Airway Maneuver"
+        },
+        {
+          "pdfSkill": "Oropharyngeal Suctioning",
+          "dbSkillId": 315,
+          "dbSkillName": "Oropharyngeal Suctioning"
+        },
+        {
+          "pdfSkill": "Bag Valve Mask (BVM) Ventilation",
+          "dbSkillId": 262,
+          "dbSkillName": "Bag Valve Mask Reservoir Ventilation – apneic patient"
+        },
+        {
+          "pdfSkill": "OP Airway Insertion",
+          "dbSkillId": 309,
+          "dbSkillName": "Oropharyngeal Tube Insertion"
+        },
+        {
+          "pdfSkill": "NP Airway Insertion",
+          "dbSkillId": 284,
+          "dbSkillName": "Insertion of Nasopharyngeal Airway"
+        },
+        {
+          "pdfSkill": "Choking – Adult",
+          "dbSkillId": 297,
+          "dbSkillName": "Adult Choking without the use of equipment"
+        },
+        {
+          "pdfSkill": "Basic Life Support with AED",
+          "dbSkillId": 265,
+          "dbSkillName": "Adult CPR with Manual defibrillator"
+        },
+        {
+          "pdfSkill": "Recovery Position",
+          "dbSkillId": 257,
+          "dbSkillName": "Recovery Position"
+        },
+        {
+          "pdfSkill": "Nebulization",
+          "dbSkillId": 279,
+          "dbSkillName": "Nebulization of Medication"
+        },
+        {
+          "pdfSkill": "Baseline Observations",
+          "dbSkillId": 314,
+          "dbSkillName": "Hgt"
+        },
+        {
+          "pdfSkill": "Hemoglucose Test (HGT)",
+          "dbSkillId": 314,
+          "dbSkillName": "Hgt"
+        },
+        {
+          "pdfSkill": "Pre-Alert (ASHICE)",
+          "dbSkillId": 293,
+          "dbSkillName": "Pre Hospital Update"
+        },
+        {
+          "pdfSkill": "Bandage Application",
+          "dbSkillId": 278,
+          "dbSkillName": "Application of a bandage"
+        },
+        {
+          "pdfSkill": "Splinting a Fracture",
+          "dbSkillId": 291,
+          "dbSkillName": "Splinting a fracture"
+        },
+        {
+          "pdfSkill": "Triangular Bandage Use",
+          "dbSkillId": 306,
+          "dbSkillName": "Application of a Triangular Bandage"
+        },
+        {
+          "pdfSkill": "Exsanguinating Hemorrhage",
+          "dbSkillId": 311,
+          "dbSkillName": "BLEEDING CONTROL/SHOCK MANAGEMENT"
+        }
+      ],
+      "unmatched": []
+    },
+    "HEM2105": {
+      "matched": [
+        {
+          "pdfSkill": "Supraglottic Airway Insertion (LMA/iGEL)",
+          "dbSkillId": 298,
+          "dbSkillName": "Supraglottic Airway Insertion"
+        },
+        {
+          "pdfSkill": "Suctioning – ETT or SGA",
+          "dbSkillId": 312,
+          "dbSkillName": "Suctioning of the Endotracheal Tube"
+        },
+        {
+          "pdfSkill": "Intermediate Life Support – Adult",
+          "dbSkillId": 265,
+          "dbSkillName": "Adult CPR with Manual defibrillator"
+        }
+      ],
+      "unmatched": []
+    },
+    "HEM2024": {
+      "matched": [
+        {
+          "pdfSkill": "Intravenous Cannulation (IV)",
+          "dbSkillId": 277,
+          "dbSkillName": "Intravenous Cannulation"
+        },
+        {
+          "pdfSkill": "Needle Thoracocentesis (Chest Decompression)",
+          "dbSkillId": 299,
+          "dbSkillName": "Needle Thoracentesis"
+        },
+        {
+          "pdfSkill": "Cervical Spine Clearance",
+          "dbSkillId": 276,
+          "dbSkillName": "C Spine Clearance"
+        }
+      ],
+      "unmatched": []
+    },
+    "HEM2033": {
+      "matched": [
+        {
+          "pdfSkill": "Traction Splint",
+          "dbSkillId": 283,
+          "dbSkillName": "Traction Splint"
+        },
+        {
+          "pdfSkill": "Drug Administration",
+          "dbSkillId": 271,
+          "dbSkillName": "Drug Administration"
+        }
+      ],
+      "unmatched": [
+        "Pelvic Binder Application"
+      ]
+    },
+    "HEM3006": {
+      "matched": [
+        {
+          "pdfSkill": "Predicting Difficult BVM Ventilations",
+          "dbSkillId": 254,
+          "dbSkillName": "Prediction of difficult bag valve mask ventilations"
+        },
+        {
+          "pdfSkill": "Predicting Difficult Intubation",
+          "dbSkillId": 290,
+          "dbSkillName": "Prediction of difficult direct endotracheal intubation"
+        },
+        {
+          "pdfSkill": "Intubation – Adult",
+          "dbSkillId": 301,
+          "dbSkillName": "Adult Endotracheal Intubation (ETT)"
+        },
+        {
+          "pdfSkill": "Orogastric & Nasogastric tube insertion",
+          "dbSkillId": 261,
+          "dbSkillName": "Orogastric and Nasogastric Tube Insertion"
+        },
+        {
+          "pdfSkill": "Surgical Cricothyroidotomy (Front of Neck Access)",
+          "dbSkillId": 296,
+          "dbSkillName": "Surgical Crichothyroidotomy"
+        },
+        {
+          "pdfSkill": "External Jugular Vein Cannulation (EJVC)",
+          "dbSkillId": 268,
+          "dbSkillName": "External Jugular Vein Cannulation (EJVC)"
+        }
+      ],
+      "unmatched": []
+    },
+    "HEM3106": {
+      "matched": [
+        {
+          "pdfSkill": "Advanced Life Support Adult",
+          "dbSkillId": 265,
+          "dbSkillName": "Adult CPR with Manual defibrillator"
+        },
+        {
+          "pdfSkill": "Advanced Life Support Infant",
+          "dbSkillId": 288,
+          "dbSkillName": "INFANT CPR WITH MANUAL DEFIBRILLATOR"
+        },
+        {
+          "pdfSkill": "Advanced Life Support Child",
+          "dbSkillId": 269,
+          "dbSkillName": "PAEDIATRIC CPR WITH MANUAL DEFIBRILLATOR"
+        },
+        {
+          "pdfSkill": "Intraosseous Access",
+          "dbSkillId": 285,
+          "dbSkillName": "EZ-IO® Distal Tibia Insertion Technique"
+        },
+        {
+          "pdfSkill": "Carotid Sinus Massage",
+          "dbSkillId": 294,
+          "dbSkillName": "CAROTID SINUS MASSAGE"
+        },
+        {
+          "pdfSkill": "Valsalva Maneuver",
+          "dbSkillId": 280,
+          "dbSkillName": "Modified Valsalva Maneuver"
+        }
+      ],
+      "unmatched": []
+    },
+    "HEM4106": {
+      "matched": [
+        {
+          "pdfSkill": "Synchronized Cardioversion",
+          "dbSkillId": 302,
+          "dbSkillName": "SYNCHRONISED CARDIOVERSION"
+        },
+        {
+          "pdfSkill": "Transcutaneous Pacing",
+          "dbSkillId": 300,
+          "dbSkillName": "TRANSCUT ANEOUS PACING"
+        },
+        {
+          "pdfSkill": "CPAP",
+          "dbSkillId": 258,
+          "dbSkillName": "CPAP"
+        },
+        {
+          "pdfSkill": "EtCO2",
+          "dbSkillId": 313,
+          "dbSkillName": "ETCO2 monitoring"
+        },
+        {
+          "pdfSkill": "Transport Ventilator",
+          "dbSkillId": 270,
+          "dbSkillName": "Use of a transport ventilator"
+        },
+        {
+          "pdfSkill": "Ventilator Alarm Troubleshooting",
+          "dbSkillId": 273,
+          "dbSkillName": "Troubleshooting ventilator alarms"
+        }
+      ],
+      "unmatched": []
+    }
+  },
+  "hemSubjects": [
+    {
+      "code": "HEM1103",
+      "level": "EMT-Basic",
+      "description": "Emergency Medical Technician - Basic Level",
+      "skillCount": 17,
+      "matchedCount": 17,
+      "unmatchedCount": 0
+    },
+    {
+      "code": "HEM2105",
+      "level": "Paramedic",
+      "description": "Intermediate Paramedic Level (Airway Management)",
+      "skillCount": 3,
+      "matchedCount": 3,
+      "unmatchedCount": 0
+    },
+    {
+      "code": "HEM2024",
+      "level": "Paramedic",
+      "description": "Intermediate Paramedic Level (IV Access & Emergency Procedures)",
+      "skillCount": 3,
+      "matchedCount": 3,
+      "unmatchedCount": 0
+    },
+    {
+      "code": "HEM2033",
+      "level": "Paramedic",
+      "description": "Intermediate Paramedic Level (Equipment & Drug Administration)",
+      "skillCount": 3,
+      "matchedCount": 2,
+      "unmatchedCount": 1
+    },
+    {
+      "code": "HEM3006",
+      "level": "Advanced Paramedic",
+      "description": "Advanced Paramedic Level (Advanced Airway Management)",
+      "skillCount": 6,
+      "matchedCount": 6,
+      "unmatchedCount": 0
+    },
+    {
+      "code": "HEM3106",
+      "level": "Advanced Paramedic",
+      "description": "Advanced Paramedic Level (Advanced Life Support)",
+      "skillCount": 6,
+      "matchedCount": 6,
+      "unmatchedCount": 0
+    },
+    {
+      "code": "HEM4106",
+      "level": "Advanced Paramedic",
+      "description": "Advanced Paramedic Level (Advanced Cardiac & Respiratory Support)",
+      "skillCount": 6,
+      "matchedCount": 6,
+      "unmatchedCount": 0
+    }
+  ]
+}

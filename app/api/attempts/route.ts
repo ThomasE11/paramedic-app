@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth';
+import { authConfig } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,7 +24,7 @@ let attempts: Attempt[] = [];
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(authConfig);
     
     // Temporarily allow without authentication for testing
     // if (!session) {
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(authConfig);
     
     // Temporarily allow without authentication for testing
     // if (!session) {

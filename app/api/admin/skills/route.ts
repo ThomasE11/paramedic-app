@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth';
+import { authConfig } from '@/lib/auth';
 import { getSkillsByCategory } from '@/lib/skills-data';
 
 export const dynamic = 'force-dynamic';
@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
   try {
     console.log('🔄 Admin skills API called');
     
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(authConfig);
     
     if (!session) {
       console.log('❌ No session found');

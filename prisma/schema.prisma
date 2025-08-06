@@ -1,0 +1,358 @@
+generator client {
+    provider = "prisma-client-js"
+    binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model User {
+  id                    String                   @id @default(cuid())
+  name                  String
+  email                 String                   @unique
+  password              String
+  role                  Role                     @default(STUDENT)
+  studentId             String?                  @unique @map("student_id")
+  createdAt             DateTime                 @default(now()) @map("created_at")
+  updatedAt             DateTime                 @updatedAt @map("updated_at")
+  accounts              Account[]
+  notifications         Notification[]
+  quizAttempts          QuizAttempt[]
+  reflections           ReflectionNote[]
+  sessions              Session[]
+  progress              StudentProgress[]
+  subjects              UserSubject[]
+  videoAnalysisSessions VideoAnalysisSession[]
+
+  @@map("users")
+}
+
+model Account {
+  id                       String  @id @default(cuid())
+  userId                   String  @map("user_id")
+  type                     String
+  provider                 String
+  providerAccountId        String  @map("provider_account_id")
+  refresh_token            String?
+  access_token             String?
+  expires_at               Int?
+  token_type               String?
+  scope                    String?
+  id_token                 String?
+  session_state            String?
+  refresh_token_expires_in Int?
+  user                     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verificationtokens")
+}
+
+model Category {
+  id          Int        @id @default(autoincrement())
+  name        String     @unique
+  description String
+  colorCode   String     @map("color_code")
+  parentId    Int?       @map("parent_id")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+  parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryHierarchy")
+  skills      Skill[]
+
+  @@map("categories")
+}
+
+model Skill {
+  id                    Int                    @id @default(autoincrement())
+  name                  String
+  categoryId            Int                    @map("category_id")
+  difficultyLevel       DifficultyLevel        @map("difficulty_level")
+  description           String
+  prerequisites         Json
+  estimatedTimeMinutes  Int                    @map("estimated_time_minutes")
+  isCritical            Boolean                @default(false) @map("is_critical")
+  objectives            Json
+  indications           Json
+  contraindications     Json
+  equipment             Json
+  commonErrors          Json                   @map("common_errors")
+  documentationReqs     Json                   @map("documentation_requirements")
+  minimumPracticeCount  Int                    @default(1) @map("minimum_practice_count")
+  createdAt             DateTime               @default(now()) @map("created_at")
+  updatedAt             DateTime               @updatedAt @map("updated_at")
+  assessmentCriteria    AssessmentCriteria[]
+  quizQuestions         QuizQuestion[]
+  reflections           ReflectionNote[]
+  dependents_rel        SkillPrerequisite[]    @relation("DependentSkill")
+  prerequisites_rel     SkillPrerequisite[]    @relation("PrerequisiteSkill")
+  steps                 SkillStep[]
+  category              Category               @relation(fields: [categoryId], references: [id])
+  progress              StudentProgress[]
+  subjects              SubjectSkill[]
+  videoAnalysisSessions VideoAnalysisSession[]
+
+  @@map("skills")
+}
+
+model SkillStep {
+  id           Int      @id @default(autoincrement())
+  skillId      Int      @map("skill_id")
+  stepNumber   Int      @map("step_number")
+  title        String
+  description  String
+  keyPoints    Json     @map("key_points")
+  isCritical   Boolean  @default(false) @map("is_critical")
+  timeEstimate Int      @map("time_estimate")
+  skill        Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([skillId, stepNumber])
+  @@map("skill_steps")
+}
+
+model AssessmentCriteria {
+  id               Int      @id @default(autoincrement())
+  skillId          Int      @map("skill_id")
+  criteriaName     String   @map("criteria_name")
+  description      String
+  weight           Float
+  isMandatory      Boolean  @default(true) @map("is_mandatory")
+  evaluationPoints Json     @map("evaluation_points")
+  skill            Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@map("assessment_criteria")
+}
+
+model SkillPrerequisite {
+  id                  Int   @id @default(autoincrement())
+  prerequisiteSkillId Int   @map("prerequisite_skill_id")
+  dependentSkillId    Int   @map("dependent_skill_id")
+  dependentSkill      Skill @relation("DependentSkill", fields: [dependentSkillId], references: [id])
+  prerequisiteSkill   Skill @relation("PrerequisiteSkill", fields: [prerequisiteSkillId], references: [id])
+
+  @@unique([prerequisiteSkillId, dependentSkillId])
+  @@map("skill_prerequisites")
+}
+
+model StudentProgress {
+  id                  String         @id @default(cuid())
+  userId              String         @map("user_id")
+  skillId             Int            @map("skill_id")
+  status              ProgressStatus @default(NOT_STARTED)
+  attempts            Int            @default(0)
+  completedSteps      Json           @map("completed_steps")
+  timeSpentMinutes    Int            @default(0) @map("time_spent_minutes")
+  currentSessionTime  Int            @default(0) @map("current_session_time")
+  totalTimeSpent      Int            @default(0) @map("total_time_spent")
+  reflectionTime      Int            @default(0) @map("reflection_time")
+  lastAttemptDate     DateTime?      @map("last_attempt_date")
+  completionDate      DateTime?      @map("completion_date")
+  selfAssessmentScore Int?           @map("self_assessment_score")
+  instructorNotes     String?        @map("instructor_notes")
+  createdAt           DateTime       @default(now()) @map("created_at")
+  updatedAt           DateTime       @updatedAt @map("updated_at")
+  skill               Skill          @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  user                User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, skillId])
+  @@map("student_progress")
+}
+
+model QuizQuestion {
+  id            Int             @id @default(autoincrement())
+  skillId       Int             @map("skill_id")
+  question      String
+  options       Json
+  correctAnswer Int             @map("correct_answer")
+  explanation   String?
+  difficulty    DifficultyLevel @default(BEGINNER)
+  attempts      QuizAttempt[]
+  skill         Skill           @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@map("quiz_questions")
+}
+
+model QuizAttempt {
+  id             String       @id @default(cuid())
+  userId         String       @map("user_id")
+  questionId     Int          @map("question_id")
+  skillId        Int          @map("skill_id")
+  selectedAnswer Int          @map("selected_answer")
+  isCorrect      Boolean      @map("is_correct")
+  attemptDate    DateTime     @default(now()) @map("attempt_date")
+  question       QuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("quiz_attempts")
+}
+
+model ReflectionNote {
+  id            String   @id @default(cuid())
+  userId        String   @map("user_id")
+  skillId       Int      @map("skill_id")
+  content       String
+  rating        Int
+  whatWentWell  String   @map("what_went_well")
+  whatToimprove String   @map("what_to_improve")
+  futureGoals   String   @map("future_goals")
+  isPrivate     Boolean  @default(false) @map("is_private")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  skill         Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("reflection_notes")
+}
+
+model Notification {
+  id             String           @id @default(cuid())
+  userId         String           @map("user_id")
+  type           NotificationType
+  title          String
+  message        String
+  isRead         Boolean          @default(false) @map("is_read")
+  relatedSkillId Int?             @map("related_skill_id")
+  createdAt      DateTime         @default(now()) @map("created_at")
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model SystemSettings {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
+
+  @@map("system_settings")
+}
+
+model Subject {
+  id          Int            @id @default(autoincrement())
+  code        String         @unique
+  name        String
+  level       String
+  description String?
+  isActive    Boolean        @default(true) @map("is_active")
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+  skills      SubjectSkill[]
+  users       UserSubject[]
+
+  @@map("subjects")
+}
+
+model UserSubject {
+  id         String   @id @default(cuid())
+  userId     String   @map("user_id")
+  subjectId  Int      @map("subject_id")
+  enrolledAt DateTime @default(now()) @map("enrolled_at")
+  isActive   Boolean  @default(true) @map("is_active")
+  subject    Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, subjectId])
+  @@map("user_subjects")
+}
+
+model SubjectSkill {
+  id        String  @id @default(cuid())
+  subjectId Int     @map("subject_id")
+  skillId   Int     @map("skill_id")
+  isCore    Boolean @default(true) @map("is_core")
+  skill     Skill   @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  subject   Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@unique([subjectId, skillId])
+  @@map("subject_skills")
+}
+
+model VideoAnalysisSession {
+  id              String                 @id @default(cuid())
+  userId          String                 @map("user_id")
+  skillId         Int                    @map("skill_id")
+  videoPath       String                 @map("video_path")
+  videoDuration   Int                    @map("video_duration") // in seconds
+  status          VideoAnalysisStatus    @default(PROCESSING)
+  analysisResults VideoAnalysisResult[]
+  createdAt       DateTime               @default(now()) @map("created_at")
+  updatedAt       DateTime               @updatedAt @map("updated_at")
+  user            User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skill           Skill                  @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@map("video_analysis_sessions")
+}
+
+model VideoAnalysisResult {
+  id                    String                  @id @default(cuid())
+  sessionId             String                  @map("session_id")
+  overallScore          Float                   @map("overall_score")
+  techniqueScore        Float                   @map("technique_score")
+  sequenceScore         Float                   @map("sequence_score")
+  timingScore           Float                   @map("timing_score")
+  communicationScore    Float                   @map("communication_score")
+  overallFeedback       String                  @map("overall_feedback")
+  strengths             Json
+  areasForImprovement   Json                    @map("areas_for_improvement")
+  specificRecommendations Json                  @map("specific_recommendations")
+  stepAnalysis          Json                    @map("step_analysis") // JSON array of step-by-step analysis
+  audioTranscription    String?                 @map("audio_transcription")
+  detectedSteps         Json                    @map("detected_steps")
+  missedSteps           Json                    @map("missed_steps")
+  incorrectSteps        Json                    @map("incorrect_steps")
+  createdAt             DateTime                @default(now()) @map("created_at")
+  session               VideoAnalysisSession    @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@map("video_analysis_results")
+}
+
+enum Role {
+  STUDENT
+  LECTURER
+  ADMIN
+}
+
+enum DifficultyLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum ProgressStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  MASTERED
+}
+
+enum NotificationType {
+  FEEDBACK
+  PROGRESS_UPDATE
+  SYSTEM_MESSAGE
+  REMINDER
+}
+
+enum VideoAnalysisStatus {
+  PROCESSING
+  COMPLETED
+  FAILED
+}

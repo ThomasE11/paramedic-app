@@ -28,17 +28,26 @@ export const authConfig: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = (user as any).id;
         token.role = (user as any).role;
+        // Set appropriate default viewMode based on role
+        token.viewMode = (user as any).role === 'LECTURER' ? 'lecturer' : undefined;
       }
+      
+      // Handle session updates (like viewMode changes)
+      if (trigger === 'update' && session?.viewMode) {
+        token.viewMode = session.viewMode;
+      }
+      
       return token;
     },
     async session({ session, token }) {
       if (session.user && token) {
         (session.user as any).id = token.id;
         (session.user as any).role = token.role;
+        (session.user as any).viewMode = token.viewMode;
       }
       return session;
     },
