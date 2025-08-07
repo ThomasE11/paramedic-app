@@ -275,6 +275,19 @@ export default function SkillPractice() {
     // Auto-save progress
     if (newCompletedSteps.length > completedSteps.length) {
       saveProgress('IN_PROGRESS');
+      
+      // Check if all steps are now completed and automatically trigger quiz
+      if (skill && newCompletedSteps.length === skill.steps?.length && !hasCompletedQuiz && !showQuiz) {
+        toast({
+          title: 'All Steps Completed! 🎉',
+          description: 'Excellent work! Starting knowledge check quiz automatically in 2 seconds...',
+        });
+        
+        // Small delay to let the step completion UI update and allow user to see completion
+        setTimeout(() => {
+          completeSkill();
+        }, 2000);
+      }
     }
   };
 
@@ -537,19 +550,19 @@ export default function SkillPractice() {
     console.log(`Quiz complete: Question ${newQuizCount}/2 answered correctly`);
     
     setQuizCount(newQuizCount);
-    setShowQuiz(false);
     
     if (newQuizCount >= 2) {
       // Completed both questions, proceed to reflection
       console.log('Quiz fully completed, proceeding to reflection');
       setHasCompletedQuiz(true);
+      setShowQuiz(false);
       
       toast({
-        title: 'Quiz Completed!',
-        description: 'You can now complete the skill.',
+        title: 'Quiz Completed! 🎉',
+        description: 'Excellent! Opening reflection form automatically...',
       });
       
-      // Directly proceed to reflection (skip completeSkill to avoid loop)
+      // Immediate transition to reflection
       setTimeout(async () => {
         console.log('Opening reflection modal');
         setIsTimerRunning(false);
@@ -572,18 +585,22 @@ export default function SkillPractice() {
         
         setShowReflection(true);
         toast({
-          title: 'Skill Completed!',
-          description: 'Please add a reflection note to complete your practice.',
+          title: 'Ready for Reflection',
+          description: 'Share your thoughts about this practice session.',
         });
-      }, 1000);
+      }, 500); // Reduced delay for faster transition
     } else {
       // Show next question
       console.log(`Proceeding to question ${newQuizCount + 1}/2`);
+      setShowQuiz(false);
+      
       toast({
-        title: `Question ${newQuizCount}/2 completed!`,
-        description: 'Please answer the next question.',
+        title: `Question ${newQuizCount}/2 completed! ✅`,
+        description: 'Great! Here\'s your next question...',
       });
-      setTimeout(() => triggerKnowledgeCheck(Math.max(...completedSteps)), 1000);
+      
+      // Trigger next question
+      setTimeout(() => triggerKnowledgeCheck(Math.max(...completedSteps)), 800);
     }
   };
 
@@ -1046,9 +1063,15 @@ export default function SkillPractice() {
                   <Label htmlFor="reflection-content">Overall Reflection</Label>
                   <Textarea
                     id="reflection-content"
-                    placeholder="How did this practice session go? What did you learn?"
+                    placeholder="How did this practice session go? What did you learn? (Auto-saves as you type)"
                     value={reflection.content}
-                    onChange={(e) => setReflection(prev => ({ ...prev, content: e.target.value }))}
+                    onChange={(e) => {
+                      setReflection(prev => ({ ...prev, content: e.target.value }));
+                      // Auto-save draft after 2 seconds of no typing
+                      if (reflectionAutoSaveInterval) clearTimeout(reflectionAutoSaveInterval);
+                      const timeoutId = setTimeout(() => saveReflectionDraft(), 2000);
+                      setReflectionAutoSaveInterval(timeoutId);
+                    }}
                     rows={4}
                   />
                 </div>

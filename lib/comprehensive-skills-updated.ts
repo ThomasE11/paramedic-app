@@ -3,6 +3,7 @@
 
 import extractedSkills from '@/data/extracted_paramedic_skills.json';
 import extractedSkillSteps from '@/data/extracted_skill_steps.json';
+import { enhancedCriticalSkillSteps, criticalSkillsMetadata } from './enhanced-critical-skills';
 
 export interface SkillStep {
   id: string;
@@ -211,6 +212,22 @@ function mapDifficultyLevel(level: string, skillName: string): 'BEGINNER' | 'INT
 
 // Convert extracted skill steps to our format
 function convertExtractedSteps(extractedSteps: any[], skillId: string): SkillStep[] {
+  // Check if we have enhanced steps for this skill
+  const enhancedSteps = enhancedCriticalSkillSteps[skillId];
+  if (enhancedSteps) {
+    return enhancedSteps.map((step: any) => ({
+      id: step.id,
+      stepNumber: step.stepNumber,
+      title: step.title,
+      description: step.description,
+      isRequired: step.isRequired,
+      keyPoints: step.keyPoints || [],
+      timeEstimate: step.timeEstimate || 60,
+      isCritical: step.isCritical,
+    }));
+  }
+  
+  // Fall back to extracted steps
   if (!extractedSteps || extractedSteps.length === 0) {
     return [];
   }
@@ -362,11 +379,20 @@ export const allProcessedSkills: Skill[] = uniqueExtractedSkills.map((extractedS
   const skillId = `skill-${(index + 1).toString().padStart(3, '0')}`;
   const categoryId = mapSkillToCategory(extractedSkill.name);
   
+  // Check if this is a critical skill with enhanced data
+  const criticalSkillId = Object.keys(criticalSkillsMetadata).find(id => 
+    extractedSkill.name.toLowerCase().includes(criticalSkillsMetadata[id].name.toLowerCase().split(' ')[0]) ||
+    criticalSkillsMetadata[id].name.toLowerCase().includes(extractedSkill.name.toLowerCase().split(' ')[0])
+  );
+  
   // Find matching steps from extracted skill documents
   const extractedSteps = findMatchingSkillSteps(extractedSkill.name);
   
   let steps: SkillStep[];
-  if (extractedSteps.length > 0) {
+  if (criticalSkillId && enhancedCriticalSkillSteps[criticalSkillId]) {
+    // Use enhanced critical skill steps
+    steps = convertExtractedSteps([], criticalSkillId);
+  } else if (extractedSteps.length > 0) {
     // Use extracted steps from skill documents
     steps = convertExtractedSteps(extractedSteps, skillId);
   } else {
@@ -390,25 +416,30 @@ export const allProcessedSkills: Skill[] = uniqueExtractedSkills.map((extractedS
 
   const assessmentCriteria = createAssessmentCriteria(extractedSkill, skillId);
 
+  // Use enhanced metadata for critical skills
+  const enhancedMetadata = criticalSkillId ? criticalSkillsMetadata[criticalSkillId] : null;
+  
   return {
     id: skillId,
-    name: extractedSkill.name,
-    description: extractedSkill.description || `Complete ${extractedSkill.name} procedure according to protocol`,
-    categoryId,
+    name: enhancedMetadata?.name || extractedSkill.name,
+    description: enhancedMetadata ? 
+      `${extractedSkill.description || ''} Enhanced with best practice guidelines and current clinical protocols.` :
+      extractedSkill.description || `Complete ${extractedSkill.name} procedure according to protocol`,
+    categoryId: enhancedMetadata?.category || categoryId,
     isActive: true,
     minimumRequirement: steps.length > 10 ? 5 : 3,
-    timeEstimateMinutes: steps.length * 2, // 2 minutes per step estimate
-    difficultyLevel: mapDifficultyLevel(extractedSkill.difficulty_level, extractedSkill.name),
+    timeEstimateMinutes: enhancedMetadata?.timeEstimateMinutes || (steps.length * 2),
+    difficultyLevel: enhancedMetadata?.difficultyLevel || mapDifficultyLevel(extractedSkill.difficulty_level, extractedSkill.name),
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    category: categories[categoryId],
+    category: categories[enhancedMetadata?.category || categoryId],
     steps,
     assessmentCriteria,
-    equipment: extractedSkill.equipment?.map((eq: any) => typeof eq === 'string' ? eq : eq.item) || [],
-    isCritical: extractedSkill.is_critical || false,
-    objectives: extractedSkill.objectives || [],
-    indications: extractedSkill.indications || [],
-    contraindications: extractedSkill.contraindications || [],
+    equipment: enhancedMetadata?.equipment || extractedSkill.equipment?.map((eq: any) => typeof eq === 'string' ? eq : eq.item) || [],
+    isCritical: enhancedMetadata?.isCritical || extractedSkill.is_critical || false,
+    objectives: enhancedMetadata?.objectives || extractedSkill.objectives || [],
+    indications: enhancedMetadata?.indications || extractedSkill.indications || [],
+    contraindications: enhancedMetadata?.contraindications || extractedSkill.contraindications || [],
     commonErrors: extractedSkill.common_errors || [],
   };
 });
