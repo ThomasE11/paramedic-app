@@ -476,13 +476,32 @@ export default function SkillPractice() {
       }
       
       // Fetch random question for this skill
-      const response = await fetch(`/api/skills/${skill.id}/quiz?stepNumber=${stepNumber}`);
+      console.log(`Fetching quiz for skill ID: ${skill.id}, step: ${stepNumber}`);
+      const response = await fetch(`/api/skills/${skill.id}/quiz-simple?stepNumber=${stepNumber}`);
+      
+      console.log(`Quiz API response status: ${response.status}`);
       
       if (!response.ok) {
-        console.log('No questions available for this skill, continuing practice...');
-        if (wasTimerRunning) {
-          setIsTimerRunning(true);
-        }
+        const errorData = await response.text();
+        console.error('Quiz API error:', response.status, errorData);
+        
+        toast({
+          title: 'Quiz Temporarily Unavailable',
+          description: 'Proceeding to reflection. Quiz will be available soon.',
+          variant: 'destructive',
+        });
+        
+        // Skip to reflection instead of failing silently
+        setHasCompletedQuiz(true);
+        setTimeout(() => {
+          setIsTimerRunning(false);
+          setShowReflection(true);
+          toast({
+            title: 'Ready for Reflection',
+            description: 'Please share your thoughts about this practice session.',
+          });
+        }, 1000);
+        
         return;
       }
       
@@ -521,7 +540,7 @@ export default function SkillPractice() {
     if (!skill) throw new Error('Skill not found');
     
     try {
-      const response = await fetch(`/api/skills/${skill.id}/quiz`, {
+      const response = await fetch(`/api/skills/${skill.id}/quiz-simple`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

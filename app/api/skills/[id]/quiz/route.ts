@@ -19,7 +19,14 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const skillId = parseInt(params.id);
+    // Handle both numeric IDs and skill-XXX format
+    let skillId: number;
+    if (params.id.startsWith('skill-')) {
+      skillId = parseInt(params.id.replace('skill-', ''));
+    } else {
+      skillId = parseInt(params.id);
+    }
+    
     const { searchParams } = new URL(request.url);
     const stepNumber = searchParams.get('stepNumber');
 
@@ -125,7 +132,14 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const skillId = parseInt(params.id);
+    // Handle both numeric IDs and skill-XXX format
+    let skillId: number;
+    if (params.id.startsWith('skill-')) {
+      skillId = parseInt(params.id.replace('skill-', ''));
+    } else {
+      skillId = parseInt(params.id);
+    }
+    
     const { questionId, selectedAnswer, stepNumber, responseTimeMs } = await request.json();
 
     if (selectedAnswer === undefined) {
