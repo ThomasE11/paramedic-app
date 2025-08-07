@@ -28,12 +28,11 @@ export function StudentNavigation({ user }: StudentNavigationProps) {
   const [switchingView, setSwitchingView] = useState(false);
   
   const navigation = [
-    { name: 'Dashboard', href: '/student/dashboard', icon: Home },
-    { name: 'Skills', href: '/student/skills', icon: BookOpen },
-    { name: 'Progress', href: '/student/progress', icon: BarChart3 },
-    { name: 'Reflections', href: '/student/reflections', icon: FileText },
-    { name: 'Messages', href: '/student/messaging', icon: MessageSquare },
-    { name: 'Feedback', href: '/student/feedback', icon: Star },
+    { name: 'Dashboard', href: '/skills/student/dashboard', icon: Home },
+    { name: 'Skills', href: '/skills/student/skills', icon: BookOpen },
+    { name: 'Progress', href: '/skills/student/progress', icon: BarChart3 },
+    { name: 'Mastery', href: '/skills/student/mastery', icon: Star },
+    { name: 'Messages', href: '/skills/student/messaging', icon: MessageSquare },
   ];
 
   // Check if the current user is a lecturer in student view mode
@@ -88,12 +87,12 @@ export function StudentNavigation({ user }: StudentNavigationProps) {
         </div>
       )}
       
-      <header className="bg-card/80 backdrop-blur-lg border-b border-border/50 sticky top-0 z-50 animate-slide-down">
+      <header className="bg-card/80 backdrop-blur-lg border-b border-border/50 sticky top-0 z-40 animate-slide-down">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex items-center">
-            <Link href="/student/dashboard" className="flex items-center group">
+            <Link href="/skills/student/dashboard" className="flex items-center group">
               <div className="relative">
                 <Stethoscope className="h-8 w-8 medical-blue transition-all group-hover:scale-110" />
                 <div className="absolute -inset-1 bg-medical-blue/20 rounded-full blur-sm opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -230,7 +229,7 @@ export function StudentNavigation({ user }: StudentNavigationProps) {
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
           <div className="md:hidden border-t border-border/50 animate-slide-down">
-            <nav className="px-2 pt-2 pb-3 space-y-1">
+            <nav className="px-3 pt-3 pb-4 space-y-2">
               {/* Return to Lecturer View Button - Mobile */}
               {isLecturerInStudentView && (
                 <Button
@@ -238,7 +237,7 @@ export function StudentNavigation({ user }: StudentNavigationProps) {
                   disabled={switchingView}
                   variant="outline"
                   size="sm"
-                  className="w-full mb-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700"
+                  className="w-full mb-3 touch-target bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700"
                 >
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   {switchingView ? 'Switching...' : 'Return to Lecturer View'}
@@ -253,14 +252,14 @@ export function StudentNavigation({ user }: StudentNavigationProps) {
                   <Link
                     key={item.name}
                     href={item.href}
-                    className={`flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                    className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors touch-target no-select ${
                       isActive
-                        ? 'bg-medical-blue text-white'
+                        ? 'bg-medical-blue text-white shadow-sm'
                         : 'text-muted-foreground hover:text-primary hover:bg-accent'
                     }`}
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    <Icon className="h-4 w-4 mr-3" />
+                    <Icon className="h-5 w-5 mr-3 flex-shrink-0" />
                     {item.name}
                   </Link>
                 );

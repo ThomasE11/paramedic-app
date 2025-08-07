@@ -25,6 +25,8 @@ interface SkillPracticeHeaderProps {
   completedSteps: number[];
   timeSpent: number;
   isTimerRunning: boolean;
+  isIdle?: boolean;
+  sessionStartTime?: Date | null;
   onBack: () => void;
   onStartPractice: () => void;
   onPausePractice: () => void;
@@ -36,6 +38,8 @@ export function SkillPracticeHeader({
   completedSteps,
   timeSpent,
   isTimerRunning,
+  isIdle = false,
+  sessionStartTime,
   onBack,
   onStartPractice,
   onPausePractice,
@@ -74,10 +78,22 @@ export function SkillPracticeHeader({
         </Button>
         
         <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2 text-sm text-gray-600 bg-gray-50 px-3 py-1 rounded-full">
+          <div className={cn(
+            "flex items-center space-x-2 text-sm px-3 py-1 rounded-full transition-colors",
+            isIdle 
+              ? "text-yellow-700 bg-yellow-100 border border-yellow-200" 
+              : "text-gray-600 bg-gray-50"
+          )}>
             <Clock className="h-4 w-4" />
             <span className="font-medium">{formatTime(timeSpent)}</span>
+            {isIdle && <span className="text-xs">(Idle)</span>}
           </div>
+          
+          {sessionStartTime && (
+            <div className="text-xs text-gray-500">
+              Session: {Math.floor((new Date().getTime() - sessionStartTime.getTime()) / (1000 * 60))}min
+            </div>
+          )}
           
           {isTimerRunning ? (
             <Button onClick={onPausePractice} variant="outline" className="border-orange-200 hover:bg-orange-50">

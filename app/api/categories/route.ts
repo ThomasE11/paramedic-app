@@ -56,9 +56,29 @@ export async function GET(request: NextRequest) {
               id: `progress-${skill.id}`,
               userId: mockUser.id,
               skillId: skill.id,
-              status: Math.random() > 0.7 ? 'COMPLETED' : Math.random() > 0.4 ? 'IN_PROGRESS' : 'NOT_STARTED',
-              completedCount: Math.floor(Math.random() * 5),
-              timeSpentMinutes: Math.floor(Math.random() * 60),
+              // Progress based on skill characteristics instead of random values
+              status: (() => {
+                const skillIndex = parseInt(skill.id.replace(/\D/g, '')) || 1;
+                if (skillIndex % 4 === 0) return 'COMPLETED';
+                if (skillIndex % 3 === 0) return 'IN_PROGRESS';
+                return 'NOT_STARTED';
+              })(),
+              // Completed count based on skill steps, not random
+              completedCount: (() => {
+                const skillIndex = parseInt(skill.id.replace(/\D/g, '')) || 1;
+                const totalSteps = skill.steps?.length || 8; // Default to 8 steps if not specified
+                if (skillIndex % 4 === 0) return totalSteps; // Completed
+                if (skillIndex % 3 === 0) return Math.floor(totalSteps * 0.6); // 60% progress
+                return 0; // Not started
+              })(),
+              // Time based on estimated completion, not random
+              timeSpentMinutes: (() => {
+                const skillIndex = parseInt(skill.id.replace(/\D/g, '')) || 1;
+                const estimatedTime = skill.timeEstimateMinutes || 30;
+                if (skillIndex % 4 === 0) return estimatedTime; // Full time for completed
+                if (skillIndex % 3 === 0) return Math.floor(estimatedTime * 0.6); // 60% time for in-progress
+                return 0; // No time for not started
+              })(),
             }] : [],
           }))
         };

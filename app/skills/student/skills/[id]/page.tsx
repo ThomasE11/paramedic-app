@@ -59,6 +59,10 @@ export default function SkillPractice() {
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [timeSpent, setTimeSpent] = useState(0);
+  const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
+  const [lastActiveTime, setLastActiveTime] = useState<Date>(new Date());
+  const [isIdle, setIsIdle] = useState(false);
+  const [autoSaveInterval, setAutoSaveInterval] = useState<NodeJS.Timeout | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showQuiz, setShowQuiz] = useState(false);
@@ -85,15 +89,84 @@ export default function SkillPractice() {
     fetchSkill();
   }, [skillId]);
 
+  // Track user activity for idle detection
+  useEffect(() => {
+    const updateLastActive = () => {
+      setLastActiveTime(new Date());
+      setIsIdle(false);
+    };
+
+    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+    
+    events.forEach(event => {
+      document.addEventListener(event, updateLastActive, true);
+    });
+
+    return () => {
+      events.forEach(event => {
+        document.removeEventListener(event, updateLastActive, true);
+      });
+    };
+  }, []);
+
+  // Handle page visibility changes to pause timer when tab is hidden
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden && isTimerRunning) {
+        // Auto-save when tab becomes hidden
+        saveProgress('IN_PROGRESS');
+      } else if (!document.hidden && isTimerRunning) {
+        // Update last active time when tab becomes visible
+        setLastActiveTime(new Date());
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [isTimerRunning]);
+
+  // Enhanced timer with idle detection and auto-save
   useEffect(() => {
     let interval: NodeJS.Timeout;
+    let idleCheckInterval: NodeJS.Timeout;
+    
     if (isTimerRunning) {
+      // Main timer
       interval = setInterval(() => {
-        setTimeSpent(prev => prev + 1);
+        const now = new Date();
+        const timeSinceActive = now.getTime() - lastActiveTime.getTime();
+        
+        // Only increment if user was active in last 5 minutes
+        if (timeSinceActive < 5 * 60 * 1000) {
+          setTimeSpent(prev => prev + 1);
+          setIsIdle(false);
+        } else {
+          setIsIdle(true);
+        }
       }, 1000);
+      
+      // Idle detection
+      idleCheckInterval = setInterval(() => {
+        const now = new Date();
+        const timeSinceActive = now.getTime() - lastActiveTime.getTime();
+        
+        if (timeSinceActive > 5 * 60 * 1000 && isTimerRunning) {
+          // Auto-pause after 5 minutes of inactivity
+          pausePractice();
+          toast({
+            title: 'Session Paused',
+            description: 'Timer paused due to inactivity. Click Start to resume.',
+            variant: 'default',
+          });
+        }
+      }, 30000); // Check every 30 seconds
     }
-    return () => clearInterval(interval);
-  }, [isTimerRunning]);
+    
+    return () => {
+      clearInterval(interval);
+      clearInterval(idleCheckInterval);
+    };
+  }, [isTimerRunning, lastActiveTime]);
 
   const fetchSkill = async () => {
     try {
@@ -126,15 +199,34 @@ export default function SkillPractice() {
 
   const startPractice = () => {
     setIsTimerRunning(true);
+    setSessionStartTime(new Date());
+    setLastActiveTime(new Date());
+    setIsIdle(false);
+    
+    // Set up auto-save every 60 seconds
+    const autoSave = setInterval(() => {
+      if (isTimerRunning) {
+        saveProgress('IN_PROGRESS');
+      }
+    }, 60000);
+    setAutoSaveInterval(autoSave);
+    
     toast({
       title: 'Practice Started',
-      description: 'Timer is now running. Good luck!',
+      description: 'Timer is now running. Auto-save enabled.',
     });
   };
 
   const pausePractice = () => {
     setIsTimerRunning(false);
-    saveProgress();
+    
+    // Clear auto-save interval
+    if (autoSaveInterval) {
+      clearInterval(autoSaveInterval);
+      setAutoSaveInterval(null);
+    }
+    
+    saveProgress('IN_PROGRESS');
     toast({
       title: 'Practice Paused',
       description: 'Your progress has been saved.',
@@ -146,9 +238,18 @@ export default function SkillPractice() {
     setTimeSpent(0);
     setIsTimerRunning(false);
     setShowReflection(false);
+    setSessionStartTime(null);
+    setIsIdle(false);
+    
+    // Clear auto-save interval
+    if (autoSaveInterval) {
+      clearInterval(autoSaveInterval);
+      setAutoSaveInterval(null);
+    }
+    
     toast({
       title: 'Practice Reset',
-      description: 'You can start fresh now.',
+      description: 'Session reset. All progress cleared.',
     });
   };
 
@@ -180,6 +281,10 @@ export default function SkillPractice() {
     
     setSaving(true);
     try {
+      const sessionDuration = sessionStartTime 
+        ? Math.floor((new Date().getTime() - sessionStartTime.getTime()) / (1000 * 60))
+        : 0;
+        
       await fetch('/api/progress', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -187,7 +292,11 @@ export default function SkillPractice() {
           skillId: skill.id,
           status,
           completedSteps,
-          timeSpent: Math.floor(timeSpent / 60),
+          timeSpent: Math.floor(timeSpent / 60), // Active practice time in minutes
+          sessionDuration, // Total session time in minutes
+          isIdle: isIdle,
+          sessionStartTime: sessionStartTime?.toISOString(),
+          lastSaveTime: new Date().toISOString(),
         }),
       });
     } catch (error) {
@@ -231,10 +340,29 @@ export default function SkillPractice() {
   };
 
   const submitReflection = async () => {
+    // Enhanced validation for detailed reflection form
     if (!reflection.content.trim()) {
       toast({
         title: 'Reflection Required',
         description: 'Please provide your reflection content.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (reflection.content.trim().length < 20) {
+      toast({
+        title: 'Reflection Too Brief',
+        description: 'Please write a more detailed reflection (at least 20 characters).',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (reflection.rating < 1 || reflection.rating > 10) {
+      toast({
+        title: 'Invalid Rating',
+        description: 'Rating must be between 1 and 10.',
         variant: 'destructive',
       });
       return;
@@ -677,6 +805,8 @@ export default function SkillPractice() {
         completedSteps={completedSteps}
         timeSpent={timeSpent}
         isTimerRunning={isTimerRunning}
+        isIdle={isIdle}
+        sessionStartTime={sessionStartTime}
         onBack={() => setPracticeMode('selection')}
         onStartPractice={startPractice}
         onPausePractice={pausePractice}
@@ -869,7 +999,7 @@ export default function SkillPractice() {
 
       {/* Reflection Modal */}
       {showReflection && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-60">
           <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <CardHeader>
               <CardTitle className="flex items-center">

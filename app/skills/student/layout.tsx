@@ -25,9 +25,9 @@ export default async function StudentLayout({
   const user = session.user;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background mobile-container">
       <StudentNavigation user={user} />
-      <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 animate-fade-in">
+      <main className="max-w-7xl mx-auto py-3 sm:py-6 px-3 sm:px-6 lg:px-8 animate-fade-in">
         {children}
       </main>
     </div>

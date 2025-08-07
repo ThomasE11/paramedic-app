@@ -50,7 +50,7 @@ export function AdminNavigation({ user }: AdminNavigationProps) {
   ];
 
   return (
-    <header className="bg-card/80 backdrop-blur-lg border-b border-border/50 sticky top-0 z-50 animate-slide-down">
+    <header className="bg-card/80 backdrop-blur-lg border-b border-border/50 sticky top-0 z-40 animate-slide-down">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}

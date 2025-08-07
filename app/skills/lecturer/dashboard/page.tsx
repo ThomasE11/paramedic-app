@@ -115,35 +115,35 @@ export default function LecturerDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
-      <div className="space-y-8 p-6 max-w-7xl mx-auto">
+      <div className="space-y-6 sm:space-y-8 p-4 sm:p-6 max-w-7xl mx-auto">
         {/* Modern Header */}
         <div className="relative">
-          <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl rounded-3xl border border-white/20 dark:border-slate-800/50 p-8 shadow-2xl shadow-slate-200/50 dark:shadow-slate-950/50">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-6">
-                <div className="relative">
-                  <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
-                    <Users className="h-8 w-8 text-white" />
+          <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl rounded-2xl sm:rounded-3xl border border-white/20 dark:border-slate-800/50 p-4 sm:p-6 lg:p-8 shadow-2xl shadow-slate-200/50 dark:shadow-slate-950/50">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+              <div className="flex items-center space-x-4 sm:space-x-6">
+                <div className="relative flex-shrink-0">
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg">
+                    <Users className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-white" />
                   </div>
-                  <div className="absolute -inset-1 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl blur opacity-30"></div>
+                  <div className="absolute -inset-1 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl sm:rounded-2xl blur opacity-30"></div>
                 </div>
-                <div>
-                  <h1 className="text-4xl font-light text-slate-900 dark:text-white tracking-tight">Instructor Portal</h1>
-                  <p className="text-lg text-slate-600 dark:text-slate-300 mt-1 font-light">
+                <div className="min-w-0 flex-1">
+                  <h1 className="text-2xl sm:text-3xl lg:text-4xl font-light text-slate-900 dark:text-white tracking-tight">Instructor Portal</h1>
+                  <p className="text-sm sm:text-base lg:text-lg text-slate-600 dark:text-slate-300 mt-1 font-light">
                     Monitor student progress and analyze learning outcomes
                   </p>
                 </div>
               </div>
-              <div className="text-right">
-                <div className="text-3xl font-light text-slate-900 dark:text-white">{new Date().toLocaleDateString('en-US', { weekday: 'long' })}</div>
-                <div className="text-sm text-slate-500 dark:text-slate-400 font-medium">{new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</div>
+              <div className="text-left sm:text-right flex-shrink-0">
+                <div className="text-xl sm:text-2xl lg:text-3xl font-light text-slate-900 dark:text-white">{new Date().toLocaleDateString('en-US', { weekday: 'long' })}</div>
+                <div className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">{new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</div>
               </div>
             </div>
           </div>
         </div>
 
         {/* Modern Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           <div className="group relative">
             <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-2xl border border-white/30 dark:border-slate-800/50 p-6 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
               <div className="flex items-center justify-between mb-4">
@@ -231,7 +231,7 @@ export default function LecturerDashboard() {
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  label={({ name, percent }) => `${name} ${(percent).toFixed(0)}%`}
                 >
                   {statusData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />

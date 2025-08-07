@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
       timeByCategory: categoriesWithCounts.map(category => ({
         categoryId: category.id,
         categoryName: category.name,
-        totalTime: category.skillCount * 45 + Math.floor(Math.random() * 500), // Mock time data
+        totalTime: category.skillCount * 45 + (category.skillCount * 15), // Realistic time based on skill count
       })),
       
       // Student completion rates (using real total skills count)

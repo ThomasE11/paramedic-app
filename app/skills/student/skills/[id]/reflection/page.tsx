@@ -56,10 +56,20 @@ export default function SkillReflection() {
   };
 
   const submitReflection = async () => {
+    // Enhanced validation
     if (!reflection.trim()) {
       toast({
         title: 'Reflection Required',
         description: 'Please write a reflection before submitting.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (reflection.trim().length < 10) {
+      toast({
+        title: 'Reflection Too Short',
+        description: 'Please write at least 10 characters for a meaningful reflection.',
         variant: 'destructive',
       });
       return;
@@ -74,18 +84,36 @@ export default function SkillReflection() {
       return;
     }
 
+    if (selfRating < 1 || selfRating > 5) {
+      toast({
+        title: 'Invalid Rating',
+        description: 'Please select a rating between 1 and 5.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setSubmitting(true);
     try {
-      // Submit reflection
-      await fetch('/api/reflections', {
+      // Submit reflection with proper field mapping
+      const reflectionResponse = await fetch('/api/reflections', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           skillId,
-          reflection: reflection.trim(),
-          selfRating,
+          content: reflection.trim(), // Map reflection to content
+          rating: selfRating, // Map selfRating to rating
+          whatWentWell: '', // Default empty for simple form
+          whatToimprove: '', // Default empty for simple form
+          futureGoals: '', // Default empty for simple form
+          isPrivate: false, // Default to public
         }),
       });
+
+      if (!reflectionResponse.ok) {
+        const errorData = await reflectionResponse.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP ${reflectionResponse.status}: ${reflectionResponse.statusText}`);
+      }
 
       // Mark reflection as completed in the attempt
       await fetch('/api/attempts', {
@@ -106,9 +134,13 @@ export default function SkillReflection() {
       router.push(`/skills/student/skills/${skillId}`);
     } catch (error) {
       console.error('Error submitting reflection:', error);
+      
+      // Enhanced error handling with specific messages
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+      
       toast({
-        title: 'Error',
-        description: 'Failed to submit reflection. Please try again.',
+        title: 'Submission Failed',
+        description: `Failed to submit reflection: ${errorMessage}. Please check your connection and try again.`,
         variant: 'destructive',
       });
     } finally {

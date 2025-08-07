@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authConfig } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+import { getSkillById } from '@/lib/comprehensive-skills-updated';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,52 +10,60 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authConfig);
     
-    // Temporarily allow without authentication for testing
-    // if (!session) {
-    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    // }
-
-    // Mock user data when no session
-    const mockUser = session?.user || {
-      id: 'student-1',
-      name: 'Test Student',
-      email: 'student@test.com',
-      studentId: 'STU001'
-    };
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     const { skillId, content, rating, whatWentWell, whatToimprove, futureGoals, isPrivate } = await request.json();
 
-    // Mock reflection creation
-    const mockReflection = {
-      id: `reflection-${Date.now()}`,
-      userId: mockUser.id,
-      skillId: skillId,
-      content: content,
-      rating: rating || 5,
-      whatWentWell: whatWentWell || '',
-      whatToimprove: whatToimprove || '',
-      futureGoals: futureGoals || '',
-      isPrivate: isPrivate || false,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      user: {
-        id: mockUser.id,
-        name: mockUser.name,
-        email: mockUser.email,
-        studentId: mockUser.studentId,
+    // Create reflection in database
+    const reflection = await prisma.reflectionNote.create({
+      data: {
+        userId: session.user.id,
+        skillId: parseInt(skillId),
+        content: content,
+        rating: rating || 5,
+        whatWentWell: whatWentWell || '',
+        whatToimprove: whatToimprove || '',
+        futureGoals: futureGoals || '',
+        isPrivate: isPrivate || false,
       },
-      skill: {
-        id: skillId,
-        name: skillId === 'skill-1' ? 'CPR Adult' : skillId === 'skill-2' ? 'AED Use' : 'IV Insertion',
-        category: {
-          id: skillId === 'skill-1' || skillId === 'skill-2' ? 'bls-1' : 'als-1',
-          name: skillId === 'skill-1' || skillId === 'skill-2' ? 'Basic Life Support' : 'Advanced Life Support',
-          colorCode: skillId === 'skill-1' || skillId === 'skill-2' ? '#3B82F6' : '#EF4444',
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            studentId: true,
+          }
         }
       }
+    });
+
+    // Get skill data from comprehensive skills system
+    const skill = getSkillById(skillId);
+
+    const responseData = {
+      id: reflection.id,
+      userId: reflection.userId,
+      skillId: skillId,
+      content: reflection.content,
+      rating: reflection.rating,
+      whatWentWell: reflection.whatWentWell,
+      whatToimprove: reflection.whatToimprove,
+      futureGoals: reflection.futureGoals,
+      isPrivate: reflection.isPrivate,
+      createdAt: reflection.createdAt.toISOString(),
+      updatedAt: reflection.updatedAt.toISOString(),
+      user: reflection.user,
+      skill: skill ? {
+        id: skill.id,
+        name: skill.name,
+        category: skill.category
+      } : null
     };
 
-    return NextResponse.json(mockReflection);
+    return NextResponse.json(responseData);
   } catch (error) {
     console.error('Error creating reflection:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -64,19 +74,9 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authConfig);
     
-    // Temporarily allow without authentication for testing
-    // if (!session) {
-    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    // }
-
-    // Mock user data when no session
-    const mockUser = session?.user || {
-      id: 'student-1',
-      name: 'Test Student',
-      email: 'student@test.com',
-      role: 'STUDENT',
-      studentId: 'STU001'
-    };
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     const { searchParams } = new URL(request.url);
     const skillId = searchParams.get('skillId');
@@ -84,156 +84,87 @@ export async function GET(request: NextRequest) {
     const isPrivate = searchParams.get('isPrivate');
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
-
-    // Mock reflections data
-    const mockReflections = [
-      {
-        id: 'reflection-1',
-        userId: 'student-1',
-        skillId: 'skill-1',
-        content: 'Today I practiced CPR on the mannequin. I felt more confident with the compression depth and was able to maintain the correct rate of 100-120 compressions per minute. I need to work on hand positioning as I sometimes drift from the correct placement.',
-        rating: 4,
-        whatWentWell: 'Maintained proper compression rate and depth throughout the session',
-        whatToimprove: 'Hand positioning accuracy needs work',
-        futureGoals: 'Practice hand placement on different body types',
-        isPrivate: false,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        user: {
-          id: 'student-1',
-          name: 'Sarah Johnson',
-          email: 'sarah.johnson@example.com',
-          studentId: 'STU001',
-        },
-        skill: {
-          id: 'skill-1',
-          name: 'CPR Adult',
-          category: {
-            id: 'bls-1',
-            name: 'Basic Life Support',
-            colorCode: '#3B82F6',
-          }
-        }
-      },
-      {
-        id: 'reflection-2',
-        userId: 'student-2',
-        skillId: 'skill-2',
-        content: 'AED practice went well today. I was able to follow all the voice prompts correctly and remembered to check for breathing and pulse. The pad placement felt natural this time.',
-        rating: 5,
-        whatWentWell: 'Followed voice prompts correctly and proper pad placement',
-        whatToimprove: 'Speed of initial assessment could be faster',
-        futureGoals: 'Practice rhythm recognition',
-        isPrivate: false,
-        createdAt: new Date(Date.now() - 86400000).toISOString(),
-        updatedAt: new Date(Date.now() - 86400000).toISOString(),
-        user: {
-          id: 'student-2',
-          name: 'Michael Chen',
-          email: 'michael.chen@example.com',
-          studentId: 'STU002',
-        },
-        skill: {
-          id: 'skill-2',
-          name: 'AED Use',
-          category: {
-            id: 'bls-1',
-            name: 'Basic Life Support',
-            colorCode: '#3B82F6',
-          }
-        }
-      },
-      {
-        id: 'reflection-3',
-        userId: 'student-3',
-        skillId: 'skill-3',
-        content: 'First attempt at IV insertion. Found it challenging to locate the vein initially. Need more practice with palpation technique before attempting insertion.',
-        rating: 2,
-        whatWentWell: 'Proper sterile technique maintained throughout',
-        whatToimprove: 'Vein location and palpation skills',
-        futureGoals: 'Practice on training arms more regularly',
-        isPrivate: false,
-        createdAt: new Date(Date.now() - 172800000).toISOString(),
-        updatedAt: new Date(Date.now() - 172800000).toISOString(),
-        user: {
-          id: 'student-3',
-          name: 'Emma Rodriguez',
-          email: 'emma.rodriguez@example.com',
-          studentId: 'STU003',
-        },
-        skill: {
-          id: 'skill-3',
-          name: 'IV Insertion',
-          category: {
-            id: 'als-1',
-            name: 'Advanced Life Support',
-            colorCode: '#EF4444',
-          }
-        }
-      },
-      {
-        id: 'reflection-4',
-        userId: mockUser.id,
-        skillId: 'skill-1',
-        content: 'Personal reflection: Working on improving my technique. This session felt much better than last time.',
-        rating: 3,
-        whatWentWell: 'Better rhythm control than previous session',
-        whatToimprove: 'Compression depth consistency',
-        futureGoals: 'Focus on maintaining quality throughout longer sessions',
-        isPrivate: true,
-        createdAt: new Date(Date.now() - 259200000).toISOString(),
-        updatedAt: new Date(Date.now() - 259200000).toISOString(),
-        user: {
-          id: mockUser.id,
-          name: mockUser.name,
-          email: mockUser.email,
-          studentId: mockUser.studentId,
-        },
-        skill: {
-          id: 'skill-1',
-          name: 'CPR Adult',
-          category: {
-            id: 'bls-1',
-            name: 'Basic Life Support',
-            colorCode: '#3B82F6',
-          }
-        }
-      }
-    ];
-
-    // Apply filters
-    let filteredReflections = mockReflections;
+    
+    // Build where clause for database query
+    const whereClause: any = {};
     
     if (skillId) {
-      filteredReflections = filteredReflections.filter(r => r.skillId === skillId);
+      whereClause.skillId = parseInt(skillId);
     }
     
     if (userId) {
-      filteredReflections = filteredReflections.filter(r => r.userId === userId);
+      whereClause.userId = userId;
     }
     
     if (isPrivate !== null) {
-      filteredReflections = filteredReflections.filter(r => r.isPrivate === (isPrivate === 'true'));
+      whereClause.isPrivate = isPrivate === 'true';
     }
-
-    // For students, only show their own private reflections
-    if (mockUser.role === 'STUDENT') {
-      filteredReflections = filteredReflections.filter(r => 
-        r.userId === mockUser.id || !r.isPrivate
-      );
+    
+    // For students, only show their own private reflections or public ones
+    if (session.user.role === 'STUDENT') {
+      whereClause.OR = [
+        { userId: session.user.id },
+        { isPrivate: false }
+      ];
     }
-
-    // Apply pagination
-    const offset = (page - 1) * limit;
-    const paginatedReflections = filteredReflections.slice(offset, offset + limit);
+    
+    // Fetch reflections from database
+    const reflections = await prisma.reflectionNote.findMany({
+      where: whereClause,
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            studentId: true,
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+    
+    // Get total count for pagination
+    const totalCount = await prisma.reflectionNote.count({
+      where: whereClause
+    });
+    
+    // Enhance reflections with skill data
+    const enhancedReflections = reflections.map(reflection => {
+      const skill = getSkillById(reflection.skillId.toString());
+      
+      return {
+        id: reflection.id,
+        userId: reflection.userId,
+        skillId: reflection.skillId.toString(),
+        content: reflection.content,
+        rating: reflection.rating,
+        whatWentWell: reflection.whatWentWell,
+        whatToimprove: reflection.whatToimprove,
+        futureGoals: reflection.futureGoals,
+        isPrivate: reflection.isPrivate,
+        createdAt: reflection.createdAt.toISOString(),
+        updatedAt: reflection.updatedAt.toISOString(),
+        user: reflection.user,
+        skill: skill ? {
+          id: skill.id,
+          name: skill.name,
+          category: skill.category
+        } : null
+      };
+    });
 
     return NextResponse.json({
-      reflections: paginatedReflections,
+      reflections: enhancedReflections,
       pagination: {
         currentPage: page,
-        totalPages: Math.ceil(filteredReflections.length / limit),
-        totalItems: filteredReflections.length,
-        hasMore: offset + limit < filteredReflections.length,
+        totalPages: Math.ceil(totalCount / limit),
+        totalItems: totalCount,
+        hasMore: (page - 1) * limit + limit < totalCount,
       }
     });
   } catch (error) {
@@ -246,31 +177,63 @@ export async function PATCH(request: NextRequest) {
   try {
     const session = await getServerSession(authConfig);
     
-    // Temporarily allow without authentication for testing
-    // if (!session) {
-    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    // }
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-    // Mock user data when no session
-    const mockUser = session?.user || {
-      id: 'student-1',
-      name: 'Test Student',
-      email: 'student@test.com',
-      studentId: 'STU001'
+    const { reflectionId, content, rating, whatWentWell, whatToimprove, futureGoals, isPrivate } = await request.json();
+
+    // Update reflection in database
+    const updatedReflection = await prisma.reflectionNote.update({
+      where: {
+        id: reflectionId,
+        userId: session.user.id, // Ensure user can only update their own reflections
+      },
+      data: {
+        content: content,
+        rating: rating,
+        whatWentWell: whatWentWell,
+        whatToimprove: whatToimprove,
+        futureGoals: futureGoals,
+        isPrivate: isPrivate,
+        updatedAt: new Date(),
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            studentId: true,
+          }
+        }
+      }
+    });
+
+    // Get skill data from comprehensive skills system
+    const skill = getSkillById(updatedReflection.skillId.toString());
+
+    const responseData = {
+      id: updatedReflection.id,
+      userId: updatedReflection.userId,
+      skillId: updatedReflection.skillId.toString(),
+      content: updatedReflection.content,
+      rating: updatedReflection.rating,
+      whatWentWell: updatedReflection.whatWentWell,
+      whatToimprove: updatedReflection.whatToimprove,
+      futureGoals: updatedReflection.futureGoals,
+      isPrivate: updatedReflection.isPrivate,
+      createdAt: updatedReflection.createdAt.toISOString(),
+      updatedAt: updatedReflection.updatedAt.toISOString(),
+      user: updatedReflection.user,
+      skill: skill ? {
+        id: skill.id,
+        name: skill.name,
+        category: skill.category
+      } : null
     };
 
-    const { reflectionId, content, isPrivate } = await request.json();
-
-    // Mock reflection update
-    const mockUpdatedReflection = {
-      id: reflectionId,
-      userId: mockUser.id,
-      content: content,
-      isPrivate: isPrivate,
-      updatedAt: new Date().toISOString(),
-    };
-
-    return NextResponse.json(mockUpdatedReflection);
+    return NextResponse.json(responseData);
   } catch (error) {
     console.error('Error updating reflection:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -281,14 +244,20 @@ export async function DELETE(request: NextRequest) {
   try {
     const session = await getServerSession(authConfig);
     
-    // Temporarily allow without authentication for testing
-    // if (!session) {
-    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    // }
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     const { reflectionId } = await request.json();
 
-    // Mock reflection deletion
+    // Delete reflection from database
+    await prisma.reflectionNote.delete({
+      where: {
+        id: reflectionId,
+        userId: session.user.id, // Ensure user can only delete their own reflections
+      }
+    });
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting reflection:', error);

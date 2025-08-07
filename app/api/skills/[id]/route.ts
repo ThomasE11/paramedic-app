@@ -26,30 +26,54 @@ export async function GET(
       return NextResponse.json({ error: 'Skill not found' }, { status: 404 });
     }
 
-    // Generate mock progress for testing
-    const generateMockProgress = () => {
+    // Generate step-based progress for testing
+    const generateStepBasedProgress = () => {
       if (session?.user?.role !== 'STUDENT') return [];
       
-      const progressStatuses = ['NOT_STARTED', 'IN_PROGRESS', 'COMPLETED', 'MASTERED'];
-      const randomStatus = progressStatuses[Math.floor(Math.random() * progressStatuses.length)];
-      const completedStepsCount = randomStatus === 'NOT_STARTED' ? 0 : 
-                                  randomStatus === 'COMPLETED' || randomStatus === 'MASTERED' ? skill.steps.length :
-                                  Math.floor(Math.random() * skill.steps.length);
+      // Calculate progress based on actual skill steps, not random values
+      const totalSteps = skill.steps.length;
+      const skillId = skill.id;
+      
+      // For demo purposes, simulate different progress levels based on skill ID
+      // In production, this would come from actual database queries
+      let completedStepsCount: number;
+      let status: string;
+      let timeSpentMinutes: number;
+      
+      // Use deterministic progress based on skill characteristics instead of random
+      const skillIndex = parseInt(skillId.replace(/\D/g, '')) || 1;
+      const progressPercent = ((skillIndex % 4) + 1) * 0.25; // 25%, 50%, 75%, 100%
+      
+      completedStepsCount = Math.floor(totalSteps * progressPercent);
+      
+      if (completedStepsCount === 0) {
+        status = 'NOT_STARTED';
+        timeSpentMinutes = 0;
+      } else if (completedStepsCount >= totalSteps) {
+        status = 'COMPLETED';
+        timeSpentMinutes = skill.timeEstimateMinutes || 60;
+        completedStepsCount = totalSteps; // Ensure we don't exceed total steps
+      } else {
+        status = 'IN_PROGRESS';
+        timeSpentMinutes = Math.floor((completedStepsCount / totalSteps) * (skill.timeEstimateMinutes || 60));
+      }
+      
+      const completedSteps = skill.steps.slice(0, completedStepsCount).map(step => step.stepNumber);
       
       return [{
         id: `progress-${skillId}`,
         userId: session?.user?.id || 'student-1',
         skillId: skill.id,
-        status: randomStatus,
-        completedCount: randomStatus === 'NOT_STARTED' ? 0 : Math.floor(Math.random() * 5) + 1,
-        timeSpentMinutes: randomStatus === 'NOT_STARTED' ? 0 : Math.floor(Math.random() * 180) + 30,
-        lastAttemptDate: randomStatus === 'NOT_STARTED' ? null : new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
-        completionDate: randomStatus === 'COMPLETED' || randomStatus === 'MASTERED' ? new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString() : null,
-        selfAssessmentScore: randomStatus === 'NOT_STARTED' ? null : Math.floor(Math.random() * 40) + 60,
-        completedSteps: skill.steps.slice(0, completedStepsCount).map(step => step.id),
-        attempts: randomStatus === 'NOT_STARTED' ? 0 : Math.floor(Math.random() * 5) + 1,
-        createdAt: new Date(Date.now() - Math.random() * 60 * 24 * 60 * 60 * 1000).toISOString(),
-        updatedAt: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
+        status: status,
+        completedCount: completedStepsCount,
+        timeSpentMinutes: timeSpentMinutes,
+        lastAttemptDate: status === 'NOT_STARTED' ? null : new Date(Date.now() - 86400000).toISOString(), // 1 day ago
+        completionDate: status === 'COMPLETED' ? new Date().toISOString() : null,
+        selfAssessmentScore: status === 'NOT_STARTED' ? null : Math.min(95, 70 + (completedStepsCount / totalSteps) * 25),
+        completedSteps: completedSteps,
+        attempts: status === 'NOT_STARTED' ? 0 : Math.ceil(completedStepsCount / 3) || 1,
+        createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+        updatedAt: new Date().toISOString(),
       }];
     };
 
@@ -93,7 +117,7 @@ export async function GET(
       })),
       assessmentCriteria: skill.assessmentCriteria,
       quizQuestions: [], // We'll generate these dynamically via Gemini
-      progress: generateMockProgress(),
+      progress: generateStepBasedProgress(),
     };
 
     return NextResponse.json(enhancedSkill);

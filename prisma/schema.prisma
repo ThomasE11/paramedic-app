@@ -9,22 +9,25 @@ datasource db {
 }
 
 model User {
-  id                    String                   @id @default(cuid())
-  name                  String
-  email                 String                   @unique
-  password              String
-  role                  Role                     @default(STUDENT)
-  studentId             String?                  @unique @map("student_id")
-  createdAt             DateTime                 @default(now()) @map("created_at")
-  updatedAt             DateTime                 @updatedAt @map("updated_at")
-  accounts              Account[]
-  notifications         Notification[]
-  quizAttempts          QuizAttempt[]
-  reflections           ReflectionNote[]
-  sessions              Session[]
-  progress              StudentProgress[]
-  subjects              UserSubject[]
-  videoAnalysisSessions VideoAnalysisSession[]
+  id                      String                   @id @default(cuid())
+  name                    String
+  email                   String                   @unique
+  password                String
+  role                    Role                     @default(STUDENT)
+  studentId               String?                  @unique @map("student_id")
+  createdAt               DateTime                 @default(now()) @map("created_at")
+  updatedAt               DateTime                 @updatedAt @map("updated_at")
+  accounts                Account[]
+  notifications           Notification[]
+  quizAttempts            QuizAttempt[]
+  reflections             ReflectionNote[]
+  sessions                Session[]
+  progress                StudentProgress[]
+  subjects                UserSubject[]
+  videoAnalysisSessions   VideoAnalysisSession[]
+  skillAttempts           SkillAttempt[]
+  masteryRequestsStudent  MasteryRequest[]         @relation("StudentMasteryRequests")
+  masteryRequestsReviewer MasteryRequest[]         @relation("InstructorMasteryReviews")
 
   @@map("users")
 }
@@ -111,6 +114,8 @@ model Skill {
   progress              StudentProgress[]
   subjects              SubjectSkill[]
   videoAnalysisSessions VideoAnalysisSession[]
+  skillAttempts         SkillAttempt[]
+  masteryRequests       MasteryRequest[]
 
   @@map("skills")
 }
@@ -155,24 +160,28 @@ model SkillPrerequisite {
 }
 
 model StudentProgress {
-  id                  String         @id @default(cuid())
-  userId              String         @map("user_id")
-  skillId             Int            @map("skill_id")
-  status              ProgressStatus @default(NOT_STARTED)
-  attempts            Int            @default(0)
-  completedSteps      Json           @map("completed_steps")
-  timeSpentMinutes    Int            @default(0) @map("time_spent_minutes")
-  currentSessionTime  Int            @default(0) @map("current_session_time")
-  totalTimeSpent      Int            @default(0) @map("total_time_spent")
-  reflectionTime      Int            @default(0) @map("reflection_time")
-  lastAttemptDate     DateTime?      @map("last_attempt_date")
-  completionDate      DateTime?      @map("completion_date")
-  selfAssessmentScore Int?           @map("self_assessment_score")
-  instructorNotes     String?        @map("instructor_notes")
-  createdAt           DateTime       @default(now()) @map("created_at")
-  updatedAt           DateTime       @updatedAt @map("updated_at")
-  skill               Skill          @relation(fields: [skillId], references: [id], onDelete: Cascade)
-  user                User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                   String         @id @default(cuid())
+  userId               String         @map("user_id")
+  skillId              Int            @map("skill_id")
+  status               ProgressStatus @default(NOT_STARTED)
+  attempts             Int            @default(0)
+  totalAttempts        Int            @default(0) @map("total_attempts")
+  completeAttempts     Int            @default(0) @map("complete_attempts")
+  completedSteps       Json           @map("completed_steps")
+  timeSpentMinutes     Int            @default(0) @map("time_spent_minutes")
+  totalTimeSpentMinutes Int           @default(0) @map("total_time_spent_minutes")
+  completeTimeMinutes  Int            @default(0) @map("complete_time_minutes")
+  currentSessionTime   Int            @default(0) @map("current_session_time")
+  totalTimeSpent       Int            @default(0) @map("total_time_spent")
+  reflectionTime       Int            @default(0) @map("reflection_time")
+  lastAttemptDate      DateTime?      @map("last_attempt_date")
+  completionDate       DateTime?      @map("completion_date")
+  selfAssessmentScore  Int?           @map("self_assessment_score")
+  instructorNotes      String?        @map("instructor_notes")
+  createdAt            DateTime       @default(now()) @map("created_at")
+  updatedAt            DateTime       @updatedAt @map("updated_at")
+  skill                Skill          @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  user                 User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, skillId])
   @@map("student_progress")
@@ -325,6 +334,52 @@ model VideoAnalysisResult {
   @@map("video_analysis_results")
 }
 
+model SkillAttempt {
+  id              String        @id @default(cuid())
+  userId          String        @map("user_id")
+  skillId         Int           @map("skill_id")
+  status          AttemptStatus @default(STARTED)
+  startTime       DateTime      @default(now()) @map("start_time")
+  endTime         DateTime?     @map("end_time")
+  timeSpentMinutes Int          @default(0) @map("time_spent_minutes")
+  completedSteps  Json          @map("completed_steps")
+  quizScore       Float?        @map("quiz_score")
+  quizAttempts    Int           @default(0) @map("quiz_attempts")
+  reflectionSubmitted Boolean   @default(false) @map("reflection_submitted")
+  sessionNotes    String?       @map("session_notes")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skill           Skill         @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@map("skill_attempts")
+}
+
+model MasteryRequest {
+  id                String              @id @default(cuid())
+  studentId         String              @map("student_id")
+  skillId           Int                 @map("skill_id")
+  status            MasteryRequestStatus @default(PENDING)
+  requestMessage    String?             @map("request_message")
+  studentNotes      String?             @map("student_notes")
+  totalPracticeTime Int                 @map("total_practice_time")
+  totalAttempts     Int                 @map("total_attempts")
+  averageScore      Float?              @map("average_score")
+  reviewedBy        String?             @map("reviewed_by")
+  reviewDate        DateTime?           @map("review_date")
+  instructorNotes   String?             @map("instructor_notes")
+  decision          String?
+  masteryDate       DateTime?           @map("mastery_date")
+  requestDate       DateTime            @default(now()) @map("request_date")
+  createdAt         DateTime            @default(now()) @map("created_at")
+  updatedAt         DateTime            @updatedAt @map("updated_at")
+  student           User                @relation("StudentMasteryRequests", fields: [studentId], references: [id], onDelete: Cascade)
+  skill             Skill               @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  instructor        User?               @relation("InstructorMasteryReviews", fields: [reviewedBy], references: [id])
+
+  @@map("mastery_requests")
+}
+
 enum Role {
   STUDENT
   LECTURER
@@ -349,10 +404,28 @@ enum NotificationType {
   PROGRESS_UPDATE
   SYSTEM_MESSAGE
   REMINDER
+  MASTERY_REQUEST
+  MASTERY_APPROVED
+  MASTERY_REJECTED
+  ASSIGNMENT
 }
 
 enum VideoAnalysisStatus {
   PROCESSING
   COMPLETED
   FAILED
+}
+
+enum MasteryRequestStatus {
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum AttemptStatus {
+  STARTED
+  IN_PROGRESS
+  COMPLETED
+  ABANDONED
 }

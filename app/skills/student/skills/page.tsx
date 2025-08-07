@@ -78,7 +78,12 @@ export default function StudentSkills() {
     }
 
     if (selectedCategory !== 'all') {
-      filtered = filtered.filter(skill => skill.categoryId === selectedCategory);
+      filtered = filtered.filter(skill => {
+        // Handle both string and number category IDs
+        const skillCategoryId = skill.categoryId?.toString();
+        const selectedCategoryId = selectedCategory.toString();
+        return skillCategoryId === selectedCategoryId;
+      });
     }
 
     if (selectedDifficulty !== 'all') {

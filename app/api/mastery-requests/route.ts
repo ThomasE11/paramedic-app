@@ -3,9 +3,7 @@ export const dynamic = "force-dynamic";
 export const runtime = 'nodejs';
 import { getServerSession } from 'next-auth';
 import { authConfig } from '@/lib/auth';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 // Submit a mastery request (Student)
 export async function POST(request: NextRequest) {
@@ -142,12 +140,7 @@ export async function POST(request: NextRequest) {
       type: 'MASTERY_REQUEST' as const,
       title: 'New Mastery Request',
       message: `${user.name} has requested mastery assessment for ${skill.name}`,
-      relatedSkillId: parseInt(skillId),
-      relatedData: { 
-        masteryRequestId: masteryRequest.id,
-        studentId: session.user.id,
-        studentName: user.name
-      }
+      relatedSkillId: parseInt(skillId)
     }));
 
     await prisma.notification.createMany({
@@ -383,12 +376,7 @@ export async function PATCH(request: NextRequest) {
         type: notificationType,
         title: decision === 'MASTERED' ? 'Mastery Approved!' : 'Mastery Request Update',
         message: notificationMessage,
-        relatedSkillId: masteryRequest.skillId,
-        relatedData: { 
-          masteryRequestId: masteryRequest.id,
-          decision: decision,
-          instructorName: instructor.name
-        }
+        relatedSkillId: masteryRequest.skillId
       }
     });
 
