@@ -307,7 +307,7 @@ export function LecturerNavigation({ user }: LecturerNavigationProps) {
                   {switchingView ? 'Switching...' : 'Switch to Student View'}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => signOut()} className="cursor-pointer text-destructive hover-lift">
+                <DropdownMenuItem onClick={() => signOut({ callbackUrl: '/' })} className="cursor-pointer text-destructive hover-lift">
                   <LogOut className="mr-2 h-4 w-4" />
                   Sign Out
                 </DropdownMenuItem>
