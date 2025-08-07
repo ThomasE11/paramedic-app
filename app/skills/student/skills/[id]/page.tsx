@@ -131,13 +131,13 @@ export default function SkillPractice() {
     let idleCheckInterval: NodeJS.Timeout;
     
     if (isTimerRunning) {
-      // Main timer
+      // Main timer - only increment locally, server handles authoritative time
       interval = setInterval(() => {
         const now = new Date();
         const timeSinceActive = now.getTime() - lastActiveTime.getTime();
         
-        // Only increment if user was active in last 5 minutes
-        if (timeSinceActive < 5 * 60 * 1000) {
+        // Only increment if user was active in last 3 minutes (reduced from 5)
+        if (timeSinceActive < 3 * 60 * 1000) {
           setTimeSpent(prev => prev + 1);
           setIsIdle(false);
         } else {
@@ -145,17 +145,17 @@ export default function SkillPractice() {
         }
       }, 1000);
       
-      // Idle detection
+      // Idle detection - more aggressive timeout
       idleCheckInterval = setInterval(() => {
         const now = new Date();
         const timeSinceActive = now.getTime() - lastActiveTime.getTime();
         
-        if (timeSinceActive > 5 * 60 * 1000 && isTimerRunning) {
-          // Auto-pause after 5 minutes of inactivity
+        if (timeSinceActive > 3 * 60 * 1000 && isTimerRunning) {
+          // Auto-pause after 3 minutes of inactivity (reduced from 5)
           pausePractice();
           toast({
-            title: 'Session Paused',
-            description: 'Timer paused due to inactivity. Click Start to resume.',
+            title: 'Session Paused - Idle Detected',
+            description: 'Timer paused due to inactivity. Click Resume to continue practicing.',
             variant: 'default',
           });
         }
@@ -198,6 +198,8 @@ export default function SkillPractice() {
   };
 
   const startPractice = () => {
+    // Reset timer to zero when starting practice
+    setTimeSpent(0);
     setIsTimerRunning(true);
     setSessionStartTime(new Date());
     setLastActiveTime(new Date());
@@ -213,7 +215,7 @@ export default function SkillPractice() {
     
     toast({
       title: 'Practice Started',
-      description: 'Timer is now running. Auto-save enabled.',
+      description: 'Timer is now running from zero. Auto-save enabled.',
     });
   };
 
@@ -309,11 +311,13 @@ export default function SkillPractice() {
   const completeSkill = async () => {
     if (!skill) return;
     
-    const minimumSteps = Math.ceil((skill.steps?.length || 0) * 0.8) || 1;
-    if (completedSteps.length < minimumSteps) {
+    // Check if ALL steps are completed (not just 80%)
+    const allStepsCompleted = completedSteps.length === skill.steps?.length;
+    if (!allStepsCompleted) {
+      const remainingSteps = (skill.steps?.length || 0) - completedSteps.length;
       toast({
         title: 'Incomplete Practice',
-        description: `Please complete at least ${minimumSteps} steps before finishing.`,
+        description: `Please complete all ${remainingSteps} remaining steps before accessing the quiz.`,
         variant: 'destructive',
       });
       return;
@@ -321,7 +325,20 @@ export default function SkillPractice() {
 
     // Check if quiz needs to be taken (and not currently in quiz)
     if (!hasCompletedQuiz && !showQuiz) {
+      // Auto-stop timer when skill is completed
       setIsTimerRunning(false);
+      
+      // Clear auto-save interval
+      if (autoSaveInterval) {
+        clearInterval(autoSaveInterval);
+        setAutoSaveInterval(null);
+      }
+      
+      toast({
+        title: 'Practice Completed!',
+        description: 'Timer stopped. Starting final quiz.',
+      });
+      
       triggerFinalQuiz();
       return;
     }
@@ -533,10 +550,26 @@ export default function SkillPractice() {
       });
       
       // Directly proceed to reflection (skip completeSkill to avoid loop)
-      setTimeout(() => {
+      setTimeout(async () => {
         console.log('Opening reflection modal');
         setIsTimerRunning(false);
-        saveProgress('COMPLETED');
+        
+        // Complete the session on server
+        try {
+          await fetch('/api/practice-sessions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              skillId,
+              action: 'COMPLETE',
+              completedSteps,
+              clientTimeSpent: Math.floor(timeSpent / 60)
+            })
+          });
+        } catch (error) {
+          console.error('Error completing session:', error);
+        }
+        
         setShowReflection(true);
         toast({
           title: 'Skill Completed!',
@@ -578,7 +611,7 @@ export default function SkillPractice() {
   }
 
   const progressPercentage = skill.steps?.length ? (completedSteps.length / skill.steps.length) * 100 : 0;
-  const isSkillComplete = completedSteps.length >= Math.ceil((skill.steps?.length || 0) * 0.8);
+  const isSkillComplete = completedSteps.length === skill.steps?.length;
 
   // Mode Selection Interface
   const renderModeSelection = () => (
