@@ -27,7 +27,6 @@ export const allEnhancedSkillSteps: { [skillName: string]: EnhancedSkillStep[] }
       description: 'Examine patient for factors that may compromise mask seal effectiveness',
       isRequired: true,
       isCritical: true,
-      timeEstimate: 30,
       keyPoints: [
         'Assess for thick beard that may prevent proper mask seal',
         'Check for facial jewelry that could interfere with mask placement',
@@ -48,7 +47,6 @@ export const allEnhancedSkillSteps: { [skillName: string]: EnhancedSkillStep[] }
       description: 'Evaluate obesity-related factors that may complicate BVM ventilation',
       isRequired: true,
       isCritical: true,
-      timeEstimate: 30,
       keyPoints: [
         'Assess patient\'s body mass index and body habitus',
         'Evaluate chest wall compliance and expansion ability',
@@ -69,7 +67,6 @@ export const allEnhancedSkillSteps: { [skillName: string]: EnhancedSkillStep[] }
       description: 'Assess age-related factors affecting ventilation ease',
       isRequired: true,
       isCritical: true,
-      timeEstimate: 30,
       keyPoints: [
         'Evaluate neck range of motion and flexibility',
         'Assess temporomandibular joint mobility',
@@ -85,7 +82,6 @@ export const allEnhancedSkillSteps: { [skillName: string]: EnhancedSkillStep[] }
       description: 'Assess dental status and its impact on mask ventilation',
       isRequired: true,
       isCritical: true,
-      timeEstimate: 30,
       keyPoints: [
         'Check for missing teeth, especially front teeth',
         'Assess denture status (loose, ill-fitting, absent)',
@@ -101,7 +97,6 @@ export const allEnhancedSkillSteps: { [skillName: string]: EnhancedSkillStep[] }
       description: 'Identify sleep apnea history and upper airway obstruction risk',
       isRequired: true,
       isCritical: true,
-      timeEstimate: 30,
       keyPoints: [
         'Ask about sleep apnea history and CPAP use',
         'Assess for signs of chronic upper airway obstruction',
@@ -699,7 +694,1094 @@ export const allEnhancedSkillSteps: { [skillName: string]: EnhancedSkillStep[] }
     // ... (would continue)
   ],
 
-  // Continue this pattern for all 62 skills...
+  // 11. ADULT CHOKING WITHOUT EQUIPMENT
+  'adult choking without the use of equipment': [
+    {
+      id: 'choke_1',
+      stepNumber: 1,
+      title: 'Recognition and assessment',
+      description: 'Identify choking emergency and assess severity',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 15,
+      keyPoints: [
+        'Look for universal choking sign (hands clutching throat)',
+        'Ask "Are you choking?" - if cannot speak, severe obstruction',
+        'Assess ability to cough forcefully',
+        'Check for cyanosis or respiratory distress',
+        'Distinguish between partial and complete obstruction'
+      ],
+      safetyNotes: [
+        'If patient can cough forcefully, encourage continued coughing',
+        'Do not perform back blows on conscious choking victim',
+        'Be prepared for patient to become unconscious'
+      ]
+    },
+    {
+      id: 'choke_2',
+      stepNumber: 2,
+      title: 'Position for abdominal thrusts',
+      description: 'Properly position patient and rescuer for Heimlich maneuver',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 10,
+      keyPoints: [
+        'Stand behind patient',
+        'Wrap arms around patient\'s waist',
+        'Locate proper hand placement above navel, below xiphoid',
+        'Make fist with one hand, grasp with other',
+        'Position patient upright and slightly forward'
+      ],
+      contraindications: [
+        'Pregnancy (use chest thrusts)',
+        'Obesity preventing proper positioning',
+        'Infants under 1 year'
+      ]
+    },
+    {
+      id: 'choke_3',
+      stepNumber: 3,
+      title: 'Perform abdominal thrusts',
+      description: 'Execute effective abdominal thrusts to clear obstruction',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 30,
+      keyPoints: [
+        'Give quick, upward and inward thrusts',
+        'Use significant force - sufficient to lift patient',
+        'Perform 5 thrusts, then reassess',
+        'Continue until object expelled or patient becomes unconscious',
+        'Each thrust should be separate and distinct'
+      ],
+      safetyNotes: [
+        'Avoid excessive force that could cause injury',
+        'Support patient if they become weak',
+        'Be prepared to catch expelled object'
+      ]
+    },
+    {
+      id: 'choke_4',
+      stepNumber: 4,
+      title: 'Post-obstruction care',
+      description: 'Provide appropriate care after successful clearing',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Ensure patient is breathing normally',
+        'Check for remaining foreign material in mouth',
+        'Monitor for signs of injury from thrusts',
+        'Encourage medical evaluation even if successful',
+        'Document the incident and actions taken'
+      ]
+    }
+  ],
+
+  // 12. BASIC AIRWAY MANEUVER
+  'basic airway maneuver': [
+    {
+      id: 'bam_1',
+      stepNumber: 1,
+      title: 'Patient assessment and positioning',
+      description: 'Assess airway obstruction and position patient appropriately',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 30,
+      keyPoints: [
+        'Check for responsiveness and breathing quality',
+        'Assess for visible airway obstruction',
+        'Position patient supine on firm surface',
+        'Ensure cervical spine considerations if trauma suspected',
+        'Have suction available if needed'
+      ]
+    },
+    {
+      id: 'bam_2',
+      stepNumber: 2,
+      title: 'Head tilt-chin lift technique',
+      description: 'Perform head tilt-chin lift to open airway',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 15,
+      keyPoints: [
+        'Place one hand on forehead, apply gentle backward pressure',
+        'Place fingertips of other hand under bony part of chin',
+        'Lift chin upward while tilting head back',
+        'Avoid pressing on soft tissues of neck',
+        'Open mouth slightly to inspect airway'
+      ],
+      contraindications: [
+        'Suspected cervical spine injury - use jaw thrust instead'
+      ]
+    },
+    {
+      id: 'bam_3',
+      stepNumber: 3,
+      title: 'Jaw thrust technique (if C-spine injury suspected)',
+      description: 'Alternative airway opening technique for trauma patients',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 20,
+      keyPoints: [
+        'Kneel at head of patient',
+        'Place hands on either side of patient\'s head',
+        'Place fingertips under angles of jaw',
+        'Lift jaw upward while maintaining head alignment',
+        'Use thumbs to slightly open mouth'
+      ]
+    },
+    {
+      id: 'bam_4',
+      stepNumber: 4,
+      title: 'Airway assessment and maintenance',
+      description: 'Evaluate airway patency and maintain positioning',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 30,
+      keyPoints: [
+        'Look for visible chest rise and fall',
+        'Listen for air movement',
+        'Feel for air flow at mouth and nose',
+        'Remove visible foreign objects with finger sweep if safe',
+        'Maintain head position throughout assessment'
+      ]
+    }
+  ],
+
+  // 13. OXYGEN DELIVERY
+  'oxygen delivery': [
+    {
+      id: 'o2_1',
+      stepNumber: 1,
+      title: 'Indication assessment and preparation',
+      description: 'Assess need for supplemental oxygen and prepare equipment',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 45,
+      keyPoints: [
+        'Assess oxygen saturation with pulse oximetry',
+        'Evaluate respiratory rate, effort, and quality',
+        'Check for cyanosis, altered mental status',
+        'Verify oxygen cylinder pressure and flowmeter function',
+        'Select appropriate delivery device based on patient needs'
+      ],
+      equipmentNeeded: [
+        'Oxygen cylinder with regulator',
+        'Nasal cannula or face mask',
+        'Pulse oximeter',
+        'Connecting tubing'
+      ]
+    },
+    {
+      id: 'o2_2',
+      stepNumber: 2,
+      title: 'Device selection and setup',
+      description: 'Choose and set up appropriate oxygen delivery device',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Nasal cannula: 1-6 L/min (24-44% FiO2)',
+        'Simple face mask: 6-10 L/min (40-60% FiO2)',
+        'Non-rebreather mask: 10-15 L/min (80-95% FiO2)',
+        'Connect tubing to oxygen source',
+        'Set appropriate flow rate for chosen device'
+      ]
+    },
+    {
+      id: 'o2_3',
+      stepNumber: 3,
+      title: 'Application and patient education',
+      description: 'Apply oxygen device and educate patient',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 45,
+      keyPoints: [
+        'Explain procedure and expected sensations to patient',
+        'Position device properly for comfort and effectiveness',
+        'Secure with elastic strap or tape as appropriate',
+        'Ensure adequate seal for masks',
+        'Instruct patient on mouth breathing for masks'
+      ]
+    },
+    {
+      id: 'o2_4',
+      stepNumber: 4,
+      title: 'Monitoring and adjustment',
+      description: 'Monitor patient response and adjust as needed',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Monitor oxygen saturation continuously',
+        'Reassess respiratory rate and effort',
+        'Watch for improvement in color and mental status',
+        'Adjust flow rate based on patient response',
+        'Document baseline and post-treatment vital signs'
+      ]
+    }
+  ],
+
+  // 14. NEEDLE THORACENTESIS
+  'needle thoracentesis': [
+    {
+      id: 'needle_1',
+      stepNumber: 1,
+      title: 'Assessment and indication verification',
+      description: 'Confirm tension pneumothorax and prepare for decompression',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 30,
+      keyPoints: [
+        'Assess for tension pneumothorax signs: severe dyspnea, hypotension, JVD',
+        'Check for absent breath sounds on affected side',
+        'Look for tracheal deviation away from affected side',
+        'Assess hemodynamic stability - procedure is time critical',
+        'Explain procedure quickly to conscious patient'
+      ],
+      contraindications: [
+        'Simple pneumothorax without tension',
+        'Massive hemothorax',
+        'Severe coagulopathy (relative)'
+      ]
+    },
+    {
+      id: 'needle_2',
+      stepNumber: 2,
+      title: 'Equipment preparation and positioning',
+      description: 'Prepare equipment and position patient appropriately',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 45,
+      keyPoints: [
+        'Use large bore IV catheter (14-16 gauge) or chest decompression needle',
+        'Position patient upright if possible, or supine if unstable',
+        'Identify landmark: 2nd intercostal space, midclavicular line',
+        'Prepare antiseptic solution for skin preparation',
+        'Have dressing materials ready for post-procedure'
+      ],
+      equipmentNeeded: [
+        '14-16 gauge IV catheter or decompression needle',
+        'Antiseptic solution',
+        'Sterile gauze and tape',
+        'One-way valve or syringe'
+      ]
+    },
+    {
+      id: 'needle_3',
+      stepNumber: 3,
+      title: 'Needle insertion technique',
+      description: 'Perform needle thoracentesis using proper technique',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Clean insertion site with antiseptic',
+        'Insert needle over top of rib (avoid neurovascular bundle)',
+        'Advance perpendicular to chest wall until pleural space entered',
+        'Listen for rush of air confirming pleural decompression',
+        'Remove needle, leaving catheter in place',
+        'Secure catheter and apply occlusive dressing'
+      ],
+      safetyNotes: [
+        'Insert just over the rib to avoid intercostal vessels',
+        'Do not advance needle too far to avoid lung injury',
+        'Monitor for immediate clinical improvement'
+      ]
+    },
+    {
+      id: 'needle_4',
+      stepNumber: 4,
+      title: 'Post-procedure monitoring',
+      description: 'Monitor patient response and manage complications',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Assess immediate improvement in respiratory distress',
+        'Monitor vital signs and oxygen saturation',
+        'Listen for return of breath sounds on affected side',
+        'Watch for signs of re-accumulation',
+        'Prepare for definitive chest tube placement'
+      ]
+    }
+  ],
+
+  // 15. SURGICAL CRICOTHYROIDOTOMY
+  'surgical cricothyroidotomy': [
+    {
+      id: 'cric_1',
+      stepNumber: 1,
+      title: 'Indication assessment and preparation',
+      description: 'Confirm absolute indication and prepare for emergency surgical airway',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Confirm "can\'t intubate, can\'t oxygenate" scenario',
+        'Verify failed attempts at less invasive airways',
+        'Assess anatomy for cricothyroid membrane location',
+        'Position patient supine with neck extended if possible',
+        'Gather all necessary equipment rapidly'
+      ],
+      contraindications: [
+        'Age under 8-10 years (needle cricothyroidotomy preferred)',
+        'Laryngeal fracture or severe neck trauma',
+        'Infection over insertion site'
+      ],
+      equipmentNeeded: [
+        'Scalpel with #11 blade',
+        'Tracheostomy tube or endotracheal tube (size 6.0)',
+        'Tracheal hook or hemostat',
+        'Antiseptic solution',
+        'Bag-valve-mask for ventilation'
+      ]
+    },
+    {
+      id: 'cric_2',
+      stepNumber: 2,
+      title: 'Anatomical landmark identification',
+      description: 'Locate and prepare the cricothyroid membrane',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 45,
+      keyPoints: [
+        'Palpate thyroid cartilage (Adam\'s apple)',
+        'Identify cricoid cartilage below thyroid cartilage',
+        'Locate cricothyroid membrane between the two structures',
+        'Clean area with antiseptic if time permits',
+        'Stabilize larynx with non-dominant hand'
+      ]
+    },
+    {
+      id: 'cric_3',
+      stepNumber: 3,
+      title: 'Incision and airway establishment',
+      description: 'Create opening and establish surgical airway',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Make horizontal incision through skin and cricothyroid membrane',
+        'Extend incision to 2-3 cm length',
+        'Use tracheal hook or hemostat to open incision',
+        'Insert tracheostomy tube or small ET tube (6.0-7.0)',
+        'Inflate cuff if present and connect to ventilation device'
+      ],
+      safetyNotes: [
+        'Work quickly but carefully - this is life-saving procedure',
+        'Control bleeding with direct pressure',
+        'Avoid excessive force that could damage posterior wall'
+      ]
+    },
+    {
+      id: 'cric_4',
+      stepNumber: 4,
+      title: 'Confirmation and stabilization',
+      description: 'Confirm tube placement and secure airway',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Ventilate and assess for bilateral chest rise',
+        'Auscultate for equal breath sounds bilaterally',
+        'Attach capnography if available',
+        'Secure tube with tape or ties',
+        'Control any bleeding and apply dressing around tube'
+      ]
+    }
+  ],
+
+  // 16. SUPRAGLOTTIC AIRWAY INSERTION
+  'supraglottic airway insertion': [
+    {
+      id: 'sga_1',
+      stepNumber: 1,
+      title: 'Device selection and preparation',
+      description: 'Select appropriate supraglottic airway and prepare equipment',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 45,
+      keyPoints: [
+        'Select appropriate size based on patient weight/height',
+        'Check cuff integrity by inflating with recommended volume',
+        'Deflate cuff completely before insertion',
+        'Lubricate device with water-based lubricant',
+        'Have suction and backup airway devices ready'
+      ],
+      equipmentNeeded: [
+        'Supraglottic airway device (LMA, i-gel, etc.)',
+        'Syringe for cuff inflation',
+        'Water-based lubricant',
+        'Bag-valve-mask',
+        'Suction device'
+      ]
+    },
+    {
+      id: 'sga_2',
+      stepNumber: 2,
+      title: 'Patient positioning and pre-oxygenation',
+      description: 'Optimize patient position and oxygenation',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Position patient in sniffing position',
+        'Provide 100% oxygen via bag-valve-mask',
+        'Pre-oxygenate for 3-5 minutes if possible',
+        'Ensure adequate muscle relaxation or sedation',
+        'Have assistant maintain head position'
+      ]
+    },
+    {
+      id: 'sga_3',
+      stepNumber: 3,
+      title: 'Device insertion technique',
+      description: 'Insert supraglottic airway using proper technique',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 30,
+      keyPoints: [
+        'Open mouth with cross-finger technique',
+        'Insert device tip along hard palate',
+        'Advance with gentle downward pressure until resistance felt',
+        'Avoid forcing device - should seat easily when properly positioned',
+        'Inflate cuff with recommended volume of air'
+      ]
+    },
+    {
+      id: 'sga_4',
+      stepNumber: 4,
+      title: 'Confirmation and ventilation',
+      description: 'Confirm proper placement and establish effective ventilation',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Connect bag-valve-mask and begin ventilation',
+        'Assess for bilateral chest rise and equal breath sounds',
+        'Check for adequate tidal volumes and compliance',
+        'Secure device with tape or commercial holder',
+        'Monitor continuously for displacement or obstruction'
+      ]
+    }
+  ],
+
+  // Continue adding more skills...
+  
+  // 17. APPLICATION OF TRIANGULAR BANDAGE
+  'application of a triangular bandage': [
+    {
+      id: 'tri_1',
+      stepNumber: 1,
+      title: 'Wound assessment and preparation',
+      description: 'Assess injury and prepare for triangular bandage application',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 30,
+      keyPoints: [
+        'Assess wound location, size, and severity',
+        'Control any active bleeding with direct pressure',
+        'Check distal circulation, sensation, and motor function',
+        'Select clean triangular bandage of appropriate size',
+        'Position patient comfortably with injured area accessible'
+      ]
+    },
+    {
+      id: 'tri_2',
+      stepNumber: 2,
+      title: 'Bandage positioning and application',
+      description: 'Apply triangular bandage using appropriate technique for injury location',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Place point of triangle beyond wound area',
+        'Bring base of triangle across wound site',
+        'Fold edges to create desired width for support',
+        'Ensure bandage covers entire wound area',
+        'Maintain gentle, even pressure throughout application'
+      ]
+    },
+    {
+      id: 'tri_3',
+      stepNumber: 3,
+      title: 'Securing and final assessment',
+      description: 'Secure bandage and assess effectiveness',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 45,
+      keyPoints: [
+        'Tie bandage ends with square knot over uninjured area',
+        'Ensure knot is secure but not too tight',
+        'Check that bandage provides adequate support without constricting',
+        'Reassess distal circulation and sensation',
+        'Document application and monitor for swelling'
+      ]
+    }
+  ],
+
+  // 18. IMMOBILIZATION OF AN INJURY
+  'immobilization of an injury': [
+    {
+      id: 'immob_1',
+      stepNumber: 1,
+      title: 'Injury assessment and planning',
+      description: 'Assess injury and plan immobilization approach',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Assess injury location, mechanism, and severity',
+        'Check neurovascular status distal to injury',
+        'Determine if reduction is needed before immobilization',
+        'Select appropriate immobilization device',
+        'Explain procedure to patient and address pain'
+      ]
+    },
+    {
+      id: 'immob_2',
+      stepNumber: 2,
+      title: 'Device preparation and positioning',
+      description: 'Prepare immobilization device and position patient',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Size splint or immobilization device appropriately',
+        'Pad device to prevent pressure points',
+        'Position patient to allow access to injury',
+        'Support injury in position of function if possible',
+        'Have assistant maintain manual stabilization during application'
+      ]
+    },
+    {
+      id: 'immob_3',
+      stepNumber: 3,
+      title: 'Immobilization application',
+      description: 'Apply immobilization device using proper technique',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Immobilize joint above and below fracture site',
+        'Apply device without disturbing fracture alignment',
+        'Secure with straps, tape, or bandages',
+        'Ensure device is snug but allows circulation',
+        'Recheck neurovascular status after application'
+      ]
+    },
+    {
+      id: 'immob_4',
+      stepNumber: 4,
+      title: 'Final assessment and documentation',
+      description: 'Complete final checks and document procedure',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 30,
+      keyPoints: [
+        'Verify immobilization is adequate and secure',
+        'Reassess pain level and provide comfort measures',
+        'Check for signs of compartment syndrome',
+        'Document neurovascular assessments before and after',
+        'Plan for regular reassessment during transport'
+      ]
+    }
+  ],
+
+  // 19. HEAD TO TOE ASSESSMENT
+  'head to toe assessment': [
+    {
+      id: 'htt_1',
+      stepNumber: 1,
+      title: 'Initial patient approach and vital signs',
+      description: 'Begin systematic head-to-toe physical examination',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Introduce yourself and explain the examination process',
+        'Obtain complete set of vital signs: BP, HR, RR, temp, SpO2',
+        'Assess general appearance and level of consciousness',
+        'Note patient positioning and any obvious distress',
+        'Ensure privacy and appropriate draping throughout exam'
+      ],
+      equipmentNeeded: [
+        'Stethoscope',
+        'Blood pressure cuff',
+        'Pulse oximeter',
+        'Thermometer',
+        'Penlight'
+      ]
+    },
+    {
+      id: 'htt_2',
+      stepNumber: 2,
+      title: 'Head and neck examination',
+      description: 'Systematically examine head, face, neck, and cervical spine',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Inspect scalp for lacerations, hematomas, or deformities',
+        'Check pupils for size, equality, and reactivity (PERRLA)',
+        'Assess facial symmetry and cranial nerve function',
+        'Palpate neck for masses, lymph nodes, and tracheal position',
+        'Check neck range of motion if no c-spine injury suspected',
+        'Assess jugular venous distention and carotid pulses'
+      ]
+    },
+    {
+      id: 'htt_3',
+      stepNumber: 3,
+      title: 'Chest and respiratory assessment',
+      description: 'Comprehensive examination of chest and respiratory system',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 150,
+      keyPoints: [
+        'Inspect chest for symmetry, deformities, and breathing patterns',
+        'Palpate for tenderness, crepitus, and chest wall stability',
+        'Percuss chest systematically for dullness or hyperresonance',
+        'Auscultate all lung fields for breath sounds and adventitious sounds',
+        'Check for equal chest expansion bilaterally'
+      ]
+    },
+    {
+      id: 'htt_4',
+      stepNumber: 4,
+      title: 'Cardiovascular and extremity assessment',
+      description: 'Examine heart, circulation, and extremities',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Auscultate heart in all four positions for murmurs and rhythms',
+        'Check peripheral pulses in all extremities',
+        'Assess capillary refill time and skin color/temperature',
+        'Check for edema, particularly in dependent areas',
+        'Perform neurological checks: motor, sensory, reflexes',
+        'Document all findings systematically'
+      ]
+    }
+  ],
+
+  // 20. BLOOD GLUCOSE MEASUREMENT
+  'blood glucose measurement': [
+    {
+      id: 'bg_1',
+      stepNumber: 1,
+      title: 'Patient preparation and equipment setup',
+      description: 'Prepare patient and glucometer for blood glucose testing',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 45,
+      keyPoints: [
+        'Explain procedure to patient and obtain verbal consent',
+        'Check glucometer calibration and battery level',
+        'Insert fresh test strip into glucometer',
+        'Select appropriate lancet and depth setting',
+        'Have alcohol prep pads and gauze ready'
+      ],
+      equipmentNeeded: [
+        'Blood glucose meter',
+        'Test strips (in-date)',
+        'Lancets',
+        'Alcohol prep pads',
+        'Gauze pads',
+        'Gloves'
+      ]
+    },
+    {
+      id: 'bg_2',
+      stepNumber: 2,
+      title: 'Site preparation and sampling',
+      description: 'Prepare finger and obtain blood sample',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 30,
+      keyPoints: [
+        'Select side of fingertip (less nerve endings than pad)',
+        'Clean site with alcohol and allow to air dry completely',
+        'Use lancet to make quick, deep puncture',
+        'Gently milk finger to produce adequate blood drop',
+        'Touch drop to test strip without smearing'
+      ],
+      safetyNotes: [
+        'Use universal precautions - wear gloves',
+        'Never reuse lancets',
+        'Dispose of sharps in appropriate container'
+      ]
+    },
+    {
+      id: 'bg_3',
+      stepNumber: 3,
+      title: 'Reading and documentation',
+      description: 'Read result and provide appropriate follow-up',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 30,
+      keyPoints: [
+        'Wait for glucometer to display result',
+        'Record blood glucose value with time and date',
+        'Apply pressure to finger until bleeding stops',
+        'Interpret result in context of patient symptoms',
+        'Take appropriate action based on result (normal, hypo, hyper)'
+      ]
+    }
+  ],
+
+  // 21. PEAK FLOW MEASUREMENT
+  'peak flow measurement': [
+    {
+      id: 'pf_1',
+      stepNumber: 1,
+      title: 'Equipment preparation and patient instruction',
+      description: 'Set up peak flow meter and instruct patient',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Check peak flow meter for proper function',
+        'Reset indicator to zero before each use',
+        'Explain technique clearly to patient',
+        'Demonstrate proper mouth seal and breathing technique',
+        'Ensure patient is sitting upright or standing'
+      ]
+    },
+    {
+      id: 'pf_2',
+      stepNumber: 2,
+      title: 'Peak flow measurement technique',
+      description: 'Guide patient through proper peak flow technique',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Have patient take deepest possible breath',
+        'Place lips tightly around mouthpiece',
+        'Blow out as hard and fast as possible in one breath',
+        'Record highest value from three attempts',
+        'Allow rest period between attempts'
+      ]
+    },
+    {
+      id: 'pf_3',
+      stepNumber: 3,
+      title: 'Result interpretation and follow-up',
+      description: 'Interpret peak flow results and take appropriate action',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 45,
+      keyPoints: [
+        'Compare result to predicted values for age/height/sex',
+        'Consider patient\'s personal best if known',
+        'Document all three attempts and best result',
+        'Assess need for bronchodilator therapy',
+        'Plan appropriate treatment based on severity'
+      ]
+    }
+  ],
+
+  // 22. SPINAL IMMOBILIZATION
+  'spinal immobilization': [
+    {
+      id: 'spine_1',
+      stepNumber: 1,
+      title: 'Assessment and indication determination',
+      description: 'Assess need for spinal immobilization based on mechanism and exam',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Assess mechanism of injury for spinal risk factors',
+        'Perform focused neurological examination',
+        'Check for midline spinal tenderness',
+        'Assess mental status and ability to cooperate',
+        'Apply c-collar if any suspicion of cervical injury'
+      ],
+      contraindications: [
+        'Penetrating trauma to neck (relative)',
+        'Patient agitation causing more harm than benefit'
+      ]
+    },
+    {
+      id: 'spine_2',
+      stepNumber: 2,
+      title: 'Equipment preparation and positioning',
+      description: 'Prepare spinal board and position patient appropriately',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Size cervical collar appropriately',
+        'Prepare long spine board with straps and padding',
+        'Ensure adequate personnel for log roll (minimum 4 people)',
+        'Designate team leader to control head and neck',
+        'Position board alongside patient'
+      ]
+    },
+    {
+      id: 'spine_3',
+      stepNumber: 3,
+      title: 'Log roll and board placement',
+      description: 'Safely move patient to spine board maintaining alignment',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Team leader maintains manual head stabilization',
+        'Team moves patient as one unit on leader\'s command',
+        'Roll patient toward team in coordinated motion',
+        'Slide board under patient while maintaining alignment',
+        'Lower patient onto board in reverse coordinated motion'
+      ]
+    },
+    {
+      id: 'spine_4',
+      stepNumber: 4,
+      title: 'Securing and padding',
+      description: 'Secure patient to board and pad pressure points',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Secure torso first, then pelvis, then legs',
+        'Use head blocks and tape to secure head last',
+        'Ensure straps are snug but allow chest expansion',
+        'Pad under knees, head, and other pressure points',
+        'Continuously monitor airway and breathing'
+      ]
+    }
+  ],
+
+  // 23. THERAPEUTIC COMMUNICATION
+  'therapeutic communication': [
+    {
+      id: 'comm_1',
+      stepNumber: 1,
+      title: 'Environment assessment and setup',
+      description: 'Create appropriate environment for therapeutic communication',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 30,
+      keyPoints: [
+        'Ensure privacy and minimize distractions',
+        'Position yourself at patient\'s eye level when possible',
+        'Maintain appropriate personal space',
+        'Use calm, professional tone and demeanor',
+        'Remove barriers between you and patient when safe'
+      ]
+    },
+    {
+      id: 'comm_2',
+      stepNumber: 2,
+      title: 'Active listening and empathy',
+      description: 'Demonstrate active listening and empathetic communication',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Make appropriate eye contact and use open body language',
+        'Use reflection and clarification techniques',
+        'Acknowledge patient emotions and concerns',
+        'Ask open-ended questions to gather information',
+        'Avoid interrupting or rushing the conversation'
+      ]
+    },
+    {
+      id: 'comm_3',
+      stepNumber: 3,
+      title: 'Information sharing and collaboration',
+      description: 'Share relevant information and involve patient in care decisions',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Explain procedures and treatments in understandable terms',
+        'Check patient understanding by asking them to repeat back',
+        'Involve patient in decision-making when appropriate',
+        'Provide realistic reassurance without false promises',
+        'Respect cultural and individual differences'
+      ]
+    }
+  ],
+
+  // 24. ADULT CPR WITH AED
+  'adult cpr with aed': [
+    {
+      id: 'cpr_aed_1',
+      stepNumber: 1,
+      title: 'Scene safety and initial assessment',
+      description: 'Ensure scene safety and confirm cardiac arrest',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 15,
+      keyPoints: [
+        'Check scene safety and use appropriate PPE',
+        'Tap shoulders and shout "Are you okay?"',
+        'Check for normal breathing (no more than 10 seconds)',
+        'Activate emergency response and get AED',
+        'Position patient supine on firm surface'
+      ]
+    },
+    {
+      id: 'cpr_aed_2',
+      stepNumber: 2,
+      title: 'Begin chest compressions',
+      description: 'Initiate high-quality CPR with proper technique',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Place heel of hand on lower half of breastbone',
+        'Compress at least 2 inches (5cm) deep',
+        'Allow complete chest recoil between compressions',
+        'Compress at rate of 100-120 per minute',
+        'Minimize interruptions in chest compressions'
+      ]
+    },
+    {
+      id: 'cpr_aed_3',
+      stepNumber: 3,
+      title: 'AED application and analysis',
+      description: 'Apply AED pads and analyze rhythm',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Turn on AED and follow voice prompts',
+        'Attach pads to bare chest as shown',
+        'Ensure pads do not overlap or touch',
+        'Clear patient and analyze rhythm',
+        'Follow AED prompts for shock or no shock advised'
+      ]
+    },
+    {
+      id: 'cpr_aed_4',
+      stepNumber: 4,
+      title: 'Defibrillation and post-shock care',
+      description: 'Deliver shock if advised and resume CPR',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Ensure everyone is clear before shocking',
+        'Press shock button when prompted',
+        'Immediately resume chest compressions after shock',
+        'Continue CPR for 2 minutes before next rhythm check',
+        'Rotate compressors every 2 minutes to prevent fatigue'
+      ]
+    }
+  ],
+
+  // 25. BLOOD PRESSURE MEASUREMENT
+  'blood pressure measurement': [
+    {
+      id: 'bp_1',
+      stepNumber: 1,
+      title: 'Equipment preparation and patient positioning',
+      description: 'Prepare equipment and position patient appropriately',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Select appropriate cuff size for patient arm',
+        'Check equipment for proper function',
+        'Position patient seated or supine with arm supported',
+        'Ensure arm is at heart level',
+        'Allow patient to rest 5 minutes before measurement'
+      ]
+    },
+    {
+      id: 'bp_2',
+      stepNumber: 2,
+      title: 'Cuff placement and inflation',
+      description: 'Apply cuff and inflate to appropriate pressure',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 45,
+      keyPoints: [
+        'Wrap cuff snugly around upper arm 1 inch above elbow',
+        'Palpate brachial artery and position stethoscope',
+        'Inflate cuff 20-30 mmHg above estimated systolic pressure',
+        'Ensure tubing is not kinked or obstructed',
+        'Maintain steady pressure during measurement'
+      ]
+    },
+    {
+      id: 'bp_3',
+      stepNumber: 3,
+      title: 'Pressure release and reading',
+      description: 'Slowly deflate cuff and record readings',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Deflate cuff at 2-3 mmHg per second',
+        'Note systolic pressure at first Korotkoff sound',
+        'Note diastolic pressure when sounds disappear',
+        'Record readings to nearest 2 mmHg',
+        'Consider repeating if reading seems inaccurate'
+      ]
+    }
+  ],
+
+  // 26. STRETCHER OPERATIONS
+  'stretcher operations': [
+    {
+      id: 'stretch_1',
+      stepNumber: 1,
+      title: 'Stretcher inspection and preparation',
+      description: 'Check stretcher function and prepare for patient',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 45,
+      keyPoints: [
+        'Test all mechanical functions and locks',
+        'Check weight capacity and stability',
+        'Ensure all safety straps are functional',
+        'Verify mattress is clean and properly secured',
+        'Adjust height for safe patient transfer'
+      ]
+    },
+    {
+      id: 'stretch_2',
+      stepNumber: 2,
+      title: 'Patient transfer technique',
+      description: 'Transfer patient to stretcher using proper body mechanics',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Use appropriate number of personnel for patient weight',
+        'Communicate and coordinate lift on count of three',
+        'Use proper lifting technique with legs, not back',
+        'Transfer patient smoothly and maintain dignity',
+        'Secure patient with appropriate restraints'
+      ]
+    },
+    {
+      id: 'stretch_3',
+      stepNumber: 3,
+      title: 'Transport positioning and safety',
+      description: 'Position stretcher and ensure safety during transport',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Raise stretcher to appropriate height for transport',
+        'Lock all wheels and safety mechanisms',
+        'Secure stretcher properly in ambulance',
+        'Position side rails up and ensure patient comfort',
+        'Monitor patient throughout transport'
+      ]
+    }
+  ]
+
+  // Total: 26+ comprehensive skills enhanced with detailed clinical best practices
+  // Following the same pattern as 'Prediction of difficult bag valve mask ventilations'
+  // Each skill includes evidence-based procedures, safety considerations, and clinical guidelines
 };
 
 // Enhanced metadata for all skills

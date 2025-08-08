@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import { ChevronLeft, Clock, Play, Pause, RotateCcw } from 'lucide-react';
+import { ChevronLeft, Clock, Play, Pause, RotateCcw, Award } from 'lucide-react';
 import { Button } from './button';
 import { Badge } from './badge';
 import { SkillProgressBar } from './skill-progress-bar';
@@ -24,6 +24,7 @@ interface SkillPracticeHeaderProps {
   };
   completedSteps: number[];
   timeSpent: number;
+  cumulativeTimeSpent?: number;
   isTimerRunning: boolean;
   isIdle?: boolean;
   sessionStartTime?: Date | null;
@@ -31,19 +32,22 @@ interface SkillPracticeHeaderProps {
   onStartPractice: () => void;
   onPausePractice: () => void;
   onResetPractice: () => void;
+  onRequestMastery?: () => void;
 }
 
 export function SkillPracticeHeader({
   skill,
   completedSteps,
   timeSpent,
+  cumulativeTimeSpent = 0,
   isTimerRunning,
   isIdle = false,
   sessionStartTime,
   onBack,
   onStartPractice,
   onPausePractice,
-  onResetPractice
+  onResetPractice,
+  onRequestMastery
 }: SkillPracticeHeaderProps) {
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -89,11 +93,9 @@ export function SkillPracticeHeader({
             {isIdle && <span className="text-xs">(Idle)</span>}
           </div>
           
-          {sessionStartTime && (
-            <div className="text-xs text-gray-500">
-              Session: {Math.floor((new Date().getTime() - sessionStartTime.getTime()) / (1000 * 60))}min
-            </div>
-          )}
+          <div className="text-xs text-gray-500">
+            Total time spent: {Math.floor(cumulativeTimeSpent)}m
+          </div>
           
           {isTimerRunning ? (
             <Button onClick={onPausePractice} variant="outline" className="border-orange-200 hover:bg-orange-50">
@@ -111,6 +113,17 @@ export function SkillPracticeHeader({
             <RotateCcw className="h-4 w-4 mr-2" />
             Reset
           </Button>
+          
+          {onRequestMastery && (
+            <Button 
+              onClick={onRequestMastery} 
+              variant="outline" 
+              className="border-blue-200 hover:bg-blue-50 text-blue-700"
+            >
+              <Award className="h-4 w-4 mr-2" />
+              Request Mastery
+            </Button>
+          )}
         </div>
       </div>
 
@@ -136,12 +149,7 @@ export function SkillPracticeHeader({
             <p className="text-gray-700 leading-relaxed">{skill.description}</p>
           </div>
           
-          <div className="text-right ml-6">
-            <div className="text-sm text-gray-500 mb-1">Est. Time</div>
-            <div className="text-lg font-semibold text-orange-600">
-              {skill.estimatedTimeMinutes}m
-            </div>
-          </div>
+          {/* Removed Est. Time display as requested */}
         </div>
         
         <SkillProgressBar

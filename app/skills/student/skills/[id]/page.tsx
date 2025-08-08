@@ -26,17 +26,10 @@ import {
 } from 'lucide-react';
 import { SkillPracticeHeader } from '@/components/ui/skill-practice-header';
 import { SkillStepCard } from '@/components/ui/skill-step-card';
-import { KnowledgeCheckModal } from '@/components/ui/knowledge-check-modal';
+// Removed KnowledgeCheckModal - quiz system removed
 import { VideoPracticePage } from '@/components/ui/video-practice-page';
-import { Skill, SkillStep, QuizQuestion, StudentProgress } from '@/lib/types';
+import { Skill, SkillStep, StudentProgress } from '@/lib/types';
 import { toast } from '@/hooks/use-toast';
-
-interface QuizState {
-  question: QuizQuestion | null;
-  selectedAnswer: number | null;
-  showResult: boolean;
-  result: any;
-}
 
 interface ReflectionData {
   content: string;
@@ -65,17 +58,10 @@ export default function SkillPractice() {
   const [autoSaveInterval, setAutoSaveInterval] = useState<NodeJS.Timeout | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [showQuiz, setShowQuiz] = useState(false);
   const [showReflection, setShowReflection] = useState(false);
-  const [quiz, setQuiz] = useState<QuizState>({
-    question: null,
-    selectedAnswer: null,
-    showResult: false,
-    result: null,
-  });
-  const [quizCount, setQuizCount] = useState(0);
-  const [hasCompletedQuiz, setHasCompletedQuiz] = useState(false);
-  const [wasTimerRunningBeforeQuiz, setWasTimerRunningBeforeQuiz] = useState(false);
+  const [reflectionAutoSaveInterval, setReflectionAutoSaveInterval] = useState<NodeJS.Timeout | null>(null);
+  const [practiceAttempts, setPracticeAttempts] = useState(0);
+  const [cumulativeTimeSpent, setCumulativeTimeSpent] = useState(0);
   const [reflection, setReflection] = useState<ReflectionData>({
     content: '',
     rating: 5,
@@ -174,17 +160,13 @@ export default function SkillPractice() {
       const data = await response.json();
       setSkill(data);
       
-      // Initialize with existing progress if available
-      if (data.progress?.[0]) {
-        const progress = data.progress[0];
-        setCompletedSteps(progress.completedSteps || []);
-        setTimeSpent(progress.timeSpentMinutes * 60);
-        
-        // If skill is already completed, show reflection option
-        if (progress.status === 'COMPLETED' || progress.status === 'MASTERED') {
-          setShowReflection(true);
-        }
-      }
+      // Always start with fresh state - no pre-selected steps
+      setCompletedSteps([]);
+      setShowReflection(false);
+      
+      // Load practice attempts and cumulative time from practice sessions
+      await loadPracticeHistory();
+      
     } catch (error) {
       console.error('Error fetching skill:', error);
       toast({
@@ -197,9 +179,27 @@ export default function SkillPractice() {
     }
   };
 
+  const loadPracticeHistory = async () => {
+    try {
+      const response = await fetch(`/api/practice-sessions?skillId=${skillId}`);
+      const data = await response.json();
+      
+      if (data.cumulativeTimeSpent) {
+        setCumulativeTimeSpent(data.cumulativeTimeSpent);
+        setTimeSpent(data.cumulativeTimeSpent * 60); // Convert to seconds for timer display
+      }
+      
+      if (data.totalAttempts) {
+        setPracticeAttempts(data.totalAttempts);
+      }
+    } catch (error) {
+      console.error('Error loading practice history:', error);
+    }
+  };
+
   const startPractice = () => {
-    // Reset timer to zero when starting practice
-    setTimeSpent(0);
+    // Continue from previous total time instead of resetting to zero
+    // setTimeSpent(0); // REMOVED - keep accumulated time from all previous sessions
     setIsTimerRunning(true);
     setSessionStartTime(new Date());
     setLastActiveTime(new Date());
@@ -276,14 +276,14 @@ export default function SkillPractice() {
     if (newCompletedSteps.length > completedSteps.length) {
       saveProgress('IN_PROGRESS');
       
-      // Check if all steps are now completed and automatically trigger quiz
-      if (skill && newCompletedSteps.length === skill.steps?.length && !hasCompletedQuiz && !showQuiz) {
+      // Check if all steps are now completed and automatically go to reflection
+      if (skill && newCompletedSteps.length === skill.steps?.length) {
         toast({
           title: 'All Steps Completed! 🎉',
-          description: 'Excellent work! Starting knowledge check quiz automatically in 2 seconds...',
+          description: 'Excellent work! Moving to reflection automatically in 2 seconds...',
         });
         
-        // Small delay to let the step completion UI update and allow user to see completion
+        // Small delay to let the step completion UI update
         setTimeout(() => {
           completeSkill();
         }, 2000);
@@ -321,52 +321,57 @@ export default function SkillPractice() {
     }
   };
 
+  const handleRequestMastery = async () => {
+    if (!skill) return;
+    
+    try {
+      // TODO: Implement API call to notify lecturer about mastery request
+      toast({
+        title: 'Mastery Request Submitted',
+        description: `Your mastery request for "${skill.name}" has been sent to your instructor for assessment.`,
+      });
+    } catch (error) {
+      console.error('Error requesting mastery:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to submit mastery request',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const completeSkill = async () => {
     if (!skill) return;
     
-    // Check if ALL steps are completed (not just 80%)
+    // Check if ALL steps are completed
     const allStepsCompleted = completedSteps.length === skill.steps?.length;
     if (!allStepsCompleted) {
       const remainingSteps = (skill.steps?.length || 0) - completedSteps.length;
       toast({
         title: 'Incomplete Practice',
-        description: `Please complete all ${remainingSteps} remaining steps before accessing the quiz.`,
+        description: `Please complete all ${remainingSteps} remaining steps before proceeding to reflection.`,
         variant: 'destructive',
       });
       return;
     }
 
-    // Check if quiz needs to be taken (and not currently in quiz)
-    if (!hasCompletedQuiz && !showQuiz) {
-      // Auto-stop timer when skill is completed
-      setIsTimerRunning(false);
-      
-      // Clear auto-save interval
-      if (autoSaveInterval) {
-        clearInterval(autoSaveInterval);
-        setAutoSaveInterval(null);
-      }
-      
-      toast({
-        title: 'Practice Completed!',
-        description: 'Timer stopped. Starting final quiz.',
-      });
-      
-      triggerFinalQuiz();
-      return;
+    // Stop timer when moving to reflection
+    setIsTimerRunning(false);
+    
+    // Clear auto-save interval
+    if (autoSaveInterval) {
+      clearInterval(autoSaveInterval);
+      setAutoSaveInterval(null);
     }
-
-    // Quiz completed or already showing quiz, proceed to reflection
-    if (hasCompletedQuiz) {
-      setIsTimerRunning(false);
-      await saveProgress('COMPLETED');
-      setShowReflection(true);
-      
-      toast({
-        title: 'Skill Completed!',
-        description: 'Please add a reflection note to complete your practice.',
-      });
-    }
+    
+    // Go directly to reflection (no quiz)
+    await saveProgress('COMPLETED');
+    setShowReflection(true);
+    
+    toast({
+      title: 'Practice Completed!',
+      description: 'Timer stopped. Please add your reflection to complete the session.',
+    });
   };
 
   const submitReflection = async () => {
@@ -400,6 +405,27 @@ export default function SkillPractice() {
 
     setSaving(true);
     try {
+      // Calculate practice attempt data
+      const practiceTimeMinutes = Math.floor(timeSpent / 60);
+      const sessionDuration = sessionStartTime 
+        ? Math.floor((new Date().getTime() - sessionStartTime.getTime()) / (1000 * 60))
+        : practiceTimeMinutes;
+      
+      // Complete practice session and submit reflection using existing system
+      await fetch('/api/practice-sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          skillId: skill?.id,
+          action: 'COMPLETE',
+          completedSteps,
+          clientTimeSpent: practiceTimeMinutes,
+          notes: `Practice completed with reflection. Time: ${practiceTimeMinutes}m`,
+          reflection: reflection,
+        }),
+      });
+
+      // Also save reflection separately for detailed reflection tracking
       await fetch('/api/reflections', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -409,12 +435,31 @@ export default function SkillPractice() {
         }),
       });
       
-      toast({
-        title: 'Reflection Submitted',
-        description: 'Your reflection has been saved successfully.',
+      // Reset skill to unselected state for next practice
+      setCompletedSteps([]);
+      setShowReflection(false);
+      setReflection({
+        content: '',
+        rating: 5,
+        whatWentWell: '',
+        whatToimprove: '',
+        futureGoals: '',
+        isPrivate: false,
       });
       
-      router.push('/student/dashboard');
+      // Keep accumulated total time but reset session
+      setIsTimerRunning(false);
+      setSessionStartTime(null);
+      
+      // Update local state with new attempt and cumulative time
+      setPracticeAttempts(prev => prev + 1);
+      setCumulativeTimeSpent(prev => prev + practiceTimeMinutes);
+      
+      toast({
+        title: 'Practice Session Completed! 🎉',
+        description: `Reflection saved. Time practiced: ${practiceTimeMinutes}m. Skill is ready for next practice.`,
+      });
+      
     } catch (error) {
       console.error('Error submitting reflection:', error);
       toast({
@@ -427,206 +472,76 @@ export default function SkillPractice() {
     }
   };
 
-  // Quiz Functions
-  const triggerFinalQuiz = async () => {
+  const skipReflection = async () => {
     if (!skill) return;
     
+    setSaving(true);
     try {
-      // Reset quiz state completely
-      setQuizCount(0);
-      setHasCompletedQuiz(false);
-      setShowQuiz(false);
+      // Calculate practice attempt data
+      const practiceTimeMinutes = Math.floor(timeSpent / 60);
+      const sessionDuration = sessionStartTime 
+        ? Math.floor((new Date().getTime() - sessionStartTime.getTime()) / (1000 * 60))
+        : practiceTimeMinutes;
       
-      // Small delay to ensure state is reset
-      setTimeout(async () => {
-        await triggerKnowledgeCheck(Math.max(...completedSteps));
-        
-        toast({
-          title: 'Knowledge Check Required',
-          description: 'Please answer 2 questions to complete this skill.',
-        });
-      }, 100);
-      
-    } catch (error) {
-      console.error('Error starting final quiz:', error);
-      // If quiz fails, proceed to reflection
-      setHasCompletedQuiz(true);
-      setTimeout(() => {
-        setIsTimerRunning(false);
-        saveProgress('COMPLETED');
-        setShowReflection(true);
-        toast({
-          title: 'Skill Completed!',
-          description: 'Please add a reflection note to complete your practice.',
-        });
-      }, 500);
-    }
-  };
-
-  const triggerKnowledgeCheck = async (stepNumber: number) => {
-    if (!skill) return;
-    
-    try {
-      // Store timer state and pause timer during quiz
-      const wasTimerRunning = isTimerRunning;
-      setWasTimerRunningBeforeQuiz(wasTimerRunning);
-      
-      if (wasTimerRunning) {
-        setIsTimerRunning(false);
-      }
-      
-      // Fetch random question for this skill
-      console.log(`Fetching quiz for skill ID: ${skill.id}, step: ${stepNumber}`);
-      const response = await fetch(`/api/skills/${skill.id}/quiz-simple?stepNumber=${stepNumber}`);
-      
-      console.log(`Quiz API response status: ${response.status}`);
-      
-      if (!response.ok) {
-        const errorData = await response.text();
-        console.error('Quiz API error:', response.status, errorData);
-        
-        toast({
-          title: 'Quiz Temporarily Unavailable',
-          description: 'Proceeding to reflection. Quiz will be available soon.',
-          variant: 'destructive',
-        });
-        
-        // Skip to reflection instead of failing silently
-        setHasCompletedQuiz(true);
-        setTimeout(() => {
-          setIsTimerRunning(false);
-          setShowReflection(true);
-          toast({
-            title: 'Ready for Reflection',
-            description: 'Please share your thoughts about this practice session.',
-          });
-        }, 1000);
-        
-        return;
-      }
-      
-      const question = await response.json();
-      
-      setQuiz({
-        question,
-        selectedAnswer: null,
-        showResult: false,
-        result: null,
-      });
-      
-      setShowQuiz(true);
-      
-      toast({
-        title: 'Knowledge Check!',
-        description: 'Answer this question to continue your practice.',
-      });
-      
-    } catch (error) {
-      console.error('Error fetching quiz question:', error);
-      toast({
-        title: 'Quiz Error',
-        description: 'Unable to load quiz question. Continuing practice...',
-        variant: 'destructive',
-      });
-      
-      // Resume timer if it was running
-      if (wasTimerRunningBeforeQuiz) {
-        setIsTimerRunning(true);
-      }
-    }
-  };
-
-  const handleQuizSubmit = async (questionId: number, selectedAnswer: number) => {
-    if (!skill) throw new Error('Skill not found');
-    
-    try {
-      const response = await fetch(`/api/skills/${skill.id}/quiz-simple`, {
+      // Save practice attempt data using existing practice-sessions endpoint
+      await fetch('/api/practice-sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          questionId,
-          selectedAnswer,
-          stepNumber: Math.max(...completedSteps),
-          responseTimeMs: Date.now() - (quiz.question ? 0 : Date.now()),
+          skillId: skill?.id,
+          action: 'COMPLETE',
+          completedSteps,
+          clientTimeSpent: practiceTimeMinutes,
+          notes: `Practice completed without reflection. Time: ${practiceTimeMinutes}m`,
+          reflection: null,
         }),
       });
       
-      if (!response.ok) {
-        throw new Error('Failed to submit answer');
-      }
+      // Reset skill to unselected state for next practice
+      setCompletedSteps([]);
+      setShowReflection(false);
+      setReflection({
+        content: '',
+        rating: 5,
+        whatWentWell: '',
+        whatToimprove: '',
+        futureGoals: '',
+        isPrivate: false,
+      });
       
-      const result = await response.json();
-      return result;
+      // Keep accumulated total time but reset session
+      setIsTimerRunning(false);
+      setSessionStartTime(null);
+      
+      // Update local state with new attempt and cumulative time
+      setPracticeAttempts(prev => prev + 1);
+      setCumulativeTimeSpent(prev => prev + practiceTimeMinutes);
+      
+      toast({
+        title: 'Practice Session Completed! 🎉',
+        description: `Practice logged. Time practiced: ${practiceTimeMinutes}m. Skill ready for next practice.`,
+      });
       
     } catch (error) {
-      console.error('Error submitting quiz answer:', error);
-      throw error;
+      console.error('Error saving practice attempt:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to save practice attempt',
+        variant: 'destructive',
+      });
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleQuizComplete = () => {
-    const newQuizCount = quizCount + 1;
-    console.log(`Quiz complete: Question ${newQuizCount}/2 answered correctly`);
-    
-    setQuizCount(newQuizCount);
-    
-    if (newQuizCount >= 2) {
-      // Completed both questions, proceed to reflection
-      console.log('Quiz fully completed, proceeding to reflection');
-      setHasCompletedQuiz(true);
-      setShowQuiz(false);
-      
-      toast({
-        title: 'Quiz Completed! 🎉',
-        description: 'Excellent! Opening reflection form automatically...',
-      });
-      
-      // Immediate transition to reflection
-      setTimeout(async () => {
-        console.log('Opening reflection modal');
-        setIsTimerRunning(false);
-        
-        // Complete the session on server
-        try {
-          await fetch('/api/practice-sessions', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              skillId,
-              action: 'COMPLETE',
-              completedSteps,
-              clientTimeSpent: Math.floor(timeSpent / 60)
-            })
-          });
-        } catch (error) {
-          console.error('Error completing session:', error);
-        }
-        
-        setShowReflection(true);
-        toast({
-          title: 'Ready for Reflection',
-          description: 'Share your thoughts about this practice session.',
-        });
-      }, 500); // Reduced delay for faster transition
-    } else {
-      // Show next question
-      console.log(`Proceeding to question ${newQuizCount + 1}/2`);
-      setShowQuiz(false);
-      
-      toast({
-        title: `Question ${newQuizCount}/2 completed! ✅`,
-        description: 'Great! Here\'s your next question...',
-      });
-      
-      // Trigger next question
-      setTimeout(() => triggerKnowledgeCheck(Math.max(...completedSteps)), 800);
+  const saveReflectionDraft = () => {
+    // Simple local storage draft save for reflection content
+    if (reflection.content.trim()) {
+      localStorage.setItem(`reflection-draft-${skillId}`, reflection.content);
     }
   };
 
-  const handleQuizClose = () => {
-    // This should not close the modal until answered correctly
-    // The modal handles this internally
-  };
+  // Quiz system removed - direct flow from steps to reflection
 
   if (loading) {
     return (
@@ -693,7 +608,7 @@ export default function SkillPractice() {
           <CardContent>
             <div className="space-y-4">
               <p className="text-muted-foreground text-sm">
-                Practice each step individually with guided instructions and periodic knowledge checks.
+                Practice each step individually with guided instructions and detailed reflection.
               </p>
               
               <div className="space-y-2">
@@ -703,7 +618,7 @@ export default function SkillPractice() {
                 </div>
                 <div className="flex items-center text-sm text-gray-700">
                   <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
-                  Knowledge check quizzes
+                  Structured reflection process
                 </div>
                 <div className="flex items-center text-sm text-gray-700">
                   <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
@@ -833,10 +748,7 @@ export default function SkillPractice() {
                   <span className="text-gray-600">Steps</span>
                   <span className="text-gray-900">{skill?.steps?.length || 0}</span>
                 </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">Est. Time</span>
-                  <span className="text-gray-900">{skill?.estimatedTimeMinutes}m</span>
-                </div>
+                {/* Removed Est. Time display as requested */}
                 {skill?.isCritical && (
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-gray-600">Type</span>
@@ -873,6 +785,7 @@ export default function SkillPractice() {
         skill={skill}
         completedSteps={completedSteps}
         timeSpent={timeSpent}
+        cumulativeTimeSpent={cumulativeTimeSpent}
         isTimerRunning={isTimerRunning}
         isIdle={isIdle}
         sessionStartTime={sessionStartTime}
@@ -880,6 +793,7 @@ export default function SkillPractice() {
         onStartPractice={startPractice}
         onPausePractice={pausePractice}
         onResetPractice={resetPractice}
+        onRequestMastery={handleRequestMastery}
       />
 
       {/* Main Content */}
@@ -936,16 +850,14 @@ export default function SkillPractice() {
                       <div>
                         <div className="font-medium">Excellent work!</div>
                         <div className="text-sm text-green-700">
-                          {hasCompletedQuiz 
-                            ? "You've completed everything. Ready to finish this skill?"
-                            : "You've completed the steps. Click to take the final quiz."}
+                          You've completed all steps. Add your reflection to finish this practice session.
                         </div>
                       </div>
                       <Button 
                         onClick={completeSkill} 
                         className="bg-green-600 hover:bg-green-700 ml-4"
                       >
-                        {hasCompletedQuiz ? "Complete Skill" : "Take Final Quiz"}
+                        Start Reflection
                       </Button>
                     </div>
                   </AlertDescription>
@@ -969,30 +881,30 @@ export default function SkillPractice() {
               <div className="space-y-4">
                 <div className="text-center">
                   <div className="text-3xl font-bold text-orange-600">
-                    {Math.round(progressPercentage)}%
+                    {practiceAttempts}
                   </div>
-                  <div className="text-sm text-gray-600">Complete</div>
+                  <div className="text-sm text-gray-600">Practice Attempts</div>
                 </div>
                 
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span>Steps completed</span>
-                    <span className="font-medium">{completedSteps.length}</span>
+                    <span>Practice attempts</span>
+                    <span className="font-medium">{practiceAttempts}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span>Steps remaining</span>
-                    <span className="font-medium">{(skill.steps?.length || 0) - completedSteps.length}</span>
+                    <span>Total time practiced</span>
+                    <span className="font-medium">{Math.floor(cumulativeTimeSpent)}m</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span>Time practiced</span>
+                    <span>Current session</span>
                     <span className="font-medium">{Math.floor(timeSpent / 60)}m</span>
                   </div>
                 </div>
                 
-                {completedSteps.length > 0 && (
+                {cumulativeTimeSpent > 0 && (
                   <div className="pt-2 border-t">
                     <div className="text-xs text-gray-500">
-                      Last completed: Step {Math.max(...completedSteps)}
+                      Average session: {practiceAttempts > 0 ? Math.round(cumulativeTimeSpent / practiceAttempts) : 0}m
                     </div>
                   </div>
                 )}
@@ -1007,10 +919,16 @@ export default function SkillPractice() {
             </CardHeader>
             <CardContent>
               <Tabs defaultValue="objectives" className="w-full">
-                <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 gap-1 h-auto text-xs">
-                  <TabsTrigger value="objectives" className="text-xs px-2 py-1.5 whitespace-nowrap">Objectives</TabsTrigger>
-                  <TabsTrigger value="indications" className="text-xs px-2 py-1.5 whitespace-nowrap">Indications</TabsTrigger>
-                  <TabsTrigger value="equipment" className="text-xs px-2 py-1.5 whitespace-nowrap">Equipment</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-3 gap-0 h-auto">
+                  <TabsTrigger value="objectives" className="text-xs px-1 py-2 text-center min-w-0">
+                    <span className="truncate">Objectives</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="indications" className="text-xs px-1 py-2 text-center min-w-0">
+                    <span className="truncate">Indications</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="equipment" className="text-xs px-1 py-2 text-center min-w-0">
+                    <span className="truncate">Equipment</span>
+                  </TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="objectives" className="mt-4">
@@ -1053,18 +971,7 @@ export default function SkillPractice() {
         </div>
       </div>
 
-      {/* Knowledge Check Modal */}
-      <KnowledgeCheckModal
-        isOpen={showQuiz}
-        onClose={handleQuizClose}
-        question={quiz.question}
-        skillName={skill?.name || ''}
-        stepNumber={Math.max(...completedSteps, 0)}
-        questionCount={quizCount + 1}
-        totalQuestions={2}
-        onAnswerSubmit={handleQuizSubmit}
-        onCorrectAnswer={handleQuizComplete}
-      />
+      {/* Quiz system removed - direct flow to reflection */}
 
       {/* Reflection Modal */}
       {showReflection && (
@@ -1154,9 +1061,10 @@ export default function SkillPractice() {
                 <div className="flex justify-end space-x-2 pt-4">
                   <Button 
                     variant="outline" 
-                    onClick={() => setShowReflection(false)}
+                    onClick={skipReflection}
+                    disabled={saving}
                   >
-                    Skip for Now
+                    {saving ? 'Saving...' : 'Skip Reflection'}
                   </Button>
                   <Button 
                     onClick={submitReflection}

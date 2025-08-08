@@ -18,6 +18,100 @@ export interface EnhancedSkillStep {
 // Enhanced skill steps for critical paramedic procedures
 export const enhancedCriticalSkillSteps: { [skillId: string]: EnhancedSkillStep[] } = {
   
+  // PREDICTION OF DIFFICULT BAG VALVE MASK VENTILATIONS (BOOTS)
+  'prediction-of-difficult-bag-valve-mask-ventilations': [
+    {
+      id: 'bvm_pred_1',
+      stepNumber: 1,
+      title: 'B – Beard and mask seal assessment',
+      description: 'Examine patient for factors that may compromise mask seal effectiveness',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Assess for thick beard that may prevent proper mask seal',
+        'Check for facial jewelry that could interfere with mask placement',
+        'Evaluate facial trauma, burns, or anatomical deformities',
+        'Identify vomit, blood, or secretions around mouth/nose',
+        'Consider using beard-compatible masks or alternative airways'
+      ],
+      safetyNotes: [
+        'Poor mask seal can lead to inadequate ventilation',
+        'Have suction ready for secretions',
+        'Consider advanced airway if seal cannot be achieved'
+      ]
+    },
+    {
+      id: 'bvm_pred_2',
+      stepNumber: 2,
+      title: 'O – Obesity assessment',
+      description: 'Evaluate obesity-related factors that may complicate BVM ventilation',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Assess patient\'s body mass index and body habitus',
+        'Evaluate chest wall compliance and expansion ability',
+        'Check ability to extend neck and position head properly',
+        'Identify redundant pharyngeal and neck soft tissue',
+        'Consider need for two-person BVM technique'
+      ],
+      safetyNotes: [
+        'Obese patients may require higher ventilation pressures',
+        'Position patient with head elevated if possible',
+        'Be prepared for difficult airway management'
+      ]
+    },
+    {
+      id: 'bvm_pred_3',
+      stepNumber: 3,
+      title: 'O – Older age assessment (>55 years)',
+      description: 'Assess age-related factors affecting ventilation ease',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Evaluate neck range of motion and flexibility',
+        'Assess temporomandibular joint mobility',
+        'Check for decreased soft tissue elasticity',
+        'Identify dental issues (loose teeth, dentures)',
+        'Consider arthritis or cervical spine limitations'
+      ]
+    },
+    {
+      id: 'bvm_pred_4',
+      stepNumber: 4,
+      title: 'T – Toothless/dental issues',
+      description: 'Assess dental status and its impact on mask ventilation',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Check for missing teeth, especially front teeth',
+        'Assess denture status (loose, ill-fitting, absent)',
+        'Evaluate facial structure changes from tooth loss',
+        'Consider leaving well-fitting dentures in place',
+        'Plan for potential mask seal difficulties'
+      ]
+    },
+    {
+      id: 'bvm_pred_5',
+      stepNumber: 5,
+      title: 'S – Sleep apnea and airway obstruction',
+      description: 'Identify sleep apnea history and upper airway obstruction risk',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Ask about sleep apnea history and CPAP use',
+        'Assess for signs of chronic upper airway obstruction',
+        'Evaluate tongue size and pharyngeal space',
+        'Check for enlarged tonsils or adenoids',
+        'Consider high risk for difficult ventilation'
+      ]
+    }
+  ],
+  
   // ADULT CPR WITH MANUAL DEFIBRILLATOR - Updated 2024 Guidelines
   'adult-cpr-defibrillator': [
     {
@@ -726,6 +820,34 @@ export const enhancedCriticalSkillSteps: { [skillId: string]: EnhancedSkillStep[
 
 // Skill metadata with enhanced information
 export const criticalSkillsMetadata = {
+  'prediction-of-difficult-bag-valve-mask-ventilations': {
+    name: 'Prediction of Difficult Bag Valve Mask Ventilations',
+    category: 'airway',
+    difficultyLevel: 'ADVANCED',
+    timeEstimateMinutes: 8,
+    isCritical: true,
+    objectives: [
+      'Systematically assess patient using BOOTS criteria',
+      'Identify factors that predict difficult bag-valve-mask ventilation',
+      'Plan appropriate airway management strategy',
+      'Prepare backup airway devices as indicated'
+    ],
+    indications: [
+      'Unconscious patient requiring ventilatory support',
+      'Pre-intubation assessment',
+      'Emergency airway management planning'
+    ],
+    contraindications: [
+      'Patient able to maintain airway independently',
+      'Cervical spine injury requiring specialized positioning'
+    ],
+    equipment: [
+      'Bag-valve-mask device',
+      'Oxygen source',
+      'Suction device',
+      'Backup airway devices'
+    ]
+  },
   'adult-cpr-defibrillator': {
     name: 'Adult CPR with Manual Defibrillator',
     category: 'bls',
