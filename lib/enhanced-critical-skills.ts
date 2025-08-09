@@ -3441,6 +3441,187 @@ export const enhancedCriticalSkillSteps: { [skillId: string]: EnhancedSkillStep[
         'Transport to appropriate facility with cardiac catheterization capabilities'
       ]
     }
+  ],
+
+  // 15. SEIZURE MANAGEMENT AND NEUROLOGICAL EMERGENCIES - Comprehensive neurological care
+  'seizure-neurological-emergencies': [
+    {
+      id: 'seizure-step-1',
+      stepNumber: 1,
+      title: 'Scene Safety and Seizure Protection',
+      description: 'Ensure safety and protect patient during active seizure activity',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Ensure scene safety and move hazardous objects away from patient',
+        'Do NOT restrain patient or force objects into mouth during seizure',
+        'Position patient on left side if possible to maintain airway',
+        'Protect head from injury with soft object (pillow, jacket)',
+        'Note time of seizure onset and duration for documentation',
+        'Clear airway only after seizure activity stops',
+        'Observe and document seizure characteristics: focal vs generalized, tonic/clonic'
+      ],
+      contraindications: [
+        'Never put objects in mouth during active seizure',
+        'Do not restrain patient movements during seizure',
+        'Avoid medications during active seizure unless status epilepticus'
+      ],
+      safetyNotes: [
+        'Patient safety is priority during seizure - protect from injury',
+        'Most seizures are self-limiting and stop within 2-5 minutes'
+      ],
+      equipmentNeeded: [
+        'Soft materials for head protection',
+        'Suction equipment',
+        'Oxygen delivery devices',
+        'Timing device'
+      ]
+    },
+    {
+      id: 'seizure-step-2',
+      stepNumber: 2,
+      title: 'Post-ictal Assessment and Airway Management',
+      description: 'Assess patient condition after seizure and ensure airway patency',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Check responsiveness and neurological status post-seizure',
+        'Assess airway patency and clear secretions if present',
+        'Position patient in recovery position (left lateral) if unconscious',
+        'Check for tongue bite, oral trauma, or aspiration',
+        'Evaluate breathing rate, depth, and oxygen saturation',
+        'Apply supplemental oxygen if SpO2 <94%',
+        'Assess for postictal confusion, weakness, or speech difficulties'
+      ],
+      safetyNotes: [
+        'Postictal period may last minutes to hours with altered mental status',
+        'Patient may be combative or confused during postictal phase'
+      ]
+    },
+    {
+      id: 'seizure-step-3',
+      stepNumber: 3,
+      title: 'Neurological Assessment and Glasgow Coma Scale',
+      description: 'Perform comprehensive neurological evaluation and document findings',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Assess level of consciousness using AVPU or Glasgow Coma Scale',
+        'Check pupil size, equality, and reaction to light (PEARRL)',
+        'Test motor function: grip strength, arm drift, leg strength',
+        'Evaluate speech: clarity, content, comprehension',
+        'Look for focal neurological deficits suggesting stroke',
+        'Check blood glucose level - hypoglycemia can cause seizures',
+        'Document baseline neurological status for hospital communication'
+      ],
+      equipmentNeeded: [
+        'Penlight for pupil examination',
+        'Blood glucose meter',
+        'Neurological assessment tools',
+        'Glasgow Coma Scale reference'
+      ]
+    },
+    {
+      id: 'seizure-step-4',
+      stepNumber: 4,
+      title: 'History Taking and Precipitating Factors',
+      description: 'Obtain detailed seizure and medical history to guide treatment',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Ask about seizure history: known epilepsy, previous seizures, medications',
+        'Inquire about recent medication changes or non-compliance',
+        'Assess for triggers: alcohol withdrawal, drug use, sleep deprivation',
+        'Check for signs of infection: fever, neck stiffness, altered mental status',
+        'Ask about recent head trauma, headaches, or neurological symptoms',
+        'Obtain medication list: anticonvulsants, compliance, recent changes',
+        'Document witness account of seizure onset and characteristics'
+      ]
+    },
+    {
+      id: 'seizure-step-5',
+      stepNumber: 5,
+      title: 'Status Epilepticus Recognition and Treatment',
+      description: 'Identify and treat prolonged seizures requiring immediate intervention',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Status epilepticus: continuous seizure >5 minutes OR recurrent seizures without recovery',
+        'Establish IV access immediately for medication administration',
+        'FIRST-LINE: Lorazepam 0.1 mg/kg IV (max 4mg) OR Midazolam 10mg IM',
+        'SECOND-LINE: Fosphenytoin 20 mg PE/kg IV if seizures continue',
+        'Consider thiamine 100mg IV if alcohol use suspected',
+        'Dextrose 25g IV (D50W) if hypoglycemic <60 mg/dL',
+        'Prepare for intubation if prolonged seizures or respiratory compromise'
+      ],
+      contraindications: [
+        'Avoid phenytoin in elderly or cardiac patients (use fosphenytoin)',
+        'Do not give dextrose without thiamine in suspected alcoholics'
+      ],
+      safetyNotes: [
+        'Status epilepticus is a medical emergency requiring immediate treatment',
+        'Prolonged seizures can cause permanent neurological damage'
+      ]
+    },
+    {
+      id: 'seizure-step-6',
+      stepNumber: 6,
+      title: 'Vital Signs Monitoring and Support',
+      description: 'Monitor physiological parameters and provide supportive care',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Monitor vital signs every 5 minutes: BP, pulse, respirations, temperature',
+        'Assess oxygen saturation continuously and titrate oxygen therapy',
+        'Check blood pressure for hypertension (common post-seizure)',
+        'Monitor for hyperthermia - cooling measures if temperature >38.5°C',
+        'Establish IV access for fluid support and medication administration',
+        'Consider cardiac monitoring for rhythm abnormalities',
+        'Document neurological improvement or deterioration'
+      ]
+    },
+    {
+      id: 'seizure-step-7',
+      stepNumber: 7,
+      title: 'Differential Diagnosis Consideration',
+      description: 'Consider alternative diagnoses and underlying causes',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Metabolic causes: hypoglycemia, hyponatremia, hypocalcemia, uremia',
+        'Toxic causes: alcohol withdrawal, drug overdose, carbon monoxide',
+        'Infectious causes: meningitis, encephalitis, brain abscess',
+        'Vascular causes: stroke, intracerebral hemorrhage, hypertensive emergency',
+        'Structural causes: brain tumor, head trauma, increased intracranial pressure',
+        'Consider pseudoseizures (non-epileptic events) in appropriate patients',
+        'Evaluate for precipitating factors: medication non-compliance, illness'
+      ]
+    },
+    {
+      id: 'seizure-step-8',
+      stepNumber: 8,
+      title: 'Transport and Communication',
+      description: 'Prepare for transport and communicate with receiving facility',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Transport to appropriate facility - consider neurology capabilities',
+        'Provide detailed report: seizure type, duration, medications given',
+        'Continue neurological monitoring during transport',
+        'Be prepared for recurrent seizures during transport',
+        'Document medication administration times and patient response',
+        'Consider air medical transport for status epilepticus or unstable patient',
+        'Prepare family/caregivers for patient condition and hospital course'
+      ]
+    }
   ]
 };
 
@@ -4224,6 +4405,49 @@ export const criticalSkillsMetadata = {
       'Capnography and pulse oximetry equipment',
       'Emergency drugs (epinephrine, amiodarone, atropine)',
       'Suction equipment and airway adjuncts'
+    ]
+  },
+
+  'seizure-neurological-emergencies': {
+    name: 'Seizure Management and Neurological Emergencies',
+    category: 'medical',
+    difficultyLevel: 'ADVANCED' as const,
+    timeEstimateMinutes: 20,
+    isCritical: true,
+    objectives: [
+      'Ensure scene safety and protect patient during active seizure activity',
+      'Perform post-ictal assessment and maintain airway patency',
+      'Conduct comprehensive neurological evaluation using standardized tools',
+      'Obtain relevant history and identify precipitating factors',
+      'Recognize and treat status epilepticus with appropriate medications',
+      'Monitor physiological parameters and provide supportive care',
+      'Consider differential diagnoses and coordinate appropriate transport'
+    ],
+    indications: [
+      'Active generalized tonic-clonic seizures',
+      'Status epilepticus (seizure >5 minutes)',
+      'Post-ictal state with altered mental status',
+      'First-time seizure requiring evaluation',
+      'Breakthrough seizures in known epileptic patients',
+      'Seizure secondary to metabolic or toxic causes',
+      'Febrile seizures in pediatric patients',
+      'Pseudoseizures requiring differentiation'
+    ],
+    contraindications: [
+      'Do not restrain patient during active seizure',
+      'Avoid placing objects in mouth during seizure',
+      'Do not administer oral medications during active seizure',
+      'Avoid phenytoin in patients with cardiac conduction abnormalities'
+    ],
+    equipment: [
+      'Soft materials for head protection during seizure',
+      'Suction equipment and airway management tools',
+      'Oxygen delivery devices and pulse oximetry',
+      'IV/IO access supplies for medication administration',
+      'Anticonvulsant medications (lorazepam, midazolam, fosphenytoin)',
+      'Blood glucose testing equipment',
+      'Neurological assessment tools and GCS reference',
+      'Cardiac monitoring equipment'
     ]
   }
 };
