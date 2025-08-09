@@ -372,6 +372,213 @@ function findMatchingSkillSteps(skillName: string): any[] {
   return [];
 }
 
+// Comprehensive skill matching function to find enhanced critical skills
+function findMatchingCriticalSkill(extractedSkillName: string): string | undefined {
+  const lowerName = extractedSkillName.toLowerCase().trim();
+  
+  // Direct mapping for known skill names
+  const directMappings: { [key: string]: string } = {
+    // Exact matches
+    'prediction of difficult bag valve mask ventilations': 'difficult-bag-valve-mask-prediction',
+    'adult cpr with manual defibrillator': 'adult-cpr-defibrillator',
+    'intravenous cannulation': 'intravenous-cannulation',
+    'haemo-gluco-test (hgt)': 'blood-glucose-testing',
+    'blood glucose testing': 'blood-glucose-testing',
+    'spinal immobilization': 'spinal-immobilization-c-spine',
+    'hemorrhage control and shock management': 'hemorrhage-control-shock-management',
+    'pediatric assessment and emergency care': 'pediatric-assessment-emergency-care',
+    'medication administration and dosage calculation': 'medication-administration-dosage-calculation',
+    'obstetric emergency and childbirth': 'obstetric-emergency-childbirth',
+    'respiratory distress management': 'respiratory-distress-management',
+    'cardiac arrest and resuscitation': 'cardiac-arrest-resuscitation-acls',
+    'seizure management and neurological emergencies': 'seizure-management-neurological-emergencies',
+    'diabetic emergency management': 'diabetic-emergency-management',
+    'anaphylaxis and allergic reaction management': 'anaphylaxis-allergic-reaction-management',
+    'stroke assessment and management': 'stroke-assessment-management',
+    'psychiatric emergency management': 'psychiatric-emergency-management',
+    'fracture and orthopedic injury management': 'fracture-orthopedic-management',
+    'poisoning and overdose management': 'poisoning-overdose-management',
+    'burns and thermal injury management': 'burns-thermal-injury-management',
+    'chest pain and acute coronary syndrome': 'chest-pain-acs-management',
+    '12-lead ecg lead placement and acquisition': '12-lead-ecg-placement',
+    'continuous positive airway pressure (cpap)': 'cpap-ventilation',
+    'basic airway management': 'basic-airway-management',
+    'advanced airway management': 'advanced-airway-management',
+    'trauma assessment': 'trauma-assessment',
+    'needle thoracentesis': 'needle-thoracentesis',
+    'intravenous fluid therapy': 'intravenous-fluid-therapy',
+    'supraglottic airway management': 'supraglottic-airway-management',
+    'femoral vein cannulation': 'femoral-vein-cannulation',
+    'double lumen airway insertion': 'double-lumen-airway-insertion',
+    'adult endotracheal intubation (ett)': 'endotracheal-intubation',
+    'surgical cricothyroidotomy': 'surgical-cricothyroidotomy',
+    'synchronized cardioversion': 'synchronized-cardioversion',
+    'pediatric cpr with manual defibrillator': 'pediatric-cpr-defibrillator',
+    'infant cpr with manual defibrillator': 'infant-cpr-defibrillator',
+    'neonatal resuscitation': 'neonatal-resuscitation',
+    'external jugular vein cannulation': 'external-jugular-vein-cannulation',
+    'use of transport ventilator': 'use-transport-ventilator',
+    'umbilical vein cannulation': 'umbilical-vein-cannulation',
+    'c-spine clearance': 'c-spine-clearance',
+    'ez-io distal tibia insertion': 'ez-io-distal-tibia-insertion',
+    'prediction of difficult direct endotracheal intubation': 'prediction-difficult-intubation',
+    'management of prolapsed cord': 'management-prolapsed-cord',
+    'carotid sinus massage': 'carotid-sinus-massage',
+    'laryngeal tube airway': 'laryngeal-tube-airway',
+    'normal childbirth - pre-delivery and delivery': 'normal-childbirth-delivery',
+    'recovery position': 'recovery-position',
+    'upper airway obstruction with equipment': 'upper-airway-obstruction-equipment',
+    'immobilization of an injury': 'immobilization-injury',
+    'disinfection of minor wounds': 'disinfection-minor-wounds',
+    'hand washing': 'hand-washing',
+    'orogastric and nasogastric tube insertion': 'orogastric-nasogastric-insertion',
+    'bag valve mask reservoir ventilation': 'bag-valve-mask-reservoir-ventilation',
+    'patient handover': 'patient-handover',
+    'drug administration': 'drug-administration',
+    'troubleshooting ventilator alarms': 'troubleshooting-ventilator-alarms',
+    '3 lead ecg interpretation': '3-lead-ecg-interpretation',
+    'application of bandage/triangular bandage': 'bandage-triangular-application',
+    'nebulization of medication': 'nebulization-medication',
+    
+    // Partial matches and variations
+    'difficult bag valve mask': 'difficult-bag-valve-mask-prediction',
+    'bag valve mask ventilation': 'difficult-bag-valve-mask-prediction',
+    'adult cpr': 'adult-cpr-defibrillator',
+    'cpr with defibrillator': 'adult-cpr-defibrillator',
+    'iv cannulation': 'intravenous-cannulation',
+    'intravenous access': 'intravenous-cannulation',
+    'blood glucose': 'blood-glucose-testing',
+    'hgt': 'blood-glucose-testing',
+    'glucose testing': 'blood-glucose-testing',
+    'spinal immobilisation': 'spinal-immobilization-c-spine',
+    'c-spine immobilization': 'spinal-immobilization-c-spine',
+    'hemorrhage control': 'hemorrhage-control-shock-management',
+    'shock management': 'hemorrhage-control-shock-management',
+    'pediatric care': 'pediatric-assessment-emergency-care',
+    'pediatric emergency': 'pediatric-assessment-emergency-care',
+    'medication administration': 'medication-administration-dosage-calculation',
+    'drug calculation': 'medication-administration-dosage-calculation',
+    'obstetric care': 'obstetric-emergency-childbirth',
+    'childbirth': 'obstetric-emergency-childbirth',
+    'respiratory distress': 'respiratory-distress-management',
+    'cardiac arrest': 'cardiac-arrest-resuscitation-acls',
+    'resuscitation': 'cardiac-arrest-resuscitation-acls',
+    'seizure management': 'seizure-management-neurological-emergencies',
+    'neurological emergency': 'seizure-management-neurological-emergencies',
+    'diabetes emergency': 'diabetic-emergency-management',
+    'diabetic care': 'diabetic-emergency-management',
+    'anaphylaxis': 'anaphylaxis-allergic-reaction-management',
+    'allergic reaction': 'anaphylaxis-allergic-reaction-management',
+    'stroke assessment': 'stroke-assessment-management',
+    'stroke care': 'stroke-assessment-management',
+    'psychiatric emergency': 'psychiatric-emergency-management',
+    'mental health': 'psychiatric-emergency-management',
+    'fracture management': 'fracture-orthopedic-management',
+    'orthopedic injury': 'fracture-orthopedic-management',
+    'poisoning management': 'poisoning-overdose-management',
+    'overdose': 'poisoning-overdose-management',
+    'burn management': 'burns-thermal-injury-management',
+    'thermal injury': 'burns-thermal-injury-management',
+    'chest pain': 'chest-pain-acs-management',
+    'acute coronary syndrome': 'chest-pain-acs-management',
+    '12 lead ecg': '12-lead-ecg-placement',
+    'ecg placement': '12-lead-ecg-placement',
+    'cpap': 'cpap-ventilation',
+    'positive airway pressure': 'cpap-ventilation',
+    'basic airway': 'basic-airway-management',
+    'airway management': 'basic-airway-management',
+    'advanced airway': 'advanced-airway-management',
+    'trauma assessment': 'trauma-assessment',
+    'thoracentesis': 'needle-thoracentesis',
+    'needle decompression': 'needle-thoracentesis',
+    'iv fluid therapy': 'intravenous-fluid-therapy',
+    'fluid resuscitation': 'intravenous-fluid-therapy',
+    'supraglottic airway': 'supraglottic-airway-management',
+    'lma': 'supraglottic-airway-management',
+    'femoral access': 'femoral-vein-cannulation',
+    'femoral cannulation': 'femoral-vein-cannulation',
+    'double lumen': 'double-lumen-airway-insertion',
+    'combitube': 'double-lumen-airway-insertion',
+    'endotracheal intubation': 'endotracheal-intubation',
+    'intubation': 'endotracheal-intubation',
+    'cricothyroidotomy': 'surgical-cricothyroidotomy',
+    'surgical airway': 'surgical-cricothyroidotomy',
+    'cardioversion': 'synchronized-cardioversion',
+    'electrical cardioversion': 'synchronized-cardioversion',
+    'pediatric cpr': 'pediatric-cpr-defibrillator',
+    'pediatric resuscitation': 'pediatric-cpr-defibrillator',
+    'infant cpr': 'infant-cpr-defibrillator',
+    'infant resuscitation': 'infant-cpr-defibrillator',
+    'neonatal care': 'neonatal-resuscitation',
+    'newborn resuscitation': 'neonatal-resuscitation',
+    'external jugular': 'external-jugular-vein-cannulation',
+    'ejvc': 'external-jugular-vein-cannulation',
+    'transport ventilator': 'use-transport-ventilator',
+    'mechanical ventilation': 'use-transport-ventilator',
+    'umbilical access': 'umbilical-vein-cannulation',
+    'umbilical cannulation': 'umbilical-vein-cannulation',
+    'cervical spine clearance': 'c-spine-clearance',
+    'c spine clearance': 'c-spine-clearance',
+    'intraosseous': 'ez-io-distal-tibia-insertion',
+    'io access': 'ez-io-distal-tibia-insertion',
+    'difficult intubation': 'prediction-difficult-intubation',
+    'intubation assessment': 'prediction-difficult-intubation',
+    'prolapsed cord': 'management-prolapsed-cord',
+    'cord prolapse': 'management-prolapsed-cord',
+    'carotid massage': 'carotid-sinus-massage',
+    'vagal maneuver': 'carotid-sinus-massage',
+    'laryngeal tube': 'laryngeal-tube-airway',
+    'lta': 'laryngeal-tube-airway',
+    'normal delivery': 'normal-childbirth-delivery',
+    'vaginal delivery': 'normal-childbirth-delivery',
+    'lateral position': 'recovery-position',
+    'recovery positioning': 'recovery-position',
+    'airway obstruction': 'upper-airway-obstruction-equipment',
+    'choking': 'upper-airway-obstruction-equipment',
+    'injury immobilization': 'immobilization-injury',
+    'splinting': 'immobilization-injury',
+    'wound disinfection': 'disinfection-minor-wounds',
+    'wound cleaning': 'disinfection-minor-wounds',
+    'hand hygiene': 'hand-washing',
+    'infection control': 'hand-washing',
+    'nasogastric tube': 'orogastric-nasogastric-insertion',
+    'ng tube': 'orogastric-nasogastric-insertion',
+    'orogastric tube': 'orogastric-nasogastric-insertion',
+    'bag valve mask': 'bag-valve-mask-reservoir-ventilation',
+    'bvm': 'bag-valve-mask-reservoir-ventilation',
+    'handover': 'patient-handover',
+    'patient transfer': 'patient-handover',
+    'drug admin': 'drug-administration',
+    'medication admin': 'drug-administration',
+    'ventilator alarm': 'troubleshooting-ventilator-alarms',
+    'alarm troubleshooting': 'troubleshooting-ventilator-alarms',
+    '3 lead ecg': '3-lead-ecg-interpretation',
+    'rhythm interpretation': '3-lead-ecg-interpretation',
+    'bandage application': 'bandage-triangular-application',
+    'triangular bandage': 'bandage-triangular-application',
+    'nebulizer': 'nebulization-medication',
+    'bronchodilator': 'nebulization-medication',
+  };
+
+  // Check direct mappings first
+  if (directMappings[lowerName]) {
+    return directMappings[lowerName];
+  }
+
+  // Check for partial matches in the direct mapping keys
+  for (const [key, value] of Object.entries(directMappings)) {
+    if (key.includes(lowerName) || lowerName.includes(key)) {
+      return value;
+    }
+  }
+
+  // Fallback to original matching logic for any unmapped skills
+  return Object.keys(criticalSkillsMetadata).find(id => 
+    lowerName.includes(criticalSkillsMetadata[id].name.toLowerCase().split(' ')[0]) ||
+    criticalSkillsMetadata[id].name.toLowerCase().includes(lowerName.split(' ')[0])
+  );
+}
+
 // Process all skills data with extracted steps
 const uniqueExtractedSkills = removeDuplicates(extractedSkills);
 
@@ -379,11 +586,8 @@ export const allProcessedSkills: Skill[] = uniqueExtractedSkills.map((extractedS
   const skillId = `skill-${(index + 1).toString().padStart(3, '0')}`;
   const categoryId = mapSkillToCategory(extractedSkill.name);
   
-  // Check if this is a critical skill with enhanced data
-  const criticalSkillId = Object.keys(criticalSkillsMetadata).find(id => 
-    extractedSkill.name.toLowerCase().includes(criticalSkillsMetadata[id].name.toLowerCase().split(' ')[0]) ||
-    criticalSkillsMetadata[id].name.toLowerCase().includes(extractedSkill.name.toLowerCase().split(' ')[0])
-  );
+  // Check if this is a critical skill with enhanced data using comprehensive matching
+  const criticalSkillId = findMatchingCriticalSkill(extractedSkill.name);
   
   // Find matching steps from extracted skill documents
   const extractedSteps = findMatchingSkillSteps(extractedSkill.name);
