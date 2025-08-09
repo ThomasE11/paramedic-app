@@ -1399,400 +1399,661 @@ export const enhancedCriticalSkillSteps: { [skillId: string]: EnhancedSkillStep[
     }
   ],
   
-  // PREDICTION OF DIFFICULT BAG VALVE MASK VENTILATIONS (BOOTS)
+  // 1. DIFFICULT BAG-VALVE-MASK VENTILATION PREDICTION - Evidence-based airway assessment
   'prediction-of-difficult-bag-valve-mask-ventilations': [
     {
-      id: 'bvm_pred_1',
+      id: 'bvm-pred-step-1',
       stepNumber: 1,
-      title: 'B – Beard and mask seal assessment',
-      description: 'Examine patient for factors that may compromise mask seal effectiveness',
+      title: 'Initial Patient Assessment and Positioning',
+      description: 'Perform comprehensive initial assessment and optimal patient positioning for BVM evaluation',
       isRequired: true,
       isCritical: true,
-      timeEstimate: 60,
+      timeEstimate: 90,
       keyPoints: [
-        'Assess for thick beard that may prevent proper mask seal',
-        'Check for facial jewelry that could interfere with mask placement',
-        'Evaluate facial trauma, burns, or anatomical deformities',
-        'Identify vomit, blood, or secretions around mouth/nose',
-        'Consider using beard-compatible masks or alternative airways'
+        'Ensure scene safety and approach patient with appropriate PPE',
+        'Assess level of consciousness and cooperation ability',
+        'Position patient supine with head in neutral or sniffing position',
+        'Evaluate overall clinical status and stability',
+        'Check for any obvious airway obstruction or distress',
+        'Prepare BVM equipment and oxygen source',
+        'Have suction equipment immediately available and functioning',
+        'Position yourself at patient\'s head for optimal visualization and access'
+      ],
+      contraindications: [
+        'Do not position unconscious patients upright',
+        'Avoid cervical manipulation if spinal injury suspected',
+        'Do not proceed if patient is combative without proper restraint'
       ],
       safetyNotes: [
-        'Poor mask seal can lead to inadequate ventilation',
-        'Have suction ready for secretions',
-        'Consider advanced airway if seal cannot be achieved'
+        'Maintain universal precautions throughout assessment',
+        'Be prepared for rapid airway deterioration',
+        'Have backup airway equipment readily available'
       ]
     },
     {
-      id: 'bvm_pred_2',
+      id: 'bvm-pred-step-2',
       stepNumber: 2,
-      title: 'O – Obesity assessment',
-      description: 'Evaluate obesity-related factors that may complicate BVM ventilation',
+      title: 'B - Beard and Facial Seal Assessment',
+      description: 'Evaluate facial characteristics that may compromise mask seal using BOOTS criteria',
       isRequired: true,
       isCritical: true,
       timeEstimate: 60,
       keyPoints: [
-        'Assess patient\'s body mass index and body habitus',
-        'Evaluate chest wall compliance and expansion ability',
-        'Check ability to extend neck and position head properly',
-        'Identify redundant pharyngeal and neck soft tissue',
-        'Consider need for two-person BVM technique'
+        'Assess for thick beard that prevents effective mask seal',
+        'Check for facial hair patterns and density around mouth and nose',
+        'Evaluate facial trauma, burns, or anatomical deformities',
+        'Look for facial jewelry that could interfere with mask placement',
+        'Check for vomit, blood, or secretions around mouth and nose',
+        'Consider beard trimming if time and situation permits',
+        'Plan for alternative airway techniques if seal compromise expected',
+        'Document findings for communication with receiving team'
       ],
       safetyNotes: [
-        'Obese patients may require higher ventilation pressures',
-        'Position patient with head elevated if possible',
-        'Be prepared for difficult airway management'
+        'Poor mask seal is a major predictor of BVM difficulty',
+        'Have advanced airway equipment ready if seal problems identified',
+        'Consider two-person BVM technique early if seal issues present'
       ]
     },
     {
-      id: 'bvm_pred_3',
+      id: 'bvm-pred-step-3',
       stepNumber: 3,
-      title: 'O – Older age assessment (>55 years)',
-      description: 'Assess age-related factors affecting ventilation ease',
+      title: 'O - Obesity and Body Habitus Assessment',
+      description: 'Evaluate patient obesity and body habitus factors affecting ventilation',
       isRequired: true,
       isCritical: true,
-      timeEstimate: 60,
+      timeEstimate: 90,
       keyPoints: [
-        'Evaluate neck range of motion and flexibility',
-        'Assess temporomandibular joint mobility',
-        'Check for decreased soft tissue elasticity',
-        'Identify dental issues (loose teeth, dentures)',
-        'Consider arthritis or cervical spine limitations'
+        'Assess body mass index estimation and overall body habitus',
+        'Evaluate chest wall compliance and ability for expansion',
+        'Check neck circumference and redundant soft tissue',
+        'Assess ability to extend neck and achieve proper head positioning',
+        'Identify pharyngeal and tongue size relative to oral cavity',
+        'Consider elevated head positioning (reverse Trendelenburg) if possible',
+        'Plan for higher ventilation pressures that may be required',
+        'Prepare for potential two-person BVM technique need'
+      ],
+      safetyNotes: [
+        'Obese patients have reduced functional residual capacity',
+        'Higher PEEP may be needed to maintain oxygenation',
+        'Prepare for rapid desaturation during apneic periods'
       ]
     },
     {
-      id: 'bvm_pred_4',
+      id: 'bvm-pred-step-4',
       stepNumber: 4,
-      title: 'T – Toothless/dental issues',
-      description: 'Assess dental status and its impact on mask ventilation',
+      title: 'O - Older Age Assessment (>55 years)',
+      description: 'Assess age-related anatomical and physiological factors',
       isRequired: true,
       isCritical: true,
-      timeEstimate: 60,
+      timeEstimate: 90,
       keyPoints: [
-        'Check for missing teeth, especially front teeth',
-        'Assess denture status (loose, ill-fitting, absent)',
-        'Evaluate facial structure changes from tooth loss',
-        'Consider leaving well-fitting dentures in place',
-        'Plan for potential mask seal difficulties'
+        'Evaluate patient age and age-related changes (>55 years higher risk)',
+        'Assess neck range of motion and cervical spine flexibility',
+        'Check temporomandibular joint mobility and mouth opening',
+        'Evaluate soft tissue elasticity and muscle tone',
+        'Look for age-related dental changes and tooth loss',
+        'Assess for arthritis or other conditions limiting positioning',
+        'Consider decreased lung compliance and respiratory reserve',
+        'Document age-related risk factors for airway difficulty'
+      ],
+      safetyNotes: [
+        'Elderly patients may have reduced physiological reserve',
+        'Age-related changes increase airway management complexity',
+        'Consider earlier advanced airway intervention in elderly patients'
       ]
     },
     {
-      id: 'bvm_pred_5',
+      id: 'bvm-pred-step-5',
       stepNumber: 5,
-      title: 'S – Sleep apnea and airway obstruction',
-      description: 'Identify sleep apnea history and upper airway obstruction risk',
+      title: 'T - Toothless and Dental Assessment',
+      description: 'Evaluate dental status and facial architecture impact on mask seal',
       isRequired: true,
       isCritical: true,
       timeEstimate: 60,
       keyPoints: [
-        'Ask about sleep apnea history and CPAP use',
-        'Assess for signs of chronic upper airway obstruction',
-        'Evaluate tongue size and pharyngeal space',
-        'Check for enlarged tonsils or adenoids',
-        'Consider high risk for difficult ventilation'
+        'Assess for missing teeth, particularly anterior teeth',
+        'Evaluate denture presence, fit, and stability',
+        'Check for loose teeth that could become dislodged',
+        'Assess facial architecture changes due to tooth loss',
+        'Consider whether to leave well-fitting dentures in place',
+        'Plan for modified mask hold techniques if needed',
+        'Evaluate potential for tissue collapse around mouth',
+        'Prepare gauze to improve mask seal if necessary'
+      ],
+      contraindications: [
+        'Do not leave loose or ill-fitting dentures in place',
+        'Remove partial dentures that could dislodge',
+        'Avoid applying excessive pressure on loose teeth'
+      ],
+      safetyNotes: [
+        'Tooth loss can significantly affect mask seal',
+        'Well-fitting dentures may improve ventilation effectiveness',
+        'Be prepared to manage loose teeth or dental trauma'
+      ]
+    },
+    {
+      id: 'bvm-pred-step-6',
+      stepNumber: 6,
+      title: 'S - Sleep Apnea and Obstruction History',
+      description: 'Assess for sleep apnea history and upper airway obstruction risk',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Ask patient or family about sleep apnea diagnosis and CPAP use',
+        'Assess for snoring history and witnessed apneas',
+        'Evaluate for signs of chronic upper airway obstruction',
+        'Check tongue size and pharyngeal space (Mallampati assessment)',
+        'Look for enlarged tonsils, adenoids, or other obstructive lesions',
+        'Assess neck circumference as sleep apnea risk factor',
+        'Consider high risk for difficult BVM ventilation',
+        'Plan for early advanced airway consideration'
+      ],
+      safetyNotes: [
+        'Sleep apnea patients have higher difficult airway risk',
+        'Upper airway obstruction may worsen with unconsciousness',
+        'Consider alternative airway techniques early'
+      ]
+    },
+    {
+      id: 'bvm-pred-step-7',
+      stepNumber: 7,
+      title: 'Risk Stratification and Alternative Planning',
+      description: 'Synthesize assessment findings and develop airway management strategy',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Score BOOTS criteria: 0-1 factors = low risk, 2-3 = moderate, 4+ = high risk',
+        'Consider additional factors: trauma, airway pathology, positioning limitations',
+        'Develop primary airway management plan based on risk assessment',
+        'Prepare alternative airway techniques and equipment',
+        'Consider two-person BVM technique for moderate-high risk patients',
+        'Plan for supraglottic airway or endotracheal intubation if BVM ineffective',
+        'Communicate findings and plan with team members',
+        'Document assessment and rationale for airway approach'
+      ],
+      safetyNotes: [
+        'Never attempt BVM without backup airway plan',
+        'High-risk patients may require immediate advanced airway',
+        'Early recognition of difficult BVM prevents patient deterioration'
+      ]
+    },
+    {
+      id: 'bvm-pred-step-8',
+      stepNumber: 8,
+      title: 'Implementation and Continuous Assessment',
+      description: 'Execute airway plan with continuous reassessment and adjustment',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Implement chosen BVM technique with appropriate modifications',
+        'Monitor chest rise, oxygen saturation, and ETCO2 if available',
+        'Assess effectiveness of ventilation continuously',
+        'Be prepared to rapidly transition to alternative techniques',
+        'Use two-person technique if one-person BVM ineffective',
+        'Consider oral/nasal airways to improve ventilation',
+        'Escalate to advanced airway if BVM remains inadequate',
+        'Document ventilation effectiveness and any technique changes'
+      ],
+      safetyNotes: [
+        'Inadequate BVM ventilation can be rapidly fatal',
+        'Do not persist with ineffective techniques',
+        'Early escalation to advanced airway may be life-saving'
       ]
     }
   ],
   
-  // ADULT CPR WITH MANUAL DEFIBRILLATOR - Updated 2024 Guidelines
+  // 2. ADULT CPR WITH MANUAL DEFIBRILLATOR - Updated 2024 AHA Guidelines
   'adult-cpr-defibrillator': [
     {
       id: 'cpr-step-1',
       stepNumber: 1,
-      title: 'Scene Safety and Assessment',
-      description: 'Ensure scene safety and assess patient responsiveness',
+      title: 'Scene Safety and Initial Assessment',
+      description: 'Ensure scene safety and rapidly assess patient responsiveness and breathing',
       isRequired: true,
       isCritical: true,
-      timeEstimate: 10,
+      timeEstimate: 30,
       keyPoints: [
-        'Approach safely, look for hazards (electrical, traffic, violence)',
-        'Wear appropriate PPE (gloves, mask, eye protection)',
-        'Tap shoulders firmly and shout "Are you okay?"',
-        'Check for normal breathing (look, listen, feel for 10 seconds maximum)',
-        'Simultaneously check carotid pulse for healthcare providers',
-        'Call for help immediately if unresponsive'
+        'Approach safely - look for hazards (electrical, traffic, violence, hazardous materials)',
+        'Don appropriate PPE (gloves, mask, eye protection) before patient contact',
+        'Tap patient\'s shoulders firmly while shouting "Are you okay?" or "Can you hear me?"',
+        'Simultaneously assess for normal breathing (look for chest rise and fall)',
+        'Check carotid pulse for maximum 10 seconds (healthcare providers only)',
+        'Look for signs of life: movement, coughing, or normal breathing',
+        'Call for help immediately if patient unresponsive and not breathing normally',
+        'Request defibrillator/AED and advanced life support equipment'
+      ],
+      contraindications: [
+        'Do not enter unsafe scene with active hazards',
+        'Do not attempt resuscitation in obviously deceased patients (rigor mortis, decomposition)',
+        'Do not start CPR if valid DNR order is present and verified'
       ],
       safetyNotes: [
-        'Never approach an unsafe scene',
-        'Ensure adequate PPE before patient contact',
-        'If in doubt about pulse, start CPR'
+        'Scene safety is paramount - never compromise provider safety',
+        'If in doubt about pulse presence, start CPR immediately',
+        'Early activation of emergency response improves survival outcomes'
       ]
     },
     {
       id: 'cpr-step-2',
       stepNumber: 2,
-      title: 'Position Patient and Prepare',
-      description: 'Position patient supine on firm surface and prepare for CPR',
+      title: 'Patient Positioning and Airway Opening',
+      description: 'Position patient optimally and establish patent airway for resuscitation',
       isRequired: true,
       isCritical: true,
-      timeEstimate: 15,
+      timeEstimate: 30,
       keyPoints: [
-        'Place patient supine on firm, flat surface',
-        'Tilt head back slightly, lift chin to open airway',
-        'Remove any visible foreign objects from mouth',
-        'Position yourself beside patient\'s chest',
-        'Expose chest completely for proper hand placement',
-        'Ensure defibrillator/AED is nearby and ready'
+        'Place patient supine on firm, flat surface (floor or backboard)',
+        'Position patient\'s arms at sides to allow full chest access',
+        'Open airway using head-tilt chin-lift (or jaw thrust if trauma suspected)',
+        'Look in mouth and remove visible foreign objects with finger sweep',
+        'Expose chest completely for proper CPR hand placement and defibrillation',
+        'Position yourself at patient\'s side for optimal compression angle',
+        'Ensure adequate space around patient for team resuscitation efforts',
+        'Have suction equipment immediately available for airway management'
       ],
       equipmentNeeded: [
-        'Defibrillator/AED',
-        'Bag-valve-mask',
-        'Oxygen',
-        'Suction device',
-        'Backboard if available'
+        'Rigid backboard or firm surface',
+        'Defibrillator/AED with pads',
+        'Bag-valve-mask with reservoir',
+        'High-flow oxygen source',
+        'Suction device with Yankauer catheter'
+      ],
+      safetyNotes: [
+        'Firm surface is essential for effective chest compressions',
+        'Avoid moving patient unnecessarily once positioned',
+        'Clear airway only of visible obstructions - avoid blind finger sweeps'
       ]
     },
     {
       id: 'cpr-step-3',
       stepNumber: 3,
-      title: 'Hand Placement and Chest Compressions',
-      description: 'Perform high-quality chest compressions',
+      title: 'High-Quality Chest Compressions',
+      description: 'Deliver effective chest compressions following current AHA guidelines',
       isRequired: true,
       isCritical: true,
       timeEstimate: 120,
       keyPoints: [
-        'Place heel of one hand on lower half of breastbone (between nipples)',
-        'Place other hand on top, interlace fingers, keep fingers off ribs',
-        'Keep arms straight, shoulders directly over hands',
-        'Compress at least 2 inches (5cm) but not more than 2.4 inches (6cm)',
-        'Allow complete chest recoil between compressions',
-        'Minimize interruptions, compress at 100-120 per minute',
-        'Count compressions aloud: "1, 2, 3..."'
+        'Place heel of one hand on lower half of breastbone, between nipples',
+        'Place other hand on top, interlacing fingers and keeping fingers off ribs',
+        'Position shoulders directly over hands with arms straight and locked',
+        'Compress hard and fast: at least 2 inches (5cm) deep but not exceeding 2.4 inches (6cm)',
+        'Allow complete chest recoil between compressions without lifting hands',
+        'Compress at rate of 100-120 per minute with minimal interruptions',
+        'Count compressions aloud to maintain rhythm and communicate with team',
+        'Minimize compression interruptions to less than 10 seconds'
       ],
       safetyNotes: [
-        'Avoid leaning on chest between compressions',
-        'Switch compressors every 2 minutes to prevent fatigue',
-        'Monitor compression quality continuously'
+        'Avoid leaning on chest between compressions - impedes venous return',
+        'Switch compressors every 2 minutes to prevent fatigue and maintain quality',
+        'Monitor compression depth and rate continuously using feedback devices if available'
       ]
     },
     {
       id: 'cpr-step-4',
       stepNumber: 4,
-      title: 'Rescue Breathing',
-      description: 'Provide rescue breaths with bag-valve-mask',
+      title: 'Rescue Ventilation and Oxygenation',
+      description: 'Provide effective ventilation while maintaining circulation',
       isRequired: true,
       isCritical: true,
-      timeEstimate: 30,
+      timeEstimate: 20,
       keyPoints: [
-        'After 30 compressions, tilt head and lift chin',
-        'Create proper mask seal (C-E grip technique)',
-        'Give 2 breaths, each over 1 second',
-        'Watch for visible chest rise with each breath',
-        'Allow complete exhalation between breaths',
-        'Use supplemental oxygen if available',
-        'Avoid excessive ventilation'
+        'After 30 compressions, open airway with head-tilt chin-lift technique',
+        'Create effective mask seal using C-E grip (thumb and index form C, other fingers E)',
+        'Deliver 2 breaths, each lasting 1 second with visible chest rise',
+        'Use bag-valve-mask with high-flow oxygen (15L/min) and reservoir bag',
+        'Allow complete passive exhalation between breaths',
+        'Avoid excessive ventilation rate and volume (causes harmful effects)',
+        'Resume chest compressions immediately after 2 breaths',
+        'Consider advanced airway if multiple providers available and trained'
       ],
       contraindications: [
-        'Do not hyperventilate the patient',
-        'Avoid mouth-to-mouth without barrier device'
+        'Do not hyperventilate - causes decreased venous return and cardiac output',
+        'Avoid mouth-to-mouth ventilation without barrier protection',
+        'Do not delay compressions for prolonged ventilation attempts'
+      ],
+      safetyNotes: [
+        'Gastric insufflation increases aspiration risk',
+        'Advanced airway allows continuous compressions with asynchronous ventilation',
+        'Excessive ventilation is harmful and decreases survival rates'
       ]
     },
     {
       id: 'cpr-step-5',
       stepNumber: 5,
-      title: 'Defibrillation Assessment',
-      description: 'Analyze rhythm and deliver shock if indicated',
+      title: 'Defibrillation and Rhythm Analysis',
+      description: 'Rapidly analyze cardiac rhythm and deliver defibrillation when indicated',
       isRequired: true,
       isCritical: true,
       timeEstimate: 45,
       keyPoints: [
-        'Continue CPR while defibrillator charges',
-        'Apply defibrillator pads correctly (upper right, lower left)',
-        'Ensure pads do not overlap and have good contact',
-        'Clear everyone from patient: "Everyone clear!"',
-        'Analyze rhythm - look for VF/pulseless VT',
-        'If shockable rhythm: charge to appropriate energy (biphasic 120-200J)',
-        'Deliver shock immediately, resume CPR for 2 minutes'
+        'Apply defibrillator pads quickly during ongoing CPR: right upper chest, left lower chest',
+        'Ensure pads do not touch each other and have good skin contact',
+        'Continue chest compressions while defibrillator analyzes rhythm',
+        'Clear all personnel from patient contact: "Everyone clear - analyzing rhythm"',
+        'Identify shockable rhythms: ventricular fibrillation (VF) or pulseless ventricular tachycardia (VT)',
+        'Charge defibrillator to appropriate energy: biphasic 120-200J initial, 150-360J subsequent',
+        'Ensure complete clearing before shock: "Everyone clear - shocking"',
+        'Deliver shock immediately when charged, resume CPR for 2 minutes'
       ],
       safetyNotes: [
-        'Ensure no one is touching patient during analysis/shock',
-        'Remove oxygen source during defibrillation',
-        'Check for medication patches, remove if necessary'
+        'Remove oxygen delivery devices during defibrillation to prevent fire hazard',
+        'Check for medication patches or implanted devices - remove patches if present',
+        'Ensure no team member is in contact with patient or stretcher during shock delivery'
       ]
     },
     {
       id: 'cpr-step-6',
       stepNumber: 6,
-      title: 'Post-Shock CPR and Reassessment',
-      description: 'Continue CPR cycles and reassess',
+      title: 'Advanced Cardiac Life Support and Medications',
+      description: 'Implement advanced interventions including medications and airway management',
       isRequired: true,
       isCritical: true,
-      timeEstimate: 120,
+      timeEstimate: 180,
       keyPoints: [
-        'Immediately resume CPR after shock (30:2 ratio)',
-        'Continue for exactly 2 minutes before next rhythm check',
-        'Switch compressors to prevent fatigue',
-        'Establish IV/IO access during CPR if possible',
-        'Consider advanced airway (supraglottic or endotracheal)',
-        'Administer medications per protocol (epinephrine, amiodarone)',
-        'Reassess rhythm every 2 minutes'
+        'Establish IV or IO access during ongoing CPR for medication administration',
+        'Administer epinephrine 1mg IV/IO every 3-5 minutes for all cardiac arrest rhythms',
+        'For persistent VF/VT: give amiodarone 300mg IV/IO after first unsuccessful shock',
+        'Consider advanced airway: supraglottic device or endotracheal intubation',
+        'With advanced airway: provide continuous compressions and 10 ventilations per minute',
+        'Treat reversible causes (H\'s and T\'s): hypovolemia, hypoxia, hydrogen ions, hyper/hypokalemia, hypothermia, tension pneumothorax, tamponade, toxins, thrombosis',
+        'Consider extracorporeal CPR (ECPR) consultation for refractory arrest in appropriate patients',
+        'Maintain team communication and role assignments throughout resuscitation'
       ],
       equipmentNeeded: [
-        'IV/IO supplies',
-        'Epinephrine',
-        'Amiodarone',
-        'Advanced airway devices'
+        'IV catheters and IO devices',
+        'Normal saline or lactated Ringer\'s',
+        'Epinephrine 1:10,000 concentration',
+        'Amiodarone 150mg/3mL vials',
+        'Advanced airway devices (King LT, LMA, ETT)',
+        'End-tidal CO2 monitoring'
+      ],
+      safetyNotes: [
+        'Confirm medication concentrations before administration',
+        'Use end-tidal CO2 monitoring to confirm airway placement and assess CPR quality',
+        'Consider point-of-care ultrasound to assess cardiac activity if available'
       ]
     },
     {
       id: 'cpr-step-7',
       stepNumber: 7,
-      title: 'ROSC Recognition and Post-Arrest Care',
-      description: 'Recognize return of circulation and provide appropriate care',
+      title: 'Return of Spontaneous Circulation Assessment',
+      description: 'Recognize ROSC and provide immediate post-cardiac arrest care',
       isRequired: true,
       isCritical: true,
-      timeEstimate: 60,
+      timeEstimate: 120,
       keyPoints: [
-        'Check for signs of ROSC: pulse, blood pressure, improved color',
-        'If ROSC achieved: assess breathing, mental status',
-        'Maintain oxygen saturation 94-98%',
-        'Monitor blood pressure, treat hypotension',
-        'Consider 12-lead ECG and targeted temperature management',
-        'Transport to appropriate facility',
-        'If no ROSC: continue resuscitation or consider termination per protocol'
+        'Check for signs of ROSC during scheduled rhythm checks: palpable pulse, blood pressure >80mmHg systolic',
+        'Look for other ROSC indicators: abrupt increase in ETCO2 >40mmHg, arterial pressure waveform',
+        'If ROSC achieved: assess mental status, breathing adequacy, and hemodynamic stability',
+        'Obtain 12-lead ECG immediately to identify ST-elevation myocardial infarction',
+        'Maintain oxygen saturation 94-98% and avoid hyperoxia',
+        'Target systolic blood pressure ≥90mmHg with fluids or vasopressors',
+        'Consider targeted temperature management (32-36°C) per protocol',
+        'Prepare for transport to cardiac arrest center or PCI-capable facility'
       ],
       safetyNotes: [
-        'Continue monitoring - re-arrest is possible',
-        'Be prepared to resume CPR if pulse lost'
+        'ROSC patients are at high risk for re-arrest - maintain continuous monitoring',
+        'Avoid hyperoxia and hypocapnia which can worsen neurological outcomes',
+        'Early cardiac catheterization improves outcomes in STEMI patients'
+      ]
+    },
+    {
+      id: 'cpr-step-8',
+      stepNumber: 8,
+      title: 'Termination Decision and Family Support',
+      description: 'Make appropriate decisions regarding resuscitation termination and provide family care',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Consider termination of resuscitation per local protocols after adequate trial',
+        'Factors supporting termination: unwitnessed arrest, prolonged downtime, no ROSC after 30 minutes',
+        'Factors supporting continuation: witnessed arrest, early CPR, shockable rhythm, hypothermia',
+        'Consult with medical control physician for termination decision',
+        'If terminating: ensure family notification and support services',
+        'Document total resuscitation time, interventions performed, and decision rationale',
+        'Provide team debriefing for learning and emotional support',
+        'Complete required death certification and reporting procedures'
+      ],
+      contraindications: [
+        'Do not terminate resuscitation prematurely in hypothermic patients',
+        'Consider extracorporeal support consultation before termination in young patients',
+        'Do not terminate in cases of drug overdose without adequate antidote trial'
+      ],
+      safetyNotes: [
+        'Termination decisions should involve medical control when possible',
+        'Team emotional support is important after unsuccessful resuscitation',
+        'Proper documentation protects providers and facilitates quality improvement'
       ]
     }
   ],
 
-  // IV CANNULATION - Best Practice Technique
+  // 3. INTRAVENOUS CANNULATION - Evidence-based vascular access techniques
   'iv-cannulation': [
     {
       id: 'iv-step-1',
       stepNumber: 1,
-      title: 'Patient Assessment and Consent',
-      description: 'Assess patient and obtain informed consent',
+      title: 'Patient Assessment and Clinical Indication',
+      description: 'Assess patient condition and determine clinical need for IV access',
       isRequired: true,
       isCritical: true,
-      timeEstimate: 30,
+      timeEstimate: 60,
       keyPoints: [
-        'Introduce yourself and explain procedure',
-        'Check patient allergies (latex, iodine, adhesives)',
-        'Assess patient\'s hydration status and medical history',
-        'Identify indications for IV access',
-        'Obtain verbal consent and address concerns',
-        'Position patient comfortably with arm extended'
+        'Assess patient\'s clinical condition and urgency of IV access need',
+        'Review indications: medication administration, fluid resuscitation, blood sampling',
+        'Check patient allergies: latex, iodine, chlorhexidine, adhesives, medications',
+        'Evaluate hydration status and hemodynamic stability',
+        'Consider patient age, medical history, and current medications',
+        'Identify any bleeding disorders or anticoagulant therapy',
+        'Assess patient anxiety level and provide reassurance',
+        'Determine appropriate catheter gauge based on intended use'
       ],
       contraindications: [
-        'Infection at insertion site',
-        'AV fistula or lymphedema on affected side',
-        'Previous mastectomy on affected side',
-        'Fracture or injury to extremity'
+        'Active cellulitis or infection at proposed insertion site',
+        'Arteriovenous fistula or graft in affected extremity',
+        'Previous mastectomy with lymph node dissection on affected side',
+        'Fracture, injury, or compromised circulation in target extremity'
+      ],
+      safetyNotes: [
+        'Larger gauge (14-16G) needed for trauma resuscitation and blood products',
+        'Smaller gauge (20-22G) appropriate for medication administration',
+        'Consider patient comfort and cooperation in gauge selection'
       ]
     },
     {
       id: 'iv-step-2',
       stepNumber: 2,
-      title: 'Equipment Preparation',
-      description: 'Gather and prepare all necessary equipment',
+      title: 'Hand Hygiene and Equipment Preparation',
+      description: 'Perform thorough hand hygiene and prepare all necessary equipment',
       isRequired: true,
       isCritical: true,
-      timeEstimate: 60,
+      timeEstimate: 90,
       keyPoints: [
-        'Perform hand hygiene thoroughly',
-        'Gather IV catheter (appropriate gauge: 14-22G based on indication)',
-        'Select appropriate IV fluid and administration set',
-        'Prepare alcohol wipes, gauze, tape, and transparent dressing',
-        'Have tourniquet, gloves, and sharps container ready',
-        'Prime IV tubing and check for air bubbles'
+        'Perform thorough hand hygiene with alcohol-based sanitizer or soap and water',
+        'Don clean, non-sterile gloves appropriate for procedure',
+        'Gather IV catheter of appropriate gauge (14-22G based on clinical need)',
+        'Select appropriate IV fluid: normal saline, lactated Ringer\'s, or prescribed solution',
+        'Prepare administration set and prime tubing completely removing all air bubbles',
+        'Gather antiseptic (2% chlorhexidine preferred, or 70% alcohol)',
+        'Prepare securement materials: transparent dressing, tape, gauze pads',
+        'Have tourniquet, sharps container, and flush syringes readily available'
       ],
       equipmentNeeded: [
-        'IV catheter (14-22 gauge)',
-        'IV fluid and tubing',
-        'Alcohol wipes',
+        'IV catheters (14-22 gauge selection)',
+        'IV fluid and administration sets',
+        '2% chlorhexidine or 70% alcohol antiseptic',
         'Tourniquet',
-        'Gloves and PPE',
-        'Gauze and tape',
-        'Transparent dressing'
+        'Clean gloves and PPE',
+        'Transparent dressing and medical tape',
+        'Normal saline flush syringes'
+      ],
+      safetyNotes: [
+        'Check expiration dates on all equipment before use',
+        'Ensure adequate lighting and comfortable positioning',
+        'Have backup equipment available in case of failure'
       ]
     },
     {
       id: 'iv-step-3',
       stepNumber: 3,
-      title: 'Vein Selection and Site Preparation',
-      description: 'Select appropriate vein and prepare insertion site',
+      title: 'Patient Positioning and Vein Assessment',
+      description: 'Position patient optimally and perform systematic vein assessment',
       isRequired: true,
       isCritical: true,
-      timeEstimate: 45,
+      timeEstimate: 90,
       keyPoints: [
-        'Apply tourniquet 4-6 inches above intended insertion site',
-        'Palpate for suitable vein (straight, firm, bouncy)',
-        'Preferred sites: dorsal hand, forearm, antecubital fossa',
-        'Avoid areas of flexion, sclerosed or tortuous veins',
-        'Clean site with alcohol in circular motion, allow to dry',
-        'Stabilize vein with non-dominant hand'
+        'Position patient comfortably with target extremity well-supported and extended',
+        'Ensure adequate lighting and access to insertion site',
+        'Apply tourniquet 4-6 inches proximal to intended insertion site',
+        'Palpate potential sites: start distally and move proximally',
+        'Assess vein characteristics: straight, firm, bouncy, non-rolling',
+        'Preferred site order: dorsal hand, forearm, antecubital fossa (avoid if possible)',
+        'Avoid areas over joints, areas of flexion, or sites with valve bumps',
+        'Consider ultrasound guidance for difficult access patients'
+      ],
+      contraindications: [
+        'Avoid sclerosed, hardened, or infiltrated veins',
+        'Do not use veins in areas of skin breakdown or rash',
+        'Avoid sites distal to previous infiltration or phlebitis',
+        'Do not cannulate through areas of infection or cellulitis'
       ],
       safetyNotes: [
-        'Do not repalpate site after cleaning',
-        'Never attempt more than 2 tries per paramedic',
-        'Choose larger gauge for trauma/resuscitation'
+        'Tourniquet should not remain in place longer than 2 minutes',
+        'Palpation is more reliable than visual inspection for vein assessment',
+        'Consider warming extremity or dependent positioning to enhance venous filling'
       ]
     },
     {
       id: 'iv-step-4',
       stepNumber: 4,
-      title: 'Catheter Insertion',
-      description: 'Insert IV catheter using proper technique',
+      title: 'Site Preparation and Antisepsis',
+      description: 'Prepare insertion site using evidence-based antiseptic technique',
       isRequired: true,
       isCritical: true,
-      timeEstimate: 30,
+      timeEstimate: 60,
       keyPoints: [
-        'Insert catheter at 15-30 degree angle, bevel up',
-        'Advance until flash of blood appears in catheter hub',
-        'Lower angle to nearly parallel with skin',
-        'Advance catheter 1-2mm more, then slide catheter off needle',
-        'Hold catheter hub steady while advancing plastic cannula',
-        'Remove needle completely when catheter fully inserted'
+        'Clean insertion site with antiseptic using circular motion from center outward',
+        'Use 2% chlorhexidine in 70% alcohol (preferred) or 70% alcohol alone',
+        'Allow antiseptic to air dry completely (minimum 30 seconds)',
+        'Maintain aseptic technique - do not touch cleaned site',
+        'If site must be repalpated, reclean with antiseptic',
+        'Ensure adequate antiseptic contact time for microbial kill',
+        'Position non-dominant hand to stabilize vein without contaminating site',
+        'Have catheter ready and inspect for defects before insertion'
       ],
       safetyNotes: [
-        'Never reinsert needle once withdrawn',
-        'Maintain sterile technique throughout',
-        'Watch for signs of infiltration or hematoma'
+        'Never skip antiseptic preparation - infection risk is significant',
+        'Allow adequate drying time for antiseptic effectiveness',
+        'Avoid chlorhexidine in patients with known allergies'
       ]
     },
     {
       id: 'iv-step-5',
       stepNumber: 5,
-      title: 'Securing and Flushing',
-      description: 'Secure catheter and confirm patency',
+      title: 'Catheter Insertion Technique',
+      description: 'Insert IV catheter using proper evidence-based technique',
       isRequired: true,
       isCritical: true,
-      timeEstimate: 45,
+      timeEstimate: 60,
       keyPoints: [
-        'Release tourniquet immediately after catheter insertion',
-        'Apply gentle pressure above catheter tip to prevent bleeding',
-        'Connect IV tubing or saline lock to catheter hub',
-        'Flush with 3-5ml normal saline to confirm patency',
-        'Watch for signs of infiltration (swelling, coolness, pain)',
-        'Secure with transparent dressing and tape loops'
+        'Stabilize vein by applying traction with non-dominant hand',
+        'Insert catheter at 15-30 degree angle with bevel facing upward',
+        'Advance catheter until flashback of blood appears in catheter hub',
+        'Lower catheter angle to 10-15 degrees and advance 1-2mm further',
+        'Occlude vein proximally and advance catheter over needle into vein',
+        'Remove needle while holding catheter hub stable',
+        'Apply pressure proximal to catheter tip to minimize blood loss',
+        'Attach IV tubing or saline lock immediately'
+      ],
+      contraindications: [
+        'Never reinsert or advance needle once withdrawn from catheter',
+        'Do not force catheter advancement if resistance is encountered',
+        'Avoid multiple punctures through same vein'
       ],
       safetyNotes: [
-        'Dispose of needle in sharps container immediately',
-        'Label IV site with date, time, and gauge',
-        'Document attempt and any complications'
+        'Maintain control of needle at all times during procedure',
+        'Watch for signs of arterial puncture (bright red, pulsatile blood)',
+        'Be prepared to apply pressure for hemostasis if insertion unsuccessful'
       ]
     },
     {
       id: 'iv-step-6',
       stepNumber: 6,
-      title: 'Post-Insertion Care',
-      description: 'Provide ongoing IV site care and monitoring',
+      title: 'Catheter Securement and Patency Confirmation',
+      description: 'Secure catheter and confirm proper function and placement',
       isRequired: true,
-      isCritical: false,
-      timeEstimate: 30,
+      isCritical: true,
+      timeEstimate: 90,
       keyPoints: [
-        'Set appropriate flow rate based on patient needs',
-        'Monitor IV site regularly for complications',
-        'Check for signs of infiltration, phlebitis, or infection',
-        'Secure tubing to prevent accidental dislodgement',
-        'Document insertion site, gauge, and patient tolerance',
-        'Educate patient about protecting IV site'
+        'Release tourniquet immediately after successful cannulation',
+        'Flush catheter with 3-5ml normal saline to confirm patency',
+        'Observe for signs of infiltration: swelling, blanching, coolness, pain',
+        'Confirm IV flows freely without resistance or patient discomfort',
+        'Apply transparent, semi-permeable dressing over insertion site',
+        'Secure IV tubing with tape loops to prevent tension on catheter',
+        'Label site with date, time, catheter gauge, and your initials',
+        'Dispose of needle in sharps container immediately after use'
       ],
       safetyNotes: [
-        'Replace IV if signs of complications develop',
-        'Monitor elderly patients closely for fluid overload'
+        'Never force flush if resistance is encountered',
+        'Infiltration signs require immediate catheter removal',
+        'Proper securement prevents accidental dislodgement and phlebitis'
+      ]
+    },
+    {
+      id: 'iv-step-7',
+      stepNumber: 7,
+      title: 'Flow Rate Setting and Initial Monitoring',
+      description: 'Establish appropriate flow rate and perform initial assessment',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Set appropriate flow rate based on clinical indication and patient needs',
+        'For maintenance: 20-30 ml/hr keep-vein-open rate if not otherwise specified',
+        'For resuscitation: wide open or pressure bag as clinically indicated',
+        'Monitor initial patient response to IV therapy',
+        'Assess IV site for early signs of complications',
+        'Check that IV is functioning properly with good flow',
+        'Document procedure: site, gauge, number of attempts, complications',
+        'Educate patient about protecting IV site and reporting problems'
+      ],
+      safetyNotes: [
+        'Monitor elderly patients closely for signs of fluid overload',
+        'Rapid fluid administration requires careful hemodynamic monitoring',
+        'Document any difficulties or complications for quality improvement'
+      ]
+    },
+    {
+      id: 'iv-step-8',
+      stepNumber: 8,
+      title: 'Ongoing Monitoring and Complication Management',
+      description: 'Provide continuous monitoring and manage potential complications',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Monitor IV site regularly for signs of infiltration, phlebitis, or infection',
+        'Assess for complications: redness, swelling, warmth, pain, streak formation',
+        'Check IV patency before each medication administration',
+        'Monitor for systemic complications: fluid overload, electrolyte imbalance',
+        'Replace IV if signs of phlebitis or infiltration develop',
+        'Educate patient on signs/symptoms to report immediately',
+        'Document ongoing assessment findings and interventions',
+        'Plan for IV replacement or discontinuation per protocol'
+      ],
+      contraindications: [
+        'Do not ignore signs of phlebitis or infiltration',
+        'Never administer medications through a questionably patent IV',
+        'Do not continue IV therapy if complications develop'
+      ],
+      safetyNotes: [
+        'Early recognition and management of complications prevents serious injury',
+        'Infiltration of vesicant medications can cause tissue necrosis',
+        'Regular assessment is essential for patient safety'
       ]
     }
   ],
@@ -2103,97 +2364,227 @@ export const enhancedCriticalSkillSteps: { [skillId: string]: EnhancedSkillStep[
     }
   ],
 
-  // BLOOD GLUCOSE TESTING - Point of Care Diagnostics
+  // 4. BLOOD GLUCOSE TESTING - Evidence-based point-of-care diagnostics
   'blood-glucose-testing': [
     {
       id: 'glucose-step-1',
       stepNumber: 1,
-      title: 'Patient Assessment and Equipment Check',
-      description: 'Assess patient and prepare glucometer',
+      title: 'Clinical Assessment and Indication Review',
+      description: 'Assess patient for glucose testing indications and clinical presentation',
       isRequired: true,
       isCritical: true,
-      timeEstimate: 30,
+      timeEstimate: 90,
       keyPoints: [
-        'Assess patient for altered mental status or suspected hypoglycemia',
-        'Check patient for diabetes history and current medications',
-        'Select appropriate finger for puncture (avoid index finger and thumb)',
-        'Verify glucometer is calibrated and functioning',
-        'Check expiration date on test strips',
-        'Ensure lancet device is loaded and ready'
+        'Assess patient for altered mental status, confusion, or decreased consciousness',
+        'Look for signs of hypoglycemia: diaphoresis, tachycardia, tremor, irritability',
+        'Identify hyperglycemia signs: polyuria, polydipsia, fruity breath odor, dehydration',
+        'Review patient history: diabetes diagnosis, medications, recent food intake',
+        'Check for diabetes medications: insulin, metformin, sulfonylureas',
+        'Assess timing of last meal and recent activity level',
+        'Consider other causes of altered mental status requiring glucose rule-out',
+        'Document clinical indication for glucose testing'
       ],
-      equipmentNeeded: [
-        'Glucometer',
-        'Test strips',
-        'Lancet device',
-        'Alcohol wipes',
-        'Gauze',
-        'Gloves'
+      contraindications: [
+        'No absolute contraindications for glucose testing',
+        'Relative caution in patients with bleeding disorders',
+        'Consider alternate sites in patients with poor peripheral circulation'
+      ],
+      safetyNotes: [
+        'Glucose testing is essential in any patient with altered mental status',
+        'Clinical presentation may not always correlate with glucose levels',
+        'Both hypoglycemia and hyperglycemia can present with similar symptoms'
       ]
     },
     {
       id: 'glucose-step-2',
       stepNumber: 2,
-      title: 'Hand Hygiene and Site Preparation',
-      description: 'Prepare puncture site using proper technique',
+      title: 'Equipment Selection and Quality Control',
+      description: 'Select appropriate equipment and perform quality control checks',
       isRequired: true,
       isCritical: true,
-      timeEstimate: 45,
+      timeEstimate: 120,
       keyPoints: [
-        'Perform hand hygiene and don gloves',
-        'Have patient wash hands with warm water if possible',
-        'Select lateral aspect of fingertip (less painful)',
-        'Clean site with alcohol wipe and allow to dry completely',
-        'Avoid using center of fingertip or thumbs',
-        'Warm hand if circulation is poor'
+        'Select calibrated glucometer appropriate for clinical setting',
+        'Verify glucometer displays correct date, time, and units (mg/dL or mmol/L)',
+        'Check test strip expiration date and storage conditions',
+        'Ensure test strips have been stored in original container with desiccant',
+        'Verify lancet device is functioning and loaded with sterile lancet',
+        'Check control solution expiration and perform quality control if required',
+        'Ensure all equipment is at room temperature before use',
+        'Have backup equipment available in case of failure'
+      ],
+      equipmentNeeded: [
+        'Calibrated blood glucose meter',
+        'Compatible test strips (not expired)',
+        'Lancet device with sterile lancets',
+        '70% isopropyl alcohol wipes',
+        'Gauze pads or cotton balls',
+        'Non-latex gloves',
+        'Sharps disposal container'
       ],
       safetyNotes: [
-        'Never reuse lancets',
-        'Ensure alcohol has completely dried before puncture',
-        'Use alternate sites if frequent testing required'
+        'Using expired or improperly stored strips can lead to inaccurate results',
+        'Cold equipment may give false readings',
+        'Quality control testing ensures measurement accuracy'
       ]
     },
     {
       id: 'glucose-step-3',
       stepNumber: 3,
-      title: 'Blood Sample Collection',
-      description: 'Obtain adequate blood sample for testing',
+      title: 'Patient Preparation and Site Selection',
+      description: 'Prepare patient and select optimal puncture site',
       isRequired: true,
       isCritical: true,
-      timeEstimate: 30,
+      timeEstimate: 90,
       keyPoints: [
-        'Insert test strip into glucometer first',
-        'Position lancet device firmly against lateral fingertip',
-        'Activate lancet with quick, firm pressure',
-        'Gently squeeze finger to produce hanging drop of blood',
-        'Touch test strip to blood drop (do not smear)',
-        'Apply pressure with gauze to control bleeding'
+        'Explain procedure to patient and obtain consent',
+        'Position patient comfortably with hand accessible',
+        'Select lateral aspects of fingertips (ring or middle finger preferred)',
+        'Avoid thumb and index finger (more sensitive and frequently used)',
+        'Assess circulation and warmth in selected finger',
+        'Avoid areas with calluses, cuts, or previous puncture sites',
+        'Consider alternate sites if poor circulation: earlobe, forearm (with appropriate strips)',
+        'Warm hands if cold to improve circulation and blood flow'
+      ],
+      contraindications: [
+        'Avoid infected or injured areas',
+        'Do not use swollen or edematous sites',
+        'Avoid areas with poor circulation or cyanosis'
       ],
       safetyNotes: [
-        'Do not squeeze excessively - can alter results',
-        'Ensure adequate blood sample for accurate reading',
-        'Dispose of lancet in sharps container immediately'
+        'Proper site selection reduces pain and improves sample quality',
+        'Lateral finger puncture is less painful than fingertip center',
+        'Warming improves blood flow and sample volume'
       ]
     },
     {
       id: 'glucose-step-4',
       stepNumber: 4,
-      title: 'Result Interpretation and Documentation',
-      description: 'Read results and correlate with clinical assessment',
+      title: 'Hand Hygiene and Site Antisepsis',
+      description: 'Perform proper hand hygiene and site preparation',
       isRequired: true,
       isCritical: true,
-      timeEstimate: 45,
+      timeEstimate: 60,
       keyPoints: [
-        'Wait for glucometer to display result (typically 5-15 seconds)',
-        'Record exact glucose value and time of test',
-        'Correlate result with patient\'s clinical presentation',
-        'Normal range: 80-120 mg/dL (4.4-6.7 mmol/L)',
-        'Hypoglycemia: <70 mg/dL (3.9 mmol/L)',
-        'Critical values: <40 or >400 mg/dL require immediate action'
+        'Perform thorough hand hygiene with alcohol-based sanitizer or soap and water',
+        'Don clean, non-sterile gloves for universal precautions',
+        'Have patient wash hands with warm soapy water if possible',
+        'Clean selected puncture site with 70% isopropyl alcohol wipe',
+        'Wipe in circular motion from center outward',
+        'Allow alcohol to air dry completely (minimum 30 seconds)',
+        'Do not blow on or fan the site to speed drying',
+        'Avoid touching cleaned area after preparation'
       ],
       safetyNotes: [
-        'Always correlate lab value with clinical assessment',
-        'Repeat test if result doesn\'t match clinical picture',
-        'Be aware of factors that can affect accuracy (poor circulation, medications)'
+        'Wet alcohol can dilute blood sample and affect accuracy',
+        'Proper hand hygiene prevents contamination and infection',
+        'Universal precautions protect against bloodborne pathogens'
+      ]
+    },
+    {
+      id: 'glucose-step-5',
+      stepNumber: 5,
+      title: 'Blood Sample Collection Technique',
+      description: 'Obtain adequate blood sample using proper technique',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Insert test strip into glucometer and wait for prompt',
+        'Hold lancet device firmly against lateral aspect of selected finger',
+        'Activate lancet device with quick, confident motion',
+        'Gently squeeze finger from base toward tip to encourage blood flow',
+        'Allow blood to form a hanging drop without excessive pressure',
+        'Touch test strip to blood drop - do not smear or spread blood',
+        'Ensure strip sample area is completely filled with blood',
+        'Apply pressure to puncture site with clean gauze immediately'
+      ],
+      contraindications: [
+        'Do not squeeze excessively - can cause hemolysis and false readings',
+        'Never reuse lancets due to infection risk',
+        'Do not milk the finger aggressively'
+      ],
+      safetyNotes: [
+        'Adequate blood sample is essential for accurate results',
+        'Excessive squeezing can dilute sample with tissue fluid',
+        'Dispose of used lancet in sharps container immediately'
+      ]
+    },
+    {
+      id: 'glucose-step-6',
+      stepNumber: 6,
+      title: 'Result Reading and Quality Assessment',
+      description: 'Obtain and assess glucose measurement for accuracy',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Wait for glucometer to process sample (typically 5-15 seconds)',
+        'Read result when displayed and ensure no error messages appear',
+        'Record exact glucose value, time of test, and units used',
+        'Note if result is flagged as high (HI) or low (LO) by device',
+        'Assess result plausibility based on patient clinical presentation',
+        'Consider repeat testing if result doesn\'t match clinical picture',
+        'Document any factors that might affect accuracy',
+        'Apply pressure to puncture site until bleeding stops'
+      ],
+      safetyNotes: [
+        'Error messages may indicate insufficient sample, expired strips, or device malfunction',
+        'Extremely high or low values should prompt repeat testing',
+        'Clinical correlation is essential for proper interpretation'
+      ]
+    },
+    {
+      id: 'glucose-step-7',
+      stepNumber: 7,
+      title: 'Clinical Interpretation and Treatment Planning',
+      description: 'Interpret results in clinical context and plan appropriate interventions',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Interpret results using established reference ranges: Normal 80-120 mg/dL (4.4-6.7 mmol/L)',
+        'Identify hypoglycemia: <70 mg/dL (3.9 mmol/L) or <50 mg/dL (2.8 mmol/L) severe',
+        'Recognize hyperglycemia: >200 mg/dL (11.1 mmol/L) or >400 mg/dL (22.2 mmol/L) critical',
+        'Consider patient-specific factors: age, comorbidities, medications',
+        'Plan immediate interventions for severe hypoglycemia or hyperglycemia',
+        'Consider additional testing if diabetic ketoacidosis suspected',
+        'Correlate with neurological status and overall clinical condition',
+        'Document clinical interpretation and planned interventions'
+      ],
+      contraindications: [
+        'Do not delay treatment of severe hypoglycemia for repeat testing',
+        'Do not ignore hyperglycemia even in asymptomatic patients',
+        'Do not rely solely on glucose reading without clinical correlation'
+      ],
+      safetyNotes: [
+        'Severe hypoglycemia (<40 mg/dL) is a medical emergency',
+        'Hyperglycemia >400 mg/dL requires immediate medical attention',
+        'Treatment should not be delayed for confirmatory testing'
+      ]
+    },
+    {
+      id: 'glucose-step-8',
+      stepNumber: 8,
+      title: 'Documentation and Follow-up Care',
+      description: 'Document findings and ensure appropriate follow-up',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Record exact glucose value, time, date, and testing conditions',
+        'Document patient\'s clinical presentation and symptoms',
+        'Note any treatments administered based on results',
+        'Document patient response to interventions',
+        'Ensure proper disposal of all contaminated materials',
+        'Clean and store glucometer according to manufacturer guidelines',
+        'Communicate significant results to receiving healthcare providers',
+        'Plan for repeat testing or continuous monitoring as indicated'
+      ],
+      safetyNotes: [
+        'Proper documentation ensures continuity of care',
+        'Significant glucose abnormalities require immediate communication',
+        'Follow institutional protocols for critical value reporting'
       ]
     }
   ],
@@ -3622,6 +4013,749 @@ export const enhancedCriticalSkillSteps: { [skillId: string]: EnhancedSkillStep[
         'Prepare family/caregivers for patient condition and hospital course'
       ]
     }
+  ],
+
+  // 16. DIABETIC EMERGENCY MANAGEMENT - Comprehensive glucose disorder management
+  'diabetic-emergency-management': [
+    {
+      id: 'diabetic-step-1',
+      stepNumber: 1,
+      title: 'Initial Assessment and Blood Glucose Testing',
+      description: 'Rapidly assess patient and obtain blood glucose measurement',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Assess level of consciousness using AVPU scale or Glasgow Coma Scale',
+        'Check for diabetic medical alert bracelet or medical history',
+        'Obtain blood glucose level immediately using glucometer',
+        'Normal range: 80-120 mg/dL (4.4-6.7 mmol/L)',
+        'Hypoglycemia: <70 mg/dL (3.9 mmol/L), severe <40 mg/dL (2.2 mmol/L)',
+        'Hyperglycemia: >180 mg/dL (10.0 mmol/L), severe >400 mg/dL (22.2 mmol/L)',
+        'Document exact glucose reading and time of measurement'
+      ],
+      equipmentNeeded: [
+        'Blood glucose meter',
+        'Test strips (not expired)',
+        'Lancets',
+        'Alcohol swabs',
+        'Gloves'
+      ],
+      safetyNotes: [
+        'Use universal precautions when handling blood samples',
+        'Ensure glucometer is calibrated and functioning properly'
+      ]
+    },
+    {
+      id: 'diabetic-step-2',
+      stepNumber: 2,
+      title: 'Hypoglycemia Recognition and Assessment',
+      description: 'Identify signs and symptoms of hypoglycemic emergency',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Classic symptoms: confusion, diaphoresis, tremors, weakness, hunger',
+        'Neurological signs: altered mental status, combativeness, seizures',
+        'Autonomic symptoms: tachycardia, pallor, anxiety, trembling',
+        'Severe hypoglycemia: unconsciousness, coma, focal neurological deficits',
+        'Ask about recent insulin use, missed meals, increased activity',
+        'Check for signs of recent seizure activity or trauma',
+        'Assess airway protection in unconscious patients'
+      ],
+      safetyNotes: [
+        'Hypoglycemic patients may be combative or unpredictable',
+        'Severe hypoglycemia can mimic stroke symptoms'
+      ]
+    },
+    {
+      id: 'diabetic-step-3',
+      stepNumber: 3,
+      title: 'Hypoglycemia Treatment Protocol',
+      description: 'Provide appropriate glucose replacement therapy based on consciousness level',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'CONSCIOUS PATIENT: Oral glucose 15g (glucose gel, tablets, or juice)',
+        'UNCONSCIOUS PATIENT: Dextrose 25g IV (D50W 50ml) or D25W 100ml',
+        'ALTERNATIVE: Glucagon 1mg IM if IV access unavailable',
+        'Pediatric dosing: D25W 2-4 mL/kg IV or glucagon 0.5mg IM if <20kg',
+        'Recheck blood glucose in 15 minutes after treatment',
+        'Repeat treatment if glucose remains <70 mg/dL',
+        'Consider thiamine 100mg IV before glucose in suspected alcoholics'
+      ],
+      contraindications: [
+        'Do not give oral glucose to unconscious patients (aspiration risk)',
+        'Avoid concentrated dextrose in severe dehydration without fluid replacement'
+      ],
+      equipmentNeeded: [
+        'Oral glucose gel or tablets',
+        'Dextrose 50% or 25% in water',
+        'IV access supplies',
+        'Glucagon injection',
+        'Thiamine injection'
+      ]
+    },
+    {
+      id: 'diabetic-step-4',
+      stepNumber: 4,
+      title: 'Hyperglycemia and DKA Assessment',
+      description: 'Evaluate for hyperglycemic emergencies and diabetic ketoacidosis',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Signs of DKA: fruity breath odor, deep rapid breathing (Kussmaul respirations)',
+        'Symptoms: polyuria, polydipsia, nausea, vomiting, abdominal pain',
+        'Dehydration signs: poor skin turgor, dry mucous membranes, tachycardia',
+        'Mental status: confusion, lethargy, or coma in severe cases',
+        'Ask about medication compliance, recent illness, or stress',
+        'Check for precipitating factors: infection, MI, medication non-compliance',
+        'Consider hyperglycemic hyperosmolar state (HHS) in elderly patients'
+      ]
+    },
+    {
+      id: 'diabetic-step-5',
+      stepNumber: 5,
+      title: 'Hyperglycemic Emergency Treatment',
+      description: 'Provide supportive care and fluid resuscitation for hyperglycemic patients',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Establish large bore IV access (14-16 gauge) for fluid resuscitation',
+        'Begin normal saline infusion: 500-1000mL bolus, then 250-500mL/hr',
+        'Do NOT give insulin in prehospital setting - can cause rapid fluid shifts',
+        'Monitor vital signs closely during fluid resuscitation',
+        'Support airway and breathing - may require intubation if comatose',
+        'Treat underlying precipitating causes if identified',
+        'Prepare for transport to facility with endocrinology capabilities'
+      ],
+      safetyNotes: [
+        'Rapid correction of hyperglycemia can cause cerebral edema',
+        'Monitor for fluid overload in elderly or cardiac patients'
+      ]
+    },
+    {
+      id: 'diabetic-step-6',
+      stepNumber: 6,
+      title: 'Monitoring and Reassessment',
+      description: 'Continuously monitor patient response and glucose levels',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Recheck blood glucose every 15 minutes after hypoglycemia treatment',
+        'Monitor neurological status for improvement or deterioration',
+        'Assess vital signs every 5 minutes during active treatment',
+        'Watch for signs of cerebral edema: headache, altered mental status',
+        'Document patient response to treatment interventions',
+        'Be prepared for recurrent hypoglycemia after initial treatment',
+        'Monitor for complications: seizures, cardiac arrhythmias, aspiration'
+      ]
+    },
+    {
+      id: 'diabetic-step-7',
+      stepNumber: 7,
+      title: 'Patient Education and Discharge Considerations',
+      description: 'Provide appropriate education and assess need for transport',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'For resolved hypoglycemia: ensure patient has eaten substantial meal',
+        'Educate about hypoglycemia prevention and recognition of symptoms',
+        'Discuss medication timing, meal schedules, and activity modifications',
+        'Assess home support system and ability to self-care',
+        'Consider transport if: recurrent hypoglycemia, underlying illness, elderly',
+        'Document patient education provided and discharge instructions',
+        'Ensure follow-up with primary care physician or endocrinologist'
+      ],
+      contraindications: [
+        'Transport required if altered mental status persists',
+        'Do not discharge if patient lives alone and at risk for recurrence'
+      ]
+    },
+    {
+      id: 'diabetic-step-8',
+      stepNumber: 8,
+      title: 'Transport Decision and Communication',
+      description: 'Determine appropriate destination and communicate with receiving facility',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Transport all hyperglycemic emergencies and severe hypoglycemia',
+        'Consider emergency department vs endocrinology unit based on severity',
+        'Provide detailed report: glucose levels, treatments given, patient response',
+        'Continue monitoring during transport with frequent glucose checks',
+        'Document medication administration times and patient response',
+        'Communicate any complications or changes in patient condition',
+        'Prepare family for possible hospital admission and treatment course'
+      ]
+    }
+  ],
+
+  // 17. ANAPHYLAXIS AND ALLERGIC REACTION MANAGEMENT - Life-threatening allergy treatment
+  'anaphylaxis-allergic-reaction': [
+    {
+      id: 'anaphylaxis-step-1',
+      stepNumber: 1,
+      title: 'Rapid Assessment and Recognition',
+      description: 'Quickly identify signs of anaphylaxis and assess severity',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Assess airway: look for lip/tongue swelling, hoarseness, stridor',
+        'Check breathing: wheeze, dyspnea, cyanosis, respiratory distress',
+        'Evaluate circulation: weak pulse, hypotension, skin color changes',
+        'Examine skin: urticaria (hives), flushing, angioedema, pruritus',
+        'Note onset time: anaphylaxis typically occurs within minutes of exposure',
+        'Ask about known allergies and recent exposures to allergens',
+        'Identify life-threatening signs requiring immediate epinephrine'
+      ],
+      safetyNotes: [
+        'Anaphylaxis can progress rapidly - immediate treatment is critical',
+        'Biphasic reactions can occur 4-12 hours after initial symptoms'
+      ],
+      equipmentNeeded: [
+        'Stethoscope for lung assessment',
+        'Blood pressure cuff',
+        'Pulse oximeter',
+        'Visual inspection tools'
+      ]
+    },
+    {
+      id: 'anaphylaxis-step-2',
+      stepNumber: 2,
+      title: 'Immediate Epinephrine Administration',
+      description: 'Administer epinephrine as first-line treatment for anaphylaxis',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Epinephrine 0.3-0.5mg (1:1000) IM into lateral thigh (vastus lateralis)',
+        'Pediatric dosing: 0.01 mg/kg IM (maximum 0.3mg for children)',
+        'Use EpiPen or draw up from vial - IM injection preferred over IV',
+        'Inject through clothing if necessary - do not delay for skin prep',
+        'Massage injection site to improve absorption',
+        'Note exact time of epinephrine administration',
+        'Prepare second dose - may repeat in 5-15 minutes if no improvement'
+      ],
+      contraindications: [
+        'No absolute contraindications in anaphylaxis - epinephrine is life-saving',
+        'Relative caution in elderly with coronary artery disease'
+      ],
+      safetyNotes: [
+        'IM route preferred over IV - faster onset, safer administration',
+        'Do not delay epinephrine for IV access or other interventions'
+      ],
+      equipmentNeeded: [
+        'Epinephrine 1:1000 (1mg/mL)',
+        'EpiPen auto-injectors',
+        'IM syringes and needles',
+        'Alcohol swabs'
+      ]
+    },
+    {
+      id: 'anaphylaxis-step-3',
+      stepNumber: 3,
+      title: 'Airway Management and Oxygen Therapy',
+      description: 'Secure airway and provide high-flow oxygen support',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Position patient: sitting up if conscious, supine if hypotensive',
+        'Administer high-flow oxygen via non-rebreather mask at 15 L/min',
+        'Monitor for upper airway obstruction from angioedema',
+        'Prepare for advanced airway if severe laryngeal edema present',
+        'Consider bag-mask ventilation if respiratory failure develops',
+        'Have cricothyrotomy kit available for complete airway obstruction',
+        'Continuously monitor oxygen saturation and respiratory effort'
+      ],
+      contraindications: [
+        'Avoid laying flat if patient has respiratory distress',
+        'Do not delay airway intervention if obstruction developing'
+      ]
+    },
+    {
+      id: 'anaphylaxis-step-4',
+      stepNumber: 4,
+      title: 'IV Access and Fluid Resuscitation',
+      description: 'Establish vascular access and treat hypotension',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Establish large bore IV access (14-16 gauge) - two lines if possible',
+        'Begin normal saline or lactated Ringer\'s fluid resuscitation',
+        'Adults: 500-1000mL bolus initially, then titrate to blood pressure',
+        'Pediatric: 20 mL/kg bolus, may repeat based on response',
+        'Target systolic BP >90 mmHg in adults, age-appropriate in children',
+        'Monitor for fluid overload in elderly or cardiac patients',
+        'Consider vasopressor support if fluid-refractory hypotension'
+      ]
+    },
+    {
+      id: 'anaphylaxis-step-5',
+      stepNumber: 5,
+      title: 'Secondary Medication Administration',
+      description: 'Administer adjunctive medications to support epinephrine therapy',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'DIPHENHYDRAMINE: 25-50mg IV/IM (1mg/kg pediatric, max 50mg)',
+        'METHYLPREDNISOLONE: 125mg IV (1-2mg/kg pediatric) for severe reactions',
+        'H2 BLOCKER: Famotidine 20mg IV or ranitidine 50mg IV if available',
+        'ALBUTEROL: 2.5mg nebulized for bronchospasm/wheezing',
+        'GLUCAGON: 1-2mg IV if patient on beta-blockers and epinephrine ineffective',
+        'Monitor patient response to each medication',
+        'Document medication administration times and dosages'
+      ],
+      safetyNotes: [
+        'Antihistamines and steroids are adjuncts - never replace epinephrine',
+        'Glucagon may be needed if patient takes beta-blockers'
+      ]
+    },
+    {
+      id: 'anaphylaxis-step-6',
+      stepNumber: 6,
+      title: 'Continuous Monitoring and Reassessment',
+      description: 'Monitor patient response and watch for biphasic reactions',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Monitor vital signs every 5 minutes: BP, pulse, respirations, O2 sat',
+        'Reassess airway patency and breathing adequacy continuously',
+        'Watch for improvement in skin findings: hives, flushing, swelling',
+        'Be prepared to repeat epinephrine if symptoms recur or worsen',
+        'Monitor for biphasic reaction: symptom return 4-12 hours later',
+        'Assess need for additional fluid boluses based on blood pressure',
+        'Document patient response to treatments and trending vital signs'
+      ]
+    },
+    {
+      id: 'anaphylaxis-step-7',
+      stepNumber: 7,
+      title: 'Allergen Identification and Avoidance',
+      description: 'Identify triggering allergen and prevent continued exposure',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Question patient about recent food intake: nuts, shellfish, medications',
+        'Ask about insect stings, latex exposure, or environmental allergens',
+        'Check for recent medication administration or new prescriptions',
+        'Remove or discontinue suspected allergen if still present',
+        'Document suspected trigger for future avoidance',
+        'Educate patient about allergen avoidance strategies',
+        'Consider need for allergy/immunology referral'
+      ]
+    },
+    {
+      id: 'anaphylaxis-step-8',
+      stepNumber: 8,
+      title: 'Transport and Disposition',
+      description: 'Coordinate transport and provide comprehensive care plan',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Transport ALL anaphylaxis patients to emergency department',
+        'Continue monitoring during transport - reactions can recur',
+        'Bring any remaining allergen or medication containers',
+        'Provide detailed report including trigger, treatments, and response',
+        'Ensure patient has EpiPen prescription before discharge (if appropriate)',
+        'Educate about biphasic reactions and when to seek immediate care',
+        'Consider observation period of 6-8 hours minimum in hospital'
+      ],
+      contraindications: [
+        'Never discharge anaphylaxis patients from scene',
+        'All patients require hospital evaluation regardless of improvement'
+      ]
+    }
+  ],
+
+  // 18. STROKE ASSESSMENT AND MANAGEMENT - Time-critical neurological emergency care
+  'stroke-assessment-management': [
+    {
+      id: 'stroke-step-1',
+      stepNumber: 1,
+      title: 'Rapid Stroke Recognition and FAST Assessment',
+      description: 'Quickly identify stroke symptoms using standardized assessment tools',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Use FAST assessment: Face drooping, Arm weakness, Speech difficulty, Time to call 911',
+        'FACE: Ask patient to smile - look for facial droop or asymmetry',
+        'ARMS: Ask patient to raise both arms - check for drift or weakness',
+        'SPEECH: Ask patient to repeat simple phrase - assess for slurred speech or aphasia',
+        'TIME: Note exact time of symptom onset or last known normal time',
+        'Additional signs: sudden severe headache, vision loss, confusion, balance problems',
+        'Consider BE-FAST: Balance, Eyes, Face, Arms, Speech, Time for posterior circulation'
+      ],
+      safetyNotes: [
+        'Time of onset critical for treatment decisions - document precisely',
+        'Stroke symptoms can be subtle - maintain high index of suspicion'
+      ],
+      equipmentNeeded: [
+        'Penlight for pupil assessment',
+        'Watch for timing symptoms',
+        'Stroke assessment scale reference',
+        'Blood pressure monitoring equipment'
+      ]
+    },
+    {
+      id: 'stroke-step-2',
+      stepNumber: 2,
+      title: 'Detailed Neurological Examination',
+      description: 'Perform comprehensive neurological assessment to characterize deficits',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Level of consciousness: use AVPU or Glasgow Coma Scale',
+        'Pupil assessment: size, equality, reaction to light (PEARRL)',
+        'Motor function: test grip strength, arm drift, leg strength bilaterally',
+        'Sensory function: test light touch and pain sensation',
+        'Speech evaluation: fluency, comprehension, repetition, naming',
+        'Visual fields: test peripheral vision by confrontation',
+        'Cranial nerves: facial symmetry, swallow, gag reflex'
+      ],
+      equipmentNeeded: [
+        'Penlight',
+        'Safety pin for pain testing',
+        'Tongue depressor',
+        'Neurological assessment tools'
+      ]
+    },
+    {
+      id: 'stroke-step-3',
+      stepNumber: 3,
+      title: 'Cincinnati Prehospital Stroke Scale (CPSS)',
+      description: 'Apply validated prehospital stroke assessment scale',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'FACIAL DROOP: "Show me your teeth" or "Smile for me"',
+        '- Normal: both sides of face move equally',
+        '- Abnormal: one side does not move as well as the other',
+        'ARM DRIFT: "Close your eyes and hold both arms out for 10 seconds"',
+        '- Normal: both arms move same or both arms do not move',
+        '- Abnormal: one arm drifts down compared to the other',
+        'SPEECH: "The sky is blue in Cincinnati" or "It is a sunny day"',
+        '- Normal: uses correct words with no slurring',
+        '- Abnormal: slurred or inappropriate words or mute'
+      ],
+      safetyNotes: [
+        'If any one of the three signs is abnormal, probability of stroke is 72%',
+        'All three abnormal increases stroke probability to 85%'
+      ]
+    },
+    {
+      id: 'stroke-step-4',
+      stepNumber: 4,
+      title: 'Vital Signs and Blood Glucose Assessment',
+      description: 'Obtain baseline vital signs and rule out hypoglycemia',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Blood pressure: often elevated in acute stroke - avoid aggressive reduction',
+        'Heart rate and rhythm: assess for atrial fibrillation (stroke risk factor)',
+        'Oxygen saturation: apply supplemental oxygen if SpO2 <94%',
+        'Blood glucose: rule out hypoglycemia as stroke mimic (<70 mg/dL)',
+        'Temperature: hyperthermia worsens stroke outcomes',
+        'Respiratory rate and pattern: assess for signs of increased ICP',
+        'Document all vital signs for hospital communication'
+      ],
+      contraindications: [
+        'Do not aggressively lower blood pressure in acute stroke',
+        'Avoid excessive oxygen unless hypoxic (may worsen outcomes)'
+      ]
+    },
+    {
+      id: 'stroke-step-5',
+      stepNumber: 5,
+      title: 'History and Stroke Mimics Assessment',
+      description: 'Obtain relevant history and consider alternative diagnoses',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Time of onset: exact time symptoms started or last known normal',
+        'Current medications: especially anticoagulants, antiplatelets',
+        'Medical history: previous stroke, atrial fibrillation, diabetes, hypertension',
+        'Recent procedures: surgery, catheterization, anticoagulation',
+        'Stroke mimics to consider: hypoglycemia, seizure, migraine, infection',
+        'Functional baseline: what was patient\'s normal neurological status?',
+        'Witness account: progression and character of symptoms'
+      ]
+    },
+    {
+      id: 'stroke-step-6',
+      stepNumber: 6,
+      title: 'Airway Protection and Supportive Care',
+      description: 'Ensure airway safety and provide appropriate supportive measures',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Assess swallow function - place patient NPO (nothing by mouth)',
+        'Position patient: head of bed elevated 30 degrees if no spinal injury',
+        'Monitor for aspiration risk - have suction immediately available',
+        'Consider advanced airway if GCS <8 or inability to protect airway',
+        'IV access: normal saline at keep-open rate (avoid fluid overload)',
+        'Avoid hyperventilation unless signs of herniation',
+        'Monitor neurological status continuously for changes'
+      ],
+      safetyNotes: [
+        'Stroke patients at high risk for aspiration - maintain NPO status',
+        'Avoid aggressive fluid resuscitation unless hypotensive'
+      ]
+    },
+    {
+      id: 'stroke-step-7',
+      stepNumber: 7,
+      title: 'Hospital Notification and Transport Decision',
+      description: 'Coordinate with stroke center and determine appropriate destination',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Notify stroke center immediately - provide stroke alert notification',
+        'Report: age, time of onset, FAST/CPSS findings, vital signs, glucose',
+        'Transport to Primary Stroke Center if within 4.5 hours of onset',
+        'Consider Comprehensive Stroke Center for large vessel occlusion',
+        'Endovascular-capable center if severe deficits and <24 hours',
+        'Include family member familiar with patient\'s baseline',
+        'Continue monitoring during transport - neurological changes can occur'
+      ],
+      safetyNotes: [
+        'Time is brain - minimize on-scene time for stroke patients',
+        'Pre-hospital notification allows hospital stroke team activation'
+      ]
+    },
+    {
+      id: 'stroke-step-8',
+      stepNumber: 8,
+      title: 'Ongoing Monitoring and Documentation',
+      description: 'Provide continuous assessment and comprehensive documentation',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Serial neurological assessments every 10-15 minutes during transport',
+        'Monitor for signs of increasing intracranial pressure',
+        'Watch for seizure activity - common complication of stroke',
+        'Document exact timing: symptom onset, assessment findings, transport',
+        'Note any improvement or worsening of neurological deficits',
+        'Communicate any changes in status to receiving stroke team',
+        'Prepare family for potential procedures: CT, tPA, thrombectomy'
+      ]
+    }
+  ],
+
+  // 19. PSYCHIATRIC EMERGENCY MANAGEMENT - Mental health crisis intervention
+  'psychiatric-emergency-management': [
+    {
+      id: 'psychiatric-step-1',
+      stepNumber: 1,
+      title: 'Scene Safety and Risk Assessment',
+      description: 'Ensure safety and assess potential dangers in psychiatric emergency',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Assess scene for weapons, drugs, or potential violence before approach',
+        'Position yourself near exit routes and maintain safe distance initially',
+        'Request law enforcement backup if violence threatened or suspected',
+        'Remove potential weapons or harmful objects from patient area',
+        'Assess patient\'s level of agitation, cooperation, and reality orientation',
+        'Consider need for physical or chemical restraints if immediate danger',
+        'Ensure adequate personnel available for patient control if needed'
+      ],
+      contraindications: [
+        'Do not approach agitated or violent patient without adequate backup',
+        'Never turn your back on potentially dangerous psychiatric patient',
+        'Avoid isolated areas when dealing with unpredictable patients'
+      ],
+      safetyNotes: [
+        'Safety of crew and bystanders is paramount in psychiatric emergencies',
+        'Maintain situational awareness throughout entire encounter'
+      ],
+      equipmentNeeded: [
+        'Communication device for law enforcement',
+        'Soft restraints if indicated',
+        'Medications for chemical sedation'
+      ]
+    },
+    {
+      id: 'psychiatric-step-2',
+      stepNumber: 2,
+      title: 'Mental Status Examination',
+      description: 'Perform systematic mental status assessment',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Appearance: hygiene, dress, grooming, psychomotor activity',
+        'Behavior: cooperation, eye contact, unusual movements or gestures',
+        'Speech: rate, volume, tone, coherence, spontaneous vs. responsive',
+        'Mood and Affect: patient\'s stated mood vs. observed emotional state',
+        'Thought Process: logical, goal-directed vs. circumstantial, tangential',
+        'Thought Content: delusions, obsessions, suicidal/homicidal ideation',
+        'Perception: hallucinations (auditory, visual, tactile, olfactory)',
+        'Cognition: orientation to person, place, time, memory, concentration'
+      ],
+      safetyNotes: [
+        'Document exact quotes when assessing thought content',
+        'Be direct but non-confrontational when asking about suicidal thoughts'
+      ]
+    },
+    {
+      id: 'psychiatric-step-3',
+      stepNumber: 3,
+      title: 'Suicide Risk Assessment',
+      description: 'Evaluate immediate suicide risk using standardized approach',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Ask directly: "Are you thinking about hurting or killing yourself?"',
+        'Assess plan specificity: method, location, timing, means availability',
+        'Evaluate intent: "How likely are you to act on these thoughts?"',
+        'Review risk factors: previous attempts, family history, recent losses',
+        'Assess protective factors: family support, religious beliefs, future plans',
+        'Consider access to lethal means: firearms, medications, heights',
+        'Document exact words used when discussing suicidal ideation'
+      ],
+      contraindications: [
+        'Never dismiss or minimize suicidal statements',
+        'Do not promise confidentiality when safety is at risk',
+        'Avoid asking "why" questions that may seem judgmental'
+      ]
+    },
+    {
+      id: 'psychiatric-step-4',
+      stepNumber: 4,
+      title: 'Medical Clearance Assessment',
+      description: 'Rule out medical causes of psychiatric symptoms',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Vital signs: fever may indicate infection affecting mental status',
+        'Blood glucose: hypoglycemia can mimic psychiatric symptoms',
+        'Neurological exam: focal deficits may suggest organic cause',
+        'History of head trauma, seizures, or medical conditions',
+        'Current medications: psychiatric, cardiac, pain medications',
+        'Substance use: alcohol, drugs, prescription medication abuse',
+        'Review systems: headache, vision changes, weakness, confusion'
+      ],
+      equipmentNeeded: [
+        'Blood glucose meter',
+        'Blood pressure cuff',
+        'Thermometer',
+        'Neurological assessment tools'
+      ]
+    },
+    {
+      id: 'psychiatric-step-5',
+      stepNumber: 5,
+      title: 'De-escalation and Therapeutic Communication',
+      description: 'Use verbal techniques to calm and reassure patient',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Introduce yourself and explain your role calmly',
+        'Use open-ended questions: "Can you tell me what\'s happening?"',
+        'Active listening: reflect and validate patient\'s feelings',
+        'Avoid arguing with delusions - neither agree nor disagree',
+        'Set clear, reasonable limits: "I need you to sit down so I can help"',
+        'Offer choices when possible: "Would you like to sit here or there?"',
+        'Use calm, non-threatening tone and body language',
+        'Acknowledge patient\'s distress: "I can see this is very difficult"'
+      ],
+      safetyNotes: [
+        'Remain calm and non-confrontational throughout interaction',
+        'If de-escalation fails, be prepared to use restraints or medication'
+      ]
+    },
+    {
+      id: 'psychiatric-step-6',
+      stepNumber: 6,
+      title: 'Chemical Sedation (if indicated)',
+      description: 'Administer appropriate medications for severe agitation',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Indications: imminent danger to self/others, severe agitation preventing care',
+        'HALOPERIDOL: 5-10mg IM (typical antipsychotic)',
+        'LORAZEPAM: 2-4mg IM (benzodiazepine for anxiety/agitation)',
+        'OLANZAPINE: 10mg IM (atypical antipsychotic, less EPS)',
+        'Combination therapy: haloperidol 5mg + lorazepam 2mg IM',
+        'Monitor for respiratory depression, especially with benzodiazepines',
+        'Be prepared for paradoxical reactions or extrapyramidal side effects'
+      ],
+      contraindications: [
+        'Avoid benzodiazepines in suspected alcohol or drug intoxication',
+        'Use caution with antipsychotics in elderly patients',
+        'Monitor airway and breathing closely after sedation'
+      ]
+    },
+    {
+      id: 'psychiatric-step-7',
+      stepNumber: 7,
+      title: 'Physical Restraints (last resort)',
+      description: 'Apply restraints safely when patient poses immediate danger',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Use only when immediate danger exists and other methods failed',
+        'Minimum 4 people: one for each extremity, one for head control',
+        'Apply soft restraints to all four extremities simultaneously',
+        'Secure patient supine or side-lying - never prone position',
+        'Check circulation, sensation, movement every 15 minutes',
+        'Monitor airway and breathing continuously',
+        'Document medical necessity and alternatives attempted',
+        'Remove restraints as soon as safely possible'
+      ],
+      contraindications: [
+        'Never use restraints as punishment or for convenience',
+        'Avoid prone restraint - risk of positional asphyxia',
+        'Do not restrain patients with respiratory compromise'
+      ]
+    },
+    {
+      id: 'psychiatric-step-8',
+      stepNumber: 8,
+      title: 'Transport and Disposition',
+      description: 'Coordinate appropriate transport and receiving facility',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Transport all patients with suicidal ideation or severe mental illness',
+        'Emergency department for medical clearance before psychiatric evaluation',
+        'Consider specialized psychiatric emergency services if available',
+        'Maintain continuous observation during transport',
+        'Remove potential self-harm objects from patient compartment',
+        'Document detailed mental status and risk assessment findings',
+        'Provide thorough report to receiving psychiatric team',
+        'Consider law enforcement escort if patient remains dangerous'
+      ]
+    }
   ]
 };
 
@@ -4449,7 +5583,2425 @@ export const criticalSkillsMetadata = {
       'Neurological assessment tools and GCS reference',
       'Cardiac monitoring equipment'
     ]
-  }
+  },
+
+  'diabetic-emergency-management': {
+    name: 'Diabetic Emergency Management',
+    category: 'medical',
+    difficultyLevel: 'INTERMEDIATE' as const,
+    timeEstimateMinutes: 18,
+    isCritical: true,
+    objectives: [
+      'Rapidly assess consciousness level and obtain blood glucose measurement',
+      'Recognize signs and symptoms of hypoglycemic and hyperglycemic emergencies',
+      'Provide appropriate glucose replacement therapy based on patient condition',
+      'Identify and assess diabetic ketoacidosis and hyperglycemic emergencies',
+      'Administer fluid resuscitation and supportive care for hyperglycemic patients',
+      'Monitor patient response and reassess glucose levels continuously',
+      'Make appropriate transport decisions and provide patient education'
+    ],
+    indications: [
+      'Altered mental status in known diabetic patients',
+      'Blood glucose <70 mg/dL (hypoglycemia) or >400 mg/dL (severe hyperglycemia)',
+      'Signs of diabetic ketoacidosis (fruity breath, Kussmaul respirations)',
+      'Hyperglycemic hyperosmolar state in elderly patients',
+      'Seizures or coma of unknown origin (check glucose)',
+      'Diabetic patient with nausea, vomiting, or dehydration',
+      'Medication non-compliance or recent illness in diabetics'
+    ],
+    contraindications: [
+      'Do not give oral glucose to unconscious patients',
+      'Avoid insulin administration in prehospital setting',
+      'Do not discharge altered mental status patients',
+      'Avoid rapid glucose correction in severe hyperglycemia'
+    ],
+    equipment: [
+      'Blood glucose meter and test strips',
+      'Lancets and alcohol swabs for glucose testing',
+      'Oral glucose gel and tablets',
+      'Dextrose solutions (D25W, D50W) for IV administration',
+      'Glucagon injection for severe hypoglycemia',
+      'IV access supplies and normal saline for fluid resuscitation',
+      'Thiamine injection for suspected alcoholics',
+      'Airway management equipment if altered consciousness'
+    ]
+  },
+
+  'anaphylaxis-allergic-reaction': {
+    name: 'Anaphylaxis and Allergic Reaction Management',
+    category: 'medical',
+    difficultyLevel: 'ADVANCED' as const,
+    timeEstimateMinutes: 22,
+    isCritical: true,
+    objectives: [
+      'Rapidly recognize signs and symptoms of anaphylactic reactions',
+      'Administer epinephrine as first-line treatment without delay',
+      'Provide comprehensive airway management and oxygen support',
+      'Establish IV access and provide fluid resuscitation for hypotension',
+      'Administer appropriate adjunctive medications (antihistamines, steroids)',
+      'Monitor continuously for biphasic reactions and treatment response',
+      'Identify triggering allergens and coordinate safe transport to hospital'
+    ],
+    indications: [
+      'Acute onset allergic reaction with systemic symptoms',
+      'Respiratory distress with known allergen exposure',
+      'Hypotension following allergen exposure (food, medication, insect sting)',
+      'Urticaria with angioedema affecting airway or breathing',
+      'Gastrointestinal symptoms with skin/respiratory involvement',
+      'Previous anaphylaxis with similar exposure or symptoms',
+      'Severe local allergic reaction progressing to systemic involvement'
+    ],
+    contraindications: [
+      'No absolute contraindications for epinephrine in anaphylaxis',
+      'Do not delay epinephrine for IV access or other interventions',
+      'Avoid antihistamines as sole treatment for anaphylaxis',
+      'Never discharge anaphylaxis patients without hospital evaluation'
+    ],
+    equipment: [
+      'Epinephrine 1:1000 and EpiPen auto-injectors',
+      'Airway management equipment and high-flow oxygen',
+      'IV access supplies and crystalloid fluids for resuscitation',
+      'Antihistamines (diphenhydramine) and corticosteroids',
+      'Nebulizer and albuterol for bronchospasm treatment',
+      'Advanced airway equipment including cricothyrotomy kit',
+      'Blood pressure monitoring and pulse oximetry equipment',
+      'Glucagon injection for patients on beta-blocker medications'
+    ]
+  },
+
+  'fracture-orthopedic-management': {
+    name: 'Fracture and Orthopedic Injury Management',
+    category: 'trauma',
+    difficultyLevel: 'INTERMEDIATE',
+    timeEstimateMinutes: 14,
+    isCritical: true,
+    objectives: [
+      'Perform systematic assessment of musculoskeletal trauma injuries',
+      'Implement appropriate fracture stabilization and splinting techniques',
+      'Recognize and manage orthopedic complications including compartment syndrome',
+      'Provide appropriate pain management for orthopedic trauma patients',
+      'Manage open fractures with proper wound care and infection prevention',
+      'Determine appropriate transport decisions and hospital selection'
+    ],
+    indications: [
+      'Suspected or obvious fractures of extremities or pelvis',
+      'Crush injuries with potential musculoskeletal involvement',
+      'High-energy trauma with orthopedic injury potential',
+      'Open wounds with suspected underlying fractures',
+      'Severe extremity pain with deformity or loss of function',
+      'Neurovascular compromise associated with extremity injury',
+      'Joint dislocations requiring reduction or stabilization',
+      'Multiple trauma with orthopedic component requiring prioritization'
+    ],
+    contraindications: [
+      'Life-threatening injuries taking priority over fracture care',
+      'Unsafe scene preventing adequate assessment or treatment',
+      'Complete neurovascular compromise requiring immediate surgery',
+      'Suspected compartment syndrome requiring emergency fasciotomy'
+    ],
+    equipment: [
+      'Various splinting materials including vacuum, rigid, and SAM splints',
+      'Traction splint for femur fractures (Hare, Sager, or similar)',
+      'Padding materials, blankets, and cushioning devices',
+      'Bandages, tape, and securing straps for splint application',
+      'Analgesic medications per protocol (morphine, fentanyl, ketamine)',
+      'Sterile dressings and hemostatic agents for open fractures',
+      'Ice packs or cold therapy devices for swelling reduction',
+      'Blood pressure monitoring and pulse oximetry equipment'
+    ]
+  },
+
+  'poisoning-overdose-management': {
+    name: 'Poisoning and Overdose Management',
+    category: 'medical',
+    difficultyLevel: 'ADVANCED',
+    timeEstimateMinutes: 18,
+    isCritical: true,
+    objectives: [
+      'Assess scene safety and identify potential toxic hazards',
+      'Perform systematic toxicological assessment and history taking',
+      'Implement appropriate decontamination procedures based on exposure route',
+      'Administer specific antidotes and supportive care per protocol',
+      'Monitor for and manage toxicological complications',
+      'Provide crisis intervention for intentional poisoning cases',
+      'Coordinate with poison control center for expert consultation'
+    ],
+    indications: [
+      'Known or suspected ingestion of toxic substances',
+      'Inhalation exposure to hazardous chemicals or gases',
+      'Dermal or eye exposure to caustic or toxic materials',
+      'Drug overdose with altered mental status or vital signs',
+      'Multiple patients with similar symptoms suggesting environmental exposure',
+      'Intentional self-poisoning or suicide attempt with toxic substances',
+      'Accidental pediatric ingestion of household chemicals or medications',
+      'Occupational exposure to industrial chemicals or pesticides'
+    ],
+    contraindications: [
+      'Unsafe scene conditions preventing provider safety',
+      'Life-threatening trauma taking priority over toxicological care',
+      'Contraindications to specific antidotes (flumazenil in seizure patients)',
+      'Gastric decontamination contraindicated for caustics or petroleum products'
+    ],
+    equipment: [
+      'Personal protective equipment including chemical-resistant suits and respirators',
+      'Decontamination supplies including water, saline, and containment materials',
+      'Specific antidotes per protocol: naloxone, flumazenil, atropine, calcium',
+      'Activated charcoal for appropriate ingestion cases',
+      'Cardiac monitor and defibrillation capability',
+      'Airway management equipment including intubation supplies',
+      'IV access supplies and various crystalloid and medication options',
+      'Poison control center contact information and communication equipment'
+    ]
+  },
+
+  'burns-thermal-injury-management': {
+    name: 'Burns and Thermal Injury Management',
+    category: 'trauma',
+    difficultyLevel: 'ADVANCED',
+    timeEstimateMinutes: 19,
+    isCritical: true,
+    objectives: [
+      'Ensure scene safety and eliminate ongoing thermal hazards',
+      'Perform systematic burn assessment including depth and total body surface area',
+      'Implement appropriate cooling therapy and initial burn treatment',
+      'Establish vascular access and provide fluid resuscitation per burn protocols',
+      'Manage burn-related complications including airway burns and compartment syndrome',
+      'Provide appropriate pain management for severe burn injuries',
+      'Determine appropriate receiving facility and coordinate burn center transport'
+    ],
+    indications: [
+      'Thermal burns from fire, hot liquids, or contact with hot objects',
+      'Chemical burns from acids, alkalis, or other caustic substances',
+      'Electrical burns from high or low voltage electrical contact',
+      'Burns involving face, hands, feet, genitalia, or major joints',
+      'Circumferential burns of extremities or torso',
+      'Burns in patients with significant comorbidities or extremes of age',
+      'Burns associated with inhalation injury or airway compromise',
+      'Burns covering >10% total body surface area in adults or >5% in children'
+    ],
+    contraindications: [
+      'Unsafe scene conditions with active fire or electrical hazards',
+      'Life-threatening trauma taking priority over burn care',
+      'Structural instability preventing safe patient access',
+      'Hazardous materials requiring specialized decontamination teams'
+    ],
+    equipment: [
+      'Personal protective equipment appropriate for fire and hazmat scenes',
+      'Cool water or saline for burn cooling and chemical irrigation',
+      'Clean, dry dressings and burn sheets for covering wounds',
+      'Large-bore IV catheters and lactated Ringer\'s solution for fluid resuscitation',
+      'Analgesic medications including morphine, fentanyl, and ketamine',
+      'Airway management equipment including intubation supplies',
+      'Cardiac monitoring and pulse oximetry for continuous assessment',
+      'Burn assessment tools including Rule of Nines charts and calculators'
+    ]
+  },
+
+  'chest-pain-acs-management': {
+    name: 'Chest Pain and Acute Coronary Syndrome Management',
+    category: 'cardiac',
+    difficultyLevel: 'ADVANCED',
+    timeEstimateMinutes: 22,
+    isCritical: true,
+    objectives: [
+      'Perform rapid assessment and early recognition of acute coronary syndrome',
+      'Obtain and interpret 12-lead ECG within 10 minutes of patient contact',
+      'Administer appropriate cardiac medications including aspirin and nitroglycerin',
+      'Implement advanced cardiac life support for complications and arrhythmias',
+      'Perform risk stratification and assess for high-risk cardiac features',
+      'Coordinate with cardiac catheterization lab for STEMI patients',
+      'Provide continuous monitoring and reassessment throughout care'
+    ],
+    indications: [
+      'Chest pain or discomfort suggestive of cardiac origin',
+      'Typical anginal symptoms with cardiac risk factors',
+      'Atypical presentations in high-risk patients (women, elderly, diabetics)',
+      'Known coronary artery disease with worsening symptoms',
+      'Chest pain associated with diaphoresis, nausea, or dyspnea',
+      'ECG changes consistent with ischemia or infarction',
+      'Elevated cardiac biomarkers if available in field',
+      'Suspected complications of acute MI including arrhythmias or heart failure'
+    ],
+    contraindications: [
+      'Aspirin allergy or active gastrointestinal bleeding',
+      'Nitroglycerin contraindicated with hypotension or recent PDE5 inhibitor use',
+      'Thrombolytic therapy contraindicated with recent surgery or bleeding',
+      'Beta-blockers contraindicated with bradycardia, heart block, or asthma'
+    ],
+    equipment: [
+      '12-lead ECG machine with transmission capability',
+      'Cardiac medications including aspirin, nitroglycerin, morphine',
+      'Advanced cardiac life support medications and defibrillator',
+      'IV access supplies and crystalloid solutions',
+      'Continuous cardiac monitoring and pulse oximetry',
+      'Blood pressure monitoring equipment',
+      'Oxygen delivery devices for hypoxic patients',
+      'Communication equipment for cardiac catheterization lab activation'
+    ]
+  },
+
+  '12-lead-ecg-placement': {
+    name: '12-Lead ECG Lead Placement and Acquisition',
+    category: 'cardiac',
+    difficultyLevel: 'INTERMEDIATE',
+    timeEstimateMinutes: 15,
+    isCritical: true,
+    objectives: [
+      'Perform accurate anatomical landmark identification for electrode placement',
+      'Apply electrodes in correct positions following standardized protocols',
+      'Acquire high-quality 12-lead ECG tracings free from artifact',
+      'Demonstrate proper skin preparation and equipment calibration techniques',
+      'Recognize and troubleshoot common ECG acquisition problems',
+      'Document findings and maintain equipment according to standards'
+    ],
+    indications: [
+      'Chest pain or cardiac symptoms requiring cardiac assessment',
+      'Suspected myocardial infarction or acute coronary syndrome',
+      'Cardiac arrhythmias or palpitations',
+      'Syncope or pre-syncope episodes',
+      'Routine cardiac screening or pre-operative assessment',
+      'Monitoring response to cardiac medications or interventions',
+      'Follow-up assessment of known cardiac conditions',
+      'Any patient with cardiovascular risk factors and symptoms'
+    ],
+    contraindications: [
+      'No absolute contraindications for diagnostic ECG',
+      'Relative caution with severe skin breakdown at electrode sites',
+      'Patient refusal or inability to cooperate with positioning'
+    ],
+    equipment: [
+      '12-lead ECG machine with calibration capability',
+      '10 ECG electrodes (limb and precordial)',
+      'Complete set of lead cables with proper color coding',
+      'Alcohol wipes for skin preparation',
+      'Razor or clippers for hair removal if needed',
+      'ECG paper or digital storage device',
+      'Patient draping materials for privacy',
+      'Electrode placement reference guide or anatomical chart'
+    ]
+  },
+
+  'cpap-ventilation': {
+    name: 'Continuous Positive Airway Pressure (CPAP)',
+    category: 'airway',
+    difficultyLevel: 'ADVANCED',
+    timeEstimateMinutes: 20,
+    isCritical: true,
+    objectives: [
+      'Assess patient appropriately for CPAP candidacy and contraindications',
+      'Set up and test CPAP equipment ensuring proper function and safety',
+      'Apply CPAP mask with proper technique and pressure titration',
+      'Monitor patient response and adjust therapy based on clinical improvement',
+      'Recognize and manage complications of CPAP therapy',
+      'Provide safe transport while maintaining CPAP support'
+    ],
+    indications: [
+      'Acute cardiogenic pulmonary edema with adequate mental status',
+      'COPD exacerbation with respiratory distress and CO2 retention',
+      'Pneumonia with respiratory failure and adequate consciousness',
+      'Acute respiratory distress in conscious, cooperative patients',
+      'Bridge therapy while preparing for intubation',
+      'Sleep apnea exacerbation in hospital or transport setting'
+    ],
+    contraindications: [
+      'Altered mental status or inability to protect airway (GCS <13)',
+      'Active vomiting or high aspiration risk',
+      'Facial trauma preventing adequate mask seal',
+      'Untreated pneumothorax',
+      'Severe hypotension (systolic <90mmHg)',
+      'Cardiac or respiratory arrest'
+    ],
+    equipment: [
+      'CPAP generator unit with pressure capability',
+      'Breathing circuit with reservoir bag and PEEP valve',
+      'Face masks in multiple sizes (small, medium, large)',
+      'Head straps and securing devices',
+      'Oxygen source with flow meter (10-15 L/min capability)',
+      'Manometer for pressure monitoring',
+      'Suction equipment for airway management',
+      'Backup bag-valve-mask equipment'
+    ]
+  },
+
+  'needle-thoracentesis': {
+    name: 'Needle Thoracentesis (Decompression)',
+    category: 'trauma',
+    difficultyLevel: 'ADVANCED' as const,
+    timeEstimateMinutes: 8,
+    isCritical: true,
+    objectives: [
+      'Rapidly identify clinical signs of tension pneumothorax requiring immediate intervention',
+      'Perform emergency needle decompression using proper anatomical landmarks and technique',
+      'Establish and maintain functional one-way valve system for ongoing decompression',
+      'Monitor patient response and manage complications during and after the procedure',
+      'Document procedure thoroughly and provide comprehensive handoff to receiving facility'
+    ],
+    indications: [
+      'Tension pneumothorax with hemodynamic compromise and respiratory distress',
+      'Absent or severely diminished breath sounds with tracheal deviation',
+      'Cardiac arrest with suspected tension pneumothorax',
+      'Progressive respiratory failure with signs of mediastinal shift'
+    ],
+    contraindications: [
+      'Simple pneumothorax without tension physiology (relative)',
+      'Severe coagulopathy with high bleeding risk (relative)',
+      'Local infection at proposed insertion site',
+      'Anatomical abnormalities preventing safe needle access'
+    ],
+    equipment: [
+      '14-gauge angiocatheter (minimum 2-inch length)',
+      'Antiseptic solution (alcohol or betadine)',
+      'Sterile gauze pads and medical tape',
+      'Flutter valve or 3-way stopcock with finger cot',
+      'Personal protective equipment (gloves, mask, eye protection)',
+      'Suction equipment and airway management supplies',
+      'Continuous monitoring equipment (pulse oximetry, blood pressure)',
+      'Documentation materials and communication devices'
+    ]
+  },
+
+  'intravenous-fluid-therapy': {
+    name: 'Intravenous Fluid Therapy',
+    category: 'vascular-access',
+    difficultyLevel: 'INTERMEDIATE' as const,
+    timeEstimateMinutes: 25,
+    isCritical: true,
+    objectives: [
+      'Assess patient hemodynamic status and determine appropriate fluid therapy indication',
+      'Select correct IV fluid type and calculate appropriate dosing for patient condition',
+      'Establish secure peripheral IV access using sterile technique and safety protocols',
+      'Administer fluid bolus therapy with continuous monitoring of patient response',
+      'Titrate fluid rates based on clinical response and avoid fluid overload complications',
+      'Monitor for adverse reactions and manage complications of IV fluid therapy',
+      'Document fluid administration and provide comprehensive handoff to receiving team'
+    ],
+    indications: [
+      'Hypovolemic shock from bleeding, dehydration, or fluid losses',
+      'Hypotension requiring volume support and resuscitation',
+      'Severe dehydration from vomiting, diarrhea, or inadequate intake',
+      'Burns requiring fluid resuscitation to prevent shock',
+      'Sepsis with hypotension requiring fluid therapy',
+      'Medication administration requiring IV access'
+    ],
+    contraindications: [
+      'Pulmonary edema or acute congestive heart failure (relative)',
+      'Known renal failure with fluid overload',
+      'Hypervolemia or evidence of fluid overload',
+      'Severe electrolyte imbalances requiring specific management'
+    ],
+    equipment: [
+      'Isotonic crystalloid solutions (Normal Saline, Lactated Ringers)',
+      'IV catheters (14G, 16G, 18G, 20G, 22G)',
+      'IV administration sets with macro and micro drip chambers',
+      'IV poles, pressure bags for rapid infusion',
+      'Infusion pumps for precise rate control',
+      'IV start kits with antiseptic and securing materials',
+      'Fluid warmers for large volume resuscitation',
+      'Monitoring equipment for vital signs and response assessment'
+    ]
+  },
+
+  'supraglottic-airway-management': {
+    name: 'Supraglottic Airway Management',
+    category: 'airway',
+    difficultyLevel: 'ADVANCED' as const,
+    timeEstimateMinutes: 12,
+    isCritical: true,
+    objectives: [
+      'Assess patient appropriateness for supraglottic airway insertion and rule out contraindications',
+      'Select correct device type and size based on patient characteristics and clinical needs',
+      'Demonstrate proper insertion technique for LMA, King LT, or similar supraglottic devices',
+      'Confirm correct placement using multiple verification methods including capnography',
+      'Secure device adequately and optimize ventilation parameters to prevent complications',
+      'Monitor continuously for device displacement and manage potential complications',
+      'Provide appropriate handoff and documentation for receiving medical team'
+    ],
+    indications: [
+      'Failed bag-mask ventilation requiring immediate airway rescue',
+      'Unconscious patient requiring positive pressure ventilation support',
+      'Cannot intubate, cannot oxygenate emergency situation',
+      'Bridge airway during failed intubation attempts',
+      'Cardiac arrest requiring definitive airway management',
+      'Alternative to intubation when endotracheal intubation is not feasible'
+    ],
+    contraindications: [
+      'Conscious patient with intact gag reflex or protective airway reflexes',
+      'Suspected complete upper airway obstruction above vocal cords',
+      'Caustic ingestion with potential laryngeal or pharyngeal burns',
+      'Significant oral, pharyngeal, or laryngeal trauma',
+      'Limited mouth opening preventing adequate device insertion (<2.5 cm)',
+      'Active vomiting or high risk of aspiration (relative contraindication)'
+    ],
+    equipment: [
+      'Supraglottic airway devices (LMA, King LT, I-gel) in multiple sizes',
+      'Syringes (10-30 mL) for cuff inflation',
+      'Water-soluble lubricant for device preparation',
+      'Bag-valve-mask device with oxygen reservoir',
+      'End-tidal CO2 monitoring with waveform capability',
+      'Suction equipment with rigid and flexible catheters',
+      'Securing tape, ties, or commercial airway holders',
+      'Stethoscope for auscultation and backup airway equipment'
+    ]
+  },
+
+  'stroke-assessment-management': {
+    name: 'Stroke Assessment and Management',
+    category: 'medical',
+    difficultyLevel: 'ADVANCED' as const,
+    timeEstimateMinutes: 20,
+    isCritical: true,
+    objectives: [
+      'Rapidly recognize stroke symptoms using FAST and BE-FAST assessments',
+      'Perform comprehensive neurological examination to characterize deficits',
+      'Apply Cincinnati Prehospital Stroke Scale for validated assessment',
+      'Obtain vital signs and rule out stroke mimics (especially hypoglycemia)',
+      'Gather relevant history including time of onset and medications',
+      'Provide appropriate supportive care while protecting airway',
+      'Coordinate with stroke center and ensure rapid transport',
+      'Monitor continuously and document neurological changes during transport'
+    ],
+    indications: [
+      'Sudden onset focal neurological deficits',
+      'Facial drooping, arm weakness, or speech difficulties',
+      'Sudden severe headache (worst headache of life)',
+      'Sudden vision loss or visual field defects',
+      'Sudden loss of balance, coordination, or walking ability',
+      'Sudden confusion or difficulty understanding speech',
+      'Any combination of neurological symptoms with acute onset'
+    ],
+    contraindications: [
+      'Do not aggressively lower blood pressure in acute stroke',
+      'Avoid excessive oxygen administration unless hypoxic',
+      'Do not give oral medications or fluids (NPO status)',
+      'Avoid aggressive fluid resuscitation unless hypotensive'
+    ],
+    equipment: [
+      'Stroke assessment scales and neurological examination tools',
+      'Blood glucose meter for ruling out hypoglycemia',
+      'Blood pressure monitoring and pulse oximetry equipment',
+      'Airway management tools and suction equipment',
+      'IV access supplies and normal saline for keep-open rate',
+      'Penlight for pupil assessment and neurological testing',
+      'Communication equipment for stroke center notification',
+      'Transport equipment with head elevation capability'
+    ]
+  },
+
+  // 20. FRACTURE AND ORTHOPEDIC INJURY MANAGEMENT - Musculoskeletal trauma care
+  'fracture-orthopedic-management': [
+    {
+      id: 'fracture-step-1',
+      stepNumber: 1,
+      title: 'Scene Safety and Mechanism Assessment',
+      description: 'Assess scene safety and understand mechanism of injury for orthopedic trauma',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Ensure scene safety - look for ongoing hazards that may affect patient or provider',
+        'Assess mechanism of injury: fall height, impact force, direction of applied forces',
+        'Consider high-energy vs low-energy trauma patterns',
+        'Look for environmental clues: twisted wreckage, broken glass, blood patterns',
+        'Determine if multisystem trauma is likely based on mechanism',
+        'Consider cervical spine precautions if indicated by mechanism',
+        'Identify need for rapid extraction vs on-scene stabilization'
+      ],
+      contraindications: [
+        'Unsafe scene requiring immediate evacuation',
+        'Life-threatening bleeding requiring immediate hemorrhage control',
+        'Airway compromise taking priority over fracture care'
+      ],
+      safetyNotes: [
+        'High-energy mechanisms often involve multiple system injuries',
+        'Never compromise scene safety to provide orthopedic care'
+      ]
+    },
+    {
+      id: 'fracture-step-2',
+      stepNumber: 2,
+      title: 'Primary Assessment and Life Threats',
+      description: 'Complete primary assessment identifying life-threatening conditions',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Assess airway, breathing, circulation following ABCDE approach',
+        'Identify immediate life threats: massive hemorrhage, pneumothorax, shock',
+        'Check for signs of hemorrhagic shock from long bone fractures',
+        'Assess neurological status and spine immobilization needs',
+        'Look for open fractures with active bleeding',
+        'Evaluate for compartment syndrome signs early',
+        'Consider crush injuries and associated complications'
+      ],
+      safetyNotes: [
+        'Femur fractures can cause 1-2 liters of blood loss',
+        'Open fractures have high infection and hemorrhage risk',
+        'Compartment syndrome is a surgical emergency'
+      ]
+    },
+    {
+      id: 'fracture-step-3',
+      stepNumber: 3,
+      title: 'Focused Orthopedic Assessment',
+      description: 'Perform systematic musculoskeletal examination',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Expose and inspect affected extremities - look for deformity, swelling, bruising',
+        'Assess neurovascular status: pulses, sensation, motor function',
+        'Palpate for point tenderness, crepitus, and instability',
+        'Check range of motion only if no obvious fracture present',
+        'Document baseline neurological and vascular findings',
+        'Assess for associated injuries: dislocations, ligament tears',
+        'Use anatomical landmarks to identify specific fracture locations'
+      ],
+      contraindications: [
+        'Do not move obviously fractured extremities unnecessarily',
+        'Avoid range of motion testing with suspected fractures',
+        'Do not palpate if gross deformity is present'
+      ],
+      safetyNotes: [
+        'Document neurovascular status before and after any intervention',
+        'Loss of pulse or sensation requires immediate action'
+      ]
+    },
+    {
+      id: 'fracture-step-4',
+      stepNumber: 4,
+      title: 'Pain Management and Patient Comfort',
+      description: 'Provide appropriate analgesia and positioning for patient comfort',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Assess pain level using appropriate scale (0-10 numeric or faces scale)',
+        'Administer analgesics per protocol: morphine, fentanyl, or ketamine',
+        'Consider regional anesthesia techniques if trained and equipped',
+        'Position patient for comfort while maintaining spine precautions',
+        'Use pillows or blankets to support injured extremities',
+        'Apply ice packs to reduce swelling and pain if available',
+        'Provide emotional support and reassurance to anxious patient'
+      ],
+      safetyNotes: [
+        'Monitor respiratory status closely with opioid administration',
+        'Pain relief improves patient cooperation with treatment',
+        'Avoid delaying analgesia for "diagnostic clarity"'
+      ]
+    },
+    {
+      id: 'fracture-step-5',
+      stepNumber: 5,
+      title: 'Fracture Stabilization and Splinting',
+      description: 'Immobilize fractures using appropriate splinting techniques',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Immobilize joint above and below suspected fracture site',
+        'Apply gentle longitudinal traction if significant angulation present',
+        'Use appropriate splinting material: vacuum, rigid, or traction splints',
+        'Pad pressure points and bony prominences adequately',
+        'Secure splint with straps or bandages - snug but not constricting',
+        'For femur fractures, consider traction splinting per protocol',
+        'Document pre- and post-splinting neurovascular assessments'
+      ],
+      equipmentNeeded: [
+        'Various splinting materials (vacuum, rigid, SAM splints)',
+        'Traction splint for femur fractures',
+        'Padding materials and bandages',
+        'Straps and securing devices'
+      ],
+      safetyNotes: [
+        'Check neurovascular status before and after splinting',
+        'Traction splints contraindicated for certain fracture patterns',
+        'Splints should immobilize, not compress'
+      ]
+    },
+    {
+      id: 'fracture-step-6',
+      stepNumber: 6,
+      title: 'Open Fracture Management',
+      description: 'Provide specialized care for open fractures with wound management',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 150,
+      keyPoints: [
+        'Assess wound classification: Grade I (<1cm), II (1-10cm), III (>10cm)',
+        'Control hemorrhage with direct pressure and hemostatic agents',
+        'Remove gross contamination but avoid aggressive debridement',
+        'Irrigate wounds with sterile saline if available',
+        'Apply sterile dressings to wound - do not remove protruding bone',
+        'Administer antibiotics per protocol if available',
+        'Document wound size, contamination level, and associated injuries'
+      ],
+      contraindications: [
+        'Do not push protruding bone back into wound',
+        'Avoid removing impaled objects near fracture sites',
+        'Do not delay transport for extensive wound care'
+      ],
+      safetyNotes: [
+        'Open fractures require urgent surgical intervention',
+        'High risk of infection and osteomyelitis',
+        'Time to antibiotic administration affects outcomes'
+      ]
+    },
+    {
+      id: 'fracture-step-7',
+      stepNumber: 7,
+      title: 'Complications Recognition and Management',
+      description: 'Monitor for and manage orthopedic complications',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Monitor for compartment syndrome: 5 P\'s (Pain, Pallor, Paresthesia, Pulselessness, Paralysis)',
+        'Assess for fat embolism syndrome in long bone fractures',
+        'Watch for signs of hemorrhagic shock from blood loss',
+        'Monitor for rhabdomyolysis in crush injuries',
+        'Check for associated vascular injuries and nerve damage',
+        'Assess for infection signs in open fractures',
+        'Monitor splint tightness and circulation regularly'
+      ],
+      safetyNotes: [
+        'Compartment syndrome can develop rapidly and cause permanent damage',
+        'Fat embolism can affect pulmonary and neurological function',
+        'Early recognition of complications is critical for outcomes'
+      ]
+    },
+    {
+      id: 'fracture-step-8',
+      stepNumber: 8,
+      title: 'Transport Decisions and Hospital Communication',
+      description: 'Determine transport priority and communicate with receiving facility',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Determine transport priority: emergent vs non-emergent based on complications',
+        'Choose appropriate receiving facility based on injury severity',
+        'Consider trauma center criteria for multiple or complex fractures',
+        'Provide pre-hospital report including mechanism, injuries, treatments',
+        'Communicate any complications or deterioration in condition',
+        'Prepare for potential surgical emergency at receiving facility',
+        'Continue monitoring and reassessing throughout transport'
+      ],
+      safetyNotes: [
+        'Some orthopedic injuries require immediate surgical intervention',
+        'Open fractures and compartment syndrome are true emergencies',
+        'Clear communication improves receiving hospital preparation'
+      ]
+    }
+  ],
+
+  // 21. POISONING AND OVERDOSE MANAGEMENT - Toxicological emergency care
+  'poisoning-overdose-management': [
+    {
+      id: 'poison-step-1',
+      stepNumber: 1,
+      title: 'Scene Safety and Contamination Assessment',
+      description: 'Assess scene for hazardous substances and prevent provider exposure',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Approach scene cautiously - look for chemical odors, spilled substances, or vapors',
+        'Don appropriate personal protective equipment before patient contact',
+        'Identify the poisonous substance if possible - check containers, labels, witnesses',
+        'Assess for airborne hazards requiring respiratory protection',
+        'Look for multiple victims suggesting environmental exposure',
+        'Consider need for decontamination before patient transport',
+        'Contact poison control center early for expert guidance (1-800-222-1222)',
+        'Consider law enforcement involvement if intentional poisoning suspected'
+      ],
+      contraindications: [
+        'Do not enter contaminated areas without proper protective equipment',
+        'Avoid mouth-to-mouth resuscitation in suspected ingestion cases',
+        'Do not induce vomiting unless specifically directed by poison control'
+      ],
+      safetyNotes: [
+        'Provider safety is paramount - never compromise your safety',
+        'Unknown substances should be treated as highly hazardous',
+        'Secondary contamination can affect healthcare providers'
+      ]
+    },
+    {
+      id: 'poison-step-2',
+      stepNumber: 2,
+      title: 'Primary Assessment and Stabilization',
+      description: 'Complete ABCDE assessment and address immediate life threats',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Assess airway patency - poisoning may cause altered mental status',
+        'Evaluate breathing adequacy - some toxins affect respiratory drive',
+        'Check circulation and blood pressure - watch for cardiovascular collapse',
+        'Assess neurological status using Glasgow Coma Scale',
+        'Check blood glucose level - hypoglycemia can mimic intoxication',
+        'Monitor cardiac rhythm - many toxins cause arrhythmias',
+        'Measure core temperature - hypo/hyperthermia common in poisoning',
+        'Establish IV access for medication and fluid administration'
+      ],
+      safetyNotes: [
+        'Altered mental status may require airway protection',
+        'Some toxins can cause rapid deterioration',
+        'Maintain continuous cardiac monitoring'
+      ]
+    },
+    {
+      id: 'poison-step-3',
+      stepNumber: 3,
+      title: 'Toxin Identification and History',
+      description: 'Gather detailed information about the toxic exposure',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Determine what substance was involved - name, concentration, formulation',
+        'Establish amount ingested/absorbed - estimate quantity and concentration',
+        'Determine time of exposure - critical for treatment decisions',
+        'Assess route of exposure: ingestion, inhalation, dermal, injection',
+        'Gather medication history - prescription and over-the-counter drugs',
+        'Ask about suicide attempt vs accidental exposure',
+        'Check for co-ingestants including alcohol or other drugs',
+        'Document symptoms and progression since exposure occurred'
+      ],
+      safetyNotes: [
+        'Patients may be unreliable historians due to altered mental status',
+        'Family members and witnesses provide crucial information',
+        'Bring substance containers to hospital if safe to do so'
+      ]
+    },
+    {
+      id: 'poison-step-4',
+      stepNumber: 4,
+      title: 'Decontamination Procedures',
+      description: 'Implement appropriate decontamination based on exposure route',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Dermal exposure: Remove contaminated clothing and jewelry safely',
+        'Irrigate affected skin with copious amounts of water (15-20 minutes)',
+        'Eye exposure: Continuous irrigation with normal saline or water',
+        'Inhalation: Move patient to fresh air and provide supplemental oxygen',
+        'Ingestion: Consider activated charcoal per protocol and poison control',
+        'Do not induce vomiting except on specific poison control recommendation',
+        'For caustic ingestions: do not neutralize - dilute with water or milk only',
+        'Document decontamination procedures and patient response'
+      ],
+      contraindications: [
+        'Do not induce vomiting for caustic substances or petroleum products',
+        'Activated charcoal contraindicated for caustics, alcohols, or decreased LOC',
+        'Avoid gastric lavage except in very specific circumstances'
+      ],
+      safetyNotes: [
+        'Decontamination water runoff may be hazardous',
+        'Some substances may be absorbed through intact skin',
+        'Eye irrigation should continue en route to hospital if needed'
+      ]
+    },
+    {
+      id: 'poison-step-5',
+      stepNumber: 5,
+      title: 'Antidote Administration and Supportive Care',
+      description: 'Administer specific antidotes and provide supportive treatment',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Administer specific antidotes per protocol: naloxone for opioids',
+        'Give flumazenil for benzodiazepines ONLY if no seizure risk',
+        'Consider thiamine and dextrose for altered mental status',
+        'Provide oxygen for carbon monoxide or cyanide poisoning',
+        'Use atropine for organophosphate/cholinergic poisoning per protocol',
+        'Calcium gluconate for calcium channel blocker or hydrofluoric acid',
+        'Supportive care: IV fluids, vasopressors, antiarrhythmics as needed',
+        'Contact poison control for specific antidote recommendations'
+      ],
+      safetyNotes: [
+        'Some antidotes can be dangerous if used inappropriately',
+        'Flumazenil can precipitate seizures in chronic benzodiazepine users',
+        'Multiple doses of naloxone may be needed for long-acting opioids'
+      ]
+    },
+    {
+      id: 'poison-step-6',
+      stepNumber: 6,
+      title: 'Monitoring and Complication Management',
+      description: 'Continuously monitor for and manage toxicological complications',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 150,
+      keyPoints: [
+        'Monitor vital signs continuously - watch for sudden deterioration',
+        'Assess for seizures and have anticonvulsants readily available',
+        'Watch for cardiac arrhythmias and conduction abnormalities',
+        'Monitor respiratory status - be prepared for intubation',
+        'Check blood glucose frequently - maintain normal levels',
+        'Assess for hyperthermia or hypothermia requiring temperature management',
+        'Monitor urine output and renal function in nephrotoxic exposures',
+        'Document all treatments and patient responses throughout care'
+      ],
+      safetyNotes: [
+        'Toxicological emergencies can deteriorate rapidly',
+        'Some complications may be delayed hours after exposure',
+        'Continuous monitoring is essential throughout transport'
+      ]
+    },
+    {
+      id: 'poison-step-7',
+      stepNumber: 7,
+      title: 'Psychological Assessment and Crisis Intervention',
+      description: 'Assess for intentional self-harm and provide crisis support',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Assess for suicidal ideation or intentional self-harm behavior',
+        'Use non-judgmental approach when discussing intentional poisoning',
+        'Provide emotional support and crisis counseling as appropriate',
+        'Ensure patient safety during transport - prevent further self-harm',
+        'Involve mental health professionals if available and indicated',
+        'Document mental health assessment and risk factors',
+        'Consider need for law enforcement or security involvement',
+        'Prepare receiving hospital for potential psychiatric consultation'
+      ],
+      contraindications: [
+        'Do not leave suicidal patients alone or unrestrained',
+        'Avoid judgmental comments that may worsen psychological state',
+        'Do not promise confidentiality in cases of self-harm risk'
+      ],
+      safetyNotes: [
+        'Suicidal patients may attempt additional self-harm during transport',
+        'Some toxins can cause psychiatric symptoms mimicking mental illness',
+        'Safety of patient and providers requires careful monitoring'
+      ]
+    },
+    {
+      id: 'poison-step-8',
+      stepNumber: 8,
+      title: 'Hospital Communication and Evidence Preservation',
+      description: 'Communicate with receiving facility and preserve forensic evidence',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Provide detailed report to receiving hospital including substance, amount, time',
+        'Communicate all treatments given and patient responses',
+        'Transfer all product containers and remaining substances safely',
+        'Document chain of custody for potential forensic evidence',
+        'Notify hospital of decontamination procedures performed',
+        'Communicate poison control center consultations and recommendations',
+        'Alert hospital to potential need for specific antidotes or treatments',
+        'Prepare for potential law enforcement involvement in intentional cases'
+      ],
+      safetyNotes: [
+        'Substance containers may be needed for laboratory analysis',
+        'Proper documentation is essential for legal proceedings',
+        'Early hospital notification improves preparation for complex cases'
+      ]
+    }
+  ],
+
+  // 22. BURNS AND THERMAL INJURY MANAGEMENT - Specialized burn care
+  'burns-thermal-injury-management': [
+    {
+      id: 'burns-step-1',
+      stepNumber: 1,
+      title: 'Scene Safety and Fire Suppression',
+      description: 'Ensure scene safety and eliminate ongoing thermal hazards',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Assess scene for active fire, hot surfaces, or continuing thermal hazards',
+        'Ensure fire is completely extinguished before patient approach',
+        'Look for electrical hazards including downed power lines',
+        'Check for chemical burns from industrial or household substances',
+        'Assess building structural integrity in fire-related incidents',
+        'Consider need for specialized rescue teams for confined spaces',
+        'Don appropriate protective equipment to prevent provider injury',
+        'Establish safe perimeter and control access to scene'
+      ],
+      contraindications: [
+        'Do not enter unsafe areas with active fire or electrical hazards',
+        'Avoid approaching patients in unstable structures',
+        'Do not attempt rescue without proper training and equipment'
+      ],
+      safetyNotes: [
+        'Provider safety takes priority over patient care in hazardous environments',
+        'Burns can be associated with smoke inhalation and toxic gas exposure',
+        'Electrical burns may have internal injury not visible externally'
+      ]
+    },
+    {
+      id: 'burns-step-2',
+      stepNumber: 2,
+      title: 'Primary Assessment and Airway Management',
+      description: 'Complete primary assessment with focus on airway burns and inhalation injury',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Assess airway for burns, swelling, or signs of inhalation injury',
+        'Look for singed nasal hairs, facial burns, or carbonaceous sputum',
+        'Evaluate voice changes, stridor, or respiratory distress',
+        'Check for circumferential neck burns affecting airway',
+        'Consider early intubation if signs of airway compromise present',
+        'Provide high-flow oxygen for all burn patients',
+        'Monitor for carbon monoxide poisoning symptoms',
+        'Assess breathing adequacy and chest wall movement'
+      ],
+      safetyNotes: [
+        'Airway edema can develop rapidly and unpredictably in burn patients',
+        'Early intubation may be needed before transport',
+        'Carbon monoxide poisoning is common in enclosed space fires'
+      ]
+    },
+    {
+      id: 'burns-step-3',
+      stepNumber: 3,
+      title: 'Burn Assessment and Classification',
+      description: 'Systematically assess burn depth, extent, and severity',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Classify burn depth: superficial, partial-thickness, full-thickness',
+        'Use Rule of Nines to estimate total body surface area (TBSA) burned',
+        'Document burn location and identify high-risk areas (face, hands, perineum)',
+        'Assess for circumferential burns that may compromise circulation',
+        'Look for electrical entry and exit wounds if electrical injury',
+        'Check for associated trauma from explosion or fall',
+        'Document burn mechanism: flame, scald, contact, chemical, electrical',
+        'Take photographs if possible for burn center consultation'
+      ],
+      safetyNotes: [
+        'Burns >15% TBSA in adults or >10% in children require burn center care',
+        'Circumferential burns may require escharotomy to prevent compartment syndrome',
+        'Electrical burns may have significant internal injury'
+      ]
+    },
+    {
+      id: 'burns-step-4',
+      stepNumber: 4,
+      title: 'Burn Cooling and Initial Treatment',
+      description: 'Provide immediate cooling therapy and stop the burning process',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Remove patient from heat source and remove burning clothing',
+        'Apply cool (not ice-cold) water to burns for 10-20 minutes',
+        'Remove jewelry and tight clothing before swelling occurs',
+        'Stop cooling when hypothermia risk outweighs benefit',
+        'Cover burns with clean, dry dressings - avoid wet dressings',
+        'Do not apply ice, butter, or home remedies to burns',
+        'For chemical burns: continuous irrigation with copious water',
+        'Remove all contaminated clothing in chemical exposure'
+      ],
+      contraindications: [
+        'Do not use ice or ice water on burns - causes vasoconstriction',
+        'Avoid prolonged cooling in patients with large burns (hypothermia risk)',
+        'Do not remove clothing that is adherent to burned skin'
+      ],
+      safetyNotes: [
+        'Cooling reduces pain and may minimize burn progression',
+        'Hypothermia is a significant risk in patients with large burns',
+        'Chemical burns require immediate and prolonged irrigation'
+      ]
+    },
+    {
+      id: 'burns-step-5',
+      stepNumber: 5,
+      title: 'Fluid Resuscitation and Vascular Access',
+      description: 'Establish IV access and begin fluid resuscitation per burn protocols',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Establish large-bore IV access in unburned areas if possible',
+        'Calculate fluid needs using Parkland formula (4ml/kg/%TBSA)',
+        'Give half of calculated fluid in first 8 hours from time of burn',
+        'Use lactated Ringer\'s solution for initial resuscitation',
+        'Consider intraosseous access if IV access difficult',
+        'Monitor urine output as guide to adequate resuscitation',
+        'Adjust fluid rate based on patient response and vital signs',
+        'Document exact time of burn injury for accurate fluid calculations'
+      ],
+      safetyNotes: [
+        'Burn shock can develop rapidly in patients with >15% TBSA burns',
+        'Over-resuscitation can lead to pulmonary edema and compartment syndrome',
+        'IV access through burned skin is acceptable if no other option available'
+      ]
+    },
+    {
+      id: 'burns-step-6',
+      stepNumber: 6,
+      title: 'Pain Management and Patient Comfort',
+      description: 'Provide appropriate analgesia and comfort measures for burn patients',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Assess pain level using appropriate scale (burns are extremely painful)',
+        'Administer IV opioids (morphine or fentanyl) per protocol',
+        'Titrate analgesics to patient comfort while monitoring respiratory status',
+        'Consider ketamine for severe pain in hemodynamically stable patients',
+        'Position patient to minimize pain and prevent contractures',
+        'Maintain normal body temperature to prevent hypothermia',
+        'Provide emotional support and reassurance to anxious patient',
+        'Cover patient with clean blankets to preserve dignity and warmth'
+      ],
+      safetyNotes: [
+        'Burn pain is severe and requires adequate analgesia',
+        'Monitor respiratory status closely with opioid administration',
+        'Hypothermia is common in burn patients and worsens outcomes'
+      ]
+    },
+    {
+      id: 'burns-step-7',
+      stepNumber: 7,
+      title: 'Monitoring and Complication Management',
+      description: 'Monitor for and manage burn-related complications',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 150,
+      keyPoints: [
+        'Monitor vital signs continuously - watch for shock development',
+        'Assess for compartment syndrome in circumferential burns',
+        'Check distal pulses and capillary refill in burned extremities',
+        'Monitor for signs of carbon monoxide poisoning',
+        'Watch for respiratory distress from inhalation injury',
+        'Assess for rhabdomyolysis in electrical burns',
+        'Monitor urine output and color (dark urine suggests myoglobinuria)',
+        'Check for associated injuries that may have been masked by burn pain'
+      ],
+      safetyNotes: [
+        'Compartment syndrome can develop rapidly in circumferential burns',
+        'Carbon monoxide poisoning may not be immediately apparent',
+        'Electrical burns can cause cardiac arrhythmias and internal organ damage'
+      ]
+    },
+    {
+      id: 'burns-step-8',
+      stepNumber: 8,
+      title: 'Transport and Hospital Coordination',
+      description: 'Determine appropriate receiving facility and coordinate transport',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Determine if patient meets burn center criteria per ABA guidelines',
+        'Consider helicopter transport for patients requiring burn center care',
+        'Contact burn center for consultation and acceptance',
+        'Prepare detailed report including burn size, depth, and mechanism',
+        'Continue fluid resuscitation and monitoring during transport',
+        'Communicate all treatments given and patient responses',
+        'Ensure burn center is prepared for immediate evaluation',
+        'Consider need for intubation during transport if airway concerns'
+      ],
+      safetyNotes: [
+        'Burn center criteria include burns >15% TBSA, airway burns, electrical burns',
+        'Early burn center consultation improves outcomes',
+        'Transport should not delay essential treatments like airway management'
+      ]
+    }
+  ],
+
+  // 23. CHEST PAIN AND ACUTE CORONARY SYNDROME - Cardiac emergency management
+  'chest-pain-acs-management': [
+    {
+      id: 'chest-pain-step-1',
+      stepNumber: 1,
+      title: 'Initial Assessment and Scene Safety',
+      description: 'Perform rapid initial assessment focusing on cardiac emergency',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Assess scene safety and approach patient calmly to reduce anxiety',
+        'Observe patient position and apparent distress level',
+        'Check airway, breathing, and circulation immediately',
+        'Assess level of consciousness and ability to communicate',
+        'Note skin color, diaphoresis, and general appearance',
+        'Position patient in position of comfort (usually sitting upright)',
+        'Apply pulse oximetry and obtain baseline vital signs',
+        'Begin continuous cardiac monitoring immediately'
+      ],
+      safetyNotes: [
+        'Cardiac patients may be anxious and require calm, reassuring approach',
+        'Position of comfort often helps reduce cardiac workload',
+        'Continuous monitoring is essential as condition can deteriorate rapidly'
+      ]
+    },
+    {
+      id: 'chest-pain-step-2',
+      stepNumber: 2,
+      title: 'Focused Cardiac History',
+      description: 'Obtain detailed history using systematic approach',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Use OPQRST method: Onset, Provocation, Quality, Region, Severity, Time',
+        'Assess pain characteristics: crushing, burning, pressure, sharp, radiating',
+        'Determine radiation pattern: jaw, neck, arms, back, epigastrium',
+        'Identify associated symptoms: nausea, vomiting, diaphoresis, dyspnea',
+        'Gather cardiac risk factors: diabetes, hypertension, smoking, family history',
+        'Review medications: cardiac drugs, erectile dysfunction medications',
+        'Ask about previous cardiac events, procedures, or hospitalizations',
+        'Assess activity level and functional capacity before symptoms'
+      ],
+      safetyNotes: [
+        'Atypical presentations are common in women, elderly, and diabetic patients',
+        'Erectile dysfunction medications contraindicate nitrate administration',
+        'Previous cardiac history significantly increases risk of ACS'
+      ]
+    },
+    {
+      id: 'chest-pain-step-3',
+      stepNumber: 3,
+      title: '12-Lead ECG Acquisition',
+      description: 'Obtain and interpret 12-lead ECG within 10 minutes',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Acquire 12-lead ECG within 10 minutes of patient contact',
+        'Ensure proper electrode placement and minimize artifact',
+        'Look for ST-elevation myocardial infarction (STEMI) criteria',
+        'Identify ST-depression, T-wave changes, or new Q-waves',
+        'Compare with old ECG if available',
+        'Consider posterior ECG (V7-V9) if inferior changes present',
+        'Obtain right-sided ECG if right heart involvement suspected',
+        'Document ECG findings and time of acquisition'
+      ],
+      safetyNotes: [
+        'STEMI requires immediate cardiac catheterization lab activation',
+        'ECG interpretation can be challenging and requires expert review',
+        'Serial ECGs may be needed to identify evolving changes'
+      ]
+    },
+    {
+      id: 'chest-pain-step-4',
+      stepNumber: 4,
+      title: 'Oxygen and Medication Administration',
+      description: 'Provide oxygen and appropriate cardiac medications',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Give oxygen only if SpO2 <90% or signs of respiratory distress',
+        'Administer aspirin 160-325mg chewed (unless contraindicated)',
+        'Give sublingual nitroglycerin 0.4mg if chest pain and SBP >100mmHg',
+        'Repeat nitroglycerin every 5 minutes up to 3 doses if pain persists',
+        'Consider morphine 2-4mg IV for severe pain not relieved by nitrates',
+        'Establish IV access with normal saline at keep-open rate',
+        'Monitor blood pressure closely with nitroglycerin administration',
+        'Document all medications given with times and patient responses'
+      ],
+      contraindications: [
+        'Aspirin allergy or active gastrointestinal bleeding',
+        'Nitroglycerin if SBP <100mmHg or recent sildenafil/tadalafil use',
+        'Avoid oxygen in normoxic patients without respiratory distress'
+      ],
+      safetyNotes: [
+        'Nitroglycerin can cause significant hypotension',
+        'Aspirin is crucial for platelet aggregation inhibition',
+        'Monitor for allergic reactions to medications'
+      ]
+    },
+    {
+      id: 'chest-pain-step-5',
+      stepNumber: 5,
+      title: 'Risk Stratification and Assessment',
+      description: 'Assess patient risk and determine urgency of care',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 150,
+      keyPoints: [
+        'Use validated risk scores (TIMI, HEART, or GRACE if available)',
+        'Assess for high-risk features: ongoing chest pain, dynamic ECG changes',
+        'Look for signs of heart failure: rales, JVD, peripheral edema',
+        'Check for cardiogenic shock: hypotension, altered mental status, cool skin',
+        'Assess for mechanical complications: new murmurs, pericardial friction rub',
+        'Monitor for arrhythmias including heart blocks and ventricular ectopy',
+        'Consider differential diagnosis: aortic dissection, PE, pericarditis',
+        'Document risk assessment and clinical decision-making rationale'
+      ],
+      safetyNotes: [
+        'High-risk patients require immediate advanced cardiac care',
+        'Cardiogenic shock has high mortality and requires urgent intervention',
+        'Aortic dissection can mimic MI but requires different treatment approach'
+      ]
+    },
+    {
+      id: 'chest-pain-step-6',
+      stepNumber: 6,
+      title: 'Advanced Cardiac Life Support',
+      description: 'Manage cardiac complications and life-threatening arrhythmias',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Monitor for ventricular fibrillation/tachycardia and prepare for defibrillation',
+        'Manage bradycardia with atropine or transcutaneous pacing per protocol',
+        'Treat hemodynamically significant tachycardias with cardioversion',
+        'Prepare for cardiac arrest with immediate CPR and ACLS protocols',
+        'Consider thrombolytic therapy for STEMI if PCI not available within timeframe',
+        'Manage cardiogenic shock with vasopressors and mechanical support consultation',
+        'Use caution with fluids in heart failure patients',
+        'Document all interventions and patient responses'
+      ],
+      safetyNotes: [
+        'Cardiac arrest in ACS patients often presents as ventricular arrhythmias',
+        'Thrombolytics have bleeding risks and specific contraindications',
+        'Early defibrillation is crucial for survival in VF/VT arrest'
+      ]
+    },
+    {
+      id: 'chest-pain-step-7',
+      stepNumber: 7,
+      title: 'Continuous Monitoring and Reassessment',
+      description: 'Provide ongoing monitoring and reassess patient status',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Monitor vital signs and cardiac rhythm continuously',
+        'Reassess chest pain level and character frequently',
+        'Watch for changes in ECG indicative of evolving MI',
+        'Monitor for signs of reperfusion: resolution of chest pain, ST-segment normalization',
+        'Assess for bleeding complications if thrombolytics administered',
+        'Monitor neurological status for signs of stroke (thrombolytic complication)',
+        'Continue oxygen saturation monitoring and respiratory assessment',
+        'Document ongoing assessment findings and trends'
+      ],
+      safetyNotes: [
+        'Patient condition can change rapidly requiring immediate intervention',
+        'Reperfusion can be associated with reperfusion arrhythmias',
+        'Bleeding complications require immediate recognition and management'
+      ]
+    },
+    {
+      id: 'chest-pain-step-8',
+      stepNumber: 8,
+      title: 'Hospital Communication and Transport',
+      description: 'Coordinate with receiving hospital for optimal patient care',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Activate cardiac catheterization lab for STEMI patients',
+        'Provide early notification to emergency department with ECG transmission',
+        'Communicate patient history, symptoms, ECG findings, and treatments given',
+        'Determine appropriate receiving facility based on patient needs and capabilities',
+        'Consider helicopter transport for time-critical STEMI in rural areas',
+        'Continue treatments and monitoring during transport',
+        'Prepare for potential deterioration during transport',
+        'Ensure smooth transition of care with complete report to receiving team'
+      ],
+      safetyNotes: [
+        'Door-to-balloon time goals require efficient communication and transport',
+        'STEMI patients benefit from direct transport to PCI-capable facilities',
+        'Transport should not delay essential treatments like defibrillation'
+      ]
+    }
+  ],
+
+  // 24. 12-LEAD ECG LEAD PLACEMENT AND ACQUISITION - Diagnostic cardiology
+  '12-lead-ecg-placement': [
+    {
+      id: 'ecg-placement-step-1',
+      stepNumber: 1,
+      title: 'Patient Assessment and Preparation',
+      description: 'Assess patient condition and prepare for 12-lead ECG acquisition',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Assess patient\'s clinical condition and chief complaint',
+        'Explain procedure to patient to reduce anxiety and improve cooperation',
+        'Ensure patient privacy and proper draping for chest exposure',
+        'Position patient supine with arms relaxed at sides',
+        'Ask patient to remain still and avoid talking during acquisition',
+        'Check for pacemaker or implanted cardiac devices',
+        'Note any chest hair that may need trimming for electrode adhesion',
+        'Ensure room temperature is comfortable to prevent shivering artifact'
+      ],
+      contraindications: [
+        'No absolute contraindications for ECG acquisition',
+        'Relative caution with skin breakdown or burns at electrode sites',
+        'Consider patient modesty and provide appropriate draping'
+      ],
+      safetyNotes: [
+        'Respect patient dignity and maintain privacy throughout procedure',
+        'Be aware of pacemaker presence for interpretation purposes',
+        'Ensure patient comfort to minimize movement artifact'
+      ]
+    },
+    {
+      id: 'ecg-placement-step-2',
+      stepNumber: 2,
+      title: 'Equipment Preparation and Calibration',
+      description: 'Prepare ECG machine and verify proper calibration',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Check ECG machine power supply and battery level',
+        'Verify machine is calibrated (10mm/mV amplitude, 25mm/sec speed)',
+        'Ensure adequate paper supply for tracing',
+        'Check all lead cables for damage or loose connections',
+        'Prepare 10 ECG electrodes, ensuring they are not expired',
+        'Verify electrode gel/adhesive is moist and functional',
+        'Set machine to 12-lead acquisition mode',
+        'Test machine with calibration signal if available'
+      ],
+      equipmentNeeded: [
+        '12-lead ECG machine',
+        '10 ECG electrodes (not expired)',
+        'Lead cables (complete set)',
+        'Razor for hair removal if needed',
+        'Alcohol wipes for skin preparation',
+        'ECG paper or digital storage device'
+      ],
+      safetyNotes: [
+        'Ensure all electrical equipment is properly grounded',
+        'Check electrode expiration dates to ensure adhesion',
+        'Have backup electrodes available if adhesion fails'
+      ]
+    },
+    {
+      id: 'ecg-placement-step-3',
+      stepNumber: 3,
+      title: 'Skin Preparation and Hair Removal',
+      description: 'Prepare skin surface for optimal electrode contact',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Expose chest completely while maintaining patient dignity',
+        'Identify electrode placement sites using anatomical landmarks',
+        'Trim excess chest hair at electrode sites if present (do not shave)',
+        'Clean electrode sites with alcohol wipes if visibly dirty',
+        'Allow skin to dry completely before electrode application',
+        'Gently abrade skin with gauze to improve conductivity (optional)',
+        'Remove oils, lotions, or debris that may interfere with adhesion',
+        'Ensure skin is dry and at room temperature'
+      ],
+      safetyNotes: [
+        'Trimming hair is preferred over shaving to prevent skin irritation',
+        'Avoid excessive skin abrasion which can cause discomfort',
+        'Allow alcohol to dry completely to prevent skin irritation'
+      ]
+    },
+    {
+      id: 'ecg-placement-step-4',
+      stepNumber: 4,
+      title: 'Limb Lead Electrode Placement',
+      description: 'Apply limb electrodes in correct anatomical positions',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Right arm (RA/WHITE): Right shoulder area or wrist, avoiding bony prominences',
+        'Left arm (LA/BLACK): Left shoulder area or wrist, mirror image of right arm',
+        'Right leg (RL/GREEN): Right lower abdomen or ankle - serves as ground electrode',
+        'Left leg (LL/RED): Left lower abdomen or ankle, avoiding bony areas',
+        'Place electrodes on flat, muscular areas rather than over ribs or bones',
+        'Ensure electrodes are at least 10cm from the heart',
+        'Press electrodes firmly for 2-3 seconds to ensure good contact',
+        'Verify electrode colors match lead cable colors before connecting'
+      ],
+      equipmentNeeded: [
+        'Limb electrodes (4 total): RA-white, LA-black, RL-green, LL-red'
+      ],
+      safetyNotes: [
+        'Consistent placement is crucial for accurate interpretation',
+        'Avoid placing electrodes over clothing or jewelry',
+        'Ensure patient is comfortable with limb positioning'
+      ]
+    },
+    {
+      id: 'ecg-placement-step-5',
+      stepNumber: 5,
+      title: 'Precordial Lead Electrode Placement',
+      description: 'Apply chest electrodes in precise anatomical locations',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'V1 (RED): 4th intercostal space at right sternal border',
+        'V2 (YELLOW): 4th intercostal space at left sternal border',
+        'V4 (BLUE): 5th intercostal space at left midclavicular line (place before V3)',
+        'V3 (GREEN): Midway between V2 and V4 positions',
+        'V5 (ORANGE): Same horizontal level as V4, at left anterior axillary line',
+        'V6 (PURPLE): Same horizontal level as V4 and V5, at left midaxillary line',
+        'Use anatomical landmarks: locate 2nd intercostal space at sternal angle (Angle of Louis)',
+        'Count down intercostal spaces carefully - palpate, don\'t just visualize'
+      ],
+      equipmentNeeded: [
+        'Precordial electrodes (6 total): V1-red, V2-yellow, V3-green, V4-blue, V5-orange, V6-purple'
+      ],
+      safetyNotes: [
+        'Precise placement is critical for accurate diagnosis',
+        'Misplacement can lead to false positive or negative findings',
+        'In women, place V3-V6 under the breast, not on breast tissue'
+      ]
+    },
+    {
+      id: 'ecg-placement-step-6',
+      stepNumber: 6,
+      title: 'Lead Cable Connection and System Check',
+      description: 'Connect lead cables and verify proper system function',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Connect lead cables to corresponding electrodes using color coding',
+        'Ensure all connections are secure and properly seated',
+        'Check for loose electrodes by gently tugging cables',
+        'Verify no "leads off" or artifact warnings on ECG display',
+        'Observe for 60Hz electrical interference or muscle artifact',
+        'Check that all 12 leads are displaying properly on monitor',
+        'Ensure patient is comfortable and cables are not pulling',
+        'Position cables to avoid patient movement restrictions'
+      ],
+      safetyNotes: [
+        'Poor connections will result in artifact or "leads off" alarms',
+        'Ensure patient comfort to minimize movement artifact',
+        'Check for electrical interference from other equipment'
+      ]
+    },
+    {
+      id: 'ecg-placement-step-7',
+      stepNumber: 7,
+      title: 'ECG Acquisition and Quality Assessment',
+      description: 'Acquire 12-lead ECG and assess tracing quality',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Instruct patient to remain still and breathe normally during acquisition',
+        'Acquire ECG tracing ensuring at least 6-10 seconds of data',
+        'Assess tracing quality: clear P waves, QRS complexes, and T waves',
+        'Check for baseline wander, muscle artifact, or electrical interference',
+        'Verify calibration markers (10mm high calibration pulse)',
+        'Ensure all 12 leads have adequate signal quality',
+        'Repeat acquisition if quality is poor or artifact is present',
+        'Print or save ECG with patient identifiers and timestamp'
+      ],
+      safetyNotes: [
+        'Poor quality tracings can lead to misdiagnosis',
+        'Patient movement or talking will create artifact',
+        'Ensure proper calibration for accurate voltage measurements'
+      ]
+    },
+    {
+      id: 'ecg-placement-step-8',
+      stepNumber: 8,
+      title: 'Documentation and Electrode Removal',
+      description: 'Complete documentation and safely remove electrodes',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Label ECG with patient name, date, time, and clinical indication',
+        'Document any factors that may affect interpretation (medications, symptoms)',
+        'Note electrode placement variations if non-standard positioning used',
+        'Remove electrodes gently to avoid skin trauma',
+        'Clean any residual electrode gel from patient\'s skin',
+        'Assist patient with re-dressing and positioning',
+        'Clean and store ECG equipment properly',
+        'Ensure ECG is properly filed or transmitted for interpretation'
+      ],
+      safetyNotes: [
+        'Remove electrodes slowly to prevent skin tears',
+        'Proper documentation ensures quality continuity of care',
+        'Clean equipment prevents cross-contamination'
+      ]
+    }
+  ],
+
+  // 25. CONTINUOUS POSITIVE AIRWAY PRESSURE (CPAP) - Advanced respiratory support
+  'cpap-ventilation': [
+    {
+      id: 'cpap-step-1',
+      stepNumber: 1,
+      title: 'Patient Assessment and CPAP Indication',
+      description: 'Assess patient for CPAP candidacy and determine clinical indications',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Assess patient for acute respiratory distress with signs of pulmonary edema',
+        'Look for classic signs: orthopnea, bilateral rales, frothy sputum, anxiety',
+        'Evaluate level of consciousness (GCS ≥13 required for CPAP)',
+        'Check vital signs: typically hypertensive, tachycardic, tachypneic',
+        'Assess work of breathing: accessory muscle use, tripod positioning',
+        'Review history: heart failure, COPD exacerbation, pneumonia',
+        'Consider CPAP for: acute pulmonary edema, COPD exacerbation, pneumonia',
+        'Rule out contraindications before proceeding with CPAP therapy'
+      ],
+      contraindications: [
+        'Altered mental status (GCS <13) or inability to protect airway',
+        'Active vomiting or high risk of aspiration',
+        'Facial trauma preventing adequate mask seal',
+        'Untreated pneumothorax or risk of barotrauma',
+        'Severe hypotension (SBP <90mmHg)',
+        'Cardiac arrest or impending respiratory arrest'
+      ],
+      safetyNotes: [
+        'Patient must be conscious and able to remove mask if needed',
+        'Continuous monitoring essential due to potential for rapid deterioration',
+        'Have intubation equipment immediately available'
+      ]
+    },
+    {
+      id: 'cpap-step-2',
+      stepNumber: 2,
+      title: 'Equipment Setup and System Check',
+      description: 'Prepare CPAP equipment and perform comprehensive system checks',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Assemble CPAP unit: generator, breathing circuit, PEEP valve, mask',
+        'Connect oxygen source and set flow rate to 10-15 L/min minimum',
+        'Check PEEP valve setting (typically 5-10 cmH2O for initial therapy)',
+        'Test system for leaks by occluding mask and checking pressure maintenance',
+        'Verify reservoir bag inflates properly and maintains volume',
+        'Select appropriate mask size (small, medium, large) for patient',
+        'Check mask cushion for damage and ensure proper seal capability',
+        'Have backup equipment available including bag-valve-mask'
+      ],
+      equipmentNeeded: [
+        'CPAP generator unit',
+        'Breathing circuit with reservoir bag',
+        'PEEP valve (adjustable 5-20 cmH2O)',
+        'Face masks (multiple sizes)',
+        'Head straps and securing devices',
+        'Oxygen source with flow meter',
+        'Manometer for pressure monitoring'
+      ],
+      safetyNotes: [
+        'All connections must be secure to prevent pressure loss',
+        'Have manual ventilation ready as backup',
+        'Check equipment function before patient application'
+      ]
+    },
+    {
+      id: 'cpap-step-3',
+      stepNumber: 3,
+      title: 'Patient Positioning and Preparation',
+      description: 'Position patient optimally for CPAP therapy and explain procedure',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Position patient in high Fowler\'s position (45-90 degrees upright)',
+        'Ensure patient is comfortable and can easily communicate',
+        'Explain procedure: "This mask will help make breathing easier"',
+        'Warn about initial sensation of pressure and tight-fitting mask',
+        'Establish communication signals for patient distress',
+        'Position suction equipment within immediate reach',
+        'Have bag-valve-mask visible and accessible for patient reassurance',
+        'Ensure adequate lighting and space for monitoring'
+      ],
+      safetyNotes: [
+        'Upright positioning reduces aspiration risk and improves ventilation',
+        'Patient cooperation essential for CPAP success',
+        'Be prepared to remove mask immediately if patient becomes distressed'
+      ]
+    },
+    {
+      id: 'cpap-step-4',
+      stepNumber: 4,
+      title: 'Mask Application and Initial CPAP Delivery',
+      description: 'Apply mask properly and initiate CPAP therapy',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Hold mask gently against patient\'s face initially without straps',
+        'Allow patient to acclimate to pressure sensation gradually',
+        'Check for proper mask seal around nose and mouth',
+        'Apply head straps with minimal tension - just enough for seal',
+        'Monitor initial patient response: anxiety, claustrophobia, cooperation',
+        'Adjust mask position to optimize comfort and seal',
+        'Observe for chest rise improvement and decreased work of breathing',
+        'Monitor oxygen saturation and respiratory rate response'
+      ],
+      safetyNotes: [
+        'Gradual introduction reduces patient anxiety and improves tolerance',
+        'Excessive strap tension can cause pressure sores and discomfort',
+        'Monitor for signs of gastric insufflation'
+      ]
+    },
+    {
+      id: 'cpap-step-5',
+      stepNumber: 5,
+      title: 'Pressure Titration and Optimization',
+      description: 'Adjust CPAP pressure settings based on patient response',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Start with low pressure (5 cmH2O) and titrate upward as tolerated',
+        'Increase pressure gradually (2-3 cmH2O increments) every 2-3 minutes',
+        'Monitor clinical response: decreased work of breathing, improved oxygenation',
+        'Optimal pressure typically 8-12 cmH2O for pulmonary edema',
+        'For COPD exacerbation: lower pressures (5-8 cmH2O) often preferred',
+        'Assess patient comfort and tolerance with each pressure adjustment',
+        'Watch for signs of barotrauma or cardiovascular compromise',
+        'Document pressure settings and patient response to adjustments'
+      ],
+      safetyNotes: [
+        'Higher pressures increase risk of barotrauma and hypotension',
+        'Patient comfort and clinical improvement guide pressure selection',
+        'Monitor blood pressure closely as CPAP can reduce venous return'
+      ]
+    },
+    {
+      id: 'cpap-step-6',
+      stepNumber: 6,
+      title: 'Continuous Monitoring and Assessment',
+      description: 'Provide ongoing patient monitoring and assessment during CPAP therapy',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Monitor vital signs every 5 minutes initially, then every 15 minutes',
+        'Continuously assess work of breathing and respiratory pattern',
+        'Watch oxygen saturation trends and response to therapy',
+        'Observe for signs of improvement: decreased anxiety, better color, easier breathing',
+        'Monitor for complications: pneumothorax, hypotension, gastric distension',
+        'Assess mask fit regularly and adjust as needed',
+        'Document patient response and any changes in clinical condition',
+        'Be prepared to discontinue CPAP if patient deteriorates'
+      ],
+      safetyNotes: [
+        'Continuous monitoring essential - patient condition can change rapidly',
+        'Signs of improvement may take 10-20 minutes to appear',
+        'Early recognition of complications prevents serious adverse outcomes'
+      ]
+    },
+    {
+      id: 'cpap-step-7',
+      stepNumber: 7,
+      title: 'Complication Recognition and Management',
+      description: 'Identify and manage potential complications of CPAP therapy',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 150,
+      keyPoints: [
+        'Monitor for pneumothorax: sudden chest pain, decreased breath sounds, hypotension',
+        'Watch for cardiovascular effects: hypotension from decreased venous return',
+        'Assess for gastric insufflation: abdominal distension, nausea, vomiting',
+        'Check for mask-related complications: pressure sores, eye irritation',
+        'Monitor for patient intolerance: anxiety, claustrophobia, agitation',
+        'Recognize failure of CPAP therapy: worsening respiratory distress',
+        'Be prepared for immediate transition to bag-valve-mask or intubation',
+        'Document any complications and interventions performed'
+      ],
+      contraindications: [
+        'Do not continue CPAP if patient becomes unconscious or unable to cooperate',
+        'Stop CPAP immediately if pneumothorax suspected',
+        'Discontinue if patient develops severe hypotension or cardiovascular instability'
+      ],
+      safetyNotes: [
+        'Have suction and airway management equipment immediately available',
+        'Rapid transition to alternative ventilation may be life-saving',
+        'Patient safety takes precedence over continuing CPAP therapy'
+      ]
+    },
+    {
+      id: 'cpap-step-8',
+      stepNumber: 8,
+      title: 'Transport Considerations and Handoff',
+      description: 'Manage CPAP during transport and provide comprehensive handoff',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Ensure adequate oxygen supply for duration of transport',
+        'Secure CPAP equipment to prevent disconnection during transport',
+        'Continue monitoring patient response throughout transport',
+        'Communicate with receiving facility about CPAP therapy and patient response',
+        'Provide report including: indication, pressure settings, duration, complications',
+        'Document total time on CPAP and overall patient response',
+        'Be prepared to manage equipment failure or patient deterioration en route',
+        'Ensure smooth transition of care to hospital staff'
+      ],
+      safetyNotes: [
+        'Equipment failure during transport requires immediate backup ventilation',
+        'Clear communication ensures continuity of respiratory support',
+        'Transport should not delay definitive care if patient failing CPAP'
+      ]
+    }
+  ],
+
+  // 26. NEEDLE THORACENTESIS (DECOMPRESSION) - Emergency thoracic procedure for tension pneumothorax
+  'needle-thoracentesis': [
+    {
+      id: 'needle-thoracentesis-step-1',
+      stepNumber: 1,
+      title: 'Recognition and Assessment of Tension Pneumothorax',
+      description: 'Identify clinical signs of tension pneumothorax requiring immediate decompression',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Assess for classic triad: respiratory distress, hemodynamic instability, absent breath sounds',
+        'Look for tracheal deviation away from affected side (late sign)',
+        'Check for jugular venous distension (JVD) and hypotension',
+        'Observe hyperresonance to percussion on affected side',
+        'Assess for subcutaneous emphysema around chest and neck',
+        'Consider mechanism: penetrating trauma, blunt chest trauma, barotrauma',
+        'Monitor for rapid deterioration: this is a time-critical emergency',
+        'Rule out other causes of shock and respiratory distress'
+      ],
+      indications: [
+        'Clinical signs of tension pneumothorax with hemodynamic compromise',
+        'Absent or diminished breath sounds with respiratory distress',
+        'Tracheal deviation with hypotension',
+        'Cardiac arrest with suspected tension pneumothorax'
+      ],
+      contraindications: [
+        'Simple pneumothorax without tension (relative contraindication)',
+        'Severe coagulopathy (relative contraindication)',
+        'Infection at insertion site',
+        'Anatomical abnormalities preventing safe access'
+      ],
+      safetyNotes: [
+        'This is a life-saving procedure - act quickly when indicated',
+        'Wrong-side decompression can cause pneumothorax in healthy lung',
+        'Consider bilateral decompression in cardiac arrest'
+      ]
+    },
+    {
+      id: 'needle-thoracentesis-step-2',
+      stepNumber: 2,
+      title: 'Equipment Preparation and Site Selection',
+      description: 'Prepare necessary equipment and identify optimal insertion site',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Gather 14-gauge, 2-inch angiocatheter (minimum length for adults)',
+        'Prepare antiseptic solution (alcohol or betadine) and gauze',
+        'Have flutter valve or three-way stopcock available if possible',
+        'Consider second needle ready for bilateral decompression if needed',
+        'Locate 2nd intercostal space, midclavicular line (traditional site)',
+        'Alternative: 4th-5th intercostal space, anterior axillary line (lateral approach)',
+        'Palpate landmarks: 2nd ICS is just below clavicle, above 3rd rib',
+        'Ensure adequate lighting and patient positioning'
+      ],
+      equipmentNeeded: [
+        '14-gauge angiocatheter (2-inch minimum)',
+        'Antiseptic solution',
+        'Sterile gauze pads',
+        'Medical tape',
+        'Flutter valve or 3-way stopcock',
+        'Gloves and protective equipment',
+        'Suction equipment nearby'
+      ],
+      safetyNotes: [
+        'Needle must be long enough to reach pleural space through chest wall',
+        'Identify correct intercostal space to avoid injury to vessels/nerves',
+        'Have resuscitation equipment immediately available'
+      ]
+    },
+    {
+      id: 'needle-thoracentesis-step-3',
+      stepNumber: 3,
+      title: 'Patient Positioning and Site Preparation',
+      description: 'Position patient optimally and prepare insertion site',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Position patient supine or semi-upright (30-45 degrees) if possible',
+        'Expose chest completely for adequate visualization',
+        'Locate insertion site: 2nd ICS, midclavicular line on affected side',
+        'Clean insertion site with antiseptic in circular motion',
+        'Allow antiseptic to dry (at least 30 seconds if time permits)',
+        'Put on sterile gloves and maintain sterile technique',
+        'Have assistant help with patient positioning if available',
+        'Ensure patient airway is secured and monitored'
+      ],
+      safetyNotes: [
+        'Speed is critical - do not delay for extensive sterile prep in emergency',
+        'Maintain C-spine immobilization if trauma patient',
+        'Monitor patient continuously during procedure'
+      ]
+    },
+    {
+      id: 'needle-thoracentesis-step-4',
+      stepNumber: 4,
+      title: 'Needle Insertion Technique',
+      description: 'Perform needle insertion using proper technique and anatomical landmarks',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Insert needle perpendicular to chest wall at 90-degree angle',
+        'Aim slightly cephalad (toward head) to avoid neurovascular bundle below rib',
+        'Advance needle steadily with continuous gentle aspiration',
+        'Feel for "pop" sensation as needle enters pleural space',
+        'Listen for audible release of air (rush of gas) indicating success',
+        'Advance catheter over needle once pleural space entered',
+        'Remove needle stylet, leaving plastic catheter in place',
+        'Secure catheter with tape and apply occlusive dressing'
+      ],
+      safetyNotes: [
+        'Never insert needle below rib to avoid intercostal artery injury',
+        'Stop advancing if resistance met or patient deteriorates',
+        'Maintain needle control to prevent deep organ injury'
+      ]
+    },
+    {
+      id: 'needle-thoracentesis-step-5',
+      stepNumber: 5,
+      title: 'Immediate Assessment of Decompression Success',
+      description: 'Evaluate immediate response to thoracic decompression',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Listen for audible air escape through catheter (confirms placement)',
+        'Assess immediate improvement in vital signs: BP, HR, oxygen saturation',
+        'Check for improved breath sounds on affected side',
+        'Observe improved chest wall movement and respiratory effort',
+        'Monitor for resolution of JVD and improved perfusion',
+        'Assess for immediate complications: bleeding, pneumothorax on opposite side',
+        'Document time of procedure and patient response',
+        'Prepare for possible need of second decompression or tube thoracostomy'
+      ],
+      safetyNotes: [
+        'Improvement should be immediate - if not, reassess diagnosis',
+        'Lack of air escape may indicate improper placement or diagnosis',
+        'Monitor for iatrogenic complications'
+      ]
+    },
+    {
+      id: 'needle-thoracentesis-step-6',
+      stepNumber: 6,
+      title: 'Catheter Securement and One-Way Valve Setup',
+      description: 'Secure catheter and establish one-way valve system if available',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Secure catheter hub firmly with medical tape to prevent dislodgement',
+        'Apply occlusive dressing around catheter insertion site',
+        'Attach flutter valve or improvised one-way valve if available',
+        'Create finger cot valve if commercial valve unavailable',
+        'Ensure valve allows air out but prevents air entry',
+        'Monitor catheter position and function continuously',
+        'Check for continued air leak indicating ongoing pneumothorax',
+        'Document catheter position and valve setup'
+      ],
+      safetyNotes: [
+        'Catheter dislodgement can lead to reaccumulation of tension',
+        'One-way valve prevents re-expansion of pneumothorax',
+        'Monitor valve function throughout transport'
+      ]
+    },
+    {
+      id: 'needle-thoracentesis-step-7',
+      stepNumber: 7,
+      title: 'Ongoing Monitoring and Complication Management',
+      description: 'Provide continuous monitoring and manage potential complications',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Monitor vital signs every 5 minutes and document trends',
+        'Continuously assess respiratory status and chest wall movement',
+        'Watch for signs of re-tension: return of original symptoms',
+        'Check catheter patency and position regularly',
+        'Monitor for bleeding at insertion site or hemothorax development',
+        'Assess for subcutaneous emphysema progression',
+        'Be prepared for bilateral tension pneumothorax in trauma patients',
+        'Prepare patient for definitive chest tube placement at hospital'
+      ],
+      safetyNotes: [
+        'Needle decompression is temporary - definitive treatment required',
+        'Patient condition can deteriorate rapidly if catheter fails',
+        'Have equipment ready for repeat decompression if needed'
+      ]
+    },
+    {
+      id: 'needle-thoracentesis-step-8',
+      stepNumber: 8,
+      title: 'Documentation and Hospital Handoff',
+      description: 'Document procedure and provide comprehensive handoff to receiving team',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Document indication for procedure and clinical findings',
+        'Record time of needle insertion and immediate patient response',
+        'Note catheter size, insertion site, and complications if any',
+        'Document vital signs before and after decompression',
+        'Describe amount of air released and ongoing air leak',
+        'Provide SBAR handoff emphasizing need for tube thoracostomy',
+        'Communicate any complications or concerns to receiving physician',
+        'Ensure catheter remains secure and functional during transfer'
+      ],
+      safetyNotes: [
+        'Clear communication prevents delays in definitive treatment',
+        'Hospital team needs to know about temporary nature of needle decompression',
+        'Document complications for quality improvement and medicolegal purposes'
+      ]
+    }
+  ],
+
+  // 27. INTRAVENOUS FLUID THERAPY - Advanced fluid resuscitation and management
+  'intravenous-fluid-therapy': [
+    {
+      id: 'iv-fluid-step-1',
+      stepNumber: 1,
+      title: 'Patient Assessment and Fluid Indication',
+      description: 'Assess patient for fluid therapy needs and determine appropriate indication',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Assess hemodynamic status: blood pressure, heart rate, perfusion markers',
+        'Evaluate volume status: skin turgor, mucous membranes, jugular veins',
+        'Check for signs of dehydration: thirst, dry mouth, decreased urine output',
+        'Look for shock signs: altered mental status, weak pulse, cool extremities',
+        'Consider fluid loss sources: bleeding, vomiting, diarrhea, burns, sepsis',
+        'Assess cardiac function: listen for S3 gallop, check for peripheral edema',
+        'Review medical history: heart failure, kidney disease, hypertension',
+        'Determine fluid type needed: crystalloid vs colloid vs blood products'
+      ],
+      indications: [
+        'Hypovolemic shock from any cause',
+        'Dehydration from fluid losses',
+        'Hypotension requiring volume support',
+        'Medication administration requiring IV access',
+        'Severe burns requiring fluid resuscitation',
+        'Sepsis requiring fluid therapy'
+      ],
+      contraindications: [
+        'Pulmonary edema or congestive heart failure (relative)',
+        'Renal failure with fluid overload',
+        'Hypervolemia or fluid overload states'
+      ],
+      safetyNotes: [
+        'Assess cardiac status before large volume infusion',
+        'Monitor for signs of fluid overload throughout therapy',
+        'Consider patient weight and underlying conditions'
+      ]
+    },
+    {
+      id: 'iv-fluid-step-2',
+      stepNumber: 2,
+      title: 'Fluid Selection and Equipment Preparation',
+      description: 'Select appropriate IV fluid and prepare infusion equipment',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Select crystalloid: Normal Saline for most situations, LR for trauma/burns',
+        'Avoid dextrose solutions in suspected stroke or head injury',
+        'Choose appropriate IV catheter: 18G for rapid infusion, 20-22G for standard',
+        'Prepare IV tubing: macro-drip (10-20 drops/mL) for rapid infusion',
+        'Check fluid expiration date and inspect for clarity/particles',
+        'Gather additional supplies: tape, gauze, transparent dressing',
+        'Have pressure bag available if rapid infusion anticipated',
+        'Prepare pump if precise rate control needed'
+      ],
+      equipmentNeeded: [
+        'Isotonic crystalloid solution (Normal Saline or Lactated Ringers)',
+        'IV catheter (appropriate gauge)',
+        'IV administration set with drip chamber',
+        'IV pole or hanging mechanism',
+        'Pressure bag for rapid infusion',
+        'Infusion pump if available',
+        'Securing materials (tape, dressing)',
+        'IV start kit with antiseptic'
+      ],
+      safetyNotes: [
+        'Never use hypotonic fluids in shock or head injury',
+        'Verify five rights: right fluid, right dose, right rate, right route, right patient',
+        'Check for fluid allergies or sensitivities'
+      ]
+    },
+    {
+      id: 'iv-fluid-step-3',
+      stepNumber: 3,
+      title: 'IV Access Establishment',
+      description: 'Establish secure peripheral IV access using sterile technique',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Select optimal venous access site: antecubital fossa preferred for large volume',
+        'Apply tourniquet 10-15 cm above insertion site',
+        'Palpate vein for patency, direction, and depth',
+        'Clean insertion site with antiseptic in circular motion',
+        'Insert IV catheter at 15-30 degree angle with bevel up',
+        'Advance catheter over needle once blood return seen',
+        'Release tourniquet and withdraw needle safely',
+        'Connect IV tubing and secure catheter with transparent dressing'
+      ],
+      safetyNotes: [
+        'Use sterile technique to prevent infection',
+        'Dispose of needle in sharps container immediately',
+        'Assess for signs of infiltration or extravasation'
+      ]
+    },
+    {
+      id: 'iv-fluid-step-4',
+      stepNumber: 4,
+      title: 'Initial Fluid Bolus Administration',
+      description: 'Administer appropriate fluid bolus based on patient condition',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Calculate initial bolus: 20 mL/kg for adults (usually 1-2 L), 20 mL/kg for pediatrics',
+        'Infuse bolus rapidly if shock present: wide-open IV or pressure bag',
+        'Monitor vital signs during bolus: BP, HR, oxygen saturation',
+        'Assess clinical response: improved perfusion, mental status, urine output',
+        'Watch for signs of fluid overload: increased work of breathing, rales',
+        'Document time of bolus start and patient response',
+        'Prepare second bolus if inadequate response to first',
+        'Reassess need for continued fluid vs other interventions'
+      ],
+      safetyNotes: [
+        'Stop infusion immediately if signs of fluid overload develop',
+        'Monitor closely for development of pulmonary edema',
+        'Consider smaller boluses in elderly or cardiac patients'
+      ]
+    },
+    {
+      id: 'iv-fluid-step-5',
+      stepNumber: 5,
+      title: 'Fluid Rate Calculation and Titration',
+      description: 'Calculate appropriate maintenance rate and titrate based on response',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Calculate maintenance rate: adults typically 125-250 mL/hr baseline',
+        'Adjust rate based on ongoing losses: higher for burns, fever, bleeding',
+        'Use infusion pump for precise rate control when available',
+        'Titrate rate based on clinical response and vital signs',
+        'Consider permissive hypotension in trauma: avoid over-resuscitation',
+        'Monitor urine output if Foley catheter present (>0.5 mL/kg/hr goal)',
+        'Reassess fluid balance regularly and adjust accordingly',
+        'Document rate changes and rationale for adjustments'
+      ],
+      safetyNotes: [
+        'Avoid excessive fluid in penetrating trauma patients',
+        'Monitor for electrolyte imbalances with large volume resuscitation',
+        'Adjust rates more cautiously in patients with cardiac or renal disease'
+      ]
+    },
+    {
+      id: 'iv-fluid-step-6',
+      stepNumber: 6,
+      title: 'Monitoring Patient Response and Complications',
+      description: 'Continuously monitor patient response to fluid therapy and watch for complications',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Monitor vital signs every 15 minutes and document trends',
+        'Assess clinical markers of perfusion: skin color, temperature, capillary refill',
+        'Check mental status improvement as indicator of adequate perfusion',
+        'Listen to lung sounds for development of rales or fluid overload',
+        'Monitor IV site for infiltration, phlebitis, or infection',
+        'Watch for signs of electrolyte imbalance: muscle cramps, weakness',
+        'Assess for complications: fluid overload, hypothermia, coagulopathy',
+        'Document fluid intake and any outputs if measurable'
+      ],
+      safetyNotes: [
+        'Early recognition of fluid overload prevents pulmonary edema',
+        'Monitor for hypothermia with large volume cold fluid administration',
+        'Be alert for signs of transfusion reactions if blood products given'
+      ]
+    },
+    {
+      id: 'iv-fluid-step-7',
+      stepNumber: 7,
+      title: 'Advanced Fluid Management and Adjunct Therapies',
+      description: 'Implement advanced fluid strategies and consider adjunct treatments',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Consider vasopressor support if fluid resuscitation inadequate',
+        'Evaluate need for blood products if hemorrhagic shock suspected',
+        'Warm IV fluids to prevent hypothermia, especially in trauma',
+        'Use balanced crystalloids (LR) rather than normal saline when possible',
+        'Consider albumin or other colloids in specific circumstances',
+        'Monitor for signs of compartment syndrome in trauma patients',
+        'Assess need for emergency blood transfusion in severe hemorrhage',
+        'Coordinate with medical control for complex fluid management decisions'
+      ],
+      safetyNotes: [
+        'Blood products require crossmatching when time permits',
+        'Monitor closely for transfusion reactions',
+        'Maintain normothermia to prevent coagulopathy'
+      ]
+    },
+    {
+      id: 'iv-fluid-step-8',
+      stepNumber: 8,
+      title: 'Documentation and Handoff Communication',
+      description: 'Document fluid therapy and communicate comprehensive status to receiving team',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Document initial patient condition and vital signs',
+        'Record type and volume of fluids administered',
+        'Note patient response to fluid therapy: vital signs, clinical improvement',
+        'Document any complications or adverse reactions',
+        'Calculate total fluid balance if possible (intake minus output)',
+        'Provide SBAR handoff including fluid needs and response',
+        'Communicate ongoing fluid requirements to receiving team',
+        'Ensure IV access remains patent and functional during transfer'
+      ],
+      safetyNotes: [
+        'Accurate fluid documentation prevents over/under-resuscitation',
+        'Clear communication ensures continuity of appropriate fluid therapy',
+        'Secure IV access to prevent loss during transport'
+      ]
+    }
+  ],
+
+  // 28. SUPRAGLOTTIC AIRWAY MANAGEMENT - Advanced airway using LMA/King airway devices
+  'supraglottic-airway-management': [
+    {
+      id: 'sga-step-1',
+      stepNumber: 1,
+      title: 'Patient Assessment and Airway Evaluation',
+      description: 'Assess patient for supraglottic airway indication and evaluate for difficult airway',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Assess level of consciousness: patient must be unconscious or deeply sedated',
+        'Evaluate airway patency and breathing adequacy',
+        'Check for signs of difficult bag-mask ventilation: beard, obesity, edentulous',
+        'Assess for difficult intubation indicators using LEMON criteria',
+        'Consider supraglottic airway as bridge to intubation or definitive airway',
+        'Rule out contraindications: intact gag reflex, caustic ingestion',
+        'Evaluate mouth opening: minimum 2.5cm required for insertion',
+        'Check for foreign body or vomitus requiring suction first'
+      ],
+      indications: [
+        'Failed bag-mask ventilation requiring airway rescue',
+        'Unconscious patient requiring positive pressure ventilation',
+        'Bridge airway for failed intubation attempts',
+        'Cannot intubate, cannot oxygenate emergency situation',
+        'Cardiac arrest requiring definitive airway management',
+        'Respiratory failure with inadequate spontaneous ventilation'
+      ],
+      contraindications: [
+        'Conscious patient with intact gag reflex',
+        'Suspected upper airway obstruction above vocal cords',
+        'Caustic ingestion with potential laryngeal injury',
+        'Significant oral or laryngeal trauma',
+        'Limited mouth opening (<2.5 cm)',
+        'Known esophageal pathology (relative contraindication)'
+      ],
+      safetyNotes: [
+        'Have suction immediately available for airway clearing',
+        'Maintain C-spine immobilization in trauma patients',
+        'Prepare for surgical airway if supraglottic device fails'
+      ]
+    },
+    {
+      id: 'sga-step-2',
+      stepNumber: 2,
+      title: 'Device Selection and Preparation',
+      description: 'Select appropriate supraglottic device and prepare equipment',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Select device type: LMA Classic, King LT, or I-gel based on availability',
+        'Choose correct size: Size 4 for small adult women, Size 5 for large adults',
+        'Inspect device for damage: cracks, inflation problems, missing parts',
+        'Test cuff inflation and deflation if inflatable device',
+        'Lubricate device with water-soluble lubricant, avoid silicone-based',
+        'Prepare bag-mask ventilation as backup',
+        'Set up suction equipment and ensure function',
+        'Have intubation equipment ready as backup plan'
+      ],
+      equipmentNeeded: [
+        'Supraglottic airway device (appropriate size)',
+        '20-30 mL syringe for cuff inflation',
+        'Water-soluble lubricant',
+        'Bag-valve device with oxygen',
+        'End-tidal CO2 monitoring',
+        'Suction equipment with large bore tip',
+        'Stethoscope for auscultation',
+        'Securing tape or ties'
+      ],
+      safetyNotes: [
+        'Never force device insertion - remove and reassess',
+        'Check cuff inflation pressures to prevent tissue damage',
+        'Have multiple device sizes available'
+      ]
+    },
+    {
+      id: 'sga-step-3',
+      stepNumber: 3,
+      title: 'Patient Positioning and Airway Preparation',
+      description: 'Position patient optimally and prepare airway for device insertion',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Position patient in sniffing position: head extended, neck flexed',
+        'Open mouth with cross-finger technique or scissor grip',
+        'Suction oropharynx clear of secretions, blood, or vomitus',
+        'Remove dentures if present and interfering with insertion',
+        'Ensure adequate lighting for visualization',
+        'Have assistant provide C-spine stabilization in trauma patients',
+        'Pre-oxygenate patient with bag-mask ventilation if possible',
+        'Position yourself at patient\'s head for optimal insertion angle'
+      ],
+      safetyNotes: [
+        'Clear airway of debris before device insertion',
+        'Maintain spinal immobilization during positioning',
+        'Avoid excessive head extension in elderly patients'
+      ]
+    },
+    {
+      id: 'sga-step-4',
+      stepNumber: 4,
+      title: 'Device Insertion Technique',
+      description: 'Insert supraglottic airway device using proper technique',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Hold device like a pencil with cuff deflated (LMA) or inflated (King)',
+        'Insert device along hard palate with tip leading',
+        'Advance device until resistance felt at hypopharynx',
+        'For LMA: inflate cuff with appropriate volume (20-30 mL air)',
+        'For King: ensure both cuffs are inflated and centered',
+        'Watch for slight outward movement of device during inflation',
+        'Attach bag-valve device and attempt ventilation',
+        'Assess for bilateral breath sounds and chest rise'
+      ],
+      safetyNotes: [
+        'Do not force insertion - may cause laryngeal trauma',
+        'Stop insertion if excessive resistance encountered',
+        'Inflate cuff gradually to avoid over-inflation'
+      ]
+    },
+    {
+      id: 'sga-step-5',
+      stepNumber: 5,
+      title: 'Confirmation of Proper Placement',
+      description: 'Verify correct device placement using multiple confirmation methods',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Auscultate bilaterally for equal breath sounds over chest',
+        'Confirm absence of gurgling sounds over stomach',
+        'Observe symmetric chest rise with each ventilation',
+        'Monitor end-tidal CO2 waveform and values (35-45 mmHg)',
+        'Check oxygen saturation improvement with ventilation',
+        'Assess ease of ventilation: should require minimal pressure',
+        'Look for condensation in device tube with exhalation',
+        'Confirm cuff seal by gentle pressure - should hold ventilation'
+      ],
+      safetyNotes: [
+        'Multiple confirmation methods reduce risk of unrecognized esophageal placement',
+        'Continuous waveform capnography is gold standard for placement confirmation',
+        'If placement uncertain, remove device and reassess'
+      ]
+    },
+    {
+      id: 'sga-step-6',
+      stepNumber: 6,
+      title: 'Device Securement and Ventilation Optimization',
+      description: 'Secure device properly and optimize ventilation parameters',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Secure device with tape or commercial holder to prevent displacement',
+        'Mark insertion depth at teeth/lips for reference',
+        'Set ventilation rate: 10-12 breaths/min adults, 12-20/min children',
+        'Use appropriate tidal volumes: 6-7 mL/kg to prevent gastric insufflation',
+        'Monitor peak inspiratory pressures: keep <20 cmH2O if possible',
+        'Confirm continued placement after any patient movement',
+        'Consider bite block if patient has teeth and risk of biting',
+        'Document device type, size, and insertion depth'
+      ],
+      safetyNotes: [
+        'Excessive ventilation pressures increase risk of gastric insufflation',
+        'Secure device adequately to prevent accidental displacement',
+        'Monitor for device migration during patient movement'
+      ]
+    },
+    {
+      id: 'sga-step-7',
+      stepNumber: 7,
+      title: 'Ongoing Monitoring and Complication Management',
+      description: 'Provide continuous monitoring and manage potential complications',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Continuously monitor end-tidal CO2 waveform for device integrity',
+        'Assess ventilation adequacy: chest rise, breath sounds, oxygen saturation',
+        'Monitor for gastric insufflation: abdominal distension, regurgitation',
+        'Watch for device displacement during patient movement or transport',
+        'Be prepared to manage regurgitation: suction, Trendelenburg position',
+        'Monitor airway pressures and adjust ventilation as needed',
+        'Assess need for conversion to endotracheal intubation',
+        'Document ventilation parameters and any complications'
+      ],
+      safetyNotes: [
+        'Supraglottic airways do not protect against aspiration',
+        'Have suction immediately available for regurgitation',
+        'Be prepared for emergent device removal if complications arise'
+      ]
+    },
+    {
+      id: 'sga-step-8',
+      stepNumber: 8,
+      title: 'Transport Management and Handoff',
+      description: 'Manage airway during transport and provide comprehensive handoff',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Continue monitoring device placement throughout transport',
+        'Secure all connections to prevent accidental disconnection',
+        'Monitor capnography continuously during transport',
+        'Be prepared to manage complications during transport',
+        'Communicate with receiving team about airway management',
+        'Provide report including: device type, size, insertion time, complications',
+        'Ensure receiving team is prepared for potential conversion to ETT',
+        'Document total time device was in place and overall effectiveness'
+      ],
+      safetyNotes: [
+        'Transport vibration can cause device displacement',
+        'Have backup airway plan ready for emergent situations',
+        'Clear communication prevents delays in hospital airway management'
+      ]
+    }
+  ]
 };
 
 export default enhancedCriticalSkillSteps;
