@@ -10419,6 +10419,1082 @@ export const enhancedCriticalSkillSteps: { [skillId: string]: EnhancedSkillStep[
         'Follow-up monitoring protocols and equipment'
       ]
     }
+  ],
+
+  // HAND WASHING
+  'hand-washing': [
+    {
+      id: 'hand-step-1',
+      stepNumber: 1,
+      title: 'Hand Hygiene Assessment and Preparation',
+      description: 'Evaluate hands and prepare for proper hand hygiene technique',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 30,
+      keyPoints: [
+        'Assess hands for visible contamination, cuts, or open wounds',
+        'Remove all jewelry including rings, watches, and bracelets',
+        'Roll up sleeves to expose forearms to at least mid-forearm level',
+        'Check availability of appropriate hand hygiene products',
+        'Ensure water temperature is comfortable and not too hot',
+        'Verify adequate lighting to visualize all hand surfaces',
+        'Position body to avoid contact with sink surfaces during washing',
+        'Prepare clean towels or paper towels for drying'
+      ],
+      contraindications: [
+        'Open wounds requiring wound care before hand hygiene',
+        'Severe skin conditions preventing safe hand washing'
+      ],
+      safetyNotes: [
+        'Hand hygiene is the single most important infection prevention measure',
+        'Proper technique prevents healthcare-associated infections',
+        'Remove jewelry as it harbors microorganisms'
+      ],
+      equipmentNeeded: [
+        'Clean running water (warm preferred)',
+        'Antimicrobial soap or alcohol-based hand rub',
+        'Clean towels or disposable paper towels',
+        'Adequate sink with hands-free controls if available'
+      ]
+    },
+    {
+      id: 'hand-step-2',
+      stepNumber: 2,
+      title: 'Initial Water Application and Wetting',
+      description: 'Properly wet hands and wrists with clean running water',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 15,
+      keyPoints: [
+        'Turn on water using clean towel or elbow if handles not automatic',
+        'Wet hands and wrists thoroughly with clean running water',
+        'Keep hands pointed downward so water flows from wrists to fingertips',
+        'Ensure water temperature is comfortable - not too hot or cold',
+        'Wet entire hand surface including between fingers and under nails',
+        'Avoid splashing water that could contaminate clothing or surfaces',
+        'Maintain hand position below elbow level throughout process',
+        'Continue water flow throughout entire washing procedure'
+      ],
+      safetyNotes: [
+        'Water should flow from least contaminated (wrists) to most contaminated (fingertips)',
+        'Hot water can damage skin and reduce compliance with hand hygiene',
+        'Keep hands lower than elbows to prevent recontamination'
+      ],
+      equipmentNeeded: [
+        'Clean running water with appropriate flow rate',
+        'Sink with adequate depth to prevent splashing',
+        'Hands-free or elbow-operated controls preferred'
+      ]
+    },
+    {
+      id: 'hand-step-3',
+      stepNumber: 3,
+      title: 'Soap Application and Lathering',
+      description: 'Apply antimicrobial soap and create thorough lather',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 20,
+      keyPoints: [
+        'Apply 3-5ml of antimicrobial soap to wet hands',
+        'Create rich lather by rubbing hands together vigorously',
+        'Cover all hand surfaces with soap including backs of hands',
+        'Work lather between fingers and around thumbs',
+        'Include wrists and lower forearms in lathering process',
+        'Pay special attention to fingertips and nail areas',
+        'Ensure soap contacts all skin surfaces for full antimicrobial effect',
+        'Continue lathering while maintaining hand position below elbows'
+      ],
+      safetyNotes: [
+        'Adequate soap volume essential for effective antimicrobial action',
+        'Lathering action provides mechanical removal of microorganisms',
+        'All hand surfaces must be covered with soap for complete disinfection'
+      ],
+      equipmentNeeded: [
+        'Antimicrobial soap (liquid preferred over bar soap)',
+        'Soap dispenser preferably hands-free or elbow-operated',
+        'Adequate soap supply for complete hand coverage'
+      ]
+    },
+    {
+      id: 'hand-step-4',
+      stepNumber: 4,
+      title: 'Systematic Hand Scrubbing Technique',
+      description: 'Perform systematic scrubbing of all hand surfaces using proper technique',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 40,
+      keyPoints: [
+        'Rub palms together with fingers interlaced to clean between fingers',
+        'Rub backs of hands with opposite palm, interlacing fingers',
+        'Clean thumbs by clasping with opposite hand and rotating',
+        'Scrub fingertips by rubbing in opposite palm in circular motion',
+        'Clean under fingernails using fingertips of opposite hand',
+        'Scrub wrists and lower forearms with circular motions',
+        'Maintain scrubbing action for minimum 15 seconds total contact time',
+        'Pay extra attention to commonly missed areas: thumbs, fingertips, between fingers'
+      ],
+      contraindications: [
+        'Excessive scrubbing that causes skin damage or irritation'
+      ],
+      safetyNotes: [
+        'Minimum 15-second contact time required for effective microbial kill',
+        'Systematic approach ensures all hand surfaces are cleaned',
+        'Under fingernails harbors high concentrations of microorganisms'
+      ],
+      equipmentNeeded: [
+        'Timer or ability to count to ensure adequate scrubbing time',
+        'Nail brush if available for under-nail cleaning',
+        'Continued running water throughout scrubbing'
+      ]
+    },
+    {
+      id: 'hand-step-5',
+      stepNumber: 5,
+      title: 'Thorough Rinsing Technique',
+      description: 'Rinse hands thoroughly to remove all soap and loosened microorganisms',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 20,
+      keyPoints: [
+        'Rinse hands under clean running water with hands pointed downward',
+        'Ensure complete removal of all soap residue from all hand surfaces',
+        'Rinse from wrists toward fingertips to prevent recontamination',
+        'Continue rinsing until water runs clear with no soap bubbles',
+        'Avoid touching sink surfaces during rinsing process',
+        'Ensure adequate rinse time to remove loosened microorganisms',
+        'Maintain proper hand position throughout rinsing',
+        'Use sufficient water volume for effective rinsing'
+      ],
+      safetyNotes: [
+        'Incomplete rinsing leaves soap residue that can cause skin irritation',
+        'Proper rinsing removes loosened microorganisms from hand surfaces',
+        'Hand position prevents recontamination during rinsing'
+      ],
+      equipmentNeeded: [
+        'Adequate clean running water for thorough rinsing',
+        'Proper water flow to ensure complete soap removal'
+      ]
+    },
+    {
+      id: 'hand-step-6',
+      stepNumber: 6,
+      title: 'Proper Hand Drying Technique',
+      description: 'Dry hands thoroughly using proper technique to prevent recontamination',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 30,
+      keyPoints: [
+        'Turn off water using clean towel or elbow if handles not automatic',
+        'Dry hands thoroughly with clean towel or disposable paper towels',
+        'Start drying from fingertips and work toward wrists',
+        'Pat dry rather than rubbing to prevent skin irritation',
+        'Ensure complete drying including between fingers and under nails',
+        'Use towel to turn off faucet handles if not automatic',
+        'Discard paper towels in appropriate waste container',
+        'Avoid touching any surfaces after drying until next patient contact'
+      ],
+      contraindications: [
+        'Reusing contaminated towels for drying',
+        'Touching sink surfaces after hand drying'
+      ],
+      safetyNotes: [
+        'Moist hands transfer microorganisms more readily than dry hands',
+        'Clean towel prevents recontamination of cleaned hands',
+        'Proper drying technique maintains benefits of hand washing'
+      ],
+      equipmentNeeded: [
+        'Clean towels or disposable paper towels',
+        'Hands-free towel dispensers preferred',
+        'Appropriate waste disposal container'
+      ]
+    },
+    {
+      id: 'hand-step-7',
+      stepNumber: 7,
+      title: 'Hand Condition Assessment and Care',
+      description: 'Assess hand condition post-washing and apply appropriate hand care',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 45,
+      keyPoints: [
+        'Inspect hands for dryness, cracking, or irritation after washing',
+        'Apply alcohol-based hand rub if additional disinfection needed',
+        'Use hand moisturizer to prevent skin dryness and cracking',
+        'Check for any missed areas that may need additional attention',
+        'Assess need for barrier protection (gloves) for next procedure',
+        'Document any skin breakdown or occupational dermatitis',
+        'Plan timing of next hand hygiene based on upcoming activities',
+        'Educate others on proper hand hygiene technique when appropriate'
+      ],
+      safetyNotes: [
+        'Healthy skin is essential for effective hand hygiene compliance',
+        'Cracked or damaged skin can harbor microorganisms',
+        'Hand moisturizer should be from individual-use containers'
+      ],
+      equipmentNeeded: [
+        'Alcohol-based hand rub (60-95% alcohol)',
+        'Individual hand moisturizer or lotion',
+        'Documentation materials for skin assessment',
+        'Personal protective equipment for next procedure'
+      ]
+    },
+    {
+      id: 'hand-step-8',
+      stepNumber: 8,
+      title: 'Hand Hygiene Documentation and Education',
+      description: 'Document hand hygiene compliance and provide education when appropriate',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 30,
+      keyPoints: [
+        'Document completion of hand hygiene in patient care record if required',
+        'Note any barriers to effective hand hygiene encountered',
+        'Record skin condition and any adverse reactions to products',
+        'Participate in hand hygiene compliance monitoring if applicable',
+        'Educate patients and families about importance of hand hygiene',
+        'Serve as role model for other healthcare workers',
+        'Report any issues with hand hygiene supplies or facilities',
+        'Contribute to quality improvement initiatives for infection prevention'
+      ],
+      safetyNotes: [
+        'Hand hygiene compliance monitoring helps improve patient safety',
+        'Education and role modeling improve overall healthcare team compliance',
+        'Reporting supply issues prevents barriers to proper hand hygiene'
+      ],
+      equipmentNeeded: [
+        'Documentation systems for compliance tracking',
+        'Patient education materials about hand hygiene',
+        'Communication tools for reporting supply issues',
+        'Quality improvement tracking systems'
+      ]
+    }
+  ],
+
+  // DOUBLE LUMEN AIRWAY INSERTION  
+  'double-lumen-airway-insertion': [
+    {
+      id: 'dla-step-1',
+      stepNumber: 1,
+      title: 'Patient Assessment and Double Lumen Airway Indication',
+      description: 'Evaluate patient condition and determine need for double lumen airway device',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Assess for failed or difficult bag-mask ventilation requiring supraglottic airway',
+        'Evaluate for difficult intubation where DLA may serve as backup',
+        'Check consciousness level - patient should be unconscious or obtunded',
+        'Assess airway anatomy for potential difficulties with placement',
+        'Verify no contraindications to supraglottic airway placement',
+        'Consider DLA for ventilation during cardiac arrest resuscitation',
+        'Evaluate need for emergency surgical airway if DLA fails',
+        'Document indication for advanced airway management'
+      ],
+      contraindications: [
+        'Conscious or semi-conscious patient with intact gag reflex',
+        'Known esophageal disease or previous esophageal surgery',
+        'Suspected upper airway obstruction above the larynx',
+        'Small adult patients where pediatric sizes not available'
+      ],
+      safetyNotes: [
+        'DLA provides ventilation but does not protect against aspiration',
+        'Should not be used in conscious patients due to gag reflex',
+        'Requires proper size selection based on patient weight/height'
+      ],
+      equipmentNeeded: [
+        'Consciousness assessment tools',
+        'Airway assessment equipment',
+        'Patient height/weight measurement tools',
+        'Emergency surgical airway kit as backup'
+      ]
+    },
+    {
+      id: 'dla-step-2',
+      stepNumber: 2,
+      title: 'Device Selection and Equipment Preparation',
+      description: 'Select appropriate DLA size and prepare insertion equipment',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Select appropriate DLA size: #3 (30-50kg), #4 (50-70kg), #5 (70-100kg)',
+        'Check device integrity - no cracks, tears, or defects',
+        'Test both lumens for patency and proper inflation',
+        'Lubricate device with water-soluble lubricant',
+        'Prepare bag-valve-mask for immediate ventilation testing',
+        'Ready suction equipment for secretions or vomit',
+        'Have backup airway devices available (LMA, endotracheal tube)',
+        'Ensure capnography available for placement confirmation'
+      ],
+      contraindications: [
+        'Damaged or defective DLA device',
+        'Improper size selection for patient'
+      ],
+      safetyNotes: [
+        'Device inspection critical - defects can cause airway obstruction',
+        'Proper lubrication facilitates insertion and reduces trauma',
+        'Backup devices essential if DLA insertion fails'
+      ],
+      equipmentNeeded: [
+        'Double lumen airway device (appropriate size)',
+        'Water-soluble lubricant',
+        'Bag-valve-mask with oxygen',
+        'Suction equipment with rigid catheter',
+        'Backup airway devices',
+        'End-tidal CO2 monitoring'
+      ]
+    },
+    {
+      id: 'dla-step-3',
+      stepNumber: 3,
+      title: 'Patient Positioning and Pre-insertion Preparation',
+      description: 'Position patient optimally and prepare for DLA insertion',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 45,
+      keyPoints: [
+        'Position patient supine with head in neutral or slight extension',
+        'Open mouth and inspect for dentures, foreign objects, or secretions',
+        'Remove dentures and clear any visible secretions with suction',
+        'Pre-oxygenate patient with bag-mask ventilation if time permits',
+        'Position yourself at patient\'s head facing toward feet',
+        'Have assistant available for cricoid pressure if needed',
+        'Ensure adequate lighting for visualization of insertion',
+        'Prepare for immediate ventilation confirmation after insertion'
+      ],
+      safetyNotes: [
+        'Proper positioning facilitates insertion and reduces complications',
+        'Pre-oxygenation provides safety margin during insertion',
+        'Clear airway of obstructions before attempting insertion'
+      ],
+      equipmentNeeded: [
+        'Patient positioning aids',
+        'Laryngoscope for mouth inspection',
+        'Suction equipment for airway clearance',
+        'Bag-valve-mask for pre-oxygenation'
+      ]
+    },
+    {
+      id: 'dla-step-4',
+      stepNumber: 4,
+      title: 'Double Lumen Airway Insertion Technique',
+      description: 'Insert DLA using proper technique and anatomical landmarks',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Hold DLA like a pencil with curved tip pointing toward patient\'s feet',
+        'Insert device along natural curve of tongue and pharynx',
+        'Advance device until resistance felt at base of tongue',
+        'Do not force insertion - resistance indicates proper depth',
+        'Inflate cuffs according to manufacturer recommendations',
+        'Connect bag-valve-mask to tracheal (blue) port first',
+        'Attempt ventilation through tracheal port - observe chest rise',
+        'If no chest rise, try esophageal (clear) port for ventilation'
+      ],
+      contraindications: [
+        'Excessive resistance requiring force during insertion',
+        'Unable to achieve ventilation through either port'
+      ],
+      safetyNotes: [
+        'Never force DLA insertion - can cause pharyngeal trauma',
+        'One port will provide ventilation while other seals esophagus',
+        'Gentle technique reduces risk of airway injury'
+      ],
+      equipmentNeeded: [
+        'Lubricated DLA device',
+        'Cuff inflation syringe',
+        'Bag-valve-mask for ventilation testing',
+        'Gentle insertion technique'
+      ]
+    },
+    {
+      id: 'dla-step-5',
+      stepNumber: 5,
+      title: 'Ventilation Confirmation and Port Selection',
+      description: 'Confirm effective ventilation and select correct port for ongoing ventilation',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Test ventilation through tracheal (blue) port first',
+        'Look for chest rise, bilateral breath sounds, and ETCO2 waveform',
+        'If tracheal port ineffective, switch to esophageal (clear) port',
+        'Confirm ventilation through selected port with capnography',
+        'Auscultate bilateral breath sounds to confirm lung ventilation',
+        'Monitor oxygen saturation improvement with effective ventilation',
+        'Secure selected port and cap unused port',
+        'Document which port is providing effective ventilation'
+      ],
+      contraindications: [
+        'Neither port provides effective ventilation',
+        'Signs of gastric insufflation instead of lung ventilation'
+      ],
+      safetyNotes: [
+        'Only one port will provide effective lung ventilation',
+        'Capnography is most reliable indicator of tracheal placement',
+        'Gastric insufflation indicates improper placement'
+      ],
+      equipmentNeeded: [
+        'Bag-valve-mask for ventilation testing',
+        'Capnography monitor',
+        'Stethoscope for auscultation',
+        'Port caps for unused lumen'
+      ]
+    },
+    {
+      id: 'dla-step-6',
+      stepNumber: 6,
+      title: 'Device Securing and Position Maintenance',
+      description: 'Secure DLA in proper position and maintain airway patency',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Secure DLA using tape or commercial securing device',
+        'Note depth marking at corner of mouth for position reference',
+        'Ensure device position allows for effective ventilation',
+        'Monitor cuff pressure to prevent over-inflation',
+        'Continue ventilation through confirmed effective port',
+        'Reassess ventilation effectiveness with any position changes',
+        'Monitor for device displacement during patient movement',
+        'Prepare for potential conversion to definitive airway'
+      ],
+      safetyNotes: [
+        'Proper securing prevents device displacement',
+        'Over-inflated cuffs can cause tissue necrosis',
+        'Device can become dislodged with patient movement'
+      ],
+      equipmentNeeded: [
+        'Medical tape or commercial securing device',
+        'Cuff pressure monitoring device',
+        'Continuous ventilation capability',
+        'Position marking system'
+      ]
+    },
+    {
+      id: 'dla-step-7',
+      stepNumber: 7,
+      title: 'Ongoing Monitoring and Complication Management',
+      description: 'Monitor patient response and manage potential complications',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Continuously monitor chest rise, breath sounds, and ETCO2',
+        'Watch for signs of device displacement or malfunction',
+        'Monitor for complications: aspiration, pneumothorax, bradycardia',
+        'Assess oxygenation and ventilation adequacy continuously',
+        'Be prepared to remove device if complications develop',
+        'Suction through device if secretions accumulate',
+        'Monitor for return of consciousness requiring device removal',
+        'Prepare for conversion to endotracheal intubation if indicated'
+      ],
+      contraindications: [
+        'Device malfunction compromising ventilation',
+        'Patient regaining consciousness with intact gag reflex'
+      ],
+      safetyNotes: [
+        'DLA does not protect against aspiration like endotracheal tube',
+        'Must be removed if patient regains consciousness',
+        'Complications require immediate device removal'
+      ],
+      equipmentNeeded: [
+        'Continuous monitoring (capnography, pulse oximetry)',
+        'Suction equipment for secretions',
+        'Equipment for device removal',
+        'Intubation equipment for conversion'
+      ]
+    },
+    {
+      id: 'dla-step-8',
+      stepNumber: 8,
+      title: 'Documentation and Transition Planning',
+      description: 'Document DLA use and plan for definitive airway management',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Document indication for DLA insertion and alternatives considered',
+        'Record device size, insertion success, and port used for ventilation',
+        'Note any complications encountered and management provided',
+        'Document ventilation effectiveness and patient response',
+        'Plan for transition to definitive airway (endotracheal tube)',
+        'Communicate airway management to receiving team',
+        'Prepare for device removal when definitive airway secured',
+        'Complete quality assurance documentation if required'
+      ],
+      safetyNotes: [
+        'DLA is temporary airway management - plan definitive care',
+        'Clear communication prevents airway management errors',
+        'Documentation essential for continuity of care'
+      ],
+      equipmentNeeded: [
+        'Documentation forms and systems',
+        'Communication tools for team coordination',
+        'Definitive airway management equipment',
+        'Quality assurance reporting systems'
+      ]
+    }
+  ],
+
+  // C-SPINE CLEARANCE
+  'c-spine-clearance': [
+    {
+      id: 'cspine-step-1',
+      stepNumber: 1,
+      title: 'Patient Assessment and Clinical Evaluation for C-Spine Clearance',
+      description: 'Comprehensive assessment to determine appropriateness for cervical spine clearance',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Assess patient consciousness level and ability to provide reliable history',
+        'Evaluate for altered mental status, intoxication, or neurological deficits',
+        'Check for distracting painful injuries that could mask cervical pain',
+        'Verify patient is alert, oriented, and cooperative for examination',
+        'Assess mechanism of injury and potential for cervical spine trauma',
+        'Review any available imaging or prior medical records',
+        'Ensure patient has been neurologically stable during observation period',
+        'Verify no concurrent spinal cord injury symptoms or signs'
+      ],
+      contraindications: [
+        'Altered mental status or inability to provide reliable history',
+        'Intoxication with drugs or alcohol affecting assessment',
+        'Distracting painful injuries preventing accurate evaluation',
+        'Neurological deficits suggesting spinal cord injury'
+      ],
+      safetyNotes: [
+        'C-spine clearance requires reliable patient cooperation',
+        'Never attempt clearance in unreliable or altered patients',
+        'High-risk mechanisms require careful consideration'
+      ],
+      equipmentNeeded: [
+        'Neurological assessment tools',
+        'Documentation materials for findings',
+        'Imaging capabilities if indicated',
+        'Spinal immobilization equipment as backup'
+      ]
+    },
+    {
+      id: 'cspine-step-2',
+      stepNumber: 2,
+      title: 'Mechanism of Injury Analysis and Risk Assessment',
+      description: 'Analyze mechanism of injury and assess risk for cervical spine injury',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'HIGH RISK: Motor vehicle crash with rollover, ejection, or high speed',
+        'HIGH RISK: Fall from height >3 feet or diving into shallow water',
+        'HIGH RISK: Axial load injury (football helmet-to-helmet contact)',
+        'HIGH RISK: Bicycle crash with handlebar or ground impact',
+        'MODERATE RISK: Rear-end collision, sports injury, assault',
+        'LOW RISK: Simple fall, minor collision, low-energy mechanism',
+        'Consider age >65 years as increasing risk factor',
+        'Evaluate time since injury - recent injury higher suspicion'
+      ],
+      contraindications: [
+        'High-risk mechanisms requiring imaging before clearance',
+        'Unable to obtain reliable mechanism of injury history'
+      ],
+      safetyNotes: [
+        'High-risk mechanisms may require imaging for clearance',
+        'Age >65 increases fracture risk even with low-energy mechanisms',
+        'When in doubt, maintain immobilization'
+      ],
+      equipmentNeeded: [
+        'Detailed history taking capability',
+        'Risk assessment criteria reference',
+        'Documentation of mechanism details',
+        'Communication with witnesses if available'
+      ]
+    },
+    {
+      id: 'cspine-step-3',
+      stepNumber: 3,
+      title: 'Symptom Assessment and Pain Evaluation',
+      description: 'Evaluate for cervical spine symptoms and associated complaints',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Ask specifically about neck pain, stiffness, or discomfort',
+        'Assess for numbness, tingling, or weakness in extremities',
+        'Evaluate for headache, particularly occipital or cervical',
+        'Check for difficulty with fine motor movements',
+        'Ask about changes in sensation or coordination',
+        'Assess for nausea or dizziness potentially related to cervical injury',
+        'Evaluate pain with attempted neck movement (DO NOT move neck yet)',
+        'Document any subjective complaints thoroughly'
+      ],
+      contraindications: [
+        'Any complaint of neck pain or stiffness',
+        'Neurological symptoms in extremities',
+        'Patient reports inability to move neck comfortably'
+      ],
+      safetyNotes: [
+        'Any neck pain or neurological symptoms require continued immobilization',
+        'Subjective complaints more important than objective findings',
+        'Patient\'s subjective assessment guides clearance decision'
+      ],
+      equipmentNeeded: [
+        'Systematic symptom assessment checklist',
+        'Pain scale for documentation',
+        'Neurological symptom evaluation tools',
+        'Documentation materials'
+      ]
+    },
+    {
+      id: 'cspine-step-4',
+      stepNumber: 4,
+      title: 'Physical Examination - Inspection and Palpation',
+      description: 'Perform systematic physical examination of cervical spine and surrounding structures',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 150,
+      keyPoints: [
+        'Inspect cervical spine for visible deformity, swelling, or bruising',
+        'Look for abrasions, lacerations, or other signs of trauma',
+        'Palpate posterior cervical spine from occiput to C7-T1',
+        'Feel for step-offs, tenderness, or muscle spasm',
+        'Assess cervical paraspinal muscles for tension or guarding',
+        'Palpate spinous processes systematically for tenderness',
+        'Check for midline tenderness over cervical vertebrae',
+        'Note any involuntary muscle guarding or protective responses'
+      ],
+      contraindications: [
+        'Visible deformity of cervical spine',
+        'Palpable tenderness over cervical vertebrae',
+        'Significant muscle spasm or guarding'
+      ],
+      safetyNotes: [
+        'Maintain neutral spine positioning during examination',
+        'Palpation should be gentle but thorough',
+        'Any tenderness requires continued immobilization'
+      ],
+      equipmentNeeded: [
+        'Adequate lighting for visual inspection',
+        'Gentle palpation technique',
+        'Documentation of examination findings',
+        'Continued cervical immobilization during exam'
+      ]
+    },
+    {
+      id: 'cspine-step-5',
+      stepNumber: 5,
+      title: 'Neurological Assessment of Upper and Lower Extremities',
+      description: 'Comprehensive neurological examination to detect spinal cord injury',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Test upper extremity strength: shoulder shrug, arm flexion/extension',
+        'Check hand grip strength and finger abduction/adduction',
+        'Test lower extremity strength: hip flexion, knee extension, ankle dorsiflexion',
+        'Assess deep tendon reflexes: biceps, triceps, patellar, Achilles',
+        'Check sensation to light touch in all dermatomes',
+        'Test sharp/dull discrimination if light touch abnormal',
+        'Evaluate proprioception and coordination',
+        'Assess for pathological reflexes (Babinski, clonus)'
+      ],
+      contraindications: [
+        'Any neurological deficit in strength, sensation, or reflexes',
+        'Abnormal pathological reflexes suggesting cord injury',
+        'Patient unable to cooperate with neurological testing'
+      ],
+      safetyNotes: [
+        'Neurological deficits indicate potential spinal cord injury',
+        'Subtle findings may be early signs of significant injury',
+        'Complete neurological exam essential before clearance'
+      ],
+      equipmentNeeded: [
+        'Reflex hammer for deep tendon reflexes',
+        'Sharp and dull testing implements',
+        'Neurological assessment documentation forms',
+        'Strength grading reference scale'
+      ]
+    },
+    {
+      id: 'cspine-step-6',
+      stepNumber: 6,
+      title: 'Active Range of Motion Testing',
+      description: 'Assess cervical spine range of motion if all previous assessments normal',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'ONLY proceed if all previous assessments completely normal',
+        'Explain procedure to patient and obtain verbal consent',
+        'Have patient SLOWLY turn head left and right to comfortable limits',
+        'Test flexion by having patient touch chin to chest if able',
+        'Test extension by having patient look up at ceiling',
+        'Assess lateral flexion by touching ear to shoulder',
+        'Stop IMMEDIATELY if patient reports any pain or discomfort',
+        'Document range of motion achieved without symptoms'
+      ],
+      contraindications: [
+        'Any pain, discomfort, or restriction during movement',
+        'Patient expresses concern or fear about moving neck',
+        'Any abnormality found in previous assessment steps'
+      ],
+      safetyNotes: [
+        'Patient controls all movement - never force or assist',
+        'Stop immediately at first sign of pain or discomfort',
+        'Normal pain-free range of motion required for clearance'
+      ],
+      equipmentNeeded: [
+        'Clear explanation and patient education',
+        'Range of motion documentation tools',
+        'Immediate ability to re-immobilize if needed',
+        'Patient consent documentation'
+      ]
+    },
+    {
+      id: 'cspine-step-7',
+      stepNumber: 7,
+      title: 'Clearance Decision and Documentation',
+      description: 'Make evidence-based decision on cervical spine clearance and document thoroughly',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Review all assessment findings systematically',
+        'Ensure ALL criteria met: reliable patient, low-risk mechanism, no symptoms',
+        'Confirm normal physical examination and neurological assessment',
+        'Verify normal pain-free active range of motion',
+        'Document decision rationale clearly in medical record',
+        'If ANY abnormality found, maintain immobilization',
+        'Consider imaging consultation if borderline findings',
+        'Communicate clearance decision to receiving team'
+      ],
+      contraindications: [
+        'Any single abnormal finding in assessment process',
+        'Uncertainty about any component of the evaluation',
+        'High-risk mechanism requiring imaging confirmation'
+      ],
+      safetyNotes: [
+        'ALL criteria must be met for safe clinical clearance',
+        'When in doubt, maintain immobilization and obtain imaging',
+        'Document decision rationale for medicolegal protection'
+      ],
+      equipmentNeeded: [
+        'Comprehensive documentation system',
+        'Clearance criteria checklist',
+        'Communication tools for team coordination',
+        'Imaging consultation availability'
+      ]
+    },
+    {
+      id: 'cspine-step-8',
+      stepNumber: 8,
+      title: 'Post-Clearance Monitoring and Patient Education',
+      description: 'Monitor patient post-clearance and provide appropriate education',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Remove cervical immobilization devices carefully',
+        'Monitor patient for any delayed symptoms or complaints',
+        'Educate patient about signs/symptoms requiring immediate medical attention',
+        'Provide discharge instructions regarding neck injury precautions',
+        'Schedule appropriate follow-up care if indicated',
+        'Document patient education provided and understanding demonstrated',
+        'Ensure patient knows to return if symptoms develop',
+        'Complete quality assurance documentation for clearance process'
+      ],
+      safetyNotes: [
+        'Delayed symptoms can occur after clearance',
+        'Patient education critical for identifying delayed complications',
+        'Clear follow-up instructions improve patient safety'
+      ],
+      equipmentNeeded: [
+        'Patient education materials',
+        'Discharge instruction forms',
+        'Follow-up scheduling resources',
+        'Quality assurance documentation system'
+      ]
+    }
+  ],
+
+  // EZ-IO DISTAL TIBIA INSERTION
+  'ez-io-distal-tibia': [
+    {
+      id: 'ezio-step-1',
+      stepNumber: 1,
+      title: 'Patient Assessment and EZ-IO Indication Evaluation',
+      description: 'Assess patient condition and determine need for intraosseous access',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Assess hemodynamic status requiring immediate vascular access',
+        'Evaluate for failed peripheral IV attempts or difficult peripheral access',
+        'Check for emergency medication administration needs',
+        'Consider IO access for rapid fluid resuscitation requirements',
+        'Assess consciousness level and patient cooperation',
+        'Verify no contraindications to intraosseous access',
+        'Consider IO as first-line access in cardiac arrest or severe shock',
+        'Document medical necessity for intraosseous access'
+      ],
+      contraindications: [
+        'Infection or cellulitis over insertion site',
+        'Previous orthopedic hardware at insertion site',
+        'Fracture of target bone (tibia)',
+        'Suspected compartment syndrome of lower leg'
+      ],
+      safetyNotes: [
+        'IO access provides rapid vascular access when peripheral IV difficult',
+        'Distal tibia site has lower complication rate than other sites',
+        'Consider patient comfort during insertion'
+      ],
+      equipmentNeeded: [
+        'Hemodynamic monitoring equipment',
+        'EZ-IO device with appropriate needle',
+        'Alternative access equipment as backup',
+        'Patient positioning aids'
+      ]
+    },
+    {
+      id: 'ezio-step-2',
+      stepNumber: 2,
+      title: 'Anatomical Landmark Identification and Site Selection',
+      description: 'Locate anatomical landmarks for distal tibia EZ-IO insertion',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Identify medial malleolus (bony prominence on inside of ankle)',
+        'Locate tibial plateau (flat area of tibia bone above malleolus)',
+        'Find insertion site: 1-2 cm proximal and 1-2 cm anterior to medial malleolus',
+        'Palpate insertion site to confirm solid bone beneath skin',
+        'Avoid areas with excessive soft tissue or edema',
+        'Ensure adequate skin integrity at insertion site',
+        'Mark insertion site with skin marker if available',
+        'Position leg to provide stable platform for insertion'
+      ],
+      contraindications: [
+        'Unable to identify anatomical landmarks due to edema or deformity',
+        'Compromised skin integrity at insertion site'
+      ],
+      safetyNotes: [
+        'Proper landmark identification crucial for successful insertion',
+        'Distal tibia provides excellent bone cortex for IO access',
+        'Anatomical variation may require slight site adjustment'
+      ],
+      equipmentNeeded: [
+        'Anatomical landmark reference guide',
+        'Skin marker for site identification',
+        'Adequate lighting for site visualization',
+        'Patient positioning equipment'
+      ]
+    },
+    {
+      id: 'ezio-step-3',
+      stepNumber: 3,
+      title: 'Equipment Preparation and Sterile Setup',
+      description: 'Prepare EZ-IO equipment and establish sterile field',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Select appropriate needle length: 15mm for most adults, 25mm if obese',
+        'Check EZ-IO device battery and proper function',
+        'Attach appropriate needle to EZ-IO device securely',
+        'Prepare antiseptic solution (chlorhexidine or iodine)',
+        'Don sterile gloves and prepare sterile field',
+        'Have normal saline flush syringes ready (5-10ml)',
+        'Prepare local anesthetic (lidocaine 1-2%) if patient conscious',
+        'Ready securing tape and transparent dressing'
+      ],
+      contraindications: [
+        'Malfunctioning EZ-IO device or battery',
+        'Inappropriate needle length for patient anatomy'
+      ],
+      safetyNotes: [
+        'Proper equipment function essential for successful insertion',
+        'Sterile technique prevents osteomyelitis',
+        'Local anesthetic reduces insertion discomfort'
+      ],
+      equipmentNeeded: [
+        'EZ-IO device with functioning battery',
+        'Appropriate needle (15mm or 25mm)',
+        'Sterile gloves and antiseptic solution',
+        'Local anesthetic and flush syringes',
+        'Securing materials'
+      ]
+    },
+    {
+      id: 'ezio-step-4',
+      stepNumber: 4,
+      title: 'Site Preparation and Local Anesthesia',
+      description: 'Prepare insertion site and provide local anesthesia if indicated',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Clean insertion site with antiseptic solution in circular motion',
+        'Allow antiseptic to dry completely before proceeding',
+        'If patient conscious, infiltrate skin and periosteum with lidocaine',
+        'Use 25-gauge needle for local anesthetic injection',
+        'Inject 1-2ml lidocaine into skin and deeper tissues',
+        'Wait 2-3 minutes for anesthetic effect',
+        'Maintain sterile field throughout preparation',
+        'Position EZ-IO device perpendicular to bone surface'
+      ],
+      contraindications: [
+        'Allergy to local anesthetic agents',
+        'Inability to maintain sterile technique'
+      ],
+      safetyNotes: [
+        'Local anesthesia reduces pain but may increase insertion time',
+        'In cardiac arrest, skip anesthesia for rapid access',
+        'Proper antiseptic technique prevents infection'
+      ],
+      equipmentNeeded: [
+        'Antiseptic solution with adequate contact time',
+        'Lidocaine 1-2% with 25-gauge needle',
+        'Sterile field maintenance supplies',
+        'Timer for anesthetic onset'
+      ]
+    },
+    {
+      id: 'ezio-step-5',
+      stepNumber: 5,
+      title: 'EZ-IO Needle Insertion and Advancement',
+      description: 'Insert and advance EZ-IO needle into tibial bone cortex',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Position EZ-IO device perpendicular to bone surface',
+        'Apply firm downward pressure while activating drill trigger',
+        'Advance needle through both cortices with steady pressure',
+        'Stop advancement when decreased resistance felt (into marrow space)',
+        'Remove EZ-IO device leaving needle in place',
+        'Assess needle stability - should not move with gentle manipulation',
+        'Look for small amount of bone marrow or blood in needle hub',
+        'Attach extension tubing to needle hub'
+      ],
+      contraindications: [
+        'Excessive resistance indicating improper needle placement',
+        'Unable to penetrate bone cortex with reasonable force'
+      ],
+      safetyNotes: [
+        'Proper perpendicular angle prevents needle bending',
+        'Steady pressure more important than drill speed',
+        'Decreased resistance indicates successful marrow penetration'
+      ],
+      equipmentNeeded: [
+        'EZ-IO device with proper needle attachment',
+        'Steady hand and controlled pressure',
+        'Extension tubing for connection',
+        'Gentle manipulation technique for stability assessment'
+      ]
+    },
+    {
+      id: 'ezio-step-6',
+      stepNumber: 6,
+      title: 'Access Confirmation and Patency Testing',
+      description: 'Confirm successful intraosseous access and test patency',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Attempt to aspirate bone marrow or blood (may not always be possible)',
+        'Flush needle with 5-10ml normal saline',
+        'Saline should flow easily with minimal resistance',
+        'Observe for extravasation or swelling around insertion site',
+        'Patient may feel pressure sensation during flush (normal)',
+        'If saline flows freely without swelling, access confirmed',
+        'Connect IV tubing and begin fluid administration if indicated',
+        'Monitor insertion site continuously for complications'
+      ],
+      contraindications: [
+        'Inability to flush saline indicating needle malposition',
+        'Obvious extravasation or tissue swelling',
+        'Severe pain suggesting improper placement'
+      ],
+      safetyNotes: [
+        'Easy saline flow best indicator of successful access',
+        'Some resistance normal due to dense bone marrow',
+        'Extravasation indicates needle not in marrow space'
+      ],
+      equipmentNeeded: [
+        'Normal saline flush in 5-10ml syringe',
+        'IV tubing for fluid administration',
+        'Observation capability for site assessment',
+        'Pain assessment tools'
+      ]
+    },
+    {
+      id: 'ezio-step-7',
+      stepNumber: 7,
+      title: 'Needle Securing and Site Management',
+      description: 'Secure EZ-IO needle and maintain insertion site',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Secure needle using tape or commercial securing device',
+        'Apply transparent dressing over insertion site',
+        'Ensure needle remains perpendicular to skin surface',
+        'Coil and secure extension tubing to prevent tension',
+        'Label insertion site with date, time, and needle size',
+        'Monitor site for signs of infection, displacement, or complications',
+        'Flush needle every 4-6 hours with saline to maintain patency',
+        'Document successful insertion and needle function'
+      ],
+      contraindications: [
+        'Needle instability preventing secure attachment',
+        'Signs of infection or complications at insertion site'
+      ],
+      safetyNotes: [
+        'Proper securing prevents needle displacement',
+        'Regular flushing maintains access patency',
+        'Monitor for osteomyelitis (rare but serious complication)'
+      ],
+      equipmentNeeded: [
+        'Medical tape or commercial securing device',
+        'Transparent dressing for site protection',
+        'Labels for site identification',
+        'Regular flush schedule and supplies'
+      ]
+    },
+    {
+      id: 'ezio-step-8',
+      stepNumber: 8,
+      title: 'Ongoing Monitoring and Removal Planning',
+      description: 'Monitor EZ-IO function and plan for appropriate removal',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Assess needle function and patency regularly',
+        'Monitor for complications: osteomyelitis, needle displacement',
+        'Evaluate ongoing need for intraosseous access',
+        'Plan transition to peripheral IV access when feasible',
+        'Document daily assessment of insertion site',
+        'Remove needle when alternative access established',
+        'Apply direct pressure after needle removal',
+        'Monitor insertion site post-removal for complications'
+      ],
+      contraindications: [
+        'Signs of osteomyelitis or serious infection',
+        'Needle malfunction compromising patient care'
+      ],
+      safetyNotes: [
+        'EZ-IO should be removed as soon as alternative access available',
+        'Prolonged use increases infection risk',
+        'Proper removal technique prevents complications'
+      ],
+      equipmentNeeded: [
+        'Regular assessment documentation tools',
+        'Alternative vascular access supplies',
+        'Needle removal equipment',
+        'Post-removal monitoring capability'
+      ]
+    }
   ]
 };
 
