@@ -620,57 +620,443 @@ export const allEnhancedSkillSteps: { [skillName: string]: EnhancedSkillStep[] }
     }
   ],
 
-  // Continue with remaining skills... (This is a sample of the comprehensive approach)
-  // I'll create sections for all 62 skills with proper clinical guidelines
-
-  // 8. ADULT CPR WITH MANUAL DEFIBRILLATOR (From enhanced-critical-skills.ts)
+  // 8. ADULT CPR WITH MANUAL DEFIBRILLATOR
   'adult cpr with manual defibrillator': [
     {
       id: 'cpr-step-1',
       stepNumber: 1,
-      title: 'Scene Safety and Assessment',
-      description: 'Ensure scene safety and assess patient responsiveness',
+      title: 'Scene Safety and Initial Assessment',
+      description: 'Ensure scene safety and rapidly assess patient responsiveness and breathing',
       isRequired: true,
       isCritical: true,
-      timeEstimate: 10,
+      timeEstimate: 30,
       keyPoints: [
-        'Approach safely, look for hazards (electrical, traffic, violence)',
-        'Wear appropriate PPE (gloves, mask, eye protection)',
-        'Tap shoulders firmly and shout "Are you okay?"',
-        'Check for normal breathing (look, listen, feel for 10 seconds maximum)',
-        'Simultaneously check carotid pulse for healthcare providers',
-        'Call for help immediately if unresponsive'
+        'Approach safely - look for hazards (electrical, traffic, violence, hazardous materials)',
+        'Don appropriate PPE (gloves, mask, eye protection) before patient contact',
+        'Tap patient\'s shoulders firmly while shouting "Are you okay?" or "Can you hear me?"',
+        'Simultaneously assess for normal breathing (look for chest rise and fall)',
+        'Check carotid pulse for maximum 10 seconds (healthcare providers only)',
+        'Look for signs of life: movement, coughing, or normal breathing',
+        'Call for help immediately if patient unresponsive and not breathing normally',
+        'Request defibrillator/AED and advanced life support equipment'
+      ],
+      contraindications: [
+        'Do not enter unsafe scene with active hazards',
+        'Do not attempt resuscitation in obviously deceased patients (rigor mortis, decomposition)',
+        'Do not start CPR if valid DNR order is present and verified'
       ],
       safetyNotes: [
-        'Never approach an unsafe scene',
-        'Ensure adequate PPE before patient contact',
-        'If in doubt about pulse, start CPR'
+        'Scene safety is paramount - never compromise provider safety',
+        'If in doubt about pulse presence, start CPR immediately',
+        'Early activation of emergency response improves survival outcomes'
       ]
     },
-    // ... (include all 7 steps from enhanced-critical-skills.ts)
+    {
+      id: 'cpr-step-2',
+      stepNumber: 2,
+      title: 'Patient Positioning and Airway Opening',
+      description: 'Position patient optimally and establish patent airway for resuscitation',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 30,
+      keyPoints: [
+        'Place patient supine on firm, flat surface (floor or backboard)',
+        'Position patient\'s arms at sides to allow full chest access',
+        'Open airway using head-tilt chin-lift (or jaw thrust if trauma suspected)',
+        'Look in mouth and remove visible foreign objects with finger sweep',
+        'Expose chest completely for proper CPR hand placement and defibrillation',
+        'Position yourself at patient\'s side for optimal compression angle',
+        'Ensure adequate space around patient for team resuscitation efforts',
+        'Have suction equipment immediately available for airway management'
+      ],
+      equipmentNeeded: [
+        'Rigid backboard or firm surface',
+        'Defibrillator/AED with pads',
+        'Bag-valve-mask with reservoir',
+        'High-flow oxygen source',
+        'Suction device with Yankauer catheter'
+      ],
+      safetyNotes: [
+        'Firm surface is essential for effective chest compressions',
+        'Avoid moving patient unnecessarily once positioned',
+        'Clear airway only of visible obstructions - avoid blind finger sweeps'
+      ]
+    },
+    {
+      id: 'cpr-step-3',
+      stepNumber: 3,
+      title: 'High-Quality Chest Compressions',
+      description: 'Deliver effective chest compressions following current AHA guidelines',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Place heel of one hand on lower half of breastbone, between nipples',
+        'Place other hand on top, interlacing fingers and keeping fingers off ribs',
+        'Position shoulders directly over hands with arms straight and locked',
+        'Compress hard and fast: at least 2 inches (5cm) deep but not exceeding 2.4 inches (6cm)',
+        'Allow complete chest recoil between compressions without lifting hands',
+        'Compress at rate of 100-120 per minute with minimal interruptions',
+        'Count compressions aloud to maintain rhythm and communicate with team',
+        'Minimize compression interruptions to less than 10 seconds'
+      ],
+      safetyNotes: [
+        'Avoid leaning on chest between compressions - impedes venous return',
+        'Switch compressors every 2 minutes to prevent fatigue and maintain quality',
+        'Monitor compression depth and rate continuously using feedback devices if available'
+      ]
+    },
+    {
+      id: 'cpr-step-4',
+      stepNumber: 4,
+      title: 'Rescue Ventilation and Oxygenation',
+      description: 'Provide effective ventilation while maintaining circulation',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 20,
+      keyPoints: [
+        'After 30 compressions, open airway with head-tilt chin-lift technique',
+        'Create effective mask seal using C-E grip (thumb and index form C, other fingers E)',
+        'Deliver 2 breaths, each lasting 1 second with visible chest rise',
+        'Use bag-valve-mask with high-flow oxygen (15L/min) and reservoir bag',
+        'Allow complete passive exhalation between breaths',
+        'Avoid excessive ventilation rate and volume (causes harmful effects)',
+        'Resume chest compressions immediately after 2 breaths',
+        'Consider advanced airway if multiple providers available and trained'
+      ],
+      contraindications: [
+        'Do not hyperventilate - causes decreased venous return and cardiac output',
+        'Avoid mouth-to-mouth ventilation without barrier protection',
+        'Do not delay compressions for prolonged ventilation attempts'
+      ],
+      safetyNotes: [
+        'Gastric insufflation increases aspiration risk',
+        'Advanced airway allows continuous compressions with asynchronous ventilation',
+        'Excessive ventilation is harmful and decreases survival rates'
+      ]
+    },
+    {
+      id: 'cpr-step-5',
+      stepNumber: 5,
+      title: 'Defibrillation and Rhythm Analysis',
+      description: 'Rapidly analyze cardiac rhythm and deliver defibrillation when indicated',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 45,
+      keyPoints: [
+        'Apply defibrillator pads quickly during ongoing CPR: right upper chest, left lower chest',
+        'Ensure pads do not touch each other and have good skin contact',
+        'Continue chest compressions while defibrillator analyzes rhythm',
+        'Clear all personnel from patient contact: "Everyone clear - analyzing rhythm"',
+        'Identify shockable rhythms: ventricular fibrillation (VF) or pulseless ventricular tachycardia (VT)',
+        'Charge defibrillator to appropriate energy: biphasic 120-200J initial, 150-360J subsequent',
+        'Ensure complete clearing before shock: "Everyone clear - shocking"',
+        'Deliver shock immediately when charged, resume CPR for 2 minutes'
+      ],
+      safetyNotes: [
+        'Remove oxygen delivery devices during defibrillation to prevent fire hazard',
+        'Check for medication patches or implanted devices - remove patches if present',
+        'Ensure no team member is in contact with patient or stretcher during shock delivery'
+      ]
+    },
+    {
+      id: 'cpr-step-6',
+      stepNumber: 6,
+      title: 'Advanced Cardiac Life Support and Medications',
+      description: 'Implement advanced interventions including medications and airway management',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Establish IV or IO access during ongoing CPR for medication administration',
+        'Administer epinephrine 1mg IV/IO every 3-5 minutes for all cardiac arrest rhythms',
+        'For persistent VF/VT: give amiodarone 300mg IV/IO after first unsuccessful shock',
+        'Consider advanced airway: supraglottic device or endotracheal intubation',
+        'With advanced airway: provide continuous compressions and 10 ventilations per minute',
+        'Treat reversible causes (H\'s and T\'s): hypovolemia, hypoxia, hydrogen ions, hyper/hypokalemia, hypothermia, tension pneumothorax, tamponade, toxins, thrombosis',
+        'Consider extracorporeal CPR (ECPR) consultation for refractory arrest in appropriate patients',
+        'Maintain team communication and role assignments throughout resuscitation'
+      ],
+      equipmentNeeded: [
+        'IV catheters and IO devices',
+        'Normal saline or lactated Ringer\'s',
+        'Epinephrine 1:10,000 concentration',
+        'Amiodarone 150mg/3mL vials',
+        'Advanced airway devices (King LT, LMA, ETT)',
+        'End-tidal CO2 monitoring'
+      ],
+      safetyNotes: [
+        'Confirm medication concentrations before administration',
+        'Use end-tidal CO2 monitoring to confirm airway placement and assess CPR quality',
+        'Consider point-of-care ultrasound to assess cardiac activity if available'
+      ]
+    },
+    {
+      id: 'cpr-step-7',
+      stepNumber: 7,
+      title: 'Return of Spontaneous Circulation Assessment',
+      description: 'Recognize ROSC and provide immediate post-cardiac arrest care',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Check for signs of ROSC during scheduled rhythm checks: palpable pulse, blood pressure >80mmHg systolic',
+        'Look for other ROSC indicators: abrupt increase in ETCO2 >40mmHg, arterial pressure waveform',
+        'If ROSC achieved: assess mental status, breathing adequacy, and hemodynamic stability',
+        'Obtain 12-lead ECG immediately to identify ST-elevation myocardial infarction',
+        'Maintain oxygen saturation 94-98% and avoid hyperoxia',
+        'Target systolic blood pressure ≥90mmHg with fluids or vasopressors',
+        'Consider targeted temperature management (32-36°C) per protocol',
+        'Prepare for transport to cardiac arrest center or PCI-capable facility'
+      ],
+      safetyNotes: [
+        'ROSC patients are at high risk for re-arrest - maintain continuous monitoring',
+        'Avoid hyperoxia and hypocapnia which can worsen neurological outcomes',
+        'Early cardiac catheterization improves outcomes in STEMI patients'
+      ]
+    },
+    {
+      id: 'cpr-step-8',
+      stepNumber: 8,
+      title: 'Termination Decision and Family Support',
+      description: 'Make appropriate decisions regarding resuscitation termination and provide family care',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Consider termination of resuscitation per local protocols after adequate trial',
+        'Factors supporting termination: unwitnessed arrest, prolonged downtime, no ROSC after 30 minutes',
+        'Factors supporting continuation: witnessed arrest, early CPR, shockable rhythm, hypothermia',
+        'Consult with medical control physician for termination decision',
+        'If terminating: ensure family notification and support services',
+        'Document total resuscitation time, interventions performed, and decision rationale',
+        'Provide team debriefing for learning and emotional support',
+        'Complete required death certification and reporting procedures'
+      ],
+      contraindications: [
+        'Do not terminate resuscitation prematurely in hypothermic patients',
+        'Consider extracorporeal support consultation before termination in young patients',
+        'Do not terminate in cases of drug overdose without adequate antidote trial'
+      ],
+      safetyNotes: [
+        'Termination decisions should involve medical control when possible',
+        'Team emotional support is important after unsuccessful resuscitation',
+        'Proper documentation protects providers and facilitates quality improvement'
+      ]
+    }
   ],
-
-  // Add abbreviated versions for remaining skills to demonstrate the pattern:
 
   // 9. 12-LEAD ECG ACQUISITION
   '12 lead ecg – lead placement and acquisition': [
     {
       id: 'ecg12-1',
       stepNumber: 1,
-      title: 'Patient preparation and consent',
-      description: 'Prepare patient for 12-lead ECG acquisition',
+      title: 'Patient preparation and informed consent',
+      description: 'Comprehensive patient preparation and consent for 12-lead ECG acquisition',
       isRequired: true,
       isCritical: true,
-      timeEstimate: 45,
+      timeEstimate: 120,
       keyPoints: [
-        'Explain procedure and obtain consent',
-        'Ensure patient privacy and proper draping',
-        'Position patient supine with arms relaxed',
-        'Expose chest completely, remove jewelry',
-        'Check for pacemaker or implanted devices'
+        'Verify patient identity using two independent identifiers',
+        'Explain procedure: \'I need to record your heart\'s electrical activity using electrode patches\'',
+        'Reassure patient that ECG only records electrical activity - no electricity enters body',
+        'Obtain informed consent and address any patient concerns',
+        'Ensure patient privacy with appropriate draping and close doors/curtains',
+        'Position patient supine on firm surface with arms relaxed at sides',
+        'Remove all metallic jewelry, watches, and clothing from chest and arms',
+        'Check for pacemaker, ICD, or other implanted devices - note on ECG',
+        'Assess skin condition and identify any areas requiring special consideration'
+      ],
+      contraindications: [
+        'Patient refusal (conscious patients)',
+        'Unstable spinal injury requiring immobilization',
+        'Active resuscitation in progress (unless specifically ordered)'
+      ],
+      equipmentNeeded: [
+        '12-lead ECG machine with paper and adequate battery',
+        '10 disposable ECG electrodes',
+        'Razor for hair removal if needed',
+        'Alcohol wipes for skin preparation',
+        'Towel for patient comfort and positioning'
       ]
     },
-    // ... (would continue with all steps)
+    {
+      id: 'ecg12-2',
+      stepNumber: 2,
+      title: 'Equipment preparation and calibration',
+      description: 'Prepare ECG machine and verify proper function',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Check ECG machine power level and connect to AC power if available',
+        'Verify adequate ECG paper supply and proper loading',
+        'Test all 10 lead wire connections for continuity and proper labeling',
+        'Set paper speed to 25 mm/sec and amplitude to 10 mm/mV (standard settings)',
+        'Perform machine calibration check - should produce 10mm square wave',
+        'Ensure filter settings are appropriate: 0.5-40 Hz for diagnostic quality',
+        'Verify patient data entry capability and prepare demographic information',
+        'Check for electromagnetic interference sources and eliminate if possible'
+      ],
+      safetyNotes: [
+        'Ensure machine is properly grounded to prevent electrical hazards',
+        'Never use damaged lead wires or electrodes',
+        'Keep machine away from sources of electrical interference'
+      ]
+    },
+    {
+      id: 'ecg12-3',
+      stepNumber: 3,
+      title: 'Skin preparation and electrode site identification',
+      description: 'Prepare skin and identify precise electrode placement sites',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Palpate anatomical landmarks: clavicles, sternum, ribs, and intercostal spaces',
+        'Identify 4th intercostal space by feeling for sternal angle (Angle of Louis)',
+        'Count down to locate 4th intercostal space for V1 and V2 placement',
+        'Clean electrode sites with alcohol wipes to remove oils and debris',
+        'Allow alcohol to dry completely before electrode application',
+        'Trim excessive hair if present using razor or clipper - do not dry shave',
+        'Gently abrade skin with gauze if needed to improve electrode contact',
+        'Ensure skin is dry and free from lotions, powders, or moisture',
+        'Mark electrode positions lightly with pen if multiple attempts anticipated'
+      ],
+      safetyNotes: [
+        'Use gentle skin preparation to avoid irritation or bleeding',
+        'Avoid placing electrodes over open wounds or irritated skin',
+        'Be especially careful with elderly patients who may have fragile skin'
+      ]
+    },
+    {
+      id: 'ecg12-4',
+      stepNumber: 4,
+      title: 'Limb lead electrode placement',
+      description: 'Accurate placement of limb electrodes using standardized positions',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Right Arm (RA/White): Place on right wrist or upper arm, avoid bony prominences',
+        'Left Arm (LA/Black): Place on left wrist or upper arm, mirror right arm position',
+        'Right Leg (RL/Green): Place on right ankle or lower leg - this is ground electrode',
+        'Left Leg (LL/Red): Place on left ankle or lower leg, mirror right leg position',
+        'Ensure limb electrodes are placed symmetrically for accurate comparison',
+        'Avoid placing electrodes over joints, bones, or areas of excessive muscle',
+        'If amputation present, place electrode on residual limb as close to usual position as possible',
+        'Press electrodes firmly to ensure good contact - no air bubbles under electrode'
+      ],
+      contraindications: [
+        'Avoid electrode placement over open wounds or rashes',
+        'Do not place on areas with excessive hair that cannot be removed',
+        'Avoid placement over areas with pacemaker or ICD if possible'
+      ]
+    },
+    {
+      id: 'ecg12-5',
+      stepNumber: 5,
+      title: 'Precordial (chest) lead electrode placement',
+      description: 'Precise anatomical placement of precordial electrodes V1-V6',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'V1 (Red/Brown): 4th intercostal space, right sternal border',
+        'V2 (Yellow): 4th intercostal space, left sternal border',
+        'V4 (Blue/Green): 5th intercostal space, left midclavicular line (place V4 before V3)',
+        'V3 (Orange/Black): Midway between V2 and V4 positions',
+        'V5 (Brown/Red): Same horizontal level as V4, left anterior axillary line',
+        'V6 (Purple/Pink): Same horizontal level as V4 and V5, left midaxillary line',
+        'Ensure V4, V5, and V6 are on the same horizontal plane',
+        'Double-check placement accuracy - electrode position errors significantly affect interpretation',
+        'For female patients, place V4-V6 under the breast, not on breast tissue'
+      ],
+      safetyNotes: [
+        'Accurate precordial placement is critical for diagnostic accuracy',
+        'Maintain patient dignity during chest electrode placement',
+        'Ask for assistance with patient positioning if needed'
+      ],
+      equipmentNeeded: [
+        'Measuring tape or ruler for precise spacing',
+        'Anatomical reference guide if needed',
+        'Additional electrodes in case replacement is needed'
+      ]
+    },
+    {
+      id: 'ecg12-6',
+      stepNumber: 6,
+      title: 'Lead wire connection and signal quality verification',
+      description: 'Connect lead wires and verify signal quality before recording',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Connect lead wires to corresponding electrodes: match colors and labels',
+        'Arrange lead wires neatly to prevent tangling and artifact',
+        'Check ECG monitor for baseline stability and absence of artifact',
+        'Verify all leads show appropriate waveforms without excessive noise',
+        'Troubleshoot any leads showing flat line, excessive artifact, or poor signal',
+        'Ensure patient is relaxed and lying still - muscle tension creates artifact',
+        'Check for 60Hz interference and eliminate electrical sources if present',
+        'Adjust electrode contact if poor signal quality persists'
+      ],
+      safetyNotes: [
+        'Poor signal quality invalidates ECG interpretation',
+        'Never record ECG with significant artifact or poor lead contact',
+        'Replace electrodes if signal quality cannot be improved'
+      ]
+    },
+    {
+      id: 'ecg12-7',
+      stepNumber: 7,
+      title: 'ECG acquisition and quality assessment',
+      description: 'Record diagnostic quality 12-lead ECG and assess for adequacy',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Instruct patient to lie still and breathe normally during recording',
+        'Begin ECG recording and monitor for adequate waveform quality',
+        'Ensure minimum 6-second recording strip for rhythm analysis',
+        'Verify all 12 leads are clearly visible with appropriate amplitude',
+        'Check for proper standardization mark (10mm calibration pulse)',
+        'Assess rhythm strip for any arrhythmias or conduction abnormalities',
+        'Record additional leads (V7-V9, posterior leads) if clinically indicated',
+        'Print clear, readable ECG with patient demographic information',
+        'Review ECG immediately for any obvious abnormalities requiring immediate action'
+      ],
+      equipmentNeeded: [
+        'Adequate ECG paper supply',
+        'Backup power source if needed',
+        'Additional lead configurations if indicated'
+      ]
+    },
+    {
+      id: 'ecg12-8',
+      stepNumber: 8,
+      title: 'Post-procedure care and documentation',
+      description: 'Proper electrode removal and comprehensive documentation',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Remove electrodes gently to prevent skin irritation',
+        'Clean any adhesive residue from skin with appropriate solvent',
+        'Assist patient with dressing and return to comfortable position',
+        'Label ECG with patient information, date, time, and clinical indication',
+        'Document procedure completion including any technical difficulties',
+        'Note patient tolerance and any symptoms during procedure',
+        'Communicate any urgent findings to appropriate healthcare provider immediately',
+        'Store ECG appropriately for interpretation and medical record filing',
+        'Clean and maintain ECG equipment according to facility protocols'
+      ],
+      safetyNotes: [
+        'Gentle electrode removal prevents skin trauma',
+        'Urgent ECG findings require immediate physician notification',
+        'Proper equipment maintenance ensures continued accuracy'
+      ]
+    }
   ],
 
   // 10. NEBULIZATION OF MEDICATION
@@ -678,20 +1064,166 @@ export const allEnhancedSkillSteps: { [skillName: string]: EnhancedSkillStep[] }
     {
       id: 'neb-1',
       stepNumber: 1,
-      title: 'Medication verification and preparation',
-      description: 'Verify correct medication and prepare nebulizer',
+      title: 'Patient assessment and medication verification',
+      description: 'Comprehensive assessment and medication verification for nebulization therapy',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Verify patient identity using two independent identifiers',
+        'Check medication order: drug name, dose, route, frequency, and indication',
+        'Assess patient for allergies to bronchodilators, preservatives, or sulfites',
+        'Review medical history for contraindications (tachycardia, hypertension)',
+        'Obtain baseline vital signs: heart rate, blood pressure, respiratory rate, oxygen saturation',
+        'Assess respiratory status: work of breathing, use of accessory muscles, breath sounds',
+        'Check medication expiration date, concentration, and solution clarity',
+        'Explain procedure, expected effects, and potential side effects to patient'
+      ],
+      contraindications: [
+        'Known hypersensitivity to medication or preservatives',
+        'Severe cardiovascular disease (relative contraindication for beta-agonists)',
+        'Hyperthyroidism or diabetes mellitus (relative contraindications)',
+        'Pregnancy (relative contraindication - risk vs benefit assessment)'
+      ],
+      equipmentNeeded: [
+        'Nebulizer medication as prescribed',
+        'Jet nebulizer or ultrasonic nebulizer',
+        'Oxygen source or compressed air',
+        'Nebulizer tubing and mouthpiece/mask',
+        'Stethoscope for assessment',
+        'Pulse oximeter and vital sign monitor'
+      ]
+    },
+    {
+      id: 'neb-2',
+      stepNumber: 2,
+      title: 'Equipment setup and preparation',
+      description: 'Prepare nebulizer system and verify proper function',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Select appropriate nebulizer type: jet nebulizer for most medications',
+        'Connect nebulizer to oxygen source at 6-8 L/min flow rate',
+        'Test nebulizer function by adding 2-3 ml normal saline to confirm misting',
+        'Ensure adequate oxygen supply for duration of treatment (typically 10-15 minutes)',
+        'Prepare medication: use sterile technique, do not mix medications unless specifically ordered',
+        'Add prescribed medication dose to nebulizer chamber (typically 2.5-5mg albuterol)',
+        'Add normal saline to achieve total volume of 3-4 ml if needed',
+        'Attach appropriate delivery device: mouthpiece for cooperative patients, mask for others'
+      ],
+      safetyNotes: [
+        'Never mix different medications without specific orders',
+        'Use sterile normal saline only - tap water may cause bronchospasm',
+        'Ensure oxygen flow rate is adequate to create fine mist'
+      ],
+      equipmentNeeded: [
+        'Sterile normal saline for dilution',
+        'Sterile medication preparation area',
+        'Appropriate sized face mask or mouthpiece',
+        'Timer for treatment duration monitoring'
+      ]
+    },
+    {
+      id: 'neb-3',
+      stepNumber: 3,
+      title: 'Patient positioning and delivery method selection',
+      description: 'Position patient optimally and select appropriate delivery method',
       isRequired: true,
       isCritical: true,
       timeEstimate: 60,
       keyPoints: [
-        'Check medication order: drug, dose, route, time',
-        'Verify patient identity with two identifiers',
-        'Check medication expiration date and clarity',
-        'Assess patient for allergies to medication',
-        'Explain procedure and expected effects to patient'
+        'Position patient upright (high Fowler\'s position) to maximize lung expansion',
+        'Support patient\'s arms on pillows or bedside table for comfort',
+        'Select mouthpiece for alert, cooperative patients who can seal lips properly',
+        'Use face mask for uncooperative, pediatric, or critically ill patients',
+        'Ensure mask fits properly: covers nose and mouth with minimal leak',
+        'Instruct patient on proper breathing technique: slow, deep breaths',
+        'Advise patient to breathe through mouth when using mouthpiece',
+        'Position nebulizer upright to maintain proper medication delivery'
+      ],
+      safetyNotes: [
+        'Monitor patient closely for signs of respiratory distress',
+        'Ensure patient can remove mouthpiece independently if needed',
+        'Watch for claustrophobic reactions with face mask use'
       ]
     },
-    // ... (would continue)
+    {
+      id: 'neb-4',
+      stepNumber: 4,
+      title: 'Treatment administration and monitoring',
+      description: 'Administer nebulized medication while continuously monitoring patient response',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 900,
+      keyPoints: [
+        'Initiate nebulization and verify adequate mist production',
+        'Coach patient breathing: \'Take slow, deep breaths and hold for 2-3 seconds\'',
+        'Monitor treatment progress: typically 10-15 minutes until medication consumed',
+        'Observe for therapeutic effects: decreased work of breathing, improved air entry',
+        'Watch for adverse effects: tachycardia, tremor, anxiety, palpitations',
+        'Check vital signs every 5 minutes during treatment',
+        'Auscultate breath sounds mid-treatment and post-treatment',
+        'Encourage patient to cough and clear secretions as they loosen',
+        'Stop treatment if severe adverse reactions occur'
+      ],
+      safetyNotes: [
+        'Be prepared to discontinue treatment for severe bronchospasm',
+        'Monitor heart rate closely - hold treatment if >150 bpm in adults',
+        'Watch for signs of medication overdose: severe tremor, chest pain'
+      ]
+    },
+    {
+      id: 'neb-5',
+      stepNumber: 5,
+      title: 'Post-treatment assessment and follow-up',
+      description: 'Assess treatment effectiveness and provide appropriate follow-up care',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Obtain complete set of vital signs immediately post-treatment',
+        'Auscultate breath sounds bilaterally and compare to pre-treatment assessment',
+        'Assess improvement in respiratory distress and oxygen saturation',
+        'Document peak flow measurements if available and patient able to cooperate',
+        'Monitor for delayed adverse reactions for 15-20 minutes post-treatment',
+        'Provide mouth care: rinse mouth with water to prevent oral candidiasis',
+        'Document treatment response: improvement, no change, or deterioration',
+        'Plan follow-up treatments based on patient response and physician orders',
+        'Educate patient on signs/symptoms requiring immediate medical attention'
+      ],
+      equipmentNeeded: [
+        'Peak flow meter if indicated',
+        'Documentation forms',
+        'Water for mouth rinsing',
+        'Emergency medications if adverse reaction occurs'
+      ]
+    },
+    {
+      id: 'neb-6',
+      stepNumber: 6,
+      title: 'Equipment cleaning and documentation',
+      description: 'Proper equipment cleaning and comprehensive documentation',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Disassemble nebulizer equipment and rinse with sterile water',
+        'Clean nebulizer chamber and mouthpiece/mask with appropriate disinfectant',
+        'Allow equipment to air dry or follow facility-specific cleaning protocols',
+        'Store equipment properly to prevent contamination',
+        'Document medication administered: name, dose, route, time',
+        'Record pre- and post-treatment vital signs and assessment findings',
+        'Note patient tolerance and any adverse effects observed',
+        'Document education provided and patient understanding',
+        'Report significant adverse reactions to physician immediately'
+      ],
+      safetyNotes: [
+        'Proper equipment cleaning prevents cross-contamination',
+        'Complete documentation is essential for ongoing care planning',
+        'Report any equipment malfunction to biomedical engineering'
+      ]
+    }
   ],
 
   // 11. ADULT CHOKING WITHOUT EQUIPMENT
@@ -1167,8 +1699,6 @@ export const allEnhancedSkillSteps: { [skillName: string]: EnhancedSkillStep[] }
     }
   ],
 
-  // Continue adding more skills...
-  
   // 17. APPLICATION OF TRIANGULAR BANDAGE
   'application of a triangular bandage': [
     {
@@ -1870,7 +2400,6 @@ export const allSkillsMetadata = {
     ]
   }
 
-  // Would continue for all remaining skills...
 };
 
 export default allEnhancedSkillSteps;
