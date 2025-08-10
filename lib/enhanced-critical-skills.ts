@@ -11401,47 +11401,258 @@ export const criticalSkillsMetadata = {
     }
   ],
 
-  'femoral-vein-cannulation': {
-    name: 'Femoral Vein Cannulation',
-    category: 'vascular-access',
-    difficultyLevel: 'ADVANCED' as const,
-    timeEstimateMinutes: 20,
-    isCritical: true,
-    objectives: [
-      'Assess patient appropriately for femoral central venous access and rule out contraindications',
-      'Demonstrate proper sterile technique and maximum barrier precautions for central line insertion',
-      'Identify anatomical landmarks and use ultrasound guidance for safe femoral vein access',
-      'Perform Seldinger technique with guidewire insertion and tract dilation safely',
-      'Confirm proper catheter placement and secure device to prevent complications',
-      'Monitor for immediate complications and provide comprehensive documentation',
-      'Communicate catheter placement and care requirements to receiving team'
-    ],
-    indications: [
-      'Failed peripheral IV access in critically ill patient requiring immediate vascular access',
-      'Need for rapid large-volume fluid resuscitation or massive transfusion protocol',
-      'Administration of vasoactive medications or chemotherapy requiring central access',
-      'Hemodynamic monitoring with central venous pressure measurement needs',
-      'Emergency hemodialysis, plasmapheresis, or extracorporeal membrane oxygenation access',
-      'Cardiac arrest with unsuccessful peripheral IV attempts and ongoing resuscitation needs'
-    ],
-    contraindications: [
-      'Active infection, cellulitis, or open wounds at proposed insertion site',
-      'Severe bleeding disorders or coagulopathy with INR >2.0 (relative contraindication)',
-      'Anatomical abnormalities, previous surgery, or known venous obstruction at site',
-      'Combative or uncooperative patient unable to remain still during procedure',
-      'Lack of proper equipment, sterile supplies, or trained personnel for safe insertion'
-    ],
-    equipment: [
-      'Central venous catheter kit with multi-lumen catheter (7Fr triple-lumen preferred)',
-      'Maximum barrier precautions: sterile gowns, gloves, drapes, caps, masks',
-      'Antiseptic solution (chlorhexidine 2% preferred) and skin preparation materials',
-      'Local anesthetic (lidocaine 1-2%) with needles and syringes for infiltration',
-      'Ultrasound machine with high-frequency linear probe and sterile probe covers',
-      'Suture materials, needle holders, and sterile dressing supplies',
-      'Normal saline flushes, catheter caps, and securing tape or devices',
-      'Emergency equipment for complication management and post-procedure monitoring'
-    ]
-  },
+  'femoral-vein-cannulation': [
+    {
+      id: 'femoral-step-1',
+      stepNumber: 1,
+      title: 'Patient Assessment and Contraindication Evaluation',
+      description: 'Assess patient appropriately for femoral central venous access and rule out contraindications',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Evaluate clinical indication: failed peripheral access, need for central access',
+        'Assess coagulation status: bleeding disorders, anticoagulation, INR if available',
+        'Examine proposed insertion site for infection, cellulitis, or wounds',
+        'Check for anatomical abnormalities or previous surgery at site',
+        'Assess patient cooperation and ability to remain still during procedure',
+        'Review medical history for venous thrombosis or previous central lines',
+        'Ensure appropriate personnel and equipment available for safe procedure',
+        'Obtain informed consent if patient consciousness and time permit'
+      ],
+      contraindications: [
+        'Active skin infection at insertion site',
+        'Severe coagulopathy (INR >2.0)',
+        'Combative or uncooperative patient',
+        'Known venous obstruction at site'
+      ],
+      safetyNotes: [
+        'Femoral site higher infection risk than subclavian/jugular',
+        'Bleeding risk increased with coagulopathy',
+        'Patient positioning critical for safe access'
+      ],
+      equipmentNeeded: [
+        'Patient assessment tools',
+        'Coagulation studies if available',
+        'Informed consent materials',
+        'Patient positioning supplies'
+      ]
+    },
+    {
+      id: 'femoral-step-2',
+      stepNumber: 2,
+      title: 'Maximum Barrier Precautions and Sterile Setup',
+      description: 'Establish maximum barrier precautions and sterile field for central line insertion',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Don sterile cap, mask, gown, and gloves using proper technique',
+        'Prepare large sterile drape to cover entire patient from head to toe',
+        'Set up sterile field with central line kit components organized',
+        'Prepare ultrasound with sterile probe cover and gel',
+        'Draw up local anesthetic in sterile syringe with appropriate needle',
+        'Check all equipment function: catheter lumens, guidewire, dilator',
+        'Have assistant available who can maintain sterile field',
+        'Ensure emergency equipment immediately accessible but outside sterile field'
+      ],
+      safetyNotes: [
+        'Maximum barrier precautions reduce infection risk significantly',
+        'Break in sterile technique requires restarting procedure',
+        'All personnel in room should wear caps and masks'
+      ],
+      equipmentNeeded: [
+        'Sterile gowns, gloves, caps, masks for all personnel',
+        'Large sterile drapes for maximum barrier',
+        'Central venous catheter kit',
+        'Ultrasound with sterile probe covers',
+        'Sterile field setup supplies'
+      ]
+    },
+    {
+      id: 'femoral-step-3',
+      stepNumber: 3,
+      title: 'Patient Positioning and Anatomical Landmark Identification',
+      description: 'Position patient optimally and identify anatomical landmarks for safe access',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Position patient supine with leg slightly externally rotated',
+        'Place small roll under ipsilateral hip to optimize access angle',
+        'Identify inguinal ligament from anterior superior iliac spine to pubic tubercle',
+        'Palpate femoral pulse medial to anterior superior iliac spine',
+        'Locate femoral vein medial to femoral artery (remember NAVEL: lateral to medial)',
+        'Mark insertion point approximately 2-3cm below inguinal ligament',
+        'Ensure adequate lighting and access to insertion site',
+        'Position ultrasound screen for optimal visualization during procedure'
+      ],
+      safetyNotes: [
+        'Femoral vein lies medial to femoral artery',
+        'Insertion too high risks retroperitoneal hematoma',
+        'Adequate exposure essential for safe technique'
+      ],
+      equipmentNeeded: [
+        'Patient positioning aids (rolls, pillows)',
+        'Adequate lighting',
+        'Anatomical landmark identification tools',
+        'Skin marking pen if needed'
+      ]
+    },
+    {
+      id: 'femoral-step-4',
+      stepNumber: 4,
+      title: 'Ultrasound Guidance and Vessel Identification',
+      description: 'Use ultrasound guidance to identify femoral vein and optimize needle approach',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Apply sterile gel to ultrasound probe with sterile cover',
+        'Place probe in transverse orientation over femoral vessels',
+        'Identify femoral artery (pulsatile, thick-walled) and vein (compressible, thin-walled)',
+        'Confirm vein compressibility and lack of intravascular thrombus',
+        'Optimize image depth and gain for clear vessel visualization',
+        'Practice needle visualization technique before skin puncture',
+        'Identify optimal insertion angle and trajectory to vein',
+        'Mark skin entry point based on ultrasound guidance'
+      ],
+      safetyNotes: [
+        'Always confirm vessel identity before needle insertion',
+        'Femoral vein should be easily compressible',
+        'Use real-time ultrasound guidance throughout needle insertion'
+      ],
+      equipmentNeeded: [
+        'Ultrasound machine with high-frequency probe',
+        'Sterile ultrasound probe covers',
+        'Sterile ultrasound gel',
+        'Image optimization controls'
+      ]
+    },
+    {
+      id: 'femoral-step-5',
+      stepNumber: 5,
+      title: 'Local Anesthesia and Initial Needle Insertion',
+      description: 'Administer local anesthesia and perform initial needle insertion under ultrasound guidance',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Infiltrate skin and subcutaneous tissue with 1-2% lidocaine',
+        'Allow adequate time for anesthetic effect (2-3 minutes)',
+        'Insert access needle at 45-degree angle toward ultrasound probe',
+        'Advance needle under real-time ultrasound guidance',
+        'Watch for needle tip visualization and vein wall indentation',
+        'Aspirate continuously while advancing to detect vessel entry',
+        'Stop advancement immediately upon obtaining dark venous blood',
+        'Confirm venous blood by color, pressure, and blood gas if available'
+      ],
+      safetyNotes: [
+        'Never advance needle without clear ultrasound visualization',
+        'Arterial puncture requires immediate pressure and reassessment',
+        'Multiple needle passes increase complication risk'
+      ],
+      equipmentNeeded: [
+        'Local anesthetic (lidocaine 1-2%)',
+        'Needles and syringes for anesthesia',
+        'Central line access needle (18-gauge)',
+        'Syringes for blood aspiration'
+      ]
+    },
+    {
+      id: 'femoral-step-6',
+      stepNumber: 6,
+      title: 'Seldinger Technique and Catheter Insertion',
+      description: 'Perform Seldinger technique with guidewire and catheter insertion',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Insert guidewire through needle with J-tip leading',
+        'Advance guidewire smoothly - stop if resistance encountered',
+        'Remove needle while maintaining guidewire position',
+        'Make small skin incision with scalpel to facilitate catheter insertion',
+        'Thread dilator over guidewire to enlarge tract',
+        'Remove dilator and quickly insert catheter over guidewire',
+        'Advance catheter to appropriate depth (typically 15-20cm)',
+        'Remove guidewire while maintaining catheter position'
+      ],
+      safetyNotes: [
+        'Never force guidewire advancement against resistance',
+        'Maintain guidewire control at all times to prevent loss',
+        'Work quickly once dilator removed to prevent air embolism'
+      ],
+      equipmentNeeded: [
+        'J-tip guidewire',
+        'Vessel dilator',
+        'Central venous catheter',
+        'Scalpel for skin incision',
+        'Guidewire control and positioning tools'
+      ]
+    },
+    {
+      id: 'femoral-step-7',
+      stepNumber: 7,
+      title: 'Catheter Function Testing and Securing',
+      description: 'Confirm catheter function and secure device to prevent complications',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Aspirate blood from all catheter lumens to confirm patency',
+        'Flush all lumens with sterile saline to ensure free flow',
+        'Check for blood return and easy flushing without resistance',
+        'Secure catheter to skin with sutures using sterile technique',
+        'Apply sterile occlusive dressing over insertion site',
+        'Cap all unused lumens with sterile caps',
+        'Label catheter with insertion date and time',
+        'Document catheter position, lumens, and function in medical record'
+      ],
+      safetyNotes: [
+        'All lumens must draw blood and flush easily',
+        'Secure suturing prevents catheter migration',
+        'Sterile dressing essential for infection prevention'
+      ],
+      equipmentNeeded: [
+        'Sterile sutures and needle holders',
+        'Sterile saline flushes',
+        'Sterile catheter caps',
+        'Sterile occlusive dressing',
+        'Catheter labeling materials'
+      ]
+    },
+    {
+      id: 'femoral-step-8',
+      stepNumber: 8,
+      title: 'Complication Assessment and Documentation',
+      description: 'Monitor for immediate complications and provide comprehensive documentation',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Monitor insertion site for immediate bleeding or hematoma formation',
+        'Check distal pulse and perfusion to rule out arterial compromise',
+        'Assess for signs of pneumothorax or air embolism',
+        'Obtain chest X-ray to confirm catheter position if required by protocol',
+        'Document procedure details: site, technique, complications, catheter type',
+        'Record number of attempts, ultrasound use, and patient tolerance',
+        'Provide detailed handoff to receiving team including catheter care',
+        'Establish plan for ongoing monitoring and catheter maintenance'
+      ],
+      safetyNotes: [
+        'Early recognition of complications essential',
+        'Arterial injury can cause life-threatening bleeding',
+        'Continuous monitoring required for central venous access'
+      ],
+      equipmentNeeded: [
+        'Monitoring equipment for vital signs',
+        'Documentation materials',
+        'Chest X-ray if required',
+        'Communication equipment for receiving team',
+        'Complication management supplies'
+      ]
+    }
+  ],
 
   'double-lumen-airway-insertion': {
     name: 'Double Lumen Airway Insertion',
