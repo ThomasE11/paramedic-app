@@ -9677,91 +9677,506 @@ export const criticalSkillsMetadata = {
     }
   ],
 
-  'burns-thermal-injury-management': {
-    name: 'Burns and Thermal Injury Management',
-    category: 'trauma',
-    difficultyLevel: 'ADVANCED',
-    timeEstimateMinutes: 19,
-    isCritical: true,
-    objectives: [
-      'Ensure scene safety and eliminate ongoing thermal hazards',
-      'Perform systematic burn assessment including depth and total body surface area',
-      'Implement appropriate cooling therapy and initial burn treatment',
-      'Establish vascular access and provide fluid resuscitation per burn protocols',
-      'Manage burn-related complications including airway burns and compartment syndrome',
-      'Provide appropriate pain management for severe burn injuries',
-      'Determine appropriate receiving facility and coordinate burn center transport'
-    ],
-    indications: [
-      'Thermal burns from fire, hot liquids, or contact with hot objects',
-      'Chemical burns from acids, alkalis, or other caustic substances',
-      'Electrical burns from high or low voltage electrical contact',
-      'Burns involving face, hands, feet, genitalia, or major joints',
-      'Circumferential burns of extremities or torso',
-      'Burns in patients with significant comorbidities or extremes of age',
-      'Burns associated with inhalation injury or airway compromise',
-      'Burns covering >10% total body surface area in adults or >5% in children'
-    ],
-    contraindications: [
-      'Unsafe scene conditions with active fire or electrical hazards',
-      'Life-threatening trauma taking priority over burn care',
-      'Structural instability preventing safe patient access',
-      'Hazardous materials requiring specialized decontamination teams'
-    ],
-    equipment: [
-      'Personal protective equipment appropriate for fire and hazmat scenes',
-      'Cool water or saline for burn cooling and chemical irrigation',
-      'Clean, dry dressings and burn sheets for covering wounds',
-      'Large-bore IV catheters and lactated Ringer\'s solution for fluid resuscitation',
-      'Analgesic medications including morphine, fentanyl, and ketamine',
-      'Airway management equipment including intubation supplies',
-      'Cardiac monitoring and pulse oximetry for continuous assessment',
-      'Burn assessment tools including Rule of Nines charts and calculators'
-    ]
-  },
+  'burns-thermal-injury-management': [
+    {
+      id: 'burns-step-1',
+      stepNumber: 1,
+      title: 'Scene Safety and Hazard Elimination',
+      description: 'Ensure scene safety and eliminate ongoing thermal hazards',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Assess scene for ongoing fire hazards, electrical risks, chemical exposures',
+        'Ensure all ignition sources are eliminated before patient contact',
+        'Check for structural integrity of buildings involved in fire',
+        'Identify type of burn: thermal, chemical, electrical, or radiation',
+        'Assess for hazardous materials requiring specialized decontamination',
+        'Establish safe perimeter and coordinate with fire department',
+        'Don appropriate PPE for specific hazard type identified',
+        'Call for additional resources: burn team, hazmat, utility companies'
+      ],
+      contraindications: [
+        'Active fire preventing safe patient access',
+        'Electrical hazards with power still connected',
+        'Structural collapse risk from fire damage'
+      ],
+      safetyNotes: [
+        'Never enter unsafe environment to retrieve burn victims',
+        'Electrical burns may have hidden internal injuries',
+        'Chemical burns require specific decontamination procedures'
+      ],
+      equipmentNeeded: [
+        'Personal protective equipment for specific hazards',
+        'Fire suppression equipment if available',
+        'Communication equipment for coordination',
+        'Utility shut-off tools if trained'
+      ]
+    },
+    {
+      id: 'burns-step-2',
+      stepNumber: 2,
+      title: 'Stop the Burning Process',
+      description: 'Immediately stop the burning process and remove patient from heat source',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Stop, drop, and roll if clothing is on fire - do not allow patient to run',
+        'Smother flames with blankets or water - avoid synthetic materials',
+        'Remove hot clothing and jewelry before swelling occurs',
+        'Flush chemical burns with copious water for 20+ minutes',
+        'For electrical burns, ensure power is disconnected before contact',
+        'Cool thermal burns with room temperature water - avoid ice',
+        'Remove patient from heat source to prevent continued injury',
+        'Remove contact lenses if facial burns present to prevent corneal damage'
+      ],
+      safetyNotes: [
+        'Do not use ice on burns - can cause further tissue damage',
+        'Remove jewelry early before swelling makes removal impossible',
+        'Synthetic clothing may melt and adhere to skin - cut around, do not pull'
+      ],
+      equipmentNeeded: [
+        'Large volumes of room temperature water',
+        'Blankets for smothering flames (wool or specially treated)',
+        'Scissors for cutting away clothing',
+        'Saline for eye irrigation if needed'
+      ]
+    },
+    {
+      id: 'burns-step-3',
+      stepNumber: 3,
+      title: 'Primary Assessment and Airway Management',
+      description: 'Perform primary assessment with emphasis on airway complications',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Assess airway for signs of inhalation injury: singed nasal hairs, soot in sputum',
+        'Look for facial burns, hoarse voice, or stridor indicating airway swelling',
+        'Evaluate breathing adequacy and check for circumferential chest burns',
+        'Assess circulation including pulse quality and capillary refill',
+        'Check neurological status and spine precautions if mechanism suggests trauma',
+        'Monitor for carbon monoxide poisoning: altered mental status, cherry-red skin',
+        'Prepare for early intubation if airway burns or smoke inhalation suspected',
+        'Apply high-flow oxygen and consider hyperbaric oxygen for CO poisoning'
+      ],
+      safetyNotes: [
+        'Airway burns can cause rapid swelling and complete obstruction',
+        'Early intubation is safer than emergency surgical airway later',
+        'Carbon monoxide poisoning may not be obvious initially'
+      ],
+      equipmentNeeded: [
+        'Advanced airway management equipment',
+        'High-flow oxygen delivery systems',
+        'Pulse oximetry and capnography',
+        'Suction equipment for secretions'
+      ]
+    },
+    {
+      id: 'burns-step-4',
+      stepNumber: 4,
+      title: 'Burn Assessment and Classification',
+      description: 'Systematically assess burn depth, extent, and severity',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Assess burn depth: superficial, partial thickness, or full thickness',
+        'Calculate total body surface area using Rule of Nines or palm method',
+        'Identify special areas: face, hands, feet, genitalia, joints, circumferential',
+        'Document associated injuries: trauma, fractures, other medical conditions',
+        'Assess for compartment syndrome in circumferential extremity burns',
+        'Evaluate perfusion distal to circumferential burns',
+        'Classify burn severity using American Burn Association criteria',
+        'Identify need for burn center transfer based on classification'
+      ],
+      safetyNotes: [
+        'Circumferential burns can cause compartment syndrome',
+        'Burns involving >20% TBSA require aggressive fluid resuscitation',
+        'Special area burns often require burn center care'
+      ],
+      equipmentNeeded: [
+        'Rule of Nines assessment charts',
+        'Documentation materials',
+        'Measuring devices for burn area calculation',
+        'Assessment tools for compartment syndrome'
+      ]
+    },
+    {
+      id: 'burns-step-5',
+      stepNumber: 5,
+      title: 'Cooling and Initial Wound Care',
+      description: 'Provide appropriate cooling therapy and initial burn wound management',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Cool burns with room temperature water for 10-20 minutes if <10% TBSA',
+        'Avoid prolonged cooling for large burns to prevent hypothermia',
+        'Gently clean burns with saline and remove loose, non-adherent debris',
+        'Do not break intact blisters - they provide natural barrier',
+        'Cover burns with clean, dry dressings or specialized burn sheets',
+        'Use nonadherent dressings to prevent further tissue damage',
+        'Wrap fingers and toes individually to prevent webbing',
+        'Elevate burned extremities to reduce swelling when possible'
+      ],
+      contraindications: [
+        'Ice application on burns',
+        'Prolonged cooling for burns >10% TBSA',
+        'Breaking intact blisters'
+      ],
+      safetyNotes: [
+        'Monitor for hypothermia during cooling of large burns',
+        'Sterile technique important to prevent infection',
+        'Do not apply topical medications in prehospital setting'
+      ],
+      equipmentNeeded: [
+        'Room temperature sterile water or saline',
+        'Clean, dry burn dressings',
+        'Nonadherent gauze and wrapping materials',
+        'Burn sheets for large surface area coverage'
+      ]
+    },
+    {
+      id: 'burns-step-6',
+      stepNumber: 6,
+      title: 'Fluid Resuscitation and Vascular Access',
+      description: 'Establish vascular access and initiate appropriate fluid resuscitation',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Establish large-bore IV access (16-18 gauge) through unburned skin if possible',
+        'Use intraosseous access if IV access through unburned skin unavailable',
+        'Initiate fluid resuscitation using lactated Ringer\'s solution',
+        'Calculate fluid requirements using Parkland formula for burns >20% TBSA',
+        'Give half of calculated fluid in first 8 hours, half in next 16 hours',
+        'Monitor urine output as guide to fluid resuscitation adequacy',
+        'Avoid excessive fluid administration in burns <20% TBSA',
+        'Consider central line placement by receiving facility for major burns'
+      ],
+      safetyNotes: [
+        'IV through burned skin is acceptable if no other options available',
+        'Over-resuscitation can cause pulmonary edema and complications',
+        'Under-resuscitation leads to acute kidney injury and shock'
+      ],
+      equipmentNeeded: [
+        'Large-bore IV catheters (16-18 gauge)',
+        'Lactated Ringer\'s solution (multiple bags)',
+        'IO access equipment if needed',
+        'Fluid calculation charts or apps'
+      ]
+    },
+    {
+      id: 'burns-step-7',
+      stepNumber: 7,
+      title: 'Pain Management and Comfort Measures',
+      description: 'Provide aggressive pain management and comfort measures for burn patients',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Assess pain level using appropriate pain scale - burns are extremely painful',
+        'Administer analgesics early and aggressively per protocol',
+        'Use morphine, fentanyl, or ketamine based on patient condition',
+        'Consider continuous analgesic infusions for extensive burns',
+        'Provide anxiolysis with benzodiazepines if appropriate',
+        'Use positioning and immobilization for comfort',
+        'Maintain normothermia - burn patients lose heat rapidly',
+        'Provide emotional support - burns are psychologically traumatic'
+      ],
+      safetyNotes: [
+        'Burn pain is severe and undertreated pain causes additional trauma',
+        'Monitor respiratory status with opioid administration',
+        'Hypothermia worsens burn shock and outcomes'
+      ],
+      equipmentNeeded: [
+        'Analgesic medications (morphine, fentanyl, ketamine)',
+        'Anxiolytic medications if appropriate',
+        'Temperature monitoring equipment',
+        'Warming blankets and devices'
+      ]
+    },
+    {
+      id: 'burns-step-8',
+      stepNumber: 8,
+      title: 'Transport Decision and Burn Center Coordination',
+      description: 'Determine appropriate receiving facility and coordinate burn center transport',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Apply American Burn Association criteria to determine burn center need',
+        'Contact burn center for consultation and transfer coordination',
+        'Choose transport mode based on burn severity and distance',
+        'Provide comprehensive report including mechanism, TBSA, depth, treatments',
+        'Continue aggressive monitoring and supportive care during transport',
+        'Monitor for complications: compartment syndrome, airway obstruction',
+        'Reassess fluid resuscitation needs and pain management',
+        'Document all assessments, treatments, and patient responses thoroughly'
+      ],
+      safetyNotes: [
+        'Burns requiring burn center care should not go to general hospitals',
+        'Transport complications can be life-threatening',
+        'Continuous monitoring essential during transport'
+      ],
+      equipmentNeeded: [
+        'Transport monitoring equipment',
+        'Communication equipment for burn center contact',
+        'Additional IV fluids and medications',
+        'Burn center transfer criteria reference'
+      ]
+    }
+  ],
 
-  'chest-pain-acs-management': {
-    name: 'Chest Pain and Acute Coronary Syndrome Management',
-    category: 'cardiac',
-    difficultyLevel: 'ADVANCED',
-    timeEstimateMinutes: 22,
-    isCritical: true,
-    objectives: [
-      'Perform rapid assessment and early recognition of acute coronary syndrome',
-      'Obtain and interpret 12-lead ECG within 10 minutes of patient contact',
-      'Administer appropriate cardiac medications including aspirin and nitroglycerin',
-      'Implement advanced cardiac life support for complications and arrhythmias',
-      'Perform risk stratification and assess for high-risk cardiac features',
-      'Coordinate with cardiac catheterization lab for STEMI patients',
-      'Provide continuous monitoring and reassessment throughout care'
-    ],
-    indications: [
-      'Chest pain or discomfort suggestive of cardiac origin',
-      'Typical anginal symptoms with cardiac risk factors',
-      'Atypical presentations in high-risk patients (women, elderly, diabetics)',
-      'Known coronary artery disease with worsening symptoms',
-      'Chest pain associated with diaphoresis, nausea, or dyspnea',
-      'ECG changes consistent with ischemia or infarction',
-      'Elevated cardiac biomarkers if available in field',
-      'Suspected complications of acute MI including arrhythmias or heart failure'
-    ],
-    contraindications: [
-      'Aspirin allergy or active gastrointestinal bleeding',
-      'Nitroglycerin contraindicated with hypotension or recent PDE5 inhibitor use',
-      'Thrombolytic therapy contraindicated with recent surgery or bleeding',
-      'Beta-blockers contraindicated with bradycardia, heart block, or asthma'
-    ],
-    equipment: [
-      '12-lead ECG machine with transmission capability',
-      'Cardiac medications including aspirin, nitroglycerin, morphine',
-      'Advanced cardiac life support medications and defibrillator',
-      'IV access supplies and crystalloid solutions',
-      'Continuous cardiac monitoring and pulse oximetry',
-      'Blood pressure monitoring equipment',
-      'Oxygen delivery devices for hypoxic patients',
-      'Communication equipment for cardiac catheterization lab activation'
-    ]
-  },
+  'chest-pain-acs-management': [
+    {
+      id: 'acs-step-1',
+      stepNumber: 1,
+      title: 'Rapid Primary Assessment and Symptom Evaluation',
+      description: 'Perform immediate assessment of chest pain and potential cardiac emergency',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Assess airway, breathing, circulation immediately for life-threatening conditions',
+        'Evaluate chest pain characteristics: location, quality, radiation, severity',
+        'Identify associated symptoms: diaphoresis, nausea, dyspnea, syncope',
+        'Check vital signs including blood pressure in both arms',
+        'Assess for signs of cardiogenic shock or acute heart failure',
+        'Obtain focused cardiac history and risk factors rapidly',
+        'Consider atypical presentations especially in women, elderly, diabetics',
+        'Rule out immediate life threats: tension pneumothorax, aortic dissection'
+      ],
+      safetyNotes: [
+        'Atypical presentations are common in high-risk populations',
+        'Chest pain may not be present in 30% of acute coronary syndromes',
+        'Consider aortic dissection with tearing pain radiating to back'
+      ],
+      equipmentNeeded: [
+        'Vital signs monitoring equipment',
+        'Pulse oximetry and blood pressure monitors',
+        'Stethoscope for cardiac and lung assessment',
+        'Basic airway and breathing support equipment'
+      ]
+    },
+    {
+      id: 'acs-step-2',
+      stepNumber: 2,
+      title: '12-Lead ECG Acquisition and Interpretation',
+      description: 'Obtain and interpret 12-lead ECG within 10 minutes of patient contact',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Obtain 12-lead ECG within 10 minutes of first medical contact',
+        'Ensure proper electrode placement for accurate interpretation',
+        'Look for ST-elevation myocardial infarction (STEMI) patterns',
+        'Identify non-STEMI patterns: ST depression, T-wave inversions',
+        'Check for new left bundle branch block equivalent to STEMI',
+        'Compare with previous ECGs if available to identify acute changes',
+        'Consider posterior leads (V7-V9) if posterior wall MI suspected',
+        'Transmit ECG to receiving hospital immediately if STEMI identified'
+      ],
+      safetyNotes: [
+        'Time is muscle - delays in ECG increase mortality',
+        'New LBBB is considered STEMI equivalent',
+        'Posterior MI may only show reciprocal changes in standard leads'
+      ],
+      equipmentNeeded: [
+        '12-lead ECG machine with transmission capability',
+        'ECG electrodes and prep materials',
+        'Communication equipment for ECG transmission',
+        'Previous ECGs for comparison if available'
+      ]
+    },
+    {
+      id: 'acs-step-3',
+      stepNumber: 3,
+      title: 'Cardiac Medication Administration',
+      description: 'Administer appropriate cardiac medications per ACS protocols',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Administer aspirin 325mg chewed unless contraindicated',
+        'Give nitroglycerin 0.4mg sublingual for chest pain if BP >90 systolic',
+        'Repeat nitroglycerin every 5 minutes up to 3 doses if pain persists',
+        'Consider morphine 2-4mg IV for severe pain unrelieved by nitroglycerin',
+        'Administer oxygen only if SpO2 <90% or signs of respiratory distress',
+        'Give clopidogrel or ticagrelor if available and indicated per protocol',
+        'Consider metoprolol if indicated and no contraindications present',
+        'Hold medications if hypotensive or signs of cardiogenic shock'
+      ],
+      contraindications: [
+        'Aspirin: active GI bleeding, known allergy',
+        'Nitroglycerin: hypotension, recent PDE5 inhibitor use',
+        'Beta-blockers: bradycardia, heart block, active asthma'
+      ],
+      safetyNotes: [
+        'Check blood pressure before each nitroglycerin dose',
+        'Ask specifically about recent sildenafil/tadalafil use',
+        'Monitor for hypotension with all cardiac medications'
+      ],
+      equipmentNeeded: [
+        'Aspirin 325mg tablets',
+        'Nitroglycerin 0.4mg sublingual tablets/spray',
+        'Morphine for IV administration',
+        'IV access supplies for medication administration'
+      ]
+    },
+    {
+      id: 'acs-step-4',
+      stepNumber: 4,
+      title: 'Advanced Cardiac Monitoring and Risk Stratification',
+      description: 'Implement continuous monitoring and assess cardiac risk factors',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Apply continuous cardiac monitoring and watch for arrhythmias',
+        'Monitor for complications: heart failure, cardiogenic shock, mechanical',
+        'Assess cardiac risk using HEART score or similar validated tool',
+        'Identify high-risk features: recurrent pain, hemodynamic instability',
+        'Check for signs of acute heart failure: rales, JVD, peripheral edema',
+        'Monitor for reperfusion arrhythmias if thrombolytics considered',
+        'Assess for mechanical complications: papillary muscle rupture, VSD',
+        'Document serial vital signs and symptom changes'
+      ],
+      safetyNotes: [
+        'Ventricular arrhythmias common in first hours after MI',
+        'Mechanical complications can cause sudden deterioration',
+        'Heart failure may develop rapidly with large MI'
+      ],
+      equipmentNeeded: [
+        'Continuous cardiac monitor/defibrillator',
+        'Blood pressure monitoring equipment',
+        'Pulse oximetry for continuous monitoring',
+        'Emergency resuscitation equipment'
+      ]
+    },
+    {
+      id: 'acs-step-5',
+      stepNumber: 5,
+      title: 'STEMI Recognition and Cardiac Catheterization Lab Activation',
+      description: 'Recognize STEMI and activate appropriate cardiac intervention pathways',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Identify STEMI criteria: ST elevation ≥1mm in 2+ contiguous leads',
+        'Recognize STEMI equivalents: new LBBB, posterior MI, de Winters T-waves',
+        'Activate cardiac catheterization lab immediately for STEMI patients',
+        'Provide pre-hospital notification with ECG transmission',
+        'Calculate time from symptom onset for reperfusion decisions',
+        'Consider prehospital thrombolytics if PCI not available within 120 minutes',
+        'Bypass non-PCI hospitals and transport directly to PCI center',
+        'Document precise timing of symptom onset and ECG changes'
+      ],
+      safetyNotes: [
+        'Time to reperfusion directly correlates with survival',
+        'Prehospital STEMI identification reduces door-to-balloon time',
+        'Every minute delay increases mortality risk'
+      ],
+      equipmentNeeded: [
+        'ECG transmission capability',
+        'Communication equipment for cath lab activation',
+        'Time documentation materials',
+        'Transport decision-making protocols'
+      ]
+    },
+    {
+      id: 'acs-step-6',
+      stepNumber: 6,
+      title: 'Arrhythmia Recognition and Management',
+      description: 'Identify and treat life-threatening arrhythmias associated with ACS',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Monitor for ventricular tachycardia and ventricular fibrillation',
+        'Recognize and treat complete heart block with transcutaneous pacing',
+        'Identify atrial fibrillation with rapid ventricular response',
+        'Manage bradycardia with atropine or pacing as indicated',
+        'Treat unstable tachycardia with synchronized cardioversion',
+        'Administer antiarrhythmic medications per ACLS protocols',
+        'Consider magnesium for polymorphic VT (torsades de pointes)',
+        'Prepare for emergency pacing or defibrillation as needed'
+      ],
+      safetyNotes: [
+        'VF/VT most common cause of sudden death in first hour after MI',
+        'Heart block may require immediate pacing in inferior MI',
+        'Avoid Class IC antiarrhythmics in setting of acute MI'
+      ],
+      equipmentNeeded: [
+        'Monitor/defibrillator with pacing capability',
+        'ACLS medications including lidocaine, amiodarone',
+        'Transcutaneous pacing pads and equipment',
+        'Synchronized cardioversion capability'
+      ]
+    },
+    {
+      id: 'acs-step-7',
+      stepNumber: 7,
+      title: 'Hemodynamic Support and Heart Failure Management',
+      description: 'Provide hemodynamic support and manage acute heart failure complications',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Assess for cardiogenic shock: hypotension, altered mental status, oliguria',
+        'Manage acute pulmonary edema with positioning, CPAP, diuretics',
+        'Provide inotropic support with dopamine or norepinephrine if shocked',
+        'Consider IABP (intra-aortic balloon pump) for refractory shock',
+        'Balance preload reduction with maintenance of coronary perfusion pressure',
+        'Monitor urine output as marker of end-organ perfusion',
+        'Avoid aggressive fluid resuscitation in cardiogenic shock',
+        'Prepare for emergent mechanical circulatory support if available'
+      ],
+      safetyNotes: [
+        'Cardiogenic shock has high mortality requiring aggressive intervention',
+        'Fluid administration can worsen pulmonary edema',
+        'Maintain MAP >65 to ensure coronary perfusion'
+      ],
+      equipmentNeeded: [
+        'Inotropic medications (dopamine, norepinephrine)',
+        'CPAP equipment for pulmonary edema',
+        'Large-bore IV access for medication administration',
+        'Hemodynamic monitoring equipment'
+      ]
+    },
+    {
+      id: 'acs-step-8',
+      stepNumber: 8,
+      title: 'Transport Decision and Continuous Reassessment',
+      description: 'Make appropriate transport decisions and provide continuous cardiac monitoring',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Choose appropriate receiving facility based on clinical findings and ECG',
+        'Transport STEMI patients directly to PCI-capable centers',
+        'Provide comprehensive report including ECG findings and medications given',
+        'Continue serial 12-lead ECGs every 15-30 minutes for symptom changes',
+        'Reassess pain level and hemodynamic status frequently',
+        'Monitor for sudden deterioration or new complications',
+        'Document response to treatments and any changes in condition',
+        'Prepare receiving facility for immediate cardiac intervention if needed'
+      ],
+      safetyNotes: [
+        'Clinical status can change rapidly during transport',
+        'Serial ECGs may show evolution of MI or new ischemia',
+        'Communication with receiving facility essential for optimal care'
+      ],
+      equipmentNeeded: [
+        'Transport monitoring equipment',
+        'Additional ECG capability for serial monitoring',
+        'Communication equipment for receiving facility',
+        'Complete documentation materials and cardiac medications'
+      ]
+    }
+  ],
 
   '12-lead-ecg-placement': {
     name: '12-Lead ECG Lead Placement and Acquisition',
