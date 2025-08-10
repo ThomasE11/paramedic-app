@@ -14200,6 +14200,243 @@ export const criticalSkillsMetadata = {
     ]
   },
 
+  // 47. RECOVERY POSITION - Evidence-based lateral recovery positioning for unconscious patients
+  'recovery-position': [
+    {
+      id: 'recovery-step-1',
+      stepNumber: 1,
+      title: 'Patient Assessment and Recovery Position Indication',
+      description: 'Assess patient condition and determine need for recovery position placement',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Assess patient consciousness level and responsiveness to stimuli',
+        'Verify adequate spontaneous breathing and clear airway',
+        'Check for absence of gag reflex or reduced consciousness',
+        'Ensure patient has palpable pulse and stable vital signs',
+        'Rule out spinal injury contraindications to positioning',
+        'Assess for vomiting risk or secretions requiring drainage',
+        'Confirm patient unable to maintain own airway positioning',
+        'Determine if recovery position safer than supine positioning'
+      ],
+      contraindications: [
+        'Suspected spinal injury requiring immobilization',
+        'Patient requiring CPR or advanced airway management',
+        'Severe respiratory distress requiring assisted ventilation'
+      ],
+      safetyNotes: [
+        'Recovery position only for unconscious patients with adequate breathing',
+        'Never place patient with suspected spine injury in recovery position',
+        'Continuous monitoring essential once positioned'
+      ],
+      equipmentNeeded: [
+        'Flat, stable surface for patient positioning',
+        'Monitoring equipment for vital signs assessment',
+        'Suction equipment readily available if needed'
+      ]
+    },
+    {
+      id: 'recovery-step-2',
+      stepNumber: 2,
+      title: 'Initial Patient Positioning and Preparation',
+      description: 'Position patient supine and prepare for safe transition to recovery position',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Ensure patient is lying flat on back on stable surface',
+        'Check that airway is clear of obvious obstructions',
+        'Remove or secure any loose clothing, jewelry, or objects',
+        'Ensure adequate space around patient for positioning maneuver',
+        'Position yourself on side where patient will be turned',
+        'Have assistant available if patient is large or uncooperative',
+        'Clear area of any obstacles that could interfere with positioning',
+        'Prepare for potential vomiting during position change'
+      ],
+      safetyNotes: [
+        'Stable surface prevents patient from rolling further than intended',
+        'Clear space essential for safe positioning without injury',
+        'Assistant helpful for larger patients or difficult positioning'
+      ],
+      equipmentNeeded: [
+        'Stable, flat surface adequate for patient size',
+        'Suction equipment within immediate reach',
+        'Clear space for safe patient movement'
+      ]
+    },
+    {
+      id: 'recovery-step-3',
+      stepNumber: 3,
+      title: 'Arm and Leg Positioning Setup',
+      description: 'Position patient arms and legs to facilitate safe rolling to recovery position',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Place arm nearest to you straight out at right angle to body',
+        'Bend elbow so palm faces up (prevents arm from being trapped)',
+        'Bring far arm across chest and hold back of hand against near cheek',
+        'Keep hand pressed against cheek throughout rolling procedure',
+        'Bend far leg at knee and hip, keeping foot flat on ground',
+        'Near leg should remain straight and aligned with body',
+        'Ensure patient head is in neutral position before rolling',
+        'Check that no clothing or equipment will interfere with movement'
+      ],
+      safetyNotes: [
+        'Proper arm positioning prevents injury during rolling',
+        'Hand against cheek supports head and neck during movement',
+        'Bent leg provides leverage for controlled rolling motion'
+      ],
+      equipmentNeeded: [
+        'Clear visualization of patient positioning',
+        'Adequate lighting for proper limb placement'
+      ]
+    },
+    {
+      id: 'recovery-step-4',
+      stepNumber: 4,
+      title: 'Controlled Rolling to Side Position',
+      description: 'Execute controlled roll to place patient in stable side-lying position',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Grasp patient at hip and shoulder to control rolling motion',
+        'Roll patient toward you in one smooth, controlled movement',
+        'Support head with hand pressed against cheek throughout roll',
+        'Continue rolling until patient is lying comfortably on side',
+        'Ensure patient does not roll too far (avoid prone position)',
+        'Keep movement steady and controlled to prevent injury',
+        'Monitor patient breathing and color during position change',
+        'Be prepared to clear airway if vomiting occurs during roll'
+      ],
+      safetyNotes: [
+        'Controlled rolling prevents injury and maintains airway protection',
+        'Rolling too far may compromise breathing or cause positional asphyxia',
+        'Monitor continuously for changes in breathing or consciousness'
+      ],
+      equipmentNeeded: [
+        'Proper body mechanics and lifting technique',
+        'Immediate access to airway management equipment'
+      ]
+    },
+    {
+      id: 'recovery-step-5',
+      stepNumber: 5,
+      title: 'Head and Airway Position Optimization',
+      description: 'Adjust head position to optimize airway patency and drainage',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Tilt head back slightly to open airway using head-tilt maneuver',
+        'Position head so mouth is slightly downward for drainage',
+        'Keep hand under cheek to support head in proper position',
+        'Ensure tongue falls forward and does not obstruct airway',
+        'Check that neck is in neutral position, not hyperextended',
+        'Open mouth slightly to facilitate drainage and air exchange',
+        'Verify clear view of mouth and airway opening',
+        'Position allows secretions or vomit to drain out rather than pool'
+      ],
+      safetyNotes: [
+        'Proper head position critical for maintaining open airway',
+        'Dependent positioning allows gravity drainage of secretions',
+        'Avoid hyperextension which may compromise airway'
+      ],
+      equipmentNeeded: [
+        'Good lighting for airway visualization',
+        'Suction equipment immediately accessible'
+      ]
+    },
+    {
+      id: 'recovery-step-6',
+      stepNumber: 6,
+      title: 'Limb Stabilization and Comfort Positioning',
+      description: 'Adjust limb positions for stability and patient comfort in recovery position',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Adjust top arm so elbow is bent at right angle for stability',
+        'Position top leg so hip and knee are bent at right angles',
+        'Ensure top leg knee touches ground for stability',
+        'Bottom arm should be positioned behind back, palm up',
+        'Check that bottom leg remains straight and aligned',
+        'Adjust position so patient is stable and will not roll',
+        'Ensure no pressure points or circulation compromise',
+        'Position provides maximum stability with minimal effort'
+      ],
+      safetyNotes: [
+        'Stable positioning prevents patient from rolling back or forward',
+        'Proper limb positioning prevents circulation compromise',
+        'Comfortable position reduces patient agitation if consciousness improves'
+      ],
+      equipmentNeeded: [
+        'Pillows or padding for comfort if available',
+        'Blanket for warmth and dignity'
+      ]
+    },
+    {
+      id: 'recovery-step-7',
+      stepNumber: 7,
+      title: 'Continuous Monitoring and Assessment',
+      description: 'Monitor patient continuously while in recovery position for changes in condition',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Monitor breathing rate, depth, and quality continuously',
+        'Check pulse and circulation regularly for changes',
+        'Assess skin color and temperature for signs of deterioration',
+        'Watch for changes in consciousness level or responsiveness',
+        'Monitor for vomiting, choking, or airway obstruction',
+        'Check pulse oximetry if available for oxygen saturation',
+        'Observe for any signs of discomfort or positional problems',
+        'Be prepared to reposition or provide emergency care if needed'
+      ],
+      safetyNotes: [
+        'Patient condition can change rapidly requiring immediate intervention',
+        'Recovery position not substitute for continuous monitoring',
+        'Be prepared to begin CPR if patient loses pulse or stops breathing'
+      ],
+      equipmentNeeded: [
+        'Pulse oximetry if available for continuous monitoring',
+        'Watch or timer for regular assessment intervals',
+        'CPR and airway management equipment immediately available'
+      ]
+    },
+    {
+      id: 'recovery-step-8',
+      stepNumber: 8,
+      title: 'Position Reassessment and Patient Care Transition',
+      description: 'Reassess position effectiveness and plan for ongoing care or transport',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Evaluate effectiveness of recovery position for airway maintenance',
+        'Check for any pressure points or circulation problems from positioning',
+        'Assess need to reposition patient if condition changes',
+        'Plan for safe transport while maintaining recovery position if possible',
+        'Prepare to return patient to supine position if CPR needed',
+        'Document time patient placed in recovery position and response',
+        'Communicate positioning and patient status to receiving team',
+        'Provide ongoing comfort measures and reassurance'
+      ],
+      safetyNotes: [
+        'Regular reassessment ensures continued effectiveness and safety',
+        'Transport may require position modification for safety',
+        'Be prepared for rapid position change if emergency interventions needed'
+      ],
+      equipmentNeeded: [
+        'Transport equipment compatible with side-lying position',
+        'Documentation materials for position timing and effectiveness',
+        'Communication equipment for receiving team notification'
+      ]
+    }
+  ],
+
   'recovery-position': {
     name: 'Recovery Position',
     category: 'bls',
@@ -15948,6 +16185,247 @@ export const criticalSkillsMetadata = {
       'Backup BVM device and advanced airway equipment'
     ]
   },
+
+  // 46. PATIENT HANDOVER - Evidence-based patient transfer communication protocol
+  'patient-handover': [
+    {
+      id: 'handover-step-1',
+      stepNumber: 1,
+      title: 'Pre-Handover Information Preparation',
+      description: 'Prepare comprehensive patient information and organize handover communication',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Organize patient information using standardized handover format (SBAR, IMIST-AMBO)',
+        'Review patient history, chief complaint, and presenting symptoms',
+        'Compile vital signs trends and significant assessment findings',
+        'Prepare list of interventions performed and patient responses',
+        'Gather all medications administered with doses, times, and effects',
+        'Review diagnostic tests performed and results obtained',
+        'Identify ongoing concerns and monitoring requirements',
+        'Prepare questions or clarifications needed from receiving team'
+      ],
+      safetyNotes: [
+        'Structured handover formats reduce communication errors',
+        'Complete information review prevents omission of critical details',
+        'Organization improves efficiency and reduces handover time'
+      ],
+      equipmentNeeded: [
+        'Patient care documentation and records',
+        'Standardized handover format reference (SBAR/IMIST)',
+        'Medication administration records',
+        'Diagnostic test results and monitor strips'
+      ]
+    },
+    {
+      id: 'handover-step-2',
+      stepNumber: 2,
+      title: 'Receiving Team Identification and Introduction',
+      description: 'Identify appropriate receiving team members and establish communication',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Identify appropriate receiving physician, nurse, and team members',
+        'Ensure receiving team is ready to accept handover communication',
+        'Introduce yourself and your role in patient care',
+        'Confirm patient identity with receiving team using two identifiers',
+        'Establish quiet environment free from distractions for handover',
+        'Ensure all relevant team members are present for handover',
+        'Ask receiving team to hold questions until handover completion',
+        'Confirm receiving team has access to patient care records'
+      ],
+      safetyNotes: [
+        'Patient identity confirmation prevents wrong-patient errors',
+        'Distraction-free environment improves communication accuracy',
+        'All relevant team members should receive complete information'
+      ],
+      equipmentNeeded: [
+        'Patient identification materials (wristband, ID card)',
+        'Quiet space for effective communication',
+        'Communication equipment if remote handover needed'
+      ]
+    },
+    {
+      id: 'handover-step-3',
+      stepNumber: 3,
+      title: 'Situation and Background Communication',
+      description: 'Communicate patient situation and relevant background information',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'State patient age, sex, and primary complaint clearly',
+        'Describe mechanism of injury or onset of illness',
+        'Provide relevant medical history and current medications',
+        'Explain circumstances of call and scene findings',
+        'Describe patient presentation and initial assessment',
+        'Include relevant social history affecting care (allergies, advanced directives)',
+        'Mention any family members or significant others present',
+        'Describe patient mental status and ability to provide history'
+      ],
+      safetyNotes: [
+        'Background information provides context for clinical decision-making',
+        'Allergies and medications critical for preventing adverse events',
+        'Scene information may reveal important diagnostic clues'
+      ],
+      equipmentNeeded: [
+        'Patient history documentation',
+        'Medication lists and allergy information',
+        'Scene assessment notes and observations'
+      ]
+    },
+    {
+      id: 'handover-step-4',
+      stepNumber: 4,
+      title: 'Assessment Findings and Vital Signs',
+      description: 'Communicate comprehensive assessment findings and vital sign trends',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Report vital signs on arrival and any significant trends',
+        'Describe physical examination findings systematically',
+        'Include neurological assessment and Glasgow Coma Score if applicable',
+        'Report pain assessment scores and patient-reported symptoms',
+        'Describe any abnormal findings: breath sounds, heart sounds, pulses',
+        'Include results of diagnostic tests: ECG, blood glucose, etc.',
+        'Report oxygen saturation and respiratory status',
+        'Mention any changes in patient condition during care'
+      ],
+      safetyNotes: [
+        'Vital sign trends more informative than single measurements',
+        'Systematic reporting prevents omission of important findings',
+        'Changes in condition may indicate evolving pathology'
+      ],
+      equipmentNeeded: [
+        'Vital sign logs and trending documentation',
+        'Assessment findings documentation',
+        'Diagnostic test results (ECG strips, glucose readings)',
+        'Pain assessment tools and scores'
+      ]
+    },
+    {
+      id: 'handover-step-5',
+      stepNumber: 5,
+      title: 'Interventions and Treatment Response',
+      description: 'Detail all interventions performed and patient responses to treatment',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 360,
+      keyPoints: [
+        'List all medications given with exact doses, routes, and times',
+        'Describe patient response to each medication or intervention',
+        'Report IV access: location, gauge, patency, and fluids given',
+        'Detail airway management: oxygen therapy, positioning, advanced airways',
+        'Describe any procedures performed: splinting, wound care, monitoring',
+        'Report pain management interventions and effectiveness',
+        'Include any unsuccessful intervention attempts and reasons',
+        'Mention ongoing interventions requiring continuation'
+      ],
+      safetyNotes: [
+        'Medication information prevents duplicate dosing and interactions',
+        'Treatment responses guide continued therapy decisions',
+        'Failed interventions may provide diagnostic information'
+      ],
+      equipmentNeeded: [
+        'Medication administration records',
+        'Intervention documentation and procedure notes',
+        'IV access documentation and fluid balance records',
+        'Response assessment documentation'
+      ]
+    },
+    {
+      id: 'handover-step-6',
+      stepNumber: 6,
+      title: 'Current Status and Ongoing Concerns',
+      description: 'Communicate current patient status and ongoing care concerns',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Report current vital signs and patient stability level',
+        'Describe current pain level and comfort status',
+        'Identify ongoing monitoring requirements and frequency',
+        'Highlight any potential complications or deterioration risks',
+        'Discuss patient and family concerns or questions',
+        'Report current IV access patency and fluid administration',
+        'Describe current oxygen requirements and respiratory status',
+        'Mention any pending diagnostic tests or consultations needed'
+      ],
+      safetyNotes: [
+        'Current status provides baseline for continued care',
+        'Risk identification allows proactive management',
+        'Family concerns may reveal important information'
+      ],
+      equipmentNeeded: [
+        'Current vital signs and monitoring equipment',
+        'Patient comfort assessment tools',
+        'Family communication notes',
+        'Pending test orders or consultation requests'
+      ]
+    },
+    {
+      id: 'handover-step-7',
+      stepNumber: 7,
+      title: 'Questions, Clarifications, and Recommendations',
+      description: 'Address questions from receiving team and provide care recommendations',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Answer any questions from receiving team about patient care',
+        'Clarify any unclear aspects of patient history or presentation',
+        'Provide recommendations for continued care priorities',
+        'Suggest monitoring parameters based on patient condition',
+        'Recommend follow-up on specific concerns or symptoms',
+        'Discuss any anticipated needs or potential complications',
+        'Share clinical insights or observations that may help diagnosis',
+        'Offer contact information for follow-up questions'
+      ],
+      safetyNotes: [
+        'Interactive dialogue improves understanding and reduces errors',
+        'Clinical insights may provide valuable diagnostic clues',
+        'Clear recommendations support continuity of care'
+      ],
+      equipmentNeeded: [
+        'Contact information for follow-up communication',
+        'Clinical references or protocols for recommendations',
+        'Documentation materials for additional notes'
+      ]
+    },
+    {
+      id: 'handover-step-8',
+      stepNumber: 8,
+      title: 'Documentation and Transfer Completion',
+      description: 'Complete documentation transfer and finalize patient care handover',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Transfer all written documentation to receiving team',
+        'Provide copies of ECGs, medication records, and assessment forms',
+        'Ensure receiving team has contact information for questions',
+        'Document handover completion time and receiving personnel',
+        'Confirm receiving team acceptance of patient care responsibility',
+        'Complete any required handover documentation or signatures',
+        'Provide patient belongings and personal effects to appropriate personnel',
+        'Offer assistance with initial receiving facility procedures if needed'
+      ],
+      safetyNotes: [
+        'Written documentation provides legal record of care provided',
+        'Clear transfer of responsibility prevents care gaps',
+        'Complete documentation supports quality improvement and legal protection'
+      ],
+      equipmentNeeded: [
+        'Complete patient care documentation packet',
+        'Copies of all diagnostic tests and monitor strips',
+        'Patient personal belongings inventory',
+        'Handover completion documentation forms'
+      ]
+    }
+  ],
 
   'patient-handover': {
     name: 'Patient Handover',
