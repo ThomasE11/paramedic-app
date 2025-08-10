@@ -9419,48 +9419,263 @@ export const criticalSkillsMetadata = {
     }
   ],
 
-  'poisoning-overdose-management': {
-    name: 'Poisoning and Overdose Management',
-    category: 'medical',
-    difficultyLevel: 'ADVANCED',
-    timeEstimateMinutes: 18,
-    isCritical: true,
-    objectives: [
-      'Assess scene safety and identify potential toxic hazards',
-      'Perform systematic toxicological assessment and history taking',
-      'Implement appropriate decontamination procedures based on exposure route',
-      'Administer specific antidotes and supportive care per protocol',
-      'Monitor for and manage toxicological complications',
-      'Provide crisis intervention for intentional poisoning cases',
-      'Coordinate with poison control center for expert consultation'
-    ],
-    indications: [
-      'Known or suspected ingestion of toxic substances',
-      'Inhalation exposure to hazardous chemicals or gases',
-      'Dermal or eye exposure to caustic or toxic materials',
-      'Drug overdose with altered mental status or vital signs',
-      'Multiple patients with similar symptoms suggesting environmental exposure',
-      'Intentional self-poisoning or suicide attempt with toxic substances',
-      'Accidental pediatric ingestion of household chemicals or medications',
-      'Occupational exposure to industrial chemicals or pesticides'
-    ],
-    contraindications: [
-      'Unsafe scene conditions preventing provider safety',
-      'Life-threatening trauma taking priority over toxicological care',
-      'Contraindications to specific antidotes (flumazenil in seizure patients)',
-      'Gastric decontamination contraindicated for caustics or petroleum products'
-    ],
-    equipment: [
-      'Personal protective equipment including chemical-resistant suits and respirators',
-      'Decontamination supplies including water, saline, and containment materials',
-      'Specific antidotes per protocol: naloxone, flumazenil, atropine, calcium',
-      'Activated charcoal for appropriate ingestion cases',
-      'Cardiac monitor and defibrillation capability',
-      'Airway management equipment including intubation supplies',
-      'IV access supplies and various crystalloid and medication options',
-      'Poison control center contact information and communication equipment'
-    ]
-  },
+  'poisoning-overdose-management': [
+    {
+      id: 'poison-step-1',
+      stepNumber: 1,
+      title: 'Scene Safety Assessment and Hazard Identification',
+      description: 'Ensure scene safety and identify potential toxic hazards before patient contact',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Approach scene cautiously and assess for ongoing toxic hazards',
+        'Identify the toxic agent if possible: containers, labels, odors, witnesses',
+        'Determine exposure route: ingestion, inhalation, dermal, or injection',
+        'Check for multiple patients suggesting environmental contamination',
+        'Assess need for personal protective equipment and decontamination',
+        'Consider calling hazmat team for unknown or dangerous chemicals',
+        'Establish safe perimeter and prevent bystander exposure',
+        'Gather substance information: name, amount, time of exposure, intent'
+      ],
+      contraindications: [
+        'Unsafe atmosphere requiring specialized equipment',
+        'Unknown chemical hazards without proper protection',
+        'Structural instability from chemical damage'
+      ],
+      safetyNotes: [
+        'Never enter contaminated area without proper PPE',
+        'Unknown chemicals require maximum precautions',
+        'Provider safety takes absolute priority over patient care'
+      ],
+      equipmentNeeded: [
+        'Personal protective equipment (suits, respirators)',
+        'Gas detection equipment if available',
+        'Communication equipment for hazmat consultation',
+        'Binoculars for safe distant assessment'
+      ]
+    },
+    {
+      id: 'poison-step-2',
+      stepNumber: 2,
+      title: 'Primary Assessment and Stabilization',
+      description: 'Perform primary assessment and address immediate life threats',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Assess airway patency and protect from aspiration if altered mental status',
+        'Evaluate breathing adequacy - many toxins cause respiratory depression',
+        'Check circulation and perfusion - monitor for shock and arrhythmias',
+        'Assess disability/neurological status using AVPU or GCS',
+        'Expose patient for full assessment while maintaining dignity',
+        'Monitor vital signs continuously - many toxins affect cardiac function',
+        'Establish IV access for medication and fluid administration',
+        'Apply cardiac monitor and pulse oximetry for continuous monitoring'
+      ],
+      safetyNotes: [
+        'Be prepared for sudden deterioration with toxic exposures',
+        'Many antidotes require IV access for administration',
+        'Continuous monitoring essential due to delayed effects'
+      ],
+      equipmentNeeded: [
+        'Airway management equipment',
+        'Cardiac monitor and defibrillator',
+        'IV access supplies and fluids',
+        'Pulse oximetry and capnography',
+        'Bag-mask ventilation equipment'
+      ]
+    },
+    {
+      id: 'poison-step-3',
+      stepNumber: 3,
+      title: 'Detailed Toxicological History and Assessment',
+      description: 'Obtain comprehensive history and perform focused toxicological assessment',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Identify specific substance: exact name, concentration, formulation',
+        'Determine amount consumed/exposed and time of exposure',
+        'Assess route of exposure: oral, inhalation, dermal, IV, or multiple',
+        'Evaluate intent: accidental, intentional overdose, or suicide attempt',
+        'Obtain medical history: medications, allergies, previous overdoses',
+        'Assess for co-ingestions or multiple substance exposure',
+        'Look for physical evidence: pill bottles, containers, residue',
+        'Interview family, friends, or witnesses for additional information'
+      ],
+      safetyNotes: [
+        'Patients may not be reliable historians due to altered mental status',
+        'Consider intentional misrepresentation in suicide attempts',
+        'Co-ingestions are common and complicate management'
+      ],
+      equipmentNeeded: [
+        'Documentation materials',
+        'Evidence collection supplies if indicated',
+        'Communication device for poison control consultation'
+      ]
+    },
+    {
+      id: 'poison-step-4',
+      stepNumber: 4,
+      title: 'Poison Control Center Consultation',
+      description: 'Contact poison control center for expert guidance and treatment recommendations',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Call Poison Control Center (1-800-222-1222) for expert consultation',
+        'Provide complete information: substance, amount, time, patient status',
+        'Obtain specific treatment recommendations and antidote guidance',
+        'Get advice on decontamination procedures and contraindications',
+        'Clarify monitoring requirements and expected clinical course',
+        'Ask about delayed effects and complications to watch for',
+        'Obtain follow-up instructions and case identification number',
+        'Document all recommendations and follow guidance precisely'
+      ],
+      safetyNotes: [
+        'Poison Control provides 24/7 expert consultation',
+        'Treatment recommendations are evidence-based and updated',
+        'Follow poison control guidance precisely for best outcomes'
+      ],
+      equipmentNeeded: [
+        'Communication device with clear signal',
+        'Documentation materials for recording recommendations',
+        'Patient information and substance details ready'
+      ]
+    },
+    {
+      id: 'poison-step-5',
+      stepNumber: 5,
+      title: 'Decontamination Procedures',
+      description: 'Perform appropriate decontamination based on exposure route and substance',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Remove contaminated clothing and jewelry to prevent continued absorption',
+        'Perform dermal decontamination with copious water irrigation',
+        'Flush eyes with saline or water for 15-20 minutes if eye exposure',
+        'Consider activated charcoal for appropriate oral ingestions within 1 hour',
+        'Do not induce vomiting - contraindicated for most substances',
+        'Avoid gastric lavage except in specific circumstances per poison control',
+        'Use whole bowel irrigation only for specific substances and under guidance',
+        'Contain and dispose of contaminated materials properly'
+      ],
+      contraindications: [
+        'Activated charcoal contraindicated for caustics, alcohols, petroleum products',
+        'Eye irrigation contraindicated for metallic sodium or similar reactive metals',
+        'Gastric emptying contraindicated for caustic or petroleum substances'
+      ],
+      safetyNotes: [
+        'Decontamination effectiveness decreases rapidly over time',
+        'Never induce vomiting due to aspiration and re-exposure risk',
+        'Proper waste disposal prevents environmental contamination'
+      ],
+      equipmentNeeded: [
+        'Activated charcoal and water',
+        'Large volumes of saline or water for irrigation',
+        'Containment materials for contaminated waste',
+        'Eye irrigation equipment'
+      ]
+    },
+    {
+      id: 'poison-step-6',
+      stepNumber: 6,
+      title: 'Antidote Administration and Specific Treatment',
+      description: 'Administer appropriate antidotes and specific treatments per protocol',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Administer naloxone for suspected opioid overdose with respiratory depression',
+        'Give flumazenil for benzodiazepine overdose if no seizure history',
+        'Use atropine for organophosphate or carbamate poisoning',
+        'Administer calcium for calcium channel blocker or fluoride exposure',
+        'Provide oxygen therapy for carbon monoxide poisoning (100% high-flow)',
+        'Give specific antidotes per poison control recommendations',
+        'Monitor response to antidote administration carefully',
+        'Be prepared for repeated doses or continuous infusions as needed'
+      ],
+      contraindications: [
+        'Flumazenil contraindicated in chronic benzodiazepine users or seizure patients',
+        'Naloxone may precipitate withdrawal in dependent users',
+        'Some antidotes have specific contraindications - verify before giving'
+      ],
+      safetyNotes: [
+        'Monitor for allergic reactions to antidotes',
+        'Some antidotes may cause paradoxical worsening initially',
+        'Have resuscitation equipment ready during antidote administration'
+      ],
+      equipmentNeeded: [
+        'Naloxone (multiple vials)',
+        'Flumazenil',
+        'Atropine',
+        'Calcium gluconate or chloride',
+        'High-flow oxygen delivery system'
+      ]
+    },
+    {
+      id: 'poison-step-7',
+      stepNumber: 7,
+      title: 'Supportive Care and Complication Management',
+      description: 'Provide comprehensive supportive care and monitor for complications',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Maintain airway patency and assist ventilation if needed',
+        'Support circulation with IV fluids and vasopressors per protocol',
+        'Monitor and treat seizures with benzodiazepines if they occur',
+        'Manage hyperthermia or hypothermia based on specific toxin',
+        'Treat cardiac arrhythmias per ACLS protocols with toxin considerations',
+        'Provide glucose if hypoglycemic from toxin effects',
+        'Manage agitation or psychiatric symptoms safely and appropriately',
+        'Monitor urine output and renal function for nephrotoxic substances'
+      ],
+      safetyNotes: [
+        'Supportive care often more important than specific antidotes',
+        'Many toxic effects are delayed and require prolonged monitoring',
+        'Psychiatric evaluation needed for intentional overdoses'
+      ],
+      equipmentNeeded: [
+        'Advanced airway management supplies',
+        'Cardiac monitoring and defibrillation',
+        'Seizure management medications',
+        'Temperature monitoring and management devices'
+      ]
+    },
+    {
+      id: 'poison-step-8',
+      stepNumber: 8,
+      title: 'Transport Decision and Crisis Intervention',
+      description: 'Make appropriate transport decisions and provide crisis intervention support',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Choose appropriate receiving facility based on toxin and severity',
+        'Consider poison center or specialty hospital for complex cases',
+        'Provide crisis intervention for intentional overdose patients',
+        'Assess suicide risk and implement appropriate safety measures',
+        'Notify receiving facility of toxin, treatment given, and current status',
+        'Continue monitoring and supportive care during transport',
+        'Document all findings, treatments, and patient responses thoroughly',
+        'Provide emotional support to family members and loved ones'
+      ],
+      safetyNotes: [
+        'Patients with intentional overdoses are flight risks',
+        'Some toxic effects may worsen during transport',
+        'Maintain continuous monitoring during transport'
+      ],
+      equipmentNeeded: [
+        'Transport monitoring equipment',
+        'Restraint devices if suicide risk',
+        'Communication equipment for receiving facility',
+        'Crisis intervention resources and contacts'
+      ]
+    }
+  ],
 
   'burns-thermal-injury-management': {
     name: 'Burns and Thermal Injury Management',
