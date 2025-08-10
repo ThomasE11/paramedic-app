@@ -8003,6 +8003,254 @@ export const enhancedCriticalSkillSteps: { [skillId: string]: EnhancedSkillStep[
         'Portable monitoring for transfers if needed'
       ]
     }
+  ],
+
+  // OROGASTRIC AND NASOGASTRIC TUBE INSERTION
+  'orogastric-nasogastric-insertion': [
+    {
+      id: 'ogng_1',
+      stepNumber: 1,
+      title: 'Patient assessment and route selection',
+      description: 'Assess patient condition, review contraindications, and select appropriate insertion route (orogastric vs nasogastric)',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Check for contraindications to nasogastric route (skull fracture, severe facial trauma)',
+        'Assess level of consciousness - consider orogastric route for unconscious patients',
+        'Review patient history for nasal obstruction, bleeding disorders, or recent surgery',
+        'Evaluate gag reflex and swallowing ability in conscious patients',
+        'Consider patient cooperation level and ability to follow instructions',
+        'Assess cervical spine stability if trauma is suspected',
+        'Review indications for tube insertion and expected duration of placement',
+        'Document baseline vital signs and neurological status'
+      ],
+      safetyNotes: [
+        'Never attempt nasogastric insertion if base of skull fracture is suspected',
+        'Use orogastric route in unconscious patients to avoid intracranial insertion',
+        'Consider cervical spine precautions if trauma mechanism present'
+      ],
+      equipmentNeeded: [
+        'Nasogastric or orogastric tube (appropriate size)',
+        'Water-soluble lubricant',
+        'Gloves and eye protection',
+        'Suction equipment',
+        'Stethoscope'
+      ]
+    },
+    {
+      id: 'ogng_2',
+      stepNumber: 2,
+      title: 'Equipment preparation and patient positioning',
+      description: 'Gather and prepare all necessary equipment, position patient optimally, and ensure safety measures are in place',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Select appropriate tube size (adults: 14-18 French, children: 8-12 French)',
+        'Test tube cuff inflation if using cuffed tube for gastric decompression',
+        'Prepare water-soluble lubricant and apply to tube tip generously',
+        'Position patient sitting upright or in semi-Fowler position if possible',
+        'Hyperextend neck slightly for nasogastric approach or maintain neutral for oral',
+        'Have suction equipment assembled and tested at bedside',
+        'Prepare securing tape or commercial tube holder device',
+        'Ensure adequate lighting and have assistant available if needed'
+      ],
+      safetyNotes: [
+        'Never use petroleum-based lubricants due to aspiration risk',
+        'Test suction equipment before procedure initiation',
+        'Have backup airway management equipment immediately available'
+      ],
+      equipmentNeeded: [
+        'Appropriate sized NG/OG tube',
+        'Water-soluble lubricant',
+        'Suction catheter and equipment',
+        'Securing tape or holder',
+        'Good lighting source'
+      ]
+    },
+    {
+      id: 'ogng_3',
+      stepNumber: 3,
+      title: 'Measurement and depth calculation',
+      description: 'Accurately measure insertion depth using standardized anatomical landmarks and mark the tube appropriately',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Use NEX method: measure from Nose to Earlobe to Xiphoid process',
+        'For orogastric route: measure from corner of mouth to earlobe to xiphoid',
+        'Add 15-20cm to NEX measurement for post-pyloric placement if required',
+        'Mark measured distance clearly on tube with indelible marker',
+        'Document measured distance in patient record for reference',
+        'Consider patient size and body habitus in measurement calculations',
+        'Verify measurement accuracy with second provider if available',
+        'Note any anatomical variations that might affect standard measurements'
+      ],
+      safetyNotes: [
+        'Accurate measurement is critical to prevent gastric perforation',
+        'Double-check measurements in pediatric patients due to size variations',
+        'Consider shorter insertion depth in patients with hiatal hernia'
+      ],
+      equipmentNeeded: [
+        'Measuring tape or ruler',
+        'Indelible marker',
+        'Patient measurement reference chart',
+        'Documentation materials'
+      ]
+    },
+    {
+      id: 'ogng_4',
+      stepNumber: 4,
+      title: 'Initial tube insertion',
+      description: 'Begin tube insertion using proper technique, maintaining patient comfort and monitoring for complications',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Insert tube gently through selected nostril or mouth with patient cooperation',
+        'Angle tube posteriorly and downward following natural anatomy',
+        'Advance tube slowly and steadily, pausing for patient comfort',
+        'Encourage swallowing or sipping water in conscious cooperative patients',
+        'Monitor for signs of respiratory distress or tube misplacement',
+        'Feel for resistance indicating esophageal sphincter passage',
+        'Watch for coiling in mouth or gagging indicating incorrect placement',
+        'Advance to pre-measured depth marking while monitoring patient response'
+      ],
+      safetyNotes: [
+        'Stop immediately if significant resistance is encountered',
+        'Monitor continuously for signs of respiratory compromise',
+        'Never force tube advancement against significant resistance',
+        'Be prepared to remove tube immediately if respiratory distress occurs'
+      ],
+      equipmentNeeded: [
+        'Lubricated tube',
+        'Suction equipment',
+        'Water for swallowing assistance',
+        'Pulse oximetry for monitoring'
+      ]
+    },
+    {
+      id: 'ogng_5',
+      stepNumber: 5,
+      title: 'Placement verification using multiple methods',
+      description: 'Confirm correct gastric placement using multiple verification techniques before securing tube',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Aspirate gastric contents and test pH (should be acidic, pH <5.5)',
+        'Auscultate over epigastrium while injecting 20-30ml of air',
+        'Look for characteristic gastric aspirate (greenish, cloudy appearance)',
+        'Check for CO2 detection if using colorimetric device (should be negative)',
+        'Observe tube markings to ensure appropriate insertion depth maintained',
+        'Assess patient comfort and absence of respiratory symptoms',
+        'Consider X-ray confirmation if any doubt about placement exists',
+        'Document all verification methods used and results obtained'
+      ],
+      safetyNotes: [
+        'Never rely on a single verification method alone',
+        'Absence of respiratory distress does not guarantee correct placement',
+        'X-ray confirmation is gold standard when placement is questionable',
+        'Remove tube immediately if pulmonary placement is suspected'
+      ],
+      equipmentNeeded: [
+        'pH testing strips or meter',
+        'Syringe for aspiration and air injection',
+        'Stethoscope for auscultation',
+        'CO2 detector if available'
+      ]
+    },
+    {
+      id: 'ogng_6',
+      stepNumber: 6,
+      title: 'Tube securing and connection',
+      description: 'Properly secure the tube to prevent dislodgement and connect to appropriate drainage or feeding system',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Secure tube to nose or mouth using appropriate tape or commercial device',
+        'Avoid excessive tension that could cause pressure ulcers or dislodgement',
+        'Loop tube to prevent kinking and maintain patency',
+        'Connect to low intermittent suction (80-120 mmHg) if for decompression',
+        'Connect to gravity drainage bag if continuous drainage needed',
+        'Ensure all connections are secure and leak-free',
+        'Mark tube at nostril/mouth level for monitoring displacement',
+        'Position drainage system below patient level for proper function'
+      ],
+      safetyNotes: [
+        'Avoid high continuous suction which can damage gastric mucosa',
+        'Check that securing method does not compromise breathing or circulation',
+        'Ensure drainage system maintains closed sterile circuit'
+      ],
+      equipmentNeeded: [
+        'Medical tape or commercial securing device',
+        'Suction equipment with pressure gauge',
+        'Drainage collection system',
+        'Irrigation supplies if needed'
+      ]
+    },
+    {
+      id: 'ogng_7',
+      stepNumber: 7,
+      title: 'Function testing and troubleshooting',
+      description: 'Test tube patency and function, troubleshoot any issues, and ensure proper drainage or feeding capability',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 150,
+      keyPoints: [
+        'Test tube patency by gentle irrigation with small amount of normal saline',
+        'Verify suction function and appropriate drainage volume',
+        'Check for proper tube positioning by re-measuring external markings',
+        'Assess patient comfort and tolerance of tube placement',
+        'Troubleshoot poor drainage by checking tube position and patency',
+        'Verify connection integrity and absence of air leaks in system',
+        'Document initial output volume and characteristics',
+        'Establish baseline parameters for ongoing monitoring'
+      ],
+      safetyNotes: [
+        'Use only small volumes of saline for irrigation to prevent overload',
+        'Never use excessive force when irrigating to clear blockages',
+        'Monitor for signs of tube migration or dislodgement'
+      ],
+      equipmentNeeded: [
+        'Normal saline for irrigation',
+        'Irrigation syringe',
+        'Measuring container for output',
+        'Pressure gauge for suction verification'
+      ]
+    },
+    {
+      id: 'ogng_8',
+      stepNumber: 8,
+      title: 'Patient monitoring and comprehensive documentation',
+      description: 'Establish ongoing monitoring plan, provide patient education, and complete comprehensive documentation',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Monitor patient for signs of tube displacement or complications',
+        'Assess gastric output volume and characteristics regularly',
+        'Educate patient on tube care and signs of problems to report',
+        'Document procedure details including tube size and insertion depth',
+        'Record verification methods used and results obtained',
+        'Note patient tolerance and any complications encountered',
+        'Establish monitoring frequency for tube position and function',
+        'Plan for tube removal when indication resolves or goals met'
+      ],
+      safetyNotes: [
+        'Monitor for signs of aspiration, especially in unconscious patients',
+        'Check tube position regularly to prevent silent migration',
+        'Ensure patient and family understand care requirements and red flags'
+      ],
+      equipmentNeeded: [
+        'Documentation materials',
+        'Patient education resources',
+        'Monitoring flow sheets',
+        'Emergency contact information'
+      ]
+    }
   ]
 };
 
@@ -10319,49 +10567,257 @@ export const criticalSkillsMetadata = {
     ]
   },
 
-  'orogastric-nasogastric-insertion': {
-    name: 'Orogastric and Nasogastric Tube Insertion',
-    category: 'medical',
-    difficultyLevel: 'INTERMEDIATE' as const,
-    timeEstimateMinutes: 18,
-    isCritical: true,
-    objectives: [
-      'Assess patient condition and select appropriate insertion route',
-      'Prepare equipment and position patient optimally for insertion',
-      'Measure correct tube insertion depth using anatomical landmarks',
-      'Insert tube safely using proper technique and patient cooperation',
-      'Verify correct gastric placement using multiple confirmation methods',
-      'Secure tube properly and connect to appropriate drainage system',
-      'Test tube function and ensure proper drainage',
-      'Provide ongoing monitoring and comprehensive documentation'
-    ],
-    indications: [
-      'Gastric decompression for bowel obstruction or ileus',
-      'Gastric lavage for overdose or poisoning management',
-      'Prevention of aspiration in unconscious patients',
-      'Medication administration when oral route not feasible',
-      'Enteral feeding access when temporary gastric access needed',
-      'Gastric content sampling for diagnostic purposes'
-    ],
-    contraindications: [
-      'Suspected base of skull fracture (nasal route contraindicated)',
-      'Severe maxillofacial trauma affecting insertion route',
-      'Active upper gastrointestinal bleeding with esophageal varices',
-      'Recent nasal, oral, or esophageal surgery',
-      'Severe coagulopathy with active bleeding tendency',
-      'Complete nasal obstruction (for nasogastric route)'
-    ],
-    equipment: [
-      'Nasogastric or orogastric tubes (14-18Fr various sizes)',
-      'Water-soluble lubricant (never petroleum-based)',
-      '60ml catheter-tip syringe for aspiration and testing',
-      'pH testing strips for gastric content verification',
-      'Stethoscope for auscultation confirmation',
-      'Suction equipment with pressure regulation',
-      'Drainage collection bag and connecting tubing',
-      'Medical tape for securing tube'
-    ]
-  },
+  'orogastric-nasogastric-insertion': [
+    {
+      id: 'oro-naso-step-1',
+      stepNumber: 1,
+      title: 'Patient assessment and route selection',
+      description: 'Assess patient condition and determine optimal insertion route (oral vs nasal)',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Assess consciousness level and ability to cooperate with procedure',
+        'Check for contraindications: base of skull fracture, severe facial trauma',
+        'Evaluate nasal patency - select most patent nostril for nasal route',
+        'Consider orogastric route for unconscious patients or nasal contraindications',
+        'Assess for recent facial surgery, active upper GI bleeding, or coagulopathy',
+        'Determine indication: decompression, lavage, feeding access, or medication',
+        'Check baseline vital signs and neurological status',
+        'Obtain informed consent when patient consciousness permits'
+      ],
+      contraindications: [
+        'Suspected base of skull fracture (nasal route)',
+        'Severe maxillofacial trauma',
+        'Recent nasal/esophageal surgery',
+        'Active esophageal varices bleeding'
+      ],
+      safetyNotes: [
+        'Never use nasal route with suspected skull base fracture',
+        'Cervical spine precautions if trauma suspected',
+        'Monitor for signs of respiratory distress throughout'
+      ],
+      equipmentNeeded: [
+        'Assessment tools and vital sign equipment',
+        'Penlight for nasal examination',
+        'Emergency airway equipment nearby'
+      ]
+    },
+    {
+      id: 'oro-naso-step-2',
+      stepNumber: 2,
+      title: 'Equipment preparation and patient positioning',
+      description: 'Prepare all necessary equipment and position patient for safe insertion',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Select appropriate tube size: 14-16Fr for adults, 12-14Fr for elderly',
+        'Check tube integrity - no cracks, kinks, or missing components',
+        'Prepare water-soluble lubricant (never petroleum-based products)',
+        'Position patient in high Fowlers (sitting upright) if conscious and stable',
+        'Use left lateral position for unconscious patients to prevent aspiration',
+        'Ensure adequate lighting and access to patient head and neck',
+        'Have suction equipment ready and functional at bedside',
+        'Prepare pH strips, syringe, and tape for securing'
+      ],
+      safetyNotes: [
+        'Never use petroleum-based lubricants - risk of lipoid pneumonia',
+        'Keep backup tubes available in case of complications',
+        'Ensure emergency airway equipment immediately accessible'
+      ],
+      equipmentNeeded: [
+        'Nasogastric/orogastric tubes (multiple sizes)',
+        'Water-soluble lubricant',
+        '60ml catheter-tip syringe',
+        'pH testing strips',
+        'Suction equipment',
+        'Medical tape for securing'
+      ]
+    },
+    {
+      id: 'oro-naso-step-3',
+      stepNumber: 3,
+      title: 'Measurement and depth calculation',
+      description: 'Accurately measure tube insertion depth using anatomical landmarks',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Use NEX method: Nose-Earlobe-Xiphoid distance for measurement',
+        'Mark measured distance clearly on tube with permanent marker',
+        'For orogastric route: mouth corner to earlobe to xiphoid process',
+        'Add 5-10cm to measured distance for adequate gastric placement',
+        'Double-check measurement - inaccurate depth risks esophageal placement',
+        'Document measured insertion depth in patient record',
+        'Consider patient body habitus - may require adjustment for very tall patients',
+        'Have assistant verify measurement accuracy before insertion'
+      ],
+      safetyNotes: [
+        'Accurate measurement critical for proper gastric placement',
+        'Insufficient depth risks esophageal placement and aspiration',
+        'Excessive depth may cause gastric perforation'
+      ],
+      equipmentNeeded: [
+        'Measuring tape or pre-marked tube',
+        'Permanent marker for depth marking',
+        'Documentation materials'
+      ]
+    },
+    {
+      id: 'oro-naso-step-4',
+      stepNumber: 4,
+      title: 'Initial tube insertion',
+      description: 'Begin tube insertion using proper technique and monitoring patient response',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Lubricate distal 10cm of tube with water-soluble lubricant',
+        'Insert tube gently along floor of nasal cavity (not upward)',
+        'Advance slowly and steadily - allow natural swallowing to assist',
+        'Monitor for resistance - never force insertion against resistance',
+        'Watch for signs of respiratory distress, coughing, or gagging',
+        'If conscious, encourage patient to swallow and take small sips of water',
+        'Stop immediately if patient develops cyanosis or severe respiratory distress',
+        'Rotate tube gently if slight resistance encountered'
+      ],
+      safetyNotes: [
+        'Never force tube insertion - risk of perforation or trauma',
+        'Monitor respiratory status continuously during insertion',
+        'Be prepared for immediate tube removal if respiratory compromise'
+      ],
+      equipmentNeeded: [
+        'Prepared nasogastric/orogastric tube',
+        'Water-soluble lubricant',
+        'Small cup of water for conscious patients',
+        'Suction equipment ready',
+        'Emergency airway equipment'
+      ]
+    },
+    {
+      id: 'oro-naso-step-5',
+      stepNumber: 5,
+      title: 'Placement verification using multiple methods',
+      description: 'Confirm correct gastric placement using multiple verification techniques',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Aspirate gastric contents with 60ml syringe - should be acidic fluid',
+        'Test aspirated fluid pH with pH strips (should be <5.5 for gastric)',
+        'Auscultate over epigastrium while injecting 20ml of air (whoosh test)',
+        'Check for visualization of tube tip on chest X-ray if available',
+        'Assess for immediate signs of respiratory distress or pneumothorax',
+        'Verify external tube markings align with pre-measured depth',
+        'Never rely on single confirmation method - use multiple verification',
+        'Document all verification methods used and results obtained'
+      ],
+      safetyNotes: [
+        'Never assume correct placement without multiple verification methods',
+        'pH testing most reliable bedside confirmation method',
+        'Chest X-ray gold standard when available and clinically appropriate',
+        'Immediately remove tube if respiratory placement suspected'
+      ],
+      equipmentNeeded: [
+        '60ml catheter-tip syringe',
+        'pH testing strips',
+        'Stethoscope',
+        'Small amount of air for auscultation test'
+      ]
+    },
+    {
+      id: 'oro-naso-step-6',
+      stepNumber: 6,
+      title: 'Tube securing and connection',
+      description: 'Properly secure tube and connect to appropriate drainage system',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Clean nasal/oral area around insertion site with antiseptic wipe',
+        'Apply skin protectant if prolonged placement anticipated',
+        'Secure tube with medical tape - avoid excessive tension on nares',
+        'Use chevron taping technique to prevent pressure necrosis',
+        'Connect tube to low intermittent suction (40-60 mmHg) if ordered',
+        'Attach drainage collection bag if continuous drainage required',
+        'Ensure tube positioning prevents kinking or disconnection',
+        'Mark tube at nares/mouth level to monitor for displacement'
+      ],
+      safetyNotes: [
+        'Avoid excessive suction pressure - risk of mucosal damage',
+        'Monitor for signs of pressure injury at insertion site',
+        'Ensure connections are secure to prevent system failure'
+      ],
+      equipmentNeeded: [
+        'Medical tape (hypoallergenic preferred)',
+        'Antiseptic wipes',
+        'Suction equipment with pressure regulation',
+        'Drainage collection bags',
+        'Skin protectant products'
+      ]
+    },
+    {
+      id: 'oro-naso-step-7',
+      stepNumber: 7,
+      title: 'Function testing and troubleshooting',
+      description: 'Test tube function and address any functional problems',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 150,
+      keyPoints: [
+        'Test tube patency by gently irrigating with 30ml normal saline',
+        'Verify drainage is functioning - should see gastric contents or air',
+        'Troubleshoot poor drainage: check for kinks, clots, or positioning',
+        'Adjust suction pressure if drainage inadequate or excessive',
+        'Flush tube gently if partial obstruction suspected',
+        'Monitor drainage characteristics: color, consistency, volume',
+        'Establish baseline gastric residual volume if appropriate',
+        'Test tube mobility - should advance/retract slightly with swallowing'
+      ],
+      safetyNotes: [
+        'Use only gentle irrigation pressure to avoid gastric trauma',
+        'Never force irrigation against resistance',
+        'Monitor for signs of gastric perforation: severe pain, hematemesis'
+      ],
+      equipmentNeeded: [
+        'Normal saline for irrigation',
+        '30-60ml catheter-tip syringe',
+        'Graduated container for measuring output',
+        'Documentation materials for baseline measurements'
+      ]
+    },
+    {
+      id: 'oro-naso-step-8',
+      stepNumber: 8,
+      title: 'Patient monitoring and comprehensive documentation',
+      description: 'Establish ongoing monitoring plan and complete thorough documentation',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Monitor vital signs and respiratory status every 15 minutes initially',
+        'Assess insertion site for signs of irritation, bleeding, or infection',
+        'Document indication, route used, tube size, and depth of insertion',
+        'Record verification methods used and results obtained',
+        'Establish monitoring schedule for tube position and function',
+        'Educate patient/family about tube care and signs of complications',
+        'Provide comfort measures: mouth care, nasal hygiene, positioning',
+        'Plan for regular reassessment of continued need for tube'
+      ],
+      safetyNotes: [
+        'Continuous monitoring prevents delayed complications',
+        'Patient education crucial for recognizing problems',
+        'Regular tube position verification prevents displacement complications'
+      ],
+      equipmentNeeded: [
+        'Vital sign monitoring equipment',
+        'Documentation forms and flowsheets',
+        'Patient education materials',
+        'Mouth care and nasal hygiene supplies'
+      ]
+    }
+  ],
 
   'bag-valve-mask-reservoir': {
     name: 'Bag Valve Mask Reservoir Ventilation',
