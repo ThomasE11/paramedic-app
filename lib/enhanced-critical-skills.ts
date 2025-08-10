@@ -9604,6 +9604,821 @@ export const enhancedCriticalSkillSteps: { [skillId: string]: EnhancedSkillStep[
         'Debriefing space and facilitator'
       ]
     }
+  ],
+
+  // EXTERNAL JUGULAR VEIN CANNULATION
+  'external-jugular-cannulation': [
+    {
+      id: 'ejv-step-1',
+      stepNumber: 1,
+      title: 'Patient Assessment and EJV Cannulation Indication',
+      description: 'Evaluate patient condition and determine need for external jugular vein access',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Assess hemodynamic status requiring large-bore IV access',
+        'Consider EJV when peripheral access difficult or impossible',
+        'Evaluate for shock states requiring rapid fluid resuscitation',
+        'Check for need of emergency medication administration',
+        'Assess patient cooperation and ability to maintain position',
+        'Verify no contraindications to central venous access',
+        'Consider alternative access routes (IO, femoral) if EJV unsuitable',
+        'Document medical necessity for central venous access'
+      ],
+      contraindications: [
+        'Infection or trauma over insertion site',
+        'Severe coagulopathy or bleeding disorder',
+        'Previous surgery or radiation to neck area',
+        'Uncooperative patient who cannot maintain position'
+      ],
+      safetyNotes: [
+        'EJV cannulation carries risk of pneumothorax and arterial puncture',
+        'Consider less invasive alternatives first',
+        'Requires patient cooperation and proper positioning'
+      ],
+      equipmentNeeded: [
+        'Hemodynamic monitoring equipment',
+        'IV access assessment tools',
+        'Alternative access equipment as backup',
+        'Patient positioning aids'
+      ]
+    },
+    {
+      id: 'ejv-step-2',
+      stepNumber: 2,
+      title: 'Anatomical Landmark Identification and Patient Positioning',
+      description: 'Position patient and identify external jugular vein anatomy',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Position patient supine with 15-20 degree Trendelenburg position',
+        'Turn head 45 degrees away from insertion side',
+        'Identify EJV running from angle of jaw to midpoint of clavicle',
+        'Palpate carotid artery medially - avoid puncturing this structure',
+        'Locate EJV lateral to carotid, superficial to sternocleidomastoid muscle',
+        'Have assistant perform Valsalva maneuver to engorge vein',
+        'Use adequate lighting to visualize vein clearly',
+        'Mark optimal puncture site over most prominent vein portion'
+      ],
+      contraindications: [
+        'Cannot identify vein landmarks due to obesity or edema',
+        'Patient unable to tolerate positioning due to respiratory distress'
+      ],
+      safetyNotes: [
+        'EJV is superficial and more visible than internal jugular',
+        'Trendelenburg position increases venous filling',
+        'Proper head positioning crucial for successful cannulation'
+      ],
+      equipmentNeeded: [
+        'Adjustable bed for Trendelenburg positioning',
+        'Adequate lighting or headlamp',
+        'Anatomical landmark identification guides',
+        'Assistant for patient positioning and Valsalva'
+      ]
+    },
+    {
+      id: 'ejv-step-3',
+      stepNumber: 3,
+      title: 'Sterile Preparation and Equipment Assembly',
+      description: 'Prepare sterile field and organize cannulation equipment',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Don sterile gloves and prepare sterile field around neck area',
+        'Apply antiseptic solution (chlorhexidine preferred) to insertion site',
+        'Allow antiseptic to dry completely before proceeding',
+        'Assemble large-bore IV catheter (16-18 gauge) with extension tubing',
+        'Prepare normal saline flush syringes (10ml minimum)',
+        'Ready securing tape and transparent dressing',
+        'Have suction equipment available for blood/secretions',
+        'Prepare emergency equipment for complications'
+      ],
+      contraindications: [
+        'Cannot maintain sterile technique due to emergency conditions',
+        'Inadequate lighting for sterile preparation'
+      ],
+      safetyNotes: [
+        'Sterile technique essential to prevent bloodstream infections',
+        'Proper antiseptic contact time reduces infection risk',
+        'Have emergency equipment ready for complications'
+      ],
+      equipmentNeeded: [
+        'Sterile gloves and draping materials',
+        'Chlorhexidine or iodine antiseptic solution',
+        'Large-bore IV catheters (16-18 gauge)',
+        'Extension tubing and flush syringes',
+        'Sterile gauze and transparent dressing',
+        'Emergency airway equipment'
+      ]
+    },
+    {
+      id: 'ejv-step-4',
+      stepNumber: 4,
+      title: 'Vein Puncture and Catheter Insertion',
+      description: 'Perform controlled puncture of external jugular vein',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Stabilize vein with non-dominant hand below insertion site',
+        'Insert catheter at 30-45 degree angle aimed toward ipsilateral nipple',
+        'Advance catheter slowly with gentle aspiration',
+        'Watch for flashback of dark venous blood in catheter hub',
+        'Once flashback obtained, lower catheter angle and advance 2-3mm',
+        'Thread catheter over needle into vein lumen',
+        'Remove needle while advancing catheter fully into vein',
+        'Apply gentle pressure above catheter tip to prevent air embolism'
+      ],
+      contraindications: [
+        'Bright red pulsatile blood indicates arterial puncture - remove immediately',
+        'No flashback after reasonable attempts - consider alternative site'
+      ],
+      safetyNotes: [
+        'Arterial puncture requires immediate pressure and monitoring',
+        'Air embolism risk during insertion - maintain Trendelenburg position',
+        'Do not force catheter advancement if resistance encountered'
+      ],
+      equipmentNeeded: [
+        'Large-bore IV catheter with needle',
+        'Gentle traction and stabilization technique',
+        'Flashback observation capability',
+        'Immediate pressure application materials'
+      ]
+    },
+    {
+      id: 'ejv-step-5',
+      stepNumber: 5,
+      title: 'Catheter Position Confirmation and Securing',
+      description: 'Confirm proper catheter placement and secure device',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Aspirate dark venous blood to confirm intravascular position',
+        'Flush catheter with normal saline - should flow easily',
+        'Connect extension tubing and flush entire system',
+        'Observe for signs of infiltration or extravasation',
+        'Secure catheter with tape using chevron or H-method',
+        'Apply transparent dressing over insertion site',
+        'Label catheter with date, time, and gauge size',
+        'Document successful insertion and catheter function'
+      ],
+      contraindications: [
+        'Difficult flushing suggests malposition - reassess placement',
+        'Signs of infiltration require catheter removal'
+      ],
+      safetyNotes: [
+        'Easy aspiration and flushing confirms intravascular position',
+        'Proper securing prevents accidental dislodgement',
+        'Monitor insertion site for complications'
+      ],
+      equipmentNeeded: [
+        'Normal saline flush syringes',
+        'Extension tubing for connection',
+        'Medical tape for catheter securing',
+        'Transparent dressing materials',
+        'Labels for catheter identification'
+      ]
+    },
+    {
+      id: 'ejv-step-6',
+      stepNumber: 6,
+      title: 'Complication Assessment and Management',
+      description: 'Monitor for immediate complications and provide appropriate management',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Assess for pneumothorax: chest pain, dyspnea, decreased breath sounds',
+        'Monitor for hematoma formation at insertion site',
+        'Check for arterial puncture: bright red blood, pulsatile flow',
+        'Evaluate for air embolism: sudden cardiovascular collapse',
+        'Apply direct pressure for any bleeding at insertion site',
+        'Prepare for chest tube insertion if pneumothorax suspected',
+        'Monitor vital signs closely for hemodynamic changes',
+        'Document any complications and interventions provided'
+      ],
+      contraindications: [
+        'Signs of tension pneumothorax require immediate decompression',
+        'Significant bleeding may require surgical intervention'
+      ],
+      safetyNotes: [
+        'Pneumothorax is most serious complication of EJV cannulation',
+        'Early recognition and treatment of complications critical',
+        'Have emergency thoracentesis equipment readily available'
+      ],
+      equipmentNeeded: [
+        'Chest assessment tools (stethoscope, pulse oximetry)',
+        'Emergency thoracentesis equipment',
+        'Hemostatic agents for bleeding control',
+        'Hemodynamic monitoring equipment'
+      ]
+    },
+    {
+      id: 'ejv-step-7',
+      stepNumber: 7,
+      title: 'Catheter Function Testing and Maintenance',
+      description: 'Test catheter functionality and establish maintenance protocols',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 150,
+      keyPoints: [
+        'Test catheter patency with normal saline flush every 4-6 hours',
+        'Assess insertion site for signs of infection daily',
+        'Monitor for catheter-related complications: thrombosis, infection',
+        'Ensure appropriate catheter use for intended therapy',
+        'Rotate injection caps and extension tubing per protocol',
+        'Document catheter function and site assessment',
+        'Prepare for catheter removal when no longer needed',
+        'Educate team on proper catheter maintenance procedures'
+      ],
+      safetyNotes: [
+        'Regular assessment prevents catheter-related complications',
+        'Remove catheter as soon as alternative access available',
+        'Proper maintenance reduces infection risk'
+      ],
+      equipmentNeeded: [
+        'Normal saline flushes for patency testing',
+        'Site assessment documentation forms',
+        'Catheter maintenance supplies',
+        'Alternative access equipment for transition'
+      ]
+    },
+    {
+      id: 'ejv-step-8',
+      stepNumber: 8,
+      title: 'Documentation and Removal Planning',
+      description: 'Complete comprehensive documentation and plan for catheter removal',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Document indication for EJV cannulation and alternatives considered',
+        'Record insertion technique, complications, and final position',
+        'Note catheter size, length inserted, and securing method',
+        'Document daily assessments and catheter function',
+        'Plan for catheter removal when peripheral access available',
+        'Prepare removal procedure with pressure application materials',
+        'Arrange follow-up for any insertion site complications',
+        'Complete quality assurance reporting if complications occurred'
+      ],
+      safetyNotes: [
+        'Thorough documentation essential for continuity of care',
+        'Removal requires careful technique to prevent air embolism',
+        'Follow-up important for identifying delayed complications'
+      ],
+      equipmentNeeded: [
+        'Comprehensive documentation system',
+        'Catheter removal supplies',
+        'Pressure application materials',
+        'Follow-up scheduling resources'
+      ]
+    }
+  ],
+
+  // INFANT CPR WITH MANUAL DEFIBRILLATOR
+  'infant-cpr-defibrillator': [
+    {
+      id: 'inf-cpr-step-1',
+      stepNumber: 1,
+      title: 'Infant Cardiac Arrest Recognition and Response Activation',
+      description: 'Rapidly recognize infant cardiac arrest and activate emergency protocols',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 45,
+      keyPoints: [
+        'Check responsiveness by tapping foot and calling infant\'s name',
+        'Assess breathing for maximum 10 seconds - look for chest movement',
+        'Check brachial pulse on inside of upper arm between bicep and tricep',
+        'If no pulse or pulse <60 bpm with poor perfusion, begin CPR immediately',
+        'Activate emergency response and request infant defibrillator',
+        'Position infant on firm surface with head in neutral position',
+        'Note time of arrest recognition for accurate documentation',
+        'Assign roles if multiple rescuers available for coordinated care'
+      ],
+      contraindications: [
+        'Do not delay CPR for prolonged pulse check >10 seconds',
+        'Do not use adult techniques or equipment on infants'
+      ],
+      safetyNotes: [
+        'Infant anatomy requires modified CPR techniques',
+        'Brachial pulse easier to locate than carotid in infants',
+        'Immediate CPR critical - brain injury occurs within 4-6 minutes'
+      ],
+      equipmentNeeded: [
+        'Manual defibrillator with pediatric/infant capability',
+        'Infant resuscitation equipment',
+        'Infant drug dosing chart or calculator',
+        'Firm surface for chest compressions'
+      ]
+    },
+    {
+      id: 'inf-cpr-step-2',
+      stepNumber: 2,
+      title: 'High-Quality Chest Compressions - Infant Technique',
+      description: 'Perform optimal chest compressions using infant-specific technique',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'SINGLE RESCUER: Two-finger technique using index and middle fingers',
+        'TWO RESCUER: Two-thumb encircling hands technique (preferred)',
+        'Compress on lower half of breastbone, just below nipple line',
+        'Compress at least 1/3 chest depth (approximately 4cm in infants)',
+        'Compression rate 100-120 per minute with complete recoil',
+        'Allow complete chest recoil between each compression',
+        'Minimize interruptions - maintain compression fraction >60%',
+        'Switch compressors every 2 minutes to prevent fatigue'
+      ],
+      contraindications: [
+        'Do not compress over xiphoid process or ribs',
+        'Avoid excessive depth that could cause internal injuries'
+      ],
+      safetyNotes: [
+        'Infant chest wall very compliant - gentle but effective compressions',
+        'Two-thumb technique provides better compression depth and consistency',
+        'Hand position critical to avoid abdominal organ injury'
+      ],
+      equipmentNeeded: [
+        'Firm, flat surface for compressions',
+        'Two trained rescuers for optimal technique',
+        'Timer or metronome for compression rate',
+        'Step platform if needed for rescuer positioning'
+      ]
+    },
+    {
+      id: 'inf-cpr-step-3',
+      stepNumber: 3,
+      title: 'Airway Management and Rescue Breathing',
+      description: 'Provide effective ventilation using infant airway techniques',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Position airway with slight head tilt - avoid hyperextension',
+        'Use head tilt-chin lift or jaw thrust if trauma suspected',
+        'Cover infant\'s mouth AND nose with rescue mask',
+        'Provide gentle rescue breaths - just enough to make chest rise',
+        'SINGLE RESCUER: 30 compressions to 2 breaths ratio',
+        'TWO RESCUER: 15 compressions to 2 breaths ratio',
+        'Each breath should be 1 second duration',
+        'Avoid excessive ventilation that causes gastric distention'
+      ],
+      contraindications: [
+        'Do not hyperextend neck - can obstruct infant airway',
+        'Avoid excessive tidal volumes causing gastric insufflation'
+      ],
+      safetyNotes: [
+        'Infant airways easily obstructed by hyperextension',
+        'Small tidal volumes appropriate for infant size',
+        'Two-rescuer technique allows better compression-ventilation ratio'
+      ],
+      equipmentNeeded: [
+        'Infant bag-mask device with appropriate reservoir',
+        'Infant face masks (multiple sizes)',
+        'Oral and nasal airway adjuncts (infant sizes)',
+        'Suction equipment for airway clearance'
+      ]
+    },
+    {
+      id: 'inf-cpr-step-4',
+      stepNumber: 4,
+      title: 'Rhythm Analysis and Defibrillator Setup',
+      description: 'Analyze cardiac rhythm and prepare defibrillator for infant use',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Attach infant defibrillation pads: Right upper chest, left lower chest',
+        'Use anterior-posterior pad placement if anterior pads overlap',
+        'Ensure minimum 3cm separation between pads',
+        'Analyze rhythm after 2 minutes CPR or immediately if witnessed arrest',
+        'SHOCKABLE: VF/pVT (rare in infants) - prepare for defibrillation',
+        'NON-SHOCKABLE: PEA/Asystole (most common) - continue CPR',
+        'Infant energy dose: 2 J/kg for first shock, 4 J/kg subsequent',
+        'Resume CPR immediately after shock without pulse check'
+      ],
+      contraindications: [
+        'Do not use adult energy doses - can cause myocardial injury',
+        'Do not delay compressions for prolonged rhythm analysis'
+      ],
+      safetyNotes: [
+        'Shockable rhythms very uncommon in infant cardiac arrest',
+        'Most infant arrests due to respiratory causes (asphyxia)',
+        'Proper pad sizing critical for effective energy delivery'
+      ],
+      equipmentNeeded: [
+        'Manual defibrillator with infant energy capability',
+        'Infant defibrillation pads (appropriate sizes)',
+        'Weight estimation tools for energy calculation',
+        'Rhythm analysis and documentation capability'
+      ]
+    },
+    {
+      id: 'inf-cpr-step-5',
+      stepNumber: 5,
+      title: 'Vascular Access and Medication Administration',
+      description: 'Establish access and administer appropriate resuscitation medications',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Establish IO access - preferred route in infant arrest',
+        'IO sites: proximal tibia (most common), distal femur, proximal humerus',
+        'Epinephrine dose: 0.01 mg/kg IV/IO (0.1 mL/kg of 1:10,000)',
+        'Give epinephrine every 3-5 minutes during arrest',
+        'Maximum single epinephrine dose: 1mg (rare to reach in infants)',
+        'Consider reversible causes: Hypoxemia, Hypovolemia, Hypothermia',
+        'Hypoglycemia, Hypo/hyperkalemia, Hydrogen ions (acidosis)',
+        'Flush all medications with normal saline to ensure delivery'
+      ],
+      contraindications: [
+        'Do not give adult medication doses - always use weight-based dosing',
+        'Avoid high-dose epinephrine (not beneficial and potentially harmful)'
+      ],
+      safetyNotes: [
+        'Weight estimation critical for accurate infant dosing',
+        'IO access faster and more reliable than IV in infant arrest',
+        'Most infant arrests respond to effective ventilation and compressions'
+      ],
+      equipmentNeeded: [
+        'Intraosseous drill with infant needles',
+        'Infant weight estimation chart or length-based tape',
+        'Resuscitation medications with accurate dosing',
+        'Normal saline flushes for medication delivery'
+      ]
+    },
+    {
+      id: 'inf-cpr-step-6',
+      stepNumber: 6,
+      title: 'Advanced Airway Considerations',
+      description: 'Consider advanced airway management during infant resuscitation',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Consider endotracheal intubation if bag-mask ventilation inadequate',
+        'Infant ET tube size: 3.0-3.5mm (uncuffed) for term infants',
+        'ET tube depth: weight (kg) + 6cm at the lip for infants',
+        'Use straight blade (Miller 0 or 1) for infant laryngoscopy',
+        'Confirm placement with capnography - gold standard',
+        'Once advanced airway placed, provide continuous compressions',
+        'Ventilation rate: 10 breaths per minute (1 breath every 6 seconds)',
+        'Avoid hyperventilation which impedes venous return'
+      ],
+      contraindications: [
+        'Do not attempt if not experienced in infant intubation',
+        'Do not delay effective bag-mask ventilation for intubation attempts'
+      ],
+      safetyNotes: [
+        'Bag-mask ventilation often sufficient for infant arrests',
+        'Infant airway anatomy differs significantly from adults',
+        'Intubation should not interrupt high-quality CPR'
+      ],
+      equipmentNeeded: [
+        'Infant laryngoscope with straight blades',
+        'Uncuffed endotracheal tubes (3.0, 3.5, 4.0mm)',
+        'Capnography for tube position confirmation',
+        'Tube securing materials appropriate for infants'
+      ]
+    },
+    {
+      id: 'inf-cpr-step-7',
+      stepNumber: 7,
+      title: 'ROSC Recognition and Post-Arrest Stabilization',
+      description: 'Recognize return of circulation and provide post-arrest care',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Signs of ROSC: Palpable brachial pulse, blood pressure, ETCO2 waveform',
+        'Check pulse during scheduled rhythm assessments',
+        'If ROSC achieved, immediately assess airway, breathing, circulation',
+        'Target oxygen saturation 94-99% with titrated oxygen',
+        'Maintain age-appropriate blood pressure and perfusion',
+        'Monitor for post-arrest complications: seizures, arrhythmias',
+        'Consider targeted temperature management per protocols',
+        'Prepare for immediate transport to pediatric intensive care'
+      ],
+      safetyNotes: [
+        'Post-arrest care critical for neurological outcomes in infants',
+        'Continuous monitoring essential after ROSC',
+        'Early NICU/PICU involvement improves outcomes'
+      ],
+      equipmentNeeded: [
+        'Continuous monitoring (ECG, BP, pulse oximetry, capnography)',
+        'Mechanical ventilation capability if needed',
+        'Age-appropriate medications for blood pressure support',
+        'Transport equipment for NICU/PICU transfer'
+      ]
+    },
+    {
+      id: 'inf-cpr-step-8',
+      stepNumber: 8,
+      title: 'Family Support and Ethical Considerations',
+      description: 'Provide family-centered care and address resuscitation decisions',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Allow family presence during resuscitation when possible',
+        'Provide clear, compassionate communication about infant\'s condition',
+        'Consider resuscitation termination after 20 minutes without ROSC',
+        'Factors favoring continued resuscitation: hypothermia, submersion',
+        'Involve neonatologist or pediatric intensivist in termination decisions',
+        'Provide immediate grief support and bereavement resources',
+        'Complete thorough documentation of all resuscitation efforts',
+        'Conduct team debriefing for emotional support and learning'
+      ],
+      safetyNotes: [
+        'Family presence can be beneficial when appropriately supported',
+        'Infant resuscitation decisions emotionally challenging for all involved',
+        'Team emotional support crucial after infant cardiac arrests'
+      ],
+      equipmentNeeded: [
+        'Private space for family communication and support',
+        'Chaplain, social work, and bereavement services',
+        'Comprehensive documentation forms',
+        'Debriefing facilitator and appropriate space'
+      ]
+    }
+  ],
+
+  // DRUG ADMINISTRATION
+  'drug-administration': [
+    {
+      id: 'drug-step-1',
+      stepNumber: 1,
+      title: 'Patient Assessment and Medication Indication Review',
+      description: 'Comprehensive patient evaluation and medication indication verification',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Review patient medical history and current medications',
+        'Assess vital signs: blood pressure, heart rate, respiratory rate, oxygen saturation',
+        'Verify indication for specific medication based on clinical presentation',
+        'Check for known allergies and adverse drug reactions',
+        'Evaluate renal and hepatic function if relevant to drug metabolism',
+        'Consider drug interactions with current medications',
+        'Assess patient weight for accurate dosing calculations',
+        'Review contraindications specific to the prescribed medication'
+      ],
+      contraindications: [
+        'Known allergy to medication or class of medications',
+        'Contraindicated drug interactions',
+        'Organ dysfunction affecting drug clearance without dose adjustment'
+      ],
+      safetyNotes: [
+        'Always verify drug allergies before administration',
+        'Consider pregnancy status in women of childbearing age',
+        'Drug interactions can be life-threatening - always check'
+      ],
+      equipmentNeeded: [
+        'Patient medical history and medication list',
+        'Vital signs monitoring equipment',
+        'Drug interaction reference or app',
+        'Allergy documentation system'
+      ]
+    },
+    {
+      id: 'drug-step-2',
+      stepNumber: 2,
+      title: 'Medication Verification and Five Rights Check',
+      description: 'Systematic verification using the five rights of medication administration',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'RIGHT PATIENT: Verify patient identity using two identifiers (name, DOB, MRN)',
+        'RIGHT MEDICATION: Check medication name against order - generic vs brand names',
+        'RIGHT DOSE: Calculate and verify dosage based on patient weight and indication',
+        'RIGHT ROUTE: Confirm appropriate administration route (IV, IM, PO, SL, etc.)',
+        'RIGHT TIME: Verify timing and frequency of administration',
+        'Check medication expiration date and physical appearance',
+        'Verify concentration and volume calculations',
+        'Have second practitioner verify high-risk medications'
+      ],
+      contraindications: [
+        'Any uncertainty about any of the five rights',
+        'Expired or visually altered medications',
+        'Inability to confirm patient identity'
+      ],
+      safetyNotes: [
+        'Never skip the five rights check - prevents medication errors',
+        'High-alert medications require independent double-check',
+        'When in doubt, stop and verify with prescriber'
+      ],
+      equipmentNeeded: [
+        'Patient identification materials',
+        'Medication order verification system',
+        'Drug dosing calculator or reference',
+        'Second practitioner for verification when required'
+      ]
+    },
+    {
+      id: 'drug-step-3',
+      stepNumber: 3,
+      title: 'Dosage Calculation and Preparation',
+      description: 'Accurate dosage calculation and sterile medication preparation',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 150,
+      keyPoints: [
+        'Calculate dose using patient weight: dose = (mg/kg) × weight (kg)',
+        'Convert units appropriately (mg to mcg, units to mL, etc.)',
+        'Use proper dilution ratios for concentrated medications',
+        'Prepare medication using aseptic technique',
+        'Draw up exact calculated volume using appropriate syringe size',
+        'Label syringe with medication name, concentration, and time prepared',
+        'Double-check calculations with another practitioner if required',
+        'Prepare only enough medication for immediate administration'
+      ],
+      contraindications: [
+        'Calculation errors or uncertainty about dosing',
+        'Contamination of medication during preparation',
+        'Inability to achieve accurate dose with available concentrations'
+      ],
+      safetyNotes: [
+        'Dosing errors are leading cause of medication-related injuries',
+        'Use standardized concentrations when available',
+        'Never prepare medications in advance unless specifically indicated'
+      ],
+      equipmentNeeded: [
+        'Accurate scale for patient weight',
+        'Dosing calculator or reference charts',
+        'Appropriate syringes and needles',
+        'Sterile medication preparation area',
+        'Labels for medication identification'
+      ]
+    },
+    {
+      id: 'drug-step-4',
+      stepNumber: 4,
+      title: 'Route Selection and Access Verification',
+      description: 'Select appropriate administration route and verify vascular access',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Select most appropriate route based on medication and patient condition',
+        'IV/IO route: Verify patency by aspirating blood and flushing with saline',
+        'IM route: Select appropriate site based on medication volume and patient age',
+        'PO route: Ensure patient can swallow safely and has adequate mental status',
+        'SL route: Ensure medication dissolves properly and patient cooperates',
+        'Topical/transdermal: Verify proper application site and skin integrity',
+        'Inhalation route: Ensure proper technique and patient cooperation',
+        'Document route selection rationale if non-standard'
+      ],
+      contraindications: [
+        'Non-functional or infiltrated IV/IO access',
+        'Compromised absorption at selected administration site',
+        'Patient unable to cooperate with selected route'
+      ],
+      safetyNotes: [
+        'Route affects onset time and bioavailability significantly',
+        'Always flush IV lines before and after medication administration',
+        'Some medications are vesicants and require specific IV precautions'
+      ],
+      equipmentNeeded: [
+        'Functional IV/IO access with flush syringes',
+        'Appropriate needles for IM administration',
+        'Route-specific administration supplies',
+        'Saline flushes for vascular access'
+      ]
+    },
+    {
+      id: 'drug-step-5',
+      stepNumber: 5,
+      title: 'Pre-Administration Assessment and Monitoring Setup',
+      description: 'Establish baseline parameters and monitoring before drug administration',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Obtain baseline vital signs immediately before administration',
+        'Establish continuous monitoring appropriate for medication (ECG, BP, SpO2)',
+        'Assess pain level if analgesic medications being administered',
+        'Evaluate consciousness level if sedating medications involved',
+        'Check specific parameters: blood glucose, peak flow, pupil size',
+        'Ensure emergency reversal agents available if applicable',
+        'Position patient appropriately for medication and monitoring',
+        'Prepare for potential adverse reactions specific to the medication'
+      ],
+      safetyNotes: [
+        'Baseline measurements essential for detecting changes',
+        'Have reversal agents ready for opioids, benzodiazepines',
+        'Some medications require specific monitoring parameters'
+      ],
+      equipmentNeeded: [
+        'Continuous vital signs monitoring',
+        'Specific monitoring equipment (glucometer, peak flow meter)',
+        'Emergency medications (naloxone, flumazenil)',
+        'Appropriate patient positioning aids'
+      ]
+    },
+    {
+      id: 'drug-step-6',
+      stepNumber: 6,
+      title: 'Medication Administration and Immediate Monitoring',
+      description: 'Administer medication using proper technique with immediate assessment',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Administer medication at appropriate rate for the specific drug',
+        'IV push: Give over recommended time (usually 1-2 minutes minimum)',
+        'Monitor patient continuously during administration',
+        'Watch for immediate adverse reactions: allergic reactions, hypotension',
+        'Assess pain or discomfort at injection site',
+        'Document exact time of administration',
+        'Flush IV line with compatible solution after administration',
+        'Observe for immediate therapeutic effects'
+      ],
+      contraindications: [
+        'Signs of allergic reaction during administration',
+        'Significant vital sign changes suggesting adverse reaction',
+        'IV infiltration or extravasation during administration'
+      ],
+      safetyNotes: [
+        'Never rush medication administration - follow recommended rates',
+        'Stop immediately if adverse reaction suspected',
+        'Some medications are incompatible with certain IV fluids'
+      ],
+      equipmentNeeded: [
+        'Administration supplies appropriate for route',
+        'Timer or clock for proper administration rate',
+        'Compatible flush solutions',
+        'Emergency medications for adverse reactions'
+      ]
+    },
+    {
+      id: 'drug-step-7',
+      stepNumber: 7,
+      title: 'Post-Administration Assessment and Response Evaluation',
+      description: 'Monitor patient response and assess therapeutic effectiveness',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Monitor vital signs at appropriate intervals post-administration',
+        'Assess therapeutic response: pain relief, symptom improvement',
+        'Watch for delayed adverse reactions or side effects',
+        'Document patient response to medication',
+        'Assess need for additional doses or alternative medications',
+        'Monitor for drug-specific effects: respiratory depression, sedation',
+        'Evaluate duration of therapeutic effect',
+        'Prepare for potential repeated dosing or reversal if needed'
+      ],
+      contraindications: [
+        'Severe adverse reactions requiring immediate intervention',
+        'Inadequate therapeutic response suggesting medication error'
+      ],
+      safetyNotes: [
+        'Some medications have delayed onset - continue monitoring',
+        'Respiratory depression can occur minutes after opioid administration',
+        'Document both therapeutic and adverse effects'
+      ],
+      equipmentNeeded: [
+        'Continuous monitoring equipment',
+        'Documentation tools for response assessment',
+        'Additional medications for repeat dosing or reversal',
+        'Patient assessment tools (pain scales, sedation scales)'
+      ]
+    },
+    {
+      id: 'drug-step-8',
+      stepNumber: 8,
+      title: 'Documentation and Follow-up Care Planning',
+      description: 'Complete comprehensive documentation and plan ongoing care',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Document complete medication administration record',
+        'Record medication name, dose, route, time, and administrator',
+        'Document patient response and any adverse reactions',
+        'Note vital signs before and after administration',
+        'Record rationale for medication selection and dosing',
+        'Plan for ongoing monitoring or repeat dosing',
+        'Communicate medication administration to receiving care team',
+        'Report adverse reactions to appropriate reporting systems'
+      ],
+      safetyNotes: [
+        'Complete documentation essential for continuity of care',
+        'Adverse drug reaction reporting helps prevent future incidents',
+        'Clear communication prevents medication errors in transitions'
+      ],
+      equipmentNeeded: [
+        'Electronic or paper medication administration record',
+        'Adverse reaction reporting system',
+        'Communication tools for care team',
+        'Follow-up monitoring protocols and equipment'
+      ]
+    }
   ]
 };
 
