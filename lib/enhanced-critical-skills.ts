@@ -164,6 +164,60 @@ export const enhancedCriticalSkillSteps: { [skillId: string]: EnhancedSkillStep[
         'Continuous monitoring is essential as status can deteriorate rapidly'
       ],
       equipmentNeeded: ['Oxygen source', 'Nasal cannula', 'Non-rebreather mask', 'Pulse oximeter', 'Bag-mask device']
+    },
+    {
+      id: 'bam_7',
+      stepNumber: 7,
+      title: 'Reassess and optimize airway interventions',
+      description: 'Continuously evaluate effectiveness of airway management and adjust interventions as needed',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Monitor oxygen saturation trends and response to interventions',
+        'Reassess breath sounds bilaterally for improvement or deterioration',
+        'Evaluate patient comfort and tolerance of airway adjuncts',
+        'Check airway adjunct positioning - ensure proper placement and function',
+        'Assess for signs of airway obstruction: increased work of breathing, stridor',
+        'Consider repositioning or sizing changes if airway remains suboptimal',
+        'Monitor level of consciousness and patient cooperation',
+        'Prepare for advanced airway if basic measures insufficient'
+      ],
+      contraindications: [
+        'Do not delay advanced intervention if basic airway management failing',
+        'Do not continue ineffective interventions - escalate care appropriately'
+      ],
+      safetyNotes: [
+        'Continuous monitoring essential - airway status can change rapidly',
+        'Be prepared to remove airway adjuncts if patient develops gag reflex',
+        'Early recognition of failing airway management prevents complications'
+      ],
+      equipmentNeeded: ['Continuous monitoring equipment', 'Alternative sized airway adjuncts', 'Advanced airway equipment']
+    },
+    {
+      id: 'bam_8',
+      stepNumber: 8,
+      title: 'Documentation and transport preparation',
+      description: 'Document airway management interventions and prepare for safe transport',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Document initial airway assessment findings and severity',
+        'Record all interventions performed: positioning, suctioning, airway adjuncts',
+        'Note patient response to each intervention and oxygen saturation improvements',
+        'Document ongoing monitoring parameters and vital sign trends',
+        'Communicate airway management to receiving facility during transport',
+        'Ensure all equipment remains secured and functional during transport',
+        'Plan for potential airway deterioration during transport',
+        'Provide comprehensive handoff including airway challenges and interventions'
+      ],
+      safetyNotes: [
+        'Complete documentation essential for continuity of care',
+        'Transport team must understand airway management performed',
+        'Be prepared for airway emergencies during transport'
+      ],
+      equipmentNeeded: ['Documentation materials', 'Communication equipment', 'Transport monitoring devices', 'Backup airway equipment']
     }
   ],
 
@@ -1428,7 +1482,8 @@ export const enhancedCriticalSkillSteps: { [skillId: string]: EnhancedSkillStep[
         'Maintain universal precautions throughout assessment',
         'Be prepared for rapid airway deterioration',
         'Have backup airway equipment readily available'
-      ]
+      ],
+      equipmentNeeded: ['PPE (gloves, mask, eye protection)', 'BVM with reservoir bag', 'Oxygen source (15L/min)', 'Suction equipment', 'Pulse oximeter', 'End-tidal CO2 monitor']
     },
     {
       id: 'bvm-pred-step-2',
@@ -1452,7 +1507,8 @@ export const enhancedCriticalSkillSteps: { [skillId: string]: EnhancedSkillStep[
         'Poor mask seal is a major predictor of BVM difficulty',
         'Have advanced airway equipment ready if seal problems identified',
         'Consider two-person BVM technique early if seal issues present'
-      ]
+      ],
+      equipmentNeeded: ['Multiple mask sizes (pediatric, adult, large adult)', 'Beard trimmer or scissors if available', 'Gauze pads for seal improvement', 'Advanced airway equipment (LMA, endotracheal tube)', 'Water-soluble lubricant']
     },
     {
       id: 'bvm-pred-step-3',
@@ -1476,7 +1532,8 @@ export const enhancedCriticalSkillSteps: { [skillId: string]: EnhancedSkillStep[
         'Obese patients have reduced functional residual capacity',
         'Higher PEEP may be needed to maintain oxygenation',
         'Prepare for rapid desaturation during apneic periods'
-      ]
+      ],
+      equipmentNeeded: ['PEEP valve for BVM', 'Ramping devices or pillows for positioning', 'Large adult face masks', 'Two-person BVM technique supplies', 'Mechanical lifting devices if available']
     },
     {
       id: 'bvm-pred-step-4',
@@ -1500,7 +1557,8 @@ export const enhancedCriticalSkillSteps: { [skillId: string]: EnhancedSkillStep[
         'Elderly patients may have reduced physiological reserve',
         'Age-related changes increase airway management complexity',
         'Consider earlier advanced airway intervention in elderly patients'
-      ]
+      ],
+      equipmentNeeded: ['Joint mobility assessment tools', 'Cervical collar if indicated', 'Advanced airway equipment', 'Alternative positioning aids', 'Continuous monitoring equipment']
     },
     {
       id: 'bvm-pred-step-5',
@@ -1529,7 +1587,8 @@ export const enhancedCriticalSkillSteps: { [skillId: string]: EnhancedSkillStep[
         'Tooth loss can significantly affect mask seal',
         'Well-fitting dentures may improve ventilation effectiveness',
         'Be prepared to manage loose teeth or dental trauma'
-      ]
+      ],
+      equipmentNeeded: ['Gauze pads for seal improvement', 'Denture cup for storage', 'Magill forceps for foreign body removal', 'Oral airway adjuncts', 'Different sized face masks']
     },
     {
       id: 'bvm-pred-step-6',
@@ -1553,7 +1612,8 @@ export const enhancedCriticalSkillSteps: { [skillId: string]: EnhancedSkillStep[
         'Sleep apnea patients have higher difficult airway risk',
         'Upper airway obstruction may worsen with unconsciousness',
         'Consider alternative airway techniques early'
-      ]
+      ],
+      equipmentNeeded: ['Measuring tape for neck circumference', 'Penlight for airway examination', 'Mallampati assessment guide', 'Supraglottic airway devices', 'CPAP equipment if available']
     },
     {
       id: 'bvm-pred-step-7',
@@ -1577,7 +1637,8 @@ export const enhancedCriticalSkillSteps: { [skillId: string]: EnhancedSkillStep[
         'Never attempt BVM without backup airway plan',
         'High-risk patients may require immediate advanced airway',
         'Early recognition of difficult BVM prevents patient deterioration'
-      ]
+      ],
+      equipmentNeeded: ['BOOTS criteria assessment card', 'Alternative airway equipment (LMA, ETT, cricothyrotomy kit)', 'Documentation materials', 'Communication equipment for team coordination']
     },
     {
       id: 'bvm-pred-step-8',
@@ -1601,7 +1662,8 @@ export const enhancedCriticalSkillSteps: { [skillId: string]: EnhancedSkillStep[
         'Inadequate BVM ventilation can be rapidly fatal',
         'Do not persist with ineffective techniques',
         'Early escalation to advanced airway may be life-saving'
-      ]
+      ],
+      equipmentNeeded: ['BVM with PEEP valve', 'End-tidal CO2 monitoring', 'Pulse oximeter', 'Oral and nasal airways', 'Two-person BVM technique supplies', 'Advanced airway equipment', 'Documentation forms']
     }
   ],
   
@@ -4756,6 +4818,3191 @@ export const enhancedCriticalSkillSteps: { [skillId: string]: EnhancedSkillStep[
         'Consider law enforcement escort if patient remains dangerous'
       ]
     }
+  ],
+
+  // ETCO2 MONITORING
+  'etco2-monitoring': [
+    {
+      id: 'etco2_1',
+      stepNumber: 1,
+      title: 'Equipment preparation and calibration',
+      description: 'Prepare and calibrate ETCO2 monitoring equipment ensuring accuracy and proper function',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Connect ETCO2 module to patient monitor and ensure proper cable connections',
+        'Allow appropriate warm-up time per manufacturer specifications (typically 2-3 minutes)',
+        'Verify calibration settings and perform zero-point calibration if required',
+        'Check sampling line is clear and not kinked or blocked',
+        'Ensure adequate battery life or secure power connection',
+        'Select appropriate sampling method (mainstream vs sidestream)',
+        'Set appropriate alarm limits based on patient condition',
+        'Document equipment serial numbers and calibration status'
+      ],
+      safetyNotes: [
+        'Never use damaged or expired sampling lines',
+        'Ensure equipment is not exposed to excessive moisture',
+        'Maintain infection control protocols with single-use components'
+      ],
+      equipmentNeeded: [
+        'ETCO2 monitor/module',
+        'Appropriate sampling line (nasal cannula or inline adapter)',
+        'Power source or charged battery',
+        'Patient monitor display',
+        'Calibration materials if required'
+      ]
+    },
+    {
+      id: 'etco2_2',
+      stepNumber: 2,
+      title: 'Patient assessment and baseline establishment',
+      description: 'Assess patient respiratory status and establish baseline measurements for trending',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Obtain complete set of vital signs including respiratory rate and depth',
+        'Assess patient level of consciousness and respiratory effort',
+        'Document current oxygen therapy and ventilatory support',
+        'Note any respiratory medications administered',
+        'Identify any factors affecting ventilation (pain, anxiety, positioning)',
+        'Record initial arterial blood gas values if available for correlation',
+        'Establish patient baseline mental status and responsiveness',
+        'Document any pre-existing respiratory conditions'
+      ],
+      safetyNotes: [
+        'Ensure patient airway is patent before applying monitoring',
+        'Be prepared for potential respiratory decompensation',
+        'Have airway management equipment immediately available'
+      ],
+      equipmentNeeded: [
+        'Stethoscope',
+        'Pulse oximeter',
+        'Blood pressure cuff',
+        'Thermometer',
+        'Suction equipment'
+      ]
+    },
+    {
+      id: 'etco2_3',
+      stepNumber: 3,
+      title: 'Sensor placement and connection',
+      description: 'Properly position and connect ETCO2 sampling device based on patient airway status',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'For spontaneously breathing patients: use nasal cannula with ETCO2 sampling',
+        'For intubated patients: connect inline sensor between ET tube and ventilator circuit',
+        'Ensure sampling line is positioned to capture expired air effectively',
+        'Secure connections to prevent disconnection during patient movement',
+        'Position sampling line to avoid condensation accumulation',
+        'Verify no air leaks around connections that could affect readings',
+        'Test sampling function with initial breath to confirm signal acquisition',
+        'Adjust positioning if waveform quality is poor'
+      ],
+      safetyNotes: [
+        'Avoid disrupting established airway devices during sensor placement',
+        'Monitor for increased dead space in pediatric patients with inline sensors',
+        'Ensure sampling lines do not create pressure on patient airways'
+      ],
+      equipmentNeeded: [
+        'ETCO2 nasal cannula or inline adapter',
+        'Tape or securing device',
+        'Scissors for line adjustment'
+      ]
+    },
+    {
+      id: 'etco2_4',
+      stepNumber: 4,
+      title: 'Waveform analysis and interpretation',
+      description: 'Analyze ETCO2 waveform morphology and identify normal versus abnormal patterns',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Identify normal capnographic waveform: sharp upstroke, plateau, sharp downstroke to baseline',
+        'Normal ETCO2 values: 35-45 mmHg in healthy adults at sea level',
+        'Assess waveform for shape abnormalities indicating airway problems',
+        'Look for signs of rebreathing (failure to return to zero baseline)',
+        'Identify bronchospasm patterns (shark fin or slanted plateau appearance)',
+        'Recognize esophageal intubation (absent or rapidly diminishing waveform)',
+        'Monitor for trends rather than single values',
+        'Document baseline waveform appearance for comparison'
+      ],
+      safetyNotes: [
+        'Never rely solely on ETCO2 for airway placement confirmation',
+        'Consider patient clinical condition alongside monitoring data',
+        'Be aware of factors that can cause false readings'
+      ],
+      equipmentNeeded: [
+        'ETCO2 monitor with waveform display',
+        'Documentation materials',
+        'Reference guide for waveform interpretation'
+      ]
+    },
+    {
+      id: 'etco2_5',
+      stepNumber: 5,
+      title: 'Continuous monitoring and trending',
+      description: 'Establish continuous monitoring protocol with appropriate alarm settings and trend analysis',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Set high and low ETCO2 alarms based on patient condition (typically ±10 mmHg from baseline)',
+        'Monitor respiratory rate accuracy compared to clinical assessment',
+        'Track ETCO2 trends over time for early detection of changes',
+        'Correlate ETCO2 changes with clinical signs and other vital signs',
+        'Document values at regular intervals per protocol (typically every 5-15 minutes)',
+        'Note any interventions that may affect readings (medications, positioning)',
+        'Monitor for technical problems (loose connections, condensation)',
+        'Assess patient tolerance of monitoring device'
+      ],
+      safetyNotes: [
+        'Respond immediately to significant changes in ETCO2 values or waveform',
+        'Never ignore alarms without clinical assessment',
+        'Be prepared to troubleshoot technical issues quickly'
+      ],
+      equipmentNeeded: [
+        'Monitoring documentation sheet',
+        'Timer or watch',
+        'Backup monitoring equipment'
+      ]
+    },
+    {
+      id: 'etco2_6',
+      stepNumber: 6,
+      title: 'Clinical correlation and intervention guidance',
+      description: 'Correlate ETCO2 findings with patient clinical status and guide therapeutic interventions',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Low ETCO2 (<30 mmHg) may indicate hyperventilation, shock, or cardiac arrest',
+        'High ETCO2 (>50 mmHg) may suggest hypoventilation, respiratory depression, or CO2 retention',
+        'Sudden loss of waveform may indicate airway displacement or circuit disconnection',
+        'Gradual decrease may suggest decreasing cardiac output or increasing dead space',
+        'Use ETCO2 to guide ventilation rate and tidal volume adjustments',
+        'Monitor response to bronchodilator therapy through waveform improvement',
+        'Assess effectiveness of CPR through ETCO2 values during resuscitation',
+        'Consider metabolic causes of ETCO2 changes (acidosis, fever, shivering)'
+      ],
+      safetyNotes: [
+        'Always assess patient clinically, not just monitor values',
+        'Consider multiple causes for ETCO2 changes',
+        'Intervene promptly for significant changes indicating deterioration'
+      ],
+      equipmentNeeded: [
+        'Ventilatory support equipment',
+        'Medications (bronchodilators, sedation)',
+        'Airway management supplies',
+        'Blood gas analysis capability if available'
+      ]
+    },
+    {
+      id: 'etco2_7',
+      stepNumber: 7,
+      title: 'Troubleshooting and quality assurance',
+      description: 'Identify and resolve technical issues while maintaining monitoring quality and reliability',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Check for sampling line obstruction if waveform is dampened or absent',
+        'Replace sampling line if contaminated with secretions or condensation',
+        'Verify sensor connections if intermittent signal loss occurs',
+        'Recalibrate equipment if values seem inconsistent with clinical picture',
+        'Consider sensor malfunction if waveform morphology is severely abnormal',
+        'Ensure adequate sampling flow rate for sidestream systems',
+        'Check for air leaks in sampling system that could affect accuracy',
+        'Document any technical issues and corrective actions taken'
+      ],
+      safetyNotes: [
+        'Never delay clinical care to troubleshoot monitoring equipment',
+        'Have backup monitoring methods available',
+        'Replace faulty equipment immediately, do not attempt temporary fixes'
+      ],
+      equipmentNeeded: [
+        'Spare sampling lines and sensors',
+        'Cleaning materials',
+        'Backup ETCO2 monitoring device',
+        'Technical support contact information'
+      ]
+    },
+    {
+      id: 'etco2_8',
+      stepNumber: 8,
+      title: 'Documentation and communication',
+      description: 'Comprehensively document monitoring data and communicate findings to healthcare team',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Document initial ETCO2 values and waveform characteristics',
+        'Record all significant changes in values and corresponding clinical events',
+        'Note any interventions performed based on ETCO2 monitoring',
+        'Include equipment information and any technical issues encountered',
+        'Communicate significant findings to receiving medical team',
+        'Provide trend data showing patient response to interventions',
+        'Document patient tolerance of monitoring and any complications',
+        'Include ETCO2 data in overall clinical assessment and treatment plan'
+      ],
+      safetyNotes: [
+        'Ensure accurate documentation for continuity of care',
+        'Communicate critical findings immediately, do not delay for documentation',
+        'Maintain patient confidentiality in all communications'
+      ],
+      equipmentNeeded: [
+        'Medical record documentation system',
+        'Communication device (phone, radio)',
+        'Printed waveform strips if available',
+        'Transfer documentation forms'
+      ]
+    }
+  ],
+
+  // INTRAMUSCULAR INJECTION
+  'intramuscular-injection': [
+    {
+      id: 'im_1',
+      stepNumber: 1,
+      title: 'Patient assessment and preparation',
+      description: 'Assess patient condition, verify medication orders, and prepare for intramuscular injection procedure',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Verify patient identity using two independent identifiers (name, DOB, medical record number)',
+        'Confirm medication order including drug name, dose, route, and frequency',
+        'Assess patient for allergies to medications, preservatives, or latex',
+        'Review medical history for contraindications to intramuscular injections',
+        'Obtain informed consent and explain procedure to patient if conscious',
+        'Check patient vital signs and current clinical status',
+        'Assess injection sites for signs of infection, inflammation, or tissue damage',
+        'Document baseline pain level and anxiety status before procedure'
+      ],
+      safetyNotes: [
+        'Always verify medication allergies before administration',
+        'Ensure patient is in stable position to prevent falls during procedure',
+        'Have emergency medications readily available for allergic reactions'
+      ],
+      equipmentNeeded: [
+        'Patient identification materials',
+        'Medication administration record (MAR)',
+        'Allergy assessment tools',
+        'Vital signs monitoring equipment',
+        'Emergency medications (epinephrine, diphenhydramine)'
+      ]
+    },
+    {
+      id: 'im_2',
+      stepNumber: 2,
+      title: 'Medication verification and preparation',
+      description: 'Verify medication using five rights of medication administration and prepare injection',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Verify right patient, right drug, right dose, right route, right time',
+        'Check medication expiration date and inspect for discoloration or particles',
+        'Calculate dosage using appropriate weight-based or age-based formulas',
+        'Select appropriate needle gauge and length for injection site and patient size',
+        'Draw up medication using aseptic technique with filter needle if indicated',
+        'Remove air bubbles from syringe and verify final volume',
+        'Label syringe with medication name, dose, and preparation time',
+        'Have second provider independently verify high-risk medications'
+      ],
+      safetyNotes: [
+        'Never use medication that appears cloudy, discolored, or contains particles',
+        'Always use new sterile syringe and needle for each injection',
+        'Maintain sterile technique throughout medication preparation'
+      ],
+      equipmentNeeded: [
+        'Prescribed medication vial or ampule',
+        'Appropriate syringe (1-5mL based on volume)',
+        'Drawing up needle (18-20 gauge)',
+        'Injection needle (21-25 gauge, 1-1.5 inch length)',
+        'Alcohol prep pads',
+        'Filter needle if required',
+        'Medication calculation resources'
+      ]
+    },
+    {
+      id: 'im_3',
+      stepNumber: 3,
+      title: 'Site selection and positioning',
+      description: 'Select appropriate injection site based on patient anatomy and medication requirements',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Preferred sites: Ventrogluteal muscle (adults), vastus lateralis (pediatrics/adults)',
+        'Alternative sites: Deltoid (small volumes <2mL), dorsogluteal (avoid if possible)',
+        'Assess muscle mass and subcutaneous tissue thickness at injection site',
+        'Avoid areas with scars, bruises, swelling, or previous injection sites',
+        'Position patient comfortably to relax target muscle group',
+        'Use anatomical landmarks to locate safe injection zone',
+        'Consider patient mobility limitations when selecting optimal position',
+        'Ensure adequate lighting and exposure of injection site'
+      ],
+      safetyNotes: [
+        'Avoid dorsogluteal site due to risk of sciatic nerve injury',
+        'Never inject into inflamed, infected, or damaged tissue',
+        'Use ventrogluteal site for large volume injections (>2mL)'
+      ],
+      equipmentNeeded: [
+        'Anatomical reference materials',
+        'Good lighting source',
+        'Patient positioning aids (pillows, supports)',
+        'Measuring tools for anatomical landmarks'
+      ]
+    },
+    {
+      id: 'im_4',
+      stepNumber: 4,
+      title: 'Skin preparation and disinfection',
+      description: 'Properly clean and prepare injection site to prevent infection and complications',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Expose injection site adequately while maintaining patient privacy',
+        'Inspect skin for integrity, lesions, or signs of infection',
+        'Clean area with alcohol prep pad using circular motion from center outward',
+        'Allow alcohol to air dry completely (minimum 30 seconds)',
+        'Avoid touching cleaned area with non-sterile surfaces',
+        'Use additional antiseptic if patient has compromised immune system',
+        'Consider hair clipping if excessive hair interferes with injection',
+        'Maintain sterile field around injection site'
+      ],
+      safetyNotes: [
+        'Never inject through clothing or inadequately cleaned skin',
+        'Allow adequate drying time to prevent alcohol injection into tissue',
+        'Use appropriate antiseptic based on patient allergies'
+      ],
+      equipmentNeeded: [
+        'Alcohol prep pads (70% isopropyl alcohol)',
+        'Additional antiseptic if indicated',
+        'Sterile scissors for hair clipping if needed',
+        'Sterile drapes if extended sterile field required'
+      ]
+    },
+    {
+      id: 'im_5',
+      stepNumber: 5,
+      title: 'Injection technique and administration',
+      description: 'Perform intramuscular injection using proper technique to ensure medication delivery and patient safety',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Hold syringe like a dart with dominant hand at 90-degree angle to skin',
+        'Use non-dominant hand to stretch skin taut and stabilize injection site',
+        'Insert needle quickly and smoothly with single motion through skin',
+        'Advance needle to appropriate depth (typically 1-1.5 inches for adults)',
+        'Aspirate by pulling back plunger slightly to check for blood return',
+        'If no blood return, inject medication slowly and steadily',
+        'Maintain steady pressure and avoid sudden movements during injection',
+        'Complete injection and pause briefly before needle withdrawal'
+      ],
+      safetyNotes: [
+        'If blood is aspirated, withdraw needle and select new injection site',
+        'Never inject if needle placement is questionable',
+        'Inject slowly to minimize tissue trauma and patient discomfort'
+      ],
+      equipmentNeeded: [
+        'Prepared medication syringe with injection needle',
+        'Sterile gloves',
+        'Gauze pads for potential bleeding',
+        'Proper lighting for visualization'
+      ]
+    },
+    {
+      id: 'im_6',
+      stepNumber: 6,
+      title: 'Post-injection care and monitoring',
+      description: 'Provide immediate post-injection care and monitor patient for adverse reactions',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Withdraw needle quickly and apply gentle pressure with gauze pad',
+        'Do not massage injection site unless specifically indicated',
+        'Apply adhesive bandage if bleeding continues or patient requests',
+        'Properly dispose of needle and syringe in sharps container immediately',
+        'Monitor patient for immediate allergic or adverse reactions (5-15 minutes)',
+        'Assess injection site for bleeding, swelling, or signs of complications',
+        'Monitor vital signs if medication has systemic effects',
+        'Provide patient comfort measures and position of comfort'
+      ],
+      safetyNotes: [
+        'Never recap needles - dispose directly into sharps container',
+        'Watch for signs of anaphylaxis: rash, difficulty breathing, hypotension',
+        'Have emergency medications immediately available during monitoring period'
+      ],
+      equipmentNeeded: [
+        'Gauze pads',
+        'Adhesive bandages',
+        'Sharps disposal container',
+        'Emergency medications',
+        'Vital signs monitoring equipment'
+      ]
+    },
+    {
+      id: 'im_7',
+      stepNumber: 7,
+      title: 'Patient education and discharge instructions',
+      description: 'Educate patient about expected effects, potential side effects, and follow-up care requirements',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 150,
+      keyPoints: [
+        'Explain expected onset of action and duration of medication effects',
+        'Review common side effects and when to seek medical attention',
+        'Provide instructions for injection site care and activity restrictions',
+        'Inform patient about signs of infection (redness, swelling, warmth, pus)',
+        'Discuss any dietary restrictions or medication interactions',
+        'Provide written instructions and emergency contact information',
+        'Schedule follow-up appointments or additional injections if required',
+        'Answer patient questions and address concerns about treatment'
+      ],
+      safetyNotes: [
+        'Ensure patient understands emergency signs requiring immediate medical attention',
+        'Provide clear instructions in patient\'s preferred language',
+        'Verify patient understanding through teach-back method'
+      ],
+      equipmentNeeded: [
+        'Patient education materials',
+        'Written discharge instructions',
+        'Emergency contact information',
+        'Appointment scheduling materials'
+      ]
+    },
+    {
+      id: 'im_8',
+      stepNumber: 8,
+      title: 'Documentation and follow-up',
+      description: 'Complete comprehensive documentation and arrange appropriate follow-up care',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Document medication name, dose, route, site, and time of administration',
+        'Record patient response to injection and any adverse reactions observed',
+        'Note injection site condition and any complications encountered',
+        'Include patient education provided and patient understanding demonstrated',
+        'Document vital signs before and after medication administration',
+        'Record any deviations from standard procedure and rationale',
+        'Communicate significant findings to receiving healthcare providers',
+        'Schedule or recommend follow-up appointments as clinically indicated'
+      ],
+      safetyNotes: [
+        'Ensure accurate documentation for legal and continuity of care purposes',
+        'Report any adverse reactions to appropriate authorities if required',
+        'Maintain patient confidentiality in all documentation'
+      ],
+      equipmentNeeded: [
+        'Medical record documentation system',
+        'Medication administration record (MAR)',
+        'Incident reporting forms if complications occur',
+        'Communication devices for provider updates'
+      ]
+    }
+  ],
+
+  // NASOPHARYNGEAL AIRWAY INSERTION
+  'nasopharyngeal-airway-insertion': [
+    {
+      id: 'npa_1',
+      stepNumber: 1,
+      title: 'Patient assessment and indication evaluation',
+      description: 'Assess patient airway status and determine need for nasopharyngeal airway insertion',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Evaluate patient level of consciousness and responsiveness to stimuli',
+        'Assess for signs of upper airway obstruction or compromise',
+        'Check for gag reflex presence - NPA tolerated better than OPA with intact gag',
+        'Examine nasal anatomy for deformities, polyps, or obvious obstruction',
+        'Look for signs of nasal trauma, bleeding, or recent nasal surgery',
+        'Consider patient position and ability to maintain their own airway',
+        'Assess oxygen saturation and respiratory effort before intervention',
+        'Determine if less invasive positioning or suctioning might be adequate'
+      ],
+      safetyNotes: [
+        'NPAs are contraindicated in suspected basilar skull fractures',
+        'Avoid use in patients with severe coagulopathy or active nasal bleeding',
+        'Consider alternative airway management if nasal anatomy is severely distorted'
+      ],
+      equipmentNeeded: [
+        'Pulse oximetry monitoring',
+        'Suction equipment',
+        'Flashlight or penlight for assessment',
+        'Stethoscope for respiratory assessment'
+      ]
+    },
+    {
+      id: 'npa_2',
+      stepNumber: 2,
+      title: 'Equipment selection and preparation',
+      description: 'Select appropriate nasopharyngeal airway size and prepare necessary equipment',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Select NPA size using diameter of patient\'s little finger or nostril',
+        'Length measurement: from tip of nose to earlobe (typically 6-9cm in adults)',
+        'Common adult sizes: 28-32 French (6-7mm internal diameter)',
+        'Pediatric sizing: 12-24 French based on age and nostril size',
+        'Inspect NPA for cracks, holes, or manufacturing defects',
+        'Ensure bevel opening faces toward nasal septum during insertion',
+        'Prepare water-soluble lubricant - never use petroleum-based products',
+        'Have safety pin ready to secure airway if needed'
+      ],
+      safetyNotes: [
+        'Never force oversized airway - can cause significant trauma',
+        'Use only water-soluble lubricant to prevent aspiration pneumonitis',
+        'Have multiple sizes available in case first choice doesn\'t fit'
+      ],
+      equipmentNeeded: [
+        'Nasopharyngeal airways in multiple sizes (28-36 French)',
+        'Water-soluble lubricant',
+        'Safety pin for securing',
+        'Measuring tape or ruler',
+        'Backup airways in different sizes'
+      ]
+    },
+    {
+      id: 'npa_3',
+      stepNumber: 3,
+      title: 'Patient positioning and preparation',
+      description: 'Position patient optimally and prepare nasal cavity for airway insertion',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Position patient supine with head in neutral or slightly extended position',
+        'Ensure cervical spine precautions if trauma suspected',
+        'Inspect both nares and select the larger, more patent nostril',
+        'Clear any visible secretions or debris from nasal cavity',
+        'Apply topical vasoconstrictor if available and not contraindicated',
+        'Explain procedure to conscious patients to reduce anxiety',
+        'Have suction immediately available for secretion management',
+        'Position yourself for optimal visualization and control'
+      ],
+      safetyNotes: [
+        'Maintain spinal immobilization if cervical injury suspected',
+        'Be gentle during nasal examination to avoid causing bleeding',
+        'Monitor patient comfort and cooperation throughout positioning'
+      ],
+      equipmentNeeded: [
+        'Suction catheter and suction device',
+        'Topical nasal decongestant (if available)',
+        'Cervical collar if spinal precautions needed',
+        'Patient positioning aids'
+      ]
+    },
+    {
+      id: 'npa_4',
+      stepNumber: 4,
+      title: 'Airway lubrication and initial insertion',
+      description: 'Properly lubricate nasopharyngeal airway and begin careful insertion process',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Apply generous amount of water-soluble lubricant to entire NPA surface',
+        'Ensure bevel opening faces toward septum (medially) during insertion',
+        'Insert NPA straight back along floor of nasal cavity, not upward',
+        'Use gentle, steady pressure - never force insertion',
+        'Advance slowly watching for patient tolerance and resistance',
+        'If significant resistance met, try slight rotation or different angle',
+        'Stop immediately if patient shows signs of distress or bleeding',
+        'Insert until flange rests against nostril opening'
+      ],
+      safetyNotes: [
+        'Never force insertion - can cause severe nasal trauma',
+        'Watch for signs of vasovagal response during insertion',
+        'Be prepared to remove immediately if complications arise'
+      ],
+      equipmentNeeded: [
+        'Selected and lubricated nasopharyngeal airway',
+        'Additional water-soluble lubricant',
+        'Gauze pads for cleanup',
+        'Tissues for patient comfort'
+      ]
+    },
+    {
+      id: 'npa_5',
+      stepNumber: 5,
+      title: 'Position verification and airway patency check',
+      description: 'Confirm proper NPA placement and assess airway patency and function',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Verify flange sits flush against nostril without being inserted too far',
+        'Listen for air movement through NPA during spontaneous ventilation',
+        'Check that patient can breathe comfortably through both nose and mouth',
+        'Observe chest rise and fall to confirm adequate ventilation',
+        'Assess oxygen saturation improvement if hypoxic before insertion',
+        'Look for signs of bleeding, swelling, or nasal trauma',
+        'Test patency by feeling air movement at proximal end during expiration',
+        'Confirm patient tolerance without excessive gagging or distress'
+      ],
+      safetyNotes: [
+        'Remove immediately if airway becomes obstructed or patient deteriorates',
+        'Monitor for signs of esophageal insertion (no air movement)',
+        'Be alert for complications like epistaxis or laryngospasm'
+      ],
+      equipmentNeeded: [
+        'Pulse oximetry',
+        'Stethoscope for breath sound assessment',
+        'Flashlight for visual inspection',
+        'Suction equipment if bleeding occurs'
+      ]
+    },
+    {
+      id: 'npa_6',
+      stepNumber: 6,
+      title: 'Securing and monitoring airway function',
+      description: 'Secure nasopharyngeal airway and establish continuous monitoring protocol',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Secure NPA with safety pin through flange to prevent aspiration',
+        'Attach safety pin to patient\'s clothing or tape to face/nose',
+        'Ensure security doesn\'t occlude the airway opening',
+        'Monitor respiratory rate, depth, and oxygen saturation continuously',
+        'Assess patient comfort and tolerance of the airway device',
+        'Check for signs of mucosal irritation, bleeding, or swelling',
+        'Document time of insertion and initial patient response',
+        'Establish routine monitoring schedule (every 15 minutes minimum)'
+      ],
+      safetyNotes: [
+        'Never leave NPA unsecured - risk of aspiration if dislodged',
+        'Ensure securing method doesn\'t compress nasal tissues',
+        'Monitor for increasing nasal congestion or obstruction'
+      ],
+      equipmentNeeded: [
+        'Safety pin',
+        'Medical tape',
+        'Scissors for tape cutting',
+        'Continuous monitoring equipment',
+        'Documentation materials'
+      ]
+    },
+    {
+      id: 'npa_7',
+      stepNumber: 7,
+      title: 'Ongoing assessment and maintenance',
+      description: 'Perform regular assessment and maintenance of nasopharyngeal airway function',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Regularly assess patency by checking air movement and breath sounds',
+        'Monitor for complications: bleeding, infection, tissue necrosis',
+        'Suction through NPA if secretions accumulate and obstruct airway',
+        'Check security of airway - retape if becoming loose',
+        'Assess patient neurological status and level of consciousness',
+        'Monitor for improvement in condition that might allow NPA removal',
+        'Watch for signs of sinusitis or other complications with prolonged use',
+        'Document any changes in patient condition or airway function'
+      ],
+      safetyNotes: [
+        'Replace or remove NPA if signs of infection or tissue damage appear',
+        'Never suction too deeply through NPA to avoid trauma',
+        'Consider alternating nostrils if prolonged use required'
+      ],
+      equipmentNeeded: [
+        'Suction catheters appropriate for NPA size',
+        'Replacement NPAs if needed',
+        'Assessment tools (pulse oximeter, stethoscope)',
+        'Documentation forms'
+      ]
+    },
+    {
+      id: 'npa_8',
+      stepNumber: 8,
+      title: 'Documentation and disposition planning',
+      description: 'Complete thorough documentation and plan for ongoing airway management',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Document indication for NPA insertion and patient condition',
+        'Record NPA size used and ease/difficulty of insertion',
+        'Note patient response to insertion and any complications',
+        'Document ongoing monitoring findings and patient tolerance',
+        'Include vital signs before and after NPA insertion',
+        'Record any medications or interventions used during procedure',
+        'Plan for transport considerations and airway management during transfer',
+        'Communicate findings and ongoing needs to receiving healthcare team'
+      ],
+      safetyNotes: [
+        'Ensure complete documentation for continuity of care',
+        'Alert receiving team to presence of NPA and any complications',
+        'Provide clear instructions for ongoing care and monitoring'
+      ],
+      equipmentNeeded: [
+        'Medical record documentation system',
+        'Communication devices for team updates',
+        'Transport monitoring equipment',
+        'Airway management supplies for transport'
+      ]
+    }
+  ],
+
+  // ADULT CHOKING WITHOUT EQUIPMENT
+  'adult-choking-without-equipment': [
+    {
+      id: 'choking_1',
+      stepNumber: 1,
+      title: 'Recognition and initial assessment',
+      description: 'Rapidly recognize signs of airway obstruction and assess severity of choking emergency',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 30,
+      keyPoints: [
+        'Look for universal choking sign - hands clutching throat',
+        'Assess ability to speak, cough, or breathe effectively',
+        'Determine if obstruction is partial (can speak/cough) or complete (silent)',
+        'Check for cyanosis around lips, face, or fingernails',
+        'Observe chest movement and respiratory effort',
+        'Ask "Are you choking?" if patient appears distressed',
+        'Differentiate from other causes of respiratory distress',
+        'Note time of onset and witness information'
+      ],
+      safetyNotes: [
+        'Partial obstruction may become complete - be ready to intervene',
+        'Do not interfere if patient can cough effectively',
+        'Call for additional help immediately'
+      ],
+      equipmentNeeded: [
+        'No equipment required for initial assessment',
+        'Consider calling for backup/EMS immediately'
+      ]
+    },
+    {
+      id: 'choking_2',
+      stepNumber: 2,
+      title: 'Patient positioning and preparation',
+      description: 'Position patient appropriately and prepare for manual airway clearance techniques',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 15,
+      keyPoints: [
+        'Stand behind patient if they are upright and conscious',
+        'Support patient if they appear weak or may collapse',
+        'Remove any visible loose objects from mouth if safe to do so',
+        'Avoid blind finger sweeps which may push objects deeper',
+        'Encourage continued coughing if patient can do so effectively',
+        'Position yourself for optimal leverage and stability',
+        'Clear area around patient to prevent falls during procedure',
+        'Assess patient size to determine appropriate technique modifications'
+      ],
+      safetyNotes: [
+        'Never perform blind finger sweeps in conscious patients',
+        'Be prepared to support patient weight if they become unconscious',
+        'Ensure your own stability to deliver effective compressions'
+      ],
+      equipmentNeeded: [
+        'Clear space around patient',
+        'Stable footing for rescuer',
+        'Good lighting if available'
+      ]
+    },
+    {
+      id: 'choking_3',
+      stepNumber: 3,
+      title: 'Back blows administration',
+      description: 'Deliver firm back blows between shoulder blades to dislodge airway obstruction',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 30,
+      keyPoints: [
+        'Position yourself slightly to side and behind patient',
+        'Support patient\'s chest with one hand, lean them forward',
+        'Use heel of other hand to deliver sharp blows between shoulder blades',
+        'Deliver 5 firm, distinct back blows with sufficient force',
+        'Aim between shoulder blades, not on spine or neck',
+        'Check mouth for expelled object after each series of blows',
+        'Allow patient to attempt coughing between back blow series',
+        'Be prepared to catch any expelled objects or debris'
+      ],
+      safetyNotes: [
+        'Use appropriate force - firm enough to be effective but not cause injury',
+        'Avoid striking spine or neck directly',
+        'Support patient to prevent falls during procedure'
+      ],
+      equipmentNeeded: [
+        'No equipment needed',
+        'Container to catch expelled objects if available'
+      ]
+    },
+    {
+      id: 'choking_4',
+      stepNumber: 4,
+      title: 'Abdominal thrusts (Heimlich maneuver)',
+      description: 'Perform abdominal thrusts to create artificial cough and expel airway obstruction',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 45,
+      keyPoints: [
+        'Stand behind patient, wrap arms around waist just above navel',
+        'Place fist with thumb side against abdomen between navel and rib cage',
+        'Grasp fist with other hand, avoid placing hands on ribs',
+        'Give quick, upward and inward thrusts using your whole body',
+        'Deliver 5 distinct abdominal thrusts with adequate force',
+        'Each thrust should be separate and distinct motion',
+        'Check for object expulsion after each series of thrusts',
+        'Continue alternating with back blows if obstruction persists'
+      ],
+      safetyNotes: [
+        'Avoid performing abdominal thrusts on pregnant patients',
+        'Do not place hands directly over ribs or xiphoid process',
+        'Be aware that abdominal thrusts can cause internal injuries'
+      ],
+      equipmentNeeded: [
+        'No equipment required',
+        'Space to position behind patient'
+      ]
+    },
+    {
+      id: 'choking_5',
+      stepNumber: 5,
+      title: 'Alternating technique cycles',
+      description: 'Continue alternating cycles of back blows and abdominal thrusts until obstruction clears',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Continue alternating 5 back blows followed by 5 abdominal thrusts',
+        'Check mouth and airway between each cycle for visible objects',
+        'Monitor patient consciousness and responsiveness continuously',
+        'Be prepared to modify technique if patient becomes unconscious',
+        'Look for signs of obstruction relief: ability to speak, cough, or breathe',
+        'Continue cycles until obstruction is relieved or patient becomes unconscious',
+        'Call for advanced medical assistance if not already done',
+        'Document number of cycles performed and patient response'
+      ],
+      safetyNotes: [
+        'If patient becomes unconscious, immediately begin CPR protocols',
+        'Do not stop to rest - maintain continuous effort until obstruction clears',
+        'Be prepared for patient collapse and support their descent if needed'
+      ],
+      equipmentNeeded: [
+        'Communication device to call for help',
+        'Timer or watch to track duration'
+      ]
+    },
+    {
+      id: 'choking_6',
+      stepNumber: 6,
+      title: 'Unconscious patient management',
+      description: 'Manage patient who becomes unconscious during choking emergency with modified CPR',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'If patient becomes unconscious, lower them to ground supporting head/neck',
+        'Open airway using head-tilt, chin-lift maneuver',
+        'Look for visible objects in mouth and remove only if clearly visible',
+        'Attempt rescue breathing - if unsuccessful, begin chest compressions',
+        'Perform 30 chest compressions followed by airway check',
+        'Look in mouth after each set of compressions for expelled objects',
+        'Attempt 2 rescue breaths, then continue compressions if no air entry',
+        'Continue modified CPR until obstruction clears or advanced help arrives'
+      ],
+      safetyNotes: [
+        'Use only finger sweeps for clearly visible objects',
+        'Ensure proper hand placement for chest compressions',
+        'Call for advanced life support immediately if not already done'
+      ],
+      equipmentNeeded: [
+        'Barrier device for rescue breathing if available',
+        'Hard surface for chest compressions',
+        'Communication device for emergency services'
+      ]
+    },
+    {
+      id: 'choking_7',
+      stepNumber: 7,
+      title: 'Post-obstruction care and monitoring',
+      description: 'Provide immediate post-emergency care after successful obstruction removal',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Once obstruction is cleared, monitor patient breathing and consciousness',
+        'Position patient in recovery position if unconscious but breathing',
+        'Assess for injuries from abdominal thrusts or chest compressions',
+        'Monitor for signs of respiratory distress or partial obstruction',
+        'Check oxygen saturation if pulse oximetry available',
+        'Provide supplemental oxygen if available and indicated',
+        'Prepare for transport to medical facility for evaluation',
+        'Reassess airway patency and breathing effectiveness continuously'
+      ],
+      safetyNotes: [
+        'All patients should be evaluated at medical facility after choking episode',
+        'Watch for delayed respiratory complications or swelling',
+        'Be prepared to repeat intervention if obstruction recurs'
+      ],
+      equipmentNeeded: [
+        'Pulse oximetry if available',
+        'Supplemental oxygen if available',
+        'Monitoring equipment',
+        'Transport arrangements'
+      ]
+    },
+    {
+      id: 'choking_8',
+      stepNumber: 8,
+      title: 'Documentation and follow-up care',
+      description: 'Document incident thoroughly and arrange appropriate medical follow-up',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Document time of incident, interventions performed, and patient response',
+        'Record number of back blows and abdominal thrusts delivered',
+        'Note any complications or injuries sustained during procedure',
+        'Document patient condition before and after obstruction removal',
+        'Record vital signs and oxygen saturation if available',
+        'Arrange immediate transport to emergency department for evaluation',
+        'Provide report to receiving medical team about interventions performed',
+        'Advise patient of potential delayed complications requiring medical attention'
+      ],
+      safetyNotes: [
+        'All choking patients require medical evaluation regardless of apparent recovery',
+        'Ensure complete documentation for legal and medical continuity',
+        'Advise patient to seek immediate care for any delayed symptoms'
+      ],
+      equipmentNeeded: [
+        'Documentation materials',
+        'Communication devices for medical facility contact',
+        'Transport arrangements',
+        'Medical evaluation forms'
+      ]
+    }
+  ],
+
+  // OROPHARYNGEAL SUCTIONING
+  'oropharyngeal-suctioning': [
+    {
+      id: 'oro_suction_1',
+      stepNumber: 1,
+      title: 'Patient assessment and indication evaluation',
+      description: 'Assess patient condition and determine need for oropharyngeal suctioning intervention',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Assess patient level of consciousness and ability to protect airway',
+        'Identify presence of visible secretions, blood, or debris in oral cavity',
+        'Evaluate effectiveness of patient\'s natural cough reflex',
+        'Look for signs of respiratory distress or airway obstruction',
+        'Check oxygen saturation and respiratory rate before intervention',
+        'Assess gag reflex presence and strength if patient conscious',
+        'Determine urgency of suctioning need based on airway compromise',
+        'Consider patient positioning and spinal precautions if trauma suspected'
+      ],
+      safetyNotes: [
+        'Be prepared for patient to vomit during stimulation',
+        'Have backup airway management equipment ready',
+        'Monitor patient tolerance throughout assessment'
+      ],
+      equipmentNeeded: [
+        'Pulse oximetry',
+        'Stethoscope for breath sound assessment',
+        'Flashlight or penlight for oral cavity inspection',
+        'Suction equipment setup'
+      ]
+    },
+    {
+      id: 'oro_suction_2',
+      stepNumber: 2,
+      title: 'Equipment preparation and setup',
+      description: 'Prepare and test all suctioning equipment to ensure proper function and readiness',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Check suction unit power source and ensure adequate battery/power',
+        'Test suction pressure - typically 80-120 mmHg for adults',
+        'Select appropriate suction catheter: rigid tip (Yankauer) for thick secretions',
+        'Inspect suction catheter for cracks, holes, or defects',
+        'Connect suction tubing and ensure all connections are secure',
+        'Test suction by occluding catheter tip and checking pressure gauge',
+        'Prepare collection canister and ensure proper installation',
+        'Have backup catheters and equipment readily available'
+      ],
+      safetyNotes: [
+        'Never use damaged or contaminated suction catheters',
+        'Ensure suction pressure is appropriate for patient age and condition',
+        'Test equipment before patient contact to prevent delays'
+      ],
+      equipmentNeeded: [
+        'Portable or mounted suction unit',
+        'Rigid suction catheter (Yankauer tip)',
+        'Flexible suction catheters in multiple sizes',
+        'Suction tubing and connectors',
+        'Collection canister',
+        'Personal protective equipment'
+      ]
+    },
+    {
+      id: 'oro_suction_3',
+      stepNumber: 3,
+      title: 'Patient positioning and preparation',
+      description: 'Position patient optimally for safe and effective oropharyngeal suctioning',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Position patient in lateral recumbent (recovery) position if possible',
+        'Turn patient\'s head to side to promote drainage and prevent aspiration',
+        'Maintain cervical spine immobilization if trauma suspected',
+        'Elevate head of bed or stretcher if patient condition allows',
+        'Open patient\'s mouth using jaw-lift or tongue-jaw lift maneuver',
+        'Ensure adequate lighting and visualization of oral cavity',
+        'Have emesis basin or towels ready to catch suctioned material',
+        'Position yourself for optimal access and visualization'
+      ],
+      safetyNotes: [
+        'Always maintain spinal precautions in trauma patients',
+        'Position to prevent aspiration of suctioned material',
+        'Be gentle with mouth opening to avoid dental or jaw injury'
+      ],
+      equipmentNeeded: [
+        'Patient positioning aids (pillows, supports)',
+        'Emesis basin or collection container',
+        'Towels or absorbent pads',
+        'Adequate lighting source'
+      ]
+    },
+    {
+      id: 'oro_suction_4',
+      stepNumber: 4,
+      title: 'Initial suctioning technique',
+      description: 'Perform initial oropharyngeal suctioning using proper technique and safety measures',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Insert suction catheter without applying suction initially',
+        'Advance catheter to visible secretions or debris in oral cavity',
+        'Apply intermittent suction while slowly withdrawing catheter',
+        'Use sweeping motion to clear secretions from entire oral cavity',
+        'Suction for maximum 15 seconds at a time in adults',
+        'Allow patient to breathe between suction attempts',
+        'Focus on removing most accessible secretions first',
+        'Monitor patient oxygen saturation and vital signs during procedure'
+      ],
+      safetyNotes: [
+        'Never exceed recommended suction duration to prevent hypoxia',
+        'Do not advance catheter blindly into pharynx',
+        'Stop immediately if patient becomes bradycardic or desaturates'
+      ],
+      equipmentNeeded: [
+        'Functioning suction unit with appropriate catheter',
+        'Pulse oximetry for continuous monitoring',
+        'Timer or watch to monitor suction duration',
+        'Supplemental oxygen if available'
+      ]
+    },
+    {
+      id: 'oro_suction_5',
+      stepNumber: 5,
+      title: 'Deep pharyngeal and ongoing suctioning',
+      description: 'Continue suctioning deeper areas of oropharynx while monitoring patient response',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Suction deeper into oropharynx if secretions remain and patient tolerates',
+        'Use rigid catheter to remove thick secretions and particulate matter',
+        'Switch to flexible catheter for deeper pharyngeal suctioning if needed',
+        'Rotate catheter during withdrawal to maximize secretion removal',
+        'Allow adequate recovery time between suction attempts (30-60 seconds)',
+        'Provide supplemental oxygen between suction attempts if available',
+        'Reassess oral cavity after each suction attempt for remaining debris',
+        'Continue until airway is clear or patient cannot tolerate further suctioning'
+      ],
+      safetyNotes: [
+        'Monitor for vasovagal response during deep pharyngeal stimulation',
+        'Watch for signs of laryngospasm or airway reflexes',
+        'Be prepared to provide ventilatory support if patient becomes apneic'
+      ],
+      equipmentNeeded: [
+        'Both rigid and flexible suction catheters',
+        'Supplemental oxygen and delivery device',
+        'Bag-valve mask for ventilatory support if needed',
+        'Cardiac monitoring if available'
+      ]
+    },
+    {
+      id: 'oro_suction_6',
+      stepNumber: 6,
+      title: 'Post-suctioning assessment and airway verification',
+      description: 'Assess effectiveness of suctioning and verify improved airway patency',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Visually inspect oral cavity for remaining secretions or debris',
+        'Listen for improved breath sounds and decreased respiratory noise',
+        'Assess patient respiratory effort and oxygen saturation improvement',
+        'Check for improved air movement and chest rise',
+        'Monitor patient comfort and reduced signs of respiratory distress',
+        'Evaluate effectiveness of patient\'s cough reflex if conscious',
+        'Document amount and character of suctioned material',
+        'Determine need for additional suctioning or airway interventions'
+      ],
+      safetyNotes: [
+        'Do not assume suctioning is complete based on appearance alone',
+        'Continue monitoring for airway compromise',
+        'Be prepared to repeat suctioning if secretions reaccumulate'
+      ],
+      equipmentNeeded: [
+        'Pulse oximetry for saturation monitoring',
+        'Stethoscope for breath sound assessment',
+        'Measuring container for volume documentation',
+        'Assessment forms for documentation'
+      ]
+    },
+    {
+      id: 'oro_suction_7',
+      stepNumber: 7,
+      title: 'Equipment cleaning and maintenance',
+      description: 'Properly clean and maintain suction equipment while ensuring continued readiness',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Rinse suction catheter and tubing with clean water or saline',
+        'Clear any debris or secretions from catheter lumens',
+        'Replace suction catheter if heavily contaminated or damaged',
+        'Empty and clean collection canister according to protocols',
+        'Check suction unit function and pressure after cleaning',
+        'Ensure equipment is ready for potential additional use',
+        'Store equipment in clean, accessible location',
+        'Document equipment maintenance and any issues encountered'
+      ],
+      safetyNotes: [
+        'Use appropriate PPE during equipment cleaning',
+        'Dispose of contaminated materials according to biohazard protocols',
+        'Ensure equipment functionality before declaring ready for use'
+      ],
+      equipmentNeeded: [
+        'Clean water or normal saline for rinsing',
+        'Replacement catheters and collection canisters',
+        'Cleaning supplies and disinfectants',
+        'Biohazard disposal containers',
+        'Personal protective equipment'
+      ]
+    },
+    {
+      id: 'oro_suction_8',
+      stepNumber: 8,
+      title: 'Documentation and ongoing monitoring',
+      description: 'Document procedure thoroughly and establish ongoing airway monitoring plan',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Document indication for suctioning and patient condition before procedure',
+        'Record type and amount of secretions removed during suctioning',
+        'Note patient tolerance of procedure and any complications',
+        'Document vital signs and oxygen saturation before and after suctioning',
+        'Record equipment used and any technical difficulties encountered',
+        'Establish plan for ongoing airway monitoring and repeat suctioning if needed',
+        'Communicate findings to receiving healthcare team or transport personnel',
+        'Schedule reassessment intervals based on patient condition and secretion production'
+      ],
+      safetyNotes: [
+        'Ensure accurate documentation for continuity of care',
+        'Alert team members to ongoing suctioning needs',
+        'Monitor for delayed complications or airway compromise'
+      ],
+      equipmentNeeded: [
+        'Medical record documentation system',
+        'Measuring devices for secretion volume',
+        'Communication devices for team updates',
+        'Ongoing monitoring equipment setup'
+      ]
+    }
+  ],
+
+  // ENDOTRACHEAL TUBE SUCTIONING
+  'endotracheal-tube-suctioning': [
+    {
+      id: 'ett_suction_1',
+      stepNumber: 1,
+      title: 'Patient assessment and indication determination',
+      description: 'Assess intubated patient condition and determine need for endotracheal suctioning intervention',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Assess patient oxygen saturation and respiratory status continuously',
+        'Listen for coarse breath sounds or secretions in ETT during ventilation',
+        'Monitor for increased airway pressures on mechanical ventilator',
+        'Observe for visible secretions in ETT or ventilator circuit',
+        'Check for decreased tidal volumes or poor chest expansion',
+        'Assess patient agitation or fighting ventilator (if conscious)',
+        'Monitor capnography waveform for dampening indicating obstruction',
+        'Determine urgency based on degree of respiratory compromise'
+      ],
+      safetyNotes: [
+        'Never suction routinely - only when clinically indicated',
+        'Pre-oxygenate patient before any suctioning procedure',
+        'Monitor cardiac rhythm during procedure for arrhythmias'
+      ],
+      equipmentNeeded: [
+        'Pulse oximetry and capnography monitoring',
+        'Ventilator with pressure monitoring',
+        'Stethoscope for breath sound assessment',
+        'ECG monitoring if available'
+      ]
+    },
+    {
+      id: 'ett_suction_2',
+      stepNumber: 2,
+      title: 'Equipment preparation and sterile setup',
+      description: 'Prepare sterile suctioning equipment and ensure proper function before patient intervention',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Select appropriate suction catheter size: no more than half ETT internal diameter',
+        'Common sizes: 14Fr for 8.0 ETT, 12Fr for 7.0-7.5 ETT, 10Fr for 6.0-6.5 ETT',
+        'Check suction unit pressure: 100-150 mmHg for adults',
+        'Prepare sterile suction catheter maintaining sterile technique',
+        'Set up sterile normal saline for catheter irrigation',
+        'Don sterile gloves using proper technique',
+        'Test suction catheter patency and suction pressure',
+        'Have backup catheters and equipment immediately available'
+      ],
+      safetyNotes: [
+        'Maintain strict sterile technique to prevent ventilator-associated pneumonia',
+        'Never reuse suction catheters between procedures',
+        'Ensure adequate suction pressure to clear thick secretions'
+      ],
+      equipmentNeeded: [
+        'Sterile suction catheters in appropriate sizes',
+        'Sterile gloves and sterile normal saline',
+        'Suction unit with pressure gauge',
+        'Sterile collection container',
+        'Personal protective equipment including eye protection'
+      ]
+    },
+    {
+      id: 'ett_suction_3',
+      stepNumber: 3,
+      title: 'Pre-oxygenation and patient preparation',
+      description: 'Provide adequate pre-oxygenation and prepare patient for safe endotracheal suctioning',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Increase FiO2 to 100% oxygen for 1-2 minutes before suctioning',
+        'Provide manual ventilation with 100% oxygen if not on mechanical ventilator',
+        'Ensure patient is adequately sedated if conscious and agitated',
+        'Position patient with head elevated 30-45 degrees if possible',
+        'Explain procedure to conscious patients to reduce anxiety',
+        'Have assistant available to help with ventilator disconnection/reconnection',
+        'Prepare for potential complications including hypoxia and bradycardia',
+        'Document baseline vital signs and oxygen saturation'
+      ],
+      safetyNotes: [
+        'Adequate pre-oxygenation is critical to prevent hypoxic episodes',
+        'Monitor patient closely for signs of distress during preparation',
+        'Have emergency medications readily available (atropine, epinephrine)'
+      ],
+      equipmentNeeded: [
+        'Oxygen source capable of 100% FiO2',
+        'Manual ventilation bag with reservoir',
+        'Sedation medications if indicated',
+        'Emergency resuscitation equipment'
+      ]
+    },
+    {
+      id: 'ett_suction_4',
+      stepNumber: 4,
+      title: 'Catheter insertion and advancement',
+      description: 'Insert suction catheter into ETT using sterile technique and proper depth',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Disconnect ventilator or bag-valve device from ETT using sterile technique',
+        'Insert catheter into ETT without applying suction initially',
+        'Advance catheter until resistance met (carina) then withdraw 1-2 cm',
+        'Typical depth: 24-26 cm for average adult (varies by ETT position)',
+        'Use gentle advancement - never force catheter',
+        'Maintain sterile technique throughout insertion',
+        'Limit disconnection time to absolute minimum',
+        'Have assistant ready to reconnect ventilation immediately'
+      ],
+      safetyNotes: [
+        'Never apply suction during catheter insertion to prevent trauma',
+        'Do not advance catheter beyond carina to avoid lung injury',
+        'Minimize time off ventilator to prevent hypoxia'
+      ],
+      equipmentNeeded: [
+        'Sterile suction catheter',
+        'Sterile gloves',
+        'Ventilator or manual ventilation device',
+        'Assistant for ventilator management'
+      ]
+    },
+    {
+      id: 'ett_suction_5',
+      stepNumber: 5,
+      title: 'Suctioning technique and secretion removal',
+      description: 'Apply suction while withdrawing catheter to effectively remove secretions from airways',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Apply intermittent suction while slowly withdrawing catheter',
+        'Use rotating motion during withdrawal to clear all airway surfaces',
+        'Limit each suction pass to maximum 10-15 seconds',
+        'Apply suction only during catheter withdrawal, not insertion',
+        'Monitor patient oxygen saturation continuously during procedure',
+        'Watch for cardiac rhythm changes indicating hypoxia or vagal stimulation',
+        'Remove catheter completely and reconnect ventilation immediately',
+        'Assess volume and character of suctioned secretions'
+      ],
+      safetyNotes: [
+        'Never exceed 15 seconds of suctioning to prevent severe hypoxia',
+        'Stop immediately if patient develops bradycardia or severe desaturation',
+        'Be prepared to provide emergency ventilation if complications arise'
+      ],
+      equipmentNeeded: [
+        'Functioning suction unit with pressure control',
+        'Continuous cardiac and oxygen saturation monitoring',
+        'Collection container for secretion measurement',
+        'Emergency ventilation equipment'
+      ]
+    },
+    {
+      id: 'ett_suction_6',
+      stepNumber: 6,
+      title: 'Post-suctioning ventilation and assessment',
+      description: 'Restore mechanical ventilation and assess patient response to suctioning procedure',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 150,
+      keyPoints: [
+        'Reconnect patient to ventilator or resume manual ventilation immediately',
+        'Return FiO2 to pre-procedure levels once oxygen saturation recovers',
+        'Auscultate breath sounds to assess improvement in air movement',
+        'Monitor oxygen saturation return to baseline or improvement',
+        'Check ventilator pressures for improvement (decreased peak pressures)',
+        'Assess capnography waveform for improved CO2 clearance',
+        'Monitor patient comfort and synchrony with ventilator',
+        'Document patient response and effectiveness of suctioning'
+      ],
+      safetyNotes: [
+        'Ensure secure ventilator reconnection to prevent accidental disconnection',
+        'Monitor for pneumothorax if high pressures were used',
+        'Watch for delayed complications including hypoxia or arrhythmias'
+      ],
+      equipmentNeeded: [
+        'Mechanical ventilator or manual ventilation device',
+        'Pulse oximetry and capnography monitoring',
+        'Stethoscope for breath sound assessment',
+        'Documentation materials for vital signs'
+      ]
+    },
+    {
+      id: 'ett_suction_7',
+      stepNumber: 7,
+      title: 'Equipment disposal and infection control',
+      description: 'Safely dispose of used equipment and maintain infection control protocols',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Dispose of used suction catheter in appropriate biohazard container',
+        'Remove and dispose of sterile gloves using proper technique',
+        'Clear suction tubing with sterile saline to remove debris',
+        'Empty and clean suction collection container if full',
+        'Perform hand hygiene immediately after glove removal',
+        'Clean and disinfect reusable equipment according to protocols',
+        'Replace any contaminated ventilator circuit components',
+        'Document equipment used and any maintenance needs'
+      ],
+      safetyNotes: [
+        'Never reuse single-use suction catheters to prevent infection',
+        'Use appropriate PPE throughout disposal process',
+        'Follow facility protocols for biohazardous waste disposal'
+      ],
+      equipmentNeeded: [
+        'Biohazard disposal containers for catheters and gloves',
+        'Hand hygiene supplies (soap, alcohol-based sanitizer)',
+        'Cleaning supplies for equipment decontamination',
+        'Replacement ventilator circuit components if needed'
+      ]
+    },
+    {
+      id: 'ett_suction_8',
+      stepNumber: 8,
+      title: 'Documentation and ongoing monitoring',
+      description: 'Document procedure thoroughly and establish plan for ongoing airway management',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Document indication for suctioning and pre-procedure patient status',
+        'Record volume, color, and consistency of suctioned secretions',
+        'Note patient tolerance of procedure and any complications',
+        'Document vital signs before, during, and after suctioning',
+        'Record ventilator settings and pressure changes',
+        'Plan frequency of reassessment based on secretion production',
+        'Communicate findings to healthcare team and receiving facilities',
+        'Schedule next suctioning based on patient needs, not routine timing'
+      ],
+      safetyNotes: [
+        'Ensure accurate documentation for continuity of care',
+        'Alert team to any complications or changes in patient condition',
+        'Avoid routine suctioning schedules - base on clinical need only'
+      ],
+      equipmentNeeded: [
+        'Medical record documentation system',
+        'Measuring container for secretion volume',
+        'Communication devices for team coordination',
+        'Ongoing monitoring equipment and ventilator'
+      ]
+    }
+  ],
+
+  // MODIFIED VALSALVA MANEUVER
+  'modified-valsalva-maneuver': [
+    {
+      id: 'valsalva_1',
+      stepNumber: 1,
+      title: 'Patient assessment and rhythm analysis',
+      description: 'Assess patient condition and confirm appropriate rhythm for modified Valsalva maneuver intervention',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Obtain 12-lead ECG and confirm narrow-complex supraventricular tachycardia (SVT)',
+        'Verify heart rate typically >150 bpm with regular rhythm',
+        'Rule out other arrhythmias: atrial fibrillation, atrial flutter, wide-complex tachycardia',
+        'Assess patient hemodynamic stability and consciousness level',
+        'Check blood pressure and ensure systolic >90 mmHg',
+        'Evaluate for signs of heart failure, chest pain, or ischemia',
+        'Review patient history for contraindications to vagal maneuvers',
+        'Document baseline vital signs and ECG rhythm strip'
+      ],
+      safetyNotes: [
+        'Do not attempt if patient is hemodynamically unstable',
+        'Rule out ventricular tachycardia before attempting vagal maneuvers',
+        'Have emergency equipment ready including defibrillator and medications'
+      ],
+      equipmentNeeded: [
+        '12-lead ECG machine',
+        'Continuous cardiac monitoring',
+        'Blood pressure monitoring equipment',
+        'Pulse oximetry',
+        'Emergency resuscitation equipment'
+      ]
+    },
+    {
+      id: 'valsalva_2',
+      stepNumber: 2,
+      title: 'Patient preparation and positioning',
+      description: 'Position patient appropriately and prepare for modified Valsalva maneuver technique',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Position patient supine with head of bed elevated 45 degrees initially',
+        'Ensure patient is comfortable and can follow instructions',
+        'Explain procedure to patient and obtain informed consent',
+        'Establish IV access for emergency medication administration if needed',
+        'Remove any tight clothing around neck or chest',
+        'Apply continuous cardiac monitoring with rhythm strip capability',
+        'Have emergency medications prepared (adenosine, diltiazem, cardioversion)',
+        'Position team members for rapid intervention if complications occur'
+      ],
+      safetyNotes: [
+        'Ensure patient understands procedure and can cooperate',
+        'Have emergency medications and defibrillator immediately available',
+        'Monitor patient continuously for rhythm changes'
+      ],
+      equipmentNeeded: [
+        'Hospital bed or stretcher with adjustable head',
+        'IV equipment and emergency medications',
+        'Continuous cardiac monitoring',
+        'Emergency airway and resuscitation equipment'
+      ]
+    },
+    {
+      id: 'valsalva_3',
+      stepNumber: 3,
+      title: 'Initial standard Valsalva attempt',
+      description: 'Perform initial standard Valsalva maneuver with patient in semi-upright position',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Have patient take deep breath and bear down as if having bowel movement',
+        'Maintain straining effort for 15 seconds while monitoring rhythm',
+        'Apply gentle pressure to abdomen to assist with Valsalva if needed',
+        'Monitor ECG continuously during strain and recovery phases',
+        'Watch for rhythm conversion during strain or immediate recovery',
+        'Document any rhythm changes or patient symptoms during procedure',
+        'Allow 30-60 seconds recovery time between attempts',
+        'Assess patient tolerance and ability to cooperate with maneuver'
+      ],
+      safetyNotes: [
+        'Monitor for excessive vagal response causing severe bradycardia',
+        'Stop immediately if patient becomes symptomatic or rhythm changes dangerously',
+        'Be prepared for post-Valsalva asystole or extreme bradycardia'
+      ],
+      equipmentNeeded: [
+        'Continuous ECG monitoring with rhythm strips',
+        'Timer or stopwatch for 15-second intervals',
+        'Emergency medications for bradycardia (atropine)',
+        'Backup pacing capability if available'
+      ]
+    },
+    {
+      id: 'valsalva_4',
+      stepNumber: 4,
+      title: 'Modified technique with position change',
+      description: 'If initial attempt unsuccessful, perform modified Valsalva with passive leg raise technique',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'If standard Valsalva unsuccessful, prepare for modified technique',
+        'Have patient perform Valsalva strain for 15 seconds in semi-upright position',
+        'Immediately after strain release, rapidly lower head of bed to supine',
+        'Simultaneously elevate both legs to 45 degrees for 15 seconds',
+        'This enhances venous return and augments vagal stimulation',
+        'Monitor closely for rhythm conversion during position change',
+        'Return patient to comfortable position after 15 seconds of leg elevation',
+        'Document any rhythm changes during modified maneuver'
+      ],
+      safetyNotes: [
+        'Ensure smooth, rapid position changes to maximize effectiveness',
+        'Monitor for orthostatic changes and patient discomfort',
+        'Be prepared for immediate rhythm conversion requiring no further intervention'
+      ],
+      equipmentNeeded: [
+        'Adjustable hospital bed or stretcher',
+        'Assistants for rapid position changes',
+        'Continuous cardiac monitoring',
+        'Blood pressure monitoring during position changes'
+      ]
+    },
+    {
+      id: 'valsalva_5',
+      stepNumber: 5,
+      title: 'Post-maneuver monitoring and assessment',
+      description: 'Monitor patient response and assess effectiveness of Valsalva maneuver intervention',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Monitor cardiac rhythm continuously for at least 5 minutes post-procedure',
+        'Check vital signs including blood pressure and oxygen saturation',
+        'Assess patient symptoms and overall clinical improvement',
+        'Document rhythm conversion if successful (target: normal sinus rhythm)',
+        'Watch for rebound tachycardia or other rhythm disturbances',
+        'Evaluate need for additional interventions if maneuver unsuccessful',
+        'Monitor for delayed complications including bradycardia or asystole',
+        'Reassess patient hemodynamic stability after procedure'
+      ],
+      safetyNotes: [
+        'Continue monitoring as some rhythm changes may be delayed',
+        'Be prepared to treat post-Valsalva bradycardia or other arrhythmias',
+        'Watch for signs of hemodynamic compromise'
+      ],
+      equipmentNeeded: [
+        'Continuous cardiac monitoring',
+        'Blood pressure monitoring equipment',
+        'Pulse oximetry',
+        'ECG machine for post-procedure 12-lead',
+        'Emergency medications if complications arise'
+      ]
+    },
+    {
+      id: 'valsalva_6',
+      stepNumber: 6,
+      title: 'Alternative intervention planning',
+      description: 'Plan alternative treatments if modified Valsalva maneuver is unsuccessful',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'If Valsalva unsuccessful, consider adenosine 6mg rapid IV push',
+        'Prepare for synchronized cardioversion if medications fail',
+        'Consider calcium channel blockers (diltiazem) for rate control',
+        'Assess patient for urgent cardiology consultation',
+        'Plan transport to higher level of care if interventions unsuccessful',
+        'Document failed Valsalva attempt and rationale for alternative treatments',
+        'Consider beta-blockers for ongoing rate control if appropriate',
+        'Evaluate for underlying causes requiring specific treatment'
+      ],
+      safetyNotes: [
+        'Follow proper protocols for adenosine administration (rapid IV push)',
+        'Be prepared for brief asystole following adenosine administration',
+        'Have cardioversion equipment ready if pharmacologic conversion fails'
+      ],
+      equipmentNeeded: [
+        'Adenosine and other emergency cardiac medications',
+        'IV equipment for rapid medication administration',
+        'Synchronized cardioversion capability',
+        'Advanced cardiac monitoring',
+        'Transport arrangements for higher level care'
+      ]
+    },
+    {
+      id: 'valsalva_7',
+      stepNumber: 7,
+      title: 'Patient education and discharge planning',
+      description: 'Educate patient about procedure and plan for ongoing cardiac care if conversion successful',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Explain what happened during the procedure and why it was necessary',
+        'Discuss signs and symptoms that should prompt immediate medical attention',
+        'Teach patient self-Valsalva techniques for future episodes if appropriate',
+        'Provide instructions for cardiac follow-up and specialist consultation',
+        'Review medications and lifestyle modifications for SVT prevention',
+        'Discuss activity restrictions and when to resume normal activities',
+        'Provide written discharge instructions with emergency contact information',
+        'Schedule follow-up ECG and cardiac evaluation as indicated'
+      ],
+      safetyNotes: [
+        'Ensure patient understands when to seek emergency care for recurrence',
+        'Provide clear instructions about medication compliance if prescribed',
+        'Emphasize importance of cardiac follow-up evaluation'
+      ],
+      equipmentNeeded: [
+        'Patient education materials about SVT',
+        'Written discharge instructions',
+        'Contact information for cardiology follow-up',
+        'Prescription forms if medications prescribed'
+      ]
+    },
+    {
+      id: 'valsalva_8',
+      stepNumber: 8,
+      title: 'Documentation and communication',
+      description: 'Document procedure thoroughly and communicate findings to healthcare team',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 150,
+      keyPoints: [
+        'Document initial rhythm, vital signs, and patient symptoms',
+        'Record detailed description of Valsalva technique used (standard vs modified)',
+        'Note patient response including any rhythm conversion or complications',
+        'Document vital signs before, during, and after procedure',
+        'Record any medications administered or additional interventions required',
+        'Include rhythm strips showing pre- and post-procedure cardiac rhythms',
+        'Communicate results to receiving physician or cardiologist',
+        'Document patient education provided and discharge instructions given'
+      ],
+      safetyNotes: [
+        'Ensure accurate documentation for legal and continuity of care purposes',
+        'Include all rhythm strips and vital sign data in medical record',
+        'Communicate any ongoing concerns to receiving healthcare team'
+      ],
+      equipmentNeeded: [
+        'Medical record documentation system',
+        'ECG rhythm strips for documentation',
+        'Communication devices for physician contact',
+        'Patient chart or electronic medical record access'
+      ]
+    }
+  ],
+
+  // OROPHARYNGEAL AIRWAY INSERTION
+  'oropharyngeal-airway-insertion': [
+    {
+      id: 'opa_1',
+      stepNumber: 1,
+      title: 'Patient assessment and airway evaluation',
+      description: 'Assess patient condition and determine appropriateness for oropharyngeal airway insertion',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Evaluate patient level of consciousness - OPA only for unconscious patients',
+        'Assess for absent or significantly diminished gag reflex',
+        'Check for upper airway obstruction due to tongue or soft tissue collapse',
+        'Examine oral cavity for visible foreign objects, blood, or secretions',
+        'Assess patient positioning and cervical spine considerations',
+        'Determine if patient can maintain own airway or requires intervention',
+        'Check oxygen saturation and respiratory effort before intervention',
+        'Rule out need for more advanced airway management (intubation)'
+      ],
+      safetyNotes: [
+        'Never insert OPA in conscious patient with intact gag reflex',
+        'OPA can stimulate vomiting in semiconscious patients',
+        'Have suction immediately available before insertion'
+      ],
+      equipmentNeeded: [
+        'Pulse oximetry monitoring',
+        'Suction equipment with Yankauer catheter',
+        'Flashlight or penlight for oral examination',
+        'Various sizes of oropharyngeal airways'
+      ]
+    },
+    {
+      id: 'opa_2',
+      stepNumber: 2,
+      title: 'Airway sizing and equipment selection',
+      description: 'Select appropriate oropharyngeal airway size based on patient anatomy',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Measure OPA from corner of mouth to angle of mandible (earlobe)',
+        'Alternative sizing: from center of lips to angle of jaw',
+        'Common adult sizes: 80mm (#4), 90mm (#5), 100mm (#6)',
+        'Pediatric sizing: 40-70mm based on age and anatomy',
+        'Inspect selected OPA for cracks, sharp edges, or defects',
+        'Ensure OPA flange will sit properly outside lips when inserted',
+        'Have multiple sizes available in case first choice doesn\'t fit properly',
+        'Select backup airway management equipment in case OPA fails'
+      ],
+      safetyNotes: [
+        'Incorrect sizing can push tongue posteriorly and worsen obstruction',
+        'Too small: ineffective airway maintenance, can be aspirated',
+        'Too large: can cause laryngospasm or airway trauma'
+      ],
+      equipmentNeeded: [
+        'Oropharyngeal airways in multiple sizes',
+        'Measuring tape or ruler',
+        'Good lighting for accurate measurement',
+        'Backup airway devices (NPA, bag-valve mask)'
+      ]
+    },
+    {
+      id: 'opa_3',
+      stepNumber: 3,
+      title: 'Patient positioning and preparation',
+      description: 'Position patient optimally and prepare oral cavity for airway insertion',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Position patient supine with head in neutral or sniffing position',
+        'Maintain cervical spine immobilization if trauma suspected',
+        'Open patient\'s mouth using cross-finger technique or jaw-lift',
+        'Clear any visible secretions, blood, or debris from oral cavity',
+        'Ensure adequate visualization of tongue and oral structures',
+        'Have assistant available to help maintain head position if needed',
+        'Position suction equipment for immediate use if needed',
+        'Prepare for potential patient movement or reflexive responses'
+      ],
+      safetyNotes: [
+        'Use universal precautions and appropriate PPE',
+        'Be gentle to avoid dental trauma or soft tissue injury',
+        'Maintain spinal precautions in trauma patients'
+      ],
+      equipmentNeeded: [
+        'Personal protective equipment (gloves, face shield)',
+        'Cervical collar or manual stabilization if needed',
+        'Tongue depressors or laryngoscope for visualization',
+        'Suction equipment ready for immediate use'
+      ]
+    },
+    {
+      id: 'opa_4',
+      stepNumber: 4,
+      title: 'Airway insertion technique',
+      description: 'Insert oropharyngeal airway using proper technique to avoid complications',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Insert OPA upside down (curved end pointing toward palate) initially',
+        'Advance OPA until tip reaches junction of hard and soft palate',
+        'Rotate OPA 180 degrees so curve follows natural tongue contour',
+        'Continue advancing until flange rests against lips',
+        'Ensure tip of OPA sits behind tongue base, not pushing it back',
+        'Check that OPA follows natural curvature of tongue and palate',
+        'Alternative technique: insert right-side up using tongue depressor',
+        'Avoid excessive force that could cause dental or soft tissue trauma'
+      ],
+      safetyNotes: [
+        'Stop immediately if patient gags, coughs, or shows signs of awakening',
+        'Never force insertion - may cause airway trauma or obstruction',
+        'Be prepared to remove quickly if patient becomes responsive'
+      ],
+      equipmentNeeded: [
+        'Selected oropharyngeal airway',
+        'Tongue depressor (if using alternative insertion technique)',
+        'Good lighting for visualization',
+        'Gentle technique and patience'
+      ]
+    },
+    {
+      id: 'opa_5',
+      stepNumber: 5,
+      title: 'Position verification and airway patency check',
+      description: 'Confirm proper OPA placement and assess airway patency',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Verify OPA flange sits flush against lips without being too deep',
+        'Check that tip of OPA sits behind tongue base in vallecular space',
+        'Observe for improved chest rise and fall with ventilation',
+        'Listen for improved air movement and decreased respiratory noise',
+        'Assess oxygen saturation improvement if patient was hypoxic',
+        'Ensure OPA does not push tongue posteriorly causing obstruction',
+        'Check that patient can be effectively ventilated with bag-valve mask',
+        'Confirm no signs of airway compromise or increased obstruction'
+      ],
+      safetyNotes: [
+        'Remove immediately if OPA causes worsening of airway obstruction',
+        'Monitor for signs of patient awakening that would require removal',
+        'Be prepared for immediate alternative airway management'
+      ],
+      equipmentNeeded: [
+        'Pulse oximetry for saturation monitoring',
+        'Bag-valve mask for ventilation assessment',
+        'Stethoscope for breath sound evaluation',
+        'Flashlight for visual inspection of placement'
+      ]
+    },
+    {
+      id: 'opa_6',
+      stepNumber: 6,
+      title: 'Securing and monitoring airway function',
+      description: 'Secure oropharyngeal airway and establish continuous monitoring protocol',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Secure OPA with tape or bite block if patient has potential for seizures',
+        'Monitor patient level of consciousness continuously',
+        'Assess respiratory rate, depth, and oxygen saturation regularly',
+        'Watch for signs of patient awakening or return of gag reflex',
+        'Suction oral cavity as needed to maintain airway patency',
+        'Position patient to optimize airway maintenance (recovery position if stable)',
+        'Monitor for complications: aspiration, dental trauma, soft tissue injury',
+        'Document time of insertion and patient response'
+      ],
+      safetyNotes: [
+        'Be prepared to remove OPA immediately if gag reflex returns',
+        'Never leave conscious patient with OPA in place',
+        'Monitor for signs of aspiration or airway compromise'
+      ],
+      equipmentNeeded: [
+        'Medical tape or bite block for securing',
+        'Continuous pulse oximetry and monitoring',
+        'Suction equipment for ongoing airway maintenance',
+        'Documentation materials'
+      ]
+    },
+    {
+      id: 'opa_7',
+      stepNumber: 7,
+      title: 'Ongoing assessment and maintenance',
+      description: 'Perform regular assessment and maintain optimal airway function',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Reassess airway patency and OPA position every 5-15 minutes',
+        'Monitor for changes in patient consciousness level',
+        'Check for OPA displacement or obstruction from secretions',
+        'Assess need for suctioning or airway repositioning',
+        'Monitor vital signs including oxygen saturation trends',
+        'Watch for return of protective airway reflexes',
+        'Evaluate need for transition to more advanced airway management',
+        'Document any changes in patient condition or airway status'
+      ],
+      safetyNotes: [
+        'Remove OPA immediately if patient shows any signs of awakening',
+        'Be prepared for emergent airway management if OPA becomes ineffective',
+        'Never delay more advanced airway management if clinically indicated'
+      ],
+      equipmentNeeded: [
+        'Ongoing monitoring equipment',
+        'Suction equipment for secretion management',
+        'Backup airway management supplies',
+        'Advanced airway equipment if needed for progression'
+      ]
+    },
+    {
+      id: 'opa_8',
+      stepNumber: 8,
+      title: 'Documentation and transition planning',
+      description: 'Document airway management and plan for ongoing care or airway transition',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 150,
+      keyPoints: [
+        'Document indication for OPA insertion and patient condition',
+        'Record OPA size used and ease of insertion',
+        'Note patient response to airway insertion and ongoing tolerance',
+        'Document vital signs before and after OPA placement',
+        'Record any complications or difficulties encountered',
+        'Plan for airway transition: removal when conscious, or intubation if needed',
+        'Communicate airway status to receiving healthcare team',
+        'Provide clear instructions for ongoing airway monitoring and management'
+      ],
+      safetyNotes: [
+        'Ensure complete documentation for continuity of care',
+        'Alert receiving team to presence of OPA and plan for removal/transition',
+        'Emphasize need for continuous monitoring until airway transition'
+      ],
+      equipmentNeeded: [
+        'Medical record documentation system',
+        'Communication devices for team coordination',
+        'Transport monitoring equipment',
+        'Plans for airway transition or advanced management'
+      ]
+    }
+  ],
+
+  // TRACTION SPLINT APPLICATION
+  'traction-splint': [
+    {
+      id: 'traction_1',
+      stepNumber: 1,
+      title: 'Patient assessment and fracture evaluation',
+      description: 'Assess patient for femur fracture and determine appropriateness for traction splinting',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Assess mechanism of injury suggesting femoral shaft fracture',
+        'Look for classic signs: thigh pain, swelling, deformity, shortening',
+        'Check distal pulses, sensation, and motor function before splinting',
+        'Rule out hip fracture or dislocation which contraindicate traction',
+        'Assess for open fractures requiring modified treatment approach',
+        'Evaluate patient hemodynamic stability - femur fractures can cause significant blood loss',
+        'Check for associated injuries that may take priority over splinting',
+        'Document baseline neurovascular status and pain level (1-10 scale)'
+      ],
+      safetyNotes: [
+        'Do not apply traction to suspected hip fractures or dislocations',
+        'Avoid traction splints in open fractures with bone protruding',
+        'Never delay treatment of life-threatening injuries for splinting'
+      ],
+      equipmentNeeded: [
+        'Pulse oximetry and vital sign monitoring',
+        'Distal pulse assessment tools (Doppler if needed)',
+        'Pain assessment scales',
+        'Neurological assessment tools',
+        'Photography equipment for documentation if available'
+      ]
+    },
+    {
+      id: 'traction_2',
+      stepNumber: 2,
+      title: 'Equipment selection and preparation',
+      description: 'Select appropriate traction splint and prepare all necessary equipment',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 150,
+      keyPoints: [
+        'Select appropriate splint type: Hare traction splint or Sager splint',
+        'Check splint for proper function, missing parts, or damage',
+        'Ensure all straps, buckles, and adjustment mechanisms work properly',
+        'Prepare ankle hitch or strap system for foot attachment',
+        'Set up traction mechanism and test weight/force settings',
+        'Gather padding materials for bony prominences and pressure points',
+        'Prepare pain medication if available and within scope of practice',
+        'Have assistant available to help with splint application'
+      ],
+      safetyNotes: [
+        'Never use damaged or incomplete traction splint equipment',
+        'Ensure proper size splint for patient (adult vs pediatric)',
+        'Test all mechanical components before patient application'
+      ],
+      equipmentNeeded: [
+        'Hare traction splint or Sager splint with all components',
+        'Ankle hitch with appropriate padding',
+        'Soft padding materials (gauze, towels, foam)',
+        'Straps or cravats for securing splint',
+        'Pain medication if available and authorized',
+        'Scissors for cutting clothing if needed'
+      ]
+    },
+    {
+      id: 'traction_3',
+      stepNumber: 3,
+      title: 'Patient preparation and positioning',
+      description: 'Prepare patient and position for safe traction splint application',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Explain procedure to patient and provide reassurance about pain relief',
+        'Administer pain medication if available and appropriate',
+        'Remove clothing from injured leg to allow full visualization',
+        'Position patient supine on firm surface for optimal splint placement',
+        'Have one rescuer maintain gentle manual traction on injured leg',
+        'Apply manual inline stabilization above and below fracture site',
+        'Prepare ankle and foot for hitch application with padding',
+        'Ensure good lighting and adequate working space around patient'
+      ],
+      safetyNotes: [
+        'Maintain continuous manual traction until mechanical traction applied',
+        'Use gentle traction - excessive force can worsen injury',
+        'Monitor patient for signs of shock or deterioration'
+      ],
+      equipmentNeeded: [
+        'Pain medication and administration supplies',
+        'Scissors or trauma shears for clothing removal',
+        'Manual traction techniques',
+        'Adequate lighting and workspace',
+        'Additional rescuers for assistance'
+      ]
+    },
+    {
+      id: 'traction_4',
+      stepNumber: 4,
+      title: 'Ankle hitch application and foot preparation',
+      description: 'Apply ankle hitch securely while maintaining distal circulation',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Apply ankle hitch around ankle and foot, avoiding malleoli pressure',
+        'Ensure adequate padding under hitch to prevent pressure sores',
+        'Check that hitch is snug but not tight enough to compromise circulation',
+        'Verify distal pulses remain palpable after hitch application',
+        'Position foot in neutral anatomical position (not plantar or dorsiflexed)',
+        'Secure hitch straps to prevent slippage during traction application',
+        'Double-check that hitch will not slip off foot during transport',
+        'Document distal pulse status after hitch application'
+      ],
+      safetyNotes: [
+        'Never apply hitch so tightly that it compromises circulation',
+        'Avoid pressure directly over bony prominences (malleoli)',
+        'Recheck distal pulses frequently during and after application'
+      ],
+      equipmentNeeded: [
+        'Ankle hitch with adequate padding',
+        'Soft padding materials for malleoli protection',
+        'Pulse assessment capability',
+        'Doppler ultrasound if pulses difficult to palpate'
+      ]
+    },
+    {
+      id: 'traction_5',
+      stepNumber: 5,
+      title: 'Splint positioning and initial setup',
+      description: 'Position traction splint properly and prepare for traction application',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Position splint alongside uninjured leg to measure proper length',
+        'Adjust splint length so it extends 6-8 inches beyond foot',
+        'Place splint under injured leg with ischial pad against pelvis',
+        'Ensure ischial pad sits properly against ischial tuberosity',
+        'Align splint parallel to injured leg without disturbing fracture',
+        'Apply padding to all bony prominences that contact splint',
+        'Secure proximal end of splint with pelvic strap or belt',
+        'Connect ankle hitch to distal traction mechanism'
+      ],
+      safetyNotes: [
+        'Do not lift or move fractured leg excessively during splint positioning',
+        'Ensure ischial pad placement does not compress perineum',
+        'Maintain manual traction until mechanical traction is applied'
+      ],
+      equipmentNeeded: [
+        'Properly sized traction splint',
+        'Padding materials for pressure points',
+        'Pelvic strap or securing device',
+        'Assistant to maintain manual traction'
+      ]
+    },
+    {
+      id: 'traction_6',
+      stepNumber: 6,
+      title: 'Traction application and adjustment',
+      description: 'Apply appropriate mechanical traction and secure splint system',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Begin applying gentle traction using splint mechanism',
+        'Apply traction gradually until leg length appears restored',
+        'Monitor patient pain level - should decrease significantly with proper traction',
+        'Check that fracture fragments are aligned and deformity reduced',
+        'Secure all straps and supports without over-tightening',
+        'Apply additional padding around thigh and calf areas',
+        'Ensure splint remains parallel to leg throughout application',
+        'Double-check all connections and mechanical components'
+      ],
+      safetyNotes: [
+        'Apply traction gradually - never use sudden or excessive force',
+        'Stop if patient reports severe increase in pain',
+        'Monitor for signs of over-traction or neurovascular compromise'
+      ],
+      equipmentNeeded: [
+        'Functioning traction mechanism',
+        'Additional padding materials',
+        'Securing straps and buckles',
+        'Pain assessment tools'
+      ]
+    },
+    {
+      id: 'traction_7',
+      stepNumber: 7,
+      title: 'Neurovascular assessment and monitoring',
+      description: 'Assess neurovascular status and establish ongoing monitoring protocol',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Check distal pulses in dorsalis pedis and posterior tibial arteries',
+        'Assess capillary refill time (should be <3 seconds)',
+        'Test sensation in foot using light touch and pinprick',
+        'Check motor function by asking patient to wiggle toes',
+        'Compare findings to uninjured extremity and baseline assessment',
+        'Document neurovascular status using standardized assessment scale',
+        'Monitor pain level - should be significantly improved with traction',
+        'Establish schedule for repeated neurovascular checks (every 15 minutes)'
+      ],
+      safetyNotes: [
+        'Any loss of pulse or sensation requires immediate splint readjustment',
+        'Notify receiving hospital immediately of neurovascular compromise',
+        'Be prepared to release traction if circulation compromised'
+      ],
+      equipmentNeeded: [
+        'Doppler ultrasound for pulse assessment',
+        'Sensation testing materials (cotton, pin)',
+        'Documentation forms for neurovascular assessment',
+        'Timer for regular assessment intervals'
+      ]
+    },
+    {
+      id: 'traction_8',
+      stepNumber: 8,
+      title: 'Documentation and transport preparation',
+      description: 'Document procedure thoroughly and prepare for safe patient transport',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Document baseline and post-splinting neurovascular assessments',
+        'Record pain levels before and after traction application',
+        'Note type of splint used and amount of traction applied',
+        'Document any complications or difficulties during application',
+        'Photograph splint placement if protocols allow',
+        'Secure splint to prevent movement during transport',
+        'Brief transport team on neurovascular monitoring requirements',
+        'Provide detailed report to receiving trauma team'
+      ],
+      safetyNotes: [
+        'Ensure splint remains secure during patient movement and transport',
+        'Continue neurovascular monitoring throughout transport',
+        'Have plan for splint removal if emergency complications arise'
+      ],
+      equipmentNeeded: [
+        'Medical documentation forms',
+        'Camera for splint documentation if available',
+        'Transport securing devices',
+        'Communication equipment for hospital notification',
+        'Continued monitoring equipment for transport'
+      ]
+    }
+  ],
+
+  // BAG VALVE MASK WITH IN-LINE NEBULIZATION
+  'bag-valve-mask-nebulizer': [
+    {
+      id: 'bvm_neb_1',
+      stepNumber: 1,
+      title: 'Patient assessment and indication evaluation',
+      description: 'Assess patient respiratory status and determine need for combined ventilation and nebulized medication',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Assess patient for signs of bronchospasm or respiratory distress',
+        'Listen for wheezing, prolonged expiration, or decreased air movement',
+        'Evaluate patient consciousness level and ability to cooperate with treatment',
+        'Check oxygen saturation and respiratory rate before intervention',
+        'Assess for contraindications to positive pressure ventilation',
+        'Determine appropriate nebulized medication based on patient condition',
+        'Review patient allergies and previous responses to bronchodilators',
+        'Consider patient positioning and spinal precautions if indicated'
+      ],
+      safetyNotes: [
+        'Assess for pneumothorax risk before applying positive pressure',
+        'Monitor for signs of respiratory depression during treatment',
+        'Be prepared for potential allergic reactions to medications'
+      ],
+      equipmentNeeded: [
+        'Pulse oximetry and continuous monitoring',
+        'Stethoscope for breath sound assessment',
+        'Blood pressure monitoring equipment',
+        'Peak flow meter if patient can cooperate'
+      ]
+    },
+    {
+      id: 'bvm_neb_2',
+      stepNumber: 2,
+      title: 'Equipment preparation and medication setup',
+      description: 'Prepare bag-valve mask with in-line nebulizer and medication for delivery',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Select appropriate bag-valve mask with reservoir bag',
+        'Connect in-line nebulizer between bag-valve mask and patient connection',
+        'Prepare prescribed nebulized medication (typically albuterol 2.5-5mg)',
+        'Dilute medication with normal saline to total volume of 3-5mL',
+        'Fill nebulizer chamber with medication solution using sterile technique',
+        'Connect oxygen tubing to nebulizer with flow rate 6-8 L/min',
+        'Test system for proper nebulization before patient application',
+        'Have backup medications and equipment readily available'
+      ],
+      safetyNotes: [
+        'Verify correct medication and dosage before administration',
+        'Use sterile technique when preparing medications',
+        'Ensure oxygen flow rate adequate for nebulization (6-8 L/min minimum)'
+      ],
+      equipmentNeeded: [
+        'Bag-valve mask with reservoir bag',
+        'In-line nebulizer chamber',
+        'Prescribed nebulized medication (albuterol, ipratropium)',
+        'Normal saline for dilution',
+        'Oxygen source with flow control',
+        'Sterile syringes for medication preparation'
+      ]
+    },
+    {
+      id: 'bvm_neb_3',
+      stepNumber: 3,
+      title: 'Patient positioning and mask application',
+      description: 'Position patient optimally and apply bag-valve mask with proper seal',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Position patient sitting upright or high Fowler\'s position if possible',
+        'Maintain cervical spine precautions if trauma suspected',
+        'Select appropriate mask size for optimal facial seal',
+        'Apply mask using E-C clamp technique for secure seal',
+        'Position mask to cover nose and mouth without compressing eyes',
+        'Ensure no air leaks around mask edges during ventilation',
+        'Explain procedure to conscious patients to reduce anxiety',
+        'Monitor patient comfort and tolerance of mask application'
+      ],
+      safetyNotes: [
+        'Avoid excessive pressure that could cause facial nerve damage',
+        'Monitor for gastric distention with positive pressure ventilation',
+        'Be prepared to suction if patient vomits'
+      ],
+      equipmentNeeded: [
+        'Properly sized face masks',
+        'Suction equipment ready for immediate use',
+        'Patient positioning aids if needed',
+        'Towel roll for neck support if indicated'
+      ]
+    },
+    {
+      id: 'bvm_neb_4',
+      stepNumber: 4,
+      title: 'Initial ventilation and nebulization start',
+      description: 'Begin assisted ventilation while initiating nebulized medication delivery',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Begin gentle bag-valve mask ventilation at 10-12 breaths per minute',
+        'Squeeze bag gradually to allow adequate inspiratory time',
+        'Observe for visible medication mist during inspiration',
+        'Monitor chest rise and fall with each ventilation',
+        'Listen for improved air movement and decreased wheezing',
+        'Adjust ventilation rate based on patient response and comfort',
+        'Ensure continuous nebulization throughout treatment period',
+        'Monitor oxygen saturation response to treatment'
+      ],
+      safetyNotes: [
+        'Avoid over-ventilation which can worsen bronchospasm',
+        'Watch for signs of pneumothorax or gastric distention',
+        'Monitor for medication side effects (tachycardia, tremor)'
+      ],
+      equipmentNeeded: [
+        'Functioning bag-valve mask system',
+        'Continuous oxygen saturation monitoring',
+        'Timer to track treatment duration',
+        'Cardiac monitoring if available'
+      ]
+    },
+    {
+      id: 'bvm_neb_5',
+      stepNumber: 5,
+      title: 'Ongoing treatment monitoring and adjustment',
+      description: 'Monitor patient response and adjust ventilation technique throughout nebulization',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Continue treatment for typical duration of 10-15 minutes',
+        'Monitor for clinical improvement: decreased wheezing, improved air entry',
+        'Assess oxygen saturation trends and respiratory effort',
+        'Adjust ventilation pressure and rate based on patient tolerance',
+        'Watch for medication side effects: increased heart rate, agitation',
+        'Encourage patient to breathe deeply if conscious and cooperative',
+        'Monitor nebulizer for continued mist production',
+        'Be prepared to discontinue if patient deteriorates'
+      ],
+      safetyNotes: [
+        'Stop immediately if patient develops severe side effects',
+        'Monitor for paradoxical bronchospasm (rare but serious)',
+        'Be alert for signs of medication overdose'
+      ],
+      equipmentNeeded: [
+        'Continuous monitoring equipment',
+        'Emergency medications for side effects',
+        'Timer for treatment duration tracking',
+        'Blood pressure monitoring capability'
+      ]
+    },
+    {
+      id: 'bvm_neb_6',
+      stepNumber: 6,
+      title: 'Treatment completion and response assessment',
+      description: 'Complete nebulization treatment and assess patient response to therapy',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Complete full nebulization treatment (medication chamber empty)',
+        'Assess post-treatment breath sounds and air movement',
+        'Monitor oxygen saturation improvement and respiratory rate',
+        'Evaluate patient subjective improvement in breathing',
+        'Check vital signs including heart rate and blood pressure',
+        'Document peak flow improvement if measurable',
+        'Assess need for additional doses or alternative treatments',
+        'Prepare for transition to spontaneous breathing if appropriate'
+      ],
+      safetyNotes: [
+        'Continue monitoring for delayed side effects',
+        'Be prepared for repeat treatments if clinically indicated',
+        'Watch for rebound bronchospasm after treatment completion'
+      ],
+      equipmentNeeded: [
+        'Post-treatment assessment tools',
+        'Peak flow meter for objective measurement',
+        'Vital signs monitoring equipment',
+        'Documentation materials for response assessment'
+      ]
+    },
+    {
+      id: 'bvm_neb_7',
+      stepNumber: 7,
+      title: 'Equipment cleaning and preparation for transport',
+      description: 'Clean equipment properly and prepare patient for ongoing care or transport',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Disconnect and clean nebulizer chamber according to protocols',
+        'Remove any remaining medication from system',
+        'Clean and disinfect bag-valve mask and reusable components',
+        'Prepare backup equipment for potential additional treatments',
+        'Secure oxygen source and ensure adequate supply for transport',
+        'Position patient for comfort and optimal breathing',
+        'Plan for ongoing respiratory monitoring during transport',
+        'Brief transport team on treatment provided and patient response'
+      ],
+      safetyNotes: [
+        'Dispose of single-use components in appropriate containers',
+        'Maintain infection control protocols during equipment handling',
+        'Ensure equipment readiness for potential additional treatments'
+      ],
+      equipmentNeeded: [
+        'Cleaning supplies and disinfectants',
+        'Replacement nebulizer chambers and masks',
+        'Transport oxygen supply',
+        'Ongoing monitoring equipment'
+      ]
+    },
+    {
+      id: 'bvm_neb_8',
+      stepNumber: 8,
+      title: 'Documentation and ongoing care planning',
+      description: 'Document treatment thoroughly and establish plan for ongoing respiratory care',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 150,
+      keyPoints: [
+        'Document pre-treatment respiratory status and vital signs',
+        'Record medication used, dosage, and method of delivery',
+        'Note treatment duration and patient tolerance',
+        'Document post-treatment improvement in symptoms and vital signs',
+        'Record any side effects or complications encountered',
+        'Plan for additional treatments or alternative therapies as needed',
+        'Communicate treatment details to receiving healthcare team',
+        'Provide patient education about ongoing respiratory care needs'
+      ],
+      safetyNotes: [
+        'Ensure accurate medication documentation for continuity of care',
+        'Alert receiving team to any ongoing respiratory needs',
+        'Document any allergic reactions or unusual responses'
+      ],
+      equipmentNeeded: [
+        'Medical record documentation system',
+        'Medication administration records',
+        'Communication devices for team coordination',
+        'Patient education materials if appropriate'
+      ]
+    }
+  ],
+
+  // PHONETIC ALPHABET COMMUNICATION
+  'phonetic-alphabet': [
+    {
+      id: 'phonetic_1',
+      stepNumber: 1,
+      title: 'Communication assessment and preparation',
+      description: 'Assess communication needs and prepare for clear radio transmission using phonetic alphabet',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Assess radio conditions and background noise levels',
+        'Determine need for phonetic alphabet based on transmission clarity',
+        'Identify critical information requiring precise spelling (names, addresses, medications)',
+        'Check radio equipment function and battery levels',
+        'Position radio microphone appropriately for clear transmission',
+        'Ensure proper radio channel selection for intended recipient',
+        'Review message content and identify words requiring phonetic spelling',
+        'Consider alternative communication methods if radio fails'
+      ],
+      safetyNotes: [
+        'Always use phonetic alphabet for critical information like drug names',
+        'Confirm receipt of transmitted information',
+        'Have backup communication methods available'
+      ],
+      equipmentNeeded: [
+        'Functioning radio communication device',
+        'Phonetic alphabet reference card',
+        'Backup communication devices (cell phone, alternative radio)',
+        'Message notepad for complex information'
+      ]
+    },
+    {
+      id: 'phonetic_2',
+      stepNumber: 2,
+      title: 'Standard phonetic alphabet mastery',
+      description: 'Demonstrate proficiency with NATO phonetic alphabet for accurate communication',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Master NATO phonetic alphabet: A-Alpha, B-Bravo, C-Charlie, D-Delta',
+        'Continue with E-Echo, F-Foxtrot, G-Golf, H-Hotel, I-India, J-Juliet',
+        'Know K-Kilo, L-Lima, M-Mike, N-November, O-Oscar, P-Papa',
+        'Remember Q-Quebec, R-Romeo, S-Sierra, T-Tango, U-Uniform, V-Victor',
+        'Complete with W-Whiskey, X-X-ray, Y-Yankee, Z-Zulu',
+        'Practice numeric pronunciations: 0-Zero, 1-One, 2-Two, 3-Three, etc.',
+        'Use clear enunciation and appropriate speaking pace',
+        'Maintain consistent volume and tone throughout transmission'
+      ],
+      safetyNotes: [
+        'Never use unofficial phonetic words that may cause confusion',
+        'Practice regularly to maintain proficiency under stress',
+        'Slow down pronunciation in high-stress situations'
+      ],
+      equipmentNeeded: [
+        'NATO phonetic alphabet reference chart',
+        'Practice materials and scenarios',
+        'Audio recording capability for self-assessment',
+        'Training partners for practice sessions'
+      ]
+    },
+    {
+      id: 'phonetic_3',
+      stepNumber: 3,
+      title: 'Medical terminology and drug name spelling',
+      description: 'Apply phonetic alphabet specifically for medical terms and medication names',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Spell medication names using phonetic alphabet: "MORPHINE - Mike Oscar Romeo Papa Hotel India November Echo"',
+        'Practice common emergency drugs: epinephrine, atropine, lidocaine, dopamine',
+        'Use phonetics for patient names with unusual spelling',
+        'Apply to street names and addresses with unclear pronunciation',
+        'Spell medical conditions requiring precise communication',
+        'Use for hospital names and receiving facility identification',
+        'Apply to equipment serial numbers and identification codes',
+        'Practice spelling medical abbreviations when verbal clarity needed'
+      ],
+      safetyNotes: [
+        'Double-check spelling of critical medications to prevent errors',
+        'Always confirm receipt and understanding of spelled information',
+        'Use phonetic alphabet for any medication with potential for confusion'
+      ],
+      equipmentNeeded: [
+        'Common emergency medication reference list',
+        'Medical terminology phonetic practice sheets',
+        'Drug reference guides',
+        'Communication scenarios for practice'
+      ]
+    },
+    {
+      id: 'phonetic_4',
+      stepNumber: 4,
+      title: 'Radio transmission protocols and procedures',
+      description: 'Execute proper radio transmission procedures incorporating phonetic alphabet',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Begin transmission with proper call signs and identification',
+        'Use "spell" indicator before using phonetic alphabet',
+        'Maintain clear 2-3 second pauses between phonetic letters',
+        'Speak directly into microphone at consistent distance (2-3 inches)',
+        'Use proper radio etiquette: "over", "out", "copy", "repeat"',
+        'Wait for acknowledgment before continuing with next information',
+        'Repeat critical information using phonetics if requested',
+        'End transmission clearly with confirmation request'
+      ],
+      safetyNotes: [
+        'Never transmit sensitive patient information on unsecured channels',
+        'Always wait for clear frequency before transmitting',
+        'Avoid simultaneous transmission with other users'
+      ],
+      equipmentNeeded: [
+        'Radio communication device with clear audio',
+        'Standard operating procedures for radio protocols',
+        'Call sign reference materials',
+        'Communication log for documentation'
+      ]
+    },
+    {
+      id: 'phonetic_5',
+      stepNumber: 5,
+      title: 'High-stress communication scenarios',
+      description: 'Maintain clear phonetic communication during high-stress emergency situations',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Practice phonetic alphabet use during simulated emergency scenarios',
+        'Maintain clear speech patterns despite adrenaline and stress',
+        'Use slower speech rate during critical information transmission',
+        'Implement systematic approach to spelling critical information',
+        'Maintain professionalism and clarity during chaotic situations',
+        'Use phonetic confirmation for received critical information',
+        'Practice with background noise and distractions',
+        'Develop automatic responses for common emergency communications'
+      ],
+      safetyNotes: [
+        'Never rush critical communications even in emergency situations',
+        'Take deep breath before transmitting complex information',
+        'Ask for repetition if transmission unclear rather than guessing'
+      ],
+      equipmentNeeded: [
+        'High-stress scenario training materials',
+        'Background noise generators for practice',
+        'Emergency communication templates',
+        'Stress management techniques reference'
+      ]
+    },
+    {
+      id: 'phonetic_6',
+      stepNumber: 6,
+      title: 'Multi-agency communication coordination',
+      description: 'Coordinate communications with multiple agencies using standardized phonetic protocols',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Coordinate with fire, police, hospitals, and dispatch using consistent phonetics',
+        'Adapt communication style for different agency protocols while maintaining standards',
+        'Use phonetic alphabet for inter-agency resource identification',
+        'Spell unit numbers, apparatus identifiers, and personnel names clearly',
+        'Maintain consistent phonetic standards across all communication partners',
+        'Coordinate patient information transfer using phonetic spelling for clarity',
+        'Practice joint agency communication exercises regularly',
+        'Document inter-agency communications using phonetic spelling when appropriate'
+      ],
+      safetyNotes: [
+        'Verify receiving agency understands phonetic spelling being used',
+        'Use standard NATO phonetics rather than agency-specific alternatives',
+        'Confirm critical information through read-back procedures'
+      ],
+      equipmentNeeded: [
+        'Multi-agency communication protocols manual',
+        'Inter-agency contact directory',
+        'Joint training scenarios and materials',
+        'Communication coordination templates'
+      ]
+    },
+    {
+      id: 'phonetic_7',
+      stepNumber: 7,
+      title: 'Quality assurance and continuous improvement',
+      description: 'Implement quality assurance measures and continuous improvement for phonetic communication skills',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Regularly review recorded communications for phonetic accuracy',
+        'Participate in communication skills training and refresher courses',
+        'Practice phonetic alphabet daily to maintain proficiency',
+        'Seek feedback from receiving parties about communication clarity',
+        'Update phonetic spelling techniques based on best practices',
+        'Mentor new personnel in proper phonetic communication techniques',
+        'Document communication errors and implement corrective measures',
+        'Stay current with communication protocol updates and changes'
+      ],
+      safetyNotes: [
+        'Regular practice prevents skill degradation under stress',
+        'Always prioritize accuracy over speed in critical communications',
+        'Learn from communication errors to prevent future occurrences'
+      ],
+      equipmentNeeded: [
+        'Communication recording and review equipment',
+        'Training materials and continuing education resources',
+        'Feedback collection forms and evaluation tools',
+        'Professional development tracking systems'
+      ]
+    },
+    {
+      id: 'phonetic_8',
+      stepNumber: 8,
+      title: 'Documentation and communication records',
+      description: 'Document communications appropriately and maintain accurate records of phonetic transmissions',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Document critical communications using standard phonetic spelling in records',
+        'Maintain communication logs with timestamps and phonetic confirmations',
+        'Record medication names and doses using phonetic spelling for accuracy',
+        'Document patient names with phonetic spelling when unusual or unclear',
+        'Keep records of inter-agency communications for quality assurance',
+        'Note any communication difficulties or equipment malfunctions',
+        'Provide accurate phonetic information for legal documentation',
+        'Maintain confidentiality while ensuring accurate record-keeping'
+      ],
+      safetyNotes: [
+        'Ensure documentation accuracy for legal and medical continuity',
+        'Protect patient confidentiality in all communication records',
+        'Verify spelling accuracy before finalizing documentation'
+      ],
+      equipmentNeeded: [
+        'Communication log books and documentation forms',
+        'Electronic documentation systems',
+        'Phonetic spelling verification references',
+        'Secure storage for communication records'
+      ]
+    }
+  ],
+
+  // VENOUS BLOOD SAMPLING
+  'venous-blood-sampling': [
+    {
+      id: 'vbs_1',
+      stepNumber: 1,
+      title: 'Patient assessment and indication evaluation',
+      description: 'Assess patient condition and determine need for venous blood sampling',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Review physician orders for specific blood tests required',
+        'Assess patient clinical condition and sampling urgency',
+        'Verify patient identity using two independent identifiers',
+        'Check for patient allergies to antiseptics or latex',
+        'Assess patient anxiety level and provide reassurance',
+        'Review patient medical history for bleeding disorders',
+        'Determine appropriate sampling site based on patient anatomy',
+        'Consider patient positioning and comfort during procedure'
+      ],
+      safetyNotes: [
+        'Always verify patient identity before any blood sampling',
+        'Assess for bleeding disorders or anticoagulation therapy',
+        'Use appropriate infection control precautions'
+      ],
+      equipmentNeeded: [
+        'Patient identification verification materials',
+        'Laboratory requisition forms',
+        'Medical history assessment tools',
+        'Comfortable seating or positioning equipment'
+      ]
+    },
+    {
+      id: 'vbs_2',
+      stepNumber: 2,
+      title: 'Equipment preparation and selection',
+      description: 'Prepare appropriate blood sampling equipment and verify laboratory requirements',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Select appropriate needle gauge (21-23G) based on vein size',
+        'Choose proper collection tubes based on laboratory tests ordered',
+        'Prepare antiseptic solution (alcohol or chlorhexidine)',
+        'Gather tourniquet, gauze, and adhesive bandages',
+        'Label collection tubes with patient information',
+        'Verify tube types match laboratory requirements',
+        'Check expiration dates on all supplies',
+        'Organize equipment for efficient procedure flow'
+      ],
+      safetyNotes: [
+        'Never use expired blood collection tubes',
+        'Ensure proper tube labeling to prevent specimen mix-ups',
+        'Use appropriate needle safety devices'
+      ],
+      equipmentNeeded: [
+        'Blood collection needles (21-23 gauge)',
+        'Various blood collection tubes (red top, purple top, etc.)',
+        'Tourniquet and antiseptic wipes',
+        'Gauze pads and adhesive bandages',
+        'Specimen labels and laboratory forms',
+        'Needle safety devices and sharps container'
+      ]
+    },
+    {
+      id: 'vbs_3',
+      stepNumber: 3,
+      title: 'Site selection and preparation',
+      description: 'Select optimal venipuncture site and prepare area for blood sampling',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Examine both arms for suitable venipuncture sites',
+        'Prefer antecubital fossa veins (median cubital, cephalic, basilic)',
+        'Avoid areas with scars, bruises, or previous injection sites',
+        'Apply tourniquet 3-4 inches above intended puncture site',
+        'Palpate vein to assess size, depth, and direction',
+        'Clean puncture site with antiseptic in circular motion',
+        'Allow antiseptic to air dry completely (30 seconds minimum)',
+        'Do not touch cleaned area with non-sterile surfaces'
+      ],
+      safetyNotes: [
+        'Avoid puncturing arteries or areas with poor circulation',
+        'Never apply tourniquet for more than 1 minute initially',
+        'Ensure complete antiseptic drying to prevent hemolysis'
+      ],
+      equipmentNeeded: [
+        'Tourniquet (latex-free if patient allergic)',
+        'Antiseptic wipes or prep pads',
+        'Good lighting for vein visualization',
+        'Sterile gloves'
+      ]
+    },
+    {
+      id: 'vbs_4',
+      stepNumber: 4,
+      title: 'Venipuncture technique and blood collection',
+      description: 'Perform venipuncture using proper technique and collect required blood samples',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Insert needle at 15-30 degree angle with bevel up',
+        'Advance needle smoothly until blood return observed',
+        'Attach collection tube ensuring proper fill volume',
+        'Fill tubes in correct order to prevent cross-contamination',
+        'Gently invert tubes containing additives (5-10 times)',
+        'Remove tourniquet before removing needle to prevent hematoma',
+        'Withdraw needle smoothly and apply immediate pressure',
+        'Activate needle safety device immediately after withdrawal'
+      ],
+      safetyNotes: [
+        'Never probe or redirect needle excessively',
+        'Remove tourniquet before needle withdrawal to prevent bleeding',
+        'Apply pressure immediately to prevent hematoma formation'
+      ],
+      equipmentNeeded: [
+        'Blood collection system (needle and tubes)',
+        'Needle holder or vacuum system',
+        'Multiple collection tubes as ordered',
+        'Immediate pressure application materials'
+      ]
+    },
+    {
+      id: 'vbs_5',
+      stepNumber: 5,
+      title: 'Post-collection care and hemostasis',
+      description: 'Provide appropriate post-puncture care and ensure adequate hemostasis',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Apply firm pressure to puncture site for 2-5 minutes',
+        'Elevate arm if bleeding continues beyond normal time',
+        'Check for adequate hemostasis before bandage application',
+        'Apply adhesive bandage over puncture site',
+        'Instruct patient to keep bandage on for 15 minutes minimum',
+        'Advise patient to avoid heavy lifting with punctured arm',
+        'Monitor patient for signs of vasovagal response',
+        'Dispose of sharps in appropriate container immediately'
+      ],
+      safetyNotes: [
+        'Monitor for excessive bleeding or hematoma formation',
+        'Watch for signs of fainting or vasovagal reaction',
+        'Never recap needles - use safety devices'
+      ],
+      equipmentNeeded: [
+        'Gauze pads for pressure application',
+        'Adhesive bandages',
+        'Sharps disposal container',
+        'Patient monitoring equipment'
+      ]
+    },
+    {
+      id: 'vbs_6',
+      stepNumber: 6,
+      title: 'Specimen processing and labeling verification',
+      description: 'Process blood specimens appropriately and verify accurate labeling',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Verify all tubes are properly labeled with patient information',
+        'Check that collection time and date are documented',
+        'Ensure specimens are stored at appropriate temperature',
+        'Mix tubes with additives gently but thoroughly',
+        'Complete laboratory requisition forms accurately',
+        'Verify tube types match ordered laboratory tests',
+        'Package specimens for transport according to laboratory requirements',
+        'Document collection details in patient medical record'
+      ],
+      safetyNotes: [
+        'Double-check specimen labeling to prevent patient mix-ups',
+        'Maintain proper storage conditions to preserve specimen integrity',
+        'Follow laboratory protocols for specimen handling'
+      ],
+      equipmentNeeded: [
+        'Specimen storage containers',
+        'Laboratory requisition forms',
+        'Temperature monitoring devices',
+        'Transport packaging materials'
+      ]
+    },
+    {
+      id: 'vbs_7',
+      stepNumber: 7,
+      title: 'Patient monitoring and complication management',
+      description: 'Monitor patient for complications and provide appropriate follow-up care',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Monitor puncture site for bleeding, swelling, or hematoma formation',
+        'Assess patient for signs of infection at puncture site',
+        'Watch for delayed vasovagal reactions or fainting',
+        'Provide patient education about post-procedure care',
+        'Instruct when to remove bandage and resume normal activities',
+        'Advise when to seek medical attention for complications',
+        'Schedule follow-up for laboratory results if indicated',
+        'Document any complications or patient concerns'
+      ],
+      safetyNotes: [
+        'Be prepared to treat vasovagal reactions with positioning and fluids',
+        'Monitor high-risk patients more closely for complications',
+        'Provide clear instructions for post-procedure care'
+      ],
+      equipmentNeeded: [
+        'Patient monitoring equipment',
+        'Emergency supplies for vasovagal reactions',
+        'Patient education materials',
+        'Follow-up scheduling resources'
+      ]
+    },
+    {
+      id: 'vbs_8',
+      stepNumber: 8,
+      title: 'Documentation and laboratory coordination',
+      description: 'Complete comprehensive documentation and coordinate with laboratory services',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 150,
+      keyPoints: [
+        'Document procedure details including site, technique, and complications',
+        'Record patient response and any adverse reactions',
+        'Note specimen types collected and laboratory tests ordered',
+        'Include collection time, date, and personnel performing procedure',
+        'Communicate special handling requirements to laboratory',
+        'Coordinate urgent or stat laboratory processing if required',
+        'Ensure proper chain of custody for legal specimens if applicable',
+        'Follow up on critical laboratory results as per protocol'
+      ],
+      safetyNotes: [
+        'Maintain accurate records for legal and medical continuity',
+        'Ensure timely communication of critical results',
+        'Follow proper protocols for stat or urgent specimens'
+      ],
+      equipmentNeeded: [
+        'Medical record documentation system',
+        'Laboratory communication devices',
+        'Chain of custody forms if required',
+        'Critical result notification protocols'
+      ]
+    }
+  ],
+
+  // PULSE OXIMETRY MONITORING
+  'pulse-oximetry-monitoring': [
+    {
+      id: 'pulse_ox_1',
+      stepNumber: 1,
+      title: 'Patient assessment and indication evaluation',
+      description: 'Assess patient respiratory status and determine need for pulse oximetry monitoring',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Assess patient respiratory rate, depth, and effort',
+        'Observe for signs of hypoxemia: cyanosis, confusion, restlessness',
+        'Evaluate patient level of consciousness and mental status',
+        'Check for conditions requiring continuous oxygen monitoring',
+        'Assess skin temperature and circulation at potential sensor sites',
+        'Review patient history for respiratory or cardiac conditions',
+        'Determine baseline oxygen saturation requirements for patient',
+        'Consider environmental factors affecting monitoring accuracy'
+      ],
+      safetyNotes: [
+        'Pulse oximetry measures saturation, not oxygen content or ventilation',
+        'Clinical assessment remains essential alongside monitoring data',
+        'Be aware of factors that can cause false readings'
+      ],
+      equipmentNeeded: [
+        'Clinical assessment tools',
+        'Patient monitoring capabilities',
+        'Environmental assessment for optimal monitoring',
+        'Medical history review materials'
+      ]
+    },
+    {
+      id: 'pulse_ox_2',
+      stepNumber: 2,
+      title: 'Equipment selection and preparation',
+      description: 'Select appropriate pulse oximetry equipment and prepare for patient monitoring',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Select pulse oximeter with appropriate accuracy specifications',
+        'Choose correct sensor type: fingertip, earlobe, or forehead',
+        'Verify equipment calibration and battery status',
+        'Check sensor for damage, cleanliness, and proper function',
+        'Set appropriate alarm limits based on patient condition',
+        'Test equipment function before patient application',
+        'Prepare alternative sensor sites in case primary site inadequate',
+        'Ensure adequate lighting for display visualization'
+      ],
+      safetyNotes: [
+        'Never rely solely on pulse oximetry for patient assessment',
+        'Ensure equipment is properly calibrated and functioning',
+        'Have backup monitoring available for critical patients'
+      ],
+      equipmentNeeded: [
+        'Pulse oximeter with functioning display',
+        'Appropriate sensors (fingertip, ear, forehead)',
+        'Spare sensors and batteries',
+        'Equipment testing materials',
+        'Backup monitoring devices'
+      ]
+    },
+    {
+      id: 'pulse_ox_3',
+      stepNumber: 3,
+      title: 'Sensor placement and application',
+      description: 'Apply pulse oximetry sensor using optimal technique for accurate readings',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Select sensor site with good circulation and minimal movement',
+        'Clean sensor site of dirt, nail polish, or artificial nails',
+        'Ensure proper sensor alignment with light source and detector',
+        'Apply sensor snugly but not tight enough to impair circulation',
+        'Position sensor to minimize motion artifact and ambient light',
+        'Verify good waveform signal and stable readings',
+        'Check that sensor placement does not impair patient circulation',
+        'Secure sensor to prevent displacement during patient movement'
+      ],
+      safetyNotes: [
+        'Avoid overtightening sensors which can impair circulation',
+        'Remove nail polish or artificial nails that may interfere',
+        'Check sensor site regularly for pressure sores in long-term monitoring'
+      ],
+      equipmentNeeded: [
+        'Selected pulse oximetry sensor',
+        'Nail polish remover if needed',
+        'Securing tape or device',
+        'Alternative sensor sites prepared'
+      ]
+    },
+    {
+      id: 'pulse_ox_4',
+      stepNumber: 4,
+      title: 'Initial reading verification and baseline establishment',
+      description: 'Verify initial readings and establish baseline oxygen saturation values',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Allow adequate time for sensor stabilization (30-60 seconds)',
+        'Verify reading corresponds with patient clinical appearance',
+        'Establish baseline oxygen saturation for patient condition',
+        'Document initial readings with time and sensor location',
+        'Compare readings with arterial blood gas if available',
+        'Assess pulse rate accuracy compared to manual pulse check',
+        'Note waveform quality and signal strength indicators',
+        'Correlate readings with patient symptoms and clinical status'
+      ],
+      safetyNotes: [
+        'Never rely on single reading - observe trends over time',
+        'Consider patient clinical condition alongside numerical values',
+        'Be aware of factors that may cause inaccurate readings'
+      ],
+      equipmentNeeded: [
+        'Documentation materials',
+        'Timer for stabilization period',
+        'Manual pulse assessment capability',
+        'Blood gas correlation if available'
+      ]
+    },
+    {
+      id: 'pulse_ox_5',
+      stepNumber: 5,
+      title: 'Continuous monitoring and trend analysis',
+      description: 'Establish continuous monitoring protocol and analyze oxygen saturation trends',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Set appropriate high and low alarm limits for patient condition',
+        'Monitor trends rather than individual readings for clinical decisions',
+        'Document oxygen saturation at regular intervals per protocol',
+        'Assess response to interventions (oxygen therapy, positioning, medications)',
+        'Monitor for sudden changes that may indicate clinical deterioration',
+        'Correlate changes with patient activities, position changes, or interventions',
+        'Watch for patterns suggesting equipment malfunction versus clinical change',
+        'Maintain continuous observation of patient clinical status'
+      ],
+      safetyNotes: [
+        'Respond to clinical deterioration, not just monitor alarms',
+        'Investigate sudden changes in readings for clinical or technical causes',
+        'Never delay treatment while waiting for monitor stabilization'
+      ],
+      equipmentNeeded: [
+        'Continuous monitoring capability',
+        'Documentation logs',
+        'Alarm management system',
+        'Intervention tracking materials'
+      ]
+    },
+    {
+      id: 'pulse_ox_6',
+      stepNumber: 6,
+      title: 'Troubleshooting and accuracy optimization',
+      description: 'Identify and resolve factors affecting pulse oximetry accuracy and reliability',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Recognize factors causing inaccurate readings: motion, ambient light, low perfusion',
+        'Address circulation issues: cold extremities, vasoconstriction, hypotension',
+        'Manage environmental factors: bright lights, electrical interference',
+        'Consider alternative sensor sites if primary site problematic',
+        'Account for patient factors: anemia, carbon monoxide poisoning, methemoglobinemia',
+        'Troubleshoot equipment issues: loose connections, low battery, sensor malfunction',
+        'Implement measures to reduce motion artifact during monitoring',
+        'Document troubleshooting measures and their effectiveness'
+      ],
+      safetyNotes: [
+        'Be aware of conditions causing falsely normal readings (carbon monoxide)',
+        'Consider clinical correlation when readings seem inconsistent',
+        'Replace faulty equipment immediately rather than attempting repairs'
+      ],
+      equipmentNeeded: [
+        'Alternative sensors and sites',
+        'Warming devices for poor circulation',
+        'Equipment troubleshooting guides',
+        'Replacement monitoring equipment'
+      ]
+    },
+    {
+      id: 'pulse_ox_7',
+      stepNumber: 7,
+      title: 'Patient care integration and clinical correlation',
+      description: 'Integrate pulse oximetry data with overall patient assessment and care planning',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Use oxygen saturation data to guide oxygen therapy decisions',
+        'Correlate readings with patient work of breathing and comfort',
+        'Integrate monitoring data with other vital signs and assessment findings',
+        'Adjust patient positioning or interventions based on saturation response',
+        'Monitor effectiveness of respiratory treatments and interventions',
+        'Consider pulse oximetry limitations in overall patient assessment',
+        'Communicate significant changes to healthcare team promptly',
+        'Use trends to anticipate patient needs and plan care'
+      ],
+      safetyNotes: [
+        'Always assess patient clinically, not just monitor values',
+        'Remember pulse oximetry does not measure ventilation or CO2 levels',
+        'Consider patient comfort and quality of life alongside numerical targets'
+      ],
+      equipmentNeeded: [
+        'Oxygen therapy equipment',
+        'Patient positioning aids',
+        'Communication devices for team coordination',
+        'Comprehensive monitoring capabilities'
+      ]
+    },
+    {
+      id: 'pulse_ox_8',
+      stepNumber: 8,
+      title: 'Documentation and monitoring continuity',
+      description: 'Document monitoring data comprehensively and ensure continuity of care',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Document initial oxygen saturation and baseline values established',
+        'Record monitoring trends and patient response to interventions',
+        'Note any technical difficulties or equipment changes during monitoring',
+        'Document correlation between oxygen saturation and clinical status',
+        'Record alarm events and clinical responses to significant changes',
+        'Communicate monitoring needs to receiving healthcare providers',
+        'Ensure continuous monitoring during patient transfers if indicated',
+        'Provide comprehensive report on monitoring trends and patient response'
+      ],
+      safetyNotes: [
+        'Ensure accurate documentation for continuity of care',
+        'Maintain monitoring during critical patient transfers',
+        'Alert receiving team to any ongoing monitoring requirements'
+      ],
+      equipmentNeeded: [
+        'Medical record documentation system',
+        'Monitoring data recording capabilities',
+        'Communication devices for handoff reports',
+        'Portable monitoring for transfers if needed'
+      ]
+    }
   ]
 };
 
@@ -7356,6 +10603,578 @@ export const criticalSkillsMetadata = {
       'Normal saline for medication dilution if required',
       'Pulse oximetry for continuous oxygen saturation monitoring',
       'Stethoscope for respiratory assessment before and after treatment'
+    ]
+  },
+
+  'etco2-monitoring': {
+    name: 'ETCO2 Monitoring',
+    category: 'monitoring',
+    difficultyLevel: 'INTERMEDIATE' as const,
+    timeEstimateMinutes: 25,
+    isCritical: true,
+    description: 'Continuous monitoring of end-tidal carbon dioxide levels to assess ventilation, circulation, and metabolism',
+    objectives: [
+      'Establish baseline ETCO2 values and waveform morphology for trending',
+      'Continuously monitor patient ventilatory status and respiratory function',
+      'Detect early signs of respiratory compromise or airway complications',
+      'Guide mechanical ventilation parameters and therapeutic interventions',
+      'Monitor effectiveness of resuscitation efforts during cardiac arrest',
+      'Assess patient response to bronchodilator and other respiratory therapies',
+      'Identify technical problems with airway devices or monitoring equipment',
+      'Provide objective data for clinical decision-making and patient transport'
+    ],
+    indications: [
+      'All intubated patients requiring mechanical ventilation support',
+      'Patients receiving conscious sedation or general anesthesia',
+      'Spontaneously breathing patients with respiratory compromise or failure',
+      'During cardiopulmonary resuscitation to assess CPR effectiveness',
+      'Patients with suspected airway obstruction or bronchospasm',
+      'Monitoring during transport of critically ill patients with airway devices',
+      'Patients receiving nebulized bronchodilator therapy for respiratory distress',
+      'Post-intubation confirmation and ongoing airway monitoring'
+    ],
+    contraindications: [
+      'Patient safety concerns that outweigh monitoring benefits',
+      'Severe facial trauma preventing proper sensor placement',
+      'Complete nasal obstruction when using nasal sampling methods',
+      'Equipment malfunction or lack of properly functioning monitoring devices'
+    ],
+    equipment: [
+      'ETCO2 monitor/module with waveform display capability',
+      'Appropriate sampling lines (nasal cannula or inline adapters)',
+      'Power source or charged battery backup for monitoring equipment',
+      'Calibration materials and reference standards as required',
+      'Documentation materials for recording trends and values',
+      'Backup monitoring equipment and replacement sensors'
+    ]
+  },
+
+  'intramuscular-injection': {
+    name: 'Intramuscular Injection',
+    category: 'medication',
+    difficultyLevel: 'INTERMEDIATE' as const,
+    timeEstimateMinutes: 20,
+    isCritical: true,
+    description: 'Safe administration of medications via intramuscular route using proper injection techniques and site selection',
+    objectives: [
+      'Verify patient identity and medication orders using five rights of administration',
+      'Select appropriate injection site based on patient anatomy and medication volume',
+      'Prepare medication and equipment using sterile technique principles',
+      'Perform injection using safe technique to minimize patient discomfort',
+      'Monitor patient for immediate adverse reactions and complications',
+      'Provide patient education regarding medication effects and follow-up care',
+      'Document procedure and patient response according to medical standards',
+      'Ensure proper disposal of sharps and maintain infection control protocols'
+    ],
+    indications: [
+      'Medications that require intramuscular absorption for therapeutic effect',
+      'Patients unable to take oral medications due to nausea or consciousness level',
+      'Emergency medications requiring rapid absorption (epinephrine, naloxone)',
+      'Vaccines and immunizations requiring intramuscular administration',
+      'Long-acting medications requiring depot injection into muscle tissue',
+      'Medications with poor oral bioavailability requiring parenteral route',
+      'Patients with contraindications to intravenous medication administration'
+    ],
+    contraindications: [
+      'Known severe allergies to prescribed medication or injection components',
+      'Infection, inflammation, or tissue damage at proposed injection site',
+      'Severe bleeding disorders or anticoagulation therapy (relative contraindication)',
+      'Shock or severe dehydration affecting muscle perfusion and absorption',
+      'Patient refusal of treatment after informed consent discussion'
+    ],
+    equipment: [
+      'Prescribed medication in appropriate concentration and volume',
+      'Sterile syringe (1-5mL) and needles (drawing and injection)',
+      'Alcohol prep pads and antiseptic cleaning supplies',
+      'Sterile gloves and appropriate personal protective equipment',
+      'Sharps disposal container and medical waste materials',
+      'Emergency medications for allergic reactions (epinephrine, diphenhydramine)',
+      'Patient identification materials and medication administration record',
+      'Gauze pads, adhesive bandages, and post-injection care supplies'
+    ]
+  },
+
+  'nasopharyngeal-airway-insertion': {
+    name: 'Nasopharyngeal Airway Insertion',
+    category: 'airway',
+    difficultyLevel: 'BEGINNER' as const,
+    timeEstimateMinutes: 15,
+    isCritical: true,
+    description: 'Insertion of nasopharyngeal airway to maintain upper airway patency in patients with compromised consciousness',
+    objectives: [
+      'Assess patient airway status and determine appropriate indication for NPA use',
+      'Select proper nasopharyngeal airway size based on patient anatomy',
+      'Insert NPA using safe technique to minimize trauma and complications',
+      'Verify proper placement and airway patency after insertion',
+      'Secure airway device and establish continuous monitoring protocol',
+      'Monitor for complications and maintain airway function during transport',
+      'Provide patient education and comfort measures as appropriate',
+      'Document procedure and communicate findings to healthcare team'
+    ],
+    indications: [
+      'Decreased level of consciousness with intact gag reflex',
+      'Upper airway obstruction due to tongue or soft tissue collapse',
+      'Patients requiring airway maintenance during transport or procedures',
+      'Alternative to oral airway when mouth cannot be opened',
+      'Semiconscious patients who cannot tolerate oral pharyngeal airway',
+      'Airway management in patients with trismus or facial trauma',
+      'Maintenance of airway patency during sedation or anesthesia'
+    ],
+    contraindications: [
+      'Suspected or confirmed basilar skull fracture',
+      'Severe coagulopathy or bleeding disorders',
+      'Active severe epistaxis (nosebleed)',
+      'Complete nasal obstruction or severe nasal deformity',
+      'Recent nasal surgery or trauma with suspected CSF leak'
+    ],
+    equipment: [
+      'Nasopharyngeal airways in multiple sizes (28-36 French for adults)',
+      'Water-soluble lubricant (K-Y jelly or similar)',
+      'Safety pin or tape for securing airway',
+      'Suction equipment and catheters',
+      'Pulse oximetry and monitoring equipment',
+      'Topical nasal decongestant if available',
+      'Personal protective equipment (gloves, face protection)',
+      'Backup airway management supplies'
+    ]
+  },
+
+  'adult-choking-without-equipment': {
+    name: 'Adult Choking Without Equipment',
+    category: 'airway',
+    difficultyLevel: 'BEGINNER' as const,
+    timeEstimateMinutes: 10,
+    isCritical: true,
+    description: 'Emergency management of complete airway obstruction in conscious adults using manual techniques only',
+    objectives: [
+      'Rapidly recognize and assess severity of choking emergency',
+      'Perform effective back blows to attempt obstruction dislodgement',
+      'Execute proper abdominal thrusts (Heimlich maneuver) technique',
+      'Alternate between back blows and abdominal thrusts until obstruction clears',
+      'Manage patient who becomes unconscious during choking episode',
+      'Provide post-obstruction care and monitoring for complications',
+      'Document incident and arrange appropriate medical follow-up',
+      'Recognize when to transition to CPR if patient becomes unconscious'
+    ],
+    indications: [
+      'Complete airway obstruction with inability to speak or cough effectively',
+      'Partial obstruction that progresses to complete obstruction',
+      'Patient demonstrating universal choking sign (hands clutching throat)',
+      'Witnessed foreign body ingestion with subsequent respiratory distress',
+      'Silent patient with obvious signs of choking distress and cyanosis'
+    ],
+    contraindications: [
+      'Effective coughing with good air exchange (partial obstruction)',
+      'Pregnant patients (use chest thrusts instead of abdominal thrusts)',
+      'Infants under 1 year (requires different technique)',
+      'Patient with known severe abdominal injuries (relative contraindication)'
+    ],
+    equipment: [
+      'No equipment required for basic manual techniques',
+      'Communication device to call for emergency services',
+      'Barrier device for rescue breathing if available',
+      'Pulse oximetry if available for post-obstruction monitoring',
+      'Supplemental oxygen if available',
+      'Transport arrangements for medical evaluation'
+    ]
+  },
+
+  'oropharyngeal-suctioning': {
+    name: 'Oropharyngeal Suctioning',
+    category: 'airway',
+    difficultyLevel: 'INTERMEDIATE' as const,
+    timeEstimateMinutes: 15,
+    isCritical: true,
+    description: 'Removal of secretions, blood, or debris from oral cavity and oropharynx to maintain airway patency',
+    objectives: [
+      'Assess patient need for oropharyngeal suctioning based on clinical indicators',
+      'Prepare and test suctioning equipment to ensure proper function',
+      'Position patient safely to optimize suctioning effectiveness and prevent aspiration',
+      'Perform initial oral cavity suctioning using appropriate technique',
+      'Continue with deep pharyngeal suctioning while monitoring patient response',
+      'Verify airway clearance and assess improvement in respiratory status',
+      'Maintain equipment cleanliness and readiness for continued use',
+      'Document procedure and establish ongoing monitoring plan'
+    ],
+    indications: [
+      'Visible secretions, blood, or debris in oral cavity or oropharynx',
+      'Ineffective cough reflex with secretion retention',
+      'Decreased level of consciousness with inability to clear secretions',
+      'Respiratory distress due to airway obstruction from secretions',
+      'Post-intubation or airway procedure secretion management',
+      'Trauma patients with blood or debris in upper airway',
+      'Preparation for airway interventions requiring clear visualization'
+    ],
+    contraindications: [
+      'Severe laryngeal trauma or suspected laryngeal fracture',
+      'Suspected epiglottitis in pediatric patients (relative)',
+      'Severe coagulopathy with high bleeding risk from stimulation',
+      'Conscious patient with strong gag reflex who can clear own secretions'
+    ],
+    equipment: [
+      'Portable or wall-mounted suction unit with adequate pressure capability',
+      'Rigid suction catheter (Yankauer tip) for thick secretions',
+      'Flexible suction catheters in various sizes',
+      'Suction tubing and secure connections',
+      'Collection canister with measurement markings',
+      'Personal protective equipment (gloves, face shield, gown)',
+      'Patient positioning aids and towels',
+      'Pulse oximetry and monitoring equipment'
+    ]
+  },
+
+  'endotracheal-tube-suctioning': {
+    name: 'Endotracheal Tube Suctioning',
+    category: 'airway',
+    difficultyLevel: 'ADVANCED' as const,
+    timeEstimateMinutes: 20,
+    isCritical: true,
+    description: 'Sterile removal of secretions from endotracheal tube and lower airways in intubated patients',
+    objectives: [
+      'Assess intubated patient for clinical indicators requiring endotracheal suctioning',
+      'Prepare sterile suctioning equipment and maintain strict infection control',
+      'Provide adequate pre-oxygenation to prevent hypoxic complications',
+      'Insert suction catheter to appropriate depth using sterile technique',
+      'Apply effective suctioning while monitoring patient physiological response',
+      'Restore mechanical ventilation and assess procedure effectiveness',
+      'Maintain equipment sterility and dispose of materials safely',
+      'Document procedure and establish ongoing airway management plan'
+    ],
+    indications: [
+      'Visible secretions in endotracheal tube or ventilator circuit',
+      'Coarse breath sounds with evidence of secretion retention',
+      'Increased peak airway pressures on mechanical ventilator',
+      'Decreased tidal volumes or poor chest expansion despite adequate ventilation',
+      'Patient agitation or ventilator dysynchrony due to secretions',
+      'Arterial blood gas deterioration with retained CO2',
+      'Preparation for extubation or airway procedures'
+    ],
+    contraindications: [
+      'Severe hypoxemia that cannot be corrected with pre-oxygenation',
+      'Untreated pneumothorax or recent lung surgery',
+      'Severe cardiovascular instability or recent myocardial infarction',
+      'Increased intracranial pressure (relative contraindication)',
+      'Severe coagulopathy with high risk of pulmonary hemorrhage'
+    ],
+    equipment: [
+      'Sterile suction catheters sized appropriately for ETT (10-14 French)',
+      'Sterile gloves and normal saline for irrigation',
+      'Suction unit with adjustable pressure (100-150 mmHg)',
+      'Mechanical ventilator or manual ventilation bag with 100% oxygen',
+      'Continuous cardiac and oxygen saturation monitoring',
+      'Sterile collection containers and biohazard disposal',
+      'Personal protective equipment including eye protection',
+      'Emergency resuscitation medications and airway equipment'
+    ]
+  },
+
+  'modified-valsalva-maneuver': {
+    name: 'Modified Valsalva Maneuver',
+    category: 'cardiac',
+    difficultyLevel: 'INTERMEDIATE' as const,
+    timeEstimateMinutes: 25,
+    isCritical: true,
+    description: 'Enhanced vagal maneuver using position changes to convert supraventricular tachycardia to normal sinus rhythm',
+    objectives: [
+      'Accurately identify appropriate supraventricular tachycardia for vagal maneuver',
+      'Properly position and prepare patient for modified Valsalva technique',
+      'Execute standard Valsalva maneuver with appropriate monitoring',
+      'Perform modified technique with passive leg raise if initial attempt fails',
+      'Monitor patient response and assess for successful rhythm conversion',
+      'Plan alternative interventions if Valsalva maneuver unsuccessful',
+      'Provide patient education and arrange appropriate cardiac follow-up',
+      'Document procedure thoroughly and communicate findings to healthcare team'
+    ],
+    indications: [
+      'Narrow-complex supraventricular tachycardia with regular rhythm',
+      'Heart rate typically >150 bpm in hemodynamically stable patients',
+      'Patient conscious and able to follow instructions for Valsalva',
+      'Failed response to simple vagal maneuvers (carotid massage, ice water)',
+      'Alternative to immediate pharmacologic intervention in stable patients',
+      'Patient preference for non-pharmacologic intervention when appropriate'
+    ],
+    contraindications: [
+      'Hemodynamic instability or signs of cardiovascular compromise',
+      'Wide-complex tachycardia or uncertain rhythm diagnosis',
+      'Atrial fibrillation or atrial flutter with irregular rhythms',
+      'Recent myocardial infarction or unstable angina',
+      'Severe heart failure or cardiogenic shock',
+      'Patient inability to cooperate or follow instructions',
+      'Severe carotid artery disease or history of stroke'
+    ],
+    equipment: [
+      '12-lead ECG machine and continuous cardiac monitoring',
+      'Adjustable hospital bed or stretcher for position changes',
+      'Blood pressure monitoring and pulse oximetry equipment',
+      'IV access and emergency cardiac medications (adenosine, atropine)',
+      'Defibrillator with synchronized cardioversion capability',
+      'Timer or stopwatch for procedure timing',
+      'Emergency resuscitation equipment and airway management supplies',
+      'Documentation materials and ECG rhythm strips'
+    ]
+  },
+
+  'oropharyngeal-airway-insertion': {
+    name: 'Oropharyngeal Airway Insertion',
+    category: 'airway',
+    difficultyLevel: 'BEGINNER' as const,
+    timeEstimateMinutes: 12,
+    isCritical: true,
+    description: 'Insertion of oral airway device to maintain upper airway patency in unconscious patients',
+    objectives: [
+      'Assess patient consciousness level and appropriateness for oropharyngeal airway',
+      'Select proper airway size based on patient anatomy and measurements',
+      'Position patient optimally and prepare oral cavity for insertion',
+      'Insert OPA using correct technique to avoid airway trauma or obstruction',
+      'Verify proper placement and assess improvement in airway patency',
+      'Secure airway and establish continuous monitoring protocol',
+      'Perform ongoing assessment and maintain optimal airway function',
+      'Document procedure and plan for airway transition or advanced management'
+    ],
+    indications: [
+      'Unconscious patient with absent or significantly diminished gag reflex',
+      'Upper airway obstruction due to tongue or soft tissue collapse',
+      'Need for airway maintenance during bag-valve mask ventilation',
+      'Temporary airway management before advanced airway placement',
+      'Patient positioning to optimize airway patency during transport',
+      'Adjunct to other airway management techniques in unconscious patients'
+    ],
+    contraindications: [
+      'Conscious or semiconscious patient with intact gag reflex',
+      'Severe facial trauma preventing proper insertion or sizing',
+      'Suspected foreign body obstruction requiring immediate removal',
+      'Severe trismus (lockjaw) preventing mouth opening',
+      'Recent oral or maxillofacial surgery with tissue friability'
+    ],
+    equipment: [
+      'Oropharyngeal airways in multiple sizes (adult: 80-100mm, pediatric: 40-70mm)',
+      'Personal protective equipment (gloves, face shield)',
+      'Suction equipment with Yankauer catheter',
+      'Bag-valve mask for ventilation assessment',
+      'Pulse oximetry and continuous monitoring equipment',
+      'Tongue depressors for alternative insertion technique',
+      'Medical tape or bite block for securing if needed',
+      'Backup airway management supplies (NPA, advanced airway equipment)'
+    ]
+  },
+
+  'traction-splint': {
+    name: 'Traction Splint Application',
+    category: 'trauma',
+    difficultyLevel: 'INTERMEDIATE' as const,
+    timeEstimateMinutes: 35,
+    isCritical: true,
+    description: 'Application of mechanical traction splint for femoral shaft fractures to reduce pain and prevent further injury',
+    objectives: [
+      'Assess patient for femur fracture and determine appropriateness for traction splinting',
+      'Select appropriate traction splint equipment and verify proper function',
+      'Prepare patient and position safely for traction splint application',
+      'Apply ankle hitch securely while maintaining distal neurovascular function',
+      'Position traction splint properly and prepare for mechanical traction',
+      'Apply appropriate mechanical traction and secure entire splint system',
+      'Assess neurovascular status and establish continuous monitoring protocol',
+      'Document procedure and prepare for safe transport with ongoing monitoring'
+    ],
+    indications: [
+      'Closed femoral shaft fractures with deformity and pain',
+      'Open femur fractures without protruding bone fragments',
+      'Suspected femur fracture with thigh pain, swelling, and shortening',
+      'Hemodynamically stable patients with isolated femur injuries',
+      'Need for pain control and fracture stabilization during transport'
+    ],
+    contraindications: [
+      'Hip fractures or hip dislocations (absolute contraindication)',
+      'Knee injuries or suspected knee dislocation on same extremity',
+      'Open fractures with protruding bone fragments',
+      'Severe crush injuries to lower extremity',
+      'Pelvic fractures with suspected acetabular involvement',
+      'Ankle or foot fractures on same extremity',
+      'Life-threatening injuries requiring immediate intervention'
+    ],
+    equipment: [
+      'Hare traction splint or Sager splint with all components',
+      'Ankle hitch with adequate soft padding materials',
+      'Securing straps, buckles, and adjustment mechanisms',
+      'Doppler ultrasound for distal pulse assessment',
+      'Pain medication and administration supplies if available',
+      'Neurovascular assessment tools (cotton, pinprick testing)',
+      'Documentation forms and transport securing devices',
+      'Photography equipment for documentation if protocols permit'
+    ]
+  },
+
+  'bag-valve-mask-nebulizer': {
+    name: 'Bag Valve Mask with In-line Nebulization',
+    category: 'respiratory',
+    difficultyLevel: 'INTERMEDIATE' as const,
+    timeEstimateMinutes: 30,
+    isCritical: true,
+    description: 'Combined ventilation assistance and nebulized medication delivery for patients with severe bronchospasm',
+    objectives: [
+      'Assess patient respiratory status and determine need for combined ventilation and medication',
+      'Prepare bag-valve mask system with in-line nebulizer and appropriate medications',
+      'Position patient optimally and apply mask with proper seal for effective treatment',
+      'Initiate assisted ventilation while beginning nebulized medication delivery',
+      'Monitor patient response and adjust ventilation technique throughout treatment',
+      'Complete full nebulization treatment and assess therapeutic response',
+      'Clean equipment properly and prepare for ongoing respiratory care',
+      'Document treatment comprehensively and plan for continued care'
+    ],
+    indications: [
+      'Severe bronchospasm with inadequate spontaneous ventilation',
+      'Status asthmaticus requiring assisted ventilation and bronchodilators',
+      'COPD exacerbation with respiratory failure and bronchospasm',
+      'Patients unable to cooperate with standard nebulizer treatments',
+      'Need for positive pressure ventilation combined with bronchodilator therapy',
+      'Emergency treatment of severe respiratory distress with wheezing'
+    ],
+    contraindications: [
+      'Pneumothorax or suspected pneumothorax (relative contraindication)',
+      'Severe hemodynamic instability that would worsen with positive pressure',
+      'Known severe allergy to prescribed nebulized medications',
+      'Facial trauma preventing adequate mask seal',
+      'Active vomiting with high aspiration risk'
+    ],
+    equipment: [
+      'Bag-valve mask with reservoir bag and appropriately sized face masks',
+      'In-line nebulizer chamber with oxygen connection tubing',
+      'Prescribed nebulized medications (albuterol, ipratropium bromide)',
+      'Normal saline for medication dilution and sterile syringes',
+      'Oxygen source with adequate flow control (6-8 L/min minimum)',
+      'Continuous monitoring equipment (pulse oximetry, cardiac monitor)',
+      'Suction equipment ready for immediate use if needed',
+      'Peak flow meter and respiratory assessment tools'
+    ]
+  },
+
+  'phonetic-alphabet': {
+    name: 'Phonetic Alphabet Communication',
+    category: 'communication',
+    difficultyLevel: 'BEGINNER' as const,
+    timeEstimateMinutes: 15,
+    isCritical: true,
+    description: 'Standardized phonetic alphabet usage for clear and accurate radio communication in emergency services',
+    objectives: [
+      'Assess communication needs and prepare for clear radio transmission',
+      'Demonstrate mastery of NATO phonetic alphabet for accurate spelling',
+      'Apply phonetic alphabet specifically for medical terms and medication names',
+      'Execute proper radio transmission procedures incorporating phonetic protocols',
+      'Maintain clear phonetic communication during high-stress emergency situations',
+      'Coordinate communications with multiple agencies using standardized phonetics',
+      'Implement quality assurance and continuous improvement for communication skills',
+      'Document communications appropriately using phonetic spelling standards'
+    ],
+    indications: [
+      'Radio communication in noisy or challenging environments',
+      'Transmission of critical patient information requiring accuracy',
+      'Medication names with potential for confusion or misinterpretation',
+      'Patient names with unusual spelling or pronunciation',
+      'Inter-agency communications requiring precise information exchange',
+      'Emergency situations where communication clarity is essential',
+      'Legal documentation requiring verified spelling accuracy'
+    ],
+    contraindications: [
+      'Time-critical emergencies where phonetic spelling would cause dangerous delays',
+      'Situations where standard verbal communication is clearly understood',
+      'Non-critical routine communications not requiring precise spelling'
+    ],
+    equipment: [
+      'Functioning radio communication device with clear audio transmission',
+      'NATO phonetic alphabet reference card or chart',
+      'Backup communication devices (cell phone, alternative radio channels)',
+      'Communication log books and documentation forms',
+      'Standard operating procedures for radio protocols',
+      'Emergency medication reference list for phonetic practice',
+      'Multi-agency communication protocols manual',
+      'Training materials and continuing education resources'
+    ]
+  },
+
+  'venous-blood-sampling': {
+    name: 'Venous Blood Sampling',
+    category: 'diagnostic',
+    difficultyLevel: 'INTERMEDIATE' as const,
+    timeEstimateMinutes: 20,
+    isCritical: true,
+    description: 'Safe collection of venous blood specimens for laboratory analysis using sterile technique',
+    objectives: [
+      'Assess patient condition and verify orders for blood sampling procedures',
+      'Prepare appropriate equipment and verify laboratory requirements',
+      'Select optimal venipuncture site and prepare area using sterile technique',
+      'Perform venipuncture safely and collect required blood specimens',
+      'Provide appropriate post-collection care and ensure hemostasis',
+      'Process specimens correctly and verify accurate labeling',
+      'Monitor patient for complications and provide follow-up care',
+      'Document procedure comprehensively and coordinate with laboratory'
+    ],
+    indications: [
+      'Laboratory testing requiring blood specimens for diagnosis',
+      'Monitoring of medication levels or therapeutic drug monitoring',
+      'Assessment of organ function through blood chemistry analysis',
+      'Evaluation of infection through blood culture collection',
+      'Monitoring of coagulation status or bleeding parameters',
+      'Blood typing and crossmatching for transfusion preparation'
+    ],
+    contraindications: [
+      'Severe bleeding disorders or extremely low platelet counts',
+      'Infection or cellulitis at proposed puncture site',
+      'Arteriovenous fistula or graft in extremity (avoid that arm)',
+      'Severe burns or trauma at potential puncture sites',
+      'Patient refusal after informed consent discussion'
+    ],
+    equipment: [
+      'Blood collection needles in appropriate gauges (21-23G)',
+      'Various collection tubes based on laboratory requirements',
+      'Tourniquet and antiseptic preparation materials',
+      'Sterile gloves and gauze pads for hemostasis',
+      'Specimen labels and laboratory requisition forms',
+      'Needle safety devices and sharps disposal container',
+      'Patient monitoring equipment for vasovagal reactions',
+      'Emergency supplies for complication management'
+    ]
+  },
+
+  'pulse-oximetry-monitoring': {
+    name: 'Pulse Oximetry Monitoring',
+    category: 'monitoring',
+    difficultyLevel: 'BEGINNER' as const,
+    timeEstimateMinutes: 15,
+    isCritical: true,
+    description: 'Continuous non-invasive monitoring of oxygen saturation using pulse oximetry technology',
+    objectives: [
+      'Assess patient respiratory status and determine need for pulse oximetry monitoring',
+      'Select appropriate equipment and prepare for accurate oxygen saturation monitoring',
+      'Apply sensor using optimal technique for reliable and accurate readings',
+      'Verify initial readings and establish baseline oxygen saturation values',
+      'Establish continuous monitoring protocol and analyze saturation trends',
+      'Troubleshoot and optimize accuracy by addressing interfering factors',
+      'Integrate monitoring data with patient assessment and clinical care planning',
+      'Document monitoring comprehensively and ensure continuity of care'
+    ],
+    indications: [
+      'Respiratory distress or suspected hypoxemia',
+      'Patients receiving oxygen therapy or respiratory treatments',
+      'Continuous monitoring during procedures or transport',
+      'Assessment of response to respiratory interventions',
+      'Patients with respiratory or cardiac conditions requiring monitoring',
+      'Post-procedural monitoring for sedation or anesthesia recovery',
+      'Sleep study monitoring or assessment of breathing disorders'
+    ],
+    contraindications: [
+      'No absolute contraindications for non-invasive pulse oximetry',
+      'Relative limitations in carbon monoxide or methemoglobin poisoning',
+      'Severe peripheral vascular disease affecting sensor site circulation',
+      'Excessive patient movement preventing accurate readings'
+    ],
+    equipment: [
+      'Pulse oximeter with functioning display and accurate calibration',
+      'Appropriate sensors for fingertip, earlobe, or forehead placement',
+      'Spare sensors and batteries for equipment backup',
+      'Nail polish remover for cleaning sensor sites if needed',
+      'Securing tape or devices to prevent sensor displacement',
+      'Alternative sensor sites prepared for troubleshooting',
+      'Documentation materials for recording trends and values',
+      'Backup monitoring equipment for critical patients'
     ]
   }
 };
@@ -16390,6 +20209,228 @@ export const criticalSkillsMetadata = {
         'Clear communication ensures continuity of care',
         'Some patients may need multiple treatments during transport'
       ]
+    }
+  ],
+
+  // 62. ADULT CHOKING WITHOUT EQUIPMENT - Basic life support for airway obstruction
+  'adult-choking-without-equipment': [
+    {
+      id: 'choking-step-1',
+      stepNumber: 1,
+      title: 'Recognition and Initial Assessment',
+      description: 'Recognize signs of airway obstruction and assess severity',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 30,
+      keyPoints: [
+        'Look for universal choking sign - hands clutching throat',
+        'Ask "Are you choking?" - inability to speak indicates complete obstruction',
+        'Assess for severe distress: inability to cough, speak, or breathe effectively',
+        'Check for partial vs complete airway obstruction',
+        'Partial obstruction: strong cough, able to speak, some air movement',
+        'Complete obstruction: unable to speak, weak/absent cough, cyanosis',
+        'Observe patient position - may be leaning forward, panicked appearance',
+        'Act immediately for complete obstruction - time is critical'
+      ],
+      contraindications: [
+        'Do not interfere with effective coughing in partial obstruction',
+        'Do not perform abdominal thrusts on unconscious patients',
+        'Avoid back blows in conscious adults (not recommended by AHA)'
+      ],
+      safetyNotes: [
+        'Complete airway obstruction is a medical emergency',
+        'Patient may lose consciousness rapidly',
+        'Be prepared to provide CPR if patient becomes unconscious'
+      ],
+      equipmentNeeded: ['None required for basic technique', 'Phone for emergency services activation']
+    },
+    {
+      id: 'choking-step-2',
+      stepNumber: 2,
+      title: 'Patient Positioning and Preparation',
+      description: 'Position patient appropriately for abdominal thrust technique',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 15,
+      keyPoints: [
+        'Stand behind the patient if they are standing or sitting',
+        'Wrap your arms around patient\'s waist from behind',
+        'Position yourself to the side if patient is in wheelchair',
+        'Make a fist with one hand, thumb side against patient\'s abdomen',
+        'Place fist slightly above navel and well below breastbone',
+        'Grasp fist with other hand to provide leverage',
+        'Ensure patient is stable and supported',
+        'Have patient lean slightly forward to help dislodge object'
+      ],
+      safetyNotes: [
+        'Proper positioning is crucial for effective thrusts',
+        'Avoid applying pressure directly over ribs or breastbone',
+        'Support patient to prevent falls during procedure'
+      ],
+      equipmentNeeded: ['Clear area around patient', 'Stable surface for support if needed']
+    },
+    {
+      id: 'choking-step-3',
+      stepNumber: 3,
+      title: 'Abdominal Thrust Technique (Heimlich Maneuver)',
+      description: 'Perform abdominal thrusts using correct technique and force',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Make quick, upward thrusts into the abdomen',
+        'Use firm, deliberate pressure directed upward toward diaphragm',
+        'Each thrust should be separate and distinct movement',
+        'Apply enough force to generate artificial cough',
+        'Continue thrusts until object is expelled or patient becomes unconscious',
+        'Check mouth between thrusts for visible object',
+        'Encourage patient to cough if object partially dislodged',
+        'Be prepared for patient to vomit after successful removal'
+      ],
+      contraindications: [
+        'Do not use excessive force that could cause injury',
+        'Modify technique for pregnant or obese patients (chest thrusts)',
+        'Stop if patient becomes unconscious - begin CPR protocol'
+      ],
+      safetyNotes: [
+        'Abdominal thrusts can cause internal injuries - use appropriate force',
+        'May cause rib fractures or organ injury even when performed correctly',
+        'Patient should be evaluated medically after successful removal'
+      ],
+      equipmentNeeded: ['None required', 'Have phone ready to call for medical evaluation']
+    },
+    {
+      id: 'choking-step-4',
+      stepNumber: 4,
+      title: 'Modified Technique for Special Populations',
+      description: 'Apply appropriate modifications for pregnant or obese patients',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'PREGNANT PATIENTS: Use chest thrusts instead of abdominal thrusts',
+        'Position hands on lower half of breastbone, between nipples',
+        'Apply firm, quick thrusts straight back toward spine',
+        'OBESE PATIENTS: May require chest thrusts if unable to wrap arms around abdomen',
+        'Stand behind patient and place arms under patient\'s armpits',
+        'Position hands on breastbone and perform chest thrusts',
+        'SEATED PATIENTS: Stand behind chair and perform abdominal thrusts',
+        'Modify positioning but maintain same thrust technique'
+      ],
+      safetyNotes: [
+        'Chest thrusts carry risk of rib fracture',
+        'Pregnant patients require immediate medical evaluation after incident',
+        'Adjust force appropriately for patient size and condition'
+      ],
+      equipmentNeeded: ['Stable chair if patient seated', 'Clear space for proper positioning']
+    },
+    {
+      id: 'choking-step-5',
+      stepNumber: 5,
+      title: 'Transition to CPR if Patient Becomes Unconscious',
+      description: 'Recognize unconsciousness and transition to CPR protocol',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 30,
+      keyPoints: [
+        'If patient loses consciousness, help them to ground safely',
+        'Position patient supine on firm, flat surface',
+        'Call for emergency medical services immediately',
+        'Open airway and look for visible foreign object',
+        'Remove visible objects with finger sweep (only if visible)',
+        'Attempt rescue breathing - if unsuccessful, begin chest compressions',
+        'Do not check for pulse - begin CPR immediately',
+        'Each time you open airway, look for and remove visible objects'
+      ],
+      contraindications: [
+        'Do not perform blind finger sweeps - may push object deeper',
+        'Do not attempt ventilation if object clearly visible in airway'
+      ],
+      safetyNotes: [
+        'Unconscious choking patients require immediate CPR',
+        'Chest compressions may help dislodge foreign object',
+        'Continue CPR until object expelled or EMS arrives'
+      ],
+      equipmentNeeded: ['Firm surface for CPR', 'Phone for EMS activation', 'Barrier device for rescue breathing if available']
+    },
+    {
+      id: 'choking-step-6',
+      stepNumber: 6,
+      title: 'Post-Obstruction Care and Assessment',
+      description: 'Provide care after successful foreign object removal',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Once object is expelled, monitor patient\'s breathing and color',
+        'Encourage patient to remain calm and breathe normally',
+        'Assess for signs of respiratory distress or continued obstruction',
+        'Check for injuries from abdominal thrusts: pain, tenderness',
+        'Monitor for vomiting - turn patient to side if occurs',
+        'Keep object that was removed for medical evaluation if possible',
+        'Provide reassurance and emotional support to patient',
+        'Recommend medical evaluation even after successful removal'
+      ],
+      safetyNotes: [
+        'Patient may have sustained injuries from thrusts or hypoxia',
+        'Residual swelling or trauma may cause delayed airway problems',
+        'Medical evaluation recommended even after successful treatment'
+      ],
+      equipmentNeeded: ['Container to save expelled object', 'Position for recovery if needed', 'Comfort measures']
+    },
+    {
+      id: 'choking-step-7',
+      stepNumber: 7,
+      title: 'Complications Recognition and Management',
+      description: 'Identify and manage potential complications from choking incident',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Monitor for signs of internal injury: abdominal pain, bruising, tenderness',
+        'Assess for rib fractures: pain with breathing, point tenderness',
+        'Watch for delayed respiratory distress or partial obstruction',
+        'Check for aspiration: coughing, fever, respiratory symptoms',
+        'Monitor vital signs: blood pressure, pulse, respiratory rate',
+        'Look for signs of hypoxic injury: confusion, altered mental status',
+        'Assess for psychological trauma: anxiety, panic, emotional distress',
+        'Document incident details for medical providers'
+      ],
+      contraindications: [
+        'Do not dismiss ongoing symptoms as minor',
+        'Do not delay medical evaluation if any concerning signs present'
+      ],
+      safetyNotes: [
+        'Complications may not be immediately apparent',
+        'Internal injuries can be serious even without obvious external signs',
+        'Hypoxic injury can cause delayed neurological problems'
+      ],
+      equipmentNeeded: ['Monitoring equipment if available', 'Documentation materials', 'Communication device for medical consultation']
+    },
+    {
+      id: 'choking-step-8',
+      stepNumber: 8,
+      title: 'Documentation and Follow-up Planning',
+      description: 'Document incident and ensure appropriate medical follow-up',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Document time and circumstances of choking incident',
+        'Record object involved, technique used, and number of thrusts performed',
+        'Note patient response and time to object removal',
+        'Document any complications or injuries noted',
+        'Record vital signs and patient condition post-incident',
+        'Provide clear instructions for seeking medical care',
+        'Inform patient of signs and symptoms requiring immediate attention',
+        'Ensure patient has transportation to medical facility if recommended'
+      ],
+      safetyNotes: [
+        'Thorough documentation important for medical continuity',
+        'Follow-up medical care may identify delayed complications',
+        'Clear instructions help patient recognize when to seek help'
+      ],
+      equipmentNeeded: ['Documentation forms', 'Emergency contact information', 'Transportation arrangements if needed']
     }
   ]
 };
