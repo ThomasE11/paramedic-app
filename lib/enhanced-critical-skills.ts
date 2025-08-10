@@ -10178,125 +10178,733 @@ export const criticalSkillsMetadata = {
     }
   ],
 
-  '12-lead-ecg-placement': {
-    name: '12-Lead ECG Lead Placement and Acquisition',
-    category: 'cardiac',
-    difficultyLevel: 'INTERMEDIATE',
-    timeEstimateMinutes: 15,
-    isCritical: true,
-    objectives: [
-      'Perform accurate anatomical landmark identification for electrode placement',
-      'Apply electrodes in correct positions following standardized protocols',
-      'Acquire high-quality 12-lead ECG tracings free from artifact',
-      'Demonstrate proper skin preparation and equipment calibration techniques',
-      'Recognize and troubleshoot common ECG acquisition problems',
-      'Document findings and maintain equipment according to standards'
-    ],
-    indications: [
-      'Chest pain or cardiac symptoms requiring cardiac assessment',
-      'Suspected myocardial infarction or acute coronary syndrome',
-      'Cardiac arrhythmias or palpitations',
-      'Syncope or pre-syncope episodes',
-      'Routine cardiac screening or pre-operative assessment',
-      'Monitoring response to cardiac medications or interventions',
-      'Follow-up assessment of known cardiac conditions',
-      'Any patient with cardiovascular risk factors and symptoms'
-    ],
-    contraindications: [
-      'No absolute contraindications for diagnostic ECG',
-      'Relative caution with severe skin breakdown at electrode sites',
-      'Patient refusal or inability to cooperate with positioning'
-    ],
-    equipment: [
-      '12-lead ECG machine with calibration capability',
-      '10 ECG electrodes (limb and precordial)',
-      'Complete set of lead cables with proper color coding',
-      'Alcohol wipes for skin preparation',
-      'Razor or clippers for hair removal if needed',
-      'ECG paper or digital storage device',
-      'Patient draping materials for privacy',
-      'Electrode placement reference guide or anatomical chart'
-    ]
-  },
+  '12-lead-ecg-placement': [
+    {
+      id: 'ecg-step-1',
+      stepNumber: 1,
+      title: 'Patient Preparation and Positioning',
+      description: 'Prepare patient and environment for optimal ECG acquisition',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Explain procedure to patient and obtain verbal consent',
+        'Position patient supine with head slightly elevated for comfort',
+        'Ensure adequate lighting and privacy for electrode placement',
+        'Remove jewelry, metal objects, and clothing from chest and limbs',
+        'Expose chest while maintaining patient dignity with appropriate draping',
+        'Ensure patient is comfortable and relaxed to minimize artifact',
+        'Check for any skin conditions, burns, or wounds at electrode sites',
+        'Turn off electronic devices that may cause electrical interference'
+      ],
+      safetyNotes: [
+        'Patient comfort reduces muscle artifact and movement',
+        'Maintain privacy and dignity throughout procedure',
+        'Metal objects can cause electrical interference'
+      ],
+      equipmentNeeded: [
+        'Patient gown or draping materials',
+        'Pillow or support for patient comfort',
+        'Privacy screens if needed'
+      ]
+    },
+    {
+      id: 'ecg-step-2',
+      stepNumber: 2,
+      title: 'Equipment Setup and Calibration',
+      description: 'Set up and calibrate ECG machine for accurate recording',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Turn on ECG machine and allow appropriate warm-up time',
+        'Check that all lead cables are properly connected to machine',
+        'Verify standard calibration settings: 25mm/sec speed, 10mm/mV gain',
+        'Run calibration signal to ensure proper machine function',
+        'Check that ECG paper is loaded correctly or digital storage ready',
+        'Ensure all lead cables are untangled and properly identified',
+        'Verify machine date and time settings for accurate documentation',
+        'Test lead integrity by checking for proper cable function'
+      ],
+      safetyNotes: [
+        'Proper calibration essential for accurate interpretation',
+        'Faulty cables can produce misleading results',
+        'Standard settings ensure consistency across providers'
+      ],
+      equipmentNeeded: [
+        '12-lead ECG machine',
+        'ECG paper or digital storage',
+        'Complete set of lead cables with color coding',
+        'Calibration reference materials'
+      ]
+    },
+    {
+      id: 'ecg-step-3',
+      stepNumber: 3,
+      title: 'Skin Preparation for Electrode Placement',
+      description: 'Prepare skin surfaces for optimal electrode contact and signal quality',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Clean electrode sites with alcohol wipes to remove oils and debris',
+        'Allow alcohol to dry completely before electrode application',
+        'Clip or shave excessive hair at electrode sites if necessary',
+        'Gently abrade skin with gauze to remove dead skin cells',
+        'Avoid using excessive pressure that could irritate or damage skin',
+        'Pay special attention to areas with heavy hair or oily skin',
+        'Ensure all 10 electrode sites are properly prepared',
+        'Check for skin conditions that might affect electrode adherence'
+      ],
+      safetyNotes: [
+        'Proper skin preparation reduces artifact and improves signal quality',
+        'Never use harsh abrasives that could damage skin',
+        'Hair removal improves electrode contact and reduces discomfort'
+      ],
+      equipmentNeeded: [
+        'Alcohol wipes or prep pads',
+        'Gauze pads for gentle abrasion',
+        'Hair clippers or safety razor if needed',
+        'Disposable towels for cleanup'
+      ]
+    },
+    {
+      id: 'ecg-step-4',
+      stepNumber: 4,
+      title: 'Limb Lead Electrode Placement',
+      description: 'Apply limb electrodes in standardized anatomical positions',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Place RA (white) electrode on right arm between shoulder and elbow',
+        'Place LA (black) electrode on left arm between shoulder and elbow',
+        'Place RL (green) electrode on right leg between hip and ankle',
+        'Place LL (red) electrode on left leg between hip and ankle',
+        'Avoid placing electrodes over bony prominences or major muscles',
+        'Ensure electrodes are placed on fleshy areas for good contact',
+        'Check that all limb electrodes are firmly adhered to skin',
+        'Verify proper color coding matches standard limb lead placement'
+      ],
+      safetyNotes: [
+        'Limb leads can be placed on torso if limb unavailable',
+        'Consistent placement ensures reproducible results',
+        'Avoid joints and bony areas to reduce artifact'
+      ],
+      equipmentNeeded: [
+        '4 limb electrodes (RA-white, LA-black, RL-green, LL-red)',
+        'Corresponding limb lead cables',
+        'Anatomical reference guide for placement'
+      ]
+    },
+    {
+      id: 'ecg-step-5',
+      stepNumber: 5,
+      title: 'Precordial Lead Electrode Placement',
+      description: 'Apply chest electrodes in precise anatomical positions',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'V1 (red): 4th intercostal space, right sternal border',
+        'V2 (yellow): 4th intercostal space, left sternal border',
+        'V3 (green): midway between V2 and V4 positions',
+        'V4 (brown): 5th intercostal space, left midclavicular line',
+        'V5 (black): same horizontal level as V4, anterior axillary line',
+        'V6 (purple): same horizontal level as V4 and V5, midaxillary line',
+        'Palpate intercostal spaces carefully using proper technique',
+        'Ensure all chest electrodes are at same horizontal level for V4-V6'
+      ],
+      safetyNotes: [
+        'Accurate chest lead placement critical for MI diagnosis',
+        'V1-V2 misplacement can mask anterior wall changes',
+        'Female patients may require breast displacement for accurate V4-V6'
+      ],
+      equipmentNeeded: [
+        '6 precordial electrodes (V1-V6 with color coding)',
+        'Corresponding chest lead cables',
+        'Anatomical landmark reference guide'
+      ]
+    },
+    {
+      id: 'ecg-step-6',
+      stepNumber: 6,
+      title: 'Lead Cable Connection and System Check',
+      description: 'Connect all lead cables and verify proper system function',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Connect each lead cable to corresponding electrode carefully',
+        'Verify color coding matches between cables and electrodes',
+        'Check that all connections are secure and making good contact',
+        'Ensure lead cables are not tangled or under tension',
+        'Position cables to prevent patient discomfort or movement artifact',
+        'Check machine display for proper lead identification',
+        'Verify no "lead off" or connection error messages displayed',
+        'Test signal quality by observing initial rhythm strips'
+      ],
+      safetyNotes: [
+        'Loose connections can cause artifact or missing leads',
+        'Cable tension can pull electrodes off or cause discomfort',
+        'Proper cable management prevents troubleshooting delays'
+      ],
+      equipmentNeeded: [
+        'All 10 lead cables with proper connections',
+        'Cable management supplies if needed'
+      ]
+    },
+    {
+      id: 'ecg-step-7',
+      stepNumber: 7,
+      title: 'ECG Acquisition and Quality Assessment',
+      description: 'Acquire 12-lead ECG and assess tracing quality',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Instruct patient to remain still and breathe normally during recording',
+        'Initiate 12-lead ECG acquisition using standard protocol',
+        'Monitor for artifact: muscle tremor, electrical interference, movement',
+        'Assess baseline stability and QRS clarity across all leads',
+        'Check for proper calibration signal and standard intervals',
+        'Verify all 12 leads are recording with adequate amplitude',
+        'Repeat acquisition if significant artifact or technical problems',
+        'Save or print ECG with proper patient identification and time stamps'
+      ],
+      safetyNotes: [
+        'Patient movement during acquisition can render ECG uninterpretable',
+        'Poor quality tracings can lead to misdiagnosis',
+        'Multiple acquisitions may be needed for optimal quality'
+      ],
+      equipmentNeeded: [
+        'ECG paper for printing or digital storage',
+        'Patient identification labels or input capability'
+      ]
+    },
+    {
+      id: 'ecg-step-8',
+      stepNumber: 8,
+      title: 'Documentation and Equipment Cleanup',
+      description: 'Complete documentation and properly clean equipment',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Label ECG with patient name, date, time, and clinical indication',
+        'Document any technical difficulties or patient factors affecting quality',
+        'Remove electrodes gently to minimize skin irritation',
+        'Clean electrode sites with alcohol if adhesive residue remains',
+        'Dispose of used electrodes in appropriate waste containers',
+        'Clean and store ECG machine and cables according to protocol',
+        'Document procedure completion in patient medical record',
+        'Provide appropriate follow-up instructions or referrals as needed'
+      ],
+      safetyNotes: [
+        'Proper documentation essential for continuity of care',
+        'Electrode removal technique prevents skin trauma',
+        'Equipment cleanliness prevents cross-contamination'
+      ],
+      equipmentNeeded: [
+        'Documentation materials and labels',
+        'Alcohol wipes for cleanup',
+        'Appropriate disposal containers',
+        'Equipment storage and cleaning supplies'
+      ]
+    }
+  ],
 
-  'cpap-ventilation': {
-    name: 'Continuous Positive Airway Pressure (CPAP)',
-    category: 'airway',
-    difficultyLevel: 'ADVANCED',
-    timeEstimateMinutes: 20,
-    isCritical: true,
-    objectives: [
-      'Assess patient appropriately for CPAP candidacy and contraindications',
-      'Set up and test CPAP equipment ensuring proper function and safety',
-      'Apply CPAP mask with proper technique and pressure titration',
-      'Monitor patient response and adjust therapy based on clinical improvement',
-      'Recognize and manage complications of CPAP therapy',
-      'Provide safe transport while maintaining CPAP support'
-    ],
-    indications: [
-      'Acute cardiogenic pulmonary edema with adequate mental status',
-      'COPD exacerbation with respiratory distress and CO2 retention',
-      'Pneumonia with respiratory failure and adequate consciousness',
-      'Acute respiratory distress in conscious, cooperative patients',
-      'Bridge therapy while preparing for intubation',
-      'Sleep apnea exacerbation in hospital or transport setting'
-    ],
-    contraindications: [
-      'Altered mental status or inability to protect airway (GCS <13)',
-      'Active vomiting or high aspiration risk',
-      'Facial trauma preventing adequate mask seal',
-      'Untreated pneumothorax',
-      'Severe hypotension (systolic <90mmHg)',
-      'Cardiac or respiratory arrest'
-    ],
-    equipment: [
-      'CPAP generator unit with pressure capability',
-      'Breathing circuit with reservoir bag and PEEP valve',
-      'Face masks in multiple sizes (small, medium, large)',
-      'Head straps and securing devices',
-      'Oxygen source with flow meter (10-15 L/min capability)',
-      'Manometer for pressure monitoring',
-      'Suction equipment for airway management',
-      'Backup bag-valve-mask equipment'
-    ]
-  },
+  'cpap-ventilation': [
+    {
+      id: 'cpap-step-1',
+      stepNumber: 1,
+      title: 'Patient Assessment and CPAP Candidacy Evaluation',
+      description: 'Assess patient for CPAP indications and rule out contraindications',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Evaluate mental status - patient must be alert and cooperative (GCS ≥13)',
+        'Assess respiratory distress: work of breathing, accessory muscle use',
+        'Check vital signs: respiratory rate, oxygen saturation, blood pressure',
+        'Identify underlying cause: CHF, COPD, pneumonia, asthma exacerbation',
+        'Confirm patient can protect their airway and follow commands',
+        'Rule out active vomiting or high aspiration risk',
+        'Check for facial trauma or deformities preventing mask seal',
+        'Ensure no untreated pneumothorax before CPAP application'
+      ],
+      contraindications: [
+        'Altered mental status (GCS <13)',
+        'Active vomiting or high aspiration risk',
+        'Untreated pneumothorax',
+        'Severe hypotension (SBP <90mmHg)',
+        'Facial trauma preventing mask seal'
+      ],
+      safetyNotes: [
+        'CPAP in obtunded patients can cause aspiration',
+        'Pneumothorax can be converted to tension pneumothorax',
+        'Monitor blood pressure closely - CPAP can reduce preload'
+      ],
+      equipmentNeeded: [
+        'Vital signs monitoring equipment',
+        'Pulse oximetry and capnography',
+        'Stethoscope for lung assessment',
+        'Glasgow Coma Scale reference'
+      ]
+    },
+    {
+      id: 'cpap-step-2',
+      stepNumber: 2,
+      title: 'Equipment Setup and Testing',
+      description: 'Assemble and test CPAP equipment for proper function',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Connect CPAP generator to oxygen source at 10-15 L/min flow rate',
+        'Attach breathing circuit with reservoir bag and PEEP valve',
+        'Test system for proper pressure generation and flow',
+        'Select appropriate mask size based on patient facial anatomy',
+        'Check mask for cracks, proper seal, and functioning one-way valve',
+        'Adjust head strap to proper length before application',
+        'Set initial CPAP pressure to 5-7.5 cmH2O for most patients',
+        'Verify backup bag-valve-mask equipment is immediately available'
+      ],
+      safetyNotes: [
+        'Improper equipment setup can cause inadequate ventilation',
+        'Always have backup ventilation ready in case CPAP fails',
+        'Test equipment before patient application to avoid delays'
+      ],
+      equipmentNeeded: [
+        'CPAP generator unit with pressure capability',
+        'Breathing circuit with reservoir bag and PEEP valve',
+        'Face masks in multiple sizes',
+        'Oxygen source with high-flow capability',
+        'Manometer for pressure monitoring'
+      ]
+    },
+    {
+      id: 'cpap-step-3',
+      stepNumber: 3,
+      title: 'Mask Application and Initial Pressure Setting',
+      description: 'Apply CPAP mask with proper technique and initial pressure',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Explain procedure to patient and obtain cooperation',
+        'Position patient in high Fowler\'s or semi-Fowler\'s position',
+        'Hold mask gently against face initially to allow patient adaptation',
+        'Gradually tighten head straps to achieve adequate seal without excessive pressure',
+        'Start with lower pressure (5 cmH2O) and titrate up gradually',
+        'Monitor for immediate patient comfort and tolerance',
+        'Check for air leaks around mask and adjust as needed',
+        'Ensure patient can still communicate and swallow if needed'
+      ],
+      safetyNotes: [
+        'Excessive strap tightness can cause skin breakdown',
+        'Rapid pressure changes can cause patient intolerance',
+        'Monitor for gastric distension from swallowed air'
+      ],
+      equipmentNeeded: [
+        'Properly sized CPAP mask',
+        'Adjustable head straps',
+        'Pressure monitoring equipment',
+        'Patient positioning supplies'
+      ]
+    },
+    {
+      id: 'cpap-step-4',
+      stepNumber: 4,
+      title: 'Pressure Titration and Optimization',
+      description: 'Adjust CPAP pressure based on patient response and clinical improvement',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Titrate pressure gradually in 2.5 cmH2O increments up to 10-12.5 cmH2O',
+        'Monitor oxygen saturation and adjust FiO2 to maintain SpO2 >90%',
+        'Assess work of breathing and accessory muscle use improvement',
+        'Monitor vital signs: heart rate, blood pressure, respiratory rate',
+        'Listen for improved air entry and decreased adventitious sounds',
+        'Check arterial blood gas if available to assess CO2 retention',
+        'Adjust pressure based on patient comfort and clinical response',
+        'Document optimal pressure settings and patient response'
+      ],
+      safetyNotes: [
+        'Higher pressures increase risk of pneumothorax',
+        'Monitor blood pressure - CPAP can cause hypotension',
+        'Watch for signs of gastric distension and vomiting'
+      ],
+      equipmentNeeded: [
+        'Manometer for accurate pressure measurement',
+        'Pulse oximetry for continuous monitoring',
+        'Blood pressure monitoring equipment',
+        'Documentation materials'
+      ]
+    },
+    {
+      id: 'cpap-step-5',
+      stepNumber: 5,
+      title: 'Patient Monitoring and Response Assessment',
+      description: 'Continuously monitor patient response and adjust therapy as needed',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Monitor respiratory rate and work of breathing every 5-10 minutes',
+        'Assess oxygen saturation continuously and document trends',
+        'Check mental status and ability to follow commands regularly',
+        'Monitor for signs of improvement: decreased dyspnea, better color',
+        'Watch for complications: pneumothorax, hypotension, vomiting',
+        'Assess mask fit and skin integrity around mask contact points',
+        'Monitor for gastric distension and consider decompression if severe',
+        'Evaluate need for intubation if no improvement or deterioration'
+      ],
+      safetyNotes: [
+        'Clinical deterioration may require immediate intubation',
+        'Mask pressure points can cause skin necrosis if prolonged',
+        'Be prepared to remove CPAP immediately if patient vomits'
+      ],
+      equipmentNeeded: [
+        'Continuous monitoring equipment',
+        'Suction equipment for airway management',
+        'Intubation equipment readily available',
+        'Skin protection materials if needed'
+      ]
+    },
+    {
+      id: 'cpap-step-6',
+      stepNumber: 6,
+      title: 'Complication Recognition and Management',
+      description: 'Identify and manage complications associated with CPAP therapy',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Monitor for pneumothorax: sudden deterioration, chest pain, decreased breath sounds',
+        'Watch for hemodynamic compromise: hypotension, decreased perfusion',
+        'Assess for gastric distension and risk of aspiration',
+        'Check for mask-related complications: pressure sores, eye irritation',
+        'Monitor for patient intolerance: anxiety, claustrophobia, agitation',
+        'Be prepared for emergency CPAP discontinuation and alternative ventilation',
+        'Recognize signs of respiratory fatigue requiring intubation',
+        'Monitor for cardiac complications in CHF patients'
+      ],
+      safetyNotes: [
+        'Remove CPAP immediately if patient vomits or becomes obtunded',
+        'Have emergency airway equipment immediately available',
+        'Monitor closely for tension pneumothorax development'
+      ],
+      equipmentNeeded: [
+        'Emergency airway management equipment',
+        'Bag-valve-mask for backup ventilation',
+        'Suction equipment',
+        'Needle thoracentesis equipment if pneumothorax suspected'
+      ]
+    },
+    {
+      id: 'cpap-step-7',
+      stepNumber: 7,
+      title: 'Transport Preparation and Continued Support',
+      description: 'Prepare patient for transport while maintaining CPAP support',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Ensure CPAP equipment is properly secured for transport',
+        'Verify adequate oxygen supply for transport duration plus reserves',
+        'Check that all connections are secure and leak-free',
+        'Position patient safely for transport while maintaining mask seal',
+        'Have backup ventilation immediately available during transport',
+        'Continue pressure and oxygen titration based on patient response',
+        'Maintain communication with patient throughout transport',
+        'Prepare receiving facility for CPAP continuation or discontinuation'
+      ],
+      safetyNotes: [
+        'Transport vibration can cause mask displacement',
+        'Ensure adequate oxygen supply - calculate consumption carefully',
+        'Be prepared for emergency CPAP discontinuation during transport'
+      ],
+      equipmentNeeded: [
+        'Portable oxygen supply with adequate reserves',
+        'Transport-compatible CPAP equipment',
+        'Backup bag-valve-mask equipment',
+        'Equipment securing devices for transport'
+      ]
+    },
+    {
+      id: 'cpap-step-8',
+      stepNumber: 8,
+      title: 'Documentation and Handoff',
+      description: 'Complete thorough documentation and provide detailed handoff',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Document initial assessment findings and CPAP indications',
+        'Record initial and optimal CPAP pressures and FiO2 settings',
+        'Document patient response to therapy and vital sign trends',
+        'Record any complications or adverse events during treatment',
+        'Note duration of CPAP therapy and transport considerations',
+        'Provide detailed report to receiving medical team',
+        'Include recommendations for continued therapy or weaning',
+        'Document equipment used and patient tolerance throughout care'
+      ],
+      safetyNotes: [
+        'Thorough documentation essential for continuity of care',
+        'Include specific pressure settings for receiving facility',
+        'Document any complications for ongoing monitoring'
+      ],
+      equipmentNeeded: [
+        'Documentation materials and flowsheets',
+        'CPAP therapy record forms',
+        'Communication equipment for receiving facility'
+      ]
+    }
+  ],
 
-  'needle-thoracentesis': {
-    name: 'Needle Thoracentesis (Decompression)',
-    category: 'trauma',
-    difficultyLevel: 'ADVANCED' as const,
-    timeEstimateMinutes: 8,
-    isCritical: true,
-    objectives: [
-      'Rapidly identify clinical signs of tension pneumothorax requiring immediate intervention',
-      'Perform emergency needle decompression using proper anatomical landmarks and technique',
-      'Establish and maintain functional one-way valve system for ongoing decompression',
-      'Monitor patient response and manage complications during and after the procedure',
-      'Document procedure thoroughly and provide comprehensive handoff to receiving facility'
-    ],
-    indications: [
-      'Tension pneumothorax with hemodynamic compromise and respiratory distress',
-      'Absent or severely diminished breath sounds with tracheal deviation',
-      'Cardiac arrest with suspected tension pneumothorax',
-      'Progressive respiratory failure with signs of mediastinal shift'
-    ],
-    contraindications: [
-      'Simple pneumothorax without tension physiology (relative)',
-      'Severe coagulopathy with high bleeding risk (relative)',
-      'Local infection at proposed insertion site',
-      'Anatomical abnormalities preventing safe needle access'
-    ],
-    equipment: [
-      '14-gauge angiocatheter (minimum 2-inch length)',
-      'Antiseptic solution (alcohol or betadine)',
-      'Sterile gauze pads and medical tape',
-      'Flutter valve or 3-way stopcock with finger cot',
-      'Personal protective equipment (gloves, mask, eye protection)',
-      'Suction equipment and airway management supplies',
-      'Continuous monitoring equipment (pulse oximetry, blood pressure)',
-      'Documentation materials and communication devices'
-    ]
-  },
+  'needle-thoracentesis': [
+    {
+      id: 'thoracentesis-step-1',
+      stepNumber: 1,
+      title: 'Rapid Assessment and Tension Pneumothorax Recognition',
+      description: 'Rapidly identify clinical signs of tension pneumothorax requiring immediate intervention',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Assess for classic triad: absent breath sounds, tracheal deviation, JVD',
+        'Check for respiratory distress with asymmetric chest expansion',
+        'Evaluate hemodynamic status: hypotension, tachycardia, weak pulses',
+        'Look for cyanosis and signs of impending cardiovascular collapse',
+        'Identify mechanism of injury suggesting pneumothorax risk',
+        'Assess for hyperresonance to percussion on affected side',
+        'Monitor for progressively worsening respiratory status',
+        'Consider tension pneumothorax in cardiac arrest with difficult ventilation'
+      ],
+      safetyNotes: [
+        'Tension pneumothorax is immediately life-threatening',
+        'Do not delay for x-ray confirmation if clinical signs present',
+        'Consider bilateral tension pneumothorax in blast injuries'
+      ],
+      equipmentNeeded: [
+        'Stethoscope for breath sound assessment',
+        'Pulse oximetry for oxygen saturation',
+        'Blood pressure monitoring equipment'
+      ]
+    },
+    {
+      id: 'thoracentesis-step-2',
+      stepNumber: 2,
+      title: 'Equipment Preparation and Site Selection',
+      description: 'Prepare equipment and identify anatomical landmarks for needle insertion',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Prepare 14-gauge angiocatheter with minimum 2-inch length',
+        'Open antiseptic solution and prepare sterile gauze',
+        'Identify 2nd intercostal space at midclavicular line on affected side',
+        'Alternative: 4th-5th intercostal space at anterior axillary line',
+        'Palpate for intercostal space above rib to avoid neurovascular bundle',
+        'Prepare flutter valve or improvised one-way valve system',
+        'Don appropriate personal protective equipment',
+        'Position patient supine or semi-upright as condition allows'
+      ],
+      safetyNotes: [
+        'Never insert needle below the rib - approach from above',
+        'Midclavicular line safer than midaxillary for most patients',
+        'Ensure adequate needle length for patient body habitus'
+      ],
+      equipmentNeeded: [
+        '14-gauge angiocatheter (2+ inch length)',
+        'Antiseptic solution (alcohol or betadine)',
+        'Flutter valve or 3-way stopcock with finger cot',
+        'Sterile gauze and tape',
+        'Personal protective equipment'
+      ]
+    },
+    {
+      id: 'thoracentesis-step-3',
+      stepNumber: 3,
+      title: 'Site Preparation and Needle Insertion',
+      description: 'Prepare insertion site and perform needle decompression',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Quickly clean insertion site with antiseptic solution',
+        'Insert needle perpendicular to chest wall at 90-degree angle',
+        'Advance needle slowly while aspirating to detect pleural entry',
+        'Listen/feel for rush of air indicating successful decompression',
+        'Advance catheter over needle into pleural space',
+        'Remove needle stylet while maintaining catheter position',
+        'Secure catheter with tape to prevent displacement',
+        'Attach flutter valve or one-way valve system immediately'
+      ],
+      safetyNotes: [
+        'Insert perpendicular to chest wall to avoid lung laceration',
+        'Do not redirect needle once inserted - risk of lung injury',
+        'Immediate rush of air confirms correct placement'
+      ],
+      equipmentNeeded: [
+        'Prepared angiocatheter',
+        'Antiseptic solution',
+        'Sterile technique supplies',
+        'Securing tape'
+      ]
+    },
+    {
+      id: 'thoracentesis-step-4',
+      stepNumber: 4,
+      title: 'Valve System Establishment',
+      description: 'Establish functional one-way valve system for ongoing decompression',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Attach flutter valve to catheter hub for continuous decompression',
+        'If no flutter valve, use 3-way stopcock with finger cot',
+        'Test valve function by observing air egress with patient respiration',
+        'Ensure valve allows air out but prevents air entry',
+        'Secure valve system to prevent disconnection',
+        'Monitor for continued air evacuation from pleural space',
+        'Position valve below level of insertion to prevent fluid backflow',
+        'Check system integrity and function continuously'
+      ],
+      safetyNotes: [
+        'One-way valve prevents reaccumulation of tension',
+        'Improper valve function can worsen pneumothorax',
+        'Secure all connections to prevent system failure'
+      ],
+      equipmentNeeded: [
+        'Flutter valve or 3-way stopcock system',
+        'Finger cot or glove finger for improvised valve',
+        'Securing tape and adhesive materials'
+      ]
+    },
+    {
+      id: 'thoracentesis-step-5',
+      stepNumber: 5,
+      title: 'Immediate Patient Response Assessment',
+      description: 'Assess immediate patient response to decompression procedure',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Monitor for immediate improvement in respiratory distress',
+        'Assess for restoration of breath sounds on affected side',
+        'Check for improvement in hemodynamic status: BP, pulse, perfusion',
+        'Evaluate oxygen saturation improvement with pulse oximetry',
+        'Monitor for resolution of tracheal deviation and JVD',
+        'Assess chest rise and fall symmetry improvement',
+        'Watch for patient color improvement and decreased cyanosis',
+        'Document immediate response to intervention'
+      ],
+      safetyNotes: [
+        'Improvement should be immediate if tension pneumothorax present',
+        'Lack of improvement may indicate incorrect diagnosis or placement',
+        'Consider additional decompression sites if bilateral involvement'
+      ],
+      equipmentNeeded: [
+        'Continuous monitoring equipment',
+        'Pulse oximetry',
+        'Blood pressure monitoring',
+        'Stethoscope for reassessment'
+      ]
+    },
+    {
+      id: 'thoracentesis-step-6',
+      stepNumber: 6,
+      title: 'Catheter Securing and Position Maintenance',
+      description: 'Secure catheter and maintain proper position during transport',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Apply occlusive dressing around catheter insertion site',
+        'Secure catheter to chest wall with medical tape',
+        'Position patient to optimize catheter function and comfort',
+        'Ensure catheter length allows for patient movement',
+        'Check catheter patency by observing continued air evacuation',
+        'Monitor insertion site for bleeding or air leak',
+        'Protect catheter from accidental displacement during transport',
+        'Mark catheter position on chest for reference'
+      ],
+      safetyNotes: [
+        'Catheter displacement can cause reaccumulation of tension',
+        'Over-securing can kink catheter and impair function',
+        'Monitor continuously for system integrity'
+      ],
+      equipmentNeeded: [
+        'Medical tape for securing',
+        'Occlusive dressing materials',
+        'Gauze pads for site protection',
+        'Marking pen for position reference'
+      ]
+    },
+    {
+      id: 'thoracentesis-step-7',
+      stepNumber: 7,
+      title: 'Complication Monitoring and Management',
+      description: 'Monitor for complications and manage adverse events',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Monitor for bleeding at insertion site and hemorrhage',
+        'Watch for signs of lung re-expansion pulmonary edema',
+        'Check for catheter malposition or migration',
+        'Assess for development of subcutaneous emphysema',
+        'Monitor for infection risk at insertion site',
+        'Watch for reaccumulation of tension if valve fails',
+        'Check for cardiac complications from mediastinal shift correction',
+        'Be prepared for chest tube insertion at receiving facility'
+      ],
+      safetyNotes: [
+        'Re-expansion pulmonary edema can be life-threatening',
+        'Subcutaneous emphysema may indicate improper placement',
+        'Have backup decompression equipment ready'
+      ],
+      equipmentNeeded: [
+        'Continuous monitoring equipment',
+        'Additional angiocatheters for backup',
+        'Suction equipment if needed',
+        'Emergency airway equipment'
+      ]
+    },
+    {
+      id: 'thoracentesis-step-8',
+      stepNumber: 8,
+      title: 'Documentation and Receiving Facility Preparation',
+      description: 'Document procedure and prepare receiving facility for continued care',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Document clinical presentation and indication for procedure',
+        'Record insertion site, time, technique, and immediate response',
+        'Note complications encountered and management provided',
+        'Document vital signs before, during, and after procedure',
+        'Communicate with receiving facility about chest tube needs',
+        'Provide detailed procedure report to surgical team',
+        'Continue monitoring and documentation during transport',
+        'Prepare for potential chest tube conversion upon arrival'
+      ],
+      safetyNotes: [
+        'Thorough documentation essential for surgical team',
+        'Receiving facility needs immediate notification',
+        'Definitive chest tube placement usually required'
+      ],
+      equipmentNeeded: [
+        'Documentation materials',
+        'Communication equipment for receiving facility',
+        'Procedure report forms',
+        'Continuous monitoring during transport'
+      ]
+    }
+  ],
 
   'intravenous-fluid-therapy': {
     name: 'Intravenous Fluid Therapy',
