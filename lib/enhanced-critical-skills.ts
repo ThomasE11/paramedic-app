@@ -11495,6 +11495,1068 @@ export const enhancedCriticalSkillSteps: { [skillId: string]: EnhancedSkillStep[
         'Post-removal monitoring capability'
       ]
     }
+  ],
+
+  // CAROTID SINUS MASSAGE
+  'carotid-sinus-massage': [
+    {
+      id: 'csm-step-1',
+      stepNumber: 1,
+      title: 'Patient Assessment and CSM Indication Evaluation',
+      description: 'Assess patient condition and determine appropriateness for carotid sinus massage',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Confirm stable supraventricular tachycardia (SVT) with narrow QRS <120ms',
+        'Verify hemodynamic stability: adequate blood pressure and consciousness',
+        'Document baseline vital signs and continuous ECG monitoring',
+        'Assess for contraindications: carotid bruits, history of stroke/TIA',
+        'Verify patient age appropriate (avoid in elderly >75 years)',
+        'Ensure IV access established before procedure',
+        'Have emergency medications readily available (adenosine, atropine)',
+        'Confirm informed consent if patient conscious and stable'
+      ],
+      contraindications: [
+        'Carotid bruits indicating carotid artery disease',
+        'History of stroke, TIA, or carotid artery surgery',
+        'Age >75 years (relative contraindication)',
+        'Hemodynamically unstable patient requiring immediate cardioversion'
+      ],
+      safetyNotes: [
+        'CSM can precipitate stroke or prolonged asystole',
+        'Always have defibrillator and emergency drugs ready',
+        'Never perform bilateral carotid massage simultaneously'
+      ],
+      equipmentNeeded: [
+        'Continuous ECG monitoring with defibrillator',
+        'Blood pressure monitoring equipment',
+        'IV access with emergency medications',
+        'Stethoscope for carotid bruit assessment'
+      ]
+    },
+    {
+      id: 'csm-step-2',
+      stepNumber: 2,
+      title: 'Carotid Artery Assessment and Selection',
+      description: 'Examine carotid arteries and select appropriate side for massage',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Auscultate both carotid arteries for presence of bruits',
+        'Position patient supine with neck slightly extended',
+        'Palpate both carotid pulses to assess strength and quality',
+        'Select right carotid artery first (dominant baroreceptor response)',
+        'Locate carotid bifurcation at level of thyroid cartilage',
+        'Identify carotid sinus just above bifurcation',
+        'Avoid areas with palpable plaques or irregularities',
+        'Document absence of bruits before proceeding'
+      ],
+      contraindications: [
+        'Audible carotid bruit on either side',
+        'Weak or absent carotid pulses',
+        'Palpable carotid plaques or irregularities'
+      ],
+      safetyNotes: [
+        'Carotid bruits indicate atherosclerotic disease and stroke risk',
+        'Never massage carotid artery with bruit present',
+        'Gentle palpation only - avoid excessive pressure'
+      ],
+      equipmentNeeded: [
+        'Stethoscope for bruit assessment',
+        'Proper patient positioning aids',
+        'Adequate lighting for examination',
+        'Documentation materials'
+      ]
+    },
+    {
+      id: 'csm-step-3',
+      stepNumber: 3,
+      title: 'Pre-Procedure Preparation and Monitoring Setup',
+      description: 'Establish comprehensive monitoring and prepare emergency interventions',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Ensure continuous ECG monitoring with rhythm strip capability',
+        'Establish baseline blood pressure and document pre-procedure vitals',
+        'Verify IV access patency and have atropine 0.5mg drawn up',
+        'Have adenosine 6mg and 12mg doses prepared if CSM fails',
+        'Position defibrillator pads for immediate cardioversion if needed',
+        'Ensure suction equipment available for airway management',
+        'Have second practitioner available to assist with monitoring',
+        'Document informed consent and procedure indication'
+      ],
+      safetyNotes: [
+        'Emergency interventions must be immediately available',
+        'Atropine ready for bradycardia or asystole',
+        'Defibrillator ready for ventricular arrhythmias'
+      ],
+      equipmentNeeded: [
+        'Continuous ECG with rhythm documentation',
+        'Emergency medications (atropine, adenosine)',
+        'Defibrillator with pads positioned',
+        'Blood pressure monitoring equipment',
+        'Suction and airway equipment'
+      ]
+    },
+    {
+      id: 'csm-step-4',
+      stepNumber: 4,
+      title: 'Carotid Sinus Massage Technique',
+      description: 'Perform carotid sinus massage using proper technique',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 45,
+      keyPoints: [
+        'Locate carotid sinus at carotid bifurcation level',
+        'Apply firm pressure with fingertips in circular motion',
+        'Massage for 10-15 seconds maximum duration',
+        'Use moderate pressure - enough to compress artery against vertebrae',
+        'Monitor ECG continuously during massage',
+        'Stop immediately if rhythm converts or patient becomes symptomatic',
+        'Never exceed 15 seconds of continuous massage',
+        'Document time and technique of massage performed'
+      ],
+      contraindications: [
+        'Any change in mental status during procedure',
+        'Development of neurological symptoms',
+        'Excessive bradycardia or asystole >5 seconds'
+      ],
+      safetyNotes: [
+        'Never exceed 15 seconds - risk of cerebral ischemia',
+        'Stop immediately if conversion occurs',
+        'Monitor for neurological changes throughout'
+      ],
+      equipmentNeeded: [
+        'Continuous ECG monitoring during procedure',
+        'Timer for massage duration',
+        'Immediate rhythm documentation capability',
+        'Neurological assessment tools'
+      ]
+    },
+    {
+      id: 'csm-step-5',
+      stepNumber: 5,
+      title: 'Response Assessment and Rhythm Evaluation',
+      description: 'Evaluate patient response and rhythm changes post-massage',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Immediately assess rhythm for conversion to sinus rhythm',
+        'Document any rhythm changes or arrhythmias that occur',
+        'Check blood pressure and heart rate post-procedure',
+        'Assess neurological status for any changes',
+        'If no conversion, wait 2-3 minutes before considering repeat attempt',
+        'Evaluate for symptoms: chest pain, dizziness, neurological changes',
+        'Continue continuous ECG monitoring for delayed effects',
+        'Document success or failure of initial attempt'
+      ],
+      contraindications: [
+        'Neurological symptoms suggesting cerebral ischemia',
+        'Persistent bradycardia or heart block',
+        'Signs of stroke or TIA'
+      ],
+      safetyNotes: [
+        'Neurological assessment crucial after CSM',
+        'Some patients may have delayed rhythm changes',
+        'Watch for rebound tachycardia or other arrhythmias'
+      ],
+      equipmentNeeded: [
+        'Continuous monitoring for rhythm assessment',
+        'Blood pressure measurement capability',
+        'Neurological assessment tools',
+        'Documentation materials for response'
+      ]
+    },
+    {
+      id: 'csm-step-6',
+      stepNumber: 6,
+      title: 'Alternative Side Attempt or Alternative Treatment',
+      description: 'Consider left carotid massage or alternative SVT treatments',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'If right CSM unsuccessful, consider left carotid massage after 5-minute interval',
+        'Repeat same assessment and technique on left carotid artery',
+        'If bilateral CSM unsuccessful, consider pharmacological treatment',
+        'Prepare adenosine 6mg IV push followed by 20ml saline flush',
+        'Consider vagal maneuvers: Valsalva, ice to face, coughing',
+        'If hemodynamically unstable, proceed to synchronized cardioversion',
+        'Document all interventions attempted and patient responses',
+        'Consider cardiology consultation for refractory SVT'
+      ],
+      contraindications: [
+        'Never perform bilateral carotid massage simultaneously',
+        'Do not repeat if neurological complications occurred'
+      ],
+      safetyNotes: [
+        'Allow adequate recovery time between attempts',
+        'Adenosine has very short half-life - rapid administration essential',
+        'Cardioversion may be needed if pharmacological treatment fails'
+      ],
+      equipmentNeeded: [
+        'Adenosine with large-bore IV access',
+        'Synchronized cardioversion capability',
+        'Alternative vagal maneuver equipment',
+        'Cardiology consultation availability'
+      ]
+    },
+    {
+      id: 'csm-step-7',
+      stepNumber: 7,
+      title: 'Post-Procedure Monitoring and Complication Management',
+      description: 'Monitor for delayed complications and provide ongoing care',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Continue ECG monitoring for minimum 30 minutes post-procedure',
+        'Monitor for delayed neurological complications or symptoms',
+        'Assess for rebound tachycardia or alternative arrhythmias',
+        'Document vital signs every 15 minutes initially',
+        'Watch for signs of carotid artery dissection: neck pain, neurological changes',
+        'Monitor for bradycardia or heart block requiring treatment',
+        'Assess carotid pulse quality and presence post-procedure',
+        'Prepare for potential complications requiring emergency intervention'
+      ],
+      contraindications: [
+        'New neurological deficits requiring immediate evaluation',
+        'Signs of carotid dissection or vascular injury'
+      ],
+      safetyNotes: [
+        'Carotid dissection is rare but serious complication',
+        'Neurological changes may be delayed',
+        'Some patients develop rebound arrhythmias'
+      ],
+      equipmentNeeded: [
+        'Extended continuous monitoring capability',
+        'Neurological assessment tools',
+        'Emergency intervention equipment',
+        'Vascular surgery consultation if needed'
+      ]
+    },
+    {
+      id: 'csm-step-8',
+      stepNumber: 8,
+      title: 'Documentation and Disposition Planning',
+      description: 'Complete comprehensive documentation and arrange appropriate follow-up',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Document indication for CSM and contraindications assessed',
+        'Record technique used, duration, and side(s) attempted',
+        'Note rhythm strips before, during, and after procedure',
+        'Document patient response and any complications',
+        'Record vital signs and neurological assessments',
+        'Note success or failure and subsequent treatments required',
+        'Arrange cardiology follow-up for SVT management',
+        'Provide patient education about arrhythmia and follow-up care'
+      ],
+      safetyNotes: [
+        'Thorough documentation essential for medicolegal protection',
+        'Cardiology follow-up important for recurrent SVT',
+        'Patient education helps prevent future episodes'
+      ],
+      equipmentNeeded: [
+        'Comprehensive documentation system',
+        'ECG rhythm strips for medical record',
+        'Cardiology referral and follow-up scheduling',
+        'Patient education materials'
+      ]
+    }
+  ],
+
+  // NORMAL CHILDBIRTH DELIVERY
+  'normal-childbirth-delivery': [
+    {
+      id: 'delivery-step-1',
+      stepNumber: 1,
+      title: 'Initial Obstetric Assessment and Delivery Preparation',
+      description: 'Rapid assessment of laboring patient and preparation for imminent delivery',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Assess stage of labor: frequency and intensity of contractions',
+        'Check for crowning or visible fetal parts at perineum',
+        'Obtain obstetric history: gravida, para, gestational age, complications',
+        'Assess maternal vital signs and fetal heart rate if equipment available',
+        'Evaluate for time to transport vs imminent delivery',
+        'Check for bleeding, ruptured membranes, or abnormal presentations',
+        'Assess for high-risk factors: multiple gestation, breech, prolapsed cord',
+        'Prepare for immediate delivery if crowning present'
+      ],
+      contraindications: [
+        'Abnormal fetal presentation (breech, transverse lie)',
+        'Prolapsed umbilical cord requiring emergency intervention',
+        'Severe antepartum hemorrhage',
+        'Known placenta previa with active bleeding'
+      ],
+      safetyNotes: [
+        'Imminent delivery takes priority over transport',
+        'Crowning indicates delivery within minutes',
+        'Have emergency equipment ready for complications'
+      ],
+      equipmentNeeded: [
+        'Vital signs monitoring equipment',
+        'Fetal heart rate monitoring if available',
+        'Obstetric emergency kit',
+        'Clean delivery supplies'
+      ]
+    },
+    {
+      id: 'delivery-step-2',
+      stepNumber: 2,
+      title: 'Sterile Field Preparation and Positioning',
+      description: 'Establish sterile field and position mother for safe delivery',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Position mother supine with knees flexed and thighs abducted',
+        'Elevate hips slightly with towels or pillows',
+        'Cleanse perineal area with antiseptic solution if time permits',
+        'Establish sterile field using sterile drapes and towels',
+        'Don sterile gloves and prepare sterile instruments',
+        'Position adequate lighting for visualization of perineum',
+        'Have suction equipment ready for newborn airway',
+        'Prepare warm towels for immediate newborn care'
+      ],
+      safetyNotes: [
+        'Sterile technique reduces infection risk',
+        'Proper positioning facilitates delivery and reduces trauma',
+        'Adequate lighting essential for safe delivery'
+      ],
+      equipmentNeeded: [
+        'Sterile delivery kit with gloves and drapes',
+        'Antiseptic solution for perineal prep',
+        'Adequate lighting source',
+        'Sterile scissors and cord clamps',
+        'Warm towels and blankets'
+      ]
+    },
+    {
+      id: 'delivery-step-3',
+      stepNumber: 3,
+      title: 'Delivery of Fetal Head',
+      description: 'Assist with controlled delivery of fetal head',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Support perineum with dominant hand to prevent rapid crowning',
+        'Apply gentle counter-pressure to fetal head during crowning',
+        'Allow slow, controlled delivery of head between contractions',
+        'Check for nuchal cord (cord around neck) as head delivers',
+        'If nuchal cord present but loose, slip over head',
+        'If nuchal cord tight, consider clamping and cutting before delivery',
+        'Suction mouth and nose with bulb syringe immediately after head delivery',
+        'Support head and check for additional nuchal cord loops'
+      ],
+      contraindications: [
+        'Tight nuchal cord preventing delivery',
+        'Signs of shoulder dystocia with head delivered but shoulders impacted'
+      ],
+      safetyNotes: [
+        'Never pull on fetal head - allow natural expulsion',
+        'Nuchal cord management critical to prevent fetal compromise',
+        'Immediate suctioning prevents aspiration'
+      ],
+      equipmentNeeded: [
+        'Sterile gloves for delivery assistance',
+        'Bulb syringe for airway suctioning',
+        'Cord clamps and sterile scissors',
+        'Sterile towels for support'
+      ]
+    },
+    {
+      id: 'delivery-step-4',
+      stepNumber: 4,
+      title: 'Delivery of Shoulders and Body',
+      description: 'Complete delivery of shoulders and remainder of fetus',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'After head delivery, allow external rotation of head',
+        'Support head with both hands during shoulder delivery',
+        'Apply gentle downward traction to deliver anterior shoulder',
+        'Once anterior shoulder delivers, apply gentle upward traction for posterior shoulder',
+        'Support body as it delivers - newborns are slippery',
+        'Avoid excessive traction that could cause brachial plexus injury',
+        'Note time of complete delivery',
+        'Immediately assess newborn breathing and heart rate'
+      ],
+      contraindications: [
+        'Shoulder dystocia - shoulders impacted after head delivery',
+        'Inability to deliver shoulders with gentle traction'
+      ],
+      safetyNotes: [
+        'Shoulder dystocia requires specific maneuvers',
+        'Excessive traction can cause permanent nerve damage',
+        'Support newborn securely - they are very slippery'
+      ],
+      equipmentNeeded: [
+        'Secure grip and support technique',
+        'Timer for delivery time documentation',
+        'Emergency shoulder dystocia management knowledge',
+        'Warm towels for immediate newborn care'
+      ]
+    },
+    {
+      id: 'delivery-step-5',
+      stepNumber: 5,
+      title: 'Immediate Newborn Care and Assessment',
+      description: 'Provide immediate care and assessment of newborn',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Place newborn skin-to-skin with mother if vigorous',
+        'Dry newborn immediately with warm towels',
+        'Assess breathing, heart rate, and color (APGAR components)',
+        'Suction mouth and nose if secretions present',
+        'Stimulate breathing by drying and tactile stimulation',
+        'Clamp and cut umbilical cord between 1-3 minutes after birth',
+        'Keep newborn warm - hypothermia is dangerous',
+        'Assign preliminary APGAR scores at 1 and 5 minutes'
+      ],
+      contraindications: [
+        'Newborn requiring immediate resuscitation',
+        'Signs of respiratory distress or cyanosis'
+      ],
+      safetyNotes: [
+        'Most newborns transition well with basic support',
+        'Delayed cord clamping benefits newborn unless resuscitation needed',
+        'Temperature regulation critical for newborn survival'
+      ],
+      equipmentNeeded: [
+        'Warm towels and blankets',
+        'Bulb syringe for suctioning',
+        'Cord clamps and sterile scissors',
+        'APGAR scoring reference',
+        'Newborn resuscitation equipment if needed'
+      ]
+    },
+    {
+      id: 'delivery-step-6',
+      stepNumber: 6,
+      title: 'Delivery of Placenta and Inspection',
+      description: 'Manage third stage of labor and deliver placenta',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Allow placenta to separate naturally - usually within 30 minutes',
+        'Watch for signs of placental separation: cord lengthening, uterine changes',
+        'Apply gentle downward traction on cord during uterine contraction',
+        'Never pull forcefully on cord - risk of uterine inversion or cord avulsion',
+        'Inspect placenta for completeness - all cotyledons present',
+        'Check for torn membranes or retained placental fragments',
+        'Estimate blood loss and monitor maternal vital signs',
+        'Massage uterine fundus to promote contraction and control bleeding'
+      ],
+      contraindications: [
+        'Excessive bleeding suggesting retained placenta',
+        'Signs of uterine inversion',
+        'Cord avulsion or breakage'
+      ],
+      safetyNotes: [
+        'Retained placenta can cause severe hemorrhage',
+        'Uterine massage essential for bleeding control',
+        'Never pull forcefully on umbilical cord'
+      ],
+      equipmentNeeded: [
+        'Container for placental inspection',
+        'Sterile towels for blood loss assessment',
+        'Uterine massage technique',
+        'Vital signs monitoring equipment'
+      ]
+    },
+    {
+      id: 'delivery-step-7',
+      stepNumber: 7,
+      title: 'Maternal Assessment and Hemorrhage Control',
+      description: 'Assess mother for complications and control postpartum bleeding',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Inspect perineum for lacerations requiring repair',
+        'Assess degree of any tears: first, second, third, or fourth degree',
+        'Apply direct pressure to control bleeding from lacerations',
+        'Perform bimanual uterine massage if bleeding excessive',
+        'Monitor maternal vital signs for signs of shock',
+        'Estimate total blood loss throughout delivery',
+        'Administer IV fluids if signs of hypovolemia',
+        'Consider uterotonic medications if available and bleeding continues'
+      ],
+      contraindications: [
+        'Severe lacerations requiring surgical repair',
+        'Uncontrolled postpartum hemorrhage',
+        'Signs of uterine rupture or inversion'
+      ],
+      safetyNotes: [
+        'Postpartum hemorrhage leading cause of maternal mortality',
+        'Uterine atony most common cause of postpartum bleeding',
+        'Early recognition and treatment of complications essential'
+      ],
+      equipmentNeeded: [
+        'Direct pressure supplies for bleeding control',
+        'IV fluids and administration equipment',
+        'Uterotonic medications if available',
+        'Blood loss estimation materials'
+      ]
+    },
+    {
+      id: 'delivery-step-8',
+      stepNumber: 8,
+      title: 'Documentation and Transport Preparation',
+      description: 'Complete delivery documentation and prepare for transport',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Document time of delivery and APGAR scores',
+        'Record maternal and newborn condition',
+        'Note any complications during delivery',
+        'Document placental delivery and completeness',
+        'Record estimated blood loss and vital signs',
+        'Prepare both mother and newborn for transport',
+        'Ensure newborn warmth during transport',
+        'Communicate delivery details to receiving hospital'
+      ],
+      safetyNotes: [
+        'Complete documentation essential for continuity of care',
+        'Both mother and newborn need ongoing monitoring',
+        'Temperature control critical during transport'
+      ],
+      equipmentNeeded: [
+        'Delivery documentation forms',
+        'Transport equipment for mother and newborn',
+        'Temperature control for newborn',
+        'Communication equipment for hospital notification'
+      ]
+    }
+  ],
+
+  // PATIENT HANDOVER  
+  'patient-handover': [
+    {
+      id: 'handover-step-1',
+      stepNumber: 1,
+      title: 'Pre-Handover Preparation and Information Gathering',
+      description: 'Organize patient information and prepare for structured handover communication',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Review patient chart, medications, and treatment timeline',
+        'Gather all relevant diagnostic results and vital signs trends',
+        'Prepare SBAR format: Situation, Background, Assessment, Recommendation',
+        'Organize medication list with doses, times, and routes',
+        'Review all procedures performed and patient responses',
+        'Check for any pending orders or treatments',
+        'Prepare summary of family communications and concerns',
+        'Ensure all documentation is complete and current'
+      ],
+      safetyNotes: [
+        'Incomplete handover communication leads to medical errors',
+        'Structured format improves information transfer accuracy',
+        'All critical information must be communicated clearly'
+      ],
+      equipmentNeeded: [
+        'Patient medical record and chart',
+        'Medication administration record',
+        'Vital signs flow sheet',
+        'Diagnostic test results',
+        'SBAR handover template'
+      ]
+    },
+    {
+      id: 'handover-step-2',
+      stepNumber: 2,
+      title: 'SITUATION - Current Patient Status and Chief Complaint',
+      description: 'Communicate current patient situation and primary presenting problem',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'State patient name, age, and room/bed number',
+        'Present chief complaint and reason for current admission/encounter',
+        'Describe current patient condition and level of consciousness',
+        'Report current vital signs and any concerning trends',
+        'Identify immediate concerns or priority interventions needed',
+        'Note patient\'s current location and planned destination',
+        'Mention any isolation precautions or special considerations',
+        'State urgency level and time-sensitive issues'
+      ],
+      safetyNotes: [
+        'Patient identification prevents wrong-patient errors',
+        'Current status establishes baseline for receiving team',
+        'Priority concerns ensure immediate attention to critical needs'
+      ],
+      equipmentNeeded: [
+        'Current vital signs documentation',
+        'Patient identification verification',
+        'Priority assessment tools',
+        'Isolation precaution signs if applicable'
+      ]
+    },
+    {
+      id: 'handover-step-3',
+      stepNumber: 3,
+      title: 'BACKGROUND - Medical History and Context',
+      description: 'Provide relevant background information and medical context',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Summarize relevant past medical history and chronic conditions',
+        'List current medications, allergies, and drug reactions',
+        'Describe events leading to current admission or encounter',
+        'Review significant diagnostic findings and test results',
+        'Note relevant family history and social factors',
+        'Mention previous hospitalizations or procedures related to current condition',
+        'Include baseline functional status and cognitive level',
+        'Describe patient and family understanding of condition'
+      ],
+      safetyNotes: [
+        'Medical history context essential for safe care decisions',
+        'Allergy information prevents adverse drug reactions',
+        'Baseline function helps establish realistic goals'
+      ],
+      equipmentNeeded: [
+        'Complete medical history documentation',
+        'Allergy and medication lists',
+        'Previous diagnostic reports',
+        'Family communication records'
+      ]
+    },
+    {
+      id: 'handover-step-4',
+      stepNumber: 4,
+      title: 'ASSESSMENT - Current Clinical Assessment and Plan',
+      description: 'Share clinical assessment findings and current treatment plan',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Present working diagnosis and differential diagnoses',
+        'Describe current treatment plan and interventions',
+        'Report patient response to treatments and medications',
+        'Identify ongoing problems and areas of concern',
+        'Note any complications or adverse events',
+        'Describe current monitoring requirements and frequency',
+        'Report pending tests or procedures and expected timing',
+        'Assess patient and family coping and support needs'
+      ],
+      safetyNotes: [
+        'Clear assessment helps receiving team understand priorities',
+        'Treatment response guides continuation or modification of care',
+        'Complications require immediate attention and monitoring'
+      ],
+      equipmentNeeded: [
+        'Treatment plan documentation',
+        'Medication response records',
+        'Monitoring parameter guidelines',
+        'Pending procedure schedules'
+      ]
+    },
+    {
+      id: 'handover-step-5',
+      stepNumber: 5,
+      title: 'RECOMMENDATIONS - Care Priorities and Action Items',
+      description: 'Provide specific recommendations for ongoing care and priorities',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Identify immediate priorities requiring attention',
+        'Recommend specific monitoring parameters and frequency',
+        'Suggest medication adjustments or interventions to consider',
+        'Note when to contact physician or escalate care',
+        'Identify patient education needs and family concerns to address',
+        'Recommend timing for reassessment or follow-up',
+        'Suggest consultations or specialist referrals if needed',
+        'Provide contact information for questions or clarifications'
+      ],
+      safetyNotes: [
+        'Clear priorities help receiving team focus on most important issues',
+        'Specific parameters prevent monitoring gaps',
+        'Contact information enables follow-up questions'
+      ],
+      equipmentNeeded: [
+        'Priority assessment checklist',
+        'Monitoring parameter references',
+        'Contact information list',
+        'Consultation request forms if needed'
+      ]
+    },
+    {
+      id: 'handover-step-6',
+      stepNumber: 6,
+      title: 'Interactive Communication and Question Period',
+      description: 'Facilitate two-way communication and address receiving team questions',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Encourage questions from receiving team members',
+        'Clarify any confusing or unclear information',
+        'Provide additional details requested by receiving team',
+        'Confirm understanding of critical information',
+        'Address concerns or suggestions from receiving team',
+        'Ensure all team members have opportunity to ask questions',
+        'Document any additional information shared during questions',
+        'Confirm agreement on priority interventions'
+      ],
+      safetyNotes: [
+        'Interactive communication prevents misunderstandings',
+        'Question period identifies information gaps',
+        'Confirmation ensures critical information understood correctly'
+      ],
+      equipmentNeeded: [
+        'Quiet environment for clear communication',
+        'Additional documentation for clarification',
+        'Note-taking materials for new information',
+        'Communication aids if language barriers exist'
+      ]
+    },
+    {
+      id: 'handover-step-7',
+      stepNumber: 7,
+      title: 'Physical Patient Introduction and Bedside Assessment',
+      description: 'Introduce receiving team to patient and demonstrate key assessment findings',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 150,
+      keyPoints: [
+        'Introduce receiving team members to patient and family',
+        'Demonstrate key physical assessment findings',
+        'Show location of important equipment and monitoring devices',
+        'Review medication administration routes and timing',
+        'Point out any special precautions or safety considerations',
+        'Demonstrate patient positioning or mobility limitations',
+        'Show family members and introduce them to new team',
+        'Ensure patient comfort and questions are addressed'
+      ],
+      safetyNotes: [
+        'Bedside introduction builds patient-provider relationship',
+        'Physical demonstration prevents assessment errors',
+        'Equipment location knowledge prevents delays in care'
+      ],
+      equipmentNeeded: [
+        'All patient monitoring and treatment equipment',
+        'Medication administration supplies',
+        'Patient positioning aids',
+        'Comfort items and personal belongings'
+      ]
+    },
+    {
+      id: 'handover-step-8',
+      stepNumber: 8,
+      title: 'Documentation and Follow-up Communication',
+      description: 'Complete handover documentation and establish follow-up communication plan',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Document handover completion time and receiving team members',
+        'Record any additional information shared or questions answered',
+        'Ensure all required forms and documentation transferred',
+        'Provide contact information for follow-up questions',
+        'Confirm receiving team accepts responsibility for patient care',
+        'Schedule any required follow-up communications',
+        'Document patient and family satisfaction with transition',
+        'Complete any required quality assurance reporting'
+      ],
+      safetyNotes: [
+        'Documentation provides record of care transition',
+        'Clear responsibility transfer prevents care gaps',
+        'Follow-up availability ensures continuity of care'
+      ],
+      equipmentNeeded: [
+        'Handover documentation forms',
+        'Contact information directory',
+        'Quality assurance reporting system',
+        'Communication scheduling tools'
+      ]
+    }
+  ],
+
+  // BAG VALVE MASK RESERVOIR VENTILATION
+  'bag-valve-mask-reservoir-ventilation': [
+    {
+      id: 'bvm-step-1',
+      stepNumber: 1,
+      title: 'Patient Assessment and BVM Ventilation Indication',
+      description: 'Assess patient respiratory status and determine need for bag-valve-mask ventilation',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Assess consciousness level and ability to protect airway',
+        'Evaluate breathing adequacy: rate, depth, effort, oxygen saturation',
+        'Check for signs of respiratory distress or failure',
+        'Assess airway patency and presence of obstructions',
+        'Determine if patient requires assisted ventilation',
+        'Consider causes: overdose, trauma, cardiac arrest, respiratory failure',
+        'Evaluate need for immediate airway management',
+        'Assess patient size for appropriate equipment selection'
+      ],
+      contraindications: [
+        'Conscious patient with adequate spontaneous ventilation',
+        'Vomiting patient without airway protection',
+        'Suspected pneumothorax without decompression'
+      ],
+      safetyNotes: [
+        'BVM ventilation can cause gastric distention and aspiration',
+        'Excessive pressure can cause pneumothorax',
+        'Proper technique essential for effective ventilation'
+      ],
+      equipmentNeeded: [
+        'Pulse oximetry for oxygen saturation monitoring',
+        'Respiratory assessment tools',
+        'Airway obstruction removal equipment',
+        'Appropriate size BVM equipment'
+      ]
+    },
+    {
+      id: 'bvm-step-2',
+      stepNumber: 2,
+      title: 'Equipment Selection and Assembly',
+      description: 'Select appropriate BVM equipment and assemble with oxygen reservoir',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Select appropriate bag size: adult (1500ml), pediatric (500ml), infant (250ml)',
+        'Choose correct mask size to ensure proper seal without covering eyes',
+        'Attach oxygen reservoir bag to increase FiO2 delivery',
+        'Connect oxygen tubing to high-flow oxygen source (15L/min)',
+        'Verify bag self-inflates properly when squeezed and released',
+        'Check mask for cracks, holes, or defects',
+        'Ensure all connections are secure and leak-free',
+        'Have suction equipment immediately available'
+      ],
+      contraindications: [
+        'Damaged or defective equipment',
+        'Inappropriate size selection for patient'
+      ],
+      safetyNotes: [
+        'Reservoir bag increases oxygen concentration to 90-95%',
+        'Proper equipment function essential for effective ventilation',
+        'Mask seal quality determines ventilation effectiveness'
+      ],
+      equipmentNeeded: [
+        'Bag-valve-mask device with reservoir',
+        'Various mask sizes for proper fit',
+        'High-flow oxygen source and tubing',
+        'Suction equipment with rigid catheter'
+      ]
+    },
+    {
+      id: 'bvm-step-3',
+      stepNumber: 3,
+      title: 'Patient Positioning and Airway Opening',
+      description: 'Position patient and open airway for optimal ventilation',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 45,
+      keyPoints: [
+        'Position patient supine on firm surface',
+        'Open airway using head-tilt chin-lift (or jaw thrust if trauma)',
+        'Ensure cervical spine immobilization if trauma suspected',
+        'Remove visible foreign objects from mouth if present',
+        'Suction airway of secretions, blood, or vomitus',
+        'Insert oral or nasal airway adjunct if needed',
+        'Position head to optimize airway alignment',
+        'Ensure adequate access for mask placement'
+      ],
+      contraindications: [
+        'Cervical spine movement in trauma patients',
+        'Forcing airway adjuncts in conscious patients'
+      ],
+      safetyNotes: [
+        'Proper airway opening essential for effective ventilation',
+        'Suction before positive pressure ventilation',
+        'Airway adjuncts help maintain patency'
+      ],
+      equipmentNeeded: [
+        'Suction equipment for airway clearance',
+        'Oral and nasal airway adjuncts',
+        'Cervical spine immobilization if indicated',
+        'Proper patient positioning aids'
+      ]
+    },
+    {
+      id: 'bvm-step-4',
+      stepNumber: 4,
+      title: 'Mask Placement and Seal Technique',
+      description: 'Achieve proper mask seal for effective positive pressure ventilation',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Use EC-clamp technique: thumb and index finger form "C" around mask',
+        'Place mask over nose and mouth, avoiding pressure on eyes',
+        'Use middle, ring, and little fingers to lift jaw (forming "E")',
+        'Apply downward pressure on mask while lifting jaw upward',
+        'Ensure complete seal around nose and mouth',
+        'Monitor for air leaks during ventilation',
+        'Adjust mask position to optimize seal',
+        'Avoid excessive pressure on face that could cause tissue damage'
+      ],
+      contraindications: [
+        'Inability to achieve adequate mask seal',
+        'Facial trauma preventing proper mask fit'
+      ],
+      safetyNotes: [
+        'Poor mask seal leads to ineffective ventilation',
+        'EC-clamp technique provides best seal with one-person operation',
+        'Avoid pressure on eyes which can cause injury'
+      ],
+      equipmentNeeded: [
+        'Properly fitted mask for patient size',
+        'Good lighting to assess mask seal',
+        'Alternative mask sizes if seal inadequate',
+        'Two-person technique if one-person seal inadequate'
+      ]
+    },
+    {
+      id: 'bvm-step-5',
+      stepNumber: 5,
+      title: 'Ventilation Technique and Rate Control',
+      description: 'Provide effective positive pressure ventilation with appropriate rate and volume',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Squeeze bag with smooth, steady pressure over 1 second',
+        'Deliver just enough volume to see chest rise (6-8ml/kg)',
+        'Allow complete bag refill between breaths',
+        'Maintain ventilation rate: 10-12 breaths/min for adults',
+        'Pediatric rates: 20-30/min infants, 12-20/min children',
+        'Watch for chest rise with each ventilation',
+        'Avoid rapid or forceful ventilation',
+        'Monitor oxygen saturation response'
+      ],
+      contraindications: [
+        'Excessive ventilation causing pneumothorax',
+        'Hyperventilation causing decreased cardiac output'
+      ],
+      safetyNotes: [
+        'Excessive tidal volume can cause lung injury',
+        'Too rapid ventilation impedes venous return',
+        'Chest rise indicates adequate ventilation volume'
+      ],
+      equipmentNeeded: [
+        'Timer or metronome for rate control',
+        'Pulse oximetry for oxygenation monitoring',
+        'Capnography if available for ventilation assessment',
+        'Assistant for two-person technique if needed'
+      ]
+    },
+    {
+      id: 'bvm-step-6',
+      stepNumber: 6,
+      title: 'Monitoring and Assessment of Ventilation Effectiveness',
+      description: 'Continuously monitor patient response and ventilation effectiveness',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Observe chest rise and fall with each ventilation',
+        'Monitor oxygen saturation trends and response',
+        'Auscultate bilateral breath sounds regularly',
+        'Assess for gastric distention and decompress if needed',
+        'Watch for improvement in skin color and perfusion',
+        'Monitor for complications: pneumothorax, aspiration',
+        'Assess ventilation compliance (ease of bag compression)',
+        'Adjust technique based on patient response'
+      ],
+      contraindications: [
+        'Signs of pneumothorax requiring decompression',
+        'Severe gastric distention requiring nasogastric decompression'
+      ],
+      safetyNotes: [
+        'Continuous monitoring essential for safe ventilation',
+        'Gastric distention increases aspiration risk',
+        'Pneumothorax can be life-threatening complication'
+      ],
+      equipmentNeeded: [
+        'Stethoscope for breath sound assessment',
+        'Continuous pulse oximetry monitoring',
+        'Nasogastric tube for gastric decompression',
+        'Equipment for pneumothorax decompression if needed'
+      ]
+    },
+    {
+      id: 'bvm-step-7',
+      stepNumber: 7,
+      title: 'Two-Person Technique and Advanced Airway Consideration',
+      description: 'Implement two-person BVM technique and consider advanced airway management',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Use two-person technique if one-person ventilation inadequate',
+        'First person maintains mask seal with both hands',
+        'Second person squeezes bag and controls ventilation',
+        'Communicate ventilation timing between team members',
+        'Consider supraglottic airway if BVM difficult',
+        'Prepare for endotracheal intubation if indicated',
+        'Maintain BVM ventilation during airway procedures',
+        'Ensure continuous oxygenation and ventilation'
+      ],
+      safetyNotes: [
+        'Two-person technique often more effective than one-person',
+        'Advanced airway may be needed for prolonged ventilation',
+        'Never interrupt ventilation for extended periods'
+      ],
+      equipmentNeeded: [
+        'Second trained provider for assistance',
+        'Supraglottic airway devices as backup',
+        'Endotracheal intubation equipment',
+        'Continuous monitoring during airway transitions'
+      ]
+    },
+    {
+      id: 'bvm-step-8',
+      stepNumber: 8,
+      title: 'Documentation and Transition Planning',
+      description: 'Document ventilation provided and plan transition to definitive airway management',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Document indication for BVM ventilation',
+        'Record ventilation technique, rate, and patient response',
+        'Note oxygen saturation improvement and complications',
+        'Document duration of BVM ventilation provided',
+        'Plan for definitive airway management if needed',
+        'Communicate ventilation history to receiving team',
+        'Ensure proper equipment cleaning and storage',
+        'Complete quality assurance documentation'
+      ],
+      safetyNotes: [
+        'Documentation provides record of respiratory support',
+        'Equipment cleaning prevents cross-contamination',
+        'Transition planning ensures continuity of care'
+      ],
+      equipmentNeeded: [
+        'Documentation forms for ventilation record',
+        'Equipment cleaning and disinfection supplies',
+        'Communication tools for care team',
+        'Storage and inventory management systems'
+      ]
+    }
   ]
 };
 
