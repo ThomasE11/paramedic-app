@@ -10906,89 +10906,500 @@ export const criticalSkillsMetadata = {
     }
   ],
 
-  'intravenous-fluid-therapy': {
-    name: 'Intravenous Fluid Therapy',
-    category: 'vascular-access',
-    difficultyLevel: 'INTERMEDIATE' as const,
-    timeEstimateMinutes: 25,
-    isCritical: true,
-    objectives: [
-      'Assess patient hemodynamic status and determine appropriate fluid therapy indication',
-      'Select correct IV fluid type and calculate appropriate dosing for patient condition',
-      'Establish secure peripheral IV access using sterile technique and safety protocols',
-      'Administer fluid bolus therapy with continuous monitoring of patient response',
-      'Titrate fluid rates based on clinical response and avoid fluid overload complications',
-      'Monitor for adverse reactions and manage complications of IV fluid therapy',
-      'Document fluid administration and provide comprehensive handoff to receiving team'
-    ],
-    indications: [
-      'Hypovolemic shock from bleeding, dehydration, or fluid losses',
-      'Hypotension requiring volume support and resuscitation',
-      'Severe dehydration from vomiting, diarrhea, or inadequate intake',
-      'Burns requiring fluid resuscitation to prevent shock',
-      'Sepsis with hypotension requiring fluid therapy',
-      'Medication administration requiring IV access'
-    ],
-    contraindications: [
-      'Pulmonary edema or acute congestive heart failure (relative)',
-      'Known renal failure with fluid overload',
-      'Hypervolemia or evidence of fluid overload',
-      'Severe electrolyte imbalances requiring specific management'
-    ],
-    equipment: [
-      'Isotonic crystalloid solutions (Normal Saline, Lactated Ringers)',
-      'IV catheters (14G, 16G, 18G, 20G, 22G)',
-      'IV administration sets with macro and micro drip chambers',
-      'IV poles, pressure bags for rapid infusion',
-      'Infusion pumps for precise rate control',
-      'IV start kits with antiseptic and securing materials',
-      'Fluid warmers for large volume resuscitation',
-      'Monitoring equipment for vital signs and response assessment'
-    ]
-  },
+  'intravenous-fluid-therapy': [
+    {
+      id: 'fluid-step-1',
+      stepNumber: 1,
+      title: 'Hemodynamic Assessment and Fluid Indication Determination',
+      description: 'Assess patient hemodynamic status and determine appropriate fluid therapy indication',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Assess vital signs: blood pressure, heart rate, respiratory rate, temperature',
+        'Evaluate signs of hypovolemia: tachycardia, hypotension, poor capillary refill',
+        'Check skin turgor, mucous membrane moisture, and jugular vein distension',
+        'Assess mental status changes suggesting poor perfusion',
+        'Identify underlying cause: bleeding, dehydration, sepsis, burns',
+        'Evaluate urine output if available as marker of perfusion',
+        'Check for orthostatic vital sign changes if safe to assess',
+        'Rule out cardiogenic causes of hypotension before fluid administration'
+      ],
+      contraindications: [
+        'Pulmonary edema with rales and JVD',
+        'Known heart failure with fluid overload',
+        'Hypervolemia with peripheral edema'
+      ],
+      safetyNotes: [
+        'Fluid overload can worsen heart failure',
+        'Assess carefully for cardiogenic vs hypovolemic shock',
+        'Serial assessments more reliable than single measurements'
+      ],
+      equipmentNeeded: [
+        'Vital signs monitoring equipment',
+        'Stethoscope for cardiac and lung assessment',
+        'Capnography for perfusion assessment',
+        'Documentation materials'
+      ]
+    },
+    {
+      id: 'fluid-step-2',
+      stepNumber: 2,
+      title: 'Fluid Selection and Dosage Calculation',
+      description: 'Select correct IV fluid type and calculate appropriate dosing for patient condition',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Choose isotonic crystalloid: Normal Saline (0.9% NaCl) or Lactated Ringers',
+        'Calculate initial bolus: 20ml/kg for pediatrics, 500-1000ml for adults',
+        'Consider patient weight, age, and comorbidities in dosing',
+        'Select NS for hyperkalemia, head injury, or alkalosis',
+        'Choose LR for trauma, burns, or when balanced solution preferred',
+        'Avoid hypotonic solutions in acute resuscitation',
+        'Calculate maintenance rates if ongoing therapy needed',
+        'Consider need for blood products if hemorrhage suspected'
+      ],
+      safetyNotes: [
+        'Hypotonic fluids can cause cerebral edema',
+        'Large volumes of NS can cause hyperchloremic acidosis',
+        'Pediatric dosing different from adult calculations'
+      ],
+      equipmentNeeded: [
+        'Isotonic crystalloid solutions (NS, LR)',
+        'Fluid calculation references or apps',
+        'Patient weight estimation tools if needed'
+      ]
+    },
+    {
+      id: 'fluid-step-3',
+      stepNumber: 3,
+      title: 'IV Access Establishment',
+      description: 'Establish secure peripheral IV access using sterile technique and safety protocols',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Select appropriate IV catheter size: 14-16G for resuscitation, 18-20G for maintenance',
+        'Choose optimal vein: antecubital, forearm, or hand veins',
+        'Apply tourniquet and prepare insertion site with antiseptic',
+        'Use sterile technique throughout insertion procedure',
+        'Insert catheter at 15-30 degree angle with bevel up',
+        'Advance catheter over needle once flashback obtained',
+        'Secure catheter with tape and transparent dressing',
+        'Attach IV tubing and verify patency with saline flush'
+      ],
+      safetyNotes: [
+        'Use universal precautions and sterile technique',
+        'Larger gauge catheters allow faster fluid administration',
+        'Secure IV well to prevent infiltration during transport'
+      ],
+      equipmentNeeded: [
+        'IV catheters in appropriate sizes',
+        'Antiseptic prep solutions',
+        'IV start kits with tourniquet and tape',
+        'Sterile gloves and supplies',
+        'Normal saline flushes'
+      ]
+    },
+    {
+      id: 'fluid-step-4',
+      stepNumber: 4,
+      title: 'IV Administration Set Setup',
+      description: 'Set up IV administration system for controlled fluid delivery',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Select macro-drip tubing (10-15 gtt/ml) for rapid fluid administration',
+        'Prime IV tubing completely to remove all air bubbles',
+        'Connect tubing to IV catheter using sterile technique',
+        'Set up pressure bag or manual pressure for rapid infusion if needed',
+        'Calculate drip rate for desired infusion speed',
+        'Use infusion pump for precise rate control when available',
+        'Label IV bags with patient information and start time',
+        'Ensure IV pole height optimizes gravity flow'
+      ],
+      safetyNotes: [
+        'Remove all air from tubing to prevent air embolism',
+        'Check for leaks in system before starting infusion',
+        'Pressure bags increase infusion rate significantly'
+      ],
+      equipmentNeeded: [
+        'IV administration sets (macro-drip)',
+        'IV poles for fluid bag elevation',
+        'Pressure bags for rapid infusion',
+        'Infusion pumps if available',
+        'IV bag labels and marking pens'
+      ]
+    },
+    {
+      id: 'fluid-step-5',
+      stepNumber: 5,
+      title: 'Fluid Bolus Administration and Monitoring',
+      description: 'Administer fluid bolus therapy with continuous monitoring of patient response',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 600,
+      keyPoints: [
+        'Administer initial fluid bolus at calculated rate',
+        'Monitor vital signs every 5-10 minutes during rapid infusion',
+        'Assess for immediate hemodynamic improvement',
+        'Watch for signs of fluid overload: increased work of breathing, rales',
+        'Monitor IV site for infiltration, phlebitis, or extravasation',
+        'Document fluid volumes administered and patient response',
+        'Reassess perfusion markers: capillary refill, skin color, mental status',
+        'Consider second bolus if inadequate response and no contraindications'
+      ],
+      safetyNotes: [
+        'Rapid fluid administration can cause pulmonary edema',
+        'Monitor continuously for signs of volume overload',
+        'Stop infusion immediately if infiltration occurs'
+      ],
+      equipmentNeeded: [
+        'Continuous monitoring equipment',
+        'Stethoscope for lung assessment',
+        'Documentation materials',
+        'Pressure monitoring devices'
+      ]
+    },
+    {
+      id: 'fluid-step-6',
+      stepNumber: 6,
+      title: 'Response Assessment and Rate Titration',
+      description: 'Titrate fluid rates based on clinical response and avoid fluid overload complications',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Reassess hemodynamic parameters after each bolus',
+        'Adjust infusion rate based on patient response and blood pressure',
+        'Switch to maintenance rate once hemodynamic stability achieved',
+        'Monitor for adequate urine output as perfusion indicator',
+        'Watch for improvement in mental status and peripheral perfusion',
+        'Reduce rate if signs of volume overload develop',
+        'Consider stopping fluids if patient becomes hypervolemic',
+        'Transition to oral fluids when appropriate and patient can tolerate'
+      ],
+      safetyNotes: [
+        'Overtitration can cause congestive heart failure',
+        'Elderly patients more susceptible to fluid overload',
+        'Monitor lung sounds frequently during infusion'
+      ],
+      equipmentNeeded: [
+        'Infusion rate calculation tools',
+        'Continuous monitoring equipment',
+        'Urine measurement devices if available'
+      ]
+    },
+    {
+      id: 'fluid-step-7',
+      stepNumber: 7,
+      title: 'Complication Recognition and Management',
+      description: 'Monitor for adverse reactions and manage complications of IV fluid therapy',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Monitor for fluid overload: pulmonary edema, peripheral edema, JVD',
+        'Watch for IV site complications: infiltration, phlebitis, infection',
+        'Assess for electrolyte imbalances from large volume infusions',
+        'Monitor for allergic reactions to IV solutions or additives',
+        'Check for hypothermia from rapid infusion of room temperature fluids',
+        'Watch for air embolism from improper IV setup',
+        'Monitor for hyperchloremic acidosis with large NS volumes',
+        'Assess for hemolysis if hypotonic solutions inadvertently used'
+      ],
+      safetyNotes: [
+        'Stop infusion immediately if severe complications develop',
+        'Have diuretics available for severe fluid overload',
+        'Use fluid warmers for large volume resuscitation'
+      ],
+      equipmentNeeded: [
+        'Emergency medications (diuretics, epinephrine)',
+        'Fluid warming devices',
+        'Equipment for IV site assessment',
+        'Electrolyte monitoring if available'
+      ]
+    },
+    {
+      id: 'fluid-step-8',
+      stepNumber: 8,
+      title: 'Documentation and Handoff',
+      description: 'Document fluid administration and provide comprehensive handoff to receiving team',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Document total fluid volumes administered and types used',
+        'Record patient response to therapy and vital sign trends',
+        'Note any complications encountered and management provided',
+        'Document ongoing infusion rates and access site condition',
+        'Calculate total fluid balance including losses and intake',
+        'Provide detailed report to receiving medical team',
+        'Include recommendations for continued therapy or monitoring',
+        'Document IV site assessment and patency status'
+      ],
+      safetyNotes: [
+        'Accurate documentation essential for ongoing fluid management',
+        'Include specific volumes and rates for receiving team',
+        'Note any patient allergies or adverse reactions'
+      ],
+      equipmentNeeded: [
+        'Documentation materials and flowsheets',
+        'Fluid intake/output records',
+        'Communication equipment for receiving facility'
+      ]
+    }
+  ],
 
-  'supraglottic-airway-management': {
-    name: 'Supraglottic Airway Management',
-    category: 'airway',
-    difficultyLevel: 'ADVANCED' as const,
-    timeEstimateMinutes: 12,
-    isCritical: true,
-    objectives: [
-      'Assess patient appropriateness for supraglottic airway insertion and rule out contraindications',
-      'Select correct device type and size based on patient characteristics and clinical needs',
-      'Demonstrate proper insertion technique for LMA, King LT, or similar supraglottic devices',
-      'Confirm correct placement using multiple verification methods including capnography',
-      'Secure device adequately and optimize ventilation parameters to prevent complications',
-      'Monitor continuously for device displacement and manage potential complications',
-      'Provide appropriate handoff and documentation for receiving medical team'
-    ],
-    indications: [
-      'Failed bag-mask ventilation requiring immediate airway rescue',
-      'Unconscious patient requiring positive pressure ventilation support',
-      'Cannot intubate, cannot oxygenate emergency situation',
-      'Bridge airway during failed intubation attempts',
-      'Cardiac arrest requiring definitive airway management',
-      'Alternative to intubation when endotracheal intubation is not feasible'
-    ],
-    contraindications: [
-      'Conscious patient with intact gag reflex or protective airway reflexes',
-      'Suspected complete upper airway obstruction above vocal cords',
-      'Caustic ingestion with potential laryngeal or pharyngeal burns',
-      'Significant oral, pharyngeal, or laryngeal trauma',
-      'Limited mouth opening preventing adequate device insertion (<2.5 cm)',
-      'Active vomiting or high risk of aspiration (relative contraindication)'
-    ],
-    equipment: [
-      'Supraglottic airway devices (LMA, King LT, I-gel) in multiple sizes',
-      'Syringes (10-30 mL) for cuff inflation',
-      'Water-soluble lubricant for device preparation',
-      'Bag-valve-mask device with oxygen reservoir',
-      'End-tidal CO2 monitoring with waveform capability',
-      'Suction equipment with rigid and flexible catheters',
-      'Securing tape, ties, or commercial airway holders',
-      'Stethoscope for auscultation and backup airway equipment'
-    ]
-  },
+  'supraglottic-airway-management': [
+    {
+      id: 'sga-step-1',
+      stepNumber: 1,
+      title: 'Patient Assessment and Device Selection',
+      description: 'Assess patient appropriateness for supraglottic airway insertion and select appropriate device',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Assess airway anatomy: mouth opening, neck mobility, dentition',
+        'Confirm unconscious state with absent gag reflex',
+        'Evaluate for contraindications: facial trauma, caustic ingestion, active vomiting',
+        'Select appropriate device: LMA, King LT, I-gel based on patient and provider factors',
+        'Choose correct size: use manufacturer weight-based sizing or clinical assessment',
+        'Consider patient positioning and access for optimal insertion angle',
+        'Assess adequacy of current oxygenation and ventilation',
+        'Prepare backup plans: surgical airway, different device sizes'
+      ],
+      contraindications: [
+        'Conscious patient with intact protective reflexes',
+        'Complete upper airway obstruction',
+        'Severe facial/oral trauma',
+        'Caustic ingestion with potential burns'
+      ],
+      safetyNotes: [
+        'Never force insertion against resistance',
+        'Have multiple device sizes available',
+        'Maintain oxygenation throughout procedure'
+      ],
+      equipmentNeeded: [
+        'Multiple supraglottic airway devices and sizes',
+        'Patient assessment tools',
+        'Backup airway equipment'
+      ]
+    },
+    {
+      id: 'sga-step-2',
+      stepNumber: 2,
+      title: 'Equipment Preparation and Pre-oxygenation',
+      description: 'Prepare supraglottic airway device and optimize patient oxygenation',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Test device cuff integrity by inflating to maximum volume and checking for leaks',
+        'Deflate cuff completely and apply water-soluble lubricant to cuff and tip',
+        'Pre-oxygenate patient with 100% oxygen for 3-5 minutes if time allows',
+        'Position patient in neutral or slightly extended head position',
+        'Ensure suction equipment is immediately available and functional',
+        'Prepare bag-valve-mask for positive pressure ventilation',
+        'Set up capnography monitoring for placement confirmation',
+        'Have assistant available to provide cricoid pressure if needed'
+      ],
+      safetyNotes: [
+        'Pre-oxygenation extends safe apnea time',
+        'Properly deflated cuff essential for smooth insertion',
+        'Never use petroleum-based lubricants'
+      ],
+      equipmentNeeded: [
+        'Prepared supraglottic airway device',
+        'Water-soluble lubricant',
+        '100% oxygen source',
+        'Bag-valve-mask with reservoir',
+        'Suction equipment',
+        'Capnography monitor'
+      ]
+    },
+    {
+      id: 'sga-step-3',
+      stepNumber: 3,
+      title: 'Device Insertion Technique',
+      description: 'Insert supraglottic airway device using proper technique and anatomical guidance',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Open mouth with cross-finger technique or tongue blade',
+        'Insert device with cuff deflated following natural curve of pharynx',
+        'Use gentle, steady pressure without force - resistance indicates improper angle',
+        'Advance device until resistance is met at hypopharyngeal tissues',
+        'For LMA: insert tip against hard palate then rotate down into position',
+        'For King LT: insert in midline with curve following posterior pharyngeal wall',
+        'Avoid advancing too far - tip should rest above upper esophageal sphincter',
+        'Remove any insertion guides or stylets per device instructions'
+      ],
+      safetyNotes: [
+        'Never force device insertion - repositioning may be needed',
+        'Stop insertion if significant resistance encountered',
+        'Maintain gentle, steady pressure throughout insertion'
+      ],
+      equipmentNeeded: [
+        'Lubricated supraglottic airway device',
+        'Tongue blade or mouth opening device',
+        'Good lighting for visualization'
+      ]
+    },
+    {
+      id: 'sga-step-4',
+      stepNumber: 4,
+      title: 'Cuff Inflation and Initial Positioning',
+      description: 'Inflate device cuff to appropriate pressure and optimize initial positioning',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Inflate cuff with recommended volume using syringe (device-specific)',
+        'Monitor cuff pressure if manometer available (typically 40-60 cmH2O)',
+        'Observe for slight outward movement of device indicating proper seating',
+        'Check that device sits at appropriate depth markers if present',
+        'Ensure cuff inflation creates adequate seal without overinflation',
+        'Connect bag-valve-mask or ventilator circuit to device',
+        'Check for immediate chest rise and fall with manual ventilation',
+        'Assess ease of ventilation and resistance to bag compression'
+      ],
+      safetyNotes: [
+        'Overinflation can cause tissue trauma and poor seal',
+        'Underinflation results in inadequate seal and aspiration risk',
+        'Monitor cuff pressure if equipment available'
+      ],
+      equipmentNeeded: [
+        'Appropriate syringe for cuff inflation',
+        'Cuff pressure manometer if available',
+        'Bag-valve-mask for initial ventilation testing'
+      ]
+    },
+    {
+      id: 'sga-step-5',
+      stepNumber: 5,
+      title: 'Placement Confirmation and Verification',
+      description: 'Confirm correct device placement using multiple verification methods',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Auscultate bilateral breath sounds over lung fields',
+        'Confirm absence of gurgling sounds over epigastrium',
+        'Verify capnography waveform and end-tidal CO2 readings',
+        'Observe bilateral chest rise and fall with ventilation',
+        'Check oxygen saturation improvement with pulse oximetry',
+        'Assess ease of ventilation - should require normal pressure',
+        'Verify no air leak around cuff during positive pressure ventilation',
+        'Document multiple confirmation methods used and results'
+      ],
+      safetyNotes: [
+        'Use multiple confirmation methods - no single method is foolproof',
+        'Capnography is gold standard for airway device placement',
+        'Gastric insufflation indicates malposition or inadequate seal'
+      ],
+      equipmentNeeded: [
+        'Stethoscope for auscultation',
+        'Capnography monitor with waveform',
+        'Pulse oximetry',
+        'Documentation materials'
+      ]
+    },
+    {
+      id: 'sga-step-6',
+      stepNumber: 6,
+      title: 'Device Securing and Optimization',
+      description: 'Secure device adequately and optimize ventilation parameters',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Secure device with tape, ties, or commercial holder to prevent displacement',
+        'Position securing method to allow mouth opening for suction if needed',
+        'Insert bite block or oral airway to prevent device damage from biting',
+        'Optimize ventilation parameters: rate, tidal volume, PEEP if available',
+        'Set appropriate oxygen concentration based on patient condition',
+        'Ensure device remains at proper depth throughout securing process',
+        'Reconfirm placement after securing and positioning changes',
+        'Document optimal ventilation settings for transport and handoff'
+      ],
+      safetyNotes: [
+        'Avoid over-tightening securing devices causing pressure necrosis',
+        'Bite blocks prevent device damage but may impede access',
+        'Recheck placement after any manipulation or transport'
+      ],
+      equipmentNeeded: [
+        'Medical tape or commercial airway holder',
+        'Bite block or oral airway',
+        'Ventilation equipment with parameter control',
+        'Securing and positioning supplies'
+      ]
+    },
+    {
+      id: 'sga-step-7',
+      stepNumber: 7,
+      title: 'Continuous Monitoring and Complication Management',
+      description: 'Monitor device function continuously and manage potential complications',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Monitor capnography waveform continuously for changes indicating displacement',
+        'Assess ventilation adequacy and chest rise regularly',
+        'Watch for signs of aspiration: decreased oxygen saturation, gurgling',
+        'Monitor for device displacement during patient movement or transport',
+        'Check cuff pressure periodically and adjust as needed',
+        'Suction airway if secretions or vomiting occurs',
+        'Be prepared for device removal and alternative airway if complications',
+        'Monitor for laryngospasm or bronchospasm related to device'
+      ],
+      safetyNotes: [
+        'Device displacement can occur with patient movement',
+        'Have plan for immediate device removal if vomiting occurs',
+        'Continuous capnography essential for detecting problems early'
+      ],
+      equipmentNeeded: [
+        'Continuous capnography monitoring',
+        'Suction equipment ready for immediate use',
+        'Backup airway management equipment',
+        'Emergency medications for bronchospasm'
+      ]
+    },
+    {
+      id: 'sga-step-8',
+      stepNumber: 8,
+      title: 'Transport Management and Handoff',
+      description: 'Manage airway during transport and provide comprehensive handoff',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Ensure device security before and during transport',
+        'Maintain continuous monitoring throughout transport',
+        'Have backup airway equipment immediately available during transport',
+        'Document total time with supraglottic airway in place',
+        'Note any complications or repositioning required during care',
+        'Provide detailed report to receiving team: device type, size, settings',
+        'Include assessment of need for definitive airway management',
+        'Prepare for potential device removal or conversion at receiving facility'
+      ],
+      safetyNotes: [
+        'Transport increases risk of device displacement',
+        'Receiving facility may need to convert to endotracheal intubation',
+        'Maintain vigilance for complications throughout transport'
+      ],
+      equipmentNeeded: [
+        'Transport monitoring equipment',
+        'Backup airway management supplies',
+        'Documentation materials',
+        'Communication equipment for receiving facility'
+      ]
+    }
+  ],
 
   'femoral-vein-cannulation': {
     name: 'Femoral Vein Cannulation',
