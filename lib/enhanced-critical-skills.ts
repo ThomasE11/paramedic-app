@@ -8251,6 +8251,1359 @@ export const enhancedCriticalSkillSteps: { [skillId: string]: EnhancedSkillStep[
         'Emergency contact information'
       ]
     }
+  ],
+
+  // ADULT ENDOTRACHEAL INTUBATION
+  'adult-endotracheal-intubation': [
+    {
+      id: 'adult-ett-step-1',
+      stepNumber: 1,
+      title: 'Pre-Intubation Assessment and Equipment Preparation',
+      description: 'Comprehensive patient assessment and systematic equipment verification for endotracheal intubation',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Assess airway anatomy: mouth opening >3 fingerbreadths, thyromental distance >6cm',
+        'Evaluate cervical spine mobility and potential C-spine restrictions',
+        'Check for predictors of difficult airway: small mouth, large tongue, short neck',
+        'Verify bag-valve-mask ventilation effectiveness before intubation attempt',
+        'Pre-oxygenate with 100% oxygen for minimum 3 minutes (SpO2 >95%)',
+        'Check laryngoscope blade size and light function (Macintosh 3-4 for adults)',
+        'Verify endotracheal tube size: 7.5-8.0mm for women, 8.0-8.5mm for men',
+        'Prepare backup airway devices and have suction immediately available'
+      ],
+      contraindications: [
+        'Severe facial trauma with anatomical distortion',
+        'Known difficult airway without backup plan ready',
+        'Severe cervical spine instability without immobilization'
+      ],
+      safetyNotes: [
+        'Never exceed 30 seconds per intubation attempt',
+        'Maintain MILS (Manual In-Line Stabilization) if C-spine injury suspected',
+        'Have backup airway plan ready before first attempt'
+      ],
+      equipmentNeeded: [
+        'Laryngoscope handle with functioning batteries and bulb',
+        'Macintosh blades sizes 3 and 4',
+        'Endotracheal tubes 7.0, 7.5, 8.0, 8.5mm with stylets',
+        '10ml syringe for cuff inflation',
+        'End-tidal CO2 detector or waveform capnography',
+        'Bag-valve-mask with oxygen reservoir',
+        'Suction equipment with rigid yankauer catheter'
+      ]
+    },
+    {
+      id: 'adult-ett-step-2',
+      stepNumber: 2,
+      title: 'Patient Positioning and Laryngoscopy Setup',
+      description: 'Optimize patient positioning and prepare for laryngoscope insertion',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Position patient supine with head in sniffing position (unless C-spine injury)',
+        'Elevate occiput 3-5cm to align oral, pharyngeal, and laryngeal axes',
+        'For obese patients, elevate shoulders and head to horizontal plane',
+        'Stand at patient\'s head facing toward feet for optimal visualization',
+        'Insert laryngoscope blade from right corner of mouth',
+        'Sweep tongue to left side while advancing blade to base of tongue',
+        'For Macintosh blade: position tip in vallecula anterior to epiglottis',
+        'Lift laryngoscope handle upward and forward (not backward toward patient\'s head)'
+      ],
+      contraindications: [
+        'DO NOT use rocking motion - can break teeth',
+        'DO NOT extend neck if cervical spine injury suspected'
+      ],
+      safetyNotes: [
+        'Maintain gentle upward traction, not leveraging against teeth',
+        'Continuous monitoring of oxygen saturation during procedure',
+        'Assistant should maintain cricoid pressure if indicated'
+      ],
+      equipmentNeeded: [
+        'Laryngoscope with appropriate blade',
+        'Head positioning device or towels for elevation',
+        'Suction immediately available',
+        'Pulse oximetry monitoring'
+      ]
+    },
+    {
+      id: 'adult-ett-step-3',
+      stepNumber: 3,
+      title: 'Vocal Cord Visualization and Tube Insertion',
+      description: 'Achieve direct visualization of vocal cords and insert endotracheal tube',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 45,
+      keyPoints: [
+        'Identify anatomical landmarks: epiglottis, arytenoid cartilages, vocal cords',
+        'Grade laryngoscopic view using Cormack-Lehane classification (Grade I-IV)',
+        'Apply external laryngeal manipulation (BURP) if needed for better visualization',
+        'Insert endotracheal tube from right corner of mouth under direct vision',
+        'Pass tube tip through vocal cords until cuff disappears beyond cords (1-2cm)',
+        'For adults: depth typically 21-23cm at lips for men, 19-21cm for women',
+        'Remove stylet while maintaining tube position with non-dominant hand',
+        'Inflate cuff with 6-10ml air until no audible leak with positive pressure'
+      ],
+      contraindications: [
+        'DO NOT force tube if resistance encountered',
+        'DO NOT insert tube if vocal cords not clearly visualized'
+      ],
+      safetyNotes: [
+        'If Grade III-IV view, consider alternative airway approach',
+        'Monitor for esophageal intubation - no chest rise with ventilation',
+        'Never exceed 30 seconds from laryngoscope insertion to tube placement'
+      ],
+      equipmentNeeded: [
+        'Endotracheal tube with stylet',
+        '10ml syringe for cuff inflation',
+        'External laryngeal manipulation assistance if available',
+        'Continuous pulse oximetry'
+      ]
+    },
+    {
+      id: 'adult-ett-step-4',
+      stepNumber: 4,
+      title: 'Initial Tube Placement Verification',
+      description: 'Perform immediate confirmation of correct endotracheal tube placement',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'FIRST: Direct visualization - confirm tube passed through vocal cords',
+        'SECOND: Auscultation - equal breath sounds bilaterally over lung apices',
+        'THIRD: Absence of breath sounds over epigastrium during ventilation',
+        'FOURTH: Observe symmetric chest rise with bag-valve-mask ventilation',
+        'FIFTH: End-tidal CO2 detection - immediate color change or waveform',
+        'Monitor oxygen saturation improvement with ventilation',
+        'Check for tube fogging with expiration (secondary sign)',
+        'Assess tube depth marking at lips (typically 21-23cm for men, 19-21cm women)'
+      ],
+      contraindications: [
+        'If ANY sign suggests esophageal placement - remove tube immediately',
+        'No end-tidal CO2 in cardiac arrest may still be correct placement'
+      ],
+      safetyNotes: [
+        'Esophageal intubation is immediately life-threatening',
+        'When in doubt, remove tube and ventilate with bag-valve-mask',
+        'Multiple confirmation methods reduce risk of unrecognized misplacement'
+      ],
+      equipmentNeeded: [
+        'Stethoscope for auscultation',
+        'End-tidal CO2 detector or capnography',
+        'Bag-valve-mask for ventilation testing',
+        'Pulse oximetry for continuous monitoring'
+      ]
+    },
+    {
+      id: 'adult-ett-step-5',
+      stepNumber: 5,
+      title: 'Advanced Tube Position Confirmation',
+      description: 'Complete comprehensive verification using multiple confirmation techniques',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Continuous end-tidal CO2 waveform capnography (gold standard)',
+        'Typical ETCO2 values: 35-45mmHg in normotensive patients',
+        'Auscultate 5 points: both lung apices, both bases, and epigastrium',
+        'Assess ventilation compliance - easy bag compression indicates good placement',
+        'Check for tube condensation during expiration cycles',
+        'Verify tube depth: mark at lips should correlate with expected depth',
+        'X-ray confirmation if available (tube tip 2-4cm above carina)',
+        'Reassess oxygen saturation trend - should improve with correct placement'
+      ],
+      contraindications: [
+        'Low or absent ETCO2 in hemodynamically stable patient suggests misplacement',
+        'Difficult ventilation or high airway pressures may indicate esophageal placement'
+      ],
+      safetyNotes: [
+        'Continuous waveform capnography is most reliable confirmation method',
+        'Colorimetric CO2 detectors less reliable in low perfusion states',
+        'Maintain high index of suspicion for tube migration during transport'
+      ],
+      equipmentNeeded: [
+        'Continuous waveform capnography monitor',
+        'Stethoscope for repeated auscultation',
+        'Chest X-ray capability if available',
+        'Documentation materials for tube depth and position'
+      ]
+    },
+    {
+      id: 'adult-ett-step-6',
+      stepNumber: 6,
+      title: 'Tube Securing and Ventilation Optimization',
+      description: 'Secure endotracheal tube and establish optimal mechanical ventilation',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Secure tube using commercial tube holder or tape circumferentially',
+        'Document and maintain consistent tube depth marking at lips',
+        'Connect to mechanical ventilator or continue bag-valve-mask ventilation',
+        'Initial ventilator settings: Tidal volume 6-8ml/kg ideal body weight',
+        'Respiratory rate 10-12/min for adults, adjust based on ETCO2',
+        'PEEP 5cmH2O initially, FiO2 100% then titrate to SpO2 >94%',
+        'Monitor peak airway pressures (normal <30cmH2O)',
+        'Reassess bilateral breath sounds after securing tube'
+      ],
+      contraindications: [
+        'Avoid hyperventilation (ETCO2 <30mmHg) except for increased ICP',
+        'High tidal volumes (>10ml/kg) increase risk of lung injury'
+      ],
+      safetyNotes: [
+        'Tube can migrate during securing process - reconfirm placement',
+        'Right main bronchus intubation causes absent left breath sounds',
+        'Pneumothorax risk increased with high airway pressures'
+      ],
+      equipmentNeeded: [
+        'Commercial tube holder or medical tape',
+        'Mechanical ventilator with capnography',
+        'Stethoscope for post-securing assessment',
+        'Airway pressure monitoring capability'
+      ]
+    },
+    {
+      id: 'adult-ett-step-7',
+      stepNumber: 7,
+      title: 'Post-Intubation Management and Monitoring',
+      description: 'Establish comprehensive monitoring and ongoing airway management protocols',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Continuous waveform capnography monitoring with trend documentation',
+        'Serial assessment of tube position with patient movement or transport',
+        'Monitor for complications: pneumothorax, aspiration, tube obstruction',
+        'Suction airway as needed using sterile technique and appropriate pressures',
+        'Assess need for sedation and paralysis for ventilator synchrony',
+        'Document initial intubation success, number of attempts, complications',
+        'Prepare for potential reintubation if tube displacement occurs',
+        'Coordinate with receiving facility regarding airway management needs'
+      ],
+      contraindications: [
+        'Never leave intubated patient unmonitored',
+        'Avoid unnecessary manipulation of secured airway'
+      ],
+      safetyNotes: [
+        'Tube displacement during transport is a leading cause of preventable death',
+        'Always have backup airway plan available during transport',
+        'Sudden loss of ETCO2 waveform indicates tube displacement until proven otherwise'
+      ],
+      equipmentNeeded: [
+        'Continuous capnography monitoring',
+        'Suction equipment with multiple catheter sizes',
+        'Backup airway equipment (LMA, bag-valve-mask)',
+        'Sedation medications if indicated'
+      ]
+    },
+    {
+      id: 'adult-ett-step-8',
+      stepNumber: 8,
+      title: 'Documentation and Quality Assurance',
+      description: 'Complete comprehensive documentation and quality review of intubation procedure',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Document indication for intubation and patient condition pre-procedure',
+        'Record laryngoscopic view grade (Cormack-Lehane I-IV)',
+        'Note number of intubation attempts and any complications encountered',
+        'Record final tube position, depth at lips, and confirmation methods used',
+        'Document initial ventilator settings and patient response to ventilation',
+        'Note any medications administered (sedation, paralysis, premedications)',
+        'Record vital signs pre-, during, and post-intubation procedure',
+        'Complete quality assurance review and identify areas for improvement'
+      ],
+      safetyNotes: [
+        'Accurate documentation essential for continuity of care',
+        'Quality review helps identify system improvements',
+        'Document any deviations from standard protocol'
+      ],
+      equipmentNeeded: [
+        'Electronic or paper documentation system',
+        'Procedure report forms',
+        'Quality assurance reporting mechanism',
+        'Communication equipment for receiving facility'
+      ]
+    }
+  ],
+
+  // SURGICAL CRICOTHYROIDOTOMY  
+  'surgical-cricothyroidotomy': [
+    {
+      id: 'cric-step-1',
+      stepNumber: 1,
+      title: 'Emergency Airway Assessment and Cricothyroidotomy Indication',
+      description: 'Rapidly assess for failed airway requiring emergency surgical intervention',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Confirm "Cannot Intubate, Cannot Ventilate" (CICV) situation',
+        'Failed endotracheal intubation attempts with hypoxemia progression',
+        'Inability to maintain adequate ventilation with bag-valve-mask',
+        'Upper airway obstruction preventing intubation (trauma, edema, foreign body)',
+        'Rapidly declining oxygen saturation despite maximal interventions',
+        'Consider if supraglottic airway devices have failed or are contraindicated',
+        'Time-critical decision: hypoxic brain injury occurs within 4-6 minutes',
+        'Ensure this is truly last resort - no alternative airway options available'
+      ],
+      contraindications: [
+        'Ability to achieve adequate ventilation through other means',
+        'Age <12 years old (needle cricothyroidotomy preferred)',
+        'Laryngeal trauma with cricothyroid membrane disruption'
+      ],
+      safetyNotes: [
+        'This is a last-resort life-saving procedure for airway emergencies',
+        'Complications include bleeding, esophageal perforation, subcutaneous emphysema',
+        'Requires emergency surgery consultation as soon as possible'
+      ],
+      equipmentNeeded: [
+        'Pulse oximetry for continuous hypoxia monitoring',
+        'Bag-valve-mask for ongoing ventilation attempts',
+        'Suction equipment for airway clearance',
+        'Emergency cricothyroidotomy kit or improvised equipment'
+      ]
+    },
+    {
+      id: 'cric-step-2',
+      stepNumber: 2,
+      title: 'Anatomical Landmark Identification and Patient Positioning',
+      description: 'Locate cricothyroid membrane and position patient for optimal access',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 45,
+      keyPoints: [
+        'Position patient supine with neck extended (unless C-spine injury)',
+        'Palpate thyroid cartilage (Adam\'s apple) - largest cartilage in neck',
+        'Identify cricoid cartilage - firm ring below thyroid cartilage',
+        'Locate cricothyroid membrane - soft depression between thyroid and cricoid',
+        'In obese patients: pinch skin to identify landmarks more clearly',
+        'Membrane is approximately 1cm high by 3cm wide in adults',
+        'Alternative: identify by counting down from hyoid bone',
+        'Mark the exact location with gentle finger pressure before cutting'
+      ],
+      contraindications: [
+        'Inability to identify cricothyroid membrane landmarks',
+        'Massive neck swelling or hematoma obscuring anatomy'
+      ],
+      safetyNotes: [
+        'Accurate landmark identification crucial to avoid complications',
+        'Cricothyroid membrane is the only safe location for this procedure',
+        'In emergency, err slightly lower rather than higher on neck'
+      ],
+      equipmentNeeded: [
+        'Adequate lighting or headlamp for visualization',
+        'Palpating finger for landmark identification',
+        'Skin marking pen if available',
+        'Patient positioning equipment (towel roll under shoulders)'
+      ]
+    },
+    {
+      id: 'cric-step-3',
+      stepNumber: 3,
+      title: 'Sterile Preparation and Equipment Setup',
+      description: 'Rapidly prepare sterile field and organize emergency surgical equipment',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Apply antiseptic solution to neck area if time permits (iodine or chlorhexidine)',
+        'Don sterile gloves and prepare sterile draping around incision site',
+        'Assemble scalpel with #11 blade for vertical incision',
+        'Prepare hemostats or forceps for tissue spreading',
+        'Ready tracheostomy tube (#6 or #7) or endotracheal tube (#6.0-7.0)',
+        'Prepare 10ml syringe for cuff inflation',
+        'Have suction immediately available for blood and secretions',
+        'Open gauze pads for hemorrhage control and securing device'
+      ],
+      contraindications: [
+        'Do not delay for extensive sterile preparation if patient is actively dying',
+        'Speed is more critical than sterility in true emergency'
+      ],
+      safetyNotes: [
+        'Balance between infection prevention and time-critical intervention',
+        'Assistant should continue bag-valve-mask attempts during preparation',
+        'Have backup equipment readily available'
+      ],
+      equipmentNeeded: [
+        'Sterile surgical kit or individual components',
+        'Antiseptic solution (iodine or chlorhexidine)',
+        'Sterile gloves and drapes',
+        'Scalpel handle with #11 blade',
+        'Hemostats or tissue forceps',
+        'Tracheostomy tube or small endotracheal tube'
+      ]
+    },
+    {
+      id: 'cric-step-4',
+      stepNumber: 4,
+      title: 'Surgical Incision and Membrane Penetration',
+      description: 'Make controlled incision through skin and cricothyroid membrane',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Stabilize thyroid cartilage with non-dominant hand',
+        'Make vertical skin incision 2-3cm long over cricothyroid membrane',
+        'Incise through skin and subcutaneous tissue in single motion',
+        'Identify and isolate cricothyroid membrane beneath fascia',
+        'Make horizontal incision through membrane (transverse to avoid vessels)',
+        'Incision should be 1-1.5cm wide through membrane only',
+        'Expect immediate rush of air and possible blood from incision',
+        'Insert hemostat tips into membrane opening and spread horizontally'
+      ],
+      contraindications: [
+        'Do not make incision too large - increases bleeding risk',
+        'Avoid horizontal skin incision which may cut anterior jugular veins'
+      ],
+      safetyNotes: [
+        'Vertical skin incision, horizontal membrane incision is safest approach',
+        'Bleeding is expected but should be controlled with direct pressure',
+        'Keep incision depth minimal to avoid posterior tracheal wall injury'
+      ],
+      equipmentNeeded: [
+        'Sharp scalpel blade for clean incision',
+        'Hemostats for spreading membrane opening',
+        'Gauze for blood control',
+        'Suction for airway clearance'
+      ]
+    },
+    {
+      id: 'cric-step-5',
+      stepNumber: 5,
+      title: 'Airway Tube Insertion and Position Verification',
+      description: 'Insert airway device and confirm correct placement within trachea',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Spread membrane opening with hemostats to accommodate tube',
+        'Insert tracheostomy tube or cuffed endotracheal tube through opening',
+        'Direct tube caudally (toward feet) at 45-degree angle',
+        'Insert tube 2-3cm into tracheal lumen - do not advance too far',
+        'Inflate cuff with 5-8ml air to create seal',
+        'Immediately connect bag-valve-mask or ventilator to tube',
+        'Confirm placement: chest rise, breath sounds, end-tidal CO2',
+        'Secure tube position with hands while confirming ventilation'
+      ],
+      contraindications: [
+        'Do not force tube insertion if resistance encountered',
+        'Do not overinflate cuff which can cause tracheal necrosis'
+      ],
+      safetyNotes: [
+        'Tube should enter trachea easily if membrane properly opened',
+        'Immediate ventilation confirmation critical to patient survival',
+        'Be prepared to reposition tube if ventilation inadequate'
+      ],
+      equipmentNeeded: [
+        'Appropriately sized tracheostomy or endotracheal tube',
+        '10ml syringe for cuff inflation',
+        'Bag-valve-mask for immediate ventilation testing',
+        'End-tidal CO2 detector for placement confirmation'
+      ]
+    },
+    {
+      id: 'cric-step-6',
+      stepNumber: 6,
+      title: 'Ventilation Establishment and Tube Securing',
+      description: 'Establish effective ventilation and secure surgical airway',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Confirm bilateral breath sounds with auscultation',
+        'Observe symmetric chest rise with each ventilation',
+        'Monitor end-tidal CO2 waveform - should show normal capnography',
+        'Assess oxygen saturation improvement with pulse oximetry',
+        'Secure tube with circumferential ties or commercial device',
+        'Apply sterile dressing around stoma site',
+        'Connect to mechanical ventilator if available',
+        'Document tube depth and secure position markings'
+      ],
+      contraindications: [
+        'Do not secure tube if ventilation remains inadequate',
+        'Avoid excessive traction that could displace tube'
+      ],
+      safetyNotes: [
+        'Tube displacement from fresh cricothyroidotomy is often fatal',
+        'Always have backup plan for reintubation if displacement occurs',
+        'Monitor for subcutaneous emphysema indicating air leak'
+      ],
+      equipmentNeeded: [
+        'Tube securing device or medical tape',
+        'Sterile gauze and dressing materials',
+        'Stethoscope for breath sound confirmation',
+        'Mechanical ventilator if available'
+      ]
+    },
+    {
+      id: 'cric-step-7',
+      stepNumber: 7,
+      title: 'Complication Management and Ongoing Monitoring',
+      description: 'Monitor for immediate complications and provide ongoing airway management',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Monitor for bleeding - apply direct pressure to control hemorrhage',
+        'Assess for subcutaneous emphysema indicating air leak around stoma',
+        'Watch for pneumothorax signs: absent breath sounds, respiratory distress',
+        'Suction airway secretions as needed through tube',
+        'Monitor vital signs for improvement: oxygen saturation, heart rate',
+        'Prepare for emergency ENT or trauma surgery consultation',
+        'Document procedure indication, technique, and patient response',
+        'Prepare patient for transport with secure airway and monitoring'
+      ],
+      contraindications: [
+        'Never leave patient with fresh cricothyroidotomy unmonitored',
+        'Do not attempt to remove tube once placed unless life-threatening'
+      ],
+      safetyNotes: [
+        'Bleeding is most common immediate complication',
+        'Loss of airway is immediately life-threatening',
+        'Surgical consultation required as soon as possible'
+      ],
+      equipmentNeeded: [
+        'Continuous pulse oximetry and capnography',
+        'Suction equipment for airway management',
+        'Hemostatic agents for bleeding control',
+        'Emergency surgical consultation availability'
+      ]
+    },
+    {
+      id: 'cric-step-8',
+      stepNumber: 8,
+      title: 'Documentation and Surgical Consultation',
+      description: 'Complete documentation and arrange definitive surgical management',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Document emergency indication: failed intubation, cannot ventilate scenario',
+        'Record procedure steps, complications, and patient response',
+        'Note tube type, size, depth, and securing method used',
+        'Document vital signs pre-, during, and post-procedure',
+        'Arrange immediate ENT or trauma surgery consultation',
+        'Prepare comprehensive report for receiving surgical team',
+        'Continue monitoring airway security during transport',
+        'Provide family notification of emergency procedure if possible'
+      ],
+      safetyNotes: [
+        'Accurate documentation essential for surgical planning',
+        'Surgical evaluation needed within hours for definitive management',
+        'Emergency cricothyroidotomy is temporary life-saving measure'
+      ],
+      equipmentNeeded: [
+        'Documentation system for procedure reporting',
+        'Communication equipment for surgical consultation',
+        'Transport monitoring equipment',
+        'Family communication resources if available'
+      ]
+    }
+  ],
+
+  // SYNCHRONIZED CARDIOVERSION
+  'synchronized-cardioversion': [
+    {
+      id: 'cardio-step-1',
+      stepNumber: 1,
+      title: 'Patient Assessment and Cardioversion Indication Evaluation',
+      description: 'Assess patient condition and determine indication for synchronized cardioversion',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Identify unstable tachyarrhythmia requiring immediate cardioversion',
+        'Assess for hemodynamic instability: hypotension, altered mental status, chest pain',
+        'Confirm regular narrow-complex or wide-complex tachycardia >150 bpm',
+        'Document rhythm on 12-lead ECG before cardioversion if stable',
+        'Check for signs of heart failure: pulmonary edema, JVD, rales',
+        'Assess airway, breathing, circulation status comprehensively',
+        'Verify patient conscious level and ability to provide consent if stable',
+        'Rule out digitalis toxicity which contraindicates cardioversion'
+      ],
+      contraindications: [
+        'Atrial fibrillation >48 hours without anticoagulation',
+        'Digitalis toxicity (can precipitate ventricular fibrillation)',
+        'Multifocal atrial tachycardia (MAT)',
+        'Sinus tachycardia with secondary cause'
+      ],
+      safetyNotes: [
+        'Unstable patients require immediate cardioversion without delay',
+        'Stable patients may benefit from vagal maneuvers or medications first',
+        'Always have defibrillation capability immediately available'
+      ],
+      equipmentNeeded: [
+        '12-lead ECG machine for rhythm documentation',
+        'Continuous cardiac monitoring',
+        'Blood pressure monitoring equipment',
+        'Pulse oximetry and basic airway equipment'
+      ]
+    },
+    {
+      id: 'cardio-step-2',
+      stepNumber: 2,
+      title: 'Pre-Cardioversion Preparation and Equipment Setup',
+      description: 'Prepare equipment and patient for synchronized cardioversion procedure',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Ensure defibrillator/cardioverter is functioning with sync capability',
+        'Test synchronization mode - sync markers should appear on R-waves',
+        'Prepare appropriate energy settings: 50J narrow complex, 100J wide complex',
+        'Place defibrillation pads in anterior-posterior or anterior-lateral position',
+        'Verify good skin contact and remove any metal objects from patient',
+        'Establish IV access for medication administration if needed',
+        'Prepare sedation medications: midazolam, etomidate, or propofol',
+        'Have emergency medications ready: atropine, epinephrine, amiodarone'
+      ],
+      contraindications: [
+        'Do not proceed if sync function not working properly',
+        'Avoid if defibrillator charge/discharge cycle malfunctioning'
+      ],
+      safetyNotes: [
+        'Synchronized mode prevents shock delivery during T-wave (R-on-T)',
+        'Unsynchronized shock during T-wave can induce ventricular fibrillation',
+        'Always verify sync mode before each cardioversion attempt'
+      ],
+      equipmentNeeded: [
+        'Defibrillator with synchronization capability',
+        'Defibrillation pads (anterior-posterior preferred)',
+        'IV access supplies and emergency medications',
+        'Sedation medications and reversal agents'
+      ]
+    },
+    {
+      id: 'cardio-step-3',
+      stepNumber: 3,
+      title: 'Conscious Sedation and Airway Management',
+      description: 'Provide appropriate sedation while maintaining airway reflexes',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Assess airway for potential intubation difficulties before sedation',
+        'Pre-oxygenate patient with 100% oxygen for 3-5 minutes',
+        'Administer appropriate sedation: midazolam 1-2mg IV or etomidate 0.2-0.3mg/kg',
+        'Monitor consciousness level - aim for moderate sedation with response to voice',
+        'Maintain spontaneous ventilation and protective airway reflexes',
+        'Have bag-valve-mask and intubation equipment immediately available',
+        'Monitor oxygen saturation continuously during sedation',
+        'Allow 2-3 minutes for sedation to take full effect before cardioversion'
+      ],
+      contraindications: [
+        'Hemodynamically unstable patients may not tolerate sedation',
+        'Difficult airway without backup intubation plan available'
+      ],
+      safetyNotes: [
+        'Cardioversion is painful - adequate sedation improves success and patient comfort',
+        'Over-sedation can compromise airway and hemodynamics',
+        'Have reversal agents available: flumazenil for benzodiazepines'
+      ],
+      equipmentNeeded: [
+        'Sedation medications with precise dosing',
+        'Bag-valve-mask and airway adjuncts',
+        'Intubation equipment for emergency airway',
+        'Reversal agents (flumazenil, naloxone)'
+      ]
+    },
+    {
+      id: 'cardio-step-4',
+      stepNumber: 4,
+      title: 'Synchronized Shock Delivery',
+      description: 'Deliver synchronized electrical cardioversion shock',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Verify sync mode activated - sync markers visible on R-waves',
+        'Charge defibrillator to appropriate energy: 50J narrow, 100J wide complex',
+        'Clear all personnel from patient contact: "Clear, clear, clear!"',
+        'Perform visual sweep to ensure no one touching patient or bed',
+        'Press and HOLD shock buttons until discharge occurs (sync delay normal)',
+        'Shock will discharge on next R-wave - may take 1-2 seconds',
+        'Immediately assess rhythm post-cardioversion on monitor',
+        'Check pulse and blood pressure after rhythm assessment'
+      ],
+      contraindications: [
+        'Do not proceed if anyone in contact with patient or bed',
+        'Do not deliver shock if sync markers not properly aligned with R-waves'
+      ],
+      safetyNotes: [
+        'Synchronized shock has intentional delay - do not release buttons early',
+        'If patient converts to VF during procedure, switch to unsynchronized mode',
+        'Success rate highest with first attempt - ensure proper technique'
+      ],
+      equipmentNeeded: [
+        'Functioning defibrillator with clear sync indicators',
+        'Well-adhered defibrillation pads',
+        'Clear communication with team members',
+        'Post-shock monitoring capability'
+      ]
+    },
+    {
+      id: 'cardio-step-5',
+      stepNumber: 5,
+      title: 'Post-Cardioversion Assessment and Management',
+      description: 'Evaluate cardioversion success and manage immediate post-procedure care',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Immediately assess cardiac rhythm - successful conversion to sinus rhythm',
+        'Check pulse quality and rate - should correlate with rhythm',
+        'Assess blood pressure and hemodynamic stability post-cardioversion',
+        'Monitor for return of arrhythmia - may recur within minutes',
+        'Evaluate patient consciousness and neurological status',
+        'Assess for complications: chest wall burns, aspiration, arrhythmias',
+        'Document pre- and post-cardioversion rhythms with ECG strips',
+        'Consider anti-arrhythmic medications to prevent recurrence'
+      ],
+      contraindications: [
+        'If unsuccessful, do not immediately repeat - reassess energy and pad position',
+        'Do not give additional sedation if airway compromise suspected'
+      ],
+      safetyNotes: [
+        'Unsuccessful cardioversion may require higher energy or different approach',
+        'Post-cardioversion arrhythmias (including VF) can occur',
+        'Some patients may have transient asystole immediately post-shock'
+      ],
+      equipmentNeeded: [
+        'Continuous cardiac monitoring',
+        'Blood pressure monitoring',
+        'ECG machine for rhythm documentation',
+        'Emergency resuscitation equipment readily available'
+      ]
+    },
+    {
+      id: 'cardio-step-6',
+      stepNumber: 6,
+      title: 'Repeat Cardioversion if Indicated',
+      description: 'Perform additional cardioversion attempts with escalating energy if initial attempt fails',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'If initial attempt unsuccessful, reassess pad position and contact',
+        'Increase energy for second attempt: 100J narrow, 200J wide complex',
+        'Consider anterior-posterior pad placement if using anterior-lateral',
+        'Ensure adequate sedation maintained for repeat attempt',
+        'Verify sync mode still activated before second shock',
+        'Consider brief trial of antiarrhythmic before repeat cardioversion',
+        'Maximum of 3 cardioversion attempts at escalating energies',
+        'If unsuccessful after 3 attempts, consider alternative treatments'
+      ],
+      contraindications: [
+        'Do not exceed maximum recommended energy levels',
+        'Avoid repeated attempts if patient becomes hemodynamically unstable'
+      ],
+      safetyNotes: [
+        'Success rate decreases with repeated attempts',
+        'Higher energies increase risk of myocardial injury',
+        'Consider consultation with cardiology if multiple attempts fail'
+      ],
+      equipmentNeeded: [
+        'Defibrillator capable of higher energy outputs',
+        'Alternative pad configurations available',
+        'Antiarrhythmic medications (amiodarone, procainamide)',
+        'Cardiology consultation capability'
+      ]
+    },
+    {
+      id: 'cardio-step-7',
+      stepNumber: 7,
+      title: 'Post-Procedure Monitoring and Stabilization',
+      description: 'Provide comprehensive post-cardioversion monitoring and prevent recurrence',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Continue continuous cardiac monitoring for minimum 4-6 hours',
+        'Monitor for recurrence of arrhythmia - most common in first hour',
+        'Assess and document vital signs every 15 minutes initially',
+        'Evaluate for complications: chest burns, pneumothorax, aspiration',
+        'Administer maintenance antiarrhythmic if indicated (amiodarone)',
+        'Assess neurological status and recovery from sedation',
+        'Obtain 12-lead ECG to document successful cardioversion',
+        'Prepare for potential transfer to cardiology or ICU'
+      ],
+      contraindications: [
+        'Do not discharge patient without adequate observation period',
+        'Avoid early mobilization until hemodynamically stable'
+      ],
+      safetyNotes: [
+        'Recurrent arrhythmias common in first 24 hours post-cardioversion',
+        'Chest wall burns from pads require assessment and treatment',
+        'Some patients require long-term anticoagulation post-cardioversion'
+      ],
+      equipmentNeeded: [
+        'Continuous monitoring capabilities',
+        'Frequent vital sign assessment tools',
+        'Antiarrhythmic medications for maintenance therapy',
+        'Transfer equipment for higher level of care'
+      ]
+    },
+    {
+      id: 'cardio-step-8',
+      stepNumber: 8,
+      title: 'Documentation and Disposition Planning',
+      description: 'Complete comprehensive documentation and arrange appropriate follow-up care',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 150,
+      keyPoints: [
+        'Document indication for cardioversion and pre-procedure assessment',
+        'Record energy levels used, number of attempts, and outcomes',
+        'Include pre- and post-cardioversion ECG strips in documentation',
+        'Document sedation medications given and patient response',
+        'Note any complications encountered and management provided',
+        'Record post-procedure vital signs and monitoring duration',
+        'Arrange cardiology consultation for underlying arrhythmia management',
+        'Provide patient education on arrhythmia and follow-up requirements'
+      ],
+      safetyNotes: [
+        'Accurate documentation essential for ongoing cardiac care',
+        'Cardiology follow-up required for most patients post-cardioversion',
+        'Patient education important for recognition of recurrent symptoms'
+      ],
+      equipmentNeeded: [
+        'Complete documentation system',
+        'ECG strips for medical record',
+        'Communication tools for cardiology consultation',
+        'Patient education materials'
+      ]
+    }
+  ],
+
+  // NEONATAL RESUSCITATION
+  'neonatal-resuscitation': [
+    {
+      id: 'neo-step-1',
+      stepNumber: 1,
+      title: 'Immediate Birth Assessment and Initial Stabilization',
+      description: 'Rapid assessment of newborn condition and initiate basic life support measures',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Assess term gestation (≥37 weeks), clear amniotic fluid, good muscle tone',
+        'Check for spontaneous breathing and heart rate >100 bpm',
+        'Evaluate color - central cyanosis indicates need for intervention',
+        'Provide immediate warmth with preheated radiant warmer or skin-to-skin',
+        'Position airway by slight neck extension - avoid hyperextension',
+        'Clear airway with bulb syringe if secretions present (mouth first, then nose)',
+        'Stimulate breathing by drying vigorously with warm towels',
+        'Start timer - most interventions based on 30-60 second intervals'
+      ],
+      safetyNotes: [
+        'Most newborns (85-90%) require only basic support measures',
+        'Avoid aggressive suctioning which can cause bradycardia',
+        'Hypothermia significantly worsens outcomes - maintain warmth'
+      ],
+      equipmentNeeded: [
+        'Radiant warmer with functioning heat source',
+        'Warm, dry towels and blankets',
+        'Bulb syringe or suction catheter (10-12Fr)',
+        'Clock or timer for interval tracking'
+      ]
+    },
+    {
+      id: 'neo-step-2',
+      stepNumber: 2,
+      title: 'Ventilation Assessment and Positive Pressure Ventilation',
+      description: 'Evaluate breathing adequacy and provide positive pressure ventilation if needed',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'If gasping or not breathing after 30 seconds stimulation, start PPV',
+        'Use bag-mask ventilation with 21% oxygen initially (room air)',
+        'Ensure proper mask seal covering nose and mouth, not eyes',
+        'Ventilate at 40-60 breaths per minute with adequate chest rise',
+        'Monitor heart rate response - should increase to >100 bpm with effective PPV',
+        'Increase oxygen concentration if heart rate <60 after 90 seconds effective PPV',
+        'Consider airway obstruction if no chest rise despite good seal',
+        'Reassess every 30 seconds during positive pressure ventilation'
+      ],
+      contraindications: [
+        'Do not use excessive pressures - can cause pneumothorax',
+        'Avoid 100% oxygen initially - associated with increased mortality'
+      ],
+      safetyNotes: [
+        'Effective ventilation is most critical intervention in neonatal resuscitation',
+        'Most neonatal bradycardia responds to adequate ventilation',
+        'Watch for gastric distention with bag-mask ventilation'
+      ],
+      equipmentNeeded: [
+        'Self-inflating bag (250-500ml) with pressure relief valve',
+        'Face masks (preterm, term, and large sizes)',
+        'Oxygen blender or flowmeter for titrated oxygen',
+        'Pulse oximeter for oxygen saturation monitoring'
+      ]
+    },
+    {
+      id: 'neo-step-3',
+      stepNumber: 3,
+      title: 'Advanced Airway Management - Intubation',
+      description: 'Perform endotracheal intubation if bag-mask ventilation inadequate',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Consider intubation if ineffective bag-mask ventilation despite corrections',
+        'Use straight blade laryngoscope (Miller 0 for preterm, Miller 1 for term)',
+        'Visualize vocal cords and insert appropriate ET tube size',
+        'ET tube size: 2.5mm <1kg, 3.0mm 1-2kg, 3.5mm 2-3kg, 4.0mm >3kg',
+        'Insert tube 2-3cm beyond vocal cords (lip marking 6+weight in kg)',
+        'Confirm placement: chest rise, breath sounds, end-tidal CO2 detection',
+        'Secure tube and continue ventilation at 40-60 breaths per minute',
+        'Limit intubation attempts to 30 seconds each to prevent hypoxia'
+      ],
+      contraindications: [
+        'Do not delay ventilation for intubation attempts if bag-mask effective',
+        'Avoid repeated failed attempts - return to effective bag-mask ventilation'
+      ],
+      safetyNotes: [
+        'Intubation should not delay effective positive pressure ventilation',
+        'Pre-oxygenation crucial before intubation attempts',
+        'Have backup plan ready if intubation unsuccessful'
+      ],
+      equipmentNeeded: [
+        'Laryngoscope with Miller 0 and 1 blades',
+        'ET tubes sizes 2.5, 3.0, 3.5, 4.0mm with stylets',
+        'End-tidal CO2 detector for tube confirmation',
+        'Tape or commercial device for tube securing'
+      ]
+    },
+    {
+      id: 'neo-step-4',
+      stepNumber: 4,
+      title: 'Chest Compressions for Persistent Bradycardia',
+      description: 'Initiate chest compressions for heart rate <60 despite effective ventilation',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Start compressions if heart rate <60 bpm after 30 seconds effective PPV',
+        'Use two-thumb encircling hands technique for best compression depth',
+        'Compress lower third of sternum just below nipple line',
+        'Compress one-third of chest depth (approximately 1.5cm in term newborn)',
+        'Coordinate 3:1 compression to ventilation ratio (90 compressions:30 breaths/min)',
+        'Ensure complete chest recoil between compressions',
+        'Reassess heart rate every 30 seconds during compressions',
+        'Discontinue compressions when heart rate >60 bpm'
+      ],
+      contraindications: [
+        'Do not start compressions without ensuring effective ventilation first',
+        'Avoid excessive compression depth which can cause injury'
+      ],
+      safetyNotes: [
+        'Chest compressions rarely needed if ventilation adequate',
+        'Two-person technique allows better coordination of compressions and ventilation',
+        'Continuous heart rate monitoring essential during compressions'
+      ],
+      equipmentNeeded: [
+        'Pulse oximeter or ECG for heart rate monitoring',
+        'Two trained providers for optimal technique',
+        'Firm surface for effective chest compressions',
+        'Continued positive pressure ventilation capability'
+      ]
+    },
+    {
+      id: 'neo-step-5',
+      stepNumber: 5,
+      title: 'Medication Administration and Vascular Access',
+      description: 'Administer medications for persistent bradycardia or cardiac arrest',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 150,
+      keyPoints: [
+        'Consider epinephrine if heart rate <60 after adequate ventilation and compressions',
+        'Establish vascular access: umbilical venous catheter preferred route',
+        'Insert UVC 2-4cm until blood return obtained (avoid deep insertion)',
+        'Epinephrine dose: 0.01-0.03 mg/kg (0.1-0.3 mL/kg of 1:10,000) IV/IO',
+        'Give epinephrine every 3-5 minutes if heart rate remains <60',
+        'Consider volume expansion if evidence of hypovolemia or blood loss',
+        'Normal saline or Ringer\'s lactate 10 mL/kg over 5-10 minutes',
+        'Reassess heart rate and response after each medication dose'
+      ],
+      contraindications: [
+        'Do not give medications without ensuring adequate ventilation and compressions',
+        'Avoid hypertonic solutions or excessive fluid volumes'
+      ],
+      safetyNotes: [
+        'Medications rarely needed in neonatal resuscitation',
+        'Umbilical vein catheter insertion requires proper technique',
+        'Monitor for complications of vascular access'
+      ],
+      equipmentNeeded: [
+        'Umbilical catheter (3.5 or 5Fr) and sterile insertion supplies',
+        'Epinephrine 1:10,000 concentration',
+        'Normal saline or Ringer\'s lactate for volume expansion',
+        'Syringes and needles for medication preparation'
+      ]
+    },
+    {
+      id: 'neo-step-6',
+      stepNumber: 6,
+      title: 'Post-Resuscitation Stabilization and Monitoring',
+      description: 'Provide ongoing stabilization and prepare for transport or NICU care',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Continue monitoring heart rate, breathing, oxygen saturation, temperature',
+        'Maintain normal temperature 36.5-37.5°C with radiant warmer or incubator',
+        'Target oxygen saturation: 85-95% (avoid hyperoxia in preterm infants)',
+        'Assess for complications: pneumothorax, cardiovascular instability',
+        'Consider glucose monitoring - treat hypoglycemia if <40 mg/dL',
+        'Provide ongoing respiratory support as needed (CPAP, mechanical ventilation)',
+        'Prepare for transport to appropriate level of care (NICU)',
+        'Communicate with receiving team regarding resuscitation details'
+      ],
+      safetyNotes: [
+        'Post-resuscitation monitoring critical for detecting deterioration',
+        'Temperature control essential for continued stabilization',
+        'Avoid hyperoxia which can cause retinopathy of prematurity'
+      ],
+      equipmentNeeded: [
+        'Continuous monitoring (ECG, pulse oximetry, temperature)',
+        'Transport incubator with ventilation capability',
+        'Glucose testing supplies',
+        'IV fluids and medications for ongoing support'
+      ]
+    },
+    {
+      id: 'neo-step-7',
+      stepNumber: 7,
+      title: 'Family Communication and Ethical Considerations',
+      description: 'Provide family communication and address ethical considerations of neonatal resuscitation',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Provide clear, honest communication to family about newborn\'s condition',
+        'Explain resuscitation measures being taken and rationale',
+        'Address questions and concerns with empathy and medical accuracy',
+        'Consider withdrawal of support if no response after appropriate interventions',
+        'Involve neonatal team in decisions regarding continuation of care',
+        'Provide emotional support and resources for families',
+        'Document family discussions and decisions in medical record',
+        'Ensure appropriate follow-up care and support services'
+      ],
+      safetyNotes: [
+        'Family communication crucial during stressful resuscitation',
+        'Ethical considerations important in prolonged unsuccessful resuscitation',
+        'Team approach needed for complex decisions'
+      ],
+      equipmentNeeded: [
+        'Private space for family discussions',
+        'Social work and chaplain services if available',
+        'Documentation materials for care decisions',
+        'Resources for ongoing family support'
+      ]
+    },
+    {
+      id: 'neo-step-8',
+      stepNumber: 8,
+      title: 'Documentation and Quality Improvement',
+      description: 'Complete comprehensive documentation and participate in quality improvement',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Document all resuscitation interventions with precise timing',
+        'Record Apgar scores at 1, 5, and 10 minutes if resuscitation performed',
+        'Note response to each intervention and final outcome',
+        'Document medications given with doses, routes, and times',
+        'Complete delivery room checklist and equipment function assessment',
+        'Participate in immediate post-event debriefing with team',
+        'Identify systems issues or equipment problems for improvement',
+        'Contribute to quality improvement database for outcome tracking'
+      ],
+      safetyNotes: [
+        'Accurate documentation essential for ongoing care',
+        'Quality improvement helps prevent future emergencies',
+        'Team debriefing important for learning and emotional support'
+      ],
+      equipmentNeeded: [
+        'Comprehensive documentation forms',
+        'Timer or clock for accurate timing',
+        'Quality improvement reporting system',
+        'Debriefing space and facilitator'
+      ]
+    }
+  ],
+
+  // PEDIATRIC CPR WITH MANUAL DEFIBRILLATOR
+  'pediatric-cpr-defibrillator': [
+    {
+      id: 'ped-cpr-step-1',
+      stepNumber: 1,
+      title: 'Pediatric Cardiac Arrest Recognition and Response Activation',
+      description: 'Rapidly recognize pediatric cardiac arrest and activate emergency response',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Check responsiveness by tapping shoulders and shouting "Are you okay?"',
+        'Assess breathing for maximum 10 seconds - look for chest rise/fall',
+        'Check pulse (brachial for infants <1 year, carotid for children ≥1 year)',
+        'If no pulse or pulse <60 bpm with poor perfusion, begin CPR immediately',
+        'Activate emergency response and request pediatric defibrillator',
+        'Note time of arrest recognition for documentation',
+        'Assign roles if multiple rescuers available',
+        'Begin high-quality chest compressions without delay'
+      ],
+      contraindications: [
+        'Do not delay CPR for pulse check >10 seconds',
+        'Do not attempt resuscitation in cases of obvious death'
+      ],
+      safetyNotes: [
+        'Early recognition and immediate CPR critical for pediatric survival',
+        'Children have different arrest patterns than adults',
+        'Pulse check can be difficult - if unsure, begin CPR'
+      ],
+      equipmentNeeded: [
+        'Manual defibrillator with pediatric capability',
+        'Pediatric resuscitation equipment cart',
+        'Pediatric drug dosing chart or calculator',
+        'Timer or clock for rhythm checks'
+      ]
+    },
+    {
+      id: 'ped-cpr-step-2',
+      stepNumber: 2,
+      title: 'High-Quality Chest Compressions - Pediatric Technique',
+      description: 'Perform age-appropriate chest compressions with optimal technique',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'INFANTS (0-12 months): Two-finger or two-thumb encircling technique',
+        'CHILDREN (1-8 years): Heel of one hand on lower half of breastbone',
+        'ADOLESCENTS (>8 years): Two-hand technique like adult CPR',
+        'Compress at least 1/3 chest depth: 4cm infants, 5cm children',
+        'Compression rate 100-120 per minute for all ages',
+        'Allow complete chest recoil between compressions',
+        'Minimize interruptions - compressions fraction >60%',
+        'Switch compressors every 2 minutes to prevent fatigue'
+      ],
+      contraindications: [
+        'Do not compress over xiphoid process or ribs',
+        'Avoid excessive depth which can cause injury'
+      ],
+      safetyNotes: [
+        'Pediatric chest wall more compliant than adults',
+        'Hand position crucial to avoid organ injury',
+        'Continuous compressions more important than perfect technique'
+      ],
+      equipmentNeeded: [
+        'Firm surface for chest compressions',
+        'Metronome or timer for compression rate',
+        'Step stool if needed for rescuer positioning',
+        'Multiple rescuers for rotation'
+      ]
+    },
+    {
+      id: 'ped-cpr-step-3',
+      stepNumber: 3,
+      title: 'Airway Management and Ventilation',
+      description: 'Provide effective ventilation using age-appropriate techniques',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Open airway with head tilt-chin lift (or jaw thrust if trauma)',
+        'For infants: minimal head tilt to avoid airway compression',
+        'Use appropriate mask size covering nose and mouth, not eyes',
+        'Provide rescue breaths: 2 breaths after 30 compressions (single rescuer)',
+        'Two rescuer CPR: 15:2 compression to ventilation ratio',
+        'Each breath should produce visible chest rise',
+        'Breath duration 1 second to avoid gastric insufflation',
+        'Continue cycles until advanced airway placed or ROSC'
+      ],
+      contraindications: [
+        'Do not hyperventilate - can impede venous return',
+        'Avoid excessive tidal volumes causing gastric distention'
+      ],
+      safetyNotes: [
+        'Pediatric airway anatomy differs from adults',
+        'Bag-mask ventilation often sufficient for pediatric arrests',
+        'Two-rescuer technique allows better compression/ventilation ratio'
+      ],
+      equipmentNeeded: [
+        'Bag-mask device with pediatric reservoir',
+        'Face masks - multiple pediatric sizes',
+        'Oral and nasal airway adjuncts (age-appropriate)',
+        'Suction equipment for airway clearance'
+      ]
+    },
+    {
+      id: 'ped-cpr-step-4',
+      stepNumber: 4,
+      title: 'Rhythm Analysis and Defibrillation Setup',
+      description: 'Analyze rhythm and prepare defibrillator for pediatric use',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Attach pediatric pads/paddles: Right upper chest, left lower chest',
+        'For infants: anterior-posterior pad placement if pads too large',
+        'Ensure pads do not touch each other (minimum 3cm separation)',
+        'Analyze rhythm after 2 minutes of CPR or immediately if witnessed arrest',
+        'SHOCKABLE: VF/pVT - prepare for immediate defibrillation',
+        'NON-SHOCKABLE: PEA/Asystole - continue CPR and assess causes',
+        'Use pediatric energy doses: 2 J/kg first shock, 4 J/kg subsequent',
+        'Resume CPR immediately after shock delivery without pulse check'
+      ],
+      contraindications: [
+        'Do not use adult energy doses in pediatric patients',
+        'Do not delay compressions for prolonged rhythm analysis'
+      ],
+      safetyNotes: [
+        'Pediatric shockable rhythms less common than adults',
+        'Proper pad sizing and placement critical for effective defibrillation',
+        'Most pediatric arrests have respiratory etiology'
+      ],
+      equipmentNeeded: [
+        'Manual defibrillator with pediatric energy capability',
+        'Pediatric defibrillation pads (multiple sizes)',
+        'Weight estimation chart for energy dosing',
+        'Conductive gel if using paddles'
+      ]
+    },
+    {
+      id: 'ped-cpr-step-5',
+      stepNumber: 5,
+      title: 'Medication Administration and Vascular Access',
+      description: 'Establish vascular access and administer appropriate resuscitation medications',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Establish IV/IO access during CPR - do not delay compressions',
+        'IO preferred route: proximal tibia, distal femur, or proximal humerus',
+        'Epinephrine: 0.01 mg/kg IV/IO (0.1 mL/kg of 1:10,000) every 3-5 minutes',
+        'Maximum single dose 1mg for epinephrine',
+        'Consider reversible causes: Hypoxia, Hypovolemia, H+ (acidosis), Hypo/hyperkalemia',
+        'Additional Hs: Hypothermia, Hypoglycemia, Hydrogen sulfide, Hypoxia',
+        'Additional Ts: Toxins, Tamponade, Tension pneumothorax, Thrombosis',
+        'Amiodarone 5 mg/kg IV/IO for refractory VF/pVT (maximum 300mg)'
+      ],
+      contraindications: [
+        'Do not give adult medication doses to pediatric patients',
+        'Avoid high-dose epinephrine (not shown to improve outcomes)'
+      ],
+      safetyNotes: [
+        'Weight-based dosing critical in pediatric resuscitation',
+        'IO access faster than IV in pediatric arrest',
+        'Flush all medications with saline to ensure delivery'
+      ],
+      equipmentNeeded: [
+        'Intraosseous drill with pediatric needles',
+        'Pediatric resuscitation medications with dosing chart',
+        'IV supplies and pediatric catheters',
+        'Normal saline for medication flushes'
+      ]
+    },
+    {
+      id: 'ped-cpr-step-6',
+      stepNumber: 6,
+      title: 'Advanced Airway Management',
+      description: 'Consider advanced airway placement during ongoing resuscitation',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Consider endotracheal intubation if bag-mask ventilation inadequate',
+        'ETT size: Age/4 + 4 for uncuffed, Age/4 + 3.5 for cuffed tubes',
+        'Depth: 3 × ETT size (cm at lip) for children',
+        'Use capnography to confirm placement and monitor ventilation',
+        'Once advanced airway placed, provide continuous compressions',
+        'Ventilation rate: 10-12 breaths/minute (1 breath every 5-6 seconds)',
+        'Avoid hyperventilation which impedes venous return',
+        'Secure airway and reassess placement frequently'
+      ],
+      contraindications: [
+        'Do not attempt intubation if not skilled in pediatric airway',
+        'Do not delay compressions for intubation attempts'
+      ],
+      safetyNotes: [
+        'Bag-mask ventilation often adequate for pediatric arrests',
+        'Intubation should not interrupt high-quality CPR',
+        'Pediatric airway has unique anatomical considerations'
+      ],
+      equipmentNeeded: [
+        'Pediatric laryngoscope blades (straight preferred)',
+        'Endotracheal tubes (multiple sizes)',
+        'Capnography for tube confirmation',
+        'Tube securing device'
+      ]
+    },
+    {
+      id: 'ped-cpr-step-7',
+      stepNumber: 7,
+      title: 'ROSC Recognition and Post-Arrest Care',
+      description: 'Recognize return of circulation and provide immediate post-arrest stabilization',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Signs of ROSC: Palpable pulse, blood pressure, waveform capnography',
+        'Check pulse and rhythm during scheduled rhythm checks',
+        'If ROSC achieved, immediately assess airway, breathing, circulation',
+        'Target oxygen saturation 94-99% with titrated oxygen therapy',
+        'Maintain normal blood pressure for age and avoid hypotension',
+        'Monitor for post-arrest complications: seizures, arrhythmias',
+        'Consider targeted temperature management per institutional protocols',
+        'Prepare for transport to pediatric intensive care unit'
+      ],
+      safetyNotes: [
+        'Post-arrest care critical for neurological outcomes',
+        'Continuous monitoring required after ROSC',
+        'Early PICU involvement improves outcomes'
+      ],
+      equipmentNeeded: [
+        'Continuous monitoring (ECG, blood pressure, pulse oximetry)',
+        'Mechanical ventilator if indicated',
+        'Vasoactive medications for blood pressure support',
+        'Transport equipment for PICU transfer'
+      ]
+    },
+    {
+      id: 'ped-cpr-step-8',
+      stepNumber: 8,
+      title: 'Family Support and Resuscitation Termination Considerations',
+      description: 'Provide family support and consider appropriate termination of resuscitation',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Consider family presence during resuscitation if appropriately supported',
+        'Provide clear, compassionate communication about child\'s condition',
+        'Consider termination after 20-30 minutes of optimal resuscitation without ROSC',
+        'Factors favoring continuation: hypothermia, drowning, drug overdose',
+        'Involve pediatric intensivist or emergency physician in termination decisions',
+        'Provide immediate bereavement support for families',
+        'Complete thorough documentation of resuscitation efforts',
+        'Conduct team debriefing to address emotional and educational needs'
+      ],
+      safetyNotes: [
+        'Family-centered care important even during resuscitation',
+        'Termination decisions require careful consideration of circumstances',
+        'Team emotional support crucial after pediatric arrests'
+      ],
+      equipmentNeeded: [
+        'Private space for family communication',
+        'Chaplain or social work services',
+        'Documentation forms for comprehensive record',
+        'Debriefing space and facilitator'
+      ]
+    }
   ]
 };
 
