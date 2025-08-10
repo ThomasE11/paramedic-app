@@ -11739,6 +11739,263 @@ export const criticalSkillsMetadata = {
     ]
   },
 
+  // 30. SURGICAL CRICOTHYROIDOTOMY - Evidence-based emergency airway technique
+  'surgical-cricothyroidotomy': [
+    {
+      id: 'cricothyroidotomy-step-1',
+      stepNumber: 1,
+      title: 'Emergency Airway Assessment and Indication Confirmation',
+      description: 'Rapidly confirm cannot intubate, cannot oxygenate scenario requiring emergency surgical airway',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Confirm failed endotracheal intubation attempts (maximum 3 attempts)',
+        'Assess for failed supraglottic airway insertion or inadequate ventilation',
+        'Verify oxygen saturation <90% despite BVM ventilation attempts',
+        'Confirm upper airway obstruction preventing effective ventilation',
+        'Check for complete loss of airway patency with imminent respiratory arrest',
+        'Ensure no contraindications: pediatric patient <10 years, adequate ventilation possible',
+        'Call for additional help and notify receiving facility of emergency surgical airway',
+        'Continue rescue ventilation attempts while preparing for cricothyroidotomy'
+      ],
+      contraindications: [
+        'Ability to achieve adequate ventilation with BVM or supraglottic airway',
+        'Pediatric patients under 10 years of age (needle cricothyroidotomy preferred)',
+        'Severe anterior neck pathology distorting normal anatomy'
+      ],
+      safetyNotes: [
+        'This is a last-resort airway technique when all other methods have failed',
+        'Time is critical - do not delay if true cannot intubate, cannot oxygenate scenario',
+        'Have backup plan for failed surgical airway (needle cricothyroidotomy)'
+      ],
+      equipmentNeeded: [
+        'Pulse oximetry for continuous oxygen saturation monitoring',
+        'Assessment tools and emergency airway equipment',
+        'Communication equipment for calling additional help'
+      ]
+    },
+    {
+      id: 'cricothyroidotomy-step-2',
+      stepNumber: 2,
+      title: 'Equipment Preparation and Sterile Setup',
+      description: 'Rapidly prepare surgical instruments and establish sterile field for emergency cricothyroidotomy',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Open cricothyroidotomy kit or gather scalpel with #11 blade',
+        'Prepare 6.0mm tracheostomy tube or small endotracheal tube (6.0-7.0mm)',
+        'Set up tracheal hook or curved hemostat for airway manipulation',
+        'Ready tracheal dilator or spreading forceps for membrane dilation',
+        'Connect BVM to high-flow oxygen and prepare for immediate ventilation',
+        'Set up suction with rigid Yankauer catheter for blood clearance',
+        'Don sterile gloves and prepare antiseptic solution for skin prep',
+        'Have cuff inflation syringe ready and tube securing materials available'
+      ],
+      safetyNotes: [
+        'Speed is essential but maintain sterile technique when possible',
+        'Have all equipment immediately accessible before starting procedure',
+        'Ensure suction is working properly to manage bleeding'
+      ],
+      equipmentNeeded: [
+        'Scalpel handle with #11 surgical blade',
+        'Tracheostomy tube (6.0mm) or small ETT (6.0-7.0mm)',
+        'Tracheal hook or curved hemostat',
+        'Tracheal dilator or spreading forceps',
+        'BVM with high-flow oxygen capability'
+      ]
+    },
+    {
+      id: 'cricothyroidotomy-step-3',
+      stepNumber: 3,
+      title: 'Patient Positioning and Anatomical Landmark Identification',
+      description: 'Position patient optimally and identify critical anatomical landmarks for safe surgical access',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Position patient supine with neck extended (towel roll under shoulders)',
+        'Palpate thyroid cartilage (Adam\'s apple) as primary anatomical landmark',
+        'Identify cricoid cartilage immediately below thyroid cartilage',
+        'Locate cricothyroid membrane in depression between thyroid and cricoid cartilages',
+        'Mark the cricothyroid membrane with finger or skin marker',
+        'Ensure adequate lighting and clear visualization of anterior neck',
+        'Stabilize larynx with non-dominant hand throughout procedure',
+        'Apply antiseptic solution to anterior neck if time permits'
+      ],
+      contraindications: [
+        'Inability to palpate normal anatomical landmarks due to swelling or pathology',
+        'Previous neck surgery or radiation causing anatomical distortion'
+      ],
+      safetyNotes: [
+        'Proper landmark identification is critical to avoid major vessel injury',
+        'Maintain laryngeal stabilization throughout the procedure',
+        'In emergency situations, anatomical identification takes precedence over extensive prep'
+      ],
+      equipmentNeeded: [
+        'Towel roll or neck roll for positioning',
+        'Adequate lighting source',
+        'Antiseptic solution for skin preparation',
+        'Skin marking pen if available'
+      ]
+    },
+    {
+      id: 'cricothyroidotomy-step-4',
+      stepNumber: 4,
+      title: 'Skin Incision and Tissue Dissection',
+      description: 'Create controlled vertical skin incision and dissect through subcutaneous tissues',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Make 3-4cm vertical skin incision over cricothyroid membrane',
+        'Incise through skin and subcutaneous tissue down to pretracheal fascia',
+        'Use spreading technique with forceps to separate tissue layers',
+        'Control bleeding with pressure and suction as needed',
+        'Maintain midline orientation to avoid major vascular structures',
+        'Ensure adequate exposure of cricothyroid membrane',
+        'Use tracheal hook or hemostat to stabilize thyroid cartilage if needed',
+        'Clear tissue and blood from operative field with suction'
+      ],
+      safetyNotes: [
+        'Stay in midline to avoid carotid arteries and jugular veins',
+        'Control bleeding quickly but do not delay airway establishment',
+        'Maintain sterile technique as much as possible under emergency conditions'
+      ],
+      equipmentNeeded: [
+        'Scalpel with #11 blade for precise incisions',
+        'Forceps or hemostats for tissue manipulation',
+        'Suction equipment with rigid catheter',
+        'Gauze sponges for bleeding control'
+      ]
+    },
+    {
+      id: 'cricothyroidotomy-step-5',
+      stepNumber: 5,
+      title: 'Cricothyroid Membrane Incision',
+      description: 'Execute precise horizontal incision through cricothyroid membrane to enter tracheal lumen',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Palpate and visualize cricothyroid membrane clearly',
+        'Make horizontal incision through cricothyroid membrane (lower third)',
+        'Extend incision through membrane into tracheal lumen',
+        'Listen for air rush indicating successful tracheal entry',
+        'Use tracheal hook to lift thyroid cartilage and open airway',
+        'Insert dilator or spread incision with forceps',
+        'Suction blood and secretions from airway opening',
+        'Ensure adequate opening size for tube insertion'
+      ],
+      safetyNotes: [
+        'Horizontal incision prevents damage to vocal cords above and tracheal rings below',
+        'Air rush confirms successful tracheal entry',
+        'Do not make incision too large to avoid difficulty with tube sealing'
+      ],
+      equipmentNeeded: [
+        'Scalpel with #11 blade for membrane incision',
+        'Tracheal hook for cartilage manipulation',
+        'Tracheal dilator or spreading forceps',
+        'Suction equipment for airway clearance'
+      ]
+    },
+    {
+      id: 'cricothyroidotomy-step-6',
+      stepNumber: 6,
+      title: 'Tracheostomy Tube Insertion and Placement',
+      description: 'Insert tracheostomy tube through surgical opening and confirm proper tracheal placement',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Insert 6.0mm tracheostomy tube or small ETT through membrane incision',
+        'Direct tube caudally (downward) into tracheal lumen',
+        'Advance tube 2-3cm beyond the cuff to ensure proper depth',
+        'Inflate cuff with 5-10ml air to seal airway',
+        'Remove obturator if using tracheostomy tube with inner cannula',
+        'Connect BVM or ventilator to tube immediately',
+        'Check for bilateral chest rise and breath sounds',
+        'Confirm placement with end-tidal CO2 if available'
+      ],
+      safetyNotes: [
+        'Ensure tube is directed into trachea, not subcutaneous tissues',
+        'Do not advance tube too far to avoid right mainstem intubation',
+        'Immediate ventilation assessment is critical to confirm success'
+      ],
+      equipmentNeeded: [
+        'Tracheostomy tube (6.0mm) or small ETT',
+        'Cuff inflation syringe',
+        'BVM with high-flow oxygen',
+        'End-tidal CO2 monitoring if available'
+      ]
+    },
+    {
+      id: 'cricothyroidotomy-step-7',
+      stepNumber: 7,
+      title: 'Ventilation Confirmation and Tube Securing',
+      description: 'Confirm adequate ventilation and secure tube to prevent dislodgement',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 150,
+      keyPoints: [
+        'Auscultate bilateral breath sounds to confirm adequate ventilation',
+        'Monitor oxygen saturation and end-tidal CO2 waveform',
+        'Assess chest rise and fall with each ventilation',
+        'Check for air leak around tube and adjust cuff pressure',
+        'Secure tube with sutures, tape, or commercial tracheostomy holder',
+        'Apply sterile dressing around tube insertion site',
+        'Document tube depth at skin level for reference',
+        'Establish appropriate ventilation rate and tidal volume'
+      ],
+      safetyNotes: [
+        'Inadequate breath sounds may indicate tube malposition',
+        'Secure tube well to prevent accidental dislodgement',
+        'Monitor continuously for tube obstruction or displacement'
+      ],
+      equipmentNeeded: [
+        'Stethoscope for breath sound assessment',
+        'Sutures or tape for tube securing',
+        'Sterile dressing materials',
+        'Commercial tracheostomy holder if available'
+      ]
+    },
+    {
+      id: 'cricothyroidotomy-step-8',
+      stepNumber: 8,
+      title: 'Ongoing Monitoring and Transport Preparation',
+      description: 'Monitor for complications and prepare for transport to appropriate facility',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Monitor vital signs and oxygen saturation continuously',
+        'Assess for complications: bleeding, pneumothorax, tube obstruction',
+        'Check tube position and patency every 5-10 minutes',
+        'Suction airway as needed for blood or secretion clearance',
+        'Monitor for subcutaneous emphysema around insertion site',
+        'Document procedure details, complications, and patient response',
+        'Prepare for immediate transport to trauma center or ENT surgery',
+        'Brief receiving team on procedure and current patient status'
+      ],
+      contraindications: [
+        'Do not delay transport for non-essential interventions',
+        'Avoid manipulating tube unnecessarily during transport'
+      ],
+      safetyNotes: [
+        'Surgical cricothyroidotomy is temporary emergency airway - definitive management needed',
+        'Transport to facility capable of surgical airway management',
+        'Have backup airway equipment available during transport'
+      ],
+      equipmentNeeded: [
+        'Continuous monitoring equipment',
+        'Portable suction with sterile catheters',
+        'Documentation materials',
+        'Transport ventilator or BVM with oxygen'
+      ]
+    }
+  ],
+
   'surgical-cricothyroidotomy': {
     name: 'Surgical Cricothyroidotomy',
     category: 'airway',
@@ -11781,6 +12038,263 @@ export const criticalSkillsMetadata = {
     ]
   },
 
+  // 31. SYNCHRONIZED CARDIOVERSION - Evidence-based electrical cardioversion technique
+  'synchronized-cardioversion': [
+    {
+      id: 'cardioversion-step-1',
+      stepNumber: 1,
+      title: 'Hemodynamic Assessment and Cardioversion Indication',
+      description: 'Assess patient stability and confirm indication for synchronized cardioversion',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Obtain 12-lead ECG to identify specific tachyarrhythmia type',
+        'Assess hemodynamic stability: blood pressure, heart rate, mental status',
+        'Look for instability signs: chest pain, dyspnea, hypotension, altered consciousness',
+        'Confirm heart rate >150 bpm with hemodynamic compromise',
+        'Rule out digitalis toxicity which contraindicates cardioversion',
+        'Assess duration of arrhythmia for anticoagulation considerations',
+        'Document patient symptoms and response to previous treatments',
+        'Confirm failed response to appropriate medical therapy'
+      ],
+      contraindications: [
+        'Hemodynamically stable patient with well-tolerated arrhythmia',
+        'Suspected digitalis toxicity (risk of ventricular fibrillation)',
+        'Multifocal atrial tachycardia (rarely responds to cardioversion)'
+      ],
+      safetyNotes: [
+        'Unstable patients may require immediate cardioversion without delay',
+        'Stable patients allow time for proper preparation and sedation',
+        'Consider medical therapy first in stable wide-complex tachycardia'
+      ],
+      equipmentNeeded: [
+        '12-lead ECG machine for rhythm identification',
+        'Continuous cardiac monitoring equipment',
+        'Blood pressure monitoring devices',
+        'Pulse oximetry for oxygen saturation monitoring'
+      ]
+    },
+    {
+      id: 'cardioversion-step-2',
+      stepNumber: 2,
+      title: 'Equipment Preparation and Safety Setup',
+      description: 'Prepare biphasic defibrillator and establish synchronized mode with safety protocols',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Use biphasic defibrillator with reliable synchronization capability',
+        'Turn on synchronization mode and verify R-wave detection markers',
+        'Select appropriate electrode pad placement (anterolateral or anteroposterior)',
+        'Apply electrode pads ensuring good skin contact and conductive gel',
+        'Check synchronization markers appear on each QRS complex',
+        'Set initial energy level based on arrhythmia type and guidelines',
+        'Ensure "sync" mode is clearly indicated on defibrillator display',
+        'Have emergency medications drawn up and immediately available'
+      ],
+      safetyNotes: [
+        'Always verify sync mode is active - unsynchronized shock may cause VF',
+        'Poor R-wave detection may prevent synchronized delivery',
+        'Have full resuscitation equipment immediately available'
+      ],
+      equipmentNeeded: [
+        'Biphasic defibrillator with synchronization mode',
+        'Defibrillator electrode pads (anterolateral placement)',
+        'Conductive gel or pre-gelled electrode pads',
+        'Emergency cardiac medications (atropine, dopamine, epinephrine)'
+      ]
+    },
+    {
+      id: 'cardioversion-step-3',
+      stepNumber: 3,
+      title: 'Procedural Sedation and Patient Preparation',
+      description: 'Provide appropriate sedation and prepare patient for electrical cardioversion',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Ensure IV access with patent large-bore IV catheter',
+        'Administer procedural sedation: midazolam 0.1-0.2mg/kg IV or etomidate 0.3mg/kg',
+        'Monitor airway, breathing, and circulation during sedation',
+        'Ensure adequate sedation depth but maintain respiratory drive',
+        'Have airway management equipment immediately available',
+        'Position patient supine with slight head elevation',
+        'Remove any metallic objects or jewelry from chest area',
+        'Ensure oxygen delivery via nasal cannula or face mask'
+      ],
+      contraindications: [
+        'Allergy to sedation medications',
+        'Significant airway compromise or respiratory failure',
+        'Hemodynamic instability requiring immediate cardioversion without sedation'
+      ],
+      safetyNotes: [
+        'Sedation increases airway management risk - have BVM ready',
+        'Unstable patients may require cardioversion with minimal or no sedation',
+        'Monitor oxygen saturation and respiratory status continuously'
+      ],
+      equipmentNeeded: [
+        'Procedural sedation medications (midazolam, etomidate)',
+        'IV access with large-bore catheter',
+        'Bag-valve-mask and airway management equipment',
+        'Oxygen delivery devices (nasal cannula, face mask)'
+      ]
+    },
+    {
+      id: 'cardioversion-step-4',
+      stepNumber: 4,
+      title: 'Energy Level Selection and Programming',
+      description: 'Select appropriate energy levels based on specific arrhythmia type and clinical guidelines',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'SVT/Atrial flutter: Start with 50-100J, increase to 200J if unsuccessful',
+        'Atrial fibrillation: Start with 120-200J, increase stepwise to maximum',
+        'Monomorphic VT: Start with 100J, increase to 200J then maximum if needed',
+        'Polymorphic VT: Treat as VF with unsynchronized high-energy shocks',
+        'Use biphasic energy levels (typically lower than monophasic requirements)',
+        'Program defibrillator to selected energy level',
+        'Verify sync mode remains active after energy selection',
+        'Charge defibrillator only when ready to deliver shock'
+      ],
+      safetyNotes: [
+        'Higher energy increases myocardial damage risk',
+        'Start with lowest effective energy for specific arrhythmia',
+        'Polymorphic VT requires immediate unsynchronized defibrillation'
+      ],
+      equipmentNeeded: [
+        'Biphasic defibrillator with variable energy settings',
+        'Current ACLS guidelines for energy recommendations',
+        'Cardiac rhythm recognition references'
+      ]
+    },
+    {
+      id: 'cardioversion-step-5',
+      stepNumber: 5,
+      title: 'Synchronized Shock Delivery',
+      description: 'Execute synchronized cardioversion with proper team coordination and safety protocols',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Ensure all team members are clear of patient and bed',
+        'Announce "charging" and verify sync mode is still active',
+        'Press and hold shock buttons simultaneously until discharge',
+        'Wait for synchronization - shock will be delayed until next R-wave',
+        'Observe for successful rhythm conversion on monitor',
+        'Check pulse and blood pressure immediately after shock',
+        'Be prepared for potential rhythm changes including asystole or VF',
+        'Document pre and post-cardioversion rhythms and patient response'
+      ],
+      safetyNotes: [
+        'Synchronized shocks are delayed until R-wave detection',
+        'Poor synchronization may prevent shock delivery',
+        'Be prepared for immediate CPR if cardiac arrest results'
+      ],
+      equipmentNeeded: [
+        'Charged defibrillator in synchronization mode',
+        'Clear verbal communication with team',
+        'Immediate access to cardiac monitoring',
+        'CPR equipment ready for complications'
+      ]
+    },
+    {
+      id: 'cardioversion-step-6',
+      stepNumber: 6,
+      title: 'Post-Cardioversion Assessment and Monitoring',
+      description: 'Monitor patient response and manage potential complications after cardioversion',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Assess rhythm conversion and hemodynamic improvement',
+        'Check blood pressure, pulse, and oxygen saturation',
+        'Monitor for return of effective cardiac output and perfusion',
+        'Obtain post-cardioversion 12-lead ECG for documentation',
+        'Assess consciousness level and neurological function',
+        'Monitor for complications: arrhythmias, hypotension, respiratory depression',
+        'Check for skin burns at electrode sites',
+        'Continue cardiac monitoring for rhythm stability'
+      ],
+      contraindications: [
+        'Do not delay treatment of life-threatening complications',
+        'Avoid repeated cardioversion attempts without addressing underlying causes'
+      ],
+      safetyNotes: [
+        'Arrhythmias may recur requiring additional treatment',
+        'Sedation effects may persist requiring airway monitoring',
+        'Hypotension may occur requiring fluid or vasopressor support'
+      ],
+      equipmentNeeded: [
+        '12-lead ECG machine for post-procedure documentation',
+        'Continuous cardiac and hemodynamic monitoring',
+        'Medications for complication management',
+        'Airway management equipment during sedation recovery'
+      ]
+    },
+    {
+      id: 'cardioversion-step-7',
+      stepNumber: 7,
+      title: 'Complication Management and Additional Interventions',
+      description: 'Recognize and manage complications, provide additional therapy as needed',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'If unsuccessful: increase energy level and repeat cardioversion attempt',
+        'Manage bradycardia with atropine 0.5mg IV or transcutaneous pacing',
+        'Treat hypotension with IV fluids, dopamine, or norepinephrine',
+        'Address recurrent tachyarrhythmias with antiarrhythmic medications',
+        'Provide respiratory support if sedation-related depression occurs',
+        'Treat skin burns with appropriate wound care',
+        'Consider underlying causes: electrolyte imbalances, drug toxicity',
+        'Consult cardiology for persistent or recurrent arrhythmias'
+      ],
+      safetyNotes: [
+        'Multiple cardioversion attempts increase myocardial injury risk',
+        'Bradycardia post-cardioversion may be severe and symptomatic',
+        'Have emergency medications and equipment immediately available'
+      ],
+      equipmentNeeded: [
+        'Emergency cardiac medications (atropine, dopamine, amiodarone)',
+        'Transcutaneous pacing capability',
+        'Airway management and respiratory support equipment',
+        'Wound care supplies for electrode burns'
+      ]
+    },
+    {
+      id: 'cardioversion-step-8',
+      stepNumber: 8,
+      title: 'Documentation and Post-Procedure Care',
+      description: 'Complete documentation and arrange appropriate post-cardioversion monitoring and care',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Document pre-cardioversion rhythm, energy levels used, and outcomes',
+        'Record patient hemodynamic response and any complications',
+        'Note sedation medications used and recovery status',
+        'Obtain serial 12-lead ECGs to monitor rhythm stability',
+        'Continue cardiac monitoring for minimum 4-6 hours post-procedure',
+        'Arrange cardiology consultation for underlying arrhythmia management',
+        'Educate patient about procedure and post-cardioversion expectations',
+        'Plan anticoagulation therapy if atrial fibrillation was present >48 hours'
+      ],
+      safetyNotes: [
+        'Arrhythmia recurrence common - extended monitoring essential',
+        'Anticoagulation decisions require careful risk-benefit assessment',
+        'Follow-up care important for long-term arrhythmia management'
+      ],
+      equipmentNeeded: [
+        'Documentation materials and procedure forms',
+        'Extended cardiac monitoring capability',
+        'Communication equipment for cardiology consultation',
+        'Patient education materials about cardioversion'
+      ]
+    }
+  ],
+
   'synchronized-cardioversion': {
     name: 'Synchronized Cardioversion',
     category: 'cardiac',
@@ -11821,6 +12335,260 @@ export const criticalSkillsMetadata = {
       'Advanced airway management equipment and continuous cardiac monitoring'
     ]
   },
+
+  // 32. TRANSCUTANEOUS PACING - Evidence-based external cardiac pacing technique
+  'transcutaneous-pacing': [
+    {
+      id: 'pacing-step-1',
+      stepNumber: 1,
+      title: 'Bradycardia Assessment and Pacing Indication',
+      description: 'Assess bradycardia severity and confirm indication for transcutaneous pacing',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Identify heart rate <60 bpm with signs of hemodynamic compromise',
+        'Assess symptoms: chest pain, dyspnea, hypotension, altered mental status',
+        'Check blood pressure and perfusion indicators',
+        'Obtain 12-lead ECG to identify specific bradycardia type',
+        'Rule out reversible causes: hypothermia, drug toxicity, electrolyte imbalances',
+        'Assess response to atropine 0.5mg IV (may repeat up to 3mg total)',
+        'Identify high-risk bradyarrhythmias requiring immediate pacing',
+        'Document baseline vital signs and neurological status'
+      ],
+      contraindications: [
+        'Asymptomatic bradycardia with adequate perfusion',
+        'Bradycardia responsive to atropine or reversible causes',
+        'Hypothermic bradycardia (may be physiologically appropriate)'
+      ],
+      safetyNotes: [
+        'Symptomatic bradycardia requires rapid intervention',
+        'Atropine may be ineffective in complete heart block',
+        'High-degree AV blocks often require pacing regardless of rate'
+      ],
+      equipmentNeeded: [
+        '12-lead ECG machine for rhythm identification',
+        'Continuous cardiac monitoring equipment',
+        'Atropine for initial medical therapy',
+        'Blood pressure monitoring devices'
+      ]
+    },
+    {
+      id: 'pacing-step-2',
+      stepNumber: 2,
+      title: 'Equipment Setup and Patient Preparation',
+      description: 'Prepare transcutaneous pacing equipment and position patient appropriately',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Set up defibrillator/monitor with transcutaneous pacing capability',
+        'Ensure large pacing electrode pads are available and functional',
+        'Position patient supine with adequate access to chest and back',
+        'Explain procedure to conscious patient and provide anxiolysis if needed',
+        'Establish secure IV access for medications and sedation',
+        'Have emergency medications ready: atropine, dopamine, midazolam',
+        'Ensure continuous cardiac monitoring and pulse oximetry',
+        'Prepare for potential need for transvenous pacing or cardioversion'
+      ],
+      safetyNotes: [
+        'Pacing can be uncomfortable for conscious patients',
+        'Have sedation and analgesia readily available',
+        'Ensure backup power and equipment availability'
+      ],
+      equipmentNeeded: [
+        'Defibrillator/monitor with transcutaneous pacing function',
+        'Large transcutaneous pacing electrode pads',
+        'IV access with emergency medications',
+        'Sedation medications (midazolam, fentanyl)'
+      ]
+    },
+    {
+      id: 'pacing-step-3',
+      stepNumber: 3,
+      title: 'Electrode Pad Placement and Positioning',
+      description: 'Apply pacing electrodes in optimal positions for effective cardiac capture',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 150,
+      keyPoints: [
+        'Use anteroposterior placement for optimal pacing efficiency',
+        'Place anterior pad over left precordium (V2-V6 area)',
+        'Position posterior pad on back between left scapula and spine',
+        'Ensure electrode pads have good skin contact with conductive gel',
+        'Avoid placing pads over bony prominences or breast tissue',
+        'Check that pads are within expiration date and properly adhesive',
+        'Connect pacing cables to appropriate terminals (positive/negative)',
+        'Verify electrode impedance is acceptable on pacing unit'
+      ],
+      safetyNotes: [
+        'Poor electrode contact reduces pacing effectiveness',
+        'Anteroposterior placement provides better capture than anterolateral',
+        'Ensure pads do not overlap or touch each other'
+      ],
+      equipmentNeeded: [
+        'Large transcutaneous pacing electrode pads (adult size)',
+        'Conductive gel or pre-gelled electrode pads',
+        'Razor for chest hair removal if necessary',
+        'Alcohol prep pads for skin cleaning'
+      ]
+    },
+    {
+      id: 'pacing-step-4',
+      stepNumber: 4,
+      title: 'Pacing Parameter Settings and Initialization',
+      description: 'Configure pacing rate and output settings for effective cardiac pacing',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Set initial pacing rate 60-80 bpm depending on clinical needs',
+        'Start with maximum output (usually 200mA) then decrease to find threshold',
+        'Use demand mode (synchronous) to avoid competing with intrinsic rhythm',
+        'Set pacing pulse width to maximum available (usually 40ms)',
+        'Verify pacing mode is appropriate for rhythm disturbance',
+        'Ensure sensitivity is set to detect patient\'s intrinsic QRS complexes',
+        'Test pacing function before connecting to patient',
+        'Document initial settings and verify equipment function'
+      ],
+      safetyNotes: [
+        'Start with high output to ensure capture, then titrate down',
+        'Demand mode prevents pacing during intrinsic beats',
+        'Fixed mode may compete with patient rhythm causing R-on-T phenomenon'
+      ],
+      equipmentNeeded: [
+        'Transcutaneous pacing unit with variable settings',
+        'Rate and output adjustment controls',
+        'Mode selection capability (demand vs fixed)',
+        'Sensitivity adjustment controls'
+      ]
+    },
+    {
+      id: 'pacing-step-5',
+      stepNumber: 5,
+      title: 'Pacing Initiation and Capture Assessment',
+      description: 'Initiate transcutaneous pacing and confirm electrical and mechanical capture',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Start pacing at maximum output and confirm electrical capture on monitor',
+        'Look for wide QRS complex following each pacing spike',
+        'Palpate pulse to confirm mechanical capture and adequate stroke volume',
+        'Check blood pressure to ensure hemodynamic improvement',
+        'Gradually decrease output until loss of capture, then increase by 10-20mA',
+        'Set final output at 2x threshold or 10-20mA above threshold',
+        'Monitor for consistent 1:1 capture ratio',
+        'Assess patient comfort level and need for analgesia/sedation'
+      ],
+      safetyNotes: [
+        'Electrical capture without mechanical capture provides no benefit',
+        'Palpate pulse away from pacing electrodes to confirm mechanical capture',
+        'Patient discomfort is common and may require sedation'
+      ],
+      equipmentNeeded: [
+        'Pulse assessment capabilities (palpation or arterial monitoring)',
+        'Blood pressure monitoring equipment',
+        'Analgesic medications (fentanyl, morphine)',
+        'Continuous cardiac rhythm monitoring'
+      ]
+    },
+    {
+      id: 'pacing-step-6',
+      stepNumber: 6,
+      title: 'Patient Comfort and Sedation Management',
+      description: 'Provide appropriate analgesia and sedation for patient comfort during pacing',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Assess patient pain and anxiety levels during pacing',
+        'Administer analgesics: fentanyl 1-3mcg/kg IV or morphine 0.1mg/kg IV',
+        'Provide anxiolysis with midazolam 0.05-0.1mg/kg IV titrated to effect',
+        'Monitor respiratory status and airway patency during sedation',
+        'Explain procedure and provide reassurance to conscious patients',
+        'Position patient comfortably while maintaining electrode contact',
+        'Monitor vital signs closely during sedation administration',
+        'Have reversal agents available: naloxone and flumazenil'
+      ],
+      contraindications: [
+        'Respiratory compromise or airway obstruction',
+        'Hemodynamic instability precluding sedation',
+        'Allergy to sedation medications'
+      ],
+      safetyNotes: [
+        'Transcutaneous pacing is often painful requiring adequate analgesia',
+        'Sedation may compromise respiratory drive - monitor closely',
+        'Balance patient comfort with safety considerations'
+      ],
+      equipmentNeeded: [
+        'Analgesic medications (fentanyl, morphine)',
+        'Anxiolytic medications (midazolam)',
+        'Reversal agents (naloxone, flumazenil)',
+        'Continuous pulse oximetry and capnography'
+      ]
+    },
+    {
+      id: 'pacing-step-7',
+      stepNumber: 7,
+      title: 'Monitoring and Troubleshooting',
+      description: 'Monitor pacing effectiveness and troubleshoot common pacing problems',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Monitor for consistent electrical and mechanical capture',
+        'Check electrode pad adhesion and skin contact regularly',
+        'Watch for failure to pace: check connections, battery, electrode impedance',
+        'Monitor for failure to capture: increase output, check electrode position',
+        'Assess for undersensing: adjust sensitivity settings appropriately',
+        'Watch for oversensing causing inappropriate pacing inhibition',
+        'Monitor patient hemodynamic response and symptom improvement',
+        'Check for complications: skin burns, muscle contractions, pneumothorax'
+      ],
+      safetyNotes: [
+        'Loss of capture may occur with electrode displacement or battery failure',
+        'High current output may cause uncomfortable muscle contractions',
+        'Monitor electrode sites for skin irritation or burns'
+      ],
+      equipmentNeeded: [
+        'Continuous cardiac and hemodynamic monitoring',
+        'Backup pacing equipment and batteries',
+        'Electrode replacement pads',
+        'Emergency cardiac medications'
+      ]
+    },
+    {
+      id: 'pacing-step-8',
+      stepNumber: 8,
+      title: 'Transport Preparation and Definitive Care Planning',
+      description: 'Prepare for transport and arrange definitive cardiac pacing or treatment',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Ensure stable pacing parameters before transport',
+        'Arrange transport to facility with cardiology and pacing capabilities',
+        'Prepare for potential transvenous pacing placement',
+        'Document pacing settings, thresholds, and patient response',
+        'Brief receiving team on pacing parameters and patient status',
+        'Ensure adequate battery life for transport duration',
+        'Have backup pacing equipment available during transport',
+        'Consider need for permanent pacemaker evaluation'
+      ],
+      safetyNotes: [
+        'Transcutaneous pacing is temporary bridge to definitive therapy',
+        'Equipment failure during transport can be life-threatening',
+        'Maintain continuous monitoring throughout transport'
+      ],
+      equipmentNeeded: [
+        'Portable pacing equipment with adequate battery life',
+        'Backup pacing device and electrode pads',
+        'Documentation materials for pacing parameters',
+        'Communication equipment for receiving facility coordination'
+      ]
+    }
+  ],
 
   'transcutaneous-pacing': {
     name: 'Transcutaneous Pacing',
@@ -12037,6 +12805,255 @@ export const criticalSkillsMetadata = {
     ]
   },
 
+  // 33. TRANSPORT VENTILATOR - Evidence-based mechanical ventilation during transport
+  'transport-ventilator': [
+    {
+      id: 'ventilator-step-1',
+      stepNumber: 1,
+      title: 'Ventilation Assessment and Transport Ventilator Indication',
+      description: 'Assess patient ventilation needs and determine appropriate transport ventilator utilization',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Assess patient respiratory status and ventilation adequacy',
+        'Evaluate for conditions requiring mechanical ventilation: respiratory failure, airway protection',
+        'Check current manual ventilation effectiveness with BVM',
+        'Assess transport duration and crew fatigue considerations',
+        'Verify secure airway with endotracheal tube or supraglottic device',
+        'Evaluate patient hemodynamic stability for ventilator transition',
+        'Check for contraindications: pneumothorax, severe hemodynamic instability',
+        'Determine appropriate ventilation strategy based on patient condition'
+      ],
+      contraindications: [
+        'Untreated tension pneumothorax',
+        'Severe hemodynamic instability requiring immediate manual ventilation control',
+        'Equipment malfunction or inadequate transport ventilator capabilities'
+      ],
+      safetyNotes: [
+        'Secure airway essential before transport ventilator use',
+        'Manual ventilation may be preferred for short transports',
+        'Have backup BVM immediately available at all times'
+      ],
+      equipmentNeeded: [
+        'Functioning transport ventilator with appropriate settings',
+        'Secure endotracheal tube or supraglottic airway device',
+        'Pulse oximetry and capnography monitoring',
+        'Backup BVM with oxygen supply'
+      ]
+    },
+    {
+      id: 'ventilator-step-2',
+      stepNumber: 2,
+      title: 'Equipment Preparation and Safety Checks',
+      description: 'Prepare transport ventilator and perform comprehensive safety and function checks',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Perform ventilator self-test and calibration sequence',
+        'Check oxygen supply connections and pressure levels',
+        'Verify battery charge level and backup power capabilities',
+        'Test all alarm systems: high pressure, low pressure, disconnect',
+        'Ensure ventilator circuit is properly assembled and leak-free',
+        'Check expiratory valve and PEEP valve function',
+        'Verify humidification system function and water levels',
+        'Test backup battery operation and charging system'
+      ],
+      safetyNotes: [
+        'Complete equipment check essential before patient connection',
+        'Have backup BVM ready in case of ventilator failure',
+        'Ensure adequate oxygen supply for entire transport duration'
+      ],
+      equipmentNeeded: [
+        'Transport ventilator with full battery charge',
+        'Oxygen supply with adequate pressure and volume',
+        'Ventilator circuit tubing and connections',
+        'Humidification system and distilled water'
+      ]
+    },
+    {
+      id: 'ventilator-step-3',
+      stepNumber: 3,
+      title: 'Initial Ventilator Settings Configuration',
+      description: 'Configure appropriate initial ventilator parameters based on patient condition and needs',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Set appropriate ventilation mode: Volume Control (VC) or Pressure Control (PC)',
+        'Configure tidal volume: 6-8ml/kg ideal body weight for adults',
+        'Set respiratory rate: 10-12 breaths/min adults, adjust for age in pediatrics',
+        'Program PEEP: start with 5cmH2O, adjust based on oxygenation needs',
+        'Set FiO2: start with current oxygen percentage, titrate to SpO2 >94%',
+        'Configure inspiratory time: 1:2 to 1:3 I:E ratio typically',
+        'Set pressure limits: 30-40cmH2O peak inspiratory pressure limit',
+        'Program alarm parameters: appropriate high/low limits for patient'
+      ],
+      safetyNotes: [
+        'Low tidal volume ventilation reduces ventilator-induced lung injury',
+        'Excessive PEEP may compromise venous return and cardiac output',
+        'High FiO2 may cause oxygen toxicity with prolonged use'
+      ],
+      equipmentNeeded: [
+        'Transport ventilator with mode and parameter controls',
+        'Patient weight/height for tidal volume calculations',
+        'Current oxygen saturation and end-tidal CO2 readings',
+        'Blood pressure monitoring for hemodynamic assessment'
+      ]
+    },
+    {
+      id: 'ventilator-step-4',
+      stepNumber: 4,
+      title: 'Patient Connection and Ventilator Transition',
+      description: 'Safely transition patient from manual ventilation to transport ventilator',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Ensure patient is adequately pre-oxygenated with manual ventilation',
+        'Connect ventilator circuit to patient airway during expiratory pause',
+        'Initiate mechanical ventilation and immediately assess chest rise',
+        'Monitor initial breath delivery and patient synchrony',
+        'Check for adequate tidal volume delivery and minute ventilation',
+        'Assess patient comfort and ventilator-patient synchrony',
+        'Verify alarm settings are appropriate and functional',
+        'Document baseline ventilator settings and patient response'
+      ],
+      safetyNotes: [
+        'Minimize interruption in ventilation during connection',
+        'Be prepared to return to manual ventilation if problems occur',
+        'Monitor for immediate adverse effects: hypotension, desaturation'
+      ],
+      equipmentNeeded: [
+        'Sterile ventilator circuit connections',
+        'Continuous monitoring equipment',
+        'BVM backup readily available',
+        'Documentation materials for settings record'
+      ]
+    },
+    {
+      id: 'ventilator-step-5',
+      stepNumber: 5,
+      title: 'Ventilator Monitoring and Assessment',
+      description: 'Continuously monitor ventilator function and patient response during transport',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 600,
+      keyPoints: [
+        'Monitor oxygen saturation continuously with pulse oximetry',
+        'Assess end-tidal CO2 values and waveform capnography',
+        'Check ventilator parameters: delivered volumes, pressures, rates',
+        'Monitor patient vital signs: heart rate, blood pressure, temperature',
+        'Assess breath sounds bilaterally for adequate ventilation',
+        'Watch for signs of patient-ventilator dyssynchrony or fighting',
+        'Monitor airway pressures for changes suggesting pneumothorax or obstruction',
+        'Observe chest wall movement and respiratory effort'
+      ],
+      safetyNotes: [
+        'Sudden changes in airway pressure may indicate pneumothorax',
+        'Loss of ETCO2 waveform suggests airway displacement or obstruction',
+        'Patient agitation may indicate inadequate ventilation or pain'
+      ],
+      equipmentNeeded: [
+        'Continuous pulse oximetry and capnography',
+        'Stethoscope for breath sound assessment',
+        'Blood pressure monitoring equipment',
+        'Ventilator monitoring displays and alarms'
+      ]
+    },
+    {
+      id: 'ventilator-step-6',
+      stepNumber: 6,
+      title: 'Parameter Adjustment and Optimization',
+      description: 'Adjust ventilator settings based on patient response and transport conditions',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Titrate FiO2 to maintain SpO2 92-96% (88-92% for COPD patients)',
+        'Adjust PEEP for optimal oxygenation while maintaining hemodynamic stability',
+        'Modify respiratory rate to achieve appropriate ETCO2 (35-45mmHg)',
+        'Fine-tune tidal volume if pressure limits exceeded or inadequate ventilation',
+        'Adjust sensitivity settings if patient triggering issues occur',
+        'Modify inspiratory time if I:E ratio optimization needed',
+        'Consider sedation if patient-ventilator dyssynchrony persists',
+        'Document all parameter changes and patient responses'
+      ],
+      safetyNotes: [
+        'Make incremental changes and assess response before further adjustments',
+        'Avoid excessive PEEP that may compromise cardiac output',
+        'Monitor for ventilator-induced lung injury with high pressures'
+      ],
+      equipmentNeeded: [
+        'Ventilator with adjustable parameters',
+        'Arterial blood gas capabilities if available',
+        'Sedation medications if indicated',
+        'Documentation materials for parameter tracking'
+      ]
+    },
+    {
+      id: 'ventilator-step-7',
+      stepNumber: 7,
+      title: 'Alarm Management and Troubleshooting',
+      description: 'Respond appropriately to ventilator alarms and troubleshoot common problems',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Respond immediately to high-priority alarms: apnea, disconnect, power failure',
+        'Troubleshoot high pressure alarms: check for airway obstruction, pneumothorax',
+        'Address low pressure alarms: verify connections, check for circuit leaks',
+        'Manage low tidal volume alarms: assess for leaks, adjust sensitivity',
+        'Handle power alarms: switch to backup battery, check power connections',
+        'Respond to oxygen supply alarms: check O2 connections and tank levels',
+        'Always have manual BVM immediately available for backup ventilation',
+        'Document all alarms, causes identified, and corrective actions taken'
+      ],
+      safetyNotes: [
+        'Patient safety takes precedence - use manual ventilation if uncertain',
+        'Never ignore ventilator alarms - investigate and address all alerts',
+        'Have backup BVM connected and ready for immediate use'
+      ],
+      equipmentNeeded: [
+        'BVM with oxygen supply for backup ventilation',
+        'Basic troubleshooting tools and spare parts',
+        'Alternative oxygen supply sources',
+        'Emergency airway management equipment'
+      ]
+    },
+    {
+      id: 'ventilator-step-8',
+      stepNumber: 8,
+      title: 'Handoff and Ventilator Transfer',
+      description: 'Safely transfer patient and ventilator care to receiving medical team',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Provide comprehensive report of ventilator settings and patient response',
+        'Document total time on mechanical ventilation and any complications',
+        'Transfer ventilator parameter log and alarm history to receiving team',
+        'Assist with patient transfer to facility ventilator if needed',
+        'Report any equipment issues or concerns to receiving staff',
+        'Ensure continuity of ventilator parameters during facility transition',
+        'Provide recommendations for ongoing ventilator management',
+        'Complete transport documentation including ventilator usage record'
+      ],
+      safetyNotes: [
+        'Maintain ventilator support until receiving team assumes care',
+        'Ensure smooth transition to avoid interruption in mechanical ventilation',
+        'Verify receiving facility capability to continue ventilator support'
+      ],
+      equipmentNeeded: [
+        'Complete ventilator documentation and parameter logs',
+        'Communication equipment for detailed handoff report',
+        'Patient transfer equipment compatible with ventilator',
+        'Backup manual ventilation during transition period'
+      ]
+    }
+  ],
+
   'transport-ventilator': {
     name: 'Use of Transport Ventilator',
     category: 'airway',
@@ -12081,6 +13098,259 @@ export const criticalSkillsMetadata = {
       'Emergency equipment including needle decompression kit and emergency medications'
     ]
   },
+
+  // 34. UMBILICAL VEIN CANNULATION - Evidence-based neonatal vascular access technique
+  'umbilical-vein-cannulation': [
+    {
+      id: 'uvc-step-1',
+      stepNumber: 1,
+      title: 'Neonatal Assessment and UVC Indication Determination',
+      description: 'Assess newborn condition and confirm indication for umbilical venous catheter insertion',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Assess newborn for critical conditions requiring immediate vascular access',
+        'Evaluate for severe bradycardia <60 bpm unresponsive to ventilation and compressions',
+        'Check for need for emergency medications: epinephrine, volume expanders',
+        'Assess umbilical cord for suitability: fresh cord (<7 days old optimal)',
+        'Verify failed attempts at peripheral IV access in unstable neonate',
+        'Consider for prolonged resuscitation requiring reliable vascular access',
+        'Assess for contraindications: omphalocele, gastroschisis, necrotizing enterocolitis',
+        'Determine urgency level: emergent vs semi-elective insertion'
+      ],
+      contraindications: [
+        'Omphalocele or gastroschisis with abdominal wall defects',
+        'Signs of necrotizing enterocolitis or abdominal infection',
+        'Umbilical cord older than 7-14 days (relative contraindication)'
+      ],
+      safetyNotes: [
+        'UVC insertion is critical skill for neonatal resuscitation',
+        'Fresh umbilical cord allows easier catheter insertion',
+        'Alternative access (IO) should be considered if UVC not feasible'
+      ],
+      equipmentNeeded: [
+        'Neonatal resuscitation equipment and monitoring',
+        'Umbilical catheterization tray with sterile instruments',
+        'Assessment tools for newborn evaluation',
+        'Alternative vascular access equipment (IO needles)'
+      ]
+    },
+    {
+      id: 'uvc-step-2',
+      stepNumber: 2,
+      title: 'Sterile Preparation and Equipment Setup',
+      description: 'Establish sterile field and prepare equipment for umbilical venous catheter insertion',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Open sterile umbilical catheter tray maintaining sterile technique',
+        'Select appropriate catheter size: 3.5Fr for premature, 5Fr for term infants',
+        'Prepare 3-way stopcock and flush system with normal saline',
+        'Set up sterile draping and create adequate sterile field around umbilicus',
+        'Don sterile gloves and gown following strict sterile precautions',
+        'Prepare umbilical tape or suture material for securing catheter',
+        'Have emergency medications drawn up: epinephrine 1:10,000 concentration',
+        'Ensure adequate lighting and positioning for optimal visualization'
+      ],
+      safetyNotes: [
+        'Strict sterile technique essential to prevent line-associated infections',
+        'Proper catheter size selection critical for successful insertion',
+        'Have emergency resuscitation equipment immediately available'
+      ],
+      equipmentNeeded: [
+        'Sterile umbilical catheter (3.5Fr or 5Fr)',
+        '3-way stopcock and normal saline flushes',
+        'Sterile drapes, gloves, and gown',
+        'Umbilical tape or suture material for securing'
+      ]
+    },
+    {
+      id: 'uvc-step-3',
+      stepNumber: 3,
+      title: 'Umbilical Cord Preparation and Vessel Identification',
+      description: 'Prepare umbilical stump and identify umbilical vein for catheter insertion',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 150,
+      keyPoints: [
+        'Clean umbilical area with antiseptic solution (chlorhexidine or povidone-iodine)',
+        'Cut umbilical cord with sterile scissors leaving 1-2cm stump',
+        'Identify umbilical vein: single large, thin-walled, oval opening',
+        'Distinguish from umbilical arteries: two smaller, thick-walled, round openings',
+        'Remove any clots or debris from umbilical vein opening',
+        'Gently dilate vein opening with small forceps if needed',
+        'Ensure vein opening is clearly visible and accessible',
+        'Place umbilical tape around base of cord for hemostasis if needed'
+      ],
+      safetyNotes: [
+        'Umbilical vein is larger and thin-walled compared to arteries',
+        'Gentle technique prevents vessel damage and bleeding',
+        'Adequate stump length essential for secure catheter placement'
+      ],
+      equipmentNeeded: [
+        'Antiseptic solution for cord preparation',
+        'Sterile scissors for cord cutting',
+        'Small forceps for vessel manipulation',
+        'Umbilical tape for hemostasis control'
+      ]
+    },
+    {
+      id: 'uvc-step-4',
+      stepNumber: 4,
+      title: 'Umbilical Venous Catheter Insertion',
+      description: 'Insert umbilical venous catheter using sterile technique and appropriate depth',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Flush catheter with normal saline before insertion to remove air',
+        'Insert catheter into umbilical vein opening using gentle pressure',
+        'Advance catheter slowly until blood return is obtained',
+        'For emergency use: insert 2-4cm until blood flows freely',
+        'For optimal position: calculate insertion depth using shoulder-umbilicus length',
+        'Target depth formula: (shoulder to umbilicus distance × 0.6) + 1cm',
+        'Stop advancing if resistance encountered to avoid perforation',
+        'Confirm blood return with gentle aspiration through stopcock'
+      ],
+      safetyNotes: [
+        'Gentle insertion technique prevents vessel perforation',
+        'Too deep insertion may cause cardiac arrhythmias or liver injury',
+        'Blood return confirms intravascular placement'
+      ],
+      equipmentNeeded: [
+        'Umbilical venous catheter with 3-way stopcock',
+        'Normal saline flushes for catheter priming',
+        'Measuring tape for insertion depth calculation',
+        'Gentle insertion technique and patience'
+      ]
+    },
+    {
+      id: 'uvc-step-5',
+      stepNumber: 5,
+      title: 'Catheter Position Confirmation and Security',
+      description: 'Confirm proper catheter placement and secure device to prevent dislodgement',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Aspirate blood to confirm intravascular placement',
+        'Check that blood flows freely without excessive pressure',
+        'Flush catheter gently with small amount of normal saline',
+        'Secure catheter at skin level with umbilical tape or suture',
+        'Create strain relief loop to prevent accidental removal',
+        'Apply sterile transparent dressing over insertion site',
+        'Mark catheter depth at skin level for position reference',
+        'Connect to appropriate IV fluids or medication infusion system'
+      ],
+      safetyNotes: [
+        'Secure fixation essential to prevent accidental catheter removal',
+        'Avoid excessive flushing which may cause fluid overload',
+        'Monitor insertion site for bleeding or hematoma formation'
+      ],
+      equipmentNeeded: [
+        'Umbilical tape or fine suture material',
+        'Sterile transparent dressing materials',
+        'Normal saline flushes for patency testing',
+        'IV connection tubing and fluids'
+      ]
+    },
+    {
+      id: 'uvc-step-6',
+      stepNumber: 6,
+      title: 'Emergency Medication Administration',
+      description: 'Safely administer emergency medications through umbilical venous catheter',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Verify catheter patency before medication administration',
+        'Administer epinephrine: 0.1-0.3ml/kg of 1:10,000 concentration IV',
+        'Follow medication with normal saline flush to ensure delivery',
+        'Monitor heart rate response to epinephrine administration',
+        'Repeat epinephrine every 3-5 minutes if bradycardia persists',
+        'Consider volume expansion: 10ml/kg normal saline if hypovolemia suspected',
+        'Monitor for medication extravasation or infiltration',
+        'Document all medications administered with times and doses'
+      ],
+      contraindications: [
+        'Never administer medications through catheter with uncertain position',
+        'Avoid rapid fluid boluses in premature infants without clear indication'
+      ],
+      safetyNotes: [
+        'Confirm catheter position before any medication administration',
+        'Use appropriate neonatal dosing calculations',
+        'Monitor for fluid overload in small premature infants'
+      ],
+      equipmentNeeded: [
+        'Epinephrine 1:10,000 concentration in appropriate syringes',
+        'Normal saline flushes for medication delivery',
+        'Volume expansion fluids (normal saline)',
+        'Accurate dosing calculations and measurement tools'
+      ]
+    },
+    {
+      id: 'uvc-step-7',
+      stepNumber: 7,
+      title: 'Continuous Monitoring and Complication Assessment',
+      description: 'Monitor newborn response and assess for umbilical catheter complications',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Monitor heart rate, blood pressure, and oxygen saturation continuously',
+        'Assess perfusion indicators: capillary refill, skin color, tone',
+        'Watch for catheter complications: bleeding, hematoma, infection',
+        'Monitor for cardiac arrhythmias suggesting catheter malposition',
+        'Check for signs of air embolism: sudden deterioration, cardiac arrest',
+        'Assess for thrombotic complications: decreased perfusion, cyanosis',
+        'Monitor insertion site for signs of infection or inflammation',
+        'Document catheter function and any complications observed'
+      ],
+      safetyNotes: [
+        'Cardiac arrhythmias may indicate catheter tip in heart',
+        'Air embolism is potentially fatal complication requiring immediate treatment',
+        'Thrombotic complications may cause serious perfusion problems'
+      ],
+      equipmentNeeded: [
+        'Continuous cardiac and oxygen saturation monitoring',
+        'Blood pressure monitoring appropriate for neonates',
+        'Equipment for complication management',
+        'Documentation materials for ongoing assessment'
+      ]
+    },
+    {
+      id: 'uvc-step-8',
+      stepNumber: 8,
+      title: 'Transport Preparation and Handoff',
+      description: 'Prepare for transport and provide comprehensive handoff to receiving neonatal team',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Ensure catheter is securely fixed before transport',
+        'Document catheter insertion depth, position, and function',
+        'Prepare comprehensive report including insertion details and complications',
+        'Verify catheter patency and appropriate IV flow rates',
+        'Brief receiving NICU team on catheter placement and medications given',
+        'Provide recommendations for catheter position confirmation (chest x-ray)',
+        'Document total resuscitation time and newborn response',
+        'Arrange for definitive catheter position verification at receiving facility'
+      ],
+      safetyNotes: [
+        'Umbilical catheters are temporary emergency access devices',
+        'Definitive position confirmation with imaging recommended',
+        'Receiving facility should plan for catheter management or replacement'
+      ],
+      equipmentNeeded: [
+        'Secure catheter fixation and dressing materials',
+        'Complete documentation of insertion procedure',
+        'Communication equipment for comprehensive handoff',
+        'Transport equipment compatible with umbilical catheter'
+      ]
+    }
+  ],
 
   'umbilical-vein-cannulation': {
     name: 'Umbilical Vein Cannulation',
