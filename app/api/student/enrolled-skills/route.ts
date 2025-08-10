@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authConfig } from '@/lib/auth';
-import { allProcessedSkills as processedSkills, skillCategories } from '@/lib/skills-data';
+import { allProcessedSkills as processedSkills } from '@/lib/comprehensive-skills-updated';
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     // Regular students see only their enrolled skills (for now, showing all for development)
     const showAllSkills = isLecturerInStudentView || isAdmin || session.user.role === 'STUDENT';
 
-    // Get all skills from the processed skills data
+    // Get all skills from the comprehensive enhanced skills data
     let finalSkills = processedSkills.map(skill => ({
       id: skill.id,
       name: skill.name,

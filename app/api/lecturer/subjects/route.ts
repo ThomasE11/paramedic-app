@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authConfig } from '@/lib/auth';
-import { allProcessedSkills, getSkillsByCategory } from '@/lib/skills-data';
+import { allProcessedSkills, getSkillsByCategory } from '@/lib/comprehensive-skills-updated';
 
 export const dynamic = 'force-dynamic';
 
