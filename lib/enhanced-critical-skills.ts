@@ -9164,47 +9164,260 @@ export const criticalSkillsMetadata = {
     ]
   },
 
-  'fracture-orthopedic-management': {
-    name: 'Fracture and Orthopedic Injury Management',
-    category: 'trauma',
-    difficultyLevel: 'INTERMEDIATE',
-    timeEstimateMinutes: 14,
-    isCritical: true,
-    objectives: [
-      'Perform systematic assessment of musculoskeletal trauma injuries',
-      'Implement appropriate fracture stabilization and splinting techniques',
-      'Recognize and manage orthopedic complications including compartment syndrome',
-      'Provide appropriate pain management for orthopedic trauma patients',
-      'Manage open fractures with proper wound care and infection prevention',
-      'Determine appropriate transport decisions and hospital selection'
-    ],
-    indications: [
-      'Suspected or obvious fractures of extremities or pelvis',
-      'Crush injuries with potential musculoskeletal involvement',
-      'High-energy trauma with orthopedic injury potential',
-      'Open wounds with suspected underlying fractures',
-      'Severe extremity pain with deformity or loss of function',
-      'Neurovascular compromise associated with extremity injury',
-      'Joint dislocations requiring reduction or stabilization',
-      'Multiple trauma with orthopedic component requiring prioritization'
-    ],
-    contraindications: [
-      'Life-threatening injuries taking priority over fracture care',
-      'Unsafe scene preventing adequate assessment or treatment',
-      'Complete neurovascular compromise requiring immediate surgery',
-      'Suspected compartment syndrome requiring emergency fasciotomy'
-    ],
-    equipment: [
-      'Various splinting materials including vacuum, rigid, and SAM splints',
-      'Traction splint for femur fractures (Hare, Sager, or similar)',
-      'Padding materials, blankets, and cushioning devices',
-      'Bandages, tape, and securing straps for splint application',
-      'Analgesic medications per protocol (morphine, fentanyl, ketamine)',
-      'Sterile dressings and hemostatic agents for open fractures',
-      'Ice packs or cold therapy devices for swelling reduction',
-      'Blood pressure monitoring and pulse oximetry equipment'
-    ]
-  },
+  'fracture-orthopedic-management': [
+    {
+      id: 'fracture-step-1',
+      stepNumber: 1,
+      title: 'Scene Safety and Mechanism Assessment',
+      description: 'Assess scene safety and understand mechanism of injury for orthopedic trauma',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Ensure scene safety - look for ongoing hazards that may affect patient or provider',
+        'Assess mechanism of injury: fall height, impact force, direction of applied forces',
+        'Consider high-energy vs low-energy trauma patterns',
+        'Look for environmental clues: twisted wreckage, broken glass, blood patterns',
+        'Determine if multisystem trauma is likely based on mechanism',
+        'Consider cervical spine precautions if indicated by mechanism',
+        'Identify need for rapid extraction vs on-scene stabilization',
+        'Call for additional resources if complex extraction or multiple patients'
+      ],
+      contraindications: [
+        'Unsafe scene requiring immediate evacuation',
+        'Life-threatening bleeding requiring immediate hemorrhage control',
+        'Airway compromise taking priority over fracture care'
+      ],
+      safetyNotes: [
+        'High-energy mechanisms often involve multiple system injuries',
+        'Never compromise scene safety to provide orthopedic care',
+        'Maintain spine precautions until cleared'
+      ],
+      equipmentNeeded: [
+        'Personal protective equipment',
+        'Scene assessment tools',
+        'Communication equipment for additional resources'
+      ]
+    },
+    {
+      id: 'fracture-step-2',
+      stepNumber: 2,
+      title: 'Primary Assessment and Life Threats',
+      description: 'Complete primary assessment identifying life-threatening conditions',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Assess airway, breathing, circulation following ABCDE approach',
+        'Identify immediate life threats: massive hemorrhage, pneumothorax, shock',
+        'Check for signs of hemorrhagic shock from long bone fractures',
+        'Assess neurological status and spine immobilization needs',
+        'Look for open fractures with active bleeding',
+        'Evaluate for compartment syndrome signs early',
+        'Consider crush injuries and associated complications',
+        'Prioritize interventions - address life threats before fracture care'
+      ],
+      safetyNotes: [
+        'Femur fractures can cause 1-2 liters of blood loss',
+        'Pelvic fractures may cause massive internal bleeding',
+        'Open fractures have high infection risk - early antibiotic consideration'
+      ],
+      equipmentNeeded: [
+        'Vital signs monitoring equipment',
+        'Bleeding control supplies',
+        'Spinal immobilization equipment',
+        'Oxygen delivery systems'
+      ]
+    },
+    {
+      id: 'fracture-step-3',
+      stepNumber: 3,
+      title: 'Detailed Musculoskeletal Assessment',
+      description: 'Perform systematic evaluation of musculoskeletal injuries',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Expose and visually inspect all extremities for deformity, swelling, wounds',
+        'Palpate bones systematically from proximal to distal',
+        'Assess joint stability and range of motion where appropriate',
+        'Check neurovascular status: pulses, capillary refill, sensation, motor function',
+        'Look for signs of compartment syndrome: pain, pallor, paresthesias, pressure',
+        'Document pre-treatment neurovascular status thoroughly',
+        'Identify multiple fractures and prioritize treatment',
+        'Consider associated injuries: dislocations, ligament tears, muscle injuries'
+      ],
+      safetyNotes: [
+        'Never test range of motion with obvious fractures',
+        'Document neurovascular status before and after splinting',
+        'Compartment syndrome is a surgical emergency'
+      ],
+      equipmentNeeded: [
+        'Penlight for neurological testing',
+        'Documentation materials',
+        'Doppler ultrasound if available for pulse assessment'
+      ]
+    },
+    {
+      id: 'fracture-step-4',
+      stepNumber: 4,
+      title: 'Pain Management and Patient Comfort',
+      description: 'Provide appropriate analgesia and comfort measures',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Assess pain level using appropriate pain scale (0-10 or faces scale)',
+        'Consider medication allergies and contraindications to analgesics',
+        'Administer analgesics per protocol: morphine, fentanyl, or ketamine',
+        'Use multimodal approach: medications, splinting, positioning, ice',
+        'Monitor for side effects: respiratory depression, hypotension, nausea',
+        'Consider regional blocks if trained and appropriate',
+        'Reassess pain level after interventions and document effectiveness',
+        'Provide emotional support and reassurance to reduce anxiety'
+      ],
+      contraindications: [
+        'Hemodynamic instability contraindicating opioids',
+        'Head injury with altered mental status',
+        'Respiratory compromise or inadequate ventilation'
+      ],
+      safetyNotes: [
+        'Monitor respiratory status closely with opioid administration',
+        'Have naloxone readily available for reversal if needed',
+        'Consider reduced doses in elderly or compromised patients'
+      ],
+      equipmentNeeded: [
+        'Analgesic medications per protocol',
+        'Naloxone for reversal if needed',
+        'Continuous monitoring equipment',
+        'Ice packs for non-pharmacological pain relief'
+      ]
+    },
+    {
+      id: 'fracture-step-5',
+      stepNumber: 5,
+      title: 'Wound Care and Open Fracture Management',
+      description: 'Provide appropriate care for open fractures and associated wounds',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Identify open fractures by bone visibility or communication with wound',
+        'Control hemorrhage using direct pressure and hemostatic agents',
+        'Cover wounds with sterile saline-moistened dressings',
+        'Do not attempt to reduce protruding bone fragments',
+        'Photograph wound if possible for hospital documentation',
+        'Consider antibiotic administration per protocol for open fractures',
+        'Assess tetanus immunization status and document',
+        'Prepare for rapid transport due to infection risk'
+      ],
+      safetyNotes: [
+        'Never push protruding bones back into wounds',
+        'Maintain sterile technique to prevent contamination',
+        'Open fractures require surgery within 6 hours ideally'
+      ],
+      equipmentNeeded: [
+        'Sterile dressings and saline',
+        'Hemostatic agents',
+        'Antibiotics if protocols allow',
+        'Camera for documentation if available'
+      ]
+    },
+    {
+      id: 'fracture-step-6',
+      stepNumber: 6,
+      title: 'Fracture Reduction and Alignment',
+      description: 'Perform appropriate reduction and alignment of fractures',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Consider need for reduction: severe deformity, compromised circulation',
+        'Apply gentle longitudinal traction to restore length and alignment',
+        'Use appropriate technique: manual traction, mechanical devices',
+        'Monitor neurovascular status during reduction attempts',
+        'Stop reduction if resistance encountered or patient deteriorates',
+        'Accept reasonable alignment - perfect reduction not required',
+        'Document pre- and post-reduction neurovascular status',
+        'Consider femur traction splint for mid-shaft femur fractures'
+      ],
+      contraindications: [
+        'Joint injuries near fracture site',
+        'Vascular compromise that worsens with manipulation',
+        'Patient instability requiring immediate transport'
+      ],
+      safetyNotes: [
+        'Gentle traction only - never force reduction',
+        'Stop immediately if neurovascular status worsens',
+        'Some fractures should not be reduced in the field'
+      ],
+      equipmentNeeded: [
+        'Traction splint for femur fractures',
+        'Manual traction equipment',
+        'Monitoring equipment for vital signs'
+      ]
+    },
+    {
+      id: 'fracture-step-7',
+      stepNumber: 7,
+      title: 'Splinting and Immobilization',
+      description: 'Apply appropriate splints to immobilize fractures',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Select appropriate splint type: vacuum, SAM, rigid, or traction',
+        'Splint joint above and joint below the fracture',
+        'Pad bony prominences to prevent pressure sores',
+        'Apply splint snugly but not so tight as to compromise circulation',
+        'Secure splint with bandages, tape, or straps',
+        'Recheck neurovascular status after splint application',
+        'Ensure splint allows access for ongoing assessment',
+        'Consider elevation to reduce swelling where appropriate'
+      ],
+      safetyNotes: [
+        'Check neurovascular status before and after splinting',
+        'Loosen splint if circulation compromised',
+        'Pad all bony prominences to prevent skin breakdown'
+      ],
+      equipmentNeeded: [
+        'Various splinting materials (vacuum, SAM, rigid)',
+        'Padding materials and blankets',
+        'Bandages and securing straps',
+        'Elevation devices'
+      ]
+    },
+    {
+      id: 'fracture-step-8',
+      stepNumber: 8,
+      title: 'Transport Decision and Monitoring',
+      description: 'Make appropriate transport decisions and provide ongoing monitoring',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Choose appropriate receiving facility based on injury severity',
+        'Consider trauma center for multiple fractures or complications',
+        'Determine transport mode: ground vs air based on distance and acuity',
+        'Monitor neurovascular status every 15 minutes during transport',
+        'Reassess pain levels and provide additional analgesia as needed',
+        'Watch for complications: compartment syndrome, fat embolism',
+        'Provide detailed report to receiving facility',
+        'Document all interventions and patient responses'
+      ],
+      safetyNotes: [
+        'Frequent neurovascular checks essential during transport',
+        'Be prepared to loosen splints if circulation compromised',
+        'Monitor for systemic complications of fractures'
+      ],
+      equipmentNeeded: [
+        'Transport monitoring equipment',
+        'Communication devices for hospital contact',
+        'Additional analgesic medications',
+        'Documentation materials'
+      ]
+    }
+  ],
 
   'poisoning-overdose-management': {
     name: 'Poisoning and Overdose Management',
