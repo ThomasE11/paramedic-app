@@ -12761,6 +12761,255 @@ export const criticalSkillsMetadata = {
     ]
   },
 
+  // 42. EXTERNAL JUGULAR VEIN CANNULATION - Evidence-based central venous access technique
+  'external-jugular-cannulation': [
+    {
+      id: 'ejv-step-1',
+      stepNumber: 1,
+      title: 'Patient Assessment and Indication Confirmation',
+      description: 'Assess patient condition and confirm indication for external jugular vein access',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Assess for failed peripheral IV attempts and urgent need for vascular access',
+        'Evaluate patient hemodynamic status requiring immediate fluid resuscitation',
+        'Check for need for emergency medication administration or blood sampling',
+        'Assess neck anatomy and external jugular vein visibility',
+        'Consider contraindications: neck trauma, infection, severe coagulopathy',
+        'Evaluate patient positioning ability and cooperation level',
+        'Document failed peripheral access attempts and clinical urgency',
+        'Consider alternative access methods if EJV not suitable'
+      ],
+      contraindications: [
+        'Suspected neck trauma or cervical spine injury',
+        'Local infection or cellulitis over insertion site',
+        'Severe coagulopathy or bleeding disorders'
+      ],
+      safetyNotes: [
+        'EJV cannulation requires specific anatomical landmarks and patient positioning',
+        'Consider risk-benefit ratio compared to peripheral or IO access',
+        'Have backup access method available if EJV attempt fails'
+      ],
+      equipmentNeeded: [
+        'IV catheter (14-16G for adults, appropriate size for pediatrics)',
+        'Sterile gloves, antiseptic, and preparation materials',
+        'Patient assessment tools and monitoring equipment',
+        'Alternative vascular access equipment as backup'
+      ]
+    },
+    {
+      id: 'ejv-step-2',
+      stepNumber: 2,
+      title: 'Patient Positioning and Anatomical Landmark Identification',
+      description: 'Position patient optimally and identify external jugular vein anatomical landmarks',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 150,
+      keyPoints: [
+        'Position patient in 15-30 degree Trendelenburg position',
+        'Turn patient head away from insertion side to enhance vein visibility',
+        'Identify external jugular vein running from angle of jaw to clavicle',
+        'Use Valsalva maneuver or gentle neck compression to distend vein',
+        'Palpate carotid artery to avoid inadvertent arterial puncture',
+        'Mark optimal insertion point where vein is most prominent and accessible',
+        'Ensure adequate lighting for clear visualization of vein',
+        'Consider ultrasound guidance if available for vein identification'
+      ],
+      safetyNotes: [
+        'Trendelenburg position helps distend neck veins for easier access',
+        'Clear visualization of vein essential before attempting cannulation',
+        'Avoid carotid artery which lies medial to external jugular vein'
+      ],
+      equipmentNeeded: [
+        'Patient positioning equipment (bed with Trendelenburg capability)',
+        'Adequate lighting or headlamp for visualization',
+        'Ultrasound equipment if available for vein identification',
+        'Skin marking pen for anatomical reference'
+      ]
+    },
+    {
+      id: 'ejv-step-3',
+      stepNumber: 3,
+      title: 'Sterile Preparation and Equipment Setup',
+      description: 'Establish sterile field and prepare equipment for external jugular vein cannulation',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Don sterile gloves and maintain sterile technique throughout procedure',
+        'Clean insertion site with antiseptic solution in circular motions',
+        'Allow antiseptic to dry completely for maximum antimicrobial effect',
+        'Prepare IV catheter and ensure all components function properly',
+        'Set up IV tubing and flush system with normal saline',
+        'Have emergency medications readily available for complications',
+        'Position all equipment for easy access during procedure',
+        'Apply sterile drape around insertion site maintaining sterile field'
+      ],
+      safetyNotes: [
+        'Sterile technique essential to prevent line-associated infections',
+        'Complete antiseptic drying time important for bacterial reduction',
+        'Have emergency equipment immediately available for complications'
+      ],
+      equipmentNeeded: [
+        'Sterile gloves and antiseptic solution',
+        'IV catheter with appropriate gauge and length',
+        'IV tubing, normal saline flushes, and connection equipment',
+        'Sterile drapes and emergency resuscitation equipment'
+      ]
+    },
+    {
+      id: 'ejv-step-4',
+      stepNumber: 4,
+      title: 'Vein Cannulation and Catheter Insertion',
+      description: 'Insert IV catheter into external jugular vein using proper technique',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Stabilize vein with non-dominant hand using gentle traction',
+        'Insert catheter at 30-45 degree angle toward ipsilateral shoulder',
+        'Advance catheter with bevel up watching for blood flashback',
+        'Once flashback obtained, lower catheter angle and advance slightly',
+        'Advance plastic catheter over needle into vein lumen',
+        'Remove needle while maintaining catheter position in vein',
+        'Immediately apply pressure to prevent air embolism',
+        'Connect IV tubing quickly to prevent blood loss and air entry'
+      ],
+      safetyNotes: [
+        'Risk of air embolism due to negative thoracic pressure in neck veins',
+        'Maintain constant pressure over insertion site when system is open',
+        'Gentle technique prevents vessel perforation or hematoma'
+      ],
+      equipmentNeeded: [
+        'IV catheter with sharp needle for initial penetration',
+        'IV tubing connected and primed for immediate connection',
+        'Gauze and pressure materials for bleeding control',
+        'Saline flush to confirm placement immediately'
+      ]
+    },
+    {
+      id: 'ejv-step-5',
+      stepNumber: 5,
+      title: 'Placement Confirmation and Patency Testing',
+      description: 'Confirm proper catheter placement and test IV patency and function',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Aspirate blood to confirm intravascular placement',
+        'Flush catheter gently with normal saline to test patency',
+        'Observe for easy flow without resistance or infiltration',
+        'Check for swelling around insertion site indicating extravasation',
+        'Confirm blood return with gentle aspiration after flushing',
+        'Test IV flow rate by running saline at moderate rate',
+        'Monitor patient for signs of discomfort or complications',
+        'Document successful placement and catheter function'
+      ],
+      safetyNotes: [
+        'Easy blood return and saline flow confirm proper intravascular placement',
+        'Resistance to flushing may indicate catheter malposition',
+        'Monitor for infiltration which can cause significant neck swelling'
+      ],
+      equipmentNeeded: [
+        'Normal saline flushes in appropriate syringes',
+        'IV fluid for flow rate testing',
+        'Monitoring equipment for patient assessment',
+        'Documentation materials for placement confirmation'
+      ]
+    },
+    {
+      id: 'ejv-step-6',
+      stepNumber: 6,
+      title: 'Catheter Securing and Dressing Application',
+      description: 'Secure external jugular catheter and apply appropriate sterile dressing',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 150,
+      keyPoints: [
+        'Secure catheter with tape or commercial securing device',
+        'Create strain relief loop to prevent accidental removal',
+        'Apply sterile transparent dressing over insertion site',
+        'Label IV site with date, time, and catheter size',
+        'Secure IV tubing to prevent tension on catheter',
+        'Position patient comfortably while maintaining catheter security',
+        'Check that dressing does not restrict neck movement excessively',
+        'Document catheter securement and dressing application'
+      ],
+      safetyNotes: [
+        'Secure fixation essential due to high mobility of neck area',
+        'Strain relief prevents catheter displacement with patient movement',
+        'Transparent dressing allows visualization of insertion site'
+      ],
+      equipmentNeeded: [
+        'Medical tape or commercial catheter securing devices',
+        'Sterile transparent dressing materials',
+        'IV tubing securement devices',
+        'Labels for catheter identification and dating'
+      ]
+    },
+    {
+      id: 'ejv-step-7',
+      stepNumber: 7,
+      title: 'Complication Monitoring and Management',
+      description: 'Monitor for complications and manage adverse events related to EJV cannulation',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Monitor for air embolism: sudden dyspnea, chest pain, cardiovascular collapse',
+        'Watch for hematoma formation at insertion site',
+        'Assess for arterial puncture: bright red blood, pulsatile flow',
+        'Check for pneumothorax: decreased breath sounds, respiratory distress',
+        'Monitor for catheter displacement or loss of patency',
+        'Watch for signs of infection at insertion site',
+        'Assess patient comfort and neck mobility',
+        'Document any complications and interventions performed'
+      ],
+      safetyNotes: [
+        'Air embolism can be fatal - position patient left lateral Trendelenburg if suspected',
+        'Arterial puncture requires immediate pressure and monitoring',
+        'Pneumothorax may require emergency needle decompression'
+      ],
+      equipmentNeeded: [
+        'Continuous monitoring equipment for vital signs',
+        'Emergency equipment for air embolism management',
+        'Chest decompression equipment if available',
+        'Materials for pressure application and bleeding control'
+      ]
+    },
+    {
+      id: 'ejv-step-8',
+      stepNumber: 8,
+      title: 'Transport Preparation and Handoff Communication',
+      description: 'Prepare for transport and provide comprehensive handoff to receiving medical team',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Ensure catheter security before patient movement or transport',
+        'Document total procedure time and any complications encountered',
+        'Verify IV patency and appropriate flow rate for transport',
+        'Provide detailed report to receiving medical team about placement',
+        'Include information about catheter size, insertion technique, and function',
+        'Document any medications or fluids administered through catheter',
+        'Plan for appropriate monitoring during transport',
+        'Arrange for definitive vascular access evaluation at receiving facility'
+      ],
+      safetyNotes: [
+        'EJV catheters may be less stable than other central access during transport',
+        'Continuous monitoring essential due to complication risks',
+        'Receiving team needs complete information for ongoing management'
+      ],
+      equipmentNeeded: [
+        'Secure transport equipment compatible with IV access',
+        'Documentation materials for comprehensive procedure record',
+        'Communication equipment for detailed handoff report',
+        'Monitoring equipment for continued patient assessment'
+      ]
+    }
+  ],
+
   'external-jugular-cannulation': {
     name: 'External Jugular Vein Cannulation',
     category: 'als',
@@ -14333,6 +14582,264 @@ export const criticalSkillsMetadata = {
     ]
   },
 
+  // 40. DISINFECTION OF MINOR WOUNDS - Evidence-based wound cleaning and infection prevention
+  'disinfection-minor-wounds': [
+    {
+      id: 'wound-disinfection-step-1',
+      stepNumber: 1,
+      title: 'Wound Assessment and Classification',
+      description: 'Assess wound characteristics and classify for appropriate disinfection protocol',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Assess wound size, depth, and location for infection risk stratification',
+        'Classify wound type: abrasion, laceration, puncture, or avulsion',
+        'Evaluate contamination level: clean, clean-contaminated, or dirty',
+        'Check time since injury occurred (infection risk increases >6-8 hours)',
+        'Assess for foreign bodies, debris, or embedded materials',
+        'Evaluate patient tetanus immunization status and update needs',
+        'Check for signs of existing infection: erythema, warmth, purulent drainage',
+        'Document wound characteristics before cleaning for comparison'
+      ],
+      contraindications: [
+        'Deep wounds requiring surgical evaluation should not be extensively manipulated',
+        'Suspected foreign bodies may require surgical removal rather than irrigation',
+        'Heavily contaminated wounds may need surgical debridement'
+      ],
+      safetyNotes: [
+        'Proper wound assessment guides appropriate disinfection strategy',
+        'Time since injury affects infection risk and treatment urgency',
+        'Document initial appearance for monitoring healing progress'
+      ],
+      equipmentNeeded: [
+        'Good lighting for wound visualization',
+        'Magnifying glass for detailed assessment if needed',
+        'Measurement tools for wound documentation',
+        'Personal protective equipment (gloves, eye protection)'
+      ]
+    },
+    {
+      id: 'wound-disinfection-step-2',
+      stepNumber: 2,
+      title: 'Hand Hygiene and Personal Protection',
+      description: 'Establish proper infection control measures and personal protective equipment',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Perform thorough hand hygiene with soap and water or alcohol-based sanitizer',
+        'Don clean examination gloves before any wound contact',
+        'Use additional PPE: eye protection, gown if splash risk anticipated',
+        'Prepare clean work surface with sterile supplies',
+        'Change gloves if contaminated during procedure',
+        'Avoid touching non-sterile surfaces after gloving',
+        'Have sharps disposal container readily available',
+        'Ensure adequate lighting and comfortable working position'
+      ],
+      safetyNotes: [
+        'Proper PPE prevents cross-contamination and bloodborne pathogen exposure',
+        'Hand hygiene is the most important infection prevention measure',
+        'Change gloves between dirty and clean phases of procedure'
+      ],
+      equipmentNeeded: [
+        'Hand hygiene supplies (soap, alcohol sanitizer)',
+        'Examination gloves and additional PPE as needed',
+        'Clean work surface preparation materials',
+        'Sharps disposal container'
+      ]
+    },
+    {
+      id: 'wound-disinfection-step-3',
+      stepNumber: 3,
+      title: 'Initial Wound Irrigation and Debris Removal',
+      description: 'Remove gross contamination and debris using gentle irrigation technique',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Use sterile saline or clean tap water for initial irrigation',
+        'Apply gentle pressure irrigation to remove loose debris and bacteria',
+        'Direct irrigation flow from clean areas toward contaminated areas',
+        'Remove visible foreign material with sterile forceps or gauze',
+        'Use copious amounts of irrigant (minimum 50-100ml per cm of wound)',
+        'Avoid harsh scrubbing which can damage healthy tissue',
+        'Continue irrigation until runoff appears clear of debris',
+        'Pat surrounding skin dry with sterile gauze after irrigation'
+      ],
+      safetyNotes: [
+        'Gentle technique prevents additional tissue damage',
+        'Adequate irrigation volume essential for bacterial removal',
+        'Avoid pushing debris deeper into wound during cleaning'
+      ],
+      equipmentNeeded: [
+        'Sterile saline or clean irrigation solution',
+        'Irrigation syringe or squeeze bottle',
+        'Sterile forceps for debris removal',
+        'Sterile gauze pads for drying'
+      ]
+    },
+    {
+      id: 'wound-disinfection-step-4',
+      stepNumber: 4,
+      title: 'Antiseptic Solution Application',
+      description: 'Apply appropriate antiseptic agent for wound disinfection and bacterial reduction',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 150,
+      keyPoints: [
+        'Select appropriate antiseptic: povidone-iodine, chlorhexidine, or hydrogen peroxide',
+        'Apply antiseptic from center of wound outward in circular motions',
+        'Allow adequate contact time: 30-60 seconds for bacterial kill',
+        'Avoid getting antiseptic in eyes or on mucous membranes',
+        'Use separate application for each area to prevent cross-contamination',
+        'Consider patient allergies to iodine or other antiseptic components',
+        'For sensitive areas: use diluted antiseptic or alternative agents',
+        'Remove excess antiseptic with sterile saline if tissue irritation occurs'
+      ],
+      contraindications: [
+        'Avoid iodine-based antiseptics in patients with iodine allergies',
+        'Hydrogen peroxide should not be used in deep wounds or body cavities',
+        'Some antiseptics may delay healing if used excessively'
+      ],
+      safetyNotes: [
+        'Check for antiseptic allergies before application',
+        'Adequate contact time essential for antimicrobial effectiveness',
+        'Balance antiseptic benefits with potential tissue toxicity'
+      ],
+      equipmentNeeded: [
+        'Appropriate antiseptic solutions (povidone-iodine, chlorhexidine)',
+        'Sterile applicators or gauze for antiseptic application',
+        'Sterile saline for antiseptic removal if needed',
+        'Timer for adequate contact time'
+      ]
+    },
+    {
+      id: 'wound-disinfection-step-5',
+      stepNumber: 5,
+      title: 'Surrounding Skin Preparation',
+      description: 'Clean and prepare surrounding skin area to prevent secondary contamination',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Clean intact skin around wound with antiseptic solution',
+        'Work outward from wound edges to prevent dragging bacteria inward',
+        'Remove any dried blood, dirt, or adhesive residue from surrounding skin',
+        'Use gentle circular motions avoiding excessive pressure',
+        'Pay attention to hair-bearing areas which may harbor bacteria',
+        'Consider hair removal if interfering with wound care or dressing',
+        'Allow antiseptic to air dry completely before applying dressings',
+        'Inspect surrounding skin for signs of infection or injury'
+      ],
+      safetyNotes: [
+        'Clean to dirty technique prevents contamination of cleaned wound',
+        'Hair removal should be done with clippers rather than razors when possible',
+        'Complete drying prevents antiseptic dilution under dressings'
+      ],
+      equipmentNeeded: [
+        'Antiseptic solution for skin preparation',
+        'Clean gauze pads or cotton swabs',
+        'Hair clippers if hair removal needed',
+        'Additional sterile saline for final rinse if needed'
+      ]
+    },
+    {
+      id: 'wound-disinfection-step-6',
+      stepNumber: 6,
+      title: 'Topical Antimicrobial Application',
+      description: 'Apply topical antibiotic ointment if indicated for infection prevention',
+      isRequired: true,
+      isCritical: false,
+      timeEstimate: 90,
+      keyPoints: [
+        'Consider topical antibiotic for high-risk wounds: contaminated, puncture, bite wounds',
+        'Apply thin layer of antibiotic ointment (bacitracin, mupirocin, or triple antibiotic)',
+        'Check for patient allergies to antibiotic components before application',
+        'Cover entire wound surface but avoid excessive amounts',
+        'Consider petroleum-based products for wounds not requiring antibiotics',
+        'Avoid antibiotic ointments on deep wounds or those requiring surgical closure',
+        'Document antibiotic application and patient tolerance',
+        'Educate patient about potential allergic reactions to watch for'
+      ],
+      contraindications: [
+        'Known allergy to topical antibiotics or preservatives',
+        'Large or deep wounds requiring systemic antibiotic therapy',
+        'Wounds that will require surgical intervention'
+      ],
+      safetyNotes: [
+        'Topical antibiotics may cause contact dermatitis in some patients',
+        'Overuse of topical antibiotics can promote resistant organisms',
+        'Monitor for signs of allergic reaction after application'
+      ],
+      equipmentNeeded: [
+        'Topical antibiotic ointments (bacitracin, mupirocin)',
+        'Sterile applicators for ointment application',
+        'Patient allergy assessment materials'
+      ]
+    },
+    {
+      id: 'wound-disinfection-step-7',
+      stepNumber: 7,
+      title: 'Sterile Dressing Application',
+      description: 'Apply appropriate sterile dressing to protect wound and promote healing',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Select dressing size that extends 2-3cm beyond wound margins',
+        'Apply sterile gauze pad or non-adherent dressing over wound',
+        'Secure dressing with medical tape or elastic wrap',
+        'Ensure dressing does not constrict circulation if on extremity',
+        'Apply gentle pressure if continued bleeding present',
+        'Label dressing with date and time of application',
+        'Provide patient with dressing change instructions',
+        'Schedule appropriate follow-up for wound evaluation'
+      ],
+      safetyNotes: [
+        'Proper dressing prevents contamination and promotes healing environment',
+        'Avoid circumferential taping which may constrict with swelling',
+        'Monitor circulation distal to dressing if applied to extremity'
+      ],
+      equipmentNeeded: [
+        'Sterile gauze pads in appropriate sizes',
+        'Non-adherent dressing materials',
+        'Medical tape or elastic wrap for securing',
+        'Labels for dressing identification'
+      ]
+    },
+    {
+      id: 'wound-disinfection-step-8',
+      stepNumber: 8,
+      title: 'Patient Education and Follow-up Planning',
+      description: 'Educate patient on wound care and arrange appropriate follow-up monitoring',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Explain signs of infection: increased redness, warmth, swelling, pus',
+        'Provide instructions for keeping wound clean and dry',
+        'Teach proper dressing change technique and frequency',
+        'Discuss activity restrictions and wound protection measures',
+        'Review tetanus prophylaxis recommendations and scheduling',
+        'Provide written wound care instructions for home reference',
+        'Schedule follow-up appointment for wound evaluation in 24-48 hours',
+        'Give clear instructions on when to seek immediate medical attention'
+      ],
+      safetyNotes: [
+        'Patient education critical for preventing complications',
+        'Clear follow-up instructions ensure appropriate monitoring',
+        'Early recognition of infection allows prompt treatment'
+      ],
+      equipmentNeeded: [
+        'Patient education materials and written instructions',
+        'Wound care supplies for home use',
+        'Contact information for follow-up questions',
+        'Scheduling system for follow-up appointments'
+      ]
+    }
+  ],
+
   'disinfection-minor-wounds': {
     name: 'Disinfection of Minor Wounds',
     category: 'medical',
@@ -14375,6 +14882,242 @@ export const criticalSkillsMetadata = {
       'Topical anesthetics for pain management'
     ]
   },
+
+  // 43. HAND WASHING - Evidence-based hand hygiene and infection prevention protocol
+  'hand-washing': [
+    {
+      id: 'handwashing-step-1',
+      stepNumber: 1,
+      title: 'Hand Hygiene Assessment and Indication Recognition',
+      description: 'Assess when hand hygiene is required and select appropriate method',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 30,
+      keyPoints: [
+        'Recognize five moments for hand hygiene: before patient contact, before aseptic procedures',
+        'After body fluid exposure risk, after patient contact, after contact with patient surroundings',
+        'Assess level of contamination to determine soap and water vs alcohol-based sanitizer',
+        'Use soap and water when hands are visibly soiled or contaminated',
+        'Choose alcohol-based sanitizer for routine decontamination when hands not visibly soiled',
+        'Recognize need for hand hygiene before donning and after removing gloves',
+        'Consider duration since last hand hygiene and level of patient contact',
+        'Identify high-risk situations requiring enhanced hand hygiene protocols'
+      ],
+      safetyNotes: [
+        'Hand hygiene is the most effective infection prevention measure',
+        'Alcohol sanitizer ineffective against C. difficile spores - use soap and water',
+        'Proper technique more important than choice of agent'
+      ],
+      equipmentNeeded: [
+        'Access to running water and soap',
+        'Alcohol-based hand sanitizer (60-95% alcohol)',
+        'Paper towels for drying',
+        'Hand hygiene indication reference guide'
+      ]
+    },
+    {
+      id: 'handwashing-step-2',
+      stepNumber: 2,
+      title: 'Pre-Washing Hand and Jewelry Preparation',
+      description: 'Prepare hands and remove jewelry before beginning hand hygiene procedure',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 45,
+      keyPoints: [
+        'Remove all hand jewelry including rings, watches, and bracelets',
+        'Push sleeves up above wrists to prevent contamination',
+        'Inspect hands for cuts, abrasions, or broken skin requiring special attention',
+        'Ensure nails are short and free from artificial nails or nail polish',
+        'Check for hangnails or cuticle damage that may harbor bacteria',
+        'Remove any visible soil or debris before beginning formal hand washing',
+        'Prepare to avoid touching sink surfaces during washing process',
+        'Position body to allow comfortable access to sink and supplies'
+      ],
+      safetyNotes: [
+        'Jewelry harbors microorganisms and prevents effective cleaning',
+        'Long nails and artificial enhancements increase bacterial load',
+        'Broken skin provides entry point for pathogens'
+      ],
+      equipmentNeeded: [
+        'Safe storage area for personal jewelry and items',
+        'Mirror for hand inspection if available',
+        'Good lighting for hand examination'
+      ]
+    },
+    {
+      id: 'handwashing-step-3',
+      stepNumber: 3,
+      title: 'Water Temperature and Flow Adjustment',
+      description: 'Adjust water temperature and flow rate for optimal hand washing effectiveness',
+      isRequired: true,
+      isCritical: false,
+      timeEstimate: 30,
+      keyPoints: [
+        'Turn on water using elbow, wrist, or automatic sensor if available',
+        'Adjust water temperature to comfortably warm (not hot or cold)',
+        'Set moderate flow rate to prevent splashing while ensuring adequate rinsing',
+        'Allow water to run briefly to clear any stagnant water from faucet',
+        'Position hands under water stream without touching sink surfaces',
+        'Wet hands completely from fingertips to wrists',
+        'Keep hands lower than elbows to prevent contaminated water running up arms',
+        'Maintain water flow throughout washing and rinsing process'
+      ],
+      safetyNotes: [
+        'Hot water can damage skin and reduce compliance with hand hygiene',
+        'Touching sink surfaces recontaminates hands during washing',
+        'Proper hand positioning prevents recontamination from arms'
+      ],
+      equipmentNeeded: [
+        'Functioning sink with adjustable water temperature',
+        'Foot pedal, sensor, or elbow-operated controls preferred',
+        'Adequate water pressure for effective rinsing'
+      ]
+    },
+    {
+      id: 'handwashing-step-4',
+      stepNumber: 4,
+      title: 'Soap Application and Lather Generation',
+      description: 'Apply appropriate amount of soap and generate effective lather for cleaning',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 45,
+      keyPoints: [
+        'Apply 3-5ml of soap (one pump from dispenser) to wet hands',
+        'Use antimicrobial or plain soap depending on facility protocol',
+        'Distribute soap over all hand surfaces including between fingers',
+        'Generate rich lather through initial rubbing motions',
+        'Ensure soap reaches all areas: palms, backs, fingertips, thumbs',
+        'Add more soap if insufficient lather generated',
+        'Avoid excessive soap which may be difficult to rinse completely',
+        'Begin systematic scrubbing technique immediately after soap application'
+      ],
+      safetyNotes: [
+        'Adequate soap volume essential for effective bacterial removal',
+        'Lather helps lift and suspend microorganisms for removal',
+        'Even distribution prevents missed areas during scrubbing'
+      ],
+      equipmentNeeded: [
+        'Liquid soap dispenser with antimicrobial or plain soap',
+        'Hands-free soap dispensers preferred to prevent recontamination'
+      ]
+    },
+    {
+      id: 'handwashing-step-5',
+      stepNumber: 5,
+      title: 'Systematic Hand Scrubbing Technique',
+      description: 'Perform systematic hand scrubbing covering all surfaces for minimum 20 seconds',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 20,
+      keyPoints: [
+        'Scrub palms together with interlaced fingers for thorough coverage',
+        'Scrub back of each hand with opposite palm, fingers interlaced',
+        'Scrub between fingers: palm to palm with fingers interlaced',
+        'Scrub backs of fingers with opposing palm in interlocked position',
+        'Scrub thumbs by grasping with opposite hand and rotating',
+        'Scrub fingertips by rubbing in circular motions on opposite palm',
+        'Clean under fingernails by scraping against opposite palm',
+        'Continue systematic scrubbing for minimum 20 seconds total time'
+      ],
+      safetyNotes: [
+        '20-second minimum scrubbing time required for effective bacterial kill',
+        'Systematic technique ensures no areas are missed during cleaning',
+        'Fingertips and thumbs commonly missed areas requiring special attention'
+      ],
+      equipmentNeeded: [
+        'Timer or counting method for 20-second minimum',
+        'Nail brush if available for heavily soiled hands',
+        'Good technique and adequate time more important than tools'
+      ]
+    },
+    {
+      id: 'handwashing-step-6',
+      stepNumber: 6,
+      title: 'Thorough Rinsing and Soap Removal',
+      description: 'Rinse hands thoroughly to remove all soap residue and suspended microorganisms',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 45,
+      keyPoints: [
+        'Rinse hands under running water from wrists to fingertips',
+        'Keep hands pointed downward to allow water to drain off fingertips',
+        'Rinse thoroughly to remove all soap residue and suspended bacteria',
+        'Use adequate water volume and pressure for effective rinsing',
+        'Avoid touching sink surfaces during rinsing process',
+        'Continue rinsing until water runs clear with no soap bubbles',
+        'Pay special attention to areas between fingers and around nails',
+        'Complete rinsing before proceeding to drying phase'
+      ],
+      safetyNotes: [
+        'Incomplete rinsing leaves soap residue that can irritate skin',
+        'Suspended microorganisms must be completely flushed away',
+        'Touching sink during rinsing recontaminates clean hands'
+      ],
+      equipmentNeeded: [
+        'Adequate water pressure and volume for thorough rinsing',
+        'Proper sink design to minimize contact with contaminated surfaces'
+      ]
+    },
+    {
+      id: 'handwashing-step-7',
+      stepNumber: 7,
+      title: 'Hand Drying and Faucet Management',
+      description: 'Dry hands thoroughly using proper technique and turn off water without recontamination',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Dry hands thoroughly with clean paper towel starting from fingertips',
+        'Pat hands dry rather than rubbing to prevent skin irritation',
+        'Dry each finger individually and between fingers completely',
+        'Use separate clean paper towel to turn off faucet handles',
+        'Dispose of paper towels in appropriate waste container',
+        'Avoid touching any surfaces after hand drying until patient care',
+        'Apply hand lotion if skin is dry or cracked (facility-approved products)',
+        'Keep hands away from body and clothing until patient contact'
+      ],
+      safetyNotes: [
+        'Wet hands transfer bacteria more readily than dry hands',
+        'Touching faucet handles with clean hands causes recontamination',
+        'Proper drying technique prevents skin breakdown and infection'
+      ],
+      equipmentNeeded: [
+        'Clean paper towels (single-use preferred)',
+        'Hands-free or foot-pedal operated towel dispensers',
+        'Appropriate waste disposal containers',
+        'Hand lotion approved for healthcare use'
+      ]
+    },
+    {
+      id: 'handwashing-step-8',
+      stepNumber: 8,
+      title: 'Hand Hygiene Quality Assessment and Documentation',
+      description: 'Assess effectiveness of hand hygiene and document compliance as required',
+      isRequired: true,
+      isCritical: false,
+      timeEstimate: 30,
+      keyPoints: [
+        'Visually inspect hands for cleanliness and complete soap removal',
+        'Check that hands feel clean and free from sticky residue',
+        'Assess skin condition for dryness, cracking, or irritation',
+        'Document hand hygiene compliance if required by facility protocols',
+        'Note any skin problems that may affect future hand hygiene practices',
+        'Educate others on proper hand hygiene technique when appropriate',
+        'Plan timing for next hand hygiene opportunity in patient care sequence',
+        'Maintain awareness of hand contamination throughout patient care activities'
+      ],
+      safetyNotes: [
+        'Hand hygiene quality more important than frequency alone',
+        'Damaged skin may harbor more bacteria and require special attention',
+        'Continuous awareness prevents inadvertent contamination between procedures'
+      ],
+      equipmentNeeded: [
+        'Hand hygiene compliance documentation tools if required',
+        'Mirror for visual inspection if available',
+        'Hand care products for skin maintenance'
+      ]
+    }
+  ],
 
   'hand-washing': {
     name: 'Hand Washing',
@@ -14996,6 +15739,264 @@ export const criticalSkillsMetadata = {
       'Any patient belongings or personal effects inventory'
     ]
   },
+
+  // 41. DRUG ADMINISTRATION - Evidence-based medication administration safety protocol
+  'drug-administration': [
+    {
+      id: 'drug-admin-step-1',
+      stepNumber: 1,
+      title: 'Patient Assessment and Medication Indication',
+      description: 'Assess patient condition and confirm appropriate medication indication',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Assess patient vital signs and clinical condition requiring medication',
+        'Confirm specific medical indication for prescribed medication',
+        'Review patient medical history and current medications',
+        'Check for drug allergies and previous adverse reactions',
+        'Evaluate contraindications and precautions for specific medication',
+        'Consider patient weight, age, and organ function for dosing',
+        'Assess severity of condition and urgency of medication need',
+        'Document baseline vital signs and clinical status before administration'
+      ],
+      contraindications: [
+        'Known allergy or hypersensitivity to medication or components',
+        'Contraindicated medical conditions for specific drug',
+        'Drug interactions with current medications'
+      ],
+      safetyNotes: [
+        'Thorough patient assessment prevents adverse drug events',
+        'Always verify indication before any medication administration',
+        'Document allergies prominently in patient record'
+      ],
+      equipmentNeeded: [
+        'Vital sign monitoring equipment',
+        'Patient medication history and allergy information',
+        'Drug reference materials for indications and contraindications',
+        'Documentation materials for baseline assessment'
+      ]
+    },
+    {
+      id: 'drug-admin-step-2',
+      stepNumber: 2,
+      title: 'Medication Verification and Five Rights Check',
+      description: 'Verify medication using systematic five rights approach for patient safety',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Right Patient: Verify patient identity using two identifiers',
+        'Right Drug: Confirm medication name matches order exactly',
+        'Right Dose: Calculate and verify dose based on patient parameters',
+        'Right Route: Confirm route of administration as ordered',
+        'Right Time: Verify timing and frequency of administration',
+        'Check medication expiration date and appearance',
+        'Verify concentration and calculate dosage accurately',
+        'Have second provider double-check high-risk medications'
+      ],
+      safetyNotes: [
+        'Five rights checking prevents most medication errors',
+        'Independent double-check required for high-risk drugs',
+        'Never skip verification steps even in emergency situations'
+      ],
+      equipmentNeeded: [
+        'Patient identification band or verification method',
+        'Medication order or protocol reference',
+        'Calculator for dosage calculations',
+        'Drug reference materials for verification'
+      ]
+    },
+    {
+      id: 'drug-admin-step-3',
+      stepNumber: 3,
+      title: 'Medication Preparation and Dosage Calculation',
+      description: 'Prepare medication safely with accurate dosage calculation and sterile technique',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Calculate dosage based on patient weight and clinical guidelines',
+        'Use proper technique for drawing medication from vial or ampoule',
+        'Maintain sterile technique throughout preparation process',
+        'Label syringe immediately with drug name, dose, and time',
+        'Check medication clarity and absence of precipitates',
+        'Use appropriate diluent if dilution required',
+        'Avoid contamination of medication during preparation',
+        'Have reversal agents or antagonists readily available if applicable'
+      ],
+      safetyNotes: [
+        'Accurate calculation prevents under- or overdosing',
+        'Sterile technique prevents infection from contaminated medications',
+        'Immediate labeling prevents medication mix-ups'
+      ],
+      equipmentNeeded: [
+        'Sterile syringes and needles in appropriate sizes',
+        'Alcohol prep pads for vial cleaning',
+        'Medication labels for syringe identification',
+        'Calculator and dosage reference materials'
+      ]
+    },
+    {
+      id: 'drug-admin-step-4',
+      stepNumber: 4,
+      title: 'Route Selection and Access Establishment',
+      description: 'Select appropriate administration route and establish secure access',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Select route based on medication requirements and patient condition',
+        'For IV: verify patent IV access with blood return and saline flush',
+        'For IM: select appropriate injection site with proper muscle mass',
+        'For SQ: choose site with adequate subcutaneous tissue',
+        'For oral: ensure patient can swallow and protect airway',
+        'Consider bioavailability and onset time for different routes',
+        'Assess patient comfort and position appropriately',
+        'Have emergency equipment available for adverse reactions'
+      ],
+      contraindications: [
+        'Oral route contraindicated in patients with impaired swallowing',
+        'IM route avoided in coagulopathy or severe thrombocytopenia',
+        'IV route requires patent access - avoid infiltrated IVs'
+      ],
+      safetyNotes: [
+        'Route selection affects drug absorption and effectiveness',
+        'Ensure access patency before administering IV medications',
+        'Have resuscitation equipment available for high-risk medications'
+      ],
+      equipmentNeeded: [
+        'IV access materials and saline flushes',
+        'Appropriate needles for IM/SQ administration',
+        'Emergency resuscitation equipment',
+        'Patient positioning aids as needed'
+      ]
+    },
+    {
+      id: 'drug-admin-step-5',
+      stepNumber: 5,
+      title: 'Medication Administration and Monitoring',
+      description: 'Administer medication safely while monitoring for immediate effects and reactions',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Administer medication at appropriate rate for specific drug',
+        'Monitor vital signs during and immediately after administration',
+        'Watch for immediate adverse reactions or allergic responses',
+        'Observe injection site for signs of infiltration or extravasation',
+        'Document time of administration and initial patient response',
+        'Follow medication with saline flush for IV medications as appropriate',
+        'Position patient safely and comfortably after administration',
+        'Have reversal agents ready for medications with specific antidotes'
+      ],
+      safetyNotes: [
+        'Rapid IV administration can cause hemodynamic instability',
+        'Monitor continuously for allergic reactions during administration',
+        'Extravasation of certain drugs can cause severe tissue damage'
+      ],
+      equipmentNeeded: [
+        'Continuous vital sign monitoring equipment',
+        'Saline flushes for IV medication administration',
+        'Emergency medications for adverse reaction treatment',
+        'Timing device for controlled administration rates'
+      ]
+    },
+    {
+      id: 'drug-admin-step-6',
+      stepNumber: 6,
+      title: 'Post-Administration Assessment and Response',
+      description: 'Monitor patient response to medication and assess therapeutic effectiveness',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 600,
+      keyPoints: [
+        'Monitor for expected therapeutic effects based on medication',
+        'Assess for adverse effects or unexpected reactions',
+        'Check vital signs at regular intervals per protocol',
+        'Evaluate pain relief, symptom improvement, or clinical response',
+        'Monitor for delayed allergic reactions or side effects',
+        'Assess need for additional doses or alternative medications',
+        'Document patient response and effectiveness of treatment',
+        'Communicate significant changes to medical control or receiving facility'
+      ],
+      safetyNotes: [
+        'Some medications have delayed onset requiring extended monitoring',
+        'Adverse effects may be delayed and require ongoing surveillance',
+        'Therapeutic response guides need for additional interventions'
+      ],
+      equipmentNeeded: [
+        'Continuous monitoring equipment for extended assessment',
+        'Documentation materials for response tracking',
+        'Communication equipment for medical consultation',
+        'Additional medications if repeat dosing needed'
+      ]
+    },
+    {
+      id: 'drug-admin-step-7',
+      stepNumber: 7,
+      title: 'Adverse Reaction Management',
+      description: 'Recognize and manage adverse drug reactions or medication complications',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Recognize signs of allergic reactions: rash, itching, swelling, bronchospasm',
+        'Identify anaphylaxis: hypotension, airway swelling, cardiovascular collapse',
+        'Manage mild reactions: discontinue medication, administer antihistamines',
+        'Treat severe reactions: epinephrine, IV fluids, airway management',
+        'Administer specific antidotes if available for drug overdose',
+        'Support vital functions: airway, breathing, circulation',
+        'Document all interventions and patient responses thoroughly',
+        'Prepare for rapid transport to appropriate medical facility'
+      ],
+      contraindications: [
+        'Do not delay treatment of severe allergic reactions',
+        'Avoid additional doses of medication causing adverse reaction'
+      ],
+      safetyNotes: [
+        'Anaphylaxis can be rapidly fatal without immediate treatment',
+        'Have epinephrine and airway management equipment immediately available',
+        'Some adverse reactions may be delayed requiring continued monitoring'
+      ],
+      equipmentNeeded: [
+        'Emergency medications (epinephrine, antihistamines, corticosteroids)',
+        'Airway management equipment',
+        'IV fluids and vasopressor medications',
+        'Specific antidotes for medication being administered'
+      ]
+    },
+    {
+      id: 'drug-admin-step-8',
+      stepNumber: 8,
+      title: 'Documentation and Communication',
+      description: 'Complete comprehensive documentation and communicate with receiving medical team',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Document medication name, dose, route, and time of administration',
+        'Record patient response and any adverse effects observed',
+        'Note vital signs before, during, and after medication administration',
+        'Document indication for medication and effectiveness of treatment',
+        'Include any complications or adverse reactions managed',
+        'Record waste medication disposal per controlled substance protocols',
+        'Communicate medication administration to receiving medical team',
+        'Provide recommendations for continued monitoring or additional treatment'
+      ],
+      safetyNotes: [
+        'Complete documentation essential for ongoing patient care',
+        'Accurate records protect patients and healthcare providers',
+        'Controlled substance documentation required by law'
+      ],
+      equipmentNeeded: [
+        'Medication administration record forms',
+        'Controlled substance waste documentation',
+        'Communication equipment for receiving facility report',
+        'Patient care documentation materials'
+      ]
+    }
+  ],
 
   'drug-administration': {
     name: 'Drug Administration',
