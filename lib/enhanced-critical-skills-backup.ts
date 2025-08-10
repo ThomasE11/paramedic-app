@@ -19919,6 +19919,38 @@ export const criticalSkillsMetadata = {
     ]
   },
 
+  // 43. HAND WASHING - Evidence-based hand hygiene and infection prevention protocol
+  'hand-washing': [
+    {
+      id: 'handwashing-step-1',
+      stepNumber: 1,
+      title: 'Hand Hygiene Assessment and Indication Recognition',
+      description: 'Assess when hand hygiene is required and select appropriate method',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 30,
+      keyPoints: [
+        'Recognize five moments for hand hygiene: before patient contact, before aseptic procedures',
+        'After body fluid exposure risk, after patient contact, after contact with patient surroundings',
+        'Assess level of contamination to determine soap and water vs alcohol-based sanitizer',
+        'Use soap and water when hands are visibly soiled or contaminated',
+        'Choose alcohol-based sanitizer for routine decontamination when hands not visibly soiled',
+        'Recognize need for hand hygiene before donning and after removing gloves',
+        'Consider duration since last hand hygiene and level of patient contact',
+        'Identify high-risk situations requiring enhanced hand hygiene protocols'
+      ],
+      safetyNotes: [
+        'Hand hygiene is the most effective infection prevention measure',
+        'Alcohol sanitizer ineffective against C. difficile spores - use soap and water',
+        'Proper technique more important than choice of agent'
+      ],
+      equipmentNeeded: [
+        'Access to running water and soap',
+        'Alcohol-based hand sanitizer (60-95% alcohol)',
+        'Paper towels for drying',
+        'Hand hygiene indication reference guide'
+      ]
+    },
     {
       id: 'handwashing-step-2',
       stepNumber: 2,
@@ -20163,6 +20195,257 @@ export const criticalSkillsMetadata = {
     ]
   },
 
+  'orogastric-nasogastric-insertion': [
+    {
+      id: 'oro-naso-step-1',
+      stepNumber: 1,
+      title: 'Patient assessment and route selection',
+      description: 'Assess patient condition and determine optimal insertion route (oral vs nasal)',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Assess consciousness level and ability to cooperate with procedure',
+        'Check for contraindications: base of skull fracture, severe facial trauma',
+        'Evaluate nasal patency - select most patent nostril for nasal route',
+        'Consider orogastric route for unconscious patients or nasal contraindications',
+        'Assess for recent facial surgery, active upper GI bleeding, or coagulopathy',
+        'Determine indication: decompression, lavage, feeding access, or medication',
+        'Check baseline vital signs and neurological status',
+        'Obtain informed consent when patient consciousness permits'
+      ],
+      contraindications: [
+        'Suspected base of skull fracture (nasal route)',
+        'Severe maxillofacial trauma',
+        'Recent nasal/esophageal surgery',
+        'Active esophageal varices bleeding'
+      ],
+      safetyNotes: [
+        'Never use nasal route with suspected skull base fracture',
+        'Cervical spine precautions if trauma suspected',
+        'Monitor for signs of respiratory distress throughout'
+      ],
+      equipmentNeeded: [
+        'Assessment tools and vital sign equipment',
+        'Penlight for nasal examination',
+        'Emergency airway equipment nearby'
+      ]
+    },
+    {
+      id: 'oro-naso-step-2',
+      stepNumber: 2,
+      title: 'Equipment preparation and patient positioning',
+      description: 'Prepare all necessary equipment and position patient for safe insertion',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Select appropriate tube size: 14-16Fr for adults, 12-14Fr for elderly',
+        'Check tube integrity - no cracks, kinks, or missing components',
+        'Prepare water-soluble lubricant (never petroleum-based products)',
+        'Position patient in high Fowlers (sitting upright) if conscious and stable',
+        'Use left lateral position for unconscious patients to prevent aspiration',
+        'Ensure adequate lighting and access to patient head and neck',
+        'Have suction equipment ready and functional at bedside',
+        'Prepare pH strips, syringe, and tape for securing'
+      ],
+      safetyNotes: [
+        'Never use petroleum-based lubricants - risk of lipoid pneumonia',
+        'Keep backup tubes available in case of complications',
+        'Ensure emergency airway equipment immediately accessible'
+      ],
+      equipmentNeeded: [
+        'Nasogastric/orogastric tubes (multiple sizes)',
+        'Water-soluble lubricant',
+        '60ml catheter-tip syringe',
+        'pH testing strips',
+        'Suction equipment',
+        'Medical tape for securing'
+      ]
+    },
+    {
+      id: 'oro-naso-step-3',
+      stepNumber: 3,
+      title: 'Measurement and depth calculation',
+      description: 'Accurately measure tube insertion depth using anatomical landmarks',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Use NEX method: Nose-Earlobe-Xiphoid distance for measurement',
+        'Mark measured distance clearly on tube with permanent marker',
+        'For orogastric route: mouth corner to earlobe to xiphoid process',
+        'Add 5-10cm to measured distance for adequate gastric placement',
+        'Double-check measurement - inaccurate depth risks esophageal placement',
+        'Document measured insertion depth in patient record',
+        'Consider patient body habitus - may require adjustment for very tall patients',
+        'Have assistant verify measurement accuracy before insertion'
+      ],
+      safetyNotes: [
+        'Accurate measurement critical for proper gastric placement',
+        'Insufficient depth risks esophageal placement and aspiration',
+        'Excessive depth may cause gastric perforation'
+      ],
+      equipmentNeeded: [
+        'Measuring tape or pre-marked tube',
+        'Permanent marker for depth marking',
+        'Documentation materials'
+      ]
+    },
+    {
+      id: 'oro-naso-step-4',
+      stepNumber: 4,
+      title: 'Initial tube insertion',
+      description: 'Begin tube insertion using proper technique and monitoring patient response',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Lubricate distal 10cm of tube with water-soluble lubricant',
+        'Insert tube gently along floor of nasal cavity (not upward)',
+        'Advance slowly and steadily - allow natural swallowing to assist',
+        'Monitor for resistance - never force insertion against resistance',
+        'Watch for signs of respiratory distress, coughing, or gagging',
+        'If conscious, encourage patient to swallow and take small sips of water',
+        'Stop immediately if patient develops cyanosis or severe respiratory distress',
+        'Rotate tube gently if slight resistance encountered'
+      ],
+      safetyNotes: [
+        'Never force tube insertion - risk of perforation or trauma',
+        'Monitor respiratory status continuously during insertion',
+        'Be prepared for immediate tube removal if respiratory compromise'
+      ],
+      equipmentNeeded: [
+        'Prepared nasogastric/orogastric tube',
+        'Water-soluble lubricant',
+        'Small cup of water for conscious patients',
+        'Suction equipment ready',
+        'Emergency airway equipment'
+      ]
+    },
+    {
+      id: 'oro-naso-step-5',
+      stepNumber: 5,
+      title: 'Placement verification using multiple methods',
+      description: 'Confirm correct gastric placement using multiple verification techniques',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Aspirate gastric contents with 60ml syringe - should be acidic fluid',
+        'Test aspirated fluid pH with pH strips (should be <5.5 for gastric)',
+        'Auscultate over epigastrium while injecting 20ml of air (whoosh test)',
+        'Check for visualization of tube tip on chest X-ray if available',
+        'Assess for immediate signs of respiratory distress or pneumothorax',
+        'Verify external tube markings align with pre-measured depth',
+        'Never rely on single confirmation method - use multiple verification',
+        'Document all verification methods used and results obtained'
+      ],
+      safetyNotes: [
+        'Never assume correct placement without multiple verification methods',
+        'pH testing most reliable bedside confirmation method',
+        'Chest X-ray gold standard when available and clinically appropriate',
+        'Immediately remove tube if respiratory placement suspected'
+      ],
+      equipmentNeeded: [
+        '60ml catheter-tip syringe',
+        'pH testing strips',
+        'Stethoscope',
+        'Small amount of air for auscultation test'
+      ]
+    },
+    {
+      id: 'oro-naso-step-6',
+      stepNumber: 6,
+      title: 'Tube securing and connection',
+      description: 'Properly secure tube and connect to appropriate drainage system',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Clean nasal/oral area around insertion site with antiseptic wipe',
+        'Apply skin protectant if prolonged placement anticipated',
+        'Secure tube with medical tape - avoid excessive tension on nares',
+        'Use chevron taping technique to prevent pressure necrosis',
+        'Connect tube to low intermittent suction (40-60 mmHg) if ordered',
+        'Attach drainage collection bag if continuous drainage required',
+        'Ensure tube positioning prevents kinking or disconnection',
+        'Mark tube at nares/mouth level to monitor for displacement'
+      ],
+      safetyNotes: [
+        'Avoid excessive suction pressure - risk of mucosal damage',
+        'Monitor for signs of pressure injury at insertion site',
+        'Ensure connections are secure to prevent system failure'
+      ],
+      equipmentNeeded: [
+        'Medical tape (hypoallergenic preferred)',
+        'Antiseptic wipes',
+        'Suction equipment with pressure regulation',
+        'Drainage collection bags',
+        'Skin protectant products'
+      ]
+    },
+    {
+      id: 'oro-naso-step-7',
+      stepNumber: 7,
+      title: 'Function testing and troubleshooting',
+      description: 'Test tube function and address any functional problems',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 150,
+      keyPoints: [
+        'Test tube patency by gently irrigating with 30ml normal saline',
+        'Verify drainage is functioning - should see gastric contents or air',
+        'Troubleshoot poor drainage: check for kinks, clots, or positioning',
+        'Adjust suction pressure if drainage inadequate or excessive',
+        'Flush tube gently if partial obstruction suspected',
+        'Monitor drainage characteristics: color, consistency, volume',
+        'Establish baseline gastric residual volume if appropriate',
+        'Test tube mobility - should advance/retract slightly with swallowing'
+      ],
+      safetyNotes: [
+        'Use only gentle irrigation pressure to avoid gastric trauma',
+        'Never force irrigation against resistance',
+        'Monitor for signs of gastric perforation: severe pain, hematemesis'
+      ],
+      equipmentNeeded: [
+        'Normal saline for irrigation',
+        '30-60ml catheter-tip syringe',
+        'Graduated container for measuring output',
+        'Documentation materials for baseline measurements'
+      ]
+    },
+    {
+      id: 'oro-naso-step-8',
+      stepNumber: 8,
+      title: 'Patient monitoring and comprehensive documentation',
+      description: 'Establish ongoing monitoring plan and complete thorough documentation',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Monitor vital signs and respiratory status every 15 minutes initially',
+        'Assess insertion site for signs of irritation, bleeding, or infection',
+        'Document indication, route used, tube size, and depth of insertion',
+        'Record verification methods used and results obtained',
+        'Establish monitoring schedule for tube position and function',
+        'Educate patient/family about tube care and signs of complications',
+        'Provide comfort measures: mouth care, nasal hygiene, positioning',
+        'Plan for regular reassessment of continued need for tube'
+      ],
+      safetyNotes: [
+        'Continuous monitoring prevents delayed complications',
+        'Patient education crucial for recognizing problems',
+        'Regular tube position verification prevents displacement complications'
+      ],
+      equipmentNeeded: [
+        'Vital sign monitoring equipment',
+        'Documentation forms and flowsheets',
+        'Patient education materials',
+        'Mouth care and nasal hygiene supplies'
+      ]
+    }
+  ],
 
   // 37. BAG VALVE MASK RESERVOIR VENTILATION - Evidence-based manual ventilation technique
   'bag-valve-mask-reservoir': [
@@ -20454,6 +20737,246 @@ export const criticalSkillsMetadata = {
     ]
   },
 
+  // 46. PATIENT HANDOVER - Evidence-based patient transfer communication protocol
+  'patient-handover': [
+    {
+      id: 'handover-step-1',
+      stepNumber: 1,
+      title: 'Pre-Handover Information Preparation',
+      description: 'Prepare comprehensive patient information and organize handover communication',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Organize patient information using standardized handover format (SBAR, IMIST-AMBO)',
+        'Review patient history, chief complaint, and presenting symptoms',
+        'Compile vital signs trends and significant assessment findings',
+        'Prepare list of interventions performed and patient responses',
+        'Gather all medications administered with doses, times, and effects',
+        'Review diagnostic tests performed and results obtained',
+        'Identify ongoing concerns and monitoring requirements',
+        'Prepare questions or clarifications needed from receiving team'
+      ],
+      safetyNotes: [
+        'Structured handover formats reduce communication errors',
+        'Complete information review prevents omission of critical details',
+        'Organization improves efficiency and reduces handover time'
+      ],
+      equipmentNeeded: [
+        'Patient care documentation and records',
+        'Standardized handover format reference (SBAR/IMIST)',
+        'Medication administration records',
+        'Diagnostic test results and monitor strips'
+      ]
+    },
+    {
+      id: 'handover-step-2',
+      stepNumber: 2,
+      title: 'Receiving Team Identification and Introduction',
+      description: 'Identify appropriate receiving team members and establish communication',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Identify appropriate receiving physician, nurse, and team members',
+        'Ensure receiving team is ready to accept handover communication',
+        'Introduce yourself and your role in patient care',
+        'Confirm patient identity with receiving team using two identifiers',
+        'Establish quiet environment free from distractions for handover',
+        'Ensure all relevant team members are present for handover',
+        'Ask receiving team to hold questions until handover completion',
+        'Confirm receiving team has access to patient care records'
+      ],
+      safetyNotes: [
+        'Patient identity confirmation prevents wrong-patient errors',
+        'Distraction-free environment improves communication accuracy',
+        'All relevant team members should receive complete information'
+      ],
+      equipmentNeeded: [
+        'Patient identification materials (wristband, ID card)',
+        'Quiet space for effective communication',
+        'Communication equipment if remote handover needed'
+      ]
+    },
+    {
+      id: 'handover-step-3',
+      stepNumber: 3,
+      title: 'Situation and Background Communication',
+      description: 'Communicate patient situation and relevant background information',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'State patient age, sex, and primary complaint clearly',
+        'Describe mechanism of injury or onset of illness',
+        'Provide relevant medical history and current medications',
+        'Explain circumstances of call and scene findings',
+        'Describe patient presentation and initial assessment',
+        'Include relevant social history affecting care (allergies, advanced directives)',
+        'Mention any family members or significant others present',
+        'Describe patient mental status and ability to provide history'
+      ],
+      safetyNotes: [
+        'Background information provides context for clinical decision-making',
+        'Allergies and medications critical for preventing adverse events',
+        'Scene information may reveal important diagnostic clues'
+      ],
+      equipmentNeeded: [
+        'Patient history documentation',
+        'Medication lists and allergy information',
+        'Scene assessment notes and observations'
+      ]
+    },
+    {
+      id: 'handover-step-4',
+      stepNumber: 4,
+      title: 'Assessment Findings and Vital Signs',
+      description: 'Communicate comprehensive assessment findings and vital sign trends',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Report vital signs on arrival and any significant trends',
+        'Describe physical examination findings systematically',
+        'Include neurological assessment and Glasgow Coma Score if applicable',
+        'Report pain assessment scores and patient-reported symptoms',
+        'Describe any abnormal findings: breath sounds, heart sounds, pulses',
+        'Include results of diagnostic tests: ECG, blood glucose, etc.',
+        'Report oxygen saturation and respiratory status',
+        'Mention any changes in patient condition during care'
+      ],
+      safetyNotes: [
+        'Vital sign trends more informative than single measurements',
+        'Systematic reporting prevents omission of important findings',
+        'Changes in condition may indicate evolving pathology'
+      ],
+      equipmentNeeded: [
+        'Vital sign logs and trending documentation',
+        'Assessment findings documentation',
+        'Diagnostic test results (ECG strips, glucose readings)',
+        'Pain assessment tools and scores'
+      ]
+    },
+    {
+      id: 'handover-step-5',
+      stepNumber: 5,
+      title: 'Interventions and Treatment Response',
+      description: 'Detail all interventions performed and patient responses to treatment',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 360,
+      keyPoints: [
+        'List all medications given with exact doses, routes, and times',
+        'Describe patient response to each medication or intervention',
+        'Report IV access: location, gauge, patency, and fluids given',
+        'Detail airway management: oxygen therapy, positioning, advanced airways',
+        'Describe any procedures performed: splinting, wound care, monitoring',
+        'Report pain management interventions and effectiveness',
+        'Include any unsuccessful intervention attempts and reasons',
+        'Mention ongoing interventions requiring continuation'
+      ],
+      safetyNotes: [
+        'Medication information prevents duplicate dosing and interactions',
+        'Treatment responses guide continued therapy decisions',
+        'Failed interventions may provide diagnostic information'
+      ],
+      equipmentNeeded: [
+        'Medication administration records',
+        'Intervention documentation and procedure notes',
+        'IV access documentation and fluid balance records',
+        'Response assessment documentation'
+      ]
+    },
+    {
+      id: 'handover-step-6',
+      stepNumber: 6,
+      title: 'Current Status and Ongoing Concerns',
+      description: 'Communicate current patient status and ongoing care concerns',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Report current vital signs and patient stability level',
+        'Describe current pain level and comfort status',
+        'Identify ongoing monitoring requirements and frequency',
+        'Highlight any potential complications or deterioration risks',
+        'Discuss patient and family concerns or questions',
+        'Report current IV access patency and fluid administration',
+        'Describe current oxygen requirements and respiratory status',
+        'Mention any pending diagnostic tests or consultations needed'
+      ],
+      safetyNotes: [
+        'Current status provides baseline for continued care',
+        'Risk identification allows proactive management',
+        'Family concerns may reveal important information'
+      ],
+      equipmentNeeded: [
+        'Current vital signs and monitoring equipment',
+        'Patient comfort assessment tools',
+        'Family communication notes',
+        'Pending test orders or consultation requests'
+      ]
+    },
+    {
+      id: 'handover-step-7',
+      stepNumber: 7,
+      title: 'Questions, Clarifications, and Recommendations',
+      description: 'Address questions from receiving team and provide care recommendations',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Answer any questions from receiving team about patient care',
+        'Clarify any unclear aspects of patient history or presentation',
+        'Provide recommendations for continued care priorities',
+        'Suggest monitoring parameters based on patient condition',
+        'Recommend follow-up on specific concerns or symptoms',
+        'Discuss any anticipated needs or potential complications',
+        'Share clinical insights or observations that may help diagnosis',
+        'Offer contact information for follow-up questions'
+      ],
+      safetyNotes: [
+        'Interactive dialogue improves understanding and reduces errors',
+        'Clinical insights may provide valuable diagnostic clues',
+        'Clear recommendations support continuity of care'
+      ],
+      equipmentNeeded: [
+        'Contact information for follow-up communication',
+        'Clinical references or protocols for recommendations',
+        'Documentation materials for additional notes'
+      ]
+    },
+    {
+      id: 'handover-step-8',
+      stepNumber: 8,
+      title: 'Documentation and Transfer Completion',
+      description: 'Complete documentation transfer and finalize patient care handover',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Transfer all written documentation to receiving team',
+        'Provide copies of ECGs, medication records, and assessment forms',
+        'Ensure receiving team has contact information for questions',
+        'Document handover completion time and receiving personnel',
+        'Confirm receiving team acceptance of patient care responsibility',
+        'Complete any required handover documentation or signatures',
+        'Provide patient belongings and personal effects to appropriate personnel',
+        'Offer assistance with initial receiving facility procedures if needed'
+      ],
+      safetyNotes: [
+        'Written documentation provides legal record of care provided',
+        'Clear transfer of responsibility prevents care gaps',
+        'Complete documentation supports quality improvement and legal protection'
+      ],
+      equipmentNeeded: [
+        'Complete patient care documentation packet',
+        'Copies of all diagnostic tests and monitor strips',
+        'Patient personal belongings inventory',
+        'Handover completion documentation forms'
+      ]
+    }
+  ],
 
   'patient-handover': {
     name: 'Patient Handover',
@@ -20494,6 +21017,263 @@ export const criticalSkillsMetadata = {
     ]
   },
 
+  // 41. DRUG ADMINISTRATION - Evidence-based medication administration safety protocol
+  'drug-administration': [
+    {
+      id: 'drug-admin-step-1',
+      stepNumber: 1,
+      title: 'Patient Assessment and Medication Indication',
+      description: 'Assess patient condition and confirm appropriate medication indication',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Assess patient vital signs and clinical condition requiring medication',
+        'Confirm specific medical indication for prescribed medication',
+        'Review patient medical history and current medications',
+        'Check for drug allergies and previous adverse reactions',
+        'Evaluate contraindications and precautions for specific medication',
+        'Consider patient weight, age, and organ function for dosing',
+        'Assess severity of condition and urgency of medication need',
+        'Document baseline vital signs and clinical status before administration'
+      ],
+      contraindications: [
+        'Known allergy or hypersensitivity to medication or components',
+        'Contraindicated medical conditions for specific drug',
+        'Drug interactions with current medications'
+      ],
+      safetyNotes: [
+        'Thorough patient assessment prevents adverse drug events',
+        'Always verify indication before any medication administration',
+        'Document allergies prominently in patient record'
+      ],
+      equipmentNeeded: [
+        'Vital sign monitoring equipment',
+        'Patient medication history and allergy information',
+        'Drug reference materials for indications and contraindications',
+        'Documentation materials for baseline assessment'
+      ]
+    },
+    {
+      id: 'drug-admin-step-2',
+      stepNumber: 2,
+      title: 'Medication Verification and Five Rights Check',
+      description: 'Verify medication using systematic five rights approach for patient safety',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Right Patient: Verify patient identity using two identifiers',
+        'Right Drug: Confirm medication name matches order exactly',
+        'Right Dose: Calculate and verify dose based on patient parameters',
+        'Right Route: Confirm route of administration as ordered',
+        'Right Time: Verify timing and frequency of administration',
+        'Check medication expiration date and appearance',
+        'Verify concentration and calculate dosage accurately',
+        'Have second provider double-check high-risk medications'
+      ],
+      safetyNotes: [
+        'Five rights checking prevents most medication errors',
+        'Independent double-check required for high-risk drugs',
+        'Never skip verification steps even in emergency situations'
+      ],
+      equipmentNeeded: [
+        'Patient identification band or verification method',
+        'Medication order or protocol reference',
+        'Calculator for dosage calculations',
+        'Drug reference materials for verification'
+      ]
+    },
+    {
+      id: 'drug-admin-step-3',
+      stepNumber: 3,
+      title: 'Medication Preparation and Dosage Calculation',
+      description: 'Prepare medication safely with accurate dosage calculation and sterile technique',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Calculate dosage based on patient weight and clinical guidelines',
+        'Use proper technique for drawing medication from vial or ampoule',
+        'Maintain sterile technique throughout preparation process',
+        'Label syringe immediately with drug name, dose, and time',
+        'Check medication clarity and absence of precipitates',
+        'Use appropriate diluent if dilution required',
+        'Avoid contamination of medication during preparation',
+        'Have reversal agents or antagonists readily available if applicable'
+      ],
+      safetyNotes: [
+        'Accurate calculation prevents under- or overdosing',
+        'Sterile technique prevents infection from contaminated medications',
+        'Immediate labeling prevents medication mix-ups'
+      ],
+      equipmentNeeded: [
+        'Sterile syringes and needles in appropriate sizes',
+        'Alcohol prep pads for vial cleaning',
+        'Medication labels for syringe identification',
+        'Calculator and dosage reference materials'
+      ]
+    },
+    {
+      id: 'drug-admin-step-4',
+      stepNumber: 4,
+      title: 'Route Selection and Access Establishment',
+      description: 'Select appropriate administration route and establish secure access',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Select route based on medication requirements and patient condition',
+        'For IV: verify patent IV access with blood return and saline flush',
+        'For IM: select appropriate injection site with proper muscle mass',
+        'For SQ: choose site with adequate subcutaneous tissue',
+        'For oral: ensure patient can swallow and protect airway',
+        'Consider bioavailability and onset time for different routes',
+        'Assess patient comfort and position appropriately',
+        'Have emergency equipment available for adverse reactions'
+      ],
+      contraindications: [
+        'Oral route contraindicated in patients with impaired swallowing',
+        'IM route avoided in coagulopathy or severe thrombocytopenia',
+        'IV route requires patent access - avoid infiltrated IVs'
+      ],
+      safetyNotes: [
+        'Route selection affects drug absorption and effectiveness',
+        'Ensure access patency before administering IV medications',
+        'Have resuscitation equipment available for high-risk medications'
+      ],
+      equipmentNeeded: [
+        'IV access materials and saline flushes',
+        'Appropriate needles for IM/SQ administration',
+        'Emergency resuscitation equipment',
+        'Patient positioning aids as needed'
+      ]
+    },
+    {
+      id: 'drug-admin-step-5',
+      stepNumber: 5,
+      title: 'Medication Administration and Monitoring',
+      description: 'Administer medication safely while monitoring for immediate effects and reactions',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Administer medication at appropriate rate for specific drug',
+        'Monitor vital signs during and immediately after administration',
+        'Watch for immediate adverse reactions or allergic responses',
+        'Observe injection site for signs of infiltration or extravasation',
+        'Document time of administration and initial patient response',
+        'Follow medication with saline flush for IV medications as appropriate',
+        'Position patient safely and comfortably after administration',
+        'Have reversal agents ready for medications with specific antidotes'
+      ],
+      safetyNotes: [
+        'Rapid IV administration can cause hemodynamic instability',
+        'Monitor continuously for allergic reactions during administration',
+        'Extravasation of certain drugs can cause severe tissue damage'
+      ],
+      equipmentNeeded: [
+        'Continuous vital sign monitoring equipment',
+        'Saline flushes for IV medication administration',
+        'Emergency medications for adverse reaction treatment',
+        'Timing device for controlled administration rates'
+      ]
+    },
+    {
+      id: 'drug-admin-step-6',
+      stepNumber: 6,
+      title: 'Post-Administration Assessment and Response',
+      description: 'Monitor patient response to medication and assess therapeutic effectiveness',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 600,
+      keyPoints: [
+        'Monitor for expected therapeutic effects based on medication',
+        'Assess for adverse effects or unexpected reactions',
+        'Check vital signs at regular intervals per protocol',
+        'Evaluate pain relief, symptom improvement, or clinical response',
+        'Monitor for delayed allergic reactions or side effects',
+        'Assess need for additional doses or alternative medications',
+        'Document patient response and effectiveness of treatment',
+        'Communicate significant changes to medical control or receiving facility'
+      ],
+      safetyNotes: [
+        'Some medications have delayed onset requiring extended monitoring',
+        'Adverse effects may be delayed and require ongoing surveillance',
+        'Therapeutic response guides need for additional interventions'
+      ],
+      equipmentNeeded: [
+        'Continuous monitoring equipment for extended assessment',
+        'Documentation materials for response tracking',
+        'Communication equipment for medical consultation',
+        'Additional medications if repeat dosing needed'
+      ]
+    },
+    {
+      id: 'drug-admin-step-7',
+      stepNumber: 7,
+      title: 'Adverse Reaction Management',
+      description: 'Recognize and manage adverse drug reactions or medication complications',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Recognize signs of allergic reactions: rash, itching, swelling, bronchospasm',
+        'Identify anaphylaxis: hypotension, airway swelling, cardiovascular collapse',
+        'Manage mild reactions: discontinue medication, administer antihistamines',
+        'Treat severe reactions: epinephrine, IV fluids, airway management',
+        'Administer specific antidotes if available for drug overdose',
+        'Support vital functions: airway, breathing, circulation',
+        'Document all interventions and patient responses thoroughly',
+        'Prepare for rapid transport to appropriate medical facility'
+      ],
+      contraindications: [
+        'Do not delay treatment of severe allergic reactions',
+        'Avoid additional doses of medication causing adverse reaction'
+      ],
+      safetyNotes: [
+        'Anaphylaxis can be rapidly fatal without immediate treatment',
+        'Have epinephrine and airway management equipment immediately available',
+        'Some adverse reactions may be delayed requiring continued monitoring'
+      ],
+      equipmentNeeded: [
+        'Emergency medications (epinephrine, antihistamines, corticosteroids)',
+        'Airway management equipment',
+        'IV fluids and vasopressor medications',
+        'Specific antidotes for medication being administered'
+      ]
+    },
+    {
+      id: 'drug-admin-step-8',
+      stepNumber: 8,
+      title: 'Documentation and Communication',
+      description: 'Complete comprehensive documentation and communicate with receiving medical team',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Document medication name, dose, route, and time of administration',
+        'Record patient response and any adverse effects observed',
+        'Note vital signs before, during, and after medication administration',
+        'Document indication for medication and effectiveness of treatment',
+        'Include any complications or adverse reactions managed',
+        'Record waste medication disposal per controlled substance protocols',
+        'Communicate medication administration to receiving medical team',
+        'Provide recommendations for continued monitoring or additional treatment'
+      ],
+      safetyNotes: [
+        'Complete documentation essential for ongoing patient care',
+        'Accurate records protect patients and healthcare providers',
+        'Controlled substance documentation required by law'
+      ],
+      equipmentNeeded: [
+        'Medication administration record forms',
+        'Controlled substance waste documentation',
+        'Communication equipment for receiving facility report',
+        'Patient care documentation materials'
+      ]
+    }
+  ],
 
   'drug-administration': {
     name: 'Drug Administration',
