@@ -11654,6 +11654,251 @@ export const criticalSkillsMetadata = {
     }
   ],
 
+  // 48. DOUBLE LUMEN AIRWAY INSERTION - Evidence-based supraglottic airway device placement
+  'double-lumen-airway-insertion': [
+    {
+      id: 'double-lumen-step-1',
+      stepNumber: 1,
+      title: 'Patient Assessment and Double Lumen Airway Indication',
+      description: 'Assess patient airway needs and confirm indication for double lumen airway device',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Assess for failed endotracheal intubation or difficult airway anatomy',
+        'Evaluate for need for supraglottic airway as primary or backup device',
+        'Check patient consciousness level and absence of protective reflexes',
+        'Assess mouth opening and potential anatomical obstacles',
+        'Verify adequate bag-valve-mask ventilation before insertion attempt',
+        'Consider contraindications: intact gag reflex, pharyngeal pathology',
+        'Evaluate patient size for appropriate device selection',
+        'Document indication and failed airway attempts if applicable'
+      ],
+      contraindications: [
+        'Conscious patient with intact gag reflex',
+        'Known esophageal or pharyngeal pathology or obstruction',
+        'Recent upper airway surgery or trauma'
+      ],
+      safetyNotes: [
+        'Double lumen devices provide supraglottic seal but not definitive airway',
+        'Maintain BVM ventilation capability throughout procedure',
+        'Have advanced airway equipment ready if insertion fails'
+      ],
+      equipmentNeeded: [
+        'Double lumen airway device in appropriate size',
+        'BVM with oxygen source for backup ventilation',
+        'Suction equipment with rigid catheter',
+        'Advanced airway equipment for backup plan'
+      ]
+    },
+    {
+      id: 'double-lumen-step-2',
+      stepNumber: 2,
+      title: 'Device Selection and Equipment Preparation',
+      description: 'Select appropriate device size and prepare equipment for insertion',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Select device size based on patient weight: <30kg size 1, 30-50kg size 2, >50kg size 3',
+        'Inspect device for damage, cracks, or manufacturing defects',
+        'Test cuff inflation system and verify symmetric inflation',
+        'Lubricate device tip with water-soluble lubricant',
+        'Prepare suction equipment and verify function',
+        'Set up bag-valve-mask with high-flow oxygen for immediate connection',
+        'Have backup sizes available in case of insertion difficulty',
+        'Position patient and equipment for optimal access'
+      ],
+      safetyNotes: [
+        'Proper size selection critical for effective seal and ventilation',
+        'Device inspection prevents equipment failure during critical procedure',
+        'Water-soluble lubricant only - avoid petroleum-based products'
+      ],
+      equipmentNeeded: [
+        'Multiple sizes of double lumen airway devices',
+        'Water-soluble lubricant for device preparation',
+        'Syringe for cuff inflation testing',
+        'BVM with high-flow oxygen connection'
+      ]
+    },
+    {
+      id: 'double-lumen-step-3',
+      stepNumber: 3,
+      title: 'Patient Positioning and Airway Preparation',
+      description: 'Position patient optimally and prepare airway for device insertion',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Position patient supine with head in neutral or sniffing position',
+        'Open mouth fully and visualize oropharynx',
+        'Clear airway of secretions, blood, or debris with suction',
+        'Remove dentures or loose dental work if present',
+        'Ensure adequate lighting for visualization during insertion',
+        'Have assistant available to help with positioning if needed',
+        'Pre-oxygenate patient with BVM if time and condition permit',
+        'Position yourself at head of patient for optimal insertion angle'
+      ],
+      safetyNotes: [
+        'Clear airway essential for successful device placement',
+        'Pre-oxygenation provides safety margin during insertion',
+        'Proper positioning improves success rate and reduces complications'
+      ],
+      equipmentNeeded: [
+        'Suction equipment for airway clearance',
+        'Good lighting or headlamp for visualization',
+        'BVM for pre-oxygenation if indicated'
+      ]
+    },
+    {
+      id: 'double-lumen-step-4',
+      stepNumber: 4,
+      title: 'Device Insertion and Placement',
+      description: 'Insert double lumen airway device using proper technique and anatomical landmarks',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Hold device like a pen with tip pointing toward hard palate',
+        'Insert device along hard palate until resistance felt',
+        'Rotate device 180 degrees as tip passes posterior tongue',
+        'Advance device until resistance felt at hypopharynx level',
+        'Do not force insertion if significant resistance encountered',
+        'Device should sit comfortably without excessive pressure',
+        'Check that black line on device aligns with patient incisors',
+        'Avoid excessive force which may cause pharyngeal trauma'
+      ],
+      safetyNotes: [
+        'Gentle technique prevents pharyngeal trauma and bleeding',
+        'Resistance indicates proper positioning - do not force further',
+        'Proper depth ensures optimal seal without excessive pressure'
+      ],
+      equipmentNeeded: [
+        'Double lumen airway device prepared and lubricated',
+        'Gentle insertion technique with controlled pressure',
+        'Visual landmarks for proper depth assessment'
+      ]
+    },
+    {
+      id: 'double-lumen-step-5',
+      stepNumber: 5,
+      title: 'Cuff Inflation and Seal Establishment',
+      description: 'Inflate device cuffs to establish airway seal while avoiding overinflation',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Inflate cuff slowly with recommended volume (varies by device size)',
+        'Stop inflation when adequate seal achieved - avoid overinflation',
+        'Test seal by gentle positive pressure ventilation',
+        'Check for audible leak around device during ventilation',
+        'Adjust cuff pressure if inadequate seal or excessive pressure',
+        'Monitor for signs of overinflation: difficulty ventilating, high pressures',
+        'Document cuff inflation volume used',
+        'Ensure cuff pressure within recommended range if manometer available'
+      ],
+      safetyNotes: [
+        'Overinflation can cause tissue ischemia and device displacement',
+        'Adequate seal essential for effective ventilation',
+        'Monitor cuff pressure to prevent complications'
+      ],
+      equipmentNeeded: [
+        'Syringe for cuff inflation with appropriate volume',
+        'Cuff pressure manometer if available',
+        'BVM for seal testing'
+      ]
+    },
+    {
+      id: 'double-lumen-step-6',
+      stepNumber: 6,
+      title: 'Ventilation Confirmation and Assessment',
+      description: 'Confirm effective ventilation and assess device function',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Connect BVM to device and begin positive pressure ventilation',
+        'Observe bilateral chest rise and fall with each ventilation',
+        'Listen for breath sounds bilaterally to confirm air entry',
+        'Check for absent breath sounds over epigastrium (no gastric insufflation)',
+        'Monitor oxygen saturation and end-tidal CO2 if available',
+        'Assess ease of ventilation and appropriate pressures',
+        'Watch for gastric distension indicating esophageal ventilation',
+        'Document ventilation effectiveness and vital sign response'
+      ],
+      safetyNotes: [
+        'Bilateral breath sounds confirm proper placement above glottis',
+        'Gastric sounds indicate malposition requiring repositioning',
+        'Continuous monitoring essential for detecting displacement'
+      ],
+      equipmentNeeded: [
+        'Stethoscope for breath sound assessment',
+        'Pulse oximetry for oxygen saturation monitoring',
+        'End-tidal CO2 monitoring if available',
+        'BVM with oxygen for ventilation testing'
+      ]
+    },
+    {
+      id: 'double-lumen-step-7',
+      stepNumber: 7,
+      title: 'Device Securing and Position Maintenance',
+      description: 'Secure device properly to prevent displacement during patient care and transport',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 150,
+      keyPoints: [
+        'Secure device with tape or commercial securing system',
+        'Note and document device depth at incisors or lip line',
+        'Create strain relief for ventilation tubing connections',
+        'Position patient to maintain device placement during movement',
+        'Avoid excessive neck flexion or extension that may displace device',
+        'Check device position after any patient movement or repositioning',
+        'Monitor for signs of device displacement: decreased breath sounds, increased resistance',
+        'Have backup airway plan ready in case of device failure'
+      ],
+      safetyNotes: [
+        'Supraglottic devices more prone to displacement than endotracheal tubes',
+        'Secure fixation essential for transport and continued care',
+        'Regular position checks prevent unrecognized displacement'
+      ],
+      equipmentNeeded: [
+        'Medical tape or commercial airway securing device',
+        'Strain relief materials for tubing connections',
+        'Backup airway equipment immediately available'
+      ]
+    },
+    {
+      id: 'double-lumen-step-8',
+      stepNumber: 8,
+      title: 'Ongoing Monitoring and Transport Preparation',
+      description: 'Monitor device function continuously and prepare for safe transport',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Monitor ventilation effectiveness continuously during patient care',
+        'Reassess breath sounds and chest rise regularly',
+        'Watch for complications: displacement, obstruction, gastric insufflation',
+        'Check cuff pressure periodically to prevent over- or under-inflation',
+        'Plan for potential need for definitive airway management',
+        'Prepare comprehensive report for receiving medical team',
+        'Document device type, size, insertion time, and function',
+        'Ensure transport equipment compatible with supraglottic airway management'
+      ],
+      safetyNotes: [
+        'Double lumen airways are bridge devices - plan for definitive management',
+        'Transport monitoring essential due to displacement risk',
+        'Be prepared for immediate airway intervention if device fails'
+      ],
+      equipmentNeeded: [
+        'Continuous monitoring equipment for transport',
+        'Documentation materials for device record',
+        'Transport-compatible ventilation equipment',
+        'Advanced airway equipment for backup management'
+      ]
+    }
+  ],
+
   'double-lumen-airway-insertion': {
     name: 'Double Lumen Airway Insertion',
     category: 'airway',
