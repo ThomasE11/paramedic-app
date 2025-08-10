@@ -14539,6 +14539,254 @@ export const criticalSkillsMetadata = {
     ]
   },
 
+  // 44. IMMOBILIZATION OF INJURY - Evidence-based trauma immobilization and stabilization
+  'immobilization-injury': [
+    {
+      id: 'immobilization-step-1',
+      stepNumber: 1,
+      title: 'Injury Assessment and Immobilization Need Determination',
+      description: 'Assess injury characteristics and determine appropriate immobilization strategy',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Assess mechanism of injury and forces involved in trauma',
+        'Evaluate for suspected fracture: pain, swelling, deformity, loss of function',
+        'Check for open vs closed injury and associated soft tissue damage',
+        'Assess neurovascular status distal to injury: pulse, sensation, movement',
+        'Determine if joint involvement requires special immobilization techniques',
+        'Consider spinal precautions if mechanism suggests spine injury',
+        'Evaluate for multiple injuries requiring prioritized immobilization',
+        'Document baseline neurovascular assessment before immobilization'
+      ],
+      safetyNotes: [
+        'Neurovascular assessment critical before and after immobilization',
+        'Document baseline function to monitor for complications',
+        'Consider systemic injuries that may take priority over isolated fractures'
+      ],
+      equipmentNeeded: [
+        'Assessment tools for neurovascular evaluation',
+        'Pain assessment scales and documentation materials',
+        'Good lighting for injury visualization',
+        'Measuring tools for swelling and deformity assessment'
+      ]
+    },
+    {
+      id: 'immobilization-step-2',
+      stepNumber: 2,
+      title: 'Pain Management and Patient Preparation',
+      description: 'Provide appropriate pain management and prepare patient for immobilization procedure',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Assess pain level using appropriate pain scale (0-10 numeric scale)',
+        'Administer analgesics as indicated and per protocol before manipulation',
+        'Consider procedural sedation for complex fracture reduction',
+        'Explain procedure to patient to reduce anxiety and improve cooperation',
+        'Position patient comfortably while maintaining injury alignment',
+        'Have assistant available to help with immobilization procedure',
+        'Ensure adequate workspace and lighting for procedure',
+        'Gather all immobilization materials before beginning procedure'
+      ],
+      safetyNotes: [
+        'Adequate analgesia improves patient comfort and cooperation',
+        'Explain procedure to reduce patient anxiety and movement',
+        'Have all materials ready to minimize procedure time'
+      ],
+      equipmentNeeded: [
+        'Analgesic medications per protocol',
+        'Pain assessment tools and documentation',
+        'Patient positioning aids and comfort measures',
+        'Assistant personnel for procedure support'
+      ]
+    },
+    {
+      id: 'immobilization-step-3',
+      stepNumber: 3,
+      title: 'Splinting Material Selection and Preparation',
+      description: 'Select appropriate splinting materials and prepare for specific injury type',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 150,
+      keyPoints: [
+        'Select splint type based on injury location and severity',
+        'For arm/forearm: padded board splints, SAM splints, or air splints',
+        'For leg injuries: traction splints, padded board splints, or vacuum splints',
+        'For joint injuries: splints that immobilize above and below joint',
+        'Prepare adequate padding materials to prevent pressure points',
+        'Cut splinting material to appropriate length before application',
+        'Have securing materials ready: elastic bandages, tape, Velcro straps',
+        'Check splint integrity and function before patient application'
+      ],
+      safetyNotes: [
+        'Splint must immobilize joint above and below fracture site',
+        'Adequate padding prevents pressure sores and circulation compromise',
+        'Select splint length and type appropriate for patient size and injury'
+      ],
+      equipmentNeeded: [
+        'Various splint types: rigid, semi-rigid, and air splints',
+        'Padding materials: gauze, cotton, foam padding',
+        'Securing materials: elastic bandages, medical tape, straps',
+        'Cutting tools for splint customization if needed'
+      ]
+    },
+    {
+      id: 'immobilization-step-4',
+      stepNumber: 4,
+      title: 'Injury Alignment and Reduction',
+      description: 'Achieve appropriate alignment of injured extremity before splint application',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Apply gentle longitudinal traction to restore length and alignment',
+        'Use steady, controlled pressure to reduce obvious deformity',
+        'Monitor patient pain and response during alignment procedure',
+        'Stop reduction attempts if significant resistance encountered',
+        'Maintain traction and alignment while assistant applies splint',
+        'Check neurovascular status after any manipulation',
+        'Accept some angulation rather than force perfect alignment',
+        'Document any reduction attempts and patient response'
+      ],
+      contraindications: [
+        'Do not attempt reduction of open fractures with bone protrusion',
+        'Avoid manipulation if neurovascular compromise worsens',
+        'Stop if patient experiences severe pain despite analgesia'
+      ],
+      safetyNotes: [
+        'Gentle traction often improves alignment and reduces pain',
+        'Perfect alignment less important than preventing further injury',
+        'Monitor neurovascular status continuously during manipulation'
+      ],
+      equipmentNeeded: [
+        'Skilled personnel for traction and alignment',
+        'Pain medication for patient comfort during procedure',
+        'Continuous neurovascular monitoring capability'
+      ]
+    },
+    {
+      id: 'immobilization-step-5',
+      stepNumber: 5,
+      title: 'Splint Application and Positioning',
+      description: 'Apply splint using proper technique to immobilize injury effectively',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Apply padding to all bony prominences and pressure points',
+        'Position splint to immobilize joint above and below fracture',
+        'Maintain injury alignment while applying and securing splint',
+        'Use three-point fixation: above fracture, at fracture, below fracture',
+        'Ensure splint extends beyond joints to prevent movement',
+        'Apply even pressure distribution to avoid pressure points',
+        'Leave fingers or toes exposed for circulation monitoring',
+        'Check splint position and alignment before final securing'
+      ],
+      safetyNotes: [
+        'Three-point fixation provides optimal fracture stability',
+        'Exposed digits allow for neurovascular monitoring',
+        'Even pressure distribution prevents complications from splint application'
+      ],
+      equipmentNeeded: [
+        'Selected splint materials cut to appropriate length',
+        'Adequate padding for pressure point protection',
+        'Securing materials for three-point fixation',
+        'Assistant to maintain alignment during application'
+      ]
+    },
+    {
+      id: 'immobilization-step-6',
+      stepNumber: 6,
+      title: 'Splint Securing and Stabilization',
+      description: 'Secure splint properly to maintain immobilization without compromising circulation',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Wrap elastic bandages or tape in spiral fashion, not circumferentially',
+        'Secure splint at multiple points to prevent shifting or movement',
+        'Apply just enough pressure to hold splint firmly without constricting',
+        'Check that securing materials do not create pressure bands',
+        'Ensure patient can wiggle fingers/toes after splint application',
+        'Tie or tape securing materials on lateral aspect, not over fracture site',
+        'Double-check splint stability by gently testing for movement',
+        'Apply sling or additional support for upper extremity injuries'
+      ],
+      safetyNotes: [
+        'Circumferential wrapping may cause compartment syndrome with swelling',
+        'Over-tightening can compromise distal circulation',
+        'Regular monitoring essential as swelling may increase pressure'
+      ],
+      equipmentNeeded: [
+        'Elastic bandages or medical tape for securing',
+        'Sling materials for upper extremity support',
+        'Scissors for cutting excess materials',
+        'Additional padding if pressure points develop'
+      ]
+    },
+    {
+      id: 'immobilization-step-7',
+      stepNumber: 7,
+      title: 'Post-Immobilization Assessment and Monitoring',
+      description: 'Assess splint effectiveness and monitor for circulation or neurological complications',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Reassess distal pulse, sensation, and movement after splint application',
+        'Check capillary refill in digits distal to splint (<2 seconds normal)',
+        'Compare color and temperature of injured vs uninjured extremity',
+        'Ask patient about numbness, tingling, or increased pain',
+        'Test for compartment syndrome: severe pain, pain with passive stretch',
+        'Monitor splint position and alignment during patient movement',
+        'Reassess every 15-30 minutes during transport or extended care',
+        'Document all neurovascular assessments and any changes noted'
+      ],
+      safetyNotes: [
+        'Compartment syndrome is limb-threatening emergency',
+        'Any neurovascular compromise requires immediate splint adjustment',
+        'Regular reassessment essential as swelling may develop over time'
+      ],
+      equipmentNeeded: [
+        'Doppler ultrasound for pulse assessment if needed',
+        'Documentation materials for serial assessments',
+        'Tools for splint adjustment if complications develop',
+        'Emergency equipment for compartment syndrome management'
+      ]
+    },
+    {
+      id: 'immobilization-step-8',
+      stepNumber: 8,
+      title: 'Patient Education and Transport Preparation',
+      description: 'Educate patient about splint care and prepare for appropriate transport',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Explain importance of keeping splint dry and intact',
+        'Teach patient to monitor for circulation problems: numbness, color changes',
+        'Instruct on elevation of injured extremity when possible',
+        'Provide ice application instructions for swelling control',
+        'Explain signs requiring immediate medical attention',
+        'Document splint type, materials used, and patient education provided',
+        'Arrange appropriate follow-up for definitive fracture care',
+        'Ensure safe transport positioning that maintains splint integrity'
+      ],
+      safetyNotes: [
+        'Patient education critical for preventing complications',
+        'Early recognition of circulation problems allows prompt intervention',
+        'Proper transport positioning prevents splint displacement'
+      ],
+      equipmentNeeded: [
+        'Patient education materials and written instructions',
+        'Ice packs or cooling devices for swelling control',
+        'Transport equipment compatible with splinted extremity',
+        'Documentation materials for comprehensive care record'
+      ]
+    }
+  ],
+
   'immobilization-injury': {
     name: 'Immobilization of an Injury',
     category: 'trauma',
@@ -16613,6 +16861,255 @@ export const criticalSkillsMetadata = {
       'Antiseptic solution for wound cleaning prior to bandaging'
     ]
   },
+
+  // 45. NEBULIZATION OF MEDICATION - Evidence-based aerosol medication delivery protocol
+  'nebulization-medication': [
+    {
+      id: 'nebulization-step-1',
+      stepNumber: 1,
+      title: 'Patient Assessment and Nebulization Indication',
+      description: 'Assess patient respiratory status and confirm indication for nebulized medication',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Assess respiratory distress: rate, depth, use of accessory muscles',
+        'Evaluate oxygen saturation and need for supplemental oxygen',
+        'Listen to breath sounds for wheezing, rhonchi, or decreased air entry',
+        'Check for specific indications: bronchospasm, COPD exacerbation, asthma',
+        'Review patient medication history and previous nebulizer treatments',
+        'Assess for contraindications: severe cardiac disease, drug allergies',
+        'Evaluate patient ability to cooperate with nebulizer treatment',
+        'Document baseline respiratory status before treatment'
+      ],
+      contraindications: [
+        'Known allergy to nebulized medication or preservatives',
+        'Severe cardiac arrhythmias that may be exacerbated by bronchodilators',
+        'Patient unable to cooperate with mask or mouthpiece'
+      ],
+      safetyNotes: [
+        'Beta-agonists may cause cardiac stimulation in sensitive patients',
+        'Baseline assessment essential for monitoring treatment effectiveness',
+        'Consider delivery method based on patient condition and cooperation'
+      ],
+      equipmentNeeded: [
+        'Pulse oximetry for oxygen saturation monitoring',
+        'Stethoscope for breath sound assessment',
+        'Peak flow meter if available for objective measurement',
+        'Patient assessment documentation materials'
+      ]
+    },
+    {
+      id: 'nebulization-step-2',
+      stepNumber: 2,
+      title: 'Medication Selection and Dose Calculation',
+      description: 'Select appropriate nebulized medication and calculate correct dosage',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 150,
+      keyPoints: [
+        'Select medication based on patient condition: albuterol, ipratropium, budesonide',
+        'Calculate dose based on patient weight and age: adult vs pediatric dosing',
+        'Standard albuterol dose: 2.5-5mg in 3ml normal saline for adults',
+        'Pediatric dosing: 0.15mg/kg (minimum 2.5mg) for children',
+        'Consider combination therapy: albuterol + ipratropium for severe cases',
+        'Check medication expiration date and clarity of solution',
+        'Verify correct concentration and prepare accurate dilution',
+        'Have reversal agents available if using medications with significant side effects'
+      ],
+      safetyNotes: [
+        'Accurate dosing essential to prevent under-treatment or toxicity',
+        'Check medication compatibility if mixing multiple agents',
+        'Use preservative-free saline for dilution to prevent bronchospasm'
+      ],
+      equipmentNeeded: [
+        'Nebulizer medications (albuterol, ipratropium, etc.)',
+        'Preservative-free normal saline for dilution',
+        'Accurate measuring devices for medication preparation',
+        'Drug reference materials for dosing calculations'
+      ]
+    },
+    {
+      id: 'nebulization-step-3',
+      stepNumber: 3,
+      title: 'Nebulizer Equipment Setup and Testing',
+      description: 'Assemble nebulizer equipment and test proper function before patient use',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Assemble nebulizer cup, tubing, and delivery mask or mouthpiece',
+        'Connect oxygen tubing to nebulizer and set flow rate to 6-8 L/min',
+        'Test nebulizer function by adding saline and checking mist production',
+        'Ensure adequate mist generation and appropriate particle size',
+        'Check all connections for leaks that would reduce medication delivery',
+        'Select appropriate delivery method: mask vs mouthpiece based on patient',
+        'Have backup nebulizer equipment available in case of malfunction',
+        'Warm nebulizer solution to room temperature if refrigerated'
+      ],
+      safetyNotes: [
+        'Proper flow rate essential for effective medication delivery',
+        'Equipment leaks significantly reduce medication reaching lungs',
+        'Cold medication may cause bronchospasm in sensitive patients'
+      ],
+      equipmentNeeded: [
+        'Disposable nebulizer cups and tubing',
+        'Face masks and mouthpieces in appropriate sizes',
+        'Oxygen source with flow meter (6-8 L/min capability)',
+        'Backup nebulizer equipment in case of failure'
+      ]
+    },
+    {
+      id: 'nebulization-step-4',
+      stepNumber: 4,
+      title: 'Medication Preparation and Loading',
+      description: 'Prepare nebulized medication using sterile technique and load into nebulizer',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Use sterile technique when opening medication vials and drawing medication',
+        'Draw calculated medication dose into syringe using sterile needle',
+        'Add medication to nebulizer cup using sterile technique',
+        'Add appropriate volume of preservative-free normal saline (usually 3-5ml total)',
+        'Gently swirl nebulizer cup to mix medication and saline',
+        'Replace nebulizer cup top and connect tubing securely',
+        'Label nebulizer with medication name, dose, and time if multiple patients',
+        'Dispose of used syringes and needles in appropriate sharps container'
+      ],
+      safetyNotes: [
+        'Sterile technique prevents contamination of respiratory medication',
+        'Correct total volume ensures proper nebulization time and delivery',
+        'Proper labeling prevents medication errors in multi-patient settings'
+      ],
+      equipmentNeeded: [
+        'Sterile syringes and needles for medication preparation',
+        'Preservative-free normal saline for dilution',
+        'Sterile technique supplies and hand hygiene materials',
+        'Sharps disposal container for safe needle disposal'
+      ]
+    },
+    {
+      id: 'nebulization-step-5',
+      stepNumber: 5,
+      title: 'Patient Positioning and Nebulizer Delivery',
+      description: 'Position patient optimally and initiate nebulized medication delivery',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 600,
+      keyPoints: [
+        'Position patient sitting upright or in high Fowler position',
+        'Apply mask securely over nose and mouth or have patient use mouthpiece',
+        'Instruct patient to breathe slowly and deeply through mouth',
+        'Start oxygen flow at 6-8 L/min to generate visible mist',
+        'Encourage patient to hold breath briefly after each inhalation',
+        'Monitor for proper mist generation throughout treatment',
+        'Continue treatment until nebulizer cup is empty (usually 10-15 minutes)',
+        'Provide coaching and encouragement during treatment'
+      ],
+      safetyNotes: [
+        'Proper breathing technique maximizes medication deposition in lungs',
+        'Good mask seal essential for effective medication delivery',
+        'Monitor patient comfort and cooperation throughout treatment'
+      ],
+      equipmentNeeded: [
+        'Patient positioning aids (elevated bed or chair)',
+        'Properly fitted mask or clean mouthpiece',
+        'Functioning nebulizer with adequate oxygen flow',
+        'Timer to monitor treatment duration'
+      ]
+    },
+    {
+      id: 'nebulization-step-6',
+      stepNumber: 6,
+      title: 'Treatment Monitoring and Patient Assessment',
+      description: 'Monitor patient response during nebulization and assess for adverse effects',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 480,
+      keyPoints: [
+        'Monitor oxygen saturation continuously during treatment',
+        'Assess heart rate and blood pressure, especially with beta-agonists',
+        'Listen to breath sounds periodically during and after treatment',
+        'Watch for signs of improvement: decreased work of breathing, better air entry',
+        'Monitor for adverse effects: tremor, palpitations, anxiety, nausea',
+        'Assess patient comfort and ability to tolerate treatment',
+        'Document patient response and any side effects observed',
+        'Be prepared to stop treatment if severe adverse reactions occur'
+      ],
+      safetyNotes: [
+        'Beta-agonists may cause significant cardiovascular stimulation',
+        'Tremor and anxiety are common but usually tolerable side effects',
+        'Stop treatment immediately if patient develops severe adverse reactions'
+      ],
+      equipmentNeeded: [
+        'Continuous pulse oximetry and cardiac monitoring',
+        'Blood pressure monitoring equipment',
+        'Stethoscope for serial breath sound assessment',
+        'Documentation materials for response tracking'
+      ]
+    },
+    {
+      id: 'nebulization-step-7',
+      stepNumber: 7,
+      title: 'Treatment Completion and Effectiveness Assessment',
+      description: 'Complete nebulization treatment and assess overall therapeutic effectiveness',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Continue treatment until nebulizer stops producing mist',
+        'Turn off oxygen flow and disconnect nebulizer from patient',
+        'Assess post-treatment respiratory status and oxygen saturation',
+        'Compare pre- and post-treatment breath sounds and peak flows',
+        'Evaluate improvement in dyspnea and accessory muscle use',
+        'Ask patient about subjective improvement in breathing',
+        'Document treatment completion time and total duration',
+        'Plan for additional treatments if inadequate response'
+      ],
+      safetyNotes: [
+        'Complete medication delivery important for maximum benefit',
+        'Objective measures more reliable than patient subjective reports alone',
+        'Some patients may require multiple treatments for optimal effect'
+      ],
+      equipmentNeeded: [
+        'Peak flow meter for objective measurement if available',
+        'Pulse oximetry for oxygen saturation comparison',
+        'Documentation materials for pre/post comparison',
+        'Additional medication for repeat treatments if needed'
+      ]
+    },
+    {
+      id: 'nebulization-step-8',
+      stepNumber: 8,
+      title: 'Equipment Cleaning and Patient Education',
+      description: 'Clean nebulizer equipment properly and educate patient about continued care',
+      isRequired: true,
+      isCritical: false,
+      timeEstimate: 180,
+      keyPoints: [
+        'Dispose of single-use nebulizer components in appropriate waste',
+        'Clean reusable components with soap and water if patient-owned equipment',
+        'Educate patient about proper home nebulizer use and maintenance',
+        'Explain signs of worsening respiratory distress requiring medical attention',
+        'Provide instructions for medication storage and expiration dates',
+        'Discuss timing of next scheduled nebulizer treatment if applicable',
+        'Document patient education provided and understanding demonstrated',
+        'Arrange appropriate follow-up for ongoing respiratory management'
+      ],
+      safetyNotes: [
+        'Proper equipment cleaning prevents bacterial contamination',
+        'Patient education critical for safe and effective home treatment',
+        'Clear instructions prevent medication errors and equipment problems'
+      ],
+      equipmentNeeded: [
+        'Equipment cleaning supplies for reusable components',
+        'Patient education materials about nebulizer use',
+        'Written instructions for medication timing and dosing',
+        'Contact information for follow-up questions or concerns'
+      ]
+    }
+  ],
 
   'nebulization-medication': {
     name: 'Nebulization of Medication',
