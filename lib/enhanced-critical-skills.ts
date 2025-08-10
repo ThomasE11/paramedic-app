@@ -18445,5 +18445,3 @@ export const criticalSkillsMetadata = {
     ]
   }
 };
-
-export default enhancedCriticalSkillSteps;
