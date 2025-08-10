@@ -573,10 +573,12 @@ function findMatchingCriticalSkill(extractedSkillName: string): string | undefin
   }
 
   // Fallback to original matching logic for any unmapped skills
-  return Object.keys(criticalSkillsMetadata).find(id => 
-    lowerName.includes(criticalSkillsMetadata[id].name.toLowerCase().split(' ')[0]) ||
-    criticalSkillsMetadata[id].name.toLowerCase().includes(lowerName.split(' ')[0])
-  );
+  return Object.keys(criticalSkillsMetadata).find(id => {
+    const skillName = criticalSkillsMetadata[id]?.name;
+    if (!skillName) return false;
+    return lowerName.includes(skillName.toLowerCase().split(' ')[0]) ||
+           skillName.toLowerCase().includes(lowerName.split(' ')[0]);
+  });
 }
 
 // Process all skills data with extracted steps
