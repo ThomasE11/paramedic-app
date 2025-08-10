@@ -13442,6 +13442,257 @@ export const criticalSkillsMetadata = {
     ]
   },
 
+  // 39. C-SPINE CLEARANCE - Evidence-based cervical spine assessment and clearance protocol
+  'c-spine-clearance': [
+    {
+      id: 'cspine-step-1',
+      stepNumber: 1,
+      title: 'Initial Trauma Assessment and C-Spine Risk Evaluation',
+      description: 'Assess trauma mechanism and determine need for cervical spine immobilization and clearance',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Evaluate mechanism of injury: high-energy trauma, fall >3 feet, motor vehicle crash',
+        'Assess for distracting injuries that may mask cervical spine pain',
+        'Check patient consciousness level and ability to provide reliable history',
+        'Identify high-risk factors: age >65, dangerous mechanism, neurological symptoms',
+        'Evaluate for intoxication or altered mental status affecting assessment reliability',
+        'Apply cervical spine immobilization if any risk factors present',
+        'Document mechanism and initial assessment findings thoroughly',
+        'Consider need for imaging based on clinical decision rules'
+      ],
+      contraindications: [
+        'Do not attempt clearance in unconscious or altered mental status patients',
+        'Avoid clearance attempts with obvious spinal deformity or neurological deficits',
+        'Do not clear spine in presence of significant distracting injuries'
+      ],
+      safetyNotes: [
+        'When in doubt, maintain spinal immobilization until definitive evaluation',
+        'High-risk mechanisms require careful evaluation even without symptoms',
+        'Patient reliability essential for clinical clearance'
+      ],
+      equipmentNeeded: [
+        'Cervical collar and spinal immobilization equipment',
+        'Trauma assessment tools and documentation materials',
+        'Communication equipment for medical consultation if needed'
+      ]
+    },
+    {
+      id: 'cspine-step-2',
+      stepNumber: 2,
+      title: 'Clinical Decision Rule Application',
+      description: 'Apply validated clinical decision rules (NEXUS or Canadian C-Spine Rule) for clearance assessment',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'NEXUS criteria: No midline tenderness, no focal neurological deficit',
+        'NEXUS continued: Normal alertness, no intoxication, no distracting injury',
+        'Canadian C-Spine Rule: Age, mechanism, and ability to rotate neck 45° each direction',
+        'Assess for dangerous mechanism: fall >1 meter, axial loading, high-speed MVC',
+        'Check for simple rear-end MVC, sitting position in ED, ambulatory at scene',
+        'Evaluate for delayed onset of neck pain or neurological symptoms',
+        'Apply rule systematically without skipping components',
+        'Document which rule was used and results of assessment'
+      ],
+      safetyNotes: [
+        'Clinical rules validated for alert, cooperative patients only',
+        'Both rules have high sensitivity for detecting significant injury',
+        'When criteria not met, maintain immobilization'
+      ],
+      equipmentNeeded: [
+        'Clinical decision rule reference cards or protocols',
+        'Assessment tools for neurological examination',
+        'Documentation materials for systematic recording'
+      ]
+    },
+    {
+      id: 'cspine-step-3',
+      stepNumber: 3,
+      title: 'Neurological Examination and Assessment',
+      description: 'Perform comprehensive neurological examination to assess spinal cord function',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Assess motor function in all extremities: grip strength, dorsiflexion, plantar flexion',
+        'Test sensation to light touch and pinprick in dermatome distribution',
+        'Evaluate deep tendon reflexes: biceps, triceps, patellar, Achilles',
+        'Check for pathological reflexes: Babinski sign, clonus',
+        'Assess proprioception and position sense in fingers and toes',
+        'Test cranial nerve function if head injury suspected',
+        'Document any asymmetry or abnormal findings systematically',
+        'Repeat examination if patient condition changes'
+      ],
+      safetyNotes: [
+        'Subtle neurological deficits may indicate spinal cord injury',
+        'Document baseline function for monitoring progression',
+        'Any abnormal findings require continued immobilization'
+      ],
+      equipmentNeeded: [
+        'Neurological assessment tools (reflex hammer, pin, cotton)',
+        'Documentation forms for systematic recording',
+        'Good lighting for detailed examination'
+      ]
+    },
+    {
+      id: 'cspine-step-4',
+      stepNumber: 4,
+      title: 'Cervical Spine Palpation and Range of Motion',
+      description: 'Perform systematic palpation and assess active range of motion if appropriate',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Palpate posterior cervical spine systematically from occiput to C7',
+        'Check for point tenderness, muscle spasm, or step-off deformity',
+        'Assess for midline cervical spine tenderness with gentle pressure',
+        'If no tenderness: ask patient to slowly rotate head 45° each direction',
+        'Assess flexion, extension, and lateral bending if rotation normal',
+        'Stop immediately if patient reports pain or resistance',
+        'Observe for protective muscle guarding during movement',
+        'Document range of motion limitations or pain with movement'
+      ],
+      contraindications: [
+        'Do not perform active range of motion with any cervical tenderness',
+        'Avoid forced or passive range of motion testing',
+        'Stop testing immediately if patient reports pain or neurological symptoms'
+      ],
+      safetyNotes: [
+        'Patient-controlled active movement only - never force movement',
+        'Any limitation or pain requires continued immobilization',
+        'Muscle spasm may indicate underlying injury'
+      ],
+      equipmentNeeded: [
+        'Systematic palpation technique',
+        'Comfortable environment for range of motion testing',
+        'Assistant to help position patient if needed'
+      ]
+    },
+    {
+      id: 'cspine-step-5',
+      stepNumber: 5,
+      title: 'Risk Factor Assessment and Clinical Correlation',
+      description: 'Assess additional risk factors and correlate findings with clinical presentation',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 150,
+      keyPoints: [
+        'Consider patient age >65 years as increased risk factor',
+        'Assess for pre-existing spinal conditions: arthritis, stenosis, previous surgery',
+        'Evaluate medication use: anticoagulants, muscle relaxants, pain medications',
+        'Check for signs of intoxication affecting assessment reliability',
+        'Assess for distracting injuries: fractures, lacerations, severe pain elsewhere',
+        'Consider mechanism energy and forces involved in trauma',
+        'Correlate all findings with clinical decision rule criteria',
+        'Reassess if patient condition or complaints change'
+      ],
+      safetyNotes: [
+        'Multiple risk factors increase likelihood of injury',
+        'Age-related changes increase fracture risk with minor trauma',
+        'Distracting injuries may mask cervical spine symptoms'
+      ],
+      equipmentNeeded: [
+        'Patient history taking materials',
+        'Risk assessment documentation tools',
+        'Communication equipment for additional history from family/witnesses'
+      ]
+    },
+    {
+      id: 'cspine-step-6',
+      stepNumber: 6,
+      title: 'Clearance Decision and Immobilization Removal',
+      description: 'Make evidence-based clearance decision and safely remove spinal immobilization if appropriate',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Review all assessment components systematically before clearance decision',
+        'Ensure patient meets ALL criteria for clinical clearance',
+        'If cleared: remove cervical collar and spinal immobilization carefully',
+        'Monitor patient closely for several minutes after collar removal',
+        'Reassess neurological function after immobilization removal',
+        'Ask patient about any new symptoms or discomfort',
+        'Document clearance rationale and assessment findings thoroughly',
+        'If unable to clear: maintain immobilization and arrange imaging'
+      ],
+      contraindications: [
+        'Do not clear if any assessment component is abnormal',
+        'Avoid clearance if patient reliability is questionable',
+        'Do not remove immobilization if mechanism suggests high energy trauma'
+      ],
+      safetyNotes: [
+        'When in doubt, do not clear - maintain immobilization',
+        'Monitor patient after collar removal for delayed symptoms',
+        'Have equipment ready to re-immobilize if symptoms develop'
+      ],
+      equipmentNeeded: [
+        'Complete assessment documentation',
+        'Equipment ready for re-immobilization if needed',
+        'Continuous patient monitoring capability'
+      ]
+    },
+    {
+      id: 'cspine-step-7',
+      stepNumber: 7,
+      title: 'Post-Clearance Monitoring and Patient Education',
+      description: 'Monitor patient after clearance and provide education about warning signs',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Monitor patient for 15-30 minutes after collar removal',
+        'Reassess neurological function periodically during observation',
+        'Ask patient about development of neck pain, stiffness, or neurological symptoms',
+        'Educate patient about delayed-onset symptoms requiring medical attention',
+        'Provide instructions for activity limitations and warning signs',
+        'Explain when to seek immediate medical care for new symptoms',
+        'Document patient understanding of post-clearance instructions',
+        'Arrange appropriate follow-up if any concerns arise'
+      ],
+      safetyNotes: [
+        'Delayed symptoms may develop hours after initial injury',
+        'Patient education critical for recognizing delayed complications',
+        'Clear instructions prevent inappropriate delay in seeking care'
+      ],
+      equipmentNeeded: [
+        'Patient monitoring equipment',
+        'Educational materials about spinal injury warning signs',
+        'Documentation materials for patient instructions'
+      ]
+    },
+    {
+      id: 'cspine-step-8',
+      stepNumber: 8,
+      title: 'Documentation and Medical Consultation',
+      description: 'Complete comprehensive documentation and arrange appropriate medical consultation if needed',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 150,
+      keyPoints: [
+        'Document all assessment components systematically and completely',
+        'Record which clinical decision rule was used and specific findings',
+        'Note any abnormal findings that prevented clearance',
+        'Document patient education provided and understanding demonstrated',
+        'If cleared: include rationale and post-clearance monitoring results',
+        'If not cleared: document plan for imaging and continued immobilization',
+        'Communicate findings to receiving physician or consulting specialist',
+        'Ensure continuity of care with appropriate follow-up arrangements'
+      ],
+      safetyNotes: [
+        'Thorough documentation protects patient and provider',
+        'Clear communication essential for appropriate ongoing care',
+        'Medical consultation recommended for complex cases'
+      ],
+      equipmentNeeded: [
+        'Comprehensive documentation forms',
+        'Communication equipment for medical consultation',
+        'Patient care continuity materials and referral information'
+      ]
+    }
+  ],
+
   'c-spine-clearance': {
     name: 'C-Spine Clearance',
     category: 'trauma',
@@ -13742,6 +13993,261 @@ export const criticalSkillsMetadata = {
       'Emergency airway equipment nearby'
     ]
   },
+
+  // 35. UPPER AIRWAY OBSTRUCTION WITH EQUIPMENT - Evidence-based choking management with tools
+  'upper-airway-obstruction-equipment': [
+    {
+      id: 'airway-obstruction-step-1',
+      stepNumber: 1,
+      title: 'Rapid Airway Obstruction Assessment',
+      description: 'Quickly assess severity of airway obstruction and determine appropriate intervention',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Assess patient consciousness level and ability to cough or speak',
+        'Look for universal choking sign: hands to throat',
+        'Evaluate air movement: complete vs partial obstruction',
+        'Check for cyanosis around lips and fingertips',
+        'Assess respiratory effort and use of accessory muscles',
+        'Determine patient age group for appropriate technique selection',
+        'Identify need for immediate intervention vs supportive care',
+        'Call for additional help and prepare emergency equipment'
+      ],
+      contraindications: [
+        'Do not perform blind finger sweeps in unconscious patients',
+        'Avoid back blows in infants under 1 year in adult position'
+      ],
+      safetyNotes: [
+        'Complete obstruction requires immediate intervention',
+        'Partial obstruction with good air exchange may not need intervention',
+        'Unconscious patients require different approach than conscious'
+      ],
+      equipmentNeeded: [
+        'Personal protective equipment (gloves, face shield)',
+        'Laryngoscope with appropriate blade sizes',
+        'Magill forceps for foreign body removal',
+        'Suction equipment with rigid catheter'
+      ]
+    },
+    {
+      id: 'airway-obstruction-step-2',
+      stepNumber: 2,
+      title: 'Conscious Patient Choking Management',
+      description: 'Manage conscious choking patient using back blows and abdominal thrusts',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'For adults/children >1 year: alternate 5 back blows and 5 abdominal thrusts',
+        'Back blows: lean patient forward, strike between shoulder blades with heel of hand',
+        'Abdominal thrusts: hands below xiphoid, quick upward thrusts',
+        'For infants <1 year: 5 back blows alternating with 5 chest thrusts',
+        'Position infant face-down on forearm for back blows',
+        'Use two fingers for chest thrusts on lower sternum',
+        'Continue cycles until object is expelled or patient becomes unconscious',
+        'Encourage patient to cough if partial obstruction with good air exchange'
+      ],
+      safetyNotes: [
+        'Never use abdominal thrusts in infants - use chest thrusts instead',
+        'Support infant head and neck during positioning',
+        'Be prepared for patient to lose consciousness'
+      ],
+      equipmentNeeded: [
+        'Proper positioning and body mechanics',
+        'Clear area for patient movement',
+        'Suction equipment ready for use'
+      ]
+    },
+    {
+      id: 'airway-obstruction-step-3',
+      stepNumber: 3,
+      title: 'Direct Laryngoscopy and Visualization',
+      description: 'Use laryngoscope to visualize obstruction and assess for equipment-assisted removal',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Position patient supine with head in sniffing position',
+        'Insert laryngoscope blade along right side of tongue',
+        'Lift laryngoscope handle to visualize vocal cords and upper airway',
+        'Look for visible foreign body in oropharynx or larynx',
+        'Assess size, shape, and position of obstructing object',
+        'Determine if object is within reach of forceps removal',
+        'Suction blood or secretions that may obscure visualization',
+        'Maintain gentle traction without pushing object deeper'
+      ],
+      contraindications: [
+        'Do not attempt forceps removal if object not clearly visible',
+        'Avoid pushing object deeper into airway during manipulation'
+      ],
+      safetyNotes: [
+        'Good visualization essential for safe foreign body removal',
+        'Have backup plan ready if direct removal unsuccessful',
+        'Limit laryngoscopy time to prevent hypoxia'
+      ],
+      equipmentNeeded: [
+        'Laryngoscope handle with fresh batteries',
+        'Appropriate laryngoscope blades (curved and straight)',
+        'Suction equipment with rigid Yankauer catheter',
+        'Good lighting and patient positioning'
+      ]
+    },
+    {
+      id: 'airway-obstruction-step-4',
+      stepNumber: 4,
+      title: 'Magill Forceps Foreign Body Removal',
+      description: 'Use Magill forceps to safely remove visible foreign body under direct visualization',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Maintain laryngoscopy view while inserting Magill forceps',
+        'Grasp foreign body with forceps tips using gentle, controlled pressure',
+        'Avoid crushing soft or fragmented objects that may break apart',
+        'Remove object with steady traction following natural airway curve',
+        'Keep object in sight throughout removal process',
+        'Be prepared to suction if bleeding or secretions occur',
+        'Remove laryngoscope only after confirming object is fully extracted',
+        'Check mouth and pharynx for additional foreign material'
+      ],
+      safetyNotes: [
+        'Never use forceps blindly without direct visualization',
+        'Gentle technique prevents object fragmentation',
+        'Have suction immediately available for bleeding control'
+      ],
+      equipmentNeeded: [
+        'Magill forceps (adult and pediatric sizes)',
+        'Laryngoscope for continued visualization',
+        'Suction equipment for bleeding or secretions',
+        'Good lighting and steady hand positioning'
+      ]
+    },
+    {
+      id: 'airway-obstruction-step-5',
+      stepNumber: 5,
+      title: 'Suction-Assisted Airway Clearance',
+      description: 'Use suction equipment to clear airway of blood, secretions, and small particles',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Use rigid suction catheter (Yankauer) for oropharyngeal suctioning',
+        'Apply suction while withdrawing catheter to avoid tissue damage',
+        'Suction mouth and pharynx systematically from side to side',
+        'Clear blood and secretions that may obstruct visualization',
+        'Use flexible suction catheter for nasopharyngeal suctioning if needed',
+        'Monitor suction pressure to avoid mucosal trauma',
+        'Limit suction time to 10-15 seconds to prevent hypoxia',
+        'Provide supplemental oxygen between suctioning attempts'
+      ],
+      safetyNotes: [
+        'Excessive suction pressure can cause airway trauma',
+        'Prolonged suctioning may worsen hypoxia',
+        'Monitor patient color and vital signs during suctioning'
+      ],
+      equipmentNeeded: [
+        'Portable suction unit with adequate vacuum',
+        'Rigid suction catheter (Yankauer)',
+        'Flexible suction catheters in various sizes',
+        'Suction tubing and collection canisters'
+      ]
+    },
+    {
+      id: 'airway-obstruction-step-6',
+      stepNumber: 6,
+      title: 'Alternative Airway Techniques',
+      description: 'Use alternative techniques if standard foreign body removal unsuccessful',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Consider pushing object into right mainstem bronchus if removal impossible',
+        'Attempt bag-valve-mask ventilation to move air past partial obstruction',
+        'Use positive pressure ventilation to dislodge loosely positioned objects',
+        'Consider supraglottic airway placement if object allows partial ventilation',
+        'Prepare for emergency surgical airway if complete obstruction persists',
+        'Use pediatric-specific techniques for infant/child patients',
+        'Position patient to optimize gravity assistance in object movement',
+        'Continue CPR if patient becomes unresponsive with cardiac arrest'
+      ],
+      contraindications: [
+        'Do not push object deeper unless specifically indicated',
+        'Avoid high-pressure ventilation that may cause barotrauma'
+      ],
+      safetyNotes: [
+        'Pushing object into bronchus allows ventilation of one lung',
+        'Emergency surgical airway may be required for complete obstruction',
+        'Have emergency airway equipment immediately available'
+      ],
+      equipmentNeeded: [
+        'Bag-valve-mask with oxygen supply',
+        'Supraglottic airway devices',
+        'Emergency surgical airway kit',
+        'Advanced airway management equipment'
+      ]
+    },
+    {
+      id: 'airway-obstruction-step-7',
+      stepNumber: 7,
+      title: 'Post-Removal Assessment and Monitoring',
+      description: 'Assess airway patency and monitor patient after successful foreign body removal',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Assess breathing adequacy and oxygen saturation immediately',
+        'Listen for bilateral breath sounds and air movement',
+        'Check for residual airway obstruction or swelling',
+        'Monitor for laryngeal injury or bleeding complications',
+        'Provide supplemental oxygen and support ventilation if needed',
+        'Assess for aspiration of blood or foreign material',
+        'Monitor vital signs and neurological status',
+        'Document foreign body characteristics and removal technique used'
+      ],
+      safetyNotes: [
+        'Airway swelling may develop after traumatic foreign body removal',
+        'Aspiration risk remains high after choking episodes',
+        'Monitor for delayed respiratory complications'
+      ],
+      equipmentNeeded: [
+        'Pulse oximetry for oxygen saturation monitoring',
+        'Supplemental oxygen delivery devices',
+        'Continuous monitoring equipment',
+        'Documentation materials for procedure record'
+      ]
+    },
+    {
+      id: 'airway-obstruction-step-8',
+      stepNumber: 8,
+      title: 'Transport Preparation and Follow-up Care',
+      description: 'Prepare for transport and arrange appropriate medical evaluation and care',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'All patients with foreign body aspiration require medical evaluation',
+        'Transport to emergency department even if object successfully removed',
+        'Monitor for delayed complications: airway swelling, aspiration pneumonia',
+        'Provide comprehensive report to receiving medical team',
+        'Document removal technique, object characteristics, and complications',
+        'Educate patient/family about signs of respiratory complications',
+        'Consider need for chest X-ray to rule out retained fragments',
+        'Arrange follow-up care for potential airway injury assessment'
+      ],
+      safetyNotes: [
+        'Delayed airway swelling may occur hours after incident',
+        'Aspiration pneumonia may develop 24-48 hours later',
+        'All choking patients need medical evaluation regardless of outcome'
+      ],
+      equipmentNeeded: [
+        'Transport equipment and continuous monitoring',
+        'Documentation materials for comprehensive reporting',
+        'Communication equipment for hospital notification',
+        'Patient education materials about warning signs'
+      ]
+    }
+  ],
 
   'upper-airway-obstruction-equipment': {
     name: 'Upper Airway Obstruction with Equipment',
@@ -14162,6 +14668,253 @@ export const criticalSkillsMetadata = {
     }
   ],
 
+  // 37. BAG VALVE MASK RESERVOIR VENTILATION - Evidence-based manual ventilation technique
+  'bag-valve-mask-reservoir': [
+    {
+      id: 'bvm-reservoir-step-1',
+      stepNumber: 1,
+      title: 'Equipment Assembly and Oxygen System Setup',
+      description: 'Assemble BVM system with reservoir bag and establish high-flow oxygen delivery',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Connect reservoir bag to BVM system for oxygen concentration optimization',
+        'Attach high-flow oxygen at 15 L/min to maximize delivered FiO2',
+        'Ensure all connections are secure and leak-free',
+        'Test bag function by compressing and observing reservoir refill',
+        'Select appropriate mask size for patient face coverage',
+        'Check for cracks or damage in BVM components',
+        'Verify PEEP valve function if equipped',
+        'Have suction equipment immediately available for airway clearance'
+      ],
+      safetyNotes: [
+        'Reservoir bag increases delivered oxygen concentration to 90-95%',
+        'Without reservoir bag, delivered FiO2 is only 40-60%',
+        'High-flow oxygen essential for critically ill patients'
+      ],
+      equipmentNeeded: [
+        'Self-inflating bag-valve-mask with reservoir attachment',
+        'High-flow oxygen source (15 L/min capability)',
+        'Appropriate mask sizes (adult, pediatric, infant)',
+        'Suction equipment with rigid catheter readily available'
+      ]
+    },
+    {
+      id: 'bvm-reservoir-step-2',
+      stepNumber: 2,
+      title: 'Patient Assessment and Ventilation Indication',
+      description: 'Assess patient respiratory status and confirm need for assisted ventilation',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Assess respiratory rate, depth, and effort',
+        'Evaluate oxygen saturation and skin color for hypoxia',
+        'Check for adequate chest rise and air movement',
+        'Assess consciousness level and ability to protect airway',
+        'Identify signs of respiratory failure: cyanosis, accessory muscle use',
+        'Evaluate for contraindications: facial trauma, vomiting risk',
+        'Determine ventilation urgency and required assistance level',
+        'Consider need for airway adjuncts or advanced airway management'
+      ],
+      contraindications: [
+        'Active vomiting with high aspiration risk',
+        'Severe facial trauma preventing effective mask seal',
+        'Suspected pneumothorax without decompression capability'
+      ],
+      safetyNotes: [
+        'Assess airway patency before initiating positive pressure ventilation',
+        'Have suction immediately available for airway protection',
+        'Monitor for gastric distension with prolonged BVM use'
+      ],
+      equipmentNeeded: [
+        'Pulse oximetry for oxygen saturation monitoring',
+        'End-tidal CO2 monitoring if available',
+        'Airway assessment tools',
+        'Backup advanced airway equipment'
+      ]
+    },
+    {
+      id: 'bvm-reservoir-step-3',
+      stepNumber: 3,
+      title: 'Patient Positioning and Airway Optimization',
+      description: 'Position patient optimally and establish patent airway for effective ventilation',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Position patient supine with head in sniffing position',
+        'Use head-tilt, chin-lift maneuver to open airway',
+        'Insert oropharyngeal or nasopharyngeal airway if needed',
+        'Clear airway of secretions, blood, or debris with suction',
+        'Ensure proper alignment of oral, pharyngeal, and laryngeal axes',
+        'Consider jaw-thrust maneuver if cervical spine injury suspected',
+        'Optimize head position with towel roll under shoulders if needed',
+        'Verify airway patency before attempting positive pressure ventilation'
+      ],
+      safetyNotes: [
+        'Proper positioning critical for effective ventilation',
+        'Use jaw-thrust instead of head-tilt if spine injury suspected',
+        'Suction airway before positive pressure ventilation to prevent aspiration'
+      ],
+      equipmentNeeded: [
+        'Oral and nasal airways in appropriate sizes',
+        'Suction equipment with rigid and flexible catheters',
+        'Towel roll or positioning aids',
+        'Cervical spine immobilization if indicated'
+      ]
+    },
+    {
+      id: 'bvm-reservoir-step-4',
+      stepNumber: 4,
+      title: 'Mask Seal Establishment and Hand Positioning',
+      description: 'Establish effective mask seal using proper technique and hand positioning',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Use EC-clamp technique: thumb and index finger form C around mask',
+        'Use remaining 3 fingers to lift jaw (E-clamp) maintaining airway',
+        'Position mask to cover nose and mouth without compressing eyes',
+        'Create airtight seal by pressing mask edges against face',
+        'Avoid excessive pressure that could obstruct venous return',
+        'Monitor for air leaks around mask edges during ventilation',
+        'Adjust mask position and pressure to optimize seal',
+        'Consider two-person technique if unable to achieve adequate seal'
+      ],
+      safetyNotes: [
+        'Poor mask seal reduces ventilation effectiveness significantly',
+        'Excessive facial pressure can cause tissue damage',
+        'Two-person BVM technique often more effective than one-person'
+      ],
+      equipmentNeeded: [
+        'Properly sized face mask with good seal properties',
+        'Assistant for two-person BVM technique if needed',
+        'Alternative mask sizes if seal inadequate'
+      ]
+    },
+    {
+      id: 'bvm-reservoir-step-5',
+      stepNumber: 5,
+      title: 'Controlled Ventilation Delivery',
+      description: 'Deliver appropriate tidal volumes and ventilation rates for patient condition',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 300,
+      keyPoints: [
+        'Deliver tidal volume of 6-7 mL/kg (approximately 500-600 mL adults)',
+        'Use ventilation rate appropriate for age: 10-12/min adults, 12-20/min children',
+        'Compress bag smoothly over 1 second inspiratory time',
+        'Allow complete passive exhalation between breaths',
+        'Observe chest rise with each ventilation to confirm adequate volume',
+        'Avoid over-ventilation which can cause gastric distension',
+        'Monitor for bilateral chest expansion and breath sounds',
+        'Adjust technique based on patient response and chest compliance'
+      ],
+      safetyNotes: [
+        'Excessive tidal volumes can cause barotrauma',
+        'Rapid ventilation rates may cause hypocapnia and decreased cardiac output',
+        'Gastric distension increases aspiration risk'
+      ],
+      equipmentNeeded: [
+        'BVM with reservoir bag and high-flow oxygen',
+        'Monitoring equipment for ventilation assessment',
+        'Stethoscope for breath sound evaluation'
+      ]
+    },
+    {
+      id: 'bvm-reservoir-step-6',
+      stepNumber: 6,
+      title: 'Ventilation Monitoring and Assessment',
+      description: 'Continuously monitor ventilation effectiveness and patient physiological response',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Monitor oxygen saturation continuously with pulse oximetry',
+        'Assess end-tidal CO2 if capnography available',
+        'Watch for bilateral chest rise and fall with each breath',
+        'Listen for breath sounds bilaterally to confirm air entry',
+        'Monitor heart rate and blood pressure response to ventilation',
+        'Assess skin color and perfusion improvement',
+        'Watch for signs of gastric distension or regurgitation',
+        'Monitor for pneumothorax development with positive pressure'
+      ],
+      safetyNotes: [
+        'Decreasing oxygen saturation may indicate inadequate ventilation',
+        'Sudden loss of compliance may suggest pneumothorax',
+        'Gastric distension increases aspiration risk significantly'
+      ],
+      equipmentNeeded: [
+        'Pulse oximetry with continuous monitoring',
+        'End-tidal CO2 monitoring if available',
+        'Stethoscope for breath sound assessment',
+        'Blood pressure monitoring equipment'
+      ]
+    },
+    {
+      id: 'bvm-reservoir-step-7',
+      stepNumber: 7,
+      title: 'Complication Recognition and Management',
+      description: 'Recognize ventilation complications and implement appropriate corrective measures',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Manage inadequate chest rise: check mask seal, airway position, obstruction',
+        'Address gastric distension: reduce ventilation pressure, consider NGT',
+        'Recognize pneumothorax: sudden compliance loss, unilateral breath sounds',
+        'Handle mask leak: reposition mask, adjust hand placement, try different size',
+        'Manage patient agitation: assess ventilation adequacy, consider sedation',
+        'Address equipment failure: have backup BVM immediately available',
+        'Recognize need for advanced airway: prolonged ventilation, aspiration risk',
+        'Monitor for cardiovascular compromise from positive pressure'
+      ],
+      safetyNotes: [
+        'Pneumothorax can be life-threatening with continued positive pressure',
+        'Gastric distension significantly increases aspiration risk',
+        'Equipment failure requires immediate backup ventilation'
+      ],
+      equipmentNeeded: [
+        'Backup BVM equipment ready for immediate use',
+        'Advanced airway management equipment available',
+        'Needle decompression kit for pneumothorax',
+        'Nasogastric tubes for gastric decompression'
+      ]
+    },
+    {
+      id: 'bvm-reservoir-step-8',
+      stepNumber: 8,
+      title: 'Transition Planning and Documentation',
+      description: 'Plan for ongoing ventilation needs and provide comprehensive documentation',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 150,
+      keyPoints: [
+        'Assess need for advanced airway management vs continued BVM',
+        'Plan for transport ventilation strategy and equipment needs',
+        'Document ventilation parameters: rate, volumes, oxygen concentration',
+        'Record patient response to ventilation and any complications',
+        'Provide detailed report to receiving medical team',
+        'Include recommendations for continued respiratory support',
+        'Document total ventilation time and techniques used',
+        'Ensure continuity of care during patient transfer'
+      ],
+      safetyNotes: [
+        'Prolonged BVM ventilation increases fatigue and inconsistency',
+        'Transport requires secure ventilation strategy',
+        'Advanced airway may be needed for extended ventilation'
+      ],
+      equipmentNeeded: [
+        'Documentation materials and ventilation flowsheets',
+        'Transport-compatible ventilation equipment',
+        'Communication equipment for medical consultation',
+        'Advanced airway equipment for transition if needed'
+      ]
+    }
+  ],
+
   'bag-valve-mask-reservoir': {
     name: 'Bag Valve Mask Reservoir Ventilation',
     category: 'airway',
@@ -14289,6 +15042,250 @@ export const criticalSkillsMetadata = {
     ]
   },
 
+  // 36. 3-LEAD ECG INTERPRETATION - Evidence-based rhythm analysis and interpretation
+  '3-lead-ecg-interpretation': [
+    {
+      id: 'ecg-interpretation-step-1',
+      stepNumber: 1,
+      title: 'ECG Equipment Setup and Lead Placement',
+      description: 'Set up 3-lead ECG monitoring with proper electrode placement for rhythm analysis',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Clean electrode sites with alcohol to remove oils and debris',
+        'Place RA (right arm) electrode below right clavicle, midclavicular line',
+        'Place LA (left arm) electrode below left clavicle, midclavicular line',
+        'Place LL (left leg) electrode on left lower chest or abdomen',
+        'Ensure good electrode contact with adequate adhesion',
+        'Select appropriate lead for monitoring (usually Lead II)',
+        'Adjust gain and filter settings for optimal waveform clarity',
+        'Verify adequate signal quality and minimal artifact'
+      ],
+      safetyNotes: [
+        'Poor electrode contact causes artifact and unreliable readings',
+        'Lead II typically provides best P-wave visualization',
+        'Avoid placing electrodes over bony prominences'
+      ],
+      equipmentNeeded: [
+        '3-lead ECG monitor with display capability',
+        'ECG electrodes with good adhesive properties',
+        'Alcohol prep pads for skin preparation',
+        'Razor for hair removal if necessary'
+      ]
+    },
+    {
+      id: 'ecg-interpretation-step-2',
+      stepNumber: 2,
+      title: 'Systematic Rhythm Analysis Approach',
+      description: 'Use systematic approach to analyze cardiac rhythm and identify key components',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Assess heart rate: count QRS complexes in 6-second strip and multiply by 10',
+        'Evaluate rhythm regularity: measure R-R intervals for consistency',
+        'Identify P waves: look for consistent morphology and relationship to QRS',
+        'Measure PR interval: normal 0.12-0.20 seconds (3-5 small boxes)',
+        'Assess QRS width: normal <0.12 seconds (3 small boxes)',
+        'Determine P-wave to QRS relationship: 1:1, 2:1, variable, or none',
+        'Calculate heart rate using multiple methods for accuracy',
+        'Document baseline rhythm for comparison with changes'
+      ],
+      safetyNotes: [
+        'Systematic approach prevents missing critical rhythm abnormalities',
+        'Rate calculation errors can lead to inappropriate treatment decisions',
+        'Always correlate ECG findings with clinical presentation'
+      ],
+      equipmentNeeded: [
+        'ECG calipers or measurement tools',
+        'ECG paper with standard calibration',
+        'Reference materials for normal values',
+        'Documentation materials for findings'
+      ]
+    },
+    {
+      id: 'ecg-interpretation-step-3',
+      stepNumber: 3,
+      title: 'Normal Sinus Rhythm Recognition',
+      description: 'Identify characteristics of normal sinus rhythm and assess for normal variants',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 150,
+      keyPoints: [
+        'Rate: 60-100 beats per minute in adults',
+        'Rhythm: regular R-R intervals with <10% variation',
+        'P waves: upright in Lead II, consistent morphology',
+        'PR interval: 0.12-0.20 seconds, consistent across beats',
+        'QRS: narrow (<0.12 seconds) with consistent morphology',
+        'P:QRS ratio: 1:1 relationship with each P wave followed by QRS',
+        'Assess for sinus arrhythmia: rate varies with respiration (normal in young patients)',
+        'Document normal sinus rhythm and any minor variations'
+      ],
+      safetyNotes: [
+        'Sinus arrhythmia is normal variant in healthy young adults',
+        'Rate may vary with age, fitness, and medications',
+        'Normal rhythm provides baseline for detecting changes'
+      ],
+      equipmentNeeded: [
+        'Clear ECG tracing with good signal quality',
+        'Measurement tools for interval assessment',
+        'Reference standards for normal values',
+        'Patient assessment for clinical correlation'
+      ]
+    },
+    {
+      id: 'ecg-interpretation-step-4',
+      stepNumber: 4,
+      title: 'Tachyarrhythmia Identification',
+      description: 'Recognize and classify tachyarrhythmias based on rate, regularity, and QRS width',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Sinus tachycardia: >100 bpm, regular, narrow QRS, visible P waves',
+        'Supraventricular tachycardia (SVT): >150 bpm, regular, narrow QRS, hidden P waves',
+        'Atrial fibrillation: irregularly irregular rhythm, no distinct P waves',
+        'Atrial flutter: regular sawtooth pattern, ventricular rate often 150 bpm',
+        'Ventricular tachycardia: >100 bpm, wide QRS (>0.12 sec), regular or irregular',
+        'Assess hemodynamic stability: blood pressure, perfusion, mental status',
+        'Identify need for immediate treatment vs observation',
+        'Document specific tachyarrhythmia type and patient response'
+      ],
+      safetyNotes: [
+        'Unstable tachycardia requires immediate intervention',
+        'Wide-complex tachycardia should be treated as VT until proven otherwise',
+        'Assess patient symptoms and hemodynamic status'
+      ],
+      equipmentNeeded: [
+        'ECG monitoring with clear rhythm display',
+        'Vital sign monitoring equipment',
+        'Emergency treatment equipment ready',
+        'Reference materials for arrhythmia classification'
+      ]
+    },
+    {
+      id: 'ecg-interpretation-step-5',
+      stepNumber: 5,
+      title: 'Bradyarrhythmia Recognition',
+      description: 'Identify and classify bradyarrhythmias and assess for hemodynamic significance',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 210,
+      keyPoints: [
+        'Sinus bradycardia: <60 bpm, regular rhythm, normal P waves and PR interval',
+        'First-degree AV block: PR interval >0.20 seconds, all beats conducted',
+        'Second-degree AV block Type I (Wenckebach): progressive PR lengthening, dropped beats',
+        'Second-degree AV block Type II: consistent PR interval with intermittent dropped beats',
+        'Third-degree (complete) AV block: no relationship between P waves and QRS',
+        'Assess for symptoms: chest pain, dyspnea, hypotension, altered mental status',
+        'Evaluate escape rhythms: junctional (40-60 bpm) vs ventricular (20-40 bpm)',
+        'Determine need for pacing based on hemodynamic status'
+      ],
+      safetyNotes: [
+        'Symptomatic bradycardia requires immediate treatment',
+        'High-degree AV blocks may progress to complete heart block',
+        'Escape rhythms indicate significant conduction system disease'
+      ],
+      equipmentNeeded: [
+        'ECG calipers for precise interval measurement',
+        'Atropine ready for symptomatic bradycardia',
+        'Transcutaneous pacing equipment available',
+        'Continuous hemodynamic monitoring'
+      ]
+    },
+    {
+      id: 'ecg-interpretation-step-6',
+      stepNumber: 6,
+      title: 'Ectopic Beat and Arrhythmia Analysis',
+      description: 'Identify premature beats and irregular rhythms with clinical significance assessment',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Premature atrial contractions (PACs): early narrow beats with abnormal P waves',
+        'Premature ventricular contractions (PVCs): early wide beats without P waves',
+        'Assess PVC frequency and patterns: isolated, bigeminy, trigeminy, couplets',
+        'Identify dangerous PVC patterns: R-on-T phenomenon, multifocal PVCs',
+        'Evaluate for non-sustained ventricular tachycardia: ≥3 consecutive PVCs',
+        'Assess for underlying causes: electrolyte imbalances, ischemia, medications',
+        'Determine clinical significance based on frequency and patient symptoms',
+        'Monitor for progression to sustained arrhythmias'
+      ],
+      safetyNotes: [
+        'Frequent PVCs may indicate underlying cardiac disease',
+        'R-on-T phenomenon can precipitate ventricular fibrillation',
+        'Multifocal PVCs suggest increased arrhythmia risk'
+      ],
+      equipmentNeeded: [
+        'Continuous ECG monitoring for pattern recognition',
+        'Event recording capability for documentation',
+        'Emergency antiarrhythmic medications',
+        'Laboratory capability for electrolyte assessment'
+      ]
+    },
+    {
+      id: 'ecg-interpretation-step-7',
+      stepNumber: 7,
+      title: 'Clinical Correlation and Treatment Decisions',
+      description: 'Correlate ECG findings with clinical presentation and determine appropriate treatment',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 240,
+      keyPoints: [
+        'Assess patient symptoms: chest pain, dyspnea, palpitations, syncope',
+        'Correlate rhythm with hemodynamic status and perfusion',
+        'Evaluate for underlying causes: medications, electrolytes, ischemia',
+        'Determine treatment urgency based on symptoms and rhythm stability',
+        'Consider medication effects: beta-blockers, digitalis, antiarrhythmics',
+        'Assess for signs of hemodynamic compromise requiring immediate intervention',
+        'Plan monitoring strategy and frequency of rhythm assessment',
+        'Document clinical correlation and treatment rationale'
+      ],
+      safetyNotes: [
+        'ECG findings must be interpreted in clinical context',
+        'Asymptomatic arrhythmias may not require immediate treatment',
+        'Patient symptoms take precedence over rhythm appearance'
+      ],
+      equipmentNeeded: [
+        'Comprehensive patient assessment tools',
+        'Vital sign monitoring equipment',
+        'Emergency treatment medications',
+        'Communication equipment for consultation'
+      ]
+    },
+    {
+      id: 'ecg-interpretation-step-8',
+      stepNumber: 8,
+      title: 'Documentation and Communication',
+      description: 'Document ECG interpretation and communicate findings to appropriate medical personnel',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 150,
+      keyPoints: [
+        'Document specific rhythm interpretation with rate and characteristics',
+        'Record any rhythm changes during monitoring period',
+        'Note clinical correlation between rhythm and patient symptoms',
+        'Communicate critical findings to receiving medical team',
+        'Provide ECG strips with interpretation for medical record',
+        'Document any treatments given and patient response',
+        'Include recommendations for ongoing cardiac monitoring',
+        'Arrange appropriate level of care based on rhythm significance'
+      ],
+      safetyNotes: [
+        'Accurate documentation essential for continuity of care',
+        'Critical rhythms require immediate communication to physicians',
+        'ECG strips provide objective evidence of rhythm disturbances'
+      ],
+      equipmentNeeded: [
+        'ECG strips with clear rhythm documentation',
+        'Documentation materials and forms',
+        'Communication equipment for medical consultation',
+        'Patient transport with continued monitoring capability'
+      ]
+    }
+  ],
+
   '3-lead-ecg-interpretation': {
     name: '3 Lead ECG Interpretation',
     category: 'cardiac',
@@ -14327,6 +15324,256 @@ export const criticalSkillsMetadata = {
       'Defibrillator with emergency cardiac medications for arrhythmia treatment'
     ]
   },
+
+  // 38. BANDAGE/TRIANGULAR BANDAGE APPLICATION - Evidence-based wound dressing and support techniques
+  'bandage-triangular-application': [
+    {
+      id: 'bandage-step-1',
+      stepNumber: 1,
+      title: 'Wound Assessment and Bandage Selection',
+      description: 'Assess wound characteristics and select appropriate bandage type and application method',
+      isRequired: true,
+      isCritical: false,
+      timeEstimate: 120,
+      keyPoints: [
+        'Assess wound size, depth, and location for appropriate bandage selection',
+        'Evaluate for active bleeding requiring pressure dressing techniques',
+        'Check for signs of infection: redness, swelling, purulent drainage',
+        'Determine if triangular bandage or standard bandage more appropriate',
+        'Consider patient mobility needs and bandage durability requirements',
+        'Assess for allergies to adhesive materials or antiseptics',
+        'Evaluate need for padding or support in addition to wound coverage',
+        'Document wound characteristics before covering with bandage'
+      ],
+      safetyNotes: [
+        'Clean wound assessment before bandage application',
+        'Document wound appearance for monitoring healing progress',
+        'Consider tetanus prophylaxis needs for contaminated wounds'
+      ],
+      equipmentNeeded: [
+        'Various bandage sizes and types available',
+        'Triangular bandages for support and immobilization',
+        'Wound assessment materials and documentation tools',
+        'Personal protective equipment (gloves)'
+      ]
+    },
+    {
+      id: 'bandage-step-2',
+      stepNumber: 2,
+      title: 'Wound Cleaning and Preparation',
+      description: 'Clean wound area and prepare skin for bandage application using sterile technique',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 180,
+      keyPoints: [
+        'Don clean gloves and use universal precautions',
+        'Irrigate wound gently with sterile saline or clean water',
+        'Remove visible debris and foreign material carefully',
+        'Clean surrounding skin with antiseptic solution working outward from wound',
+        'Pat skin dry with sterile gauze before bandage application',
+        'Avoid getting antiseptic directly in open wound',
+        'Apply topical antibiotic if indicated and not contraindicated',
+        'Allow antiseptic to dry completely before applying adhesive bandages'
+      ],
+      contraindications: [
+        'Do not use hydrogen peroxide on deep or chronic wounds',
+        'Avoid antiseptics in patients with known allergies',
+        'Do not irrigate wounds with visible foreign bodies requiring surgical removal'
+      ],
+      safetyNotes: [
+        'Sterile technique prevents wound contamination and infection',
+        'Gentle irrigation prevents further tissue damage',
+        'Complete drying prevents bandage adhesion problems'
+      ],
+      equipmentNeeded: [
+        'Sterile saline or clean irrigation solution',
+        'Antiseptic solutions (povidone-iodine, chlorhexidine)',
+        'Sterile gauze pads for cleaning and drying',
+        'Topical antibiotics if indicated'
+      ]
+    },
+    {
+      id: 'bandage-step-3',
+      stepNumber: 3,
+      title: 'Standard Bandage Application Technique',
+      description: 'Apply standard adhesive or gauze bandages using proper technique for wound protection',
+      isRequired: true,
+      isCritical: false,
+      timeEstimate: 150,
+      keyPoints: [
+        'Select bandage size that extends 1-2cm beyond wound edges',
+        'Remove backing from adhesive bandages without contaminating pad',
+        'Center bandage pad over wound without touching sterile surface',
+        'Apply gentle, even pressure to ensure adhesion around wound edges',
+        'Smooth bandage to remove air bubbles and wrinkles',
+        'For gauze bandages: secure with tape or wrap, avoiding circumferential taping',
+        'Ensure bandage does not restrict circulation in extremities',
+        'Check that bandage provides adequate coverage and protection'
+      ],
+      safetyNotes: [
+        'Circumferential taping can cause constriction with swelling',
+        'Avoid touching sterile pad to maintain wound cleanliness',
+        'Ensure adequate but not excessive tension to prevent circulation compromise'
+      ],
+      equipmentNeeded: [
+        'Adhesive bandages in appropriate sizes',
+        'Sterile gauze pads and medical tape',
+        'Non-adherent dressing pads for sensitive wounds',
+        'Elastic wrap if additional support needed'
+      ]
+    },
+    {
+      id: 'bandage-step-4',
+      stepNumber: 4,
+      title: 'Triangular Bandage Folding and Preparation',
+      description: 'Properly fold and prepare triangular bandage for specific application methods',
+      isRequired: true,
+      isCritical: false,
+      timeEstimate: 90,
+      keyPoints: [
+        'For broad fold: fold triangular bandage in half twice to create wide band',
+        'For narrow fold: fold broad fold in half again for narrow support band',
+        'For sling application: use full triangle with point at elbow',
+        'Ensure fabric is clean and free from tears or weak spots',
+        'Check that folded edges are smooth and even',
+        'Prepare adequate length for secure tying and adjustment',
+        'Consider patient comfort and range of motion needs',
+        'Have safety pins available for additional security if needed'
+      ],
+      safetyNotes: [
+        'Proper folding ensures even pressure distribution',
+        'Check fabric integrity to prevent failure during use',
+        'Safety pins should be placed away from wound sites'
+      ],
+      equipmentNeeded: [
+        'Clean triangular bandages in appropriate sizes',
+        'Safety pins for additional security',
+        'Scissors for adjusting bandage length if needed'
+      ]
+    },
+    {
+      id: 'bandage-step-5',
+      stepNumber: 5,
+      title: 'Arm Sling Application',
+      description: 'Apply triangular bandage as arm sling for upper extremity support and immobilization',
+      isRequired: true,
+      isCritical: false,
+      timeEstimate: 180,
+      keyPoints: [
+        'Position injured arm across chest with hand elevated above elbow',
+        'Place triangular bandage with point at injured elbow',
+        'Bring upper end around neck on uninjured side',
+        'Bring lower end up and over injured arm to meet at neck',
+        'Tie ends securely at side of neck, not at back',
+        'Adjust sling to support wrist and hand properly',
+        'Fold point at elbow and secure with safety pin or tape',
+        'Check circulation in fingers after application'
+      ],
+      safetyNotes: [
+        'Sling should support arm without restricting circulation',
+        'Tying at back of neck can be uncomfortable and unstable',
+        'Check finger circulation and sensation after application'
+      ],
+      equipmentNeeded: [
+        'Large triangular bandage for sling application',
+        'Safety pins or tape for securing fold at elbow',
+        'Padding for comfort at neck if needed'
+      ]
+    },
+    {
+      id: 'bandage-step-6',
+      stepNumber: 6,
+      title: 'Head and Scalp Bandaging',
+      description: 'Apply triangular bandage for head and scalp wound protection and pressure',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 210,
+      keyPoints: [
+        'Place sterile pad over scalp wound before bandage application',
+        'Position triangular bandage with base at forehead above eyebrows',
+        'Bring sides of bandage down around ears and back of head',
+        'Cross bandage ends at nape of neck and bring forward',
+        'Tie ends securely at forehead or temple area',
+        'Pull point of triangle down over back of head and tuck under',
+        'Ensure bandage applies gentle pressure without restricting breathing',
+        'Check that ears are comfortable and not compressed'
+      ],
+      contraindications: [
+        'Avoid excessive pressure over suspected skull fractures',
+        'Do not cover eyes unless specifically treating eye injuries',
+        'Avoid restricting airway with tight bandaging around neck'
+      ],
+      safetyNotes: [
+        'Head bandages can shift and require frequent checking',
+        'Monitor for signs of increased intracranial pressure',
+        'Ensure patient comfort and ability to communicate'
+      ],
+      equipmentNeeded: [
+        'Triangular bandage large enough for head coverage',
+        'Sterile gauze pads for wound coverage',
+        'Additional padding if needed for comfort'
+      ]
+    },
+    {
+      id: 'bandage-step-7',
+      stepNumber: 7,
+      title: 'Circulation and Comfort Assessment',
+      description: 'Assess bandage effectiveness and patient comfort, adjusting as needed',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Check circulation distal to bandage: color, warmth, capillary refill',
+        'Assess sensation and movement in affected area',
+        'Ask patient about comfort level and pain changes',
+        'Look for signs of bandage being too tight: swelling, numbness',
+        'Check that bandage maintains position and provides adequate coverage',
+        'Assess for pressure points or chafing from bandage edges',
+        'Adjust tightness if circulation appears compromised',
+        'Document circulation status and bandage effectiveness'
+      ],
+      safetyNotes: [
+        'Compromised circulation requires immediate bandage adjustment',
+        'Swelling may occur after initial application requiring loosening',
+        'Regular monitoring essential for early complication detection'
+      ],
+      equipmentNeeded: [
+        'Assessment tools for circulation evaluation',
+        'Additional bandage materials for adjustments',
+        'Documentation materials for monitoring records'
+      ]
+    },
+    {
+      id: 'bandage-step-8',
+      stepNumber: 8,
+      title: 'Patient Education and Follow-up Instructions',
+      description: 'Educate patient on bandage care and provide instructions for monitoring and follow-up',
+      isRequired: true,
+      isCritical: false,
+      timeEstimate: 180,
+      keyPoints: [
+        'Explain signs of circulation problems requiring immediate attention',
+        'Teach patient how to check for numbness, tingling, or color changes',
+        'Provide instructions for keeping bandage dry and clean',
+        'Explain when to change bandage and how to do it safely',
+        'Describe signs of infection requiring medical attention',
+        'Provide wound care instructions and activity limitations',
+        'Schedule appropriate follow-up appointment for wound evaluation',
+        'Give written instructions for home care and warning signs'
+      ],
+      safetyNotes: [
+        'Patient education critical for preventing complications',
+        'Clear instructions prevent improper self-care',
+        'Follow-up ensures proper healing and complication detection'
+      ],
+      equipmentNeeded: [
+        'Patient education materials and written instructions',
+        'Demonstration materials for teaching bandage care',
+        'Contact information for follow-up questions',
+        'Additional bandage supplies for home use'
+      ]
+    }
+  ],
 
   'bandage-triangular-application': {
     name: 'Application of Bandage/Triangular Bandage',
