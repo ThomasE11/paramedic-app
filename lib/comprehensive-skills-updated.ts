@@ -212,8 +212,8 @@ function mapDifficultyLevel(level: string, skillName: string): 'BEGINNER' | 'INT
 
 // Convert extracted skill steps to our format
 function convertExtractedSteps(extractedSteps: any[], skillId: string): SkillStep[] {
-  // Check if we have enhanced steps for this skill
-  const enhancedSteps = enhancedCriticalSkillSteps[skillId];
+  // Check if we have enhanced steps for this skill (separate array or integrated in metadata)
+  const enhancedSteps = enhancedCriticalSkillSteps[skillId] || criticalSkillsMetadata[skillId]?.steps;
   if (enhancedSteps) {
     return enhancedSteps.map((step: any) => ({
       id: step.id,
@@ -401,6 +401,8 @@ function findMatchingCriticalSkill(extractedSkillName: string): string | undefin
     'burns and thermal injury management': 'burns-thermal-injury-management',
     'chest pain and acute coronary syndrome': 'chest-pain-acs-management',
     '12-lead ecg lead placement and acquisition': '12-lead-ecg-placement',
+    '12 lead ecg – lead placement and acquisition': '12-lead-ecg-placement',
+    '12 lead ecg - lead placement and acquisition': '12-lead-ecg-placement',
     'continuous positive airway pressure (cpap)': 'cpap-ventilation',
     'basic airway management': 'basic-airway-management',
     'advanced airway management': 'advanced-airway-management',
@@ -595,8 +597,8 @@ export const allProcessedSkills: Skill[] = uniqueExtractedSkills.map((extractedS
   const extractedSteps = findMatchingSkillSteps(extractedSkill.name);
   
   let steps: SkillStep[];
-  if (criticalSkillId && enhancedCriticalSkillSteps[criticalSkillId]) {
-    // Use enhanced critical skill steps
+  if (criticalSkillId && (enhancedCriticalSkillSteps[criticalSkillId] || criticalSkillsMetadata[criticalSkillId]?.steps)) {
+    // Use enhanced critical skill steps (either separate array or integrated in metadata)
     steps = convertExtractedSteps([], criticalSkillId);
   } else if (extractedSteps.length > 0) {
     // Use extracted steps from skill documents
