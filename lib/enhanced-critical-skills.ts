@@ -14484,7 +14484,13 @@ export const criticalSkillsMetadata = {
     }
   ],
 
-  '12-lead-ecg-placement': [
+  '12-lead-ecg-placement': {
+    name: '12-Lead ECG - Lead Placement and Acquisition',
+    category: 'assessment',
+    difficultyLevel: 'BEGINNER' as const,
+    timeEstimateMinutes: 8,
+    isCritical: true,
+    steps: [
     {
       id: 'ecg-step-1',
       stepNumber: 1,
@@ -14719,6 +14725,42 @@ export const criticalSkillsMetadata = {
       ]
     }
   ],
+    objectives: [
+      'Demonstrate proper patient preparation and positioning for ECG acquisition',
+      'Perform accurate anatomical electrode placement using standard landmarks',
+      'Set up and calibrate ECG equipment for optimal recording quality',
+      'Execute systematic limb and precordial lead placement techniques',
+      'Acquire artifact-free 12-lead ECG with proper calibration and timing',
+      'Assess ECG quality and troubleshoot common technical problems',
+      'Document findings and maintain equipment in proper working condition',
+      'Ensure patient comfort and safety throughout the entire procedure'
+    ],
+    indications: [
+      'Chest pain or cardiac symptoms requiring diagnostic evaluation',
+      'Suspected acute coronary syndrome or myocardial infarction',
+      'Routine cardiac assessment or pre-procedural evaluation',
+      'Monitoring response to cardiac medications or interventions',
+      'Evaluation of arrhythmias or abnormal heart rhythms',
+      'Assessment of electrolyte imbalances affecting cardiac function'
+    ],
+    contraindications: [
+      'No absolute contraindications for 12-lead ECG acquisition',
+      'Relative contraindication: unstable patient requiring immediate intervention',
+      'Skin conditions preventing electrode adhesion at standard sites',
+      'Patient unable to cooperate or maintain required positioning'
+    ],
+    equipment: [
+      'Calibrated 12-lead ECG machine with recording capability',
+      'Disposable ECG electrodes with conductive gel',
+      'Lead cables and connection wires',
+      'Disposable razors for hair removal if needed',
+      'Alcohol prep pads for skin preparation',
+      'Gauze pads for skin cleaning and drying',
+      'ECG paper or digital storage system',
+      'Patient positioning aids and comfort items',
+      'Documentation materials and labels'
+    ]
+  },
 
   'cpap-ventilation': [
     {
@@ -21112,260 +21154,259 @@ export const criticalSkillsMetadata = {
   },
 
   // 45. NEBULIZATION OF MEDICATION - Evidence-based aerosol medication delivery protocol
-  'nebulization-medication': [
-    {
-      id: 'nebulization-step-1',
-      stepNumber: 1,
-      title: 'Patient Assessment and Nebulization Indication',
-      description: 'Assess patient respiratory status and confirm indication for nebulized medication',
-      isRequired: true,
-      isCritical: true,
-      timeEstimate: 120,
-      keyPoints: [
-        'Assess respiratory distress: rate, depth, use of accessory muscles',
-        'Evaluate oxygen saturation and need for supplemental oxygen',
-        'Listen to breath sounds for wheezing, rhonchi, or decreased air entry',
-        'Check for specific indications: bronchospasm, COPD exacerbation, asthma',
-        'Review patient medication history and previous nebulizer treatments',
-        'Assess for contraindications: severe cardiac disease, drug allergies',
-        'Evaluate patient ability to cooperate with nebulizer treatment',
-        'Document baseline respiratory status before treatment'
-      ],
-      contraindications: [
-        'Known allergy to nebulized medication or preservatives',
-        'Severe cardiac arrhythmias that may be exacerbated by bronchodilators',
-        'Patient unable to cooperate with mask or mouthpiece'
-      ],
-      safetyNotes: [
-        'Beta-agonists may cause cardiac stimulation in sensitive patients',
-        'Baseline assessment essential for monitoring treatment effectiveness',
-        'Consider delivery method based on patient condition and cooperation'
-      ],
-      equipmentNeeded: [
-        'Pulse oximetry for oxygen saturation monitoring',
-        'Stethoscope for breath sound assessment',
-        'Peak flow meter if available for objective measurement',
-        'Patient assessment documentation materials'
-      ]
-    },
-    {
-      id: 'nebulization-step-2',
-      stepNumber: 2,
-      title: 'Medication Selection and Dose Calculation',
-      description: 'Select appropriate nebulized medication and calculate correct dosage',
-      isRequired: true,
-      isCritical: true,
-      timeEstimate: 150,
-      keyPoints: [
-        'Select medication based on patient condition: albuterol, ipratropium, budesonide',
-        'Calculate dose based on patient weight and age: adult vs pediatric dosing',
-        'Standard albuterol dose: 2.5-5mg in 3ml normal saline for adults',
-        'Pediatric dosing: 0.15mg/kg (minimum 2.5mg) for children',
-        'Consider combination therapy: albuterol + ipratropium for severe cases',
-        'Check medication expiration date and clarity of solution',
-        'Verify correct concentration and prepare accurate dilution',
-        'Have reversal agents available if using medications with significant side effects'
-      ],
-      safetyNotes: [
-        'Accurate dosing essential to prevent under-treatment or toxicity',
-        'Check medication compatibility if mixing multiple agents',
-        'Use preservative-free saline for dilution to prevent bronchospasm'
-      ],
-      equipmentNeeded: [
-        'Nebulizer medications (albuterol, ipratropium, etc.)',
-        'Preservative-free normal saline for dilution',
-        'Accurate measuring devices for medication preparation',
-        'Drug reference materials for dosing calculations'
-      ]
-    },
-    {
-      id: 'nebulization-step-3',
-      stepNumber: 3,
-      title: 'Nebulizer Equipment Setup and Testing',
-      description: 'Assemble nebulizer equipment and test proper function before patient use',
-      isRequired: true,
-      isCritical: true,
-      timeEstimate: 180,
-      keyPoints: [
-        'Assemble nebulizer cup, tubing, and delivery mask or mouthpiece',
-        'Connect oxygen tubing to nebulizer and set flow rate to 6-8 L/min',
-        'Test nebulizer function by adding saline and checking mist production',
-        'Ensure adequate mist generation and appropriate particle size',
-        'Check all connections for leaks that would reduce medication delivery',
-        'Select appropriate delivery method: mask vs mouthpiece based on patient',
-        'Have backup nebulizer equipment available in case of malfunction',
-        'Warm nebulizer solution to room temperature if refrigerated'
-      ],
-      safetyNotes: [
-        'Proper flow rate essential for effective medication delivery',
-        'Equipment leaks significantly reduce medication reaching lungs',
-        'Cold medication may cause bronchospasm in sensitive patients'
-      ],
-      equipmentNeeded: [
-        'Disposable nebulizer cups and tubing',
-        'Face masks and mouthpieces in appropriate sizes',
-        'Oxygen source with flow meter (6-8 L/min capability)',
-        'Backup nebulizer equipment in case of failure'
-      ]
-    },
-    {
-      id: 'nebulization-step-4',
-      stepNumber: 4,
-      title: 'Medication Preparation and Loading',
-      description: 'Prepare nebulized medication using sterile technique and load into nebulizer',
-      isRequired: true,
-      isCritical: true,
-      timeEstimate: 120,
-      keyPoints: [
-        'Use sterile technique when opening medication vials and drawing medication',
-        'Draw calculated medication dose into syringe using sterile needle',
-        'Add medication to nebulizer cup using sterile technique',
-        'Add appropriate volume of preservative-free normal saline (usually 3-5ml total)',
-        'Gently swirl nebulizer cup to mix medication and saline',
-        'Replace nebulizer cup top and connect tubing securely',
-        'Label nebulizer with medication name, dose, and time if multiple patients',
-        'Dispose of used syringes and needles in appropriate sharps container'
-      ],
-      safetyNotes: [
-        'Sterile technique prevents contamination of respiratory medication',
-        'Correct total volume ensures proper nebulization time and delivery',
-        'Proper labeling prevents medication errors in multi-patient settings'
-      ],
-      equipmentNeeded: [
-        'Sterile syringes and needles for medication preparation',
-        'Preservative-free normal saline for dilution',
-        'Sterile technique supplies and hand hygiene materials',
-        'Sharps disposal container for safe needle disposal'
-      ]
-    },
-    {
-      id: 'nebulization-step-5',
-      stepNumber: 5,
-      title: 'Patient Positioning and Nebulizer Delivery',
-      description: 'Position patient optimally and initiate nebulized medication delivery',
-      isRequired: true,
-      isCritical: true,
-      timeEstimate: 600,
-      keyPoints: [
-        'Position patient sitting upright or in high Fowler position',
-        'Apply mask securely over nose and mouth or have patient use mouthpiece',
-        'Instruct patient to breathe slowly and deeply through mouth',
-        'Start oxygen flow at 6-8 L/min to generate visible mist',
-        'Encourage patient to hold breath briefly after each inhalation',
-        'Monitor for proper mist generation throughout treatment',
-        'Continue treatment until nebulizer cup is empty (usually 10-15 minutes)',
-        'Provide coaching and encouragement during treatment'
-      ],
-      safetyNotes: [
-        'Proper breathing technique maximizes medication deposition in lungs',
-        'Good mask seal essential for effective medication delivery',
-        'Monitor patient comfort and cooperation throughout treatment'
-      ],
-      equipmentNeeded: [
-        'Patient positioning aids (elevated bed or chair)',
-        'Properly fitted mask or clean mouthpiece',
-        'Functioning nebulizer with adequate oxygen flow',
-        'Timer to monitor treatment duration'
-      ]
-    },
-    {
-      id: 'nebulization-step-6',
-      stepNumber: 6,
-      title: 'Treatment Monitoring and Patient Assessment',
-      description: 'Monitor patient response during nebulization and assess for adverse effects',
-      isRequired: true,
-      isCritical: true,
-      timeEstimate: 480,
-      keyPoints: [
-        'Monitor oxygen saturation continuously during treatment',
-        'Assess heart rate and blood pressure, especially with beta-agonists',
-        'Listen to breath sounds periodically during and after treatment',
-        'Watch for signs of improvement: decreased work of breathing, better air entry',
-        'Monitor for adverse effects: tremor, palpitations, anxiety, nausea',
-        'Assess patient comfort and ability to tolerate treatment',
-        'Document patient response and any side effects observed',
-        'Be prepared to stop treatment if severe adverse reactions occur'
-      ],
-      safetyNotes: [
-        'Beta-agonists may cause significant cardiovascular stimulation',
-        'Tremor and anxiety are common but usually tolerable side effects',
-        'Stop treatment immediately if patient develops severe adverse reactions'
-      ],
-      equipmentNeeded: [
-        'Continuous pulse oximetry and cardiac monitoring',
-        'Blood pressure monitoring equipment',
-        'Stethoscope for serial breath sound assessment',
-        'Documentation materials for response tracking'
-      ]
-    },
-    {
-      id: 'nebulization-step-7',
-      stepNumber: 7,
-      title: 'Treatment Completion and Effectiveness Assessment',
-      description: 'Complete nebulization treatment and assess overall therapeutic effectiveness',
-      isRequired: true,
-      isCritical: true,
-      timeEstimate: 240,
-      keyPoints: [
-        'Continue treatment until nebulizer stops producing mist',
-        'Turn off oxygen flow and disconnect nebulizer from patient',
-        'Assess post-treatment respiratory status and oxygen saturation',
-        'Compare pre- and post-treatment breath sounds and peak flows',
-        'Evaluate improvement in dyspnea and accessory muscle use',
-        'Ask patient about subjective improvement in breathing',
-        'Document treatment completion time and total duration',
-        'Plan for additional treatments if inadequate response'
-      ],
-      safetyNotes: [
-        'Complete medication delivery important for maximum benefit',
-        'Objective measures more reliable than patient subjective reports alone',
-        'Some patients may require multiple treatments for optimal effect'
-      ],
-      equipmentNeeded: [
-        'Peak flow meter for objective measurement if available',
-        'Pulse oximetry for oxygen saturation comparison',
-        'Documentation materials for pre/post comparison',
-        'Additional medication for repeat treatments if needed'
-      ]
-    },
-    {
-      id: 'nebulization-step-8',
-      stepNumber: 8,
-      title: 'Equipment Cleaning and Patient Education',
-      description: 'Clean nebulizer equipment properly and educate patient about continued care',
-      isRequired: true,
-      isCritical: false,
-      timeEstimate: 180,
-      keyPoints: [
-        'Dispose of single-use nebulizer components in appropriate waste',
-        'Clean reusable components with soap and water if patient-owned equipment',
-        'Educate patient about proper home nebulizer use and maintenance',
-        'Explain signs of worsening respiratory distress requiring medical attention',
-        'Provide instructions for medication storage and expiration dates',
-        'Discuss timing of next scheduled nebulizer treatment if applicable',
-        'Document patient education provided and understanding demonstrated',
-        'Arrange appropriate follow-up for ongoing respiratory management'
-      ],
-      safetyNotes: [
-        'Proper equipment cleaning prevents bacterial contamination',
-        'Patient education critical for safe and effective home treatment',
-        'Clear instructions prevent medication errors and equipment problems'
-      ],
-      equipmentNeeded: [
-        'Equipment cleaning supplies for reusable components',
-        'Patient education materials about nebulizer use',
-        'Written instructions for medication timing and dosing',
-        'Contact information for follow-up questions or concerns'
-      ]
-    }
-  ],
-
   'nebulization-medication': {
     name: 'Nebulization of Medication',
     category: 'pharmacology',
     difficultyLevel: 'INTERMEDIATE' as const,
     timeEstimateMinutes: 20,
     isCritical: true,
+    steps: [
+      {
+        id: 'nebulization-step-1',
+        stepNumber: 1,
+        title: 'Patient Assessment and Nebulization Indication',
+        description: 'Assess patient respiratory status and confirm indication for nebulized medication',
+        isRequired: true,
+        isCritical: true,
+        timeEstimate: 120,
+        keyPoints: [
+          'Assess respiratory distress: rate, depth, use of accessory muscles',
+          'Evaluate oxygen saturation and need for supplemental oxygen',
+          'Listen to breath sounds for wheezing, rhonchi, or decreased air entry',
+          'Check for specific indications: bronchospasm, COPD exacerbation, asthma',
+          'Review patient medication history and previous nebulizer treatments',
+          'Assess for contraindications: severe cardiac disease, drug allergies',
+          'Evaluate patient ability to cooperate with nebulizer treatment',
+          'Document baseline respiratory status before treatment'
+        ],
+        contraindications: [
+          'Known allergy to nebulized medication or preservatives',
+          'Severe cardiac arrhythmias that may be exacerbated by bronchodilators',
+          'Patient unable to cooperate with mask or mouthpiece'
+        ],
+        safetyNotes: [
+          'Beta-agonists may cause cardiac stimulation in sensitive patients',
+          'Baseline assessment essential for monitoring treatment effectiveness',
+          'Consider delivery method based on patient condition and cooperation'
+        ],
+        equipmentNeeded: [
+          'Pulse oximetry for oxygen saturation monitoring',
+          'Stethoscope for breath sound assessment',
+          'Peak flow meter if available for objective measurement',
+          'Patient assessment documentation materials'
+        ]
+      },
+      {
+        id: 'nebulization-step-2',
+        stepNumber: 2,
+        title: 'Medication Selection and Dose Calculation',
+        description: 'Select appropriate nebulized medication and calculate correct dosage',
+        isRequired: true,
+        isCritical: true,
+        timeEstimate: 150,
+        keyPoints: [
+          'Select medication based on patient condition: albuterol, ipratropium, budesonide',
+          'Calculate dose based on patient weight and age: adult vs pediatric dosing',
+          'Standard albuterol dose: 2.5-5mg in 3ml normal saline for adults',
+          'Pediatric dosing: 0.15mg/kg (minimum 2.5mg) for children',
+          'Consider combination therapy: albuterol + ipratropium for severe cases',
+          'Check medication expiration date and clarity of solution',
+          'Verify correct concentration and prepare accurate dilution',
+          'Have reversal agents available if using medications with significant side effects'
+        ],
+        safetyNotes: [
+          'Accurate dosing essential to prevent under-treatment or toxicity',
+          'Check medication compatibility if mixing multiple agents',
+          'Use preservative-free saline for dilution to prevent bronchospasm'
+        ],
+        equipmentNeeded: [
+          'Nebulizer medications (albuterol, ipratropium, etc.)',
+          'Preservative-free normal saline for dilution',
+          'Accurate measuring devices for medication preparation',
+          'Drug reference materials for dosing calculations'
+        ]
+      },
+      {
+        id: 'nebulization-step-3',
+        stepNumber: 3,
+        title: 'Nebulizer Equipment Setup and Testing',
+        description: 'Assemble nebulizer equipment and test proper function before patient use',
+        isRequired: true,
+        isCritical: true,
+        timeEstimate: 180,
+        keyPoints: [
+          'Assemble nebulizer cup, tubing, and delivery mask or mouthpiece',
+          'Connect oxygen tubing to nebulizer and set flow rate to 6-8 L/min',
+          'Test nebulizer function by adding saline and checking mist production',
+          'Ensure adequate mist generation and appropriate particle size',
+          'Check all connections for leaks that would reduce medication delivery',
+          'Select appropriate delivery method: mask vs mouthpiece based on patient',
+          'Have backup nebulizer equipment available in case of malfunction',
+          'Warm nebulizer solution to room temperature if refrigerated'
+        ],
+        safetyNotes: [
+          'Proper flow rate essential for effective medication delivery',
+          'Equipment leaks significantly reduce medication reaching lungs',
+          'Cold medication may cause bronchospasm in sensitive patients'
+        ],
+        equipmentNeeded: [
+          'Disposable nebulizer cups and tubing',
+          'Face masks and mouthpieces in appropriate sizes',
+          'Oxygen source with flow meter (6-8 L/min capability)',
+          'Backup nebulizer equipment in case of failure'
+        ]
+      },
+      {
+        id: 'nebulization-step-4',
+        stepNumber: 4,
+        title: 'Medication Preparation and Loading',
+        description: 'Prepare nebulized medication using sterile technique and load into nebulizer',
+        isRequired: true,
+        isCritical: true,
+        timeEstimate: 120,
+        keyPoints: [
+          'Use sterile technique when opening medication vials and drawing medication',
+          'Draw calculated medication dose into syringe using sterile needle',
+          'Add medication to nebulizer cup using sterile technique',
+          'Add appropriate volume of preservative-free normal saline (usually 3-5ml total)',
+          'Gently swirl nebulizer cup to mix medication and saline',
+          'Replace nebulizer cup top and connect tubing securely',
+          'Label nebulizer with medication name, dose, and time if multiple patients',
+          'Dispose of used syringes and needles in appropriate sharps container'
+        ],
+        safetyNotes: [
+          'Sterile technique prevents contamination of respiratory medication',
+          'Correct total volume ensures proper nebulization time and delivery',
+          'Proper labeling prevents medication errors in multi-patient settings'
+        ],
+        equipmentNeeded: [
+          'Sterile syringes and needles for medication preparation',
+          'Preservative-free normal saline for dilution',
+          'Sterile technique supplies and hand hygiene materials',
+          'Sharps disposal container for safe needle disposal'
+        ]
+      },
+      {
+        id: 'nebulization-step-5',
+        stepNumber: 5,
+        title: 'Patient Positioning and Nebulizer Delivery',
+        description: 'Position patient optimally and initiate nebulized medication delivery',
+        isRequired: true,
+        isCritical: true,
+        timeEstimate: 600,
+        keyPoints: [
+          'Position patient sitting upright or in high Fowler position',
+          'Apply mask securely over nose and mouth or have patient use mouthpiece',
+          'Instruct patient to breathe slowly and deeply through mouth',
+          'Start oxygen flow at 6-8 L/min to generate visible mist',
+          'Encourage patient to hold breath briefly after each inhalation',
+          'Monitor for proper mist generation throughout treatment',
+          'Continue treatment until nebulizer cup is empty (usually 10-15 minutes)',
+          'Provide coaching and encouragement during treatment'
+        ],
+        safetyNotes: [
+          'Proper breathing technique maximizes medication deposition in lungs',
+          'Good mask seal essential for effective medication delivery',
+          'Monitor patient comfort and cooperation throughout treatment'
+        ],
+        equipmentNeeded: [
+          'Patient positioning aids (elevated bed or chair)',
+          'Properly fitted mask or clean mouthpiece',
+          'Functioning nebulizer with adequate oxygen flow',
+          'Timer to monitor treatment duration'
+        ]
+      },
+      {
+        id: 'nebulization-step-6',
+        stepNumber: 6,
+        title: 'Treatment Monitoring and Patient Assessment',
+        description: 'Monitor patient response during nebulization and assess for adverse effects',
+        isRequired: true,
+        isCritical: true,
+        timeEstimate: 480,
+        keyPoints: [
+          'Monitor oxygen saturation continuously during treatment',
+          'Assess heart rate and blood pressure, especially with beta-agonists',
+          'Listen to breath sounds periodically during and after treatment',
+          'Watch for signs of improvement: decreased work of breathing, better air entry',
+          'Monitor for adverse effects: tremor, palpitations, anxiety, nausea',
+          'Assess patient comfort and ability to tolerate treatment',
+          'Document patient response and any side effects observed',
+          'Be prepared to stop treatment if severe adverse reactions occur'
+        ],
+        safetyNotes: [
+          'Beta-agonists may cause significant cardiovascular stimulation',
+          'Tremor and anxiety are common but usually tolerable side effects',
+          'Stop treatment immediately if patient develops severe adverse reactions'
+        ],
+        equipmentNeeded: [
+          'Continuous pulse oximetry and cardiac monitoring',
+          'Blood pressure monitoring equipment',
+          'Stethoscope for serial breath sound assessment',
+          'Documentation materials for response tracking'
+        ]
+      },
+      {
+        id: 'nebulization-step-7',
+        stepNumber: 7,
+        title: 'Treatment Completion and Effectiveness Assessment',
+        description: 'Complete nebulization treatment and assess overall therapeutic effectiveness',
+        isRequired: true,
+        isCritical: true,
+        timeEstimate: 240,
+        keyPoints: [
+          'Continue treatment until nebulizer stops producing mist',
+          'Turn off oxygen flow and disconnect nebulizer from patient',
+          'Assess post-treatment respiratory status and oxygen saturation',
+          'Compare pre- and post-treatment breath sounds and peak flows',
+          'Evaluate improvement in dyspnea and accessory muscle use',
+          'Ask patient about subjective improvement in breathing',
+          'Document treatment completion time and total duration',
+          'Plan for additional treatments if inadequate response'
+        ],
+        safetyNotes: [
+          'Complete medication delivery important for maximum benefit',
+          'Objective measures more reliable than patient subjective reports alone',
+          'Some patients may require multiple treatments for optimal effect'
+        ],
+        equipmentNeeded: [
+          'Peak flow meter for objective measurement if available',
+          'Pulse oximetry for oxygen saturation comparison',
+          'Documentation materials for pre/post comparison',
+          'Additional medication for repeat treatments if needed'
+        ]
+      },
+      {
+        id: 'nebulization-step-8',
+        stepNumber: 8,
+        title: 'Equipment Cleaning and Patient Education',
+        description: 'Clean nebulizer equipment properly and educate patient about continued care',
+        isRequired: true,
+        isCritical: false,
+        timeEstimate: 180,
+        keyPoints: [
+          'Dispose of single-use nebulizer components in appropriate waste',
+          'Clean reusable components with soap and water if patient-owned equipment',
+          'Educate patient about proper home nebulizer use and maintenance',
+          'Explain signs of worsening respiratory distress requiring medical attention',
+          'Provide instructions for medication storage and expiration dates',
+          'Discuss timing of next scheduled nebulizer treatment if applicable',
+          'Document patient education provided and understanding demonstrated',
+          'Arrange appropriate follow-up for ongoing respiratory management'
+        ],
+        safetyNotes: [
+          'Proper equipment cleaning prevents bacterial contamination',
+          'Patient education critical for safe and effective home treatment',
+          'Clear instructions prevent medication errors and equipment problems'
+        ],
+        equipmentNeeded: [
+          'Equipment cleaning supplies for reusable components',
+          'Patient education materials about nebulizer use',
+          'Written instructions for medication timing and dosing',
+          'Contact information for follow-up questions or concerns'
+        ]
+      }
+    ],
     objectives: [
       'Assess patient respiratory status and verify indications for nebulized therapy',
       'Set up and operate nebulizer equipment with proper medication preparation',
