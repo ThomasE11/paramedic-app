@@ -12557,6 +12557,151 @@ export const enhancedCriticalSkillSteps: { [skillId: string]: EnhancedSkillStep[
         'Storage and inventory management systems'
       ]
     }
+  ],
+  'troubleshooting-ventilator-alarms': [
+    {
+      id: 'tva_1',
+      stepNumber: 1,
+      title: 'Initial Response and Patient Assessment',
+      description: 'Immediately respond to the ventilator alarm and assess the patient, not the machine.',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 30,
+      keyPoints: [
+        'Verbally acknowledge the alarm and identify its type (e.g., high pressure, low volume).',
+        'Visually inspect the patient for signs of distress, cyanosis, or altered mental status.',
+        'Check for chest rise and fall.',
+        'Briefly auscultate breath sounds.'
+      ],
+      safetyNotes: [
+        'Always assess the patient first. The ventilator is secondary.',
+        'If the patient is in severe distress, immediately disconnect from the ventilator and begin manual ventilation.'
+      ]
+    },
+    {
+      id: 'tva_2',
+      stepNumber: 2,
+      title: 'Disconnect and Manually Ventilate',
+      description: 'If the patient is unstable or the cause of the alarm is not immediately obvious, disconnect the patient from the ventilator and manually ventilate with a bag-valve-mask at 100% oxygen.',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'Disconnect the ventilator circuit from the endotracheal tube.',
+        'Attach a bag-valve-mask with a high-flow oxygen source.',
+        'Provide gentle ventilations and assess for compliance (ease of bagging).',
+        'If bagging is easy, the problem is likely with the ventilator or circuit.',
+        'If bagging is difficult, the problem is likely with the patient\'s airway or lungs.'
+      ],
+      safetyNotes: [
+        'This step quickly differentiates between a patient problem and an equipment problem.',
+        'Ensure a good seal with the BVM to the ET tube.'
+      ],
+      equipmentNeeded: ['Bag-valve-mask', 'Oxygen source']
+    },
+    {
+      id: 'tva_3',
+      stepNumber: 3,
+      title: 'Troubleshoot using DOPE Mnemonic - D for Displacement',
+      description: 'Systematically assess for endotracheal tube displacement.',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Check the depth of the ET tube at the lips or teeth and compare with the documented depth.',
+        'Auscultate for bilateral breath sounds and absence of gastric sounds.',
+        'Check for waveform capnography. A lost waveform indicates displacement.',
+        'If displaced, attempt to reposition. If unsuccessful, prepare for re-intubation.'
+      ],
+      safetyNotes: [
+        'An esophageal intubation is a critical emergency. If suspected, extubate immediately and ventilate with BVM.',
+        'A right mainstem intubation will present with absent left-sided breath sounds.'
+      ],
+      equipmentNeeded: ['Stethoscope', 'Capnography monitor', 'Laryngoscope', 'New ETT']
+    },
+    {
+      id: 'tva_4',
+      stepNumber: 4,
+      title: 'Troubleshoot using DOPE Mnemonic - O for Obstruction',
+      description: 'Assess for and relieve any airway obstruction.',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'Attempt to pass a suction catheter through the ET tube. If it doesn\'t pass, the tube is obstructed.',
+        'Common obstructions include mucous plugs, blood, or kinking of the tube.',
+        'Suction the ET tube to remove secretions.',
+        'Check for any kinks in the ventilator tubing or ET tube.',
+        'The patient biting the tube can also cause an obstruction; consider a bite block or sedation.'
+      ],
+      safetyNotes: [
+        'Use sterile technique for suctioning to prevent infection.',
+        'Limit suctioning passes to <15 seconds to prevent hypoxia.'
+      ],
+      equipmentNeeded: ['Suction catheter', 'Suction source', 'Bite block', 'Sedatives']
+    },
+    {
+      id: 'tva_5',
+      stepNumber: 5,
+      title: 'Troubleshoot using DOPE Mnemonic - P for Pneumothorax',
+      description: 'Assess for pneumothorax, especially after trauma or with high airway pressures.',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 90,
+      keyPoints: [
+        'Auscultate for unilateral decreased or absent breath sounds.',
+        'Check for tracheal deviation away from the affected side (a late sign).',
+        'Percuss the chest for hyperresonance.',
+        'Look for subcutaneous emphysema.',
+        'If tension pneumothorax is suspected, perform immediate needle decompression.'
+      ],
+      safetyNotes: [
+        'Tension pneumothorax is a life-threatening emergency requiring immediate intervention.',
+        'Be prepared for chest tube insertion after needle decompression.'
+      ],
+      equipmentNeeded: ['Stethoscope', 'Needle decompression kit (14-gauge needle)', 'Chest tube kit (in hospital)']
+    },
+    {
+      id: 'tva_6',
+      stepNumber: 6,
+      title: 'Troubleshoot using DOPE Mnemonic - E for Equipment Failure',
+      description: 'Check the ventilator, circuit, and all connections for failures.',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 120,
+      keyPoints: [
+        'If manual ventilation is easy, the problem is likely equipment-related.',
+        'Check the ventilator settings to ensure they are appropriate.',
+        'Inspect the entire ventilator circuit for disconnections, leaks, or water condensation.',
+        'Check the oxygen source and connections.',
+        'If a specific ventilator failure is suspected, replace the ventilator.'
+      ],
+      safetyNotes: [
+        'Always have a backup ventilator or BVM readily available.',
+        'Systematically check all parts of the equipment from the ventilator to the patient.'
+      ],
+      equipmentNeeded: ['Backup ventilator', 'Replacement ventilator circuit']
+    },
+    {
+      id: 'tva_7',
+      stepNumber: 7,
+      title: 'Resolution and Reconnection',
+      description: 'Once the problem is identified and resolved, reconnect the patient to the ventilator.',
+      isRequired: true,
+      isCritical: true,
+      timeEstimate: 60,
+      keyPoints: [
+        'After resolving the issue, reconnect the patient to the ventilator circuit.',
+        'Observe the ventilator to ensure alarms have resolved.',
+        'Reassess the patient to confirm stable vital signs and adequate ventilation.',
+        'Document the event, interventions, and patient outcome.'
+      ],
+      safetyNotes: [
+        'Continuously monitor the patient after reconnection to ensure the problem is fully resolved.',
+        'If alarms recur, repeat the troubleshooting process.'
+      ],
+      equipmentNeeded: ['Ventilator', 'Monitoring equipment']
+    }
   ]
 };
 
@@ -21807,5 +21952,36 @@ export const criticalSkillsMetadata = {
       'Documentation materials for recording trends and values',
       'Backup monitoring equipment for critical patients'
     ]
-  }
+  },
+  'troubleshooting-ventilator-alarms': {
+    name: 'Troubleshooting Ventilator Alarms',
+    category: 'airway',
+    difficultyLevel: 'ADVANCED',
+    timeEstimateMinutes: 15,
+    isCritical: true,
+    objectives: [
+      'Rapidly identify and categorize ventilator alarms (high pressure, low pressure, apnea).',
+      'Systematically troubleshoot the cause of ventilator alarms using the DOPE mnemonic.',
+      'Perform immediate life-saving interventions for critical airway or ventilator issues.',
+      'Ensure patient safety during troubleshooting by providing manual ventilation when necessary.',
+      'Document alarm events, interventions, and patient response accurately.'
+    ],
+    indications: [
+      'Any audible or visual alarm from a mechanical ventilator.',
+      'Sudden change in patient respiratory status while on a ventilator.',
+      'Discrepancy between ventilator settings and patient\'s clinical presentation.'
+    ],
+    contraindications: [
+      'Patient is not on a mechanical ventilator.',
+      'Alarm is for a non-critical setting change (e.g., battery low but plugged in).'
+    ],
+    equipment: [
+      'Mechanical ventilator',
+      'Bag-valve-mask with oxygen source',
+      'Suction equipment (in-line and standard)',
+      'Endotracheal tube supplies (replacement tube, laryngoscope)',
+      'Stethoscope',
+      'Pulse oximeter and capnography monitor'
+    ]
+  },
 };
