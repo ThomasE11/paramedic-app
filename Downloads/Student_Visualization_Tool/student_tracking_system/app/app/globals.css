@@ -1,0 +1,832 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Apple-inspired color system */
+:root {
+  /* Primary Colors */
+  --apple-blue: #007AFF;
+  --apple-purple: #5856D6;
+  --apple-pink: #FF2D92;
+  --apple-red: #FF3B30;
+  --apple-orange: #FF9500;
+  --apple-yellow: #FFCC00;
+  --apple-green: #30D158;
+  --apple-teal: #40C8E0;
+  
+  /* System Colors */
+  --apple-gray-1: #8E8E93;
+  --apple-gray-2: #AEAEB2;
+  --apple-gray-3: #C7C7CC;
+  --apple-gray-4: #D1D1D6;
+  --apple-gray-5: #E5E5EA;
+  --apple-gray-6: #F2F2F7;
+  
+  /* Dark System Colors */
+  --apple-dark-1: #1C1C1E;
+  --apple-dark-2: #2C2C2E;
+  --apple-dark-3: #3A3A3C;
+  --apple-dark-4: #48484A;
+  --apple-dark-5: #636366;
+  --apple-dark-6: #8E8E93;
+}
+ 
+@layer base {
+  :root {
+    --background: 0 0% 99%;
+    --foreground: 220 15% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 15% 10%;
+ 
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 15% 10%;
+ 
+    --primary: 214 100% 50%;
+    --primary-foreground: 0 0% 100%;
+ 
+    --secondary: 214 32% 97%;
+    --secondary-foreground: 220 15% 10%;
+ 
+    --muted: 214 32% 97%;
+    --muted-foreground: 220 8% 46%;
+ 
+    --accent: 214 32% 97%;
+    --accent-foreground: 220 15% 10%;
+ 
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 214 100% 50%;
+ 
+    --radius: 0.75rem;
+  }
+ 
+  .dark {
+    --background: 220 15% 11%;
+    --foreground: 210 40% 98%;
+ 
+    --card: 220 15% 11%;
+    --card-foreground: 210 40% 98%;
+ 
+    --popover: 220 15% 11%;
+    --popover-foreground: 210 40% 98%;
+ 
+    --primary: 214 100% 50%;
+    --primary-foreground: 220 15% 11%;
+ 
+    --secondary: 220 13% 18%;
+    --secondary-foreground: 210 40% 98%;
+ 
+    --muted: 220 13% 18%;
+    --muted-foreground: 215 20% 65%;
+ 
+    --accent: 220 13% 18%;
+    --accent-foreground: 210 40% 98%;
+ 
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+ 
+    --border: 220 13% 18%;
+    --input: 220 13% 18%;
+    --ring: 214 100% 50%;
+  }
+}
+ 
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-transparent text-foreground;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    font-weight: 400;
+    letter-spacing: -0.022em;
+    line-height: 1.47;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply text-foreground font-semibold;
+    letter-spacing: -0.025em;
+    font-feature-settings: 'liga' 1, 'kern' 1;
+  }
+  
+  h1 { 
+    @apply text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight;
+    font-weight: 700;
+  }
+  
+  h2 { 
+    @apply text-3xl md:text-4xl font-bold tracking-tight;
+    font-weight: 600;
+  }
+  
+  h3 { 
+    @apply text-2xl md:text-3xl font-semibold tracking-tight;
+    font-weight: 600;
+  }
+  
+  p {
+    @apply text-muted-foreground leading-relaxed;
+  }
+  
+  /* Apple-style focus ring */
+  :focus-visible {
+    outline: 3px solid rgba(0, 122, 255, 0.4);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+}
+
+/* Apple-inspired gradients and backgrounds */
+.apple-gradient-blue {
+  background: linear-gradient(135deg, #007AFF 0%, #5856D6 100%);
+}
+
+.apple-gradient-purple {
+  background: linear-gradient(135deg, #5856D6 0%, #FF2D92 100%);
+}
+
+.apple-gradient-teal {
+  background: linear-gradient(135deg, #40C8E0 0%, #30D158 100%);
+}
+
+.apple-gradient-orange {
+  background: linear-gradient(135deg, #FF9500 0%, #FF3B30 100%);
+}
+
+/* Theme-aware glassmorphism */
+.glass-morphism {
+  background: hsl(var(--card) / 0.85);
+  backdrop-filter: blur(20px);
+  border: 1px solid hsl(var(--border) / 0.5);
+  box-shadow: 
+    0 8px 32px hsl(var(--foreground) / 0.05),
+    0 1px 0px hsl(var(--border) / 0.05) inset;
+  transition: all 0.2s ease-in-out;
+}
+
+.dark .glass-morphism {
+  background: hsl(var(--card) / 0.9);
+  border: 1px solid hsl(var(--border) / 0.6);
+  box-shadow: 
+    0 8px 32px hsl(var(--background) / 0.8),
+    0 1px 0px hsl(var(--border) / 0.1) inset;
+}
+
+/* Custom scrollbar with Apple styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+  background-clip: content-box;
+}
+
+/* Smooth animations and transitions */
+.animate-fade-in {
+  animation: fadeIn 0.6s ease-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.4s ease-out;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Apple-inspired card hover effects */
+.card-hover {
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, box-shadow;
+}
+
+.card-hover:hover {
+  transform: translateY(-8px) scale(1.03);
+  box-shadow: 
+    0 25px 50px -12px rgba(0, 0, 0, 0.15),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.card-hover:active {
+  transform: translateY(-4px) scale(1.02);
+  transition-duration: 0.15s;
+}
+
+/* Apple-style buttons */
+.apple-button {
+  @apply inline-flex items-center justify-center rounded-xl font-medium transition-all duration-200;
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2;
+  font-size: 17px;
+  line-height: 1.235;
+  letter-spacing: -0.022em;
+  padding: 12px 20px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.04) 100%);
+  border: 0.5px solid rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(20px);
+}
+
+.apple-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.apple-button:active {
+  transform: translateY(0px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Apple-style input fields - Theme aware */
+.apple-input {
+  @apply w-full rounded-xl border bg-card px-4 py-3 text-base;
+  @apply focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20;
+  @apply border-border text-foreground;
+  font-family: inherit;
+  font-size: 17px;
+  line-height: 1.235;
+  letter-spacing: -0.022em;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.apple-input::placeholder {
+  @apply text-muted-foreground;
+  font-weight: 400;
+}
+
+/* Ensure high contrast text in both themes */
+.text-high-contrast {
+  @apply text-foreground;
+}
+
+.text-medium-contrast {
+  @apply text-muted-foreground;
+}
+
+.text-low-contrast {
+  @apply text-muted-foreground/60;
+}
+
+/* Theme-aware border colors */
+.border-theme {
+  @apply border-border;
+}
+
+.border-theme-light {
+  @apply border-border/50;
+}
+
+/* Better visibility for interactive elements */
+.interactive-text {
+  @apply text-foreground hover:text-primary transition-colors;
+}
+
+.interactive-icon {
+  @apply text-muted-foreground hover:text-foreground transition-colors;
+}
+
+/* Theme-aware Apple-style cards */
+.apple-card {
+  @apply rounded-2xl border backdrop-blur-xl;
+  background: hsl(var(--card) / 0.8);
+  border-color: hsl(var(--border) / 0.6);
+  box-shadow: 
+    0 1px 3px hsl(var(--foreground) / 0.03),
+    0 1px 2px hsl(var(--foreground) / 0.02),
+    0 0 0 1px hsl(var(--card) / 0.05) inset;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.apple-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 10px 25px -5px hsl(var(--foreground) / 0.1),
+    0 4px 6px -2px hsl(var(--foreground) / 0.05),
+    0 0 0 1px hsl(var(--card) / 0.1) inset;
+}
+
+.dark .apple-card {
+  background: hsl(var(--card) / 0.9);
+  border-color: hsl(var(--border) / 0.8);
+}
+
+/* Refined module colors inspired by Apple's design system */
+.module-card-hem3903 {
+  background: linear-gradient(135deg, #007AFF 0%, #5856D6 100%);
+  box-shadow: 0 8px 32px rgba(0, 122, 255, 0.25);
+}
+
+.module-card-hem2903 {
+  background: linear-gradient(135deg, #30D158 0%, #40C8E0 100%);
+  box-shadow: 0 8px 32px rgba(48, 209, 88, 0.25);
+}
+
+.module-card-hem3923 {
+  background: linear-gradient(135deg, #FF9500 0%, #FF3B30 100%);
+  box-shadow: 0 8px 32px rgba(255, 149, 0, 0.25);
+}
+
+.module-card-aem230 {
+  background: linear-gradient(135deg, #5856D6 0%, #FF2D92 100%);
+  box-shadow: 0 8px 32px rgba(88, 86, 214, 0.25);
+}
+
+/* Modern button styles */
+.btn-primary {
+  @apply bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105;
+}
+
+.btn-secondary {
+  @apply bg-white/80 backdrop-blur-sm hover:bg-white text-gray-700 hover:text-gray-900 font-medium px-6 py-3 rounded-xl border border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-md transition-all duration-200;
+}
+
+/* Focus styles with Apple-inspired design */
+.focus-visible:focus-visible {
+  outline: 3px solid rgba(0, 122, 255, 0.4);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* Enhanced status badges with gradients and dark mode support */
+.badge-success {
+  @apply bg-gradient-to-r from-green-400 to-green-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-sm;
+}
+
+.badge-warning {
+  @apply bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-sm;
+}
+
+.badge-info {
+  @apply bg-gradient-to-r from-blue-400 to-purple-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-sm;
+}
+
+/* Professional card enhancements */
+.student-card-professional {
+  background: linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--card)) 100%);
+  backdrop-filter: blur(10px);
+  border: 1px solid hsl(var(--border));
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, box-shadow;
+}
+
+.student-card-professional:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 20px 25px -5px hsl(var(--foreground) / 0.1),
+    0 10px 10px -5px hsl(var(--foreground) / 0.04);
+}
+
+.dark .student-card-professional:hover {
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.3),
+    0 10px 10px -5px rgba(0, 0, 0, 0.2);
+}
+
+/* Smooth fade-in animation for cards */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+/* Staggered animation delays for multiple cards */
+.animate-delay-100 { animation-delay: 0.1s; }
+.animate-delay-200 { animation-delay: 0.2s; }
+.animate-delay-300 { animation-delay: 0.3s; }
+.animate-delay-400 { animation-delay: 0.4s; }
+.animate-delay-500 { animation-delay: 0.5s; }
+
+/* Module-specific color schemes */
+.module-hem3903 {
+  @apply bg-gradient-to-br from-blue-500/10 to-purple-500/10 border-blue-200;
+}
+
+.module-hem2903 {
+  @apply bg-gradient-to-br from-green-500/10 to-teal-500/10 border-green-200;
+}
+
+.module-hem3923 {
+  @apply bg-gradient-to-br from-orange-500/10 to-red-500/10 border-orange-200;
+}
+
+.module-aem230 {
+  @apply bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-purple-200;
+}
+
+/* Mobile-first responsive design utilities */
+@layer components {
+  /* Mobile-friendly container */
+  .mobile-container {
+    @apply px-4 sm:px-6 lg:px-8;
+    max-width: 100%;
+  }
+  
+  /* Mobile-friendly grid systems */
+  .mobile-grid {
+    @apply grid gap-3 sm:gap-4 lg:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4;
+  }
+  
+  .mobile-grid-2 {
+    @apply grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2;
+  }
+  
+  .mobile-grid-3 {
+    @apply grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3;
+  }
+  
+  /* Touch-friendly buttons */
+  .btn-mobile {
+    @apply min-h-[44px] min-w-[44px] touch-manipulation;
+  }
+  
+  /* Responsive text sizing */
+  .text-mobile-xs {
+    @apply text-xs sm:text-sm;
+  }
+  
+  .text-mobile {
+    @apply text-sm sm:text-base;
+  }
+  
+  .text-mobile-lg {
+    @apply text-base sm:text-lg;
+  }
+  
+  .text-mobile-xl {
+    @apply text-lg sm:text-xl lg:text-2xl;
+  }
+  
+  .text-mobile-2xl {
+    @apply text-xl sm:text-2xl lg:text-3xl;
+  }
+  
+  /* Mobile-friendly spacing */
+  .space-mobile-sm {
+    @apply space-y-3 sm:space-y-4;
+  }
+  
+  .space-mobile {
+    @apply space-y-4 sm:space-y-6;
+  }
+  
+  .space-mobile-lg {
+    @apply space-y-6 sm:space-y-8;
+  }
+  
+  .gap-mobile-sm {
+    @apply gap-2 sm:gap-3;
+  }
+  
+  .gap-mobile {
+    @apply gap-3 sm:gap-4 lg:gap-6;
+  }
+  
+  .gap-mobile-lg {
+    @apply gap-4 sm:gap-6 lg:gap-8;
+  }
+  
+  /* Responsive padding */
+  .p-mobile-sm {
+    @apply p-3 sm:p-4;
+  }
+  
+  .p-mobile {
+    @apply p-4 sm:p-6;
+  }
+  
+  .p-mobile-lg {
+    @apply p-6 sm:p-8;
+  }
+  
+  /* Mobile-friendly flex layouts */
+  .flex-mobile {
+    @apply flex flex-col sm:flex-row items-start sm:items-center;
+  }
+  
+  .flex-mobile-center {
+    @apply flex flex-col sm:flex-row items-center justify-center sm:justify-between;
+  }
+  
+  .flex-mobile-wrap {
+    @apply flex flex-wrap items-center;
+  }
+  
+  /* Touch-friendly interactive elements */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px] flex items-center justify-center touch-manipulation;
+  }
+  
+  /* Mobile-optimized modals */
+  .modal-mobile {
+    @apply w-full max-w-lg mx-4 sm:mx-auto max-h-[90vh] overflow-y-auto;
+  }
+  
+  /* Responsive table wrapper */
+  .table-mobile {
+    @apply overflow-x-auto -mx-4 sm:mx-0 scrollbar-hide;
+  }
+  
+  .table-mobile table {
+    @apply min-w-full;
+  }
+  
+  /* Hide/show elements based on screen size */
+  .mobile-only {
+    @apply block sm:hidden;
+  }
+  
+  .tablet-only {
+    @apply hidden sm:block lg:hidden;
+  }
+  
+  .desktop-only {
+    @apply hidden lg:block;
+  }
+  
+  .tablet-up {
+    @apply hidden sm:block;
+  }
+  
+  .desktop-up {
+    @apply hidden lg:block;
+  }
+  
+  /* Mobile-friendly card styling */
+  .card-mobile {
+    @apply glass-morphism rounded-xl p-4 sm:p-6 shadow-lg;
+  }
+  
+  /* Responsive headers */
+  .header-mobile {
+    @apply flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6;
+  }
+  
+  /* Mobile navigation */
+  .nav-mobile {
+    @apply flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4;
+  }
+  
+  .nav-mobile-item {
+    @apply block px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 touch-manipulation;
+  }
+}
+
+/* Mobile-specific enhancements */
+@media (max-width: 640px) {
+  .container {
+    @apply px-4;
+  }
+  
+  /* Better text hierarchy for mobile */
+  h1 {
+    @apply text-2xl leading-tight mb-4;
+  }
+  
+  h2 {
+    @apply text-xl leading-tight mb-3;
+  }
+  
+  h3 {
+    @apply text-lg leading-tight mb-3;
+  }
+  
+  h4, h5, h6 {
+    @apply text-base leading-tight mb-2;
+  }
+  
+  /* Mobile-optimized buttons */
+  button, .btn {
+    @apply min-h-[44px] px-4 py-3 text-base font-medium;
+  }
+  
+  /* Mobile-friendly form elements with theme awareness */
+  input, select, textarea {
+    @apply min-h-[44px] text-base px-4;
+    @apply text-foreground bg-background border-border;
+  }
+  
+  input::placeholder, textarea::placeholder {
+    @apply text-muted-foreground;
+  }
+  
+  /* Prevent zoom on input focus in iOS */
+  input[type="text"], 
+  input[type="email"], 
+  input[type="password"], 
+  input[type="number"], 
+  input[type="tel"], 
+  input[type="url"], 
+  input[type="search"], 
+  textarea, 
+  select {
+    font-size: 16px !important;
+  }
+  
+  /* Ensure checkboxes and radios are visible in both themes */
+  input[type="checkbox"], input[type="radio"] {
+    @apply border-border bg-background;
+  }
+  
+  input[type="checkbox"]:checked, input[type="radio"]:checked {
+    @apply border-primary bg-primary;
+  }
+  
+  /* Mobile cards with better spacing */
+  .card-hover {
+    @apply mb-4;
+  }
+  
+  .card-hover:hover {
+    transform: none;
+  }
+  
+  .card-hover:active {
+    transform: scale(0.98);
+    transition: transform 0.1s;
+  }
+  
+  /* Mobile modal adjustments */
+  .modal-mobile {
+    @apply mx-2 max-h-[95vh] rounded-2xl;
+  }
+  
+  /* Better mobile tables */
+  .table-mobile {
+    @apply -mx-2;
+  }
+  
+  /* Mobile-friendly badges */
+  .badge-info, .badge-success, .badge-warning {
+    @apply px-2 py-1 text-xs;
+  }
+}
+
+/* Tablet optimizations */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .container {
+    @apply px-6;
+  }
+  
+  /* Tablet-specific grid adjustments */
+  .mobile-grid {
+    @apply grid-cols-2 lg:grid-cols-3;
+  }
+  
+  /* Better tablet modal sizing */
+  .modal-mobile {
+    @apply max-w-2xl;
+  }
+}
+
+/* Desktop optimizations */
+@media (min-width: 1025px) {
+  .container {
+    @apply px-8;
+  }
+  
+  /* Enhanced hover effects for desktop */
+  .card-hover:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 
+      0 25px 50px -12px rgba(0, 0, 0, 0.25),
+      0 0 0 1px rgba(255, 255, 255, 0.05);
+  }
+}
+
+/* High DPI displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .glass-morphism {
+    backdrop-filter: blur(25px);
+  }
+  
+  /* Crisper borders on high DPI */
+  .border {
+    border-width: 0.5px;
+  }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in,
+  .animate-slide-up,
+  .animate-scale-in,
+  .card-hover {
+    animation: none;
+    transition: none;
+  }
+  
+  .card-hover:hover {
+    transform: none;
+  }
+}
+
+/* Dark mode mobile optimizations */
+.dark .card-mobile {
+  @apply bg-gray-800/90 border-gray-700/50;
+}
+
+/* Print styles */
+@media print {
+  .mobile-only,
+  .desktop-only,
+  button,
+  .btn {
+    display: none;
+  }
+  
+  .card-mobile {
+    @apply border border-gray-300 shadow-none;
+  }
+  
+  .glass-morphism {
+    background: white;
+    backdrop-filter: none;
+    border: 1px solid #e5e7eb;
+  }
+}
+
+/* Extra small screens (xs) - 475px and below */
+@media (max-width: 475px) {
+  .xs\:hidden {
+    display: none !important;
+  }
+  
+  .xs\:inline {
+    display: inline !important;
+  }
+  
+  .xs\:block {
+    display: block !important;
+  }
+  
+  .xs\:flex {
+    display: flex !important;
+  }
+}
+
+/* Show on extra small screens and above */
+@media (min-width: 476px) {
+  .xs\:inline {
+    display: none !important;
+  }
+}
