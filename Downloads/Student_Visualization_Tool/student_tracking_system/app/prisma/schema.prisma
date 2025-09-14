@@ -1,0 +1,308 @@
+generator client {
+    provider = "prisma-client-js"
+    binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model User {
+  id               String         @id @default(cuid())
+  name             String?
+  email            String         @unique
+  emailVerified    DateTime?      @map("email_verified")
+  image            String?
+  password         String?
+  role             String         @default("instructor")
+  bio              String?
+  createdAt        DateTime       @default(now()) @map("created_at")
+  department       String?
+  phone            String?
+  preferences      Json?          @default("{}")
+  title            String?
+  updatedAt        DateTime       @default(now()) @updatedAt @map("updated_at")
+  accounts         Account[]
+  attendanceMarked Attendance[]
+  classSessions    ClassSession[]
+  notes            Note[]
+  sessions         Session[]
+
+  @@map("users")
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verificationtokens")
+}
+
+model Module {
+  id            String         @id @default(cuid())
+  code          String         @unique
+  name          String
+  description   String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  averageGPA    Float?         @default(0.0)
+  totalCredits  Int?           @default(0)
+  classSessions ClassSession[]
+  grades        Grade[]
+  students      Student[]
+  subjects      Subject[]
+
+  @@map("modules")
+}
+
+model Student {
+  id          String             @id @default(cuid())
+  studentId   String             @unique
+  firstName   String
+  lastName    String
+  fullName    String
+  email       String             @unique
+  phone       String?
+  moduleId    String?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  creditHours Int?               @default(0)
+  currentGPA  Float?             @default(0.0)
+  activities  Activity[]
+  attendance  Attendance[]
+  grades      Grade[]
+  notes       Note[]
+  conflicts   ScheduleConflict[]
+  schedules   Schedule[]
+  module      Module?            @relation(fields: [moduleId], references: [id])
+
+  @@map("students")
+}
+
+model Note {
+  id        String   @id @default(cuid())
+  studentId String
+  userId    String
+  title     String
+  content   String
+  category  String   @default("general")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notes")
+}
+
+model Activity {
+  id          String   @id @default(cuid())
+  studentId   String?
+  type        String
+  description String
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  student     Student? @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@map("activities")
+}
+
+model TimeSlot {
+  id              String          @id @default(cuid())
+  startTime       String
+  endTime         String
+  duration        Int
+  createdAt       DateTime        @default(now())
+  scheduleEntries ScheduleEntry[]
+
+  @@map("time_slots")
+}
+
+model Location {
+  id              String          @id @default(cuid())
+  name            String
+  capacity        Int?
+  type            String          @default("classroom")
+  building        String?
+  floor           String?
+  equipment       String?
+  createdAt       DateTime        @default(now())
+  classSessions   ClassSession[]
+  scheduleEntries ScheduleEntry[]
+
+  @@map("locations")
+}
+
+model Subject {
+  id              String          @id @default(cuid())
+  code            String          @unique
+  name            String
+  description     String?
+  credits         Int?
+  moduleId        String?
+  createdAt       DateTime        @default(now())
+  classSessions   ClassSession[]
+  grades          Grade[]
+  scheduleEntries ScheduleEntry[]
+  module          Module?         @relation(fields: [moduleId], references: [id])
+
+  @@map("subjects")
+}
+
+model Schedule {
+  id           String          @id @default(cuid())
+  studentId    String
+  semester     String          @default("current")
+  academicYear String          @default("2024-2025")
+  isActive     Boolean         @default(true)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  entries      ScheduleEntry[]
+  student      Student         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, semester, academicYear])
+  @@map("schedules")
+}
+
+model ScheduleEntry {
+  id          String    @id @default(cuid())
+  scheduleId  String
+  subjectId   String?
+  timeSlotId  String
+  locationId  String?
+  dayOfWeek   Int
+  startTime   String
+  endTime     String
+  title       String
+  type        String    @default("class")
+  instructor  String?
+  notes       String?
+  color       String?   @default("#3B82F6")
+  isRecurring Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  location    Location? @relation(fields: [locationId], references: [id])
+  schedule    Schedule  @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  subject     Subject?  @relation(fields: [subjectId], references: [id])
+  timeSlot    TimeSlot  @relation(fields: [timeSlotId], references: [id])
+
+  @@map("schedule_entries")
+}
+
+model ScheduleConflict {
+  id           String   @id @default(cuid())
+  studentId    String
+  entryId1     String
+  entryId2     String
+  conflictType String
+  resolved     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  student      Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@map("schedule_conflicts")
+}
+
+model Grade {
+  id           String    @id @default(cuid())
+  studentId    String
+  subjectId    String
+  moduleId     String?
+  grade        String
+  gradePoints  Float
+  creditHours  Int       @default(3)
+  semester     String    @default("current")
+  academicYear String    @default("2024-2025")
+  examType     String?
+  examDate     DateTime?
+  comments     String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  module       Module?   @relation(fields: [moduleId], references: [id])
+  student      Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  subject      Subject   @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, subjectId, semester, academicYear, examType])
+  @@map("grades")
+}
+
+model ClassSession {
+  id               String       @id @default(cuid())
+  title            String
+  description      String?
+  subjectId        String?
+  moduleId         String?
+  locationId       String?
+  instructorId     String?
+  date             DateTime
+  startTime        String
+  endTime          String
+  duration         Int
+  type             String       @default("lecture")
+  status           String       @default("scheduled")
+  capacity         Int?         @default(30)
+  notes            String?
+  color            String?      @default("#3B82F6")
+  isRecurring      Boolean      @default(false)
+  recurringPattern String?
+  recurringEndDate DateTime?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  attendance       Attendance[]
+  instructor       User?        @relation(fields: [instructorId], references: [id])
+  location         Location?    @relation(fields: [locationId], references: [id])
+  module           Module?      @relation(fields: [moduleId], references: [id])
+  subject          Subject?     @relation(fields: [subjectId], references: [id])
+
+  @@map("class_sessions")
+}
+
+model Attendance {
+  id             String       @id @default(cuid())
+  classSessionId String
+  studentId      String
+  status         String       @default("present")
+  notes          String?
+  markedAt       DateTime?
+  markedBy       String?
+  duration       Int?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  classSession   ClassSession @relation(fields: [classSessionId], references: [id], onDelete: Cascade)
+  marker         User?        @relation(fields: [markedBy], references: [id])
+  student        Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([classSessionId, studentId])
+  @@map("attendance")
+}
