@@ -5,9 +5,7 @@ import { writeFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
 import { nanoid } from 'nanoid';
-// Dynamic imports to prevent build issues
-const pdfreader = require('pdf-parse');
-const mammoth = require('mammoth');
+// These will be imported dynamically in the function to prevent build issues
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_TYPES = [
@@ -87,6 +85,8 @@ export async function POST(request: NextRequest) {
       if (file.type === 'text/plain') {
         extractedText = buffer.toString('utf-8');
       } else if (file.type === 'application/pdf') {
+        // Dynamic import to prevent build issues
+        const pdfreader = (await import('pdf-parse')).default;
         const pdfData = await pdfreader(buffer);
         extractedText = pdfData.text;
         metadata = {
@@ -94,6 +94,8 @@ export async function POST(request: NextRequest) {
           wordCount: pdfData.text.split(/\s+/).length
         };
       } else if (file.type.includes('word') || file.type.includes('document')) {
+        // Dynamic import to prevent build issues
+        const mammoth = (await import('mammoth')).default;
         const result = await mammoth.extractRawText({ buffer });
         extractedText = result.value;
         metadata = {
