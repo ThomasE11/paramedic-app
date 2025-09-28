@@ -14,7 +14,7 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { SettingsModal } from '@/components/account/settings-modal';
 import { GmailSetupDialog } from '@/components/email/gmail-setup-dialog';
-import { AiAssistantDialog } from '@/components/ai/ai-assistant-dialog';
+import { EnhancedEducationalAI } from '@/components/ai/EnhancedEducationalAI';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { 
   GraduationCap, 
@@ -34,6 +34,7 @@ const navigation = [
   { name: 'Dashboard', href: '/dashboard' },
   { name: 'Students', href: '/students' },
   { name: 'Classes', href: '/classes' },
+  { name: 'Assignments', href: '/assignments' },
   { name: 'Modules', href: '/modules' },
   { name: 'Attendance', href: '/attendance' },
   { name: 'Timetables', href: '/timetables' },
@@ -135,7 +136,7 @@ export function Header() {
               className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white font-medium px-3 sm:px-4 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 text-sm"
             >
               <Bot className="w-4 h-4 sm:mr-2" />
-              <span className="hidden sm:inline">AI Assistant</span>
+              <span className="hidden sm:inline">CLAUDIA AI</span>
             </Button>
 
             {/* Theme Toggle */}
@@ -179,12 +180,12 @@ export function Header() {
                   <Settings className="mr-3 h-4 w-4 text-blue-600" />
                   <span className="font-medium">Settings</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   onClick={() => setAiAssistantOpen(true)}
                   className="hover:bg-muted transition-colors"
                 >
                   <Bot className="mr-3 h-4 w-4 text-purple-600" />
-                  <span className="font-medium">AI Assistant</span>
+                  <span className="font-medium">CLAUDIA AI</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem 
                   onClick={() => setGmailSetupOpen(true)}
@@ -267,10 +268,10 @@ export function Header() {
         }}
       />
       
-      {/* AI Assistant Dialog */}
-      <AiAssistantDialog
-        open={aiAssistantOpen}
-        onOpenChange={setAiAssistantOpen}
+      {/* Enhanced Educational AI Assistant */}
+      <EnhancedEducationalAI
+        isOpen={aiAssistantOpen}
+        onClose={() => setAiAssistantOpen(false)}
       />
     </header>
   );
