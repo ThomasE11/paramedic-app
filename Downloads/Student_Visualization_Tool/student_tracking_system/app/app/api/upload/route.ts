@@ -5,8 +5,9 @@ import { writeFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
 import { nanoid } from 'nanoid';
-import * as pdfreader from 'pdf-parse';
-import mammoth from 'mammoth';
+// Dynamic imports to prevent build issues
+const pdfreader = require('pdf-parse');
+const mammoth = require('mammoth');
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_TYPES = [
