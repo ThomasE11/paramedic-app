@@ -2,11 +2,11 @@
 import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { PrismaAdapter } from '@next-auth/prisma-adapter';
-import { prisma } from './db';
+import { prisma } from './prisma';
 import bcrypt from 'bcryptjs';
 
 export const authOptions: NextAuthOptions = {
-  adapter: process.env.NODE_ENV === 'production' || !process.env.DATABASE_URL || process.env.DATABASE_URL.includes('placeholder')
+  adapter: !process.env.DATABASE_URL || process.env.DATABASE_URL.includes('placeholder')
     ? undefined
     : PrismaAdapter(prisma),
   providers: [
@@ -21,25 +21,17 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        // Demo mode - allow specific test credentials
-        if (process.env.NODE_ENV === 'production' || !process.env.DATABASE_URL || process.env.DATABASE_URL.includes('placeholder')) {
+        // Demo mode - allow specific test credentials when no database is available
+        if (process.env.ENABLE_DEMO_MODE === 'true' || !process.env.DATABASE_URL || process.env.DATABASE_URL.includes('placeholder')) {
           console.log('Demo mode: Checking credentials');
 
-          // Test credentials
-          const testUsers = [
-            { email: 'admin@test.com', password: 'admin123', name: 'Admin User', role: 'admin' },
-            { email: 'instructor@test.com', password: 'instructor123', name: 'Test Instructor', role: 'instructor' },
-            { email: 'elias@twetemo.com', password: 'test123', name: 'Elias Thomas', role: 'instructor' }
-          ];
-
-          const testUser = testUsers.find(u => u.email === credentials.email && u.password === credentials.password);
-
-          if (testUser) {
+          // Original credentials as requested
+          if (credentials.email === 'elias@twetemo.com' && credentials.password === 'test123') {
             return {
               id: Date.now().toString(),
-              email: testUser.email,
-              name: testUser.name,
-              role: testUser.role
+              email: 'elias@twetemo.com',
+              name: 'Elias Thomas',
+              role: 'instructor'
             };
           }
 
