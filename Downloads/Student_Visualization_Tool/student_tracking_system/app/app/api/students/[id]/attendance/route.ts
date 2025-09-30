@@ -6,7 +6,7 @@ import { format, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-f
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -14,7 +14,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const studentId = params.id;
+    const { id: studentId } = await params;
     const url = new URL(request.url);
     const startDate = url.searchParams.get('startDate');
     const endDate = url.searchParams.get('endDate');

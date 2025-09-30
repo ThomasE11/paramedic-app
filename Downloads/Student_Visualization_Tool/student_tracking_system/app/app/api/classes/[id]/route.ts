@@ -6,13 +6,15 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const { id } = await params;
 
     // Demo mode - return null (class not found)
     if (process.env.NODE_ENV === 'production' || !process.env.DATABASE_URL || process.env.DATABASE_URL.includes('placeholder')) {
@@ -21,7 +23,7 @@ export async function GET(
     }
 
     const classSession = await prisma.classSession.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         module: true,
         subject: true,
@@ -78,7 +80,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -86,6 +88,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id } = await params;
     const body = await request.json();
     const {
       title,
@@ -115,7 +118,7 @@ export async function PUT(
     })();
 
     const updatedClass = await prisma.classSession.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         ...(title !== undefined && { title }),
         ...(description !== undefined && { description }),
@@ -171,7 +174,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -179,8 +182,10 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id } = await params;
+
     await prisma.classSession.delete({
-      where: { id: params.id }
+      where: { id }
     });
 
     return NextResponse.json({ message: 'Class deleted successfully' });

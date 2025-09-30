@@ -6,7 +6,7 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -14,8 +14,10 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id } = await params;
+
     const attendance = await prisma.attendance.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         student: {
           select: {
@@ -63,13 +65,15 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const { id } = await params;
 
     const user = await prisma.user.findUnique({
       where: { email: session.user.email }
@@ -83,7 +87,7 @@ export async function PUT(
     const { status, notes, duration } = body;
 
     const updatedAttendance = await prisma.attendance.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         ...(status !== undefined && { status }),
         ...(notes !== undefined && { notes }),
@@ -132,7 +136,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -140,8 +144,10 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id } = await params;
+
     await prisma.attendance.delete({
-      where: { id: params.id }
+      where: { id }
     });
 
     return NextResponse.json({ message: 'Attendance record deleted successfully' });

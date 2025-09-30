@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -16,6 +16,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id } = await params;
     const body = await request.json();
     const { title, content, category } = body;
 
@@ -24,7 +25,7 @@ export async function PUT(
       console.log('Demo mode: Updating mock note');
 
       const mockNote = {
-        id: params.id,
+        id,
         title,
         content,
         category,
@@ -37,7 +38,7 @@ export async function PUT(
     }
 
     const note = await prisma.note.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         title,
         content,
@@ -73,7 +74,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -81,8 +82,10 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id } = await params;
+
     const note = await prisma.note.delete({
-      where: { id: params.id },
+      where: { id },
       include: { student: true }
     });
 
