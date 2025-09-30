@@ -30,6 +30,10 @@ export default async function StudentDetailsPage({
           }
         },
         orderBy: { createdAt: 'desc' }
+      },
+      activities: {
+        orderBy: { createdAt: 'desc' },
+        take: 10
       }
     }
   });
