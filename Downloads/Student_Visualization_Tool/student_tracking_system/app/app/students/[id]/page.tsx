@@ -2,23 +2,25 @@
 import { getServerSession } from 'next-auth';
 import { redirect, notFound } from 'next/navigation';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/db';
+import { prisma } from '@/lib/prisma';
 import { Header } from '@/components/layout/header';
 import { StudentDetailsContent } from './student-details-content';
 
 export default async function StudentDetailsPage({
   params
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
   const session = await getServerSession(authOptions);
-  
+
   if (!session?.user) {
     redirect('/auth/signin');
   }
 
+  const { id } = await params;
+
   const student = await prisma.student.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       module: true,
       notes: {
@@ -27,9 +29,6 @@ export default async function StudentDetailsPage({
             select: { name: true, email: true }
           }
         },
-        orderBy: { createdAt: 'desc' }
-      },
-      activities: {
         orderBy: { createdAt: 'desc' }
       }
     }
