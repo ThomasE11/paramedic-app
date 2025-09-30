@@ -19,44 +19,21 @@ export default async function StudentDetailsPage({
 
   const { id } = await params;
 
-  let student;
-  try {
-    student = await prisma.student.findUnique({
-      where: { id },
-      include: {
-        module: true,
-        notes: {
-          include: {
-            user: {
-              select: { name: true, email: true }
-            }
-          },
-          orderBy: { createdAt: 'desc' }
+  // Fetch student without activities initially to ensure page loads
+  const student = await prisma.student.findUnique({
+    where: { id },
+    include: {
+      module: true,
+      notes: {
+        include: {
+          user: {
+            select: { name: true, email: true }
+          }
         },
-        activities: {
-          orderBy: { createdAt: 'desc' },
-          take: 10
-        }
+        orderBy: { createdAt: 'desc' }
       }
-    });
-  } catch (error) {
-    console.error('Error fetching student with activities:', error);
-    // Fallback: try without activities if that's causing the issue
-    student = await prisma.student.findUnique({
-      where: { id },
-      include: {
-        module: true,
-        notes: {
-          include: {
-            user: {
-              select: { name: true, email: true }
-            }
-          },
-          orderBy: { createdAt: 'desc' }
-        }
-      }
-    });
-  }
+    }
+  });
 
   if (!student) {
     notFound();
