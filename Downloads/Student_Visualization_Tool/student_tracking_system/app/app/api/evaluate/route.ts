@@ -192,8 +192,19 @@ Be thorough, fair, and constructive in your evaluation. Focus on helping the stu
       }
 
       const aiData = await aiResponse.json();
-      const evaluationResult = JSON.parse(aiData.choices[0].message.content || '{}');
+
+      // Clean markdown code blocks from response
+      let responseContent = aiData.choices[0].message.content || '{}';
+      responseContent = responseContent.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+
+      const evaluationResult = JSON.parse(responseContent);
       const processingTime = Date.now() - startTime;
+
+      console.log('[Evaluate] AI Response parsed successfully:', {
+        totalScore: evaluationResult.totalScore,
+        maxScore: submission.assignment.maxScore,
+        criteriaCount: Object.keys(evaluationResult.scores || {}).length
+      });
 
       // Create evaluation record
       const evaluation = await prisma.evaluation.create({
