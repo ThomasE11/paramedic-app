@@ -114,11 +114,11 @@ export async function POST(request: NextRequest) {
         description,
         criteria,
         version,
-        extractedText,
-        fileName,
-        filePath,
-        fileSize,
-        mimeType,
+        ...(extractedText && { extractedText }),
+        ...(fileName && { fileName }),
+        ...(filePath && { filePath }),
+        ...(fileSize && { fileSize }),
+        ...(mimeType && { mimeType }),
         createdBy: session.user.id
       },
       include: {
