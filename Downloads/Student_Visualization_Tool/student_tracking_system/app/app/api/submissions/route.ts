@@ -24,8 +24,7 @@ export async function GET(request: NextRequest) {
       include: {
         assignment: {
           include: {
-            module: true,
-            subject: true
+            module: true
           }
         },
         student: {
@@ -131,16 +130,14 @@ export async function POST(request: NextRequest) {
         filePath,
         fileSize: fileSize || 0,
         mimeType: mimeType || 'application/octet-stream',
-        content,
         extractedText,
-        metadata,
-        status: 'pending'
+        uploadedBy: session.user.id,
+        status: 'submitted'
       },
       include: {
         assignment: {
           include: {
-            module: true,
-            subject: true
+            module: true
           }
         },
         student: {
