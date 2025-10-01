@@ -19,7 +19,7 @@ export default async function StudentDetailsPage({
 
   const { id } = await params;
 
-  // Fetch student without activities initially to ensure page loads
+  // Fetch student with all related data
   const student = await prisma.student.findUnique({
     where: { id },
     include: {
@@ -31,6 +31,10 @@ export default async function StudentDetailsPage({
           }
         },
         orderBy: { createdAt: 'desc' }
+      },
+      activities: {
+        orderBy: { createdAt: 'desc' },
+        take: 10 // Limit to 10 most recent activities
       }
     }
   });
