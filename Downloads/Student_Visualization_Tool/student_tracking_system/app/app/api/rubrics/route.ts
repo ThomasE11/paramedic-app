@@ -21,8 +21,7 @@ export async function GET(request: NextRequest) {
       include: {
         assignment: {
           include: {
-            module: true,
-            subject: true
+            module: true
           }
         },
         creator: {
@@ -66,7 +65,12 @@ export async function POST(request: NextRequest) {
       title,
       description,
       criteria,
-      weightings
+      weightings,
+      extractedText,
+      fileName,
+      filePath,
+      fileSize,
+      mimeType
     } = body;
 
     // Validate required fields
@@ -109,15 +113,18 @@ export async function POST(request: NextRequest) {
         title,
         description,
         criteria,
-        weightings,
         version,
+        extractedText,
+        fileName,
+        filePath,
+        fileSize,
+        mimeType,
         createdBy: session.user.id
       },
       include: {
         assignment: {
           include: {
-            module: true,
-            subject: true
+            module: true
           }
         },
         creator: {

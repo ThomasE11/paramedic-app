@@ -21,7 +21,6 @@ export async function GET(request: NextRequest) {
       },
       include: {
         module: true,
-        subject: true,
         creator: {
           select: { id: true, name: true, email: true }
         },
@@ -120,7 +119,6 @@ export async function POST(request: NextRequest) {
       },
       include: {
         module: true,
-        subject: true,
         creator: {
           select: { id: true, name: true, email: true }
         }
