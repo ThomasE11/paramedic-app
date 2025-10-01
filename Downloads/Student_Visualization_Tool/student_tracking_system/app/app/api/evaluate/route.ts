@@ -2,11 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import OpenAI from 'openai';
 
-const openai = process.env.OPENAI_API_KEY ? new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-}) : null;
+const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
+const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions';
 
 interface EvaluationCriteria {
   name: string;
@@ -46,8 +44,7 @@ export async function POST(request: NextRequest) {
       include: {
         assignment: {
           include: {
-            module: true,
-            subject: true
+            module: true
           }
         },
         student: {
@@ -163,27 +160,39 @@ Be thorough, fair, and constructive in your evaluation. Focus on helping the stu
 `;
 
     try {
-      if (!openai) {
-        throw new Error('OpenAI API key not configured');
+      if (!DEEPSEEK_API_KEY) {
+        throw new Error('DeepSeek API key not configured');
       }
 
-      const aiResponse = await openai.chat.completions.create({
-        model: "gpt-4",
-        messages: [
-          {
-            role: "system",
-            content: "You are an expert academic evaluator. Provide detailed, constructive, and fair evaluations following the exact JSON format requested."
-          },
-          {
-            role: "user",
-            content: evaluationPrompt
-          }
-        ],
-        temperature: 0.3,
-        max_tokens: 2000
+      const aiResponse = await fetch(DEEPSEEK_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          messages: [
+            {
+              role: "system",
+              content: "You are an expert academic evaluator. Provide detailed, constructive, and fair evaluations following the exact JSON format requested."
+            },
+            {
+              role: "user",
+              content: evaluationPrompt
+            }
+          ],
+          temperature: 0.3,
+          max_tokens: 2000
+        })
       });
 
-      const evaluationResult = JSON.parse(aiResponse.choices[0].message.content || '{}');
+      if (!aiResponse.ok) {
+        throw new Error(`DeepSeek API error: ${aiResponse.statusText}`);
+      }
+
+      const aiData = await aiResponse.json();
+      const evaluationResult = JSON.parse(aiData.choices[0].message.content || '{}');
       const processingTime = Date.now() - startTime;
 
       // Create evaluation record
