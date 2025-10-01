@@ -19,7 +19,7 @@ export default async function StudentDetailsPage({
 
   const { id } = await params;
 
-  // Fetch student with all related data
+  // Fetch student with related data, fetch activities separately to handle potential issues
   const student = await prisma.student.findUnique({
     where: { id },
     include: {
@@ -31,10 +31,6 @@ export default async function StudentDetailsPage({
           }
         },
         orderBy: { createdAt: 'desc' }
-      },
-      activities: {
-        orderBy: { createdAt: 'desc' },
-        take: 10 // Limit to 10 most recent activities
       }
     }
   });
@@ -43,11 +39,30 @@ export default async function StudentDetailsPage({
     notFound();
   }
 
+  // Fetch activities separately with error handling
+  let activities: any[] = [];
+  try {
+    activities = await prisma.activity.findMany({
+      where: { studentId: id },
+      orderBy: { createdAt: 'desc' },
+      take: 10
+    });
+  } catch (error) {
+    console.error('Failed to fetch activities:', error);
+    // Continue without activities if they fail to load
+  }
+
+  // Attach activities to student object for client component
+  const studentWithActivities = {
+    ...student,
+    activities
+  };
+
   return (
     <div className="min-h-screen">
       <Header />
       <main className="container mx-auto max-w-7xl px-4 py-8">
-        <StudentDetailsContent student={student} />
+        <StudentDetailsContent student={studentWithActivities} />
       </main>
     </div>
   );
