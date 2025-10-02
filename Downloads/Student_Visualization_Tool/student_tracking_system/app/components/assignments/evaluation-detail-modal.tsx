@@ -26,24 +26,30 @@ export function EvaluationDetailModal({
   const hasValidEvaluation = evaluation && evaluation.totalScore > 0;
 
   const handleReEvaluate = async () => {
-    if (!submission?.assignment?.rubrics?.[0]) {
-      toast({
-        title: 'No Rubric',
-        description: 'This assignment does not have a rubric for evaluation.',
-        variant: 'destructive'
-      });
-      return;
-    }
-
     setIsReEvaluating(true);
 
     try {
+      // Fetch assignment with rubrics
+      const assignmentRes = await fetch(`/api/assignments`);
+      const assignmentsData = await assignmentRes.json();
+      const assignment = assignmentsData.assignments?.find((a: any) => a.id === submission.assignment.id);
+
+      if (!assignment?.rubrics?.[0]) {
+        toast({
+          title: 'No Rubric',
+          description: 'This assignment does not have a rubric. Please create one first.',
+          variant: 'destructive'
+        });
+        setIsReEvaluating(false);
+        return;
+      }
+
       const response = await fetch('/api/evaluate/re-evaluate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           submissionId: submission.id,
-          rubricId: submission.assignment.rubrics[0].id
+          rubricId: assignment.rubrics[0].id
         })
       });
 
