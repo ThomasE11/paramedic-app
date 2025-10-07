@@ -132,16 +132,19 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { studentId, firstName, lastName, email, phone, moduleId } = body;
+    const { studentId, firstName, lastName, phone, moduleId } = body;
 
-    if (!studentId || !firstName || !lastName || !email) {
+    if (!studentId || !firstName || !lastName) {
       return NextResponse.json(
-        { error: 'Required fields: studentId, firstName, lastName, email' },
+        { error: 'Required fields: studentId, firstName, lastName' },
         { status: 400 }
       );
     }
 
-    // Check for existing student with same email or studentId
+    // Always use correct email format: studentId@hct.ac.ae
+    const email = `${studentId}@hct.ac.ae`;
+
+    // Check for existing student with same studentId
     const existing = await prisma.student.findFirst({
       where: {
         OR: [
@@ -153,7 +156,7 @@ export async function POST(request: NextRequest) {
 
     if (existing) {
       return NextResponse.json(
-        { error: 'Student with this email or ID already exists' },
+        { error: 'Student with this ID already exists' },
         { status: 400 }
       );
     }
@@ -164,7 +167,7 @@ export async function POST(request: NextRequest) {
         firstName,
         lastName,
         fullName: `${firstName} ${lastName}`,
-        email,
+        email, // Now always uses studentId@hct.ac.ae format
         phone: phone || null,
         moduleId: moduleId || null
       },

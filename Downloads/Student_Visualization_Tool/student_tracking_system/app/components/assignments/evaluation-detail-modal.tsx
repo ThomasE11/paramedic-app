@@ -4,7 +4,9 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Brain, CheckCircle, AlertCircle, RefreshCw, FileText, User } from 'lucide-react';
+import { Brain, CheckCircle, AlertCircle, RefreshCw, FileText, User, Mail, Send, Edit, Download } from 'lucide-react';
+import { FeedbackEmailModal } from './feedback-email-modal';
+import { ManualTextInputModal } from './manual-text-input-modal';
 
 interface EvaluationDetailModalProps {
   isOpen: boolean;
@@ -20,10 +22,14 @@ export function EvaluationDetailModal({
   onReEvaluate
 }: EvaluationDetailModalProps) {
   const [isReEvaluating, setIsReEvaluating] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [showManualTextModal, setShowManualTextModal] = useState(false);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const { toast } = useToast();
 
   const evaluation = submission?.evaluations?.[0];
   const hasValidEvaluation = evaluation && evaluation.totalScore > 0;
+  const extractionFailed = submission?.extractedText?.includes('Text extraction failed');
 
   const handleReEvaluate = async () => {
     setIsReEvaluating(true);
@@ -79,6 +85,45 @@ export function EvaluationDetailModal({
     }
   };
 
+  const handleExportPDF = async () => {
+    if (!evaluation?.id) return;
+
+    setIsGeneratingPDF(true);
+    try {
+      // Fetch data for PDF
+      const response = await fetch(`/api/evaluations/${evaluation.id}/export-pdf`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch evaluation data');
+      }
+
+      const data = await response.json();
+
+      // Dynamically import PDF generator
+      const { generateEvaluationPDF, downloadPDF } = await import('@/lib/pdf-generator');
+
+      // Generate PDF
+      const pdfBlob = await generateEvaluationPDF(data.evaluation, data.studentInfo);
+
+      // Download PDF
+      const fileName = `${data.studentInfo.fullName.replace(/\s+/g, '_')}_${submission.assignment?.title.replace(/\s+/g, '_')}_Evaluation_${new Date().toISOString().split('T')[0]}.pdf`;
+      downloadPDF(pdfBlob, fileName);
+
+      toast({
+        title: 'Success',
+        description: 'Evaluation PDF generated successfully'
+      });
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to generate PDF',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  };
+
   if (!submission) return null;
 
   return (
@@ -131,7 +176,26 @@ export function EvaluationDetailModal({
                     <li>The AI service encountered an error</li>
                     <li>The rubric was not properly configured</li>
                   </ul>
+
+                  {extractionFailed && (
+                    <div className="mb-4 p-3 bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-300 dark:border-yellow-700 rounded">
+                      <p className="text-sm text-yellow-800 dark:text-yellow-300">
+                        <strong>PDF text extraction failed.</strong> You can manually provide the submission text to enable proper evaluation.
+                      </p>
+                    </div>
+                  )}
+
                   <div className="flex gap-2">
+                    {extractionFailed && (
+                      <Button
+                        onClick={() => setShowManualTextModal(true)}
+                        variant="outline"
+                        className="border-blue-600 text-blue-600 hover:bg-blue-50"
+                      >
+                        <Edit className="w-4 h-4 mr-2" />
+                        Provide Text Manually
+                      </Button>
+                    )}
                     <Button
                       onClick={handleReEvaluate}
                       disabled={isReEvaluating}
@@ -159,24 +223,45 @@ export function EvaluationDetailModal({
               <div className="p-6 bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20 rounded-lg border">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold">Overall Score</h3>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleReEvaluate}
-                    disabled={isReEvaluating}
-                  >
-                    {isReEvaluating ? (
-                      <>
-                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                        Re-Evaluating...
-                      </>
-                    ) : (
-                      <>
-                        <RefreshCw className="w-4 h-4 mr-2" />
-                        Re-Evaluate
-                      </>
-                    )}
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleExportPDF}
+                      disabled={isGeneratingPDF}
+                      className="border-blue-500 text-blue-600 hover:bg-blue-50"
+                    >
+                      {isGeneratingPDF ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                          Generating...
+                        </>
+                      ) : (
+                        <>
+                          <Download className="w-4 h-4 mr-2" />
+                          Export PDF
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleReEvaluate}
+                      disabled={isReEvaluating}
+                    >
+                      {isReEvaluating ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                          Re-Evaluating...
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="w-4 h-4 mr-2" />
+                          Re-Evaluate
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
                 <div className="flex items-baseline gap-2">
                   <span className="text-4xl font-bold text-purple-700 dark:text-purple-300">
@@ -238,6 +323,53 @@ export function EvaluationDetailModal({
                   <p className="text-sm text-orange-800 dark:text-orange-300">{evaluation.improvements}</p>
                 </div>
               )}
+
+              {/* Feedback Summary & Email Action */}
+              <div className="p-6 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 rounded-lg border-2 border-dashed border-blue-300 dark:border-blue-700">
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <h3 className="font-semibold text-lg text-blue-900 dark:text-blue-200 mb-1">
+                      Feedback Summary
+                    </h3>
+                    <p className="text-sm text-blue-700 dark:text-blue-300">
+                      Send personalized feedback email to the student
+                    </p>
+                  </div>
+                  <Mail className="w-6 h-6 text-blue-600" />
+                </div>
+
+                <div className="space-y-3 mb-4">
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-200">Strengths</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
+                        {evaluation.strengths || 'Good understanding demonstrated'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 text-orange-600 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-200">Areas to Improve</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
+                        {evaluation.improvements || 'Continue developing skills'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={() => setShowEmailModal(true)}
+                  className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+                >
+                  <Send className="w-4 h-4 mr-2" />
+                  Draft & Send Feedback Email
+                </Button>
+                <p className="text-xs text-center text-muted-foreground mt-2">
+                  AI will generate a personalized email you can edit before sending
+                </p>
+              </div>
             </>
           )}
 
@@ -258,6 +390,46 @@ export function EvaluationDetailModal({
             <Button onClick={onClose}>Close</Button>
           </div>
         </div>
+
+        {/* Email Modal */}
+        {hasValidEvaluation && showEmailModal && (
+          <FeedbackEmailModal
+            isOpen={showEmailModal}
+            onClose={() => setShowEmailModal(false)}
+            evaluationId={evaluation.id}
+            studentName={submission.student?.fullName || 'Student'}
+            studentEmail={submission.student?.email || ''}
+            assignmentTitle={submission.assignment?.title || 'Assignment'}
+            onSent={() => {
+              toast({
+                title: 'Email Sent',
+                description: 'Feedback email has been sent to the student'
+              });
+            }}
+          />
+        )}
+
+        {/* Manual Text Input Modal */}
+        {showManualTextModal && (
+          <ManualTextInputModal
+            isOpen={showManualTextModal}
+            onClose={() => setShowManualTextModal(false)}
+            submissionId={submission.id}
+            studentName={submission.student?.fullName}
+            assignmentTitle={submission.assignment?.title}
+            currentText={submission.extractedText}
+            onSuccess={() => {
+              toast({
+                title: 'Text Updated',
+                description: 'Submission text has been updated. You can now re-evaluate.'
+              });
+              setShowManualTextModal(false);
+              if (onReEvaluate) {
+                onReEvaluate();
+              }
+            }}
+          />
+        )}
       </DialogContent>
     </Dialog>
   );

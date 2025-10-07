@@ -110,10 +110,53 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
       }
+
+      // Validate status values
+      const validStatuses = ['present', 'absent', 'late', 'excused'];
+      if (!validStatuses.includes(record.status)) {
+        return NextResponse.json(
+          { error: `Invalid status: ${record.status}. Must be one of: ${validStatuses.join(', ')}` },
+          { status: 400 }
+        );
+      }
     }
 
-    // Use upsert to handle both creating and updating attendance records
-    const results = await Promise.all(
+    // Verify all referenced entities exist
+    const classSessionIds = [...new Set(attendance.map(r => r.classSessionId))];
+    const studentIds = [...new Set(attendance.map(r => r.studentId))];
+
+    const [classSessions, students] = await Promise.all([
+      prisma.classSession.findMany({
+        where: { id: { in: classSessionIds } },
+        select: { id: true }
+      }),
+      prisma.student.findMany({
+        where: { id: { in: studentIds } },
+        select: { id: true }
+      })
+    ]);
+
+    const existingClassSessionIds = new Set(classSessions.map(cs => cs.id));
+    const existingStudentIds = new Set(students.map(s => s.id));
+
+    // Validate all IDs exist
+    for (const record of attendance) {
+      if (!existingClassSessionIds.has(record.classSessionId)) {
+        return NextResponse.json(
+          { error: `Class session not found: ${record.classSessionId}` },
+          { status: 404 }
+        );
+      }
+      if (!existingStudentIds.has(record.studentId)) {
+        return NextResponse.json(
+          { error: `Student not found: ${record.studentId}` },
+          { status: 404 }
+        );
+      }
+    }
+
+    // Use transaction to ensure all-or-nothing save
+    const results = await prisma.$transaction(
       attendance.map(record =>
         prisma.attendance.upsert({
           where: {
@@ -162,11 +205,47 @@ export async function POST(request: NextRequest) {
       )
     );
 
+    console.log(`Successfully saved ${results.length} attendance records for user ${user.email}`);
+
+    // Log activity for each student
+    const activityPromises = results.map(async (record) => {
+      try {
+        await prisma.activity.create({
+          data: {
+            studentId: record.studentId,
+            type: 'attendance_marked',
+            description: `Attendance marked as ${record.status} for ${record.classSession.title}`,
+            metadata: {
+              status: record.status,
+              classSessionId: record.classSessionId,
+              classTitle: record.classSession.title,
+              date: record.classSession.date,
+              markedBy: user.email,
+              notes: record.notes
+            }
+          }
+        });
+      } catch (error) {
+        console.error(`Failed to log activity for student ${record.studentId}:`, error);
+      }
+    });
+
+    await Promise.allSettled(activityPromises);
+
     return NextResponse.json(results, { status: 201 });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Attendance marking error:', error);
+
+    // Return detailed error messages for debugging
+    const errorMessage = error?.message || 'Failed to mark attendance';
+    const errorCode = error?.code || 'UNKNOWN_ERROR';
+
     return NextResponse.json(
-      { error: 'Failed to mark attendance' },
+      {
+        error: errorMessage,
+        code: errorCode,
+        details: process.env.NODE_ENV === 'development' ? error?.stack : undefined
+      },
       { status: 500 }
     );
   }

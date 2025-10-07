@@ -13,6 +13,25 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { searchParams } = new URL(request.url);
+    const moduleId = searchParams.get('id');
+
+    // If requesting a specific module
+    if (moduleId) {
+      const module = await prisma.module.findUnique({
+        where: { id: moduleId },
+        include: {
+          students: true
+        }
+      });
+
+      if (!module) {
+        return NextResponse.json({ error: 'Module not found' }, { status: 404 });
+      }
+
+      return NextResponse.json(module);
+    }
+
     // Demo mode - use actual module data with real students
     if (process.env.NODE_ENV === 'production' || !process.env.DATABASE_URL || process.env.DATABASE_URL.includes('placeholder')) {
       console.log('Demo mode: Using actual module data with real students');

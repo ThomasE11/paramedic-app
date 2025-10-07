@@ -140,9 +140,27 @@ export function AttendanceDialog({
   };
 
   const handleSave = async () => {
+    if (!classSession?.id) {
+      toast({
+        title: 'Error',
+        description: 'Invalid class session',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (attendance.length === 0) {
+      toast({
+        title: 'Error',
+        description: 'No students to save attendance for',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     try {
       setSaving(true);
-      
+
       const attendanceData = attendance.map(att => ({
         classSessionId: classSession.id,
         studentId: att.studentId,
@@ -160,23 +178,35 @@ export function AttendanceDialog({
       });
 
       if (response.ok) {
+        const savedData = await response.json();
+
         toast({
           title: 'Success',
-          description: 'Attendance marked successfully'
+          description: `Attendance marked successfully (${savedData.length} records saved)`
         });
+
+        // Refresh the data to confirm persistence
+        await fetchClassDetails();
+
+        // Close dialog and notify parent
         onAttendanceMarked();
+        onOpenChange(false);
       } else {
-        const error = await response.json();
+        const error = await response.json().catch(() => ({ error: 'Unknown error occurred' }));
+        console.error('Attendance save error:', error);
+
         toast({
-          title: 'Error',
-          description: error.error || 'Failed to mark attendance',
+          title: 'Failed to save attendance',
+          description: error.error || error.message || 'Please check your connection and try again',
           variant: 'destructive'
         });
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Attendance save error:', error);
+
       toast({
         title: 'Error',
-        description: 'Something went wrong. Please try again.',
+        description: error?.message || 'Something went wrong. Please try again.',
         variant: 'destructive'
       });
     } finally {

@@ -32,6 +32,10 @@ export async function GET(
         },
         activities: {
           orderBy: { createdAt: 'desc' }
+        },
+        emailLogs: {
+          orderBy: { sentAt: 'desc' },
+          take: 20
         }
       }
     });

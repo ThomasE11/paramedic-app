@@ -85,18 +85,42 @@ export async function POST(request: NextRequest) {
       if (file.type === 'text/plain') {
         extractedText = buffer.toString('utf-8');
       } else if (file.type === 'application/pdf') {
-        const pdfreader = (await import('pdf-parse')).default;
-        const pdfData = await pdfreader(buffer);
-        extractedText = pdfData.text;
+        try {
+          // Use pdf-parse for PDF extraction (better for Node.js/Next.js)
+          const pdfParse = (await import('pdf-parse')).default;
+
+          const pdfData = await pdfParse(buffer);
+
+          extractedText = pdfData.text.trim();
+          console.log(`[PDF] Successfully extracted ${extractedText.length} characters from ${pdfData.numpages} pages`);
+
+          if (!extractedText || extractedText.length < 50) {
+            console.error('[PDF] Insufficient text extracted from PDF');
+            return NextResponse.json({
+              error: 'This PDF appears to be image-based or has no extractable text. Please try: 1) Converting to a text-based PDF, 2) Using OCR software first, or 3) Copying and pasting the text manually.'
+            }, { status: 400 });
+          }
+        } catch (pdfError: any) {
+          console.error('[PDF] Extraction failed:', pdfError);
+          console.error('[PDF] Error details:', {
+            name: pdfError.name,
+            message: pdfError.message,
+            stack: pdfError.stack?.split('\n').slice(0, 3)
+          });
+
+          return NextResponse.json({
+            error: `PDF extraction failed: ${pdfError.message || 'Could not read PDF file'}. The PDF may be encrypted, corrupted, or image-based. Please try using a different format or paste the text manually.`
+          }, { status: 500 });
+        }
       } else if (file.type.includes('word') || file.type.includes('document')) {
         const mammoth = (await import('mammoth')).default;
         const result = await mammoth.extractRawText({ buffer });
         extractedText = result.value;
       }
     } catch (error) {
-      console.error('Text extraction error:', error);
+      console.error('[Extract] Text extraction error:', error);
       return NextResponse.json({
-        error: 'Failed to extract text from document. Please try a different file format.'
+        error: 'Failed to extract text from document. Please try a different file format or paste the text manually.'
       }, { status: 500 });
     }
 

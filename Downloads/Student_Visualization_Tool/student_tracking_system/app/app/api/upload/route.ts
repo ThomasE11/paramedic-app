@@ -85,14 +85,29 @@ export async function POST(request: NextRequest) {
       if (file.type === 'text/plain') {
         extractedText = buffer.toString('utf-8');
       } else if (file.type === 'application/pdf') {
-        // Dynamic import to prevent build issues
-        const pdfreader = (await import('pdf-parse')).default;
-        const pdfData = await pdfreader(buffer);
-        extractedText = pdfData.text;
-        metadata = {
-          pageCount: pdfData.numpages,
-          wordCount: pdfData.text.split(/\s+/).length
-        };
+        try {
+          // Use pdf-parse for PDF extraction (better for Node.js/Next.js)
+          const pdfParse = (await import('pdf-parse')).default;
+
+          const pdfData = await pdfParse(buffer);
+
+          extractedText = pdfData.text.trim();
+          metadata = {
+            pageCount: pdfData.numpages,
+            wordCount: extractedText.split(/\s+/).filter(w => w).length,
+            extractedChars: extractedText.length
+          };
+
+          if (!extractedText || extractedText.length < 50) {
+            extractedText = 'PDF appears to be image-based or has no extractable text. Please use OCR software or paste text manually.';
+            metadata = { extractionFailed: true, reason: 'insufficient_text' };
+          }
+        } catch (pdfError: any) {
+          console.error('PDF extraction failed:', pdfError);
+          // If PDF extraction fails, provide clear message
+          extractedText = `PDF text extraction failed. Error: ${pdfError.message || 'Unknown error'}. The PDF may be encrypted, corrupted, or image-based. Please manually input the text content or re-upload the file.`;
+          metadata = { extractionFailed: true, error: pdfError.message };
+        }
       } else if (file.type.includes('word') || file.type.includes('document')) {
         // Dynamic import to prevent build issues
         const mammoth = (await import('mammoth')).default;
@@ -104,7 +119,7 @@ export async function POST(request: NextRequest) {
         };
       }
     } catch (error) {
-      console.warn('Failed to extract text:', error);
+      console.warn('General extraction error:', error);
       extractedText = 'Text extraction failed - manual review required';
     }
 

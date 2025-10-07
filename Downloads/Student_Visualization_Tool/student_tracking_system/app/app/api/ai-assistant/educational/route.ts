@@ -3,6 +3,30 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 
+// Task Context Management - Ensures each request is treated independently
+interface TaskContext {
+  taskId: string;
+  emails: any[];
+  timestamp: number;
+  subject: string;
+  intent: string; // What the user asked for (e.g., "office hours", "blue room activities")
+  moduleCode?: string;
+}
+
+// In-memory cache for pending emails with task isolation (by user ID)
+const pendingEmailsCache = new Map<string, TaskContext>();
+
+// Clean up old cached emails (older than 30 minutes)
+setInterval(() => {
+  const now = Date.now();
+  for (const [userId, data] of pendingEmailsCache.entries()) {
+    if (now - data.timestamp > 30 * 60 * 1000) {
+      pendingEmailsCache.delete(userId);
+      console.log(`🗑️  Auto-cleared stale email cache for user ${userId}`);
+    }
+  }
+}, 5 * 60 * 1000); // Run every 5 minutes
+
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -139,9 +163,11 @@ MODULE & CURRICULUM:
 - Track module performance
 
 EMAIL & COMMUNICATION:
-- Send emails to students or groups
-- Create email templates
-- Bulk communication management
+- Compose personalized individual emails to students (using first names only)
+- Generate email drafts for module-wide announcements
+- Create individualized email content that replaces "Dear Students" with "Dear [FirstName]"
+- Provide email previews for instructor approval before sending
+- Support both individual and bulk email generation
 
 REPORTING & ANALYTICS:
 - Generate comprehensive reports
@@ -151,7 +177,7 @@ REPORTING & ANALYTICS:
 
 CURRENT SYSTEM STATE:
 - Institution: HCT Al Ain EMS Program
-- User: ${user.name} (${user.role})
+- User: ${user.name || user.email} (${user.role || 'instructor'})
 - Total Students: ${students.length}
 - Active Modules: ${modules.length}
 - Recent Class Sessions: ${classSessions.length}
@@ -198,6 +224,8 @@ Always respond in JSON format with this structure:
 "Student H00123456 is struggling - add note and set attendance to 75%"
 "Create a new assignment for AEM230 module due next Friday"
 "Send email to all HEM2903 students about upcoming exam"
+"Email all students in HEM3923 individually about office hours tomorrow 9-11 AM for work placement and logbook support"
+"Create personalized emails for AEM230 students using their first names about the assignment deadline"
 "Create a rubric from the uploaded PDF file for HEM3923"
 "Grade this student submission using the uploaded rubric"
 "Create an assignment from the uploaded rubric file with due date next week"
@@ -206,6 +234,90 @@ Always respond in JSON format with this structure:
 "Schedule practical class for HEM3903 tomorrow at 10 AM"
 "Mark all students present for today's HEM2903 class"
 "Update Ahmed's phone number to +971501234567"
+
+🚨 CRITICAL - TASK ISOLATION SYSTEM 🚨
+EACH REQUEST IS A NEW, INDEPENDENT TASK. NEVER MIX TASKS OR USE DATA FROM PREVIOUS REQUESTS.
+
+TASK ISOLATION RULES:
+1. **NEW REQUEST = NEW TASK**: When the user makes a new request, treat it as completely separate from any previous request
+2. **NO MEMORY MIXING**: Do NOT combine information from "office hours" with "blue room activities" or any other different tasks
+3. **FRESH ANALYSIS**: For each request, analyze ONLY what the user is currently asking for
+4. **SUBJECT LINE = TASK IDENTIFIER**: The subject line you create identifies the specific task
+5. **ONE TASK AT A TIME**: Never reference or include content from previous unrelated email requests
+
+EXAMPLE OF CORRECT TASK ISOLATION:
+- Request 1: "Email students about office hours Monday" → Generate emails with subject "Office Hours - Monday"
+- Request 2: "Email students about blue room activities" → Generate COMPLETELY NEW emails with subject "Blue Room Activities" (NOT office hours!)
+- When user says "send" → Send ONLY the most recent task's emails (blue room, NOT office hours)
+
+IMPORTANT EMAIL HANDLING:
+- When asked to "email students" or "send email to students", ALWAYS:
+  1. **ANALYZE THE CURRENT REQUEST ONLY** - Do NOT look at previous email content
+  2. Identify which module(s) the students belong to (leave moduleCode null for all students)
+  3. Create individual personalized emails using first names only (not full names)
+  4. REWRITE the user's message into professional, well-formatted email text
+     - Convert conversational language to professional tone
+     - Fix grammar and formatting
+     - Make it read naturally as if written by the instructor
+     - Keep the core message and intent
+     - **USE ONLY THE CURRENT REQUEST'S CONTENT**
+  5. Generate a SEND_EMAIL action with these REQUIRED parameters:
+     - subject: "..." (create appropriate subject line from CURRENT request - e.g., "Blue Room Activities" NOT "Office Hours")
+     - body: "Dear Student,\n\n[professionally written message FROM CURRENT REQUEST ONLY]\n\nBest regards,\n[instructor name]"
+     - moduleCode: "CODE" or null for all students
+     - individualEmails: true
+  6. The system will automatically replace "Dear Student/Students" with "Dear [FirstName]"
+  7. Mark as requiresConfirmation: true for instructor approval
+
+EXAMPLE EMAIL ACTION:
+{
+  "type": "SEND_EMAIL",
+  "description": "Send personalized office hours email to all students",
+  "parameters": {
+    "subject": "Office Hours - Monday, October 6th",
+    "body": "Dear Student,\n\nI hope this message finds you well. My office hours tomorrow (Monday, October 6th) will be from 9:00 to 11:00 AM. I am available for one-on-one sessions to discuss work placement related tasks or any logbook concerns you may have. Please feel free to stop by during this time.\n\nBest regards,\nElias Thomas\nEMS Instructor, HCT Al Ain",
+    "moduleCode": null,
+    "individualEmails": true
+  }
+}
+
+FOLLOW-UP COMMANDS FOR SENDING EMAILS:
+When user says ONLY "send", "proceed", "yes", "go ahead", "yes send them", or similar SHORT confirmation commands:
+  - This means they want to actually SEND the emails that were just generated
+  - Create a SEND_EMAIL_NOW action to trigger actual email sending
+  - Since you don't have access to the previously generated email list, create NEW emails using the SAME parameters from the user's original request
+  - The user's original email request was about office hours on Monday October 6th, 9-11 AM for work placement and logbook support
+  - Generate ALL students' emails again and send them
+  - Use delaySeconds: 30 (30 seconds between each email to avoid spam filters)
+
+SEND_EMAIL_NOW ACTION EXAMPLE (when user says "send"):
+{
+  "understood": true,
+  "intent": "Send the previously generated emails to all students",
+  "actions": [
+    {
+      "type": "SEND_EMAIL",
+      "description": "Regenerate personalized emails for all students",
+      "parameters": {
+        "subject": "Office Hours - Monday, October 6th",
+        "body": "Dear Student,\n\nI hope this message finds you well. I would like to inform you that my office hours tomorrow (Monday, October 6th) will be from 9:00 to 11:00 AM. I will be available for one-on-one sessions to discuss any work placement related tasks, address any issues or concerns with your logbook, or provide general support. Please feel free to come see me during this time.\n\nBest regards,\nElias Thomas\nEMS Instructor, HCT Al Ain",
+        "moduleCode": null,
+        "individualEmails": true
+      }
+    },
+    {
+      "type": "SEND_EMAIL_NOW",
+      "description": "Send all emails with 30-second delays between each",
+      "parameters": {
+        "emails": "\${EMAILS_FROM_PREVIOUS_ACTION}",
+        "delaySeconds": 30
+      }
+    }
+  ],
+  "confirmation": "Sending 60 personalized emails to all students with 30-second delays to avoid spam filters. This will take approximately 30 minutes.",
+  "warnings": ["Email sending will take approximately 30 minutes due to spam prevention delays"],
+  "success": true
+}
 
 COMMAND: "${command}"
 
@@ -226,7 +338,7 @@ EDUCATIONAL EXPERTISE:
 
 CURRENT CONTEXT:
 - Institution: HCT Al Ain EMS Program
-- User: ${user.name} (${user.role})
+- User: ${user.name || user.email} (${user.role || 'instructor'})
 - Mode: ${mode}
 - Specialty Focus: ${specialty || 'General EMS'}
 - Difficulty Level: ${difficulty}
@@ -504,11 +616,31 @@ Please process this attached file according to my request.` : ''}`
     // If in action mode, execute the actions
     if (actionMode && aiResponse.actions && aiResponse.actions.length > 0) {
       const executionResults = [];
+      let previousEmails = null; // Store emails from SEND_EMAIL for SEND_EMAIL_NOW
 
       for (const action of aiResponse.actions) {
         try {
+          // If this is SEND_EMAIL_NOW and we have emails from previous action
+          if (action.type === 'SEND_EMAIL_NOW' && action.parameters?.emails === '${EMAILS_FROM_PREVIOUS_ACTION}') {
+            if (previousEmails) {
+              action.parameters.emails = previousEmails;
+            } else {
+              executionResults.push({
+                type: action.type,
+                success: false,
+                error: 'No emails available from previous action'
+              });
+              continue;
+            }
+          }
+
           const result = await executeAction(action, user.id, prisma);
           executionResults.push(result);
+
+          // Store emails if this was a SEND_EMAIL action
+          if (action.type === 'SEND_EMAIL' && result.success && result.data?.emails) {
+            previousEmails = result.data.emails;
+          }
         } catch (error) {
           executionResults.push({
             type: action.type,
@@ -540,7 +672,7 @@ Please process this attached file according to my request.` : ''}`
         generatedAt: new Date().toISOString(),
         actionMode: true,
         context: {
-          user: user.name,
+          user: user.name || user.email,
           institution: 'HCT Al Ain',
           program: 'Emergency Medical Services'
         }
@@ -568,7 +700,7 @@ Please process this attached file according to my request.` : ''}`
       success: true,
       generatedAt: new Date().toISOString(),
       context: {
-        user: user.name,
+        user: user.name || user.email,
         institution: 'HCT Al Ain',
         program: 'Emergency Medical Services'
       }
@@ -643,7 +775,10 @@ async function executeAction(action: any, userId: string, prisma: any) {
       return await trackStudentProgress(action, userId, prisma);
 
     case 'SEND_EMAIL':
-      return await sendEmail(action, prisma);
+      return await sendEmail(action, userId, prisma);
+
+    case 'SEND_EMAIL_NOW':
+      return await sendEmailNow(action, userId, prisma);
 
     case 'MARK_ATTENDANCE':
       return await markAttendance(action, prisma);
@@ -862,13 +997,330 @@ async function createAssignment(action: any, userId: string, prisma: any) {
   };
 }
 
-async function sendEmail(action: any, prisma: any) {
-  // This would integrate with your email service
-  return {
-    type: action.type,
-    success: true,
-    data: { message: 'Email functionality would be implemented here' }
-  };
+async function sendEmail(action: any, userId: string, prisma: any) {
+  const { parameters } = action;
+
+  if (!parameters) {
+    return {
+      type: action.type,
+      success: false,
+      error: 'Email parameters are missing'
+    };
+  }
+
+  const { moduleCode, subject, body, message, individualEmails = true } = parameters;
+
+  // Use 'message' as fallback if 'body' is not provided
+  const emailBody = body || message;
+
+  if (!emailBody) {
+    return {
+      type: action.type,
+      success: false,
+      error: 'Email body/message is required'
+    };
+  }
+
+  try {
+    // Get students from module or all students
+    let students = [];
+
+    if (moduleCode) {
+      const module = await prisma.module.findFirst({
+        where: { code: moduleCode },
+        include: {
+          students: true
+        }
+      });
+
+      if (!module) {
+        return {
+          type: action.type,
+          success: false,
+          error: `Module ${moduleCode} not found`
+        };
+      }
+
+      students = module.students;
+    } else {
+      // No module specified - get all students
+      students = await prisma.student.findMany({
+        orderBy: { firstName: 'asc' }
+      });
+    }
+
+    if (students.length === 0) {
+      return {
+        type: action.type,
+        success: false,
+        error: 'No students found'
+      };
+    }
+
+    // Generate personalized emails for each student
+    const emailList = students.map(student => {
+      // Get first name only
+      const firstName = student.firstName || student.fullName.split(' ')[0];
+
+      // Personalize the email body - replace various greeting patterns
+      let personalizedBody = emailBody
+        .replace(/Dear Students?/gi, `Dear ${firstName}`)
+        .replace(/Hi Students?/gi, `Hi ${firstName}`)
+        .replace(/Hello Students?/gi, `Hello ${firstName}`)
+        .replace(/Greetings Students?/gi, `Greetings ${firstName}`);
+
+      return {
+        studentId: student.id, // Use database ID, not student number
+        studentNumber: student.studentId, // Keep student number for reference
+        studentName: student.fullName,
+        firstName: firstName,
+        email: student.email,
+        subject: subject,
+        body: personalizedBody,
+        to: student.email
+      };
+    });
+
+    // Generate unique task ID for this email generation request
+    const taskId = `email_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    // Extract intent from subject and body to identify the task
+    const intent = subject.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
+
+    // Cache the emails with full task context
+    const taskContext: TaskContext = {
+      taskId,
+      emails: emailList,
+      timestamp: Date.now(),
+      subject: subject,
+      intent: intent,
+      moduleCode: moduleCode || undefined
+    };
+
+    pendingEmailsCache.set(userId, taskContext);
+
+    console.log(`✅ Cached new email task for user ${userId}:`);
+    console.log(`   Task ID: ${taskId}`);
+    console.log(`   Intent: "${intent}"`);
+    console.log(`   Subject: "${subject}"`);
+    console.log(`   Emails: ${emailList.length}`);
+    console.log(`   Module: ${moduleCode || 'All students'}`);
+
+    return {
+      type: action.type,
+      success: true,
+      data: {
+        emailsGenerated: emailList.length,
+        emails: emailList,
+        moduleCode: moduleCode,
+        preview: emailList[0], // First email as preview
+        requiresConfirmation: true,
+        cached: true,
+        taskId: taskId,
+        taskIntent: intent,
+        cacheMessage: `✅ Cached ${emailList.length} personalized emails. Task: "${intent}". Say "send" or "proceed" to send them now.`
+      }
+    };
+  } catch (error) {
+    console.error('Email generation error:', error);
+    return {
+      type: action.type,
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+async function sendEmailNow(action: any, userId: string, prisma: any) {
+  const { parameters } = action;
+
+  if (!parameters) {
+    return {
+      type: action.type,
+      success: false,
+      error: 'Email parameters are missing'
+    };
+  }
+
+  let { emails, delaySeconds = 30, moduleCode } = parameters;
+
+  // If no emails provided, check cache
+  if (!emails || !Array.isArray(emails) || emails.length === 0) {
+    const cached = pendingEmailsCache.get(userId);
+    if (cached && cached.emails) {
+      console.log(`\n📧 ============ RETRIEVING CACHED EMAIL TASK ============`);
+      console.log(`   User: ${userId}`);
+      console.log(`   Task ID: ${cached.taskId}`);
+      console.log(`   Intent: "${cached.intent}"`);
+      console.log(`   Subject: "${cached.subject}"`);
+      console.log(`   Emails to send: ${cached.emails.length}`);
+      console.log(`   Module: ${cached.moduleCode || 'All students'}`);
+      console.log(`   Cached at: ${new Date(cached.timestamp).toISOString()}`);
+      console.log(`=======================================================\n`);
+
+      emails = cached.emails;
+      moduleCode = cached.moduleCode;
+    } else {
+      return {
+        type: action.type,
+        success: false,
+        error: 'No emails to send. Please generate emails first by describing what you want to communicate.'
+      };
+    }
+  }
+
+  try {
+    // Import nodemailer and send emails directly
+    const nodemailer = require('nodemailer');
+
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_APP_PASSWORD,
+      },
+    });
+
+    let sent = 0;
+    let failed = 0;
+    const errors = [];
+
+    for (let i = 0; i < emails.length; i++) {
+      const email = emails[i];
+
+      try {
+        await transporter.sendMail({
+          from: `"${process.env.GMAIL_USER}" <${process.env.GMAIL_USER}>`,
+          to: email.email || email.to,
+          subject: email.subject,
+          text: email.body,
+          html: email.body.replace(/\n/g, '<br>'),
+        });
+
+        sent++;
+        console.log(`✓ Email sent to ${email.firstName || email.studentName} (${email.email || email.to}) [${i + 1}/${emails.length}]`);
+
+        // Log the sent email
+        try {
+          await prisma.emailLog.create({
+            data: {
+              studentId: email.studentId || null,
+              recipientEmail: email.email || email.to,
+              recipientName: email.studentName || email.firstName || 'Unknown',
+              subject: email.subject,
+              body: email.body,
+              sentBy: userId,
+              moduleCode: moduleCode || null,
+              status: 'sent',
+              emailType: determineEmailType(email.subject, email.body),
+              sentAt: new Date(),
+            }
+          });
+
+          // Create a note for the student
+          if (email.studentId) {
+            const noteContent = `Email sent: "${email.subject}"\n\nSummary: ${generateEmailSummary(email.body)}`;
+            await prisma.note.create({
+              data: {
+                studentId: email.studentId,
+                userId: userId,
+                title: `Email: ${email.subject}`,
+                content: noteContent,
+                category: 'communication',
+              }
+            });
+          }
+        } catch (logError) {
+          console.error('Failed to log email:', logError);
+        }
+
+        // Add delay between emails (except for the last one)
+        if (i < emails.length - 1) {
+          console.log(`⏳ Waiting ${delaySeconds} seconds before next email...`);
+          await new Promise(resolve => setTimeout(resolve, delaySeconds * 1000));
+        }
+      } catch (error) {
+        failed++;
+        errors.push({
+          email: email.email || email.to,
+          error: error.message,
+        });
+        console.error(`✗ Failed to send email to ${email.firstName || email.studentName}:`, error.message);
+
+        // Log failed email
+        try {
+          await prisma.emailLog.create({
+            data: {
+              studentId: email.studentId || null,
+              recipientEmail: email.email || email.to,
+              recipientName: email.studentName || email.firstName || 'Unknown',
+              subject: email.subject,
+              body: email.body,
+              sentBy: userId,
+              moduleCode: moduleCode || null,
+              status: 'failed',
+              emailType: determineEmailType(email.subject, email.body),
+              sentAt: new Date(),
+            }
+          });
+        } catch (logError) {
+          console.error('Failed to log failed email:', logError);
+        }
+      }
+    }
+
+    const success = failed === 0;
+
+    // Clear cache after sending (success or failure)
+    pendingEmailsCache.delete(userId);
+    console.log(`🗑️  Cleared email cache for user ${userId}`);
+
+    return {
+      type: action.type,
+      success,
+      data: {
+        sent,
+        failed,
+        total: emails.length,
+        errors,
+        message: `Successfully sent ${sent} out of ${emails.length} emails`
+      }
+    };
+  } catch (error) {
+    console.error('Send email now error:', error);
+    return {
+      type: action.type,
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+// Helper function to determine email type from content
+function determineEmailType(subject: string, body: string): string {
+  const content = (subject + ' ' + body).toLowerCase();
+
+  if (content.includes('office hour')) return 'office_hours';
+  if (content.includes('assignment') || content.includes('submission')) return 'assignment';
+  if (content.includes('grade') || content.includes('feedback')) return 'feedback';
+  if (content.includes('attendance')) return 'attendance';
+  if (content.includes('reminder')) return 'reminder';
+  if (content.includes('announcement')) return 'announcement';
+
+  return 'general';
+}
+
+// Helper function to generate email summary for notes
+function generateEmailSummary(body: string): string {
+  // Get first 150 characters or first 2 sentences
+  const sentences = body.split(/[.!?]+/).filter(s => s.trim().length > 0);
+  const summary = sentences.slice(0, 2).join('. ').trim();
+
+  if (summary.length > 150) {
+    return summary.substring(0, 147) + '...';
+  }
+
+  return summary + (sentences.length > 2 ? '...' : '');
 }
 
 async function markAttendance(action: any, prisma: any) {

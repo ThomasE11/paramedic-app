@@ -29,7 +29,8 @@ import {
   BookOpen,
   Calendar,
   ExternalLink,
-  GraduationCap
+  GraduationCap,
+  Download
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -51,6 +52,7 @@ export function StudentDetailsContent({ student: initialStudent }: StudentDetail
   const [showAIAssistant, setShowAIAssistant] = useState(false);
   const [showEducationalAI, setShowEducationalAI] = useState(false);
   const [showAttendanceDetail, setShowAttendanceDetail] = useState(false);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
 
@@ -141,19 +143,67 @@ export function StudentDetailsContent({ student: initialStudent }: StudentDetail
     }
   };
 
+  const handleExportPDF = async () => {
+    if (!student?.id) return;
+
+    setIsGeneratingPDF(true);
+    try {
+      // Fetch data for PDF
+      const response = await fetch(`/api/students/${student.id}/export-pdf`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch student data');
+      }
+
+      const data = await response.json();
+
+      // Dynamically import PDF generator to reduce bundle size
+      const { generateStudentProgressPDF, downloadPDF } = await import('@/lib/pdf-generator');
+
+      // Generate PDF
+      const pdfBlob = await generateStudentProgressPDF(data);
+
+      // Download PDF
+      const fileName = `${student.fullName.replace(/\s+/g, '_')}_Progress_Report_${new Date().toISOString().split('T')[0]}.pdf`;
+      downloadPDF(pdfBlob, fileName);
+
+      toast({
+        title: 'Success',
+        description: 'PDF report generated successfully'
+      });
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to generate PDF report',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header - Mobile Responsive */}
       <div className="glass-morphism rounded-3xl p-4 sm:p-6 shadow-2xl">
-        {/* Back Button - Full width on mobile */}
-        <div className="mb-4">
-          <Button 
-            variant="outline" 
+        {/* Back Button and Actions - Full width on mobile */}
+        <div className="mb-4 flex flex-col sm:flex-row gap-3 sm:justify-between">
+          <Button
+            variant="outline"
             onClick={() => router.push('/students')}
             className="w-full sm:w-auto"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Students
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleExportPDF}
+            disabled={isGeneratingPDF}
+            className="w-full sm:w-auto border-blue-500 text-blue-600 hover:bg-blue-50"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            {isGeneratingPDF ? 'Generating...' : 'Export PDF Report'}
           </Button>
         </div>
 
@@ -358,7 +408,7 @@ export function StudentDetailsContent({ student: initialStudent }: StudentDetail
                 <div className="flex-1 min-w-0">
                   <p className="text-sm sm:text-base text-foreground break-words leading-relaxed">{activity?.description || 'No description'}</p>
                   <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-                    {activity?.createdAt 
+                    {activity?.createdAt
                       ? format(new Date(activity.createdAt), 'MMM d, yyyy at h:mm a')
                       : 'Unknown time'
                     }
@@ -368,6 +418,60 @@ export function StudentDetailsContent({ student: initialStudent }: StudentDetail
             ))
           ) : (
             <p className="text-muted-foreground text-center py-4 text-sm sm:text-base">No activities recorded</p>
+          )}
+        </div>
+      </div>
+
+      {/* Email Communication History */}
+      <div className="glass-morphism rounded-3xl p-6 shadow-2xl">
+        <div className="mb-6">
+          <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+            <Mail className="w-5 h-5 text-muted-foreground" />
+            Email Communication History
+          </h2>
+        </div>
+        <div className="space-y-4 max-h-96 overflow-y-auto">
+          {student?.emailLogs?.length ? (
+            student.emailLogs.map((emailLog: any) => (
+              <div key={emailLog?.id} className="bg-muted/50 backdrop-blur-xl border border-border rounded-2xl p-4">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-medium text-foreground text-sm sm:text-base break-words flex items-center gap-2">
+                      {emailLog?.subject || 'No Subject'}
+                      <Badge
+                        variant={emailLog?.status === 'sent' ? 'default' : 'destructive'}
+                        className="text-xs"
+                      >
+                        {emailLog?.status || 'unknown'}
+                      </Badge>
+                    </h4>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 mt-2">
+                      <Badge variant="outline" className="text-xs w-fit bg-blue-50 text-blue-700 border-blue-200">
+                        {emailLog?.emailType?.replace('_', ' ') || 'general'}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">
+                        {emailLog?.sentAt
+                          ? format(new Date(emailLog.sentAt), 'MMM d, yyyy at h:mm a')
+                          : 'Unknown time'
+                        }
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-3 p-3 bg-background/50 rounded-xl">
+                  <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
+                    {emailLog?.body?.length > 200
+                      ? `${emailLog.body.substring(0, 200)}...`
+                      : emailLog?.body || 'No content'
+                    }
+                  </p>
+                </div>
+              </div>
+            ))
+          ) : (
+            <p className="text-muted-foreground text-center py-8 text-sm sm:text-base">
+              No emails sent yet. Use the AI Email Assistant to communicate with this student.
+            </p>
           )}
         </div>
       </div>

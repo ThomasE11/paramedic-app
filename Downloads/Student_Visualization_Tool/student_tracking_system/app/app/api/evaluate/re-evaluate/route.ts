@@ -79,8 +79,8 @@ export async function POST(request: NextRequest) {
 
     console.log('[Re-Evaluate] Max possible score from rubric:', maxPossibleScore);
 
-    // Prepare AI evaluation prompt
-    const evaluationPrompt = `You are an expert academic evaluator for Emergency Medical Services education.
+    // Prepare AI evaluation prompt with stringent academic standards
+    const evaluationPrompt = `You are an expert academic evaluator for Advanced Paramedicine education with 15+ years of clinical and educational experience.
 
 ASSIGNMENT: ${submission.assignment.title}
 STUDENT: ${submission.student.fullName} (${submission.student.studentId})
@@ -95,13 +95,41 @@ ${c.levels.map(level => `- ${level.level} (${level.score} points): ${level.descr
 STUDENT SUBMISSION:
 ${submission.extractedText || 'No text content available'}
 
+CRITICAL EVALUATION STANDARDS:
+
+For "Ability to critically analyze the incident" - OUTSTANDING requires:
+✓ Differential diagnosis with 3+ alternative conditions considered
+✓ Pathophysiology explanation (WHY symptoms occur, not just WHAT they are)
+✓ Evidence-based guidelines cited with SPECIFIC recommendations (not just title)
+✓ Clinical reasoning showing synthesis of theory + practice
+✓ Discussion of clinical decision rules or protocols
+✓ Acknowledgment of uncertainty and clinical limitations
+
+For "Solutions/Action Plan" - OUTSTANDING requires:
+✓ Specific, measurable learning objectives (NOT vague "read more")
+✓ Evidence-based references for improvement strategies
+✓ Timeline or implementation plan
+✓ Self-assessment of knowledge gaps with concrete remediation
+
+For "Overall Performance" - OUTSTANDING requires:
+✓ References cited WITH specific guideline quotes/recommendations used
+✓ Evidence levels discussed (e.g., "NICE Grade A recommendation")
+✓ Integration of multiple authoritative sources
+✓ Application of evidence to justify clinical decisions
+
 EVALUATION INSTRUCTIONS:
-1. Carefully read the student's submission
-2. For each criterion, determine which level best matches the student's work
-3. Assign the corresponding score for that level
-4. Provide specific justification with quotes from the student's work
-5. Identify overall strengths and areas for improvement
-6. Provide 2-4 specific, actionable recommendations
+1. **BE DISCRIMINATING** - Each submission is UNIQUE. Do NOT give similar scores to different submissions unless they truly have similar quality
+2. **TEXT LENGTH MATTERS** - A 5,700 char submission vs 9,800 char submission should NOT get identical scores unless shorter one is significantly more concise/efficient
+3. **RIGOROUS STANDARDS** - Outstanding (4/4) is RARE. Reserve it for truly exceptional work that meets ALL rubric descriptors
+4. **DEPTH VARIATIONS** - If one submission has deeper analysis, more examples, better references - it should score HIGHER
+5. **Quote SPECIFIC text** - Justify each score with exact quotes showing why this submission earns this specific score
+6. **Avoid Score Clustering** - If evaluating 3 submissions, they should have varied scores (not all 17/20) unless truly identical in quality
+7. **Missing Elements = Lower Scores**:
+   - No differential diagnosis? Deduct from critical analysis
+   - References listed but not applied? Deduct from overall performance
+   - Vague action plan ("read more")? Maximum 3/4 for that criterion
+   - No pathophysiology explanation? Deduct from critical analysis
+8. **Compare & Contrast** - Longer, more detailed submissions with more examples should score higher than shorter, surface-level ones
 
 RESPONSE FORMAT (JSON only, no markdown):
 {
@@ -109,37 +137,39 @@ RESPONSE FORMAT (JSON only, no markdown):
     "Description": {
       "points": <number 0-4>,
       "level": "<Outstanding|Very Good|Satisfactory|Less Than Satisfactory|Omitted>",
-      "justification": "<detailed explanation with specific quotes from submission>"
+      "justification": "<Quote exact text, explain why it meets/doesn't meet descriptor requirements>"
     },
     "Thoughts and Feelings": {
       "points": <number 0-4>,
       "level": "<level name>",
-      "justification": "<detailed explanation>"
+      "justification": "<Quote exact text showing emotional reflection depth>"
     },
     "Ability to critically analyze the incident": {
       "points": <number 0-4>,
       "level": "<level name>",
-      "justification": "<detailed explanation>"
+      "justification": "<Check: differential diagnosis? pathophysiology explained? guidelines quoted? If any missing, NOT outstanding>"
     },
     "Solutions / recommendation / improvement strategies (Action)": {
       "points": <number 0-4>,
       "level": "<level name>",
-      "justification": "<detailed explanation>"
+      "justification": "<Check: specific measurable goals? timeline? If vague 'read more', give 3/4 max>"
     },
     "Overall Performance": {
       "points": <number 0-4>,
       "level": "<level name>",
-      "justification": "<detailed explanation>"
+      "justification": "<Check: references USED with quotes? If just listed, NOT outstanding>"
     }
   },
   "totalScore": <sum of all points>,
-  "feedback": "<overall constructive feedback paragraph>",
-  "strengths": "<specific strengths identified>",
-  "improvements": "<specific areas for improvement>",
-  "suggestions": "<2-4 actionable recommendations>"
+  "feedback": "<START WITH STUDENT'S FIRST NAME. Constructive feedback highlighting what would elevate work to Outstanding level>",
+  "strengths": "<Specific strengths with evidence quoted from submission>",
+  "improvements": "<Specific gaps: missing differential dx? vague actions? references not applied?>",
+  "suggestions": "<Concrete, measurable next steps with specific resources/protocols to study>"
 }
 
-Be thorough, fair, and constructive. Base scores strictly on the rubric descriptors.`;
+IMPORTANT: Start the feedback field with the student's first name: "${submission.student.firstName}, [your feedback...]"
+
+Be academically rigorous. Reserve "Outstanding" for truly exceptional work. "Very Good" is still excellent but has minor gaps.`;
 
     try {
       if (!DEEPSEEK_API_KEY) {

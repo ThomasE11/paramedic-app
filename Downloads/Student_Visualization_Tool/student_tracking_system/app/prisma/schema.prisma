@@ -74,19 +74,21 @@ model VerificationToken {
 }
 
 model Module {
-  id            String         @id @default(cuid())
-  code          String         @unique
-  name          String
-  description   String?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  averageGPA    Float?         @default(0.0)
-  totalCredits  Int?           @default(0)
-  assignments   Assignment[]   @relation("ModuleAssignments")
-  classSessions ClassSession[]
-  grades        Grade[]
-  students      Student[]
-  subjects      Subject[]
+  id                  String           @id @default(cuid())
+  code                String           @unique
+  name                String
+  description         String?
+  submissionSchedule  Json?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  averageGPA          Float?           @default(0.0)
+  totalCredits        Int?             @default(0)
+  assignments         Assignment[]     @relation("ModuleAssignments")
+  classSessions       ClassSession[]
+  grades              Grade[]
+  students            Student[]
+  subjects            Subject[]
+  activities          ModuleActivity[]
 
   @@map("modules")
 }
@@ -112,6 +114,7 @@ model Student {
   schedules   Schedule[]
   module      Module?            @relation(fields: [moduleId], references: [id])
   submissions Submission[]       @relation("StudentSubmissions")
+  emailLogs   EmailLog[]
 
   @@map("students")
 }
@@ -398,4 +401,53 @@ model Evaluation {
 
   @@unique([submissionId, rubricId])
   @@map("evaluations")
+}
+
+model ModuleActivity {
+  id            String   @id @default(cuid())
+  moduleId      String
+  title         String
+  activityType  String   @default("seminar")
+  date          DateTime
+  duration      Int?
+  targetAudience String?
+  description   String?  @db.Text
+  content       Json?
+  objectives    String[] @default([])
+  outcomes      String?  @db.Text
+  facilitator   String?
+  location      String?
+  studentCount  Int?
+  attachments   Json?
+  notes         String?  @db.Text
+  createdBy     String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  module        Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@index([moduleId, date])
+  @@index([activityType])
+  @@map("module_activities")
+}
+
+model EmailLog {
+  id           String   @id @default(cuid())
+  studentId    String?
+  recipientEmail String
+  recipientName  String
+  subject      String
+  body         String   @db.Text
+  sentBy       String
+  moduleCode   String?
+  status       String   @default("sent")
+  emailType    String   @default("general")
+  sentAt       DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  student      Student? @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId, sentAt])
+  @@index([sentBy, sentAt])
+  @@index([moduleCode, sentAt])
+  @@map("email_logs")
 }

@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { type, recipients, subject, message, classId } = body;
+    const { type, recipients, subject, message, classId, to, body: emailBody } = body;
 
     // Get user info
     const user = await prisma.user.findUnique({
@@ -27,7 +27,62 @@ export async function POST(request: NextRequest) {
     let emailsSent = 0;
     let errors: any[] = [];
 
-    if (type === 'general') {
+    if (type === 'feedback') {
+      // Handle feedback email (from evaluation modal)
+      try {
+        if (!to || !subject || !emailBody) {
+          return NextResponse.json({
+            error: 'Missing required fields: to, subject, body'
+          }, { status: 400 });
+        }
+
+        // Send the feedback email directly
+        await sendEmail({
+          to,
+          subject,
+          html: emailBody.replace(/\n/g, '<br>'),
+          text: emailBody
+        });
+
+        emailsSent++;
+
+        // Find student by email to log activity
+        const student = await prisma.student.findFirst({
+          where: { email: to }
+        });
+
+        if (student) {
+          await prisma.activity.create({
+            data: {
+              studentId: student.id,
+              type: 'email_sent',
+              description: `Feedback email sent: "${subject}"`,
+              metadata: {
+                subject,
+                sentBy: user.name || user.email,
+                sentAt: new Date().toISOString(),
+                type: 'feedback'
+              }
+            }
+          });
+        }
+
+        return NextResponse.json({
+          success: true,
+          emailsSent: 1,
+          message: 'Feedback email sent successfully'
+        });
+
+      } catch (error) {
+        console.error('Feedback email error:', error);
+        errors.push({ error: error instanceof Error ? error.message : 'Unknown error' });
+
+        return NextResponse.json({
+          success: false,
+          error: error instanceof Error ? error.message : 'Failed to send feedback email'
+        }, { status: 500 });
+      }
+    } else if (type === 'general') {
       // Send general message
       for (const studentId of recipients) {
         try {

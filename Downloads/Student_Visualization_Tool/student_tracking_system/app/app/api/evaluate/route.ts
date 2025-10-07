@@ -200,9 +200,13 @@ Be thorough, fair, and constructive in your evaluation. Focus on helping the stu
       const evaluationResult = JSON.parse(responseContent);
       const processingTime = Date.now() - startTime;
 
+      // Calculate maxScore from rubric criteria
+      const maxScore = rubricCriteria.criteria.reduce((sum, c) => sum + c.maxPoints, 0);
+      const safePercentage = maxScore > 0 ? (evaluationResult.totalScore / maxScore) * 100 : 0;
+
       console.log('[Evaluate] AI Response parsed successfully:', {
         totalScore: evaluationResult.totalScore,
-        maxScore: submission.assignment.maxScore,
+        maxScore: maxScore,
         criteriaCount: Object.keys(evaluationResult.scores || {}).length
       });
 
@@ -212,8 +216,8 @@ Be thorough, fair, and constructive in your evaluation. Focus on helping the stu
           submissionId,
           rubricId,
           totalScore: evaluationResult.totalScore,
-          maxScore: submission.assignment.maxScore,
-          percentage: (evaluationResult.totalScore / submission.assignment.maxScore) * 100,
+          maxScore: maxScore,
+          percentage: safePercentage,
           feedback: evaluationResult.feedback,
           criteriaScores: evaluationResult.scores,
           strengths: evaluationResult.strengths,
@@ -243,7 +247,7 @@ Be thorough, fair, and constructive in your evaluation. Focus on helping the stu
           studentId: submission.studentId,
           userId: session.user.id,
           title: `AI Evaluation: ${submission.assignment.title}`,
-          content: `Score: ${evaluationResult.totalScore}/${submission.assignment.maxScore}
+          content: `Score: ${evaluationResult.totalScore}/${maxScore}
 
 Strengths: ${evaluationResult.strengths}
 
@@ -251,6 +255,27 @@ Areas for Improvement: ${evaluationResult.improvements}
 
 Suggestions: ${evaluationResult.suggestions}`,
           category: 'academic'
+        }
+      });
+
+      // Log activity for submission evaluation
+      await prisma.activity.create({
+        data: {
+          studentId: submission.studentId,
+          type: 'submission_evaluated',
+          description: `Received ${evaluationResult.totalScore}/${maxScore} (${evaluation.percentage.toFixed(1)}%) on ${submission.assignment.title}`,
+          metadata: {
+            assignmentId: submission.assignmentId,
+            assignmentTitle: submission.assignment.title,
+            submissionId: submission.id,
+            evaluationId: evaluation.id,
+            score: evaluationResult.totalScore,
+            maxScore: maxScore,
+            percentage: evaluation.percentage,
+            strengths: evaluationResult.strengths,
+            improvements: evaluationResult.improvements,
+            evaluatedBy: 'ai'
+          }
         }
       });
 
@@ -266,6 +291,9 @@ Suggestions: ${evaluationResult.suggestions}`,
     } catch (aiError) {
       console.error('AI evaluation error:', aiError);
 
+      // Calculate maxScore from rubric criteria for fallback
+      const maxScore = rubricCriteria.criteria.reduce((sum, c) => sum + c.maxPoints, 0);
+
       // Create a fallback evaluation
       const evaluation = await prisma.evaluation.create({
         data: {
@@ -273,7 +301,7 @@ Suggestions: ${evaluationResult.suggestions}`,
           rubricId,
           criteriaScores: {},
           totalScore: 0,
-          maxScore: submission.assignment.maxScore,
+          maxScore: maxScore > 0 ? maxScore : 100,
           percentage: 0,
           feedback: 'AI evaluation failed. Manual review required.',
           evaluatedBy: 'ai'

@@ -35,7 +35,8 @@ import {
   ToggleRight,
   Paperclip,
   X,
-  FileText
+  FileText,
+  Mail
 } from 'lucide-react';
 
 interface EnhancedEducationalAIProps {
@@ -434,10 +435,63 @@ export function EnhancedEducationalAI({ isOpen, onClose, moduleContext, studentC
       return `❌ **Request Not Understood**: ${response.error || 'Please try rephrasing your request.'}`;
     }
 
-    // Handle missing or malformed content
-    if (!response.content) {
-      console.error('No content in response:', response);
+    // Handle missing or malformed content (unless in Action Mode)
+    if (!response.content && !response.actions) {
+      console.error('No content or actions in response:', response);
       return `❌ **Response Error**: The AI response is missing content. Please try again.`;
+    }
+
+    // Handle action mode responses
+    if (response.actions && response.executionResults) {
+      let formatted = `## ✅ Actions Executed\n\n`;
+      formatted += `${response.confirmation}\n\n`;
+
+      response.executionResults.forEach((result: any, index: number) => {
+        const action = response.actions[index];
+        if (result.success) {
+          formatted += `✅ **${action.description}**\n`;
+
+          // Special handling for email actions
+          if (action.type === 'SEND_EMAIL' && result.data?.emails) {
+            const emails = result.data.emails;
+            formatted += `\n📧 **${emails.length} Personalized Emails Generated**\n\n`;
+            formatted += `**Preview** (${result.data.preview?.firstName}):\n`;
+            formatted += `Subject: ${result.data.preview?.subject}\n`;
+            formatted += `\`\`\`\n${result.data.preview?.body}\n\`\`\`\n\n`;
+            formatted += `**Ready to Send**: Click individual mailto links below or use your email client.\n\n`;
+          } else if (action.type === 'SEND_EMAIL_NOW' && result.data) {
+            formatted += `\n📨 **Email Sending Complete**\n\n`;
+            formatted += `✅ Successfully sent: ${result.data.sent}/${result.data.total}\n`;
+            if (result.data.failed > 0) {
+              formatted += `❌ Failed: ${result.data.failed}\n`;
+              if (result.data.errors && result.data.errors.length > 0) {
+                formatted += `\n**Errors**:\n`;
+                result.data.errors.forEach((err: any) => {
+                  formatted += `- ${err.email}: ${err.error}\n`;
+                });
+              }
+            }
+            formatted += `\n${result.data.message}\n\n`;
+            formatted += `ℹ️ Emails were sent with 30-second delays to avoid spam filters.\n`;
+          } else if (result.data) {
+            formatted += `\nResult: ${JSON.stringify(result.data, null, 2)}\n`;
+          }
+          formatted += '\n';
+        } else {
+          formatted += `❌ **Failed**: ${action.description}\n`;
+          formatted += `Error: ${result.error}\n\n`;
+        }
+      });
+
+      if (response.warnings && response.warnings.length > 0) {
+        formatted += `\n⚠️ **Warnings**:\n${response.warnings.map((w: string) => `• ${w}`).join('\n')}\n`;
+      }
+
+      if (response.follow_up) {
+        formatted += `\n💡 **Next Steps**: ${response.follow_up}\n`;
+      }
+
+      return formatted;
     }
 
     const content = response.content;
@@ -876,6 +930,41 @@ export function EnhancedEducationalAI({ isOpen, onClose, moduleContext, studentC
                               <div className="whitespace-pre-wrap text-sm leading-relaxed">
                                 {message.content}
                               </div>
+
+                              {/* Email Action Buttons */}
+                              {message.response?.executionResults?.find((r: any) => r.type === 'SEND_EMAIL' && r.data?.emails) && (
+                                <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border-2 border-blue-200">
+                                  <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-3 flex items-center gap-2">
+                                    <Mail className="w-4 h-4" />
+                                    Individual Email Links
+                                  </h4>
+                                  <div className="max-h-60 overflow-y-auto space-y-2">
+                                    {message.response.executionResults
+                                      .find((r: any) => r.type === 'SEND_EMAIL')
+                                      ?.data?.emails?.map((email: any, idx: number) => (
+                                        <a
+                                          key={idx}
+                                          href={`mailto:${email.email}?subject=${encodeURIComponent(email.subject)}&body=${encodeURIComponent(email.body)}`}
+                                          className="flex items-center justify-between p-2 bg-white dark:bg-gray-800 rounded border border-blue-200 hover:border-blue-400 transition-colors group"
+                                        >
+                                          <div className="flex-1 min-w-0">
+                                            <div className="font-medium text-sm truncate text-blue-900 dark:text-blue-100">
+                                              {email.firstName} ({email.studentId})
+                                            </div>
+                                            <div className="text-xs text-gray-600 dark:text-gray-400 truncate">
+                                              {email.email}
+                                            </div>
+                                          </div>
+                                          <Mail className="w-4 h-4 text-blue-600 group-hover:text-blue-800 flex-shrink-0 ml-2" />
+                                        </a>
+                                      ))}
+                                  </div>
+                                  <div className="mt-3 text-xs text-blue-700 dark:text-blue-300">
+                                    💡 Click any link to open in your default email client
+                                  </div>
+                                </div>
+                              )}
+
                               <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-200/50">
                                 <div className="flex items-center gap-2 text-xs opacity-70">
                                   <Clock className="w-3 h-3" />

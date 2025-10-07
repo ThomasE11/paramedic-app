@@ -243,9 +243,27 @@ export function AttendanceContent() {
       return;
     }
 
+    if (!selectedDate) {
+      toast({
+        title: 'Error',
+        description: 'Please select a date',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (attendance.length === 0) {
+      toast({
+        title: 'Error',
+        description: 'No students to record attendance for',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     try {
       setSaving(true);
-      
+
       const moduleData = modules.find(m => m.id === selectedModule);
       let classSession;
 
@@ -281,10 +299,16 @@ export function AttendanceContent() {
         });
 
         if (!classSessionResponse.ok) {
-          throw new Error('Failed to create class session');
+          const errorData = await classSessionResponse.json().catch(() => ({}));
+          throw new Error(errorData.error || 'Failed to create class session');
         }
 
         classSession = await classSessionResponse.json();
+      }
+
+      // Validate class session was created/found
+      if (!classSession || !classSession.id) {
+        throw new Error('Class session is invalid');
       }
 
       // Save the attendance (the API handles upserts)
@@ -304,23 +328,32 @@ export function AttendanceContent() {
       });
 
       if (response.ok) {
+        const savedData = await response.json();
         setIsExistingData(true); // Mark as existing data after successful save
+
         toast({
           title: 'Success',
-          description: `Attendance ${isExistingData ? 'updated' : 'saved'} for ${moduleData?.code} on ${format(new Date(selectedDate), 'MMM d, yyyy')}`
+          description: `Attendance ${isExistingData ? 'updated' : 'saved'} successfully for ${moduleData?.code} on ${format(new Date(selectedDate), 'MMM d, yyyy')} (${savedData.length} records)`
         });
+
+        // Reload to confirm persistence
+        await loadExistingAttendance();
       } else {
-        const error = await response.json();
+        const error = await response.json().catch(() => ({ error: 'Unknown error occurred' }));
+        console.error('Attendance save error:', error);
+
         toast({
-          title: 'Error',
-          description: error.error || 'Failed to save attendance',
+          title: 'Failed to save attendance',
+          description: error.error || error.message || 'Please check your connection and try again',
           variant: 'destructive'
         });
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Attendance save error:', error);
+
       toast({
         title: 'Error',
-        description: 'Something went wrong. Please try again.',
+        description: error?.message || 'Something went wrong. Please try again.',
         variant: 'destructive'
       });
     } finally {
