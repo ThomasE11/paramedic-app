@@ -195,9 +195,9 @@ export async function POST(request: NextRequest) {
             fileSize: file.size,
             mimeType: file.type,
             extractedText,
-            metadata,
-            status: 'pending',
-            submittedAt: new Date()
+            status: 'submitted',
+            submittedAt: new Date(),
+            uploadedBy: session.user.id
           },
           include: {
             student: {
