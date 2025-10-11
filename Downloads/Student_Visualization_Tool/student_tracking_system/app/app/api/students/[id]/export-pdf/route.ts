@@ -87,17 +87,17 @@ export async function GET(
     const evaluations = student.submissions
       .filter(sub => sub.evaluations.length > 0)
       .map(sub => {
-        const eval = sub.evaluations[0]; // Get latest evaluation
+        const evaluation = sub.evaluations[0]; // Get latest evaluation
         return {
           assignmentTitle: sub.assignment.title,
           submittedAt: sub.submittedAt,
-          score: eval.totalScore,
-          maxScore: eval.maxScore,
-          percentage: eval.percentage,
-          feedback: eval.feedback,
-          strengths: eval.strengths || undefined,
-          improvements: eval.improvements || undefined,
-          criteriaScores: eval.criteriaScores as Record<string, any>
+          score: evaluation.totalScore,
+          maxScore: evaluation.maxScore,
+          percentage: evaluation.percentage,
+          feedback: evaluation.feedback,
+          strengths: evaluation.strengths || undefined,
+          improvements: evaluation.improvements || undefined,
+          criteriaScores: evaluation.criteriaScores as Record<string, any>
         };
       });
 
