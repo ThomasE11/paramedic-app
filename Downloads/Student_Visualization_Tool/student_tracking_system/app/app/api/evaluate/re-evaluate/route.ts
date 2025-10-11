@@ -71,11 +71,15 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('[Re-Evaluate] Submission text length:', submission.extractedText?.length);
-    console.log('[Re-Evaluate] Rubric criteria count:', (rubric.criteria as any)?.length);
 
-    // Calculate max possible score from rubric
-    const criteria = rubric.criteria as EvaluationCriteria[];
-    const maxPossibleScore = criteria.reduce((sum, criterion) => sum + criterion.maxScore, 0);
+    // Handle both rubric structures: { criteria: [] } or { categories: [] }
+    const rubricCriteria = rubric.criteria as any;
+    const criteriaArray = rubricCriteria.criteria || rubricCriteria.categories || [];
+
+    console.log('[Re-Evaluate] Rubric criteria count:', criteriaArray.length);
+
+    // Calculate max possible score from rubric (handle both maxPoints and weight fields)
+    const maxPossibleScore = criteriaArray.reduce((sum: number, c: any) => sum + (c.maxPoints || c.maxScore || c.weight || 0), 0);
 
     console.log('[Re-Evaluate] Max possible score from rubric:', maxPossibleScore);
 
@@ -87,89 +91,69 @@ STUDENT: ${submission.student.fullName} (${submission.student.studentId})
 MODULE: ${submission.assignment.module?.name}
 
 RUBRIC CRITERIA:
-${criteria.map(c => `
-${c.name} (Max: ${c.maxScore} points):
-${c.levels.map(level => `- ${level.level} (${level.score} points): ${level.descriptor}`).join('\n')}
-`).join('\n')}
+${JSON.stringify(criteriaArray, null, 2)}
 
 STUDENT SUBMISSION:
 ${submission.extractedText || 'No text content available'}
 
-CRITICAL EVALUATION STANDARDS:
+CRITICAL EVALUATION INSTRUCTIONS:
+You must be STRICT and LITERAL in applying the rubric. Do NOT make assumptions or be generous.
 
-For "Ability to critically analyze the incident" - OUTSTANDING requires:
-✓ Differential diagnosis with 3+ alternative conditions considered
-✓ Pathophysiology explanation (WHY symptoms occur, not just WHAT they are)
-✓ Evidence-based guidelines cited with SPECIFIC recommendations (not just title)
-✓ Clinical reasoning showing synthesis of theory + practice
-✓ Discussion of clinical decision rules or protocols
-✓ Acknowledgment of uncertainty and clinical limitations
+1. LITERAL INTERPRETATION: Each rubric criterion lists specific required elements
+   - ALL elements must be explicitly present in the submission to award full marks
+   - DO NOT assume elements are "implied" - they must be explicitly documented
+   - DO NOT give credit for partial or implied completion
 
-For "Solutions/Action Plan" - OUTSTANDING requires:
-✓ Specific, measurable learning objectives (NOT vague "read more")
-✓ Evidence-based references for improvement strategies
-✓ Timeline or implementation plan
-✓ Self-assessment of knowledge gaps with concrete remediation
+2. EVIDENCE-BASED SCORING:
+   - Quote specific text from the submission to justify scores
+   - If an element is not explicitly documented, it is MISSING
+   - Count missing/incomplete elements accurately
 
-For "Overall Performance" - OUTSTANDING requires:
-✓ References cited WITH specific guideline quotes/recommendations used
-✓ Evidence levels discussed (e.g., "NICE Grade A recommendation")
-✓ Integration of multiple authoritative sources
-✓ Application of evidence to justify clinical decisions
+3. LEVEL SELECTION:
+   - Read each level's description carefully
+   - Match the submission to the MOST ACCURATE level (not the highest possible)
+   - Best Practice (highest score) requires ALL elements complete and excellent
+   - If ANY required element is missing, incomplete, or poor quality → lower level
 
-EVALUATION INSTRUCTIONS:
-1. **BE DISCRIMINATING** - Each submission is UNIQUE. Do NOT give similar scores to different submissions unless they truly have similar quality
-2. **TEXT LENGTH MATTERS** - A 5,700 char submission vs 9,800 char submission should NOT get identical scores unless shorter one is significantly more concise/efficient
-3. **RIGOROUS STANDARDS** - Outstanding (4/4) is RARE. Reserve it for truly exceptional work that meets ALL rubric descriptors
-4. **DEPTH VARIATIONS** - If one submission has deeper analysis, more examples, better references - it should score HIGHER
-5. **Quote SPECIFIC text** - Justify each score with exact quotes showing why this submission earns this specific score
-6. **Avoid Score Clustering** - If evaluating 3 submissions, they should have varied scores (not all 17/20) unless truly identical in quality
-7. **Missing Elements = Lower Scores**:
-   - No differential diagnosis? Deduct from critical analysis
-   - References listed but not applied? Deduct from overall performance
-   - Vague action plan ("read more")? Maximum 3/4 for that criterion
-   - No pathophysiology explanation? Deduct from critical analysis
-8. **Compare & Contrast** - Longer, more detailed submissions with more examples should score higher than shorter, surface-level ones
+4. SPECIFIC RUBRIC REQUIREMENTS:
+   ${submission.assignment.type === 'skill_assessment' ? `
+   For PCR/Skill Assessments:
+   - "998 call details/code" means explicit call code must be documented (e.g., "Code 3 Cardiac")
+   - "Annotated silhouette" requires a visual body diagram with markings (not just text description)
+   - "Body systems review" requires systematic documentation of multiple systems (CVS, Resp, Neuro, etc.)
+   - "Rationale for treatments" means explicit explanation for decisions (not just listing interventions)
+   - "Reassessment" requires documented post-intervention changes with specific values
+   ` : ''}
 
-RESPONSE FORMAT (JSON only, no markdown):
+5. QUALITY STANDARDS:
+   - Identify strengths and areas for improvement objectively
+   - Suggest specific, actionable improvements
+   - Be constructive but rigorous
+
+6. CONFIDENCE RATING:
+   - Rate your confidence in the evaluation (0-1)
+   - Lower confidence if submission is unclear, incomplete, or hard to assess
+
+RESPONSE FORMAT (JSON only, no markdown code blocks):
 {
   "scores": {
-    "Description": {
-      "points": <number 0-4>,
-      "level": "<Outstanding|Very Good|Satisfactory|Less Than Satisfactory|Omitted>",
-      "justification": "<Quote exact text, explain why it meets/doesn't meet descriptor requirements>"
-    },
-    "Thoughts and Feelings": {
-      "points": <number 0-4>,
-      "level": "<level name>",
-      "justification": "<Quote exact text showing emotional reflection depth>"
-    },
-    "Ability to critically analyze the incident": {
-      "points": <number 0-4>,
-      "level": "<level name>",
-      "justification": "<Check: differential diagnosis? pathophysiology explained? guidelines quoted? If any missing, NOT outstanding>"
-    },
-    "Solutions / recommendation / improvement strategies (Action)": {
-      "points": <number 0-4>,
-      "level": "<level name>",
-      "justification": "<Check: specific measurable goals? timeline? If vague 'read more', give 3/4 max>"
-    },
-    "Overall Performance": {
-      "points": <number 0-4>,
-      "level": "<level name>",
-      "justification": "<Check: references USED with quotes? If just listed, NOT outstanding>"
+    "criterionName1": {
+      "points": number,
+      "level": "string",
+      "justification": "detailed explanation with specific quotes/evidence",
+      "missingElements": ["list any missing required elements"],
+      "evidence": "specific text from submission that supports this score"
     }
   },
-  "totalScore": <sum of all points>,
-  "feedback": "<START WITH STUDENT'S FIRST NAME. Constructive feedback highlighting what would elevate work to Outstanding level>",
-  "strengths": "<Specific strengths with evidence quoted from submission>",
-  "improvements": "<Specific gaps: missing differential dx? vague actions? references not applied?>",
-  "suggestions": "<Concrete, measurable next steps with specific resources/protocols to study>"
+  "totalScore": number,
+  "feedback": "Overall constructive feedback",
+  "strengths": "Specific strengths identified with evidence",
+  "improvements": "Specific areas for improvement with actionable steps",
+  "suggestions": "Actionable suggestions for future work",
+  "confidence": number (0-1)
 }
 
-IMPORTANT: Start the feedback field with the student's first name: "${submission.student.firstName}, [your feedback...]"
-
-Be academically rigorous. Reserve "Outstanding" for truly exceptional work. "Very Good" is still excellent but has minor gaps.`;
+Remember: Be STRICT, LITERAL, and EVIDENCE-BASED. Do not be generous or assume implied content.`;
 
     try {
       if (!DEEPSEEK_API_KEY) {

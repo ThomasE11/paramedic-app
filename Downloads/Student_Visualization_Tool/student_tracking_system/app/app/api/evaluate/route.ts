@@ -96,7 +96,11 @@ export async function POST(request: NextRequest) {
     const startTime = Date.now();
 
     // Prepare AI evaluation prompt
-    const rubricCriteria = rubric.criteria as RubricCriteria;
+    const rubricCriteria = rubric.criteria as any;
+
+    // Handle both rubric structures: { criteria: [] } or { categories: [] }
+    const criteriaArray = rubricCriteria.criteria || rubricCriteria.categories || [];
+
     const studentHistory = submission.student.submissions
       .filter(s => s.id !== submissionId)
       .map(s => ({
@@ -120,18 +124,49 @@ Previous submission evaluations and scores to track progress and improvement pat
 `).join('\n')}
 
 RUBRIC CRITERIA:
-${JSON.stringify(rubricCriteria.criteria, null, 2)}
+${JSON.stringify(criteriaArray, null, 2)}
 
 SUBMISSION CONTENT:
 ${submission.extractedText || 'No text content available'}
 
-EVALUATION INSTRUCTIONS:
-1. Evaluate the submission against each criterion in the rubric
-2. For each criterion, determine the appropriate level and assign points
-3. Provide specific, constructive feedback
-4. Identify strengths and areas for improvement
-5. Compare with student's previous work if available to note progress
-6. Suggest specific actions for improvement
+CRITICAL EVALUATION INSTRUCTIONS:
+You must be STRICT and LITERAL in applying the rubric. Do NOT make assumptions or be generous.
+
+1. LITERAL INTERPRETATION: Each rubric criterion lists specific required elements
+   - ALL elements must be explicitly present in the submission to award full marks
+   - DO NOT assume elements are "implied" - they must be explicitly documented
+   - DO NOT give credit for partial or implied completion
+
+2. EVIDENCE-BASED SCORING:
+   - Quote specific text from the submission to justify scores
+   - If an element is not explicitly documented, it is MISSING
+   - Count missing/incomplete elements accurately
+
+3. LEVEL SELECTION:
+   - Read each level's description carefully
+   - Match the submission to the MOST ACCURATE level (not the highest possible)
+   - Best Practice (highest score) requires ALL elements complete and excellent
+   - If ANY required element is missing, incomplete, or poor quality → lower level
+
+4. SPECIFIC RUBRIC REQUIREMENTS:
+   ${submission.assignment.type === 'skill_assessment' ? `
+   For PCR/Skill Assessments:
+   - "998 call details/code" means explicit call code must be documented (e.g., "Code 3 Cardiac")
+   - "Annotated silhouette" requires a visual body diagram with markings (not just text description)
+   - "Body systems review" requires systematic documentation of multiple systems (CVS, Resp, Neuro, etc.)
+   - "Rationale for treatments" means explicit explanation for decisions (not just listing interventions)
+   - "Reassessment" requires documented post-intervention changes with specific values
+   ` : ''}
+
+5. QUALITY STANDARDS:
+   - Identify strengths and areas for improvement objectively
+   - Compare with student's previous work if available to note progress
+   - Suggest specific, actionable improvements
+   - Be constructive but rigorous
+
+6. CONFIDENCE RATING:
+   - Rate your confidence in the evaluation (0-1)
+   - Lower confidence if submission is unclear, incomplete, or hard to assess
 
 RESPONSE FORMAT (JSON):
 {
@@ -139,24 +174,21 @@ RESPONSE FORMAT (JSON):
     "criterionName1": {
       "points": number,
       "level": "string",
-      "justification": "detailed explanation"
-    },
-    "criterionName2": {
-      "points": number,
-      "level": "string",
-      "justification": "detailed explanation"
+      "justification": "detailed explanation with specific quotes/evidence",
+      "missingElements": ["list any missing required elements"],
+      "evidence": "specific text from submission that supports this score"
     }
   },
   "totalScore": number,
   "feedback": "Overall constructive feedback",
-  "strengths": "Specific strengths identified",
-  "improvements": "Specific areas for improvement",
+  "strengths": "Specific strengths identified with evidence",
+  "improvements": "Specific areas for improvement with actionable steps",
   "suggestions": "Actionable suggestions for future work",
   "progressNotes": "Notes on student's progress compared to previous submissions",
   "confidence": number (0-1)
 }
 
-Be thorough, fair, and constructive in your evaluation. Focus on helping the student learn and improve.
+Remember: Be STRICT, LITERAL, and EVIDENCE-BASED. Do not be generous or assume implied content.
 `;
 
     try {
@@ -200,8 +232,9 @@ Be thorough, fair, and constructive in your evaluation. Focus on helping the stu
       const evaluationResult = JSON.parse(responseContent);
       const processingTime = Date.now() - startTime;
 
-      // Calculate maxScore from rubric criteria
-      const maxScore = rubricCriteria.criteria.reduce((sum, c) => sum + c.maxPoints, 0);
+      // Calculate maxScore from rubric criteria (handle both structures)
+      const criteriaArray = rubricCriteria.criteria || rubricCriteria.categories || [];
+      const maxScore = criteriaArray.reduce((sum: number, c: any) => sum + (c.maxPoints || c.weight || 0), 0);
       const safePercentage = maxScore > 0 ? (evaluationResult.totalScore / maxScore) * 100 : 0;
 
       console.log('[Evaluate] AI Response parsed successfully:', {
@@ -291,8 +324,9 @@ Suggestions: ${evaluationResult.suggestions}`,
     } catch (aiError) {
       console.error('AI evaluation error:', aiError);
 
-      // Calculate maxScore from rubric criteria for fallback
-      const maxScore = rubricCriteria.criteria.reduce((sum, c) => sum + c.maxPoints, 0);
+      // Calculate maxScore from rubric criteria for fallback (handle both structures)
+      const criteriaArray = rubricCriteria.criteria || rubricCriteria.categories || [];
+      const maxScore = criteriaArray.reduce((sum: number, c: any) => sum + (c.maxPoints || c.weight || 0), 0);
 
       // Create a fallback evaluation
       const evaluation = await prisma.evaluation.create({
