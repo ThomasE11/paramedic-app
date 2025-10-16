@@ -24,10 +24,13 @@ export const authOptions: NextAuthOptions = {
 
         console.log('[AUTH] Attempting login for:', credentials.email);
         console.log('[AUTH] DATABASE_URL exists:', !!process.env.DATABASE_URL);
+        console.log('[AUTH] DATABASE_URL value:', process.env.DATABASE_URL?.substring(0, 50) + '...');
+        console.log('[AUTH] ENABLE_DEMO_MODE:', process.env.ENABLE_DEMO_MODE);
+        console.log('[AUTH] NODE_ENV:', process.env.NODE_ENV);
 
         // Demo mode - allow specific test credentials when no database is available
         if (process.env.ENABLE_DEMO_MODE === 'true' || !process.env.DATABASE_URL || process.env.DATABASE_URL.includes('placeholder')) {
-          console.log('Demo mode: Checking credentials');
+          console.log('[AUTH] Entering demo mode');
 
           // Original credentials as requested
           if (credentials.email === 'elias@twetemo.com' && credentials.password === 'test123') {
