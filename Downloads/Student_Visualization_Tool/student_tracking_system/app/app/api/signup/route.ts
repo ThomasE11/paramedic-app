@@ -17,9 +17,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Demo mode - bypass database for testing
-    if (process.env.NODE_ENV === 'production' || !process.env.DATABASE_URL || process.env.DATABASE_URL.includes('placeholder')) {
-      console.log('Demo mode: Creating mock user');
+    // Demo mode - bypass database for testing (only when no database is available)
+    if (process.env.ENABLE_DEMO_MODE === 'true' || !process.env.DATABASE_URL || process.env.DATABASE_URL.includes('placeholder')) {
+      console.log('[SIGNUP] Demo mode: Creating mock user');
 
       const mockUser = {
         id: Date.now().toString(),
@@ -35,6 +35,8 @@ export async function POST(request: NextRequest) {
         { status: 201 }
       );
     }
+
+    console.log('[SIGNUP] Creating user in database:', email);
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({

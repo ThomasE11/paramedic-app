@@ -3,5 +3,3 @@
   "outputDirectory": "app/.next",
   "installCommand": "cd app && npm install"
 }
-
-# Trigger redeploy
