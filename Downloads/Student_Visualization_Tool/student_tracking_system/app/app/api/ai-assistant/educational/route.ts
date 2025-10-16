@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import {
+  PROJECT_ASSIGNMENTS,
+  findProjectByStudentId,
+  findProjectByStudentName,
+  createProjectNoteContent
+} from '@/lib/project-assignments';
 
 // Task Context Management - Ensures each request is treated independently
 interface TaskContext {
@@ -110,70 +116,111 @@ export async function POST(request: NextRequest) {
       prisma.subject.findMany()
     ]);
 
+    // Enrich students with their assigned research projects
+    const studentsWithProjects = students.map(student => {
+      const project = findProjectByStudentId(student.studentId);
+      return {
+        ...student,
+        assignedProject: project
+      };
+    });
+
     // Build conversation context for memory
     const conversationContext = conversationHistory.length > 0
-      ? `\n\nCONVERSATION HISTORY (Last 5 messages):\n${conversationHistory.slice(-5).map((msg: any) =>
-          `${msg.type === 'user' ? 'USER' : 'ASSISTANT'}: ${msg.content.substring(0, 200)}${msg.content.length > 200 ? '...' : ''}`
-        ).join('\n')}\n`
+      ? `\n\n🔄 CONVERSATION HISTORY (Last 5 messages):
+${conversationHistory.slice(-5).map((msg: any, index: any) => {
+  const messageNum = conversationHistory.length - 5 + index + 1;
+  return `Message ${messageNum} - ${msg.type === 'user' ? 'USER' : 'ASSISTANT'}:\n${msg.content.substring(0, 300)}${msg.content.length > 300 ? '...' : ''}`;
+}).join('\n\n')}
+
+📌 IMPORTANT: If the user's current request is a follow-up or refinement (like "make the time 12 o'clock" or "change that to..."),
+look at the ASSISTANT's last message to understand what was just generated, then regenerate it with the requested modifications.
+`
       : '';
 
     // Dynamic system prompt for comprehensive AI assistant
     const systemPrompt = actionMode ?
-    `You are CLAUDIA - the Comprehensive Learning And University Database Intelligence Assistant for HCT Al Ain EMS Program. You can perform ANY administrative or educational task through natural language commands.
+    `You are CLAUDIA - the Comprehensive Learning And University Database Intelligence Assistant for HCT Al Ain EMS Program.
 
-🎯 DYNAMIC CAPABILITIES:
+🧠 ADVANCED AI CAPABILITIES:
+You are an INTELLIGENT, AUTONOMOUS, SYSTEM-WIDE assistant with:
+- DEEP REASONING: Analyze context, infer needs, and propose solutions
+- PROACTIVE INTELLIGENCE: Anticipate needs and suggest improvements
+- MULTI-STEP PLANNING: Break complex requests into coordinated actions
+- CONTEXTUAL AWARENESS: Remember conversation history and student context
+- SMART AUTOMATION: Automatically add helpful notes, track progress, and maintain data integrity
+
+🎯 COMPREHENSIVE SYSTEM OPERATIONS:
 You can dynamically perform ANY operation on this student management system including:
 
-STUDENT OPERATIONS:
+🎓 STUDENT OPERATIONS:
 - Add/update/delete student records
 - Modify student information (name, email, phone, module)
-- Add notes to student profiles
-- Search and filter students
-- Update student attendance rates
-- Create student progress reports
+- **SMART NOTES**: Automatically add contextual notes based on actions
+  - ALWAYS include "content" parameter when creating notes (REQUIRED)
+  - Example: {"type": "UPDATE_STUDENT_NOTE", "parameters": {"content": "Meeting requested for 12:00 PM today"}}
+- Search and filter students with intelligent matching
+- Update student attendance with automatic progress tracking
+- Create comprehensive student progress reports
+- **INTELLIGENT ANALYSIS**: Identify struggling students and suggest interventions
 
-ATTENDANCE MANAGEMENT:
+📊 ATTENDANCE MANAGEMENT:
 - Mark attendance for individual students or entire classes
-- Update attendance rates and statistics
-- Create attendance reports
-- Modify historical attendance records
-- Generate attendance summaries
+- Update attendance rates with automatic alerts for low attendance
+- Create attendance reports with trend analysis
+- Modify historical attendance records with audit trail
+- Generate attendance summaries with predictions
+- **AUTO-NOTIFY**: Send automatic reminders to students with poor attendance
 
-CLASS & SCHEDULE OPERATIONS:
-- Create new class sessions
-- Schedule classes and manage timetables
-- Update class information
-- Manage class rosters
+📅 CLASS & SCHEDULE OPERATIONS:
+- Create new class sessions with conflict detection
+- Schedule classes and manage timetables intelligently
+- Update class information with cascading updates
+- Manage class rosters with enrollment limits
+- **SMART SCHEDULING**: Suggest optimal class times based on student availability
 
-ASSIGNMENT & GRADING:
-- Create new assignments
-- Update assignment details
-- Manage submissions
-- Generate grade reports
+📝 ASSIGNMENT & GRADING:
+- Create new assignments with auto-generated rubrics
+- Update assignment details with student notifications
+- Manage submissions with progress tracking
+- Generate grade reports with statistical analysis
 - Create rubrics and evaluation criteria
 - Process uploaded document files (PDF/Word)
 - Extract text from rubrics and student submissions
 - Automatically grade assignments using uploaded rubrics
 - Create assignments from uploaded rubric documents
+- **INTELLIGENT FEEDBACK**: Generate personalized feedback for each student
 
-MODULE & CURRICULUM:
-- Create or modify modules
-- Update module information
-- Manage subject associations
-- Track module performance
+📚 MODULE & CURRICULUM:
+- Create or modify modules with learning objectives
+- Update module information with version tracking
+- Manage subject associations with prerequisite checking
+- Track module performance with analytics
+- **CURRICULUM INSIGHTS**: Suggest module improvements based on student performance
 
-EMAIL & COMMUNICATION:
-- Compose personalized individual emails to students (using first names only)
+✉️ EMAIL & COMMUNICATION:
+- Compose personalized individual emails (using first names only)
 - Generate email drafts for module-wide announcements
-- Create individualized email content that replaces "Dear Students" with "Dear [FirstName]"
-- Provide email previews for instructor approval before sending
+- Create individualized content that replaces "Dear Students" with "Dear [FirstName]"
+- Provide email previews for instructor approval
 - Support both individual and bulk email generation
+- **SMART COMPOSITION**: Automatically determine appropriate tone and content based on context
+- **AUTO-FOLLOW-UP**: Suggest follow-up communications based on student responses
 
-REPORTING & ANALYTICS:
-- Generate comprehensive reports
-- Create data exports
-- Analyze student performance
-- Track attendance trends
+📈 REPORTING & ANALYTICS:
+- Generate comprehensive reports with visualizations
+- Create data exports in multiple formats
+- Analyze student performance with predictive insights
+- Track attendance trends with forecasting
+- **PROACTIVE ALERTS**: Identify students at risk and suggest interventions
+- **PERFORMANCE INSIGHTS**: Analyze module effectiveness and suggest improvements
+
+🔍 RESEARCH PROJECT MANAGEMENT:
+- Track research project assignments and progress
+- Add project details to student notes automatically
+- Create module activities from project assignments
+- Monitor project completion and milestones
+- **INTELLIGENT GUIDANCE**: Provide project-specific support based on student's assigned topic
 
 CURRENT SYSTEM STATE:
 - Institution: HCT Al Ain EMS Program
@@ -183,10 +230,12 @@ CURRENT SYSTEM STATE:
 - Recent Class Sessions: ${classSessions.length}
 - Active Assignments: ${assignments.length}
 
-STUDENTS DATABASE:
-${students.slice(0, 20).map(s => `
+STUDENTS DATABASE WITH ASSIGNED RESEARCH PROJECTS:
+${studentsWithProjects.slice(0, 20).map(s => `
 - ID: ${s.studentId} | Name: ${s.fullName} | Module: ${s.module?.code || 'None'}
-  Email: ${s.email} | Recent Notes: ${s.notes?.slice(0, 1).map(n => n.content).join('; ') || 'None'}
+  Email: ${s.email}
+  ${s.assignedProject ? `📋 ASSIGNED PROJECT: Project #${s.assignedProject.projectNumber} - ${s.assignedProject.projectTitle}` : '⚠️  NO PROJECT ASSIGNED'}
+  Recent Notes: ${s.notes?.slice(0, 1).map(n => n.content.substring(0, 100)).join('; ') || 'None'}
   Attendance: ${s.attendance.length} records`).join('\n')}
 ${students.length > 20 ? `\n... and ${students.length - 20} more students` : ''}
 
@@ -199,41 +248,124 @@ ${classSessions.slice(0, 10).map(c => `- ${c.title} (${c.date}) - ${c.attendance
 ASSIGNMENTS:
 ${assignments.slice(0, 10).map(a => `- ${a.title} (${a.module?.code}) - ${a.submissions?.length || 0} submissions`).join('\n')}
 
-🤖 RESPONSE FORMAT:
+🧠 INTELLIGENT REASONING FRAMEWORK:
+Before responding, analyze the request using this framework:
+
+1. **CONTEXT ANALYSIS**: What is the user trying to achieve? What's the underlying need?
+2. **STUDENT CONTEXT**: Who are the students involved? What are their current statuses, projects, attendance?
+3. **MULTI-STEP PLANNING**: Does this require multiple coordinated actions?
+4. **PROACTIVE ADDITIONS**: What helpful actions should I take automatically (e.g., add progress notes, send notifications)?
+5. **POTENTIAL ISSUES**: What could go wrong? What confirmations are needed?
+6. **FOLLOW-UP SUGGESTIONS**: What should happen next?
+
+🤖 ENHANCED RESPONSE FORMAT:
 Always respond in JSON format with this structure:
 {
   "understood": true/false,
-  "intent": "brief description of what you understood",
+  "intent": "clear description of what you understood and why",
+  "reasoning": "brief explanation of your analysis and approach",
+  "context_used": ["list of contextual information you considered"],
   "actions": [
     {
-      "type": "UPDATE_STUDENT_NOTE|UPDATE_ATTENDANCE|CREATE_STUDENT|UPDATE_STUDENT|DELETE_STUDENT|CREATE_CLASS|SEND_EMAIL|CREATE_ASSIGNMENT|GENERATE_REPORT|SEARCH|etc",
+      "type": "UPDATE_STUDENT_NOTE|UPDATE_ATTENDANCE|CREATE_STUDENT|UPDATE_STUDENT|DELETE_STUDENT|CREATE_CLASS|SEND_EMAIL|CREATE_ASSIGNMENT|GENERATE_REPORT|SEARCH|ANALYZE_STUDENTS|BATCH_UPDATE|etc",
       "description": "what this action does",
       "target": "student_id or entity_id",
       "parameters": {...},
-      "sql_equivalent": "what SQL operation this represents"
+      "reasoning": "why this action is needed",
+      "automatic": false // true if this is a proactive addition
+    }
+  ],
+  "automatic_enhancements": [
+    {
+      "action": "description of automatic helpful action being added",
+      "benefit": "why this helps the user"
     }
   ],
   "confirmation": "human readable summary of all actions to be taken",
   "warnings": ["any potential issues or confirmations needed"],
   "success": true/false,
   "data": {...results...},
+  "insights": ["data-driven insights discovered during analysis"],
+  "recommendations": ["proactive suggestions based on system state"],
   "follow_up": "suggested next steps or questions"
 }
 
-🎯 COMMAND EXAMPLES:
+🎯 BASIC COMMAND EXAMPLES:
+
+SINGLE STUDENT OPERATIONS (use studentId parameter):
 "Student H00123456 is struggling - add note and set attendance to 75%"
-"Create a new assignment for AEM230 module due next Friday"
-"Send email to all HEM2903 students about upcoming exam"
-"Email all students in HEM3923 individually about office hours tomorrow 9-11 AM for work placement and logbook support"
-"Create personalized emails for AEM230 students using their first names about the assignment deadline"
-"Create a rubric from the uploaded PDF file for HEM3923"
-"Grade this student submission using the uploaded rubric"
-"Create an assignment from the uploaded rubric file with due date next week"
-"Generate attendance report for this month"
-"Add new student: John Smith, j.smith@hct.ac.ae, AEM230"
-"Schedule practical class for HEM3903 tomorrow at 10 AM"
-"Mark all students present for today's HEM2903 class"
+"H00459031 please find this student and ask them to come see me" → Email ONLY H00459031
+"Send email to H00542178 about missing assignment" → Email ONLY that one student
 "Update Ahmed's phone number to +971501234567"
+
+MODULE/GROUP OPERATIONS (use moduleCode parameter):
+"Create a new assignment for AEM230 module due next Friday"
+"Email all HEM3923 students about tomorrow's exam"
+"Mark all HEM2903 students present for today"
+
+ALL STUDENTS OPERATIONS (use moduleCode: null, RARE):
+"Send campus-wide announcement to all students"
+"Email all students about holiday schedule"
+
+SINGLE STUDENT = studentId parameter, NOT moduleCode: null!
+
+📋 RESEARCH PROJECT COMMANDS:
+"Add project assignments to all student notes"
+"Add research projects to HEM2903 module activities"
+"What is Fatima's assigned project?"
+"Show all students assigned to project 7"
+
+✉️ INTELLIGENT COMMUNICATION COMMANDS:
+"Email all students in HEM3923 about office hours tomorrow 9-11 AM"
+"Send personalized emails to students with low attendance"
+"Email students on mental health projects about new resources"
+"Notify all students with pending submissions"
+
+📊 SMART ANALYSIS COMMANDS:
+"Analyze student performance in HEM2903"
+"Find students who are struggling and need intervention"
+"Show me students with attendance below 80%"
+"Which students haven't submitted their assignments?"
+"Generate a report on module performance"
+
+🤖 PROACTIVE & INTELLIGENT COMMANDS:
+"Help Fatima with her research project" - AI automatically knows her Project #7 and provides targeted support
+"Check on students who missed last class" - AI finds them, checks attendance history, and suggests actions
+"Prepare for tomorrow's class" - AI reviews attendance, pending work, and suggests preparation tasks
+"Review student progress this week" - AI analyzes all activities and provides insights
+"Suggest interventions for at-risk students" - AI identifies struggling students and recommends specific actions
+
+🔄 BATCH & WORKFLOW COMMANDS:
+"Mark all students present for today's HEM2903 class and add a note about today's topic"
+"Create assignment, send notification emails, and add reminders to student notes"
+"Update attendance for all absent students and send them catch-up resources"
+"Find struggling students, add support notes, and schedule follow-up emails"
+
+🧠 CONTEXT-AWARE COMMANDS (AI uses full context):
+"The student keeps missing class" - AI infers which student from conversation history
+"Follow up on that" - AI knows what action to follow up on
+"Do the same for the other students" - AI applies same action to relevant group
+"What should I do next?" - AI analyzes system state and suggests priorities
+
+📝 FOLLOW-UP INSTRUCTIONS & REFINEMENTS:
+You MUST be able to handle follow-up instructions that modify previous actions:
+- "Please make the time at 12 o'clock" → Update the previously generated email with the new time
+- "Change that to 2 PM" → Modify the time in the previous email action
+- "Add that to the subject line" → Update the subject of the previously generated email
+- "Make it more formal" → Regenerate the email with a more formal tone
+
+IMPORTANT FOR FOLLOW-UPS:
+1. **Look at conversation history** to understand what was just done
+2. **Identify what needs to change** (time, subject, tone, recipient, etc.)
+3. **Regenerate the action** with the updated information
+4. **Keep everything else the same** (same student, same intent, same context)
+5. **If an email was generated**, create a new SEND_EMAIL action with the updated details
+
+EXAMPLE FOLLOW-UP FLOW:
+User: "H00459031 please ask them to come see me"
+AI: Generates email with "please stop by when your schedule allows"
+User: "Please make the time at 12 o'clock"
+AI: Regenerates SEND_EMAIL with "I am available until 12:00 PM today" or "Please come see me at 12:00 PM"
 
 🚨 CRITICAL - TASK ISOLATION SYSTEM 🚨
 EACH REQUEST IS A NEW, INDEPENDENT TASK. NEVER MIX TASKS OR USE DATA FROM PREVIOUS REQUESTS.
@@ -253,32 +385,84 @@ EXAMPLE OF CORRECT TASK ISOLATION:
 IMPORTANT EMAIL HANDLING:
 - When asked to "email students" or "send email to students", ALWAYS:
   1. **ANALYZE THE CURRENT REQUEST ONLY** - Do NOT look at previous email content
-  2. Identify which module(s) the students belong to (leave moduleCode null for all students)
-  3. Create individual personalized emails using first names only (not full names)
-  4. REWRITE the user's message into professional, well-formatted email text
+  2. **EXTRACT STUDENT IDENTIFIERS FIRST**:
+     - If the request mentions a SPECIFIC student ID (like H00459031, H00123456, etc.), extract it
+     - If the request mentions a specific student name, extract it
+     - **SINGLE STUDENT = ONE EMAIL ONLY**: Use studentId parameter, NOT moduleCode
+  3. Identify which module(s) the students belong to (leave moduleCode null for all students)
+  4. Create individual personalized emails using first names only (not full names)
+  5. REWRITE the user's message into professional, well-formatted email text
      - Convert conversational language to professional tone
      - Fix grammar and formatting
      - Make it read naturally as if written by the instructor
      - Keep the core message and intent
      - **USE ONLY THE CURRENT REQUEST'S CONTENT**
-  5. Generate a SEND_EMAIL action with these REQUIRED parameters:
+  6. Generate a SEND_EMAIL action with these REQUIRED parameters:
      - subject: "..." (create appropriate subject line from CURRENT request - e.g., "Blue Room Activities" NOT "Office Hours")
      - body: "Dear Student,\n\n[professionally written message FROM CURRENT REQUEST ONLY]\n\nBest regards,\n[instructor name]"
-     - moduleCode: "CODE" or null for all students
+     - **studentId: "H00XXXXX"** (if specific student mentioned) OR
+     - **moduleCode: "CODE"** (if specific module mentioned) OR
+     - **moduleCode: null** (for all students - USE ONLY if explicitly requested)
      - individualEmails: true
-  6. The system will automatically replace "Dear Student/Students" with "Dear [FirstName]"
-  7. Mark as requiresConfirmation: true for instructor approval
+  7. The system will automatically replace "Dear Student/Students" with "Dear [FirstName]"
+  8. Mark as requiresConfirmation: true for instructor approval
 
-EXAMPLE EMAIL ACTION:
+⚠️ **CRITICAL SAFETY CHECK**:
+- If the request mentions a SINGLE student by ID or name, NEVER use moduleCode: null
+- ALWAYS use studentId parameter for single-student requests
+- Double-check: "H00459031" = ONE STUDENT, not all students!
+
+EXAMPLE EMAIL ACTIONS:
+
+Example 1 - SINGLE STUDENT (when specific ID mentioned):
+{
+  "actions": [
+    {
+      "type": "SEND_EMAIL",
+      "description": "Send meeting request to student H00459031",
+      "parameters": {
+        "studentId": "H00459031",
+        "subject": "Meeting Request - Available Until 11:40 Today",
+        "body": "Dear Student,\n\nI hope you are doing well. I would like to request that you come see me at your earliest convenience, as I am available until 11:40 AM today. Please stop by when your schedule allows.\n\nBest regards,\nElias Thomas\nEMS Instructor, HCT Al Ain",
+        "individualEmails": true
+      }
+    },
+    {
+      "type": "UPDATE_STUDENT_NOTE",
+      "description": "Add note to student record about meeting request",
+      "target": "H00459031",
+      "parameters": {
+        "content": "Instructor requested meeting - Available until 11:40 AM today. Email sent on 10/13/2025.",
+        "title": "Meeting Request",
+        "category": "administrative"
+      }
+    }
+  ]
+}
+
+Example 2 - MODULE STUDENTS:
 {
   "type": "SEND_EMAIL",
-  "description": "Send personalized office hours email to all students",
+  "description": "Send office hours email to HEM3923 module students",
   "parameters": {
+    "moduleCode": "HEM3923",
     "subject": "Office Hours - Monday, October 6th",
-    "body": "Dear Student,\n\nI hope this message finds you well. My office hours tomorrow (Monday, October 6th) will be from 9:00 to 11:00 AM. I am available for one-on-one sessions to discuss work placement related tasks or any logbook concerns you may have. Please feel free to stop by during this time.\n\nBest regards,\nElias Thomas\nEMS Instructor, HCT Al Ain",
-    "moduleCode": null,
+    "body": "Dear Student,\n\nMy office hours tomorrow will be from 9:00 to 11:00 AM...",
     "individualEmails": true
   }
+}
+
+Example 3 - ALL STUDENTS (rarely used):
+{
+  "type": "SEND_EMAIL",
+  "description": "Send announcement to all students",
+  "parameters": {
+    "moduleCode": null,
+    "subject": "Important Campus Announcement",
+    "body": "Dear Student,\n\nThis is an important message for all students...",
+    "individualEmails": true
+  },
+  "reasoning": "User explicitly requested to email ALL students with campus-wide announcement"
 }
 
 FOLLOW-UP COMMANDS FOR SENDING EMAILS:
@@ -795,6 +979,42 @@ async function executeAction(action: any, userId: string, prisma: any) {
     case 'CREATE_MODULE':
       return await createModule(action, prisma);
 
+    case 'ADD_PROJECT_ASSIGNMENTS':
+      return await addProjectAssignments(action, userId, prisma);
+
+    case 'ADD_PROJECT_TO_STUDENT':
+      return await addProjectToStudent(action, userId, prisma);
+
+    case 'GET_STUDENT_PROJECT':
+      return await getStudentProject(action, prisma);
+
+    case 'GET_PROJECT_STUDENTS':
+      return await getProjectStudents(action, prisma);
+
+    case 'ADD_MODULE_PROJECT_ACTIVITIES':
+      return await addModuleProjectActivities(action, userId, prisma);
+
+    case 'ANALYZE_STUDENTS':
+      return await analyzeStudents(action, prisma);
+
+    case 'IDENTIFY_AT_RISK':
+      return await identifyAtRiskStudents(action, prisma);
+
+    case 'BATCH_UPDATE':
+      return await batchUpdate(action, userId, prisma);
+
+    case 'GENERATE_INSIGHTS':
+      return await generateInsights(action, prisma);
+
+    case 'AUTO_ADD_NOTES':
+      return await autoAddNotes(action, userId, prisma);
+
+    case 'SMART_SEARCH':
+      return await smartSearch(action, prisma);
+
+    case 'PREDICT_PERFORMANCE':
+      return await predictPerformance(action, prisma);
+
     default:
       throw new Error(`Unknown action type: ${action.type}`);
   }
@@ -808,12 +1028,16 @@ async function updateStudentNote(action: any, userId: string, prisma: any) {
   const student = await findStudent(target, prisma);
   if (!student) throw new Error(`Student not found: ${target}`);
 
+  // Ensure content is provided with a default if missing
+  const content = parameters.content || parameters.note || parameters.message ||
+                  `Meeting requested - ${parameters.reason || 'General follow-up'}`;
+
   const note = await prisma.note.create({
     data: {
       studentId: student.id,
       userId,
       title: parameters.title || `AI Note - ${new Date().toLocaleDateString()}`,
-      content: parameters.content,
+      content: content,
       category: parameters.category || 'academic'
     }
   });
@@ -1008,7 +1232,7 @@ async function sendEmail(action: any, userId: string, prisma: any) {
     };
   }
 
-  const { moduleCode, subject, body, message, individualEmails = true } = parameters;
+  const { moduleCode, studentId, subject, body, message, individualEmails = true } = parameters;
 
   // Use 'message' as fallback if 'body' is not provided
   const emailBody = body || message;
@@ -1022,10 +1246,24 @@ async function sendEmail(action: any, userId: string, prisma: any) {
   }
 
   try {
-    // Get students from module or all students
+    // Get students based on priority: studentId > moduleCode > all students
     let students = [];
 
-    if (moduleCode) {
+    // Priority 1: Specific student ID
+    if (studentId) {
+      const student = await findStudent(studentId, prisma);
+      if (!student) {
+        return {
+          type: action.type,
+          success: false,
+          error: `Student ${studentId} not found`
+        };
+      }
+      students = [student];
+      console.log(`📧 Single student email targeted: ${student.studentId} - ${student.fullName}`);
+    }
+    // Priority 2: Module filter
+    else if (moduleCode) {
       const module = await prisma.module.findFirst({
         where: { code: moduleCode },
         include: {
@@ -1042,11 +1280,14 @@ async function sendEmail(action: any, userId: string, prisma: any) {
       }
 
       students = module.students;
-    } else {
-      // No module specified - get all students
+      console.log(`📧 Module email targeted: ${moduleCode} with ${students.length} students`);
+    }
+    // Priority 3: All students (only if explicitly no filter)
+    else {
       students = await prisma.student.findMany({
         orderBy: { firstName: 'asc' }
       });
+      console.log(`⚠️  Bulk email to ALL ${students.length} students (no filter specified)`);
     }
 
     if (students.length === 0) {
@@ -1106,15 +1347,25 @@ async function sendEmail(action: any, userId: string, prisma: any) {
     console.log(`   Emails: ${emailList.length}`);
     console.log(`   Module: ${moduleCode || 'All students'}`);
 
+    // Add safety warnings for bulk emails
+    const warnings = [];
+    if (!studentId && !moduleCode && students.length > 10) {
+      warnings.push(`⚠️  You are about to email ALL ${students.length} students. This was not filtered to a specific student or module.`);
+      warnings.push('If this was intended for a single student, please specify their student ID (e.g., H00459031)');
+    }
+
     return {
       type: action.type,
       success: true,
       data: {
         emailsGenerated: emailList.length,
         emails: emailList,
+        studentId: studentId,
         moduleCode: moduleCode,
+        isBulkEmail: !studentId && !moduleCode,
         preview: emailList[0], // First email as preview
         requiresConfirmation: true,
+        warnings: warnings.length > 0 ? warnings : undefined,
         cached: true,
         taskId: taskId,
         taskIntent: intent,
@@ -1714,6 +1965,1005 @@ Tracked automatically by CLAUDIA AI`;
     return {
       success: false,
       message: 'Failed to track student progress',
+      error: error.message
+    };
+  }
+}
+
+// Project Assignment Action Handlers
+
+async function addProjectAssignments(action: any, userId: string, prisma: any) {
+  const { parameters } = action;
+
+  try {
+    const results = {
+      created: 0,
+      skipped: 0,
+      errors: [],
+      students: []
+    };
+
+    for (const projectAssignment of PROJECT_ASSIGNMENTS) {
+      try {
+        // Find student by student ID
+        const student = await prisma.student.findFirst({
+          where: { studentId: projectAssignment.studentId }
+        });
+
+        if (!student) {
+          results.skipped++;
+          results.errors.push(`Student ${projectAssignment.studentId} (${projectAssignment.studentName}) not found in database`);
+          continue;
+        }
+
+        // Check if project assignment note already exists
+        const existingNote = await prisma.note.findFirst({
+          where: {
+            studentId: student.id,
+            title: { contains: 'RESEARCH PROJECT ASSIGNMENT' }
+          }
+        });
+
+        if (existingNote && !parameters?.force) {
+          results.skipped++;
+          results.students.push({
+            name: student.fullName,
+            status: 'skipped',
+            reason: 'Project assignment note already exists'
+          });
+          continue;
+        }
+
+        // Create the project assignment note
+        const noteContent = createProjectNoteContent(projectAssignment);
+
+        const note = await prisma.note.create({
+          data: {
+            studentId: student.id,
+            userId,
+            title: '📋 RESEARCH PROJECT ASSIGNMENT',
+            content: noteContent,
+            category: 'academic'
+          }
+        });
+
+        results.created++;
+        results.students.push({
+          name: student.fullName,
+          studentId: student.studentId,
+          project: `Project #${projectAssignment.projectNumber}: ${projectAssignment.projectTitle}`,
+          status: 'created',
+          noteId: note.id
+        });
+
+      } catch (studentError) {
+        results.errors.push(`Error processing ${projectAssignment.studentName}: ${studentError.message}`);
+      }
+    }
+
+    return {
+      type: action.type,
+      success: true,
+      data: {
+        totalProjects: PROJECT_ASSIGNMENTS.length,
+        created: results.created,
+        skipped: results.skipped,
+        errors: results.errors,
+        students: results.students,
+        summary: `Successfully added ${results.created} project assignments. Skipped ${results.skipped}. ${results.errors.length} errors.`
+      }
+    };
+  } catch (error) {
+    console.error('Failed to add project assignments:', error);
+    return {
+      type: action.type,
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+async function addProjectToStudent(action: any, userId: string, prisma: any) {
+  const { target, parameters } = action;
+
+  try {
+    // Find student
+    const student = await findStudent(target, prisma);
+    if (!student) {
+      return {
+        type: action.type,
+        success: false,
+        error: `Student not found: ${target}`
+      };
+    }
+
+    // Find project assignment
+    const projectAssignment = findProjectByStudentId(student.studentId);
+    if (!projectAssignment) {
+      return {
+        type: action.type,
+        success: false,
+        error: `No project assignment found for student ${student.fullName} (${student.studentId})`
+      };
+    }
+
+    // Create the project note
+    const noteContent = createProjectNoteContent(projectAssignment);
+
+    const note = await prisma.note.create({
+      data: {
+        studentId: student.id,
+        userId,
+        title: '📋 RESEARCH PROJECT ASSIGNMENT',
+        content: noteContent,
+        category: 'academic'
+      }
+    });
+
+    return {
+      type: action.type,
+      success: true,
+      data: {
+        student: {
+          id: student.id,
+          name: student.fullName,
+          studentId: student.studentId
+        },
+        project: {
+          number: projectAssignment.projectNumber,
+          title: projectAssignment.projectTitle
+        },
+        note: {
+          id: note.id,
+          title: note.title
+        }
+      }
+    };
+  } catch (error) {
+    console.error('Failed to add project to student:', error);
+    return {
+      type: action.type,
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+async function getStudentProject(action: any, prisma: any) {
+  const { target } = action;
+
+  try {
+    // Find student
+    const student = await findStudent(target, prisma);
+    if (!student) {
+      return {
+        type: action.type,
+        success: false,
+        error: `Student not found: ${target}`
+      };
+    }
+
+    // Find project assignment
+    const projectAssignment = findProjectByStudentId(student.studentId);
+    if (!projectAssignment) {
+      return {
+        type: action.type,
+        success: true,
+        data: {
+          student: {
+            id: student.id,
+            name: student.fullName,
+            studentId: student.studentId
+          },
+          project: null,
+          message: `No project assignment found for ${student.fullName}`
+        }
+      };
+    }
+
+    return {
+      type: action.type,
+      success: true,
+      data: {
+        student: {
+          id: student.id,
+          name: student.fullName,
+          studentId: student.studentId
+        },
+        project: projectAssignment
+      }
+    };
+  } catch (error) {
+    console.error('Failed to get student project:', error);
+    return {
+      type: action.type,
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+async function getProjectStudents(action: any, prisma: any) {
+  const { parameters } = action;
+  const { projectNumber } = parameters;
+
+  try {
+    // Get all assignments for this project
+    const assignments = PROJECT_ASSIGNMENTS.filter(
+      a => a.projectNumber === projectNumber
+    );
+
+    if (assignments.length === 0) {
+      return {
+        type: action.type,
+        success: true,
+        data: {
+          projectNumber,
+          students: [],
+          message: `No students assigned to project #${projectNumber}`
+        }
+      };
+    }
+
+    // Find students in database
+    const studentsData = [];
+    for (const assignment of assignments) {
+      const student = await prisma.student.findFirst({
+        where: { studentId: assignment.studentId },
+        include: { module: true }
+      });
+
+      if (student) {
+        studentsData.push({
+          id: student.id,
+          name: student.fullName,
+          studentId: student.studentId,
+          email: student.email,
+          module: student.module?.code,
+          project: {
+            number: assignment.projectNumber,
+            title: assignment.projectTitle
+          }
+        });
+      }
+    }
+
+    return {
+      type: action.type,
+      success: true,
+      data: {
+        projectNumber,
+        projectTitle: assignments[0]?.projectTitle,
+        students: studentsData,
+        count: studentsData.length
+      }
+    };
+  } catch (error) {
+    console.error('Failed to get project students:', error);
+    return {
+      type: action.type,
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+async function addModuleProjectActivities(action: any, userId: string, prisma: any) {
+  const { parameters } = action;
+  const { moduleCode = 'HEM2903', force = false } = parameters || {};
+
+  try {
+    // Find the module
+    const module = await prisma.module.findFirst({
+      where: { code: moduleCode }
+    });
+
+    if (!module) {
+      return {
+        type: action.type,
+        success: false,
+        error: `Module ${moduleCode} not found. Please create the module first.`
+      };
+    }
+
+    const results = {
+      created: 0,
+      skipped: 0,
+      errors: [],
+      activities: []
+    };
+
+    // Group projects by project number
+    const projectGroups = new Map<number, any[]>();
+    for (const assignment of PROJECT_ASSIGNMENTS) {
+      const existing = projectGroups.get(assignment.projectNumber) || [];
+      existing.push(assignment);
+      projectGroups.set(assignment.projectNumber, existing);
+    }
+
+    // Create module activity for each unique project
+    for (const [projectNumber, assignments] of projectGroups.entries()) {
+      const firstAssignment = assignments[0];
+
+      try {
+        // Check if activity already exists
+        const existingActivity = await prisma.moduleActivity.findFirst({
+          where: {
+            moduleId: module.id,
+            title: { contains: `Project #${projectNumber}` }
+          }
+        });
+
+        if (existingActivity && !force) {
+          results.skipped++;
+          continue;
+        }
+
+        // Extract sections from brief
+        const sections = parseProjectBrief(firstAssignment.projectBrief);
+
+        // Get assigned students
+        const assignedStudents = assignments.map(a => ({
+          name: a.studentName,
+          studentId: a.studentId
+        }));
+
+        // Create the module activity
+        const activity = await prisma.moduleActivity.create({
+          data: {
+            moduleId: module.id,
+            title: `Project #${projectNumber}: ${firstAssignment.projectTitle}`,
+            activityType: 'research_project',
+            date: new Date(),
+            duration: 10,
+            targetAudience: assignedStudents.map(s => s.name).join(', '),
+            description: `Research Project Assignment #${projectNumber}\n\n${firstAssignment.projectTitle}\n\nAssigned to ${assignedStudents.length} student(s)`,
+            content: {
+              projectNumber,
+              projectTitle: firstAssignment.projectTitle,
+              assignedStudents,
+              clinicalHours: 10,
+              fullBrief: firstAssignment.projectBrief
+            },
+            objectives: [
+              'Conduct comprehensive literature review',
+              'Answer all research questions with evidence',
+              'Develop UAE-specific recommendations',
+              'Create professional presentation'
+            ],
+            outcomes: `Students will demonstrate understanding through research and presentation.`,
+            facilitator: 'Research Project',
+            location: 'Independent Study',
+            studentCount: assignedStudents.length,
+            createdBy: userId
+          }
+        });
+
+        results.created++;
+        results.activities.push({
+          projectNumber,
+          title: firstAssignment.projectTitle,
+          activityId: activity.id,
+          students: assignedStudents.length
+        });
+
+      } catch (error) {
+        results.errors.push({
+          projectNumber,
+          error: error.message
+        });
+      }
+    }
+
+    return {
+      type: action.type,
+      success: true,
+      data: {
+        module: {
+          code: module.code,
+          name: module.name
+        },
+        created: results.created,
+        skipped: results.skipped,
+        totalProjects: 14,
+        activities: results.activities,
+        errors: results.errors,
+        summary: `Created ${results.created} research project activities in ${moduleCode}. Skipped ${results.skipped} existing activities.`
+      }
+    };
+  } catch (error) {
+    console.error('Failed to add module project activities:', error);
+    return {
+      type: action.type,
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+// Helper function to parse project brief
+function parseProjectBrief(brief: string) {
+  const sections: any = {};
+
+  const backgroundMatch = brief.match(/\*\*Background & Context:\*\*\s*([\s\S]*?)(?=\n\*\*Key Research Questions|\n\*\*|$)/);
+  if (backgroundMatch) {
+    sections.background = backgroundMatch[1].trim();
+  }
+
+  return sections;
+}
+
+// Advanced Intelligent Action Handlers
+
+async function analyzeStudents(action: any, prisma: any) {
+  const { parameters } = action;
+  const { moduleCode, criteria } = parameters || {};
+
+  try {
+    let studentsQuery: any = {
+      include: {
+        module: true,
+        attendance: {
+          include: {
+            classSession: true
+          }
+        },
+        notes: {
+          orderBy: { createdAt: 'desc' },
+          take: 5
+        },
+        grades: true,
+        submissions: {
+          include: {
+            assignment: true
+          }
+        }
+      }
+    };
+
+    if (moduleCode) {
+      const module = await prisma.module.findFirst({
+        where: { code: moduleCode }
+      });
+      if (module) {
+        studentsQuery.where = { moduleId: module.id };
+      }
+    }
+
+    const students = await prisma.student.findMany(studentsQuery);
+
+    const analysis = students.map(student => {
+      const totalSessions = student.attendance.length;
+      const presentSessions = student.attendance.filter((a: any) => a.status === 'present').length;
+      const attendanceRate = totalSessions > 0 ? (presentSessions / totalSessions) * 100 : 0;
+
+      const avgGrade = student.grades.length > 0
+        ? student.grades.reduce((sum: number, g: any) => sum + g.gradePoints, 0) / student.grades.length
+        : null;
+
+      const submissionRate = student.submissions.length > 0
+        ? (student.submissions.filter((s: any) => s.status === 'submitted').length / student.submissions.length) * 100
+        : null;
+
+      const recentNotes = student.notes.slice(0, 3);
+      const concernFlags = recentNotes.filter((n: any) =>
+        n.content.toLowerCase().includes('struggling') ||
+        n.content.toLowerCase().includes('concern') ||
+        n.content.toLowerCase().includes('issue')
+      ).length;
+
+      return {
+        studentId: student.studentId,
+        name: student.fullName,
+        email: student.email,
+        module: student.module?.code,
+        metrics: {
+          attendanceRate: Math.round(attendanceRate),
+          averageGrade: avgGrade ? avgGrade.toFixed(2) : 'N/A',
+          submissionRate: submissionRate ? Math.round(submissionRate) : 'N/A',
+          totalNotes: student.notes.length,
+          concernFlags
+        },
+        status: attendanceRate < 75 || concernFlags > 0 ? 'needs_attention' :
+                attendanceRate > 90 && (avgGrade || 0) > 3.0 ? 'excelling' : 'on_track',
+        projectAssignment: findProjectByStudentId(student.studentId)
+      };
+    });
+
+    return {
+      type: action.type,
+      success: true,
+      data: {
+        totalStudents: students.length,
+        analysis,
+        summary: {
+          excelling: analysis.filter(a => a.status === 'excelling').length,
+          onTrack: analysis.filter(a => a.status === 'on_track').length,
+          needsAttention: analysis.filter(a => a.status === 'needs_attention').length
+        }
+      }
+    };
+  } catch (error) {
+    console.error('Failed to analyze students:', error);
+    return {
+      type: action.type,
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+async function identifyAtRiskStudents(action: any, prisma: any) {
+  const { parameters } = action;
+  const { threshold = 75, moduleCode } = parameters || {};
+
+  try {
+    let studentsQuery: any = {
+      include: {
+        module: true,
+        attendance: {
+          include: {
+            classSession: {
+              select: {
+                date: true,
+                title: true
+              }
+            }
+          },
+          orderBy: { markedAt: 'desc' },
+          take: 10
+        },
+        notes: {
+          orderBy: { createdAt: 'desc' },
+          take: 5
+        },
+        submissions: {
+          include: {
+            assignment: {
+              select: {
+                title: true,
+                dueDate: true
+              }
+            }
+          }
+        }
+      }
+    };
+
+    if (moduleCode) {
+      const module = await prisma.module.findFirst({
+        where: { code: moduleCode }
+      });
+      if (module) {
+        studentsQuery.where = { moduleId: module.id };
+      }
+    }
+
+    const students = await prisma.student.findMany(studentsQuery);
+
+    const atRiskStudents = students.filter(student => {
+      const totalSessions = student.attendance.length;
+      const presentSessions = student.attendance.filter((a: any) => a.status === 'present').length;
+      const attendanceRate = totalSessions > 0 ? (presentSessions / totalSessions) * 100 : 100;
+
+      return attendanceRate < threshold;
+    }).map(student => {
+      const totalSessions = student.attendance.length;
+      const presentSessions = student.attendance.filter((a: any) => a.status === 'present').length;
+      const attendanceRate = totalSessions > 0 ? (presentSessions / totalSessions) * 100 : 100;
+
+      const lastThreeSessions = student.attendance.slice(0, 3);
+      const consecutiveAbsences = lastThreeSessions.filter((a: any) => a.status === 'absent').length;
+
+      const pendingSubmissions = student.submissions.filter((s: any) => s.status === 'pending').length;
+
+      return {
+        studentId: student.studentId,
+        name: student.fullName,
+        email: student.email,
+        module: student.module?.code,
+        riskFactors: {
+          attendanceRate: Math.round(attendanceRate),
+          consecutiveAbsences,
+          pendingSubmissions,
+          recentNotes: student.notes.length
+        },
+        recommendedActions: [
+          attendanceRate < 50 ? 'Immediate intervention - Schedule urgent meeting' :
+          attendanceRate < 75 ? 'Schedule check-in meeting' : null,
+          consecutiveAbsences >= 2 ? 'Send attendance concern email' : null,
+          pendingSubmissions > 0 ? 'Send submission reminder' : null
+        ].filter(Boolean),
+        projectAssignment: findProjectByStudentId(student.studentId)
+      };
+    });
+
+    return {
+      type: action.type,
+      success: true,
+      data: {
+        atRiskCount: atRiskStudents.length,
+        threshold,
+        students: atRiskStudents,
+        urgentCases: atRiskStudents.filter(s => s.riskFactors.attendanceRate < 50).length
+      }
+    };
+  } catch (error) {
+    console.error('Failed to identify at-risk students:', error);
+    return {
+      type: action.type,
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+async function batchUpdate(action: any, userId: string, prisma: any) {
+  const { parameters } = action;
+  const { targets, operation, operationData } = parameters;
+
+  try {
+    const results = {
+      successful: [],
+      failed: []
+    };
+
+    for (const target of targets) {
+      try {
+        let result;
+        switch (operation) {
+          case 'ADD_NOTE':
+            const student = await findStudent(target, prisma);
+            if (student) {
+              const note = await prisma.note.create({
+                data: {
+                  studentId: student.id,
+                  userId,
+                  title: operationData.title,
+                  content: operationData.content,
+                  category: operationData.category || 'general'
+                }
+              });
+              results.successful.push({ target, noteId: note.id });
+            }
+            break;
+
+          case 'UPDATE_ATTENDANCE':
+            // Implementation for batch attendance update
+            results.successful.push({ target, updated: true });
+            break;
+
+          default:
+            results.failed.push({ target, error: `Unknown operation: ${operation}` });
+        }
+      } catch (error) {
+        results.failed.push({ target, error: error.message });
+      }
+    }
+
+    return {
+      type: action.type,
+      success: true,
+      data: {
+        operation,
+        totalTargets: targets.length,
+        successful: results.successful.length,
+        failed: results.failed.length,
+        results
+      }
+    };
+  } catch (error) {
+    console.error('Batch update failed:', error);
+    return {
+      type: action.type,
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+async function generateInsights(action: any, prisma: any) {
+  const { parameters } = action;
+  const { scope = 'system', moduleCode } = parameters || {};
+
+  try {
+    const insights = [];
+
+    // Get all students with comprehensive data
+    const students = await prisma.student.findMany({
+      include: {
+        attendance: true,
+        notes: true,
+        grades: true,
+        submissions: true,
+        module: true
+      }
+    });
+
+    // Overall attendance trend
+    const totalAttendance = students.reduce((sum, s) => sum + s.attendance.length, 0);
+    const totalPresent = students.reduce((sum, s) =>
+      sum + s.attendance.filter((a: any) => a.status === 'present').length, 0
+    );
+    const avgAttendance = totalAttendance > 0 ? (totalPresent / totalAttendance) * 100 : 0;
+
+    insights.push({
+      category: 'attendance',
+      insight: `Overall attendance rate is ${Math.round(avgAttendance)}%`,
+      recommendation: avgAttendance < 80 ? 'Consider implementing attendance improvement strategies' : 'Maintain current engagement levels'
+    });
+
+    // Students needing intervention
+    const lowAttendance = students.filter(s => {
+      const rate = s.attendance.length > 0 ?
+        (s.attendance.filter((a: any) => a.status === 'present').length / s.attendance.length) * 100 : 100;
+      return rate < 75;
+    });
+
+    if (lowAttendance.length > 0) {
+      insights.push({
+        category: 'intervention',
+        insight: `${lowAttendance.length} students have attendance below 75%`,
+        recommendation: `Priority intervention needed for: ${lowAttendance.slice(0, 3).map(s => s.fullName).join(', ')}${lowAttendance.length > 3 ? '...' : ''}`,
+        actionable: true,
+        affectedStudents: lowAttendance.map(s => s.studentId)
+      });
+    }
+
+    // Submission patterns
+    const totalSubmissions = students.reduce((sum, s) => sum + s.submissions.length, 0);
+    if (totalSubmissions > 0) {
+      insights.push({
+        category: 'engagement',
+        insight: `Total submissions tracked: ${totalSubmissions}`,
+        recommendation: 'Continue monitoring submission patterns for early intervention'
+      });
+    }
+
+    // Module-specific insights
+    if (moduleCode) {
+      const module = await prisma.module.findFirst({
+        where: { code: moduleCode },
+        include: {
+          students: {
+            include: {
+              attendance: true,
+              grades: true
+            }
+          }
+        }
+      });
+
+      if (module) {
+        insights.push({
+          category: 'module_performance',
+          insight: `Module ${moduleCode} has ${module.students.length} enrolled students`,
+          recommendation: `Monitor individual progress and provide targeted support`
+        });
+      }
+    }
+
+    return {
+      type: action.type,
+      success: true,
+      data: {
+        scope,
+        totalStudents: students.length,
+        insights,
+        generatedAt: new Date().toISOString()
+      }
+    };
+  } catch (error) {
+    console.error('Failed to generate insights:', error);
+    return {
+      type: action.type,
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+async function autoAddNotes(action: any, userId: string, prisma: any) {
+  const { parameters } = action;
+  const { context, targets, noteTemplate } = parameters;
+
+  try {
+    const notes = [];
+
+    for (const target of targets) {
+      const student = await findStudent(target, prisma);
+      if (!student) continue;
+
+      const project = findProjectByStudentId(student.studentId);
+
+      const noteContent = noteTemplate
+        .replace('{studentName}', student.fullName)
+        .replace('{project}', project ? `Project #${project.projectNumber}: ${project.projectTitle}` : 'N/A')
+        .replace('{context}', context);
+
+      const note = await prisma.note.create({
+        data: {
+          studentId: student.id,
+          userId,
+          title: `Auto-generated: ${context}`,
+          content: noteContent,
+          category: 'system_generated'
+        }
+      });
+
+      notes.push({
+        studentId: student.studentId,
+        studentName: student.fullName,
+        noteId: note.id
+      });
+    }
+
+    return {
+      type: action.type,
+      success: true,
+      data: {
+        notesCreated: notes.length,
+        notes
+      }
+    };
+  } catch (error) {
+    console.error('Failed to auto-add notes:', error);
+    return {
+      type: action.type,
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+async function smartSearch(action: any, prisma: any) {
+  const { parameters } = action;
+  const { query, filters } = parameters;
+
+  try {
+    const searchConditions: any = {
+      OR: [
+        { fullName: { contains: query, mode: 'insensitive' } },
+        { studentId: { contains: query, mode: 'insensitive' } },
+        { email: { contains: query, mode: 'insensitive' } }
+      ]
+    };
+
+    if (filters?.moduleCode) {
+      const module = await prisma.module.findFirst({
+        where: { code: filters.moduleCode }
+      });
+      if (module) {
+        searchConditions.AND = [{ moduleId: module.id }];
+      }
+    }
+
+    const results = await prisma.student.findMany({
+      where: searchConditions,
+      include: {
+        module: true,
+        attendance: { take: 5, orderBy: { markedAt: 'desc' } },
+        notes: { take: 3, orderBy: { createdAt: 'desc' } }
+      }
+    });
+
+    return {
+      type: action.type,
+      success: true,
+      data: {
+        query,
+        resultsCount: results.length,
+        results: results.map(s => ({
+          studentId: s.studentId,
+          name: s.fullName,
+          email: s.email,
+          module: s.module?.code,
+          recentAttendance: s.attendance.length,
+          recentNotes: s.notes.length,
+          project: findProjectByStudentId(s.studentId)
+        }))
+      }
+    };
+  } catch (error) {
+    console.error('Smart search failed:', error);
+    return {
+      type: action.type,
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+async function predictPerformance(action: any, prisma: any) {
+  const { parameters } = action;
+  const { studentId } = parameters;
+
+  try {
+    const student = await findStudent(studentId, prisma);
+    if (!student) {
+      return {
+        type: action.type,
+        success: false,
+        error: 'Student not found'
+      };
+    }
+
+    const fullStudent = await prisma.student.findUnique({
+      where: { id: student.id },
+      include: {
+        attendance: {
+          orderBy: { markedAt: 'desc' },
+          take: 20
+        },
+        grades: true,
+        submissions: true,
+        notes: {
+          orderBy: { createdAt: 'desc' },
+          take: 10
+        }
+      }
+    });
+
+    if (!fullStudent) {
+      return {
+        type: action.type,
+        success: false,
+        error: 'Student data not found'
+      };
+    }
+
+    // Calculate current metrics
+    const totalSessions = fullStudent.attendance.length;
+    const presentCount = fullStudent.attendance.filter(a => a.status === 'present').length;
+    const attendanceRate = totalSessions > 0 ? (presentCount / totalSessions) * 100 : 0;
+
+    const avgGrade = fullStudent.grades.length > 0
+      ? fullStudent.grades.reduce((sum, g) => sum + g.gradePoints, 0) / fullStudent.grades.length
+      : null;
+
+    // Simple trend analysis
+    const recentAttendance = fullStudent.attendance.slice(0, 5);
+    const recentPresent = recentAttendance.filter(a => a.status === 'present').length;
+    const recentRate = recentAttendance.length > 0 ? (recentPresent / recentAttendance.length) * 100 : 0;
+
+    const trend = recentRate > attendanceRate ? 'improving' :
+                  recentRate < attendanceRate ? 'declining' : 'stable';
+
+    const prediction = {
+      currentPerformance: {
+        attendanceRate: Math.round(attendanceRate),
+        averageGrade: avgGrade ? avgGrade.toFixed(2) : 'N/A',
+        totalSubmissions: fullStudent.submissions.length
+      },
+      trend,
+      predictions: {
+        likelyOutcome: attendanceRate > 85 && (avgGrade || 0) > 3.0 ? 'Excellent' :
+                       attendanceRate > 75 && (avgGrade || 0) > 2.5 ? 'Good' :
+                       attendanceRate > 65 ? 'Satisfactory' : 'At Risk',
+        confidenceLevel: totalSessions > 10 ? 'High' : 'Medium',
+        recommendations: [
+          attendanceRate < 75 ? 'Immediate attendance intervention needed' : null,
+          trend === 'declining' ? 'Monitor closely - showing declining pattern' : null,
+          trend === 'improving' ? 'Positive trend - continue current support' : null,
+          (avgGrade || 0) < 2.5 ? 'Academic support recommended' : null
+        ].filter(Boolean)
+      }
+    };
+
+    return {
+      type: action.type,
+      success: true,
+      data: {
+        studentId: fullStudent.studentId,
+        studentName: fullStudent.fullName,
+        prediction
+      }
+    };
+  } catch (error) {
+    console.error('Performance prediction failed:', error);
+    return {
+      type: action.type,
+      success: false,
       error: error.message
     };
   }

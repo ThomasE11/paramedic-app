@@ -76,10 +76,15 @@ export async function POST(request: NextRequest) {
       }, { status: 404 });
     }
 
-    // Handle both rubric structures: { criteria: [] } or { categories: [] }
+    // Handle three rubric structures:
+    // 1. Direct array: [{ name, maxScore, ... }]
+    // 2. Object with criteria: { criteria: [...] }
+    // 3. Object with categories: { categories: [...] }
     const rubricCriteria = rubric.criteria as any;
-    const criteriaArray = rubricCriteria.criteria || rubricCriteria.categories || [];
-    const maxScore = criteriaArray.reduce((sum: number, c: any) => sum + (c.maxPoints || c.maxScore || c.weight || 0), 0);
+    const criteriaArray = Array.isArray(rubricCriteria)
+      ? rubricCriteria
+      : (rubricCriteria.criteria || rubricCriteria.categories || []);
+    const maxScore = criteriaArray.reduce((sum: number, c: any) => sum + (c.maxScore || c.maxPoints || c.weight || 0), 0);
 
     console.log('[Batch Evaluate] Rubric criteria count:', criteriaArray.length);
     console.log('[Batch Evaluate] Max score:', maxScore);

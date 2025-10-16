@@ -98,8 +98,13 @@ export async function POST(request: NextRequest) {
     // Prepare AI evaluation prompt
     const rubricCriteria = rubric.criteria as any;
 
-    // Handle both rubric structures: { criteria: [] } or { categories: [] }
-    const criteriaArray = rubricCriteria.criteria || rubricCriteria.categories || [];
+    // Handle three rubric structures:
+    // 1. Direct array: [{ name, maxScore, ... }]
+    // 2. Object with criteria: { criteria: [...] }
+    // 3. Object with categories: { categories: [...] }
+    const criteriaArray = Array.isArray(rubricCriteria)
+      ? rubricCriteria
+      : (rubricCriteria.criteria || rubricCriteria.categories || []);
 
     const studentHistory = submission.student.submissions
       .filter(s => s.id !== submissionId)
@@ -128,6 +133,21 @@ ${JSON.stringify(criteriaArray, null, 2)}
 
 SUBMISSION CONTENT:
 ${submission.extractedText || 'No text content available'}
+
+${submission.metadata && (submission.metadata as any).isHandwritten ? `
+⚠️ HANDWRITTEN DOCUMENT DETECTED
+This submission was identified as handwritten or image-based content.
+- Extraction Method: ${(submission.metadata as any).extractionMethod || 'OCR'}
+- OCR Confidence: ${(submission.metadata as any).ocrConfidence ? `${Math.round((submission.metadata as any).ocrConfidence * 100)}%` : 'N/A'}
+- Page Count: ${(submission.metadata as any).pageCount || 'Unknown'}
+
+SPECIAL CONSIDERATIONS FOR HANDWRITTEN CONTENT:
+- Text may contain OCR errors or unclear sections
+- Be flexible with spelling/transcription errors while maintaining content standards
+- Focus on content understanding rather than perfect transcription
+- If text is unclear or incomplete, note this in your evaluation
+- Consider the medical/clinical content substance over presentation
+` : ''}
 
 CRITICAL EVALUATION INSTRUCTIONS:
 You must be STRICT and LITERAL in applying the rubric. Do NOT make assumptions or be generous.
@@ -232,9 +252,11 @@ Remember: Be STRICT, LITERAL, and EVIDENCE-BASED. Do not be generous or assume i
       const evaluationResult = JSON.parse(responseContent);
       const processingTime = Date.now() - startTime;
 
-      // Calculate maxScore from rubric criteria (handle both structures)
-      const criteriaArray = rubricCriteria.criteria || rubricCriteria.categories || [];
-      const maxScore = criteriaArray.reduce((sum: number, c: any) => sum + (c.maxPoints || c.weight || 0), 0);
+      // Calculate maxScore from rubric criteria (handle all three structures)
+      const criteriaArray = Array.isArray(rubricCriteria)
+        ? rubricCriteria
+        : (rubricCriteria.criteria || rubricCriteria.categories || []);
+      const maxScore = criteriaArray.reduce((sum: number, c: any) => sum + (c.maxScore || c.maxPoints || c.weight || 0), 0);
       const safePercentage = maxScore > 0 ? (evaluationResult.totalScore / maxScore) * 100 : 0;
 
       console.log('[Evaluate] AI Response parsed successfully:', {
@@ -324,9 +346,11 @@ Suggestions: ${evaluationResult.suggestions}`,
     } catch (aiError) {
       console.error('AI evaluation error:', aiError);
 
-      // Calculate maxScore from rubric criteria for fallback (handle both structures)
-      const criteriaArray = rubricCriteria.criteria || rubricCriteria.categories || [];
-      const maxScore = criteriaArray.reduce((sum: number, c: any) => sum + (c.maxPoints || c.weight || 0), 0);
+      // Calculate maxScore from rubric criteria for fallback (handle all three structures)
+      const criteriaArray = Array.isArray(rubricCriteria)
+        ? rubricCriteria
+        : (rubricCriteria.criteria || rubricCriteria.categories || []);
+      const maxScore = criteriaArray.reduce((sum: number, c: any) => sum + (c.maxScore || c.maxPoints || c.weight || 0), 0);
 
       // Create a fallback evaluation
       const evaluation = await prisma.evaluation.create({

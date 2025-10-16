@@ -316,22 +316,24 @@ model Attendance {
 }
 
 model Assignment {
-  id          String       @id @default(cuid())
-  title       String
-  description String?
-  type        String       @default("case_reflection")
-  moduleId    String
-  subjectId   String?
-  createdBy   String
-  dueDate     DateTime?
-  maxScore    Int          @default(100)
-  isActive    Boolean      @default(true)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  creator     User         @relation("AssignmentCreator", fields: [createdBy], references: [id])
-  module      Module       @relation("ModuleAssignments", fields: [moduleId], references: [id], onDelete: Cascade)
-  rubrics     Rubric[]
-  submissions Submission[]
+  id               String       @id @default(cuid())
+  title            String
+  description      String?
+  type             String       @default("case_reflection")
+  moduleId         String
+  subjectId        String?
+  createdBy        String
+  dueDate          DateTime?
+  maxScore         Int          @default(100)
+  isActive         Boolean      @default(true)
+  allowResubmission Boolean     @default(false)
+  autoEvaluate     Boolean      @default(false)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  creator          User         @relation("AssignmentCreator", fields: [createdBy], references: [id])
+  module           Module       @relation("ModuleAssignments", fields: [moduleId], references: [id], onDelete: Cascade)
+  rubrics          Rubric[]
+  submissions      Submission[]
 
   @@map("assignments")
 }

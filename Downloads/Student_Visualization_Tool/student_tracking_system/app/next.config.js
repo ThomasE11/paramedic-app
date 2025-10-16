@@ -6,6 +6,8 @@ const nextConfig = {
   output: process.env.NEXT_OUTPUT_MODE,
   experimental: {
     outputFileTracingRoot: undefined,
+    // For App Router, body size is controlled at route level
+    // File uploads will handle size limits in route handlers
   },
   eslint: {
     ignoreDuringBuilds: true,

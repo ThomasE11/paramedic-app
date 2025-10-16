@@ -196,11 +196,11 @@ export function EnhancedEducationalAI({ isOpen, onClose, moduleContext, studentC
         return;
       }
 
-      // Validate file size (10MB)
-      if (file.size > 10 * 1024 * 1024) {
+      // Validate file size (60MB)
+      if (file.size > 60 * 1024 * 1024) {
         toast({
           title: "File too large",
-          description: "Please upload files smaller than 10MB.",
+          description: "Please upload files smaller than 60MB.",
           variant: "destructive"
         });
         return;

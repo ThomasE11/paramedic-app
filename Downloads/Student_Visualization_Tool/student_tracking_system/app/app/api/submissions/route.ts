@@ -116,10 +116,13 @@ export async function POST(request: NextRequest) {
       }
     });
 
+    // If submission exists, delete it to allow resubmission
+    // This enables the workflow where instructors delete poor submissions
+    // and request students to resubmit
     if (existingSubmission) {
-      return NextResponse.json({
-        error: 'Student has already submitted for this assignment'
-      }, { status: 409 });
+      await prisma.submission.delete({
+        where: { id: existingSubmission.id }
+      });
     }
 
     const submission = await prisma.submission.create({

@@ -72,7 +72,9 @@ export async function POST(request: NextRequest) {
       moduleId,
       subjectId,
       dueDate,
-      maxScore
+      maxScore,
+      autoEvaluate,
+      allowResubmission
     } = body;
 
     // Validate required fields
@@ -115,6 +117,8 @@ export async function POST(request: NextRequest) {
         subjectId,
         dueDate: dueDate ? new Date(dueDate) : null,
         maxScore: maxScore || 100.0,
+        autoEvaluate: autoEvaluate ?? false,
+        allowResubmission: allowResubmission ?? false,
         createdBy: session.user.id
       },
       include: {

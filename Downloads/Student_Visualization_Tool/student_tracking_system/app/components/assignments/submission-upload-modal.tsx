@@ -91,11 +91,11 @@ export function SubmissionUploadModal({
         return;
       }
 
-      // Validate file size (10MB)
-      if (selectedFile.size > 10 * 1024 * 1024) {
+      // Validate file size (60MB)
+      if (selectedFile.size > 60 * 1024 * 1024) {
         toast({
           title: 'File too large',
-          description: 'Please upload files smaller than 10MB.',
+          description: 'Please upload files smaller than 60MB.',
           variant: 'destructive'
         });
         return;
@@ -290,7 +290,7 @@ export function SubmissionUploadModal({
                   border border-border rounded-lg p-3"
               />
               <p className="text-xs text-muted-foreground mt-2">
-                Supported formats: PDF, Word (.doc, .docx), Text (.txt). Max size: 10MB
+                Supported formats: PDF, Word (.doc, .docx), Text (.txt), Images (JPG, PNG). Max size: 60MB
               </p>
               {file && (
                 <div className="mt-2 p-2 bg-green-50 dark:bg-green-950/20 rounded border border-green-200 dark:border-green-800">

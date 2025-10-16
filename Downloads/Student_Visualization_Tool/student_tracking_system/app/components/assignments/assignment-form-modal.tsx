@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 
 interface AssignmentFormModalProps {
@@ -29,6 +30,8 @@ interface FormData {
   subjectId?: string;
   dueDate: string;
   maxScore: number;
+  allowResubmission: boolean;
+  autoEvaluate: boolean;
 }
 
 export function AssignmentFormModal({
@@ -44,7 +47,9 @@ export function AssignmentFormModal({
     type: 'case_reflection',
     moduleId: '',
     dueDate: '',
-    maxScore: 100
+    maxScore: 100,
+    allowResubmission: false,
+    autoEvaluate: false
   });
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -58,7 +63,9 @@ export function AssignmentFormModal({
         moduleId: assignment.moduleId || '',
         subjectId: assignment.subjectId || '',
         dueDate: assignment.dueDate ? assignment.dueDate.split('T')[0] : '',
-        maxScore: assignment.maxScore || 100
+        maxScore: assignment.maxScore || 100,
+        allowResubmission: assignment.allowResubmission || false,
+        autoEvaluate: assignment.autoEvaluate || false
       });
     } else {
       setFormData({
@@ -67,7 +74,9 @@ export function AssignmentFormModal({
         type: 'case_reflection',
         moduleId: '',
         dueDate: '',
-        maxScore: 100
+        maxScore: 100,
+        allowResubmission: false,
+        autoEvaluate: false
       });
     }
   }, [assignment, isOpen]);
@@ -193,6 +202,40 @@ export function AssignmentFormModal({
                 max="1000"
                 value={formData.maxScore}
                 onChange={(e) => setFormData(prev => ({ ...prev, maxScore: parseInt(e.target.value) || 100 }))}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/20">
+              <div className="space-y-0.5">
+                <Label htmlFor="allowResubmission" className="text-base font-medium">
+                  Allow Resubmissions
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Students can submit multiple times for this assignment
+                </p>
+              </div>
+              <Switch
+                id="allowResubmission"
+                checked={formData.allowResubmission}
+                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, allowResubmission: checked }))}
+              />
+            </div>
+
+            <div className="flex items-center justify-between p-4 border rounded-lg bg-blue-50 dark:bg-blue-950/20">
+              <div className="space-y-0.5">
+                <Label htmlFor="autoEvaluate" className="text-base font-medium">
+                  Auto-Evaluate Submissions
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Automatically evaluate submissions with AI when uploaded via batch upload
+                </p>
+              </div>
+              <Switch
+                id="autoEvaluate"
+                checked={formData.autoEvaluate}
+                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, autoEvaluate: checked }))}
               />
             </div>
           </div>

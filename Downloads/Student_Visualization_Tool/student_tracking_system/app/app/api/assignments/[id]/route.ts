@@ -161,12 +161,22 @@ export async function PATCH(
 
     const { id: assignmentId } = await params;
     const body = await request.json();
-    const { isActive } = body;
+    const { isActive, autoEvaluate, allowResubmission, title, description, dueDate, maxScore } = body;
 
-    // Update assignment active status
+    // Build update data dynamically
+    const updateData: any = {};
+    if (isActive !== undefined) updateData.isActive = isActive;
+    if (autoEvaluate !== undefined) updateData.autoEvaluate = autoEvaluate;
+    if (allowResubmission !== undefined) updateData.allowResubmission = allowResubmission;
+    if (title !== undefined) updateData.title = title;
+    if (description !== undefined) updateData.description = description;
+    if (dueDate !== undefined) updateData.dueDate = dueDate ? new Date(dueDate) : null;
+    if (maxScore !== undefined) updateData.maxScore = maxScore;
+
+    // Update assignment
     const assignment = await prisma.assignment.update({
       where: { id: assignmentId },
-      data: { isActive },
+      data: updateData,
       include: {
         module: true,
         creator: {

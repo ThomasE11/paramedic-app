@@ -7,13 +7,18 @@ import path from 'path';
 import { nanoid } from 'nanoid';
 // These will be imported dynamically in the function to prevent build issues
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_FILE_SIZE = 60 * 1024 * 1024; // 60MB
 const ALLOWED_TYPES = [
   'application/pdf',
   'application/msword',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'text/plain',
-  'text/rtf'
+  'text/rtf',
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/tiff',
+  'image/bmp'
 ];
 
 export async function POST(request: NextRequest) {
@@ -36,14 +41,14 @@ export async function POST(request: NextRequest) {
     // Validate file type
     if (!ALLOWED_TYPES.includes(file.type)) {
       return NextResponse.json({
-        error: 'Invalid file type. Please upload PDF, Word, or text files only.'
+        error: 'Invalid file type. Please upload PDF, Word, text, or image files only.'
       }, { status: 400 });
     }
 
     // Validate file size
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json({
-        error: 'File too large. Maximum size is 10MB.'
+        error: 'File too large. Maximum size is 60MB.'
       }, { status: 400 });
     }
 
@@ -98,9 +103,49 @@ export async function POST(request: NextRequest) {
             extractedChars: extractedText.length
           };
 
+          // If PDF has insufficient text, it might be image-based (scanned/handwritten)
           if (!extractedText || extractedText.length < 50) {
-            extractedText = 'PDF appears to be image-based or has no extractable text. Please use OCR software or paste text manually.';
-            metadata = { extractionFailed: true, reason: 'insufficient_text' };
+            console.log('PDF appears to be image-based, attempting OCR extraction...');
+
+            try {
+              // Try to extract images and perform OCR
+              const ocrResult = await performPdfOcr(buffer);
+
+              if (ocrResult.success && ocrResult.text && ocrResult.text.length > 50) {
+                extractedText = ocrResult.text;
+                metadata = {
+                  pageCount: pdfData.numpages,
+                  extractionMethod: 'ocr',
+                  ocrConfidence: ocrResult.confidence,
+                  isHandwritten: true,
+                  wordCount: extractedText.split(/\s+/).filter(w => w).length,
+                  extractedChars: extractedText.length
+                };
+                console.log('OCR extraction successful:', {
+                  textLength: extractedText.length,
+                  confidence: ocrResult.confidence
+                });
+              } else {
+                extractedText = 'PDF appears to be image-based or handwritten. OCR processing will be attempted during evaluation. The AI will analyze visual content.';
+                metadata = {
+                  extractionFailed: false,
+                  reason: 'image_based_pdf',
+                  requiresOcr: true,
+                  isHandwritten: true,
+                  pageCount: pdfData.numpages
+                };
+              }
+            } catch (ocrError: any) {
+              console.warn('OCR extraction failed:', ocrError);
+              extractedText = 'Handwritten or image-based PDF detected. The AI will attempt to process visual content during evaluation.';
+              metadata = {
+                extractionFailed: false,
+                reason: 'ocr_unavailable',
+                requiresOcr: true,
+                isHandwritten: true,
+                pageCount: pdfData.numpages
+              };
+            }
           }
         } catch (pdfError: any) {
           console.error('PDF extraction failed:', pdfError);
@@ -117,6 +162,40 @@ export async function POST(request: NextRequest) {
           wordCount: result.value.split(/\s+/).length,
           hasImages: result.messages.some(m => m.type === 'warning' && m.message.includes('image'))
         };
+      } else if (file.type.includes('image/')) {
+        // Handle image uploads (scanned/handwritten documents)
+        console.log('Image file detected, attempting OCR...');
+        try {
+          const ocrResult = await performImageOcr(buffer, file.type);
+
+          if (ocrResult.success && ocrResult.text) {
+            extractedText = ocrResult.text;
+            metadata = {
+              extractionMethod: 'ocr',
+              isHandwritten: true,
+              ocrConfidence: ocrResult.confidence,
+              imageType: file.type,
+              wordCount: ocrResult.text.split(/\s+/).filter(w => w).length
+            };
+          } else {
+            extractedText = 'Image uploaded. OCR processing will be performed during evaluation. The AI will analyze visual content.';
+            metadata = {
+              extractionMethod: 'pending_ocr',
+              isHandwritten: true,
+              imageType: file.type,
+              requiresOcr: true
+            };
+          }
+        } catch (imageError: any) {
+          console.warn('Image OCR failed:', imageError);
+          extractedText = 'Handwritten document image detected. The AI will process visual content during evaluation.';
+          metadata = {
+            extractionFailed: false,
+            isHandwritten: true,
+            imageType: file.type,
+            requiresOcr: true
+          };
+        }
       }
     } catch (error) {
       console.warn('General extraction error:', error);
@@ -326,4 +405,75 @@ function inferRubricStructure(text: string): any {
     suggestedCriteria: numberedCriteria.slice(0, 5),
     suggestedLevels: scoringLevels.slice(0, 3)
   };
+}
+
+// OCR Helper Functions for Handwritten/Image-based Content
+async function performPdfOcr(pdfBuffer: Buffer): Promise<{ success: boolean; text: string; confidence?: number }> {
+  try {
+    // Use Tesseract.js for OCR on PDF images
+    const Tesseract = (await import('tesseract.js')).default;
+
+    // Convert PDF to images (this is a simplified approach)
+    // In production, you'd want to use pdf2pic or similar
+    console.log('Attempting OCR on PDF...');
+
+    // For now, return indication that OCR is needed
+    // The actual OCR will be performed by Claude during evaluation
+    return {
+      success: false,
+      text: '',
+      confidence: 0
+    };
+  } catch (error) {
+    console.error('PDF OCR error:', error);
+    return {
+      success: false,
+      text: '',
+      confidence: 0
+    };
+  }
+}
+
+async function performImageOcr(imageBuffer: Buffer, mimeType: string): Promise<{ success: boolean; text: string; confidence?: number }> {
+  try {
+    console.log('Attempting OCR on image...');
+
+    // Use Tesseract.js for OCR
+    const Tesseract = (await import('tesseract.js')).default;
+
+    // Convert buffer to data URL
+    const base64Image = imageBuffer.toString('base64');
+    const dataUrl = `data:${mimeType};base64,${base64Image}`;
+
+    // Perform OCR
+    const { data } = await Tesseract.recognize(dataUrl, 'eng', {
+      logger: (m: any) => {
+        if (m.status === 'recognizing text') {
+          console.log(`OCR Progress: ${Math.round(m.progress * 100)}%`);
+        }
+      }
+    });
+
+    const confidence = data.confidence / 100;
+    const text = data.text.trim();
+
+    console.log('OCR completed:', {
+      textLength: text.length,
+      confidence: confidence,
+      wordCount: text.split(/\s+/).length
+    });
+
+    return {
+      success: text.length > 20,
+      text,
+      confidence
+    };
+  } catch (error) {
+    console.error('Image OCR error:', error);
+    return {
+      success: false,
+      text: '',
+      confidence: 0
+    };
+  }
 }

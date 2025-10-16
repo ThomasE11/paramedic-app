@@ -10,13 +10,18 @@ import { nanoid } from 'nanoid';
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions';
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_FILE_SIZE = 60 * 1024 * 1024; // 60MB
 const ALLOWED_TYPES = [
   'application/pdf',
   'application/msword',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'text/plain',
-  'text/rtf'
+  'text/rtf',
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/tiff',
+  'image/bmp'
 ];
 
 export async function POST(request: NextRequest) {
@@ -42,14 +47,14 @@ export async function POST(request: NextRequest) {
     // Validate file type
     if (!ALLOWED_TYPES.includes(file.type)) {
       return NextResponse.json({
-        error: 'Invalid file type. Please upload PDF, Word, or text files only.'
+        error: 'Invalid file type. Please upload PDF, Word, text, or image files only.'
       }, { status: 400 });
     }
 
     // Validate file size
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json({
-        error: 'File too large. Maximum size is 10MB.'
+        error: 'File too large. Maximum size is 60MB.'
       }, { status: 400 });
     }
 

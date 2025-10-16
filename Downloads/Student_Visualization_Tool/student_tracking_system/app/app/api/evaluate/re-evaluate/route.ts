@@ -72,14 +72,19 @@ export async function POST(request: NextRequest) {
 
     console.log('[Re-Evaluate] Submission text length:', submission.extractedText?.length);
 
-    // Handle both rubric structures: { criteria: [] } or { categories: [] }
+    // Handle three rubric structures:
+    // 1. Direct array: [{ name, maxScore, ... }]
+    // 2. Object with criteria: { criteria: [...] }
+    // 3. Object with categories: { categories: [...] }
     const rubricCriteria = rubric.criteria as any;
-    const criteriaArray = rubricCriteria.criteria || rubricCriteria.categories || [];
+    const criteriaArray = Array.isArray(rubricCriteria)
+      ? rubricCriteria
+      : (rubricCriteria.criteria || rubricCriteria.categories || []);
 
     console.log('[Re-Evaluate] Rubric criteria count:', criteriaArray.length);
 
-    // Calculate max possible score from rubric (handle both maxPoints and weight fields)
-    const maxPossibleScore = criteriaArray.reduce((sum: number, c: any) => sum + (c.maxPoints || c.maxScore || c.weight || 0), 0);
+    // Calculate max possible score from rubric (handle all score field names)
+    const maxPossibleScore = criteriaArray.reduce((sum: number, c: any) => sum + (c.maxScore || c.maxPoints || c.weight || 0), 0);
 
     console.log('[Re-Evaluate] Max possible score from rubric:', maxPossibleScore);
 

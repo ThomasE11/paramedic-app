@@ -158,11 +158,11 @@ export function RubricFormModal({
         return;
       }
 
-      // Validate file size (10MB)
-      if (selectedFile.size > 10 * 1024 * 1024) {
+      // Validate file size (60MB)
+      if (selectedFile.size > 60 * 1024 * 1024) {
         toast({
           title: 'File Too Large',
-          description: 'Maximum file size is 10MB',
+          description: 'Maximum file size is 60MB',
           variant: 'destructive'
         });
         return;
@@ -248,7 +248,7 @@ export function RubricFormModal({
                         <Upload className="w-8 h-8" />
                         <span>Click to upload rubric</span>
                         <span className="text-xs text-muted-foreground">
-                          PDF, Word, or Text (Max 10MB)
+                          PDF, Word, Text, or Images (Max 60MB)
                         </span>
                       </div>
                     )}

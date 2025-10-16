@@ -7,13 +7,18 @@ import { existsSync } from 'fs';
 import path from 'path';
 import { nanoid } from 'nanoid';
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_FILE_SIZE = 60 * 1024 * 1024; // 60MB
 const ALLOWED_TYPES = [
   'application/pdf',
   'application/msword',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'text/plain',
-  'text/rtf'
+  'text/rtf',
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/tiff',
+  'image/bmp'
 ];
 
 // Extract student ID from filename (e.g., H00123456.pdf → H00123456)
@@ -85,7 +90,7 @@ export async function POST(request: NextRequest) {
         if (!ALLOWED_TYPES.includes(file.type)) {
           results.failed.push({
             fileName: file.name,
-            reason: 'Invalid file type. Only PDF, Word, and text files are allowed.'
+            reason: 'Invalid file type. Only PDF, Word, text, and image files are allowed.'
           });
           continue;
         }
@@ -94,7 +99,7 @@ export async function POST(request: NextRequest) {
         if (file.size > MAX_FILE_SIZE) {
           results.failed.push({
             fileName: file.name,
-            reason: 'File too large. Maximum size is 10MB.'
+            reason: 'File too large. Maximum size is 60MB.'
           });
           continue;
         }
@@ -132,14 +137,22 @@ export async function POST(request: NextRequest) {
           }
         });
 
-        if (existingSubmission) {
+        // If submission exists and resubmission not allowed, skip
+        if (existingSubmission && !assignment.allowResubmission) {
           results.skipped.push({
             fileName: file.name,
             studentId: extractedStudentId,
             studentName: student.fullName,
-            reason: 'Submission already exists for this student'
+            reason: 'Submission already exists. Resubmissions not allowed for this assignment.'
           });
           continue;
+        }
+
+        // If resubmission allowed and submission exists, delete old one
+        if (existingSubmission && assignment.allowResubmission) {
+          await prisma.submission.delete({
+            where: { id: existingSubmission.id }
+          });
         }
 
         // Save file

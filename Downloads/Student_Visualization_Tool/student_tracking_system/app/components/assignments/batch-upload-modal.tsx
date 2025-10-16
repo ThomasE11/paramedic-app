@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -37,8 +37,16 @@ export function BatchUploadModal({
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [uploadResults, setUploadResults] = useState<any>(null);
   const [evaluationResults, setEvaluationResults] = useState<any>(null);
-  const [autoEvaluate, setAutoEvaluate] = useState(false);
+  // Initialize autoEvaluate from assignment settings
+  const [autoEvaluate, setAutoEvaluate] = useState(assignment?.autoEvaluate ?? false);
   const [selectedRubricId, setSelectedRubricId] = useState<string>('');
+
+  // Update autoEvaluate when assignment changes
+  useEffect(() => {
+    if (assignment?.autoEvaluate !== undefined) {
+      setAutoEvaluate(assignment.autoEvaluate);
+    }
+  }, [assignment?.autoEvaluate]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(e.target.files || []);
@@ -172,7 +180,8 @@ export function BatchUploadModal({
     setFiles([]);
     setUploadResults(null);
     setEvaluationResults(null);
-    setAutoEvaluate(false);
+    // Reset to assignment's default autoEvaluate setting
+    setAutoEvaluate(assignment?.autoEvaluate ?? false);
     setSelectedRubricId('');
     onClose();
   };
@@ -244,7 +253,7 @@ export function BatchUploadModal({
                 <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
                 <p className="font-semibold mb-1">Click to select files</p>
                 <p className="text-sm text-muted-foreground">
-                  PDF, Word, or Text files (max 10MB each)
+                  PDF, Word, Text, or Image files (max 60MB each)
                 </p>
                 <p className="text-xs text-muted-foreground mt-2">
                   Filename format: H00123456.pdf (student ID)

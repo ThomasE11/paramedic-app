@@ -16,7 +16,8 @@ import {
   CheckCircle,
   Clock,
   RefreshCw,
-  Eye
+  Eye,
+  Trash2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { EvaluationDetailModal } from './evaluation-detail-modal';
@@ -40,6 +41,7 @@ interface Submission {
   evaluations: Array<{
     id: string;
     totalScore: number;
+    maxScore: number;
     feedback?: string;
     strengths?: string;
     improvements?: string;
@@ -117,6 +119,46 @@ export function EvaluationViewModal({
     if (percentage >= 80) return 'text-green-600';
     if (percentage >= 60) return 'text-yellow-600';
     return 'text-red-600';
+  };
+
+  const handleDeleteSubmission = async (submission: Submission) => {
+    if (!confirm(
+      `Delete submission from ${submission.student.fullName}?\n\n` +
+      `This will permanently delete:\n` +
+      `- The submission file: ${submission.fileName}\n` +
+      `- ${submission.evaluations.length} evaluation(s)\n\n` +
+      `The student will be able to resubmit after deletion.`
+    )) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/submissions/${submission.id}`, {
+        method: 'DELETE'
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast({
+          title: 'Success',
+          description: data.message || 'Submission deleted successfully'
+        });
+        fetchSubmissions(); // Refresh the list
+      } else {
+        toast({
+          title: 'Error',
+          description: data.error || 'Failed to delete submission',
+          variant: 'destructive'
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Something went wrong',
+        variant: 'destructive'
+      });
+    }
   };
 
   if (!assignment) return null;
@@ -224,15 +266,15 @@ export function EvaluationViewModal({
 
                           {submission.evaluations.length > 0 && (
                             <div className="text-right">
-                              <div className={`text-lg font-bold ${getScoreColor(submission.evaluations[0].totalScore, assignment.maxScore)}`}>
-                                {submission.evaluations[0].totalScore}/{assignment.maxScore}
+                              <div className={`text-lg font-bold ${getScoreColor(submission.evaluations[0].totalScore, submission.evaluations[0].maxScore)}`}>
+                                {submission.evaluations[0].totalScore}/{submission.evaluations[0].maxScore}
                               </div>
                               <div className="flex items-center gap-1">
                                 {submission.evaluations[0].aiGenerated && (
                                   <Brain className="w-3 h-3 text-purple-600" />
                                 )}
                                 <span className="text-xs text-muted-foreground">
-                                  {Math.round((submission.evaluations[0].totalScore / assignment.maxScore) * 100)}%
+                                  {Math.round((submission.evaluations[0].totalScore / submission.evaluations[0].maxScore) * 100)}%
                                 </span>
                               </div>
                             </div>
@@ -249,6 +291,18 @@ export function EvaluationViewModal({
                           >
                             <Eye className="w-4 h-4 mr-1" />
                             View Details
+                          </Button>
+
+                          <Button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteSubmission(submission);
+                            }}
+                            size="sm"
+                            variant="outline"
+                            className="text-red-600 hover:bg-red-50 dark:hover:bg-red-950 hover:text-red-700"
+                          >
+                            <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
                       </div>
@@ -279,8 +333,8 @@ export function EvaluationViewModal({
                         </p>
                       </div>
                       <div className="text-right">
-                        <div className={`text-2xl font-bold ${getScoreColor(evaluation.totalScore, assignment.maxScore)}`}>
-                          {evaluation.totalScore}/{assignment.maxScore}
+                        <div className={`text-2xl font-bold ${getScoreColor(evaluation.totalScore, evaluation.maxScore)}`}>
+                          {evaluation.totalScore}/{evaluation.maxScore}
                         </div>
                         {evaluation.confidence && (
                           <p className="text-sm text-muted-foreground">
