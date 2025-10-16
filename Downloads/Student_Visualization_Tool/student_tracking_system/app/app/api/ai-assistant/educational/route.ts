@@ -1328,6 +1328,30 @@ async function sendEmail(action: any, userId: string, prisma: any) {
     // Extract intent from subject and body to identify the task
     const intent = subject.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
 
+    // Check if there's already a cached task for this user
+    const existingTask = pendingEmailsCache.get(userId);
+    const warnings = [];
+
+    if (existingTask) {
+      // There's already a pending email task - this is a critical warning!
+      console.log(`\n⚠️  ============ CACHE OVERWRITE WARNING ============`);
+      console.log(`   User ${userId} already has a pending email task!`);
+      console.log(`   EXISTING Task: "${existingTask.intent}"`);
+      console.log(`   EXISTING Subject: "${existingTask.subject}"`);
+      console.log(`   EXISTING Emails: ${existingTask.emails.length}`);
+      console.log(`   NEW Task: "${intent}"`);
+      console.log(`   NEW Subject: "${subject}"`);
+      console.log(`   NEW Emails: ${emailList.length}`);
+      console.log(`   ⚠️  THE OLD TASK WILL BE REPLACED!`);
+      console.log(`===================================================\n`);
+
+      warnings.push(`⚠️  CRITICAL: You already have a pending email task!`);
+      warnings.push(`Previous task: "${existingTask.subject}" (${existingTask.emails.length} emails)`);
+      warnings.push(`This new task will REPLACE the previous one.`);
+      warnings.push(`If you want to send the PREVIOUS task instead, say "send previous" or "cancel this".`);
+      warnings.push(`To proceed with THIS new task, say "send" or "proceed".`);
+    }
+
     // Cache the emails with full task context
     const taskContext: TaskContext = {
       taskId,
@@ -1348,9 +1372,8 @@ async function sendEmail(action: any, userId: string, prisma: any) {
     console.log(`   Module: ${moduleCode || 'All students'}`);
 
     // Add safety warnings for bulk emails
-    const warnings = [];
     if (!studentId && !moduleCode && students.length > 10) {
-      warnings.push(`⚠️  You are about to email ALL ${students.length} students. This was not filtered to a specific student or module.`);
+      warnings.push(`⚠️  Bulk email to ALL ${students.length} students (no filter specified)`);
       warnings.push('If this was intended for a single student, please specify their student ID (e.g., H00459031)');
     }
 
@@ -1369,7 +1392,14 @@ async function sendEmail(action: any, userId: string, prisma: any) {
         cached: true,
         taskId: taskId,
         taskIntent: intent,
-        cacheMessage: `✅ Cached ${emailList.length} personalized emails. Task: "${intent}". Say "send" or "proceed" to send them now.`
+        cacheMessage: existingTask
+          ? `⚠️  REPLACED previous task "${existingTask.subject}". New task: "${intent}" (${emailList.length} emails). Say "send" to proceed with THIS task.`
+          : `✅ Cached ${emailList.length} personalized emails. Task: "${intent}". Say "send" or "proceed" to send them now.`,
+        replacedTask: existingTask ? {
+          subject: existingTask.subject,
+          intent: existingTask.intent,
+          emailCount: existingTask.emails.length
+        } : undefined
       }
     };
   } catch (error) {
