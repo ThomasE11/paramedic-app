@@ -13,7 +13,7 @@ import { prisma } from '@/lib/db';
 import { sendEmail } from '@/lib/email';
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
 // Rate limiting: Track last email send time
 let lastEmailSentAt: number = 0;
