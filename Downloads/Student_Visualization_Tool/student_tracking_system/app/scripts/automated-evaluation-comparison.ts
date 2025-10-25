@@ -3,8 +3,8 @@ import * as fs from 'fs';
 
 const prisma = new PrismaClient();
 
-const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
-const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions';
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 
 interface EvaluationComparison {
   submissionId: string;
@@ -92,35 +92,30 @@ Return your evaluation in this EXACT JSON format (no markdown):
   "improvements": "<specific areas for improvement>"
 }`;
 
-  const response = await fetch(DEEPSEEK_API_URL, {
+  const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
+      'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      model: 'deepseek-chat',
-      messages: [
-        {
-          role: "system",
-          content: "You are an expert academic evaluator. Provide detailed, fair evaluations. Return ONLY valid JSON without markdown formatting."
-        },
-        {
-          role: "user",
-          content: evaluationPrompt
-        }
-      ],
-      temperature: 0.3,
-      max_tokens: 3000
+      contents: [{
+        parts: [{
+          text: `You are an expert academic evaluator. Provide detailed, fair evaluations. Return ONLY valid JSON without markdown formatting.\n\n${evaluationPrompt}`
+        }]
+      }],
+      generationConfig: {
+        temperature: 0.3,
+        maxOutputTokens: 3000
+      }
     })
   });
 
   if (!response.ok) {
-    throw new Error(`AI API error: ${response.statusText}`);
+    throw new Error(`Gemini API error: ${response.statusText}`);
   }
 
   const data = await response.json();
-  let content = data.choices[0].message.content || '{}';
+  let content = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
   content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
   
   return JSON.parse(content);
@@ -169,35 +164,30 @@ Return your evaluation in this EXACT JSON format (no markdown):
   "improvements": "<specific improvements needed with examples>"
 }`;
 
-  const response = await fetch(DEEPSEEK_API_URL, {
+  const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
+      'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      model: 'deepseek-chat',
-      messages: [
-        {
-          role: "system",
-          content: "You are a senior expert educator. Provide thorough, evidence-based evaluations. Return ONLY valid JSON without markdown."
-        },
-        {
-          role: "user",
-          content: expertPrompt
-        }
-      ],
-      temperature: 0.2,
-      max_tokens: 3000
+      contents: [{
+        parts: [{
+          text: `You are a senior expert educator. Provide thorough, evidence-based evaluations. Return ONLY valid JSON without markdown.\n\n${expertPrompt}`
+        }]
+      }],
+      generationConfig: {
+        temperature: 0.2,
+        maxOutputTokens: 3000
+      }
     })
   });
 
   if (!response.ok) {
-    throw new Error(`Expert AI API error: ${response.statusText}`);
+    throw new Error(`Gemini API error: ${response.statusText}`);
   }
 
   const data = await response.json();
-  let content = data.choices[0].message.content || '{}';
+  let content = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
   content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
   
   return JSON.parse(content);

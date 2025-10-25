@@ -1,7 +1,7 @@
 import { prisma } from '../lib/db';
 
-const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
-const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions';
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 
 async function triggerStrictEvaluation() {
   try {
@@ -139,40 +139,35 @@ RESPONSE FORMAT (JSON):
 Remember: Be STRICT, LITERAL, and EVIDENCE-BASED. Do not be generous or assume implied content.
 `;
 
-    if (!DEEPSEEK_API_KEY) {
-      throw new Error('DeepSeek API key not configured');
+    if (!GEMINI_API_KEY) {
+      throw new Error('Gemini API key not configured');
     }
 
     const startTime = Date.now();
-    const aiResponse = await fetch(DEEPSEEK_API_URL, {
+    const aiResponse = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'deepseek-chat',
-        messages: [
-          {
-            role: "system",
-            content: "You are an expert academic evaluator. Be STRICT and LITERAL in applying rubrics. Do not be generous. Provide detailed, evidence-based evaluations following the exact JSON format requested."
-          },
-          {
-            role: "user",
-            content: evaluationPrompt
-          }
-        ],
-        temperature: 0.2, // Lower temperature for more consistent, strict evaluation
-        max_tokens: 3000
+        contents: [{
+          parts: [{
+            text: `You are an expert academic evaluator. Be STRICT and LITERAL in applying rubrics. Do not be generous. Provide detailed, evidence-based evaluations following the exact JSON format requested.\n\n${evaluationPrompt}`
+          }]
+        }],
+        generationConfig: {
+          temperature: 0.2,
+          maxOutputTokens: 3000
+        }
       })
     });
 
     if (!aiResponse.ok) {
-      throw new Error(`DeepSeek API error: ${aiResponse.statusText}`);
+      throw new Error(`Gemini API error: ${aiResponse.statusText}`);
     }
 
     const aiData = await aiResponse.json();
-    let responseContent = aiData.choices[0].message.content || '{}';
+    let responseContent = aiData.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
     responseContent = responseContent.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
 
     const evaluationResult = JSON.parse(responseContent);

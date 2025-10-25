@@ -1,8 +1,8 @@
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
-const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
-const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions';
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 
 async function triggerEvaluation() {
   const submissionId = 'cmglh2ce40009rxuim78dag19';
@@ -83,41 +83,36 @@ RESPONSE FORMAT (JSON only, no markdown code blocks):
 
 Be thorough, fair, and constructive in your evaluation.`;
 
-  console.log('Calling DeepSeek API...\n');
+  console.log('Calling Gemini API...\n');
 
-  const aiResponse = await fetch(DEEPSEEK_API_URL, {
+  const aiResponse = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
+      'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      model: 'deepseek-chat',
-      messages: [
-        {
-          role: "system",
-          content: "You are an expert academic evaluator. Provide detailed, constructive, and fair evaluations. Return ONLY valid JSON without markdown formatting."
-        },
-        {
-          role: "user",
-          content: evaluationPrompt
-        }
-      ],
-      temperature: 0.3,
-      max_tokens: 3000
+      contents: [{
+        parts: [{
+          text: `You are an expert academic evaluator. Provide detailed, constructive, and fair evaluations. Return ONLY valid JSON without markdown formatting.\n\n${evaluationPrompt}`
+        }]
+      }],
+      generationConfig: {
+        temperature: 0.3,
+        maxOutputTokens: 3000
+      }
     })
   });
 
   if (!aiResponse.ok) {
     const errorText = await aiResponse.text();
-    console.error('DeepSeek API error:', errorText);
+    console.error('Gemini API error:', errorText);
     return;
   }
 
   const aiData = await aiResponse.json();
 
   // Clean markdown code blocks
-  let responseContent = aiData.choices[0].message.content || '{}';
+  let responseContent = aiData.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
   responseContent = responseContent.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
 
   console.log('AI Response:\n', responseContent.substring(0, 500) + '...\n');

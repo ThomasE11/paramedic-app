@@ -39,7 +39,7 @@ async function checkEnvironmentVariables() {
     { name: 'DATABASE_URL', critical: true },
     { name: 'NEXTAUTH_SECRET', critical: true },
     { name: 'NEXTAUTH_URL', critical: true },
-    { name: 'DEEPSEEK_API_KEY', critical: true },
+    { name: 'GEMINI_API_KEY', critical: true },
     { name: 'GMAIL_USER', critical: false },
     { name: 'GMAIL_APP_PASSWORD', critical: false }
   ];
@@ -115,28 +115,24 @@ async function checkAPIEndpoints() {
 
 async function checkAISystemConfiguration() {
   console.log('\n🤖 Checking AI System Configuration...');
-  
-  if (process.env.DEEPSEEK_API_KEY) {
-    addResult('AI System', 'API Key', 'pass', '✅ DeepSeek API key configured', true);
-    
+
+  if (process.env.GEMINI_API_KEY) {
+    addResult('AI System', 'API Key', 'pass', '✅ Gemini API key configured', true);
+
     // Check if AI can be reached (basic test)
     try {
-      const response = await fetch('https://api.deepseek.com/v1/models', {
-        headers: {
-          'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY}`
-        }
-      });
-      
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash?key=${process.env.GEMINI_API_KEY}`);
+
       if (response.ok) {
-        addResult('AI System', 'API Connectivity', 'pass', '✅ DeepSeek API is reachable', true);
+        addResult('AI System', 'API Connectivity', 'pass', '✅ Gemini API is reachable', true);
       } else {
-        addResult('AI System', 'API Connectivity', 'warning', `⚠️ DeepSeek API returned ${response.status}`, false);
+        addResult('AI System', 'API Connectivity', 'warning', `⚠️ Gemini API returned ${response.status}`, false);
       }
     } catch (error) {
-      addResult('AI System', 'API Connectivity', 'warning', `⚠️ Could not verify DeepSeek API: ${error}`, false);
+      addResult('AI System', 'API Connectivity', 'warning', `⚠️ Could not verify Gemini API: ${error}`, false);
     }
   } else {
-    addResult('AI System', 'API Key', 'fail', '❌ DeepSeek API key not configured', true);
+    addResult('AI System', 'API Key', 'fail', '❌ Gemini API key not configured', true);
   }
 
   // Check AI assistant route files

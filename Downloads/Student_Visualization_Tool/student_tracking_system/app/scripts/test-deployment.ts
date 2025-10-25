@@ -56,7 +56,7 @@ async function testEnvironmentVariables() {
     'DATABASE_URL',
     'NEXTAUTH_SECRET',
     'NEXTAUTH_URL',
-    'DEEPSEEK_API_KEY',
+    'GEMINI_API_KEY',
     'GMAIL_USER',
     'GMAIL_APP_PASSWORD'
   ];
@@ -79,30 +79,29 @@ async function testAIFunctionality() {
   console.log('🔍 Testing AI service configuration...');
 
   try {
-    const apiKey = process.env.DEEPSEEK_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      console.error('❌ DEEPSEEK_API_KEY not found');
+      console.error('❌ GEMINI_API_KEY not found');
       return false;
     }
 
     console.log('✅ AI API key is configured');
 
     // Test a simple API call
-    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'deepseek-chat',
-        messages: [
-          {
-            role: 'user',
-            content: 'Test connection. Respond with just "OK".'
-          }
-        ],
-        max_tokens: 10
+        contents: [{
+          parts: [{
+            text: 'Test connection. Respond with just "OK".'
+          }]
+        }],
+        generationConfig: {
+          maxOutputTokens: 10
+        }
       })
     });
 

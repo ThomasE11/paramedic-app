@@ -60,13 +60,16 @@ function checkRateLimit(): boolean {
  * Generate AI email content using Gemini
  */
 async function generateEmailContent(request: AIEmailRequest): Promise<{ subject: string; body: string }> {
-  const { context, emailType } = request;
+  const { context, emailType, senderName } = request;
+
+  // Use provided sender name or default to "Elias Thomas"
+  const instructorName = senderName || 'Elias Thomas';
 
   let prompt = '';
 
   switch (emailType) {
     case 'feedback':
-      prompt = `You are a professional EMS instructor providing feedback to a student.
+      prompt = `You are ${instructorName}, a professional EMS instructor providing feedback to a student.
 
 Student: ${context.studentName}
 Assignment: ${context.assignmentName}
@@ -79,6 +82,7 @@ Generate a professional, encouraging email that:
 3. Encourages improvement
 4. Is warm but professional
 5. Is concise (max 200 words)
+6. Sign with "${instructorName}" as the instructor name
 
 Return ONLY valid JSON:
 {
@@ -88,7 +92,7 @@ Return ONLY valid JSON:
       break;
 
     case 'encouragement':
-      prompt = `You are a supportive EMS instructor sending encouragement.
+      prompt = `You are ${instructorName}, a supportive EMS instructor sending encouragement.
 
 Student: ${context.studentName}
 Context: ${context.customPrompt || 'General encouragement'}
@@ -97,6 +101,7 @@ Generate a warm, encouraging email (max 150 words) that:
 1. Is genuinely supportive
 2. Is professional yet friendly
 3. Motivates the student
+4. Sign with "${instructorName}" as the instructor name
 4. References their EMS journey
 
 Return ONLY valid JSON:
@@ -107,7 +112,7 @@ Return ONLY valid JSON:
       break;
 
     case 'reminder':
-      prompt = `You are an EMS instructor sending a reminder.
+      prompt = `You are ${instructorName}, an EMS instructor sending a reminder.
 
 Student: ${context.studentName}
 Reminder about: ${context.customPrompt}
@@ -117,6 +122,7 @@ Generate a professional reminder email (max 150 words) that:
 2. Provides necessary details
 3. Is polite but firm
 4. Includes a call to action
+5. Sign with "${instructorName}" as the instructor name
 
 Return ONLY valid JSON:
 {
@@ -129,13 +135,14 @@ Return ONLY valid JSON:
       if (!context.customPrompt) {
         throw new Error('Custom prompt is required for custom email type');
       }
-      prompt = `You are a professional EMS instructor communicating with a student.
+      prompt = `You are ${instructorName}, a professional EMS instructor communicating with a student.
 
 Student: ${context.studentName}
 Context: ${context.customPrompt}
 
 Generate a professional email (max 200 words) based on the context provided.
 Be professional, clear, and supportive.
+Sign with "${instructorName}" as the instructor name.
 
 Return ONLY valid JSON:
 {
@@ -278,6 +285,32 @@ export async function sendAIEmail(
       return {
         success: false,
         error: 'Student not found'
+      };
+    }
+
+    // DUPLICATE PREVENTION: Check if similar email was sent recently (within 1 hour)
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    const recentSimilarEmail = await prisma.activity.findFirst({
+      where: {
+        studentId: student.id,
+        type: 'email_sent',
+        createdAt: {
+          gte: oneHourAgo
+        },
+        metadata: {
+          path: ['subject'],
+          string_contains: subject.substring(0, 30) // Check first 30 chars of subject
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    if (recentSimilarEmail) {
+      return {
+        success: false,
+        error: `Duplicate email prevented: Similar email "${(recentSimilarEmail.metadata as any)?.subject}" was already sent ${new Date(recentSimilarEmail.createdAt).toLocaleString()}`
       };
     }
 
