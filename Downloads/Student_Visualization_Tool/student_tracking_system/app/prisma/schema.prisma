@@ -1,11 +1,11 @@
 generator client {
-    provider = "prisma-client-js"
-    binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
 }
 
 datasource db {
-    provider = "postgresql"
-    url      = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model Account {
@@ -38,28 +38,28 @@ model Session {
 }
 
 model User {
-  id               String         @id @default(cuid())
-  name             String?
-  email            String         @unique
-  emailVerified    DateTime?      @map("email_verified")
-  image            String?
-  password         String?
-  role             String         @default("instructor")
-  bio              String?
-  createdAt        DateTime       @default(now()) @map("created_at")
-  department       String?
-  phone            String?
-  preferences      Json?          @default("{}")
-  title            String?
-  updatedAt        DateTime       @default(now()) @updatedAt @map("updated_at")
-  accounts               Account[]
-  attendanceMarked       Attendance[]
-  classSessions          ClassSession[]
-  notes                  Note[]
-  sessions               Session[]
-  createdAssignments     Assignment[]   @relation("AssignmentCreator")
-  createdRubrics         Rubric[]       @relation("RubricCreator")
-  uploadedSubmissions    Submission[]   @relation("SubmissionUploader")
+  id                  String         @id @default(cuid())
+  name                String?
+  email               String         @unique
+  emailVerified       DateTime?      @map("email_verified")
+  image               String?
+  password            String?
+  role                String         @default("instructor")
+  bio                 String?
+  createdAt           DateTime       @default(now()) @map("created_at")
+  department          String?
+  phone               String?
+  preferences         Json?          @default("{}")
+  title               String?
+  updatedAt           DateTime       @default(now()) @updatedAt @map("updated_at")
+  accounts            Account[]
+  attendanceMarked    Attendance[]
+  classSessions       ClassSession[]
+  notes               Note[]
+  sessions            Session[]
+  createdAssignments  Assignment[]   @relation("AssignmentCreator")
+  createdRubrics      Rubric[]       @relation("RubricCreator")
+  uploadedSubmissions Submission[]   @relation("SubmissionUploader")
 
   @@map("users")
 }
@@ -74,47 +74,51 @@ model VerificationToken {
 }
 
 model Module {
-  id                  String           @id @default(cuid())
-  code                String           @unique
-  name                String
-  description         String?
-  submissionSchedule  Json?
-  createdAt           DateTime         @default(now())
-  updatedAt           DateTime         @updatedAt
-  averageGPA          Float?           @default(0.0)
-  totalCredits        Int?             @default(0)
-  assignments         Assignment[]     @relation("ModuleAssignments")
-  classSessions       ClassSession[]
-  grades              Grade[]
-  students            Student[]
-  subjects            Subject[]
-  activities          ModuleActivity[]
+  id                 String                @id @default(cuid())
+  code               String                @unique
+  name               String
+  description        String?
+  submissionSchedule Json?
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+  averageGPA         Float?                @default(0.0)
+  totalCredits       Int?                  @default(0)
+  assignments        Assignment[]          @relation("ModuleAssignments")
+  classSessions      ClassSession[]
+  grades             Grade[]
+  students           Student[]
+  subjects           Subject[]
+  activities         ModuleActivity[]
+  placements         PlacementAssignment[]
 
   @@map("modules")
 }
 
 model Student {
-  id          String             @id @default(cuid())
-  studentId   String             @unique
-  firstName   String
-  lastName    String
-  fullName    String
-  email       String             @unique
-  phone       String?
-  moduleId    String?
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
-  creditHours Int?               @default(0)
-  currentGPA  Float?             @default(0.0)
-  activities  Activity[]
-  attendance  Attendance[]
-  grades      Grade[]
-  notes       Note[]
-  conflicts   ScheduleConflict[]
-  schedules   Schedule[]
-  module      Module?            @relation(fields: [moduleId], references: [id])
-  submissions Submission[]       @relation("StudentSubmissions")
-  emailLogs   EmailLog[]
+  id                  String                @id @default(cuid())
+  studentId           String                @unique
+  firstName           String
+  lastName            String
+  fullName            String
+  email               String                @unique
+  phone               String?
+  moduleId            String?
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  creditHours         Int?                  @default(0)
+  currentGPA          Float?                @default(0.0)
+  activities          Activity[]
+  attendance          Attendance[]
+  grades              Grade[]
+  notes               Note[]
+  conflicts           ScheduleConflict[]
+  schedules           Schedule[]
+  module              Module?               @relation(fields: [moduleId], references: [id])
+  submissions         Submission[]          @relation("StudentSubmissions")
+  emailLogs           EmailLog[]
+  placements          PlacementAssignment[]
+  siteVisitNotes      SiteVisitNote[]
+  recordOfDiscussions RecordOfDiscussion[]
 
   @@map("students")
 }
@@ -316,47 +320,47 @@ model Attendance {
 }
 
 model Assignment {
-  id               String       @id @default(cuid())
-  title            String
-  description      String?
-  type             String       @default("case_reflection")
-  moduleId         String
-  subjectId        String?
-  createdBy        String
-  dueDate          DateTime?
-  maxScore         Int          @default(100)
-  isActive         Boolean      @default(true)
-  allowResubmission Boolean     @default(false)
-  autoEvaluate     Boolean      @default(false)
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @updatedAt
-  creator          User         @relation("AssignmentCreator", fields: [createdBy], references: [id])
-  module           Module       @relation("ModuleAssignments", fields: [moduleId], references: [id], onDelete: Cascade)
-  rubrics          Rubric[]
-  submissions      Submission[]
+  id                String       @id @default(cuid())
+  title             String
+  description       String?
+  type              String       @default("case_reflection")
+  moduleId          String
+  subjectId         String?
+  createdBy         String
+  dueDate           DateTime?
+  maxScore          Int          @default(100)
+  isActive          Boolean      @default(true)
+  allowResubmission Boolean      @default(false)
+  autoEvaluate      Boolean      @default(false)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  creator           User         @relation("AssignmentCreator", fields: [createdBy], references: [id])
+  module            Module       @relation("ModuleAssignments", fields: [moduleId], references: [id], onDelete: Cascade)
+  rubrics           Rubric[]
+  submissions       Submission[]
 
   @@map("assignments")
 }
 
 model Rubric {
-  id           String       @id @default(cuid())
-  assignmentId String
-  title        String
-  description  String?
-  version      Int          @default(1)
-  criteria     Json
-  fileName     String?
-  filePath     String?
-  fileSize     Int?
-  mimeType     String?
-  extractedText String?     @db.Text
-  isActive     Boolean      @default(true)
-  createdBy    String
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  assignment   Assignment   @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
-  creator      User         @relation("RubricCreator", fields: [createdBy], references: [id])
-  evaluations  Evaluation[]
+  id            String       @id @default(cuid())
+  assignmentId  String
+  title         String
+  description   String?
+  version       Int          @default(1)
+  criteria      Json
+  fileName      String?
+  filePath      String?
+  fileSize      Int?
+  mimeType      String?
+  extractedText String?      @db.Text
+  isActive      Boolean      @default(true)
+  createdBy     String
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  assignment    Assignment   @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  creator       User         @relation("RubricCreator", fields: [createdBy], references: [id])
+  evaluations   Evaluation[]
 
   @@map("rubrics")
 }
@@ -385,47 +389,47 @@ model Submission {
 }
 
 model Evaluation {
-  id           String     @id @default(cuid())
-  submissionId String
-  rubricId     String
-  totalScore   Float
-  maxScore     Float
-  percentage   Float
-  feedback     String     @db.Text
+  id             String     @id @default(cuid())
+  submissionId   String
+  rubricId       String
+  totalScore     Float
+  maxScore       Float
+  percentage     Float
+  feedback       String     @db.Text
   criteriaScores Json
-  strengths    String?    @db.Text
-  improvements String?    @db.Text
-  evaluatedBy  String     @default("ai")
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  rubric       Rubric     @relation(fields: [rubricId], references: [id], onDelete: Cascade)
-  submission   Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  strengths      String?    @db.Text
+  improvements   String?    @db.Text
+  evaluatedBy    String     @default("ai")
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  rubric         Rubric     @relation(fields: [rubricId], references: [id], onDelete: Cascade)
+  submission     Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
 
   @@unique([submissionId, rubricId])
   @@map("evaluations")
 }
 
 model ModuleActivity {
-  id            String   @id @default(cuid())
-  moduleId      String
-  title         String
-  activityType  String   @default("seminar")
-  date          DateTime
-  duration      Int?
+  id             String   @id @default(cuid())
+  moduleId       String
+  title          String
+  activityType   String   @default("seminar")
+  date           DateTime
+  duration       Int?
   targetAudience String?
-  description   String?  @db.Text
-  content       Json?
-  objectives    String[] @default([])
-  outcomes      String?  @db.Text
-  facilitator   String?
-  location      String?
-  studentCount  Int?
-  attachments   Json?
-  notes         String?  @db.Text
-  createdBy     String
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  module        Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  description    String?  @db.Text
+  content        Json?
+  objectives     String[] @default([])
+  outcomes       String?  @db.Text
+  facilitator    String?
+  location       String?
+  studentCount   Int?
+  attachments    Json?
+  notes          String?  @db.Text
+  createdBy      String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  module         Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
 
   @@index([moduleId, date])
   @@index([activityType])
@@ -433,23 +437,191 @@ model ModuleActivity {
 }
 
 model EmailLog {
-  id           String   @id @default(cuid())
-  studentId    String?
+  id             String   @id @default(cuid())
+  studentId      String?
   recipientEmail String
   recipientName  String
-  subject      String
-  body         String   @db.Text
-  sentBy       String
-  moduleCode   String?
-  status       String   @default("sent")
-  emailType    String   @default("general")
-  sentAt       DateTime @default(now())
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  student      Student? @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  subject        String
+  body           String   @db.Text
+  sentBy         String
+  moduleCode     String?
+  status         String   @default("sent")
+  emailType      String   @default("general")
+  sentAt         DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  student        Student? @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@index([studentId, sentAt])
   @@index([sentBy, sentAt])
   @@index([moduleCode, sentAt])
   @@map("email_logs")
+}
+
+model PlacementSite {
+  id             String                @id @default(cuid())
+  name           String
+  type           String                @default("hospital")
+  address        String?
+  city           String?
+  contactPerson  String?
+  contactEmail   String?
+  contactPhone   String?
+  capacity       Int?
+  department     String?
+  specialization String?
+  facilities     Json?
+  notes          String?               @db.Text
+  isActive       Boolean               @default(true)
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  assignments    PlacementAssignment[]
+  visits         SiteVisit[]
+
+  @@index([type, isActive])
+  @@map("placement_sites")
+}
+
+model PlacementAssignment {
+  id           String        @id @default(cuid())
+  studentId    String
+  siteId       String
+  moduleId     String?
+  startDate    DateTime
+  endDate      DateTime
+  weekNumber   Int?
+  rotationType String        @default("clinical")
+  shift        String?
+  mentor       String?
+  objectives   String[]      @default([])
+  status       String        @default("scheduled")
+  notes        String?       @db.Text
+  createdBy    String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  student      Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  site         PlacementSite @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  module       Module?       @relation(fields: [moduleId], references: [id])
+
+  @@index([studentId, startDate])
+  @@index([siteId, startDate])
+  @@index([status])
+  @@map("placement_assignments")
+}
+
+model SiteVisit {
+  id               String    @id @default(cuid())
+  siteId           String
+  visitDate        DateTime
+  visitTime        String?
+  visitedBy        String
+  purpose          String?
+  duration         Int?
+  generalNotes     String?   @db.Text
+  mentorFeedback   String?   @db.Text
+  areasOfConcern   String?   @db.Text
+  recommendations  String?   @db.Text
+  followUpRequired Boolean   @default(false)
+  followUpDate     DateTime?
+  attachments      Json?
+
+  // Signatures
+  instructorSignature     String?   @db.Text
+  instructorSignatureDate DateTime?
+  instructorName          String?
+  studentSignature        String?   @db.Text
+  studentSignatureDate    DateTime?
+
+  // Form status
+  status      String    @default("draft") // draft, completed, archived
+  completedAt DateTime?
+
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  site         PlacementSite   @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  studentNotes SiteVisitNote[]
+
+  @@index([siteId, visitDate])
+  @@index([visitedBy, visitDate])
+  @@index([status, completedAt])
+  @@map("site_visits")
+}
+
+model SiteVisitNote {
+  id                  String    @id @default(cuid())
+  visitId             String
+  studentId           String
+  performance         String?
+  competencies        Json?
+  strengths           String?   @db.Text
+  areasForDevelopment String?   @db.Text
+  mentorComments      String?   @db.Text
+  studentReflection   String?   @db.Text
+  grade               String?
+  skillsAssessed      String[]  @default([])
+  attendanceStatus    String    @default("present")
+  hoursCompleted      Float?
+  concerns            String?   @db.Text
+  actionItems         String?   @db.Text
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  visit               SiteVisit @relation(fields: [visitId], references: [id], onDelete: Cascade)
+  student             Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([visitId, studentId])
+  @@index([studentId, createdAt])
+  @@map("site_visit_notes")
+}
+
+model RecordOfDiscussion {
+  id                  String   @id @default(cuid())
+  studentId           String
+  discussionDate      DateTime
+  discussionTime      String
+  companyNameLocation String
+  conductorName       String
+  conductorRole       String   @default("HCT Mentor")
+
+  // Record of Discussion Fields
+  peoplePresent     String? @db.Text
+  discussedTopics   String? @db.Text
+  studentActions    String? @db.Text
+  evidenceAvailable String? @db.Text
+
+  // Follow-up Meeting
+  followUpAttendance String? @db.Text
+  attendanceRecorded Boolean @default(false)
+  attendanceSessions Int?    @default(0)
+
+  // Challenges at Hospital
+  challengesEncountered String? @db.Text
+
+  // Interesting Cases
+  interestingCases String? @db.Text
+
+  // Skills Completed
+  skillsCompleted Json?
+
+  // Discussion on SA2 Assessment
+  sa2Discussion String? @db.Text
+
+  // Assessment Criteria Met
+  assessmentCriteriaMet String? @db.Text
+
+  // Signatures
+  conductorSignature     String?   @db.Text
+  conductorSignatureDate DateTime?
+  studentSignature       String?   @db.Text
+  studentSignatureDate   DateTime?
+
+  // Metadata
+  createdBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId, discussionDate])
+  @@index([createdBy, discussionDate])
+  @@map("record_of_discussions")
 }
