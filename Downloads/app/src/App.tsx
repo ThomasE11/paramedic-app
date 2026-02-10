@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { CaseScenario, StudentYear, CaseSession } from '@/types';
-import { caseDatabase, getRandomCase, yearLevels, caseCategories, priorities } from '@/data/cases';
+import { allCases, getRandomCase, yearLevels, caseCategories, priorities } from '@/data/cases';
 import { CaseDisplay } from '@/components/CaseDisplay';
 import { AssessmentPanel } from '@/components/AssessmentPanel';
 import { SessionSummary } from '@/components/SessionSummary';
@@ -286,7 +286,7 @@ function App() {
                   {/* Stats */}
                   <div className="grid grid-cols-3 gap-4 pt-4 border-t">
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-primary">{caseDatabase.length}+</div>
+                      <div className="text-2xl font-bold text-primary">{allCases.length}+</div>
                       <div className="text-xs text-muted-foreground">Case Scenarios</div>
                     </div>
                     <div className="text-center">
@@ -324,7 +324,7 @@ function App() {
                         <div className={`mb-2 h-2 w-8 rounded-full ${cat.color}`} />
                         <p className="text-sm font-medium">{cat.label}</p>
                         <p className="text-xs text-muted-foreground">
-                          {caseDatabase.filter(c => c.category === cat.value).length} cases
+                          {allCases.filter(c => c.category === cat.value).length} cases
                         </p>
                       </CardContent>
                     </Card>

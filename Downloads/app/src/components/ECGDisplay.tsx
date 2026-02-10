@@ -60,8 +60,8 @@ export function ECGDisplayComponent({ ecg, show = true, onClose }: ECGDisplayPro
   };
 
   return (
-    <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-2 md:p-4 ${isFullscreen ? '!p-0' : ''}`}>
-      <div className={`bg-background w-full overflow-y-auto rounded-lg shadow-2xl ${isFullscreen ? 'h-screen w-screen max-w-none rounded-none' : 'max-w-7xl max-h-[95vh]'}`}>
+    <div className={`fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-2 md:p-4 ${isFullscreen ? '!p-0' : ''}`}>
+      <div className={`bg-background w-full overflow-y-auto rounded-lg shadow-2xl border ${isFullscreen ? 'h-screen w-screen max-w-none rounded-none border-0' : 'max-w-7xl max-h-[95vh]'}`}>
         {/* Header */}
         <div className="sticky top-0 z-10 bg-background border-b px-6 py-4 flex items-center justify-between rounded-t-lg">
           <div className="flex items-center gap-3">
