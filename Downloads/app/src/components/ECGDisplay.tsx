@@ -60,8 +60,8 @@ export function ECGDisplayComponent({ ecg, show = true, onClose }: ECGDisplayPro
   };
 
   return (
-    <div className={`fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-2 md:p-4 ${isFullscreen ? '!p-0' : ''}`}>
-      <div className={`bg-background w-full overflow-y-auto rounded-lg shadow-2xl border ${isFullscreen ? 'h-screen w-screen max-w-none rounded-none border-0' : 'max-w-7xl max-h-[95vh]'}`}>
+    <div className={`fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-sm ${isFullscreen ? '' : 'p-2 md:p-4'}`}>
+      <div className={`bg-background w-full flex flex-col shadow-2xl border ${isFullscreen ? 'h-screen w-screen max-w-none rounded-none border-0' : 'max-w-7xl max-h-[98vh] rounded-lg'}`}>
         {/* Header */}
         <div className="sticky top-0 z-10 bg-background border-b px-6 py-4 flex items-center justify-between rounded-t-lg">
           <div className="flex items-center gap-3">
@@ -99,10 +99,10 @@ export function ECGDisplayComponent({ ecg, show = true, onClose }: ECGDisplayPro
           </div>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
           {/* ECG Image Display */}
-          <Card className="overflow-hidden">
-            <CardContent className="p-0">
+          <Card className="overflow-hidden border-2">
+            <CardContent className="p-0 bg-black">
               {ecg.imageUrl ? (
                 <div className="relative">
                   <img
@@ -146,21 +146,21 @@ export function ECGDisplayComponent({ ecg, show = true, onClose }: ECGDisplayPro
           </Card>
 
           {/* Quick Info */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center p-3 bg-muted rounded-lg">
-              <div className="text-2xl font-bold text-primary">{ecg.interpretation.rate}</div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <div className="text-center p-2 bg-muted rounded-lg">
+              <div className="text-xl font-bold text-primary">{ecg.interpretation.rate}</div>
               <div className="text-xs text-muted-foreground">Rate (bpm)</div>
             </div>
-            <div className="text-center p-3 bg-muted rounded-lg">
-              <div className="text-lg font-bold">{ecg.interpretation.qrsDuration}</div>
-              <div className="text-xs text-muted-foreground">QRS Duration</div>
+            <div className="text-center p-2 bg-muted rounded-lg">
+              <div className="text-base font-bold">{ecg.interpretation.qrsDuration}</div>
+              <div className="text-xs text-muted-foreground">QRS</div>
             </div>
-            <div className="text-center p-3 bg-muted rounded-lg">
-              <div className="text-lg font-bold">{ecg.interpretation.rhythm}</div>
+            <div className="text-center p-2 bg-muted rounded-lg">
+              <div className="text-sm font-bold">{ecg.interpretation.rhythm}</div>
               <div className="text-xs text-muted-foreground">Rhythm</div>
             </div>
-            <div className="text-center p-3 bg-muted rounded-lg">
-              <div className="text-lg font-bold">{ecg.interpretation.stSegment}</div>
+            <div className="text-center p-2 bg-muted rounded-lg">
+              <div className="text-sm font-bold">{ecg.interpretation.stSegment}</div>
               <div className="text-xs text-muted-foreground">ST Segment</div>
             </div>
           </div>
@@ -168,13 +168,13 @@ export function ECGDisplayComponent({ ecg, show = true, onClose }: ECGDisplayPro
           {/* Clinical Context */}
           {ecg.clinicalContext && (
             <Card className="border-primary/20 bg-primary/5">
-              <CardHeader className="pb-3">
+              <CardHeader className="pb-2 px-4">
                 <CardTitle className="text-sm flex items-center gap-2">
                   <AlertCircle className="h-4 w-4 text-primary" />
                   Clinical Context
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="px-4">
                 <p className="text-sm">{ecg.clinicalContext}</p>
               </CardContent>
             </Card>
@@ -182,14 +182,14 @@ export function ECGDisplayComponent({ ecg, show = true, onClose }: ECGDisplayPro
 
           {/* Key Features */}
           <Card>
-            <CardHeader className="pb-3">
+            <CardHeader className="pb-2 px-4">
               <CardTitle className="text-sm flex items-center gap-2">
                 <Zap className="h-4 w-4 text-amber-500" />
                 Key ECG Features
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ul className="space-y-2">
+              <ul className="space-y-1.5">
                 {ecg.interpretation.keyFeatures.map((feature, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm">
                     <ChevronRight className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
@@ -202,14 +202,14 @@ export function ECGDisplayComponent({ ecg, show = true, onClose }: ECGDisplayPro
 
           {/* Teaching Points */}
           <Card>
-            <CardHeader className="pb-3">
+            <CardHeader className="pb-2 px-4">
               <CardTitle className="text-sm flex items-center gap-2">
                 <BookOpen className="h-4 w-4 text-primary" />
                 Teaching Points & Pearls
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ul className="space-y-3">
+              <ul className="space-y-2">
                 {ecg.teachingPoints.map((point, i) => (
                   <li key={i} className="flex gap-2 text-sm">
                     <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-medium">
@@ -225,14 +225,14 @@ export function ECGDisplayComponent({ ecg, show = true, onClose }: ECGDisplayPro
           {/* Management */}
           {ecg.management && ecg.management.length > 0 && (
             <Card className="border-red-200 dark:border-red-800">
-              <CardHeader className="pb-3">
+              <CardHeader className="pb-2 px-4">
                 <CardTitle className="text-sm flex items-center gap-2 text-red-600">
                   <AlertTriangle className="h-4 w-4" />
                   Management Actions
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <ul className="space-y-2">
+              <CardContent className="px-4">
+                <ul className="space-y-1.5">
                   {ecg.management.map((action, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm">
                       <Zap className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
@@ -249,10 +249,10 @@ export function ECGDisplayComponent({ ecg, show = true, onClose }: ECGDisplayPro
           {/* Differential Diagnosis */}
           {ecg.interpretation.differentialDiagnosis && (
             <Card>
-              <CardHeader className="pb-3">
+              <CardHeader className="pb-2 px-4">
                 <CardTitle className="text-sm">Differential Diagnosis</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="px-4">
                 <div className="flex flex-wrap gap-2">
                   {ecg.interpretation.differentialDiagnosis.map((dx, i) => (
                     <Badge key={i} variant="secondary" className="text-xs">
@@ -267,10 +267,10 @@ export function ECGDisplayComponent({ ecg, show = true, onClose }: ECGDisplayPro
           {/* Description */}
           {ecg.description && (
             <Card>
-              <CardHeader className="pb-3">
+              <CardHeader className="pb-2 px-4">
                 <CardTitle className="text-sm">Description</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="px-4">
                 <p className="text-sm text-muted-foreground">{ecg.description}</p>
               </CardContent>
             </Card>
@@ -278,7 +278,7 @@ export function ECGDisplayComponent({ ecg, show = true, onClose }: ECGDisplayPro
         </div>
 
         {/* Footer */}
-        <div className="border-t px-6 py-4 bg-muted/30 flex items-center justify-between">
+        <div className="border-t px-4 py-2 bg-muted/30 flex items-center justify-between flex-shrink-0">
           <p className="text-xs text-muted-foreground">
             Source: Life in the Fast Lane ECG Library
           </p>
