@@ -6,7 +6,7 @@
  * Includes fullscreen mode for teaching purposes
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -37,6 +37,18 @@ export function ECGDisplayComponent({ ecg, show = true, onClose }: ECGDisplayPro
     setIsFullscreen(!isFullscreen);
   };
 
+  // Scroll to top when modal opens
+  useEffect(() => {
+    if (show) {
+      const contentElement = document.getElementById('ecg-content-start');
+      if (contentElement) {
+        contentElement.scrollTop = 0;
+      }
+      // Also scroll the main window to top
+      window.scrollTo(0, 0);
+    }
+  }, [show]);
+
   if (!show || !ecg) {
     return null;
   }
@@ -60,8 +72,8 @@ export function ECGDisplayComponent({ ecg, show = true, onClose }: ECGDisplayPro
   };
 
   return (
-    <div className={`fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-sm ${isFullscreen ? '' : 'p-2 md:p-4'}`}>
-      <div className={`bg-background w-full flex flex-col shadow-2xl border ${isFullscreen ? 'h-screen w-screen max-w-none rounded-none border-0' : 'max-w-7xl max-h-[98vh] rounded-lg'}`}>
+    <div className={`fixed inset-0 z-50 bg-background/95 backdrop-blur-sm ${isFullscreen ? '' : 'p-2 md:p-4'}`}>
+      <div className={`bg-background w-full h-full flex flex-col shadow-2xl border ${isFullscreen ? 'h-screen w-screen max-w-none rounded-none border-0' : 'max-w-7xl max-h-screen rounded-lg mx-auto'}`}>
         {/* Header */}
         <div className="sticky top-0 z-10 bg-background border-b px-6 py-4 flex items-center justify-between rounded-t-lg">
           <div className="flex items-center gap-3">
@@ -99,7 +111,7 @@ export function ECGDisplayComponent({ ecg, show = true, onClose }: ECGDisplayPro
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4" id="ecg-content-start">
           {/* ECG Image Display */}
           <Card className="overflow-hidden border-2">
             <CardContent className="p-0 bg-black">
