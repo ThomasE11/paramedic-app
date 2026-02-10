@@ -3,6 +3,9 @@ import type { CaseScenario } from '@/types';
 // Import enhanced cases
 import { enhancedCaseDatabase } from './enhancedCases';
 
+// Import visual resources
+import { getTraumaResourcesByCondition } from './traumaVisualResources';
+
 // Helper function to create a case with enhanced structure
 const createCase = (caseData: Partial<CaseScenario> & { id: string; title: string }): CaseScenario => ({
   version: 1,
@@ -1078,7 +1081,8 @@ export const caseDatabase: CaseScenario[] = [
       'Address catastrophic hemorrhage before airway in exsanguination',
       'TXA within 3 hours of injury',
       'Rapid transport to trauma center - load and go'
-    ]
+    ],
+    visualResources: getTraumaResourcesByCondition('multi-trauma polytrauma chest hemothorax pneumothorax')
   }),
 
   createCase({
@@ -1187,7 +1191,8 @@ export const caseDatabase: CaseScenario[] = [
       'Blown pupil indicates uncal herniation',
       'Cushing triad: hypertension, bradycardia, irregular breathing',
       'Rapid transport to neurosurgical center'
-    ]
+    ],
+    visualResources: getTraumaResourcesByCondition('head injury TBI brain skull fracture')
   }),
 
   createCase({
@@ -1296,7 +1301,8 @@ export const caseDatabase: CaseScenario[] = [
       'If tension develops, remove dressing temporarily',
       'Position injured side down if possible',
       'Rapid transport to trauma center'
-    ]
+    ],
+    visualResources: getTraumaResourcesByCondition('penetrating chest trauma pneumothorax hemothorax tamponade')
   }),
 
   // ==================== NEUROLOGICAL CASES (6 cases) ====================

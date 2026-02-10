@@ -380,6 +380,9 @@ export interface CaseScenario {
   // References
   references?: string[];
 
+  // Visual Resources for Teaching
+  visualResources?: VisualResources;
+
   // Metadata
   createdAt: string;
   updatedAt: string;
@@ -606,4 +609,31 @@ export interface ModuleLearningOutcomes {
   outcomes: LearningOutcome[];
   prerequisites?: string[];
   resources: string[];
+}
+
+// ============================================================================
+// VISUAL RESOURCES TYPES
+// ============================================================================
+
+export interface VisualResource {
+  id: string;
+  type: 'image' | 'video' | 'article' | 'infographic' | 'animation' | 'podcast' | 'case-study';
+  title: string;
+  url: string;
+  thumbnail?: string;
+  source: string;
+  caption?: string;
+  duration?: string;
+  category?: string;
+  relevance: 'essential' | 'important' | 'supplementary';
+  tags?: string[];
+}
+
+export interface VisualResources {
+  images?: VisualResource[];
+  videos?: VisualResource[];
+  articles?: VisualResource[];
+  procedures?: VisualResource[];
+  assessment?: VisualResource[];
+  management?: VisualResource[];
 }

@@ -8,7 +8,8 @@ import {
   Phone, MapPin, Clock, User, Users, AlertTriangle,
   Activity, Eye, Stethoscope,
   Pill, History, Utensils, FileText, Thermometer,
-  Droplets, Wind, Heart, Brain, Zap
+  Droplets, Wind, Heart, Brain, Zap,
+  Image, Video, FileText as FileTextIcon, ExternalLink, Play, X
 } from 'lucide-react';
 import { getECGForCase } from '@/data/litflECGs';
 import { ECGDisplayComponent, EmergencyECGQuickRef } from './ECGDisplay';
@@ -57,6 +58,10 @@ function shouldShowDetail(
 export function CaseDisplay({ caseData, studentYear = '3rd-year' }: CaseDisplayProps) {
   // ECG Display state
   const [showECGModal, setShowECGModal] = useState(false);
+
+  // Visual Resources state
+  const [showVisualResources, setShowVisualResources] = useState(false);
+  const [selectedResource, setSelectedResource] = useState<{type: string; url: string; title: string} | null>(null);
 
   // Memoize detail visibility checks
   const showDetailedFindings = useMemo(() =>
@@ -613,6 +618,209 @@ export function CaseDisplay({ caseData, studentYear = '3rd-year' }: CaseDisplayP
           show={showECGModal}
           onClose={() => setShowECGModal(false)}
         />
+      )}
+
+      {/* Visual Resources - For trauma cases */}
+      {caseData.visualResources && (
+        <Card className="border-l-4 border-l-purple-500 bg-purple-50/50 dark:bg-purple-950/20">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2 text-lg text-purple-600 dark:text-purple-400">
+                <Image className="h-5 w-5" />
+                Visual Resources & Learning Materials
+              </CardTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowVisualResources(!showVisualResources)}
+              >
+                {showVisualResources ? 'Hide' : 'Show'}
+              </Button>
+            </div>
+          </CardHeader>
+          {showVisualResources && (
+            <CardContent className="space-y-4">
+              {/* Images */}
+              {caseData.visualResources.images && caseData.visualResources.images.length > 0 && (
+                <div>
+                  <div className="mb-2 flex items-center gap-2">
+                    <Image className="h-4 w-4 text-purple-600" />
+                    <p className="text-sm font-medium">Clinical Images & X-Rays</p>
+                    <Badge variant="outline" className="text-xs">{caseData.visualResources.images.length}</Badge>
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                    {caseData.visualResources.images.map((img) => (
+                      <a
+                        key={img.id}
+                        href={img.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group flex items-center gap-2 rounded-lg border bg-background p-2 text-sm transition-colors hover:bg-purple-100 dark:hover:bg-purple-900/30"
+                      >
+                        <Image className="h-8 w-8 flex-shrink-0 text-purple-500" />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-medium">{img.title}</p>
+                          <p className="truncate text-xs text-muted-foreground">{img.source}</p>
+                        </div>
+                        <ExternalLink className="h-4 w-4 flex-shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Videos */}
+              {caseData.visualResources.videos && caseData.visualResources.videos.length > 0 && (
+                <div>
+                  <div className="mb-2 flex items-center gap-2">
+                    <Video className="h-4 w-4 text-red-600" />
+                    <p className="text-sm font-medium">Procedure Videos</p>
+                    <Badge variant="outline" className="text-xs">{caseData.visualResources.videos.length}</Badge>
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {caseData.visualResources.videos.map((vid) => (
+                      <a
+                        key={vid.id}
+                        href={vid.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group flex items-center gap-2 rounded-lg border bg-background p-2 text-sm transition-colors hover:bg-red-50 dark:hover:bg-red-900/30"
+                      >
+                        <Play className="h-8 w-8 flex-shrink-0 text-red-500" />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-medium">{vid.title}</p>
+                          <p className="truncate text-xs text-muted-foreground">{vid.source} {vid.duration && `• ${vid.duration}`}</p>
+                        </div>
+                        <ExternalLink className="h-4 w-4 flex-shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Articles */}
+              {caseData.visualResources.articles && caseData.visualResources.articles.length > 0 && (
+                <div>
+                  <div className="mb-2 flex items-center gap-2">
+                    <FileTextIcon className="h-4 w-4 text-blue-600" />
+                    <p className="text-sm font-medium">Reference Articles</p>
+                    <Badge variant="outline" className="text-xs">{caseData.visualResources.articles.length}</Badge>
+                  </div>
+                  <div className="space-y-2">
+                    {caseData.visualResources.articles.slice(0, 5).map((article) => (
+                      <a
+                        key={article.id}
+                        href={article.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group flex items-start gap-2 rounded-lg border bg-background p-2 text-sm transition-colors hover:bg-blue-50 dark:hover:bg-blue-900/30"
+                      >
+                        <FileTextIcon className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-500" />
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium">{article.title}</p>
+                          <p className="text-xs text-muted-foreground">{article.source}</p>
+                        </div>
+                        <ExternalLink className="h-4 w-4 flex-shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
+                      </a>
+                    ))}
+                    {caseData.visualResources.articles.length > 5 && (
+                      <p className="text-center text-xs text-muted-foreground">
+                        +{caseData.visualResources.articles.length - 5} more articles available
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Assessment Resources */}
+              {caseData.visualResources.assessment && caseData.visualResources.assessment.length > 0 && (
+                <div>
+                  <div className="mb-2 flex items-center gap-2">
+                    <Stethoscope className="h-4 w-4 text-green-600" />
+                    <p className="text-sm font-medium">Assessment Tools & Algorithms</p>
+                    <Badge variant="outline" className="text-xs">{caseData.visualResources.assessment.length}</Badge>
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                    {caseData.visualResources.assessment.map((res) => (
+                      <a
+                        key={res.id}
+                        href={res.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group flex items-center gap-2 rounded-lg border bg-background p-2 text-sm transition-colors hover:bg-green-50 dark:hover:bg-green-900/30"
+                      >
+                        <Stethoscope className="h-8 w-8 flex-shrink-0 text-green-500" />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-medium">{res.title}</p>
+                          <p className="truncate text-xs text-muted-foreground">{res.source}</p>
+                        </div>
+                        <ExternalLink className="h-4 w-4 flex-shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Procedures */}
+              {caseData.visualResources.procedures && caseData.visualResources.procedures.length > 0 && (
+                <div>
+                  <div className="mb-2 flex items-center gap-2">
+                    <Zap className="h-4 w-4 text-amber-600" />
+                    <p className="text-sm font-medium">Procedure Guides</p>
+                    <Badge variant="outline" className="text-xs">{caseData.visualResources.procedures.length}</Badge>
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {caseData.visualResources.procedures.map((proc) => (
+                      <a
+                        key={proc.id}
+                        href={proc.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group flex items-center gap-2 rounded-lg border bg-background p-2 text-sm transition-colors hover:bg-amber-50 dark:hover:bg-amber-900/30"
+                      >
+                        <Play className="h-8 w-8 flex-shrink-0 text-amber-500" />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-medium">{proc.title}</p>
+                          <p className="truncate text-xs text-muted-foreground">{proc.source}</p>
+                        </div>
+                        <ExternalLink className="h-4 w-4 flex-shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Management */}
+              {caseData.visualResources.management && caseData.visualResources.management.length > 0 && (
+                <div>
+                  <div className="mb-2 flex items-center gap-2">
+                    <Brain className="h-4 w-4 text-cyan-600" />
+                    <p className="text-sm font-medium">Management Algorithms</p>
+                    <Badge variant="outline" className="text-xs">{caseData.visualResources.management.length}</Badge>
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {caseData.visualResources.management.map((mgmt) => (
+                      <a
+                        key={mgmt.id}
+                        href={mgmt.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group flex items-center gap-2 rounded-lg border bg-background p-2 text-sm transition-colors hover:bg-cyan-50 dark:hover:bg-cyan-900/30"
+                      >
+                        <FileTextIcon className="h-8 w-8 flex-shrink-0 text-cyan-500" />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-medium">{mgmt.title}</p>
+                          <p className="truncate text-xs text-muted-foreground">{mgmt.source}</p>
+                        </div>
+                        <ExternalLink className="h-4 w-4 flex-shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          )}
+        </Card>
       )}
     </div>
   );
