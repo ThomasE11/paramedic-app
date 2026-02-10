@@ -1,0 +1,609 @@
+// Student Year Levels
+export type StudentYear = '2nd-year' | '3rd-year' | '4th-year' | 'diploma';
+
+// Case Categories - Expanded with Subcategories
+export type CaseCategory =
+  | 'cardiac'
+  | 'respiratory'
+  | 'trauma'
+  | 'neurological'
+  | 'metabolic'
+  | 'environmental'
+  | 'psychiatric'
+  | 'obstetric'
+  | 'pediatric'
+  | 'general'
+  | 'post-discharge'
+  | 'anxiety-related'
+  | 'rule-out'
+  | 'elderly-fall'
+  | 'toxicology'
+  | 'obstetrics-gynecology'
+  | 'burns'
+  | 'multiple-patients'
+  | 'disaster'
+  | 'clinical-procedures'
+  | 'thoracic'
+  | 'critical-care'
+  | 'cardiac-ecg'
+  | 'toxicological'
+  | 'procedural';
+
+// Cardiac Subcategories
+export type CardiacSubcategory =
+  | 'stem-anterior'
+  | 'stem-inferior'
+  | 'stem-lateral'
+  | 'stem-posterior'
+  | 'nstemi'
+  | 'unstable-angina'
+  | 'cardiac-arrest'
+  | 'arrhythmia-af'
+  | 'arrhythmia-flutter'
+  | 'arrhythmia-svt'
+  | 'arrhythmia-vt'
+  | 'heart-failure'
+  | 'cardiomyopathy'
+  | 'valvular'
+  | 'pericardial'
+  | 'aortic-dissection';
+
+// Respiratory Subcategories
+export type RespiratorySubcategory =
+  | 'asthma'
+  | 'copd'
+  | 'pneumothorax-tension'
+  | 'pneumothorax-simple'
+  | 'hemothorax'
+  | 'hemopneumothorax'
+  | 'pulmonary-embolism'
+  | 'pneumonia'
+  | 'ards'
+  | 'upper-airway-obstruction';
+
+// Trauma Subcategories
+export type TraumaSubcategory =
+  | 'blunt-chest'
+  | 'penetrating-chest'
+  | 'flail-chest'
+  | 'cardiac-tamponade-trauma'
+  | 'traumatic-brain-injury'
+  | 'spinal-cord-injury'
+  | 'pelvic-fracture'
+  | 'long-bone-fracture'
+  | 'massive-hemorrhage'
+  | 'polytrauma'
+  | 'burns-thermal'
+  | 'burns-electrical'
+  | 'blast-injury';
+
+// Thoracic Subcategories (Critical Care)
+export type ThoracicSubcategory =
+  | 'cardiac-tamponade'
+  | 'tension-pneumothorax'
+  | 'massive-hemothorax'
+  | 'flail-chest-thoracic'
+  | 'traumatic-aortic-injury'
+  | 'diaphragmatic-rupture'
+  | 'esophageal-injury'
+  | 'bronchial-injury';
+
+// Case Priority
+export type CasePriority = 'critical' | 'high' | 'moderate' | 'low';
+
+// Case Complexity Level - Enhanced
+export type ComplexityLevel = 'basic' | 'intermediate' | 'advanced' | 'expert';
+
+// Detail Level for Progressive Disclosure
+export type DetailLevel = 'minimal' | 'standard' | 'detailed' | 'comprehensive';
+
+// Critical Action - Must-pass items
+export interface CriticalAction {
+  id: string;
+  description: string;
+  failureReason: string;
+  timeframe?: string;
+  consequence?: string;
+  alternativeActions?: string[];
+}
+
+// Time of Day
+export type TimeOfDay =
+  | 'early-morning'
+  | 'morning'
+  | 'afternoon'
+  | 'evening';
+
+// Gender
+export type Gender = 'male' | 'female';
+
+// Detailed Intervention
+export interface Intervention {
+  id: string;
+  description: string;
+  indication: string;
+  contraindications?: string[];
+  dosage?: string;
+  route?: string;
+  expectedOutcome?: string;
+  monitoring?: string[];
+  complications?: string[];
+}
+
+// ABCDE Assessment - Enhanced with more detail
+export interface ABCDEAssessment {
+  airway: {
+    patent: boolean;
+    findings: string[];
+    interventions: string[];
+    adjunctsNeeded?: string[];
+    difficulty?: string;
+  };
+  breathing: {
+    rate: number;
+    rhythm: string;
+    depth: string;
+    spo2: number;
+    findings: string[];
+    interventions: string[];
+    auscultation?: string[];
+    percussion?: string[];
+  };
+  circulation: {
+    pulseRate: number;
+    pulseQuality: string;
+    bp: { systolic: number; diastolic: number };
+    capillaryRefill: number;
+    skin: string;
+    findings: string[];
+    interventions: string[];
+    ecgFindings?: string[];
+    ivAccess?: string[];
+  };
+  disability: {
+    avpu: 'A' | 'V' | 'P' | 'U';
+    gcs: { eye: number; verbal: number; motor: number; total: number };
+    pupils: string;
+    bloodGlucose?: number;
+    findings: string[];
+    interventions: string[];
+    focalDeficits?: string[];
+    seizureActivity?: string;
+  };
+  exposure: {
+    temperature?: number;
+    findings: string[];
+    interventions: string[];
+    wounds?: string[];
+    rashes?: string[];
+    deformities?: string[];
+  };
+}
+
+// Secondary Survey - Enhanced
+export interface SecondarySurvey {
+  head: string[];
+  neck: string[];
+  chest: string[];
+  abdomen: string[];
+  pelvis: string[];
+  extremities: string[];
+  posterior: string[];
+  neurological: string[];
+  // Additional detail fields
+  headDetailed?: {
+    scalp: string[];
+    face: string[];
+    eyes: string[];
+    ears: string[];
+    nose: string[];
+    mouth: string[];
+  };
+  spine?: string[];
+}
+
+// Medication - Enhanced
+export interface Medication {
+  name: string;
+  dose: string;
+  frequency: string;
+  indication: string;
+  route?: string;
+  sideEffects?: string[];
+  interactions?: string[];
+}
+
+// Social History
+export interface SocialHistory {
+  smoking?: string;
+  alcohol?: string;
+  drugs?: string;
+  occupation?: string;
+  livingSituation?: string;
+  supportSystem?: string;
+}
+
+// Family History
+export interface FamilyHistory {
+  conditions: string[];
+  relevantToPresentation?: string[];
+}
+
+// Patient History - Enhanced
+export interface PatientHistory {
+  medications: Medication[];
+  allergies: string[];
+  medicalConditions: string[];
+  surgicalHistory: string[];
+  lastMeal: string;
+  eventsLeading: string;
+  socialHistory?: SocialHistory;
+  familyHistory?: FamilyHistory;
+  previousSimilarEpisodes?: string[];
+  immunizations?: string[];
+}
+
+// Investigation/Procedure
+export interface Investigation {
+  name: string;
+  indication: string;
+  findings?: string;
+  interpretation?: string;
+  urgency: 'immediate' | 'urgent' | 'routine';
+}
+
+// Student Expectation/Checklist Item - Enhanced
+export interface ChecklistItem {
+  id: string;
+  category: 'abcde' | 'secondary' | 'history' | 'intervention' | 'communication' | 'documentation' |
+  'safety' | 'procedural' | 'medication' | 'equipment' | 'clinical-reasoning' | 'team-lead';
+  description: string;
+  points: number;
+  yearLevel: StudentYear[];
+  complexity: ComplexityLevel[];
+  critical?: boolean;
+  timeframe?: string;
+  details?: string[];
+  rationale?: string;
+  commonErrors?: string[];
+  hints?: string[];
+}
+
+// Case Variation - Different presentations of same condition
+export interface CaseVariation {
+  id: string;
+  name: string;
+  description: string;
+  difficultyModifier: number;
+  changes: {
+    presentation?: Partial<CaseScenario['initialPresentation']>;
+    vitals?: Partial<VitalSigns>;
+    findings?: Partial<CaseScenario['expectedFindings']>;
+  };
+}
+
+// Case Scenario - Enhanced
+export interface CaseScenario {
+  id: string;
+  title: string;
+  category: CaseCategory;
+  priority: CasePriority;
+  complexity: ComplexityLevel;
+  yearLevels: StudentYear[];
+  estimatedDuration?: number;
+  criticalActions?: CriticalAction[];
+
+  // Variations
+  variations?: CaseVariation[];
+
+  // Dispatch Information
+  dispatchInfo: {
+    callReason: string;
+    timeOfDay: TimeOfDay;
+    location: string;
+    callerInfo: string;
+    dispatchCode?: string;
+    additionalInfo?: string[];
+  };
+
+  // Patient Information
+  patientInfo: {
+    age: number;
+    gender: Gender;
+    weight: number;
+    occupation?: string;
+    language: string;
+    culturalConsiderations?: string[];
+  };
+
+  // Scene Information
+  sceneInfo: {
+    description: string;
+    hazards: string[];
+    bystanders: string;
+    environment: string;
+    accessIssues?: string[];
+    extricationNeeded?: boolean;
+  };
+
+  // Initial Presentation
+  initialPresentation: {
+    generalImpression: string;
+    position: string;
+    appearance: string;
+    consciousness: string;
+    odor?: string[];
+    sounds?: string[];
+  };
+
+  // Assessments
+  abcde: ABCDEAssessment;
+  secondarySurvey: SecondarySurvey;
+  history: PatientHistory;
+  investigations?: Investigation[];
+
+  // Vital Signs Progression
+  vitalSignsProgression: {
+    initial: VitalSigns;
+    afterIntervention?: VitalSigns;
+    enRoute?: VitalSigns;
+    deterioration?: VitalSigns;
+  };
+
+  // Expected Findings for Instructor
+  expectedFindings: {
+    keyObservations: string[];
+    redFlags: string[];
+    differentialDiagnoses: string[];
+    mostLikelyDiagnosis: string;
+    supportingEvidence?: string[];
+    contradictingEvidence?: string[];
+  };
+
+  // Management Pathway
+  managementPathway?: {
+    immediate: string[];
+    definitive: string[];
+    monitoring: string[];
+    transportConsiderations?: string[];
+  };
+
+  // Student Checklist
+  studentChecklist: ChecklistItem[];
+
+  // Teaching Points
+  teachingPoints: string[];
+
+  // Pitfalls
+  commonPitfalls?: string[];
+
+  // References
+  references?: string[];
+
+  // Metadata
+  createdAt: string;
+  updatedAt: string;
+  version: number;
+  author?: string;
+  reviewedBy?: string[];
+}
+
+// Vital Signs
+export interface VitalSigns {
+  time?: string;
+  bp: string;
+  pulse: number;
+  respiration: number;
+  spo2: number;
+  temperature?: number;
+  gcs?: number;
+  bloodGlucose?: number;
+  etco2?: number;
+  painScore?: number;
+}
+
+// Generated Case Session - Enhanced
+export interface CaseSession {
+  id: string;
+  caseId: string;
+  variationId?: string;
+  studentYear: StudentYear;
+  generatedAt: string;
+  completedItems: string[];
+  notes: string;
+  score: number;
+  totalPossible: number;
+  instructorName?: string;
+  studentName?: string;
+  startTime?: string;
+  endTime?: string;
+  timeTaken?: number;
+  interventionsPerformed?: string[];
+}
+
+// Filter Options
+export interface CaseFilter {
+  yearLevel?: StudentYear;
+  category?: CaseCategory;
+  priority?: CasePriority;
+  complexity?: ComplexityLevel;
+  searchQuery?: string;
+  duration?: 'short' | 'medium' | 'long';
+}
+
+// Case Summary for Display
+export interface CaseSummary {
+  id: string;
+  title: string;
+  category: CaseCategory;
+  priority: CasePriority;
+  complexity: ComplexityLevel;
+  patientAge: number;
+  patientGender: Gender;
+  dispatchReason: string;
+  suitableFor: StudentYear[];
+  estimatedDuration?: number;
+  hasVariations?: boolean;
+}
+
+// Progress Tracking
+export interface StudentProgress {
+  studentId: string;
+  totalCases: number;
+  averageScore: number;
+  casesByCategory: Record<CaseCategory, number>;
+  improvementTrend: 'improving' | 'stable' | 'declining';
+  weakAreas: string[];
+  strongAreas: string[];
+}
+
+// Case Statistics
+export interface CaseStatistics {
+  caseId: string;
+  timesUsed: number;
+  averageScore: number;
+  averageCompletionTime: number;
+  mostMissedItems: string[];
+  difficultyRating: number;
+}
+
+// ============================================================================
+// ECG TYPES
+// ============================================================================
+
+export interface ECGFinding {
+  location: string;
+  description: string;
+  significance: 'critical' | 'important' | 'supportive';
+}
+
+export interface ECGInterpretation {
+  rhythm: string;
+  rate: number;
+  axis: string;
+  prInterval: string;
+  qrsDuration: string;
+  qtInterval: string;
+  stSegment: string;
+  tWave: string;
+  other?: string[];
+}
+
+export interface ECGCase {
+  id: string;
+  title: string;
+  category: 'STEMI' | 'NSTEMI' | 'Arrhythmia' | 'Conduction' | 'Metabolic' | 'Toxic' | 'Normal';
+  interpretation: ECGInterpretation;
+  keyFindings: ECGFinding[];
+  clinicalContext: string;
+  differentials: string[];
+  teachingPoints: string[];
+  pitfalls: string[];
+  associatedConditions: string[];
+  referenceUrl?: string;
+}
+
+// ============================================================================
+// CLINICAL GUIDELINES TYPES
+// ============================================================================
+
+export interface GuidelineReference {
+  id: string;
+  source: 'ATLS' | 'ACLS' | 'ERC' | 'ILCOR' | 'RCUK' | 'AHA' | 'JRCALC' | 'ALS';
+  title: string;
+  year: number;
+  url?: string;
+  keyPoints: string[];
+}
+
+export interface GuidelineChecklistItem {
+  guidelineId: string;
+  requirement: string;
+  timeframe?: string;
+  criticalAction: boolean;
+  rationale: string;
+  commonErrors: string[];
+  evidenceLevel: 'A' | 'B' | 'C' | 'Expert Opinion';
+}
+
+// ============================================================================
+// ENHANCED CHECKLIST TYPES
+// ============================================================================
+
+export type ChecklistCategory =
+  | 'abcde'
+  | 'secondary'
+  | 'history'
+  | 'intervention'
+  | 'communication'
+  | 'documentation'
+  | 'safety'
+  | 'procedural'
+  | 'medication'
+  | 'equipment'
+  | 'clinical-reasoning'
+  | 'team-lead'
+  | 'neurological-assessment'
+  | 'perfusion-assessment'
+  | 'ecg-interpretation'
+  | 'guideline-adherence';
+
+export interface EnhancedChecklistItem {
+  id: string;
+  category: ChecklistCategory;
+  description: string;
+  points: number;
+  yearLevel: StudentYear[];
+  complexity: ComplexityLevel[];
+  critical?: boolean;
+  timeframe?: string;
+  details?: string[];
+  rationale?: string;
+  commonErrors?: string[];
+  hints?: string[];
+  guidelineReference?: string;
+  assessmentTechnique?: string;
+  expectedFindings?: string[];
+  abnormalFindings?: string[];
+}
+
+// ============================================================================
+// SUBCATEGORY TYPES
+// ============================================================================
+
+export interface CaseSubcategory {
+  id: string;
+  category: CaseCategory;
+  subcategory: string;
+  label: string;
+  description: string;
+  icon?: string;
+  color: string;
+  caseCount: number;
+}
+
+export interface SubcategoryFilter {
+  category: CaseCategory;
+  subcategory?: string;
+}
+
+// ============================================================================
+// LEARNING OUTCOME TYPES
+// ============================================================================
+
+export interface LearningOutcome {
+  id: string;
+  category: string;
+  outcome: string;
+  criteria: string[];
+  assessmentMethods: string[];
+  yearLevel: StudentYear[];
+}
+
+export interface ModuleLearningOutcomes {
+  moduleId: string;
+  moduleName: string;
+  outcomes: LearningOutcome[];
+  prerequisites?: string[];
+  resources: string[];
+}
