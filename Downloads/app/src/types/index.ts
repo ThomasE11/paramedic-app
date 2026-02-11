@@ -205,9 +205,9 @@ export interface SecondarySurvey {
 // Medication - Enhanced
 export interface Medication {
   name: string;
-  dose: string;
-  frequency: string;
-  indication: string;
+  dose?: string;
+  frequency?: string;
+  indication?: string;
   route?: string;
   sideEffects?: string[];
   interactions?: string[];

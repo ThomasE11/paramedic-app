@@ -1469,7 +1469,7 @@ export const moreTraumaCases: CaseScenario[] = [
         pupils: ['Right dilated 6mm non-reactive', 'Left 4mm sluggish'],
         findings: ['Uncal herniation signs', 'Dilated fixed pupil = blowout'],
         interventions: ['Protect spine', 'Hyperventilate if herniating', 'Elevate head 30°'],
-        focalNeurology: ['Left-sided weakness', 'Extensor posturing']
+          focalNeurology: ['Left-sided weakness', 'Extensor posturing']
       },
       exposure: {
         findings: ['Large scalp laceration parietal region', 'Battle\'s sign present', 'Raccoon eyes developing', 'CSF otorrhea right ear'],
