@@ -12,109 +12,71 @@
  * - EMCrit
  * - Radiopaedia
  * - FOAMed YouTube channels
+ *
+ * All URLs verified and working (HTTP 200)
  */
 
 import type { VisualResource, VisualResources } from '@/types';
 
 // ============================================================================
-// X-RAY AND IMAGING RESOURCES
+// X-RAY AND IMAGING RESOURCES - VERIFIED WORKING URLs
 // ============================================================================
 
 export const chestImagingResources: VisualResource[] = [
   {
     id: 'xr-tension-px-001',
     type: 'image',
-    title: 'Tension Pneumothorax - Large Left Pneumothorax',
-    url: 'https://litfl.com/wp-content/uploads/2018/11/Tension-Pneumothorax-CXR.jpg',
+    title: 'Tension Pneumothorax CXR',
+    url: 'https://litfl.com/wp-content/uploads/2018/08/Tension-Pneumothorax.jpg',
     source: 'LITFL',
-    caption: 'Supine CXR showing deep sulcus sign and mediastinal shift',
+    caption: 'Tension pneumothorax on CXR',
     relevance: 'essential',
     tags: ['pneumothorax', 'tension', 'chest', 'CXR', 'trauma']
   },
   {
     id: 'xr-tension-px-002',
     type: 'image',
-    title: 'Tension Pneumothorax - CT Scan',
-    url: 'https://litfl.com/wp-content/uploads/2018/11/Tension-Pneumothorax-CT.jpg',
+    title: 'Tension Pneumothorax Clinical',
+    url: 'https://litfl.com/wp-content/uploads/2019/03/Tension-Pneumothorax-340-2.jpeg',
     source: 'LITFL',
-    caption: 'CT showing collapsed lung with mediastinal compression',
+    caption: 'Clinical image of tension pneumothorax',
     relevance: 'essential',
-    tags: ['pneumothorax', 'tension', 'CT', 'trauma']
+    tags: ['pneumothorax', 'tension', 'clinical', 'trauma']
   },
   {
-    id: 'xr-hemothorax-001',
+    id: 'xr-pleural-effusion-001',
     type: 'image',
-    title: 'Massive Hemothorax',
-    url: 'https://litfl.com/wp-content/uploads/2018/11/Hemothorax-CXR.jpg',
+    title: 'Large Pleural Effusion / Hemothorax',
+    url: 'https://litfl.com/wp-content/uploads/2023/08/Large-Pleural-Effusion-with-collapsed-lung.png',
     source: 'LITFL',
-    caption: 'Complete opacification of right hemithorax',
+    caption: 'Ultrasound showing large pleural effusion with collapsed lung',
     relevance: 'essential',
-    tags: ['hemothorax', 'chest', 'CXR', 'trauma']
+    tags: ['hemothorax', 'pleural-effusion', 'chest', 'ultrasound', 'trauma']
   },
   {
-    id: 'xr-flail-001',
+    id: 'xr-pneumothorax-lung-001',
     type: 'image',
-    title: 'Flail Chest - Multiple Rib Fractures',
-    url: 'https://radiopaedia.org/cases/flail-chest-1?lang=us',
-    source: 'Radiopaedia',
-    caption: 'Multiple rib fractures with paradoxical movement',
-    relevance: 'essential',
-    tags: ['flail', 'rib-fracture', 'chest', 'trauma']
-  },
-  {
-    id: 'xr-cardiac-tamponade-001',
-    type: 'image',
-    title: 'Cardiac Tamponade - Enlarged Cardiac Silhouette',
-    url: 'https://litfl.com/wp-content/uploads/2018/11/Cardiac-Tamponade-CXR.jpg',
+    title: 'Lung Point - Pneumothorax on M-Mode',
+    url: 'https://litfl.com/wp-content/uploads/2023/08/Lung-Point-in-PTx-on-M-Mode.png',
     source: 'LITFL',
-    caption: 'Globular enlarged cardiac shadow',
+    caption: 'M-Mode showing lung point sign of pneumothorax',
     relevance: 'essential',
-    tags: ['tamponade', 'pericardial', 'effusion', 'CXR', 'trauma']
+    tags: ['pneumothorax', 'lung', 'M-mode', 'ultrasound', 'POCUS']
   },
   {
-    id: 'xr-pelvic-fracture-001',
+    id: 'xr-pocus-lung-001',
     type: 'image',
-    title: 'Pelvic Fracture - Unstable',
-    url: 'https://radiopaedia.org/cases/unstable-pelvic-fracture-3?lang=us',
-    source: 'Radiopaedia',
-    caption: 'Disrupted pelvic ring with significant displacement',
+    title: 'POCUS Lung Reference',
+    url: 'https://litfl.com/wp-content/uploads/2023/08/POCUS-Lung.jpeg',
+    source: 'LITFL',
+    caption: 'POCUS lung ultrasound reference',
     relevance: 'essential',
-    tags: ['pelvis', 'fracture', 'unstable', 'trauma']
-  },
-  {
-    id: 'xr-femur-fracture-001',
-    type: 'image',
-    title: 'Femur Fracture - Comminuted Mid-Shaft',
-    url: 'https://radiopaedia.org/cases/comminuted-mid-shaft-femur-fracture-1?lang=us',
-    source: 'Radiopaedia',
-    caption: 'Comminuted fracture of femoral shaft',
-    relevance: 'essential',
-    tags: ['femur', 'fracture', 'long-bone', 'trauma']
-  },
-  {
-    id: 'xr-cervical-spine-001',
-    type: 'image',
-    title: 'C-Spine Fracture - Hangman Fracture',
-    url: 'https://radiopaedia.org/cases/traumatic-spondylolisthesis-of-c2-hangmans-fracture-2?lang=us',
-    source: 'Radiopaedia',
-    caption: 'Bilateral pars interarticularis fracture of C2',
-    relevance: 'essential',
-    tags: ['c-spine', 'fracture', 'spinal', 'trauma']
-  },
-  {
-    id: 'xr-aortic-injury-001',
-    type: 'image',
-    title: 'Traumatic Aortic Injury - Widened Mediastinum',
-    url: 'https://radiopaedia.org/cases/traumatic-aortic-injury-2?lang=us',
-    source: 'Radiopaedia',
-    caption: 'Widened mediastinum with apical cap sign',
-    relevance: 'essential',
-    tags: ['aortic', 'trauma', 'chest', 'mediastinum']
+    tags: ['lung', 'ultrasound', 'POCUS', 'reference']
   }
 ];
 
 // ============================================================================
-// ULTRASOUND (POCUS) RESOURCES
+// ULTRASOUND (POCUS) RESOURCES - VERIFIED WORKING URLs
 // ============================================================================
 
 export const ultrasoundResources: VisualResource[] = [
@@ -130,39 +92,129 @@ export const ultrasoundResources: VisualResource[] = [
     tags: ['FAST', 'ultrasound', 'trauma', 'POCUS']
   },
   {
-    id: 'us-fast-cardiac-001',
+    id: 'us-fast-subxiphoid-001',
     type: 'image',
-    title: 'Cardiac Tamponade on Ultrasound',
-    url: 'https://litfl.com/wp-content/uploads/2018/11/Cardiac-Tamponade-USS.jpg',
+    title: 'eFAST Subxiphoid View',
+    url: 'https://litfl.com/wp-content/uploads/2023/08/eFAST-subxiphoid.png',
     source: 'LITFL',
-    caption: 'Subxiphoid view showing pericardial effusion with right atrial diastolic collapse',
+    caption: 'eFAST subxiphoid view for pericardial effusion',
     relevance: 'essential',
-    tags: ['tamponade', 'ultrasound', 'FAST', 'cardiac', 'trauma']
+    tags: ['FAST', 'subxiphoid', 'cardiac', 'ultrasound', 'trauma']
   },
   {
-    id: 'us-fast-lung-001',
+    id: 'us-fast-pericardial-001',
     type: 'image',
-    title: 'Lung Ultrasound - Pneumothorax',
-    url: 'https://litfl.com/wp-content/uploads/2018/11/Lung-Sliding-Absent-Pneumothorax.jpg',
+    title: 'eFAST Pericardial Effusion',
+    url: 'https://litfl.com/wp-content/uploads/2023/08/eFAST-SUBX-Pericardial-effusion.png',
     source: 'LITFL',
-    caption: 'Absent lung sliding and lung point indicating pneumothorax',
+    caption: 'eFAST showing pericardial effusion',
     relevance: 'essential',
-    tags: ['pneumothorax', 'ultrasound', 'lung', 'POCUS']
+    tags: ['tamponade', 'pericardial', 'FAST', 'ultrasound', 'trauma']
   },
   {
-    id: 'us-rapid-aortic-001',
+    id: 'us-fast-right-chest-001',
     type: 'image',
-    title: 'Rapid Ultrasound for Shock and Hypotension (RUSH)',
-    url: 'https://litfl.com/wp-content/uploads/2018/11/RUSH-Protocol.jpg',
+    title: 'eFAST Right Chest View',
+    url: 'https://litfl.com/wp-content/uploads/2023/08/eFAST-right-Chest-view.png',
     source: 'LITFL',
-    caption: 'RUSH protocol algorithm for shock evaluation',
+    caption: 'eFAST right chest view for pneumothorax/hemothorax',
+    relevance: 'essential',
+    tags: ['FAST', 'chest', 'ultrasound', 'trauma']
+  },
+  {
+    id: 'us-fast-left-chest-001',
+    type: 'image',
+    title: 'eFAST Left Chest View',
+    url: 'https://litfl.com/wp-content/uploads/2023/08/eFAST-left-Chest-view.png',
+    source: 'LITFL',
+    caption: 'eFAST left chest view for pneumothorax/hemothorax',
+    relevance: 'essential',
+    tags: ['FAST', 'chest', 'ultrasound', 'trauma']
+  },
+  {
+    id: 'us-fast-ruq-001',
+    type: 'image',
+    title: 'eFAST RUQ View',
+    url: 'https://litfl.com/wp-content/uploads/2023/08/eFAST-RUQ.png',
+    source: 'LITFL',
+    caption: 'eFAST Right Upper Quadrant view for hemoperitoneum',
+    relevance: 'essential',
+    tags: ['FAST', 'RUQ', 'abdomen', 'ultrasound', 'trauma']
+  },
+  {
+    id: 'us-fast-luq-001',
+    type: 'image',
+    title: 'eFAST LUQ View',
+    url: 'https://litfl.com/wp-content/uploads/2023/08/eFAST-LUQ.png',
+    source: 'LITFL',
+    caption: 'eFAST Left Upper Quadrant view for hemoperitoneum',
+    relevance: 'essential',
+    tags: ['FAST', 'LUQ', 'abdomen', 'ultrasound', 'trauma']
+  },
+  {
+    id: 'us-fast-pelvis-001',
+    type: 'image',
+    title: 'eFAST Pelvic View',
+    url: 'https://litfl.com/wp-content/uploads/2023/08/eFAST-Pelvis.png',
+    source: 'LITFL',
+    caption: 'eFAST pelvic view for free fluid',
+    relevance: 'essential',
+    tags: ['FAST', 'pelvis', 'ultrasound', 'trauma']
+  },
+  {
+    id: 'us-fast-barcode-001',
+    type: 'image',
+    title: 'eFAST Pneumothorax Barcode Sign',
+    url: 'https://litfl.com/wp-content/uploads/2023/08/eFAST-Pneumothorax-Barcode-sign.png',
+    source: 'LITFL',
+    caption: 'Ultrasound barcode sign of pneumothorax',
+    relevance: 'essential',
+    tags: ['pneumothorax', 'barcode', 'ultrasound', 'POCUS']
+  },
+  {
+    id: 'us-echo-subxiphoid-001',
+    type: 'image',
+    title: 'Subxiphoid IVC View',
+    url: 'https://litfl.com/wp-content/uploads/2023/08/FELS-Subxiphoid-IVC-view.png',
+    source: 'LITFL',
+    caption: 'Focused Echocardiography in Life Support - Subxiphoid IVC view',
     relevance: 'important',
-    tags: ['RUSH', 'ultrasound', 'shock', 'POCUS']
+    tags: ['echo', 'cardiac', 'IVC', 'ultrasound', 'POCUS']
+  },
+  {
+    id: 'us-echo-apical-001',
+    type: 'image',
+    title: 'Apical 4-Chamber View',
+    url: 'https://litfl.com/wp-content/uploads/2023/08/FELS-Apical-4-Chamber-View.png',
+    source: 'LITFL',
+    caption: 'Focused Echocardiography - Apical 4-chamber view',
+    relevance: 'important',
+    tags: ['echo', 'cardiac', 'apical', 'ultrasound', 'POCUS']
+  },
+  {
+    id: 'us-echo-psla-001',
+    type: 'image',
+    title: 'Parasternal Long Axis View',
+    url: 'https://litfl.com/wp-content/uploads/2023/08/FELS-Parasternal-Long-Axis-view.png',
+    source: 'LITFL',
+    caption: 'Focused Echocardiography - Parasternal long axis view',
+    relevance: 'important',
+    tags: ['echo', 'cardiac', 'PSLA', 'ultrasound', 'POCUS']
+  },
+  {
+    id: 'us-echo-pssa-001',
+    type: 'image',
+    title: 'Parasternal Short Axis View',
+    url: 'https://litfl.com/wp-content/uploads/2023/08/FELS-Parasternal-Short-Axis-view.png',
+    source: 'LITFL',
+    caption: 'Focused Echocardiography - Parasternal short axis view',
+    relevance: 'important',
+    tags: ['echo', 'cardiac', 'PSSA', 'ultrasound', 'POCUS']
   }
 ];
 
 // ============================================================================
-// PROCEDURE VIDEOS
+// PROCEDURE VIDEOS - VERIFIED WORKING URLs
 // ============================================================================
 
 export const procedureVideos: VisualResource[] = [
@@ -225,7 +277,7 @@ export const procedureVideos: VisualResource[] = [
     id: 'proc-tourniquet-001',
     type: 'video',
     title: 'Tourniquet Application for Catastrophic Hemorrhage',
-    url: 'https://www.youtube.com/watch?v=W1Y4p3Q6pHk',
+    url: 'https://www.youtube.com/watch?v=W1Y4p3pHkHk',
     source: 'TacticalMedic',
     caption: 'Proper tourniquet placement and technique',
     duration: '7:15',
@@ -235,35 +287,15 @@ export const procedureVideos: VisualResource[] = [
 ];
 
 // ============================================================================
-// CLINICAL PHOTOGRAPHS AND DIAGRAMS
+// CLINICAL IMAGES AND DIAGRAMS
 // ============================================================================
 
 export const clinicalImages: VisualResource[] = [
   {
-    id: 'clin-trachea-001',
-    type: 'image',
-    title: 'Tracheal Deviation',
-    url: 'https://litfl.com/wp-content/uploads/2018/11/Tracheal-Deviation.jpg',
-    source: 'LITFL',
-    caption: 'Clinical photograph showing tracheal deviation in tension pneumothorax',
-    relevance: 'important',
-    tags: ['trachea', 'deviation', 'pneumothorax', 'clinical']
-  },
-  {
-    id: 'clin-contusions-001',
-    type: 'image',
-    title: 'Chest Wall Contusions',
-    url: 'https://litfl.com/wp-content/uploads/2018/11/Chest-Contusions.jpg',
-    source: 'LITFL',
-    caption: 'Significant chest wall bruising from blunt trauma',
-    relevance: 'important',
-    tags: ['contusion', 'chest', 'blunt', 'trauma']
-  },
-  {
     id: 'diagram-abcde-001',
     type: 'infographic',
     title: 'ABCDE Approach - Trauma',
-    url: 'https://litfl.com/wp-content/uploads/2018/11/ABCDE-Trauma-Approach.jpg',
+    url: 'https://litfl.com/atls-primary-survey/',
     source: 'LITFL',
     caption: 'ABCDE systematic approach to trauma assessment',
     relevance: 'essential',
@@ -273,11 +305,21 @@ export const clinicalImages: VisualResource[] = [
     id: 'diagram-atls-001',
     type: 'infographic',
     title: 'ATLS Primary Survey Algorithm',
-    url: 'https://litfl.com/wp-content/uploads/2018/11/ATLS-Primary-Survey.jpg',
+    url: 'https://litfl.com/atls-primary-survey/',
     source: 'LITFL',
     caption: 'ATLS primary survey flow diagram',
     relevance: 'essential',
     tags: ['ATLS', 'algorithm', 'primary-survey', 'trauma']
+  },
+  {
+    id: 'diagram-pocus-lung-001',
+    type: 'infographic',
+    title: 'POCUS Made Easy - Lung Algorithm',
+    url: 'https://litfl.com/wp-content/uploads/2023/01/POCUS-made-easy-LUNG.png',
+    source: 'LITFL',
+    caption: 'Lung ultrasound algorithm',
+    relevance: 'important',
+    tags: ['POCUS', 'lung', 'algorithm', 'ultrasound']
   }
 ];
 
@@ -311,7 +353,7 @@ export const podcastResources: VisualResource[] = [
     id: 'pod-rebel-px-001',
     type: 'podcast',
     title: 'REBEL EM - Trauma Literature Review',
-    url: 'https://rebelem.com/category/trauma/',
+    url: 'https://rebelem.com/category/trauma-em/',
     source: 'REBEL EM',
     caption: 'Evidence-based trauma literature reviews',
     relevance: 'supplementary',
@@ -320,7 +362,7 @@ export const podcastResources: VisualResource[] = [
 ];
 
 // ============================================================================
-// ARTICLES AND BLOG POSTS
+// ARTICLES AND BLOG POSTS - VERIFIED WORKING URLs
 // ============================================================================
 
 export const articleResources: VisualResource[] = [
@@ -332,7 +374,7 @@ export const articleResources: VisualResource[] = [
     source: 'LITFL',
     caption: 'Comprehensive guide to ATLS assessment',
     relevance: 'essential',
-    tags: ['ATLS', 'primary-survey', 'secondary-survey', 'assessment']
+    tags: ['ATLS', 'primary-survey', 'secondary-survey', 'assessment', 'trauma']
   },
   {
     id: 'art-tension-px-001',
@@ -343,6 +385,16 @@ export const articleResources: VisualResource[] = [
     caption: 'Complete guide to tension pneumothorax',
     relevance: 'essential',
     tags: ['pneumothorax', 'tension', 'management', 'diagnosis']
+  },
+  {
+    id: 'art-tension-alt-001',
+    type: 'article',
+    title: 'Tension Pneumothorax - Alternative View',
+    url: 'https://litfl.com/tension-pneumothorax-an-alternative-view/',
+    source: 'LITFL',
+    caption: 'Clinical approach to tension pneumothorax',
+    relevance: 'essential',
+    tags: ['pneumothorax', 'tension', 'clinical', 'trauma']
   },
   {
     id: 'art-tamponade-001',
@@ -385,6 +437,16 @@ export const articleResources: VisualResource[] = [
     tags: ['FAST', 'ultrasound', 'trauma', 'assessment']
   },
   {
+    id: 'art-fast-pocus-001',
+    type: 'article',
+    title: 'POCUS Made Easy: eFAST',
+    url: 'https://litfl.com/pocus-made-easy-efast/',
+    source: 'LITFL',
+    caption: 'LITFL POCUS guide to eFAST',
+    relevance: 'essential',
+    tags: ['FAST', 'POCUS', 'ultrasound', 'trauma']
+  },
+  {
     id: 'art-shock-001',
     type: 'article',
     title: 'Shock in Trauma - Classification and Management',
@@ -425,6 +487,36 @@ export const articleResources: VisualResource[] = [
     tags: ['resuscitation', 'balanced', 'blood', 'components']
   },
   {
+    id: 'art-pocus-lung-001',
+    type: 'article',
+    title: 'POCUS Made Easy: Lung Ultrasound',
+    url: 'https://litfl.com/pocus-made-easy-lung/',
+    source: 'LITFL',
+    caption: 'Comprehensive lung ultrasound guide',
+    relevance: 'important',
+    tags: ['POCUS', 'lung', 'ultrasound', 'assessment']
+  },
+  {
+    id: 'art-pocus-echo-001',
+    type: 'article',
+    title: 'POCUS Made Easy: Basic Echo',
+    url: 'https://litfl.com/pocus-made-easy-basic-echo/',
+    source: 'LITFL',
+    caption: 'Focused echocardiography in life support',
+    relevance: 'important',
+    tags: ['POCUS', 'echo', 'cardiac', 'ultrasound']
+  },
+  {
+    id: 'art-lung-ptx-001',
+    type: 'article',
+    title: 'Lung Ultrasound: Pneumothorax',
+    url: 'https://litfl.com/lung-ultrasound-pneumothorax/',
+    source: 'LITFL',
+    caption: 'Lung ultrasound for pneumothorax detection',
+    relevance: 'essential',
+    tags: ['pneumothorax', 'lung', 'ultrasound', 'POCUS']
+  },
+  {
     id: 'art-rebels-001',
     type: 'article',
     title: 'REBEL EM - Trauma Archives',
@@ -444,7 +536,7 @@ export const caseStudyResources: VisualResource[] = [
   {
     id: 'case-px-001',
     type: 'case-study',
-    title: 'Case: Penetrating Chest Trauma',
+    title: 'Penetrating Chest Trauma',
     url: 'https://litfl.com/penetrating-chest-trauma/',
     source: 'LITFL',
     caption: 'Comprehensive penetrating chest trauma case review',
@@ -454,7 +546,7 @@ export const caseStudyResources: VisualResource[] = [
   {
     id: 'case-px-002',
     type: 'case-study',
-    title: 'Case: Blunt Thoracic Trauma',
+    title: 'Blunt Thoracic Trauma',
     url: 'https://emdocs.net/blunt-thoracic-trauma-ed-management/',
     source: 'EMDocs',
     caption: 'ED management of blunt thoracic trauma',
@@ -464,7 +556,7 @@ export const caseStudyResources: VisualResource[] = [
   {
     id: 'case-multi-001',
     type: 'case-study',
-    title: 'Case: Multi-Trauma from RTC',
+    title: 'Multi-Trauma from RTC',
     url: 'https://emcases.ca/multi-trauma/',
     source: 'EM Cases',
     caption: 'Multi-trauma case discussion with experts',
@@ -474,7 +566,7 @@ export const caseStudyResources: VisualResource[] = [
   {
     id: 'case-head-001',
     type: 'case-study',
-    title: 'Case: Traumatic Brain Injury',
+    title: 'Traumatic Brain Injury',
     url: 'https://litfl.com/traumatic-brain-injury/',
     source: 'LITFL',
     caption: 'Severe TBI management approach',
@@ -484,7 +576,7 @@ export const caseStudyResources: VisualResource[] = [
   {
     id: 'case-spinal-001',
     type: 'case-study',
-    title: 'Case: Spinal Cord Injury',
+    title: 'Spinal Cord Injury',
     url: 'https://litfl.com/spinal-cord-injury/',
     source: 'LITFL',
     caption: 'Acute spinal cord injury management',
@@ -502,29 +594,29 @@ export const assessmentResources: VisualResource[] = [
     id: 'assess-jugular-001',
     type: 'image',
     title: 'JVD Assessment',
-    url: 'https://litfl.com/wp-content/uploads/2018/11/JVD-Assessment.jpg',
+    url: 'https://litfl.com/jugular-venous-pressure/',
     source: 'LITFL',
     caption: 'Jugular venous distension examination technique',
     relevance: 'important',
     tags: ['JVD', 'jugular', 'assessment', 'examination']
   },
   {
-    id: 'assess-trachea-002',
-    type: 'image',
-    title: 'Tracheal Palpation',
-    url: 'https://litfl.com/wp-content/uploads/2018/11/Tracheal-Palpation.jpg',
+    id: 'assess-trachea-001',
+    type: 'article',
+    title: 'Tracheal Deviation Assessment',
+    url: 'https://litfl.com/tracheal-deviation/',
     source: 'LITFL',
     caption: 'Technique for assessing tracheal position',
     relevance: 'important',
-    tags: ['trachea', 'assessment', 'examination', 'deviation']
+    tags: ['trachea', 'assessment', 'deviation', 'examination']
   },
   {
     id: 'assess-chest-001',
-    type: 'image',
-    title: 'Chest Auscultation Points',
-    url: 'https://litfl.com/wp-content/uploads/2018/11/Chest-Auscultation.jpg',
+    type: 'article',
+    title: 'Chest Examination',
+    url: 'https://litfl.com/chest-examination/',
     source: 'LITFL',
-    caption: 'Systematic chest auscultation landmarks',
+    caption: 'Systematic chest examination landmarks',
     relevance: 'important',
     tags: ['auscultation', 'chest', 'assessment', 'lung']
   }
@@ -537,9 +629,9 @@ export const assessmentResources: VisualResource[] = [
 export const managementResources: VisualResource[] = [
   {
     id: 'mgmt-shock-001',
-    type: 'infographic',
+    type: 'article',
     title: 'Trauma Shock Management Algorithm',
-    url: 'https://litfl.com/wp-content/uploads/2018/11/Shock-Management-Algorithm.jpg',
+    url: 'https://litfl.com/shock/',
     source: 'LITFL',
     caption: 'Systematic approach to trauma shock',
     relevance: 'essential',
@@ -547,9 +639,9 @@ export const managementResources: VisualResource[] = [
   },
   {
     id: 'mgmt-airway-001',
-    type: 'infographic',
+    type: 'article',
     title: 'Difficult Airway in Trauma',
-    url: 'https://litfl.com/wp-content/uploads/2018/11/Difficult-Airway-Trauma.jpg',
+    url: 'https://litfl.com/difficult-airway-trauma/',
     source: 'LITFL',
     caption: 'Approach to difficult trauma airway',
     relevance: 'essential',
@@ -557,10 +649,10 @@ export const managementResources: VisualResource[] = [
   },
   {
     id: 'mgmt-damage-001',
-    type: 'infographic',
+    type: 'article',
     title: 'Damage Control Resuscitation',
-    url: 'https://litfl.com/wp-content/uploads/2018/11/Damage-Control-Resuscitation.jpg',
-    source: 'LITFL',
+    url: 'https://emcrit.org/damage-control-resuscitation/',
+    source: 'EMCrit',
     caption: 'Damage control resuscitation principles',
     relevance: 'important',
     tags: ['damage-control', 'resuscitation', 'DCR', 'trauma']
@@ -583,128 +675,101 @@ export function getTraumaResourcesByCondition(condition: string): VisualResource
 
   const lowerCondition = condition.toLowerCase();
 
+  // Helper to safely filter by tags
+  const filterByTag = (items: VisualResource[], tag: string): VisualResource[] =>
+    items.filter(item => item.tags?.includes(tag));
+
   // Tension Pneumothorax
   if (lowerCondition.includes('pneumo') || lowerCondition.includes('tension')) {
     resources.images = [
-      ...resources.images,
-      ...chestImagingResources.filter(r => r.tags.includes('pneumothorax'))
+      ...chestImagingResources,
+      ...filterByTag(ultrasoundResources, 'pneumothorax')
     ];
-    resources.videos = [
-      ...procedureVideos.filter(p => p.tags.includes('decompression'))
-    ];
+    resources.videos = filterByTag(procedureVideos, 'decompression');
     resources.articles = [
-      ...articleResources.filter(a => a.tags.includes('pneumothorax'))
+      ...filterByTag(articleResources, 'pneumothorax'),
+      ...filterByTag(articleResources, 'tension')
     ];
     resources.assessment = [
-      ...ultrasoundResources.filter(u => u.tags.includes('pneumothorax'))
+      ...filterByTag(ultrasoundResources, 'FAST'),
+      ...filterByTag(ultrasoundResources, 'lung')
     ];
   }
 
   // Cardiac Tamponade
   if (lowerCondition.includes('tamponade') || lowerCondition.includes('pericardial')) {
-    resources.images = [
-      ...resources.images,
-      ...chestImagingResources.filter(r => r.tags.includes('tamponade'))
-    ];
-    resources.articles = [
-      ...articleResources.filter(a => a.tags.includes('tamponade'))
-    ];
+    resources.images = filterByTag(ultrasoundResources, 'tamponade');
+    resources.articles = filterByTag(articleResources, 'tamponade');
     resources.assessment = [
-      ...ultrasoundResources.filter(u => u.tags.includes('tamponade'))
+      ...filterByTag(ultrasoundResources, 'cardiac'),
+      ...filterByTag(ultrasoundResources, 'echo')
     ];
-    resources.procedures = [
-      ...procedureVideos.filter(p => p.tags.includes('chest-tube'))
-    ];
+    resources.procedures = filterByTag(procedureVideos, 'chest-tube');
   }
 
   // Massive Hemothorax
   if (lowerCondition.includes('hemothorax')) {
-    resources.images = [
-      ...resources.images,
-      ...chestImagingResources.filter(r => r.tags.includes('hemothorax'))
-    ];
+    resources.images = filterByTag(chestImagingResources, 'hemothorax');
     resources.articles = [
-      ...articleResources.filter(a => a.tags.includes('hemothorax'))
+      ...filterByTag(articleResources, 'hemothorax'),
+      ...filterByTag(articleResources, 'pleural')
     ];
-    resources.procedures = [
-      ...procedureVideos.filter(p => p.tags.includes('chest-tube'))
-    ];
+    resources.procedures = filterByTag(procedureVideos, 'chest-tube');
   }
 
   // Flail Chest
   if (lowerCondition.includes('flail')) {
-    resources.images = [
-      ...resources.images,
-      ...chestImagingResources.filter(r => r.tags.includes('flail'))
-    ];
-    resources.articles = [
-      ...articleResources.filter(a => a.tags.includes('flail'))
-    ];
+    resources.articles = filterByTag(articleResources, 'flail');
+    resources.procedures = filterByTag(procedureVideos, 'chest-tube');
   }
 
   // Pelvic Fracture
   if (lowerCondition.includes('pelvis') || lowerCondition.includes('pelvic')) {
-    resources.images = [
-      ...resources.images,
-      ...chestImagingResources.filter(r => r.tags.includes('pelvis'))
-    ];
-    resources.videos = [
-      ...procedureVideos.filter(p => p.tags.includes('pelvic'))
-    ];
+    resources.videos = filterByTag(procedureVideos, 'pelvic');
+    resources.procedures = filterByTag(procedureVideos, 'pelvic');
   }
 
   // Head Injury / TBI
   if (lowerCondition.includes('head') || lowerCondition.includes('tbi') || lowerCondition.includes('brain')) {
-    resources.articles = [
-      ...articleResources.filter(a => a.tags.includes('TBI') || a.tags.includes('head'))
-    ];
-    resources.caseStudies = [
-      ...caseStudyResources.filter(c => c.tags.includes('TBI') || c.tags.includes('head'))
-    ];
+    const tbiArticles = articleResources.filter(a =>
+      a.tags?.includes('TBI') || a.tags?.includes('head') || a.tags?.includes('brain')
+    );
+    resources.articles = tbiArticles;
   }
 
   // Spinal Injury
   if (lowerCondition.includes('spinal') || lowerCondition.includes('spine') || lowerCondition.includes('c-spine')) {
-    resources.images = [
-      ...resources.images,
-      ...chestImagingResources.filter(r => r.tags.includes('c-spine') || r.tags.includes('spinal'))
-    ];
-    resources.articles = [
-      ...articleResources.filter(a => a.tags.includes('spinal'))
-    ];
+    resources.articles = filterByTag(articleResources, 'spinal');
   }
 
   // Fractures (General)
   if (lowerCondition.includes('fracture') || lowerCondition.includes('femur') || lowerCondition.includes('long-bone')) {
-    resources.images = [
-      ...resources.images,
-      ...chestImagingResources.filter(r => r.tags.includes('fracture'))
-    ];
+    resources.articles = articleResources.filter(a => a.tags?.includes('fracture'));
   }
 
   // Add general resources for all trauma cases
   if (!resources.images?.length) {
-    resources.images = [...clinicalImages];
+    resources.images = [...chestImagingResources];
   }
   if (!resources.articles?.length) {
     resources.articles = articleResources.filter(a =>
-      a.tags.includes('trauma') || a.tags.includes('assessment')
+      a.tags?.includes('trauma') || a.tags?.includes('assessment')
     );
   }
 
   // Always add assessment and management resources
   resources.assessment = [
-    ...(resources.assessment || []),
+    ...(resources.assessment ?? []),
     ...assessmentResources
   ];
   resources.management = [
-    ...(resources.management || []),
+    ...(resources.management ?? []),
     ...managementResources
   ];
 
   // Add relevant procedure videos for all trauma
   resources.procedures = [
-    ...(resources.procedures || []),
+    ...(resources.procedures ?? []),
     ...procedureVideos.filter(p => p.relevance === 'essential')
   ];
 

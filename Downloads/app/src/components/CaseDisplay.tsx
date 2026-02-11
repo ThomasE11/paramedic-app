@@ -9,7 +9,7 @@ import {
   Activity, Eye, Stethoscope,
   Pill, History, Utensils, FileText, Thermometer,
   Droplets, Wind, Heart, Brain, Zap,
-  Image, Video, FileText as FileTextIcon, ExternalLink, Play, X
+  Image, Video, FileText as FileTextIcon, ExternalLink, Play
 } from 'lucide-react';
 import { getECGForCase } from '@/data/litflECGs';
 import { ECGDisplayComponent, EmergencyECGQuickRef } from './ECGDisplay';
@@ -61,7 +61,6 @@ export function CaseDisplay({ caseData, studentYear = '3rd-year' }: CaseDisplayP
 
   // Visual Resources state
   const [showVisualResources, setShowVisualResources] = useState(false);
-  const [selectedResource, setSelectedResource] = useState<{type: string; url: string; title: string} | null>(null);
 
   // Memoize detail visibility checks
   const showDetailedFindings = useMemo(() =>

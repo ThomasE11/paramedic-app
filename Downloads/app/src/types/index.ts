@@ -287,6 +287,7 @@ export interface CaseScenario {
   id: string;
   title: string;
   category: CaseCategory;
+  subcategory?: string;
   priority: CasePriority;
   complexity: ComplexityLevel;
   yearLevels: StudentYear[];
