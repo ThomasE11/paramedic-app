@@ -1715,7 +1715,7 @@ export const moreTraumaCases: CaseScenario[] = [
           'DO NOT move patient excessively',
           'Monitor for neurogenic shock'
         ],
-        focalNeurology: ['Complete cord injury at C5 level', 'Absent rectal tone', 'Bulbocavernosus reflex absent']
+        focalDeficits: ['Complete cord injury at C5 level', 'Absent rectal tone', 'Bulbocavernosus reflex absent']
       },
       exposure: {
         findings: ['No obvious deformity', 'Tenderness C4-C5', 'No sensation below clavicle', 'Priapism'],
