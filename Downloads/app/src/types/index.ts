@@ -163,7 +163,7 @@ export interface ABCDEAssessment {
   disability: {
     avpu: 'A' | 'V' | 'P' | 'U';
     gcs: { eye: number; verbal: number; motor: number; total: number };
-    pupils: string;
+    pupils: string | string[];
     bloodGlucose?: number;
     findings: string[];
     interventions: string[];
