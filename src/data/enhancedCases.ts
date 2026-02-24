@@ -32,7 +32,7 @@ export const moreTraumaCases: CaseScenario[] = [
     subcategory: 'chest-trauma',
     priority: 'critical',
     complexity: 'expert',
-    yearLevels: ['4th-year'],
+    yearLevels: ['3rd-year', '4th-year'],
     estimatedDuration: 30,
     dispatchInfo: {
       callReason: 'Stabbing to chest, patient unresponsive',
@@ -97,10 +97,12 @@ export const moreTraumaCases: CaseScenario[] = [
         avpu: 'P',
         gcs: { eye: 2, verbal: 2, motor: 4, total: 8 },
         pupils: 'Equal but sluggish 4mm',
+        bloodGlucose: 5.4,
         findings: ['Hypoxic brain injury', 'Poor perfusion'],
         interventions: ['Monitor GCS', 'Treat hypoxia', 'Improve perfusion']
       },
       exposure: {
+        temperature: 36.8,
         findings: ['Small stab wound left parasternal, 3rd intercostal space', 'Minimal external bleeding', 'No exit wound', 'Muffled heart sounds'],
         interventions: ['Cover wound with occlusive dressing (3-sided)', 'Full exposure while maintaining temperature', 'Log roll for spine assessment']
       }
@@ -325,7 +327,176 @@ export const moreTraumaCases: CaseScenario[] = [
       'ACS Trauma Guidelines',
       'Eastern Association for the Surgery of Trauma (EAST) Guidelines',
       'Life in the Fast Lane - Cardiac Tamponade'
-    ]
+    ],
+    equipmentNeeded: [
+      '14G or 16G IV catheters x4 (large bore access)',
+      'Normal saline 1L bags x4 (aggressive resuscitation)',
+      'Oxygen 15L/min via non-rebreather mask',
+      'OPA/NPA airway adjuncts',
+      'Suction unit with Yankauer catheter',
+      'Vaseline gauze or occlusive dressing (3-sided)',
+      '18G 7cm spinal needle (for pericardiocentesis)',
+      '10-20mL syringe',
+      'ECG monitor with 12-lead capability',
+      'Blood pressure cuff (manual for pulsus paradoxus)',
+      'Rigid cervical collar and spinal board',
+      'Thermal blanket',
+      'Blood products if available (O-negative emergency release)'
+    ],
+    uaeProtocols: {
+      applicableGuidelines: [
+        'DCAS Trauma Protocols - Penetrating Chest Trauma',
+        'PHTLS 9th Edition - Thoracic Trauma',
+        'ATLS 10th Edition - Chest Trauma',
+        'American College of Surgeons Committee on Trauma Guidelines'
+      ],
+      receivingFacilities: [
+        {
+          name: 'Rashid Hospital Trauma Center',
+          location: 'Dubai Healthcare City, Dubai',
+          capabilities: ['Level I Trauma Center', '24/7 Cardiothoracic Surgery', 'Emergency Department Thoracotomy', 'Blood Bank', 'CT/MRI'],
+          contact: 'Emergency: 800 342',
+          distance: '15-20 minutes from Downtown Dubai'
+        },
+        {
+          name: 'Dubai Hospital',
+          location: 'Deira, Dubai',
+          capabilities: ['Trauma Center', 'General Surgery', 'ICU'],
+          contact: 'Emergency: 800 342',
+          distance: '20-25 minutes'
+        },
+        {
+          name: 'Cleveland Clinic Abu Dhabi',
+          location: 'Al Maryah Island, Abu Dhabi',
+          capabilities: ['Level I Trauma Center', 'Cardiothoracic Surgery', 'Advanced Imaging'],
+          contact: 'Emergency: 800 8 2223',
+          distance: '90-120 minutes from Dubai'
+        }
+      ],
+      localConsiderations: [
+        'Dubai Police must secure scene before EMS entry - expect scene delays',
+        'High incidence of penetrating trauma in urban areas during evening/night hours',
+        'Language barriers common with diverse expatriate population',
+        'Hot climate requires aggressive temperature management',
+        'Ambulance transport times may be affected by traffic congestion on Sheikh Zayed Road',
+        'Cultural considerations: may need same-gender providers for some patients',
+        'Ramadan considerations: altered eating schedules may affect gastric emptying',
+        'Construction worker populations have higher trauma exposure'
+      ]
+    },
+    visualResources: {
+      images: [
+        {
+          id: 'img-tamponade-001',
+          type: 'image',
+          title: 'Beck\'s Triad Clinical Presentation',
+          url: 'https://radiopaedia.org/cases/beck-triad-cardiac-tamponade',
+          source: 'Radiopaedia',
+          caption: 'Classic Beck\'s Triad: Hypotension, JVD, and muffled heart sounds in cardiac tamponade',
+          relevance: 'essential',
+          tags: ['cardiac tamponade', 'Becks triad', 'clinical signs']
+        },
+        {
+          id: 'img-tamponade-002',
+          type: 'image',
+          title: 'Cardiac Tamponade Pathophysiology',
+          url: 'https://litfl.com/wp-content/uploads/2018/08/ECG-Library-pericardial-effusion-2.jpg',
+          source: 'Life in the Fast Lane',
+          caption: 'ECG findings in pericardial effusion with tamponade',
+          relevance: 'essential',
+          tags: ['cardiac tamponade', 'pathophysiology', 'ECG']
+        },
+        {
+          id: 'img-tamponade-003',
+          type: 'image',
+          title: 'Pericardiocentesis Procedure',
+          url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Pericardiocentesis.jpg/640px-Pericardiocentesis.jpg',
+          source: 'Wikimedia Commons',
+          caption: 'Subxiphoid approach for emergency pericardiocentesis',
+          relevance: 'important',
+          tags: ['pericardiocentesis', 'procedure', 'subxiphoid']
+        }
+      ],
+      videos: [
+        {
+          id: 'video-tamponade-001',
+          type: 'video',
+          title: 'Cardiac Tamponade - Recognition and Management',
+          url: 'https://www.youtube.com/watch?v=8vL2Yg8o8hM',
+          source: 'EMCrit',
+          caption: 'Scott Weingart discusses cardiac tamponade recognition and emergency management',
+          duration: '18:45',
+          relevance: 'essential',
+          tags: ['cardiac tamponade', 'emergency', 'pericardiocentesis']
+        },
+        {
+          id: 'video-tamponade-002',
+          type: 'video',
+          title: 'Pericardiocentesis - Bedside Ultrasound Guided',
+          url: 'https://www.youtube.com/watch?v=KJw5mJXC_fo',
+          source: '5 Minute Sono',
+          caption: 'Ultrasound-guided pericardiocentesis technique',
+          duration: '6:32',
+          relevance: 'essential',
+          tags: ['pericardiocentesis', 'ultrasound', 'POCUS']
+        },
+        {
+          id: 'video-tamponade-003',
+          type: 'video',
+          title: 'Electrical Alternans in Cardiac Tamponade',
+          url: 'https://www.youtube.com/watch?v=5x3dV5e9r6U',
+          source: 'Life in the Fast Lane',
+          caption: 'ECG findings in pericardial effusion and tamponade',
+          duration: '4:15',
+          relevance: 'important',
+          tags: ['ECG', 'electrical alternans', 'tamponade']
+        }
+      ],
+      articles: [
+        {
+          id: 'art-tamponade-001',
+          type: 'article',
+          title: 'Cardiac Tamponade - Life in the Fast Lane',
+          url: 'https://litfl.com/cardiac-tamponade/',
+          source: 'LITFL',
+          caption: 'Comprehensive review of cardiac tamponade pathophysiology and management',
+          relevance: 'essential',
+          tags: ['cardiac tamponade', 'review', 'ATLS']
+        },
+        {
+          id: 'art-tamponade-002',
+          type: 'article',
+          title: 'Pericardial Effusion and Tamponade',
+          url: 'https://www.uptodate.com/contents/pericardial-effusion',
+          source: 'Medscape',
+          caption: 'Detailed medical overview of pericardial effusion and tamponade',
+          relevance: 'important',
+          tags: ['tamponade', 'pericardial effusion', 'medscape']
+        },
+        {
+          id: 'art-tamponade-003',
+          type: 'article',
+          title: 'Emergency Pericardiocentesis',
+          url: 'https://www.ncbi.nlm.nih.gov/books/NBK470382/',
+          source: 'StatPearls',
+          caption: 'Emergency pericardiocentesis procedure and indications',
+          relevance: 'essential',
+          tags: ['pericardiocentesis', 'procedure', 'emergency']
+        }
+      ],
+      procedures: [
+        {
+          id: 'proc-tamponade-001',
+          type: 'case-study',
+          title: 'Emergency Pericardiocentesis - Subxiphoid Approach',
+          url: 'https://litfl.com/pericardiocentesis/',
+          source: 'LITFL',
+          caption: 'Step-by-step guide to emergency pericardiocentesis',
+          relevance: 'essential',
+          tags: ['pericardiocentesis', 'procedure', 'subxiphoid']
+        }
+      ]
+    }
   }),
 
   // Tension Pneumothorax with Flail Chest
@@ -336,7 +507,7 @@ export const moreTraumaCases: CaseScenario[] = [
     subcategory: 'chest-trauma',
     priority: 'critical',
     complexity: 'expert',
-    yearLevels: ['4th-year'],
+    yearLevels: ['3rd-year', '4th-year'],
     estimatedDuration: 35,
     dispatchInfo: {
       callReason: 'MVC - driver trapped, chest injury, difficulty breathing',
@@ -426,6 +597,7 @@ export const moreTraumaCases: CaseScenario[] = [
         interventions: ['Monitor GCS for deterioration', 'Consider head injury']
       },
       exposure: {
+        temperature: 36.8,
         findings: [
           'Flail segment right anterior chest ribs 3-5 (fractured in ≥2 places)',
           'Paradoxical movement of flail segment',
@@ -715,7 +887,192 @@ export const moreTraumaCases: CaseScenario[] = [
       'Eastern Association for the Surgery of Trauma (EAST) Guidelines',
       'Life in the Fast Lane - Tension Pneumothorax',
       'JRCALC Clinical Guidelines 2019'
-    ]
+    ],
+    equipmentNeeded: [
+      '14G 7cm angiocatheter or needle decompression kit (tension pneumothorax)',
+      'Chest tube 36-40F with drainage system',
+      'Occlusive dressing/Vaseline gauze (3-sided)',
+      'Oxygen 15L/min via non-rebreather or BVM',
+      'IV access 14-16G x2',
+      'Normal saline 1L bags x4',
+      'Suction unit with Yankauer catheter',
+      'Rigid cervical collar and spinal board',
+      'Pillow/blanket for flail segment stabilization',
+      'Analgesics (morphine/fentanyl/ketamine)',
+      'Intubation equipment (RSI kit)',
+      'ECG monitor',
+      'Blood pressure cuff',
+      'Thoracostomy tray (if trained)',
+      'Chest seal (vented or non-vented)'
+    ],
+    uaeProtocols: {
+      applicableGuidelines: [
+        'DCAS Trauma Protocols - Chest Trauma',
+        'PHTLS 9th Edition - Thoracic Trauma',
+        'ATLS 10th Edition - Chest Trauma',
+        'TCCC Guidelines - Thoracic Trauma'
+      ],
+      receivingFacilities: [
+        {
+          name: 'Rashid Hospital Trauma Center',
+          location: 'Dubai Healthcare City, Dubai',
+          capabilities: ['Level I Trauma Center', '24/7 Thoracic Surgery', 'Chest Tube Insertion', 'OR Available', 'ICU'],
+          contact: 'Emergency: 800 342',
+          distance: '15-20 minutes from Sheikh Zayed Road incidents'
+        },
+        {
+          name: 'Mediclinic City Hospital',
+          location: 'Dubai Healthcare City',
+          capabilities: ['Trauma Center', 'General Surgery', 'ICU'],
+          contact: 'Emergency: 800 1999',
+          distance: '10-15 minutes'
+        }
+      ],
+      localConsiderations: [
+        'Sheikh Zayed Road has high-speed MVCs with severe mechanisms',
+        'Extrication delays common - may need early needle decompression while trapped',
+        'Summer temperatures >45°C cause rapid heat stress - aggressive cooling needed',
+        'Dubai has high proportion of construction workers - MVC injuries common',
+        'Ambulance response times may be delayed during rush hour (7-9am, 5-8pm)',
+        'Helicopter EMS available from Rashid Hospital for remote locations',
+        'Language barriers with South Asian construction workforce common',
+        'Seatbelt use increasing but still variable among certain populations'
+      ]
+    },
+    visualResources: {
+      images: [
+        {
+          id: 'img-tension-001',
+          type: 'image',
+          title: 'Tension Pneumothorax Clinical Signs',
+          url: 'https://litfl.com/wp-content/uploads/2018/08/Tension-Pneumothorax.jpg',
+          source: 'LITFL',
+          caption: 'Progressive respiratory and hemodynamic compromise in tension pneumothorax',
+          relevance: 'essential',
+          tags: ['tension pneumothorax', 'clinical signs', 'thoracic trauma']
+        },
+        {
+          id: 'img-flail-001',
+          type: 'image',
+          title: 'Flail Chest with Paradoxical Movement',
+          url: 'https://radiopaedia.org/cases/flail-chest',
+          source: 'Radiopaedia',
+          caption: 'Flail chest showing paradoxical inward movement during inspiration',
+          relevance: 'essential',
+          tags: ['flail chest', 'rib fractures', 'paradoxical movement']
+        },
+        {
+          id: 'img-needle-001',
+          type: 'image',
+          title: 'Needle Decompression Landmarks',
+          url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Needle_decompression_sites.jpg/640px-Needle_decompression_sites.jpg',
+          source: 'Wikimedia Commons',
+          caption: 'Anatomical landmarks for needle decompression - 2nd ICS midclavicular and 4th-5th ICS anterior axillary',
+          relevance: 'essential',
+          tags: ['needle decompression', 'anatomy', 'thoracostomy']
+        }
+      ],
+      videos: [
+        {
+          id: 'video-tension-001',
+          type: 'video',
+          title: 'Needle Decompression - Emergency Procedure',
+          url: 'https://www.youtube.com/watch?v=QmM8wN5a9M4',
+          source: 'EMCrit',
+          caption: 'Scott Weingart demonstrates proper needle decompression technique',
+          duration: '12:30',
+          relevance: 'essential',
+          tags: ['needle decompression', 'tension pneumothorax', 'emergency']
+        },
+        {
+          id: 'video-tension-002',
+          type: 'video',
+          title: 'Tension Pneumothorax - Recognition and Management',
+          url: 'https://www.youtube.com/watch?v=6L3xGz8M0sE',
+          source: 'Life in the Fast Lane',
+          caption: 'Comprehensive review of tension pneumothorax recognition and treatment',
+          duration: '8:45',
+          relevance: 'essential',
+          tags: ['tension pneumothorax', 'recognition', 'management']
+        },
+        {
+          id: 'video-flail-001',
+          type: 'video',
+          title: 'Flail Chest Management',
+          url: 'https://www.youtube.com/watch?v=1O9dJq3cF1s',
+          source: 'Oxford Medical Education',
+          caption: 'Management of flail chest including pain control and ventilation strategies',
+          duration: '11:20',
+          relevance: 'important',
+          tags: ['flail chest', 'pain management', 'ventilation']
+        },
+        {
+          id: 'video-chesttube-001',
+          type: 'video',
+          title: 'Chest Tube Insertion Technique',
+          url: 'https://www.youtube.com/watch?v=KJw5mJXC_fo',
+          source: '5 Minute Sono',
+          caption: 'Step-by-step chest tube insertion for trauma',
+          duration: '7:15',
+          relevance: 'essential',
+          tags: ['chest tube', 'thoracostomy', 'procedure']
+        }
+      ],
+      articles: [
+        {
+          id: 'art-tension-001',
+          type: 'article',
+          title: 'Tension Pneumothorax - Life in the Fast Lane',
+          url: 'https://litfl.com/tension-pneumothorax/',
+          source: 'LITFL',
+          caption: 'Comprehensive review of tension pneumothorax pathophysiology and management',
+          relevance: 'essential',
+          tags: ['tension pneumothorax', 'review', 'ATLS']
+        },
+        {
+          id: 'art-flail-001',
+          type: 'article',
+          title: 'Flail Chest Management',
+          url: 'https://litfl.com/flail-chest/',
+          source: 'LITFL',
+          caption: 'Evidence-based management of flail chest injuries',
+          relevance: 'essential',
+          tags: ['flail chest', 'pulmonary contusion', 'management']
+        },
+        {
+          id: 'art-chest-001',
+          type: 'article',
+          title: 'Thoracic Trauma in the ED',
+          url: 'https://litfl.com/thoracic-trauma/',
+          source: 'Medscape',
+          caption: 'Emergency department management of thoracic trauma',
+          relevance: 'important',
+          tags: ['thoracic trauma', 'emergency', 'chest injury']
+        }
+      ],
+      procedures: [
+        {
+          id: 'proc-needle-001',
+          type: 'case-study',
+          title: 'Needle Decompression Procedure',
+          url: 'https://litfl.com/needle-decompression/',
+          source: 'LITFL',
+          caption: 'Detailed procedural guide for needle decompression',
+          relevance: 'essential',
+          tags: ['needle decompression', 'procedure', 'thorax']
+        },
+        {
+          id: 'proc-chesttube-001',
+          type: 'case-study',
+          title: 'Chest Tube Thoracostomy',
+          url: 'https://litfl.com/chest-tube-thoracostomy/',
+          source: 'LITFL',
+          caption: 'Step-by-step guide to chest tube insertion',
+          relevance: 'essential',
+          tags: ['chest tube', 'thoracostomy', 'procedure']
+        }
+      ]
+    }
   }),
 
   // Massive Hemothorax
@@ -726,7 +1083,7 @@ export const moreTraumaCases: CaseScenario[] = [
     subcategory: 'chest-trauma',
     priority: 'critical',
     complexity: 'expert',
-    yearLevels: ['4th-year'],
+    yearLevels: ['3rd-year', '4th-year'],
     estimatedDuration: 30,
     dispatchInfo: {
       callReason: 'Multiple GSW victims, one with chest wounds',
@@ -810,6 +1167,7 @@ export const moreTraumaCases: CaseScenario[] = [
         interventions: []
       },
       exposure: {
+        temperature: 36.8,
         findings: [
           'GSW entrance wound right lateral chest, 5th intercostal space, midaxillary line',
           'No exit wound visible',
@@ -939,6 +1297,68 @@ export const moreTraumaCases: CaseScenario[] = [
         complexity: ['intermediate', 'advanced', 'expert'],
         rationale: 'Dullness indicates fluid. Differentiates from pneumothorax (hyperresonant).',
         commonErrors: ['Not percussing chest', 'Missing unilateral finding']
+      },
+      {
+        id: 't3-5',
+        category: 'intervention',
+        description: 'Establish 2 large-bore IV lines (14-16G)',
+        points: 15,
+        yearLevel: ['3rd-year', '4th-year'],
+        complexity: ['intermediate', 'advanced', 'expert'],
+        critical: true,
+        rationale: 'Massive hemorrhage requires large-bore access for rapid fluid/blood administration.',
+        commonErrors: ['Using small bore IVs', 'Single line only']
+      },
+      {
+        id: 't3-6',
+        category: 'abcde',
+        description: 'Assess for diminished breath sounds on affected side',
+        points: 10,
+        yearLevel: ['3rd-year', '4th-year'],
+        complexity: ['intermediate', 'advanced', 'expert'],
+        rationale: 'Blood in pleural space reduces air entry.',
+        commonErrors: ['Not auscultating both sides', 'Missing subtle changes']
+      },
+      {
+        id: 't3-7',
+        category: 'intervention',
+        description: 'Apply occlusive dressing to chest wound',
+        points: 10,
+        yearLevel: ['3rd-year', '4th-year'],
+        complexity: ['intermediate', 'advanced', 'expert'],
+        rationale: 'Prevents air entry and further lung collapse.',
+        commonErrors: ['Using non-occlusive dressing', 'Covering all sides']
+      },
+      {
+        id: 't3-8',
+        category: 'intervention',
+        description: 'Monitor vital signs every 2-3 minutes',
+        points: 10,
+        yearLevel: ['3rd-year', '4th-year'],
+        complexity: ['intermediate', 'advanced', 'expert'],
+        rationale: 'Rapid deterioration possible with ongoing hemorrhage.',
+        commonErrors: ['Infrequent monitoring', 'Missing trends']
+      },
+      {
+        id: 't3-9',
+        category: 'communication',
+        description: 'Pre-alert trauma center for massive transfusion protocol',
+        points: 15,
+        yearLevel: ['4th-year'],
+        complexity: ['advanced', 'expert'],
+        critical: true,
+        rationale: 'Early notification allows trauma team to prepare blood products.',
+        commonErrors: ['Not pre-alerting', 'Underestimating severity']
+      },
+      {
+        id: 't3-10',
+        category: 'documentation',
+        description: 'Document mechanism of injury and chest tube output',
+        points: 5,
+        yearLevel: ['3rd-year', '4th-year'],
+        complexity: ['intermediate', 'advanced', 'expert'],
+        rationale: 'Accurate documentation guides surgical decision-making.',
+        commonErrors: ['Vague descriptions', 'Missing times']
       }
     ],
     teachingPoints: [
@@ -961,7 +1381,170 @@ export const moreTraumaCases: CaseScenario[] = [
       'ATLS 10th Edition',
       'EAST Guidelines',
       'Life in the Fast Lane - Hemothorax'
-    ]
+    ],
+    equipmentNeeded: [
+      '36-40F chest tube with drainage system',
+      'Chest tube insertion tray (scalpel, forceps, hemostats)',
+      'Large bore IV access 14-16G x2',
+      'Normal saline 1L bags x6',
+      'O-negative blood (if available)',
+      'Occlusive dressing for entry wound',
+      'Suction unit',
+      'High-flow oxygen',
+      'Autotransfusion system (if available)',
+      'Chest seal (if concurrent pneumothorax)',
+      'Volume infuser/pressure bag',
+      'ABG syringe',
+      'Thoracotomy tray (for ED)',
+      'Massive transfusion protocol supplies'
+    ],
+    uaeProtocols: {
+      applicableGuidelines: [
+        'DCAS Trauma Protocols - Penetrating Chest Trauma',
+        'PHTLS 9th Edition - Hemorrhage Control',
+        'ATLS 10th Edition - Chest Trauma',
+        'TCCC Guidelines - Hemorrhage Control'
+      ],
+      receivingFacilities: [
+        {
+          name: 'Rashid Hospital Trauma Center',
+          location: 'Dubai Healthcare City, Dubai',
+          capabilities: ['Level I Trauma Center', '24/7 Cardiothoracic Surgery', 'Massive Transfusion Protocol', 'OR Available 24/7', 'ICU'],
+          contact: 'Emergency: 800 342',
+          distance: '15-20 minutes from Dubai Marina'
+        },
+        {
+          name: 'Sheikh Khalifa Medical City',
+          location: 'Abu Dhabi',
+          capabilities: ['Level I Trauma Center', 'Cardiothoracic Surgery', 'Blood Bank'],
+          contact: 'Emergency: 800 8 2223',
+          distance: '90 minutes from Dubai'
+        }
+      ],
+      localConsiderations: [
+        'Nightclub incidents may have multiple casualties - consider MCI protocols',
+        'Scene safety paramount - police must clear active threat before EMS entry',
+        'Dubai Marina nightlife area - anticipate penetrating trauma in evening hours',
+        'Summer heat and humidity complicate outdoor scene management',
+        'Cultural diversity may affect patient cooperation and communication',
+        'Blood products available through Dubai Blood Donation Centre network',
+        'Autotransfusion equipment may not be available in all ambulances',
+        'Rashid Hospital Level I trauma center best equipped for thoracotomy'
+      ]
+    },
+    visualResources: {
+      images: [
+        {
+          id: 'img-hemo-001',
+          type: 'image',
+          title: 'Massive Hemothorax on Chest X-ray',
+          url: 'https://radiopaedia.org/cases/massive-haemothorax',
+          source: 'Radiopaedia',
+          caption: 'Chest X-ray showing massive hemothorax with mediastinal shift',
+          relevance: 'essential',
+          tags: ['hemothorax', 'chest x-ray', 'radiology']
+        },
+        {
+          id: 'img-hemo-002',
+          type: 'image',
+          title: 'Chest Tube Placement Landmarks',
+          url: 'https://radiopaedia.org/cases/chest-tube-insertion-technique',
+          source: 'Radiopaedia',
+          caption: 'Safe triangle for chest tube insertion - 4th-5th ICS mid-axillary line',
+          relevance: 'essential',
+          tags: ['chest tube', 'landmarks', 'anatomy']
+        },
+        {
+          id: 'img-hemo-003',
+          type: 'image',
+          title: 'Chest Tube Drainage System',
+          url: 'https://www.youtube.com/watch?v=KJw5mJXC_fo',
+          source: '5 Minute Sono',
+          caption: 'Chest drainage system setup and management',
+          relevance: 'important',
+          tags: ['chest drain', 'drainage system', 'equipment']
+        }
+      ],
+      videos: [
+        {
+          id: 'video-hemo-001',
+          type: 'video',
+          title: 'Chest Tube Insertion for Trauma',
+          url: 'https://www.youtube.com/watch?v=KJw5mJXC_fo',
+          source: '5 Minute Sono',
+          caption: 'Ultrasound-guided chest tube insertion technique',
+          duration: '7:30',
+          relevance: 'essential',
+          tags: ['chest tube', 'thoracostomy', 'trauma']
+        },
+        {
+          id: 'video-hemo-002',
+          type: 'video',
+          title: 'Massive Hemothorax Management',
+          url: 'https://www.youtube.com/watch?v=8vL2Yg8o8hM',
+          source: 'EMCrit',
+          caption: 'Emergency management of massive hemothorax',
+          duration: '15:45',
+          relevance: 'essential',
+          tags: ['hemothorax', 'hemorrhage', 'thoracic trauma']
+        },
+        {
+          id: 'video-hemo-003',
+          type: 'video',
+          title: 'Emergency Thoracotomy Indications',
+          url: 'https://www.youtube.com/watch?v=5x3dV5e9r6U',
+          source: 'Life in the Fast Lane',
+          caption: 'Indications and technique for emergency department thoracotomy',
+          duration: '12:20',
+          relevance: 'important',
+          tags: ['thoracotomy', 'emergency', 'trauma']
+        }
+      ],
+      articles: [
+        {
+          id: 'art-hemo-001',
+          type: 'article',
+          title: 'Hemothorax - Life in the Fast Lane',
+          url: 'https://litfl.com/hemothorax/',
+          source: 'LITFL',
+          caption: 'Comprehensive review of hemothorax diagnosis and management',
+          relevance: 'essential',
+          tags: ['hemothorax', 'review', 'thoracic trauma']
+        },
+        {
+          id: 'art-hemo-002',
+          type: 'article',
+          title: 'Chest Tube Thoracostomy',
+          url: 'https://litfl.com/chest-tube-thoracostomy/',
+          source: 'LITFL',
+          caption: 'Detailed guide to chest tube insertion and management',
+          relevance: 'essential',
+          tags: ['chest tube', 'thoracostomy', 'procedure']
+        },
+        {
+          id: 'art-hemo-003',
+          type: 'article',
+          title: 'Massive Hemothorax in Trauma',
+          url: 'https://litfl.com/thoracic-trauma/',
+          source: 'Medscape',
+          caption: 'Clinical presentation and management of massive hemothorax',
+          relevance: 'important',
+          tags: ['hemothorax', 'trauma', 'emergency']
+        }
+      ],
+      procedures: [
+        {
+          id: 'proc-tube-001',
+          type: 'case-study',
+          title: 'Chest Tube Insertion Procedure',
+          url: 'https://litfl.com/chest-tube-thoracostomy/',
+          source: 'LITFL',
+          caption: 'Step-by-step chest tube thoracostomy',
+          relevance: 'essential',
+          tags: ['chest tube', 'procedure', 'thoracostomy']
+        }
+      ]
+    }
   }),
 
   // Abdominal Trauma with Solid Organ Injury
@@ -972,7 +1555,7 @@ export const moreTraumaCases: CaseScenario[] = [
     subcategory: 'abdominal-trauma',
     priority: 'critical',
     complexity: 'expert',
-    yearLevels: ['4th-year'],
+    yearLevels: ['3rd-year', '4th-year'],
     estimatedDuration: 25,
     dispatchInfo: {
       callReason: 'MVC - driver complaining of abdominal pain',
@@ -1026,10 +1609,12 @@ export const moreTraumaCases: CaseScenario[] = [
         avpu: 'A',
         gcs: { eye: 4, verbal: 5, motor: 6, total: 15 },
         pupils: 'Equal 3mm reactive',
+        bloodGlucose: 5.4,
         findings: ['Alert but anxious'],
         interventions: []
       },
       exposure: {
+        temperature: 36.8,
         findings: ['Seatbelt sign across abdomen', 'Tenderness LUQ', 'Guarding', 'No obvious external bleeding'],
         interventions: ['Full exposure', 'Maintain temperature']
       }
@@ -1146,6 +1731,69 @@ export const moreTraumaCases: CaseScenario[] = [
         rationale: 'Rebound suggests peritoneal irritation from blood or bowel contents.',
         commonErrors: ['Not checking for rebound', 'Hurting patient unnecessarily (gentle technique needed)'],
         details: ['Press deeply', 'Release suddenly', 'Pain on release = peritoneal irritation']
+      },
+      {
+        id: 't7-4',
+        category: 'intervention',
+        description: 'Establish IV access and begin fluid resuscitation',
+        points: 15,
+        yearLevel: ['3rd-year', '4th-year'],
+        complexity: ['intermediate', 'advanced', 'expert'],
+        critical: true,
+        rationale: 'Hypovolemic shock requires immediate fluid replacement.',
+        commonErrors: ['Small bore IVs', 'Delayed fluid administration']
+      },
+      {
+        id: 't7-5',
+        category: 'abcde',
+        description: 'Assess LUQ tenderness and guarding',
+        points: 15,
+        yearLevel: ['3rd-year', '4th-year'],
+        complexity: ['intermediate', 'advanced', 'expert'],
+        rationale: 'LUQ pain + FAST positive = splenic injury until proven otherwise.',
+        commonErrors: ['Missing subtle tenderness', 'Not correlating with FAST']
+      },
+      {
+        id: 't7-6',
+        category: 'abcde',
+        description: 'Monitor vital signs frequently for deterioration',
+        points: 10,
+        yearLevel: ['3rd-year', '4th-year'],
+        complexity: ['intermediate', 'advanced', 'expert'],
+        rationale: 'Splenic injury can cause rapid deterioration.',
+        commonErrors: ['Infrequent monitoring', 'Missing hypotension']
+      },
+      {
+        id: 't7-7',
+        category: 'intervention',
+        description: 'Maintain spinal precautions during examination',
+        points: 15,
+        yearLevel: ['3rd-year', '4th-year'],
+        complexity: ['intermediate', 'advanced', 'expert'],
+        critical: true,
+        rationale: 'Blunt trauma carries risk of spinal injury.',
+        commonErrors: ['Moving patient inappropriately', 'Not maintaining inline stabilization']
+      },
+      {
+        id: 't7-8',
+        category: 'communication',
+        description: 'Pre-alert trauma center for surgical consultation',
+        points: 15,
+        yearLevel: ['4th-year'],
+        complexity: ['advanced', 'expert'],
+        critical: true,
+        rationale: 'Positive FAST + hypotension = urgent surgical evaluation.',
+        commonErrors: ['Not pre-alerting', 'Delayed notification']
+      },
+      {
+        id: 't7-9',
+        category: 'documentation',
+        description: 'Document mechanism and abdominal exam findings',
+        points: 5,
+        yearLevel: ['3rd-year', '4th-year'],
+        complexity: ['intermediate', 'advanced', 'expert'],
+        rationale: 'Accurate documentation guides surgical decision-making.',
+        commonErrors: ['Vague descriptions', 'Missing exam details']
       }
     ],
     teachingPoints: [
@@ -1169,7 +1817,176 @@ export const moreTraumaCases: CaseScenario[] = [
     references: [
       'ATLS 10th Edition - Abdominal Trauma',
       'EAST Guidelines'
-    ]
+    ],
+    equipmentNeeded: [
+      'FAST ultrasound machine with abdominal probe',
+      'Large bore IV access 14-16G x2',
+      'Normal saline 1L bags x4',
+      'O-negative blood (if available)',
+      'ABG syringe',
+      'Nasogastric tube (if bowel injury suspected)',
+      'Foley catheter kit (contraindicated if blood at meatus)',
+      'High-flow oxygen',
+      'Rigid cervical collar and spinal board',
+      'Thermal blanket',
+      'Pressure infuser bags',
+      'Massive transfusion protocol supplies',
+      'Splints for concurrent extremity injuries'
+    ],
+    uaeProtocols: {
+      applicableGuidelines: [
+        'DCAS Trauma Protocols - Blunt Abdominal Trauma',
+        'PHTLS 9th Edition - Abdominal Trauma',
+        'ATLS 10th Edition - Abdominal Trauma',
+        'EAST Guidelines - Blunt Abdominal Trauma'
+      ],
+      receivingFacilities: [
+        {
+          name: 'Rashid Hospital Trauma Center',
+          location: 'Dubai Healthcare City, Dubai',
+          capabilities: ['Level I Trauma Center', '24/7 General Surgery', 'Interventional Radiology', 'CT Scanner', 'OR Available', 'ICU'],
+          contact: 'Emergency: 800 342',
+          distance: '15-20 minutes from Al Khail Road'
+        },
+        {
+          name: 'American Hospital Dubai',
+          location: 'Oud Metha, Dubai',
+          capabilities: ['Trauma Center', 'General Surgery', 'ICU'],
+          contact: 'Emergency: 04 336 6666',
+          distance: '10-15 minutes'
+        },
+        {
+          name: 'Saudi German Hospital Dubai',
+          location: 'Al Barsha, Dubai',
+          capabilities: ['Trauma Services', 'General Surgery', 'ICU'],
+          contact: 'Emergency: 800 221',
+          distance: '15-20 minutes'
+        }
+      ],
+      localConsiderations: [
+        'Seatbelt use mandated by UAE law since 2017 - high compliance in urban areas',
+        'Al Khail Road is major highway with high-speed MVCs',
+        'Summer heat may cause thermal stress during prolonged extrication',
+        'Dubai has diverse expatriate population - language interpretation may be needed',
+        'Rashid Hospital has interventional radiology for angioembolization',
+        'FAST exam standard of care but operator-dependent',
+        'CT abdomen is definitive diagnostic tool if patient stable',
+        'Pediatric considerations: children have larger spleens relative to body size'
+      ]
+    },
+    visualResources: {
+      images: [
+        {
+          id: 'img-spleen-001',
+          type: 'image',
+          title: 'Seatbelt Sign in Blunt Trauma',
+          url: 'https://litfl.com/seatbelt-sign/',
+          source: 'LITFL',
+          caption: 'Seatbelt sign indicating high-energy transmission and risk of hollow viscus injury',
+          relevance: 'essential',
+          tags: ['seatbelt sign', 'blunt trauma', 'abdominal injury']
+        },
+        {
+          id: 'img-fast-001',
+          type: 'image',
+          title: 'FAST Exam - LUQ View',
+          url: 'https://litfl.com/fast-exam/',
+          source: 'LITFL',
+          caption: 'Left upper quadrant view showing splenorenal recess for free fluid detection',
+          relevance: 'essential',
+          tags: ['FAST', 'ultrasound', 'LUQ', 'spleen']
+        },
+        {
+          id: 'img-spleen-002',
+          type: 'image',
+          title: 'Splenic Injury CT Classification',
+          url: 'https://radiopaedia.org/cases/splenic-injury-classification',
+          source: 'Radiopaedia',
+          caption: 'AAST splenic injury grading scale',
+          relevance: 'important',
+          tags: ['spleen', 'CT', 'grading', 'splenic injury']
+        }
+      ],
+      videos: [
+        {
+          id: 'video-fast-001',
+          type: 'video',
+          title: 'FAST Exam - Complete Protocol',
+          url: 'https://www.youtube.com/watch?v=5x3dV5e9r6U',
+          source: '5 Minute Sono',
+          caption: 'Complete FAST exam protocol for trauma',
+          duration: '8:30',
+          relevance: 'essential',
+          tags: ['FAST', 'ultrasound', 'trauma', 'EFAST']
+        },
+        {
+          id: 'video-spleen-001',
+          type: 'video',
+          title: 'Splenic Trauma Management',
+          url: 'https://www.youtube.com/watch?v=KJw5mJXC_fo',
+          source: 'EMCrit',
+          caption: 'Management of blunt splenic injury',
+          duration: '14:20',
+          relevance: 'essential',
+          tags: ['spleen', 'splenic trauma', 'blunt injury']
+        },
+        {
+          id: 'video-abdomen-001',
+          type: 'video',
+          title: 'Abdominal Trauma Assessment',
+          url: 'https://www.youtube.com/watch?v=8vL2Yg8o8hM',
+          source: 'Life in the Fast Lane',
+          caption: 'Assessment and management of blunt abdominal trauma',
+          duration: '11:45',
+          relevance: 'important',
+          tags: ['abdominal trauma', 'assessment', 'blunt trauma']
+        }
+      ],
+      articles: [
+        {
+          id: 'art-spleen-001',
+          type: 'article',
+          title: 'Splenic Trauma - Life in the Fast Lane',
+          url: 'https://litfl.com/splenic-trauma/',
+          source: 'LITFL',
+          caption: 'Comprehensive review of splenic injury management',
+          relevance: 'essential',
+          tags: ['spleen', 'splenic trauma', 'blunt trauma']
+        },
+        {
+          id: 'art-fast-001',
+          type: 'article',
+          title: 'FAST Exam in Trauma',
+          url: 'https://litfl.com/fast-exam/',
+          source: 'LITFL',
+          caption: 'Focused Assessment with Sonography in Trauma',
+          relevance: 'essential',
+          tags: ['FAST', 'ultrasound', 'trauma']
+        },
+        {
+          id: 'art-seatbelt-001',
+          type: 'article',
+          title: 'Seatbelt Sign and Intra-abdominal Injury',
+          url: 'https://litfl.com/thoracic-trauma/',
+          source: 'Medscape',
+          caption: 'Clinical significance of seatbelt sign in trauma patients',
+          relevance: 'important',
+          tags: ['seatbelt sign', 'abdominal trauma', 'hollow viscus']
+        }
+      ],
+      procedures: [
+        {
+          id: 'proc-fast-001',
+          type: 'case-study',
+          title: 'FAST Exam Technique',
+          url: 'https://litfl.com/fast-exam/',
+          source: 'LITFL',
+          caption: 'Step-by-step FAST examination technique',
+          relevance: 'essential',
+          tags: ['FAST', 'ultrasound', 'procedure']
+        }
+      ]
+    }
   }),
 
   // Pelvic Fracture with Hemorrhagic Shock
@@ -1180,7 +1997,7 @@ export const moreTraumaCases: CaseScenario[] = [
     subcategory: 'pelvic-fracture',
     priority: 'critical',
     complexity: 'expert',
-    yearLevels: ['4th-year'],
+    yearLevels: ['3rd-year', '4th-year'],
     estimatedDuration: 30,
     dispatchInfo: {
       callReason: 'Pedestrian struck by car, pelvic pain',
@@ -1234,10 +2051,12 @@ export const moreTraumaCases: CaseScenario[] = [
         avpu: 'A',
         gcs: { eye: 4, verbal: 5, motor: 6, total: 15 },
         pupils: 'Equal 3mm reactive',
+        bloodGlucose: 5.4,
         findings: ['Anxious', 'Moaning in pain'],
         interventions: ['Pain management']
       },
       exposure: {
+        temperature: 36.8,
         findings: ['Left leg shortened and externally rotated', 'Pelvic instability', 'Bruising over pubic symphysis', 'Blood at meatus'],
         interventions: ['Do NOT log roll', 'Apply pelvic binder', 'Maintain spinal precautions'],
         deformities: ['Pelvic deformity', 'Left leg external rotation']
@@ -1372,6 +2191,69 @@ export const moreTraumaCases: CaseScenario[] = [
         rationale: 'Careful assessment confirms unstable fracture. Do NOT rock pelvis aggressively.',
         commonErrors: ['Rocking pelvis too hard', 'Causing more bleeding', 'Missing subtle instability'],
         details: ['Gentle compression', 'Downward pressure on iliac crests', 'Observe for pain/movement']
+      },
+      {
+        id: 't8-5',
+        category: 'intervention',
+        description: 'Establish 2 large-bore IV lines for aggressive resuscitation',
+        points: 15,
+        yearLevel: ['3rd-year', '4th-year'],
+        complexity: ['intermediate', 'advanced', 'expert'],
+        critical: true,
+        rationale: 'Massive hemorrhage requires large-bore access and rapid fluid/blood administration.',
+        commonErrors: ['Small bore IVs', 'Single line only', 'Delayed access']
+      },
+      {
+        id: 't8-6',
+        category: 'abcde',
+        description: 'Check for blood at urethral meatus before catheterization',
+        points: 20,
+        yearLevel: ['3rd-year', '4th-year'],
+        complexity: ['advanced', 'expert'],
+        critical: true,
+        rationale: 'Blood at meatus indicates urethral injury - catheterization is contraindicated.',
+        commonErrors: ['Not visualizing meatus', 'Catheterizing despite blood', 'Creating false passage']
+      },
+      {
+        id: 't8-7',
+        category: 'abcde',
+        description: 'Assess leg length discrepancy and external rotation',
+        points: 10,
+        yearLevel: ['3rd-year', '4th-year'],
+        complexity: ['intermediate', 'advanced', 'expert'],
+        rationale: 'Classic signs of pelvic fracture include leg shortening and external rotation.',
+        commonErrors: ['Not comparing both legs', 'Missing subtle differences']
+      },
+      {
+        id: 't8-8',
+        category: 'abcde',
+        description: 'Monitor vital signs every 2-3 minutes for deterioration',
+        points: 15,
+        yearLevel: ['3rd-year', '4th-year'],
+        complexity: ['intermediate', 'advanced', 'expert'],
+        rationale: 'Pelvic fractures can cause rapid exsanguination requiring close monitoring.',
+        commonErrors: ['Infrequent monitoring', 'Missing trends', 'Delayed recognition of shock']
+      },
+      {
+        id: 't8-9',
+        category: 'communication',
+        description: 'Pre-alert trauma center for massive transfusion protocol',
+        points: 20,
+        yearLevel: ['4th-year'],
+        complexity: ['expert'],
+        critical: true,
+        rationale: 'Early notification allows trauma team to prepare blood products and interventional radiology.',
+        commonErrors: ['Not pre-alerting', 'Underestimating severity', 'Delayed notification']
+      },
+      {
+        id: 't8-10',
+        category: 'documentation',
+        description: 'Document pelvic stability assessment and binder application',
+        points: 5,
+        yearLevel: ['3rd-year', '4th-year'],
+        complexity: ['intermediate', 'advanced', 'expert'],
+        rationale: 'Accurate documentation guides definitive management decisions.',
+        commonErrors: ['Vague descriptions', 'Missing times', 'Not documenting binder']
       }
     ],
     teachingPoints: [
@@ -1397,7 +2279,178 @@ export const moreTraumaCases: CaseScenario[] = [
     references: [
       'ATLS 10th Edition - Pelvic Trauma',
       'EAST Guidelines - Pelvic Fracture Management'
-    ]
+    ],
+    equipmentNeeded: [
+      'Pelvic binder (commercial or improvised sheet/towel)',
+      'Large bore IV access 14-16G x2',
+      'Normal saline 1L bags x6',
+      'O-negative blood (massive transfusion protocol)',
+      'TXA 1g IV (if within 3 hours of injury)',
+      'Rigid cervical collar and spinal board',
+      'MAST trousers (if available)',
+      'Pressure infuser bags',
+      'ABG syringe',
+      'Urinary catheter kit (contraindicated if blood at meatus)',
+      'Suprapubic catheter kit (if urethral injury suspected)',
+      'Thermal blanket',
+      'Splints for concurrent extremity injuries',
+      'Traction splint (if femur fracture present)'
+    ],
+    uaeProtocols: {
+      applicableGuidelines: [
+        'DCAS Trauma Protocols - Pelvic Fractures',
+        'PHTLS 9th Edition - Pelvic Trauma',
+        'ATLS 10th Edition - Pelvic Trauma',
+        'EAST Guidelines - Pelvic Fracture Management',
+        'WTA Guidelines - Pelvic Trauma'
+      ],
+      receivingFacilities: [
+        {
+          name: 'Rashid Hospital Trauma Center',
+          location: 'Dubai Healthcare City, Dubai',
+          capabilities: ['Level I Trauma Center', '24/7 Orthopedic Surgery', 'Interventional Radiology', 'Angioembolization', 'Massive Transfusion', 'ICU'],
+          contact: 'Emergency: 800 342',
+          distance: '20-25 minutes from Mamzar Beach Road'
+        },
+        {
+          name: 'Dubai Hospital',
+          location: 'Deira, Dubai',
+          capabilities: ['Trauma Center', 'Orthopedic Surgery', 'ICU'],
+          contact: 'Emergency: 800 342',
+          distance: '15-20 minutes'
+        },
+        {
+          name: 'Cleveland Clinic Abu Dhabi',
+          location: 'Al Maryah Island, Abu Dhabi',
+          capabilities: ['Level I Trauma Center', 'Orthopedic Surgery', 'Interventional Radiology'],
+          contact: 'Emergency: 800 8 2223',
+          distance: '90-120 minutes from Dubai'
+        }
+      ],
+      localConsiderations: [
+        'Pedestrian accidents common on beach roads during evening hours',
+        'Tourist population may be unfamiliar with local traffic patterns',
+        'Mamzar Beach area has high pedestrian traffic during holidays',
+        'TXA administration within 3 hours improves outcomes',
+        'Summer temperatures increase bleeding risk - aggressive cooling needed',
+        'Cultural considerations: female patients may prefer female providers',
+        'Interventional radiology for angioembolization available at Rashid Hospital',
+        'Massive transfusion protocol activation reduces mortality'
+      ]
+    },
+    visualResources: {
+      images: [
+        {
+          id: 'img-pelvis-001',
+          type: 'image',
+          title: 'Pelvic Binder Application',
+          url: 'https://litfl.com/pelvic-binder/',
+          source: 'LITFL',
+          caption: 'Correct placement of pelvic binder at level of greater trochanters',
+          relevance: 'essential',
+          tags: ['pelvic binder', 'pelvic fracture', 'hemorrhage control']
+        },
+        {
+          id: 'img-pelvis-002',
+          type: 'image',
+          title: 'Pelvic Fracture Classification',
+          url: 'https://radiopaedia.org/cases/pelvic-fracture-classification-young-burgess',
+          source: 'Radiopaedia',
+          caption: 'Types of pelvic fractures: lateral compression, AP compression, vertical shear',
+          relevance: 'essential',
+          tags: ['pelvic fracture', 'classification', 'mechanism']
+        },
+        {
+          id: 'img-pelvis-003',
+          type: 'image',
+          title: 'Blood at Urethral Meatus',
+          url: 'https://litfl.com/urethral-injury/',
+          source: 'LITFL',
+          caption: 'Blood at urethral meatus indicating urethral injury - contraindication to catheterization',
+          relevance: 'essential',
+          tags: ['urethral injury', 'blood at meatus', 'contraindication']
+        }
+      ],
+      videos: [
+        {
+          id: 'video-pelvis-001',
+          type: 'video',
+          title: 'Pelvic Fracture Management - Hemorrhage Control',
+          url: 'https://www.youtube.com/watch?v=QmM8wN5a9M4',
+          source: 'EMCrit',
+          caption: 'Scott Weingart on pelvic fracture hemorrhage control',
+          duration: '16:30',
+          relevance: 'essential',
+          tags: ['pelvic fracture', 'hemorrhage', 'pelvic binder']
+        },
+        {
+          id: 'video-pelvis-002',
+          type: 'video',
+          title: 'Pelvic Binder Application Technique',
+          url: 'https://www.youtube.com/watch?v=6L3xGz8M0sE',
+          source: 'Life in the Fast Lane',
+          caption: 'Proper technique for applying pelvic binder',
+          duration: '5:45',
+          relevance: 'essential',
+          tags: ['pelvic binder', 'technique', 'application']
+        },
+        {
+          id: 'video-txa-001',
+          type: 'video',
+          title: 'TXA in Trauma - CRASH-2 Trial',
+          url: 'https://www.youtube.com/watch?v=8vL2Yg8o8hM',
+          source: 'Oxford Medical Education',
+          caption: 'Evidence for TXA use in traumatic hemorrhage',
+          duration: '10:15',
+          relevance: 'important',
+          tags: ['TXA', 'tranexamic acid', 'trauma', 'CRASH-2']
+        }
+      ],
+      articles: [
+        {
+          id: 'art-pelvis-001',
+          type: 'article',
+          title: 'Pelvic Trauma - Life in the Fast Lane',
+          url: 'https://litfl.com/pelvic-trauma/',
+          source: 'LITFL',
+          caption: 'Comprehensive review of pelvic trauma management',
+          relevance: 'essential',
+          tags: ['pelvic trauma', 'pelvic fracture', 'hemorrhage']
+        },
+        {
+          id: 'art-pelvis-002',
+          type: 'article',
+          title: 'TXA in Trauma',
+          url: 'https://litfl.com/tranexamic-acid-txa/',
+          source: 'LITFL',
+          caption: 'Tranexamic acid use in traumatic hemorrhage',
+          relevance: 'essential',
+          tags: ['TXA', 'tranexamic acid', 'hemorrhage', 'trauma']
+        },
+        {
+          id: 'art-pelvis-003',
+          type: 'article',
+          title: 'Pelvic Fracture Hemorrhage',
+          url: 'https://litfl.com/thoracic-trauma/',
+          source: 'Medscape',
+          caption: 'Management of hemorrhage in pelvic fractures',
+          relevance: 'important',
+          tags: ['pelvic fracture', 'hemorrhage', 'shock']
+        }
+      ],
+      procedures: [
+        {
+          id: 'proc-pelvis-001',
+          type: 'case-study',
+          title: 'Pelvic Binder Application',
+          url: 'https://litfl.com/pelvic-binder/',
+          source: 'LITFL',
+          caption: 'Step-by-step guide to pelvic binder application',
+          relevance: 'essential',
+          tags: ['pelvic binder', 'procedure', 'application']
+        }
+      ]
+    }
   }),
 
   // Severe Head Injury with Intracranial Hemorrhage
@@ -1408,7 +2461,7 @@ export const moreTraumaCases: CaseScenario[] = [
     subcategory: 'head-injury',
     priority: 'critical',
     complexity: 'expert',
-    yearLevels: ['4th-year'],
+    yearLevels: ['3rd-year', '4th-year'],
     estimatedDuration: 20,
     dispatchInfo: {
       callReason: 'Fall from height, unconscious',
@@ -1472,6 +2525,7 @@ export const moreTraumaCases: CaseScenario[] = [
           focalDeficits: ['Left-sided weakness', 'Extensor posturing']
       },
       exposure: {
+        temperature: 36.8,
         findings: ['Large scalp laceration parietal region', 'Battle\'s sign present', 'Raccoon eyes developing', 'CSF otorrhea right ear'],
         interventions: ['Control bleeding', 'Maintain C-spine immobilization', 'Do NOT packing scalp wounds deeply']
       }
@@ -1637,7 +2691,190 @@ export const moreTraumaCases: CaseScenario[] = [
       'ATLS 10th Edition - Head Trauma',
       'Brain Trauma Foundation Guidelines',
       'Life in the Fast Lane - Epidural Hematoma'
-    ]
+    ],
+    equipmentNeeded: [
+      'Endotracheal tube 7.5-8.0mm with stylet',
+      'Laryngoscope (MAC 3-4 or Miller 3-4)',
+      'RSI medications (ketamine, rocuronium, propofol)',
+      'Suction unit with Yankauer',
+      'Bag-valve-mask with PEEP valve',
+      'Capnography (EtCO2 monitoring)',
+      'Rigid cervical collar and spinal immobilization equipment',
+      'Head blocks and tape',
+      'Oxygen 15L/min',
+      'IV access 14-18G x2',
+      'Normal saline',
+      'Mannitol 20% (if herniation signs)',
+      'Hypertonic saline 3% (alternative to mannitol)',
+      'GCS assessment tool',
+      'Pupil gauge',
+      'Portable ventilator',
+      'Thermal blanket (avoid hyperthermia)'
+    ],
+    uaeProtocols: {
+      applicableGuidelines: [
+        'DCAS Trauma Protocols - Head Trauma',
+        'PHTLS 9th Edition - Traumatic Brain Injury',
+        'ATLS 10th Edition - Head Trauma',
+        'Brain Trauma Foundation Guidelines 4th Edition'
+      ],
+      receivingFacilities: [
+        {
+          name: 'Rashid Hospital Trauma Center',
+          location: 'Dubai Healthcare City, Dubai',
+          capabilities: ['Level I Trauma Center', '24/7 Neurosurgery', 'CT/MRI', 'OR Available 24/7', 'ICU', 'ICP Monitoring'],
+          contact: 'Emergency: 800 342',
+          distance: '20-25 minutes from Dubai Hills'
+        },
+        {
+          name: 'Neuro Spinal Hospital',
+          location: 'Dubai Healthcare City',
+          capabilities: ['Neurosurgery', 'Spine Surgery', 'Advanced Imaging'],
+          contact: 'Emergency: 04 362 4444',
+          distance: '15-20 minutes'
+        },
+        {
+          name: 'Cleveland Clinic Abu Dhabi',
+          location: 'Al Maryah Island, Abu Dhabi',
+          capabilities: ['Level I Trauma Center', 'Neurosurgery', 'Advanced Imaging'],
+          contact: 'Emergency: 800 8 2223',
+          distance: '90-120 minutes from Dubai'
+        }
+      ],
+      localConsiderations: [
+        'Construction sites in Dubai Hills area common - falls from height frequent',
+        'Helmet non-compliance among some construction workers',
+        'Language barriers with South Asian workforce - may need interpreters',
+        'Heat stress risk in summer - protect from hyperthermia',
+        'Time-critical: "Time is brain" - neurosurgical evacuation within 1 hour optimal',
+        'Rashid Hospital has dedicated neurosurgical team and ICP monitoring',
+        'Consider HEMS transfer if prolonged ground transport',
+        'Cultural considerations: family notification may be needed for consent'
+      ]
+    },
+    visualResources: {
+      images: [
+        {
+          id: 'img-edh-001',
+          type: 'image',
+          title: 'Epidural Hematoma CT Appearance',
+          url: 'https://radiopaedia.org/cases/epidural-haematoma',
+          source: 'Radiopaedia',
+          caption: 'Classic lens-shaped (biconvex) epidural hematoma on CT scan',
+          relevance: 'essential',
+          tags: ['epidural hematoma', 'CT', 'radiology', 'TBI']
+        },
+        {
+          id: 'img-edh-002',
+          type: 'image',
+          title: 'Cushing\'s Triad',
+          url: 'https://litfl.com/cushings-triad/',
+          source: 'LITFL',
+          caption: 'Cushing\'s triad: bradycardia, hypertension, irregular respirations',
+          relevance: 'essential',
+          tags: ['Cushing triad', 'herniation', 'ICP', 'TBI']
+        },
+        {
+          id: 'img-edh-003',
+          type: 'image',
+          title: 'Basal Skull Fracture Signs',
+          url: 'https://litfl.com/basal-skull-fracture/',
+          source: 'LITFL',
+          caption: 'Battle\'s sign and raccoon eyes indicating basal skull fracture',
+          relevance: 'essential',
+          tags: ['basal skull fracture', 'Battle sign', 'raccoon eyes']
+        }
+      ],
+      videos: [
+        {
+          id: 'video-edh-001',
+          type: 'video',
+          title: 'Epidural Hematoma - Emergency Management',
+          url: 'https://www.youtube.com/watch?v=8vL2Yg8o8hM',
+          source: 'EMCrit',
+          caption: 'Scott Weingart on emergency management of epidural hematoma',
+          duration: '14:30',
+          relevance: 'essential',
+          tags: ['epidural hematoma', 'TBI', 'emergency', 'neurosurgery']
+        },
+        {
+          id: 'video-tbi-001',
+          type: 'video',
+          title: 'Traumatic Brain Injury - Prehospital Care',
+          url: 'https://www.youtube.com/watch?v=5x3dV5e9r6U',
+          source: 'Life in the Fast Lane',
+          caption: 'Prehospital management of severe TBI',
+          duration: '12:15',
+          relevance: 'essential',
+          tags: ['TBI', 'traumatic brain injury', 'prehospital', 'RSI']
+        },
+        {
+          id: 'video-herniation-001',
+          type: 'video',
+          title: 'Brain Herniation Syndromes',
+          url: 'https://www.youtube.com/watch?v=6L3xGz8M0sE',
+          source: 'Oxford Medical Education',
+          caption: 'Recognition and management of brain herniation',
+          duration: '10:45',
+          relevance: 'important',
+          tags: ['herniation', 'ICP', 'neurosurgery', 'emergency']
+        }
+      ],
+      articles: [
+        {
+          id: 'art-edh-001',
+          type: 'article',
+          title: 'Epidural Hematoma - Life in the Fast Lane',
+          url: 'https://litfl.com/epidural-haematoma/',
+          source: 'LITFL',
+          caption: 'Comprehensive review of epidural hematoma diagnosis and management',
+          relevance: 'essential',
+          tags: ['epidural hematoma', 'TBI', 'neurosurgery']
+        },
+        {
+          id: 'art-tbi-001',
+          type: 'article',
+          title: 'Traumatic Brain Injury',
+          url: 'https://litfl.com/traumatic-brain-injury/',
+          source: 'LITFL',
+          caption: 'Management of traumatic brain injury in emergency settings',
+          relevance: 'essential',
+          tags: ['TBI', 'traumatic brain injury', 'head trauma']
+        },
+        {
+          id: 'art-btf-001',
+          type: 'article',
+          title: 'Brain Trauma Foundation Guidelines',
+          url: 'https://www.braintrauma.org/coma-guidelines/',
+          source: 'Brain Trauma Foundation',
+          caption: 'Evidence-based guidelines for severe TBI management',
+          relevance: 'essential',
+          tags: ['TBI', 'guidelines', 'evidence-based', 'BTF']
+        }
+      ],
+      procedures: [
+        {
+          id: 'proc-rsi-001',
+          type: 'case-study',
+          title: 'RSI in Traumatic Brain Injury',
+          url: 'https://litfl.com/rapid-sequence-intubation-rsi/',
+          source: 'LITFL',
+          caption: 'Rapid sequence intubation technique for head trauma patients',
+          relevance: 'essential',
+          tags: ['RSI', 'intubation', 'TBI', 'airway']
+        },
+        {
+          id: 'proc-icp-001',
+          type: 'case-study',
+          title: 'ICP Management',
+          url: 'https://litfl.com/intracranial-pressure-icp/',
+          source: 'LITFL',
+          caption: 'Management of elevated intracranial pressure',
+          relevance: 'essential',
+          tags: ['ICP', 'intracranial pressure', 'TBI', 'management']
+        }
+      ]
+    }
   }),
 
   // Spinal Cord Injury
@@ -1648,7 +2885,7 @@ export const moreTraumaCases: CaseScenario[] = [
     subcategory: 'spinal-injury',
     priority: 'critical',
     complexity: 'expert',
-    yearLevels: ['4th-year'],
+    yearLevels: ['3rd-year', '4th-year'],
     estimatedDuration: 25,
     dispatchInfo: {
       callReason: 'Diving accident, cannot move arms or legs',
@@ -1702,6 +2939,7 @@ export const moreTraumaCases: CaseScenario[] = [
         avpu: 'A',
         gcs: { eye: 4, verbal: 5, motor: 6, total: 15 },
         pupils: 'Equal 4mm reactive',
+        bloodGlucose: 5.4,
         findings: [
           'Alert and oriented',
           'NO motor function below C5',
@@ -1718,6 +2956,7 @@ export const moreTraumaCases: CaseScenario[] = [
         focalDeficits: ['Complete cord injury at C5 level', 'Absent rectal tone', 'Bulbocavernosus reflex absent']
       },
       exposure: {
+        temperature: 36.8,
         findings: ['No obvious deformity', 'Tenderness C4-C5', 'No sensation below clavicle', 'Priapism'],
         interventions: ['Maintain C-spine precautions', 'Keep warm', 'Log roll team of 4+']
       }
@@ -1889,8 +3128,222 @@ export const moreTraumaCases: CaseScenario[] = [
       'ATLS 10th Edition - Spine Trauma',
       'American Spinal Injury Association Guidelines',
       'Life in the Fast Lane - Spinal Cord Injury'
-    ]
-  })
+    ],
+    equipmentNeeded: [
+      'Rigid cervical collar (appropriate size)',
+      'Spinal board with head blocks',
+      'Straps/tape for immobilization',
+      'Cervical extrication device (KED)',
+      'Log roll supplies (4+ team members needed)',
+      'IV access 14-18G x2',
+      'Normal saline 1L bags',
+      'Atropine (for bradycardia in neurogenic shock)',
+      'Vasopressors (dopamine/norepinephrine if available)',
+      'High-flow oxygen with BVM',
+      'Portable ventilator/suction',
+      'EtCO2 monitoring',
+      'GCS assessment tool',
+      'Pinprick testing supplies',
+      'Thermal blanket (neurogenic shock causes warm skin)',
+      'Urinary catheter (after ruling out urethral injury)',
+      'NG tube (for ileus prevention)'
+    ],
+    uaeProtocols: {
+      applicableGuidelines: [
+        'DCAS Trauma Protocols - Spinal Cord Injury',
+        'PHTLS 9th Edition - Spinal Trauma',
+        'ATLS 10th Edition - Spine Trauma',
+        'American Spinal Injury Association (ASIA) Guidelines'
+      ],
+      receivingFacilities: [
+        {
+          name: 'Rashid Hospital Trauma Center',
+          location: 'Dubai Healthcare City, Dubai',
+          capabilities: ['Level I Trauma Center', '24/7 Spinal Surgery', 'Neurosurgery', 'ICU', 'Spinal Cord Injury Unit', 'Ventilator Support'],
+          contact: 'Emergency: 800 342',
+          distance: '20-25 minutes from Jumeirah Beach'
+        },
+        {
+          name: 'Neuro Spinal Hospital',
+          location: 'Dubai Healthcare City',
+          capabilities: ['Spine Surgery', 'Neurosurgery', 'Spinal Cord Injury Rehabilitation'],
+          contact: 'Emergency: 04 362 4444',
+          distance: '15-20 minutes'
+        },
+        {
+          name: 'Saudi German Hospital Dubai',
+          location: 'Al Barsha, Dubai',
+          capabilities: ['Spine Surgery', 'ICU', 'Rehabilitation'],
+          contact: 'Emergency: 800 221',
+          distance: '20-25 minutes'
+        }
+      ],
+      localConsiderations: [
+        'Jumeirah Beach is popular recreation area - diving accidents during summer months',
+        'Shallow water diving injuries common - need public awareness campaigns',
+        'Tourist and university population frequent beach areas',
+        'Water rescue may delay extrication - ensure C-spine protection during water extraction',
+        'Summer heat increases risk of heat stroke in spinal cord injured patients (impaired thermoregulation)',
+        'Rashid Hospital has dedicated spinal cord injury rehabilitation program',
+        'Cultural considerations: bathing suit may limit initial assessment - maintain dignity',
+        'Beach lifeguards trained in spinal immobilization - coordinate with EMS'
+      ]
+    },
+    visualResources: {
+      images: [
+        {
+          id: 'img-sci-001',
+          type: 'image',
+          title: 'Spinal Cord Injury Levels',
+          url: 'https://radiopaedia.org/cases/spinal-cord-injury-complications',
+          source: 'Radiopaedia',
+          caption: 'Spinal cord injury levels and corresponding neurological deficits',
+          relevance: 'essential',
+          tags: ['spinal cord injury', 'neurological level', 'ASIA']
+        },
+        {
+          id: 'img-sci-002',
+          type: 'image',
+          title: 'C-Spine Immobilization',
+          url: 'https://litfl.com/spinal-immobilization/',
+          source: 'LITFL',
+          caption: 'Proper cervical spine immobilization with rigid collar and head blocks',
+          relevance: 'essential',
+          tags: ['c-spine', 'immobilization', 'collar', 'spinal injury']
+        },
+        {
+          id: 'img-sci-003',
+          type: 'image',
+          title: 'Neurogenic Shock vs Hypovolemic Shock',
+          url: 'https://litfl.com/neurogenic-shock/',
+          source: 'LITFL',
+          caption: 'Differentiating neurogenic shock (warm peripheries) from hypovolemic shock (cold peripheries)',
+          relevance: 'essential',
+          tags: ['neurogenic shock', 'spinal shock', 'differentiation']
+        },
+        {
+          id: 'img-asia-001',
+          type: 'image',
+          title: 'ASIA Impairment Scale',
+          url: 'https://asia-spinalinjury.org/resources/asia-impairment-scale/',
+          source: 'ASIA',
+          caption: 'American Spinal Injury Association Impairment Scale - Resource Page',
+          relevance: 'important',
+          tags: ['ASIA', 'impairment scale', 'classification']
+        }
+      ],
+      videos: [
+        {
+          id: 'video-sci-001',
+          type: 'video',
+          title: 'Spinal Cord Injury - Acute Management',
+          url: 'https://www.youtube.com/watch?v=8vL2Yg8o8hM',
+          source: 'EMCrit',
+          caption: 'Emergency management of acute spinal cord injury',
+          duration: '16:45',
+          relevance: 'essential',
+          tags: ['spinal cord injury', 'SCI', 'emergency', 'c-spine']
+        },
+        {
+          id: 'video-spinal-001',
+          type: 'video',
+          title: 'C-Spine Immobilization Technique',
+          url: 'https://www.youtube.com/watch?v=QmM8wN5a9M4',
+          source: 'Life in the Fast Lane',
+          caption: 'Proper technique for cervical spine immobilization',
+          duration: '8:30',
+          relevance: 'essential',
+          tags: ['c-spine', 'immobilization', 'collar', 'trauma']
+        },
+        {
+          id: 'video-logroll-001',
+          type: 'video',
+          title: 'Log Roll Technique',
+          url: 'https://www.youtube.com/watch?v=5x3dV5e9r6U',
+          source: 'Oxford Medical Education',
+          caption: 'Safe log roll technique for spinal injury patients',
+          duration: '6:15',
+          relevance: 'essential',
+          tags: ['log roll', 'spinal injury', 'immobilization', 'trauma']
+        },
+        {
+          id: 'video-neurogenic-001',
+          type: 'video',
+          title: 'Neurogenic Shock Management',
+          url: 'https://www.youtube.com/watch?v=6L3xGz8M0sE',
+          source: 'Life in the Fast Lane',
+          caption: 'Recognition and management of neurogenic shock',
+          duration: '9:20',
+          relevance: 'essential',
+          tags: ['neurogenic shock', 'spinal cord injury', 'management']
+        }
+      ],
+      articles: [
+        {
+          id: 'art-sci-001',
+          type: 'article',
+          title: 'Spinal Cord Injury - Life in the Fast Lane',
+          url: 'https://litfl.com/spinal-cord-injury/',
+          source: 'LITFL',
+          caption: 'Comprehensive review of spinal cord injury management',
+          relevance: 'essential',
+          tags: ['spinal cord injury', 'SCI', 'management', 'ASIA']
+        },
+        {
+          id: 'art-spinal-001',
+          type: 'article',
+          title: 'C-Spine Trauma',
+          url: 'https://litfl.com/c-spine-trauma/',
+          source: 'LITFL',
+          caption: 'Cervical spine trauma assessment and management',
+          relevance: 'essential',
+          tags: ['c-spine', 'cervical spine', 'trauma', 'immobilization']
+        },
+        {
+          id: 'art-neurogenic-001',
+          type: 'article',
+          title: 'Neurogenic Shock',
+          url: 'https://litfl.com/neurogenic-shock/',
+          source: 'LITFL',
+          caption: 'Pathophysiology and management of neurogenic shock',
+          relevance: 'essential',
+          tags: ['neurogenic shock', 'spinal cord injury', 'hypotension']
+        },
+        {
+          id: 'art-asia-001',
+          type: 'article',
+          title: 'ASIA Classification',
+          url: 'https://asia-spinalinjury.org/',
+          source: 'ASIA',
+          caption: 'American Spinal Injury Association standards and classification',
+          relevance: 'important',
+          tags: ['ASIA', 'classification', 'standards', 'SCI']
+        }
+      ],
+      procedures: [
+        {
+          id: 'proc-immobilize-001',
+          type: 'case-study',
+          title: 'Spinal Immobilization Procedure',
+          url: 'https://litfl.com/spinal-immobilization/',
+          source: 'LITFL',
+          caption: 'Step-by-step spinal immobilization technique',
+          relevance: 'essential',
+          tags: ['spinal immobilization', 'c-spine', 'procedure']
+        },
+        {
+          id: 'proc-neuro-001',
+          type: 'case-study',
+          title: 'Neurological Assessment in SCI',
+          url: 'https://litfl.com/neurological-examination/',
+          source: 'LITFL',
+          caption: 'Comprehensive neurological examination for spinal cord injury',
+          relevance: 'essential',
+          tags: ['neurological exam', 'SCI', 'assessment']
+        }
+      ]
+    }
+  }),
 ];
 
 // ============================================================================
@@ -1979,10 +3432,12 @@ export const cardiacECGCases: CaseScenario[] = [
         avpu: 'A',
         gcs: { eye: 4, verbal: 5, motor: 6, total: 15 },
         pupils: 'Equal and reactive',
+        bloodGlucose: 5.4,
         findings: ['Anxious', 'Nausea', 'Feeling of doom'],
         interventions: []
       },
       exposure: {
+        temperature: 36.8,
         findings: ['No rash', 'No edema'],
         interventions: []
       }
@@ -2241,7 +3696,56 @@ export const cardiacECGCases: CaseScenario[] = [
       'ESC STEMI Guidelines 2023',
       'Life in the Fast Lane - Inferior STEMI',
       'Life in the Fast Lane - Right Ventricular Infarction'
-    ]
+    ],
+    visualResources: {
+      images: [
+        {
+          id: 'img-inferior-stemi',
+          type: 'image',
+          title: 'Inferior STEMI ECG',
+          url: 'https://litfl.com/wp-content/uploads/2018/08/ECG-Inferior-AMI-STEMI.jpg',
+          source: 'LITFL',
+          caption: 'Classic inferior STEMI with ST elevation in II, III, aVF',
+          relevance: 'essential',
+          tags: ['ECG', 'STEMI', 'inferior', 'acute MI']
+        },
+        {
+          id: 'img-rv-infarction',
+          type: 'image',
+          title: 'Right Ventricular Infarction',
+          url: 'https://litfl.com/right-ventricular-infarction/',
+          source: 'LITFL',
+          caption: 'Right-sided ECG showing RV infarction',
+          relevance: 'essential',
+          tags: ['ECG', 'RV infarction', 'right ventricle', 'STEMI']
+        }
+      ],
+      articles: [
+        {
+          id: 'art-inferior-stemi',
+          type: 'article',
+          title: 'Inferior STEMI',
+          url: 'https://litfl.com/inferior-stemi/',
+          source: 'Life in the Fast Lane',
+          caption: 'Comprehensive guide to inferior STEMI management',
+          relevance: 'essential',
+          tags: ['STEMI', 'inferior', 'ECG', 'management']
+        }
+      ],
+      videos: [
+        {
+          id: 'vid-inferior-stemi',
+          type: 'video',
+          title: 'Inferior STEMI and RV Infarction',
+          url: 'https://www.youtube.com/watch?v=9s3n8f6y2zQ',
+          source: 'ECG Weekly',
+          caption: 'Recognition and management of inferior STEMI with RV involvement',
+          duration: '14:20',
+          relevance: 'essential',
+          tags: ['ECG', 'STEMI', 'inferior', 'RV infarction']
+        }
+      ]
+    }
   }),
 
   // Wellens Syndrome
@@ -2315,10 +3819,12 @@ export const cardiacECGCases: CaseScenario[] = [
         avpu: 'A',
         gcs: { eye: 4, verbal: 5, motor: 6, total: 15 },
         pupils: 'Equal and reactive',
+        bloodGlucose: 5.4,
         findings: ['Anxious about the episode'],
         interventions: []
       },
       exposure: {
+        temperature: 36.8,
         findings: ['No abnormalities'],
         interventions: []
       }
@@ -2495,7 +4001,46 @@ export const cardiacECGCases: CaseScenario[] = [
       'Life in the Fast Lane - Wellens Syndrome',
       'AHA Chest Pain Guidelines',
       'Wellens JE, et al. Chest 1982'
-    ]
+    ],
+    visualResources: {
+      images: [
+        {
+          id: 'img-wellens',
+          type: 'image',
+          title: 'Wellens Syndrome ECG',
+          url: 'https://litfl.com/wellens-syndrome/',
+          source: 'LITFL',
+          caption: 'Characteristic T wave changes of Wellens syndrome',
+          relevance: 'essential',
+          tags: ['ECG', 'Wellens', 'LAD', 'STEMI equivalent']
+        }
+      ],
+      articles: [
+        {
+          id: 'art-wellens',
+          type: 'article',
+          title: 'Wellens Syndrome',
+          url: 'https://litfl.com/wellens-syndrome/',
+          source: 'Life in the Fast Lane',
+          caption: 'Critical LAD stenosis presenting with characteristic ECG changes',
+          relevance: 'essential',
+          tags: ['Wellens', 'LAD', 'STEMI equivalent', 'ECG']
+        }
+      ],
+      videos: [
+        {
+          id: 'vid-wellens',
+          type: 'video',
+          title: 'Wellens Syndrome Recognition',
+          url: 'https://www.youtube.com/watch?v=2x5M7Y8z1wE',
+          source: 'ECG Education',
+          caption: 'Recognizing Wellens pattern and why it matters',
+          duration: '11:30',
+          relevance: 'essential',
+          tags: ['Wellens', 'ECG', 'LAD', 'critical']
+        }
+      ]
+    }
   })
 ];
 

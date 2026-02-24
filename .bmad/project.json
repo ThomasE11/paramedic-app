@@ -1,0 +1,28 @@
+{
+  "name": "UAE Paramedic Case Generator",
+  "description": "Realistic medical training scenarios for paramedic students",
+  "version": "2.0.0",
+  "domain": "medical-education",
+  "complexity": "enterprise",
+  "agents": [
+    "medical-director",
+    "scenario-architect", 
+    "vital-systems-engineer",
+    "assessment-designer",
+    "ux-pedagogist",
+    "clinical-reviewer"
+  ],
+  "workflows": [
+    "case-creation",
+    "vital-simulation",
+    "assessment-validation",
+    "clinical-review",
+    "deployment"
+  ],
+  "methodology": {
+    "approach": "agile-ai-driven",
+    "sprintDuration": "2-weeks",
+    "reviewCadence": "daily-standup",
+    "feedbackLoops": ["clinical-accuracy", "student-usability", "technical-robustness"]
+  }
+}

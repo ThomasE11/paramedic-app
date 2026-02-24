@@ -1,5 +1,5 @@
 // Student Year Levels
-export type StudentYear = '2nd-year' | '3rd-year' | '4th-year' | 'diploma';
+export type StudentYear = '1st-year' | '2nd-year' | '3rd-year' | '4th-year' | 'diploma';
 
 // Case Categories - Expanded with Subcategories
 export type CaseCategory =
@@ -252,6 +252,74 @@ export interface Investigation {
   urgency: 'immediate' | 'urgent' | 'routine';
 }
 
+// Individual Patient Profile (for MCI scenarios)
+export interface IndividualPatient {
+  id: string;
+  priority: 'red' | 'yellow' | 'green' | 'black';
+  age: number;
+  gender: Gender;
+  name?: string;
+  patientInfo: {
+    age: number;
+    gender: Gender;
+    weight: number;
+    occupation?: string;
+    language: string;
+    medicalConditions?: string[];
+    medications?: string[];
+    allergies?: string[];
+  };
+  presentation: {
+    generalImpression: string;
+    position: string;
+    appearance: string;
+    consciousness: string;
+    complaints: string[];
+  };
+  vitals: VitalSigns;
+  abcde: ABCDEAssessment;
+  secondarySurvey: SecondarySurvey;
+  injuries: {
+    head?: string[];
+    neck?: string[];
+    chest?: string[];
+    abdomen?: string[];
+    pelvis?: string[];
+    extremities?: string[];
+    posterior?: string[];
+  };
+  interventions: string[];
+  transportPriority: 'immediate' | 'urgent' | 'delayed' | 'expectant';
+  destination?: string;
+  specialConsiderations?: string[];
+}
+
+// MCI (Mass Casualty Incident) Structure
+export interface MCIScenario {
+  isMCI: true;
+  totalPatients: number;
+  patients: IndividualPatient[];
+  triageCategories: {
+    red: number;
+    yellow: number;
+    green: number;
+    black: number;
+  };
+  resources: {
+    ambulancesNeeded: number;
+    helicopters?: number;
+    fireRescue: boolean;
+    police: boolean;
+    additionalParamedics: number;
+  };
+  commandStructure: {
+    incidentCommander?: string;
+    triageOfficer?: string;
+    treatmentOfficer?: string;
+    transportOfficer?: string;
+  };
+}
+
 // Student Expectation/Checklist Item - Enhanced
 export interface ChecklistItem {
   id: string;
@@ -383,6 +451,25 @@ export interface CaseScenario {
 
   // Visual Resources for Teaching
   visualResources?: VisualResources;
+
+  // Equipment Needed for Case
+  equipmentNeeded?: string[];
+
+  // UAE-Specific Protocols and Guidelines
+  uaeProtocols?: {
+    applicableGuidelines: string[];
+    receivingFacilities?: {
+      name: string;
+      location: string;
+      capabilities: string[];
+      contact?: string;
+      distance?: string;
+    }[];
+    localConsiderations?: string[];
+  };
+
+  // MCI (Mass Casualty Incident) - Multiple Patients
+  mci?: MCIScenario;
 
   // Metadata
   createdAt: string;
@@ -637,4 +724,117 @@ export interface VisualResources {
   procedures?: VisualResource[];
   assessment?: VisualResource[];
   management?: VisualResource[];
+}
+
+// ============================================================================
+// INSTRUCTOR NOTES & FEEDBACK TYPES
+// ============================================================================
+
+export interface InstructorAssessmentNote {
+  id: string;
+  timestamp: string;
+  category: 'omitted' | 'incomplete' | 'excellent' | 'critical-miss' | 'communication' | 'safety' | 'clinical-reasoning';
+  phase: 'dispatch' | 'scene-safety' | 'primary-survey' | 'secondary-survey' | 'history-taking' | 'intervention' | 'packaging' | 'handover';
+  finding: string;
+  whatWasMissed: string;
+  whyItMatters: string;
+  improvementAction: string;
+  severity: 'critical' | 'important' | 'learning-point';
+}
+
+export interface YearSpecificExpectations {
+  yearLevel: StudentYear;
+  focusAreas: string[];
+  assessmentEmphasis: {
+    primarySurvey: string[];
+    historyTaking: string[];
+    secondarySurvey: string[];
+    documentation: string[];
+  };
+  skillsExpected: string[];
+  skillsIntroduced: string[];
+  commonOmissions: string[];
+  teachingPriorities: string[];
+}
+
+export interface AssessmentDomain {
+  domain: string;
+  description: string;
+  weight: number;
+  criteria: {
+    excellent: string;
+    satisfactory: string;
+    needsImprovement: string;
+    unsafe: string;
+  };
+}
+
+export interface YearLevelRubric {
+  yearLevel: StudentYear;
+  domains: AssessmentDomain[];
+  criticalActions: string[];
+  assessmentFocus: string;
+  expectationsSummary: string;
+}
+
+export interface InstructorFeedbackSession {
+  sessionId: string;
+  caseId: string;
+  studentYear: StudentYear;
+  instructorName?: string;
+  studentName?: string;
+  date: string;
+  overallScore: number;
+  totalScore: number;
+  assessmentNotes: InstructorAssessmentNote[];
+  strengths: string[];
+  areasForImprovement: string[];
+  actionPlan: string[];
+  instructorNotes: string;
+  followUpNeeded: boolean;
+  followUpNotes?: string;
+}
+
+export interface QuickAssessmentTag {
+  id: string;
+  label: string;
+  category: 'positive' | 'negative' | 'critical' | 'instruction';
+  description: string;
+  yearLevels: StudentYear[];
+}
+
+// ============================================================================
+// CASE TESTING & FEEDBACK TYPES
+// ============================================================================
+
+export interface CaseTestResult {
+  caseId: string;
+  testCaseId: string;
+  date: string;
+  testerRole: 'instructor' | 'peer' | 'student';
+  difficultyRating: number;
+  clarityRating: number;
+  relevanceRating: number;
+  timeToComplete: number;
+  issues: string[];
+  suggestions: string[];
+  approved: boolean;
+}
+
+export interface CaseVersion {
+  version: number;
+  date: string;
+  changes: string[];
+  author: string;
+  feedback: CaseTestResult[];
+}
+
+export interface CaseFeedback {
+  caseId: string;
+  timestamp: string;
+  feedbackType: 'bug' | 'improvement' | 'content' | 'clarity' | 'relevance';
+  category: string;
+  description: string;
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  status: 'open' | 'in-progress' | 'resolved' | 'deferred';
 }

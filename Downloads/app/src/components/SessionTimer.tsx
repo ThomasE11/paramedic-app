@@ -26,6 +26,7 @@ export function SessionTimer({
 
   const intervalRef = useRef<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const handleTimerCompleteRef = useRef<(() => void) | null>(null);
 
   // Create audio element for alarm
   useEffect(() => {
@@ -39,6 +40,23 @@ export function SessionTimer({
     };
   }, []);
 
+  const handleTimerComplete = useCallback(() => {
+    setIsRunning(false);
+    setIsPaused(false);
+    setShowAlarm(true);
+    if (audioRef.current) {
+      audioRef.current.play().catch(console.error);
+    }
+    if (onTimerComplete) {
+      onTimerComplete();
+    }
+  }, [onTimerComplete]);
+
+  // Keep ref updated with latest callback
+  useEffect(() => {
+    handleTimerCompleteRef.current = handleTimerComplete;
+  }, [handleTimerComplete]);
+
   // Update elapsed time when timer changes
   useEffect(() => {
     if (isRunning && !isPaused) {
@@ -50,13 +68,13 @@ export function SessionTimer({
     }
   }, [timeRemaining, isRunning, isPaused, timeLimit, onElapsedTimeChange]);
 
-  // Timer effect
+  // Timer effect - uses ref to avoid stale closure
   useEffect(() => {
     if (isRunning && !isPaused && timeRemaining > 0) {
       intervalRef.current = window.setInterval(() => {
         setTimeRemaining(prev => {
           if (prev <= 1) {
-            handleTimerComplete();
+            handleTimerCompleteRef.current?.();
             return 0;
           }
           return prev - 1;
@@ -73,18 +91,6 @@ export function SessionTimer({
       }
     };
   }, [isRunning, isPaused, timeRemaining]);
-
-  const handleTimerComplete = useCallback(() => {
-    setIsRunning(false);
-    setIsPaused(false);
-    setShowAlarm(true);
-    if (audioRef.current) {
-      audioRef.current.play().catch(console.error);
-    }
-    if (onTimerComplete) {
-      onTimerComplete();
-    }
-  }, [onTimerComplete]);
 
   const startTimer = useCallback(() => {
     setIsRunning(true);

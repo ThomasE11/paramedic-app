@@ -1,0 +1,190 @@
+{
+  "projectName": "UAE Paramedic Case Generator",
+  "projectDescription": "Realistic medical training scenarios with advanced vital simulation, assessment modes, and comprehensive case management",
+  "version": "2.0.0",
+  "branchName": "feature/bmad-ralph-implementation",
+  "qualityChecks": [
+    "npm run build",
+    "npm run lint",
+    "npx tsc --noEmit"
+  ],
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Fix TypeScript type errors in VitalSignsMonitor",
+      "description": "Resolve all TypeScript type mismatches in VitalSignsMonitor.tsx including number/string conversions and undefined checks",
+      "acceptanceCriteria": [
+        "npx tsc --noEmit passes with zero errors",
+        "All vital sign values properly typed",
+        "No 'any' types used",
+        "Build succeeds without type warnings"
+      ],
+      "priority": "critical",
+      "estimatedHours": 2,
+      "passes": true
+    },
+    {
+      "id": "US-002", 
+      "title": "Integrate Time-Based Deterioration System",
+      "description": "Connect deteriorationSystem.ts to VitalSignsMonitor so patient vitals deteriorate realistically without treatment",
+      "acceptanceCriteria": [
+        "Vitals decrease over time without intervention",
+        "Treatment slows deterioration by 70%",
+        "Warning signs appear as patient worsens",
+        "Critical alarms trigger at appropriate thresholds",
+        "Reassessment intervals shown per severity"
+      ],
+      "priority": "high",
+      "estimatedHours": 4,
+      "passes": true
+    },
+    {
+      "id": "US-003",
+      "title": "Implement Procedure Time Tracking",
+      "description": "Add realistic procedure durations with step-by-step progress for IV, intubation, nebulizer, etc.",
+      "acceptanceCriteria": [
+        "Each procedure shows duration timer",
+        "Steps progress sequentially",
+        "Critical steps must succeed",
+        "Complications can occur",
+        "Equipment requirements checked"
+      ],
+      "priority": "high", 
+      "estimatedHours": 6,
+      "passes": false
+    },
+    {
+      "id": "US-004",
+      "title": "Connect Equipment Management System",
+      "description": "Integrate equipmentSystem.ts so equipment must be applied before vitals visible",
+      "acceptanceCriteria": [
+        "Pulse oximeter required for SpO2",
+        "BP cuff required for blood pressure",
+        "Equipment shows battery status",
+        "Malfunctions can occur",
+        "Equipment takes time to apply"
+      ],
+      "priority": "high",
+      "estimatedHours": 5,
+      "passes": false
+    },
+    {
+      "id": "US-005",
+      "title": "Add Mass Casualty Incident Mode",
+      "description": "Implement multi-patient scenarios with START triage system",
+      "acceptanceCriteria": [
+        "Multiple patients generated",
+        "START triage categories work",
+        "Resource allocation system",
+        "Time-based deterioration per patient",
+        "Triage accuracy scoring"
+      ],
+      "priority": "medium",
+      "estimatedHours": 8,
+      "passes": false
+    },
+    {
+      "id": "US-006",
+      "title": "Integrate Environmental Factors",
+      "description": "Connect environmentalSystem.ts for heat, altitude, weather effects",
+      "acceptanceCriteria": [
+        "UAE-specific environments (heat, sandstorms)",
+        "Altitude affects SpO2",
+        "Temperature affects vitals",
+        "Communication delays simulated",
+        "Weather impacts transport"
+      ],
+      "priority": "medium",
+      "estimatedHours": 4,
+      "passes": false
+    },
+    {
+      "id": "US-007",
+      "title": "Add Complication Scenarios",
+      "description": "Implement random complications during cases",
+      "acceptanceCriteria": [
+        "IV infiltration can occur",
+        "Patient can become agitated",
+        "Equipment can malfunction",
+        "Allergic reactions possible",
+        "Provider must respond appropriately"
+      ],
+      "priority": "medium",
+      "estimatedHours": 5,
+      "passes": false
+    },
+    {
+      "id": "US-008",
+      "title": "Implement Cultural/Family Dynamics",
+      "description": "Add family scenarios with cultural protocols",
+      "acceptanceCriteria": [
+        "Cultural protocols for different backgrounds",
+        "Language barriers simulated",
+        "Family dynamics scenarios",
+        "Religious considerations",
+        "Consent and decision-making variations"
+      ],
+      "priority": "low",
+      "estimatedHours": 6,
+      "passes": false
+    },
+    {
+      "id": "US-009",
+      "title": "Create Transport Decision System",
+      "description": "Add realistic transport mode and hospital selection",
+      "acceptanceCriteria": [
+        "6 UAE hospitals in database",
+        "Helicopter vs ground decisions",
+        "Weather affects air transport",
+        "Hospital capacity tracked",
+        "Stay-and-play vs load-and-go logic"
+      ],
+      "priority": "medium",
+      "estimatedHours": 5,
+      "passes": false
+    },
+    {
+      "id": "US-010",
+      "title": "Add Scene Safety Evolution",
+      "description": "Implement dynamic hazards that change over time",
+      "acceptanceCriteria": [
+        "Traffic hazards evolve",
+        "Building stability changes",
+        "Chemical hazards identified",
+        "Provider safety prioritized",
+        "Evacuation triggers work"
+      ],
+      "priority": "low",
+      "estimatedHours": 4,
+      "passes": false
+    },
+    {
+      "id": "US-011",
+      "title": "Optimize Bundle Size",
+      "description": "Reduce JavaScript bundle size through code splitting",
+      "acceptanceCriteria": [
+        "Main bundle under 500KB",
+        "Lazy load heavy components",
+        "Dynamic imports for features",
+        "Build completes without warnings"
+      ],
+      "priority": "medium",
+      "estimatedHours": 3,
+      "passes": false
+    },
+    {
+      "id": "US-012",
+      "title": "Add Comprehensive Documentation",
+      "description": "Document all systems with AGENTS.md files",
+      "acceptanceCriteria": [
+        "AGENTS.md in each major directory",
+        "Architecture decisions recorded",
+        "API documentation complete",
+        "Setup instructions clear"
+      ],
+      "priority": "low",
+      "estimatedHours": 4,
+      "passes": false
+    }
+  ]
+}

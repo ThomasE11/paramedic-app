@@ -1,0 +1,66 @@
+# Ralph Progress Log
+
+## Started: 2026-02-24
+
+## Learnings
+
+### TypeScript Patterns
+- Always parse BP string "120/80" before math operations
+- Use nullish coalescing: `vital ?? defaultValue`
+- Keep VitalSigns type in single source of truth
+
+### Component Architecture
+- VitalSignsMonitor should be self-contained
+- Use assessment mode to hide/show vitals
+- Alarm system needs audio + visual indicators
+
+### Treatment System
+- Gradual effects are more realistic than instant
+- Different onset times create educational value
+- Track treatment progress with percentage
+
+### Data Structure
+- Cases need managementPathway for full functionality
+- Visual resources must have working URLs
+- Checklist items need 8-12 for good coverage
+
+### Integration Patterns
+- Deterioration system connects to case severity
+- Equipment affects which vitals are visible
+- Environmental factors modify base vitals
+
+## Completed Work
+- Fixed broken URLs in visual resources
+- Added management pathways to critical cases
+- Implemented assessment mode with show/hide
+- Created alarm system with audio
+- Expanded to 43 treatments
+- Added 37 management pathways
+
+## Next Steps
+## 2026-02-24: US-002 Complete - Time-Based Deterioration System
+
+### Implementation Details
+- Integrated deteriorationSystem.ts into VitalSignsMonitor
+- Added state tracking: caseSeverity, minutesElapsed, activeTreatments
+- Timer applies deterioration every minute via applyDeterioration()
+- Treatments slow deterioration by 70% (multiplier 0.3)
+- UI shows: status, progress bar, time remaining, warning signs, recent changes
+- Reassessment intervals displayed per severity level (1-15 minutes)
+
+### Acceptance Criteria Met
+✅ Vitals decrease over time without intervention  
+✅ Treatment slows deterioration by 70%  
+✅ Warning signs appear as patient worsens  
+✅ Critical alarms trigger at appropriate thresholds  
+✅ Reassessment intervals shown per severity  
+
+### Quality Gates
+✅ Build passes  
+✅ TypeScript check passes (0 errors)  
+⚠️ Lint warnings (pre-existing unused imports)  
+
+### Next Steps
+- US-003: Implement Procedure Time Tracking
+- US-004: Connect Equipment Management System  
+- US-005: Add Mass Casualty Incident Mode
