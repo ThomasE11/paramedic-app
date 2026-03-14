@@ -140,206 +140,206 @@ export function ClinicalReferenceDialog() {
             <TabsContent value="medications" className="mt-4">
               <ScrollArea className="h-[400px]">
                 <div className="space-y-3 pr-4">
-                  {filteredMedications.map((med) => (
-                    <Card key={med.id} className="cursor-pointer hover:border-primary/50 transition-colors"
-                      onClick={() => setSelectedMedication(med)}>
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h4 className="font-semibold">{med.genericName}</h4>
-                              <Badge variant="outline" className="text-[10px]">
-                                {med.uaeSpecific.scopeLevel}
-                              </Badge>
-                            </div>
-                            <p className="text-sm text-muted-foreground">
-                              {med.tradeNames.slice(0, 2).join(', ')}
-                            </p>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {med.class}
-                            </p>
-                          </div>
-                          <Pill className="h-5 w-5 text-muted-foreground" />
+                  {selectedMedication ? (
+                    <Card className="border-primary">
+                      <CardHeader className="pb-2">
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="text-lg">{selectedMedication.genericName}</CardTitle>
+                          <Button variant="ghost" size="sm" onClick={() => setSelectedMedication(null)}>
+                            Back to list
+                          </Button>
                         </div>
-                        <div className="mt-2 flex flex-wrap gap-1">
-                          {med.indications.slice(0, 2).map((ind, i) => (
-                            <Badge key={i} variant="secondary" className="text-[10px]">
-                              {ind}
-                            </Badge>
+                        <p className="text-sm text-muted-foreground">{selectedMedication.class}</p>
+                      </CardHeader>
+                      <CardContent className="space-y-3 text-sm">
+                        <div>
+                          <p className="font-medium">Trade Names:</p>
+                          <p className="text-muted-foreground">{selectedMedication.tradeNames.join(', ')}</p>
+                        </div>
+                        <div>
+                          <p className="font-medium">Adult Dose:</p>
+                          {selectedMedication.adultDose.map((dose, i) => (
+                            <p key={i} className="text-muted-foreground">
+                              {dose.route}: {dose.dose} {dose.frequency && `(${dose.frequency})`}
+                            </p>
                           ))}
                         </div>
+                        <div>
+                          <p className="font-medium">Indications:</p>
+                          <ul className="list-disc list-inside text-muted-foreground">
+                            {selectedMedication.indications.map((ind, i) => (
+                              <li key={i}>{ind}</li>
+                            ))}
+                          </ul>
+                        </div>
+                        <div>
+                          <p className="font-medium text-red-600">Contraindications:</p>
+                          <ul className="list-disc list-inside text-muted-foreground">
+                            {selectedMedication.contraindications.map((contra, i) => (
+                              <li key={i}>{contra}</li>
+                            ))}
+                          </ul>
+                        </div>
+                        {selectedMedication.uaeSpecific.protocolNotes && (
+                          <div className="bg-primary/5 p-3 rounded-lg">
+                            <p className="font-medium flex items-center gap-1">
+                              <AlertCircle className="h-4 w-4" />
+                              UAE Protocol Notes:
+                            </p>
+                            <ul className="list-disc list-inside text-muted-foreground mt-1">
+                              {selectedMedication.uaeSpecific.protocolNotes.map((note, i) => (
+                                <li key={i}>{note}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
-                  ))}
+                  ) : (
+                    filteredMedications.map((med) => (
+                      <Card key={med.id} className="cursor-pointer hover:border-primary/50 transition-colors"
+                        onClick={() => setSelectedMedication(med)}>
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h4 className="font-semibold">{med.genericName}</h4>
+                                <Badge variant="outline" className="text-[10px]">
+                                  {med.uaeSpecific.scopeLevel}
+                                </Badge>
+                              </div>
+                              <p className="text-sm text-muted-foreground">
+                                {med.tradeNames.slice(0, 2).join(', ')}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {med.class}
+                              </p>
+                            </div>
+                            <Pill className="h-5 w-5 text-muted-foreground" />
+                          </div>
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {med.indications.slice(0, 2).map((ind, i) => (
+                              <Badge key={i} variant="secondary" className="text-[10px]">
+                                {ind}
+                              </Badge>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
                 </div>
               </ScrollArea>
-              
-              {selectedMedication && (
-                <Card className="mt-4 border-primary">
-                  <CardHeader className="pb-2">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg">{selectedMedication.genericName}</CardTitle>
-                      <Button variant="ghost" size="sm" onClick={() => setSelectedMedication(null)}>
-                        Close
-                      </Button>
-                    </div>
-                    <p className="text-sm text-muted-foreground">{selectedMedication.class}</p>
-                  </CardHeader>
-                  <CardContent className="space-y-3 text-sm">
-                    <div>
-                      <p className="font-medium">Trade Names:</p>
-                      <p className="text-muted-foreground">{selectedMedication.tradeNames.join(', ')}</p>
-                    </div>
-                    <div>
-                      <p className="font-medium">Adult Dose:</p>
-                      {selectedMedication.adultDose.map((dose, i) => (
-                        <p key={i} className="text-muted-foreground">
-                          {dose.route}: {dose.dose} {dose.frequency && `(${dose.frequency})`}
-                        </p>
-                      ))}
-                    </div>
-                    <div>
-                      <p className="font-medium">Indications:</p>
-                      <ul className="list-disc list-inside text-muted-foreground">
-                        {selectedMedication.indications.map((ind, i) => (
-                          <li key={i}>{ind}</li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div>
-                      <p className="font-medium text-red-600">Contraindications:</p>
-                      <ul className="list-disc list-inside text-muted-foreground">
-                        {selectedMedication.contraindications.map((contra, i) => (
-                          <li key={i}>{contra}</li>
-                        ))}
-                      </ul>
-                    </div>
-                    {selectedMedication.uaeSpecific.protocolNotes && (
-                      <div className="bg-primary/5 p-3 rounded-lg">
-                        <p className="font-medium flex items-center gap-1">
-                          <AlertCircle className="h-4 w-4" />
-                          UAE Protocol Notes:
-                        </p>
-                        <ul className="list-disc list-inside text-muted-foreground mt-1">
-                          {selectedMedication.uaeSpecific.protocolNotes.map((note, i) => (
-                            <li key={i}>{note}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
             </TabsContent>
 
             {/* Guidelines Tab */}
             <TabsContent value="guidelines" className="mt-4">
               <ScrollArea className="h-[400px]">
                 <div className="space-y-3 pr-4">
-                  {filteredGuidelines.map((guide, index) => (
-                    <Card key={index} className="cursor-pointer hover:border-primary/50 transition-colors"
-                      onClick={() => setSelectedGuideline(guide)}>
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between">
+                  {selectedGuideline ? (
+                    <Card className="border-primary">
+                      <CardHeader className="pb-2">
+                        <div className="flex items-center justify-between">
                           <div>
-                            <div className="flex items-center gap-2">
-                              <h4 className="font-semibold">{guide.title}</h4>
-                              <Badge variant="outline" className="text-[10px]">
-                                {guide.category}
-                              </Badge>
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {guide.description}
-                            </p>
-                          </div>
-                          <FileText className="h-5 w-5 text-muted-foreground" />
-                        </div>
-                        <div className="mt-2">
-                          <p className="text-xs text-muted-foreground line-clamp-2">
-                            <span className="font-medium">Key assessments:</span> {guide.keyAssessments.slice(0, 2).join(', ')}...
-                          </p>
-                        </div>
-                        <div className="mt-2 flex flex-wrap gap-1">
-                          {guide.redFlags.slice(0, 3).map((flag, i) => (
-                            <Badge key={i} variant="destructive" className="text-[10px]">
-                              {flag}
+                            <CardTitle className="text-lg">{selectedGuideline.title}</CardTitle>
+                            <Badge variant="outline" className="mt-1">
+                              {selectedGuideline.category}
                             </Badge>
-                          ))}
+                          </div>
+                          <Button variant="ghost" size="sm" onClick={() => setSelectedGuideline(null)}>
+                            Back to list
+                          </Button>
                         </div>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <p className="text-sm text-muted-foreground">{selectedGuideline.description}</p>
+
+                        <div>
+                          <p className="font-medium text-sm">Key Assessments:</p>
+                          <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
+                            {selectedGuideline.keyAssessments.map((assessment, i) => (
+                              <li key={i}>{assessment}</li>
+                            ))}
+                          </ul>
+                        </div>
+
+                        <div>
+                          <p className="font-medium text-sm text-red-600">Red Flags:</p>
+                          <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
+                            {selectedGuideline.redFlags.map((flag, i) => (
+                              <li key={i}>{flag}</li>
+                            ))}
+                          </ul>
+                        </div>
+
+                        <div>
+                          <p className="font-medium text-sm">Mandatory Actions:</p>
+                          <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
+                            {selectedGuideline.mandatoryActions.map((action, i) => (
+                              <li key={i}>{action}</li>
+                            ))}
+                          </ul>
+                        </div>
+
+                        {selectedGuideline.guidelines.length > 0 && (
+                          <div className="bg-primary/5 p-3 rounded-lg">
+                            <p className="font-medium text-sm flex items-center gap-1">
+                              <BookOpen className="h-4 w-4" />
+                              References:
+                            </p>
+                            <ul className="list-disc list-inside text-sm text-muted-foreground mt-1">
+                              {selectedGuideline.guidelines.map((ref, i) => (
+                                <li key={i}>
+                                  {ref.source} {ref.year} - {ref.title}
+                                  {ref.url && (
+                                    <a href={ref.url} target="_blank" rel="noopener noreferrer" className="text-primary ml-1">
+                                      <ExternalLink className="h-3 w-3 inline" />
+                                    </a>
+                                  )}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
-                  ))}
+                  ) : (
+                    filteredGuidelines.map((guide, index) => (
+                      <Card key={index} className="cursor-pointer hover:border-primary/50 transition-colors"
+                        onClick={() => setSelectedGuideline(guide)}>
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h4 className="font-semibold">{guide.title}</h4>
+                                <Badge variant="outline" className="text-[10px]">
+                                  {guide.category}
+                                </Badge>
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {guide.description}
+                              </p>
+                            </div>
+                            <FileText className="h-5 w-5 text-muted-foreground" />
+                          </div>
+                          <div className="mt-2">
+                            <p className="text-xs text-muted-foreground line-clamp-2">
+                              <span className="font-medium">Key assessments:</span> {guide.keyAssessments.slice(0, 2).join(', ')}...
+                            </p>
+                          </div>
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {guide.redFlags.slice(0, 3).map((flag, i) => (
+                              <Badge key={i} variant="destructive" className="text-[10px]">
+                                {flag}
+                              </Badge>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
                 </div>
               </ScrollArea>
-
-              {selectedGuideline && (
-                <Card className="mt-4 border-primary">
-                  <CardHeader className="pb-2">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle className="text-lg">{selectedGuideline.title}</CardTitle>
-                        <Badge variant="outline" className="mt-1">
-                          {selectedGuideline.category}
-                        </Badge>
-                      </div>
-                      <Button variant="ghost" size="sm" onClick={() => setSelectedGuideline(null)}>
-                        Close
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <p className="text-sm text-muted-foreground">{selectedGuideline.description}</p>
-                    
-                    <div>
-                      <p className="font-medium text-sm">Key Assessments:</p>
-                      <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
-                        {selectedGuideline.keyAssessments.map((assessment, i) => (
-                          <li key={i}>{assessment}</li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    <div>
-                      <p className="font-medium text-sm text-red-600">Red Flags:</p>
-                      <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
-                        {selectedGuideline.redFlags.map((flag, i) => (
-                          <li key={i}>{flag}</li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    <div>
-                      <p className="font-medium text-sm">Mandatory Actions:</p>
-                      <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
-                        {selectedGuideline.mandatoryActions.map((action, i) => (
-                          <li key={i}>{action}</li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    {selectedGuideline.guidelines.length > 0 && (
-                      <div className="bg-primary/5 p-3 rounded-lg">
-                        <p className="font-medium text-sm flex items-center gap-1">
-                          <BookOpen className="h-4 w-4" />
-                          References:
-                        </p>
-                        <ul className="list-disc list-inside text-sm text-muted-foreground mt-1">
-                          {selectedGuideline.guidelines.map((ref, i) => (
-                            <li key={i}>
-                              {ref.source} {ref.year} - {ref.title}
-                              {ref.url && (
-                                <a href={ref.url} target="_blank" rel="noopener noreferrer" className="text-primary ml-1">
-                                  <ExternalLink className="h-3 w-3 inline" />
-                                </a>
-                              )}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
             </TabsContent>
 
             {/* ECG Library Tab */}

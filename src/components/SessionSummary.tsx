@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
-import type { CaseScenario, CaseSession, ChecklistItem } from '@/types';
+import type { CaseScenario, CaseSession, ChecklistItem, AppliedTreatment, VitalSigns, SimulationObjective, DebriefingResource } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -9,12 +9,18 @@ import {
   Target, Star, RotateCcw, Sparkles
 } from 'lucide-react';
 import { exportSessionToPDF } from '@/lib/pdf-export';
+import { DebriefingResourcesPanel } from '@/components/DebriefingResourcesPanel';
 
 interface SessionSummaryProps {
   session: CaseSession;
   caseData: CaseScenario;
   elapsedTime?: string;
   timeTakenSeconds?: number;
+  appliedTreatments?: AppliedTreatment[];
+  vitalsHistory?: VitalSigns[];
+  instructorNotes?: string;
+  simulationObjective?: SimulationObjective;
+  debriefingResources?: DebriefingResource[];
 }
 
 // Enhanced grade thresholds with more granular feedback
@@ -95,19 +101,43 @@ const getConsequenceForItem = (item: ChecklistItem): string | undefined => {
 
 // Generate contextual feedback for missed items
 const generateFeedbackForItem = (item: ChecklistItem, caseData: CaseScenario): string => {
+  // Prefer item's own rationale first
+  if (item.rationale) return item.rationale;
+
   const desc = item.description.toLowerCase();
 
+  // Specific medication/treatment matches (most specific first)
+  if (desc.includes('glucagon')) {
+    return 'Glucagon is the IM alternative when IV access is unavailable. It stimulates hepatic glycogenolysis to raise blood glucose within 10-15 minutes.';
+  }
+  if (desc.includes('dextrose') || desc.includes('d50') || desc.includes('d10')) {
+    return 'IV dextrose is the fastest way to correct hypoglycemia in patients with impaired consciousness. D10% is preferred for controlled correction.';
+  }
+  if (desc.includes('oral glucose') || desc.includes('glucose tablet')) {
+    return 'Oral glucose (15-20g) is first-line for conscious, cooperative hypoglycemic patients. Always reassess in 10-15 minutes.';
+  }
   if (desc.includes('adrenaline') || desc.includes('epinephrine')) {
-    return 'Adrenaline is the cornerstone of anaphylaxis treatment. It works by reversing bronchoconstriction, vasodilation, and angioedema.';
+    return 'Adrenaline is the cornerstone of anaphylaxis treatment. It reverses bronchoconstriction, vasodilation, and angioedema. Give IM 0.5mg (1:1000).';
   }
   if (desc.includes('salbutamol') || desc.includes('albuterol')) {
-    return 'Salbutamol is a short-acting beta-agonist that provides rapid bronchodilation. In acute asthma, it should be administered early via nebulizer.';
+    return 'Salbutamol is a short-acting beta-agonist that provides rapid bronchodilation. In acute asthma, administer early via nebulizer.';
   }
   if (desc.includes('aspirin')) {
-    return 'Aspirin irreversibly inhibits cyclooxygenase-1, reducing thromboxane A2 production and platelet aggregation.';
+    return 'Aspirin irreversibly inhibits cyclooxygenase-1, reducing platelet aggregation. Give 300mg chewed in suspected ACS.';
+  }
+  if (desc.includes('naloxone') || desc.includes('narcan')) {
+    return 'Naloxone is a competitive opioid antagonist. Titrate to respiratory effort (not consciousness) to avoid acute withdrawal.';
+  }
+  if (desc.includes('midazolam') || desc.includes('diazepam') || desc.includes('seizure')) {
+    return 'Benzodiazepines are first-line for prolonged seizures. Early treatment improves outcomes — do not wait for spontaneous termination beyond 5 minutes.';
+  }
+
+  // Assessment/procedure matches
+  if (desc.includes('glucose') && (desc.includes('check') || desc.includes('blood') || desc.includes('reassess'))) {
+    return 'Blood glucose measurement is a critical early assessment. In altered consciousness, always check glucose — it is a rapidly reversible cause.';
   }
   if (desc.includes('oxygen')) {
-    return 'Hypoxia is a killer. Oxygen should be administered to any patient with SpO2 < 94% or signs of respiratory distress.';
+    return 'Oxygen should be administered to any patient with SpO2 < 94% or signs of respiratory distress. Titrate to target SpO2 94-98%.';
   }
   if (desc.includes('scene') || desc.includes('safety') || desc.includes('hazards')) {
     return 'Scene safety is Rule #1. A dead or injured provider cannot help anyone. Always assess: hazards, environment, resources, and mechanism.';
@@ -115,22 +145,47 @@ const generateFeedbackForItem = (item: ChecklistItem, caseData: CaseScenario): s
   if (desc.includes('airway') || desc.includes('breathing') || desc.includes('c-spine')) {
     return 'Airway and breathing are assessed before circulation. A patient without a patent airway will die within minutes.';
   }
-  if (desc.includes('iv') || desc.includes('fluid') || desc.includes('access')) {
+  if (desc.includes('precipitating') || desc.includes('cause') || desc.includes('history')) {
+    return 'Identifying the precipitating cause is essential for preventing recurrence and guiding definitive management.';
+  }
+  if (desc.includes('iv access') || desc.includes('cannul') || desc.includes('establish iv')) {
     return 'IV access allows fluid resuscitation and medication administration. In trauma or shock, establish 2 large-bore (14-16G) IVs.';
   }
+  if (desc.includes('monitor') || desc.includes('reassess') || desc.includes('vital')) {
+    return 'Continuous monitoring detects deterioration early. Reassess vitals after every intervention to evaluate treatment response.';
+  }
 
-  if (item.rationale) return item.rationale;
+  // Category-specific fallbacks
   if (item.critical) return `This is a critical action for ${caseData.category} cases. Missing this step indicates a gap in clinical knowledge.`;
-  return 'While not immediately life-threatening, this action is part of comprehensive patient care.';
+  return 'This action is part of comprehensive patient care and contributes to better clinical outcomes.';
 };
 
-export function SessionSummary({ session, caseData, elapsedTime, timeTakenSeconds }: SessionSummaryProps) {
+export function SessionSummary({
+  session,
+  caseData,
+  elapsedTime,
+  timeTakenSeconds,
+  appliedTreatments,
+  vitalsHistory,
+  instructorNotes,
+  simulationObjective,
+  debriefingResources
+}: SessionSummaryProps) {
   const [isExporting, setIsExporting] = useState(false);
 
   const handleExportPDF = async () => {
     setIsExporting(true);
     try {
-      await exportSessionToPDF({ session, caseData, elapsedTime });
+      await exportSessionToPDF({
+        session,
+        caseData,
+        elapsedTime,
+        appliedTreatments,
+        vitalsHistory,
+        instructorNotes,
+        simulationObjective,
+        debriefingResources
+      });
     } catch (error) {
       console.error('Failed to export PDF:', error);
     } finally {
@@ -509,6 +564,13 @@ export function SessionSummary({ session, caseData, elapsedTime, timeTakenSecond
           </CardContent>
         </Card>
       )}
+
+      {/* Debriefing Resources */}
+      <DebriefingResourcesPanel
+        caseData={caseData}
+        objective={simulationObjective}
+        resources={debriefingResources}
+      />
 
       {/* Action Buttons */}
       <div className="flex gap-3 animate-fade-in-up stagger-9">

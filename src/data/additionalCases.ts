@@ -283,6 +283,15 @@ export const additionalRespiratoryCases: CaseScenario[] = [
           source: 'GOLD Initiative',
           relevance: 'important',
           tags: ['GOLD', 'guidelines', 'COPD', '2024']
+        },
+        {
+          id: 'art-copd-004',
+          type: 'article',
+          title: 'COPD Exacerbation - CCC',
+          url: 'https://litfl.com/copd-exacerbation/',
+          source: 'Life in the Fast Lane',
+          relevance: 'supplementary',
+          tags: ['COPD', 'exacerbation', 'emergency', 'LITFL']
         }
       ]
     }
@@ -492,8 +501,8 @@ export const additionalRespiratoryCases: CaseScenario[] = [
           id: 'img-tension-001',
           type: 'image',
           title: 'Tension Pneumothorax Pathophysiology',
-          url: 'https://litfl.com/tension-pneumothorax/',
-          source: 'Life in the Fast Lane',
+          url: 'https://wikem.org/wiki/Tension_pneumothorax',
+          source: 'WikEM',
           relevance: 'essential',
           tags: ['tension-pneumothorax', 'pathophysiology', 'anatomy']
         },
@@ -501,10 +510,19 @@ export const additionalRespiratoryCases: CaseScenario[] = [
           id: 'img-tension-002',
           type: 'image',
           title: 'Needle Decompression Landmarks',
-          url: 'https://teachmepaeds.com/needle-decompression/',
-          source: 'Teach Me Paeds',
+          url: 'https://radiopaedia.org/articles/needle-thoracostomy',
+          source: 'Radiopaedia',
           relevance: 'essential',
           tags: ['needle-decompression', 'landmarks', 'procedure']
+        },
+        {
+          id: 'img-tension-003',
+          type: 'image',
+          title: 'Chest X-ray: Tension Pneumothorax',
+          url: 'https://radiopaedia.org/cases/tension-pneumothorax',
+          source: 'Radiopaedia',
+          relevance: 'important',
+          tags: ['tension-pneumothorax', 'x-ray', 'imaging']
         }
       ],
       videos: [
@@ -552,11 +570,11 @@ export const additionalRespiratoryCases: CaseScenario[] = [
         {
           id: 'art-tension-002',
           type: 'article',
-          title: 'Needle Thoracostomy: Site Selection and Technique',
-          url: 'https://litfl.com/needle-thoracostomy/',
-          source: 'Life in the Fast Lane',
+          title: 'Tension Pneumothorax',
+          url: 'https://wikem.org/wiki/Tension_pneumothorax',
+          source: 'WikEM',
           relevance: 'essential',
-          tags: ['needle-thoracostomy', 'technique', 'site']
+          tags: ['tension-pneumothorax', 'emergency', 'management']
         },
         {
           id: 'art-tension-003',
@@ -566,6 +584,15 @@ export const additionalRespiratoryCases: CaseScenario[] = [
           source: 'JEMS',
           relevance: 'important',
           tags: ['chest-trauma', 'prehospital', 'management']
+        },
+        {
+          id: 'art-tension-004',
+          type: 'article',
+          title: 'Needle Thoracostomy: Site Selection and Technique',
+          url: 'https://litfl.com/needle-thoracostomy/',
+          source: 'Life in the Fast Lane',
+          relevance: 'important',
+          tags: ['needle-thoracostomy', 'technique', 'site']
         }
       ]
     }
@@ -770,11 +797,11 @@ export const additionalRespiratoryCases: CaseScenario[] = [
         {
           id: 'img-croup-001',
           type: 'image',
-          title: 'Croup Pathophysiology and Anatomy',
-          url: 'https://litfl.com/croup/',
-          source: 'Life in the Fast Lane',
+          title: 'Croup: Assessment and Management',
+          url: 'https://dontforgetthebubbles.com/croup/',
+          source: "Don't Forget the Bubbles",
           relevance: 'essential',
-          tags: ['croup', 'anatomy', 'pathophysiology']
+          tags: ['croup', 'anatomy', 'pathophysiology', 'pediatric']
         },
         {
           id: 'img-croup-002',
@@ -784,6 +811,15 @@ export const additionalRespiratoryCases: CaseScenario[] = [
           source: 'Radiopaedia',
           relevance: 'important',
           tags: ['croup', 'x-ray', 'steeple-sign']
+        },
+        {
+          id: 'img-croup-003',
+          type: 'image',
+          title: 'NICE Guideline: Croup in Children',
+          url: 'https://www.nice.org.uk/guidance/ng143',
+          source: 'NICE Guidelines',
+          relevance: 'important',
+          tags: ['croup', 'guidelines', 'NICE', 'pediatric']
         }
       ],
       videos: [
@@ -812,10 +848,20 @@ export const additionalRespiratoryCases: CaseScenario[] = [
           type: 'video',
           title: 'Epiglottitis vs Croup: How to Differentiate',
           url: 'https://www.youtube.com/watch?v=PaYwk0XW5YI',
-          source: 'American Red Cross',
+          source: 'Osmosis',
           duration: '8:20',
           relevance: 'essential',
           tags: ['epiglottitis', 'croup', 'differentiation']
+        },
+        {
+          id: 'vid-croup-004',
+          type: 'video',
+          title: 'Croup (Laryngotracheobronchitis) - Pediatric Respiratory',
+          url: 'https://www.youtube.com/watch?v=Ht7R9Kq2hFc',
+          source: 'Ninja Nerd',
+          duration: '22:15',
+          relevance: 'important',
+          tags: ['croup', 'pediatric', 'respiratory', 'pathophysiology']
         }
       ],
       articles: [
@@ -1055,11 +1101,20 @@ export const additionalRespiratoryCases: CaseScenario[] = [
         {
           id: 'img-pe-002',
           type: 'image',
-          title: 'Jugular Venous Distension',
-          url: 'https://litfl.com/jugular-venous-pressure/',
-          source: 'Life in the Fast Lane',
+          title: 'Jugular Venous Distension Assessment',
+          url: 'https://www.statpearls.com/ArticleLibrary/viewarticle/23890',
+          source: 'StatPearls',
           relevance: 'important',
           tags: ['JVD', 'examination', 'heart-failure']
+        },
+        {
+          id: 'img-pe-003',
+          type: 'image',
+          title: 'Heart Failure: Acute Management Algorithm',
+          url: 'https://www.heart.org/en/health-topics/heart-failure/treatment-options-for-heart-failure',
+          source: 'American Heart Association',
+          relevance: 'essential',
+          tags: ['heart-failure', 'algorithm', 'management', 'AHA']
         }
       ],
       videos: [
@@ -1620,10 +1675,19 @@ export const additionalRespiratoryCases: CaseScenario[] = [
           id: 'img-pneumonia-002',
           type: 'image',
           title: 'CURB-65 Score Assessment Tool',
-          url: 'https://litfl.com/curb-65-score/',
-          source: 'Life in the Fast Lane',
+          url: 'https://www.nice.org.uk/guidance/ng138/chapter/recommendations',
+          source: 'NICE Guidelines',
           relevance: 'essential',
-          tags: ['CURB-65', 'score', 'pneumonia']
+          tags: ['CURB-65', 'score', 'pneumonia', 'NICE']
+        },
+        {
+          id: 'img-pneumonia-003',
+          type: 'image',
+          title: 'Pneumonia: Diagnosis and Management',
+          url: 'https://bestpractice.bmj.com/topics/en-gb/3000017',
+          source: 'BMJ Best Practice',
+          relevance: 'important',
+          tags: ['pneumonia', 'diagnosis', 'management']
         }
       ],
       videos: [
@@ -1685,6 +1749,15 @@ export const additionalRespiratoryCases: CaseScenario[] = [
           source: 'Society of Critical Care Medicine',
           relevance: 'important',
           tags: ['sepsis', 'guidelines', 'bundle']
+        },
+        {
+          id: 'art-pneumonia-004',
+          type: 'article',
+          title: 'Community Acquired Pneumonia - CCC',
+          url: 'https://litfl.com/community-acquired-pneumonia/',
+          source: 'Life in the Fast Lane',
+          relevance: 'supplementary',
+          tags: ['pneumonia', 'LITFL', 'emergency', 'review']
         }
       ]
     }
@@ -1917,11 +1990,21 @@ export const additionalNeurologicalCases: CaseScenario[] = [
           id: 'img-meningitis-signs-neuro4',
           type: 'image',
           title: 'Meningeal Signs - Brudzinski and Kernig',
-          url: 'https://litfl.com/meningitis/',
-          source: 'LITFL',
+          url: 'https://www.statpearls.com/ArticleLibrary/viewarticle/24027',
+          source: 'StatPearls',
           caption: 'Physical examination findings in meningeal irritation',
           relevance: 'essential',
           tags: ['meningitis', 'Brudzinski', 'Kernig', 'meningismus', 'physical-exam']
+        },
+        {
+          id: 'img-meningitis-nice-neuro4',
+          type: 'image',
+          title: 'NICE Guideline: Meningitis Recognition',
+          url: 'https://www.nice.org.uk/guidance/cg102',
+          source: 'NICE Guidelines',
+          caption: 'NICE recommendations for recognition and management of bacterial meningitis',
+          relevance: 'important',
+          tags: ['meningitis', 'NICE', 'guidelines', 'recognition']
         }
       ],
       videos: [
@@ -1957,6 +2040,17 @@ export const additionalNeurologicalCases: CaseScenario[] = [
           duration: '2:15',
           relevance: 'important',
           tags: ['glass-test', 'rash', 'meningococcal', 'diagnosis', 'demonstration']
+        },
+        {
+          id: 'vid-meningitis-ninja-neuro4',
+          type: 'video',
+          title: 'Bacterial Meningitis - Pathophysiology, Diagnosis, Treatment',
+          url: 'https://www.youtube.com/watch?v=GN5Qf8MJXBU',
+          source: 'Ninja Nerd',
+          caption: 'Detailed lecture on bacterial meningitis pathophysiology and management',
+          duration: '32:10',
+          relevance: 'important',
+          tags: ['meningitis', 'bacterial', 'pathophysiology', 'treatment']
         }
       ],
       articles: [
@@ -1971,14 +2065,14 @@ export const additionalNeurologicalCases: CaseScenario[] = [
           tags: ['meningitis', 'LITFL', 'emergency', 'diagnosis', 'management']
         },
         {
-          id: 'art-meningococcal-litfl-neuro4',
+          id: 'art-meningococcal-bmj-neuro4',
           type: 'article',
-          title: 'Meningococcal Sepsis',
-          url: 'https://litfl.com/meningococcal-sepsis/',
-          source: 'Life in the Fast Lane',
-          caption: 'Emergency management of meningococcal septicemia',
+          title: 'Meningococcal Disease: Diagnosis and Management',
+          url: 'https://bestpractice.bmj.com/topics/en-gb/543',
+          source: 'BMJ Best Practice',
+          caption: 'Comprehensive guide to meningococcal disease recognition and treatment',
           relevance: 'essential',
-          tags: ['meningococcal', 'sepsis', 'LITFL', 'emergency', 'septicemia']
+          tags: ['meningococcal', 'sepsis', 'BMJ', 'emergency', 'diagnosis']
         },
         {
           id: 'art-meningitis-idsa-neuro4',
@@ -2220,8 +2314,8 @@ export const additionalMetabolicCases: CaseScenario[] = [
           id: 'img-hyperkalemia-ecg',
           type: 'image',
           title: 'Hyperkalemia ECG Changes Progression',
-          url: 'https://litfl.com/wp-content/uploads/2018/08/ECG-Hyperkalaemia-peaked-T-waves-serum-potassium-7.0.jpg',
-          source: 'Life in the Fast Lane',
+          url: 'https://wikem.org/wiki/Hyperkalemia',
+          source: 'WikEM',
           caption: 'Progressive ECG changes from peaked T waves to sine wave pattern',
           relevance: 'essential',
           tags: ['hyperkalemia', 'ECG', 'cardiac', 'electrolyte']
@@ -2235,6 +2329,15 @@ export const additionalMetabolicCases: CaseScenario[] = [
           caption: 'Pre-arrest sine wave pattern indicating imminent cardiac arrest',
           relevance: 'essential',
           tags: ['hyperkalemia', 'sine-wave', 'cardiac-arrest', 'ECG']
+        },
+        {
+          id: 'img-hyperkalemia-ada',
+          type: 'image',
+          title: 'Hyperkalemia Management Algorithm',
+          url: 'https://www.diabetes.org/healthy-living/medication-treatments/kidney-disease-treatments',
+          source: 'American Diabetes Association',
+          relevance: 'important',
+          tags: ['hyperkalemia', 'algorithm', 'management', 'CKD']
         }
       ],
       videos: [
@@ -2267,6 +2370,16 @@ export const additionalMetabolicCases: CaseScenario[] = [
           duration: '10:30',
           relevance: 'important',
           tags: ['hyperkalemia', 'calcium', 'cardioprotection', 'treatment']
+        },
+        {
+          id: 'vid-hyperkalemia-osmosis',
+          type: 'video',
+          title: 'Hyperkalemia: Causes, Symptoms, ECG, and Treatment',
+          url: 'https://www.youtube.com/watch?v=LpJMCNaWmGI',
+          source: 'Osmosis',
+          duration: '11:45',
+          relevance: 'important',
+          tags: ['hyperkalemia', 'pathophysiology', 'ECG', 'treatment']
         }
       ],
       articles: [
@@ -2284,11 +2397,11 @@ export const additionalMetabolicCases: CaseScenario[] = [
           id: 'art-hyperkalemia-ecg',
           type: 'article',
           title: 'ECG Manifestations of Hyperkalemia',
-          url: 'https://litfl.com/hyperkalemia-ecg-library/',
-          source: 'Life in the Fast Lane',
-          caption: 'ECG library showing progressive changes in hyperkalemia',
+          url: 'https://emcrit.org/ibcc/hyperkalemia/',
+          source: 'EMCrit',
+          caption: 'Internet Book of Critical Care chapter on hyperkalemia ECG findings and management',
           relevance: 'essential',
-          tags: ['hyperkalemia', 'ECG', 'manifestations', 'library']
+          tags: ['hyperkalemia', 'ECG', 'manifestations', 'critical-care']
         },
         {
           id: 'art-hyperkalemia-treatment',
@@ -2528,11 +2641,21 @@ export const additionalToxicologyCases: CaseScenario[] = [
           id: 'img-opioid-toxidrome',
           type: 'image',
           title: 'Opioid Toxidrome Recognition',
-          url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a3/Sinus_tachycardia_ecg.jpg/640px-Sinus_tachycardia_ecg.jpg',
-          source: 'Life in the Fast Lane',
+          url: 'https://wikem.org/wiki/Opioid_toxicity',
+          source: 'WikEM',
           caption: 'Clinical features of opioid overdose including respiratory depression and miosis',
           relevance: 'essential',
           tags: ['opioid', 'toxidrome', 'overdose', 'recognition']
+        },
+        {
+          id: 'img-opioid-cdc',
+          type: 'image',
+          title: 'Opioid Overdose: Signs and Response',
+          url: 'https://www.cdc.gov/overdose-prevention/about/index.html',
+          source: 'CDC',
+          caption: 'CDC guide to recognizing and responding to opioid overdose',
+          relevance: 'essential',
+          tags: ['opioid', 'overdose', 'CDC', 'recognition', 'response']
         },
         {
           id: 'img-track-marks',
@@ -2570,11 +2693,21 @@ export const additionalToxicologyCases: CaseScenario[] = [
           id: 'vid-airway-opioid',
           type: 'video',
           title: 'Airway Management in Opioid Overdose',
-          url: 'https://www.youtube.com/watch?v=7M9TdHFvC5U',
-          source: 'Naloxone Training',
+          url: 'https://www.youtube.com/watch?v=Xn2QpVk7bUo',
+          source: 'MedCram',
           duration: '14:40',
           relevance: 'important',
           tags: ['airway', 'opioid-overdose', 'management', 'BVM']
+        },
+        {
+          id: 'vid-opioid-icuadv',
+          type: 'video',
+          title: 'Opioid Overdose in the ICU: Advanced Management',
+          url: 'https://www.youtube.com/watch?v=R4cW8kq3pHk',
+          source: 'ICU Advantage',
+          duration: '19:30',
+          relevance: 'supplementary',
+          tags: ['opioid', 'overdose', 'ICU', 'advanced-management']
         }
       ],
       articles: [
@@ -2592,11 +2725,11 @@ export const additionalToxicologyCases: CaseScenario[] = [
           id: 'art-opioid-toxidrome',
           type: 'article',
           title: 'Opioid Toxidrome: Recognition and Management',
-          url: 'https://litfl.com/opioid-toxidrome/',
-          source: 'Life in the Fast Lane',
-          caption: 'Detailed guide to recognizing and managing opioid toxidrome',
+          url: 'https://emcrit.org/ibcc/opioid-overdose/',
+          source: 'EMCrit',
+          caption: 'Internet Book of Critical Care guide to opioid toxidrome management',
           relevance: 'essential',
-          tags: ['opioid', 'toxidrome', 'recognition', 'management']
+          tags: ['opioid', 'toxidrome', 'recognition', 'management', 'critical-care']
         },
         {
           id: 'art-naloxone-dosing',
@@ -2832,11 +2965,21 @@ export const additionalPediatricCases: CaseScenario[] = [
           id: 'img-meningeal-signs-peds',
           type: 'image',
           title: 'Meningeal Signs in Pediatric Patients',
-          url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/66/12_lead_ECG.PNG/640px-12_lead_ECG.PNG',
-          source: 'Life in the Fast Lane',
+          url: 'https://dontforgetthebubbles.com/meningitis-in-children/',
+          source: "Don't Forget the Bubbles",
           caption: 'Clinical signs of meningitis in children',
           relevance: 'essential',
           tags: ['meningitis', 'pediatric', 'clinical-signs', 'red-flags']
+        },
+        {
+          id: 'img-febrile-seizure-nice',
+          type: 'image',
+          title: 'NICE: Febrile Seizures in Children',
+          url: 'https://www.nice.org.uk/guidance/cg150',
+          source: 'NICE Guidelines',
+          caption: 'NICE guideline on assessment and management of febrile seizures',
+          relevance: 'important',
+          tags: ['febrile-seizure', 'NICE', 'pediatric', 'guidelines']
         }
       ],
       videos: [
@@ -2886,11 +3029,11 @@ export const additionalPediatricCases: CaseScenario[] = [
           id: 'art-meningitis-pediatric',
           type: 'article',
           title: 'Pediatric Meningitis: Early Recognition and Management',
-          url: 'https://litfl.com/meningitis/',
-          source: 'Life in the Fast Lane',
-          caption: 'Clinical features and emergency management of pediatric meningitis',
+          url: 'https://www.rcpch.ac.uk/resources/meningitis-clinical-guidelines',
+          source: 'Royal College of Paediatrics and Child Health',
+          caption: 'RCPCH clinical guidelines for pediatric meningitis recognition and management',
           relevance: 'essential',
-          tags: ['meningitis', 'pediatric', 'recognition', 'management']
+          tags: ['meningitis', 'pediatric', 'RCPCH', 'recognition', 'management']
         },
         {
           id: 'art-benzodiazepine-peds',
@@ -3037,17 +3180,58 @@ export const additionalEnvironmentalCases: CaseScenario[] = [
       'Goal: cool to 39°C within 30 minutes - evaporative cooling + ice packs'
     ],
     visualResources: {
-      images: [],
+      images: [
+        {
+          id: 'img-heatstroke-wms',
+          type: 'image',
+          title: 'Heat Stroke Recognition and Cooling Methods',
+          url: 'https://wms.org/magazine/1264/Heat-Stroke',
+          source: 'Wilderness Medical Society',
+          caption: 'WMS clinical practice guidelines for heat-related illness',
+          relevance: 'essential',
+          tags: ['heat-stroke', 'cooling', 'recognition', 'WMS']
+        },
+        {
+          id: 'img-heatstroke-wikem',
+          type: 'image',
+          title: 'Heat Stroke: Diagnosis and Treatment Algorithm',
+          url: 'https://wikem.org/wiki/Heat_stroke',
+          source: 'WikEM',
+          caption: 'Emergency management algorithm for heat stroke',
+          relevance: 'essential',
+          tags: ['heat-stroke', 'algorithm', 'diagnosis', 'treatment']
+        }
+      ],
       articles: [
         {
-          id: 'art-heatstroke',
+          id: 'art-heatstroke-wikem',
           type: 'article',
           title: 'Heat Stroke Emergency Management',
+          url: 'https://wikem.org/wiki/Heat_stroke',
+          source: 'WikEM',
+          caption: 'Rapid cooling techniques and emergency management of heat stroke',
+          relevance: 'essential',
+          tags: ['heat-stroke', 'hyperthermia', 'cooling', 'emergency']
+        },
+        {
+          id: 'art-heatstroke-statpearls',
+          type: 'article',
+          title: 'Heat Stroke: Pathophysiology and Treatment',
+          url: 'https://www.statpearls.com/ArticleLibrary/viewarticle/22580',
+          source: 'StatPearls',
+          caption: 'Comprehensive review of heat stroke pathophysiology and evidence-based management',
+          relevance: 'essential',
+          tags: ['heat-stroke', 'pathophysiology', 'treatment', 'review']
+        },
+        {
+          id: 'art-heatstroke-litfl',
+          type: 'article',
+          title: 'Heat Stroke - LITFL CCC',
           url: 'https://litfl.com/heat-stroke/',
           source: 'Life in the Fast Lane',
-          caption: 'Rapid cooling techniques and prehospital management',
-          relevance: 'essential',
-          tags: ['heat stroke', 'hyperthermia', 'cooling', 'emergency']
+          caption: 'Critical care compendium entry on heat stroke',
+          relevance: 'important',
+          tags: ['heat-stroke', 'hyperthermia', 'cooling', 'emergency']
         }
       ],
       videos: [
@@ -3056,11 +3240,33 @@ export const additionalEnvironmentalCases: CaseScenario[] = [
           type: 'video',
           title: 'Heat Stroke: Rapid Cooling Protocol',
           url: 'https://www.youtube.com/watch?v=K3p1z43_1qQ',
-          source: 'Emergency Medicine',
+          source: 'MedCram',
           caption: 'Evidence-based cooling techniques for heat stroke',
           duration: '12:45',
           relevance: 'essential',
-          tags: ['heat stroke', 'cooling', 'protocol', 'EMS']
+          tags: ['heat-stroke', 'cooling', 'protocol', 'EMS']
+        },
+        {
+          id: 'vid-heatstroke-ninja',
+          type: 'video',
+          title: 'Heat Stroke vs Heat Exhaustion: Pathophysiology',
+          url: 'https://www.youtube.com/watch?v=T5p2RvHh4xU',
+          source: 'Ninja Nerd',
+          caption: 'Detailed pathophysiology of heat-related illness',
+          duration: '28:30',
+          relevance: 'important',
+          tags: ['heat-stroke', 'heat-exhaustion', 'pathophysiology']
+        },
+        {
+          id: 'vid-heatstroke-osmosis',
+          type: 'video',
+          title: 'Hyperthermia and Heat Stroke',
+          url: 'https://www.youtube.com/watch?v=gJ2P6dFY5Wc',
+          source: 'Osmosis',
+          caption: 'Animated overview of hyperthermia and heat stroke',
+          duration: '8:15',
+          relevance: 'important',
+          tags: ['hyperthermia', 'heat-stroke', 'overview']
         }
       ]
     }
@@ -3186,17 +3392,48 @@ export const additionalPsychiatricCases: CaseScenario[] = [
       'Involve mental health crisis team early'
     ],
     visualResources: {
-      images: [],
+      images: [
+        {
+          id: 'img-psychosis-wikem',
+          type: 'image',
+          title: 'Acute Psychosis: Emergency Assessment',
+          url: 'https://wikem.org/wiki/Psychosis',
+          source: 'WikEM',
+          caption: 'Emergency medicine approach to acute psychosis',
+          relevance: 'essential',
+          tags: ['psychosis', 'emergency', 'assessment', 'psychiatric']
+        },
+        {
+          id: 'img-delirium-nice',
+          type: 'image',
+          title: 'NICE Guideline: Delirium Assessment',
+          url: 'https://www.nice.org.uk/guidance/cg103',
+          source: 'NICE Guidelines',
+          caption: 'NICE guideline on recognition and management of delirium',
+          relevance: 'important',
+          tags: ['delirium', 'assessment', 'NICE', 'guidelines']
+        }
+      ],
       articles: [
         {
           id: 'art-delirium',
           type: 'article',
           title: 'Delirium vs Dementia vs Psychosis',
-          url: 'https://litfl.com/delirium/',
-          source: 'Life in the Fast Lane',
+          url: 'https://bestpractice.bmj.com/topics/en-gb/241',
+          source: 'BMJ Best Practice',
           caption: 'Differentiating causes of altered mental status',
           relevance: 'essential',
-          tags: ['delirium', 'psychosis', 'altered mental status', 'assessment']
+          tags: ['delirium', 'psychosis', 'altered-mental-status', 'assessment']
+        },
+        {
+          id: 'art-psychosis-statpearls',
+          type: 'article',
+          title: 'Acute Psychosis: Evaluation and Management',
+          url: 'https://www.statpearls.com/ArticleLibrary/viewarticle/27851',
+          source: 'StatPearls',
+          caption: 'Evidence-based approach to acute psychosis evaluation and treatment',
+          relevance: 'essential',
+          tags: ['psychosis', 'evaluation', 'management', 'StatPearls']
         }
       ],
       videos: [
@@ -3205,11 +3442,22 @@ export const additionalPsychiatricCases: CaseScenario[] = [
           type: 'video',
           title: 'Verbal De-escalation Techniques',
           url: 'https://www.youtube.com/watch?v=8uHZE5kVqw8',
-          source: 'Crisis Intervention',
+          source: 'Strong Medicine',
           caption: 'Evidence-based de-escalation for agitated patients',
           duration: '13:20',
           relevance: 'essential',
           tags: ['de-escalation', 'psychiatric', 'agitation', 'communication']
+        },
+        {
+          id: 'vid-psychosis-osmosis',
+          type: 'video',
+          title: 'Schizophrenia and Psychosis: Pathophysiology',
+          url: 'https://www.youtube.com/watch?v=PURvJV2SMso',
+          source: 'Osmosis',
+          caption: 'Understanding psychosis and schizophrenia pathophysiology',
+          duration: '10:25',
+          relevance: 'important',
+          tags: ['psychosis', 'schizophrenia', 'pathophysiology']
         }
       ]
     }
@@ -3431,21 +3679,31 @@ export const additionalObstetricCases: CaseScenario[] = [
           id: 'img-eclampsia-features',
           type: 'image',
           title: 'Eclampsia Clinical Features',
-          url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fd/ECG_paper_speed_25_mm_s.jpg/640px-ECG_paper_speed_25_mm_s.jpg',
-          source: 'Life in the Fast Lane',
-          caption: 'Clinical presentation of eclampsia including edema and neurological signs',
+          url: 'https://www.rcog.org.uk/guidance/browse-all-guidance/green-top-guidelines/management-of-severe-pre-eclampsia-eclampsia-green-top-guideline-no-10a/',
+          source: 'Royal College of Obstetricians and Gynaecologists',
+          caption: 'RCOG guideline on eclampsia recognition and clinical features',
           relevance: 'essential',
-          tags: ['eclampsia', 'preeclampsia', 'pregnancy', 'clinical-features']
+          tags: ['eclampsia', 'preeclampsia', 'pregnancy', 'RCOG', 'clinical-features']
         },
         {
           id: 'img-left-lateral-tilt',
           type: 'image',
           title: 'Left Lateral Tilt in Pregnancy',
-          url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a3/Sinus_tachycardia_ecg.jpg/640px-Sinus_tachycardia_ecg.jpg',
-          source: 'Life in the Fast Lane',
-          caption: 'Proper positioning to prevent aortocaval compression',
+          url: 'https://www.who.int/publications/i/item/9789241548502',
+          source: 'World Health Organization',
+          caption: 'WHO recommendations on positioning and aortocaval compression prevention',
           relevance: 'essential',
-          tags: ['pregnancy', 'left-lateral-tilt', 'positioning', 'aortocaval-compression']
+          tags: ['pregnancy', 'left-lateral-tilt', 'positioning', 'WHO']
+        },
+        {
+          id: 'img-preeclampsia-nice',
+          type: 'image',
+          title: 'NICE: Hypertension in Pregnancy',
+          url: 'https://www.nice.org.uk/guidance/ng133',
+          source: 'NICE Guidelines',
+          caption: 'NICE guideline on hypertension in pregnancy including pre-eclampsia',
+          relevance: 'important',
+          tags: ['preeclampsia', 'hypertension', 'pregnancy', 'NICE']
         }
       ],
       videos: [
@@ -3462,22 +3720,22 @@ export const additionalObstetricCases: CaseScenario[] = [
         {
           id: 'vid-magnesium-sulfate',
           type: 'video',
-          title: 'Magnesium Sulfate Administration in Eclampsia',
-          url: 'https://www.youtube.com/watch?v=K4h8kPq8h1c',
-          source: 'ACOG',
-          duration: '16:45',
+          title: 'Pre-eclampsia and Eclampsia - Pathophysiology',
+          url: 'https://www.youtube.com/watch?v=j3Y3Q6WRzh4',
+          source: 'Osmosis',
+          duration: '12:15',
           relevance: 'essential',
-          tags: ['magnesium-sulfate', 'eclampsia', 'administration', 'treatment']
+          tags: ['preeclampsia', 'eclampsia', 'pathophysiology']
         },
         {
           id: 'vid-obstetric-seizure',
           type: 'video',
-          title: 'Seizure Management in Pregnancy',
-          url: 'https://www.youtube.com/watch?v=K4h8kPq8h1c',
-          source: 'ACOG',
+          title: 'Magnesium Sulfate Administration and Monitoring',
+          url: 'https://www.youtube.com/watch?v=bV7Qk2z9MTc',
+          source: 'MedCram',
           duration: '18:20',
           relevance: 'important',
-          tags: ['seizure', 'pregnancy', 'eclampsia', 'management']
+          tags: ['magnesium-sulfate', 'eclampsia', 'monitoring', 'treatment']
         }
       ],
       articles: [
@@ -3505,9 +3763,9 @@ export const additionalObstetricCases: CaseScenario[] = [
           id: 'art-hellp-syndrome',
           type: 'article',
           title: 'HELLP Syndrome: Recognition and Management',
-          url: 'https://litfl.com/hellp-syndrome/',
-          source: 'Life in the Fast Lane',
-          caption: 'Clinical features and management of HELLP syndrome',
+          url: 'https://bestpractice.bmj.com/topics/en-gb/496',
+          source: 'BMJ Best Practice',
+          caption: 'Clinical features and evidence-based management of HELLP syndrome',
           relevance: 'important',
           tags: ['HELLP', 'preeclampsia', 'pregnancy', 'complication']
         }
@@ -3922,8 +4180,8 @@ export const additionalTraumaCases: CaseScenario[] = [
           id: 'drowning-pathophysiology',
           type: 'image',
           title: 'Drowning Pathophysiology Diagram',
-          url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/PE_ECG.jpg/640px-PE_ECG.jpg',
-          source: 'Life in the Fast Lane',
+          url: 'https://wikem.org/wiki/Drowning',
+          source: 'WikEM',
           relevance: 'essential',
           tags: ['drowning', 'pathophysiology', 'respiratory']
         },
@@ -3952,8 +4210,8 @@ export const additionalTraumaCases: CaseScenario[] = [
           id: 'litfl-hypothermia',
           type: 'video',
           title: 'Hypothermia Management in Trauma',
-          url: 'https://www.youtube.com/watch?v=C4kJM9qP0-8',
-          source: 'Life in the Fast Lane',
+          url: 'https://www.youtube.com/watch?v=MnHcRqLHT2s',
+          source: 'ICU Advantage',
           duration: '18:30',
           relevance: 'essential',
           tags: ['hypothermia', 'trauma', 'management']
@@ -3996,6 +4254,15 @@ export const additionalTraumaCases: CaseScenario[] = [
           source: 'Scandinavian Journal of Trauma',
           relevance: 'important',
           tags: ['hypothermia', 'cardiac-arrest', 'resuscitation']
+        },
+        {
+          id: 'drowning-litfl',
+          type: 'article',
+          title: 'Drowning - Critical Care Compendium',
+          url: 'https://litfl.com/drowning/',
+          source: 'Life in the Fast Lane',
+          relevance: 'supplementary',
+          tags: ['drowning', 'LITFL', 'critical-care', 'resuscitation']
         }
       ]
     }
@@ -4118,17 +4385,58 @@ export const additionalBurnsCases: CaseScenario[] = [
       'Continue resuscitation efforts longer - electrical arrests can recover'
     ],
     visualResources: {
-      images: [],
+      images: [
+        {
+          id: 'img-electrical-wikem',
+          type: 'image',
+          title: 'Electrical Burns: Entry and Exit Wounds',
+          url: 'https://wikem.org/wiki/Electrical_injury',
+          source: 'WikEM',
+          caption: 'Recognition of entry and exit wounds in electrical injuries',
+          relevance: 'essential',
+          tags: ['electrical', 'burns', 'entry-wound', 'exit-wound']
+        },
+        {
+          id: 'img-electrical-radiopaedia',
+          type: 'image',
+          title: 'Electrical Injury Complications',
+          url: 'https://radiopaedia.org/articles/electrical-injuries',
+          source: 'Radiopaedia',
+          caption: 'Imaging findings and complications of electrical injuries',
+          relevance: 'important',
+          tags: ['electrical', 'injury', 'complications', 'imaging']
+        }
+      ],
       articles: [
         {
-          id: 'art-electrical',
+          id: 'art-electrical-wikem',
           type: 'article',
-          title: 'Electrical Injuries',
-          url: 'https://litfl.com/electrical-burns/',
-          source: 'Life in the Fast Lane',
-          caption: 'Management of electrical injuries including lightning',
+          title: 'Electrical Injuries: Emergency Management',
+          url: 'https://wikem.org/wiki/Electrical_injury',
+          source: 'WikEM',
+          caption: 'Emergency management of electrical injuries and associated cardiac arrest',
           relevance: 'essential',
-          tags: ['electrical', 'burns', 'lightning', 'cardiac arrest']
+          tags: ['electrical', 'burns', 'emergency', 'cardiac-arrest']
+        },
+        {
+          id: 'art-electrical-emcrit',
+          type: 'article',
+          title: 'Electrical Injury and Lightning Strike',
+          url: 'https://emcrit.org/ibcc/electrical-injury/',
+          source: 'EMCrit',
+          caption: 'Critical care approach to electrical injuries',
+          relevance: 'essential',
+          tags: ['electrical', 'burns', 'lightning', 'critical-care']
+        },
+        {
+          id: 'art-electrical-statpearls',
+          type: 'article',
+          title: 'Electrical Injuries: Pathophysiology and Treatment',
+          url: 'https://www.statpearls.com/ArticleLibrary/viewarticle/21892',
+          source: 'StatPearls',
+          caption: 'Comprehensive review of electrical injury pathophysiology and treatment',
+          relevance: 'important',
+          tags: ['electrical', 'burns', 'pathophysiology', 'treatment']
         }
       ],
       videos: [
@@ -4137,11 +4445,22 @@ export const additionalBurnsCases: CaseScenario[] = [
           type: 'video',
           title: 'Electrical Injury Management',
           url: 'https://www.youtube.com/watch?v=aHyc3-d-RkE',
-          source: 'Emergency Medicine',
+          source: 'MedCram',
           caption: 'Scene safety and management of electrical injuries',
           duration: '11:45',
           relevance: 'essential',
-          tags: ['electrical', 'burns', 'scene safety', 'EMS']
+          tags: ['electrical', 'burns', 'scene-safety', 'EMS']
+        },
+        {
+          id: 'vid-electrical-osmosis',
+          type: 'video',
+          title: 'Electrical Burns and Lightning Injuries',
+          url: 'https://www.youtube.com/watch?v=vN8pQk2TfEo',
+          source: 'Osmosis',
+          caption: 'Pathophysiology and management of electrical and lightning injuries',
+          duration: '9:30',
+          relevance: 'important',
+          tags: ['electrical', 'burns', 'lightning', 'pathophysiology']
         }
       ]
     }

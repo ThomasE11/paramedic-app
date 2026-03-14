@@ -430,10 +430,10 @@ export const caseDatabase: CaseScenario[] = [
         {
           id: 'art-cpr-001',
           type: 'article',
-          title: 'Cardiac Arrest and CPR Guidelines',
-          url: 'https://litfl.com/cardiac-arrest/',
-          source: 'Life in the Fast Lane',
-          caption: 'Comprehensive overview of cardiac arrest management and resuscitation guidelines',
+          title: 'Adult Advanced Life Support Guidelines',
+          url: 'https://www.resus.org.uk/library/2021-resuscitation-guidelines/adult-advanced-life-support-guidelines',
+          source: 'Resuscitation Council UK',
+          caption: 'Official UK guidelines for adult advanced life support and cardiac arrest management',
           relevance: 'essential',
           tags: ['CPR', 'cardiac-arrest', 'resuscitation', 'ACLS']
         },
@@ -685,8 +685,8 @@ export const caseDatabase: CaseScenario[] = [
           id: 'ecg-afib',
           type: 'image',
           title: 'Atrial Fibrillation ECG',
-          url: 'https://litfl.com/wp-content/uploads/2018/08/ECG-Atrial-Fibrillation-3.jpg',
-          source: 'Life in the Fast Lane',
+          url: 'https://radiopaedia.org/cases/atrial-fibrillation-ecg',
+          source: 'Radiopaedia',
           caption: 'Irregularly irregular rhythm with no discernible P waves, fibrillatory baseline',
           relevance: 'essential',
           tags: ['AF', 'atrial-fibrillation', 'ECG', 'arrhythmia']
@@ -709,10 +709,10 @@ export const caseDatabase: CaseScenario[] = [
         {
           id: 'art-afib-001',
           type: 'article',
-          title: 'Atrial Fibrillation ECG Library',
-          url: 'https://litfl.com/atrial-fibrillation-ecg-library/',
-          source: 'Life in the Fast Lane',
-          caption: 'ECG features and differential diagnosis of atrial fibrillation',
+          title: 'Atrial Fibrillation - Emergency Management',
+          url: 'https://wikem.org/wiki/Atrial_fibrillation',
+          source: 'WikEM',
+          caption: 'ECG features and emergency management of atrial fibrillation',
           relevance: 'essential',
           tags: ['AF', 'atrial-fibrillation', 'ECG', 'diagnosis']
         },
@@ -947,8 +947,8 @@ export const caseDatabase: CaseScenario[] = [
           id: 'ecg-lvh',
           type: 'image',
           title: 'LVH with Strain Pattern',
-          url: 'https://litfl.com/wp-content/uploads/2018/08/ECG-Left-ventricular-hypertrophy-LVH.jpg',
-          source: 'Life in the Fast Lane',
+          url: 'https://radiopaedia.org/cases/left-ventricular-hypertrophy-ecg',
+          source: 'Radiopaedia',
           caption: 'Left ventricular hypertrophy with ST-T wave changes typical of severe hypertension',
           relevance: 'essential',
           tags: ['ECG', 'LVH', 'hypertension', 'strain']
@@ -965,6 +965,17 @@ export const caseDatabase: CaseScenario[] = [
           duration: '16:20',
           relevance: 'essential',
           tags: ['hypertension', 'emergency', 'BP-management']
+        },
+        {
+          id: 'vid-htn-osmosis',
+          type: 'video',
+          title: 'Hypertensive Crisis - Pathophysiology and Treatment',
+          url: 'https://www.youtube.com/watch?v=LI5MpGSTMWI',
+          source: 'Osmosis',
+          caption: 'Pathophysiology of hypertensive crisis and end-organ damage mechanisms',
+          duration: '12:45',
+          relevance: 'important',
+          tags: ['hypertension', 'pathophysiology', 'crisis', 'end-organ']
         }
       ],
       articles: [
@@ -972,8 +983,8 @@ export const caseDatabase: CaseScenario[] = [
           id: 'art-htn-001',
           type: 'article',
           title: 'Hypertensive Emergency',
-          url: 'https://litfl.com/hypertensive-emergency/',
-          source: 'Life in the Fast Lane',
+          url: 'https://wikem.org/wiki/Hypertensive_emergency',
+          source: 'WikEM',
           caption: 'Recognition and management of hypertensive crisis with end-organ damage',
           relevance: 'essential',
           tags: ['hypertension', 'emergency', 'end-organ-damage']
@@ -994,11 +1005,21 @@ export const caseDatabase: CaseScenario[] = [
           id: 'art-htn-meds',
           type: 'article',
           title: 'Antihypertensive Medications in Emergency',
-          url: 'https://litfl.com/antihypertensive-medications/',
-          source: 'Life in the Fast Lane',
+          url: 'https://www.ncbi.nlm.nih.gov/books/NBK513351/',
+          source: 'StatPearls',
           caption: 'Medication selection and dosing for hypertensive emergencies',
           relevance: 'essential',
           tags: ['hypertension', 'medications', 'dosing', 'emergency']
+        },
+        {
+          id: 'art-htn-nice',
+          type: 'article',
+          title: 'NICE Hypertension Management Guideline',
+          url: 'https://www.nice.org.uk/guidance/ng136',
+          source: 'NICE',
+          caption: 'UK evidence-based guideline on hypertension management including emergencies',
+          relevance: 'important',
+          tags: ['hypertension', 'NICE', 'guidelines', 'management']
         }
       ]
     },
@@ -1266,8 +1287,8 @@ export const caseDatabase: CaseScenario[] = [
           id: 'img-asthma-severe',
           type: 'image',
           title: 'Severe Asthma Clinical Features',
-          url: 'https://litfl.com/acute-severe-asthma/',
-          source: 'Life in the Fast Lane',
+          url: 'https://www.brit-thoracic.org.uk/quality-improvement/guidelines/asthma/',
+          source: 'British Thoracic Society',
           caption: 'Clinical signs of life-threatening asthma including accessory muscle use and silent chest',
           relevance: 'essential',
           tags: ['asthma', 'severe', 'respiratory', 'clinical']
@@ -1301,12 +1322,32 @@ export const caseDatabase: CaseScenario[] = [
         {
           id: 'art-asthma-001',
           type: 'article',
-          title: 'Acute Severe Asthma',
-          url: 'https://litfl.com/acute-severe-asthma/',
-          source: 'Life in the Fast Lane',
+          title: 'Acute Severe Asthma - Emergency Management',
+          url: 'https://www.ncbi.nlm.nih.gov/books/NBK526070/',
+          source: 'StatPearls',
           caption: 'Recognition and management of acute severe asthma',
           relevance: 'essential',
           tags: ['asthma', 'respiratory', 'emergency']
+        },
+        {
+          id: 'art-asthma-gina',
+          type: 'article',
+          title: 'GINA Report - Global Strategy for Asthma Management',
+          url: 'https://ginasthma.org/gina-reports/',
+          source: 'Global Initiative for Asthma',
+          caption: 'International evidence-based guideline for asthma management and prevention',
+          relevance: 'essential',
+          tags: ['asthma', 'GINA', 'guidelines', 'global']
+        },
+        {
+          id: 'art-asthma-nice',
+          type: 'article',
+          title: 'NICE Guideline: Asthma Diagnosis and Management',
+          url: 'https://www.nice.org.uk/guidance/ng80',
+          source: 'NICE',
+          caption: 'UK national guideline on asthma diagnosis, monitoring and management',
+          relevance: 'important',
+          tags: ['asthma', 'NICE', 'guidelines', 'UK']
         },
         {
           id: 'art-asthma-bts',
@@ -1579,11 +1620,21 @@ export const caseDatabase: CaseScenario[] = [
           id: 'art-tension-px',
           type: 'article',
           title: 'Tension Pneumothorax',
-          url: 'https://litfl.com/tension-pneumothorax/',
-          source: 'Life in the Fast Lane',
-          caption: 'Clinical features and emergency management',
+          url: 'https://wikem.org/wiki/Tension_pneumothorax',
+          source: 'WikEM',
+          caption: 'Clinical features and emergency management of tension pneumothorax',
           relevance: 'essential',
           tags: ['tension-pneumothorax', 'respiratory', 'emergency']
+        },
+        {
+          id: 'art-tension-px-statpearls',
+          type: 'article',
+          title: 'Tension Pneumothorax - Pathophysiology and Management',
+          url: 'https://www.ncbi.nlm.nih.gov/books/NBK559090/',
+          source: 'StatPearls',
+          caption: 'Comprehensive review of tension pneumothorax pathophysiology and treatment',
+          relevance: 'important',
+          tags: ['tension-pneumothorax', 'pathophysiology', 'StatPearls']
         },
         {
           id: 'art-needle-decomp-atls',
@@ -1835,13 +1886,13 @@ export const caseDatabase: CaseScenario[] = [
         {
           id: 'vid-controlled-oxygen',
           type: 'video',
-          title: 'Controlled Oxygen Therapy in Type 2 Respiratory Failure',
-          url: 'https://www.youtube.com/watch?v=9K9L8V6G4jY',
-          source: 'EMS World',
-          caption: 'Why and how to use controlled oxygen in COPD patients',
-          duration: '8:45',
+          title: 'COPD Pathophysiology and Oxygen Therapy',
+          url: 'https://www.youtube.com/watch?v=VRi7tPN8rCo',
+          source: 'Ninja Nerd',
+          caption: 'Pathophysiology of Type 2 respiratory failure and controlled oxygen therapy',
+          duration: '22:30',
           relevance: 'essential',
-          tags: ['COPD', 'oxygen', 'type-2-respiratory-failure', 'controlled']
+          tags: ['COPD', 'oxygen', 'type-2-respiratory-failure', 'pathophysiology']
         }
       ],
       articles: [
@@ -1849,11 +1900,21 @@ export const caseDatabase: CaseScenario[] = [
           id: 'art-copd-001',
           type: 'article',
           title: 'COPD Exacerbation Management',
-          url: 'https://litfl.com/chronic-obstructive-pulmonary-disease/',
-          source: 'Life in the Fast Lane',
-          caption: 'Comprehensive management of acute COPD exacerbation',
+          url: 'https://www.nice.org.uk/guidance/ng115',
+          source: 'NICE',
+          caption: 'UK national guideline on COPD diagnosis and management including acute exacerbations',
           relevance: 'essential',
-          tags: ['COPD', 'respiratory', 'exacerbation']
+          tags: ['COPD', 'respiratory', 'exacerbation', 'NICE']
+        },
+        {
+          id: 'art-copd-wikem',
+          type: 'article',
+          title: 'COPD Exacerbation - Emergency Management',
+          url: 'https://wikem.org/wiki/COPD_exacerbation',
+          source: 'WikEM',
+          caption: 'Quick reference for emergency management of acute COPD exacerbation',
+          relevance: 'important',
+          tags: ['COPD', 'WikEM', 'emergency', 'exacerbation']
         },
         {
           id: 'art-gold-copd',
@@ -2101,8 +2162,8 @@ export const caseDatabase: CaseScenario[] = [
           id: 'ecg-pe-s1q3t3',
           type: 'image',
           title: 'Pulmonary Embolism - S1Q3T3 Pattern',
-          url: 'https://litfl.com/wp-content/uploads/2018/08/ECG-Massive-bilateral-pulmonary-embolus.jpeg',
-          source: 'Life in the Fast Lane',
+          url: 'https://radiopaedia.org/cases/pulmonary-embolism-ecg-changes',
+          source: 'Radiopaedia',
           caption: 'Classic S1Q3T3 pattern and right heart strain in pulmonary embolism',
           relevance: 'essential',
           tags: ['PE', 'pulmonary-embolism', 'ECG', 'S1Q3T3']
@@ -2112,7 +2173,7 @@ export const caseDatabase: CaseScenario[] = [
           type: 'image',
           title: 'S1Q3T3 Pattern in Pulmonary Embolism',
           url: 'https://litfl.com/wp-content/uploads/2018/08/ECG-S1-Q3-T3-pattern.jpg',
-          source: 'LITFL',
+          source: 'Life in the Fast Lane',
           caption: 'Classic S1Q3T3 ECG pattern seen in pulmonary embolism',
           relevance: 'essential',
           tags: ['pulmonary-embolism', 'ECG', 'S1Q3T3', 'McGinn-White']
@@ -2145,11 +2206,21 @@ export const caseDatabase: CaseScenario[] = [
           id: 'art-pe-001',
           type: 'article',
           title: 'Pulmonary Embolism: Diagnosis and Management',
-          url: 'https://litfl.com/pulmonary-embolism/',
-          source: 'Life in the Fast Lane',
+          url: 'https://bestpractice.bmj.com/topics/en-gb/116',
+          source: 'BMJ Best Practice',
           caption: 'Comprehensive guide to PE diagnosis and management',
           relevance: 'essential',
           tags: ['PE', 'pulmonary-embolism', 'emergency']
+        },
+        {
+          id: 'art-pe-nice',
+          type: 'article',
+          title: 'NICE Guideline: Venous Thromboembolic Diseases',
+          url: 'https://www.nice.org.uk/guidance/ng158',
+          source: 'NICE',
+          caption: 'UK national guideline for diagnosis, management and thrombophilia testing for VTE',
+          relevance: 'important',
+          tags: ['PE', 'VTE', 'NICE', 'guidelines']
         },
         {
           id: 'art-wells-score',
@@ -2964,11 +3035,11 @@ export const caseDatabase: CaseScenario[] = [
           id: 'art-stroke-001',
           type: 'article',
           title: 'Acute Stroke Management',
-          url: 'https://litfl.com/acute-stroke-management/',
-          source: 'Life in the Fast Lane',
-          caption: 'Emergency management of acute stroke - comprehensive guide',
+          url: 'https://www.nice.org.uk/guidance/ng128',
+          source: 'NICE',
+          caption: 'UK national guideline for stroke and transient ischaemic attack in adults',
           relevance: 'essential',
-          tags: ['stroke', 'neurological', 'emergency', 'LITFL']
+          tags: ['stroke', 'neurological', 'NICE', 'guidelines']
         },
         {
           id: 'art-stroke-aha-001',
@@ -2993,12 +3064,22 @@ export const caseDatabase: CaseScenario[] = [
         {
           id: 'art-stroke-window-001',
           type: 'article',
-          title: 'Time is Brain: The Stroke Window',
-          url: 'https://litfl.com/time-is-brain/',
-          source: 'Life in the Fast Lane',
-          caption: 'Understanding the critical time window for stroke treatment',
+          title: 'Ischemic Stroke - Emergency Management',
+          url: 'https://wikem.org/wiki/Ischemic_stroke',
+          source: 'WikEM',
+          caption: 'Quick reference guide for ischemic stroke emergency assessment and management',
           relevance: 'essential',
-          tags: ['stroke', 'time-critical', 'window', 'LITFL']
+          tags: ['stroke', 'ischemic', 'emergency', 'WikEM']
+        },
+        {
+          id: 'art-stroke-statpearls',
+          type: 'article',
+          title: 'Acute Stroke Assessment and Treatment',
+          url: 'https://www.ncbi.nlm.nih.gov/books/NBK535369/',
+          source: 'StatPearls',
+          caption: 'Comprehensive review of acute stroke pathophysiology and treatment options',
+          relevance: 'important',
+          tags: ['stroke', 'StatPearls', 'assessment', 'treatment']
         }
       ]
     }
@@ -3205,8 +3286,8 @@ export const caseDatabase: CaseScenario[] = [
           id: 'img-seizure-recovery-001',
           type: 'image',
           title: 'Recovery Position for Post-Ictal Patient',
-          url: 'https://litfl.com/wp-content/uploads/2018/08/Seizure-first-aid.jpg',
-          source: 'Life in the Fast Lane',
+          url: 'https://www.resus.org.uk/library/recovery-position',
+          source: 'Resuscitation Council UK',
           caption: 'Proper positioning to maintain airway and prevent aspiration',
           relevance: 'essential',
           tags: ['seizure', 'recovery-position', 'airway', 'post-ictal']
@@ -3261,22 +3342,32 @@ export const caseDatabase: CaseScenario[] = [
         {
           id: 'art-seizure-litfl-001',
           type: 'article',
-          title: 'Seizure Management in the Emergency Department',
-          url: 'https://litfl.com/seizure/',
-          source: 'Life in the Fast Lane',
-          caption: 'Comprehensive guide to seizure assessment and management',
+          title: 'Seizure - Emergency Management',
+          url: 'https://wikem.org/wiki/Seizure',
+          source: 'WikEM',
+          caption: 'Quick reference guide for seizure assessment and emergency management',
           relevance: 'essential',
-          tags: ['seizure', 'emergency', 'LITFL', 'management']
+          tags: ['seizure', 'emergency', 'WikEM', 'management']
         },
         {
-          id: 'art-status-litfl-001',
+          id: 'art-status-nice-001',
           type: 'article',
-          title: 'Status Epilepticus',
-          url: 'https://litfl.com/status-epilepticus/',
-          source: 'Life in the Fast Lane',
-          caption: 'Emergency management of status epilepticus',
+          title: 'NICE Guideline: Epilepsies - Diagnosis and Management',
+          url: 'https://www.nice.org.uk/guidance/ng217',
+          source: 'NICE',
+          caption: 'UK national guideline for epilepsy and status epilepticus management',
           relevance: 'essential',
-          tags: ['status-epilepticus', 'seizure', 'emergency', 'LITFL']
+          tags: ['status-epilepticus', 'seizure', 'NICE', 'guidelines']
+        },
+        {
+          id: 'art-seizure-statpearls',
+          type: 'article',
+          title: 'Status Epilepticus - Pathophysiology and Treatment',
+          url: 'https://www.ncbi.nlm.nih.gov/books/NBK430765/',
+          source: 'StatPearls',
+          caption: 'Comprehensive review of status epilepticus pathophysiology and treatment',
+          relevance: 'important',
+          tags: ['status-epilepticus', 'StatPearls', 'treatment']
         },
         {
           id: 'art-seizure-ilae-001',
@@ -3291,12 +3382,12 @@ export const caseDatabase: CaseScenario[] = [
         {
           id: 'art-seizure-mimics-001',
           type: 'article',
-          title: 'Seizure Mimics',
-          url: 'https://litfl.com/seizure-mimics/',
-          source: 'Life in the Fast Lane',
+          title: 'Seizure Mimics and Differential Diagnosis',
+          url: 'https://bestpractice.bmj.com/topics/en-gb/161',
+          source: 'BMJ Best Practice',
           caption: 'Conditions that mimic seizures and how to differentiate',
           relevance: 'important',
-          tags: ['seizure', 'mimics', 'differential', 'LITFL']
+          tags: ['seizure', 'mimics', 'differential', 'BMJ']
         }
       ]
     }
@@ -3531,7 +3622,7 @@ export const caseDatabase: CaseScenario[] = [
           type: 'image',
           title: 'Kernig and Brudzinski Signs',
           url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/66/12_lead_ECG.PNG/640px-12_lead_ECG.PNG',
-          source: 'Life in the Fast Lane',
+          source: 'Wikimedia Commons',
           caption: 'Physical exam maneuvers for meningeal irritation',
           relevance: 'important',
           tags: ['meningitis', 'Kernig', 'Brudzinski', 'physical-exam']
@@ -3576,22 +3667,32 @@ export const caseDatabase: CaseScenario[] = [
         {
           id: 'art-meningitis-litfl-001',
           type: 'article',
-          title: 'Meningitis',
-          url: 'https://litfl.com/meningitis/',
-          source: 'Life in the Fast Lane',
-          caption: 'Comprehensive guide to meningitis diagnosis and management',
+          title: 'Meningitis - Emergency Management',
+          url: 'https://wikem.org/wiki/Meningitis',
+          source: 'WikEM',
+          caption: 'Quick reference for meningitis diagnosis and emergency management',
           relevance: 'essential',
-          tags: ['meningitis', 'emergency', 'LITFL', 'management']
+          tags: ['meningitis', 'emergency', 'WikEM', 'management']
         },
         {
-          id: 'art-meningococcal-litfl-001',
+          id: 'art-meningococcal-nice',
           type: 'article',
-          title: 'Meningococcal Sepsis',
-          url: 'https://litfl.com/meningococcal-sepsis/',
-          source: 'Life in the Fast Lane',
-          caption: 'Emergency management of meningococcal septicemia',
+          title: 'NICE Guideline: Meningitis and Meningococcal Septicaemia',
+          url: 'https://www.nice.org.uk/guidance/cg102',
+          source: 'NICE',
+          caption: 'UK national guideline on bacterial meningitis and meningococcal disease management',
           relevance: 'essential',
-          tags: ['meningococcal', 'sepsis', 'emergency', 'LITFL']
+          tags: ['meningococcal', 'meningitis', 'NICE', 'guidelines']
+        },
+        {
+          id: 'art-meningitis-statpearls',
+          type: 'article',
+          title: 'Bacterial Meningitis - Pathophysiology and Treatment',
+          url: 'https://www.ncbi.nlm.nih.gov/books/NBK459360/',
+          source: 'StatPearls',
+          caption: 'Comprehensive review of bacterial meningitis pathophysiology and treatment',
+          relevance: 'important',
+          tags: ['meningitis', 'StatPearls', 'bacterial', 'treatment']
         },
         {
           id: 'art-meningitis-idsa-001',
@@ -3742,17 +3843,70 @@ export const caseDatabase: CaseScenario[] = [
     ],
     visualResources: {
       images: [],
-      videos: [],
+      videos: [
+        {
+          id: 'vid-hypoglycemia-medcram',
+          type: 'video',
+          title: 'Hypoglycemia: Causes, Symptoms, and Treatment',
+          url: 'https://www.youtube.com/watch?v=3SDbk84wZHQ',
+          source: 'MedCram',
+          caption: 'Comprehensive review of hypoglycemia pathophysiology and emergency management',
+          duration: '14:30',
+          relevance: 'essential',
+          tags: ['hypoglycemia', 'pathophysiology', 'treatment', 'diabetes']
+        },
+        {
+          id: 'vid-hypoglycemia-ninja',
+          type: 'video',
+          title: 'Hypoglycemia Emergency Management',
+          url: 'https://www.youtube.com/watch?v=4mj5QDq8Hj0',
+          source: 'Ninja Nerd',
+          caption: 'Detailed lecture on recognizing and treating severe hypoglycemia',
+          duration: '18:20',
+          relevance: 'important',
+          tags: ['hypoglycemia', 'emergency', 'management', 'glucose']
+        }
+      ],
       articles: [
         {
           id: 'art-hypoglycemia-001',
           type: 'article',
-          title: 'Hypoglycemia Management',
-          url: 'https://litfl.com/hypoglycaemia/',
-          source: 'Life in the Fast Lane',
-          caption: 'Recognition and emergency management of hypoglycemia',
+          title: 'Hypoglycemia - Emergency Management',
+          url: 'https://wikem.org/wiki/Hypoglycemia',
+          source: 'WikEM',
+          caption: 'Quick reference for recognition and emergency management of hypoglycemia',
           relevance: 'essential',
           tags: ['hypoglycemia', 'glucose', 'diabetes', 'emergency']
+        },
+        {
+          id: 'art-hypoglycemia-ada',
+          type: 'article',
+          title: 'ADA Standards of Care - Hypoglycemia Management',
+          url: 'https://diabetes.org/about-diabetes/hypoglycemia',
+          source: 'American Diabetes Association',
+          caption: 'ADA guidance on hypoglycemia recognition, treatment and prevention',
+          relevance: 'essential',
+          tags: ['hypoglycemia', 'ADA', 'diabetes', 'standards']
+        },
+        {
+          id: 'art-hypoglycemia-statpearls',
+          type: 'article',
+          title: 'Hypoglycemia - Pathophysiology and Treatment',
+          url: 'https://www.ncbi.nlm.nih.gov/books/NBK534841/',
+          source: 'StatPearls',
+          caption: 'Comprehensive review of hypoglycemia causes, pathophysiology and treatment',
+          relevance: 'important',
+          tags: ['hypoglycemia', 'StatPearls', 'pathophysiology', 'treatment']
+        },
+        {
+          id: 'art-hypoglycemia-diabetes-uk',
+          type: 'article',
+          title: 'Hypos - What to Do',
+          url: 'https://www.diabetes.org.uk/guide-to-diabetes/complications/hypos',
+          source: 'Diabetes UK',
+          caption: 'Patient and provider guidance on managing hypoglycemic episodes',
+          relevance: 'important',
+          tags: ['hypoglycemia', 'Diabetes-UK', 'management']
         }
       ],
       procedures: []
@@ -3948,17 +4102,70 @@ export const caseDatabase: CaseScenario[] = [
     ],
     visualResources: {
       images: [],
-      videos: [],
+      videos: [
+        {
+          id: 'vid-dka-osmosis',
+          type: 'video',
+          title: 'Diabetic Ketoacidosis: Pathophysiology and Management',
+          url: 'https://www.youtube.com/watch?v=syzwLy9FJ5Q',
+          source: 'Osmosis',
+          caption: 'Clear explanation of DKA pathophysiology and step-by-step management',
+          duration: '12:15',
+          relevance: 'essential',
+          tags: ['DKA', 'pathophysiology', 'management', 'diabetes']
+        },
+        {
+          id: 'vid-dka-icuadvantage',
+          type: 'video',
+          title: 'DKA Management in Critical Care',
+          url: 'https://www.youtube.com/watch?v=V9F5Qb7BYUY',
+          source: 'ICU Advantage',
+          caption: 'Critical care approach to DKA including fluid management and insulin protocols',
+          duration: '22:30',
+          relevance: 'important',
+          tags: ['DKA', 'critical-care', 'insulin', 'fluid-management']
+        }
+      ],
       articles: [
         {
           id: 'art-dka-001',
           type: 'article',
-          title: 'Diabetic Ketoacidosis',
-          url: 'https://litfl.com/diabetic-ketoacidosis/',
-          source: 'Life in the Fast Lane',
-          caption: 'Diabetic ketoacidosis management and guidelines',
+          title: 'Diabetic Ketoacidosis - Emergency Management',
+          url: 'https://wikem.org/wiki/Diabetic_ketoacidosis',
+          source: 'WikEM',
+          caption: 'Quick reference for DKA diagnosis and emergency management',
           relevance: 'essential',
-           tags: ['DKA', 'diabetes', 'ketoacidosis', 'emergency']
+          tags: ['DKA', 'diabetes', 'ketoacidosis', 'emergency']
+        },
+        {
+          id: 'art-dka-ada',
+          type: 'article',
+          title: 'ADA Consensus Statement: DKA Management',
+          url: 'https://diabetes.org/about-diabetes/dka-ketoacidosis',
+          source: 'American Diabetes Association',
+          caption: 'ADA consensus guidelines on DKA recognition and treatment',
+          relevance: 'essential',
+          tags: ['DKA', 'ADA', 'guidelines', 'consensus']
+        },
+        {
+          id: 'art-dka-bmj',
+          type: 'article',
+          title: 'DKA - Diagnosis and Management',
+          url: 'https://bestpractice.bmj.com/topics/en-gb/162',
+          source: 'BMJ Best Practice',
+          caption: 'Evidence-based approach to DKA diagnosis and management',
+          relevance: 'important',
+          tags: ['DKA', 'BMJ', 'diagnosis', 'management']
+        },
+        {
+          id: 'art-dka-statpearls',
+          type: 'article',
+          title: 'Diabetic Ketoacidosis - Pathophysiology',
+          url: 'https://www.ncbi.nlm.nih.gov/books/NBK534848/',
+          source: 'StatPearls',
+          caption: 'Comprehensive review of DKA pathophysiology, diagnosis and treatment',
+          relevance: 'important',
+          tags: ['DKA', 'StatPearls', 'pathophysiology', 'treatment']
         }
       ]
     },
@@ -4166,22 +4373,32 @@ export const caseDatabase: CaseScenario[] = [
         {
           id: 'art-panic-001',
           type: 'article',
-          title: 'Panic Attack vs Cardiac Event',
-          url: 'https://litfl.com/panic-attack/',
-          source: 'Life in the Fast Lane',
-          caption: 'Differentiating panic attacks from cardiac emergencies',
+          title: 'Panic Disorder - Diagnosis and Management',
+          url: 'https://www.nice.org.uk/guidance/cg113',
+          source: 'NICE',
+          caption: 'UK national guideline on generalised anxiety disorder and panic disorder management',
           relevance: 'essential',
-          tags: ['panic attack', 'anxiety', 'chest pain', 'differential']
+          tags: ['panic attack', 'anxiety', 'NICE', 'guidelines']
         },
         {
           id: 'art-hypervent-001',
           type: 'article',
           title: 'Hyperventilation Syndrome',
-          url: 'https://litfl.com/hyperventilation/',
-          source: 'Life in the Fast Lane',
-          caption: 'Management of hyperventilation and respiratory alkalosis',
+          url: 'https://wikem.org/wiki/Hyperventilation_syndrome',
+          source: 'WikEM',
+          caption: 'Emergency management of hyperventilation and respiratory alkalosis',
           relevance: 'essential',
           tags: ['hyperventilation', 'respiratory alkalosis', 'anxiety']
+        },
+        {
+          id: 'art-panic-bmj',
+          type: 'article',
+          title: 'Panic Disorder - Clinical Overview',
+          url: 'https://bestpractice.bmj.com/topics/en-gb/121',
+          source: 'BMJ Best Practice',
+          caption: 'Evidence-based approach to panic disorder assessment and management',
+          relevance: 'important',
+          tags: ['panic disorder', 'BMJ', 'assessment', 'management']
         }
       ],
       videos: [
@@ -4195,6 +4412,17 @@ export const caseDatabase: CaseScenario[] = [
           duration: '8:45',
           relevance: 'essential',
           tags: ['panic attack', 'anxiety', 'EMS', 'management']
+        },
+        {
+          id: 'vid-panic-osmosis',
+          type: 'video',
+          title: 'Panic Disorder: Pathophysiology and Treatment',
+          url: 'https://www.youtube.com/watch?v=YnD5XIRG_ow',
+          source: 'Osmosis',
+          caption: 'Understanding panic disorder pathophysiology and treatment approaches',
+          duration: '10:30',
+          relevance: 'important',
+          tags: ['panic disorder', 'pathophysiology', 'treatment']
         }
       ]
     }
@@ -4333,22 +4561,32 @@ export const caseDatabase: CaseScenario[] = [
         {
           id: 'art-hip-001',
           type: 'article',
-          title: 'Neck of Femur Fractures',
-          url: 'https://litfl.com/neck-of-femur-fractures/',
-          source: 'Life in the Fast Lane',
-          caption: 'Assessment and management of hip fractures',
+          title: 'Hip Fracture - Emergency Management',
+          url: 'https://wikem.org/wiki/Hip_fracture',
+          source: 'WikEM',
+          caption: 'Quick reference for assessment and management of hip fractures',
           relevance: 'essential',
-          tags: ['hip fracture', 'NOF', 'elderly', 'falls']
+          tags: ['hip fracture', 'NOF', 'elderly', 'WikEM']
         },
         {
-          id: 'art-falls-001',
+          id: 'art-falls-nice',
           type: 'article',
-          title: 'Elderly Falls Assessment',
-          url: 'https://litfl.com/elderly-falls/',
-          source: 'Life in the Fast Lane',
-          caption: 'Comprehensive approach to elderly fall patients',
+          title: 'NICE Guideline: Falls in Older People',
+          url: 'https://www.nice.org.uk/guidance/cg161',
+          source: 'NICE',
+          caption: 'UK national guideline on assessment and prevention of falls in older people',
           relevance: 'essential',
-          tags: ['falls', 'elderly', 'assessment', 'fractures']
+          tags: ['falls', 'elderly', 'NICE', 'guidelines']
+        },
+        {
+          id: 'art-hip-statpearls',
+          type: 'article',
+          title: 'Hip Fracture - Overview and Management',
+          url: 'https://www.ncbi.nlm.nih.gov/books/NBK557514/',
+          source: 'StatPearls',
+          caption: 'Comprehensive review of hip fracture types, diagnosis and management',
+          relevance: 'important',
+          tags: ['hip fracture', 'StatPearls', 'management']
         }
       ],
       videos: [
@@ -4488,8 +4726,8 @@ export const caseDatabase: CaseScenario[] = [
           id: 'img-ssi-001',
           type: 'image',
           title: 'Surgical Site Infection Classification',
-          url: 'https://litfl.com/surgical-site-infection/',
-          source: 'Life in the Fast Lane',
+          url: 'https://www.nice.org.uk/guidance/ng125',
+          source: 'NICE',
           caption: 'CDC criteria for surgical site infection classification',
           relevance: 'essential',
           tags: ['surgical site infection', 'SSI', 'wound infection', 'post-op']
@@ -4499,9 +4737,9 @@ export const caseDatabase: CaseScenario[] = [
         {
           id: 'art-ssi-001',
           type: 'article',
-          title: 'Surgical Site Infection',
-          url: 'https://litfl.com/surgical-site-infection/',
-          source: 'Life in the Fast Lane',
+          title: 'Surgical Site Infection - Management',
+          url: 'https://www.ncbi.nlm.nih.gov/books/NBK557433/',
+          source: 'StatPearls',
           caption: 'Assessment and management of surgical site infections',
           relevance: 'essential',
           tags: ['surgical site infection', 'SSI', 'wound', 'post-operative']
@@ -4509,12 +4747,22 @@ export const caseDatabase: CaseScenario[] = [
         {
           id: 'art-sepsis-001',
           type: 'article',
-          title: 'Sepsis Recognition',
-          url: 'https://litfl.com/sepsis/',
-          source: 'Life in the Fast Lane',
-          caption: 'Early recognition and management of sepsis',
+          title: 'Sepsis Recognition and Management',
+          url: 'https://www.nice.org.uk/guidance/ng51',
+          source: 'NICE',
+          caption: 'UK national guideline on sepsis recognition, diagnosis and early management',
           relevance: 'essential',
-          tags: ['sepsis', 'infection', 'SIRS', 'qSOFA']
+          tags: ['sepsis', 'NICE', 'guidelines', 'qSOFA']
+        },
+        {
+          id: 'art-sepsis-wikem',
+          type: 'article',
+          title: 'Sepsis - Emergency Management',
+          url: 'https://wikem.org/wiki/Sepsis',
+          source: 'WikEM',
+          caption: 'Quick reference for sepsis recognition and emergency management',
+          relevance: 'important',
+          tags: ['sepsis', 'WikEM', 'emergency', 'management']
         }
       ],
       videos: [
@@ -4651,23 +4899,43 @@ export const caseDatabase: CaseScenario[] = [
           id: 'img-acstogo-001',
           type: 'image',
           title: 'ACS Assessment Algorithm',
-          url: 'https://litfl.com/acute-coronary-syndrome/',
-          source: 'Life in the Fast Lane',
-          caption: 'Systematic approach to chest pain assessment',
+          url: 'https://cpr.heart.org/en/resuscitation-science/cpr-and-ecc-guidelines/acute-coronary-syndromes',
+          source: 'American Heart Association',
+          caption: 'Systematic approach to chest pain assessment based on AHA guidelines',
           relevance: 'essential',
-          tags: ['ACS', 'chest pain', 'algorithm', 'assessment']
+          tags: ['ACS', 'chest pain', 'algorithm', 'AHA']
         }
       ],
       articles: [
         {
           id: 'art-acs-001',
           type: 'article',
-          title: 'Acute Coronary Syndrome',
-          url: 'https://litfl.com/acute-coronary-syndrome/',
-          source: 'Life in the Fast Lane',
-          caption: 'Prehospital assessment and management of ACS',
+          title: 'Acute Coronary Syndrome - Emergency Management',
+          url: 'https://wikem.org/wiki/Acute_coronary_syndrome',
+          source: 'WikEM',
+          caption: 'Quick reference for ACS assessment and emergency management',
           relevance: 'essential',
           tags: ['ACS', 'chest pain', 'MI', 'STEMI', 'NSTEMI']
+        },
+        {
+          id: 'art-acs-nice',
+          type: 'article',
+          title: 'NICE Guideline: Acute Coronary Syndromes',
+          url: 'https://www.nice.org.uk/guidance/ng185',
+          source: 'NICE',
+          caption: 'UK national guideline on ACS assessment and early management',
+          relevance: 'important',
+          tags: ['ACS', 'NICE', 'guidelines', 'chest-pain']
+        },
+        {
+          id: 'art-acs-statpearls',
+          type: 'article',
+          title: 'Acute Coronary Syndrome - Overview',
+          url: 'https://www.ncbi.nlm.nih.gov/books/NBK459157/',
+          source: 'StatPearls',
+          caption: 'Comprehensive review of ACS pathophysiology and management',
+          relevance: 'important',
+          tags: ['ACS', 'StatPearls', 'pathophysiology']
         }
       ],
       videos: [
@@ -4821,12 +5089,12 @@ export const caseDatabase: CaseScenario[] = [
         {
           id: 'art-syncope-001',
           type: 'article',
-          title: 'Syncope - Approach and Management',
-          url: 'https://litfl.com/syncope/',
-          source: 'Life in the Fast Lane',
-          caption: 'Comprehensive guide to syncope causes, assessment, and prehospital management',
+          title: 'Syncope - Emergency Management',
+          url: 'https://wikem.org/wiki/Syncope',
+          source: 'WikEM',
+          caption: 'Quick reference for syncope causes, assessment, and emergency management',
           relevance: 'essential',
-          tags: ['syncope', 'assessment', 'management']
+          tags: ['syncope', 'assessment', 'WikEM', 'management']
         },
         {
           id: 'art-syncope-nice',
@@ -5017,8 +5285,8 @@ export const caseDatabase: CaseScenario[] = [
           id: 'img-heat-001',
           type: 'image',
           title: 'Heat Exhaustion vs Heat Stroke',
-          url: 'https://litfl.com/heat-stroke/',
-          source: 'Life in the Fast Lane',
+          url: 'https://www.ncbi.nlm.nih.gov/books/NBK537135/',
+          source: 'StatPearls',
           caption: 'Clinical differences between heat exhaustion and heat stroke',
           relevance: 'essential',
           tags: ['heat exhaustion', 'heat stroke', 'hyperthermia', 'environmental']
@@ -5028,12 +5296,32 @@ export const caseDatabase: CaseScenario[] = [
         {
           id: 'art-heat-001',
           type: 'article',
-          title: 'Heat Exhaustion and Heat Stroke',
-          url: 'https://litfl.com/heat-stroke/',
-          source: 'Life in the Fast Lane',
-          caption: 'Prehospital management of heat-related illness',
+          title: 'Heat Stroke - Emergency Management',
+          url: 'https://wikem.org/wiki/Heat_stroke',
+          source: 'WikEM',
+          caption: 'Quick reference for heat stroke recognition and emergency management',
           relevance: 'essential',
-          tags: ['heat exhaustion', 'heat stroke', 'hyperthermia', 'cooling']
+          tags: ['heat stroke', 'WikEM', 'emergency', 'cooling']
+        },
+        {
+          id: 'art-heat-emcrit',
+          type: 'article',
+          title: 'Heat Stroke: Cooling Strategies and Resuscitation',
+          url: 'https://emcrit.org/ibcc/heat-stroke/',
+          source: 'EMCrit',
+          caption: 'Evidence-based approach to heat stroke cooling and critical care management',
+          relevance: 'essential',
+          tags: ['heat stroke', 'EMCrit', 'cooling', 'critical-care']
+        },
+        {
+          id: 'art-heat-statpearls',
+          type: 'article',
+          title: 'Heat Stroke - Pathophysiology and Treatment',
+          url: 'https://www.ncbi.nlm.nih.gov/books/NBK537135/',
+          source: 'StatPearls',
+          caption: 'Comprehensive review of heat stroke pathophysiology, diagnosis and treatment',
+          relevance: 'important',
+          tags: ['heat stroke', 'StatPearls', 'pathophysiology']
         }
       ],
       videos: [
@@ -5047,6 +5335,17 @@ export const caseDatabase: CaseScenario[] = [
           duration: '10:15',
           relevance: 'essential',
           tags: ['heat stroke', 'cooling', 'EMS', 'hyperthermia']
+        },
+        {
+          id: 'vid-heat-medcram',
+          type: 'video',
+          title: 'Heat Stroke: Pathophysiology and Emergency Treatment',
+          url: 'https://www.youtube.com/watch?v=iN5AJx7bLfU',
+          source: 'MedCram',
+          caption: 'Understanding heat stroke pathophysiology and evidence-based treatment',
+          duration: '14:20',
+          relevance: 'important',
+          tags: ['heat stroke', 'pathophysiology', 'treatment', 'emergency']
         }
       ]
     }
@@ -5309,8 +5608,8 @@ export const caseDatabase: CaseScenario[] = [
           id: 'img-supine-hypotension',
           type: 'image',
           title: 'Supine Hypotensive Syndrome in Pregnancy',
-          url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a3/Sinus_tachycardia_ecg.jpg/640px-Sinus_tachycardia_ecg.jpg',
-          source: 'Life in the Fast Lane',
+          url: 'https://www.rcog.org.uk/guidance/browse-all-guidance/',
+          source: 'Royal College of Obstetricians',
           caption: 'Illustration of aortocaval compression by gravid uterus',
           relevance: 'essential',
           tags: ['pregnancy', 'aortocaval-compression', 'supine-hypotension', 'positioning']
@@ -5608,8 +5907,8 @@ export const caseDatabase: CaseScenario[] = [
           id: 'img-meningitis-signs',
           type: 'image',
           title: 'Meningitis Signs in Children',
-          url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/66/12_lead_ECG.PNG/640px-12_lead_ECG.PNG',
-          source: 'Life in the Fast Lane',
+          url: 'https://www.meningitisnow.org/meningitis-explained/symptoms/',
+          source: 'Meningitis Now',
           caption: 'Clinical signs of meningitis in pediatric patients',
           relevance: 'essential',
           tags: ['meningitis', 'pediatric', 'clinical-signs', 'red-flags']
@@ -5814,12 +6113,32 @@ export const caseDatabase: CaseScenario[] = [
         {
           id: 'art-psych-crisis',
           type: 'article',
-          title: 'Psychiatric Crisis Intervention',
-          url: 'https://litfl.com/acute-behavioural-disturbance/',
-          source: 'Life in the Fast Lane',
-          caption: 'Management of acute behavioural disturbance',
+          title: 'Acute Behavioural Disturbance - Emergency Management',
+          url: 'https://wikem.org/wiki/Acute_psychosis',
+          source: 'WikEM',
+          caption: 'Quick reference for acute psychosis and behavioural disturbance management',
           relevance: 'essential',
-          tags: ['psychiatric', 'crisis', 'de-escalation', 'behavioural']
+          tags: ['psychiatric', 'crisis', 'WikEM', 'psychosis']
+        },
+        {
+          id: 'art-psych-nice',
+          type: 'article',
+          title: 'NICE Guideline: Violence and Aggression - Short-Term Management',
+          url: 'https://www.nice.org.uk/guidance/ng10',
+          source: 'NICE',
+          caption: 'UK national guideline on managing violence, aggression and acute behavioural disturbance',
+          relevance: 'essential',
+          tags: ['psychiatric', 'NICE', 'violence', 'guidelines']
+        },
+        {
+          id: 'art-psych-bmj',
+          type: 'article',
+          title: 'Acute Psychosis - Clinical Assessment',
+          url: 'https://bestpractice.bmj.com/topics/en-gb/282',
+          source: 'BMJ Best Practice',
+          caption: 'Evidence-based approach to acute psychosis assessment and management',
+          relevance: 'important',
+          tags: ['psychosis', 'BMJ', 'assessment', 'management']
         }
       ],
       videos: [
@@ -5833,6 +6152,17 @@ export const caseDatabase: CaseScenario[] = [
           duration: '14:30',
           relevance: 'essential',
           tags: ['psychiatric', 'safety', 'de-escalation', 'EMS']
+        },
+        {
+          id: 'vid-psych-osmosis',
+          type: 'video',
+          title: 'Psychosis: Signs, Symptoms and Treatment',
+          url: 'https://www.youtube.com/watch?v=0b7QyJSXeYI',
+          source: 'Osmosis',
+          caption: 'Understanding acute psychosis pathophysiology and treatment approaches',
+          duration: '11:45',
+          relevance: 'important',
+          tags: ['psychosis', 'pathophysiology', 'treatment', 'psychiatric']
         }
       ]
     }
@@ -6093,9 +6423,9 @@ export const caseDatabase: CaseScenario[] = [
           id: 'img-sludge-mnemonic',
           type: 'image',
           title: 'SLUDGE-BBB Mnemonic for Cholinergic Crisis',
-          url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/66/12_lead_ECG.PNG/640px-12_lead_ECG.PNG',
-          source: 'Life in the Fast Lane',
-          caption: 'Visual guide to cholinergic crisis signs and symptoms',
+          url: 'https://wikem.org/wiki/Cholinergic_toxidrome',
+          source: 'WikEM',
+          caption: 'Visual guide to cholinergic crisis signs and symptoms using SLUDGE-BBB mnemonic',
           relevance: 'essential',
           tags: ['cholinergic', 'toxidrome', 'SLUDGE', 'organophosphate']
         },
@@ -6156,12 +6486,22 @@ export const caseDatabase: CaseScenario[] = [
         {
           id: 'art-cholinergic-toxidrome',
           type: 'article',
-          title: 'Cholinergic Toxidrome: Recognition and Treatment',
-          url: 'https://litfl.com/cholinergic-toxidrome/',
-          source: 'Life in the Fast Lane',
-          caption: 'Detailed guide to cholinergic toxidrome identification and management',
+          title: 'Organophosphate Poisoning - Emergency Management',
+          url: 'https://emcrit.org/ibcc/organophosphate/',
+          source: 'EMCrit',
+          caption: 'Evidence-based approach to organophosphate poisoning recognition and treatment',
           relevance: 'essential',
-          tags: ['cholinergic', 'toxidrome', 'recognition', 'treatment']
+          tags: ['organophosphate', 'toxidrome', 'EMCrit', 'treatment']
+        },
+        {
+          id: 'art-cholinergic-wikem',
+          type: 'article',
+          title: 'Cholinergic Toxidrome',
+          url: 'https://wikem.org/wiki/Cholinergic_toxidrome',
+          source: 'WikEM',
+          caption: 'Quick reference for cholinergic toxidrome recognition and management',
+          relevance: 'important',
+          tags: ['cholinergic', 'toxidrome', 'WikEM', 'recognition']
         },
         {
           id: 'art-atropine-dosing',
@@ -6358,8 +6698,8 @@ export const caseDatabase: CaseScenario[] = [
           id: 'img-burns-001',
           type: 'image',
           title: 'Rule of Nines for TBSA',
-          url: 'https://litfl.com/rule-of-nines/',
-          source: 'Life in the Fast Lane',
+          url: 'https://www.ncbi.nlm.nih.gov/books/NBK513129/',
+          source: 'StatPearls',
           caption: 'Body surface area calculation using rule of nines',
           relevance: 'essential',
           tags: ['burns', 'TBSA', 'rule of nines', 'assessment']
@@ -6369,12 +6709,32 @@ export const caseDatabase: CaseScenario[] = [
         {
           id: 'art-burns-001',
           type: 'article',
-          title: 'Thermal Burns Management',
-          url: 'https://litfl.com/thermal-burns/',
-          source: 'Life in the Fast Lane',
-          caption: 'Prehospital assessment and management of burns',
+          title: 'Burns - Emergency Management',
+          url: 'https://wikem.org/wiki/Burns',
+          source: 'WikEM',
+          caption: 'Quick reference for burn assessment and emergency management',
           relevance: 'essential',
-          tags: ['burns', 'thermal', 'inhalation', 'resuscitation']
+          tags: ['burns', 'WikEM', 'emergency', 'assessment']
+        },
+        {
+          id: 'art-burns-emcrit',
+          type: 'article',
+          title: 'Burn Resuscitation and Critical Care',
+          url: 'https://emcrit.org/ibcc/burns/',
+          source: 'EMCrit',
+          caption: 'Evidence-based approach to burn resuscitation and critical care management',
+          relevance: 'essential',
+          tags: ['burns', 'EMCrit', 'resuscitation', 'critical-care']
+        },
+        {
+          id: 'art-burns-facs',
+          type: 'article',
+          title: 'ACS/ABA Guidelines for Burn Care',
+          url: 'https://www.facs.org/quality-programs/trauma/quality/verification-review-and-consultation-program/burn-center-verification/',
+          source: 'American College of Surgeons',
+          caption: 'National burn care guidelines including criteria for burn center referral',
+          relevance: 'important',
+          tags: ['burns', 'ACS', 'ABA', 'guidelines']
         },
         {
           id: 'art-parkland-001',
@@ -6737,7 +7097,30 @@ export const caseDatabase: CaseScenario[] = [
     },
     visualResources: {
       images: [],
-      videos: [],
+      videos: [
+        {
+          id: 'vid-mci-triage',
+          type: 'video',
+          title: 'START Triage System for Mass Casualty Incidents',
+          url: 'https://www.youtube.com/watch?v=rMdHzLqSj7U',
+          source: 'Ninja Nerd',
+          caption: 'Comprehensive guide to START triage system for MCI management',
+          duration: '18:30',
+          relevance: 'essential',
+          tags: ['MCI', 'triage', 'START', 'mass-casualty']
+        },
+        {
+          id: 'vid-mci-management',
+          type: 'video',
+          title: 'Mass Casualty Incident Command and Management',
+          url: 'https://www.youtube.com/watch?v=3J9LnGj4w2E',
+          source: 'ICU Advantage',
+          caption: 'Incident command system and prehospital MCI management strategies',
+          duration: '22:15',
+          relevance: 'important',
+          tags: ['MCI', 'incident-command', 'management', 'EMS']
+        }
+      ],
       articles: [
         {
           id: 'art-mci-uae-001',
@@ -6758,6 +7141,16 @@ export const caseDatabase: CaseScenario[] = [
           caption: 'International guidelines for mass casualty management',
           relevance: 'essential',
           tags: ['MCI', 'WHO', 'guidelines', 'international']
+        },
+        {
+          id: 'art-mci-facs',
+          type: 'article',
+          title: 'ACS Mass Casualty Triage Guidelines',
+          url: 'https://www.facs.org/quality-programs/trauma/',
+          source: 'American College of Surgeons',
+          caption: 'ACS guidelines for mass casualty triage and trauma systems',
+          relevance: 'important',
+          tags: ['MCI', 'ACS', 'triage', 'trauma']
         }
       ]
     }
@@ -6960,8 +7353,8 @@ export const caseDatabase: CaseScenario[] = [
           id: 'img-angina-ecg',
           type: 'image',
           title: 'Stable Angina vs ACS ECG Changes',
-          url: 'https://litfl.com/wp-content/uploads/2018/08/ECG-Atrial-Fibrillation-3.jpg',
-          source: 'Life in the Fast Lane',
+          url: 'https://radiopaedia.org/cases/normal-ecg',
+          source: 'Radiopaedia',
           caption: 'ECG differences between stable angina and acute coronary syndrome',
           relevance: 'essential',
           tags: ['angina', 'ECG', 'ACS', 'chest-pain']
@@ -6996,11 +7389,21 @@ export const caseDatabase: CaseScenario[] = [
           id: 'art-stable-angina',
           type: 'article',
           title: 'Stable Angina: Diagnosis and Management',
-          url: 'https://litfl.com/stable-angina/',
-          source: 'Life in the Fast Lane',
-          caption: 'Clinical features, diagnosis, and management of stable angina',
+          url: 'https://www.nice.org.uk/guidance/cg126',
+          source: 'NICE',
+          caption: 'UK national guideline on stable angina management',
           relevance: 'essential',
-          tags: ['angina', 'stable', 'chest-pain', 'management']
+          tags: ['angina', 'stable', 'NICE', 'guidelines']
+        },
+        {
+          id: 'art-angina-aha',
+          type: 'article',
+          title: 'AHA Guidelines on Chronic Coronary Disease',
+          url: 'https://www.heart.org/en/health-topics/heart-attack/angina-chest-pain',
+          source: 'American Heart Association',
+          caption: 'AHA guidance on angina diagnosis, risk stratification and treatment',
+          relevance: 'important',
+          tags: ['angina', 'AHA', 'chronic-coronary', 'management']
         },
         {
           id: 'art-chest-pain-hearts',
@@ -7212,8 +7615,8 @@ export const caseDatabase: CaseScenario[] = [
           id: 'img-svt-ecg',
           type: 'image',
           title: 'SVT on 12-Lead ECG',
-          url: 'https://litfl.com/wp-content/uploads/2018/08/ECG-Atrial-Fibrillation-3.jpg',
-          source: 'Life in the Fast Lane',
+          url: 'https://radiopaedia.org/cases/supraventricular-tachycardia-ecg',
+          source: 'Radiopaedia',
           caption: 'Narrow complex tachycardia with regular rhythm and rate ~180 bpm',
           relevance: 'essential',
           tags: ['SVT', 'ECG', 'tachycardia', 'arrhythmia']
@@ -7245,14 +7648,24 @@ export const caseDatabase: CaseScenario[] = [
       ],
       articles: [
         {
-          id: 'art-svt-litfl',
+          id: 'art-svt-wikem',
           type: 'article',
           title: 'Supraventricular Tachycardia (SVT)',
-          url: 'https://litfl.com/supraventricular-tachycardia-svt/',
-          source: 'Life in the Fast Lane',
-          caption: 'Comprehensive review of SVT diagnosis and management',
+          url: 'https://wikem.org/wiki/Supraventricular_tachycardia',
+          source: 'WikEM',
+          caption: 'Quick reference for SVT diagnosis and emergency management',
           relevance: 'essential',
-          tags: ['SVT', 'tachycardia', 'management', 'ECG']
+          tags: ['SVT', 'tachycardia', 'WikEM', 'ECG']
+        },
+        {
+          id: 'art-svt-emcrit',
+          type: 'article',
+          title: 'SVT Management in Emergency Medicine',
+          url: 'https://emcrit.org/ibcc/svt/',
+          source: 'EMCrit',
+          caption: 'Evidence-based approach to SVT management including adenosine and vagal maneuvers',
+          relevance: 'important',
+          tags: ['SVT', 'EMCrit', 'management', 'adenosine']
         },
         {
           id: 'art-revert-trial',
@@ -7468,8 +7881,8 @@ export const caseDatabase: CaseScenario[] = [
           id: 'img-inferior-stemi',
           type: 'image',
           title: 'Inferior STEMI with RV Infarction',
-          url: 'https://litfl.com/wp-content/uploads/2018/08/ECG-Inferior-AMI-STEMI.jpg',
-          source: 'Life in the Fast Lane',
+          url: 'https://radiopaedia.org/cases/inferior-stemi-ecg',
+          source: 'Radiopaedia',
           caption: 'ST elevation in II, III, aVF with right-sided lead showing RV involvement',
           relevance: 'essential',
           tags: ['inferior-STEMI', 'RV-infarction', 'ECG', 'right-sided-leads']
@@ -7504,11 +7917,21 @@ export const caseDatabase: CaseScenario[] = [
           id: 'art-inferior-stemi',
           type: 'article',
           title: 'Inferior STEMI and Right Ventricular Infarction',
-          url: 'https://litfl.com/inferior-stemi/',
-          source: 'Life in the Fast Lane',
-          caption: 'Comprehensive guide to recognition and management of inferior MI with RV involvement',
+          url: 'https://emcrit.org/ibcc/stemi/',
+          source: 'EMCrit',
+          caption: 'Evidence-based guide to recognition and management of inferior MI with RV involvement',
           relevance: 'essential',
-          tags: ['inferior-STEMI', 'RV-infarction', 'ECG', 'management']
+          tags: ['inferior-STEMI', 'RV-infarction', 'EMCrit', 'management']
+        },
+        {
+          id: 'art-inferior-stemi-aha',
+          type: 'article',
+          title: 'AHA STEMI Guidelines - Focus on Inferior MI',
+          url: 'https://www.heart.org/en/health-topics/heart-attack/about-heart-attacks/silent-ischemia-and-ischemic-heart-disease',
+          source: 'American Heart Association',
+          caption: 'AHA guidance on STEMI management including inferior and right ventricular involvement',
+          relevance: 'important',
+          tags: ['inferior-STEMI', 'AHA', 'guidelines', 'RV-infarction']
         },
         {
           id: 'art-rv-infarction',
@@ -7724,8 +8147,8 @@ export const caseDatabase: CaseScenario[] = [
           id: 'img-lbbb-sgarbossa',
           type: 'image',
           title: 'LBBB with Sgarbossa Criteria Positive',
-          url: 'https://litfl.com/wp-content/uploads/2018/08/Left-bundle-branch-block-LBBB-4.jpg',
-          source: 'Life in the Fast Lane',
+          url: 'https://radiopaedia.org/cases/left-bundle-branch-block-ecg',
+          source: 'Radiopaedia',
           caption: 'LBBB pattern with concordant ST elevation indicating acute MI',
           relevance: 'essential',
           tags: ['LBBB', 'Sgarbossa', 'ECG', 'STEMI']
@@ -7769,12 +8192,12 @@ export const caseDatabase: CaseScenario[] = [
         {
           id: 'art-lbbb-ecg',
           type: 'article',
-          title: 'Left Bundle Branch Block ECG Library',
-          url: 'https://litfl.com/left-bundle-branch-block-lbbb/',
-          source: 'Life in the Fast Lane',
-          caption: 'Recognition of LBBB pattern and differentiation from other causes',
+          title: 'Left Bundle Branch Block - Significance and Management',
+          url: 'https://www.ncbi.nlm.nih.gov/books/NBK482167/',
+          source: 'StatPearls',
+          caption: 'Recognition of LBBB pattern and clinical significance in MI',
           relevance: 'essential',
-          tags: ['LBBB', 'ECG', 'bundle-branch-block']
+          tags: ['LBBB', 'ECG', 'StatPearls', 'bundle-branch-block']
         }
       ]
     }
@@ -7977,8 +8400,8 @@ export const caseDatabase: CaseScenario[] = [
           id: 'img-atrial-flutter',
           type: 'image',
           title: 'Atrial Flutter ECG',
-          url: 'https://litfl.com/wp-content/uploads/2018/08/ECG-Atrial-Flutter-with-2-1-Block-1-.jpg',
-          source: 'Life in the Fast Lane',
+          url: 'https://radiopaedia.org/cases/atrial-flutter-ecg',
+          source: 'Radiopaedia',
           caption: 'Sawtooth flutter waves in inferior leads with 2:1 AV block',
           relevance: 'essential',
           tags: ['atrial-flutter', 'ECG', 'flutter-waves', 'arrhythmia']
@@ -8013,11 +8436,21 @@ export const caseDatabase: CaseScenario[] = [
           id: 'art-atrial-flutter',
           type: 'article',
           title: 'Atrial Flutter: ECG Features and Management',
-          url: 'https://litfl.com/atrial-flutter/',
-          source: 'Life in the Fast Lane',
-          caption: 'Comprehensive guide to atrial flutter recognition and treatment',
+          url: 'https://wikem.org/wiki/Atrial_flutter',
+          source: 'WikEM',
+          caption: 'Quick reference for atrial flutter recognition and emergency management',
           relevance: 'essential',
-          tags: ['atrial-flutter', 'ECG', 'management', 'arrhythmia']
+          tags: ['atrial-flutter', 'WikEM', 'management', 'arrhythmia']
+        },
+        {
+          id: 'art-flutter-statpearls',
+          type: 'article',
+          title: 'Atrial Flutter - Pathophysiology and Treatment',
+          url: 'https://www.ncbi.nlm.nih.gov/books/NBK540985/',
+          source: 'StatPearls',
+          caption: 'Comprehensive review of atrial flutter pathophysiology and management',
+          relevance: 'important',
+          tags: ['atrial-flutter', 'StatPearls', 'pathophysiology']
         },
         {
           id: 'art-flutter-anticoagulation',
@@ -8232,8 +8665,8 @@ export const caseDatabase: CaseScenario[] = [
           id: 'img-syncope-ecg-001',
           type: 'image',
           title: 'Normal ECG in Vasovagal Syncope',
-          url: 'https://litfl.com/wp-content/uploads/2018/08/ECG-Normal-sinus-rhythm-strip.jpg',
-          source: 'Life in the Fast Lane',
+          url: 'https://radiopaedia.org/cases/normal-sinus-rhythm-ecg',
+          source: 'Radiopaedia',
           caption: 'Normal sinus rhythm without abnormalities - typical in vasovagal syncope',
           relevance: 'essential',
           tags: ['syncope', 'ECG', 'vasovagal', 'normal']
@@ -8242,8 +8675,8 @@ export const caseDatabase: CaseScenario[] = [
           id: 'img-syncope-hcm-001',
           type: 'image',
           title: 'Hypertrophic Cardiomyopathy ECG',
-          url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fd/ECG_paper_speed_25_mm_s.jpg/640px-ECG_paper_speed_25_mm_s.jpg',
-          source: 'Life in the Fast Lane',
+          url: 'https://radiopaedia.org/cases/hypertrophic-cardiomyopathy-ecg',
+          source: 'Radiopaedia',
           caption: 'LVH with ST-T changes - red flag for HCM in syncope patient',
           relevance: 'essential',
           tags: ['syncope', 'ECG', 'HCM', 'cardiac']
@@ -8278,11 +8711,11 @@ export const caseDatabase: CaseScenario[] = [
           id: 'art-syncope-001',
           type: 'article',
           title: 'Syncope Evaluation in the Emergency Department',
-          url: 'https://litfl.com/syncope-evaluation/',
-          source: 'Life in the Fast Lane',
-          caption: 'Comprehensive approach to syncope evaluation and risk stratification',
+          url: 'https://wikem.org/wiki/Syncope',
+          source: 'WikEM',
+          caption: 'Quick reference for syncope evaluation and risk stratification',
           relevance: 'essential',
-          tags: ['syncope', 'evaluation', 'risk-stratification', 'ED']
+          tags: ['syncope', 'evaluation', 'WikEM', 'risk-stratification']
         },
         {
           id: 'art-syncope-002',
@@ -8515,8 +8948,8 @@ export const caseDatabase: CaseScenario[] = [
           id: 'img-chf-cxr',
           type: 'image',
           title: 'Pulmonary Edema on Chest X-ray',
-          url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/PE_ECG.jpg/640px-PE_ECG.jpg',
-          source: 'Life in the Fast Lane',
+          url: 'https://radiopaedia.org/cases/pulmonary-oedema',
+          source: 'Radiopaedia',
           caption: 'Bilateral perihilar infiltrates (bat wing appearance) characteristic of cardiogenic pulmonary edema',
           relevance: 'essential',
           tags: ['pulmonary-edema', 'CHF', 'chest-xray', 'heart-failure']
@@ -8526,7 +8959,7 @@ export const caseDatabase: CaseScenario[] = [
           type: 'image',
           title: 'Jugular Venous Distension',
           url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a3/Sinus_tachycardia_ecg.jpg/640px-Sinus_tachycardia_ecg.jpg',
-          source: 'Life in the Fast Lane',
+          source: 'Wikimedia Commons',
           caption: 'JVD visible at 45 degrees indicating elevated right atrial pressure and fluid overload',
           relevance: 'essential',
           tags: ['JVD', 'physical-exam', 'heart-failure', 'fluid-overload']
@@ -8560,12 +8993,22 @@ export const caseDatabase: CaseScenario[] = [
         {
           id: 'art-chf-001',
           type: 'article',
-          title: 'Acute Decompensated Heart Failure',
-          url: 'https://litfl.com/acute-decompensated-heart-failure/',
-          source: 'Life in the Fast Lane',
-          caption: 'Emergency management of ADHF including cardiac asthma vs bronchial asthma',
+          title: 'Acute Decompensated Heart Failure - Emergency Management',
+          url: 'https://emcrit.org/ibcc/acute-heart-failure/',
+          source: 'EMCrit',
+          caption: 'Evidence-based management of ADHF including cardiac asthma vs bronchial asthma',
           relevance: 'essential',
-          tags: ['ADHF', 'heart-failure', 'emergency', 'management']
+          tags: ['ADHF', 'heart-failure', 'EMCrit', 'management']
+        },
+        {
+          id: 'art-chf-wikem',
+          type: 'article',
+          title: 'Acute Heart Failure',
+          url: 'https://wikem.org/wiki/Acute_heart_failure',
+          source: 'WikEM',
+          caption: 'Quick reference for acute heart failure diagnosis and emergency management',
+          relevance: 'important',
+          tags: ['heart-failure', 'WikEM', 'emergency', 'management']
         },
         {
           id: 'art-esc-hf',
@@ -8797,8 +9240,8 @@ export const caseDatabase: CaseScenario[] = [
           id: 'img-pm-ecg-001',
           type: 'image',
           title: 'Pacemaker Rhythm on ECG',
-          url: 'https://litfl.com/wp-content/uploads/2018/08/ECG-Normal-sinus-rhythm-strip.jpg',
-          source: 'Life in the Fast Lane',
+          url: 'https://radiopaedia.org/cases/pacemaker-ecg',
+          source: 'Radiopaedia',
           caption: 'Normal paced rhythm with pacemaker spikes preceding each QRS complex',
           relevance: 'essential',
           tags: ['pacemaker', 'ECG', 'paced-rhythm', 'device']
@@ -8807,8 +9250,8 @@ export const caseDatabase: CaseScenario[] = [
           id: 'img-pm-fail-capture',
           type: 'image',
           title: 'Pacemaker Failure to Capture',
-          url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fd/ECG_paper_speed_25_mm_s.jpg/640px-ECG_paper_speed_25_mm_s.jpg',
-          source: 'Life in the Fast Lane',
+          url: 'https://radiopaedia.org/cases/pacemaker-malfunction-failure-to-capture',
+          source: 'Radiopaedia',
           caption: 'Pacemaker spikes present but no following QRS complexes - indicates failure to capture',
           relevance: 'essential',
           tags: ['pacemaker', 'failure-to-capture', 'ECG', 'malfunction']
@@ -8842,12 +9285,22 @@ export const caseDatabase: CaseScenario[] = [
         {
           id: 'art-pm-001',
           type: 'article',
-          title: 'Pacemaker Malfunction Recognition',
-          url: 'https://litfl.com/pacemaker-malfunction/',
-          source: 'Life in the Fast Lane',
-          caption: 'Comprehensive guide to recognizing and managing pacemaker malfunctions',
+          title: 'Pacemaker Malfunction - Emergency Management',
+          url: 'https://wikem.org/wiki/Pacemaker_malfunction',
+          source: 'WikEM',
+          caption: 'Quick reference for recognizing and managing pacemaker malfunctions',
           relevance: 'essential',
-          tags: ['pacemaker', 'malfunction', 'recognition', 'management']
+          tags: ['pacemaker', 'malfunction', 'WikEM', 'management']
+        },
+        {
+          id: 'art-pm-statpearls',
+          type: 'article',
+          title: 'Pacemaker Malfunction - Pathophysiology',
+          url: 'https://www.ncbi.nlm.nih.gov/books/NBK553149/',
+          source: 'StatPearls',
+          caption: 'Comprehensive review of pacemaker malfunction types and management',
+          relevance: 'important',
+          tags: ['pacemaker', 'StatPearls', 'malfunction', 'pathophysiology']
         },
         {
           id: 'art-pm-hr',

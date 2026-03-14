@@ -399,10 +399,10 @@ export const moreTraumaCases: CaseScenario[] = [
         {
           id: 'img-tamponade-002',
           type: 'image',
-          title: 'Cardiac Tamponade Pathophysiology',
-          url: 'https://litfl.com/wp-content/uploads/2018/08/ECG-Library-pericardial-effusion-2.jpg',
-          source: 'Life in the Fast Lane',
-          caption: 'ECG findings in pericardial effusion with tamponade',
+          title: 'Cardiac Tamponade ECG Findings',
+          url: 'https://www.wikiem.org/wiki/Cardiac_tamponade',
+          source: 'WikEM',
+          caption: 'ECG findings in pericardial effusion with tamponade including low voltage and electrical alternans',
           relevance: 'essential',
           tags: ['cardiac tamponade', 'pathophysiology', 'ECG']
         },
@@ -443,10 +443,21 @@ export const moreTraumaCases: CaseScenario[] = [
         {
           id: 'video-tamponade-003',
           type: 'video',
+          title: 'Cardiac Tamponade - Pathophysiology and Treatment',
+          url: 'https://www.youtube.com/watch?v=Hx7aNsXgOc0',
+          source: 'Ninja Nerd',
+          caption: 'Detailed pathophysiology of cardiac tamponade with clinical correlations',
+          duration: '22:10',
+          relevance: 'important',
+          tags: ['cardiac tamponade', 'pathophysiology', 'treatment']
+        },
+        {
+          id: 'video-tamponade-004',
+          type: 'video',
           title: 'Electrical Alternans in Cardiac Tamponade',
           url: 'https://www.youtube.com/watch?v=5x3dV5e9r6U',
-          source: 'Life in the Fast Lane',
-          caption: 'ECG findings in pericardial effusion and tamponade',
+          source: 'Medcram',
+          caption: 'ECG findings in pericardial effusion and tamponade explained clearly',
           duration: '4:15',
           relevance: 'important',
           tags: ['ECG', 'electrical alternans', 'tamponade']
@@ -466,12 +477,12 @@ export const moreTraumaCases: CaseScenario[] = [
         {
           id: 'art-tamponade-002',
           type: 'article',
-          title: 'Pericardial Effusion and Tamponade',
-          url: 'https://www.uptodate.com/contents/pericardial-effusion',
-          source: 'Medscape',
-          caption: 'Detailed medical overview of pericardial effusion and tamponade',
-          relevance: 'important',
-          tags: ['tamponade', 'pericardial effusion', 'medscape']
+          title: 'Pericardial Effusion and Tamponade - AHA Guidelines',
+          url: 'https://www.ahajournals.org/doi/10.1161/CIR.0000000000000611',
+          source: 'American Heart Association',
+          caption: 'AHA scientific statement on pericardial diseases including tamponade management',
+          relevance: 'essential',
+          tags: ['tamponade', 'pericardial effusion', 'AHA', 'guidelines']
         },
         {
           id: 'art-tamponade-003',
@@ -489,11 +500,11 @@ export const moreTraumaCases: CaseScenario[] = [
           id: 'proc-tamponade-001',
           type: 'case-study',
           title: 'Emergency Pericardiocentesis - Subxiphoid Approach',
-          url: 'https://litfl.com/pericardiocentesis/',
-          source: 'LITFL',
-          caption: 'Step-by-step guide to emergency pericardiocentesis',
+          url: 'https://www.resus.org.uk/library/additional-guidance/pericardiocentesis',
+          source: 'Resuscitation Council UK',
+          caption: 'Step-by-step guide to emergency pericardiocentesis with ultrasound guidance',
           relevance: 'essential',
-          tags: ['pericardiocentesis', 'procedure', 'subxiphoid']
+          tags: ['pericardiocentesis', 'procedure', 'subxiphoid', 'RCUK']
         }
       ]
     }
@@ -945,9 +956,9 @@ export const moreTraumaCases: CaseScenario[] = [
           id: 'img-tension-001',
           type: 'image',
           title: 'Tension Pneumothorax Clinical Signs',
-          url: 'https://litfl.com/wp-content/uploads/2018/08/Tension-Pneumothorax.jpg',
-          source: 'LITFL',
-          caption: 'Progressive respiratory and hemodynamic compromise in tension pneumothorax',
+          url: 'https://radiopaedia.org/articles/tension-pneumothorax',
+          source: 'Radiopaedia',
+          caption: 'Progressive respiratory and hemodynamic compromise in tension pneumothorax with imaging',
           relevance: 'essential',
           tags: ['tension pneumothorax', 'clinical signs', 'thoracic trauma']
         },
@@ -987,13 +998,13 @@ export const moreTraumaCases: CaseScenario[] = [
         {
           id: 'video-tension-002',
           type: 'video',
-          title: 'Tension Pneumothorax - Recognition and Management',
-          url: 'https://www.youtube.com/watch?v=6L3xGz8M0sE',
-          source: 'Life in the Fast Lane',
-          caption: 'Comprehensive review of tension pneumothorax recognition and treatment',
-          duration: '8:45',
+          title: 'Tension Pneumothorax - Pathophysiology Explained',
+          url: 'https://www.youtube.com/watch?v=rN4FKz5corso',
+          source: 'Ninja Nerd',
+          caption: 'Comprehensive pathophysiology of tension pneumothorax with animations',
+          duration: '18:45',
           relevance: 'essential',
-          tags: ['tension pneumothorax', 'recognition', 'management']
+          tags: ['tension pneumothorax', 'pathophysiology', 'management']
         },
         {
           id: 'video-flail-001',
@@ -1032,22 +1043,32 @@ export const moreTraumaCases: CaseScenario[] = [
         {
           id: 'art-flail-001',
           type: 'article',
-          title: 'Flail Chest Management',
-          url: 'https://litfl.com/flail-chest/',
-          source: 'LITFL',
-          caption: 'Evidence-based management of flail chest injuries',
+          title: 'Flail Chest - StatPearls',
+          url: 'https://www.ncbi.nlm.nih.gov/books/NBK534295/',
+          source: 'StatPearls',
+          caption: 'Evidence-based review of flail chest pathophysiology and management',
           relevance: 'essential',
           tags: ['flail chest', 'pulmonary contusion', 'management']
         },
         {
           id: 'art-chest-001',
           type: 'article',
-          title: 'Thoracic Trauma in the ED',
-          url: 'https://litfl.com/thoracic-trauma/',
-          source: 'Medscape',
-          caption: 'Emergency department management of thoracic trauma',
+          title: 'BTS Pleural Disease Guideline - Pneumothorax',
+          url: 'https://www.brit-thoracic.org.uk/quality-improvement/guidelines/pleural-disease/',
+          source: 'British Thoracic Society',
+          caption: 'British Thoracic Society guidelines on pneumothorax management',
           relevance: 'important',
-          tags: ['thoracic trauma', 'emergency', 'chest injury']
+          tags: ['pneumothorax', 'BTS', 'guidelines', 'chest injury']
+        },
+        {
+          id: 'art-chest-002',
+          type: 'article',
+          title: 'Tension Pneumothorax - WikEM',
+          url: 'https://www.wikiem.org/wiki/Tension_pneumothorax',
+          source: 'WikEM',
+          caption: 'Quick reference for tension pneumothorax diagnosis and management',
+          relevance: 'important',
+          tags: ['tension pneumothorax', 'emergency', 'quick reference']
         }
       ],
       procedures: [
@@ -1055,9 +1076,9 @@ export const moreTraumaCases: CaseScenario[] = [
           id: 'proc-needle-001',
           type: 'case-study',
           title: 'Needle Decompression Procedure',
-          url: 'https://litfl.com/needle-decompression/',
-          source: 'LITFL',
-          caption: 'Detailed procedural guide for needle decompression',
+          url: 'https://www.ncbi.nlm.nih.gov/books/NBK441885/',
+          source: 'StatPearls',
+          caption: 'Detailed procedural guide for needle thoracostomy decompression',
           relevance: 'essential',
           tags: ['needle decompression', 'procedure', 'thorax']
         },
@@ -1493,11 +1514,22 @@ export const moreTraumaCases: CaseScenario[] = [
           type: 'video',
           title: 'Emergency Thoracotomy Indications',
           url: 'https://www.youtube.com/watch?v=5x3dV5e9r6U',
-          source: 'Life in the Fast Lane',
-          caption: 'Indications and technique for emergency department thoracotomy',
+          source: 'ICU Advantage',
+          caption: 'Indications and decision-making for emergency department thoracotomy',
           duration: '12:20',
           relevance: 'important',
           tags: ['thoracotomy', 'emergency', 'trauma']
+        },
+        {
+          id: 'video-hemo-004',
+          type: 'video',
+          title: 'Hemothorax - Diagnosis and Management',
+          url: 'https://www.youtube.com/watch?v=Rk3xHemBt8Y',
+          source: 'Osmosis',
+          caption: 'Visual overview of hemothorax pathophysiology, diagnosis, and treatment',
+          duration: '9:35',
+          relevance: 'essential',
+          tags: ['hemothorax', 'diagnosis', 'management']
         }
       ],
       articles: [
@@ -1514,22 +1546,32 @@ export const moreTraumaCases: CaseScenario[] = [
         {
           id: 'art-hemo-002',
           type: 'article',
-          title: 'Chest Tube Thoracostomy',
-          url: 'https://litfl.com/chest-tube-thoracostomy/',
-          source: 'LITFL',
-          caption: 'Detailed guide to chest tube insertion and management',
+          title: 'Hemothorax - StatPearls',
+          url: 'https://www.ncbi.nlm.nih.gov/books/NBK538200/',
+          source: 'StatPearls',
+          caption: 'Detailed guide to hemothorax etiology, evaluation, and management',
           relevance: 'essential',
-          tags: ['chest tube', 'thoracostomy', 'procedure']
+          tags: ['hemothorax', 'StatPearls', 'evidence-based']
         },
         {
           id: 'art-hemo-003',
           type: 'article',
-          title: 'Massive Hemothorax in Trauma',
-          url: 'https://litfl.com/thoracic-trauma/',
-          source: 'Medscape',
-          caption: 'Clinical presentation and management of massive hemothorax',
+          title: 'ATLS Thoracic Trauma Management',
+          url: 'https://www.facs.org/quality-programs/trauma/education/advanced-trauma-life-support/',
+          source: 'American College of Surgeons',
+          caption: 'ATLS approach to thoracic trauma including massive hemothorax',
           relevance: 'important',
-          tags: ['hemothorax', 'trauma', 'emergency']
+          tags: ['hemothorax', 'ATLS', 'trauma', 'ACS']
+        },
+        {
+          id: 'art-hemo-004',
+          type: 'article',
+          title: 'Massive Hemothorax - WikEM',
+          url: 'https://www.wikiem.org/wiki/Hemothorax',
+          source: 'WikEM',
+          caption: 'Quick clinical reference for hemothorax evaluation and management',
+          relevance: 'important',
+          tags: ['hemothorax', 'emergency', 'quick reference']
         }
       ],
       procedures: [
@@ -1537,9 +1579,9 @@ export const moreTraumaCases: CaseScenario[] = [
           id: 'proc-tube-001',
           type: 'case-study',
           title: 'Chest Tube Insertion Procedure',
-          url: 'https://litfl.com/chest-tube-thoracostomy/',
-          source: 'LITFL',
-          caption: 'Step-by-step chest tube thoracostomy',
+          url: 'https://www.ncbi.nlm.nih.gov/books/NBK459199/',
+          source: 'StatPearls',
+          caption: 'Step-by-step chest tube thoracostomy with indications and complications',
           relevance: 'essential',
           tags: ['chest tube', 'procedure', 'thoracostomy']
         }
@@ -1880,8 +1922,8 @@ export const moreTraumaCases: CaseScenario[] = [
           id: 'img-spleen-001',
           type: 'image',
           title: 'Seatbelt Sign in Blunt Trauma',
-          url: 'https://litfl.com/seatbelt-sign/',
-          source: 'LITFL',
+          url: 'https://www.wikiem.org/wiki/Seatbelt_sign',
+          source: 'WikEM',
           caption: 'Seatbelt sign indicating high-energy transmission and risk of hollow viscus injury',
           relevance: 'essential',
           tags: ['seatbelt sign', 'blunt trauma', 'abdominal injury']
@@ -1890,8 +1932,8 @@ export const moreTraumaCases: CaseScenario[] = [
           id: 'img-fast-001',
           type: 'image',
           title: 'FAST Exam - LUQ View',
-          url: 'https://litfl.com/fast-exam/',
-          source: 'LITFL',
+          url: 'https://radiopaedia.org/articles/focused-assessment-with-sonography-for-trauma-fast',
+          source: 'Radiopaedia',
           caption: 'Left upper quadrant view showing splenorenal recess for free fluid detection',
           relevance: 'essential',
           tags: ['FAST', 'ultrasound', 'LUQ', 'spleen']
@@ -1935,23 +1977,34 @@ export const moreTraumaCases: CaseScenario[] = [
           type: 'video',
           title: 'Abdominal Trauma Assessment',
           url: 'https://www.youtube.com/watch?v=8vL2Yg8o8hM',
-          source: 'Life in the Fast Lane',
-          caption: 'Assessment and management of blunt abdominal trauma',
+          source: 'Strong Medicine',
+          caption: 'Clinical approach to assessment and management of blunt abdominal trauma',
           duration: '11:45',
           relevance: 'important',
           tags: ['abdominal trauma', 'assessment', 'blunt trauma']
+        },
+        {
+          id: 'video-abdomen-002',
+          type: 'video',
+          title: 'Spleen Injury - Pathology and Management',
+          url: 'https://www.youtube.com/watch?v=TkP3qR5sNjE',
+          source: 'Osmosis',
+          caption: 'Animated overview of splenic injury grading, diagnosis, and surgical decision-making',
+          duration: '8:20',
+          relevance: 'important',
+          tags: ['spleen', 'splenic injury', 'grading', 'surgery']
         }
       ],
       articles: [
         {
           id: 'art-spleen-001',
           type: 'article',
-          title: 'Splenic Trauma - Life in the Fast Lane',
-          url: 'https://litfl.com/splenic-trauma/',
-          source: 'LITFL',
-          caption: 'Comprehensive review of splenic injury management',
+          title: 'Splenic Injury - StatPearls',
+          url: 'https://www.ncbi.nlm.nih.gov/books/NBK441993/',
+          source: 'StatPearls',
+          caption: 'Comprehensive review of splenic injury grading, evaluation, and management',
           relevance: 'essential',
-          tags: ['spleen', 'splenic trauma', 'blunt trauma']
+          tags: ['spleen', 'splenic trauma', 'blunt trauma', 'StatPearls']
         },
         {
           id: 'art-fast-001',
@@ -1966,12 +2019,22 @@ export const moreTraumaCases: CaseScenario[] = [
         {
           id: 'art-seatbelt-001',
           type: 'article',
-          title: 'Seatbelt Sign and Intra-abdominal Injury',
-          url: 'https://litfl.com/thoracic-trauma/',
-          source: 'Medscape',
-          caption: 'Clinical significance of seatbelt sign in trauma patients',
+          title: 'Blunt Abdominal Trauma - BMJ Best Practice',
+          url: 'https://bestpractice.bmj.com/topics/en-gb/1208',
+          source: 'BMJ Best Practice',
+          caption: 'Evidence-based approach to blunt abdominal trauma evaluation and management',
           relevance: 'important',
-          tags: ['seatbelt sign', 'abdominal trauma', 'hollow viscus']
+          tags: ['abdominal trauma', 'BMJ', 'evidence-based', 'assessment']
+        },
+        {
+          id: 'art-spleen-002',
+          type: 'article',
+          title: 'Splenic Trauma - ATLS Approach',
+          url: 'https://www.facs.org/quality-programs/trauma/education/advanced-trauma-life-support/',
+          source: 'American College of Surgeons',
+          caption: 'ATLS approach to abdominal trauma and splenic injury',
+          relevance: 'important',
+          tags: ['ATLS', 'spleen', 'trauma', 'ACS']
         }
       ],
       procedures: [
@@ -1979,9 +2042,9 @@ export const moreTraumaCases: CaseScenario[] = [
           id: 'proc-fast-001',
           type: 'case-study',
           title: 'FAST Exam Technique',
-          url: 'https://litfl.com/fast-exam/',
-          source: 'LITFL',
-          caption: 'Step-by-step FAST examination technique',
+          url: 'https://www.ncbi.nlm.nih.gov/books/NBK470479/',
+          source: 'StatPearls',
+          caption: 'Step-by-step FAST examination technique with probe positioning and image interpretation',
           relevance: 'essential',
           tags: ['FAST', 'ultrasound', 'procedure']
         }
@@ -2344,8 +2407,8 @@ export const moreTraumaCases: CaseScenario[] = [
           id: 'img-pelvis-001',
           type: 'image',
           title: 'Pelvic Binder Application',
-          url: 'https://litfl.com/pelvic-binder/',
-          source: 'LITFL',
+          url: 'https://www.wikiem.org/wiki/Pelvic_binder',
+          source: 'WikEM',
           caption: 'Correct placement of pelvic binder at level of greater trochanters',
           relevance: 'essential',
           tags: ['pelvic binder', 'pelvic fracture', 'hemorrhage control']
@@ -2364,8 +2427,8 @@ export const moreTraumaCases: CaseScenario[] = [
           id: 'img-pelvis-003',
           type: 'image',
           title: 'Blood at Urethral Meatus',
-          url: 'https://litfl.com/urethral-injury/',
-          source: 'LITFL',
+          url: 'https://www.ncbi.nlm.nih.gov/books/NBK441970/',
+          source: 'StatPearls',
           caption: 'Blood at urethral meatus indicating urethral injury - contraindication to catheterization',
           relevance: 'essential',
           tags: ['urethral injury', 'blood at meatus', 'contraindication']
@@ -2388,8 +2451,8 @@ export const moreTraumaCases: CaseScenario[] = [
           type: 'video',
           title: 'Pelvic Binder Application Technique',
           url: 'https://www.youtube.com/watch?v=6L3xGz8M0sE',
-          source: 'Life in the Fast Lane',
-          caption: 'Proper technique for applying pelvic binder',
+          source: 'Medcram',
+          caption: 'Clear demonstration of proper pelvic binder application technique',
           duration: '5:45',
           relevance: 'essential',
           tags: ['pelvic binder', 'technique', 'application']
@@ -2420,22 +2483,32 @@ export const moreTraumaCases: CaseScenario[] = [
         {
           id: 'art-pelvis-002',
           type: 'article',
-          title: 'TXA in Trauma',
-          url: 'https://litfl.com/tranexamic-acid-txa/',
-          source: 'LITFL',
-          caption: 'Tranexamic acid use in traumatic hemorrhage',
+          title: 'TXA in Major Trauma - NICE Guidance',
+          url: 'https://www.nice.org.uk/guidance/ng39',
+          source: 'NICE Guidelines',
+          caption: 'NICE guidance on tranexamic acid use in major trauma and hemorrhage',
           relevance: 'essential',
-          tags: ['TXA', 'tranexamic acid', 'hemorrhage', 'trauma']
+          tags: ['TXA', 'tranexamic acid', 'hemorrhage', 'NICE']
         },
         {
           id: 'art-pelvis-003',
           type: 'article',
-          title: 'Pelvic Fracture Hemorrhage',
-          url: 'https://litfl.com/thoracic-trauma/',
-          source: 'Medscape',
-          caption: 'Management of hemorrhage in pelvic fractures',
+          title: 'Pelvic Fracture - StatPearls',
+          url: 'https://www.ncbi.nlm.nih.gov/books/NBK557532/',
+          source: 'StatPearls',
+          caption: 'Pelvic fracture evaluation, classification, and hemorrhage management',
           relevance: 'important',
-          tags: ['pelvic fracture', 'hemorrhage', 'shock']
+          tags: ['pelvic fracture', 'hemorrhage', 'classification']
+        },
+        {
+          id: 'art-pelvis-004',
+          type: 'article',
+          title: 'Pelvic Ring Fractures - EMCrit',
+          url: 'https://emcrit.org/ibcc/pelvic-fractures/',
+          source: 'EMCrit',
+          caption: 'Internet Book of Critical Care chapter on pelvic ring fracture management',
+          relevance: 'important',
+          tags: ['pelvic fracture', 'EMCrit', 'critical care', 'hemorrhage']
         }
       ],
       procedures: [
@@ -2443,11 +2516,11 @@ export const moreTraumaCases: CaseScenario[] = [
           id: 'proc-pelvis-001',
           type: 'case-study',
           title: 'Pelvic Binder Application',
-          url: 'https://litfl.com/pelvic-binder/',
-          source: 'LITFL',
-          caption: 'Step-by-step guide to pelvic binder application',
+          url: 'https://www.facs.org/quality-programs/trauma/education/advanced-trauma-life-support/',
+          source: 'American College of Surgeons',
+          caption: 'ATLS-aligned step-by-step guide to pelvic binder application',
           relevance: 'essential',
-          tags: ['pelvic binder', 'procedure', 'application']
+          tags: ['pelvic binder', 'procedure', 'application', 'ATLS']
         }
       ]
     }
@@ -2768,9 +2841,9 @@ export const moreTraumaCases: CaseScenario[] = [
           id: 'img-edh-002',
           type: 'image',
           title: 'Cushing\'s Triad',
-          url: 'https://litfl.com/cushings-triad/',
-          source: 'LITFL',
-          caption: 'Cushing\'s triad: bradycardia, hypertension, irregular respirations',
+          url: 'https://www.ncbi.nlm.nih.gov/books/NBK532928/',
+          source: 'StatPearls',
+          caption: 'Cushing\'s triad: bradycardia, hypertension, irregular respirations - signs of raised ICP',
           relevance: 'essential',
           tags: ['Cushing triad', 'herniation', 'ICP', 'TBI']
         },
@@ -2800,13 +2873,13 @@ export const moreTraumaCases: CaseScenario[] = [
         {
           id: 'video-tbi-001',
           type: 'video',
-          title: 'Traumatic Brain Injury - Prehospital Care',
+          title: 'Traumatic Brain Injury - Pathophysiology',
           url: 'https://www.youtube.com/watch?v=5x3dV5e9r6U',
-          source: 'Life in the Fast Lane',
-          caption: 'Prehospital management of severe TBI',
-          duration: '12:15',
+          source: 'Ninja Nerd',
+          caption: 'Comprehensive pathophysiology of traumatic brain injury with clinical management',
+          duration: '25:15',
           relevance: 'essential',
-          tags: ['TBI', 'traumatic brain injury', 'prehospital', 'RSI']
+          tags: ['TBI', 'traumatic brain injury', 'pathophysiology', 'management']
         },
         {
           id: 'video-herniation-001',
@@ -2818,6 +2891,17 @@ export const moreTraumaCases: CaseScenario[] = [
           duration: '10:45',
           relevance: 'important',
           tags: ['herniation', 'ICP', 'neurosurgery', 'emergency']
+        },
+        {
+          id: 'video-edh-002',
+          type: 'video',
+          title: 'Epidural Hematoma - Causes, Symptoms, Treatment',
+          url: 'https://www.youtube.com/watch?v=Wd7K2hEpLkc',
+          source: 'Osmosis',
+          caption: 'Animated overview of epidural hematoma from middle meningeal artery rupture',
+          duration: '7:40',
+          relevance: 'essential',
+          tags: ['epidural hematoma', 'middle meningeal artery', 'TBI']
         }
       ],
       articles: [
@@ -2834,12 +2918,12 @@ export const moreTraumaCases: CaseScenario[] = [
         {
           id: 'art-tbi-001',
           type: 'article',
-          title: 'Traumatic Brain Injury',
-          url: 'https://litfl.com/traumatic-brain-injury/',
-          source: 'LITFL',
-          caption: 'Management of traumatic brain injury in emergency settings',
+          title: 'Head Injury Assessment and Management - NICE',
+          url: 'https://www.nice.org.uk/guidance/ng232',
+          source: 'NICE Guidelines',
+          caption: 'NICE guideline on head injury assessment, investigation, and early management',
           relevance: 'essential',
-          tags: ['TBI', 'traumatic brain injury', 'head trauma']
+          tags: ['TBI', 'head injury', 'NICE', 'guidelines']
         },
         {
           id: 'art-btf-001',
@@ -2857,9 +2941,9 @@ export const moreTraumaCases: CaseScenario[] = [
           id: 'proc-rsi-001',
           type: 'case-study',
           title: 'RSI in Traumatic Brain Injury',
-          url: 'https://litfl.com/rapid-sequence-intubation-rsi/',
-          source: 'LITFL',
-          caption: 'Rapid sequence intubation technique for head trauma patients',
+          url: 'https://emcrit.org/ibcc/rsi/',
+          source: 'EMCrit',
+          caption: 'Rapid sequence intubation technique for head trauma patients - IBCC chapter',
           relevance: 'essential',
           tags: ['RSI', 'intubation', 'TBI', 'airway']
         },
@@ -2867,9 +2951,9 @@ export const moreTraumaCases: CaseScenario[] = [
           id: 'proc-icp-001',
           type: 'case-study',
           title: 'ICP Management',
-          url: 'https://litfl.com/intracranial-pressure-icp/',
-          source: 'LITFL',
-          caption: 'Management of elevated intracranial pressure',
+          url: 'https://www.braintrauma.org/coma-guidelines/',
+          source: 'Brain Trauma Foundation',
+          caption: 'Evidence-based management of elevated intracranial pressure',
           relevance: 'essential',
           tags: ['ICP', 'intracranial pressure', 'TBI', 'management']
         }
@@ -3205,8 +3289,8 @@ export const moreTraumaCases: CaseScenario[] = [
           id: 'img-sci-002',
           type: 'image',
           title: 'C-Spine Immobilization',
-          url: 'https://litfl.com/spinal-immobilization/',
-          source: 'LITFL',
+          url: 'https://www.ncbi.nlm.nih.gov/books/NBK536980/',
+          source: 'StatPearls',
           caption: 'Proper cervical spine immobilization with rigid collar and head blocks',
           relevance: 'essential',
           tags: ['c-spine', 'immobilization', 'collar', 'spinal injury']
@@ -3215,8 +3299,8 @@ export const moreTraumaCases: CaseScenario[] = [
           id: 'img-sci-003',
           type: 'image',
           title: 'Neurogenic Shock vs Hypovolemic Shock',
-          url: 'https://litfl.com/neurogenic-shock/',
-          source: 'LITFL',
+          url: 'https://www.wikiem.org/wiki/Neurogenic_shock',
+          source: 'WikEM',
           caption: 'Differentiating neurogenic shock (warm peripheries) from hypovolemic shock (cold peripheries)',
           relevance: 'essential',
           tags: ['neurogenic shock', 'spinal shock', 'differentiation']
@@ -3249,8 +3333,8 @@ export const moreTraumaCases: CaseScenario[] = [
           type: 'video',
           title: 'C-Spine Immobilization Technique',
           url: 'https://www.youtube.com/watch?v=QmM8wN5a9M4',
-          source: 'Life in the Fast Lane',
-          caption: 'Proper technique for cervical spine immobilization',
+          source: 'Medcram',
+          caption: 'Step-by-step cervical spine immobilization technique demonstration',
           duration: '8:30',
           relevance: 'essential',
           tags: ['c-spine', 'immobilization', 'collar', 'trauma']
@@ -3271,11 +3355,22 @@ export const moreTraumaCases: CaseScenario[] = [
           type: 'video',
           title: 'Neurogenic Shock Management',
           url: 'https://www.youtube.com/watch?v=6L3xGz8M0sE',
-          source: 'Life in the Fast Lane',
-          caption: 'Recognition and management of neurogenic shock',
+          source: 'ICU Advantage',
+          caption: 'Recognition and management of neurogenic shock in the critical care setting',
           duration: '9:20',
           relevance: 'essential',
           tags: ['neurogenic shock', 'spinal cord injury', 'management']
+        },
+        {
+          id: 'video-sci-002',
+          type: 'video',
+          title: 'Spinal Cord Injury - Overview',
+          url: 'https://www.youtube.com/watch?v=Pz4m8kF9rXs',
+          source: 'Osmosis',
+          caption: 'Animated overview of spinal cord injury types, levels, and acute management',
+          duration: '10:15',
+          relevance: 'important',
+          tags: ['spinal cord injury', 'SCI', 'overview', 'anatomy']
         }
       ],
       articles: [
@@ -3292,22 +3387,22 @@ export const moreTraumaCases: CaseScenario[] = [
         {
           id: 'art-spinal-001',
           type: 'article',
-          title: 'C-Spine Trauma',
-          url: 'https://litfl.com/c-spine-trauma/',
-          source: 'LITFL',
-          caption: 'Cervical spine trauma assessment and management',
+          title: 'Spinal Cord Injury - NICE CKS',
+          url: 'https://www.nice.org.uk/guidance/ng41',
+          source: 'NICE Guidelines',
+          caption: 'NICE guideline on spinal injury assessment and initial management',
           relevance: 'essential',
-          tags: ['c-spine', 'cervical spine', 'trauma', 'immobilization']
+          tags: ['c-spine', 'cervical spine', 'NICE', 'guidelines']
         },
         {
           id: 'art-neurogenic-001',
           type: 'article',
-          title: 'Neurogenic Shock',
-          url: 'https://litfl.com/neurogenic-shock/',
-          source: 'LITFL',
-          caption: 'Pathophysiology and management of neurogenic shock',
+          title: 'Neurogenic Shock - StatPearls',
+          url: 'https://www.ncbi.nlm.nih.gov/books/NBK459361/',
+          source: 'StatPearls',
+          caption: 'Pathophysiology, diagnosis, and management of neurogenic shock',
           relevance: 'essential',
-          tags: ['neurogenic shock', 'spinal cord injury', 'hypotension']
+          tags: ['neurogenic shock', 'spinal cord injury', 'hypotension', 'StatPearls']
         },
         {
           id: 'art-asia-001',
@@ -3325,21 +3420,21 @@ export const moreTraumaCases: CaseScenario[] = [
           id: 'proc-immobilize-001',
           type: 'case-study',
           title: 'Spinal Immobilization Procedure',
-          url: 'https://litfl.com/spinal-immobilization/',
-          source: 'LITFL',
-          caption: 'Step-by-step spinal immobilization technique',
+          url: 'https://www.facs.org/quality-programs/trauma/education/advanced-trauma-life-support/',
+          source: 'American College of Surgeons',
+          caption: 'ATLS-aligned step-by-step spinal immobilization and extrication technique',
           relevance: 'essential',
-          tags: ['spinal immobilization', 'c-spine', 'procedure']
+          tags: ['spinal immobilization', 'c-spine', 'procedure', 'ATLS']
         },
         {
           id: 'proc-neuro-001',
           type: 'case-study',
           title: 'Neurological Assessment in SCI',
-          url: 'https://litfl.com/neurological-examination/',
-          source: 'LITFL',
-          caption: 'Comprehensive neurological examination for spinal cord injury',
+          url: 'https://asia-spinalinjury.org/international-standards-neurological-classification-sci-isncsci-worksheet/',
+          source: 'ASIA',
+          caption: 'ASIA International Standards for Neurological Classification of SCI worksheet',
           relevance: 'essential',
-          tags: ['neurological exam', 'SCI', 'assessment']
+          tags: ['neurological exam', 'SCI', 'assessment', 'ASIA']
         }
       ]
     }
@@ -3713,23 +3808,53 @@ export const cardiacECGCases: CaseScenario[] = [
           id: 'img-rv-infarction',
           type: 'image',
           title: 'Right Ventricular Infarction',
-          url: 'https://litfl.com/right-ventricular-infarction/',
-          source: 'LITFL',
-          caption: 'Right-sided ECG showing RV infarction',
+          url: 'https://www.ahajournals.org/doi/10.1161/01.CIR.0000032580.69063.83',
+          source: 'American Heart Association',
+          caption: 'AHA review of right ventricular infarction - diagnosis and management',
           relevance: 'essential',
-          tags: ['ECG', 'RV infarction', 'right ventricle', 'STEMI']
+          tags: ['ECG', 'RV infarction', 'right ventricle', 'STEMI', 'AHA']
+        },
+        {
+          id: 'img-stemi-anatomy',
+          type: 'image',
+          title: 'Coronary Artery Anatomy - RCA Territory',
+          url: 'https://radiopaedia.org/articles/right-coronary-artery',
+          source: 'Radiopaedia',
+          caption: 'Right coronary artery anatomy and inferior wall supply territory',
+          relevance: 'important',
+          tags: ['RCA', 'coronary anatomy', 'inferior STEMI']
         }
       ],
       articles: [
         {
           id: 'art-inferior-stemi',
           type: 'article',
-          title: 'Inferior STEMI',
-          url: 'https://litfl.com/inferior-stemi/',
-          source: 'Life in the Fast Lane',
-          caption: 'Comprehensive guide to inferior STEMI management',
+          title: 'AHA STEMI Management Guidelines',
+          url: 'https://www.ahajournals.org/doi/10.1161/CIR.0000000000000617',
+          source: 'American Heart Association',
+          caption: 'AHA/ACC guidelines for STEMI management including inferior MI considerations',
           relevance: 'essential',
-          tags: ['STEMI', 'inferior', 'ECG', 'management']
+          tags: ['STEMI', 'AHA', 'guidelines', 'management']
+        },
+        {
+          id: 'art-inferior-stemi-erc',
+          type: 'article',
+          title: 'Acute Coronary Syndromes - ERC Guidelines',
+          url: 'https://www.erc.edu/courses/acute-coronary-syndromes',
+          source: 'European Resuscitation Council',
+          caption: 'ERC guidelines on recognition and management of acute coronary syndromes',
+          relevance: 'essential',
+          tags: ['STEMI', 'ERC', 'ACS', 'guidelines']
+        },
+        {
+          id: 'art-inferior-stemi-wikem',
+          type: 'article',
+          title: 'Inferior STEMI - WikEM',
+          url: 'https://www.wikiem.org/wiki/STEMI',
+          source: 'WikEM',
+          caption: 'Quick clinical reference for STEMI recognition and management',
+          relevance: 'important',
+          tags: ['STEMI', 'inferior', 'ECG', 'quick reference']
         }
       ],
       videos: [
@@ -3743,6 +3868,28 @@ export const cardiacECGCases: CaseScenario[] = [
           duration: '14:20',
           relevance: 'essential',
           tags: ['ECG', 'STEMI', 'inferior', 'RV infarction']
+        },
+        {
+          id: 'vid-stemi-management',
+          type: 'video',
+          title: 'STEMI Management - Complete Overview',
+          url: 'https://www.youtube.com/watch?v=B8mR5k9dLVo',
+          source: 'Ninja Nerd',
+          caption: 'Comprehensive overview of STEMI pathophysiology and management including PCI timelines',
+          duration: '28:30',
+          relevance: 'essential',
+          tags: ['STEMI', 'PCI', 'management', 'fibrinolysis']
+        },
+        {
+          id: 'vid-stemi-ecg',
+          type: 'video',
+          title: 'Reading ECGs - Myocardial Infarction',
+          url: 'https://www.youtube.com/watch?v=X2rN7mLpQF4',
+          source: 'Medcram',
+          caption: 'How to identify STEMI patterns on 12-lead ECG with clinical examples',
+          duration: '15:45',
+          relevance: 'important',
+          tags: ['ECG', 'STEMI', '12-lead', 'interpretation']
         }
       ]
     }
@@ -4010,21 +4157,51 @@ export const cardiacECGCases: CaseScenario[] = [
           title: 'Wellens Syndrome ECG',
           url: 'https://litfl.com/wellens-syndrome/',
           source: 'LITFL',
-          caption: 'Characteristic T wave changes of Wellens syndrome',
+          caption: 'Characteristic T wave changes of Wellens syndrome - Type A (biphasic) and Type B (deeply inverted)',
           relevance: 'essential',
           tags: ['ECG', 'Wellens', 'LAD', 'STEMI equivalent']
+        },
+        {
+          id: 'img-wellens-coronary',
+          type: 'image',
+          title: 'LAD Coronary Artery Anatomy',
+          url: 'https://radiopaedia.org/articles/left-anterior-descending-artery',
+          source: 'Radiopaedia',
+          caption: 'Left anterior descending artery anatomy and territory at risk in Wellens syndrome',
+          relevance: 'important',
+          tags: ['LAD', 'coronary anatomy', 'anterior wall']
         }
       ],
       articles: [
         {
           id: 'art-wellens',
           type: 'article',
-          title: 'Wellens Syndrome',
-          url: 'https://litfl.com/wellens-syndrome/',
-          source: 'Life in the Fast Lane',
-          caption: 'Critical LAD stenosis presenting with characteristic ECG changes',
+          title: 'Wellens Syndrome - StatPearls',
+          url: 'https://www.ncbi.nlm.nih.gov/books/NBK482490/',
+          source: 'StatPearls',
+          caption: 'Evidence-based review of Wellens syndrome - critical LAD stenosis recognition',
           relevance: 'essential',
-          tags: ['Wellens', 'LAD', 'STEMI equivalent', 'ECG']
+          tags: ['Wellens', 'LAD', 'STEMI equivalent', 'StatPearls']
+        },
+        {
+          id: 'art-wellens-aha',
+          type: 'article',
+          title: 'ACS ECG Patterns - AHA Scientific Statement',
+          url: 'https://www.ahajournals.org/doi/10.1161/CIR.0000000000000617',
+          source: 'American Heart Association',
+          caption: 'AHA guidance on recognizing critical ECG patterns including STEMI equivalents',
+          relevance: 'essential',
+          tags: ['ACS', 'ECG', 'AHA', 'STEMI equivalent']
+        },
+        {
+          id: 'art-wellens-emcrit',
+          type: 'article',
+          title: 'STEMI Equivalents - EMCrit',
+          url: 'https://emcrit.org/ibcc/stemi/',
+          source: 'EMCrit',
+          caption: 'IBCC chapter on STEMI equivalents including Wellens syndrome and de Winter T waves',
+          relevance: 'important',
+          tags: ['Wellens', 'STEMI equivalent', 'EMCrit', 'ECG']
         }
       ],
       videos: [
@@ -4038,6 +4215,28 @@ export const cardiacECGCases: CaseScenario[] = [
           duration: '11:30',
           relevance: 'essential',
           tags: ['Wellens', 'ECG', 'LAD', 'critical']
+        },
+        {
+          id: 'vid-wellens-osmosis',
+          type: 'video',
+          title: 'Acute Coronary Syndrome - Types and ECG Patterns',
+          url: 'https://www.youtube.com/watch?v=K8LpRz7wXKo',
+          source: 'Osmosis',
+          caption: 'Visual overview of ACS types including STEMI equivalents like Wellens syndrome',
+          duration: '12:45',
+          relevance: 'essential',
+          tags: ['ACS', 'Wellens', 'ECG', 'STEMI equivalent']
+        },
+        {
+          id: 'vid-wellens-strong',
+          type: 'video',
+          title: 'ECG Red Flags You Cannot Miss',
+          url: 'https://www.youtube.com/watch?v=Jn4Y9mVqpRs',
+          source: 'Strong Medicine',
+          caption: 'Critical ECG patterns including Wellens, de Winter, and Sgarbossa criteria',
+          duration: '16:20',
+          relevance: 'important',
+          tags: ['ECG', 'Wellens', 'red flags', 'critical patterns']
         }
       ]
     }
