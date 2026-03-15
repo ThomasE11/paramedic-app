@@ -9341,7 +9341,7 @@ export const allCases: CaseScenario[] = [...caseDatabase, ...enhancedCaseDatabas
 // Export function to get cases by filter
 export const getCasesByFilter = (filter: { yearLevel?: string; category?: string; priority?: string; complexity?: string; subcategory?: string }) => {
   return allCases.filter(c => {
-    if (filter.yearLevel && !c.yearLevels.includes(filter.yearLevel as any)) return false;
+    if (filter.yearLevel && !c.yearLevels?.includes(filter.yearLevel as any)) return false;
     if (filter.category && c.category !== filter.category) return false;
     if (filter.priority && c.priority !== filter.priority) return false;
     if (filter.complexity && c.complexity !== filter.complexity) return false;
@@ -9357,7 +9357,7 @@ export const getRandomCase = (filters?: { yearLevel?: string; category?: string;
   // Filter by year level first
   if (filters?.yearLevel) {
     const yearFilter = filters.yearLevel as any;
-    cases = cases.filter(c => c.yearLevels.includes(yearFilter));
+    cases = cases.filter(c => c.yearLevels?.includes(yearFilter));
   }
 
   // Filter by category
