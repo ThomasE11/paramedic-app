@@ -195,13 +195,13 @@ export function SessionSummary({
 
   // Memoize computed values
   const completedItems = useMemo(() =>
-    caseData.studentChecklist.filter(item => session.completedItems.includes(item.id)),
+    (caseData.studentChecklist || []).filter(item => session.completedItems.includes(item.id)),
     [caseData.studentChecklist, session.completedItems]
   );
 
   const missedItems = useMemo(() =>
-    caseData.studentChecklist.filter(item =>
-      !session.completedItems.includes(item.id) && item.yearLevel.includes(session.studentYear)
+    (caseData.studentChecklist || []).filter(item =>
+      !session.completedItems.includes(item.id) && item.yearLevel?.includes(session.studentYear)
     ),
     [caseData.studentChecklist, session.completedItems, session.studentYear]
   );

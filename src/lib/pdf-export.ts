@@ -1,9 +1,14 @@
-import type { CaseScenario, CaseSession } from '@/types';
+import type { CaseScenario, CaseSession, AppliedTreatment, VitalSigns, SimulationObjective, DebriefingResource } from '@/types';
 
 interface ExportOptions {
   session: CaseSession;
   caseData: CaseScenario;
   elapsedTime?: string;
+  appliedTreatments?: AppliedTreatment[];
+  vitalsHistory?: VitalSigns[];
+  instructorNotes?: string;
+  simulationObjective?: SimulationObjective;
+  debriefingResources?: DebriefingResource[];
 }
 
 /**
@@ -115,6 +120,17 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
     doc.text(text, pageWidth / 2, y, { align: 'center' } as never);
   };
 
+  // Helper function to add a clickable link
+  const addClickableLink = (text: string, url: string, x: number, y: number, fontSize: number): void => {
+    doc.setFontSize(fontSize);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(59, 130, 246); // Blue
+    // Truncate long text
+    const maxWidth = contentWidth - (x - margin) - 5;
+    const truncated = doc.splitTextToSize(text, maxWidth)[0] as string;
+    doc.textWithLink(truncated, x, y, { url });
+  };
+
   // ========== HEADER ==========
   // Title background
   addFilledRoundedRect(0, 0, pageWidth, 35, 0, [59, 130, 246]);
@@ -143,6 +159,26 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
     addTextAt(value, margin + 35, yPosition, 10, 'normal', [60, 60, 60]);
     yPosition += 6;
   });
+
+  // ========== SIMULATION OBJECTIVE ==========
+  if (options.simulationObjective) {
+    yPosition += 5;
+    addSectionHeader('Simulation Objective');
+
+    addFilledRoundedRect(margin, yPosition, contentWidth, 18, 2, [239, 246, 255]);
+    addStrokeRoundedRect(margin, yPosition, contentWidth, 18, 2, [59, 130, 246]);
+
+    addTextAt('Objective:', margin + 3, yPosition + 6, 9, 'bold', [59, 130, 246]);
+    const objLines = doc.splitTextToSize(options.simulationObjective.primaryObjective, contentWidth - 30);
+    addTextAt((objLines as string[])[0], margin + 25, yPosition + 6, 9, 'normal', [60, 60, 60]);
+
+    addTextAt('Skills Focus:', margin + 3, yPosition + 13, 8, 'bold', [100, 100, 100]);
+    const skillsText = options.simulationObjective.skillsFocus.join(', ');
+    const skillLines = doc.splitTextToSize(skillsText, contentWidth - 30);
+    addTextAt((skillLines as string[])[0], margin + 25, yPosition + 13, 8, 'normal', [100, 100, 100]);
+
+    yPosition += 22;
+  }
 
   // ========== DISPATCH INFO ==========
   yPosition += 5;
@@ -222,9 +258,9 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
   yPosition = scoreBoxY + scoreBoxHeight + 10;
 
   // ========== COMPLETED ITEMS ==========
-  const completedItems = caseData.studentChecklist.filter(item => session.completedItems.includes(item.id));
+  const completedItems = (caseData.studentChecklist || []).filter(item => session.completedItems.includes(item.id));
   const missedItems = caseData.studentChecklist.filter(item =>
-    !session.completedItems.includes(item.id) && item.yearLevel.includes(session.studentYear)
+    !session.completedItems.includes(item.id) && item.yearLevel?.includes(session.studentYear)
   );
   const criticalMissedItems = missedItems.filter(item => item.critical);
 
@@ -311,6 +347,102 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
     });
   }
 
+  // ========== APPLIED TREATMENTS ==========
+  if (options.appliedTreatments && options.appliedTreatments.length > 0) {
+    addSectionHeader('Applied Treatments & Interventions');
+
+    options.appliedTreatments.forEach((treatment, index) => {
+      checkPageBreak(20);
+
+      // Treatment box
+      addFilledRoundedRect(margin, yPosition, contentWidth, 18, 2, [240, 253, 244]);
+      addStrokeRoundedRect(margin, yPosition, contentWidth, 18, 2, [34, 197, 94]);
+
+      // Treatment number and description
+      addTextAt(`${index + 1}.`, margin + 3, yPosition + 5, 10, 'bold', [34, 197, 94]);
+      addTextAt(treatment.description, margin + 12, yPosition + 5, 10, 'bold', [0, 0, 0]);
+
+      // Applied time
+      const timeStr = new Date(treatment.appliedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+      addTextAt(`Applied at: ${timeStr}`, margin + 12, yPosition + 11, 8, 'normal', [100, 100, 100]);
+
+      yPosition += 22;
+
+      // Treatment effects
+      if (treatment.effects.length > 0) {
+        treatment.effects.forEach((effect) => {
+          checkPageBreak(8);
+
+          addTextAt('  ↳', margin + 5, yPosition + 3, 8, 'normal', [100, 100, 100]);
+          addTextAt(`${effect.vitalSign}:`, margin + 15, yPosition + 3, 9, 'bold', [60, 60, 60]);
+
+          // Old value (red)
+          addTextAt(String(effect.oldValue), margin + 50, yPosition + 3, 9, 'normal', [220, 38, 38]);
+
+          // Arrow
+          addTextAt('→', margin + 75, yPosition + 3, 9, 'bold', [100, 100, 100]);
+
+          // New value (green)
+          addTextAt(String(effect.newValue), margin + 85, yPosition + 3, 9, 'bold', [34, 197, 94]);
+
+          yPosition += 6;
+        });
+        yPosition += 3;
+      }
+    });
+  }
+
+  // ========== VITALS HISTORY ==========
+  if (options.vitalsHistory && options.vitalsHistory.length > 1) {
+    addSectionHeader('Vital Signs Progression');
+
+    // Table header
+    addFilledRoundedRect(margin, yPosition, contentWidth, 8, 1, [240, 240, 240]);
+    addTextAt('Time', margin + 2, yPosition + 5, 8, 'bold', [60, 60, 60]);
+    addTextAt('BP', margin + 30, yPosition + 5, 8, 'bold', [60, 60, 60]);
+    addTextAt('HR', margin + 60, yPosition + 5, 8, 'bold', [60, 60, 60]);
+    addTextAt('SpO2', margin + 80, yPosition + 5, 8, 'bold', [60, 60, 60]);
+    addTextAt('RR', margin + 105, yPosition + 5, 8, 'bold', [60, 60, 60]);
+    yPosition += 10;
+
+    // Vitals rows
+    options.vitalsHistory.forEach((vitals, idx) => {
+      checkPageBreak(8);
+
+      const rowColor = idx % 2 === 0 ? [250, 250, 250] : [255, 255, 255];
+      addFilledRoundedRect(margin, yPosition, contentWidth, 7, 0, rowColor as [number, number, number]);
+
+      const timeStr = idx === 0 ? 'Initial' : `T+${idx}`;
+      addTextAt(timeStr, margin + 2, yPosition + 5, 8, 'normal', [80, 80, 80]);
+      addTextAt(String(vitals.bp), margin + 30, yPosition + 5, 8, 'normal', [60, 60, 60]);
+      addTextAt(String(vitals.pulse), margin + 60, yPosition + 5, 8, 'normal', [60, 60, 60]);
+      addTextAt(String(vitals.spo2) + '%', margin + 80, yPosition + 5, 8, 'normal', [60, 60, 60]);
+      addTextAt(String(vitals.respiration), margin + 105, yPosition + 5, 8, 'normal', [60, 60, 60]);
+
+      yPosition += 8;
+    });
+    yPosition += 5;
+  }
+
+  // ========== CLINICAL GUIDELINES & REFERENCES ==========
+  if (caseData.uaeProtocols?.applicableGuidelines && caseData.uaeProtocols.applicableGuidelines.length > 0) {
+    addSectionHeader('Clinical Guidelines & References');
+
+    caseData.uaeProtocols.applicableGuidelines.forEach((guideline) => {
+      checkPageBreak(8);
+
+      addFilledRoundedRect(margin, yPosition, 6, 6, 1, [239, 246, 255]);
+      addTextAt('📋', margin + 2, yPosition + 4.5, 8, 'normal', [59, 130, 246]);
+
+      const lines = doc.splitTextToSize(guideline, contentWidth - 12);
+      (lines as string[]).forEach((line: string, idx: number) => {
+        addTextAt(line, margin + 10, yPosition + 4.5 + (idx * 4), 9, 'normal', [60, 60, 60]);
+      });
+
+      yPosition += lines.length * 5 + 2;
+    });
+  }
+
   // ========== COMMON PITFALLS ==========
   if (caseData.commonPitfalls && caseData.commonPitfalls.length > 0) {
     addSectionHeader('Common Pitfalls to Avoid');
@@ -339,6 +471,67 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
       addTextAt(line, margin, yPosition, 10, 'normal', [60, 60, 60]);
       yPosition += 5;
     });
+  }
+
+  // ========== FURTHER STUDY RESOURCES ==========
+  if (options.debriefingResources && options.debriefingResources.length > 0) {
+    addSectionHeader('Further Study Resources');
+
+    // Group by type
+    const typeOrder = ['guideline', 'article', 'image', 'video', 'podcast', 'case-study'];
+    const grouped: Record<string, typeof options.debriefingResources> = {};
+    for (const r of options.debriefingResources) {
+      if (!grouped[r.type]) grouped[r.type] = [];
+      grouped[r.type]!.push(r);
+    }
+
+    for (const type of typeOrder) {
+      const resources = grouped[type];
+      if (!resources || resources.length === 0) continue;
+
+      checkPageBreak(15);
+
+      // Type header
+      const typeLabel = type === 'case-study' ? 'Case Studies' : `${type.charAt(0).toUpperCase() + type.slice(1)}s`;
+      addTextAt(typeLabel, margin, yPosition + 4, 10, 'bold', [80, 80, 80]);
+      yPosition += 8;
+
+      // Essential resources first, limit total
+      const sorted = [...resources].sort((a, b) => {
+        const order: Record<string, number> = { essential: 0, important: 1, supplementary: 2 };
+        return (order[a.relevance] || 2) - (order[b.relevance] || 2);
+      });
+
+      for (const resource of sorted.slice(0, 5)) {
+        checkPageBreak(12);
+
+        // Source badge
+        addTextAt(`[${resource.source}]`, margin + 2, yPosition + 4, 7, 'normal', [150, 150, 150]);
+
+        // Clickable title
+        addClickableLink(resource.title, resource.url, margin + 45, yPosition + 4, 9);
+
+        // Relevance indicator
+        if (resource.relevance === 'essential') {
+          addTextAt('★', pageWidth - margin - 5, yPosition + 4, 8, 'normal', [234, 179, 8]);
+        }
+
+        yPosition += 8;
+      }
+
+      if (resources.length > 5) {
+        addTextAt(`+ ${resources.length - 5} more resources available online`, margin + 45, yPosition + 3, 7, 'normal', [150, 150, 150]);
+        yPosition += 6;
+      }
+
+      yPosition += 3;
+    }
+
+    // Source attribution
+    yPosition += 2;
+    checkPageBreak(10);
+    addTextAt('Resources from: NICE, Resuscitation Council UK, Radiopaedia, EMDocs, REBEL EM, ALiEM, EM Cases, EMCrit, and more.', margin, yPosition + 3, 7, 'normal', [180, 180, 180]);
+    yPosition += 8;
   }
 
   // ========== FOOTER ==========
