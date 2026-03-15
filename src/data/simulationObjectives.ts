@@ -293,7 +293,7 @@ export function scoreCaseForObjective(caseData: CaseScenario, objective: Simulat
     ...(caseData.studentChecklist?.map(c => c.description) || []),
   ].join(' ').toLowerCase();
 
-  for (const keyword of objective.relatedKeywords) {
+  for (const keyword of (objective.relatedKeywords || [])) {
     if (caseText.includes(keyword.toLowerCase())) {
       score += 10;
     }
@@ -301,7 +301,7 @@ export function scoreCaseForObjective(caseData: CaseScenario, objective: Simulat
 
   // Skills focus matching against checklist items
   const checklistText = (caseData.studentChecklist || []).map(c => c.description).join(' ').toLowerCase();
-  for (const skill of objective.skillsFocus) {
+  for (const skill of (objective.skillsFocus || [])) {
     const skillWords = skill.toLowerCase().split(/\s+/);
     if (skillWords.some(word => checklistText.includes(word))) {
       score += 5;
