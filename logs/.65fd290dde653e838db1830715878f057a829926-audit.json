@@ -6,9 +6,49 @@
     "auditLog": "/Users/eliastlcthomas/Desktop/app/logs/.65fd290dde653e838db1830715878f057a829926-audit.json",
     "files": [
         {
-            "date": 1771936296699,
-            "name": "/Users/eliastlcthomas/Desktop/app/logs/mcp-puppeteer-2026-02-24.log",
-            "hash": "ef453a522608140ee816ab7ce0d8c157a623a2daf3c24e0c48da2337519a53a3"
+            "date": 1771988087756,
+            "name": "/Users/eliastlcthomas/Desktop/app/logs/mcp-puppeteer-2026-02-25.log",
+            "hash": "de21632c1405fad99215c0e435ec121dd6bcbd1361bf2ce989f46e451d487bee"
+        },
+        {
+            "date": 1772104371362,
+            "name": "/Users/eliastlcthomas/Desktop/app/logs/mcp-puppeteer-2026-02-26.log",
+            "hash": "b9fbd9547b445e0e39fdc8083ef99e9cba145adcec83834135f8ee914f2093ea"
+        },
+        {
+            "date": 1772217106156,
+            "name": "/Users/eliastlcthomas/Desktop/app/logs/mcp-puppeteer-2026-02-27.log",
+            "hash": "9e05a3e6ab65fb5ad3500f3ad193b5026d5f5ff71be22b381f36b7a46cdae2db"
+        },
+        {
+            "date": 1772223497658,
+            "name": "/Users/eliastlcthomas/Desktop/app/logs/mcp-puppeteer-2026-02-28.log",
+            "hash": "c8c473166dc9c77d3df3b2e786627dc29d2e6151ba718d8142d63c20ff93cebe"
+        },
+        {
+            "date": 1772315067106,
+            "name": "/Users/eliastlcthomas/Desktop/app/logs/mcp-puppeteer-2026-03-01.log",
+            "hash": "9f483cf4508ee43d149afa2b846643aebd5bd1217c93e159311438334b15a819"
+        },
+        {
+            "date": 1772432317693,
+            "name": "/Users/eliastlcthomas/Desktop/app/logs/mcp-puppeteer-2026-03-02.log",
+            "hash": "196423cdc675951f9e98a06389b9fe56781badeee72e6e5f9209b1cb4debb037"
+        },
+        {
+            "date": 1772745238170,
+            "name": "/Users/eliastlcthomas/Desktop/app/logs/mcp-puppeteer-2026-03-06.log",
+            "hash": "1919c1268d20622922e78582d031142c89647fda1aa9e1508b1ab17ea904e9ed"
+        },
+        {
+            "date": 1772837105437,
+            "name": "/Users/eliastlcthomas/Desktop/app/logs/mcp-puppeteer-2026-03-07.log",
+            "hash": "301817d4a23607b7e148af058394886802d5721965b14a6fb5ef9edc4974be8c"
+        },
+        {
+            "date": 1773162430659,
+            "name": "/Users/eliastlcthomas/Desktop/app/logs/mcp-puppeteer-2026-03-10.log",
+            "hash": "00e5973791e181771b1038fbc3779861988d0d3be25577a7fb59e05e28e565d1"
         }
     ],
     "hashType": "sha256"
