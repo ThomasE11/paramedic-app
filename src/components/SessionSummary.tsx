@@ -293,63 +293,63 @@ export function SessionSummary({
         </CardContent>
       </Card>
 
-      {/* Quick Stats Row */}
-      <div className="grid gap-4 sm:grid-cols-3">
+      {/* Quick Stats Row - always 3 columns */}
+      <div className="grid grid-cols-3 gap-2 sm:gap-4">
         <Card className="card-interactive card-hover animate-fade-in-up stagger-2 border-l-4 border-l-emerald-500">
-          <CardContent className="p-5">
+          <CardContent className="p-3 sm:p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-3xl font-bold text-emerald-600">{completedItems.length}</p>
-                <p className="text-sm text-muted-foreground">Completed</p>
+                <p className="text-2xl sm:text-3xl font-bold text-emerald-600">{completedItems.length}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">Completed</p>
               </div>
-              <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+              <div className="hidden sm:flex w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 items-center justify-center">
                 <CheckCircle className="w-6 h-6 text-emerald-600" />
               </div>
             </div>
-            <div className="mt-3 h-1.5 bg-muted rounded-full overflow-hidden">
-              <div className="h-full bg-emerald-500 rounded-full transition-all duration-500" 
-                style={{ width: `${(completedItems.length / (completedItems.length + missedItems.length)) * 100}%` }} 
+            <div className="mt-2 sm:mt-3 h-1 sm:h-1.5 bg-muted rounded-full overflow-hidden">
+              <div className="h-full bg-emerald-500 rounded-full transition-all duration-500"
+                style={{ width: `${(completedItems.length / (completedItems.length + missedItems.length)) * 100}%` }}
               />
             </div>
           </CardContent>
         </Card>
 
         <Card className="card-interactive card-hover animate-fade-in-up stagger-3 border-l-4 border-l-red-500">
-          <CardContent className="p-5">
+          <CardContent className="p-3 sm:p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-3xl font-bold text-red-600">{missedItems.length}</p>
-                <p className="text-sm text-muted-foreground">Missed</p>
+                <p className="text-2xl sm:text-3xl font-bold text-red-600">{missedItems.length}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">Missed</p>
               </div>
-              <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+              <div className="hidden sm:flex w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 items-center justify-center">
                 <XCircle className="w-6 h-6 text-red-600" />
               </div>
             </div>
             {criticalMissedItems.length > 0 && (
-              <div className="mt-3 flex items-center gap-1.5">
+              <div className="mt-2 sm:mt-3 flex items-center gap-1">
                 <AlertTriangle className="w-3 h-3 text-red-500" />
-                <span className="text-xs text-red-600 font-medium">{criticalMissedItems.length} critical</span>
+                <span className="text-[10px] sm:text-xs text-red-600 font-medium">{criticalMissedItems.length} critical</span>
               </div>
             )}
           </CardContent>
         </Card>
 
         <Card className="card-interactive card-hover animate-fade-in-up stagger-4 border-l-4 border-l-blue-500">
-          <CardContent className="p-5">
+          <CardContent className="p-3 sm:p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-3xl font-bold text-blue-600">
+                <p className="text-2xl sm:text-3xl font-bold text-blue-600">
                   {Math.round((completedItems.length / (completedItems.length + missedItems.length || 1)) * 100)}%
                 </p>
-                <p className="text-sm text-muted-foreground">Completion</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">Completion</p>
               </div>
-              <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+              <div className="hidden sm:flex w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 items-center justify-center">
                 <Target className="w-6 h-6 text-blue-600" />
               </div>
             </div>
-            <div className="mt-3 h-1.5 bg-muted rounded-full overflow-hidden">
-              <div className="h-full bg-blue-500 rounded-full transition-all duration-500" 
-                style={{ width: `${(completedItems.length / (completedItems.length + missedItems.length || 1)) * 100}%` }} 
+            <div className="mt-2 sm:mt-3 h-1 sm:h-1.5 bg-muted rounded-full overflow-hidden">
+              <div className="h-full bg-blue-500 rounded-full transition-all duration-500"
+                style={{ width: `${(completedItems.length / (completedItems.length + missedItems.length || 1)) * 100}%` }}
               />
             </div>
           </CardContent>

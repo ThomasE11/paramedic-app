@@ -658,7 +658,7 @@ function App() {
     <div className="min-h-screen bg-background paper-texture">
       {/* Enhanced Header with glassmorphism */}
       <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 transition-all duration-300">
-        <div className="container mx-auto px-4 py-4">
+        <div className="container mx-auto px-3 sm:px-4 py-2.5 sm:py-4">
           <div className="flex items-center justify-between">
             {/* Logo - Clickable to go home */}
             <button
@@ -669,8 +669,11 @@ function App() {
                 <Stethoscope className="h-5 w-5 text-primary group-hover:scale-110 transition-transform duration-300" />
               </div>
               <div className="text-left">
-                <h1 className="text-xl font-semibold tracking-tight group-hover:text-primary transition-colors">UAE Paramedic Case Generator</h1>
-                <p className="text-xs text-muted-foreground">Realistic scenarios for student training</p>
+                <h1 className="text-base sm:text-xl font-semibold tracking-tight group-hover:text-primary transition-colors leading-tight">
+                  <span className="hidden sm:inline">UAE Paramedic Case Generator</span>
+                  <span className="sm:hidden">UAE Paramedic<br />Case Generator</span>
+                </h1>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">Realistic scenarios for student training</p>
               </div>
             </button>
 
@@ -710,9 +713,9 @@ function App() {
             </div>
           </div>
 
-          {/* Enhanced Breadcrumb Navigation */}
+          {/* Enhanced Breadcrumb Navigation - hidden on mobile */}
           {currentCase && (
-            <div className="flex items-center gap-2 mt-3 text-sm text-muted-foreground border-t pt-3 animate-fade-in">
+            <div className="hidden sm:flex items-center gap-2 mt-3 text-sm text-muted-foreground border-t pt-3 animate-fade-in">
               <button
                 onClick={goHome}
                 className="hover:text-primary transition-colors flex items-center gap-1 btn-press"
@@ -1037,15 +1040,16 @@ function App() {
           /* Case Display Screen with Glassmorphism Navigation */
           <div className="animate-fade-in">
             {/* Action Bar */}
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-2 sm:mb-4">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={goHome}
-                className="gap-1 text-muted-foreground hover:text-foreground btn-press"
+                className="gap-1 text-muted-foreground hover:text-foreground btn-press -ml-2 h-8 text-xs sm:text-sm sm:h-9"
               >
-                <ArrowLeft className="h-4 w-4" />
-                Back to Home
+                <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Back to Home</span>
+                <span className="sm:hidden">Back</span>
               </Button>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-muted-foreground hidden sm:inline">
@@ -1058,7 +1062,7 @@ function App() {
             </div>
 
             {/* Case Header - Always visible */}
-            <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
+            <div className="flex flex-wrap items-start justify-between gap-2 sm:gap-4 mb-3 sm:mb-4">
               <div className="animate-fade-in-up">
                 <div className="flex items-center gap-2 mb-2">
                   <Badge 
@@ -1374,10 +1378,9 @@ function App() {
               UAE Paramedic Case Generator • For educational purposes
             </p>
             {currentCase && (
-              <div className="flex items-center gap-3">
+              <div className="hidden sm:flex items-center gap-3">
                 <span>Shortcuts:</span>
                 <span className="flex items-center gap-1"><kbd className="px-1 bg-background rounded border font-mono">ESC</kbd> Home</span>
-
                 <span className="flex items-center gap-1"><kbd className="px-1 bg-background rounded border font-mono">N</kbd> New Case</span>
               </div>
             )}

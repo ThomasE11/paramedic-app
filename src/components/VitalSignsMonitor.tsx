@@ -28,9 +28,11 @@ import {
 
 interface VitalSignsMonitorProps {
   initialVitals: VitalSigns;
+  previousVitals?: VitalSigns | null;
   deteriorationVitals?: VitalSigns;
   onVitalChange?: (vitals: VitalSigns) => void;
   caseCategory?: string;
+  appliedTreatments?: string[];
 }
 
 // Assessment method definitions
@@ -186,22 +188,24 @@ function HiddenVitalCard({
 }
 
 // Visible vital metric component
-function VitalMetric({ 
-  label, 
-  value, 
-  unit, 
-  icon, 
-  status, 
+function VitalMetric({
+  label,
+  value,
+  unit,
+  icon,
+  status,
   onHide,
-  alarmActive 
-}: { 
-  label: string; 
-  value: string | number; 
-  unit: string; 
-  icon: React.ReactNode; 
+  alarmActive,
+  previousValue
+}: {
+  label: string;
+  value: string | number;
+  unit: string;
+  icon: React.ReactNode;
   status: 'normal' | 'warning' | 'critical';
   onHide: () => void;
   alarmActive: boolean;
+  previousValue?: string | number;
 }) {
   const statusColors = {
     normal: 'text-green-600 bg-green-50 border-green-200',
@@ -209,43 +213,53 @@ function VitalMetric({
     critical: 'text-red-600 bg-red-50 border-red-200 animate-pulse'
   };
 
+  const hasChanged = previousValue !== undefined && previousValue !== value;
+
   return (
-    <div className={`relative p-4 rounded-lg border-2 transition-all duration-300 min-h-[100px] flex flex-col justify-between ${statusColors[status]} ${alarmActive ? 'ring-4 ring-red-500 ring-opacity-50' : ''}`}>
-      <button 
+    <div className={`relative p-4 rounded-lg border-2 transition-all duration-300 min-h-[100px] flex flex-col justify-between ${statusColors[status]} ${alarmActive ? 'ring-4 ring-red-500 ring-opacity-50' : ''} ${hasChanged ? 'scale-105 shadow-lg' : ''}`}>
+      <button
         onClick={onHide}
         className="absolute top-1 right-1 p-1 rounded hover:bg-white/50 text-gray-400 hover:text-gray-600"
         title="Hide vital sign"
       >
         <EyeOff className="h-3 w-3" />
       </button>
-      
+
       {alarmActive && (
         <div className="absolute -top-2 -right-2">
           <BellRing className="h-5 w-5 text-red-500 animate-bounce" />
         </div>
       )}
-      
+
       <div className="flex items-center gap-2 mb-2">
         {icon}
         <span className="text-xs font-medium opacity-70 truncate">{label}</span>
         {alarmActive && <AlertTriangle className="h-3 w-3 text-red-500 animate-pulse" />}
       </div>
-      
+
       <div className="flex items-baseline gap-1 flex-wrap">
-        <span className={`text-2xl font-bold break-all ${alarmActive ? 'text-red-600' : ''}`}>
+        <span className={`text-2xl font-bold break-all ${alarmActive ? 'text-red-600' : ''} ${hasChanged ? 'animate-pulse' : ''}`}>
           {value}
         </span>
         <span className="text-xs opacity-60 whitespace-nowrap">{unit}</span>
       </div>
+
+      {hasChanged && (
+        <div className="text-[10px] opacity-70 mt-1">
+          Was: {previousValue} {unit}
+        </div>
+      )}
     </div>
   );
 }
 
 export function VitalSignsMonitor({
   initialVitals,
+  previousVitals,
   deteriorationVitals,
   onVitalChange,
   caseCategory,
+  appliedTreatments = [],
 }: VitalSignsMonitorProps) {
   const [currentVitals, setCurrentVitals] = useState<VitalSigns>(initialVitals);
   
@@ -269,7 +283,8 @@ export function VitalSignsMonitor({
   const [deteriorationWarningSigns, setDeteriorationWarningSigns] = useState<string[]>([]);
   const [deteriorationChanges, setDeteriorationChanges] = useState<string[]>([]);
   const [isDeteriorationCritical, setIsDeteriorationCritical] = useState(false);
-  const [activeTreatments, setActiveTreatments] = useState<string[]>([]);
+  // Use appliedTreatments prop for deterioration calculations
+  const activeTreatments = appliedTreatments;
   
   // Selected assessment methods
   const [selectedMethods, setSelectedMethods] = useState<Record<string, string>>({});
@@ -483,54 +498,46 @@ export function VitalSignsMonitor({
     count: activeAlarms.size,
   };
 
-  // Add treatment to slow deterioration
-  const addTreatment = (treatmentName: string) => {
-    setActiveTreatments(prev => {
-      if (prev.includes(treatmentName)) return prev;
-      return [...prev, treatmentName];
-    });
-  };
-
-  // Remove treatment
-  const removeTreatment = (treatmentName: string) => {
-    setActiveTreatments(prev => prev.filter(t => t !== treatmentName));
-  };
+  // Note: Treatments are managed by parent component via appliedTreatments prop
+  // This component uses them to calculate deterioration slowdown
 
   return (
     <Card className={`border-2 ${alarmStatus.hasCritical ? 'border-red-500' : alarmStatus.hasWarning ? 'border-yellow-500' : 'border-primary/20'}`}>
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Activity className="h-5 w-5 text-primary" />
-            Vital Signs Monitor
-            {assessmentMode && (
-              <Badge variant="secondary" className="text-[10px]">
-                <EyeOff className="h-3 w-3 mr-1" />
-                Assessment Mode
-              </Badge>
-            )}
-            {alarmStatus.count > 0 && alarmsEnabled && (
-              <Badge className={`text-[10px] ${alarmStatus.hasCritical ? 'bg-red-500' : 'bg-yellow-500'}`}>
-                <BellRing className="h-3 w-3 mr-1" />
-                {alarmStatus.count}
-              </Badge>
-            )}
-          </CardTitle>
-          
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={assessmentMode ? showAllVitals : hideAllVitals}
-              className="h-8 text-xs"
-            >
-              {assessmentMode ? (
-                <><Eye className="h-3 w-3 mr-1" /> Show All</>
-              ) : (
-                <><EyeOff className="h-3 w-3 mr-1" /> Hide All</>
+      <CardHeader className="pb-2 px-3 sm:px-6">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+            <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+              <Activity className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+              Vital Signs Monitor
+            </CardTitle>
+            <div className="flex items-center gap-1.5">
+              {assessmentMode && (
+                <Badge variant="secondary" className="text-[10px]">
+                  <EyeOff className="h-3 w-3 mr-1" />
+                  Assessment Mode
+                </Badge>
               )}
-            </Button>
+              {alarmStatus.count > 0 && alarmsEnabled && (
+                <Badge className={`text-[10px] ${alarmStatus.hasCritical ? 'bg-red-500' : 'bg-yellow-500'}`}>
+                  <BellRing className="h-3 w-3 mr-1" />
+                  {alarmStatus.count}
+                </Badge>
+              )}
+            </div>
           </div>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={assessmentMode ? showAllVitals : hideAllVitals}
+            className="h-7 sm:h-8 text-[10px] sm:text-xs shrink-0"
+          >
+            {assessmentMode ? (
+              <><Eye className="h-3 w-3 mr-1" /> Show All</>
+            ) : (
+              <><EyeOff className="h-3 w-3 mr-1" /> Hide All</>
+            )}
+          </Button>
         </div>
         
         {assessmentMode && (
@@ -676,6 +683,7 @@ export function VitalSignsMonitor({
             }
             
             // Show visible vital
+            const previousValue = previousVitals ? previousVitals[config.key] : undefined;
             return (
               <VitalMetric
                 key={config.key}
@@ -686,6 +694,7 @@ export function VitalSignsMonitor({
                 status={getVitalStatus(config.key, value as number | string)}
                 onHide={() => hideVital(config.key)}
                 alarmActive={hasAlarm(config.key)}
+                previousValue={previousValue !== undefined ? String(previousValue) : undefined}
               />
             );
           })}
