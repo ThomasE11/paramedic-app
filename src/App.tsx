@@ -66,9 +66,9 @@ const createSessionFromCase = (caseData: CaseScenario, yearLevel: StudentYear): 
   completedItems: [],
   notes: '',
   score: 0,
-  totalPossible: caseData.studentChecklist
-    .filter(item => item.yearLevel.includes(yearLevel))
-    .reduce((sum, item) => sum + item.points, 0),
+  totalPossible: (caseData.studentChecklist || [])
+    .filter(item => item.yearLevel?.includes(yearLevel))
+    .reduce((sum, item) => sum + (item.points || 0), 0),
 });
 
 // Empty state component
@@ -312,7 +312,7 @@ function App() {
   // Memoize filtered checklist to avoid recalculation
   const filteredChecklist = useMemo(() => {
     if (!currentCase) return [];
-    return currentCase.studentChecklist.filter(item => item.yearLevel.includes(selectedYear));
+    return (currentCase.studentChecklist || []).filter(item => item.yearLevel?.includes(selectedYear));
   }, [currentCase, selectedYear]);
 
   // Memoize category lookups
