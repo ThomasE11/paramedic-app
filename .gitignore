@@ -5,3 +5,17 @@ dist
 *.log.gz
 .playwright-mcp
 .claude/worktrees
+.claude/launch.json
+
+# Test artifacts & screenshots
+*.png
+*.jpg
+*.jpeg
+comprehensive-test.ts
+run-tests.cjs
+test-suite.js
+download-images.sh
+youtube-video-ids.json
+*_REPORT.md
+*_CHECKLIST.md
+TEST_PLAN.md
