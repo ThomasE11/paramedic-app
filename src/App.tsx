@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
-import type { CaseScenario, StudentYear, CaseSession, VitalSigns, AppliedTreatment, SimulationObjective, DebriefingResource } from '@/types';
+import type { CaseScenario, StudentYear, CaseSession, VitalSigns, AppliedTreatment, SimulationObjective, DebriefingResource, InstructorAssessmentNote } from '@/types';
 import { useGradualVitalChanges } from '@/hooks/useGradualVitalChanges';
 import { allCases, getRandomCase, yearLevels, caseCategories, priorities } from '@/data/cases';
 import { matchObjectiveToCase } from '@/data/simulationObjectives';
@@ -15,9 +15,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Stethoscope, GraduationCap, ClipboardCheck, RotateCcw,
   FileText, Sparkles, CheckCircle2, Home, ChevronRight, ArrowLeft,
-  History, BarChart3, Loader2, Activity, Clock, Target
+  History, BarChart3, Loader2, Activity, Clock, Target, BookOpen, Users
 } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
+
+// Lazy load the student panel
+const StudentPanel = lazy(() => import('@/components/StudentPanel'));
 
 // Lazy load heavy components for better performance
 const CaseDisplay = lazy(() => import('@/components/CaseDisplay').then(m => ({ default: m.CaseDisplay })));
@@ -30,6 +33,7 @@ const TreatmentsPanel = lazy(() => import('@/components/TreatmentsPanel').then(m
 const TreatmentApplicationPanel = lazy(() => import('@/components/TreatmentApplicationPanel').then(m => ({ default: m.TreatmentApplicationPanel })));
 const VitalSignsMonitor = lazy(() => import('@/components/VitalSignsMonitor').then(m => ({ default: m.VitalSignsMonitor })));
 const GlassNavigation = lazy(() => import('@/components/GlassNavigation').then(m => ({ default: m.GlassNavigation })));
+const InstructorNotesPanel = lazy(() => import('@/components/InstructorNotesPanel').then(m => ({ default: m.InstructorNotesPanel })));
 const ObjectiveSetupPanel = lazy(() => import('@/components/ObjectiveSetupPanel').then(m => ({ default: m.ObjectiveSetupPanel })));
 const PreBriefingPanel = lazy(() => import('@/components/PreBriefingPanel').then(m => ({ default: m.PreBriefingPanel })));
 import { ComplicationPanel, useComplicationManager } from '@/components/ComplicationManager';
@@ -90,7 +94,179 @@ function EmptyState({ onGenerate }: { onGenerate: () => void }) {
   );
 }
 
+type UserRole = 'none' | 'educator' | 'student';
+
+function RoleSelection({ onSelect }: { onSelect: (role: UserRole) => void }) {
+  return (
+    <div className="min-h-screen bg-background bg-mesh flex flex-col relative overflow-hidden">
+      {/* Decorative background orbs */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-[600px] h-[600px] bg-primary/[0.04] rounded-full blur-[100px]" />
+        <div className="absolute -bottom-40 -left-40 w-[500px] h-[500px] bg-accent/[0.06] rounded-full blur-[100px]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-primary/[0.02] rounded-full blur-[120px] rotate-12" />
+      </div>
+
+      {/* Top bar */}
+      <div className="relative z-10 flex items-center justify-between px-8 py-5">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+            <Activity className="h-4 w-4 text-primary" />
+          </div>
+          <span className="text-sm font-semibold tracking-tight text-foreground/80">ParaMedic Studio</span>
+        </div>
+        <ThemeToggle />
+      </div>
+
+      <div className="relative z-10 flex-1 flex items-center justify-center p-6">
+        <div className="max-w-3xl w-full space-y-12">
+          {/* Header */}
+          <div className="text-center space-y-5">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-primary to-primary/70 shadow-2xl shadow-primary/20 ring-[6px] ring-primary/[0.08]">
+              <Stethoscope className="h-10 w-10 text-primary-foreground" />
+            </div>
+            <div className="space-y-3">
+              <h1 className="heading-display text-[2.75rem] leading-[1.1]">
+                UAE Paramedic<br />Case Simulator
+              </h1>
+              <p className="text-muted-foreground text-lg max-w-md mx-auto leading-relaxed">
+                Immersive clinical training with real-time LIFEPAK 20 monitoring and evidence-based scenarios
+              </p>
+            </div>
+          </div>
+
+          {/* Role Cards */}
+          <div className="grid gap-6 sm:grid-cols-2">
+            {/* Educator */}
+            <button
+              onClick={() => onSelect('educator')}
+              className="group relative flex flex-col rounded-3xl card-glass p-10 transition-all duration-500 hover:shadow-xl hover:-translate-y-2 text-left overflow-hidden"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/0 to-emerald-500/0 group-hover:from-emerald-500/[0.04] group-hover:to-emerald-500/[0.08] transition-all duration-700" />
+              <div className="absolute inset-[0] rounded-3xl border border-transparent group-hover:border-emerald-500/20 transition-all duration-500" />
+              <div className="relative z-10 flex flex-col items-center gap-6">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500/12 to-emerald-600/5 ring-2 ring-emerald-500/[0.08] group-hover:ring-emerald-500/25 group-hover:from-emerald-500/20 transition-all duration-500">
+                  <Users className="h-8 w-8 text-emerald-500" />
+                </div>
+                <div className="text-center space-y-2.5">
+                  <h2 className="heading-premium text-xl">Educator Panel</h2>
+                  <p className="text-sm text-muted-foreground leading-relaxed max-w-[240px]">
+                    Generate cases, set objectives, run simulations, and guide debriefing sessions
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-1.5 justify-center">
+                  {['Cases', 'Pre-Brief', 'Tracking', 'Debrief', 'Export'].map(tag => (
+                    <span key={tag} className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-500/[0.07] text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/[0.08]">{tag}</span>
+                  ))}
+                </div>
+                <div className="flex items-center gap-2 text-sm font-semibold text-emerald-600 dark:text-emerald-400 group-hover:gap-3 transition-all duration-300 mt-1">
+                  Open Educator Panel
+                  <ChevronRight className="h-4 w-4" />
+                </div>
+              </div>
+            </button>
+
+            {/* Student */}
+            <button
+              onClick={() => onSelect('student')}
+              className="group relative flex flex-col rounded-3xl card-glass p-10 transition-all duration-500 hover:shadow-xl hover:-translate-y-2 text-left overflow-hidden"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/0 to-blue-500/0 group-hover:from-blue-500/[0.04] group-hover:to-blue-500/[0.08] transition-all duration-700" />
+              <div className="absolute inset-[0] rounded-3xl border border-transparent group-hover:border-blue-500/20 transition-all duration-500" />
+              <div className="relative z-10 flex flex-col items-center gap-6">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500/12 to-blue-600/5 ring-2 ring-blue-500/[0.08] group-hover:ring-blue-500/25 group-hover:from-blue-500/20 transition-all duration-500">
+                  <GraduationCap className="h-8 w-8 text-blue-500" />
+                </div>
+                <div className="text-center space-y-2.5">
+                  <h2 className="heading-premium text-xl">Student Training</h2>
+                  <p className="text-sm text-muted-foreground leading-relaxed max-w-[240px]">
+                    Work through real scenarios with live vitals, apply treatments, and get performance feedback
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-1.5 justify-center">
+                  {['Scenarios', 'LIFEPAK 20', 'Treatments', 'Feedback', 'Resources'].map(tag => (
+                    <span key={tag} className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-blue-500/[0.07] text-blue-600 dark:text-blue-400 ring-1 ring-blue-500/[0.08]">{tag}</span>
+                  ))}
+                </div>
+                <div className="flex items-center gap-2 text-sm font-semibold text-blue-600 dark:text-blue-400 group-hover:gap-3 transition-all duration-300 mt-1">
+                  Start Training
+                  <ChevronRight className="h-4 w-4" />
+                </div>
+              </div>
+            </button>
+          </div>
+
+          {/* Stats bar */}
+          <div className="flex items-center justify-center">
+            <div className="frosted rounded-2xl px-8 py-4 flex items-center gap-10">
+              <div className="flex items-center gap-2.5 text-sm">
+                <div className="w-2 h-2 rounded-full bg-primary" />
+                <span className="font-medium">{allCases.length}+ Cases</span>
+              </div>
+              <div className="w-px h-4 bg-border/50" />
+              <div className="flex items-center gap-2.5 text-sm">
+                <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                <span className="font-medium">15+ ECG Rhythms</span>
+              </div>
+              <div className="w-px h-4 bg-border/50" />
+              <div className="flex items-center gap-2.5 text-sm">
+                <div className="w-2 h-2 rounded-full bg-blue-500" />
+                <span className="font-medium">LIFEPAK 20 Sim</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <p className="text-center text-xs text-muted-foreground/50 tracking-wide">
+            For educational purposes only  |  Evidence-based paramedic training
+          </p>
+        </div>
+      </div>
+      <Toaster position="top-right" richColors closeButton />
+    </div>
+  );
+}
+
 function App() {
+  const [userRole, setUserRole] = useState<UserRole>(() => {
+    return (localStorage.getItem('paramedic-role') as UserRole) || 'none';
+  });
+
+  // Persist role selection
+  useEffect(() => {
+    if (userRole !== 'none') {
+      localStorage.setItem('paramedic-role', userRole);
+    }
+  }, [userRole]);
+
+  const handleRoleExit = useCallback(() => {
+    setUserRole('none');
+    localStorage.removeItem('paramedic-role');
+  }, []);
+
+  // Role selection screen
+  if (userRole === 'none') {
+    return <RoleSelection onSelect={setUserRole} />;
+  }
+
+  // Student panel
+  if (userRole === 'student') {
+    return (
+      <Suspense fallback={
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      }>
+        <StudentPanel onExit={handleRoleExit} />
+        <Toaster position="top-right" richColors closeButton />
+      </Suspense>
+    );
+  }
+
+  // Educator panel (existing App component below)
+  return <EducatorPanel onExit={handleRoleExit} />;
+}
+
+function EducatorPanel({ onExit }: { onExit: () => void }) {
   const [currentCase, setCurrentCase] = useState<CaseScenario | null>(null);
   const [selectedYear, setSelectedYear] = useState<StudentYear>('3rd-year');
   const [session, setSession] = useState<CaseSession | null>(null);
@@ -103,6 +279,9 @@ function App() {
   const [vitalsHistory, setVitalsHistory] = useState<VitalSigns[]>([]);
   const [appliedTreatments, setAppliedTreatments] = useState<AppliedTreatment[]>([]);
   const [glassLayer, setGlassLayer] = useState<GlassLayer>('case');
+
+  // Instructor feedback state (lifted from InstructorNotesPanel for persistence)
+  const [instructorAssessmentNotes, setInstructorAssessmentNotes] = useState<InstructorAssessmentNote[]>([]);
 
   // Guided simulation flow state
   const [showObjectiveSetup, setShowObjectiveSetup] = useState(false);
@@ -401,6 +580,7 @@ function App() {
     clearComplications();
     setAppliedTreatments([]);
     setAppliedTreatmentIds([]);
+    setInstructorAssessmentNotes([]);
     setApplyingTreatmentId(undefined);
 
     // Route to pre-briefing if guided flow, otherwise straight to case
@@ -669,11 +849,14 @@ function App() {
                 <Stethoscope className="h-5 w-5 text-primary group-hover:scale-110 transition-transform duration-300" />
               </div>
               <div className="text-left">
-                <h1 className="text-base sm:text-xl font-semibold tracking-tight group-hover:text-primary transition-colors leading-tight">
+                <h1 className="heading-premium text-base sm:text-xl group-hover:text-primary transition-colors leading-tight">
                   <span className="hidden sm:inline">UAE Paramedic Case Generator</span>
                   <span className="sm:hidden">UAE Paramedic<br />Case Generator</span>
                 </h1>
-                <p className="text-[10px] sm:text-xs text-muted-foreground">Realistic scenarios for student training</p>
+                <div className="flex items-center gap-1.5">
+                  <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 border-emerald-500/30 text-emerald-600">Educator</Badge>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">Realistic scenarios for student training</p>
+                </div>
               </div>
             </button>
 
@@ -709,6 +892,10 @@ function App() {
                   </Button>
                 </>
               )}
+              <Button variant="ghost" size="sm" onClick={onExit} className="gap-1 text-xs text-muted-foreground hover:text-foreground">
+                <ArrowLeft className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Switch Role</span>
+              </Button>
               <ThemeToggle />
             </div>
           </div>
@@ -775,7 +962,7 @@ function App() {
                   <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary/70 shadow-xl shadow-primary/20 animate-float">
                     <Stethoscope className="h-10 w-10 text-primary-foreground" />
                   </div>
-                  <CardTitle className="text-3xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text">
+                  <CardTitle className="heading-display text-3xl">
                     Paramedic Case Generator
                   </CardTitle>
                   <p className="text-base text-muted-foreground mt-2 max-w-md mx-auto leading-relaxed">
@@ -1197,6 +1384,9 @@ function App() {
                               setCurrentVitals(completeVitals);
                               setVitalsHistory(prev => [...prev, completeVitals]);
                             }}
+                            caseCategory={currentCase.category}
+                            caseSubcategory={currentCase.subcategory}
+                            caseTitle={currentCase.title}
                             appliedTreatments={appliedTreatments.map(t => t.description)}
                           />
                         </Suspense>
@@ -1339,6 +1529,21 @@ function App() {
                           </div>
                         </CardContent>
                       </Card>
+
+                      {/* Instructor Feedback Panel - Available During Active Case */}
+                      {currentCase && session && (
+                        <Suspense fallback={<Card><CardContent className="p-4"><div className="animate-pulse h-32 bg-muted rounded" /></CardContent></Card>}>
+                          <InstructorNotesPanel
+                            caseId={currentCase.id}
+                            studentYear={selectedYear}
+                            sessionNotes={session.notes}
+                            completedItems={session.completedItems}
+                            totalItems={(currentCase.studentChecklist || []).filter(item => item.yearLevel?.includes(selectedYear)).length}
+                            assessmentNotes={instructorAssessmentNotes}
+                            onAssessmentNotesChange={setInstructorAssessmentNotes}
+                          />
+                        </Suspense>
+                      )}
                     </div>
                   ),
                   summary: (
@@ -1353,6 +1558,7 @@ function App() {
                             appliedTreatments={appliedTreatments}
                             vitalsHistory={vitalsHistory}
                             instructorNotes={session.notes}
+                            instructorAssessmentNotes={instructorAssessmentNotes}
                             simulationObjective={simulationObjective || undefined}
                             debriefingResources={debriefingResources.length > 0 ? debriefingResources : undefined}
                           />

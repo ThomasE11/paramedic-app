@@ -1,4 +1,5 @@
-import type { CaseScenario, CaseSession, AppliedTreatment, VitalSigns, SimulationObjective, DebriefingResource } from '@/types';
+import type { CaseScenario, CaseSession, AppliedTreatment, VitalSigns, SimulationObjective, DebriefingResource, InstructorAssessmentNote } from '@/types';
+import { getVideosByFindings, getVideosByCategory, referenceArticles, getYouTubeWatchUrl } from '@/data/localClinicalResources';
 
 interface ExportOptions {
   session: CaseSession;
@@ -7,6 +8,7 @@ interface ExportOptions {
   appliedTreatments?: AppliedTreatment[];
   vitalsHistory?: VitalSigns[];
   instructorNotes?: string;
+  instructorAssessmentNotes?: InstructorAssessmentNote[];
   simulationObjective?: SimulationObjective;
   debriefingResources?: DebriefingResource[];
 }
@@ -473,6 +475,82 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
     });
   }
 
+  // ========== INSTRUCTOR ASSESSMENT FEEDBACK ==========
+  if (options.instructorAssessmentNotes && options.instructorAssessmentNotes.length > 0) {
+    addSectionHeader('Instructor Assessment Feedback');
+
+    const severityColors: Record<string, [number, number, number]> = {
+      critical: [220, 38, 38],
+      important: [234, 146, 60],
+      'learning-point': [59, 130, 246],
+    };
+
+    const categoryColors: Record<string, [number, number, number]> = {
+      excellent: [34, 197, 94],
+      'critical-miss': [220, 38, 38],
+      omitted: [234, 146, 60],
+      incomplete: [234, 179, 8],
+      communication: [139, 92, 246],
+      safety: [220, 38, 38],
+      'clinical-reasoning': [59, 130, 246],
+    };
+
+    for (const note of options.instructorAssessmentNotes) {
+      checkPageBreak(28);
+
+      const severityColor = severityColors[note.severity] || [80, 80, 80];
+      const catColor = categoryColors[note.category] || [80, 80, 80];
+
+      // Note card background
+      const bgColor: [number, number, number] = note.category === 'excellent'
+        ? [240, 253, 244] : note.category === 'critical-miss'
+        ? [254, 242, 242] : [255, 251, 235];
+      addFilledRoundedRect(margin, yPosition, contentWidth, 24, 2, bgColor);
+
+      // Left border accent
+      doc.setFillColor(catColor[0], catColor[1], catColor[2]);
+      doc.rect(margin, yPosition, 2, 24, 'F');
+
+      // Severity badge
+      addTextAt(`[${note.severity.toUpperCase()}]`, margin + 5, yPosition + 5, 7, 'bold', severityColor);
+
+      // Phase
+      addTextAt(`Phase: ${note.phase}`, margin + 40, yPosition + 5, 7, 'normal', [120, 120, 120]);
+
+      // Timestamp
+      const noteTime = new Date(note.timestamp).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+      addTextAt(noteTime, pageWidth - margin - 15, yPosition + 5, 7, 'normal', [150, 150, 150]);
+
+      // Finding
+      const findingLines = doc.splitTextToSize(note.finding, contentWidth - 10);
+      addTextAt((findingLines as string[])[0], margin + 5, yPosition + 11, 9, 'bold', [30, 30, 30]);
+
+      // What was missed + why it matters
+      if (note.whatWasMissed && note.whatWasMissed !== 'Not specified') {
+        const missedText = `Missed: ${note.whatWasMissed}`;
+        const missedLines = doc.splitTextToSize(missedText, contentWidth - 10);
+        addTextAt((missedLines as string[])[0], margin + 5, yPosition + 17, 7, 'normal', [80, 80, 80]);
+      }
+
+      if (note.improvementAction) {
+        addTextAt(`Action: ${note.improvementAction}`, margin + 5, yPosition + 22, 7, 'normal', [59, 130, 246]);
+      }
+
+      yPosition += 28;
+    }
+
+    // Summary counts
+    checkPageBreak(15);
+    yPosition += 3;
+    const critCount = options.instructorAssessmentNotes.filter(n => n.severity === 'critical').length;
+    const strengthCount = options.instructorAssessmentNotes.filter(n => n.category === 'excellent').length;
+    const improvCount = options.instructorAssessmentNotes.filter(n => n.category === 'omitted' || n.category === 'incomplete').length;
+
+    addFilledRoundedRect(margin, yPosition, contentWidth, 10, 2, [248, 250, 252]);
+    addTextAt(`Summary: ${critCount} critical  |  ${improvCount} areas for improvement  |  ${strengthCount} strengths noted`, margin + 5, yPosition + 7, 8, 'bold', [80, 80, 80]);
+    yPosition += 15;
+  }
+
   // ========== FURTHER STUDY RESOURCES ==========
   if (options.debriefingResources && options.debriefingResources.length > 0) {
     addSectionHeader('Further Study Resources');
@@ -532,6 +610,77 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
     checkPageBreak(10);
     addTextAt('Resources from: NICE, Resuscitation Council UK, Radiopaedia, EMDocs, REBEL EM, ALiEM, EM Cases, EMCrit, and more.', margin, yPosition + 3, 7, 'normal', [180, 180, 180]);
     yPosition += 8;
+  }
+
+  // ========== CONDITION-SPECIFIC VISUAL RESOURCES ==========
+  // Pull relevant videos and articles from local clinical resources based on case
+  {
+    const caseFindings = [
+      caseData.category,
+      caseData.title,
+      caseData.dispatchInfo?.callReason,
+      ...(caseData.expectedFindings?.keyObservations || []),
+      ...(caseData.expectedFindings?.differentialDiagnoses || []),
+    ].filter(Boolean) as string[];
+
+    const matchedVideos = [
+      ...getVideosByCategory(caseData.category),
+      ...getVideosByFindings(caseFindings),
+    ].filter((v, i, arr) => arr.findIndex(x => x.id === v.id) === i).slice(0, 6);
+
+    const matchedArticles = referenceArticles.filter(a =>
+      a.category === caseData.category ||
+      caseFindings.some(f => a.title.toLowerCase().includes(f.toLowerCase()) || f.toLowerCase().includes(a.category))
+    ).slice(0, 6);
+
+    if (matchedVideos.length > 0 || matchedArticles.length > 0) {
+      addSectionHeader('Condition-Specific Learning Resources');
+
+      addTextAt(
+        'The following resources are directly relevant to this case condition. Use them for further study.',
+        margin, yPosition + 3, 8, 'normal', [100, 100, 100]
+      );
+      yPosition += 8;
+
+      // Videos
+      if (matchedVideos.length > 0) {
+        checkPageBreak(12);
+        addTextAt('Educational Videos:', margin, yPosition + 4, 10, 'bold', [220, 38, 38]);
+        yPosition += 8;
+
+        for (const video of matchedVideos) {
+          checkPageBreak(12);
+
+          addTextAt(`[${video.duration}]`, margin + 2, yPosition + 4, 7, 'normal', [150, 150, 150]);
+
+          const videoUrl = getYouTubeWatchUrl(video.youtubeId);
+          addClickableLink(video.name, videoUrl, margin + 20, yPosition + 4, 9);
+
+          addTextAt(video.source, margin + 20, yPosition + 9, 7, 'normal', [150, 150, 150]);
+
+          yPosition += 13;
+        }
+        yPosition += 3;
+      }
+
+      // Articles
+      if (matchedArticles.length > 0) {
+        checkPageBreak(12);
+        addTextAt('Reference Articles & Guidelines:', margin, yPosition + 4, 10, 'bold', [59, 130, 246]);
+        yPosition += 8;
+
+        for (const article of matchedArticles) {
+          checkPageBreak(10);
+
+          addTextAt(`[${article.source}]`, margin + 2, yPosition + 4, 7, 'normal', [150, 150, 150]);
+
+          addClickableLink(article.title, article.url, margin + 45, yPosition + 4, 9);
+
+          yPosition += 8;
+        }
+        yPosition += 3;
+      }
+    }
   }
 
   // ========== FOOTER ==========

@@ -27,19 +27,52 @@ export function SessionTimer({
   const [showAlarm, setShowAlarm] = useState(false);
 
   const intervalRef = useRef<number | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const alarmIntervalRef = useRef<number | null>(null);
 
-  // Create audio element for alarm
+  // Synthesize alarm tone using Web Audio API (no external file needed)
+  const playAlarmTone = useCallback(() => {
+    if (!audioContextRef.current) {
+      audioContextRef.current = new AudioContext();
+    }
+    const ctx = audioContextRef.current;
+    if (ctx.state === 'suspended') {
+      ctx.resume();
+    }
+    // Play a repeating beep pattern
+    const playBeep = () => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = 880;
+      osc.type = 'square';
+      gain.gain.setValueAtTime(0.15, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.3);
+    };
+    playBeep();
+    alarmIntervalRef.current = window.setInterval(playBeep, 600);
+  }, []);
+
+  const stopAlarmTone = useCallback(() => {
+    if (alarmIntervalRef.current) {
+      clearInterval(alarmIntervalRef.current);
+      alarmIntervalRef.current = null;
+    }
+  }, []);
+
+  // Cleanup on unmount
   useEffect(() => {
-    audioRef.current = new Audio('/alarm.mp3');
-    audioRef.current.loop = true;
     return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
+      stopAlarmTone();
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+        audioContextRef.current = null;
       }
     };
-  }, []);
+  }, [stopAlarmTone]);
 
   // Use refs to avoid effect dependencies and prevent unnecessary parent re-renders
   const onElapsedTimeChangeRef = useRef(onElapsedTimeChange);
@@ -86,26 +119,21 @@ export function SessionTimer({
     setIsRunning(false);
     setIsPaused(false);
     setShowAlarm(true);
-    if (audioRef.current) {
-      audioRef.current.play().catch(console.error);
-    }
+    playAlarmTone();
     if (onTimerComplete) {
       onTimerComplete();
     }
-  }, [onTimerComplete]);
+  }, [onTimerComplete, playAlarmTone]);
 
   const startTimer = useCallback(() => {
     setIsRunning(true);
     setIsPaused(false);
     setShowAlarm(false);
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-    }
+    stopAlarmTone();
     if (onTimerStart && !isPaused) {
       onTimerStart();
     }
-  }, [onTimerStart, isPaused]);
+  }, [onTimerStart, isPaused, stopAlarmTone]);
 
   const pauseTimer = useCallback(() => {
     setIsPaused(true);
@@ -120,19 +148,13 @@ export function SessionTimer({
     setIsPaused(false);
     setTimeRemaining(timeLimit * 60);
     setShowAlarm(false);
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-    }
-  }, [timeLimit]);
+    stopAlarmTone();
+  }, [timeLimit, stopAlarmTone]);
 
   const stopAlarm = useCallback(() => {
     setShowAlarm(false);
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-    }
-  }, []);
+    stopAlarmTone();
+  }, [stopAlarmTone]);
 
   const handleDurationChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const newDuration = parseInt(e.target.value) || 20;

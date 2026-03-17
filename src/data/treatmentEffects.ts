@@ -26,7 +26,7 @@ const ensureCompleteVitals = (vitals: Partial<VitalSigns>): VitalSigns => ({
   temperature: vitals.temperature ?? 36.5,
   gcs: vitals.gcs ?? 15,
   bloodGlucose: vitals.bloodGlucose ?? 5.5,
-  etco2: vitals.etco2,
+  etco2: vitals.etco2 ?? 35,
   painScore: vitals.painScore,
   time: vitals.time || new Date().toISOString(),
 });
@@ -195,55 +195,48 @@ export function applyTreatmentEffectEnhanced(
   const originalVitals = { ...newVitals };
   
   // ============ OXYGEN THERAPY - Case-dependent effects ============
-  if (desc.includes('oxygen') || desc.includes('o2') || desc.includes('spo2') || desc.includes('airway')) {
-    // Cardiac cases: Focus on myocardial oxygenation
-    if (caseType === 'cardiac') {
-      if (newVitals.spo2 < 94) {
-        const improvement = Math.min(12, 96 - newVitals.spo2);
-        newVitals.spo2 = Math.min(98, newVitals.spo2 + improvement);
-        recordImprovement('SpO₂', originalVitals.spo2, newVitals.spo2, '%');
-      }
-      // Cardiac patients may have anxiety - slight HR reduction
-      if (newVitals.pulse > 100) {
-        newVitals.pulse = Math.max(70, newVitals.pulse - 8);
-        recordImprovement('HR', originalVitals.pulse, newVitals.pulse);
-      }
-      // Slight BP improvement from reduced myocardial stress
-      const bp = parseBP(newVitals.bp);
-      if (bp.systolic < 100) {
-        bp.systolic = Math.min(110, bp.systolic + 8);
-        bp.diastolic = Math.min(75, bp.diastolic + 5);
-        newVitals.bp = formatBP(bp.systolic, bp.diastolic);
-        recordImprovement('BP', originalVitals.bp, newVitals.bp);
-      }
+  // High-flow O2 should rapidly improve SpO2 in most cases
+  // The bigger the deficit, the faster the improvement (clinical reality)
+  if (desc.includes('oxygen') || desc.includes('o2') || desc.includes('spo2') || desc.includes('airway') ||
+      desc.includes('mask') || desc.includes('cannula') || desc.includes('bvm') || desc.includes('high flow') ||
+      desc.includes('non-rebreather') || desc.includes('nrb') || desc.includes('cpap') || desc.includes('bipap')) {
+
+    // Determine if high-flow (15L) vs low-flow
+    const isHighFlow = desc.includes('15') || desc.includes('high flow') || desc.includes('non-rebreather') ||
+                       desc.includes('nrb') || desc.includes('bvm') || desc.includes('cpap') || desc.includes('bipap');
+
+    // Target SpO2 depends on case type (COPD patients target 88-92%)
+    const targetSpo2 = caseType === 'respiratory' && desc.includes('copd') ? 92 : 98;
+
+    if (newVitals.spo2 < targetSpo2) {
+      const deficit = targetSpo2 - newVitals.spo2;
+      // Proportional improvement: larger deficit = larger initial jump
+      // High-flow O2 is more effective than low-flow
+      const baseFactor = isHighFlow ? 0.6 : 0.35; // 60% or 35% of deficit corrected
+      const improvement = Math.round(deficit * baseFactor);
+      newVitals.spo2 = Math.min(targetSpo2, newVitals.spo2 + Math.max(improvement, 3));
+      recordImprovement('SpO₂', originalVitals.spo2, newVitals.spo2, '%');
     }
-    // Respiratory cases: SpO2 improves but respiratory rate should DECREASE
-    else if (caseType === 'respiratory') {
-      if (newVitals.spo2 < 92) {
-        const improvement = Math.min(18, 95 - newVitals.spo2);
-        newVitals.spo2 = Math.min(96, newVitals.spo2 + improvement);
-        recordImprovement('SpO₂', originalVitals.spo2, newVitals.spo2, '%');
-      }
-      // KEY: In respiratory cases, oxygen reduces the work of breathing
-      if (newVitals.respiration > 20) {
-        const rrReduction = Math.min(12, newVitals.respiration - 16);
+
+    // Improved oxygenation reduces compensatory tachycardia
+    if (newVitals.pulse > 100) {
+      const hrReduction = caseType === 'cardiac' ? 8 : caseType === 'respiratory' ? 12 : 10;
+      newVitals.pulse = Math.max(70, newVitals.pulse - hrReduction);
+      recordImprovement('HR', originalVitals.pulse, newVitals.pulse);
+    }
+
+    // Respiratory: O2 reduces work of breathing → RR decreases
+    if (newVitals.respiration > 20) {
+      const rrReduction = caseType === 'respiratory' ? Math.min(12, newVitals.respiration - 16)
+                        : Math.min(6, newVitals.respiration - 16);
+      if (rrReduction > 0) {
         newVitals.respiration = newVitals.respiration - rrReduction;
         recordImprovement('RR', originalVitals.respiration, newVitals.respiration);
       }
-      // Reduced work of breathing also reduces HR
-      if (newVitals.pulse > 100) {
-        newVitals.pulse = Math.max(80, newVitals.pulse - 12);
-        recordImprovement('HR', originalVitals.pulse, newVitals.pulse);
-      }
     }
-    // Trauma cases: Focus on tissue perfusion
-    else if (caseType === 'trauma') {
-      if (newVitals.spo2 < 90) {
-        const improvement = Math.min(15, 95 - newVitals.spo2);
-        newVitals.spo2 = Math.min(97, newVitals.spo2 + improvement);
-        recordImprovement('SpO₂', originalVitals.spo2, newVitals.spo2, '%');
-      }
-      // May need to support perfusion
+
+    // Cardiac: slight BP improvement from reduced stress
+    if (caseType === 'cardiac') {
       const bp = parseBP(newVitals.bp);
       if (bp.systolic < 100) {
         bp.systolic = Math.min(110, bp.systolic + 8);
@@ -251,36 +244,12 @@ export function applyTreatmentEffectEnhanced(
         newVitals.bp = formatBP(bp.systolic, bp.diastolic);
         recordImprovement('BP', originalVitals.bp, newVitals.bp);
       }
-      // Reduced tissue hypoxia improves HR
-      if (newVitals.pulse > 110) {
-        newVitals.pulse = Math.max(85, newVitals.pulse - 15);
-        recordImprovement('HR', originalVitals.pulse, newVitals.pulse);
-      }
     }
-    // Neurological cases - oxygen supports brain perfusion
-    else if (caseType === 'neurological') {
-      if (newVitals.spo2 < 94) {
-        const improvement = Math.min(12, 96 - newVitals.spo2);
-        newVitals.spo2 = Math.min(98, newVitals.spo2 + improvement);
-        recordImprovement('SpO₂', originalVitals.spo2, newVitals.spo2, '%');
-      }
-      // Better oxygenation may improve GCS slightly
-      if (newVitals.gcs && newVitals.gcs < 15 && newVitals.gcs >= 13) {
-        newVitals.gcs = Math.min(15, newVitals.gcs + 1);
-        recordImprovement('GCS', originalVitals.gcs ?? 0, newVitals.gcs ?? 0);
-      }
-    }
-    // General/metabolic cases
-    else {
-      if (newVitals.spo2 < 94) {
-        const improvement = Math.min(10, 96 - newVitals.spo2);
-        newVitals.spo2 = Math.min(98, newVitals.spo2 + improvement);
-        recordImprovement('SpO₂', originalVitals.spo2, newVitals.spo2, '%');
-      }
-      if (newVitals.respiration > 24) {
-        newVitals.respiration = Math.max(18, newVitals.respiration - 4);
-        recordImprovement('RR', originalVitals.respiration, newVitals.respiration);
-      }
+
+    // Neurological: better oxygenation may improve GCS
+    if (caseType === 'neurological' && newVitals.gcs && newVitals.gcs < 15 && newVitals.gcs >= 10) {
+      newVitals.gcs = Math.min(15, newVitals.gcs + 1);
+      recordImprovement('GCS', originalVitals.gcs ?? 0, newVitals.gcs ?? 0);
     }
   }
   

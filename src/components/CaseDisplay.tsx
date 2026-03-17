@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, Component, type ErrorInfo, type ReactNode } from 'react';
 import type { CaseScenario, StudentYear, ComplexityLevel } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +14,26 @@ import {
 import { getECGForCase } from '@/data/litflECGs';
 import { ECGDisplayComponent, EmergencyECGQuickRef } from './ECGDisplay';
 import { ClinicalResources } from './ClinicalResources';
+
+// Error boundary to prevent ClinicalResources crashes from taking down the whole app
+class ResourcesErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error?: Error }> {
+  state = { hasError: false, error: undefined as Error | undefined };
+  static getDerivedStateFromError(error: Error) { return { hasError: true, error }; }
+  componentDidCatch(error: Error, info: ErrorInfo) { console.error('ClinicalResources error:', error, info); }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <Card className="border-yellow-500/30 bg-yellow-950/10">
+          <CardContent className="p-4 text-center text-sm text-yellow-600">
+            Clinical resources temporarily unavailable.
+            <button onClick={() => this.setState({ hasError: false })} className="ml-2 underline">Retry</button>
+          </CardContent>
+        </Card>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 interface CaseDisplayProps {
   caseData: CaseScenario;
@@ -101,8 +121,7 @@ export function CaseDisplay({ caseData, studentYear = '3rd-year' }: CaseDisplayP
   // ECG Display state
   const [showECGModal, setShowECGModal] = useState(false);
 
-  // Visual Resources state
-  const [showVisualResources, setShowVisualResources] = useState(false);
+
 
   // Collapsible sections state
   const [showABCDE, setShowABCDE] = useState(true);
@@ -159,6 +178,11 @@ export function CaseDisplay({ caseData, studentYear = '3rd-year' }: CaseDisplayP
     caseData.title,
     caseData.category,
     caseData.expectedFindings?.mostLikelyDiagnosis,
+    caseData.dispatchInfo?.callReason,
+    caseData.initialPresentation?.generalImpression,
+    caseData.initialPresentation?.sounds,
+    ...(caseData.expectedFindings?.keyObservations || []),
+    ...(caseData.expectedFindings?.differentialDiagnoses || []),
     ...(caseData.abcde?.exposure?.findings || []),
     ...(caseData.secondarySurvey?.head || []),
     ...(caseData.secondarySurvey?.neck || []),
@@ -170,6 +194,11 @@ export function CaseDisplay({ caseData, studentYear = '3rd-year' }: CaseDisplayP
     caseData.title,
     caseData.category,
     caseData.expectedFindings?.mostLikelyDiagnosis,
+    caseData.dispatchInfo?.callReason,
+    caseData.initialPresentation?.generalImpression,
+    caseData.initialPresentation?.sounds,
+    caseData.expectedFindings?.keyObservations,
+    caseData.expectedFindings?.differentialDiagnoses,
     caseData.abcde?.exposure?.findings,
     caseData.secondarySurvey?.head,
     caseData.secondarySurvey?.neck,
@@ -730,261 +759,10 @@ export function CaseDisplay({ caseData, studentYear = '3rd-year' }: CaseDisplayP
         />
       )}
 
-      {/* Visual Resources - For trauma cases */}
-      {caseData.visualResources && (
-        <Card className="border-l-4 border-l-purple-500 bg-purple-50/50 dark:bg-purple-950/20">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-lg text-purple-600 dark:text-purple-400">
-                <Image className="h-5 w-5" />
-                Visual Resources & Learning Materials
-              </CardTitle>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowVisualResources(!showVisualResources)}
-              >
-                {showVisualResources ? 'Hide' : 'Show'}
-              </Button>
-            </div>
-          </CardHeader>
-          {showVisualResources && (
-            <CardContent className="space-y-4">
-              {/* Images */}
-              {caseData.visualResources.images && caseData.visualResources.images.length > 0 && (
-                <div>
-                  <div className="mb-2 flex items-center gap-2">
-                    <Image className="h-4 w-4 text-purple-600" />
-                    <p className="text-sm font-medium">Clinical Images & X-Rays</p>
-                    <Badge variant="outline" className="text-xs">{caseData.visualResources.images.length}</Badge>
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    {caseData.visualResources.images.map((img) => (
-                      <div
-                        key={img.id}
-                        className="group relative rounded-lg border overflow-hidden bg-background hover:border-purple-500 transition-colors"
-                      >
-                        <div className="aspect-video">
-                          <ExternalImage
-                            src={img.url}
-                            alt={img.title}
-                            className="w-full h-full"
-                          />
-                        </div>
-                        <div className="p-2">
-                          <p className="text-sm font-medium truncate">{img.title}</p>
-                          <p className="text-xs text-muted-foreground truncate">{img.source}</p>
-                        </div>
-                        <a
-                          href={img.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="absolute top-2 right-2 bg-background/80 backdrop-blur p-1.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-background"
-                          title="Open full size"
-                        >
-                          <ExternalLink className="h-4 w-4" />
-                        </a>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Videos */}
-              {caseData.visualResources.videos && caseData.visualResources.videos.length > 0 && (
-                <div>
-                  <div className="mb-2 flex items-center gap-2">
-                    <Video className="h-4 w-4 text-red-600" />
-                    <p className="text-sm font-medium">Procedure Videos</p>
-                    <Badge variant="outline" className="text-xs">{caseData.visualResources.videos.length}</Badge>
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {caseData.visualResources.videos.map((vid) => {
-                      // Check if YouTube URL and convert to embed format
-                      const isYouTube = vid.url.includes('youtube.com') || vid.url.includes('youtu.be');
-                      const embedUrl = isYouTube
-                        ? vid.url.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')
-                        : vid.url;
-
-                      return (
-                        <div
-                          key={vid.id}
-                          className="group rounded-lg border overflow-hidden bg-background hover:border-red-500 transition-colors"
-                        >
-                          <div className="aspect-video bg-black">
-                            {isYouTube ? (
-                              <iframe
-                                src={embedUrl}
-                                title={vid.title}
-                                className="w-full h-full"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowFullScreen
-                                loading="lazy"
-                              />
-                            ) : (
-                              <a
-                                href={vid.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="block w-full h-full flex items-center justify-center bg-muted hover:bg-muted/80 transition-colors"
-                              >
-                                <Play className="h-12 w-12 text-red-500" />
-                              </a>
-                            )}
-                          </div>
-                          <div className="p-2">
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="min-w-0 flex-1">
-                                <p className="text-sm font-medium truncate">{vid.title}</p>
-                                <p className="text-xs text-muted-foreground truncate">
-                                  {vid.source} {vid.duration && `• ${vid.duration}`}
-                                </p>
-                              </div>
-                              <a
-                                href={vid.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-muted-foreground hover:text-primary transition-colors flex-shrink-0"
-                                title="Open on original site"
-                              >
-                                <ExternalLink className="h-4 w-4" />
-                              </a>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Articles */}
-              {caseData.visualResources.articles && caseData.visualResources.articles.length > 0 && (
-                <div>
-                  <div className="mb-2 flex items-center gap-2">
-                    <FileTextIcon className="h-4 w-4 text-blue-600" />
-                    <p className="text-sm font-medium">Reference Articles</p>
-                    <Badge variant="outline" className="text-xs">{caseData.visualResources.articles.length}</Badge>
-                  </div>
-                  <div className="space-y-2">
-                    {caseData.visualResources.articles.slice(0, 5).map((article) => (
-                      <a
-                        key={article.id}
-                        href={article.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="group flex items-start gap-2 rounded-lg border bg-background p-2 text-sm transition-colors hover:bg-blue-50 dark:hover:bg-blue-900/30"
-                      >
-                        <FileTextIcon className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-500" />
-                        <div className="min-w-0 flex-1">
-                          <p className="font-medium">{article.title}</p>
-                          <p className="text-xs text-muted-foreground">{article.source}</p>
-                        </div>
-                        <ExternalLink className="h-4 w-4 flex-shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
-                      </a>
-                    ))}
-                    {caseData.visualResources.articles.length > 5 && (
-                      <p className="text-center text-xs text-muted-foreground">
-                        +{caseData.visualResources.articles.length - 5} more articles available
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Assessment Resources */}
-              {caseData.visualResources.assessment && caseData.visualResources.assessment.length > 0 && (
-                <div>
-                  <div className="mb-2 flex items-center gap-2">
-                    <Stethoscope className="h-4 w-4 text-green-600" />
-                    <p className="text-sm font-medium">Assessment Tools & Algorithms</p>
-                    <Badge variant="outline" className="text-xs">{caseData.visualResources.assessment.length}</Badge>
-                  </div>
-                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                    {caseData.visualResources.assessment.map((res) => (
-                      <a
-                        key={res.id}
-                        href={res.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="group flex items-center gap-2 rounded-lg border bg-background p-2 text-sm transition-colors hover:bg-green-50 dark:hover:bg-green-900/30"
-                      >
-                        <Stethoscope className="h-8 w-8 flex-shrink-0 text-green-500" />
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate font-medium">{res.title}</p>
-                          <p className="truncate text-xs text-muted-foreground">{res.source}</p>
-                        </div>
-                        <ExternalLink className="h-4 w-4 flex-shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Procedures */}
-              {caseData.visualResources.procedures && caseData.visualResources.procedures.length > 0 && (
-                <div>
-                  <div className="mb-2 flex items-center gap-2">
-                    <Zap className="h-4 w-4 text-amber-600" />
-                    <p className="text-sm font-medium">Procedure Guides</p>
-                    <Badge variant="outline" className="text-xs">{caseData.visualResources.procedures.length}</Badge>
-                  </div>
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    {caseData.visualResources.procedures.map((proc) => (
-                      <a
-                        key={proc.id}
-                        href={proc.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="group flex items-center gap-2 rounded-lg border bg-background p-2 text-sm transition-colors hover:bg-amber-50 dark:hover:bg-amber-900/30"
-                      >
-                        <Play className="h-8 w-8 flex-shrink-0 text-amber-500" />
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate font-medium">{proc.title}</p>
-                          <p className="truncate text-xs text-muted-foreground">{proc.source}</p>
-                        </div>
-                        <ExternalLink className="h-4 w-4 flex-shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Management */}
-              {caseData.visualResources.management && caseData.visualResources.management.length > 0 && (
-                <div>
-                  <div className="mb-2 flex items-center gap-2">
-                    <Brain className="h-4 w-4 text-cyan-600" />
-                    <p className="text-sm font-medium">Management Algorithms</p>
-                    <Badge variant="outline" className="text-xs">{caseData.visualResources.management.length}</Badge>
-                  </div>
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    {caseData.visualResources.management.map((mgmt) => (
-                      <a
-                        key={mgmt.id}
-                        href={mgmt.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="group flex items-center gap-2 rounded-lg border bg-background p-2 text-sm transition-colors hover:bg-cyan-50 dark:hover:bg-cyan-900/30"
-                      >
-                        <FileTextIcon className="h-8 w-8 flex-shrink-0 text-cyan-500" />
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate font-medium">{mgmt.title}</p>
-                          <p className="truncate text-xs text-muted-foreground">{mgmt.source}</p>
-                        </div>
-                        <ExternalLink className="h-4 w-4 flex-shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          )}
-        </Card>
-      )}
-
-      {/* Clinical Resources - Images and Sounds for Clinical Findings */}
-      <ClinicalResources caseFindings={caseFindings} />
+      {/* Clinical Resources - Images, Videos, Sounds for Clinical Findings */}
+      <ResourcesErrorBoundary>
+        <ClinicalResources caseCategory={caseData.category} caseFindings={caseFindings} />
+      </ResourcesErrorBoundary>
     </div>
   );
 }

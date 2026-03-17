@@ -5,6 +5,7 @@ import { enhancedCaseDatabase } from './enhancedCases';
 import { additionalCaseDatabase } from './additionalCases';
 import { firstYearCases } from './firstYearCases';
 import { secondYearCases } from './secondYearCases';
+import { litflCaseDatabase } from './litflCases';
 
 // Import visual resources
 import { getTraumaResourcesByCondition } from './traumaVisualResources';
@@ -24,6 +25,7 @@ export const caseDatabase: CaseScenario[] = [
     id: 'cardiac-001',
     title: 'Acute Anterior STEMI',
     category: 'cardiac',
+    subcategory: 'stem-anterior',
     priority: 'critical',
     complexity: 'advanced',
     yearLevels: ['4th-year'],
@@ -260,6 +262,7 @@ export const caseDatabase: CaseScenario[] = [
     id: 'cardiac-002',
     title: 'Out-of-Hospital Cardiac Arrest',
     category: 'cardiac',
+    subcategory: 'vfib',
     priority: 'critical',
     complexity: 'expert',
     yearLevels: ['4th-year'],
@@ -543,6 +546,7 @@ export const caseDatabase: CaseScenario[] = [
     id: 'cardiac-003',
     title: 'Atrial Fibrillation with Rapid Ventricular Response',
     category: 'cardiac',
+    subcategory: 'afib',
     priority: 'high',
     complexity: 'intermediate',
     yearLevels: ['3rd-year'],
@@ -7424,6 +7428,7 @@ export const caseDatabase: CaseScenario[] = [
     id: 'cardiac-006',
     title: 'Supraventricular Tachycardia (SVT) - Young Adult',
     category: 'cardiac',
+    subcategory: 'svt',
     priority: 'high',
     complexity: 'intermediate',
     yearLevels: ['3rd-year', '4th-year', 'diploma'],
@@ -7686,6 +7691,7 @@ export const caseDatabase: CaseScenario[] = [
     id: 'cardiac-007',
     title: 'Acute Inferior STEMI with Right Ventricular Involvement',
     category: 'cardiac',
+    subcategory: 'stem-inferior',
     priority: 'critical',
     complexity: 'advanced',
     yearLevels: ['4th-year'],
@@ -7952,6 +7958,7 @@ export const caseDatabase: CaseScenario[] = [
     id: 'cardiac-008',
     title: 'Chest Pain with Known LBBB - Possible Occlusion MI',
     category: 'cardiac',
+    subcategory: 'nstemi',
     priority: 'critical',
     complexity: 'expert',
     yearLevels: ['4th-year'],
@@ -8208,6 +8215,7 @@ export const caseDatabase: CaseScenario[] = [
     id: 'cardiac-009',
     title: 'Atrial Flutter with 2:1 Block - Elderly Patient',
     category: 'cardiac',
+    subcategory: 'aflutter',
     priority: 'high',
     complexity: 'intermediate',
     yearLevels: ['3rd-year', '4th-year', 'diploma'],
@@ -9336,7 +9344,7 @@ export const caseDatabase: CaseScenario[] = [
 
 // Combine original cases with enhanced and additional cases
 // This allows for backward compatibility while adding new detailed cases
-export const allCases: CaseScenario[] = [...caseDatabase, ...enhancedCaseDatabase, ...additionalCaseDatabase, ...firstYearCases, ...secondYearCases];
+export const allCases: CaseScenario[] = [...caseDatabase, ...enhancedCaseDatabase, ...additionalCaseDatabase, ...firstYearCases, ...secondYearCases, ...litflCaseDatabase];
 
 // Export function to get cases by filter
 export const getCasesByFilter = (filter: { yearLevel?: string; category?: string; priority?: string; complexity?: string; subcategory?: string }) => {

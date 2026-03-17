@@ -137,12 +137,29 @@ export function applyDeterioration(
   const changes: string[] = [];
   let isCritical = false;
   
-  // Check if deterioration is slowed/stopped by treatments
-  const isDeteriorationSlowed = activeTreatments.some(t => 
-    ['oxygen', 'fluids', 'airway'].some(keyword => t.toLowerCase().includes(keyword))
-  );
-  
-  const deteriorationMultiplier = isDeteriorationSlowed ? 0.3 : 1.0; // Treatments slow deterioration by 70%
+  // Check treatment coverage — proper treatment should halt or reverse deterioration
+  const txLower = activeTreatments.map(t => t.toLowerCase()).join(' ');
+  const hasOxygenTx = ['oxygen', 'o2', 'mask', 'cannula', 'high flow', 'nrb', 'non-rebreather', 'bvm', 'cpap', 'bipap']
+    .some(k => txLower.includes(k));
+  const hasFluidTx = ['fluid', 'saline', 'hartmann', 'bolus', 'ringer', 'crystalloid']
+    .some(k => txLower.includes(k));
+  const hasAirwayTx = ['airway', 'intubat', 'supraglottic', 'opa', 'npa', 'igel']
+    .some(k => txLower.includes(k));
+  const hasMedTx = ['adrenaline', 'epinephrine', 'atropine', 'amiodarone', 'adenosine']
+    .some(k => txLower.includes(k));
+
+  // Count how many treatment categories are covered
+  const txCoverage = [hasOxygenTx, hasFluidTx, hasAirwayTx, hasMedTx].filter(Boolean).length;
+
+  // With good treatment coverage, deterioration is halted or reversed
+  // 0 treatments: full deterioration (1.0x)
+  // 1 treatment: slowed (0.4x)
+  // 2 treatments: nearly halted (0.1x)
+  // 3+ treatments: reversed (-0.3x = improvement)
+  const deteriorationMultiplier = txCoverage >= 3 ? -0.3
+                                : txCoverage === 2 ? 0.1
+                                : txCoverage === 1 ? 0.4
+                                : 1.0;
   
   profile.rates.forEach(rate => {
     // Check trigger condition if present

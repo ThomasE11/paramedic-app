@@ -66,8 +66,8 @@ export interface TreatmentApplication {
   isComplete: boolean;
 }
 
-// Onset timing configuration (in seconds)
-const ONSET_TIMES: Record<TreatmentOnset, { start: number; full: number }> = {
+// Onset timing configuration (in seconds) - exported for use in animation timing
+export const ONSET_TIMES: Record<TreatmentOnset, { start: number; full: number }> = {
   immediate: { start: 0, full: 1 },      // Defibrillation, adenosine
   fast: { start: 2, full: 10 },          // Nebulizers, suction
   moderate: { start: 5, full: 30 },      // Most medications
@@ -815,7 +815,8 @@ export function applyTreatmentEffectGradual(
     const partialValue = effect.value * progress;
     
     switch (effect.vitalSign) {
-      case 'bp':
+      case 'bp': {
+        const oldSystolic = bp.systolic;
         if (effect.changeType === 'increase') {
           const newSystolic = Math.min(
             effect.maxValue || 999,
@@ -835,9 +836,27 @@ export function applyTreatmentEffectGradual(
           const diff = targetSystolic - bp.systolic;
           bp.systolic += diff * progress;
           if (progress >= 0.1) changes.push(`BP → ${Math.round(bp.systolic)}`);
+        } else if (effect.changeType === 'stabilize') {
+          // Stabilize: prevent further deterioration, nudge toward normal range
+          if (bp.systolic < 90) {
+            // If critically low, gradually bring up toward 90
+            const correction = (90 - bp.systolic) * 0.3 * progress;
+            bp.systolic += correction;
+          } else if (bp.systolic > 180) {
+            // If critically high, gradually bring down toward 180
+            const correction = (bp.systolic - 180) * 0.3 * progress;
+            bp.systolic -= correction;
+          }
+          if (progress >= 0.1) changes.push('BP stabilized');
         }
-        newVitals.bp = formatBP(bp.systolic, bp.diastolic);
+        // Adjust diastolic proportionally to systolic change
+        const systolicDelta = bp.systolic - oldSystolic;
+        if (Math.abs(systolicDelta) > 0.5) {
+          bp.diastolic = Math.round(Math.max(30, Math.min(120, bp.diastolic + systolicDelta * 0.6)));
+        }
+        newVitals.bp = formatBP(Math.round(bp.systolic), bp.diastolic);
         break;
+      }
         
       case 'pulse':
         if (effect.changeType === 'increase') {
@@ -880,6 +899,16 @@ export function applyTreatmentEffectGradual(
           const diff = effect.value - newVitals.respiration;
           newVitals.respiration = Math.round(newVitals.respiration + (diff * progress));
           if (progress >= 0.1) changes.push(`RR → ${newVitals.respiration}`);
+        } else if (effect.changeType === 'stabilize') {
+          // Stabilize: normalize respiration rate toward 14-18 range
+          if (newVitals.respiration > 24) {
+            const correction = (newVitals.respiration - 20) * 0.3 * progress;
+            newVitals.respiration = Math.round(newVitals.respiration - correction);
+          } else if (newVitals.respiration < 10) {
+            const correction = (12 - newVitals.respiration) * 0.3 * progress;
+            newVitals.respiration = Math.round(newVitals.respiration + correction);
+          }
+          if (progress >= 0.1) changes.push('RR stabilized');
         }
         break;
         

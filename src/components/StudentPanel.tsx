@@ -1,0 +1,986 @@
+/**
+ * Student Panel
+ *
+ * Streamlined student-facing interface with guided case flow:
+ * 1. Pre-Briefing: Select/generate a case, review pre-briefing info
+ * 2. Case Presentation: Dispatch info, scene, patient presentation
+ * 3. Vitals & Treatment: Monitor, treatments, interventions
+ * 4. Transport / End Care: Decision point
+ * 5. Post-Case Report: Performance feedback, resources, learning points
+ */
+
+import { useState, useCallback, useMemo, lazy, Suspense, useEffect } from 'react';
+import type { CaseScenario, StudentYear, CaseSession, VitalSigns, AppliedTreatment } from '@/types';
+import { allCases, getRandomCase, yearLevels, caseCategories } from '@/data/cases';
+import { ensureCompleteVitals } from '@/data/treatmentEffects';
+import { applyTreatmentEffectGradual, type Treatment } from '@/data/enhancedTreatmentEffects';
+import { useGradualVitalChanges } from '@/hooks/useGradualVitalChanges';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Separator } from '@/components/ui/separator';
+import {
+  Stethoscope, GraduationCap, Activity, Clock, ArrowLeft, ArrowRight,
+  Sparkles, CheckCircle2, AlertTriangle, FileText, Loader2, BookOpen,
+  Ambulance, XCircle, Heart, Shield, ChevronRight, BarChart3,
+  ClipboardCheck, Star, TrendingUp, TrendingDown, Minus, ExternalLink,
+  RotateCcw
+} from 'lucide-react';
+import { toast } from 'sonner';
+
+// Lazy load heavy components
+const CaseDisplay = lazy(() => import('@/components/CaseDisplay').then(m => ({ default: m.CaseDisplay })));
+const VitalSignsMonitor = lazy(() => import('@/components/VitalSignsMonitor').then(m => ({ default: m.VitalSignsMonitor })));
+const TreatmentApplicationPanel = lazy(() => import('@/components/TreatmentApplicationPanel').then(m => ({ default: m.TreatmentApplicationPanel })));
+
+function LoadingCard() {
+  return (
+    <Card>
+      <CardContent className="p-8 flex flex-col items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-primary mb-3" />
+        <p className="text-sm text-muted-foreground animate-pulse">Loading...</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+type StudentPhase = 'select' | 'prebriefing' | 'case' | 'vitals' | 'postcase';
+
+interface StudentPanelProps {
+  onExit: () => void;
+}
+
+export function StudentPanel({ onExit }: StudentPanelProps) {
+  // Core state
+  const [phase, setPhase] = useState<StudentPhase>('select');
+  const [currentCase, setCurrentCase] = useState<CaseScenario | null>(null);
+  const [selectedYear, setSelectedYear] = useState<StudentYear>('3rd-year');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  // Session tracking
+  const [session, setSession] = useState<CaseSession | null>(null);
+  const [currentVitals, setCurrentVitals] = useState<VitalSigns | null>(null);
+  const [previousVitals, setPreviousVitals] = useState<VitalSigns | null>(null);
+  const [vitalsHistory, setVitalsHistory] = useState<VitalSigns[]>([]);
+  const [appliedTreatments, setAppliedTreatments] = useState<AppliedTreatment[]>([]);
+  const [appliedTreatmentIds, setAppliedTreatmentIds] = useState<string[]>([]);
+  const [applyingTreatmentId, setApplyingTreatmentId] = useState<string | null>(null);
+
+  // Timer
+  const [caseStartTime, setCaseStartTime] = useState<number | null>(null);
+  const [caseEndTime, setCaseEndTime] = useState<number | null>(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+
+  // Treatment effects
+  const {
+    currentVitals: animatedVitals,
+    isAnimating: isVitalsAnimating,
+    progress: vitalChangeProgress,
+    startGradualChange,
+  } = useGradualVitalChanges();
+
+  useEffect(() => {
+    if (animatedVitals && !isVitalsAnimating) {
+      setCurrentVitals(animatedVitals);
+    }
+  }, [animatedVitals, isVitalsAnimating]);
+
+  // Timer effect
+  useEffect(() => {
+    if (!caseStartTime || caseEndTime) return;
+    const interval = setInterval(() => {
+      setElapsedSeconds(Math.floor((Date.now() - caseStartTime) / 1000));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [caseStartTime, caseEndTime]);
+
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+
+  // Generate case
+  const generateCase = useCallback(async () => {
+    setIsGenerating(true);
+    await new Promise(resolve => setTimeout(resolve, 400));
+
+    const newCase = getRandomCase({
+      yearLevel: selectedYear,
+      category: selectedCategory !== 'all' ? selectedCategory : undefined
+    });
+
+    setCurrentCase(newCase);
+    const initialVitals = ensureCompleteVitals(newCase.vitalSignsProgression.initial);
+    setCurrentVitals(initialVitals);
+    setVitalsHistory([initialVitals]);
+    setAppliedTreatments([]);
+    setAppliedTreatmentIds([]);
+    setCaseStartTime(null);
+    setCaseEndTime(null);
+    setElapsedSeconds(0);
+
+    const newSession: CaseSession = {
+      id: Date.now().toString(),
+      caseId: newCase.id,
+      studentYear: selectedYear,
+      generatedAt: new Date().toISOString(),
+      completedItems: [],
+      notes: '',
+      score: 0,
+      totalPossible: (newCase.studentChecklist || [])
+        .filter(item => item.yearLevel?.includes(selectedYear))
+        .reduce((sum, item) => sum + (item.points || 0), 0),
+    };
+    setSession(newSession);
+
+    setIsGenerating(false);
+    setPhase('prebriefing');
+    toast.success(`Case generated: ${newCase.title}`);
+  }, [selectedYear, selectedCategory]);
+
+  // Start case (from pre-briefing)
+  const startCase = useCallback(() => {
+    setCaseStartTime(Date.now());
+    setPhase('vitals');
+    toast.success('Case started — assess the patient and begin treatment');
+  }, []);
+
+  // Apply treatment
+  const applyTreatment = useCallback((treatment: Treatment) => {
+    if (!currentVitals || !currentCase) return;
+
+    setApplyingTreatmentId(treatment.id);
+
+    const result = applyTreatmentEffectGradual(treatment, currentVitals, currentCase);
+
+    const newTreatment: AppliedTreatment = {
+      id: treatment.id,
+      name: treatment.name,
+      description: treatment.description || treatment.name,
+      appliedAt: new Date().toISOString(),
+      effect: result.description,
+      vitalChanges: result.vitalChanges,
+    };
+
+    setAppliedTreatments(prev => [...prev, newTreatment]);
+    setAppliedTreatmentIds(prev => [...prev, treatment.id]);
+
+    if (result.newVitals) {
+      setPreviousVitals(currentVitals);
+      if (startGradualChange) {
+        startGradualChange(currentVitals, result.newVitals, 8000);
+      } else {
+        setCurrentVitals(result.newVitals);
+      }
+      setVitalsHistory(prev => [...prev, result.newVitals!]);
+    }
+
+    setTimeout(() => setApplyingTreatmentId(null), 1500);
+    toast.success(`Applied: ${treatment.name}`, { description: result.description });
+  }, [currentVitals, currentCase, startGradualChange]);
+
+  // End case
+  const endCase = useCallback((action: 'transport' | 'end') => {
+    setCaseEndTime(Date.now());
+    setPhase('postcase');
+    toast.info(action === 'transport' ? 'Patient transported — generating report...' : 'Care ended — generating report...');
+  }, []);
+
+  // Calculate performance metrics for post-case
+  const performanceMetrics = useMemo(() => {
+    if (!currentCase || !session) return null;
+
+    const checklist = (currentCase.studentChecklist || []).filter(
+      item => item.yearLevel?.includes(selectedYear)
+    );
+    const completed = checklist.filter(item => session.completedItems.includes(item.id));
+    const criticalItems = checklist.filter(item => item.critical);
+    const criticalCompleted = criticalItems.filter(item => session.completedItems.includes(item.id));
+
+    const scoreEarned = completed.reduce((sum, item) => sum + (item.points || 0), 0);
+    const totalPossible = checklist.reduce((sum, item) => sum + (item.points || 0), 0);
+    const percentage = totalPossible > 0 ? Math.round((scoreEarned / totalPossible) * 100) : 0;
+
+    // Treatment analysis
+    const treatmentCount = appliedTreatments.length;
+    const timeToFirstTreatment = appliedTreatments.length > 0 && caseStartTime
+      ? Math.round((new Date(appliedTreatments[0].appliedAt).getTime() - caseStartTime) / 1000)
+      : null;
+
+    // Vital sign trend
+    const initialHR = parseInt(String(vitalsHistory[0]?.pulse)) || 0;
+    const finalHR = parseInt(String(vitalsHistory[vitalsHistory.length - 1]?.pulse)) || 0;
+    const initialSpO2 = parseInt(String(vitalsHistory[0]?.spo2)) || 0;
+    const finalSpO2 = parseInt(String(vitalsHistory[vitalsHistory.length - 1]?.spo2)) || 0;
+
+    return {
+      checklist,
+      completed,
+      criticalItems,
+      criticalCompleted,
+      scoreEarned,
+      totalPossible,
+      percentage,
+      treatmentCount,
+      timeToFirstTreatment,
+      totalTime: elapsedSeconds,
+      vitalsTrend: {
+        hrImproved: Math.abs(finalHR - 75) < Math.abs(initialHR - 75),
+        spo2Improved: finalSpO2 > initialSpO2,
+        initialHR, finalHR, initialSpO2, finalSpO2
+      }
+    };
+  }, [currentCase, session, selectedYear, appliedTreatments, vitalsHistory, elapsedSeconds, caseStartTime]);
+
+  // Reset to start
+  const resetToStart = useCallback(() => {
+    setCurrentCase(null);
+    setSession(null);
+    setCurrentVitals(null);
+    setVitalsHistory([]);
+    setAppliedTreatments([]);
+    setAppliedTreatmentIds([]);
+    setCaseStartTime(null);
+    setCaseEndTime(null);
+    setElapsedSeconds(0);
+    setPhase('select');
+  }, []);
+
+  // ============================================================================
+  // RENDER
+  // ============================================================================
+
+  const phaseLabels: Record<StudentPhase, string> = {
+    select: 'Select',
+    prebriefing: 'Pre-Brief',
+    vitals: 'Assess & Treat',
+    case: 'Case Detail',
+    postcase: 'Report',
+  };
+  const phaseOrder: StudentPhase[] = ['prebriefing', 'vitals', 'case', 'postcase'];
+
+  return (
+    <div className="min-h-screen bg-background bg-mesh">
+      {/* Student Header */}
+      <header className="sticky top-0 z-50 frosted border-b border-border/30">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-md shadow-blue-500/20">
+                <GraduationCap className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-sm font-bold tracking-tight heading-premium">Student Training</h1>
+                  <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 border-blue-500/30 text-blue-600 dark:text-blue-400 font-medium">Student</Badge>
+                </div>
+                <p className="text-[10px] text-muted-foreground">ParaMedic Studio</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              {/* Phase indicator - modern step display */}
+              {phase !== 'select' && (
+                <div className="hidden sm:flex items-center gap-1">
+                  {phaseOrder.map((p, i) => {
+                    const currentIdx = phaseOrder.indexOf(phase);
+                    const isActive = phase === p;
+                    const isComplete = currentIdx > i;
+                    return (
+                      <div key={p} className="flex items-center gap-1">
+                        <div className={`flex items-center justify-center transition-all duration-300 ${
+                          isActive ? 'w-auto px-2.5 py-0.5 rounded-full bg-blue-500/15 text-blue-600 dark:text-blue-400 text-[10px] font-semibold ring-1 ring-blue-500/30' :
+                          isComplete ? 'w-5 h-5 rounded-full bg-green-500/15 ring-1 ring-green-500/30' :
+                          'w-5 h-5 rounded-full bg-muted'
+                        }`}>
+                          {isActive ? phaseLabels[p] : isComplete ? (
+                            <CheckCircle2 className="h-3 w-3 text-green-500" />
+                          ) : (
+                            <span className="text-[9px] text-muted-foreground">{i + 1}</span>
+                          )}
+                        </div>
+                        {i < phaseOrder.length - 1 && (
+                          <div className={`w-4 h-px ${isComplete ? 'bg-green-500/50' : 'bg-border'}`} />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Timer */}
+              {caseStartTime && !caseEndTime && (
+                <Badge variant="outline" className="font-mono gap-1.5 text-xs border-primary/30 bg-primary/5">
+                  <Clock className="h-3 w-3 text-primary" />
+                  {formatTime(elapsedSeconds)}
+                </Badge>
+              )}
+
+              <Button variant="ghost" size="sm" onClick={onExit} className="text-xs gap-1 text-muted-foreground hover:text-foreground">
+                <ArrowLeft className="h-3.5 w-3.5" />
+                Exit
+              </Button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main className="container mx-auto px-4 py-6">
+        {/* ================================================================ */}
+        {/* PHASE 1: Case Selection */}
+        {/* ================================================================ */}
+        {phase === 'select' && (
+          <div className="max-w-2xl mx-auto animate-fade-in space-y-8">
+            <div className="text-center mb-4">
+              <div className="mx-auto mb-5 flex h-18 w-18 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-xl shadow-blue-500/25 ring-4 ring-blue-500/10">
+                <Stethoscope className="h-9 w-9 text-white" />
+              </div>
+              <h2 className="heading-display text-[2rem] leading-tight">Paramedic Case Generator</h2>
+              <p className="text-muted-foreground mt-2 text-base max-w-md mx-auto leading-relaxed">
+                Select your training level and generate realistic emergency scenarios to sharpen your clinical skills
+              </p>
+            </div>
+
+            {/* Year Level */}
+            <Card className="card-glass rounded-2xl">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <GraduationCap className="h-4 w-4 text-blue-500" />
+                  Select Your Year Level
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+                  {yearLevels.map(year => (
+                    <button
+                      key={year.value}
+                      onClick={() => setSelectedYear(year.value as StudentYear)}
+                      className={`flex flex-col items-center gap-1.5 px-3 py-3 rounded-xl border-2 text-sm font-medium transition-all duration-300 ${
+                        selectedYear === year.value
+                          ? 'border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400 shadow-md shadow-blue-500/10 ring-2 ring-blue-500/20'
+                          : 'border-border/60 hover:border-blue-500/40 text-muted-foreground hover:text-foreground hover:bg-accent/30'
+                      }`}
+                    >
+                      <GraduationCap className={`h-5 w-5 ${selectedYear === year.value ? 'text-blue-500' : 'text-muted-foreground/50'}`} />
+                      {year.label}
+                    </button>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Category */}
+            <Card className="card-glass rounded-2xl">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <BarChart3 className="h-4 w-4 text-blue-500" />
+                  Choose Category
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => setSelectedCategory('all')}
+                    className={`px-3.5 py-2 rounded-xl border text-sm transition-all duration-300 ${
+                      selectedCategory === 'all'
+                        ? 'border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400 font-semibold ring-1 ring-blue-500/20 shadow-sm'
+                        : 'border-border/60 hover:border-blue-500/40 text-muted-foreground hover:bg-accent/30'
+                    }`}
+                  >
+                    All Categories
+                  </button>
+                  {caseCategories.map(cat => (
+                    <button
+                      key={cat.value}
+                      onClick={() => setSelectedCategory(cat.value)}
+                      className={`px-3.5 py-2 rounded-xl border text-sm transition-all duration-300 ${
+                        selectedCategory === cat.value
+                          ? 'border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400 font-semibold ring-1 ring-blue-500/20 shadow-sm'
+                          : 'border-border/60 hover:border-blue-500/40 text-muted-foreground hover:bg-accent/30'
+                      }`}
+                    >
+                      {cat.label}
+                    </button>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Generate */}
+            <Button
+              onClick={generateCase}
+              disabled={isGenerating}
+              size="lg"
+              className="w-full gap-3 text-base py-7 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-xl shadow-blue-500/20 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/30 hover:-translate-y-0.5"
+            >
+              {isGenerating ? (
+                <><Loader2 className="h-5 w-5 animate-spin" /> Generating Case...</>
+              ) : (
+                <><Sparkles className="h-5 w-5" /> Generate Case</>
+              )}
+            </Button>
+
+            <p className="text-center text-xs text-muted-foreground/60">
+              Cases are randomized within your selected category and year level
+            </p>
+          </div>
+        )}
+
+        {/* ================================================================ */}
+        {/* PHASE 2: Pre-Briefing */}
+        {/* ================================================================ */}
+        {phase === 'prebriefing' && currentCase && (
+          <div className="max-w-3xl mx-auto animate-fade-in space-y-6">
+            {/* Phase header */}
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div className="flex items-center gap-3">
+                <Badge className="gap-1.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20 hover:bg-blue-500/15">
+                  <BookOpen className="h-3 w-3" /> Pre-Briefing
+                </Badge>
+                <Badge variant="secondary" className="capitalize">{currentCase.category}</Badge>
+              </div>
+            </div>
+
+            <div>
+              <h2 className="heading-premium text-2xl">{currentCase.title}</h2>
+              <p className="text-sm text-muted-foreground mt-1">Review the dispatch and scene information before starting</p>
+            </div>
+
+            {/* Dispatch Information */}
+            <Card className="card-glass rounded-2xl overflow-hidden">
+              <CardHeader className="pb-3 bg-gradient-to-r from-blue-500/8 via-blue-500/3 to-transparent border-b border-border/30">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue-500/15">
+                    <Activity className="h-3.5 w-3.5 text-blue-500" />
+                  </div>
+                  Dispatch Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 pt-4">
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  {[
+                    { label: 'Call Reason', value: currentCase.dispatchInfo.callReason },
+                    { label: 'Location', value: currentCase.dispatchInfo.location },
+                    { label: 'Time', value: currentCase.dispatchInfo.timeOfDay },
+                    { label: 'Caller', value: currentCase.dispatchInfo.callerInfo },
+                  ].map((item) => (
+                    <div key={item.label} className="p-3 rounded-xl bg-muted/30 border border-border/30">
+                      <span className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">{item.label}</span>
+                      <p className="font-medium mt-0.5">{item.value}</p>
+                    </div>
+                  ))}
+                </div>
+                {currentCase.dispatchInfo.additionalInfo && (
+                  <div className="bg-amber-500/8 border border-amber-500/15 rounded-xl p-3.5 mt-2">
+                    <p className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 mb-1.5 uppercase tracking-wider">Additional Information</p>
+                    <ul className="text-sm space-y-1.5">
+                      {currentCase.dispatchInfo.additionalInfo.map((info, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <ChevronRight className="h-3 w-3 text-amber-500 mt-1 shrink-0" />
+                          {info}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Scene Information */}
+            <Card className="card-glass rounded-2xl overflow-hidden">
+              <CardHeader className="pb-3 border-b border-border/30">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue-500/15">
+                    <Shield className="h-3.5 w-3.5 text-blue-500" />
+                  </div>
+                  Scene Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="text-sm space-y-3 pt-4">
+                <p className="leading-relaxed">{currentCase.sceneInfo.description}</p>
+                {currentCase.sceneInfo.hazards && currentCase.sceneInfo.hazards.length > 0 && (
+                  <div className="bg-red-500/8 border border-red-500/15 rounded-xl p-3.5">
+                    <p className="text-[11px] font-semibold text-red-600 dark:text-red-400 mb-1.5 uppercase tracking-wider">Hazards Identified</p>
+                    <ul className="space-y-1">
+                      {currentCase.sceneInfo.hazards.map((h, i) => (
+                        <li key={i} className="text-red-700 dark:text-red-400 flex items-start gap-2">
+                          <AlertTriangle className="h-3 w-3 shrink-0 mt-0.5" />{h}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {currentCase.sceneInfo.bystanders && (
+                  <p className="text-muted-foreground">Bystanders: {currentCase.sceneInfo.bystanders}</p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Patient Info */}
+            <Card className="card-glass rounded-2xl overflow-hidden">
+              <CardHeader className="pb-3 border-b border-border/30">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue-500/15">
+                    <Heart className="h-3.5 w-3.5 text-blue-500" />
+                  </div>
+                  Patient Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="text-sm pt-4">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {[
+                    { label: 'Age', value: `${currentCase.patientInfo.age} years` },
+                    { label: 'Gender', value: currentCase.patientInfo.gender },
+                    { label: 'Weight', value: `${currentCase.patientInfo.weight} kg` },
+                    { label: 'Language', value: currentCase.patientInfo.language },
+                  ].map((item) => (
+                    <div key={item.label} className="p-3 rounded-xl bg-muted/30 border border-border/30 text-center">
+                      <span className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">{item.label}</span>
+                      <p className="font-semibold mt-0.5 capitalize">{item.value}</p>
+                    </div>
+                  ))}
+                </div>
+                {currentCase.patientInfo.culturalConsiderations && currentCase.patientInfo.culturalConsiderations.length > 0 && (
+                  <div className="mt-3 text-xs text-muted-foreground bg-accent/30 rounded-xl p-3 border border-border/20">
+                    <strong>Cultural Note:</strong> {currentCase.patientInfo.culturalConsiderations.join('. ')}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Initial Presentation */}
+            {currentCase.initialPresentation && (
+              <Card className="card-glass rounded-2xl overflow-hidden">
+                <CardHeader className="pb-3 border-b border-border/30">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue-500/15">
+                      <Stethoscope className="h-3.5 w-3.5 text-blue-500" />
+                    </div>
+                    Initial Presentation
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="text-sm space-y-2 pt-4">
+                  <p><strong>General Impression:</strong> {currentCase.initialPresentation.generalImpression}</p>
+                  {currentCase.initialPresentation.position && (
+                    <p><strong>Position:</strong> {currentCase.initialPresentation.position}</p>
+                  )}
+                  {currentCase.initialPresentation.appearance && (
+                    <p><strong>Appearance:</strong> {currentCase.initialPresentation.appearance}</p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Ready to start callout */}
+            <Card className="border-blue-500/20 bg-gradient-to-r from-blue-500/5 to-primary/5 shadow-sm overflow-hidden">
+              <CardContent className="p-5">
+                <div className="flex items-start gap-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/15 shrink-0">
+                    <AlertTriangle className="h-5 w-5 text-blue-500" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold">Ready to begin?</p>
+                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                      Once you click <strong>Start Case</strong>, the timer begins. You will assess the patient, apply treatments, and manage the case through to completion. Consider your initial approach and have your equipment ready.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={resetToStart} className="gap-2 rounded-xl">
+                <ArrowLeft className="h-4 w-4" /> Different Case
+              </Button>
+              <Button onClick={startCase} size="lg" className="flex-1 gap-2 rounded-xl bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg shadow-green-500/20 transition-all hover:shadow-xl hover:shadow-green-500/25 hover:-translate-y-0.5">
+                <Activity className="h-5 w-5" />
+                Start Case
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* ================================================================ */}
+        {/* PHASE 3: Vitals & Treatment (Active Case) */}
+        {/* ================================================================ */}
+        {phase === 'vitals' && currentCase && (
+          <div className="animate-fade-in space-y-4">
+            {/* Case banner */}
+            <div className="flex items-center justify-between flex-wrap gap-3 p-5 rounded-2xl card-glass">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary/15 to-primary/5">
+                  <Activity className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold tracking-tight">{currentCase.title}</h2>
+                  <p className="text-xs text-muted-foreground">
+                    {currentCase.dispatchInfo.location} <span className="mx-1.5 text-border">|</span> <Clock className="h-3 w-3 inline-block -mt-px" /> {formatTime(elapsedSeconds)}
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPhase('case')}
+                  className="gap-1.5 text-xs rounded-lg"
+                >
+                  <FileText className="h-3.5 w-3.5" /> Case Details
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => endCase('transport')}
+                  className="gap-1.5 text-xs rounded-lg bg-amber-500 hover:bg-amber-600 text-white shadow-sm"
+                >
+                  <Ambulance className="h-3.5 w-3.5" /> Transport
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => endCase('end')}
+                  className="gap-1.5 text-xs rounded-lg shadow-sm"
+                >
+                  <XCircle className="h-3.5 w-3.5" /> End Care
+                </Button>
+              </div>
+            </div>
+
+            {/* Vital Signs Monitor */}
+            <Suspense fallback={<LoadingCard />}>
+              <VitalSignsMonitor
+                initialVitals={currentVitals || ensureCompleteVitals(currentCase.vitalSignsProgression.initial)}
+                previousVitals={previousVitals}
+                deteriorationVitals={currentCase.vitalSignsProgression.deterioration ? ensureCompleteVitals(currentCase.vitalSignsProgression.deterioration) : undefined}
+                onVitalChange={(vitals) => {
+                  const completeVitals = ensureCompleteVitals(vitals);
+                  setCurrentVitals(completeVitals);
+                  setVitalsHistory(prev => [...prev, completeVitals]);
+                }}
+                caseCategory={currentCase.category}
+                caseSubcategory={currentCase.subcategory}
+                caseTitle={currentCase.title}
+                appliedTreatments={appliedTreatments.map(t => t.description)}
+              />
+            </Suspense>
+
+            {/* Treatment Panel */}
+            {currentVitals && (
+              <Suspense fallback={<LoadingCard />}>
+                <TreatmentApplicationPanel
+                  currentVitals={currentVitals}
+                  onApplyTreatment={applyTreatment}
+                  appliedTreatmentIds={appliedTreatmentIds}
+                  isApplying={!!applyingTreatmentId}
+                  applyingTreatmentId={applyingTreatmentId}
+                />
+              </Suspense>
+            )}
+
+            {/* Applied Treatments Log */}
+            {appliedTreatments.length > 0 && (
+              <Card className="card-glass rounded-2xl">
+                <CardHeader className="pb-2 border-b border-border/30">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-green-500/15">
+                      <ClipboardCheck className="h-3.5 w-3.5 text-green-500" />
+                    </div>
+                    Treatments Applied
+                    <Badge variant="secondary" className="ml-auto text-[10px]">{appliedTreatments.length}</Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-3">
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {appliedTreatments.map((t, i) => (
+                      <div key={i} className="flex items-start gap-2.5 text-xs p-2.5 rounded-lg bg-green-500/5 border border-green-500/10">
+                        <CheckCircle2 className="h-3.5 w-3.5 text-green-500 mt-0.5 shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <span className="font-semibold">{t.name}</span>
+                          <span className="text-muted-foreground ml-2">{t.effect}</span>
+                        </div>
+                        <span className="text-muted-foreground/60 text-[10px] shrink-0">
+                          {new Date(t.appliedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
+
+        {/* ================================================================ */}
+        {/* PHASE 3b: Case Details (accessible during active case) */}
+        {/* ================================================================ */}
+        {phase === 'case' && currentCase && (
+          <div className="animate-fade-in space-y-4">
+            <Button variant="outline" size="sm" onClick={() => setPhase('vitals')} className="gap-1.5 rounded-lg shadow-sm">
+              <ArrowLeft className="h-3.5 w-3.5" /> Back to Monitor
+            </Button>
+            <Suspense fallback={<LoadingCard />}>
+              <CaseDisplay caseData={currentCase} studentYear={selectedYear} />
+            </Suspense>
+          </div>
+        )}
+
+        {/* ================================================================ */}
+        {/* PHASE 4: Post-Case Report */}
+        {/* ================================================================ */}
+        {phase === 'postcase' && currentCase && performanceMetrics && (
+          <div className="max-w-3xl mx-auto animate-fade-in space-y-6">
+            {/* Hero header */}
+            <div className="text-center mb-2 relative">
+              <div className="absolute inset-0 bg-gradient-to-b from-primary/3 to-transparent rounded-3xl -mx-4 -mt-4 h-40" />
+              <div className="relative">
+                <div className={`mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl shadow-xl ring-4 ${
+                  performanceMetrics.percentage >= 80
+                    ? 'bg-gradient-to-br from-green-500 to-green-600 shadow-green-500/20 ring-green-500/10'
+                    : performanceMetrics.percentage >= 50
+                    ? 'bg-gradient-to-br from-amber-500 to-amber-600 shadow-amber-500/20 ring-amber-500/10'
+                    : 'bg-gradient-to-br from-red-500 to-red-600 shadow-red-500/20 ring-red-500/10'
+                }`}>
+                  <Star className="h-8 w-8 text-white" />
+                </div>
+                <h2 className="heading-display text-2xl">Case Complete</h2>
+                <p className="text-muted-foreground mt-1">{currentCase.title}</p>
+              </div>
+            </div>
+
+            {/* Overall Score */}
+            <Card className="card-glass rounded-2xl border-primary/15 overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/3 to-transparent" />
+              <CardContent className="p-6 relative">
+                <div className="grid grid-cols-3 gap-6 text-center">
+                  <div className="space-y-1">
+                    <div className={`text-3xl font-bold ${
+                      performanceMetrics.percentage >= 80 ? 'text-green-500' :
+                      performanceMetrics.percentage >= 50 ? 'text-amber-500' : 'text-red-500'
+                    }`}>{performanceMetrics.percentage}%</div>
+                    <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">Score</p>
+                  </div>
+                  <div className="space-y-1 border-x border-border/30">
+                    <div className="text-3xl font-bold font-mono">{formatTime(performanceMetrics.totalTime)}</div>
+                    <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">Duration</p>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="text-3xl font-bold">{performanceMetrics.treatmentCount}</div>
+                    <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">Treatments</p>
+                  </div>
+                </div>
+                <Progress value={performanceMetrics.percentage} className="mt-5 h-2" />
+              </CardContent>
+            </Card>
+
+            {/* Performance Feedback */}
+            <Card className="card-glass rounded-2xl overflow-hidden">
+              <CardHeader className="pb-3 border-b border-border/30">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue-500/15">
+                    <BarChart3 className="h-3.5 w-3.5 text-blue-500" />
+                  </div>
+                  Performance Analysis
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-5 pt-4">
+                {/* Timing */}
+                <div className="space-y-3">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Response Timing</h4>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div className="p-3.5 rounded-xl bg-muted/30 border border-border/30">
+                      <span className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">Total Duration</span>
+                      <p className="font-bold text-lg mt-1 font-mono">{formatTime(performanceMetrics.totalTime)}</p>
+                    </div>
+                    <div className="p-3.5 rounded-xl bg-muted/30 border border-border/30">
+                      <span className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">First Treatment</span>
+                      <p className="font-bold text-lg mt-1 font-mono">
+                        {performanceMetrics.timeToFirstTreatment
+                          ? formatTime(performanceMetrics.timeToFirstTreatment)
+                          : 'N/A'}
+                      </p>
+                    </div>
+                  </div>
+                  {performanceMetrics.timeToFirstTreatment && performanceMetrics.timeToFirstTreatment > 120 && (
+                    <div className="text-xs text-amber-600 dark:text-amber-400 bg-amber-500/8 border border-amber-500/15 p-3 rounded-xl flex items-start gap-2">
+                      <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                      Consider beginning treatment sooner — early intervention is key to patient outcomes.
+                    </div>
+                  )}
+                  {performanceMetrics.timeToFirstTreatment && performanceMetrics.timeToFirstTreatment <= 60 && (
+                    <div className="text-xs text-green-600 dark:text-green-400 bg-green-500/8 border border-green-500/15 p-3 rounded-xl flex items-start gap-2">
+                      <CheckCircle2 className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                      Excellent — you identified the need for treatment quickly and initiated care promptly.
+                    </div>
+                  )}
+                </div>
+
+                <Separator className="bg-border/30" />
+
+                {/* Vital Signs Trend */}
+                <div className="space-y-3">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Vital Signs Trend</h4>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div className="p-3.5 rounded-xl bg-muted/30 border border-border/30 flex items-center justify-between">
+                      <div>
+                        <span className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">Heart Rate</span>
+                        <p className="font-bold mt-0.5">{performanceMetrics.vitalsTrend.initialHR} <ArrowRight className="h-3 w-3 inline-block text-muted-foreground" /> {performanceMetrics.vitalsTrend.finalHR} <span className="text-xs font-normal text-muted-foreground">bpm</span></p>
+                      </div>
+                      <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${
+                        performanceMetrics.vitalsTrend.hrImproved ? 'bg-green-500/15' : 'bg-muted'
+                      }`}>
+                        {performanceMetrics.vitalsTrend.hrImproved ? (
+                          <TrendingUp className="h-4 w-4 text-green-500" />
+                        ) : performanceMetrics.vitalsTrend.initialHR === performanceMetrics.vitalsTrend.finalHR ? (
+                          <Minus className="h-4 w-4 text-muted-foreground" />
+                        ) : (
+                          <TrendingDown className="h-4 w-4 text-amber-500" />
+                        )}
+                      </div>
+                    </div>
+                    <div className="p-3.5 rounded-xl bg-muted/30 border border-border/30 flex items-center justify-between">
+                      <div>
+                        <span className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">SpO2</span>
+                        <p className="font-bold mt-0.5">{performanceMetrics.vitalsTrend.initialSpO2} <ArrowRight className="h-3 w-3 inline-block text-muted-foreground" /> {performanceMetrics.vitalsTrend.finalSpO2}<span className="text-xs font-normal text-muted-foreground">%</span></p>
+                      </div>
+                      <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${
+                        performanceMetrics.vitalsTrend.spo2Improved ? 'bg-green-500/15' : 'bg-muted'
+                      }`}>
+                        {performanceMetrics.vitalsTrend.spo2Improved ? (
+                          <TrendingUp className="h-4 w-4 text-green-500" />
+                        ) : performanceMetrics.vitalsTrend.initialSpO2 === performanceMetrics.vitalsTrend.finalSpO2 ? (
+                          <Minus className="h-4 w-4 text-muted-foreground" />
+                        ) : (
+                          <TrendingDown className="h-4 w-4 text-red-500" />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator className="bg-border/30" />
+
+                {/* Treatments Applied */}
+                <div className="space-y-3">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Treatments Applied ({performanceMetrics.treatmentCount})
+                  </h4>
+                  {appliedTreatments.length > 0 ? (
+                    <div className="space-y-2">
+                      {appliedTreatments.map((t, i) => (
+                        <div key={i} className="flex items-start gap-2.5 text-xs p-3 rounded-xl bg-green-500/5 border border-green-500/10">
+                          <CheckCircle2 className="h-3.5 w-3.5 text-green-500 mt-0.5 shrink-0" />
+                          <div>
+                            <span className="font-semibold">{t.name}</span>
+                            <span className="text-muted-foreground ml-2">{t.effect}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-xs text-amber-600 dark:text-amber-400 bg-amber-500/8 border border-amber-500/15 p-3 rounded-xl">
+                      No treatments were applied during this case. Consider whether interventions were needed.
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Key Learning Points */}
+            {currentCase.expectedFindings && (
+              <Card className="card-glass rounded-2xl overflow-hidden">
+                <CardHeader className="pb-3 border-b border-border/30">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue-500/15">
+                      <BookOpen className="h-3.5 w-3.5 text-blue-500" />
+                    </div>
+                    Key Learning Points
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4 pt-4">
+                  <div className="p-4 rounded-xl bg-primary/5 border border-primary/10">
+                    <p className="text-[11px] text-primary font-semibold uppercase tracking-wider mb-1">Most Likely Diagnosis</p>
+                    <p className="text-base font-bold">{currentCase.expectedFindings.mostLikelyDiagnosis}</p>
+                  </div>
+                  {currentCase.expectedFindings.keyObservations && (
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Key Observations</p>
+                      <ul className="space-y-1.5">
+                        {currentCase.expectedFindings.keyObservations.map((obs, i) => (
+                          <li key={i} className="text-sm flex items-start gap-2">
+                            <ChevronRight className="h-3.5 w-3.5 text-blue-500 mt-0.5 shrink-0" />
+                            {obs}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {currentCase.expectedFindings.redFlags && (
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Red Flags</p>
+                      <ul className="space-y-1.5">
+                        {currentCase.expectedFindings.redFlags.map((flag, i) => (
+                          <li key={i} className="text-sm flex items-start gap-2 text-red-600 dark:text-red-400">
+                            <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                            {flag}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Additional Resources */}
+            {currentCase.educationalResources && currentCase.educationalResources.length > 0 && (
+              <Card className="card-glass rounded-2xl overflow-hidden">
+                <CardHeader className="pb-3 border-b border-border/30">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue-500/15">
+                      <ExternalLink className="h-3.5 w-3.5 text-blue-500" />
+                    </div>
+                    Further Reading
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-3">
+                  <div className="space-y-1">
+                    {currentCase.educationalResources.slice(0, 6).map((res, i) => (
+                      <a
+                        key={i}
+                        href={res.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 text-sm p-3 rounded-xl hover:bg-accent/40 transition-all duration-200 group"
+                      >
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/10 group-hover:bg-blue-500/20 transition-colors shrink-0">
+                          <ExternalLink className="h-3.5 w-3.5 text-blue-500" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium group-hover:text-blue-500 transition-colors truncate">{res.title}</p>
+                          {res.source && <p className="text-[11px] text-muted-foreground">{res.source}</p>}
+                        </div>
+                        <Badge variant="outline" className="text-[10px] shrink-0 border-border/50">{res.type}</Badge>
+                      </a>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Actions */}
+            <div className="flex gap-3 pt-2 pb-8">
+              <Button variant="outline" onClick={resetToStart} size="lg" className="flex-1 gap-2 rounded-xl">
+                <RotateCcw className="h-4 w-4" /> Start New Case
+              </Button>
+            </div>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
+
+// Re-export for lazy loading
+export default StudentPanel;

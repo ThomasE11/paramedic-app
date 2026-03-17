@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
-import type { CaseScenario, CaseSession, ChecklistItem, AppliedTreatment, VitalSigns, SimulationObjective, DebriefingResource } from '@/types';
+import type { CaseScenario, CaseSession, ChecklistItem, AppliedTreatment, VitalSigns, SimulationObjective, DebriefingResource, InstructorAssessmentNote } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,7 @@ interface SessionSummaryProps {
   appliedTreatments?: AppliedTreatment[];
   vitalsHistory?: VitalSigns[];
   instructorNotes?: string;
+  instructorAssessmentNotes?: InstructorAssessmentNote[];
   simulationObjective?: SimulationObjective;
   debriefingResources?: DebriefingResource[];
 }
@@ -168,6 +169,7 @@ export function SessionSummary({
   appliedTreatments,
   vitalsHistory,
   instructorNotes,
+  instructorAssessmentNotes,
   simulationObjective,
   debriefingResources
 }: SessionSummaryProps) {
@@ -183,6 +185,7 @@ export function SessionSummary({
         appliedTreatments,
         vitalsHistory,
         instructorNotes,
+        instructorAssessmentNotes,
         simulationObjective,
         debriefingResources
       });
@@ -561,6 +564,68 @@ export function SessionSummary({
             <div className="p-4 bg-muted/50 rounded-lg">
               <p className="whitespace-pre-wrap text-sm leading-relaxed">{session.notes}</p>
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Instructor Assessment Notes */}
+      {instructorAssessmentNotes && instructorAssessmentNotes.length > 0 && (
+        <Card className="card-interactive animate-fade-in-up stagger-8 border-l-4 border-l-indigo-500">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg text-indigo-700 dark:text-indigo-400">
+              <div className="p-1.5 rounded-lg bg-indigo-100 dark:bg-indigo-900/30">
+                <FileText className="h-5 w-5" />
+              </div>
+              Instructor Assessment Feedback ({instructorAssessmentNotes.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {instructorAssessmentNotes.map((note, index) => (
+              <div
+                key={note.id}
+                className={`p-3 rounded-lg border-l-4 animate-slide-in ${
+                  note.category === 'excellent'
+                    ? 'border-l-green-500 bg-green-50 dark:bg-green-900/10'
+                    : note.category === 'critical-miss'
+                    ? 'border-l-red-500 bg-red-50 dark:bg-red-900/10'
+                    : 'border-l-amber-500 bg-amber-50 dark:bg-amber-900/10'
+                }`}
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <Badge
+                    variant="outline"
+                    className={`text-[10px] ${
+                      note.severity === 'critical' ? 'bg-red-500 text-white border-red-500'
+                      : note.severity === 'important' ? 'bg-orange-500 text-white border-orange-500'
+                      : 'bg-blue-500 text-white border-blue-500'
+                    }`}
+                  >
+                    {note.severity}
+                  </Badge>
+                  <Badge variant="outline" className="text-[10px]">{note.phase}</Badge>
+                  <span className="text-[10px] text-muted-foreground ml-auto">
+                    {new Date(note.timestamp).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+                <p className="text-sm font-medium">{note.finding}</p>
+                {note.whatWasMissed && note.whatWasMissed !== 'Not specified' && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    <span className="font-medium">Missed:</span> {note.whatWasMissed}
+                  </p>
+                )}
+                {note.whyItMatters && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    <span className="font-medium">Why it matters:</span> {note.whyItMatters}
+                  </p>
+                )}
+                {note.improvementAction && (
+                  <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                    <span className="font-medium">Action:</span> {note.improvementAction}
+                  </p>
+                )}
+              </div>
+            ))}
           </CardContent>
         </Card>
       )}

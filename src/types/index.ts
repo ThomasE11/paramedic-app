@@ -510,6 +510,25 @@ export interface CaseSession {
   endTime?: string;
   timeTaken?: number;
   interventionsPerformed?: string[];
+  simulationObjective?: SimulationObjective;
+  preBriefingCompleted?: boolean;
+  preBriefingTime?: number;
+  debriefingResources?: DebriefingResource[];
+}
+
+// Applied Treatment Tracking
+export interface AppliedTreatment {
+  id: string;
+  description: string;
+  appliedAt: string;
+  effects: {
+    vitalSign: string;
+    oldValue: number | string;
+    newValue: number | string;
+    unit: string;
+  }[];
+  category: 'abcde' | 'intervention' | 'documentation' | 'communication' | 'procedural' | 'secondary' | 'history' | 'safety' | 'medication' | 'equipment' | 'clinical-reasoning' | 'team-lead' | 'airway' | 'breathing' | 'circulation' | 'procedure' | 'comfort' | 'positioning' | 'psychological';
+  isActive: boolean;
 }
 
 // Filter Options
@@ -715,6 +734,7 @@ export interface VisualResource {
   category?: string;
   relevance: 'essential' | 'important' | 'supplementary';
   tags?: string[];
+  usageContext?: 'prebriefing' | 'debriefing' | 'both';
 }
 
 export interface VisualResources {
@@ -837,4 +857,45 @@ export interface CaseFeedback {
   description: string;
   priority: 'low' | 'medium' | 'high' | 'critical';
   status: 'open' | 'in-progress' | 'resolved' | 'deferred';
+}
+
+// ============================================================================
+// SIMULATION OBJECTIVE TYPES (INACSL-aligned)
+// ============================================================================
+
+export interface SimulationObjective {
+  id: string;
+  primaryObjective: string;
+  skillsFocus: string[];
+  learningDomain: 'cognitive' | 'psychomotor' | 'affective';
+  relatedCategories: CaseCategory[];
+  relatedKeywords: string[];
+}
+
+export interface PreBriefingContent {
+  objectives: string[];
+  keyConceptReview: string[];
+  relevantResources: VisualResource[];
+  relevantArticles: VisualResource[];
+  expectedSkills: string[];
+  orientationNotes: string[];
+  safetyBriefing: string[];
+}
+
+export interface DebriefingResource {
+  id: string;
+  title: string;
+  url: string;
+  type: 'article' | 'video' | 'guideline' | 'image' | 'case-study' | 'podcast';
+  source: string;
+  relevance: 'essential' | 'important' | 'supplementary';
+  category: string;
+}
+
+export interface ResourceSource {
+  id: string;
+  name: string;
+  baseUrl: string;
+  type: 'foamed' | 'guideline' | 'imaging' | 'education' | 'government';
+  categories: CaseCategory[];
 }

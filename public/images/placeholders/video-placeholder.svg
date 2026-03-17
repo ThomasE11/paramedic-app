@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 225" fill="none">
+  <rect width="400" height="225" fill="#1f2937"/>
+  <circle cx="200" cy="112.5" r="40" fill="#374151"/>
+  <path d="M185 97.5l30 15-30 15v-30z" fill="#9ca3af"/>
+  <text x="200" y="180" font-family="Arial" font-size="14" fill="#9ca3af" text-anchor="middle">Video Resource</text>
+</svg>

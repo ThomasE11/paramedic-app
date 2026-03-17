@@ -323,9 +323,11 @@ export function CaseViewContainer({
               <div className="space-y-4">
                 <VitalSignsMonitor
                   initialVitals={currentVitals || ensureCompleteVitals(caseData.vitalSignsProgression.initial)}
-                  deteriorationVitals={caseData.vitalSignsProgression.deterioration ? 
+                  deteriorationVitals={caseData.vitalSignsProgression.deterioration ?
                     ensureCompleteVitals(caseData.vitalSignsProgression.deterioration) : undefined}
                   onVitalChange={onVitalChange}
+                  caseCategory={caseData.category}
+                  caseSubcategory={caseData.subcategory}
                 />
               </div>
             )}

@@ -52,7 +52,68 @@ export const articleResources: VisualResource[] = [
     caption: 'Proper tourniquet techniques and indications',
     relevance: 'essential',
     tags: ['tourniquet', 'hemorrhage', 'bleeding', 'trauma']
-  }
+  },
+  // Diversified sources
+  {
+    id: 'art-trauma-primary-emdocs',
+    type: 'article',
+    title: 'Trauma Primary Survey - Getting It Right',
+    url: 'https://www.emdocs.net/trauma-primary-survey/',
+    source: 'EMDocs',
+    caption: 'Systematic approach to trauma primary survey',
+    relevance: 'essential',
+    tags: ['primary-survey', 'trauma', 'ABCDE', 'assessment']
+  },
+  {
+    id: 'art-tbi-rebelem',
+    type: 'article',
+    title: 'Traumatic Brain Injury - Evidence Review',
+    url: 'https://rebelem.com/traumatic-brain-injury/',
+    source: 'REBEL EM',
+    caption: 'Evidence-based approach to TBI management',
+    relevance: 'essential',
+    tags: ['TBI', 'head', 'brain', 'trauma', 'neuroprotection']
+  },
+  {
+    id: 'art-txa-rebelem',
+    type: 'article',
+    title: 'Tranexamic Acid in Trauma - CRASH-2 and Beyond',
+    url: 'https://rebelem.com/tranexamic-acid-in-trauma/',
+    source: 'REBEL EM',
+    caption: 'Evidence for TXA use in major haemorrhage',
+    relevance: 'important',
+    tags: ['TXA', 'tranexamic-acid', 'hemorrhage', 'trauma', 'CRASH-2']
+  },
+  {
+    id: 'art-trauma-resus-emcrit',
+    type: 'article',
+    title: 'Trauma Resuscitation Essentials',
+    url: 'https://emcrit.org/emcrit/trauma-resuscitation/',
+    source: 'EMCrit',
+    caption: 'Critical care approach to trauma resuscitation',
+    relevance: 'essential',
+    tags: ['resuscitation', 'trauma', 'hemorrhage', 'shock', 'blood']
+  },
+  {
+    id: 'art-nice-major-trauma',
+    type: 'article',
+    title: 'NICE: Major Trauma Assessment and Management',
+    url: 'https://www.nice.org.uk/guidance/ng39',
+    source: 'NICE',
+    caption: 'UK national guideline for major trauma',
+    relevance: 'essential',
+    tags: ['guideline', 'major-trauma', 'assessment', 'NICE']
+  },
+  {
+    id: 'art-fast-aliem',
+    type: 'article',
+    title: 'eFAST Exam - Technique and Interpretation',
+    url: 'https://www.aliem.com/pocus-101-efast/',
+    source: 'ALiEM',
+    caption: 'Step-by-step guide to performing eFAST',
+    relevance: 'important',
+    tags: ['FAST', 'eFAST', 'ultrasound', 'POCUS', 'trauma']
+  },
 ];
 
 // ============================================================================
@@ -318,7 +379,6 @@ export const clinicalImages: VisualResource[] = [
 // ============================================================================
 
 export const managementResources: VisualResource[] = [
-
   {
     id: 'mgmt-airway-001',
     type: 'article',
@@ -329,7 +389,36 @@ export const managementResources: VisualResource[] = [
     relevance: 'essential',
     tags: ['airway', 'difficult', 'trauma', 'RSI']
   },
-
+  {
+    id: 'mgmt-nice-head-injury',
+    type: 'article',
+    title: 'NICE: Head Injury Assessment and Management',
+    url: 'https://www.nice.org.uk/guidance/ng232',
+    source: 'NICE',
+    caption: 'UK national guideline for head injury management',
+    relevance: 'essential',
+    tags: ['head', 'TBI', 'guideline', 'GCS', 'management']
+  },
+  {
+    id: 'mgmt-nice-spinal',
+    type: 'article',
+    title: 'NICE: Spinal Injury Assessment',
+    url: 'https://www.nice.org.uk/guidance/ng41',
+    source: 'NICE',
+    caption: 'UK guideline for spinal injury assessment and early management',
+    relevance: 'important',
+    tags: ['spinal', 'c-spine', 'guideline', 'immobilisation']
+  },
+  {
+    id: 'mgmt-emcrit-airway',
+    type: 'article',
+    title: 'Definitive Airway Management',
+    url: 'https://emcrit.org/emcrit/airway-management/',
+    source: 'EMCrit',
+    caption: 'Critical care approach to definitive airway management',
+    relevance: 'important',
+    tags: ['airway', 'intubation', 'RSI', 'management']
+  },
 ];
 
 // ============================================================================

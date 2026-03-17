@@ -36,6 +36,10 @@ interface InstructorNotesPanelProps {
   sessionNotes: string;
   completedItems: string[];
   totalItems: number;
+  /** Lifted state: external assessment notes */
+  assessmentNotes?: InstructorAssessmentNote[];
+  /** Callback when notes change (for lifting state to parent) */
+  onAssessmentNotesChange?: (notes: InstructorAssessmentNote[]) => void;
 }
 
 const ASSESSMENT_PHASES = [
@@ -60,9 +64,22 @@ export function InstructorNotesPanel({
   studentYear,
   sessionNotes,
   completedItems,
-  totalItems
+  totalItems,
+  assessmentNotes: externalNotes,
+  onAssessmentNotesChange
 }: InstructorNotesPanelProps) {
-  const [assessmentNotes, setAssessmentNotes] = useState<InstructorAssessmentNote[]>([]);
+  const [internalNotes, setInternalNotes] = useState<InstructorAssessmentNote[]>([]);
+
+  // Use external state if provided, otherwise use internal state
+  const assessmentNotes = externalNotes ?? internalNotes;
+  const setAssessmentNotes = (updater: InstructorAssessmentNote[] | ((prev: InstructorAssessmentNote[]) => InstructorAssessmentNote[])) => {
+    if (onAssessmentNotesChange) {
+      const newNotes = typeof updater === 'function' ? updater(assessmentNotes) : updater;
+      onAssessmentNotesChange(newNotes);
+    } else {
+      setInternalNotes(updater as any);
+    }
+  };
   const [selectedPhase, setSelectedPhase] = useState<InstructorAssessmentNote['phase']>('primary-survey');
   const [customNote, setCustomNote] = useState('');
   const [whatWasMissed, setWhatWasMissed] = useState('');

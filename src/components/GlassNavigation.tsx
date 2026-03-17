@@ -20,7 +20,7 @@ export function GlassNavigation({ activeLayer, onLayerChange, showPreBriefing = 
     if (newLayer === activeLayer) return;
     onLayerChange(newLayer);
     // Scroll to top when switching layers
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'instant' });
   }, [activeLayer, onLayerChange]);
 
   // Build layers dynamically based on whether pre-briefing is active
@@ -59,12 +59,22 @@ export function GlassNavigation({ activeLayer, onLayerChange, showPreBriefing = 
         </div>
       </div>
 
-      {/* Active Layer Content */}
+      {/* All Layer Content - kept mounted, visibility controlled via CSS */}
       <div className="min-h-[50vh]">
-        {activeLayer === 'prebriefing' && children.prebriefing}
-        {activeLayer === 'case' && children.case}
-        {activeLayer === 'vitals' && children.vitals}
-        {activeLayer === 'summary' && children.summary}
+        {children.prebriefing && (
+          <div style={{ display: activeLayer === 'prebriefing' ? 'block' : 'none' }}>
+            {children.prebriefing}
+          </div>
+        )}
+        <div style={{ display: activeLayer === 'case' ? 'block' : 'none' }}>
+          {children.case}
+        </div>
+        <div style={{ display: activeLayer === 'vitals' ? 'block' : 'none' }}>
+          {children.vitals}
+        </div>
+        <div style={{ display: activeLayer === 'summary' ? 'block' : 'none' }}>
+          {children.summary}
+        </div>
       </div>
     </div>
   );

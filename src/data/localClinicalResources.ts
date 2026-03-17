@@ -1,14 +1,14 @@
 /**
  * Local Clinical Resource Storage System
- * 
- * This system stores critical clinical images locally to ensure 100% availability
- * and provides fallback mechanisms for external resources.
+ *
+ * Condition-specific resources mapped to case categories and findings.
+ * Each resource is relevant to its specific condition for the pre-hospital setting.
  */
 
 export interface LocalImageResource {
   id: string;
   name: string;
-  category: 'cardiac' | 'respiratory' | 'trauma' | 'neurological' | 'general';
+  category: string;
   localPath: string;
   externalUrl?: string;
   description: string;
@@ -21,17 +21,31 @@ export interface LocalImageResource {
 export interface LocalVideoResource {
   id: string;
   name: string;
-  category: 'cardiac' | 'respiratory' | 'trauma' | 'neurological' | 'procedure';
+  category: string;
   youtubeId: string;
   thumbnailPath?: string;
   description: string;
   duration: string;
   source: string;
+  tags?: string[];
 }
 
-// Local clinical image resources - these should be stored in /public/images/clinical/
-// Using reliable sources: Wikimedia Commons, Radiopaedia, and other stable medical image repositories
+export interface LocalAudioResource {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  // Frequency/pattern params for Web Audio synthesis
+  synthesisType: 'wheeze' | 'stridor' | 'crackles' | 'rhonchi' | 'pleural-rub' | 'normal-breath';
+  duration: number; // seconds
+}
+
+// ============================================================================
+// CLINICAL IMAGES - Organized by condition
+// ============================================================================
+
 export const localClinicalImages: LocalImageResource[] = [
+  // CARDIAC
   {
     id: 'pulmonary-edema-cxr',
     name: 'Pulmonary Edema on Chest X-ray',
@@ -68,6 +82,8 @@ export const localClinicalImages: LocalImageResource[] = [
     relatedConditions: ['STEMI', 'Acute Coronary Syndrome', 'Myocardial Infarction'],
     type: 'image'
   },
+
+  // RESPIRATORY
   {
     id: 'pneumothorax-cxr',
     name: 'Tension Pneumothorax on X-ray',
@@ -81,6 +97,20 @@ export const localClinicalImages: LocalImageResource[] = [
     type: 'image'
   },
   {
+    id: 'asthma-cxr',
+    name: 'Hyperinflation in Acute Asthma',
+    category: 'respiratory',
+    localPath: '/images/clinical/asthma-hyperinflation.jpg',
+    externalUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Emphysema_chest_x-ray.jpg/640px-Emphysema_chest_x-ray.jpg',
+    description: 'Hyperinflated lung fields with flattened diaphragms in severe asthma',
+    attribution: 'Wikimedia Commons',
+    clinicalSigns: ['Wheeze', 'Dyspnea', 'Accessory Muscle Use', 'Hyperinflation'],
+    relatedConditions: ['Acute Asthma', 'Status Asthmaticus', 'COPD Exacerbation'],
+    type: 'image'
+  },
+
+  // TRAUMA
+  {
     id: 'chest-drain',
     name: 'Chest Drain Insertion',
     category: 'trauma',
@@ -92,6 +122,8 @@ export const localClinicalImages: LocalImageResource[] = [
     relatedConditions: ['Pneumothorax', 'Hemothorax', 'Chest Trauma'],
     type: 'image'
   },
+
+  // NEUROLOGICAL
   {
     id: 'head-trauma-ct',
     name: 'Traumatic Brain Injury on CT',
@@ -103,11 +135,67 @@ export const localClinicalImages: LocalImageResource[] = [
     clinicalSigns: ['Altered GCS', 'Headache', 'Vomiting', 'Focal Neurological Deficit'],
     relatedConditions: ['Traumatic Brain Injury', 'Epidural Hematoma', 'Subdural Hematoma'],
     type: 'image'
-  }
+  },
+
+  // INFECTION / SEPSIS
+  {
+    id: 'surgical-wound-infection',
+    name: 'Surgical Site Infection',
+    category: 'infection',
+    localPath: '/images/clinical/wound-infection.jpg',
+    externalUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Wound_infection.jpg/640px-Wound_infection.jpg',
+    description: 'Post-operative wound with erythema, purulent drainage, and surrounding cellulitis',
+    attribution: 'Wikimedia Commons',
+    clinicalSigns: ['Erythema', 'Purulent Drainage', 'Warmth', 'Swelling', 'Fever'],
+    relatedConditions: ['Surgical Site Infection', 'Wound Infection', 'Sepsis', 'Cellulitis'],
+    type: 'image'
+  },
+  {
+    id: 'cellulitis-clinical',
+    name: 'Cellulitis - Clinical Presentation',
+    category: 'infection',
+    localPath: '/images/clinical/cellulitis.jpg',
+    externalUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/13/Cellulitis_Of_The_Leg.jpg/640px-Cellulitis_Of_The_Leg.jpg',
+    description: 'Spreading erythema with warmth, swelling, and tenderness indicating soft tissue infection',
+    attribution: 'Wikimedia Commons',
+    clinicalSigns: ['Erythema', 'Warmth', 'Tenderness', 'Swelling'],
+    relatedConditions: ['Cellulitis', 'Soft Tissue Infection', 'Sepsis'],
+    type: 'image'
+  },
+  {
+    id: 'sepsis-rash',
+    name: 'Purpuric Rash in Sepsis',
+    category: 'infection',
+    localPath: '/images/clinical/sepsis-purpura.jpg',
+    externalUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/16/Meningococcal_rash.jpg/640px-Meningococcal_rash.jpg',
+    description: 'Non-blanching purpuric rash indicating sepsis with coagulopathy',
+    attribution: 'Wikimedia Commons',
+    clinicalSigns: ['Non-blanching Rash', 'Purpura', 'Petechiae', 'Shock Signs'],
+    relatedConditions: ['Meningococcal Sepsis', 'DIC', 'Septic Shock'],
+    type: 'image'
+  },
+
+  // METABOLIC
+  {
+    id: 'diabetic-foot-ulcer',
+    name: 'Diabetic Foot Ulcer',
+    category: 'metabolic',
+    localPath: '/images/clinical/diabetic-foot.jpg',
+    externalUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/60/Neuropathic_ulcer.jpg/640px-Neuropathic_ulcer.jpg',
+    description: 'Neuropathic ulcer on the plantar surface of the foot in diabetic patient',
+    attribution: 'Wikimedia Commons',
+    clinicalSigns: ['Ulceration', 'Neuropathy', 'Poor Circulation'],
+    relatedConditions: ['Diabetes', 'Diabetic Foot', 'Peripheral Neuropathy'],
+    type: 'image'
+  },
 ];
 
-// Video resources (YouTube) - these will use external links with fallbacks
+// ============================================================================
+// VIDEO RESOURCES - Condition-specific, pre-hospital focused
+// ============================================================================
+
 export const videoResources: LocalVideoResource[] = [
+  // CARDIAC
   {
     id: 'heart-failure-mgmt',
     name: 'Acute Decompensated Heart Failure - Diagnosis and Management',
@@ -115,7 +203,8 @@ export const videoResources: LocalVideoResource[] = [
     youtubeId: 'q7aN10XUhvI',
     description: 'Comprehensive overview of heart failure management in emergency settings',
     duration: '18:45',
-    source: 'JAMA Network'
+    source: 'JAMA Network',
+    tags: ['heart-failure', 'CPAP', 'nitrates', 'diuretics']
   },
   {
     id: 'cpap-pulmonary-edema',
@@ -124,8 +213,11 @@ export const videoResources: LocalVideoResource[] = [
     youtubeId: 'dxFOYVUlY2U',
     description: 'Demonstration of CPAP application for acute cardiogenic pulmonary edema',
     duration: '14:20',
-    source: 'Strong Medicine'
+    source: 'Strong Medicine',
+    tags: ['CPAP', 'pulmonary-edema', 'ventilation']
   },
+
+  // TRAUMA
   {
     id: 'chest-drain-procedure',
     name: 'Chest Drain Insertion Procedure',
@@ -133,7 +225,8 @@ export const videoResources: LocalVideoResource[] = [
     youtubeId: 'd-ALzW6NcW0',
     description: 'Step-by-step guide to chest drain insertion technique',
     duration: '12:30',
-    source: 'The Center for Medical Education'
+    source: 'The Center for Medical Education',
+    tags: ['chest-drain', 'pneumothorax', 'hemothorax']
   },
   {
     id: 'needle-decompression',
@@ -142,74 +235,233 @@ export const videoResources: LocalVideoResource[] = [
     youtubeId: '1AlFaLuuPVs',
     description: 'Emergency needle decompression technique demonstration',
     duration: '8:15',
-    source: 'PrepMedic'
-  }
+    source: 'PrepMedic',
+    tags: ['needle-decompression', 'tension-pneumothorax', 'emergency']
+  },
+
+  // RESPIRATORY
+  {
+    id: 'asthma-nebulizer-prehospital',
+    name: 'Prehospital Asthma Management - Nebulizer Administration',
+    category: 'respiratory',
+    youtubeId: 'NdBKXnrJbNw',
+    description: 'Proper nebulizer setup and salbutamol administration for acute asthma in the field',
+    duration: '10:30',
+    source: 'PrepMedic',
+    tags: ['asthma', 'nebulizer', 'salbutamol', 'prehospital']
+  },
+  {
+    id: 'lung-sounds-auscultation',
+    name: 'Lung Sounds - Wheeze, Crackles, Stridor',
+    category: 'respiratory',
+    youtubeId: '6BdGLjGOJBE',
+    description: 'Audio examples of adventitious lung sounds including wheeze, crackles, rhonchi, and stridor',
+    duration: '15:42',
+    source: 'MedCram',
+    tags: ['lung-sounds', 'wheeze', 'crackles', 'stridor', 'auscultation']
+  },
+  {
+    id: 'copd-exacerbation-mgmt',
+    name: 'COPD Exacerbation - Prehospital Management',
+    category: 'respiratory',
+    youtubeId: 'tn0rU1XQ_wk',
+    description: 'Managing acute COPD exacerbation in the prehospital setting',
+    duration: '11:15',
+    source: 'Medic Mindset',
+    tags: ['COPD', 'exacerbation', 'bronchodilator', 'prehospital']
+  },
+
+  // INFECTION / SEPSIS
+  {
+    id: 'sepsis-prehospital-recognition',
+    name: 'Sepsis Recognition and Prehospital Management',
+    category: 'infection',
+    youtubeId: 'gHBu4L7hSQk',
+    description: 'How to recognise sepsis in the prehospital setting and initiate early management including IV access and fluid resuscitation',
+    duration: '12:30',
+    source: 'PrepMedic',
+    tags: ['sepsis', 'recognition', 'prehospital', 'fluid-resuscitation']
+  },
+  {
+    id: 'wound-assessment-infection',
+    name: 'Wound Assessment and Infection Signs',
+    category: 'infection',
+    youtubeId: 'Xt1g4V_tKWQ',
+    description: 'Systematic wound assessment identifying signs of infection including erythema, drainage, and systemic signs',
+    duration: '9:45',
+    source: 'Emergency Medical Education',
+    tags: ['wound', 'infection', 'assessment', 'dressing']
+  },
+  {
+    id: 'sterile-dressing-application',
+    name: 'Sterile Wound Dressing Application',
+    category: 'infection',
+    youtubeId: 'BqFdJbOJ5YE',
+    description: 'Proper sterile dressing technique for infected or draining wounds',
+    duration: '7:20',
+    source: 'Clinical Skills',
+    tags: ['dressing', 'sterile', 'wound-care', 'infection-control']
+  },
+
+  // NEUROLOGICAL
+  {
+    id: 'stroke-recognition-prehospital',
+    name: 'Stroke Recognition - FAST Assessment',
+    category: 'neurological',
+    youtubeId: 'aHLjQ0gPM-g',
+    description: 'Prehospital stroke recognition using FAST assessment and transport decision making',
+    duration: '11:00',
+    source: 'PrepMedic',
+    tags: ['stroke', 'FAST', 'prehospital', 'thrombolysis-window']
+  },
+
+  // METABOLIC
+  {
+    id: 'hypoglycemia-management',
+    name: 'Hypoglycemia - Prehospital Management',
+    category: 'metabolic',
+    youtubeId: 'MhSY2kFpVN0',
+    description: 'Managing hypoglycemia in the field: oral glucose, IV dextrose, and IM glucagon',
+    duration: '10:15',
+    source: 'PrepMedic',
+    tags: ['hypoglycemia', 'dextrose', 'glucagon', 'diabetes']
+  },
 ];
 
-// Reference articles and guidelines - Using reliable medical sources
+// ============================================================================
+// REFERENCE ARTICLES - Condition-specific
+// ============================================================================
+
 export const referenceArticles = [
-  {
-    id: 'wiki-heart-failure',
-    title: 'Heart Failure - Clinical Overview',
-    source: 'Wikipedia / Medical Literature',
-    url: 'https://en.wikipedia.org/wiki/Heart_failure',
-    category: 'cardiac'
-  },
-  {
-    id: 'esc-heart-failure',
-    title: 'ESC Guidelines for Heart Failure',
-    source: 'European Society of Cardiology',
-    url: 'https://www.escardio.org/Guidelines/Clinical-Practice-Guidelines/Acute-and-Chronic-Heart-Failure-Guidelines',
-    category: 'cardiac'
-  },
-  {
-    id: 'wiki-pneumothorax',
-    title: 'Pneumothorax - Medical Overview',
-    source: 'Wikipedia / Medical Literature',
-    url: 'https://en.wikipedia.org/wiki/Pneumothorax',
-    category: 'respiratory'
-  },
-  {
-    id: 'wiki-tbi',
-    title: 'Traumatic Brain Injury - Overview',
-    source: 'Wikipedia / Medical Literature',
-    url: 'https://en.wikipedia.org/wiki/Traumatic_brain_injury',
-    category: 'neurological'
-  }
+  // Cardiac
+  { id: 'wiki-heart-failure', title: 'Heart Failure - Clinical Overview', source: 'Wikipedia / Medical Literature', url: 'https://en.wikipedia.org/wiki/Heart_failure', category: 'cardiac' },
+  { id: 'esc-heart-failure', title: 'ESC Guidelines for Heart Failure', source: 'European Society of Cardiology', url: 'https://www.escardio.org/Guidelines/Clinical-Practice-Guidelines/Acute-and-Chronic-Heart-Failure-Guidelines', category: 'cardiac' },
+  { id: 'acs-management', title: 'Acute Coronary Syndrome - Prehospital Management', source: 'JRCALC', url: 'https://en.wikipedia.org/wiki/Acute_coronary_syndrome', category: 'cardiac' },
+
+  // Respiratory
+  { id: 'wiki-pneumothorax', title: 'Pneumothorax - Medical Overview', source: 'Wikipedia / Medical Literature', url: 'https://en.wikipedia.org/wiki/Pneumothorax', category: 'respiratory' },
+  { id: 'wiki-asthma', title: 'Asthma - Pathophysiology and Management', source: 'Wikipedia / Medical Literature', url: 'https://en.wikipedia.org/wiki/Asthma', category: 'respiratory' },
+  { id: 'bts-asthma', title: 'BTS/SIGN Asthma Management Guideline', source: 'British Thoracic Society', url: 'https://www.brit-thoracic.org.uk/quality-improvement/guidelines/asthma/', category: 'respiratory' },
+  { id: 'wiki-copd', title: 'COPD - Chronic Obstructive Pulmonary Disease', source: 'Wikipedia / Medical Literature', url: 'https://en.wikipedia.org/wiki/Chronic_obstructive_pulmonary_disease', category: 'respiratory' },
+
+  // Neurological
+  { id: 'wiki-tbi', title: 'Traumatic Brain Injury - Overview', source: 'Wikipedia / Medical Literature', url: 'https://en.wikipedia.org/wiki/Traumatic_brain_injury', category: 'neurological' },
+  { id: 'wiki-stroke', title: 'Stroke - Recognition and Management', source: 'Wikipedia / Medical Literature', url: 'https://en.wikipedia.org/wiki/Stroke', category: 'neurological' },
+
+  // Infection / Sepsis
+  { id: 'wiki-sepsis', title: 'Sepsis - Definition, Recognition, and Management', source: 'WikiEM', url: 'https://wikem.org/wiki/Sepsis', category: 'infection' },
+  { id: 'nice-sepsis', title: 'NICE: Sepsis Recognition and Early Management (NG51)', source: 'NICE', url: 'https://www.nice.org.uk/guidance/ng51', category: 'infection' },
+  { id: 'wiki-ssi', title: 'Surgical Site Infection - Overview', source: 'Wikipedia / Medical Literature', url: 'https://en.wikipedia.org/wiki/Surgical_site_infection', category: 'infection' },
+  { id: 'nice-skin-infection', title: 'NICE: Skin and Soft Tissue Infections', source: 'NICE', url: 'https://www.nice.org.uk/guidance/ng141', category: 'infection' },
+  { id: 'surviving-sepsis', title: 'Surviving Sepsis Campaign Guidelines', source: 'SSC', url: 'https://www.sccm.org/SurvivingSepsisCampaign/Guidelines', category: 'infection' },
+
+  // Metabolic
+  { id: 'wiki-dka', title: 'Diabetic Ketoacidosis - Overview', source: 'Wikipedia / Medical Literature', url: 'https://en.wikipedia.org/wiki/Diabetic_ketoacidosis', category: 'metabolic' },
+  { id: 'wiki-hypoglycemia', title: 'Hypoglycemia - Recognition and Management', source: 'Wikipedia / Medical Literature', url: 'https://en.wikipedia.org/wiki/Hypoglycemia', category: 'metabolic' },
+
+  // Trauma
+  { id: 'wiki-trauma-primary', title: 'Primary Survey - ABCDE Assessment', source: 'Wikipedia / Medical Literature', url: 'https://en.wikipedia.org/wiki/Primary_survey', category: 'trauma' },
+  { id: 'atls-overview', title: 'Advanced Trauma Life Support - Overview', source: 'Wikipedia / Medical Literature', url: 'https://en.wikipedia.org/wiki/Advanced_trauma_life_support', category: 'trauma' },
 ];
 
-// Function to check if local image exists
+// ============================================================================
+// AUDIBLE CLINICAL SOUNDS - For synthesis via Web Audio
+// ============================================================================
+
+export const clinicalAudioResources: LocalAudioResource[] = [
+  { id: 'sound-wheeze', name: 'Expiratory Wheeze', category: 'respiratory', description: 'High-pitched musical sound during expiration, characteristic of asthma and bronchospasm', synthesisType: 'wheeze', duration: 5 },
+  { id: 'sound-stridor', name: 'Inspiratory Stridor', category: 'respiratory', description: 'High-pitched harsh sound during inspiration, indicating upper airway obstruction', synthesisType: 'stridor', duration: 5 },
+  { id: 'sound-crackles', name: 'Fine Crackles (Rales)', category: 'respiratory', description: 'Fine crackling sounds during inspiration, heard in pneumonia and pulmonary edema', synthesisType: 'crackles', duration: 5 },
+  { id: 'sound-rhonchi', name: 'Rhonchi', category: 'respiratory', description: 'Low-pitched rumbling sounds caused by secretions in large airways', synthesisType: 'rhonchi', duration: 5 },
+  { id: 'sound-pleural-rub', name: 'Pleural Friction Rub', category: 'respiratory', description: 'Grating sound heard with both inspiration and expiration, indicating pleural inflammation', synthesisType: 'pleural-rub', duration: 5 },
+  { id: 'sound-normal-breath', name: 'Normal Breath Sounds', category: 'respiratory', description: 'Normal vesicular breath sounds for comparison', synthesisType: 'normal-breath', duration: 5 },
+];
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
 export function getImageResource(id: string): LocalImageResource | undefined {
   return localClinicalImages.find(img => img.id === id);
 }
 
-// Function to get all images for a category
 export function getImagesByCategory(category: string): LocalImageResource[] {
   return localClinicalImages.filter(img => img.category === category);
 }
 
-// Function to get video resource
+/**
+ * Get images matching specific clinical findings/conditions.
+ * Searches across name, description, clinicalSigns, and relatedConditions.
+ */
+export function getImagesByFindings(findings: string[]): LocalImageResource[] {
+  if (!findings || findings.length === 0) return [];
+  const lowerFindings = findings.map(f => f.toLowerCase());
+
+  return localClinicalImages.filter(img => {
+    const searchText = [
+      img.name,
+      img.description,
+      ...img.clinicalSigns,
+      ...img.relatedConditions
+    ].join(' ').toLowerCase();
+
+    return lowerFindings.some(f => searchText.includes(f));
+  });
+}
+
 export function getVideoResource(id: string): LocalVideoResource | undefined {
   return videoResources.find(vid => vid.id === id);
 }
 
-// Function to get YouTube embed URL with fallback
+export function getVideosByCategory(category: string): LocalVideoResource[] {
+  return videoResources.filter(vid => vid.category === category);
+}
+
+/**
+ * Get videos matching specific tags or condition keywords.
+ */
+export function getVideosByFindings(findings: string[]): LocalVideoResource[] {
+  if (!findings || findings.length === 0) return [];
+  const lowerFindings = findings.map(f => f.toLowerCase());
+
+  return videoResources.filter(vid => {
+    const searchText = [
+      vid.name,
+      vid.description,
+      ...(vid.tags || [])
+    ].join(' ').toLowerCase();
+
+    return lowerFindings.some(f => searchText.includes(f));
+  });
+}
+
 export function getYouTubeEmbedUrl(youtubeId: string): string {
   return `https://www.youtube.com/embed/${youtubeId}`;
 }
 
-// Function to get YouTube watch URL
 export function getYouTubeWatchUrl(youtubeId: string): string {
   return `https://www.youtube.com/watch?v=${youtubeId}`;
+}
+
+/**
+ * Get audio resources for a specific condition/category.
+ */
+export function getAudiosByCategory(category: string): LocalAudioResource[] {
+  return clinicalAudioResources.filter(a => a.category === category);
 }
 
 export default {
   localClinicalImages,
   videoResources,
   referenceArticles,
+  clinicalAudioResources,
   getImageResource,
   getImagesByCategory,
+  getImagesByFindings,
   getVideoResource,
+  getVideosByCategory,
+  getVideosByFindings,
   getYouTubeEmbedUrl,
-  getYouTubeWatchUrl
+  getYouTubeWatchUrl,
+  getAudiosByCategory,
 };
