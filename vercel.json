@@ -3,6 +3,7 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "installCommand": "npm install",
+  "regions": ["lhr1"],
   "build": {
     "env": {
       "NODE_VERSION": "22"
