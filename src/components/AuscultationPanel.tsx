@@ -18,6 +18,7 @@ import type { ClinicalSoundState, BreathSoundType } from '@/data/clinicalSounds'
 import {
   BREATH_SOUND_DESCRIPTIONS,
   playBreathSound,
+  playHeartSound,
   stopAllSounds,
   isAudioAvailable,
 } from '@/data/clinicalSounds';
@@ -185,6 +186,29 @@ export function AuscultationPanel({ sounds, isExpanded: initialExpanded = false 
                  sounds.heartSound === 'absent' ? 'NO HEART SOUNDS' :
                  sounds.heartSound}
               </Badge>
+              {hasAudio && sounds.heartSound !== 'absent' && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 w-7 p-0 ml-auto"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (isPlaying === 'heart') {
+                      handleStopSound();
+                    } else {
+                      setIsPlaying('heart');
+                      playHeartSound(sounds.heartSound, 5000);
+                      setTimeout(() => setIsPlaying(null), 5000);
+                    }
+                  }}
+                >
+                  {isPlaying === 'heart' ? (
+                    <VolumeX className="h-4 w-4 animate-pulse text-red-500" />
+                  ) : (
+                    <Volume2 className="h-4 w-4" />
+                  )}
+                </Button>
+              )}
             </div>
           </div>
 

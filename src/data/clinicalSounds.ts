@@ -590,6 +590,137 @@ export function playBreathSound(soundType: BreathSoundType, durationMs: number =
       break;
     }
 
+    case 'crackles-coarse': {
+      // Coarse bubbly crackles — louder, lower-pitched pops throughout breath cycle
+      const bufferSize = ctx.sampleRate * duration;
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        const breathCycle = Math.sin(2 * Math.PI * i / (ctx.sampleRate * 1.5));
+        const envelope = Math.abs(breathCycle) * 0.25 + 0.08;
+        // Coarse crackles: bigger, slower pops throughout both phases
+        if (Math.random() < 0.008) {
+          const crackleLen = Math.floor(ctx.sampleRate * 0.006); // longer than fine
+          for (let j = 0; j < crackleLen && (i + j) < bufferSize; j++) {
+            const decay = 1 - j / crackleLen;
+            data[i + j] = (Math.random() * 2 - 1) * 0.8 * decay * decay;
+          }
+        }
+        // Underlying bubbling noise
+        data[i] += (Math.random() * 2 - 1) * envelope * 0.12;
+      }
+      const source = ctx.createBufferSource();
+      source.buffer = buffer;
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 1200;
+      source.connect(filter);
+      filter.connect(masterGain);
+      source.start();
+      source.stop(ctx.currentTime + duration);
+      break;
+    }
+
+    case 'rhonchi': {
+      // Low-pitched continuous rumbling — like snoring through mucus
+      const osc1 = ctx.createOscillator();
+      osc1.type = 'sawtooth';
+      osc1.frequency.setValueAtTime(90, ctx.currentTime);
+      const osc2 = ctx.createOscillator();
+      osc2.type = 'sawtooth';
+      osc2.frequency.setValueAtTime(120, ctx.currentTime);
+      // Slow frequency wobble for organic feel
+      for (let t = 0; t < duration; t += 0.3) {
+        osc1.frequency.setValueAtTime(85 + Math.random() * 20, ctx.currentTime + t);
+        osc2.frequency.setValueAtTime(115 + Math.random() * 25, ctx.currentTime + t);
+      }
+      const rhonchiGain = ctx.createGain();
+      // Expiratory emphasis with rumbling throughout
+      for (let t = 0; t < duration; t += 1.5) {
+        rhonchiGain.gain.setValueAtTime(0.06, ctx.currentTime + t);
+        rhonchiGain.gain.linearRampToValueAtTime(0.1, ctx.currentTime + t + 0.5);
+        rhonchiGain.gain.linearRampToValueAtTime(0.18, ctx.currentTime + t + 0.9);
+        rhonchiGain.gain.linearRampToValueAtTime(0.04, ctx.currentTime + t + 1.4);
+      }
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 250;
+      filter.Q.value = 2;
+      osc1.connect(filter);
+      osc2.connect(filter);
+      filter.connect(rhonchiGain);
+      rhonchiGain.connect(masterGain);
+      osc1.start();
+      osc2.start();
+      osc1.stop(ctx.currentTime + duration);
+      osc2.stop(ctx.currentTime + duration);
+      currentOscillators.push(osc1, osc2);
+      break;
+    }
+
+    case 'pleural-rub': {
+      // Creaking/grating sound on both inspiration and expiration
+      const bufferSize = ctx.sampleRate * duration;
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        const breathCycle = Math.sin(2 * Math.PI * i / (ctx.sampleRate * 1.5));
+        const isBreathPhase = Math.abs(breathCycle) > 0.2;
+        if (isBreathPhase) {
+          // Creaking: irregular bursts of grating noise
+          const creakFreq = 180 + Math.sin(i / 80) * 60;
+          const creak = Math.sin(2 * Math.PI * creakFreq * i / ctx.sampleRate);
+          const grit = (Math.random() * 2 - 1) * 0.3;
+          data[i] = (creak * 0.4 + grit * 0.2) * Math.abs(breathCycle);
+        } else {
+          // Brief silence between breath phases
+          data[i] = (Math.random() * 2 - 1) * 0.01;
+        }
+      }
+      const source = ctx.createBufferSource();
+      source.buffer = buffer;
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.value = 350;
+      filter.Q.value = 1.5;
+      source.connect(filter);
+      filter.connect(masterGain);
+      source.start();
+      source.stop(ctx.currentTime + duration);
+      break;
+    }
+
+    case 'snoring': {
+      // Sonorous low-frequency vibration — partial upper airway obstruction
+      const osc = ctx.createOscillator();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(60, ctx.currentTime);
+      // Irregular snoring rhythm
+      for (let t = 0; t < duration; t += 0.2) {
+        osc.frequency.setValueAtTime(55 + Math.random() * 20, ctx.currentTime + t);
+      }
+      const snoreGain = ctx.createGain();
+      // Inspiratory-dominant pattern with pauses
+      for (let t = 0; t < duration; t += 2.0) {
+        snoreGain.gain.setValueAtTime(0.01, ctx.currentTime + t);
+        snoreGain.gain.linearRampToValueAtTime(0.25, ctx.currentTime + t + 0.3);
+        snoreGain.gain.setValueAtTime(0.25, ctx.currentTime + t + 0.8);
+        snoreGain.gain.linearRampToValueAtTime(0.03, ctx.currentTime + t + 1.2);
+        snoreGain.gain.setValueAtTime(0.01, ctx.currentTime + t + 1.9);
+      }
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 180;
+      filter.Q.value = 3;
+      osc.connect(filter);
+      filter.connect(snoreGain);
+      snoreGain.connect(masterGain);
+      osc.start();
+      osc.stop(ctx.currentTime + duration);
+      currentOscillators.push(osc);
+      break;
+    }
+
     case 'diminished':
     case 'absent': {
       // Very faint or no breathing sound
@@ -611,25 +742,120 @@ export function playBreathSound(soundType: BreathSoundType, durationMs: number =
       source.stop(ctx.currentTime + duration);
       break;
     }
-
-    default: {
-      // Generic breathing sound for unimplemented types
-      const bufferSize = ctx.sampleRate * duration;
-      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-      const data = buffer.getChannelData(0);
-      for (let i = 0; i < bufferSize; i++) {
-        const breathCycle = Math.sin(2 * Math.PI * i / (ctx.sampleRate * 1.5));
-        const envelope = Math.abs(breathCycle) * 0.3 + 0.05;
-        data[i] = (Math.random() * 2 - 1) * envelope * 0.15;
-      }
-      const source = ctx.createBufferSource();
-      source.buffer = buffer;
-      source.connect(masterGain);
-      source.start();
-      source.stop(ctx.currentTime + duration);
-      break;
-    }
   }
+}
+
+/**
+ * Play a heart sound for the specified duration
+ */
+export function playHeartSound(soundType: HeartSoundType, durationMs: number = 4000): void {
+  stopAllSounds();
+
+  const ctx = getAudioContext();
+  if (ctx.state === 'suspended') {
+    ctx.resume();
+  }
+
+  const masterGain = ctx.createGain();
+  masterGain.gain.setValueAtTime(0.2, ctx.currentTime);
+  masterGain.connect(ctx.destination);
+  currentGainNode = masterGain;
+
+  const duration = durationMs / 1000;
+
+  // Heart rate in BPM mapped to interval
+  const bpmMap: Record<HeartSoundType, number> = {
+    'normal': 75,
+    'tachycardic': 120,
+    'bradycardic': 45,
+    'irregular': 90,
+    'muffled': 70,
+    'gallop': 85,
+    'murmur-systolic': 80,
+    'absent': 0,
+  };
+
+  const bpm = bpmMap[soundType];
+  if (bpm === 0) {
+    // Absent — flat silence
+    const bufferSize = ctx.sampleRate * duration;
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(masterGain);
+    source.start();
+    source.stop(ctx.currentTime + duration);
+    return;
+  }
+
+  const beatInterval = 60 / bpm;
+  const bufferSize = Math.floor(ctx.sampleRate * duration);
+  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+
+  let t = 0;
+  while (t < duration) {
+    const actualInterval = soundType === 'irregular'
+      ? beatInterval * (0.7 + Math.random() * 0.6) // AF: irregularly irregular
+      : beatInterval;
+
+    const beatSample = Math.floor(t * ctx.sampleRate);
+
+    // S1 — louder, lower pitch (mitral/tricuspid closure)
+    const s1Len = Math.floor(ctx.sampleRate * 0.04);
+    const s1Freq = soundType === 'muffled' ? 30 : 55;
+    const s1Vol = soundType === 'muffled' ? 0.3 : 0.8;
+    for (let j = 0; j < s1Len && (beatSample + j) < bufferSize; j++) {
+      const env = Math.exp(-j / (s1Len * 0.3));
+      data[beatSample + j] += Math.sin(2 * Math.PI * s1Freq * j / ctx.sampleRate) * env * s1Vol;
+    }
+
+    // S2 — slightly higher pitch, after systolic interval (~0.3 of beat)
+    const s2Offset = Math.floor(actualInterval * 0.35 * ctx.sampleRate);
+    const s2Len = Math.floor(ctx.sampleRate * 0.03);
+    const s2Freq = soundType === 'muffled' ? 40 : 70;
+    const s2Vol = soundType === 'muffled' ? 0.2 : 0.6;
+    for (let j = 0; j < s2Len && (beatSample + s2Offset + j) < bufferSize; j++) {
+      const env = Math.exp(-j / (s2Len * 0.25));
+      data[beatSample + s2Offset + j] += Math.sin(2 * Math.PI * s2Freq * j / ctx.sampleRate) * env * s2Vol;
+    }
+
+    // S3 gallop — extra sound after S2 (ventricular filling)
+    if (soundType === 'gallop') {
+      const s3Offset = Math.floor(actualInterval * 0.52 * ctx.sampleRate);
+      const s3Len = Math.floor(ctx.sampleRate * 0.025);
+      for (let j = 0; j < s3Len && (beatSample + s3Offset + j) < bufferSize; j++) {
+        const env = Math.exp(-j / (s3Len * 0.2));
+        data[beatSample + s3Offset + j] += Math.sin(2 * Math.PI * 45 * j / ctx.sampleRate) * env * 0.35;
+      }
+    }
+
+    // Systolic murmur — noise between S1 and S2
+    if (soundType === 'murmur-systolic') {
+      const murmurStart = Math.floor(ctx.sampleRate * 0.05);
+      const murmurEnd = s2Offset - Math.floor(ctx.sampleRate * 0.01);
+      for (let j = murmurStart; j < murmurEnd && (beatSample + j) < bufferSize; j++) {
+        const pos = (j - murmurStart) / (murmurEnd - murmurStart);
+        // Diamond-shaped crescendo-decrescendo
+        const env = Math.sin(Math.PI * pos) * 0.25;
+        data[beatSample + j] += (Math.random() * 2 - 1) * env;
+      }
+    }
+
+    t += actualInterval;
+  }
+
+  const source = ctx.createBufferSource();
+  source.buffer = buffer;
+
+  // Low-pass filter for body-transmitted sound feel
+  const filter = ctx.createBiquadFilter();
+  filter.type = 'lowpass';
+  filter.frequency.value = soundType === 'muffled' ? 100 : 200;
+  source.connect(filter);
+  filter.connect(masterGain);
+  source.start();
+  source.stop(ctx.currentTime + duration);
 }
 
 /**
