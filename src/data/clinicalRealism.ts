@@ -564,6 +564,259 @@ export const PATHOLOGY_MODIFIERS: Record<string, PathologyModifier[]> = {
       rationale: 'Amiodarone is given after 3rd shock in shockable arrest. No role without defibrillation attempts.',
     },
   ],
+
+  // --- NSTEMI ---
+  'nstemi': [
+    {
+      treatmentId: 'oxygen_nonrebreather',
+      effectivenessMultiplier: 0.7,
+      spo2Ceiling: 98,
+      rationale: 'Avoid hyperoxia in ACS — titrate to 94-98%. NSTEMI less acutely unstable but same O2 principles apply.',
+    },
+    {
+      treatmentId: 'oxygen_nasal',
+      effectivenessMultiplier: 1.0,
+      spo2Ceiling: 98,
+      rationale: 'Low-flow nasal cannula appropriate for mild hypoxia in NSTEMI. Target SpO2 94-98%.',
+    },
+    {
+      treatmentId: 'gtn_spray',
+      effectivenessMultiplier: 1.2,
+      rationale: 'GTN is appropriate in NSTEMI if SBP > 90mmHg. Reduces preload, improves myocardial oxygen supply-demand.',
+    },
+    {
+      treatmentId: 'morphine_5mg',
+      effectivenessMultiplier: 0.8,
+      rationale: 'Morphine for refractory chest pain but evidence suggests potential harm — use cautiously and only if GTN fails.',
+    },
+  ],
+
+  // --- ATRIAL FIBRILLATION (rapid ventricular response) ---
+  'afib': [
+    {
+      treatmentId: 'oxygen_nonrebreather',
+      effectivenessMultiplier: 0.5,
+      spo2Ceiling: 98,
+      rationale: 'High-flow O2 rarely needed in AF unless concurrent cardiac failure. Target SpO2 94-98%.',
+    },
+    {
+      treatmentId: 'fluids_500ml',
+      effectivenessMultiplier: 0.6,
+      rationale: 'Cautious fluids may be appropriate if dehydration triggered the AF, but excess volume risks pulmonary edema in compromised LV.',
+    },
+    {
+      treatmentId: 'fluids_1000ml',
+      effectivenessMultiplier: 0.3,
+      rationale: 'Large-volume resuscitation in AF with RVR risks fluid overload and worsening heart failure.',
+    },
+    {
+      treatmentId: 'amiodarone_300mg',
+      effectivenessMultiplier: 1.3,
+      rationale: 'Amiodarone is effective for rate/rhythm control in hemodynamically unstable AF. IV loading over 20-60 minutes.',
+    },
+  ],
+
+  // --- CHEST TRAUMA (flail chest, hemothorax, cardiac tamponade) ---
+  'chest-trauma': [
+    {
+      treatmentId: 'oxygen_nonrebreather',
+      effectivenessMultiplier: 0.8,
+      spo2Ceiling: 96,
+      rationale: 'High-flow O2 beneficial but limited by mechanical ventilation impairment (flail, pain). Splinting and analgesia improve oxygenation.',
+    },
+    {
+      treatmentId: 'fluids_500ml',
+      effectivenessMultiplier: 0.7,
+      prerequisiteTreatments: {
+        treatmentIds: ['bleeding_control'],
+        multiplierWithPrereqs: 1.0,
+      },
+      rationale: 'Cautious fluid for hemorrhagic shock from hemothorax. Excessive volume without hemorrhage control worsens bleeding.',
+    },
+    {
+      treatmentId: 'fluids_1000ml',
+      effectivenessMultiplier: 0.4,
+      rationale: 'Large-volume resuscitation risks re-bleeding in chest trauma. Permissive hypotension (SBP 80-90) until surgical control.',
+    },
+    {
+      treatmentId: 'needle_decompression',
+      effectivenessMultiplier: 1.8,
+      rationale: 'Critical intervention for tension pneumothorax component. Immediate life-saving if tension physiology present.',
+    },
+    {
+      treatmentId: 'morphine_5mg',
+      effectivenessMultiplier: 1.0,
+      rationale: 'Adequate analgesia in chest trauma improves ventilation by allowing deeper breathing. Pain splinting worsens hypoxia.',
+    },
+  ],
+
+  // --- ABDOMINAL TRAUMA ---
+  'abdominal-trauma': [
+    {
+      treatmentId: 'fluids_250ml',
+      effectivenessMultiplier: 0.5,
+      prerequisiteTreatments: {
+        treatmentIds: ['bleeding_control'],
+        multiplierWithPrereqs: 0.8,
+      },
+      rationale: 'Intra-abdominal hemorrhage is not externally controllable. Cautious fluids — permissive hypotension (SBP 80-90) until surgery.',
+    },
+    {
+      treatmentId: 'fluids_500ml',
+      effectivenessMultiplier: 0.4,
+      rationale: 'Moderate fluid resuscitation provides transient hemodynamic support. Risk of dilutional coagulopathy.',
+    },
+    {
+      treatmentId: 'fluids_1000ml',
+      effectivenessMultiplier: 0.3,
+      rationale: 'Aggressive crystalloid in abdominal trauma worsens coagulopathy and re-bleeding. Rapid surgical transfer is the definitive treatment.',
+    },
+    {
+      treatmentId: 'morphine_5mg',
+      effectivenessMultiplier: 0.7,
+      rationale: 'Analgesia is appropriate but opioids can mask abdominal signs. Document exam findings BEFORE administering.',
+    },
+  ],
+
+  // --- HYPERTENSIVE EMERGENCY ---
+  'hypertensive-emergency': [
+    {
+      treatmentId: 'gtn_spray',
+      effectivenessMultiplier: 1.4,
+      rationale: 'GTN provides controlled BP reduction. Target 20-25% reduction in first hour. Avoid precipitous drops.',
+    },
+    {
+      treatmentId: 'fluids_250ml',
+      effectivenessMultiplier: 0.3,
+      rationale: 'Volume loading is inappropriate in hypertensive emergency — increases afterload and worsens end-organ damage.',
+    },
+    {
+      treatmentId: 'fluids_500ml',
+      effectivenessMultiplier: 0.2,
+      rationale: 'Fluids are CONTRAINDICATED unless concurrent hypovolemia. Increases cardiac workload.',
+    },
+    {
+      treatmentId: 'morphine_5mg',
+      effectivenessMultiplier: 0.6,
+      rationale: 'Morphine may help with anxiety-driven hypertension but respiratory depression risk. Not first-line.',
+    },
+  ],
+
+  // --- SEIZURE / STATUS EPILEPTICUS ---
+  'seizure': [
+    {
+      treatmentId: 'midazolam_5mg',
+      effectivenessMultiplier: 1.8,
+      rationale: 'IM/buccal midazolam is first-line for prolonged seizures. Rapid onset anticonvulsant.',
+    },
+    {
+      treatmentId: 'oxygen_nonrebreather',
+      effectivenessMultiplier: 0.8,
+      rationale: 'High-flow O2 beneficial during post-ictal period. Difficult to apply during active seizure — use NRB once seizure terminates.',
+    },
+    {
+      treatmentId: 'glucose_10g',
+      effectivenessMultiplier: 0.5,
+      rationale: 'Oral glucose only if hypoglycemia confirmed AND patient conscious with intact gag reflex. Check BGL first.',
+    },
+    {
+      treatmentId: 'dextrose_10',
+      effectivenessMultiplier: 1.5,
+      rationale: 'IV dextrose is critical if seizure caused by hypoglycemia. Must check blood glucose to guide treatment.',
+    },
+  ],
+
+  // --- PELVIC FRACTURE ---
+  'pelvic-fracture': [
+    {
+      treatmentId: 'fluids_250ml',
+      effectivenessMultiplier: 0.5,
+      prerequisiteTreatments: {
+        treatmentIds: ['bleeding_control'],
+        multiplierWithPrereqs: 0.8,
+      },
+      rationale: 'Retroperitoneal hemorrhage is not externally controllable. Pelvic binder + permissive hypotension (SBP 80-90). Small boluses only.',
+    },
+    {
+      treatmentId: 'fluids_500ml',
+      effectivenessMultiplier: 0.4,
+      prerequisiteTreatments: {
+        treatmentIds: ['bleeding_control'],
+        multiplierWithPrereqs: 0.75,
+      },
+      rationale: 'Moderate fluid risks diluting clotting factors. Pelvic fractures can lose 2-4 units into retroperitoneum.',
+    },
+    {
+      treatmentId: 'fluids_1000ml',
+      effectivenessMultiplier: 0.3,
+      rationale: 'Aggressive crystalloid in pelvic hemorrhage worsens coagulopathy. Risk of "popping the clot" and re-bleeding.',
+    },
+    {
+      treatmentId: 'fentanyl_50mcg',
+      effectivenessMultiplier: 1.0,
+      rationale: 'Fentanyl is appropriate for pelvic fracture pain. Shorter acting and less histamine release than morphine.',
+    },
+  ],
+
+  // --- SVT / SUPRAVENTRICULAR TACHYCARDIA ---
+  'svt': [
+    {
+      treatmentId: 'adenosine_6mg',
+      effectivenessMultiplier: 1.8,
+      rationale: 'Adenosine is first-line pharmacological treatment for stable SVT. Rapid IV push with flush. Warn patient of transient chest tightness.',
+    },
+    {
+      treatmentId: 'fluids_500ml',
+      effectivenessMultiplier: 0.4,
+      rationale: 'Fluids do not treat SVT. The problem is a re-entrant circuit, not volume depletion. May worsen heart failure if LV compromised.',
+    },
+    {
+      treatmentId: 'amiodarone_300mg',
+      effectivenessMultiplier: 1.0,
+      prerequisiteTreatments: {
+        treatmentIds: ['adenosine_6mg'],
+        multiplierWithPrereqs: 1.3,
+      },
+      rationale: 'Amiodarone is second-line for refractory SVT after adenosine failure. Consider synchronized cardioversion if hemodynamically unstable.',
+    },
+  ],
+
+  // --- MULTI-TRAUMA / POLYTRAUMA ---
+  'multi-trauma': [
+    {
+      treatmentId: 'oxygen_nonrebreather',
+      effectivenessMultiplier: 1.0,
+      rationale: 'High-flow O2 is standard in polytrauma. Multiple injury sites increase oxygen demand.',
+    },
+    {
+      treatmentId: 'fluids_500ml',
+      effectivenessMultiplier: 0.6,
+      prerequisiteTreatments: {
+        treatmentIds: ['bleeding_control', 'tourniquet'],
+        multiplierWithPrereqs: 0.9,
+      },
+      rationale: 'Cautious fluid resuscitation with hemorrhage control. Permissive hypotension SBP 80-90 in penetrating trauma.',
+    },
+    {
+      treatmentId: 'fluids_1000ml',
+      effectivenessMultiplier: 0.4,
+      prerequisiteTreatments: {
+        treatmentIds: ['bleeding_control', 'tourniquet'],
+        multiplierWithPrereqs: 0.7,
+      },
+      rationale: 'Aggressive crystalloid without hemorrhage control dilutes clotting factors. Use only with active bleeding control.',
+    },
+    {
+      treatmentId: 'morphine_5mg',
+      effectivenessMultiplier: 0.6,
+      rationale: 'Analgesia important but opioids risk respiratory depression and hypotension in shocked patients. Titrate carefully.',
+    },
+    {
+      treatmentId: 'fentanyl_50mcg',
+      effectivenessMultiplier: 0.8,
+      rationale: 'Fentanyl preferred over morphine in trauma — shorter acting, less histamine release, less hemodynamic impact.',
+    },
+  ],
 };
 
 /**
@@ -574,16 +827,10 @@ export const PATHOLOGY_MODIFIERS: Record<string, PathologyModifier[]> = {
 const SUBCATEGORY_ALIAS: Record<string, string> = {
   'head-injury':              'traumatic-brain-injury',
   'vfib':                     'cardiac-arrest',
-  'pelvic-fracture':          'massive-hemorrhage',
   'acute-coronary-syndrome':  'stem-anterior',
-  'nstemi':                   'stem-anterior',
-  'chest-trauma':             'pneumothorax-tension', // conservative — worst-case
   'cerebrovascular-emergency':'stroke',
   'electrolyte-emergency':    'electrolyte',
-  'hypothermia':              'hypothermia',
-  'spinal-injury':            'spinal-injury',
-  'abdominal-trauma':         'abdominal-trauma',
-  'overdose':                 'overdose',
+  'aflutter':                 'afib',        // atrial flutter — similar rate-control management
 };
 
 /** Resolve a subcategory to its canonical key for modifier/timeline lookup */
@@ -1079,6 +1326,134 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       isCritical: true,
     },
   ],
+
+  // --- NSTEMI ---
+  'nstemi': [
+    {
+      triggerMinutes: 10,
+      vitalChanges: { pulse: 105, spo2: 93, bpSystolicDelta: -5 },
+      clinicalSigns: 'Ongoing chest pain, mild tachycardia, diaphoresis — slower progression than STEMI',
+    },
+    {
+      triggerMinutes: 20,
+      vitalChanges: { pulse: 115, spo2: 90, bpSystolicDelta: -15 },
+      clinicalSigns: 'Pain worsening, dynamic ECG changes (ST depression deepening), nausea, anxiety increasing',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 35,
+      vitalChanges: { pulse: 130, spo2: 85, bpSystolicDelta: -30, respiration: 26 },
+      clinicalSigns: 'Evolving to STEMI or cardiogenic shock — new ST elevation, crackles in bases, hypotension',
+      rhythm: 'Sinus Tachycardia with ST changes',
+      isCritical: true,
+    },
+  ],
+
+  // --- HYPERTENSIVE EMERGENCY ---
+  'hypertensive-emergency': [
+    {
+      triggerMinutes: 8,
+      vitalChanges: { bpSystolicDelta: 20, pulse: 100, respiration: 22 },
+      clinicalSigns: 'Severe headache worsening, visual disturbances, nausea — end-organ damage developing',
+    },
+    {
+      triggerMinutes: 15,
+      vitalChanges: { bpSystolicDelta: 35, pulse: 110, gcs: 13, respiration: 26 },
+      clinicalSigns: 'Hypertensive encephalopathy — confusion, papilledema, focal neurological signs emerging',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 25,
+      vitalChanges: { bpSystolicDelta: 50, pulse: 55, gcs: 9, respiration: 12 },
+      clinicalSigns: 'Intracerebral hemorrhage or aortic dissection risk — Cushing response, obtundation, seizure risk',
+      isCritical: true,
+    },
+  ],
+
+  // --- SEIZURE / STATUS EPILEPTICUS ---
+  'seizure': [
+    {
+      triggerMinutes: 5,
+      vitalChanges: { pulse: 130, spo2: 85, respiration: 8, gcs: 3 },
+      clinicalSigns: 'Ongoing generalized seizure > 5 minutes — status epilepticus. Hypoxia from airway compromise and apnea.',
+    },
+    {
+      triggerMinutes: 10,
+      vitalChanges: { pulse: 140, spo2: 75, respiration: 6, gcs: 3 },
+      clinicalSigns: 'Refractory status — prolonged seizure causing metabolic acidosis, hyperthermia, rhabdomyolysis risk',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 20,
+      vitalChanges: { pulse: 50, spo2: 60, respiration: 4, gcs: 3 },
+      clinicalSigns: 'Cardiorespiratory collapse from prolonged status — bradycardia, severe hypoxia, brain damage imminent',
+      isCritical: true,
+    },
+  ],
+
+  // --- MULTI-TRAUMA / POLYTRAUMA ---
+  'multi-trauma': [
+    {
+      triggerMinutes: 3,
+      vitalChanges: { pulse: 120, bpSystolicDelta: -15, spo2: 92, respiration: 28 },
+      clinicalSigns: 'Multiple injury sites bleeding, tachycardia developing, patient becoming restless and anxious',
+    },
+    {
+      triggerMinutes: 8,
+      vitalChanges: { pulse: 140, bpSystolicDelta: -30, spo2: 85, gcs: 12, respiration: 32 },
+      clinicalSigns: 'Hemorrhagic shock Class III — confused, cold/clammy, weak radial pulse, distended abdomen or hemothorax',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 15,
+      vitalChanges: { pulse: 155, bpSystolicDelta: -50, spo2: 75, gcs: 8, respiration: 36 },
+      clinicalSigns: 'Decompensated shock — moribund, obtunded, imminent cardiac arrest without immediate intervention',
+      isCritical: true,
+    },
+  ],
+
+  // --- CHEST TRAUMA ---
+  'chest-trauma': [
+    {
+      triggerMinutes: 3,
+      vitalChanges: { spo2: 90, pulse: 115, bpSystolicDelta: -10, respiration: 28 },
+      clinicalSigns: 'Increasing respiratory distress, paradoxical chest wall movement (flail), subcutaneous emphysema',
+    },
+    {
+      triggerMinutes: 8,
+      vitalChanges: { spo2: 80, pulse: 135, bpSystolicDelta: -25, respiration: 36 },
+      clinicalSigns: 'Tension physiology developing — tracheal deviation, absent breath sounds, JVD, hemodynamic instability',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 14,
+      vitalChanges: { spo2: 65, pulse: 40, bpSystolicDelta: -50, respiration: 8 },
+      clinicalSigns: 'Cardiac tamponade or massive hemothorax — pulseless electrical activity, obstructive shock',
+      rhythm: 'PEA',
+      isCritical: true,
+    },
+  ],
+
+  // --- PELVIC FRACTURE ---
+  'pelvic-fracture': [
+    {
+      triggerMinutes: 3,
+      vitalChanges: { pulse: 115, bpSystolicDelta: -10, spo2: 96 },
+      clinicalSigns: 'Pelvic instability on gentle compression, perineal bruising, tachycardia — occult hemorrhage',
+    },
+    {
+      triggerMinutes: 8,
+      vitalChanges: { pulse: 135, bpSystolicDelta: -30, spo2: 93, respiration: 26 },
+      clinicalSigns: 'Class III hemorrhage — retroperitoneal bleeding, cold/clammy, pelvic binder urgently needed',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 15,
+      vitalChanges: { pulse: 150, bpSystolicDelta: -50, spo2: 86, gcs: 10 },
+      clinicalSigns: 'Massive hemorrhage — exsanguination risk, altered consciousness, thready pulse, imminent arrest',
+      isCritical: true,
+    },
+  ],
 };
 
 /**
@@ -1319,6 +1694,95 @@ const TREATMENT_QUALITY_RULES: TreatmentQualityRule[] = [
       feedback: 'Naloxone is the specific antidote for opioid toxicity. Remember to titrate to respiratory effort (RR > 12), NOT full consciousness. Over-reversal causes acute withdrawal, agitation, and vomiting with aspiration risk.',
     }),
   },
+
+  // --- MIDAZOLAM IN SEIZURE ---
+  {
+    treatmentId: 'midazolam_5mg',
+    condition: (_vitals, _cat, sub) => sub.includes('seizure'),
+    result: (year) => ({
+      score: 95,
+      level: 'optimal',
+      feedback: 'Midazolam is first-line for prolonged seizures (> 5 minutes). IM or buccal route is appropriate prehospitally. Good decision.',
+      yearLevelNote: year === '4th-year' || year === 'diploma'
+        ? 'Excellent clinical reasoning. Remember: status epilepticus is defined as seizure > 5 minutes or two seizures without regaining consciousness.'
+        : undefined,
+    }),
+  },
+
+  // --- GTN IN HYPERTENSIVE EMERGENCY ---
+  {
+    treatmentId: 'gtn_spray',
+    condition: (_vitals, _cat, sub) => sub.includes('hypertensive'),
+    result: (year) => ({
+      score: 85,
+      level: 'optimal',
+      feedback: 'GTN provides controlled BP reduction in hypertensive emergency. Target 20-25% reduction in first hour — avoid precipitous drops which risk cerebral hypoperfusion.',
+      yearLevelNote: year === '4th-year' || year === 'diploma'
+        ? 'Good: controlled reduction is key. Aggressive lowering risks watershed infarcts. Monitor BP every 5 minutes during treatment.'
+        : undefined,
+    }),
+  },
+
+  // --- FLUIDS IN HYPERTENSIVE EMERGENCY ---
+  {
+    treatmentId: 'fluids_500ml',
+    condition: (_vitals, _cat, sub) => sub.includes('hypertensive'),
+    result: (year) => ({
+      score: year === '3rd-year' ? 30 : 15,
+      level: 'inappropriate',
+      feedback: 'IV fluid bolus in hypertensive emergency increases intravascular volume and worsens hypertension. The BP is already dangerously elevated — adding volume is counterproductive.',
+      yearLevelNote: year === '4th-year' || year === 'diploma'
+        ? 'Fluid management in hypertensive emergencies requires understanding that the problem is excessive afterload/pressure, not volume depletion.'
+        : undefined,
+    }),
+  },
+
+  // --- LARGE-VOLUME FLUIDS IN MULTI-TRAUMA WITHOUT HEMORRHAGE CONTROL ---
+  {
+    treatmentId: 'fluids_1000ml',
+    condition: (_vitals, _cat, sub) => sub.includes('multi-trauma') || sub.includes('chest-trauma') || sub.includes('abdominal-trauma'),
+    result: (year) => ({
+      score: year === '3rd-year' ? 35 : 20,
+      level: 'suboptimal',
+      feedback: 'Large-volume crystalloid in trauma without hemorrhage control risks dilutional coagulopathy and "popping the clot." Use small-volume (250ml) boluses, assess response, and target permissive hypotension (SBP 80-90).',
+      yearLevelNote: year === '4th-year' || year === 'diploma'
+        ? 'Damage control resuscitation: permissive hypotension, minimal crystalloid, TXA, and rapid surgical transfer. This is core diploma-level knowledge.'
+        : undefined,
+    }),
+  },
+
+  // --- APPROPRIATE TXA IN HEMORRHAGE ---
+  {
+    treatmentId: 'txa_1g',
+    condition: (_vitals, cat, sub) => cat === 'trauma' || sub.includes('hemorrhage') || sub.includes('pelvic'),
+    result: () => ({
+      score: 92,
+      level: 'optimal',
+      feedback: 'TXA within 3 hours of injury reduces mortality in hemorrhagic trauma (CRASH-2). Best given as early as possible. Well done.',
+    }),
+  },
+
+  // --- DEFIBRILLATION IN CARDIAC ARREST ---
+  {
+    treatmentId: 'defibrillation',
+    condition: (_vitals, _cat, sub) => sub.includes('vfib') || sub.includes('cardiac-arrest'),
+    result: () => ({
+      score: 95,
+      level: 'optimal',
+      feedback: 'Early defibrillation is the single most important intervention in VF/pulseless VT arrest. Every minute without defibrillation reduces survival by 7-10%.',
+    }),
+  },
+
+  // --- ASPIRIN IN ACS ---
+  {
+    treatmentId: 'aspirin',
+    condition: (_vitals, _cat, sub) => sub.includes('stem') || sub.includes('nstemi') || sub.includes('coronary') || sub.includes('afib'),
+    result: () => ({
+      score: 90,
+      level: 'optimal',
+      feedback: 'Aspirin 300mg is a cornerstone of ACS management. Inhibits platelet aggregation and reduces mortality. Should be given as early as possible.',
+    }),
+  },
 ];
 
 /**
@@ -1486,6 +1950,14 @@ export function getResourcesForCase(
   if (subcategory.includes('electrolyte') || subcategory.includes('hyperkal')) topics.push('electrolyte');
   if (subcategory.includes('hypothermia')) topics.push('hypothermia');
   if (subcategory.includes('head-injury')) topics.push('neurological');
+  if (subcategory.includes('chest-trauma')) topics.push('hemorrhage-control', 'respiratory-emergencies');
+  if (subcategory.includes('abdominal-trauma')) topics.push('hemorrhage-control', 'fluid-resuscitation');
+  if (subcategory.includes('multi-trauma')) topics.push('hemorrhage-control', 'fluid-resuscitation', 'pain-management');
+  if (subcategory.includes('seizure')) topics.push('neurological');
+  if (subcategory.includes('hypertensive')) topics.push('ami-management');
+  if (subcategory.includes('afib') || subcategory.includes('aflutter')) topics.push('ami-management');
+  if (subcategory.includes('hypoglycemia')) topics.push('neurological');
+  if (subcategory.includes('pulmonary-embolism')) topics.push('respiratory-emergencies', 'fluid-resuscitation');
 
   // Add resources based on what was missed
   if (missedCategories.includes('safety')) topics.push('scene-safety');
@@ -1553,6 +2025,10 @@ export function assessTreatmentTiming(
     calcium_chloride_10: { maxSeconds: 180, description: 'Calcium chloride for hyperkalemia with ECG changes should be given within 3 minutes' },
     bleeding_control: { maxSeconds: 120, description: 'Direct pressure on life-threatening hemorrhage should be applied within 2 minutes' },
     tourniquet: { maxSeconds: 120, description: 'Tourniquet for uncontrollable limb hemorrhage should be applied within 2 minutes' },
+    midazolam_5mg: { maxSeconds: 300, description: 'Midazolam for status epilepticus should be given within 5 minutes of identifying prolonged seizure' },
+    gtn_spray: { maxSeconds: 300, description: 'GTN should be given within 5 minutes for ACS or hypertensive emergency (after BP check)' },
+    txa_1g: { maxSeconds: 600, description: 'TXA should be given within 10 minutes for major hemorrhage — most effective within first 3 hours post-injury' },
+    amiodarone_300mg: { maxSeconds: 300, description: 'Amiodarone should be given after 3rd shock in shockable arrest or within 5 minutes for unstable arrhythmia' },
   };
 
   const expectation = timingExpectations[treatmentId];
@@ -1571,7 +2047,11 @@ export function assessTreatmentTiming(
     (treatmentId === 'glucagon_1mg' && sub.includes('hypoglycemia')) ||
     (treatmentId === 'naloxone_04mg' && (sub.includes('overdose') || sub.includes('opioid') || cat === 'toxicology')) ||
     (treatmentId === 'calcium_chloride_10' && (sub.includes('electrolyte') || sub.includes('hyperkal'))) ||
-    ((treatmentId === 'bleeding_control' || treatmentId === 'tourniquet') && (sub.includes('hemorrhage') || sub.includes('pelvic') || cat === 'trauma'));
+    ((treatmentId === 'bleeding_control' || treatmentId === 'tourniquet') && (sub.includes('hemorrhage') || sub.includes('pelvic') || cat === 'trauma')) ||
+    (treatmentId === 'midazolam_5mg' && sub.includes('seizure')) ||
+    (treatmentId === 'gtn_spray' && (sub.includes('stem') || sub.includes('nstemi') || sub.includes('coronary') || sub.includes('hypertensive'))) ||
+    (treatmentId === 'txa_1g' && (cat === 'trauma' || sub.includes('hemorrhage') || sub.includes('pelvic'))) ||
+    (treatmentId === 'amiodarone_300mg' && (sub.includes('arrest') || sub.includes('vfib') || sub.includes('afib') || sub.includes('svt')));
 
   if (!isRelevant) return null;
 
