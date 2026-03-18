@@ -1005,7 +1005,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                           <CheckCircle2 className="h-3.5 w-3.5 text-green-500 mt-0.5 shrink-0" />
                           <div>
                             <span className="font-semibold">{t.name}</span>
-                            <span className="text-muted-foreground ml-2">{t.effect}</span>
+                            <span className="text-muted-foreground ml-2">{t.description}</span>
                           </div>
                         </div>
                       ))}

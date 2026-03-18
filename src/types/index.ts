@@ -519,6 +519,7 @@ export interface CaseSession {
 // Applied Treatment Tracking
 export interface AppliedTreatment {
   id: string;
+  name?: string;
   description: string;
   appliedAt: string;
   effects: {

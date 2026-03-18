@@ -309,7 +309,11 @@ export function updateSoundsAfterTreatment(
   switch (treatmentId) {
     case 'nebulizer_salbutamol': {
       // Salbutamol: Progressive improvement in bronchospasm
-      if (sounds.leftLung === 'wheeze' || sounds.rightLung === 'wheeze') {
+      // Check for wheeze OR diminished (which is the state after dose 2)
+      const hasRespiratoryFindings = sounds.leftLung === 'wheeze' || sounds.rightLung === 'wheeze' ||
+        sounds.leftLung === 'diminished' || sounds.rightLung === 'diminished' ||
+        sounds.leftLung === 'rhonchi' || sounds.rightLung === 'rhonchi';
+      if (hasRespiratoryFindings) {
         if (applicationCount === 1) {
           // First dose: partial relief — wheeze still present but improved
           sounds.description = 'Wheeze slightly improved after first salbutamol nebulizer. Still significant bronchospasm present. Consider repeat dose.';
