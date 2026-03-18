@@ -9,11 +9,18 @@
  * 5. Post-Case Report: Performance feedback, resources, learning points
  */
 
-import { useState, useCallback, useMemo, lazy, Suspense, useEffect } from 'react';
+import { useState, useCallback, useMemo, lazy, Suspense, useEffect, useRef } from 'react';
 import type { CaseScenario, StudentYear, CaseSession, VitalSigns, AppliedTreatment } from '@/types';
 import { allCases, getRandomCase, yearLevels, caseCategories } from '@/data/cases';
 import { ensureCompleteVitals } from '@/data/treatmentEffects';
-import { applyTreatmentEffectGradual, type Treatment } from '@/data/enhancedTreatmentEffects';
+import { type Treatment } from '@/data/enhancedTreatmentEffects';
+import {
+  type PatientState,
+  type DefibrillationParams,
+  createInitialPatientState,
+  applyDynamicTreatment,
+  applyDeterioration,
+} from '@/data/dynamicTreatmentEngine';
 import { useGradualVitalChanges } from '@/hooks/useGradualVitalChanges';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,9 +32,11 @@ import {
   Sparkles, CheckCircle2, AlertTriangle, FileText, Loader2, BookOpen,
   Ambulance, XCircle, Heart, Shield, ChevronRight, BarChart3,
   ClipboardCheck, Star, TrendingUp, TrendingDown, Minus, ExternalLink,
-  RotateCcw
+  RotateCcw, Zap, Volume2
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { AuscultationPanel } from '@/components/AuscultationPanel';
+import { DefibrillationDialog } from '@/components/DefibrillationDialog';
 
 // Lazy load heavy components
 const CaseDisplay = lazy(() => import('@/components/CaseDisplay').then(m => ({ default: m.CaseDisplay })));
@@ -67,6 +76,12 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
   const [appliedTreatments, setAppliedTreatments] = useState<AppliedTreatment[]>([]);
   const [appliedTreatmentIds, setAppliedTreatmentIds] = useState<string[]>([]);
   const [applyingTreatmentId, setApplyingTreatmentId] = useState<string | null>(null);
+
+  // Dynamic treatment engine state
+  const [patientState, setPatientState] = useState<PatientState | null>(null);
+  const [showDefibDialog, setShowDefibDialog] = useState(false);
+  const [pendingDefibTreatment, setPendingDefibTreatment] = useState<Treatment | null>(null);
+  const deteriorationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Timer
   const [caseStartTime, setCaseStartTime] = useState<number | null>(null);
@@ -122,6 +137,10 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
     setCaseEndTime(null);
     setElapsedSeconds(0);
 
+    // Initialize dynamic treatment engine patient state
+    const initialPatientState = createInitialPatientState(newCase);
+    setPatientState(initialPatientState);
+
     const newSession: CaseSession = {
       id: Date.now().toString(),
       caseId: newCase.id,
@@ -146,46 +165,115 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
     setCaseStartTime(Date.now());
     setPhase('vitals');
     toast.success('Case started — assess the patient and begin treatment');
-  }, []);
 
-  // Apply treatment
-  const applyTreatment = useCallback((treatment: Treatment) => {
-    if (!currentVitals || !currentCase) return;
+    // Start deterioration timer — patient deteriorates if not treated
+    if (deteriorationIntervalRef.current) clearInterval(deteriorationIntervalRef.current);
+    deteriorationIntervalRef.current = setInterval(() => {
+      setPatientState(prev => {
+        if (!prev || !currentCase) return prev;
+        const newState = applyDeterioration(prev, currentCase, 30);
+        if (newState.vitals.spo2 !== prev.vitals.spo2 || newState.vitals.pulse !== prev.vitals.pulse) {
+          setCurrentVitals(ensureCompleteVitals(newState.vitals));
+        }
+        return newState;
+      });
+    }, 30000); // Check every 30 seconds
+  }, [currentCase]);
+
+  // Apply treatment — uses dynamic treatment engine
+  const applyTreatment = useCallback((treatment: Treatment, defibParams?: DefibrillationParams) => {
+    if (!currentVitals || !currentCase || !patientState) return;
+
+    // Defibrillation requires energy/mode selection
+    if (treatment.id === 'defibrillation' && !defibParams) {
+      setPendingDefibTreatment(treatment);
+      setShowDefibDialog(true);
+      return;
+    }
 
     setApplyingTreatmentId(treatment.id);
 
-    const result = applyTreatmentEffectGradual(treatment, currentVitals, currentCase);
+    // Use dynamic treatment engine
+    const { newState, response } = applyDynamicTreatment(
+      treatment,
+      patientState,
+      currentCase,
+      defibParams,
+    );
 
+    // Update patient state
+    setPatientState(newState);
+
+    // Build applied treatment record
     const newTreatment: AppliedTreatment = {
       id: treatment.id,
       name: treatment.name,
-      description: treatment.description || treatment.name,
+      description: response.description,
       appliedAt: new Date().toISOString(),
-      effect: result.description,
-      vitalChanges: result.vitalChanges,
+      effects: response.vitalChanges.map(vc => ({
+        vitalSign: vc.vital,
+        oldValue: vc.oldValue,
+        newValue: vc.newValue,
+        unit: '',
+      })),
+      category: treatment.category,
+      isActive: true,
     };
 
     setAppliedTreatments(prev => [...prev, newTreatment]);
     setAppliedTreatmentIds(prev => [...prev, treatment.id]);
 
-    if (result.newVitals) {
-      setPreviousVitals(currentVitals);
-      if (startGradualChange) {
-        startGradualChange(currentVitals, result.newVitals, 8000);
-      } else {
-        setCurrentVitals(result.newVitals);
-      }
-      setVitalsHistory(prev => [...prev, result.newVitals!]);
+    // Animate vital sign changes
+    const targetVitals = ensureCompleteVitals(newState.vitals);
+    setPreviousVitals(currentVitals);
+    if (startGradualChange) {
+      startGradualChange(currentVitals, targetVitals, 8000);
+    } else {
+      setCurrentVitals(targetVitals);
     }
+    setVitalsHistory(prev => [...prev, targetVitals]);
 
     setTimeout(() => setApplyingTreatmentId(null), 1500);
-    toast.success(`Applied: ${treatment.name}`, { description: result.description });
-  }, [currentVitals, currentCase, startGradualChange]);
+
+    // Show appropriate toast based on response
+    if (response.criticalEvent) {
+      toast.error(response.criticalEvent.description, {
+        description: response.warningMessage,
+        duration: 8000,
+      });
+    } else if (response.warningMessage) {
+      toast.warning(`${treatment.name}: ${response.warningMessage}`, {
+        description: response.description,
+        duration: 6000,
+      });
+    } else if (response.isPartialResponse) {
+      toast.info(`${treatment.name}: Partial response`, {
+        description: response.description,
+        duration: 5000,
+      });
+    } else {
+      toast.success(`Applied: ${treatment.name}`, {
+        description: response.description,
+      });
+    }
+  }, [currentVitals, currentCase, patientState, startGradualChange]);
+
+  // Handle defibrillation dialog confirmation
+  const handleDefibConfirm = useCallback((params: DefibrillationParams) => {
+    if (pendingDefibTreatment) {
+      applyTreatment(pendingDefibTreatment, params);
+      setPendingDefibTreatment(null);
+    }
+  }, [pendingDefibTreatment, applyTreatment]);
 
   // End case
   const endCase = useCallback((action: 'transport' | 'end') => {
     setCaseEndTime(Date.now());
     setPhase('postcase');
+    if (deteriorationIntervalRef.current) {
+      clearInterval(deteriorationIntervalRef.current);
+      deteriorationIntervalRef.current = null;
+    }
     toast.info(action === 'transport' ? 'Patient transported — generating report...' : 'Care ended — generating report...');
   }, []);
 
@@ -666,6 +754,14 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
               />
             </Suspense>
 
+            {/* Auscultation Panel — listen to the patient */}
+            {patientState && (
+              <AuscultationPanel
+                sounds={patientState.sounds}
+                isExpanded={['respiratory', 'cardiac', 'cardiac-ecg', 'thoracic'].includes(currentCase.category)}
+              />
+            )}
+
             {/* Treatment Panel */}
             {currentVitals && (
               <Suspense fallback={<LoadingCard />}>
@@ -677,6 +773,20 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                   applyingTreatmentId={applyingTreatmentId}
                 />
               </Suspense>
+            )}
+
+            {/* Defibrillation Dialog */}
+            {showDefibDialog && patientState && (
+              <DefibrillationDialog
+                open={showDefibDialog}
+                onClose={() => {
+                  setShowDefibDialog(false);
+                  setPendingDefibTreatment(null);
+                }}
+                onConfirm={handleDefibConfirm}
+                currentRhythm={patientState.currentRhythm}
+                currentPulse={currentVitals?.pulse || 0}
+              />
             )}
 
             {/* Applied Treatments Log */}
@@ -693,18 +803,40 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                 </CardHeader>
                 <CardContent className="pt-3">
                   <div className="space-y-2 max-h-48 overflow-y-auto">
-                    {appliedTreatments.map((t, i) => (
-                      <div key={i} className="flex items-start gap-2.5 text-xs p-2.5 rounded-lg bg-green-500/5 border border-green-500/10">
-                        <CheckCircle2 className="h-3.5 w-3.5 text-green-500 mt-0.5 shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <span className="font-semibold">{t.name}</span>
-                          <span className="text-muted-foreground ml-2">{t.effect}</span>
+                    {appliedTreatments.map((t, i) => {
+                      const hasWarning = t.description?.includes('CRITICAL') || t.description?.includes('ADVERSE') || t.description?.includes('CONTRAINDICATED');
+                      const isPartial = t.description?.includes('Partial') || t.description?.includes('Consider repeat');
+                      return (
+                        <div key={i} className={`flex items-start gap-2.5 text-xs p-2.5 rounded-lg border ${
+                          hasWarning
+                            ? 'bg-red-500/5 border-red-500/15'
+                            : isPartial
+                              ? 'bg-amber-500/5 border-amber-500/15'
+                              : 'bg-green-500/5 border-green-500/10'
+                        }`}>
+                          {hasWarning ? (
+                            <AlertTriangle className="h-3.5 w-3.5 text-red-500 mt-0.5 shrink-0" />
+                          ) : isPartial ? (
+                            <Activity className="h-3.5 w-3.5 text-amber-500 mt-0.5 shrink-0" />
+                          ) : (
+                            <CheckCircle2 className="h-3.5 w-3.5 text-green-500 mt-0.5 shrink-0" />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <span className="font-semibold">{t.name}</span>
+                            {/* Show dose count if repeated */}
+                            {patientState && patientState.treatmentCounts[t.id] > 1 && (
+                              <Badge variant="outline" className="ml-1.5 text-[9px] py-0 h-4">
+                                x{patientState.treatmentCounts[t.id]}
+                              </Badge>
+                            )}
+                            <p className="text-muted-foreground mt-0.5 leading-relaxed">{t.description}</p>
+                          </div>
+                          <span className="text-muted-foreground/60 text-[10px] shrink-0">
+                            {new Date(t.appliedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
                         </div>
-                        <span className="text-muted-foreground/60 text-[10px] shrink-0">
-                          {new Date(t.appliedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </CardContent>
               </Card>
