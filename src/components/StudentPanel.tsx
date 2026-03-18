@@ -46,6 +46,14 @@ import {
   performAssessment as performAssessmentStep,
   generateAssessmentDebrief,
 } from '@/data/assessmentFramework';
+import {
+  evaluateTreatmentQuality,
+  getResourcesForCase,
+  generateYearAwareGuidance,
+  assessTreatmentTiming,
+  type TreatmentQualityResult,
+  type FeedbackResource,
+} from '@/data/clinicalRealism';
 
 // Lazy load heavy components
 const CaseDisplay = lazy(() => import('@/components/CaseDisplay').then(m => ({ default: m.CaseDisplay })));
@@ -1202,6 +1210,114 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                 </CardContent>
               </Card>
             )}
+
+            {/* Treatment Quality Analysis — Year-Aware */}
+            {appliedTreatments.length > 0 && (() => {
+              const qualityResults: { treatmentName: string; result: TreatmentQualityResult; timingNote?: string }[] = [];
+              for (const tx of appliedTreatments) {
+                const result = evaluateTreatmentQuality(tx.id, currentCase.vitalSignsProgression.initial, currentCase, selectedYear);
+                if (result) {
+                  const timing = tx.appliedAt
+                    ? assessTreatmentTiming(tx.id, Math.round((new Date(tx.appliedAt).getTime() - (caseStartTime || Date.now())) / 1000), currentCase)
+                    : null;
+                  qualityResults.push({ treatmentName: tx.name || tx.description, result, timingNote: timing?.feedback });
+                }
+              }
+              if (qualityResults.length === 0) return null;
+
+              const levelColors: Record<string, string> = {
+                optimal: 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/20',
+                acceptable: 'border-blue-500 bg-blue-50 dark:bg-blue-950/20',
+                suboptimal: 'border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20',
+                inappropriate: 'border-orange-500 bg-orange-50 dark:bg-orange-950/20',
+                harmful: 'border-red-500 bg-red-50 dark:bg-red-950/20',
+              };
+              const levelLabels: Record<string, string> = {
+                optimal: 'Optimal', acceptable: 'Acceptable', suboptimal: 'Suboptimal',
+                inappropriate: 'Inappropriate', harmful: 'Harmful',
+              };
+
+              return (
+                <Card className="card-glass rounded-2xl overflow-hidden">
+                  <CardHeader className="pb-3 border-b border-border/30">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-violet-500/15">
+                        <Activity className="h-3.5 w-3.5 text-violet-500" />
+                      </div>
+                      Treatment Quality Analysis
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3 pt-4">
+                    {qualityResults.map((qr, i) => (
+                      <div key={i} className={`rounded-xl border-l-4 p-3 ${levelColors[qr.result.level]}`}>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-medium text-sm">{qr.treatmentName}</span>
+                          <Badge variant="outline" className="text-[10px]">{levelLabels[qr.result.level]} ({qr.result.score}%)</Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground leading-relaxed">{qr.result.feedback}</p>
+                        {qr.result.yearLevelNote && (
+                          <p className="text-xs mt-2 p-2 bg-violet-50 dark:bg-violet-900/20 rounded-lg text-violet-700 dark:text-violet-300 italic">
+                            {qr.result.yearLevelNote}
+                          </p>
+                        )}
+                        {qr.timingNote && (
+                          <p className="text-xs mt-1 flex items-center gap-1 text-muted-foreground">
+                            <Clock className="w-3 h-3" />
+                            {qr.timingNote}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              );
+            })()}
+
+            {/* Year-Level Guidance & Resources */}
+            {performanceMetrics.assessmentDebrief && performanceMetrics.assessmentDebrief.criticalMissed.length > 0 && (() => {
+              const missedCategories = [...new Set(performanceMetrics.assessmentDebrief!.criticalMissed.map(m => m.category || 'assessment'))];
+              const resources: FeedbackResource[] = getResourcesForCase(currentCase, missedCategories, selectedYear);
+              const guidanceItems = missedCategories.slice(0, 3).map(cat => {
+                const desc = `${cat} assessment gaps`;
+                return generateYearAwareGuidance(desc, cat, selectedYear);
+              });
+
+              if (guidanceItems.length === 0 && resources.length === 0) return null;
+
+              return (
+                <Card className="card-glass rounded-2xl overflow-hidden">
+                  <CardHeader className="pb-3 border-b border-border/30">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-500/15">
+                        <BookOpen className="h-3.5 w-3.5 text-indigo-500" />
+                      </div>
+                      Year-Level Guidance ({selectedYear})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3 pt-4">
+                    {guidanceItems.map((guidance, i) => (
+                      <div key={i} className="text-xs p-3 rounded-xl bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-800 leading-relaxed">
+                        {guidance}
+                      </div>
+                    ))}
+                    {resources.length > 0 && (
+                      <div className="space-y-1.5 pt-2">
+                        <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Recommended Resources</h4>
+                        {resources.slice(0, 5).map((res, i) => (
+                          <div key={i} className="flex items-start gap-2 text-xs p-2.5 rounded-xl bg-muted/30 border border-border/30">
+                            <Badge variant="outline" className="text-[9px] shrink-0 mt-0.5">{res.type}</Badge>
+                            <div>
+                              <span className="font-medium">{res.title}</span>
+                              <p className="text-muted-foreground mt-0.5">{res.description}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })()}
 
             {/* Key Learning Points */}
             {currentCase.expectedFindings && (

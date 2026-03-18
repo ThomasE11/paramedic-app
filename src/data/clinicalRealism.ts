@@ -471,6 +471,78 @@ export const PATHOLOGY_MODIFIERS: Record<string, PathologyModifier[]> = {
     },
   ],
 
+  // --- STROKE ---
+  'stroke': [
+    {
+      treatmentId: 'oxygen_nonrebreather',
+      effectivenessMultiplier: 0.8,
+      spo2Ceiling: 98,
+      rationale: 'Avoid hyperoxia in stroke — target SpO2 94-98%. Evidence suggests high-flow O2 may worsen ischemic injury.',
+    },
+    {
+      treatmentId: 'fluids_1000ml',
+      effectivenessMultiplier: 0.4,
+      rationale: 'Avoid excessive fluid — risk of cerebral edema. Maintain euvolemia only.',
+    },
+    {
+      treatmentId: 'gtn_spray',
+      effectivenessMultiplier: 0.0,
+      rationale: 'GTN is generally AVOIDED in acute stroke — rapid BP lowering can worsen ischemic penumbra. Permissive hypertension unless SBP > 220.',
+    },
+    {
+      treatmentId: 'morphine_5mg',
+      effectivenessMultiplier: 0.3,
+      rationale: 'Opioids obscure neurological assessment and depress consciousness. Avoid unless compelling need.',
+    },
+  ],
+
+  // --- SPINAL INJURY (neurogenic shock) ---
+  'spinal-injury': [
+    {
+      treatmentId: 'fluids_500ml',
+      effectivenessMultiplier: 0.7,
+      rationale: 'Fluids can partially treat neurogenic hypotension but vasopressors may be needed. Volume alone rarely corrects neurogenic shock.',
+    },
+    {
+      treatmentId: 'fluids_1000ml',
+      effectivenessMultiplier: 0.5,
+      rationale: 'Excessive fluid in neurogenic shock risks pulmonary edema without fixing the vasodilation. Cautious volume + vasopressors.',
+    },
+    {
+      treatmentId: 'morphine_5mg',
+      effectivenessMultiplier: 0.4,
+      rationale: 'Opioids worsen hypotension in neurogenic shock and impair neurological assessment.',
+    },
+  ],
+
+  // --- ELECTROLYTE EMERGENCY (hyperkalemia) ---
+  'electrolyte': [
+    {
+      treatmentId: 'calcium_chloride_10',
+      effectivenessMultiplier: 2.0,
+      rationale: 'Calcium chloride is the first-line cardiac membrane stabilizer in hyperkalemia. Immediate cardioprotection.',
+    },
+    {
+      treatmentId: 'nebulizer_salbutamol',
+      effectivenessMultiplier: 1.3,
+      rationale: 'Salbutamol drives potassium intracellularly. Effective adjunct to calcium in hyperkalemia.',
+    },
+  ],
+
+  // --- HYPOTHERMIA ---
+  'hypothermia': [
+    {
+      treatmentId: 'fluids_500ml',
+      effectivenessMultiplier: 0.6,
+      rationale: 'Cold fluids worsen hypothermia. Only use warmed IV fluids (38-42°C). Standard room-temperature crystalloid has limited benefit.',
+    },
+    {
+      treatmentId: 'adrenaline_1mg',
+      effectivenessMultiplier: 0.3,
+      rationale: 'Adrenaline is less effective in severe hypothermia (< 30°C). Drug metabolism is impaired. Consider withholding until rewarmed.',
+    },
+  ],
+
   // --- CARDIAC ARREST ---
   'cardiac-arrest': [
     {
@@ -495,13 +567,42 @@ export const PATHOLOGY_MODIFIERS: Record<string, PathologyModifier[]> = {
 };
 
 /**
+ * Maps case subcategory values to their canonical PATHOLOGY_MODIFIERS / DETERIORATION key.
+ * This resolves the mismatch between case file subcategories (e.g. 'head-injury')
+ * and the clinicalRealism keys (e.g. 'traumatic-brain-injury').
+ */
+const SUBCATEGORY_ALIAS: Record<string, string> = {
+  'head-injury':              'traumatic-brain-injury',
+  'vfib':                     'cardiac-arrest',
+  'pelvic-fracture':          'massive-hemorrhage',
+  'acute-coronary-syndrome':  'stem-anterior',
+  'nstemi':                   'stem-anterior',
+  'chest-trauma':             'pneumothorax-tension', // conservative — worst-case
+  'cerebrovascular-emergency':'stroke',
+  'electrolyte-emergency':    'electrolyte',
+  'hypothermia':              'hypothermia',
+  'spinal-injury':            'spinal-injury',
+  'abdominal-trauma':         'abdominal-trauma',
+  'overdose':                 'overdose',
+};
+
+/** Resolve a subcategory to its canonical key for modifier/timeline lookup */
+function resolveSubcategory(subcategory: string): string {
+  return SUBCATEGORY_ALIAS[subcategory] || subcategory;
+}
+
+/**
  * Get pathology modifiers for a specific case
  */
 export function getPathologyModifiers(caseData: CaseScenario): PathologyModifier[] {
   const subcategory = (caseData.subcategory || '').toLowerCase();
   const category = caseData.category.toLowerCase();
+  const resolved = resolveSubcategory(subcategory);
 
-  // Check subcategory first (more specific), then category
+  // Check resolved subcategory first (most specific), then raw subcategory, then category
+  if (resolved && PATHOLOGY_MODIFIERS[resolved]) {
+    return PATHOLOGY_MODIFIERS[resolved];
+  }
   if (subcategory && PATHOLOGY_MODIFIERS[subcategory]) {
     return PATHOLOGY_MODIFIERS[subcategory];
   }
@@ -812,6 +913,172 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       isCritical: true,
     },
   ],
+
+  // --- STROKE (cerebrovascular emergency) ---
+  'stroke': [
+    {
+      triggerMinutes: 5,
+      vitalChanges: { bpSystolicDelta: 15, pulse: 90, gcs: 13 },
+      clinicalSigns: 'Worsening focal deficits, hypertension developing, patient becoming more confused',
+    },
+    {
+      triggerMinutes: 15,
+      vitalChanges: { bpSystolicDelta: 30, gcs: 10, respiration: 22, pulse: 85 },
+      clinicalSigns: 'Significant neurological deterioration, gaze deviation, increasing obtundation',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 25,
+      vitalChanges: { bpSystolicDelta: 40, gcs: 7, respiration: 10, pulse: 60 },
+      clinicalSigns: 'Herniation signs — fixed dilated pupil, decerebrate posturing, Cushing response',
+      isCritical: true,
+    },
+  ],
+
+  // --- SPINAL INJURY (neurogenic shock) ---
+  'spinal-injury': [
+    {
+      triggerMinutes: 5,
+      vitalChanges: { pulse: 50, bpSystolicDelta: -20, spo2: 94 },
+      clinicalSigns: 'Neurogenic shock developing — bradycardia, hypotension, warm dry skin below injury level',
+    },
+    {
+      triggerMinutes: 10,
+      vitalChanges: { pulse: 42, bpSystolicDelta: -35, spo2: 90, respiration: 24 },
+      clinicalSigns: 'Worsening neurogenic shock, loss of motor function progressing, diaphragmatic breathing if high cervical',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 18,
+      vitalChanges: { pulse: 35, bpSystolicDelta: -50, spo2: 82, respiration: 10 },
+      clinicalSigns: 'High cervical injury: respiratory failure from phrenic nerve involvement, severe bradycardia',
+      isCritical: true,
+    },
+  ],
+
+  // --- ABDOMINAL TRAUMA ---
+  'abdominal-trauma': [
+    {
+      triggerMinutes: 5,
+      vitalChanges: { pulse: 110, bpSystolicDelta: -10, spo2: 96 },
+      clinicalSigns: 'Guarding, increasing abdominal tenderness, tachycardia — concealed hemorrhage suspected',
+    },
+    {
+      triggerMinutes: 10,
+      vitalChanges: { pulse: 130, bpSystolicDelta: -25, spo2: 94, respiration: 26 },
+      clinicalSigns: 'Rigid abdomen, rebound tenderness, hemodynamic instability, peritonism signs',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 18,
+      vitalChanges: { pulse: 145, bpSystolicDelta: -45, spo2: 88, gcs: 12 },
+      clinicalSigns: 'Hemorrhagic shock from intra-abdominal bleeding, altered mental status, thready pulse',
+      isCritical: true,
+    },
+  ],
+
+  // --- SVT / RAPID ARRHYTHMIAS ---
+  'svt': [
+    {
+      triggerMinutes: 5,
+      vitalChanges: { pulse: 180, bpSystolicDelta: -10, spo2: 95 },
+      clinicalSigns: 'Palpitations, dizziness, chest tightness, anxiety',
+    },
+    {
+      triggerMinutes: 12,
+      vitalChanges: { pulse: 200, bpSystolicDelta: -25, spo2: 92, respiration: 26 },
+      clinicalSigns: 'Hemodynamic compromise developing — hypotension, pallor, near-syncope',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 20,
+      vitalChanges: { pulse: 220, bpSystolicDelta: -40, spo2: 88 },
+      clinicalSigns: 'Cardiogenic shock from prolonged SVT, altered consciousness, signs of heart failure',
+      isCritical: true,
+    },
+  ],
+
+  // --- ATRIAL FIBRILLATION (rapid) ---
+  'afib': [
+    {
+      triggerMinutes: 8,
+      vitalChanges: { pulse: 150, bpSystolicDelta: -10, spo2: 94 },
+      clinicalSigns: 'Irregularly irregular pulse, patient symptomatic with palpitations and dyspnea',
+    },
+    {
+      triggerMinutes: 18,
+      vitalChanges: { pulse: 165, bpSystolicDelta: -20, spo2: 91, respiration: 24 },
+      clinicalSigns: 'Worsening hemodynamic instability, pulmonary edema risk in patients with LV dysfunction',
+      isCritical: true,
+    },
+  ],
+
+  // --- HYPOTHERMIA ---
+  'hypothermia': [
+    {
+      triggerMinutes: 10,
+      vitalChanges: { pulse: 50, bpSystolicDelta: -10, respiration: 10, gcs: 13 },
+      clinicalSigns: 'Shivering stopped (ominous), bradycardia, confusion, clumsy movements',
+    },
+    {
+      triggerMinutes: 20,
+      vitalChanges: { pulse: 40, bpSystolicDelta: -20, respiration: 8, gcs: 8 },
+      clinicalSigns: 'Severe hypothermia — muscle rigidity, fixed dilated pupils (may mimic death), Osborn J-waves on ECG',
+      rhythm: 'Sinus Bradycardia',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 30,
+      vitalChanges: { pulse: 0, spo2: 50 },
+      clinicalSigns: 'VF arrest from severe hypothermia. "Not dead until warm and dead." Begin rewarming + CPR.',
+      rhythm: 'Ventricular Fibrillation',
+      isCritical: true,
+    },
+  ],
+
+  // --- ELECTROLYTE EMERGENCY (hyperkalemia) ---
+  'electrolyte': [
+    {
+      triggerMinutes: 5,
+      vitalChanges: { pulse: 55, bpSystolicDelta: -5 },
+      clinicalSigns: 'Muscle weakness, paresthesias, peaked T-waves on monitor, mild bradycardia',
+    },
+    {
+      triggerMinutes: 12,
+      vitalChanges: { pulse: 45, bpSystolicDelta: -15 },
+      clinicalSigns: 'Widening QRS, bradycardia worsening, risk of sine-wave pattern',
+      rhythm: 'Sinus Bradycardia',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 18,
+      vitalChanges: { pulse: 0, spo2: 60 },
+      clinicalSigns: 'Cardiac arrest from hyperkalemia — sine-wave → VF/asystole. Give calcium chloride STAT.',
+      rhythm: 'Ventricular Fibrillation',
+      isCritical: true,
+    },
+  ],
+
+  // --- OVERDOSE / TOXICOLOGY ---
+  'overdose': [
+    {
+      triggerMinutes: 3,
+      vitalChanges: { respiration: 8, spo2: 88, gcs: 10, pulse: 55 },
+      clinicalSigns: 'Respiratory depression, miosis (pinpoint pupils), decreased consciousness',
+    },
+    {
+      triggerMinutes: 8,
+      vitalChanges: { respiration: 4, spo2: 75, gcs: 5, pulse: 50 },
+      clinicalSigns: 'Severe respiratory failure, cyanosis, barely rousable, aspiration risk',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 12,
+      vitalChanges: { respiration: 0, spo2: 40, gcs: 3, pulse: 30 },
+      clinicalSigns: 'Respiratory arrest → hypoxic cardiac arrest. BVM ventilation + naloxone urgently needed.',
+      isCritical: true,
+    },
+  ],
 };
 
 /**
@@ -820,7 +1087,11 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
 export function getCaseDeteriorationTimeline(caseData: CaseScenario): DeteriorationStage[] {
   const subcategory = (caseData.subcategory || '').toLowerCase();
   const category = caseData.category.toLowerCase();
+  const resolved = resolveSubcategory(subcategory);
 
+  if (resolved && CASE_DETERIORATION_TIMELINES[resolved]) {
+    return CASE_DETERIORATION_TIMELINES[resolved];
+  }
   if (subcategory && CASE_DETERIORATION_TIMELINES[subcategory]) {
     return CASE_DETERIORATION_TIMELINES[subcategory];
   }
@@ -976,6 +1247,78 @@ const TREATMENT_QUALITY_RULES: TreatmentQualityRule[] = [
         : undefined,
     }),
   },
+
+  // --- GTN IN STROKE ---
+  {
+    treatmentId: 'gtn_spray',
+    condition: (_vitals, _cat, sub) => sub.includes('cerebrovascular') || sub.includes('stroke'),
+    result: (year) => ({
+      score: year === '3rd-year' ? 25 : 10,
+      level: 'harmful',
+      feedback: 'GTN is generally AVOIDED in acute stroke. Rapid BP lowering can extend the ischemic penumbra and worsen outcomes. Permissive hypertension up to SBP 220 is the current standard.',
+      yearLevelNote: year === '4th-year' || year === 'diploma'
+        ? 'BP management in stroke is nuanced. You must understand permissive hypertension and the only role for acute BP lowering (thrombolysis threshold).'
+        : undefined,
+    }),
+  },
+
+  // --- EXCESSIVE O2 IN COPD (nasal cannula at high SpO2 still suboptimal) ---
+  {
+    treatmentId: 'oxygen_mask',
+    condition: (vitals, _cat, sub) => vitals.spo2 >= 92 && sub.includes('copd'),
+    result: (year) => ({
+      score: year === '1st-year' ? 55 : year === '2nd-year' ? 35 : 15,
+      level: year === '1st-year' ? 'acceptable' : 'suboptimal',
+      feedback: 'COPD patient SpO2 >= 92%. Even a simple face mask delivers uncontrolled FiO2 (40-60%). Use nasal cannula at 1-2L/min or Venturi mask 24-28% to target 88-92%.',
+    }),
+  },
+
+  // --- CALCIUM IN HYPERKALEMIA ---
+  {
+    treatmentId: 'calcium_chloride_10',
+    condition: (_vitals, _cat, sub) => sub.includes('electrolyte') || sub.includes('hyperkal'),
+    result: () => ({
+      score: 95,
+      level: 'optimal',
+      feedback: 'Excellent: Calcium chloride is the correct first-line treatment for hyperkalemia with ECG changes. It stabilizes the cardiac membrane within minutes.',
+    }),
+  },
+
+  // --- ADRENALINE TIMING IN ANAPHYLAXIS ---
+  {
+    treatmentId: 'adrenaline_im',
+    condition: (_vitals, _cat, sub) => sub.includes('anaphylaxis'),
+    result: () => ({
+      score: 95,
+      level: 'optimal',
+      feedback: 'IM adrenaline 0.5mg is the single most important intervention in anaphylaxis. This should be given as early as possible. Well done.',
+    }),
+  },
+
+  // --- FLUIDS IN SPINAL INJURY ---
+  {
+    treatmentId: 'fluids_1000ml',
+    condition: (_vitals, _cat, sub) => sub.includes('spinal'),
+    result: (year) => ({
+      score: year === '3rd-year' ? 40 : 25,
+      level: 'suboptimal',
+      feedback: 'Large-volume fluid in neurogenic shock has limited effectiveness. The hypotension is from loss of sympathetic tone, not volume depletion. Vasopressors are the definitive treatment.',
+      yearLevelNote: year === '4th-year' || year === 'diploma'
+        ? 'Distinguishing neurogenic from hypovolemic shock is a key clinical reasoning skill at your level.'
+        : undefined,
+    }),
+  },
+
+  // --- NALOXONE IN OVERDOSE ---
+  {
+    treatmentId: 'naloxone_04mg',
+    condition: (_vitals, _cat, sub) => sub.includes('overdose') || sub.includes('opioid'),
+    result: () => ({
+      score: 90,
+      level: 'optimal',
+      feedback: 'Naloxone is the specific antidote for opioid toxicity. Remember to titrate to respiratory effort (RR > 12), NOT full consciousness. Over-reversal causes acute withdrawal, agitation, and vomiting with aspiration risk.',
+    }),
+  },
 ];
 
 /**
@@ -1083,6 +1426,27 @@ const CLINICAL_RESOURCES: Record<string, FeedbackResource[]> = {
     { title: 'Scene Safety Assessment Framework', type: 'textbook', description: 'Hazards, resources, mechanism, patient count — systematic approach', yearLevels: ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'] },
     { title: 'PPE Selection Guide', type: 'protocol', description: 'Gloves, masks, eye protection — when and what', yearLevels: ['1st-year', '2nd-year'] },
   ],
+  'stroke': [
+    { title: 'FAST Stroke Assessment', type: 'protocol', description: 'Face drooping, Arm weakness, Speech difficulty, Time to call — rapid screening', yearLevels: ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'] },
+    { title: 'Prehospital Stroke Pathway', type: 'guideline', description: 'Time-critical pathway: recognition, pre-alert, BP management, glucose check', yearLevels: ['3rd-year', '4th-year', 'diploma'] },
+    { title: 'BP Management in Stroke', type: 'article', description: 'Permissive hypertension, thrombolysis thresholds, when to treat acutely', yearLevels: ['4th-year', 'diploma'] },
+  ],
+  'spinal-injury': [
+    { title: 'Spinal Motion Restriction Guidelines', type: 'guideline', description: 'NEXUS/Canadian C-Spine rules, selective immobilisation, vacuum mattress', yearLevels: ['2nd-year', '3rd-year', '4th-year', 'diploma'] },
+    { title: 'Neurogenic vs Hypovolemic Shock', type: 'textbook', description: 'Differentiating shock types: warm/dry vs cold/clammy, HR patterns, treatment differences', yearLevels: ['3rd-year', '4th-year', 'diploma'] },
+  ],
+  'toxicology': [
+    { title: 'Toxidromes Recognition', type: 'textbook', description: 'Opioid, sympathomimetic, anticholinergic, cholinergic — pattern recognition', yearLevels: ['3rd-year', '4th-year', 'diploma'] },
+    { title: 'Naloxone Administration Protocol', type: 'protocol', description: 'Titrate to respiratory effort, IM/IV/IN routes, repeat dosing intervals', yearLevels: ['2nd-year', '3rd-year', '4th-year', 'diploma'] },
+  ],
+  'electrolyte': [
+    { title: 'Hyperkalemia Emergency Protocol', type: 'guideline', description: 'Calcium chloride → insulin/dextrose → salbutamol → sodium bicarbonate pathway', yearLevels: ['4th-year', 'diploma'] },
+    { title: 'ECG Changes in Electrolyte Disorders', type: 'textbook', description: 'Peaked T-waves, wide QRS, sine wave — recognizing life-threatening patterns', yearLevels: ['3rd-year', '4th-year', 'diploma'] },
+  ],
+  'hypothermia': [
+    { title: 'Hypothermia Classification and Management', type: 'guideline', description: 'Swiss staging system, rewarming strategies, cardiac arrest in hypothermia', yearLevels: ['3rd-year', '4th-year', 'diploma'] },
+    { title: 'Avalanche Victim Protocol', type: 'protocol', description: 'Burial time, airway patency, core temperature — triage and rewarming', yearLevels: ['4th-year', 'diploma'] },
+  ],
 };
 
 /**
@@ -1100,19 +1464,28 @@ export function getResourcesForCase(
   // Map case characteristics to resource topics
   const topicMap: Record<string, string[]> = {
     'cardiac': ['ami-management', 'pain-management'],
+    'cardiac-ecg': ['ami-management'],
     'respiratory': ['respiratory-emergencies', 'oxygen-therapy'],
     'trauma': ['hemorrhage-control', 'pain-management'],
-    'neurological': ['neurological'],
+    'neurological': ['neurological', 'stroke'],
     'environmental': ['anaphylaxis'],
+    'toxicology': ['toxicology'],
+    'metabolic': ['neurological'],
   };
 
   // Add category-specific resources
   const topics = topicMap[category] || [];
-  if (subcategory.includes('stem') || subcategory.includes('nstemi')) topics.push('ami-management', 'oxygen-therapy');
+  if (subcategory.includes('stem') || subcategory.includes('nstemi') || subcategory.includes('coronary')) topics.push('ami-management', 'oxygen-therapy');
   if (subcategory.includes('asthma') || subcategory.includes('copd')) topics.push('respiratory-emergencies', 'oxygen-therapy');
-  if (subcategory.includes('arrest')) topics.push('cardiac-arrest');
+  if (subcategory.includes('arrest') || subcategory.includes('vfib')) topics.push('cardiac-arrest');
   if (subcategory.includes('anaphylaxis')) topics.push('anaphylaxis');
   if (subcategory.includes('hemorrhage') || subcategory.includes('pelvic')) topics.push('hemorrhage-control', 'fluid-resuscitation');
+  if (subcategory.includes('cerebrovascular') || subcategory.includes('stroke')) topics.push('stroke', 'neurological');
+  if (subcategory.includes('spinal')) topics.push('spinal-injury');
+  if (subcategory.includes('overdose') || subcategory.includes('opioid')) topics.push('toxicology');
+  if (subcategory.includes('electrolyte') || subcategory.includes('hyperkal')) topics.push('electrolyte');
+  if (subcategory.includes('hypothermia')) topics.push('hypothermia');
+  if (subcategory.includes('head-injury')) topics.push('neurological');
 
   // Add resources based on what was missed
   if (missedCategories.includes('safety')) topics.push('scene-safety');
@@ -1176,6 +1549,10 @@ export function assessTreatmentTiming(
     glucose_10g: { maxSeconds: 300, description: 'Glucose correction should begin within 5 minutes of identifying hypoglycemia' },
     glucagon_1mg: { maxSeconds: 300, description: 'Glucagon should be given within 5 minutes if IV access unavailable' },
     dextrose_10: { maxSeconds: 300, description: 'IV dextrose should be given within 5 minutes for severe hypoglycemia' },
+    naloxone_04mg: { maxSeconds: 180, description: 'Naloxone should be given within 3 minutes for opioid overdose with respiratory depression' },
+    calcium_chloride_10: { maxSeconds: 180, description: 'Calcium chloride for hyperkalemia with ECG changes should be given within 3 minutes' },
+    bleeding_control: { maxSeconds: 120, description: 'Direct pressure on life-threatening hemorrhage should be applied within 2 minutes' },
+    tourniquet: { maxSeconds: 120, description: 'Tourniquet for uncontrollable limb hemorrhage should be applied within 2 minutes' },
   };
 
   const expectation = timingExpectations[treatmentId];
@@ -1185,13 +1562,16 @@ export function assessTreatmentTiming(
   const sub = (caseData.subcategory || '').toLowerCase();
   const cat = caseData.category.toLowerCase();
   const isRelevant =
-    (treatmentId === 'aspirin' && (sub.includes('stem') || sub.includes('nstemi') || cat === 'cardiac')) ||
-    (treatmentId.includes('adrenaline') && (sub.includes('anaphylaxis') || sub.includes('arrest'))) ||
+    (treatmentId === 'aspirin' && (sub.includes('stem') || sub.includes('nstemi') || sub.includes('coronary') || cat === 'cardiac')) ||
+    (treatmentId.includes('adrenaline') && (sub.includes('anaphylaxis') || sub.includes('arrest') || sub.includes('vfib'))) ||
     (treatmentId === 'needle_decompression' && sub.includes('pneumothorax')) ||
-    (treatmentId === 'defibrillation' && sub.includes('arrest')) ||
-    (treatmentId === 'cpr' && sub.includes('arrest')) ||
-    (treatmentId.includes('glucose') || treatmentId.includes('dextrose')) && sub.includes('hypoglycemia') ||
-    (treatmentId === 'glucagon_1mg' && sub.includes('hypoglycemia'));
+    (treatmentId === 'defibrillation' && (sub.includes('arrest') || sub.includes('vfib'))) ||
+    (treatmentId === 'cpr' && (sub.includes('arrest') || sub.includes('vfib'))) ||
+    ((treatmentId.includes('glucose') || treatmentId.includes('dextrose')) && sub.includes('hypoglycemia')) ||
+    (treatmentId === 'glucagon_1mg' && sub.includes('hypoglycemia')) ||
+    (treatmentId === 'naloxone_04mg' && (sub.includes('overdose') || sub.includes('opioid') || cat === 'toxicology')) ||
+    (treatmentId === 'calcium_chloride_10' && (sub.includes('electrolyte') || sub.includes('hyperkal'))) ||
+    ((treatmentId === 'bleeding_control' || treatmentId === 'tourniquet') && (sub.includes('hemorrhage') || sub.includes('pelvic') || cat === 'trauma'));
 
   if (!isRelevant) return null;
 
