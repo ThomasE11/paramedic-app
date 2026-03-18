@@ -841,3 +841,75 @@ html, body {
   background: rgba(30, 30, 35, 0.9);
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
+
+/* ============================================================================
+ * Mobile Optimization Utilities
+ * ============================================================================ */
+
+/* Safe area insets for notched/dynamic island devices */
+.safe-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.safe-left {
+  padding-left: env(safe-area-inset-left, 0px);
+}
+
+.safe-right {
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+/* Prevent text size adjust on orientation change */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Smoother touch scrolling */
+.overflow-y-auto,
+.overflow-auto {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Prevent pull-to-refresh on mobile during case */
+body.case-active {
+  overscroll-behavior-y: contain;
+}
+
+/* Better touch targets on mobile */
+@media (max-width: 639px) {
+  button, [role="button"], a {
+    min-height: 36px;
+  }
+
+  /* Make cards more compact on mobile */
+  .card-glass {
+    border-radius: 1rem;
+  }
+
+  /* Tighter container padding on small screens */
+  .container {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+}
+
+/* Prevent double-tap zoom on iOS */
+* {
+  touch-action: manipulation;
+}
+
+/* Hide scrollbar on mobile for cleaner look but keep functionality */
+@media (max-width: 639px) {
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}

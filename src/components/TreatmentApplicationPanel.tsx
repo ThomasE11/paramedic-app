@@ -119,35 +119,35 @@ export function TreatmentApplicationPanel({
 
   return (
     <Card className="border-2 border-primary/20 shadow-lg">
-      <CardHeader className="pb-3 bg-gradient-to-r from-primary/5 to-transparent">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <div className="p-1.5 rounded-lg bg-primary/10">
-            <Syringe className="h-5 w-5 text-primary" />
+      <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-6 bg-gradient-to-r from-primary/5 to-transparent">
+        <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+          <div className="p-1 sm:p-1.5 rounded-lg bg-primary/10">
+            <Syringe className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
           </div>
           <span>Apply Treatment</span>
-          <Badge variant="secondary" className="ml-auto">
+          <Badge variant="secondary" className="ml-auto text-[10px] sm:text-xs">
             {TREATMENTS.length} available
           </Badge>
         </CardTitle>
-        <p className="text-xs text-muted-foreground mt-1">
+        <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 hidden sm:block">
           Select a treatment to apply. Effects will change vitals gradually based on onset time.
         </p>
 
         {/* Search */}
-        <div className="mt-2">
+        <div className="mt-1.5 sm:mt-2">
           <input
             type="text"
             placeholder="Search treatments..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-3 py-2 text-sm rounded-lg border bg-background/50 focus:outline-none focus:ring-2 focus:ring-primary/20 placeholder:text-muted-foreground/60"
+            className="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm rounded-lg border bg-background/50 focus:outline-none focus:ring-2 focus:ring-primary/20 placeholder:text-muted-foreground/60"
           />
         </div>
       </CardHeader>
 
       <CardContent className="p-0">
-        <ScrollArea className="h-[400px]">
-          <div className="p-3 space-y-1">
+        <ScrollArea className="h-[300px] sm:h-[400px]">
+          <div className="p-2 sm:p-3 space-y-1">
             {categories.map(({ category, count, label }) => {
               const treatments = treatmentsByCategory[category];
               if (!treatments || treatments.length === 0) return null;
@@ -158,7 +158,7 @@ export function TreatmentApplicationPanel({
                   {/* Category Header */}
                   <button
                     onClick={() => toggleCategory(category)}
-                    className={`w-full flex items-center gap-2 px-3 py-2.5 text-sm font-medium transition-all rounded-lg ${
+                    className={`w-full flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-2 sm:py-2.5 text-xs sm:text-sm font-medium transition-all rounded-lg ${
                       isExpanded
                         ? `${categoryColors[category]} border`
                         : 'hover:bg-muted/60 text-muted-foreground hover:text-foreground'
@@ -166,7 +166,7 @@ export function TreatmentApplicationPanel({
                   >
                     {categoryIcons[category]}
                     <span className="flex-1 text-left">{label}</span>
-                    <Badge variant="outline" className="text-[10px] mr-1">
+                    <Badge variant="outline" className="text-[9px] sm:text-[10px] mr-0.5 sm:mr-1">
                       {count}
                     </Badge>
                     {isExpanded ? (
@@ -187,7 +187,7 @@ export function TreatmentApplicationPanel({
                         return (
                           <div
                             key={treatment.id}
-                            className={`rounded-lg border p-3 transition-all duration-200 ${
+                            className={`rounded-lg border p-2 sm:p-3 transition-all duration-200 ${
                               isApplied
                                 ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
                                 : contra
@@ -195,10 +195,10 @@ export function TreatmentApplicationPanel({
                                   : 'bg-card hover:bg-accent/30 hover:border-primary/30'
                             }`}
                           >
-                            <div className="flex items-start gap-3">
+                            <div className="flex items-start gap-2 sm:gap-3">
                               <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <span className="font-medium text-sm">{treatment.name}</span>
+                                <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                                  <span className="font-medium text-xs sm:text-sm">{treatment.name}</span>
                                   {isApplied && (
                                     <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
                                   )}
@@ -206,10 +206,10 @@ export function TreatmentApplicationPanel({
                                     <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
                                   )}
                                 </div>
-                                <p className="text-xs text-muted-foreground mt-0.5">
+                                <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 line-clamp-2 sm:line-clamp-none">
                                   {treatment.description}
                                 </p>
-                                <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                                <div className="flex items-center gap-2 sm:gap-3 mt-1 sm:mt-1.5 flex-wrap">
                                   <span className={`text-[11px] font-medium flex items-center gap-1 ${onsetColors[treatment.onset]}`}>
                                     <Clock className="h-3 w-3" />
                                     {getOnsetDescription(treatment.onset)}
@@ -245,7 +245,7 @@ export function TreatmentApplicationPanel({
                                 variant={isApplied ? 'secondary' : contra ? 'destructive' : 'default'}
                                 disabled={isCurrentlyApplying}
                                 onClick={() => handleApply(treatment)}
-                                className="shrink-0 text-xs h-8"
+                                className="shrink-0 text-[10px] sm:text-xs h-7 sm:h-8 px-2 sm:px-3"
                               >
                                 {isCurrentlyApplying ? (
                                   <>

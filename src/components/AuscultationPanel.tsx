@@ -79,38 +79,38 @@ export function AuscultationPanel({ sounds, isExpanded: initialExpanded = false 
     <Card className={`border-2 ${isCritical ? 'border-red-300 dark:border-red-800' : 'border-blue-200 dark:border-blue-800'} shadow-lg overflow-hidden`}>
       {/* Header */}
       <CardHeader
-        className={`pb-3 cursor-pointer ${isCritical ? 'bg-gradient-to-r from-red-500/10 to-transparent' : 'bg-gradient-to-r from-blue-500/10 to-transparent'}`}
+        className={`pb-2 sm:pb-3 px-3 sm:px-6 cursor-pointer ${isCritical ? 'bg-gradient-to-r from-red-500/10 to-transparent' : 'bg-gradient-to-r from-blue-500/10 to-transparent'}`}
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <CardTitle className="flex items-center gap-2 text-base">
-          <div className={`p-1.5 rounded-lg ${isCritical ? 'bg-red-500/10' : 'bg-blue-500/10'}`}>
-            <Stethoscope className={`h-5 w-5 ${isCritical ? 'text-red-600' : 'text-blue-600'}`} />
+        <CardTitle className="flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base">
+          <div className={`p-1 sm:p-1.5 rounded-lg ${isCritical ? 'bg-red-500/10' : 'bg-blue-500/10'}`}>
+            <Stethoscope className={`h-4 w-4 sm:h-5 sm:w-5 ${isCritical ? 'text-red-600' : 'text-blue-600'}`} />
           </div>
           <span>Auscultation</span>
           {isCritical && (
-            <Badge variant="destructive" className="ml-2 text-[10px]">
-              <AlertTriangle className="h-3 w-3 mr-0.5" />
+            <Badge variant="destructive" className="ml-1 sm:ml-2 text-[9px] sm:text-[10px]">
+              <AlertTriangle className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5" />
               ABNORMAL
             </Badge>
           )}
-          {isExpanded ? <ChevronUp className="h-4 w-4 ml-auto" /> : <ChevronDown className="h-4 w-4 ml-auto" />}
+          {isExpanded ? <ChevronUp className="h-3.5 w-3.5 sm:h-4 sm:w-4 ml-auto" /> : <ChevronDown className="h-3.5 w-3.5 sm:h-4 sm:w-4 ml-auto" />}
         </CardTitle>
 
         {/* Quick summary always visible */}
-        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+        <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 line-clamp-2">
           {sounds.description}
         </p>
       </CardHeader>
 
       {/* Expanded content */}
       {isExpanded && (
-        <CardContent className="pt-0 space-y-4">
+        <CardContent className="pt-0 px-3 sm:px-6 space-y-3 sm:space-y-4">
           {/* Lung diagram layout */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2 sm:gap-3">
             {/* Left Lung */}
-            <div className={`rounded-xl border p-3 ${soundSeverityColor[sounds.leftLung]}`}>
-              <div className="flex items-center justify-between mb-2">
-                <span className="font-semibold text-sm">Left Lung</span>
+            <div className={`rounded-xl border p-2 sm:p-3 ${soundSeverityColor[sounds.leftLung]}`}>
+              <div className="flex items-center justify-between mb-1.5 sm:mb-2">
+                <span className="font-semibold text-xs sm:text-sm">Left Lung</span>
                 {hasAudio && (
                   <Button
                     variant="ghost"
@@ -130,18 +130,18 @@ export function AuscultationPanel({ sounds, isExpanded: initialExpanded = false 
                   </Button>
                 )}
               </div>
-              <Badge variant="outline" className="text-[11px] mb-1.5">
+              <Badge variant="outline" className="text-[9px] sm:text-[11px] mb-1 sm:mb-1.5">
                 {leftDesc.name}
               </Badge>
-              <p className="text-[11px] opacity-80 leading-relaxed">
+              <p className="text-[10px] sm:text-[11px] opacity-80 leading-relaxed line-clamp-3 sm:line-clamp-none">
                 {leftDesc.audioDescription}
               </p>
             </div>
 
             {/* Right Lung */}
-            <div className={`rounded-xl border p-3 ${soundSeverityColor[sounds.rightLung]}`}>
-              <div className="flex items-center justify-between mb-2">
-                <span className="font-semibold text-sm">Right Lung</span>
+            <div className={`rounded-xl border p-2 sm:p-3 ${soundSeverityColor[sounds.rightLung]}`}>
+              <div className="flex items-center justify-between mb-1.5 sm:mb-2">
+                <span className="font-semibold text-xs sm:text-sm">Right Lung</span>
                 {hasAudio && (
                   <Button
                     variant="ghost"
@@ -161,20 +161,20 @@ export function AuscultationPanel({ sounds, isExpanded: initialExpanded = false 
                   </Button>
                 )}
               </div>
-              <Badge variant="outline" className="text-[11px] mb-1.5">
+              <Badge variant="outline" className="text-[9px] sm:text-[11px] mb-1 sm:mb-1.5">
                 {rightDesc.name}
               </Badge>
-              <p className="text-[11px] opacity-80 leading-relaxed">
+              <p className="text-[10px] sm:text-[11px] opacity-80 leading-relaxed line-clamp-3 sm:line-clamp-none">
                 {rightDesc.audioDescription}
               </p>
             </div>
           </div>
 
           {/* Heart Sounds */}
-          <div className="rounded-xl border border-border/60 bg-card/50 p-3">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="font-semibold text-sm">Heart Sounds</span>
-              <Badge variant="outline" className="text-[10px]">
+          <div className="rounded-xl border border-border/60 bg-card/50 p-2 sm:p-3">
+            <div className="flex items-center gap-1.5 sm:gap-2 mb-1">
+              <span className="font-semibold text-xs sm:text-sm">Heart Sounds</span>
+              <Badge variant="outline" className="text-[9px] sm:text-[10px]">
                 {sounds.heartSound === 'normal' ? 'Normal S1S2' :
                  sounds.heartSound === 'tachycardic' ? 'Tachycardic S1S2' :
                  sounds.heartSound === 'bradycardic' ? 'Bradycardic S1S2' :
