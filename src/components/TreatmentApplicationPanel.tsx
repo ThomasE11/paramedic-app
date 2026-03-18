@@ -23,7 +23,8 @@ import {
   type Treatment,
   type TreatmentCategory,
 } from '@/data/enhancedTreatmentEffects';
-import type { VitalSigns } from '@/types';
+import type { VitalSigns, StudentYear } from '@/types';
+import { filterTreatmentsForYear } from '@/data/clinicalRealism';
 
 // Map category to icon
 const categoryIcons: Record<TreatmentCategory, React.ReactNode> = {
@@ -64,6 +65,7 @@ interface TreatmentApplicationPanelProps {
   appliedTreatmentIds: string[];
   isApplying?: boolean;
   applyingTreatmentId?: string;
+  studentYear?: StudentYear;
 }
 
 export function TreatmentApplicationPanel({
@@ -72,6 +74,7 @@ export function TreatmentApplicationPanel({
   appliedTreatmentIds,
   isApplying = false,
   applyingTreatmentId,
+  studentYear,
 }: TreatmentApplicationPanelProps) {
   const [expandedCategory, setExpandedCategory] = useState<TreatmentCategory | null>('airway');
   const [searchQuery, setSearchQuery] = useState('');
@@ -79,14 +82,17 @@ export function TreatmentApplicationPanel({
   const categories = useMemo(() => getTreatmentCategories(), []);
 
   const filteredTreatments = useMemo(() => {
-    if (!searchQuery.trim()) return TREATMENTS;
+    // First, filter by year level
+    const yearFiltered = studentYear ? filterTreatmentsForYear(TREATMENTS, studentYear) : TREATMENTS;
+    // Then filter by search query
+    if (!searchQuery.trim()) return yearFiltered;
     const query = searchQuery.toLowerCase();
-    return TREATMENTS.filter(t =>
+    return yearFiltered.filter(t =>
       t.name.toLowerCase().includes(query) ||
       t.description.toLowerCase().includes(query) ||
       t.category.toLowerCase().includes(query)
     );
-  }, [searchQuery]);
+  }, [searchQuery, studentYear]);
 
   const treatmentsByCategory = useMemo(() => {
     const grouped: Record<string, Treatment[]> = {};
@@ -126,7 +132,7 @@ export function TreatmentApplicationPanel({
           </div>
           <span>Apply Treatment</span>
           <Badge variant="secondary" className="ml-auto text-[10px] sm:text-xs">
-            {TREATMENTS.length} available
+            {filteredTreatments.length} available
           </Badge>
         </CardTitle>
         <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 hidden sm:block">
@@ -148,7 +154,7 @@ export function TreatmentApplicationPanel({
       <CardContent className="p-0">
         <ScrollArea className="h-[300px] sm:h-[400px]">
           <div className="p-2 sm:p-3 space-y-1">
-            {categories.map(({ category, count, label }) => {
+            {categories.map(({ category, label }) => {
               const treatments = treatmentsByCategory[category];
               if (!treatments || treatments.length === 0) return null;
               const isExpanded = expandedCategory === category;
@@ -167,7 +173,7 @@ export function TreatmentApplicationPanel({
                     {categoryIcons[category]}
                     <span className="flex-1 text-left">{label}</span>
                     <Badge variant="outline" className="text-[9px] sm:text-[10px] mr-0.5 sm:mr-1">
-                      {count}
+                      {treatments.length}
                     </Badge>
                     {isExpanded ? (
                       <ChevronUp className="h-4 w-4" />

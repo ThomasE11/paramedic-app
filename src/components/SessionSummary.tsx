@@ -4,12 +4,20 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { 
-  CheckCircle, XCircle, FileText, Award, AlertTriangle, 
-  Clock, BookOpen, Lightbulb, Download, Loader2, TrendingUp, 
-  Target, Star, RotateCcw, Sparkles
+  CheckCircle, XCircle, FileText, Award, AlertTriangle,
+  Clock, BookOpen, Lightbulb, Download, Loader2, TrendingUp,
+  Target, Star, RotateCcw, Sparkles, Activity
 } from 'lucide-react';
 import { exportSessionToPDF } from '@/lib/pdf-export';
 import { DebriefingResourcesPanel } from '@/components/DebriefingResourcesPanel';
+import {
+  evaluateTreatmentQuality,
+  getResourcesForCase,
+  generateYearAwareGuidance,
+  assessTreatmentTiming,
+  type TreatmentQualityResult,
+  type FeedbackResource,
+} from '@/data/clinicalRealism';
 
 interface SessionSummaryProps {
   session: CaseSession;
@@ -410,6 +418,15 @@ export function SessionSummary({
                         </p>
                         <p className="text-sm text-amber-600 dark:text-amber-400">{feedback}</p>
                       </div>
+                      <div className="mt-2 p-3 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg">
+                        <p className="text-xs font-semibold text-indigo-700 dark:text-indigo-300 mb-1 flex items-center gap-1">
+                          <BookOpen className="w-3 h-3" />
+                          {session.studentYear} Guidance:
+                        </p>
+                        <p className="text-sm text-indigo-600 dark:text-indigo-400">
+                          {generateYearAwareGuidance(item.description, item.category, session.studentYear)}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -500,6 +517,120 @@ export function SessionSummary({
           </CardContent>
         </Card>
       )}
+
+      {/* Treatment Quality Analysis — Year-Aware */}
+      {appliedTreatments && appliedTreatments.length > 0 && (() => {
+        const qualityResults: { treatmentName: string; result: TreatmentQualityResult; timingNote?: string }[] = [];
+        for (const tx of appliedTreatments) {
+          const result = evaluateTreatmentQuality(tx.id, session.completedItems.length > 0 ? caseData.vitalSignsProgression.initial : caseData.vitalSignsProgression.initial, caseData, session.studentYear);
+          if (result) {
+            const timing = tx.appliedAt && timeTakenSeconds !== undefined
+              ? assessTreatmentTiming(tx.id, Math.min(timeTakenSeconds, 1800), caseData)
+              : null;
+            qualityResults.push({ treatmentName: tx.name || tx.description, result, timingNote: timing?.feedback });
+          }
+        }
+        if (qualityResults.length === 0) return null;
+
+        const levelColors: Record<string, string> = {
+          optimal: 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/20',
+          acceptable: 'border-blue-500 bg-blue-50 dark:bg-blue-950/20',
+          suboptimal: 'border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20',
+          inappropriate: 'border-orange-500 bg-orange-50 dark:bg-orange-950/20',
+          harmful: 'border-red-500 bg-red-50 dark:bg-red-950/20',
+        };
+        const levelLabels: Record<string, string> = {
+          optimal: 'Optimal',
+          acceptable: 'Acceptable',
+          suboptimal: 'Suboptimal',
+          inappropriate: 'Inappropriate',
+          harmful: 'Harmful',
+        };
+
+        return (
+          <Card className="card-interactive animate-fade-in-up stagger-7 border-l-4 border-l-violet-500">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg text-violet-700 dark:text-violet-400">
+                <div className="p-1.5 rounded-lg bg-violet-100 dark:bg-violet-900/30">
+                  <Activity className="h-5 w-5" />
+                </div>
+                Treatment Quality Analysis
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {qualityResults.map((qr, i) => (
+                <div key={i} className={`rounded-lg border-l-4 p-3 ${levelColors[qr.result.level]}`}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-medium text-sm">{qr.treatmentName}</span>
+                    <Badge variant="outline" className="text-[10px]">{levelLabels[qr.result.level]} ({qr.result.score}%)</Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">{qr.result.feedback}</p>
+                  {qr.result.yearLevelNote && (
+                    <p className="text-xs mt-2 p-2 bg-violet-50 dark:bg-violet-900/20 rounded text-violet-700 dark:text-violet-300 italic">
+                      {qr.result.yearLevelNote}
+                    </p>
+                  )}
+                  {qr.timingNote && (
+                    <p className="text-xs mt-1 flex items-center gap-1 text-muted-foreground">
+                      <Clock className="w-3 h-3" />
+                      {qr.timingNote}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        );
+      })()}
+
+      {/* Year-Aware Guidance & Resources */}
+      {missedItems.length > 0 && (() => {
+        const missedCategories = [...new Set(missedItems.map(i => i.category))];
+        const resources: FeedbackResource[] = getResourcesForCase(caseData, missedCategories, session.studentYear);
+        const guidanceItems = missedCategories.slice(0, 3).map(cat => {
+          const catItems = missedItems.filter(i => i.category === cat);
+          const desc = catItems.length > 1 ? `${catItems.length} ${cat} items missed` : catItems[0]?.description || cat;
+          return generateYearAwareGuidance(desc, cat, session.studentYear);
+        });
+
+        if (guidanceItems.length === 0 && resources.length === 0) return null;
+
+        return (
+          <Card className="card-interactive animate-fade-in-up stagger-7 border-l-4 border-l-indigo-500">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg text-indigo-700 dark:text-indigo-400">
+                <div className="p-1.5 rounded-lg bg-indigo-100 dark:bg-indigo-900/30">
+                  <BookOpen className="h-5 w-5" />
+                </div>
+                Year-Level Guidance ({session.studentYear})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {guidanceItems.map((guidance, i) => (
+                <div key={i} className="p-3 bg-indigo-50 dark:bg-indigo-950/20 rounded-lg">
+                  <p className="text-sm text-indigo-700 dark:text-indigo-300 leading-relaxed">{guidance}</p>
+                </div>
+              ))}
+              {resources.length > 0 && (
+                <div className="mt-4">
+                  <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Recommended Resources</p>
+                  <div className="space-y-2">
+                    {resources.slice(0, 5).map((r, i) => (
+                      <div key={i} className="flex items-start gap-2 p-2 rounded bg-white dark:bg-gray-800 border">
+                        <Badge variant="outline" className="text-[9px] shrink-0 mt-0.5">{r.type}</Badge>
+                        <div>
+                          <p className="text-sm font-medium">{r.title}</p>
+                          <p className="text-xs text-muted-foreground">{r.description}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        );
+      })()}
 
       {/* Teaching Points */}
       <Card className="card-interactive animate-fade-in-up stagger-8 border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">

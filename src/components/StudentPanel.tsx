@@ -839,6 +839,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                   appliedTreatmentIds={appliedTreatmentIds}
                   isApplying={!!applyingTreatmentId}
                   applyingTreatmentId={applyingTreatmentId}
+                  studentYear={selectedYear}
                 />
               </Suspense>
             )}

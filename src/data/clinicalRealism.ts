@@ -1,0 +1,1204 @@
+/**
+ * Clinical Realism Engine
+ *
+ * Provides year-level treatment gating, pathology-aware treatment modifiers,
+ * case-specific staged deterioration, treatment quality scoring, and
+ * enhanced year-aware/case-aware feedback.
+ *
+ * This module sits between the case data and the treatment engine to ensure
+ * that treatment responses, available options, and feedback all behave the
+ * way a real patient and a real clinical educator would expect.
+ */
+
+import type { StudentYear, CaseScenario, VitalSigns } from '@/types';
+
+// ============================================================================
+// PHASE 1: YEAR-LEVEL TREATMENT GATING
+// ============================================================================
+
+/**
+ * Defines which treatments are available at each year level.
+ * Year 1-2: Foundation — assessment & basic treatment
+ * Year 3: Intermediate — IV meds, cardiac monitoring, clinical reasoning
+ * Year 4 + Diploma: Advanced — complex pharmacology, advanced procedures
+ */
+export const TREATMENT_YEAR_ACCESS: Record<string, StudentYear[]> = {
+  // ----- AIRWAY -----
+  airway_open:          ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
+  suction:              ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
+  opa_insert:           ['2nd-year', '3rd-year', '4th-year', 'diploma'],
+  intubation:           ['4th-year', 'diploma'],
+
+  // ----- BREATHING -----
+  oxygen_nasal:         ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
+  oxygen_mask:          ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
+  oxygen_nonrebreather: ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
+  bvm_ventilation:      ['2nd-year', '3rd-year', '4th-year', 'diploma'],
+  nebulizer_salbutamol: ['2nd-year', '3rd-year', '4th-year', 'diploma'],
+  nebulizer_ipratropium:['3rd-year', '4th-year', 'diploma'],
+  cpap_niv:             ['4th-year', 'diploma'],
+  needle_decompression: ['3rd-year', '4th-year', 'diploma'],
+
+  // ----- CIRCULATION -----
+  iv_access:            ['3rd-year', '4th-year', 'diploma'],
+  fluids_250ml:         ['3rd-year', '4th-year', 'diploma'],
+  fluids_500ml:         ['3rd-year', '4th-year', 'diploma'],
+  fluids_1000ml:        ['4th-year', 'diploma'],
+  bleeding_control:     ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
+  tourniquet:           ['2nd-year', '3rd-year', '4th-year', 'diploma'],
+  cpr:                  ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
+  defibrillation:       ['3rd-year', '4th-year', 'diploma'],
+
+  // ----- MEDICATIONS -----
+  aspirin:              ['3rd-year', '4th-year', 'diploma'],
+  gtn_spray:            ['3rd-year', '4th-year', 'diploma'],
+  morphine_5mg:         ['4th-year', 'diploma'],
+  fentanyl_50mcg:       ['4th-year', 'diploma'],
+  adrenaline_1mg:       ['3rd-year', '4th-year', 'diploma'],
+  adrenaline_im:        ['3rd-year', '4th-year', 'diploma'],
+  atropine_05mg:        ['4th-year', 'diploma'],
+  adenosine_6mg:        ['4th-year', 'diploma'],
+  amiodarone_300mg:     ['4th-year', 'diploma'],
+  glucose_10g:          ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
+  glucagon_1mg:         ['2nd-year', '3rd-year', '4th-year', 'diploma'],
+  dextrose_10:          ['3rd-year', '4th-year', 'diploma'],
+  midazolam_5mg:        ['4th-year', 'diploma'],
+  naloxone_04mg:        ['3rd-year', '4th-year', 'diploma'],
+  txa_1g:               ['3rd-year', '4th-year', 'diploma'],
+  hydrocortisone_200mg: ['4th-year', 'diploma'],
+  magnesium_2g:         ['4th-year', 'diploma'],
+  ondansetron_4mg:      ['3rd-year', '4th-year', 'diploma'],
+  calcium_chloride_10:  ['4th-year', 'diploma'],
+
+  // ----- POSITIONING -----
+  supine_position:      ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
+  recovery_position:    ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
+  fowlers_position:     ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
+  left_lateral_tilt:    ['2nd-year', '3rd-year', '4th-year', 'diploma'],
+  leg_elevation:        ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
+
+  // ----- COMFORT/OTHER -----
+  warming_blanket:      ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
+  active_cooling:       ['2nd-year', '3rd-year', '4th-year', 'diploma'],
+  splinting:            ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
+  reassurance:          ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
+  calm_environment:     ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
+  family_presence:      ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
+};
+
+/**
+ * Check if a treatment is available for a given year level
+ */
+export function isTreatmentAvailableForYear(treatmentId: string, year: StudentYear): boolean {
+  const allowed = TREATMENT_YEAR_ACCESS[treatmentId];
+  if (!allowed) return true; // Unknown treatments are available to all (future-proof)
+  return allowed.includes(year);
+}
+
+/**
+ * Filter an array of treatments to only those available for a year level
+ */
+export function filterTreatmentsForYear<T extends { id: string }>(
+  treatments: T[],
+  year: StudentYear,
+): T[] {
+  return treatments.filter(t => isTreatmentAvailableForYear(t.id, year));
+}
+
+
+// ============================================================================
+// PHASE 2: PATHOLOGY-AWARE TREATMENT RESPONSE MODIFIERS
+// ============================================================================
+
+/**
+ * Per-case modifiers that scale how effective treatments are based on
+ * the underlying pathology and whether prerequisite treatments have been applied.
+ *
+ * For example: giving oxygen to a tension pneumothorax patient has minimal effect
+ * until the chest is decompressed. Giving fluids to a hemorrhaging patient only
+ * transiently improves BP if bleeding isn't controlled.
+ */
+export interface PathologyModifier {
+  /** Treatment ID this modifier applies to */
+  treatmentId: string;
+  /** Effectiveness multiplier (0.0 = no effect, 1.0 = full, >1.0 = enhanced) */
+  effectivenessMultiplier: number;
+  /** If these treatments have been applied first, use this multiplier instead */
+  prerequisiteTreatments?: {
+    treatmentIds: string[];
+    multiplierWithPrereqs: number;
+  };
+  /** Maximum SpO2 achievable with this treatment for this condition */
+  spo2Ceiling?: number;
+  /** Clinical explanation for why this modifier exists */
+  rationale: string;
+}
+
+/**
+ * Maps case subcategory/category to pathology modifiers.
+ * The dynamic treatment engine uses these to adjust effect magnitude.
+ */
+export const PATHOLOGY_MODIFIERS: Record<string, PathologyModifier[]> = {
+  // --- TENSION PNEUMOTHORAX ---
+  'pneumothorax-tension': [
+    {
+      treatmentId: 'oxygen_nasal',
+      effectivenessMultiplier: 0.15,
+      prerequisiteTreatments: {
+        treatmentIds: ['needle_decompression'],
+        multiplierWithPrereqs: 1.0,
+      },
+      spo2Ceiling: 88,
+      rationale: 'Oxygen cannot reach alveoli in a collapsed lung. Decompression must come first.',
+    },
+    {
+      treatmentId: 'oxygen_mask',
+      effectivenessMultiplier: 0.15,
+      prerequisiteTreatments: {
+        treatmentIds: ['needle_decompression'],
+        multiplierWithPrereqs: 1.0,
+      },
+      spo2Ceiling: 88,
+      rationale: 'Oxygen cannot reach alveoli in a collapsed lung.',
+    },
+    {
+      treatmentId: 'oxygen_nonrebreather',
+      effectivenessMultiplier: 0.2,
+      prerequisiteTreatments: {
+        treatmentIds: ['needle_decompression'],
+        multiplierWithPrereqs: 1.0,
+      },
+      spo2Ceiling: 90,
+      rationale: 'High-flow O2 provides marginal benefit without chest decompression.',
+    },
+    {
+      treatmentId: 'fluids_250ml',
+      effectivenessMultiplier: 0.3,
+      prerequisiteTreatments: {
+        treatmentIds: ['needle_decompression'],
+        multiplierWithPrereqs: 0.9,
+      },
+      rationale: 'Obstructive shock from tension PTX — fluids alone cannot overcome mediastinal compression.',
+    },
+    {
+      treatmentId: 'fluids_500ml',
+      effectivenessMultiplier: 0.3,
+      prerequisiteTreatments: {
+        treatmentIds: ['needle_decompression'],
+        multiplierWithPrereqs: 0.9,
+      },
+      rationale: 'Obstructive shock — decompress first, then fluid resuscitate.',
+    },
+  ],
+
+  // --- HEMORRHAGIC SHOCK (massive hemorrhage, pelvic fracture, polytrauma) ---
+  'massive-hemorrhage': [
+    {
+      treatmentId: 'fluids_250ml',
+      effectivenessMultiplier: 0.4,
+      prerequisiteTreatments: {
+        treatmentIds: ['bleeding_control', 'tourniquet'],
+        multiplierWithPrereqs: 0.8,
+      },
+      rationale: 'Fluid without hemorrhage control is filling a leaking bucket. Transient BP rise then continued drop.',
+    },
+    {
+      treatmentId: 'fluids_500ml',
+      effectivenessMultiplier: 0.4,
+      prerequisiteTreatments: {
+        treatmentIds: ['bleeding_control', 'tourniquet'],
+        multiplierWithPrereqs: 0.85,
+      },
+      rationale: 'Large volume resuscitation without source control dilutes clotting factors and worsens hemorrhage.',
+    },
+    {
+      treatmentId: 'fluids_1000ml',
+      effectivenessMultiplier: 0.35,
+      prerequisiteTreatments: {
+        treatmentIds: ['bleeding_control', 'tourniquet'],
+        multiplierWithPrereqs: 0.8,
+      },
+      rationale: 'Aggressive crystalloid without hemorrhage control risks dilutional coagulopathy and popping the clot.',
+    },
+  ],
+
+  // --- ACUTE STEMI ---
+  'stem-anterior': [
+    {
+      treatmentId: 'oxygen_nonrebreather',
+      effectivenessMultiplier: 0.6,
+      spo2Ceiling: 99,
+      rationale: 'Hyperoxia in AMI may increase infarct size via coronary vasoconstriction and ROS generation. Titrate to 94-98%.',
+    },
+    {
+      treatmentId: 'oxygen_mask',
+      effectivenessMultiplier: 0.8,
+      spo2Ceiling: 98,
+      rationale: 'Moderate-flow O2 appropriate if SpO2 < 94%. Monitor for overcorrection.',
+    },
+    {
+      treatmentId: 'oxygen_nasal',
+      effectivenessMultiplier: 1.0,
+      spo2Ceiling: 98,
+      rationale: 'Low-flow nasal cannula is appropriate for mild hypoxia in AMI. Titrate to 94-98%.',
+    },
+    {
+      treatmentId: 'fluids_1000ml',
+      effectivenessMultiplier: 0.5,
+      rationale: 'Large-volume fluid bolus in cardiogenic shock risks pulmonary edema. Use cautious 250ml boluses.',
+    },
+    {
+      treatmentId: 'gtn_spray',
+      effectivenessMultiplier: 0.0,
+      rationale: 'GTN is CONTRAINDICATED in hypotensive STEMI. Risk of further BP drop and cardiogenic collapse.',
+    },
+  ],
+  'stem-inferior': [
+    {
+      treatmentId: 'oxygen_nonrebreather',
+      effectivenessMultiplier: 0.6,
+      spo2Ceiling: 99,
+      rationale: 'Hyperoxia in AMI increases oxidative stress. Target SpO2 94-98%.',
+    },
+    {
+      treatmentId: 'oxygen_nasal',
+      effectivenessMultiplier: 1.0,
+      spo2Ceiling: 98,
+      rationale: 'Low-flow nasal cannula appropriate for mild hypoxia. Titrate to 94-98%.',
+    },
+    {
+      treatmentId: 'gtn_spray',
+      effectivenessMultiplier: 0.3,
+      rationale: 'GTN in inferior STEMI may cause severe hypotension due to RV involvement and preload dependence.',
+    },
+    {
+      treatmentId: 'fluids_250ml',
+      effectivenessMultiplier: 1.2,
+      rationale: 'RV infarction is preload-dependent. Cautious fluid bolus can significantly improve haemodynamics.',
+    },
+    {
+      treatmentId: 'morphine_5mg',
+      effectivenessMultiplier: 0.6,
+      rationale: 'Morphine causes vasodilation and further hypotension in preload-dependent states. Use with extreme caution.',
+    },
+  ],
+
+  // --- COPD EXACERBATION ---
+  'copd': [
+    {
+      treatmentId: 'oxygen_nonrebreather',
+      effectivenessMultiplier: 0.5,
+      spo2Ceiling: 92,
+      rationale: 'High-flow O2 in COPD risks abolishing hypoxic drive, causing CO2 retention and narcosis. Target 88-92%.',
+    },
+    {
+      treatmentId: 'oxygen_mask',
+      effectivenessMultiplier: 0.6,
+      spo2Ceiling: 92,
+      rationale: 'Medium-flow O2 may exceed target SpO2 in COPD. Monitor closely. Use controlled O2 delivery.',
+    },
+    {
+      treatmentId: 'oxygen_nasal',
+      effectivenessMultiplier: 1.0,
+      spo2Ceiling: 92,
+      rationale: 'Low-flow nasal cannula is first-line for COPD. Titrate to 88-92% — avoid overcorrection.',
+    },
+  ],
+
+  // --- SEVERE ASTHMA ---
+  'asthma': [
+    {
+      treatmentId: 'oxygen_nonrebreather',
+      effectivenessMultiplier: 0.7,
+      prerequisiteTreatments: {
+        treatmentIds: ['nebulizer_salbutamol'],
+        multiplierWithPrereqs: 1.0,
+      },
+      rationale: 'O2 alone cannot fix bronchospasm. Bronchodilation + oxygen together provides optimal improvement.',
+    },
+    {
+      treatmentId: 'nebulizer_salbutamol',
+      effectivenessMultiplier: 1.3,
+      rationale: 'Beta-2 agonist is the cornerstone of acute asthma management. High effectiveness.',
+    },
+    {
+      treatmentId: 'nebulizer_ipratropium',
+      effectivenessMultiplier: 1.2,
+      prerequisiteTreatments: {
+        treatmentIds: ['nebulizer_salbutamol'],
+        multiplierWithPrereqs: 1.5,
+      },
+      rationale: 'Ipratropium adds synergistic bronchodilation when combined with salbutamol in severe asthma.',
+    },
+  ],
+
+  // --- ANAPHYLAXIS ---
+  'anaphylaxis': [
+    {
+      treatmentId: 'adrenaline_1mg',
+      effectivenessMultiplier: 2.0,
+      rationale: 'IM adrenaline is the single most important treatment. Dramatically reverses bronchospasm and vasodilation.',
+    },
+    {
+      treatmentId: 'adrenaline_im',
+      effectivenessMultiplier: 2.0,
+      rationale: 'IM adrenaline 0.5mg (1:1000) is first-line. Life-saving intervention.',
+    },
+    {
+      treatmentId: 'nebulizer_salbutamol',
+      effectivenessMultiplier: 0.5,
+      prerequisiteTreatments: {
+        treatmentIds: ['adrenaline_1mg', 'adrenaline_im'],
+        multiplierWithPrereqs: 1.0,
+      },
+      rationale: 'Nebulized salbutamol treats residual bronchospasm but does NOT address systemic anaphylaxis. Adrenaline first.',
+    },
+    {
+      treatmentId: 'fluids_500ml',
+      effectivenessMultiplier: 0.6,
+      prerequisiteTreatments: {
+        treatmentIds: ['adrenaline_1mg', 'adrenaline_im'],
+        multiplierWithPrereqs: 1.0,
+      },
+      rationale: 'Fluids treat distributive shock but do not reverse the underlying mast cell degranulation. Adrenaline first.',
+    },
+  ],
+
+  // --- PULMONARY EMBOLISM ---
+  'pulmonary-embolism': [
+    {
+      treatmentId: 'oxygen_nonrebreather',
+      effectivenessMultiplier: 0.4,
+      spo2Ceiling: 92,
+      rationale: 'O2 has limited effect when perfusion to ventilated alveoli is blocked by thrombus. Dead space ventilation.',
+    },
+    {
+      treatmentId: 'oxygen_nasal',
+      effectivenessMultiplier: 0.3,
+      spo2Ceiling: 90,
+      rationale: 'Low-flow O2 unlikely to correct significant V/Q mismatch from PE.',
+    },
+    {
+      treatmentId: 'fluids_500ml',
+      effectivenessMultiplier: 0.5,
+      rationale: 'Cautious fluids may improve RV preload but excessive volume worsens RV dilation.',
+    },
+    {
+      treatmentId: 'fluids_1000ml',
+      effectivenessMultiplier: 0.3,
+      rationale: 'Large-volume resuscitation in massive PE risks RV overdistension and cardiovascular collapse.',
+    },
+  ],
+
+  // --- HEAD INJURY (TBI) ---
+  'traumatic-brain-injury': [
+    {
+      treatmentId: 'oxygen_nonrebreather',
+      effectivenessMultiplier: 1.2,
+      rationale: 'Avoid secondary brain injury from hypoxia. Target SpO2 > 94%. High-flow O2 appropriate.',
+    },
+    {
+      treatmentId: 'fluids_1000ml',
+      effectivenessMultiplier: 0.5,
+      rationale: 'Avoid excessive fluid in TBI — risk of cerebral edema. Target SBP > 90mmHg, not normotension.',
+    },
+    {
+      treatmentId: 'morphine_5mg',
+      effectivenessMultiplier: 0.4,
+      rationale: 'Opioids depress consciousness and respiration. Difficult to monitor neurological status. Use with extreme caution.',
+    },
+    {
+      treatmentId: 'midazolam_5mg',
+      effectivenessMultiplier: 0.3,
+      rationale: 'Benzodiazepines obscure GCS assessment. Only use if actively seizing.',
+    },
+  ],
+
+  // --- CARDIOGENIC SHOCK / HEART FAILURE ---
+  'heart-failure': [
+    {
+      treatmentId: 'fluids_250ml',
+      effectivenessMultiplier: 0.2,
+      rationale: 'Fluids in heart failure worsen pulmonary congestion. Volume is the problem, not the solution.',
+    },
+    {
+      treatmentId: 'fluids_500ml',
+      effectivenessMultiplier: 0.1,
+      rationale: 'CONTRAINDICATED: Fluid loading in acute heart failure causes flash pulmonary edema.',
+    },
+    {
+      treatmentId: 'fluids_1000ml',
+      effectivenessMultiplier: 0.05,
+      rationale: 'DANGEROUS: Large-volume resuscitation in heart failure causes respiratory failure.',
+    },
+    {
+      treatmentId: 'gtn_spray',
+      effectivenessMultiplier: 1.5,
+      rationale: 'GTN reduces preload and afterload — first-line for acute cardiogenic pulmonary edema if SBP > 90.',
+    },
+  ],
+
+  // --- OPIOID OVERDOSE ---
+  'overdose': [
+    {
+      treatmentId: 'naloxone_04mg',
+      effectivenessMultiplier: 2.0,
+      rationale: 'Naloxone is the specific antidote. Titrate to respiratory effort, NOT full consciousness.',
+    },
+    {
+      treatmentId: 'bvm_ventilation',
+      effectivenessMultiplier: 1.5,
+      rationale: 'BVM ventilation is critical if RR < 8. Supports oxygenation while naloxone takes effect.',
+    },
+  ],
+
+  // --- HYPOGLYCEMIA ---
+  'hypoglycemia': [
+    {
+      treatmentId: 'glucose_10g',
+      effectivenessMultiplier: 1.5,
+      rationale: 'Oral glucose is first-line for conscious, cooperative patients. Fast-acting, readily available.',
+    },
+    {
+      treatmentId: 'glucagon_1mg',
+      effectivenessMultiplier: 1.3,
+      rationale: 'Glucagon is effective IM alternative when IV unavailable or patient unconscious.',
+    },
+    {
+      treatmentId: 'dextrose_10',
+      effectivenessMultiplier: 1.8,
+      rationale: 'IV dextrose provides fastest glucose correction. D10% preferred for controlled correction.',
+    },
+  ],
+
+  // --- CARDIAC ARREST ---
+  'cardiac-arrest': [
+    {
+      treatmentId: 'adrenaline_1mg',
+      effectivenessMultiplier: 1.0,
+      prerequisiteTreatments: {
+        treatmentIds: ['cpr'],
+        multiplierWithPrereqs: 1.5,
+      },
+      rationale: 'Adrenaline improves coronary perfusion pressure during CPR. CPR must be ongoing for drug delivery.',
+    },
+    {
+      treatmentId: 'amiodarone_300mg',
+      effectivenessMultiplier: 1.0,
+      prerequisiteTreatments: {
+        treatmentIds: ['defibrillation'],
+        multiplierWithPrereqs: 1.3,
+      },
+      rationale: 'Amiodarone is given after 3rd shock in shockable arrest. No role without defibrillation attempts.',
+    },
+  ],
+};
+
+/**
+ * Get pathology modifiers for a specific case
+ */
+export function getPathologyModifiers(caseData: CaseScenario): PathologyModifier[] {
+  const subcategory = (caseData.subcategory || '').toLowerCase();
+  const category = caseData.category.toLowerCase();
+
+  // Check subcategory first (more specific), then category
+  if (subcategory && PATHOLOGY_MODIFIERS[subcategory]) {
+    return PATHOLOGY_MODIFIERS[subcategory];
+  }
+  if (PATHOLOGY_MODIFIERS[category]) {
+    return PATHOLOGY_MODIFIERS[category];
+  }
+  return [];
+}
+
+/**
+ * Get the effective multiplier for a specific treatment in a specific case,
+ * considering which prerequisite treatments have already been applied.
+ */
+export function getTreatmentEffectivenessMultiplier(
+  treatmentId: string,
+  caseData: CaseScenario,
+  appliedTreatmentIds: string[],
+): { multiplier: number; spo2Ceiling?: number; rationale?: string } {
+  const modifiers = getPathologyModifiers(caseData);
+  const modifier = modifiers.find(m => m.treatmentId === treatmentId);
+
+  if (!modifier) {
+    return { multiplier: 1.0 }; // No modifier — full standard effect
+  }
+
+  // Check if prerequisite treatments have been applied
+  if (modifier.prerequisiteTreatments) {
+    const prereqsMet = modifier.prerequisiteTreatments.treatmentIds.some(
+      prereqId => appliedTreatmentIds.includes(prereqId),
+    );
+    if (prereqsMet) {
+      return {
+        multiplier: modifier.prerequisiteTreatments.multiplierWithPrereqs,
+        spo2Ceiling: modifier.spo2Ceiling,
+        rationale: modifier.rationale,
+      };
+    }
+  }
+
+  return {
+    multiplier: modifier.effectivenessMultiplier,
+    spo2Ceiling: modifier.spo2Ceiling,
+    rationale: modifier.rationale,
+  };
+}
+
+
+// ============================================================================
+// PHASE 3: CASE-SPECIFIC STAGED DETERIORATION
+// ============================================================================
+
+export interface DeteriorationStage {
+  /** Minutes into the case when this stage triggers (if untreated) */
+  triggerMinutes: number;
+  /** Vital sign changes at this stage */
+  vitalChanges: Partial<VitalSigns> & { bpSystolicDelta?: number; bpDiastolicDelta?: number };
+  /** Clinical signs/description at this stage */
+  clinicalSigns: string;
+  /** ECG rhythm at this stage (if changed) */
+  rhythm?: string;
+  /** Is this a critical/arrest event? */
+  isCritical?: boolean;
+}
+
+/**
+ * Case-specific deterioration timelines.
+ * Each array describes staged deterioration if the patient is NOT treated.
+ */
+export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> = {
+  'stem-anterior': [
+    {
+      triggerMinutes: 3,
+      vitalChanges: { pulse: 120, spo2: 92, bpSystolicDelta: -5 },
+      clinicalSigns: 'Increasing diaphoresis, worsening chest pain, patient becoming more anxious',
+    },
+    {
+      triggerMinutes: 7,
+      vitalChanges: { pulse: 135, spo2: 89, bpSystolicDelta: -15 },
+      clinicalSigns: 'PVCs on monitor, BP dropping, skin cool and mottled, pain 9/10',
+      rhythm: 'Sinus Tachycardia with PVCs',
+    },
+    {
+      triggerMinutes: 12,
+      vitalChanges: { pulse: 150, spo2: 85, bpSystolicDelta: -25, respiration: 30 },
+      clinicalSigns: 'Runs of VT on monitor, cardiogenic shock developing, crackles in lung bases',
+      rhythm: 'Ventricular Tachycardia',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 18,
+      vitalChanges: { pulse: 0, spo2: 60, bpSystolicDelta: -90 },
+      clinicalSigns: 'VF arrest! No pulse. Begin CPR immediately.',
+      rhythm: 'Ventricular Fibrillation',
+      isCritical: true,
+    },
+  ],
+
+  'stem-inferior': [
+    {
+      triggerMinutes: 5,
+      vitalChanges: { pulse: 50, spo2: 93, bpSystolicDelta: -10 },
+      clinicalSigns: 'Vagal response — bradycardia developing, nausea, diaphoresis',
+      rhythm: 'Sinus Bradycardia',
+    },
+    {
+      triggerMinutes: 10,
+      vitalChanges: { pulse: 42, spo2: 90, bpSystolicDelta: -25 },
+      clinicalSigns: 'Significant bradycardia, JVD if RV involvement, hypotension worsening',
+      rhythm: 'Sinus Bradycardia',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 15,
+      vitalChanges: { pulse: 35, spo2: 85, bpSystolicDelta: -40, respiration: 28 },
+      clinicalSigns: 'Complete heart block developing, profound hypotension, altered mental status',
+      rhythm: 'Third Degree Heart Block',
+      isCritical: true,
+    },
+  ],
+
+  'asthma': [
+    {
+      triggerMinutes: 3,
+      vitalChanges: { respiration: 36, spo2: 84, pulse: 130 },
+      clinicalSigns: 'Accessory muscle use, intercostal recession, audible wheeze, tripod positioning',
+    },
+    {
+      triggerMinutes: 8,
+      vitalChanges: { respiration: 40, spo2: 78, pulse: 140, bpSystolicDelta: -10 },
+      clinicalSigns: 'Silent chest developing — OMINOUS sign. Air entry minimal. Unable to speak.',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 13,
+      vitalChanges: { respiration: 12, spo2: 65, pulse: 50, bpSystolicDelta: -30 },
+      clinicalSigns: 'EXHAUSTION — respiratory rate paradoxically dropping. Bradycardia. Peri-arrest.',
+      rhythm: 'Sinus Bradycardia',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 16,
+      vitalChanges: { respiration: 4, spo2: 40, pulse: 0 },
+      clinicalSigns: 'Respiratory arrest progressing to cardiac arrest. PEA/Asystole.',
+      rhythm: 'PEA',
+      isCritical: true,
+    },
+  ],
+
+  'copd': [
+    {
+      triggerMinutes: 5,
+      vitalChanges: { respiration: 34, spo2: 75, pulse: 115 },
+      clinicalSigns: 'Pursed lip breathing, barrel chest, prolonged expiration, use of accessory muscles',
+    },
+    {
+      triggerMinutes: 12,
+      vitalChanges: { respiration: 38, spo2: 70, pulse: 125, bpSystolicDelta: 10 },
+      clinicalSigns: 'CO2 retention — drowsiness, confusion, flapping tremor (asterixis)',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 20,
+      vitalChanges: { respiration: 10, spo2: 60, gcs: 8, bpSystolicDelta: 20 },
+      clinicalSigns: 'CO2 narcosis — GCS dropping, hypertension from hypercapnia, apneic episodes',
+      isCritical: true,
+    },
+  ],
+
+  'pneumothorax-tension': [
+    {
+      triggerMinutes: 2,
+      vitalChanges: { spo2: 78, pulse: 140, bpSystolicDelta: -15, respiration: 38 },
+      clinicalSigns: 'Tracheal deviation, distended neck veins, absent breath sounds on affected side',
+    },
+    {
+      triggerMinutes: 5,
+      vitalChanges: { spo2: 65, pulse: 160, bpSystolicDelta: -35, respiration: 42 },
+      clinicalSigns: 'Severe respiratory distress, pulsus paradoxus, mediastinal shift',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 8,
+      vitalChanges: { spo2: 40, pulse: 30, bpSystolicDelta: -60 },
+      clinicalSigns: 'PEA arrest imminent — obstructive shock. Decompress NOW or patient dies.',
+      rhythm: 'PEA',
+      isCritical: true,
+    },
+  ],
+
+  'cardiac-arrest': [
+    {
+      triggerMinutes: 1,
+      vitalChanges: { spo2: 50, gcs: 3 },
+      clinicalSigns: 'No pulse, no breathing. Brain damage begins within 4-6 minutes without CPR.',
+    },
+    {
+      triggerMinutes: 4,
+      vitalChanges: { spo2: 20 },
+      clinicalSigns: 'Irreversible brain damage imminent. Fixed dilated pupils developing.',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 10,
+      vitalChanges: { spo2: 0 },
+      clinicalSigns: 'Prolonged arrest without intervention. Survival unlikely.',
+      rhythm: 'Asystole',
+      isCritical: true,
+    },
+  ],
+
+  'anaphylaxis': [
+    {
+      triggerMinutes: 2,
+      vitalChanges: { pulse: 130, bpSystolicDelta: -20, respiration: 30, spo2: 90 },
+      clinicalSigns: 'Urticaria spreading, facial swelling, stridor developing, tachycardia',
+    },
+    {
+      triggerMinutes: 5,
+      vitalChanges: { pulse: 150, bpSystolicDelta: -40, respiration: 36, spo2: 80 },
+      clinicalSigns: 'Severe angioedema, audible stridor, wheeze, distributive shock',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 8,
+      vitalChanges: { pulse: 160, bpSystolicDelta: -60, respiration: 8, spo2: 60 },
+      clinicalSigns: 'Complete airway obstruction, cardiovascular collapse, peri-arrest',
+      isCritical: true,
+    },
+  ],
+
+  'massive-hemorrhage': [
+    {
+      triggerMinutes: 2,
+      vitalChanges: { pulse: 120, bpSystolicDelta: -15, spo2: 95 },
+      clinicalSigns: 'Class II hemorrhage: tachycardia, cool extremities, narrowing pulse pressure',
+    },
+    {
+      triggerMinutes: 5,
+      vitalChanges: { pulse: 140, bpSystolicDelta: -35, spo2: 92, respiration: 28 },
+      clinicalSigns: 'Class III hemorrhage: confused, markedly tachycardic, cold/clammy, SBP dropping',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 10,
+      vitalChanges: { pulse: 150, bpSystolicDelta: -55, spo2: 85, gcs: 10, respiration: 35 },
+      clinicalSigns: 'Class IV hemorrhage: moribund, obtunded, thread pulse, imminent arrest',
+      isCritical: true,
+    },
+  ],
+
+  'traumatic-brain-injury': [
+    {
+      triggerMinutes: 5,
+      vitalChanges: { gcs: 12, pulse: 65, bpSystolicDelta: 15 },
+      clinicalSigns: 'GCS declining, unilateral pupil dilation, vomiting',
+    },
+    {
+      triggerMinutes: 10,
+      vitalChanges: { gcs: 8, pulse: 55, bpSystolicDelta: 30, respiration: 10 },
+      clinicalSigns: 'Cushing triad developing: hypertension, bradycardia, irregular respirations. Rising ICP.',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 15,
+      vitalChanges: { gcs: 5, pulse: 40, bpSystolicDelta: 50, respiration: 6 },
+      clinicalSigns: 'Bilateral fixed dilated pupils, decorticate posturing, Cheyne-Stokes breathing',
+      isCritical: true,
+    },
+  ],
+
+  'pulmonary-embolism': [
+    {
+      triggerMinutes: 5,
+      vitalChanges: { pulse: 130, spo2: 85, bpSystolicDelta: -10, respiration: 30 },
+      clinicalSigns: 'Increasing dyspnea, pleuritic chest pain, tachycardia, anxiety',
+    },
+    {
+      triggerMinutes: 10,
+      vitalChanges: { pulse: 145, spo2: 75, bpSystolicDelta: -25, respiration: 35 },
+      clinicalSigns: 'RV strain — distended neck veins, S1Q3T3 on ECG, worsening hypoxia',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 15,
+      vitalChanges: { pulse: 160, spo2: 60, bpSystolicDelta: -45 },
+      clinicalSigns: 'Massive PE — obstructive shock, PEA arrest imminent',
+      rhythm: 'Sinus Tachycardia',
+      isCritical: true,
+    },
+  ],
+
+  'hypoglycemia': [
+    {
+      triggerMinutes: 5,
+      vitalChanges: { gcs: 12, pulse: 110, bloodGlucose: 2.5 },
+      clinicalSigns: 'Diaphoresis, tremor, confusion, slurred speech, combative behavior',
+    },
+    {
+      triggerMinutes: 10,
+      vitalChanges: { gcs: 8, pulse: 120, bloodGlucose: 1.8 },
+      clinicalSigns: 'Seizure risk increasing, obtundation, unable to protect airway',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 15,
+      vitalChanges: { gcs: 4, pulse: 55, bloodGlucose: 1.0 },
+      clinicalSigns: 'Hypoglycemic coma, seizures, bradycardia, brain damage risk',
+      isCritical: true,
+    },
+  ],
+};
+
+/**
+ * Get the deterioration timeline for a specific case
+ */
+export function getCaseDeteriorationTimeline(caseData: CaseScenario): DeteriorationStage[] {
+  const subcategory = (caseData.subcategory || '').toLowerCase();
+  const category = caseData.category.toLowerCase();
+
+  if (subcategory && CASE_DETERIORATION_TIMELINES[subcategory]) {
+    return CASE_DETERIORATION_TIMELINES[subcategory];
+  }
+  if (CASE_DETERIORATION_TIMELINES[category]) {
+    return CASE_DETERIORATION_TIMELINES[category];
+  }
+  return [];
+}
+
+
+// ============================================================================
+// PHASE 4: TREATMENT QUALITY SCORING
+// ============================================================================
+
+/**
+ * Evaluates the QUALITY of a treatment decision, not just whether it was done.
+ * Returns a score from 0-100 and contextual feedback.
+ */
+export interface TreatmentQualityResult {
+  score: number; // 0-100
+  level: 'optimal' | 'acceptable' | 'suboptimal' | 'inappropriate' | 'harmful';
+  feedback: string;
+  yearLevelNote?: string; // Year-specific context
+}
+
+interface TreatmentQualityRule {
+  treatmentId: string;
+  /** Condition on current vitals that triggers this rule */
+  condition: (vitals: VitalSigns, caseCategory: string, caseSubcategory: string) => boolean;
+  /** Scoring result if condition is met */
+  result: (year: StudentYear) => TreatmentQualityResult;
+}
+
+const TREATMENT_QUALITY_RULES: TreatmentQualityRule[] = [
+  // --- OXYGEN THERAPY APPROPRIATENESS ---
+  {
+    treatmentId: 'oxygen_nonrebreather',
+    condition: (vitals, _cat, sub) => vitals.spo2 >= 94 && (sub.includes('stem') || sub.includes('nstemi') || sub.includes('angina')),
+    result: (year) => ({
+      score: year === '1st-year' || year === '2nd-year' ? 70 : year === '3rd-year' ? 45 : 25,
+      level: year === '1st-year' || year === '2nd-year' ? 'acceptable' : 'suboptimal',
+      feedback: 'Patient SpO2 is >= 94%. High-flow O2 via NRB is not indicated for AMI with adequate saturation. Evidence shows hyperoxia in acute MI increases infarct size (AVOID-2, DETO2X-AMI trials). Nasal prongs titrated to 94-98% is the appropriate choice.',
+      yearLevelNote: year === '1st-year'
+        ? 'At your level, recognizing chest pain needs oxygen is good. As you progress, you will learn to titrate oxygen to target ranges.'
+        : year === '4th-year' || year === 'diploma'
+          ? 'At your level, you are expected to know that hyperoxia in AMI increases mortality. This is a significant clinical reasoning gap.'
+          : undefined,
+    }),
+  },
+  {
+    treatmentId: 'oxygen_nonrebreather',
+    condition: (vitals, _cat, sub) => vitals.spo2 >= 92 && sub.includes('copd'),
+    result: (year) => ({
+      score: year === '1st-year' ? 60 : year === '2nd-year' ? 40 : 20,
+      level: year === '1st-year' ? 'acceptable' : 'inappropriate',
+      feedback: 'COPD patient already at SpO2 >= 92%. High-flow O2 risks CO2 retention and narcosis. Target SpO2 88-92% with controlled oxygen delivery (nasal cannula 1-2L/min or Venturi mask 24-28%).',
+      yearLevelNote: year === '1st-year'
+        ? 'Oxygen management in COPD is a concept you will learn in Year 2. The key principle: some patients can be harmed by too much oxygen.'
+        : year === '3rd-year' || year === '4th-year' || year === 'diploma'
+          ? 'You should know the target SpO2 for COPD patients (88-92%) and the pathophysiology of hypoxic drive. This is a critical knowledge gap.'
+          : undefined,
+    }),
+  },
+  {
+    treatmentId: 'oxygen_nasal',
+    condition: (vitals, _cat, sub) => vitals.spo2 >= 94 && (sub.includes('stem') || sub.includes('nstemi')),
+    result: (year) => ({
+      score: year === '1st-year' || year === '2nd-year' ? 85 : 60,
+      level: year === '1st-year' || year === '2nd-year' ? 'acceptable' : 'suboptimal',
+      feedback: 'Patient SpO2 is already >= 94%. Current evidence does not support supplemental oxygen in AMI with adequate saturation. Monitor SpO2 and apply only if it drops below 94%.',
+      yearLevelNote: year === '4th-year' || year === 'diploma'
+        ? 'Evidence-based practice: withhold supplemental O2 if SpO2 >= 94% in AMI (AVOID, DETO2X-AMI). Monitor and apply only if saturation drops.'
+        : undefined,
+    }),
+  },
+
+  // --- GTN IN HYPOTENSION ---
+  {
+    treatmentId: 'gtn_spray',
+    condition: (vitals) => parseInt(vitals.bp.split('/')[0]) < 90,
+    result: () => ({
+      score: 0,
+      level: 'harmful',
+      feedback: 'GTN is CONTRAINDICATED when systolic BP < 90mmHg. GTN causes vasodilation and further drops BP, potentially causing cardiovascular collapse. Always check BP before administering GTN.',
+    }),
+  },
+  {
+    treatmentId: 'gtn_spray',
+    condition: (vitals, _cat, sub) => sub.includes('stem-inferior'),
+    result: (year) => ({
+      score: year === '3rd-year' ? 30 : 15,
+      level: 'inappropriate',
+      feedback: 'GTN in inferior STEMI is high-risk due to RV involvement. These patients are preload-dependent — GTN reduces preload and can cause severe hypotension. Check V4R first to rule out RV infarct.',
+      yearLevelNote: year === '4th-year' || year === 'diploma'
+        ? 'You are expected to know the association between inferior STEMI and RV involvement, and the risk of preload-reducing agents.'
+        : undefined,
+    }),
+  },
+
+  // --- FLUIDS IN HEART FAILURE ---
+  {
+    treatmentId: 'fluids_500ml',
+    condition: (_vitals, _cat, sub) => sub.includes('heart-failure'),
+    result: (year) => ({
+      score: year === '3rd-year' ? 20 : 5,
+      level: 'harmful',
+      feedback: 'IV fluid bolus in acute heart failure worsens pulmonary congestion. The patient is already fluid-overloaded. This will cause flash pulmonary edema and respiratory failure.',
+      yearLevelNote: year === '4th-year' || year === 'diploma'
+        ? 'Understanding fluid status assessment is critical. Heart failure = too much fluid. Adding more is directly harmful.'
+        : undefined,
+    }),
+  },
+  {
+    treatmentId: 'fluids_1000ml',
+    condition: (_vitals, _cat, sub) => sub.includes('heart-failure'),
+    result: () => ({
+      score: 0,
+      level: 'harmful',
+      feedback: 'Large-volume fluid resuscitation in heart failure is DANGEROUS. This will cause acute pulmonary edema, respiratory failure, and potentially death.',
+    }),
+  },
+
+  // --- OPIOIDS WITH RESPIRATORY DEPRESSION ---
+  {
+    treatmentId: 'morphine_5mg',
+    condition: (vitals) => vitals.respiration <= 12,
+    result: () => ({
+      score: 10,
+      level: 'harmful',
+      feedback: 'Morphine given to patient with RR <= 12. This risks respiratory arrest. Opioids are contraindicated in respiratory depression. Have naloxone ready and prepare for BVM ventilation.',
+    }),
+  },
+  {
+    treatmentId: 'fentanyl_50mcg',
+    condition: (vitals) => vitals.respiration <= 12,
+    result: () => ({
+      score: 10,
+      level: 'harmful',
+      feedback: 'Fentanyl given with RR <= 12. Risk of respiratory arrest. Monitor closely and prepare naloxone.',
+    }),
+  },
+
+  // --- APPROPRIATE FLUID CHALLENGE IN HEMORRHAGE ---
+  {
+    treatmentId: 'fluids_250ml',
+    condition: (_vitals, cat, sub) => cat === 'trauma' || sub.includes('hemorrhage') || sub.includes('pelvic'),
+    result: (year) => ({
+      score: year === '3rd-year' || year === '4th-year' ? 90 : 80,
+      level: 'optimal',
+      feedback: 'Cautious 250ml fluid bolus is the correct approach in hemorrhagic shock. Assess response before repeating. Permissive hypotension (SBP 80-90) may be appropriate in uncontrolled hemorrhage.',
+      yearLevelNote: year === '4th-year' || year === 'diploma'
+        ? 'Good clinical reasoning. Small-volume resuscitation reduces dilutional coagulopathy risk.'
+        : undefined,
+    }),
+  },
+];
+
+/**
+ * Evaluate the quality of a treatment decision
+ */
+export function evaluateTreatmentQuality(
+  treatmentId: string,
+  currentVitals: VitalSigns,
+  caseData: CaseScenario,
+  studentYear: StudentYear,
+): TreatmentQualityResult | null {
+  const caseCategory = caseData.category.toLowerCase();
+  const caseSubcategory = (caseData.subcategory || '').toLowerCase();
+
+  for (const rule of TREATMENT_QUALITY_RULES) {
+    if (rule.treatmentId === treatmentId && rule.condition(currentVitals, caseCategory, caseSubcategory)) {
+      return rule.result(studentYear);
+    }
+  }
+
+  return null; // No specific quality rule applies — treatment is standard
+}
+
+
+// ============================================================================
+// PHASE 5: ENHANCED YEAR-AWARE, CASE-AWARE FEEDBACK
+// ============================================================================
+
+export interface EnhancedFeedbackItem {
+  /** The feedback message */
+  message: string;
+  /** Year-appropriate learning guidance */
+  guidance: string;
+  /** Severity of the gap */
+  severity: 'critical' | 'important' | 'minor' | 'informational';
+  /** Recommended learning resources */
+  resources: FeedbackResource[];
+  /** Case-specific context */
+  caseContext?: string;
+  /** Treatment timing assessment */
+  timingNote?: string;
+}
+
+export interface FeedbackResource {
+  title: string;
+  type: 'guideline' | 'protocol' | 'article' | 'video' | 'textbook';
+  description: string;
+  /** Whether this is appropriate for the student's year level */
+  yearLevels: StudentYear[];
+}
+
+/**
+ * Common clinical resources mapped by topic for debrief
+ */
+const CLINICAL_RESOURCES: Record<string, FeedbackResource[]> = {
+  'oxygen-therapy': [
+    { title: 'BTS Guideline for Oxygen Use in Adults', type: 'guideline', description: 'British Thoracic Society guidelines on target SpO2 ranges and oxygen delivery devices', yearLevels: ['2nd-year', '3rd-year', '4th-year', 'diploma'] },
+    { title: 'AVOID Trial (2015)', type: 'article', description: 'Supplemental O2 in AMI — showed increased infarct size with high-flow O2 in STEMI', yearLevels: ['3rd-year', '4th-year', 'diploma'] },
+    { title: 'DETO2X-AMI Trial (2017)', type: 'article', description: 'No benefit of supplemental O2 in suspected MI with SpO2 >= 90%', yearLevels: ['4th-year', 'diploma'] },
+    { title: 'Oxygen Delivery Devices - Basics', type: 'textbook', description: 'Nasal cannula, simple mask, NRB — FiO2 ranges and indications', yearLevels: ['1st-year', '2nd-year'] },
+  ],
+  'ami-management': [
+    { title: 'AHA/ACC STEMI Guidelines', type: 'guideline', description: 'Door-to-balloon time targets, dual antiplatelet therapy, reperfusion strategy', yearLevels: ['3rd-year', '4th-year', 'diploma'] },
+    { title: 'Prehospital STEMI Care Bundle', type: 'protocol', description: 'Aspirin, 12-lead ECG, pre-alert, pain management, oxygen titration', yearLevels: ['3rd-year', '4th-year', 'diploma'] },
+    { title: 'Chest Pain Assessment (OPQRST)', type: 'textbook', description: 'Structured pain assessment for cardiac presentations', yearLevels: ['1st-year', '2nd-year'] },
+  ],
+  'airway-management': [
+    { title: 'Basic Airway Management', type: 'textbook', description: 'Head tilt-chin lift, jaw thrust, recovery position, suction', yearLevels: ['1st-year', '2nd-year'] },
+    { title: 'Airway Adjuncts and Advanced Airways', type: 'textbook', description: 'OPA, NPA, SGA, ETT selection and insertion', yearLevels: ['2nd-year', '3rd-year', '4th-year', 'diploma'] },
+    { title: 'Difficult Airway Algorithm', type: 'protocol', description: 'Stepwise approach to unanticipated difficult intubation', yearLevels: ['4th-year', 'diploma'] },
+  ],
+  'hemorrhage-control': [
+    { title: 'MARCH Algorithm', type: 'protocol', description: 'Massive hemorrhage, Airway, Respiration, Circulation, Hypothermia — trauma priorities', yearLevels: ['2nd-year', '3rd-year', '4th-year', 'diploma'] },
+    { title: 'Tourniquet Application', type: 'textbook', description: 'Indications, high-and-tight placement, time documentation', yearLevels: ['2nd-year', '3rd-year', '4th-year', 'diploma'] },
+    { title: 'Permissive Hypotension in Trauma', type: 'article', description: 'Evidence for SBP targets of 80-90mmHg in uncontrolled hemorrhage', yearLevels: ['4th-year', 'diploma'] },
+  ],
+  'respiratory-emergencies': [
+    { title: 'BTS/SIGN Asthma Guideline', type: 'guideline', description: 'Severity scoring, step-up treatment, life-threatening features', yearLevels: ['2nd-year', '3rd-year', '4th-year', 'diploma'] },
+    { title: 'GOLD COPD Guidelines', type: 'guideline', description: 'Acute exacerbation management, controlled O2, NIV criteria', yearLevels: ['3rd-year', '4th-year', 'diploma'] },
+    { title: 'Pneumothorax Management', type: 'protocol', description: 'Tension pneumothorax recognition, needle decompression landmarks', yearLevels: ['2nd-year', '3rd-year', '4th-year', 'diploma'] },
+  ],
+  'anaphylaxis': [
+    { title: 'Resuscitation Council UK Anaphylaxis Algorithm', type: 'guideline', description: 'IM adrenaline 0.5mg, positioning, fluid resuscitation, second-line agents', yearLevels: ['2nd-year', '3rd-year', '4th-year', 'diploma'] },
+    { title: 'Anaphylaxis vs Allergic Reaction', type: 'textbook', description: 'Differentiation, grading severity, when to give adrenaline', yearLevels: ['1st-year', '2nd-year'] },
+  ],
+  'cardiac-arrest': [
+    { title: 'ALS Algorithm', type: 'guideline', description: 'Shockable vs non-shockable rhythms, drug timings, reversible causes (4Hs/4Ts)', yearLevels: ['3rd-year', '4th-year', 'diploma'] },
+    { title: 'BLS Algorithm', type: 'guideline', description: 'CPR quality, ratio 30:2, AED use, chain of survival', yearLevels: ['1st-year', '2nd-year'] },
+    { title: 'Post-ROSC Care Bundle', type: 'protocol', description: 'Targeted temperature management, coronary angiography, neuroprotection', yearLevels: ['4th-year', 'diploma'] },
+  ],
+  'fluid-resuscitation': [
+    { title: 'IV Fluid Therapy in Adults', type: 'guideline', description: 'Crystalloid selection, bolus volumes, reassessment after each bolus', yearLevels: ['3rd-year', '4th-year', 'diploma'] },
+    { title: 'Fluid Challenge Technique', type: 'textbook', description: '250ml over 10-15 min, assess response before repeating', yearLevels: ['3rd-year', '4th-year', 'diploma'] },
+  ],
+  'neurological': [
+    { title: 'GCS Assessment', type: 'textbook', description: 'Eye, Verbal, Motor scoring with common pitfalls', yearLevels: ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'] },
+    { title: 'FAST Stroke Assessment', type: 'protocol', description: 'Face, Arms, Speech, Time — rapid stroke screening', yearLevels: ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'] },
+    { title: 'Raised ICP Management', type: 'guideline', description: 'Head elevation, avoid hypotension, osmotic therapy, hyperventilation (short-term)', yearLevels: ['4th-year', 'diploma'] },
+  ],
+  'pain-management': [
+    { title: 'WHO Pain Ladder - Prehospital Adaptation', type: 'guideline', description: 'Paracetamol, NSAIDs, opioids — stepwise approach to analgesia', yearLevels: ['2nd-year', '3rd-year', '4th-year', 'diploma'] },
+    { title: 'Intranasal Fentanyl', type: 'protocol', description: 'Non-IV opioid option, rapid onset, dose titration', yearLevels: ['3rd-year', '4th-year', 'diploma'] },
+  ],
+  'scene-safety': [
+    { title: 'Scene Safety Assessment Framework', type: 'textbook', description: 'Hazards, resources, mechanism, patient count — systematic approach', yearLevels: ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'] },
+    { title: 'PPE Selection Guide', type: 'protocol', description: 'Gloves, masks, eye protection — when and what', yearLevels: ['1st-year', '2nd-year'] },
+  ],
+};
+
+/**
+ * Get relevant resources for a case based on category and missed checklist items
+ */
+export function getResourcesForCase(
+  caseData: CaseScenario,
+  missedCategories: string[],
+  studentYear: StudentYear,
+): FeedbackResource[] {
+  const resources: FeedbackResource[] = [];
+  const category = caseData.category.toLowerCase();
+  const subcategory = (caseData.subcategory || '').toLowerCase();
+
+  // Map case characteristics to resource topics
+  const topicMap: Record<string, string[]> = {
+    'cardiac': ['ami-management', 'pain-management'],
+    'respiratory': ['respiratory-emergencies', 'oxygen-therapy'],
+    'trauma': ['hemorrhage-control', 'pain-management'],
+    'neurological': ['neurological'],
+    'environmental': ['anaphylaxis'],
+  };
+
+  // Add category-specific resources
+  const topics = topicMap[category] || [];
+  if (subcategory.includes('stem') || subcategory.includes('nstemi')) topics.push('ami-management', 'oxygen-therapy');
+  if (subcategory.includes('asthma') || subcategory.includes('copd')) topics.push('respiratory-emergencies', 'oxygen-therapy');
+  if (subcategory.includes('arrest')) topics.push('cardiac-arrest');
+  if (subcategory.includes('anaphylaxis')) topics.push('anaphylaxis');
+  if (subcategory.includes('hemorrhage') || subcategory.includes('pelvic')) topics.push('hemorrhage-control', 'fluid-resuscitation');
+
+  // Add resources based on what was missed
+  if (missedCategories.includes('safety')) topics.push('scene-safety');
+  if (missedCategories.includes('airway')) topics.push('airway-management');
+  if (missedCategories.includes('intervention') || missedCategories.includes('medication')) topics.push('fluid-resuscitation');
+
+  // Deduplicate and collect
+  const uniqueTopics = [...new Set(topics)];
+  for (const topic of uniqueTopics) {
+    const topicResources = CLINICAL_RESOURCES[topic] || [];
+    for (const resource of topicResources) {
+      if (resource.yearLevels.includes(studentYear) && !resources.some(r => r.title === resource.title)) {
+        resources.push(resource);
+      }
+    }
+  }
+
+  return resources;
+}
+
+/**
+ * Generate year-aware guidance text for a specific gap
+ */
+export function generateYearAwareGuidance(
+  gapDescription: string,
+  category: string,
+  studentYear: StudentYear,
+): string {
+  const yearGuidance: Record<StudentYear, (gap: string, cat: string) => string> = {
+    '1st-year': (gap, cat) =>
+      `Focus area: ${gap}. At this stage, the priority is building a safe, systematic approach. Practice your ${cat === 'safety' ? 'scene safety checklist' : cat === 'abcde' ? 'ABCDE sequence' : cat === 'history' ? 'SAMPLE/OPQRST history taking' : 'basic assessment skills'} until they become automatic.`,
+    '2nd-year': (gap, cat) =>
+      `Improvement area: ${gap}. You should be able to ${cat === 'abcde' ? 'complete a full ABCDE without prompting' : cat === 'secondary' ? 'perform a thorough secondary survey' : cat === 'intervention' ? 'identify when basic interventions are needed' : 'recognize key abnormalities and document them'}. Review the systematic approach and practice with peer assessment.`,
+    '3rd-year': (gap, cat) =>
+      `Clinical reasoning gap: ${gap}. At your level, you should ${cat === 'intervention' || cat === 'medication' ? 'identify time-critical treatments and initiate them without delay' : cat === 'clinical-reasoning' ? 'formulate a differential diagnosis and adjust your management accordingly' : 'integrate assessment findings with clinical decision-making'}. Consider why this step matters for patient outcome.`,
+    '4th-year': (gap, cat) =>
+      `Professional standard gap: ${gap}. As a near-independent practitioner, you are expected to ${cat === 'intervention' || cat === 'medication' ? 'manage complex pharmacology including contraindications, dose adjustment, and anticipating complications' : cat === 'team-lead' || cat === 'communication' ? 'lead the team effectively, delegate tasks, and communicate clearly with receiving facilities' : 'demonstrate expert-level clinical reasoning with justification for all decisions'}.`,
+    'diploma': (gap, cat) =>
+      `Practice-readiness concern: ${gap}. At diploma level, this represents a ${cat === 'safety' || cat === 'airway' ? 'fundamental gap that must be addressed before independent practice' : 'gap in clinical competency that requires focused revision and supervised practice'}. Seek mentorship and additional clinical exposure in this area.`,
+  };
+
+  return yearGuidance[studentYear](gapDescription, category);
+}
+
+/**
+ * Assess treatment timing — was this intervention given within the expected timeframe?
+ */
+export function assessTreatmentTiming(
+  treatmentId: string,
+  timeGivenSeconds: number,
+  caseData: CaseScenario,
+): { isOnTime: boolean; expectedSeconds: number; feedback: string } | null {
+  // Critical treatment timing expectations (seconds from case start)
+  const timingExpectations: Record<string, { maxSeconds: number; description: string }> = {
+    aspirin: { maxSeconds: 300, description: 'Aspirin should be given within 5 minutes for suspected ACS' },
+    adrenaline_1mg: { maxSeconds: 180, description: 'Adrenaline should be given as soon as cardiac arrest or anaphylaxis is identified' },
+    adrenaline_im: { maxSeconds: 120, description: 'IM adrenaline in anaphylaxis should be given within 2 minutes of recognition' },
+    needle_decompression: { maxSeconds: 120, description: 'Needle decompression for tension PTX is immediately life-saving — within 2 minutes' },
+    defibrillation: { maxSeconds: 120, description: 'First shock for VF/pVT should be delivered within 2 minutes' },
+    cpr: { maxSeconds: 60, description: 'CPR must begin within 1 minute of recognizing cardiac arrest' },
+    glucose_10g: { maxSeconds: 300, description: 'Glucose correction should begin within 5 minutes of identifying hypoglycemia' },
+    glucagon_1mg: { maxSeconds: 300, description: 'Glucagon should be given within 5 minutes if IV access unavailable' },
+    dextrose_10: { maxSeconds: 300, description: 'IV dextrose should be given within 5 minutes for severe hypoglycemia' },
+  };
+
+  const expectation = timingExpectations[treatmentId];
+  if (!expectation) return null;
+
+  // Check if this treatment is relevant to the case
+  const sub = (caseData.subcategory || '').toLowerCase();
+  const cat = caseData.category.toLowerCase();
+  const isRelevant =
+    (treatmentId === 'aspirin' && (sub.includes('stem') || sub.includes('nstemi') || cat === 'cardiac')) ||
+    (treatmentId.includes('adrenaline') && (sub.includes('anaphylaxis') || sub.includes('arrest'))) ||
+    (treatmentId === 'needle_decompression' && sub.includes('pneumothorax')) ||
+    (treatmentId === 'defibrillation' && sub.includes('arrest')) ||
+    (treatmentId === 'cpr' && sub.includes('arrest')) ||
+    (treatmentId.includes('glucose') || treatmentId.includes('dextrose')) && sub.includes('hypoglycemia') ||
+    (treatmentId === 'glucagon_1mg' && sub.includes('hypoglycemia'));
+
+  if (!isRelevant) return null;
+
+  const isOnTime = timeGivenSeconds <= expectation.maxSeconds;
+  const feedback = isOnTime
+    ? `Good timing: ${expectation.description}. You achieved this in ${Math.round(timeGivenSeconds / 60)} min ${timeGivenSeconds % 60}s.`
+    : `Delayed: ${expectation.description}. You gave this at ${Math.round(timeGivenSeconds / 60)} min ${timeGivenSeconds % 60}s — ${Math.round((timeGivenSeconds - expectation.maxSeconds) / 60)} minutes late. Earlier intervention improves outcomes.`;
+
+  return { isOnTime, expectedSeconds: expectation.maxSeconds, feedback };
+}

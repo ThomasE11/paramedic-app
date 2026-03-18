@@ -19,6 +19,11 @@ import {
   getInitialSounds,
   updateSoundsAfterTreatment,
 } from './clinicalSounds';
+import {
+  getTreatmentEffectivenessMultiplier,
+  getCaseDeteriorationTimeline,
+  type DeteriorationStage,
+} from './clinicalRealism';
 
 // ============================================================================
 // TYPES
@@ -180,8 +185,9 @@ export function applyDynamicTreatment(
   if (treatment.id === 'defibrillation' && defibrillationParams) {
     response = handleDefibrillation(state, defibrillationParams, caseCategory);
   } else {
-    // Standard treatment logic
-    response = applyStandardTreatment(treatment, state, count, caseCategory, caseSubcategory);
+    // Standard treatment logic with pathology-aware modifiers
+    const appliedIds = Object.keys(state.treatmentCounts).filter(id => state.treatmentCounts[id] > 0);
+    response = applyStandardTreatment(treatment, state, count, caseCategory, caseSubcategory, caseData, appliedIds);
   }
 
   // Update clinical sounds
@@ -213,6 +219,8 @@ function applyStandardTreatment(
   applicationCount: number,
   caseCategory: string,
   caseSubcategory: string,
+  caseData?: CaseScenario,
+  appliedTreatmentIds?: string[],
 ): ClinicalResponse {
   const vitals = state.vitals;
   const bp = parseBP(vitals.bp);
@@ -229,6 +237,36 @@ function applyStandardTreatment(
     : applicationCount === 2 ? 0.7
     : applicationCount === 3 ? 0.4
     : 0.2; // After 3rd dose, minimal additional effect
+
+  // ===== PATHOLOGY-AWARE MODIFIERS =====
+  // Get case-specific treatment effectiveness from the clinical realism engine
+  let pathologyMultiplier = 1.0;
+  let spo2Ceiling: number | undefined;
+  let pathologyRationale: string | undefined;
+  if (caseData && appliedTreatmentIds) {
+    const pathologyResult = getTreatmentEffectivenessMultiplier(
+      treatment.id, caseData, appliedTreatmentIds,
+    );
+    pathologyMultiplier = pathologyResult.multiplier;
+    spo2Ceiling = pathologyResult.spo2Ceiling;
+    pathologyRationale = pathologyResult.rationale;
+
+    // If pathology makes this treatment nearly useless, add a warning
+    if (pathologyMultiplier < 0.3 && pathologyRationale) {
+      warningMessage = pathologyRationale;
+    }
+    // If pathology makes this treatment contraindicated (0.0), return immediately
+    if (pathologyMultiplier === 0 && pathologyRationale) {
+      return {
+        description: `${treatment.name} applied but INEFFECTIVE for this condition. ${pathologyRationale}`,
+        effectivenessPercent: 0,
+        isPartialResponse: false,
+        requiresRepeat: false,
+        warningMessage: pathologyRationale,
+        vitalChanges: [],
+      };
+    }
+  }
 
   // ===== CASE-SPECIFIC EFFECTIVENESS MODIFIERS =====
   let categoryModifier = 1.0;
@@ -317,7 +355,7 @@ function applyStandardTreatment(
   }
 
   // ===== APPLY TREATMENT EFFECTS =====
-  const effectMultiplier = diminishingFactor * categoryModifier;
+  const effectMultiplier = diminishingFactor * categoryModifier * pathologyMultiplier;
 
   treatment.effects.forEach(effect => {
     const adjustedValue = effect.value * effectMultiplier;
@@ -392,10 +430,13 @@ function applyStandardTreatment(
 
       case 'spo2': {
         const oldSpO2 = vitals.spo2;
+        // Apply pathology-based SpO2 ceiling (e.g., COPD 88-92%, tension PTX limited until decompressed)
+        const effectiveMaxSpo2 = spo2Ceiling !== undefined ? Math.min(spo2Ceiling, effect.maxValue || 100) : (effect.maxValue || 100);
         if (effect.changeType === 'increase') {
-          vitals.spo2 = Math.round(clamp(vitals.spo2 + adjustedValue, effect.minValue || 60, effect.maxValue || 100));
+          vitals.spo2 = Math.round(clamp(vitals.spo2 + adjustedValue, effect.minValue || 60, effectiveMaxSpo2));
         } else if (effect.changeType === 'set') {
-          vitals.spo2 = Math.round(vitals.spo2 + (effect.value - vitals.spo2) * effectMultiplier);
+          const target = spo2Ceiling !== undefined ? Math.min(effect.value, spo2Ceiling) : effect.value;
+          vitals.spo2 = Math.round(vitals.spo2 + (target - vitals.spo2) * effectMultiplier);
         }
         if (vitals.spo2 !== oldSpO2) {
           changes.push({
@@ -698,7 +739,8 @@ function handleDefibrillation(
 
 /**
  * Apply time-based deterioration if patient is not being treated.
- * Call this periodically (e.g., every 30-60 seconds of simulation time).
+ * Uses case-specific staged deterioration timelines when available,
+ * falling back to generic category-based deterioration.
  */
 export function applyDeterioration(
   state: PatientState,
@@ -715,9 +757,72 @@ export function applyDeterioration(
   // Only deteriorate if no treatment applied recently (>60 seconds)
   if (newState.timeWithoutTreatment < 60) return newState;
 
+  const totalUntreatedMinutes = newState.timeWithoutTreatment / 60;
+
+  // ===== CASE-SPECIFIC STAGED DETERIORATION =====
+  // Use the clinically accurate staged timelines when available
+  const stagedTimeline = getCaseDeteriorationTimeline(caseData);
+  if (stagedTimeline.length > 0) {
+    // Find the current deterioration stage based on elapsed untreated time
+    let activeStage: DeteriorationStage | null = null;
+    for (let i = stagedTimeline.length - 1; i >= 0; i--) {
+      if (totalUntreatedMinutes >= stagedTimeline[i].triggerMinutes) {
+        activeStage = stagedTimeline[i];
+        break;
+      }
+    }
+
+    if (activeStage) {
+      const bp = parseBP(newState.vitals.bp);
+
+      // Apply stage-specific vital changes
+      if (activeStage.vitalChanges.pulse !== undefined) {
+        newState.vitals.pulse = activeStage.vitalChanges.pulse;
+      }
+      if (activeStage.vitalChanges.spo2 !== undefined) {
+        newState.vitals.spo2 = Math.max(0, activeStage.vitalChanges.spo2);
+      }
+      if (activeStage.vitalChanges.respiration !== undefined) {
+        newState.vitals.respiration = activeStage.vitalChanges.respiration;
+      }
+      if (activeStage.vitalChanges.gcs !== undefined) {
+        newState.vitals.gcs = activeStage.vitalChanges.gcs;
+      }
+      if (activeStage.vitalChanges.bloodGlucose !== undefined) {
+        newState.vitals.bloodGlucose = activeStage.vitalChanges.bloodGlucose;
+      }
+      if (activeStage.vitalChanges.bpSystolicDelta !== undefined) {
+        const initialBP = parseBP(caseData.vitalSignsProgression.initial.bp);
+        bp.systolic = Math.max(0, initialBP.systolic + activeStage.vitalChanges.bpSystolicDelta);
+        bp.diastolic = Math.max(0, bp.diastolic + (activeStage.vitalChanges.bpDiastolicDelta || activeStage.vitalChanges.bpSystolicDelta * 0.6));
+        newState.vitals.bp = formatBP(Math.round(bp.systolic), Math.round(bp.diastolic));
+      }
+
+      // Apply rhythm change
+      if (activeStage.rhythm) {
+        newState.currentRhythm = activeStage.rhythm;
+        if (['Ventricular Fibrillation', 'Asystole', 'PEA'].includes(activeStage.rhythm)) {
+          newState.isInArrest = true;
+        }
+      }
+
+      // Set deterioration level
+      newState.deteriorationLevel = activeStage.isCritical ? 4 : Math.min(3, Math.ceil(totalUntreatedMinutes / 5));
+
+      // Pulse = 0 means arrest
+      if (newState.vitals.pulse === 0) {
+        newState.isInArrest = true;
+        newState.deteriorationLevel = 4;
+      }
+
+      return newState;
+    }
+  }
+
+  // ===== FALLBACK: GENERIC CATEGORY-BASED DETERIORATION =====
   const cat = caseData.category.toLowerCase();
   const bp = parseBP(newState.vitals.bp);
-  const deteriorationRate = Math.min(4, Math.floor(newState.timeWithoutTreatment / 120)); // Escalates every 2 min
+  const deteriorationRate = Math.min(4, Math.floor(newState.timeWithoutTreatment / 120));
 
   // Arrest patients deteriorate fastest
   if (newState.isInArrest) {
