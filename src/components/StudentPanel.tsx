@@ -36,6 +36,41 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AuscultationPanel } from '@/components/AuscultationPanel';
+
+/**
+ * Generate a student-friendly case title that doesn't reveal the diagnosis.
+ * Uses dispatch reason and patient demographics instead.
+ */
+function getStudentCaseTitle(caseData: CaseScenario): string {
+  const age = caseData.patientInfo?.age;
+  const gender = caseData.patientInfo?.gender;
+  const reason = caseData.dispatchInfo?.callReason;
+
+  // Build patient description
+  let patient = '';
+  if (age && gender) {
+    patient = `${age}yo ${gender === 'male' ? 'Male' : gender === 'female' ? 'Female' : 'Patient'}`;
+  } else {
+    patient = 'Patient';
+  }
+
+  // Use dispatch reason as the case title
+  if (reason) {
+    // Clean up the reason to be a good title
+    const cleanReason = reason.charAt(0).toUpperCase() + reason.slice(1);
+    return `${patient} — ${cleanReason}`;
+  }
+
+  // Fallback to category-based generic title
+  const cat = caseData.category?.toLowerCase() || '';
+  if (cat.includes('cardiac')) return `${patient} — Chest Pain / Cardiac Complaint`;
+  if (cat.includes('respiratory')) return `${patient} — Breathing Difficulty`;
+  if (cat.includes('trauma')) return `${patient} — Trauma / Injury`;
+  if (cat.includes('neurological')) return `${patient} — Neurological Complaint`;
+  if (cat.includes('medical')) return `${patient} — Medical Emergency`;
+
+  return `${patient} — Emergency Call`;
+}
 import { DefibrillationDialog } from '@/components/DefibrillationDialog';
 import { ClinicalAssessmentPanel } from '@/components/ClinicalAssessmentPanel';
 import {
@@ -183,7 +218,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
 
     setIsGenerating(false);
     setPhase('prebriefing');
-    toast.success(`Case generated: ${newCase.title}`);
+    toast.success(`Case generated: ${getStudentCaseTitle(newCase)}`);
   }, [selectedYear, selectedCategory]);
 
   // Start case (from pre-briefing)
@@ -347,8 +382,10 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
     const criticalItems = checklist.filter(item => item.critical);
     const criticalCompleted = criticalItems.filter(item => session.completedItems.includes(item.id));
 
-    const scoreEarned = completed.reduce((sum, item) => sum + (item.points || 0), 0);
-    const totalPossible = checklist.reduce((sum, item) => sum + (item.points || 0), 0);
+    // Use assessment tracker score if available (primary scoring system), fall back to checklist
+    const debrief = assessmentTracker ? generateAssessmentDebrief(assessmentTracker) : null;
+    const scoreEarned = debrief ? debrief.score : completed.reduce((sum, item) => sum + (item.points || 0), 0);
+    const totalPossible = debrief ? debrief.totalPossible : checklist.reduce((sum, item) => sum + (item.points || 0), 0);
     const percentage = totalPossible > 0 ? Math.round((scoreEarned / totalPossible) * 100) : 0;
 
     // Treatment analysis
@@ -379,8 +416,8 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
         spo2Improved: finalSpO2 > initialSpO2,
         initialHR, finalHR, initialSpO2, finalSpO2
       },
-      // Assessment debrief
-      assessmentDebrief: assessmentTracker ? generateAssessmentDebrief(assessmentTracker) : null,
+      // Assessment debrief (reuse already-computed debrief)
+      assessmentDebrief: debrief,
     };
   }, [currentCase, session, selectedYear, appliedTreatments, vitalsHistory, elapsedSeconds, caseStartTime, assessmentTracker]);
 
@@ -599,7 +636,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
             </div>
 
             <div>
-              <h2 className="heading-premium text-lg sm:text-2xl">{currentCase.title}</h2>
+              <h2 className="heading-premium text-lg sm:text-2xl">{getStudentCaseTitle(currentCase)}</h2>
               <p className="text-xs sm:text-sm text-muted-foreground mt-1">Review the dispatch and scene information before starting</p>
             </div>
 
@@ -769,7 +806,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                   <Activity className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h2 className="text-sm sm:text-base font-bold tracking-tight truncate">{currentCase.title}</h2>
+                  <h2 className="text-sm sm:text-base font-bold tracking-tight truncate">{getStudentCaseTitle(currentCase)}</h2>
                   <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
                     {currentCase.dispatchInfo.location} <span className="mx-1 text-border">|</span> <Clock className="h-2.5 w-2.5 sm:h-3 sm:w-3 inline-block -mt-px" /> {formatTime(elapsedSeconds)}
                   </p>
@@ -835,6 +872,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
               <AuscultationPanel
                 sounds={patientState.sounds}
                 isExpanded={['respiratory', 'cardiac', 'cardiac-ecg', 'thoracic'].includes(currentCase.category)}
+                isStudentView={true}
               />
             )}
 
@@ -848,6 +886,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                   isApplying={!!applyingTreatmentId}
                   applyingTreatmentId={applyingTreatmentId}
                   studentYear={selectedYear}
+                  isStudentView={true}
                 />
               </Suspense>
             )}
@@ -906,7 +945,19 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                                 x{patientState.treatmentCounts[t.id]}
                               </Badge>
                             )}
-                            <p className="text-muted-foreground mt-0.5 leading-relaxed">{t.description}</p>
+                            <p className="text-muted-foreground mt-0.5 leading-relaxed">
+                              {/* Strip exact vital transitions from student view — they should observe changes on the monitor */}
+                              {(() => {
+                                const desc = t.description || '';
+                                // Remove "— HR: 120 → 110, SpO2: 85 → 89" style transitions
+                                const cleaned = desc
+                                  .replace(/\s*—\s*(?:[A-Z][A-Za-z\d]+:\s*[\d./]+[%°]?[A-Za-z]?\s*→\s*[\d./]+[%°]?[A-Za-z]?(?:,\s*)?)+\.?/g, '.')
+                                  .replace(/\s*—\s*\d+\s*vitals?\s*improving\.?\s*(?:Consider\s*repeat\s*dose\.?)?/g, '.')
+                                  .replace(/\.{2,}/g, '.')
+                                  .trim();
+                                return cleaned;
+                              })()}
+                            </p>
                           </div>
                           <span className="text-muted-foreground/60 text-[10px] shrink-0">
                             {new Date(t.appliedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
@@ -930,7 +981,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
               <ArrowLeft className="h-3.5 w-3.5" /> Back to Monitor
             </Button>
             <Suspense fallback={<LoadingCard />}>
-              <CaseDisplay caseData={currentCase} studentYear={selectedYear} />
+              <CaseDisplay caseData={currentCase} studentYear={selectedYear} isStudentView={true} />
             </Suspense>
           </div>
         )}
@@ -954,7 +1005,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                   <Star className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
                 </div>
                 <h2 className="heading-display text-xl sm:text-2xl">Case Complete</h2>
-                <p className="text-muted-foreground mt-1 text-sm sm:text-base truncate px-2">{currentCase.title}</p>
+                <p className="text-muted-foreground mt-1 text-sm sm:text-base truncate px-2">{getStudentCaseTitle(currentCase)}</p>
               </div>
             </div>
 
@@ -1082,7 +1133,16 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                           <CheckCircle2 className="h-3.5 w-3.5 text-green-500 mt-0.5 shrink-0" />
                           <div>
                             <span className="font-semibold">{t.name}</span>
-                            <span className="text-muted-foreground ml-2">{t.description}</span>
+                            <span className="text-muted-foreground ml-2">
+                              {(() => {
+                                const desc = t.description || '';
+                                return desc
+                                  .replace(/\s*—\s*(?:[A-Z][A-Za-z\d]+:\s*[\d./]+[%°]?[A-Za-z]?\s*→\s*[\d./]+[%°]?[A-Za-z]?(?:,\s*)?)+\.?/g, '.')
+                                  .replace(/\s*—\s*\d+\s*vitals?\s*improving\.?\s*(?:Consider\s*repeat\s*dose\.?)?/g, '.')
+                                  .replace(/\.{2,}/g, '.')
+                                  .trim();
+                              })()}
+                            </span>
                           </div>
                         </div>
                       ))}
@@ -1278,7 +1338,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
               const missedCategories = [...new Set(performanceMetrics.assessmentDebrief!.criticalMissed.map(m => m.category || 'assessment'))];
               const resources: FeedbackResource[] = getResourcesForCase(currentCase, missedCategories, selectedYear);
               const guidanceItems = missedCategories.slice(0, 3).map(cat => {
-                const desc = `${cat} assessment gaps`;
+                const desc = cat === 'assessment' ? 'clinical assessment gaps' : `${cat} assessment gaps`;
                 return generateYearAwareGuidance(desc, cat, selectedYear);
               });
 

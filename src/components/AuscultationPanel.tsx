@@ -2,8 +2,9 @@
  * Auscultation Panel
  *
  * Interactive panel where students can "listen" to the patient's lungs and heart.
- * Displays auscultation findings that change dynamically based on patient condition
- * and treatment responses. Includes Web Audio API sound generation.
+ * In STUDENT mode: only plays sounds — no labels revealing what the sound is.
+ * The student must identify the sound themselves.
+ * In INSTRUCTOR mode: shows full sound descriptions and clinical significance.
  */
 
 import { useState, useCallback } from 'react';
@@ -26,9 +27,11 @@ import {
 interface AuscultationPanelProps {
   sounds: ClinicalSoundState;
   isExpanded?: boolean;
+  /** When true, hides sound labels — student must identify by listening only */
+  isStudentView?: boolean;
 }
 
-// Color coding for sound severity
+// Color coding for sound severity (only used in instructor mode)
 const soundSeverityColor: Record<BreathSoundType, string> = {
   'clear': 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300',
   'wheeze': 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300',
@@ -44,7 +47,7 @@ const soundSeverityColor: Record<BreathSoundType, string> = {
 
 const criticalSounds: BreathSoundType[] = ['absent', 'stridor', 'snoring'];
 
-export function AuscultationPanel({ sounds, isExpanded: initialExpanded = false }: AuscultationPanelProps) {
+export function AuscultationPanel({ sounds, isExpanded: initialExpanded = false, isStudentView = true }: AuscultationPanelProps) {
   const [isExpanded, setIsExpanded] = useState(initialExpanded);
   const [isPlaying, setIsPlaying] = useState<string | null>(null);
   const [showDetails, setShowDetails] = useState(false);
@@ -76,6 +79,134 @@ export function AuscultationPanel({ sounds, isExpanded: initialExpanded = false 
   const leftDesc = BREATH_SOUND_DESCRIPTIONS[sounds.leftLung];
   const rightDesc = BREATH_SOUND_DESCRIPTIONS[sounds.rightLung];
 
+  // ============================================================
+  // STUDENT VIEW — sound only, no labels
+  // ============================================================
+  if (isStudentView) {
+    return (
+      <Card className="border-2 border-blue-200 dark:border-blue-800 shadow-lg overflow-hidden">
+        <CardHeader
+          className="pb-2 sm:pb-3 px-3 sm:px-6 cursor-pointer bg-gradient-to-r from-blue-500/10 to-transparent"
+          onClick={() => setIsExpanded(!isExpanded)}
+        >
+          <CardTitle className="flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base">
+            <div className="p-1 sm:p-1.5 rounded-lg bg-blue-500/10">
+              <Stethoscope className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
+            </div>
+            <span>Chest Auscultation</span>
+            {isExpanded ? <ChevronUp className="h-3.5 w-3.5 sm:h-4 sm:w-4 ml-auto" /> : <ChevronDown className="h-3.5 w-3.5 sm:h-4 sm:w-4 ml-auto" />}
+          </CardTitle>
+          <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
+            Click to auscultate — listen and identify the sounds
+          </p>
+        </CardHeader>
+
+        {isExpanded && (
+          <CardContent className="pt-0 px-3 sm:px-6 space-y-3 sm:space-y-4">
+            {/* Lung sounds — play buttons only */}
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
+              {/* Left Lung */}
+              <div className="rounded-xl border border-border/60 bg-card/50 p-3 sm:p-4 flex flex-col items-center gap-2">
+                <span className="font-semibold text-xs sm:text-sm">Left Lung</span>
+                {hasAudio ? (
+                  <Button
+                    variant={isPlaying === 'left' ? 'destructive' : 'outline'}
+                    size="sm"
+                    className="h-12 w-12 sm:h-14 sm:w-14 rounded-full p-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (isPlaying === 'left') handleStopSound();
+                      else handlePlaySound('left', sounds.leftLung);
+                    }}
+                  >
+                    {isPlaying === 'left' ? (
+                      <VolumeX className="h-5 w-5 sm:h-6 sm:w-6 animate-pulse" />
+                    ) : (
+                      <Volume2 className="h-5 w-5 sm:h-6 sm:w-6" />
+                    )}
+                  </Button>
+                ) : (
+                  <p className="text-[10px] text-muted-foreground text-center">Audio not available</p>
+                )}
+                <p className="text-[10px] text-muted-foreground">
+                  {isPlaying === 'left' ? 'Listening...' : 'Tap to listen'}
+                </p>
+              </div>
+
+              {/* Right Lung */}
+              <div className="rounded-xl border border-border/60 bg-card/50 p-3 sm:p-4 flex flex-col items-center gap-2">
+                <span className="font-semibold text-xs sm:text-sm">Right Lung</span>
+                {hasAudio ? (
+                  <Button
+                    variant={isPlaying === 'right' ? 'destructive' : 'outline'}
+                    size="sm"
+                    className="h-12 w-12 sm:h-14 sm:w-14 rounded-full p-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (isPlaying === 'right') handleStopSound();
+                      else handlePlaySound('right', sounds.rightLung);
+                    }}
+                  >
+                    {isPlaying === 'right' ? (
+                      <VolumeX className="h-5 w-5 sm:h-6 sm:w-6 animate-pulse" />
+                    ) : (
+                      <Volume2 className="h-5 w-5 sm:h-6 sm:w-6" />
+                    )}
+                  </Button>
+                ) : (
+                  <p className="text-[10px] text-muted-foreground text-center">Audio not available</p>
+                )}
+                <p className="text-[10px] text-muted-foreground">
+                  {isPlaying === 'right' ? 'Listening...' : 'Tap to listen'}
+                </p>
+              </div>
+            </div>
+
+            {/* Heart Sounds — play button only */}
+            <div className="rounded-xl border border-border/60 bg-card/50 p-3 sm:p-4 flex items-center justify-between">
+              <span className="font-semibold text-xs sm:text-sm">Heart Sounds</span>
+              {hasAudio && sounds.heartSound !== 'absent' ? (
+                <div className="flex items-center gap-2">
+                  <p className="text-[10px] text-muted-foreground">
+                    {isPlaying === 'heart' ? 'Listening...' : 'Tap to listen'}
+                  </p>
+                  <Button
+                    variant={isPlaying === 'heart' ? 'destructive' : 'outline'}
+                    size="sm"
+                    className="h-10 w-10 sm:h-12 sm:w-12 rounded-full p-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (isPlaying === 'heart') {
+                        handleStopSound();
+                      } else {
+                        setIsPlaying('heart');
+                        playHeartSound(sounds.heartSound, 5000);
+                        setTimeout(() => setIsPlaying(null), 5000);
+                      }
+                    }}
+                  >
+                    {isPlaying === 'heart' ? (
+                      <VolumeX className="h-4 w-4 sm:h-5 sm:w-5 animate-pulse" />
+                    ) : (
+                      <Volume2 className="h-4 w-4 sm:h-5 sm:w-5" />
+                    )}
+                  </Button>
+                </div>
+              ) : sounds.heartSound === 'absent' ? (
+                <Badge variant="destructive" className="text-[9px]">No heart sounds detected</Badge>
+              ) : (
+                <p className="text-[10px] text-muted-foreground">Audio not available</p>
+              )}
+            </div>
+          </CardContent>
+        )}
+      </Card>
+    );
+  }
+
+  // ============================================================
+  // INSTRUCTOR VIEW — full details with sound labels
+  // ============================================================
   return (
     <Card className={`border-2 ${isCritical ? 'border-red-300 dark:border-red-800' : 'border-blue-200 dark:border-blue-800'} shadow-lg overflow-hidden`}>
       {/* Header */}

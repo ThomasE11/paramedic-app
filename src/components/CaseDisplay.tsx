@@ -38,6 +38,51 @@ class ResourcesErrorBoundary extends Component<{ children: ReactNode }, { hasErr
 interface CaseDisplayProps {
   caseData: CaseScenario;
   studentYear?: StudentYear;
+  isStudentView?: boolean;
+}
+
+/**
+ * Click-to-reveal field for student view.
+ * Shows a clickable label that expands to reveal content underneath.
+ */
+function RevealableField({
+  label,
+  icon,
+  children,
+  isStudentView = false,
+  className = '',
+}: {
+  label: string;
+  icon?: ReactNode;
+  children: ReactNode;
+  isStudentView?: boolean;
+  className?: string;
+}) {
+  const [revealed, setRevealed] = useState(!isStudentView);
+
+  if (!isStudentView) {
+    return <div className={className}>{children}</div>;
+  }
+
+  return (
+    <div className={className}>
+      <button
+        onClick={() => setRevealed(!revealed)}
+        className="flex items-center gap-2 w-full text-left group py-1 px-1 -ml-1 rounded-md hover:bg-muted/60 transition-colors"
+      >
+        {icon && <span className="text-muted-foreground">{icon}</span>}
+        <span className="text-sm font-medium flex-1">{label}</span>
+        <span className={`text-xs text-muted-foreground transition-transform duration-200 ${revealed ? 'rotate-90' : ''}`}>
+          &#9654;
+        </span>
+      </button>
+      {revealed && (
+        <div className="pl-6 pt-1 pb-1 animate-fade-in">
+          {children}
+        </div>
+      )}
+    </div>
+  );
 }
 
 // Detail visibility levels mapping - avoid recreating on every render
@@ -117,16 +162,14 @@ function shouldShowDetail(
   }
 }
 
-export function CaseDisplay({ caseData, studentYear = '3rd-year' }: CaseDisplayProps) {
+export function CaseDisplay({ caseData, studentYear = '3rd-year', isStudentView = false }: CaseDisplayProps) {
   // ECG Display state
   const [showECGModal, setShowECGModal] = useState(false);
 
-
-
-  // Collapsible sections state
-  const [showABCDE, setShowABCDE] = useState(true);
-  const [showSecondarySurvey, setShowSecondarySurvey] = useState(true);
-  const [showPatientHistory, setShowPatientHistory] = useState(true);
+  // Collapsible sections state — collapsed by default in student view
+  const [showABCDE, setShowABCDE] = useState(!isStudentView);
+  const [showSecondarySurvey, setShowSecondarySurvey] = useState(!isStudentView);
+  const [showPatientHistory, setShowPatientHistory] = useState(!isStudentView);
 
   // Memoize detail visibility checks
   const showDetailedFindings = useMemo(() =>
@@ -174,23 +217,36 @@ export function CaseDisplay({ caseData, studentYear = '3rd-year' }: CaseDisplayP
   );
 
   // Memoize case findings for ClinicalResources to prevent unnecessary re-renders
-  const caseFindings = useMemo(() => [
-    caseData.title,
-    caseData.category,
-    caseData.expectedFindings?.mostLikelyDiagnosis,
-    caseData.dispatchInfo?.callReason,
-    caseData.initialPresentation?.generalImpression,
-    caseData.initialPresentation?.sounds,
-    ...(caseData.expectedFindings?.keyObservations || []),
-    ...(caseData.expectedFindings?.differentialDiagnoses || []),
-    ...(caseData.abcde?.exposure?.findings || []),
-    ...(caseData.secondarySurvey?.head || []),
-    ...(caseData.secondarySurvey?.neck || []),
-    ...(caseData.secondarySurvey?.chest || []),
-    ...(caseData.abcde?.airway?.findings || []),
-    ...(caseData.abcde?.breathing?.findings || []),
-    ...(caseData.abcde?.circulation?.findings || []),
-  ].filter(Boolean) as string[], [
+  // In student view, exclude diagnosis-revealing data (title, diagnosis, differentials)
+  const caseFindings = useMemo(() => {
+    if (isStudentView) {
+      return [
+        caseData.category,
+        caseData.dispatchInfo?.callReason,
+        caseData.initialPresentation?.generalImpression,
+        ...(caseData.abcde?.exposure?.findings || []),
+        ...(caseData.abcde?.airway?.findings || []),
+      ].filter(Boolean) as string[];
+    }
+    return [
+      caseData.title,
+      caseData.category,
+      caseData.expectedFindings?.mostLikelyDiagnosis,
+      caseData.dispatchInfo?.callReason,
+      caseData.initialPresentation?.generalImpression,
+      caseData.initialPresentation?.sounds,
+      ...(caseData.expectedFindings?.keyObservations || []),
+      ...(caseData.expectedFindings?.differentialDiagnoses || []),
+      ...(caseData.abcde?.exposure?.findings || []),
+      ...(caseData.secondarySurvey?.head || []),
+      ...(caseData.secondarySurvey?.neck || []),
+      ...(caseData.secondarySurvey?.chest || []),
+      ...(caseData.abcde?.airway?.findings || []),
+      ...(caseData.abcde?.breathing?.findings || []),
+      ...(caseData.abcde?.circulation?.findings || []),
+    ].filter(Boolean) as string[];
+  }, [
+    isStudentView,
     caseData.title,
     caseData.category,
     caseData.expectedFindings?.mostLikelyDiagnosis,
@@ -282,50 +338,60 @@ export function CaseDisplay({ caseData, studentYear = '3rd-year' }: CaseDisplayP
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="flex items-start gap-2">
-            <FileText className="mt-0.5 h-4 w-4 text-muted-foreground" />
-            <div>
-              <p className="text-sm font-medium">Scene Description</p>
-              <p className="text-sm text-muted-foreground">{caseData.sceneInfo.description}</p>
-            </div>
-          </div>
-          <div className="flex items-start gap-2">
-            <Users className="mt-0.5 h-4 w-4 text-muted-foreground" />
-            <div>
-              <p className="text-sm font-medium">Bystanders</p>
-              <p className="text-sm text-muted-foreground">{caseData.sceneInfo.bystanders}</p>
-            </div>
-          </div>
-          <div className="flex items-start gap-2">
-            <AlertTriangle className="mt-0.5 h-4 w-4 text-muted-foreground" />
-            <div>
-              <p className="text-sm font-medium">Environment</p>
-              <p className="text-sm text-muted-foreground">{caseData.sceneInfo.environment}</p>
-            </div>
-          </div>
-          {showDetailedFindings && accessIssues && (
+          <RevealableField label="Scene Description" icon={<FileText className="h-4 w-4" />} isStudentView={isStudentView}>
             <div className="flex items-start gap-2">
-              <AlertTriangle className="mt-0.5 h-4 w-4 text-amber-500" />
+              <FileText className="mt-0.5 h-4 w-4 text-muted-foreground" />
               <div>
-                <p className="text-sm font-medium text-amber-600">Access Issues</p>
-                <p className="text-sm text-muted-foreground">{accessIssues}</p>
+                <p className="text-sm font-medium">Scene Description</p>
+                <p className="text-sm text-muted-foreground">{caseData.sceneInfo.description}</p>
               </div>
             </div>
-          )}
-          {caseData.sceneInfo.hazards.length > 0 && (
+          </RevealableField>
+          <RevealableField label="Bystanders" icon={<Users className="h-4 w-4" />} isStudentView={isStudentView}>
             <div className="flex items-start gap-2">
-              <AlertTriangle className="mt-0.5 h-4 w-4 text-red-500" />
+              <Users className="mt-0.5 h-4 w-4 text-muted-foreground" />
               <div>
-                <p className="text-sm font-medium text-red-600">Hazards</p>
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {caseData.sceneInfo.hazards.map((hazard, i) => (
-                    <Badge key={i} variant="destructive" className="text-xs">
-                      {hazard}
-                    </Badge>
-                  ))}
+                <p className="text-sm font-medium">Bystanders</p>
+                <p className="text-sm text-muted-foreground">{caseData.sceneInfo.bystanders}</p>
+              </div>
+            </div>
+          </RevealableField>
+          <RevealableField label="Environment" icon={<AlertTriangle className="h-4 w-4" />} isStudentView={isStudentView}>
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="mt-0.5 h-4 w-4 text-muted-foreground" />
+              <div>
+                <p className="text-sm font-medium">Environment</p>
+                <p className="text-sm text-muted-foreground">{caseData.sceneInfo.environment}</p>
+              </div>
+            </div>
+          </RevealableField>
+          {showDetailedFindings && accessIssues && (
+            <RevealableField label="Access Issues" icon={<AlertTriangle className="h-4 w-4 text-amber-500" />} isStudentView={isStudentView}>
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="mt-0.5 h-4 w-4 text-amber-500" />
+                <div>
+                  <p className="text-sm font-medium text-amber-600">Access Issues</p>
+                  <p className="text-sm text-muted-foreground">{accessIssues}</p>
                 </div>
               </div>
-            </div>
+            </RevealableField>
+          )}
+          {caseData.sceneInfo.hazards.length > 0 && (
+            <RevealableField label="Hazards" icon={<AlertTriangle className="h-4 w-4 text-red-500" />} isStudentView={isStudentView}>
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="mt-0.5 h-4 w-4 text-red-500" />
+                <div>
+                  <p className="text-sm font-medium text-red-600">Hazards</p>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {caseData.sceneInfo.hazards.map((hazard, i) => (
+                      <Badge key={i} variant="destructive" className="text-xs">
+                        {hazard}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </RevealableField>
           )}
         </CardContent>
       </Card>
@@ -342,34 +408,46 @@ export function CaseDisplay({ caseData, studentYear = '3rd-year' }: CaseDisplayP
         </CardHeader>
         <CardContent>
           <div className="grid gap-3 sm:grid-cols-2">
-            <div>
-              <p className="text-sm font-medium">General Impression</p>
-              <p className="text-sm text-muted-foreground">{caseData.initialPresentation.generalImpression}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium">Position</p>
-              <p className="text-sm text-muted-foreground">{caseData.initialPresentation.position}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium">Appearance</p>
-              <p className="text-sm text-muted-foreground">{caseData.initialPresentation.appearance}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium">Consciousness</p>
-              <p className="text-sm text-muted-foreground">{caseData.initialPresentation.consciousness}</p>
-            </div>
+            <RevealableField label="General Impression" isStudentView={isStudentView}>
+              <div>
+                <p className="text-sm font-medium">General Impression</p>
+                <p className="text-sm text-muted-foreground">{caseData.initialPresentation.generalImpression}</p>
+              </div>
+            </RevealableField>
+            <RevealableField label="Position" isStudentView={isStudentView}>
+              <div>
+                <p className="text-sm font-medium">Position</p>
+                <p className="text-sm text-muted-foreground">{caseData.initialPresentation.position}</p>
+              </div>
+            </RevealableField>
+            <RevealableField label="Appearance" isStudentView={isStudentView}>
+              <div>
+                <p className="text-sm font-medium">Appearance</p>
+                <p className="text-sm text-muted-foreground">{caseData.initialPresentation.appearance}</p>
+              </div>
+            </RevealableField>
+            <RevealableField label="Consciousness" isStudentView={isStudentView}>
+              <div>
+                <p className="text-sm font-medium">Consciousness</p>
+                <p className="text-sm text-muted-foreground">{caseData.initialPresentation.consciousness}</p>
+              </div>
+            </RevealableField>
           </div>
           {showDetailedFindings && odors && (
-            <div className="mt-3 p-2 bg-muted/50 rounded-lg">
-              <p className="text-xs font-medium text-muted-foreground">Odor</p>
-              <p className="text-sm text-muted-foreground">{odors}</p>
-            </div>
+            <RevealableField label="Odor" isStudentView={isStudentView} className="mt-3">
+              <div className="p-2 bg-muted/50 rounded-lg">
+                <p className="text-xs font-medium text-muted-foreground">Odor</p>
+                <p className="text-sm text-muted-foreground">{odors}</p>
+              </div>
+            </RevealableField>
           )}
           {showDetailedFindings && sounds && (
-            <div className="mt-3 p-2 bg-muted/50 rounded-lg">
-              <p className="text-xs font-medium text-muted-foreground">Sounds</p>
-              <p className="text-sm text-muted-foreground">{sounds}</p>
-            </div>
+            <RevealableField label="Sounds" isStudentView={isStudentView} className="mt-3">
+              <div className="p-2 bg-muted/50 rounded-lg">
+                <p className="text-xs font-medium text-muted-foreground">Sounds</p>
+                <p className="text-sm text-muted-foreground">{sounds}</p>
+              </div>
+            </RevealableField>
           )}
         </CardContent>
       </Card>
@@ -400,14 +478,18 @@ export function CaseDisplay({ caseData, studentYear = '3rd-year' }: CaseDisplayP
               A - Airway
             </h4>
             <div className="space-y-1 text-sm">
-              <p><span className="text-muted-foreground">Patent:</span> {caseData.abcde.airway.patent ? 'Yes' : 'No'}</p>
-              <div>
-                <span className="text-muted-foreground">Findings:</span>
-                <ul className="ml-4 mt-1 list-disc text-muted-foreground">
-                  {caseData.abcde.airway.findings.map((finding: string, idx: number) => <li key={idx}>{finding}</li>)}
-                </ul>
-              </div>
-              {showInterventions && caseData.abcde.airway.interventions.length > 0 && (
+              <RevealableField label="Airway Status" isStudentView={isStudentView}>
+                <p><span className="text-muted-foreground">Patent:</span> {caseData.abcde.airway.patent ? 'Yes' : 'No'}</p>
+              </RevealableField>
+              <RevealableField label="Findings" isStudentView={isStudentView}>
+                <div>
+                  <span className="text-muted-foreground">Findings:</span>
+                  <ul className="ml-4 mt-1 list-disc text-muted-foreground">
+                    {caseData.abcde.airway.findings.map((finding: string, idx: number) => <li key={idx}>{finding}</li>)}
+                  </ul>
+                </div>
+              </RevealableField>
+              {showInterventions && caseData.abcde.airway.interventions.length > 0 && !isStudentView && (
                 <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded">
                   <span className="text-xs font-medium text-blue-600 dark:text-blue-400">Interventions:</span>
                   <ul className="ml-4 mt-1 list-disc text-xs text-muted-foreground">
@@ -415,7 +497,7 @@ export function CaseDisplay({ caseData, studentYear = '3rd-year' }: CaseDisplayP
                   </ul>
                 </div>
               )}
-              {showDetailedFindings && caseData.abcde.airway.adjunctsNeeded && (
+              {showDetailedFindings && caseData.abcde.airway.adjunctsNeeded && !isStudentView && (
                 <p className="text-xs text-muted-foreground mt-1">
                   <span className="font-medium">Adjuncts:</span> {caseData.abcde.airway.adjunctsNeeded.join(', ')}
                 </p>
@@ -432,25 +514,56 @@ export function CaseDisplay({ caseData, studentYear = '3rd-year' }: CaseDisplayP
               B - Breathing
             </h4>
             <div className="grid gap-2 text-sm sm:grid-cols-2">
-              <p><span className="text-muted-foreground">Rate:</span> {caseData.abcde.breathing.rate} /min</p>
-              <p><span className="text-muted-foreground">SpO2:</span> {caseData.abcde.breathing.spo2}%</p>
-              <p><span className="text-muted-foreground">Rhythm:</span> {caseData.abcde.breathing.rhythm}</p>
-              <p><span className="text-muted-foreground">Depth:</span> {caseData.abcde.breathing.depth}</p>
-              <div className="col-span-2">
-                <span className="text-muted-foreground">Findings:</span>
-                <ul className="ml-4 mt-1 list-disc text-muted-foreground">
-                  {caseData.abcde.breathing.findings.map((f: string, i: number) => <li key={i}>{f}</li>)}
-                </ul>
-              </div>
-              {showDetailedFindings && caseData.abcde.breathing.auscultation && (
-                <div className="col-span-2">
-                  <span className="text-muted-foreground text-xs">Auscultation:</span>
-                  <ul className="ml-4 mt-1 list-disc text-xs text-muted-foreground">
-                    {caseData.abcde.breathing.auscultation.map((f: string, i: number) => <li key={i}>{f}</li>)}
-                  </ul>
+              {/* RR and SpO2: on the monitor in student view, shown here in instructor view */}
+              {isStudentView ? (
+                <div className="col-span-2 p-2 rounded-lg bg-cyan-50/50 dark:bg-cyan-900/10 border border-cyan-200/30">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                    <Activity className="h-3.5 w-3.5 text-cyan-500" />
+                    Respiratory rate and SpO2 are displayed on the patient monitor
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <p><span className="text-muted-foreground">Rate:</span> {caseData.abcde.breathing.rate} /min</p>
+                  <p><span className="text-muted-foreground">SpO2:</span> {caseData.abcde.breathing.spo2}%</p>
+                </>
+              )}
+              <RevealableField label="Rhythm" isStudentView={isStudentView}>
+                <p><span className="text-muted-foreground">Rhythm:</span> {caseData.abcde.breathing.rhythm}</p>
+              </RevealableField>
+              <RevealableField label="Depth" isStudentView={isStudentView}>
+                <p><span className="text-muted-foreground">Depth:</span> {caseData.abcde.breathing.depth}</p>
+              </RevealableField>
+              {/* Breathing findings & auscultation: hidden in student view — student discovers these by listening */}
+              {!isStudentView && (
+                <>
+                  {caseData.abcde.breathing.findings.length > 0 && (
+                    <div className="col-span-2">
+                      <span className="text-muted-foreground text-xs">Findings:</span>
+                      <ul className="ml-4 mt-1 list-disc text-xs text-muted-foreground">
+                        {caseData.abcde.breathing.findings.map((f: string, i: number) => <li key={i}>{f}</li>)}
+                      </ul>
+                    </div>
+                  )}
+                  {showDetailedFindings && caseData.abcde.breathing.auscultation && (
+                    <div className="col-span-2">
+                      <span className="text-muted-foreground text-xs">Auscultation:</span>
+                      <ul className="ml-4 mt-1 list-disc text-xs text-muted-foreground">
+                        {caseData.abcde.breathing.auscultation.map((f: string, i: number) => <li key={i}>{f}</li>)}
+                      </ul>
+                    </div>
+                  )}
+                </>
+              )}
+              {isStudentView && (
+                <div className="col-span-2 p-2 rounded-lg bg-blue-50/50 dark:bg-blue-900/10 border border-blue-200/30">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                    <Stethoscope className="h-3.5 w-3.5 text-blue-500" />
+                    Auscultate the patient using the Chest Auscultation panel to assess lung sounds
+                  </p>
                 </div>
               )}
-              {showInterventions && caseData.abcde.breathing.interventions.length > 0 && (
+              {showInterventions && caseData.abcde.breathing.interventions.length > 0 && !isStudentView && (
                 <div className="col-span-2 mt-2 p-2 bg-cyan-50 dark:bg-cyan-900/20 rounded">
                   <span className="text-xs font-medium text-cyan-600 dark:text-cyan-400">Interventions:</span>
                   <ul className="ml-4 mt-1 list-disc text-xs text-muted-foreground">
@@ -470,11 +583,26 @@ export function CaseDisplay({ caseData, studentYear = '3rd-year' }: CaseDisplayP
               C - Circulation
             </h4>
             <div className="grid gap-2 text-sm sm:grid-cols-2">
-              <p><span className="text-muted-foreground">Pulse:</span> {caseData.abcde.circulation.pulseRate} bpm ({caseData.abcde.circulation.pulseQuality})</p>
-              <p><span className="text-muted-foreground">BP:</span> {caseData.abcde.circulation.bp.systolic}/{caseData.abcde.circulation.bp.diastolic} mmHg</p>
-              <p><span className="text-muted-foreground">Cap Refill:</span> {caseData.abcde.circulation.capillaryRefill} sec</p>
-              <p><span className="text-muted-foreground">Skin:</span> {caseData.abcde.circulation.skin}</p>
-              {showDetailedFindings && caseData.abcde.circulation.ecgFindings && (
+              {isStudentView ? (
+                <div className="col-span-2 p-2 rounded-lg bg-red-50/50 dark:bg-red-900/10 border border-red-200/30">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                    <Activity className="h-3.5 w-3.5 text-red-500" />
+                    Pulse and blood pressure are displayed on the patient monitor
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <p><span className="text-muted-foreground">Pulse:</span> {caseData.abcde.circulation.pulseRate} bpm ({caseData.abcde.circulation.pulseQuality})</p>
+                  <p><span className="text-muted-foreground">BP:</span> {caseData.abcde.circulation.bp.systolic}/{caseData.abcde.circulation.bp.diastolic} mmHg</p>
+                </>
+              )}
+              <RevealableField label="Capillary Refill" isStudentView={isStudentView}>
+                <p><span className="text-muted-foreground">Cap Refill:</span> {caseData.abcde.circulation.capillaryRefill} sec</p>
+              </RevealableField>
+              <RevealableField label="Skin" isStudentView={isStudentView}>
+                <p><span className="text-muted-foreground">Skin:</span> {caseData.abcde.circulation.skin}</p>
+              </RevealableField>
+              {showDetailedFindings && caseData.abcde.circulation.ecgFindings && !isStudentView && (
                 <div className="col-span-2">
                   <span className="text-muted-foreground text-xs">ECG Findings:</span>
                   <ul className="ml-4 mt-1 list-disc text-xs text-muted-foreground">
@@ -482,7 +610,15 @@ export function CaseDisplay({ caseData, studentYear = '3rd-year' }: CaseDisplayP
                   </ul>
                 </div>
               )}
-              {showInterventions && caseData.abcde.circulation.interventions.length > 0 && (
+              {isStudentView && caseData.abcde.circulation.ecgFindings && (
+                <div className="col-span-2 p-2 rounded-lg bg-rose-50/50 dark:bg-rose-900/10 border border-rose-200/30">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                    <Activity className="h-3.5 w-3.5 text-rose-500" />
+                    Obtain and interpret the ECG from the patient monitor
+                  </p>
+                </div>
+              )}
+              {showInterventions && caseData.abcde.circulation.interventions.length > 0 && !isStudentView && (
                 <div className="col-span-2 mt-2 p-2 bg-red-50 dark:bg-red-900/20 rounded">
                   <span className="text-xs font-medium text-red-600 dark:text-red-400">Interventions:</span>
                   <ul className="ml-4 mt-1 list-disc text-xs text-muted-foreground">
@@ -502,21 +638,31 @@ export function CaseDisplay({ caseData, studentYear = '3rd-year' }: CaseDisplayP
               D - Disability
             </h4>
             <div className="grid gap-2 text-sm sm:grid-cols-2">
-              <p><span className="text-muted-foreground">AVPU:</span> <Badge variant="outline">{caseData.abcde.disability.avpu}</Badge></p>
-              <p><span className="text-muted-foreground">GCS:</span> {caseData.abcde.disability.gcs.total}/15 (E{caseData.abcde.disability.gcs.eye}V{caseData.abcde.disability.gcs.verbal}M{caseData.abcde.disability.gcs.motor})</p>
-              <p><span className="text-muted-foreground">Pupils:</span> {caseData.abcde.disability.pupils}</p>
+              <RevealableField label="AVPU" isStudentView={isStudentView}>
+                <p><span className="text-muted-foreground">AVPU:</span> <Badge variant="outline">{caseData.abcde.disability.avpu}</Badge></p>
+              </RevealableField>
+              <RevealableField label="GCS" isStudentView={isStudentView}>
+                <p><span className="text-muted-foreground">GCS:</span> {caseData.abcde.disability.gcs.total}/15 (E{caseData.abcde.disability.gcs.eye}V{caseData.abcde.disability.gcs.verbal}M{caseData.abcde.disability.gcs.motor})</p>
+              </RevealableField>
+              <RevealableField label="Pupils" isStudentView={isStudentView}>
+                <p><span className="text-muted-foreground">Pupils:</span> {caseData.abcde.disability.pupils}</p>
+              </RevealableField>
               {caseData.abcde.disability.bloodGlucose && (
-                <p><span className="text-muted-foreground">Glucose:</span> {caseData.abcde.disability.bloodGlucose} mmol/L</p>
+                <RevealableField label="Blood Glucose" isStudentView={isStudentView}>
+                  <p><span className="text-muted-foreground">Glucose:</span> {caseData.abcde.disability.bloodGlucose} mmol/L</p>
+                </RevealableField>
               )}
               {showDetailedFindings && caseData.abcde.disability.focalDeficits && (
-                <div className="col-span-2">
-                  <span className="text-muted-foreground text-xs">Focal Deficits:</span>
-                  <ul className="ml-4 mt-1 list-disc text-xs text-muted-foreground">
-                    {caseData.abcde.disability.focalDeficits.map((f: string, i: number) => <li key={i}>{f}</li>)}
-                  </ul>
-                </div>
+                <RevealableField label="Focal Deficits" isStudentView={isStudentView} className="col-span-2">
+                  <div>
+                    <span className="text-muted-foreground text-xs">Focal Deficits:</span>
+                    <ul className="ml-4 mt-1 list-disc text-xs text-muted-foreground">
+                      {caseData.abcde.disability.focalDeficits.map((f: string, i: number) => <li key={i}>{f}</li>)}
+                    </ul>
+                  </div>
+                </RevealableField>
               )}
-              {showInterventions && caseData.abcde.disability.interventions.length > 0 && (
+              {showInterventions && caseData.abcde.disability.interventions.length > 0 && !isStudentView && (
                 <div className="col-span-2 mt-2 p-2 bg-purple-50 dark:bg-purple-900/20 rounded">
                   <span className="text-xs font-medium text-purple-600 dark:text-purple-400">Interventions:</span>
                   <ul className="ml-4 mt-1 list-disc text-xs text-muted-foreground">
@@ -536,23 +682,29 @@ export function CaseDisplay({ caseData, studentYear = '3rd-year' }: CaseDisplayP
               E - Exposure
             </h4>
             {caseData.abcde.exposure.temperature && (
-              <p className="text-sm"><span className="text-muted-foreground">Temperature:</span> {caseData.abcde.exposure.temperature}°C</p>
+              <RevealableField label="Temperature" isStudentView={isStudentView}>
+                <p className="text-sm"><span className="text-muted-foreground">Temperature:</span> {caseData.abcde.exposure.temperature}°C</p>
+              </RevealableField>
             )}
-            <div className="text-sm">
-              <span className="text-muted-foreground">Findings:</span>
-              <ul className="ml-4 mt-1 list-disc text-muted-foreground">
-                {caseData.abcde.exposure.findings.map((f: string, i: number) => <li key={i}>{f}</li>)}
-              </ul>
-            </div>
-            {showDetailedFindings && caseData.abcde.exposure.wounds && (
-              <div className="mt-2">
-                <span className="text-muted-foreground text-xs">Wounds:</span>
-                <ul className="ml-4 mt-1 list-disc text-xs text-muted-foreground">
-                  {caseData.abcde.exposure.wounds.map((f: string, i: number) => <li key={i}>{f}</li>)}
+            <RevealableField label="Findings" isStudentView={isStudentView}>
+              <div className="text-sm">
+                <span className="text-muted-foreground">Findings:</span>
+                <ul className="ml-4 mt-1 list-disc text-muted-foreground">
+                  {caseData.abcde.exposure.findings.map((f: string, i: number) => <li key={i}>{f}</li>)}
                 </ul>
               </div>
+            </RevealableField>
+            {showDetailedFindings && caseData.abcde.exposure.wounds && (
+              <RevealableField label="Wounds" isStudentView={isStudentView} className="mt-2">
+                <div>
+                  <span className="text-muted-foreground text-xs">Wounds:</span>
+                  <ul className="ml-4 mt-1 list-disc text-xs text-muted-foreground">
+                    {caseData.abcde.exposure.wounds.map((f: string, i: number) => <li key={i}>{f}</li>)}
+                  </ul>
+                </div>
+              </RevealableField>
             )}
-            {showInterventions && caseData.abcde.exposure.interventions.length > 0 && (
+            {showInterventions && caseData.abcde.exposure.interventions.length > 0 && !isStudentView && (
               <div className="mt-2 p-2 bg-amber-50 dark:bg-amber-900/20 rounded">
                 <span className="text-xs font-medium text-amber-600 dark:text-amber-400">Interventions:</span>
                 <ul className="ml-4 mt-1 list-disc text-xs text-muted-foreground">
@@ -581,13 +733,17 @@ export function CaseDisplay({ caseData, studentYear = '3rd-year' }: CaseDisplayP
         {showSecondarySurvey && (
           <CardContent>
             <div className="grid gap-3 sm:grid-cols-2">
-              {Object.entries(caseData.secondarySurvey).map(([region, findings]) => (
-                <div key={region} className="rounded-lg border p-3">
-                  <p className="mb-1 text-sm font-medium capitalize">{region}</p>
-                  <ul className="ml-3 list-disc text-sm text-muted-foreground">
-                    {findings.map((finding: string, idx: number) => <li key={idx}>{finding}</li>)}
-                  </ul>
-                </div>
+              {Object.entries(caseData.secondarySurvey)
+                .filter((entry): entry is [string, string[]] => Array.isArray(entry[1]) && entry[1].length > 0)
+                .map(([region, findings]) => (
+                <RevealableField key={region} label={region.charAt(0).toUpperCase() + region.slice(1)} isStudentView={isStudentView}>
+                  <div className="rounded-lg border p-3">
+                    <p className="mb-1 text-sm font-medium capitalize">{region}</p>
+                    <ul className="ml-3 list-disc text-sm text-muted-foreground">
+                      {findings.map((finding, idx) => <li key={idx}>{finding}</li>)}
+                    </ul>
+                  </div>
+                </RevealableField>
               ))}
             </div>
           </CardContent>
@@ -685,8 +841,8 @@ export function CaseDisplay({ caseData, studentYear = '3rd-year' }: CaseDisplayP
         )}
       </Card>
 
-      {/* Management Pathway - Only for advanced/expert cases or higher year levels */}
-      {showInterventions && caseData.managementPathway && (
+      {/* Management Pathway - Only for advanced/expert cases or higher year levels, instructor only */}
+      {showInterventions && caseData.managementPathway && !isStudentView && (
         <Card className="border-l-4 border-l-green-500">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-lg">
@@ -730,22 +886,29 @@ export function CaseDisplay({ caseData, studentYear = '3rd-year' }: CaseDisplayP
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2 text-lg text-rose-600 dark:text-rose-400">
                 <Activity className="h-5 w-5" />
-                Associated ECG - {associatedECG.title}
+                {isStudentView ? '12-Lead ECG Available' : `Associated ECG - ${associatedECG.title}`}
               </CardTitle>
-              <Badge className={associatedECG.urgency === 'critical' ? 'bg-red-600' : 'bg-orange-500'}>
-                {associatedECG.urgency.toUpperCase()}
-              </Badge>
+              {!isStudentView && (
+                <Badge className={associatedECG.urgency === 'critical' ? 'bg-red-600' : 'bg-orange-500'}>
+                  {associatedECG.urgency.toUpperCase()}
+                </Badge>
+              )}
             </div>
           </CardHeader>
           <CardContent>
-            <EmergencyECGQuickRef ecg={associatedECG} />
+            {!isStudentView && <EmergencyECGQuickRef ecg={associatedECG} />}
             <Button
               onClick={() => setShowECGModal(true)}
               className="mt-3 w-full sm:w-auto bg-rose-600 hover:bg-rose-700"
             >
               <Eye className="h-4 w-4 mr-2" />
-              View Full ECG Details
+              {isStudentView ? 'View ECG' : 'View Full ECG Details'}
             </Button>
+            {isStudentView && (
+              <p className="text-xs text-muted-foreground mt-2">
+                Interpret the ECG rhythm, rate, and morphology to support your clinical assessment.
+              </p>
+            )}
           </CardContent>
         </Card>
       )}

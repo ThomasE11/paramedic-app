@@ -776,10 +776,11 @@ export function getStepFindings(stepId: AssessmentStepId, caseData: CaseScenario
 
     case 'breathing': {
       const breathing = caseData.abcde.breathing;
+      // RR and SpO2 are dynamic vitals — direct student to the monitor
       findings.push({
         label: 'Respiratory Rate',
-        value: `${breathing.rate} breaths/min`,
-        severity: breathing.rate < 10 || breathing.rate > 28 ? 'critical' : breathing.rate < 12 || breathing.rate > 20 ? 'abnormal' : 'normal',
+        value: 'Check the patient monitor for current respiratory rate',
+        severity: 'normal',
       });
       findings.push({
         label: 'Rhythm & Depth',
@@ -788,43 +789,43 @@ export function getStepFindings(stepId: AssessmentStepId, caseData: CaseScenario
       });
       findings.push({
         label: 'SpO2',
-        value: `${breathing.spo2}%`,
-        severity: breathing.spo2 < 90 ? 'critical' : breathing.spo2 < 94 ? 'abnormal' : 'normal',
-        significance: breathing.spo2 < 94 ? 'Supplemental oxygen indicated.' : undefined,
+        value: 'Check the patient monitor for current SpO2 reading',
+        severity: 'normal',
       });
+      // Work of breathing / visual observations (not auscultation)
       breathing.findings.forEach(f => {
-        const sev = f.toLowerCase().includes('wheez') || f.toLowerCase().includes('crackle') || f.toLowerCase().includes('diminished')
-          ? 'abnormal' as const
-          : f.toLowerCase().includes('absent') || f.toLowerCase().includes('stridor')
-            ? 'critical' as const
-            : 'normal' as const;
-        findings.push({ label: 'Finding', value: f, severity: sev });
+        // Filter out auscultation-related findings — student must listen
+        const isAuscultation = f.toLowerCase().includes('wheez') || f.toLowerCase().includes('crackle') ||
+          f.toLowerCase().includes('diminished') || f.toLowerCase().includes('absent breath') ||
+          f.toLowerCase().includes('air entry') || f.toLowerCase().includes('rhonchi') ||
+          f.toLowerCase().includes('stridor') || f.toLowerCase().includes('rales');
+        if (!isAuscultation) {
+          findings.push({ label: 'Finding', value: f, severity: 'normal' });
+        }
       });
-      if (breathing.auscultation && breathing.auscultation.length > 0) {
-        findings.push({
-          label: 'Auscultation',
-          value: breathing.auscultation.join('; '),
-          severity: breathing.auscultation.some(a =>
-            a.toLowerCase().includes('wheez') || a.toLowerCase().includes('crackle') ||
-            a.toLowerCase().includes('absent') || a.toLowerCase().includes('diminished')
-          ) ? 'abnormal' : 'normal',
-        });
-      }
+      // Direct student to auscultation panel instead of showing text
+      findings.push({
+        label: 'Auscultation',
+        value: 'Use the Chest Auscultation panel to listen to lung sounds',
+        severity: 'normal',
+      });
       break;
     }
 
     case 'circulation': {
       const circ = caseData.abcde.circulation;
+      // Pulse and BP are dynamic vitals — direct student to the monitor
       findings.push({
         label: 'Pulse',
-        value: `${circ.pulseRate} bpm — ${circ.pulseQuality}`,
-        severity: circ.pulseRate < 50 || circ.pulseRate > 120 ? 'critical' : circ.pulseRate < 60 || circ.pulseRate > 100 ? 'abnormal' : 'normal',
+        value: `Check the patient monitor — quality: ${circ.pulseQuality}`,
+        severity: 'normal',
       });
       findings.push({
         label: 'Blood Pressure',
-        value: `${circ.bp.systolic}/${circ.bp.diastolic} mmHg`,
-        severity: circ.bp.systolic < 90 || circ.bp.systolic > 180 ? 'critical' : circ.bp.systolic < 100 || circ.bp.systolic > 140 ? 'abnormal' : 'normal',
+        value: 'Check the patient monitor for current BP reading',
+        severity: 'normal',
       });
+      // Physical exam findings — these are found by assessment
       findings.push({
         label: 'Capillary Refill',
         value: `${circ.capillaryRefill} seconds`,
@@ -843,12 +844,12 @@ export function getStepFindings(stepId: AssessmentStepId, caseData: CaseScenario
             : 'normal' as const;
         findings.push({ label: 'Finding', value: f, severity: sev });
       });
+      // ECG interpretation — student should interpret from ECG display
       if (circ.ecgFindings && circ.ecgFindings.length > 0) {
         findings.push({
           label: 'ECG',
-          value: circ.ecgFindings.join('; '),
-          severity: circ.ecgFindings.some(e => e.toLowerCase().includes('st ') || e.toLowerCase().includes('vt') || e.toLowerCase().includes('vf'))
-            ? 'critical' : 'abnormal',
+          value: 'Obtain and interpret the ECG from the patient monitor',
+          severity: 'normal',
         });
       }
       break;

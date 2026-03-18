@@ -66,6 +66,7 @@ interface TreatmentApplicationPanelProps {
   isApplying?: boolean;
   applyingTreatmentId?: string;
   studentYear?: StudentYear;
+  isStudentView?: boolean;
 }
 
 export function TreatmentApplicationPanel({
@@ -75,6 +76,7 @@ export function TreatmentApplicationPanel({
   isApplying = false,
   applyingTreatmentId,
   studentYear,
+  isStudentView = false,
 }: TreatmentApplicationPanelProps) {
   const [expandedCategory, setExpandedCategory] = useState<TreatmentCategory | null>('airway');
   const [searchQuery, setSearchQuery] = useState('');
@@ -131,12 +133,16 @@ export function TreatmentApplicationPanel({
             <Syringe className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
           </div>
           <span>Apply Treatment</span>
-          <Badge variant="secondary" className="ml-auto text-[10px] sm:text-xs">
-            {filteredTreatments.length} available
-          </Badge>
+          {!isStudentView && (
+            <Badge variant="secondary" className="ml-auto text-[10px] sm:text-xs">
+              {filteredTreatments.length} available
+            </Badge>
+          )}
         </CardTitle>
         <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 hidden sm:block">
-          Select a treatment to apply. Effects will change vitals gradually based on onset time.
+          {isStudentView
+            ? 'Select a treatment to apply. Monitor the patient to observe effects.'
+            : 'Select a treatment to apply. Effects will change vitals gradually based on onset time.'}
         </p>
 
         {/* Search */}
@@ -172,9 +178,11 @@ export function TreatmentApplicationPanel({
                   >
                     {categoryIcons[category]}
                     <span className="flex-1 text-left">{label}</span>
-                    <Badge variant="outline" className="text-[9px] sm:text-[10px] mr-0.5 sm:mr-1">
-                      {treatments.length}
-                    </Badge>
+                    {!isStudentView && (
+                      <Badge variant="outline" className="text-[9px] sm:text-[10px] mr-0.5 sm:mr-1">
+                        {treatments.length}
+                      </Badge>
+                    )}
                     {isExpanded ? (
                       <ChevronUp className="h-4 w-4" />
                     ) : (
@@ -215,6 +223,7 @@ export function TreatmentApplicationPanel({
                                 <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 line-clamp-2 sm:line-clamp-none">
                                   {treatment.description}
                                 </p>
+                                {!isStudentView && (
                                 <div className="flex items-center gap-2 sm:gap-3 mt-1 sm:mt-1.5 flex-wrap">
                                   <span className={`text-[11px] font-medium flex items-center gap-1 ${onsetColors[treatment.onset]}`}>
                                     <Clock className="h-3 w-3" />
@@ -225,10 +234,10 @@ export function TreatmentApplicationPanel({
                                       <Activity className="h-3 w-3" />
                                       {treatment.effects.map(e => {
                                         const sign = e.changeType === 'increase' ? '+' : e.changeType === 'decrease' ? '-' : '';
-                                        const vital = e.vitalSign === 'bp' ? 'BP' 
-                                          : e.vitalSign === 'pulse' ? 'HR' 
-                                          : e.vitalSign === 'respiration' ? 'RR' 
-                                          : e.vitalSign === 'spo2' ? 'SpO2' 
+                                        const vital = e.vitalSign === 'bp' ? 'BP'
+                                          : e.vitalSign === 'pulse' ? 'HR'
+                                          : e.vitalSign === 'respiration' ? 'RR'
+                                          : e.vitalSign === 'spo2' ? 'SpO2'
                                           : e.vitalSign === 'gcs' ? 'GCS'
                                           : e.vitalSign === 'bloodGlucose' ? 'BGL'
                                           : e.vitalSign === 'temperature' ? 'Temp'
@@ -238,6 +247,7 @@ export function TreatmentApplicationPanel({
                                     </span>
                                   )}
                                 </div>
+                                )}
                                 {contra && (
                                   <p className="text-[11px] text-red-600 dark:text-red-400 mt-1 flex items-center gap-1">
                                     <AlertTriangle className="h-3 w-3" />

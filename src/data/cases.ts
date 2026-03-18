@@ -6,6 +6,7 @@ import { additionalCaseDatabase } from './additionalCases';
 import { firstYearCases } from './firstYearCases';
 import { secondYearCases } from './secondYearCases';
 import { litflCaseDatabase } from './litflCases';
+import { severityVariantCases } from './severityVariantCases';
 
 // Import visual resources
 import { getTraumaResourcesByCondition } from './traumaVisualResources';
@@ -9354,7 +9355,7 @@ export const caseDatabase: CaseScenario[] = [
 
 // Combine original cases with enhanced and additional cases
 // This allows for backward compatibility while adding new detailed cases
-export const allCases: CaseScenario[] = [...caseDatabase, ...enhancedCaseDatabase, ...additionalCaseDatabase, ...firstYearCases, ...secondYearCases, ...litflCaseDatabase];
+export const allCases: CaseScenario[] = [...caseDatabase, ...enhancedCaseDatabase, ...additionalCaseDatabase, ...firstYearCases, ...secondYearCases, ...litflCaseDatabase, ...severityVariantCases];
 
 // Export function to get cases by filter
 export const getCasesByFilter = (filter: { yearLevel?: string; category?: string; priority?: string; complexity?: string; subcategory?: string }) => {

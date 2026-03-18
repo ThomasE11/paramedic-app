@@ -24,6 +24,14 @@ import {
   getCaseDeteriorationTimeline,
   type DeteriorationStage,
 } from './clinicalRealism';
+import {
+  findProtocol,
+  determineSeverityFromVitals,
+  getSynergyMultiplier,
+  getPositioningEffects,
+  assessProtocolCompliance,
+  type SeverityProtocol,
+} from './treatmentProtocols';
 
 // ============================================================================
 // TYPES
@@ -133,7 +141,12 @@ export function createInitialPatientState(caseData: CaseScenario): PatientState 
 
   return {
     vitals: { ...vitals },
-    sounds: getInitialSounds(caseData.category, caseData.subcategory, findings),
+    sounds: getInitialSounds(caseData.category, caseData.subcategory, findings, {
+      spo2: vitals.spo2,
+      pulse: vitals.pulse,
+      respiration: vitals.respiration,
+      gcs: vitals.gcs,
+    }),
     treatmentHistory: [],
     treatmentCounts: {},
     currentRhythm: rhythm,
@@ -190,8 +203,12 @@ export function applyDynamicTreatment(
     response = applyStandardTreatment(treatment, state, count, caseCategory, caseSubcategory, caseData, appliedIds);
   }
 
-  // Update clinical sounds
-  state.sounds = updateSoundsAfterTreatment(state.sounds, treatment.id, count, caseCategory);
+  // Update clinical sounds — pass all applied treatment IDs for combination awareness
+  const allAppliedIds = Object.keys(state.treatmentCounts).filter(id => state.treatmentCounts[id] > 0);
+  state.sounds = updateSoundsAfterTreatment(
+    state.sounds, treatment.id, count, caseCategory,
+    allAppliedIds, caseData.subcategory,
+  );
 
   // Record the application
   state.treatmentHistory.push({
@@ -265,6 +282,52 @@ function applyStandardTreatment(
         warningMessage: pathologyRationale,
         vitalChanges: [],
       };
+    }
+  }
+
+  // ===== TREATMENT PROTOCOL SYNERGY =====
+  // Check if a severity-aware protocol exists and apply synergy multipliers
+  let protocolSynergyMultiplier = 1.0;
+  let protocolSeverity: SeverityProtocol | undefined;
+  if (caseData) {
+    const protocol = findProtocol(caseSubcategory || '', caseCategory);
+    if (protocol) {
+      protocolSeverity = determineSeverityFromVitals(protocol, vitals);
+      if (protocolSeverity && appliedTreatmentIds) {
+        const synergy = getSynergyMultiplier(protocolSeverity, appliedTreatmentIds);
+        protocolSynergyMultiplier = synergy.multiplier;
+
+        // Check for contraindicated treatments
+        if (protocolSeverity.contraindicatedTreatments.includes(treatment.id)) {
+          warningMessage = `CAUTION: ${treatment.name} may be contraindicated in ${protocolSeverity.severity} ${protocol.conditionName}`;
+        }
+
+        // Apply positioning effects
+        const posEffect = getPositioningEffects(protocolSeverity, appliedTreatmentIds || []);
+        if (posEffect) {
+          // Positioning bonus applied to SpO2 and RR
+          if (posEffect.spo2Bonus !== 0) {
+            const oldSpO2 = vitals.spo2;
+            vitals.spo2 = Math.max(0, Math.min(100, vitals.spo2 + posEffect.spo2Bonus));
+            if (vitals.spo2 !== oldSpO2) {
+              changes.push({
+                vital: 'SpO2', oldValue: `${oldSpO2}%`, newValue: `${vitals.spo2}%`,
+                direction: vitals.spo2 > oldSpO2 ? 'improved' : 'worsened',
+              });
+            }
+          }
+          if (posEffect.rrReduction !== 0 && vitals.respiration > 12) {
+            const oldRR = vitals.respiration;
+            vitals.respiration = Math.max(10, vitals.respiration - posEffect.rrReduction);
+            if (vitals.respiration !== oldRR) {
+              changes.push({
+                vital: 'RR', oldValue: oldRR, newValue: vitals.respiration,
+                direction: Math.abs(vitals.respiration - 16) < Math.abs(oldRR - 16) ? 'improved' : 'worsened',
+              });
+            }
+          }
+        }
+      }
     }
   }
 
@@ -355,7 +418,7 @@ function applyStandardTreatment(
   }
 
   // ===== APPLY TREATMENT EFFECTS =====
-  const effectMultiplier = diminishingFactor * categoryModifier * pathologyMultiplier;
+  const effectMultiplier = diminishingFactor * categoryModifier * pathologyMultiplier * protocolSynergyMultiplier;
 
   treatment.effects.forEach(effect => {
     const adjustedValue = effect.value * effectMultiplier;
@@ -503,19 +566,29 @@ function applyStandardTreatment(
   const improvementCount = changes.filter(c => c.direction === 'improved').length;
   const worsenedCount = changes.filter(c => c.direction === 'worsened').length;
 
+  // Check for active synergies to mention in description
+  let synergyNote = '';
+  if (protocolSeverity && appliedTreatmentIds) {
+    const synResult = getSynergyMultiplier(protocolSeverity, appliedTreatmentIds);
+    if (synResult.activeSynergies.length > 0) {
+      const bestSynergy = synResult.activeSynergies[synResult.activeSynergies.length - 1];
+      synergyNote = ` ${bestSynergy.description}.`;
+    }
+  }
+
   let description: string;
   if (changes.length === 0) {
     description = `${treatment.name} applied. No immediate vital sign changes.`;
     if (treatment.id === 'iv_access') description = 'IV access established. Ready for medication administration.';
     if (treatment.id === 'bleeding_control') description = 'Bleeding controlled with direct pressure. Hemostasis achieved.';
   } else if (isPartial) {
-    description = `${treatment.name} applied (dose ${applicationCount}). Partial response — ${improvementCount} vitals improving. Consider repeat dose.`;
+    description = `${treatment.name} applied (dose ${applicationCount}). Partial response — ${improvementCount} vitals improving. Consider repeat dose.${synergyNote}`;
   } else if (improvementCount > 0 && worsenedCount === 0) {
-    description = `${treatment.name} applied. Good clinical response — ${changes.map(c => `${c.vital}: ${c.oldValue} → ${c.newValue}`).join(', ')}.`;
+    description = `${treatment.name} applied. Good clinical response — ${changes.map(c => `${c.vital}: ${c.oldValue} → ${c.newValue}`).join(', ')}.${synergyNote}`;
   } else if (worsenedCount > 0 && improvementCount === 0) {
     description = `${treatment.name} applied. Adverse response noted — ${changes.map(c => `${c.vital}: ${c.oldValue} → ${c.newValue}`).join(', ')}.`;
   } else {
-    description = `${treatment.name} applied. Mixed response — ${changes.map(c => `${c.vital}: ${c.oldValue} → ${c.newValue}`).join(', ')}.`;
+    description = `${treatment.name} applied. Mixed response — ${changes.map(c => `${c.vital}: ${c.oldValue} → ${c.newValue}`).join(', ')}.${synergyNote}`;
   }
 
   return {
