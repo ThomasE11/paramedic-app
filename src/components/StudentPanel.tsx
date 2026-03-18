@@ -37,6 +37,15 @@ import {
 import { toast } from 'sonner';
 import { AuscultationPanel } from '@/components/AuscultationPanel';
 import { DefibrillationDialog } from '@/components/DefibrillationDialog';
+import { ClinicalAssessmentPanel } from '@/components/ClinicalAssessmentPanel';
+import {
+  type AssessmentStepId,
+  type AssessmentFinding,
+  type AssessmentTracker,
+  createAssessmentTracker,
+  performAssessment as performAssessmentStep,
+  generateAssessmentDebrief,
+} from '@/data/assessmentFramework';
 
 // Lazy load heavy components
 const CaseDisplay = lazy(() => import('@/components/CaseDisplay').then(m => ({ default: m.CaseDisplay })));
@@ -82,6 +91,10 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
   const [showDefibDialog, setShowDefibDialog] = useState(false);
   const [pendingDefibTreatment, setPendingDefibTreatment] = useState<Treatment | null>(null);
   const deteriorationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Assessment tracking
+  const [assessmentTracker, setAssessmentTracker] = useState<AssessmentTracker | null>(null);
+  const [activeFindings, setActiveFindings] = useState<{ stepId: AssessmentStepId; findings: AssessmentFinding[] } | null>(null);
 
   // Timer
   const [caseStartTime, setCaseStartTime] = useState<number | null>(null);
@@ -140,6 +153,11 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
     // Initialize dynamic treatment engine patient state
     const initialPatientState = createInitialPatientState(newCase);
     setPatientState(initialPatientState);
+
+    // Initialize assessment tracker
+    const initialTracker = createAssessmentTracker(newCase);
+    setAssessmentTracker(initialTracker);
+    setActiveFindings(null);
 
     const newSession: CaseSession = {
       id: Date.now().toString(),
@@ -266,6 +284,39 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
     }
   }, [pendingDefibTreatment, applyTreatment]);
 
+  // Handle assessment step
+  const handlePerformAssessment = useCallback((stepId: AssessmentStepId) => {
+    if (!assessmentTracker || !currentCase || !caseStartTime) return;
+
+    const { tracker: updatedTracker, findings } = performAssessmentStep(
+      assessmentTracker,
+      stepId,
+      currentCase,
+      caseStartTime,
+    );
+
+    setAssessmentTracker(updatedTracker);
+    setActiveFindings({ stepId, findings });
+
+    // Show toast based on findings severity
+    const hasCritical = findings.some(f => f.severity === 'critical');
+    const hasAbnormal = findings.some(f => f.severity === 'abnormal');
+
+    if (hasCritical) {
+      toast.error(`Assessment: Critical finding!`, {
+        description: findings.filter(f => f.severity === 'critical').map(f => f.value).join('; '),
+        duration: 6000,
+      });
+    } else if (hasAbnormal) {
+      toast.warning(`Assessment: Abnormal finding`, {
+        description: findings.filter(f => f.severity === 'abnormal').map(f => f.value).join('; '),
+        duration: 4000,
+      });
+    } else {
+      toast.success(`Assessment: Normal findings`, { duration: 3000 });
+    }
+  }, [assessmentTracker, currentCase, caseStartTime]);
+
   // End case
   const endCase = useCallback((action: 'transport' | 'end') => {
     setCaseEndTime(Date.now());
@@ -319,9 +370,11 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
         hrImproved: Math.abs(finalHR - 75) < Math.abs(initialHR - 75),
         spo2Improved: finalSpO2 > initialSpO2,
         initialHR, finalHR, initialSpO2, finalSpO2
-      }
+      },
+      // Assessment debrief
+      assessmentDebrief: assessmentTracker ? generateAssessmentDebrief(assessmentTracker) : null,
     };
-  }, [currentCase, session, selectedYear, appliedTreatments, vitalsHistory, elapsedSeconds, caseStartTime]);
+  }, [currentCase, session, selectedYear, appliedTreatments, vitalsHistory, elapsedSeconds, caseStartTime, assessmentTracker]);
 
   // Reset to start
   const resetToStart = useCallback(() => {
@@ -334,6 +387,8 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
     setCaseStartTime(null);
     setCaseEndTime(null);
     setElapsedSeconds(0);
+    setAssessmentTracker(null);
+    setActiveFindings(null);
     setPhase('select');
   }, []);
 
@@ -736,6 +791,16 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
               </div>
             </div>
 
+            {/* Clinical Assessment Panel */}
+            {assessmentTracker && (
+              <ClinicalAssessmentPanel
+                caseCategory={currentCase.category}
+                tracker={assessmentTracker}
+                onPerformAssessment={handlePerformAssessment}
+                activeFindings={activeFindings}
+              />
+            )}
+
             {/* Vital Signs Monitor */}
             <Suspense fallback={<LoadingCard />}>
               <VitalSignsMonitor
@@ -1018,6 +1083,121 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Assessment Debrief */}
+            {performanceMetrics.assessmentDebrief && (
+              <Card className="card-glass rounded-2xl overflow-hidden">
+                <CardHeader className="pb-3 border-b border-border/30">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue-500/15">
+                      <ClipboardCheck className="h-3.5 w-3.5 text-blue-500" />
+                    </div>
+                    Clinical Assessment Review
+                    <Badge variant="secondary" className="ml-auto text-[10px]">
+                      {performanceMetrics.assessmentDebrief.score}/{performanceMetrics.assessmentDebrief.totalPossible} pts
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-5 pt-4">
+                  {/* Summary badges */}
+                  <div className="flex flex-wrap gap-2">
+                    <Badge variant={performanceMetrics.assessmentDebrief.abcdeCompleted ? 'default' : 'destructive'} className={`text-[10px] ${performanceMetrics.assessmentDebrief.abcdeCompleted ? 'bg-green-500' : ''}`}>
+                      {performanceMetrics.assessmentDebrief.abcdeCompleted ? 'ABCDE Complete' : 'ABCDE Incomplete'}
+                    </Badge>
+                    <Badge variant={performanceMetrics.assessmentDebrief.historyTaken ? 'default' : 'secondary'} className={`text-[10px] ${performanceMetrics.assessmentDebrief.historyTaken ? 'bg-green-500' : ''}`}>
+                      {performanceMetrics.assessmentDebrief.historyTaken ? 'History Taken' : 'History Incomplete'}
+                    </Badge>
+                    <Badge variant={performanceMetrics.assessmentDebrief.secondarySurveyCompleted ? 'default' : 'secondary'} className={`text-[10px] ${performanceMetrics.assessmentDebrief.secondarySurveyCompleted ? 'bg-green-500' : ''}`}>
+                      {performanceMetrics.assessmentDebrief.secondarySurveyCompleted ? 'Secondary Survey Done' : 'Secondary Survey Incomplete'}
+                    </Badge>
+                  </div>
+
+                  {/* Assessment order */}
+                  {performanceMetrics.assessmentDebrief.assessmentOrder.length > 0 && (
+                    <div>
+                      <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Your Assessment Order</h4>
+                      <div className="flex flex-wrap gap-1">
+                        {performanceMetrics.assessmentDebrief.assessmentOrder.map((label, i) => (
+                          <div key={i} className="flex items-center gap-1">
+                            <Badge variant="outline" className="text-[10px]">
+                              {i + 1}. {label}
+                            </Badge>
+                            {i < performanceMetrics.assessmentDebrief!.assessmentOrder.length - 1 && (
+                              <ArrowRight className="h-2.5 w-2.5 text-muted-foreground/40" />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Timing issues */}
+                  {performanceMetrics.assessmentDebrief.timingIssues.length > 0 && (
+                    <div className="space-y-1.5">
+                      <h4 className="text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">Timing Issues</h4>
+                      {performanceMetrics.assessmentDebrief.timingIssues.map((issue, i) => (
+                        <div key={i} className="text-xs text-amber-700 dark:text-amber-300 bg-amber-500/8 border border-amber-500/15 p-2.5 rounded-xl flex items-start gap-2">
+                          <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                          {issue}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Critical missed */}
+                  {performanceMetrics.assessmentDebrief.criticalMissed.length > 0 && (
+                    <div className="space-y-1.5">
+                      <h4 className="text-xs font-semibold uppercase tracking-wider text-red-600 dark:text-red-400">Critical Assessments Missed</h4>
+                      {performanceMetrics.assessmentDebrief.criticalMissed.map((item, i) => (
+                        <div key={i} className="text-xs text-red-700 dark:text-red-300 bg-red-500/8 border border-red-500/15 p-2.5 rounded-xl">
+                          <div className="flex items-start gap-2">
+                            <XCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                            <div>
+                              <span className="font-semibold">{item.label}</span>
+                              <p className="opacity-80 mt-0.5">{item.rationale}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <Separator className="bg-border/30" />
+
+                  {/* Detailed breakdown */}
+                  <div className="space-y-1.5">
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Detailed Breakdown</h4>
+                    <div className="grid grid-cols-1 gap-1">
+                      {performanceMetrics.assessmentDebrief.items.map((item, i) => (
+                        <div key={i} className={`flex items-center gap-2 text-xs p-2 rounded-lg ${
+                          item.status === 'completed' ? 'bg-green-500/5' :
+                          item.status === 'missed-required' ? 'bg-red-500/5' :
+                          item.status === 'missed-recommended' ? 'bg-muted/30' :
+                          'bg-blue-500/5'
+                        }`}>
+                          {item.status === 'completed' ? (
+                            <CheckCircle2 className="h-3.5 w-3.5 text-green-500 shrink-0" />
+                          ) : item.status === 'missed-required' ? (
+                            <XCircle className="h-3.5 w-3.5 text-red-500 shrink-0" />
+                          ) : item.status === 'missed-recommended' ? (
+                            <Minus className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                          ) : (
+                            <Star className="h-3.5 w-3.5 text-blue-500 shrink-0" />
+                          )}
+                          <span className="flex-1 truncate">{item.label}</span>
+                          {item.order && (
+                            <Badge variant="outline" className="text-[9px] py-0 h-4">#{item.order}</Badge>
+                          )}
+                          {item.performedAt !== undefined && (
+                            <span className="text-muted-foreground/60 text-[10px]">{formatTime(item.performedAt)}</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Key Learning Points */}
             {currentCase.expectedFindings && (
