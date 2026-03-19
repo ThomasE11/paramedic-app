@@ -534,6 +534,8 @@ export const TREATMENT_PROTOCOLS: TreatmentProtocol[] = [
           additionalSounds: ['No air movement', 'Obtunded', 'Cyanotic', 'Agonal breathing'],
           description: 'Absent breath sounds — complete respiratory failure. Patient obtunded. Prepare for intubation.',
         },
+        // NRB is contraindicated at moderate COPD (hypoxic drive risk) but in life-threatening respiratory failure,
+        // aggressive oxygenation takes priority — accept CO2 retention risk to prevent death from hypoxia
         essentialTreatments: ['bvm_ventilation', 'oxygen_nonrebreather', 'iv_access', 'nebulizer_salbutamol', 'nebulizer_ipratropium', 'hydrocortisone_200mg'],
         optimalTreatments: ['bvm_ventilation', 'oxygen_nonrebreather', 'iv_access', 'nebulizer_salbutamol', 'nebulizer_ipratropium', 'hydrocortisone_200mg', 'intubation', 'adrenaline_im'],
         beneficialTreatments: ['intubation', 'cpap_niv', 'adrenaline_im'],
@@ -579,9 +581,9 @@ export const TREATMENT_PROTOCOLS: TreatmentProtocol[] = [
           additionalSounds: ['Diaphoresis', 'Crushing chest pain', 'Radiating to left arm/jaw'],
           description: 'Clear lungs bilaterally. Tachycardic heart sounds, regular rhythm.',
         },
-        essentialTreatments: ['aspirin', 'gtn_spray', 'oxygen_nasal', 'iv_access', 'morphine_5mg'],
+        essentialTreatments: ['aspirin', 'gtn_spray', 'oxygen_nasal', 'iv_access'],
         optimalTreatments: ['aspirin', 'gtn_spray', 'oxygen_nasal', 'iv_access', 'morphine_5mg', 'reassurance', 'fowlers_position'],
-        beneficialTreatments: ['reassurance', 'fowlers_position', 'ondansetron_4mg'],
+        beneficialTreatments: ['morphine_5mg', 'reassurance', 'fowlers_position', 'ondansetron_4mg'],
         contraindicatedTreatments: [],
         deteriorationRate: 'moderate',
         synergies: [
@@ -593,12 +595,12 @@ export const TREATMENT_PROTOCOLS: TreatmentProtocol[] = [
           {
             treatments: ['aspirin', 'gtn_spray', 'morphine_5mg'],
             synergyMultiplier: 1.6,
-            description: 'Full MONA protocol: pain relief reduces sympathetic drive and myocardial oxygen demand',
+            description: 'Aspirin + GTN + morphine: pain relief reduces sympathetic drive and myocardial oxygen demand (morphine only for refractory pain)',
           },
           {
             treatments: ['aspirin', 'gtn_spray', 'morphine_5mg', 'oxygen_nasal'],
             synergyMultiplier: 1.8,
-            description: 'Complete ACS protocol: MONA — Morphine, Oxygen, Nitrates, Aspirin',
+            description: 'Complete ACS protocol: Aspirin, GTN (if SBP > 90), O2 (if SpO2 < 94%), morphine for refractory pain only',
           },
         ],
         positioningEffects: [

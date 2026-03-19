@@ -85,7 +85,7 @@ export const caseDatabase: CaseScenario[] = [
         capillaryRefill: 3,
         skin: 'Pale, clammy, diaphoretic',
         findings: ['Tachycardic', 'Hypotensive', 'Poor perfusion'],
-        interventions: ['IV access x2', 'Aspirin 300mg', 'GTN spray'],
+        interventions: ['IV access x2', 'Aspirin 300mg', 'GTN spray only if SBP > 90'],
         ecgFindings: ['ST elevation V1-V4', 'Tombstone ST segments'],
         ivAccess: ['16G cannula right AC fossa']
       },
@@ -104,8 +104,8 @@ export const caseDatabase: CaseScenario[] = [
       }
     },
     secondarySurvey: {
-      head: ['No trauma', 'No JVD'],
-      neck: ['Trachea central', 'No subcutaneous emphysema'],
+      head: ['No trauma'],
+      neck: ['No JVD', 'Trachea central', 'No subcutaneous emphysema'],
       chest: ['Equal chest expansion', 'Heart sounds S1S2 present'],
       abdomen: ['Soft, non-tender'],
       pelvis: ['Stable'],
@@ -263,7 +263,7 @@ export const caseDatabase: CaseScenario[] = [
     id: 'cardiac-002',
     title: 'Out-of-Hospital Cardiac Arrest',
     category: 'cardiac',
-    subcategory: 'vfib',
+    subcategory: 'asystole',
     priority: 'critical',
     complexity: 'expert',
     yearLevels: ['4th-year'],
@@ -398,6 +398,7 @@ export const caseDatabase: CaseScenario[] = [
       'Team coordination is essential - clear roles, closed-loop communication, regular updates',
       'Prognostic factors: downtime, initial rhythm, witnessed arrest, bystander CPR, ROSC achieved',
       'Termination of resuscitation: Consider after 20 minutes if no ROSC, no shockable rhythm, and no reversible causes identified',
+      'Recognition of death: Prolonged unwitnessed downtime (>15-20 min), fixed dilated pupils, asystole, and no reversible cause may warrant withholding resuscitation per local guidelines',
       'Family presence during resuscitation: Can be beneficial with appropriate support and explanation',
       'Post-resuscitation care: Targeted temperature management, hemodynamic optimization, neurological assessment',
       'Documentation: Accurate timing of all interventions, drug doses, rhythm changes, and clinical decisions',
