@@ -140,6 +140,12 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
   const [assessmentTracker, setAssessmentTracker] = useState<AssessmentTracker | null>(null);
   const [activeFindings, setActiveFindings] = useState<{ stepId: AssessmentStepId; findings: AssessmentFinding[] } | null>(null);
 
+  // Scene time warnings & coaching
+  const [sceneTimeWarnings, setSceneTimeWarnings] = useState<Set<string>>(new Set());
+  const lastActivityRef = useRef<number>(Date.now());
+  const [hintVisible, setHintVisible] = useState(false);
+  const [currentHint, setCurrentHint] = useState<string>('');
+
   // Timer
   const [caseStartTime, setCaseStartTime] = useState<number | null>(null);
   const [caseEndTime, setCaseEndTime] = useState<number | null>(null);
@@ -168,6 +174,59 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
     return () => clearInterval(interval);
   }, [caseStartTime, caseEndTime]);
 
+  // Scene time warnings — paramedic standard is 15 minutes on scene
+  useEffect(() => {
+    if (!caseStartTime || caseEndTime || phase !== 'vitals') return;
+    const minutes = elapsedSeconds / 60;
+
+    if (minutes >= 10 && !sceneTimeWarnings.has('10min')) {
+      toast.warning('Scene time: 10 minutes', {
+        description: 'Consider your transport decision. Most patients should be en route to hospital by now.',
+        duration: 8000,
+      });
+      setSceneTimeWarnings(prev => new Set(prev).add('10min'));
+    }
+    if (minutes >= 13 && !sceneTimeWarnings.has('13min')) {
+      toast.error('Scene time extended: 13 minutes', {
+        description: 'You have exceeded standard scene time. Justify any delay — is there a clinical reason to stay on scene?',
+        duration: 10000,
+      });
+      setSceneTimeWarnings(prev => new Set(prev).add('13min'));
+    }
+    if (minutes >= 15 && !sceneTimeWarnings.has('15min')) {
+      toast.error('⚠️ 15 minutes on scene — patient may be deteriorating', {
+        description: 'Prolonged scene time is associated with worse patient outcomes. Consider immediate transport.',
+        duration: 12000,
+      });
+      setSceneTimeWarnings(prev => new Set(prev).add('15min'));
+    }
+  }, [elapsedSeconds, caseStartTime, caseEndTime, phase, sceneTimeWarnings]);
+
+  // Inactivity coaching — nudge students who are stuck
+  useEffect(() => {
+    if (!caseStartTime || caseEndTime || phase !== 'vitals') return;
+    const checkInactivity = setInterval(() => {
+      const inactiveSecs = (Date.now() - lastActivityRef.current) / 1000;
+      const abcdePerformed = assessmentTracker?.performed?.length || 0;
+
+      if (inactiveSecs >= 120 && abcdePerformed === 0) {
+        setCurrentHint('Have you assessed the patient? Start with Scene Safety, then work through Airway, Breathing, Circulation, Disability, Exposure.');
+        setHintVisible(true);
+      } else if (inactiveSecs >= 120 && abcdePerformed < 4) {
+        const missing = ['Scene', 'Airway', 'Breathing', 'Circulation', 'Disability', 'Exposure']
+          .filter(s => !assessmentTracker?.performed?.some(p => p.stepId.toLowerCase().includes(s.toLowerCase().slice(0, 4))));
+        if (missing.length > 0) {
+          setCurrentHint(`Consider completing your primary survey. You haven't assessed: ${missing.join(', ')}.`);
+          setHintVisible(true);
+        }
+      } else if (inactiveSecs >= 180 && appliedTreatments.length === 0 && abcdePerformed >= 4) {
+        setCurrentHint('You\'ve completed your assessment. Based on your findings, does the patient need any treatment? Check the treatment panel.');
+        setHintVisible(true);
+      }
+    }, 15000); // Check every 15 seconds
+    return () => clearInterval(checkInactivity);
+  }, [caseStartTime, caseEndTime, phase, assessmentTracker, appliedTreatments.length]);
+
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
@@ -193,6 +252,10 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
     setCaseStartTime(null);
     setCaseEndTime(null);
     setElapsedSeconds(0);
+    setSceneTimeWarnings(new Set());
+    setHintVisible(false);
+    setCurrentHint('');
+    lastActivityRef.current = Date.now();
 
     // Initialize dynamic treatment engine patient state
     const initialPatientState = createInitialPatientState(newCase);
@@ -225,6 +288,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
   // Start case (from pre-briefing)
   const startCase = useCallback(() => {
     setCaseStartTime(Date.now());
+    lastActivityRef.current = Date.now();
     setPhase('vitals');
     toast.success('Case started — assess the patient and begin treatment');
 
@@ -245,6 +309,8 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
   // Apply treatment — uses dynamic treatment engine
   const applyTreatment = useCallback((treatment: Treatment, defibParams?: DefibrillationParams) => {
     if (!currentVitals || !currentCase || !patientState) return;
+    lastActivityRef.current = Date.now();
+    setHintVisible(false);
 
     // Defibrillation requires energy/mode selection
     if (treatment.id === 'defibrillation' && !defibParams) {
@@ -331,6 +397,8 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
   // Handle assessment step
   const handlePerformAssessment = useCallback((stepId: AssessmentStepId) => {
     if (!assessmentTracker || !currentCase || !caseStartTime) return;
+    lastActivityRef.current = Date.now();
+    setHintVisible(false);
 
     const { tracker: updatedTracker, findings } = performAssessmentStep(
       assessmentTracker,
@@ -839,6 +907,22 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                 </Button>
               </div>
             </div>
+
+            {/* Coaching hint — shown when student is inactive */}
+            {hintVisible && currentHint && (
+              <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 animate-fade-in">
+                <div className="flex items-start gap-2">
+                  <Sparkles className="h-4 w-4 text-blue-500 mt-0.5 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-blue-700 dark:text-blue-300">Coaching Hint</p>
+                    <p className="text-xs text-blue-600 dark:text-blue-400 mt-0.5">{currentHint}</p>
+                  </div>
+                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0 shrink-0" onClick={() => setHintVisible(false)}>
+                    <XCircle className="h-3.5 w-3.5 text-blue-400" />
+                  </Button>
+                </div>
+              </div>
+            )}
 
             {/* Clinical Assessment Panel */}
             {assessmentTracker && (
