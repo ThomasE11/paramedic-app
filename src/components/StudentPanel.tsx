@@ -36,6 +36,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AuscultationPanel } from '@/components/AuscultationPanel';
+import { DebriefingResourcesPanel } from '@/components/DebriefingResourcesPanel';
 
 /**
  * Generate a student-friendly case title that doesn't reveal the diagnosis.
@@ -1424,6 +1425,9 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                 </CardContent>
               </Card>
             )}
+
+            {/* Further Study Resources — same as instructor debrief */}
+            <DebriefingResourcesPanel caseData={currentCase} />
 
             {/* Additional Resources */}
             {currentCase.educationalResources && currentCase.educationalResources.length > 0 && (
