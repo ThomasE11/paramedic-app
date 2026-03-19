@@ -440,15 +440,15 @@ export function updateSoundsAfterTreatment(
             sounds.description = 'Lungs now clear with comprehensive bronchodilator therapy. Good bilateral air entry. Excellent response to combination treatment.';
             sounds.additionalSounds = ['Air entry now equal bilaterally', 'No residual wheeze', 'Work of breathing normalised'];
           } else if (effectiveDose >= 2) {
-            // Significant improvement
-            sounds.leftLung = sounds.leftLung === 'wheeze' ? 'diminished' : sounds.leftLung;
-            sounds.rightLung = sounds.rightLung === 'wheeze' ? 'diminished' : sounds.rightLung;
+            // Significant improvement — wheeze resolving toward clear
+            sounds.leftLung = sounds.leftLung === 'wheeze' ? 'clear' : sounds.leftLung;
+            sounds.rightLung = sounds.rightLung === 'wheeze' ? 'clear' : sounds.rightLung;
             sounds.description = hasIpratropium
-              ? 'Significant improvement with combined salbutamol and ipratropium. Wheeze resolving. Good clinical response.'
-              : 'Wheeze reducing after repeat salbutamol. Consider adding ipratropium for optimal response.';
+              ? 'Significant improvement with combined salbutamol and ipratropium. Wheeze resolved. Good bilateral air entry.'
+              : 'Wheeze resolved after repeat salbutamol. Consider adding ipratropium if symptoms recur.';
             sounds.additionalSounds = hasIpratropium
-              ? ['Wheeze mostly cleared with dual bronchodilation', 'Mild residual diminished air entry']
-              : ['Wheeze improving but still present', 'Consider adding ipratropium bromide'];
+              ? ['Lungs clear with dual bronchodilation', 'Good air entry bilaterally']
+              : ['Wheeze resolved', 'Good air entry returning', 'Monitor for recurrence'];
           } else {
             // First dose, no combination
             sounds.description = 'Wheeze slightly improved after first salbutamol nebulizer. Still significant bronchospasm. Consider repeat dose and add ipratropium.';
@@ -510,10 +510,10 @@ export function updateSoundsAfterTreatment(
             sounds.description = 'Dual bronchodilation showing effect — air movement improving. Wheeze now audible (positive sign). Continue treatment.';
             sounds.additionalSounds = ['Air entry improving with combination therapy', 'Wheeze returning as airways open'];
           } else {
-            sounds.leftLung = sounds.leftLung === 'wheeze' ? 'diminished' : sounds.leftLung === 'rhonchi' ? 'diminished' : sounds.leftLung;
-            sounds.rightLung = sounds.rightLung === 'wheeze' ? 'diminished' : sounds.rightLung === 'rhonchi' ? 'diminished' : sounds.rightLung;
-            sounds.description = 'Good response to combined salbutamol and ipratropium. Bronchospasm significantly reduced.';
-            sounds.additionalSounds = ['Dual bronchodilation effective', 'Secretions clearing', 'Work of breathing reducing'];
+            sounds.leftLung = sounds.leftLung === 'wheeze' ? 'clear' : sounds.leftLung === 'rhonchi' ? 'clear' : sounds.leftLung;
+            sounds.rightLung = sounds.rightLung === 'wheeze' ? 'clear' : sounds.rightLung === 'rhonchi' ? 'clear' : sounds.rightLung;
+            sounds.description = 'Good response to combined salbutamol and ipratropium. Bronchospasm resolved.';
+            sounds.additionalSounds = ['Dual bronchodilation effective', 'Lungs clearing', 'Air entry normalising'];
           }
         } else {
           // Ipratropium alone — slower, partial effect

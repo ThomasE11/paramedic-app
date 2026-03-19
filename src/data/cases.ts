@@ -81,11 +81,11 @@ export const caseDatabase: CaseScenario[] = [
       circulation: {
         pulseRate: 110,
         pulseQuality: 'Weak, thready',
-        bp: { systolic: 90, diastolic: 60 },
+        bp: { systolic: 95, diastolic: 62 },
         capillaryRefill: 3,
         skin: 'Pale, clammy, diaphoretic',
-        findings: ['Tachycardic', 'Hypotensive', 'Poor perfusion'],
-        interventions: ['IV access x2', 'Aspirin 300mg', 'GTN spray only if SBP > 90'],
+        findings: ['Tachycardic', 'Borderline hypotensive', 'Poor perfusion'],
+        interventions: ['IV access x2', 'Aspirin 300mg', 'GTN spray — use with caution if SBP remains above 90'],
         ecgFindings: ['ST elevation V1-V4', 'Tombstone ST segments'],
         ivAccess: ['16G cannula right AC fossa']
       },
