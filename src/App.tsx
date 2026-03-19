@@ -848,15 +848,14 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 group-hover:from-primary/30 group-hover:to-primary/10 transition-all duration-300 shadow-sm group-hover:shadow-md">
                 <Stethoscope className="h-5 w-5 text-primary group-hover:scale-110 transition-transform duration-300" />
               </div>
-              <div className="text-left">
-                <h1 className="heading-premium text-base sm:text-xl group-hover:text-primary transition-colors leading-tight">
-                  <span className="hidden sm:inline">UAE Paramedic Case Generator</span>
-                  <span className="sm:hidden">UAE Paramedic<br />Case Generator</span>
-                </h1>
-                <div className="flex items-center gap-1.5">
-                  <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 border-emerald-500/30 text-emerald-600">Educator</Badge>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground">Realistic scenarios for student training</p>
+              <div className="text-left min-w-0">
+                <div className="flex items-center gap-2">
+                  <h1 className="heading-premium text-base sm:text-lg group-hover:text-primary transition-colors leading-tight truncate">
+                    ParaMedic Studio
+                  </h1>
+                  <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 border-emerald-500/30 text-emerald-600 shrink-0">Educator</Badge>
                 </div>
+                <p className="text-[10px] sm:text-xs text-muted-foreground truncate">Case generation &amp; student assessment</p>
               </div>
             </button>
 

@@ -290,12 +290,20 @@ export function SessionSummary({
                   <span className="text-sm font-medium">{elapsedTime}</span>
                 </div>
                 
-                {timeEfficiency && (
-                  <Badge 
-                    variant="outline" 
-                    className={`${timeEfficiency > 100 ? 'text-emerald-600 border-emerald-600' : timeEfficiency > 80 ? 'text-yellow-600 border-yellow-600' : 'text-red-600 border-red-600'}`}
+                {timeEfficiency && timeTakenSeconds && (
+                  <Badge
+                    variant="outline"
+                    className={`${
+                      timeTakenSeconds < 120 ? 'text-orange-600 border-orange-600'
+                      : timeEfficiency > 100 ? 'text-emerald-600 border-emerald-600'
+                      : timeEfficiency > 80 ? 'text-yellow-600 border-yellow-600'
+                      : 'text-red-600 border-red-600'
+                    }`}
                   >
-                    {timeEfficiency > 100 ? 'Under' : timeEfficiency > 80 ? 'Within' : 'Over'} time
+                    {timeTakenSeconds < 120 ? 'Incomplete \u2014 case barely started'
+                      : timeEfficiency > 100 ? 'Efficient'
+                      : timeEfficiency > 80 ? 'Within time'
+                      : 'Over time'}
                   </Badge>
                 )}
               </div>
@@ -518,6 +526,109 @@ export function SessionSummary({
         </Card>
       )}
 
+      {/* Treatment Log — Chronological */}
+      {appliedTreatments && appliedTreatments.length > 0 && (
+        <Card className="card-interactive animate-fade-in-up stagger-6 border-l-4 border-l-teal-500">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg text-teal-700 dark:text-teal-400">
+              <div className="p-1.5 rounded-lg bg-teal-100 dark:bg-teal-900/30">
+                <Activity className="h-5 w-5" />
+              </div>
+              Treatments Applied
+              <Badge variant="secondary" className="ml-auto text-xs">{appliedTreatments.length}</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="relative">
+              {/* Timeline line */}
+              <div className="absolute left-3 top-2 bottom-2 w-px bg-teal-200 dark:bg-teal-800" />
+              <div className="space-y-3">
+                {appliedTreatments.map((tx, i) => {
+                  const timeStr = tx.appliedAt
+                    ? new Date(tx.appliedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+                    : `#${i + 1}`;
+                  return (
+                    <div key={i} className="flex items-start gap-3 pl-1">
+                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-teal-100 dark:bg-teal-900/50 text-[10px] font-semibold text-teal-700 dark:text-teal-300 z-10">
+                        {timeStr}
+                      </div>
+                      <div className="min-w-0 flex-1 pt-0.5">
+                        <p className="text-sm font-medium">{tx.name || tx.description}</p>
+                        {tx.description && tx.name && (
+                          <p className="text-xs text-muted-foreground truncate">{tx.description}</p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Vitals Trend Summary */}
+      {vitalsHistory && vitalsHistory.length >= 2 && (() => {
+        const initial = vitalsHistory[0];
+        const final = vitalsHistory[vitalsHistory.length - 1];
+
+        const vitalItems: { label: string; initial: string; final: string; unit: string; improved: boolean; worsened: boolean }[] = [];
+        if (initial.pulse !== undefined && final.pulse !== undefined) {
+          const improved = (initial.pulse > 100 && final.pulse < initial.pulse) || (initial.pulse < 60 && final.pulse > initial.pulse);
+          const worsened = (final.pulse > 120 && final.pulse > initial.pulse) || (final.pulse < 50 && final.pulse < initial.pulse);
+          vitalItems.push({ label: 'Heart Rate', initial: String(initial.pulse), final: String(final.pulse), unit: 'bpm', improved, worsened });
+        }
+        if (initial.bp && final.bp) {
+          const initialSbp = parseInt(initial.bp.split('/')[0]);
+          const finalSbp = parseInt(final.bp.split('/')[0]);
+          if (!isNaN(initialSbp) && !isNaN(finalSbp)) {
+            const improved = (initialSbp < 90 && finalSbp > initialSbp) || (initialSbp > 180 && finalSbp < initialSbp);
+            const worsened = (finalSbp < 80 && finalSbp < initialSbp) || (finalSbp > 200 && finalSbp > initialSbp);
+            vitalItems.push({ label: 'BP', initial: initial.bp, final: final.bp, unit: 'mmHg', improved, worsened });
+          }
+        }
+        if (initial.respiration !== undefined && final.respiration !== undefined) {
+          const improved = (initial.respiration > 20 && final.respiration < initial.respiration) || (initial.respiration < 10 && final.respiration > initial.respiration);
+          const worsened = (final.respiration > 30 && final.respiration > initial.respiration) || (final.respiration < 8 && final.respiration < initial.respiration);
+          vitalItems.push({ label: 'Resp Rate', initial: String(initial.respiration), final: String(final.respiration), unit: '/min', improved, worsened });
+        }
+        if (initial.spo2 !== undefined && final.spo2 !== undefined) {
+          const improved = initial.spo2 < 94 && final.spo2 > initial.spo2;
+          const worsened = final.spo2 < 90 && final.spo2 < initial.spo2;
+          vitalItems.push({ label: 'SpO2', initial: String(initial.spo2), final: String(final.spo2), unit: '%', improved, worsened });
+        }
+
+        if (vitalItems.length === 0) return null;
+
+        return (
+          <Card className="card-interactive animate-fade-in-up stagger-6 border-l-4 border-l-cyan-500">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg text-cyan-700 dark:text-cyan-400">
+                <div className="p-1.5 rounded-lg bg-cyan-100 dark:bg-cyan-900/30">
+                  <TrendingUp className="h-5 w-5" />
+                </div>
+                Vitals Trend
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {vitalItems.map((v, i) => (
+                  <div key={i} className={`rounded-lg border p-3 text-center ${v.improved ? 'border-emerald-300 bg-emerald-50 dark:bg-emerald-950/20' : v.worsened ? 'border-red-300 bg-red-50 dark:bg-red-950/20' : 'border-muted bg-muted/30'}`}>
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">{v.label}</p>
+                    <div className="flex items-center justify-center gap-1.5">
+                      <span className="text-sm text-muted-foreground">{v.initial}</span>
+                      <span className="text-xs text-muted-foreground">&rarr;</span>
+                      <span className={`text-sm font-semibold ${v.improved ? 'text-emerald-700 dark:text-emerald-400' : v.worsened ? 'text-red-700 dark:text-red-400' : ''}`}>{v.final}</span>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">{v.unit}</p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })()}
+
       {/* Treatment Quality Analysis — Year-Aware */}
       {appliedTreatments && appliedTreatments.length > 0 && (() => {
         const qualityResults: { treatmentName: string; result: TreatmentQualityResult; timingNote?: string }[] = [];
@@ -583,17 +694,12 @@ export function SessionSummary({
         );
       })()}
 
-      {/* Year-Aware Guidance & Resources */}
+      {/* Targeted Resources for Missed Areas */}
       {missedItems.length > 0 && (() => {
         const missedCategories = [...new Set(missedItems.map(i => i.category))];
         const resources: FeedbackResource[] = getResourcesForCase(caseData, missedCategories, session.studentYear);
-        const guidanceItems = missedCategories.slice(0, 3).map(cat => {
-          const catItems = missedItems.filter(i => i.category === cat);
-          const desc = catItems.length > 1 ? `${catItems.length} ${cat} items missed` : catItems[0]?.description || cat;
-          return generateYearAwareGuidance(desc, cat, session.studentYear);
-        });
 
-        if (guidanceItems.length === 0 && resources.length === 0) return null;
+        if (resources.length === 0) return null;
 
         return (
           <Card className="card-interactive animate-fade-in-up stagger-7 border-l-4 border-l-indigo-500">
@@ -602,31 +708,21 @@ export function SessionSummary({
                 <div className="p-1.5 rounded-lg bg-indigo-100 dark:bg-indigo-900/30">
                   <BookOpen className="h-5 w-5" />
                 </div>
-                Year-Level Guidance ({session.studentYear})
+                Recommended Resources
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              {guidanceItems.map((guidance, i) => (
-                <div key={i} className="p-3 bg-indigo-50 dark:bg-indigo-950/20 rounded-lg">
-                  <p className="text-sm text-indigo-700 dark:text-indigo-300 leading-relaxed">{guidance}</p>
-                </div>
-              ))}
-              {resources.length > 0 && (
-                <div className="mt-4">
-                  <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Recommended Resources</p>
-                  <div className="space-y-2">
-                    {resources.slice(0, 5).map((r, i) => (
-                      <div key={i} className="flex items-start gap-2 p-2 rounded bg-white dark:bg-gray-800 border">
-                        <Badge variant="outline" className="text-[9px] shrink-0 mt-0.5">{r.type}</Badge>
-                        <div>
-                          <p className="text-sm font-medium">{r.title}</p>
-                          <p className="text-xs text-muted-foreground">{r.description}</p>
-                        </div>
-                      </div>
-                    ))}
+            <CardContent>
+              <div className="space-y-2">
+                {resources.slice(0, 5).map((r, i) => (
+                  <div key={i} className="flex items-start gap-2 p-2 rounded bg-white dark:bg-gray-800 border">
+                    <Badge variant="outline" className="text-[9px] shrink-0 mt-0.5">{r.type}</Badge>
+                    <div>
+                      <p className="text-sm font-medium">{r.title}</p>
+                      <p className="text-xs text-muted-foreground">{r.description}</p>
+                    </div>
                   </div>
-                </div>
-              )}
+                ))}
+              </div>
             </CardContent>
           </Card>
         );
