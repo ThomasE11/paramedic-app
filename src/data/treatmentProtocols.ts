@@ -1325,6 +1325,200 @@ export const TREATMENT_PROTOCOLS: TreatmentProtocol[] = [
       },
     ],
   },
+
+  // ============================================================================
+  // ATRIAL FIBRILLATION
+  // ============================================================================
+  {
+    condition: 'afib',
+    conditionName: 'Atrial Fibrillation with Rapid Ventricular Response',
+    severityLevels: [
+      {
+        severity: 'moderate',
+        description: 'AF with RVR — hemodynamically stable, rate >120, symptomatic (palpitations, dyspnoea)',
+        typicalVitals: {
+          pulse: [120, 170],
+          respiration: [16, 24],
+          spo2: [94, 98],
+          bpSystolic: [100, 150],
+        },
+        initialSounds: {
+          leftLung: 'clear',
+          rightLung: 'clear',
+          heartSound: 'irregular',
+          additionalSounds: ['Irregularly irregular pulse', 'Palpitations', 'Mild dyspnoea'],
+          description: 'Clear lungs bilaterally. Irregularly irregular heart sounds at rapid rate.',
+        },
+        essentialTreatments: ['iv_access', 'oxygen_nasal', 'reassurance'],
+        optimalTreatments: ['iv_access', 'oxygen_nasal', 'reassurance', 'fowlers_position'],
+        beneficialTreatments: ['fowlers_position', 'reassurance'],
+        contraindicatedTreatments: ['adenosine_6mg'], // Adenosine is for SVT not AF
+        deteriorationRate: 'slow',
+        synergies: [
+          {
+            treatments: ['iv_access', 'oxygen_nasal'],
+            synergyMultiplier: 1.3,
+            description: 'IV access + supplemental O2: Prepared for rate control, maintaining oxygenation during rapid rate',
+          },
+        ],
+        positioningEffects: [
+          {
+            positionId: 'fowlers_position',
+            spo2Bonus: 1,
+            description: 'Semi-upright position reduces venous return and cardiac workload',
+          },
+        ],
+        responseCeilings: {
+          partialCeiling: 50,
+          fullCeiling: 75,
+          timeToResponse: 600,
+        },
+      },
+      {
+        severity: 'severe',
+        description: 'AF with RVR — hemodynamically unstable, hypotensive, signs of heart failure, rate >150',
+        typicalVitals: {
+          pulse: [150, 200],
+          respiration: [22, 32],
+          spo2: [88, 94],
+          bpSystolic: [80, 100],
+        },
+        initialSounds: {
+          leftLung: 'crackles-fine',
+          rightLung: 'crackles-fine',
+          heartSound: 'irregular',
+          additionalSounds: ['Hypotension', 'Acute pulmonary oedema', 'Altered consciousness', 'Chest pain'],
+          description: 'Bilateral basal crackles. Irregularly irregular, very rapid. Signs of cardiac failure.',
+        },
+        essentialTreatments: ['iv_access', 'oxygen_nonrebreather', 'fowlers_position'],
+        optimalTreatments: ['iv_access', 'oxygen_nonrebreather', 'amiodarone_300mg', 'fowlers_position'],
+        beneficialTreatments: ['amiodarone_300mg', 'cpap_niv'],
+        contraindicatedTreatments: ['adenosine_6mg', 'gtn_spray'],
+        deteriorationRate: 'fast',
+        synergies: [
+          {
+            treatments: ['iv_access', 'amiodarone_300mg'],
+            synergyMultiplier: 1.5,
+            description: 'IV amiodarone for pharmacological rate/rhythm control in unstable AF',
+          },
+          {
+            treatments: ['iv_access', 'amiodarone_300mg', 'oxygen_nonrebreather'],
+            synergyMultiplier: 1.7,
+            description: 'Full unstable AF protocol: IV access, amiodarone, high-flow O2',
+          },
+        ],
+        positioningEffects: [
+          {
+            positionId: 'fowlers_position',
+            spo2Bonus: 3,
+            description: 'Upright positioning reduces pulmonary congestion and improves oxygenation',
+          },
+        ],
+        responseCeilings: {
+          partialCeiling: 30,
+          fullCeiling: 65,
+          timeToResponse: 900,
+        },
+      },
+    ],
+  },
+
+  // ============================================================================
+  // HYPERTENSIVE EMERGENCY
+  // ============================================================================
+  {
+    condition: 'hypertensive-emergency',
+    conditionName: 'Hypertensive Emergency',
+    severityLevels: [
+      {
+        severity: 'moderate',
+        description: 'Hypertensive emergency — SBP >180 with end-organ symptoms (headache, visual changes, chest pain)',
+        typicalVitals: {
+          pulse: [80, 110],
+          respiration: [16, 22],
+          spo2: [95, 99],
+          bpSystolic: [180, 220],
+        },
+        initialSounds: {
+          leftLung: 'clear',
+          rightLung: 'clear',
+          heartSound: 'normal',
+          additionalSounds: ['Severe headache', 'Visual disturbance', 'Nausea', 'Bounding pulse'],
+          description: 'Clear lungs bilaterally. Normal heart sounds. Bounding, regular pulse.',
+        },
+        essentialTreatments: ['iv_access', 'reassurance'],
+        optimalTreatments: ['iv_access', 'reassurance', 'fowlers_position'],
+        beneficialTreatments: ['fowlers_position', 'oxygen_nasal'],
+        contraindicatedTreatments: ['gtn_spray', 'aspirin'],
+        deteriorationRate: 'moderate',
+        synergies: [
+          {
+            treatments: ['iv_access', 'reassurance'],
+            synergyMultiplier: 1.3,
+            description: 'IV access for antihypertensive therapy + reassurance to reduce sympathetic drive',
+          },
+        ],
+        positioningEffects: [
+          {
+            positionId: 'fowlers_position',
+            spo2Bonus: 1,
+            description: 'Semi-upright to reduce intracranial pressure and improve cerebral perfusion',
+          },
+        ],
+        responseCeilings: {
+          partialCeiling: 40,
+          fullCeiling: 70,
+          timeToResponse: 900,
+        },
+      },
+      {
+        severity: 'severe',
+        description: 'Hypertensive emergency — SBP >220, encephalopathy, seizures, papilledema, aortic dissection risk',
+        typicalVitals: {
+          pulse: [90, 120],
+          respiration: [20, 28],
+          spo2: [92, 97],
+          bpSystolic: [220, 280],
+        },
+        initialSounds: {
+          leftLung: 'crackles-fine',
+          rightLung: 'crackles-fine',
+          heartSound: 'normal',
+          additionalSounds: ['Altered consciousness', 'Seizures', 'Papilledema', 'Pulmonary oedema'],
+          description: 'Bilateral fine crackles (pulmonary oedema). Regular but bounding pulse.',
+        },
+        essentialTreatments: ['iv_access', 'oxygen_nonrebreather', 'fowlers_position'],
+        optimalTreatments: ['iv_access', 'oxygen_nonrebreather', 'fowlers_position', 'midazolam_5mg'],
+        beneficialTreatments: ['midazolam_5mg', 'cpap_niv'],
+        contraindicatedTreatments: ['gtn_spray', 'aspirin', 'morphine_5mg'],
+        deteriorationRate: 'fast',
+        synergies: [
+          {
+            treatments: ['iv_access', 'oxygen_nonrebreather'],
+            synergyMultiplier: 1.4,
+            description: 'IV access + high-flow O2: Stabilize while preparing for antihypertensive infusion in ED',
+          },
+          {
+            treatments: ['iv_access', 'midazolam_5mg'],
+            synergyMultiplier: 1.5,
+            description: 'IV midazolam for seizure control in hypertensive encephalopathy',
+          },
+        ],
+        positioningEffects: [
+          {
+            positionId: 'fowlers_position',
+            spo2Bonus: 3,
+            description: 'Upright positioning reduces intracranial pressure and pulmonary congestion',
+          },
+        ],
+        responseCeilings: {
+          partialCeiling: 25,
+          fullCeiling: 60,
+          timeToResponse: 600,
+        },
+      },
+    ],
+  },
 ];
 
 // ============================================================================
