@@ -37,6 +37,8 @@ import {
 import { toast } from 'sonner';
 import { AuscultationPanel } from '@/components/AuscultationPanel';
 import { DebriefingResourcesPanel } from '@/components/DebriefingResourcesPanel';
+import { exportSessionToPDF } from '@/lib/pdf-export';
+import { getResourcesForDebriefing } from '@/data/diversifiedResources';
 
 /**
  * Generate a student-friendly case title that doesn't reveal the diagnosis.
@@ -1551,6 +1553,32 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
 
             {/* Actions */}
             <div className="flex gap-3 pt-2 pb-6 sm:pb-8">
+              <Button
+                variant="outline"
+                size="lg"
+                className="flex-1 gap-2 rounded-xl text-sm sm:text-base h-11 sm:h-12"
+                onClick={async () => {
+                  if (!currentCase || !session) return;
+                  try {
+                    toast.loading('Generating PDF report...');
+                    await exportSessionToPDF({
+                      session,
+                      caseData: currentCase,
+                      elapsedTime: formatTime(performanceMetrics.totalTime),
+                      appliedTreatments,
+                      vitalsHistory,
+                      debriefingResources: getResourcesForDebriefing(currentCase),
+                    });
+                    toast.dismiss();
+                    toast.success('PDF report downloaded');
+                  } catch {
+                    toast.dismiss();
+                    toast.error('Failed to generate PDF');
+                  }
+                }}
+              >
+                <FileText className="h-4 w-4" /> Download Report
+              </Button>
               <Button variant="outline" onClick={resetToStart} size="lg" className="flex-1 gap-2 rounded-xl text-sm sm:text-base h-11 sm:h-12">
                 <RotateCcw className="h-4 w-4" /> Start New Case
               </Button>
