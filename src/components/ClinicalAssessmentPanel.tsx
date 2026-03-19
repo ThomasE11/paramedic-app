@@ -293,6 +293,17 @@ export function ClinicalAssessmentPanel({
 }: ClinicalAssessmentPanelProps) {
   const profile = useMemo(() => getAssessmentProfile(caseCategory), [caseCategory]);
 
+  // Filter secondary steps to only show relevant ones for this case profile
+  const relevantSecondarySteps = useMemo(() => {
+    const relevant = new Set<string>([
+      ...profile.requiredSecondary,
+      ...profile.recommendedSecondary,
+    ]);
+    // If no secondary steps are specified, show all (fallback for general cases)
+    if (relevant.size === 0) return SECONDARY_STEPS;
+    return SECONDARY_STEPS.filter(s => relevant.has(s.id));
+  }, [profile]);
+
   // Filter special steps to only show relevant ones for this case
   const relevantSpecialSteps = useMemo(() => {
     const relevant = new Set<string>([
@@ -360,7 +371,7 @@ export function ClinicalAssessmentPanel({
         title={profile.secondarySurveyLabel}
         description={profile.secondarySurveyDescription}
         phase="secondary"
-        steps={SECONDARY_STEPS}
+        steps={relevantSecondarySteps}
         tracker={tracker}
         onPerform={onPerformAssessment}
         defaultExpanded={false}

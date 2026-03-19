@@ -282,6 +282,22 @@ const toxicologyResources: DebriefingResource[] = [
 // ALL RESOURCES BY CATEGORY
 // ============================================================================
 
+// ============================================================================
+// GENERAL / MULTI-SYSTEM RESOURCES (syncope, sepsis, general assessment)
+// ============================================================================
+
+const generalResources: DebriefingResource[] = [
+  { id: 'gen-emdocs-syncope', title: 'Syncope - ED Approach and Differential', url: 'https://www.emdocs.net/syncope-an-evidence-based-approach/', type: 'article', source: 'EMDocs', relevance: 'essential', category: 'general' },
+  { id: 'gen-litfl-syncope', title: 'Syncope - Evaluation and Risk Stratification', url: 'https://litfl.com/syncope/', type: 'article', source: 'LITFL', relevance: 'essential', category: 'general' },
+  { id: 'gen-emcases-syncope', title: 'Approach to Syncope', url: 'https://emergencymedicinecases.com/syncope/', type: 'podcast', source: 'EM Cases', relevance: 'essential', category: 'general' },
+  { id: 'gen-nice-syncope', title: 'NICE: Transient Loss of Consciousness (Syncope)', url: 'https://www.nice.org.uk/guidance/cg109', type: 'guideline', source: 'NICE', relevance: 'essential', category: 'general' },
+  { id: 'gen-medscape-syncope', title: 'Syncope - Clinical Overview', url: 'https://emedicine.medscape.com/article/811669-overview', type: 'article', source: 'Medscape', relevance: 'important', category: 'general' },
+  { id: 'gen-rebelem-syncope', title: 'Syncope Red Flags and Disposition', url: 'https://rebelem.com/syncope/', type: 'article', source: 'REBEL EM', relevance: 'important', category: 'general' },
+  { id: 'gen-emdocs-assessment', title: 'Systematic Clinical Assessment - ABCDE', url: 'https://www.emdocs.net/abcde-approach/', type: 'article', source: 'EMDocs', relevance: 'important', category: 'general' },
+  { id: 'gen-nice-sepsis', title: 'NICE: Sepsis Recognition and Management', url: 'https://www.nice.org.uk/guidance/ng51', type: 'guideline', source: 'NICE', relevance: 'important', category: 'general' },
+  { id: 'gen-rcuk-medical-emergencies', title: 'Medical Emergencies and Resuscitation', url: 'https://www.resus.org.uk/library/2021-resuscitation-guidelines/adult-basic-life-support-guidelines', type: 'guideline', source: 'Resuscitation Council UK', relevance: 'supplementary', category: 'general' },
+];
+
 export const categoryResources: Partial<Record<string, DebriefingResource[]>> = {
   cardiac: cardiacResources,
   respiratory: respiratoryResources,
@@ -295,6 +311,50 @@ export const categoryResources: Partial<Record<string, DebriefingResource[]>> = 
   ent: entResources,
   obstetric: obstetricResources,
   toxicology: toxicologyResources,
+  general: generalResources,
+};
+
+// ============================================================================
+// SUBCATEGORY → KEYWORD MAPPING (for condition-specific resource matching)
+// ============================================================================
+
+/**
+ * Maps case subcategories/diagnoses to keywords used to score resource relevance.
+ * Resources whose title contains these keywords get boosted.
+ * Resources whose title contains NEGATIVE keywords get demoted.
+ */
+const subcategoryKeywords: Record<string, { boost: string[]; demote: string[] }> = {
+  // Cardiac
+  'stem-anterior': { boost: ['stemi', 'acs', 'coronary', 'myocardial', 'ecg', 'reperfusion', 'aspirin', 'pci'], demote: ['syncope', 'af ', 'atrial fib', 'flutter'] },
+  'stem-inferior': { boost: ['stemi', 'acs', 'coronary', 'myocardial', 'ecg', 'inferior', 'right ventricle'], demote: ['syncope', 'af ', 'flutter'] },
+  'nstemi': { boost: ['nstemi', 'acs', 'coronary', 'troponin', 'chest pain', 'antiplatelet'], demote: ['syncope', 'af ', 'flutter'] },
+  'afib': { boost: ['atrial fib', 'af ', 'arrhythmia', 'rate control', 'anticoagul'], demote: ['stemi', 'reperfusion', 'thrombol'] },
+  'aflutter': { boost: ['atrial flutter', 'arrhythmia', 'rate control', 'cardioversion'], demote: ['stemi', 'reperfusion'] },
+  'svt': { boost: ['svt', 'supraventricular', 'adenosine', 'vagal', 'arrhythmia'], demote: ['stemi', 'reperfusion'] },
+  'asystole': { boost: ['cardiac arrest', 'als', 'cpr', 'resuscitation', 'adrenaline', 'epinephrine'], demote: ['stemi', 'af ', 'syncope'] },
+  'vfib': { boost: ['cardiac arrest', 'defibrillation', 'vf', 'als', 'cpr', 'resuscitation', 'shockable'], demote: ['syncope', 'af '] },
+  'hypertensive-emergency': { boost: ['hypertensive', 'blood pressure', 'end-organ', 'labetalol', 'aortic dissection'], demote: ['stemi', 'af ', 'syncope'] },
+  'syncope': { boost: ['syncope', 'loss of consciousness', 'vasovagal', 'orthostatic', 'differential'], demote: ['stemi', 'reperfusion', 'thrombol', 'pci', 'door-to-balloon'] },
+
+  // Respiratory
+  'asthma': { boost: ['asthma', 'bronchospasm', 'salbutamol', 'wheeze', 'peak flow', 'steroid'], demote: ['copd', 'pneumothorax', 'embolism'] },
+  'copd': { boost: ['copd', 'chronic obstructive', 'exacerbation', 'niv', 'bipap', 'hypercapn'], demote: ['asthma', 'pneumothorax', 'embolism'] },
+  'pneumothorax-tension': { boost: ['pneumothorax', 'tension', 'decompression', 'needle', 'chest drain'], demote: ['asthma', 'copd', 'embolism'] },
+  'pulmonary-embolism': { boost: ['pulmonary embolism', 'pe', 'dvt', 'anticoagul', 'wells', 'thrombol'], demote: ['asthma', 'copd', 'pneumothorax'] },
+  'pneumonia': { boost: ['pneumonia', 'sepsis', 'antibiotic', 'consolidation', 'curb-65'], demote: ['asthma', 'pneumothorax'] },
+
+  // Trauma
+  'multi-trauma': { boost: ['polytrauma', 'primary survey', 'haemorrhage', 'massive transfusion', 'tourniquet'], demote: [] },
+  'head-injury': { boost: ['head injury', 'tbi', 'traumatic brain', 'gcs', 'intracranial', 'cushing'], demote: ['tourniquet', 'pelvic'] },
+  'chest-trauma': { boost: ['chest trauma', 'thoracic', 'pneumothorax', 'haemothorax', 'flail', 'tamponade'], demote: ['head injury', 'pelvic'] },
+  'abdominal-trauma': { boost: ['abdominal', 'splenic', 'liver', 'peritonitis', 'blunt trauma'], demote: ['head injury', 'chest trauma'] },
+  'pelvic-fracture': { boost: ['pelvic', 'pelvis', 'binder', 'haemorrhage', 'retroperitoneal'], demote: ['head injury', 'chest trauma'] },
+  'spinal-injury': { boost: ['spinal', 'spine', 'cord', 'immobilis', 'neurogenic shock', 'log roll'], demote: [] },
+
+  // Neurological
+  'stroke': { boost: ['stroke', 'cerebrovascular', 'thrombolysis', 'fast', 'ct head', 'nihss'], demote: ['seizure', 'meningitis'] },
+  'seizure': { boost: ['seizure', 'epilep', 'status epilepticus', 'benzodiazepine', 'midazolam'], demote: ['stroke', 'meningitis'] },
+  'meningitis': { boost: ['meningitis', 'meningococcal', 'lumbar puncture', 'sepsis', 'rash'], demote: ['stroke', 'seizure'] },
 };
 
 // ============================================================================
@@ -309,42 +369,95 @@ export function getResourcesForCategory(category: string): DebriefingResource[] 
 }
 
 /**
+ * Score a resource's relevance to a specific case based on keyword matching.
+ * Higher score = more relevant to this particular case.
+ */
+function scoreResourceRelevance(resource: DebriefingResource, caseData: CaseScenario): number {
+  let score = 0;
+  const titleLower = resource.title.toLowerCase();
+  const subcategory = caseData.subcategory || '';
+  const keywords = subcategoryKeywords[subcategory];
+
+  if (keywords) {
+    // Boost resources that match the subcategory keywords
+    for (const kw of keywords.boost) {
+      if (titleLower.includes(kw.toLowerCase())) {
+        score += 10;
+      }
+    }
+    // Demote resources for other conditions
+    for (const kw of keywords.demote) {
+      if (titleLower.includes(kw.toLowerCase())) {
+        score -= 15;
+      }
+    }
+  }
+
+  // Also check against case title and diagnosis
+  const caseTitleLower = caseData.title.toLowerCase();
+  const diagnosisLower = caseData.expectedFindings?.mostLikelyDiagnosis?.toLowerCase() || '';
+  const caseKeywords = [caseTitleLower, diagnosisLower, subcategory.toLowerCase()];
+
+  for (const caseKw of caseKeywords) {
+    if (caseKw && titleLower.includes(caseKw)) {
+      score += 5;
+    }
+  }
+
+  // Relevance baseline
+  const relevanceBase = { essential: 3, important: 2, supplementary: 1 };
+  score += relevanceBase[resource.relevance] || 0;
+
+  return score;
+}
+
+/**
  * Get resources matched to a case for debriefing.
- * Matches by category, then keyword scoring against case content.
+ * Uses subcategory keyword scoring to return condition-specific resources,
+ * not just everything in the category.
  */
 export function getResourcesForDebriefing(
   caseData: CaseScenario,
   objective?: SimulationObjective
 ): DebriefingResource[] {
-  const resources: DebriefingResource[] = [];
+  const allResources: DebriefingResource[] = [];
 
   // Get category resources
   const categoryRes = getResourcesForCategory(caseData.category);
-  resources.push(...categoryRes);
+  allResources.push(...categoryRes);
 
-  // If objective spans multiple categories, include those too
+  // If objective spans multiple categories, include essential resources from those
   if (objective) {
     for (const cat of objective.relatedCategories) {
       if (cat !== caseData.category) {
         const additionalRes = getResourcesForCategory(cat);
-        resources.push(...additionalRes.filter(r => r.relevance === 'essential'));
+        allResources.push(...additionalRes.filter(r => r.relevance === 'essential'));
       }
     }
   }
 
   // Deduplicate
   const seen = new Set<string>();
-  const unique = resources.filter(r => {
+  const unique = allResources.filter(r => {
     if (seen.has(r.id)) return false;
     seen.add(r.id);
     return true;
   });
 
-  // Sort: essential first, then important, then supplementary
-  const relevanceOrder = { essential: 0, important: 1, supplementary: 2 };
-  unique.sort((a, b) => relevanceOrder[a.relevance] - relevanceOrder[b.relevance]);
+  // Score each resource by relevance to this specific case
+  const scored = unique.map(r => ({
+    resource: r,
+    score: scoreResourceRelevance(r, caseData),
+  }));
 
-  return unique;
+  // Filter out negatively-scored resources (wrong condition)
+  const relevant = scored.filter(s => s.score >= 0);
+
+  // Sort by score descending, then by relevance tier
+  relevant.sort((a, b) => b.score - a.score);
+
+  // Return top resources — enough variety but not overwhelming
+  return relevant.slice(0, 12).map(s => s.resource);
 }
 
 /**
