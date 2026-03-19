@@ -519,7 +519,7 @@ export function CaseDisplay({ caseData, studentYear = '3rd-year', isStudentView 
                 <div className="col-span-2 p-2 rounded-lg bg-cyan-50/50 dark:bg-cyan-900/10 border border-cyan-200/30">
                   <p className="text-xs text-muted-foreground flex items-center gap-1.5">
                     <Activity className="h-3.5 w-3.5 text-cyan-500" />
-                    Respiratory rate and SpO2 are displayed on the patient monitor
+                    Assess respiratory rate and SpO2 using the patient monitor
                   </p>
                 </div>
               ) : (

@@ -34,7 +34,7 @@ export const TREATMENT_YEAR_ACCESS: Record<string, StudentYear[]> = {
   oxygen_mask:          ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
   oxygen_nonrebreather: ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
   bvm_ventilation:      ['2nd-year', '3rd-year', '4th-year', 'diploma'],
-  nebulizer_salbutamol: ['2nd-year', '3rd-year', '4th-year', 'diploma'],
+  nebulizer_salbutamol: ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
   nebulizer_ipratropium:['3rd-year', '4th-year', 'diploma'],
   cpap_niv:             ['4th-year', 'diploma'],
   needle_decompression: ['3rd-year', '4th-year', 'diploma'],

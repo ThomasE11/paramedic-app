@@ -776,10 +776,10 @@ export function getStepFindings(stepId: AssessmentStepId, caseData: CaseScenario
 
     case 'breathing': {
       const breathing = caseData.abcde.breathing;
-      // RR and SpO2 are dynamic vitals — direct student to the monitor
+      // RR is a dynamic vital — student must count or use monitor
       findings.push({
         label: 'Respiratory Rate',
-        value: 'Check the patient monitor for current respiratory rate',
+        value: 'Count the respiratory rate on the patient monitor or by observing chest rise',
         severity: 'normal',
       });
       findings.push({
