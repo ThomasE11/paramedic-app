@@ -245,6 +245,14 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
       category: selectedCategory !== 'all' ? selectedCategory : undefined
     });
 
+    if (!newCase) {
+      setIsGenerating(false);
+      toast.error('No cases available', {
+        description: `No ${selectedCategory !== 'all' ? selectedCategory : ''} cases are available for ${selectedYear} level. Try a different category.`,
+      });
+      return;
+    }
+
     setCurrentCase(newCase);
     const initialVitals = ensureCompleteVitals(newCase.vitalSignsProgression.initial);
     setCurrentVitals(initialVitals);
@@ -674,7 +682,9 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                   >
                     All Categories
                   </button>
-                  {caseCategories.map(cat => (
+                  {caseCategories
+                    .filter(cat => allCases.some(c => c.category === cat.value && c.yearLevels?.includes(selectedYear as any)))
+                    .map(cat => (
                     <button
                       key={cat.value}
                       onClick={() => setSelectedCategory(cat.value)}

@@ -9433,17 +9433,10 @@ export const getRandomCase = (filters?: { yearLevel?: string; category?: string;
     const categoryFilter = filters.category;
     const categoryMatches = cases.filter(c => c.category === categoryFilter);
 
-    // If category filter results in no cases, try to find any case with this category (ignore year level)
+    // If category filter results in no cases for this year level, return null
+    // Do NOT fall back to other year levels — that gives inappropriate complexity
     if (categoryMatches.length === 0) {
-      const anyYearForCategory = caseDatabase.filter(c => c.category === categoryFilter);
-      if (anyYearForCategory.length === 0) {
-        // Category doesn't exist at all - log warning and return a random case
-        // console.warn(`No cases found for category: "${categoryFilter}". Available categories:`, [...new Set(caseDatabase.map(c => c.category))]);
-        return caseDatabase[Math.floor(Math.random() * caseDatabase.length)];
-      }
-      // Use any case from this category (regardless of year level)
-      // console.warn(`No "${categoryFilter}" cases available for ${filters?.yearLevel}. Using case from any year level.`);
-      return anyYearForCategory[Math.floor(Math.random() * anyYearForCategory.length)];
+      return null as unknown as typeof cases[0];
     }
     cases = categoryMatches;
   }
@@ -9470,10 +9463,9 @@ export const getRandomCase = (filters?: { yearLevel?: string; category?: string;
     }
   }
 
-  // Final fallback - should rarely reach here
+  // Final fallback - no cases match all filters
   if (cases.length === 0) {
-    // console.warn('No cases match filters, returning random case');
-    return allCases[Math.floor(Math.random() * allCases.length)];
+    return null as unknown as typeof allCases[0];
   }
 
   return cases[Math.floor(Math.random() * cases.length)];
