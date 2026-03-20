@@ -342,6 +342,7 @@ const subcategoryKeywords: Record<string, { boost: string[]; demote: string[] }>
   'pneumothorax-tension': { boost: ['pneumothorax', 'tension', 'decompression', 'needle', 'chest drain'], demote: ['asthma', 'copd', 'embolism'] },
   'pulmonary-embolism': { boost: ['pulmonary embolism', 'pe', 'dvt', 'anticoagul', 'wells', 'thrombol'], demote: ['asthma', 'copd', 'pneumothorax'] },
   'pneumonia': { boost: ['pneumonia', 'sepsis', 'antibiotic', 'consolidation', 'curb-65'], demote: ['asthma', 'pneumothorax'] },
+  'choking': { boost: ['choking', 'foreign body', 'airway obstruction', 'heimlich', 'back blows', 'abdominal thrust', 'fbao', 'magill'], demote: ['asthma', 'copd', 'pneumonia', 'pneumothorax', 'ventilation', 'niv'] },
 
   // Trauma
   'multi-trauma': { boost: ['polytrauma', 'primary survey', 'haemorrhage', 'massive transfusion', 'tourniquet'], demote: [] },

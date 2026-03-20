@@ -1185,6 +1185,7 @@ export const additionalRespiratoryCases: CaseScenario[] = [
     id: 'resp-009',
     title: 'Foreign Body Aspiration in Adult',
     category: 'respiratory',
+    subcategory: 'choking',
     priority: 'critical',
     complexity: 'advanced',
     yearLevels: ['3rd-year', '4th-year'],

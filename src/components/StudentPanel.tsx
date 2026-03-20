@@ -455,8 +455,28 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
 
     // Use assessment tracker score if available (primary scoring system), fall back to checklist
     const debrief = assessmentTracker ? generateAssessmentDebrief(assessmentTracker) : null;
-    const scoreEarned = debrief ? debrief.score : completed.reduce((sum, item) => sum + (item.points || 0), 0);
-    const totalPossible = debrief ? debrief.totalPossible : checklist.reduce((sum, item) => sum + (item.points || 0), 0);
+    const assessmentScore = debrief ? debrief.score : completed.reduce((sum, item) => sum + (item.points || 0), 0);
+    const assessmentTotal = debrief ? debrief.totalPossible : checklist.reduce((sum, item) => sum + (item.points || 0), 0);
+
+    // Treatment bonus: appropriate treatments earn points (up to 30% of total possible)
+    const treatmentBonusCap = Math.round(assessmentTotal * 0.3);
+    let treatmentBonus = 0;
+    if (appliedTreatments.length > 0 && currentCase) {
+      // Each treatment earns 5 points, capped at treatmentBonusCap
+      treatmentBonus = Math.min(appliedTreatments.length * 5, treatmentBonusCap);
+      // Extra bonus if vitals improved (patient got better)
+      const initialSpO2Check = parseInt(String(vitalsHistory[0]?.spo2)) || 0;
+      const finalSpO2Check = parseInt(String(vitalsHistory[vitalsHistory.length - 1]?.spo2)) || 0;
+      if (finalSpO2Check > initialSpO2Check + 5) treatmentBonus = Math.min(treatmentBonus + 10, treatmentBonusCap);
+      // Bonus for early treatment (within 2 minutes)
+      const firstTx = caseStartTime && appliedTreatments[0]?.appliedAt
+        ? Math.round((new Date(appliedTreatments[0].appliedAt).getTime() - caseStartTime) / 1000)
+        : null;
+      if (firstTx !== null && firstTx <= 120) treatmentBonus = Math.min(treatmentBonus + 5, treatmentBonusCap);
+    }
+
+    const scoreEarned = assessmentScore + treatmentBonus;
+    const totalPossible = assessmentTotal + treatmentBonusCap;
     const percentage = totalPossible > 0 ? Math.round((scoreEarned / totalPossible) * 100) : 0;
 
     // Treatment analysis
