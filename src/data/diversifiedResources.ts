@@ -427,6 +427,23 @@ export function getResourcesForDebriefing(
   const categoryRes = getResourcesForCategory(caseData.category);
   allResources.push(...categoryRes);
 
+  // Cross-category inclusion: some conditions span categories (e.g., PE is cardiac + respiratory)
+  // Pull essential/important resources from related categories when subcategory suggests overlap
+  const crossCategoryMap: Record<string, string[]> = {
+    'pulmonary-embolism': ['respiratory'],   // PE cases need respiratory resources too
+    'cardiac-tamponade': ['trauma'],          // Tamponade may be traumatic
+    'anaphylaxis': ['respiratory', 'cardiac'], // Anaphylaxis spans airway + cardiac
+    'choking': ['airway'],                     // FBAO is an airway emergency
+    'drowning': ['respiratory'],               // Drowning → respiratory failure
+  };
+  const relatedCategories = crossCategoryMap[caseData.subcategory || ''] || [];
+  for (const relCat of relatedCategories) {
+    if (relCat !== caseData.category) {
+      const crossRes = getResourcesForCategory(relCat);
+      allResources.push(...crossRes.filter(r => r.relevance === 'essential' || r.relevance === 'important'));
+    }
+  }
+
   // If objective spans multiple categories, include essential resources from those
   if (objective) {
     for (const cat of objective.relatedCategories) {
