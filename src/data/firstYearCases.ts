@@ -35,7 +35,7 @@ export const firstYearCases: CaseScenario[] = [
     subcategory: 'fall',
     priority: 'moderate',
     complexity: 'basic',
-    yearLevels: ['1st-year', '2nd-year'],
+    yearLevels: ['1st-year', '2nd-year', 'diploma'],
     estimatedDuration: 15,
     dispatchInfo: {
       callReason: '78-year-old female fallen, unable to get up',
@@ -424,7 +424,7 @@ export const firstYearCases: CaseScenario[] = [
     subcategory: 'abdominal-pain',
     priority: 'moderate',
     complexity: 'basic',
-    yearLevels: ['1st-year', '2nd-year'],
+    yearLevels: ['1st-year', '2nd-year', 'diploma'],
     estimatedDuration: 18,
     dispatchInfo: {
       callReason: '25-year-old male with abdominal pain',
@@ -615,7 +615,7 @@ export const firstYearCases: CaseScenario[] = [
     subcategory: 'hypoglycemia',
     priority: 'moderate',
     complexity: 'basic',
-    yearLevels: ['1st-year', '2nd-year'],
+    yearLevels: ['1st-year', '2nd-year', 'diploma'],
     estimatedDuration: 15,
     dispatchInfo: {
       callReason: '45-year-old diabetic feeling "not right"',

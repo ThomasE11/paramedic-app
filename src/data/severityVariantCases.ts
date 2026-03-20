@@ -162,7 +162,7 @@ export const asthmaSeverityCases: CaseScenario[] = [
     subcategory: 'asthma',
     priority: 'high',
     complexity: 'intermediate',
-    yearLevels: ['2nd-year', '3rd-year', '4th-year', 'diploma'],
+    yearLevels: ['2nd-year', '3rd-year', '4th-year'],
     estimatedDuration: 20,
     dispatchInfo: {
       callReason: 'Asthma attack, struggling to breathe, not responding to inhalers',
@@ -300,7 +300,7 @@ export const asthmaSeverityCases: CaseScenario[] = [
     subcategory: 'asthma',
     priority: 'critical',
     complexity: 'advanced',
-    yearLevels: ['3rd-year', '4th-year', 'diploma'],
+    yearLevels: ['3rd-year', '4th-year'],
     estimatedDuration: 25,
     dispatchInfo: {
       callReason: 'Severe asthma attack, cannot breathe, cannot speak',

@@ -26,7 +26,7 @@ export const litflCaseDatabase: CaseScenario[] = [
     subcategory: 'acute-coronary-syndrome',
     priority: 'critical',
     complexity: 'advanced',
-    yearLevels: ['3rd-year', '4th-year', 'diploma'],
+    yearLevels: ['3rd-year', '4th-year'],
     estimatedDuration: 25,
     dispatchInfo: {
       callReason: 'Male, 58, severe chest pain radiating to jaw, feeling faint',
@@ -266,7 +266,7 @@ export const litflCaseDatabase: CaseScenario[] = [
     subcategory: 'electrolyte-emergency',
     priority: 'critical',
     complexity: 'advanced',
-    yearLevels: ['3rd-year', '4th-year', 'diploma'],
+    yearLevels: ['3rd-year', '4th-year'],
     estimatedDuration: 20,
     dispatchInfo: {
       callReason: 'Male, 64, difficulty breathing, very weak, dialysis patient',
@@ -488,7 +488,7 @@ export const litflCaseDatabase: CaseScenario[] = [
     subcategory: 'pulmonary-embolism',
     priority: 'critical',
     complexity: 'advanced',
-    yearLevels: ['3rd-year', '4th-year', 'diploma'],
+    yearLevels: ['3rd-year', '4th-year'],
     estimatedDuration: 25,
     dispatchInfo: {
       callReason: 'Female, 42, sudden severe breathing difficulty and chest pain after long flight',
@@ -725,7 +725,7 @@ export const litflCaseDatabase: CaseScenario[] = [
     subcategory: 'hypothermia',
     priority: 'critical',
     complexity: 'intermediate',
-    yearLevels: ['2nd-year', '3rd-year', '4th-year', 'diploma'],
+    yearLevels: ['2nd-year', '3rd-year', '4th-year'],
     estimatedDuration: 25,
     dispatchInfo: {
       callReason: 'Elderly person found unresponsive on balcony, very cold',
@@ -967,7 +967,7 @@ export const litflCaseDatabase: CaseScenario[] = [
     subcategory: 'acute-coronary-syndrome',
     priority: 'critical',
     complexity: 'expert',
-    yearLevels: ['4th-year', 'diploma'],
+    yearLevels: ['4th-year'],
     estimatedDuration: 25,
     dispatchInfo: {
       callReason: 'Male, 51, crushing chest pain for 30 minutes, diaphoretic',
@@ -1190,7 +1190,7 @@ export const litflCaseDatabase: CaseScenario[] = [
     subcategory: 'cerebrovascular-emergency',
     priority: 'critical',
     complexity: 'advanced',
-    yearLevels: ['3rd-year', '4th-year', 'diploma'],
+    yearLevels: ['3rd-year', '4th-year'],
     estimatedDuration: 25,
     dispatchInfo: {
       callReason: 'Male, 35, found collapsed at home, unresponsive',

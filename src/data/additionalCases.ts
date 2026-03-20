@@ -19,7 +19,7 @@ export const additionalRespiratoryCases: CaseScenario[] = [
     category: 'respiratory',
     priority: 'high',
     complexity: 'advanced',
-    yearLevels: ['3rd-year', '4th-year', 'diploma'],
+    yearLevels: ['3rd-year', '4th-year'],
     estimatedDuration: 25,
     dispatchInfo: {
       callReason: 'Elderly man struggling to breathe, known COPD',
@@ -303,7 +303,7 @@ export const additionalRespiratoryCases: CaseScenario[] = [
     category: 'respiratory',
     priority: 'critical',
     complexity: 'advanced',
-    yearLevels: ['3rd-year', '4th-year', 'diploma'],
+    yearLevels: ['3rd-year', '4th-year'],
     estimatedDuration: 20,
     dispatchInfo: {
       callReason: 'Man fell from ladder, chest pain, difficulty breathing',
@@ -604,7 +604,7 @@ export const additionalRespiratoryCases: CaseScenario[] = [
     category: 'respiratory',
     priority: 'high',
     complexity: 'intermediate',
-    yearLevels: ['2nd-year', '3rd-year', '4th-year', 'diploma'],
+    yearLevels: ['2nd-year', '3rd-year', '4th-year'],
     estimatedDuration: 20,
     dispatchInfo: {
       callReason: '2-year-old with barking cough, difficulty breathing',
@@ -902,7 +902,7 @@ export const additionalRespiratoryCases: CaseScenario[] = [
     category: 'respiratory',
     priority: 'critical',
     complexity: 'advanced',
-    yearLevels: ['3rd-year', '4th-year', 'diploma'],
+    yearLevels: ['3rd-year', '4th-year'],
     estimatedDuration: 25,
     dispatchInfo: {
       callReason: 'Elderly woman severely short of breath, frothy sputum',
@@ -1188,7 +1188,7 @@ export const additionalRespiratoryCases: CaseScenario[] = [
     subcategory: 'choking',
     priority: 'critical',
     complexity: 'advanced',
-    yearLevels: ['2nd-year', '3rd-year', '4th-year', 'diploma'],
+    yearLevels: ['2nd-year', '3rd-year', '4th-year'],
     estimatedDuration: 15,
     dispatchInfo: {
       callReason: 'Man choking on food, cannot breathe',
@@ -1468,7 +1468,7 @@ export const additionalRespiratoryCases: CaseScenario[] = [
     category: 'respiratory',
     priority: 'high',
     complexity: 'intermediate',
-    yearLevels: ['2nd-year', '3rd-year', '4th-year', 'diploma'],
+    yearLevels: ['2nd-year', '3rd-year', '4th-year'],
     estimatedDuration: 25,
     dispatchInfo: {
       callReason: 'Fever and cough for 3 days, now very short of breath',
@@ -1776,7 +1776,7 @@ export const additionalNeurologicalCases: CaseScenario[] = [
     category: 'neurological',
     priority: 'critical',
     complexity: 'advanced',
-    yearLevels: ['3rd-year', '4th-year', 'diploma'],
+    yearLevels: ['3rd-year', '4th-year'],
     estimatedDuration: 25,
     dispatchInfo: {
       callReason: 'Severe headache, fever, stiff neck, confused',
@@ -2111,7 +2111,7 @@ export const additionalMetabolicCases: CaseScenario[] = [
     category: 'metabolic',
     priority: 'critical',
     complexity: 'expert',
-    yearLevels: ['4th-year', 'diploma'],
+    yearLevels: ['4th-year'],
     estimatedDuration: 20,
     dispatchInfo: {
       callReason: 'Weakness, palpitations, known kidney disease',
@@ -2430,7 +2430,7 @@ export const additionalToxicologyCases: CaseScenario[] = [
     category: 'toxicology',
     priority: 'critical',
     complexity: 'intermediate',
-    yearLevels: ['2nd-year', '3rd-year', '4th-year', 'diploma'],
+    yearLevels: ['2nd-year', '3rd-year', '4th-year'],
     estimatedDuration: 15,
     dispatchInfo: {
       callReason: 'Found unconscious, not breathing properly, needle nearby',
@@ -2758,7 +2758,7 @@ export const additionalPediatricCases: CaseScenario[] = [
     category: 'pediatric',
     priority: 'high',
     complexity: 'intermediate',
-    yearLevels: ['2nd-year', '3rd-year', '4th-year', 'diploma'],
+    yearLevels: ['2nd-year', '3rd-year', '4th-year'],
     estimatedDuration: 20,
     dispatchInfo: {
       callReason: '2-year-old having a seizure, fever',
@@ -3062,7 +3062,7 @@ export const additionalEnvironmentalCases: CaseScenario[] = [
     category: 'environmental',
     priority: 'critical',
     complexity: 'advanced',
-    yearLevels: ['3rd-year', '4th-year', 'diploma'],
+    yearLevels: ['3rd-year', '4th-year'],
     estimatedDuration: 25,
     dispatchInfo: {
       callReason: 'Construction worker collapsed at site, very hot, confused',
@@ -3285,7 +3285,7 @@ export const additionalPsychiatricCases: CaseScenario[] = [
     category: 'psychiatric',
     priority: 'high',
     complexity: 'intermediate',
-    yearLevels: ['2nd-year', '3rd-year', '4th-year', 'diploma'],
+    yearLevels: ['2nd-year', '3rd-year', '4th-year'],
     estimatedDuration: 30,
     dispatchInfo: {
       callReason: 'Man acting strangely, hearing voices, family concerned',
@@ -3476,7 +3476,7 @@ export const additionalObstetricCases: CaseScenario[] = [
     category: 'obstetric',
     priority: 'critical',
     complexity: 'expert',
-    yearLevels: ['4th-year', 'diploma'],
+    yearLevels: ['4th-year'],
     estimatedDuration: 25,
     dispatchInfo: {
       callReason: 'Pregnant woman having a seizure, 34 weeks pregnant',
@@ -3786,7 +3786,7 @@ export const additionalTraumaCases: CaseScenario[] = [
     category: 'trauma',
     priority: 'critical',
     complexity: 'advanced',
-    yearLevels: ['3rd-year', '4th-year', 'diploma'],
+    yearLevels: ['3rd-year', '4th-year'],
     estimatedDuration: 20,
     dispatchInfo: {
       callReason: 'Hand caught in machine, hand severed, heavy bleeding',
@@ -4022,7 +4022,7 @@ export const additionalTraumaCases: CaseScenario[] = [
     category: 'trauma',
     priority: 'critical',
     complexity: 'advanced',
-    yearLevels: ['3rd-year', '4th-year', 'diploma'],
+    yearLevels: ['3rd-year', '4th-year'],
     estimatedDuration: 30,
     dispatchInfo: {
       callReason: 'Child pulled from swimming pool, not breathing',
@@ -4281,7 +4281,7 @@ export const additionalBurnsCases: CaseScenario[] = [
     category: 'burns',
     priority: 'critical',
     complexity: 'expert',
-    yearLevels: ['4th-year', 'diploma'],
+    yearLevels: ['4th-year'],
     estimatedDuration: 30,
     dispatchInfo: {
       callReason: 'Electrician shocked, unconscious, not breathing',

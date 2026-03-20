@@ -29,7 +29,7 @@ export const caseDatabase: CaseScenario[] = [
     subcategory: 'stem-anterior',
     priority: 'critical',
     complexity: 'advanced',
-    yearLevels: ['3rd-year', '4th-year', 'diploma'],
+    yearLevels: ['3rd-year', '4th-year'],
     estimatedDuration: 25,
     dispatchInfo: {
       callReason: 'Severe chest pain, patient called 999 himself',
@@ -266,7 +266,7 @@ export const caseDatabase: CaseScenario[] = [
     subcategory: 'asystole',
     priority: 'critical',
     complexity: 'expert',
-    yearLevels: ['4th-year', 'diploma'],
+    yearLevels: ['4th-year'],
     estimatedDuration: 35,
     dispatchInfo: {
       callReason: 'Husband not breathing, wife found him unconscious in bed',
@@ -551,7 +551,7 @@ export const caseDatabase: CaseScenario[] = [
     subcategory: 'afib',
     priority: 'high',
     complexity: 'intermediate',
-    yearLevels: ['2nd-year', '3rd-year', '4th-year', 'diploma'],
+    yearLevels: ['2nd-year', '3rd-year', '4th-year'],
     dispatchInfo: {
       callReason: 'Palpitations and dizziness',
       timeOfDay: 'afternoon',
@@ -809,7 +809,7 @@ export const caseDatabase: CaseScenario[] = [
     subcategory: 'hypertensive-emergency',
     priority: 'critical',
     complexity: 'advanced',
-    yearLevels: ['3rd-year', '4th-year', 'diploma'],
+    yearLevels: ['3rd-year', '4th-year'],
     dispatchInfo: {
       callReason: 'Severe headache, vision changes',
       timeOfDay: 'evening',
@@ -1092,7 +1092,7 @@ export const caseDatabase: CaseScenario[] = [
     subcategory: 'asthma',
     priority: 'critical',
     complexity: 'advanced',
-    yearLevels: ['3rd-year', '4th-year', 'diploma'],
+    yearLevels: ['3rd-year', '4th-year'],
     dispatchInfo: {
       callReason: 'Son cannot breathe, using inhaler repeatedly',
       timeOfDay: 'evening',
@@ -1388,7 +1388,7 @@ export const caseDatabase: CaseScenario[] = [
     subcategory: 'pneumothorax-tension',
     priority: 'critical',
     complexity: 'expert',
-    yearLevels: ['4th-year', 'diploma'],
+    yearLevels: ['4th-year'],
     dispatchInfo: {
       callReason: 'Sudden chest pain, difficulty breathing after fall',
       timeOfDay: 'afternoon',
@@ -1666,7 +1666,7 @@ export const caseDatabase: CaseScenario[] = [
     subcategory: 'copd',
     priority: 'high',
     complexity: 'intermediate',
-    yearLevels: ['2nd-year', '3rd-year', '4th-year', 'diploma'],
+    yearLevels: ['2nd-year', '3rd-year', '4th-year'],
     dispatchInfo: {
       callReason: 'Increased breathlessness, using oxygen at home',
       timeOfDay: 'morning',
@@ -1957,7 +1957,7 @@ export const caseDatabase: CaseScenario[] = [
     subcategory: 'pulmonary-embolism',
     priority: 'critical',
     complexity: 'advanced',
-    yearLevels: ['3rd-year', '4th-year', 'diploma'],
+    yearLevels: ['3rd-year', '4th-year'],
     dispatchInfo: {
       callReason: 'Sudden shortness of breath, chest pain',
       timeOfDay: 'morning',
@@ -2265,7 +2265,7 @@ export const caseDatabase: CaseScenario[] = [
     subcategory: 'multi-trauma',
     priority: 'critical',
     complexity: 'expert',
-    yearLevels: ['3rd-year', '4th-year', 'diploma'],
+    yearLevels: ['3rd-year', '4th-year'],
     dispatchInfo: {
       callReason: 'Motorcycle accident, rider on ground not moving',
       timeOfDay: 'afternoon',
@@ -2443,7 +2443,7 @@ export const caseDatabase: CaseScenario[] = [
     subcategory: 'head-injury',
     priority: 'critical',
     complexity: 'advanced',
-    yearLevels: ['3rd-year', '4th-year', 'diploma'],
+    yearLevels: ['3rd-year', '4th-year'],
     dispatchInfo: {
       callReason: 'Fall from height, head injury, unconscious',
       timeOfDay: 'afternoon',
@@ -2615,7 +2615,7 @@ export const caseDatabase: CaseScenario[] = [
     subcategory: 'chest-trauma',
     priority: 'critical',
     complexity: 'advanced',
-    yearLevels: ['2nd-year', '3rd-year', '4th-year', 'diploma'],
+    yearLevels: ['2nd-year', '3rd-year', '4th-year'],
     dispatchInfo: {
       callReason: 'Stab wound to chest, bleeding heavily',
       timeOfDay: 'evening',
@@ -2790,7 +2790,7 @@ export const caseDatabase: CaseScenario[] = [
     subcategory: 'stroke',
     priority: 'critical',
     complexity: 'advanced',
-    yearLevels: ['3rd-year', '4th-year', 'diploma'],
+    yearLevels: ['3rd-year', '4th-year'],
     dispatchInfo: {
       callReason: 'Husband suddenly cannot speak or move right side',
       timeOfDay: 'morning',
@@ -3107,7 +3107,7 @@ export const caseDatabase: CaseScenario[] = [
     subcategory: 'seizure',
     priority: 'high',
     complexity: 'intermediate',
-    yearLevels: ['2nd-year', '3rd-year', '4th-year', 'diploma'],
+    yearLevels: ['2nd-year', '3rd-year', '4th-year'],
     dispatchInfo: {
       callReason: 'Daughter having a seizure, just stopped',
       timeOfDay: 'evening',
@@ -3415,7 +3415,7 @@ export const caseDatabase: CaseScenario[] = [
     category: 'neurological',
     priority: 'critical',
     complexity: 'advanced',
-    yearLevels: ['3rd-year', '4th-year', 'diploma'],
+    yearLevels: ['3rd-year', '4th-year'],
     dispatchInfo: {
       callReason: 'Fever, severe headache, neck stiffness',
       timeOfDay: 'morning',
@@ -4003,7 +4003,7 @@ export const caseDatabase: CaseScenario[] = [
     category: 'metabolic',
     priority: 'critical',
     complexity: 'advanced',
-    yearLevels: ['3rd-year', '4th-year', 'diploma'],
+    yearLevels: ['3rd-year', '4th-year'],
     dispatchInfo: {
       callReason: 'Vomiting, abdominal pain, breathing fast',
       timeOfDay: 'afternoon',
@@ -4644,7 +4644,7 @@ export const caseDatabase: CaseScenario[] = [
     category: 'post-discharge',
     priority: 'moderate',
     complexity: 'intermediate',
-    yearLevels: ['2nd-year', '3rd-year', '4th-year', 'diploma'],
+    yearLevels: ['2nd-year', '3rd-year', '4th-year'],
     dispatchInfo: {
       callReason: 'Surgical wound red and draining pus, fever',
       timeOfDay: 'afternoon',
@@ -5422,7 +5422,7 @@ export const caseDatabase: CaseScenario[] = [
     category: 'obstetric',
     priority: 'critical',
     complexity: 'advanced',
-    yearLevels: ['3rd-year', '4th-year', 'diploma'],
+    yearLevels: ['3rd-year', '4th-year'],
     estimatedDuration: 30,
     dispatchInfo: {
       callReason: 'Pregnant woman, heavy vaginal bleeding, 34 weeks pregnant',
@@ -5752,7 +5752,7 @@ export const caseDatabase: CaseScenario[] = [
     category: 'pediatric',
     priority: 'high',
     complexity: 'intermediate',
-    yearLevels: ['3rd-year', '4th-year', 'diploma'],
+    yearLevels: ['3rd-year', '4th-year'],
     estimatedDuration: 25,
     dispatchInfo: {
       callReason: 'Child having seizure, very hot, mother screaming',
@@ -6051,7 +6051,7 @@ export const caseDatabase: CaseScenario[] = [
     category: 'psychiatric',
     priority: 'moderate',
     complexity: 'intermediate',
-    yearLevels: ['2nd-year', '3rd-year', '4th-year', 'diploma'],
+    yearLevels: ['2nd-year', '3rd-year', '4th-year'],
     estimatedDuration: 35,
     dispatchInfo: {
       callReason: 'Son behaving erratically, breaking things, threatening family',
@@ -6238,7 +6238,7 @@ export const caseDatabase: CaseScenario[] = [
     category: 'toxicology',
     priority: 'critical',
     complexity: 'expert',
-    yearLevels: ['3rd-year', '4th-year', 'diploma'],
+    yearLevels: ['3rd-year', '4th-year'],
     estimatedDuration: 40,
     dispatchInfo: {
       callReason: 'Worker collapsed after spraying pesticides, difficult breathing, vomiting',
@@ -6587,7 +6587,7 @@ export const caseDatabase: CaseScenario[] = [
     category: 'burns',
     priority: 'critical',
     complexity: 'advanced',
-    yearLevels: ['3rd-year', '4th-year', 'diploma'],
+    yearLevels: ['3rd-year', '4th-year'],
     estimatedDuration: 35,
     dispatchInfo: {
       callReason: 'Factory fire, multiple people trapped, one with severe burns',
@@ -6833,7 +6833,7 @@ export const caseDatabase: CaseScenario[] = [
     category: 'multiple-patients',
     priority: 'critical',
     complexity: 'expert',
-    yearLevels: ['4th-year', 'diploma'],
+    yearLevels: ['4th-year'],
     estimatedDuration: 60,
     dispatchInfo: {
       callReason: 'Bus vs car collision, multiple injuries, road blocked, MCI declared',
@@ -7491,7 +7491,7 @@ export const caseDatabase: CaseScenario[] = [
     subcategory: 'svt',
     priority: 'high',
     complexity: 'intermediate',
-    yearLevels: ['2nd-year', '3rd-year', '4th-year', 'diploma'],
+    yearLevels: ['2nd-year', '3rd-year', '4th-year'],
     estimatedDuration: 20,
     dispatchInfo: {
       callReason: 'Heart racing, feels like going to pass out',
@@ -7754,7 +7754,7 @@ export const caseDatabase: CaseScenario[] = [
     subcategory: 'stem-inferior',
     priority: 'critical',
     complexity: 'advanced',
-    yearLevels: ['3rd-year', '4th-year', 'diploma'],
+    yearLevels: ['3rd-year', '4th-year'],
     estimatedDuration: 25,
     dispatchInfo: {
       callReason: 'Severe chest pain, sweating, vomiting',
@@ -8021,7 +8021,7 @@ export const caseDatabase: CaseScenario[] = [
     subcategory: 'nstemi',
     priority: 'critical',
     complexity: 'expert',
-    yearLevels: ['4th-year', 'diploma'],
+    yearLevels: ['4th-year'],
     estimatedDuration: 25,
     dispatchInfo: {
       callReason: 'Chest pain, shortness of breath',
@@ -8278,7 +8278,7 @@ export const caseDatabase: CaseScenario[] = [
     subcategory: 'aflutter',
     priority: 'high',
     complexity: 'intermediate',
-    yearLevels: ['2nd-year', '3rd-year', '4th-year', 'diploma'],
+    yearLevels: ['2nd-year', '3rd-year', '4th-year'],
     estimatedDuration: 20,
     dispatchInfo: {
       callReason: 'Heart racing, feeling weak',
@@ -8819,7 +8819,7 @@ export const caseDatabase: CaseScenario[] = [
     category: 'cardiac',
     priority: 'high',
     complexity: 'advanced',
-    yearLevels: ['3rd-year', '4th-year', 'diploma'],
+    yearLevels: ['3rd-year', '4th-year'],
     estimatedDuration: 25,
     dispatchInfo: {
       callReason: 'Cannot breathe, asthma attack',
@@ -9112,7 +9112,7 @@ export const caseDatabase: CaseScenario[] = [
     category: 'cardiac',
     priority: 'high',
     complexity: 'expert',
-    yearLevels: ['4th-year', 'diploma'],
+    yearLevels: ['4th-year'],
     estimatedDuration: 20,
     dispatchInfo: {
       callReason: 'Very dizzy, weak, tired for 2 days',

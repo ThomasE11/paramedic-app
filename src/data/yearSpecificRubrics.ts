@@ -46,42 +46,42 @@ export const quickAssessmentTags: QuickAssessmentTag[] = [
     label: 'No Introduction',
     category: 'negative',
     description: 'Did not introduce self to patient',
-    yearLevels: ['1st-year']
+    yearLevels: ['1st-year', 'diploma']
   },
   {
     id: 'y1-no-consent',
     label: 'No Consent',
     category: 'negative',
     description: 'Did not ask permission before touching',
-    yearLevels: ['1st-year']
+    yearLevels: ['1st-year', 'diploma']
   },
   {
     id: 'y1-rushed-assessment',
     label: 'Too Fast',
     category: 'instruction',
     description: 'Rushed through assessment, missed details',
-    yearLevels: ['1st-year']
+    yearLevels: ['1st-year', 'diploma']
   },
   {
     id: 'y1-good-history',
     label: '✓ Good History Taking',
     category: 'positive',
     description: 'Obtained thorough SAMPLE history',
-    yearLevels: ['1st-year', '2nd-year']
+    yearLevels: ['1st-year', '2nd-year', 'diploma']
   },
   {
     id: 'y1-good-opener',
     label: '✓ Good Opener',
     category: 'positive',
     description: 'Used appropriate opening and built rapport',
-    yearLevels: ['1st-year', '2nd-year']
+    yearLevels: ['1st-year', '2nd-year', 'diploma']
   },
   {
     id: 'y1-no-opqrs',
     label: 'Missing OPQRS',
     category: 'instruction',
     description: 'Did not ask OPQRS for pain assessment',
-    yearLevels: ['1st-year', '2nd-year']
+    yearLevels: ['1st-year', '2nd-year', 'diploma']
   },
 
   // 2nd Year Specific - Focus on systematic assessment
@@ -157,21 +157,21 @@ export const quickAssessmentTags: QuickAssessmentTag[] = [
     label: '✓ Good Leadership',
     category: 'positive',
     description: 'Effectively led the team',
-    yearLevels: ['4th-year', 'diploma']
+    yearLevels: ['4th-year']
   },
   {
     id: 'y4-communication',
     label: '✓ Clear Communication',
     category: 'positive',
     description: 'Clear and professional communication throughout',
-    yearLevels: ['4th-year', 'diploma']
+    yearLevels: ['4th-year']
   },
   {
     id: 'y4-resource-use',
     label: '✓ Efficient Resource Use',
     category: 'positive',
     description: 'Appropriate use of available resources',
-    yearLevels: ['4th-year', 'diploma']
+    yearLevels: ['4th-year']
   },
 
   // General positive feedback
