@@ -32,7 +32,7 @@ export const moreTraumaCases: CaseScenario[] = [
     subcategory: 'chest-trauma',
     priority: 'critical',
     complexity: 'expert',
-    yearLevels: ['3rd-year', '4th-year'],
+    yearLevels: ['3rd-year', '4th-year', 'diploma'],
     estimatedDuration: 30,
     dispatchInfo: {
       callReason: 'Stabbing to chest, patient unresponsive',
@@ -518,7 +518,7 @@ export const moreTraumaCases: CaseScenario[] = [
     subcategory: 'chest-trauma',
     priority: 'critical',
     complexity: 'expert',
-    yearLevels: ['3rd-year', '4th-year'],
+    yearLevels: ['3rd-year', '4th-year', 'diploma'],
     estimatedDuration: 35,
     dispatchInfo: {
       callReason: 'MVC - driver trapped, chest injury, difficulty breathing',
@@ -1104,7 +1104,7 @@ export const moreTraumaCases: CaseScenario[] = [
     subcategory: 'chest-trauma',
     priority: 'critical',
     complexity: 'expert',
-    yearLevels: ['3rd-year', '4th-year'],
+    yearLevels: ['3rd-year', '4th-year', 'diploma'],
     estimatedDuration: 30,
     dispatchInfo: {
       callReason: 'Multiple GSW victims, one with chest wounds',
@@ -1597,7 +1597,7 @@ export const moreTraumaCases: CaseScenario[] = [
     subcategory: 'abdominal-trauma',
     priority: 'critical',
     complexity: 'expert',
-    yearLevels: ['3rd-year', '4th-year'],
+    yearLevels: ['3rd-year', '4th-year', 'diploma'],
     estimatedDuration: 25,
     dispatchInfo: {
       callReason: 'MVC - driver complaining of abdominal pain',
@@ -2060,7 +2060,7 @@ export const moreTraumaCases: CaseScenario[] = [
     subcategory: 'pelvic-fracture',
     priority: 'critical',
     complexity: 'expert',
-    yearLevels: ['3rd-year', '4th-year'],
+    yearLevels: ['3rd-year', '4th-year', 'diploma'],
     estimatedDuration: 30,
     dispatchInfo: {
       callReason: 'Pedestrian struck by car, pelvic pain',
@@ -2534,7 +2534,7 @@ export const moreTraumaCases: CaseScenario[] = [
     subcategory: 'head-injury',
     priority: 'critical',
     complexity: 'expert',
-    yearLevels: ['3rd-year', '4th-year'],
+    yearLevels: ['3rd-year', '4th-year', 'diploma'],
     estimatedDuration: 20,
     dispatchInfo: {
       callReason: 'Fall from height, unconscious',
@@ -2969,7 +2969,7 @@ export const moreTraumaCases: CaseScenario[] = [
     subcategory: 'spinal-injury',
     priority: 'critical',
     complexity: 'expert',
-    yearLevels: ['3rd-year', '4th-year'],
+    yearLevels: ['3rd-year', '4th-year', 'diploma'],
     estimatedDuration: 25,
     dispatchInfo: {
       callReason: 'Diving accident, cannot move arms or legs',
@@ -3453,7 +3453,7 @@ export const cardiacECGCases: CaseScenario[] = [
     category: 'cardiac-ecg',
     priority: 'critical',
     complexity: 'expert',
-    yearLevels: ['4th-year'],
+    yearLevels: ['4th-year', 'diploma'],
     estimatedDuration: 25,
     dispatchInfo: {
       callReason: 'Severe epigastric pain, vomiting, diaphoresis',
@@ -3902,7 +3902,7 @@ export const cardiacECGCases: CaseScenario[] = [
     category: 'cardiac-ecg',
     priority: 'high',
     complexity: 'expert',
-    yearLevels: ['4th-year'],
+    yearLevels: ['4th-year', 'diploma'],
     estimatedDuration: 20,
     dispatchInfo: {
       callReason: 'Chest pain, now pain-free but feeling unwell',

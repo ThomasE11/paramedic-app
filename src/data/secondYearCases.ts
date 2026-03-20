@@ -34,7 +34,7 @@ export const secondYearCases: CaseScenario[] = [
     subcategory: 'asthma',
     priority: 'high',
     complexity: 'intermediate',
-    yearLevels: ['2nd-year'],
+    yearLevels: ['2nd-year', '3rd-year'],
     estimatedDuration: 20,
     dispatchInfo: {
       callReason: '22-year-old female with asthma attack, difficulty breathing',
@@ -466,7 +466,7 @@ export const secondYearCases: CaseScenario[] = [
     subcategory: 'acute-coronary-syndrome',
     priority: 'high',
     complexity: 'intermediate',
-    yearLevels: ['2nd-year'],
+    yearLevels: ['2nd-year', '3rd-year'],
     estimatedDuration: 20,
     dispatchInfo: {
       callReason: '55-year-old male with chest pain',
@@ -844,7 +844,7 @@ export const secondYearCases: CaseScenario[] = [
     subcategory: 'stroke',
     priority: 'critical',
     complexity: 'intermediate',
-    yearLevels: ['2nd-year'],
+    yearLevels: ['2nd-year', '3rd-year'],
     estimatedDuration: 18,
     dispatchInfo: {
       callReason: '67-year-old male slurred speech, weak arm',
