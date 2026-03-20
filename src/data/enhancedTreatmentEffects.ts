@@ -419,6 +419,7 @@ export const TREATMENTS: Treatment[] = [
     effects: [
       { vitalSign: 'pulse', changeType: 'decrease', value: 5, minValue: 60 },
     ],
+    contraindications: ['Children under 16 (Reye syndrome risk)', 'Active GI bleeding', 'Aspirin allergy'],
   },
   {
     id: 'gtn_spray',
@@ -906,6 +907,90 @@ export const TREATMENTS: Treatment[] = [
       { vitalSign: 'pulse', changeType: 'decrease', value: 15, minValue: 55 },
       { vitalSign: 'bp', changeType: 'increase', value: 10 },
     ],
+  },
+
+  // ================================================================
+  // PEDIATRIC-SPECIFIC TREATMENTS
+  // ================================================================
+  {
+    id: 'midazolam_buccal',
+    name: 'Buccal Midazolam',
+    description: 'First-line anticonvulsant for pediatric seizures (0.3mg/kg buccal)',
+    category: 'medication',
+    onset: 'fast',
+    onsetTimeSeconds: 3,
+    durationSeconds: 15,
+    icon: 'Brain',
+    color: 'purple',
+    effects: [
+      { vitalSign: 'pulse', changeType: 'decrease', value: 10, minValue: 70 },
+      { vitalSign: 'respiration', changeType: 'decrease', value: 2, minValue: 12 },
+    ],
+    requiresMonitoring: true,
+    contraindications: ['Respiratory depression', 'Known benzodiazepine allergy'],
+  },
+  {
+    id: 'diazepam_rectal',
+    name: 'Rectal Diazepam',
+    description: 'Anticonvulsant for prolonged seizures (0.5mg/kg PR)',
+    category: 'medication',
+    onset: 'moderate',
+    onsetTimeSeconds: 5,
+    durationSeconds: 20,
+    icon: 'Brain',
+    color: 'purple',
+    effects: [
+      { vitalSign: 'pulse', changeType: 'decrease', value: 8, minValue: 70 },
+      { vitalSign: 'respiration', changeType: 'decrease', value: 2, minValue: 12 },
+    ],
+    requiresMonitoring: true,
+    contraindications: ['Respiratory depression', 'Acute narrow-angle glaucoma'],
+  },
+  {
+    id: 'paracetamol_oral',
+    name: 'Paracetamol (Oral)',
+    description: 'Antipyretic/analgesic (15mg/kg, max 1g)',
+    category: 'medication',
+    onset: 'gradual',
+    onsetTimeSeconds: 15,
+    durationSeconds: 30,
+    icon: 'Thermometer',
+    color: 'blue',
+    effects: [
+      { vitalSign: 'temperature', changeType: 'decrease', value: 1.0, minValue: 36.5 },
+      { vitalSign: 'pulse', changeType: 'decrease', value: 8, minValue: 60 },
+    ],
+  },
+  {
+    id: 'paracetamol_iv',
+    name: 'Paracetamol IV (Perfalgan)',
+    description: 'IV antipyretic/analgesic (15mg/kg over 15 min)',
+    category: 'medication',
+    onset: 'moderate',
+    onsetTimeSeconds: 8,
+    durationSeconds: 20,
+    icon: 'Thermometer',
+    color: 'blue',
+    effects: [
+      { vitalSign: 'temperature', changeType: 'decrease', value: 1.5, minValue: 36.5 },
+      { vitalSign: 'pulse', changeType: 'decrease', value: 10, minValue: 60 },
+    ],
+  },
+  {
+    id: 'ibuprofen_oral',
+    name: 'Ibuprofen (Oral)',
+    description: 'NSAID antipyretic/anti-inflammatory (10mg/kg)',
+    category: 'medication',
+    onset: 'gradual',
+    onsetTimeSeconds: 15,
+    durationSeconds: 30,
+    icon: 'Thermometer',
+    color: 'orange',
+    effects: [
+      { vitalSign: 'temperature', changeType: 'decrease', value: 1.2, minValue: 36.5 },
+      { vitalSign: 'pulse', changeType: 'decrease', value: 6, minValue: 60 },
+    ],
+    contraindications: ['Under 3 months old', 'Dehydration', 'Renal impairment', 'Active bleeding'],
   },
 ];
 
