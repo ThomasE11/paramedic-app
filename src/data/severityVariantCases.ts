@@ -145,6 +145,13 @@ export const asthmaSeverityCases: CaseScenario[] = [
       'Peak flow measurement helps classify severity — >75% predicted = mild',
       'Single nebuliser may suffice for mild exacerbation — reassess after 15-20 minutes',
     ],
+    commonPitfalls: [
+      'Discharging without observing post-nebuliser response for 15-20 minutes',
+      'Not checking preventer inhaler adherence — the most common cause of exacerbations',
+      'Failing to provide a written asthma action plan on discharge',
+      'Over-treating mild asthma with IV medications or aggressive interventions',
+      'Not assessing peak flow before and after treatment to document response',
+    ],
   }),
 
   // --- MODERATE ASTHMA ---
@@ -274,6 +281,14 @@ export const asthmaSeverityCases: CaseScenario[] = [
       'Aspirin-sensitive asthma (Samter\'s triad): asthma + nasal polyps + aspirin sensitivity',
       'Cat exposure is a common trigger — remove from environment if possible',
       'Document response to treatment — if failing to improve, escalate to severe protocol',
+    ],
+    commonPitfalls: [
+      'Using salbutamol alone without ipratropium — combination therapy is evidence-based for moderate asthma',
+      'Delaying steroid administration — give early even though onset is 4-6 hours',
+      'Lying the patient flat for examination — never lay an asthmatic flat',
+      'Not reassessing after first nebuliser — repeat immediately if poor response',
+      'Failing to recognise deterioration from moderate to severe (silent chest, single words, exhaustion)',
+      'Not documenting peak flow before and after treatment',
     ],
   }),
 

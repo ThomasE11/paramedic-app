@@ -28,13 +28,13 @@ import type { DebriefingResource, ResourceSource, CaseCategory, CaseScenario, Si
 
 export const resourceSources: ResourceSource[] = [
   { id: 'radiopaedia', name: 'Radiopaedia', baseUrl: 'https://radiopaedia.org', type: 'imaging', categories: ['cardiac', 'respiratory', 'trauma', 'neurological'] },
-  { id: 'emdocs', name: 'EMDocs', baseUrl: 'https://www.emdocs.net', type: 'foamed', categories: ['cardiac', 'respiratory', 'neurological', 'metabolic'] },
+  { id: 'emdocs', name: 'EMDocs', baseUrl: 'https://www.emdocs.net', type: 'foamed', categories: ['cardiac', 'respiratory', 'neurological', 'metabolic', 'psychiatric'] },
   { id: 'rebelem', name: 'REBEL EM', baseUrl: 'https://rebelem.com', type: 'foamed', categories: ['cardiac', 'respiratory', 'trauma'] },
   { id: 'aliem', name: 'ALiEM', baseUrl: 'https://www.aliem.com', type: 'education', categories: ['cardiac', 'respiratory', 'neurological', 'trauma'] },
   { id: 'emcases', name: 'EM Cases', baseUrl: 'https://emergencymedicinecases.com', type: 'foamed', categories: ['cardiac', 'respiratory', 'neurological', 'trauma'] },
   { id: 'emcrit', name: 'EMCrit', baseUrl: 'https://emcrit.org', type: 'foamed', categories: ['cardiac', 'respiratory'] },
-  { id: 'litfl', name: 'LITFL', baseUrl: 'https://litfl.com', type: 'foamed', categories: ['cardiac', 'neurological', 'respiratory', 'trauma'] },
-  { id: 'nice', name: 'NICE', baseUrl: 'https://www.nice.org.uk', type: 'guideline', categories: ['cardiac', 'respiratory', 'neurological', 'metabolic'] },
+  { id: 'litfl', name: 'LITFL', baseUrl: 'https://litfl.com', type: 'foamed', categories: ['cardiac', 'neurological', 'respiratory', 'trauma', 'psychiatric', 'multiple-patients'] },
+  { id: 'nice', name: 'NICE', baseUrl: 'https://www.nice.org.uk', type: 'guideline', categories: ['cardiac', 'respiratory', 'neurological', 'metabolic', 'psychiatric'] },
   { id: 'rcuk', name: 'Resuscitation Council UK', baseUrl: 'https://www.resus.org.uk', type: 'guideline', categories: ['cardiac', 'respiratory', 'pediatric'] },
   { id: 'jrcalc', name: 'JRCALC', baseUrl: 'https://jrcalcplus.co.uk', type: 'guideline', categories: ['cardiac', 'trauma', 'respiratory', 'metabolic'] },
   { id: 'who', name: 'WHO', baseUrl: 'https://www.who.int', type: 'government', categories: ['pediatric', 'obstetric'] },
@@ -321,6 +321,30 @@ const environmentalResources: DebriefingResource[] = [
   { id: 'env-emcrit-temp', title: 'Temperature Management in the ED', url: 'https://emcrit.org/ibcc/temperature-management/', type: 'article', source: 'EMCrit', relevance: 'important', category: 'environmental' },
 ];
 
+// ============================================================================
+// PSYCHIATRIC / MENTAL HEALTH RESOURCES
+// ============================================================================
+
+const psychiatricResources: DebriefingResource[] = [
+  { id: 'psych-nice-self-harm', title: 'NICE: Self-Harm Assessment and Management', url: 'https://www.nice.org.uk/guidance/ng225', type: 'guideline', source: 'NICE', relevance: 'essential', category: 'psychiatric' },
+  { id: 'psych-nice-psychosis', title: 'NICE: Psychosis and Schizophrenia in Adults', url: 'https://www.nice.org.uk/guidance/cg178', type: 'guideline', source: 'NICE', relevance: 'essential', category: 'psychiatric' },
+  { id: 'psych-emdocs-behavioural', title: 'Acute Behavioural Disturbance - ED Management', url: 'https://www.emdocs.net/acute-behavioral-emergencies/', type: 'article', source: 'EMDocs', relevance: 'essential', category: 'psychiatric' },
+  { id: 'psych-litfl-behavioural', title: 'Behavioural Emergencies - Acute Sedation', url: 'https://litfl.com/behavioural-emergency/', type: 'article', source: 'LITFL', relevance: 'essential', category: 'psychiatric' },
+  { id: 'psych-emcases-mental-health', title: 'Mental Health Emergencies in the ED', url: 'https://emergencymedicinecases.com/mental-health-emergencies/', type: 'podcast', source: 'EM Cases', relevance: 'important', category: 'psychiatric' },
+  { id: 'psych-nice-mental-health-crisis', title: 'NICE: Mental Health Crisis in Community', url: 'https://www.nice.org.uk/guidance/cg136', type: 'guideline', source: 'NICE', relevance: 'important', category: 'psychiatric' },
+];
+
+// ============================================================================
+// MULTIPLE PATIENTS / MASS CASUALTY / TRIAGE RESOURCES
+// ============================================================================
+
+const multiplePatientResources: DebriefingResource[] = [
+  { id: 'mci-litfl-triage', title: 'START Triage and Mass Casualty Incidents', url: 'https://litfl.com/mass-casualty-incident/', type: 'article', source: 'LITFL', relevance: 'essential', category: 'multiple-patients' },
+  { id: 'mci-emdocs-mci', title: 'Mass Casualty Incident Management Pearls', url: 'https://www.emdocs.net/mass-casualty-incidents/', type: 'article', source: 'EMDocs', relevance: 'essential', category: 'multiple-patients' },
+  { id: 'mci-rcuk-major-incident', title: 'Major Incident and Mass Casualty Guidance', url: 'https://www.resus.org.uk/library/additional-guidance', type: 'guideline', source: 'Resuscitation Council UK', relevance: 'essential', category: 'multiple-patients' },
+  { id: 'mci-medscape-triage', title: 'Disaster Triage - Principles and Systems', url: 'https://emedicine.medscape.com/article/765085-overview', type: 'article', source: 'Medscape', relevance: 'important', category: 'multiple-patients' },
+];
+
 export const categoryResources: Partial<Record<string, DebriefingResource[]>> = {
   cardiac: cardiacResources,
   respiratory: respiratoryResources,
@@ -337,6 +361,12 @@ export const categoryResources: Partial<Record<string, DebriefingResource[]>> = 
   general: generalResources,
   burns: burnsResources,
   environmental: environmentalResources,
+  psychiatric: psychiatricResources,
+  'multiple-patients': multiplePatientResources,
+  'elderly-fall': [...traumaResources, ...generalResources],
+  'post-discharge': generalResources,
+  'rule-out': generalResources,
+  'anxiety-related': psychiatricResources,
 };
 
 // ============================================================================
@@ -396,6 +426,22 @@ const subcategoryKeywords: Record<string, { boost: string[]; demote: string[] }>
   'febrile-seizure': { boost: ['febrile seizure', 'fever', 'pediatric', 'paediatric', 'child', 'midazolam', 'antipyretic'], demote: ['adult', 'stroke', 'acs'] },
   'croup': { boost: ['croup', 'stridor', 'barking cough', 'dexamethasone', 'nebulised adrenaline'], demote: ['asthma', 'copd', 'adult'] },
   'bronchiolitis': { boost: ['bronchiolitis', 'rsv', 'infant', 'wheeze', 'supportive care'], demote: ['asthma', 'copd', 'adult'] },
+
+  // Psychiatric / Mental Health
+  'anxiety-attack': { boost: ['anxiety', 'panic', 'mental health', 'crisis', 'hyperventilation'], demote: ['psychosis', 'overdose', 'trauma'] },
+  'psychosis': { boost: ['psychosis', 'schizophrenia', 'behavioural', 'sedation', 'acute', 'antipsychotic'], demote: ['anxiety', 'self-harm'] },
+  'suicidal-ideation': { boost: ['self-harm', 'suicide', 'mental health', 'crisis', 'risk assessment', 'safety plan'], demote: ['psychosis', 'behavioural disturbance'] },
+  'acute-behavioural-disturbance': { boost: ['behavioural', 'agitation', 'sedation', 'restraint', 'de-escalation', 'acute'], demote: ['anxiety', 'self-harm'] },
+
+  // Multiple Patients / Mass Casualty
+  'mass-casualty': { boost: ['mass casualty', 'triage', 'start', 'major incident', 'disaster', 'mimms'], demote: [] },
+  'multi-patient-triage': { boost: ['triage', 'multiple patients', 'prioritisation', 'scene management'], demote: [] },
+
+  // Elderly Fall
+  'elderly-fall': { boost: ['fall', 'elderly', 'geriatric', 'hip fracture', 'head injury', 'anticoagulant', 'osteoporosis'], demote: ['paediatric', 'pediatric', 'child'] },
+
+  // Rule-out / Diagnostic
+  'rule-out': { boost: ['differential', 'assessment', 'systematic', 'clinical reasoning', 'red flags'], demote: [] },
 };
 
 // ============================================================================

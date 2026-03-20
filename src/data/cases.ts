@@ -4383,6 +4383,14 @@ export const caseDatabase: CaseScenario[] = [
       'Rebreathing techniques can help',
       'Avoid paper bag (risk of hypoxia)'
     ],
+    commonPitfalls: [
+      'Dismissing symptoms as "just anxiety" without ruling out organic causes such as PE, MI, or pneumothorax',
+      'Failing to check blood glucose - hypoglycaemia can mimic or trigger panic attacks',
+      'Over-sedating with benzodiazepines before completing a thorough medical assessment',
+      'Not performing an ECG to exclude cardiac causes, especially in first presentations or patients with risk factors',
+      'Missing pulmonary embolism which can present with acute dyspnoea, tachycardia, and anxiety',
+      'Anchoring on psychiatric diagnosis without systematic exclusion of life-threatening differentials'
+    ],
     visualResources: {
       images: [],
       articles: [
@@ -4560,6 +4568,14 @@ export const caseDatabase: CaseScenario[] = [
       'Gentle handling prevents complications',
       'Assess for osteoporosis and fall prevention'
     ],
+    commonPitfalls: [
+      'Not asking about anticoagulant or antiplatelet use - patients on warfarin or DOACs are at high risk of intracranial haemorrhage even from minor head strikes',
+      'Failing to assess for concomitant cervical spine injury, especially if mechanism or history of head injury is unclear',
+      'Inadequate pain management in elderly patients due to fear of over-sedation - undertreated pain causes delirium and complications',
+      'Not performing a thorough head injury assessment in patients on anticoagulants, where intracranial bleeding can be delayed',
+      'Missing other injuries such as wrist fractures, rib fractures, or pelvic injuries sustained during the fall',
+      'Not considering the cause of the fall - cardiac syncope, postural hypotension, medication side effects, or neurological causes'
+    ],
     visualResources: {
       images: [
         {
@@ -4736,6 +4752,14 @@ export const caseDatabase: CaseScenario[] = [
       'Check for sepsis signs',
       'Document wound appearance carefully'
     ],
+    commonPitfalls: [
+      'Not screening for sepsis using structured tools (NEWS2/qSOFA) - wound infections can rapidly progress to septic shock',
+      'Failing to fully expose and inspect the surgical site - superficial assessment misses deep or tracking infections',
+      'Missing early signs of necrotising fasciitis: pain out of proportion, crepitus, rapidly spreading erythema, or systemic toxicity',
+      'Delaying antibiotic administration - in suspected sepsis, antibiotics should be given within one hour',
+      'Not involving the surgical team early - post-operative wound complications often require surgical review or return to theatre',
+      'Underestimating severity in immunocompromised or diabetic patients who may not mount a typical inflammatory response'
+    ],
     visualResources: {
       images: [
         {
@@ -4908,6 +4932,14 @@ export const caseDatabase: CaseScenario[] = [
       'Atypical presentations common in women, diabetics, elderly',
       'Troponins needed to exclude MI',
       'Document thorough assessment'
+    ],
+    commonPitfalls: [
+      'Premature reassurance from a single normal ECG - NSTEMI can present with a completely normal initial ECG',
+      'Not performing serial 12-lead ECGs at 15-minute intervals to capture evolving ST changes',
+      'Missing atypical ACS presentations in women, diabetics, and elderly patients who may present with dyspnoea, nausea, or fatigue rather than classic chest pain',
+      'Anchoring on one diagnosis (e.g., GORD or musculoskeletal) and failing to systematically exclude ACS',
+      'Not administering aspirin early due to uncertainty - aspirin should be given unless true allergy or active bleeding',
+      'Failing to obtain a pre-hospital 12-lead ECG which delays cath lab activation for STEMI patients'
     ],
     visualResources: {
       images: [
@@ -5098,6 +5130,14 @@ export const caseDatabase: CaseScenario[] = [
       'Differentiate syncope from seizure: Syncope - brief LOC, no post-ictal confusion, pale; Seizure - tonic-clonic movements, post-ictal confusion, tongue biting, incontinence',
       'Syncope in pregnancy: Consider PE, ectopic pregnancy, hypovolemia - higher risk',
       'Return to play/work: All syncope patients need medical clearance before returning to work/driving'
+    ],
+    commonPitfalls: [
+      'Assuming vasovagal syncope without systematically ruling out dangerous cardiac causes (arrhythmia, structural heart disease, PE)',
+      'Not performing a 12-lead ECG on all first-episode syncope patients to screen for long QT, Brugada, WPW, or heart block',
+      'Failing to measure orthostatic vital signs - lying and standing BP/HR to detect orthostatic hypotension',
+      'Discharging without adequate safety-netting advice including when to call back, driving restrictions, and follow-up plan',
+      'Not obtaining a detailed witness account of the event - crucial for differentiating syncope from seizure',
+      'Missing syncope during exertion which is a red flag for hypertrophic cardiomyopathy or aortic stenosis'
     ],
     visualResources: {
       images: [],
@@ -5294,6 +5334,14 @@ export const caseDatabase: CaseScenario[] = [
       'Heat stroke: hot dry skin, altered mental status - EMERGENCY',
       'Early cooling prevents progression',
       'Hydration crucial in UAE climate'
+    ],
+    commonPitfalls: [
+      'Not recognising progression from heat exhaustion to heat stroke - altered mental status, cessation of sweating, and core temp >40C are critical warning signs',
+      'Inadequate cooling measures - passive cooling alone is insufficient; active cooling with ice packs to axillae, groin, and neck should be initiated early',
+      'Not measuring core temperature (rectal or oesophageal) - axillary and tympanic readings are unreliable in heat illness',
+      'Missing exercise-associated hyponatraemia from excessive hypotonic fluid intake, which can cause seizures and cerebral oedema',
+      'Not monitoring for rhabdomyolysis - dark urine, muscle pain, and elevated CK require aggressive IV fluid resuscitation and renal monitoring',
+      'Allowing the patient to return to work or activity too soon without adequate recovery, rehydration, and acclimatisation'
     ],
     visualResources: {
       images: [
