@@ -298,6 +298,29 @@ const generalResources: DebriefingResource[] = [
   { id: 'gen-rcuk-medical-emergencies', title: 'Medical Emergencies and Resuscitation', url: 'https://www.resus.org.uk/library/2021-resuscitation-guidelines/adult-basic-life-support-guidelines', type: 'guideline', source: 'Resuscitation Council UK', relevance: 'supplementary', category: 'general' },
 ];
 
+// Burns-specific resources — drawn from trauma + dedicated burns sources
+const burnsResources: DebriefingResource[] = [
+  { id: 'burns-nice-burns', title: 'NICE: Burns and Scalds', url: 'https://cks.nice.org.uk/topics/burns-scalds/', type: 'guideline', source: 'NICE', relevance: 'essential', category: 'burns' },
+  { id: 'burns-rcuk-burns', title: 'Emergency Treatment of Burns', url: 'https://www.resus.org.uk/library/additional-guidance/guidance-post-resuscitation-care', type: 'guideline', source: 'Resuscitation Council UK', relevance: 'essential', category: 'burns' },
+  { id: 'burns-emdocs-burns', title: 'Burns in the ED - Pearls and Pitfalls', url: 'https://www.emdocs.net/burns-in-the-ed/', type: 'article', source: 'EMDocs', relevance: 'essential', category: 'burns' },
+  { id: 'burns-litfl-burns', title: 'Burns - Assessment and Management', url: 'https://litfl.com/burns/', type: 'article', source: 'LITFL', relevance: 'essential', category: 'burns' },
+  { id: 'burns-rebel-inhalation', title: 'Inhalation Injury - Evidence Review', url: 'https://rebelem.com/inhalation-injury/', type: 'article', source: 'REBEL EM', relevance: 'essential', category: 'burns' },
+  { id: 'burns-radiopedia-burns', title: 'Burns (Imaging)', url: 'https://radiopaedia.org/articles/burns', type: 'image', source: 'Radiopaedia', relevance: 'important', category: 'burns' },
+  { id: 'burns-emcrit-fluid', title: 'Burns Fluid Resuscitation - Parkland Formula', url: 'https://emcrit.org/ibcc/burns/', type: 'article', source: 'EMCrit', relevance: 'essential', category: 'burns' },
+  { id: 'burns-medscape-overview', title: 'Burns - Clinical Management Overview', url: 'https://emedicine.medscape.com/article/1278244-overview', type: 'article', source: 'Medscape', relevance: 'supplementary', category: 'burns' },
+  { id: 'burns-dermnetnz', title: 'Burns Assessment and Classification', url: 'https://dermnetnz.org/topics/burn', type: 'article', source: 'DermNet NZ', relevance: 'important', category: 'burns' },
+  { id: 'burns-emcases-burns', title: 'Approach to Burns', url: 'https://emergencymedicinecases.com/approach-to-burns/', type: 'podcast', source: 'EM Cases', relevance: 'important', category: 'burns' },
+];
+
+// Environmental-specific resources
+const environmentalResources: DebriefingResource[] = [
+  { id: 'env-nice-hypothermia', title: 'NICE: Hypothermia - Prevention and Management', url: 'https://www.nice.org.uk/guidance/cg161', type: 'guideline', source: 'NICE', relevance: 'essential', category: 'environmental' },
+  { id: 'env-litfl-hyperthermia', title: 'Heat Stroke and Heat Exhaustion', url: 'https://litfl.com/heat-stroke/', type: 'article', source: 'LITFL', relevance: 'essential', category: 'environmental' },
+  { id: 'env-emdocs-drowning', title: 'Drowning - ED Management Pearls', url: 'https://www.emdocs.net/drowning/', type: 'article', source: 'EMDocs', relevance: 'essential', category: 'environmental' },
+  { id: 'env-rebel-hypothermia', title: 'Accidental Hypothermia - Evidence Review', url: 'https://rebelem.com/accidental-hypothermia/', type: 'article', source: 'REBEL EM', relevance: 'essential', category: 'environmental' },
+  { id: 'env-emcrit-temp', title: 'Temperature Management in the ED', url: 'https://emcrit.org/ibcc/temperature-management/', type: 'article', source: 'EMCrit', relevance: 'important', category: 'environmental' },
+];
+
 export const categoryResources: Partial<Record<string, DebriefingResource[]>> = {
   cardiac: cardiacResources,
   respiratory: respiratoryResources,
@@ -312,6 +335,8 @@ export const categoryResources: Partial<Record<string, DebriefingResource[]>> = 
   obstetric: obstetricResources,
   toxicology: toxicologyResources,
   general: generalResources,
+  burns: burnsResources,
+  environmental: environmentalResources,
 };
 
 // ============================================================================
@@ -356,6 +381,21 @@ const subcategoryKeywords: Record<string, { boost: string[]; demote: string[] }>
   'stroke': { boost: ['stroke', 'cerebrovascular', 'thrombolysis', 'fast', 'ct head', 'nihss'], demote: ['seizure', 'meningitis'] },
   'seizure': { boost: ['seizure', 'epilep', 'status epilepticus', 'benzodiazepine', 'midazolam'], demote: ['stroke', 'meningitis'] },
   'meningitis': { boost: ['meningitis', 'meningococcal', 'lumbar puncture', 'sepsis', 'rash'], demote: ['stroke', 'seizure'] },
+
+  // Burns
+  'thermal-burns': { boost: ['burns', 'tbsa', 'parkland', 'inhalation', 'eschar', 'fluid resuscitation', 'rule of 9'], demote: ['fracture', 'head injury'] },
+  'chemical-burns': { boost: ['chemical burn', 'decontamination', 'irrigation', 'alkali', 'acid burn'], demote: ['thermal', 'fire'] },
+  'electrical-burns': { boost: ['electrical burn', 'electrocution', 'cardiac monitoring', 'entry exit wound'], demote: ['thermal', 'chemical'] },
+
+  // Environmental
+  'heat-stroke': { boost: ['heat stroke', 'hyperthermia', 'cooling', 'core temperature', 'exertional'], demote: ['hypothermia', 'drowning'] },
+  'hypothermia': { boost: ['hypothermia', 'rewarming', 'core temperature', 'cold exposure'], demote: ['heat stroke', 'hyperthermia'] },
+  'drowning': { boost: ['drowning', 'submersion', 'near-drowning', 'pulmonary oedema'], demote: ['heat stroke', 'hypothermia'] },
+
+  // Pediatric
+  'febrile-seizure': { boost: ['febrile seizure', 'fever', 'pediatric', 'paediatric', 'child', 'midazolam', 'antipyretic'], demote: ['adult', 'stroke', 'acs'] },
+  'croup': { boost: ['croup', 'stridor', 'barking cough', 'dexamethasone', 'nebulised adrenaline'], demote: ['asthma', 'copd', 'adult'] },
+  'bronchiolitis': { boost: ['bronchiolitis', 'rsv', 'infant', 'wheeze', 'supportive care'], demote: ['asthma', 'copd', 'adult'] },
 };
 
 // ============================================================================
