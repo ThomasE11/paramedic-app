@@ -8,7 +8,7 @@
  * - ERC (European Resuscitation Council)
  * - ILCOR (International Liaison Committee on Resuscitation)
  * - Resuscitation Council UK
- * - AHA (American Heart Association)
+ * - AHA (American Heart Association) — including AHA 2025 Guidelines for CPR and ECC
  */
 
 export interface GuidelineReference {
@@ -143,7 +143,7 @@ export const abcdeGuideline: AssessmentGuideline = {
 };
 
 // ============================================================================
-// CARDIAC GUIDELINES (ACLS 2020)
+// CARDIAC GUIDELINES (ACLS — updated with AHA 2025 Guidelines for CPR and ECC)
 // ============================================================================
 
 export const acuteCoronarySyndromeGuideline: AssessmentGuideline = {
@@ -266,8 +266,8 @@ export const acuteCoronarySyndromeGuideline: AssessmentGuideline = {
 
 export const cardiacArrestGuideline: AssessmentGuideline = {
   category: 'Cardiac',
-  title: 'Cardiac Arrest (ACLS)',
-  description: 'Management of cardiac arrest with standardized algorithms',
+  title: 'Cardiac Arrest (ACLS — AHA 2025 update)',
+  description: 'Management of cardiac arrest with standardized algorithms per AHA 2025 Guidelines for CPR and ECC',
   keyAssessments: [
     'Unresponsiveness assessment',
     'Pulse check (max 10 seconds)',
@@ -281,17 +281,39 @@ export const cardiacArrestGuideline: AssessmentGuideline = {
     'Asystole'
   ],
   mandatoryActions: [
-    'Immediate high-quality CPR',
+    'Immediate high-quality CPR on firm surface (optimize hand position, body position, patient positioning — AHA 2025)',
     'Defibrillation for shockable rhythms',
-    'Airway management',
-    'IV/IO access',
-    'Epinephrine 1mg q3-5min'
+    'Airway management with ventilations (30:2 ratio — AHA 2025 recommends breaths WITH compressions)',
+    'IV access (AHA 2025: IV preferred over IO in adult cardiac arrest; IO is second-line)',
+    'Epinephrine 1mg IV q3-5min',
+    'Temperature control post-ROSC: 32-36°C for at least 36 hours if unresponsive (AHA 2025)'
   ],
   guidelines: [
     {
+      id: 'aha-als-2025',
+      source: 'AHA',
+      title: 'AHA 2025 Guidelines for CPR and ECC',
+      year: 2025,
+      keyPoints: [
+        'Chest compressions at 100-120/min on firm surface — optimize hand position, body position, patient positioning',
+        'Depth 2-2.4 inches (5-6cm)',
+        'Allow full chest recoil',
+        'Minimize interruptions (<10 sec)',
+        'Defibrillate within 2 minutes of rhythm recognition',
+        'IV access preferred over IO in adult cardiac arrest (IO is second-line)',
+        'Breaths WITH compressions (30:2) for both HCPs and trained lay rescuers',
+        'Single unified Chain of Survival for all ages and settings',
+        'Temperature control 32-36°C for at least 36 hours post-ROSC if unresponsive',
+        'DSED for refractory VF: Class 2b — usefulness NOT established',
+        'FBAO: alternate 5 back blows then 5 abdominal thrusts (adults); 5 back blows then 5 chest thrusts (infants)',
+        'Children aged 12+ can be taught effective CPR',
+        'Pediatric: pauses in compressions should be <10 seconds'
+      ]
+    },
+    {
       id: 'aha-als-2020',
       source: 'AHA',
-      title: '2020 ACLS Guidelines',
+      title: '2020 ACLS Guidelines (superseded by AHA 2025)',
       year: 2020,
       keyPoints: [
         'Chest compressions at 100-120/min',
@@ -361,12 +383,12 @@ export const cardiacArrestGuideline: AssessmentGuideline = {
       evidenceLevel: 'A'
     },
     {
-      guidelineId: 'aha-als-2020',
-      requirement: 'Administer epinephrine 1mg IV/IO q3-5min',
+      guidelineId: 'aha-als-2025',
+      requirement: 'Administer epinephrine 1mg IV q3-5min (AHA 2025: IV preferred over IO in adult arrest)',
       timeframe: 'After first shock/2 minutes CPR',
       criticalAction: true,
-      rationale: 'Epinephrine increases coronary and cerebral perfusion pressure',
-      commonErrors: ['Wrong dose', 'Wrong timing', 'Not pushing flush after'],
+      rationale: 'Epinephrine increases coronary and cerebral perfusion pressure. AHA 2025 recommends IV over IO for adult cardiac arrest.',
+      commonErrors: ['Wrong dose', 'Wrong timing', 'Not pushing flush after', 'Defaulting to IO when IV is achievable'],
       evidenceLevel: 'A'
     },
     {

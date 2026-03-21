@@ -1220,7 +1220,7 @@ export const additionalRespiratoryCases: CaseScenario[] = [
       airway: {
         patent: false,
         findings: ['Complete obstruction', 'Unable to speak or cough'],
-        interventions: ['Heimlich maneuver', 'Back blows']
+        interventions: ['Alternate 5 back blows then 5 abdominal thrusts (AHA 2025)', 'If unconscious: CPR and check airway']
       },
       breathing: {
         rate: 0,
@@ -1282,8 +1282,8 @@ export const additionalRespiratoryCases: CaseScenario[] = [
     },
     studentChecklist: [
       { id: 'resp9-1', category: 'abcde', description: 'Recognize complete airway obstruction', points: 15, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced', 'expert'], critical: true },
-      { id: 'resp9-2', category: 'intervention', description: 'Perform Heimlich maneuver (abdominal thrusts)', points: 20, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'], critical: true },
-      { id: 'resp9-3', category: 'intervention', description: 'Alternate back blows and abdominal thrusts', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced'] },
+      { id: 'resp9-2', category: 'intervention', description: 'Perform alternating 5 back blows then 5 abdominal thrusts (AHA 2025 protocol)', points: 20, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'], critical: true },
+      { id: 'resp9-3', category: 'intervention', description: 'Alternate sets of 5 back blows and 5 abdominal thrusts until object expelled or patient becomes unconscious (AHA 2025)', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced'] },
       { id: 'resp9-4', category: 'abcde', description: 'Prepare for CPR if patient becomes unconscious', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced', 'expert'] },
       { id: 'resp9-5', category: 'abcde', description: 'Assess for universal choking sign and inability to speak', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced'], critical: true },
       { id: 'resp9-6', category: 'intervention', description: 'Position hands correctly for abdominal thrusts', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced'] },
@@ -1296,7 +1296,8 @@ export const additionalRespiratoryCases: CaseScenario[] = [
     ],
     teachingPoints: [
       'Complete obstruction = unable to speak, cough, or breathe',
-      'Heimlich maneuver is first-line for conscious adults',
+      'AHA 2025 FBAO protocol: alternate 5 back blows then 5 abdominal thrusts for conscious adults (not abdominal thrusts alone). Continue cycles until object expelled or patient becomes unconscious',
+      'For infants: alternate 5 back blows then 5 chest thrusts (NO abdominal thrusts in infants per AHA 2025)',
       'If patient becomes unconscious, start CPR and check airway',
       'Do not attempt blind finger sweeps in conscious patients'
     ],
@@ -1304,9 +1305,9 @@ export const additionalRespiratoryCases: CaseScenario[] = [
       'Delaying intervention to ask extensive history questions',
       'Performing finger sweep in conscious patient (can push object deeper)',
       'Not recognizing partial vs complete obstruction',
-      'Using chest thrusts instead of abdominal thrusts in adults',
-      'Not positioning hands correctly for Heimlich maneuver',
-      'Continuing abdominal thrusts after object is expelled',
+      'Performing only abdominal thrusts without alternating with back blows (AHA 2025 recommends alternating 5 back blows then 5 abdominal thrusts)',
+      'Not positioning hands correctly for abdominal thrusts',
+      'Continuing thrusts after object is expelled',
       'Not calling for backup/EMS immediately',
       'Failing to recognize when patient becomes unconscious',
       'Not having suction and airway equipment ready',
@@ -1332,7 +1333,7 @@ export const additionalRespiratoryCases: CaseScenario[] = [
       applicableGuidelines: [
         'DCAS Airway Obstruction Protocol',
         'DCAS BLS/ALS Choking Management Guidelines',
-        'AHA Guidelines for CPR and ECC - Choking',
+        'AHA 2025 Guidelines for CPR and ECC - FBAO (back blows + abdominal thrusts)',
         'ERC Guidelines - Adult BLS'
       ],
       receivingFacilities: [

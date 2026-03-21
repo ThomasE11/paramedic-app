@@ -3219,12 +3219,12 @@ export const secondYearCases: CaseScenario[] = [
           'Shock 1: Defibrillate VF (biphasic 150-200J)',
           'Resume CPR immediately after shock for 2 minutes',
           'Shock 2: Defibrillate persistent VF',
-          'IV/IO access during CPR (do not stop compressions)',
+          'IV access during CPR — AHA 2025: IV preferred over IO in adult arrest (do not stop compressions)',
           'Adrenaline 1mg IV after 2nd shock (repeat every 3-5 min)',
           'If VF persists after 3rd shock: Amiodarone 300mg IV',
           'Post-ROSC: 12-lead ECG, maintain SpO2 94-98%'
         ],
-        ivAccess: ['18G IV in right AC during CPR', 'Consider IO if IV unsuccessful within 2 minutes']
+        ivAccess: ['18G IV in right AC during CPR (AHA 2025: IV preferred over IO in adult arrest)', 'IO as second-line if IV not achievable within 2 minutes']
       },
       disability: {
         avpu: 'U',
@@ -3351,7 +3351,7 @@ export const secondYearCases: CaseScenario[] = [
         'Defibrillate (Shock 1)',
         'Resume CPR for 2 minutes',
         'Reanalyse - persistent VF - Shock 2',
-        'IV/IO access during CPR',
+        'IV access during CPR (AHA 2025: IV preferred over IO in adult arrest; IO is second-line)',
         'Adrenaline 1mg IV after 2nd shock'
       ],
       definitive: [
@@ -3361,6 +3361,7 @@ export const secondYearCases: CaseScenario[] = [
         'Post-ROSC: 12-lead ECG immediately',
         'Maintain SpO2 94-98% (avoid hyperoxia)',
         'IV fluid bolus for post-ROSC hypotension',
+        'Post-ROSC temperature control: target 32-36°C for at least 36 hours if patient remains unresponsive (AHA 2025)',
         'Rapid transport to cardiac catheterisation facility',
         'Pre-alert receiving hospital: ROSC post VF arrest, ?STEMI'
       ],
@@ -3436,7 +3437,7 @@ export const secondYearCases: CaseScenario[] = [
       {
         id: 'y2-009-iv-io-access',
         category: 'treatment',
-        description: 'Establish IV/IO access during CPR without stopping compressions',
+        description: 'Establish IV access during CPR without stopping compressions (AHA 2025: IV preferred over IO in adult arrest)',
         points: 4,
         yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
@@ -3491,13 +3492,15 @@ export const secondYearCases: CaseScenario[] = [
       }
     ],
     teachingPoints: [
-      'BLS foundation remains critical - high-quality CPR saves lives',
+      'BLS foundation remains critical - high-quality CPR saves lives. AHA 2025: optimize hand position, body position, patient positioning on firm surface',
+      'AHA 2025: Breaths WITH compressions (30:2) recommended for both HCPs and lay rescuers who are willing and capable',
       'Rhythm recognition: VF is shockable - defibrillate early and defibrillate often',
-      'IV/IO access during CPR - never stop compressions to gain access',
+      'AHA 2025: IV access preferred over IO in adult cardiac arrest. IO is second-line when IV is not achievable. Never stop compressions to gain access.',
       'Adrenaline 1mg IV after 2nd shock in shockable rhythms (every 3-5 minutes thereafter)',
       'Amiodarone 300mg IV after 3rd shock for refractory VF (150mg can be repeated)',
       'Reversible causes (4H\'s: Hypoxia, Hypovolaemia, Hypo/Hyperkalaemia, Hypothermia; 4T\'s: Tension pneumothorax, Tamponade, Toxins, Thrombosis)',
-      'Post-ROSC care: 12-lead ECG immediately, maintain SpO2 94-98%, do not hyperventilate',
+      'Post-ROSC care (AHA 2025): 12-lead ECG immediately, maintain SpO2 94-98%, do not hyperventilate. Temperature control at 32-36°C for at least 36 hours in adults who remain unresponsive',
+      'AHA 2025: Single unified Chain of Survival for all ages and settings (replaces separate IHCA/OHCA chains)',
       'Airway management in arrest: suction first, OPA, consider iGel/LMA - do not delay CPR for intubation',
       'Rotate compressors every 2 minutes to maintain CPR quality',
       'Minimise interruptions to chest compressions - aim for <10 seconds for rhythm checks',
@@ -3518,9 +3521,9 @@ export const secondYearCases: CaseScenario[] = [
       'Over-oxygenating post-ROSC (target 94-98%, not 100%)'
     ],
     references: [
-      'ACLS Cardiac Arrest Algorithm - AHA/ERC Guidelines',
+      'ACLS Cardiac Arrest Algorithm - AHA 2025 Guidelines for CPR and ECC',
       'Resuscitation Council UK - Adult Advanced Life Support',
-      'Post-Resuscitation Care Guidelines',
+      'Post-Resuscitation Care Guidelines (AHA 2025 update)',
       'Defibrillation and Cardioversion in Pre-Hospital Care'
     ]
   })

@@ -111,7 +111,7 @@ export const TREATMENTS: Treatment[] = [
   {
     id: 'back_blows',
     name: 'Back Blows',
-    description: '5 sharp blows between scapulae for choking',
+    description: '5 sharp back blows between scapulae — alternate with 5 abdominal thrusts (AHA 2025)',
     category: 'airway',
     onset: 'immediate',
     onsetTimeSeconds: 0,
@@ -127,7 +127,7 @@ export const TREATMENTS: Treatment[] = [
   {
     id: 'abdominal_thrusts',
     name: 'Abdominal Thrusts (Heimlich)',
-    description: 'Subdiaphragmatic thrusts for foreign body removal',
+    description: '5 subdiaphragmatic thrusts — alternate with 5 back blows (AHA 2025)',
     category: 'airway',
     onset: 'immediate',
     onsetTimeSeconds: 0,

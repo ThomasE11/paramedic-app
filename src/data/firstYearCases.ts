@@ -2910,8 +2910,9 @@ export const firstYearCases: CaseScenario[] = [
       immediate: [
         'Confirm cardiac arrest: unresponsive + not breathing normally + no pulse',
         'Take over CPR from bystander - assess CPR quality',
+        'Ensure patient is on a firm surface (AHA 2025: optimize hand position, body position, patient positioning)',
         'Apply AED immediately - shock if advised',
-        'High-quality CPR: 30:2, rate 100-120/min, depth 5-6cm, full recoil',
+        'High-quality CPR: 30:2 with breaths (AHA 2025 recommends ventilations with compressions), rate 100-120/min, depth 5-6cm, full recoil',
         'Insert OPA and ventilate with BVM',
         'Minimise interruptions to compressions (<10 seconds for rhythm check)'
       ],
@@ -2946,11 +2947,14 @@ export const firstYearCases: CaseScenario[] = [
     ],
     teachingPoints: [
       'Confirm cardiac arrest: unresponsive + not breathing normally + no pulse (take no more than 10 seconds)',
-      'High-quality CPR saves lives: 30:2 ratio, rate 100-120/min, depth 5-6cm, full recoil, minimise interruptions',
+      'High-quality CPR saves lives: 30:2 ratio, rate 100-120/min, depth 5-6cm, full recoil, minimise interruptions. AHA 2025 emphasizes CPR on a firm surface, optimizing hand position, body position, and patient positioning',
+      'AHA 2025: Breaths WITH compressions (30:2) recommended for both HCPs and lay rescuers who are willing and capable',
+      'AHA 2025: Single unified Chain of Survival for all ages and settings (replaces separate IHCA/OHCA chains)',
       'Early defibrillation: AED application, shock if advised, resume CPR immediately after shock',
       'Airway adjuncts: OPA sizing (corner of mouth to angle of jaw) and insertion',
       'BVM ventilation: 2 ventilations every 30 compressions, watch for chest rise',
       'Team CPR: rotate compressors every 2 minutes to maintain compression quality',
+      'AHA 2025: Children aged 12+ can be taught to perform effective CPR',
       'Handover to advanced care team: provide arrest time, CPR duration, number of shocks, any ROSC'
     ],
     commonPitfalls: [
@@ -2963,9 +2967,9 @@ export const firstYearCases: CaseScenario[] = [
       'Not using OPA with BVM - tongue is the most common airway obstruction in unconscious patients'
     ],
     references: [
-      'Basic Life Support - AHA/ERC Guidelines',
+      'Basic Life Support - AHA 2025 Guidelines for CPR and ECC',
       'AED Use in Public Access Defibrillation',
-      'High-Quality CPR - Pre-hospital BLS Standards'
+      'High-Quality CPR - Pre-hospital BLS Standards (AHA 2025 update)'
     ]
   })
 ];

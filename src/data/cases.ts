@@ -367,8 +367,8 @@ export const caseDatabase: CaseScenario[] = [
       mostLikelyDiagnosis: 'Cardiac arrest secondary to recurrent myocardial infarction'
     },
     managementPathway: {
-      immediate: ['Immediate CPR - 30:2 ratio, depth 5-6cm, rate 100-120/min', 'AED/defibrillator application and rhythm analysis', 'Defibrillation if VF/pVT (150-200J biphasic)', 'Adrenaline 1mg IV/IO every 3-5 minutes', 'Airway management with OPA/LMA/ETT', 'IV/IO access establishment', 'Reversible causes assessment (Hs and Ts)'],
-      definitive: ['24/7 Cardiac Catheterization Lab for PCI', 'Targeted Temperature Management (32-36C)', 'ECMO support if available', 'Cardiac surgery if indicated'],
+      immediate: ['Immediate CPR on firm surface - 30:2 ratio, depth 5-6cm, rate 100-120/min, optimize hand position and body position (AHA 2025)', 'AED/defibrillator application and rhythm analysis', 'Defibrillation if VF/pVT (150-200J biphasic)', 'Adrenaline 1mg IV every 3-5 minutes (AHA 2025: IV preferred over IO in adult cardiac arrest; IO is second-line if IV not achievable)', 'Airway management with OPA/LMA/ETT', 'IV access establishment (preferred over IO per AHA 2025)', 'Reversible causes assessment (Hs and Ts)'],
+      definitive: ['24/7 Cardiac Catheterization Lab for PCI', 'Temperature control post-ROSC: target 32-36°C for at least 36 hours in adults who remain unresponsive (AHA 2025)', 'ECMO support if available', 'Cardiac surgery if indicated'],
       monitoring: ['Continuous ECG monitoring', 'End-tidal CO2 (ETCO2) - target >10mmHg', 'Blood pressure monitoring', 'SpO2 monitoring', 'Temperature monitoring', 'Blood glucose monitoring'],
       transportConsiderations: ['Pre-alert receiving hospital with ETA and clinical status', 'Do not delay transport for prolonged resuscitation on scene', 'Consider HEMS for rural areas or long transport times', 'Family notification and counseling', 'Continue CPR during transport unless ROSC achieved']
     },
@@ -378,7 +378,7 @@ export const caseDatabase: CaseScenario[] = [
       { id: 'c2-3', category: 'abcde', description: 'Initiate immediate high-quality CPR - 30:2 ratio, depth 5-6cm, rate 100-120/min', points: 15, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'], critical: true },
       { id: 'c2-4', category: 'intervention', description: 'Apply AED/defibrillator and analyze rhythm immediately', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'], critical: true },
       { id: 'c2-5', category: 'intervention', description: 'Defibrillate if VF/pVT - 150-200J biphasic, resume CPR immediately', points: 15, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'], critical: true },
-      { id: 'c2-6', category: 'intervention', description: 'Establish IV/IO access for medication administration', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
+      { id: 'c2-6', category: 'intervention', description: 'Establish IV access for medication administration (AHA 2025: IV preferred over IO in adult arrest)', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
       { id: 'c2-7', category: 'intervention', description: 'Administer adrenaline 1mg IV/IO every 3-5 minutes', points: 15, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'], critical: true },
       { id: 'c2-8', category: 'intervention', description: 'Secure airway with OPA, LMA, or ETT - minimize CPR interruptions', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced', 'expert'] },
       { id: 'c2-9', category: 'intervention', description: 'Check blood glucose - rule out hypoglycemia as reversible cause', points: 5, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
@@ -388,19 +388,21 @@ export const caseDatabase: CaseScenario[] = [
       { id: 'c2-13', category: 'documentation', description: 'Document arrest time, downtime, interventions, and response to treatment', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] }
     ],
     teachingPoints: [
-      'High-quality CPR is the most important intervention - depth 5-6cm, rate 100-120/min, full recoil, minimal interruptions (<10 seconds)',
+      'High-quality CPR is the most important intervention - depth 5-6cm, rate 100-120/min, full recoil, minimal interruptions (<10 seconds). AHA 2025 emphasizes optimizing hand position, body position, and patient positioning on a firm surface',
       'Early defibrillation is critical for shockable rhythms (VF/pVT) - every minute delay reduces survival by 7-10%',
       'Minimize interruptions to chest compressions - aim for >80% compression fraction',
+      'AHA 2025: Breaths WITH compressions recommended (30:2 ratio) for both HCPs and trained lay rescuers who are willing and capable',
       'The 4 Hs: Hypoxia, Hypovolemia, Hypo/hyperkalemia, Hypothermia',
       'The 4 Ts: Tension pneumothorax, Tamponade, Thrombosis (MI/PE), Toxins',
-      'Adrenaline 1mg IV/IO every 3-5 minutes increases coronary perfusion pressure',
+      'AHA 2025: IV access is recommended OVER IO access for adult cardiac arrest. IO is second-line when IV is not achievable. Adrenaline 1mg IV every 3-5 minutes',
       'Advanced airway (ETT/LMA) should not delay CPR - basic airway adjuncts acceptable initially',
+      'AHA 2025: Single unified Chain of Survival for all ages and settings (replaces separate IHCA/OHCA chains)',
       'Team coordination is essential - clear roles, closed-loop communication, regular updates',
       'Prognostic factors: downtime, initial rhythm, witnessed arrest, bystander CPR, ROSC achieved',
       'Termination of resuscitation: Consider after 20 minutes if no ROSC, no shockable rhythm, and no reversible causes identified',
       'Recognition of death: Prolonged unwitnessed downtime (>15-20 min), fixed dilated pupils, asystole, and no reversible cause may warrant withholding resuscitation per local guidelines',
       'Family presence during resuscitation: Can be beneficial with appropriate support and explanation',
-      'Post-resuscitation care: Targeted temperature management, hemodynamic optimization, neurological assessment',
+      'Post-resuscitation care (AHA 2025): Temperature control at 32-36°C for at least 36 hours in adults who remain unresponsive after ROSC. Hemodynamic optimization, neurological assessment',
       'Documentation: Accurate timing of all interventions, drug doses, rhythm changes, and clinical decisions',
       'Debriefing: Critical incident stress management for team after traumatic arrest'
     ],
@@ -435,10 +437,10 @@ export const caseDatabase: CaseScenario[] = [
         {
           id: 'art-cpr-001',
           type: 'article',
-          title: 'Adult Advanced Life Support Guidelines',
+          title: 'Adult Advanced Life Support Guidelines (updated with AHA 2025)',
           url: 'https://www.resus.org.uk/library/2021-resuscitation-guidelines/adult-advanced-life-support-guidelines',
-          source: 'Resuscitation Council UK',
-          caption: 'Official UK guidelines for adult advanced life support and cardiac arrest management',
+          source: 'Resuscitation Council UK / AHA 2025',
+          caption: 'Guidelines for adult advanced life support and cardiac arrest management — cross-reference with AHA 2025 Guidelines for CPR and ECC',
           relevance: 'essential',
           tags: ['CPR', 'cardiac-arrest', 'resuscitation', 'ACLS']
         },
@@ -9476,18 +9478,18 @@ export const caseDatabase: CaseScenario[] = [
         interventions: [
           'High-quality CPR — rate 100-120/min, depth 5-6cm, full recoil, minimise interruptions',
           'Defibrillation 200J biphasic — shock 3 (first crew shock)',
-          'IV access — 18G right EJ or antecubital',
-          'IO access if IV fails — right proximal tibia',
+          'IV access — 18G right EJ or antecubital (AHA 2025: IV preferred over IO in adult arrest)',
+          'IO access if IV not achievable — right proximal tibia (second-line per AHA 2025)',
           'Adrenaline 1mg IV after 3rd shock, then every 3-5 minutes',
           'Amiodarone 300mg IV after 3rd shock',
-          'If still refractory after 5th shock: consider double sequential defibrillation (DSE)',
+          'If still refractory after 5th shock: consider double sequential defibrillation (DSED) — AHA 2025: Class 2b, usefulness NOT established, investigational only',
           'If still refractory: Esmolol 500mcg/kg IV bolus (emerging evidence)',
           'Alternative: Lignocaine 1mg/kg IV if amiodarone ineffective',
           'Amiodarone 150mg IV after 5th shock (second dose)',
           'Consider mechanical CPR device (LUCAS) for prolonged resuscitation and transport'
         ],
         ecgFindings: ['Coarse ventricular fibrillation persisting through multiple shocks', 'No organised rhythm between shocks'],
-        ivAccess: ['18G right antecubital fossa', 'Consider IO right proximal tibia if IV delayed']
+        ivAccess: ['18G right antecubital fossa (AHA 2025: IV preferred over IO in adult arrest)', 'IO right proximal tibia as second-line if IV not achievable']
       },
       disability: {
         avpu: 'U',
@@ -9585,14 +9587,14 @@ export const caseDatabase: CaseScenario[] = [
         'Apply defibrillator/monitor — confirm VF',
         'Defibrillate 200J biphasic — this is shock 3 (AED gave 2)',
         'Resume CPR immediately — 2-minute cycle',
-        'Establish IV/IO access',
+        'Establish IV access (AHA 2025: IV preferred over IO in adult arrest)',
         'Suction airway, insert OPA, BVM ventilation',
         'Attach waveform capnography',
         'Adrenaline 1mg IV after 3rd shock',
         'Amiodarone 300mg IV after 3rd shock'
       ],
       definitive: [
-        'If VF persists after 5th shock: consider double sequential defibrillation (anterior-posterior pad placement)',
+        'If VF persists after 5th shock: consider double sequential defibrillation (DSED, anterior-posterior pad placement) — AHA 2025 Class 2b: usefulness NOT established, emerging/investigational evidence only',
         'Esmolol 500mcg/kg IV bolus for refractory VF (emerging evidence — consider after 5+ shocks)',
         'Alternative: Lignocaine 1mg/kg IV if amiodarone has failed',
         'Amiodarone 150mg IV (second dose) after 5th shock',
@@ -9614,7 +9616,7 @@ export const caseDatabase: CaseScenario[] = [
         'Nearest PCI-capable centre: Rashid Hospital or American Hospital Dubai',
         'Consider HEMS for direct cath lab transfer if ground transport prolonged',
         'Continue resuscitation en route — do not terminate on scene if young patient with witnessed arrest and shockable rhythm',
-        'If ROSC achieved: targeted temperature management pathway, post-ROSC care bundle'
+        'If ROSC achieved: temperature control 32-36°C for at least 36 hours if unresponsive (AHA 2025), post-ROSC care bundle'
       ]
     },
     studentChecklist: [
@@ -9623,12 +9625,12 @@ export const caseDatabase: CaseScenario[] = [
       { id: 'c13-3', category: 'intervention', description: 'Take over high-quality CPR — correct rate (100-120/min), depth (5-6cm), full recoil', points: 10, yearLevel: ['4th-year'], complexity: ['advanced'], critical: true, rationale: 'CPR quality directly affects survival' },
       { id: 'c13-4', category: 'intervention', description: 'Defibrillate VF — 200J biphasic, minimise peri-shock pause (<5 seconds)', points: 10, yearLevel: ['4th-year'], complexity: ['advanced'], critical: true, timeframe: 'Within 1 minute of arrival' },
       { id: 'c13-5', category: 'abcde', description: 'Airway management — suction, OPA, BVM, consider advanced airway', points: 5, yearLevel: ['4th-year'], complexity: ['advanced'] },
-      { id: 'c13-6', category: 'intervention', description: 'Establish IV/IO access for drug delivery', points: 5, yearLevel: ['4th-year'], complexity: ['advanced'], timeframe: 'Within 2 minutes' },
+      { id: 'c13-6', category: 'intervention', description: 'Establish IV access for drug delivery (AHA 2025: IV preferred over IO in adult arrest)', points: 5, yearLevel: ['4th-year'], complexity: ['advanced'], timeframe: 'Within 2 minutes' },
       { id: 'c13-7', category: 'medication', description: 'Adrenaline 1mg IV after 3rd shock, then every 3-5 minutes', points: 10, yearLevel: ['4th-year'], complexity: ['advanced'], critical: true },
       { id: 'c13-8', category: 'medication', description: 'Amiodarone 300mg IV after 3rd shock', points: 10, yearLevel: ['4th-year'], complexity: ['advanced'], critical: true },
       { id: 'c13-9', category: 'equipment', description: 'Attach waveform capnography and use ETCO2 to monitor CPR quality', points: 10, yearLevel: ['4th-year'], complexity: ['advanced'], rationale: 'ETCO2 >10mmHg indicates adequate CPR, >20mmHg good prognosis, sudden rise >40mmHg suggests ROSC' },
-      { id: 'c13-10', category: 'clinical-reasoning', description: 'Recognise refractory VF and escalate management beyond standard ALS algorithm', points: 15, yearLevel: ['4th-year'], complexity: ['advanced'], critical: true, rationale: 'Refractory VF requires advanced strategies — DSE, esmolol, lignocaine' },
-      { id: 'c13-11', category: 'intervention', description: 'Consider double sequential defibrillation after 5+ failed shocks', points: 10, yearLevel: ['4th-year'], complexity: ['advanced'] },
+      { id: 'c13-10', category: 'clinical-reasoning', description: 'Recognise refractory VF and escalate management beyond standard ALS algorithm', points: 15, yearLevel: ['4th-year'], complexity: ['advanced'], critical: true, rationale: 'Refractory VF requires advanced strategies — DSED (Class 2b, investigational), esmolol, lignocaine' },
+      { id: 'c13-11', category: 'intervention', description: 'Consider double sequential defibrillation (DSED) after 5+ failed shocks — AHA 2025 Class 2b: not established, discuss as investigational', points: 10, yearLevel: ['4th-year'], complexity: ['advanced'] },
       { id: 'c13-12', category: 'medication', description: 'Consider Esmolol 500mcg/kg IV or Lignocaine 1mg/kg IV for refractory VF', points: 10, yearLevel: ['4th-year'], complexity: ['advanced'] },
       { id: 'c13-13', category: 'clinical-reasoning', description: 'Systematically consider reversible causes (4Hs and 4Ts) — especially acute MI and electrolyte abnormalities', points: 10, yearLevel: ['4th-year'], complexity: ['advanced'] },
       { id: 'c13-14', category: 'communication', description: 'Early activation of cardiac catheterisation lab / eCPR pathway', points: 10, yearLevel: ['4th-year'], complexity: ['advanced'], critical: true },
@@ -9638,7 +9640,7 @@ export const caseDatabase: CaseScenario[] = [
     ],
     teachingPoints: [
       'Refractory VF is defined as VF persisting after 3 or more defibrillation attempts with appropriate energy and CPR',
-      'Double sequential defibrillation (DSE) involves two defibrillators with pads in different vectors (anterior-lateral AND anterior-posterior) — emerging evidence suggests improved conversion rates',
+      'Double sequential defibrillation (DSED) involves two defibrillators with pads in different vectors (anterior-lateral AND anterior-posterior). AHA 2025 rates DSED as Class 2b — usefulness is NOT established. While some observational studies suggest improved conversion rates, this remains investigational and should not be treated as standard practice. Discuss as an emerging option only.',
       'Esmolol 500mcg/kg IV bolus is emerging as a treatment for refractory VF — acts by reducing myocardial oxygen demand and may facilitate defibrillation',
       'Lignocaine 1mg/kg IV is an alternative antiarrhythmic to amiodarone — some evidence suggests superiority in refractory VF, particularly from cardiac aetiology',
       'ETCO2 monitoring is essential — values >10mmHg indicate adequate CPR quality, >20mmHg associated with better outcomes, sudden rise >40mmHg is earliest sign of ROSC',
@@ -9647,9 +9649,10 @@ export const caseDatabase: CaseScenario[] = [
       'Pre-workout supplements with high caffeine content (300-600mg per dose) can precipitate arrhythmias, especially combined with intense exercise and dehydration',
       'Anabolic steroid use is associated with left ventricular hypertrophy, coronary artery disease, and increased risk of sudden cardiac death during exertion',
       'In the gym setting — always check for supplements, syringes, and medications in the patient\'s bag. This information changes differential diagnosis and management',
+      'AHA 2025: IV access is preferred over IO in adult cardiac arrest. IO is second-line when IV is not achievable',
       'Transport decisions in refractory VF: do NOT terminate on scene if patient is young, arrest was witnessed, rhythm is shockable. Transport with mechanical CPR to PCI-capable centre',
       'Magnesium 2g IV can be given empirically in refractory VF — may be particularly useful if hypomagnesaemia from exercise/dehydration/supplements',
-      'Post-ROSC care is critical: targeted temperature management 32-36°C, maintain MAP >65mmHg, emergent coronary angiography, avoid hyperoxia (target SpO2 94-98%)'
+      'Post-ROSC care (AHA 2025): temperature control at 32-36°C for at least 36 hours in adults who remain unresponsive. Maintain MAP >65mmHg, emergent coronary angiography, avoid hyperoxia (target SpO2 94-98%)'
     ],
     commonPitfalls: [
       'Failing to recognise refractory VF and continuing standard ALS without escalation',
@@ -9849,7 +9852,7 @@ export const caseDatabase: CaseScenario[] = [
           'Warm the ambulance to maximum temperature',
           'Handle gently — rough handling can precipitate VF in hypothermic patients',
           'Active rewarming target: 1°C per hour until 32°C, then slower',
-          'Post-ROSC target temperature 36°C (NOT therapeutic hypothermia in drowning — they are already cold)',
+          'Post-ROSC target temperature 36°C (NOT therapeutic hypothermia in drowning — they are already cold). AHA 2025: once rewarmed, maintain temperature control 32-36°C for at least 36 hours if patient remains unresponsive',
           'Continuous core temperature monitoring'
         ]
       }
@@ -9970,7 +9973,7 @@ export const caseDatabase: CaseScenario[] = [
       { id: 'c14-1', category: 'safety', description: 'Scene safety — wet poolside, ensure safe access', points: 3, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'] },
       { id: 'c14-2', category: 'abcde', description: 'Confirm cardiac arrest — extended pulse check (30-60 seconds in hypothermia)', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true, rationale: 'Pulses may be very faint or slow in severe hypothermia — do not declare absent too quickly' },
       { id: 'c14-3', category: 'intervention', description: 'Begin with 5 rescue breaths FIRST (drowning protocol) before compressions', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true, rationale: 'Drowning is a hypoxic arrest — ventilation is the priority' },
-      { id: 'c14-4', category: 'intervention', description: 'Start pediatric CPR at 15:2 ratio with correct depth (1/3 AP diameter)', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true },
+      { id: 'c14-4', category: 'intervention', description: 'Start pediatric CPR at 15:2 ratio with correct depth (1/3 AP diameter). AHA 2025: pauses in compressions must be <10 seconds', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true },
       { id: 'c14-5', category: 'intervention', description: 'Remove all wet clothing and begin active rewarming immediately', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true },
       { id: 'c14-6', category: 'abcde', description: 'Suction airway — clear water and vomitus, manage high aspiration risk', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'] },
       { id: 'c14-7', category: 'intervention', description: 'Obtain core temperature and recognise severe hypothermia (<30°C)', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true },
@@ -9996,7 +9999,7 @@ export const caseDatabase: CaseScenario[] = [
       'Handle hypothermic patients GENTLY — rough handling, rapid position changes, and cold stimuli can precipitate ventricular fibrillation in the irritable hypothermic myocardium',
       'Gastric distension is very common in drowning — children swallow large amounts of water. Decompress with NG/OG tube if available to improve ventilation',
       'Post-ROSC hypothermic bradycardia (HR 40-50) is a normal physiological response — do NOT treat with atropine. The heart rate will increase as the patient rewarms.',
-      'Post-ROSC temperature target in drowning: 36°C (normothermia). These patients are already hypothermic — aggressive rewarming is the priority, not therapeutic cooling',
+      'Post-ROSC temperature target in drowning: 36°C (normothermia). These patients are already hypothermic — aggressive rewarming is the priority, not therapeutic cooling. AHA 2025: for adults who remain unresponsive post-ROSC, maintain temperature control (32-36°C) for at least 36 hours. In pediatric drowning, rewarm to normothermia first.',
       'UAE drowning context: hotel pools (especially unheated winter pools), wadis after rain, and construction site water features are common drowning locations. Many hotels lack lifeguards at all hours.',
       'Safeguarding consideration: always document the circumstances of paediatric drowning — who was supervising, how long was the child unattended, any suspicious circumstances',
       'ECMO rewarming is the gold standard for hypothermic cardiac arrest — transport to an ECMO-capable centre if no ROSC despite rewarming above 32°C',
