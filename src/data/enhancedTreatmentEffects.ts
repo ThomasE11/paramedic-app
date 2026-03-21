@@ -231,7 +231,7 @@ export const TREATMENTS: Treatment[] = [
     icon: 'Droplets',
     color: 'cyan',
     effects: [
-      { vitalSign: 'spo2', changeType: 'increase', value: 15, minValue: 80, maxValue: 99 },
+      { vitalSign: 'spo2', changeType: 'increase', value: 15, minValue: 80, maxValue: 98 },
       { vitalSign: 'respiration', changeType: 'decrease', value: 6, minValue: 12 },
       { vitalSign: 'pulse', changeType: 'decrease', value: 12, minValue: 60 },
     ],

@@ -227,7 +227,7 @@ export const PATHOLOGY_MODIFIERS: Record<string, PathologyModifier[]> = {
     {
       treatmentId: 'oxygen_nonrebreather',
       effectivenessMultiplier: 0.6,
-      spo2Ceiling: 99,
+      spo2Ceiling: 98,
       rationale: 'Hyperoxia in AMI may increase infarct size via coronary vasoconstriction and ROS generation. Titrate to 94-98%.',
     },
     {
@@ -257,7 +257,7 @@ export const PATHOLOGY_MODIFIERS: Record<string, PathologyModifier[]> = {
     {
       treatmentId: 'oxygen_nonrebreather',
       effectivenessMultiplier: 0.6,
-      spo2Ceiling: 99,
+      spo2Ceiling: 98,
       rationale: 'Hyperoxia in AMI increases oxidative stress. Target SpO2 94-98%.',
     },
     {
