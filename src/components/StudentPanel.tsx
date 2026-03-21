@@ -391,7 +391,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
     setCaseStartTime(Date.now());
     lastActivityRef.current = Date.now();
     setPhase('vitals');
-    toast.success('Case started — assess the patient and begin treatment');
+    toast.success('Case started — begin your assessment', { duration: 3000 });
 
     // Start deterioration timer — patient deteriorates if not treated
     if (deteriorationIntervalRef.current) clearInterval(deteriorationIntervalRef.current);
@@ -545,17 +545,17 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
     const hasAbnormal = findings.some(f => f.severity === 'abnormal');
 
     if (hasCritical) {
-      toast.error(`Assessment: Critical finding!`, {
+      toast.error(`Critical finding!`, {
         description: findings.filter(f => f.severity === 'critical').map(f => f.value).join('; '),
         duration: 6000,
       });
     } else if (hasAbnormal) {
-      toast.warning(`Assessment: Abnormal finding`, {
+      toast.warning(`Abnormal finding`, {
         description: findings.filter(f => f.severity === 'abnormal').map(f => f.value).join('; '),
         duration: 4000,
       });
     } else {
-      toast.success(`Assessment: Normal findings`, { duration: 3000 });
+      // Normal findings — no toast needed, findings panel shows them
     }
   }, [assessmentTracker, currentCase, caseStartTime]);
 
@@ -1076,42 +1076,50 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
               </div>
             )}
 
-            {/* Clinical Assessment Panel */}
-            {assessmentTracker && (
-              <ClinicalAssessmentPanel
-                caseCategory={currentCase.category}
-                tracker={assessmentTracker}
-                onPerformAssessment={handlePerformAssessment}
-                activeFindings={activeFindings}
-              />
-            )}
+            {/* ===== Two-column layout: Monitor (right/sticky) + Assessments (left) ===== */}
+            <div className="flex flex-col lg:grid lg:grid-cols-[1fr,380px] lg:gap-4 xl:grid-cols-[1fr,420px]">
+              {/* Monitor — shown FIRST on mobile (order-1), right column on desktop (sticky) */}
+              <div className="order-1 lg:order-2 mb-4 lg:mb-0 lg:sticky lg:top-4 lg:self-start">
+                <Suspense fallback={<LoadingCard />}>
+                  <VitalSignsMonitor
+                    initialVitals={currentVitals || ensureCompleteVitals(currentCase.vitalSignsProgression.initial)}
+                    previousVitals={previousVitals}
+                    deteriorationVitals={currentCase.vitalSignsProgression.deterioration ? ensureCompleteVitals(currentCase.vitalSignsProgression.deterioration) : undefined}
+                    onVitalChange={(vitals) => {
+                      const completeVitals = ensureCompleteVitals(vitals);
+                      setCurrentVitals(completeVitals);
+                      setVitalsHistory(prev => [...prev, completeVitals]);
+                    }}
+                    caseCategory={currentCase.category}
+                    caseSubcategory={currentCase.subcategory}
+                    caseTitle={currentCase.title}
+                    appliedTreatments={appliedTreatments.map(t => t.description)}
+                  />
+                </Suspense>
+              </div>
 
-            {/* Vital Signs Monitor */}
-            <Suspense fallback={<LoadingCard />}>
-              <VitalSignsMonitor
-                initialVitals={currentVitals || ensureCompleteVitals(currentCase.vitalSignsProgression.initial)}
-                previousVitals={previousVitals}
-                deteriorationVitals={currentCase.vitalSignsProgression.deterioration ? ensureCompleteVitals(currentCase.vitalSignsProgression.deterioration) : undefined}
-                onVitalChange={(vitals) => {
-                  const completeVitals = ensureCompleteVitals(vitals);
-                  setCurrentVitals(completeVitals);
-                  setVitalsHistory(prev => [...prev, completeVitals]);
-                }}
-                caseCategory={currentCase.category}
-                caseSubcategory={currentCase.subcategory}
-                caseTitle={currentCase.title}
-                appliedTreatments={appliedTreatments.map(t => t.description)}
-              />
-            </Suspense>
+              {/* Assessments + Auscultation — below monitor on mobile, left column on desktop */}
+              <div className="order-2 lg:order-1 space-y-4 sm:space-y-5">
+                {/* Clinical Assessment Panel */}
+                {assessmentTracker && (
+                  <ClinicalAssessmentPanel
+                    caseCategory={currentCase.category}
+                    tracker={assessmentTracker}
+                    onPerformAssessment={handlePerformAssessment}
+                    activeFindings={activeFindings}
+                  />
+                )}
 
-            {/* Auscultation Panel — listen to the patient */}
-            {patientState && (
-              <AuscultationPanel
-                sounds={patientState.sounds}
-                isExpanded={['respiratory', 'cardiac', 'cardiac-ecg', 'thoracic'].includes(currentCase.category)}
-                isStudentView={true}
-              />
-            )}
+                {/* Auscultation Panel — listen to the patient */}
+                {patientState && (
+                  <AuscultationPanel
+                    sounds={patientState.sounds}
+                    isExpanded={['respiratory', 'cardiac', 'cardiac-ecg', 'thoracic'].includes(currentCase.category)}
+                    isStudentView={true}
+                  />
+                )}
+              </div>
+            </div>
 
             {/* Cardiac Arrest Status Bar */}
             {arrestActive && (
