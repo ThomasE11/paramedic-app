@@ -15,11 +15,13 @@ import {
   Stethoscope, Volume2, VolumeX, AlertTriangle, Info,
   ChevronDown, ChevronUp,
 } from 'lucide-react';
-import type { ClinicalSoundState, BreathSoundType } from '@/data/clinicalSounds';
+import type { ClinicalSoundState, BreathSoundType, BowelSoundType } from '@/data/clinicalSounds';
 import {
   BREATH_SOUND_DESCRIPTIONS,
+  BOWEL_SOUND_DESCRIPTIONS,
   playBreathSound,
   playHeartSound,
+  playBowelSound,
   stopAllSounds,
   isAudioAvailable,
 } from '@/data/clinicalSounds';
@@ -198,6 +200,43 @@ export function AuscultationPanel({ sounds, isExpanded: initialExpanded = false,
                 <p className="text-[10px] text-muted-foreground">Audio not available</p>
               )}
             </div>
+
+            {/* Bowel Sounds — play button only */}
+            {sounds.bowelSounds && (
+              <div className="rounded-xl border border-border/60 bg-card/50 p-3 sm:p-4 flex items-center justify-between">
+                <span className="font-semibold text-xs sm:text-sm">Bowel Sounds</span>
+                {hasAudio ? (
+                  <div className="flex items-center gap-2">
+                    <p className="text-[10px] text-muted-foreground">
+                      {isPlaying === 'bowel' ? 'Listening...' : 'Tap to listen'}
+                    </p>
+                    <Button
+                      variant={isPlaying === 'bowel' ? 'destructive' : 'outline'}
+                      size="sm"
+                      className="h-10 w-10 sm:h-12 sm:w-12 rounded-full p-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (isPlaying === 'bowel') {
+                          handleStopSound();
+                        } else {
+                          setIsPlaying('bowel');
+                          playBowelSound(sounds.bowelSounds!, 6000);
+                          setTimeout(() => setIsPlaying(null), 6000);
+                        }
+                      }}
+                    >
+                      {isPlaying === 'bowel' ? (
+                        <VolumeX className="h-4 w-4 sm:h-5 sm:w-5 animate-pulse" />
+                      ) : (
+                        <Volume2 className="h-4 w-4 sm:h-5 sm:w-5" />
+                      )}
+                    </Button>
+                  </div>
+                ) : (
+                  <p className="text-[10px] text-muted-foreground">Audio not available</p>
+                )}
+              </div>
+            )}
           </CardContent>
         )}
       </Card>
@@ -342,6 +381,44 @@ export function AuscultationPanel({ sounds, isExpanded: initialExpanded = false,
               )}
             </div>
           </div>
+
+          {/* Bowel Sounds */}
+          {sounds.bowelSounds && (
+            <div className="rounded-xl border border-border/60 bg-card/50 p-2 sm:p-3">
+              <div className="flex items-center gap-1.5 sm:gap-2 mb-1">
+                <span className="font-semibold text-xs sm:text-sm">Bowel Sounds</span>
+                <Badge variant="outline" className="text-[9px] sm:text-[10px]">
+                  {BOWEL_SOUND_DESCRIPTIONS[sounds.bowelSounds]?.name || sounds.bowelSounds}
+                </Badge>
+                {hasAudio && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0 ml-auto"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (isPlaying === 'bowel') {
+                        handleStopSound();
+                      } else {
+                        setIsPlaying('bowel');
+                        playBowelSound(sounds.bowelSounds!, 6000);
+                        setTimeout(() => setIsPlaying(null), 6000);
+                      }
+                    }}
+                  >
+                    {isPlaying === 'bowel' ? (
+                      <VolumeX className="h-4 w-4 animate-pulse text-red-500" />
+                    ) : (
+                      <Volume2 className="h-4 w-4" />
+                    )}
+                  </Button>
+                )}
+              </div>
+              <p className="text-[10px] sm:text-[11px] text-muted-foreground">
+                {BOWEL_SOUND_DESCRIPTIONS[sounds.bowelSounds]?.clinicalSignificance}
+              </p>
+            </div>
+          )}
 
           {/* Additional sounds */}
           {sounds.additionalSounds.length > 0 && (

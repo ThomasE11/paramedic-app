@@ -39,10 +39,21 @@ export type HeartSoundType =
   | 'absent'          // Cardiac arrest
   ;
 
+export type BowelSoundType =
+  | 'normal'           // Regular intermittent gurgling (normoactive)
+  | 'hyperactive'      // Frequent, loud, high-pitched (gastroenteritis, early obstruction, diarrhoea)
+  | 'hypoactive'       // Infrequent, quiet (post-operative ileus, peritonitis, constipation)
+  | 'absent'           // No bowel sounds after 3+ minutes (paralytic ileus, advanced peritonitis)
+  | 'tinkling'         // High-pitched metallic sounds (mechanical bowel obstruction)
+  | 'borborygmi'       // Loud prolonged gurgling (hunger, incomplete obstruction)
+  | 'bruit'            // Vascular whooshing sound (aortic aneurysm, renal artery stenosis)
+  ;
+
 export interface ClinicalSoundState {
   leftLung: BreathSoundType;
   rightLung: BreathSoundType;
   heartSound: HeartSoundType;
+  bowelSounds?: BowelSoundType;  // Abdominal auscultation
   additionalSounds: string[];  // e.g., "audible wheeze", "gurgling", "stridor heard without stethoscope"
   description: string;         // Human-readable description for display
 }
@@ -122,6 +133,64 @@ export const BREATH_SOUND_DESCRIPTIONS: Record<BreathSoundType, {
     description: 'Loud snoring-type breathing indicating partial upper airway obstruction by the tongue.',
     clinicalSignificance: 'Partial airway obstruction — reduced consciousness, needs airway management',
     audioDescription: 'Loud snoring sound synchronous with breathing'
+  },
+};
+
+export const BOWEL_SOUND_DESCRIPTIONS: Record<BowelSoundType, {
+  name: string;
+  description: string;
+  clinicalSignificance: string;
+  audioDescription: string;
+  conditions: string[];
+}> = {
+  'normal': {
+    name: 'Normal Bowel Sounds',
+    description: 'Intermittent gurgling sounds heard every 5-15 seconds. Normoactive bowel sounds in all four quadrants.',
+    clinicalSignificance: 'Normal peristalsis — functional gastrointestinal tract',
+    audioDescription: 'Soft intermittent gurgling or clicking sounds, irregular rhythm',
+    conditions: ['Healthy abdomen', 'Non-abdominal presentations'],
+  },
+  'hyperactive': {
+    name: 'Hyperactive Bowel Sounds',
+    description: 'Frequent, loud, high-pitched gurgling heard continuously. Sounds occur every 1-3 seconds.',
+    clinicalSignificance: 'Increased peristalsis — gastroenteritis, early mechanical obstruction, diarrhoeal illness, post-laxative',
+    audioDescription: 'Loud, frequent, rushing gurgling sounds like water flowing through pipes',
+    conditions: ['Gastroenteritis', 'Early bowel obstruction', 'Diarrhoea', 'Food poisoning', 'Crohn\'s flare'],
+  },
+  'hypoactive': {
+    name: 'Hypoactive Bowel Sounds',
+    description: 'Infrequent, quiet bowel sounds. Only 1-2 sounds heard per minute. Sluggish peristalsis.',
+    clinicalSignificance: 'Reduced peristalsis — post-operative ileus, peritonitis onset, opiate use, electrolyte imbalance',
+    audioDescription: 'Rare, faint gurgling sounds with long silent intervals between them',
+    conditions: ['Post-operative ileus', 'Early peritonitis', 'Opioid use', 'Constipation', 'Hypokalaemia'],
+  },
+  'absent': {
+    name: 'Absent Bowel Sounds',
+    description: 'No bowel sounds detected after auscultating for a full 3 minutes in all four quadrants.',
+    clinicalSignificance: 'CRITICAL — paralytic ileus, advanced peritonitis, mesenteric ischaemia. Must auscultate for minimum 3 minutes before declaring absent.',
+    audioDescription: 'Complete silence — no gurgling, clicking, or movement sounds',
+    conditions: ['Paralytic ileus', 'Generalised peritonitis', 'Mesenteric ischaemia', 'Post-operative (early)'],
+  },
+  'tinkling': {
+    name: 'High-Pitched Tinkling',
+    description: 'High-pitched, metallic tinkling sounds. Suggests fluid and air under pressure in a distended bowel loop.',
+    clinicalSignificance: 'Mechanical bowel obstruction — fluid sloshing in distended obstructed bowel. Requires surgical review.',
+    audioDescription: 'Like small bells or metallic pinging sounds, high-pitched and musical',
+    conditions: ['Mechanical bowel obstruction', 'Adhesive small bowel obstruction', 'Volvulus'],
+  },
+  'borborygmi': {
+    name: 'Borborygmi',
+    description: 'Loud, prolonged gurgling rumbles. Often audible without a stethoscope.',
+    clinicalSignificance: 'Vigorous peristalsis — hunger, incomplete obstruction, irritable bowel, anxiety',
+    audioDescription: 'Loud stomach rumbling or growling, prolonged and echoing',
+    conditions: ['Hunger', 'Incomplete bowel obstruction', 'IBS', 'Anxiety', 'Fasting'],
+  },
+  'bruit': {
+    name: 'Abdominal Bruit',
+    description: 'Vascular whooshing sound heard over aorta or renal arteries. Indicates turbulent blood flow.',
+    clinicalSignificance: 'VASCULAR — aortic aneurysm (epigastric bruit), renal artery stenosis (flank bruit). Do NOT palpate deeply if AAA suspected.',
+    audioDescription: 'Blowing or whooshing sound synchronous with pulse, similar to a cardiac murmur but heard over the abdomen',
+    conditions: ['Abdominal aortic aneurysm', 'Renal artery stenosis', 'Hepatic artery stenosis'],
   },
 };
 
@@ -340,11 +409,22 @@ export function getInitialSounds(
     };
   }
 
+  // Determine bowel sounds based on findings
+  let bowelSounds: BowelSoundType = 'normal';
+  if (findingsStr.includes('ileus') || findingsStr.includes('paralytic')) bowelSounds = 'absent';
+  else if (findingsStr.includes('peritonit') || findingsStr.includes('rigid abdomen')) bowelSounds = 'absent';
+  else if (findingsStr.includes('bowel obstruct') || findingsStr.includes('vomiting') && findingsStr.includes('distend')) bowelSounds = 'tinkling';
+  else if (findingsStr.includes('gastroenter') || findingsStr.includes('diarrh') || findingsStr.includes('food poison')) bowelSounds = 'hyperactive';
+  else if (findingsStr.includes('constipat') || findingsStr.includes('post-op') || findingsStr.includes('opioid')) bowelSounds = 'hypoactive';
+  else if (findingsStr.includes('aortic aneurysm') || findingsStr.includes('aaa')) bowelSounds = 'bruit';
+  else if (findingsStr.includes('hunger') || findingsStr.includes('fasting') || findingsStr.includes('borborygmi')) bowelSounds = 'borborygmi';
+
   // Default for all other cases
   return {
     leftLung: 'clear',
     rightLung: 'clear',
     heartSound: 'normal',
+    bowelSounds,
     additionalSounds: [],
     description: 'Clear lungs bilaterally. Normal heart sounds.'
   };
@@ -1517,6 +1597,278 @@ export function playHeartSound(soundType: HeartSoundType, durationMs: number = 5
   filter.connect(masterGain);
   source.start();
   source.stop(ctx.currentTime + duration);
+}
+
+// ============================================================================
+// BOWEL SOUND SYNTHESIS
+// ============================================================================
+
+/**
+ * Play synthesised bowel/abdominal sounds.
+ * Uses filtered noise bursts and tonal elements to simulate peristaltic gurgling.
+ */
+export function playBowelSound(soundType: BowelSoundType, durationMs: number = 6000): void {
+  const AudioCtx = (window as any).AudioContext || (window as any).webkitAudioContext;
+  if (!AudioCtx) return;
+  const ctx: AudioContext = new AudioCtx();
+  const dur = durationMs / 1000;
+
+  // Pink noise buffer for base texture
+  const sampleRate = ctx.sampleRate;
+  const bufferLength = Math.ceil(sampleRate * dur);
+  const noiseBuffer = ctx.createBuffer(1, bufferLength, sampleRate);
+  const noiseData = noiseBuffer.getChannelData(0);
+
+  // Simple pink noise approximation
+  let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+  for (let i = 0; i < bufferLength; i++) {
+    const white = Math.random() * 2 - 1;
+    b0 = 0.99886 * b0 + white * 0.0555179;
+    b1 = 0.99332 * b1 + white * 0.0750759;
+    b2 = 0.96900 * b2 + white * 0.1538520;
+    b3 = 0.86650 * b3 + white * 0.3104856;
+    b4 = 0.55000 * b4 + white * 0.5329522;
+    b5 = -0.7616 * b5 - white * 0.0168980;
+    noiseData[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.05;
+    b6 = white * 0.115926;
+  }
+
+  const masterGain = ctx.createGain();
+  masterGain.gain.setValueAtTime(0.3, ctx.currentTime);
+  masterGain.connect(ctx.destination);
+
+  switch (soundType) {
+    case 'normal': {
+      // Intermittent gurgling every 2-4 seconds
+      const gurgleCount = Math.floor(dur / 3);
+      for (let g = 0; g < gurgleCount; g++) {
+        const startTime = ctx.currentTime + g * (2 + Math.random() * 2);
+        const gurgleDur = 0.3 + Math.random() * 0.5;
+
+        // Filtered noise burst
+        const source = ctx.createBufferSource();
+        source.buffer = noiseBuffer;
+        const bp = ctx.createBiquadFilter();
+        bp.type = 'bandpass';
+        bp.frequency.value = 200 + Math.random() * 300; // 200-500 Hz
+        bp.Q.value = 2;
+        const env = ctx.createGain();
+        env.gain.setValueAtTime(0, startTime);
+        env.gain.linearRampToValueAtTime(0.15 + Math.random() * 0.1, startTime + 0.05);
+        env.gain.exponentialRampToValueAtTime(0.001, startTime + gurgleDur);
+        source.connect(bp).connect(env).connect(masterGain);
+        source.start(startTime);
+        source.stop(startTime + gurgleDur + 0.1);
+
+        // Low tonal element for body
+        const osc = ctx.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(80 + Math.random() * 60, startTime);
+        osc.frequency.exponentialRampToValueAtTime(120 + Math.random() * 80, startTime + gurgleDur);
+        const oscEnv = ctx.createGain();
+        oscEnv.gain.setValueAtTime(0, startTime);
+        oscEnv.gain.linearRampToValueAtTime(0.04, startTime + 0.03);
+        oscEnv.gain.exponentialRampToValueAtTime(0.001, startTime + gurgleDur);
+        osc.connect(oscEnv).connect(masterGain);
+        osc.start(startTime);
+        osc.stop(startTime + gurgleDur + 0.1);
+      }
+      break;
+    }
+
+    case 'hyperactive': {
+      // Frequent, loud, rushing gurgles every 0.5-1.5 seconds
+      const gurgleCount = Math.floor(dur / 0.8);
+      for (let g = 0; g < gurgleCount; g++) {
+        const startTime = ctx.currentTime + g * (0.5 + Math.random() * 1.0);
+        const gurgleDur = 0.4 + Math.random() * 0.8;
+
+        const source = ctx.createBufferSource();
+        source.buffer = noiseBuffer;
+        const bp = ctx.createBiquadFilter();
+        bp.type = 'bandpass';
+        bp.frequency.value = 250 + Math.random() * 400;
+        bp.Q.value = 1.5;
+        const env = ctx.createGain();
+        env.gain.setValueAtTime(0, startTime);
+        env.gain.linearRampToValueAtTime(0.25 + Math.random() * 0.15, startTime + 0.03);
+        env.gain.exponentialRampToValueAtTime(0.001, startTime + gurgleDur);
+        source.connect(bp).connect(env).connect(masterGain);
+        source.start(startTime);
+        source.stop(startTime + gurgleDur + 0.1);
+
+        // Higher pitched tonal — rushing fluid sound
+        const osc = ctx.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(150 + Math.random() * 200, startTime);
+        osc.frequency.linearRampToValueAtTime(100 + Math.random() * 100, startTime + gurgleDur);
+        const oscEnv = ctx.createGain();
+        oscEnv.gain.setValueAtTime(0, startTime);
+        oscEnv.gain.linearRampToValueAtTime(0.06, startTime + 0.02);
+        oscEnv.gain.exponentialRampToValueAtTime(0.001, startTime + gurgleDur);
+        osc.connect(oscEnv).connect(masterGain);
+        osc.start(startTime);
+        osc.stop(startTime + gurgleDur + 0.1);
+      }
+      break;
+    }
+
+    case 'hypoactive': {
+      // Very rare, faint sounds — one every 5-8 seconds
+      const gurgleCount = Math.max(1, Math.floor(dur / 6));
+      for (let g = 0; g < gurgleCount; g++) {
+        const startTime = ctx.currentTime + 2 + g * (5 + Math.random() * 3);
+        if (startTime > ctx.currentTime + dur) break;
+        const gurgleDur = 0.2 + Math.random() * 0.3;
+
+        const source = ctx.createBufferSource();
+        source.buffer = noiseBuffer;
+        const bp = ctx.createBiquadFilter();
+        bp.type = 'bandpass';
+        bp.frequency.value = 150 + Math.random() * 200;
+        bp.Q.value = 3;
+        const lp = ctx.createBiquadFilter();
+        lp.type = 'lowpass';
+        lp.frequency.value = 400;
+        const env = ctx.createGain();
+        env.gain.setValueAtTime(0, startTime);
+        env.gain.linearRampToValueAtTime(0.06, startTime + 0.05);
+        env.gain.exponentialRampToValueAtTime(0.001, startTime + gurgleDur);
+        source.connect(bp).connect(lp).connect(env).connect(masterGain);
+        source.start(startTime);
+        source.stop(startTime + gurgleDur + 0.1);
+      }
+      break;
+    }
+
+    case 'absent': {
+      // Near silence — very faint room ambience only
+      const source = ctx.createBufferSource();
+      source.buffer = noiseBuffer;
+      const lp = ctx.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.value = 100;
+      const env = ctx.createGain();
+      env.gain.setValueAtTime(0.005, ctx.currentTime);
+      source.connect(lp).connect(env).connect(masterGain);
+      source.start();
+      source.stop(ctx.currentTime + dur);
+      break;
+    }
+
+    case 'tinkling': {
+      // High-pitched metallic pings — obstructed bowel
+      const pingCount = Math.floor(dur / 1.5);
+      for (let p = 0; p < pingCount; p++) {
+        const startTime = ctx.currentTime + p * (1.0 + Math.random() * 1.5);
+        if (startTime > ctx.currentTime + dur) break;
+
+        // High-pitched metallic ping
+        const osc = ctx.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800 + Math.random() * 600, startTime); // 800-1400 Hz
+        osc.frequency.exponentialRampToValueAtTime(400 + Math.random() * 200, startTime + 0.3);
+        const env = ctx.createGain();
+        env.gain.setValueAtTime(0, startTime);
+        env.gain.linearRampToValueAtTime(0.12, startTime + 0.005); // Sharp attack
+        env.gain.exponentialRampToValueAtTime(0.001, startTime + 0.15 + Math.random() * 0.2);
+        osc.connect(env).connect(masterGain);
+        osc.start(startTime);
+        osc.stop(startTime + 0.5);
+
+        // Harmonic for metallic quality
+        const osc2 = ctx.createOscillator();
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(osc.frequency.value * 2.7, startTime);
+        const env2 = ctx.createGain();
+        env2.gain.setValueAtTime(0, startTime);
+        env2.gain.linearRampToValueAtTime(0.03, startTime + 0.005);
+        env2.gain.exponentialRampToValueAtTime(0.001, startTime + 0.1);
+        osc2.connect(env2).connect(masterGain);
+        osc2.start(startTime);
+        osc2.stop(startTime + 0.3);
+      }
+      break;
+    }
+
+    case 'borborygmi': {
+      // Loud, prolonged rumbling
+      const rumbleCount = Math.max(1, Math.floor(dur / 3));
+      for (let r = 0; r < rumbleCount; r++) {
+        const startTime = ctx.currentTime + r * (2 + Math.random() * 2);
+        const rumbleDur = 1.0 + Math.random() * 1.5;
+
+        // Deep rumbling noise
+        const source = ctx.createBufferSource();
+        source.buffer = noiseBuffer;
+        const bp = ctx.createBiquadFilter();
+        bp.type = 'bandpass';
+        bp.frequency.value = 100 + Math.random() * 150;
+        bp.Q.value = 1;
+        const env = ctx.createGain();
+        env.gain.setValueAtTime(0, startTime);
+        env.gain.linearRampToValueAtTime(0.3, startTime + 0.1);
+        env.gain.setValueAtTime(0.3, startTime + rumbleDur * 0.7);
+        env.gain.exponentialRampToValueAtTime(0.001, startTime + rumbleDur);
+        source.connect(bp).connect(env).connect(masterGain);
+        source.start(startTime);
+        source.stop(startTime + rumbleDur + 0.1);
+
+        // Tonal rumble — low frequency wobble
+        const osc = ctx.createOscillator();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(50 + Math.random() * 40, startTime);
+        const wobble = ctx.createOscillator();
+        wobble.frequency.value = 4 + Math.random() * 3;
+        const wobbleGain = ctx.createGain();
+        wobbleGain.gain.value = 15;
+        wobble.connect(wobbleGain).connect(osc.frequency);
+        wobble.start(startTime);
+        wobble.stop(startTime + rumbleDur + 0.1);
+        const oscLp = ctx.createBiquadFilter();
+        oscLp.type = 'lowpass';
+        oscLp.frequency.value = 200;
+        const oscEnv = ctx.createGain();
+        oscEnv.gain.setValueAtTime(0, startTime);
+        oscEnv.gain.linearRampToValueAtTime(0.08, startTime + 0.1);
+        oscEnv.gain.exponentialRampToValueAtTime(0.001, startTime + rumbleDur);
+        osc.connect(oscLp).connect(oscEnv).connect(masterGain);
+        osc.start(startTime);
+        osc.stop(startTime + rumbleDur + 0.1);
+      }
+      break;
+    }
+
+    case 'bruit': {
+      // Vascular whooshing synchronous with heartbeat (~70bpm = ~0.86s cycle)
+      const heartInterval = 0.86;
+      const beats = Math.floor(dur / heartInterval);
+      for (let b = 0; b < beats; b++) {
+        const startTime = ctx.currentTime + b * heartInterval;
+        const whooshDur = 0.3;
+
+        // Filtered noise whoosh
+        const source = ctx.createBufferSource();
+        source.buffer = noiseBuffer;
+        const bp = ctx.createBiquadFilter();
+        bp.type = 'bandpass';
+        bp.frequency.value = 200;
+        bp.Q.value = 0.8;
+        const env = ctx.createGain();
+        env.gain.setValueAtTime(0, startTime);
+        env.gain.linearRampToValueAtTime(0.15, startTime + 0.05);
+        env.gain.linearRampToValueAtTime(0.18, startTime + whooshDur * 0.4); // Diamond shape
+        env.gain.exponentialRampToValueAtTime(0.001, startTime + whooshDur);
+        source.connect(bp).connect(env).connect(masterGain);
+        source.start(startTime);
+        source.stop(startTime + whooshDur + 0.1);
+      }
+      break;
+    }
+  }
+
+  // Auto-cleanup
+  setTimeout(() => ctx.close(), durationMs + 500);
 }
 
 /**
