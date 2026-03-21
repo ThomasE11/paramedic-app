@@ -994,6 +994,71 @@ export const TREATMENTS: Treatment[] = [
     ],
     contraindications: ['Under 3 months old', 'Dehydration', 'Renal impairment', 'Active bleeding'],
   },
+  // ===== CARDIAC ARREST SPECIFIC =====
+  {
+    id: 'amiodarone_150mg',
+    name: 'Amiodarone 150mg',
+    description: 'Second dose antiarrhythmic for refractory VF/pVT (after 5th shock)',
+    category: 'medication',
+    onset: 'moderate',
+    onsetTimeSeconds: 10,
+    durationSeconds: 60,
+    icon: 'Activity',
+    color: 'yellow',
+    effects: [
+      { vitalSign: 'pulse', changeType: 'decrease', value: 8, minValue: 60 },
+      { vitalSign: 'bp', changeType: 'decrease', value: 5 },
+    ],
+    contraindications: ['Not given amiodarone 300mg first', 'Non-shockable rhythm'],
+  },
+  {
+    id: 'lucas_device',
+    name: 'LUCAS Mechanical CPR',
+    description: 'Mechanical chest compression device — 30-45s setup pause required',
+    category: 'circulation',
+    onset: 'immediate',
+    onsetTimeSeconds: 35, // Setup time — no compressions during this period
+    durationSeconds: 1,
+    icon: 'Cog',
+    color: 'gray',
+    effects: [
+      { vitalSign: 'pulse', changeType: 'set', value: 55 },
+      { vitalSign: 'bp', changeType: 'set', value: 50 },
+      { vitalSign: 'spo2', changeType: 'set', value: 80 },
+    ],
+    contraindications: ['Patient too small (<45kg)', 'Traumatic arrest with chest injury'],
+  },
+  {
+    id: 'sodium_bicarbonate',
+    name: 'Sodium Bicarbonate 8.4%',
+    description: 'For known or suspected severe metabolic acidosis, hyperkalaemia',
+    category: 'medication',
+    onset: 'moderate',
+    onsetTimeSeconds: 10,
+    durationSeconds: 60,
+    icon: 'Droplets',
+    color: 'blue',
+    effects: [
+      { vitalSign: 'bp', changeType: 'increase', value: 5 },
+    ],
+    contraindications: ['Routine use in cardiac arrest (not recommended)'],
+  },
+  {
+    id: 'calcium_chloride',
+    name: 'Calcium Chloride 10%',
+    description: 'For hyperkalaemia, calcium channel blocker OD, hypermagnesaemia',
+    category: 'medication',
+    onset: 'fast',
+    onsetTimeSeconds: 5,
+    durationSeconds: 30,
+    icon: 'Zap',
+    color: 'orange',
+    effects: [
+      { vitalSign: 'pulse', changeType: 'increase', value: 10, maxValue: 120 },
+      { vitalSign: 'bp', changeType: 'increase', value: 10 },
+    ],
+    contraindications: ['Digoxin toxicity (relative)', 'Concurrent sodium bicarbonate (precipitates)'],
+  },
 ];
 
 // Get treatments by category

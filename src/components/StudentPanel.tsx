@@ -148,6 +148,19 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
   const [hintVisible, setHintVisible] = useState(false);
   const [currentHint, setCurrentHint] = useState<string>('');
 
+  // Cardiac arrest management — integrated into existing flow
+  const [arrestActive, setArrestActive] = useState(false);
+  const [cprCycleTimer, setCprCycleTimer] = useState(120); // 2 min countdown
+  const [cprCycleNumber, setCprCycleNumber] = useState(0);
+  const [cprRunning, setCprRunning] = useState(false);
+  const [shockCount, setShockCount] = useState(0);
+  const [lastAdrenalineTime, setLastAdrenalineTime] = useState<number | null>(null);
+  const [adrenalineDoses, setAdrenalineDoses] = useState(0);
+  const [amiodaroneDoses, setAmiodaroneDoses] = useState(0);
+  const [arrestStartTime, setArrestStartTime] = useState<number | null>(null);
+  const [arrestTimeline, setArrestTimeline] = useState<Array<{time: number; event: string; type: string}>>([]);
+  const cprTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   // Timer
   const [caseStartTime, setCaseStartTime] = useState<number | null>(null);
   const [caseEndTime, setCaseEndTime] = useState<number | null>(null);
@@ -203,6 +216,84 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
       setSceneTimeWarnings(prev => new Set(prev).add('15min'));
     }
   }, [elapsedSeconds, caseStartTime, caseEndTime, phase, sceneTimeWarnings]);
+
+  // Cardiac arrest detection — activate arrest mode when patient enters arrest
+  useEffect(() => {
+    if (!patientState) return;
+    if (patientState.isInArrest && !arrestActive) {
+      setArrestActive(true);
+      setArrestStartTime(Date.now());
+      setCprCycleNumber(0);
+      setCprCycleTimer(120);
+      setShockCount(0);
+      setAdrenalineDoses(0);
+      setAmiodaroneDoses(0);
+      setLastAdrenalineTime(null);
+      setArrestTimeline([{ time: Date.now(), event: 'Cardiac arrest detected', type: 'arrest-start' }]);
+      toast.error('CARDIAC ARREST', {
+        description: 'Patient is in cardiac arrest. Start CPR immediately. Apply defibrillator.',
+        duration: 10000,
+      });
+    } else if (!patientState.isInArrest && arrestActive) {
+      // ROSC achieved
+      setArrestActive(false);
+      setCprRunning(false);
+      if (cprTimerRef.current) clearInterval(cprTimerRef.current);
+      setArrestTimeline(prev => [...prev, { time: Date.now(), event: 'ROSC achieved', type: 'rosc' }]);
+      toast.success('ROSC ACHIEVED', {
+        description: 'Return of spontaneous circulation. Begin post-ROSC care: maintain SpO2 94-98%, avoid hyperventilation, 12-lead ECG, temperature management.',
+        duration: 15000,
+      });
+    }
+  }, [patientState?.isInArrest, arrestActive]);
+
+  // CPR 2-minute cycle countdown
+  useEffect(() => {
+    if (!cprRunning) {
+      if (cprTimerRef.current) clearInterval(cprTimerRef.current);
+      return;
+    }
+    cprTimerRef.current = setInterval(() => {
+      setCprCycleTimer(prev => {
+        if (prev <= 1) {
+          // Cycle complete — prompt rhythm check
+          setCprRunning(false);
+          setCprCycleNumber(n => n + 1);
+          toast.warning('2 minutes — RHYTHM CHECK', {
+            description: 'Pause CPR briefly (<10 sec). Check rhythm. Rotate compressor. Shock if indicated. Resume CPR.',
+            duration: 8000,
+          });
+          setArrestTimeline(prev => [...prev, { time: Date.now(), event: `CPR Cycle complete — rhythm check`, type: 'rhythm-check' }]);
+          return 120; // Reset for next cycle
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => { if (cprTimerRef.current) clearInterval(cprTimerRef.current); };
+  }, [cprRunning]);
+
+  // Adrenaline timing check — warn when overdue
+  useEffect(() => {
+    if (!arrestActive || !cprRunning) return;
+    const checkInterval = setInterval(() => {
+      if (lastAdrenalineTime) {
+        const secsSinceAdr = (Date.now() - lastAdrenalineTime) / 1000;
+        if (secsSinceAdr >= 300 && secsSinceAdr < 305) {
+          toast.error('ADRENALINE OVERDUE', {
+            description: 'Adrenaline is due every 3-5 minutes. Consider giving 1mg IV/IO now.',
+            duration: 8000,
+          });
+        }
+      } else if (adrenalineDoses === 0 && shockCount >= 2) {
+        // After 2nd shock in shockable rhythm, adrenaline is due
+        toast.warning('Consider Adrenaline', {
+          description: 'AHA 2025: Adrenaline 1mg IV after 2nd shock (shockable rhythm) or immediately (non-shockable).',
+          duration: 6000,
+        });
+      }
+    }, 5000);
+    return () => clearInterval(checkInterval);
+  }, [arrestActive, cprRunning, lastAdrenalineTime, adrenalineDoses, shockCount]);
 
   // Inactivity coaching — nudge students who are stuck
   useEffect(() => {
@@ -394,7 +485,36 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
         description: response.description,
       });
     }
-  }, [currentVitals, currentCase, patientState, startGradualChange]);
+
+    // Track arrest-specific drug timing
+    if (arrestActive) {
+      if (treatment.id === 'adrenaline_1mg') {
+        setLastAdrenalineTime(Date.now());
+        setAdrenalineDoses(prev => prev + 1);
+        setArrestTimeline(prev => [...prev, { time: Date.now(), event: `Adrenaline 1mg IV (dose #${adrenalineDoses + 1})`, type: 'drug' }]);
+      }
+      if (treatment.id === 'amiodarone_300mg' || treatment.id === 'amiodarone_150mg') {
+        setAmiodaroneDoses(prev => prev + 1);
+        const dose = treatment.id === 'amiodarone_300mg' ? '300mg' : '150mg';
+        setArrestTimeline(prev => [...prev, { time: Date.now(), event: `Amiodarone ${dose} IV`, type: 'drug' }]);
+      }
+      if (treatment.id === 'defibrillation') {
+        setShockCount(prev => prev + 1);
+        setArrestTimeline(prev => [...prev, {
+          time: Date.now(),
+          event: `Shock #${shockCount + 1} delivered (${defibParams?.energy || '?'}J)`,
+          type: 'shock',
+        }]);
+      }
+      if (treatment.id === 'lucas_device') {
+        setArrestTimeline(prev => [...prev, { time: Date.now(), event: 'LUCAS mechanical CPR device applied', type: 'lucas' }]);
+      }
+      // Track any other treatment
+      if (!['adrenaline_1mg', 'amiodarone_300mg', 'amiodarone_150mg', 'defibrillation', 'lucas_device'].includes(treatment.id)) {
+        setArrestTimeline(prev => [...prev, { time: Date.now(), event: `${treatment.name} applied`, type: 'treatment' }]);
+      }
+    }
+  }, [currentVitals, currentCase, patientState, startGradualChange, arrestActive, adrenalineDoses, shockCount]);
 
   // Handle defibrillation dialog confirmation
   const handleDefibConfirm = useCallback((params: DefibrillationParams) => {
@@ -993,6 +1113,95 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
               />
             )}
 
+            {/* Cardiac Arrest Status Bar */}
+            {arrestActive && (
+              <Card className="border-2 border-red-500 bg-red-50 dark:bg-red-950/30 rounded-2xl overflow-hidden animate-pulse-slow">
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Heart className="h-5 w-5 text-red-500 animate-pulse" />
+                      <span className="font-bold text-red-700 dark:text-red-400 text-sm uppercase tracking-wider">Cardiac Arrest</span>
+                    </div>
+                    <Badge variant="destructive" className="text-xs font-mono">
+                      {arrestStartTime ? formatTime(Math.floor((Date.now() - arrestStartTime) / 1000)) : '00:00'}
+                    </Badge>
+                  </div>
+
+                  {/* CPR Timer + Controls */}
+                  <div className="grid grid-cols-3 gap-2 mb-3">
+                    <div className="text-center p-2 rounded-xl bg-white/60 dark:bg-black/20 border border-red-200 dark:border-red-800">
+                      <div className={`text-2xl font-mono font-bold ${cprCycleTimer <= 10 ? 'text-red-500 animate-pulse' : 'text-slate-800 dark:text-white'}`}>
+                        {Math.floor(cprCycleTimer / 60)}:{String(cprCycleTimer % 60).padStart(2, '0')}
+                      </div>
+                      <p className="text-[9px] text-muted-foreground uppercase">CPR Timer</p>
+                    </div>
+                    <div className="text-center p-2 rounded-xl bg-white/60 dark:bg-black/20 border border-red-200 dark:border-red-800">
+                      <div className="text-2xl font-bold text-slate-800 dark:text-white">{cprCycleNumber}</div>
+                      <p className="text-[9px] text-muted-foreground uppercase">Cycles</p>
+                    </div>
+                    <div className="text-center p-2 rounded-xl bg-white/60 dark:bg-black/20 border border-red-200 dark:border-red-800">
+                      <div className="text-2xl font-bold text-yellow-600">{shockCount}</div>
+                      <p className="text-[9px] text-muted-foreground uppercase">Shocks</p>
+                    </div>
+                  </div>
+
+                  {/* Quick Actions */}
+                  <div className="grid grid-cols-2 gap-2 mb-2">
+                    <Button
+                      size="sm"
+                      variant={cprRunning ? 'destructive' : 'default'}
+                      className={`text-xs h-9 ${!cprRunning ? 'bg-green-600 hover:bg-green-700 text-white' : ''}`}
+                      onClick={() => {
+                        if (cprRunning) {
+                          setCprRunning(false);
+                          setArrestTimeline(prev => [...prev, { time: Date.now(), event: 'CPR paused', type: 'cpr-pause' }]);
+                        } else {
+                          setCprRunning(true);
+                          if (cprCycleTimer <= 0) setCprCycleTimer(120);
+                          setArrestTimeline(prev => [...prev, { time: Date.now(), event: 'CPR started', type: 'cpr-start' }]);
+                          lastActivityRef.current = Date.now();
+                        }
+                      }}
+                    >
+                      {cprRunning ? '⏸ Pause CPR' : '▶ Start/Resume CPR'}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-xs h-9 border-yellow-500 text-yellow-700 hover:bg-yellow-50"
+                      onClick={() => {
+                        setShowDefibDialog(true);
+                        lastActivityRef.current = Date.now();
+                      }}
+                    >
+                      <Zap className="h-3.5 w-3.5 mr-1" /> Defibrillate
+                    </Button>
+                  </div>
+
+                  {/* Drug Timing Indicators */}
+                  <div className="flex gap-2 text-[10px]">
+                    <div className={`flex-1 p-1.5 rounded-lg text-center border ${
+                      lastAdrenalineTime && (Date.now() - lastAdrenalineTime) > 300000
+                        ? 'bg-red-100 border-red-400 text-red-700 animate-pulse font-bold'
+                        : lastAdrenalineTime && (Date.now() - lastAdrenalineTime) > 180000
+                        ? 'bg-amber-100 border-amber-400 text-amber-700'
+                        : 'bg-muted/30 border-border/30 text-muted-foreground'
+                    }`}>
+                      Adrenaline: {adrenalineDoses}x given
+                      {lastAdrenalineTime
+                        ? ` (${Math.floor((Date.now() - lastAdrenalineTime) / 60000)}m ago)`
+                        : shockCount >= 2 ? ' — DUE NOW' : ''}
+                    </div>
+                    <div className="flex-1 p-1.5 rounded-lg text-center border bg-muted/30 border-border/30 text-muted-foreground">
+                      Amiodarone: {amiodaroneDoses}/2
+                      {amiodaroneDoses === 0 && shockCount >= 3 ? ' — DUE (300mg)' : ''}
+                      {amiodaroneDoses === 1 && shockCount >= 5 ? ' — DUE (150mg)' : ''}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Treatment Panel */}
             {currentVitals && (
               <Suspense fallback={<LoadingCard />}>
@@ -1382,6 +1591,71 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                           )}
                         </div>
                       ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Cardiac Arrest Timeline */}
+            {arrestTimeline.length > 0 && (
+              <Card className="card-glass rounded-2xl overflow-hidden border-red-200 dark:border-red-800">
+                <CardHeader className="pb-3 border-b border-border/30">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-red-500/15">
+                      <Heart className="h-3.5 w-3.5 text-red-500" />
+                    </div>
+                    Cardiac Arrest Timeline
+                    <Badge variant="destructive" className="ml-auto text-[10px]">
+                      {cprCycleNumber} cycles | {shockCount} shocks | {adrenalineDoses} adrenaline
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-4">
+                  <div className="space-y-1.5">
+                    {arrestTimeline.map((event, i) => {
+                      const elapsed = arrestStartTime ? Math.floor((event.time - arrestStartTime) / 1000) : 0;
+                      const mins = Math.floor(elapsed / 60);
+                      const secs = elapsed % 60;
+                      const typeColors: Record<string, string> = {
+                        'arrest-start': 'text-red-600 bg-red-50',
+                        'cpr-start': 'text-green-600 bg-green-50',
+                        'cpr-pause': 'text-amber-600 bg-amber-50',
+                        'rhythm-check': 'text-blue-600 bg-blue-50',
+                        'shock': 'text-yellow-600 bg-yellow-50',
+                        'drug': 'text-purple-600 bg-purple-50',
+                        'rosc': 'text-emerald-600 bg-emerald-50',
+                        'lucas': 'text-slate-600 bg-slate-50',
+                        'treatment': 'text-cyan-600 bg-cyan-50',
+                      };
+                      return (
+                        <div key={i} className={`flex items-center gap-2 text-xs p-2 rounded-lg ${typeColors[event.type] || 'bg-muted/30'}`}>
+                          <span className="font-mono text-[10px] w-10 shrink-0">{mins}:{String(secs).padStart(2, '0')}</span>
+                          <span className="flex-1">{event.event}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {/* AHA Compliance Summary */}
+                  <div className="mt-4 p-3 rounded-xl bg-muted/30 border border-border/30">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">AHA 2025 Compliance</p>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="flex items-center gap-1.5">
+                        {shockCount > 0 ? <CheckCircle2 className="h-3 w-3 text-green-500" /> : <XCircle className="h-3 w-3 text-red-500" />}
+                        Defibrillation attempted
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        {adrenalineDoses > 0 ? <CheckCircle2 className="h-3 w-3 text-green-500" /> : <XCircle className="h-3 w-3 text-red-500" />}
+                        Adrenaline administered
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        {amiodaroneDoses > 0 && shockCount >= 3 ? <CheckCircle2 className="h-3 w-3 text-green-500" /> : shockCount < 3 ? <Minus className="h-3 w-3 text-muted-foreground" /> : <XCircle className="h-3 w-3 text-red-500" />}
+                        Amiodarone protocol
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        {cprCycleNumber >= 1 ? <CheckCircle2 className="h-3 w-3 text-green-500" /> : <XCircle className="h-3 w-3 text-red-500" />}
+                        CPR cycles completed
+                      </div>
                     </div>
                   </div>
                 </CardContent>

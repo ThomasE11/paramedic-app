@@ -57,7 +57,8 @@ export type SpecialAssessmentStep =
   | 'pain-assessment'
   | '12-lead-ecg'
   | 'blood-glucose'
-  | 'temperature';
+  | 'temperature'
+  | 'reversible-causes';
 
 export type AssessmentStepId =
   | PrimaryAssessmentStep
@@ -507,6 +508,18 @@ export const SPECIAL_STEPS: AssessmentStepDefinition[] = [
     critical: false,
     rationale: 'Temperature abnormalities guide management in environmental, infectious, and post-cardiac arrest care.',
   },
+  {
+    id: 'reversible-causes',
+    phase: 'special',
+    label: "H's and T's (Reversible Causes)",
+    shortLabel: "H's & T's",
+    icon: 'Search',
+    description: "Systematic review of reversible causes of cardiac arrest: Hypovolaemia, Hypoxia, Hydrogen ions (acidosis), Hypo/Hyperkalaemia, Hypothermia, Tension pneumothorax, Tamponade, Toxins, Thrombosis (coronary & pulmonary).",
+    points: 10,
+    required: false,
+    critical: true,
+    rationale: "Identifying and treating reversible causes is the only way to achieve ROSC in non-shockable arrest and improves outcomes in all arrest rhythms.",
+  },
 ];
 
 /** All step definitions indexed by ID */
@@ -549,7 +562,7 @@ const CARDIAC_PROFILE: CaseAssessmentProfile = {
   requiredSecondary: ['chest', 'neck-cspine'],
   recommendedSecondary: ['abdomen', 'extremities'],
   requiredSpecial: ['12-lead-ecg', 'pain-assessment'],
-  recommendedSpecial: ['blood-glucose'],
+  recommendedSpecial: ['blood-glucose', 'reversible-causes'],
   secondarySurveyLabel: 'Focused Cardiac Assessment',
   secondarySurveyDescription: 'Focused chest and cardiovascular examination. 12-lead ECG is critical.',
 };
@@ -1290,6 +1303,43 @@ export function getStepFindings(stepId: AssessmentStepId, caseData: CaseScenario
         });
       } else {
         findings.push({ label: 'Temperature', value: '36.8 C (normal)', severity: 'normal' });
+      }
+      break;
+    }
+
+    case 'reversible-causes': {
+      // H's and T's — reversible causes of cardiac arrest
+      const hsAndTs = [
+        { label: 'Hypovolaemia', hint: 'Check for blood loss, dehydration, fluid status' },
+        { label: 'Hypoxia', hint: 'Check SpO2, airway patency, ventilation adequacy' },
+        { label: 'Hydrogen ions (Acidosis)', hint: 'Consider DKA, renal failure, prolonged arrest' },
+        { label: 'Hypo/Hyperkalaemia', hint: 'Consider renal failure, medications, dialysis history' },
+        { label: 'Hypothermia', hint: 'Check core temperature, environmental exposure, drowning' },
+        { label: 'Tension Pneumothorax', hint: 'Unilateral absent breath sounds, tracheal deviation, JVD' },
+        { label: 'Tamponade (Cardiac)', hint: 'Beck\'s triad: hypotension, muffled heart sounds, JVD' },
+        { label: 'Toxins / Drugs', hint: 'Medication history, drug paraphernalia, needle marks, pupils' },
+        { label: 'Thrombosis — Coronary', hint: '12-lead ECG, chest pain history, risk factors' },
+        { label: 'Thrombosis — Pulmonary', hint: 'Recent surgery, immobilisation, DVT signs, pregnancy' },
+      ];
+      hsAndTs.forEach(item => {
+        findings.push({
+          label: item.label,
+          value: item.hint,
+          severity: 'normal',
+        });
+      });
+      // Add case-specific prompts based on findings
+      const circ = caseData.abcde.circulation;
+      if (circ.bp.systolic < 90) {
+        findings.push({ label: 'ALERT', value: 'Hypotension present — consider hypovolaemia, tamponade, tension PTX', severity: 'critical' });
+      }
+      const breathing = caseData.abcde.breathing;
+      if (breathing.spo2 < 90) {
+        findings.push({ label: 'ALERT', value: 'Hypoxia present — address oxygenation and ventilation', severity: 'critical' });
+      }
+      const exp = caseData.abcde.exposure;
+      if (exp.temperature !== undefined && exp.temperature < 35) {
+        findings.push({ label: 'ALERT', value: `Hypothermia detected (${exp.temperature}°C) — prolonged resuscitation indicated`, severity: 'critical' });
       }
       break;
     }
