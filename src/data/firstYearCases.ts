@@ -2782,6 +2782,191 @@ export const firstYearCases: CaseScenario[] = [
       'Vagal Manoeuvres - Indications and Technique',
       'Pre-hospital Arrhythmia Recognition - EMT Fundamentals'
     ]
+  }),
+
+  // Case 14: Witnessed Cardiac Arrest - BLS focus for 1st year
+  createCase({
+    id: 'y1-014',
+    title: 'Witnessed Cardiac Arrest - Shopping Mall',
+    category: 'cardiac',
+    subcategory: 'cardiac-arrest',
+    priority: 'critical',
+    complexity: 'basic',
+    yearLevels: ['1st-year', 'diploma'],
+    estimatedDuration: 20,
+    dispatchInfo: {
+      callReason: '55-year-old male collapsed in shopping mall food court, bystander CPR in progress',
+      timeOfDay: 'afternoon',
+      location: 'Mall of the Emirates, Dubai',
+      callerInfo: 'Security guard (trained first aider, performing CPR)',
+      dispatchCode: 'Echo'
+    },
+    patientInfo: {
+      age: 55,
+      gender: 'male',
+      weight: 85,
+      language: 'English',
+      culturalConsiderations: ['Public setting - manage crowd', 'Maintain patient dignity in public area']
+    },
+    sceneInfo: {
+      description: 'Food court area of shopping mall, patient supine on floor, security guard performing CPR, AED retrieved from wall mount nearby',
+      hazards: ['Crowd of onlookers', 'Wet floor near food court', 'Limited space between tables'],
+      bystanders: 'Security guard performing CPR, multiple bystanders watching, mall staff managing crowd',
+      environment: 'Air-conditioned mall, well-lit food court area'
+    },
+    initialPresentation: {
+      generalImpression: 'Adult male supine on floor, unresponsive, security guard performing chest compressions',
+      position: 'Supine on hard floor',
+      appearance: 'Cyanotic, no signs of life, no spontaneous movement',
+      consciousness: 'Unresponsive - no response to any stimulus'
+    },
+    abcde: {
+      airway: {
+        patent: false,
+        findings: ['Unresponsive', 'No gag reflex', 'Airway unprotected', 'Needs OPA and BVM'],
+        interventions: ['Head tilt chin lift', 'OPA insertion (size by measuring corner of mouth to angle of jaw)', 'BVM ventilation']
+      },
+      breathing: {
+        rate: 0,
+        rhythm: 'Absent',
+        depth: 'Absent',
+        spo2: 0,
+        spo2Ceiling: 0,
+        findings: ['Apnoeic', 'No chest rise', 'No breath sounds', 'Requires BVM ventilation'],
+        interventions: ['BVM ventilation - 2 breaths every 30 compressions', 'Ensure visible chest rise with each ventilation']
+      },
+      circulation: {
+        pulseRate: 0,
+        pulseQuality: 'Absent - pulseless',
+        bp: { systolic: 0, diastolic: 0 },
+        capillaryRefill: 0,
+        skin: 'Cyanotic, cool, mottled',
+        findings: ['No carotid pulse', 'No signs of life', 'Bystander CPR in progress'],
+        interventions: ['Take over CPR', 'High-quality compressions 30:2 at 100-120/min', 'Apply AED', 'Shock if advised', 'Rotate compressors every 2 minutes']
+      },
+      disability: {
+        avpu: 'U',
+        gcs: { eye: 1, verbal: 1, motor: 1, total: 3 },
+        pupils: 'Fixed and dilated bilaterally',
+        findings: ['GCS 3 (E1V1M1)', 'Pupils fixed and dilated', 'No response to stimuli'],
+        interventions: ['Continue resuscitation', 'Reassess pupils after ROSC']
+      },
+      exposure: {
+        findings: ['No obvious trauma', 'No medical alert bracelet', 'No obvious needle marks or medication patches'],
+        interventions: ['Expose chest for AED pad placement', 'Check for medication patches before AED', 'Maintain dignity with crowd management']
+      }
+    },
+    history: {
+      medications: [
+        { name: 'Unknown', dose: 'Unknown', frequency: 'Unknown', indication: 'Unknown - patient unresponsive, no family present' }
+      ],
+      allergies: ['Unknown - patient unresponsive'],
+      medicalConditions: ['Unknown - gather from family/bystanders if possible'],
+      surgicalHistory: ['Unknown'],
+      lastMeal: 'Was eating at food court when collapsed',
+      eventsLeading: 'Patient was eating lunch at food court, suddenly clutched his chest, slumped forward, then fell to the floor. Security guard witnessed collapse, confirmed unresponsive and not breathing, started CPR within 2 minutes. Another staff member retrieved AED from wall mount.',
+      socialHistory: {
+        smoking: 'Unknown',
+        alcohol: 'Unknown',
+        occupation: 'Unknown',
+        livingSituation: 'Unknown'
+      }
+    },
+    vitalSignsProgression: {
+      initial: { bp: '0/0', pulse: 0, respiration: 0, spo2: 0, gcs: 3 },
+      afterIntervention: { bp: '90/60', pulse: 100, respiration: 12, spo2: 94, gcs: 6 },
+      deterioration: { bp: '0/0', pulse: 0, respiration: 0, spo2: 0, gcs: 3 }
+    },
+    expectedFindings: {
+      keyObservations: [
+        'Witnessed cardiac arrest with bystander CPR in progress',
+        'AED available on scene',
+        'No signs of life',
+        'Collapsed while eating - possible cardiac cause'
+      ],
+      redFlags: [
+        'Cardiac arrest - immediate life threat',
+        'Unknown medical history',
+        'Possible choking vs cardiac arrest (collapsed while eating)',
+        'Re-arrest after initial ROSC'
+      ],
+      differentialDiagnoses: [
+        'Sudden cardiac arrest (VF/VT)',
+        'Massive myocardial infarction',
+        'Foreign body airway obstruction (was eating)',
+        'Pulmonary embolism',
+        'Aortic dissection/rupture'
+      ],
+      mostLikelyDiagnosis: 'Sudden cardiac arrest - presumed cardiac cause (witnessed collapse, clutched chest)',
+      supportingEvidence: [
+        'Witnessed sudden collapse',
+        'Clutched chest before collapse (cardiac symptom)',
+        'Age 55 male (high risk demographic)',
+        'No signs of choking prior to collapse',
+        'Was eating (not exerting) - suggests cardiac event'
+      ]
+    },
+    managementPathway: {
+      immediate: [
+        'Confirm cardiac arrest: unresponsive + not breathing normally + no pulse',
+        'Take over CPR from bystander - assess CPR quality',
+        'Apply AED immediately - shock if advised',
+        'High-quality CPR: 30:2, rate 100-120/min, depth 5-6cm, full recoil',
+        'Insert OPA and ventilate with BVM',
+        'Minimise interruptions to compressions (<10 seconds for rhythm check)'
+      ],
+      definitive: [
+        'Continue CPR cycles (2 minutes between rhythm checks)',
+        'Rotate compressors every 2 minutes to maintain quality',
+        'Handover to ALS team when they arrive',
+        'If ROSC: recovery position, monitor closely, prepare for re-arrest',
+        'Provide detailed handover: arrest time, bystander CPR, shocks delivered, any ROSC'
+      ],
+      monitoring: [
+        'CPR quality: rate, depth, recoil, minimising interruptions',
+        'AED rhythm analysis every 2 minutes',
+        'Signs of ROSC: spontaneous breathing, movement, pulse',
+        'If ROSC: continuous pulse, BP, SpO2, GCS monitoring',
+        'Watch for re-arrest after ROSC'
+      ]
+    },
+    studentChecklist: [
+      { id: 'y1-014-scene', category: 'safety', description: 'Scene safety and BSI', points: 2, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
+      { id: 'y1-014-confirm', category: 'abcde', description: 'Confirm cardiac arrest (danger, response, send for help, no breathing, no pulse)', points: 5, yearLevel: ['1st-year'], complexity: ['basic'], critical: true, rationale: 'Systematic confirmation prevents starting CPR on a breathing patient' },
+      { id: 'y1-014-cpr-start', category: 'intervention', description: 'Start/take over CPR within 10 seconds of confirming arrest', points: 5, yearLevel: ['1st-year'], complexity: ['basic'], critical: true, rationale: 'Every second without compressions reduces survival' },
+      { id: 'y1-014-aed', category: 'intervention', description: 'Apply AED within 2 minutes, deliver shock if advised', points: 5, yearLevel: ['1st-year'], complexity: ['basic'], critical: true, rationale: 'Early defibrillation is the single most important intervention in VF/VT arrest' },
+      { id: 'y1-014-quality', category: 'intervention', description: 'High-quality compressions: rate 100-120/min, depth 5-6cm, full recoil', points: 5, yearLevel: ['1st-year'], complexity: ['basic'], critical: true, rationale: 'Poor quality CPR significantly reduces survival' },
+      { id: 'y1-014-bvm', category: 'intervention', description: 'Effective BVM ventilation with visible chest rise', points: 4, yearLevel: ['1st-year'], complexity: ['basic'], critical: true, rationale: 'Adequate ventilation is essential for oxygenation during CPR' },
+      { id: 'y1-014-interruptions', category: 'intervention', description: 'Minimise interruptions to compressions (<10 seconds for rhythm check)', points: 4, yearLevel: ['1st-year'], complexity: ['basic'], critical: true, rationale: 'Pauses in compressions allow coronary perfusion pressure to drop' },
+      { id: 'y1-014-rotate', category: 'intervention', description: 'Rotate compressors every 2 minutes', points: 3, yearLevel: ['1st-year'], complexity: ['basic'], critical: true, rationale: 'Compressor fatigue degrades CPR quality after 2 minutes' },
+      { id: 'y1-014-opa', category: 'intervention', description: 'OPA sizing and insertion', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
+      { id: 'y1-014-rosc', category: 'abcde', description: 'Recognise signs of ROSC and manage accordingly', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
+      { id: 'y1-014-handover', category: 'communication', description: 'Structured handover to ALS team (arrest time, CPR details, shocks, ROSC)', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
+      { id: 'y1-014-document', category: 'documentation', description: 'Document arrest time, CPR timeline, shocks delivered, and outcomes', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] }
+    ],
+    teachingPoints: [
+      'Confirm cardiac arrest: unresponsive + not breathing normally + no pulse (take no more than 10 seconds)',
+      'High-quality CPR saves lives: 30:2 ratio, rate 100-120/min, depth 5-6cm, full recoil, minimise interruptions',
+      'Early defibrillation: AED application, shock if advised, resume CPR immediately after shock',
+      'Airway adjuncts: OPA sizing (corner of mouth to angle of jaw) and insertion',
+      'BVM ventilation: 2 ventilations every 30 compressions, watch for chest rise',
+      'Team CPR: rotate compressors every 2 minutes to maintain compression quality',
+      'Handover to advanced care team: provide arrest time, CPR duration, number of shocks, any ROSC'
+    ],
+    commonPitfalls: [
+      'Delaying CPR to perform a full assessment - start compressions immediately',
+      'Poor compression depth or rate - practice with feedback devices',
+      'Excessive ventilation causing gastric insufflation - gentle breaths with visible chest rise only',
+      'Long pauses for rhythm checks - keep interruptions under 10 seconds',
+      'Not rotating compressors - fatigue leads to poor quality CPR after 2 minutes',
+      'Forgetting to tilt head for airway before ventilating',
+      'Not using OPA with BVM - tongue is the most common airway obstruction in unconscious patients'
+    ],
+    references: [
+      'Basic Life Support - AHA/ERC Guidelines',
+      'AED Use in Public Access Defibrillation',
+      'High-Quality CPR - Pre-hospital BLS Standards'
+    ]
   })
 ];
 

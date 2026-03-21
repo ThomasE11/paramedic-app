@@ -3133,6 +3133,396 @@ export const secondYearCases: CaseScenario[] = [
       'Mental Health Act and Pre-Hospital Practice',
       'Organic Causes of Psychosis - Differential Diagnosis'
     ]
+  }),
+
+  // Case 9: Cardiac Arrest - ACLS with Drug Administration
+  createCase({
+    id: 'y2-009',
+    title: 'Cardiac Arrest - Workplace Collapse',
+    category: 'cardiac',
+    subcategory: 'cardiac-arrest',
+    priority: 'critical',
+    complexity: 'intermediate',
+    yearLevels: ['2nd-year', '3rd-year'],
+    estimatedDuration: 25,
+    dispatchInfo: {
+      callReason: '62-year-old male collapsed at work, not breathing',
+      timeOfDay: 'morning',
+      location: 'Construction site office, Al Quoz Industrial, Dubai',
+      callerInfo: 'Co-worker (panicking, no first aid training)',
+      dispatchCode: 'Echo-1'
+    },
+    patientInfo: {
+      age: 62,
+      gender: 'male',
+      weight: 95,
+      language: 'English',
+      culturalConsiderations: ['Workplace setting - multiple bystanders', 'Construction site - potential environmental hazards']
+    },
+    sceneInfo: {
+      description: 'Patient found on floor of site office, morning briefing was in progress. Hot day, patient had been outside supervising prior to coming inside.',
+      hazards: ['Construction site environment', 'No AED on site', 'Limited space in office'],
+      bystanders: '8 co-workers present, no one trained in CPR',
+      environment: 'Indoor office on construction site, air conditioned but patient was outside in heat prior'
+    },
+    initialPresentation: {
+      generalImpression: 'Elderly male, unresponsive, on floor, no signs of life',
+      position: 'Supine on office floor',
+      appearance: 'Cyanotic, no chest rise, vomit visible around mouth',
+      consciousness: 'Unresponsive to all stimuli'
+    },
+    abcde: {
+      airway: {
+        patent: false,
+        findings: ['Unresponsive - no gag reflex', 'Vomit present in mouth and around lips', 'Airway obstructed by emesis'],
+        interventions: ['Suction oropharynx immediately', 'Log roll to clear vomit if no suction available', 'Insert OPA after suctioning', 'BVM ventilation with OPA in situ']
+      },
+      breathing: {
+        rate: 0,
+        rhythm: 'Absent',
+        depth: 'Absent',
+        spo2: 0,
+        findings: [
+          'Apnoeic - no respiratory effort',
+          'No chest rise',
+          'SpO2 unreadable',
+          'Previous smoker (30 pack-year history per co-workers)'
+        ],
+        interventions: [
+          'BVM ventilation with high-flow oxygen after airway cleared',
+          'Ventilate at 10 breaths/min during CPR (1 breath every 6 seconds)',
+          'Consider iGel/LMA for definitive airway',
+          'Avoid hyperventilation'
+        ],
+        auscultation: [
+          'No breath sounds bilaterally (apnoeic)',
+          'After BVM: bilateral air entry confirmed'
+        ]
+      },
+      circulation: {
+        pulseRate: 0,
+        pulseQuality: 'Absent',
+        bp: { systolic: 0, diastolic: 0 },
+        capillaryRefill: 0,
+        skin: 'Cyanotic, cool peripherally, diaphoretic (per witnesses prior to collapse)',
+        findings: [
+          'No carotid pulse palpable',
+          'No radial pulse',
+          'Cardiac monitor/AED shows Ventricular Fibrillation (VF)',
+          'VF persists after 1st shock',
+          '2nd shock delivered - ROSC achieved',
+          'Post-ROSC: HR 110, BP 85/55, weak thready pulse'
+        ],
+        interventions: [
+          'Immediate high-quality CPR (100-120/min, 5-6cm depth)',
+          'Apply defibrillator pads',
+          'Shock 1: Defibrillate VF (biphasic 150-200J)',
+          'Resume CPR immediately after shock for 2 minutes',
+          'Shock 2: Defibrillate persistent VF',
+          'IV/IO access during CPR (do not stop compressions)',
+          'Adrenaline 1mg IV after 2nd shock (repeat every 3-5 min)',
+          'If VF persists after 3rd shock: Amiodarone 300mg IV',
+          'Post-ROSC: 12-lead ECG, maintain SpO2 94-98%'
+        ],
+        ivAccess: ['18G IV in right AC during CPR', 'Consider IO if IV unsuccessful within 2 minutes']
+      },
+      disability: {
+        avpu: 'U',
+        gcs: { eye: 1, verbal: 1, motor: 1, total: 3 },
+        pupils: 'Bilaterally dilated 6mm, fixed during arrest. After ROSC: dilated but reactive',
+        bloodGlucose: 8.2,
+        findings: [
+          'Unresponsive - GCS 3 during arrest',
+          'Post-ROSC: GCS 4 (E1 V1 M2)',
+          'Pupils dilated but become reactive after ROSC',
+          'Blood glucose 8.2 mmol/L (mildly elevated - stress response)'
+        ],
+        interventions: [
+          'Monitor GCS continuously post-ROSC',
+          'Reassess pupils every 2 minutes',
+          'Monitor blood glucose',
+          'Targeted temperature management awareness'
+        ]
+      },
+      exposure: {
+        findings: [
+          'Overweight male (95kg estimated)',
+          'Witnesses report he was sweating heavily before collapse (had been outside in heat)',
+          'No obvious trauma or injuries from fall',
+          'No medical alert jewellery',
+          'Work clothes - high-vis vest, boots'
+        ],
+        interventions: [
+          'Remove high-vis vest and loosen clothing for defibrillation',
+          'Expose chest for pad placement',
+          'Maintain dignity where possible',
+          'Protect from environmental temperature post-ROSC'
+        ]
+      }
+    },
+    secondarySurvey: {
+      head: ['No trauma from collapse', 'Vomit around mouth (suctioned)', 'Cyanosis resolving post-ROSC'],
+      neck: ['Trachea midline', 'No JVD noted', 'Carotid pulse weak post-ROSC'],
+      chest: [
+        'Defibrillation pads in situ',
+        'Chest wall intact - no crepitus',
+        'Post-ROSC: bilateral air entry with BVM',
+        'No chest wall tenderness from CPR'
+      ],
+      abdomen: ['Soft, distended', 'Obese habitus'],
+      pelvis: ['Stable, no abnormalities'],
+      extremities: ['Cool peripherally', 'Weak radial pulse post-ROSC', 'No peripheral oedema noted'],
+      posterior: ['Log rolled during airway clearance - no spinal tenderness', 'No posterior injuries'],
+      neurological: ['GCS 3 during arrest, GCS 4 post-ROSC', 'No purposeful movement', 'Pupils reactive post-ROSC']
+    },
+    history: {
+      medications: [
+        { name: 'Metoprolol', dose: '50mg', frequency: 'Twice daily', indication: 'Hypertension' },
+        { name: 'Atorvastatin', dose: '40mg', frequency: 'Evening', indication: 'Hypercholesterolaemia' },
+        { name: 'Aspirin', dose: '81mg', frequency: 'Daily', indication: 'Cardiovascular prophylaxis' },
+        { name: 'Metformin', dose: '500mg', frequency: 'Twice daily', indication: 'Type 2 Diabetes' }
+      ],
+      allergies: [
+        'No known drug allergies (per co-worker who knows him well)'
+      ],
+      medicalConditions: [
+        'Hypertension (diagnosed 10 years ago)',
+        'Type 2 Diabetes',
+        'Hypercholesterolaemia',
+        'Previous smoker (quit 5 years ago, 30 pack-year history)',
+        'Family history of MI (father died age 58)'
+      ],
+      surgicalHistory: ['Appendectomy (age 30)', 'Right knee arthroscopy (2019)'],
+      lastMeal: 'Breakfast at 6am - tea and toast (per co-worker)',
+      eventsLeading: 'Patient was supervising outdoor construction work in the heat since 6am. Came inside for morning briefing at 8am. Co-workers noticed he looked pale and was sweating excessively. During the briefing he suddenly clutched his chest, said "I don\'t feel right", then collapsed to the floor. Co-workers called ambulance immediately but did not start CPR as none were trained.',
+      socialHistory: {
+        smoking: 'Ex-smoker (quit 5 years ago, 30 pack-year history)',
+        alcohol: 'Social (occasional beer on weekends)',
+        occupation: 'Construction site supervisor (physically demanding role)',
+        livingSituation: 'Lives with wife in Dubai, adult children in UK'
+      }
+    },
+    vitalSignsProgression: {
+      initial: { bp: '0/0', pulse: 0, respiration: 0, spo2: 0, gcs: 3 },
+      afterIntervention: { bp: '85/55', pulse: 110, respiration: 14, spo2: 92, gcs: 4 },
+      deterioration: { bp: '60/30', pulse: 40, respiration: 6, spo2: 82, gcs: 3 }
+    },
+    expectedFindings: {
+      keyObservations: [
+        'Witnessed cardiac arrest - VF rhythm',
+        'Delayed CPR (bystanders untrained)',
+        'Airway compromised by vomit - suction required',
+        'Multiple cardiovascular risk factors',
+        'ROSC achieved after 2nd shock',
+        'Post-ROSC hypotension and reduced consciousness'
+      ],
+      redFlags: [
+        'Cardiac arrest - immediate life threat',
+        'Vomit in airway - aspiration risk',
+        'No bystander CPR - prolonged downtime',
+        'Post-ROSC instability (hypotension, low GCS)',
+        'Risk of re-arrest (PEA)',
+        'Multiple comorbidities complicating resuscitation'
+      ],
+      differentialDiagnoses: [
+        'Acute myocardial infarction (STEMI) with VF arrest',
+        'Heat-related cardiac event',
+        'Massive pulmonary embolism',
+        'Aortic dissection',
+        'Hyperkalaemia (diabetic patient)'
+      ],
+      mostLikelyDiagnosis: 'Acute MI with ventricular fibrillation cardiac arrest',
+      supportingEvidence: [
+        'Witnessed chest pain prior to collapse',
+        'VF rhythm on monitor (shockable - typical of cardiac cause)',
+        'Multiple cardiovascular risk factors (HTN, DM, smoking hx, FHx)',
+        'Age and gender consistent with acute coronary syndrome',
+        'Heat exposure may have been additional stressor'
+      ]
+    },
+    managementPathway: {
+      immediate: [
+        'Confirm cardiac arrest (unresponsive, not breathing normally, no pulse)',
+        'Call for help and request ALS backup',
+        'Suction airway - clear vomit before ventilation',
+        'Begin high-quality CPR immediately (30:2 until advanced airway)',
+        'Apply defibrillator pads',
+        'Analyse rhythm - identify VF',
+        'Defibrillate (Shock 1)',
+        'Resume CPR for 2 minutes',
+        'Reanalyse - persistent VF - Shock 2',
+        'IV/IO access during CPR',
+        'Adrenaline 1mg IV after 2nd shock'
+      ],
+      definitive: [
+        'Continue 2-minute CPR cycles with rhythm checks',
+        'Amiodarone 300mg IV after 3rd shock if still VF',
+        'Consider advanced airway (iGel/LMA)',
+        'Post-ROSC: 12-lead ECG immediately',
+        'Maintain SpO2 94-98% (avoid hyperoxia)',
+        'IV fluid bolus for post-ROSC hypotension',
+        'Rapid transport to cardiac catheterisation facility',
+        'Pre-alert receiving hospital: ROSC post VF arrest, ?STEMI'
+      ],
+      monitoring: [
+        'Continuous cardiac monitoring',
+        'SpO2 monitoring (target 94-98%)',
+        'Repeat vital signs every 2 minutes post-ROSC',
+        'Monitor for re-arrest (deterioration: PEA)',
+        'Reassess GCS and pupils',
+        'End-tidal CO2 monitoring if available',
+        'Blood glucose monitoring'
+      ],
+      transportConsiderations: [
+        'Rapid transport to cardiac catheterisation centre',
+        'Pre-alert hospital with ROSC details and ECG findings',
+        'Continue monitoring en route',
+        'Be prepared for re-arrest during transport',
+        'Ensure defibrillator charged and ready',
+        'IV fluids running for hypotension'
+      ]
+    },
+    studentChecklist: [
+      {
+        id: 'y2-009-confirm-arrest',
+        category: 'abcde',
+        description: 'Confirm cardiac arrest (unresponsive, no normal breathing, no pulse)',
+        points: 5,
+        yearLevel: ['2nd-year'],
+        complexity: ['intermediate'],
+        critical: true,
+        rationale: 'Rapid confirmation of cardiac arrest initiates the chain of survival'
+      },
+      {
+        id: 'y2-009-suction-airway',
+        category: 'abcde',
+        description: 'Suction airway to clear vomit before ventilation',
+        points: 5,
+        yearLevel: ['2nd-year'],
+        complexity: ['intermediate'],
+        critical: true,
+        rationale: 'Ventilating without clearing vomit causes aspiration and worsens outcome'
+      },
+      {
+        id: 'y2-009-high-quality-cpr',
+        category: 'abcde',
+        description: 'Initiate high-quality CPR (rate, depth, recoil, minimal interruptions)',
+        points: 5,
+        yearLevel: ['2nd-year'],
+        complexity: ['intermediate'],
+        critical: true,
+        rationale: 'High-quality CPR is the foundation of cardiac arrest management'
+      },
+      {
+        id: 'y2-009-apply-defib',
+        category: 'abcde',
+        description: 'Apply defibrillator/AED pads correctly',
+        points: 4,
+        yearLevel: ['2nd-year'],
+        complexity: ['intermediate'],
+        critical: true,
+        rationale: 'Early defibrillation is the definitive treatment for VF'
+      },
+      {
+        id: 'y2-009-defibrillate-vf',
+        category: 'treatment',
+        description: 'Recognise VF and defibrillate (up to 3 shocks with CPR between)',
+        points: 5,
+        yearLevel: ['2nd-year', '3rd-year'],
+        complexity: ['intermediate'],
+        critical: true,
+        rationale: 'VF is a shockable rhythm - defibrillation is the only definitive treatment'
+      },
+      {
+        id: 'y2-009-iv-io-access',
+        category: 'treatment',
+        description: 'Establish IV/IO access during CPR without stopping compressions',
+        points: 4,
+        yearLevel: ['2nd-year', '3rd-year'],
+        complexity: ['intermediate'],
+        rationale: 'Vascular access enables drug administration during resuscitation'
+      },
+      {
+        id: 'y2-009-adrenaline-timing',
+        category: 'treatment',
+        description: 'Administer adrenaline 1mg IV after 2nd shock (every 3-5 min)',
+        points: 5,
+        yearLevel: ['2nd-year', '3rd-year'],
+        complexity: ['intermediate'],
+        critical: true,
+        rationale: 'Correct adrenaline timing improves coronary perfusion pressure'
+      },
+      {
+        id: 'y2-009-amiodarone',
+        category: 'treatment',
+        description: 'Administer amiodarone 300mg IV after 3rd shock if still VF',
+        points: 4,
+        yearLevel: ['3rd-year'],
+        complexity: ['intermediate'],
+        rationale: 'Amiodarone is indicated for refractory VF after 3rd shock'
+      },
+      {
+        id: 'y2-009-reversible-causes',
+        category: 'clinical-reasoning',
+        description: 'Consider reversible causes (4H\'s and 4T\'s)',
+        points: 4,
+        yearLevel: ['2nd-year', '3rd-year'],
+        complexity: ['intermediate'],
+        rationale: 'Identifying and treating reversible causes improves ROSC rates'
+      },
+      {
+        id: 'y2-009-post-rosc',
+        category: 'treatment',
+        description: 'Post-ROSC monitoring: 12-lead ECG, SpO2 94-98%, avoid hyperventilation',
+        points: 4,
+        yearLevel: ['2nd-year', '3rd-year'],
+        complexity: ['intermediate'],
+        critical: true,
+        rationale: 'Structured post-ROSC care reduces secondary brain injury and re-arrest risk'
+      },
+      {
+        id: 'y2-009-team-leadership',
+        category: 'communication',
+        description: 'Demonstrate team leadership and clear communication during resuscitation',
+        points: 3,
+        yearLevel: ['2nd-year', '3rd-year'],
+        complexity: ['intermediate'],
+        rationale: 'Effective team dynamics improve resuscitation performance and outcomes'
+      }
+    ],
+    teachingPoints: [
+      'BLS foundation remains critical - high-quality CPR saves lives',
+      'Rhythm recognition: VF is shockable - defibrillate early and defibrillate often',
+      'IV/IO access during CPR - never stop compressions to gain access',
+      'Adrenaline 1mg IV after 2nd shock in shockable rhythms (every 3-5 minutes thereafter)',
+      'Amiodarone 300mg IV after 3rd shock for refractory VF (150mg can be repeated)',
+      'Reversible causes (4H\'s: Hypoxia, Hypovolaemia, Hypo/Hyperkalaemia, Hypothermia; 4T\'s: Tension pneumothorax, Tamponade, Toxins, Thrombosis)',
+      'Post-ROSC care: 12-lead ECG immediately, maintain SpO2 94-98%, do not hyperventilate',
+      'Airway management in arrest: suction first, OPA, consider iGel/LMA - do not delay CPR for intubation',
+      'Rotate compressors every 2 minutes to maintain CPR quality',
+      'Minimise interruptions to chest compressions - aim for <10 seconds for rhythm checks',
+      'In witnessed VF arrest, early defibrillation is the single most important intervention',
+      'Post-ROSC hypotension is common - IV fluid bolus and consider vasopressors'
+    ],
+    commonPitfalls: [
+      'Not suctioning airway before ventilation (aspiration risk)',
+      'Delaying defibrillation while performing other tasks',
+      'Poor CPR quality due to fatigue - not rotating compressors',
+      'Adrenaline given too early (before 2nd shock in shockable rhythm)',
+      'Stopping CPR to gain IV access or perform other interventions',
+      'Hyperventilating the patient post-ROSC (causes hypocapnia and cerebral vasoconstriction)',
+      'Not considering reversible causes (4H\'s and 4T\'s)',
+      'Forgetting amiodarone for refractory VF after 3rd shock',
+      'Prolonged rhythm check pauses (>10 seconds)',
+      'Not performing 12-lead ECG immediately post-ROSC',
+      'Over-oxygenating post-ROSC (target 94-98%, not 100%)'
+    ],
+    references: [
+      'ACLS Cardiac Arrest Algorithm - AHA/ERC Guidelines',
+      'Resuscitation Council UK - Adult Advanced Life Support',
+      'Post-Resuscitation Care Guidelines',
+      'Defibrillation and Cardioversion in Pre-Hospital Care'
+    ]
   })
 ];
 
