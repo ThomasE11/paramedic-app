@@ -370,7 +370,20 @@ export function getInitialSounds(
 
   // Trauma cases
   if (cat === 'trauma') {
-    if (findingsStr.includes('chest') || findingsStr.includes('thorax') || findingsStr.includes('rib')) {
+    // Head injury with low GCS — airway compromise, not chest pathology
+    if ((findingsStr.includes('head injury') || findingsStr.includes('tbi') || findingsStr.includes('gcs'))
+        && initialVitals?.gcs !== undefined && initialVitals.gcs <= 8) {
+      return {
+        leftLung: 'snoring',
+        rightLung: 'snoring',
+        heartSound: 'tachycardic',
+        additionalSounds: ['Sonorous breathing', 'Airway compromise from reduced consciousness', 'Potential aspiration risk'],
+        description: 'Snoring respirations bilaterally — partial airway obstruction. Tachycardic. Needs airway management.'
+      };
+    }
+    // Chest trauma specifically (NOT just any mention of chest in findings)
+    if (sub.includes('chest') || sub.includes('thorax') || sub.includes('pneumothorax') || sub.includes('flail')
+        || findingsStr.includes('pneumothorax') || findingsStr.includes('flail segment') || findingsStr.includes('haemothorax')) {
       return {
         leftLung: 'diminished',
         rightLung: 'clear',
@@ -379,7 +392,7 @@ export function getInitialSounds(
         description: 'Diminished breath sounds on the injured side. Clear contralateral lung.'
       };
     }
-    // Default trauma
+    // Default trauma — clear lungs bilaterally
     return {
       leftLung: 'clear',
       rightLung: 'clear',

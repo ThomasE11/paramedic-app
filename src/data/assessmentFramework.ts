@@ -984,8 +984,11 @@ export function getStepFindings(stepId: AssessmentStepId, caseData: CaseScenario
 
     case 'chest': {
       const chestData = caseData.secondarySurvey?.chest || [];
-      if (chestData.length > 0) {
-        chestData.forEach(f => {
+      // Filter out auscultation findings — student must use Chest Auscultation panel
+      const auscultationTerms = /clear|wheeze|crackle|rhonchi|breath sounds|air entry|diminished|absent breath/i;
+      const inspectionPalpationFindings = chestData.filter(f => !auscultationTerms.test(f));
+      if (inspectionPalpationFindings.length > 0) {
+        inspectionPalpationFindings.forEach(f => {
           const sev = f.toLowerCase().includes('flail') || f.toLowerCase().includes('crepitus') || f.toLowerCase().includes('open wound') || f.toLowerCase().includes('sucking')
             ? 'critical' as const
             : f.toLowerCase().includes('tender') || f.toLowerCase().includes('decreased') || f.toLowerCase().includes('asymmetr')
@@ -996,13 +999,17 @@ export function getStepFindings(stepId: AssessmentStepId, caseData: CaseScenario
       } else {
         findings.push({ label: 'Chest', value: 'Equal chest expansion, no tenderness, no crepitus', severity: 'normal' });
       }
+      findings.push({ label: 'Note', value: 'Auscultate using the Chest Auscultation panel to assess breath sounds', severity: 'normal' });
       break;
     }
 
     case 'abdomen': {
       const abdData = caseData.secondarySurvey?.abdomen || [];
-      if (abdData.length > 0) {
-        abdData.forEach(f => {
+      // Filter out bowel sound findings — student must use auscultation panel
+      const bowelSoundTerms = /bowel sounds|bowel sound|hyperactive|hypoactive|absent bowel|tinkling|borborygmi/i;
+      const abdInspectionPalpation = abdData.filter(f => !bowelSoundTerms.test(f));
+      if (abdInspectionPalpation.length > 0) {
+        abdInspectionPalpation.forEach(f => {
           const sev = f.toLowerCase().includes('rigid') || f.toLowerCase().includes('guarding') || f.toLowerCase().includes('distended')
             ? 'critical' as const
             : f.toLowerCase().includes('tender')
@@ -1013,6 +1020,7 @@ export function getStepFindings(stepId: AssessmentStepId, caseData: CaseScenario
       } else {
         findings.push({ label: 'Abdomen', value: 'Soft, non-tender, non-distended', severity: 'normal' });
       }
+      findings.push({ label: 'Note', value: 'Auscultate the abdomen to assess bowel sounds', severity: 'normal' });
       break;
     }
 
@@ -1365,7 +1373,7 @@ export function createAssessmentTracker(caseData: CaseScenario): AssessmentTrack
   });
   recommended.forEach(stepId => {
     const step = ALL_STEPS[stepId];
-    if (step) totalPoints += Math.floor(step.points / 2); // recommended steps worth half
+    if (step) totalPoints += Math.floor(step.points * 0.4); // recommended steps worth 40%
   });
 
   return {
@@ -1411,9 +1419,9 @@ export function performAssessment(
   if (tracker.required.includes(stepId)) {
     earnedPoints += step.points;
   } else if (tracker.recommended.includes(stepId)) {
-    earnedPoints += Math.floor(step.points / 2);
+    earnedPoints += Math.floor(step.points * 0.4); // recommended steps worth 40%
   } else {
-    earnedPoints += 1; // Small bonus for extra assessments
+    // No points for extra assessments — score is driven by doing the RIGHT assessments
   }
 
   return {
