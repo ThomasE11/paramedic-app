@@ -293,6 +293,11 @@ const generalResources: DebriefingResource[] = [
   { id: 'gen-nice-syncope', title: 'NICE: Transient Loss of Consciousness (Syncope)', url: 'https://www.nice.org.uk/guidance/cg109', type: 'guideline', source: 'NICE', relevance: 'essential', category: 'general' },
   { id: 'gen-medscape-syncope', title: 'Syncope - Clinical Overview', url: 'https://emedicine.medscape.com/article/811669-overview', type: 'article', source: 'Medscape', relevance: 'important', category: 'general' },
   { id: 'gen-rebelem-syncope', title: 'Syncope Red Flags and Disposition', url: 'https://rebelem.com/syncope/', type: 'article', source: 'REBEL EM', relevance: 'important', category: 'general' },
+  { id: 'gen-esc-syncope', title: 'ESC Guidelines on Syncope (Diagnosis and Management)', url: 'https://www.escardio.org/Guidelines/Clinical-Practice-Guidelines/Syncope', type: 'guideline', source: 'ESC', relevance: 'essential', category: 'general' },
+  { id: 'gen-aafp-syncope', title: 'Syncope: Evaluation and Differential Diagnosis', url: 'https://www.aafp.org/pubs/afp/issues/2017/0301/p303.html', type: 'article', source: 'AAFP', relevance: 'essential', category: 'general' },
+  { id: 'gen-litfl-orthostatic', title: 'Orthostatic Hypotension Assessment Technique', url: 'https://litfl.com/orthostatic-hypotension/', type: 'article', source: 'LITFL', relevance: 'important', category: 'general' },
+  { id: 'gen-emrap-syncope', title: 'Risk Stratification in Syncope — San Francisco Rule vs Canadian Rule', url: 'https://www.emrap.org/corependium/chapter/syncope', type: 'article', source: 'EMDocs', relevance: 'important', category: 'general' },
+  { id: 'gen-rebelem-syncope-risk', title: 'Cardiac Syncope Red Flags', url: 'https://rebelem.com/syncope-risk-stratification/', type: 'article', source: 'REBEL EM', relevance: 'important', category: 'general' },
   { id: 'gen-emdocs-assessment', title: 'Systematic Clinical Assessment - ABCDE', url: 'https://www.emdocs.net/abcde-approach/', type: 'article', source: 'EMDocs', relevance: 'important', category: 'general' },
   { id: 'gen-nice-sepsis', title: 'NICE: Sepsis Recognition and Management', url: 'https://www.nice.org.uk/guidance/ng51', type: 'guideline', source: 'NICE', relevance: 'important', category: 'general' },
   { id: 'gen-rcuk-medical-emergencies', title: 'Medical Emergencies and Resuscitation', url: 'https://www.resus.org.uk/library/2021-resuscitation-guidelines/adult-basic-life-support-guidelines', type: 'guideline', source: 'Resuscitation Council UK', relevance: 'supplementary', category: 'general' },
@@ -389,7 +394,8 @@ const subcategoryKeywords: Record<string, { boost: string[]; demote: string[] }>
   'asystole': { boost: ['cardiac arrest', 'als', 'cpr', 'resuscitation', 'adrenaline', 'epinephrine'], demote: ['stemi', 'af ', 'syncope'] },
   'vfib': { boost: ['cardiac arrest', 'defibrillation', 'vf', 'als', 'cpr', 'resuscitation', 'shockable'], demote: ['syncope', 'af '] },
   'hypertensive-emergency': { boost: ['hypertensive', 'blood pressure', 'end-organ', 'labetalol', 'aortic dissection'], demote: ['stemi', 'af ', 'syncope'] },
-  'syncope': { boost: ['syncope', 'loss of consciousness', 'vasovagal', 'orthostatic', 'differential'], demote: ['stemi', 'reperfusion', 'thrombol', 'pci', 'door-to-balloon'] },
+  'syncope': { boost: ['syncope', 'vasovagal', 'orthostatic', 'tilt-table', 'loss of consciousness', 'transient loss', 'risk stratification'], demote: ['stemi', 'reperfusion', 'thrombol', 'pci', 'door-to-balloon', 'heart failure', 'cardiomyopathy'] },
+  'first-episode-syncope': { boost: ['syncope', 'vasovagal', 'orthostatic', 'tilt-table', 'loss of consciousness', 'transient loss', 'risk stratification'], demote: ['stemi', 'reperfusion', 'thrombol', 'pci', 'door-to-balloon', 'heart failure', 'cardiomyopathy'] },
 
   // Respiratory
   'asthma': { boost: ['asthma', 'bronchospasm', 'salbutamol', 'wheeze', 'peak flow', 'steroid'], demote: ['copd', 'pneumothorax', 'embolism'] },

@@ -73,6 +73,8 @@ interface ClinicalAssessmentPanelProps {
   onPerformAssessment: (stepId: AssessmentStepId) => void;
   /** Currently revealed findings (from the most recent assessment) */
   activeFindings: { stepId: AssessmentStepId; findings: AssessmentFinding[] } | null;
+  /** Hide points, scores, and required/recommended badges from student view */
+  isStudentView?: boolean;
 }
 
 // ============================================================================
@@ -111,6 +113,7 @@ function AssessmentStepButton({
   isRecommended,
   performedOrder,
   onPerform,
+  isStudentView = false,
 }: {
   step: AssessmentStepDefinition;
   isPerformed: boolean;
@@ -118,6 +121,7 @@ function AssessmentStepButton({
   isRecommended: boolean;
   performedOrder?: number;
   onPerform: () => void;
+  isStudentView?: boolean;
 }) {
   const Icon = getIcon(step.icon);
 
@@ -166,7 +170,7 @@ function AssessmentStepButton({
         </div>
         <span className="text-[9px] sm:text-[10px] opacity-70 line-clamp-1">{step.description}</span>
       </div>
-      {!isPerformed && (
+      {!isPerformed && !isStudentView && (
         <div className="text-[9px] sm:text-[10px] font-mono opacity-60 shrink-0">
           +{step.points}
         </div>
@@ -189,6 +193,7 @@ function PhaseSection({
   defaultExpanded,
   activeFindings,
   phaseColor,
+  isStudentView = false,
 }: {
   title: string;
   description: string;
@@ -199,6 +204,7 @@ function PhaseSection({
   defaultExpanded: boolean;
   activeFindings: { stepId: AssessmentStepId; findings: AssessmentFinding[] } | null;
   phaseColor: string;
+  isStudentView?: boolean;
 }) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
@@ -254,6 +260,7 @@ function PhaseSection({
                   isRecommended={tracker.recommended.includes(step.id)}
                   performedOrder={performed?.order}
                   onPerform={() => onPerform(step.id)}
+                  isStudentView={isStudentView}
                 />
               );
             })}
@@ -290,6 +297,7 @@ export function ClinicalAssessmentPanel({
   tracker,
   onPerformAssessment,
   activeFindings,
+  isStudentView = false,
 }: ClinicalAssessmentPanelProps) {
   const profile = useMemo(() => getAssessmentProfile(caseCategory), [caseCategory]);
 
@@ -336,14 +344,16 @@ export function ClinicalAssessmentPanel({
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          <Badge variant={overallPct === 100 ? 'default' : 'secondary'} className={`text-[9px] sm:text-[10px] ${overallPct === 100 ? 'bg-green-500' : ''}`}>
-            {completedRequired}/{totalRequired} req'd
-          </Badge>
-          <Badge variant="outline" className="text-[9px] sm:text-[10px]">
-            {tracker.earnedPoints} pts
-          </Badge>
-        </div>
+        {!isStudentView && (
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <Badge variant={overallPct === 100 ? 'default' : 'secondary'} className={`text-[9px] sm:text-[10px] ${overallPct === 100 ? 'bg-green-500' : ''}`}>
+              {completedRequired}/{totalRequired} req'd
+            </Badge>
+            <Badge variant="outline" className="text-[9px] sm:text-[10px]">
+              {tracker.earnedPoints} pts
+            </Badge>
+          </div>
+        )}
       </div>
 
       {/* Overall progress bar */}
@@ -365,6 +375,7 @@ export function ClinicalAssessmentPanel({
         defaultExpanded={true}
         activeFindings={activeFindings}
         phaseColor="bg-gradient-to-r from-red-500/5 to-transparent"
+        isStudentView={isStudentView}
       />
 
       <PhaseSection
@@ -377,6 +388,7 @@ export function ClinicalAssessmentPanel({
         defaultExpanded={false}
         activeFindings={activeFindings}
         phaseColor="bg-gradient-to-r from-amber-500/5 to-transparent"
+        isStudentView={isStudentView}
       />
 
       <PhaseSection
@@ -389,6 +401,7 @@ export function ClinicalAssessmentPanel({
         defaultExpanded={false}
         activeFindings={activeFindings}
         phaseColor="bg-gradient-to-r from-blue-500/5 to-transparent"
+        isStudentView={isStudentView}
       />
 
       {relevantSpecialSteps.length > 0 && (
@@ -402,6 +415,7 @@ export function ClinicalAssessmentPanel({
           defaultExpanded={false}
           activeFindings={activeFindings}
           phaseColor="bg-gradient-to-r from-purple-500/5 to-transparent"
+          isStudentView={isStudentView}
         />
       )}
     </div>

@@ -86,7 +86,7 @@ export const caseDatabase: CaseScenario[] = [
         skin: 'Pale, clammy, diaphoretic',
         findings: ['Tachycardic', 'Borderline hypotensive', 'Poor perfusion'],
         interventions: ['IV access x2', 'Aspirin 300mg', 'GTN spray — use with caution if SBP remains above 90'],
-        ecgFindings: ['ST elevation V1-V4', 'Tombstone ST segments'],
+        ecgFindings: ['ST elevation V1-V4', 'Tombstone ST segments', 'Reciprocal ST depression in II, III, aVF'],
         ivAccess: ['16G cannula right AC fossa']
       },
       disability: {
@@ -130,7 +130,7 @@ export const caseDatabase: CaseScenario[] = [
       }
     },
     investigations: [
-      { name: '12-lead ECG', indication: 'Chest pain', findings: 'ST elevation V1-V4', interpretation: 'Acute anterior STEMI', urgency: 'immediate' }
+      { name: '12-lead ECG', indication: 'Chest pain', findings: 'ST elevation V1-V4 with reciprocal ST depression in II, III, aVF', interpretation: 'Acute anterior STEMI', urgency: 'immediate' }
     ],
     vitalSignsProgression: {
       initial: { bp: '90/60', pulse: 110, respiration: 24, spo2: 94, gcs: 15 },
@@ -141,7 +141,7 @@ export const caseDatabase: CaseScenario[] = [
       redFlags: ['STEMI presentation', 'Cardiogenic shock risk'],
       differentialDiagnoses: ['Acute MI', 'Unstable angina', 'Aortic dissection', 'Pulmonary embolism'],
       mostLikelyDiagnosis: 'Acute Anterior STEMI',
-      supportingEvidence: ['ST elevation V1-V4', 'Typical chest pain', 'Diaphoresis']
+      supportingEvidence: ['ST elevation V1-V4', 'Reciprocal ST depression II, III, aVF', 'Typical chest pain', 'Diaphoresis']
     },
     managementPathway: {
       immediate: ['Aspirin 300mg', 'GTN spray', 'IV access', '12-lead ECG'],
@@ -5009,6 +5009,7 @@ export const caseDatabase: CaseScenario[] = [
     id: 'general-001',
     title: 'Syncope - First Episode',
     category: 'general',
+    subcategory: 'first-episode-syncope',
     priority: 'moderate',
     complexity: 'basic',
     yearLevels: ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
@@ -5106,13 +5107,19 @@ export const caseDatabase: CaseScenario[] = [
       differentialDiagnoses: ['Vasovagal syncope', 'Orthostatic hypotension', 'Arrhythmia', 'PE', 'Hypoglycemia', 'Seizure'],
       mostLikelyDiagnosis: 'Vasovagal Syncope'
     },
+    managementPathway: {
+      immediate: ['Scene safety', 'Supine positioning with legs elevated', 'Assess for injuries from fall', 'Blood glucose check'],
+      definitive: ['12-lead ECG (mandatory for all first-episode syncope)', 'Orthostatic vital signs (lying and standing BP/HR)', 'Detailed history including prodromal symptoms and witness account', 'Transport to ED for full cardiac workup and risk stratification'],
+      monitoring: ['Continuous cardiac monitoring', 'Serial vital signs including orthostatic measurements', 'Neurological observations'],
+      transportConsiderations: ['All first-episode syncope requires ED evaluation', 'Monitor for recurrence during transport', 'Document time of event and recovery time']
+    },
     studentChecklist: [
       { id: 'g1-1', category: 'abcde', description: 'Assess for injury from fall (FAST assessment)', points: 15, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'], critical: true },
       { id: 'g1-2', category: 'abcde', description: 'Perform neurological assessment (GCS, pupils, power)', points: 15, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'], critical: true },
       { id: 'g1-3', category: 'intervention', description: 'Blood glucose check', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'], critical: true },
       { id: 'g1-4', category: 'intervention', description: 'Obtain 12-lead ECG', points: 15, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'], critical: true },
       { id: 'g1-5', category: 'history', description: 'Detailed history of prodrome and circumstances', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
-      { id: 'g1-6', category: 'intervention', description: 'Check orthostatic vital signs (lying and standing BP/HR)', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
+      { id: 'g1-6', category: 'intervention', description: 'Check orthostatic vital signs (lying and standing BP/HR)', points: 15, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'], critical: true },
       { id: 'g1-7', category: 'intervention', description: 'Position patient supine with legs elevated', points: 5, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
       { id: 'g1-8', category: 'intervention', description: 'Administer oral fluids if conscious and no contraindications', points: 5, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
       { id: 'g1-9', category: 'abcde', description: 'Screen for red flags (cardiac symptoms, family history)', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
@@ -7812,7 +7819,7 @@ export const caseDatabase: CaseScenario[] = [
         skin: 'Pale, cool, diaphoretic',
         findings: ['Bradycardic', 'Hypotensive', 'Signs of shock', 'JVD present'],
         interventions: ['IV access x2', 'Aspirin 300mg chewed', 'ECG - Right-sided leads (V4R)'],
-        ecgFindings: ['ST elevation II, III, aVF', 'ST depression V1-V3 (reciprocal)', 'ST elevation greater in III than II = RCA', 'Right-sided ECG shows V4R elevation = RV infarction']
+        ecgFindings: ['ST elevation II, III, aVF', 'Reciprocal ST depression in I, aVL', 'ST depression V1-V3 (posterior extension)', 'ST elevation greater in III than II = RCA', 'Right-sided ECG shows V4R elevation = RV infarction']
       },
       disability: {
         avpu: 'A',

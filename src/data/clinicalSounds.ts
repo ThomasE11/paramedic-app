@@ -913,7 +913,7 @@ export function playBreathSound(soundType: BreathSoundType, durationMs: number =
   }
 
   const masterGain = ctx.createGain();
-  masterGain.gain.setValueAtTime(0.25, ctx.currentTime);
+  masterGain.gain.setValueAtTime(0.55, ctx.currentTime);
   masterGain.connect(ctx.destination);
   currentGainNode = masterGain;
 
@@ -1497,7 +1497,7 @@ export function playHeartSound(soundType: HeartSoundType, durationMs: number = 5
   }
 
   const masterGain = ctx.createGain();
-  masterGain.gain.setValueAtTime(0.3, ctx.currentTime);
+  masterGain.gain.setValueAtTime(0.55, ctx.currentTime);
   masterGain.connect(ctx.destination);
   currentGainNode = masterGain;
 
@@ -1647,7 +1647,7 @@ export function playBowelSound(soundType: BowelSoundType, durationMs: number = 6
   }
 
   const masterGain = ctx.createGain();
-  masterGain.gain.setValueAtTime(0.3, ctx.currentTime);
+  masterGain.gain.setValueAtTime(0.55, ctx.currentTime);
   masterGain.connect(ctx.destination);
 
   switch (soundType) {

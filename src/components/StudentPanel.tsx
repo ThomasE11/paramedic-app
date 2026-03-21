@@ -1107,6 +1107,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                     tracker={assessmentTracker}
                     onPerformAssessment={handlePerformAssessment}
                     activeFindings={activeFindings}
+                    isStudentView={true}
                   />
                 )}
 
