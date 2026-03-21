@@ -9396,6 +9396,673 @@ export const caseDatabase: CaseScenario[] = [
       ]
     }
   }),
+
+  // ==================== ADVANCED CARDIAC ARREST CASES ====================
+
+  // CARDIAC CASE 013 - Refractory VF Cardiac Arrest (4th Year)
+  createCase({
+    id: 'cardiac-013',
+    title: 'Refractory VF Cardiac Arrest',
+    category: 'cardiac',
+    subcategory: 'cardiac-arrest',
+    priority: 'critical',
+    complexity: 'advanced',
+    yearLevels: ['4th-year'],
+    estimatedDuration: 30,
+    dispatchInfo: {
+      callReason: 'Male collapsed at gym, bystander CPR in progress, AED has shocked twice — still in cardiac arrest',
+      timeOfDay: 'evening',
+      location: 'FitLife Gym, Al Quoz Industrial Area, Dubai',
+      callerInfo: 'Gym staff member (trained first aider)',
+      dispatchCode: 'Echo-1',
+      additionalInfo: [
+        'Patient collapsed during heavy deadlift session',
+        'Witnessed arrest — bystander CPR started immediately',
+        'AED applied — 2 shocks delivered, patient remains in VF',
+        'Patient is a regular gym member, approximately 48 years old'
+      ]
+    },
+    patientInfo: {
+      age: 48,
+      gender: 'male',
+      weight: 95,
+      occupation: 'Construction project manager',
+      language: 'English',
+      culturalConsiderations: ['Gym bag contains supplements — check for clues']
+    },
+    sceneInfo: {
+      description: 'Large commercial gym, weights area. Patient supine on rubber flooring between squat rack and deadlift platform. AED pads attached. Gym staff performing CPR.',
+      hazards: ['Heavy weights and barbells around patient — clear area', 'Loud music — communication difficult'],
+      bystanders: 'Gym staff (2 performing CPR rotation), several gym members watching',
+      environment: 'Air-conditioned indoor gym, well-lit, 22°C',
+      accessIssues: ['Stretcher access through main entrance — wide enough', 'Equipment may need moving to create space for mechanical CPR device'],
+      extricationNeeded: false
+    },
+    initialPresentation: {
+      generalImpression: 'Large muscular male, unresponsive, AED pads in situ, bystander performing chest compressions',
+      position: 'Supine on gym floor',
+      appearance: 'Cyanotic, diaphoretic, no signs of life',
+      consciousness: 'Unresponsive',
+      sounds: ['AED voice prompts', 'Bystander counting compressions']
+    },
+    abcde: {
+      airway: {
+        patent: false,
+        findings: ['Airway not maintained — no adjunct in place', 'Vomitus present in oropharynx', 'Clenched jaw'],
+        interventions: ['Suction oropharynx', 'OPA size 4 inserted', 'BVM ventilation 2 breaths every 30 compressions', 'Consider supraglottic airway (i-gel size 4) or ETT for definitive airway'],
+        adjunctsNeeded: ['OPA', 'Suction', 'BVM', 'i-gel or ETT']
+      },
+      breathing: {
+        rate: 0,
+        rhythm: 'Absent',
+        depth: 'Absent',
+        spo2: 0,
+        findings: ['Apnoeic', 'No respiratory effort', 'Bilateral air entry absent without ventilation'],
+        interventions: ['BVM ventilation with high-flow O2 at 15L/min', 'Aim for 10 breaths/min once advanced airway placed', 'Waveform capnography — attach immediately for CPR quality monitoring'],
+        auscultation: ['No breath sounds without ventilation', 'Bilateral air entry with BVM ventilation confirmed']
+      },
+      circulation: {
+        pulseRate: 0,
+        pulseQuality: 'Absent — no carotid or femoral pulse',
+        bp: { systolic: 0, diastolic: 0 },
+        capillaryRefill: 0,
+        skin: 'Cyanotic, cool, diaphoretic',
+        findings: [
+          'Cardiac arrest — VF on monitor',
+          'Refractory VF — persisting after AED shocks x2 plus additional defibrillation attempts',
+          'No pulse with CPR pause',
+          'ETCO2 reading 15 mmHg with good quality CPR'
+        ],
+        interventions: [
+          'High-quality CPR — rate 100-120/min, depth 5-6cm, full recoil, minimise interruptions',
+          'Defibrillation 200J biphasic — shock 3 (first crew shock)',
+          'IV access — 18G right EJ or antecubital',
+          'IO access if IV fails — right proximal tibia',
+          'Adrenaline 1mg IV after 3rd shock, then every 3-5 minutes',
+          'Amiodarone 300mg IV after 3rd shock',
+          'If still refractory after 5th shock: consider double sequential defibrillation (DSE)',
+          'If still refractory: Esmolol 500mcg/kg IV bolus (emerging evidence)',
+          'Alternative: Lignocaine 1mg/kg IV if amiodarone ineffective',
+          'Amiodarone 150mg IV after 5th shock (second dose)',
+          'Consider mechanical CPR device (LUCAS) for prolonged resuscitation and transport'
+        ],
+        ecgFindings: ['Coarse ventricular fibrillation persisting through multiple shocks', 'No organised rhythm between shocks'],
+        ivAccess: ['18G right antecubital fossa', 'Consider IO right proximal tibia if IV delayed']
+      },
+      disability: {
+        avpu: 'U',
+        gcs: { eye: 1, verbal: 1, motor: 1, total: 3 },
+        pupils: 'Fixed and dilated bilaterally (8mm) — expected in arrest',
+        bloodGlucose: 12.8,
+        findings: ['Unresponsive', 'GCS 3', 'Fixed dilated pupils', 'BGL 12.8 mmol/L (stress response)'],
+        interventions: ['Monitor pupil response — may improve with ROSC', 'Blood glucose noted — no intervention needed in arrest']
+      },
+      exposure: {
+        temperature: 37.2,
+        findings: ['No external trauma', 'Gym clothing removed for defibrillation', 'Multiple supplement containers in gym bag', 'Muscular build — possible anabolic steroid use', 'No medical alert jewellery'],
+        interventions: ['Maintain dignity — cover when possible', 'Check gym bag for medications or substances', 'Note any injection sites on arms/glutes']
+      }
+    },
+    secondarySurvey: {
+      head: ['No trauma', 'No bleeding from ears or nose'],
+      neck: ['No JVD assessable during CPR', 'Trachea central', 'No medical alert necklace'],
+      chest: ['AED/defibrillation pads in situ', 'Good chest wall compliance with compressions', 'No chest wall deformity'],
+      abdomen: ['Muscular, unable to fully assess during CPR', 'No obvious distension'],
+      pelvis: ['Stable — not priority during arrest'],
+      extremities: ['Large bore IV in right AC fossa', 'No track marks', 'Possible injection sites on deltoids (steroid use?)'],
+      posterior: ['Log roll briefly — no spinal injury suspected', 'No posterior bleeding'],
+      neurological: ['GCS 3', 'Fixed dilated pupils', 'No lateralising signs assessable']
+    },
+    history: {
+      medications: [
+        { name: 'Pre-workout supplement', dose: 'Double scoop', frequency: 'Before gym sessions', indication: 'Energy/performance', route: 'PO' },
+        { name: 'Protein powder', dose: '2 scoops', frequency: 'Twice daily', indication: 'Muscle building', route: 'PO' },
+        { name: 'Creatine', dose: '5g', frequency: 'Daily', indication: 'Performance', route: 'PO' }
+      ],
+      allergies: ['Unknown — patient unresponsive, no medical alert'],
+      medicalConditions: ['Unknown — gym staff report he seemed healthy', 'Possible undisclosed cardiac history'],
+      surgicalHistory: ['Unknown'],
+      lastMeal: 'Gym staff say he had a protein shake approximately 1 hour before session',
+      eventsLeading: 'Patient was performing heavy deadlifts (reportedly 200kg+). Completed a set, stood up, said "I feel weird," grabbed his chest, and collapsed. Gym staff witnessed the collapse, called for help, started CPR within 30 seconds. AED retrieved within 2 minutes — advised shock x2. Patient remains in VF.',
+      socialHistory: {
+        smoking: 'Unknown — gym environment suggests health-conscious but not conclusive',
+        alcohol: 'Unknown',
+        drugs: 'Gym bag contains various supplements including pre-workout with high caffeine content. Possible anabolic steroid use based on physique — not confirmed',
+        occupation: 'Construction project manager — physically demanding, high stress'
+      },
+      familyHistory: {
+        conditions: ['Unknown — unable to obtain from patient'],
+        relevantToPresentation: ['Sudden cardiac death in young/middle-aged male during exertion raises concern for: hypertrophic cardiomyopathy, coronary artery disease, channelopathies (Brugada, Long QT)']
+      }
+    },
+    investigations: [
+      { name: 'Cardiac monitor', indication: 'Cardiac arrest', findings: 'Coarse VF persisting through multiple defibrillation attempts', interpretation: 'Refractory ventricular fibrillation', urgency: 'immediate' },
+      { name: 'Waveform capnography', indication: 'CPR quality and ROSC detection', findings: 'ETCO2 15-22 mmHg during CPR', interpretation: 'Adequate CPR quality (>10 mmHg). Sudden rise >40 mmHg would indicate ROSC', urgency: 'immediate' },
+      { name: 'Blood glucose', indication: 'Reversible cause screen', findings: '12.8 mmol/L', interpretation: 'Stress hyperglycaemia — expected in arrest', urgency: 'immediate' },
+      { name: '12-lead ECG (post-ROSC)', indication: 'Identify cause of arrest', findings: 'ST elevation V1-V4, reciprocal depression II, III, aVF', interpretation: 'Acute anterior STEMI — likely cause of refractory VF. Activate cath lab.', urgency: 'immediate' }
+    ],
+    vitalSignsProgression: {
+      initial: { bp: '0/0', pulse: 0, respiration: 0, spo2: 0, gcs: 3, etco2: 15 },
+      afterIntervention: { bp: '75/50', pulse: 120, respiration: 12, spo2: 90, gcs: 3, etco2: 38, bloodGlucose: 12.8 },
+      enRoute: { bp: '85/55', pulse: 115, respiration: 14, spo2: 93, gcs: 3, etco2: 35 },
+      deterioration: { bp: '0/0', pulse: 0, respiration: 0, spo2: 0, gcs: 3, etco2: 8 }
+    },
+    expectedFindings: {
+      keyObservations: [
+        'Witnessed cardiac arrest during heavy exertion',
+        'Refractory VF — persisting despite multiple standard defibrillation attempts',
+        'Bystander CPR and AED use — good prognostic sign',
+        'Young-ish male with possible risk factors (supplements, steroids, family history unknown)',
+        'ETCO2 monitoring shows adequate CPR quality'
+      ],
+      redFlags: [
+        'Refractory VF — standard ACLS algorithm not converting rhythm',
+        'Potential underlying acute MI as cause',
+        'Unknown medication/substance history — possible steroid or stimulant use',
+        'Prolonged resuscitation — need to consider ceiling of care and eCPR eligibility'
+      ],
+      differentialDiagnoses: [
+        'Acute myocardial infarction (most likely — exertional chest pain preceding collapse)',
+        'Hypertrophic cardiomyopathy (sudden death during exertion in middle-aged male)',
+        'Drug-induced arrhythmia (pre-workout stimulants, anabolic steroids)',
+        'Electrolyte abnormality (hypomagnesaemia, hypokalaemia from supplements/dehydration)',
+        'Commotio cordis (unlikely — no direct chest impact)',
+        'Channelopathy — Brugada syndrome, Long QT (less likely at age 48)',
+        'Aortic dissection with VF (heavy Valsalva manoeuvre during deadlift)'
+      ],
+      mostLikelyDiagnosis: 'Acute MI causing refractory ventricular fibrillation',
+      supportingEvidence: [
+        'Age 48 with cardiovascular risk factors',
+        'Collapse during heavy exertion (deadlift)',
+        'Post-ROSC ECG showing STEMI',
+        'Refractory VF consistent with acute coronary occlusion'
+      ]
+    },
+    managementPathway: {
+      immediate: [
+        'Confirm cardiac arrest — check for signs of life, pulse check <10 seconds',
+        'Take over CPR from bystanders — ensure high-quality compressions (100-120/min, 5-6cm depth)',
+        'Apply defibrillator/monitor — confirm VF',
+        'Defibrillate 200J biphasic — this is shock 3 (AED gave 2)',
+        'Resume CPR immediately — 2-minute cycle',
+        'Establish IV/IO access',
+        'Suction airway, insert OPA, BVM ventilation',
+        'Attach waveform capnography',
+        'Adrenaline 1mg IV after 3rd shock',
+        'Amiodarone 300mg IV after 3rd shock'
+      ],
+      definitive: [
+        'If VF persists after 5th shock: consider double sequential defibrillation (anterior-posterior pad placement)',
+        'Esmolol 500mcg/kg IV bolus for refractory VF (emerging evidence — consider after 5+ shocks)',
+        'Alternative: Lignocaine 1mg/kg IV if amiodarone has failed',
+        'Amiodarone 150mg IV (second dose) after 5th shock',
+        'Mechanical CPR device (LUCAS) for transport with ongoing CPR',
+        'Early cath lab activation — eCPR pathway if available',
+        'Consider reversible causes: 4Hs and 4Ts — Hyper/hypokalaemia likely given supplements',
+        'Magnesium 2g IV (8mmol) if hypomagnesaemia suspected or as empiric therapy in refractory VF'
+      ],
+      monitoring: [
+        'Continuous waveform capnography — target ETCO2 >10 mmHg (>20 good prognosis)',
+        'Sudden ETCO2 rise >40 mmHg suggests ROSC',
+        'CPR quality feedback — rate, depth, recoil',
+        'Time tracking — drug intervals, total arrest time',
+        'Post-ROSC: continuous ECG, BP, SpO2, ETCO2, temperature'
+      ],
+      transportConsiderations: [
+        'Transport with mechanical CPR (LUCAS) if available — do NOT stop CPR for transport',
+        'Pre-alert cardiac catheterisation lab for eCPR/emergent PCI',
+        'Nearest PCI-capable centre: Rashid Hospital or American Hospital Dubai',
+        'Consider HEMS for direct cath lab transfer if ground transport prolonged',
+        'Continue resuscitation en route — do not terminate on scene if young patient with witnessed arrest and shockable rhythm',
+        'If ROSC achieved: targeted temperature management pathway, post-ROSC care bundle'
+      ]
+    },
+    studentChecklist: [
+      { id: 'c13-1', category: 'safety', description: 'Scene safety — clear heavy weights around patient, ensure safe working space', points: 3, yearLevel: ['4th-year'], complexity: ['advanced'] },
+      { id: 'c13-2', category: 'abcde', description: 'Confirm cardiac arrest — pulse check <10 seconds', points: 5, yearLevel: ['4th-year'], complexity: ['advanced'], critical: true, timeframe: 'Immediate' },
+      { id: 'c13-3', category: 'intervention', description: 'Take over high-quality CPR — correct rate (100-120/min), depth (5-6cm), full recoil', points: 10, yearLevel: ['4th-year'], complexity: ['advanced'], critical: true, rationale: 'CPR quality directly affects survival' },
+      { id: 'c13-4', category: 'intervention', description: 'Defibrillate VF — 200J biphasic, minimise peri-shock pause (<5 seconds)', points: 10, yearLevel: ['4th-year'], complexity: ['advanced'], critical: true, timeframe: 'Within 1 minute of arrival' },
+      { id: 'c13-5', category: 'abcde', description: 'Airway management — suction, OPA, BVM, consider advanced airway', points: 5, yearLevel: ['4th-year'], complexity: ['advanced'] },
+      { id: 'c13-6', category: 'intervention', description: 'Establish IV/IO access for drug delivery', points: 5, yearLevel: ['4th-year'], complexity: ['advanced'], timeframe: 'Within 2 minutes' },
+      { id: 'c13-7', category: 'medication', description: 'Adrenaline 1mg IV after 3rd shock, then every 3-5 minutes', points: 10, yearLevel: ['4th-year'], complexity: ['advanced'], critical: true },
+      { id: 'c13-8', category: 'medication', description: 'Amiodarone 300mg IV after 3rd shock', points: 10, yearLevel: ['4th-year'], complexity: ['advanced'], critical: true },
+      { id: 'c13-9', category: 'equipment', description: 'Attach waveform capnography and use ETCO2 to monitor CPR quality', points: 10, yearLevel: ['4th-year'], complexity: ['advanced'], rationale: 'ETCO2 >10mmHg indicates adequate CPR, >20mmHg good prognosis, sudden rise >40mmHg suggests ROSC' },
+      { id: 'c13-10', category: 'clinical-reasoning', description: 'Recognise refractory VF and escalate management beyond standard ALS algorithm', points: 15, yearLevel: ['4th-year'], complexity: ['advanced'], critical: true, rationale: 'Refractory VF requires advanced strategies — DSE, esmolol, lignocaine' },
+      { id: 'c13-11', category: 'intervention', description: 'Consider double sequential defibrillation after 5+ failed shocks', points: 10, yearLevel: ['4th-year'], complexity: ['advanced'] },
+      { id: 'c13-12', category: 'medication', description: 'Consider Esmolol 500mcg/kg IV or Lignocaine 1mg/kg IV for refractory VF', points: 10, yearLevel: ['4th-year'], complexity: ['advanced'] },
+      { id: 'c13-13', category: 'clinical-reasoning', description: 'Systematically consider reversible causes (4Hs and 4Ts) — especially acute MI and electrolyte abnormalities', points: 10, yearLevel: ['4th-year'], complexity: ['advanced'] },
+      { id: 'c13-14', category: 'communication', description: 'Early activation of cardiac catheterisation lab / eCPR pathway', points: 10, yearLevel: ['4th-year'], complexity: ['advanced'], critical: true },
+      { id: 'c13-15', category: 'equipment', description: 'Request and deploy mechanical CPR device (LUCAS) for transport', points: 5, yearLevel: ['4th-year'], complexity: ['advanced'] },
+      { id: 'c13-16', category: 'team-lead', description: 'Effective team leadership — assign roles, closed-loop communication, time management', points: 10, yearLevel: ['4th-year'], complexity: ['advanced'] },
+      { id: 'c13-17', category: 'documentation', description: 'Accurate documentation — shock times, drug times, CPR quality metrics, total arrest time', points: 5, yearLevel: ['4th-year'], complexity: ['advanced'] }
+    ],
+    teachingPoints: [
+      'Refractory VF is defined as VF persisting after 3 or more defibrillation attempts with appropriate energy and CPR',
+      'Double sequential defibrillation (DSE) involves two defibrillators with pads in different vectors (anterior-lateral AND anterior-posterior) — emerging evidence suggests improved conversion rates',
+      'Esmolol 500mcg/kg IV bolus is emerging as a treatment for refractory VF — acts by reducing myocardial oxygen demand and may facilitate defibrillation',
+      'Lignocaine 1mg/kg IV is an alternative antiarrhythmic to amiodarone — some evidence suggests superiority in refractory VF, particularly from cardiac aetiology',
+      'ETCO2 monitoring is essential — values >10mmHg indicate adequate CPR quality, >20mmHg associated with better outcomes, sudden rise >40mmHg is earliest sign of ROSC',
+      'Mechanical CPR devices (LUCAS) provide consistent compressions and allow safe transport with ongoing CPR — essential for refractory arrest requiring cath lab transfer',
+      'eCPR (extracorporeal CPR) pathway: young patient + witnessed arrest + shockable rhythm + no ROSC after 10-15 minutes = candidate for emergency cardiac catheterisation with ongoing mechanical CPR',
+      'Pre-workout supplements with high caffeine content (300-600mg per dose) can precipitate arrhythmias, especially combined with intense exercise and dehydration',
+      'Anabolic steroid use is associated with left ventricular hypertrophy, coronary artery disease, and increased risk of sudden cardiac death during exertion',
+      'In the gym setting — always check for supplements, syringes, and medications in the patient\'s bag. This information changes differential diagnosis and management',
+      'Transport decisions in refractory VF: do NOT terminate on scene if patient is young, arrest was witnessed, rhythm is shockable. Transport with mechanical CPR to PCI-capable centre',
+      'Magnesium 2g IV can be given empirically in refractory VF — may be particularly useful if hypomagnesaemia from exercise/dehydration/supplements',
+      'Post-ROSC care is critical: targeted temperature management 32-36°C, maintain MAP >65mmHg, emergent coronary angiography, avoid hyperoxia (target SpO2 94-98%)'
+    ],
+    commonPitfalls: [
+      'Failing to recognise refractory VF and continuing standard ALS without escalation',
+      'Poor CPR quality — inadequate depth, rate, or incomplete recoil reduce survival to near zero',
+      'Long peri-shock pauses (>5 seconds) — compressions should resume immediately after shock',
+      'Delaying adrenaline and amiodarone — both should be given after the 3rd shock',
+      'Not attaching waveform capnography — losing valuable CPR quality and ROSC detection data',
+      'Terminating resuscitation too early in a young patient with witnessed arrest and shockable rhythm',
+      'Failing to consider reversible causes — especially acute MI which is treatable even during CPR',
+      'Not requesting mechanical CPR device early enough — delays transport to cath lab',
+      'Ignoring the gym bag contents — supplements and steroids are critical history',
+      'Hyperventilating the patient with BVM — aim for 10 breaths/min with advanced airway, excessive ventilation reduces venous return',
+      'Forgetting to check the AED event log for shock times and rhythm analysis from bystander use',
+      'Not pre-alerting the receiving hospital with specific STEMI + refractory VF information'
+    ],
+    equipmentNeeded: [
+      'Monitor/defibrillator with manual and advisory modes',
+      'Second defibrillator for double sequential defibrillation',
+      'Anterior-posterior defibrillation pads',
+      'Waveform capnography',
+      'BVM with reservoir (adult)',
+      'Oropharyngeal airways (sizes 3, 4)',
+      'Supraglottic airway (i-gel size 4) or ETT kit',
+      'Suction unit with yankauer and flexible catheters',
+      'IV cannulation kit (16G, 18G)',
+      'IO drill and needles (proximal tibia, humeral head)',
+      'Adrenaline 1mg prefilled syringes (x5)',
+      'Amiodarone 300mg (x2)',
+      'Esmolol 100mg/10ml',
+      'Lignocaine 1% (100mg/10ml)',
+      'Magnesium sulfate 50% (2g/4ml)',
+      'Normal saline 250ml bags (x2)',
+      'Mechanical CPR device (LUCAS)',
+      'CPR feedback device (metronome/accelerometer)',
+      'Transport stretcher'
+    ],
+    uaeProtocols: {
+      applicableGuidelines: [
+        'DCAS Cardiac Arrest Protocol v5.1',
+        'DCAS Advanced Life Support — Adult Cardiac Arrest Algorithm',
+        'DCAS Refractory VF/VT Pathway',
+        'Dubai eCPR Activation Criteria (Rashid Hospital)',
+        'UAE National Ambulance ALS Protocol'
+      ],
+      receivingFacilities: [
+        { name: 'Rashid Hospital', location: 'Dubai', capabilities: ['24/7 PCI', 'eCPR Programme', 'Cardiac Surgery', 'ECMO'], contact: '04 219 3000', distance: '15km from Al Quoz' },
+        { name: 'American Hospital Dubai', location: 'Oud Metha', capabilities: ['24/7 PCI', 'Cardiac ICU'], contact: '04 377 5500', distance: '12km from Al Quoz' },
+        { name: 'Cleveland Clinic Abu Dhabi', location: 'Abu Dhabi', capabilities: ['24/7 PCI', 'eCPR', 'ECMO', 'Cardiac Surgery'], contact: '02 501 9000', distance: '130km — HEMS transfer only' }
+      ],
+      localConsiderations: [
+        'Al Quoz Industrial Area — evening traffic usually light but route planning essential',
+        'Mechanical CPR device allows safe transport on Sheikh Zayed Road',
+        'Rashid Hospital is the primary eCPR centre for Dubai — pre-alert interventional cardiology on-call',
+        'Gym environments in UAE — check for unregistered supplements common in bodybuilding culture',
+        'Dubai summer temperatures can cause dehydration and electrolyte imbalances compounding arrest risk'
+      ]
+    }
+  }),
+
+  // CARDIAC CASE 014 - Hypothermic Drowning Cardiac Arrest (3rd/4th Year)
+  createCase({
+    id: 'cardiac-014',
+    title: 'Hypothermic Drowning - Cardiac Arrest',
+    category: 'cardiac',
+    subcategory: 'cardiac-arrest',
+    priority: 'critical',
+    complexity: 'advanced',
+    yearLevels: ['3rd-year', '4th-year'],
+    estimatedDuration: 30,
+    dispatchInfo: {
+      callReason: 'Child pulled from swimming pool, not breathing, no pulse — bystander CPR attempted then stopped',
+      timeOfDay: 'morning',
+      location: 'Grand Palms Hotel, Jumeirah Beach Road, Dubai',
+      callerInfo: 'Hotel duty manager (panicked, limited first aid knowledge)',
+      dispatchCode: 'Echo-1',
+      additionalInfo: [
+        '8-year-old boy found face-down in unheated hotel pool',
+        'Estimated submersion time 5-8 minutes',
+        'Hotel staff pulled him out and started CPR but stopped — believe he has been under too long',
+        'Pool is outdoor, unheated — winter season',
+        'Mother is on scene, extremely distressed'
+      ]
+    },
+    patientInfo: {
+      age: 8,
+      gender: 'male',
+      weight: 28,
+      occupation: 'School student (tourist)',
+      language: 'English, Arabic',
+      culturalConsiderations: ['Family are tourists from UK', 'Mother on scene — will need support and information']
+    },
+    sceneInfo: {
+      description: 'Hotel poolside, outdoor unheated pool. Child lying on pool deck, wet, cold. Hotel towels placed over him. Pool water temperature approximately 18°C (winter in Dubai). No lifeguard on duty.',
+      hazards: ['Wet pool deck — slip risk', 'Child is soaking wet and cold — risk of hypothermia to rescuers unlikely but note'],
+      bystanders: 'Mother (hysterical, being comforted by hotel staff), hotel duty manager, two housekeeping staff',
+      environment: 'Outdoor poolside, morning, air temperature 20°C, breezy. Child soaking wet, estimated core temperature significantly below normal.',
+      accessIssues: ['Pool area accessible through hotel lobby', 'Stretcher access via service entrance — hotel staff to guide'],
+      extricationNeeded: false
+    },
+    initialPresentation: {
+      generalImpression: 'Small child, cold and pale, lying on pool deck wrapped in wet towels, not moving, no signs of life',
+      position: 'Supine on pool deck',
+      appearance: 'Pale/grey, cyanotic lips, cold and wet, motionless',
+      consciousness: 'Unresponsive',
+      sounds: ['Mother crying', 'No sounds from patient']
+    },
+    abcde: {
+      airway: {
+        patent: false,
+        findings: ['Airway not maintained', 'Water and possible vomit in oropharynx', 'No gag reflex', 'Tongue occluding airway — head tilt chin lift'],
+        interventions: [
+          'Head tilt, chin lift — open airway',
+          'Suction oropharynx — clear water and vomit',
+          'OPA size 2 (pediatric)',
+          '5 rescue breaths FIRST (drowning protocol — ventilation priority)',
+          'BVM ventilation with pediatric mask and appropriate bag',
+          'Consider supraglottic airway or ETT — high aspiration risk, definitive airway preferred early'
+        ],
+        adjunctsNeeded: ['Pediatric OPA', 'Suction', 'Pediatric BVM with reservoir', 'Pediatric i-gel or cuffed ETT (5.5mm)']
+      },
+      breathing: {
+        rate: 0,
+        rhythm: 'Absent',
+        depth: 'Absent',
+        spo2: 0,
+        findings: ['Apnoeic', 'No respiratory effort', 'Bilateral coarse crackles heard after initial BVM ventilation (aspirated water)', 'Significant gastric distension from swallowed water'],
+        interventions: [
+          '5 initial rescue breaths (drowning resuscitation — ventilation is priority)',
+          'BVM ventilation with 100% O2 at 15L/min',
+          'Aim 12-20 breaths/min (age appropriate)',
+          'Gastric distension expected — NG tube if available to decompress',
+          'Expect poor compliance initially due to water in lungs — may need higher pressures',
+          'Waveform capnography — attach once advanced airway placed'
+        ],
+        auscultation: ['Bilateral coarse crackles (aspirated water)', 'Reduced air entry bilaterally initially']
+      },
+      circulation: {
+        pulseRate: 0,
+        pulseQuality: 'Absent — no carotid or brachial pulse',
+        bp: { systolic: 0, diastolic: 0 },
+        capillaryRefill: 0,
+        skin: 'Cold (core temp 28°C), pale/grey, cyanotic, mottled',
+        findings: [
+          'Cardiac arrest — asystole on monitor (hypothermic arrest)',
+          'Core temperature 28°C (severe hypothermia)',
+          'No palpable pulses — check for 30-60 seconds in hypothermia (may be very slow/weak)',
+          'ETCO2 very low (8 mmHg) — expected in hypothermic arrest'
+        ],
+        interventions: [
+          'CPR — pediatric ratio 15:2 (two rescuers), depth 1/3 anterior-posterior chest diameter (~4-5cm)',
+          'Remove wet clothing immediately — replace with dry blankets, space blanket',
+          'IV access — 22G dorsal hand or antecubital (may be very difficult — cold vasoconstriction)',
+          'IO access — left proximal tibia (preferred in pediatric arrest)',
+          'Adrenaline 10mcg/kg (0.28mg for 28kg) IV/IO — BUT withhold adrenaline until core temp >30°C, then give at DOUBLE intervals',
+          'Warm IV fluids — 20ml/kg bolus (560ml) warmed to 40°C if available',
+          'Active rewarming measures (see exposure)',
+          'Defibrillation: if VF/VT develops — give up to 3 shocks, if unsuccessful withhold further shocks until core temp >30°C',
+          'Asystole in hypothermia: continue CPR — asystole may convert to VF then sinus rhythm as patient rewarms'
+        ],
+        ecgFindings: ['Asystole initially', 'May see Osborn (J) waves if any electrical activity returns during rewarming', 'VF may develop during rewarming — be prepared to defibrillate'],
+        ivAccess: ['22G left hand (difficult — cold vasoconstriction)', 'IO left proximal tibia 15mm needle — preferred route']
+      },
+      disability: {
+        avpu: 'U',
+        gcs: { eye: 1, verbal: 1, motor: 1, total: 3 },
+        pupils: 'Fixed and dilated (6mm) — DO NOT use as prognostic indicator in hypothermia',
+        bloodGlucose: 2.1,
+        findings: [
+          'Unresponsive, GCS 3',
+          'Fixed dilated pupils — EXPECTED in hypothermia, NOT a sign of death',
+          'Blood glucose 2.1 mmol/L — CRITICAL HYPOGLYCAEMIA (children deplete glycogen rapidly in hypothermia)',
+          'No assessable reflexes'
+        ],
+        interventions: [
+          'Dextrose 10% 5ml/kg IV (140ml of 10% dextrose) for hypoglycaemia',
+          'If 10% unavailable: Dextrose 25% 2ml/kg (56ml)',
+          'Recheck BGL every 5-10 minutes',
+          'Do NOT use pupil response as prognostic indicator in hypothermia'
+        ]
+      },
+      exposure: {
+        temperature: 28,
+        findings: [
+          'Core temperature 28°C (severe hypothermia — measured via tympanic as initial estimate, need oesophageal/rectal for accuracy)',
+          'Soaking wet in swim shorts only',
+          'Cold to touch throughout',
+          'Skin mottled, pale/grey',
+          'No external injuries visible',
+          'No signs of non-accidental injury'
+        ],
+        interventions: [
+          'REMOVE ALL WET CLOTHING immediately',
+          'Dry the patient thoroughly',
+          'Wrap in dry blankets + space blanket (foil blanket)',
+          'Warm IV fluids (40°C) — 20ml/kg bolus',
+          'Chemical heat packs to axillae and groin (avoid direct skin contact — use cloth barrier)',
+          'Warm the ambulance to maximum temperature',
+          'Handle gently — rough handling can precipitate VF in hypothermic patients',
+          'Active rewarming target: 1°C per hour until 32°C, then slower',
+          'Post-ROSC target temperature 36°C (NOT therapeutic hypothermia in drowning — they are already cold)',
+          'Continuous core temperature monitoring'
+        ]
+      }
+    },
+    secondarySurvey: {
+      head: ['No trauma', 'No signs of head injury pre-submersion'],
+      neck: ['C-spine considered — no mechanism for spinal injury (pool, not diving)', 'Trachea central'],
+      chest: ['Bilateral crackles (aspirated water)', 'Equal chest rise with ventilation', 'Gastric distension present'],
+      abdomen: ['Distended — swallowed water', 'NG decompression if available'],
+      pelvis: ['Normal — no concerns'],
+      extremities: ['Cold peripherally', 'IO in situ left tibia', 'No injuries'],
+      posterior: ['No bruising or injuries', 'No signs of non-accidental injury'],
+      neurological: ['GCS 3', 'Fixed dilated pupils (expected in hypothermia — NOT prognostic)', 'No lateralising signs assessable']
+    },
+    history: {
+      medications: [
+        { name: 'Salbutamol inhaler', dose: '100mcg', frequency: 'As needed', indication: 'Mild asthma', route: 'Inhaled' }
+      ],
+      allergies: ['Penicillin (rash)'],
+      medicalConditions: ['Mild asthma (exercise-induced)', 'Otherwise healthy child'],
+      surgicalHistory: ['None'],
+      lastMeal: 'Breakfast at hotel approximately 1.5 hours ago (cereal and toast — mother confirms)',
+      eventsLeading: 'Family staying at hotel on holiday from UK. Mother was in hotel room, child went to pool area alone approximately 8:15am. Hotel housekeeper found child face-down in deep end of unheated outdoor pool at approximately 8:22am. Estimated submersion 5-8 minutes. Staff pulled child from water, placed on pool deck, attempted CPR for approximately 2 minutes then stopped because "he is cold and has been under too long." Ambulance called at 8:25am.',
+      socialHistory: {
+        occupation: 'Year 3 primary school student',
+        livingSituation: 'Lives with parents and younger sister in London, UK — on holiday in Dubai'
+      },
+      familyHistory: {
+        conditions: ['No family history of cardiac disease', 'No epilepsy', 'Mother has asthma'],
+        relevantToPresentation: ['No predisposing conditions for drowning identified']
+      }
+    },
+    investigations: [
+      { name: 'Cardiac monitor', indication: 'Cardiac arrest', findings: 'Asystole initially; may develop VF during rewarming', interpretation: 'Hypothermic cardiac arrest — asystole common at <28°C', urgency: 'immediate' },
+      { name: 'Core temperature', indication: 'Hypothermia assessment', findings: '28°C (tympanic — may underestimate)', interpretation: 'Severe hypothermia (<30°C). Oesophageal or rectal temperature more accurate.', urgency: 'immediate' },
+      { name: 'Blood glucose', indication: 'Pediatric arrest — glycogen depletion risk', findings: '2.1 mmol/L', interpretation: 'Critical hypoglycaemia — children deplete glycogen rapidly in cold. Treat immediately with IV dextrose.', urgency: 'immediate' },
+      { name: 'Waveform capnography', indication: 'CPR quality and ROSC detection', findings: 'ETCO2 8 mmHg initially, rising to 14 with rewarming', interpretation: 'Low ETCO2 expected in hypothermia — do NOT use for prognostication. Rising values suggest improving perfusion.', urgency: 'immediate' }
+    ],
+    vitalSignsProgression: {
+      initial: { bp: '0/0', pulse: 0, respiration: 0, spo2: 0, gcs: 3, temperature: 28, bloodGlucose: 2.1, etco2: 8 },
+      afterIntervention: { bp: '70/40', pulse: 50, respiration: 8, spo2: 88, gcs: 3, temperature: 30, bloodGlucose: 5.2, etco2: 28 },
+      enRoute: { bp: '80/50', pulse: 58, respiration: 12, spo2: 92, gcs: 3, temperature: 31, bloodGlucose: 6.0, etco2: 32 }
+    },
+    expectedFindings: {
+      keyObservations: [
+        'Pediatric drowning with cardiac arrest',
+        'Severe hypothermia (28°C) — neuroprotective potential',
+        'Witnessed submersion with relatively short immersion time (5-8 minutes)',
+        'Bystander CPR was started but inappropriately stopped',
+        'Critical hypoglycaemia requiring urgent treatment',
+        'Asystole — typical rhythm in severe hypothermia'
+      ],
+      redFlags: [
+        'Bystander CPR stopped prematurely — "cold and too long" is NOT a reason to stop',
+        'Severe hypothermia — drug dosing modifications required',
+        'Hypoglycaemia — paediatric emergency within the emergency',
+        'High aspiration risk from swallowed/aspirated water',
+        'Unwitnessed submersion duration — could be longer than estimated',
+        'Safeguarding concern — unsupervised child at pool with no lifeguard'
+      ],
+      differentialDiagnoses: [
+        'Primary drowning (most likely — unsupervised child)',
+        'Drowning secondary to seizure (child has asthma — no epilepsy history but consider)',
+        'Drowning secondary to trauma (head injury on pool edge — examine head)',
+        'Drowning secondary to cardiac event (rare in 8yo but consider Long QT)',
+        'Non-accidental injury (always consider in paediatric drowning — examine for marks)'
+      ],
+      mostLikelyDiagnosis: 'Primary drowning with hypothermic cardiac arrest',
+      supportingEvidence: [
+        'Found face-down in unheated pool',
+        'Unsupervised child — no lifeguard',
+        'Severe hypothermia consistent with cold water immersion',
+        'Cardiac arrest rhythm (asystole) consistent with hypothermia'
+      ]
+    },
+    managementPathway: {
+      immediate: [
+        'Confirm cardiac arrest — check pulse for 30-60 seconds (pulses may be very faint in hypothermia)',
+        '5 rescue breaths FIRST (drowning protocol — ventilation before compressions)',
+        'If no signs of life after rescue breaths: start CPR 15:2 (pediatric)',
+        'Remove ALL wet clothing — dry thoroughly',
+        'Suction airway — water and vomit likely',
+        'Insert OPA and commence BVM ventilation with 100% O2',
+        'Apply cardiac monitor — identify rhythm',
+        'Obtain core temperature',
+        'IO access — preferred in pediatric arrest (left proximal tibia)'
+      ],
+      definitive: [
+        'Active rewarming: dry blankets, space blanket, warm IV fluids, heat packs to axillae/groin',
+        'Treat hypoglycaemia immediately — Dextrose 10% 5ml/kg IV/IO',
+        'Adrenaline: withhold until core temp >30°C, then give 10mcg/kg at DOUBLE intervals (every 6-10 minutes)',
+        'If rhythm changes to VF: defibrillate at 4J/kg (112J), up to 3 shocks — withhold further shocks until >30°C',
+        'Warm IV fluids: Normal saline warmed to 40°C, 20ml/kg bolus',
+        'Advanced airway: cuffed ETT 5.5mm or pediatric i-gel for definitive airway and aspiration prevention',
+        'NG/OG tube to decompress stomach (swallowed water)',
+        'Continue CPR until rewarmed to 32°C minimum — "not dead until warm and dead"',
+        'Consider ECMO rewarming at receiving centre if no ROSC despite rewarming to >32°C'
+      ],
+      monitoring: [
+        'Continuous core temperature — serial measurements every 5 minutes',
+        'Cardiac monitor — watch for rhythm changes during rewarming',
+        'Blood glucose — recheck every 5-10 minutes (children deplete rapidly)',
+        'ETCO2 — do not use for prognostication in hypothermia but trend is useful',
+        'SpO2 — unreliable in hypothermia/poor perfusion but attach',
+        'Handle GENTLY — rough handling precipitates VF in hypothermia'
+      ],
+      transportConsiderations: [
+        'Transport to ECMO-capable paediatric centre if available',
+        'Nearest facility: Al Jalila Children\'s Specialty Hospital or Dubai Hospital Pediatric ICU',
+        'Pre-alert receiving hospital: pediatric hypothermic cardiac arrest, drowning, current core temp',
+        'Warm the ambulance to maximum temperature',
+        'Continue aggressive rewarming en route',
+        'Do NOT stop CPR — prolonged resuscitation (60+ minutes) indicated in hypothermic arrest',
+        'Hypothermic bradycardia after ROSC is NORMAL — do NOT give atropine for HR 40-50 in hypothermia'
+      ]
+    },
+    studentChecklist: [
+      { id: 'c14-1', category: 'safety', description: 'Scene safety — wet poolside, ensure safe access', points: 3, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'] },
+      { id: 'c14-2', category: 'abcde', description: 'Confirm cardiac arrest — extended pulse check (30-60 seconds in hypothermia)', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true, rationale: 'Pulses may be very faint or slow in severe hypothermia — do not declare absent too quickly' },
+      { id: 'c14-3', category: 'intervention', description: 'Begin with 5 rescue breaths FIRST (drowning protocol) before compressions', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true, rationale: 'Drowning is a hypoxic arrest — ventilation is the priority' },
+      { id: 'c14-4', category: 'intervention', description: 'Start pediatric CPR at 15:2 ratio with correct depth (1/3 AP diameter)', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true },
+      { id: 'c14-5', category: 'intervention', description: 'Remove all wet clothing and begin active rewarming immediately', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true },
+      { id: 'c14-6', category: 'abcde', description: 'Suction airway — clear water and vomitus, manage high aspiration risk', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'] },
+      { id: 'c14-7', category: 'intervention', description: 'Obtain core temperature and recognise severe hypothermia (<30°C)', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true },
+      { id: 'c14-8', category: 'clinical-reasoning', description: 'State "nobody is dead until warm and dead" — commit to prolonged resuscitation', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true, rationale: 'Hypothermia is neuroprotective — children have survived after >60 minutes of cold water submersion' },
+      { id: 'c14-9', category: 'medication', description: 'Withhold adrenaline until core temp >30°C, then give at double intervals', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true },
+      { id: 'c14-10', category: 'clinical-reasoning', description: 'Limit defibrillation to 3 shocks until core temp >30°C', points: 5, yearLevel: ['4th-year'], complexity: ['advanced'] },
+      { id: 'c14-11', category: 'medication', description: 'Check blood glucose and treat critical hypoglycaemia with Dextrose 10% 5ml/kg', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true, rationale: 'Children deplete glycogen rapidly in hypothermia — hypoglycaemia worsens neurological outcome' },
+      { id: 'c14-12', category: 'intervention', description: 'Establish IO access (preferred in pediatric arrest) with correct weight-based dosing', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'] },
+      { id: 'c14-13', category: 'intervention', description: 'Warm IV fluids (40°C) — 20ml/kg bolus for rewarming', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'] },
+      { id: 'c14-14', category: 'clinical-reasoning', description: 'Recognise hypothermic bradycardia post-ROSC as normal — do NOT give atropine', points: 10, yearLevel: ['4th-year'], complexity: ['advanced'], rationale: 'Bradycardia is a physiological response to hypothermia, not pathological — atropine is ineffective and unnecessary' },
+      { id: 'c14-15', category: 'communication', description: 'Pre-alert paediatric centre with hypothermic drowning arrest details', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'] },
+      { id: 'c14-16', category: 'communication', description: 'Communicate with mother — provide reassurance, explain ongoing resuscitation', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'] },
+      { id: 'c14-17', category: 'clinical-reasoning', description: 'Consider safeguarding — unsupervised child, document circumstances', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'] }
+    ],
+    teachingPoints: [
+      '"Nobody is dead until they are WARM and dead" — hypothermia provides significant neuroprotection, especially in children. Cases of full neurological recovery after >60 minutes cold water submersion are documented.',
+      'Drowning resuscitation begins with 5 rescue breaths (not 30:2) — this is a hypoxic arrest where oxygenation is the immediate priority',
+      'Core temperature measurement: tympanic thermometers are unreliable in hypothermia and may over-read. Oesophageal probe is gold standard prehospital; rectal is acceptable.',
+      'Defibrillation in severe hypothermia (<30°C): the heart may not respond to electrical therapy. Give up to 3 shocks — if unsuccessful, withhold further shocks until rewarmed above 30°C',
+      'Drug dosing in hypothermia: below 30°C, hepatic metabolism is severely impaired. Withhold adrenaline until >30°C, then give at double the normal interval (every 6-10 minutes instead of 3-5)',
+      'Children deplete glycogen stores rapidly in hypothermia — ALWAYS check blood glucose. Hypoglycaemia worsens neurological outcome and must be treated aggressively',
+      'Active rewarming strategy: remove wet clothes, dry thoroughly, warm blankets, space blanket, warm IV fluids (40°C), chemical heat packs to axillae and groin (with cloth barrier)',
+      'Handle hypothermic patients GENTLY — rough handling, rapid position changes, and cold stimuli can precipitate ventricular fibrillation in the irritable hypothermic myocardium',
+      'Gastric distension is very common in drowning — children swallow large amounts of water. Decompress with NG/OG tube if available to improve ventilation',
+      'Post-ROSC hypothermic bradycardia (HR 40-50) is a normal physiological response — do NOT treat with atropine. The heart rate will increase as the patient rewarms.',
+      'Post-ROSC temperature target in drowning: 36°C (normothermia). These patients are already hypothermic — aggressive rewarming is the priority, not therapeutic cooling',
+      'UAE drowning context: hotel pools (especially unheated winter pools), wadis after rain, and construction site water features are common drowning locations. Many hotels lack lifeguards at all hours.',
+      'Safeguarding consideration: always document the circumstances of paediatric drowning — who was supervising, how long was the child unattended, any suspicious circumstances',
+      'ECMO rewarming is the gold standard for hypothermic cardiac arrest — transport to an ECMO-capable centre if no ROSC despite rewarming above 32°C',
+      'Pediatric weight-based dosing reminders: Adrenaline 10mcg/kg, Defibrillation 4J/kg, Dextrose 10% at 5ml/kg, IV fluid bolus 20ml/kg'
+    ],
+    commonPitfalls: [
+      'Stopping CPR because the patient is cold and "has been too long" — this is the most dangerous misconception in hypothermic arrest',
+      'Starting with 30:2 instead of 5 rescue breaths — drowning is a hypoxic arrest, ventilation comes first',
+      'Using tympanic temperature and assuming it is accurate — tympanic readings significantly overestimate core temp in hypothermia',
+      'Giving adrenaline immediately at standard intervals — drugs accumulate in hypothermia and cause toxicity on rewarming',
+      'Repeated defibrillation attempts below 30°C — wastes time and the hypothermic heart will not convert',
+      'Declaring death based on fixed dilated pupils in a hypothermic patient — pupils are unreliable in hypothermia',
+      'Forgetting to check blood glucose — paediatric hypoglycaemia is a silent killer in hypothermic arrest',
+      'Rough patient handling — triggers VF in the irritable hypothermic myocardium',
+      'Giving atropine for post-ROSC bradycardia — hypothermic bradycardia is physiological and will resolve with rewarming',
+      'Not removing wet clothing — wet clothes accelerate heat loss and prevent rewarming',
+      'Placing heat packs directly on skin — causes burns in vasoconstricted, cold skin. Always use cloth barrier.',
+      'Using adult drug doses — weight-based dosing is critical in paediatrics (this child is 28kg)',
+      'Failing to decompress the stomach — gastric distension from swallowed water impairs ventilation',
+      'Terminating resuscitation too early — hypothermic arrest in children warrants at least 60 minutes of resuscitation or until rewarmed to 32°C',
+      'Not considering safeguarding — unsupervised child at a pool requires documentation and reporting'
+    ],
+    equipmentNeeded: [
+      'Pediatric monitor/defibrillator with pediatric pads',
+      'Pediatric BVM with reservoir and selection of masks',
+      'Oropharyngeal airways (sizes 0-3)',
+      'Suction unit with pediatric yankauer',
+      'Pediatric supraglottic airway or cuffed ETT (5.5mm)',
+      'IO drill with 15mm pediatric needles',
+      'IV cannulation kit (22G, 24G)',
+      'Waveform capnography (pediatric)',
+      'Core temperature probe (oesophageal or rectal)',
+      'Adrenaline 1:10,000 (10mcg/kg = 0.28mg for 28kg child)',
+      'Dextrose 10% solution (5ml/kg = 140ml)',
+      'Normal saline 500ml warmed to 40°C',
+      'Fluid warming device (if available)',
+      'Space blanket (foil blanket)',
+      'Dry blankets x4',
+      'Chemical heat packs x4',
+      'Cloth barriers for heat packs',
+      'NG/OG tube (pediatric)',
+      'Glucometer',
+      'Pediatric drug dose reference chart or calculator'
+    ],
+    uaeProtocols: {
+      applicableGuidelines: [
+        'DCAS Pediatric Cardiac Arrest Protocol v4.0',
+        'DCAS Drowning/Submersion Injury Protocol',
+        'DCAS Hypothermia Management Protocol',
+        'ILCOR 2025 Drowning Resuscitation Guidelines',
+        'UAE Child Protection Law (Federal Law No. 3 of 2016)'
+      ],
+      receivingFacilities: [
+        { name: 'Al Jalila Children\'s Specialty Hospital', location: 'Dubai', capabilities: ['Pediatric ICU', 'Pediatric Emergency', 'ECMO'], contact: '04 248 6666', distance: '10km from Jumeirah Beach Road' },
+        { name: 'Dubai Hospital — Pediatric Emergency', location: 'Dubai', capabilities: ['Pediatric ICU', 'Pediatric Emergency'], contact: '04 219 5000', distance: '8km from Jumeirah Beach Road' },
+        { name: 'Latifa Hospital for Women and Children', location: 'Dubai', capabilities: ['Pediatric ICU', 'Pediatric Emergency', 'PICU'], contact: '04 219 3000', distance: '7km from Jumeirah Beach Road' }
+      ],
+      localConsiderations: [
+        'Dubai winter pool temperatures can drop to 16-20°C — significant hypothermia risk especially for children',
+        'Many hotel pools do not have full-time lifeguards outside of peak hours',
+        'UAE Child Protection Law requires mandatory reporting of child welfare concerns — document circumstances thoroughly',
+        'Tourist families may not have UAE health insurance — hospital financial counsellor may be needed',
+        'Language considerations — ensure family understands ongoing resuscitation and transport decisions'
+      ]
+    }
+  }),
 ];
 
 // ============================================================================

@@ -96,7 +96,8 @@ export interface PatientState {
 
 const parseBP = (bp: string): { systolic: number; diastolic: number } => {
   const parts = bp.split('/').map(p => parseInt(p.trim()));
-  return { systolic: parts[0] || 120, diastolic: parts[1] || 80 };
+  // Use nullish coalescing — 0 is a valid BP value (cardiac arrest)
+  return { systolic: parts[0] ?? 120, diastolic: parts[1] ?? 80 };
 };
 
 const formatBP = (systolic: number, diastolic: number): string =>

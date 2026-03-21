@@ -386,6 +386,8 @@ export const TREATMENTS: Treatment[] = [
     effects: [
       { vitalSign: 'pulse', changeType: 'set', value: 60 },
       { vitalSign: 'bp', changeType: 'set', value: 60 }, // Systolic
+      { vitalSign: 'spo2', changeType: 'set', value: 85 }, // CPR generates some oxygenation
+      { vitalSign: 'respiration', changeType: 'set', value: 10 }, // With BVM ventilation
     ],
   },
   {
