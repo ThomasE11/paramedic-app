@@ -562,7 +562,7 @@ const CARDIAC_PROFILE: CaseAssessmentProfile = {
   requiredSecondary: ['chest', 'neck-cspine'],
   recommendedSecondary: ['abdomen', 'extremities'],
   requiredSpecial: ['12-lead-ecg', 'pain-assessment'],
-  recommendedSpecial: ['blood-glucose', 'reversible-causes'],
+  recommendedSpecial: ['blood-glucose'],
   secondarySurveyLabel: 'Focused Cardiac Assessment',
   secondarySurveyDescription: 'Focused chest and cardiovascular examination. 12-lead ECG is critical.',
 };
@@ -709,6 +709,12 @@ export function getRequiredSteps(caseData: CaseScenario): {
     ...profile.recommendedSecondary,
     ...profile.recommendedSpecial,
   ];
+
+  // H's and T's (reversible causes) ONLY for cardiac arrest cases
+  const sub = (caseData.subcategory || '').toLowerCase();
+  if (sub.includes('cardiac-arrest') || sub.includes('arrest') || sub.includes('vfib') || sub.includes('asystole')) {
+    required.push('reversible-causes');
+  }
 
   return { required, recommended };
 }
