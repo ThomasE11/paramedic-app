@@ -1421,16 +1421,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                   </CardContent>
                 </Card>
 
-                {/* --- Clinical Assessment Panel (full ABCDE detail — kept for completeness) --- */}
-                {assessmentTracker && (
-                  <ClinicalAssessmentPanel
-                    caseCategory={currentCase.category}
-                    tracker={assessmentTracker}
-                    onPerformAssessment={handlePerformAssessment}
-                    activeFindings={activeFindings}
-                    isStudentView={true}
-                  />
-                )}
+                {/* Clinical Assessment Panel removed — replaced by inline ABCDE Primary Survey + 3D Physical Exam above */}
               </div>
 
               {/* ===== RIGHT COLUMN (sticky on desktop) ===== */}
@@ -1682,8 +1673,8 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
               />
             )}
 
-            {/* Hidden TreatmentApplicationPanel — still used for full treatment search fallback */}
-            {currentVitals && (
+            {/* TreatmentApplicationPanel removed — replaced by inline Management ABCDE tabs above */}
+            {false && currentVitals && (
               <Suspense fallback={<LoadingCard />}>
                 <TreatmentApplicationPanel
                   currentVitals={currentVitals}
