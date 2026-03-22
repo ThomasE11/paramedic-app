@@ -32,7 +32,7 @@ import {
   Sparkles, CheckCircle2, AlertTriangle, FileText, Loader2, BookOpen,
   Ambulance, XCircle, Heart, Shield, ChevronRight, BarChart3,
   ClipboardCheck, Star, TrendingUp, TrendingDown, Minus, ExternalLink,
-  RotateCcw, Zap, Volume2
+  RotateCcw, Zap, Volume2, Phone
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AuscultationPanel } from '@/components/AuscultationPanel';
@@ -147,6 +147,16 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
   const lastActivityRef = useRef<number>(Date.now());
   const [hintVisible, setHintVisible] = useState(false);
   const [currentHint, setCurrentHint] = useState<string>('');
+
+  // Transport decision + diagnosis choice (shown before debrief)
+  const [showTransportDecision, setShowTransportDecision] = useState(false);
+  const [transportDecisions, setTransportDecisions] = useState<{
+    priority: string;
+    position: string;
+    preAlert: boolean;
+    destination: string;
+    provisionalDiagnosis: string;
+  } | null>(null);
 
   // Cardiac arrest management — integrated into existing flow
   const [arrestActive, setArrestActive] = useState(false);
@@ -559,15 +569,21 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
     }
   }, [assessmentTracker, currentCase, caseStartTime]);
 
-  // End case
+  // End case — show transport decision dialog first
   const endCase = useCallback((action: 'transport' | 'end') => {
+    setShowTransportDecision(true);
+  }, []);
+
+  // Finalize case after transport decisions are made
+  const finalizeCase = useCallback(() => {
     setCaseEndTime(Date.now());
+    setShowTransportDecision(false);
     setPhase('postcase');
     if (deteriorationIntervalRef.current) {
       clearInterval(deteriorationIntervalRef.current);
       deteriorationIntervalRef.current = null;
     }
-    toast.info(action === 'transport' ? 'Patient transported — generating report...' : 'Care ended — generating report...');
+    toast.info('Care ended — generating report...');
   }, []);
 
   // Calculate performance metrics for post-case
@@ -1060,6 +1076,134 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
               </div>
             </div>
 
+            {/* Transport Decision Dialog */}
+            {showTransportDecision && (
+              <Card className="border-2 border-amber-400 bg-amber-50/50 dark:bg-amber-950/20 rounded-2xl overflow-hidden animate-fade-in">
+                <CardHeader className="pb-3 border-b border-amber-200 dark:border-amber-800">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Ambulance className="h-4 w-4 text-amber-600" />
+                    Transport & Handover Decisions
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-4 space-y-4">
+                  {/* Transport Priority */}
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Transport Priority</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { value: 'lights', label: 'Lights & Sirens', desc: 'Time-critical, rapid transport', color: 'border-red-400 bg-red-50 dark:bg-red-950/20' },
+                        { value: 'urgent', label: 'Urgent (No L&S)', desc: 'Prompt but safe transport', color: 'border-amber-400 bg-amber-50 dark:bg-amber-950/20' },
+                        { value: 'routine', label: 'Routine', desc: 'Non-urgent, standard transport', color: 'border-green-400 bg-green-50 dark:bg-green-950/20' },
+                      ].map(opt => (
+                        <button
+                          key={opt.value}
+                          onClick={() => setTransportDecisions(prev => ({ ...prev || { priority: '', position: '', preAlert: false, destination: '', provisionalDiagnosis: '' }, priority: opt.value }))}
+                          className={`p-2 rounded-xl border-2 text-left transition-all ${
+                            transportDecisions?.priority === opt.value ? opt.color + ' ring-2 ring-offset-1 ring-amber-400' : 'border-border/30 hover:border-border'
+                          }`}
+                        >
+                          <p className="text-xs font-semibold">{opt.label}</p>
+                          <p className="text-[9px] text-muted-foreground">{opt.desc}</p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Patient Position */}
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Patient Position</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {['Supine', 'Semi-Fowlers (30-45°)', 'Left Lateral', 'Sitting Upright', 'Recovery Position', 'Trendelenburg'].map(pos => (
+                        <button
+                          key={pos}
+                          onClick={() => setTransportDecisions(prev => ({ ...prev || { priority: '', position: '', preAlert: false, destination: '', provisionalDiagnosis: '' }, position: pos }))}
+                          className={`p-2 rounded-lg border text-xs text-left transition-all ${
+                            transportDecisions?.position === pos ? 'border-amber-400 bg-amber-50 dark:bg-amber-950/20 font-semibold' : 'border-border/30 hover:border-border'
+                          }`}
+                        >
+                          {pos}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Pre-Alert */}
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setTransportDecisions(prev => ({ ...prev || { priority: '', position: '', preAlert: false, destination: '', provisionalDiagnosis: '' }, preAlert: !prev?.preAlert }))}
+                      className={`flex items-center gap-2 p-2.5 rounded-xl border-2 text-xs transition-all flex-1 ${
+                        transportDecisions?.preAlert ? 'border-red-400 bg-red-50 dark:bg-red-950/20 font-semibold' : 'border-border/30 hover:border-border'
+                      }`}
+                    >
+                      <Phone className="h-3.5 w-3.5" />
+                      {transportDecisions?.preAlert ? '✓ Pre-Alert Hospital' : 'Pre-Alert Hospital?'}
+                    </button>
+                  </div>
+
+                  {/* Destination */}
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Destination</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        'Nearest ED',
+                        'Trauma Centre',
+                        'Cardiac Centre (PCI)',
+                        'Stroke Centre',
+                        'Burns Unit',
+                        'Paediatric ED',
+                      ].map(dest => (
+                        <button
+                          key={dest}
+                          onClick={() => setTransportDecisions(prev => ({ ...prev || { priority: '', position: '', preAlert: false, destination: '', provisionalDiagnosis: '' }, destination: dest }))}
+                          className={`p-2 rounded-lg border text-xs text-left transition-all ${
+                            transportDecisions?.destination === dest ? 'border-amber-400 bg-amber-50 dark:bg-amber-950/20 font-semibold' : 'border-border/30 hover:border-border'
+                          }`}
+                        >
+                          {dest}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Provisional Diagnosis */}
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Your Provisional Diagnosis</p>
+                    <div className="grid grid-cols-1 gap-1.5">
+                      {currentCase.expectedFindings?.differentialDiagnoses
+                        ? [...currentCase.expectedFindings.differentialDiagnoses.slice(0, 5),
+                           ...(currentCase.expectedFindings.differentialDiagnoses.length < 5 ? ['Other / Undifferentiated'] : [])
+                          ].sort(() => Math.random() - 0.5).map(dx => (
+                          <button
+                            key={dx}
+                            onClick={() => setTransportDecisions(prev => ({ ...prev || { priority: '', position: '', preAlert: false, destination: '', provisionalDiagnosis: '' }, provisionalDiagnosis: dx }))}
+                            className={`p-2 rounded-lg border text-xs text-left transition-all ${
+                              transportDecisions?.provisionalDiagnosis === dx ? 'border-blue-400 bg-blue-50 dark:bg-blue-950/20 font-semibold' : 'border-border/30 hover:border-border'
+                            }`}
+                          >
+                            {dx}
+                          </button>
+                        ))
+                        : <p className="text-xs text-muted-foreground">No differential diagnoses available</p>
+                      }
+                    </div>
+                  </div>
+
+                  {/* Confirm */}
+                  <Button
+                    onClick={finalizeCase}
+                    className="w-full h-10 rounded-xl gap-2 bg-amber-500 hover:bg-amber-600 text-white"
+                    disabled={!transportDecisions?.priority || !transportDecisions?.position}
+                  >
+                    <CheckCircle2 className="h-4 w-4" />
+                    Confirm & End Case
+                  </Button>
+                  {(!transportDecisions?.priority || !transportDecisions?.position) && (
+                    <p className="text-[10px] text-muted-foreground text-center">Select at least transport priority and patient position</p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
             {/* Coaching hint — shown when student is inactive */}
             {hintVisible && currentHint && (
               <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 animate-fade-in">
@@ -1368,6 +1512,55 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                 <Progress value={performanceMetrics.percentage} className="mt-4 sm:mt-5 h-2" />
               </CardContent>
             </Card>
+
+            {/* Transport & Clinical Decisions */}
+            {transportDecisions && (
+              <Card className="card-glass rounded-2xl overflow-hidden">
+                <CardHeader className="pb-3 border-b border-border/30">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-amber-500/15">
+                      <Ambulance className="h-3.5 w-3.5 text-amber-500" />
+                    </div>
+                    Transport & Clinical Decisions
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-4">
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="p-2.5 rounded-xl bg-muted/30 border border-border/30">
+                      <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Transport Priority</span>
+                      <p className="font-semibold mt-1">{transportDecisions.priority === 'lights' ? '🚨 Lights & Sirens' : transportDecisions.priority === 'urgent' ? '⚡ Urgent' : '🟢 Routine'}</p>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-muted/30 border border-border/30">
+                      <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Patient Position</span>
+                      <p className="font-semibold mt-1">{transportDecisions.position || 'Not selected'}</p>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-muted/30 border border-border/30">
+                      <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Pre-Alert</span>
+                      <p className="font-semibold mt-1">{transportDecisions.preAlert ? '✓ Yes — hospital notified' : '✗ No pre-alert'}</p>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-muted/30 border border-border/30">
+                      <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Destination</span>
+                      <p className="font-semibold mt-1">{transportDecisions.destination || 'Not specified'}</p>
+                    </div>
+                  </div>
+                  {transportDecisions.provisionalDiagnosis && (
+                    <div className={`mt-3 p-3 rounded-xl border ${
+                      transportDecisions.provisionalDiagnosis === currentCase.expectedFindings?.mostLikelyDiagnosis
+                        ? 'bg-green-50 dark:bg-green-950/20 border-green-300'
+                        : 'bg-amber-50 dark:bg-amber-950/20 border-amber-300'
+                    }`}>
+                      <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Your Provisional Diagnosis</span>
+                      <p className="font-semibold text-sm mt-1">{transportDecisions.provisionalDiagnosis}</p>
+                      {transportDecisions.provisionalDiagnosis === currentCase.expectedFindings?.mostLikelyDiagnosis ? (
+                        <p className="text-xs text-green-600 mt-1 flex items-center gap-1"><CheckCircle2 className="h-3 w-3" /> Correct — matches the most likely diagnosis</p>
+                      ) : (
+                        <p className="text-xs text-amber-600 mt-1">The most likely diagnosis for this case was: <strong>{currentCase.expectedFindings?.mostLikelyDiagnosis}</strong></p>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             {/* Performance Feedback */}
             <Card className="card-glass rounded-2xl overflow-hidden">
