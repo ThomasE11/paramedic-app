@@ -97,6 +97,7 @@ import {
 const CaseDisplay = lazy(() => import('@/components/CaseDisplay').then(m => ({ default: m.CaseDisplay })));
 const VitalSignsMonitor = lazy(() => import('@/components/VitalSignsMonitor').then(m => ({ default: m.VitalSignsMonitor })));
 const TreatmentApplicationPanel = lazy(() => import('@/components/TreatmentApplicationPanel').then(m => ({ default: m.TreatmentApplicationPanel })));
+const Body3DModel = lazy(() => import('@/components/Body3DModel').then(m => ({ default: m.Body3DModel })));
 
 function LoadingCard() {
   return (
@@ -1268,6 +1269,21 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
 
               {/* Assessments + Auscultation — below monitor on mobile, left column on desktop */}
               <div className="order-2 lg:order-1 space-y-4 sm:space-y-5">
+                {/* 3D Body Model — interactive physical examination */}
+                {assessmentTracker && (
+                  <Suspense fallback={<LoadingCard />}>
+                    <Body3DModel
+                      onRegionClick={handlePerformAssessment}
+                      assessedRegions={new Set(
+                        assessmentTracker.performed
+                          .filter(p => p.phase === 'secondary')
+                          .map(p => p.stepId)
+                      )}
+                      isStudentView={true}
+                    />
+                  </Suspense>
+                )}
+
                 {/* Clinical Assessment Panel */}
                 {assessmentTracker && (
                   <ClinicalAssessmentPanel
