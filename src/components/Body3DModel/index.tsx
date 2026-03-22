@@ -13,8 +13,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { RotateCcw, User } from 'lucide-react';
 import { BodyMesh } from './BodyMesh';
-import { BODY_REGIONS } from './bodyRegions';
 import type { AssessmentStepId } from '@/data/assessmentFramework';
+
+const TOTAL_REGIONS = 8; // head, face, neck, chest, abdomen, pelvis, extremities, posterior
 
 interface Body3DModelProps {
   onRegionClick: (stepId: AssessmentStepId) => void;
@@ -38,7 +39,8 @@ export function Body3DModel({ onRegionClick, assessedRegions }: Body3DModelProps
     setIsFlipped(!isFlipped);
   }, [isFlipped]);
 
-  const assessedCount = BODY_REGIONS.filter(r => assessedRegions.has(r.id)).length;
+  const regionIds = ['head', 'face', 'neck-cspine', 'chest', 'abdomen', 'pelvis', 'extremities', 'posterior-logroll'];
+  const assessedCount = regionIds.filter(id => assessedRegions.has(id)).length;
 
   return (
     <div className="relative rounded-2xl overflow-hidden border border-border/40 bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-950">
@@ -48,25 +50,26 @@ export function Body3DModel({ onRegionClick, assessedRegions }: Body3DModelProps
           <User className="h-4 w-4 text-blue-500" />
           <span className="text-xs font-semibold">Physical Examination</span>
         </div>
-        <Badge variant={assessedCount === BODY_REGIONS.length ? 'default' : 'secondary'}
-          className={`text-[9px] ${assessedCount === BODY_REGIONS.length ? 'bg-green-500' : ''}`}>
-          {assessedCount}/{BODY_REGIONS.length} regions
+        <Badge variant={assessedCount === TOTAL_REGIONS ? 'default' : 'secondary'}
+          className={`text-[9px] ${assessedCount === TOTAL_REGIONS ? 'bg-green-500' : ''}`}>
+          {assessedCount}/{TOTAL_REGIONS} regions
         </Badge>
       </div>
 
       {/* 3D Canvas */}
-      <div className="h-[350px] sm:h-[400px] lg:h-[420px]">
+      <div className="h-[380px] sm:h-[440px] lg:h-[480px]">
         <Canvas
-          camera={{ position: [0, 0.5, 4.5], fov: 40 }}
+          camera={{ position: [0, 0.9, 3.2], fov: 40 }}
           dpr={Math.min(window.devicePixelRatio, 2)}
           frameloop="demand"
           gl={{ antialias: true, alpha: true }}
           style={{ background: 'transparent' }}
         >
-          {/* Lighting */}
-          <ambientLight intensity={0.7} />
-          <directionalLight position={[3, 5, 3]} intensity={0.8} castShadow={false} />
-          <directionalLight position={[-2, 3, -2]} intensity={0.3} />
+          {/* Studio lighting for anatomical model */}
+          <ambientLight intensity={0.5} />
+          <directionalLight position={[4, 8, 4]} intensity={1.0} color="#fff5ee" />
+          <directionalLight position={[-3, 5, -2]} intensity={0.4} color="#e8e0ff" />
+          <directionalLight position={[0, -2, 3]} intensity={0.2} color="#ffe8d0" />
 
           {/* Body mesh */}
           <BodyMesh
@@ -76,11 +79,11 @@ export function Body3DModel({ onRegionClick, assessedRegions }: Body3DModelProps
 
           {/* Ground shadow */}
           <ContactShadows
-            position={[0, -2.1, 0]}
-            opacity={0.3}
-            scale={4}
-            blur={2}
-            far={4}
+            position={[0, -0.01, 0]}
+            opacity={0.4}
+            scale={3}
+            blur={2.5}
+            far={3}
           />
 
           {/* Controls */}
@@ -91,7 +94,7 @@ export function Body3DModel({ onRegionClick, assessedRegions }: Body3DModelProps
             maxDistance={7}
             minPolarAngle={Math.PI * 0.15}
             maxPolarAngle={Math.PI * 0.85}
-            target={[0, 0.3, 0]}
+            target={[0, 0.85, 0]}
           />
         </Canvas>
       </div>
