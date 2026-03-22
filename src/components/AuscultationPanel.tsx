@@ -201,8 +201,8 @@ export function AuscultationPanel({ sounds, isExpanded: initialExpanded = false,
               )}
             </div>
 
-            {/* Bowel Sounds — play button only */}
-            {sounds.bowelSounds && (
+            {/* Bowel Sounds — always available for abdominal auscultation */}
+            {(
               <div className="rounded-xl border border-border/60 bg-card/50 p-3 sm:p-4 flex items-center justify-between">
                 <span className="font-semibold text-xs sm:text-sm">Bowel Sounds</span>
                 {hasAudio ? (
@@ -220,7 +220,7 @@ export function AuscultationPanel({ sounds, isExpanded: initialExpanded = false,
                           handleStopSound();
                         } else {
                           setIsPlaying('bowel');
-                          playBowelSound(sounds.bowelSounds!, 6000);
+                          playBowelSound(sounds.bowelSounds || 'normal', 6000);
                           setTimeout(() => setIsPlaying(null), 6000);
                         }
                       }}
@@ -401,7 +401,7 @@ export function AuscultationPanel({ sounds, isExpanded: initialExpanded = false,
                         handleStopSound();
                       } else {
                         setIsPlaying('bowel');
-                        playBowelSound(sounds.bowelSounds!, 6000);
+                        playBowelSound(sounds.bowelSounds || 'normal', 6000);
                         setTimeout(() => setIsPlaying(null), 6000);
                       }
                     }}

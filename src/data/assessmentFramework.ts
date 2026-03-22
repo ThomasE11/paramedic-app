@@ -807,11 +807,15 @@ export function getStepFindings(stepId: AssessmentStepId, caseData: CaseScenario
       });
       // Work of breathing / visual observations (not auscultation)
       breathing.findings.forEach(f => {
-        // Filter out auscultation-related findings — student must listen
-        const isAuscultation = f.toLowerCase().includes('wheez') || f.toLowerCase().includes('crackle') ||
-          f.toLowerCase().includes('diminished') || f.toLowerCase().includes('absent breath') ||
-          f.toLowerCase().includes('air entry') || f.toLowerCase().includes('rhonchi') ||
-          f.toLowerCase().includes('stridor') || f.toLowerCase().includes('rales');
+        // Filter out auscultation-related findings — student must listen via panel
+        const lower = f.toLowerCase();
+        const isAuscultation = lower.includes('wheez') || lower.includes('crackle') ||
+          lower.includes('diminished') || lower.includes('absent breath') ||
+          lower.includes('air entry') || lower.includes('rhonchi') ||
+          lower.includes('stridor') || lower.includes('rales') ||
+          lower.includes('clear lung') || lower.includes('lung sounds') ||
+          lower.includes('breath sounds') || lower.includes('bilateral') && lower.includes('clear') ||
+          lower.includes('vesicular') || lower.includes('bronchial breath');
         if (!isAuscultation) {
           findings.push({ label: 'Finding', value: f, severity: 'normal' });
         }

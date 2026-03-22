@@ -422,7 +422,7 @@ export function getInitialSounds(
     };
   }
 
-  // Determine bowel sounds based on findings
+  // Determine bowel sounds based on findings (applied to ALL cases, not just default path)
   let bowelSounds: BowelSoundType = 'normal';
   if (findingsStr.includes('ileus') || findingsStr.includes('paralytic')) bowelSounds = 'absent';
   else if (findingsStr.includes('peritonit') || findingsStr.includes('rigid abdomen')) bowelSounds = 'absent';
