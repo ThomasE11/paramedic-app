@@ -92,6 +92,7 @@ export const TREATMENT_YEAR_ACCESS: Record<string, StudentYear[]> = {
   amiodarone_150mg:     ['4th-year'],
   sodium_bicarbonate:   ['4th-year'],
   calcium_chloride:     ['4th-year'],
+  calcium_chloride_10:  ['4th-year'],
   metoclopramide_10mg:  ['3rd-year', '4th-year'],
   mannitol_20:          ['4th-year'],
   hypertonic_saline:    ['4th-year'],
@@ -100,10 +101,17 @@ export const TREATMENT_YEAR_ACCESS: Record<string, StudentYear[]> = {
 
   // ----- PEDIATRIC MEDICATIONS -----
   buccal_midazolam:     ['2nd-year', '3rd-year', '4th-year'],
+  midazolam_buccal:     ['2nd-year', '3rd-year', '4th-year'],
   rectal_diazepam:      ['2nd-year', '3rd-year', '4th-year'],
+  diazepam_rectal:      ['2nd-year', '3rd-year', '4th-year'],
   paracetamol_oral:     ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
   paracetamol_iv:       ['3rd-year', '4th-year'],
   ibuprofen_oral:       ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
+
+  // ----- AIRWAY BASICS (all years) -----
+  back_blows:           ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
+  abdominal_thrusts:    ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
+  magill_forceps:       ['3rd-year', '4th-year'],
 };
 
 /**
