@@ -1238,6 +1238,30 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                     caseSubcategory={currentCase.subcategory}
                     caseTitle={currentCase.title}
                     appliedTreatments={appliedTreatments.map(t => t.description)}
+                    cprState={arrestActive ? {
+                      active: arrestActive,
+                      running: cprRunning,
+                      timerSeconds: cprCycleTimer,
+                      cycleNumber: cprCycleNumber,
+                      shockCount,
+                      adrenalineDoses,
+                      amiodaroneDoses,
+                      lastAdrenalineTime,
+                      onStartCPR: () => {
+                        setCprRunning(true);
+                        if (cprCycleTimer <= 0) setCprCycleTimer(120);
+                        setArrestTimeline(prev => [...prev, { time: Date.now(), event: 'CPR started', type: 'cpr-start' }]);
+                        lastActivityRef.current = Date.now();
+                      },
+                      onPauseCPR: () => {
+                        setCprRunning(false);
+                        setArrestTimeline(prev => [...prev, { time: Date.now(), event: 'CPR paused', type: 'cpr-pause' }]);
+                      },
+                      onDefibrillate: () => {
+                        setShowDefibDialog(true);
+                        lastActivityRef.current = Date.now();
+                      },
+                    } : undefined}
                   />
                 </Suspense>
               </div>
@@ -1265,95 +1289,6 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                 )}
               </div>
             </div>
-
-            {/* Cardiac Arrest Status Bar */}
-            {arrestActive && (
-              <Card className="border-2 border-red-500 bg-red-50 dark:bg-red-950/30 rounded-2xl overflow-hidden animate-pulse-slow">
-                <CardContent className="p-3 sm:p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <Heart className="h-5 w-5 text-red-500 animate-pulse" />
-                      <span className="font-bold text-red-700 dark:text-red-400 text-sm uppercase tracking-wider">Cardiac Arrest</span>
-                    </div>
-                    <Badge variant="destructive" className="text-xs font-mono">
-                      {arrestStartTime ? formatTime(Math.floor((Date.now() - arrestStartTime) / 1000)) : '00:00'}
-                    </Badge>
-                  </div>
-
-                  {/* CPR Timer + Controls */}
-                  <div className="grid grid-cols-3 gap-2 mb-3">
-                    <div className="text-center p-2 rounded-xl bg-white/60 dark:bg-black/20 border border-red-200 dark:border-red-800">
-                      <div className={`text-2xl font-mono font-bold ${cprCycleTimer <= 10 ? 'text-red-500 animate-pulse' : 'text-slate-800 dark:text-white'}`}>
-                        {Math.floor(cprCycleTimer / 60)}:{String(cprCycleTimer % 60).padStart(2, '0')}
-                      </div>
-                      <p className="text-[9px] text-muted-foreground uppercase">CPR Timer</p>
-                    </div>
-                    <div className="text-center p-2 rounded-xl bg-white/60 dark:bg-black/20 border border-red-200 dark:border-red-800">
-                      <div className="text-2xl font-bold text-slate-800 dark:text-white">{cprCycleNumber}</div>
-                      <p className="text-[9px] text-muted-foreground uppercase">Cycles</p>
-                    </div>
-                    <div className="text-center p-2 rounded-xl bg-white/60 dark:bg-black/20 border border-red-200 dark:border-red-800">
-                      <div className="text-2xl font-bold text-yellow-600">{shockCount}</div>
-                      <p className="text-[9px] text-muted-foreground uppercase">Shocks</p>
-                    </div>
-                  </div>
-
-                  {/* Quick Actions */}
-                  <div className="grid grid-cols-2 gap-2 mb-2">
-                    <Button
-                      size="sm"
-                      variant={cprRunning ? 'destructive' : 'default'}
-                      className={`text-xs h-9 ${!cprRunning ? 'bg-green-600 hover:bg-green-700 text-white' : ''}`}
-                      onClick={() => {
-                        if (cprRunning) {
-                          setCprRunning(false);
-                          setArrestTimeline(prev => [...prev, { time: Date.now(), event: 'CPR paused', type: 'cpr-pause' }]);
-                        } else {
-                          setCprRunning(true);
-                          if (cprCycleTimer <= 0) setCprCycleTimer(120);
-                          setArrestTimeline(prev => [...prev, { time: Date.now(), event: 'CPR started', type: 'cpr-start' }]);
-                          lastActivityRef.current = Date.now();
-                        }
-                      }}
-                    >
-                      {cprRunning ? '⏸ Pause CPR' : '▶ Start/Resume CPR'}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="text-xs h-9 border-yellow-500 text-yellow-700 hover:bg-yellow-50"
-                      onClick={() => {
-                        setShowDefibDialog(true);
-                        lastActivityRef.current = Date.now();
-                      }}
-                    >
-                      <Zap className="h-3.5 w-3.5 mr-1" /> Defibrillate
-                    </Button>
-                  </div>
-
-                  {/* Drug Timing Indicators */}
-                  <div className="flex gap-2 text-[10px]">
-                    <div className={`flex-1 p-1.5 rounded-lg text-center border ${
-                      lastAdrenalineTime && (Date.now() - lastAdrenalineTime) > 300000
-                        ? 'bg-red-100 border-red-400 text-red-700 animate-pulse font-bold'
-                        : lastAdrenalineTime && (Date.now() - lastAdrenalineTime) > 180000
-                        ? 'bg-amber-100 border-amber-400 text-amber-700'
-                        : 'bg-muted/30 border-border/30 text-muted-foreground'
-                    }`}>
-                      Adrenaline: {adrenalineDoses}x given
-                      {lastAdrenalineTime
-                        ? ` (${Math.floor((Date.now() - lastAdrenalineTime) / 60000)}m ago)`
-                        : shockCount >= 2 ? ' — DUE NOW' : ''}
-                    </div>
-                    <div className="flex-1 p-1.5 rounded-lg text-center border bg-muted/30 border-border/30 text-muted-foreground">
-                      Amiodarone: {amiodaroneDoses}/2
-                      {amiodaroneDoses === 0 && shockCount >= 3 ? ' — DUE (300mg)' : ''}
-                      {amiodaroneDoses === 1 && shockCount >= 5 ? ' — DUE (150mg)' : ''}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
 
             {/* Treatment Panel */}
             {currentVitals && (

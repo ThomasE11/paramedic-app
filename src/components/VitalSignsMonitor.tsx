@@ -50,6 +50,20 @@ interface VitalSignsMonitorProps {
   caseSubcategory?: string;
   caseTitle?: string;
   appliedTreatments?: string[];
+  // Cardiac arrest CPR management — displayed on monitor
+  cprState?: {
+    active: boolean;
+    running: boolean;
+    timerSeconds: number;
+    cycleNumber: number;
+    shockCount: number;
+    adrenalineDoses: number;
+    amiodaroneDoses: number;
+    lastAdrenalineTime: number | null;
+    onStartCPR: () => void;
+    onPauseCPR: () => void;
+    onDefibrillate: () => void;
+  };
 }
 
 // Assessment method definitions
@@ -1393,6 +1407,7 @@ export function VitalSignsMonitor({
   caseSubcategory,
   caseTitle,
   appliedTreatments = [],
+  cprState,
 }: VitalSignsMonitorProps) {
   const [currentVitals, setCurrentVitals] = useState<VitalSigns>(initialVitals);
   const [visibleVitals, setVisibleVitals] = useState<Set<string>>(new Set());
@@ -2762,6 +2777,66 @@ export function VitalSignsMonitor({
             )}
           </div>
         </div>
+
+        {/* ================================================================ */}
+        {/* CPR MANAGEMENT — integrated into monitor display               */}
+        {/* ================================================================ */}
+        {cprState?.active && (
+          <div className="mx-3 mb-2 p-2 rounded-lg border border-red-600/60"
+            style={{ background: 'rgba(80,0,0,0.5)' }}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] font-mono text-red-400 font-bold tracking-wider animate-pulse">
+                ● CARDIAC ARREST
+              </span>
+              <span className="text-[10px] font-mono text-red-300">
+                Cycle {cprState.cycleNumber} | Shocks: {cprState.shockCount}
+              </span>
+            </div>
+
+            {/* CPR Timer */}
+            <div className="flex items-center gap-2 mb-2">
+              <div className={`flex-1 text-center py-1.5 rounded font-mono text-lg font-bold ${
+                cprState.timerSeconds <= 10 ? 'text-red-400 animate-pulse' : 'text-green-400'
+              }`}
+                style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(100,100,100,0.3)' }}>
+                {Math.floor(cprState.timerSeconds / 60)}:{String(cprState.timerSeconds % 60).padStart(2, '0')}
+              </div>
+              <LP20Button
+                label={cprState.running ? 'PAUSE' : 'START'}
+                sublabel="CPR"
+                onClick={() => cprState.running ? cprState.onPauseCPR() : cprState.onStartCPR()}
+                variant={cprState.running ? 'red' : 'green'}
+                active={cprState.running}
+              />
+              <LP20Button
+                label="SHOCK"
+                sublabel={`${cprState.shockCount}`}
+                onClick={cprState.onDefibrillate}
+                variant="red"
+              />
+            </div>
+
+            {/* Drug timing indicators */}
+            <div className="flex gap-1.5">
+              <div className={`flex-1 text-center py-1 rounded text-[8px] font-mono ${
+                cprState.lastAdrenalineTime && (Date.now() - cprState.lastAdrenalineTime) > 300000
+                  ? 'text-red-300 bg-red-900/40 border border-red-600/50 animate-pulse'
+                  : cprState.lastAdrenalineTime && (Date.now() - cprState.lastAdrenalineTime) > 180000
+                  ? 'text-yellow-300 bg-yellow-900/30 border border-yellow-600/30'
+                  : 'text-gray-400 bg-black/30 border border-gray-700/30'
+              }`}>
+                ADRENALINE: {cprState.adrenalineDoses}x
+                {cprState.lastAdrenalineTime
+                  ? ` (${Math.floor((Date.now() - cprState.lastAdrenalineTime) / 60000)}m)`
+                  : cprState.shockCount >= 2 ? ' DUE' : ''}
+              </div>
+              <div className="flex-1 text-center py-1 rounded text-[8px] font-mono text-gray-400 bg-black/30 border border-gray-700/30">
+                AMIODARONE: {cprState.amiodaroneDoses}/2
+                {cprState.amiodaroneDoses === 0 && cprState.shockCount >= 3 ? ' DUE' : ''}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ================================================================ */}
         {/* EXPANDED ASSESSMENT PANEL (for non-monitor vitals)              */}
