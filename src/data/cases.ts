@@ -10073,6 +10073,264 @@ export const caseDatabase: CaseScenario[] = [
       ]
     }
   }),
+
+  // ==================== REFRACTORY ANAPHYLAXIS ====================
+  createCase({
+    id: 'resp-010',
+    title: 'Refractory Anaphylaxis — Bee Sting',
+    category: 'respiratory',
+    subcategory: 'anaphylaxis',
+    priority: 'critical',
+    complexity: 'advanced',
+    yearLevels: ['3rd-year', '4th-year'],
+    estimatedDuration: 30,
+    dispatchInfo: {
+      callReason: '45-year-old male collapsed on construction site after bee sting, severe breathing difficulty',
+      timeOfDay: 'afternoon',
+      location: 'Construction site, Al Quoz Industrial Area, Dubai',
+      callerInfo: 'Site foreman (panicked)',
+      dispatchCode: 'Echo-1',
+      additionalInfo: ['Patient stung by bee', 'Face swelling rapidly', 'Difficulty breathing', 'Becoming drowsy']
+    },
+    patientInfo: {
+      age: 45,
+      gender: 'male',
+      weight: 90,
+      occupation: 'Construction worker',
+      language: 'Hindi, basic English',
+      culturalConsiderations: ['South Asian worker — language barrier possible', 'May be reluctant to remove clothing on site']
+    },
+    sceneInfo: {
+      description: 'Active construction site, patient on ground near scaffolding, co-workers surrounding him',
+      hazards: ['Active construction site', 'Overhead hazards', 'Possible further bee exposure', 'Hot environment (40°C+)'],
+      bystanders: 'Multiple co-workers, site foreman, first aid officer',
+      environment: 'Outdoor, hot (42°C), dusty, limited shade',
+      accessIssues: ['Construction site access — security gate', 'Uneven ground for stretcher'],
+      extricationNeeded: false
+    },
+    initialPresentation: {
+      generalImpression: 'Middle-aged male on ground, severe facial and neck swelling, stridulous breathing, altered consciousness',
+      position: 'Semi-recumbent on ground, propped against wall',
+      appearance: 'Grossly swollen face and neck, cyanotic lips, widespread urticaria, drenched in sweat',
+      consciousness: 'Drowsy, responding to voice only, confused',
+      sounds: ['Inspiratory stridor', 'Gurgling', 'Weak moan']
+    },
+    abcde: {
+      airway: {
+        patent: false,
+        findings: ['Airway critically compromised', 'Severe angioedema of face, lips, tongue, and pharynx', 'Inspiratory stridor (high-pitched)', 'Drooling — unable to swallow secretions', 'Voice barely audible', 'Tongue protruding and swollen'],
+        interventions: ['IM Adrenaline 0.5mg IMMEDIATELY', 'Suction oropharynx', 'Jaw thrust', 'Nebulised adrenaline 5mg (if available)', 'Prepare for advanced airway — RSI if GCS drops further'],
+        adjunctsNeeded: ['Suction', 'Nebuliser', 'RSI equipment on standby']
+      },
+      breathing: {
+        rate: 36,
+        rhythm: 'Labored, irregular',
+        depth: 'Shallow',
+        spo2: 82,
+        findings: ['Severe tachypnea', 'Marked accessory muscle use', 'Intercostal and subcostal recession', 'Bilateral wheeze and stridor', 'Minimal air entry bilaterally', 'Cyanosis of lips and fingertips'],
+        interventions: ['High-flow oxygen 15L/min via non-rebreather', 'BVM ventilation if respiratory effort inadequate', 'Nebulised adrenaline 5mg'],
+        auscultation: ['Inspiratory stridor', 'Widespread expiratory wheeze', 'Markedly reduced air entry bilaterally']
+      },
+      circulation: {
+        pulseRate: 140,
+        pulseQuality: 'Rapid, weak, thready — barely palpable radially',
+        bp: { systolic: 65, diastolic: 30 },
+        capillaryRefill: 6,
+        skin: 'Flushed centrally, mottled peripheries, widespread urticaria, profusely diaphoretic',
+        findings: ['Severe tachycardia', 'Profound hypotension (cardiovascular collapse)', 'Distributive shock', 'Cap refill >5 seconds', 'Peripheral mottling'],
+        interventions: ['IV access x2 (large bore 14-16G)', 'Aggressive IV fluid bolus — 1L normal saline STAT, repeat as needed', 'IO access if IV fails', 'Adrenaline infusion if IM doses fail'],
+        ivAccess: ['Attempt 16G bilateral antecubital fossa', 'IO tibial if IV access fails']
+      },
+      disability: {
+        avpu: 'V',
+        gcs: { eye: 3, verbal: 3, motor: 6, total: 12 },
+        pupils: 'Equal 4mm, sluggish reaction',
+        bloodGlucose: 7.8,
+        findings: ['Altered consciousness — GCS 12, deteriorating', 'Confused and agitated', 'Responds to voice but disoriented', 'GCS likely to drop further without treatment'],
+        interventions: ['Continuous GCS monitoring', 'Prepare RSI drugs if GCS drops to 8 or below']
+      },
+      exposure: {
+        temperature: 38.2,
+        findings: ['Bee sting site on right forearm — localised swelling and erythema', 'Widespread urticaria over entire torso, arms, and legs', 'Severe angioedema of face and neck', 'No other injuries', 'Hot environment contributing to vasodilation'],
+        interventions: ['Remove sting if still present (scrape, do not squeeze)', 'Full exposure', 'Active cooling — move to shade, wet towels']
+      }
+    },
+    secondarySurvey: {
+      head: ['Massive periorbital angioedema — eyes swollen shut', 'Lips grossly swollen', 'Tongue swollen and protruding', 'Unable to open mouth fully'],
+      neck: ['Neck swollen — angioedema', 'Trachea central but obscured by swelling', 'Cannot assess JVP due to swelling'],
+      chest: ['Bilateral wheeze and stridor', 'Accessory muscle use', 'Intercostal recession', 'Reduced air entry'],
+      abdomen: ['Soft', 'Patient too drowsy for reliable assessment', 'No obvious distension'],
+      pelvis: ['Normal'],
+      extremities: ['Widespread urticaria', 'Mottled peripheries', 'Bee sting site right forearm — localised swelling', 'Weak peripheral pulses'],
+      posterior: ['Urticaria extending to back', 'No spinal tenderness'],
+      neurological: ['GCS 12 (E3V3M6)', 'Confused', 'Moving all limbs', 'Pupils equal but sluggish']
+    },
+    history: {
+      medications: [],
+      allergies: ['Bee stings — known allergy (previous local reactions only)', 'No EpiPen prescribed — GP said reactions were "mild"'],
+      medicalConditions: ['Previous bee sting reactions (local swelling only — twice before)', 'Hypertension (untreated — does not see doctor regularly)', 'No regular medications'],
+      surgicalHistory: [],
+      lastMeal: 'Lunch 2 hours ago (rice and curry)',
+      eventsLeading: 'Stung by bee on right forearm while working on site 20 minutes ago. Initially had local swelling only, then within 5 minutes developed widespread rash, facial swelling, and difficulty breathing. Collapsed 10 minutes after sting. Co-workers called ambulance. No EpiPen available on site.'
+    },
+    vitalSignsProgression: {
+      initial: { bp: '65/30', pulse: 140, respiration: 36, spo2: 82, gcs: 12 },
+      afterIntervention: { bp: '95/60', pulse: 110, respiration: 22, spo2: 94, gcs: 13 },
+      deterioration: { bp: '0/0', pulse: 0, respiration: 0, spo2: 0, gcs: 3 }
+    },
+    expectedFindings: {
+      keyObservations: [
+        'Fulminant anaphylaxis with cardiovascular collapse and critical airway compromise',
+        'Refractory to initial IM adrenaline — requires escalation',
+        'GCS dropping — approaching threshold for RSI',
+        'Known bee allergy but never prescribed EpiPen — escalation from local to systemic reaction'
+      ],
+      redFlags: [
+        'Stridor with severe angioedema — impending complete airway obstruction',
+        'Profound hypotension (BP 65/30) — cardiovascular collapse',
+        'Falling GCS (12→8 if untreated) — cerebral hypoperfusion and airway loss',
+        'SpO2 82% — critical hypoxaemia',
+        'Refractory to first dose of adrenaline — need escalation strategy'
+      ],
+      differentialDiagnoses: [
+        'Refractory anaphylaxis (most likely)',
+        'Anaphylactoid reaction',
+        'Angioedema (hereditary — unlikely given bee sting trigger)',
+        'Heat stroke with collapse (construction site)',
+        'Acute asthma triggered by sting',
+        'Cardiogenic shock (less likely given age and context)'
+      ],
+      mostLikelyDiagnosis: 'Refractory anaphylaxis secondary to Hymenoptera (bee) venom',
+      supportingEvidence: [
+        'Known bee allergy with escalating reaction pattern',
+        'Bee sting 20 minutes prior with rapid multi-system deterioration',
+        'Anaphylaxis triad: skin (urticaria/angioedema) + respiratory (stridor/wheeze) + cardiovascular (hypotension/tachycardia)',
+        'Failure to respond to initial IM adrenaline defines refractory anaphylaxis',
+        'Altered consciousness from cerebral hypoperfusion'
+      ]
+    },
+    managementPathway: {
+      immediate: [
+        'Scene safety — move patient from construction hazards, away from bee area',
+        'IM Adrenaline 0.5mg (500mcg) anterolateral thigh IMMEDIATELY',
+        'High-flow oxygen 15L/min via non-rebreather mask',
+        'Lay flat, elevate legs',
+        'Suction airway, jaw thrust',
+        'Call for backup / critical care support early',
+        'Reassess at 5 minutes — give 2nd IM adrenaline 0.5mg if no improvement',
+        'Reassess at 10 minutes — give 3rd IM adrenaline 0.5mg if still refractory'
+      ],
+      definitive: [
+        'IV access x2 large bore (14-16G) — IO if IV fails',
+        'Aggressive IV fluids: 1L normal saline STAT, may need 2-4L total',
+        'START ADRENALINE INFUSION: 1mg in 1L normal saline (1:1,000,000), titrate to BP and HR',
+        'Nebulised adrenaline 5mg via oxygen-driven nebuliser (for upper airway oedema)',
+        'Hydrocortisone 200mg IV (to prevent biphasic reaction)',
+        'Chlorphenamine 10mg IV (adjunct for urticaria — NOT a substitute for adrenaline)',
+        'RSI if GCS drops to 8 or airway becomes unmanageable:',
+        '  - Ketamine 2mg/kg IV (bronchodilator properties)',
+        '  - Suxamethonium 1.5mg/kg IV (or rocuronium 1.2mg/kg)',
+        '  - Expect difficult airway — have surgical cricothyrotomy kit ready',
+        'Post-intubation: propofol or midazolam infusion for sedation'
+      ],
+      monitoring: [
+        'Continuous airway assessment — stridor, voice, ability to swallow',
+        'Continuous SpO2 and waveform capnography (if intubated)',
+        'Blood pressure every 1-2 minutes during acute phase',
+        'Heart rate and rhythm — continuous cardiac monitoring',
+        'GCS every 5 minutes',
+        'Urine output if prolonged scene time',
+        'Response to each adrenaline dose',
+        'Watch for cardiac arrest — have ALS algorithm ready'
+      ],
+      transportConsiderations: [
+        'Pre-alert hospital: refractory anaphylaxis, multiple adrenaline doses given, cardiovascular collapse',
+        'Request anaesthetics/ICU standby at receiving hospital',
+        'Transport to facility with ICU and difficult airway capability',
+        'Adrenaline infusion running during transport',
+        'Have surgical airway kit immediately accessible',
+        'Continuous monitoring throughout — anticipate cardiac arrest',
+        'Do NOT delay transport for full stabilisation — load and go with treatment en route'
+      ]
+    },
+    studentChecklist: [
+      { id: 'r10-scene', category: 'safety', description: 'Scene safety — construction site hazards, bee area', points: 2, yearLevel: ['3rd-year'], complexity: ['advanced'], critical: true },
+      { id: 'r10-recognise', category: 'abcde', description: 'Recognise severe/refractory anaphylaxis with cardiovascular collapse', points: 5, yearLevel: ['3rd-year'], complexity: ['advanced'], critical: true, rationale: 'Refractory anaphylaxis requires escalation beyond standard IM adrenaline' },
+      { id: 'r10-adr1', category: 'intervention', description: 'IM Adrenaline 0.5mg immediately (1st dose)', points: 10, yearLevel: ['3rd-year'], complexity: ['advanced'], critical: true },
+      { id: 'r10-oxygen', category: 'intervention', description: 'High-flow oxygen 15L/min via non-rebreather', points: 4, yearLevel: ['3rd-year'], complexity: ['advanced'], critical: true },
+      { id: 'r10-position', category: 'intervention', description: 'Flat positioning with leg elevation', points: 3, yearLevel: ['3rd-year'], complexity: ['advanced'], critical: true },
+      { id: 'r10-adr2', category: 'intervention', description: 'Repeat IM adrenaline at 5 minutes (2nd dose)', points: 8, yearLevel: ['3rd-year'], complexity: ['advanced'], critical: true, rationale: 'If no response to first dose, repeat — up to 3 IM doses before infusion' },
+      { id: 'r10-adr3', category: 'intervention', description: '3rd IM adrenaline or escalate to adrenaline infusion', points: 8, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true, rationale: 'Refractory = failure of 2-3 IM doses — requires IV adrenaline infusion' },
+      { id: 'r10-iv', category: 'intervention', description: 'IV/IO access — large bore, bilateral', points: 5, yearLevel: ['3rd-year'], complexity: ['advanced'], critical: true },
+      { id: 'r10-fluids', category: 'intervention', description: 'Aggressive IV fluid resuscitation (1-4L)', points: 5, yearLevel: ['3rd-year'], complexity: ['advanced'], critical: true },
+      { id: 'r10-infusion', category: 'intervention', description: 'Adrenaline infusion preparation and titration', points: 8, yearLevel: ['4th-year'], complexity: ['advanced'], critical: true, rationale: 'IV adrenaline infusion is the definitive treatment for refractory anaphylaxis' },
+      { id: 'r10-neb-adr', category: 'intervention', description: 'Nebulised adrenaline 5mg for upper airway oedema', points: 5, yearLevel: ['3rd-year'], complexity: ['advanced'] },
+      { id: 'r10-steroids', category: 'intervention', description: 'Hydrocortisone 200mg IV', points: 3, yearLevel: ['3rd-year'], complexity: ['advanced'] },
+      { id: 'r10-antihistamine', category: 'intervention', description: 'Chlorphenamine 10mg IV (adjunct)', points: 2, yearLevel: ['3rd-year'], complexity: ['advanced'] },
+      { id: 'r10-airway-plan', category: 'intervention', description: 'Airway escalation plan: RSI preparation if GCS drops', points: 8, yearLevel: ['4th-year'], complexity: ['advanced'], critical: true, rationale: 'Angioedema makes intubation extremely difficult — prepare for surgical airway' },
+      { id: 'r10-rsi', category: 'intervention', description: 'RSI if indicated (ketamine + suxamethonium/rocuronium)', points: 8, yearLevel: ['4th-year'], complexity: ['advanced'] },
+      { id: 'r10-surgical', category: 'intervention', description: 'Surgical cricothyrotomy kit prepared as backup', points: 5, yearLevel: ['4th-year'], complexity: ['advanced'] },
+      { id: 'r10-arrest', category: 'intervention', description: 'Recognise and manage cardiac arrest if occurs', points: 8, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true },
+      { id: 'r10-prealert', category: 'communication', description: 'Pre-alert hospital: refractory anaphylaxis, request ICU/anaesthetics', points: 5, yearLevel: ['3rd-year'], complexity: ['advanced'], critical: true },
+      { id: 'r10-document', category: 'documentation', description: 'Document: allergen, sting time, each adrenaline dose time, response, GCS trend', points: 3, yearLevel: ['3rd-year'], complexity: ['advanced'] }
+    ],
+    teachingPoints: [
+      'Refractory anaphylaxis = failure to respond to 2-3 doses of IM adrenaline — requires escalation to IV adrenaline infusion',
+      'Escalation ladder: IM adrenaline x3 → adrenaline infusion → RSI → surgical airway',
+      'Adrenaline infusion: 1mg in 1L NS (1:1,000,000), start at 0.5-1mcg/kg/min, titrate to response',
+      'Nebulised adrenaline (5mg) targets upper airway oedema directly — useful adjunct to IM/IV',
+      'Bee sting anaphylaxis can be more severe than food anaphylaxis — venom is injected directly into tissue',
+      'Previous local reactions to bee stings can escalate to systemic anaphylaxis — each sting is unpredictable',
+      'Angioedema makes intubation extremely difficult — always have surgical airway as Plan C',
+      'Ketamine is the RSI induction agent of choice in anaphylaxis — it has bronchodilator properties',
+      'Massive fluid shifts occur in anaphylaxis — patients may need 4-6L of crystalloid',
+      'Cardiac arrest in anaphylaxis: modified ALS — adrenaline 1mg IV as per standard protocol but consider early high-dose adrenaline',
+      'Steroids (hydrocortisone) take 4-6 hours to work — they prevent biphasic reaction, not treat acute phase',
+      'Construction workers in UAE/Gulf are high-risk for Hymenoptera stings — often no access to EpiPens',
+      'Hot environment worsens vasodilation — move patient to shade, active cooling'
+    ],
+    commonPitfalls: [
+      'Not escalating beyond IM adrenaline when patient is clearly refractory — stuck in a loop of IM doses',
+      'Giving adrenaline IV push in a non-arrest patient — can cause fatal arrhythmia (use INFUSION, not bolus)',
+      'Delaying RSI when GCS is dropping — once airway is lost in angioedema, bag-mask may be impossible',
+      'Not preparing surgical airway kit — intubation through swollen glottis may fail',
+      'Insufficient fluid resuscitation — anaphylaxis causes massive capillary leak, need aggressive fluids',
+      'Relying on antihistamines and steroids — these do NOT treat acute cardiovascular collapse',
+      'Standing the patient up — causes cardiac arrest (empty ventricle syndrome)',
+      'Not considering cardiac arrest — anaphylaxis is a reversible cause (4Hs and 4Ts)',
+      'Language barrier leading to missed allergy history — use co-workers as interpreters',
+      'Not removing the bee sting — scrape off, do not squeeze (squeezing injects more venom)'
+    ],
+    equipmentNeeded: [
+      'Adrenaline 1:1000 ampoules x5 (1mg/mL)',
+      'IM needles (21G, 25mm for anterolateral thigh)',
+      'High-flow oxygen with non-rebreather mask',
+      'Nebuliser setup (oxygen-driven)',
+      'IV cannulae (14G and 16G)',
+      'IO drill and needles',
+      'Normal saline 1L bags x4',
+      'Pressure infuser bags',
+      'Syringe driver / infusion pump for adrenaline infusion',
+      'RSI drugs: ketamine, suxamethonium, rocuronium',
+      'Intubation equipment (video laryngoscope preferred)',
+      'Bougie and stylet',
+      'Surgical cricothyrotomy kit',
+      'Suction unit',
+      'BVM with PEEP valve',
+      'Cardiac monitor/defibrillator',
+      'Hydrocortisone 100mg x2',
+      'Chlorphenamine 10mg ampoules'
+    ],
+    references: [
+      'Resuscitation Council UK — Refractory Anaphylaxis Guidelines 2021',
+      'AANZCA Anaphylaxis Management — Escalation Pathways',
+      'NICE Anaphylaxis Guidelines (CG134)',
+      'Difficult Airway Society — Airway Management in Anaphylaxis',
+      'JRCALC Clinical Guidelines — Anaphylaxis',
+      'Pumphrey RS — Fatal Anaphylaxis in the UK (Clin Exp Allergy 2000)',
+      'Brown SGA — Clinical Features and Severity Grading of Anaphylaxis (JACI 2004)'
+    ]
+  }),
 ];
 
 // ============================================================================

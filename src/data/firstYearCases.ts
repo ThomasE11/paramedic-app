@@ -2971,6 +2971,225 @@ export const firstYearCases: CaseScenario[] = [
       'AED Use in Public Access Defibrillation',
       'High-Quality CPR - Pre-hospital BLS Standards (AHA 2025 update)'
     ]
+  }),
+
+  // Case 15: Severe Allergic Reaction (Anaphylaxis) — Restaurant
+  createCase({
+    id: 'y1-015',
+    title: 'Severe Allergic Reaction — Restaurant',
+    category: 'respiratory',
+    subcategory: 'anaphylaxis',
+    priority: 'critical',
+    complexity: 'basic',
+    yearLevels: ['1st-year', '2nd-year', 'diploma'],
+    estimatedDuration: 20,
+    dispatchInfo: {
+      callReason: '32-year-old female difficulty breathing after eating at restaurant, swollen face',
+      timeOfDay: 'evening',
+      location: 'Seafood restaurant, Al Maryah Island, Abu Dhabi',
+      callerInfo: 'Restaurant manager (anxious)',
+      dispatchCode: 'Echo-1',
+      additionalInfo: ['Patient ate prawns', 'Face and throat swelling', 'Rash visible']
+    },
+    patientInfo: {
+      age: 32,
+      gender: 'female',
+      weight: 65,
+      occupation: 'Marketing executive',
+      language: 'English',
+      culturalConsiderations: ['Female patient — offer same-gender provider if available']
+    },
+    sceneInfo: {
+      description: 'Busy restaurant, patient seated at table, other diners watching',
+      hazards: ['Crowded environment', 'Limited space around table'],
+      bystanders: 'Partner and restaurant staff present, other diners observing',
+      environment: 'Air-conditioned restaurant, allergen exposure from prawns'
+    },
+    initialPresentation: {
+      generalImpression: 'Young female, visibly distressed, urticarial rash on face and arms, audible wheeze',
+      position: 'Sitting upright, leaning forward',
+      appearance: 'Flushed, swollen lips and eyes, raised red welts on arms and torso',
+      consciousness: 'Alert, anxious, speaking in short sentences',
+      sounds: ['Audible wheeze', 'Hoarse voice']
+    },
+    abcde: {
+      airway: {
+        patent: true,
+        findings: ['Airway patent but threatened', 'Swollen lips and tongue', 'Hoarse voice', 'Reports throat tightness', 'No stridor yet'],
+        interventions: ['Monitor closely for deterioration', 'Prepare suction', 'IM Adrenaline 0.5mg (anterolateral thigh)']
+      },
+      breathing: {
+        rate: 28,
+        rhythm: 'Labored',
+        depth: 'Shallow',
+        spo2: 93,
+        findings: ['Tachypnea', 'Audible expiratory wheeze', 'Mild accessory muscle use', 'Bilateral wheeze on auscultation'],
+        interventions: ['High-flow oxygen 15L/min via non-rebreather mask'],
+        auscultation: ['Bilateral widespread wheeze', 'Reduced air entry bilaterally']
+      },
+      circulation: {
+        pulseRate: 125,
+        pulseQuality: 'Rapid, thready',
+        bp: { systolic: 85, diastolic: 50 },
+        capillaryRefill: 4,
+        skin: 'Flushed, warm, widespread urticarial rash',
+        findings: ['Tachycardia', 'Hypotension', 'Prolonged cap refill', 'Distributive shock'],
+        interventions: ['Elevate legs (if no respiratory distress worsening)', 'IV access if competent', 'IV fluid bolus 500ml-1L normal saline']
+      },
+      disability: {
+        avpu: 'A',
+        gcs: { eye: 4, verbal: 5, motor: 6, total: 15 },
+        pupils: 'Equal 3mm, reactive to light',
+        bloodGlucose: 6.2,
+        findings: ['Alert and oriented', 'Anxious but cooperative'],
+        interventions: ['Reassurance']
+      },
+      exposure: {
+        temperature: 37.1,
+        findings: ['Widespread urticarial rash (raised red welts) on face, arms, torso', 'Angioedema of lips and periorbital area', 'No rash on legs'],
+        interventions: ['Full exposure to assess extent of rash', 'Maintain dignity — use blanket screening']
+      }
+    },
+    secondarySurvey: {
+      head: ['Periorbital angioedema bilaterally', 'Lip swelling', 'Tongue mildly swollen'],
+      neck: ['Trachea central', 'No lymphadenopathy', 'Patient reports throat tightness'],
+      chest: ['Bilateral wheeze', 'No crackles', 'Equal air entry (reduced)'],
+      abdomen: ['Soft', 'Mild nausea', 'No vomiting yet'],
+      pelvis: ['Normal'],
+      extremities: ['Urticarial rash on arms', 'Warm peripheries', 'Cap refill 4 seconds'],
+      posterior: ['Rash extending to upper back'],
+      neurological: ['Alert', 'Oriented', 'Anxious']
+    },
+    history: {
+      medications: [
+        { name: 'EpiPen (auto-injector)', dose: '0.3mg', frequency: 'PRN', indication: 'Anaphylaxis — left at home today' },
+        { name: 'Cetirizine', dose: '10mg', frequency: 'Daily', indication: 'Allergies' }
+      ],
+      allergies: ['Shellfish (known severe allergy)', 'Penicillin (mild rash)'],
+      medicalConditions: ['Shellfish allergy diagnosed age 12', 'Previous anaphylaxis to crab aged 18 (required A&E treatment)', 'Asthma (mild, well-controlled)'],
+      surgicalHistory: [],
+      lastMeal: 'Prawn dish at restaurant 15 minutes ago — did not realise dish contained prawns',
+      eventsLeading: 'Ordered a salad at restaurant, unaware it contained prawns. Within 10 minutes developed tingling lips, then rapid onset of facial swelling, rash, and difficulty breathing. EpiPen was left at home.'
+    },
+    vitalSignsProgression: {
+      initial: { bp: '85/50', pulse: 125, respiration: 28, spo2: 93, gcs: 15 },
+      afterIntervention: { bp: '110/70', pulse: 100, respiration: 18, spo2: 97, gcs: 15 }
+    },
+    expectedFindings: {
+      keyObservations: [
+        'Classic anaphylaxis triad: skin (urticaria/angioedema), respiratory (wheeze/stridor), cardiovascular (hypotension/tachycardia)',
+        'Known shellfish allergy with previous anaphylaxis',
+        'Rapid onset after allergen ingestion',
+        'EpiPen not available — requires IM adrenaline from drug kit'
+      ],
+      redFlags: [
+        'Airway swelling (angioedema, hoarse voice) — may progress to complete obstruction',
+        'Hypotension (BP 85/50) — anaphylactic shock',
+        'Previous severe reaction — high risk of severe recurrence',
+        'Stridor if develops = critical airway compromise'
+      ],
+      differentialDiagnoses: [
+        'Anaphylaxis (most likely)',
+        'Severe allergic reaction without anaphylaxis',
+        'Angioedema (hereditary or ACE-inhibitor related)',
+        'Acute asthma exacerbation',
+        'Vasovagal episode',
+        'Panic attack'
+      ],
+      mostLikelyDiagnosis: 'Anaphylaxis secondary to shellfish (prawn) ingestion',
+      supportingEvidence: [
+        'Known shellfish allergy with previous anaphylaxis',
+        'Ingestion of prawns 15 minutes prior',
+        'Multi-system involvement: skin + respiratory + cardiovascular',
+        'Rapid onset consistent with IgE-mediated reaction',
+        'Hypotension confirms anaphylaxis (not just allergic reaction)'
+      ]
+    },
+    managementPathway: {
+      immediate: [
+        'Scene safety and BSI',
+        'Remove allergen exposure (move patient away from food)',
+        'Call for help early',
+        'IM Adrenaline 0.5mg (500mcg) into anterolateral thigh — THIS IS THE PRIORITY',
+        'High-flow oxygen 15L/min via non-rebreather mask',
+        'Lay patient flat with legs elevated (if tolerated — may need to sit up if severe wheeze)',
+        'Monitor airway continuously for deterioration'
+      ],
+      definitive: [
+        'Reassess after 5 minutes — repeat IM adrenaline if no improvement',
+        'IV access and IV fluid bolus (500ml-1L normal saline)',
+        'Transport to hospital — all anaphylaxis patients need observation (biphasic risk)',
+        'Antihistamine (chlorphenamine 10mg IM) — adjunct only, NOT a substitute for adrenaline',
+        'Hydrocortisone 200mg IV — prevents biphasic reaction (takes hours to work)',
+        'Minimum 6-hour observation in hospital post-anaphylaxis'
+      ],
+      monitoring: [
+        'Continuous airway assessment — listen for stridor development',
+        'SpO2 continuous monitoring',
+        'Blood pressure every 2-3 minutes initially',
+        'Heart rate and rhythm',
+        'Respiratory rate and work of breathing',
+        'Level of consciousness',
+        'Rash progression or resolution',
+        'Watch for biphasic reaction (can occur up to 72 hours later)'
+      ],
+      transportConsiderations: [
+        'Pre-alert hospital: anaphylaxis, adrenaline given, vital signs',
+        'Transport with ongoing monitoring',
+        'Have second dose of adrenaline ready',
+        'Position: flat with legs elevated OR sitting up if respiratory distress predominates',
+        'Rapid transport — do not delay on scene'
+      ]
+    },
+    studentChecklist: [
+      { id: 'y1-015-scene', category: 'safety', description: 'Scene safety and BSI', points: 2, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
+      { id: 'y1-015-recognise', category: 'abcde', description: 'Recognise anaphylaxis: skin + airway/breathing + circulation involvement', points: 5, yearLevel: ['1st-year'], complexity: ['basic'], critical: true, rationale: 'Anaphylaxis requires multi-system involvement — skin alone is allergic reaction, not anaphylaxis' },
+      { id: 'y1-015-adrenaline', category: 'intervention', description: 'Administer IM adrenaline 0.5mg (anterolateral thigh) promptly', points: 10, yearLevel: ['1st-year'], complexity: ['basic'], critical: true, rationale: 'IM adrenaline is the ONLY life-saving treatment in anaphylaxis — delays cost lives' },
+      { id: 'y1-015-oxygen', category: 'intervention', description: 'High-flow oxygen 15L/min via non-rebreather', points: 4, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
+      { id: 'y1-015-position', category: 'intervention', description: 'Appropriate positioning — flat with legs elevated (or sitting if respiratory distress)', points: 3, yearLevel: ['1st-year'], complexity: ['basic'], critical: true, rationale: 'Laying flat improves venous return in distributive shock — but respiratory distress may require sitting' },
+      { id: 'y1-015-help', category: 'communication', description: 'Call for help / backup early', points: 3, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
+      { id: 'y1-015-abcde', category: 'abcde', description: 'Systematic ABCDE assessment', points: 4, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
+      { id: 'y1-015-vitals', category: 'abcde', description: 'Full vital signs including BP', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
+      { id: 'y1-015-history', category: 'history', description: 'Allergy history: known allergens, previous reactions, EpiPen availability', points: 4, yearLevel: ['1st-year'], complexity: ['basic'] },
+      { id: 'y1-015-sample', category: 'history', description: 'SAMPLE history', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
+      { id: 'y1-015-reassess', category: 'abcde', description: 'Reassess after adrenaline — repeat at 5 minutes if no improvement', points: 4, yearLevel: ['1st-year'], complexity: ['basic'], critical: true, rationale: 'Adrenaline may need repeating — always reassess response' },
+      { id: 'y1-015-fluids', category: 'intervention', description: 'IV access and fluid bolus if trained', points: 3, yearLevel: ['2nd-year'], complexity: ['basic'] },
+      { id: 'y1-015-monitor', category: 'abcde', description: 'Continuous monitoring of airway, breathing, and circulation', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
+      { id: 'y1-015-transport', category: 'communication', description: 'Pre-alert hospital and rapid transport', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
+      { id: 'y1-015-document', category: 'documentation', description: 'Document allergen, time of exposure, time of adrenaline, response', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] }
+    ],
+    teachingPoints: [
+      'Anaphylaxis = acute multi-system allergic reaction involving airway/breathing AND/OR circulation — skin signs alone are NOT anaphylaxis',
+      'IM adrenaline (0.5mg / 500mcg for adults) is the ONLY first-line life-saving treatment — give it IMMEDIATELY',
+      'Inject into the anterolateral thigh (vastus lateralis) — NOT the deltoid, NOT subcutaneously',
+      'Adrenaline works within minutes: vasoconstriction (raises BP), bronchodilation (relieves wheeze), reduces oedema',
+      'Can repeat IM adrenaline every 5 minutes if no improvement — there is no maximum dose in anaphylaxis',
+      'Antihistamines (chlorphenamine) treat itch and urticaria only — they do NOT treat airway or cardiovascular collapse',
+      'Positioning matters: flat + legs up for shock; sitting up if respiratory distress predominates',
+      'ALL anaphylaxis patients MUST go to hospital — risk of biphasic reaction (recurrence hours later)',
+      'Common triggers in UAE: shellfish, nuts, bee/wasp stings, medications (antibiotics, NSAIDs)',
+      'Always ask: has the patient used their EpiPen? Do they have one? (This patient left it at home)',
+      'Anaphylaxis vs allergic reaction: if any airway compromise, breathing difficulty, or hypotension → it is anaphylaxis'
+    ],
+    commonPitfalls: [
+      'DELAYING adrenaline — this is the #1 error. Give adrenaline FIRST, not antihistamines',
+      'Giving antihistamines instead of adrenaline — antihistamines do NOT treat anaphylaxis',
+      'Wrong route: giving adrenaline IV instead of IM (IV adrenaline can cause fatal arrhythmias in non-arrest patients)',
+      'Wrong site: injecting into deltoid or buttock instead of anterolateral thigh',
+      'Not repeating adrenaline if first dose does not work within 5 minutes',
+      'Standing the patient up — this can cause cardiac arrest in anaphylaxis (empty ventricle syndrome)',
+      'Not monitoring the airway — angioedema can progress to complete airway obstruction',
+      'Forgetting to remove the allergen (move patient away from the prawns)',
+      'Not transporting to hospital — biphasic reactions can be fatal',
+      'Confusing anaphylaxis with panic attack — always check for skin signs, wheeze, and hypotension'
+    ],
+    references: [
+      'Resuscitation Council UK — Anaphylaxis Guidelines 2021',
+      'AANZCA Anaphylaxis Management',
+      'WHO Anaphylaxis Recognition and Treatment',
+      'UK NICE Anaphylaxis Guidelines (CG134)',
+      'Pre-hospital Anaphylaxis Management — JRCALC'
+    ]
   })
 ];
 

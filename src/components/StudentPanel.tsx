@@ -1527,7 +1527,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                           {TREATMENTS.filter(t => {
                             if (activeManagementTab === 'disability') {
                               return [
-                                'glucose_10g', 'glucose_iv_50', 'midazolam_5mg', 'midazolam_buccal',
+                                'glucose_10g', 'dextrose_10', 'dextrose_10_250ml', 'midazolam_5mg', 'midazolam_buccal',
                                 'diazepam_rectal', 'mannitol_20', 'naloxone_04mg', 'ketamine_iv',
                                 'ondansetron_4mg', 'metoclopramide_10mg', 'hypertonic_saline',
                               ].includes(t.id) || t.description?.toLowerCase().includes('seizure') || t.description?.toLowerCase().includes('glucose');
