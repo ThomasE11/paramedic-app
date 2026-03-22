@@ -5,6 +5,7 @@
 
 import { useState, useMemo, useRef } from 'react';
 import { Html } from '@react-three/drei';
+import type { ThreeEvent } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { BodyRegionDef, RegionGeometry } from './bodyRegions';
 import { SKIN_COLOR, HOVER_COLOR, ASSESSED_COLOR, HOVER_EMISSIVE_INTENSITY } from './bodyRegions';
@@ -41,12 +42,12 @@ export function BodyRegion({ def, isAssessed, onRegionClick }: BodyRegionProps) 
   const emissive = hovered ? (isAssessed ? '#22c55e' : '#3b82f6') : '#000000';
   const emissiveIntensity = hovered ? HOVER_EMISSIVE_INTENSITY : 0;
 
-  const handleClick = (e: THREE.Event) => {
+  const handleClick = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
     onRegionClick(def.id);
   };
 
-  const handlePointerOver = (e: THREE.Event) => {
+  const handlePointerOver = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
     setHovered(true);
     document.body.style.cursor = 'pointer';
@@ -68,7 +69,7 @@ export function BodyRegion({ def, isAssessed, onRegionClick }: BodyRegionProps) 
               key={i}
               geometry={childGeo}
               position={child.position}
-              rotation={child.rotation ? new THREE.Euler(...child.rotation) : undefined}
+              rotation={child.rotation}
               scale={child.scale}
               onClick={handleClick}
               onPointerOver={handlePointerOver}
@@ -102,7 +103,7 @@ export function BodyRegion({ def, isAssessed, onRegionClick }: BodyRegionProps) 
       ref={meshRef}
       geometry={geometry}
       position={def.position}
-      rotation={def.rotation ? new THREE.Euler(...def.rotation) : undefined}
+      rotation={def.rotation}
       scale={def.scale}
       onClick={handleClick}
       onPointerOver={handlePointerOver}

@@ -9,7 +9,6 @@
 import { useRef, useCallback, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, ContactShadows } from '@react-three/drei';
-import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { RotateCcw, User } from 'lucide-react';
@@ -24,7 +23,8 @@ interface Body3DModelProps {
 }
 
 export function Body3DModel({ onRegionClick, assessedRegions }: Body3DModelProps) {
-  const controlsRef = useRef<OrbitControlsImpl>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const controlsRef = useRef<any>(null);
   const [isFlipped, setIsFlipped] = useState(false);
 
   const handleToggleView = useCallback(() => {
