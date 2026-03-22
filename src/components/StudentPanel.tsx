@@ -1289,9 +1289,8 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                           <button
                             key={item.key}
                             onClick={() => {
-                              if (!isAssessed) {
-                                handlePerformAssessment(item.stepId);
-                              }
+                              // Always call to refresh activeFindings for display
+                              handlePerformAssessment(item.stepId);
                               setActivePrimarySurvey(isActive ? null : item.key);
                             }}
                             className={`flex flex-col items-center gap-0.5 p-2 sm:p-3 rounded-xl border-2 transition-all text-center ${
@@ -1345,6 +1344,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                           .map(p => p.stepId)
                       )}
                       caseData={currentCase}
+                      patientSounds={patientState?.sounds}
                       isStudentView={true}
                     />
                   </Suspense>
@@ -1526,7 +1526,11 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                         <div className="space-y-1">
                           {TREATMENTS.filter(t => {
                             if (activeManagementTab === 'disability') {
-                              return ['glucose_oral', 'glucose_iv', 'midazolam', 'diazepam', 'mannitol', 'naloxone', 'flumazenil'].includes(t.id);
+                              return [
+                                'glucose_10g', 'glucose_iv_50', 'midazolam_5mg', 'midazolam_buccal',
+                                'diazepam_rectal', 'mannitol_20', 'naloxone_04mg', 'ketamine_iv',
+                                'ondansetron_4mg', 'metoclopramide_10mg', 'hypertonic_saline',
+                              ].includes(t.id) || t.description?.toLowerCase().includes('seizure') || t.description?.toLowerCase().includes('glucose');
                             }
                             if (activeManagementTab === 'exposure') {
                               return t.category === 'comfort' || t.category === 'positioning';
@@ -1573,14 +1577,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                   </CardContent>
                 </Card>
 
-                {/* --- AUSCULTATION PANEL --- */}
-                {patientState && (
-                  <AuscultationPanel
-                    sounds={patientState.sounds}
-                    isExpanded={['respiratory', 'cardiac', 'cardiac-ecg', 'thoracic'].includes(currentCase.category)}
-                    isStudentView={true}
-                  />
-                )}
+                {/* Auscultation integrated into 3D Physical Exam — click lung/heart regions to listen */}
 
                 {/* --- Cardiac Arrest Status Bar --- */}
                 {arrestActive && (

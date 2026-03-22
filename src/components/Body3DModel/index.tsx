@@ -18,6 +18,8 @@ import { RotateCcw, User, Eye, Hand, Activity, Stethoscope, Heart, X, ChevronRig
 import { BodyMesh } from './BodyMesh';
 import type { AssessmentStepId } from '@/data/assessmentFramework';
 import type { CaseScenario } from '@/types';
+import type { ClinicalSoundState } from '@/data/clinicalSounds';
+import { playBreathSound, playHeartSound, stopAllSounds } from '@/data/clinicalSounds';
 
 const TOTAL_REGIONS = 8;
 
@@ -263,10 +265,11 @@ interface Body3DModelProps {
   onRegionClick: (stepId: AssessmentStepId) => void;
   assessedRegions: Set<string>;
   caseData: CaseScenario;
+  patientSounds?: ClinicalSoundState | null;
   isStudentView?: boolean;
 }
 
-export function Body3DModel({ onRegionClick, assessedRegions, caseData }: Body3DModelProps) {
+export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientSounds }: Body3DModelProps) {
   const controlsRef = useRef<any>(null);
   const [isFlipped, setIsFlipped] = useState(false);
   const [activeRegion, setActiveRegion] = useState<string | null>(null);
@@ -295,7 +298,24 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData }: Body3D
       next.set(actionId, finding);
       return next;
     });
-  }, [activeRegion, caseData]);
+
+    // Play sounds for auscultation actions
+    if (actionId.includes('auscultate') && patientSounds) {
+      stopAllSounds();
+      if (actionId.startsWith('rul') || actionId.startsWith('rll')) {
+        playBreathSound(patientSounds.rightLung, 4000);
+      } else if (actionId.startsWith('lul') || actionId.startsWith('lll')) {
+        playBreathSound(patientSounds.leftLung, 4000);
+      } else if (actionId.startsWith('ruq') || actionId.startsWith('luq') || actionId.startsWith('rlq') || actionId.startsWith('llq')) {
+        // Bowel sounds — use breath sound engine with a proxy for now
+        // TODO: Add dedicated bowel sound synthesis
+      }
+    }
+    if (actionId.startsWith('heart-') && patientSounds) {
+      stopAllSounds();
+      playHeartSound(patientSounds.heartSound, 5000);
+    }
+  }, [activeRegion, caseData, patientSounds]);
 
   const regionIds = ['head', 'face', 'neck-cspine', 'chest', 'abdomen', 'pelvis', 'extremities', 'posterior-logroll'];
   const assessedCount = regionIds.filter(id => assessedRegions.has(id)).length;
