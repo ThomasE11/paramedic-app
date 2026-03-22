@@ -1316,19 +1316,31 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
 
                         <TabsContent value="case" className="mt-4 animate-fade-in">
                           <Suspense fallback={<LoadingCard />}>
-                            <CaseDisplay caseData={currentCase} studentYear={selectedYear} />
+                            {currentCase ? (
+                              <CaseDisplay caseData={currentCase} studentYear={selectedYear} />
+                            ) : (
+                              <LoadingCard />
+                            )}
                           </Suspense>
                         </TabsContent>
 
                         <TabsContent value="assessment" className="mt-4 animate-fade-in">
                           <Suspense fallback={<LoadingCard />}>
-                            <AssessmentPanel caseData={currentCase} studentYear={selectedYear} />
+                            {currentCase ? (
+                              <AssessmentPanel caseData={currentCase} studentYear={selectedYear} />
+                            ) : (
+                              <LoadingCard />
+                            )}
                           </Suspense>
                         </TabsContent>
 
                         <TabsContent value="management" className="mt-4 animate-fade-in">
                           <Suspense fallback={<LoadingCard />}>
-                            <ManagementView caseData={currentCase} />
+                            {currentCase ? (
+                              <ManagementView caseData={currentCase} />
+                            ) : (
+                              <LoadingCard />
+                            )}
                           </Suspense>
                         </TabsContent>
                       </Tabs>

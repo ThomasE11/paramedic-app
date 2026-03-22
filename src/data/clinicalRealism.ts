@@ -22,68 +22,88 @@ import type { StudentYear, CaseScenario, VitalSigns } from '@/types';
  * Year 3: Intermediate — IV meds, cardiac monitoring, clinical reasoning
  * Year 4 + Diploma: Advanced — complex pharmacology, advanced procedures
  */
+// Diploma = EMT level = equivalent to 1st Year (basic skills only)
 export const TREATMENT_YEAR_ACCESS: Record<string, StudentYear[]> = {
   // ----- AIRWAY -----
   airway_open:          ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
   suction:              ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
-  opa_insert:           ['2nd-year', '3rd-year', '4th-year', 'diploma'],
-  intubation:           ['4th-year', 'diploma'],
+  opa_insert:           ['2nd-year', '3rd-year', '4th-year'],
+  intubation:           ['4th-year'],
 
   // ----- BREATHING -----
   oxygen_nasal:         ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
   oxygen_mask:          ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
   oxygen_nonrebreather: ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
-  bvm_ventilation:      ['2nd-year', '3rd-year', '4th-year', 'diploma'],
+  bvm_ventilation:      ['2nd-year', '3rd-year', '4th-year'],
   nebulizer_salbutamol: ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
-  nebulizer_ipratropium:['3rd-year', '4th-year', 'diploma'],
-  cpap_niv:             ['4th-year', 'diploma'],
-  needle_decompression: ['3rd-year', '4th-year', 'diploma'],
+  nebulizer_ipratropium:['3rd-year', '4th-year'],
+  cpap_niv:             ['4th-year'],
+  needle_decompression: ['3rd-year', '4th-year'],
 
   // ----- CIRCULATION -----
-  iv_access:            ['3rd-year', '4th-year', 'diploma'],
-  fluids_250ml:         ['3rd-year', '4th-year', 'diploma'],
-  fluids_500ml:         ['3rd-year', '4th-year', 'diploma'],
-  fluids_1000ml:        ['4th-year', 'diploma'],
+  iv_access:            ['3rd-year', '4th-year'],
+  fluids_250ml:         ['3rd-year', '4th-year'],
+  fluids_500ml:         ['3rd-year', '4th-year'],
+  fluids_1000ml:        ['4th-year'],
   bleeding_control:     ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
-  tourniquet:           ['2nd-year', '3rd-year', '4th-year', 'diploma'],
+  tourniquet:           ['2nd-year', '3rd-year', '4th-year'],
   cpr:                  ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
-  defibrillation:       ['3rd-year', '4th-year', 'diploma'],
+  defibrillation:       ['2nd-year', '3rd-year', '4th-year'],
 
   // ----- MEDICATIONS -----
-  aspirin:              ['3rd-year', '4th-year', 'diploma'],
-  gtn_spray:            ['3rd-year', '4th-year', 'diploma'],
-  morphine_5mg:         ['4th-year', 'diploma'],
-  fentanyl_50mcg:       ['4th-year', 'diploma'],
-  adrenaline_1mg:       ['3rd-year', '4th-year', 'diploma'],
-  adrenaline_im:        ['3rd-year', '4th-year', 'diploma'],
-  atropine_05mg:        ['4th-year', 'diploma'],
-  adenosine_6mg:        ['4th-year', 'diploma'],
-  amiodarone_300mg:     ['4th-year', 'diploma'],
+  aspirin:              ['3rd-year', '4th-year'],
+  gtn_spray:            ['3rd-year', '4th-year'],
+  morphine_5mg:         ['4th-year'],
+  fentanyl_50mcg:       ['4th-year'],
+  adrenaline_1mg:       ['3rd-year', '4th-year'],
+  adrenaline_im:        ['3rd-year', '4th-year'],
+  atropine_05mg:        ['4th-year'],
+  adenosine_6mg:        ['4th-year'],
+  amiodarone_300mg:     ['4th-year'],
   glucose_10g:          ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
-  glucagon_1mg:         ['2nd-year', '3rd-year', '4th-year', 'diploma'],
-  dextrose_10:          ['3rd-year', '4th-year', 'diploma'],
-  midazolam_5mg:        ['4th-year', 'diploma'],
-  naloxone_04mg:        ['3rd-year', '4th-year', 'diploma'],
-  txa_1g:               ['3rd-year', '4th-year', 'diploma'],
-  hydrocortisone_200mg: ['4th-year', 'diploma'],
-  magnesium_2g:         ['4th-year', 'diploma'],
-  ondansetron_4mg:      ['3rd-year', '4th-year', 'diploma'],
-  calcium_chloride_10:  ['4th-year', 'diploma'],
+  glucagon_1mg:         ['2nd-year', '3rd-year', '4th-year'],
+  dextrose_10:          ['3rd-year', '4th-year'],
+  naloxone_04mg:        ['3rd-year', '4th-year'],
+  txa_1g:               ['3rd-year', '4th-year'],
+  hydrocortisone_200mg: ['4th-year'],
+  magnesium_2g:         ['4th-year'],
+  ondansetron_4mg:      ['3rd-year', '4th-year'],
 
   // ----- POSITIONING -----
   supine_position:      ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
   recovery_position:    ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
   fowlers_position:     ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
-  left_lateral_tilt:    ['2nd-year', '3rd-year', '4th-year', 'diploma'],
+  left_lateral_tilt:    ['2nd-year', '3rd-year', '4th-year'],
   leg_elevation:        ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
 
   // ----- COMFORT/OTHER -----
   warming_blanket:      ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
-  active_cooling:       ['2nd-year', '3rd-year', '4th-year', 'diploma'],
+  active_cooling:       ['2nd-year', '3rd-year', '4th-year'],
   splinting:            ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
   reassurance:          ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
   calm_environment:     ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
   family_presence:      ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
+
+  // ----- ADVANCED MEDICATIONS (3rd/4th year only) -----
+  rsi_intubation:       ['4th-year'],
+  ketamine_iv:          ['4th-year'],
+  suxamethonium:        ['4th-year'],
+  rocuronium:           ['4th-year'],
+  amiodarone_150mg:     ['4th-year'],
+  sodium_bicarbonate:   ['4th-year'],
+  calcium_chloride:     ['4th-year'],
+  metoclopramide_10mg:  ['3rd-year', '4th-year'],
+  mannitol_20:          ['4th-year'],
+  hypertonic_saline:    ['4th-year'],
+  lucas_device:         ['3rd-year', '4th-year'],
+  midazolam_5mg:        ['4th-year'],
+
+  // ----- PEDIATRIC MEDICATIONS -----
+  buccal_midazolam:     ['2nd-year', '3rd-year', '4th-year'],
+  rectal_diazepam:      ['2nd-year', '3rd-year', '4th-year'],
+  paracetamol_oral:     ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
+  paracetamol_iv:       ['3rd-year', '4th-year'],
+  ibuprofen_oral:       ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
 };
 
 /**
