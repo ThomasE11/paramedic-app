@@ -13,7 +13,7 @@ import { useState, useCallback, useMemo, lazy, Suspense, useEffect, useRef } fro
 import type { CaseScenario, StudentYear, CaseSession, VitalSigns, AppliedTreatment } from '@/types';
 import { allCases, getRandomCase, yearLevels, caseCategories } from '@/data/cases';
 import { ensureCompleteVitals } from '@/data/treatmentEffects';
-import { type Treatment } from '@/data/enhancedTreatmentEffects';
+import { type Treatment, type TreatmentCategory, TREATMENTS } from '@/data/enhancedTreatmentEffects';
 import {
   type PatientState,
   type DefibrillationParams,
@@ -32,7 +32,8 @@ import {
   Sparkles, CheckCircle2, AlertTriangle, FileText, Loader2, BookOpen,
   Ambulance, XCircle, Heart, Shield, ChevronRight, BarChart3,
   ClipboardCheck, Star, TrendingUp, TrendingDown, Minus, ExternalLink,
-  RotateCcw, Zap, Volume2, Phone
+  RotateCcw, Zap, Volume2, Phone, Eye, Thermometer, ChevronDown, ChevronUp,
+  Wind, Droplets, Brain, Pill, Syringe
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AuscultationPanel } from '@/components/AuscultationPanel';
@@ -148,6 +149,12 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
   const lastActivityRef = useRef<number>(Date.now());
   const [hintVisible, setHintVisible] = useState(false);
   const [currentHint, setCurrentHint] = useState<string>('');
+
+  // Scene toggle & ABCDE row states
+  const [showScene, setShowScene] = useState(false);
+  const [activePrimarySurvey, setActivePrimarySurvey] = useState<'airway' | 'breathing' | 'circulation' | 'disability' | 'exposure' | null>(null);
+  const [activeHistoryStep, setActiveHistoryStep] = useState<'signs-symptoms' | 'allergies' | 'medications' | 'past-medical' | 'last-meal' | 'events-leading' | null>(null);
+  const [activeManagementTab, setActiveManagementTab] = useState<'airway' | 'breathing' | 'circulation' | 'disability' | 'exposure' | 'medications' | null>(null);
 
   // Transport decision + diagnosis choice (shown before debrief)
   const [showTransportDecision, setShowTransportDecision] = useState(false);
@@ -1037,7 +1044,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
         {/* ================================================================ */}
         {phase === 'vitals' && currentCase && (
           <div className="animate-fade-in space-y-3 sm:space-y-4">
-            {/* Case banner */}
+            {/* ===== TOP: Patient Banner (full width) ===== */}
             <div className="p-3 sm:p-5 rounded-2xl card-glass space-y-3">
               <div className="flex items-center gap-2 sm:gap-3">
                 <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 shrink-0">
@@ -1076,6 +1083,36 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                 </Button>
               </div>
             </div>
+
+            {/* ===== Scene Toggle ===== */}
+            <button
+              onClick={() => setShowScene(!showScene)}
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-xl border border-border/40 bg-muted/20 hover:bg-muted/40 transition-colors text-xs font-medium text-muted-foreground"
+            >
+              <Shield className="h-3.5 w-3.5 text-blue-500" />
+              Scene Details
+              {showScene ? <ChevronUp className="h-3.5 w-3.5 ml-auto" /> : <ChevronDown className="h-3.5 w-3.5 ml-auto" />}
+            </button>
+            {showScene && (
+              <div className="p-3 rounded-xl bg-muted/20 border border-border/30 text-xs space-y-2 animate-fade-in">
+                <p className="leading-relaxed">{currentCase.sceneInfo.description}</p>
+                {currentCase.sceneInfo.hazards && currentCase.sceneInfo.hazards.length > 0 && (
+                  <div className="bg-red-500/8 border border-red-500/15 rounded-lg p-2.5">
+                    <p className="text-[10px] font-semibold text-red-600 dark:text-red-400 mb-1 uppercase tracking-wider">Hazards</p>
+                    <ul className="space-y-0.5">
+                      {currentCase.sceneInfo.hazards.map((h, i) => (
+                        <li key={i} className="text-red-700 dark:text-red-400 flex items-start gap-1.5">
+                          <AlertTriangle className="h-3 w-3 shrink-0 mt-0.5" />{h}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {currentCase.sceneInfo.bystanders && (
+                  <p className="text-muted-foreground">Bystanders: {currentCase.sceneInfo.bystanders}</p>
+                )}
+              </div>
+            )}
 
             {/* Transport Decision Dialog */}
             {showTransportDecision && (
@@ -1221,10 +1258,185 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
               </div>
             )}
 
-            {/* ===== Two-column layout: Monitor (right/sticky) + Assessments (left) ===== */}
-            <div className="flex flex-col lg:grid lg:grid-cols-[1fr,380px] lg:gap-4 xl:grid-cols-[1fr,420px]">
-              {/* Monitor — shown FIRST on mobile (order-1), right column on desktop (sticky) */}
-              <div className="order-1 lg:order-2 mb-4 lg:mb-0 lg:sticky lg:top-4 lg:self-start">
+            {/* ===== SPLIT LAYOUT: Left (Assessment) + Right (Monitor/Treatment) ===== */}
+            <div className="flex flex-col lg:grid lg:grid-cols-2 lg:gap-4">
+
+              {/* ===== LEFT COLUMN ===== */}
+              <div className="order-2 lg:order-1 space-y-4">
+
+                {/* --- PRIMARY SURVEY (ABCDE) --- */}
+                <Card className="card-glass rounded-xl sm:rounded-2xl overflow-hidden">
+                  <CardHeader className="pb-2 px-3 sm:px-4 border-b border-border/30">
+                    <CardTitle className="text-xs sm:text-sm flex items-center gap-2">
+                      <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-lg bg-blue-500/15">
+                        <Shield className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-blue-500" />
+                      </div>
+                      Primary Survey
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-2 sm:p-3">
+                    <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
+                      {([
+                        { key: 'airway' as const, letter: 'A', label: 'Airway', stepId: 'airway' as AssessmentStepId },
+                        { key: 'breathing' as const, letter: 'B', label: 'Breathing', stepId: 'breathing' as AssessmentStepId },
+                        { key: 'circulation' as const, letter: 'C', label: 'Circulation', stepId: 'circulation' as AssessmentStepId },
+                        { key: 'disability' as const, letter: 'D', label: 'Disability', stepId: 'disability' as AssessmentStepId },
+                        { key: 'exposure' as const, letter: 'E', label: 'Exposure', stepId: 'exposure' as AssessmentStepId },
+                      ]).map(item => {
+                        const isAssessed = assessmentTracker?.performed.some(p => p.stepId === item.stepId);
+                        const isActive = activePrimarySurvey === item.key;
+                        return (
+                          <button
+                            key={item.key}
+                            onClick={() => {
+                              if (!isAssessed) {
+                                handlePerformAssessment(item.stepId);
+                              }
+                              setActivePrimarySurvey(isActive ? null : item.key);
+                            }}
+                            className={`flex flex-col items-center gap-0.5 p-2 sm:p-3 rounded-xl border-2 transition-all text-center ${
+                              isActive
+                                ? 'border-blue-500 bg-blue-500/10 ring-1 ring-blue-500/30'
+                                : isAssessed
+                                  ? 'border-green-500/40 bg-green-500/5'
+                                  : 'border-border/40 hover:border-blue-500/40 hover:bg-accent/30'
+                            }`}
+                          >
+                            <span className={`text-base sm:text-xl font-bold ${isAssessed ? 'text-green-600 dark:text-green-400' : 'text-foreground'}`}>
+                              {item.letter}
+                            </span>
+                            <span className="text-[8px] sm:text-[10px] text-muted-foreground leading-tight">{item.label}</span>
+                            {isAssessed && <CheckCircle2 className="h-3 w-3 text-green-500" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {/* Findings dropdown for active primary survey step */}
+                    {activePrimarySurvey && activeFindings && activeFindings.stepId === activePrimarySurvey && (
+                      <div className="mt-2 p-2.5 rounded-xl bg-muted/30 border border-border/30 animate-fade-in">
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
+                          {activePrimarySurvey.charAt(0).toUpperCase() + activePrimarySurvey.slice(1)} Findings
+                        </p>
+                        <div className="space-y-1">
+                          {activeFindings.findings.map((f, i) => (
+                            <div key={i} className={`text-xs p-1.5 rounded-lg border ${
+                              f.severity === 'critical' ? 'bg-red-500/8 border-red-500/20 text-red-700 dark:text-red-300' :
+                              f.severity === 'abnormal' ? 'bg-amber-500/8 border-amber-500/20 text-amber-700 dark:text-amber-300' :
+                              'bg-green-500/5 border-green-500/15 text-foreground'
+                            }`}>
+                              <span className="font-medium">{f.label}:</span> {f.value}
+                              {f.significance && <p className="text-[10px] text-muted-foreground mt-0.5 italic">{f.significance}</p>}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* --- 3D PHYSICAL EXAMINATION --- */}
+                {assessmentTracker && (
+                  <Suspense fallback={<LoadingCard />}>
+                    <Body3DModel
+                      onRegionClick={handlePerformAssessment}
+                      assessedRegions={new Set(
+                        assessmentTracker.performed
+                          .filter(p => p.phase === 'secondary')
+                          .map(p => p.stepId)
+                      )}
+                      caseData={currentCase}
+                      isStudentView={true}
+                    />
+                  </Suspense>
+                )}
+
+                {/* --- HISTORY (SAMPLE) --- */}
+                <Card className="card-glass rounded-xl sm:rounded-2xl overflow-hidden">
+                  <CardHeader className="pb-2 px-3 sm:px-4 border-b border-border/30">
+                    <CardTitle className="text-xs sm:text-sm flex items-center gap-2">
+                      <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-lg bg-purple-500/15">
+                        <ClipboardCheck className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-purple-500" />
+                      </div>
+                      History (SAMPLE)
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-2 sm:p-3">
+                    <div className="grid grid-cols-6 gap-1 sm:gap-1.5">
+                      {([
+                        { key: 'signs-symptoms' as const, letter: 'S', label: 'Signs', stepId: 'signs-symptoms' as AssessmentStepId },
+                        { key: 'allergies' as const, letter: 'A', label: 'Allergies', stepId: 'allergies' as AssessmentStepId },
+                        { key: 'medications' as const, letter: 'M', label: 'Meds', stepId: 'medications' as AssessmentStepId },
+                        { key: 'past-medical' as const, letter: 'P', label: 'PMHx', stepId: 'past-medical' as AssessmentStepId },
+                        { key: 'last-meal' as const, letter: 'L', label: 'Last Meal', stepId: 'last-meal' as AssessmentStepId },
+                        { key: 'events-leading' as const, letter: 'E', label: 'Events', stepId: 'events-leading' as AssessmentStepId },
+                      ]).map(item => {
+                        const isAssessed = assessmentTracker?.performed.some(p => p.stepId === item.stepId);
+                        const isActive = activeHistoryStep === item.key;
+                        return (
+                          <button
+                            key={item.key}
+                            onClick={() => {
+                              if (!isAssessed) {
+                                handlePerformAssessment(item.stepId);
+                              }
+                              setActiveHistoryStep(isActive ? null : item.key);
+                            }}
+                            className={`flex flex-col items-center gap-0.5 p-1.5 sm:p-2 rounded-lg border-2 transition-all text-center ${
+                              isActive
+                                ? 'border-purple-500 bg-purple-500/10 ring-1 ring-purple-500/30'
+                                : isAssessed
+                                  ? 'border-green-500/40 bg-green-500/5'
+                                  : 'border-border/40 hover:border-purple-500/40 hover:bg-accent/30'
+                            }`}
+                          >
+                            <span className={`text-sm sm:text-lg font-bold ${isAssessed ? 'text-green-600 dark:text-green-400' : 'text-foreground'}`}>
+                              {item.letter}
+                            </span>
+                            <span className="text-[7px] sm:text-[9px] text-muted-foreground leading-tight">{item.label}</span>
+                            {isAssessed && <CheckCircle2 className="h-2.5 w-2.5 text-green-500" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {/* Findings dropdown for active history step */}
+                    {activeHistoryStep && activeFindings && activeFindings.stepId === activeHistoryStep && (
+                      <div className="mt-2 p-2.5 rounded-xl bg-muted/30 border border-border/30 animate-fade-in">
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
+                          {activeHistoryStep.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())} Findings
+                        </p>
+                        <div className="space-y-1">
+                          {activeFindings.findings.map((f, i) => (
+                            <div key={i} className={`text-xs p-1.5 rounded-lg border ${
+                              f.severity === 'critical' ? 'bg-red-500/8 border-red-500/20 text-red-700 dark:text-red-300' :
+                              f.severity === 'abnormal' ? 'bg-amber-500/8 border-amber-500/20 text-amber-700 dark:text-amber-300' :
+                              'bg-green-500/5 border-green-500/15 text-foreground'
+                            }`}>
+                              <span className="font-medium">{f.label}:</span> {f.value}
+                              {f.significance && <p className="text-[10px] text-muted-foreground mt-0.5 italic">{f.significance}</p>}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* --- Clinical Assessment Panel (full ABCDE detail — kept for completeness) --- */}
+                {assessmentTracker && (
+                  <ClinicalAssessmentPanel
+                    caseCategory={currentCase.category}
+                    tracker={assessmentTracker}
+                    onPerformAssessment={handlePerformAssessment}
+                    activeFindings={activeFindings}
+                    isStudentView={true}
+                  />
+                )}
+              </div>
+
+              {/* ===== RIGHT COLUMN (sticky on desktop) ===== */}
+              <div className="order-1 lg:order-2 mb-4 lg:mb-0 lg:sticky lg:top-16 lg:self-start space-y-4">
+
+                {/* --- LIFEPAK MONITOR --- */}
                 <Suspense fallback={<LoadingCard />}>
                   <VitalSignsMonitor
                     initialVitals={currentVitals || ensureCompleteVitals(currentCase.vitalSignsProgression.initial)}
@@ -1265,37 +1477,112 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                     } : undefined}
                   />
                 </Suspense>
-              </div>
 
-              {/* Assessments + Auscultation — below monitor on mobile, left column on desktop */}
-              <div className="order-2 lg:order-1 space-y-4 sm:space-y-5">
-                {/* 3D Body Model — interactive physical examination */}
-                {assessmentTracker && (
-                  <Suspense fallback={<LoadingCard />}>
-                    <Body3DModel
-                      onRegionClick={handlePerformAssessment}
-                      assessedRegions={new Set(
-                        assessmentTracker.performed
-                          .filter(p => p.phase === 'secondary')
-                          .map(p => p.stepId)
-                      )}
-                      isStudentView={true}
-                    />
-                  </Suspense>
-                )}
+                {/* --- MANAGEMENT (ABCDE) --- */}
+                <Card className="card-glass rounded-xl sm:rounded-2xl overflow-hidden">
+                  <CardHeader className="pb-2 px-3 sm:px-4 border-b border-border/30">
+                    <CardTitle className="text-xs sm:text-sm flex items-center gap-2">
+                      <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-lg bg-green-500/15">
+                        <Syringe className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-green-500" />
+                      </div>
+                      Management (ABCDE)
+                      <Badge variant="secondary" className="ml-auto text-[9px] sm:text-[10px]">{appliedTreatments.length} applied</Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-2 sm:p-3">
+                    <div className="grid grid-cols-6 gap-1 sm:gap-1.5">
+                      {([
+                        { key: 'airway' as const, letter: 'A', label: 'Airway', categories: ['airway'] as TreatmentCategory[] },
+                        { key: 'breathing' as const, letter: 'B', label: 'Breathing', categories: ['breathing'] as TreatmentCategory[] },
+                        { key: 'circulation' as const, letter: 'C', label: 'Circulation', categories: ['circulation'] as TreatmentCategory[] },
+                        { key: 'disability' as const, letter: 'D', label: 'Disability', categories: [] as TreatmentCategory[] },
+                        { key: 'exposure' as const, letter: 'E', label: 'Exposure', categories: ['comfort', 'positioning'] as TreatmentCategory[] },
+                        { key: 'medications' as const, letter: 'Rx', label: 'Meds', categories: ['medication'] as TreatmentCategory[] },
+                      ]).map(item => {
+                        const isActive = activeManagementTab === item.key;
+                        // Count treatments applied in this category
+                        const appliedInCat = appliedTreatments.filter(t => {
+                          if (item.key === 'disability') {
+                            return ['glucose_oral', 'glucose_iv', 'midazolam', 'diazepam', 'mannitol', 'naloxone', 'flumazenil'].includes(t.id);
+                          }
+                          return item.categories.includes(t.category as TreatmentCategory);
+                        }).length;
+                        return (
+                          <button
+                            key={item.key}
+                            onClick={() => setActiveManagementTab(isActive ? null : item.key)}
+                            className={`flex flex-col items-center gap-0.5 p-1.5 sm:p-2 rounded-lg border-2 transition-all text-center relative ${
+                              isActive
+                                ? 'border-green-500 bg-green-500/10 ring-1 ring-green-500/30'
+                                : 'border-border/40 hover:border-green-500/40 hover:bg-accent/30'
+                            }`}
+                          >
+                            <span className="text-sm sm:text-lg font-bold">{item.letter}</span>
+                            <span className="text-[7px] sm:text-[9px] text-muted-foreground leading-tight">{item.label}</span>
+                            {appliedInCat > 0 && (
+                              <Badge className="absolute -top-1.5 -right-1.5 h-4 w-4 p-0 flex items-center justify-center text-[8px] bg-green-500">{appliedInCat}</Badge>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {/* Treatment options for active management tab */}
+                    {activeManagementTab && currentVitals && (
+                      <div className="mt-2 p-2 rounded-xl bg-muted/20 border border-border/30 animate-fade-in max-h-64 overflow-y-auto">
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
+                          {activeManagementTab === 'medications' ? 'Medications' : activeManagementTab.charAt(0).toUpperCase() + activeManagementTab.slice(1)} Treatments
+                        </p>
+                        <div className="space-y-1">
+                          {TREATMENTS.filter(t => {
+                            if (activeManagementTab === 'disability') {
+                              return ['glucose_oral', 'glucose_iv', 'midazolam', 'diazepam', 'mannitol', 'naloxone', 'flumazenil'].includes(t.id);
+                            }
+                            if (activeManagementTab === 'exposure') {
+                              return t.category === 'comfort' || t.category === 'positioning';
+                            }
+                            if (activeManagementTab === 'medications') {
+                              return t.category === 'medication';
+                            }
+                            const catMap: Record<string, TreatmentCategory> = { airway: 'airway', breathing: 'breathing', circulation: 'circulation' };
+                            return t.category === catMap[activeManagementTab];
+                          }).map(treatment => {
+                            const isApplied = appliedTreatmentIds.includes(treatment.id);
+                            const isCurrentlyApplying = applyingTreatmentId === treatment.id;
+                            return (
+                              <div key={treatment.id} className={`flex items-center gap-2 p-2 rounded-lg border text-xs transition-all ${
+                                isApplied ? 'bg-green-500/5 border-green-500/20' : 'border-border/30 hover:bg-accent/20'
+                              }`}>
+                                <div className="flex-1 min-w-0">
+                                  <span className="font-medium">{treatment.name}</span>
+                                  <p className="text-[10px] text-muted-foreground truncate">{treatment.description}</p>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  variant={isApplied ? 'outline' : 'default'}
+                                  className="h-6 px-2 text-[10px] rounded-md shrink-0"
+                                  onClick={() => applyTreatment(treatment)}
+                                  disabled={isCurrentlyApplying}
+                                >
+                                  {isCurrentlyApplying ? (
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                  ) : isApplied ? (
+                                    <>
+                                      <RotateCcw className="h-2.5 w-2.5 mr-0.5" /> Repeat
+                                    </>
+                                  ) : (
+                                    'Apply'
+                                  )}
+                                </Button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
 
-                {/* Clinical Assessment Panel */}
-                {assessmentTracker && (
-                  <ClinicalAssessmentPanel
-                    caseCategory={currentCase.category}
-                    tracker={assessmentTracker}
-                    onPerformAssessment={handlePerformAssessment}
-                    activeFindings={activeFindings}
-                    isStudentView={true}
-                  />
-                )}
-
-                {/* Auscultation Panel — listen to the patient */}
+                {/* --- AUSCULTATION PANEL --- */}
                 {patientState && (
                   <AuscultationPanel
                     sounds={patientState.sounds}
@@ -1303,23 +1590,83 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                     isStudentView={true}
                   />
                 )}
+
+                {/* --- Cardiac Arrest Status Bar --- */}
+                {arrestActive && (
+                  <div className="p-3 rounded-xl bg-red-500/10 border-2 border-red-500/30 animate-pulse-slow">
+                    <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
+                      <Zap className="h-4 w-4" />
+                      <span className="text-xs font-bold uppercase tracking-wider">Cardiac Arrest Active</span>
+                      <Badge variant="destructive" className="ml-auto text-[10px]">
+                        {cprRunning ? `CPR ${formatTime(cprCycleTimer)}` : 'CPR Paused'}
+                      </Badge>
+                    </div>
+                  </div>
+                )}
+
+                {/* --- Applied Treatments Log --- */}
+                {appliedTreatments.length > 0 && (
+                  <Card className="card-glass rounded-xl sm:rounded-2xl">
+                    <CardHeader className="pb-2 border-b border-border/30 px-3 sm:px-4">
+                      <CardTitle className="text-xs sm:text-sm flex items-center gap-2">
+                        <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-lg bg-green-500/15">
+                          <ClipboardCheck className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-green-500" />
+                        </div>
+                        Treatments Applied
+                        <Badge variant="secondary" className="ml-auto text-[9px] sm:text-[10px]">{appliedTreatments.length}</Badge>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-2 sm:pt-3 px-3 sm:px-4">
+                      <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                        {appliedTreatments.map((t, i) => {
+                          const hasWarning = t.description?.includes('CRITICAL') || t.description?.includes('ADVERSE') || t.description?.includes('CONTRAINDICATED');
+                          const isPartial = t.description?.includes('Partial') || t.description?.includes('Consider repeat');
+                          return (
+                            <div key={i} className={`flex items-start gap-2 text-[10px] sm:text-xs p-2 rounded-lg border ${
+                              hasWarning
+                                ? 'bg-red-500/5 border-red-500/15'
+                                : isPartial
+                                  ? 'bg-amber-500/5 border-amber-500/15'
+                                  : 'bg-green-500/5 border-green-500/10'
+                            }`}>
+                              {hasWarning ? (
+                                <AlertTriangle className="h-3.5 w-3.5 text-red-500 mt-0.5 shrink-0" />
+                              ) : isPartial ? (
+                                <Activity className="h-3.5 w-3.5 text-amber-500 mt-0.5 shrink-0" />
+                              ) : (
+                                <CheckCircle2 className="h-3.5 w-3.5 text-green-500 mt-0.5 shrink-0" />
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <span className="font-semibold">{t.name}</span>
+                                {patientState && patientState.treatmentCounts[t.id] > 1 && (
+                                  <Badge variant="outline" className="ml-1.5 text-[9px] py-0 h-4">
+                                    x{patientState.treatmentCounts[t.id]}
+                                  </Badge>
+                                )}
+                                <p className="text-muted-foreground mt-0.5 leading-relaxed">
+                                  {(() => {
+                                    const desc = t.description || '';
+                                    const cleaned = desc
+                                      .replace(/\s*—\s*(?:[A-Z][A-Za-z\d]+:\s*[\d./]+[%°]?[A-Za-z]?\s*→\s*[\d./]+[%°]?[A-Za-z]?(?:,\s*)?)+\.?/g, '.')
+                                      .replace(/\s*—\s*\d+\s*vitals?\s*improving\.?\s*(?:Consider\s*repeat\s*dose\.?)?/g, '.')
+                                      .replace(/\.{2,}/g, '.')
+                                      .trim();
+                                    return cleaned;
+                                  })()}
+                                </p>
+                              </div>
+                              <span className="text-muted-foreground/60 text-[10px] shrink-0">
+                                {new Date(t.appliedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             </div>
-
-            {/* Treatment Panel */}
-            {currentVitals && (
-              <Suspense fallback={<LoadingCard />}>
-                <TreatmentApplicationPanel
-                  currentVitals={currentVitals}
-                  onApplyTreatment={applyTreatment}
-                  appliedTreatmentIds={appliedTreatmentIds}
-                  isApplying={!!applyingTreatmentId}
-                  applyingTreatmentId={applyingTreatmentId}
-                  studentYear={selectedYear}
-                  isStudentView={true}
-                />
-              </Suspense>
-            )}
 
             {/* Defibrillation Dialog */}
             {showDefibDialog && patientState && (
@@ -1335,69 +1682,19 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
               />
             )}
 
-            {/* Applied Treatments Log */}
-            {appliedTreatments.length > 0 && (
-              <Card className="card-glass rounded-xl sm:rounded-2xl">
-                <CardHeader className="pb-2 border-b border-border/30 px-3 sm:px-6">
-                  <CardTitle className="text-xs sm:text-sm flex items-center gap-2">
-                    <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-lg bg-green-500/15">
-                      <ClipboardCheck className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-green-500" />
-                    </div>
-                    Treatments Applied
-                    <Badge variant="secondary" className="ml-auto text-[9px] sm:text-[10px]">{appliedTreatments.length}</Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-2 sm:pt-3 px-3 sm:px-6">
-                  <div className="space-y-1.5 sm:space-y-2 max-h-40 sm:max-h-48 overflow-y-auto">
-                    {appliedTreatments.map((t, i) => {
-                      const hasWarning = t.description?.includes('CRITICAL') || t.description?.includes('ADVERSE') || t.description?.includes('CONTRAINDICATED');
-                      const isPartial = t.description?.includes('Partial') || t.description?.includes('Consider repeat');
-                      return (
-                        <div key={i} className={`flex items-start gap-2 sm:gap-2.5 text-[10px] sm:text-xs p-2 sm:p-2.5 rounded-lg border ${
-                          hasWarning
-                            ? 'bg-red-500/5 border-red-500/15'
-                            : isPartial
-                              ? 'bg-amber-500/5 border-amber-500/15'
-                              : 'bg-green-500/5 border-green-500/10'
-                        }`}>
-                          {hasWarning ? (
-                            <AlertTriangle className="h-3.5 w-3.5 text-red-500 mt-0.5 shrink-0" />
-                          ) : isPartial ? (
-                            <Activity className="h-3.5 w-3.5 text-amber-500 mt-0.5 shrink-0" />
-                          ) : (
-                            <CheckCircle2 className="h-3.5 w-3.5 text-green-500 mt-0.5 shrink-0" />
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <span className="font-semibold">{t.name}</span>
-                            {/* Show dose count if repeated */}
-                            {patientState && patientState.treatmentCounts[t.id] > 1 && (
-                              <Badge variant="outline" className="ml-1.5 text-[9px] py-0 h-4">
-                                x{patientState.treatmentCounts[t.id]}
-                              </Badge>
-                            )}
-                            <p className="text-muted-foreground mt-0.5 leading-relaxed">
-                              {/* Strip exact vital transitions from student view — they should observe changes on the monitor */}
-                              {(() => {
-                                const desc = t.description || '';
-                                // Remove "— HR: 120 → 110, SpO2: 85 → 89" style transitions
-                                const cleaned = desc
-                                  .replace(/\s*—\s*(?:[A-Z][A-Za-z\d]+:\s*[\d./]+[%°]?[A-Za-z]?\s*→\s*[\d./]+[%°]?[A-Za-z]?(?:,\s*)?)+\.?/g, '.')
-                                  .replace(/\s*—\s*\d+\s*vitals?\s*improving\.?\s*(?:Consider\s*repeat\s*dose\.?)?/g, '.')
-                                  .replace(/\.{2,}/g, '.')
-                                  .trim();
-                                return cleaned;
-                              })()}
-                            </p>
-                          </div>
-                          <span className="text-muted-foreground/60 text-[10px] shrink-0">
-                            {new Date(t.appliedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
+            {/* Hidden TreatmentApplicationPanel — still used for full treatment search fallback */}
+            {currentVitals && (
+              <Suspense fallback={<LoadingCard />}>
+                <TreatmentApplicationPanel
+                  currentVitals={currentVitals}
+                  onApplyTreatment={applyTreatment}
+                  appliedTreatmentIds={appliedTreatmentIds}
+                  isApplying={!!applyingTreatmentId}
+                  applyingTreatmentId={applyingTreatmentId}
+                  studentYear={selectedYear}
+                  isStudentView={true}
+                />
+              </Suspense>
             )}
           </div>
         )}
