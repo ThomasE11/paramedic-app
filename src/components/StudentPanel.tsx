@@ -156,8 +156,9 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
   const [activeHistoryStep, setActiveHistoryStep] = useState<'signs-symptoms' | 'allergies' | 'medications' | 'past-medical' | 'last-meal' | 'events-leading' | null>(null);
   const [activeManagementTab, setActiveManagementTab] = useState<'airway' | 'breathing' | 'circulation' | 'disability' | 'exposure' | 'medications' | null>(null);
 
-  // Transport decision + diagnosis choice (shown before debrief)
+  // Transport decision wizard — step-by-step flow
   const [showTransportDecision, setShowTransportDecision] = useState(false);
+  const [transportStep, setTransportStep] = useState<1 | 2 | 3 | 4 | 5>(1); // 1=priority, 2=position, 3=preAlert+destination, 4=diagnosis, 5=confirm
   const [transportDecisions, setTransportDecisions] = useState<{
     priority: string;
     position: string;
@@ -577,8 +578,9 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
     }
   }, [assessmentTracker, currentCase, caseStartTime]);
 
-  // End case — show transport decision dialog first
+  // End case — show transport decision wizard from step 1
   const endCase = useCallback((action: 'transport' | 'end') => {
+    setTransportStep(1);
     setShowTransportDecision(true);
   }, []);
 
@@ -1115,129 +1117,210 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
             )}
 
             {/* Transport Decision Dialog */}
+            {/* Transport Decision Wizard — Step-by-step */}
             {showTransportDecision && (
               <Card className="border-2 border-amber-400 bg-amber-50/50 dark:bg-amber-950/20 rounded-2xl overflow-hidden animate-fade-in">
-                <CardHeader className="pb-3 border-b border-amber-200 dark:border-amber-800">
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <Ambulance className="h-4 w-4 text-amber-600" />
-                    Transport & Handover Decisions
+                <CardHeader className="pb-2 border-b border-amber-200 dark:border-amber-800">
+                  <CardTitle className="text-sm flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Ambulance className="h-4 w-4 text-amber-600" />
+                      Transport & Handover
+                    </div>
+                    <div className="flex gap-1">
+                      {[1,2,3,4,5].map(s => (
+                        <div key={s} className={`h-1.5 w-6 rounded-full transition-all ${
+                          s < transportStep ? 'bg-green-500'
+                          : s === transportStep ? 'bg-amber-500'
+                          : 'bg-border/40'
+                        }`} />
+                      ))}
+                    </div>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="pt-4 space-y-4">
-                  {/* Transport Priority */}
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Transport Priority</p>
-                    <div className="grid grid-cols-3 gap-2">
-                      {[
-                        { value: 'lights', label: 'Lights & Sirens', desc: 'Time-critical, rapid transport', color: 'border-red-400 bg-red-50 dark:bg-red-950/20' },
-                        { value: 'urgent', label: 'Urgent (No L&S)', desc: 'Prompt but safe transport', color: 'border-amber-400 bg-amber-50 dark:bg-amber-950/20' },
-                        { value: 'routine', label: 'Routine', desc: 'Non-urgent, standard transport', color: 'border-green-400 bg-green-50 dark:bg-green-950/20' },
-                      ].map(opt => (
-                        <button
-                          key={opt.value}
-                          onClick={() => setTransportDecisions(prev => ({ ...prev || { priority: '', position: '', preAlert: false, destination: '', provisionalDiagnosis: '' }, priority: opt.value }))}
-                          className={`p-2 rounded-xl border-2 text-left transition-all ${
-                            transportDecisions?.priority === opt.value ? opt.color + ' ring-2 ring-offset-1 ring-amber-400' : 'border-border/30 hover:border-border'
-                          }`}
-                        >
-                          <p className="text-xs font-semibold">{opt.label}</p>
-                          <p className="text-[9px] text-muted-foreground">{opt.desc}</p>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                <CardContent className="pt-4 space-y-3">
 
-                  {/* Patient Position */}
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Patient Position</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      {['Supine', 'Semi-Fowlers (30-45°)', 'Left Lateral', 'Sitting Upright', 'Recovery Position', 'Trendelenburg'].map(pos => (
-                        <button
-                          key={pos}
-                          onClick={() => setTransportDecisions(prev => ({ ...prev || { priority: '', position: '', preAlert: false, destination: '', provisionalDiagnosis: '' }, position: pos }))}
-                          className={`p-2 rounded-lg border text-xs text-left transition-all ${
-                            transportDecisions?.position === pos ? 'border-amber-400 bg-amber-50 dark:bg-amber-950/20 font-semibold' : 'border-border/30 hover:border-border'
-                          }`}
-                        >
-                          {pos}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Pre-Alert */}
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => setTransportDecisions(prev => ({ ...prev || { priority: '', position: '', preAlert: false, destination: '', provisionalDiagnosis: '' }, preAlert: !prev?.preAlert }))}
-                      className={`flex items-center gap-2 p-2.5 rounded-xl border-2 text-xs transition-all flex-1 ${
-                        transportDecisions?.preAlert ? 'border-red-400 bg-red-50 dark:bg-red-950/20 font-semibold' : 'border-border/30 hover:border-border'
-                      }`}
-                    >
-                      <Phone className="h-3.5 w-3.5" />
-                      {transportDecisions?.preAlert ? '✓ Pre-Alert Hospital' : 'Pre-Alert Hospital?'}
-                    </button>
-                  </div>
-
-                  {/* Destination */}
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Destination</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      {[
-                        'Nearest ED',
-                        'Trauma Centre',
-                        'Cardiac Centre (PCI)',
-                        'Stroke Centre',
-                        'Burns Unit',
-                        'Paediatric ED',
-                      ].map(dest => (
-                        <button
-                          key={dest}
-                          onClick={() => setTransportDecisions(prev => ({ ...prev || { priority: '', position: '', preAlert: false, destination: '', provisionalDiagnosis: '' }, destination: dest }))}
-                          className={`p-2 rounded-lg border text-xs text-left transition-all ${
-                            transportDecisions?.destination === dest ? 'border-amber-400 bg-amber-50 dark:bg-amber-950/20 font-semibold' : 'border-border/30 hover:border-border'
-                          }`}
-                        >
-                          {dest}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Provisional Diagnosis */}
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Your Provisional Diagnosis</p>
-                    <div className="grid grid-cols-1 gap-1.5">
-                      {currentCase.expectedFindings?.differentialDiagnoses
-                        ? [...currentCase.expectedFindings.differentialDiagnoses.slice(0, 5),
-                           ...(currentCase.expectedFindings.differentialDiagnoses.length < 5 ? ['Other / Undifferentiated'] : [])
-                          ].sort(() => Math.random() - 0.5).map(dx => (
+                  {/* STEP 1: Transport Priority */}
+                  {transportStep === 1 && (
+                    <div className="animate-fade-in">
+                      <p className="text-sm font-bold mb-1">How do you want to transport this patient?</p>
+                      <p className="text-xs text-muted-foreground mb-3">Select the transport priority based on the patient's condition.</p>
+                      <div className="grid grid-cols-1 gap-2">
+                        {[
+                          { value: 'lights', label: '🚨 Lights & Sirens', desc: 'Time-critical — life-threatening condition requiring immediate hospital intervention', color: 'border-red-400 bg-red-50 dark:bg-red-950/20' },
+                          { value: 'urgent', label: '⚡ Urgent (No L&S)', desc: 'Serious condition requiring prompt transport but stable enough for normal driving', color: 'border-amber-400 bg-amber-50 dark:bg-amber-950/20' },
+                          { value: 'routine', label: '🟢 Routine', desc: 'Stable patient — standard safe transport, no time pressure', color: 'border-green-400 bg-green-50 dark:bg-green-950/20' },
+                        ].map(opt => (
                           <button
-                            key={dx}
-                            onClick={() => setTransportDecisions(prev => ({ ...prev || { priority: '', position: '', preAlert: false, destination: '', provisionalDiagnosis: '' }, provisionalDiagnosis: dx }))}
-                            className={`p-2 rounded-lg border text-xs text-left transition-all ${
-                              transportDecisions?.provisionalDiagnosis === dx ? 'border-blue-400 bg-blue-50 dark:bg-blue-950/20 font-semibold' : 'border-border/30 hover:border-border'
+                            key={opt.value}
+                            onClick={() => {
+                              setTransportDecisions(prev => ({ ...prev || { priority: '', position: '', preAlert: false, destination: '', provisionalDiagnosis: '' }, priority: opt.value }));
+                              setTransportStep(2);
+                            }}
+                            className={`p-3 rounded-xl border-2 text-left transition-all hover:shadow-md ${opt.color}`}
+                          >
+                            <p className="text-sm font-semibold">{opt.label}</p>
+                            <p className="text-[10px] text-muted-foreground mt-0.5">{opt.desc}</p>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* STEP 2: Patient Position */}
+                  {transportStep === 2 && (
+                    <div className="animate-fade-in">
+                      <p className="text-sm font-bold mb-1">What position should the patient be transported in?</p>
+                      <p className="text-xs text-muted-foreground mb-3">Choose the most appropriate position for this patient's condition.</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[
+                          { pos: 'Supine', desc: 'Flat on back — trauma, spinal precautions' },
+                          { pos: 'Semi-Fowlers (30-45°)', desc: 'Head elevated — cardiac, respiratory' },
+                          { pos: 'Left Lateral', desc: 'On left side — pregnancy, unconscious' },
+                          { pos: 'Sitting Upright', desc: 'Fully upright — severe dyspnoea, CHF' },
+                          { pos: 'Recovery Position', desc: 'Unconscious, breathing, no spinal risk' },
+                          { pos: 'Trendelenburg', desc: 'Legs elevated — shock, hypotension' },
+                        ].map(({ pos, desc }) => (
+                          <button
+                            key={pos}
+                            onClick={() => {
+                              setTransportDecisions(prev => ({ ...prev || { priority: '', position: '', preAlert: false, destination: '', provisionalDiagnosis: '' }, position: pos }));
+                              setTransportStep(3);
+                            }}
+                            className="p-2.5 rounded-xl border-2 border-border/30 text-left transition-all hover:border-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/20 hover:shadow-md"
+                          >
+                            <p className="text-xs font-semibold">{pos}</p>
+                            <p className="text-[9px] text-muted-foreground">{desc}</p>
+                          </button>
+                        ))}
+                      </div>
+                      <button onClick={() => setTransportStep(1)} className="text-[10px] text-muted-foreground mt-2 hover:underline">← Back</button>
+                    </div>
+                  )}
+
+                  {/* STEP 3: Pre-Alert & Destination */}
+                  {transportStep === 3 && (
+                    <div className="animate-fade-in space-y-4">
+                      <div>
+                        <p className="text-sm font-bold mb-1">Will you pre-alert the hospital?</p>
+                        <p className="text-xs text-muted-foreground mb-3">Pre-alerting gives the receiving team time to prepare.</p>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            onClick={() => setTransportDecisions(prev => ({ ...prev || { priority: '', position: '', preAlert: false, destination: '', provisionalDiagnosis: '' }, preAlert: true }))}
+                            className={`p-3 rounded-xl border-2 text-left transition-all ${
+                              transportDecisions?.preAlert === true ? 'border-red-400 bg-red-50 dark:bg-red-950/20 ring-2 ring-red-400/30' : 'border-border/30 hover:border-red-400'
                             }`}
                           >
-                            {dx}
+                            <p className="text-xs font-semibold">📞 Yes — Pre-Alert</p>
+                            <p className="text-[9px] text-muted-foreground">Notify hospital of incoming patient</p>
                           </button>
-                        ))
-                        : <p className="text-xs text-muted-foreground">No differential diagnoses available</p>
-                      }
+                          <button
+                            onClick={() => setTransportDecisions(prev => ({ ...prev || { priority: '', position: '', preAlert: false, destination: '', provisionalDiagnosis: '' }, preAlert: false }))}
+                            className={`p-3 rounded-xl border-2 text-left transition-all ${
+                              transportDecisions?.preAlert === false && transportDecisions?.priority ? 'border-green-400 bg-green-50 dark:bg-green-950/20 ring-2 ring-green-400/30' : 'border-border/30 hover:border-green-400'
+                            }`}
+                          >
+                            <p className="text-xs font-semibold">No Pre-Alert</p>
+                            <p className="text-[9px] text-muted-foreground">Standard arrival, no advance notice</p>
+                          </button>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold mb-1">Where are you transporting to?</p>
+                        <div className="grid grid-cols-2 gap-2">
+                          {['Nearest ED', 'Trauma Centre', 'Cardiac Centre (PCI)', 'Stroke Centre', 'Burns Unit', 'Paediatric ED'].map(dest => (
+                            <button
+                              key={dest}
+                              onClick={() => setTransportDecisions(prev => ({ ...prev || { priority: '', position: '', preAlert: false, destination: '', provisionalDiagnosis: '' }, destination: dest }))}
+                              className={`p-2 rounded-lg border text-xs text-left transition-all ${
+                                transportDecisions?.destination === dest ? 'border-amber-400 bg-amber-50 dark:bg-amber-950/20 font-semibold ring-1 ring-amber-400/30' : 'border-border/30 hover:border-amber-400'
+                              }`}
+                            >
+                              {dest}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <button onClick={() => setTransportStep(2)} className="text-[10px] text-muted-foreground hover:underline">← Back</button>
+                        <Button
+                          size="sm"
+                          onClick={() => setTransportStep(4)}
+                          disabled={!transportDecisions?.destination}
+                          className="rounded-lg gap-1 bg-amber-500 hover:bg-amber-600 text-white text-xs"
+                        >
+                          Next <ChevronRight className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-
-                  {/* Confirm */}
-                  <Button
-                    onClick={finalizeCase}
-                    className="w-full h-10 rounded-xl gap-2 bg-amber-500 hover:bg-amber-600 text-white"
-                    disabled={!transportDecisions?.priority || !transportDecisions?.position}
-                  >
-                    <CheckCircle2 className="h-4 w-4" />
-                    Confirm & End Case
-                  </Button>
-                  {(!transportDecisions?.priority || !transportDecisions?.position) && (
-                    <p className="text-[10px] text-muted-foreground text-center">Select at least transport priority and patient position</p>
                   )}
+
+                  {/* STEP 4: Provisional Diagnosis */}
+                  {transportStep === 4 && (
+                    <div className="animate-fade-in">
+                      <p className="text-sm font-bold mb-1">What is your provisional diagnosis?</p>
+                      <p className="text-xs text-muted-foreground mb-3">Based on your assessment, what do you think is wrong with this patient?</p>
+                      <div className="grid grid-cols-1 gap-1.5">
+                        {currentCase.expectedFindings?.differentialDiagnoses
+                          ? [...currentCase.expectedFindings.differentialDiagnoses.slice(0, 5),
+                             'Other / Undifferentiated'
+                          ].map(dx => (
+                            <button
+                              key={dx}
+                              onClick={() => {
+                                setTransportDecisions(prev => ({ ...prev || { priority: '', position: '', preAlert: false, destination: '', provisionalDiagnosis: '' }, provisionalDiagnosis: dx }));
+                                setTransportStep(5);
+                              }}
+                              className="p-2.5 rounded-lg border text-xs text-left transition-all border-border/30 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20"
+                            >
+                              {dx}
+                            </button>
+                          ))
+                          : <p className="text-xs text-muted-foreground">No options available</p>
+                        }
+                      </div>
+                      <button onClick={() => setTransportStep(3)} className="text-[10px] text-muted-foreground mt-2 hover:underline">← Back</button>
+                    </div>
+                  )}
+
+                  {/* STEP 5: Confirm Summary */}
+                  {transportStep === 5 && (
+                    <div className="animate-fade-in space-y-3">
+                      <p className="text-sm font-bold mb-2">Confirm your decisions</p>
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between p-2 rounded-lg bg-white/60 dark:bg-black/20 border border-border/30 text-xs">
+                          <span className="text-muted-foreground">Priority:</span>
+                          <span className="font-semibold">{transportDecisions?.priority === 'lights' ? '🚨 Lights & Sirens' : transportDecisions?.priority === 'urgent' ? '⚡ Urgent' : '🟢 Routine'}</span>
+                        </div>
+                        <div className="flex items-center justify-between p-2 rounded-lg bg-white/60 dark:bg-black/20 border border-border/30 text-xs">
+                          <span className="text-muted-foreground">Position:</span>
+                          <span className="font-semibold">{transportDecisions?.position}</span>
+                        </div>
+                        <div className="flex items-center justify-between p-2 rounded-lg bg-white/60 dark:bg-black/20 border border-border/30 text-xs">
+                          <span className="text-muted-foreground">Pre-Alert:</span>
+                          <span className="font-semibold">{transportDecisions?.preAlert ? '📞 Yes' : 'No'}</span>
+                        </div>
+                        <div className="flex items-center justify-between p-2 rounded-lg bg-white/60 dark:bg-black/20 border border-border/30 text-xs">
+                          <span className="text-muted-foreground">Destination:</span>
+                          <span className="font-semibold">{transportDecisions?.destination}</span>
+                        </div>
+                        <div className="flex items-center justify-between p-2 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 text-xs">
+                          <span className="text-muted-foreground">Diagnosis:</span>
+                          <span className="font-semibold text-blue-700 dark:text-blue-300">{transportDecisions?.provisionalDiagnosis}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between pt-2">
+                        <button onClick={() => setTransportStep(4)} className="text-[10px] text-muted-foreground hover:underline">← Back</button>
+                        <Button
+                          onClick={finalizeCase}
+                          className="rounded-xl gap-2 bg-green-600 hover:bg-green-700 text-white"
+                        >
+                          <CheckCircle2 className="h-4 w-4" />
+                          Confirm & End Case
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
                 </CardContent>
               </Card>
             )}
