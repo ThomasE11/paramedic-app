@@ -152,7 +152,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
 
   // Scene toggle & ABCDE row states
   const [showScene, setShowScene] = useState(false);
-  const [activePrimarySurvey, setActivePrimarySurvey] = useState<'airway' | 'breathing' | 'circulation' | 'disability' | 'exposure' | null>(null);
+  const [activePrimarySurvey, setActivePrimarySurvey] = useState<'scene-safety' | 'airway' | 'breathing' | 'circulation' | 'disability' | 'exposure' | null>(null);
   const [activeHistoryStep, setActiveHistoryStep] = useState<'signs-symptoms' | 'allergies' | 'medications' | 'past-medical' | 'last-meal' | 'events-leading' | null>(null);
   const [activeManagementTab, setActiveManagementTab] = useState<'airway' | 'breathing' | 'circulation' | 'disability' | 'exposure' | 'medications' | null>(null);
 
@@ -1364,8 +1364,9 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-2 sm:p-3">
-                    <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
+                    <div className="grid grid-cols-6 gap-1 sm:gap-1.5">
                       {([
+                        { key: 'scene-safety' as const, letter: 'S', label: 'Scene', stepId: 'scene-safety' as AssessmentStepId },
                         { key: 'airway' as const, letter: 'A', label: 'Airway', stepId: 'airway' as AssessmentStepId },
                         { key: 'breathing' as const, letter: 'B', label: 'Breathing', stepId: 'breathing' as AssessmentStepId },
                         { key: 'circulation' as const, letter: 'C', label: 'Circulation', stepId: 'circulation' as AssessmentStepId },
