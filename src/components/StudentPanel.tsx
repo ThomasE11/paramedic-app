@@ -1530,8 +1530,8 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                     caseCategory={currentCase.category}
                     caseSubcategory={currentCase.subcategory}
                     caseTitle={currentCase.title}
-                    appliedTreatments={appliedTreatments.map(t => t.description)}
-                    overrideRhythm={patientState?.currentRhythm || undefined}
+                    appliedTreatments={appliedTreatmentIds}
+                    overrideRhythm={patientState?.currentRhythm}
                     cprState={arrestActive ? {
                       active: arrestActive,
                       running: cprRunning,
