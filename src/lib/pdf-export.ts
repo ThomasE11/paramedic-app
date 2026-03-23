@@ -207,7 +207,7 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
   const vitals = caseData.vitalSignsProgression.initial;
   const vitalSignsParts: string[] = [`BP: ${vitals.bp}`, `Pulse: ${vitals.pulse} bpm`, `RR: ${vitals.respiration}/min`, `SpO2: ${vitals.spo2}%`];
   if (vitals.gcs !== undefined) vitalSignsParts.push(`GCS: ${vitals.gcs}/15`);
-  if (vitals.temperature !== undefined) vitalSignsParts.push(`Temp: ${vitals.temperature}°C`);
+  if (vitals.temperature !== undefined) vitalSignsParts.push(`Temp: ${vitals.temperature}C`);
   if (vitals.bloodGlucose !== undefined) vitalSignsParts.push(`Glucose: ${vitals.bloodGlucose} mmol/L`);
 
   addText(vitalSignsParts.join('    '), 10);
@@ -274,7 +274,7 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
       addFilledRoundedRect(margin, yPosition, contentWidth, 7, 1, [236, 253, 245]);
       addStrokeRoundedRect(margin, yPosition, contentWidth, 7, 1, [34, 197, 94]);
 
-      addTextAt('✓', margin + 3, yPosition + 5, 9, 'bold', [34, 197, 94]);
+      addTextAt('+', margin + 3, yPosition + 5, 9, 'bold', [34, 197, 94]);
 
       const text = item.description + (item.critical ? ' (Critical)' : '');
       const lines = doc.splitTextToSize(text, contentWidth - 12);
@@ -289,7 +289,7 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
     addSectionHeader('CRITICAL - Missed Actions');
 
     addFilledRoundedRect(margin, yPosition, contentWidth, 6, 0, [254, 226, 226]);
-    addTextAt('⚠ The following critical actions were missed:', margin + 3, yPosition + 4, 9, 'bold', [220, 38, 38]);
+    addTextAt('(!) The following critical actions were missed:', margin + 3, yPosition + 4, 9, 'bold', [220, 38, 38]);
     yPosition += 10;
 
     criticalMissedItems.forEach((item) => {
@@ -297,7 +297,7 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
 
       addStrokeRoundedRect(margin, yPosition, contentWidth, 12, 2, [239, 68, 68]);
 
-      addTextAt('✗', margin + 3, yPosition + 5, 9, 'bold', [220, 38, 38]);
+      addTextAt('x', margin + 3, yPosition + 5, 9, 'bold', [220, 38, 38]);
 
       const lines = doc.splitTextToSize(item.description, contentWidth - 10);
       (lines as string[]).forEach((line: string, i: number) => {
@@ -318,7 +318,7 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
 
       addStrokeRoundedRect(margin, yPosition, contentWidth, 6, 1, [251, 146, 60]);
 
-      addTextAt('○', margin + 3, yPosition + 4, 9, 'bold', [251, 146, 60]);
+      addTextAt('-', margin + 3, yPosition + 4, 9, 'bold', [251, 146, 60]);
 
       const truncatedText = item.description.length > 90
         ? item.description.substring(0, 87) + '...'
@@ -375,14 +375,14 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
         treatment.effects.forEach((effect) => {
           checkPageBreak(8);
 
-          addTextAt('  ↳', margin + 5, yPosition + 3, 8, 'normal', [100, 100, 100]);
+          addTextAt('  >', margin + 5, yPosition + 3, 8, 'normal', [100, 100, 100]);
           addTextAt(`${effect.vitalSign}:`, margin + 15, yPosition + 3, 9, 'bold', [60, 60, 60]);
 
           // Old value (red)
           addTextAt(String(effect.oldValue), margin + 50, yPosition + 3, 9, 'normal', [220, 38, 38]);
 
           // Arrow
-          addTextAt('→', margin + 75, yPosition + 3, 9, 'bold', [100, 100, 100]);
+          addTextAt('->', margin + 75, yPosition + 3, 9, 'bold', [100, 100, 100]);
 
           // New value (green)
           addTextAt(String(effect.newValue), margin + 85, yPosition + 3, 9, 'bold', [34, 197, 94]);
@@ -434,7 +434,7 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
       checkPageBreak(8);
 
       addFilledRoundedRect(margin, yPosition, 6, 6, 1, [239, 246, 255]);
-      addTextAt('📋', margin + 2, yPosition + 4.5, 8, 'normal', [59, 130, 246]);
+      addTextAt('>', margin + 2, yPosition + 4.5, 8, 'normal', [59, 130, 246]);
 
       const lines = doc.splitTextToSize(guideline, contentWidth - 12);
       (lines as string[]).forEach((line: string, idx: number) => {
@@ -452,7 +452,7 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
     caseData.commonPitfalls.forEach((pitfall) => {
       checkPageBreak(10);
 
-      addTextAt('⚠', margin, yPosition + 3, 9, 'normal', [251, 146, 60]);
+      addTextAt('(!)', margin, yPosition + 3, 9, 'normal', [251, 146, 60]);
 
       const lines = doc.splitTextToSize(pitfall, contentWidth - 8);
       (lines as string[]).forEach((line: string, idx: number) => {
@@ -591,7 +591,7 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
 
         // Relevance indicator
         if (resource.relevance === 'essential') {
-          addTextAt('★', pageWidth - margin - 5, yPosition + 4, 8, 'normal', [234, 179, 8]);
+          addTextAt('*', pageWidth - margin - 5, yPosition + 4, 8, 'normal', [234, 179, 8]);
         }
 
         yPosition += 8;
@@ -616,11 +616,13 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
   // Pull relevant videos and articles from local clinical resources based on case
   {
     const caseFindings = [
-      caseData.category,
+      caseData.subcategory,
       caseData.title,
+      caseData.category,
       caseData.dispatchInfo?.callReason,
       ...(caseData.expectedFindings?.keyObservations || []),
       ...(caseData.expectedFindings?.differentialDiagnoses || []),
+      caseData.expectedFindings?.mostLikelyDiagnosis,
     ].filter(Boolean) as string[];
 
     const matchedVideos = [
@@ -628,10 +630,26 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
       ...getVideosByFindings(caseFindings),
     ].filter((v, i, arr) => arr.findIndex(x => x.id === v.id) === i).slice(0, 6);
 
-    const matchedArticles = referenceArticles.filter(a =>
-      a.category === caseData.category ||
-      caseFindings.some(f => a.title.toLowerCase().includes(f.toLowerCase()) || f.toLowerCase().includes(a.category))
-    ).slice(0, 6);
+    const matchedArticles = referenceArticles
+      .filter(a =>
+        a.category === caseData.category ||
+        caseFindings.some(f => a.title.toLowerCase().includes(f.toLowerCase()) || f.toLowerCase().includes(a.category))
+      )
+      .sort((a, b) => {
+        // Prioritize subcategory and title matches over broad category matches
+        const scoreMatch = (article: typeof a): number => {
+          let score = 0;
+          const titleLower = article.title.toLowerCase();
+          if (caseData.subcategory && titleLower.includes(caseData.subcategory.toLowerCase())) score += 10;
+          if (caseData.title && titleLower.includes(caseData.title.toLowerCase())) score += 8;
+          if (caseData.expectedFindings?.mostLikelyDiagnosis && titleLower.includes(caseData.expectedFindings.mostLikelyDiagnosis.toLowerCase())) score += 6;
+          if (caseFindings.some(f => titleLower.includes(f.toLowerCase()))) score += 3;
+          if (article.category === caseData.category) score += 1;
+          return score;
+        };
+        return scoreMatch(b) - scoreMatch(a);
+      })
+      .slice(0, 6);
 
     if (matchedVideos.length > 0 || matchedArticles.length > 0) {
       addSectionHeader('Condition-Specific Learning Resources');
