@@ -62,6 +62,15 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
     return false;
   };
 
+  // Sanitize text to remove Unicode characters that jsPDF can't render
+  const sanitizeText = (text: string): string => {
+    return text
+      .replace(/→/g, '->')
+      .replace(/←/g, '<-')
+      .replace(/°/g, ' deg')
+      .replace(/[^\x20-\x7E\n]/g, ''); // Remove any remaining non-ASCII
+  };
+
   // Helper function to add text with word wrap
   const addText = (text: string, fontSize: number, fontStyle: 'normal' | 'bold' = 'normal', rgbColor: [number, number, number] = [0, 0, 0]): number => {
     doc.setFontSize(fontSize);
@@ -85,12 +94,13 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
 
   // Helper function to add a section header
   const addSectionHeader = (text: string): void => {
-    yPosition += 8;
+    yPosition += 10;
     checkPageBreak(15);
     doc.setDrawColor(59, 130, 246); // Primary blue color
     doc.setLineWidth(0.5);
-    doc.line(margin, yPosition - 3, pageWidth - margin, yPosition - 3);
-    addText(text, 14, 'bold', [59, 130, 246]);
+    doc.line(margin, yPosition - 1, pageWidth - margin, yPosition - 1);
+    yPosition += 3; // gap after line before text
+    addText(sanitizeText(text), 14, 'bold', [59, 130, 246]);
   };
 
   // Helper function to add a rounded rect with fill
@@ -147,13 +157,13 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
   addSectionHeader('Case Information');
 
   const caseInfo = [
-    [`Case Title:`, caseData.title],
-    [`Category:`, caseData.category],
+    [`Case Title:`, sanitizeText(caseData.title)],
+    [`Category:`, sanitizeText(caseData.category)],
     [`Priority:`, caseData.priority.toUpperCase()],
     [`Complexity:`, caseData.complexity.toUpperCase()],
     [`Year Level:`, session.studentYear],
     [`Patient:`, `${caseData.patientInfo.age}y ${caseData.patientInfo.gender}`],
-    [`Location:`, caseData.dispatchInfo.location],
+    [`Location:`, sanitizeText(caseData.dispatchInfo.location)],
   ];
 
   caseInfo.forEach(([label, value]) => {
@@ -171,7 +181,7 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
     addStrokeRoundedRect(margin, yPosition, contentWidth, 18, 2, [59, 130, 246]);
 
     addTextAt('Objective:', margin + 3, yPosition + 6, 9, 'bold', [59, 130, 246]);
-    const objLines = doc.splitTextToSize(options.simulationObjective.primaryObjective, contentWidth - 30);
+    const objLines = doc.splitTextToSize(sanitizeText(options.simulationObjective.primaryObjective), contentWidth - 30);
     addTextAt((objLines as string[])[0], margin + 25, yPosition + 6, 9, 'normal', [60, 60, 60]);
 
     addTextAt('Skills Focus:', margin + 3, yPosition + 13, 8, 'bold', [100, 100, 100]);
@@ -187,9 +197,9 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
   addSectionHeader('Dispatch Information');
 
   const dispatchLines = [
-    `Call Reason: ${caseData.dispatchInfo.callReason}`,
-    `Time of Day: ${caseData.dispatchInfo.timeOfDay}`,
-    `Caller Info: ${caseData.dispatchInfo.callerInfo}`,
+    `Call Reason: ${sanitizeText(caseData.dispatchInfo.callReason)}`,
+    `Time of Day: ${sanitizeText(caseData.dispatchInfo.timeOfDay)}`,
+    `Caller Info: ${sanitizeText(caseData.dispatchInfo.callerInfo)}`,
   ];
 
   dispatchLines.forEach((line) => {
@@ -340,7 +350,7 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
 
       addTextAt(`${i + 1}`, margin + 3, yPosition + 4.5, 9, 'bold', [59, 130, 246]);
 
-      const lines = doc.splitTextToSize(point, contentWidth - 12);
+      const lines = doc.splitTextToSize(sanitizeText(point), contentWidth - 12);
       (lines as string[]).forEach((line: string, idx: number) => {
         addTextAt(line, margin + 10, yPosition + 4.5 + (idx * 4), 9, 'normal', [60, 60, 60]);
       });
@@ -360,9 +370,13 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
       addFilledRoundedRect(margin, yPosition, contentWidth, 18, 2, [240, 253, 244]);
       addStrokeRoundedRect(margin, yPosition, contentWidth, 18, 2, [34, 197, 94]);
 
-      // Treatment number and description
+      // Treatment number and description (strip vital changes and sanitize)
+      const cleanDesc = sanitizeText(treatment.description)
+        .replace(/\s*--\s*(?:[A-Z][A-Za-z\d]+:\s*[\d./]+[%]?\s*(?:->|!')\s*[\d./]+[%]?(?:,\s*)?)+\.?/g, '.')
+        .replace(/\.{2,}/g, '.')
+        .trim();
       addTextAt(`${index + 1}.`, margin + 3, yPosition + 5, 10, 'bold', [34, 197, 94]);
-      addTextAt(treatment.description, margin + 12, yPosition + 5, 10, 'bold', [0, 0, 0]);
+      addTextAt(cleanDesc, margin + 12, yPosition + 5, 10, 'bold', [0, 0, 0]);
 
       // Applied time
       const timeStr = new Date(treatment.appliedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
@@ -376,16 +390,16 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
           checkPageBreak(8);
 
           addTextAt('  >', margin + 5, yPosition + 3, 8, 'normal', [100, 100, 100]);
-          addTextAt(`${effect.vitalSign}:`, margin + 15, yPosition + 3, 9, 'bold', [60, 60, 60]);
+          addTextAt(sanitizeText(`${effect.vitalSign}:`), margin + 15, yPosition + 3, 9, 'bold', [60, 60, 60]);
 
           // Old value (red)
-          addTextAt(String(effect.oldValue), margin + 50, yPosition + 3, 9, 'normal', [220, 38, 38]);
+          addTextAt(sanitizeText(String(effect.oldValue)), margin + 50, yPosition + 3, 9, 'normal', [220, 38, 38]);
 
           // Arrow
           addTextAt('->', margin + 75, yPosition + 3, 9, 'bold', [100, 100, 100]);
 
           // New value (green)
-          addTextAt(String(effect.newValue), margin + 85, yPosition + 3, 9, 'bold', [34, 197, 94]);
+          addTextAt(sanitizeText(String(effect.newValue)), margin + 85, yPosition + 3, 9, 'bold', [34, 197, 94]);
 
           yPosition += 6;
         });
@@ -436,7 +450,7 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
       addFilledRoundedRect(margin, yPosition, 6, 6, 1, [239, 246, 255]);
       addTextAt('>', margin + 2, yPosition + 4.5, 8, 'normal', [59, 130, 246]);
 
-      const lines = doc.splitTextToSize(guideline, contentWidth - 12);
+      const lines = doc.splitTextToSize(sanitizeText(guideline), contentWidth - 12);
       (lines as string[]).forEach((line: string, idx: number) => {
         addTextAt(line, margin + 10, yPosition + 4.5 + (idx * 4), 9, 'normal', [60, 60, 60]);
       });
@@ -454,7 +468,7 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
 
       addTextAt('(!)', margin, yPosition + 3, 9, 'normal', [251, 146, 60]);
 
-      const lines = doc.splitTextToSize(pitfall, contentWidth - 8);
+      const lines = doc.splitTextToSize(sanitizeText(pitfall), contentWidth - 8);
       (lines as string[]).forEach((line: string, idx: number) => {
         addTextAt(line, margin + 6, yPosition + 3 + (idx * 4), 9, 'normal', [80, 80, 80]);
       });
@@ -467,7 +481,7 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
   if (session.notes) {
     addSectionHeader('Instructor Notes');
 
-    const noteLines = doc.splitTextToSize(session.notes, contentWidth);
+    const noteLines = doc.splitTextToSize(sanitizeText(session.notes), contentWidth);
     (noteLines as string[]).forEach((line: string) => {
       checkPageBreak(6);
       addTextAt(line, margin, yPosition, 10, 'normal', [60, 60, 60]);
@@ -522,18 +536,18 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
       addTextAt(noteTime, pageWidth - margin - 15, yPosition + 5, 7, 'normal', [150, 150, 150]);
 
       // Finding
-      const findingLines = doc.splitTextToSize(note.finding, contentWidth - 10);
+      const findingLines = doc.splitTextToSize(sanitizeText(note.finding), contentWidth - 10);
       addTextAt((findingLines as string[])[0], margin + 5, yPosition + 11, 9, 'bold', [30, 30, 30]);
 
       // What was missed + why it matters
       if (note.whatWasMissed && note.whatWasMissed !== 'Not specified') {
-        const missedText = `Missed: ${note.whatWasMissed}`;
+        const missedText = `Missed: ${sanitizeText(note.whatWasMissed)}`;
         const missedLines = doc.splitTextToSize(missedText, contentWidth - 10);
         addTextAt((missedLines as string[])[0], margin + 5, yPosition + 17, 7, 'normal', [80, 80, 80]);
       }
 
       if (note.improvementAction) {
-        addTextAt(`Action: ${note.improvementAction}`, margin + 5, yPosition + 22, 7, 'normal', [59, 130, 246]);
+        addTextAt(sanitizeText(`Action: ${note.improvementAction}`), margin + 5, yPosition + 22, 7, 'normal', [59, 130, 246]);
       }
 
       yPosition += 28;
@@ -587,7 +601,7 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
         addTextAt(`[${resource.source}]`, margin + 2, yPosition + 4, 7, 'normal', [150, 150, 150]);
 
         // Clickable title
-        addClickableLink(resource.title, resource.url, margin + 45, yPosition + 4, 9);
+        addClickableLink(sanitizeText(resource.title), resource.url, margin + 45, yPosition + 4, 9);
 
         // Relevance indicator
         if (resource.relevance === 'essential') {
@@ -672,7 +686,7 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
           addTextAt(`[${video.duration}]`, margin + 2, yPosition + 4, 7, 'normal', [150, 150, 150]);
 
           const videoUrl = getYouTubeWatchUrl(video.youtubeId);
-          addClickableLink(video.name, videoUrl, margin + 20, yPosition + 4, 9);
+          addClickableLink(sanitizeText(video.name), videoUrl, margin + 20, yPosition + 4, 9);
 
           addTextAt(video.source, margin + 20, yPosition + 9, 7, 'normal', [150, 150, 150]);
 
@@ -692,7 +706,7 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
 
           addTextAt(`[${article.source}]`, margin + 2, yPosition + 4, 7, 'normal', [150, 150, 150]);
 
-          addClickableLink(article.title, article.url, margin + 45, yPosition + 4, 9);
+          addClickableLink(sanitizeText(article.title), article.url, margin + 45, yPosition + 4, 9);
 
           yPosition += 8;
         }
