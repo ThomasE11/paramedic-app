@@ -733,7 +733,7 @@ export const brugadaPattern: ECGCase = {
     'Not advising on fever management',
     'Forgetting that placement of V1-V2 matters'
   ],
-  associatedConditions: ['Sudden cardiac death', 'Ventrical fibrillation', 'Sleep-related death', 'Fever-induced arrhythmias'],
+  associatedConditions: ['Sudden cardiac death', 'Ventricular fibrillation', 'Sleep-related death', 'Fever-induced arrhythmias'],
   litflLink: 'https://litfl.com/brugada-syndrome-ecg-library/'
 };
 

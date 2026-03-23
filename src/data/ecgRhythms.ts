@@ -528,6 +528,150 @@ export const pea: ECGRhythm = {
 };
 
 // ============================================================================
+// FIRST DEGREE HEART BLOCK
+// ============================================================================
+const firstDegreeBlockWave: WaveformFn = (t) => {
+  // Same as NSR but with prolonged PR interval (>200ms)
+  // P wave at normal position, then flat segment, then delayed QRS
+  const p = pWave(t, 0.08, 0, 0.1);
+  // Shift QRS later by adding extra PR delay (start at 0.22 instead of 0.16)
+  const qrs = qrsComplex(t, -0.1, 1.0, -0.2, 0.22, 0.08);
+  const tw = tWave(t, 0.15, 0.42, 0.15);
+  return p + qrs + tw;
+};
+
+export const firstDegreeBlock: ECGRhythm = {
+  id: 'first-degree-block',
+  name: 'First Degree Heart Block',
+  description: 'Prolonged PR interval >200ms, all P waves conducted',
+  category: 'block',
+  defaultRate: 70,
+  rateRange: [55, 90],
+  regular: true,
+  leads: makeLeadSet(firstDegreeBlockWave, NORMAL_SCALES),
+};
+
+// ============================================================================
+// JUNCTIONAL RHYTHM
+// ============================================================================
+const junctionalWave: WaveformFn = (t) => {
+  // No P wave (or small inverted P near QRS), narrow QRS, rate 40-60
+  const invertedP = pWave(t, -0.03, 0.12, 0.05); // Small inverted P near QRS
+  const qrs = qrsComplex(t, -0.1, 0.9, -0.15, 0.16, 0.08);
+  const tw = tWave(t, 0.12, 0.35, 0.15);
+  return invertedP + qrs + tw;
+};
+
+export const junctionalRhythm: ECGRhythm = {
+  id: 'junctional',
+  name: 'Junctional Rhythm',
+  description: 'Narrow QRS, absent or inverted P waves, rate 40-60',
+  category: 'bradycardia',
+  defaultRate: 50,
+  rateRange: [40, 60],
+  regular: true,
+  leads: makeLeadSet(junctionalWave, NORMAL_SCALES),
+};
+
+// ============================================================================
+// IDIOVENTRICULAR RHYTHM
+// ============================================================================
+const idioventricularWave: WaveformFn = (t) => {
+  // Wide bizarre QRS, no P waves, very slow rate 20-40
+  return wideQRS(t, 0.7, 0.12, 0.2);
+};
+
+export const idioventricularRhythm: ECGRhythm = {
+  id: 'idioventricular',
+  name: 'Idioventricular Rhythm',
+  description: 'Wide QRS escape rhythm, no P waves, rate 20-40',
+  category: 'bradycardia',
+  defaultRate: 30,
+  rateRange: [20, 40],
+  regular: true,
+  leads: makeLeadSet(idioventricularWave, {
+    I: 0.8, II: 1.0, III: 0.9, aVR: -0.7, aVL: 0.5, aVF: 0.95,
+    V1: 1.0, V2: 0.9, V3: 0.7, V4: 0.5, V5: 0.4, V6: 0.3,
+  }),
+};
+
+// ============================================================================
+// ACCELERATED IDIOVENTRICULAR RHYTHM (AIVR)
+// ============================================================================
+const aivrWave: WaveformFn = (t) => {
+  // Wide QRS, no P waves, rate 60-120 (faster than idioventricular)
+  // Often seen post-reperfusion
+  return wideQRS(t, 0.8, 0.12, 0.18);
+};
+
+export const aivr: ECGRhythm = {
+  id: 'aivr',
+  name: 'Accelerated Idioventricular Rhythm (AIVR)',
+  description: 'Wide QRS, no P waves, rate 60-120. Often post-reperfusion.',
+  category: 'arrhythmia',
+  defaultRate: 80,
+  rateRange: [60, 120],
+  regular: true,
+  leads: makeLeadSet(aivrWave, {
+    I: 0.8, II: 1.0, III: 0.9, aVR: -0.7, aVL: 0.5, aVF: 0.95,
+    V1: 1.0, V2: 0.9, V3: 0.7, V4: 0.5, V5: 0.4, V6: 0.3,
+  }),
+};
+
+// ============================================================================
+// FINE VENTRICULAR FIBRILLATION
+// ============================================================================
+const fineVfibWave: WaveformFn = (t) => {
+  // Same as VF but very low amplitude - almost mimics asystole
+  return vfibWave(t) * 0.25;
+};
+
+export const fineVF: ECGRhythm = {
+  id: 'vfib-fine',
+  name: 'Fine Ventricular Fibrillation',
+  description: 'Very low amplitude chaotic waves, can mimic asystole. Still shockable.',
+  category: 'arrest',
+  defaultRate: 0,
+  rateRange: [0, 0],
+  regular: false,
+  leads: makeLeadSet(fineVfibWave, {
+    I: 0.6, II: 0.8, III: 0.7, aVR: 0.5, aVL: 0.6, aVF: 0.7,
+    V1: 0.5, V2: 0.7, V3: 0.9, V4: 1.0, V5: 0.8, V6: 0.6,
+  }),
+};
+
+// ============================================================================
+// WPW (WOLFF-PARKINSON-WHITE)
+// ============================================================================
+const wpwWave: WaveformFn = (t) => {
+  // Short PR interval, delta wave (slurred QRS upstroke), wide QRS
+  const p = pWave(t, 0.08, 0, 0.1);
+  // Delta wave: slurred upstroke starting early (short PR)
+  const deltaStart = 0.12; // Short PR
+  const deltaWidth = 0.05;
+  let delta = 0;
+  if (t >= deltaStart && t < deltaStart + deltaWidth) {
+    const pos = (t - deltaStart) / deltaWidth;
+    delta = pos * 0.4; // Gradual slurred upstroke
+  }
+  // QRS starts slightly later, wider than normal
+  const qrs = qrsComplex(t, -0.05, 0.9, -0.2, 0.15, 0.12);
+  const tw = tWave(t, 0.12, 0.38, 0.15);
+  return p + delta + qrs + tw;
+};
+
+export const wpw: ECGRhythm = {
+  id: 'wpw',
+  name: 'WPW (Wolff-Parkinson-White)',
+  description: 'Short PR, delta wave (slurred QRS upstroke), wide QRS. Pre-excitation syndrome.',
+  category: 'arrhythmia',
+  defaultRate: 80,
+  rateRange: [60, 100],
+  regular: true,
+  leads: makeLeadSet(wpwWave, NORMAL_SCALES),
+};
+
+// ============================================================================
 // RHYTHM REGISTRY
 // ============================================================================
 
@@ -550,6 +694,12 @@ export const ALL_RHYTHMS: ECGRhythm[] = [
   mobiType2,
   torsadesDePointes,
   pea,
+  firstDegreeBlock,
+  junctionalRhythm,
+  idioventricularRhythm,
+  aivr,
+  fineVF,
+  wpw,
 ];
 
 export const RHYTHM_MAP: Record<string, ECGRhythm> = Object.fromEntries(
@@ -585,10 +735,14 @@ export function getRhythmForCase(category: string, subcategory?: string, heartRa
   if (searchText.includes('atrial flutter') || searchText.includes('aflutter') || sub === 'aflutter' || sub.includes('atrial-flutter')) return atrialFlutter;
   if (searchText.includes('svt') || searchText.includes('supraventricular tachycardia') || sub === 'svt' || sub.includes('supraventricular')) return svt;
   if (searchText.includes('ventricular tachycardia') || searchText.includes('vtach') || sub === 'vtach' || sub.includes('ventricular-tach')) return ventricularTachycardia;
-  if (searchText.includes('ventricular fibrillation') || searchText.includes('vfib') || searchText.includes('cardiac arrest') || sub === 'vfib') return ventricularFibrillation;
-  if (searchText.includes('torsades') || sub.includes('torsades')) return torsadesDePointes;
+  // Check specific arrest rhythms BEFORE generic "cardiac arrest"
   if (searchText.includes('asystole') || sub.includes('asystole')) return asystole;
   if (searchText.includes('pea') || searchText.includes('pulseless electrical') || sub.includes('pea')) return pea;
+  if (searchText.includes('torsades') || sub.includes('torsades')) return torsadesDePointes;
+  if (searchText.includes('fine vf') || searchText.includes('fine ventricular fibrillation')) return fineVF;
+  if (searchText.includes('vfib') || searchText.includes('ventricular fibrillation') || searchText.includes('vf ') || sub === 'vfib') return ventricularFibrillation;
+  // Generic cardiac arrest defaults to VF (most common shockable)
+  if (searchText.includes('cardiac arrest') || searchText.includes('cardiac-arrest')) return ventricularFibrillation;
 
   // ===== Conduction blocks =====
   if (searchText.includes('complete heart block') || searchText.includes('3rd degree') || searchText.includes('third degree') || sub.includes('3rd-degree')) return completeHeartBlock;
