@@ -2409,9 +2409,10 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                     });
                     toast.dismiss();
                     toast.success('PDF report downloaded');
-                  } catch {
+                  } catch (err) {
+                    console.error('PDF generation error:', err);
                     toast.dismiss();
-                    toast.error('Failed to generate PDF');
+                    toast.error('Failed to generate PDF: ' + (err instanceof Error ? err.message : 'Unknown error'));
                   }
                 }}
               >

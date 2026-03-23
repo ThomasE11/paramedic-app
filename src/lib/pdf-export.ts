@@ -63,8 +63,9 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
   };
 
   // Sanitize text to remove Unicode characters that jsPDF can't render
-  const sanitizeText = (text: string): string => {
-    return text
+  const sanitizeText = (text: string | undefined | null): string => {
+    if (!text) return '';
+    return String(text)
       .replace(/→/g, '->')
       .replace(/←/g, '<-')
       .replace(/°/g, ' deg')
