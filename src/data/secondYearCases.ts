@@ -65,7 +65,7 @@ export const secondYearCases: CaseScenario[] = [
     abcde: {
       airway: {
         patent: true,
-        findings: ['Airway patent but compromised by respiratory effort', 'Speaking in 1-2 word sentences', 'Able to secretions but increased work'],
+        findings: ['Airway patent but compromised by respiratory effort', 'Speaking in 1-2 word sentences', 'Able to manage secretions but increased work of breathing'],
         interventions: ['Encourage calm environment', 'Prepare for airway adjuncts if needed']
       },
       breathing: {
@@ -424,6 +424,33 @@ export const secondYearCases: CaseScenario[] = [
         yearLevel: ['2nd-year'],
         complexity: ['intermediate'],
         rationale: 'Anxiety worsens respiratory distress'
+      },
+      {
+        id: 'y2-001-salb',
+        category: 'intervention',
+        description: 'Administer salbutamol 5mg via nebuliser',
+        points: 10,
+        yearLevel: ['2nd-year'],
+        complexity: ['intermediate'],
+        critical: true,
+        rationale: 'Salbutamol is the first-line bronchodilator for acute asthma'
+      },
+      {
+        id: 'y2-001-ipra',
+        category: 'intervention',
+        description: 'Add ipratropium 500mcg to nebuliser (if severe)',
+        points: 5,
+        yearLevel: ['2nd-year'],
+        complexity: ['intermediate']
+      },
+      {
+        id: 'y2-001-o2',
+        category: 'intervention',
+        description: 'High-flow oxygen (target SpO2 94-98%)',
+        points: 5,
+        yearLevel: ['2nd-year'],
+        complexity: ['intermediate'],
+        critical: true
       }
     ],
     teachingPoints: [
@@ -808,6 +835,40 @@ export const secondYearCases: CaseScenario[] = [
         yearLevel: ['2nd-year'],
         complexity: ['intermediate'],
         rationale: 'ECG timing is important for cardiac care'
+      },
+      {
+        id: 'y2-002-aspirin',
+        category: 'intervention',
+        description: 'Aspirin 300mg if no allergy/contraindication',
+        points: 10,
+        yearLevel: ['2nd-year'],
+        complexity: ['intermediate'],
+        critical: true
+      },
+      {
+        id: 'y2-002-gtn',
+        category: 'intervention',
+        description: 'GTN spray if SBP > 90 and no contraindications',
+        points: 5,
+        yearLevel: ['2nd-year'],
+        complexity: ['intermediate']
+      },
+      {
+        id: 'y2-002-morphine',
+        category: 'intervention',
+        description: 'Morphine 5mg IV titrated for pain (if severe)',
+        points: 5,
+        yearLevel: ['2nd-year'],
+        complexity: ['intermediate']
+      },
+      {
+        id: 'y2-002-iv',
+        category: 'intervention',
+        description: 'IV access — large bore',
+        points: 5,
+        yearLevel: ['2nd-year'],
+        complexity: ['intermediate'],
+        critical: true
       }
     ],
     teachingPoints: [
@@ -1153,6 +1214,33 @@ export const secondYearCases: CaseScenario[] = [
         yearLevel: ['2nd-year'],
         complexity: ['intermediate'],
         rationale: 'Neuro documentation provides baseline'
+      },
+      {
+        id: 'y2-003-bgl',
+        category: 'intervention',
+        description: 'Blood glucose check — exclude hypoglycaemia',
+        points: 10,
+        yearLevel: ['2nd-year'],
+        complexity: ['intermediate'],
+        critical: true,
+        rationale: 'Hypoglycaemia mimics stroke and is immediately treatable'
+      },
+      {
+        id: 'y2-003-time',
+        category: 'history',
+        description: 'Document exact time of symptom onset (for thrombolysis window)',
+        points: 10,
+        yearLevel: ['2nd-year'],
+        complexity: ['intermediate'],
+        critical: true
+      },
+      {
+        id: 'y2-003-position',
+        category: 'intervention',
+        description: 'Position supine or 30-degree head elevation',
+        points: 3,
+        yearLevel: ['2nd-year'],
+        complexity: ['intermediate']
       }
     ],
     teachingPoints: [
@@ -1947,6 +2035,32 @@ export const secondYearCases: CaseScenario[] = [
         yearLevel: ['2nd-year'],
         complexity: ['intermediate'],
         rationale: 'Pre-alerting allows surgical team preparation'
+      },
+      {
+        id: 'y2-005-fluid',
+        category: 'intervention',
+        description: 'IV fluid resuscitation — NaCl bolus for hypotension',
+        points: 10,
+        yearLevel: ['2nd-year'],
+        complexity: ['intermediate'],
+        critical: true
+      },
+      {
+        id: 'y2-005-iv',
+        category: 'intervention',
+        description: 'Two large-bore IV access',
+        points: 5,
+        yearLevel: ['2nd-year'],
+        complexity: ['intermediate'],
+        critical: true
+      },
+      {
+        id: 'y2-005-position',
+        category: 'intervention',
+        description: 'Left lateral position',
+        points: 3,
+        yearLevel: ['2nd-year'],
+        complexity: ['intermediate']
       }
     ],
     teachingPoints: [
@@ -3098,6 +3212,23 @@ export const secondYearCases: CaseScenario[] = [
         yearLevel: ['2nd-year'],
         complexity: ['intermediate'],
         rationale: 'GCS monitors for organic deterioration alongside psychiatric presentation'
+      },
+      {
+        id: 'y2-008-bgl',
+        category: 'intervention',
+        description: 'Blood glucose — exclude organic cause',
+        points: 5,
+        yearLevel: ['2nd-year'],
+        complexity: ['intermediate'],
+        critical: true
+      },
+      {
+        id: 'y2-008-temp',
+        category: 'intervention',
+        description: 'Temperature check — exclude infection/NMS',
+        points: 3,
+        yearLevel: ['2nd-year'],
+        complexity: ['intermediate']
       }
     ],
     teachingPoints: [
@@ -3489,6 +3620,23 @@ export const secondYearCases: CaseScenario[] = [
         yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         rationale: 'Effective team dynamics improve resuscitation performance and outcomes'
+      },
+      {
+        id: 'y2-009-adr-timing',
+        category: 'intervention',
+        description: 'Adrenaline 1mg IV after 2nd shock (then every 3-5 min)',
+        points: 10,
+        yearLevel: ['2nd-year'],
+        complexity: ['intermediate'],
+        critical: true
+      },
+      {
+        id: 'y2-009-amio',
+        category: 'intervention',
+        description: 'Amiodarone 300mg IV after 3rd shock for refractory VF',
+        points: 5,
+        yearLevel: ['2nd-year'],
+        complexity: ['intermediate']
       }
     ],
     teachingPoints: [

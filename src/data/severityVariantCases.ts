@@ -266,8 +266,8 @@ export const asthmaSeverityCases: CaseScenario[] = [
       { id: 'amod2', category: 'intervention', description: 'Position upright (Fowler\'s) — essential for breathing', points: 5, yearLevel: ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
       { id: 'amod3', category: 'intervention', description: 'High-flow O2 via non-rebreather mask', points: 5, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
       { id: 'amod4', category: 'intervention', description: 'Salbutamol nebulizer — first dose', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
-      { id: 'amod5', category: 'intervention', description: 'Add ipratropium nebulizer', points: 10, yearLevel: ['3rd-year', '4th-year', 'diploma'], complexity: ['intermediate', 'advanced', 'expert'] },
-      { id: 'amod6', category: 'intervention', description: 'IV access and steroids (hydrocortisone 200mg)', points: 10, yearLevel: ['3rd-year', '4th-year', 'diploma'], complexity: ['intermediate', 'advanced', 'expert'] },
+      { id: 'amod5', category: 'intervention', description: 'Add ipratropium nebulizer', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['intermediate', 'advanced', 'expert'] },
+      { id: 'amod6', category: 'intervention', description: 'IV access and steroids (hydrocortisone 200mg)', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['intermediate', 'advanced', 'expert'] },
       { id: 'amod7', category: 'intervention', description: 'Reassess after treatment — repeat salbutamol if needed', points: 5, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
     ],
     teachingPoints: [

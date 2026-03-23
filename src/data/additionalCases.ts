@@ -708,7 +708,8 @@ export const additionalRespiratoryCases: CaseScenario[] = [
       { id: 'resp7-9', category: 'abcde', description: 'Differentiate from epiglottitis (drooling, toxic appearance)', points: 15, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced'] },
       { id: 'resp7-10', category: 'intervention', description: 'Provide humidified oxygen if hypoxic', points: 5, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['basic', 'intermediate', 'advanced'] },
       { id: 'resp7-11', category: 'communication', description: 'Reassure parents and explain treatment plan', points: 5, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['basic', 'intermediate', 'advanced'] },
-      { id: 'resp7-12', category: 'documentation', description: 'Document stridor characteristics and interventions', points: 5, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['basic', 'intermediate', 'advanced'] }
+      { id: 'resp7-12', category: 'documentation', description: 'Document stridor characteristics and interventions', points: 5, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['basic', 'intermediate', 'advanced'] },
+      { id: 'resp7-neb-adr', category: 'intervention', description: 'Nebulised adrenaline 5ml 1:1000 for severe croup/stridor at rest', points: 5, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['intermediate'] }
     ],
     teachingPoints: [
       'Croup is a clinical diagnosis - barking cough and stridor',
