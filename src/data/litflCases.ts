@@ -1392,7 +1392,7 @@ export const litflCaseDatabase: CaseScenario[] = [
       { id: 'litfl012-1', text: 'Recognized Cushing triad', category: 'assessment', points: 4 },
       { id: 'litfl012-2', text: 'Identified unilateral blown pupil (herniation)', category: 'assessment', points: 4 },
       { id: 'litfl012-3', text: 'Recognized cerebral T waves (not cardiac)', category: 'assessment', points: 4 },
-      { id: 'litfl012-4', text: 'Secured airway (GCS <8)', category: 'treatment', points: 4 },
+      { id: 'litfl012-4', text: 'Secure airway for GCS <8 (LMA/i-gel for 3rd-year; RSI for 4th-year)', category: 'treatment', points: 4 },
       { id: 'litfl012-5', text: 'Did NOT lower blood pressure', category: 'treatment', points: 3 },
       { id: 'litfl012-6', text: 'Maintained normocapnia (EtCO2 35-40)', category: 'treatment', points: 3 },
       { id: 'litfl012-7', text: 'Head-up 30° positioning', category: 'treatment', points: 2 },

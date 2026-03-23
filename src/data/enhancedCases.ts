@@ -296,7 +296,8 @@ export const moreTraumaCases: CaseScenario[] = [
         complexity: ['basic', 'intermediate', 'advanced', 'expert'],
         rationale: 'Accurate documentation helps trauma team understand injury and plan interventions.',
         commonErrors: ['Not documenting wound location', 'Not describing weapon if known', 'Not estimating time of injury']
-      }
+      },
+      { id: 't1-airway', category: 'intervention', description: 'Secure airway for GCS ≤8 (LMA/i-gel for 3rd-year; RSI for 4th-year)', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true }
     ],
     teachingPoints: [
       'Cardiac tamponade is a clinical diagnosis - DO NOT wait for imaging confirmation',
@@ -910,7 +911,7 @@ export const moreTraumaCases: CaseScenario[] = [
       'Rigid cervical collar and spinal board',
       'Pillow/blanket for flail segment stabilization',
       'Analgesics (morphine/fentanyl/ketamine)',
-      'Intubation equipment (RSI kit)',
+      'Intubation equipment (RSI kit) (4th-year only)',
       'ECG monitor',
       'Blood pressure cuff',
       'Thoracostomy tray (if trained)',
@@ -1380,7 +1381,8 @@ export const moreTraumaCases: CaseScenario[] = [
         complexity: ['intermediate', 'advanced', 'expert'],
         rationale: 'Accurate documentation guides surgical decision-making.',
         commonErrors: ['Vague descriptions', 'Missing times']
-      }
+      },
+      { id: 't6-txa', category: 'intervention', description: 'Tranexamic acid 1g IV within 3 hours of injury', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true, rationale: 'TXA reduces mortality in haemorrhagic trauma (CRASH-2 trial)' }
     ],
     teachingPoints: [
       'Massive hemothorax: >1500mL or 1/3 patient blood volume',
@@ -1836,7 +1838,8 @@ export const moreTraumaCases: CaseScenario[] = [
         complexity: ['intermediate', 'advanced', 'expert'],
         rationale: 'Accurate documentation guides surgical decision-making.',
         commonErrors: ['Vague descriptions', 'Missing exam details']
-      }
+      },
+      { id: 't7-txa', category: 'intervention', description: 'Tranexamic acid 1g IV within 3 hours of injury', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true, rationale: 'TXA reduces mortality in haemorrhagic trauma (CRASH-2 trial)' }
     ],
     teachingPoints: [
       'Spleen is most commonly injured solid organ in blunt trauma',
@@ -2317,7 +2320,8 @@ export const moreTraumaCases: CaseScenario[] = [
         complexity: ['intermediate', 'advanced', 'expert'],
         rationale: 'Accurate documentation guides definitive management decisions.',
         commonErrors: ['Vague descriptions', 'Missing times', 'Not documenting binder']
-      }
+      },
+      { id: 't8-txa', category: 'intervention', description: 'Tranexamic acid 1g IV within 3 hours of injury', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true, rationale: 'TXA reduces mortality in haemorrhagic trauma (CRASH-2 trial)' }
     ],
     teachingPoints: [
       'Pelvic fractures can lose 2-3 liters of blood!',
@@ -2668,7 +2672,7 @@ export const moreTraumaCases: CaseScenario[] = [
         'Hyperventilate if herniating (target EtCO2 30-35)',
         'Elevate head 30°',
         'IV access',
-        'Mannitol 0.5-1g/kg if herniation signs',
+        'Mannitol 0.5-1g/kg if herniation signs (4th-year scope only)',
         'Rapid transport to neurosurgical center',
         'Pre-alert neurosurgeon'
       ],
@@ -2723,18 +2727,8 @@ export const moreTraumaCases: CaseScenario[] = [
         commonErrors: ['Hyperventilating prophylactically', 'Targeting wrong EtCO2', 'Over-hyperventilating'],
         details: ['Target EtCO2 30-35 mmHg', 'Temporary measure only', 'Can cause cerebral ischemia if prolonged']
       },
-      {
-        id: 't9-4',
-        category: 'intervention',
-        description: 'Secure airway for GCS ≤8',
-        points: 15,
-        yearLevel: ['3rd-year', '4th-year'],
-        complexity: ['advanced', 'expert'],
-        critical: true,
-        rationale: 'Low GCS = unable to protect airway. Intubation protects from aspiration and hypoxia.',
-        commonErrors: ['Delaying intubation', 'Not using RSI', 'Forgetting cervical spine precautions'],
-        details: ['GCS ≤8 = intubate', 'RSI with cervical spine protection', 'Succinylcholine contraindicated if >24h post-injury']
-      }
+      { id: 't9-4a', category: 'intervention', description: 'Secure airway for GCS ≤8 using LMA/i-gel with C-spine precautions', points: 5, yearLevel: ['3rd-year'], complexity: ['advanced'], critical: true },
+      { id: 't9-4b', category: 'intervention', description: 'RSI with C-spine in-line stabilisation (ketamine/rocuronium)', points: 10, yearLevel: ['4th-year'], complexity: ['advanced'], critical: true }
     ],
     teachingPoints: [
       'Epidural hematoma = arterial bleed (usually middle meningeal artery)',

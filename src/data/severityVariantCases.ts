@@ -407,7 +407,7 @@ export const asthmaSeverityCases: CaseScenario[] = [
       { id: 'as5', category: 'intervention', description: 'Salbutamol + ipratropium nebuliser (combined)', points: 10, yearLevel: ['3rd-year', '4th-year', 'diploma'], complexity: ['intermediate', 'advanced', 'expert'] },
       { id: 'as6', category: 'intervention', description: 'IV access and hydrocortisone 200mg', points: 10, yearLevel: ['3rd-year', '4th-year', 'diploma'], complexity: ['intermediate', 'advanced', 'expert'] },
       { id: 'as7', category: 'intervention', description: 'IM adrenaline 0.5mg for severe bronchospasm', points: 15, yearLevel: ['4th-year', 'diploma'], complexity: ['advanced', 'expert'] },
-      { id: 'as8', category: 'intervention', description: 'IV magnesium sulfate 2g over 20 minutes', points: 10, yearLevel: ['4th-year', 'diploma'], complexity: ['advanced', 'expert'] },
+      { id: 'as8', category: 'intervention', description: 'IV magnesium sulfate 2g over 20 minutes', points: 10, yearLevel: ['3rd-year', '4th-year', 'diploma'], complexity: ['advanced', 'expert'] },
       { id: 'as9', category: 'clinical-reasoning', description: 'Recognise salbutamol alone is insufficient — needs combination therapy', points: 15, yearLevel: ['3rd-year', '4th-year', 'diploma'], complexity: ['intermediate', 'advanced', 'expert'] },
       { id: 'as10', category: 'clinical-reasoning', description: 'Prepare for intubation if patient exhausts', points: 10, yearLevel: ['4th-year', 'diploma'], complexity: ['advanced', 'expert'] },
     ],

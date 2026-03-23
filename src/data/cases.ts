@@ -385,7 +385,8 @@ export const caseDatabase: CaseScenario[] = [
       { id: 'c2-10', category: 'abcde', description: 'Consider and treat reversible causes (Hs and Ts) throughout resuscitation', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
       { id: 'c2-11', category: 'communication', description: 'Coordinate team roles - compressor, airway, medications, documentation', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
       { id: 'c2-12', category: 'communication', description: 'Communicate with family - provide updates, explain procedures sensitively', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
-      { id: 'c2-13', category: 'documentation', description: 'Document arrest time, downtime, interventions, and response to treatment', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] }
+      { id: 'c2-13', category: 'documentation', description: 'Document arrest time, downtime, interventions, and response to treatment', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
+      { id: 'c2-amio', category: 'intervention', description: 'Amiodarone 300mg IV after 3rd shock for shockable rhythms', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true, rationale: 'Amiodarone improves ROSC rates in refractory VF/pVT' }
     ],
     teachingPoints: [
       'High-quality CPR is the most important intervention - depth 5-6cm, rate 100-120/min, full recoil, minimal interruptions (<10 seconds). AHA 2025 emphasizes optimizing hand position, body position, and patient positioning on a firm surface',
@@ -4060,8 +4061,8 @@ export const caseDatabase: CaseScenario[] = [
         avpu: 'A',
         gcs: { eye: 4, verbal: 4, motor: 6, total: 14 },
         pupils: 'Equal and reactive',
-        bloodGlucose: 5.4,
-        findings: ['Drowsy', 'Confused'],
+        bloodGlucose: 28.5,
+        findings: ['Drowsy', 'Confused', 'Severe hyperglycaemia — BGL 28.5 mmol/L'],
         interventions: []
       },
       exposure: {
@@ -6396,7 +6397,8 @@ export const caseDatabase: CaseScenario[] = [
       { id: 'tox1-4', category: 'intervention', description: 'Prepare for advanced airway (RSI equipment)', points: 15, yearLevel: ['4th-year'], complexity: ['advanced', 'expert'], critical: true },
       { id: 'tox1-5', category: 'abcde', description: 'Recognize SLUDGE-BBB mnemonic signs', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
       { id: 'tox1-6', category: 'communication', description: 'Request HazMat support and additional ambulances', points: 15, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'], critical: true },
-      { id: 'tox1-7', category: 'communication', description: 'Alert receiving hospital of organophosphate poisoning', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] }
+      { id: 'tox1-7', category: 'communication', description: 'Alert receiving hospital of organophosphate poisoning', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
+      { id: 'tox1-airway-y3', category: 'intervention', description: 'Manage compromised airway with LMA/i-gel for GCS ≤8', points: 5, yearLevel: ['3rd-year'], complexity: ['advanced'], critical: true }
     ],
     teachingPoints: [
       'SLUDGE-BBB mnemonic: Salivation, Lacrimation, Urination, Defecation, GI upset, Emesis, Bronchorrhea, Bronchospasm, Bradycardia, Bradypnea',
@@ -10260,7 +10262,7 @@ export const caseDatabase: CaseScenario[] = [
       { id: 'r10-oxygen', category: 'intervention', description: 'High-flow oxygen 15L/min via non-rebreather', points: 4, yearLevel: ['3rd-year'], complexity: ['advanced'], critical: true },
       { id: 'r10-position', category: 'intervention', description: 'Flat positioning with leg elevation', points: 3, yearLevel: ['3rd-year'], complexity: ['advanced'], critical: true },
       { id: 'r10-adr2', category: 'intervention', description: 'Repeat IM adrenaline at 5 minutes (2nd dose)', points: 8, yearLevel: ['3rd-year'], complexity: ['advanced'], critical: true, rationale: 'If no response to first dose, repeat — up to 3 IM doses before infusion' },
-      { id: 'r10-adr3', category: 'intervention', description: '3rd IM adrenaline or escalate to adrenaline infusion', points: 8, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true, rationale: 'Refractory = failure of 2-3 IM doses — requires IV adrenaline infusion' },
+      { id: 'r10-adr3', category: 'intervention', description: '3rd dose IM adrenaline 0.5mg', points: 8, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true, rationale: 'Refractory = failure of 2-3 IM doses — requires IV adrenaline infusion' },
       { id: 'r10-iv', category: 'intervention', description: 'IV/IO access — large bore, bilateral', points: 5, yearLevel: ['3rd-year'], complexity: ['advanced'], critical: true },
       { id: 'r10-fluids', category: 'intervention', description: 'Aggressive IV fluid resuscitation (1-4L)', points: 5, yearLevel: ['3rd-year'], complexity: ['advanced'], critical: true },
       { id: 'r10-infusion', category: 'intervention', description: 'Adrenaline infusion preparation and titration', points: 8, yearLevel: ['4th-year'], complexity: ['advanced'], critical: true, rationale: 'IV adrenaline infusion is the definitive treatment for refractory anaphylaxis' },
