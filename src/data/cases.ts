@@ -10333,6 +10333,632 @@ export const caseDatabase: CaseScenario[] = [
       'Brown SGA — Clinical Features and Severity Grading of Anaphylaxis (JACI 2004)'
     ]
   }),
+
+  // ==================== BRADYARRHYTHMIA CASES ====================
+  createCase({
+    id: 'cardiac-015',
+    title: 'Symptomatic Bradycardia — Medication Induced',
+    category: 'cardiac',
+    subcategory: 'bradycardia',
+    priority: 'high',
+    complexity: 'advanced',
+    yearLevels: ['3rd-year', '4th-year'],
+    estimatedDuration: 25,
+    dispatchInfo: {
+      callReason: 'Neighbour reports elderly male confused and unresponsive in chair',
+      timeOfDay: 'afternoon',
+      location: 'Ground floor flat, residential area',
+      callerInfo: 'Neighbour (concerned, found patient through window)',
+      dispatchCode: 'Charlie-3',
+      additionalInfo: ['Patient lives alone', 'Neighbour has spare key', 'No response to knocking']
+    },
+    patientInfo: {
+      age: 72,
+      gender: 'male',
+      weight: 78,
+      occupation: 'Retired teacher',
+      language: 'English',
+      culturalConsiderations: []
+    },
+    sceneInfo: {
+      description: 'Small ground floor flat, patient found sitting in armchair in living room, medication packets scattered on side table',
+      hazards: [],
+      bystanders: 'Neighbour present, concerned but cooperative',
+      environment: 'Indoor, adequately heated, cluttered living space',
+      accessIssues: ['Narrow hallway to living room'],
+      extricationNeeded: false
+    },
+    initialPresentation: {
+      generalImpression: 'Elderly male, pale and drowsy, slumped in armchair',
+      position: 'Sitting in armchair, slumped to one side',
+      appearance: 'Pale, cool skin, appears confused and lethargic',
+      consciousness: 'Confused, opens eyes to voice',
+      sounds: ['Slow, mumbled speech']
+    },
+    abcde: {
+      airway: {
+        patent: true,
+        findings: ['Airway patent', 'No obstruction', 'Drowsy but maintaining own airway', 'Speech slurred and slow'],
+        interventions: ['Position upright', 'Continuous airway monitoring'],
+        adjunctsNeeded: ['OPA on standby if GCS drops']
+      },
+      breathing: {
+        rate: 14,
+        rhythm: 'Regular',
+        depth: 'Normal',
+        spo2: 94,
+        findings: ['Rate normal but SpO2 reduced due to poor cardiac output', 'No respiratory distress', 'Clear chest'],
+        interventions: ['High-flow oxygen 15L/min via non-rebreather'],
+        auscultation: ['Clear air entry bilaterally', 'No crackles', 'No wheeze']
+      },
+      circulation: {
+        pulseRate: 32,
+        pulseQuality: 'Regular but very slow, weak',
+        bp: { systolic: 75, diastolic: 45 },
+        capillaryRefill: 4,
+        skin: 'Pale, cool peripheries, dry',
+        findings: ['Severe bradycardia HR 32', 'Hypotension 75/45', 'Poor peripheral perfusion', 'Cap refill 4 seconds'],
+        interventions: ['IV access x1 large bore', 'Atropine 500mcg IV', 'Repeat atropine if no response', 'Cautious IV fluid bolus 250ml NS', 'Prepare transcutaneous pacing'],
+        ecgFindings: ['Sinus bradycardia 32 bpm', 'No heart block pattern', 'No ST changes', 'Normal QRS width'],
+        ivAccess: ['18G cannula left dorsum of hand']
+      },
+      disability: {
+        avpu: 'V',
+        gcs: { eye: 3, verbal: 4, motor: 6, total: 13 },
+        pupils: 'Equal and reactive, 3mm bilaterally',
+        bloodGlucose: 6.2,
+        findings: ['Confused', 'GCS 13 (E3V4M6)', 'No focal neurological deficits', 'Oriented to person only'],
+        interventions: ['Continuous GCS monitoring']
+      },
+      exposure: {
+        temperature: 36.2,
+        findings: ['Cool peripheries', 'No rashes', 'No oedema', 'Medication packets on side table: atenolol 100mg and diltiazem 120mg'],
+        interventions: ['Keep warm', 'Collect all medication packets for hospital']
+      }
+    },
+    secondarySurvey: {
+      head: ['No trauma'],
+      neck: ['No JVD', 'Trachea central'],
+      chest: ['Heart sounds present but slow rate', 'Equal chest expansion', 'Clear lungs'],
+      abdomen: ['Soft, non-tender'],
+      pelvis: ['Stable'],
+      extremities: ['Cool peripheries bilaterally', 'Weak peripheral pulses', 'No oedema'],
+      posterior: ['No abnormality'],
+      neurological: ['GCS 13', 'No focal deficits', 'Confused and disoriented']
+    },
+    history: {
+      medications: [
+        { name: 'Atenolol', dose: '100mg', frequency: 'Once daily', indication: 'Hypertension', route: 'PO' },
+        { name: 'Diltiazem', dose: '120mg', frequency: 'Once daily', indication: 'Recently added by GP for rate control', route: 'PO' },
+        { name: 'Ramipril', dose: '5mg', frequency: 'Once daily', indication: 'Hypertension', route: 'PO' },
+        { name: 'Simvastatin', dose: '40mg', frequency: 'Once nightly', indication: 'Hyperlipidaemia', route: 'PO' }
+      ],
+      allergies: ['Penicillin — rash'],
+      medicalConditions: ['Hypertension', 'Hyperlipidaemia', 'Atrial fibrillation (rate control strategy)', 'Type 2 diabetes (diet controlled)'],
+      surgicalHistory: ['Right hip replacement 2019'],
+      lastMeal: 'Unknown — neighbour unsure when he last ate',
+      eventsLeading: 'Neighbour noticed curtains still closed at 2pm, used spare key to check on patient. Found him slumped in chair, confused and barely responsive. Neighbour reports patient had recently visited GP who started a new heart medication (diltiazem).',
+      socialHistory: {
+        smoking: 'Ex-smoker, quit 10 years ago',
+        alcohol: 'Occasional',
+        occupation: 'Retired teacher',
+        livingSituation: 'Lives alone, wife deceased 3 years ago',
+        supportSystem: 'Neighbour checks on him daily, daughter lives 2 hours away'
+      }
+    },
+    investigations: [
+      { name: '12-lead ECG', indication: 'Severe bradycardia', findings: 'Sinus bradycardia 32 bpm, no heart block, no ST changes', interpretation: 'Drug-induced sinus bradycardia — beta-blocker + CCB synergistic effect', urgency: 'immediate' }
+    ],
+    vitalSignsProgression: {
+      initial: { bp: '75/45', pulse: 32, respiration: 14, spo2: 94, gcs: 13, temperature: 36.2 },
+      afterIntervention: { bp: '92/58', pulse: 52, respiration: 14, spo2: 97, gcs: 14 },
+      enRoute: { bp: '100/65', pulse: 58, respiration: 14, spo2: 98, gcs: 15 }
+    },
+    expectedFindings: {
+      keyObservations: ['Severe bradycardia HR 32', 'Hypotension', 'Confusion/altered GCS', 'Beta-blocker + CCB combination on medication list', 'Recently added diltiazem'],
+      redFlags: ['HR <40', 'Systolic BP <90', 'Altered consciousness', 'Poor perfusion'],
+      differentialDiagnoses: ['Drug-induced bradycardia (most likely)', 'Sick sinus syndrome', 'Hypothyroidism', 'Inferior MI', 'Hypothermia', 'Raised intracranial pressure'],
+      mostLikelyDiagnosis: 'Iatrogenic bradycardia — beta-blocker and calcium channel blocker synergistic toxicity',
+      supportingEvidence: ['Atenolol 100mg + diltiazem 120mg (double AV-node blocking agents)', 'Recently added diltiazem by GP', 'Sinus bradycardia on ECG (not heart block)', 'Responds to atropine']
+    },
+    managementPathway: {
+      immediate: ['ABCDE assessment', 'High-flow oxygen', '12-lead ECG', 'IV access', 'Atropine 500mcg IV', 'Identify medications — collect all packets'],
+      definitive: ['Repeat atropine 500mcg every 3-5 min (max 3mg total)', 'If atropine fails: transcutaneous pacing', 'Calcium chloride 10% 10ml slow IV for CCB toxicity', 'Glucagon 5mg IV for beta-blocker toxicity', 'Adrenaline infusion 2-10mcg/min if pacing unavailable (4th year)'],
+      monitoring: ['Continuous ECG', 'Repeat BP every 3 minutes', 'SpO2', 'GCS monitoring'],
+      transportConsiderations: ['Pre-alert: symptomatic bradycardia, medication-induced, may require transvenous pacing', 'Priority 1 transport', 'Bring all medication packets']
+    },
+    studentChecklist: [
+      { id: 'c15-1', category: 'safety', description: 'Scene safety and access assessment', points: 3, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'] },
+      { id: 'c15-2', category: 'abcde', description: 'Systematic ABCDE assessment', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'] },
+      { id: 'c15-3', category: 'clinical-reasoning', description: 'Identify and collect all medication packets from scene', points: 8, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true, rationale: 'Medication identification is key to diagnosing iatrogenic bradycardia' },
+      { id: 'c15-4', category: 'clinical-reasoning', description: 'Recognise beta-blocker + CCB combination as cause', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true, rationale: 'This drug interaction is a common cause of iatrogenic bradycardia' },
+      { id: 'c15-5', category: 'intervention', description: 'Obtain 12-lead ECG', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], timeframe: 'Within 5 minutes' },
+      { id: 'c15-6', category: 'intervention', description: 'Establish IV access', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'] },
+      { id: 'c15-7', category: 'medication', description: 'Administer atropine 500mcg IV (correct dose)', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true, rationale: 'Atropine 500mcg is first-line for symptomatic bradycardia — NOT 300mcg' },
+      { id: 'c15-8', category: 'medication', description: 'Repeat atropine if inadequate response (up to 3mg total)', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'] },
+      { id: 'c15-9', category: 'intervention', description: 'Prepare transcutaneous pacing equipment', points: 8, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], rationale: 'TCP is second-line if atropine fails' },
+      { id: 'c15-10', category: 'medication', description: 'Consider calcium chloride 10% for CCB toxicity', points: 8, yearLevel: ['4th-year'], complexity: ['advanced'], rationale: 'Calcium chloride directly antagonises CCB effects' },
+      { id: 'c15-11', category: 'medication', description: 'Consider glucagon 5mg IV for beta-blocker toxicity', points: 8, yearLevel: ['4th-year'], complexity: ['advanced'], rationale: 'Glucagon bypasses beta-receptors via cAMP pathway' },
+      { id: 'c15-12', category: 'intervention', description: 'Cautious IV fluid bolus (250ml NS)', points: 3, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'] },
+      { id: 'c15-13', category: 'abcde', description: 'Administer high-flow oxygen', points: 3, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'] },
+      { id: 'c15-14', category: 'intervention', description: 'Continuous cardiac monitoring', points: 3, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'] },
+      { id: 'c15-15', category: 'communication', description: 'Pre-alert hospital: symptomatic bradycardia, drug-induced', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true },
+      { id: 'c15-16', category: 'communication', description: 'Transport as priority with all medications', points: 3, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'] }
+    ],
+    teachingPoints: [
+      'Beta-blocker + calcium channel blocker (non-dihydropyridine) combination is a common cause of iatrogenic bradycardia — both suppress the SA and AV nodes synergistically',
+      'Atropine dose is 500mcg IV — NOT 300mcg (300mcg is the old, sub-therapeutic dose). Maximum total dose is 3mg. Doses below 500mcg can paradoxically worsen bradycardia',
+      'Atropine may be ineffective in complete heart block because it works on the AV node — if the block IS at the AV node, increasing vagal tone withdrawal above the block achieves nothing',
+      'Transcutaneous pacing: set rate 60-80 bpm, start at low current and increase until electrical capture is seen, then confirm mechanical capture with pulse. Sedate if conscious (midazolam 1-2mg)',
+      'Calcium chloride 10% (10ml = 6.8mmol Ca2+) works faster than calcium gluconate for CCB toxicity — it provides 3x more ionised calcium per volume',
+      'Glucagon bypasses beta-receptors entirely — it activates adenylate cyclase via glucagon receptors, increasing cAMP and therefore heart rate and contractility, even when beta-blockers are on board',
+      'Always check ALL medications including OTC drugs and recently changed prescriptions — the new diltiazem added to existing atenolol is the classic prescribing error',
+      '"Treat the patient, not the number" — asymptomatic bradycardia does not always require treatment. Symptoms of haemodynamic compromise (hypotension, confusion, chest pain, heart failure) are the indication',
+      'Diltiazem and verapamil are non-dihydropyridine CCBs that affect the heart. Amlodipine and nifedipine are dihydropyridines that primarily affect vessels — combining amlodipine with a beta-blocker is generally safe',
+      'In elderly patients living alone, medication compliance errors and polypharmacy are extremely common causes of presentation'
+    ],
+    commonPitfalls: [
+      'Using atropine 300mcg instead of 500mcg — sub-therapeutic doses can cause paradoxical bradycardia',
+      'Not looking at medication packets — missing the drug interaction that explains the entire presentation',
+      'Giving only one dose of atropine and assuming failure — repeat every 3-5 minutes up to 3mg total',
+      'Delaying transcutaneous pacing while repeating ineffective atropine doses',
+      'Not considering calcium chloride or glucagon for specific drug toxicity',
+      'Aggressive IV fluid bolus in an elderly patient — risk of pulmonary oedema',
+      'Failing to bring medication packets to hospital — critical for ongoing management',
+      'Not monitoring for deterioration to higher-degree heart block or cardiac arrest'
+    ],
+    equipmentNeeded: [
+      'Cardiac monitor/defibrillator with transcutaneous pacing capability',
+      'High-flow oxygen with non-rebreather mask',
+      'IV cannulation kit',
+      'Atropine 500mcg/5ml ampoules x6 (enough for 3mg total)',
+      'Calcium chloride 10% 10ml prefilled syringe',
+      'Glucagon 1mg vials x5',
+      'Normal saline 250ml bags',
+      'Midazolam 5mg/5ml ampoule (for TCP sedation)',
+      'Pacing pads',
+      'OPA/NPA on standby'
+    ],
+    references: [
+      'Resuscitation Council UK — Bradycardia Algorithm 2021',
+      'AHA/ACLS Bradycardia with Pulse Algorithm 2020',
+      'JRCALC Clinical Guidelines — Bradycardia',
+      'Toxbase — Beta-Blocker and Calcium Channel Blocker Overdose/Toxicity',
+      'BNF Interactions — Atenolol + Diltiazem',
+      'NICE CKS — Bradycardia'
+    ],
+    uaeProtocols: {
+      applicableGuidelines: [
+        'DCAS Bradycardia Management Protocol',
+        'DCAS Pharmacological Guidelines — Atropine, Calcium Chloride, Glucagon',
+        'DCAS Transcutaneous Pacing Protocol'
+      ],
+      localConsiderations: [
+        'Elderly patients living alone are common in both UK and UAE expatriate populations — welfare checks by neighbours are vital',
+        'Polypharmacy is common in elderly patients — always collect all medications from scene',
+        'Transcutaneous pacing may be performed by advanced paramedics under protocol'
+      ]
+    }
+  }),
+
+  createCase({
+    id: 'cardiac-016',
+    title: 'Complete Heart Block — Syncope',
+    category: 'cardiac',
+    subcategory: 'heart-block',
+    priority: 'critical',
+    complexity: 'advanced',
+    yearLevels: ['3rd-year', '4th-year'],
+    estimatedDuration: 25,
+    dispatchInfo: {
+      callReason: 'Collapse in shopping centre, brief loss of consciousness, now conscious',
+      timeOfDay: 'midday',
+      location: 'Shopping centre food court',
+      callerInfo: 'Shopping centre security guard',
+      dispatchCode: 'Delta-1',
+      additionalInfo: ['Patient collapsed while walking', 'Brief LOC approximately 30 seconds', 'Now conscious but very dizzy', 'First aider on scene']
+    },
+    patientInfo: {
+      age: 68,
+      gender: 'female',
+      weight: 65,
+      occupation: 'Retired nurse',
+      language: 'English',
+      culturalConsiderations: []
+    },
+    sceneInfo: {
+      description: 'Busy shopping centre food court, patient now lying on floor with security and first aider. Crowd gathering.',
+      hazards: ['Crowd management needed'],
+      bystanders: 'Security guard and first aider with patient, multiple onlookers',
+      environment: 'Indoor, air-conditioned, public space',
+      accessIssues: ['Stretcher access through wide corridors', 'Lift access to ground floor if needed'],
+      extricationNeeded: false
+    },
+    initialPresentation: {
+      generalImpression: 'Elderly female lying on floor, pale and sweaty, conscious but looks very unwell',
+      position: 'Supine on floor, coat under head as pillow',
+      appearance: 'Pale, diaphoretic, anxious expression',
+      consciousness: 'Alert but intermittently confused, reports feeling very dizzy',
+      sounds: ['Speaking in short sentences', 'Intermittent groaning']
+    },
+    abcde: {
+      airway: {
+        patent: true,
+        findings: ['Airway patent', 'Speaking in short sentences', 'No stridor or gurgling'],
+        interventions: ['Maintain supine position', 'Continuous airway monitoring'],
+        adjunctsNeeded: []
+      },
+      breathing: {
+        rate: 20,
+        rhythm: 'Regular',
+        depth: 'Slightly shallow',
+        spo2: 92,
+        findings: ['Mild tachypnoea — compensating for low cardiac output', 'Clear lung fields', 'No respiratory distress'],
+        interventions: ['High-flow oxygen 15L/min via non-rebreather'],
+        auscultation: ['Clear air entry bilaterally', 'No crackles', 'No wheeze']
+      },
+      circulation: {
+        pulseRate: 28,
+        pulseQuality: 'Regular but very slow, moderate volume — note: atrial and ventricular rates dissociated',
+        bp: { systolic: 82, diastolic: 50 },
+        capillaryRefill: 4,
+        skin: 'Pale, diaphoretic, cool peripheries',
+        findings: ['Profound bradycardia HR 28', 'Hypotension 82/50', 'Cannon A waves visible in JVP (pathognomonic for CHB)', 'Variable intensity S1 on auscultation', 'Pre-syncopal'],
+        interventions: ['IV access x2', 'Atropine 500mcg IV (likely ineffective — prepare for TCP)', 'Transcutaneous pacing: rate 60, increase mA until capture', 'Sedation for conscious pacing: midazolam 1-2mg IV'],
+        ecgFindings: ['Complete (3rd degree) heart block', 'P waves marching through at ~75/min', 'Ventricular escape rhythm at 28/min', 'Broad QRS complexes (>120ms)', 'Complete AV dissociation — no relationship between P waves and QRS'],
+        ivAccess: ['18G cannula right AC fossa', '20G cannula left hand']
+      },
+      disability: {
+        avpu: 'A',
+        gcs: { eye: 4, verbal: 4, motor: 6, total: 14 },
+        pupils: 'Equal and reactive, 3mm',
+        bloodGlucose: 5.8,
+        findings: ['Intermittent confusion', 'GCS 14 (E4V4M6)', 'Reports feeling faint and dizzy', 'No focal neurological deficits'],
+        interventions: ['Keep supine', 'Continuous monitoring']
+      },
+      exposure: {
+        temperature: 36.5,
+        findings: ['No pacemaker box visible or palpable on chest', 'No surgical scars on chest suggesting previous cardiac surgery', 'No peripheral oedema', 'No rashes'],
+        interventions: ['Keep warm — blanket from ambulance', 'Maintain dignity — screen from public']
+      }
+    },
+    secondarySurvey: {
+      head: ['No trauma from fall — no head strike witnessed by security'],
+      neck: ['Cannon A waves in JVP', 'Trachea central', 'No carotid bruit'],
+      chest: ['Variable intensity first heart sound (classic CHB sign)', 'No murmurs', 'Clear lung fields'],
+      abdomen: ['Soft, non-tender'],
+      pelvis: ['Stable'],
+      extremities: ['Cool peripheries', 'Weak peripheral pulses', 'No oedema', 'No injuries from fall'],
+      posterior: ['No spinal tenderness — log roll if mechanism concerns'],
+      neurological: ['GCS 14', 'No focal deficits', 'Intermittent pre-syncope']
+    },
+    history: {
+      medications: [
+        { name: 'Amlodipine', dose: '5mg', frequency: 'Once daily', indication: 'Hypertension', route: 'PO' },
+        { name: 'Metformin', dose: '500mg', frequency: 'Twice daily', indication: 'Type 2 diabetes', route: 'PO' },
+        { name: 'Aspirin', dose: '75mg', frequency: 'Once daily', indication: 'Cardiovascular protection', route: 'PO' }
+      ],
+      allergies: ['None known'],
+      medicalConditions: ['Hypertension', 'Type 2 diabetes', 'Known "heart condition" — told she needs a cardiology appointment', 'Previous episodes of dizziness over past 3 months'],
+      surgicalHistory: ['Cholecystectomy 2005', 'Right knee replacement 2018'],
+      lastMeal: 'Light lunch 1 hour ago',
+      eventsLeading: 'Was walking through the shopping centre when she suddenly felt extremely dizzy and "everything went black." Collapsed to the ground. Security guard witnessed the event — reports patient was unresponsive for approximately 30 seconds then came round confused. Reports similar dizzy spells over past 3 months but never lost consciousness before. Has cardiology appointment scheduled next month.',
+      previousSimilarEpisodes: ['Multiple dizzy spells over past 3 months', 'Near-syncope on two occasions', 'Never fully lost consciousness before today'],
+      socialHistory: {
+        smoking: 'Never smoked',
+        alcohol: 'Rare — glass of wine occasionally',
+        occupation: 'Retired nurse',
+        livingSituation: 'Lives with husband',
+        supportSystem: 'Husband (waiting in car park, has been contacted by security)'
+      }
+    },
+    investigations: [
+      { name: '12-lead ECG', indication: 'Syncope with profound bradycardia', findings: 'Complete heart block: P waves at ~75/min, ventricular escape rhythm at 28/min, broad QRS complexes, complete AV dissociation', interpretation: 'Complete (3rd degree) AV block with broad complex escape rhythm — high risk of cardiac arrest', urgency: 'immediate' }
+    ],
+    vitalSignsProgression: {
+      initial: { bp: '82/50', pulse: 28, respiration: 20, spo2: 92, gcs: 14 },
+      afterIntervention: { bp: '95/60', pulse: 65, respiration: 16, spo2: 97, gcs: 15 },
+      deterioration: { bp: '60/35', pulse: 20, respiration: 24, spo2: 85, gcs: 10 }
+    },
+    expectedFindings: {
+      keyObservations: ['Syncope with brief LOC', 'Profound bradycardia HR 28', 'Cannon A waves in JVP', 'Variable S1 intensity', 'Complete AV dissociation on ECG', 'Broad QRS escape rhythm'],
+      redFlags: ['Complete heart block — medical emergency', 'HR <30', 'Syncope', 'Haemodynamic compromise', 'High risk of cardiac arrest — ventricular standstill or VF'],
+      differentialDiagnoses: ['Complete heart block (confirmed on ECG)', 'Inferior STEMI with heart block', 'Digoxin toxicity', 'Degenerative conduction disease (Lenegre/Lev disease)', 'Post-cardiac surgery AV block'],
+      mostLikelyDiagnosis: 'Complete (3rd degree) heart block — likely degenerative conduction disease',
+      supportingEvidence: ['ECG confirms complete AV dissociation', 'Progressive symptoms over 3 months (dizzy spells)', 'Known "heart condition" with pending cardiology review', 'No AV-node blocking drugs', 'Broad QRS escape rhythm suggests infra-nodal block']
+    },
+    managementPathway: {
+      immediate: ['ABCDE assessment', 'High-flow oxygen', '12-lead ECG — confirm CHB', 'IV access x2', 'Atropine 500mcg IV (trial — likely ineffective in CHB)'],
+      definitive: ['Transcutaneous pacing — rate 60-80, increase mA until capture', 'Confirm mechanical capture with pulse palpation', 'Sedation for conscious pacing: midazolam 1-2mg IV or fentanyl 25-50mcg IV (4th year)', 'If pacing fails: adrenaline infusion 2-10mcg/min (4th year)', 'Hospital: transvenous pacing then permanent pacemaker'],
+      monitoring: ['Continuous ECG — watch for deterioration to ventricular standstill', 'BP every 2 minutes', 'SpO2', 'GCS', 'Confirm continued pacing capture throughout transport'],
+      transportConsiderations: ['Pre-alert: complete heart block, rate 28, transcutaneous pacing initiated, require cardiology and transvenous pacing capability', 'Priority 1 transport', 'Avoid bumpy roads — can lose pacing capture', 'Defib pads on and charged throughout transport']
+    },
+    studentChecklist: [
+      { id: 'c16-1', category: 'safety', description: 'Scene management — crowd control, screen patient', points: 3, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'] },
+      { id: 'c16-2', category: 'abcde', description: 'Systematic ABCDE assessment', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'] },
+      { id: 'c16-3', category: 'intervention', description: 'Obtain 12-lead ECG and recognise complete heart block', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true, rationale: 'CHB recognition is essential — drives management decisions' },
+      { id: 'c16-4', category: 'clinical-reasoning', description: 'Identify cannon A waves in JVP', points: 5, yearLevel: ['4th-year'], complexity: ['advanced'], rationale: 'Pathognomonic sign of AV dissociation' },
+      { id: 'c16-5', category: 'clinical-reasoning', description: 'Identify variable S1 intensity', points: 3, yearLevel: ['4th-year'], complexity: ['advanced'] },
+      { id: 'c16-6', category: 'intervention', description: 'Establish IV access x2', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'] },
+      { id: 'c16-7', category: 'medication', description: 'Trial atropine 500mcg IV', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'] },
+      { id: 'c16-8', category: 'clinical-reasoning', description: 'Recognise atropine is likely ineffective in CHB and prepare TCP immediately', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true, rationale: 'Do not delay TCP waiting for atropine to work in confirmed CHB' },
+      { id: 'c16-9', category: 'procedural', description: 'Initiate transcutaneous pacing — correct pad placement', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true },
+      { id: 'c16-10', category: 'procedural', description: 'Achieve electrical AND mechanical capture', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true, rationale: 'Electrical capture on monitor does not guarantee mechanical output — must check pulse' },
+      { id: 'c16-11', category: 'medication', description: 'Provide sedation for conscious pacing (midazolam or fentanyl)', points: 5, yearLevel: ['4th-year'], complexity: ['advanced'] },
+      { id: 'c16-12', category: 'medication', description: 'Consider adrenaline infusion if pacing fails', points: 8, yearLevel: ['4th-year'], complexity: ['advanced'] },
+      { id: 'c16-13', category: 'abcde', description: 'Administer high-flow oxygen', points: 3, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'] },
+      { id: 'c16-14', category: 'intervention', description: 'Continuous cardiac monitoring with defibrillator on standby', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'] },
+      { id: 'c16-15', category: 'communication', description: 'Pre-alert: CHB with pacing, require transvenous pacing', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true },
+      { id: 'c16-16', category: 'documentation', description: 'Document syncope duration, ECG findings, pacing settings, capture confirmation', points: 3, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'] }
+    ],
+    teachingPoints: [
+      'Complete heart block is a medical emergency with HIGH risk of cardiac arrest — the escape rhythm can fail at any time, causing ventricular standstill',
+      'Atropine works by reducing vagal tone at the AV node — if the block IS at or below the AV node (which it is in CHB), atropine cannot improve conduction. It may increase the atrial rate without improving ventricular rate',
+      'Cannon A waves occur when the atria contract against closed AV valves — this is pathognomonic for AV dissociation (seen in CHB and VT)',
+      'Variable S1 intensity is another classic sign — the AV valves are in different positions when the ventricle contracts depending on timing relative to atrial contraction',
+      'Do NOT rely on atropine alone for complete heart block — prepare for transcutaneous pacing IMMEDIATELY while trialling atropine',
+      'Transcutaneous pacing technique: anterior-posterior pad placement, set rate 60-80, start current low and increase until electrical capture (consistent pacing spike followed by wide QRS), then confirm MECHANICAL capture with pulse palpation',
+      'Electrical capture does NOT guarantee mechanical capture — you MUST check for a pulse with each paced complex. Pulseless electrical activity can occur with pacing',
+      'Pre-alert message should be specific: "Complete heart block, ventricular rate 28, transcutaneous pacing initiated at [rate/mA], mechanical capture confirmed, requesting cardiology and transvenous pacing capability"',
+      'Causes of CHB to consider: acute MI (especially inferior — RCA supplies AV node in 85% of people), digoxin toxicity, post-cardiac surgery, and degenerative conduction disease (Lenegre or Lev disease) in elderly',
+      'A narrow QRS escape rhythm suggests the block is at the AV node (junctional escape, rate 40-60) — better prognosis. A broad QRS escape suggests infra-nodal block (ventricular escape, rate 20-40) — worse prognosis, more unstable',
+      'If pacing fails and no adrenaline infusion available, consider isoprenaline infusion (specialist use) or fist pacing (percussive pacing) as a temporising measure'
+    ],
+    commonPitfalls: [
+      'Relying on atropine alone for complete heart block — wasting critical time before initiating TCP',
+      'Confirming only electrical capture and not checking for mechanical capture (pulse)',
+      'Posterior pad placement errors — pad should be between left scapula and spine, not over the scapula',
+      'Not sedating a conscious patient for TCP — transcutaneous pacing is extremely painful',
+      'Forgetting to have defibrillator charged and ready — CHB can deteriorate to VF or asystole',
+      'Stopping pacing because "the patient looks better" — the underlying block is still present',
+      'Aggressive movement during transport causing loss of pad contact and pacing capture',
+      'Not recognising this as a time-critical emergency — delaying transport for unnecessary on-scene interventions'
+    ],
+    equipmentNeeded: [
+      'Cardiac monitor/defibrillator with transcutaneous pacing capability',
+      'Pacing pads (anterior-posterior placement)',
+      'High-flow oxygen with non-rebreather mask',
+      'IV cannulation kit (18G and 20G)',
+      'Atropine 500mcg/5ml ampoules x6',
+      'Midazolam 5mg/5ml ampoule (TCP sedation)',
+      'Fentanyl 100mcg/2ml ampoule (TCP sedation alternative)',
+      'Adrenaline 1mg/10ml (1:10,000) for infusion preparation',
+      'Normal saline 100ml bag (for adrenaline infusion)',
+      'Syringe driver / infusion pump',
+      'OPA/NPA on standby',
+      'Privacy screen for public location'
+    ],
+    references: [
+      'Resuscitation Council UK — Bradycardia Algorithm 2021',
+      'AHA/ACLS Bradycardia with Pulse Algorithm 2020',
+      'JRCALC Clinical Guidelines — Bradycardia and Heart Blocks',
+      'Brignole M et al — ESC Guidelines on Syncope 2018',
+      'Kusumoto FM et al — AHA/ACC Guideline on Bradycardia and Cardiac Conduction Delay 2018',
+      'Epstein AE et al — ACC/AHA/HRS Guidelines for Device-Based Therapy 2012'
+    ],
+    uaeProtocols: {
+      applicableGuidelines: [
+        'DCAS Bradycardia Management Protocol',
+        'DCAS Transcutaneous Pacing Protocol',
+        'DCAS Syncope Assessment Pathway'
+      ],
+      localConsiderations: [
+        'Shopping centres and malls are common collapse locations in UAE — security teams often have AEDs',
+        'Public location requires crowd management and privacy screening',
+        'Consider language barriers — patient history may need translator',
+        'Transport to facility with cardiology and transvenous pacing capability'
+      ]
+    }
+  }),
+
+  createCase({
+    id: 'cardiac-017',
+    title: 'Paediatric Bradycardia — Infant with Poor Perfusion',
+    category: 'cardiac',
+    subcategory: 'bradycardia',
+    priority: 'critical',
+    complexity: 'intermediate',
+    yearLevels: ['2nd-year', '3rd-year'],
+    estimatedDuration: 20,
+    dispatchInfo: {
+      callReason: 'Parents report 8-month-old baby "not breathing properly" and "very floppy"',
+      timeOfDay: 'night',
+      location: 'Family home, first floor apartment',
+      callerInfo: 'Mother (extremely distressed, crying on phone)',
+      dispatchCode: 'Echo-1',
+      additionalInfo: ['Baby found floppy in cot', 'Had been unwell for 2 days with fever', 'Not feeding today', 'Dispatcher coaching mother on positioning']
+    },
+    patientInfo: {
+      age: 0.67,
+      gender: 'female',
+      weight: 8,
+      language: 'Parents speak English',
+      culturalConsiderations: []
+    },
+    sceneInfo: {
+      description: 'First floor apartment, baby in cot in nursery. Parents extremely anxious. Older sibling (3 years) present.',
+      hazards: [],
+      bystanders: 'Both parents present — mother holding baby, father at front door to guide crew in',
+      environment: 'Indoor, warm nursery, well-equipped home',
+      accessIssues: ['Stairs to first floor', 'Narrow doorways'],
+      extricationNeeded: false
+    },
+    initialPresentation: {
+      generalImpression: 'Critically unwell infant — floppy, mottled, minimal response to handling',
+      position: 'Held by mother, head unsupported and lolling',
+      appearance: 'Mottled skin, central cyanosis, lethargic, grunting respirations',
+      consciousness: 'Responds to pain only — minimal withdrawal',
+      sounds: ['Weak grunting', 'No crying']
+    },
+    abcde: {
+      airway: {
+        patent: true,
+        findings: ['Airway patent but at risk — reduced conscious level', 'Grunting respirations', 'Head bobbing', 'No stridor', 'No visible foreign body'],
+        interventions: ['Neutral position (sniffing position — use towel under shoulders)', 'Suction if secretions present', 'Prepare BVM with appropriately sized mask'],
+        adjunctsNeeded: ['Size 0 OPA on standby', 'Suction with paediatric catheter']
+      },
+      breathing: {
+        rate: 8,
+        rhythm: 'Irregular, minimal effort',
+        depth: 'Very shallow',
+        spo2: 75,
+        findings: ['Severe bradypnoea (normal infant RR 30-50)', 'Minimal respiratory effort', 'Grunting', 'Central cyanosis', 'Crackles bilaterally on auscultation', 'Head bobbing', 'Subcostal and intercostal recession'],
+        interventions: ['Immediate BVM ventilation with high-flow O2 at rate 20-30/min', 'This is the PRIORITY — bradycardia in infants is almost always secondary to hypoxia', 'Reassess HR after 30 seconds of effective ventilation'],
+        auscultation: ['Poor air entry bilaterally', 'Fine crackles bilateral bases', 'Grunting']
+      },
+      circulation: {
+        pulseRate: 55,
+        pulseQuality: 'Weak central pulse (brachial), absent peripheral pulses',
+        bp: { systolic: 50, diastolic: 30 },
+        capillaryRefill: 6,
+        skin: 'Mottled, central cyanosis, cool extremities',
+        findings: ['Severe bradycardia HR 55 (normal infant 120-160)', 'Profound hypotension', 'Mottled skin — decompensated shock', 'Cap refill >5 seconds', 'Weak brachial pulses only', 'Absent radial and pedal pulses'],
+        interventions: ['If HR remains <60 after adequate ventilation and oxygenation — START CPR (15:2)', 'IO access preferred (proximal tibia) — faster and more reliable than IV in sick infants', 'Adrenaline 10mcg/kg (80mcg = 0.8ml of 1:10,000) IV/IO', 'Fluid bolus 20ml/kg (160ml) normal saline IV/IO'],
+        ecgFindings: ['Sinus bradycardia 55 bpm', 'No heart block', 'Normal QRS morphology for age'],
+        ivAccess: ['IO access right proximal tibia']
+      },
+      disability: {
+        avpu: 'P',
+        gcs: { eye: 2, verbal: 2, motor: 4, total: 8 },
+        pupils: 'Sluggish but equal, 4mm',
+        bloodGlucose: 2.8,
+        findings: ['Responds to pain only (P on AVPU)', 'Hypoglycaemia — BGL 2.8 (treat immediately)', 'Floppy — reduced muscle tone', 'Anterior fontanelle — full but not bulging'],
+        interventions: ['Dextrose 10% 2ml/kg (16ml) IV/IO for hypoglycaemia', 'Continuous monitoring']
+      },
+      exposure: {
+        temperature: 38.8,
+        findings: ['Febrile 38.8°C', 'Mottled skin throughout', 'Petechial rash developing on trunk and abdomen — non-blanching', 'Nappy dry — no urine output (sign of poor perfusion)'],
+        interventions: ['Expose fully — assess for rash', 'Paracetamol NOT priority — treat underlying cause', 'Do NOT actively cool — prevent heat loss after assessment']
+      }
+    },
+    secondarySurvey: {
+      head: ['Anterior fontanelle full but not bulging', 'No trauma'],
+      neck: ['No neck stiffness assessable in this age group'],
+      chest: ['Poor air entry bilaterally', 'Fine crackles', 'Heart sounds present but slow'],
+      abdomen: ['Soft', 'No hepatosplenomegaly'],
+      pelvis: ['Nappy dry — no recent urine output'],
+      extremities: ['Mottled', 'Cool', 'Absent peripheral pulses', 'No oedema'],
+      posterior: ['No rash on back — petechiae confined to trunk so far'],
+      neurological: ['P on AVPU', 'Floppy', 'Weak response to pain', 'Fontanelle full']
+    },
+    history: {
+      medications: [
+        { name: 'Paracetamol', dose: '120mg/5ml', frequency: 'Given by parents intermittently over past 2 days', indication: 'Fever', route: 'PO' }
+      ],
+      allergies: ['None known'],
+      medicalConditions: ['Previously well', 'Up to date with immunisations', 'Born at term, no neonatal problems'],
+      surgicalHistory: ['None'],
+      lastMeal: 'Refused feeds all day — last fed small amount yesterday evening',
+      eventsLeading: 'Baby developed fever 2 days ago with mild coryzal symptoms — parents assumed viral illness. Today became increasingly lethargic, stopped feeding, became very floppy. Parents noticed mottled skin and baby stopped crying. When placed in cot this evening, parents noticed grunting breathing and baby barely responsive. Called emergency services.',
+      socialHistory: {
+        livingSituation: 'Lives with both parents and 3-year-old sibling',
+        supportSystem: 'Both parents present, grandparents nearby'
+      }
+    },
+    investigations: [
+      { name: 'Blood glucose', indication: 'Altered consciousness in infant', findings: '2.8 mmol/L', interpretation: 'Hypoglycaemia — requires immediate treatment with dextrose 10%', urgency: 'immediate' },
+      { name: 'Temperature', indication: 'Febrile illness', findings: '38.8°C', interpretation: 'Febrile — likely underlying infection (meningococcal sepsis suspected given petechiae)', urgency: 'immediate' }
+    ],
+    vitalSignsProgression: {
+      initial: { bp: '50/30', pulse: 55, respiration: 8, spo2: 75, gcs: 8, temperature: 38.8 },
+      afterIntervention: { bp: '65/40', pulse: 130, respiration: 30, spo2: 94, gcs: 10 },
+      deterioration: { bp: '40/20', pulse: 40, respiration: 4, spo2: 60, gcs: 3 }
+    },
+    expectedFindings: {
+      keyObservations: ['Critically unwell infant', 'Severe bradycardia (HR 55 — normal 120-160)', 'Bradypnoea (RR 8 — normal 30-50)', 'Central cyanosis', 'Mottled skin', 'Petechial rash', 'Hypoglycaemia', 'Absent peripheral pulses'],
+      redFlags: ['Bradycardia in infant = pre-arrest rhythm', 'Petechial rash + fever = meningococcal sepsis until proven otherwise', 'Decompensated shock', 'Hypoglycaemia', 'Minimal response to pain'],
+      differentialDiagnoses: ['Meningococcal sepsis (most likely given petechiae + fever + shock)', 'Severe pneumonia with sepsis', 'Viral myocarditis', 'Congenital heart disease (undiagnosed)', 'Non-accidental injury (always consider)'],
+      mostLikelyDiagnosis: 'Meningococcal sepsis causing hypoxia-driven bradycardia and decompensated shock',
+      supportingEvidence: ['Petechial rash + fever + shocked infant', 'Bradycardia secondary to hypoxia (not primary cardiac)', 'Preceding febrile illness with rapid deterioration', 'Decompensated shock pattern — mottled, absent peripheral pulses, poor perfusion']
+    },
+    managementPathway: {
+      immediate: ['BVM ventilation with high-flow O2 — PRIORITY (treat the hypoxia)', 'Reassess HR after 30 seconds of effective ventilation', 'If HR <60 despite ventilation — start CPR 15:2', 'IO access (proximal tibia)', 'Adrenaline 10mcg/kg IV/IO if HR <60 with CPR'],
+      definitive: ['Fluid bolus 20ml/kg NS (160ml) — repeat as needed', 'Dextrose 10% 2ml/kg (16ml) IV/IO for hypoglycaemia', 'Weight estimation: Broselow tape or formula (0.5 + age in months / 2 = ~8kg)', 'Hospital: IV antibiotics (ceftriaxone), blood cultures, full sepsis workup'],
+      monitoring: ['Continuous ECG and SpO2', 'HR response to ventilation (should increase if hypoxia-driven)', 'Cap refill and perfusion after fluid bolus', 'Blood glucose recheck after dextrose'],
+      transportConsiderations: ['Pre-alert: critically unwell 8-month-old, bradycardia secondary to suspected meningococcal sepsis, ventilated, IO access, requesting paediatric resus team', 'Priority 1 — lights and sirens', 'Transport to paediatric-capable facility', 'Continue BVM ventilation en route', 'Parent to travel in ambulance — keep informed']
+    },
+    studentChecklist: [
+      { id: 'c17-1', category: 'safety', description: 'Scene safety and introduce self to parents', points: 2, yearLevel: ['2nd-year', '3rd-year'], complexity: ['intermediate'] },
+      { id: 'c17-2', category: 'abcde', description: 'Rapid ABCDE assessment with paediatric approach', points: 5, yearLevel: ['2nd-year', '3rd-year'], complexity: ['intermediate'] },
+      { id: 'c17-3', category: 'clinical-reasoning', description: 'Recognise bradycardia as secondary to hypoxia (NOT primary cardiac)', points: 10, yearLevel: ['2nd-year', '3rd-year'], complexity: ['intermediate'], critical: true, rationale: 'In children, bradycardia is almost always hypoxia-driven — treat the cause' },
+      { id: 'c17-4', category: 'intervention', description: 'Immediate BVM ventilation with high-flow oxygen', points: 10, yearLevel: ['2nd-year', '3rd-year'], complexity: ['intermediate'], critical: true, timeframe: 'Within 60 seconds', rationale: 'Ventilation is the single most important intervention for paediatric bradycardia' },
+      { id: 'c17-5', category: 'intervention', description: 'Correct BVM technique — neutral position, two-person technique, rate 20-30/min', points: 5, yearLevel: ['2nd-year', '3rd-year'], complexity: ['intermediate'] },
+      { id: 'c17-6', category: 'clinical-reasoning', description: 'Reassess HR after 30 seconds of effective ventilation', points: 5, yearLevel: ['2nd-year', '3rd-year'], complexity: ['intermediate'], critical: true },
+      { id: 'c17-7', category: 'intervention', description: 'Start CPR if HR remains <60 despite adequate ventilation', points: 10, yearLevel: ['2nd-year', '3rd-year'], complexity: ['intermediate'], critical: true, rationale: 'AHA/Resuscitation Council: HR <60 with poor perfusion in child = start CPR' },
+      { id: 'c17-8', category: 'procedural', description: 'Obtain IO access (proximal tibia)', points: 8, yearLevel: ['3rd-year'], complexity: ['intermediate'], rationale: 'IO is preferred over IV in critically unwell infants — faster and more reliable' },
+      { id: 'c17-9', category: 'medication', description: 'Adrenaline 10mcg/kg IV/IO (correct dose calculation)', points: 8, yearLevel: ['3rd-year'], complexity: ['intermediate'], critical: true, rationale: '10mcg/kg = 0.1ml/kg of 1:10,000 — dose errors are a major risk in paediatrics' },
+      { id: 'c17-10', category: 'medication', description: 'Fluid bolus 20ml/kg normal saline', points: 5, yearLevel: ['2nd-year', '3rd-year'], complexity: ['intermediate'] },
+      { id: 'c17-11', category: 'intervention', description: 'Check blood glucose and treat hypoglycaemia', points: 5, yearLevel: ['2nd-year', '3rd-year'], complexity: ['intermediate'], critical: true, rationale: 'Hypoglycaemia is common and easily treatable in sick children' },
+      { id: 'c17-12', category: 'medication', description: 'Dextrose 10% 2ml/kg IV/IO for hypoglycaemia', points: 5, yearLevel: ['3rd-year'], complexity: ['intermediate'] },
+      { id: 'c17-13', category: 'clinical-reasoning', description: 'Identify petechial rash and suspect meningococcal sepsis', points: 8, yearLevel: ['2nd-year', '3rd-year'], complexity: ['intermediate'], critical: true, rationale: 'Petechiae + fever + sick child = meningococcal sepsis until proven otherwise' },
+      { id: 'c17-14', category: 'clinical-reasoning', description: 'Weight estimation using Broselow tape or age-based formula', points: 5, yearLevel: ['2nd-year', '3rd-year'], complexity: ['intermediate'], rationale: 'Accurate weight is critical for all paediatric drug doses' },
+      { id: 'c17-15', category: 'communication', description: 'Pre-alert: critically unwell infant, suspected meningococcal sepsis, request paediatric resus team', points: 5, yearLevel: ['2nd-year', '3rd-year'], complexity: ['intermediate'], critical: true },
+      { id: 'c17-16', category: 'communication', description: 'Keep parents informed — calm, clear communication', points: 3, yearLevel: ['2nd-year', '3rd-year'], complexity: ['intermediate'] },
+      { id: 'c17-17', category: 'intervention', description: 'Continuous monitoring including HR, SpO2, and perfusion assessment', points: 3, yearLevel: ['2nd-year', '3rd-year'], complexity: ['intermediate'] }
+    ],
+    teachingPoints: [
+      'CRITICAL CONCEPT: Paediatric bradycardia = HYPOXIA until proven otherwise. Children almost never have primary cardiac bradycardia like adults — their bradycardia is a response to oxygen deprivation',
+      'Never give atropine as first-line treatment for paediatric bradycardia — FIX THE OXYGENATION FIRST with BVM ventilation. If the bradycardia is hypoxia-driven (which it almost always is), the heart rate will improve with effective ventilation',
+      'HR <60 with poor perfusion in a child = START CPR. This is per AHA/Resuscitation Council guidelines. Do not wait for the heart to stop — a rate of <60 in a child produces inadequate cardiac output',
+      'Adrenaline dose in children: 10mcg/kg (0.01mg/kg) = 0.1ml/kg of 1:10,000. This is the IV/IO dose. Medication errors in paediatrics are common and potentially fatal — always double-check calculations',
+      'IO access is preferred over IV in critically unwell children — the proximal tibia is the standard site in infants. IO provides rapid, reliable vascular access when peripheral veins are collapsed from shock',
+      'Petechial rash + fever + sick child = meningococcal sepsis until proven otherwise. This is a time-critical diagnosis. Glass test: petechiae do NOT blanch with pressure',
+      '"Children don\'t have heart attacks — they have hypoxia." This teaching pearl reminds clinicians that the paediatric cardiac arrest pathway is fundamentally different from adults. Respiratory failure leads to bradycardia leads to cardiac arrest',
+      'Weight estimation is CRITICAL for all drug doses in children. Use Broselow tape for rapid estimation, or the formula: weight (kg) = (age in months + 9) / 2 for infants. For this 8-month-old: (8+9)/2 = 8.5kg',
+      'Mottled skin + absent peripheral pulses = decompensated shock. This is a LATE sign in children — they compensate remarkably well until they suddenly crash. By the time a child is hypotensive, they have lost ~25% of blood volume or are in severe distributive shock',
+      'Dextrose 10% is used in children (NOT 50% as in adults). Dose is 2ml/kg. Dextrose 50% can cause tissue necrosis and dangerous hyperglycaemia in children',
+      'Always consider non-accidental injury in any sick or injured child — maintain clinical suspicion while treating the immediate emergency'
+    ],
+    commonPitfalls: [
+      'Giving atropine first instead of ventilating — the bradycardia is hypoxia-driven, not vagal',
+      'Failing to start CPR when HR <60 — waiting for asystole is too late',
+      'Using adult drug doses — paediatric doses must be calculated by weight',
+      'Attempting peripheral IV access for too long in a shut-down infant — go to IO early',
+      'Using dextrose 50% instead of dextrose 10% — can cause tissue necrosis and dangerous hyperglycaemia',
+      'Not checking blood glucose — hypoglycaemia is a common and easily reversible cause of reduced consciousness in children',
+      'Forgetting to expose the child fully — the petechial rash is a critical diagnostic clue',
+      'Not reassessing HR after ventilation — the response to ventilation tells you whether the cause is hypoxia',
+      'Failing to estimate weight before drug administration — guessing doses is dangerous',
+      'Not communicating with parents — they are terrified and need clear, honest updates'
+    ],
+    equipmentNeeded: [
+      'Paediatric BVM (infant size, 500ml bag)',
+      'Infant face masks (sizes 0 and 1)',
+      'High-flow oxygen',
+      'Paediatric suction catheter (size 8F)',
+      'OPA size 0 and 000',
+      'IO needle and drill (paediatric — 15mm)',
+      'Adrenaline 1:10,000 (100mcg/ml)',
+      '1ml and 5ml syringes for drug preparation',
+      'Dextrose 10% ampoules',
+      'Normal saline 250ml bags',
+      'Broselow tape or paediatric drug reference',
+      'Cardiac monitor with paediatric leads',
+      'Infant warming blanket',
+      'Paediatric blood glucose meter'
+    ],
+    references: [
+      'Resuscitation Council UK — Paediatric Bradycardia Algorithm 2021',
+      'AHA PALS Bradycardia with Pulse Algorithm 2020',
+      'JRCALC Clinical Guidelines — Paediatric Emergencies',
+      'NICE CG102 — Bacterial Meningitis and Meningococcal Septicaemia in Children',
+      'APLS Course Manual — Recognition of the Seriously Ill Child',
+      'EPALS Course Manual — Paediatric Bradycardia Management'
+    ],
+    uaeProtocols: {
+      applicableGuidelines: [
+        'DCAS Paediatric Emergency Protocol',
+        'DCAS Paediatric Drug Dose Reference',
+        'DCAS Paediatric Sepsis Pathway'
+      ],
+      localConsiderations: [
+        'Paediatric-capable facilities must be identified in advance — not all EDs have paediatric resuscitation teams',
+        'Language barriers with parents may require interpreter — clear simple communication essential',
+        'IO access may be performed by paramedics under protocol for critically unwell children',
+        'Meningococcal disease has global distribution — maintain suspicion regardless of geography'
+      ]
+    }
+  }),
 ];
 
 // ============================================================================
