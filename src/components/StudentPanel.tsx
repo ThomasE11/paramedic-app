@@ -36,7 +36,7 @@ import {
   Wind, Droplets, Brain, Pill, Syringe
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { AuscultationPanel } from '@/components/AuscultationPanel';
+// AuscultationPanel removed — sounds now play inline from 3D Physical Examination
 import { DebriefingResourcesPanel } from '@/components/DebriefingResourcesPanel';
 import { exportSessionToPDF } from '@/lib/pdf-export';
 import { getResourcesForDebriefing } from '@/data/diversifiedResources';
@@ -76,7 +76,7 @@ function getStudentCaseTitle(caseData: CaseScenario): string {
   return `${patient} — Emergency Call`;
 }
 import { DefibrillationDialog } from '@/components/DefibrillationDialog';
-import { ClinicalAssessmentPanel } from '@/components/ClinicalAssessmentPanel';
+// ClinicalAssessmentPanel removed — replaced by inline ABCDE Primary Survey + 3D Physical Exam
 import {
   type AssessmentStepId,
   type AssessmentFinding,

@@ -347,12 +347,12 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
         </div>
       </div>
 
-      {/* Three-panel layout when region is active */}
-      <div className={`${activeRegion ? 'grid grid-cols-[200px_1fr_1fr] sm:grid-cols-[220px_1fr_1fr]' : ''}`}>
+      {/* Three-panel layout when region is active — stacks on mobile, side-by-side on desktop */}
+      <div className={`${activeRegion ? 'flex flex-col lg:grid lg:grid-cols-[200px_1fr_260px]' : ''}`}>
 
-        {/* LEFT: Assessment options (only when region is active) */}
+        {/* LEFT (desktop) / TOP (mobile): Assessment options */}
         {activeRegion && (
-          <div className="border-r border-border/30 bg-white/30 dark:bg-black/10 p-2 space-y-1.5 overflow-y-auto max-h-[420px]">
+          <div className="order-first lg:order-none border-b lg:border-b-0 lg:border-r border-border/30 bg-white/30 dark:bg-black/10 p-2 space-y-1.5 overflow-y-auto max-h-[250px] lg:max-h-[420px]">
             <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground px-1 mb-1">
               Examine
             </p>
@@ -414,9 +414,9 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
           </Canvas>
         </div>
 
-        {/* RIGHT: Findings (only when region is active) */}
+        {/* RIGHT (desktop) / BELOW (mobile): Findings */}
         {activeRegion && (
-          <div className="border-l border-border/30 bg-white/30 dark:bg-black/10 p-3 overflow-y-auto max-h-[420px]">
+          <div className="border-t lg:border-t-0 lg:border-l border-border/30 bg-white/30 dark:bg-black/10 p-3 overflow-y-auto max-h-[300px] lg:max-h-[420px]">
             <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
               Findings
             </p>
