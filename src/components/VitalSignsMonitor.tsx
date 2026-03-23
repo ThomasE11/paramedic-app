@@ -50,6 +50,8 @@ interface VitalSignsMonitorProps {
   caseSubcategory?: string;
   caseTitle?: string;
   appliedTreatments?: string[];
+  /** Override rhythm from patient state — updates when treatment changes rhythm */
+  overrideRhythm?: string;
   // Cardiac arrest CPR management — displayed on monitor
   cprState?: {
     active: boolean;
@@ -1407,6 +1409,7 @@ export function VitalSignsMonitor({
   caseSubcategory,
   caseTitle,
   appliedTreatments = [],
+  overrideRhythm,
   cprState,
 }: VitalSignsMonitorProps) {
   const [currentVitals, setCurrentVitals] = useState<VitalSigns>(initialVitals);
@@ -1456,11 +1459,19 @@ export function VitalSignsMonitor({
   const codeTimerRef = useRef<number | null>(null);
   const nibpIntervalRef = useRef<number | null>(null);
 
-  // ECG Rhythm - derived from case category/subcategory
+  // ECG Rhythm - from override (dynamic patient state) or case category
   const currentRhythm = useMemo<ECGRhythm>(() => {
     const hr = parseInt(String(currentVitals.pulse)) || 75;
+    // If patient state provides a rhythm override (e.g., after defibrillation, atropine),
+    // look it up in the rhythm map first
+    if (overrideRhythm) {
+      const overrideResult = getRhythmForCase('cardiac', overrideRhythm, hr, overrideRhythm);
+      if (overrideResult.id !== 'nsr' || overrideRhythm.toLowerCase().includes('sinus')) {
+        return overrideResult;
+      }
+    }
     return getRhythmForCase(caseCategory || 'general', caseSubcategory, hr, caseTitle);
-  }, [caseCategory, caseSubcategory, currentVitals.pulse, caseTitle]);
+  }, [caseCategory, caseSubcategory, currentVitals.pulse, caseTitle, overrideRhythm]);
 
   // Get the waveform function for the selected lead
   const getWaveformForLead = useCallback((lead: string): WaveformFn => {

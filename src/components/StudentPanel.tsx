@@ -1089,11 +1089,17 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
             {/* ===== Scene Toggle ===== */}
             <button
               onClick={() => setShowScene(!showScene)}
-              className="w-full flex items-center gap-2 px-3 py-2 rounded-xl border border-border/40 bg-muted/20 hover:bg-muted/40 transition-colors text-xs font-medium text-muted-foreground"
+              className={`w-full flex items-center gap-2 px-4 py-3 rounded-xl border-2 transition-all text-sm font-semibold ${
+                showScene
+                  ? 'border-blue-400 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300'
+                  : 'border-amber-400 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 animate-pulse hover:animate-none'
+              }`}
             >
-              <Shield className="h-3.5 w-3.5 text-blue-500" />
-              Scene Details
-              {showScene ? <ChevronUp className="h-3.5 w-3.5 ml-auto" /> : <ChevronDown className="h-3.5 w-3.5 ml-auto" />}
+              <Shield className="h-4 w-4" />
+              <span className="flex-1 text-left">
+                {showScene ? 'Scene Details' : '⚠ Assess Scene — Click to View Details'}
+              </span>
+              {showScene ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </button>
             {showScene && (
               <div className="p-3 rounded-xl bg-muted/20 border border-border/30 text-xs space-y-2 animate-fade-in">
@@ -1525,6 +1531,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                     caseSubcategory={currentCase.subcategory}
                     caseTitle={currentCase.title}
                     appliedTreatments={appliedTreatments.map(t => t.description)}
+                    overrideRhythm={patientState?.currentRhythm || undefined}
                     cprState={arrestActive ? {
                       active: arrestActive,
                       running: cprRunning,
