@@ -1775,7 +1775,7 @@ export const additionalNeurologicalCases: CaseScenario[] = [
   createCase({
     id: 'neuro-004',
     title: 'Bacterial Meningitis',
-    category: 'neurological',
+    category: 'pediatric',
     priority: 'critical',
     complexity: 'advanced',
     yearLevels: ['3rd-year', '4th-year'],
@@ -4021,7 +4021,7 @@ export const additionalTraumaCases: CaseScenario[] = [
   createCase({
     id: 'trauma-012',
     title: 'Drowning with Hypothermia',
-    category: 'trauma',
+    category: 'environmental',
     priority: 'critical',
     complexity: 'advanced',
     yearLevels: ['3rd-year', '4th-year'],
