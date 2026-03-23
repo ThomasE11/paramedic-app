@@ -256,8 +256,6 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
   addFilledRoundedRect(margin + 3, scoreBoxY + scoreBoxHeight / 2 - 12, 24, 24, 12, gradeColor);
 
   addTextAt(`${percentage}%`, margin + 15, scoreBoxY + scoreBoxHeight / 2 + 5, 14, 'bold', [255, 255, 255]);
-  // Re-center the percentage text in the circle
-  doc.text(`${percentage}%`, margin + 15, scoreBoxY + scoreBoxHeight / 2 + 5, { align: 'center' } as never);
 
   // Grade info
   addTextAt(grade, margin + 35, scoreBoxY + 12, 16, 'bold', gradeColor);
@@ -372,9 +370,14 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
       addStrokeRoundedRect(margin, yPosition, contentWidth, 18, 2, [34, 197, 94]);
 
       // Treatment number and description (strip vital changes and sanitize)
-      const cleanDesc = sanitizeText(treatment.description)
-        .replace(/\s*--\s*(?:[A-Z][A-Za-z\d]+:\s*[\d./]+[%]?\s*(?:->|!')\s*[\d./]+[%]?(?:,\s*)?)+\.?/g, '.')
+      const cleanDesc = sanitizeText(treatment.description || treatment.name)
+        .replace(/\s*[-—]+\s*(?:[A-Z][A-Za-z\d ]+:\s*[\d./]+[%]?\s*(?:->|→)\s*[\d./]+[%]?(?:,\s*)?)+\.?/g, '.')
+        .replace(/\s*HR:\s*\d+\s*->\s*\d+\.?/g, '')
+        .replace(/\s*SpO2:\s*\d+%?\s*->\s*\d+%?\.?/g, '')
+        .replace(/\s*BP:\s*[\d/]+\s*->\s*[\d/]+\.?/g, '')
+        .replace(/\s*RR:\s*\d+\s*->\s*\d+\.?/g, '')
         .replace(/\.{2,}/g, '.')
+        .replace(/\.\s*$/, '')
         .trim();
       addTextAt(`${index + 1}.`, margin + 3, yPosition + 5, 10, 'bold', [34, 197, 94]);
       addTextAt(cleanDesc, margin + 12, yPosition + 5, 10, 'bold', [0, 0, 0]);
@@ -641,9 +644,23 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
     ].filter(Boolean) as string[];
 
     const matchedVideos = [
+      ...getVideosByFindings(caseFindings), // Findings-based first (more specific)
       ...getVideosByCategory(caseData.category),
-      ...getVideosByFindings(caseFindings),
-    ].filter((v, i, arr) => arr.findIndex(x => x.id === v.id) === i).slice(0, 6);
+    ]
+      .filter((v, i, arr) => arr.findIndex(x => x.id === v.id) === i)
+      // Prioritize videos whose name matches the case subcategory or title
+      .sort((a, b) => {
+        const scoreVideo = (v: typeof a) => {
+          let s = 0;
+          const nameLower = v.name.toLowerCase();
+          if (caseData.subcategory && nameLower.includes(caseData.subcategory.replace(/-/g, ' '))) s += 10;
+          if (caseData.title && caseFindings.some(f => nameLower.includes(f.toLowerCase()))) s += 5;
+          if (caseData.expectedFindings?.mostLikelyDiagnosis && nameLower.includes(caseData.expectedFindings.mostLikelyDiagnosis.toLowerCase())) s += 8;
+          return s;
+        };
+        return scoreVideo(b) - scoreVideo(a);
+      })
+      .slice(0, 4); // Reduce to 4 max, only best matches
 
     const matchedArticles = referenceArticles
       .filter(a =>
@@ -663,6 +680,18 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
           return score;
         };
         return scoreMatch(b) - scoreMatch(a);
+      })
+      .filter(a => {
+        const titleLower = a.title.toLowerCase();
+        // Exclude articles that are clearly about a different condition
+        if (caseData.subcategory) {
+          const sub = caseData.subcategory.toLowerCase().replace(/-/g, ' ');
+          // If the article is about heart failure but case is about SVT, exclude
+          if (titleLower.includes('heart failure') && !sub.includes('heart failure')) return false;
+          if (titleLower.includes('pulmonary edema') && !sub.includes('pulmonary') && !sub.includes('edema')) return false;
+          if (titleLower.includes('pulmonary embolism') && !sub.includes('embolism') && !sub.includes('pe')) return false;
+        }
+        return true;
       })
       .slice(0, 6);
 
