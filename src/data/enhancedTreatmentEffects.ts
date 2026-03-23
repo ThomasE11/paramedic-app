@@ -139,6 +139,7 @@ export const TREATMENTS: Treatment[] = [
       { vitalSign: 'respiration', changeType: 'increase', value: 8, minValue: 0, maxValue: 18 },
       { vitalSign: 'pulse', changeType: 'decrease', value: 15, minValue: 70 },
     ],
+    contraindications: ['Infants under 1 year', 'Late pregnancy'],
   },
   {
     id: 'magill_forceps',
@@ -169,6 +170,7 @@ export const TREATMENTS: Treatment[] = [
     effects: [
       { vitalSign: 'spo2', changeType: 'increase', value: 3, minValue: 85, maxValue: 94 },
     ],
+    contraindications: ['Gag reflex present'],
   },
   {
     id: 'intubation',
@@ -238,8 +240,8 @@ export const TREATMENTS: Treatment[] = [
   },
   {
     id: 'nebulizer_salbutamol',
-    name: 'Salbutamol Nebulizer',
-    description: 'Bronchodilator therapy',
+    name: 'Salbutamol Nebulizer (5mg)',
+    description: 'Beta-2 agonist bronchodilator — 5mg nebulised (2.5mg for child <5y)',
     category: 'breathing',
     onset: 'fast',
     onsetTimeSeconds: 2,
@@ -254,8 +256,8 @@ export const TREATMENTS: Treatment[] = [
   },
   {
     id: 'nebulizer_ipratropium',
-    name: 'Ipratropium Nebulizer',
-    description: 'Anticholinergic bronchodilator',
+    name: 'Ipratropium Nebulizer (500mcg)',
+    description: 'Anticholinergic bronchodilator — 500mcg nebulised. Use with salbutamol for severe asthma/COPD.',
     category: 'breathing',
     onset: 'moderate',
     onsetTimeSeconds: 5,
@@ -393,7 +395,7 @@ export const TREATMENTS: Treatment[] = [
   {
     id: 'defibrillation',
     name: 'Defibrillation',
-    description: 'Synchronized electrical shock',
+    description: 'Unsynchronized electrical shock for VF/pulseless VT. NOT the same as synchronized cardioversion.',
     category: 'circulation',
     onset: 'immediate',
     onsetTimeSeconds: 0,
@@ -425,7 +427,7 @@ export const TREATMENTS: Treatment[] = [
   },
   {
     id: 'gtn_spray',
-    name: 'GTN Spray',
+    name: 'GTN Spray (400mcg SL)',
     description: 'Nitroglycerin for angina',
     category: 'medication',
     onset: 'fast',
@@ -437,12 +439,12 @@ export const TREATMENTS: Treatment[] = [
       { vitalSign: 'bp', changeType: 'decrease', value: 20 },
       { vitalSign: 'pulse', changeType: 'increase', value: 10, maxValue: 130 },
     ],
-    contraindications: ['Systolic BP < 90'],
+    contraindications: ['Systolic BP < 90', 'Phosphodiesterase-5 inhibitors (sildenafil within 24h, tadalafil within 48h)', 'Right ventricular infarction', 'Aortic stenosis'],
   },
   {
     id: 'morphine_5mg',
-    name: 'Morphine 5mg',
-    description: 'Opioid analgesic',
+    name: 'Morphine 2.5-5mg IV (titrated)',
+    description: 'Opioid analgesic — titrate in 1-2mg increments to effect. Monitor respiratory rate.',
     category: 'medication',
     onset: 'moderate',
     onsetTimeSeconds: 5,
@@ -455,6 +457,7 @@ export const TREATMENTS: Treatment[] = [
       { vitalSign: 'respiration', changeType: 'decrease', value: 2, minValue: 10 },
     ],
     requiresMonitoring: true,
+    contraindications: ['Respiratory rate < 12', 'Systolic BP < 90', 'Head injury (use with caution)', 'Known opioid allergy', 'Severe asthma/COPD (use with caution)'],
   },
   {
     id: 'fentanyl_50mcg',
@@ -472,11 +475,12 @@ export const TREATMENTS: Treatment[] = [
       { vitalSign: 'respiration', changeType: 'decrease', value: 2, minValue: 10 },
     ],
     requiresMonitoring: true,
+    contraindications: ['Respiratory rate < 12', 'Systolic BP < 90', 'Head injury (use with caution)', 'Known opioid allergy'],
   },
   {
     id: 'adrenaline_1mg',
     name: 'Adrenaline 1mg IV',
-    description: 'Cardiac arrest and anaphylaxis',
+    description: '1mg IV (1:10,000) for CARDIAC ARREST ONLY. Give every 3-5 minutes. NOT for anaphylaxis (use IM route).',
     category: 'medication',
     onset: 'immediate',
     onsetTimeSeconds: 0,
@@ -516,6 +520,7 @@ export const TREATMENTS: Treatment[] = [
     effects: [
       { vitalSign: 'pulse', changeType: 'set', value: 80 },
     ],
+    contraindications: ['Asthma (severe bronchospasm risk)', '2nd/3rd degree heart block', 'Denervated transplant heart'],
   },
   {
     id: 'adenosine_12mg',
@@ -567,7 +572,7 @@ export const TREATMENTS: Treatment[] = [
   {
     id: 'amiodarone_300mg',
     name: 'Amiodarone 300mg',
-    description: 'Antiarrhythmic for VF/VT',
+    description: 'Antiarrhythmic for refractory VF/pVT — give after 3rd shock. IV bolus.',
     category: 'medication',
     onset: 'moderate',
     onsetTimeSeconds: 10,
@@ -646,7 +651,7 @@ export const TREATMENTS: Treatment[] = [
   {
     id: 'txa_1g',
     name: 'Tranexamic Acid 1g',
-    description: 'Antifibrinolytic for trauma',
+    description: 'Antifibrinolytic — reduces bleeding in trauma. Must give within 3 hours of injury (CRASH-2). 1g IV over 10 minutes.',
     category: 'medication',
     onset: 'moderate',
     onsetTimeSeconds: 10,
@@ -880,23 +885,6 @@ export const TREATMENTS: Treatment[] = [
     ],
   },
   {
-    id: 'adrenaline_im',
-    name: 'Adrenaline 0.5mg IM',
-    description: 'IM adrenaline for anaphylaxis (1:1000)',
-    category: 'medication',
-    onset: 'fast',
-    onsetTimeSeconds: 3,
-    durationSeconds: 15,
-    icon: 'Activity',
-    color: 'orange',
-    effects: [
-      { vitalSign: 'pulse', changeType: 'increase', value: 20, maxValue: 140 },
-      { vitalSign: 'bp', changeType: 'increase', value: 25 },
-      { vitalSign: 'spo2', changeType: 'increase', value: 8, maxValue: 98 },
-      { vitalSign: 'respiration', changeType: 'decrease', value: 6, minValue: 14 },
-    ],
-  },
-  {
     id: 'dextrose_10',
     name: 'Dextrose 10% IV',
     description: 'IV glucose for hypoglycemia',
@@ -941,21 +929,7 @@ export const TREATMENTS: Treatment[] = [
     effects: [
       { vitalSign: 'pulse', changeType: 'decrease', value: 5, minValue: 60 },
     ],
-  },
-  {
-    id: 'calcium_chloride_10',
-    name: 'Calcium Chloride 10% IV',
-    description: 'For hyperkalemia cardiac protection',
-    category: 'medication',
-    onset: 'fast',
-    onsetTimeSeconds: 2,
-    durationSeconds: 10,
-    icon: 'Activity',
-    color: 'yellow',
-    effects: [
-      { vitalSign: 'pulse', changeType: 'decrease', value: 15, minValue: 55 },
-      { vitalSign: 'bp', changeType: 'increase', value: 10 },
-    ],
+    contraindications: ['Congenital long QT syndrome', 'Concurrent QT-prolonging drugs'],
   },
 
   // ================================================================
@@ -1077,7 +1051,7 @@ export const TREATMENTS: Treatment[] = [
   },
   {
     id: 'sodium_bicarbonate',
-    name: 'Sodium Bicarbonate 8.4%',
+    name: 'Sodium Bicarbonate 8.4% (50ml)',
     description: 'For known or suspected severe metabolic acidosis, hyperkalaemia',
     category: 'medication',
     onset: 'moderate',
@@ -1326,7 +1300,7 @@ export const TREATMENTS: Treatment[] = [
   // ANAPHYLAXIS DRUGS
   // ================================================================
   {
-    id: 'adrenaline_im_adult',
+    id: 'adrenaline_im',
     name: 'Adrenaline 0.5mg IM (Anaphylaxis — Adult)',
     description: 'First-line treatment for anaphylaxis in adults >12 years',
     category: 'medication',
@@ -1507,6 +1481,8 @@ export const TREATMENTS: Treatment[] = [
     color: 'yellow',
     effects: [
       { vitalSign: 'pulse', changeType: 'decrease', value: 5, minValue: 55 },
+      { vitalSign: 'bloodGlucose', changeType: 'increase', value: 8 },
+      { vitalSign: 'gcs', changeType: 'increase', value: 3, maxValue: 15 },
     ],
     contraindications: ['Hyperglycaemia'],
   },
@@ -1540,8 +1516,77 @@ export const TREATMENTS: Treatment[] = [
     effects: [
       { vitalSign: 'spo2', changeType: 'increase', value: 6, maxValue: 97 },
       { vitalSign: 'respiration', changeType: 'decrease', value: 4, minValue: 14 },
+      { vitalSign: 'pulse', changeType: 'increase', value: 10, maxValue: 160 },
     ],
     contraindications: [],
+  },
+
+  // ================================================================
+  // ADDITIONAL MEDICATIONS (Clinical Audit)
+  // ================================================================
+  {
+    id: 'flumazenil_02mg',
+    name: 'Flumazenil 0.2mg IV',
+    description: 'Benzodiazepine antagonist — 0.2mg IV, repeat every 60s to max 1mg. Monitor for re-sedation.',
+    category: 'medication',
+    onset: 'fast',
+    onsetTimeSeconds: 2,
+    durationSeconds: 30,
+    icon: 'Activity',
+    color: 'orange',
+    effects: [
+      { vitalSign: 'respiration', changeType: 'increase', value: 4, maxValue: 20 },
+      { vitalSign: 'gcs', changeType: 'increase', value: 3, maxValue: 15 },
+    ],
+    contraindications: ['Chronic benzodiazepine use (seizure risk)', 'Tricyclic antidepressant co-ingestion', 'Raised ICP'],
+  },
+  {
+    id: 'sugammadex',
+    name: 'Sugammadex 16mg/kg IV',
+    description: 'Immediate reversal of rocuronium neuromuscular blockade. For cannot-intubate-cannot-oxygenate emergencies.',
+    category: 'medication',
+    onset: 'fast',
+    onsetTimeSeconds: 3,
+    durationSeconds: 30,
+    icon: 'Activity',
+    color: 'green',
+    effects: [
+      { vitalSign: 'respiration', changeType: 'increase', value: 6, maxValue: 16 },
+    ],
+    contraindications: ['Known sugammadex allergy'],
+  },
+  {
+    id: 'labetalol_20mg',
+    name: 'Labetalol 20mg IV',
+    description: 'Combined alpha/beta blocker for hypertensive emergency and pre-eclampsia. Give over 2 min.',
+    category: 'medication',
+    onset: 'moderate',
+    onsetTimeSeconds: 5,
+    durationSeconds: 30,
+    icon: 'Activity',
+    color: 'blue',
+    effects: [
+      { vitalSign: 'pulse', changeType: 'decrease', value: 15, minValue: 55 },
+      { vitalSign: 'bp', changeType: 'decrease', value: 25 },
+    ],
+    contraindications: ['Asthma', 'Heart failure', 'HR < 60', '2nd/3rd degree heart block'],
+  },
+  {
+    id: 'lorazepam_4mg',
+    name: 'Lorazepam 4mg IV',
+    description: 'Benzodiazepine for status epilepticus — 4mg IV over 2 min. May repeat once after 10 min.',
+    category: 'medication',
+    onset: 'fast',
+    onsetTimeSeconds: 3,
+    durationSeconds: 30,
+    icon: 'Activity',
+    color: 'purple',
+    effects: [
+      { vitalSign: 'pulse', changeType: 'decrease', value: 5, minValue: 50 },
+      { vitalSign: 'bp', changeType: 'decrease', value: 8 },
+      { vitalSign: 'respiration', changeType: 'decrease', value: 2, minValue: 8 },
+    ],
+    contraindications: ['Respiratory depression', 'Myasthenia gravis', 'Severe hepatic impairment'],
   },
 ];
 

@@ -100,7 +100,6 @@ export const TREATMENT_YEAR_ACCESS: Record<string, StudentYear[]> = {
   metoclopramide_10mg:  ['3rd-year', '4th-year'],
   sodium_bicarbonate:   ['3rd-year', '4th-year'],
   calcium_chloride:     ['3rd-year', '4th-year'],
-  calcium_chloride_10:  ['3rd-year', '4th-year'],
   dextrose_10:          ['3rd-year', '4th-year'],
   naloxone_04mg:        ['3rd-year', '4th-year'],
   clopidogrel:          ['3rd-year', '4th-year'],
@@ -579,7 +578,7 @@ export const PATHOLOGY_MODIFIERS: Record<string, PathologyModifier[]> = {
   // --- ELECTROLYTE EMERGENCY (hyperkalemia) ---
   'electrolyte': [
     {
-      treatmentId: 'calcium_chloride_10',
+      treatmentId: 'calcium_chloride',
       effectivenessMultiplier: 2.0,
       rationale: 'Calcium chloride is the first-line cardiac membrane stabilizer in hyperkalemia. Immediate cardioprotection.',
     },
@@ -1711,7 +1710,7 @@ const TREATMENT_QUALITY_RULES: TreatmentQualityRule[] = [
 
   // --- CALCIUM IN HYPERKALEMIA ---
   {
-    treatmentId: 'calcium_chloride_10',
+    treatmentId: 'calcium_chloride',
     condition: (_vitals, _cat, sub) => sub.includes('electrolyte') || sub.includes('hyperkal'),
     result: () => ({
       score: 95,
@@ -2083,7 +2082,7 @@ export function assessTreatmentTiming(
     glucagon_1mg: { maxSeconds: 300, description: 'Glucagon should be given within 5 minutes if IV access unavailable' },
     dextrose_10: { maxSeconds: 300, description: 'IV dextrose should be given within 5 minutes for severe hypoglycemia' },
     naloxone_04mg: { maxSeconds: 180, description: 'Naloxone should be given within 3 minutes for opioid overdose with respiratory depression' },
-    calcium_chloride_10: { maxSeconds: 180, description: 'Calcium chloride for hyperkalemia with ECG changes should be given within 3 minutes' },
+    calcium_chloride: { maxSeconds: 180, description: 'Calcium chloride for hyperkalemia with ECG changes should be given within 3 minutes' },
     bleeding_control: { maxSeconds: 120, description: 'Direct pressure on life-threatening hemorrhage should be applied within 2 minutes' },
     tourniquet: { maxSeconds: 120, description: 'Tourniquet for uncontrollable limb hemorrhage should be applied within 2 minutes' },
     midazolam_5mg: { maxSeconds: 300, description: 'Midazolam for status epilepticus should be given within 5 minutes of identifying prolonged seizure' },
@@ -2107,7 +2106,7 @@ export function assessTreatmentTiming(
     ((treatmentId.includes('glucose') || treatmentId.includes('dextrose')) && sub.includes('hypoglycemia')) ||
     (treatmentId === 'glucagon_1mg' && sub.includes('hypoglycemia')) ||
     (treatmentId === 'naloxone_04mg' && (sub.includes('overdose') || sub.includes('opioid') || cat === 'toxicology')) ||
-    (treatmentId === 'calcium_chloride_10' && (sub.includes('electrolyte') || sub.includes('hyperkal'))) ||
+    (treatmentId === 'calcium_chloride' && (sub.includes('electrolyte') || sub.includes('hyperkal'))) ||
     ((treatmentId === 'bleeding_control' || treatmentId === 'tourniquet') && (sub.includes('hemorrhage') || sub.includes('pelvic') || cat === 'trauma')) ||
     (treatmentId === 'midazolam_5mg' && sub.includes('seizure')) ||
     (treatmentId === 'gtn_spray' && (sub.includes('stem') || sub.includes('nstemi') || sub.includes('coronary') || sub.includes('hypertensive'))) ||
