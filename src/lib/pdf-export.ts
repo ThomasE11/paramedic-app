@@ -95,13 +95,14 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
 
   // Helper function to add a section header
   const addSectionHeader = (text: string): void => {
-    yPosition += 10;
-    checkPageBreak(15);
-    doc.setDrawColor(59, 130, 246); // Primary blue color
+    yPosition += 12; // More space before header
+    checkPageBreak(18);
+    doc.setDrawColor(59, 130, 246);
     doc.setLineWidth(0.5);
-    doc.line(margin, yPosition - 1, pageWidth - margin, yPosition - 1);
-    yPosition += 3; // gap after line before text
-    addText(sanitizeText(text), 14, 'bold', [59, 130, 246]);
+    doc.line(margin, yPosition, pageWidth - margin, yPosition);
+    yPosition += 5; // More gap after line
+    addText(sanitizeText(text), 13, 'bold', [59, 130, 246]); // Slightly smaller font
+    yPosition += 2; // Space after header text
   };
 
   // Helper function to add a rounded rect with fill
@@ -412,36 +413,47 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
     });
   }
 
-  // ========== VITALS HISTORY ==========
+  // ========== VITAL SIGNS SUMMARY ==========
   if (options.vitalsHistory && options.vitalsHistory.length > 1) {
-    addSectionHeader('Vital Signs Progression');
+    addSectionHeader('Vital Signs Summary');
 
-    // Table header
+    const initial = options.vitalsHistory[0];
+    const final = options.vitalsHistory[options.vitalsHistory.length - 1];
+
+    // Two-row summary: Initial and Final
+    checkPageBreak(30);
+
     addFilledRoundedRect(margin, yPosition, contentWidth, 8, 1, [240, 240, 240]);
-    addTextAt('Time', margin + 2, yPosition + 5, 8, 'bold', [60, 60, 60]);
+    addTextAt('', margin + 2, yPosition + 5, 8, 'bold', [60, 60, 60]);
     addTextAt('BP', margin + 30, yPosition + 5, 8, 'bold', [60, 60, 60]);
     addTextAt('HR', margin + 60, yPosition + 5, 8, 'bold', [60, 60, 60]);
-    addTextAt('SpO2', margin + 80, yPosition + 5, 8, 'bold', [60, 60, 60]);
-    addTextAt('RR', margin + 105, yPosition + 5, 8, 'bold', [60, 60, 60]);
+    addTextAt('SpO2', margin + 85, yPosition + 5, 8, 'bold', [60, 60, 60]);
+    addTextAt('RR', margin + 110, yPosition + 5, 8, 'bold', [60, 60, 60]);
     yPosition += 10;
 
-    // Vitals rows
-    options.vitalsHistory.forEach((vitals, idx) => {
-      checkPageBreak(8);
+    // Initial row
+    addFilledRoundedRect(margin, yPosition, contentWidth, 7, 0, [255, 255, 255]);
+    addTextAt('Initial', margin + 2, yPosition + 5, 8, 'bold', [100, 100, 100]);
+    addTextAt(String(initial.bp), margin + 30, yPosition + 5, 8, 'normal', [60, 60, 60]);
+    addTextAt(String(initial.pulse), margin + 60, yPosition + 5, 8, 'normal', [60, 60, 60]);
+    addTextAt(String(initial.spo2) + '%', margin + 85, yPosition + 5, 8, 'normal', [60, 60, 60]);
+    addTextAt(String(initial.respiration), margin + 110, yPosition + 5, 8, 'normal', [60, 60, 60]);
+    yPosition += 8;
 
-      const rowColor = idx % 2 === 0 ? [250, 250, 250] : [255, 255, 255];
-      addFilledRoundedRect(margin, yPosition, contentWidth, 7, 0, rowColor as [number, number, number]);
+    // Final row
+    const hrBetter = Number(final.pulse) < Number(initial.pulse);
+    const spo2Better = Number(final.spo2) > Number(initial.spo2);
+    addFilledRoundedRect(margin, yPosition, contentWidth, 7, 0, [250, 250, 250]);
+    addTextAt('Final', margin + 2, yPosition + 5, 8, 'bold', [100, 100, 100]);
+    addTextAt(String(final.bp), margin + 30, yPosition + 5, 8, 'normal', [60, 60, 60]);
+    addTextAt(String(final.pulse), margin + 60, yPosition + 5, 8, 'normal', hrBetter ? [34, 197, 94] : [220, 38, 38]);
+    addTextAt(String(final.spo2) + '%', margin + 85, yPosition + 5, 8, 'normal', spo2Better ? [34, 197, 94] : [220, 38, 38]);
+    addTextAt(String(final.respiration), margin + 110, yPosition + 5, 8, 'normal', [60, 60, 60]);
+    yPosition += 10;
 
-      const timeStr = idx === 0 ? 'Initial' : `T+${idx}`;
-      addTextAt(timeStr, margin + 2, yPosition + 5, 8, 'normal', [80, 80, 80]);
-      addTextAt(String(vitals.bp), margin + 30, yPosition + 5, 8, 'normal', [60, 60, 60]);
-      addTextAt(String(vitals.pulse), margin + 60, yPosition + 5, 8, 'normal', [60, 60, 60]);
-      addTextAt(String(vitals.spo2) + '%', margin + 80, yPosition + 5, 8, 'normal', [60, 60, 60]);
-      addTextAt(String(vitals.respiration), margin + 105, yPosition + 5, 8, 'normal', [60, 60, 60]);
-
-      yPosition += 8;
-    });
-    yPosition += 5;
+    // Trend summary
+    addTextAt(`Snapshots recorded: ${options.vitalsHistory.length}`, margin, yPosition + 3, 7, 'normal', [150, 150, 150]);
+    yPosition += 8;
   }
 
   // ========== CLINICAL GUIDELINES & REFERENCES ==========

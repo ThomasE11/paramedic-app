@@ -19,7 +19,7 @@ import { BodyMesh } from './BodyMesh';
 import type { AssessmentStepId } from '@/data/assessmentFramework';
 import type { CaseScenario } from '@/types';
 import type { ClinicalSoundState } from '@/data/clinicalSounds';
-import { playBreathSound, playHeartSound, stopAllSounds } from '@/data/clinicalSounds';
+import { playBreathSound, playHeartSound, playPercussionSound, stopAllSounds } from '@/data/clinicalSounds';
 
 const TOTAL_REGIONS = 8;
 
@@ -314,6 +314,17 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
     if (actionId.startsWith('heart-') && patientSounds) {
       stopAllSounds();
       playHeartSound(patientSounds.heartSound, 5000);
+    }
+
+    // Play percussion sound
+    if (actionId.includes('percuss')) {
+      stopAllSounds();
+      const finding = getFinding(caseData, activeRegion!, actionId);
+      const percType = finding.toLowerCase().includes('hyper') ? 'hyper-resonant'
+        : finding.toLowerCase().includes('dull') ? 'dull'
+        : finding.toLowerCase().includes('tympanic') ? 'tympanic'
+        : 'resonant';
+      playPercussionSound(percType);
     }
   }, [activeRegion, caseData, patientSounds]);
 

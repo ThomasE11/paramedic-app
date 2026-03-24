@@ -1884,6 +1884,72 @@ export function playBowelSound(soundType: BowelSoundType, durationMs: number = 6
   setTimeout(() => ctx.close(), durationMs + 500);
 }
 
+// ============================================================================
+// PERCUSSION SOUNDS
+// ============================================================================
+
+/**
+ * Play synthesised percussion tap sounds.
+ * Generates short tapping sounds with different resonance characteristics
+ * based on clinical percussion findings.
+ */
+export function playPercussionSound(type: 'resonant' | 'hyper-resonant' | 'dull' | 'tympanic', count: number = 2): void {
+  const AudioCtx = (window as any).AudioContext || (window as any).webkitAudioContext;
+  if (!AudioCtx) return;
+  const ctx: AudioContext = new AudioCtx();
+
+  const params: { freq: number; duration: number; resonance: number } = (() => {
+    switch (type) {
+      case 'resonant':
+        return { freq: 200, duration: 0.1, resonance: 0.6 };
+      case 'hyper-resonant':
+        return { freq: 300, duration: 0.15, resonance: 0.8 };
+      case 'dull':
+        return { freq: 100, duration: 0.05, resonance: 0.1 };
+      case 'tympanic':
+        return { freq: 250, duration: 0.12, resonance: 0.7 };
+    }
+  })();
+
+  const masterGain = ctx.createGain();
+  masterGain.gain.setValueAtTime(0.5, ctx.currentTime);
+  masterGain.connect(ctx.destination);
+
+  for (let i = 0; i < count; i++) {
+    const startTime = ctx.currentTime + i * 0.2; // 200ms gap between taps
+
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(params.freq, startTime);
+
+    const env = ctx.createGain();
+    env.gain.setValueAtTime(0, startTime);
+    // Quick attack
+    env.gain.linearRampToValueAtTime(0.6, startTime + 0.005);
+    // Exponential decay — duration controls how quickly it fades
+    env.gain.exponentialRampToValueAtTime(0.001, startTime + params.duration);
+
+    // Resonance filter for hollow / drum-like quality
+    if (params.resonance > 0.2) {
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.value = params.freq;
+      filter.Q.value = params.resonance * 10;
+      osc.connect(filter).connect(env).connect(masterGain);
+    } else {
+      // Dull — no resonance, direct connection
+      osc.connect(env).connect(masterGain);
+    }
+
+    osc.start(startTime);
+    osc.stop(startTime + params.duration + 0.05);
+  }
+
+  // Close context after all taps finish
+  const totalDuration = (count - 1) * 0.2 + params.duration + 0.1;
+  setTimeout(() => ctx.close(), totalDuration * 1000);
+}
+
 /**
  * Check if Web Audio API is available
  */
