@@ -50,138 +50,68 @@ const TECHNIQUE_COLORS: Record<string, string> = {
 function getSubRegions(regionId: string): SubRegion[] {
   switch (regionId) {
     case 'head': return [
-      { id: 'scalp', label: 'Scalp', actions: [
-        { id: 'scalp-inspect', label: 'Wounds, bleeding, swelling', technique: 'inspect' },
-        { id: 'scalp-palpate', label: 'Depressions, step deformity', technique: 'palpate' },
-      ]},
-      { id: 'pupils', label: 'Pupils', actions: [
-        { id: 'pupils-inspect', label: 'PERRL — size, equality, reactivity', technique: 'inspect' },
-      ]},
-      { id: 'ears', label: 'Ears', actions: [
-        { id: 'ears-inspect', label: "Battle's sign, CSF, blood", technique: 'inspect' },
+      { id: 'head-exam', label: 'Head', actions: [
+        { id: 'scalp-inspect', label: 'Inspect', technique: 'inspect' },
+        { id: 'scalp-palpate', label: 'Palpate', technique: 'palpate' },
+        { id: 'pupils-inspect', label: 'Pupils', technique: 'inspect' },
+        { id: 'ears-inspect', label: 'Ears', technique: 'inspect' },
       ]},
     ];
     case 'face': return [
-      { id: 'symmetry', label: 'Facial Symmetry', actions: [
-        { id: 'face-inspect', label: 'Droop, asymmetry, FAST', technique: 'inspect' },
-      ]},
-      { id: 'mouth', label: 'Mouth & Airway', actions: [
-        { id: 'mouth-inspect', label: 'Blood, vomit, foreign body, swelling', technique: 'inspect' },
-        { id: 'airway-listen', label: 'Stridor, gurgling, snoring', technique: 'auscultate' },
-      ]},
-      { id: 'jaw', label: 'Jaw & Nose', actions: [
-        { id: 'jaw-palpate', label: 'Stability, crepitus, midface', technique: 'palpate' },
-        { id: 'nose-inspect', label: 'CSF rhinorrhoea, epistaxis', technique: 'inspect' },
+      { id: 'face-exam', label: 'Face', actions: [
+        { id: 'face-inspect', label: 'Inspect', technique: 'inspect' },
+        { id: 'mouth-inspect', label: 'Mouth & Airway', technique: 'inspect' },
+        { id: 'airway-listen', label: 'Auscultate Airway', technique: 'auscultate' },
+        { id: 'jaw-palpate', label: 'Palpate', technique: 'palpate' },
       ]},
     ];
     case 'neck-cspine': return [
-      { id: 'trachea', label: 'Trachea', actions: [
-        { id: 'trachea-palpate', label: 'Midline or deviated', technique: 'palpate' },
-      ]},
-      { id: 'jvp', label: 'Jugular Veins', actions: [
-        { id: 'jvd-inspect', label: 'Assess jugular venous distension', technique: 'inspect' },
-      ]},
-      { id: 'cspine', label: 'C-Spine', actions: [
-        { id: 'cspine-palpate', label: 'Midline tenderness, step deformity', technique: 'palpate' },
-        { id: 'cspine-inspect', label: 'Subcut emphysema, wounds', technique: 'inspect' },
+      { id: 'neck-exam', label: 'Neck & C-Spine', actions: [
+        { id: 'cspine-inspect', label: 'Inspect', technique: 'inspect' },
+        { id: 'cspine-palpate', label: 'Palpate', technique: 'palpate' },
+        { id: 'trachea-palpate', label: 'Trachea', technique: 'palpate' },
+        { id: 'jvd-inspect', label: 'JVP', technique: 'inspect' },
       ]},
     ];
     case 'chest': return [
-      { id: 'chest-wall', label: 'Chest Wall', actions: [
-        { id: 'chest-inspect', label: 'Symmetry, wounds, flail, paradox', technique: 'inspect' },
-        { id: 'chest-palpate', label: 'Tenderness, crepitus, emphysema', technique: 'palpate' },
-      ]},
-      { id: 'lung-r-upper', label: 'Right Upper Lung', actions: [
-        { id: 'rul-percuss', label: 'Percussion note', technique: 'percuss' },
-        { id: 'rul-auscultate', label: 'Breath sounds', technique: 'auscultate' },
-      ]},
-      { id: 'lung-r-lower', label: 'Right Lower Lung', actions: [
-        { id: 'rll-percuss', label: 'Percussion note', technique: 'percuss' },
-        { id: 'rll-auscultate', label: 'Breath sounds', technique: 'auscultate' },
-      ]},
-      { id: 'lung-l-upper', label: 'Left Upper Lung', actions: [
-        { id: 'lul-percuss', label: 'Percussion note', technique: 'percuss' },
-        { id: 'lul-auscultate', label: 'Breath sounds', technique: 'auscultate' },
-      ]},
-      { id: 'lung-l-lower', label: 'Left Lower Lung', actions: [
-        { id: 'lll-percuss', label: 'Percussion note', technique: 'percuss' },
-        { id: 'lll-auscultate', label: 'Breath sounds', technique: 'auscultate' },
-      ]},
-      { id: 'heart', label: 'Heart Sounds', actions: [
-        { id: 'heart-aortic', label: 'Aortic (R 2nd ICS)', technique: 'auscultate' },
-        { id: 'heart-pulm', label: 'Pulmonary (L 2nd ICS)', technique: 'auscultate' },
-        { id: 'heart-tricusp', label: 'Tricuspid (L sternal)', technique: 'auscultate' },
-        { id: 'heart-mitral', label: 'Mitral (apex 5th ICS)', technique: 'auscultate' },
+      { id: 'chest-exam', label: 'Chest', actions: [
+        { id: 'chest-inspect', label: 'Inspect', technique: 'inspect' },
+        { id: 'chest-palpate', label: 'Palpate', technique: 'palpate' },
+        { id: 'chest-percuss', label: 'Percuss', technique: 'percuss' },
+        { id: 'chest-auscultate-lungs', label: 'Auscultate — Lungs', technique: 'auscultate' },
+        { id: 'chest-auscultate-heart', label: 'Auscultate — Heart', technique: 'auscultate' },
       ]},
     ];
     // Abdomen: Clinical exam order is Inspect → Auscultate → Percuss → Palpate
-    // (auscultate BEFORE palpation to avoid altering bowel sounds)
     case 'abdomen': return [
-      { id: 'abd-general', label: 'General Inspection', actions: [
-        { id: 'abd-inspect', label: 'Distension, bruising, scars, visible peristalsis', technique: 'inspect' },
-      ]},
-      { id: 'ruq', label: 'Right Upper Quadrant', actions: [
-        { id: 'ruq-inspect', label: 'Inspect RUQ', technique: 'inspect' },
-        { id: 'ruq-auscultate', label: 'Bowel sounds RUQ', technique: 'auscultate' },
-        { id: 'ruq-percuss', label: 'Percussion — liver span', technique: 'percuss' },
-        { id: 'ruq-palpate', label: 'Tenderness, hepatomegaly, Murphy sign', technique: 'palpate' },
-      ]},
-      { id: 'luq', label: 'Left Upper Quadrant', actions: [
-        { id: 'luq-inspect', label: 'Inspect LUQ', technique: 'inspect' },
-        { id: 'luq-auscultate', label: 'Bowel sounds LUQ', technique: 'auscultate' },
-        { id: 'luq-percuss', label: 'Percussion — splenic dullness', technique: 'percuss' },
-        { id: 'luq-palpate', label: 'Tenderness, splenomegaly', technique: 'palpate' },
-      ]},
-      { id: 'rlq', label: 'Right Lower Quadrant', actions: [
-        { id: 'rlq-inspect', label: 'Inspect RLQ', technique: 'inspect' },
-        { id: 'rlq-auscultate', label: 'Bowel sounds RLQ', technique: 'auscultate' },
-        { id: 'rlq-percuss', label: 'Percussion RLQ', technique: 'percuss' },
-        { id: 'rlq-palpate', label: 'Rebound, Rovsing, McBurney', technique: 'palpate' },
-      ]},
-      { id: 'llq', label: 'Left Lower Quadrant', actions: [
-        { id: 'llq-inspect', label: 'Inspect LLQ', technique: 'inspect' },
-        { id: 'llq-auscultate', label: 'Bowel sounds LLQ', technique: 'auscultate' },
-        { id: 'llq-percuss', label: 'Percussion LLQ', technique: 'percuss' },
-        { id: 'llq-palpate', label: 'Tenderness, diverticular signs', technique: 'palpate' },
+      { id: 'abd-exam', label: 'Abdomen', actions: [
+        { id: 'abd-inspect', label: 'Inspect', technique: 'inspect' },
+        { id: 'abd-auscultate', label: 'Auscultate', technique: 'auscultate' },
+        { id: 'abd-percuss', label: 'Percuss', technique: 'percuss' },
+        { id: 'abd-palpate', label: 'Palpate', technique: 'palpate' },
       ]},
     ];
     case 'pelvis': return [
-      { id: 'pelvis-test', label: 'Stability', actions: [
-        { id: 'pelvis-inspect', label: 'Deformity, bruising', technique: 'inspect' },
-        { id: 'pelvis-palpate', label: 'Spring test — compress ONCE', technique: 'palpate' },
-      ]},
-      { id: 'perineum', label: 'Perineum', actions: [
-        { id: 'perineum-inspect', label: 'Bleeding, priapism', technique: 'inspect' },
+      { id: 'pelvis-exam', label: 'Pelvis', actions: [
+        { id: 'pelvis-inspect', label: 'Inspect', technique: 'inspect' },
+        { id: 'pelvis-palpate', label: 'Palpate', technique: 'palpate' },
       ]},
     ];
     case 'extremities': return [
-      { id: 'r-arm', label: 'Right Arm', actions: [
-        { id: 'rarm-inspect', label: 'Deformity, wounds, swelling', technique: 'inspect' },
-        { id: 'rarm-palpate', label: 'Pulses, sensation, motor', technique: 'palpate' },
+      { id: 'upper-limbs', label: 'Upper Limbs', actions: [
+        { id: 'arms-inspect', label: 'Inspect', technique: 'inspect' },
+        { id: 'arms-palpate', label: 'Palpate', technique: 'palpate' },
       ]},
-      { id: 'l-arm', label: 'Left Arm', actions: [
-        { id: 'larm-inspect', label: 'Deformity, wounds, swelling', technique: 'inspect' },
-        { id: 'larm-palpate', label: 'Pulses, sensation, motor', technique: 'palpate' },
-      ]},
-      { id: 'r-leg', label: 'Right Leg', actions: [
-        { id: 'rleg-inspect', label: 'Deformity, wounds, swelling', technique: 'inspect' },
-        { id: 'rleg-palpate', label: 'DP/PT pulses, sensation, motor', technique: 'palpate' },
-      ]},
-      { id: 'l-leg', label: 'Left Leg', actions: [
-        { id: 'lleg-inspect', label: 'Deformity, wounds, swelling', technique: 'inspect' },
-        { id: 'lleg-palpate', label: 'Pulses, sensation, motor', technique: 'palpate' },
+      { id: 'lower-limbs', label: 'Lower Limbs', actions: [
+        { id: 'legs-inspect', label: 'Inspect', technique: 'inspect' },
+        { id: 'legs-palpate', label: 'Palpate', technique: 'palpate' },
       ]},
     ];
     case 'posterior-logroll': return [
-      { id: 'logroll', label: 'Log Roll', actions: [
-        { id: 'logroll-inspect', label: 'Maintain C-spine. Roll on command.', technique: 'inspect' },
-      ]},
-      { id: 'spine', label: 'Spine', actions: [
-        { id: 'spine-palpate', label: 'Each process — tenderness, step', technique: 'palpate' },
-        { id: 'spine-inspect', label: 'Bruising, wounds, haematoma', technique: 'inspect' },
-      ]},
-      { id: 'flanks', label: 'Flanks & Buttocks', actions: [
-        { id: 'flanks-inspect', label: 'Grey Turner, wounds, bleeding', technique: 'inspect' },
+      { id: 'posterior-exam', label: 'Posterior', actions: [
+        { id: 'logroll-inspect', label: 'Log Roll', technique: 'inspect' },
+        { id: 'spine-inspect', label: 'Inspect Spine', technique: 'inspect' },
+        { id: 'spine-palpate', label: 'Palpate Spine', technique: 'palpate' },
       ]},
     ];
     default: return [];
@@ -199,59 +129,54 @@ function getFinding(caseData: CaseScenario, regionId: string, actionId: string):
   const disability = caseData.abcde?.disability;
   const airway = caseData.abcde?.airway;
 
-  // Chest auscultation → lung sounds
-  if (actionId.includes('auscultate') && (actionId.startsWith('rul') || actionId.startsWith('rll') || actionId.startsWith('lul') || actionId.startsWith('lll'))) {
+  // Chest — consolidated techniques
+  if (actionId === 'chest-inspect') {
+    const chestFindings = ss?.chest?.filter(f => !f.toLowerCase().includes('clear') && !f.toLowerCase().includes('wheez') && !f.toLowerCase().includes('breath'));
+    return chestFindings?.length ? chestFindings.join('. ') : 'Equal bilateral chest expansion. No wounds, bruising, or deformity. No paradoxical movement.';
+  }
+  if (actionId === 'chest-palpate') {
+    return ss?.chest?.some(f => f.toLowerCase().includes('crepitus') || f.toLowerCase().includes('tender'))
+      ? ss.chest.filter(f => f.toLowerCase().includes('crepitus') || f.toLowerCase().includes('tender') || f.toLowerCase().includes('emphysema')).join('. ')
+      : 'No tenderness. No crepitus. No subcutaneous emphysema. Trachea central.';
+  }
+  if (actionId === 'chest-percuss') {
+    if (breathing?.findings?.some(f => f.toLowerCase().includes('pneumothorax'))) return 'Hyper-resonant percussion note — suggests pneumothorax.';
+    if (breathing?.findings?.some(f => f.toLowerCase().includes('effusion') || f.toLowerCase().includes('haemothorax'))) return 'Dull percussion note — suggests fluid collection.';
+    return 'Resonant percussion note bilaterally — normal.';
+  }
+  if (actionId === 'chest-auscultate-lungs') {
     if (breathing?.auscultation?.length) return breathing.auscultation.join('. ');
-    return 'Vesicular breath sounds. Normal air entry.';
+    const lungFindings = breathing?.findings?.filter(f => f.toLowerCase().includes('wheez') || f.toLowerCase().includes('crackle') || f.toLowerCase().includes('air entry') || f.toLowerCase().includes('diminished'));
+    return lungFindings?.length ? lungFindings.join('. ') : 'Vesicular breath sounds bilaterally. Good air entry throughout.';
   }
-  // Heart sounds
-  if (actionId.startsWith('heart-')) {
-    return circ?.ecgFindings?.length ? `S1 S2 present. ${circ.ecgFindings[0]}` : 'S1 S2 present. No murmurs.';
+  if (actionId === 'chest-auscultate-heart') {
+    if (circ?.ecgFindings?.length) return `Heart sounds: S1 S2 present. ${circ.ecgFindings[0]}`;
+    return 'Heart sounds: S1 S2 present. No murmurs, rubs, or gallops.';
   }
-  // Chest percussion
-  if (actionId.includes('percuss') && (actionId.startsWith('rul') || actionId.startsWith('rll') || actionId.startsWith('lul') || actionId.startsWith('lll'))) {
-    if (breathing?.findings?.some(f => f.toLowerCase().includes('pneumothorax'))) return 'Hyper-resonant';
-    if (breathing?.findings?.some(f => f.toLowerCase().includes('effusion'))) return 'Dull — fluid';
-    return 'Resonant — normal';
-  }
-  // Chest wall
-  if (actionId === 'chest-inspect') return ss?.chest?.filter(f => !f.toLowerCase().includes('clear') && !f.toLowerCase().includes('wheez')).join('. ') || 'Equal expansion. No wounds. No flail.';
-  if (actionId === 'chest-palpate') return 'No tenderness. No crepitus. No subcutaneous emphysema.';
-  // Abdomen — quadrant inspection
-  if (actionId.includes('inspect') && (actionId.startsWith('ruq') || actionId.startsWith('luq') || actionId.startsWith('rlq') || actionId.startsWith('llq'))) {
-    const abd = ss?.abdomen || [];
-    const quadrant = actionId.substring(0, 3).toUpperCase();
-    const relevant = abd.filter(f => f.toLowerCase().includes(quadrant.toLowerCase()) || f.toLowerCase().includes('distend') || f.toLowerCase().includes('bruis'));
-    return relevant.length ? relevant.join('. ') : `${quadrant}: No visible abnormality. No bruising, scars, or distension.`;
-  }
-  // Abdomen — bowel sounds (auscultate BEFORE palpation)
-  if (actionId.includes('auscultate') && (actionId.startsWith('ruq') || actionId.startsWith('luq') || actionId.startsWith('rlq') || actionId.startsWith('llq'))) {
-    const abd = ss?.abdomen || [];
-    if (abd.some(f => f.toLowerCase().includes('absent bowel'))) return 'Absent bowel sounds — no sounds heard over 2 minutes';
-    if (abd.some(f => f.toLowerCase().includes('hyperactive'))) return 'Hyperactive bowel sounds — high-pitched, frequent gurgling';
-    if (abd.some(f => f.toLowerCase().includes('tinkling'))) return 'Tinkling bowel sounds — suggests obstruction';
-    return 'Normal bowel sounds present — 5-30 sounds per minute';
-  }
-  // Abdomen — percussion
-  if (actionId.includes('percuss') && (actionId.startsWith('ruq') || actionId.startsWith('luq') || actionId.startsWith('rlq') || actionId.startsWith('llq'))) {
-    const abd = ss?.abdomen || [];
-    if (actionId.startsWith('ruq')) return abd.some(f => f.toLowerCase().includes('hepato')) ? 'Dull — enlarged liver span >12cm' : 'Liver span normal (6-12cm). Tympanic elsewhere.';
-    if (abd.some(f => f.toLowerCase().includes('ascites') || f.toLowerCase().includes('fluid'))) return 'Shifting dullness present — suggests fluid';
-    return 'Tympanic — normal gas-filled bowel';
-  }
-  // Abdomen — palpation (done LAST to avoid altering bowel sounds)
-  if (actionId.includes('palpate') && (actionId.startsWith('ruq') || actionId.startsWith('luq') || actionId.startsWith('rlq') || actionId.startsWith('llq'))) {
-    const abd = ss?.abdomen || [];
-    if (abd.length) return abd.join('. ');
-    return 'Soft, non-tender. No guarding or rigidity. No masses.';
-  }
-  // Abdomen — general inspection
+  // Abdomen — consolidated techniques (each covers the whole abdomen)
   if (actionId === 'abd-inspect') {
     const abd = ss?.abdomen || [];
-    const inspectFindings = abd.filter(f => f.toLowerCase().includes('distend') || f.toLowerCase().includes('bruis') || f.toLowerCase().includes('scar'));
+    const inspectFindings = abd.filter(f => f.toLowerCase().includes('distend') || f.toLowerCase().includes('bruis') || f.toLowerCase().includes('scar') || f.toLowerCase().includes('visible'));
     return inspectFindings.length ? inspectFindings.join('. ') : 'Abdomen flat, symmetrical. No distension. No visible bruising, scars, or peristalsis.';
   }
-  if (actionId.includes('percuss') && (actionId.startsWith('ruq') || actionId.startsWith('luq') || actionId.startsWith('rlq') || actionId.startsWith('llq'))) return 'Tympanic — normal';
+  if (actionId === 'abd-auscultate') {
+    const abd = ss?.abdomen || [];
+    if (abd.some(f => f.toLowerCase().includes('absent bowel'))) return 'Absent bowel sounds — no sounds heard over 2 minutes in all 4 quadrants.';
+    if (abd.some(f => f.toLowerCase().includes('hyperactive'))) return 'Hyperactive bowel sounds — high-pitched, frequent gurgling throughout.';
+    if (abd.some(f => f.toLowerCase().includes('tinkling'))) return 'Tinkling bowel sounds — suggests obstruction.';
+    return 'Normal bowel sounds present in all 4 quadrants — 5-30 sounds per minute.';
+  }
+  if (actionId === 'abd-percuss') {
+    const abd = ss?.abdomen || [];
+    if (abd.some(f => f.toLowerCase().includes('ascites') || f.toLowerCase().includes('fluid'))) return 'Shifting dullness present — suggests free fluid.';
+    if (abd.some(f => f.toLowerCase().includes('hepato'))) return 'RUQ: Dull — enlarged liver span >12cm. Rest: Tympanic.';
+    return 'Tympanic throughout all quadrants — normal gas-filled bowel.';
+  }
+  if (actionId === 'abd-palpate') {
+    const abd = ss?.abdomen || [];
+    if (abd.length) return abd.join('. ');
+    return 'Soft, non-tender in all 4 quadrants. No guarding, rigidity, or masses.';
+  }
   // Head
   if (actionId === 'pupils-inspect') return typeof disability?.pupils === 'string' ? disability.pupils : 'Equal and reactive';
   if (actionId === 'ears-inspect') return ss?.headDetailed?.ears?.join('. ') || 'No Battle sign. No CSF. Canals clear.';
@@ -267,11 +192,17 @@ function getFinding(caseData: CaseScenario, regionId: string, actionId: string):
   if (actionId === 'jvd-inspect') return ss?.neck?.find(f => f.toLowerCase().includes('jvd') || f.toLowerCase().includes('jugular')) || 'No JVD';
   if (actionId.startsWith('cspine')) return ss?.neck?.join('. ') || 'No midline tenderness. No step deformity.';
   // Pelvis
-  if (regionId === 'pelvis') return ss?.pelvis?.join('. ') || 'Stable on spring test.';
+  if (actionId === 'pelvis-inspect') return ss?.pelvis?.some(f => f.toLowerCase().includes('deform') || f.toLowerCase().includes('bruis')) ? ss.pelvis.join('. ') : 'No deformity. No bruising. Leg length equal.';
+  if (actionId === 'pelvis-palpate') return ss?.pelvis?.join('. ') || 'Pelvis stable on single spring test. No instability.';
   // Extremities
-  if (regionId === 'extremities') return ss?.extremities?.join('. ') || 'No deformity. Pulses present. Sensation intact.';
+  if (actionId === 'arms-inspect') return ss?.extremities?.filter(f => f.toLowerCase().includes('arm') || f.toLowerCase().includes('upper') || f.toLowerCase().includes('wrist') || f.toLowerCase().includes('hand')).join('. ') || 'No deformity, wounds, or swelling. Colour normal bilaterally.';
+  if (actionId === 'arms-palpate') return ss?.extremities?.length ? ss.extremities.join('. ') : 'Radial pulses present and equal. Sensation intact. Full motor power bilaterally.';
+  if (actionId === 'legs-inspect') return ss?.extremities?.filter(f => f.toLowerCase().includes('leg') || f.toLowerCase().includes('lower') || f.toLowerCase().includes('ankle') || f.toLowerCase().includes('foot') || f.toLowerCase().includes('femur') || f.toLowerCase().includes('knee')).join('. ') || 'No deformity, wounds, or swelling. Colour normal bilaterally.';
+  if (actionId === 'legs-palpate') return ss?.extremities?.length ? ss.extremities.join('. ') : 'Dorsalis pedis and posterior tibial pulses present. Sensation intact. Full motor power bilaterally.';
   // Posterior
-  if (regionId === 'posterior-logroll') return ss?.posterior?.join('. ') || 'No spinal tenderness. No step deformity.';
+  if (actionId === 'logroll-inspect') return 'Log roll performed with manual in-line C-spine stabilisation. Patient rolled on command.';
+  if (actionId === 'spine-inspect') return ss?.posterior?.join('. ') || 'No bruising, wounds, or haematoma along spine.';
+  if (actionId === 'spine-palpate') return ss?.posterior?.join('. ') || 'No midline tenderness. No step deformity. No muscle spasm.';
   return 'No abnormalities detected.';
 }
 
@@ -328,27 +259,27 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
     // Play sounds for auscultation actions
     if (actionId.includes('auscultate') && patientSounds) {
       stopAllSounds();
-      if (actionId.startsWith('rul') || actionId.startsWith('rll')) {
-        playBreathSound(patientSounds.rightLung, 4000);
-      } else if (actionId.startsWith('lul') || actionId.startsWith('lll')) {
+      if (actionId === 'chest-auscultate-lungs') {
+        // Play both lung sounds sequentially (left then right)
         playBreathSound(patientSounds.leftLung, 4000);
-      } else if (actionId.startsWith('ruq') || actionId.startsWith('luq') || actionId.startsWith('rlq') || actionId.startsWith('llq')) {
-        // Bowel sounds — use breath sound engine with a proxy for now
-        // TODO: Add dedicated bowel sound synthesis
+      } else if (actionId === 'chest-auscultate-heart') {
+        playHeartSound(patientSounds.heartSound, 5000);
+      } else if (actionId === 'abd-auscultate') {
+        // Bowel sounds
+        playBreathSound('clear', 3000); // Placeholder — bowel sound synthesis TODO
+      } else if (actionId === 'airway-listen') {
+        // Airway sounds
+        playBreathSound(patientSounds.leftLung, 3000);
       }
-    }
-    if (actionId.startsWith('heart-') && patientSounds) {
-      stopAllSounds();
-      playHeartSound(patientSounds.heartSound, 5000);
     }
 
     // Play percussion sound
     if (actionId.includes('percuss')) {
       stopAllSounds();
-      const finding = getFinding(caseData, activeRegion!, actionId);
-      const percType = finding.toLowerCase().includes('hyper') ? 'hyper-resonant'
-        : finding.toLowerCase().includes('dull') ? 'dull'
-        : finding.toLowerCase().includes('tympanic') ? 'tympanic'
+      const percFinding = getFinding(caseData, activeRegion!, actionId);
+      const percType = percFinding.toLowerCase().includes('hyper') ? 'hyper-resonant'
+        : percFinding.toLowerCase().includes('dull') ? 'dull'
+        : percFinding.toLowerCase().includes('tympanic') ? 'tympanic'
         : 'resonant';
       playPercussionSound(percType);
     }

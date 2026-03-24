@@ -48,6 +48,45 @@ async function loadJsPDF(): Promise<any> {
   throw new Error('Failed to load jsPDF from all CDN sources');
 }
 
+// ==========================================================================
+// DESIGN CONSTANTS - Three font sizes only, consistent spacing
+// ==========================================================================
+const FONT = {
+  HEADER: 12,       // Section headers - bold
+  BODY: 9,          // Body text - normal
+  LABEL: 8,         // Labels, metadata, small text - normal
+} as const;
+
+const LINE_HEIGHT = {
+  HEADER: 5.5,      // Line height for 12pt
+  BODY: 4.2,        // Line height for 9pt
+  LABEL: 3.8,       // Line height for 8pt
+} as const;
+
+const SECTION_GAP = 10;       // Consistent 10mm gap before every section
+const PAGE_BORDER_INSET = 8;  // Inset for the subtle gray page border
+
+const COLOR = {
+  PRIMARY: [59, 130, 246] as [number, number, number],
+  BLACK: [0, 0, 0] as [number, number, number],
+  BODY_TEXT: [50, 50, 50] as [number, number, number],
+  MUTED: [100, 100, 100] as [number, number, number],
+  LIGHT_MUTED: [150, 150, 150] as [number, number, number],
+  GREEN: [34, 197, 94] as [number, number, number],
+  RED: [220, 38, 38] as [number, number, number],
+  ORANGE: [234, 146, 60] as [number, number, number],
+  YELLOW: [234, 179, 8] as [number, number, number],
+  PURPLE: [139, 92, 246] as [number, number, number],
+  WHITE: [255, 255, 255] as [number, number, number],
+  BG_LIGHT: [248, 250, 252] as [number, number, number],
+  BG_GREEN: [240, 253, 244] as [number, number, number],
+  BG_RED: [254, 242, 242] as [number, number, number],
+  BG_YELLOW: [255, 251, 235] as [number, number, number],
+  BG_BLUE: [239, 246, 255] as [number, number, number],
+  BORDER_GRAY: [210, 210, 210] as [number, number, number],
+  ROW_ALT: [245, 245, 245] as [number, number, number],
+};
+
 /**
  * Generate a PDF export of the session summary
  */
@@ -67,11 +106,11 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
   const contentWidth = pageWidth - 2 * margin;
   let yPosition = margin;
 
-  // Helper function to check if we need a new page
+  // Helper: check if we need a new page
   const checkPageBreak = (requiredSpace: number): boolean => {
-    if (yPosition + requiredSpace > pageHeight - margin) {
+    if (yPosition + requiredSpace > pageHeight - 20) {
       doc.addPage();
-      yPosition = margin;
+      yPosition = margin + 5; // Leave room for page border top
       return true;
     }
     return false;
@@ -84,133 +123,153 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
       .replace(/→/g, '->')
       .replace(/←/g, '<-')
       .replace(/°/g, ' deg')
-      .replace(/[^\x20-\x7E\n]/g, ''); // Remove any remaining non-ASCII
+      .replace(/[^\x20-\x7E\n]/g, '');
   };
 
-  // Helper function to add text with word wrap
-  const addText = (text: string, fontSize: number, fontStyle: 'normal' | 'bold' = 'normal', rgbColor: [number, number, number] = [0, 0, 0]): number => {
+  // Helper: add wrapped text at current yPosition, auto page-breaking
+  const addWrappedText = (
+    text: string,
+    fontSize: number,
+    lineHeight: number,
+    fontStyle: 'normal' | 'bold' = 'normal',
+    rgbColor: [number, number, number] = COLOR.BODY_TEXT,
+    xOffset = 0,
+  ): void => {
     doc.setFontSize(fontSize);
     doc.setFont('helvetica', fontStyle);
     doc.setTextColor(rgbColor[0], rgbColor[1], rgbColor[2]);
 
-    const lines = doc.splitTextToSize(text, contentWidth);
-    const lineHeight = fontSize * 0.5;
-
-    (lines as string[]).forEach((line: string) => {
-      if (yPosition > pageHeight - margin - lineHeight) {
+    const lines = doc.splitTextToSize(text, contentWidth - xOffset) as string[];
+    for (const line of lines) {
+      if (yPosition > pageHeight - 20) {
         doc.addPage();
-        yPosition = margin;
+        yPosition = margin + 5;
       }
-      doc.text(line, margin, yPosition);
+      doc.text(line, margin + xOffset, yPosition);
       yPosition += lineHeight;
-    });
-
-    return yPosition;
+    }
   };
 
-  // Helper function to add a section header
+  // Helper: add a section header with consistent spacing
   const addSectionHeader = (text: string): void => {
-    yPosition += 12; // More space before header
-    checkPageBreak(18);
-    doc.setDrawColor(59, 130, 246);
+    yPosition += SECTION_GAP;
+    checkPageBreak(15);
+    // Draw blue accent line
+    doc.setDrawColor(COLOR.PRIMARY[0], COLOR.PRIMARY[1], COLOR.PRIMARY[2]);
     doc.setLineWidth(0.5);
     doc.line(margin, yPosition, pageWidth - margin, yPosition);
-    yPosition += 5; // More gap after line
-    addText(sanitizeText(text), 13, 'bold', [59, 130, 246]); // Slightly smaller font
-    yPosition += 2; // Space after header text
+    yPosition += 6; // Fixed gap below line before text
+    // Header text
+    doc.setFontSize(FONT.HEADER);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(COLOR.PRIMARY[0], COLOR.PRIMARY[1], COLOR.PRIMARY[2]);
+    doc.text(sanitizeText(text), margin, yPosition);
+    yPosition += LINE_HEIGHT.HEADER + 2; // Fixed gap after header text
   };
 
-  // Helper function to add a rounded rect with fill
-  // jsPDF v4 requires separate rx, ry radius values
+  // Helper: add a filled rounded rect
   const addFilledRoundedRect = (x: number, y: number, w: number, h: number, r: number, rgbColor: [number, number, number]): void => {
     doc.setFillColor(rgbColor[0], rgbColor[1], rgbColor[2]);
     doc.roundedRect(x, y, w, h, r, r, 'F');
   };
 
-  // Helper function to add a rounded rect with stroke
+  // Helper: add a stroked rounded rect
   const addStrokeRoundedRect = (x: number, y: number, w: number, h: number, r: number, rgbColor: [number, number, number]): void => {
     doc.setDrawColor(rgbColor[0], rgbColor[1], rgbColor[2]);
     doc.setLineWidth(0.3);
     doc.roundedRect(x, y, w, h, r, r, 'S');
   };
 
-  // Helper function to add text at position
-  const addTextAt = (text: string, x: number, y: number, fontSize: number, fontStyle: 'normal' | 'bold' = 'normal', rgbColor: [number, number, number] = [0, 0, 0]): void => {
+  // Helper: add text at a specific position (no yPosition mutation)
+  const addTextAt = (
+    text: string,
+    x: number,
+    y: number,
+    fontSize: number,
+    fontStyle: 'normal' | 'bold' = 'normal',
+    rgbColor: [number, number, number] = COLOR.BLACK,
+  ): void => {
     doc.setFontSize(fontSize);
     doc.setFont('helvetica', fontStyle);
     doc.setTextColor(rgbColor[0], rgbColor[1], rgbColor[2]);
     doc.text(text, x, y);
   };
 
-  // Helper function to add centered text
-  const addCenteredText = (text: string, y: number, fontSize: number, fontStyle: 'normal' | 'bold' = 'normal'): void => {
+  // Helper: add centered text at a specific y
+  const addCenteredText = (
+    text: string,
+    y: number,
+    fontSize: number,
+    fontStyle: 'normal' | 'bold' = 'normal',
+    rgbColor: [number, number, number] = COLOR.BLACK,
+  ): void => {
     doc.setFontSize(fontSize);
     doc.setFont('helvetica', fontStyle);
+    doc.setTextColor(rgbColor[0], rgbColor[1], rgbColor[2]);
     doc.text(text, pageWidth / 2, y, { align: 'center' } as never);
   };
 
-  // Helper function to add a clickable link
-  const addClickableLink = (text: string, url: string, x: number, y: number, fontSize: number): void => {
-    doc.setFontSize(fontSize);
+  // Helper: add a clickable link
+  const addClickableLink = (text: string, url: string, x: number, y: number): void => {
+    doc.setFontSize(FONT.BODY);
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(59, 130, 246); // Blue
-    // Truncate long text
-    const maxWidth = contentWidth - (x - margin) - 5;
-    const truncated = doc.splitTextToSize(text, maxWidth)[0] as string;
+    doc.setTextColor(COLOR.PRIMARY[0], COLOR.PRIMARY[1], COLOR.PRIMARY[2]);
+    const maxWidth = contentWidth - (x - margin) - 2;
+    const truncated = (doc.splitTextToSize(text, maxWidth) as string[])[0];
     doc.textWithLink(truncated, x, y, { url });
   };
 
-  // ========== HEADER ==========
-  // Title background
-  addFilledRoundedRect(0, 0, pageWidth, 35, 0, [59, 130, 246]);
+  // ========== HEADER BANNER ==========
+  addFilledRoundedRect(0, 0, pageWidth, 32, 0, COLOR.PRIMARY);
 
-  addCenteredText('UAE Paramedic Case Generator', 15, 22, 'bold');
-  addCenteredText('Session Summary Report', 23, 12);
-  addCenteredText(`Generated: ${new Date().toLocaleString('en-GB')}`, 30, 9);
+  doc.setTextColor(255, 255, 255);
+  addCenteredText('UAE Paramedic Case Generator', 13, 18, 'bold', COLOR.WHITE);
+  addCenteredText('Session Summary Report', 21, FONT.BODY, 'normal', COLOR.WHITE);
+  addCenteredText(`Generated: ${new Date().toLocaleString('en-GB')}`, 28, FONT.LABEL, 'normal', COLOR.WHITE);
 
-  yPosition = 45;
+  yPosition = 40;
 
   // ========== CASE INFORMATION ==========
   addSectionHeader('Case Information');
 
   const caseInfo = [
-    [`Case Title:`, sanitizeText(caseData.title)],
-    [`Category:`, sanitizeText(caseData.category)],
-    [`Priority:`, caseData.priority.toUpperCase()],
-    [`Complexity:`, caseData.complexity.toUpperCase()],
-    [`Year Level:`, session.studentYear],
-    [`Patient:`, `${caseData.patientInfo.age}y ${caseData.patientInfo.gender}`],
-    [`Location:`, sanitizeText(caseData.dispatchInfo.location)],
+    ['Case Title:', sanitizeText(caseData.title)],
+    ['Category:', sanitizeText(caseData.category)],
+    ['Priority:', caseData.priority.toUpperCase()],
+    ['Complexity:', caseData.complexity.toUpperCase()],
+    ['Year Level:', session.studentYear],
+    ['Patient:', `${caseData.patientInfo.age}y ${caseData.patientInfo.gender}`],
+    ['Location:', sanitizeText(caseData.dispatchInfo.location)],
   ];
 
   caseInfo.forEach(([label, value]) => {
-    addTextAt(label, margin, yPosition, 10, 'bold', [0, 0, 0]);
-    addTextAt(value, margin + 35, yPosition, 10, 'normal', [60, 60, 60]);
-    yPosition += 6;
+    checkPageBreak(6);
+    addTextAt(label, margin, yPosition, FONT.BODY, 'bold', COLOR.BLACK);
+    addTextAt(value, margin + 30, yPosition, FONT.BODY, 'normal', COLOR.BODY_TEXT);
+    yPosition += LINE_HEIGHT.BODY + 1;
   });
 
   // ========== SIMULATION OBJECTIVE ==========
   if (options.simulationObjective) {
-    yPosition += 5;
     addSectionHeader('Simulation Objective');
 
-    addFilledRoundedRect(margin, yPosition, contentWidth, 18, 2, [239, 246, 255]);
-    addStrokeRoundedRect(margin, yPosition, contentWidth, 18, 2, [59, 130, 246]);
+    checkPageBreak(20);
+    addFilledRoundedRect(margin, yPosition, contentWidth, 16, 2, COLOR.BG_BLUE);
+    addStrokeRoundedRect(margin, yPosition, contentWidth, 16, 2, COLOR.PRIMARY);
 
-    addTextAt('Objective:', margin + 3, yPosition + 6, 9, 'bold', [59, 130, 246]);
-    const objLines = doc.splitTextToSize(sanitizeText(options.simulationObjective.primaryObjective), contentWidth - 30);
-    addTextAt((objLines as string[])[0], margin + 25, yPosition + 6, 9, 'normal', [60, 60, 60]);
+    addTextAt('Objective:', margin + 3, yPosition + 5, FONT.BODY, 'bold', COLOR.PRIMARY);
+    const objLines = doc.splitTextToSize(sanitizeText(options.simulationObjective.primaryObjective), contentWidth - 30) as string[];
+    addTextAt(objLines[0], margin + 25, yPosition + 5, FONT.BODY, 'normal', COLOR.BODY_TEXT);
 
-    addTextAt('Skills Focus:', margin + 3, yPosition + 13, 8, 'bold', [100, 100, 100]);
+    addTextAt('Skills Focus:', margin + 3, yPosition + 11, FONT.LABEL, 'bold', COLOR.MUTED);
     const skillsText = options.simulationObjective.skillsFocus.join(', ');
-    const skillLines = doc.splitTextToSize(skillsText, contentWidth - 30);
-    addTextAt((skillLines as string[])[0], margin + 25, yPosition + 13, 8, 'normal', [100, 100, 100]);
+    const skillLines = doc.splitTextToSize(skillsText, contentWidth - 30) as string[];
+    addTextAt(skillLines[0], margin + 25, yPosition + 11, FONT.LABEL, 'normal', COLOR.MUTED);
 
-    yPosition += 22;
+    yPosition += 20;
   }
 
-  // ========== DISPATCH INFO ==========
-  yPosition += 5;
+  // ========== DISPATCH INFORMATION ==========
   addSectionHeader('Dispatch Information');
 
   const dispatchLines = [
@@ -220,71 +279,79 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
   ];
 
   dispatchLines.forEach((line) => {
-    const lines = doc.splitTextToSize(line, contentWidth);
-    (lines as string[]).forEach((l: string) => {
-      addTextAt(l, margin, yPosition, 10, 'normal', [60, 60, 60]);
-      yPosition += 5;
-    });
+    checkPageBreak(6);
+    const lines = doc.splitTextToSize(line, contentWidth) as string[];
+    for (const l of lines) {
+      addTextAt(l, margin, yPosition, FONT.BODY, 'normal', COLOR.BODY_TEXT);
+      yPosition += LINE_HEIGHT.BODY + 0.5;
+    }
   });
 
   // ========== VITAL SIGNS ==========
-  yPosition += 5;
   addSectionHeader('Initial Vital Signs');
 
   const vitals = caseData.vitalSignsProgression.initial;
-  const vitalSignsParts: string[] = [`BP: ${vitals.bp}`, `Pulse: ${vitals.pulse} bpm`, `RR: ${vitals.respiration}/min`, `SpO2: ${vitals.spo2}%`];
+  const vitalSignsParts: string[] = [
+    `BP: ${vitals.bp}`,
+    `Pulse: ${vitals.pulse} bpm`,
+    `RR: ${vitals.respiration}/min`,
+    `SpO2: ${vitals.spo2}%`,
+  ];
   if (vitals.gcs !== undefined) vitalSignsParts.push(`GCS: ${vitals.gcs}/15`);
   if (vitals.temperature !== undefined) vitalSignsParts.push(`Temp: ${vitals.temperature}C`);
   if (vitals.bloodGlucose !== undefined) vitalSignsParts.push(`Glucose: ${vitals.bloodGlucose} mmol/L`);
 
-  addText(vitalSignsParts.join('    '), 10);
+  addWrappedText(vitalSignsParts.join('    '), FONT.BODY, LINE_HEIGHT.BODY);
 
-  // ========== SCORE SUMMARY ==========
-  yPosition += 5;
+  // ========== PERFORMANCE SUMMARY ==========
   addSectionHeader('Performance Summary');
 
   const percentage = session.totalPossible > 0 ? Math.round((session.score / session.totalPossible) * 100) : 0;
 
-  // Grade calculation
   let grade = 'Needs Improvement';
-  let gradeColor: [number, number, number] = [239, 68, 68]; // red
+  let gradeColor: [number, number, number] = COLOR.RED;
   if (percentage >= 90) {
     grade = 'Excellent';
-    gradeColor = [34, 197, 94]; // green
+    gradeColor = COLOR.GREEN;
   } else if (percentage >= 75) {
     grade = 'Good';
-    gradeColor = [59, 130, 246]; // blue
+    gradeColor = COLOR.PRIMARY;
   } else if (percentage >= 60) {
     grade = 'Satisfactory';
-    gradeColor = [234, 179, 8]; // yellow
+    gradeColor = COLOR.YELLOW;
   }
 
-  // Add score card
-  checkPageBreak(40);
+  checkPageBreak(32);
 
   const scoreBoxY = yPosition;
-  const scoreBoxHeight = 35;
+  const scoreBoxHeight = 28;
 
   // Score card background
-  addFilledRoundedRect(margin, scoreBoxY, contentWidth, scoreBoxHeight, 3, [248, 250, 252]);
+  addFilledRoundedRect(margin, scoreBoxY, contentWidth, scoreBoxHeight, 3, COLOR.BG_LIGHT);
+  addStrokeRoundedRect(margin, scoreBoxY, contentWidth, scoreBoxHeight, 3, COLOR.BORDER_GRAY);
 
-  // Score circle
-  addFilledRoundedRect(margin + 3, scoreBoxY + scoreBoxHeight / 2 - 12, 24, 24, 12, gradeColor);
+  // Score circle (centered vertically in box)
+  const circleY = scoreBoxY + scoreBoxHeight / 2 - 10;
+  addFilledRoundedRect(margin + 4, circleY, 20, 20, 10, gradeColor);
 
-  addTextAt(`${percentage}%`, margin + 15, scoreBoxY + scoreBoxHeight / 2 + 5, 14, 'bold', [255, 255, 255]);
+  // Percentage text centered in circle
+  const pctText = `${percentage}%`;
+  addTextAt(pctText, margin + 14, circleY + 12, FONT.HEADER, 'bold', COLOR.WHITE);
 
-  // Grade info
-  addTextAt(grade, margin + 35, scoreBoxY + 12, 16, 'bold', gradeColor);
-  addTextAt(`${session.score} points out of ${session.totalPossible} possible`, margin + 35, scoreBoxY + 22, 11, 'normal', [80, 80, 80]);
+  // Grade info to the right of circle
+  addTextAt(grade, margin + 30, scoreBoxY + 10, FONT.HEADER, 'bold', gradeColor);
+  addTextAt(
+    `${session.score} / ${session.totalPossible} points`,
+    margin + 30, scoreBoxY + 16, FONT.BODY, 'normal', COLOR.MUTED,
+  );
 
-  // Time info
   if (elapsedTime) {
-    addTextAt(`Time: ${elapsedTime}`, margin + 35, scoreBoxY + 30, 11, 'normal', [80, 80, 80]);
+    addTextAt(`Time: ${elapsedTime}`, margin + 30, scoreBoxY + 22, FONT.BODY, 'normal', COLOR.MUTED);
   }
 
-  yPosition = scoreBoxY + scoreBoxHeight + 10;
+  yPosition = scoreBoxY + scoreBoxHeight + 3;
 
-  // ========== COMPLETED ITEMS ==========
+  // ========== COMPLETED ACTIONS ==========
   const completedItems = (caseData.studentChecklist || []).filter(item => session.completedItems.includes(item.id));
   const missedItems = caseData.studentChecklist.filter(item =>
     !session.completedItems.includes(item.id) && item.yearLevel?.includes(session.studentYear)
@@ -295,41 +362,42 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
     addSectionHeader('Completed Actions');
 
     completedItems.forEach((item) => {
-      checkPageBreak(10);
-      addFilledRoundedRect(margin, yPosition, contentWidth, 7, 1, [236, 253, 245]);
-      addStrokeRoundedRect(margin, yPosition, contentWidth, 7, 1, [34, 197, 94]);
+      checkPageBreak(8);
+      addFilledRoundedRect(margin, yPosition - 1, contentWidth, 6, 1, COLOR.BG_GREEN);
+      addStrokeRoundedRect(margin, yPosition - 1, contentWidth, 6, 1, COLOR.GREEN);
 
-      addTextAt('+', margin + 3, yPosition + 5, 9, 'bold', [34, 197, 94]);
+      addTextAt('+', margin + 3, yPosition + 3, FONT.BODY, 'bold', COLOR.GREEN);
 
-      const text = item.description + (item.critical ? ' (Critical)' : '');
-      const lines = doc.splitTextToSize(text, contentWidth - 12);
-      addTextAt((lines as string[])[0], margin + 8, yPosition + 5, 9, 'normal', [60, 60, 60]);
+      const text = sanitizeText(item.description) + (item.critical ? ' (Critical)' : '');
+      const lines = doc.splitTextToSize(text, contentWidth - 12) as string[];
+      addTextAt(lines[0], margin + 8, yPosition + 3, FONT.BODY, 'normal', COLOR.BODY_TEXT);
 
-      yPosition += 10;
+      yPosition += 8;
     });
   }
 
-  // ========== CRITICAL MISSED ITEMS ==========
+  // ========== CRITICAL MISSED ACTIONS ==========
   if (criticalMissedItems.length > 0) {
     addSectionHeader('CRITICAL - Missed Actions');
 
-    addFilledRoundedRect(margin, yPosition, contentWidth, 6, 0, [254, 226, 226]);
-    addTextAt('(!) The following critical actions were missed:', margin + 3, yPosition + 4, 9, 'bold', [220, 38, 38]);
-    yPosition += 10;
+    addFilledRoundedRect(margin, yPosition - 1, contentWidth, 6, 0, COLOR.BG_RED);
+    addTextAt('(!) The following critical actions were missed:', margin + 3, yPosition + 3, FONT.BODY, 'bold', COLOR.RED);
+    yPosition += 9;
 
     criticalMissedItems.forEach((item) => {
-      checkPageBreak(15);
+      checkPageBreak(12);
 
-      addStrokeRoundedRect(margin, yPosition, contentWidth, 12, 2, [239, 68, 68]);
+      const descLines = doc.splitTextToSize(sanitizeText(item.description), contentWidth - 12) as string[];
+      const boxH = Math.max(8, descLines.length * LINE_HEIGHT.BODY + 3);
 
-      addTextAt('x', margin + 3, yPosition + 5, 9, 'bold', [220, 38, 38]);
+      addStrokeRoundedRect(margin, yPosition, contentWidth, boxH, 2, COLOR.RED);
+      addTextAt('x', margin + 3, yPosition + 5, FONT.BODY, 'bold', COLOR.RED);
 
-      const lines = doc.splitTextToSize(item.description, contentWidth - 10);
-      (lines as string[]).forEach((line: string, i: number) => {
-        addTextAt(line, margin + 8, yPosition + 5 + (i * 4), 9, 'normal', [60, 60, 60]);
+      descLines.forEach((line: string, i: number) => {
+        addTextAt(line, margin + 8, yPosition + 5 + (i * LINE_HEIGHT.BODY), FONT.BODY, 'normal', COLOR.BODY_TEXT);
       });
 
-      yPosition += 14;
+      yPosition += boxH + 3;
     });
   }
 
@@ -341,36 +409,34 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
     nonCriticalMissed.forEach((item) => {
       checkPageBreak(8);
 
-      addStrokeRoundedRect(margin, yPosition, contentWidth, 6, 1, [251, 146, 60]);
-
-      addTextAt('-', margin + 3, yPosition + 4, 9, 'bold', [251, 146, 60]);
+      addStrokeRoundedRect(margin, yPosition - 1, contentWidth, 6, 1, COLOR.ORANGE);
+      addTextAt('-', margin + 3, yPosition + 3, FONT.BODY, 'bold', COLOR.ORANGE);
 
       const truncatedText = item.description.length > 90
         ? item.description.substring(0, 87) + '...'
         : item.description;
-      addTextAt(truncatedText, margin + 8, yPosition + 4, 9, 'normal', [80, 80, 80]);
+      addTextAt(sanitizeText(truncatedText), margin + 8, yPosition + 3, FONT.BODY, 'normal', COLOR.MUTED);
 
       yPosition += 8;
     });
   }
 
-  // ========== TEACHING POINTS ==========
+  // ========== KEY LEARNING POINTS ==========
   if (caseData.teachingPoints.length > 0) {
     addSectionHeader('Key Learning Points');
 
     caseData.teachingPoints.forEach((point, i) => {
       checkPageBreak(10);
 
-      addFilledRoundedRect(margin, yPosition, 6, 6, 1, [239, 246, 255]);
+      addFilledRoundedRect(margin, yPosition - 1, 6, 6, 1, COLOR.BG_BLUE);
+      addTextAt(`${i + 1}`, margin + 2.5, yPosition + 3, FONT.BODY, 'bold', COLOR.PRIMARY);
 
-      addTextAt(`${i + 1}`, margin + 3, yPosition + 4.5, 9, 'bold', [59, 130, 246]);
-
-      const lines = doc.splitTextToSize(sanitizeText(point), contentWidth - 12);
-      (lines as string[]).forEach((line: string, idx: number) => {
-        addTextAt(line, margin + 10, yPosition + 4.5 + (idx * 4), 9, 'normal', [60, 60, 60]);
+      const lines = doc.splitTextToSize(sanitizeText(point), contentWidth - 12) as string[];
+      lines.forEach((line: string, idx: number) => {
+        addTextAt(line, margin + 10, yPosition + 3 + (idx * LINE_HEIGHT.BODY), FONT.BODY, 'normal', COLOR.BODY_TEXT);
       });
 
-      yPosition += lines.length * 5 + 3;
+      yPosition += lines.length * LINE_HEIGHT.BODY + 4;
     });
   }
 
@@ -379,51 +445,49 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
     addSectionHeader('Applied Treatments & Interventions');
 
     options.appliedTreatments.forEach((treatment, index) => {
-      checkPageBreak(20);
+      checkPageBreak(18);
 
-      // Treatment box
-      addFilledRoundedRect(margin, yPosition, contentWidth, 18, 2, [240, 253, 244]);
-      addStrokeRoundedRect(margin, yPosition, contentWidth, 18, 2, [34, 197, 94]);
-
-      // Treatment number and description (strip vital changes and sanitize)
+      // Clean description: strip vital-change suffixes like "-- SpO2: 85% -> 92%, HR: 120 -> 105."
       const cleanDesc = sanitizeText(treatment.description || treatment.name)
-        .replace(/\s*[-—]+\s*(?:[A-Z][A-Za-z\d ]+:\s*[\d./]+[%]?\s*(?:->|→)\s*[\d./]+[%]?(?:,\s*)?)+\.?/g, '.')
-        .replace(/\s*HR:\s*\d+\s*->\s*\d+\.?/g, '')
-        .replace(/\s*SpO2:\s*\d+%?\s*->\s*\d+%?\.?/g, '')
-        .replace(/\s*BP:\s*[\d/]+\s*->\s*[\d/]+\.?/g, '')
-        .replace(/\s*RR:\s*\d+\s*->\s*\d+\.?/g, '')
+        // Strip "-- VitalSign: old -> new, VitalSign: old -> new." patterns
+        .replace(/\s*[-—]{1,3}\s*(?:[A-Za-z][A-Za-z\d /]*:\s*[\d./%]+\s*(?:->|->)\s*[\d./%]+(?:\s*,\s*)?)+\.?/g, '')
+        // Fallback: strip individual vital change mentions
+        .replace(/\s*(?:HR|SpO2|BP|RR|GCS|Temp|Temperature|EtCO2):\s*[\d./%]+\s*->\s*[\d./%]+\.?/gi, '')
+        // Clean up trailing/double punctuation
         .replace(/\.{2,}/g, '.')
         .replace(/\.\s*$/, '')
+        .replace(/,\s*$/, '')
         .trim();
-      addTextAt(`${index + 1}.`, margin + 3, yPosition + 5, 10, 'bold', [34, 197, 94]);
-      addTextAt(cleanDesc, margin + 12, yPosition + 5, 10, 'bold', [0, 0, 0]);
 
-      // Applied time
+      // Treatment box
+      addFilledRoundedRect(margin, yPosition, contentWidth, 14, 2, COLOR.BG_GREEN);
+      addStrokeRoundedRect(margin, yPosition, contentWidth, 14, 2, COLOR.GREEN);
+
+      addTextAt(`${index + 1}.`, margin + 3, yPosition + 5, FONT.BODY, 'bold', COLOR.GREEN);
+
+      // Wrap the description within the box width
+      const descLines = doc.splitTextToSize(cleanDesc, contentWidth - 18) as string[];
+      addTextAt(descLines[0], margin + 10, yPosition + 5, FONT.BODY, 'bold', COLOR.BLACK);
+
       const timeStr = new Date(treatment.appliedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-      addTextAt(`Applied at: ${timeStr}`, margin + 12, yPosition + 11, 8, 'normal', [100, 100, 100]);
+      addTextAt(`Applied at: ${timeStr}`, margin + 10, yPosition + 10, FONT.LABEL, 'normal', COLOR.MUTED);
 
-      yPosition += 22;
+      yPosition += 17;
 
       // Treatment effects
       if (treatment.effects.length > 0) {
         treatment.effects.forEach((effect) => {
-          checkPageBreak(8);
+          checkPageBreak(6);
 
-          addTextAt('  >', margin + 5, yPosition + 3, 8, 'normal', [100, 100, 100]);
-          addTextAt(sanitizeText(`${effect.vitalSign}:`), margin + 15, yPosition + 3, 9, 'bold', [60, 60, 60]);
+          addTextAt('>', margin + 6, yPosition, FONT.LABEL, 'normal', COLOR.MUTED);
+          addTextAt(sanitizeText(`${effect.vitalSign}:`), margin + 12, yPosition, FONT.BODY, 'bold', COLOR.BODY_TEXT);
+          addTextAt(sanitizeText(String(effect.oldValue)), margin + 45, yPosition, FONT.BODY, 'normal', COLOR.RED);
+          addTextAt('->', margin + 65, yPosition, FONT.BODY, 'bold', COLOR.MUTED);
+          addTextAt(sanitizeText(String(effect.newValue)), margin + 72, yPosition, FONT.BODY, 'bold', COLOR.GREEN);
 
-          // Old value (red)
-          addTextAt(sanitizeText(String(effect.oldValue)), margin + 50, yPosition + 3, 9, 'normal', [220, 38, 38]);
-
-          // Arrow
-          addTextAt('->', margin + 75, yPosition + 3, 9, 'bold', [100, 100, 100]);
-
-          // New value (green)
-          addTextAt(sanitizeText(String(effect.newValue)), margin + 85, yPosition + 3, 9, 'bold', [34, 197, 94]);
-
-          yPosition += 6;
+          yPosition += LINE_HEIGHT.BODY + 1;
         });
-        yPosition += 3;
+        yPosition += 2;
       }
     });
   }
@@ -435,40 +499,39 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
     const initial = options.vitalsHistory[0];
     const final = options.vitalsHistory[options.vitalsHistory.length - 1];
 
-    // Two-row summary: Initial and Final
-    checkPageBreak(30);
+    checkPageBreak(28);
 
-    addFilledRoundedRect(margin, yPosition, contentWidth, 8, 1, [240, 240, 240]);
-    addTextAt('', margin + 2, yPosition + 5, 8, 'bold', [60, 60, 60]);
-    addTextAt('BP', margin + 30, yPosition + 5, 8, 'bold', [60, 60, 60]);
-    addTextAt('HR', margin + 60, yPosition + 5, 8, 'bold', [60, 60, 60]);
-    addTextAt('SpO2', margin + 85, yPosition + 5, 8, 'bold', [60, 60, 60]);
-    addTextAt('RR', margin + 110, yPosition + 5, 8, 'bold', [60, 60, 60]);
-    yPosition += 10;
+    // Table header row
+    addFilledRoundedRect(margin, yPosition, contentWidth, 7, 1, [230, 230, 230]);
+    const colPositions = [margin + 20, margin + 50, margin + 75, margin + 100, margin + 125];
+    addTextAt('', margin + 2, yPosition + 5, FONT.LABEL, 'bold', COLOR.BODY_TEXT);
+    addTextAt('BP', colPositions[0], yPosition + 5, FONT.LABEL, 'bold', COLOR.BODY_TEXT);
+    addTextAt('HR', colPositions[1], yPosition + 5, FONT.LABEL, 'bold', COLOR.BODY_TEXT);
+    addTextAt('SpO2', colPositions[2], yPosition + 5, FONT.LABEL, 'bold', COLOR.BODY_TEXT);
+    addTextAt('RR', colPositions[3], yPosition + 5, FONT.LABEL, 'bold', COLOR.BODY_TEXT);
+    yPosition += 8;
 
     // Initial row
-    addFilledRoundedRect(margin, yPosition, contentWidth, 7, 0, [255, 255, 255]);
-    addTextAt('Initial', margin + 2, yPosition + 5, 8, 'bold', [100, 100, 100]);
-    addTextAt(String(initial.bp), margin + 30, yPosition + 5, 8, 'normal', [60, 60, 60]);
-    addTextAt(String(initial.pulse), margin + 60, yPosition + 5, 8, 'normal', [60, 60, 60]);
-    addTextAt(String(initial.spo2) + '%', margin + 85, yPosition + 5, 8, 'normal', [60, 60, 60]);
-    addTextAt(String(initial.respiration), margin + 110, yPosition + 5, 8, 'normal', [60, 60, 60]);
-    yPosition += 8;
+    addTextAt('Initial', margin + 2, yPosition + 5, FONT.LABEL, 'bold', COLOR.MUTED);
+    addTextAt(String(initial.bp), colPositions[0], yPosition + 5, FONT.LABEL, 'normal', COLOR.BODY_TEXT);
+    addTextAt(String(initial.pulse), colPositions[1], yPosition + 5, FONT.LABEL, 'normal', COLOR.BODY_TEXT);
+    addTextAt(String(initial.spo2) + '%', colPositions[2], yPosition + 5, FONT.LABEL, 'normal', COLOR.BODY_TEXT);
+    addTextAt(String(initial.respiration), colPositions[3], yPosition + 5, FONT.LABEL, 'normal', COLOR.BODY_TEXT);
+    yPosition += 7;
 
     // Final row
     const hrBetter = Number(final.pulse) < Number(initial.pulse);
     const spo2Better = Number(final.spo2) > Number(initial.spo2);
-    addFilledRoundedRect(margin, yPosition, contentWidth, 7, 0, [250, 250, 250]);
-    addTextAt('Final', margin + 2, yPosition + 5, 8, 'bold', [100, 100, 100]);
-    addTextAt(String(final.bp), margin + 30, yPosition + 5, 8, 'normal', [60, 60, 60]);
-    addTextAt(String(final.pulse), margin + 60, yPosition + 5, 8, 'normal', hrBetter ? [34, 197, 94] : [220, 38, 38]);
-    addTextAt(String(final.spo2) + '%', margin + 85, yPosition + 5, 8, 'normal', spo2Better ? [34, 197, 94] : [220, 38, 38]);
-    addTextAt(String(final.respiration), margin + 110, yPosition + 5, 8, 'normal', [60, 60, 60]);
-    yPosition += 10;
+    addFilledRoundedRect(margin, yPosition, contentWidth, 7, 0, COLOR.ROW_ALT);
+    addTextAt('Final', margin + 2, yPosition + 5, FONT.LABEL, 'bold', COLOR.MUTED);
+    addTextAt(String(final.bp), colPositions[0], yPosition + 5, FONT.LABEL, 'normal', COLOR.BODY_TEXT);
+    addTextAt(String(final.pulse), colPositions[1], yPosition + 5, FONT.LABEL, 'normal', hrBetter ? COLOR.GREEN : COLOR.RED);
+    addTextAt(String(final.spo2) + '%', colPositions[2], yPosition + 5, FONT.LABEL, 'normal', spo2Better ? COLOR.GREEN : COLOR.RED);
+    addTextAt(String(final.respiration), colPositions[3], yPosition + 5, FONT.LABEL, 'normal', COLOR.BODY_TEXT);
+    yPosition += 9;
 
-    // Trend summary
-    addTextAt(`Snapshots recorded: ${options.vitalsHistory.length}`, margin, yPosition + 3, 7, 'normal', [150, 150, 150]);
-    yPosition += 8;
+    addTextAt(`Snapshots recorded: ${options.vitalsHistory.length}`, margin, yPosition, FONT.LABEL, 'normal', COLOR.LIGHT_MUTED);
+    yPosition += 5;
   }
 
   // ========== CLINICAL GUIDELINES & REFERENCES ==========
@@ -478,15 +541,15 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
     caseData.uaeProtocols.applicableGuidelines.forEach((guideline) => {
       checkPageBreak(8);
 
-      addFilledRoundedRect(margin, yPosition, 6, 6, 1, [239, 246, 255]);
-      addTextAt('>', margin + 2, yPosition + 4.5, 8, 'normal', [59, 130, 246]);
+      addFilledRoundedRect(margin, yPosition - 1, 5, 5, 1, COLOR.BG_BLUE);
+      addTextAt('>', margin + 1.5, yPosition + 3, FONT.LABEL, 'normal', COLOR.PRIMARY);
 
-      const lines = doc.splitTextToSize(sanitizeText(guideline), contentWidth - 12);
-      (lines as string[]).forEach((line: string, idx: number) => {
-        addTextAt(line, margin + 10, yPosition + 4.5 + (idx * 4), 9, 'normal', [60, 60, 60]);
+      const lines = doc.splitTextToSize(sanitizeText(guideline), contentWidth - 10) as string[];
+      lines.forEach((line: string, idx: number) => {
+        addTextAt(line, margin + 8, yPosition + 3 + (idx * LINE_HEIGHT.BODY), FONT.BODY, 'normal', COLOR.BODY_TEXT);
       });
 
-      yPosition += lines.length * 5 + 2;
+      yPosition += lines.length * LINE_HEIGHT.BODY + 3;
     });
   }
 
@@ -495,16 +558,16 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
     addSectionHeader('Common Pitfalls to Avoid');
 
     caseData.commonPitfalls.forEach((pitfall) => {
-      checkPageBreak(10);
+      checkPageBreak(8);
 
-      addTextAt('(!)', margin, yPosition + 3, 9, 'normal', [251, 146, 60]);
+      addTextAt('(!)', margin, yPosition, FONT.BODY, 'normal', COLOR.ORANGE);
 
-      const lines = doc.splitTextToSize(sanitizeText(pitfall), contentWidth - 8);
-      (lines as string[]).forEach((line: string, idx: number) => {
-        addTextAt(line, margin + 6, yPosition + 3 + (idx * 4), 9, 'normal', [80, 80, 80]);
+      const lines = doc.splitTextToSize(sanitizeText(pitfall), contentWidth - 8) as string[];
+      lines.forEach((line: string, idx: number) => {
+        addTextAt(line, margin + 7, yPosition + (idx * LINE_HEIGHT.BODY), FONT.BODY, 'normal', COLOR.MUTED);
       });
 
-      yPosition += lines.length * 5 + 2;
+      yPosition += lines.length * LINE_HEIGHT.BODY + 3;
     });
   }
 
@@ -512,12 +575,12 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
   if (session.notes) {
     addSectionHeader('Instructor Notes');
 
-    const noteLines = doc.splitTextToSize(sanitizeText(session.notes), contentWidth);
-    (noteLines as string[]).forEach((line: string) => {
+    const noteLines = doc.splitTextToSize(sanitizeText(session.notes), contentWidth) as string[];
+    for (const line of noteLines) {
       checkPageBreak(6);
-      addTextAt(line, margin, yPosition, 10, 'normal', [60, 60, 60]);
-      yPosition += 5;
-    });
+      addTextAt(line, margin, yPosition, FONT.BODY, 'normal', COLOR.BODY_TEXT);
+      yPosition += LINE_HEIGHT.BODY + 0.5;
+    }
   }
 
   // ========== INSTRUCTOR ASSESSMENT FEEDBACK ==========
@@ -525,82 +588,84 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
     addSectionHeader('Instructor Assessment Feedback');
 
     const severityColors: Record<string, [number, number, number]> = {
-      critical: [220, 38, 38],
-      important: [234, 146, 60],
-      'learning-point': [59, 130, 246],
+      critical: COLOR.RED,
+      important: COLOR.ORANGE,
+      'learning-point': COLOR.PRIMARY,
     };
 
     const categoryColors: Record<string, [number, number, number]> = {
-      excellent: [34, 197, 94],
-      'critical-miss': [220, 38, 38],
-      omitted: [234, 146, 60],
-      incomplete: [234, 179, 8],
-      communication: [139, 92, 246],
-      safety: [220, 38, 38],
-      'clinical-reasoning': [59, 130, 246],
+      excellent: COLOR.GREEN,
+      'critical-miss': COLOR.RED,
+      omitted: COLOR.ORANGE,
+      incomplete: COLOR.YELLOW,
+      communication: COLOR.PURPLE,
+      safety: COLOR.RED,
+      'clinical-reasoning': COLOR.PRIMARY,
     };
 
     for (const note of options.instructorAssessmentNotes) {
-      checkPageBreak(28);
+      checkPageBreak(24);
 
-      const severityColor = severityColors[note.severity] || [80, 80, 80];
-      const catColor = categoryColors[note.category] || [80, 80, 80];
+      const catColor = categoryColors[note.category] || COLOR.MUTED;
+      const severityColor = severityColors[note.severity] || COLOR.MUTED;
 
       // Note card background
       const bgColor: [number, number, number] = note.category === 'excellent'
-        ? [240, 253, 244] : note.category === 'critical-miss'
-        ? [254, 242, 242] : [255, 251, 235];
-      addFilledRoundedRect(margin, yPosition, contentWidth, 24, 2, bgColor);
+        ? COLOR.BG_GREEN : note.category === 'critical-miss'
+        ? COLOR.BG_RED : COLOR.BG_YELLOW;
+      addFilledRoundedRect(margin, yPosition, contentWidth, 22, 2, bgColor);
 
       // Left border accent
       doc.setFillColor(catColor[0], catColor[1], catColor[2]);
-      doc.rect(margin, yPosition, 2, 24, 'F');
+      doc.rect(margin, yPosition, 2, 22, 'F');
 
       // Severity badge
-      addTextAt(`[${note.severity.toUpperCase()}]`, margin + 5, yPosition + 5, 7, 'bold', severityColor);
+      addTextAt(`[${note.severity.toUpperCase()}]`, margin + 5, yPosition + 5, FONT.LABEL, 'bold', severityColor);
 
       // Phase
-      addTextAt(`Phase: ${note.phase}`, margin + 40, yPosition + 5, 7, 'normal', [120, 120, 120]);
+      addTextAt(`Phase: ${note.phase}`, margin + 35, yPosition + 5, FONT.LABEL, 'normal', COLOR.MUTED);
 
       // Timestamp
       const noteTime = new Date(note.timestamp).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-      addTextAt(noteTime, pageWidth - margin - 15, yPosition + 5, 7, 'normal', [150, 150, 150]);
+      addTextAt(noteTime, pageWidth - margin - 12, yPosition + 5, FONT.LABEL, 'normal', COLOR.LIGHT_MUTED);
 
       // Finding
-      const findingLines = doc.splitTextToSize(sanitizeText(note.finding), contentWidth - 10);
-      addTextAt((findingLines as string[])[0], margin + 5, yPosition + 11, 9, 'bold', [30, 30, 30]);
+      const findingLines = doc.splitTextToSize(sanitizeText(note.finding), contentWidth - 10) as string[];
+      addTextAt(findingLines[0], margin + 5, yPosition + 11, FONT.BODY, 'bold', COLOR.BLACK);
 
-      // What was missed + why it matters
+      // What was missed
       if (note.whatWasMissed && note.whatWasMissed !== 'Not specified') {
         const missedText = `Missed: ${sanitizeText(note.whatWasMissed)}`;
-        const missedLines = doc.splitTextToSize(missedText, contentWidth - 10);
-        addTextAt((missedLines as string[])[0], margin + 5, yPosition + 17, 7, 'normal', [80, 80, 80]);
+        const missedLines = doc.splitTextToSize(missedText, contentWidth - 10) as string[];
+        addTextAt(missedLines[0], margin + 5, yPosition + 16, FONT.LABEL, 'normal', COLOR.MUTED);
       }
 
       if (note.improvementAction) {
-        addTextAt(sanitizeText(`Action: ${note.improvementAction}`), margin + 5, yPosition + 22, 7, 'normal', [59, 130, 246]);
+        addTextAt(sanitizeText(`Action: ${note.improvementAction}`), margin + 5, yPosition + 20, FONT.LABEL, 'normal', COLOR.PRIMARY);
       }
 
-      yPosition += 28;
+      yPosition += 25;
     }
 
     // Summary counts
-    checkPageBreak(15);
-    yPosition += 3;
+    checkPageBreak(12);
+    yPosition += 2;
     const critCount = options.instructorAssessmentNotes.filter(n => n.severity === 'critical').length;
     const strengthCount = options.instructorAssessmentNotes.filter(n => n.category === 'excellent').length;
     const improvCount = options.instructorAssessmentNotes.filter(n => n.category === 'omitted' || n.category === 'incomplete').length;
 
-    addFilledRoundedRect(margin, yPosition, contentWidth, 10, 2, [248, 250, 252]);
-    addTextAt(`Summary: ${critCount} critical  |  ${improvCount} areas for improvement  |  ${strengthCount} strengths noted`, margin + 5, yPosition + 7, 8, 'bold', [80, 80, 80]);
-    yPosition += 15;
+    addFilledRoundedRect(margin, yPosition, contentWidth, 8, 2, COLOR.BG_LIGHT);
+    addTextAt(
+      `Summary: ${critCount} critical  |  ${improvCount} areas for improvement  |  ${strengthCount} strengths noted`,
+      margin + 5, yPosition + 5, FONT.LABEL, 'bold', COLOR.MUTED,
+    );
+    yPosition += 12;
   }
 
   // ========== FURTHER STUDY RESOURCES ==========
   if (options.debriefingResources && options.debriefingResources.length > 0) {
     addSectionHeader('Further Study Resources');
 
-    // Group by type
     const typeOrder = ['guideline', 'article', 'image', 'video', 'podcast', 'case-study'];
     const grouped: Record<string, typeof options.debriefingResources> = {};
     for (const r of options.debriefingResources) {
@@ -612,53 +677,48 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
       const resources = grouped[type];
       if (!resources || resources.length === 0) continue;
 
-      checkPageBreak(15);
+      checkPageBreak(12);
 
-      // Type header
       const typeLabel = type === 'case-study' ? 'Case Studies' : `${type.charAt(0).toUpperCase() + type.slice(1)}s`;
-      addTextAt(typeLabel, margin, yPosition + 4, 10, 'bold', [80, 80, 80]);
-      yPosition += 8;
+      addTextAt(typeLabel, margin, yPosition, FONT.BODY, 'bold', COLOR.MUTED);
+      yPosition += LINE_HEIGHT.BODY + 2;
 
-      // Essential resources first, limit total
       const sorted = [...resources].sort((a, b) => {
         const order: Record<string, number> = { essential: 0, important: 1, supplementary: 2 };
         return (order[a.relevance] || 2) - (order[b.relevance] || 2);
       });
 
       for (const resource of sorted.slice(0, 5)) {
-        checkPageBreak(12);
+        checkPageBreak(8);
 
-        // Source badge
-        addTextAt(`[${resource.source}]`, margin + 2, yPosition + 4, 7, 'normal', [150, 150, 150]);
+        addTextAt(`[${resource.source}]`, margin + 2, yPosition, FONT.LABEL, 'normal', COLOR.LIGHT_MUTED);
+        addClickableLink(sanitizeText(resource.title), resource.url, margin + 40, yPosition);
 
-        // Clickable title
-        addClickableLink(sanitizeText(resource.title), resource.url, margin + 45, yPosition + 4, 9);
-
-        // Relevance indicator
         if (resource.relevance === 'essential') {
-          addTextAt('*', pageWidth - margin - 5, yPosition + 4, 8, 'normal', [234, 179, 8]);
+          addTextAt('*', pageWidth - margin - 5, yPosition, FONT.LABEL, 'normal', COLOR.YELLOW);
         }
 
-        yPosition += 8;
+        yPosition += LINE_HEIGHT.BODY + 3;
       }
 
       if (resources.length > 5) {
-        addTextAt(`+ ${resources.length - 5} more resources available online`, margin + 45, yPosition + 3, 7, 'normal', [150, 150, 150]);
-        yPosition += 6;
+        addTextAt(`+ ${resources.length - 5} more resources available online`, margin + 40, yPosition, FONT.LABEL, 'normal', COLOR.LIGHT_MUTED);
+        yPosition += 5;
       }
 
-      yPosition += 3;
+      yPosition += 2;
     }
 
     // Source attribution
-    yPosition += 2;
-    checkPageBreak(10);
-    addTextAt('Resources from: NICE, Resuscitation Council UK, Radiopaedia, EMDocs, REBEL EM, ALiEM, EM Cases, EMCrit, and more.', margin, yPosition + 3, 7, 'normal', [180, 180, 180]);
-    yPosition += 8;
+    checkPageBreak(8);
+    addTextAt(
+      'Resources from: NICE, Resuscitation Council UK, Radiopaedia, EMDocs, REBEL EM, ALiEM, EM Cases, EMCrit.',
+      margin, yPosition, FONT.LABEL, 'normal', COLOR.LIGHT_MUTED,
+    );
+    yPosition += 5;
   }
 
-  // ========== CONDITION-SPECIFIC VISUAL RESOURCES ==========
-  // Pull relevant videos and articles from local clinical resources based on case
+  // ========== CONDITION-SPECIFIC LEARNING RESOURCES ==========
   {
     const caseFindings = [
       caseData.subcategory,
@@ -671,11 +731,10 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
     ].filter(Boolean) as string[];
 
     const matchedVideos = [
-      ...getVideosByFindings(caseFindings), // Findings-based first (more specific)
+      ...getVideosByFindings(caseFindings),
       ...getVideosByCategory(caseData.category),
     ]
       .filter((v, i, arr) => arr.findIndex(x => x.id === v.id) === i)
-      // Prioritize videos whose name matches the case subcategory or title
       .sort((a, b) => {
         const scoreVideo = (v: typeof a) => {
           let s = 0;
@@ -687,7 +746,7 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
         };
         return scoreVideo(b) - scoreVideo(a);
       })
-      .slice(0, 4); // Reduce to 4 max, only best matches
+      .slice(0, 4);
 
     const matchedArticles = referenceArticles
       .filter(a =>
@@ -695,7 +754,6 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
         caseFindings.some(f => a.title.toLowerCase().includes(f.toLowerCase()) || f.toLowerCase().includes(a.category))
       )
       .sort((a, b) => {
-        // Prioritize subcategory and title matches over broad category matches
         const scoreMatch = (article: typeof a): number => {
           let score = 0;
           const titleLower = article.title.toLowerCase();
@@ -710,10 +768,8 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
       })
       .filter(a => {
         const titleLower = a.title.toLowerCase();
-        // Exclude articles that are clearly about a different condition
         if (caseData.subcategory) {
           const sub = caseData.subcategory.toLowerCase().replace(/-/g, ' ');
-          // If the article is about heart failure but case is about SVT, exclude
           if (titleLower.includes('heart failure') && !sub.includes('heart failure')) return false;
           if (titleLower.includes('pulmonary edema') && !sub.includes('pulmonary') && !sub.includes('edema')) return false;
           if (titleLower.includes('pulmonary embolism') && !sub.includes('embolism') && !sub.includes('pe')) return false;
@@ -726,64 +782,83 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
       addSectionHeader('Condition-Specific Learning Resources');
 
       addTextAt(
-        'The following resources are directly relevant to this case condition. Use them for further study.',
-        margin, yPosition + 3, 8, 'normal', [100, 100, 100]
+        'The following resources are directly relevant to this case condition.',
+        margin, yPosition, FONT.LABEL, 'normal', COLOR.MUTED,
       );
-      yPosition += 8;
+      yPosition += 6;
 
       // Videos
       if (matchedVideos.length > 0) {
-        checkPageBreak(12);
-        addTextAt('Educational Videos:', margin, yPosition + 4, 10, 'bold', [220, 38, 38]);
-        yPosition += 8;
+        checkPageBreak(10);
+        addTextAt('Educational Videos:', margin, yPosition, FONT.BODY, 'bold', COLOR.RED);
+        yPosition += LINE_HEIGHT.BODY + 2;
 
         for (const video of matchedVideos) {
-          checkPageBreak(12);
+          checkPageBreak(10);
 
-          addTextAt(`[${video.duration}]`, margin + 2, yPosition + 4, 7, 'normal', [150, 150, 150]);
+          addTextAt(`[${video.duration}]`, margin + 2, yPosition, FONT.LABEL, 'normal', COLOR.LIGHT_MUTED);
 
           const videoUrl = getYouTubeWatchUrl(video.youtubeId);
-          addClickableLink(sanitizeText(video.name), videoUrl, margin + 20, yPosition + 4, 9);
+          addClickableLink(sanitizeText(video.name), videoUrl, margin + 18, yPosition);
 
-          addTextAt(video.source, margin + 20, yPosition + 9, 7, 'normal', [150, 150, 150]);
+          addTextAt(video.source, margin + 18, yPosition + LINE_HEIGHT.BODY, FONT.LABEL, 'normal', COLOR.LIGHT_MUTED);
 
-          yPosition += 13;
+          yPosition += LINE_HEIGHT.BODY * 2 + 2;
         }
-        yPosition += 3;
+        yPosition += 2;
       }
 
       // Articles
       if (matchedArticles.length > 0) {
-        checkPageBreak(12);
-        addTextAt('Reference Articles & Guidelines:', margin, yPosition + 4, 10, 'bold', [59, 130, 246]);
-        yPosition += 8;
+        checkPageBreak(10);
+        addTextAt('Reference Articles & Guidelines:', margin, yPosition, FONT.BODY, 'bold', COLOR.PRIMARY);
+        yPosition += LINE_HEIGHT.BODY + 2;
 
         for (const article of matchedArticles) {
-          checkPageBreak(10);
+          checkPageBreak(8);
 
-          addTextAt(`[${article.source}]`, margin + 2, yPosition + 4, 7, 'normal', [150, 150, 150]);
+          addTextAt(`[${article.source}]`, margin + 2, yPosition, FONT.LABEL, 'normal', COLOR.LIGHT_MUTED);
+          addClickableLink(sanitizeText(article.title), article.url, margin + 40, yPosition);
 
-          addClickableLink(sanitizeText(article.title), article.url, margin + 45, yPosition + 4, 9);
-
-          yPosition += 8;
+          yPosition += LINE_HEIGHT.BODY + 3;
         }
-        yPosition += 3;
+        yPosition += 2;
       }
     }
   }
 
-  // ========== FOOTER ==========
+  // ========== PAGE BORDERS + FOOTER ON EVERY PAGE ==========
   const totalPages = (doc.internal.pages.length - 1) as number;
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
+
+    // Subtle gray border around the content area of each page
+    doc.setDrawColor(COLOR.BORDER_GRAY[0], COLOR.BORDER_GRAY[1], COLOR.BORDER_GRAY[2]);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(
+      PAGE_BORDER_INSET,
+      PAGE_BORDER_INSET,
+      pageWidth - 2 * PAGE_BORDER_INSET,
+      pageHeight - 2 * PAGE_BORDER_INSET,
+      2, 2, 'S',
+    );
+
+    // Footer separator line
+    doc.setDrawColor(COLOR.BORDER_GRAY[0], COLOR.BORDER_GRAY[1], COLOR.BORDER_GRAY[2]);
+    doc.setLineWidth(0.2);
+    doc.line(margin, pageHeight - 14, pageWidth - margin, pageHeight - 14);
+
+    // Footer text
     addCenteredText(
-      `Page ${i} of ${totalPages}  |  UAE Paramedic Case Generator  |  Session ID: ${session.id}`,
-      pageHeight - 10,
-      8
+      `Page ${i} of ${totalPages}  |  UAE Paramedic Case Generator  |  Session: ${session.id}`,
+      pageHeight - 9,
+      FONT.LABEL,
+      'normal',
+      COLOR.LIGHT_MUTED,
     );
   }
 
-  // Save the PDF using blob approach for better browser compatibility
+  // Save the PDF
   const pdfBlob = doc.output('blob');
   const url = URL.createObjectURL(pdfBlob);
   const link = document.createElement('a');
