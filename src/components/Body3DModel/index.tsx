@@ -114,29 +114,35 @@ function getSubRegions(regionId: string): SubRegion[] {
         { id: 'heart-mitral', label: 'Mitral (apex 5th ICS)', technique: 'auscultate' },
       ]},
     ];
+    // Abdomen: Clinical exam order is Inspect → Auscultate → Percuss → Palpate
+    // (auscultate BEFORE palpation to avoid altering bowel sounds)
     case 'abdomen': return [
-      { id: 'abd-general', label: 'General', actions: [
-        { id: 'abd-inspect', label: 'Distension, bruising, scars', technique: 'inspect' },
+      { id: 'abd-general', label: 'General Inspection', actions: [
+        { id: 'abd-inspect', label: 'Distension, bruising, scars, visible peristalsis', technique: 'inspect' },
       ]},
       { id: 'ruq', label: 'Right Upper Quadrant', actions: [
-        { id: 'ruq-auscultate', label: 'Bowel sounds', technique: 'auscultate' },
-        { id: 'ruq-palpate', label: 'Tenderness, hepatomegaly', technique: 'palpate' },
-        { id: 'ruq-percuss', label: 'Liver span', technique: 'percuss' },
+        { id: 'ruq-inspect', label: 'Inspect RUQ', technique: 'inspect' },
+        { id: 'ruq-auscultate', label: 'Bowel sounds RUQ', technique: 'auscultate' },
+        { id: 'ruq-percuss', label: 'Percussion — liver span', technique: 'percuss' },
+        { id: 'ruq-palpate', label: 'Tenderness, hepatomegaly, Murphy sign', technique: 'palpate' },
       ]},
       { id: 'luq', label: 'Left Upper Quadrant', actions: [
-        { id: 'luq-auscultate', label: 'Bowel sounds', technique: 'auscultate' },
+        { id: 'luq-inspect', label: 'Inspect LUQ', technique: 'inspect' },
+        { id: 'luq-auscultate', label: 'Bowel sounds LUQ', technique: 'auscultate' },
+        { id: 'luq-percuss', label: 'Percussion — splenic dullness', technique: 'percuss' },
         { id: 'luq-palpate', label: 'Tenderness, splenomegaly', technique: 'palpate' },
-        { id: 'luq-percuss', label: 'Percussion', technique: 'percuss' },
       ]},
       { id: 'rlq', label: 'Right Lower Quadrant', actions: [
-        { id: 'rlq-auscultate', label: 'Bowel sounds', technique: 'auscultate' },
-        { id: 'rlq-palpate', label: 'Appendicitis signs, rebound', technique: 'palpate' },
-        { id: 'rlq-percuss', label: 'Percussion', technique: 'percuss' },
+        { id: 'rlq-inspect', label: 'Inspect RLQ', technique: 'inspect' },
+        { id: 'rlq-auscultate', label: 'Bowel sounds RLQ', technique: 'auscultate' },
+        { id: 'rlq-percuss', label: 'Percussion RLQ', technique: 'percuss' },
+        { id: 'rlq-palpate', label: 'Rebound, Rovsing, McBurney', technique: 'palpate' },
       ]},
       { id: 'llq', label: 'Left Lower Quadrant', actions: [
-        { id: 'llq-auscultate', label: 'Bowel sounds', technique: 'auscultate' },
-        { id: 'llq-palpate', label: 'Diverticular signs', technique: 'palpate' },
-        { id: 'llq-percuss', label: 'Percussion', technique: 'percuss' },
+        { id: 'llq-inspect', label: 'Inspect LLQ', technique: 'inspect' },
+        { id: 'llq-auscultate', label: 'Bowel sounds LLQ', technique: 'auscultate' },
+        { id: 'llq-percuss', label: 'Percussion LLQ', technique: 'percuss' },
+        { id: 'llq-palpate', label: 'Tenderness, diverticular signs', technique: 'palpate' },
       ]},
     ];
     case 'pelvis': return [
@@ -211,20 +217,40 @@ function getFinding(caseData: CaseScenario, regionId: string, actionId: string):
   // Chest wall
   if (actionId === 'chest-inspect') return ss?.chest?.filter(f => !f.toLowerCase().includes('clear') && !f.toLowerCase().includes('wheez')).join('. ') || 'Equal expansion. No wounds. No flail.';
   if (actionId === 'chest-palpate') return 'No tenderness. No crepitus. No subcutaneous emphysema.';
-  // Abdomen bowel sounds
+  // Abdomen — quadrant inspection
+  if (actionId.includes('inspect') && (actionId.startsWith('ruq') || actionId.startsWith('luq') || actionId.startsWith('rlq') || actionId.startsWith('llq'))) {
+    const abd = ss?.abdomen || [];
+    const quadrant = actionId.substring(0, 3).toUpperCase();
+    const relevant = abd.filter(f => f.toLowerCase().includes(quadrant.toLowerCase()) || f.toLowerCase().includes('distend') || f.toLowerCase().includes('bruis'));
+    return relevant.length ? relevant.join('. ') : `${quadrant}: No visible abnormality. No bruising, scars, or distension.`;
+  }
+  // Abdomen — bowel sounds (auscultate BEFORE palpation)
   if (actionId.includes('auscultate') && (actionId.startsWith('ruq') || actionId.startsWith('luq') || actionId.startsWith('rlq') || actionId.startsWith('llq'))) {
     const abd = ss?.abdomen || [];
-    if (abd.some(f => f.toLowerCase().includes('absent bowel'))) return 'Absent bowel sounds';
-    if (abd.some(f => f.toLowerCase().includes('hyperactive'))) return 'Hyperactive bowel sounds';
-    return 'Normal bowel sounds present';
+    if (abd.some(f => f.toLowerCase().includes('absent bowel'))) return 'Absent bowel sounds — no sounds heard over 2 minutes';
+    if (abd.some(f => f.toLowerCase().includes('hyperactive'))) return 'Hyperactive bowel sounds — high-pitched, frequent gurgling';
+    if (abd.some(f => f.toLowerCase().includes('tinkling'))) return 'Tinkling bowel sounds — suggests obstruction';
+    return 'Normal bowel sounds present — 5-30 sounds per minute';
   }
-  // Abdomen palpation
+  // Abdomen — percussion
+  if (actionId.includes('percuss') && (actionId.startsWith('ruq') || actionId.startsWith('luq') || actionId.startsWith('rlq') || actionId.startsWith('llq'))) {
+    const abd = ss?.abdomen || [];
+    if (actionId.startsWith('ruq')) return abd.some(f => f.toLowerCase().includes('hepato')) ? 'Dull — enlarged liver span >12cm' : 'Liver span normal (6-12cm). Tympanic elsewhere.';
+    if (abd.some(f => f.toLowerCase().includes('ascites') || f.toLowerCase().includes('fluid'))) return 'Shifting dullness present — suggests fluid';
+    return 'Tympanic — normal gas-filled bowel';
+  }
+  // Abdomen — palpation (done LAST to avoid altering bowel sounds)
   if (actionId.includes('palpate') && (actionId.startsWith('ruq') || actionId.startsWith('luq') || actionId.startsWith('rlq') || actionId.startsWith('llq'))) {
-    return ss?.abdomen?.join('. ') || 'Soft, non-tender. No guarding.';
+    const abd = ss?.abdomen || [];
+    if (abd.length) return abd.join('. ');
+    return 'Soft, non-tender. No guarding or rigidity. No masses.';
   }
-  // Abdomen inspection
-  if (actionId === 'abd-inspect') return 'Not distended. No bruising. No scars.';
-  // Abdomen percussion
+  // Abdomen — general inspection
+  if (actionId === 'abd-inspect') {
+    const abd = ss?.abdomen || [];
+    const inspectFindings = abd.filter(f => f.toLowerCase().includes('distend') || f.toLowerCase().includes('bruis') || f.toLowerCase().includes('scar'));
+    return inspectFindings.length ? inspectFindings.join('. ') : 'Abdomen flat, symmetrical. No distension. No visible bruising, scars, or peristalsis.';
+  }
   if (actionId.includes('percuss') && (actionId.startsWith('ruq') || actionId.startsWith('luq') || actionId.startsWith('rlq') || actionId.startsWith('llq'))) return 'Tympanic — normal';
   // Head
   if (actionId === 'pupils-inspect') return typeof disability?.pupils === 'string' ? disability.pupils : 'Equal and reactive';
@@ -359,37 +385,39 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
       </div>
 
       {/* Three-panel layout when region is active — stacks on mobile, side-by-side on desktop */}
-      <div className={`${activeRegion ? 'flex flex-col lg:grid lg:grid-cols-[200px_1fr_260px]' : ''}`}>
+      <div className={`${activeRegion ? 'flex flex-col lg:grid lg:grid-cols-[240px_1fr_280px]' : ''}`}>
 
         {/* LEFT (desktop) / TOP (mobile): Assessment options */}
         {activeRegion && (
-          <div className="order-first lg:order-none border-b lg:border-b-0 lg:border-r border-border/30 bg-white/30 dark:bg-black/10 p-2 space-y-1.5 overflow-y-auto max-h-[250px] lg:max-h-[420px]">
-            <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground px-1 mb-1">
-              Examine
+          <div className="order-first lg:order-none border-b lg:border-b-0 lg:border-r border-border/30 bg-white/60 dark:bg-slate-900/60 p-3 space-y-2 overflow-y-auto max-h-[280px] lg:max-h-[420px]">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-foreground/70 dark:text-slate-300 px-1 mb-2">
+              Examination
             </p>
             {subRegions.map(sr => (
-              <div key={sr.id}>
-                <p className="text-[10px] font-semibold text-muted-foreground px-1 pt-1">{sr.label}</p>
-                {sr.actions.map(action => {
-                  const Icon = TECHNIQUE_ICONS[action.technique];
-                  const isRevealed = revealedFindings.has(action.id);
-                  const isSelected = selectedAction === action.id;
-                  return (
-                    <button
-                      key={action.id}
-                      onClick={() => handleExamAction(action.id)}
-                      className={`flex items-center gap-1.5 w-full text-left px-2 py-1.5 rounded-lg text-[10px] transition-all mt-0.5 border ${
-                        isSelected ? 'ring-2 ring-blue-400 ' + TECHNIQUE_COLORS[action.technique]
-                        : isRevealed ? 'bg-green-50 border-green-200 text-green-700 dark:bg-green-950/20 dark:border-green-800 dark:text-green-400'
-                        : TECHNIQUE_COLORS[action.technique]
-                      }`}
-                    >
-                      <Icon className="h-3 w-3 shrink-0" />
-                      <span className="flex-1 leading-tight">{action.label}</span>
-                      {isRevealed && <span className="text-green-500 text-[8px]">✓</span>}
-                    </button>
-                  );
-                })}
+              <div key={sr.id} className="mb-2">
+                <p className="text-xs font-bold text-foreground dark:text-white px-1 py-1 border-b border-border/20 mb-1.5">{sr.label}</p>
+                <div className="space-y-1">
+                  {sr.actions.map(action => {
+                    const Icon = TECHNIQUE_ICONS[action.technique];
+                    const isRevealed = revealedFindings.has(action.id);
+                    const isSelected = selectedAction === action.id;
+                    return (
+                      <button
+                        key={action.id}
+                        onClick={() => handleExamAction(action.id)}
+                        className={`flex items-center gap-2 w-full text-left px-2.5 py-2 rounded-lg text-xs transition-all border ${
+                          isSelected ? 'ring-2 ring-blue-400 shadow-sm ' + TECHNIQUE_COLORS[action.technique]
+                          : isRevealed ? 'bg-green-50 border-green-300 text-green-800 dark:bg-green-950/30 dark:border-green-700 dark:text-green-300 font-medium'
+                          : TECHNIQUE_COLORS[action.technique]
+                        }`}
+                      >
+                        <Icon className="h-3.5 w-3.5 shrink-0" />
+                        <span className="flex-1 leading-snug truncate">{action.label}</span>
+                        {isRevealed && <span className="text-green-500 text-xs font-bold shrink-0">✓</span>}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             ))}
           </div>
@@ -427,42 +455,47 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
 
         {/* RIGHT (desktop) / BELOW (mobile): Findings */}
         {activeRegion && (
-          <div className="border-t lg:border-t-0 lg:border-l border-border/30 bg-white/30 dark:bg-black/10 p-3 overflow-y-auto max-h-[300px] lg:max-h-[420px]">
-            <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+          <div className="border-t lg:border-t-0 lg:border-l border-border/30 bg-white/60 dark:bg-slate-900/60 p-3 overflow-y-auto max-h-[320px] lg:max-h-[420px]">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-foreground/70 dark:text-slate-300 mb-3">
               Findings
             </p>
             {selectedAction && revealedFindings.has(selectedAction) ? (
-              <div className="space-y-2">
-                <div className="p-3 rounded-xl bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800">
-                  <p className="text-xs font-semibold text-green-800 dark:text-green-300 mb-1">
+              <div className="space-y-3">
+                {/* Current finding — highlighted */}
+                <div className="p-3.5 rounded-xl bg-green-50 dark:bg-green-950/30 border border-green-300 dark:border-green-700 shadow-sm">
+                  <p className="text-xs font-bold text-green-800 dark:text-green-200 mb-1.5">
                     {subRegions.flatMap(sr => sr.actions).find(a => a.id === selectedAction)?.label || 'Finding'}
                   </p>
-                  <p className="text-sm text-green-700 dark:text-green-400 leading-relaxed">
+                  <p className="text-sm text-green-700 dark:text-green-300 leading-relaxed font-medium">
                     {revealedFindings.get(selectedAction)}
                   </p>
                 </div>
-                {/* Show all revealed findings for this region */}
-                <div className="space-y-1 mt-3">
-                  <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">All findings</p>
-                  {[...revealedFindings.entries()]
-                    .filter(([id]) => {
-                      // Only show findings from current region's actions
-                      const regionActions = subRegions.flatMap(sr => sr.actions).map(a => a.id);
-                      return regionActions.includes(id);
-                    })
-                    .map(([id, finding]) => (
-                    <div key={id} className="p-2 rounded-lg bg-muted/30 border border-border/30 text-[10px]">
-                      <span className="font-medium">{subRegions.flatMap(sr => sr.actions).find(a => a.id === id)?.label}: </span>
-                      <span className="text-muted-foreground">{finding}</span>
+                {/* All revealed findings for this region */}
+                {(() => {
+                  const regionActions = subRegions.flatMap(sr => sr.actions).map(a => a.id);
+                  const regionFindings = [...revealedFindings.entries()].filter(([id]) => regionActions.includes(id) && id !== selectedAction);
+                  if (regionFindings.length === 0) return null;
+                  return (
+                    <div className="space-y-1.5 pt-2 border-t border-border/20">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-foreground/50 dark:text-slate-400">Previous findings</p>
+                      {regionFindings.map(([id, finding]) => (
+                        <div key={id} className="p-2.5 rounded-lg bg-muted/40 dark:bg-slate-800/50 border border-border/30 dark:border-slate-700/50">
+                          <span className="text-xs font-semibold text-foreground dark:text-slate-200">{subRegions.flatMap(sr => sr.actions).find(a => a.id === id)?.label}: </span>
+                          <span className="text-xs text-muted-foreground dark:text-slate-400">{finding}</span>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  );
+                })()}
               </div>
             ) : (
-              <div className="flex items-center justify-center h-32 text-muted-foreground">
-                <p className="text-xs text-center">
-                  Click an assessment<br />option on the left<br />to reveal findings
-                </p>
+              <div className="flex items-center justify-center h-32">
+                <div className="text-center">
+                  <Stethoscope className="h-8 w-8 mx-auto mb-2 text-muted-foreground/30" />
+                  <p className="text-xs text-muted-foreground dark:text-slate-500">
+                    Select an examination<br />technique on the left
+                  </p>
+                </div>
               </div>
             )}
           </div>
