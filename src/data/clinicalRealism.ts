@@ -166,6 +166,17 @@ export const TREATMENT_YEAR_ACCESS: Record<string, StudentYear[]> = {
   ked:                  ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
   traction_splint:      ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
 
+  // ----- KETAMINE VARIANTS & SEDATION -----
+  ketamine_analgesic:   ['3rd-year', '4th-year'],
+  ketamine_sedation:    ['4th-year'],
+  droperidol_5mg:       ['3rd-year', '4th-year'],
+
+  // ----- MENTAL HEALTH INTERVENTIONS -----
+  verbal_deescalation:  ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
+  therapeutic_rapport:  ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
+  suicide_risk_assessment: ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
+  mental_health_act:    ['2nd-year', '3rd-year', '4th-year'],
+
   // ----- NAME ALIASES -----
   chlorphenamine_10mg:  ['3rd-year', '4th-year'],
   clopidogrel_300mg:    ['3rd-year', '4th-year'],

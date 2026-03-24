@@ -1686,6 +1686,120 @@ export const TREATMENTS: Treatment[] = [
     ],
     contraindications: ['Fracture near knee or hip joint', 'Pelvic fracture', 'Lower leg fracture on same side'],
   },
+
+  // ================================================================
+  // KETAMINE VARIANTS & SEDATION
+  // ================================================================
+  {
+    id: 'ketamine_analgesic',
+    name: 'Ketamine 0.3mg/kg IV (Analgesic)',
+    description: 'Sub-dissociative ketamine for severe pain — alternative to opioids. Give over 10-15 minutes.',
+    category: 'medication',
+    onset: 'fast',
+    onsetTimeSeconds: 3,
+    durationSeconds: 30,
+    icon: 'Activity',
+    color: 'purple',
+    effects: [
+      { vitalSign: 'pulse', changeType: 'increase', value: 5, maxValue: 120 },
+      { vitalSign: 'bp', changeType: 'increase', value: 5 },
+    ],
+    contraindications: ['Age < 3 months', 'Known psychosis (relative)', 'Severe hypertension (SBP >180)'],
+  },
+  {
+    id: 'ketamine_sedation',
+    name: 'Ketamine 4mg/kg IM (Sedation)',
+    description: 'IM sedation for severely agitated/violent patient when verbal de-escalation has failed. Onset 3-5 minutes IM.',
+    category: 'medication',
+    onset: 'moderate',
+    onsetTimeSeconds: 10,
+    durationSeconds: 30,
+    icon: 'Activity',
+    color: 'purple',
+    effects: [
+      { vitalSign: 'pulse', changeType: 'increase', value: 15, maxValue: 140 },
+      { vitalSign: 'bp', changeType: 'increase', value: 10 },
+      { vitalSign: 'gcs', changeType: 'decrease', value: 6, minValue: 3 },
+    ],
+    contraindications: ['Age < 3 months', 'Airway compromise', 'No monitoring equipment available'],
+  },
+  {
+    id: 'droperidol_5mg',
+    name: 'Droperidol 5mg IM',
+    description: 'Antipsychotic for acute behavioural disturbance. Alternative to ketamine for agitated patients.',
+    category: 'medication',
+    onset: 'moderate',
+    onsetTimeSeconds: 10,
+    durationSeconds: 30,
+    icon: 'Activity',
+    color: 'purple',
+    effects: [
+      { vitalSign: 'pulse', changeType: 'decrease', value: 10, minValue: 55 },
+      { vitalSign: 'bp', changeType: 'decrease', value: 10 },
+    ],
+    contraindications: ['Known long QT syndrome', 'Concurrent QT-prolonging drugs', 'Parkinson disease'],
+  },
+
+  // ================================================================
+  // MENTAL HEALTH & PSYCHOLOGICAL INTERVENTIONS
+  // ================================================================
+  {
+    id: 'verbal_deescalation',
+    name: 'Verbal De-escalation',
+    description: 'Calm, non-threatening communication. Low voice, open posture, active listening. Offer choices.',
+    category: 'comfort',
+    onset: 'gradual',
+    onsetTimeSeconds: 15,
+    durationSeconds: 60,
+    icon: 'MessageCircle',
+    color: 'blue',
+    effects: [
+      { vitalSign: 'pulse', changeType: 'decrease', value: 10, minValue: 60 },
+      { vitalSign: 'bp', changeType: 'decrease', value: 8 },
+    ],
+    contraindications: [],
+  },
+  {
+    id: 'therapeutic_rapport',
+    name: 'Build Therapeutic Rapport',
+    description: 'Introduce yourself. Use patient name. Validate emotions. Non-judgmental approach. Active listening.',
+    category: 'comfort',
+    onset: 'gradual',
+    onsetTimeSeconds: 15,
+    durationSeconds: 60,
+    icon: 'Heart',
+    color: 'pink',
+    effects: [
+      { vitalSign: 'pulse', changeType: 'decrease', value: 8, minValue: 60 },
+    ],
+    contraindications: [],
+  },
+  {
+    id: 'suicide_risk_assessment',
+    name: 'Suicide Risk Assessment',
+    description: 'Direct questioning: thoughts of self-harm, plan, means, intent, previous attempts, protective factors.',
+    category: 'comfort',
+    onset: 'immediate',
+    onsetTimeSeconds: 0,
+    durationSeconds: 1,
+    icon: 'Shield',
+    color: 'red',
+    effects: [],
+    contraindications: [],
+  },
+  {
+    id: 'mental_health_act',
+    name: 'Mental Health Act Assessment',
+    description: 'Assess capacity. Consider involuntary detention criteria if patient poses risk to self or others.',
+    category: 'comfort',
+    onset: 'immediate',
+    onsetTimeSeconds: 0,
+    durationSeconds: 1,
+    icon: 'FileText',
+    color: 'blue',
+    effects: [],
+    contraindications: [],
+  },
 ];
 
 // Get treatments by category
