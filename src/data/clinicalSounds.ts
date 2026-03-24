@@ -1646,9 +1646,7 @@ export function playHeartSound(soundType: HeartSoundType, durationMs: number = 5
  * Uses filtered noise bursts and tonal elements to simulate peristaltic gurgling.
  */
 export function playBowelSound(soundType: BowelSoundType, durationMs: number = 6000): void {
-  const AudioCtx = (window as any).AudioContext || (window as any).webkitAudioContext;
-  if (!AudioCtx) return;
-  const ctx: AudioContext = new AudioCtx();
+  const ctx = getAudioContext();
   const dur = durationMs / 1000;
 
   // Pink noise buffer for base texture
@@ -1905,8 +1903,6 @@ export function playBowelSound(soundType: BowelSoundType, durationMs: number = 6
     }
   }
 
-  // Auto-cleanup
-  setTimeout(() => ctx.close(), durationMs + 500);
 }
 
 // ============================================================================
@@ -1919,9 +1915,7 @@ export function playBowelSound(soundType: BowelSoundType, durationMs: number = 6
  * based on clinical percussion findings.
  */
 export function playPercussionSound(type: 'resonant' | 'hyper-resonant' | 'dull' | 'tympanic', count: number = 2): void {
-  const AudioCtx = (window as any).AudioContext || (window as any).webkitAudioContext;
-  if (!AudioCtx) return;
-  const ctx: AudioContext = new AudioCtx();
+  const ctx = getAudioContext();
 
   const params: { freq: number; duration: number; resonance: number } = (() => {
     switch (type) {
@@ -1970,9 +1964,6 @@ export function playPercussionSound(type: 'resonant' | 'hyper-resonant' | 'dull'
     osc.stop(startTime + params.duration + 0.05);
   }
 
-  // Close context after all taps finish
-  const totalDuration = (count - 1) * 0.2 + params.duration + 0.1;
-  setTimeout(() => ctx.close(), totalDuration * 1000);
 }
 
 /**

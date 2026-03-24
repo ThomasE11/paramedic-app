@@ -21,16 +21,31 @@ async function loadJsPDF(): Promise<any> {
     return (window as any).jspdf.jsPDF;
   }
 
-  // Load jsPDF from unpkg CDN
-  await new Promise<void>((resolve, reject) => {
-    const script = document.createElement('script');
-    script.src = 'https://unpkg.com/jspdf@4.0.0/dist/jspdf.umd.min.js';
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error('Failed to load jsPDF'));
-    document.head.appendChild(script);
-  });
+  // Try loading jsPDF from multiple CDNs for reliability
+  const cdnUrls = [
+    'https://unpkg.com/jspdf@4.0.0/dist/jspdf.umd.min.js',
+    'https://cdn.jsdelivr.net/npm/jspdf@4.0.0/dist/jspdf.umd.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js',
+  ];
 
-  return (window as any).jspdf.jsPDF;
+  for (const url of cdnUrls) {
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = url;
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error(`Failed to load from ${url}`));
+        document.head.appendChild(script);
+      });
+      if ((window as any).jspdf?.jsPDF) {
+        return (window as any).jspdf.jsPDF;
+      }
+    } catch {
+      console.warn(`jsPDF CDN failed: ${url}, trying next...`);
+    }
+  }
+
+  throw new Error('Failed to load jsPDF from all CDN sources');
 }
 
 /**

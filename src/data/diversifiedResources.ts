@@ -221,7 +221,7 @@ const abdominalResources: DebriefingResource[] = [
   { id: 'abdo-radiopaedia-aaa', title: 'Abdominal Aortic Aneurysm (Imaging)', url: 'https://radiopaedia.org/articles/abdominal-aortic-aneurysm-2', type: 'image', source: 'Radiopaedia', relevance: 'essential', category: 'abdominal' },
   { id: 'abdo-radiopaedia-obstruction', title: 'Bowel Obstruction (Imaging)', url: 'https://radiopaedia.org/articles/small-bowel-obstruction', type: 'image', source: 'Radiopaedia', relevance: 'important', category: 'abdominal' },
   { id: 'abdo-emcases-abdopain', title: 'Abdominal Pain - Case Approach', url: 'https://emergencymedicinecases.com/abdominal-pain/', type: 'podcast', source: 'EM Cases', relevance: 'important', category: 'abdominal' },
-  { id: 'abdo-nice-gi-bleed', title: 'NICE: GI Bleeding Management', url: 'https://www.nice.org.uk/guidance/ng141', type: 'guideline', source: 'NICE', relevance: 'important', category: 'abdominal' },
+  { id: 'abdo-nice-gi-bleed', title: 'NICE: Acute Upper GI Bleeding', url: 'https://www.nice.org.uk/guidance/cg141', type: 'guideline', source: 'NICE', relevance: 'important', category: 'abdominal' },
   { id: 'abdo-medscape-aaa', title: 'AAA - Clinical Overview', url: 'https://emedicine.medscape.com/article/1979501-overview', type: 'article', source: 'Medscape', relevance: 'supplementary', category: 'abdominal' },
 ];
 

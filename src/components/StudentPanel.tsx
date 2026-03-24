@@ -315,6 +315,20 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
     return () => clearInterval(checkInterval);
   }, [arrestActive, cprRunning, lastAdrenalineTime, adrenalineDoses, shockCount]);
 
+  // Cleanup deterioration interval on unmount
+  useEffect(() => {
+    return () => {
+      if (deteriorationIntervalRef.current) {
+        clearInterval(deteriorationIntervalRef.current);
+        deteriorationIntervalRef.current = null;
+      }
+      if (cprTimerRef.current) {
+        clearInterval(cprTimerRef.current);
+        cprTimerRef.current = null;
+      }
+    };
+  }, []);
+
   // Inactivity coaching — nudge students who are stuck
   useEffect(() => {
     if (!caseStartTime || caseEndTime || phase !== 'vitals') return;
