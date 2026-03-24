@@ -36,6 +36,7 @@ import {
   Wind, Droplets, Brain, Pill, Syringe
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { ThemeToggle } from '@/components/ThemeToggle';
 // AuscultationPanel removed — sounds now play inline from 3D Physical Examination
 import { DebriefingResourcesPanel } from '@/components/DebriefingResourcesPanel';
 import { exportSessionToPDF } from '@/lib/pdf-export';
@@ -770,6 +771,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                 </Badge>
               )}
 
+              <ThemeToggle />
               <Button variant="ghost" size="sm" onClick={onExit} className="text-[10px] sm:text-xs gap-1 text-muted-foreground hover:text-foreground h-7 sm:h-8 px-2 sm:px-3">
                 <ArrowLeft className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                 <span className="hidden sm:inline">Exit</span>
@@ -784,38 +786,42 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
         {/* PHASE 1: Case Selection */}
         {/* ================================================================ */}
         {phase === 'select' && (
-          <div className="max-w-2xl mx-auto animate-fade-in space-y-5 sm:space-y-8">
-            <div className="text-center mb-2 sm:mb-4">
-              <div className="mx-auto mb-4 sm:mb-5 flex h-14 w-14 sm:h-18 sm:w-18 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-xl shadow-blue-500/25 ring-4 ring-blue-500/10">
-                <Stethoscope className="h-7 w-7 sm:h-9 sm:w-9 text-white" />
+          <div className="max-w-2xl mx-auto animate-fade-in space-y-6 sm:space-y-10">
+            {/* Hero Section */}
+            <div className="text-center mb-2 sm:mb-4 relative">
+              <div className="absolute inset-0 -top-8 -z-10 overflow-hidden">
+                <div className="mx-auto w-64 h-64 rounded-full bg-gradient-to-br from-blue-500/8 via-indigo-500/5 to-cyan-500/8 blur-3xl" />
               </div>
-              <h2 className="heading-display text-xl sm:text-[2rem] leading-tight">Paramedic Case Generator</h2>
-              <p className="text-muted-foreground mt-1.5 sm:mt-2 text-sm sm:text-base max-w-md mx-auto leading-relaxed">
+              <div className="mx-auto mb-5 sm:mb-6 flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 shadow-2xl shadow-blue-500/30 ring-4 ring-blue-500/10">
+                <Stethoscope className="h-8 w-8 sm:h-10 sm:w-10 text-white drop-shadow-sm" />
+              </div>
+              <h2 className="heading-display text-2xl sm:text-[2.25rem] leading-tight text-foreground">Paramedic Case Generator</h2>
+              <p className="text-muted-foreground mt-2 sm:mt-3 text-sm sm:text-base max-w-lg mx-auto leading-relaxed">
                 Select your training level and generate realistic emergency scenarios to sharpen your clinical skills
               </p>
             </div>
 
             {/* Year Level */}
-            <Card className="card-glass rounded-2xl">
+            <Card className="card-glass rounded-2xl dark:bg-slate-900/60">
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm flex items-center gap-2">
+                <CardTitle className="text-sm flex items-center gap-2 heading-premium">
                   <GraduationCap className="h-4 w-4 text-blue-500" />
                   Select Your Year Level
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-5 gap-2">
+                <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-5 gap-2.5 sm:gap-3">
                   {yearLevels.map(year => (
                     <button
                       key={year.value}
                       onClick={() => setSelectedYear(year.value as StudentYear)}
-                      className={`flex flex-col items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-2.5 sm:py-3 rounded-xl border-2 text-xs sm:text-sm font-medium transition-all duration-300 ${
+                      className={`group flex flex-col items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-3 sm:py-4 rounded-xl border-2 text-xs sm:text-sm font-medium transition-all duration-300 ${
                         selectedYear === year.value
-                          ? 'border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400 shadow-md shadow-blue-500/10 ring-2 ring-blue-500/20'
-                          : 'border-border/60 hover:border-blue-500/40 text-muted-foreground hover:text-foreground hover:bg-accent/30'
+                          ? 'border-blue-500 bg-gradient-to-b from-blue-500/15 to-blue-500/5 text-blue-600 dark:text-blue-400 shadow-lg shadow-blue-500/15 ring-2 ring-blue-500/20 scale-[1.02]'
+                          : 'border-border/50 hover:border-blue-400/60 text-muted-foreground hover:text-foreground hover:bg-accent/40 hover:shadow-md hover:-translate-y-0.5 dark:border-slate-700/60'
                       }`}
                     >
-                      <GraduationCap className={`h-4 w-4 sm:h-5 sm:w-5 ${selectedYear === year.value ? 'text-blue-500' : 'text-muted-foreground/50'}`} />
+                      <GraduationCap className={`h-5 w-5 sm:h-6 sm:w-6 transition-all duration-300 ${selectedYear === year.value ? 'text-blue-500 scale-110' : 'text-muted-foreground/40 group-hover:text-blue-400/70'}`} />
                       {year.label}
                     </button>
                   ))}
@@ -824,9 +830,9 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
             </Card>
 
             {/* Category */}
-            <Card className="card-glass rounded-2xl">
+            <Card className="card-glass rounded-2xl dark:bg-slate-900/60">
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm flex items-center gap-2">
+                <CardTitle className="text-sm flex items-center gap-2 heading-premium">
                   <BarChart3 className="h-4 w-4 text-blue-500" />
                   Choose Category
                 </CardTitle>
@@ -835,29 +841,42 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                 <div className="flex flex-wrap gap-2">
                   <button
                     onClick={() => setSelectedCategory('all')}
-                    className={`px-3.5 py-2 rounded-xl border text-sm transition-all duration-300 ${
+                    className={`px-4 py-2.5 rounded-xl border text-sm transition-all duration-300 ${
                       selectedCategory === 'all'
-                        ? 'border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400 font-semibold ring-1 ring-blue-500/20 shadow-sm'
-                        : 'border-border/60 hover:border-blue-500/40 text-muted-foreground hover:bg-accent/30'
+                        ? 'border-blue-500 bg-gradient-to-r from-blue-500/15 to-blue-500/5 text-blue-600 dark:text-blue-400 font-semibold ring-1 ring-blue-500/25 shadow-md shadow-blue-500/10'
+                        : 'border-border/50 hover:border-blue-400/50 text-muted-foreground hover:bg-accent/40 hover:shadow-sm dark:border-slate-700/60'
                     }`}
                   >
-                    All Categories
+                    <span className="flex items-center gap-1.5">
+                      <span className={`h-2 w-2 rounded-full ${selectedCategory === 'all' ? 'bg-blue-500' : 'bg-muted-foreground/30'}`} />
+                      All Categories
+                    </span>
                   </button>
                   {caseCategories
                     .filter(cat => allCases.some(c => c.category === cat.value && c.yearLevels?.includes(selectedYear as any)))
-                    .map(cat => (
+                    .map(cat => {
+                    const catColors: Record<string, string> = {
+                      cardiac: 'bg-red-500', respiratory: 'bg-cyan-500', trauma: 'bg-orange-500',
+                      neurological: 'bg-purple-500', medical: 'bg-emerald-500', paediatric: 'bg-pink-500',
+                      obstetric: 'bg-rose-400', environmental: 'bg-amber-500', psychiatric: 'bg-violet-500',
+                    };
+                    const dotColor = catColors[cat.value.toLowerCase()] || 'bg-blue-500';
+                    return (
                     <button
                       key={cat.value}
                       onClick={() => setSelectedCategory(cat.value)}
-                      className={`px-3.5 py-2 rounded-xl border text-sm transition-all duration-300 ${
+                      className={`px-4 py-2.5 rounded-xl border text-sm transition-all duration-300 ${
                         selectedCategory === cat.value
-                          ? 'border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400 font-semibold ring-1 ring-blue-500/20 shadow-sm'
-                          : 'border-border/60 hover:border-blue-500/40 text-muted-foreground hover:bg-accent/30'
+                          ? 'border-blue-500 bg-gradient-to-r from-blue-500/15 to-blue-500/5 text-blue-600 dark:text-blue-400 font-semibold ring-1 ring-blue-500/25 shadow-md shadow-blue-500/10'
+                          : 'border-border/50 hover:border-blue-400/50 text-muted-foreground hover:bg-accent/40 hover:shadow-sm dark:border-slate-700/60'
                       }`}
                     >
-                      {cat.label}
+                      <span className="flex items-center gap-1.5">
+                        <span className={`h-2 w-2 rounded-full ${selectedCategory === cat.value ? 'bg-blue-500' : dotColor}`} />
+                        {cat.label}
+                      </span>
                     </button>
-                  ))}
+                  );})}
                 </div>
               </CardContent>
             </Card>
@@ -867,16 +886,16 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
               onClick={generateCase}
               disabled={isGenerating}
               size="lg"
-              className="w-full gap-2 sm:gap-3 text-sm sm:text-base py-5 sm:py-7 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-xl shadow-blue-500/20 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/30 hover:-translate-y-0.5"
+              className="w-full gap-2.5 sm:gap-3 text-sm sm:text-lg py-6 sm:py-8 rounded-2xl bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 hover:from-blue-600 hover:via-blue-700 hover:to-indigo-700 shadow-xl shadow-blue-500/25 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/35 hover:-translate-y-1 font-semibold tracking-tight generate-btn-shimmer"
             >
               {isGenerating ? (
-                <><Loader2 className="h-5 w-5 animate-spin" /> Generating Case...</>
+                <><Loader2 className="h-5 w-5 sm:h-6 sm:w-6 animate-spin" /> Generating Case...</>
               ) : (
-                <><Sparkles className="h-5 w-5" /> Generate Case</>
+                <><Sparkles className="h-5 w-5 sm:h-6 sm:w-6" /> Generate Case</>
               )}
             </Button>
 
-            <p className="text-center text-xs text-muted-foreground/60">
+            <p className="text-center text-xs text-muted-foreground/50 pb-4">
               Cases are randomized within your selected category and year level
             </p>
           </div>
@@ -1062,16 +1081,20 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
         {phase === 'vitals' && currentCase && (
           <div className="animate-fade-in space-y-3 sm:space-y-4">
             {/* ===== TOP: Patient Banner (full width) ===== */}
-            <div className="p-3 sm:p-5 rounded-2xl card-glass space-y-3">
+            <div className="p-3 sm:p-5 rounded-2xl card-glass dark:bg-slate-900/60 space-y-3">
               <div className="flex items-center gap-2 sm:gap-3">
-                <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 shrink-0">
+                <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-blue-600/10 shrink-0">
                   <Activity className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <h2 className="text-sm sm:text-base font-bold tracking-tight truncate">{getStudentCaseTitle(currentCase)}</h2>
                   <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
-                    {currentCase.dispatchInfo.location} <span className="mx-1 text-border">|</span> <Clock className="h-2.5 w-2.5 sm:h-3 sm:w-3 inline-block -mt-px" /> {formatTime(elapsedSeconds)}
+                    {currentCase.dispatchInfo.location}
                   </p>
+                </div>
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 dark:bg-primary/15 border border-primary/20 shrink-0">
+                  <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-primary" />
+                  <span className="font-mono text-xs sm:text-sm font-semibold text-primary">{formatTime(elapsedSeconds)}</span>
                 </div>
               </div>
               <div className="flex gap-1.5 sm:gap-2">
@@ -1079,14 +1102,14 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                   variant="outline"
                   size="sm"
                   onClick={() => setPhase('case')}
-                  className="gap-1 sm:gap-1.5 text-[10px] sm:text-xs rounded-lg flex-1 sm:flex-none h-8"
+                  className="gap-1 sm:gap-1.5 text-[10px] sm:text-xs rounded-lg flex-1 sm:flex-none h-8 dark:border-slate-700"
                 >
                   <FileText className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> <span className="hidden xs:inline">Case </span>Details
                 </Button>
                 <Button
                   size="sm"
                   onClick={() => endCase('transport')}
-                  className="gap-1 sm:gap-1.5 text-[10px] sm:text-xs rounded-lg bg-amber-500 hover:bg-amber-600 text-white shadow-sm flex-1 sm:flex-none h-8"
+                  className="gap-1 sm:gap-1.5 text-[10px] sm:text-xs rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-sm shadow-amber-500/15 flex-1 sm:flex-none h-8"
                 >
                   <Ambulance className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> Transport
                 </Button>
@@ -1104,17 +1127,17 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
             {/* ===== Scene Toggle ===== */}
             <button
               onClick={() => setShowScene(!showScene)}
-              className={`w-full flex items-center gap-2 px-4 py-3 rounded-xl border-2 transition-all text-sm font-semibold ${
+              className={`w-full flex items-center gap-3 px-5 py-4 rounded-xl border-2 transition-all duration-300 font-semibold ${
                 showScene
-                  ? 'border-blue-400 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300'
-                  : 'border-amber-400 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 animate-pulse hover:animate-none'
+                  ? 'border-blue-400 bg-blue-50/80 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 shadow-sm'
+                  : 'border-amber-400 bg-gradient-to-r from-amber-50 to-amber-100/60 dark:from-amber-950/40 dark:to-amber-900/20 text-amber-700 dark:text-amber-300 shadow-md shadow-amber-500/10 hover:shadow-lg hover:shadow-amber-500/15 hover:-translate-y-0.5'
               }`}
             >
-              <Shield className="h-4 w-4" />
-              <span className="flex-1 text-left">
-                {showScene ? 'Scene Details' : '⚠ Assess Scene — Click to View Details'}
+              <Shield className="h-5 w-5 shrink-0" />
+              <span className="flex-1 text-left text-sm sm:text-base">
+                {showScene ? 'Scene Details' : 'Assess Scene — Click to View Details'}
               </span>
-              {showScene ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              {showScene ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5 animate-bounce-subtle" />}
             </button>
             {showScene && (
               <div className="p-3 rounded-xl bg-muted/20 border border-border/30 text-xs space-y-2 animate-fade-in">
