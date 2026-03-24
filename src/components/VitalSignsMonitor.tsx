@@ -2353,7 +2353,7 @@ export function VitalSignsMonitor({
                       ? 'text-amber-400 text-3xl sm:text-4xl'
                       : 'text-green-400 text-3xl sm:text-4xl'
                 }`}>
-                  {visibleVitals.has('pulse') ? currentVitals.pulse : '---'}
+                  {visibleVitals.has('pulse') ? Math.round(currentVitals.pulse) : '---'}
                 </div>
               </div>
 
@@ -2372,7 +2372,7 @@ export function VitalSignsMonitor({
                       ? 'text-amber-400 text-3xl sm:text-4xl'
                       : 'text-cyan-400 text-3xl sm:text-4xl'
                 }`}>
-                  {visibleVitals.has('spo2') ? currentVitals.spo2 : '---'}
+                  {visibleVitals.has('spo2') ? Math.round(currentVitals.spo2) : '---'}
                 </div>
               </div>
 
@@ -2421,7 +2421,7 @@ export function VitalSignsMonitor({
                       ? 'text-amber-400 text-2xl sm:text-3xl'
                       : 'text-yellow-400 text-2xl sm:text-3xl'
                 }`}>
-                  {visibleVitals.has('respiration') ? currentVitals.respiration : '---'}
+                  {visibleVitals.has('respiration') ? Math.round(currentVitals.respiration) : '---'}
                 </div>
               </div>
 
@@ -2492,7 +2492,7 @@ export function VitalSignsMonitor({
                       ? getVitalAlarmState('bloodGlucose').isAlarm ? 'text-red-500' : 'text-purple-400'
                       : 'text-purple-400/20'
                   }`}>
-                    {visibleVitals.has('bloodGlucose') ? currentVitals.bloodGlucose : '---'}
+                    {visibleVitals.has('bloodGlucose') ? (typeof currentVitals.bloodGlucose === 'number' ? currentVitals.bloodGlucose.toFixed(1) : currentVitals.bloodGlucose) : '---'}
                   </div>
                 </div>
               )}
