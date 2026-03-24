@@ -1465,7 +1465,7 @@ export const additionalRespiratoryCases: CaseScenario[] = [
   }),
 
   createCase({
-    id: 'resp-010',
+    id: 'resp-011',
     title: 'Community Acquired Pneumonia',
     category: 'respiratory',
     priority: 'high',

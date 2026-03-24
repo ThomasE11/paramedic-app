@@ -144,6 +144,32 @@ export const TREATMENT_YEAR_ACCESS: Record<string, StudentYear[]> = {
   rectal_diazepam:      ['2nd-year', '3rd-year', '4th-year'],
   diazepam_rectal:      ['2nd-year', '3rd-year', '4th-year'],
   paracetamol_iv:       ['3rd-year', '4th-year'],
+
+  // ----- ADDITIONAL MEDICATIONS -----
+  adenosine_12mg:       ['3rd-year', '4th-year'],
+  diltiazem_20mg:       ['4th-year'],
+  metoprolol_5mg:       ['4th-year'],
+  flumazenil_02mg:      ['3rd-year', '4th-year'],
+  labetalol_20mg:       ['4th-year'],
+  lorazepam_4mg:        ['3rd-year', '4th-year'],
+  sugammadex:           ['4th-year'],
+  adrenaline_im_child:  ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
+  adrenaline_im_older:  ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
+  dextrose_10_250ml:    ['2nd-year', '3rd-year', '4th-year'],
+
+  // ----- IMMOBILISATION DEVICES -----
+  cervical_collar:      ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
+  head_blocks:          ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
+  spinal_board:         ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
+  scoop_stretcher:      ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
+  vacuum_mattress:      ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
+  ked:                  ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
+  traction_splint:      ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
+
+  // ----- NAME ALIASES -----
+  chlorphenamine_10mg:  ['3rd-year', '4th-year'],
+  clopidogrel_300mg:    ['3rd-year', '4th-year'],
+  enoxaparin_1mg:       ['3rd-year', '4th-year'],
 };
 
 /**
