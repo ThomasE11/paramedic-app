@@ -33,15 +33,17 @@ interface RegionRange {
   condition?: 'front' | 'back' | 'lateral';
 }
 
+// Mixamo model proportions: ~1.72 units tall, feet at Y=0
+// Adjusted from visual testing to match actual mesh geometry
 const REGION_RANGES: RegionRange[] = [
-  { id: 'head', label: 'Head', description: 'Scalp, skull, ears — palpate for deformity, bleeding', yMin: 1.52, yMax: 1.8 },
-  { id: 'face', label: 'Face', description: 'Eyes (PERRL), nose, mouth, jaw, facial symmetry', yMin: 1.42, yMax: 1.52 },
-  { id: 'neck-cspine', label: 'Neck & C-Spine', description: 'Trachea, JVD, C-spine tenderness, subcutaneous emphysema', yMin: 1.32, yMax: 1.42 },
-  { id: 'chest', label: 'Chest', description: 'Inspect, palpate, percuss. Symmetry, crepitus, flail. Auscultate separately.', yMin: 1.05, yMax: 1.32 },
-  { id: 'abdomen', label: 'Abdomen', description: 'Inspect, auscultate bowel sounds, palpate 4 quadrants, percussion', yMin: 0.85, yMax: 1.05 },
-  { id: 'pelvis', label: 'Pelvis', description: 'Pelvic spring test, stability, perineal inspection', yMin: 0.72, yMax: 0.85 },
-  { id: 'extremities', label: 'Extremities', description: 'Pulses, sensation, motor, deformity, compartment signs', yMin: 0.0, yMax: 0.72 },
-  { id: 'posterior-logroll', label: 'Posterior / Log Roll', description: 'Log roll with C-spine control. Palpate entire spine.', yMin: 0.72, yMax: 1.52, condition: 'back' },
+  { id: 'head', label: 'Head', description: 'Inspect and palpate scalp, skull, ears', yMin: 1.58, yMax: 1.75 },
+  { id: 'face', label: 'Face', description: 'Eyes, nose, mouth, jaw, facial symmetry', yMin: 1.48, yMax: 1.58 },
+  { id: 'neck-cspine', label: 'Neck & C-Spine', description: 'Trachea, JVD, C-spine, subcutaneous emphysema', yMin: 1.38, yMax: 1.48 },
+  { id: 'chest', label: 'Chest', description: 'Inspect, palpate, percuss, auscultate', yMin: 1.15, yMax: 1.38 },
+  { id: 'abdomen', label: 'Abdomen', description: 'Inspect, auscultate, percuss, palpate', yMin: 0.95, yMax: 1.15 },
+  { id: 'pelvis', label: 'Pelvis', description: 'Stability test, perineal inspection', yMin: 0.82, yMax: 0.95 },
+  { id: 'extremities', label: 'Extremities', description: 'Pulses, sensation, motor, deformity', yMin: 0.0, yMax: 0.82 },
+  { id: 'posterior-logroll', label: 'Posterior / Log Roll', description: 'Log roll with C-spine control. Palpate entire spine.', yMin: 0.82, yMax: 1.48, condition: 'back' },
 ];
 
 function getRegionAtPoint(point: THREE.Vector3): RegionRange | null {

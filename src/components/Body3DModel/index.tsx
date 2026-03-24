@@ -240,11 +240,30 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
     setIsFlipped(!isFlipped);
   }, [isFlipped]);
 
+  // Y-center positions for each region (must match BodyMesh REGION_RANGES)
+  const regionCenters: Record<string, number> = useMemo(() => ({
+    'head': 1.66, 'face': 1.53, 'neck-cspine': 1.43,
+    'chest': 1.26, 'abdomen': 1.05, 'pelvis': 0.88,
+    'extremities': 0.41, 'posterior-logroll': 1.15,
+  }), []);
+
   const handleRegionClick = useCallback((stepId: string) => {
     setActiveRegion(stepId);
     setSelectedAction(null);
     onRegionClick(stepId as AssessmentStepId);
-  }, [onRegionClick]);
+
+    // Zoom camera to focus on the selected region
+    if (controlsRef.current) {
+      const centerY = regionCenters[stepId] ?? 0.85;
+      controlsRef.current.target.set(0, centerY, 0);
+      // Zoom in closer for head/face/neck, stay wider for extremities
+      const zoomDistance = stepId === 'extremities' ? 3.5 : stepId === 'head' || stepId === 'face' ? 2.0 : 2.5;
+      const currentPos = controlsRef.current.object.position;
+      const dir = currentPos.clone().sub(controlsRef.current.target).normalize();
+      controlsRef.current.object.position.copy(dir.multiplyScalar(zoomDistance).add(controlsRef.current.target));
+      controlsRef.current.update();
+    }
+  }, [onRegionClick, regionCenters]);
 
   const handleExamAction = useCallback((actionId: string) => {
     if (!activeRegion) return;
@@ -315,44 +334,10 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
         </div>
       </div>
 
-      {/* Three-panel layout when region is active — stacks on mobile, side-by-side on desktop */}
-      <div className={`${activeRegion ? 'flex flex-col lg:grid lg:grid-cols-[240px_1fr_280px]' : ''}`}>
+      {/* Body always centered. When region active, exam options and findings appear below on all screens */}
+      <div>
 
-        {/* LEFT (desktop) / TOP (mobile): Assessment options */}
-        {activeRegion && (
-          <div className="order-first lg:order-none border-b lg:border-b-0 lg:border-r border-border/30 bg-white/60 dark:bg-slate-900/60 p-3 space-y-2 overflow-y-auto max-h-[280px] lg:max-h-[420px]">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-foreground/70 dark:text-slate-300 px-1 mb-2">
-              Examination
-            </p>
-            {subRegions.map(sr => (
-              <div key={sr.id} className="mb-2">
-                <p className="text-xs font-bold text-foreground dark:text-white px-1 py-1 border-b border-border/20 mb-1.5">{sr.label}</p>
-                <div className="space-y-1">
-                  {sr.actions.map(action => {
-                    const Icon = TECHNIQUE_ICONS[action.technique];
-                    const isRevealed = revealedFindings.has(action.id);
-                    const isSelected = selectedAction === action.id;
-                    return (
-                      <button
-                        key={action.id}
-                        onClick={() => handleExamAction(action.id)}
-                        className={`flex items-center gap-2 w-full text-left px-2.5 py-2 rounded-lg text-xs transition-all border ${
-                          isSelected ? 'ring-2 ring-blue-400 shadow-sm ' + TECHNIQUE_COLORS[action.technique]
-                          : isRevealed ? 'bg-green-50 border-green-300 text-green-800 dark:bg-green-950/30 dark:border-green-700 dark:text-green-300 font-medium'
-                          : TECHNIQUE_COLORS[action.technique]
-                        }`}
-                      >
-                        <Icon className="h-3.5 w-3.5 shrink-0" />
-                        <span className="flex-1 leading-snug truncate">{action.label}</span>
-                        {isRevealed && <span className="text-green-500 text-xs font-bold shrink-0">✓</span>}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        {/* Exam options and findings go BELOW the 3D body, not beside it */}
 
         {/* CENTER: 3D Body */}
         <div className={`${activeRegion ? 'h-[420px]' : 'h-[320px] sm:h-[380px] lg:h-[420px]'}`}>
@@ -384,70 +369,118 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
           </Canvas>
         </div>
 
-        {/* RIGHT (desktop) / BELOW (mobile): Findings */}
-        {activeRegion && (
-          <div className="border-t lg:border-t-0 lg:border-l border-border/30 bg-white/60 dark:bg-slate-900/60 p-3 overflow-y-auto max-h-[320px] lg:max-h-[420px]">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-foreground/70 dark:text-slate-300 mb-3">
-              Findings
-            </p>
-            {selectedAction && revealedFindings.has(selectedAction) ? (
-              <div className="space-y-3">
-                {/* Current finding — highlighted */}
-                <div className="p-3.5 rounded-xl bg-green-50 dark:bg-green-950/30 border border-green-300 dark:border-green-700 shadow-sm">
-                  <p className="text-xs font-bold text-green-800 dark:text-green-200 mb-1.5">
-                    {subRegions.flatMap(sr => sr.actions).find(a => a.id === selectedAction)?.label || 'Finding'}
-                  </p>
-                  <p className="text-sm text-green-700 dark:text-green-300 leading-relaxed font-medium">
-                    {revealedFindings.get(selectedAction)}
-                  </p>
-                </div>
-                {/* All revealed findings for this region */}
-                {(() => {
-                  const regionActions = subRegions.flatMap(sr => sr.actions).map(a => a.id);
-                  const regionFindings = [...revealedFindings.entries()].filter(([id]) => regionActions.includes(id) && id !== selectedAction);
-                  if (regionFindings.length === 0) return null;
-                  return (
-                    <div className="space-y-1.5 pt-2 border-t border-border/20">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-foreground/50 dark:text-slate-400">Previous findings</p>
-                      {regionFindings.map(([id, finding]) => (
-                        <div key={id} className="p-2.5 rounded-lg bg-muted/40 dark:bg-slate-800/50 border border-border/30 dark:border-slate-700/50">
-                          <span className="text-xs font-semibold text-foreground dark:text-slate-200">{subRegions.flatMap(sr => sr.actions).find(a => a.id === id)?.label}: </span>
-                          <span className="text-xs text-muted-foreground dark:text-slate-400">{finding}</span>
-                        </div>
-                      ))}
-                    </div>
-                  );
-                })()}
-              </div>
-            ) : (
-              <div className="flex items-center justify-center h-32">
-                <div className="text-center">
-                  <Stethoscope className="h-8 w-8 mx-auto mb-2 text-muted-foreground/30" />
-                  <p className="text-xs text-muted-foreground dark:text-slate-500">
-                    Select an examination<br />technique on the left
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+        {/* Findings panel removed from here — now below canvas */}
       </div>
 
       {/* Controls + footer */}
       <div className="flex items-center justify-between px-3 py-1.5 bg-white/50 dark:bg-black/20 border-t border-border/30">
         <p className="text-[9px] text-muted-foreground">
-          {activeRegion ? 'Click exams on the left → findings appear on the right' : 'Click a body region to examine'}
+          {activeRegion ? 'Perform each examination technique below' : 'Click a body region to examine'}
         </p>
-        <Button
-          variant="secondary"
-          size="sm"
-          className="h-7 gap-1 text-[9px] rounded-lg"
-          onClick={handleToggleView}
-        >
-          <RotateCcw className="h-2.5 w-2.5" />
-          {isFlipped ? 'Anterior' : 'Posterior'}
-        </Button>
+        <div className="flex gap-1.5">
+          {activeRegion && (
+            <Button variant="ghost" size="sm" className="h-7 gap-1 text-[9px] rounded-lg" onClick={() => {
+              setActiveRegion(null);
+              setSelectedAction(null);
+              // Reset camera
+              if (controlsRef.current) {
+                controlsRef.current.target.set(0, 0.85, 0);
+                controlsRef.current.object.position.set(0, 0.9, 3.2);
+                controlsRef.current.update();
+              }
+            }}>
+              <X className="h-2.5 w-2.5" /> Back
+            </Button>
+          )}
+          <Button
+            variant="secondary"
+            size="sm"
+            className="h-7 gap-1 text-[9px] rounded-lg"
+            onClick={handleToggleView}
+          >
+            <RotateCcw className="h-2.5 w-2.5" />
+            {isFlipped ? 'Anterior' : 'Posterior'}
+          </Button>
+        </div>
       </div>
+
+      {/* ===== EXAM PANEL: Below body, shows when region is active ===== */}
+      {activeRegion && (
+        <div className="border-t border-border/30 bg-white/60 dark:bg-slate-900/60">
+          {/* Two-column: techniques left, findings right */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-0 divide-y sm:divide-y-0 sm:divide-x divide-border/30">
+            {/* LEFT: Examination techniques */}
+            <div className="p-3 space-y-1.5">
+              <p className="text-xs font-bold text-foreground dark:text-white mb-2">
+                {REGION_LABELS[activeRegion]} — Examination
+              </p>
+              {subRegions.map(sr => (
+                <div key={sr.id} className="space-y-1">
+                  {sr.actions.map(action => {
+                    const Icon = TECHNIQUE_ICONS[action.technique];
+                    const isRevealed = revealedFindings.has(action.id);
+                    const isSelected = selectedAction === action.id;
+                    return (
+                      <button
+                        key={action.id}
+                        onClick={() => handleExamAction(action.id)}
+                        className={`flex items-center gap-2.5 w-full text-left px-3 py-2.5 rounded-xl text-sm transition-all border-2 ${
+                          isSelected ? 'ring-2 ring-blue-400 shadow-md border-blue-400 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300'
+                          : isRevealed ? 'border-green-400 bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-300'
+                          : 'border-border/40 dark:border-slate-700 hover:border-blue-300 hover:bg-accent/30 text-foreground dark:text-slate-200'
+                        }`}
+                      >
+                        <Icon className="h-4 w-4 shrink-0" />
+                        <span className="flex-1 font-medium">{action.label}</span>
+                        {isRevealed && <span className="text-green-500 font-bold shrink-0">✓</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+
+            {/* RIGHT: Findings */}
+            <div className="p-3">
+              <p className="text-xs font-bold text-foreground dark:text-white mb-2">Findings</p>
+              {selectedAction && revealedFindings.has(selectedAction) ? (
+                <div className="space-y-2">
+                  <div className="p-4 rounded-xl bg-green-50 dark:bg-green-950/30 border-2 border-green-300 dark:border-green-700">
+                    <p className="text-sm font-bold text-green-800 dark:text-green-200 mb-1">
+                      {subRegions.flatMap(sr => sr.actions).find(a => a.id === selectedAction)?.label}
+                    </p>
+                    <p className="text-base text-green-700 dark:text-green-300 leading-relaxed">
+                      {revealedFindings.get(selectedAction)}
+                    </p>
+                  </div>
+                  {/* Previous findings */}
+                  {(() => {
+                    const regionActions = subRegions.flatMap(sr => sr.actions).map(a => a.id);
+                    const others = [...revealedFindings.entries()].filter(([id]) => regionActions.includes(id) && id !== selectedAction);
+                    if (others.length === 0) return null;
+                    return (
+                      <div className="space-y-1.5 pt-2">
+                        {others.map(([id, finding]) => (
+                          <div key={id} className="p-2.5 rounded-lg bg-muted/30 dark:bg-slate-800/40 border border-border/30">
+                            <span className="text-xs font-semibold dark:text-slate-200">{subRegions.flatMap(sr => sr.actions).find(a => a.id === id)?.label}: </span>
+                            <span className="text-xs text-muted-foreground dark:text-slate-400">{finding}</span>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-24 text-muted-foreground">
+                  <p className="text-sm text-center dark:text-slate-500">
+                    Select an examination technique
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
