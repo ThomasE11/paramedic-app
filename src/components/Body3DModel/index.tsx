@@ -79,7 +79,7 @@ function getSubRegions(regionId: string): SubRegion[] {
         { id: 'trachea-palpate', label: 'Midline or deviated', technique: 'palpate' },
       ]},
       { id: 'jvp', label: 'Jugular Veins', actions: [
-        { id: 'jvd-inspect', label: 'JVD — elevated or flat', technique: 'inspect' },
+        { id: 'jvd-inspect', label: 'Assess jugular venous distension', technique: 'inspect' },
       ]},
       { id: 'cspine', label: 'C-Spine', actions: [
         { id: 'cspine-palpate', label: 'Midline tenderness, step deformity', technique: 'palpate' },

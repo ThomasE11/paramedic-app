@@ -334,34 +334,34 @@ export const videoResources: LocalVideoResource[] = [
 
 export const referenceArticles = [
   // Cardiac
-  { id: 'wiki-heart-failure', title: 'Heart Failure - Clinical Overview', source: 'Wikipedia / Medical Literature', url: 'https://en.wikipedia.org/wiki/Heart_failure', category: 'cardiac' },
+  { id: 'emcrit-heart-failure', title: 'Heart Failure - Clinical Overview', source: 'EMCrit IBCC', url: 'https://emcrit.org/ibcc/chf/', category: 'cardiac' },
   { id: 'esc-heart-failure', title: 'ESC Guidelines for Heart Failure', source: 'European Society of Cardiology', url: 'https://www.escardio.org/Guidelines/Clinical-Practice-Guidelines/Acute-and-Chronic-Heart-Failure-Guidelines', category: 'cardiac' },
-  { id: 'acs-management', title: 'Acute Coronary Syndrome - Prehospital Management', source: 'JRCALC', url: 'https://en.wikipedia.org/wiki/Acute_coronary_syndrome', category: 'cardiac' },
+  { id: 'acs-management', title: 'Acute Coronary Syndrome - Prehospital Management', source: 'LITFL', url: 'https://litfl.com/acute-coronary-syndrome/', category: 'cardiac' },
 
   // Respiratory
-  { id: 'wiki-pneumothorax', title: 'Pneumothorax - Medical Overview', source: 'Wikipedia / Medical Literature', url: 'https://en.wikipedia.org/wiki/Pneumothorax', category: 'respiratory' },
-  { id: 'wiki-asthma', title: 'Asthma - Pathophysiology and Management', source: 'Wikipedia / Medical Literature', url: 'https://en.wikipedia.org/wiki/Asthma', category: 'respiratory' },
+  { id: 'litfl-pneumothorax', title: 'Pneumothorax - Medical Overview', source: 'LITFL', url: 'https://litfl.com/pneumothorax/', category: 'respiratory' },
+  { id: 'litfl-asthma', title: 'Asthma - Pathophysiology and Management', source: 'LITFL', url: 'https://litfl.com/asthma/', category: 'respiratory' },
   { id: 'bts-asthma', title: 'BTS/SIGN Asthma Management Guideline', source: 'British Thoracic Society', url: 'https://www.brit-thoracic.org.uk/quality-improvement/guidelines/asthma/', category: 'respiratory' },
-  { id: 'wiki-copd', title: 'COPD - Chronic Obstructive Pulmonary Disease', source: 'Wikipedia / Medical Literature', url: 'https://en.wikipedia.org/wiki/Chronic_obstructive_pulmonary_disease', category: 'respiratory' },
+  { id: 'litfl-copd', title: 'COPD - Chronic Obstructive Pulmonary Disease', source: 'LITFL', url: 'https://litfl.com/chronic-obstructive-pulmonary-disease-copd/', category: 'respiratory' },
 
   // Neurological
-  { id: 'wiki-tbi', title: 'Traumatic Brain Injury - Overview', source: 'Wikipedia / Medical Literature', url: 'https://en.wikipedia.org/wiki/Traumatic_brain_injury', category: 'neurological' },
-  { id: 'wiki-stroke', title: 'Stroke - Recognition and Management', source: 'Wikipedia / Medical Literature', url: 'https://en.wikipedia.org/wiki/Stroke', category: 'neurological' },
+  { id: 'litfl-tbi', title: 'Traumatic Brain Injury', source: 'LITFL', url: 'https://litfl.com/traumatic-brain-injury/', category: 'neurological' },
+  { id: 'litfl-stroke', title: 'Stroke - Recognition and Management', source: 'LITFL', url: 'https://litfl.com/stroke/', category: 'neurological' },
 
   // Infection / Sepsis
   { id: 'wiki-sepsis', title: 'Sepsis - Definition, Recognition, and Management', source: 'WikiEM', url: 'https://wikem.org/wiki/Sepsis', category: 'infection' },
   { id: 'nice-sepsis', title: 'NICE: Sepsis Recognition and Early Management (NG51)', source: 'NICE', url: 'https://www.nice.org.uk/guidance/ng51', category: 'infection' },
-  { id: 'wiki-ssi', title: 'Surgical Site Infection - Overview', source: 'Wikipedia / Medical Literature', url: 'https://en.wikipedia.org/wiki/Surgical_site_infection', category: 'infection' },
+  { id: 'emcrit-ssi', title: 'Surgical Site Infection - Overview', source: 'EMDocs', url: 'https://www.emdocs.net/surgical-wound-infections-ed-evaluation-and-management/', category: 'infection' },
   { id: 'nice-skin-infection', title: 'NICE: Skin and Soft Tissue Infections', source: 'NICE', url: 'https://www.nice.org.uk/guidance/ng141', category: 'infection' },
   { id: 'surviving-sepsis', title: 'Surviving Sepsis Campaign Guidelines', source: 'SSC', url: 'https://www.sccm.org/SurvivingSepsisCampaign/Guidelines', category: 'infection' },
 
   // Metabolic
-  { id: 'wiki-dka', title: 'Diabetic Ketoacidosis - Overview', source: 'Wikipedia / Medical Literature', url: 'https://en.wikipedia.org/wiki/Diabetic_ketoacidosis', category: 'metabolic' },
-  { id: 'wiki-hypoglycemia', title: 'Hypoglycemia - Recognition and Management', source: 'Wikipedia / Medical Literature', url: 'https://en.wikipedia.org/wiki/Hypoglycemia', category: 'metabolic' },
+  { id: 'litfl-dka', title: 'Diabetic Ketoacidosis - Overview', source: 'LITFL', url: 'https://litfl.com/diabetic-ketoacidosis-dka/', category: 'metabolic' },
+  { id: 'litfl-hypoglycemia', title: 'Hypoglycemia - Recognition and Management', source: 'LITFL', url: 'https://litfl.com/hypoglycaemia/', category: 'metabolic' },
 
   // Trauma
-  { id: 'wiki-trauma-primary', title: 'Primary Survey - ABCDE Assessment', source: 'Wikipedia / Medical Literature', url: 'https://en.wikipedia.org/wiki/Primary_survey', category: 'trauma' },
-  { id: 'atls-overview', title: 'Advanced Trauma Life Support - Overview', source: 'Wikipedia / Medical Literature', url: 'https://en.wikipedia.org/wiki/Advanced_trauma_life_support', category: 'trauma' },
+  { id: 'litfl-primary-survey', title: 'Primary Survey - ABCDE Assessment', source: 'LITFL', url: 'https://litfl.com/primary-survey/', category: 'trauma' },
+  { id: 'litfl-atls', title: 'Advanced Trauma Life Support - Overview', source: 'LITFL', url: 'https://litfl.com/advanced-trauma-life-support-atls/', category: 'trauma' },
 ];
 
 // ============================================================================

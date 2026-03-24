@@ -155,6 +155,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
   const [activePrimarySurvey, setActivePrimarySurvey] = useState<'scene-safety' | 'airway' | 'breathing' | 'circulation' | 'disability' | 'exposure' | null>(null);
   const [activeHistoryStep, setActiveHistoryStep] = useState<'signs-symptoms' | 'allergies' | 'medications' | 'past-medical' | 'last-meal' | 'events-leading' | null>(null);
   const [activeManagementTab, setActiveManagementTab] = useState<'airway' | 'breathing' | 'circulation' | 'disability' | 'exposure' | 'medications' | null>(null);
+  const [medSearch, setMedSearch] = useState('');
 
   // Transport decision wizard — step-by-step flow
   const [showTransportDecision, setShowTransportDecision] = useState(false);
@@ -1610,10 +1611,22 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                     </div>
                     {/* Treatment options for active management tab */}
                     {activeManagementTab && currentVitals && (
-                      <div className="mt-2 p-2 rounded-xl bg-muted/20 border border-border/30 animate-fade-in max-h-64 overflow-y-auto">
-                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
-                          {activeManagementTab === 'medications' ? 'Medications' : activeManagementTab.charAt(0).toUpperCase() + activeManagementTab.slice(1)} Treatments
-                        </p>
+                      <div className="mt-2 p-2 rounded-xl bg-muted/20 border border-border/30 animate-fade-in max-h-72 overflow-y-auto">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                            {activeManagementTab === 'medications' ? 'Medications' : activeManagementTab.charAt(0).toUpperCase() + activeManagementTab.slice(1)} Treatments
+                          </p>
+                        </div>
+                        {/* Search input for medications */}
+                        {activeManagementTab === 'medications' && (
+                          <input
+                            type="text"
+                            value={medSearch}
+                            onChange={e => setMedSearch(e.target.value)}
+                            placeholder="Search medications..."
+                            className="w-full mb-2 px-2.5 py-1.5 rounded-lg border border-border/40 bg-white dark:bg-black/20 text-xs placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                          />
+                        )}
                         <div className="space-y-1">
                           {TREATMENTS.filter(t => {
                             if (activeManagementTab === 'disability') {
@@ -1621,17 +1634,21 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                                 'glucose_10g', 'dextrose_10', 'dextrose_10_250ml', 'midazolam_5mg', 'midazolam_buccal',
                                 'diazepam_rectal', 'mannitol_20', 'naloxone_04mg', 'ketamine_iv',
                                 'ondansetron_4mg', 'metoclopramide_10mg', 'hypertonic_saline',
+                                'lorazepam_4mg', 'flumazenil_02mg',
                               ].includes(t.id) || t.description?.toLowerCase().includes('seizure') || t.description?.toLowerCase().includes('glucose');
                             }
                             if (activeManagementTab === 'exposure') {
                               return t.category === 'comfort' || t.category === 'positioning';
                             }
                             if (activeManagementTab === 'medications') {
-                              return t.category === 'medication';
+                              const matchesSearch = !medSearch || t.name.toLowerCase().includes(medSearch.toLowerCase()) || t.description.toLowerCase().includes(medSearch.toLowerCase());
+                              return t.category === 'medication' && matchesSearch;
                             }
                             const catMap: Record<string, TreatmentCategory> = { airway: 'airway', breathing: 'breathing', circulation: 'circulation' };
                             return t.category === catMap[activeManagementTab];
-                          }).map(treatment => {
+                          })
+                          .sort((a, b) => a.name.localeCompare(b.name)) // Alphabetical
+                          .map(treatment => {
                             const isApplied = appliedTreatmentIds.includes(treatment.id);
                             const isCurrentlyApplying = applyingTreatmentId === treatment.id;
                             return (
