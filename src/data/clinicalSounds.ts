@@ -280,7 +280,7 @@ export function getInitialSounds(
     }
     if (sub.includes('copd') || findingsStr.includes('copd')) {
       return {
-        leftLung: 'wheeze',
+        leftLung: 'rhonchi',
         rightLung: 'rhonchi',
         heartSound: 'tachycardic',
         additionalSounds: ['Pursed-lip breathing', 'Barrel chest'],
@@ -289,25 +289,50 @@ export function getInitialSounds(
     }
     if (sub.includes('pneumothorax') || findingsStr.includes('pneumothorax')) {
       const isTension = sub.includes('tension') || findingsStr.includes('tension');
-      return {
-        leftLung: isTension ? 'absent' : 'diminished',
-        rightLung: 'clear',
-        heartSound: isTension ? 'tachycardic' : 'normal',
-        additionalSounds: isTension
-          ? ['Tracheal deviation to right', 'Distended neck veins', 'Hyper-resonant left chest']
-          : ['Reduced chest expansion on left'],
-        description: isTension
-          ? 'ABSENT breath sounds on the left. Clear on the right. Tracheal deviation noted.'
-          : 'Diminished breath sounds on the left. Clear air entry on the right.'
-      };
+      // Determine which side is affected from findings
+      const rightSided = findingsStr.includes('right');
+      const leftSided = findingsStr.includes('left') && !findingsStr.includes('right');
+      // Default to left if no laterality specified
+      const affectedRight = rightSided && !leftSided;
+
+      if (isTension) {
+        // Tension pneumothorax — absent on affected side
+        return {
+          leftLung: affectedRight ? 'clear' : 'absent',
+          rightLung: affectedRight ? 'absent' : 'clear',
+          heartSound: 'tachycardic',
+          additionalSounds: [
+            `Tracheal deviation to ${affectedRight ? 'left' : 'right'}`,
+            'Distended neck veins',
+            `Hyper-resonant ${affectedRight ? 'right' : 'left'} chest`,
+          ],
+          description: `ABSENT breath sounds ${affectedRight ? 'right' : 'left'} hemithorax. Tension pneumothorax.`,
+        };
+      } else {
+        // Simple pneumothorax — diminished on affected side
+        return {
+          leftLung: affectedRight ? 'clear' : 'diminished',
+          rightLung: affectedRight ? 'diminished' : 'clear',
+          heartSound: 'normal',
+          additionalSounds: [`Reduced chest expansion on ${affectedRight ? 'right' : 'left'}`],
+          description: `Diminished breath sounds ${affectedRight ? 'right' : 'left'} hemithorax.`,
+        };
+      }
     }
     if (sub.includes('pneumonia') || findingsStr.includes('pneumonia') || findingsStr.includes('consolidation')) {
+      // Determine which side is affected from findings
+      const rightPneumonia = findingsStr.includes('right') || findingsStr.includes('rll') || findingsStr.includes('right lower');
+      const leftPneumonia = findingsStr.includes('left') && !rightPneumonia;
+      // Default to left if no laterality specified
+      const affectedRight = rightPneumonia && !leftPneumonia;
       return {
-        leftLung: 'crackles-fine',
-        rightLung: 'clear',
+        leftLung: affectedRight ? 'clear' : 'crackles-fine',
+        rightLung: affectedRight ? 'crackles-fine' : 'clear',
         heartSound: 'tachycardic',
         additionalSounds: ['Productive cough', 'Fever'],
-        description: 'Fine inspiratory crackles at left base with bronchial breathing. Clear right lung.'
+        description: affectedRight
+          ? 'Fine inspiratory crackles at right base with bronchial breathing. Clear left lung.'
+          : 'Fine inspiratory crackles at left base with bronchial breathing. Clear right lung.',
       };
     }
     if (sub.includes('pulmonary-embolism') || findingsStr.includes('embolism')) {

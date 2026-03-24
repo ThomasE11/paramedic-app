@@ -49,6 +49,7 @@ interface VitalSignsMonitorProps {
   caseCategory?: string;
   caseSubcategory?: string;
   caseTitle?: string;
+  ecgFindings?: string[];
   appliedTreatments?: string[];
   /** Override rhythm from patient state — updates when treatment changes rhythm */
   overrideRhythm?: string;
@@ -1408,6 +1409,7 @@ export function VitalSignsMonitor({
   caseCategory,
   caseSubcategory,
   caseTitle,
+  ecgFindings,
   appliedTreatments = [],
   overrideRhythm,
   cprState,
@@ -1470,8 +1472,8 @@ export function VitalSignsMonitor({
         return overrideResult;
       }
     }
-    return getRhythmForCase(caseCategory || 'general', caseSubcategory, hr, caseTitle);
-  }, [caseCategory, caseSubcategory, currentVitals.pulse, caseTitle, overrideRhythm]);
+    return getRhythmForCase(caseCategory || 'general', caseSubcategory, hr, caseTitle, ecgFindings);
+  }, [caseCategory, caseSubcategory, currentVitals.pulse, caseTitle, ecgFindings, overrideRhythm]);
 
   // Get the waveform function for the selected lead
   const getWaveformForLead = useCallback((lead: string): WaveformFn => {

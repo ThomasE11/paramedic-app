@@ -714,13 +714,14 @@ export const RHYTHM_MAP: Record<string, ECGRhythm> = Object.fromEntries(
  * Maps case category + subcategory to the appropriate ECG rhythm.
  * Falls back to sinus tachycardia for unknown categories.
  */
-export function getRhythmForCase(category: string, subcategory?: string, heartRate?: number, caseTitle?: string): ECGRhythm {
+export function getRhythmForCase(category: string, subcategory?: string, heartRate?: number, caseTitle?: string, ecgFindings?: string[]): ECGRhythm {
   const cat = category.toLowerCase();
   const sub = (subcategory || '').toLowerCase();
   const title = (caseTitle || '').toLowerCase();
+  const ecgText = (ecgFindings || []).join(' ').toLowerCase();
 
   // Combined search text for matching — subcategory + title + ecg findings
-  const searchText = `${sub} ${title}`;
+  const searchText = `${sub} ${title} ${ecgText}`;
 
   // ===== STEMI cases =====
   if (searchText.includes('anterior stemi') || searchText.includes('stem-anterior') || sub === 'stem-anterior') return anteriorSTEMI;
@@ -728,7 +729,7 @@ export function getRhythmForCase(category: string, subcategory?: string, heartRa
   if (searchText.includes('lateral stemi') || searchText.includes('stem-lateral') || sub === 'stem-lateral') return lateralSTEMI;
   if (searchText.includes('posterior stemi') || searchText.includes('stem-posterior') || sub === 'stem-posterior') return inferiorSTEMI;
   if (searchText.includes('nstemi') || searchText.includes('non-st elevation') || sub === 'nstemi') return nstemi;
-  if (searchText.includes('de winter') || sub.includes('de-winter')) return anteriorSTEMI; // STEMI equivalent
+  if (searchText.includes('de winter') || sub.includes('de-winter')) return nstemi; // De Winter = STEMI equivalent WITHOUT ST elevation
 
   // ===== Arrhythmias (check BEFORE generic "stemi" to avoid false matches) =====
   if (searchText.includes('atrial fibrillation') || searchText.includes('afib') || sub === 'afib' || sub.includes('atrial-fib')) return atrialFibrillation;
@@ -745,7 +746,7 @@ export function getRhythmForCase(category: string, subcategory?: string, heartRa
   if (searchText.includes('cardiac arrest') || searchText.includes('cardiac-arrest')) return ventricularFibrillation;
 
   // ===== Conduction blocks =====
-  if (searchText.includes('complete heart block') || searchText.includes('3rd degree') || searchText.includes('third degree') || sub.includes('3rd-degree')) return completeHeartBlock;
+  if (searchText.includes('heart-block') || searchText.includes('heart block') || searchText.includes('complete heart block') || searchText.includes('3rd degree') || searchText.includes('third degree') || sub.includes('3rd-degree')) return completeHeartBlock;
   if (searchText.includes('wenckebach') || searchText.includes('mobitz type i') || searchText.includes('2nd degree type i') || sub.includes('wenckebach') || sub.includes('mobitz-1')) return wenckebachBlock;
   if (searchText.includes('mobitz type ii') || searchText.includes('mobitz 2') || searchText.includes('2nd degree type ii') || sub.includes('mobitz-2') || sub.includes('type-ii')) return mobiType2;
 
@@ -761,7 +762,7 @@ export function getRhythmForCase(category: string, subcategory?: string, heartRa
   if (cat === 'cardiac' || cat === 'cardiac-ecg') {
     if (heartRate && heartRate > 150) return svt;
     if (heartRate && heartRate > 100) return sinusTachycardia;
-    if (heartRate && heartRate < 50) return sinusBradycardia;
+    if (heartRate && heartRate < 60) return sinusBradycardia;
     return sinusTachycardia;
   }
 
@@ -782,7 +783,7 @@ export function getRhythmForCase(category: string, subcategory?: string, heartRa
   if (heartRate) {
     if (heartRate > 150) return svt;
     if (heartRate > 100) return sinusTachycardia;
-    if (heartRate < 50) return sinusBradycardia;
+    if (heartRate < 60) return sinusBradycardia;
   }
 
   return normalSinusRhythm;

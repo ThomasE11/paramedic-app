@@ -328,6 +328,7 @@ export function CaseViewContainer({
                   onVitalChange={onVitalChange}
                   caseCategory={caseData.category}
                   caseSubcategory={caseData.subcategory}
+                  ecgFindings={caseData.abcde?.circulation?.ecgFindings}
                 />
               </div>
             )}

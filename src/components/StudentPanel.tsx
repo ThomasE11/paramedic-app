@@ -1532,6 +1532,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                     caseCategory={currentCase.category}
                     caseSubcategory={currentCase.subcategory}
                     caseTitle={currentCase.title}
+                    ecgFindings={currentCase.abcde?.circulation?.ecgFindings}
                     appliedTreatments={appliedTreatmentIds}
                     overrideRhythm={patientState?.currentRhythm}
                     cprState={arrestActive ? {

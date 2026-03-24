@@ -1398,6 +1398,7 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
                             caseCategory={currentCase.category}
                             caseSubcategory={currentCase.subcategory}
                             caseTitle={currentCase.title}
+                            ecgFindings={currentCase.abcde?.circulation?.ecgFindings}
                             appliedTreatments={appliedTreatments.map(t => t.description)}
                           />
                         </Suspense>
