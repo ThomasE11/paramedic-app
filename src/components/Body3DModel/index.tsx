@@ -242,9 +242,9 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
 
   // Y-center positions for each region (must match BodyMesh REGION_RANGES)
   const regionCenters: Record<string, number> = useMemo(() => ({
-    'head': 1.66, 'face': 1.53, 'neck-cspine': 1.43,
-    'chest': 1.26, 'abdomen': 1.05, 'pelvis': 0.88,
-    'extremities': 0.41, 'posterior-logroll': 1.15,
+    'head': 1.71, 'face': 1.58, 'neck-cspine': 1.49,
+    'chest': 1.32, 'abdomen': 1.10, 'pelvis': 0.92,
+    'extremities': 0.42, 'posterior-logroll': 1.20,
   }), []);
 
   const handleRegionClick = useCallback((stepId: string) => {
