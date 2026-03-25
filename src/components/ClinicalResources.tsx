@@ -439,7 +439,7 @@ export function ClinicalResources({ caseCategory, caseFindings }: ClinicalResour
 
   const categoryArticles = useMemo(() => {
     const lowerCat = caseCategory.toLowerCase();
-    const lowerFindings = caseFindings.map(f => f.toLowerCase());
+    const lowerFindings = caseFindings.filter(f => typeof f === 'string').map(f => f.toLowerCase());
     return referenceArticles.filter(a => {
       if (a.category === lowerCat) return true;
       // Also match articles by findings keywords
@@ -451,7 +451,7 @@ export function ClinicalResources({ caseCategory, caseFindings }: ClinicalResour
   // Get condition-relevant audio sounds
   const conditionSounds = useMemo(() => {
     const lowerCat = caseCategory.toLowerCase();
-    const lowerFindings = caseFindings.map(f => f.toLowerCase()).join(' ');
+    const lowerFindings = caseFindings.filter(f => typeof f === 'string').map(f => f.toLowerCase()).join(' ');
 
     // Show respiratory sounds for respiratory cases or if findings mention relevant terms
     if (lowerCat === 'respiratory' || lowerFindings.includes('wheez') || lowerFindings.includes('stridor') ||

@@ -395,7 +395,7 @@ export function getImagesByCategory(category: string): LocalImageResource[] {
  */
 export function getImagesByFindings(findings: string[]): LocalImageResource[] {
   if (!findings || findings.length === 0) return [];
-  const lowerFindings = findings.map(f => f.toLowerCase());
+  const lowerFindings = findings.filter(f => typeof f === 'string').map(f => f.toLowerCase());
 
   return localClinicalImages.filter(img => {
     const searchText = [
@@ -422,7 +422,7 @@ export function getVideosByCategory(category: string): LocalVideoResource[] {
  */
 export function getVideosByFindings(findings: string[]): LocalVideoResource[] {
   if (!findings || findings.length === 0) return [];
-  const lowerFindings = findings.map(f => f.toLowerCase());
+  const lowerFindings = findings.filter(f => typeof f === 'string').map(f => f.toLowerCase());
 
   return videoResources.filter(vid => {
     const searchText = [
