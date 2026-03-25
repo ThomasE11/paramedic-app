@@ -65,6 +65,17 @@ function getRegionAtPoint(point: THREE.Vector3): RegionRange | null {
     const posterior = REGION_RANGES.find(r => r.condition === 'back' && point.y >= r.yMin && point.y < r.yMax);
     if (posterior) return posterior;
   }
+
+  // Arms detection: if click is lateral (|X| > threshold) AND in the
+  // torso Y range, it's an arm, not chest/abdomen. The model's arms
+  // extend outward from X ≈ ±0.20 at shoulders to ±0.85 at hands.
+  // Arms span Y range ~0.60 to ~1.44 (hands to shoulders)
+  const absX = Math.abs(point.x);
+  if (absX > 0.20 && point.y >= 0.60 && point.y < 1.44) {
+    // This is an arm/hand — map to extremities
+    return REGION_RANGES.find(r => r.id === 'extremities') || null;
+  }
+
   // Then check front/lateral regions (no condition)
   return REGION_RANGES.find(r => !r.condition && point.y >= r.yMin && point.y < r.yMax) || null;
 }
