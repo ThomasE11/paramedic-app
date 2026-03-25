@@ -957,7 +957,7 @@ export const secondYearCases: CaseScenario[] = [
         interventions: ['Monitor BP', 'Establish IV if protocols allow']
       },
       disability: {
-        avpu: 'A',
+        avpu: 'V',
         gcs: { eye: 4, verbal: 3, motor: 5, total: 12 },
         pupils: ['Right: 3mm reactive', 'Left: 4mm sluggish'],
         bloodGlucose: 8.2,

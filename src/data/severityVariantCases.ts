@@ -87,7 +87,7 @@ export const asthmaSeverityCases: CaseScenario[] = [
         skin: 'Warm, slightly clammy',
         findings: ['Mildly tachycardic from beta-agonist use', 'Well perfused'],
         interventions: [],
-        ecgFindings: ['Sinus tachycardia'],
+        ecgFindings: ['Sinus rhythm'],
         ivAccess: [],
       },
       disability: {

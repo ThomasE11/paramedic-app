@@ -247,7 +247,7 @@ export function CaseDisplay({ caseData, studentYear = '3rd-year', isStudentView 
       caseData.expectedFindings?.mostLikelyDiagnosis,
       caseData.dispatchInfo?.callReason,
       caseData.initialPresentation?.generalImpression,
-      caseData.initialPresentation?.sounds,
+      ...(caseData.initialPresentation?.sounds || []),
       ...(caseData.expectedFindings?.keyObservations || []),
       ...(caseData.expectedFindings?.differentialDiagnoses || []),
       ...(caseData.abcde?.exposure?.findings || []),

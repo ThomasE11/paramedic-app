@@ -59,7 +59,8 @@ export const additionalRespiratoryCases: CaseScenario[] = [
         depth: 'Shallow',
         spo2: 78,
         findings: ['Severe dyspnea', 'Prolonged expiration', 'Wheeze bilateral', 'Pursed lip breathing'],
-        interventions: ['Nebulized bronchodilators', 'Oxygen titrated to 88-92%', 'Consider NIV']
+        interventions: ['Nebulized bronchodilators', 'Oxygen titrated to 88-92%', 'Consider NIV'],
+        auscultation: ['Bilateral expiratory wheeze', 'Reduced air entry bilaterally', 'Prolonged expiration']
       },
       circulation: {
         pulseRate: 110,
@@ -343,7 +344,8 @@ export const additionalRespiratoryCases: CaseScenario[] = [
         depth: 'Shallow',
         spo2: 88,
         findings: ['Right-sided chest pain', 'Decreased breath sounds right', 'Hyper-resonant percussion', 'Tracheal deviation to left'],
-        interventions: ['High-flow O2', 'Prepare for chest decompression']
+        interventions: ['High-flow O2', 'Prepare for chest decompression'],
+        auscultation: ['Absent breath sounds right hemithorax', 'Normal air entry left']
       },
       circulation: {
         pulseRate: 120,
@@ -644,7 +646,8 @@ export const additionalRespiratoryCases: CaseScenario[] = [
         depth: 'Normal',
         spo2: 94,
         findings: ['Intercostal recession', 'Nasal flaring', 'Stridor'],
-        interventions: ['Humidified oxygen', 'Steroids']
+        interventions: ['Humidified oxygen', 'Steroids'],
+        auscultation: ['Inspiratory stridor', 'Good bilateral air entry', 'No wheeze']
       },
       circulation: {
         pulseRate: 130,
@@ -657,7 +660,7 @@ export const additionalRespiratoryCases: CaseScenario[] = [
       },
       disability: {
         avpu: 'A',
-        gcs: { eye: 4, verbal: 3, motor: 6, total: 13 },
+        gcs: { eye: 4, verbal: 5, motor: 6, total: 15 },
         pupils: 'Equal and reactive',
         bloodGlucose: 5.4,
         findings: ['Appropriate for age'],
@@ -943,7 +946,8 @@ export const additionalRespiratoryCases: CaseScenario[] = [
         depth: 'Shallow',
         spo2: 82,
         findings: ['Bilateral crackles', 'Wheeze (cardiac asthma)', 'Pink frothy sputum'],
-        interventions: ['CPAP if available', 'Nitrates', 'Diuretics']
+        interventions: ['CPAP if available', 'Nitrates', 'Diuretics'],
+        auscultation: ['Bilateral fine crackles to mid-zones', 'Expiratory wheeze (cardiac wheeze)', 'Reduced air entry bases']
       },
       circulation: {
         pulseRate: 130,
@@ -1229,7 +1233,8 @@ export const additionalRespiratoryCases: CaseScenario[] = [
         depth: 'None',
         spo2: 70,
         findings: ['No air movement', 'Cyanosis'],
-        interventions: ['Immediate airway clearance']
+        interventions: ['Immediate airway clearance'],
+        auscultation: ['Stridor', 'Reduced air entry', 'No wheeze']
       },
       circulation: {
         pulseRate: 140,
@@ -1241,7 +1246,7 @@ export const additionalRespiratoryCases: CaseScenario[] = [
         interventions: []
       },
       disability: {
-        avpu: 'A',
+        avpu: 'V',
         gcs: { eye: 4, verbal: 1, motor: 6, total: 11 },
         pupils: 'Equal and reactive',
         bloodGlucose: 5.4,
@@ -1510,7 +1515,8 @@ export const additionalRespiratoryCases: CaseScenario[] = [
         depth: 'Normal',
         spo2: 88,
         findings: ['Crackles right base', 'Bronchial breathing right', 'Pleuritic chest pain'],
-        interventions: ['High-flow O2', 'Antibiotics']
+        interventions: ['High-flow O2', 'Antibiotics'],
+        auscultation: ['Focal crackles right lower lobe', 'Bronchial breathing right base', 'Normal left lung']
       },
       circulation: {
         pulseRate: 110,
@@ -1818,7 +1824,8 @@ export const additionalNeurologicalCases: CaseScenario[] = [
         depth: 'Normal',
         spo2: 96,
         findings: ['Tachypneic from pain/fever'],
-        interventions: []
+        interventions: [],
+        auscultation: ['Clear bilaterally', 'Good air entry']
       },
       circulation: {
         pulseRate: 120,
@@ -2156,13 +2163,14 @@ export const additionalMetabolicCases: CaseScenario[] = [
         interventions: []
       },
       circulation: {
-        pulseRate: 55,
+        pulseRate: 38,
         pulseQuality: 'Irregular',
         bp: { systolic: 90, diastolic: 60 },
         capillaryRefill: 3,
         skin: 'Pale, cool',
         findings: ['Bradycardia', 'Irregular rhythm', 'Wide QRS on ECG'],
-        interventions: ['IV calcium', 'Insulin/Glucose']
+        interventions: ['IV calcium', 'Insulin/Glucose'],
+        ecgFindings: ['Severe bradycardia 38 bpm', 'Peaked tented T waves V2-V5', 'Broadened QRS complexes >160ms', 'Loss of P waves', 'Developing sine wave pattern']
       },
       disability: {
         avpu: 'A',
@@ -2200,7 +2208,7 @@ export const additionalMetabolicCases: CaseScenario[] = [
       eventsLeading: 'Missed dialysis session yesterday, now weak with palpitations'
     },
     vitalSignsProgression: {
-      initial: { bp: '90/60', pulse: 55, respiration: 18, spo2: 96, gcs: 15 }
+      initial: { bp: '90/60', pulse: 38, respiration: 18, spo2: 96, gcs: 15 }
     },
     expectedFindings: {
       keyObservations: ['ECG: peaked T waves, wide QRS, sine wave pattern', 'Muscle weakness', 'Missed dialysis'],
@@ -2472,7 +2480,8 @@ export const additionalToxicologyCases: CaseScenario[] = [
         depth: 'Shallow',
         spo2: 70,
         findings: ['Severe respiratory depression', 'Agonal respirations'],
-        interventions: ['BVM ventilation', 'Naloxone']
+        interventions: ['BVM ventilation', 'Naloxone'],
+        auscultation: ['Shallow breath sounds', 'Reduced air entry bilaterally', 'Possible aspiration sounds right base']
       },
       circulation: {
         pulseRate: 50,
@@ -3104,7 +3113,8 @@ export const additionalEnvironmentalCases: CaseScenario[] = [
         depth: 'Normal',
         spo2: 95,
         findings: ['Tachypneic from metabolic acidosis'],
-        interventions: ['Oxygen']
+        interventions: ['Oxygen'],
+        auscultation: ['Clear bilaterally']
       },
       circulation: {
         pulseRate: 140,
@@ -3116,7 +3126,7 @@ export const additionalEnvironmentalCases: CaseScenario[] = [
         interventions: ['Aggressive cooling', 'IV fluids']
       },
       disability: {
-        avpu: 'P',
+        avpu: 'V',
         gcs: { eye: 3, verbal: 4, motor: 5, total: 12 },
         pupils: 'Equal and reactive',
         bloodGlucose: 5.4,
@@ -3327,7 +3337,8 @@ export const additionalPsychiatricCases: CaseScenario[] = [
         depth: 'Normal',
         spo2: 98,
         findings: ['Mildly tachypneic'],
-        interventions: []
+        interventions: [],
+        auscultation: ['Clear bilaterally']
       },
       circulation: {
         pulseRate: 100,
@@ -3518,7 +3529,8 @@ export const additionalObstetricCases: CaseScenario[] = [
         depth: 'Normal',
         spo2: 94,
         findings: ['Post-ictal breathing'],
-        interventions: ['Oxygen']
+        interventions: ['Oxygen'],
+        auscultation: ['Clear bilaterally', 'Good air entry']
       },
       circulation: {
         pulseRate: 100,
@@ -3530,7 +3542,7 @@ export const additionalObstetricCases: CaseScenario[] = [
         interventions: ['IV access', 'Magnesium sulfate']
       },
       disability: {
-        avpu: 'P',
+        avpu: 'A',
         gcs: { eye: 4, verbal: 4, motor: 6, total: 14 },
         pupils: 'Equal and reactive',
         bloodGlucose: 5.4,
@@ -3828,7 +3840,8 @@ export const additionalTraumaCases: CaseScenario[] = [
         depth: 'Normal',
         spo2: 95,
         findings: ['Tachypneic from pain'],
-        interventions: ['Oxygen']
+        interventions: ['Oxygen'],
+        auscultation: ['Clear bilaterally', 'Good air entry']
       },
       circulation: {
         pulseRate: 120,
@@ -4064,7 +4077,8 @@ export const additionalTraumaCases: CaseScenario[] = [
         depth: 'None',
         spo2: 70,
         findings: ['Apneic'],
-        interventions: ['BVM ventilation', 'Consider intubation']
+        interventions: ['BVM ventilation', 'Consider intubation'],
+        auscultation: ['Coarse crackles bilaterally (aspirated water)', 'Reduced air entry']
       },
       circulation: {
         pulseRate: 50,
@@ -4323,7 +4337,8 @@ export const additionalBurnsCases: CaseScenario[] = [
         depth: 'None',
         spo2: 0,
         findings: ['Apneic'],
-        interventions: ['BVM', 'Intubation']
+        interventions: ['BVM', 'Intubation'],
+        auscultation: ['No breath sounds — apnoeic']
       },
       circulation: {
         pulseRate: 0,

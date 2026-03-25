@@ -365,6 +365,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
     setIsGenerating(true);
     await new Promise(resolve => setTimeout(resolve, 400));
 
+    try {
     const newCase = getRandomCase({
       yearLevel: selectedYear,
       category: selectedCategory !== 'all' ? selectedCategory : undefined
@@ -418,6 +419,13 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
     setIsGenerating(false);
     setPhase('prebriefing');
     toast.success(`Case generated: ${getStudentCaseTitle(newCase)}`);
+    } catch (err) {
+      console.error('Case generation error:', err);
+      setIsGenerating(false);
+      toast.error('Failed to generate case', {
+        description: err instanceof Error ? err.message : 'An unexpected error occurred. Try a different category.',
+      });
+    }
   }, [selectedYear, selectedCategory]);
 
   // Start case (from pre-briefing)
@@ -498,25 +506,33 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
 
     setTimeout(() => setApplyingTreatmentId(null), 1500);
 
-    // Show appropriate toast based on response
+    // Show appropriate toast — strip vital change numbers from student view
+    // Student should monitor the patient to observe effects, not be told the numbers
+    const studentDesc = (response.description || '')
+      .replace(/\s*[—–-]+\s*(?:[A-Za-z][A-Za-z\d /]*:\s*[\d./%]+\s*(?:→|->)\s*[\d./%]+(?:\s*,\s*)?)+\.?/g, '.')
+      .replace(/\s*(?:HR|SpO2|BP|RR|GCS|Temp|EtCO2|BGL):\s*[\d./%]+\s*(?:→|->)\s*[\d./%]+\.?/gi, '')
+      .replace(/\d+\s*vitals?\s*improving\.?\s*(?:Consider\s*repeat\s*dose\.?)?/g, '')
+      .replace(/\.{2,}/g, '.').replace(/\.\s*$/, '').trim();
+
     if (response.criticalEvent) {
       toast.error(response.criticalEvent.description, {
         description: response.warningMessage,
         duration: 8000,
       });
     } else if (response.warningMessage) {
-      toast.warning(`${treatment.name}: ${response.warningMessage}`, {
-        description: response.description,
-        duration: 6000,
+      toast.warning(`${treatment.name} applied`, {
+        description: 'Monitor the patient to assess response.',
+        duration: 5000,
       });
     } else if (response.isPartialResponse) {
-      toast.info(`${treatment.name}: Partial response`, {
-        description: response.description,
-        duration: 5000,
+      toast.info(`${treatment.name} applied`, {
+        description: 'Monitor the patient — reassess vitals to evaluate response.',
+        duration: 4000,
       });
     } else {
       toast.success(`Applied: ${treatment.name}`, {
-        description: response.description,
+        description: studentDesc.includes('applied') ? 'Treatment applied. Monitor the patient.' : studentDesc || 'Treatment applied. Monitor the patient.',
+        duration: 3000,
       });
     }
 

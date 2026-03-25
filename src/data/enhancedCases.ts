@@ -3004,7 +3004,7 @@ export const moreTraumaCases: CaseScenario[] = [
         auscultation: ['Reduced at bases']
       },
       circulation: {
-        pulseRate: 65,
+        pulseRate: 52,
         pulseQuality: 'Normal',
         bp: { systolic: 95, diastolic: 60 },
         capillaryRefill: 3,
@@ -3067,7 +3067,7 @@ export const moreTraumaCases: CaseScenario[] = [
       { name: 'MRI Spine', indication: 'Assess cord injury', findings: 'Complete cord transection at C5 level', interpretation: 'Complete spinal cord injury', urgency: 'urgent' }
     ],
     vitalSignsProgression: {
-      initial: { bp: '95/60', pulse: 65, respiration: 24, spo2: 94, gcs: 15 },
+      initial: { bp: '95/60', pulse: 52, respiration: 24, spo2: 94, gcs: 15 },
       afterIntervention: { bp: '100/65', pulse: 68, respiration: 20, spo2: 96, gcs: 15 },
       deterioration: { bp: '70/45', pulse: 50, respiration: 8, spo2: 88, gcs: 14 }
     },

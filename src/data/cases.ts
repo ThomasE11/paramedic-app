@@ -81,7 +81,7 @@ export const caseDatabase: CaseScenario[] = [
       circulation: {
         pulseRate: 110,
         pulseQuality: 'Weak, thready',
-        bp: { systolic: 95, diastolic: 62 },
+        bp: { systolic: 90, diastolic: 60 },
         capillaryRefill: 3,
         skin: 'Pale, clammy, diaphoretic',
         findings: ['Tachycardic', 'Borderline hypotensive', 'Poor perfusion'],
@@ -2844,7 +2844,7 @@ export const caseDatabase: CaseScenario[] = [
         interventions: ['Monitor BP', 'IV access']
       },
       disability: {
-        avpu: 'A',
+        avpu: 'V',
         gcs: { eye: 4, verbal: 2, motor: 4, total: 10 },
         pupils: 'Equal and reactive',
         bloodGlucose: 5.4,
@@ -3792,7 +3792,8 @@ export const caseDatabase: CaseScenario[] = [
         capillaryRefill: 2,
         skin: 'Pale, diaphoretic',
         findings: ['Tachycardic'],
-        interventions: ['IV access']
+        interventions: ['IV access'],
+        ecgFindings: ['Sinus rhythm', 'No acute ST changes']
       },
       disability: {
         avpu: 'V',
@@ -4055,7 +4056,8 @@ export const caseDatabase: CaseScenario[] = [
         capillaryRefill: 3,
         skin: 'Warm, dry',
         findings: ['Tachycardic', 'Hypotensive', 'Dehydrated'],
-        interventions: ['IV access', 'Fluid resuscitation']
+        interventions: ['IV access', 'Fluid resuscitation'],
+        ecgFindings: ['Sinus tachycardia ~110 bpm', 'Check for peaked T waves (hyperkalaemia risk in DKA)']
       },
       disability: {
         avpu: 'A',
