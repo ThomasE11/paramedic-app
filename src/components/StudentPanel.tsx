@@ -36,7 +36,6 @@ import {
   Wind, Droplets, Brain, Pill, Syringe
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { ThemeToggle } from '@/components/ThemeToggle';
 // AuscultationPanel removed — sounds now play inline from 3D Physical Examination
 import { DebriefingResourcesPanel } from '@/components/DebriefingResourcesPanel';
 import { exportSessionToPDF } from '@/lib/pdf-export';
@@ -771,7 +770,6 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                 </Badge>
               )}
 
-              <ThemeToggle />
               <Button variant="ghost" size="sm" onClick={onExit} className="text-[10px] sm:text-xs gap-1 text-muted-foreground hover:text-foreground h-7 sm:h-8 px-2 sm:px-3">
                 <ArrowLeft className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                 <span className="hidden sm:inline">Exit</span>
