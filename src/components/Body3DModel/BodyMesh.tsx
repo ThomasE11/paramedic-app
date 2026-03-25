@@ -33,19 +33,30 @@ interface RegionRange {
   condition?: 'front' | 'back' | 'lateral';
 }
 
-// Mixamo/Michelle model proportions — measured from GLB mesh bounds
-// The model stands ~1.72 units tall with feet at Y≈0
-// Each region boundary is shifted UP by ~0.07 from previous estimates
-// to fix face/neck/chest misalignment reported in testing
+// Beta_Surface GLB model — measured bounds: Y -0.003 to 1.806 (height 1.81)
+// Using 7.5-head proportional system: head unit = 1.81 / 7.5 = 0.241
+//
+// Anatomical landmarks (Y coordinates):
+//   Top of skull:    1.806
+//   Crown/forehead:  ~1.71  (where hair starts)
+//   Eyes/nose:       ~1.65  (mid-face)
+//   Chin:            ~1.565 (bottom of mandible)
+//   Neck (C3-C7):    ~1.44 to 1.565
+//   Shoulders:       ~1.40
+//   Nipple line:     ~1.20
+//   Navel:           ~0.98
+//   Groin:           ~0.83
+//   Knees:           ~0.48
+//   Feet:            ~0.00
 const REGION_RANGES: RegionRange[] = [
-  { id: 'head', label: 'Head', description: 'Inspect and palpate scalp, skull, ears', yMin: 1.62, yMax: 1.80 },
-  { id: 'face', label: 'Face', description: 'Eyes, nose, mouth, jaw, facial symmetry', yMin: 1.54, yMax: 1.62 },
-  { id: 'neck-cspine', label: 'Neck & C-Spine', description: 'Trachea, JVD, C-spine, subcutaneous emphysema', yMin: 1.44, yMax: 1.54 },
+  { id: 'head', label: 'Head', description: 'Inspect and palpate scalp, skull, ears', yMin: 1.71, yMax: 1.81 },
+  { id: 'face', label: 'Face', description: 'Eyes, nose, mouth, jaw, facial symmetry', yMin: 1.565, yMax: 1.71 },
+  { id: 'neck-cspine', label: 'Neck & C-Spine', description: 'Trachea, JVD, C-spine, subcutaneous emphysema', yMin: 1.44, yMax: 1.565 },
   { id: 'chest', label: 'Chest', description: 'Inspect, palpate, percuss, auscultate', yMin: 1.20, yMax: 1.44 },
-  { id: 'abdomen', label: 'Abdomen', description: 'Inspect, auscultate, percuss, palpate', yMin: 1.00, yMax: 1.20 },
-  { id: 'pelvis', label: 'Pelvis', description: 'Stability test, perineal inspection', yMin: 0.85, yMax: 1.00 },
-  { id: 'extremities', label: 'Extremities', description: 'Pulses, sensation, motor, deformity', yMin: 0.0, yMax: 0.85 },
-  { id: 'posterior-logroll', label: 'Posterior / Log Roll', description: 'Log roll with C-spine control. Palpate entire spine.', yMin: 0.85, yMax: 1.54, condition: 'back' },
+  { id: 'abdomen', label: 'Abdomen', description: 'Inspect, auscultate, percuss, palpate', yMin: 0.98, yMax: 1.20 },
+  { id: 'pelvis', label: 'Pelvis', description: 'Stability test, perineal inspection', yMin: 0.83, yMax: 0.98 },
+  { id: 'extremities', label: 'Extremities', description: 'Pulses, sensation, motor, deformity', yMin: 0.0, yMax: 0.83 },
+  { id: 'posterior-logroll', label: 'Posterior / Log Roll', description: 'Log roll with C-spine control. Palpate entire spine.', yMin: 0.83, yMax: 1.565, condition: 'back' },
 ];
 
 function getRegionAtPoint(point: THREE.Vector3): RegionRange | null {
