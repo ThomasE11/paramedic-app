@@ -262,7 +262,7 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
     addTextAt(objLines[0], margin + 25, yPosition + 5, FONT.BODY, 'normal', COLOR.BODY_TEXT);
 
     addTextAt('Skills Focus:', margin + 3, yPosition + 11, FONT.LABEL, 'bold', COLOR.MUTED);
-    const skillsText = options.simulationObjective.skillsFocus.join(', ');
+    const skillsText = sanitizeText(options.simulationObjective.skillsFocus.join(', '));
     const skillLines = doc.splitTextToSize(skillsText, contentWidth - 30) as string[];
     addTextAt(skillLines[0], margin + 25, yPosition + 11, FONT.LABEL, 'normal', COLOR.MUTED);
 
