@@ -104,7 +104,7 @@ export const firstYearCases: CaseScenario[] = [
       chest: ['Clear bilaterally', 'No tenderness'],
       abdomen: ['Soft, non-tender'],
       pelvis: ['Stable, no tenderness'],
-      extremities: ['Right hip pain', 'No obvious deformity', 'Distal pulses present bilateral'],
+      extremities: ['Right hip pain', 'No obvious deformity', 'Distal pulses present bilateral', 'No peripheral oedema'],
       posterior: ['Patient reports back pain'],
       neurological: ['Sensation intact', 'Movement possible but painful at right hip']
     },
@@ -493,7 +493,7 @@ export const firstYearCases: CaseScenario[] = [
       chest: ['Clear bilaterally'],
       abdomen: ['Guarding RLQ', 'Rebound tenderness present', 'McBurnery\'s point tender', 'Bowel sounds diminished'],
       pelvis: ['Normal'],
-      extremities: ['Normal'],
+      extremities: ['No peripheral oedema', 'Peripheral pulses present'],
       posterior: ['Normal'],
       neurological: ['Normal']
     },
@@ -685,7 +685,7 @@ export const firstYearCases: CaseScenario[] = [
       chest: ['Normal'],
       abdomen: ['Soft, non-tender'],
       pelvis: ['Normal'],
-      extremities: ['Cool to touch', 'Peripheral pulses present but weak'],
+      extremities: ['Cool to touch', 'Peripheral pulses present but weak', 'No peripheral oedema'],
       posterior: ['Normal'],
       neurological: ['Mild confusion present', 'No focal deficits']
     },
@@ -881,7 +881,7 @@ export const firstYearCases: CaseScenario[] = [
       chest: ['Clear bilaterally'],
       abdomen: ['Soft, non-tender'],
       pelvis: ['Normal'],
-      extremities: ['Left forearm partial thickness burn ~5% TBSA', 'Blisters intact', 'Distal pulses present', 'Sensation intact distally', 'Can wiggle fingers'],
+      extremities: ['Left forearm partial thickness burn ~5% TBSA', 'Blisters intact', 'Localised swelling at burn site', 'Distal pulses present', 'Sensation intact distally', 'Can wiggle fingers'],
       posterior: ['Normal'],
       neurological: ['Normal, intact sensation distal to burn']
     },
@@ -1071,7 +1071,7 @@ export const firstYearCases: CaseScenario[] = [
       chest: ['Clear bilaterally', 'No increased work of breathing'],
       abdomen: ['Soft, non-tender'],
       pelvis: ['Normal'],
-      extremities: ['Normal tone returning', 'Moving all four limbs', 'No rash'],
+      extremities: ['Normal tone returning', 'Moving all four limbs', 'No rash', 'No peripheral oedema'],
       posterior: ['Normal'],
       neurological: ['Post-ictal state', 'GCS improving', 'No focal deficits', 'Pupils equal and reactive']
     },
@@ -1470,7 +1470,7 @@ export const firstYearCases: CaseScenario[] = [
       chest: ['Mild subcostal recession', 'Good air entry bilateral', 'No wheeze', 'Stridor mainly inspiratory'],
       abdomen: ['Soft, non-tender'],
       pelvis: ['Normal'],
-      extremities: ['Normal, warm, well-perfused'],
+      extremities: ['Normal, warm, well-perfused', 'No peripheral oedema'],
       posterior: ['Normal'],
       neurological: ['Age-appropriate development', 'Alert and interactive']
     },
@@ -1663,7 +1663,7 @@ export const firstYearCases: CaseScenario[] = [
       chest: ['Clear bilaterally', 'No pain on palpation', 'Normal heart sounds'],
       abdomen: ['Soft, non-tender'],
       pelvis: ['Normal'],
-      extremities: ['Tingling fingers bilateral', 'Mild carpopedal spasm', 'No calf swelling or tenderness'],
+      extremities: ['Tingling fingers bilateral', 'Mild carpopedal spasm', 'No calf swelling or tenderness', 'No peripheral oedema'],
       posterior: ['Normal'],
       neurological: ['Alert, oriented', 'Tingling perioral and fingers (hyperventilation)', 'No focal deficits']
     },
@@ -1859,7 +1859,7 @@ export const firstYearCases: CaseScenario[] = [
       chest: ['Clear bilaterally'],
       abdomen: ['Soft, mild tenderness uncertain (child crying)'],
       pelvis: ['Normal'],
-      extremities: ['Normal, no chemical contact burns'],
+      extremities: ['Normal, no chemical contact burns', 'No peripheral oedema'],
       posterior: ['Normal'],
       neurological: ['Alert, age-appropriate crying response', 'No focal deficits']
     },
@@ -2269,7 +2269,7 @@ export const firstYearCases: CaseScenario[] = [
       chest: ['Seatbelt mark across chest (diagonal)', 'No tenderness on palpation', 'Clear bilaterally'],
       abdomen: ['Soft, non-tender', 'Lap belt mark visible'],
       pelvis: ['Stable, non-tender'],
-      extremities: ['Full range of motion in all limbs', 'Normal power bilaterally', 'Normal sensation', 'Reflexes normal'],
+      extremities: ['Full range of motion in all limbs', 'Normal power bilaterally', 'Normal sensation', 'Reflexes normal', 'No peripheral oedema'],
       posterior: ['Midline cervical tenderness C4-C6 area', 'No thoracic or lumbar tenderness'],
       neurological: ['GCS 15', 'No focal deficits', 'Sensation intact', 'Power 5/5 all limbs', 'No numbness or tingling']
     },
@@ -2465,7 +2465,7 @@ export const firstYearCases: CaseScenario[] = [
       chest: ['Clear bilaterally', 'Equal expansion', 'No chest pain on palpation', 'No tenderness'],
       abdomen: ['Soft, non-tender'],
       pelvis: ['Normal'],
-      extremities: ['Carpopedal spasm bilateral', 'Tingling in fingers', 'No calf swelling', 'No unilateral leg symptoms'],
+      extremities: ['Carpopedal spasm bilateral', 'Tingling in fingers', 'No calf swelling', 'No unilateral leg symptoms', 'No peripheral oedema'],
       posterior: ['Normal'],
       neurological: ['Alert', 'Perioral tingling', 'Bilateral hand tingling', 'No focal deficits', 'No weakness']
     },
@@ -2659,7 +2659,7 @@ export const firstYearCases: CaseScenario[] = [
       chest: ['Clear bilaterally', 'Heart sounds: regular, no murmurs appreciated', 'No chest wall tenderness'],
       abdomen: ['Soft, non-tender', 'Mild central obesity'],
       pelvis: ['Normal'],
-      extremities: ['No oedema', 'Peripheral pulses present and equal', 'No calf tenderness'],
+      extremities: ['No peripheral oedema', 'Peripheral pulses present and equal', 'No calf tenderness'],
       posterior: ['Normal'],
       neurological: ['Alert, oriented', 'No focal deficits']
     },
@@ -3056,7 +3056,7 @@ export const firstYearCases: CaseScenario[] = [
       chest: ['Bilateral wheeze', 'No crackles', 'Equal air entry (reduced)'],
       abdomen: ['Soft', 'Mild nausea', 'No vomiting yet'],
       pelvis: ['Normal'],
-      extremities: ['Urticarial rash on arms', 'Warm peripheries', 'Cap refill 4 seconds'],
+      extremities: ['Urticarial rash on arms', 'Warm peripheries', 'Cap refill 4 seconds', 'No peripheral oedema'],
       posterior: ['Rash extending to upper back'],
       neurological: ['Alert', 'Oriented', 'Anxious']
     },

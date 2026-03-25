@@ -109,7 +109,7 @@ export const caseDatabase: CaseScenario[] = [
       chest: ['Equal chest expansion', 'Heart sounds S1S2 present'],
       abdomen: ['Soft, non-tender'],
       pelvis: ['Stable'],
-      extremities: ['Equal pulses bilaterally', 'No edema'],
+      extremities: ['Equal pulses bilaterally', 'No peripheral oedema'],
       posterior: ['No bruising'],
       neurological: ['GCS 15', 'No deficits']
     },
@@ -339,7 +339,7 @@ export const caseDatabase: CaseScenario[] = [
       chest: ['No scars'],
       abdomen: ['Soft'],
       pelvis: ['Stable'],
-      extremities: ['No edema'],
+      extremities: ['No peripheral oedema'],
       posterior: ['No pressure sores'],
       neurological: ['Unresponsive']
     },
@@ -625,7 +625,7 @@ export const caseDatabase: CaseScenario[] = [
       chest: ['Normal'],
       abdomen: ['Normal'],
       pelvis: ['Normal'],
-      extremities: ['Normal'],
+      extremities: ['No peripheral oedema', 'Peripheral pulses present'],
       posterior: ['Normal'],
       neurological: ['Normal']
     },
@@ -882,7 +882,7 @@ export const caseDatabase: CaseScenario[] = [
       chest: ['Heart sounds normal'],
       abdomen: ['Normal'],
       pelvis: ['Normal'],
-      extremities: ['Normal'],
+      extremities: ['No peripheral oedema', 'Peripheral pulses present'],
       posterior: ['Normal'],
       neurological: ['Confused', 'Cranial nerves intact']
     },
@@ -1740,7 +1740,7 @@ export const caseDatabase: CaseScenario[] = [
       chest: ['Barrel chest', 'Hyperresonant'],
       abdomen: ['Normal'],
       pelvis: ['Normal'],
-      extremities: ['Peripheral edema', 'Tar staining fingers'],
+      extremities: ['Peripheral oedema — bilateral pitting to ankles (cor pulmonale)', 'Tar staining fingers'],
       posterior: ['Normal'],
       neurological: ['Normal']
     },
@@ -2031,7 +2031,7 @@ export const caseDatabase: CaseScenario[] = [
       chest: ['Tender right lower chest', 'Clear auscultation'],
       abdomen: ['Normal'],
       pelvis: ['Normal'],
-      extremities: ['Right calf swollen, tender, warm - DVT'],
+      extremities: ['Right calf swollen, tender, warm — DVT', 'Pitting oedema unilateral right leg', 'Left leg normal — no oedema'],
       posterior: ['Normal'],
       neurological: ['Normal']
     },
@@ -2863,7 +2863,7 @@ export const caseDatabase: CaseScenario[] = [
       chest: ['Normal'],
       abdomen: ['Normal'],
       pelvis: ['Normal'],
-      extremities: ['Right arm weakness', 'Right leg weakness', 'Normal left side'],
+      extremities: ['Right arm weakness', 'Right leg weakness', 'Normal left side', 'No peripheral oedema'],
       posterior: ['Normal'],
       neurological: ['FAST positive', 'Expressive aphasia', 'Right hemiparesis']
     },
@@ -3814,7 +3814,7 @@ export const caseDatabase: CaseScenario[] = [
       chest: ['Normal'],
       abdomen: ['Normal'],
       pelvis: ['Normal'],
-      extremities: ['Tremor in hands'],
+      extremities: ['Tremor in hands', 'No peripheral oedema'],
       posterior: ['Normal'],
       neurological: ['Confused', 'Oriented to person only']
     },
@@ -4348,7 +4348,7 @@ export const caseDatabase: CaseScenario[] = [
       chest: ['Normal'],
       abdomen: ['Normal'],
       pelvis: ['Normal'],
-      extremities: ['Carpal spasm bilaterally'],
+      extremities: ['Carpal spasm bilaterally', 'No peripheral oedema'],
       posterior: ['Normal'],
       neurological: ['Anxious but oriented']
     },
@@ -4532,7 +4532,7 @@ export const caseDatabase: CaseScenario[] = [
       chest: ['Normal'],
       abdomen: ['Normal'],
       pelvis: ['Left hip tender', 'External rotation', 'Shortened leg'],
-      extremities: ['Left leg shortened and externally rotated', 'Distal pulses present', 'No neuro deficit'],
+      extremities: ['Left leg shortened and externally rotated', 'Left hip tenderness on palpation', 'Distal pulses present', 'No neuro deficit', 'No peripheral oedema'],
       posterior: ['No bruising'],
       neurological: ['Normal']
     },
@@ -5837,7 +5837,7 @@ export const caseDatabase: CaseScenario[] = [
       chest: ['Clear bilateral', 'No retractions'],
       abdomen: ['Soft, non-tender'],
       pelvis: ['Normal'],
-      extremities: ['Normal', 'No edema'],
+      extremities: ['Normal', 'No peripheral oedema'],
       posterior: ['Normal'],
       neurological: ['Post-ictal, improving']
     },
@@ -6136,7 +6136,7 @@ export const caseDatabase: CaseScenario[] = [
       chest: ['No trauma'],
       abdomen: ['Soft, non-tender'],
       pelvis: ['Normal'],
-      extremities: ['No trauma', 'No needle marks'],
+      extremities: ['No trauma', 'No needle marks', 'No peripheral oedema'],
       posterior: ['Normal'],
       neurological: ['Agitated', 'Paranoid']
     },
@@ -8110,7 +8110,7 @@ export const caseDatabase: CaseScenario[] = [
       chest: ['Bibasilar crackles'],
       abdomen: ['Soft, non-tender'],
       pelvis: ['Stable'],
-      extremities: ['Bilateral ankle edema', 'Cool extremities'],
+      extremities: ['Bilateral pitting oedema to ankles', 'Cool extremities'],
       posterior: ['Normal'],
       neurological: ['Normal']
     },
@@ -8904,12 +8904,12 @@ export const caseDatabase: CaseScenario[] = [
     },
     secondarySurvey: {
       head: ['Diaphoretic'],
-      neck: ['JVD to angle of jaw'],
-      chest: ['Crackles throughout', 'Possible S3 gallop'],
+      neck: ['JVD present — elevated jugular venous pressure to angle of jaw'],
+      chest: ['Bilateral basal crackles (pulmonary oedema)', 'Possible S3 gallop'],
       abdomen: ['Possible hepatomegaly'],
       pelvis: ['Stable'],
-      extremities: ['Bilateral pitting edema to knees', 'Cool extremities'],
-      posterior: ['Normal'],
+      extremities: ['Bilateral pitting oedema to mid-calf (2+)', 'Cool extremities'],
+      posterior: ['Sacral oedema present'],
       neurological: ['Normal except anxiety']
     },
     history: {

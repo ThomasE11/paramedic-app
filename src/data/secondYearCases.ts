@@ -151,7 +151,7 @@ export const secondYearCases: CaseScenario[] = [
       ],
       abdomen: ['Soft, non-tender', 'Moving with respiration'],
       pelvis: ['Normal'],
-      extremities: ['Warm and dry', 'No edema', 'Good peripheral pulses'],
+      extremities: ['Warm and dry', 'No peripheral oedema', 'Good peripheral pulses'],
       posterior: ['Spine non-tender', 'No posterior abnormalities'],
       neurological: ['Anxious but appropriate', 'No focal deficits', 'Moving all extremities']
     },
@@ -587,7 +587,7 @@ export const secondYearCases: CaseScenario[] = [
       ],
       abdomen: ['Soft, non-tender'],
       pelvis: ['Normal'],
-      extremities: ['No edema', 'Pulses equal bilaterally', 'Skin cool and pale'],
+      extremities: ['No peripheral oedema', 'Pulses equal bilaterally', 'Skin cool and pale'],
       posterior: ['No posterior chest tenderness'],
       neurological: ['Normal', 'No focal deficits']
     },
@@ -992,7 +992,8 @@ export const secondYearCases: CaseScenario[] = [
         'Left arm: decreased tone, weak grip (0/5 strength)',
         'Left leg: decreased tone, weak (2/5 strength)',
         'Right side: normal strength (5/5)',
-        'No deformities'
+        'No deformities',
+        'No peripheral oedema'
       ],
       posterior: ['Normal spine, no tenderness'],
       neurological: [
@@ -1430,7 +1431,8 @@ export const secondYearCases: CaseScenario[] = [
         'Superficial erythema to dorsal aspects of both upper arms',
         'Hands: minor erythema only, no blistering',
         'Lower extremities unaffected',
-        'Good peripheral pulses throughout'
+        'Good peripheral pulses throughout',
+        'Localised swelling at burn sites'
       ],
       posterior: ['No posterior burns', 'Spine non-tender'],
       neurological: ['Alert and oriented', 'No focal deficits', 'Pain response appropriate']
@@ -1823,7 +1825,7 @@ export const secondYearCases: CaseScenario[] = [
         'Bowel sounds present but reduced'
       ],
       pelvis: ['Tenderness on gentle palpation of suprapubic region', 'Patient reports vaginal spotting'],
-      extremities: ['Cool peripheries', 'Thready radial pulses', 'No edema'],
+      extremities: ['Cool peripheries', 'Thready radial pulses', 'No peripheral oedema'],
       posterior: ['Not assessed - patient in pain, minimise movement'],
       neurological: ['Alert and oriented', 'Anxious but appropriate', 'No focal deficits']
     },
@@ -2211,7 +2213,8 @@ export const secondYearCases: CaseScenario[] = [
         'Equal strength bilaterally (5/5 all limbs)',
         'Equal grip strength',
         'No pronator drift',
-        'Good peripheral pulses'
+        'Good peripheral pulses',
+        'No peripheral oedema'
       ],
       posterior: ['Not examined - patient ambulant'],
       neurological: [
@@ -2590,7 +2593,7 @@ export const secondYearCases: CaseScenario[] = [
         'Mild nausea but no vomiting'
       ],
       pelvis: ['Normal'],
-      extremities: ['Normal, no track marks', 'No self-harm scars visible'],
+      extremities: ['Normal, no track marks', 'No self-harm scars visible', 'No peripheral oedema'],
       posterior: ['Not examined'],
       neurological: ['Alert and oriented', 'No focal deficits', 'Emotionally flat']
     },
@@ -3402,7 +3405,7 @@ export const secondYearCases: CaseScenario[] = [
       ],
       abdomen: ['Soft, distended', 'Obese habitus'],
       pelvis: ['Stable, no abnormalities'],
-      extremities: ['Cool peripherally', 'Weak radial pulse post-ROSC', 'No peripheral oedema noted'],
+      extremities: ['Cool peripherally', 'Weak radial pulse post-ROSC', 'No peripheral oedema'],
       posterior: ['Log rolled during airway clearance - no spinal tenderness', 'No posterior injuries'],
       neurological: ['GCS 3 during arrest, GCS 4 post-ROSC', 'No purposeful movement', 'Pupils reactive post-ROSC']
     },

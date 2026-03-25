@@ -90,7 +90,7 @@ export const additionalRespiratoryCases: CaseScenario[] = [
       chest: ['Hyperinflated', 'Bilateral wheeze', 'Poor air entry bases'],
       abdomen: ['Normal'],
       pelvis: ['Normal'],
-      extremities: ['Peripheral cyanosis', 'Asterixis (CO2 retention flap)'],
+      extremities: ['Peripheral cyanosis', 'Asterixis (CO2 retention flap)', 'Peripheral oedema bilateral — cor pulmonale (right heart failure)'],
       posterior: ['Normal'],
       neurological: ['CO2 retention causing confusion']
     },
@@ -970,12 +970,12 @@ export const additionalRespiratoryCases: CaseScenario[] = [
     },
     secondarySurvey: {
       head: ['Alert', 'Cyanotic lips'],
-      neck: ['JVD +++', 'Trachea central'],
-      chest: ['Bilateral crackles to mid-zones', 'Wheeze', 'Tachypnea'],
+      neck: ['JVD present — elevated jugular venous pressure (+++)', 'Trachea central'],
+      chest: ['Bilateral basal crackles (pulmonary oedema)', 'Cardiac wheeze', 'Tachypnea'],
       abdomen: ['Normal'],
       pelvis: ['Normal'],
-      extremities: ['Peripheral edema', 'Cold extremities'],
-      posterior: ['Sacral edema'],
+      extremities: ['Bilateral pitting oedema to mid-calf', 'Cold extremities'],
+      posterior: ['Sacral oedema present (supine position)'],
       neurological: ['Alert']
     },
     history: {
@@ -1260,7 +1260,7 @@ export const additionalRespiratoryCases: CaseScenario[] = [
       chest: ['No air entry'],
       abdomen: ['Normal'],
       pelvis: ['Normal'],
-      extremities: ['Cyanosis'],
+      extremities: ['Cyanosis', 'No peripheral oedema'],
       posterior: ['Normal'],
       neurological: ['Alert but distressed']
     },
@@ -1849,7 +1849,7 @@ export const additionalNeurologicalCases: CaseScenario[] = [
       chest: ['Normal'],
       abdomen: ['Normal'],
       pelvis: ['Normal'],
-      extremities: ['Non-blanching petechial rash'],
+      extremities: ['Non-blanching petechial rash', 'No peripheral oedema'],
       posterior: ['Normal'],
       neurological: ['Confused', 'Positive Kernig and Brudzinski']
     },

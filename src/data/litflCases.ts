@@ -129,7 +129,7 @@ export const litflCaseDatabase: CaseScenario[] = [
       chest: ['Equal expansion', 'Heart sounds — S1S2, no murmurs', 'Clear lungs'],
       abdomen: ['Soft, non-tender'],
       pelvis: ['Stable'],
-      extremities: ['Cool peripheries bilaterally', 'Weak radial pulses', 'No edema'],
+      extremities: ['Cool peripheries bilaterally', 'Weak radial pulses', 'No peripheral oedema'],
       posterior: ['No abnormalities'],
       neurological: ['GCS 15', 'No focal deficits']
     },
@@ -369,7 +369,7 @@ export const litflCaseDatabase: CaseScenario[] = [
       chest: ['Bilateral basal crackles', 'Heart sounds distant'],
       abdomen: ['Mild distension', 'Non-tender', 'Peritoneal dialysis catheter in situ'],
       pelvis: ['Stable'],
-      extremities: ['Bilateral pitting edema to knees', 'AV fistula left forearm with thrill', 'Generalized weakness'],
+      extremities: ['Bilateral pitting oedema to knees', 'AV fistula left forearm with thrill', 'Periorbital oedema', 'Generalized weakness'],
       posterior: ['No abnormalities'],
       neurological: ['GCS 12 (E3V4M5)', 'Generalized weakness', 'Hyporeflexia']
     },
@@ -601,7 +601,7 @@ export const litflCaseDatabase: CaseScenario[] = [
       chest: ['Clear lungs bilaterally', 'Accentuated P2', 'RV heave palpable'],
       abdomen: ['Soft', 'Mild hepatomegaly (RV back-pressure)'],
       pelvis: ['Stable'],
-      extremities: ['Left calf swollen, tender, warm — DVT', 'Right leg normal', 'Cool peripheries both feet'],
+      extremities: ['Left calf swollen, tender, warm — DVT', 'Pitting oedema unilateral left leg', 'Right leg normal — no oedema', 'Cool peripheries both feet'],
       posterior: ['No abnormalities'],
       neurological: ['GCS 14 (E4V4M6)', 'Anxious and agitated']
     },
@@ -844,7 +844,7 @@ export const litflCaseDatabase: CaseScenario[] = [
       chest: ['Heart sounds distant', 'Clear lungs'],
       abdomen: ['Soft, non-tender (difficult to assess — patient barely responsive)'],
       pelvis: ['Stable'],
-      extremities: ['Cold, mottled', 'No obvious fractures', 'Very poor peripheral perfusion'],
+      extremities: ['Cold, mottled', 'No obvious fractures', 'Very poor peripheral perfusion', 'No peripheral oedema'],
       posterior: ['Log roll carefully — avoid triggering VF', 'No deformity'],
       neurological: ['GCS 8 (E2V2M4)', 'Pupils sluggish (expected)']
     },
@@ -1071,7 +1071,7 @@ export const litflCaseDatabase: CaseScenario[] = [
       chest: ['Equal expansion', 'S1S2 normal', 'Clear lungs'],
       abdomen: ['Soft', 'Mild epigastric tenderness (referred pain)'],
       pelvis: ['Stable'],
-      extremities: ['No edema', 'Good perfusion'],
+      extremities: ['No peripheral oedema', 'Good perfusion'],
       posterior: ['No abnormalities'],
       neurological: ['GCS 15']
     },
@@ -1309,7 +1309,7 @@ export const litflCaseDatabase: CaseScenario[] = [
       chest: ['Clear', 'Normal heart sounds'],
       abdomen: ['Soft'],
       pelvis: ['Stable'],
-      extremities: ['Decerebrate posturing bilaterally to pain', 'No fractures'],
+      extremities: ['Decerebrate posturing bilaterally to pain', 'No fractures', 'No peripheral oedema'],
       posterior: ['No abnormalities on log roll'],
       neurological: ['GCS 5 E1V1M3', 'Left blown pupil', 'Decerebrate posturing', 'Cushing triad present']
     },

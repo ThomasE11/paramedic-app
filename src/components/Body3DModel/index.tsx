@@ -259,13 +259,36 @@ function getFinding(caseData: CaseScenario, regionId: string, actionId: string):
   if (actionId === 'l-arm-pulses') return findFor(['left radial', 'l radial']) || 'Left radial pulse present, strong, regular. CRT <2 seconds.';
   if (actionId === 'l-arm-neuro') return findFor(['left arm sensation', 'left upper limb']) || 'Sensation intact all dermatomes. Motor power 5/5. Grip strength equal.';
 
+  // Helper: check for oedema findings in ankle/foot exam
+  const getOedemaFindings = (): string | null => {
+    if (allExtText.includes('oedema') || allExtText.includes('edema') || allExtText.includes('swell') || allExtText.includes('pitting')) {
+      const oedemaFindings = extFindings.filter(f =>
+        f.toLowerCase().includes('oedema') || f.toLowerCase().includes('edema') || f.toLowerCase().includes('swell') || f.toLowerCase().includes('pitting')
+      );
+      if (oedemaFindings.length) return oedemaFindings.join('. ');
+    }
+    return null;
+  };
+
   // RIGHT LEG
   if (actionId === 'r-hip-palpate') return findFor(['right hip', 'r hip']) || 'No tenderness. No shortening or rotation.';
   if (actionId === 'r-femur-palpate') return findFor(['right femur', 'r femur', 'right thigh', 'r thigh']) || 'No tenderness. No deformity. No swelling.';
   if (actionId === 'r-knee-palpate') return findFor(['right knee', 'r knee', 'patella']) || 'No tenderness. No effusion. Stable to valgus/varus stress.';
   if (actionId === 'r-tibia-palpate') return findFor(['right tibia', 'right fibula', 'r tibia', 'right shin', 'r shin']) || 'No tenderness. No deformity. No crepitus.';
-  if (actionId === 'r-ankle-palpate') return findFor(['right ankle', 'r ankle', 'right malleol']) || 'No tenderness over malleoli. No swelling. Ottawa rules negative.';
-  if (actionId === 'r-foot-palpate') return findFor(['right foot', 'r foot', 'right metatarsal']) || 'No tenderness. No deformity. Weight-bearing ability normal.';
+  if (actionId === 'r-ankle-palpate') {
+    const specific = findFor(['right ankle', 'r ankle', 'right malleol']);
+    if (specific) return specific;
+    const oedema = getOedemaFindings();
+    if (oedema) return oedema;
+    return 'No tenderness over malleoli. No swelling. Ottawa rules negative.';
+  }
+  if (actionId === 'r-foot-palpate') {
+    const specific = findFor(['right foot', 'r foot', 'right metatarsal']);
+    if (specific) return specific;
+    const oedema = getOedemaFindings();
+    if (oedema) return oedema;
+    return 'No tenderness. No deformity. Weight-bearing ability normal.';
+  }
   if (actionId === 'r-leg-pulses') return findFor(['right dorsalis', 'right pedal', 'r dorsalis']) || 'Right dorsalis pedis and posterior tibial pulses present. CRT <2 seconds.';
   if (actionId === 'r-leg-neuro') return findFor(['right leg sensation', 'right lower limb']) || 'Sensation intact L2-S1. Motor power 5/5. Dorsi/plantar flexion normal.';
   if (actionId === 'r-leg-compartment') return allExtText.includes('compartment') && allExtText.includes('right') ? 'TENSE compartment — pain on passive stretch. Consider compartment syndrome.' : 'Compartments soft. No pain on passive stretch. No paraesthesia.';
@@ -275,15 +298,48 @@ function getFinding(caseData: CaseScenario, regionId: string, actionId: string):
   if (actionId === 'l-femur-palpate') return findFor(['left femur', 'l femur', 'left thigh', 'l thigh']) || 'No tenderness. No deformity. No swelling.';
   if (actionId === 'l-knee-palpate') return findFor(['left knee', 'l knee']) || 'No tenderness. No effusion. Stable to valgus/varus stress.';
   if (actionId === 'l-tibia-palpate') return findFor(['left tibia', 'left fibula', 'l tibia', 'left shin']) || 'No tenderness. No deformity. No crepitus.';
-  if (actionId === 'l-ankle-palpate') return findFor(['left ankle', 'l ankle', 'left malleol']) || 'No tenderness over malleoli. No swelling. Ottawa rules negative.';
-  if (actionId === 'l-foot-palpate') return findFor(['left foot', 'l foot', 'left metatarsal']) || 'No tenderness. No deformity. Weight-bearing ability normal.';
+  if (actionId === 'l-ankle-palpate') {
+    const specific = findFor(['left ankle', 'l ankle', 'left malleol']);
+    if (specific) return specific;
+    const oedema = getOedemaFindings();
+    if (oedema) return oedema;
+    return 'No tenderness over malleoli. No swelling. Ottawa rules negative.';
+  }
+  if (actionId === 'l-foot-palpate') {
+    const specific = findFor(['left foot', 'l foot', 'left metatarsal']);
+    if (specific) return specific;
+    const oedema = getOedemaFindings();
+    if (oedema) return oedema;
+    return 'No tenderness. No deformity. Weight-bearing ability normal.';
+  }
   if (actionId === 'l-leg-pulses') return findFor(['left dorsalis', 'left pedal', 'l dorsalis']) || 'Left dorsalis pedis and posterior tibial pulses present. CRT <2 seconds.';
   if (actionId === 'l-leg-neuro') return findFor(['left leg sensation', 'left lower limb']) || 'Sensation intact L2-S1. Motor power 5/5. Dorsi/plantar flexion normal.';
   if (actionId === 'l-leg-compartment') return allExtText.includes('compartment') && allExtText.includes('left') ? 'TENSE compartment — pain on passive stretch. Consider compartment syndrome.' : 'Compartments soft. No pain on passive stretch. No paraesthesia.';
   // Posterior
-  if (actionId === 'logroll-inspect') return 'Log roll performed with manual in-line C-spine stabilisation. Patient rolled on command.';
-  if (actionId === 'spine-inspect') return ss?.posterior?.join('. ') || 'No bruising, wounds, or haematoma along spine.';
-  if (actionId === 'spine-palpate') return ss?.posterior?.join('. ') || 'No midline tenderness. No step deformity. No muscle spasm.';
+  if (actionId === 'logroll-inspect') {
+    // Check for sacral oedema (heart failure, renal failure)
+    const sacralFindings: string[] = [];
+    if (ss?.posterior?.some(f => f.toLowerCase().includes('sacral'))) {
+      sacralFindings.push(...(ss?.posterior?.filter(f => f.toLowerCase().includes('sacral')) || []));
+    }
+    if (allExtText.includes('sacral')) {
+      sacralFindings.push(...extFindings.filter(f => f.toLowerCase().includes('sacral')));
+    }
+    const baseMsg = 'Log roll performed with manual in-line C-spine stabilisation. Patient rolled on command.';
+    return sacralFindings.length ? `${baseMsg} ${sacralFindings.join('. ')}.` : baseMsg;
+  }
+  if (actionId === 'spine-inspect') {
+    const posteriorFindings = ss?.posterior || [];
+    return posteriorFindings.length ? posteriorFindings.join('. ') : 'No bruising, wounds, or haematoma along spine.';
+  }
+  if (actionId === 'spine-palpate') {
+    const posteriorFindings = ss?.posterior || [];
+    // Include sacral oedema in palpation findings if present
+    const sacral = posteriorFindings.filter(f => f.toLowerCase().includes('sacral') || f.toLowerCase().includes('oedema') || f.toLowerCase().includes('edema'));
+    const spinal = posteriorFindings.filter(f => !f.toLowerCase().includes('sacral'));
+    const palpFindings = [...spinal, ...sacral].filter(Boolean);
+    return palpFindings.length ? palpFindings.join('. ') : 'No midline tenderness. No step deformity. No muscle spasm.';
+  }
   return 'No abnormalities detected.';
 }
 

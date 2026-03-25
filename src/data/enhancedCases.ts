@@ -113,7 +113,7 @@ export const moreTraumaCases: CaseScenario[] = [
       chest: ['Muffled heart sounds', 'Equal but diminished breath sounds', 'Small entry wound 3rd ICS left parasternal'],
       abdomen: ['Soft, non-tender', 'No distension'],
       pelvis: ['Stable'],
-      extremities: ['Delayed capillary refill', 'Cool to touch', 'Equal pulses but weak'],
+      extremities: ['Delayed capillary refill', 'Cool to touch', 'Equal pulses but weak', 'No peripheral oedema'],
       posterior: ['No posterior chest wounds', 'Spine non-tender'],
       neurological: ['GCS 8 (E2, V2, M4)', 'No focal deficits prior to hypoxic injury']
     },
@@ -639,7 +639,7 @@ export const moreTraumaCases: CaseScenario[] = [
       ],
       abdomen: ['Difficult to assess due to position', 'No obvious distension', 'Seatbelt across abdomen - high risk for injury'],
       pelvis: ['Stable', 'No tenderness'],
-      extremities: ['Possible fractured right femur (pain on movement)', 'Left ankle swollen'],
+      extremities: ['Possible fractured right femur (pain on movement)', 'Left ankle swollen — traumatic swelling', 'No peripheral oedema'],
       posterior: ['Unable to fully assess until extricated'],
       neurological: ['GCS 14 (E4, V4, M6)', 'No obvious focal deficits', 'Moving all extremities (painful right femur)']
     },
@@ -2134,7 +2134,7 @@ export const moreTraumaCases: CaseScenario[] = [
       chest: ['Clear lungs', 'Normal heart sounds'],
       abdomen: ['Distended', 'Tender diffusely', 'Guarding'],
       pelvis: ['UNSTABLE on compression', 'Crepitus', 'Shortened left leg', 'Externally rotated'],
-      extremities: ['Left leg shortened/external rotation', 'Distal pulses weak', 'No other obvious fractures'],
+      extremities: ['Left leg shortened and externally rotated', 'Left hip tenderness on palpation', 'Distal pulses weak', 'No other obvious fractures', 'No peripheral oedema'],
       posterior: ['Unable to fully assess'],
       neurological: ['Normal, distracted by pain']
     },
@@ -2613,7 +2613,7 @@ export const moreTraumaCases: CaseScenario[] = [
       chest: ['Clear'],
       abdomen: ['Soft, non-tender'],
       pelvis: ['Stable'],
-      extremities: ['Moving all four equally', 'No obvious fractures'],
+      extremities: ['Moving all four equally', 'No obvious fractures', 'No peripheral oedema'],
       posterior: ['No step-off'],
       neurological: ['GCS 6 (E1, V1, M4)', 'Right blown pupil', 'Left hemiparesis']
     },
@@ -3045,7 +3045,7 @@ export const moreTraumaCases: CaseScenario[] = [
       chest: ['Diaphragmatic breathing', 'Reduced chest expansion'],
       abdomen: ['Soft, absent bowel sounds'],
       pelvis: ['Stable'],
-      extremities: ['Flaccid paralysis all four limbs', 'No reflexes', 'Priapism'],
+      extremities: ['Flaccid paralysis all four limbs', 'No reflexes', 'Priapism', 'No peripheral oedema'],
       posterior: ['Step-off at C5'],
       neurological: [
         'C5 complete cord injury',
@@ -3537,7 +3537,7 @@ export const cardiacECGCases: CaseScenario[] = [
       chest: ['Normal heart sounds', 'Clear lungs'],
       abdomen: ['Epigastric tenderness', 'Soft'],
       pelvis: ['Normal'],
-      extremities: ['Cool peripheries', 'Delayed capillary refill'],
+      extremities: ['Cool peripheries', 'Delayed capillary refill', 'No peripheral oedema'],
       posterior: ['Normal'],
       neurological: ['Normal']
     },
