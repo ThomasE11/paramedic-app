@@ -166,6 +166,16 @@ export const TREATMENT_YEAR_ACCESS: Record<string, StudentYear[]> = {
   ked:                  ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
   traction_splint:      ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
 
+  // ----- POST-RSI & VENTILATOR MANAGEMENT (4th Year Critical Care) -----
+  ett_confirmation:     ['3rd-year', '4th-year'],
+  ventilator_setup:     ['4th-year'],
+  post_rsi_sedation:    ['4th-year'],
+  post_rsi_paralysis:   ['4th-year'],
+  post_rosc_bundle:     ['3rd-year', '4th-year'],
+  targeted_temp_mgmt:   ['4th-year'],
+  vasopressor_norad:    ['4th-year'],
+  orogastric_tube:      ['3rd-year', '4th-year'],
+
   // ----- KETAMINE VARIANTS & SEDATION -----
   ketamine_analgesic:   ['3rd-year', '4th-year'],
   ketamine_sedation:    ['4th-year'],
