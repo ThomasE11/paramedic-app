@@ -181,7 +181,7 @@ export function BodyMesh({ assessedRegions, onRegionClick }: BodyMeshProps) {
       {/* Hover tooltip */}
       {hoveredRegion && (
         <Html position={tooltipPos} distanceFactor={4} zIndexRange={[100, 0]}>
-          <div className="px-3 py-2 rounded-xl bg-black/90 text-white text-xs font-medium whitespace-nowrap pointer-events-none shadow-xl border border-white/10 backdrop-blur-sm">
+          <div className="px-3 py-2 rounded-xl bg-black/90 text-white text-xs font-medium pointer-events-none shadow-xl border border-white/10 backdrop-blur-sm max-w-[220px]">
             <div className="font-bold text-sm">
               {hoveredRegion.label}
               {assessedRegions.has(hoveredRegion.id) && (
