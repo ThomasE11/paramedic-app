@@ -102,42 +102,52 @@ function getSubRegions(regionId: string): SubRegion[] {
     ];
     case 'extremities': return [
       { id: 'right-arm', label: 'Right Arm', actions: [
+        { id: 'r-arm-inspect', label: 'Inspect', technique: 'inspect' },
         { id: 'r-shoulder-palpate', label: 'Shoulder', technique: 'palpate' },
         { id: 'r-humerus-palpate', label: 'Humerus (upper arm)', technique: 'palpate' },
         { id: 'r-elbow-palpate', label: 'Elbow', technique: 'palpate' },
         { id: 'r-forearm-palpate', label: 'Radius / Ulna (forearm)', technique: 'palpate' },
-        { id: 'r-wrist-palpate', label: 'Wrist', technique: 'palpate' },
-        { id: 'r-hand-palpate', label: 'Hand', technique: 'palpate' },
-        { id: 'r-arm-pulses', label: 'Radial Pulse', technique: 'palpate' },
+        { id: 'r-wrist-palpate', label: 'Wrist / Scaphoid', technique: 'palpate' },
+        { id: 'r-hand-palpate', label: 'Hand (metacarpals)', technique: 'palpate' },
+        { id: 'r-thumb-palpate', label: 'Thumb', technique: 'palpate' },
+        { id: 'r-fingers-palpate', label: 'Fingers (index–little)', technique: 'palpate' },
+        { id: 'r-arm-pulses', label: 'Radial Pulse + CRT', technique: 'palpate' },
         { id: 'r-arm-neuro', label: 'Sensation & Motor', technique: 'inspect' },
       ]},
       { id: 'left-arm', label: 'Left Arm', actions: [
+        { id: 'l-arm-inspect', label: 'Inspect', technique: 'inspect' },
         { id: 'l-shoulder-palpate', label: 'Shoulder', technique: 'palpate' },
         { id: 'l-humerus-palpate', label: 'Humerus (upper arm)', technique: 'palpate' },
         { id: 'l-elbow-palpate', label: 'Elbow', technique: 'palpate' },
         { id: 'l-forearm-palpate', label: 'Radius / Ulna (forearm)', technique: 'palpate' },
-        { id: 'l-wrist-palpate', label: 'Wrist', technique: 'palpate' },
-        { id: 'l-hand-palpate', label: 'Hand', technique: 'palpate' },
-        { id: 'l-arm-pulses', label: 'Radial Pulse', technique: 'palpate' },
+        { id: 'l-wrist-palpate', label: 'Wrist / Scaphoid', technique: 'palpate' },
+        { id: 'l-hand-palpate', label: 'Hand (metacarpals)', technique: 'palpate' },
+        { id: 'l-thumb-palpate', label: 'Thumb', technique: 'palpate' },
+        { id: 'l-fingers-palpate', label: 'Fingers (index–little)', technique: 'palpate' },
+        { id: 'l-arm-pulses', label: 'Radial Pulse + CRT', technique: 'palpate' },
         { id: 'l-arm-neuro', label: 'Sensation & Motor', technique: 'inspect' },
       ]},
       { id: 'right-leg', label: 'Right Leg', actions: [
+        { id: 'r-leg-inspect', label: 'Inspect', technique: 'inspect' },
         { id: 'r-femur-palpate', label: 'Femur (thigh)', technique: 'palpate' },
         { id: 'r-knee-palpate', label: 'Knee', technique: 'palpate' },
         { id: 'r-tibia-palpate', label: 'Tibia / Fibula (shin)', technique: 'palpate' },
-        { id: 'r-ankle-palpate', label: 'Ankle', technique: 'palpate' },
-        { id: 'r-foot-palpate', label: 'Foot', technique: 'palpate' },
-        { id: 'r-leg-pulses', label: 'Dorsalis Pedis & Post. Tibial', technique: 'palpate' },
+        { id: 'r-ankle-palpate', label: 'Ankle (malleoli)', technique: 'palpate' },
+        { id: 'r-foot-palpate', label: 'Foot (metatarsals)', technique: 'palpate' },
+        { id: 'r-toes-palpate', label: 'Toes (all digits)', technique: 'palpate' },
+        { id: 'r-leg-pulses', label: 'Dorsalis Pedis & Post. Tibial + CRT', technique: 'palpate' },
         { id: 'r-leg-neuro', label: 'Sensation & Motor', technique: 'inspect' },
         { id: 'r-leg-compartment', label: 'Compartment Check', technique: 'palpate' },
       ]},
       { id: 'left-leg', label: 'Left Leg', actions: [
+        { id: 'l-leg-inspect', label: 'Inspect', technique: 'inspect' },
         { id: 'l-femur-palpate', label: 'Femur (thigh)', technique: 'palpate' },
         { id: 'l-knee-palpate', label: 'Knee', technique: 'palpate' },
         { id: 'l-tibia-palpate', label: 'Tibia / Fibula (shin)', technique: 'palpate' },
-        { id: 'l-ankle-palpate', label: 'Ankle', technique: 'palpate' },
-        { id: 'l-foot-palpate', label: 'Foot', technique: 'palpate' },
-        { id: 'l-leg-pulses', label: 'Dorsalis Pedis & Post. Tibial', technique: 'palpate' },
+        { id: 'l-ankle-palpate', label: 'Ankle (malleoli)', technique: 'palpate' },
+        { id: 'l-foot-palpate', label: 'Foot (metatarsals)', technique: 'palpate' },
+        { id: 'l-toes-palpate', label: 'Toes (all digits)', technique: 'palpate' },
+        { id: 'l-leg-pulses', label: 'Dorsalis Pedis & Post. Tibial + CRT', technique: 'palpate' },
         { id: 'l-leg-neuro', label: 'Sensation & Motor', technique: 'inspect' },
         { id: 'l-leg-compartment', label: 'Compartment Check', technique: 'palpate' },
       ]},
@@ -241,24 +251,30 @@ function getFinding(caseData: CaseScenario, regionId: string, actionId: string):
   };
 
   // RIGHT ARM
+  if (actionId === 'r-arm-inspect') return findFor(['right arm', 'right upper limb', 'right forearm', 'right hand']) || 'No deformity. No swelling. No wounds. No bruising. Skin colour normal.';
   if (actionId === 'r-shoulder-palpate') return findFor(['right shoulder', 'r shoulder']) || 'No tenderness. Full range of motion. No crepitus.';
   if (actionId === 'r-humerus-palpate') return findFor(['humerus', 'right upper arm', 'r upper arm']) || 'No tenderness. No deformity. No swelling.';
   if (actionId === 'r-elbow-palpate') return findFor(['right elbow', 'r elbow', 'olecranon']) || 'No tenderness. No effusion. Full flexion/extension.';
   if (actionId === 'r-forearm-palpate') return findFor(['right forearm', 'radius', 'ulna', 'colles', 'smith']) || 'No tenderness along radius or ulna. No deformity.';
   if (actionId === 'r-wrist-palpate') return findFor(['right wrist', 'r wrist', 'scaphoid', 'anatomical snuffbox']) || 'No tenderness. No swelling. Anatomical snuffbox non-tender.';
-  if (actionId === 'r-hand-palpate') return findFor(['right hand', 'r hand', 'metacarpal', 'finger']) || 'No tenderness. No deformity. Grip strength normal.';
-  if (actionId === 'r-arm-pulses') return findFor(['right radial', 'r radial']) || 'Right radial pulse present, strong, regular. CRT <2 seconds.';
-  if (actionId === 'r-arm-neuro') return findFor(['right arm sensation', 'right upper limb']) || 'Sensation intact all dermatomes. Motor power 5/5. Grip strength equal.';
+  if (actionId === 'r-hand-palpate') return findFor(['right hand', 'r hand', 'metacarpal']) || 'No metacarpal tenderness. No deformity. Grip strength normal.';
+  if (actionId === 'r-thumb-palpate') return findFor(['right thumb', 'r thumb', 'gamekeeper', 'bennett']) || 'Thumb: no tenderness at MCP or IP joints. Full opposition. No instability.';
+  if (actionId === 'r-fingers-palpate') return findFor(['right finger', 'r finger', 'right digit', 'mallet', 'boutonniere', 'phalanx']) || 'All digits: no tenderness. No deformity. Full range of motion. No mallet or boutonniere deformity.';
+  if (actionId === 'r-arm-pulses') return findFor(['right radial', 'r radial']) || 'Right radial pulse present, strong, regular. CRT <2 seconds. Nailbed perfusion normal.';
+  if (actionId === 'r-arm-neuro') return findFor(['right arm sensation', 'right upper limb']) || 'Sensation intact all dermatomes (median/ulnar/radial). Motor power 5/5. Grip strength equal.';
 
   // LEFT ARM
+  if (actionId === 'l-arm-inspect') return findFor(['left arm', 'left upper limb', 'left forearm', 'left hand']) || 'No deformity. No swelling. No wounds. No bruising. Skin colour normal.';
   if (actionId === 'l-shoulder-palpate') return findFor(['left shoulder', 'l shoulder']) || 'No tenderness. Full range of motion. No crepitus.';
   if (actionId === 'l-humerus-palpate') return findFor(['left humerus', 'l upper arm']) || 'No tenderness. No deformity. No swelling.';
   if (actionId === 'l-elbow-palpate') return findFor(['left elbow', 'l elbow']) || 'No tenderness. No effusion. Full flexion/extension.';
   if (actionId === 'l-forearm-palpate') return findFor(['left forearm', 'l forearm', 'left radius', 'left ulna']) || 'No tenderness along radius or ulna. No deformity.';
   if (actionId === 'l-wrist-palpate') return findFor(['left wrist', 'l wrist']) || 'No tenderness. No swelling. Anatomical snuffbox non-tender.';
-  if (actionId === 'l-hand-palpate') return findFor(['left hand', 'l hand']) || 'No tenderness. No deformity. Grip strength normal.';
-  if (actionId === 'l-arm-pulses') return findFor(['left radial', 'l radial']) || 'Left radial pulse present, strong, regular. CRT <2 seconds.';
-  if (actionId === 'l-arm-neuro') return findFor(['left arm sensation', 'left upper limb']) || 'Sensation intact all dermatomes. Motor power 5/5. Grip strength equal.';
+  if (actionId === 'l-hand-palpate') return findFor(['left hand', 'l hand', 'left metacarpal']) || 'No metacarpal tenderness. No deformity. Grip strength normal.';
+  if (actionId === 'l-thumb-palpate') return findFor(['left thumb', 'l thumb']) || 'Thumb: no tenderness at MCP or IP joints. Full opposition. No instability.';
+  if (actionId === 'l-fingers-palpate') return findFor(['left finger', 'l finger', 'left digit']) || 'All digits: no tenderness. No deformity. Full range of motion. No mallet or boutonniere deformity.';
+  if (actionId === 'l-arm-pulses') return findFor(['left radial', 'l radial']) || 'Left radial pulse present, strong, regular. CRT <2 seconds. Nailbed perfusion normal.';
+  if (actionId === 'l-arm-neuro') return findFor(['left arm sensation', 'left upper limb']) || 'Sensation intact all dermatomes (median/ulnar/radial). Motor power 5/5. Grip strength equal.';
 
   // Helper: check for oedema findings in ankle/foot exam
   const getOedemaFindings = (): string | null => {
@@ -272,6 +288,7 @@ function getFinding(caseData: CaseScenario, regionId: string, actionId: string):
   };
 
   // RIGHT LEG
+  if (actionId === 'r-leg-inspect') return findFor(['right leg', 'right lower limb', 'right thigh', 'right shin']) || 'No deformity. No swelling. No wounds. Skin colour normal. No shortening or rotation.';
   if (actionId === 'r-hip-palpate') return findFor(['right hip', 'r hip']) || 'No tenderness. No shortening or rotation.';
   if (actionId === 'r-femur-palpate') return findFor(['right femur', 'r femur', 'right thigh', 'r thigh']) || 'No tenderness. No deformity. No swelling.';
   if (actionId === 'r-knee-palpate') return findFor(['right knee', 'r knee', 'patella']) || 'No tenderness. No effusion. Stable to valgus/varus stress.';
@@ -290,11 +307,13 @@ function getFinding(caseData: CaseScenario, regionId: string, actionId: string):
     if (oedema) return oedema;
     return 'No tenderness. No deformity. Weight-bearing ability normal.';
   }
-  if (actionId === 'r-leg-pulses') return findFor(['right dorsalis', 'right pedal', 'r dorsalis']) || 'Right dorsalis pedis and posterior tibial pulses present. CRT <2 seconds.';
+  if (actionId === 'r-toes-palpate') return findFor(['right toe', 'r toe', 'right digit', 'right hallux']) || 'All toes: no tenderness. No deformity. Capillary refill brisk. Sensation intact.';
+  if (actionId === 'r-leg-pulses') return findFor(['right dorsalis', 'right pedal', 'r dorsalis']) || 'Right dorsalis pedis and posterior tibial pulses present. CRT <2 seconds. Nailbed perfusion normal.';
   if (actionId === 'r-leg-neuro') return findFor(['right leg sensation', 'right lower limb']) || 'Sensation intact L2-S1. Motor power 5/5. Dorsi/plantar flexion normal.';
   if (actionId === 'r-leg-compartment') return allExtText.includes('compartment') && allExtText.includes('right') ? 'TENSE compartment — pain on passive stretch. Consider compartment syndrome.' : 'Compartments soft. No pain on passive stretch. No paraesthesia.';
 
   // LEFT LEG
+  if (actionId === 'l-leg-inspect') return findFor(['left leg', 'left lower limb', 'left thigh', 'left shin']) || 'No deformity. No swelling. No wounds. Skin colour normal. No shortening or rotation.';
   if (actionId === 'l-hip-palpate') return findFor(['left hip', 'l hip']) || 'No tenderness. No shortening or rotation.';
   if (actionId === 'l-femur-palpate') return findFor(['left femur', 'l femur', 'left thigh', 'l thigh']) || 'No tenderness. No deformity. No swelling.';
   if (actionId === 'l-knee-palpate') return findFor(['left knee', 'l knee']) || 'No tenderness. No effusion. Stable to valgus/varus stress.';
@@ -313,7 +332,8 @@ function getFinding(caseData: CaseScenario, regionId: string, actionId: string):
     if (oedema) return oedema;
     return 'No tenderness. No deformity. Weight-bearing ability normal.';
   }
-  if (actionId === 'l-leg-pulses') return findFor(['left dorsalis', 'left pedal', 'l dorsalis']) || 'Left dorsalis pedis and posterior tibial pulses present. CRT <2 seconds.';
+  if (actionId === 'l-toes-palpate') return findFor(['left toe', 'l toe', 'left digit', 'left hallux']) || 'All toes: no tenderness. No deformity. Capillary refill brisk. Sensation intact.';
+  if (actionId === 'l-leg-pulses') return findFor(['left dorsalis', 'left pedal', 'l dorsalis']) || 'Left dorsalis pedis and posterior tibial pulses present. CRT <2 seconds. Nailbed perfusion normal.';
   if (actionId === 'l-leg-neuro') return findFor(['left leg sensation', 'left lower limb']) || 'Sensation intact L2-S1. Motor power 5/5. Dorsi/plantar flexion normal.';
   if (actionId === 'l-leg-compartment') return allExtText.includes('compartment') && allExtText.includes('left') ? 'TENSE compartment — pain on passive stretch. Consider compartment syndrome.' : 'Compartments soft. No pain on passive stretch. No paraesthesia.';
   // Posterior
