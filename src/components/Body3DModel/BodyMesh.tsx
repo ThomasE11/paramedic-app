@@ -59,6 +59,11 @@ const REGION_RANGES: RegionRange[] = [
   { id: 'posterior-logroll', label: 'Posterior / Log Roll', description: 'Log roll with C-spine control. Palpate entire spine.', yMin: 0.83, yMax: 1.565, condition: 'back' },
 ];
 
+// Track which specific limb was clicked for exam panel filtering
+export type LimbSide = 'right-arm' | 'left-arm' | 'right-leg' | 'left-leg' | null;
+let lastClickedLimb: LimbSide = null;
+export function getLastClickedLimb(): LimbSide { return lastClickedLimb; }
+
 function getRegionAtPoint(point: THREE.Vector3): RegionRange | null {
   // Check posterior first (back of model, z < -0.05)
   if (point.z < -0.05) {
@@ -69,12 +74,21 @@ function getRegionAtPoint(point: THREE.Vector3): RegionRange | null {
   // Arms detection: if click is lateral (|X| > threshold) AND in the
   // torso Y range, it's an arm, not chest/abdomen. The model's arms
   // extend outward from X ≈ ±0.20 at shoulders to ±0.85 at hands.
-  // Arms span Y range ~0.60 to ~1.44 (hands to shoulders)
   const absX = Math.abs(point.x);
   if (absX > 0.20 && point.y >= 0.60 && point.y < 1.44) {
-    // This is an arm/hand — map to extremities
+    // Determine which arm based on X sign (model faces forward, +X = model's left = viewer's right)
+    lastClickedLimb = point.x > 0 ? 'left-arm' : 'right-arm';
     return REGION_RANGES.find(r => r.id === 'extremities') || null;
   }
+
+  // Legs detection: below pelvis, determine left vs right by X
+  if (point.y < 0.83) {
+    lastClickedLimb = point.x > 0 ? 'left-leg' : 'right-leg';
+    return REGION_RANGES.find(r => r.id === 'extremities') || null;
+  }
+
+  // Clear limb selection for non-extremity clicks
+  lastClickedLimb = null;
 
   // Then check front/lateral regions (no condition)
   return REGION_RANGES.find(r => !r.condition && point.y >= r.yMin && point.y < r.yMax) || null;
@@ -121,6 +135,13 @@ export function BodyMesh({ assessedRegions, onRegionClick }: BodyMeshProps) {
   const handlePointerMove = useCallback((e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
     const point = e.point;
+    // Detect limb side for hover tooltip before getRegionAtPoint (which also sets lastClickedLimb)
+    const absX = Math.abs(point.x);
+    if (absX > 0.20 && point.y >= 0.60 && point.y < 1.44) {
+      lastClickedLimb = point.x > 0 ? 'left-arm' : 'right-arm';
+    } else if (point.y < 0.83) {
+      lastClickedLimb = point.x > 0 ? 'left-leg' : 'right-leg';
+    }
     const region = getRegionAtPoint(point);
 
     if (region !== hoveredRegion) {
@@ -205,7 +226,9 @@ export function BodyMesh({ assessedRegions, onRegionClick }: BodyMeshProps) {
         <Html position={tooltipPos} distanceFactor={4} zIndexRange={[100, 0]}>
           <div className="px-3 py-2 rounded-xl bg-black/90 text-white text-xs font-medium pointer-events-none shadow-xl border border-white/10 backdrop-blur-sm max-w-[220px]">
             <div className="font-bold text-sm">
-              {hoveredRegion.label}
+              {hoveredRegion.id === 'extremities' && lastClickedLimb
+                ? { 'right-arm': 'Right Arm', 'left-arm': 'Left Arm', 'right-leg': 'Right Leg', 'left-leg': 'Left Leg' }[lastClickedLimb] || hoveredRegion.label
+                : hoveredRegion.label}
               {assessedRegions.has(hoveredRegion.id) && (
                 <span className="ml-1.5 text-green-400">✓</span>
               )}

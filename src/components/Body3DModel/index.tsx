@@ -15,7 +15,8 @@ import { OrbitControls, ContactShadows } from '@react-three/drei';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { RotateCcw, User, Eye, Hand, Activity, Stethoscope, Heart, X, ChevronRight } from 'lucide-react';
-import { BodyMesh } from './BodyMesh';
+import { BodyMesh, getLastClickedLimb } from './BodyMesh';
+import type { LimbSide } from './BodyMesh';
 import type { AssessmentStepId } from '@/data/assessmentFramework';
 import type { CaseScenario } from '@/types';
 import type { ClinicalSoundState } from '@/data/clinicalSounds';
@@ -94,7 +95,9 @@ function getSubRegions(regionId: string): SubRegion[] {
     case 'pelvis': return [
       { id: 'pelvis-exam', label: 'Pelvis', actions: [
         { id: 'pelvis-inspect', label: 'Inspect', technique: 'inspect' },
-        { id: 'pelvis-palpate', label: 'Palpate', technique: 'palpate' },
+        { id: 'pelvis-palpate', label: 'Spring Test', technique: 'palpate' },
+        { id: 'r-hip-palpate', label: 'Right Hip', technique: 'palpate' },
+        { id: 'l-hip-palpate', label: 'Left Hip', technique: 'palpate' },
       ]},
     ];
     case 'extremities': return [
@@ -119,7 +122,6 @@ function getSubRegions(regionId: string): SubRegion[] {
         { id: 'l-arm-neuro', label: 'Sensation & Motor', technique: 'inspect' },
       ]},
       { id: 'right-leg', label: 'Right Leg', actions: [
-        { id: 'r-hip-palpate', label: 'Hip', technique: 'palpate' },
         { id: 'r-femur-palpate', label: 'Femur (thigh)', technique: 'palpate' },
         { id: 'r-knee-palpate', label: 'Knee', technique: 'palpate' },
         { id: 'r-tibia-palpate', label: 'Tibia / Fibula (shin)', technique: 'palpate' },
@@ -130,7 +132,6 @@ function getSubRegions(regionId: string): SubRegion[] {
         { id: 'r-leg-compartment', label: 'Compartment Check', technique: 'palpate' },
       ]},
       { id: 'left-leg', label: 'Left Leg', actions: [
-        { id: 'l-hip-palpate', label: 'Hip', technique: 'palpate' },
         { id: 'l-femur-palpate', label: 'Femur (thigh)', technique: 'palpate' },
         { id: 'l-knee-palpate', label: 'Knee', technique: 'palpate' },
         { id: 'l-tibia-palpate', label: 'Tibia / Fibula (shin)', technique: 'palpate' },
@@ -351,6 +352,11 @@ const REGION_LABELS: Record<string, string> = {
   abdomen: 'Abdomen', pelvis: 'Pelvis', extremities: 'Extremities', 'posterior-logroll': 'Posterior',
 };
 
+const LIMB_LABELS: Record<string, string> = {
+  'right-arm': 'Right Arm', 'left-arm': 'Left Arm',
+  'right-leg': 'Right Leg', 'left-leg': 'Left Leg',
+};
+
 // ============================================================================
 // Main Component
 // ============================================================================
@@ -367,6 +373,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   const controlsRef = useRef<any>(null);
   const [isFlipped, setIsFlipped] = useState(false);
   const [activeRegion, setActiveRegion] = useState<string | null>(null);
+  const [activeLimb, setActiveLimb] = useState<LimbSide>(null);
   const [revealedFindings, setRevealedFindings] = useState<Map<string, string>>(new Map());
   const [selectedAction, setSelectedAction] = useState<string | null>(null);
 
@@ -386,6 +393,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
 
   const handleRegionClick = useCallback((stepId: string) => {
     setActiveRegion(stepId);
+    setActiveLimb(stepId === 'extremities' ? getLastClickedLimb() : null);
     setSelectedAction(null);
     onRegionClick(stepId as AssessmentStepId);
 
@@ -443,7 +451,11 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
 
   const regionIds = ['head', 'face', 'neck-cspine', 'chest', 'abdomen', 'pelvis', 'extremities', 'posterior-logroll'];
   const assessedCount = regionIds.filter(id => assessedRegions.has(id)).length;
-  const subRegions = activeRegion ? getSubRegions(activeRegion) : [];
+  const allSubRegions = activeRegion ? getSubRegions(activeRegion) : [];
+  // When a specific limb is clicked, only show that limb's exams
+  const subRegions = activeRegion === 'extremities' && activeLimb
+    ? allSubRegions.filter(sr => sr.id === activeLimb)
+    : allSubRegions;
 
   return (
     <div className="rounded-2xl overflow-hidden border border-border/40 bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-950">
@@ -454,7 +466,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
           <span className="text-xs font-semibold">Physical Examination</span>
           {activeRegion && (
             <span className="text-xs text-muted-foreground">
-              — {REGION_LABELS[activeRegion] || activeRegion}
+              — {activeLimb ? LIMB_LABELS[activeLimb] : (REGION_LABELS[activeRegion] || activeRegion)}
             </span>
           )}
         </div>
@@ -549,7 +561,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
             {/* LEFT: Examination techniques */}
             <div className="p-3 space-y-1.5">
               <p className="text-xs font-bold text-foreground dark:text-white mb-2">
-                {REGION_LABELS[activeRegion]} — Examination
+                {activeLimb ? LIMB_LABELS[activeLimb] : REGION_LABELS[activeRegion]} — Examination
               </p>
               {subRegions.map(sr => (
                 <div key={sr.id} className="space-y-1">
