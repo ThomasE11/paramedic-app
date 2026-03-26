@@ -314,6 +314,7 @@ export const TREATMENTS: Treatment[] = [
       { vitalSign: 'bp', changeType: 'increase', value: 10 },
       { vitalSign: 'pulse', changeType: 'decrease', value: 8, minValue: 60 },
     ],
+    contraindications: ['Heart failure (use with caution)', 'Pulmonary oedema'],
   },
   {
     id: 'fluids_500ml',
@@ -329,6 +330,7 @@ export const TREATMENTS: Treatment[] = [
       { vitalSign: 'bp', changeType: 'increase', value: 18 },
       { vitalSign: 'pulse', changeType: 'decrease', value: 15, minValue: 60 },
     ],
+    contraindications: ['Heart failure', 'Pulmonary oedema', 'Fluid overload'],
   },
   {
     id: 'fluids_1000ml',
@@ -344,6 +346,7 @@ export const TREATMENTS: Treatment[] = [
       { vitalSign: 'bp', changeType: 'increase', value: 30 },
       { vitalSign: 'pulse', changeType: 'decrease', value: 25, minValue: 60 },
     ],
+    contraindications: ['Heart failure', 'Pulmonary oedema', 'Renal failure (use with caution)', 'Fluid overload'],
   },
   {
     id: 'bleeding_control',
@@ -495,7 +498,7 @@ export const TREATMENTS: Treatment[] = [
   {
     id: 'atropine_05mg',
     name: 'Atropine 0.5mg',
-    description: 'For bradycardia and organophosphate poisoning',
+    description: 'For symptomatic bradycardia — 0.5mg IV every 3-5 minutes, max total dose 3mg. Also used for organophosphate poisoning.',
     category: 'medication',
     onset: 'moderate',
     onsetTimeSeconds: 5,
@@ -510,7 +513,7 @@ export const TREATMENTS: Treatment[] = [
   {
     id: 'adenosine_6mg',
     name: 'Adenosine 6mg',
-    description: 'For SVT - causes transient asystole',
+    description: 'First-line for SVT — rapid IV push with immediate 20ml saline flush. Causes transient asystole (warn patient).',
     category: 'medication',
     onset: 'immediate',
     onsetTimeSeconds: 0,
@@ -604,8 +607,8 @@ export const TREATMENTS: Treatment[] = [
     name: 'Glucagon 1mg IM',
     description: 'For unconscious hypoglycemia',
     category: 'medication',
-    onset: 'fast',
-    onsetTimeSeconds: 5,
+    onset: 'gradual',
+    onsetTimeSeconds: 15,
     durationSeconds: 20,
     icon: 'Activity',
     color: 'green',
@@ -617,7 +620,7 @@ export const TREATMENTS: Treatment[] = [
   },
   {
     id: 'midazolam_5mg',
-    name: 'Midazolam 5mg',
+    name: 'Midazolam 5mg IV/IM',
     description: 'Benzodiazepine for seizures/agitation',
     category: 'medication',
     onset: 'fast',
@@ -635,7 +638,7 @@ export const TREATMENTS: Treatment[] = [
   {
     id: 'naloxone_04mg',
     name: 'Naloxone 0.4mg',
-    description: 'Opioid antagonist',
+    description: 'Opioid antagonist — titrate to respiratory rate (target RR >12), not consciousness. May need repeat doses (re-sedation risk as naloxone wears off). Can give IM/IN if no IV access.',
     category: 'medication',
     onset: 'fast',
     onsetTimeSeconds: 2,
@@ -647,6 +650,7 @@ export const TREATMENTS: Treatment[] = [
       { vitalSign: 'pulse', changeType: 'increase', value: 20, maxValue: 140 },
       { vitalSign: 'gcs', changeType: 'increase', value: 4, maxValue: 15 },
     ],
+    contraindications: ['Caution: may precipitate acute opioid withdrawal'],
   },
   {
     id: 'txa_1g',
@@ -915,6 +919,7 @@ export const TREATMENTS: Treatment[] = [
       { vitalSign: 'spo2', changeType: 'increase', value: 6, maxValue: 96 },
       { vitalSign: 'bp', changeType: 'decrease', value: 10 },
     ],
+    contraindications: ['Myasthenia gravis', 'Heart block', 'Severe renal impairment'],
   },
   {
     id: 'ondansetron_4mg',
@@ -938,7 +943,7 @@ export const TREATMENTS: Treatment[] = [
   {
     id: 'midazolam_buccal',
     name: 'Buccal Midazolam',
-    description: 'First-line anticonvulsant for pediatric seizures (0.3mg/kg buccal)',
+    description: 'First-line anticonvulsant for pediatric seizures (0.3mg/kg buccal). Max 10mg buccal.',
     category: 'medication',
     onset: 'fast',
     onsetTimeSeconds: 3,
@@ -1129,7 +1134,7 @@ export const TREATMENTS: Treatment[] = [
     effects: [
       { vitalSign: 'respiration', changeType: 'set', value: 0 },
     ],
-    contraindications: ['Known hyperkalaemia', 'Burns >24hrs old', 'Denervation injuries', 'Known malignant hyperthermia'],
+    contraindications: ['Known hyperkalaemia', 'Burns >24hrs old', 'Denervation injuries', 'Known malignant hyperthermia', 'Neuromuscular disease (myasthenia gravis, muscular dystrophy)', 'Spinal cord injury >72hrs'],
   },
   {
     id: 'rocuronium',
@@ -1918,6 +1923,39 @@ export const TREATMENTS: Treatment[] = [
     color: 'yellow',
     effects: [],
     contraindications: ['Base of skull fracture (nasogastric — use orogastric instead)', 'Oesophageal varices'],
+  },
+  {
+    id: 'pericardiocentesis',
+    name: 'Pericardiocentesis',
+    description: 'Emergency needle aspiration of pericardial fluid for cardiac tamponade. Subxiphoid approach, aim toward left shoulder.',
+    category: 'circulation',
+    onset: 'immediate',
+    onsetTimeSeconds: 0,
+    durationSeconds: 1,
+    icon: 'Activity',
+    color: 'red',
+    effects: [
+      { vitalSign: 'bp', changeType: 'increase', value: 30 },
+      { vitalSign: 'pulse', changeType: 'decrease', value: 15, minValue: 60 },
+    ],
+    contraindications: ['Aortic dissection', 'Uncorrected coagulopathy'],
+  },
+  {
+    id: 'adrenaline_im_infant',
+    name: 'Adrenaline 0.1mg IM (Infant <1yr)',
+    description: 'IM adrenaline for anaphylaxis in infants under 1 year. 0.1mg (0.1ml of 1:1000). Anterolateral thigh.',
+    category: 'medication',
+    onset: 'moderate',
+    onsetTimeSeconds: 8,
+    durationSeconds: 30,
+    icon: 'Activity',
+    color: 'red',
+    effects: [
+      { vitalSign: 'bp', changeType: 'increase', value: 15 },
+      { vitalSign: 'pulse', changeType: 'increase', value: 10, maxValue: 180 },
+      { vitalSign: 'spo2', changeType: 'increase', value: 3, maxValue: 99 },
+    ],
+    contraindications: [],
   },
 ];
 

@@ -296,7 +296,7 @@ const generalResources: DebriefingResource[] = [
   { id: 'gen-esc-syncope', title: 'ESC Guidelines on Syncope (Diagnosis and Management)', url: 'https://www.escardio.org/Guidelines/Clinical-Practice-Guidelines/Syncope', type: 'guideline', source: 'ESC', relevance: 'essential', category: 'general' },
   { id: 'gen-aafp-syncope', title: 'Syncope: Evaluation and Differential Diagnosis', url: 'https://www.aafp.org/pubs/afp/issues/2017/0301/p303.html', type: 'article', source: 'AAFP', relevance: 'essential', category: 'general' },
   { id: 'gen-litfl-orthostatic', title: 'Orthostatic Hypotension Assessment Technique', url: 'https://litfl.com/orthostatic-hypotension/', type: 'article', source: 'LITFL', relevance: 'important', category: 'general' },
-  { id: 'gen-emrap-syncope', title: 'Risk Stratification in Syncope — San Francisco Rule vs Canadian Rule', url: 'https://www.emrap.org/corependium/chapter/syncope', type: 'article', source: 'EMDocs', relevance: 'important', category: 'general' },
+  { id: 'gen-emrap-syncope', title: 'Risk Stratification in Syncope — San Francisco Rule vs Canadian Rule', url: 'https://www.emrap.org/corependium/chapter/syncope', type: 'article', source: 'EM:RAP', relevance: 'important', category: 'general' },
   { id: 'gen-rebelem-syncope-risk', title: 'Cardiac Syncope Red Flags', url: 'https://rebelem.com/syncope-risk-stratification/', type: 'article', source: 'REBEL EM', relevance: 'important', category: 'general' },
   { id: 'gen-emdocs-assessment', title: 'Systematic Clinical Assessment - ABCDE', url: 'https://www.emdocs.net/abcde-approach/', type: 'article', source: 'EMDocs', relevance: 'important', category: 'general' },
   { id: 'gen-nice-sepsis', title: 'NICE: Sepsis Recognition and Management', url: 'https://www.nice.org.uk/guidance/ng51', type: 'guideline', source: 'NICE', relevance: 'important', category: 'general' },
@@ -306,7 +306,7 @@ const generalResources: DebriefingResource[] = [
 // Burns-specific resources — drawn from trauma + dedicated burns sources
 const burnsResources: DebriefingResource[] = [
   { id: 'burns-nice-burns', title: 'NICE: Burns and Scalds', url: 'https://cks.nice.org.uk/topics/burns-scalds/', type: 'guideline', source: 'NICE', relevance: 'essential', category: 'burns' },
-  { id: 'burns-rcuk-burns', title: 'Emergency Treatment of Burns', url: 'https://www.resus.org.uk/library/additional-guidance/guidance-post-resuscitation-care', type: 'guideline', source: 'Resuscitation Council UK', relevance: 'essential', category: 'burns' },
+  { id: 'burns-rcuk-burns', title: 'Resuscitation Council UK: Emergency Management Guidance', url: 'https://www.resus.org.uk/library/additional-guidance', type: 'guideline', source: 'Resuscitation Council UK', relevance: 'essential', category: 'burns' },
   { id: 'burns-emdocs-burns', title: 'Burns in the ED - Pearls and Pitfalls', url: 'https://www.emdocs.net/burns-in-the-ed/', type: 'article', source: 'EMDocs', relevance: 'essential', category: 'burns' },
   { id: 'burns-litfl-burns', title: 'Burns - Assessment and Management', url: 'https://litfl.com/burns/', type: 'article', source: 'LITFL', relevance: 'essential', category: 'burns' },
   { id: 'burns-rebel-inhalation', title: 'Inhalation Injury - Evidence Review', url: 'https://rebelem.com/inhalation-injury/', type: 'article', source: 'REBEL EM', relevance: 'essential', category: 'burns' },
