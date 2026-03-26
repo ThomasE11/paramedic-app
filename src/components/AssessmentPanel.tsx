@@ -7,18 +7,19 @@ import { AlertTriangle, CheckCircle, Lightbulb, Stethoscope, Activity, TrendingU
 interface AssessmentPanelProps {
   caseData: CaseScenario;
   studentYear?: StudentYear;
+  showAllContent?: boolean;
 }
 
-export function AssessmentPanel({ caseData, studentYear = '3rd-year' }: AssessmentPanelProps) {
-  // Memoize visibility flags
+export function AssessmentPanel({ caseData, studentYear = '3rd-year', showAllContent = false }: AssessmentPanelProps) {
+  // Memoize visibility flags - showAllContent overrides year-level filtering
   const showAdvancedDetails = useMemo(() =>
-    ['3rd-year', '4th-year'].includes(studentYear),
-    [studentYear]
+    showAllContent || ['3rd-year', '4th-year'].includes(studentYear),
+    [studentYear, showAllContent]
   );
 
   const showExpertDetails = useMemo(() =>
-    studentYear === '4th-year',
-    [studentYear]
+    showAllContent || studentYear === '4th-year',
+    [studentYear, showAllContent]
   );
 
   return (

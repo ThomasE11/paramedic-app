@@ -1317,7 +1317,7 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
                         <TabsContent value="case" className="mt-4 animate-fade-in">
                           <Suspense fallback={<LoadingCard />}>
                             {currentCase ? (
-                              <CaseDisplay caseData={currentCase} studentYear={selectedYear} />
+                              <CaseDisplay caseData={currentCase} studentYear={selectedYear} showAllContent={true} />
                             ) : (
                               <LoadingCard />
                             )}
@@ -1327,7 +1327,7 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
                         <TabsContent value="assessment" className="mt-4 animate-fade-in">
                           <Suspense fallback={<LoadingCard />}>
                             {currentCase ? (
-                              <AssessmentPanel caseData={currentCase} studentYear={selectedYear} />
+                              <AssessmentPanel caseData={currentCase} studentYear={selectedYear} showAllContent={true} />
                             ) : (
                               <LoadingCard />
                             )}
@@ -1553,6 +1553,7 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
                             totalItems={(currentCase.studentChecklist || []).filter(item => item.yearLevel?.includes(selectedYear)).length}
                             assessmentNotes={instructorAssessmentNotes}
                             onAssessmentNotesChange={setInstructorAssessmentNotes}
+                            onSessionNotesChange={(notes) => setSession(prev => prev ? { ...prev, notes } : prev)}
                           />
                         </Suspense>
                       )}

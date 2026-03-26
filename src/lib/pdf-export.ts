@@ -353,7 +353,7 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
 
   // ========== COMPLETED ACTIONS ==========
   const completedItems = (caseData.studentChecklist || []).filter(item => session.completedItems.includes(item.id));
-  const missedItems = caseData.studentChecklist.filter(item =>
+  const missedItems = (caseData.studentChecklist || []).filter(item =>
     !session.completedItems.includes(item.id) && item.yearLevel?.includes(session.studentYear)
   );
   const criticalMissedItems = missedItems.filter(item => item.critical);
@@ -422,7 +422,7 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
   }
 
   // ========== KEY LEARNING POINTS ==========
-  if (caseData.teachingPoints.length > 0) {
+  if (caseData.teachingPoints && caseData.teachingPoints.length > 0) {
     addSectionHeader('Key Learning Points');
 
     caseData.teachingPoints.forEach((point, i) => {

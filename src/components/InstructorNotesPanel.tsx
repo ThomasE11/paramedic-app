@@ -40,6 +40,8 @@ interface InstructorNotesPanelProps {
   assessmentNotes?: InstructorAssessmentNote[];
   /** Callback when notes change (for lifting state to parent) */
   onAssessmentNotesChange?: (notes: InstructorAssessmentNote[]) => void;
+  /** Callback when session notes (general instructor notes) change */
+  onSessionNotesChange?: (notes: string) => void;
 }
 
 const ASSESSMENT_PHASES = [
@@ -66,7 +68,8 @@ export function InstructorNotesPanel({
   completedItems,
   totalItems,
   assessmentNotes: externalNotes,
-  onAssessmentNotesChange
+  onAssessmentNotesChange,
+  onSessionNotesChange
 }: InstructorNotesPanelProps) {
   const [internalNotes, setInternalNotes] = useState<InstructorAssessmentNote[]>([]);
 
@@ -447,6 +450,24 @@ export function InstructorNotesPanel({
             )}
           </CardContent>
         )}
+      </Card>
+
+      {/* General Instructor Notes */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <BookOpen className="h-4 w-4 text-primary" />
+            Instructor Notes
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Textarea
+            placeholder="General observations, debriefing notes, follow-up items..."
+            value={sessionNotes}
+            onChange={(e) => onSessionNotesChange?.(e.target.value)}
+            className="min-h-[80px] text-sm"
+          />
+        </CardContent>
       </Card>
 
       {/* Session Summary */}

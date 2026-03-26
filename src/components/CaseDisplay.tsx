@@ -40,6 +40,7 @@ interface CaseDisplayProps {
   caseData: CaseScenario;
   studentYear?: StudentYear;
   isStudentView?: boolean;
+  showAllContent?: boolean;
 }
 
 /**
@@ -146,8 +147,11 @@ function ExternalImage({
 function shouldShowDetail(
   complexity: ComplexityLevel,
   year: StudentYear,
-  type: 'findings' | 'interventions' | 'rationale'
+  type: 'findings' | 'interventions' | 'rationale',
+  showAllContent = false
 ): boolean {
+  if (showAllContent) return true; // Instructor override — show everything
+
   const yearLevel = YEAR_LEVEL_MAP[year];
   const complexityLevel = COMPLEXITY_MAP[complexity];
 
@@ -163,7 +167,10 @@ function shouldShowDetail(
   }
 }
 
-export function CaseDisplay({ caseData, studentYear = '3rd-year', isStudentView = false }: CaseDisplayProps) {
+export function CaseDisplay({ caseData, studentYear = '3rd-year', isStudentView: isStudentViewProp = false, showAllContent = false }: CaseDisplayProps) {
+  // When showAllContent is true (instructor override), force all content visible
+  const isStudentView = showAllContent ? false : isStudentViewProp;
+
   // Guard against null/undefined caseData
   if (!caseData) {
     return (
@@ -179,20 +186,20 @@ export function CaseDisplay({ caseData, studentYear = '3rd-year', isStudentView 
   // ECG Display state
   const [showECGModal, setShowECGModal] = useState(false);
 
-  // Collapsible sections state — collapsed by default in student view
-  const [showABCDE, setShowABCDE] = useState(!isStudentView);
-  const [showSecondarySurvey, setShowSecondarySurvey] = useState(!isStudentView);
-  const [showPatientHistory, setShowPatientHistory] = useState(!isStudentView);
+  // Collapsible sections state — collapsed by default in student view, expanded for instructor override
+  const [showABCDE, setShowABCDE] = useState(!isStudentView || showAllContent);
+  const [showSecondarySurvey, setShowSecondarySurvey] = useState(!isStudentView || showAllContent);
+  const [showPatientHistory, setShowPatientHistory] = useState(!isStudentView || showAllContent);
 
   // Memoize detail visibility checks
   const showDetailedFindings = useMemo(() =>
-    shouldShowDetail(caseData.complexity, studentYear, 'findings'),
-    [caseData.complexity, studentYear]
+    shouldShowDetail(caseData.complexity, studentYear, 'findings', showAllContent),
+    [caseData.complexity, studentYear, showAllContent]
   );
 
   const showInterventions = useMemo(() =>
-    shouldShowDetail(caseData.complexity, studentYear, 'interventions'),
-    [caseData.complexity, studentYear]
+    shouldShowDetail(caseData.complexity, studentYear, 'interventions', showAllContent),
+    [caseData.complexity, studentYear, showAllContent]
   );
 
   // Check if this case has an associated ECG
