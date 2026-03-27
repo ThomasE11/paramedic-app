@@ -20,7 +20,8 @@ import type { LimbSide } from './BodyMesh';
 import type { AssessmentStepId } from '@/data/assessmentFramework';
 import type { CaseScenario } from '@/types';
 import type { ClinicalSoundState } from '@/data/clinicalSounds';
-import { playBreathSound, playHeartSound, playPercussionSound, stopAllSounds } from '@/data/clinicalSounds';
+import { playBreathSound, playHeartSound, playPercussionSound, playBowelSound, stopAllSounds } from '@/data/clinicalSounds';
+import type { BowelSoundType } from '@/data/clinicalSounds';
 
 const TOTAL_REGIONS = 8;
 
@@ -449,8 +450,15 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
       } else if (actionId === 'chest-auscultate-heart') {
         playHeartSound(patientSounds.heartSound, 5000);
       } else if (actionId === 'abd-auscultate') {
-        // Bowel sounds
-        playBreathSound('clear', 3000); // Placeholder — bowel sound synthesis TODO
+        // Determine bowel sound type from case findings
+        const abd = caseData.secondarySurvey?.abdomen || [];
+        const abdText = abd.join(' ').toLowerCase();
+        let bowelType: BowelSoundType = 'normal';
+        if (abdText.includes('absent bowel') || abdText.includes('ileus') || abdText.includes('paralytic')) bowelType = 'absent';
+        else if (abdText.includes('hyperactive') || abdText.includes('diarrh') || abdText.includes('gastroenter')) bowelType = 'hyperactive';
+        else if (abdText.includes('tinkling') || abdText.includes('obstruct')) bowelType = 'tinkling';
+        else if (abdText.includes('hypoactive') || abdText.includes('post-op') || abdText.includes('opioid')) bowelType = 'hypoactive';
+        playBowelSound(bowelType, 5000);
       } else if (actionId === 'airway-listen') {
         // Airway sounds
         playBreathSound(patientSounds.leftLung, 3000);
