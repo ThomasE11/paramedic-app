@@ -139,6 +139,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
   const [showDefibDialog, setShowDefibDialog] = useState(false);
   const [pendingDefibTreatment, setPendingDefibTreatment] = useState<Treatment | null>(null);
   const deteriorationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const medicationConfirmedRef = useRef<Set<string>>(new Set());
 
   // Assessment tracking
   const [assessmentTracker, setAssessmentTracker] = useState<AssessmentTracker | null>(null);
@@ -462,6 +463,26 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
       return;
     }
 
+    // Medication safety check — prompt to confirm allergies and contraindications
+    if (treatment.category === 'medication' && !medicationConfirmedRef.current.has(treatment.id)) {
+      const allergies = currentCase.history?.allergies || [];
+      const allergyText = allergies.length > 0 && allergies[0] !== 'NKDA' && !allergies[0]?.toLowerCase().includes('no known')
+        ? `Patient allergies: ${allergies.map(a => typeof a === 'string' ? a : a.name || a).join(', ')}`
+        : 'No known drug allergies (NKDA)';
+      const contraText = treatment.contraindications?.length
+        ? `\nContraindications: ${treatment.contraindications.slice(0, 3).join('; ')}`
+        : '';
+
+      const confirmed = window.confirm(
+        `⚠️ MEDICATION SAFETY CHECK\n\n` +
+        `Drug: ${treatment.name}\n` +
+        `${allergyText}${contraText}\n\n` +
+        `Have you checked allergies and confirmed this medication is appropriate for this patient?`
+      );
+      if (!confirmed) return;
+      medicationConfirmedRef.current.add(treatment.id);
+    }
+
     setApplyingTreatmentId(treatment.id);
 
     // Use dynamic treatment engine
@@ -711,6 +732,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
     setAssessmentTracker(null);
     setActiveFindings(null);
     setPhase('select');
+    medicationConfirmedRef.current = new Set();
   }, []);
 
   // ============================================================================
