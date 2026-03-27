@@ -126,15 +126,19 @@ export function createInitialPatientState(caseData: CaseScenario): PatientState 
   const ecgFindings = caseData.abcde?.circulation?.ecgFindings || [];
   const allFindings = [...ecgFindings, ...(caseData.expectedFindings?.keyObservations || [])].join(' ').toLowerCase();
 
-  if (allFindings.includes('vf') || allFindings.includes('ventricular fibrillation')) rhythm = 'Ventricular Fibrillation';
-  else if (allFindings.includes('vt') || allFindings.includes('ventricular tachycardia')) rhythm = 'Ventricular Tachycardia';
-  else if (allFindings.includes('svt') || allFindings.includes('supraventricular')) rhythm = 'SVT';
-  else if (allFindings.includes('af') || allFindings.includes('atrial fibrillation')) rhythm = 'Atrial Fibrillation';
-  else if (allFindings.includes('flutter')) rhythm = 'Atrial Flutter';
-  else if (allFindings.includes('asystole')) rhythm = 'Asystole';
-  else if (allFindings.includes('pea') || allFindings.includes('pulseless electrical')) rhythm = 'PEA';
-  else if (allFindings.includes('stemi') || allFindings.includes('st elevation')) rhythm = 'Sinus Tachycardia with ST Elevation';
-  else if (allFindings.includes('bradycardia') || (vitals.pulse && vitals.pulse < 50)) rhythm = 'Sinus Bradycardia';
+  // Use word-boundary regex to avoid matching substrings
+  // e.g., 'pea' in 'peanut', 'af' in 'after', 'vf' in 'verfied'
+  const matchWord = (word: string) => new RegExp(`\\b${word}\\b`, 'i').test(allFindings);
+
+  if (matchWord('ventricular fibrillation') || (matchWord('vf') && !allFindings.includes('lvf'))) rhythm = 'Ventricular Fibrillation';
+  else if (matchWord('ventricular tachycardia') || (matchWord('vt') && !allFindings.includes('avt'))) rhythm = 'Ventricular Tachycardia';
+  else if (matchWord('svt') || matchWord('supraventricular tachycardia')) rhythm = 'SVT';
+  else if (matchWord('atrial fibrillation') || (matchWord('af') && allFindings.includes('fibrillation'))) rhythm = 'Atrial Fibrillation';
+  else if (matchWord('atrial flutter') || matchWord('flutter')) rhythm = 'Atrial Flutter';
+  else if (matchWord('asystole')) rhythm = 'Asystole';
+  else if (matchWord('pulseless electrical activity') || (matchWord('pea') && !allFindings.includes('peanut') && !allFindings.includes('appear'))) rhythm = 'PEA';
+  else if (matchWord('stemi') || matchWord('st elevation')) rhythm = 'Sinus Tachycardia with ST Elevation';
+  else if (matchWord('bradycardia') || (vitals.pulse && vitals.pulse < 60)) rhythm = 'Sinus Bradycardia';
   else if (vitals.pulse && vitals.pulse > 100) rhythm = 'Sinus Tachycardia';
 
   const isInArrest = ['Ventricular Fibrillation', 'Asystole', 'PEA'].includes(rhythm) ||

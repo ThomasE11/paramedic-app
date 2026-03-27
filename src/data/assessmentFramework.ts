@@ -813,16 +813,22 @@ export function getStepFindings(stepId: AssessmentStepId, caseData: CaseScenario
       });
       // Work of breathing / visual observations (not auscultation)
       breathing.findings.forEach(f => {
-        // Filter out auscultation-related findings — student must listen via panel
         const lower = f.toLowerCase();
+        // Filter out auscultation findings — student must listen via panel
         const isAuscultation = lower.includes('wheez') || lower.includes('crackle') ||
           lower.includes('diminished') || lower.includes('absent breath') ||
           lower.includes('air entry') || lower.includes('rhonchi') ||
           lower.includes('stridor') || lower.includes('rales') ||
           lower.includes('clear lung') || lower.includes('lung sounds') ||
-          lower.includes('breath sounds') || lower.includes('bilateral') && lower.includes('clear') ||
+          lower.includes('breath sounds') || (lower.includes('bilateral') && lower.includes('clear')) ||
           lower.includes('vesicular') || lower.includes('bronchial breath');
-        if (!isAuscultation) {
+        // Filter out vital sign values — student must check monitor
+        const isVitalValue = lower.includes('spo2') || lower.includes('saturation') ||
+          lower.includes('respiratory rate') || /\d+\/min/.test(lower) ||
+          /\d+\s*%/.test(lower) || lower.includes('room air') ||
+          lower.includes('heart rate') || lower.includes('blood pressure') ||
+          lower.includes('pulse rate') || lower.includes('bp ');
+        if (!isAuscultation && !isVitalValue) {
           findings.push({ label: 'Finding', value: f, severity: 'normal' });
         }
       });
@@ -860,9 +866,16 @@ export function getStepFindings(stepId: AssessmentStepId, caseData: CaseScenario
         severity: circ.skin.toLowerCase().includes('pale') || circ.skin.toLowerCase().includes('clammy') || circ.skin.toLowerCase().includes('mottled') ? 'abnormal' : 'normal',
       });
       circ.findings.forEach(f => {
-        const sev = f.toLowerCase().includes('shock') || f.toLowerCase().includes('haemorrhag') || f.toLowerCase().includes('hemorrhag')
+        const lower = f.toLowerCase();
+        // Filter out vital sign values — student must check monitor
+        const isVitalValue = lower.includes('heart rate') || lower.includes('pulse rate') ||
+          lower.includes('blood pressure') || /\b\d+\/\d+\b/.test(lower) ||
+          /\b\d+\s*bpm\b/.test(lower) || /\bbp\s*\d/.test(lower) ||
+          (lower.includes('rate') && /\d+\/min/.test(lower));
+        if (isVitalValue) return;
+        const sev = lower.includes('shock') || lower.includes('haemorrhag') || lower.includes('hemorrhag')
           ? 'critical' as const
-          : f.toLowerCase().includes('tachycard') || f.toLowerCase().includes('hypotens')
+          : lower.includes('tachycard') || lower.includes('hypotens')
             ? 'abnormal' as const
             : 'normal' as const;
         findings.push({ label: 'Finding', value: f, severity: sev });
