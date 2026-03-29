@@ -49,7 +49,7 @@ export const resourceSources: ResourceSource[] = [
 const cardiacResources: DebriefingResource[] = [
   // Articles & FOAMed
   { id: 'cardiac-emdocs-acs', title: 'Acute Coronary Syndromes - ED Pearls', url: 'https://www.emdocs.net/acute-coronary-syndrome-an-emergency-medicine-approach/', type: 'article', source: 'EMDocs', relevance: 'essential', category: 'cardiac' },
-  { id: 'cardiac-rebelem-stemi', title: 'STEMI Equivalents You Need to Know', url: 'https://rebelem.com/stemi-equivalents/', type: 'article', source: 'REBEL EM', relevance: 'essential', category: 'cardiac' },
+  { id: 'cardiac-rebelem-stemi', title: 'STEMI Equivalents You Need to Know', url: 'https://rebelem.com/five-ecg-patterns-you-must-know/', type: 'article', source: 'REBEL EM', relevance: 'essential', category: 'cardiac' },
   { id: 'cardiac-emcrit-push-dose', title: 'Push Dose Pressors in Cardiogenic Shock', url: 'https://emcrit.org/emcrit/push-dose-pressors/', type: 'article', source: 'EMCrit', relevance: 'important', category: 'cardiac' },
   { id: 'cardiac-litfl-ecg', title: 'ECG Library - Comprehensive Interpretation', url: 'https://litfl.com/ecg-library/', type: 'article', source: 'LITFL', relevance: 'essential', category: 'cardiac' },
   { id: 'cardiac-emcases-chestpain', title: 'Chest Pain - Emergency Approach', url: 'https://emergencymedicinecases.com/chest-pain/', type: 'podcast', source: 'EM Cases', relevance: 'important', category: 'cardiac' },
@@ -61,8 +61,8 @@ const cardiacResources: DebriefingResource[] = [
 
   // Guidelines
   { id: 'cardiac-rcuk-als', title: 'Adult Advanced Life Support Algorithm', url: 'https://www.resus.org.uk/library/2021-resuscitation-guidelines/adult-advanced-life-support-guidelines', type: 'guideline', source: 'Resuscitation Council UK', relevance: 'essential', category: 'cardiac' },
-  { id: 'cardiac-nice-acs', title: 'NICE: Acute Coronary Syndromes', url: 'https://www.nice.org.uk/guidance/ng185', type: 'guideline', source: 'NICE', relevance: 'essential', category: 'cardiac' },
-  { id: 'cardiac-nice-af', title: 'NICE: Atrial Fibrillation Management', url: 'https://www.nice.org.uk/guidance/ng196', type: 'guideline', source: 'NICE', relevance: 'important', category: 'cardiac' },
+  { id: 'cardiac-nice-acs', title: 'NICE: Acute Coronary Syndromes (PDF)', url: 'https://www.nice.org.uk/guidance/ng185/resources/acute-coronary-syndromes-pdf-66142023361477', type: 'guideline', source: 'NICE', relevance: 'essential', category: 'cardiac' },
+  { id: 'cardiac-nice-af', title: 'NICE: Atrial Fibrillation Management (PDF)', url: 'https://www.nice.org.uk/guidance/ng196/resources/atrial-fibrillation-diagnosis-and-management-pdf-66142085507269', type: 'guideline', source: 'NICE', relevance: 'important', category: 'cardiac' },
   { id: 'cardiac-rcuk-peri-arrest', title: 'Peri-arrest Arrhythmias', url: 'https://www.resus.org.uk/library/2021-resuscitation-guidelines/peri-arrest-arrhythmias', type: 'guideline', source: 'Resuscitation Council UK', relevance: 'essential', category: 'cardiac' },
 
   // Education
@@ -77,7 +77,7 @@ const cardiacResources: DebriefingResource[] = [
 const respiratoryResources: DebriefingResource[] = [
   // Articles & FOAMed
   { id: 'resp-emdocs-asthma', title: 'Acute Asthma in the ED', url: 'https://www.emdocs.net/asthma-in-the-emergency-department/', type: 'article', source: 'EMDocs', relevance: 'essential', category: 'respiratory' },
-  { id: 'resp-rebelem-niv', title: 'Non-Invasive Ventilation - Key Concepts', url: 'https://rebelem.com/non-invasive-ventilation/', type: 'article', source: 'REBEL EM', relevance: 'essential', category: 'respiratory' },
+  { id: 'resp-rebelem-niv', title: 'Non-Invasive Ventilation - Key Concepts', url: 'https://rebelem.com/rebel-core-cast-148-0-demystifying-non-invasive-ventilation-hiflow/', type: 'article', source: 'REBEL EM', relevance: 'essential', category: 'respiratory' },
   { id: 'resp-emcrit-airway', title: 'Definitive Airway Management', url: 'https://emcrit.org/emcrit/airway-management/', type: 'article', source: 'EMCrit', relevance: 'essential', category: 'respiratory' },
   { id: 'resp-emcrit-preoxygenation', title: 'Preoxygenation Techniques', url: 'https://emcrit.org/emcrit/preoxygenation/', type: 'article', source: 'EMCrit', relevance: 'important', category: 'respiratory' },
   { id: 'resp-litfl-asthma', title: 'Life-Threatening Asthma', url: 'https://litfl.com/acute-severe-asthma/', type: 'article', source: 'LITFL', relevance: 'important', category: 'respiratory' },
@@ -90,9 +90,9 @@ const respiratoryResources: DebriefingResource[] = [
   { id: 'resp-radiopaedia-copd', title: 'COPD (Imaging Features)', url: 'https://radiopaedia.org/articles/chronic-obstructive-pulmonary-disease', type: 'image', source: 'Radiopaedia', relevance: 'supplementary', category: 'respiratory' },
 
   // Guidelines
-  { id: 'resp-nice-asthma', title: 'NICE: Asthma Management', url: 'https://www.nice.org.uk/guidance/ng80', type: 'guideline', source: 'NICE', relevance: 'essential', category: 'respiratory' },
-  { id: 'resp-nice-copd', title: 'NICE: COPD Management', url: 'https://www.nice.org.uk/guidance/ng115', type: 'guideline', source: 'NICE', relevance: 'essential', category: 'respiratory' },
-  { id: 'resp-nice-pneumonia', title: 'NICE: Community-acquired Pneumonia', url: 'https://www.nice.org.uk/guidance/ng138', type: 'guideline', source: 'NICE', relevance: 'important', category: 'respiratory' },
+  { id: 'resp-nice-asthma', title: 'NICE: Asthma Diagnosis and Management (PDF)', url: 'https://www.nice.org.uk/guidance/ng245/resources/asthma-diagnosis-monitoring-and-chronic-asthma-management-bts-nice-sign-pdf-66143958279109', type: 'guideline', source: 'NICE', relevance: 'essential', category: 'respiratory' },
+  { id: 'resp-nice-copd', title: 'NICE: COPD Management (PDF)', url: 'https://www.nice.org.uk/guidance/ng115/resources/chronic-obstructive-pulmonary-disease-in-over-16s-diagnosis-and-management-pdf-66141600098245', type: 'guideline', source: 'NICE', relevance: 'essential', category: 'respiratory' },
+  { id: 'resp-nice-pneumonia', title: 'NICE: Pneumonia Diagnosis and Management (PDF)', url: 'https://www.nice.org.uk/guidance/ng250/resources/pneumonia-diagnosis-and-management-pdf-66144010347205', type: 'guideline', source: 'NICE', relevance: 'important', category: 'respiratory' },
 
   // Education
   { id: 'resp-aliem-airway', title: 'Airway Management Techniques', url: 'https://www.aliem.com/category/airway/', type: 'article', source: 'ALiEM', relevance: 'supplementary', category: 'respiratory' },
@@ -106,12 +106,12 @@ const respiratoryResources: DebriefingResource[] = [
 const traumaResources: DebriefingResource[] = [
   // Articles & FOAMed
   { id: 'trauma-emdocs-primary', title: 'Primary Survey - Getting It Right', url: 'https://www.emdocs.net/trauma-primary-survey/', type: 'article', source: 'EMDocs', relevance: 'essential', category: 'trauma' },
-  { id: 'trauma-rebelem-tbi', title: 'Traumatic Brain Injury - Evidence Review', url: 'https://rebelem.com/traumatic-brain-injury/', type: 'article', source: 'REBEL EM', relevance: 'essential', category: 'trauma' },
-  { id: 'trauma-rebelem-txa', title: 'Tranexamic Acid in Trauma - Evidence', url: 'https://rebelem.com/tranexamic-acid-in-trauma/', type: 'article', source: 'REBEL EM', relevance: 'important', category: 'trauma' },
+  { id: 'trauma-rebelem-tbi', title: 'Traumatic Brain Injury - Evidence Review', url: 'https://rebelem.com/tag/traumatic-brain-injury/', type: 'article', source: 'REBEL EM', relevance: 'essential', category: 'trauma' },
+  { id: 'trauma-rebelem-txa', title: 'Tranexamic Acid in Trauma - Evidence', url: 'https://rebelem.com/tranexamic-acid-txa-for-everything-that-bleeds/', type: 'article', source: 'REBEL EM', relevance: 'important', category: 'trauma' },
   { id: 'trauma-emcrit-resus', title: 'Trauma Resuscitation Essentials', url: 'https://emcrit.org/emcrit/trauma-resuscitation/', type: 'article', source: 'EMCrit', relevance: 'essential', category: 'trauma' },
-  { id: 'trauma-litfl-chest', title: 'Chest Trauma Management', url: 'https://litfl.com/chest-trauma/', type: 'article', source: 'LITFL', relevance: 'important', category: 'trauma' },
+  { id: 'trauma-litfl-chest', title: 'Chest Trauma Management', url: 'https://litfl.com/thoracic-trauma/', type: 'article', source: 'LITFL', relevance: 'important', category: 'trauma' },
   { id: 'trauma-emcases-polytrauma', title: 'Polytrauma - Case-Based Approach', url: 'https://emergencymedicinecases.com/trauma/', type: 'podcast', source: 'EM Cases', relevance: 'important', category: 'trauma' },
-  { id: 'trauma-litfl-tourniquet', title: 'Tourniquet Application in Trauma', url: 'https://litfl.com/tourniquet-application/', type: 'article', source: 'LITFL', relevance: 'essential', category: 'trauma' },
+  { id: 'trauma-litfl-tourniquet', title: 'Tourniquet Application in Trauma', url: 'https://litfl.com/trauma-extremity-arterial-hemorrhage/', type: 'article', source: 'LITFL', relevance: 'essential', category: 'trauma' },
 
   // Imaging
   { id: 'trauma-radiopaedia-tbi', title: 'Traumatic Brain Injury (Imaging)', url: 'https://radiopaedia.org/articles/traumatic-brain-injury', type: 'image', source: 'Radiopaedia', relevance: 'essential', category: 'trauma' },
@@ -138,7 +138,7 @@ const neurologicalResources: DebriefingResource[] = [
   { id: 'neuro-emdocs-stroke', title: 'Stroke Recognition in the ED', url: 'https://www.emdocs.net/stroke-recognition-in-the-emergency-department/', type: 'article', source: 'EMDocs', relevance: 'essential', category: 'neurological' },
   { id: 'neuro-rebelem-seizure', title: 'Status Epilepticus - Evidence-Based Management', url: 'https://rebelem.com/status-epilepticus/', type: 'article', source: 'REBEL EM', relevance: 'essential', category: 'neurological' },
   { id: 'neuro-litfl-gcs', title: 'Glasgow Coma Scale - Comprehensive Guide', url: 'https://litfl.com/glasgow-coma-scale-gcs/', type: 'article', source: 'LITFL', relevance: 'essential', category: 'neurological' },
-  { id: 'neuro-litfl-cushing', title: 'Cushing Reflex - Raised ICP', url: 'https://litfl.com/cushings-reflex/', type: 'article', source: 'LITFL', relevance: 'important', category: 'neurological' },
+  { id: 'neuro-litfl-cushing', title: 'Cushing Reflex - Raised ICP', url: 'https://litfl.com/signs-of-intracranial-hypertension/', type: 'article', source: 'LITFL', relevance: 'important', category: 'neurological' },
   { id: 'neuro-emcases-headache', title: 'Headache Emergencies', url: 'https://emergencymedicinecases.com/headache/', type: 'podcast', source: 'EM Cases', relevance: 'important', category: 'neurological' },
   { id: 'neuro-emcrit-neuro-resus', title: 'Neurological Resuscitation', url: 'https://emcrit.org/emcrit/neurological-emergencies/', type: 'article', source: 'EMCrit', relevance: 'important', category: 'neurological' },
 
@@ -148,9 +148,9 @@ const neurologicalResources: DebriefingResource[] = [
   { id: 'neuro-radiopaedia-epidural', title: 'Epidural Haematoma (Imaging)', url: 'https://radiopaedia.org/articles/epidural-haematoma', type: 'image', source: 'Radiopaedia', relevance: 'important', category: 'neurological' },
 
   // Guidelines
-  { id: 'neuro-nice-stroke', title: 'NICE: Stroke and TIA Management', url: 'https://www.nice.org.uk/guidance/ng128', type: 'guideline', source: 'NICE', relevance: 'essential', category: 'neurological' },
-  { id: 'neuro-nice-epilepsy', title: 'NICE: Epilepsy Management', url: 'https://www.nice.org.uk/guidance/ng217', type: 'guideline', source: 'NICE', relevance: 'important', category: 'neurological' },
-  { id: 'neuro-nice-meningitis', title: 'NICE: Meningitis Recognition', url: 'https://www.nice.org.uk/guidance/cg102', type: 'guideline', source: 'NICE', relevance: 'important', category: 'neurological' },
+  { id: 'neuro-nice-stroke', title: 'NICE: Stroke and TIA Management (PDF)', url: 'https://www.nice.org.uk/guidance/ng128/resources/stroke-and-transient-ischaemic-attack-in-over-16s-diagnosis-and-initial-management-pdf-66141665603269', type: 'guideline', source: 'NICE', relevance: 'essential', category: 'neurological' },
+  { id: 'neuro-nice-epilepsy', title: 'NICE: Epilepsy Management (PDF)', url: 'https://www.nice.org.uk/guidance/ng217/resources/epilepsies-in-children-young-people-and-adults-pdf-66143780239813', type: 'guideline', source: 'NICE', relevance: 'important', category: 'neurological' },
+  { id: 'neuro-nice-meningitis', title: 'NICE: Meningitis Recognition and Management (PDF)', url: 'https://www.nice.org.uk/guidance/ng240/resources/meningitis-bacterial-and-meningococcal-disease-recognition-diagnosis-and-management-pdf-66143949881029', type: 'guideline', source: 'NICE', relevance: 'important', category: 'neurological' },
 
   // Education
   { id: 'neuro-aliem-neuro-exam', title: 'Neurological Examination - Key Techniques', url: 'https://www.aliem.com/category/neurology/', type: 'article', source: 'ALiEM', relevance: 'supplementary', category: 'neurological' },
@@ -164,15 +164,15 @@ const neurologicalResources: DebriefingResource[] = [
 const metabolicResources: DebriefingResource[] = [
   { id: 'meta-emdocs-dka', title: 'DKA Management - Emergency Approach', url: 'https://www.emdocs.net/diabetic-ketoacidosis/', type: 'article', source: 'EMDocs', relevance: 'essential', category: 'metabolic' },
   { id: 'meta-emdocs-hypo', title: 'Hypoglycaemia in the ED', url: 'https://www.emdocs.net/hypoglycemia-in-the-ed/', type: 'article', source: 'EMDocs', relevance: 'essential', category: 'metabolic' },
-  { id: 'meta-rebelem-anaphylaxis', title: 'Anaphylaxis - Evidence Review', url: 'https://rebelem.com/anaphylaxis/', type: 'article', source: 'REBEL EM', relevance: 'essential', category: 'metabolic' },
+  { id: 'meta-rebelem-anaphylaxis', title: 'Anaphylaxis - Evidence Review', url: 'https://rebelem.com/anaphylactic-shock/', type: 'article', source: 'REBEL EM', relevance: 'essential', category: 'metabolic' },
   { id: 'meta-emcrit-sepsis', title: 'Sepsis Management Essentials', url: 'https://emcrit.org/emcrit/sepsis/', type: 'article', source: 'EMCrit', relevance: 'essential', category: 'metabolic' },
   { id: 'meta-litfl-electrolytes', title: 'Electrolyte Emergencies', url: 'https://litfl.com/hyperkalaemia/', type: 'article', source: 'LITFL', relevance: 'important', category: 'metabolic' },
   { id: 'meta-emcases-anaphylaxis', title: 'Anaphylaxis Management - Case Review', url: 'https://emergencymedicinecases.com/anaphylaxis/', type: 'podcast', source: 'EM Cases', relevance: 'important', category: 'metabolic' },
 
   // Guidelines
-  { id: 'meta-nice-diabetes', title: 'NICE: Type 1 Diabetes - DKA Management', url: 'https://www.nice.org.uk/guidance/ng17', type: 'guideline', source: 'NICE', relevance: 'essential', category: 'metabolic' },
+  { id: 'meta-nice-diabetes', title: 'NICE: Type 1 Diabetes - DKA Management (PDF)', url: 'https://www.nice.org.uk/guidance/ng17/resources/type-1-diabetes-in-adults-diagnosis-and-management-pdf-1837276469701', type: 'guideline', source: 'NICE', relevance: 'essential', category: 'metabolic' },
   { id: 'meta-rcuk-anaphylaxis', title: 'Resuscitation Council UK: Anaphylaxis Algorithm', url: 'https://www.resus.org.uk/library/additional-guidance/guidance-anaphylaxis', type: 'guideline', source: 'Resuscitation Council UK', relevance: 'essential', category: 'metabolic' },
-  { id: 'meta-nice-sepsis', title: 'NICE: Sepsis Recognition and Management', url: 'https://www.nice.org.uk/guidance/ng51', type: 'guideline', source: 'NICE', relevance: 'essential', category: 'metabolic' },
+  { id: 'meta-nice-sepsis', title: 'NICE: Sepsis Recognition and Management', url: 'https://www.nice.org.uk/guidance/ng253/resources/suspected-sepsis-in-people-aged-16-or-over-recognition-assessment-and-early-management-pdf-66144015386053', type: 'guideline', source: 'NICE', relevance: 'essential', category: 'metabolic' },
 
   // Education
   { id: 'meta-medscape-dka', title: 'Diabetic Ketoacidosis - Clinical Overview', url: 'https://emedicine.medscape.com/article/118361-overview', type: 'article', source: 'Medscape', relevance: 'supplementary', category: 'metabolic' },
@@ -187,7 +187,7 @@ const pediatricResources: DebriefingResource[] = [
   { id: 'paed-emdocs-assessment', title: 'Paediatric Assessment Triangle', url: 'https://www.emdocs.net/pediatric-assessment-triangle/', type: 'article', source: 'EMDocs', relevance: 'essential', category: 'pediatric' },
   { id: 'paed-aliem-paed-em', title: 'Paediatric Emergency Medicine Resources', url: 'https://www.aliem.com/category/pediatrics/', type: 'article', source: 'ALiEM', relevance: 'essential', category: 'pediatric' },
   { id: 'paed-emcases-croup', title: 'Croup and Paediatric Airway', url: 'https://emergencymedicinecases.com/croup/', type: 'podcast', source: 'EM Cases', relevance: 'important', category: 'pediatric' },
-  { id: 'paed-litfl-paed', title: 'Paediatric Emergencies Overview', url: 'https://litfl.com/paediatric-emergencies/', type: 'article', source: 'LITFL', relevance: 'important', category: 'pediatric' },
+  { id: 'paed-litfl-paed', title: 'Paediatric Emergencies Overview', url: 'https://litfl.com/paediatric-life-support/', type: 'article', source: 'LITFL', relevance: 'important', category: 'pediatric' },
   { id: 'paed-rcuk-newborn', title: 'Newborn Life Support Algorithm', url: 'https://www.resus.org.uk/library/2021-resuscitation-guidelines/newborn-resuscitation-and-support-transition-infants-birth', type: 'guideline', source: 'Resuscitation Council UK', relevance: 'essential', category: 'pediatric' },
   { id: 'paed-rcuk-paed-als', title: 'Paediatric Advanced Life Support', url: 'https://www.resus.org.uk/library/2021-resuscitation-guidelines/paediatric-advanced-life-support-guidelines', type: 'guideline', source: 'Resuscitation Council UK', relevance: 'essential', category: 'pediatric' },
   { id: 'paed-nice-fever', title: 'NICE: Fever in Under 5s', url: 'https://www.nice.org.uk/guidance/ng143', type: 'guideline', source: 'NICE', relevance: 'important', category: 'pediatric' },
@@ -206,7 +206,7 @@ const dermatologicalResources: DebriefingResource[] = [
   { id: 'derm-dermnetnz-cellulitis', title: 'Cellulitis - Diagnosis and Management', url: 'https://dermnetnz.org/topics/cellulitis', type: 'article', source: 'DermNet NZ', relevance: 'important', category: 'dermatological' },
   { id: 'derm-emdocs-rash', title: 'Life-Threatening Rashes in the ED', url: 'https://www.emdocs.net/life-threatening-rashes/', type: 'article', source: 'EMDocs', relevance: 'essential', category: 'dermatological' },
   { id: 'derm-dermnetnz-burns', title: 'Burns Assessment and Classification', url: 'https://dermnetnz.org/topics/burn', type: 'article', source: 'DermNet NZ', relevance: 'important', category: 'dermatological' },
-  { id: 'derm-nice-skin-infections', title: 'NICE: Skin and Soft Tissue Infections', url: 'https://www.nice.org.uk/guidance/ng141', type: 'guideline', source: 'NICE', relevance: 'important', category: 'dermatological' },
+  { id: 'derm-nice-skin-infections', title: 'NICE: Skin and Soft Tissue Infections', url: 'https://www.nice.org.uk/guidance/ng141/resources/cellulitis-and-erysipelas-antimicrobial-prescribing-pdf-66141774778309', type: 'guideline', source: 'NICE', relevance: 'important', category: 'dermatological' },
   { id: 'derm-medscape-cellulitis', title: 'Cellulitis - Clinical Overview', url: 'https://emedicine.medscape.com/article/214222-overview', type: 'article', source: 'Medscape', relevance: 'supplementary', category: 'dermatological' },
 ];
 
@@ -232,7 +232,7 @@ const abdominalResources: DebriefingResource[] = [
 const ophthalmicResources: DebriefingResource[] = [
   { id: 'oph-emdocs-red-eye', title: 'Red Eye - Emergency Approach', url: 'https://www.emdocs.net/red-eye-in-the-emergency-department/', type: 'article', source: 'EMDocs', relevance: 'essential', category: 'ophthalmic' },
   { id: 'oph-emdocs-vision-loss', title: 'Acute Vision Loss in the ED', url: 'https://www.emdocs.net/acute-vision-loss/', type: 'article', source: 'EMDocs', relevance: 'essential', category: 'ophthalmic' },
-  { id: 'oph-litfl-pupil', title: 'Pupil Assessment - Clinical Guide', url: 'https://litfl.com/pupil-examination/', type: 'article', source: 'LITFL', relevance: 'important', category: 'ophthalmic' },
+  { id: 'oph-litfl-pupil', title: 'Pupil Assessment - Clinical Guide', url: 'https://litfl.com/fixed-dilated-pupil-ddx/', type: 'article', source: 'LITFL', relevance: 'important', category: 'ophthalmic' },
   { id: 'oph-radiopaedia-orbital', title: 'Orbital Trauma (Imaging)', url: 'https://radiopaedia.org/articles/orbital-fracture', type: 'image', source: 'Radiopaedia', relevance: 'important', category: 'ophthalmic' },
   { id: 'oph-aliem-eye-exam', title: 'Emergency Eye Examination', url: 'https://www.aliem.com/category/ophthalmology/', type: 'article', source: 'ALiEM', relevance: 'supplementary', category: 'ophthalmic' },
   { id: 'oph-medscape-chemical-burn', title: 'Chemical Eye Burns - Emergency Management', url: 'https://emedicine.medscape.com/article/798696-overview', type: 'article', source: 'Medscape', relevance: 'important', category: 'ophthalmic' },
@@ -271,9 +271,9 @@ const obstetricResources: DebriefingResource[] = [
 
 const toxicologyResources: DebriefingResource[] = [
   { id: 'tox-emdocs-toxidromes', title: 'Toxidromes - Pattern Recognition', url: 'https://www.emdocs.net/toxidromes/', type: 'article', source: 'EMDocs', relevance: 'essential', category: 'toxicology' },
-  { id: 'tox-litfl-toxicology', title: 'Clinical Toxicology Library', url: 'https://litfl.com/toxicology-library/', type: 'article', source: 'LITFL', relevance: 'essential', category: 'toxicology' },
+  { id: 'tox-litfl-toxicology', title: 'Clinical Toxicology Library', url: 'https://litfl.com/tox-library/', type: 'article', source: 'LITFL', relevance: 'essential', category: 'toxicology' },
   { id: 'tox-emcrit-intox', title: 'Toxicological Emergencies', url: 'https://emcrit.org/emcrit/toxicology/', type: 'article', source: 'EMCrit', relevance: 'important', category: 'toxicology' },
-  { id: 'tox-rebelem-paracetamol', title: 'Paracetamol Overdose - Evidence', url: 'https://rebelem.com/acetaminophen-toxicity/', type: 'article', source: 'REBEL EM', relevance: 'essential', category: 'toxicology' },
+  { id: 'tox-rebelem-paracetamol', title: 'Paracetamol Overdose - Evidence', url: 'https://rebelem.com/rebel-core-cast-134-0-acetaminophen-toxicity/', type: 'article', source: 'REBEL EM', relevance: 'essential', category: 'toxicology' },
   { id: 'tox-emcases-poisoning', title: 'Poisoning and Overdose - Cases', url: 'https://emergencymedicinecases.com/toxicology/', type: 'podcast', source: 'EM Cases', relevance: 'important', category: 'toxicology' },
   { id: 'tox-medscape-overdose', title: 'Drug Overdose - Clinical Overview', url: 'https://emedicine.medscape.com/article/818583-overview', type: 'article', source: 'Medscape', relevance: 'supplementary', category: 'toxicology' },
 ];
@@ -292,14 +292,14 @@ const generalResources: DebriefingResource[] = [
   { id: 'gen-emcases-syncope', title: 'Approach to Syncope', url: 'https://emergencymedicinecases.com/syncope/', type: 'podcast', source: 'EM Cases', relevance: 'essential', category: 'general' },
   { id: 'gen-nice-syncope', title: 'NICE: Transient Loss of Consciousness (Syncope)', url: 'https://www.nice.org.uk/guidance/cg109', type: 'guideline', source: 'NICE', relevance: 'essential', category: 'general' },
   { id: 'gen-medscape-syncope', title: 'Syncope - Clinical Overview', url: 'https://emedicine.medscape.com/article/811669-overview', type: 'article', source: 'Medscape', relevance: 'important', category: 'general' },
-  { id: 'gen-rebelem-syncope', title: 'Syncope Red Flags and Disposition', url: 'https://rebelem.com/syncope/', type: 'article', source: 'REBEL EM', relevance: 'important', category: 'general' },
+  { id: 'gen-rebelem-syncope', title: 'Syncope Red Flags and Disposition', url: 'https://rebelem.com/rebel-core-cast-basics-of-em-syncope/', type: 'article', source: 'REBEL EM', relevance: 'important', category: 'general' },
   { id: 'gen-esc-syncope', title: 'ESC Guidelines on Syncope (Diagnosis and Management)', url: 'https://www.escardio.org/Guidelines/Clinical-Practice-Guidelines/Syncope', type: 'guideline', source: 'ESC', relevance: 'essential', category: 'general' },
   { id: 'gen-aafp-syncope', title: 'Syncope: Evaluation and Differential Diagnosis', url: 'https://www.aafp.org/pubs/afp/issues/2017/0301/p303.html', type: 'article', source: 'AAFP', relevance: 'essential', category: 'general' },
-  { id: 'gen-litfl-orthostatic', title: 'Orthostatic Hypotension Assessment Technique', url: 'https://litfl.com/orthostatic-hypotension/', type: 'article', source: 'LITFL', relevance: 'important', category: 'general' },
+  { id: 'gen-litfl-orthostatic', title: 'Orthostatic Hypotension Assessment Technique', url: 'https://litfl.com/the-futility-of-orthostatic-measurements/', type: 'article', source: 'LITFL', relevance: 'important', category: 'general' },
   { id: 'gen-emrap-syncope', title: 'Risk Stratification in Syncope — San Francisco Rule vs Canadian Rule', url: 'https://www.emrap.org/corependium/chapter/syncope', type: 'article', source: 'EM:RAP', relevance: 'important', category: 'general' },
   { id: 'gen-rebelem-syncope-risk', title: 'Cardiac Syncope Red Flags', url: 'https://rebelem.com/syncope-risk-stratification/', type: 'article', source: 'REBEL EM', relevance: 'important', category: 'general' },
   { id: 'gen-emdocs-assessment', title: 'Systematic Clinical Assessment - ABCDE', url: 'https://www.emdocs.net/abcde-approach/', type: 'article', source: 'EMDocs', relevance: 'important', category: 'general' },
-  { id: 'gen-nice-sepsis', title: 'NICE: Sepsis Recognition and Management', url: 'https://www.nice.org.uk/guidance/ng51', type: 'guideline', source: 'NICE', relevance: 'important', category: 'general' },
+  { id: 'gen-nice-sepsis', title: 'NICE: Sepsis Recognition and Management', url: 'https://www.nice.org.uk/guidance/ng253/resources/suspected-sepsis-in-people-aged-16-or-over-recognition-assessment-and-early-management-pdf-66144015386053', type: 'guideline', source: 'NICE', relevance: 'important', category: 'general' },
   { id: 'gen-rcuk-medical-emergencies', title: 'Medical Emergencies and Resuscitation', url: 'https://www.resus.org.uk/library/2021-resuscitation-guidelines/adult-basic-life-support-guidelines', type: 'guideline', source: 'Resuscitation Council UK', relevance: 'supplementary', category: 'general' },
 ];
 
@@ -344,7 +344,7 @@ const psychiatricResources: DebriefingResource[] = [
 // ============================================================================
 
 const multiplePatientResources: DebriefingResource[] = [
-  { id: 'mci-litfl-triage', title: 'START Triage and Mass Casualty Incidents', url: 'https://litfl.com/mass-casualty-incident/', type: 'article', source: 'LITFL', relevance: 'essential', category: 'multiple-patients' },
+  { id: 'mci-litfl-triage', title: 'START Triage and Mass Casualty Incidents', url: 'https://litfl.com/osce-disaster-planning/', type: 'article', source: 'LITFL', relevance: 'essential', category: 'multiple-patients' },
   { id: 'mci-emdocs-mci', title: 'Mass Casualty Incident Management Pearls', url: 'https://www.emdocs.net/mass-casualty-incidents/', type: 'article', source: 'EMDocs', relevance: 'essential', category: 'multiple-patients' },
   { id: 'mci-rcuk-major-incident', title: 'Major Incident and Mass Casualty Guidance', url: 'https://www.resus.org.uk/library/additional-guidance', type: 'guideline', source: 'Resuscitation Council UK', relevance: 'essential', category: 'multiple-patients' },
   { id: 'mci-medscape-triage', title: 'Disaster Triage - Principles and Systems', url: 'https://emedicine.medscape.com/article/765085-overview', type: 'article', source: 'Medscape', relevance: 'important', category: 'multiple-patients' },
@@ -469,32 +469,73 @@ function scoreResourceRelevance(resource: DebriefingResource, caseData: CaseScen
   let score = 0;
   const titleLower = resource.title.toLowerCase();
   const subcategory = caseData.subcategory || '';
+  const diagnosisLower = caseData.expectedFindings?.mostLikelyDiagnosis?.toLowerCase() || '';
+  const caseTitleLower = caseData.title.toLowerCase();
   const keywords = subcategoryKeywords[subcategory];
 
+  // Strong match (+20): Resource title contains the exact diagnosis or subcategory name
+  const subcategoryReadable = subcategory.replace(/-/g, ' ').toLowerCase();
+  if (diagnosisLower && titleLower.includes(diagnosisLower)) {
+    score += 20;
+  } else if (subcategoryReadable && titleLower.includes(subcategoryReadable)) {
+    score += 20;
+  } else if (caseTitleLower && titleLower.includes(caseTitleLower)) {
+    score += 20;
+  }
+
+  // Medium match (+10): Resource matches condition family keywords (e.g., arrhythmia resources for flutter)
   if (keywords) {
-    // Boost resources that match the subcategory keywords
+    let boostHits = 0;
     for (const kw of keywords.boost) {
       if (titleLower.includes(kw.toLowerCase())) {
-        score += 10;
+        boostHits++;
       }
     }
-    // Demote resources for other conditions
+    // Only give medium match if we didn't already get a strong match
+    if (boostHits > 0 && score < 20) {
+      score += 10;
+    } else if (boostHits > 0) {
+      // Additional boost for keyword matches on top of strong match
+      score += Math.min(boostHits * 2, 6);
+    }
+  }
+
+  // Negative match (-10): Resource is for a DIFFERENT subcondition within the same category
+  // e.g., cardiac tamponade resource for an arrhythmia case
+  if (keywords) {
     for (const kw of keywords.demote) {
       if (titleLower.includes(kw.toLowerCase())) {
-        score -= 15;
+        score -= 10;
       }
     }
   }
 
-  // Also check against case title and diagnosis
-  const caseTitleLower = caseData.title.toLowerCase();
-  const diagnosisLower = caseData.expectedFindings?.mostLikelyDiagnosis?.toLowerCase() || '';
-  const caseKeywords = [caseTitleLower, diagnosisLower, subcategory.toLowerCase()];
+  // Additional negative: check if the resource title matches a DIFFERENT subcategory's
+  // specific boost keywords (indicating it's for a different condition in the same category)
+  if (subcategory) {
+    for (const [otherSubcat, otherKw] of Object.entries(subcategoryKeywords)) {
+      if (otherSubcat === subcategory) continue;
+      // Only penalize within the same broad category
+      const otherCatPrefix = otherSubcat.split('-')[0];
+      const thisCatPrefix = subcategory.split('-')[0];
+      // Check if they share the same category family
+      const sameFamily = otherCatPrefix === thisCatPrefix ||
+        (resource.category === caseData.category);
+      if (!sameFamily) continue;
 
-  for (const caseKw of caseKeywords) {
-    if (caseKw && titleLower.includes(caseKw)) {
-      score += 5;
+      // If the resource title contains a very specific keyword from another subcategory
+      // (like the subcategory name itself), penalize it
+      const otherReadable = otherSubcat.replace(/-/g, ' ').toLowerCase();
+      if (otherReadable.length > 3 && titleLower.includes(otherReadable) && !titleLower.includes(subcategoryReadable)) {
+        score -= 10;
+        break; // One penalty is enough
+      }
     }
+  }
+
+  // Weak match (+2): Same category only, no keyword or diagnosis match
+  if (score === 0 && resource.category === caseData.category) {
+    score += 2;
   }
 
   // Relevance baseline
@@ -560,8 +601,8 @@ export function getResourcesForDebriefing(
     score: scoreResourceRelevance(r, caseData),
   }));
 
-  // Filter out negatively-scored resources (wrong condition)
-  const relevant = scored.filter(s => s.score >= 0);
+  // Filter out low-relevance resources (wrong condition or barely related)
+  const relevant = scored.filter(s => s.score > 0);
 
   // Sort by score descending, then by relevance tier
   relevant.sort((a, b) => b.score - a.score);

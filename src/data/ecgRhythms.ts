@@ -9,10 +9,16 @@
  * https://litfl.com/ecg-library/
  */
 
+// Context passed to waveform functions for dynamic behaviour
+export interface WaveformContext {
+  heartRate?: number;
+  beatIndex?: number;
+}
+
 // A single-lead waveform generator function
 // Input: t (0-1 normalized position within one beat cycle)
 // Output: amplitude (-1 to 1)
-export type WaveformFn = (t: number) => number;
+export type WaveformFn = (t: number, context?: WaveformContext) => number;
 
 // 12-Lead morphology set
 export interface TwelveLeadMorphology {
@@ -120,11 +126,22 @@ const hyperacuteT = (t: number, amplitude = 0.4, start = 0.30, width = 0.2): num
 };
 
 // Flutter waves (sawtooth pattern for atrial flutter)
-const flutterWaves = (t: number, amplitude = 0.15): number => {
-  // ~300bpm flutter rate = 5x the ventricular rate at 60bpm
-  const flutterCycles = 5;
+// Atrial rate ~300bpm produces classic sawtooth "F-waves" best seen in leads II, III, aVF.
+// At 2:1 block (ventricular rate 150bpm), each R-R interval spans 2 atrial cycles.
+// At 4:1 block (ventricular rate 75bpm), each R-R interval spans 4 atrial cycles.
+// Since t is normalized 0-1 per ventricular beat and we can't dynamically access heart rate,
+// we use 4 cycles which produces clearly visible sawtooth waves across the typical rate range.
+// At 150bpm (2:1): 4 sawtooth waves in 0.4s = 600/min visible rate (slightly fast but very visible).
+// At 75bpm (4:1): 4 sawtooth waves in 0.8s = 300/min (anatomically correct).
+const flutterWaves = (t: number, amplitude = 0.18, context?: WaveformContext): number => {
+  const hr = context?.heartRate || 75;
+  const flutterCycles = Math.max(2, Math.round(300 / hr));
   const phase = (t * flutterCycles) % 1;
-  return amplitude * (1 - 2 * phase); // sawtooth
+  // Sawtooth wave: slow downstroke (70% of cycle) + rapid upstroke (30%) -- classic flutter morphology
+  if (phase < 0.7) {
+    return amplitude * (1 - (phase / 0.7) * 2); // Gradual negative deflection
+  }
+  return amplitude * (-1 + ((phase - 0.7) / 0.3) * 2); // Sharp positive upstroke
 };
 
 // ============================================================================
@@ -141,9 +158,9 @@ function makeLeadSet(
   for (const lead of ALL_LEADS) {
     const scale = scales[lead] ?? 1;
     const modifier = modifiers?.[lead];
-    leads[lead] = (t: number) => {
-      const base = baseWave(t) * scale;
-      return modifier ? base + modifier(t) : base;
+    leads[lead] = (t: number, context?: WaveformContext) => {
+      const base = baseWave(t, context) * scale;
+      return modifier ? base + modifier(t, context) : base;
     };
   }
   return leads as TwelveLeadMorphology;
@@ -195,7 +212,7 @@ export const sinusBradycardia: ECGRhythm = {
   description: 'Regular sinus rhythm, rate <60',
   category: 'bradycardia',
   defaultRate: 48,
-  rateRange: [30, 59],
+  rateRange: [25, 59],
   regular: true,
   leads: makeLeadSet(nsrWave, NORMAL_SCALES),
 };
@@ -224,8 +241,8 @@ export const atrialFibrillation: ECGRhythm = {
 // ============================================================================
 // ATRIAL FLUTTER
 // ============================================================================
-const aflutterWave: WaveformFn = (t) =>
-  flutterWaves(t) + qrsComplex(t) + tWave(t, 0.08);
+const aflutterWave: WaveformFn = (t, context?) =>
+  flutterWaves(t, 0.18, context) + qrsComplex(t) + tWave(t, 0.08);
 
 export const atrialFlutter: ECGRhythm = {
   id: 'aflutter',
@@ -454,6 +471,26 @@ export const completeHeartBlock: ECGRhythm = {
 // ============================================================================
 // SECOND DEGREE TYPE I (WENCKEBACH)
 // ============================================================================
+// Dedicated waveform: PR prolongation based on beat index within 4-beat cycle
+// Beat 0: PR = 0.16 (normal), Beat 1: PR = 0.20, Beat 2: PR = 0.24, Beat 3: P only (dropped QRS)
+const wenckebachWave: WaveformFn = (t, context?) => {
+  const cyclePos = (context?.beatIndex ?? 0) % 4;
+
+  // P wave always present
+  const p = pWave(t, 0.08, 0, 0.1);
+
+  if (cyclePos === 3) {
+    // Dropped beat: P wave only, no QRS or T
+    return p;
+  }
+
+  // Progressive PR prolongation: 0.16, 0.20, 0.24
+  const prDelay = 0.16 + cyclePos * 0.04;
+  const qrs = qrsComplex(t, -0.1, 1.0, -0.2, prDelay, 0.08);
+  const tw = tWave(t, 0.15, prDelay + 0.19, 0.15);
+  return p + qrs + tw;
+};
+
 export const wenckebachBlock: ECGRhythm = {
   id: 'wenckebach',
   name: 'Second Degree Type I (Wenckebach)',
@@ -462,7 +499,7 @@ export const wenckebachBlock: ECGRhythm = {
   defaultRate: 60,
   rateRange: [40, 80],
   regular: false,
-  leads: makeLeadSet(nsrWave, NORMAL_SCALES),
+  leads: makeLeadSet(wenckebachWave, NORMAL_SCALES),
   irregularityFn: (beatIndex) => {
     // Every 4th beat is longer (dropped beat)
     const cyclePos = beatIndex % 4;
@@ -672,6 +709,188 @@ export const wpw: ECGRhythm = {
 };
 
 // ============================================================================
+// LEFT BUNDLE BRANCH BLOCK (LBBB)
+// ============================================================================
+// Wide QRS with M-shaped pattern in lateral leads (I, aVL, V5, V6)
+// Deep QS (inverted) in V1, discordant ST/T waves
+const lbbbLateralQRS = (t: number, _context?: WaveformContext): number => {
+  // M-shaped wide QRS: two peaks
+  const start = 0.14;
+  const width = 0.16;
+  if (t < start || t > start + width) return 0;
+  const pos = (t - start) / width;
+  // First peak (R), dip, second peak (R')
+  const r1 = Math.sin(pos * Math.PI * 2) * 0.8;
+  const r2 = Math.sin((pos - 0.35) * Math.PI * 2) * 0.6;
+  return Math.max(r1, 0) + Math.max(r2, 0) * (pos > 0.3 ? 1 : 0);
+};
+
+const lbbbV1QRS = (t: number, _context?: WaveformContext): number => {
+  // Deep QS pattern (inverted) in V1
+  const start = 0.14;
+  const width = 0.16;
+  if (t < start || t > start + width) return 0;
+  const pos = (t - start) / width;
+  return -0.9 * Math.sin(pos * Math.PI) * (1 - pos * 0.3);
+};
+
+// Discordant ST/T: opposite direction to QRS
+const lbbbDiscordantST_Lateral = (t: number, _context?: WaveformContext): number => {
+  // QRS is upright in lateral leads, so ST/T is depressed/inverted
+  return stDepression(t, -0.1, 0.30, 0.1) + invertedT(t, -0.12, 0.38, 0.15);
+};
+
+const lbbbDiscordantST_V1 = (t: number, _context?: WaveformContext): number => {
+  // QRS is inverted in V1, so ST/T is elevated/upright
+  return stElevation(t, 0.1, 0.30, 0.1) + tWave(t, 0.15, 0.38, 0.15);
+};
+
+const lbbbWaveLateral: WaveformFn = (t, context?) =>
+  pWave(t) + lbbbLateralQRS(t, context) + lbbbDiscordantST_Lateral(t, context);
+
+const lbbbWaveV1: WaveformFn = (t, context?) =>
+  pWave(t) + lbbbV1QRS(t, context) + lbbbDiscordantST_V1(t, context);
+
+const lbbbWaveNeutral: WaveformFn = (t, context?) =>
+  pWave(t) + wideQRS(t, 0.6, 0.14, 0.16) + tWave(t, 0.1, 0.38, 0.15);
+
+export const lbbb: ECGRhythm = {
+  id: 'lbbb',
+  name: 'Left Bundle Branch Block (LBBB)',
+  description: 'Wide QRS with M-shaped pattern in lateral leads, deep QS in V1, discordant ST/T changes',
+  category: 'block',
+  defaultRate: 75,
+  rateRange: [40, 130],
+  regular: true,
+  leads: {
+    I: (t, ctx?) => lbbbWaveLateral(t, ctx) * 0.8,
+    II: (t, ctx?) => lbbbWaveNeutral(t, ctx) * 1.0,
+    III: (t, ctx?) => lbbbWaveNeutral(t, ctx) * 0.5,
+    aVR: (t, ctx?) => lbbbWaveNeutral(t, ctx) * -0.6,
+    aVL: (t, ctx?) => lbbbWaveLateral(t, ctx) * 0.6,
+    aVF: (t, ctx?) => lbbbWaveNeutral(t, ctx) * 0.7,
+    V1: (t, ctx?) => lbbbWaveV1(t, ctx) * 0.9,
+    V2: (t, ctx?) => lbbbWaveV1(t, ctx) * 0.7,
+    V3: (t, ctx?) => lbbbWaveNeutral(t, ctx) * 0.6,
+    V4: (t, ctx?) => lbbbWaveNeutral(t, ctx) * 0.8,
+    V5: (t, ctx?) => lbbbWaveLateral(t, ctx) * 0.9,
+    V6: (t, ctx?) => lbbbWaveLateral(t, ctx) * 0.7,
+  },
+};
+
+// ============================================================================
+// RIGHT BUNDLE BRANCH BLOCK (RBBB)
+// ============================================================================
+// rsR' pattern in V1-V2, wide S wave in I, V5, V6
+const rbbbV1QRS = (t: number, _context?: WaveformContext): number => {
+  // rsR' pattern: small r, small s, then tall R'
+  const start = 0.14;
+  const width = 0.14;
+  if (t < start || t > start + width) return 0;
+  const pos = (t - start) / width;
+  if (pos < 0.2) return 0.3 * Math.sin(pos / 0.2 * Math.PI); // small r
+  if (pos < 0.4) return -0.2 * Math.sin((pos - 0.2) / 0.2 * Math.PI); // small s
+  if (pos < 0.75) return 0.9 * Math.sin((pos - 0.4) / 0.35 * Math.PI); // tall R'
+  return 0.9 * (1 - (pos - 0.75) / 0.25) * 0.3; // return to baseline
+};
+
+const rbbbLateralQRS = (t: number, _context?: WaveformContext): number => {
+  // Normal R then wide slurred S wave
+  const start = 0.14;
+  const width = 0.14;
+  if (t < start || t > start + width) return 0;
+  const pos = (t - start) / width;
+  if (pos < 0.35) return 0.8 * Math.sin(pos / 0.35 * Math.PI); // Normal R
+  // Wide S wave
+  return -0.35 * Math.sin((pos - 0.35) / 0.65 * Math.PI);
+};
+
+const rbbbWaveV1: WaveformFn = (t, _context?) =>
+  pWave(t) + rbbbV1QRS(t) + tWave(t, -0.1, 0.36, 0.15); // Inverted T in V1
+
+const rbbbWaveLateral: WaveformFn = (t, _context?) =>
+  pWave(t) + rbbbLateralQRS(t) + tWave(t, 0.12, 0.36, 0.15);
+
+const rbbbWaveNeutral: WaveformFn = (t, _context?) =>
+  pWave(t) + qrsComplex(t, -0.1, 0.9, -0.2, 0.14, 0.12) + tWave(t, 0.12, 0.36, 0.15);
+
+export const rbbb: ECGRhythm = {
+  id: 'rbbb',
+  name: 'Right Bundle Branch Block (RBBB)',
+  description: 'rsR\' pattern in V1-V2, wide S wave in lateral leads, slightly wide QRS',
+  category: 'block',
+  defaultRate: 75,
+  rateRange: [40, 130],
+  regular: true,
+  leads: {
+    I: (t, ctx?) => rbbbWaveLateral(t, ctx) * 0.7,
+    II: (t, ctx?) => rbbbWaveNeutral(t, ctx) * 1.0,
+    III: (t, ctx?) => rbbbWaveNeutral(t, ctx) * 0.5,
+    aVR: (t, ctx?) => rbbbWaveNeutral(t, ctx) * -0.6,
+    aVL: (t, ctx?) => rbbbWaveLateral(t, ctx) * 0.4,
+    aVF: (t, ctx?) => rbbbWaveNeutral(t, ctx) * 0.8,
+    V1: (t, ctx?) => rbbbWaveV1(t, ctx) * 1.0,
+    V2: (t, ctx?) => rbbbWaveV1(t, ctx) * 0.8,
+    V3: (t, ctx?) => rbbbWaveNeutral(t, ctx) * 0.8,
+    V4: (t, ctx?) => rbbbWaveNeutral(t, ctx) * 0.9,
+    V5: (t, ctx?) => rbbbWaveLateral(t, ctx) * 0.9,
+    V6: (t, ctx?) => rbbbWaveLateral(t, ctx) * 0.7,
+  },
+};
+
+// ============================================================================
+// PREMATURE ATRIAL COMPLEXES (PACs)
+// ============================================================================
+export const pacs: ECGRhythm = {
+  id: 'pacs',
+  name: 'Premature Atrial Complexes (PACs)',
+  description: 'Occasional early beats with normal QRS morphology, compensatory pauses',
+  category: 'arrhythmia',
+  defaultRate: 75,
+  rateRange: [60, 100],
+  regular: false,
+  leads: makeLeadSet(nsrWave, NORMAL_SCALES),
+  irregularityFn: (beatIndex) => {
+    // Every 5th beat is 25% early, followed by compensatory pause
+    const cyclePos = beatIndex % 5;
+    if (cyclePos === 4) return 0.75; // PAC: 25% early
+    if (cyclePos === 0 && beatIndex > 0) return 1.25; // Compensatory pause after PAC
+    return 1.0;
+  },
+};
+
+// ============================================================================
+// PREMATURE VENTRICULAR COMPLEXES (PVCs)
+// ============================================================================
+// PVC waveform: every 4th beat uses wide QRS, normal beats use NSR
+const pvcWave: WaveformFn = (t, context?) => {
+  const beatIdx = context?.beatIndex ?? 0;
+  if (beatIdx % 4 === 3) {
+    // PVC beat: wide, bizarre QRS with no preceding P wave
+    return wideQRS(t, 0.9, 0.12, 0.18);
+  }
+  // Normal sinus beat
+  return nsrWave(t, context);
+};
+
+export const pvcs: ECGRhythm = {
+  id: 'pvcs',
+  name: 'Premature Ventricular Complexes (PVCs)',
+  description: 'Every 4th beat is a wide-complex PVC with compensatory pause',
+  category: 'arrhythmia',
+  defaultRate: 75,
+  rateRange: [60, 100],
+  regular: false,
+  leads: makeLeadSet(pvcWave, NORMAL_SCALES),
+  irregularityFn: (beatIndex) => {
+    const cyclePos = beatIndex % 4;
+    if (cyclePos === 3) return 0.85; // PVC comes 15% early
+    if (cyclePos === 0 && beatIndex > 0) return 1.40; // 40% longer compensatory pause
+    return 1.0;
+  },
+};
+
+// ============================================================================
 // RHYTHM REGISTRY
 // ============================================================================
 
@@ -700,6 +919,10 @@ export const ALL_RHYTHMS: ECGRhythm[] = [
   aivr,
   fineVF,
   wpw,
+  lbbb,
+  rbbb,
+  pacs,
+  pvcs,
 ];
 
 export const RHYTHM_MAP: Record<string, ECGRhythm> = Object.fromEntries(
@@ -722,6 +945,10 @@ export function getRhythmForCase(category: string, subcategory?: string, heartRa
 
   // Combined search text for matching — subcategory + title + ecg findings
   const searchText = `${sub} ${title} ${ecgText}`;
+
+  // ===== Bundle branch blocks (check BEFORE STEMI to avoid false matches like LBBB-STEMI) =====
+  if (searchText.includes('lbbb') || searchText.includes('left bundle branch block')) return lbbb;
+  if (searchText.includes('rbbb') || searchText.includes('right bundle branch block')) return rbbb;
 
   // ===== STEMI cases =====
   if (searchText.includes('anterior stemi') || searchText.includes('stem-anterior') || sub === 'stem-anterior') return anteriorSTEMI;
@@ -750,6 +977,38 @@ export function getRhythmForCase(category: string, subcategory?: string, heartRa
   if (searchText.includes('wenckebach') || searchText.includes('mobitz type i') || searchText.includes('2nd degree type i') || sub.includes('wenckebach') || sub.includes('mobitz-1')) return wenckebachBlock;
   if (searchText.includes('mobitz type ii') || searchText.includes('mobitz 2') || searchText.includes('2nd degree type ii') || sub.includes('mobitz-2') || sub.includes('type-ii')) return mobiType2;
 
+  // ===== Stable angina / ACS / normal cardiac =====
+  if (searchText.includes('stable angina') || searchText.includes('stable-angina') || sub.includes('stable-angina')) return normalSinusRhythm;
+  if (searchText.includes('acute coronary syndrome') || searchText.includes('acute-coronary-syndrome') || sub.includes('acute-coronary-syndrome')) {
+    if (heartRate && heartRate > 100) return sinusTachycardia;
+    return normalSinusRhythm;
+  }
+  if (searchText.includes('syncope') || sub.includes('syncope')) return normalSinusRhythm;
+  if (searchText.includes('hypertensive') || sub.includes('hypertensive')) return normalSinusRhythm;
+
+  // ===== Heart failure (sinus tachy with LVH) =====
+  if (searchText.includes('heart failure') || searchText.includes('heart-failure') || sub.includes('heart-failure')) {
+    if (heartRate && heartRate > 100) return sinusTachycardia;
+    return normalSinusRhythm;
+  }
+
+  // ===== Sinus tachycardia (explicit) =====
+  if (searchText.includes('sinus tachycardia') || searchText.includes('sinus-tachycardia') || sub === 'sinus-tachycardia') return sinusTachycardia;
+
+  // ===== Junctional / idioventricular rhythms =====
+  if (searchText.includes('junctional') || sub.includes('junctional')) return junctionalRhythm;
+  if (searchText.includes('idioventricular') || sub.includes('idioventricular')) return idioventricularRhythm;
+
+  // ===== WPW / pre-excitation =====
+  if (searchText.includes('wpw') || searchText.includes('wolff-parkinson') || searchText.includes('pre-excitation') || sub.includes('wpw')) return wpw;
+
+  // ===== PACs / PVCs =====
+  if (searchText.includes('premature atrial') || searchText.includes('pacs') || sub.includes('pacs')) return pacs;
+  if (searchText.includes('premature ventricular') || searchText.includes('pvcs') || sub.includes('pvcs')) return pvcs;
+
+  // ===== First degree block =====
+  if (searchText.includes('first degree') || searchText.includes('1st degree') || sub.includes('first-degree') || sub.includes('1st-degree')) return firstDegreeBlock;
+
   // ===== Specific conditions =====
   if (searchText.includes('hyperkalemia') || searchText.includes('hyperkalaemia')) return sinusBradycardia; // Broad QRS bradycardia
   if (searchText.includes('hypothermia')) return sinusBradycardia; // Osborn waves + bradycardia
@@ -763,7 +1022,7 @@ export function getRhythmForCase(category: string, subcategory?: string, heartRa
     if (heartRate && heartRate > 150) return svt;
     if (heartRate && heartRate > 100) return sinusTachycardia;
     if (heartRate && heartRate < 60) return sinusBradycardia;
-    return sinusTachycardia;
+    return normalSinusRhythm;
   }
 
   if (cat === 'respiratory' || cat === 'thoracic') {

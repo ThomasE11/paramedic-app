@@ -514,9 +514,9 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
     // Initial row
     addTextAt('Initial', margin + 2, yPosition + 5, FONT.LABEL, 'bold', COLOR.MUTED);
     addTextAt(String(initial.bp), colPositions[0], yPosition + 5, FONT.LABEL, 'normal', COLOR.BODY_TEXT);
-    addTextAt(String(initial.pulse), colPositions[1], yPosition + 5, FONT.LABEL, 'normal', COLOR.BODY_TEXT);
-    addTextAt(String(initial.spo2) + '%', colPositions[2], yPosition + 5, FONT.LABEL, 'normal', COLOR.BODY_TEXT);
-    addTextAt(String(initial.respiration), colPositions[3], yPosition + 5, FONT.LABEL, 'normal', COLOR.BODY_TEXT);
+    addTextAt(String(Math.round(Number(initial.pulse))), colPositions[1], yPosition + 5, FONT.LABEL, 'normal', COLOR.BODY_TEXT);
+    addTextAt(String(Math.round(Number(initial.spo2))) + '%', colPositions[2], yPosition + 5, FONT.LABEL, 'normal', COLOR.BODY_TEXT);
+    addTextAt(String(Math.round(Number(initial.respiration))), colPositions[3], yPosition + 5, FONT.LABEL, 'normal', COLOR.BODY_TEXT);
     yPosition += 7;
 
     // Final row
@@ -525,9 +525,9 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
     addFilledRoundedRect(margin, yPosition, contentWidth, 7, 0, COLOR.ROW_ALT);
     addTextAt('Final', margin + 2, yPosition + 5, FONT.LABEL, 'bold', COLOR.MUTED);
     addTextAt(String(final.bp), colPositions[0], yPosition + 5, FONT.LABEL, 'normal', COLOR.BODY_TEXT);
-    addTextAt(String(final.pulse), colPositions[1], yPosition + 5, FONT.LABEL, 'normal', hrBetter ? COLOR.GREEN : COLOR.RED);
-    addTextAt(String(final.spo2) + '%', colPositions[2], yPosition + 5, FONT.LABEL, 'normal', spo2Better ? COLOR.GREEN : COLOR.RED);
-    addTextAt(String(final.respiration), colPositions[3], yPosition + 5, FONT.LABEL, 'normal', COLOR.BODY_TEXT);
+    addTextAt(String(Math.round(Number(final.pulse))), colPositions[1], yPosition + 5, FONT.LABEL, 'normal', hrBetter ? COLOR.GREEN : COLOR.RED);
+    addTextAt(String(Math.round(Number(final.spo2))) + '%', colPositions[2], yPosition + 5, FONT.LABEL, 'normal', spo2Better ? COLOR.GREEN : COLOR.RED);
+    addTextAt(String(Math.round(Number(final.respiration))), colPositions[3], yPosition + 5, FONT.LABEL, 'normal', COLOR.BODY_TEXT);
     yPosition += 9;
 
     addTextAt(`Snapshots recorded: ${options.vitalsHistory.length}`, margin, yPosition, FONT.LABEL, 'normal', COLOR.LIGHT_MUTED);
@@ -538,19 +538,75 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
   if (caseData.uaeProtocols?.applicableGuidelines && caseData.uaeProtocols.applicableGuidelines.length > 0) {
     addSectionHeader('Clinical Guidelines & References');
 
+    // Map well-known guideline names to their authoritative URLs
+    const guidelineUrlMap: Record<string, string> = {
+      'uae national ambulance': 'https://www.doh.gov.ae/en/resources/Ede/Policies',
+      'dubai health authority': 'https://www.dha.gov.ae',
+      'haad': 'https://www.doh.gov.ae',
+      'department of health abu dhabi': 'https://www.doh.gov.ae',
+      'european resuscitation council': 'https://www.erc.edu/guidelines',
+      'erc guidelines': 'https://www.erc.edu/guidelines',
+      'ilcor': 'https://www.ilcor.org/documents/consensus-on-science-with-treatment-recommendations',
+      'american heart association': 'https://www.heart.org/en/professional/quality-improvement/guidelines',
+      'aha guidelines': 'https://www.heart.org/en/professional/quality-improvement/guidelines',
+      'resuscitation council uk': 'https://www.resus.org.uk/library/2021-resuscitation-guidelines',
+      'rcuk': 'https://www.resus.org.uk/library/2021-resuscitation-guidelines',
+      'jrcalc': 'https://jrcalc.org.uk',
+      'nice guidelines': 'https://www.nice.org.uk/guidance',
+      'nice': 'https://www.nice.org.uk/guidance',
+      'atls': 'https://www.facs.org/quality-programs/trauma/education/advanced-trauma-life-support/',
+      'advanced trauma life support': 'https://www.facs.org/quality-programs/trauma/education/advanced-trauma-life-support/',
+      'acls': 'https://cpr.heart.org/en/resuscitation-science/cpr-and-ecc-guidelines',
+      'pals': 'https://cpr.heart.org/en/resuscitation-science/cpr-and-ecc-guidelines',
+      'btls': 'https://www.naemt.org/education/phtls',
+      'phtls': 'https://www.naemt.org/education/phtls',
+      'who': 'https://www.who.int/publications/guidelines',
+    };
+
+    const findGuidelineUrl = (guidelineText: string): string | null => {
+      const lower = guidelineText.toLowerCase();
+      // Check if the guideline text already contains a URL
+      const urlMatch = guidelineText.match(/https?:\/\/[^\s)]+/);
+      if (urlMatch) return urlMatch[0];
+      // Check against known guideline name patterns
+      for (const [pattern, url] of Object.entries(guidelineUrlMap)) {
+        if (lower.includes(pattern)) return url;
+      }
+      return null;
+    };
+
     caseData.uaeProtocols.applicableGuidelines.forEach((guideline) => {
       checkPageBreak(8);
 
       addFilledRoundedRect(margin, yPosition - 1, 5, 5, 1, COLOR.BG_BLUE);
       addTextAt('>', margin + 1.5, yPosition + 3, FONT.LABEL, 'normal', COLOR.PRIMARY);
 
-      const lines = doc.splitTextToSize(sanitizeText(guideline), contentWidth - 10) as string[];
-      lines.forEach((line: string, idx: number) => {
-        addTextAt(line, margin + 8, yPosition + 3 + (idx * LINE_HEIGHT.BODY), FONT.BODY, 'normal', COLOR.BODY_TEXT);
-      });
-
-      yPosition += lines.length * LINE_HEIGHT.BODY + 3;
+      const guidelineUrl = findGuidelineUrl(guideline);
+      if (guidelineUrl) {
+        // Render as clickable link
+        addClickableLink(sanitizeText(guideline), guidelineUrl, margin + 8, yPosition + 3);
+        yPosition += LINE_HEIGHT.BODY + 3;
+      } else {
+        // Render as plain text
+        const lines = doc.splitTextToSize(sanitizeText(guideline), contentWidth - 10) as string[];
+        lines.forEach((line: string, idx: number) => {
+          addTextAt(line, margin + 8, yPosition + 3 + (idx * LINE_HEIGHT.BODY), FONT.BODY, 'normal', COLOR.BODY_TEXT);
+        });
+        yPosition += lines.length * LINE_HEIGHT.BODY + 3;
+      }
     });
+
+    // Add a note pointing to full guideline sources
+    checkPageBreak(8);
+    addTextAt(
+      'Full clinical practice guidelines available at: doh.gov.ae | erc.edu | resus.org.uk | jrcalc.org.uk',
+      margin,
+      yPosition + 2,
+      FONT.LABEL,
+      'italic',
+      COLOR.LIGHT_MUTED
+    );
+    yPosition += 7;
   }
 
   // ========== COMMON PITFALLS ==========
@@ -688,7 +744,7 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
         return (order[a.relevance] || 2) - (order[b.relevance] || 2);
       });
 
-      for (const resource of sorted.slice(0, 5)) {
+      for (const resource of sorted) {
         checkPageBreak(8);
 
         addTextAt(`[${resource.source}]`, margin + 2, yPosition, FONT.LABEL, 'normal', COLOR.LIGHT_MUTED);
@@ -699,11 +755,6 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
         }
 
         yPosition += LINE_HEIGHT.BODY + 3;
-      }
-
-      if (resources.length > 5) {
-        addTextAt(`+ ${resources.length - 5} more resources available online`, margin + 40, yPosition, FONT.LABEL, 'normal', COLOR.LIGHT_MUTED);
-        yPosition += 5;
       }
 
       yPosition += 2;
@@ -730,18 +781,61 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
       caseData.expectedFindings?.mostLikelyDiagnosis,
     ].filter(Boolean) as string[];
 
+    const diagnosisStr = caseData.expectedFindings?.mostLikelyDiagnosis || '';
+    const subcategoryStr = caseData.subcategory || '';
+    const subcategoryReadable = subcategoryStr.replace(/-/g, ' ').toLowerCase();
+
+    // Exclusion map: conditions that should NOT appear in video results
+    const videoExclusions: Record<string, string[]> = {
+      'aflutter': ['tamponade', 'heart failure', 'cpap', 'pulmonary edema', 'chest pain', 'stemi'],
+      'afib': ['tamponade', 'heart failure', 'cpap', 'pulmonary edema', 'stemi'],
+      'svt': ['tamponade', 'heart failure', 'cpap', 'pulmonary edema', 'stemi'],
+      'asystole': ['tamponade', 'flutter', 'afib', 'svt'],
+      'vfib': ['tamponade', 'flutter', 'afib', 'svt'],
+      'stem-anterior': ['tamponade', 'flutter', 'afib', 'svt', 'heart failure', 'cpap'],
+      'stem-inferior': ['tamponade', 'flutter', 'afib', 'svt', 'heart failure', 'cpap'],
+      'nstemi': ['tamponade', 'flutter', 'afib', 'svt', 'heart failure', 'cpap'],
+      'asthma': ['copd', 'pneumothorax', 'chest drain'],
+      'copd': ['asthma', 'pneumothorax', 'chest drain'],
+      'pneumothorax-tension': ['asthma', 'copd', 'nebulizer'],
+    };
+    const exclusions = videoExclusions[subcategoryStr] || [];
+
     const matchedVideos = [
-      ...getVideosByFindings(caseFindings),
+      ...getVideosByFindings(caseFindings, {
+        diagnosis: diagnosisStr,
+        subcategory: subcategoryStr,
+        category: caseData.category,
+      }),
       ...getVideosByCategory(caseData.category),
     ]
       .filter((v, i, arr) => arr.findIndex(x => x.id === v.id) === i)
+      .filter(v => {
+        // Filter out videos for excluded conditions
+        const searchText = [v.name, v.description || '', ...(v.tags || [])].join(' ').toLowerCase();
+        return !exclusions.some(ex => searchText.includes(ex));
+      })
       .sort((a, b) => {
         const scoreVideo = (v: typeof a) => {
           let s = 0;
           const nameLower = v.name.toLowerCase();
-          if (caseData.subcategory && nameLower.includes(caseData.subcategory.replace(/-/g, ' '))) s += 10;
-          if (caseData.title && caseFindings.some(f => nameLower.includes(f.toLowerCase()))) s += 5;
-          if (caseData.expectedFindings?.mostLikelyDiagnosis && nameLower.includes(caseData.expectedFindings.mostLikelyDiagnosis.toLowerCase())) s += 8;
+          const descLower = (v.description || '').toLowerCase();
+          const tagsLower = (v.tags || []).join(' ').toLowerCase();
+          const searchText = `${nameLower} ${descLower} ${tagsLower}`;
+
+          // Strong: video title matches the actual diagnosis (+25)
+          if (diagnosisStr && nameLower.includes(diagnosisStr.toLowerCase())) s += 25;
+          // Strong: video title matches subcategory (+20)
+          if (subcategoryReadable && nameLower.includes(subcategoryReadable)) s += 20;
+          // Medium: video tags/description match diagnosis (+12)
+          if (diagnosisStr && searchText.includes(diagnosisStr.toLowerCase())) s += 12;
+          // Medium: case findings match video title (+5 each)
+          for (const f of caseFindings) {
+            if (f && nameLower.includes(f.toLowerCase())) s += 5;
+          }
+          // Weak: same category only (+1)
+          if (v.category === caseData.category && s === 0) s += 1;
+
           return s;
         };
         return scoreVideo(b) - scoreVideo(a);

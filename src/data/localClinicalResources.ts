@@ -340,9 +340,9 @@ export const referenceArticles = [
 
   // Respiratory
   { id: 'litfl-pneumothorax', title: 'Pneumothorax - Medical Overview', source: 'LITFL', url: 'https://litfl.com/pneumothorax/', category: 'respiratory' },
-  { id: 'litfl-asthma', title: 'Asthma - Pathophysiology and Management', source: 'LITFL', url: 'https://litfl.com/asthma/', category: 'respiratory' },
+  { id: 'litfl-asthma', title: 'Acute Severe Asthma - Management', source: 'LITFL', url: 'https://litfl.com/acute-severe-asthma/', category: 'respiratory' },
   { id: 'bts-asthma', title: 'BTS/SIGN Asthma Management Guideline', source: 'British Thoracic Society', url: 'https://www.brit-thoracic.org.uk/quality-improvement/guidelines/asthma/', category: 'respiratory' },
-  { id: 'litfl-copd', title: 'COPD - Chronic Obstructive Pulmonary Disease', source: 'LITFL', url: 'https://litfl.com/chronic-obstructive-pulmonary-disease-copd/', category: 'respiratory' },
+  { id: 'litfl-copd', title: 'COPD - Chronic Obstructive Pulmonary Disease', source: 'LITFL', url: 'https://litfl.com/chronic-obstructive-pulmonary-disease/', category: 'respiratory' },
 
   // Neurological
   { id: 'litfl-tbi', title: 'Traumatic Brain Injury', source: 'LITFL', url: 'https://litfl.com/traumatic-brain-injury/', category: 'neurological' },
@@ -350,18 +350,18 @@ export const referenceArticles = [
 
   // Infection / Sepsis
   { id: 'wiki-sepsis', title: 'Sepsis - Definition, Recognition, and Management', source: 'WikiEM', url: 'https://wikem.org/wiki/Sepsis', category: 'infection' },
-  { id: 'nice-sepsis', title: 'NICE: Sepsis Recognition and Early Management (NG51)', source: 'NICE', url: 'https://www.nice.org.uk/guidance/ng51', category: 'infection' },
+  { id: 'nice-sepsis', title: 'NICE: Sepsis Recognition and Early Management (PDF)', source: 'NICE', url: 'https://www.nice.org.uk/guidance/ng253/resources/suspected-sepsis-in-people-aged-16-or-over-recognition-assessment-and-early-management-pdf-66144015386053', category: 'infection' },
   { id: 'emcrit-ssi', title: 'Surgical Site Infection - Overview', source: 'EMDocs', url: 'https://www.emdocs.net/surgical-wound-infections-ed-evaluation-and-management/', category: 'infection' },
-  { id: 'nice-skin-infection', title: 'NICE: Skin and Soft Tissue Infections', source: 'NICE', url: 'https://www.nice.org.uk/guidance/ng141', category: 'infection' },
+  { id: 'nice-skin-infection', title: 'NICE: Skin and Soft Tissue Infections (PDF)', source: 'NICE', url: 'https://www.nice.org.uk/guidance/ng141/resources/cellulitis-and-erysipelas-antimicrobial-prescribing-pdf-66141774778309', category: 'infection' },
   { id: 'surviving-sepsis', title: 'Surviving Sepsis Campaign Guidelines', source: 'SSC', url: 'https://www.sccm.org/SurvivingSepsisCampaign/Guidelines', category: 'infection' },
 
   // Metabolic
-  { id: 'litfl-dka', title: 'Diabetic Ketoacidosis - Overview', source: 'LITFL', url: 'https://litfl.com/diabetic-ketoacidosis-dka/', category: 'metabolic' },
+  { id: 'litfl-dka', title: 'Diabetic Ketoacidosis - Overview', source: 'LITFL', url: 'https://litfl.com/diabetic-ketoacidosis/', category: 'metabolic' },
   { id: 'litfl-hypoglycemia', title: 'Hypoglycemia - Recognition and Management', source: 'LITFL', url: 'https://litfl.com/hypoglycaemia/', category: 'metabolic' },
 
   // Trauma
-  { id: 'litfl-primary-survey', title: 'Primary Survey - ABCDE Assessment', source: 'LITFL', url: 'https://litfl.com/primary-survey/', category: 'trauma' },
-  { id: 'litfl-atls', title: 'Advanced Trauma Life Support - Overview', source: 'LITFL', url: 'https://litfl.com/advanced-trauma-life-support-atls/', category: 'trauma' },
+  { id: 'litfl-primary-survey', title: 'Initial Trauma Assessment - Primary Survey', source: 'LITFL', url: 'https://litfl.com/initial-trauma-assessment/', category: 'trauma' },
+  { id: 'litfl-atls', title: 'Trauma Initial Assessment and Management', source: 'LITFL', url: 'https://litfl.com/trauma-initial-assessment-and-management/', category: 'trauma' },
 ];
 
 // ============================================================================
@@ -419,20 +419,61 @@ export function getVideosByCategory(category: string): LocalVideoResource[] {
 
 /**
  * Get videos matching specific tags or condition keywords.
+ * Scores videos by relevance and filters out clearly unrelated ones.
+ * Pass diagnosis and subcategory for tighter filtering.
  */
-export function getVideosByFindings(findings: string[]): LocalVideoResource[] {
+export function getVideosByFindings(
+  findings: string[],
+  options?: { diagnosis?: string; subcategory?: string; category?: string }
+): LocalVideoResource[] {
   if (!findings || findings.length === 0) return [];
   const lowerFindings = findings.filter(f => typeof f === 'string').map(f => f.toLowerCase());
+  const diagnosis = options?.diagnosis?.toLowerCase() || '';
+  const subcategory = options?.subcategory?.replace(/-/g, ' ').toLowerCase() || '';
 
-  return videoResources.filter(vid => {
-    const searchText = [
-      vid.name,
-      vid.description,
-      ...(vid.tags || [])
-    ].join(' ').toLowerCase();
+  // Conditions that should NOT appear in results for this case
+  // e.g., "cardiac tamponade" videos should not show for "atrial flutter"
+  const conditionExclusions: Record<string, string[]> = {
+    'aflutter': ['tamponade', 'heart failure', 'cpap', 'pulmonary edema', 'chest pain', 'stemi', 'acs'],
+    'afib': ['tamponade', 'heart failure', 'cpap', 'pulmonary edema', 'stemi', 'acs'],
+    'svt': ['tamponade', 'heart failure', 'cpap', 'pulmonary edema', 'stemi', 'acs'],
+    'asystole': ['tamponade', 'flutter', 'afib', 'svt', 'chest pain'],
+    'vfib': ['tamponade', 'flutter', 'afib', 'svt', 'chest pain'],
+    'stem-anterior': ['tamponade', 'flutter', 'afib', 'svt', 'heart failure', 'cpap'],
+    'stem-inferior': ['tamponade', 'flutter', 'afib', 'svt', 'heart failure', 'cpap'],
+    'nstemi': ['tamponade', 'flutter', 'afib', 'svt', 'heart failure', 'cpap'],
+    'asthma': ['copd', 'pneumothorax', 'embolism', 'chest drain'],
+    'copd': ['asthma', 'pneumothorax', 'embolism', 'chest drain'],
+    'pneumothorax-tension': ['asthma', 'copd', 'embolism', 'nebulizer'],
+    'pulmonary-embolism': ['asthma', 'copd', 'pneumothorax', 'nebulizer'],
+  };
 
-    return lowerFindings.some(f => searchText.includes(f));
-  });
+  const exclusions = conditionExclusions[options?.subcategory || ''] || [];
+
+  return videoResources
+    .map(vid => {
+      const searchText = [vid.name, vid.description, ...(vid.tags || [])].join(' ').toLowerCase();
+
+      // Must match at least one finding
+      const hasMatch = lowerFindings.some(f => searchText.includes(f));
+      if (!hasMatch) return null;
+
+      // Filter out videos for excluded conditions
+      const isExcluded = exclusions.some(ex => searchText.includes(ex));
+      if (isExcluded) return null;
+
+      // Score by specificity
+      let score = 0;
+      if (diagnosis && searchText.includes(diagnosis)) score += 20;
+      if (subcategory && searchText.includes(subcategory)) score += 15;
+      const matchCount = lowerFindings.filter(f => searchText.includes(f)).length;
+      score += matchCount * 2;
+
+      return { vid, score };
+    })
+    .filter((entry): entry is { vid: LocalVideoResource; score: number } => entry !== null)
+    .sort((a, b) => b.score - a.score)
+    .map(entry => entry.vid);
 }
 
 export function getYouTubeEmbedUrl(youtubeId: string): string {

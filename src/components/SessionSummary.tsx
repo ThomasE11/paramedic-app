@@ -579,12 +579,23 @@ export function SessionSummary({
           vitalItems.push({ label: 'Heart Rate', initial: String(initial.pulse), final: String(final.pulse), unit: 'bpm', improved, worsened });
         }
         if (initial.bp && final.bp) {
-          const initialSbp = parseInt(initial.bp.split('/')[0]);
-          const finalSbp = parseInt(final.bp.split('/')[0]);
+          const initialParts = initial.bp.split('/').map(p => parseInt(p.trim()));
+          const finalParts = final.bp.split('/').map(p => parseInt(p.trim()));
+          const initialSbp = initialParts[0];
+          const initialDbp = initialParts[1];
+          const finalSbp = finalParts[0];
+          const finalDbp = finalParts[1];
           if (!isNaN(initialSbp) && !isNaN(finalSbp)) {
-            const improved = (initialSbp < 90 && finalSbp > initialSbp) || (initialSbp > 180 && finalSbp < initialSbp);
-            const worsened = (finalSbp < 80 && finalSbp < initialSbp) || (finalSbp > 200 && finalSbp > initialSbp);
-            vitalItems.push({ label: 'BP', initial: initial.bp, final: final.bp, unit: 'mmHg', improved, worsened });
+            // Systolic: improved if moving toward 100-140 range, worsened if moving away
+            const sbpImproved = (initialSbp < 100 && finalSbp > initialSbp) || (initialSbp > 150 && finalSbp < initialSbp);
+            const sbpWorsened = (finalSbp < 90 && finalSbp < initialSbp) || (finalSbp > 180 && finalSbp > initialSbp);
+            vitalItems.push({ label: 'Systolic BP', initial: String(initialSbp), final: String(finalSbp), unit: 'mmHg', improved: sbpImproved, worsened: sbpWorsened });
+          }
+          if (!isNaN(initialDbp) && !isNaN(finalDbp)) {
+            // Diastolic: improved if moving toward 60-90 range, worsened if moving away
+            const dbpImproved = (initialDbp < 60 && finalDbp > initialDbp) || (initialDbp > 100 && finalDbp < initialDbp);
+            const dbpWorsened = (finalDbp < 50 && finalDbp < initialDbp) || (finalDbp > 110 && finalDbp > initialDbp);
+            vitalItems.push({ label: 'Diastolic BP', initial: String(initialDbp), final: String(finalDbp), unit: 'mmHg', improved: dbpImproved, worsened: dbpWorsened });
           }
         }
         if (initial.respiration !== undefined && final.respiration !== undefined) {

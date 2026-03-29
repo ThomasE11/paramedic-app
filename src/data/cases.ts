@@ -74,9 +74,9 @@ export const caseDatabase: CaseScenario[] = [
         rhythm: 'Regular',
         depth: 'Normal',
         spo2: 94,
-        findings: ['Tachypneic', 'Clear bilateral air entry', 'No added sounds'],
+        findings: ['Tachypneic', 'Bilateral air entry', 'Bibasal fine crackles'],
         interventions: ['High-flow oxygen 15L/min via non-rebreather'],
-        auscultation: ['Clear air entry bilaterally', 'No crackles', 'No wheeze']
+        auscultation: ['Clear air entry bilaterally', 'Bibasal fine crackles', 'No wheeze']
       },
       circulation: {
         pulseRate: 110,
@@ -139,7 +139,7 @@ export const caseDatabase: CaseScenario[] = [
     expectedFindings: {
       keyObservations: ['Crushing chest pain', 'Diaphoresis', 'Radiation to arm/jaw', 'Hypotension'],
       redFlags: ['STEMI presentation', 'Cardiogenic shock risk'],
-      differentialDiagnoses: ['Acute MI', 'Unstable angina', 'Aortic dissection', 'Pulmonary embolism'],
+      differentialDiagnoses: ['Acute MI', 'Acute Pericarditis', 'Aortic dissection', 'Pulmonary embolism'],
       mostLikelyDiagnosis: 'Acute Anterior STEMI',
       supportingEvidence: ['ST elevation V1-V4', 'Reciprocal ST depression II, III, aVF', 'Typical chest pain', 'Diaphoresis']
     },
@@ -164,7 +164,7 @@ export const caseDatabase: CaseScenario[] = [
       'Aspirin 300mg should be given immediately unless contraindicated (allergy, active bleeding)',
       'GTN is contraindicated if SBP < 90 mmHg, RV infarct, or recent PDE5 inhibitor use',
       'Door-to-balloon time target is 90 minutes, door-to-needle is 30 minutes for thrombolysis',
-      'Morphine 2.5-5mg IV may be given for ongoing chest pain after GTN if BP allows',
+      'Morphine 2-4mg IV may be given for ongoing chest pain after GTN if BP allows',
       'Clopidogrel 300mg loading dose if PCI planned (per DCAS ACS protocol)',
       'In Dubai, Rashid Hospital, American Hospital, and Mediclinic City Hospital have 24/7 PCI capability',
       'Consider HEMS activation for rural areas or traffic delays to achieve timely reperfusion'
@@ -357,7 +357,7 @@ export const caseDatabase: CaseScenario[] = [
     },
     vitalSignsProgression: {
       initial: { bp: '0/0', pulse: 0, respiration: 0, spo2: 0, gcs: 3 },
-      afterIntervention: { bp: '80/50', pulse: 45, respiration: 8, spo2: 92, gcs: 3 },
+      afterIntervention: { bp: '0/0', pulse: 0, respiration: 0, spo2: 0, gcs: 3 },
       deterioration: { bp: '0/0', pulse: 0, respiration: 0, spo2: 0, gcs: 3 }
     },
     expectedFindings: {
@@ -812,7 +812,7 @@ export const caseDatabase: CaseScenario[] = [
     subcategory: 'hypertensive-emergency',
     priority: 'critical',
     complexity: 'advanced',
-    yearLevels: ['3rd-year', '4th-year'],
+    yearLevels: ['2nd-year', '3rd-year', '4th-year'], // 2nd-year stretch: recognition of hypertensive emergency signs
     dispatchInfo: {
       callReason: 'Severe headache, vision changes',
       timeOfDay: 'evening',
@@ -1960,7 +1960,7 @@ export const caseDatabase: CaseScenario[] = [
     subcategory: 'pulmonary-embolism',
     priority: 'critical',
     complexity: 'advanced',
-    yearLevels: ['3rd-year', '4th-year'],
+    yearLevels: ['2nd-year', '3rd-year', '4th-year'], // 2nd-year stretch: PE presentation recognition and risk factors
     dispatchInfo: {
       callReason: 'Sudden shortness of breath, chest pain',
       timeOfDay: 'morning',
@@ -2320,9 +2320,9 @@ export const caseDatabase: CaseScenario[] = [
       },
       disability: {
         avpu: 'U',
-        gcs: { eye: 1, verbal: 1, motor: 4, total: 6 },
+        gcs: { eye: 1, verbal: 1, motor: 3, total: 5 },
         pupils: 'Right dilated, left reactive',
-        findings: ['Unequal pupils suggest head injury', 'Decorticate posturing'],
+        findings: ['Unequal pupils suggest head injury', 'Decorticate posturing (abnormal flexion)'],
         interventions: ['Spinal immobilization', 'Monitor GCS']
       },
       exposure: {
@@ -2339,7 +2339,7 @@ export const caseDatabase: CaseScenario[] = [
       pelvis: ['Stable on compression'],
       extremities: ['Open femur fracture right', 'Distal pulses present', 'Deformity'],
       posterior: ['Road rash', 'No step-off'],
-      neurological: ['GCS 6', 'Unequal pupils']
+      neurological: ['GCS 5', 'Unequal pupils']
     },
     history: {
       medications: [],
@@ -2350,8 +2350,8 @@ export const caseDatabase: CaseScenario[] = [
       eventsLeading: 'Motorcycle collided with car at intersection, thrown 5 meters'
     },
     vitalSignsProgression: {
-      initial: { bp: '80/50', pulse: 125, respiration: 8, spo2: 85, gcs: 6 },
-      afterIntervention: { bp: '90/60', pulse: 115, respiration: 14, spo2: 92, gcs: 6 }
+      initial: { bp: '80/50', pulse: 125, respiration: 8, spo2: 85, gcs: 5 },
+      afterIntervention: { bp: '90/60', pulse: 115, respiration: 14, spo2: 92, gcs: 5 }
     },
     expectedFindings: {
       keyObservations: ['Multiple trauma', 'Head injury with unequal pupils', 'Hypovolemic shock', 'Chest injury'],
@@ -2793,7 +2793,7 @@ export const caseDatabase: CaseScenario[] = [
     subcategory: 'stroke',
     priority: 'critical',
     complexity: 'advanced',
-    yearLevels: ['3rd-year', '4th-year'],
+    yearLevels: ['2nd-year', '3rd-year', '4th-year'],
     dispatchInfo: {
       callReason: 'Husband suddenly cannot speak or move right side',
       timeOfDay: 'morning',
@@ -2818,7 +2818,7 @@ export const caseDatabase: CaseScenario[] = [
       generalImpression: 'Elderly male, slumped in chair, facial droop obvious',
       position: 'Sitting, leaning to right',
       appearance: 'Alert but unable to communicate',
-      consciousness: 'Alert'
+      consciousness: 'Confused - expressive aphasia'
     },
     abcde: {
       airway: {
@@ -2896,7 +2896,7 @@ export const caseDatabase: CaseScenario[] = [
     },
     studentChecklist: [
       { id: 'n1-1', category: 'abcde', description: 'Perform FAST assessment', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
-      { id: 'n1-2', category: 'history', description: 'Establish exact time last known well', points: 15, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'], critical: true },
+      { id: 'n1-2', category: 'history', description: 'Establish exact time last known well', points: 15, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['basic', 'intermediate', 'advanced', 'expert'], critical: true },
       { id: 'n1-3', category: 'intervention', description: 'Check blood glucose', points: 5, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
       { id: 'n1-4', category: 'intervention', description: 'IV access', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
       { id: 'n1-5', category: 'intervention', description: 'Do NOT give food or drink', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
@@ -3418,7 +3418,7 @@ export const caseDatabase: CaseScenario[] = [
     category: 'neurological',
     priority: 'critical',
     complexity: 'advanced',
-    yearLevels: ['3rd-year', '4th-year'],
+    yearLevels: ['2nd-year', '3rd-year', '4th-year'], // 2nd-year stretch: meningitis presentation recognition
     dispatchInfo: {
       callReason: 'Fever, severe headache, neck stiffness',
       timeOfDay: 'morning',
@@ -5298,7 +5298,7 @@ export const caseDatabase: CaseScenario[] = [
         gcs: { eye: 4, verbal: 5, motor: 6, total: 15 },
         pupils: 'Equal and reactive',
         bloodGlucose: 5.4,
-        findings: ['Mild confusion'],
+        findings: ['Alert but mildly fatigued'],
         interventions: []
       },
       exposure: {
@@ -5315,7 +5315,7 @@ export const caseDatabase: CaseScenario[] = [
       pelvis: ['Normal'],
       extremities: ['Normal'],
       posterior: ['Normal'],
-      neurological: ['Mild confusion']
+      neurological: ['Alert, mildly fatigued']
     },
     history: {
       medications: [],
@@ -5764,7 +5764,7 @@ export const caseDatabase: CaseScenario[] = [
     category: 'pediatric',
     priority: 'high',
     complexity: 'intermediate',
-    yearLevels: ['3rd-year', '4th-year'],
+    yearLevels: ['2nd-year', '3rd-year', '4th-year'],
     estimatedDuration: 25,
     dispatchInfo: {
       callReason: 'Child having seizure, very hot, mother screaming',
@@ -6314,7 +6314,7 @@ export const caseDatabase: CaseScenario[] = [
         interventions: ['Monitor GCS', 'Prepare for intubation']
       },
       exposure: {
-        temperature: 36.8,
+        temperature: 37.8,
         findings: ['Profuse sweating (diaphoresis)', 'Salivation', 'Urine incontinence', 'Chemical smell on clothes/skin'],
         interventions: ['REMOVE ALL CONTAMINATED CLOTHING', 'DECONTAMINATE SKIN', 'Provider PPE critical']
       }
@@ -7238,9 +7238,10 @@ export const caseDatabase: CaseScenario[] = [
   // CARDIAC CASE 005 - Stable Angina (Basic/Diploma)
   createCase({
     id: 'cardiac-005',
-    title: 'Stable Angina - Chest Pain at Rest',
+    title: 'Stable Angina - Exertional Chest Pain',
     category: 'cardiac',
-    priority: 'low',
+    subcategory: 'stable-angina',
+    priority: 'moderate',
     complexity: 'basic',
     yearLevels: ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
     estimatedDuration: 15,
@@ -7842,7 +7843,7 @@ export const caseDatabase: CaseScenario[] = [
     secondarySurvey: {
       head: ['Diaphoretic', 'No trauma'],
       neck: ['JVD present', 'Trachea central'],
-      chest: ['Clear lungs', 'Heart sounds muffled'],
+      chest: ['Clear lungs', 'Heart sounds present — possible S3/S4 from RV strain'],
       abdomen: ['Soft, non-tender'],
       pelvis: ['Stable'],
       extremities: ['Cool extremities'],
@@ -8031,7 +8032,7 @@ export const caseDatabase: CaseScenario[] = [
     id: 'cardiac-008',
     title: 'Chest Pain with Known LBBB - Possible Occlusion MI',
     category: 'cardiac',
-    subcategory: 'nstemi',
+    subcategory: 'lbbb-stemi',
     priority: 'critical',
     complexity: 'expert',
     yearLevels: ['4th-year'],
@@ -8552,6 +8553,7 @@ export const caseDatabase: CaseScenario[] = [
     id: 'cardiac-010',
     title: 'Syncope - Rule Out Cardiac Cause',
     category: 'cardiac',
+    subcategory: 'syncope',
     priority: 'high',
     complexity: 'intermediate',
     yearLevels: ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
@@ -8830,9 +8832,10 @@ export const caseDatabase: CaseScenario[] = [
     id: 'cardiac-011',
     title: 'Acute Decompensated Heart Failure - "Crashing Asthma"',
     category: 'cardiac',
+    subcategory: 'heart-failure',
     priority: 'high',
     complexity: 'advanced',
-    yearLevels: ['3rd-year', '4th-year'],
+    yearLevels: ['2nd-year', '3rd-year', '4th-year'],
     estimatedDuration: 25,
     dispatchInfo: {
       callReason: 'Cannot breathe, asthma attack',
@@ -8939,9 +8942,9 @@ export const caseDatabase: CaseScenario[] = [
       { id: 'c11-1', category: 'abcde', description: 'Recognize pulmonary edema (crackles, wheezing, JVD, edema)', points: 20, yearLevel: ['3rd-year', '4th-year', 'diploma'], complexity: ['intermediate', 'advanced'], critical: true },
       { id: 'c11-2', category: 'intervention', description: 'High-flow oxygen, consider CPAP', points: 20, yearLevel: ['3rd-year', '4th-year', 'diploma'], complexity: ['intermediate', 'advanced'], critical: true },
       { id: 'c11-3', category: 'intervention', description: 'Nitroglycerin for preload/afterload reduction', points: 20, yearLevel: ['4th-year'], complexity: ['advanced', 'expert'] },
-      { id: 'c11-4', category: 'history', description: 'Ask about history of heart failure, recent medication changes', points: 15, yearLevel: ['2nd-year', '3rd-year', 'diploma'], complexity: ['basic', 'intermediate'] },
-      { id: 'c11-5', category: 'intervention', description: 'Position upright (improves breathing)', points: 10, yearLevel: ['2nd-year', 'diploma'], complexity: ['basic'] },
-      { id: 'c11-6', category: 'communication', description: 'Rapid transport to hospital', points: 10, yearLevel: ['2nd-year', '3rd-year', 'diploma'], complexity: ['basic', 'intermediate'], critical: true }
+      { id: 'c11-4', category: 'history', description: 'Ask about history of heart failure, recent medication changes', points: 15, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate'] },
+      { id: 'c11-5', category: 'intervention', description: 'Position upright (improves breathing)', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic'] },
+      { id: 'c11-6', category: 'communication', description: 'Rapid transport to hospital', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate'], critical: true }
     ],
     teachingPoints: [
       "Cardiac asthma: Wheezing from pulmonary edema, easily confused with asthma/ COPD",
@@ -9123,6 +9126,7 @@ export const caseDatabase: CaseScenario[] = [
     id: 'cardiac-012',
     title: 'Possible Pacemaker Malfunction - Dizziness and Fatigue',
     category: 'cardiac',
+    subcategory: 'junctional',
     priority: 'high',
     complexity: 'expert',
     yearLevels: ['4th-year'],
@@ -10344,7 +10348,7 @@ export const caseDatabase: CaseScenario[] = [
     subcategory: 'bradycardia',
     priority: 'high',
     complexity: 'advanced',
-    yearLevels: ['3rd-year', '4th-year'],
+    yearLevels: ['2nd-year', '3rd-year', '4th-year'], // 2nd-year stretch: bradycardia recognition and medication history
     estimatedDuration: 25,
     dispatchInfo: {
       callReason: 'Neighbour reports elderly male confused and unresponsive in chair',
@@ -10550,7 +10554,7 @@ export const caseDatabase: CaseScenario[] = [
     subcategory: 'heart-block',
     priority: 'critical',
     complexity: 'advanced',
-    yearLevels: ['3rd-year', '4th-year'],
+    yearLevels: ['2nd-year', '3rd-year', '4th-year'], // 2nd-year stretch: ECG pattern recognition of CHB
     estimatedDuration: 25,
     dispatchInfo: {
       callReason: 'Collapse in shopping centre, brief loss of consciousness, now conscious',
@@ -11099,6 +11103,49 @@ export const priorities = [
   { value: 'moderate', label: 'Moderate', color: 'text-yellow-600 bg-yellow-100 dark:bg-yellow-900/30' },
   { value: 'low', label: 'Low', color: 'text-green-600 bg-green-100 dark:bg-green-900/30' },
 ];
+
+// ============================================================================
+// CONDITIONS INDEX — maps condition names to case IDs for fast lookup
+// Built from mostLikelyDiagnosis and differentialDiagnoses across all cases
+// ============================================================================
+
+export const conditionsIndex: Map<string, string[]> = (() => {
+  const index = new Map<string, string[]>();
+  for (const c of allCases) {
+    const diagnoses: string[] = [];
+    if (c.expectedFindings?.mostLikelyDiagnosis) {
+      diagnoses.push(c.expectedFindings.mostLikelyDiagnosis);
+    }
+    if (c.expectedFindings?.differentialDiagnoses) {
+      diagnoses.push(...c.expectedFindings.differentialDiagnoses);
+    }
+    for (const dx of diagnoses) {
+      const normalized = dx.trim();
+      if (!normalized) continue;
+      const existing = index.get(normalized) || [];
+      if (!existing.includes(c.id)) {
+        existing.push(c.id);
+      }
+      index.set(normalized, existing);
+    }
+  }
+  return index;
+})();
+
+/** Sorted list of all unique condition names for the search dropdown */
+export const allConditionNames: string[] = [...conditionsIndex.keys()].sort((a, b) =>
+  a.localeCompare(b, undefined, { sensitivity: 'base' })
+);
+
+/** Get cases matching a specific condition (as primary or differential) filtered by year */
+export const getCasesByCondition = (condition: string, yearLevel?: string): CaseScenario[] => {
+  const caseIds = conditionsIndex.get(condition) || [];
+  let cases = caseIds.map(id => allCases.find(c => c.id === id)).filter(Boolean) as CaseScenario[];
+  if (yearLevel) {
+    cases = cases.filter(c => c.yearLevels?.includes(yearLevel as any));
+  }
+  return cases;
+};
 
 // Get case statistics
 export const getCaseStatistics = () => {

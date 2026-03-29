@@ -69,12 +69,19 @@ export function BodyRegion({ def, isAssessed, onRegionClick }: BodyRegionProps) 
     opacity: def.id === 'posterior-logroll' ? 0.6 : 1,
   };
 
-  // Compound region (extremities, chest with shoulders, pelvis with hips)
+  // Compound region (chest with shoulders, pelvis with hips, individual limbs with joints)
   if (def.children && def.children.length > 0) {
+    // Compute a tooltip position based on the region's main geometry
+    const tooltipPos: [number, number, number] = [
+      def.position[0] + (def.position[0] >= 0 ? 0.4 : -0.4),
+      def.position[1],
+      0,
+    ];
+
     return (
       <group>
-        {/* Main mesh (if not just a placeholder) */}
-        {def.id !== 'extremities' && (() => {
+        {/* Main mesh */}
+        {(() => {
           const geo = createGeometry(def.geometry);
           return (
             <mesh
@@ -113,7 +120,7 @@ export function BodyRegion({ def, isAssessed, onRegionClick }: BodyRegionProps) 
         {/* Tooltip */}
         {hovered && (
           <Html
-            position={def.id === 'extremities' ? [0.9, 2.5, 0] : [0.6, def.position[1], 0]}
+            position={tooltipPos}
             distanceFactor={5}
             zIndexRange={[100, 0]}
           >

@@ -518,11 +518,31 @@ export function applyTreatmentEffectEnhanced(
   if (desc.includes('insulin')) {
     if (newVitals.bloodGlucose && newVitals.bloodGlucose > 15) {
       const oldGlucose = newVitals.bloodGlucose;
-      newVitals.bloodGlucose = Math.max(8, newVitals.bloodGlucose - 8);
+      newVitals.bloodGlucose = Math.max(8, newVitals.bloodGlucose - 4);
       recordImprovement('Glucose', oldGlucose, newVitals.bloodGlucose, ' mmol/L');
     }
   }
   
+  // ============ CHEST SEAL / OCCLUSIVE DRESSING — Open pneumothorax ============
+  if (desc.includes('chest seal') || desc.includes('occlusive dressing') || desc.includes('3-sided') || desc.includes('3 sided')) {
+    if (caseType === 'respiratory' || caseType === 'trauma') {
+      // Sealing the wound restores chest wall integrity → improved ventilation
+      if (newVitals.spo2 < 94) {
+        newVitals.spo2 = Math.min(96, newVitals.spo2 + 8);
+        recordImprovement('SpO₂', originalVitals.spo2, newVitals.spo2, '%');
+      }
+      if (newVitals.respiration > 24) {
+        newVitals.respiration = Math.max(18, newVitals.respiration - 6);
+        recordImprovement('RR', originalVitals.respiration, newVitals.respiration);
+      }
+      // Reduced respiratory distress lowers compensatory tachycardia
+      if (newVitals.pulse > 100) {
+        newVitals.pulse = Math.max(80, newVitals.pulse - 10);
+        recordImprovement('HR', originalVitals.pulse, newVitals.pulse);
+      }
+    }
+  }
+
   // ============ NEEDLE DECOMPRESSION/CHEST DRAIN ============
   if (desc.includes('needle decompress') || desc.includes('chest drain') || desc.includes('thoracostomy')) {
     if (caseType === 'respiratory' || caseType === 'trauma') {

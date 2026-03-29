@@ -9,14 +9,16 @@
 import { useState, useRef, useCallback, useMemo } from 'react';
 import { useGLTF } from '@react-three/drei';
 import { Html } from '@react-three/drei';
+import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { ThreeEvent } from '@react-three/fiber';
-import { SKIN_COLOR, HOVER_COLOR, ASSESSED_COLOR } from './bodyRegions';
+import { SKIN_COLOR, HOVER_COLOR, ASSESSED_COLOR, ACTIVE_COLOR } from './bodyRegions';
 import type { SecondaryAssessmentStep } from '@/data/assessmentFramework';
 
 interface BodyMeshProps {
   assessedRegions: Set<string>;
   onRegionClick: (stepId: string) => void;
+  requiredRegions?: Set<string>;
 }
 
 /**
@@ -48,16 +50,31 @@ interface RegionRange {
 //   Groin:           ~0.83
 //   Knees:           ~0.48
 //   Feet:            ~0.00
-const REGION_RANGES: RegionRange[] = [
+interface ExtendedRegionRange extends RegionRange {
+  /** X offset for limb highlights (arms/legs are not centered) */
+  xOffset?: number;
+  /** Custom radius for the highlight overlay */
+  highlightRadius?: number;
+}
+
+const REGION_RANGES: ExtendedRegionRange[] = [
   { id: 'head', label: 'Head', description: 'Inspect and palpate scalp, skull, ears', yMin: 1.71, yMax: 1.81 },
   { id: 'face', label: 'Face', description: 'Eyes, nose, mouth, jaw, facial symmetry', yMin: 1.565, yMax: 1.71 },
   { id: 'neck-cspine', label: 'Neck & C-Spine', description: 'Trachea, JVD, C-spine, subcutaneous emphysema', yMin: 1.44, yMax: 1.565 },
   { id: 'chest', label: 'Chest', description: 'Inspect, palpate, percuss, auscultate', yMin: 1.20, yMax: 1.44 },
   { id: 'abdomen', label: 'Abdomen', description: 'Inspect, auscultate, percuss, palpate', yMin: 0.98, yMax: 1.20 },
   { id: 'pelvis', label: 'Pelvis', description: 'Stability test, perineal inspection', yMin: 0.83, yMax: 0.98 },
-  { id: 'extremities', label: 'Extremities', description: 'Pulses, sensation, motor, deformity', yMin: 0.0, yMax: 0.83 },
+  // Arms — positioned laterally (x offset from center)
+  { id: 'right-arm', label: 'Right Arm', description: 'Pulses, sensation, motor, deformity', yMin: 0.60, yMax: 1.40, xOffset: -0.45, highlightRadius: 0.08 },
+  { id: 'left-arm', label: 'Left Arm', description: 'Pulses, sensation, motor, deformity', yMin: 0.60, yMax: 1.40, xOffset: 0.45, highlightRadius: 0.08 },
+  // Legs — positioned laterally
+  { id: 'right-leg', label: 'Right Leg', description: 'Pulses, sensation, motor, deformity', yMin: 0.0, yMax: 0.83, xOffset: -0.10, highlightRadius: 0.08 },
+  { id: 'left-leg', label: 'Left Leg', description: 'Pulses, sensation, motor, deformity', yMin: 0.0, yMax: 0.83, xOffset: 0.10, highlightRadius: 0.08 },
   { id: 'posterior-logroll', label: 'Posterior / Log Roll', description: 'Log roll with C-spine control. Palpate entire spine.', yMin: 0.83, yMax: 1.565, condition: 'back' },
 ];
+
+// Amber color for required-but-unassessed regions
+const REQUIRED_UNASSESSED_COLOR = '#f59e0b';
 
 // Track which specific limb was clicked for exam panel filtering
 export type LimbSide = 'right-arm' | 'left-arm' | 'right-leg' | 'left-leg' | null;
@@ -74,17 +91,24 @@ function getRegionAtPoint(point: THREE.Vector3): RegionRange | null {
   // Arms detection: if click is lateral (|X| > threshold) AND in the
   // torso Y range, it's an arm, not chest/abdomen. The model's arms
   // extend outward from X ≈ ±0.20 at shoulders to ±0.85 at hands.
+  //
+  // Use a graduated X threshold: near the shoulder (Y 1.2-1.44) the arms
+  // are closer to the body midline, so use a lower threshold (0.15).
+  // Below the shoulder (Y < 1.2) arms extend further out, use 0.20.
   const absX = Math.abs(point.x);
-  if (absX > 0.20 && point.y >= 0.60 && point.y < 1.44) {
+  const armXThreshold = point.y >= 1.20 ? 0.15 : 0.20;
+  if (absX > armXThreshold && point.y >= 0.60 && point.y < 1.44) {
     // Determine which arm based on X sign (model faces forward, +X = model's left = viewer's right)
-    lastClickedLimb = point.x > 0 ? 'left-arm' : 'right-arm';
-    return REGION_RANGES.find(r => r.id === 'extremities') || null;
+    const limbId = point.x > 0 ? 'left-arm' : 'right-arm';
+    lastClickedLimb = limbId;
+    return { id: limbId as SecondaryAssessmentStep, label: limbId === 'left-arm' ? 'Left Arm' : 'Right Arm', description: 'Pulses, sensation, motor, deformity', yMin: 0.60, yMax: 1.44 };
   }
 
   // Legs detection: below pelvis, determine left vs right by X
   if (point.y < 0.83) {
-    lastClickedLimb = point.x > 0 ? 'left-leg' : 'right-leg';
-    return REGION_RANGES.find(r => r.id === 'extremities') || null;
+    const limbId = point.x > 0 ? 'left-leg' : 'right-leg';
+    lastClickedLimb = limbId;
+    return { id: limbId as SecondaryAssessmentStep, label: limbId === 'left-leg' ? 'Left Leg' : 'Right Leg', description: 'Pulses, sensation, motor, deformity', yMin: 0.0, yMax: 0.83 };
   }
 
   // Clear limb selection for non-extremity clicks
@@ -94,11 +118,13 @@ function getRegionAtPoint(point: THREE.Vector3): RegionRange | null {
   return REGION_RANGES.find(r => !r.condition && point.y >= r.yMin && point.y < r.yMax) || null;
 }
 
-export function BodyMesh({ assessedRegions, onRegionClick }: BodyMeshProps) {
+export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions }: BodyMeshProps) {
   const { scene } = useGLTF('/models/patient.glb');
   const [hoveredRegion, setHoveredRegion] = useState<RegionRange | null>(null);
   const [tooltipPos, setTooltipPos] = useState<[number, number, number]>([0, 0, 0]);
   const meshRef = useRef<THREE.Group>(null);
+  // For pulsing animation on required regions
+  const pulseRef = useRef(0);
 
   // Clone the scene so we can modify materials
   const clonedScene = useMemo(() => {
@@ -132,16 +158,16 @@ export function BodyMesh({ assessedRegions, onRegionClick }: BodyMeshProps) {
     });
   }, []);
 
+  // Drive continuous rendering for pulse animation when required regions exist
+  useFrame((_, delta) => {
+    if (requiredRegions && requiredRegions.size > 0) {
+      pulseRef.current += delta;
+    }
+  });
+
   const handlePointerMove = useCallback((e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
     const point = e.point;
-    // Detect limb side for hover tooltip before getRegionAtPoint (which also sets lastClickedLimb)
-    const absX = Math.abs(point.x);
-    if (absX > 0.20 && point.y >= 0.60 && point.y < 1.44) {
-      lastClickedLimb = point.x > 0 ? 'left-arm' : 'right-arm';
-    } else if (point.y < 0.83) {
-      lastClickedLimb = point.x > 0 ? 'left-leg' : 'right-leg';
-    }
     const region = getRegionAtPoint(point);
 
     if (region !== hoveredRegion) {
@@ -171,42 +197,91 @@ export function BodyMesh({ assessedRegions, onRegionClick }: BodyMeshProps) {
   // Render region highlight overlays using transparent cylinders
   const regionHighlights = useMemo(() => {
     const highlights: JSX.Element[] = [];
+    const required = requiredRegions || new Set<string>();
+    // Compute pulse opacity for amber ring
+    const pulseOpacity = 0.15 + Math.sin(pulseRef.current * 3) * 0.1;
 
     for (const region of REGION_RANGES) {
       if (region.condition === 'back') continue; // Don't show overlay for posterior
 
-      const isAssessed = assessedRegions.has(region.id);
+      const isLimbId = region.id === 'right-arm' || region.id === 'left-arm' || region.id === 'right-leg' || region.id === 'left-leg';
+      const isAssessed = assessedRegions.has(region.id) || (isLimbId && assessedRegions.has('extremities'));
       const isHovered = hoveredRegion?.id === region.id;
+      const isRequired = required.has(region.id);
 
-      if (!isAssessed && !isHovered) continue;
+      // Show highlights for: assessed, hovered, or required-but-unassessed
+      if (!isAssessed && !isHovered && !isRequired) continue;
 
       const height = region.yMax - region.yMin;
       const centerY = region.yMin + height / 2;
-      // Width varies by body part
-      const radius = region.id === 'head' || region.id === 'face' ? 0.12
-        : region.id === 'neck-cspine' ? 0.08
-        : region.id === 'extremities' ? 0.25
-        : 0.18;
+      const xOffset = (region as ExtendedRegionRange).xOffset || 0;
+      // Width varies by body part — use custom radius if defined
+      const radius = (region as ExtendedRegionRange).highlightRadius
+        || (region.id === 'head' || region.id === 'face' ? 0.12
+          : region.id === 'neck-cspine' ? 0.08
+          : 0.18);
+
+      // Determine color and opacity based on state
+      let color: string;
+      let opacity: number;
+
+      if (isAssessed && isRequired) {
+        color = ASSESSED_COLOR;
+        opacity = isHovered ? 0.5 : 0.35;
+      } else if (isAssessed) {
+        color = ASSESSED_COLOR;
+        opacity = isHovered ? 0.45 : 0.25;
+      } else if (isRequired && !isAssessed) {
+        // Required but not yet assessed: pulsing amber
+        color = REQUIRED_UNASSESSED_COLOR;
+        opacity = isHovered ? 0.5 : pulseOpacity;
+      } else {
+        // Hovered: bright cyan
+        color = HOVER_COLOR;
+        opacity = 0.45;
+      }
 
       highlights.push(
         <mesh
           key={region.id}
-          position={[0, centerY, 0]}
+          position={[xOffset, centerY, 0]}
         >
           <cylinderGeometry args={[radius, radius, height, 16, 1, true]} />
           <meshStandardMaterial
-            color={isAssessed ? ASSESSED_COLOR : HOVER_COLOR}
+            color={color}
             transparent
-            opacity={isHovered ? 0.35 : 0.2}
+            opacity={opacity}
             side={THREE.DoubleSide}
             depthWrite={false}
           />
         </mesh>
       );
+
+      // Phase 2B: Add emissive outline ring for required unassessed regions
+      if (isRequired && !isAssessed) {
+        highlights.push(
+          <mesh
+            key={`${region.id}-ring`}
+            position={[xOffset, centerY, 0]}
+          >
+            <cylinderGeometry args={[radius + 0.005, radius + 0.005, height, 16, 1, true]} />
+            <meshStandardMaterial
+              color={REQUIRED_UNASSESSED_COLOR}
+              transparent
+              opacity={pulseOpacity * 1.5}
+              side={THREE.DoubleSide}
+              depthWrite={false}
+              emissive={REQUIRED_UNASSESSED_COLOR}
+              emissiveIntensity={0.3 + Math.sin(pulseRef.current * 3) * 0.2}
+            />
+          </mesh>
+        );
+      }
     }
 
     return highlights;
-  }, [assessedRegions, hoveredRegion]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assessedRegions, hoveredRegion, requiredRegions, pulseRef.current]);
 
   return (
     <group ref={meshRef}>
@@ -226,11 +301,12 @@ export function BodyMesh({ assessedRegions, onRegionClick }: BodyMeshProps) {
         <Html position={tooltipPos} distanceFactor={4} zIndexRange={[100, 0]}>
           <div className="px-3 py-2 rounded-xl bg-black/90 text-white text-xs font-medium pointer-events-none shadow-xl border border-white/10 backdrop-blur-sm max-w-[220px]">
             <div className="font-bold text-sm">
-              {hoveredRegion.id === 'extremities' && lastClickedLimb
-                ? { 'right-arm': 'Right Arm', 'left-arm': 'Left Arm', 'right-leg': 'Right Leg', 'left-leg': 'Left Leg' }[lastClickedLimb] || hoveredRegion.label
-                : hoveredRegion.label}
-              {assessedRegions.has(hoveredRegion.id) && (
-                <span className="ml-1.5 text-green-400">✓</span>
+              {hoveredRegion.label}
+              {(assessedRegions.has(hoveredRegion.id) || ((hoveredRegion.id === 'right-arm' || hoveredRegion.id === 'left-arm' || hoveredRegion.id === 'right-leg' || hoveredRegion.id === 'left-leg') && assessedRegions.has('extremities'))) && (
+                <span className="ml-1.5 text-green-400">{'\u2713'}</span>
+              )}
+              {requiredRegions?.has(hoveredRegion.id) && !assessedRegions.has(hoveredRegion.id) && (
+                <span className="ml-1.5 text-amber-400 text-[10px]">required</span>
               )}
             </div>
             <div className="text-[10px] text-white/60 mt-0.5 max-w-[200px] leading-relaxed">

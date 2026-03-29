@@ -19,7 +19,7 @@ export const additionalRespiratoryCases: CaseScenario[] = [
     category: 'respiratory',
     priority: 'high',
     complexity: 'advanced',
-    yearLevels: ['3rd-year', '4th-year'],
+    yearLevels: ['2nd-year', '3rd-year', '4th-year'],
     estimatedDuration: 25,
     dispatchInfo: {
       callReason: 'Elderly man struggling to breathe, known COPD',
@@ -93,7 +93,7 @@ export const additionalRespiratoryCases: CaseScenario[] = [
       pelvis: ['Normal'],
       extremities: ['Peripheral cyanosis', 'Asterixis (CO2 retention flap)', 'Peripheral oedema bilateral — cor pulmonale (right heart failure)'],
       posterior: ['Normal'],
-      neurological: ['CO2 retention causing confusion']
+      neurological: ['At risk of CO2 retention — monitor for confusion']
     },
     history: {
       medications: [
@@ -117,9 +117,9 @@ export const additionalRespiratoryCases: CaseScenario[] = [
       mostLikelyDiagnosis: 'Acute on Chronic Type 2 Respiratory Failure'
     },
     studentChecklist: [
-      { id: 'resp5-1', category: 'abcde', description: 'Controlled oxygen therapy 88-92%', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced', 'expert'], critical: true },
-      { id: 'resp5-2', category: 'intervention', description: 'Nebulized bronchodilators', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced', 'expert'] },
-      { id: 'resp5-3', category: 'abcde', description: 'Assess for CO2 retention (flap, headache, drowsiness)', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced', 'expert'] },
+      { id: 'resp5-1', category: 'abcde', description: 'Controlled oxygen therapy 88-92%', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'], critical: true },
+      { id: 'resp5-2', category: 'intervention', description: 'Nebulized bronchodilators', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
+      { id: 'resp5-3', category: 'abcde', description: 'Assess for CO2 retention (flap, headache, drowsiness)', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
       { id: 'resp5-4', category: 'intervention', description: 'Consider NIV (BiPAP) early', points: 15, yearLevel: ['4th-year'], complexity: ['expert'] },
       { id: 'resp5-5', category: 'intervention', description: 'Systemic steroids', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced', 'expert'] }
     ],
@@ -372,7 +372,7 @@ export const additionalRespiratoryCases: CaseScenario[] = [
     },
     secondarySurvey: {
       head: ['Normal'],
-      neck: ['Trachea deviated to left', 'No JVD'],
+      neck: ['Trachea deviated to left', 'JVD present'],
       chest: ['Right chest bruising', 'Tender ribs 4-6', 'Decreased air entry right', 'Hyper-resonant'],
       abdomen: ['Normal'],
       pelvis: ['Normal'],
@@ -691,7 +691,7 @@ export const additionalRespiratoryCases: CaseScenario[] = [
       eventsLeading: 'Started with cold symptoms 2 days ago, barking cough started tonight'
     },
     vitalSignsProgression: {
-      initial: { bp: '90/55', pulse: 130, respiration: 40, spo2: 94, gcs: 13 }
+      initial: { bp: '90/55', pulse: 130, respiration: 40, spo2: 94, gcs: 15 }
     },
     expectedFindings: {
       keyObservations: ['Classic croup presentation', 'Stridor at rest indicates moderate severity'],
@@ -1536,7 +1536,7 @@ export const additionalRespiratoryCases: CaseScenario[] = [
         interventions: []
       },
       exposure: {
-        temperature: 36.8,
+        temperature: 39.0,
         findings: ['Fever 39°C', 'Rigors'],
         interventions: ['Antipyretics']
       }
@@ -1845,7 +1845,7 @@ export const additionalNeurologicalCases: CaseScenario[] = [
         interventions: ['Protect from light']
       },
       exposure: {
-        temperature: 36.8,
+        temperature: 40.0,
         findings: ['Fever 40°C', 'Non-blanching rash on legs'],
         interventions: ['Cooling measures']
       }
@@ -2829,7 +2829,7 @@ export const additionalPediatricCases: CaseScenario[] = [
         interventions: ['Buccal midazolam if prolonged >5 min']
       },
       exposure: {
-        temperature: 36.8,
+        temperature: 39.5,
         findings: ['Fever 39.5°C', 'No rash'],
         interventions: ['Cooling measures']
       }
@@ -3073,7 +3073,7 @@ export const additionalEnvironmentalCases: CaseScenario[] = [
     category: 'environmental',
     priority: 'critical',
     complexity: 'advanced',
-    yearLevels: ['3rd-year', '4th-year'],
+    yearLevels: ['2nd-year', '3rd-year', '4th-year'],
     estimatedDuration: 25,
     dispatchInfo: {
       callReason: 'Construction worker collapsed at site, very hot, confused',
@@ -3134,7 +3134,7 @@ export const additionalEnvironmentalCases: CaseScenario[] = [
         interventions: ['Rapid cooling', 'Benzodiazepines if seizing']
       },
       exposure: {
-        temperature: 36.8,
+        temperature: 41.5,
         findings: ['Core temperature 41.5°C', 'No sweating', 'Hot skin'],
         interventions: ['Aggressive cooling - ice packs, cold IV fluids']
       }
@@ -3173,18 +3173,18 @@ export const additionalEnvironmentalCases: CaseScenario[] = [
       transportConsiderations: ['Continue aggressive cooling during transport', 'Do not delay transport for full cooling - cool en route', 'Pre-alert hospital for cooling protocol', 'Air-conditioned ambulance essential', 'Monitor for seizures and cardiac arrhythmias', 'Rapid transport to ICU-capable facility']
     },
     studentChecklist: [
-      { id: 'env2-1', category: 'abcde', description: 'Recognize heat stroke (temp >40°C + altered LOC)', points: 15, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced', 'expert'], critical: true },
+      { id: 'env2-1', category: 'abcde', description: 'Recognize heat stroke (temp >40°C + altered LOC)', points: 15, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'], critical: true },
       { id: 'env2-2', category: 'intervention', description: 'Immediate aggressive cooling', points: 20, yearLevel: ['3rd-year', '4th-year'], complexity: ['expert'], critical: true },
       { id: 'env2-3', category: 'intervention', description: 'Cold IV fluids', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced', 'expert'] },
       { id: 'env2-4', category: 'abcde', description: 'Check for complications (rhabdomyolysis, DIC)', points: 10, yearLevel: ['4th-year'], complexity: ['expert'] },
-      { id: 'env2-5', category: 'abcde', description: 'Obtain accurate core temperature reading', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced'] },
-      { id: 'env2-6', category: 'abcde', description: 'Assess for anhidrosis (dry hot skin)', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced'] },
-      { id: 'env2-7', category: 'intervention', description: 'Remove clothing and apply ice packs to neck, axilla, groin', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced'] },
-      { id: 'env2-8', category: 'intervention', description: 'Evaporative cooling with mist and fan', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced', 'expert'] },
+      { id: 'env2-5', category: 'abcde', description: 'Obtain accurate core temperature reading', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['basic', 'intermediate', 'advanced'] },
+      { id: 'env2-6', category: 'abcde', description: 'Assess for anhidrosis (dry hot skin)', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['basic', 'intermediate', 'advanced'] },
+      { id: 'env2-7', category: 'intervention', description: 'Remove clothing and apply ice packs to neck, axilla, groin', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['basic', 'intermediate', 'advanced'] },
+      { id: 'env2-8', category: 'intervention', description: 'Evaporative cooling with mist and fan', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
       { id: 'env2-9', category: 'abcde', description: 'Monitor for seizures and administer benzodiazepines if needed', points: 15, yearLevel: ['4th-year'], complexity: ['expert'] },
       { id: 'env2-10', category: 'intervention', description: 'Aggressive IV fluid resuscitation', points: 15, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced', 'expert'] },
       { id: 'env2-11', category: 'communication', description: 'Pre-alert hospital for cooling protocol activation', points: 10, yearLevel: ['4th-year'], complexity: ['expert'] },
-      { id: 'env2-12', category: 'documentation', description: 'Document temperature and cooling interventions', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced'] }
+      { id: 'env2-12', category: 'documentation', description: 'Document temperature and cooling interventions', points: 5, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['basic', 'intermediate', 'advanced'] }
     ],
     teachingPoints: [
       'Heat stroke is a medical emergency - mortality increases with time to cooling',
@@ -4098,7 +4098,7 @@ export const additionalTraumaCases: CaseScenario[] = [
         interventions: ['Prevent further heat loss']
       },
       exposure: {
-        temperature: 36.8,
+        temperature: 32.0,
         findings: ['Hypothermia 32°C', 'Wet clothes'],
         interventions: ['Remove wet clothes', 'Active rewarming', 'Warm blankets']
       }

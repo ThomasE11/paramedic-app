@@ -287,6 +287,39 @@ export const TREATMENTS: Treatment[] = [
     ],
   },
 
+  {
+    id: 'chest_seal_vented',
+    name: 'Vented Chest Seal',
+    description: 'Vented chest seal for open pneumothorax — allows air to escape while preventing re-entry. Apply over sucking chest wound.',
+    category: 'breathing',
+    onset: 'fast',
+    onsetTimeSeconds: 15,
+    durationSeconds: 1,
+    icon: 'Shield',
+    color: 'red',
+    effects: [
+      { vitalSign: 'spo2', changeType: 'increase', value: 5, minValue: 70, maxValue: 96 },
+      { vitalSign: 'respiration', changeType: 'decrease', value: 3, minValue: 14 },
+      { vitalSign: 'pulse', changeType: 'decrease', value: 5, minValue: 60 },
+    ],
+  },
+  {
+    id: 'occlusive_dressing_3sided',
+    name: '3-Sided Occlusive Dressing',
+    description: '3-sided occlusive dressing for sucking chest wound — taped on three sides to create a flutter valve effect, allowing trapped air to escape on exhalation.',
+    category: 'breathing',
+    onset: 'fast',
+    onsetTimeSeconds: 15,
+    durationSeconds: 1,
+    icon: 'Square',
+    color: 'red',
+    effects: [
+      { vitalSign: 'spo2', changeType: 'increase', value: 4, minValue: 70, maxValue: 96 },
+      { vitalSign: 'respiration', changeType: 'decrease', value: 2, minValue: 14 },
+      { vitalSign: 'pulse', changeType: 'decrease', value: 3, minValue: 60 },
+    ],
+  },
+
   // ===== CIRCULATION TREATMENTS =====
   {
     id: 'iv_access',
@@ -409,6 +442,22 @@ export const TREATMENTS: Treatment[] = [
       { vitalSign: 'pulse', changeType: 'set', value: 80 },
       { vitalSign: 'bp', changeType: 'set', value: 100 }, // Systolic
       { vitalSign: 'spo2', changeType: 'increase', value: 10, minValue: 88, maxValue: 98 },
+    ],
+  },
+
+  {
+    id: 'aed',
+    name: 'Automated External Defibrillator (AED)',
+    description: 'Attach AED pads, follow voice prompts, deliver shock if advised',
+    category: 'circulation',
+    onset: 'immediate',
+    onsetTimeSeconds: 0,
+    durationSeconds: 1,
+    icon: 'Zap',
+    color: 'yellow',
+    effects: [
+      { vitalSign: 'pulse', changeType: 'set', value: 80 },
+      { vitalSign: 'spo2', changeType: 'increase', value: 10, maxValue: 98 },
     ],
   },
 

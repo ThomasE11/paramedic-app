@@ -2587,7 +2587,7 @@ export const firstYearCases: CaseScenario[] = [
     id: 'y1-013',
     title: 'Middle-Aged Adult - Palpitations',
     category: 'cardiac',
-    subcategory: 'arrhythmia-svt',
+    subcategory: 'sinus-tachycardia',
     priority: 'moderate',
     complexity: 'basic',
     yearLevels: ['1st-year', 'diploma'],

@@ -48,6 +48,10 @@ export const TREATMENT_YEAR_ACCESS: Record<string, StudentYear[]> = {
   nebulizer_ipratropium:['2nd-year', '3rd-year', '4th-year'],
   nebulised_adrenaline: ['2nd-year', '3rd-year', '4th-year'],
 
+  // ----- BREATHING (Year 2+ — chest wound management) -----
+  chest_seal_vented:          ['2nd-year', '3rd-year', '4th-year', 'diploma'],
+  occlusive_dressing_3sided:  ['2nd-year', '3rd-year', '4th-year', 'diploma'],
+
   // ----- BREATHING (Year 3+) -----
   needle_decompression: ['3rd-year', '4th-year'],
   cpap_niv:             ['3rd-year', '4th-year'],
@@ -82,9 +86,7 @@ export const TREATMENT_YEAR_ACCESS: Record<string, StudentYear[]> = {
   // ----- MEDICATIONS (Year 3+) -----
   morphine_5mg:         ['3rd-year', '4th-year'],
   fentanyl_50mcg:       ['3rd-year', '4th-year'],
-  fentanyl_bolus:       ['3rd-year', '4th-year'],
   midazolam_5mg:        ['3rd-year', '4th-year'],
-  midazolam_bolus:      ['3rd-year', '4th-year'],
   midazolam_buccal:     ['3rd-year', '4th-year'],
   buccal_midazolam:     ['3rd-year', '4th-year'],
   adenosine_6mg:        ['3rd-year', '4th-year'],
@@ -93,7 +95,6 @@ export const TREATMENT_YEAR_ACCESS: Record<string, StudentYear[]> = {
   amiodarone_150mg:     ['3rd-year', '4th-year'],
   adrenaline_1mg:       ['3rd-year', '4th-year'],
   hydrocortisone_200mg: ['3rd-year', '4th-year'],
-  chlorphenamine:       ['3rd-year', '4th-year'],
   txa_1g:               ['3rd-year', '4th-year'],
   magnesium_2g:         ['3rd-year', '4th-year'],
   ondansetron_4mg:      ['3rd-year', '4th-year'],
@@ -102,8 +103,6 @@ export const TREATMENT_YEAR_ACCESS: Record<string, StudentYear[]> = {
   calcium_chloride:     ['3rd-year', '4th-year'],
   dextrose_10:          ['3rd-year', '4th-year'],
   naloxone_04mg:        ['3rd-year', '4th-year'],
-  clopidogrel:          ['3rd-year', '4th-year'],
-  enoxaparin:           ['3rd-year', '4th-year'],
   salbutamol_iv:        ['3rd-year', '4th-year'],
   intralipid:           ['3rd-year', '4th-year'],
 
@@ -154,6 +153,7 @@ export const TREATMENT_YEAR_ACCESS: Record<string, StudentYear[]> = {
   lorazepam_4mg:        ['3rd-year', '4th-year'],
   sugammadex:           ['4th-year'],
   adrenaline_im_child:  ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
+  adrenaline_im_infant: ['2nd-year', '3rd-year', '4th-year', 'diploma'],
   adrenaline_im_older:  ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
   dextrose_10_250ml:    ['2nd-year', '3rd-year', '4th-year'],
 
@@ -1036,7 +1036,7 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       triggerMinutes: 7,
       vitalChanges: { pulse: 135, spo2: 89, bpSystolicDelta: -15 },
       clinicalSigns: 'PVCs on monitor, BP dropping, skin cool and mottled, pain 9/10',
-      rhythm: 'Sinus Tachycardia with PVCs',
+      rhythm: 'Normal Sinus Rhythm',
     },
     {
       triggerMinutes: 12,

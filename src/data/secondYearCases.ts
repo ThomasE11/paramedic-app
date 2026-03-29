@@ -143,11 +143,11 @@ export const secondYearCases: CaseScenario[] = [
       head: ['Normal', 'No trauma', 'Cyanosis of oral mucosa'],
       neck: ['Trachea midline', 'No lymphadenopathy', 'Accessory muscle use visible'],
       chest: [
-        'Barrel chest appearance',
+        'Hyperinflated on percussion',
         'Bilateral wheeze',
-        'Increased anteroposterior diameter',
         'Use of accessory muscles',
-        'Chest hyperresonant to percussion'
+        'Chest hyperresonant to percussion',
+        'Equal expansion bilaterally'
       ],
       abdomen: ['Soft, non-tender', 'Moving with respiration'],
       pelvis: ['Normal'],
@@ -957,13 +957,13 @@ export const secondYearCases: CaseScenario[] = [
         interventions: ['Monitor BP', 'Establish IV if protocols allow']
       },
       disability: {
-        avpu: 'V',
+        avpu: 'A',
         gcs: { eye: 4, verbal: 3, motor: 5, total: 12 },
         pupils: ['Right: 3mm reactive', 'Left: 4mm sluggish'],
         bloodGlucose: 8.2,
         findings: [
           'Alert but aphasic (difficulty speaking)',
-          'GCS 12 (E4, V3, M5) - verbal component affected',
+          'GCS 12 (E4, V3, M5) - verbal component affected by aphasia, not consciousness',
           'Left pupil sluggish - possible uncal herniation sign',
           'Hyperglycemic (BSL 8.2) - may be stress response or diabetes',
           'Left-sided weakness (hemiparesis)',
@@ -3590,11 +3590,11 @@ export const secondYearCases: CaseScenario[] = [
       {
         id: 'y2-009-amiodarone',
         category: 'treatment',
-        description: 'Administer amiodarone 300mg IV after 3rd shock if still VF',
+        description: 'Administer amiodarone 300mg IV after 3rd shock if still VF (bonus — ALS skill)',
         points: 4,
-        yearLevel: ['3rd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
-        rationale: 'Amiodarone is indicated for refractory VF after 3rd shock'
+        rationale: 'Amiodarone is indicated for refractory VF after 3rd shock — 2nd-year bonus item, core skill at 3rd-year'
       },
       {
         id: 'y2-009-reversible-causes',

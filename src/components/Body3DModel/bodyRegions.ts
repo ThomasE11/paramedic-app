@@ -107,34 +107,48 @@ export const BODY_REGIONS: BodyRegionDef[] = [
       { geometry: { type: 'sphere', args: [0.12, 12, 12] }, position: [-0.22, 2.55, 0] },
     ],
   },
-  // ========== EXTREMITIES ==========
-  // All 4 limbs as one assessment region
+  // ========== RIGHT ARM ==========
   {
-    id: 'extremities',
-    label: 'Extremities',
-    description: 'All 4 limbs: pulses, sensation, motor, deformity, wounds, compartment syndrome signs',
-    geometry: { type: 'cylinder', args: [0.08, 0.07, 0.6, 12] }, // placeholder
-    position: [0, 2, 0],
+    id: 'right-arm',
+    label: 'Right Arm',
+    description: 'Pulses, sensation, motor, deformity, wounds, compartment syndrome signs',
+    geometry: { type: 'capsule', args: [0.065, 0.5, 8, 12] },
+    position: [0.52, 3.85, 0],
+    rotation: [0, 0, 0.12],
     children: [
-      // === RIGHT ARM ===
-      // Upper arm
-      { geometry: { type: 'capsule', args: [0.065, 0.5, 8, 12] }, position: [0.52, 3.85, 0], rotation: [0, 0, 0.12] },
       // Elbow joint
       { geometry: { type: 'sphere', args: [0.07, 10, 10] }, position: [0.56, 3.32, 0] },
       // Forearm
       { geometry: { type: 'capsule', args: [0.055, 0.48, 8, 12] }, position: [0.58, 2.85, 0], rotation: [0, 0, 0.05] },
       // Hand
       { geometry: { type: 'box', args: [0.08, 0.14, 0.04] }, position: [0.6, 2.38, 0], scale: [1.2, 1, 1] },
-
-      // === LEFT ARM ===
-      { geometry: { type: 'capsule', args: [0.065, 0.5, 8, 12] }, position: [-0.52, 3.85, 0], rotation: [0, 0, -0.12] },
+    ],
+  },
+  // ========== LEFT ARM ==========
+  {
+    id: 'left-arm',
+    label: 'Left Arm',
+    description: 'Pulses, sensation, motor, deformity, wounds, compartment syndrome signs',
+    geometry: { type: 'capsule', args: [0.065, 0.5, 8, 12] },
+    position: [-0.52, 3.85, 0],
+    rotation: [0, 0, -0.12],
+    children: [
+      // Elbow joint
       { geometry: { type: 'sphere', args: [0.07, 10, 10] }, position: [-0.56, 3.32, 0] },
+      // Forearm
       { geometry: { type: 'capsule', args: [0.055, 0.48, 8, 12] }, position: [-0.58, 2.85, 0], rotation: [0, 0, -0.05] },
+      // Hand
       { geometry: { type: 'box', args: [0.08, 0.14, 0.04] }, position: [-0.6, 2.38, 0], scale: [1.2, 1, 1] },
-
-      // === RIGHT LEG ===
-      // Thigh
-      { geometry: { type: 'capsule', args: [0.1, 0.65, 8, 12] }, position: [0.18, 2.0, 0] },
+    ],
+  },
+  // ========== RIGHT LEG ==========
+  {
+    id: 'right-leg',
+    label: 'Right Leg',
+    description: 'Pulses, sensation, motor, deformity, wounds, compartment syndrome signs',
+    geometry: { type: 'capsule', args: [0.1, 0.65, 8, 12] },
+    position: [0.18, 2.0, 0],
+    children: [
       // Knee joint
       { geometry: { type: 'sphere', args: [0.1, 10, 10] }, position: [0.18, 1.4, 0], scale: [1, 0.8, 1.1] },
       // Shin/calf
@@ -143,12 +157,23 @@ export const BODY_REGIONS: BodyRegionDef[] = [
       { geometry: { type: 'sphere', args: [0.06, 8, 8] }, position: [0.18, 0.25, 0] },
       // Foot
       { geometry: { type: 'box', args: [0.09, 0.06, 0.2] }, position: [0.18, 0.1, 0.06] },
-
-      // === LEFT LEG ===
-      { geometry: { type: 'capsule', args: [0.1, 0.65, 8, 12] }, position: [-0.18, 2.0, 0] },
+    ],
+  },
+  // ========== LEFT LEG ==========
+  {
+    id: 'left-leg',
+    label: 'Left Leg',
+    description: 'Pulses, sensation, motor, deformity, wounds, compartment syndrome signs',
+    geometry: { type: 'capsule', args: [0.1, 0.65, 8, 12] },
+    position: [-0.18, 2.0, 0],
+    children: [
+      // Knee joint
       { geometry: { type: 'sphere', args: [0.1, 10, 10] }, position: [-0.18, 1.4, 0], scale: [1, 0.8, 1.1] },
+      // Shin/calf
       { geometry: { type: 'capsule', args: [0.075, 0.62, 8, 12] }, position: [-0.18, 0.8, 0] },
+      // Ankle
       { geometry: { type: 'sphere', args: [0.06, 8, 8] }, position: [-0.18, 0.25, 0] },
+      // Foot
       { geometry: { type: 'box', args: [0.09, 0.06, 0.2] }, position: [-0.18, 0.1, 0.06] },
     ],
   },
@@ -164,9 +189,11 @@ export const BODY_REGIONS: BodyRegionDef[] = [
 
 /** Skin tone colors */
 export const SKIN_COLOR = '#d4a574';
-/** Highlight color for hovering */
-export const HOVER_COLOR = '#60a5fa';
-/** Color for assessed regions */
-export const ASSESSED_COLOR = '#22c55e';
+/** Highlight color for hovering — bright cyan, high contrast against skin */
+export const HOVER_COLOR = '#22d3ee';
+/** Color for assessed regions — bright green */
+export const ASSESSED_COLOR = '#4ade80';
+/** Color for the actively selected region — purple/violet, unmistakable */
+export const ACTIVE_COLOR = '#c084fc';
 /** Emissive intensity on hover */
 export const HOVER_EMISSIVE_INTENSITY = 0.5;

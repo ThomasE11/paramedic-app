@@ -951,6 +951,69 @@ export const TREATMENT_PROTOCOLS: TreatmentProtocol[] = [
   },
 
   // ===========================================================================
+  // OPEN PNEUMOTHORAX (SUCKING CHEST WOUND)
+  // ===========================================================================
+  {
+    condition: 'pneumothorax-open',
+    conditionName: 'Open Pneumothorax (Sucking Chest Wound)',
+    severityLevels: [
+      {
+        severity: 'severe',
+        description: 'Open pneumothorax — sucking chest wound with audible air entry, reduced breath sounds on affected side',
+        typicalVitals: {
+          pulse: [110, 140],
+          respiration: [26, 36],
+          spo2: [80, 90],
+          bpSystolic: [80, 100],
+        },
+        initialSounds: {
+          leftLung: 'diminished',
+          rightLung: 'clear',
+          heartSound: 'tachycardic',
+          additionalSounds: ['Audible sucking sound from wound', 'Bubbling at wound site', 'Subcutaneous emphysema'],
+          description: 'DIMINISHED breath sounds on the affected side. Audible sucking sound at wound site. Clear on opposite side.',
+        },
+        essentialTreatments: ['chest_seal_vented', 'oxygen_nonrebreather'],
+        optimalTreatments: ['chest_seal_vented', 'oxygen_nonrebreather', 'iv_access', 'fluids_500ml'],
+        beneficialTreatments: ['occlusive_dressing_3sided', 'iv_access', 'fluids_250ml', 'reassurance'],
+        contraindicatedTreatments: [],
+        deteriorationRate: 'rapid',
+        synergies: [
+          {
+            treatments: ['chest_seal_vented', 'oxygen_nonrebreather'],
+            synergyMultiplier: 2.2,
+            description: 'Sealing the wound restores chest wall integrity; high-flow O2 then improves oxygenation rapidly',
+          },
+          {
+            treatments: ['chest_seal_vented', 'oxygen_nonrebreather', 'fluids_500ml'],
+            synergyMultiplier: 2.5,
+            description: 'Full open PTX protocol: seal wound + oxygenate + volume replace for associated hypovolaemia from trauma',
+          },
+          {
+            treatments: ['occlusive_dressing_3sided', 'oxygen_nonrebreather'],
+            synergyMultiplier: 2.0,
+            description: '3-sided dressing creates flutter valve; combined with O2 improves ventilation. Vented chest seal preferred if available',
+          },
+        ],
+        positioningEffects: [
+          {
+            positionId: 'fowlers_position',
+            spo2Bonus: 2,
+            rrReduction: 2,
+            hrChange: -5,
+            description: 'Semi-upright position aids ventilation and reduces work of breathing',
+          },
+        ],
+        responseCeilings: {
+          partialCeiling: 20,
+          fullCeiling: 85,
+          timeToResponse: 90,
+        },
+      },
+    ],
+  },
+
+  // ===========================================================================
   // STROKE (CVA)
   // ===========================================================================
   {

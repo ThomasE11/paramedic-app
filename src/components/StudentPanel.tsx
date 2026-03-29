@@ -11,7 +11,22 @@
 
 import { useState, useCallback, useMemo, lazy, Suspense, useEffect, useRef } from 'react';
 import type { CaseScenario, StudentYear, CaseSession, VitalSigns, AppliedTreatment } from '@/types';
-import { allCases, getRandomCase, yearLevels, caseCategories } from '@/data/cases';
+
+function seededShuffle<T>(array: T[], seed: string): T[] {
+  const shuffled = [...array];
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    hash = ((hash << 5) - hash) + seed.charCodeAt(i);
+    hash |= 0;
+  }
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    hash = ((hash << 5) - hash + i) | 0;
+    const j = Math.abs(hash) % (i + 1);
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+import { allCases, getRandomCase, yearLevels, caseCategories, allConditionNames, getCasesByCondition } from '@/data/cases';
 import { ensureCompleteVitals } from '@/data/treatmentEffects';
 import { type Treatment, type TreatmentCategory, TREATMENTS } from '@/data/enhancedTreatmentEffects';
 import {
@@ -33,7 +48,7 @@ import {
   Ambulance, XCircle, Heart, Shield, ChevronRight, BarChart3,
   ClipboardCheck, Star, TrendingUp, TrendingDown, Minus, ExternalLink,
   RotateCcw, Zap, Volume2, Phone, Eye, Thermometer, ChevronDown, ChevronUp,
-  Wind, Droplets, Brain, Pill, Syringe
+  Wind, Droplets, Brain, Pill, Syringe, Search, Shuffle, Target
 } from 'lucide-react';
 import { toast } from 'sonner';
 // AuscultationPanel removed — sounds now play inline from 3D Physical Examination
@@ -123,6 +138,9 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
   const [currentCase, setCurrentCase] = useState<CaseScenario | null>(null);
   const [selectedYear, setSelectedYear] = useState<StudentYear>('3rd-year');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectionMode, setSelectionMode] = useState<'standard' | 'random-category' | 'condition'>('standard');
+  const [conditionSearch, setConditionSearch] = useState('');
+  const [selectedCondition, setSelectedCondition] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
   // Session tracking
@@ -170,7 +188,13 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
   } | null>(null);
 
   // Cardiac arrest management — integrated into existing flow
+  // arrestConfirmed: student has explicitly confirmed the arrest (via pulse check + button)
+  // arrestActive: the full arrest workflow (CPR timer, drug tracking) is running
+  const [arrestConfirmed, setArrestConfirmed] = useState(false);
   const [arrestActive, setArrestActive] = useState(false);
+  // Pulse check state
+  const [pulseCheckInProgress, setPulseCheckInProgress] = useState(false);
+  const [pulseCheckResult, setPulseCheckResult] = useState<string | null>(null);
   const [cprCycleTimer, setCprCycleTimer] = useState(120); // 2 min countdown
   const [cprCycleNumber, setCprCycleNumber] = useState(0);
   const [cprRunning, setCprRunning] = useState(false);
@@ -196,10 +220,10 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
   } = useGradualVitalChanges();
 
   useEffect(() => {
-    if (animatedVitals && !isVitalsAnimating) {
+    if (animatedVitals) {
       setCurrentVitals(animatedVitals);
     }
-  }, [animatedVitals, isVitalsAnimating]);
+  }, [animatedVitals]);
 
   // Timer effect
   useEffect(() => {
@@ -238,10 +262,11 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
     }
   }, [elapsedSeconds, caseStartTime, caseEndTime, phase, sceneTimeWarnings]);
 
-  // Cardiac arrest detection — activate arrest mode when patient enters arrest
+  // Cardiac arrest activation — only when student confirms (not automatic)
+  // The arrest workflow activates when arrestConfirmed is set to true (via the Confirm button)
   useEffect(() => {
     if (!patientState) return;
-    if (patientState.isInArrest && !arrestActive) {
+    if (arrestConfirmed && !arrestActive) {
       setArrestActive(true);
       setArrestStartTime(Date.now());
       setCprCycleNumber(0);
@@ -250,15 +275,17 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
       setAdrenalineDoses(0);
       setAmiodaroneDoses(0);
       setLastAdrenalineTime(null);
-      setArrestTimeline([{ time: Date.now(), event: 'Cardiac arrest detected', type: 'arrest-start' }]);
-      toast.error('CARDIAC ARREST', {
-        description: 'Patient is in cardiac arrest. Start CPR immediately. Apply defibrillator.',
+      setArrestTimeline([{ time: Date.now(), event: 'Cardiac arrest confirmed by student', type: 'arrest-start' }]);
+      toast.error('CARDIAC ARREST CONFIRMED', {
+        description: 'Start high-quality CPR immediately. Apply defibrillator. Follow ALS algorithm.',
         duration: 10000,
       });
     } else if (!patientState.isInArrest && arrestActive) {
       // ROSC achieved
       setArrestActive(false);
+      setArrestConfirmed(false);
       setCprRunning(false);
+      setPulseCheckResult(null);
       if (cprTimerRef.current) clearInterval(cprTimerRef.current);
       setArrestTimeline(prev => [...prev, { time: Date.now(), event: 'ROSC achieved', type: 'rosc' }]);
       toast.success('ROSC ACHIEVED', {
@@ -266,7 +293,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
         duration: 15000,
       });
     }
-  }, [patientState?.isInArrest, arrestActive]);
+  }, [arrestConfirmed, patientState, arrestActive]);
 
   // CPR 2-minute cycle countdown
   useEffect(() => {
@@ -361,7 +388,55 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
-  // Generate case
+  // Filtered conditions list for search dropdown
+  const filteredConditions = useMemo(() => {
+    if (!conditionSearch.trim()) return allConditionNames.slice(0, 30);
+    const q = conditionSearch.toLowerCase();
+    return allConditionNames.filter(c => c.toLowerCase().includes(q)).slice(0, 30);
+  }, [conditionSearch]);
+
+  // Shared case initialization helper
+  const initializeCase = useCallback((newCase: CaseScenario, conditionMode: boolean, condition?: string) => {
+    setCurrentCase(newCase);
+    const initialVitals = ensureCompleteVitals(newCase.vitalSignsProgression.initial);
+    setCurrentVitals(initialVitals);
+    setVitalsHistory([initialVitals]);
+    setAppliedTreatments([]);
+    setAppliedTreatmentIds([]);
+    setCaseStartTime(null);
+    setCaseEndTime(null);
+    setElapsedSeconds(0);
+    setSceneTimeWarnings(new Set());
+    setHintVisible(false);
+    setCurrentHint('');
+    lastActivityRef.current = Date.now();
+
+    const initialPatientState = createInitialPatientState(newCase);
+    setPatientState(initialPatientState);
+
+    const initialTracker = createAssessmentTracker(newCase);
+    setAssessmentTracker(initialTracker);
+    setActiveFindings(null);
+
+    const newSession: CaseSession = {
+      id: Date.now().toString(),
+      caseId: newCase.id,
+      studentYear: selectedYear,
+      generatedAt: new Date().toISOString(),
+      completedItems: [],
+      notes: '',
+      score: 0,
+      totalPossible: (newCase.studentChecklist || [])
+        .filter(item => item.yearLevel?.includes(selectedYear))
+        .reduce((sum, item) => sum + (item.points || 0), 0),
+      isConditionSelected: conditionMode,
+      selectedCondition: condition,
+    };
+    setSession(newSession);
+    setPhase('prebriefing');
+  }, [selectedYear]);
+
+  // Generate case — standard mode
   const generateCase = useCallback(async () => {
     setIsGenerating(true);
     await new Promise(resolve => setTimeout(resolve, 400));
@@ -380,45 +455,8 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
       return;
     }
 
-    setCurrentCase(newCase);
-    const initialVitals = ensureCompleteVitals(newCase.vitalSignsProgression.initial);
-    setCurrentVitals(initialVitals);
-    setVitalsHistory([initialVitals]);
-    setAppliedTreatments([]);
-    setAppliedTreatmentIds([]);
-    setCaseStartTime(null);
-    setCaseEndTime(null);
-    setElapsedSeconds(0);
-    setSceneTimeWarnings(new Set());
-    setHintVisible(false);
-    setCurrentHint('');
-    lastActivityRef.current = Date.now();
-
-    // Initialize dynamic treatment engine patient state
-    const initialPatientState = createInitialPatientState(newCase);
-    setPatientState(initialPatientState);
-
-    // Initialize assessment tracker
-    const initialTracker = createAssessmentTracker(newCase);
-    setAssessmentTracker(initialTracker);
-    setActiveFindings(null);
-
-    const newSession: CaseSession = {
-      id: Date.now().toString(),
-      caseId: newCase.id,
-      studentYear: selectedYear,
-      generatedAt: new Date().toISOString(),
-      completedItems: [],
-      notes: '',
-      score: 0,
-      totalPossible: (newCase.studentChecklist || [])
-        .filter(item => item.yearLevel?.includes(selectedYear))
-        .reduce((sum, item) => sum + (item.points || 0), 0),
-    };
-    setSession(newSession);
-
+    initializeCase(newCase, false);
     setIsGenerating(false);
-    setPhase('prebriefing');
     toast.success(`Case generated: ${getStudentCaseTitle(newCase)}`);
     } catch (err) {
       console.error('Case generation error:', err);
@@ -427,7 +465,59 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
         description: err instanceof Error ? err.message : 'An unexpected error occurred. Try a different category.',
       });
     }
-  }, [selectedYear, selectedCategory]);
+  }, [selectedYear, selectedCategory, initializeCase]);
+
+  // Generate case — random by category mode
+  const generateCaseByCategory = useCallback(async (category: string) => {
+    setIsGenerating(true);
+    await new Promise(resolve => setTimeout(resolve, 400));
+
+    try {
+      const newCase = getRandomCase({ yearLevel: selectedYear, category });
+      if (!newCase) {
+        setIsGenerating(false);
+        toast.error('No cases available', {
+          description: `No ${category} cases are available for ${selectedYear} level.`,
+        });
+        return;
+      }
+
+      initializeCase(newCase, false);
+      setIsGenerating(false);
+      toast.success(`Random ${category} case: ${getStudentCaseTitle(newCase)}`);
+    } catch (err) {
+      console.error('Case generation error:', err);
+      setIsGenerating(false);
+      toast.error('Failed to generate case');
+    }
+  }, [selectedYear, initializeCase]);
+
+  // Generate case — practice specific condition mode
+  const generateCaseByCondition = useCallback(async (condition: string) => {
+    setIsGenerating(true);
+    setSelectedCondition(condition);
+    await new Promise(resolve => setTimeout(resolve, 400));
+
+    try {
+      const matchingCases = getCasesByCondition(condition, selectedYear);
+      if (matchingCases.length === 0) {
+        setIsGenerating(false);
+        toast.error('No cases available', {
+          description: `No cases featuring "${condition}" are available for ${selectedYear} level.`,
+        });
+        return;
+      }
+
+      const newCase = matchingCases[Math.floor(Math.random() * matchingCases.length)];
+      initializeCase(newCase, true, condition);
+      setIsGenerating(false);
+      toast.success(`Condition practice: ${getStudentCaseTitle(newCase)}`);
+    } catch (err) {
+      console.error('Case generation error:', err);
+      setIsGenerating(false);
+      toast.error('Failed to generate case');
+    }
+  }, [selectedYear, initializeCase]);
 
   // Start case (from pre-briefing)
   const startCase = useCallback(() => {
@@ -629,6 +719,22 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
       // Normal findings — no toast needed, findings panel shows them
     }
   }, [assessmentTracker, currentCase, caseStartTime]);
+
+  // Sync assessmentTracker.performed step IDs into session.completedItems
+  // so that checklist-based scoring (12-lead ECG, pain assessment, etc.) works
+  // during gameplay — not only on PDF export.
+  useEffect(() => {
+    if (!assessmentTracker || !session) return;
+    const performedStepIds = assessmentTracker.performed.map(p => p.stepId);
+    // Only update if there are new items not yet in completedItems
+    const newItems = performedStepIds.filter(id => !session.completedItems.includes(id));
+    if (newItems.length > 0) {
+      setSession(prev => prev ? {
+        ...prev,
+        completedItems: [...new Set([...prev.completedItems, ...performedStepIds])],
+      } : prev);
+    }
+  }, [assessmentTracker, session]);
 
   // End case — show transport decision wizard from step 1
   const endCase = useCallback((action: 'transport' | 'end') => {
@@ -865,74 +971,198 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
               </CardContent>
             </Card>
 
-            {/* Category */}
+            {/* Selection Mode Tabs */}
             <Card className="card-glass rounded-2xl dark:bg-slate-900/60">
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm flex items-center gap-2 heading-premium">
                   <BarChart3 className="h-4 w-4 text-blue-500" />
-                  Choose Category
+                  How would you like to select a case?
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    onClick={() => setSelectedCategory('all')}
-                    className={`px-4 py-2.5 rounded-xl border text-sm transition-all duration-300 ${
-                      selectedCategory === 'all'
-                        ? 'border-blue-500 bg-gradient-to-r from-blue-500/15 to-blue-500/5 text-blue-600 dark:text-blue-400 font-semibold ring-1 ring-blue-500/25 shadow-md shadow-blue-500/10'
-                        : 'border-border/50 hover:border-blue-400/50 text-muted-foreground hover:bg-accent/40 hover:shadow-sm dark:border-slate-700/60'
-                    }`}
-                  >
-                    <span className="flex items-center gap-1.5">
-                      <span className={`h-2 w-2 rounded-full ${selectedCategory === 'all' ? 'bg-blue-500' : 'bg-muted-foreground/30'}`} />
-                      All Categories
-                    </span>
-                  </button>
-                  {caseCategories
-                    .filter(cat => allCases.some(c => c.category === cat.value && c.yearLevels?.includes(selectedYear as any)))
-                    .map(cat => {
-                    const catColors: Record<string, string> = {
-                      cardiac: 'bg-red-500', respiratory: 'bg-cyan-500', trauma: 'bg-orange-500',
-                      neurological: 'bg-purple-500', medical: 'bg-emerald-500', paediatric: 'bg-pink-500',
-                      obstetric: 'bg-rose-400', environmental: 'bg-amber-500', psychiatric: 'bg-violet-500',
-                    };
-                    const dotColor = catColors[cat.value.toLowerCase()] || 'bg-blue-500';
-                    return (
+              <CardContent className="space-y-4">
+                {/* Mode selector */}
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { mode: 'standard' as const, label: 'Generate Random', icon: Sparkles, desc: 'Filter & randomize' },
+                    { mode: 'random-category' as const, label: 'Random by Category', icon: Shuffle, desc: 'Pick a category' },
+                    { mode: 'condition' as const, label: 'Practice Condition', icon: Target, desc: 'Search conditions' },
+                  ].map(({ mode, label, icon: ModeIcon, desc }) => (
                     <button
-                      key={cat.value}
-                      onClick={() => setSelectedCategory(cat.value)}
-                      className={`px-4 py-2.5 rounded-xl border text-sm transition-all duration-300 ${
-                        selectedCategory === cat.value
-                          ? 'border-blue-500 bg-gradient-to-r from-blue-500/15 to-blue-500/5 text-blue-600 dark:text-blue-400 font-semibold ring-1 ring-blue-500/25 shadow-md shadow-blue-500/10'
-                          : 'border-border/50 hover:border-blue-400/50 text-muted-foreground hover:bg-accent/40 hover:shadow-sm dark:border-slate-700/60'
+                      key={mode}
+                      onClick={() => setSelectionMode(mode)}
+                      className={`flex flex-col items-center gap-1 px-2 py-3 rounded-xl border-2 text-xs transition-all duration-300 ${
+                        selectionMode === mode
+                          ? 'border-blue-500 bg-gradient-to-b from-blue-500/15 to-blue-500/5 text-blue-600 dark:text-blue-400 shadow-md ring-1 ring-blue-500/20'
+                          : 'border-border/50 hover:border-blue-400/50 text-muted-foreground hover:bg-accent/40 dark:border-slate-700/60'
                       }`}
                     >
-                      <span className="flex items-center gap-1.5">
-                        <span className={`h-2 w-2 rounded-full ${selectedCategory === cat.value ? 'bg-blue-500' : dotColor}`} />
-                        {cat.label}
-                      </span>
+                      <ModeIcon className={`h-4 w-4 ${selectionMode === mode ? 'text-blue-500' : 'text-muted-foreground/50'}`} />
+                      <span className="font-medium text-[11px] sm:text-xs">{label}</span>
+                      <span className="text-[9px] text-muted-foreground hidden sm:block">{desc}</span>
                     </button>
-                  );})}
+                  ))}
                 </div>
+
+                {/* MODE: Standard — category filter + generate */}
+                {selectionMode === 'standard' && (
+                  <div className="space-y-4 animate-fade-in">
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => setSelectedCategory('all')}
+                        className={`px-4 py-2.5 rounded-xl border text-sm transition-all duration-300 ${
+                          selectedCategory === 'all'
+                            ? 'border-blue-500 bg-gradient-to-r from-blue-500/15 to-blue-500/5 text-blue-600 dark:text-blue-400 font-semibold ring-1 ring-blue-500/25 shadow-md shadow-blue-500/10'
+                            : 'border-border/50 hover:border-blue-400/50 text-muted-foreground hover:bg-accent/40 hover:shadow-sm dark:border-slate-700/60'
+                        }`}
+                      >
+                        <span className="flex items-center gap-1.5">
+                          <span className={`h-2 w-2 rounded-full ${selectedCategory === 'all' ? 'bg-blue-500' : 'bg-muted-foreground/30'}`} />
+                          All Categories
+                        </span>
+                      </button>
+                      {caseCategories
+                        .filter(cat => allCases.some(c => c.category === cat.value && c.yearLevels?.includes(selectedYear as any)))
+                        .map(cat => {
+                        const catColors: Record<string, string> = {
+                          cardiac: 'bg-red-500', respiratory: 'bg-cyan-500', trauma: 'bg-orange-500',
+                          neurological: 'bg-purple-500', medical: 'bg-emerald-500', paediatric: 'bg-pink-500',
+                          obstetric: 'bg-rose-400', environmental: 'bg-amber-500', psychiatric: 'bg-violet-500',
+                        };
+                        const dotColor = catColors[cat.value.toLowerCase()] || 'bg-blue-500';
+                        return (
+                        <button
+                          key={cat.value}
+                          onClick={() => setSelectedCategory(cat.value)}
+                          className={`px-4 py-2.5 rounded-xl border text-sm transition-all duration-300 ${
+                            selectedCategory === cat.value
+                              ? 'border-blue-500 bg-gradient-to-r from-blue-500/15 to-blue-500/5 text-blue-600 dark:text-blue-400 font-semibold ring-1 ring-blue-500/25 shadow-md shadow-blue-500/10'
+                              : 'border-border/50 hover:border-blue-400/50 text-muted-foreground hover:bg-accent/40 hover:shadow-sm dark:border-slate-700/60'
+                          }`}
+                        >
+                          <span className="flex items-center gap-1.5">
+                            <span className={`h-2 w-2 rounded-full ${selectedCategory === cat.value ? 'bg-blue-500' : dotColor}`} />
+                            {cat.label}
+                          </span>
+                        </button>
+                      );})}
+                    </div>
+                  </div>
+                )}
+
+                {/* MODE: Random by Category — click a category to instantly get a random case */}
+                {selectionMode === 'random-category' && (
+                  <div className="space-y-2 animate-fade-in">
+                    <p className="text-xs text-muted-foreground">Click a category to get a random case from it:</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {caseCategories
+                        .filter(cat => allCases.some(c => c.category === cat.value && c.yearLevels?.includes(selectedYear as any)))
+                        .map(cat => {
+                        const catColors: Record<string, string> = {
+                          cardiac: 'from-red-500/15 to-red-500/5 border-red-400 text-red-600 dark:text-red-400',
+                          respiratory: 'from-cyan-500/15 to-cyan-500/5 border-cyan-400 text-cyan-600 dark:text-cyan-400',
+                          trauma: 'from-orange-500/15 to-orange-500/5 border-orange-400 text-orange-600 dark:text-orange-400',
+                          neurological: 'from-purple-500/15 to-purple-500/5 border-purple-400 text-purple-600 dark:text-purple-400',
+                          medical: 'from-emerald-500/15 to-emerald-500/5 border-emerald-400 text-emerald-600 dark:text-emerald-400',
+                          paediatric: 'from-pink-500/15 to-pink-500/5 border-pink-400 text-pink-600 dark:text-pink-400',
+                          obstetric: 'from-rose-500/15 to-rose-500/5 border-rose-400 text-rose-600 dark:text-rose-400',
+                          environmental: 'from-amber-500/15 to-amber-500/5 border-amber-400 text-amber-600 dark:text-amber-400',
+                          psychiatric: 'from-violet-500/15 to-violet-500/5 border-violet-400 text-violet-600 dark:text-violet-400',
+                        };
+                        const colors = catColors[cat.value.toLowerCase()] || 'from-blue-500/15 to-blue-500/5 border-blue-400 text-blue-600 dark:text-blue-400';
+                        const count = allCases.filter(c => c.category === cat.value && c.yearLevels?.includes(selectedYear as any)).length;
+                        return (
+                        <button
+                          key={cat.value}
+                          onClick={() => generateCaseByCategory(cat.value)}
+                          disabled={isGenerating}
+                          className={`flex flex-col items-center gap-1 px-3 py-3.5 rounded-xl border-2 bg-gradient-to-b ${colors} text-sm font-medium transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed`}
+                        >
+                          <Shuffle className="h-4 w-4 mb-0.5" />
+                          <span className="text-xs font-semibold">{cat.label}</span>
+                          <span className="text-[10px] opacity-60">{count} case{count !== 1 ? 's' : ''}</span>
+                        </button>
+                      );})}
+                    </div>
+                  </div>
+                )}
+
+                {/* MODE: Practice Specific Condition — searchable dropdown */}
+                {selectionMode === 'condition' && (
+                  <div className="space-y-3 animate-fade-in">
+                    <p className="text-xs text-muted-foreground">Search for a specific condition to practice:</p>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <input
+                        type="text"
+                        value={conditionSearch}
+                        onChange={(e) => { setConditionSearch(e.target.value); setSelectedCondition(null); }}
+                        placeholder="Search conditions... (e.g. STEMI, Asthma, Pneumothorax)"
+                        className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-border/50 bg-background text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all"
+                      />
+                    </div>
+                    <div className="max-h-52 overflow-y-auto rounded-xl border border-border/30 divide-y divide-border/20">
+                      {filteredConditions.length === 0 ? (
+                        <p className="text-xs text-muted-foreground text-center py-4">No conditions match your search</p>
+                      ) : (
+                        filteredConditions.map(condition => {
+                          const matchCount = getCasesByCondition(condition, selectedYear).length;
+                          return (
+                            <button
+                              key={condition}
+                              onClick={() => generateCaseByCondition(condition)}
+                              disabled={isGenerating || matchCount === 0}
+                              className="flex items-center justify-between w-full px-3 py-2 text-left text-sm hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                              <span className="flex items-center gap-2">
+                                <Target className="h-3 w-3 text-blue-500 shrink-0" />
+                                <span>{condition}</span>
+                              </span>
+                              <Badge variant="secondary" className="text-[10px] py-0 h-4 shrink-0">
+                                {matchCount} case{matchCount !== 1 ? 's' : ''}
+                              </Badge>
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+                    {conditionSearch.trim() === '' && (
+                      <p className="text-[10px] text-muted-foreground/50 text-center">
+                        Showing first 30 conditions. Type to search all {allConditionNames.length} conditions.
+                      </p>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
 
-            {/* Generate */}
-            <Button
-              onClick={generateCase}
-              disabled={isGenerating}
-              size="lg"
-              className="w-full gap-2.5 sm:gap-3 text-sm sm:text-lg py-6 sm:py-8 rounded-2xl bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 hover:from-blue-600 hover:via-blue-700 hover:to-indigo-700 shadow-xl shadow-blue-500/25 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/35 hover:-translate-y-1 font-semibold tracking-tight generate-btn-shimmer"
-            >
-              {isGenerating ? (
-                <><Loader2 className="h-5 w-5 sm:h-6 sm:w-6 animate-spin" /> Generating Case...</>
-              ) : (
-                <><Sparkles className="h-5 w-5 sm:h-6 sm:w-6" /> Generate Case</>
-              )}
-            </Button>
+            {/* Generate button — only for standard mode */}
+            {selectionMode === 'standard' && (
+              <Button
+                onClick={generateCase}
+                disabled={isGenerating}
+                size="lg"
+                className="w-full gap-2.5 sm:gap-3 text-sm sm:text-lg py-6 sm:py-8 rounded-2xl bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 hover:from-blue-600 hover:via-blue-700 hover:to-indigo-700 shadow-xl shadow-blue-500/25 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/35 hover:-translate-y-1 font-semibold tracking-tight generate-btn-shimmer"
+              >
+                {isGenerating ? (
+                  <><Loader2 className="h-5 w-5 sm:h-6 sm:w-6 animate-spin" /> Generating Case...</>
+                ) : (
+                  <><Sparkles className="h-5 w-5 sm:h-6 sm:w-6" /> Generate Case</>
+                )}
+              </Button>
+            )}
+
+            {/* Loading indicator for category/condition modes */}
+            {selectionMode !== 'standard' && isGenerating && (
+              <div className="flex items-center justify-center gap-2 py-4">
+                <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
+                <span className="text-sm text-muted-foreground">Generating case...</span>
+              </div>
+            )}
 
             <p className="text-center text-xs text-muted-foreground/50 pb-4">
-              Cases are randomized within your selected category and year level
+              {selectionMode === 'standard' && 'Cases are randomized within your selected category and year level'}
+              {selectionMode === 'random-category' && 'Click any category above to instantly get a random case from it'}
+              {selectionMode === 'condition' && 'Select a condition to get a case where it appears as diagnosis or differential'}
             </p>
           </div>
         )}
@@ -1133,7 +1363,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                   <span className="font-mono text-xs sm:text-sm font-semibold text-primary">{formatTime(elapsedSeconds)}</span>
                 </div>
               </div>
-              <div className="flex gap-1.5 sm:gap-2">
+              <div className="flex gap-1.5 sm:gap-2 mb-3">
                 <Button
                   variant="outline"
                   size="sm"
@@ -1142,13 +1372,18 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                 >
                   <FileText className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> <span className="hidden xs:inline">Case </span>Details
                 </Button>
-                <Button
-                  size="sm"
-                  onClick={() => endCase('transport')}
-                  className="gap-1 sm:gap-1.5 text-[10px] sm:text-xs rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-sm shadow-amber-500/15 flex-1 sm:flex-none h-8"
-                >
-                  <Ambulance className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> Transport
-                </Button>
+                <div className="relative flex-1 sm:flex-none">
+                  <Button
+                    size="sm"
+                    onClick={() => endCase('transport')}
+                    className="gap-1 sm:gap-1.5 text-[10px] sm:text-xs rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-md shadow-amber-500/25 w-full h-8 animate-pulse-soft ring-2 ring-amber-400/30"
+                  >
+                    <Ambulance className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> Transport
+                  </Button>
+                  <span className="absolute -bottom-4 left-1/2 -translate-x-1/2 text-[8px] text-amber-600 dark:text-amber-400 whitespace-nowrap font-medium pointer-events-none">
+                    Ready to transport?
+                  </span>
+                </div>
                 <Button
                   variant="destructive"
                   size="sm"
@@ -1201,28 +1436,82 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
             {showTransportDecision && (
               <Card className="border-2 border-amber-400 bg-amber-50/50 dark:bg-amber-950/20 rounded-2xl overflow-hidden animate-fade-in">
                 <CardHeader className="pb-2 border-b border-amber-200 dark:border-amber-800">
-                  <CardTitle className="text-sm flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Ambulance className="h-4 w-4 text-amber-600" />
+                  <CardTitle className="flex flex-col gap-2">
+                    <div className="flex items-center gap-2 text-base sm:text-lg font-bold">
+                      <Ambulance className="h-5 w-5 text-amber-600" />
                       Transport & Handover
                     </div>
-                    <div className="flex gap-1">
-                      {[1,2,3,4,5].map(s => (
-                        <div key={s} className={`h-1.5 w-6 rounded-full transition-all ${
-                          s < transportStep ? 'bg-green-500'
-                          : s === transportStep ? 'bg-amber-500'
-                          : 'bg-border/40'
-                        }`} />
+                    <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap">
+                      {[
+                        { step: 1, label: 'Priority' },
+                        { step: 2, label: 'Position' },
+                        { step: 3, label: 'Pre-Alert' },
+                        { step: 4, label: 'Diagnosis' },
+                        { step: 5, label: 'Confirm' },
+                      ].map(({ step: s, label }, idx) => (
+                        <div key={s} className="flex items-center gap-1 sm:gap-1.5">
+                          <div className="flex flex-col items-center gap-0.5">
+                            <div className={`h-2 w-7 sm:w-8 rounded-full transition-all ${
+                              s < transportStep ? 'bg-green-500'
+                              : s === transportStep ? 'bg-amber-500'
+                              : 'bg-border/40'
+                            }`} />
+                            <span className={`text-xs sm:text-sm leading-tight transition-colors ${
+                              s === transportStep ? 'text-amber-600 dark:text-amber-400 font-bold' : s < transportStep ? 'text-green-600 dark:text-green-400 font-medium' : 'text-muted-foreground/60'
+                            }`}>{label}</span>
+                          </div>
+                          {idx < 4 && (
+                            <span className={`text-xs sm:text-sm mt-[-0.5rem] ${
+                              s < transportStep ? 'text-green-500' : 'text-muted-foreground/40'
+                            }`}>›</span>
+                          )}
+                        </div>
                       ))}
                     </div>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-4 space-y-3">
 
+                  {/* Mini-summary bar — shows completed decisions at a glance */}
+                  {transportStep > 1 && (
+                    <div className="flex flex-wrap gap-x-3 gap-y-1 px-2.5 py-1.5 rounded-lg bg-white/60 dark:bg-black/20 border border-border/30 text-[10px] text-muted-foreground animate-fade-in">
+                      {transportDecisions?.priority && (
+                        <span>
+                          <span className="font-semibold text-foreground/80">Priority:</span>{' '}
+                          {transportDecisions.priority === 'lights' ? 'Lights & Sirens' : transportDecisions.priority === 'urgent' ? 'Urgent' : 'Routine'}
+                        </span>
+                      )}
+                      {transportDecisions?.position && (
+                        <span>
+                          <span className="font-semibold text-foreground/80">Position:</span>{' '}
+                          {transportDecisions.position}
+                        </span>
+                      )}
+                      {transportStep > 3 && transportDecisions?.preAlert !== undefined && transportDecisions?.priority && (
+                        <span>
+                          <span className="font-semibold text-foreground/80">Pre-Alert:</span>{' '}
+                          {transportDecisions.preAlert ? 'Yes' : 'No'}
+                        </span>
+                      )}
+                      {transportDecisions?.destination && (
+                        <span>
+                          <span className="font-semibold text-foreground/80">Dest:</span>{' '}
+                          {transportDecisions.destination}
+                        </span>
+                      )}
+                      {transportDecisions?.provisionalDiagnosis && (
+                        <span>
+                          <span className="font-semibold text-foreground/80">Dx:</span>{' '}
+                          {transportDecisions.provisionalDiagnosis}
+                        </span>
+                      )}
+                    </div>
+                  )}
+
                   {/* STEP 1: Transport Priority */}
                   {transportStep === 1 && (
                     <div className="animate-fade-in">
-                      <p className="text-sm font-bold mb-1">How do you want to transport this patient?</p>
+                      <p className="text-base sm:text-xl font-bold mb-1">How do you want to transport this patient?</p>
                       <p className="text-xs text-muted-foreground mb-3">Select the transport priority based on the patient's condition.</p>
                       <div className="grid grid-cols-1 gap-2">
                         {[
@@ -1337,11 +1626,19 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                   {/* STEP 4: Provisional Diagnosis */}
                   {transportStep === 4 && (
                     <div className="animate-fade-in">
-                      <p className="text-sm font-bold mb-1">What is your provisional diagnosis?</p>
-                      <p className="text-xs text-muted-foreground mb-3">Based on your assessment, what do you think is wrong with this patient?</p>
+                      <p className="text-sm font-bold mb-1">
+                        {session?.isConditionSelected && session?.selectedCondition
+                          ? `What is the underlying cause of this ${session.selectedCondition}?`
+                          : 'What is your provisional diagnosis?'}
+                      </p>
+                      <p className="text-xs text-muted-foreground mb-3">
+                        {session?.isConditionSelected
+                          ? 'You know the general condition — now identify the specific underlying cause.'
+                          : 'Based on your assessment, what do you think is wrong with this patient?'}
+                      </p>
                       <div className="grid grid-cols-1 gap-1.5">
                         {currentCase.expectedFindings?.differentialDiagnoses
-                          ? [...currentCase.expectedFindings.differentialDiagnoses.slice(0, 5),
+                          ? [...seededShuffle(currentCase.expectedFindings.differentialDiagnoses.slice(0, 5), currentCase.id),
                              'Other / Undifferentiated'
                           ].map(dx => (
                             <button
@@ -1510,6 +1807,8 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                       caseData={currentCase}
                       patientSounds={patientState?.sounds}
                       isStudentView={true}
+                      caseCategory={currentCase.category}
+                      isInArrest={patientState?.isInArrest ?? false}
                     />
                   </Suspense>
                 )}
@@ -1628,12 +1927,79 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                         setArrestTimeline(prev => [...prev, { time: Date.now(), event: 'CPR paused', type: 'cpr-pause' }]);
                       },
                       onDefibrillate: () => {
+                        // Create a defibrillation treatment object for the dialog
+                        setPendingDefibTreatment({
+                          id: 'defibrillation',
+                          name: 'Defibrillation',
+                          category: 'procedure',
+                          description: 'Deliver electrical shock to restore normal rhythm',
+                          effects: [],
+                        } as any);
                         setShowDefibDialog(true);
                         lastActivityRef.current = Date.now();
                       },
                     } : undefined}
                   />
                 </Suspense>
+
+                {/* --- PULSE CHECK + CONFIRM ARREST BUTTONS --- */}
+                <div className="flex flex-col gap-2">
+                  {/* Quick Pulse Check button — always visible during active case */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={`gap-2 text-xs ${pulseCheckInProgress ? 'animate-pulse border-amber-500 text-amber-600' : pulseCheckResult ? (pulseCheckResult === 'absent' ? 'border-red-500 text-red-600' : 'border-green-500 text-green-600') : ''}`}
+                    disabled={pulseCheckInProgress}
+                    onClick={() => {
+                      setPulseCheckInProgress(true);
+                      setPulseCheckResult(null);
+                      lastActivityRef.current = Date.now();
+                      // 5-second assessment delay
+                      setTimeout(() => {
+                        const hasPulse = currentVitals && currentVitals.pulse > 0 && !(patientState?.isInArrest);
+                        const result = hasPulse ? 'present' : 'absent';
+                        setPulseCheckResult(result);
+                        setPulseCheckInProgress(false);
+                        if (result === 'absent') {
+                          toast.error('No pulse detected', {
+                            description: 'Patient is pulseless. Consider cardiac arrest protocol.',
+                            duration: 8000,
+                          });
+                        } else {
+                          toast.success('Pulse present', {
+                            description: `Pulse detected — rate approximately ${currentVitals?.pulse || '?'} bpm.`,
+                            duration: 5000,
+                          });
+                        }
+                      }, 5000);
+                    }}
+                  >
+                    <Heart className="h-3.5 w-3.5" />
+                    {pulseCheckInProgress
+                      ? 'Checking pulse...'
+                      : pulseCheckResult === 'absent'
+                        ? 'No pulse detected'
+                        : pulseCheckResult === 'present'
+                          ? 'Pulse present'
+                          : 'Check Pulse'}
+                  </Button>
+
+                  {/* Confirm Cardiac Arrest — only appears when pulse check shows absent AND arrest not yet confirmed */}
+                  {pulseCheckResult === 'absent' && !arrestConfirmed && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="gap-2 text-xs font-bold animate-pulse"
+                      onClick={() => {
+                        setArrestConfirmed(true);
+                        lastActivityRef.current = Date.now();
+                      }}
+                    >
+                      <Zap className="h-3.5 w-3.5" />
+                      Confirm Cardiac Arrest — Start Protocol
+                    </Button>
+                  )}
+                </div>
 
                 {/* --- MANAGEMENT (ABCDE) --- */}
                 <Card className="card-glass rounded-xl sm:rounded-2xl overflow-hidden">

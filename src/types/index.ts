@@ -511,6 +511,8 @@ export interface CaseSession {
   timeTaken?: number;
   interventionsPerformed?: string[];
   simulationObjective?: SimulationObjective;
+  isConditionSelected?: boolean;
+  selectedCondition?: string;
   preBriefingCompleted?: boolean;
   preBriefingTime?: number;
   debriefingResources?: DebriefingResource[];

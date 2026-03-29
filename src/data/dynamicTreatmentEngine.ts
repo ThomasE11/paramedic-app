@@ -122,9 +122,18 @@ export function createInitialPatientState(caseData: CaseScenario): PatientState 
   ];
 
   // Determine initial ECG rhythm from case data
+  // Include subcategory, title, differentials, and circulation findings for comprehensive matching
   let rhythm = 'Normal Sinus Rhythm';
   const ecgFindings = caseData.abcde?.circulation?.ecgFindings || [];
-  const allFindings = [...ecgFindings, ...(caseData.expectedFindings?.keyObservations || [])].join(' ').toLowerCase();
+  const allFindings = [
+    ...ecgFindings,
+    ...(caseData.expectedFindings?.keyObservations || []),
+    ...(caseData.expectedFindings?.differentialDiagnoses || []),
+    caseData.expectedFindings?.mostLikelyDiagnosis || '',
+    caseData.subcategory || '',
+    caseData.title || '',
+    ...(caseData.abcde?.circulation?.findings || []),
+  ].join(' ').toLowerCase();
 
   // Use word-boundary regex to avoid matching substrings
   // e.g., 'pea' in 'peanut', 'af' in 'after', 'vf' in 'verfied'
@@ -141,16 +150,30 @@ export function createInitialPatientState(caseData: CaseScenario): PatientState 
   else if (matchWord('bradycardia') || (vitals.pulse && vitals.pulse < 60)) rhythm = 'Sinus Bradycardia';
   else if (vitals.pulse && vitals.pulse > 100) rhythm = 'Sinus Tachycardia';
 
+  // If pulse is 0 but no arrest rhythm was matched, default to VF (most common shockable arrest)
+  if (rhythm === 'Normal Sinus Rhythm' && vitals.pulse !== undefined && vitals.pulse === 0) {
+    rhythm = 'Ventricular Fibrillation';
+  }
+
   const isInArrest = ['Ventricular Fibrillation', 'Asystole', 'PEA'].includes(rhythm) ||
     (vitals.pulse !== undefined && vitals.pulse === 0);
 
+  // If in arrest, force vitals to arrest values — pulse 0, BP 0/0
+  const arrestVitals = isInArrest ? {
+    ...vitals,
+    pulse: 0,
+    bp: '0/0',
+    respiration: 0,
+    gcs: 3,
+  } : vitals;
+
   return {
-    vitals: { ...vitals },
+    vitals: { ...arrestVitals },
     sounds: getInitialSounds(caseData.category, caseData.subcategory, findings, {
-      spo2: vitals.spo2,
-      pulse: vitals.pulse,
-      respiration: vitals.respiration,
-      gcs: vitals.gcs,
+      spo2: arrestVitals.spo2,
+      pulse: arrestVitals.pulse,
+      respiration: arrestVitals.respiration,
+      gcs: arrestVitals.gcs,
     }),
     treatmentHistory: [],
     treatmentCounts: {},
@@ -724,27 +747,27 @@ function handleDefibrillation(
     const isSuccessful = energy >= 100 || (energy >= 50 && (state.treatmentCounts['defibrillation'] || 1) >= 2);
 
     if (isSuccessful) {
-      state.currentRhythm = 'Sinus Rhythm';
+      const oldPulse = vitals.pulse;
+      const oldBP = vitals.bp;
+      state.currentRhythm = 'Normal Sinus Rhythm';
       vitals.pulse = 78;
       vitals.bp = '110/70';
       state.deteriorationLevel = Math.max(0, state.deteriorationLevel - 2);
 
       changes.push(
-        { vital: 'HR', oldValue: vitals.pulse, newValue: 78, direction: 'improved' },
-        { vital: 'BP', oldValue: vitals.bp, newValue: '110/70', direction: 'improved' },
+        { vital: 'HR', oldValue: oldPulse, newValue: 78, direction: 'improved' },
+        { vital: 'BP', oldValue: oldBP, newValue: '110/70', direction: 'improved' },
       );
-      vitals.pulse = 78;
-      vitals.bp = '110/70';
 
       return {
-        description: `Synchronized cardioversion at ${energy}J successful! VT converted to sinus rhythm. HR 78, BP 110/70.`,
+        description: `Synchronized cardioversion at ${energy}J successful! VT converted to normal sinus rhythm. HR 78, BP 110/70.`,
         effectivenessPercent: 100,
         isPartialResponse: false,
         requiresRepeat: false,
         criticalEvent: {
           type: 'rhythm-change',
-          description: 'VT successfully cardioverted to sinus rhythm.',
-          newRhythm: 'Sinus Rhythm',
+          description: 'VT successfully cardioverted to normal sinus rhythm.',
+          newRhythm: 'Normal Sinus Rhythm',
           requiresAction: ['Continue monitoring', 'Consider Amiodarone for maintenance', '12-lead ECG'],
         },
         vitalChanges: changes,
@@ -761,24 +784,157 @@ function handleDefibrillation(
     }
   }
 
-  // SVT: Synchronized cardioversion at lower energy
+  // SVT: Synchronized cardioversion (low energy preferred: 50-100J)
   if (currentRhythm === 'SVT') {
-    if (synchronized && energy <= 100) {
-      state.currentRhythm = 'Sinus Rhythm';
+    if (!synchronized) {
+      return {
+        description: `Unsynchronized shock delivered to SVT patient. Risk of inducing VF! Use SYNCHRONIZED cardioversion for SVT.`,
+        effectivenessPercent: 10,
+        isPartialResponse: false,
+        requiresRepeat: false,
+        warningMessage: 'SVT requires SYNCHRONIZED cardioversion!',
+        vitalChanges: [],
+      };
+    }
+
+    // Synchronized cardioversion — successful at 50-100J, also works at higher energy
+    const isSuccessful = energy >= 50;
+
+    if (isSuccessful) {
+      const oldPulse = vitals.pulse;
+      state.currentRhythm = 'Normal Sinus Rhythm';
       vitals.pulse = 80;
+      state.deteriorationLevel = Math.max(0, state.deteriorationLevel - 2);
 
       return {
-        description: `Synchronized cardioversion at ${energy}J — SVT terminated. Sinus rhythm restored at 80 bpm.`,
-        effectivenessPercent: 95,
+        description: `Synchronized cardioversion at ${energy}J — SVT terminated. Normal sinus rhythm restored at 80 bpm.${energy > 100 ? ' Note: Lower energy (50-100J) is typically sufficient for SVT.' : ''}`,
+        effectivenessPercent: energy <= 100 ? 95 : 85,
         isPartialResponse: false,
         requiresRepeat: false,
         criticalEvent: {
           type: 'rhythm-change',
-          description: 'SVT successfully cardioverted.',
-          newRhythm: 'Sinus Rhythm',
+          description: 'SVT successfully cardioverted to normal sinus rhythm.',
+          newRhythm: 'Normal Sinus Rhythm',
           requiresAction: ['Monitor for SVT recurrence', 'Consider Adenosine if recurs'],
         },
-        vitalChanges: [{ vital: 'HR', oldValue: vitals.pulse, newValue: 80, direction: 'improved' }],
+        warningMessage: energy > 100 ? 'SVT typically cardioverts at 50-100J — consider lower energy' : undefined,
+        vitalChanges: [{ vital: 'HR', oldValue: oldPulse, newValue: 80, direction: 'improved' }],
+      };
+    } else {
+      return {
+        description: `Synchronized cardioversion at ${energy}J — SVT persists. Increase energy to 50-100J.`,
+        effectivenessPercent: 15,
+        isPartialResponse: true,
+        requiresRepeat: true,
+        warningMessage: 'Consider increasing energy to 50-100J for SVT',
+        vitalChanges: [],
+      };
+    }
+  }
+
+  // Atrial Flutter: Synchronized cardioversion
+  if (currentRhythm === 'Atrial Flutter') {
+    if (!synchronized) {
+      return {
+        description: `Unsynchronized shock delivered to atrial flutter patient. Risk of inducing VF! Use SYNCHRONIZED cardioversion for atrial flutter.`,
+        effectivenessPercent: 10,
+        isPartialResponse: false,
+        requiresRepeat: false,
+        warningMessage: 'Atrial flutter requires SYNCHRONIZED cardioversion!',
+        vitalChanges: [],
+      };
+    }
+
+    // Synchronized cardioversion — effective at relatively low energy (50-100J typically)
+    const isSuccessful = energy >= 50 || (energy >= 25 && (state.treatmentCounts['defibrillation'] || 1) >= 2);
+
+    if (isSuccessful) {
+      const oldPulse = vitals.pulse;
+      state.currentRhythm = 'Normal Sinus Rhythm';
+      vitals.pulse = 78;
+      const oldBP = vitals.bp;
+      vitals.bp = '120/75';
+      state.deteriorationLevel = Math.max(0, state.deteriorationLevel - 2);
+
+      changes.push(
+        { vital: 'HR', oldValue: oldPulse, newValue: 78, direction: 'improved' },
+        { vital: 'BP', oldValue: oldBP, newValue: '120/75', direction: 'improved' },
+      );
+
+      return {
+        description: `Synchronized cardioversion at ${energy}J — atrial flutter terminated. Normal sinus rhythm restored at 78 bpm.`,
+        effectivenessPercent: 100,
+        isPartialResponse: false,
+        requiresRepeat: false,
+        criticalEvent: {
+          type: 'rhythm-change',
+          description: 'Atrial flutter successfully cardioverted to normal sinus rhythm.',
+          newRhythm: 'Normal Sinus Rhythm',
+          requiresAction: ['Continue monitoring', 'Consider rate/rhythm control maintenance', '12-lead ECG post-cardioversion'],
+        },
+        vitalChanges: changes,
+      };
+    } else {
+      return {
+        description: `Synchronized cardioversion at ${energy}J — atrial flutter persists. Consider increasing energy (50-100J for flutter).`,
+        effectivenessPercent: 20,
+        isPartialResponse: true,
+        requiresRepeat: true,
+        warningMessage: energy < 50 ? 'Consider increasing to 50-100J for atrial flutter' : undefined,
+        vitalChanges: [],
+      };
+    }
+  }
+
+  // Atrial Fibrillation: Synchronized cardioversion (hemodynamically unstable)
+  if (currentRhythm === 'Atrial Fibrillation') {
+    if (!synchronized) {
+      return {
+        description: `Unsynchronized shock delivered to atrial fibrillation patient. Risk of inducing VF! Use SYNCHRONIZED cardioversion.`,
+        effectivenessPercent: 10,
+        isPartialResponse: false,
+        requiresRepeat: false,
+        warningMessage: 'Atrial fibrillation requires SYNCHRONIZED cardioversion!',
+        vitalChanges: [],
+      };
+    }
+
+    const isSuccessful = energy >= 120 || (energy >= 100 && (state.treatmentCounts['defibrillation'] || 1) >= 2);
+
+    if (isSuccessful) {
+      const oldPulse = vitals.pulse;
+      state.currentRhythm = 'Normal Sinus Rhythm';
+      vitals.pulse = 76;
+      const oldBP = vitals.bp;
+      vitals.bp = '118/72';
+      state.deteriorationLevel = Math.max(0, state.deteriorationLevel - 2);
+
+      changes.push(
+        { vital: 'HR', oldValue: oldPulse, newValue: 76, direction: 'improved' },
+        { vital: 'BP', oldValue: oldBP, newValue: '118/72', direction: 'improved' },
+      );
+
+      return {
+        description: `Synchronized cardioversion at ${energy}J — atrial fibrillation terminated. Normal sinus rhythm restored at 76 bpm.`,
+        effectivenessPercent: 100,
+        isPartialResponse: false,
+        requiresRepeat: false,
+        criticalEvent: {
+          type: 'rhythm-change',
+          description: 'Atrial fibrillation successfully cardioverted to normal sinus rhythm.',
+          newRhythm: 'Normal Sinus Rhythm',
+          requiresAction: ['Continue monitoring', 'Anticoagulation assessment', 'Rate/rhythm control maintenance'],
+        },
+        vitalChanges: changes,
+      };
+    } else {
+      return {
+        description: `Synchronized cardioversion at ${energy}J — AF persists. Consider increasing energy (120-200J for AF).`,
+        effectivenessPercent: 20,
+        isPartialResponse: true,
+        requiresRepeat: true,
+        warningMessage: energy < 120 ? 'Consider increasing to 120-200J for atrial fibrillation' : undefined,
+        vitalChanges: [],
       };
     }
   }

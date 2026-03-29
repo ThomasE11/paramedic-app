@@ -36,6 +36,10 @@ export type SecondaryAssessmentStep =
   | 'abdomen'
   | 'pelvis'
   | 'extremities'
+  | 'right-arm'
+  | 'left-arm'
+  | 'right-leg'
+  | 'left-leg'
   | 'posterior-logroll';
 
 export type HistoryStep =
@@ -1408,6 +1412,14 @@ export function createAssessmentTracker(caseData: CaseScenario): AssessmentTrack
   };
 }
 
+/** Map individual limb region IDs to the parent 'extremities' assessment step */
+const LIMB_TO_EXTREMITIES: Record<string, AssessmentStepId> = {
+  'right-arm': 'extremities',
+  'left-arm': 'extremities',
+  'right-leg': 'extremities',
+  'left-leg': 'extremities',
+};
+
 /**
  * Record an assessment being performed
  */
@@ -1417,19 +1429,24 @@ export function performAssessment(
   caseData: CaseScenario,
   caseStartTime: number,
 ): { tracker: AssessmentTracker; findings: AssessmentFinding[] } {
-  // Don't record duplicates
-  if (tracker.performed.some(p => p.stepId === stepId)) {
-    return { tracker, findings: getStepFindings(stepId, caseData) };
+  // Map individual limb IDs to the 'extremities' step for scoring purposes
+  const effectiveStepId = LIMB_TO_EXTREMITIES[stepId] || stepId;
+
+  // Don't record duplicates (check both the specific limb and the effective step)
+  if (tracker.performed.some(p => p.stepId === stepId || p.stepId === effectiveStepId)) {
+    return { tracker, findings: getStepFindings(effectiveStepId, caseData) };
   }
 
-  const step = ALL_STEPS[stepId];
+  const step = ALL_STEPS[effectiveStepId];
   if (!step) return { tracker, findings: [] };
 
-  const findings = getStepFindings(stepId, caseData);
+  const findings = getStepFindings(effectiveStepId, caseData);
   const now = Date.now();
 
+  // Record the effective step ID so that 'extremities' shows as performed
+  // even when clicked via a specific limb
   const performed: PerformedAssessment = {
-    stepId,
+    stepId: effectiveStepId,
     phase: step.phase,
     performedAt: new Date(now).toISOString(),
     elapsedSeconds: Math.floor((now - caseStartTime) / 1000),
@@ -1437,11 +1454,11 @@ export function performAssessment(
     order: tracker.performed.length + 1,
   };
 
-  // Calculate points
+  // Calculate points using effective step ID (required/recommended lists use 'extremities')
   let earnedPoints = tracker.earnedPoints;
-  if (tracker.required.includes(stepId)) {
+  if (tracker.required.includes(effectiveStepId)) {
     earnedPoints += step.points;
-  } else if (tracker.recommended.includes(stepId)) {
+  } else if (tracker.recommended.includes(effectiveStepId)) {
     earnedPoints += Math.floor(step.points * 0.4); // recommended steps worth 40%
   } else {
     // No points for extra assessments — score is driven by doing the RIGHT assessments

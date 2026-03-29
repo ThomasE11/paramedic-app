@@ -304,6 +304,67 @@ function getRegionConfig(regionId: string): RegionConfig | null {
         ],
       };
 
+    case 'right-arm':
+      return {
+        title: 'Right Arm Assessment',
+        icon: Hand,
+        subRegions: [
+          {
+            id: 'right-upper',
+            label: 'Right Arm',
+            actions: [
+              { id: 'rarm-inspect', label: 'Deformity, wounds, swelling, skin colour', technique: 'inspect', icon: Eye },
+              { id: 'rarm-palpate', label: 'Pulses, sensation, motor, compartments, crepitus', technique: 'palpate', icon: Hand },
+            ],
+          },
+        ],
+      };
+    case 'left-arm':
+      return {
+        title: 'Left Arm Assessment',
+        icon: Hand,
+        subRegions: [
+          {
+            id: 'left-upper',
+            label: 'Left Arm',
+            actions: [
+              { id: 'larm-inspect', label: 'Deformity, wounds, swelling, skin colour', technique: 'inspect', icon: Eye },
+              { id: 'larm-palpate', label: 'Pulses, sensation, motor, compartments, crepitus', technique: 'palpate', icon: Hand },
+            ],
+          },
+        ],
+      };
+    case 'right-leg':
+      return {
+        title: 'Right Leg Assessment',
+        icon: Hand,
+        subRegions: [
+          {
+            id: 'right-lower',
+            label: 'Right Leg',
+            actions: [
+              { id: 'rleg-inspect', label: 'Deformity, wounds, swelling, skin colour', technique: 'inspect', icon: Eye },
+              { id: 'rleg-palpate', label: 'Pulses (dorsalis pedis, posterior tibial), sensation, motor, compartments', technique: 'palpate', icon: Hand },
+            ],
+          },
+        ],
+      };
+    case 'left-leg':
+      return {
+        title: 'Left Leg Assessment',
+        icon: Hand,
+        subRegions: [
+          {
+            id: 'left-lower',
+            label: 'Left Leg',
+            actions: [
+              { id: 'lleg-inspect', label: 'Deformity, wounds, swelling, skin colour', technique: 'inspect', icon: Eye },
+              { id: 'lleg-palpate', label: 'Pulses, sensation, motor, compartments', technique: 'palpate', icon: Hand },
+            ],
+          },
+        ],
+      };
+    // Legacy fallback: if 'extremities' is passed, show all limbs
     case 'extremities':
       return {
         title: 'Extremities Assessment',
@@ -523,8 +584,8 @@ function getFindings(
     return 'Pelvis stable on spring test. No deformity.';
   }
 
-  // Extremities
-  if (regionId === 'extremities') {
+  // Extremities (individual limb IDs or legacy 'extremities')
+  if (regionId === 'extremities' || regionId === 'right-arm' || regionId === 'left-arm' || regionId === 'right-leg' || regionId === 'left-leg') {
     const extFindings = ss?.extremities || [];
     if (extFindings.length) return extFindings.join('. ');
     return 'No deformity. Pulses present. Sensation and motor intact.';
@@ -582,7 +643,7 @@ export function RegionAssessmentPanel({
           </div>
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-3 space-y-2">
+      <CardContent className="p-2 space-y-1.5">
         {config.subRegions.map(subRegion => {
           const isExpanded = expandedSub === subRegion.id;
           const subCompleted = subRegion.actions.filter(a =>
@@ -594,7 +655,7 @@ export function RegionAssessmentPanel({
               {/* Sub-region header */}
               <button
                 onClick={() => setExpandedSub(isExpanded ? null : subRegion.id)}
-                className="flex items-center gap-2 w-full text-left p-2.5 hover:bg-muted/40 transition-colors"
+                className="flex items-center gap-2 w-full text-left p-2 hover:bg-muted/40 transition-colors"
               >
                 <ChevronRight className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
                 <span className="text-xs font-semibold flex-1">{subRegion.label}</span>
@@ -607,7 +668,7 @@ export function RegionAssessmentPanel({
 
               {/* Exam actions */}
               {isExpanded && (
-                <div className="px-2.5 pb-2.5 space-y-1.5 animate-in fade-in duration-200">
+                <div className="px-2 pb-2 space-y-1 animate-in fade-in duration-200">
                   {subRegion.actions.map(action => {
                     const findingKey = `${regionId}:${subRegion.id}:${action.id}`;
                     const isRevealed = revealedFindings.has(findingKey);

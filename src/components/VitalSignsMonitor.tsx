@@ -36,9 +36,12 @@ import {
   getRhythmForCase,
   getLitflDataForRhythm,
   ALL_LEADS,
+  ALL_RHYTHMS,
+  RHYTHM_MAP,
   type ECGRhythm,
   type LeadName,
   type WaveformFn,
+  type WaveformContext,
 } from '@/data/ecgRhythms';
 
 interface VitalSignsMonitorProps {
@@ -160,6 +163,9 @@ class ClinicalAudioEngine {
   private bpInflateTimeout: number | null = null;
   private isPlaying = false;
   private _volume = 0.15;
+  // Ready tone state — continuous tone after charge completes
+  private readyToneOsc: OscillatorNode | null = null;
+  private readyToneGain: GainNode | null = null;
 
   get volume() { return this._volume; }
   set volume(v: number) { this._volume = Math.max(0, Math.min(1, v)); }
@@ -335,6 +341,45 @@ class ClinicalAudioEngine {
     }
   }
 
+  // Sustained high-pitched ready tone — plays continuously until shock or cancel
+  playReadyTone() {
+    this.stopReadyTone(); // Clean up any existing tone
+    try {
+      const ctx = this.getCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.frequency.setValueAtTime(1000, ctx.currentTime);
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(this._volume * 0.1, ctx.currentTime);
+
+      osc.start();
+      this.readyToneOsc = osc;
+      this.readyToneGain = gain;
+    } catch {
+      // Audio may not be available
+    }
+  }
+
+  stopReadyTone() {
+    try {
+      if (this.readyToneOsc) {
+        this.readyToneOsc.stop();
+        this.readyToneOsc.disconnect();
+        this.readyToneOsc = null;
+      }
+      if (this.readyToneGain) {
+        this.readyToneGain.disconnect();
+        this.readyToneGain = null;
+      }
+    } catch {
+      // Already stopped
+    }
+  }
+
   // LIFEPAK shock delivered sound
   playShockSound() {
     try {
@@ -358,6 +403,7 @@ class ClinicalAudioEngine {
 
   dispose() {
     this.stopHeartbeat();
+    this.stopReadyTone();
     if (this.bpInflateTimeout) clearTimeout(this.bpInflateTimeout);
     if (this.audioCtx) {
       this.audioCtx.close();
@@ -385,6 +431,8 @@ function ECGWaveform({ heartRate, color, height = 80, isVisible, waveformFn, sho
   const phaseRef = useRef(0);
   const pacingSpikeRef = useRef<Set<number>>(new Set());
   const syncMarkerRef = useRef<Set<number>>(new Set());
+  const beatIndexRef = useRef(0);
+  const lastBeatPhaseRef = useRef(0);
 
   useEffect(() => {
     if (!isVisible) return;
@@ -447,7 +495,17 @@ function ECGWaveform({ heartRate, color, height = 80, isVisible, waveformFn, sho
         const pixelPhase = phaseRef.current + (i - startIdx) / pixelsPerBeat;
         const beatProgress = pixelPhase % 1;
 
-        let val = ecgWave(beatProgress);
+        // Track beat transitions to increment beatIndex
+        if (beatProgress < lastBeatPhaseRef.current && lastBeatPhaseRef.current > 0.5) {
+          beatIndexRef.current++;
+        }
+        lastBeatPhaseRef.current = beatProgress;
+
+        const waveformContext: WaveformContext = {
+          heartRate: heartRate,
+          beatIndex: beatIndexRef.current,
+        };
+        let val = ecgWave(beatProgress, waveformContext);
 
         // Shock artifact: random noise
         if (showShockArtifact) {
@@ -640,10 +698,17 @@ function TwelveLeadECG({ rhythm, heartRate, onClose, onExport }: { rhythm: ECGRh
         ctx.shadowBlur = 2;
 
         ctx.beginPath();
+        let prevBeatProgress = 0;
+        let viewerBeatIndex = 0;
         for (let x = 0; x < w; x++) {
           const adjustedX = (x + posRef.current) % (w * 2);
           const beatProgress = (adjustedX / pixelsPerBeat) % 1;
-          const y = midY - wfn(beatProgress) * (h * 0.35);
+          if (beatProgress < prevBeatProgress && prevBeatProgress > 0.5) {
+            viewerBeatIndex++;
+          }
+          prevBeatProgress = beatProgress;
+          const ctx12: WaveformContext = { heartRate, beatIndex: viewerBeatIndex };
+          const y = midY - wfn(beatProgress, ctx12) * (h * 0.35);
           if (x === 0) ctx.moveTo(x, y);
           else ctx.lineTo(x, y);
         }
@@ -800,10 +865,14 @@ function TwelveLeadECG({ rhythm, heartRate, onClose, onExport }: { rhythm: ECGRh
         ctx.lineWidth = 1.2;
         ctx.beginPath();
         let first = true;
+        let expPrevBP = 0;
+        let expBeatIdx = 0;
         for (let px = 0; px < leadW; px++) {
           const beatProgress = (px / pxPerBeat) % 1;
+          if (beatProgress < expPrevBP && expPrevBP > 0.5) expBeatIdx++;
+          expPrevBP = beatProgress;
           // 1mV = 10mm = 40px; waveform returns values roughly -0.2 to 1.0
-          const amplitude = wfn(beatProgress) * (10 * pxPerMm);
+          const amplitude = wfn(beatProgress, { heartRate, beatIndex: expBeatIdx }) * (10 * pxPerMm);
           const wy = midY - amplitude;
           if (first) { ctx.moveTo(waveStartX + px, wy); first = false; }
           else ctx.lineTo(waveStartX + px, wy);
@@ -846,9 +915,13 @@ function TwelveLeadECG({ rhythm, heartRate, onClose, onExport }: { rhythm: ECGRh
     ctx.lineWidth = 1.2;
     ctx.beginPath();
     let first2 = true;
+    let rsPrevBP = 0;
+    let rsBeatIdx = 0;
     for (let px = 0; px < rsTraceW; px++) {
       const beatProgress = (px / pxPerBeat) % 1;
-      const amplitude = wfn2(beatProgress) * (10 * pxPerMm);
+      if (beatProgress < rsPrevBP && rsPrevBP > 0.5) rsBeatIdx++;
+      rsPrevBP = beatProgress;
+      const amplitude = wfn2(beatProgress, { heartRate, beatIndex: rsBeatIdx }) * (10 * pxPerMm);
       const wy = rsMidY - amplitude;
       if (first2) { ctx.moveTo(rsWaveStart + px, wy); first2 = false; }
       else ctx.lineTo(rsWaveStart + px, wy);
@@ -1461,16 +1534,62 @@ export function VitalSignsMonitor({
   const codeTimerRef = useRef<number | null>(null);
   const nibpIntervalRef = useRef<number | null>(null);
 
+  // Pacemaker capture enforcement - continuously enforce pacer rate while active
+  // This prevents other vital updates (deterioration, treatment effects) from overriding the paced rate
+  useEffect(() => {
+    if (!pacerActive || pacerOutput < 60) return;
+
+    // Check every 2 seconds if the HR has drifted from the pacer rate
+    const interval = setInterval(() => {
+      setCurrentVitals(prev => {
+        if (prev.pulse !== pacerRate) {
+          return { ...prev, pulse: pacerRate };
+        }
+        return prev;
+      });
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [pacerActive, pacerRate, pacerOutput]);
+
+  // Stop ready tone when leaving defib mode or when charge is cancelled
+  useEffect(() => {
+    if (monitorMode !== 'defib' || !isCharged) {
+      if (audioEngineRef.current) {
+        audioEngineRef.current.stopReadyTone();
+      }
+    }
+  }, [monitorMode, isCharged]);
+
   // ECG Rhythm - from override (dynamic patient state) or case category
   const currentRhythm = useMemo<ECGRhythm>(() => {
     const hr = parseInt(String(currentVitals.pulse)) || 75;
     // If patient state provides a rhythm override (e.g., after defibrillation, atropine),
-    // look it up in the rhythm map first
+    // resolve it directly from the rhythm registry before falling back to category matching.
+    // The override can be either a rhythm ID ('nsr', 'sinus-tachy') or a display name
+    // ('Normal Sinus Rhythm', 'Sinus Tachycardia').
     if (overrideRhythm) {
-      const overrideResult = getRhythmForCase('cardiac', overrideRhythm, hr, overrideRhythm);
-      if (overrideResult.id !== 'nsr' || overrideRhythm.toLowerCase().includes('sinus')) {
-        return overrideResult;
+      // 1. Try direct rhythm ID match (e.g., 'nsr', 'sinus-tachy', 'vfib')
+      if (RHYTHM_MAP[overrideRhythm]) {
+        return RHYTHM_MAP[overrideRhythm];
       }
+      // 2. Try matching by display name (e.g., 'Sinus Rhythm', 'Sinus Tachycardia')
+      const byName = ALL_RHYTHMS.find(r => r.name.toLowerCase() === overrideRhythm.toLowerCase());
+      if (byName) return byName;
+      // 3. Try partial name match for common variations
+      const lowerOverride = overrideRhythm.toLowerCase();
+      if (lowerOverride === 'sinus rhythm' || lowerOverride === 'normal sinus rhythm') {
+        return RHYTHM_MAP['nsr'];
+      }
+      if (lowerOverride.includes('sinus tachycardia')) {
+        return RHYTHM_MAP['sinus-tachy'];
+      }
+      if (lowerOverride.includes('sinus bradycardia')) {
+        return RHYTHM_MAP['sinus-brady'];
+      }
+      // 4. Fallback to category-based matching using the override as search text
+      const overrideResult = getRhythmForCase('cardiac', overrideRhythm, hr, overrideRhythm);
+      return overrideResult;
     }
     return getRhythmForCase(caseCategory || 'general', caseSubcategory, hr, caseTitle, ecgFindings);
   }, [caseCategory, caseSubcategory, currentVitals.pulse, caseTitle, ecgFindings, overrideRhythm]);
@@ -1521,10 +1640,15 @@ export function VitalSignsMonitor({
     }
   }, [currentVitals, onVitalChange]);
 
-  // Heart flash effect synced to HR
+  // Heart flash effect synced to HR — no flash during arrest rhythms
   useEffect(() => {
     if (!visibleVitals.has('pulse')) return;
+    if (currentRhythm.category === 'arrest') {
+      setHeartFlash(false);
+      return;
+    }
     const hr = parseInt(String(currentVitals.pulse)) || 80;
+    if (hr === 0) return;
     const intervalMs = (60 / hr) * 1000;
 
     const flash = () => {
@@ -1535,7 +1659,7 @@ export function VitalSignsMonitor({
     flash();
     const interval = window.setInterval(flash, intervalMs);
     return () => clearInterval(interval);
-  }, [currentVitals.pulse, visibleVitals]);
+  }, [currentVitals.pulse, visibleVitals, currentRhythm.category]);
 
   // Code timer
   useEffect(() => {
@@ -1551,20 +1675,24 @@ export function VitalSignsMonitor({
     };
   }, [codeTimerRunning]);
 
-  // Manage heartbeat sound
+  // Manage heartbeat sound — no heartbeat during arrest rhythms
   useEffect(() => {
     if (!audioEngineRef.current) return;
 
-    if (audioEnabled && visibleVitals.has('pulse')) {
+    if (audioEnabled && visibleVitals.has('pulse') && currentRhythm.category !== 'arrest') {
       const hr = parseInt(String(currentVitals.pulse)) || 80;
-      audioEngineRef.current.updateHeartbeatRate(hr);
-      if (!audioEngineRef.current['isPlaying']) {
-        audioEngineRef.current.playHeartbeat(hr);
+      if (hr > 0) {
+        audioEngineRef.current.updateHeartbeatRate(hr);
+        if (!audioEngineRef.current['isPlaying']) {
+          audioEngineRef.current.playHeartbeat(hr);
+        }
+      } else {
+        audioEngineRef.current.stopHeartbeat();
       }
     } else {
       audioEngineRef.current.stopHeartbeat();
     }
-  }, [audioEnabled, visibleVitals, currentVitals.pulse]);
+  }, [audioEnabled, visibleVitals, currentVitals.pulse, currentRhythm.category]);
 
   // Available vitals
   const availableVitals = useMemo(() => {
@@ -1579,6 +1707,8 @@ export function VitalSignsMonitor({
       { key: 'bloodGlucose' as keyof VitalSigns, label: 'BGL', unit: 'mmol/L' },
       { key: 'painScore' as keyof VitalSigns, label: 'Pain', unit: '/10' },
     ].filter(config => {
+      // Pain score is always available for assessment even if not in initial vitals
+      if (config.key === 'painScore') return true;
       const value = currentVitals[config.key];
       return value !== undefined && value !== null;
     });
@@ -1676,6 +1806,11 @@ export function VitalSignsMonitor({
           return next;
         });
 
+        // If pain assessment completed but painScore was not in initial vitals, set a default
+        if (completed.includes('painScore') && currentVitals.painScore === undefined) {
+          setCurrentVitals(prev => ({ ...prev, painScore: 0 }));
+        }
+
         if (audioEnabled && audioEngineRef.current && completed.includes('spo2')) {
           audioEngineRef.current.playSpo2Beep(currentVitals.spo2 || 98);
         }
@@ -1737,7 +1872,11 @@ export function VitalSignsMonitor({
     count: activeAlarms.size,
   };
 
-  const hrValue = parseInt(String(currentVitals.pulse)) || 80;
+  // During arrest rhythms (VF, asystole, fine VF, PEA), displayed HR is always 0
+  // UNLESS arrest has been resolved (ROSC) — check both rhythm category AND cprState
+  const rawHrValue = parseInt(String(currentVitals.pulse)) || 0;
+  const isArrestRhythm = currentRhythm.category === 'arrest' && cprState?.active !== false;
+  const hrValue = isArrestRhythm ? 0 : (rawHrValue || (currentRhythm.category !== 'arrest' ? 80 : 0));
   const spo2Value = currentVitals.spo2 || 98;
   const rrValue = currentVitals.respiration || 16;
   const etco2Value = currentVitals.etco2;
@@ -1805,15 +1944,18 @@ export function VitalSignsMonitor({
     const hasNaloxone = latest.includes('naloxone') || latest.includes('narcan');
     const hasAspirin = allTx.includes('aspirin');
 
+    // During cardiac arrest, treatment effects on SpO2 are meaningless (no perfusion)
+    const isInCardiacArrest = cprState?.active === true;
+
     // Apply gradual treatment effects
     const applyEffects = () => {
       setCurrentVitals(prev => {
         const updated = { ...prev };
         let changed = false;
 
-        // Oxygen therapy -> SpO2 gradually rises
+        // Oxygen therapy -> SpO2 gradually rises (skip during arrest — no perfusion for SpO2 reading)
         // More aggressive improvement when critically low (proportional to deficit)
-        if (hasOxygen) {
+        if (hasOxygen && !isInCardiacArrest) {
           const currentSpo2 = prev.spo2 || 92;
           if (currentSpo2 < 98) {
             // Bigger improvement when SpO2 is very low (clinical: high-flow O2 works fast)
@@ -1885,8 +2027,10 @@ export function VitalSignsMonitor({
 
         // Bronchodilators -> SpO2 improves, RR normalizes, EtCO2 normalizes
         if (hasBronchodilator) {
-          const spo2 = prev.spo2 || 90;
-          if (spo2 < 97) { updated.spo2 = Math.min(97, Math.round((spo2 + Math.random() * 1.5 + 0.5) * 10) / 10); changed = true; }
+          if (!isInCardiacArrest) {
+            const spo2 = prev.spo2 || 90;
+            if (spo2 < 97) { updated.spo2 = Math.min(97, Math.round((spo2 + Math.random() * 1.5 + 0.5) * 10) / 10); changed = true; }
+          }
           const rr = prev.respiration || 24;
           if (rr > 18) { updated.respiration = Math.max(16, rr - Math.floor(Math.random() * 2 + 1)); changed = true; }
           // HR may increase slightly with salbutamol
@@ -1952,8 +2096,10 @@ export function VitalSignsMonitor({
           if (rr < 14) { updated.respiration = Math.min(16, rr + Math.floor(Math.random() * 4 + 2)); changed = true; }
           const gcs = prev.gcs || 8;
           if (gcs < 15) { updated.gcs = Math.min(15, gcs + Math.floor(Math.random() * 3 + 2)); changed = true; }
-          const spo2 = prev.spo2 || 85;
-          if (spo2 < 96) { updated.spo2 = Math.min(97, spo2 + Math.random() * 3 + 1); changed = true; }
+          if (!isInCardiacArrest) {
+            const spo2 = prev.spo2 || 85;
+            if (spo2 < 96) { updated.spo2 = Math.min(97, spo2 + Math.random() * 3 + 1); changed = true; }
+          }
         }
 
         return changed ? updated : prev;
@@ -1972,6 +2118,70 @@ export function VitalSignsMonitor({
     };
   }, [appliedTreatments.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ============================================================================
+  // CARDIAC ARREST PHYSIOLOGY — EtCO2 and SpO2 alignment
+  // During arrest: SpO2 unreliable (no perfusion), EtCO2 low (no cardiac output)
+  // During CPR: EtCO2 rises to 15-25 (CPR quality indicator)
+  // After ROSC: EtCO2 jumps >40, SpO2 gradually improves
+  // ============================================================================
+  const prevArrestActiveRef = useRef(cprState?.active ?? false);
+  useEffect(() => {
+    const arrestActive = cprState?.active === true;
+    const cprRunning = cprState?.running === true;
+    const justAchievedROSC = prevArrestActiveRef.current && !arrestActive;
+    prevArrestActiveRef.current = arrestActive;
+
+    if (justAchievedROSC) {
+      // ROSC: EtCO2 jumps up (classic ROSC indicator), SpO2 begins gradual recovery
+      setCurrentVitals(prev => ({
+        ...prev,
+        etco2: 38 + Math.floor(Math.random() * 10), // 38-47 mmHg post-ROSC
+      }));
+      // Gradual SpO2 recovery over ~15 seconds
+      const roscRecovery = setInterval(() => {
+        setCurrentVitals(prev => {
+          const spo2 = prev.spo2 || 60;
+          if (spo2 >= 94) {
+            clearInterval(roscRecovery);
+            return prev;
+          }
+          return { ...prev, spo2: Math.min(96, spo2 + Math.random() * 4 + 2) };
+        });
+      }, 3000);
+      return () => clearInterval(roscRecovery);
+    }
+
+    if (!arrestActive) return;
+
+    // During cardiac arrest: periodically enforce physiological values
+    const arrestPhysiologyInterval = setInterval(() => {
+      setCurrentVitals(prev => {
+        const updated = { ...prev };
+        if (cprRunning) {
+          // CPR in progress: EtCO2 reflects CPR quality (15-25 mmHg)
+          updated.etco2 = 15 + Math.floor(Math.random() * 11); // 15-25
+          // SpO2 unreliable during CPR — show very low/unstable values
+          updated.spo2 = 40 + Math.floor(Math.random() * 25); // 40-64% (unreliable)
+        } else {
+          // No CPR: EtCO2 very low (no cardiac output)
+          updated.etco2 = 5 + Math.floor(Math.random() * 10); // 5-14 mmHg
+          // SpO2 absent/very low without perfusion
+          updated.spo2 = 20 + Math.floor(Math.random() * 20); // 20-39% (no reading)
+        }
+        return updated;
+      });
+    }, 4000);
+
+    // Set initial arrest values immediately
+    setCurrentVitals(prev => ({
+      ...prev,
+      etco2: cprRunning ? (15 + Math.floor(Math.random() * 11)) : (5 + Math.floor(Math.random() * 10)),
+      spo2: cprRunning ? (40 + Math.floor(Math.random() * 25)) : (20 + Math.floor(Math.random() * 20)),
+    }));
+
+    return () => clearInterval(arrestPhysiologyInterval);
+  }, [cprState?.active, cprState?.running]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // LIFEPAK charge handler
   const handleCharge = () => {
     if (isCharging || monitorMode !== 'defib') return;
@@ -1984,12 +2194,17 @@ export function VitalSignsMonitor({
     setTimeout(() => {
       setIsCharging(false);
       setIsCharged(true);
+      // Play sustained ready tone once charged
+      if (audioEnabled && audioEngineRef.current) {
+        audioEngineRef.current.playReadyTone();
+      }
     }, 2500);
   };
 
   const handleShock = () => {
     if (!isCharged) return;
     if (audioEnabled && audioEngineRef.current) {
+      audioEngineRef.current.stopReadyTone();
       audioEngineRef.current.playShockSound();
     }
 
@@ -2031,6 +2246,7 @@ export function VitalSignsMonitor({
     if (idx < ENERGY_OPTIONS.length - 1) {
       setSelectedEnergy(ENERGY_OPTIONS[idx + 1]);
       setIsCharged(false);
+      if (audioEngineRef.current) audioEngineRef.current.stopReadyTone();
     }
   };
 
@@ -2039,6 +2255,7 @@ export function VitalSignsMonitor({
     if (idx > 0) {
       setSelectedEnergy(ENERGY_OPTIONS[idx - 1]);
       setIsCharged(false);
+      if (audioEngineRef.current) audioEngineRef.current.stopReadyTone();
     }
   };
 
@@ -2353,7 +2570,9 @@ export function VitalSignsMonitor({
                       ? 'text-amber-400 text-3xl sm:text-4xl'
                       : 'text-green-400 text-3xl sm:text-4xl'
                 }`}>
-                  {visibleVitals.has('pulse') ? Math.round(currentVitals.pulse) : '---'}
+                  {visibleVitals.has('pulse')
+                    ? (currentRhythm.category === 'arrest' ? 0 : Math.round(currentVitals.pulse))
+                    : '---'}
                 </div>
               </div>
 
@@ -2414,15 +2633,29 @@ export function VitalSignsMonitor({
                   <span className="text-[9px] font-mono font-bold text-yellow-400/80">RR</span>
                   <span className="text-[7px] font-mono text-yellow-400/50">/min</span>
                 </div>
-                <div className={`font-mono font-bold tracking-tight leading-none mt-0.5 ${
-                  getVitalAlarmState('respiration').isAlarm
-                    ? 'text-red-500 text-2xl sm:text-3xl'
-                    : getVitalAlarmState('respiration').isWarning
-                      ? 'text-amber-400 text-2xl sm:text-3xl'
-                      : 'text-yellow-400 text-2xl sm:text-3xl'
-                }`}>
-                  {visibleVitals.has('respiration') ? Math.round(currentVitals.respiration) : '---'}
-                </div>
+                {visibleVitals.has('respiration') ? (
+                  <div className={`font-mono font-bold tracking-tight leading-none mt-0.5 text-2xl sm:text-3xl ${
+                    getVitalAlarmState('respiration').isAlarm
+                      ? 'text-red-500'
+                      : getVitalAlarmState('respiration').isWarning
+                        ? 'text-amber-400'
+                        : 'text-yellow-400'
+                  }`}>
+                    {Math.round(currentVitals.respiration)}
+                  </div>
+                ) : activeAssessments.has('respiration') ? (
+                  <div>
+                    <div className="text-xl sm:text-2xl font-mono font-bold text-yellow-400/30 mt-0.5">---</div>
+                    <Progress value={assessmentProgress.get('respiration') || 0} className="h-0.5 mt-1" />
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => startAssessment('respiration', ASSESSMENT_METHODS.respiration[0])}
+                    className="text-xl sm:text-2xl font-mono font-bold text-yellow-400/20 mt-0.5 cursor-pointer hover:text-yellow-400/40 transition-colors"
+                  >
+                    ---
+                  </button>
+                )}
               </div>
 
               {/* EtCO2 (Magenta/Pink) */}
@@ -2497,20 +2730,30 @@ export function VitalSignsMonitor({
                 </div>
               )}
 
-              {/* Pain Score (Red/Pink) */}
-              {currentVitals.painScore !== undefined && (
-                <div className="px-3 py-1 border-b border-gray-800/30">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[8px] font-mono font-bold text-rose-400/80">PAIN</span>
-                    <span className="text-[7px] font-mono text-rose-400/50">/10</span>
-                  </div>
-                  <div className={`font-mono font-bold tracking-tight leading-none mt-0.5 text-lg sm:text-xl ${
-                    visibleVitals.has('painScore') ? 'text-rose-400' : 'text-rose-400/20'
-                  }`}>
-                    {visibleVitals.has('painScore') ? currentVitals.painScore : '---'}
-                  </div>
+              {/* Pain Score (Red/Pink) - Always visible for assessment */}
+              <div className="px-3 py-1 border-b border-gray-800/30">
+                <div className="flex items-center justify-between">
+                  <span className="text-[8px] font-mono font-bold text-rose-400/80">PAIN</span>
+                  <span className="text-[7px] font-mono text-rose-400/50">/10</span>
                 </div>
-              )}
+                {visibleVitals.has('painScore') ? (
+                  <div className="font-mono font-bold tracking-tight leading-none mt-0.5 text-lg sm:text-xl text-rose-400">
+                    {currentVitals.painScore}
+                  </div>
+                ) : activeAssessments.has('painScore') ? (
+                  <div>
+                    <div className="text-lg sm:text-xl font-mono font-bold text-rose-400/30 mt-0.5">---</div>
+                    <Progress value={assessmentProgress.get('painScore') || 0} className="h-0.5 mt-1" />
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => startAssessment('painScore', ASSESSMENT_METHODS.painScore[0])}
+                    className="text-lg sm:text-xl font-mono font-bold text-rose-400/20 mt-0.5 cursor-pointer hover:text-rose-400/40 transition-colors"
+                  >
+                    ---
+                  </button>
+                )}
+              </div>
 
               {/* Code Timer */}
               <div className="px-3 py-2 mt-auto" style={{ background: 'rgba(0,0,0,0.4)' }}>
@@ -2709,20 +2952,46 @@ export function VitalSignsMonitor({
           {monitorMode === 'pacer' && (
             <div className="flex items-center gap-1.5 flex-wrap">
               {/* Pacer Rate controls */}
-              <LP20Button label="-" onClick={() => setPacerRate(prev => Math.max(30, prev - 10))} size="small" />
+              <LP20Button label="-" onClick={() => {
+                const newRate = Math.max(30, pacerRate - 10);
+                setPacerRate(newRate);
+                if (pacerActive && pacerOutput >= 60) {
+                  setCurrentVitals(prev => ({ ...prev, pulse: newRate }));
+                }
+              }} size="small" />
               <div className="px-2 py-1 rounded bg-black/50 border border-blue-600/50 min-w-[60px]">
                 <span className="text-[7px] font-mono text-blue-400 block text-center">RATE</span>
                 <span className="text-sm font-mono font-bold text-blue-300 block text-center leading-tight">{pacerRate}<span className="text-[7px] text-blue-500">ppm</span></span>
               </div>
-              <LP20Button label="+" onClick={() => setPacerRate(prev => Math.min(180, prev + 10))} size="small" />
+              <LP20Button label="+" onClick={() => {
+                const newRate = Math.min(180, pacerRate + 10);
+                setPacerRate(newRate);
+                if (pacerActive && pacerOutput >= 60) {
+                  setCurrentVitals(prev => ({ ...prev, pulse: newRate }));
+                }
+              }} size="small" />
 
               {/* Pacer Output controls */}
-              <LP20Button label="-" onClick={() => setPacerOutput(prev => Math.max(0, prev - 10))} size="small" />
+              <LP20Button label="-" onClick={() => {
+                const newOutput = Math.max(0, pacerOutput - 10);
+                setPacerOutput(newOutput);
+                if (pacerActive && newOutput < 60) {
+                  // Lost capture - revert to intrinsic rate
+                  logIntervention('PACER', `Output decreased to ${newOutput}mA - LOSS OF CAPTURE`);
+                }
+              }} size="small" />
               <div className="px-2 py-1 rounded bg-black/50 border border-blue-600/50 min-w-[60px]">
                 <span className="text-[7px] font-mono text-blue-400 block text-center">OUTPUT</span>
                 <span className="text-sm font-mono font-bold text-blue-300 block text-center leading-tight">{pacerOutput}<span className="text-[7px] text-blue-500">mA</span></span>
               </div>
-              <LP20Button label="+" onClick={() => setPacerOutput(prev => Math.min(200, prev + 10))} size="small" />
+              <LP20Button label="+" onClick={() => {
+                const newOutput = Math.min(200, pacerOutput + 10);
+                setPacerOutput(newOutput);
+                if (pacerActive && newOutput >= 60) {
+                  // Regained capture
+                  setCurrentVitals(prev => ({ ...prev, pulse: pacerRate }));
+                }
+              }} size="small" />
 
               {/* Start/Stop Pacer */}
               <LP20Button
@@ -2880,8 +3149,8 @@ export function VitalSignsMonitor({
               {/* Respiratory Rate */}
               {!visibleVitals.has('respiration') && !activeAssessments.has('respiration') && renderAssessButton('respiration', 'RR', ASSESSMENT_METHODS.respiration)}
 
-              {/* Pain Score */}
-              {currentVitals.painScore !== undefined && renderAssessButton('painScore', 'PAIN', ASSESSMENT_METHODS.painScore)}
+              {/* Pain Score - always available for assessment */}
+              {renderAssessButton('painScore', 'PAIN', ASSESSMENT_METHODS.painScore)}
             </div>
 
             {/* Visible vitals summary */}
@@ -2914,10 +3183,10 @@ export function VitalSignsMonitor({
                       }`}>{currentVitals.bloodGlucose}</span>
                     </div>
                   )}
-                  {currentVitals.painScore !== undefined && visibleVitals.has('painScore') && (
+                  {visibleVitals.has('painScore') && (
                     <div className="flex items-center justify-between px-2 py-1 rounded" style={{ background: 'rgba(255,100,100,0.1)' }}>
                       <span className="text-[9px] font-mono text-red-300">PAIN</span>
-                      <span className="text-sm font-mono font-bold text-red-300">{currentVitals.painScore}/10</span>
+                      <span className="text-sm font-mono font-bold text-red-300">{currentVitals.painScore ?? 0}/10</span>
                     </div>
                   )}
                 </div>
