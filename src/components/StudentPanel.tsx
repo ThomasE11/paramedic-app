@@ -48,7 +48,8 @@ import {
   Ambulance, XCircle, Heart, Shield, ChevronRight, BarChart3,
   ClipboardCheck, Star, TrendingUp, TrendingDown, Minus, ExternalLink,
   RotateCcw, Zap, Volume2, Phone, Eye, Thermometer, ChevronDown, ChevronUp,
-  Wind, Droplets, Brain, Pill, Syringe, Search, Shuffle, Target
+  Wind, Droplets, Brain, Pill, Syringe, Search, Shuffle, Target,
+  Flame, Baby, FlaskConical, ListChecks, HeartPulse, Gauge,
 } from 'lucide-react';
 import { toast } from 'sonner';
 // AuscultationPanel removed — sounds now play inline from 3D Physical Examination
@@ -91,6 +92,7 @@ function getStudentCaseTitle(caseData: CaseScenario): string {
   return `${patient} — Emergency Call`;
 }
 import { DefibrillationDialog } from '@/components/DefibrillationDialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 // ClinicalAssessmentPanel removed — replaced by inline ABCDE Primary Survey + 3D Physical Exam
 import {
   type AssessmentStepId,
@@ -99,6 +101,8 @@ import {
   createAssessmentTracker,
   performAssessment as performAssessmentStep,
   generateAssessmentDebrief,
+  SPECIAL_STEPS,
+  ALL_STEPS,
 } from '@/data/assessmentFramework';
 import {
   evaluateTreatmentQuality,
@@ -156,12 +160,15 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
   const [patientState, setPatientState] = useState<PatientState | null>(null);
   const [showDefibDialog, setShowDefibDialog] = useState(false);
   const [pendingDefibTreatment, setPendingDefibTreatment] = useState<Treatment | null>(null);
+  // Medication safety confirmation (replaces window.confirm which auto-dismisses on re-render)
+  const [pendingMedConfirm, setPendingMedConfirm] = useState<{ treatment: Treatment; allergyText: string; contraText: string } | null>(null);
   const deteriorationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const medicationConfirmedRef = useRef<Set<string>>(new Set());
 
   // Assessment tracking
   const [assessmentTracker, setAssessmentTracker] = useState<AssessmentTracker | null>(null);
   const [activeFindings, setActiveFindings] = useState<{ stepId: AssessmentStepId; findings: AssessmentFinding[] } | null>(null);
+  const [monitorRevealedVitals, setMonitorRevealedVitals] = useState<Set<string>>(new Set());
 
   // Scene time warnings & coaching
   const [sceneTimeWarnings, setSceneTimeWarnings] = useState<Set<string>>(new Set());
@@ -205,6 +212,8 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
   const [arrestStartTime, setArrestStartTime] = useState<number | null>(null);
   const [arrestTimeline, setArrestTimeline] = useState<Array<{time: number; event: string; type: string}>>([]);
   const cprTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Ref always holds latest tracker — prevents stale closure when handlePerformAssessment is called rapidly
+  const assessmentTrackerRef = useRef(assessmentTracker);
 
   // Timer
   const [caseStartTime, setCaseStartTime] = useState<number | null>(null);
@@ -304,15 +313,14 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
     cprTimerRef.current = setInterval(() => {
       setCprCycleTimer(prev => {
         if (prev <= 1) {
-          // Cycle complete — prompt rhythm check
-          setCprRunning(false);
+          // Cycle complete — prompt rhythm check; CPR continues automatically
           setCprCycleNumber(n => n + 1);
           toast.warning('2 minutes — RHYTHM CHECK', {
-            description: 'Pause CPR briefly (<10 sec). Check rhythm. Rotate compressor. Shock if indicated. Resume CPR.',
+            description: 'Pause CPR briefly (<10 sec) to check rhythm. Rotate compressor. Shock if indicated, then resume CPR immediately.',
             duration: 8000,
           });
           setArrestTimeline(prev => [...prev, { time: Date.now(), event: `CPR Cycle complete — rhythm check`, type: 'rhythm-check' }]);
-          return 120; // Reset for next cycle
+          return 120; // Reset for next cycle; CPR timer keeps running
         }
         return prev - 1;
       });
@@ -410,11 +418,25 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
     setHintVisible(false);
     setCurrentHint('');
     lastActivityRef.current = Date.now();
+    // Reset all cardiac arrest state for fresh case
+    setArrestConfirmed(false);
+    setArrestActive(false);
+    setPulseCheckInProgress(false);
+    setPulseCheckResult(null);
+    setCprCycleTimer(120);
+    setCprCycleNumber(0);
+    setCprRunning(false);
+    setShockCount(0);
+    setLastAdrenalineTime(null);
+    setAdrenalineDoses(0);
+    setAmiodaroneDoses(0);
+    setArrestStartTime(null);
+    setArrestTimeline([]);
 
     const initialPatientState = createInitialPatientState(newCase);
     setPatientState(initialPatientState);
 
-    const initialTracker = createAssessmentTracker(newCase);
+    const initialTracker = createAssessmentTracker(newCase, selectedYear);
     setAssessmentTracker(initialTracker);
     setActiveFindings(null);
 
@@ -553,24 +575,17 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
       return;
     }
 
-    // Medication safety check — prompt to confirm allergies and contraindications
+    // Medication safety check — show React dialog (window.confirm auto-dismisses on re-render)
     if (treatment.category === 'medication' && !medicationConfirmedRef.current.has(treatment.id)) {
       const allergies = currentCase.history?.allergies || [];
       const allergyText = allergies.length > 0 && allergies[0] !== 'NKDA' && !allergies[0]?.toLowerCase().includes('no known')
         ? `Patient allergies: ${allergies.map(a => typeof a === 'string' ? a : a.name || a).join(', ')}`
         : 'No known drug allergies (NKDA)';
       const contraText = treatment.contraindications?.length
-        ? `\nContraindications: ${treatment.contraindications.slice(0, 3).join('; ')}`
+        ? `Contraindications: ${treatment.contraindications.slice(0, 3).join('; ')}`
         : '';
-
-      const confirmed = window.confirm(
-        `⚠️ MEDICATION SAFETY CHECK\n\n` +
-        `Drug: ${treatment.name}\n` +
-        `${allergyText}${contraText}\n\n` +
-        `Have you checked allergies and confirmed this medication is appropriate for this patient?`
-      );
-      if (!confirmed) return;
-      medicationConfirmedRef.current.add(treatment.id);
+      setPendingMedConfirm({ treatment, allergyText, contraText });
+      return; // Wait for dialog confirmation
     }
 
     setApplyingTreatmentId(treatment.id);
@@ -685,21 +700,70 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
     }
   }, [pendingDefibTreatment, applyTreatment]);
 
+  // Keep ref in sync with state so rapid calls always read the latest tracker
+  useEffect(() => { assessmentTrackerRef.current = assessmentTracker; }, [assessmentTracker]);
+
   // Handle assessment step
   const handlePerformAssessment = useCallback((stepId: AssessmentStepId) => {
-    if (!assessmentTracker || !currentCase || !caseStartTime) return;
+    if (!assessmentTrackerRef.current || !currentCase || !caseStartTime) return;
     lastActivityRef.current = Date.now();
     setHintVisible(false);
 
     const { tracker: updatedTracker, findings } = performAssessmentStep(
-      assessmentTracker,
+      assessmentTrackerRef.current,
       stepId,
       currentCase,
       caseStartTime,
     );
 
+    // Update ref immediately so back-to-back calls read the right state
+    assessmentTrackerRef.current = updatedTracker;
     setAssessmentTracker(updatedTracker);
     setActiveFindings({ stepId, findings });
+
+    // Reveal vitals on the LIFEPAK monitor when ABCDE assessment exposes them
+    if (currentCase) {
+      const toReveal = new Set<string>();
+      // Extra assessment step credit: ABCDE D/E expose BGL and TEMP, which blocks the
+      // LIFEPAK assess buttons — award the scoring step credit automatically here instead.
+      const extraSteps: AssessmentStepId[] = [];
+      if (stepId === 'disability') {
+        if (currentCase.abcde?.disability?.gcs) toReveal.add('gcs');
+        if (currentCase.abcde?.disability?.bloodGlucose != null) {
+          toReveal.add('bloodGlucose');
+          extraSteps.push('blood-glucose');
+        }
+      }
+      if (stepId === 'exposure') {
+        if (currentCase.abcde?.exposure?.temperature != null) {
+          toReveal.add('temperature');
+          extraSteps.push('temperature');
+        }
+      }
+      if (stepId === 'pain-assessment' && !monitorRevealedVitals.has('painScore')) {
+        toReveal.add('painScore');
+      }
+      // Award credit for co-assessed steps (BGL, TEMP) found via ABCDE
+      for (const extra of extraSteps) {
+        if (!assessmentTrackerRef.current?.performed.some(p => p.stepId === extra)) {
+          const { tracker: extraTracker } = performAssessmentStep(
+            assessmentTrackerRef.current!,
+            extra,
+            currentCase,
+            caseStartTime,
+          );
+          assessmentTrackerRef.current = extraTracker;
+          setAssessmentTracker(extraTracker);
+        }
+      }
+      if (toReveal.size > 0) {
+        setMonitorRevealedVitals(prev => {
+          const next = new Set(prev);
+          toReveal.forEach(v => next.add(v));
+          return next;
+        });
+      }
+    }
 
     // Show toast based on findings severity
     const hasCritical = findings.some(f => f.severity === 'critical');
@@ -718,7 +782,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
     } else {
       // Normal findings — no toast needed, findings panel shows them
     }
-  }, [assessmentTracker, currentCase, caseStartTime]);
+  }, [currentCase, caseStartTime]); // assessmentTracker read via ref — always current
 
   // Sync assessmentTracker.performed step IDs into session.completedItems
   // so that checklist-based scoring (12-lead ECG, pain assessment, etc.) works
@@ -774,8 +838,9 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
     const treatmentBonusCap = Math.round(assessmentTotal * 0.3);
     let treatmentBonus = 0;
     if (appliedTreatments.length > 0 && currentCase) {
-      // Each treatment earns 5 points, capped at treatmentBonusCap
-      treatmentBonus = Math.min(appliedTreatments.length * 5, treatmentBonusCap);
+      // Deduplicate by treatment ID so repeat applications don't inflate score
+      const uniqueTreatmentCount = new Set(appliedTreatments.map(t => t.id)).size;
+      treatmentBonus = Math.min(uniqueTreatmentCount * 5, treatmentBonusCap);
       // Extra bonus if vitals improved (patient got better)
       const initialSpO2Check = parseInt(String(vitalsHistory[0]?.spo2)) || 0;
       const finalSpO2Check = parseInt(String(vitalsHistory[vitalsHistory.length - 1]?.spo2)) || 0;
@@ -837,8 +902,32 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
     setElapsedSeconds(0);
     setAssessmentTracker(null);
     setActiveFindings(null);
+    setMonitorRevealedVitals(new Set());
     setPhase('select');
     medicationConfirmedRef.current = new Set();
+    // Reset transport / patient state
+    setShowTransportDecision(false);
+    setPatientState(null);
+    setSceneTimeWarnings(new Set());
+    // Clear deterioration timer
+    if (deteriorationIntervalRef.current) {
+      clearInterval(deteriorationIntervalRef.current);
+      deteriorationIntervalRef.current = null;
+    }
+    // Reset all cardiac arrest state
+    setArrestConfirmed(false);
+    setArrestActive(false);
+    setPulseCheckInProgress(false);
+    setPulseCheckResult(null);
+    setCprCycleTimer(120);
+    setCprCycleNumber(0);
+    setCprRunning(false);
+    setShockCount(0);
+    setLastAdrenalineTime(null);
+    setAdrenalineDoses(0);
+    setAmiodaroneDoses(0);
+    setArrestStartTime(null);
+    setArrestTimeline([]);
   }, []);
 
   // ============================================================================
@@ -855,13 +944,13 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
   const phaseOrder: StudentPhase[] = ['prebriefing', 'vitals', 'case', 'postcase'];
 
   return (
-    <div className="min-h-screen bg-background bg-mesh">
+    <div className="min-h-screen bg-background">
       {/* Student Header */}
-      <header className="sticky top-0 z-50 frosted border-b border-border/30 safe-top">
+      <header className="sticky top-0 z-50 bg-background border-b border-border/30 safe-top">
         <div className="container mx-auto px-3 sm:px-4 py-2 sm:py-3">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-              <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-md shadow-blue-500/20 shrink-0">
+              <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl bg-blue-600 shadow-md shrink-0">
                 <GraduationCap className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
               </div>
               <div className="min-w-0">
@@ -934,17 +1023,17 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
               <div className="absolute inset-0 -top-8 -z-10 overflow-hidden">
                 <div className="mx-auto w-64 h-64 rounded-full bg-gradient-to-br from-blue-500/8 via-indigo-500/5 to-cyan-500/8 blur-3xl" />
               </div>
-              <div className="mx-auto mb-5 sm:mb-6 flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 shadow-2xl shadow-blue-500/30 ring-4 ring-blue-500/10">
+              <div className="mx-auto mb-5 sm:mb-6 flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-2xl bg-blue-600 shadow-sm ring-4 ring-blue-500/10">
                 <Stethoscope className="h-8 w-8 sm:h-10 sm:w-10 text-white drop-shadow-sm" />
               </div>
-              <h2 className="heading-display text-2xl sm:text-[2.25rem] leading-tight text-foreground">Paramedic Case Generator</h2>
+              <h2 className="heading-clean text-2xl sm:text-[2.25rem] leading-tight text-foreground">Paramedic Case Generator</h2>
               <p className="text-muted-foreground mt-2 sm:mt-3 text-sm sm:text-base max-w-lg mx-auto leading-relaxed">
                 Select your training level and generate realistic emergency scenarios to sharpen your clinical skills
               </p>
             </div>
 
             {/* Year Level */}
-            <Card className="card-glass rounded-2xl dark:bg-slate-900/60">
+            <Card className="bg-card border border-border rounded-2xl dark:bg-slate-900/60">
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm flex items-center gap-2 heading-premium">
                   <GraduationCap className="h-4 w-4 text-blue-500" />
@@ -972,7 +1061,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
             </Card>
 
             {/* Selection Mode Tabs */}
-            <Card className="card-glass rounded-2xl dark:bg-slate-900/60">
+            <Card className="bg-card border border-border rounded-2xl dark:bg-slate-900/60">
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm flex items-center gap-2 heading-premium">
                   <BarChart3 className="h-4 w-4 text-blue-500" />
@@ -1141,7 +1230,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                 onClick={generateCase}
                 disabled={isGenerating}
                 size="lg"
-                className="w-full gap-2.5 sm:gap-3 text-sm sm:text-lg py-6 sm:py-8 rounded-2xl bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 hover:from-blue-600 hover:via-blue-700 hover:to-indigo-700 shadow-xl shadow-blue-500/25 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/35 hover:-translate-y-1 font-semibold tracking-tight generate-btn-shimmer"
+                className="w-full gap-2.5 sm:gap-3 text-sm sm:text-lg py-6 sm:py-8 rounded-2xl bg-blue-600 hover:bg-blue-700 shadow-sm transition-all duration-300 hover:-translate-y-1 font-semibold tracking-tight"
               >
                 {isGenerating ? (
                   <><Loader2 className="h-5 w-5 sm:h-6 sm:w-6 animate-spin" /> Generating Case...</>
@@ -1188,7 +1277,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
             </div>
 
             {/* Dispatch Information */}
-            <Card className="card-glass rounded-2xl overflow-hidden">
+            <Card className="bg-card border border-border rounded-2xl overflow-hidden">
               <CardHeader className="pb-3 bg-gradient-to-r from-blue-500/8 via-blue-500/3 to-transparent border-b border-border/30">
                 <CardTitle className="text-sm flex items-center gap-2">
                   <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue-500/15">
@@ -1228,7 +1317,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
             </Card>
 
             {/* Scene Information */}
-            <Card className="card-glass rounded-2xl overflow-hidden">
+            <Card className="bg-card border border-border rounded-2xl overflow-hidden">
               <CardHeader className="pb-3 border-b border-border/30">
                 <CardTitle className="text-sm flex items-center gap-2">
                   <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue-500/15">
@@ -1258,7 +1347,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
             </Card>
 
             {/* Patient Info */}
-            <Card className="card-glass rounded-2xl overflow-hidden">
+            <Card className="bg-card border border-border rounded-2xl overflow-hidden">
               <CardHeader className="pb-3 border-b border-border/30">
                 <CardTitle className="text-sm flex items-center gap-2">
                   <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue-500/15">
@@ -1291,7 +1380,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
 
             {/* Initial Presentation */}
             {currentCase.initialPresentation && (
-              <Card className="card-glass rounded-2xl overflow-hidden">
+              <Card className="bg-card border border-border rounded-2xl overflow-hidden">
                 <CardHeader className="pb-3 border-b border-border/30">
                   <CardTitle className="text-sm flex items-center gap-2">
                     <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue-500/15">
@@ -1333,7 +1422,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
               <Button variant="outline" onClick={resetToStart} className="gap-1.5 sm:gap-2 rounded-xl text-xs sm:text-sm h-10 sm:h-11 px-3 sm:px-4">
                 <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> <span className="hidden xs:inline">Different </span>Back
               </Button>
-              <Button onClick={startCase} size="lg" className="flex-1 gap-2 rounded-xl bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg shadow-green-500/20 transition-all hover:shadow-xl hover:shadow-green-500/25 hover:-translate-y-0.5 text-sm sm:text-base h-10 sm:h-12">
+              <Button onClick={startCase} size="lg" className="flex-1 gap-2 rounded-xl bg-green-600 hover:bg-green-700 text-white shadow-sm transition-all hover:-translate-y-0.5 text-sm sm:text-base h-10 sm:h-12">
                 <Activity className="h-4 w-4 sm:h-5 sm:w-5" />
                 Start Case
               </Button>
@@ -1347,7 +1436,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
         {phase === 'vitals' && currentCase && (
           <div className="animate-fade-in space-y-3 sm:space-y-4">
             {/* ===== TOP: Patient Banner (full width) ===== */}
-            <div className="p-3 sm:p-5 rounded-2xl card-glass dark:bg-slate-900/60 space-y-3">
+            <div className="p-3 sm:p-5 rounded-2xl bg-card border border-border dark:bg-slate-900/60 space-y-3">
               <div className="flex items-center gap-2 sm:gap-3">
                 <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-blue-600/10 shrink-0">
                   <Activity className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
@@ -1376,7 +1465,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                   <Button
                     size="sm"
                     onClick={() => endCase('transport')}
-                    className="gap-1 sm:gap-1.5 text-[10px] sm:text-xs rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-md shadow-amber-500/25 w-full h-8 animate-pulse-soft ring-2 ring-amber-400/30"
+                    className="gap-1 sm:gap-1.5 text-[10px] sm:text-xs rounded-lg bg-amber-600 hover:bg-amber-700 text-white shadow-sm w-full h-8 ring-2 ring-amber-400/30"
                   >
                     <Ambulance className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> Transport
                   </Button>
@@ -1408,7 +1497,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
               <span className="flex-1 text-left text-sm sm:text-base">
                 {showScene ? 'Scene Details' : 'Assess Scene — Click to View Details'}
               </span>
-              {showScene ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5 animate-bounce-subtle" />}
+              {showScene ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
             </button>
             {showScene && (
               <div className="p-3 rounded-xl bg-muted/20 border border-border/30 text-xs space-y-2 animate-fade-in">
@@ -1725,7 +1814,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
               <div className="order-2 lg:order-1 space-y-4">
 
                 {/* --- PRIMARY SURVEY (ABCDE) --- */}
-                <Card className="card-glass rounded-xl sm:rounded-2xl overflow-hidden">
+                <Card className="bg-card border border-border rounded-xl sm:rounded-2xl overflow-hidden">
                   <CardHeader className="pb-2 px-3 sm:px-4 border-b border-border/30">
                     <CardTitle className="text-xs sm:text-sm flex items-center gap-2">
                       <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-lg bg-blue-500/15">
@@ -1779,13 +1868,8 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                         </p>
                         <div className="space-y-1">
                           {activeFindings.findings.map((f, i) => (
-                            <div key={i} className={`text-xs p-1.5 rounded-lg border ${
-                              f.severity === 'critical' ? 'bg-red-500/8 border-red-500/20 text-red-700 dark:text-red-300' :
-                              f.severity === 'abnormal' ? 'bg-amber-500/8 border-amber-500/20 text-amber-700 dark:text-amber-300' :
-                              'bg-green-500/5 border-green-500/15 text-foreground'
-                            }`}>
+                            <div key={i} className="text-xs p-1.5 rounded-lg border bg-muted/20 border-border/30 text-foreground">
                               <span className="font-medium">{f.label}:</span> {f.value}
-                              {f.significance && <p className="text-[10px] text-muted-foreground mt-0.5 italic">{f.significance}</p>}
                             </div>
                           ))}
                         </div>
@@ -1814,7 +1898,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                 )}
 
                 {/* --- HISTORY (SAMPLE) --- */}
-                <Card className="card-glass rounded-xl sm:rounded-2xl overflow-hidden">
+                <Card className="bg-card border border-border rounded-xl sm:rounded-2xl overflow-hidden">
                   <CardHeader className="pb-2 px-3 sm:px-4 border-b border-border/30">
                     <CardTitle className="text-xs sm:text-sm flex items-center gap-2">
                       <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-lg bg-purple-500/15">
@@ -1839,9 +1923,8 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                           <button
                             key={item.key}
                             onClick={() => {
-                              if (!isAssessed) {
-                                handlePerformAssessment(item.stepId);
-                              }
+                              // Always call to refresh activeFindings for display
+                              handlePerformAssessment(item.stepId);
                               setActiveHistoryStep(isActive ? null : item.key);
                             }}
                             className={`flex flex-col items-center gap-0.5 p-1.5 sm:p-2 rounded-lg border-2 transition-all text-center ${
@@ -1869,13 +1952,8 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                         </p>
                         <div className="space-y-1">
                           {activeFindings.findings.map((f, i) => (
-                            <div key={i} className={`text-xs p-1.5 rounded-lg border ${
-                              f.severity === 'critical' ? 'bg-red-500/8 border-red-500/20 text-red-700 dark:text-red-300' :
-                              f.severity === 'abnormal' ? 'bg-amber-500/8 border-amber-500/20 text-amber-700 dark:text-amber-300' :
-                              'bg-green-500/5 border-green-500/15 text-foreground'
-                            }`}>
+                            <div key={i} className="text-xs p-1.5 rounded-lg border bg-muted/20 border-border/30 text-foreground">
                               <span className="font-medium">{f.label}:</span> {f.value}
-                              {f.significance && <p className="text-[10px] text-muted-foreground mt-0.5 italic">{f.significance}</p>}
                             </div>
                           ))}
                         </div>
@@ -1883,6 +1961,103 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                     )}
                   </CardContent>
                 </Card>
+
+                {/* ===== SPECIAL ASSESSMENTS (contextual, driven by assessment framework) ===== */}
+                {assessmentTracker && (() => {
+                  // Build list of special assessment steps that are in required or recommended but not yet performed
+                  const performedIds = new Set(assessmentTracker.performed.map(p => p.stepId));
+                  const specialStepIds = new Set([
+                    ...assessmentTracker.required.filter(id => SPECIAL_STEPS.some(s => s.id === id)),
+                    ...assessmentTracker.recommended.filter(id => SPECIAL_STEPS.some(s => s.id === id)),
+                  ]);
+                  // Filter to only the 6 special steps that have no other UI path
+                  const specialOnlyIds = new Set<AssessmentStepId>([
+                    'reversible-causes', 'pediatric-assessment', 'stroke-screen',
+                    'burns-assessment', 'psychiatric-assessment', 'toxicology-screen',
+                  ]);
+                  const visibleSteps = SPECIAL_STEPS.filter(
+                    s => specialOnlyIds.has(s.id) && specialStepIds.has(s.id),
+                  );
+                  if (visibleSteps.length === 0) return null;
+
+                  const iconMap: Record<string, React.ReactNode> = {
+                    'Search': <ListChecks className="h-3.5 w-3.5" />,
+                    'Brain': <Brain className="h-3.5 w-3.5" />,
+                    'Flame': <Flame className="h-3.5 w-3.5" />,
+                    'Baby': <Baby className="h-3.5 w-3.5" />,
+                    'Flask': <FlaskConical className="h-3.5 w-3.5" />,
+                    'HeartPulse': <HeartPulse className="h-3.5 w-3.5" />,
+                    'Gauge': <Gauge className="h-3.5 w-3.5" />,
+                  };
+
+                  return (
+                    <Card className="border-amber-500/30 bg-amber-500/5">
+                      <CardHeader className="pb-1 pt-2 px-3">
+                        <CardTitle className="text-xs sm:text-sm flex items-center gap-2">
+                          <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-lg bg-amber-500/15">
+                            <Target className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-amber-500" />
+                          </div>
+                          Special Assessments
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-2 sm:p-3">
+                        <div className="flex flex-wrap gap-1.5">
+                          {visibleSteps.map(step => {
+                            const isPerformed = performedIds.has(step.id);
+                            const isRequired = assessmentTracker.required.includes(step.id);
+                            return (
+                              <button
+                                key={step.id}
+                                onClick={() => {
+                                  handlePerformAssessment(step.id);
+                                  setActiveHistoryStep(null);
+                                }}
+                                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border-2 transition-all text-xs sm:text-sm ${
+                                  isPerformed
+                                    ? 'border-green-500/40 bg-green-500/10 text-green-700 dark:text-green-400'
+                                    : 'border-amber-500/40 bg-amber-500/5 hover:border-amber-500 hover:bg-amber-500/15 text-foreground'
+                                }`}
+                              >
+                                <span className={isPerformed ? 'text-green-500' : 'text-amber-500'}>
+                                  {iconMap[step.icon] || <Target className="h-3.5 w-3.5" />}
+                                </span>
+                                <span className="font-medium">{step.shortLabel}</span>
+                                {isRequired && !isPerformed && (
+                                  <Badge variant="outline" className="text-[8px] px-1 py-0 border-amber-500/50 text-amber-600 dark:text-amber-400">
+                                    Required
+                                  </Badge>
+                                )}
+                                {isPerformed && <CheckCircle2 className="h-3 w-3 text-green-500" />}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        {/* Show findings for last clicked special assessment */}
+                        {activeFindings && SPECIAL_STEPS.some(s => s.id === activeFindings.stepId && specialOnlyIds.has(s.id) && specialStepIds.has(s.id)) && (
+                          <div className="mt-2 p-2.5 rounded-xl bg-muted/30 border border-border/30 animate-fade-in">
+                            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
+                              {ALL_STEPS[activeFindings.stepId]?.label || activeFindings.stepId} Findings
+                            </p>
+                            <div className="space-y-1">
+                              {activeFindings.findings.map((f, i) => (
+                                <div key={i} className={`text-xs p-1.5 rounded-lg border bg-muted/20 text-foreground ${
+                                  f.severity === 'critical' ? 'border-red-500/40 bg-red-500/5' :
+                                  f.severity === 'abnormal' ? 'border-amber-500/40 bg-amber-500/5' :
+                                  'border-border/30'
+                                }`}>
+                                  <span className="font-medium">{f.label}:</span> {f.value}
+                                  {f.significance && (
+                                    <p className="text-[10px] text-muted-foreground mt-0.5 italic">{f.significance}</p>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })()}
 
                 {/* Clinical Assessment Panel removed — replaced by inline ABCDE Primary Survey + 3D Physical Exam above */}
               </div>
@@ -1901,12 +2076,14 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                       setCurrentVitals(completeVitals);
                       setVitalsHistory(prev => [...prev, completeVitals]);
                     }}
+                    onAssessmentPerformed={handlePerformAssessment}
                     caseCategory={currentCase.category}
                     caseSubcategory={currentCase.subcategory}
                     caseTitle={currentCase.title}
                     ecgFindings={currentCase.abcde?.circulation?.ecgFindings}
                     appliedTreatments={appliedTreatmentIds}
                     overrideRhythm={patientState?.currentRhythm}
+                    revealedVitals={monitorRevealedVitals}
                     cprState={arrestActive ? {
                       active: arrestActive,
                       running: cprRunning,
@@ -2002,7 +2179,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                 </div>
 
                 {/* --- MANAGEMENT (ABCDE) --- */}
-                <Card className="card-glass rounded-xl sm:rounded-2xl overflow-hidden">
+                <Card className="bg-card border border-border rounded-xl sm:rounded-2xl overflow-hidden">
                   <CardHeader className="pb-2 px-3 sm:px-4 border-b border-border/30">
                     <CardTitle className="text-xs sm:text-sm flex items-center gap-2">
                       <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-lg bg-green-500/15">
@@ -2142,7 +2319,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
 
                 {/* --- Applied Treatments Log --- */}
                 {appliedTreatments.length > 0 && (
-                  <Card className="card-glass rounded-xl sm:rounded-2xl">
+                  <Card className="bg-card border border-border rounded-xl sm:rounded-2xl">
                     <CardHeader className="pb-2 border-b border-border/30 px-3 sm:px-4">
                       <CardTitle className="text-xs sm:text-sm flex items-center gap-2">
                         <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-lg bg-green-500/15">
@@ -2215,7 +2392,48 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                 onConfirm={handleDefibConfirm}
                 currentRhythm={patientState.currentRhythm}
                 currentPulse={currentVitals?.pulse || 0}
+                isInArrest={patientState.isInArrest}
               />
+            )}
+
+            {/* Medication Safety Confirmation Dialog */}
+            {pendingMedConfirm && (
+              <Dialog open={!!pendingMedConfirm} onOpenChange={(open) => { if (!open) setPendingMedConfirm(null); }}>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2 text-amber-600">
+                      <AlertTriangle className="h-5 w-5" />
+                      Medication Safety Check
+                    </DialogTitle>
+                    <DialogDescription>
+                      Confirm allergies and appropriateness before administering.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-3 py-2">
+                    <div className="rounded-lg border border-border bg-muted/30 p-3">
+                      <p className="text-sm font-semibold">{pendingMedConfirm.treatment.name}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{pendingMedConfirm.allergyText}</p>
+                      {pendingMedConfirm.contraText && (
+                        <p className="text-xs text-amber-600 mt-1">{pendingMedConfirm.contraText}</p>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Have you checked allergies and confirmed this medication is appropriate?
+                    </p>
+                  </div>
+                  <DialogFooter className="gap-2">
+                    <Button variant="outline" onClick={() => setPendingMedConfirm(null)}>Cancel</Button>
+                    <Button onClick={() => {
+                      const t = pendingMedConfirm.treatment;
+                      medicationConfirmedRef.current.add(t.id);
+                      setPendingMedConfirm(null);
+                      applyTreatment(t);
+                    }}>
+                      Confirm &amp; Administer
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             )}
 
             {/* TreatmentApplicationPanel removed — replaced by inline Management ABCDE tabs above */}
@@ -2258,22 +2476,22 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
             <div className="text-center mb-1 sm:mb-2 relative">
               <div className="absolute inset-0 bg-gradient-to-b from-primary/3 to-transparent rounded-3xl -mx-3 sm:-mx-4 -mt-3 sm:-mt-4 h-32 sm:h-40" />
               <div className="relative">
-                <div className={`mx-auto mb-3 sm:mb-4 flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-2xl shadow-xl ring-4 ${
+                <div className={`mx-auto mb-3 sm:mb-4 flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-2xl shadow-sm ring-4 ${
                   performanceMetrics.percentage >= 80
-                    ? 'bg-gradient-to-br from-green-500 to-green-600 shadow-green-500/20 ring-green-500/10'
+                    ? 'bg-green-600 ring-green-500/10'
                     : performanceMetrics.percentage >= 50
-                    ? 'bg-gradient-to-br from-amber-500 to-amber-600 shadow-amber-500/20 ring-amber-500/10'
-                    : 'bg-gradient-to-br from-red-500 to-red-600 shadow-red-500/20 ring-red-500/10'
+                    ? 'bg-amber-600 ring-amber-500/10'
+                    : 'bg-red-600 ring-red-500/10'
                 }`}>
                   <Star className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
                 </div>
-                <h2 className="heading-display text-xl sm:text-2xl">Case Complete</h2>
+                <h2 className="heading-clean text-xl sm:text-2xl">Case Complete</h2>
                 <p className="text-muted-foreground mt-1 text-sm sm:text-base truncate px-2">{getStudentCaseTitle(currentCase)}</p>
               </div>
             </div>
 
             {/* Overall Score */}
-            <Card className="card-glass rounded-2xl border-primary/15 overflow-hidden">
+            <Card className="bg-card border border-border rounded-2xl border-primary/15 overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-br from-primary/3 to-transparent" />
               <CardContent className="p-4 sm:p-6 relative">
                 <div className="grid grid-cols-3 gap-3 sm:gap-6 text-center">
@@ -2299,7 +2517,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
 
             {/* Transport & Clinical Decisions */}
             {transportDecisions && (
-              <Card className="card-glass rounded-2xl overflow-hidden">
+              <Card className="bg-card border border-border rounded-2xl overflow-hidden">
                 <CardHeader className="pb-3 border-b border-border/30">
                   <CardTitle className="text-sm flex items-center gap-2">
                     <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-amber-500/15">
@@ -2347,7 +2565,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
             )}
 
             {/* Performance Feedback */}
-            <Card className="card-glass rounded-2xl overflow-hidden">
+            <Card className="bg-card border border-border rounded-2xl overflow-hidden">
               <CardHeader className="pb-3 border-b border-border/30">
                 <CardTitle className="text-sm flex items-center gap-2">
                   <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue-500/15">
@@ -2470,7 +2688,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
 
             {/* Assessment Debrief */}
             {performanceMetrics.assessmentDebrief && (
-              <Card className="card-glass rounded-2xl overflow-hidden">
+              <Card className="bg-card border border-border rounded-2xl overflow-hidden">
                 <CardHeader className="pb-3 border-b border-border/30">
                   <CardTitle className="text-sm flex items-center gap-2">
                     <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue-500/15">
@@ -2585,7 +2803,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
 
             {/* Cardiac Arrest Timeline */}
             {arrestTimeline.length > 0 && (
-              <Card className="card-glass rounded-2xl overflow-hidden border-red-200 dark:border-red-800">
+              <Card className="bg-card border border-border rounded-2xl overflow-hidden border-red-200 dark:border-red-800">
                 <CardHeader className="pb-3 border-b border-border/30">
                   <CardTitle className="text-sm flex items-center gap-2">
                     <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-red-500/15">
@@ -2675,7 +2893,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
               };
 
               return (
-                <Card className="card-glass rounded-2xl overflow-hidden">
+                <Card className="bg-card border border-border rounded-2xl overflow-hidden">
                   <CardHeader className="pb-3 border-b border-border/30">
                     <CardTitle className="text-sm flex items-center gap-2">
                       <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-violet-500/15">
@@ -2722,7 +2940,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
               if (guidanceItems.length === 0 && resources.length === 0) return null;
 
               return (
-                <Card className="card-glass rounded-2xl overflow-hidden">
+                <Card className="bg-card border border-border rounded-2xl overflow-hidden">
                   <CardHeader className="pb-3 border-b border-border/30">
                     <CardTitle className="text-sm flex items-center gap-2">
                       <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-500/15">
@@ -2758,7 +2976,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
 
             {/* Key Learning Points */}
             {currentCase.expectedFindings && (
-              <Card className="card-glass rounded-2xl overflow-hidden">
+              <Card className="bg-card border border-border rounded-2xl overflow-hidden">
                 <CardHeader className="pb-3 border-b border-border/30">
                   <CardTitle className="text-sm flex items-center gap-2">
                     <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue-500/15">
@@ -2807,7 +3025,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
 
             {/* Additional Resources */}
             {currentCase.educationalResources && currentCase.educationalResources.length > 0 && (
-              <Card className="card-glass rounded-2xl overflow-hidden">
+              <Card className="bg-card border border-border rounded-2xl overflow-hidden">
                 <CardHeader className="pb-3 border-b border-border/30">
                   <CardTitle className="text-sm flex items-center gap-2">
                     <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue-500/15">

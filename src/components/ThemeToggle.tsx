@@ -1,21 +1,58 @@
 import { Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+
+const THEME_KEY = 'paramedic-theme';
+
+/**
+ * Resolve the effective theme: saved preference > system preference > light.
+ */
+function getEffectiveTheme(): 'dark' | 'light' {
+  const saved = localStorage.getItem(THEME_KEY);
+  if (saved === 'dark' || saved === 'light') return saved;
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+/**
+ * Apply the theme class to the document root so Tailwind picks it up.
+ */
+function applyTheme(theme: 'dark' | 'light') {
+  if (theme === 'dark') {
+    document.documentElement.classList.add('dark');
+  } else {
+    document.documentElement.classList.remove('dark');
+  }
+}
 
 export function ThemeToggle() {
-  // Initialize state from DOM during component initialization (lazy init)
-  const [isDark, setIsDark] = useState(() =>
-    document.documentElement.classList.contains('dark')
-  );
+  const [isDark, setIsDark] = useState(() => {
+    const theme = getEffectiveTheme();
+    // Ensure DOM matches on initial render
+    applyTheme(theme);
+    return theme === 'dark';
+  });
+
+  // Listen for system preference changes when no manual override is saved
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const handler = (e: MediaQueryListEvent) => {
+      // Only follow system when user hasn't set a manual preference
+      if (!localStorage.getItem(THEME_KEY)) {
+        const newDark = e.matches;
+        applyTheme(newDark ? 'dark' : 'light');
+        setIsDark(newDark);
+      }
+    };
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
 
   const toggleTheme = useCallback(() => {
     setIsDark(prev => {
       const newIsDark = !prev;
-      if (newIsDark) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
+      const theme = newIsDark ? 'dark' : 'light';
+      applyTheme(theme);
+      localStorage.setItem(THEME_KEY, theme);
       return newIsDark;
     });
   }, []);

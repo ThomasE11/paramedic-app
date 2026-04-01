@@ -75,7 +75,7 @@ export function PreBriefingPanel({
   return (
     <div className="space-y-6 animate-fade-in-up">
       {/* Header Card */}
-      <Card className="border-primary/20 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30">
+      <Card className="border-primary/20 bg-blue-50 dark:bg-blue-950/30">
         <CardContent className="p-6">
           <div className="flex items-center gap-3 mb-3">
             <div className="p-2.5 rounded-xl bg-primary/20">
@@ -240,7 +240,7 @@ export function PreBriefingPanel({
         </Button>
         <Button
           onClick={onStartSimulation}
-          className="flex-1 h-12 btn-glow bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white"
+          className="flex-1 h-12 bg-green-600 hover:bg-green-700 text-white"
         >
           <Play className="w-5 h-5 mr-2" />
           Begin Simulation

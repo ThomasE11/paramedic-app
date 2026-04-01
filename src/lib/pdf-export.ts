@@ -1,3 +1,4 @@
+import { jsPDF } from 'jspdf';
 import type { CaseScenario, CaseSession, AppliedTreatment, VitalSigns, SimulationObjective, DebriefingResource, InstructorAssessmentNote } from '@/types';
 import { getVideosByFindings, getVideosByCategory, referenceArticles, getYouTubeWatchUrl } from '@/data/localClinicalResources';
 
@@ -11,41 +12,6 @@ interface ExportOptions {
   instructorAssessmentNotes?: InstructorAssessmentNote[];
   simulationObjective?: SimulationObjective;
   debriefingResources?: DebriefingResource[];
-}
-
-/**
- * Load jsPDF dynamically from CDN (works better with Vite than npm package)
- */
-async function loadJsPDF(): Promise<any> {
-  if ((window as any).jspdf?.jsPDF) {
-    return (window as any).jspdf.jsPDF;
-  }
-
-  // Try loading jsPDF from multiple CDNs for reliability
-  const cdnUrls = [
-    'https://unpkg.com/jspdf@4.0.0/dist/jspdf.umd.min.js',
-    'https://cdn.jsdelivr.net/npm/jspdf@4.0.0/dist/jspdf.umd.min.js',
-    'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js',
-  ];
-
-  for (const url of cdnUrls) {
-    try {
-      await new Promise<void>((resolve, reject) => {
-        const script = document.createElement('script');
-        script.src = url;
-        script.onload = () => resolve();
-        script.onerror = () => reject(new Error(`Failed to load from ${url}`));
-        document.head.appendChild(script);
-      });
-      if ((window as any).jspdf?.jsPDF) {
-        return (window as any).jspdf.jsPDF;
-      }
-    } catch {
-      console.warn(`jsPDF CDN failed: ${url}, trying next...`);
-    }
-  }
-
-  throw new Error('Failed to load jsPDF from all CDN sources');
 }
 
 // ==========================================================================
@@ -93,7 +59,6 @@ const COLOR = {
 export async function exportSessionToPDF(options: ExportOptions): Promise<void> {
   const { session, caseData, elapsedTime } = options;
 
-  const jsPDF = await loadJsPDF();
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',

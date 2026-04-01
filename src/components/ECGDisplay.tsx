@@ -73,15 +73,15 @@ export function ECGDisplayComponent({ ecg, show = true, onClose }: ECGDisplayPro
 
   return (
     <div className={`fixed inset-0 z-50 bg-background/95 backdrop-blur-xl ${isFullscreen ? '' : 'p-2 md:p-4'}`}>
-      <div className={`bg-background w-full h-full flex flex-col shadow-2xl border ${isFullscreen ? 'h-screen w-screen max-w-none rounded-none border-0' : 'max-w-7xl max-h-screen rounded-xl mx-auto overflow-hidden'}`}>
+      <div className={`bg-background w-full h-full flex flex-col shadow-sm border ${isFullscreen ? 'h-screen w-screen max-w-none rounded-none border-0' : 'max-w-7xl max-h-screen rounded-xl mx-auto overflow-hidden'}`}>
         {/* Enhanced Header with Gradient */}
-        <div className="sticky top-0 z-10 bg-gradient-to-r from-background via-background to-muted/30 border-b px-6 py-4 flex items-center justify-between">
+        <div className="sticky top-0 z-10 bg-background border-b px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-gradient-to-br from-red-500/20 to-red-600/10 animate-pulse-soft">
+            <div className="p-2 rounded-xl bg-red-100 dark:bg-red-950/30">
               <Activity className="h-6 w-6 text-red-500" />
             </div>
             <div>
-              <h2 className="text-xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">{ecg.title}</h2>
+              <h2 className="text-xl font-bold text-foreground">{ecg.title}</h2>
               <div className="flex items-center gap-2 mt-1">
                 <Badge variant="outline" className={`${urgencyColors[ecg.urgency]} font-semibold`}>
                   {ecg.urgency.toUpperCase()}

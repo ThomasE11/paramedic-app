@@ -40,7 +40,7 @@ export function AssessmentPanel({ caseData, studentYear = '3rd-year', showAllCon
   return (
     <div className="space-y-4">
       {/* Expected Findings */}
-      <Card className="card-interactive animate-fade-in-up stagger-1">
+      <Card className="animate-fade-in-up stagger-1">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-sm font-semibold">
             <div className="p-1.5 rounded-lg bg-primary/10">
@@ -111,7 +111,7 @@ export function AssessmentPanel({ caseData, studentYear = '3rd-year', showAllCon
       </Card>
 
       {/* Teaching Points */}
-      <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10 card-interactive animate-fade-in-up stagger-2">
+      <Card className="border-primary/20 bg-primary/5 animate-fade-in-up stagger-2">
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-sm font-semibold">
             <div className="p-1 rounded-lg bg-amber-100 dark:bg-amber-900/30">
@@ -136,7 +136,7 @@ export function AssessmentPanel({ caseData, studentYear = '3rd-year', showAllCon
 
       {/* Common Pitfalls - Only for 3rd year+ */}
       {showAdvancedDetails && caseData.commonPitfalls && (
-        <Card className="border-amber-200 bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-950/20 dark:to-amber-900/10 card-interactive animate-fade-in-up stagger-3">
+        <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950/20 animate-fade-in-up stagger-3">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-semibold text-amber-700 dark:text-amber-400">
               <div className="p-1 rounded-lg bg-amber-100 dark:bg-amber-900/30">
@@ -161,7 +161,7 @@ export function AssessmentPanel({ caseData, studentYear = '3rd-year', showAllCon
       )}
 
       {/* Vital Signs Progression */}
-      <Card className="card-interactive animate-fade-in-up stagger-4">
+      <Card className="animate-fade-in-up stagger-4">
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-sm font-semibold">
             <div className="p-1 rounded-lg bg-primary/10">

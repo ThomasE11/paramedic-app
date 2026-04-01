@@ -9,6 +9,7 @@ import {
   Target, Star, RotateCcw, Sparkles, Activity
 } from 'lucide-react';
 import { exportSessionToPDF } from '@/lib/pdf-export';
+import { toast } from 'sonner';
 import { DebriefingResourcesPanel } from '@/components/DebriefingResourcesPanel';
 import {
   evaluateTreatmentQuality,
@@ -199,6 +200,7 @@ export function SessionSummary({
       });
     } catch (error) {
       console.error('Failed to export PDF:', error);
+      toast.error('PDF export failed. Please try again.');
     } finally {
       setIsExporting(false);
     }
@@ -242,33 +244,21 @@ export function SessionSummary({
   return (
     <div className="space-y-6">
       {/* Hero Score Card with Gradient Background */}
-      <Card className="relative overflow-hidden border-2 card-interactive animate-fade-in-up">
-        {/* Animated gradient background */}
-        <div className={`absolute inset-0 bg-gradient-to-br ${grade.color} opacity-5`} />
-        
-        {/* Decorative circles */}
-        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/2" />
-        <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-primary/10 to-transparent rounded-full translate-y-1/2 -translate-x-1/2" />
-
-        <CardContent className="relative p-8">
+      <Card className="border-2 animate-fade-in-up">
+        <CardContent className="p-8">
           <div className="flex flex-col items-center text-center">
             {/* Animated Grade Badge */}
-            <div className={`relative mb-6 animate-pop-in`}>
-              <div className={`w-28 h-28 rounded-full bg-gradient-to-br ${grade.color} p-1 shadow-lg`}>
+            <div className={`relative mb-6 animate-fade-in`}>
+              <div className={`w-28 h-28 rounded-full border-2 border-border p-1 shadow-sm`}>
                 <div className={`w-full h-full rounded-full ${grade.bgColor} flex items-center justify-center`}>
-                  <GradeIcon className={`w-12 h-12 animate-float`} />
+                  <GradeIcon className={`w-12 h-12`} />
                 </div>
               </div>
-              
-              {/* Success indicator ring */}
-              {percentage >= 75 && (
-                <div className="absolute inset-0 rounded-full border-4 border-dashed border-primary/30 animate-rotate-slow" />
-              )}
             </div>
 
             {/* Animated Score Display */}
             <div className="mb-2">
-              <span className="text-6xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+              <span className="text-6xl font-bold text-foreground">
                 {animatedPercentage}
               </span>
               <span className="text-3xl text-muted-foreground">%</span>
@@ -314,7 +304,7 @@ export function SessionSummary({
 
       {/* Quick Stats Row - always 3 columns */}
       <div className="grid grid-cols-3 gap-2 sm:gap-4">
-        <Card className="card-interactive card-hover animate-fade-in-up stagger-2 border-l-4 border-l-emerald-500">
+        <Card className="animate-fade-in-up stagger-2 border-l-4 border-l-emerald-500">
           <CardContent className="p-3 sm:p-5">
             <div className="flex items-center justify-between">
               <div>
@@ -333,7 +323,7 @@ export function SessionSummary({
           </CardContent>
         </Card>
 
-        <Card className="card-interactive card-hover animate-fade-in-up stagger-3 border-l-4 border-l-red-500">
+        <Card className="animate-fade-in-up stagger-3 border-l-4 border-l-red-500">
           <CardContent className="p-3 sm:p-5">
             <div className="flex items-center justify-between">
               <div>
@@ -353,7 +343,7 @@ export function SessionSummary({
           </CardContent>
         </Card>
 
-        <Card className="card-interactive card-hover animate-fade-in-up stagger-4 border-l-4 border-l-blue-500">
+        <Card className="animate-fade-in-up stagger-4 border-l-4 border-l-blue-500">
           <CardContent className="p-3 sm:p-5">
             <div className="flex items-center justify-between">
               <div>
@@ -377,10 +367,8 @@ export function SessionSummary({
 
       {/* Critical Alert - if any critical items were missed */}
       {criticalMissedItems.length > 0 && (
-        <Card className="border-2 border-red-500 bg-gradient-to-br from-red-50 to-red-100/50 dark:from-red-950/30 dark:to-red-900/20 animate-fade-in-up stagger-5 overflow-hidden relative">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-red-500/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-          
-          <CardHeader className="relative">
+        <Card className="border-2 border-red-500 bg-red-50 dark:bg-red-950/30 animate-fade-in-up stagger-5">
+          <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg text-red-700 dark:text-red-400">
               <div className="p-1.5 rounded-lg bg-red-100 dark:bg-red-900/30 animate-pulse">
                 <AlertTriangle className="h-5 w-5" />
@@ -389,7 +377,7 @@ export function SessionSummary({
             </CardTitle>
           </CardHeader>
           
-          <CardContent className="relative space-y-3">
+          <CardContent className="space-y-3">
             <p className="text-red-700 dark:text-red-300">
               The following <strong>critical</strong> actions were not performed:
             </p>
@@ -446,7 +434,7 @@ export function SessionSummary({
 
       {/* Completed Items */}
       {completedItems.length > 0 && (
-        <Card className="card-interactive animate-fade-in-up stagger-6 border-l-4 border-l-emerald-500">
+        <Card className="animate-fade-in-up stagger-6 border-l-4 border-l-emerald-500">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-lg text-emerald-700 dark:text-emerald-400">
               <div className="p-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
@@ -482,7 +470,7 @@ export function SessionSummary({
 
       {/* Missed Non-Critical Items */}
       {missedItems.filter(item => !item.critical).length > 0 && (
-        <Card className="card-interactive animate-fade-in-up stagger-7 border-l-4 border-l-orange-500">
+        <Card className="animate-fade-in-up stagger-7 border-l-4 border-l-orange-500">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-lg text-orange-700 dark:text-orange-400">
               <div className="p-1.5 rounded-lg bg-orange-100 dark:bg-orange-900/30">
@@ -528,7 +516,7 @@ export function SessionSummary({
 
       {/* Treatment Log — Chronological */}
       {appliedTreatments && appliedTreatments.length > 0 && (
-        <Card className="card-interactive animate-fade-in-up stagger-6 border-l-4 border-l-teal-500">
+        <Card className="animate-fade-in-up stagger-6 border-l-4 border-l-teal-500">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-lg text-teal-700 dark:text-teal-400">
               <div className="p-1.5 rounded-lg bg-teal-100 dark:bg-teal-900/30">
@@ -612,7 +600,7 @@ export function SessionSummary({
         if (vitalItems.length === 0) return null;
 
         return (
-          <Card className="card-interactive animate-fade-in-up stagger-6 border-l-4 border-l-cyan-500">
+          <Card className="animate-fade-in-up stagger-6 border-l-4 border-l-cyan-500">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-lg text-cyan-700 dark:text-cyan-400">
                 <div className="p-1.5 rounded-lg bg-cyan-100 dark:bg-cyan-900/30">
@@ -670,7 +658,7 @@ export function SessionSummary({
         };
 
         return (
-          <Card className="card-interactive animate-fade-in-up stagger-7 border-l-4 border-l-violet-500">
+          <Card className="animate-fade-in-up stagger-7 border-l-4 border-l-violet-500">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-lg text-violet-700 dark:text-violet-400">
                 <div className="p-1.5 rounded-lg bg-violet-100 dark:bg-violet-900/30">
@@ -713,7 +701,7 @@ export function SessionSummary({
         if (resources.length === 0) return null;
 
         return (
-          <Card className="card-interactive animate-fade-in-up stagger-7 border-l-4 border-l-indigo-500">
+          <Card className="animate-fade-in-up stagger-7 border-l-4 border-l-indigo-500">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-lg text-indigo-700 dark:text-indigo-400">
                 <div className="p-1.5 rounded-lg bg-indigo-100 dark:bg-indigo-900/30">
@@ -740,7 +728,7 @@ export function SessionSummary({
       })()}
 
       {/* Teaching Points */}
-      <Card className="card-interactive animate-fade-in-up stagger-8 border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
+      <Card className="animate-fade-in-up stagger-8 border-primary/20 bg-primary/5">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-lg">
             <div className="p-1.5 rounded-lg bg-primary/20">
@@ -765,7 +753,7 @@ export function SessionSummary({
 
       {/* Common Pitfalls */}
       {caseData.commonPitfalls && caseData.commonPitfalls.length > 0 && (
-        <Card className="card-interactive animate-fade-in-up stagger-8 border-amber-200 bg-gradient-to-br from-amber-50/80 to-amber-100/50 dark:from-amber-950/30 dark:to-amber-900/20">
+        <Card className="animate-fade-in-up stagger-8 border-amber-200 bg-amber-50 dark:bg-amber-950/30">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-lg text-amber-700 dark:text-amber-400">
               <div className="p-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/30">
@@ -789,7 +777,7 @@ export function SessionSummary({
 
       {/* Instructor Notes */}
       {session.notes && (
-        <Card className="card-interactive animate-fade-in-up stagger-8">
+        <Card className="animate-fade-in-up stagger-8">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-lg">
               <div className="p-1.5 rounded-lg bg-muted">
@@ -808,7 +796,7 @@ export function SessionSummary({
 
       {/* Instructor Assessment Notes */}
       {instructorAssessmentNotes && instructorAssessmentNotes.length > 0 && (
-        <Card className="card-interactive animate-fade-in-up stagger-8 border-l-4 border-l-indigo-500">
+        <Card className="animate-fade-in-up stagger-8 border-l-4 border-l-indigo-500">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-lg text-indigo-700 dark:text-indigo-400">
               <div className="p-1.5 rounded-lg bg-indigo-100 dark:bg-indigo-900/30">
@@ -879,7 +867,7 @@ export function SessionSummary({
       <div className="flex gap-3 animate-fade-in-up stagger-9">
         <Button
           variant="outline"
-          className="flex-1 h-12 card-hover"
+          className="flex-1 h-12"
           onClick={() => window.print()}
         >
           <FileText className="mr-2 h-4 w-4" />
@@ -888,7 +876,7 @@ export function SessionSummary({
         <Button
           onClick={handleExportPDF}
           disabled={isExporting}
-          className="flex-1 h-12 btn-glow bg-gradient-to-r from-primary to-primary/90"
+          className="flex-1 h-12 bg-primary"
         >
           {isExporting ? (
             <>

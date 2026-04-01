@@ -693,9 +693,10 @@ export function getAssessmentProfile(category: CaseCategory): CaseAssessmentProf
 }
 
 /**
- * Get all required and recommended steps for a case
+ * Get all required and recommended steps for a case.
+ * @param yearLevel Optional student year level — used to gate advanced steps like H's & T's
  */
-export function getRequiredSteps(caseData: CaseScenario): {
+export function getRequiredSteps(caseData: CaseScenario, yearLevel?: string): {
   required: AssessmentStepId[];
   recommended: AssessmentStepId[];
 } {
@@ -714,17 +715,39 @@ export function getRequiredSteps(caseData: CaseScenario): {
     ...profile.recommendedSpecial,
   ];
 
-  // H's and T's (reversible causes) ONLY for cardiac arrest cases
+  // H's and T's (reversible causes) for cardiac arrest cases.
+  // For 1st-year students this is recommended (not required) — it's a 2nd-year+ curriculum topic.
   const sub = (caseData.subcategory || '').toLowerCase();
-  if (sub.includes('cardiac-arrest') || sub.includes('arrest') || sub.includes('vfib') || sub.includes('asystole')) {
-    required.push('reversible-causes');
+  const isArrestCase = sub.includes('cardiac-arrest') || sub.includes('arrest') || sub.includes('vfib') || sub.includes('asystole');
+  if (isArrestCase) {
+    if (yearLevel === '1st-year') {
+      recommended.push('reversible-causes');
+    } else {
+      required.push('reversible-causes');
+    }
+  }
+
+  // Pediatric Assessment Triangle (PAT) for any pediatric patient regardless of category
+  const patientAge = caseData.patientInfo?.age;
+  const isPediatric = patientAge !== undefined && patientAge < 16;
+  if (isPediatric && !required.includes('pediatric-assessment') && !recommended.includes('pediatric-assessment')) {
+    recommended.push('pediatric-assessment');
   }
 
   return { required, recommended };
 }
 
 /**
- * Extract findings for a specific assessment step from case data
+ * Extract findings for a specific assessment step from case data.
+ *
+ * KNOWN LIMITATION: Findings are always derived from the static initial case
+ * data (caseData.abcde, caseData.secondarySurvey, etc.). They do NOT update
+ * dynamically based on treatment effects or current vital signs. For example,
+ * if treatment improves SpO2 from 82% to 92%, auscultation findings will still
+ * reflect the initial presentation (e.g., "silent chest"). Implementing
+ * dynamic findings would require a significant refactor to pass current
+ * patient state into this function and define state-dependent finding rules
+ * for each case.
  */
 export function getStepFindings(stepId: AssessmentStepId, caseData: CaseScenario): AssessmentFinding[] {
   const findings: AssessmentFinding[] = [];
@@ -1129,8 +1152,8 @@ export function getStepFindings(stepId: AssessmentStepId, caseData: CaseScenario
       findings.push({
         label: 'Allergies',
         value: allergies.length > 0 ? allergies.join(', ') : 'No known allergies (NKDA)',
-        severity: allergies.some(a => a.toLowerCase() !== 'none known' && a.toLowerCase() !== 'nkda' && a.toLowerCase() !== 'nil') ? 'abnormal' : 'normal',
-        significance: allergies.some(a => a.toLowerCase() !== 'none known' && a.toLowerCase() !== 'nkda' && a.toLowerCase() !== 'nil')
+        severity: allergies.some(a => !['none known', 'nkda', 'nil', 'none', 'no known allergies', 'no known drug allergies', 'nil known'].includes(a.toLowerCase().trim())) ? 'abnormal' : 'normal',
+        significance: allergies.some(a => !['none known', 'nkda', 'nil', 'none', 'no known allergies', 'no known drug allergies', 'nil known'].includes(a.toLowerCase().trim()))
           ? 'Check for cross-reactivity with planned treatments.'
           : undefined,
       });
@@ -1390,8 +1413,8 @@ export function getStepFindings(stepId: AssessmentStepId, caseData: CaseScenario
 /**
  * Create a fresh assessment tracker for a case
  */
-export function createAssessmentTracker(caseData: CaseScenario): AssessmentTracker {
-  const { required, recommended } = getRequiredSteps(caseData);
+export function createAssessmentTracker(caseData: CaseScenario, yearLevel?: string): AssessmentTracker {
+  const { required, recommended } = getRequiredSteps(caseData, yearLevel);
 
   let totalPoints = 0;
   required.forEach(stepId => {
@@ -1542,7 +1565,7 @@ export function generateAssessmentDebrief(tracker: AssessmentTracker): {
       status: performed ? 'completed' : 'missed-recommended',
       performedAt: performed?.elapsedSeconds,
       order: performed?.order,
-      points: performed ? Math.floor(step.points / 2) : 0,
+      points: performed ? Math.floor(step.points * 0.4) : 0, // 40% — matches actual scoring in createAssessmentTracker
       rationale: step.rationale,
       critical: false,
     });
@@ -1574,9 +1597,13 @@ export function generateAssessmentDebrief(tracker: AssessmentTracker): {
   const primaryStepIds: PrimaryAssessmentStep[] = ['scene-safety', 'airway', 'breathing', 'circulation', 'disability', 'exposure'];
   const abcdeCompleted = primaryStepIds.every(id => performedIds.has(id));
 
-  // Check secondary survey completion
-  const secondaryPerformed = SECONDARY_STEPS.filter(s => performedIds.has(s.id));
-  const secondarySurveyCompleted = secondaryPerformed.length >= 5; // at least 5 of 8 regions
+  // Check secondary survey completion — profile-aware
+  // Trauma profiles require all 8 regions; focused medical profiles require only their specific steps
+  const requiredSecondaryIds = tracker.required.filter(id => SECONDARY_STEPS.some(s => s.id === id));
+  const recommendedSecondaryIds = tracker.recommended.filter(id => SECONDARY_STEPS.some(s => s.id === id));
+  const secondarySurveyCompleted = requiredSecondaryIds.length > 0
+    ? requiredSecondaryIds.every(id => performedIds.has(id)) // all required secondary steps done
+    : recommendedSecondaryIds.some(id => performedIds.has(id)); // at least 1 recommended secondary done
 
   // History taken
   const historyStepIds: HistoryStep[] = ['signs-symptoms', 'allergies', 'medications', 'past-medical', 'last-meal', 'events-leading'];

@@ -212,15 +212,15 @@ export const litflCaseDatabase: CaseScenario[] = [
       ]
     },
     studentChecklist: [
-      { id: 'litfl001-1', description: 'Recognized inferior STEMI on ECG', category: 'assessment', points: 3 },
-      { id: 'litfl001-2', description: 'Identified RV involvement (III > II, V1 STE)', category: 'assessment', points: 4 },
-      { id: 'litfl001-3', description: 'Performed V4R to confirm RV infarct', category: 'assessment', points: 3 },
-      { id: 'litfl001-4', description: 'Stopped nitrates and understood contraindication', category: 'treatment', points: 4 },
-      { id: 'litfl001-5', description: 'Kept patient supine (not sitting)', category: 'treatment', points: 3 },
-      { id: 'litfl001-6', description: 'Administered cautious IV fluid bolus', category: 'treatment', points: 3 },
-      { id: 'litfl001-7', description: 'Administered aspirin', category: 'treatment', points: 2 },
-      { id: 'litfl001-8', description: 'Pre-alerted PCI centre with STEMI code', category: 'communication', points: 3 },
-      { id: 'litfl001-9', description: 'Prepared for AV block / pacing', category: 'anticipation', points: 2 }
+      { id: 'litfl001-1', description: 'Recognized inferior STEMI on ECG', category: 'assessment', points: 10, yearLevel: ['3rd-year', '4th-year'] },
+      { id: 'litfl001-2', description: 'Identified RV involvement (III > II, V1 STE)', category: 'assessment', points: 15, yearLevel: ['3rd-year', '4th-year'] },
+      { id: 'litfl001-3', description: 'Performed V4R to confirm RV infarct', category: 'assessment', points: 12, yearLevel: ['3rd-year', '4th-year'] },
+      { id: 'litfl001-4', description: 'Stopped nitrates and understood contraindication', category: 'treatment', points: 15, yearLevel: ['3rd-year', '4th-year'] },
+      { id: 'litfl001-5', description: 'Kept patient supine (not sitting)', category: 'treatment', points: 12, yearLevel: ['3rd-year', '4th-year'] },
+      { id: 'litfl001-6', description: 'Administered cautious IV fluid bolus', category: 'treatment', points: 10, yearLevel: ['3rd-year', '4th-year'] },
+      { id: 'litfl001-7', description: 'Administered aspirin', category: 'treatment', points: 8, yearLevel: ['3rd-year', '4th-year'] },
+      { id: 'litfl001-8', description: 'Pre-alerted PCI centre with STEMI code', category: 'communication', points: 10, yearLevel: ['3rd-year', '4th-year'] },
+      { id: 'litfl001-9', description: 'Prepared for AV block / pacing', category: 'anticipation', points: 8, yearLevel: ['3rd-year', '4th-year'] }
     ],
     teachingPoints: [
       'RV infarction complicates ~40% of inferior STEMIs — always check V4R',
@@ -446,13 +446,13 @@ export const litflCaseDatabase: CaseScenario[] = [
       ]
     },
     studentChecklist: [
-      { id: 'litfl003-1', description: 'Identified hyperkalemia from history (missed dialysis)', category: 'assessment', points: 3 },
-      { id: 'litfl003-2', description: 'Recognized hyperkalemic ECG changes', category: 'assessment', points: 4 },
-      { id: 'litfl003-3', description: 'Administered calcium gluconate as first-line treatment', category: 'treatment', points: 4 },
-      { id: 'litfl003-4', description: 'Avoided AV fistula arm for access/BP', category: 'treatment', points: 3 },
-      { id: 'litfl003-5', description: 'Used potassium-shifting agents (salbutamol, bicarb)', category: 'treatment', points: 3 },
-      { id: 'litfl003-6', description: 'Avoided potassium-containing fluids', category: 'treatment', points: 2 },
-      { id: 'litfl003-7', description: 'Pre-alerted for emergency dialysis', category: 'communication', points: 3 }
+      { id: 'litfl003-1', description: 'Identified hyperkalemia from history (missed dialysis)', category: 'assessment', points: 12, yearLevel: ['3rd-year', '4th-year'] },
+      { id: 'litfl003-2', description: 'Recognized hyperkalemic ECG changes', category: 'assessment', points: 15, yearLevel: ['3rd-year', '4th-year'] },
+      { id: 'litfl003-3', description: 'Administered calcium gluconate as first-line treatment', category: 'treatment', points: 15, yearLevel: ['3rd-year', '4th-year'] },
+      { id: 'litfl003-4', description: 'Avoided AV fistula arm for access/BP', category: 'treatment', points: 12, yearLevel: ['3rd-year', '4th-year'] },
+      { id: 'litfl003-5', description: 'Used potassium-shifting agents (salbutamol, bicarb)', category: 'treatment', points: 12, yearLevel: ['3rd-year', '4th-year'] },
+      { id: 'litfl003-6', description: 'Avoided potassium-containing fluids', category: 'treatment', points: 10, yearLevel: ['3rd-year', '4th-year'] },
+      { id: 'litfl003-7', description: 'Pre-alerted for emergency dialysis', category: 'communication', points: 10, yearLevel: ['3rd-year', '4th-year'] }
     ],
     teachingPoints: [
       'Hyperkalemia causes progressive ECG changes: peaked T → loss of P → wide QRS → sine wave → VF/asystole',
@@ -681,14 +681,14 @@ export const litflCaseDatabase: CaseScenario[] = [
       ]
     },
     studentChecklist: [
-      { id: 'litfl007-1', description: 'Identified PE risk factors (flight, DVT, OCP, obesity)', category: 'assessment', points: 3 },
-      { id: 'litfl007-2', description: 'Recognized DVT as source (unilateral calf swelling)', category: 'assessment', points: 2 },
-      { id: 'litfl007-3', description: 'Noted clear lungs with severe hypoxia (shunt)', category: 'assessment', points: 3 },
-      { id: 'litfl007-4', description: 'Recognized RV strain pattern on ECG', category: 'assessment', points: 3 },
-      { id: 'litfl007-5', description: 'Noted low EtCO2 (dead-space ventilation)', category: 'assessment', points: 3 },
-      { id: 'litfl007-6', description: 'Cautious fluid resuscitation', category: 'treatment', points: 2 },
-      { id: 'litfl007-7', description: 'Prepared for PEA cardiac arrest', category: 'anticipation', points: 3 },
-      { id: 'litfl007-8', description: 'Pre-alerted receiving facility', category: 'communication', points: 2 }
+      { id: 'litfl007-1', description: 'Identified PE risk factors (flight, DVT, OCP, obesity)', category: 'assessment', points: 10, yearLevel: ['3rd-year', '4th-year'] },
+      { id: 'litfl007-2', description: 'Recognized DVT as source (unilateral calf swelling)', category: 'assessment', points: 10, yearLevel: ['3rd-year', '4th-year'] },
+      { id: 'litfl007-3', description: 'Noted clear lungs with severe hypoxia (shunt)', category: 'assessment', points: 12, yearLevel: ['3rd-year', '4th-year'] },
+      { id: 'litfl007-4', description: 'Recognized RV strain pattern on ECG', category: 'assessment', points: 15, yearLevel: ['3rd-year', '4th-year'] },
+      { id: 'litfl007-5', description: 'Noted low EtCO2 (dead-space ventilation)', category: 'assessment', points: 12, yearLevel: ['3rd-year', '4th-year'] },
+      { id: 'litfl007-6', description: 'Cautious fluid resuscitation', category: 'treatment', points: 10, yearLevel: ['3rd-year', '4th-year'] },
+      { id: 'litfl007-7', description: 'Prepared for PEA cardiac arrest', category: 'anticipation', points: 12, yearLevel: ['3rd-year', '4th-year'] },
+      { id: 'litfl007-8', description: 'Pre-alerted receiving facility', category: 'communication', points: 10, yearLevel: ['3rd-year', '4th-year'] }
     ],
     teachingPoints: [
       'Massive PE = PE with hemodynamic compromise (systolic <90 or requiring vasopressors)',
@@ -923,14 +923,14 @@ export const litflCaseDatabase: CaseScenario[] = [
       ]
     },
     studentChecklist: [
-      { id: 'litfl010-1', description: 'Measured core temperature', category: 'assessment', points: 3 },
-      { id: 'litfl010-2', description: 'Recognized Osborn waves on ECG', category: 'assessment', points: 3 },
-      { id: 'litfl010-3', description: 'Handled patient gently (VF prevention)', category: 'treatment', points: 4 },
-      { id: 'litfl010-4', description: 'Passive rewarming initiated', category: 'treatment', points: 3 },
-      { id: 'litfl010-5', description: 'Checked blood glucose', category: 'assessment', points: 2 },
-      { id: 'litfl010-6', description: 'Avoided medications below 30°C', category: 'treatment', points: 3 },
-      { id: 'litfl010-7', description: 'Used warmed IV fluids', category: 'treatment', points: 2 },
-      { id: 'litfl010-8', description: 'Understood defibrillation limitations below 30°C', category: 'knowledge', points: 3 }
+      { id: 'litfl010-1', description: 'Measured core temperature', category: 'assessment', points: 8, yearLevel: ['2nd-year', '3rd-year', '4th-year'] },
+      { id: 'litfl010-2', description: 'Recognized Osborn waves on ECG', category: 'assessment', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'] },
+      { id: 'litfl010-3', description: 'Handled patient gently (VF prevention)', category: 'treatment', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'] },
+      { id: 'litfl010-4', description: 'Passive rewarming initiated', category: 'treatment', points: 8, yearLevel: ['2nd-year', '3rd-year', '4th-year'] },
+      { id: 'litfl010-5', description: 'Checked blood glucose', category: 'assessment', points: 7, yearLevel: ['2nd-year', '3rd-year', '4th-year'] },
+      { id: 'litfl010-6', description: 'Avoided medications below 30°C', category: 'treatment', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'] },
+      { id: 'litfl010-7', description: 'Used warmed IV fluids', category: 'treatment', points: 8, yearLevel: ['2nd-year', '3rd-year', '4th-year'] },
+      { id: 'litfl010-8', description: 'Understood defibrillation limitations below 30°C', category: 'knowledge', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'] }
     ],
     teachingPoints: [
       'Osborn (J) waves are pathognomonic for hypothermia — positive deflection at the J point',
@@ -1149,12 +1149,12 @@ export const litflCaseDatabase: CaseScenario[] = [
       ]
     },
     studentChecklist: [
-      { id: 'litfl019-1', description: 'Recognized De Winter pattern as STEMI equivalent', category: 'assessment', points: 5 },
-      { id: 'litfl019-2', description: 'Activated STEMI code despite no classic STE', category: 'communication', points: 4 },
-      { id: 'litfl019-3', description: 'Administered aspirin', category: 'treatment', points: 2 },
-      { id: 'litfl019-4', description: 'Appropriate pain management', category: 'treatment', points: 2 },
-      { id: 'litfl019-5', description: 'Serial ECGs performed', category: 'assessment', points: 2 },
-      { id: 'litfl019-6', description: 'Defibrillator ready for VF', category: 'anticipation', points: 2 }
+      { id: 'litfl019-1', description: 'Recognized De Winter pattern as STEMI equivalent', category: 'assessment', points: 25, yearLevel: ['4th-year'] },
+      { id: 'litfl019-2', description: 'Activated STEMI code despite no classic STE', category: 'communication', points: 25, yearLevel: ['4th-year'] },
+      { id: 'litfl019-3', description: 'Administered aspirin', category: 'treatment', points: 15, yearLevel: ['4th-year'] },
+      { id: 'litfl019-4', description: 'Appropriate pain management', category: 'treatment', points: 15, yearLevel: ['4th-year'] },
+      { id: 'litfl019-5', description: 'Serial ECGs performed', category: 'assessment', points: 20, yearLevel: ['4th-year'] },
+      { id: 'litfl019-6', description: 'Defibrillator ready for VF', category: 'anticipation', points: 20, yearLevel: ['4th-year'] }
     ],
     teachingPoints: [
       'De Winter T-wave pattern: upsloping ST depression in V2-V5 merging with tall, prominent, symmetric T waves',
@@ -1389,14 +1389,14 @@ export const litflCaseDatabase: CaseScenario[] = [
       ]
     },
     studentChecklist: [
-      { id: 'litfl012-1', description: 'Recognized Cushing triad', category: 'assessment', points: 4 },
-      { id: 'litfl012-2', description: 'Identified unilateral blown pupil (herniation)', category: 'assessment', points: 4 },
-      { id: 'litfl012-3', description: 'Recognized cerebral T waves (not cardiac)', category: 'assessment', points: 4 },
-      { id: 'litfl012-4', description: 'Secure airway for GCS <8 (LMA/i-gel for 3rd-year; RSI for 4th-year)', category: 'treatment', points: 4 },
-      { id: 'litfl012-5', description: 'Did NOT lower blood pressure', category: 'treatment', points: 3 },
-      { id: 'litfl012-6', description: 'Maintained normocapnia (EtCO2 35-40)', category: 'treatment', points: 3 },
-      { id: 'litfl012-7', description: 'Head-up 30° positioning', category: 'treatment', points: 2 },
-      { id: 'litfl012-8', description: 'Transported to neurosurgical centre', category: 'communication', points: 3 }
+      { id: 'litfl012-1', description: 'Recognized Cushing triad', category: 'assessment', points: 12, yearLevel: ['3rd-year', '4th-year'] },
+      { id: 'litfl012-2', description: 'Identified unilateral blown pupil (herniation)', category: 'assessment', points: 15, yearLevel: ['3rd-year', '4th-year'] },
+      { id: 'litfl012-3', description: 'Recognized cerebral T waves (not cardiac)', category: 'assessment', points: 15, yearLevel: ['3rd-year', '4th-year'] },
+      { id: 'litfl012-4', description: 'Secure airway for GCS <8 (LMA/i-gel for 3rd-year; RSI for 4th-year)', category: 'treatment', points: 15, yearLevel: ['3rd-year', '4th-year'] },
+      { id: 'litfl012-5', description: 'Did NOT lower blood pressure', category: 'treatment', points: 12, yearLevel: ['3rd-year', '4th-year'] },
+      { id: 'litfl012-6', description: 'Maintained normocapnia (EtCO2 35-40)', category: 'treatment', points: 12, yearLevel: ['3rd-year', '4th-year'] },
+      { id: 'litfl012-7', description: 'Head-up 30° positioning', category: 'treatment', points: 10, yearLevel: ['3rd-year', '4th-year'] },
+      { id: 'litfl012-8', description: 'Transported to neurosurgical centre', category: 'communication', points: 10, yearLevel: ['3rd-year', '4th-year'] }
     ],
     teachingPoints: [
       'Cerebral T waves (giant T inversions + QT prolongation) mimic cardiac ischemia but are caused by massive catecholamine surge from raised ICP',

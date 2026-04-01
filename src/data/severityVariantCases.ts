@@ -135,6 +135,31 @@ export const asthmaSeverityCases: CaseScenario[] = [
       differentialDiagnoses: ['Mild asthma exacerbation', 'Exercise-induced bronchospasm', 'Viral wheeze'],
       mostLikelyDiagnosis: 'Mild Asthma Exacerbation',
     },
+    managementPathway: {
+      immediate: [
+        'Position upright — Fowler\'s or tripod; optimises respiratory mechanics',
+        'SpO2 monitoring — target >94%',
+        'Salbutamol 5mg nebulised (oxygen-driven at 6L/min) — first-line bronchodilation',
+        'Peak flow measurement before and after nebuliser — document % predicted',
+        'Reassess after 10-15 minutes — if improved, arrange GP follow-up'
+      ],
+      definitive: [
+        'If good response (SpO2 >94%, speaking full sentences, peak flow >75% predicted) — arrange GP follow-up and discharge education',
+        'If partial response — repeat salbutamol, consider adding Ipratropium 500mcg nebulised',
+        'Review preventer inhaler compliance — educate on step-up therapy with patient'
+      ],
+      monitoring: [
+        'SpO2 pre and post nebuliser',
+        'Peak flow pre and post treatment if able',
+        'RR and work of breathing — accessory muscle use developing?',
+        'Reassess severity after each treatment — mild can progress to moderate'
+      ],
+      transportConsiderations: [
+        'Transport to ED if no improvement after two nebulisers or if any doubt about stability',
+        'Patient may self-present to GP or ED if symptoms recur same day',
+        'Pre-alert if deteriorating during transport to hospital'
+      ]
+    },
     treatmentOptions: {
       medications: ['Salbutamol 5mg nebulized (oxygen-driven)', 'Consider ipratropium if poor response'],
       procedures: ['Peak flow measurement', 'SpO2 monitoring'],
@@ -275,6 +300,37 @@ export const asthmaSeverityCases: CaseScenario[] = [
       redFlags: ['Watch for deterioration to severe/life-threatening', 'Pulsus paradoxus suggests significant bronchospasm', 'Aspirin allergy — avoid aspirin/NSAIDs'],
       differentialDiagnoses: ['Moderate asthma exacerbation', 'Allergic reaction', 'Acute bronchitis'],
       mostLikelyDiagnosis: 'Moderate Acute Asthma Exacerbation',
+    },
+    managementPathway: {
+      immediate: [
+        'Position upright — Fowler\'s position; do NOT allow patient to lie down',
+        'High-flow oxygen via non-rebreather mask — target SpO2 >94%',
+        'Salbutamol 5mg nebulised back-to-back — first two doses without waiting',
+        'Ipratropium 500mcg nebulised — add to second salbutamol; dual bronchodilation',
+        'IV access (18G antecubital)',
+        'Hydrocortisone 200mg IV — or prednisolone 40mg PO; start early as effect takes 4-6 hours',
+        'Reassess after each nebuliser — RR, SpO2, accessory muscle use, speech'
+      ],
+      definitive: [
+        'Hospital admission — moderate asthma requires ED assessment and monitoring for deterioration',
+        'Rashid Hospital, American Hospital Dubai, or Mediclinic City Hospital',
+        'Repeat salbutamol every 20 minutes if needed in ED',
+        'Consider admission to respiratory ward if not improving after 2 hours'
+      ],
+      monitoring: [
+        'SpO2 continuous — if falling despite treatment, upgrade severity classification',
+        'Peak flow every 15-20 minutes post-treatment if able',
+        'RR and accessory muscle use — increasing effort = deteriorating',
+        'Observe for silent chest — no wheeze but severe distress = life-threatening',
+        'HR — tachycardia from bronchospasm, and salbutamol-induced'
+      ],
+      transportConsiderations: [
+        'Pre-alert hospital — "moderate asthma, SpO2 90-94% on O2, two nebulisers given"',
+        'Continue salbutamol nebuliser during transport if portable equipment available',
+        'Maintain upright position in ambulance — do not lie flat',
+        'Reassess every 5-10 minutes during transport',
+        'Escalate care immediately if speech becomes single words or SpO2 drops below 90%'
+      ]
     },
     treatmentOptions: {
       medications: ['Salbutamol 5mg nebulized (back-to-back)', 'Ipratropium 500mcg nebulized', 'Hydrocortisone 200mg IV', 'Consider prednisolone 40mg PO'],
@@ -423,6 +479,40 @@ export const asthmaSeverityCases: CaseScenario[] = [
       redFlags: ['Previous near-fatal attack', 'Exhaustion risk', 'Diminished air entry suggests severe obstruction', 'If gets silent chest = imminent arrest'],
       differentialDiagnoses: ['Severe acute asthma', 'Near-fatal asthma', 'Anaphylaxis to incense'],
       mostLikelyDiagnosis: 'Severe Asthma Exacerbation',
+    },
+    managementPathway: {
+      immediate: [
+        'REMOVE TRIGGER — eliminate incense and any smoke from environment immediately',
+        'Position upright — Fowler\'s or tripod; NEVER lay flat; gravity-assisted respiration critical',
+        'High-flow oxygen 15L/min via non-rebreather mask — target SpO2 >94%; hypoxia is the killer',
+        'Salbutamol 5mg nebulised CONTINUOUSLY — repeat every 15-20 minutes or continuous if deteriorating',
+        'Ipratropium 500mcg nebulised — combine with salbutamol for maximum bronchodilation',
+        'IV access x2 (14-16G antecubital) — prepare for IV drugs and fluids',
+        'Hydrocortisone 200mg IV immediately — inflammation reduction is essential',
+        'Adrenaline 0.5mg IM (1:1000) if life-threatening features develop — bronchospasm unresponsive to above',
+        'Magnesium Sulfate 2g IV over 20 minutes — smooth muscle relaxation as rescue bronchodilation'
+      ],
+      definitive: [
+        'Emergency transport to hospital — prepare for intubation if patient exhausts',
+        'RSI if required: Ketamine (bronchodilatory) is preferred induction agent in asthma; avoid morphine (histamine release)',
+        'Rashid Hospital or Mediclinic City Hospital ICU for life-threatening asthma',
+        'IV Aminophylline 5mg/kg loading dose over 20 minutes in hospital as additional bronchodilation',
+        'Heliox (70:30 helium:oxygen) if available — reduces airway turbulence in severe obstruction'
+      ],
+      monitoring: [
+        'Continuous SpO2 — <90% = life-threatening; prepare airway equipment',
+        'RR every 5 minutes — >30 = severe; gasping or decreasing = impending arrest',
+        'AVPU/GCS — drowsiness = CO2 narcosis = critical deterioration',
+        'Auscultation after each nebuliser — improving wheeze vs silent chest',
+        'Peak flow only if can be done without distressing patient — <33% = severe'
+      ],
+      transportConsiderations: [
+        'Pre-alert with "severe asthma, SpO2 <90%, three nebulisers given, adrenaline and magnesium administered"',
+        'Transport upright — NEVER allow supine positioning in severe asthma',
+        'Continue salbutamol continuously during transport',
+        'Have RSI drugs drawn and labelled — intubation may be needed within minutes',
+        'Do not stop on scene for additional interventions — load and go with treatment en route'
+      ]
     },
     treatmentOptions: {
       medications: ['Salbutamol 5mg continuous nebuliser', 'Ipratropium 500mcg nebuliser', 'Hydrocortisone 200mg IV', 'Adrenaline 0.5mg IM', 'Magnesium sulfate 2g IV over 20 min'],

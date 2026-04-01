@@ -116,6 +116,38 @@ export const additionalRespiratoryCases: CaseScenario[] = [
       differentialDiagnoses: ['COPD exacerbation', 'Pneumonia', 'Pulmonary embolism', 'Pneumothorax'],
       mostLikelyDiagnosis: 'Acute on Chronic Type 2 Respiratory Failure'
     },
+    managementPathway: {
+      immediate: [
+        'Controlled oxygen therapy — target SpO2 88-92%; use 24-28% Venturi mask; do NOT give high-flow O2 to a known COPD patient',
+        'Position upright — seated/tripod position optimises respiratory mechanics',
+        'Salbutamol 5mg + Ipratropium 500mcg nebulised back-to-back — bronchodilation',
+        'IV access — 18G antecubital',
+        'Assess for CO2 retention signs: asterixis (flapping tremor), confusion, flushed warm peripheries, bounding pulse',
+        'Prednisolone/Methylprednisolone — systemic steroids reduce airway inflammation',
+        'Blood glucose check',
+        'If exhausted, obtunded, or SpO2 not improving — consider Non-Invasive Ventilation (BiPAP) urgently'
+      ],
+      definitive: [
+        'Non-Invasive Ventilation (BiPAP) — IPAP 10-15 cmH2O, EPAP 4-8 cmH2O; reduces work of breathing and CO2',
+        'If BiPAP fails or patient deteriorates — RSI and intubation (accepting the risks of CO2 retention on ventilator)',
+        'Hospital admission to respiratory ward or ICU for IV antibiotics if infective exacerbation confirmed',
+        'Rashid Hospital or American Hospital Dubai for BiPAP-capable ED and respiratory team'
+      ],
+      monitoring: [
+        'Continuous SpO2 — titrate O2 to maintain 88-92%; alarm if >94% (hyperoxia harmful in COPD)',
+        'RR every 5 minutes — increasing rate = tiring; <8 = impending respiratory arrest',
+        'GCS/AVPU — deteriorating consciousness from CO2 narcosis is a critical sign',
+        'Waveform capnography if available — ETCO2 rising = worsening CO2 retention',
+        'Continuous ECG — COPD patients at risk of atrial fibrillation during exacerbation'
+      ],
+      transportConsiderations: [
+        'Pre-alert with respiratory failure details — COPD, O2-dependent, consider BiPAP on arrival',
+        'Maintain controlled O2 en route — do not allow SpO2 to rise above 94%',
+        'Keep patient upright in transport — do not lay flat',
+        'Have BVM ready but use only if patient stops breathing — avoid high-flow O2',
+        'Reassess every 5 minutes during transport — CO2 narcosis can develop rapidly'
+      ]
+    },
     studentChecklist: [
       { id: 'resp5-1', category: 'abcde', description: 'Controlled oxygen therapy 88-92%', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'], critical: true },
       { id: 'resp5-2', category: 'intervention', description: 'Nebulized bronchodilators', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
@@ -699,6 +731,38 @@ export const additionalRespiratoryCases: CaseScenario[] = [
       differentialDiagnoses: ['Viral croup', 'Bacterial tracheitis', 'Epiglottitis', 'Foreign body'],
       mostLikelyDiagnosis: 'Viral Laryngotracheobronchitis (Croup)'
     },
+    managementPathway: {
+      immediate: [
+        'Keep child CALM — allow to remain with parent/carer in their arms; crying and distress worsen laryngospasm',
+        'Do NOT force examination or equipment on child if it will cause agitation',
+        'Assess croup severity — mild: cough, no stridor at rest; moderate: stridor at rest, mild recession; severe: stridor at rest + significant recession + pallor/cyanosis',
+        'Position upright — in parent\'s arms or supported sitting; do not lie flat',
+        'Humidified oxygen if tolerated (blow-by technique for paediatric patients)',
+        'Dexamethasone 0.15-0.6mg/kg PO/IM (max 10mg) — reduces airway inflammation; single dose effective',
+        'Nebulised Adrenaline (Epinephrine) 1:1000 5mL — for moderate-severe croup; rapid onset but 2-3 hour rebound risk',
+        'SpO2 monitoring — pulse oximeter on finger or toe'
+      ],
+      definitive: [
+        'Hospital admission for moderate-severe croup — observation for 4-6 hours post-adrenaline (rebound risk)',
+        'Latifa Hospital Dubai or Al Wasl Hospital for paediatric facilities',
+        'ENT/paediatric consultation — bacterial tracheitis or epiglottitis if not responding to croup treatment',
+        'In extremis: prepare surgical airway (needle cricothyrotomy) — size-appropriate for child'
+      ],
+      monitoring: [
+        'Continuous SpO2 — if falling below 92% consider assisted ventilation',
+        'Work of breathing: intercostal, subcostal, sternal recession',
+        'Stridor character — worsening means upper airway narrowing progressing',
+        'Heart rate — tachycardia in a child is a sign of increasing distress/hypoxia',
+        'Colour — pallor or perioral cyanosis = critical sign, act immediately'
+      ],
+      transportConsiderations: [
+        'Transport in parent\'s arms if possible — reduces distress and maintains airway',
+        'Pre-alert paediatric ED — child with croup, age and SpO2',
+        'Ensure BVM appropriate paediatric size is at hand throughout transport',
+        'Adrenaline can wear off in 1-2 hours — rebound stridor possible en route',
+        'If complete upper airway obstruction — jaw thrust, BVM, and prepare for surgical airway'
+      ]
+    },
     studentChecklist: [
       { id: 'resp7-1', category: 'abcde', description: 'Assess severity of croup (stridor at rest vs exertion)', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['basic', 'intermediate', 'advanced'] },
       { id: 'resp7-2', category: 'intervention', description: 'Nebulized epinephrine for moderate-severe croup', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced'] },
@@ -1003,6 +1067,40 @@ export const additionalRespiratoryCases: CaseScenario[] = [
       differentialDiagnoses: ['Acute pulmonary edema', 'COPD exacerbation', 'Pneumonia', 'PE'],
       mostLikelyDiagnosis: 'Acute Cardiogenic Pulmonary Edema'
     },
+    managementPathway: {
+      immediate: [
+        'Sit patient upright immediately — legs dangling if possible; reduces preload and improves ventilation',
+        'High-flow oxygen 10-15L/min via non-rebreather mask — target SpO2 >94%',
+        'CPAP 5-10 cmH2O if available — reduces pulmonary fluid transudation and work of breathing; improves outcomes',
+        'IV access x2 (18G antecubital) — do not delay treatment for difficult IV access',
+        'GTN (Glyceryl Trinitrate) sublingual 400mcg spray — check BP >100 systolic before giving; repeat every 5 minutes',
+        'GTN IV infusion if persistent hypertension — start at 10-20 mcg/min, titrate to BP',
+        'Furosemide 40-80mg IV — diuresis takes 15-20 minutes but venodilation is immediate',
+        'Blood glucose and 12-lead ECG — identify ACS as precipitant',
+        'Morphine 2-4mg IV titrated — reduces preload and anxiety (use cautiously, may cause hypotension/respiratory depression)'
+      ],
+      definitive: [
+        'Hospital admission — cardiology review, identification and treatment of underlying cause',
+        'American Hospital Dubai or Mediclinic City Hospital for cardiology support',
+        'Intubation and mechanical ventilation if CPAP fails or patient exhausted — last resort',
+        'IV GTN infusion titrated in ED for persistent hypertensive pulmonary edema',
+        'Identify precipitant: ACS, rapid AF, non-compliance with medications, dietary indiscretion'
+      ],
+      monitoring: [
+        'SpO2 continuous — target >94%; if falling despite CPAP, prepare for intubation',
+        'BP every 3-5 minutes — GTN and furosemide both lower BP; do not allow SBP <90',
+        'RR and work of breathing — improvement should be seen within 5-10 minutes of CPAP/GTN',
+        'HR and rhythm — AF with rapid ventricular response common in APO',
+        'Continuous ECG — exclude STEMI as precipitant'
+      ],
+      transportConsiderations: [
+        'Pre-alert cardiac-capable ED with "acute pulmonary oedema, BP 190/110, SpO2 82% on room air"',
+        'Transport seated upright — do not allow to lie down even if patient requests',
+        'Continue CPAP during transport if initiated on scene',
+        'Ensure BP rechecked before each GTN dose en route',
+        'Rapid transport — SpO2 82% is critically low; do not delay for additional interventions on scene'
+      ]
+    },
     studentChecklist: [
       { id: 'resp8-1', category: 'abcde', description: 'Sit patient upright', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced'] },
       { id: 'resp8-2', category: 'intervention', description: 'High-flow oxygen', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced'] },
@@ -1286,19 +1384,50 @@ export const additionalRespiratoryCases: CaseScenario[] = [
       differentialDiagnoses: ['Foreign body airway obstruction', 'Anaphylaxis', 'Severe asthma'],
       mostLikelyDiagnosis: 'Complete Foreign Body Airway Obstruction'
     },
+    managementPathway: {
+      immediate: [
+        'CONFIRM complete obstruction — patient cannot speak, cough, or breathe; universal choking sign',
+        'Do NOT perform blind finger sweep — do not reach into airway unless foreign body is directly visible',
+        'Stand patient upright and lean forward if conscious and standing',
+        '5 firm back blows — heel of hand between shoulder blades',
+        '5 abdominal thrusts — positioned above umbilicus, below xiphoid; upward and inward; repeat alternating cycles (AHA 2025)',
+        'If patient becomes unconscious — lower to ground, begin CPR',
+        'Each time airway is opened for rescue breaths — look for visible object and remove ONLY if visible',
+        'Laryngoscopy and Magill forceps — if patient unconscious and intubation equipment available'
+      ],
+      definitive: [
+        'If all attempts fail — surgical airway: needle cricothyrotomy (14G cannula through cricothyroid membrane)',
+        'RSI and direct laryngoscopy under sedation at hospital if object not expelled prehospital',
+        'Rigid bronchoscopy — definitive removal of lower airway foreign body at hospital',
+        'All patients successfully relieved still require ED review — risk of airway trauma and aspiration pneumonia'
+      ],
+      monitoring: [
+        'SpO2 continuous once oximeter can be applied — SpO2 70% is critically low',
+        'Reassess airway after each cycle of back blows/abdominal thrusts',
+        'GCS/AVPU — deteriorating consciousness = hypoxic brain injury developing',
+        'Post-relief: auscultate for air entry bilaterally and abnormal breath sounds'
+      ],
+      transportConsiderations: [
+        'If object relieved — transport to ED for assessment regardless of apparent recovery',
+        'If object NOT relieved — perform ongoing CPR and transport immediately with pre-alert',
+        'Communicate clearly to receiving team: "FBAO, partial/complete, interventions attempted, current patient state"',
+        'Do not stop resuscitation efforts en route — continue CPR and airway manoeuvres',
+        'Pre-alert Rashid Hospital trauma team if ongoing obstruction'
+      ]
+    },
     studentChecklist: [
-      { id: 'resp9-1', category: 'abcde', description: 'Recognize complete airway obstruction', points: 15, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced', 'expert'], critical: true },
-      { id: 'resp9-2', category: 'intervention', description: 'Perform alternating 5 back blows then 5 abdominal thrusts (AHA 2025 protocol)', points: 20, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'], critical: true },
-      { id: 'resp9-3', category: 'intervention', description: 'Alternate sets of 5 back blows and 5 abdominal thrusts until object expelled or patient becomes unconscious (AHA 2025)', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced'] },
-      { id: 'resp9-4', category: 'abcde', description: 'Prepare for CPR if patient becomes unconscious', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced', 'expert'] },
-      { id: 'resp9-5', category: 'abcde', description: 'Assess for universal choking sign and inability to speak', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced'], critical: true },
-      { id: 'resp9-6', category: 'intervention', description: 'Position hands correctly for abdominal thrusts', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced'] },
-      { id: 'resp9-7', category: 'intervention', description: 'Encourage coughing if partial obstruction', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced'] },
-      { id: 'resp9-8', category: 'safety', description: 'Ensure scene safety and crowd control', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['basic', 'intermediate', 'advanced'] },
-      { id: 'resp9-9', category: 'intervention', description: 'Check airway visually if patient becomes unconscious', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced', 'expert'] },
-      { id: 'resp9-10', category: 'intervention', description: 'Remove visible foreign body if possible', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced', 'expert'] },
-      { id: 'resp9-11', category: 'communication', description: 'Instruct bystanders to call emergency services', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['basic', 'intermediate', 'advanced'] },
-      { id: 'resp9-12', category: 'documentation', description: 'Document obstruction cause and removal method', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced'] }
+      { id: 'resp9-1', category: 'abcde', description: 'Recognize complete airway obstruction', points: 15, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['advanced', 'expert'], critical: true },
+      { id: 'resp9-2', category: 'intervention', description: 'Perform alternating 5 back blows then 5 abdominal thrusts (AHA 2025 protocol)', points: 20, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'], critical: true },
+      { id: 'resp9-3', category: 'intervention', description: 'Alternate sets of 5 back blows and 5 abdominal thrusts until object expelled or patient becomes unconscious (AHA 2025)', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['intermediate', 'advanced'] },
+      { id: 'resp9-4', category: 'abcde', description: 'Prepare for CPR if patient becomes unconscious', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['advanced', 'expert'] },
+      { id: 'resp9-5', category: 'abcde', description: 'Assess for universal choking sign and inability to speak', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['intermediate', 'advanced'], critical: true },
+      { id: 'resp9-6', category: 'intervention', description: 'Position hands correctly for abdominal thrusts', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['intermediate', 'advanced'] },
+      { id: 'resp9-7', category: 'intervention', description: 'Encourage coughing if partial obstruction', points: 5, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['intermediate', 'advanced'] },
+      { id: 'resp9-8', category: 'safety', description: 'Ensure scene safety and crowd control', points: 5, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['basic', 'intermediate', 'advanced'] },
+      { id: 'resp9-9', category: 'intervention', description: 'Check airway visually if patient becomes unconscious', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['advanced', 'expert'] },
+      { id: 'resp9-10', category: 'intervention', description: 'Remove visible foreign body if possible', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['advanced', 'expert'] },
+      { id: 'resp9-11', category: 'communication', description: 'Instruct bystanders to call emergency services', points: 5, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['basic', 'intermediate', 'advanced'] },
+      { id: 'resp9-12', category: 'documentation', description: 'Document obstruction cause and removal method', points: 5, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['intermediate', 'advanced'] }
     ],
     teachingPoints: [
       'Complete obstruction = unable to speak, cough, or breathe',
@@ -1569,6 +1698,40 @@ export const additionalRespiratoryCases: CaseScenario[] = [
       redFlags: ['Severe pneumonia', 'Sepsis risk'],
       differentialDiagnoses: ['Community acquired pneumonia', 'Pleural effusion', 'Lung cancer', 'Pulmonary embolism'],
       mostLikelyDiagnosis: 'Community Acquired Pneumonia (Right Lower Lobe)'
+    },
+    managementPathway: {
+      immediate: [
+        'Oxygen via non-rebreather mask — target SpO2 >94% (or 88-92% if known COPD)',
+        'Position upright — maximises ventilation and reduces work of breathing',
+        'IV access x1-2 (18G) — for fluids and antibiotics',
+        'IV fluids 500mL NS bolus if signs of sepsis (qSOFA ≥2: RR >22, altered mentation, SBP ≤100)',
+        'Calculate CURB-65 (Confusion, Urea, RR>30, BP<90/60, age≥65) — score 2 = consider hospital admission',
+        'Blood glucose check',
+        'Temperature and full vital signs — fever, tachycardia, tachypnoea = sepsis screen',
+        'Antipyretics if temperature >38.5°C — Paracetamol 1g IV or oral'
+      ],
+      definitive: [
+        'Broad-spectrum IV antibiotics within 1 hour of recognition — Amoxicillin/Clavulanic acid + Azithromycin (or Ceftriaxone 1-2g IV for hospitalised patients)',
+        'Hospital admission for CURB-65 ≥2 — respiratory ward or HDU',
+        'Rashid Hospital, American Hospital Dubai, or Mediclinic City Hospital',
+        'Chest X-ray — confirms consolidation, identifies complications (effusion, abscess)',
+        'Blood cultures x2 before antibiotics if hospital permits',
+        'Consider ICU if septic shock, SpO2 <90% despite O2, or respiratory failure'
+      ],
+      monitoring: [
+        'SpO2 continuous — monitor response to oxygen therapy',
+        'RR every 5-10 minutes — >30 breaths/min = severe, consider intubation',
+        'BP every 10-15 minutes — sepsis hypotension may develop',
+        'Mental status — new confusion in an elderly patient with pneumonia = severe disease',
+        'Temperature trend — persistent fever despite antibiotics = complications'
+      ],
+      transportConsiderations: [
+        'Pre-alert with "elderly male, CAP with sepsis features, SpO2 88%, CURB-65 score 2"',
+        'Maintain upright position in transport — do not allow supine',
+        'Oxygen must be maintained en route — portable cylinder with non-rebreather',
+        'IV antibiotics should be commenced before or during transport if available',
+        'Reassess BP and mental status every 5-10 minutes during transport'
+      ]
     },
     studentChecklist: [
       { id: 'resp10-1', category: 'abcde', description: 'Assess severity using CURB-65', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced'] },
@@ -1876,6 +2039,37 @@ export const additionalNeurologicalCases: CaseScenario[] = [
       redFlags: ['Septic shock', 'Death within hours if untreated'],
       differentialDiagnoses: ['Bacterial meningitis', 'Viral meningitis', 'Meningococcal sepsis', 'SAH'],
       mostLikelyDiagnosis: 'Acute Bacterial Meningitis (Meningococcal)'
+    },
+    managementPathway: {
+      immediate: [
+        'Droplet precautions IMMEDIATELY — N95 mask, gloves, gown, eye protection before patient contact',
+        'ABC assessment — airway at risk with GCS 14; be prepared to escalate to advanced airway',
+        'IV access x2 (large bore 16G)',
+        'IV fluid resuscitation — 500mL NS bolus for septic shock (SBP 90/60)',
+        'IV Ceftriaxone 2g IV (third-generation cephalosporin) — do not delay for LP or CT',
+        'Dexamethasone 10mg IV with or before first antibiotic dose (reduces inflammation)',
+        'Blood glucose check',
+        'Assess for non-blanching rash — glass test; positive rash = meningococcal septicaemia'
+      ],
+      definitive: [
+        'ICU admission for monitoring and ongoing IV antibiotics',
+        'CT head if raised ICP suspected before LP',
+        'Lumbar puncture for CSF analysis (after CT and haemodynamic stability)',
+        'Public health notification — contact tracing and prophylaxis for close contacts'
+      ],
+      monitoring: [
+        'GCS every 5 minutes — deterioration indicates raised ICP or septic shock',
+        'BP every 3 minutes — septic shock can develop rapidly',
+        'SpO2 continuous',
+        'Monitor for seizures — have midazolam drawn up and ready',
+        'Pupil response — unequal pupils = herniation risk'
+      ],
+      transportConsiderations: [
+        'Rapid transport — every minute of antibiotic delay increases mortality',
+        'Pre-alert: "Suspected bacterial meningitis, septic shock, antibiotics given — need ICU"',
+        'Maintain droplet precautions throughout transport',
+        'Rashid Hospital or Dubai Hospital (ICU and infectious disease capabilities)'
+      ]
     },
     studentChecklist: [
       { id: 'neuro4-1', category: 'abcde', description: 'Recognize meningitis triad and rash', points: 15, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced', 'expert'], critical: true },
@@ -2215,6 +2409,41 @@ export const additionalMetabolicCases: CaseScenario[] = [
       redFlags: ['Cardiac arrest imminent', 'Sine wave pattern = pre-arrest'],
       differentialDiagnoses: ['Hyperkalemia', 'Hypermagnesemia', 'Digoxin toxicity', 'AV block'],
       mostLikelyDiagnosis: 'Life-Threatening Hyperkalemia'
+    },
+    managementPathway: {
+      immediate: [
+        '12-lead ECG immediately — identify hyperkalemia pattern: peaked T waves, wide QRS, loss of P waves, sine wave',
+        'IV access x2 (large bore 16-18G) — avoid the arm with AVF',
+        'Cardiac monitoring continuous — sine wave = pre-arrest, prepare for immediate intervention',
+        'Calcium gluconate 10% 10mL (1g) IV over 2-3 minutes — cardioprotection, stabilises myocardial membrane',
+        'Or Calcium chloride 10% 5-10mL IV via central line if available — 3x more ionised calcium',
+        'Actrapid (regular insulin) 10 units IV with 50mL 50% dextrose — shifts K+ into cells over 15-30 min',
+        'Salbutamol 10-20mg nebulised — additional K+ shift into cells via beta-2 stimulation',
+        'Sodium bicarbonate 50mL of 8.4% IV if metabolic acidosis confirmed — shifts K+ intracellularly',
+        'Check blood glucose after insulin administration — monitor for hypoglycaemia',
+        'Pre-alert receiving hospital — life-threatening hyperkalemia, dialysis patient, ECG changes'
+      ],
+      definitive: [
+        'Emergency haemodialysis — definitive treatment to remove potassium from body',
+        'Rashid Hospital or American Hospital Dubai for nephrology and dialysis access',
+        'Kayexalate (sodium polystyrene sulphonate) or Patiromer — GI potassium binders if stable',
+        'ICU admission for continuous cardiac monitoring post-treatment',
+        'Repeat ECG after each intervention to assess response'
+      ],
+      monitoring: [
+        'Continuous cardiac monitoring — watch for VF/pulseless VT; have defibrillator ready',
+        'BP every 3-5 minutes — hypotension may be present',
+        'Blood glucose every 15 minutes post-insulin',
+        'SpO2 continuous',
+        'Mental status — muscle weakness may progress to respiratory muscle paralysis'
+      ],
+      transportConsiderations: [
+        'Rapid transport — life-threatening dysrhythmia may develop at any moment',
+        'Pre-alert Rashid Hospital with dialysis access capability for emergency dialysis',
+        'Defibrillator pads applied and charged before departing scene',
+        'Have arrest drugs drawn up — CPR may be needed en route',
+        'Do NOT delay on scene — calcium and insulin given, now transport immediately'
+      ]
     },
     studentChecklist: [
       { id: 'met3-1', category: 'abcde', description: 'Recognize ECG changes of hyperkalemia', points: 15, yearLevel: ['4th-year'], complexity: ['expert'], critical: true },
@@ -2861,6 +3090,40 @@ export const additionalPediatricCases: CaseScenario[] = [
       differentialDiagnoses: ['Febrile seizure', 'Meningitis', 'Epilepsy', 'Electrolyte abnormality'],
       mostLikelyDiagnosis: 'Simple Febrile Seizure'
     },
+    managementPathway: {
+      immediate: [
+        'Do NOT restrain limbs — protect from injury by removing hazards and padding surroundings',
+        'Time the seizure — simple febrile seizure typically <5 minutes and self-limiting',
+        'Position lateral (recovery) if possible — prevents aspiration',
+        'Airway management — jaw thrust if airway obstructed; suction if secretions/vomit present',
+        'Oxygen via face mask or blow-by if SpO2 <95% or cyanosis present',
+        'If seizure >5 minutes — Midazolam 0.2-0.5mg/kg buccal (max 10mg), or IV/IO if access available',
+        'Temperature assessment — rectal or axillary; paracetamol suppository 15mg/kg if >38.5°C',
+        'Blood glucose check — exclude hypoglycaemia as seizure cause',
+        'Reassure parents — febrile seizures are terrifying to witness but usually benign'
+      ],
+      definitive: [
+        'All first febrile seizures warrant ED assessment — to exclude meningitis and serious bacterial infection',
+        'Latifa Hospital or Al Wasl Hospital paediatric ED, Dubai',
+        'Lumbar puncture may be indicated if <18 months, meningism signs, or prolonged seizure',
+        'Ongoing fever management — identify and treat underlying infection source',
+        'Parental education on seizure first aid and fever management'
+      ],
+      monitoring: [
+        'Continuous SpO2 post-seizure — post-ictal period may include apnoea',
+        'Neurological status — child should recover gradually post-ictally over 10-20 minutes',
+        'Temperature every 10 minutes during transport',
+        'GCS/AVPU — document baseline and monitor recovery trajectory',
+        'Watch for second seizure — risk in first 24 hours is 20-30%'
+      ],
+      transportConsiderations: [
+        'Pre-alert paediatric ED — "18-month-old, febrile seizure, temperature 39.6°C, post-ictal now"',
+        'Position lateral during transport — maintain airway protection',
+        'Paediatric oxygen delivery equipment (age-appropriate mask size)',
+        'Have midazolam drawn and labelled for weight-based dose in case of second seizure en route',
+        'Keep environment calm — bright lights and noise can be stimulating for post-ictal child'
+      ]
+    },
     studentChecklist: [
       { id: 'ped2-1', category: 'abcde', description: 'Protect airway and place in recovery position', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['basic', 'intermediate', 'advanced'] },
       { id: 'ped2-2', category: 'abcde', description: 'Time the seizure', points: 5, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['basic', 'intermediate', 'advanced'] },
@@ -3192,6 +3455,14 @@ export const additionalEnvironmentalCases: CaseScenario[] = [
       'Exertional heat stroke: sweaty (common in athletes/military)',
       'Goal: cool to 39°C within 30 minutes - evaporative cooling + ice packs'
     ],
+    commonPitfalls: [
+      'Confusing heat stroke with heat exhaustion — heat stroke requires immediate aggressive cooling; the key differentiator is altered mental status and core temperature >40°C',
+      'Not starting cooling on scene — every minute of delay worsens organ damage; begin cooling before transport',
+      'Over-cooling below 38°C — causes shivering which paradoxically increases heat production; stop active cooling once temperature reaches 39°C',
+      'Failing to check blood glucose — hypoglycaemia co-exists in many heat stroke patients and worsens neurological outcome',
+      'Not anticipating seizures — have benzodiazepines drawn up and ready; heat stroke lowers seizure threshold significantly',
+      'Missing early rhabdomyolysis signs — dark urine, muscle rigidity, and extreme CK elevation indicate rhabdo requiring aggressive IV fluid resuscitation'
+    ],
     visualResources: {
       images: [
         {
@@ -3392,18 +3663,58 @@ export const additionalPsychiatricCases: CaseScenario[] = [
       differentialDiagnoses: ['Schizophrenia relapse', 'Drug-induced psychosis', 'Bipolar mania', 'Medical cause (thyroid, electrolytes)'],
       mostLikelyDiagnosis: 'Acute Psychotic Episode - Schizophrenia Relapse'
     },
+    managementPathway: {
+      immediate: [
+        'Scene safety first — assess for weapons, violence risk, adequate exit routes; request police if threat present',
+        'De-escalation approach — calm, non-threatening tone; introduce yourself, maintain distance, avoid direct eye contact',
+        'Rule out medical causes IMMEDIATELY — blood glucose, SpO2, temperature, vitals (hypoglycaemia, hypoxia, sepsis)',
+        'Minimise sensory stimulation — reduce noise, bystanders, bright lights; speak one at a time',
+        'Do NOT challenge or argue with delusions — acknowledge distress without reinforcing or denying content',
+        'Assess suicide and violence risk — direct questioning is safe and necessary',
+        'Contact family or carer for collateral history — medication compliance, recent drug use, baseline behaviour'
+      ],
+      definitive: [
+        'Chemical sedation if verbal de-escalation fails and patient/crew safety is threatened',
+        'Midazolam 2.5-5mg IM (preferred in prehospital) — for acute behavioural emergency',
+        'Or Haloperidol 5mg IM + Promethazine 25mg IM — WHO/DCAS approved combination',
+        'Physical restraint only as last resort with multiple trained personnel — document clearly',
+        'Transport to Al Amal Hospital Dubai (psychiatric facility) or ED with psychiatric assessment capacity',
+        'Refer to mental health crisis team on arrival for assessment under UAE Mental Health Law'
+      ],
+      monitoring: [
+        'Continuous vital signs monitoring — especially if chemical sedation given',
+        'SpO2 and airway patency if sedated — benzodiazepines cause respiratory depression',
+        'GCS monitoring post-sedation',
+        'Blood glucose rechecked if any clinical change',
+        'Document behaviour and all interventions for handover'
+      ],
+      transportConsiderations: [
+        'Ensure secure transport — patient should not have access to equipment or door handles',
+        'Position to maximise safety for patient and crew — avoid prone restraint position',
+        'Pre-alert Al Amal Hospital or ED psychiatric unit with behaviour description and medications given',
+        'Do not transport alone with sedated patient — crew safety requires two personnel minimum',
+        'Document all use of force and chemical restraint on patient care record'
+      ]
+    },
     studentChecklist: [
-      { id: 'psych3-1', category: 'safety', description: 'Scene safety and de-escalation techniques', points: 15, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced'], critical: true },
-      { id: 'psych3-2', category: 'abcde', description: 'Rule out medical causes of psychosis (glucose, vitals)', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced'] },
-      { id: 'psych3-3', category: 'abcde', description: 'Assess suicide and violence risk', points: 15, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'] },
+      { id: 'psych3-1', category: 'safety', description: 'Scene safety and de-escalation techniques', points: 15, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['intermediate', 'advanced'], critical: true },
+      { id: 'psych3-2', category: 'abcde', description: 'Rule out medical causes of psychosis (glucose, vitals)', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['intermediate', 'advanced'] },
+      { id: 'psych3-3', category: 'abcde', description: 'Assess suicide and violence risk', points: 15, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['advanced'] },
       { id: 'psych3-4', category: 'intervention', description: 'Chemical restraint only if necessary', points: 5, yearLevel: ['4th-year'], complexity: ['advanced'] },
-      { id: 'psych3-5', category: 'communication', description: 'Calm, non-confrontational communication', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced'] }
+      { id: 'psych3-5', category: 'communication', description: 'Calm, non-confrontational communication', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['intermediate', 'advanced'] }
     ],
     teachingPoints: [
       'Always rule out medical causes of altered mental status (DELIRIUM)',
       'De-escalation is first-line - avoid physical restraint if possible',
       'Chemical restraint: benzodiazepines or antipsychotics if needed',
       'Involve mental health crisis team early'
+    ],
+    commonPitfalls: [
+      'Entering the scene without a safety assessment — agitated psychotic patients may be unpredictable; always assess exit routes and ensure police backup if violence risk is high',
+      'Arguing with or challenging the patient\'s delusions — this escalates agitation; acknowledge their distress without reinforcing or contradicting the delusion',
+      'Missing a medical cause of psychosis — hypoglycaemia, hypoxia, sepsis, or head injury can present identically; always check BGL, oxygen saturations, and vitals',
+      'Using physical restraint as a first response — restraint should only follow failed verbal de-escalation and requires multiple trained personnel; improper restraint increases morbidity',
+      'Not gathering collateral history from family — family members can provide crucial information about baseline behaviour, medication compliance, and recent drug or alcohol use'
     ],
     visualResources: {
       images: [
@@ -3894,6 +4205,39 @@ export const additionalTraumaCases: CaseScenario[] = [
       differentialDiagnoses: ['Traumatic amputation', 'Crush injury', 'Hemorrhagic shock'],
       mostLikelyDiagnosis: 'Traumatic Amputation of Right Hand'
     },
+    managementPathway: {
+      immediate: [
+        'Haemorrhage control — apply tourniquet 5-7cm proximal to amputation site; apply tight with one-handed windlass; note time applied',
+        'Direct pressure to stump if tourniquet not immediately available — use haemostatic dressing (QuikClot, Celox)',
+        'IV access x2 (14-16G) large bore, antecubital',
+        'Fluid resuscitation 500mL NS bolus — reassess BP; target SBP >90',
+        'Preserve the amputated part: wrap in moist sterile gauze, place in sealed waterproof bag, then place bag in container of ice water — do NOT place directly on ice or submerge in water',
+        'Label the bag with patient name, time of amputation, and time placed on ice',
+        'Analgesia — Morphine 0.1mg/kg IV titrated; Ketamine 0.3mg/kg IV if haemodynamically compromised',
+        'Reassess tourniquet effectiveness — proximal pulse should be absent, bleeding should be controlled'
+      ],
+      definitive: [
+        'Reimplantation surgery — best outcomes within 6 hours of amputation (warm ischaemia time)',
+        'Rashid Hospital Dubai Trauma Centre — specialist hand/plastic surgery for reimplantation',
+        'Tetanus prophylaxis at hospital',
+        'IV antibiotics — cover for contaminated wound',
+        'Reconstructive surgery if reimplantation not possible'
+      ],
+      monitoring: [
+        'BP every 3-5 minutes — haemorrhagic shock may develop rapidly',
+        'SpO2 continuous',
+        'Tourniquet time — maximum 2 hours recommended; note on patient',
+        'Neurovascular status of remaining limb',
+        'Signs of haemorrhagic shock: HR >120, SBP <90, cool pale skin, altered consciousness'
+      ],
+      transportConsiderations: [
+        'Pre-alert trauma centre with "traumatic hand amputation, tourniquet in situ, time X, amputated part preserved"',
+        'Bring amputated part — clearly communicated handover of part to ED team',
+        'Rapid transport — every minute of warm ischaemia time reduces reimplantation success',
+        'Do not delay on scene beyond tourniquet and IV access — load and go',
+        'Reassess tourniquet effectiveness during transport'
+      ]
+    },
     studentChecklist: [
       { id: 't11-1', category: 'intervention', description: 'Control bleeding with direct pressure/tourniquet', points: 15, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced', 'expert'], critical: true },
       { id: 't11-2', category: 'intervention', description: 'Proper care of amputated part (dry, cool, do not immerse)', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced', 'expert'] },
@@ -4122,13 +4466,47 @@ export const additionalTraumaCases: CaseScenario[] = [
       eventsLeading: 'Fell into pool while unsupervised, estimated submersion 5 minutes'
     },
     vitalSignsProgression: {
-      initial: { bp: '70/40', pulse: 50, respiration: 0, spo2: 70, gcs: 5, temperature: 32 }
+      initial: { bp: '70/40', pulse: 50, respiration: 4, spo2: 70, gcs: 5, temperature: 32 }
     },
     expectedFindings: {
       keyObservations: ['Drowning', 'Hypothermia', 'Respiratory arrest', 'Aspiration'],
       redFlags: ['Hypoxic brain injury', 'Secondary drowning', 'Death'],
       differentialDiagnoses: ['Drowning', 'Hypothermia', 'Aspiration pneumonia'],
       mostLikelyDiagnosis: 'Drowning with Hypothermia'
+    },
+    managementPathway: {
+      immediate: [
+        'Rescue from water safely — do not enter dangerous water without trained water rescue; use reach and throw techniques',
+        'C-spine precautions if dive/fall mechanism — log roll for spinal management during rescue if safe to do so',
+        'Airway suctioning — water and vomit in upper airway; use rigid suction catheter',
+        'Assess for respiratory effort and pulse — up to 60 seconds for hypothermic pulse check',
+        'If no pulse or apnoea — CPR immediately; ratio 30:2; rescue breaths are critical in drowning',
+        'High-flow oxygen 15L/min via NRB or BVM — SpO2 83% is critically low',
+        'Remove wet clothing — wet clothing accelerates heat loss',
+        'Passive rewarming — blankets, metallic foil emergency blanket; avoid active warming without monitoring',
+        'IV access (warmed fluids if available) — avoid cold crystalloid, use warmed NS if possible'
+      ],
+      definitive: [
+        '"No one is dead until they are warm and dead" — continue resuscitation until core temperature >32°C or no response to rewarming',
+        'ECMO (Extracorporeal Membrane Oxygenation) at tertiary centre for rewarming in cardiac arrest from hypothermia',
+        'Rashid Hospital Dubai or Mediclinic City Hospital intensive care for active rewarming',
+        'ICU admission for monitoring of secondary drowning (delayed pulmonary oedema)',
+        'Treat hypothermia as the primary problem — dysrhythmias will resolve with rewarming'
+      ],
+      monitoring: [
+        'Core temperature (rectal or oesophageal) — axillary is unreliable in hypothermia',
+        'Continuous ECG — hypothermia causes J waves (Osborn waves) and VF risk',
+        'SpO2 continuous — peripheral circulation compromised in hypothermia; probe on ear or forehead',
+        'GCS/AVPU — consciousness improves with rewarming',
+        'Secondary drowning — pulmonary oedema may develop 4-24 hours later; all drowning patients need observation'
+      ],
+      transportConsiderations: [
+        'Pre-alert with "drowning with hypothermia, temperature 29°C, CPR ongoing/breathing spontaneously"',
+        'Keep patient horizontal during transport — vasodilation of hypothermic peripheries on standing causes cardiac arrest',
+        'Maintain rewarming in transport — heater on maximum, foil blanket',
+        'Do NOT stop CPR for hypothermic arrest — rewarming is the treatment',
+        'ICU-capable hospital required — Rashid Hospital or American Hospital Dubai'
+      ]
     },
     studentChecklist: [
       { id: 't12-1', category: 'abcde', description: 'Airway suction and BVM ventilation', points: 15, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced', 'expert'], critical: true },
@@ -4295,6 +4673,7 @@ export const additionalBurnsCases: CaseScenario[] = [
     id: 'burn-002',
     title: 'Electrical Burn with Cardiac Arrest',
     category: 'burns',
+    subcategory: 'cardiac-arrest',
     priority: 'critical',
     complexity: 'expert',
     yearLevels: ['4th-year'],
@@ -4389,6 +4768,41 @@ export const additionalBurnsCases: CaseScenario[] = [
       differentialDiagnoses: ['Electrical injury', 'Ventricular fibrillation', 'Asystole'],
       mostLikelyDiagnosis: 'Electrical Injury with Cardiac Arrest'
     },
+    managementPathway: {
+      immediate: [
+        'SCENE SAFETY FIRST — do NOT approach until power source is confirmed OFF by facility electrician/engineer; call for power isolation',
+        'Once safe: begin CPR immediately — high-quality chest compressions 100-120/min, depth 5-6cm',
+        'Attach AED/defibrillator immediately — electrical arrests are frequently VF and highly shockable',
+        'Defibrillation per ALS protocol — 200J biphasic for VF/pVT',
+        'Advanced airway — RSI or supraglottic airway; electrical burns can cause airway oedema rapidly',
+        'IV/IO access — large bore bilateral antecubital fossa',
+        'Adrenaline 1mg IV/IO every 3-5 minutes per ALS algorithm',
+        'Examine for entry and exit wounds — entry typically at contact point (hands), exit where current left body (feet)',
+        'C-spine precautions — muscular tetany may have caused fall or posterior shoulder dislocation'
+      ],
+      definitive: [
+        'Prolonged resuscitation — electrical cardiac arrests in young healthy patients have excellent ROSC rates; do not stop prematurely',
+        'Rashid Hospital Trauma Centre — specialist care for post-arrest management and burn assessment',
+        'Fluid resuscitation for rhabdomyolysis — IV fluids titrated to urine output >1mL/kg/hr',
+        'Alkalinisation of urine — sodium bicarbonate to protect renal tubules from myoglobin',
+        'ICU admission for cardiac monitoring — dysrhythmias can recur post-ROSC',
+        'Compartment syndrome assessment — internal thermal injury causes tissue oedema'
+      ],
+      monitoring: [
+        'Continuous ECG — VF may recur after ROSC; monitor for QT prolongation and heart block',
+        'SpO2 continuous post-ROSC',
+        'Temperature — electrical injury causes hyperthermia from internal heating',
+        'Urine output — dark/brown urine = myoglobinuria from rhabdomyolysis',
+        'GCS post-ROSC — neurological recovery trajectory'
+      ],
+      transportConsiderations: [
+        'Pre-alert Rashid Hospital trauma team — "electrical injury cardiac arrest, ROSC/ongoing CPR, burns to hands and feet"',
+        'Continue CPR if no ROSC — maintain throughout transport',
+        'Have defibrillator charged and pads on throughout — VF may recur',
+        'Spinal precautions if mechanism suggests fall or tetanic injury',
+        'Bring information about voltage and type of current (AC/DC) for handover'
+      ]
+    },
     studentChecklist: [
       { id: 'burn2-1', category: 'safety', description: 'Ensure scene is safe - power off', points: 15, yearLevel: ['4th-year'], complexity: ['expert'], critical: true },
       { id: 'burn2-2', category: 'abcde', description: 'Immediate CPR for cardiac arrest', points: 20, yearLevel: ['4th-year'], complexity: ['expert'], critical: true },
@@ -4401,6 +4815,13 @@ export const additionalBurnsCases: CaseScenario[] = [
       'Ensure power is off before approaching patient',
       'Entry and exit wounds may be small but internal damage extensive',
       'Continue resuscitation efforts longer - electrical arrests can recover'
+    ],
+    commonPitfalls: [
+      'Approaching the patient before confirming the power source is off — rescuers can become casualties; always confirm with facility personnel that the circuit is isolated before contact',
+      'Assuming a brief electrical exposure means minor injury — internal thermal injury can cause extensive tissue necrosis along the current path between entry and exit wounds',
+      'Abandoning resuscitation prematurely — electrical cardiac arrests in young healthy patients have much higher ROSC rates than other arrest aetiology; extend resuscitation efforts significantly',
+      'Failing to identify both entry and exit wounds — entry is typically at point of contact (hands); exit is where current left the body (often feet); both inform mechanism assessment',
+      'Missing associated trauma — the muscular tetany from electrocution can throw patients significant distances or cause posterior shoulder dislocations; always assess for fall injuries'
     ],
     visualResources: {
       images: [

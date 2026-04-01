@@ -650,17 +650,44 @@ export const caseDatabase: CaseScenario[] = [
       differentialDiagnoses: ['AF with RVR', 'Atrial flutter with variable block', 'Multifocal atrial tachycardia', 'Thyrotoxicosis', 'PE', 'Hypovolemia', 'Infection/sepsis'],
       mostLikelyDiagnosis: 'Atrial Fibrillation with Rapid Ventricular Response'
     },
+    managementPathway: {
+      immediate: [
+        'Assess hemodynamic stability — BP, GCS, chest pain, signs of shock',
+        'Obtain 12-lead ECG to confirm rhythm',
+        'IV access x1 (18G)',
+        'If UNSTABLE (SBP <90, chest pain, GCS <14): Synchronized cardioversion 100-200J biphasic with procedural sedation',
+        'If STABLE: Rate control — Metoprolol 5mg IV slow push over 5 min (repeat x2), or Diltiazem 0.25mg/kg IV',
+        'Oxygen if SpO2 <94%',
+        'Check anticoagulation status — warfarin/DOAC compliance'
+      ],
+      definitive: [
+        'Rate control target: HR <110 bpm (lenient) or <80 bpm (strict)',
+        'Hospital admission for rhythm management and electrophysiology review',
+        'Identify and treat trigger (infection, PE, dehydration, thyroid disease)'
+      ],
+      monitoring: [
+        'Continuous ECG monitoring',
+        'BP every 5 minutes after rate-control medications',
+        'SpO2 continuous',
+        'Monitor for deterioration — be prepared to cardiovert if haemodynamic compromise'
+      ],
+      transportConsiderations: [
+        'Transport to facility with cardiology capabilities — American Hospital Dubai or Dubai Hospital',
+        'Pre-alert with rate, rhythm, haemodynamic status, and anticoagulation history',
+        'Continuous monitoring during transport — be prepared for cardioversion en route'
+      ]
+    },
     studentChecklist: [
-      { id: 'c3-1', category: 'abcde', description: 'Assess hemodynamic stability - BP, mental status, signs of shock, chest pain', points: 15, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'], critical: true },
-      { id: 'c3-2', category: 'intervention', description: 'Obtain 12-lead ECG immediately to confirm rhythm', points: 15, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'], critical: true },
-      { id: 'c3-3', category: 'intervention', description: 'Establish IV access for medication administration', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
+      { id: 'c3-1', category: 'abcde', description: 'Assess hemodynamic stability - BP, mental status, signs of shock, chest pain', points: 15, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'], critical: true },
+      { id: 'c3-2', category: 'intervention', description: 'Obtain 12-lead ECG immediately to confirm rhythm', points: 15, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'], critical: true },
+      { id: 'c3-3', category: 'intervention', description: 'Establish IV access for medication administration', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
       { id: 'c3-4', category: 'intervention', description: 'Administer rate control - Metoprolol 5mg IV or Diltiazem 0.25mg/kg IV', points: 15, yearLevel: ['4th-year'], complexity: ['advanced', 'expert'] },
       { id: 'c3-5', category: 'intervention', description: 'Check INR if on warfarin - assess stroke risk', points: 10, yearLevel: ['4th-year'], complexity: ['advanced', 'expert'] },
-      { id: 'c3-6', category: 'intervention', description: 'Administer fluids if hypovolemic - consider dehydration as trigger', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
-      { id: 'c3-7', category: 'history', description: 'Identify triggers: infection, thyroid, alcohol, dehydration, PE', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
-      { id: 'c3-8', category: 'abcde', description: 'Monitor for deterioration: ongoing tachycardia, hypotension, chest pain', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
-      { id: 'c3-9', category: 'communication', description: 'Transport to hospital with continuous monitoring', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
-      { id: 'c3-10', category: 'documentation', description: 'Document rhythm, rate, ECG findings, interventions, and response', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] }
+      { id: 'c3-6', category: 'intervention', description: 'Administer fluids if hypovolemic - consider dehydration as trigger', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
+      { id: 'c3-7', category: 'history', description: 'Identify triggers: infection, thyroid, alcohol, dehydration, PE', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
+      { id: 'c3-8', category: 'abcde', description: 'Monitor for deterioration: ongoing tachycardia, hypotension, chest pain', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
+      { id: 'c3-9', category: 'communication', description: 'Transport to hospital with continuous monitoring', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
+      { id: 'c3-10', category: 'documentation', description: 'Document rhythm, rate, ECG findings, interventions, and response', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] }
     ],
     teachingPoints: [
       'AF with RVR: Irregularly irregular rhythm with rate >100 bpm - no discernible P waves, fibrillatory waves may be present',
@@ -914,16 +941,16 @@ export const caseDatabase: CaseScenario[] = [
       transportConsiderations: ['Continuous BP monitoring en route', 'IV access maintained', 'Cardiac monitoring', 'Avoid rapid BP reduction during transport', 'Pre-alert receiving hospital with BP readings and end-organ damage', 'Consider stroke center if neurological deficits']
     },
     studentChecklist: [
-      { id: 'c4-1', category: 'intervention', description: 'Confirm BP in both arms - check for significant difference', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
-      { id: 'c4-2', category: 'intervention', description: 'Establish IV access for antihypertensive medications', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
+      { id: 'c4-1', category: 'intervention', description: 'Confirm BP in both arms - check for significant difference', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
+      { id: 'c4-2', category: 'intervention', description: 'Establish IV access for antihypertensive medications', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
       { id: 'c4-3', category: 'abcde', description: 'Assess for end-organ damage: neuro exam, chest auscultation, urine output', points: 20, yearLevel: ['4th-year'], complexity: ['advanced', 'expert'], critical: true },
       { id: 'c4-4', category: 'intervention', description: 'Administer antihypertensive: Labetalol 20mg IV or Hydralazine 10mg IV', points: 20, yearLevel: ['4th-year'], complexity: ['advanced', 'expert'] },
-      { id: 'c4-5', category: 'intervention', description: 'Obtain 12-lead ECG - assess for LVH, ischemia, arrhythmias', points: 15, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
+      { id: 'c4-5', category: 'intervention', description: 'Obtain 12-lead ECG - assess for LVH, ischemia, arrhythmias', points: 15, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
       { id: 'c4-6', category: 'intervention', description: 'Check serum creatinine and electrolytes if available', points: 10, yearLevel: ['4th-year'], complexity: ['advanced', 'expert'] },
-      { id: 'c4-7', category: 'intervention', description: 'Monitor BP every 5-10 minutes', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
-      { id: 'c4-8', category: 'history', description: 'Identify cause: medication compliance, renal disease, recreational drugs', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
-      { id: 'c4-9', category: 'communication', description: 'Rapid transport to hospital with continuous monitoring', points: 15, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'], critical: true },
-      { id: 'c4-10', category: 'documentation', description: 'Document BP readings, neurological status, medication given, response', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] }
+      { id: 'c4-7', category: 'intervention', description: 'Monitor BP every 5-10 minutes', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
+      { id: 'c4-8', category: 'history', description: 'Identify cause: medication compliance, renal disease, recreational drugs', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
+      { id: 'c4-9', category: 'communication', description: 'Rapid transport to hospital with continuous monitoring', points: 15, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'], critical: true },
+      { id: 'c4-10', category: 'documentation', description: 'Document BP readings, neurological status, medication given, response', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] }
     ],
     teachingPoints: [
       'Hypertensive emergency = severely elevated BP (usually >180/120) WITH acute end-organ damage',
@@ -1775,18 +1802,18 @@ export const caseDatabase: CaseScenario[] = [
       transportConsiderations: ['Continue controlled oxygen during transport', 'Use Venturi mask for precise FiO2 delivery', 'Do NOT use high-flow oxygen (>4L) without medical direction', 'Transport to facility with NIV capability', 'Pre-alert if patient requiring NIV or showing CO2 retention signs', 'Air-conditioned ambulance essential']
     },
     studentChecklist: [
-      { id: 'r3-1', category: 'abcde', description: 'Controlled oxygen 24-28%', points: 15, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'], critical: true },
-      { id: 'r3-2', category: 'intervention', description: 'Nebulized bronchodilators', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
-      { id: 'r3-3', category: 'intervention', description: 'IV hydrocortisone', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
+      { id: 'r3-1', category: 'abcde', description: 'Controlled oxygen 24-28%', points: 15, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'], critical: true },
+      { id: 'r3-2', category: 'intervention', description: 'Nebulized bronchodilators', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
+      { id: 'r3-3', category: 'intervention', description: 'IV hydrocortisone', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
       { id: 'r3-4', category: 'abcde', description: 'Check for CO2 retention signs', points: 10, yearLevel: ['4th-year'], complexity: ['advanced', 'expert'] },
-      { id: 'r3-5', category: 'history', description: 'Obtain smoking history and pack-years', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
-      { id: 'r3-6', category: 'history', description: 'Ask about baseline oxygen requirements', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
-      { id: 'r3-7', category: 'abcde', description: 'Assess work of breathing and accessory muscle use', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
-      { id: 'r3-8', category: 'intervention', description: 'Position patient upright with tripod posture', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
-      { id: 'r3-9', category: 'abcde', description: 'Check for fever and assess sputum characteristics', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
+      { id: 'r3-5', category: 'history', description: 'Obtain smoking history and pack-years', points: 5, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
+      { id: 'r3-6', category: 'history', description: 'Ask about baseline oxygen requirements', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
+      { id: 'r3-7', category: 'abcde', description: 'Assess work of breathing and accessory muscle use', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
+      { id: 'r3-8', category: 'intervention', description: 'Position patient upright with tripod posture', points: 5, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
+      { id: 'r3-9', category: 'abcde', description: 'Check for fever and assess sputum characteristics', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
       { id: 'r3-10', category: 'intervention', description: 'Consider NIV/BiPAP if available and indicated', points: 15, yearLevel: ['4th-year'], complexity: ['advanced', 'expert'] },
-      { id: 'r3-11', category: 'communication', description: 'Transport to facility with respiratory support', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
-      { id: 'r3-12', category: 'documentation', description: 'Document oxygen delivery method and patient response', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] }
+      { id: 'r3-11', category: 'communication', description: 'Transport to facility with respiratory support', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
+      { id: 'r3-12', category: 'documentation', description: 'Document oxygen delivery method and patient response', points: 5, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] }
     ],
     teachingPoints: [
       'Controlled oxygen in COPD - target SpO2 88-92% to avoid CO2 retention',
@@ -2064,14 +2091,14 @@ export const caseDatabase: CaseScenario[] = [
       transportConsiderations: ['Rapid transport to facility with CT angiography 24/7', 'Pre-alert for possible thrombolysis if hemodynamically unstable', 'Do NOT massage or excessively examine DVT (risk of further embolization)', 'Continue oxygen during transport', 'Monitor closely for hemodynamic collapse', 'Massive PE: consider thrombolysis en route if protocols allow']
     },
     studentChecklist: [
-      { id: 'r4-1', category: 'abcde', description: 'High-flow oxygen', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
-      { id: 'r4-2', category: 'intervention', description: 'IV access', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
+      { id: 'r4-1', category: 'abcde', description: 'High-flow oxygen', points: 5, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
+      { id: 'r4-2', category: 'intervention', description: 'IV access', points: 5, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
       { id: 'r4-3', category: 'history', description: 'Assess PE risk factors', points: 15, yearLevel: ['4th-year'], complexity: ['advanced', 'expert'] },
       { id: 'r4-4', category: 'intervention', description: 'Check for DVT', points: 10, yearLevel: ['4th-year'], complexity: ['advanced', 'expert'] },
       { id: 'r4-5', category: 'abcde', description: 'Obtain 12-lead ECG to assess for right heart strain', points: 15, yearLevel: ['4th-year'], complexity: ['advanced', 'expert'] },
       { id: 'r4-6', category: 'abcde', description: 'Assess hemodynamic stability and shock signs', points: 20, yearLevel: ['4th-year'], complexity: ['advanced', 'expert'], critical: true },
-      { id: 'r4-7', category: 'intervention', description: 'Position patient comfortably semi-upright', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
-      { id: 'r4-8', category: 'abcde', description: 'Monitor vital signs continuously', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
+      { id: 'r4-7', category: 'intervention', description: 'Position patient comfortably semi-upright', points: 5, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
+      { id: 'r4-8', category: 'abcde', description: 'Monitor vital signs continuously', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
       { id: 'r4-9', category: 'intervention', description: 'Fluid resuscitation if hypotensive', points: 10, yearLevel: ['4th-year'], complexity: ['advanced', 'expert'] },
       { id: 'r4-10', category: 'communication', description: 'Pre-alert receiving hospital for possible thrombolysis', points: 15, yearLevel: ['4th-year'], complexity: ['advanced', 'expert'], critical: true },
       { id: 'r4-11', category: 'documentation', description: 'Document risk factors and clinical probability', points: 5, yearLevel: ['4th-year'], complexity: ['advanced', 'expert'] },
@@ -2717,8 +2744,8 @@ export const caseDatabase: CaseScenario[] = [
     },
     studentChecklist: [
       { id: 't3-1', category: 'intervention', description: 'Seal wound with occlusive dressing (3 sides)', points: 20, yearLevel: ['4th-year'], complexity: ['advanced', 'expert'], critical: true },
-      { id: 't3-2', category: 'intervention', description: 'High-flow oxygen', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
-      { id: 't3-3', category: 'intervention', description: 'IV access and fluids', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
+      { id: 't3-2', category: 'intervention', description: 'High-flow oxygen', points: 5, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
+      { id: 't3-3', category: 'intervention', description: 'IV access and fluids', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
       { id: 't3-4', category: 'abcde', description: 'Monitor for tension pneumothorax', points: 15, yearLevel: ['4th-year'], complexity: ['advanced', 'expert'] }
     ],
     teachingPoints: [
@@ -3518,7 +3545,7 @@ export const caseDatabase: CaseScenario[] = [
     studentChecklist: [
       { id: 'n3-1', category: 'abcde', description: 'Recognize meningitis triad', points: 15, yearLevel: ['4th-year'], complexity: ['advanced', 'expert'] },
       { id: 'n3-2', category: 'abcde', description: 'Check for non-blanching rash', points: 10, yearLevel: ['4th-year'], complexity: ['advanced', 'expert'] },
-      { id: 'n3-3', category: 'intervention', description: 'IV access and fluids', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
+      { id: 'n3-3', category: 'intervention', description: 'IV access and fluids', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
       { id: 'n3-4', category: 'intervention', description: 'Antibiotics within 1 hour', points: 20, yearLevel: ['4th-year'], complexity: ['advanced', 'expert'], critical: true },
       { id: 'n3-5', category: 'communication', description: 'Isolation precautions', points: 10, yearLevel: ['4th-year'], complexity: ['advanced', 'expert'] }
     ],
@@ -3848,11 +3875,11 @@ export const caseDatabase: CaseScenario[] = [
       transportConsiderations: ['Transport to hospital if glucose does not normalize', 'If glucose normalized and patient alert with good support: may not need transport if no concerning features', 'Continue monitoring during transport', 'Have IV dextrose ready for recurrent hypoglycemia', 'Patient should not drive or operate machinery']
     },
     studentChecklist: [
-      { id: 'm1-1', category: 'abcde', description: 'Check blood glucose immediately', points: 15, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'], critical: true },
-      { id: 'm1-2', category: 'intervention', description: 'Administer oral glucose if conscious', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
+      { id: 'm1-1', category: 'abcde', description: 'Check blood glucose immediately', points: 15, yearLevel: ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'], critical: true },
+      { id: 'm1-2', category: 'intervention', description: 'Administer oral glucose if conscious', points: 10, yearLevel: ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
       { id: 'm1-3', category: 'intervention', description: 'IV dextrose 10% if impaired consciousness', points: 15, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
       { id: 'm1-4', category: 'intervention', description: 'Glucagon IM if no IV access', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
-      { id: 'm1-5', category: 'abcde', description: 'Reassess glucose after treatment', points: 5, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
+      { id: 'm1-5', category: 'abcde', description: 'Reassess glucose after treatment', points: 5, yearLevel: ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
       { id: 'm1-6', category: 'history', description: 'Identify precipitating cause', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] }
     ],
     teachingPoints: [
@@ -4374,12 +4401,40 @@ export const caseDatabase: CaseScenario[] = [
       differentialDiagnoses: ['Panic attack', 'MI', 'Pulmonary embolism', 'Hyperthyroidism', 'Hypoglycemia'],
       mostLikelyDiagnosis: 'Panic Attack'
     },
+    managementPathway: {
+      immediate: [
+        'Ensure scene safety and remove from stressors if possible',
+        'Calm, reassuring communication — steady voice, slow breathing coaching',
+        'Full vital signs including SpO2 and blood glucose',
+        '12-lead ECG — mandatory for first presentation or atypical features to exclude cardiac cause',
+        'Coach controlled breathing — 4 counts in, hold 2, 6 counts out',
+        'Do NOT use paper bag — risk of dangerous hypoxia',
+        'IV access and oxygen only if organic cause not excluded'
+      ],
+      definitive: [
+        'Medical exclusion of organic causes (PE, ACS, pneumothorax) before accepting panic diagnosis',
+        'Benzodiazepine (lorazepam 1-2mg PO or midazolam 2.5mg IM) only if de-escalation fails and organic cause excluded',
+        'Refer to GP or mental health services for ongoing anxiety management'
+      ],
+      monitoring: [
+        'SpO2 continuous — should be normal in panic attack',
+        'Respiratory rate — goal is reduction to <20/min',
+        'Reassess ECG if any atypical features develop',
+        'Monitor for carpo-pedal spasm resolution (indicates hypocapnia correcting)'
+      ],
+      transportConsiderations: [
+        'Transport to ED for medical exclusion if first presentation, risk factors, or atypical features',
+        'Patient may refuse transport if symptoms resolve — document refusal thoroughly',
+        'Keep environment calm — reduce stimuli, ask bystanders to step back',
+        'Rashid Hospital or American Hospital Dubai for first-time presentations with atypical features'
+      ]
+    },
     studentChecklist: [
-      { id: 'p1-1', category: 'abcde', description: 'Rule out life-threatening causes first', points: 15, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
+      { id: 'p1-1', category: 'abcde', description: 'Rule out life-threatening causes first', points: 15, yearLevel: ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
       { id: 'p1-2', category: 'abcde', description: 'Obtain 12-lead ECG', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
-      { id: 'p1-3', category: 'intervention', description: 'Check vital signs including SpO2', points: 5, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
-      { id: 'p1-4', category: 'intervention', description: 'Calm, reassuring approach', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
-      { id: 'p1-5', category: 'intervention', description: 'Coach controlled breathing', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
+      { id: 'p1-3', category: 'intervention', description: 'Check vital signs including SpO2', points: 5, yearLevel: ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
+      { id: 'p1-4', category: 'intervention', description: 'Calm, reassuring approach', points: 10, yearLevel: ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
+      { id: 'p1-5', category: 'intervention', description: 'Coach controlled breathing', points: 10, yearLevel: ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
       { id: 'p1-6', category: 'history', description: 'Assess for suicidal ideation', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] }
     ],
     teachingPoints: [
@@ -4559,11 +4614,41 @@ export const caseDatabase: CaseScenario[] = [
       differentialDiagnoses: ['Neck of femur fracture', 'Intertrochanteric fracture', 'Hip dislocation'],
       mostLikelyDiagnosis: 'Neck of Femur Fracture'
     },
+    managementPathway: {
+      immediate: [
+        'Scene safety and request additional resources if needed for extrication from bathroom',
+        'Primary survey — check airway, breathing, circulation; assess for head injury from fall',
+        'Do not move patient until injury assessed — logroll or spinal precautions if indicated',
+        'Analgesia early — morphine 2-5mg IV titrated or consider fascia iliaca compartment block (FICB)',
+        'IV access (18G)',
+        'Immobilise fracture in position found — traction splint contraindicated for NOF fractures',
+        'Full exposure and secondary survey — check for other injuries (wrist, ribs, head)',
+        'Document anticoagulant use — warfarin/DOAC patients at elevated intracranial haemorrhage risk'
+      ],
+      definitive: [
+        'Hip fracture repair within 36 hours (operative delay increases mortality significantly)',
+        'Rashid Hospital or Mediclinic City Hospital for orthopaedic trauma',
+        'Geriatric and falls assessment during admission',
+        'Osteoporosis optimisation and falls prevention review'
+      ],
+      monitoring: [
+        'Pain score every 5 minutes after analgesia — target VAS <4',
+        'BP and pulse — haemorrhage into hip can be significant (up to 1L)',
+        'Monitor neurovascular status of affected limb (pulses, sensation, warmth)',
+        'SpO2 continuous'
+      ],
+      transportConsiderations: [
+        'Gentle handling to minimise pain and prevent fat embolism',
+        'Padded splinting for comfort during transport',
+        'Pre-alert: "78-year-old female, NOF fracture, anticoagulated on amlodipine — analgesia given"',
+        'Transport to orthopaedic trauma-capable facility with geriatric services'
+      ]
+    },
     studentChecklist: [
-      { id: 'f1-1', category: 'abcde', description: 'Assess for head injury', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
+      { id: 'f1-1', category: 'abcde', description: 'Assess for head injury', points: 10, yearLevel: ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
       { id: 'f1-2', category: 'intervention', description: 'Analgesia (consider fascia iliaca block)', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced', 'expert'] },
       { id: 'f1-3', category: 'intervention', description: 'IV access', points: 5, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
-      { id: 'f1-4', category: 'intervention', description: 'Splint/immobilize leg', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
+      { id: 'f1-4', category: 'intervention', description: 'Splint/immobilize leg', points: 10, yearLevel: ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
       { id: 'f1-5', category: 'intervention', description: 'Gentle handling to prevent fat embolism', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
       { id: 'f1-6', category: 'history', description: 'Assess fall risk factors', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] }
     ],
@@ -4743,6 +4828,39 @@ export const caseDatabase: CaseScenario[] = [
       redFlags: ['Sepsis risk', 'Necrotizing fasciitis must be excluded'],
       differentialDiagnoses: ['Surgical site infection', 'Cellulitis', 'Abscess formation', 'Necrotizing fasciitis'],
       mostLikelyDiagnosis: 'Surgical Site Infection'
+    },
+    managementPathway: {
+      immediate: [
+        'Full sepsis screen — assess qSOFA (RR, BP, GCS): any ≥2 = sepsis, activate sepsis pathway',
+        'Full vital signs including temperature — fever >38°C or hypothermia <36°C both indicate systemic response',
+        'IV access (18G) — for antibiotics and fluids',
+        'IV fluid bolus 500mL NS if signs of sepsis-induced hypotension (SBP <100)',
+        'Blood glucose check — diabetes impairs wound healing and immune response; high BGL common',
+        'Assess wound: erythema, warmth, swelling, discharge, wound dehiscence, crepitus (gas in tissues = necrotising fasciitis)',
+        'Sterile dressing — cover wound to prevent further contamination',
+        'Analgesia — Paracetamol 1g IV or Morphine for severe pain'
+      ],
+      definitive: [
+        'IV broad-spectrum antibiotics within 1 hour if sepsis criteria met — Piperacillin/Tazobactam or Cefazolin per DCAS protocol',
+        'Urgent surgical review — necrotising fasciitis requires emergency debridement within hours',
+        'Hospital admission — Rashid Hospital or American Hospital Dubai surgical team',
+        'Wound culture and blood cultures x2 before antibiotics if time permits',
+        'Diabetic patients: insulin sliding scale for glucose management'
+      ],
+      monitoring: [
+        'Vital signs every 5-10 minutes — watch for septic shock development',
+        'Temperature trend — escalating fever = worsening infection',
+        'Mental status — new confusion + infection = septic encephalopathy',
+        'Wound appearance — rapidly expanding erythema, crepitus, necrosis = surgical emergency',
+        'Urine output if catheterised — <0.5mL/kg/hr = poor perfusion'
+      ],
+      transportConsiderations: [
+        'Pre-alert surgical team — "post-op day 5, wound infection with sepsis features, temperature 39.0°C"',
+        'Maintain IV antibiotics during transport if initiated on scene',
+        'Keep wound covered with sterile dressing',
+        'Reassess vital signs every 5-10 minutes during transport',
+        'Document time of antibiotic administration — Sepsis Six hour 1 target: antibiotics within 60 minutes'
+      ]
     },
     studentChecklist: [
       { id: 'pd1-1', category: 'abcde', description: 'Assess for sepsis', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
@@ -4924,10 +5042,37 @@ export const caseDatabase: CaseScenario[] = [
       differentialDiagnoses: ['Musculoskeletal chest pain', 'Anxiety', 'GERD', 'Atypical ACS', 'Pericarditis'],
       mostLikelyDiagnosis: 'Musculoskeletal Chest Pain'
     },
+    managementPathway: {
+      immediate: [
+        'Full vital signs — BP, HR, RR, SpO2, BGL',
+        '12-lead ECG immediately — mandatory for all chest pain regardless of age or presentation',
+        'Detailed OPQRST pain history — onset, quality, radiation, severity, timing',
+        'Cardiovascular risk factor assessment — family history, smoking, diabetes, hypertension',
+        'Aspirin 300mg PO if not contraindicated — low threshold in first presentations',
+        'IV access if ECG abnormal or high-risk features identified',
+        'Serial 12-lead ECG at 15 minutes if initial ECG normal'
+      ],
+      definitive: [
+        'Hospital evaluation for serial troponins (high-sensitivity at 0 and 3 hours)',
+        'Risk stratification using HEART or TIMI score',
+        'Musculoskeletal cause can only be confirmed after cardiac exclusion'
+      ],
+      monitoring: [
+        'Continuous ECG monitoring if any ECG abnormality detected',
+        'BP and SpO2 continuous',
+        'Reassess pain score and clinical status every 5 minutes'
+      ],
+      transportConsiderations: [
+        'Transport all chest pain patients to ED — do not rely on normal ECG alone to exclude ACS',
+        'Pre-alert if ECG changes develop, increasing pain, or haemodynamic instability',
+        'American Hospital Dubai or Dubai Hospital for chest pain assessment unit',
+        'Patient education: never self-dismiss chest pain — always seek assessment'
+      ]
+    },
     studentChecklist: [
-      { id: 'ro1-1', category: 'abcde', description: 'Complete vital signs', points: 5, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
+      { id: 'ro1-1', category: 'abcde', description: 'Complete vital signs', points: 5, yearLevel: ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
       { id: 'ro1-2', category: 'abcde', description: '12-lead ECG', points: 15, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
-      { id: 'ro1-3', category: 'history', description: 'Detailed pain history (OPQRST)', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
+      { id: 'ro1-3', category: 'history', description: 'Detailed pain history (OPQRST)', points: 10, yearLevel: ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
       { id: 'ro1-4', category: 'history', description: 'Cardiovascular risk assessment', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
       { id: 'ro1-5', category: 'intervention', description: 'Aspirin if not contraindicated', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
       { id: 'ro1-6', category: 'communication', description: 'Transport for troponins', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] }
@@ -5117,17 +5262,17 @@ export const caseDatabase: CaseScenario[] = [
       transportConsiderations: ['All first-episode syncope requires ED evaluation', 'Monitor for recurrence during transport', 'Document time of event and recovery time']
     },
     studentChecklist: [
-      { id: 'g1-1', category: 'abcde', description: 'Assess for injury from fall (FAST assessment)', points: 15, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'], critical: true },
-      { id: 'g1-2', category: 'abcde', description: 'Perform neurological assessment (GCS, pupils, power)', points: 15, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'], critical: true },
-      { id: 'g1-3', category: 'intervention', description: 'Blood glucose check', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'], critical: true },
+      { id: 'g1-1', category: 'abcde', description: 'Assess for injury from fall (FAST assessment)', points: 15, yearLevel: ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'], critical: true },
+      { id: 'g1-2', category: 'abcde', description: 'Perform neurological assessment (GCS, pupils, power)', points: 15, yearLevel: ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'], critical: true },
+      { id: 'g1-3', category: 'intervention', description: 'Blood glucose check', points: 10, yearLevel: ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'], critical: true },
       { id: 'g1-4', category: 'intervention', description: 'Obtain 12-lead ECG', points: 15, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'], critical: true },
-      { id: 'g1-5', category: 'history', description: 'Detailed history of prodrome and circumstances', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
-      { id: 'g1-6', category: 'intervention', description: 'Check orthostatic vital signs (lying and standing BP/HR)', points: 15, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'], critical: true },
-      { id: 'g1-7', category: 'intervention', description: 'Position patient supine with legs elevated', points: 5, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
-      { id: 'g1-8', category: 'intervention', description: 'Administer oral fluids if conscious and no contraindications', points: 5, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
-      { id: 'g1-9', category: 'abcde', description: 'Screen for red flags (cardiac symptoms, family history)', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
-      { id: 'g1-10', category: 'communication', description: 'Transport to hospital for evaluation (all first-time syncope)', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'], critical: true },
-      { id: 'g1-11', category: 'documentation', description: 'Document detailed circumstances and witness accounts', points: 5, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] }
+      { id: 'g1-5', category: 'history', description: 'Detailed history of prodrome and circumstances', points: 10, yearLevel: ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
+      { id: 'g1-6', category: 'intervention', description: 'Check orthostatic vital signs (lying and standing BP/HR)', points: 15, yearLevel: ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'], critical: true },
+      { id: 'g1-7', category: 'intervention', description: 'Position patient supine with legs elevated', points: 5, yearLevel: ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
+      { id: 'g1-8', category: 'intervention', description: 'Administer oral fluids if conscious and no contraindications', points: 5, yearLevel: ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
+      { id: 'g1-9', category: 'abcde', description: 'Screen for red flags (cardiac symptoms, family history)', points: 10, yearLevel: ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
+      { id: 'g1-10', category: 'communication', description: 'Transport to hospital for evaluation (all first-time syncope)', points: 10, yearLevel: ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'], critical: true },
+      { id: 'g1-11', category: 'documentation', description: 'Document detailed circumstances and witness accounts', points: 5, yearLevel: ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] }
     ],
     teachingPoints: [
       'Vasovagal syncope: Most common cause in young adults, often triggered by prolonged standing, heat, emotional stress',
@@ -5334,10 +5479,39 @@ export const caseDatabase: CaseScenario[] = [
       differentialDiagnoses: ['Heat exhaustion', 'Heat stroke', 'Hypoglycemia', 'Viral illness'],
       mostLikelyDiagnosis: 'Heat Exhaustion'
     },
+    managementPathway: {
+      immediate: [
+        'Remove from hot environment — move to shaded or air-conditioned area immediately',
+        'Remove excess clothing to maximise surface cooling',
+        'Active cooling — cool wet cloths to skin, fan, ice packs to axillae and groin',
+        'Oral rehydration if conscious and tolerating — cool water or sports drink',
+        'IV access — Normal Saline 0.9% 500mL over 30 minutes if unable to tolerate oral fluids',
+        'Core temperature measurement — tympanic or axillary (rectal preferred if available)',
+        'Check blood glucose',
+        'Vital signs — assess for progression to heat stroke'
+      ],
+      definitive: [
+        'Hospital evaluation if temperature >39°C, persistent symptoms, or altered mental status develops',
+        'Labs: electrolytes, renal function, CK (rhabdomyolysis screening)',
+        'Heat exhaustion with normal mental status can be managed on scene after cooling'
+      ],
+      monitoring: [
+        'Temperature every 5 minutes — target reduction to <38°C',
+        'Mental status continuously — any confusion = treat as heat stroke',
+        'BP and pulse — tachycardia and mild hypotension expected, should improve with cooling',
+        'SpO2 continuous'
+      ],
+      transportConsiderations: [
+        'Transport if temperature does not fall within 30 minutes, mental status changes, or signs of heat stroke',
+        'Maintain cool environment in ambulance — maximise AC',
+        'Pre-alert for hospital if suspecting heat stroke: "Possible heat stroke, temp 38+°C, altered MS"',
+        'Dubai Hospital or Rashid Hospital for heat emergencies in summer'
+      ]
+    },
     studentChecklist: [
-      { id: 'e1-1', category: 'abcde', description: 'Move to cool/shaded area', points: 5, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
-      { id: 'e1-2', category: 'intervention', description: 'Remove excess clothing', points: 5, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
-      { id: 'e1-3', category: 'intervention', description: 'Active cooling measures', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
+      { id: 'e1-1', category: 'abcde', description: 'Move to cool/shaded area', points: 5, yearLevel: ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
+      { id: 'e1-2', category: 'intervention', description: 'Remove excess clothing', points: 5, yearLevel: ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
+      { id: 'e1-3', category: 'intervention', description: 'Active cooling measures', points: 10, yearLevel: ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
       { id: 'e1-4', category: 'intervention', description: 'Oral/IV fluids', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
       { id: 'e1-5', category: 'abcde', description: 'Distinguish from heat stroke', points: 15, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] }
     ],
@@ -5863,6 +6037,40 @@ export const caseDatabase: CaseScenario[] = [
       differentialDiagnoses: ['Febrile seizure', 'Meningitis/encephalitis', 'Heat stroke', 'Urinary tract infection', 'Pneumonia'],
       mostLikelyDiagnosis: 'Febrile Seizure secondary to viral illness'
     },
+    managementPathway: {
+      immediate: [
+        'Airway management — place in lateral (recovery) position if post-ictal; do NOT insert objects in mouth',
+        'Do NOT restrain during seizure — protect from environmental hazards only',
+        'Time the seizure — if >5 minutes, administer midazolam',
+        'Temperature check immediately — rectal or axillary; 40.2°C is dangerously high',
+        'Active cooling — remove clothing; tepid sponge with lukewarm water (NOT ice); fan; cool environment',
+        'Oxygen via face mask or blow-by if SpO2 <94% or cyanosis',
+        'Blood glucose check — exclude hypoglycaemia as contributing factor',
+        'If seizure >5 minutes: Midazolam 0.2mg/kg intranasal (max 10mg) or 0.1mg/kg IM',
+        'Paracetamol 15mg/kg orally or rectally — antipyresis; does NOT prevent seizure recurrence'
+      ],
+      definitive: [
+        'All children with first febrile seizure require ED evaluation — meningitis must be excluded',
+        'Latifa Hospital Dubai or Al Wasl Hospital Paediatric ED',
+        'Lumbar puncture if <18 months, prolonged seizure, focal features, or meningism signs',
+        'Investigations: FBC, CRP, blood culture, urine culture, electrolytes',
+        'Parental education: seizure first aid, when to call 999, prognosis'
+      ],
+      monitoring: [
+        'Temperature every 5-10 minutes — cooling effectiveness',
+        'SpO2 continuous — post-ictal apnoea is rare but possible',
+        'GCS/AVPU — child should recover towards baseline within 10-20 minutes post-ictally',
+        'Watch for second seizure — 30% recurrence risk within 24 hours',
+        'Watch for signs of meningitis: worsening headache, photophobia, bulging fontanelle, non-blanching rash'
+      ],
+      transportConsiderations: [
+        'Pre-alert paediatric ED — "3-year-old, febrile seizure, temperature 40.2°C, post-ictal, parents present"',
+        'Transport lateral to maintain airway patency',
+        'Continue cooling during transport — fan and remove blankets; do not over-cool',
+        'Paediatric BVM and correct mask size at hand throughout',
+        'Have weight-based midazolam dose ready in case of second seizure'
+      ]
+    },
     studentChecklist: [
       { id: 'ped1-1', category: 'abcde', description: 'Check temperature immediately', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'], critical: true },
       { id: 'ped1-2', category: 'abcde', description: 'Maintain airway during seizure (recovery position)', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'], critical: true },
@@ -6160,6 +6368,34 @@ export const caseDatabase: CaseScenario[] = [
       redFlags: ['Risk of violence escalation', 'Potential for self-harm', 'Could be drug-induced psychosis', 'Could be medical emergency (head trauma, infection)'],
       differentialDiagnoses: ['Acute psychosis (bipolar/schizophrenia)', 'Drug-induced psychosis', 'Delirium from medical cause', 'Alcohol withdrawal'],
       mostLikelyDiagnosis: 'Acute Psychotic Episode - Bipolar Disorder'
+    },
+    managementPathway: {
+      immediate: [
+        'Scene safety assessment BEFORE entry — identify exit routes, remove breakable objects if possible, request police backup if violence risk',
+        'Verbal de-escalation — calm voice, respectful tone, stand at an angle (not face-on), do not crowd patient',
+        'Maintain safe distance — remain beyond arm\'s reach until patient is calmer',
+        'Check blood glucose and vital signs when patient allows — rule out organic cause',
+        'Gather collateral history from family — medication history, previous episodes, recent drug/alcohol use',
+        'Chemical restraint if verbal fails: Midazolam 5mg IM or Haloperidol 5mg IM (per DCAS protocol) — last resort after verbal de-escalation fails',
+        'Document baseline GCS before any sedation'
+      ],
+      definitive: [
+        'Transfer to Al Amal Hospital (Dubai psychiatric facility) or Rashid Hospital emergency psychiatric unit',
+        'Mental health team assessment and involuntary admission if risk to self or others',
+        'Antipsychotic optimisation and compliance support'
+      ],
+      monitoring: [
+        'GCS continuously after sedation — risk of respiratory depression',
+        'SpO2 after any chemical restraint',
+        'Behavioural response to de-escalation — document what worked',
+        'Physical observation every 5 minutes minimum throughout care'
+      ],
+      transportConsiderations: [
+        'Police escort may be required if patient is violent or refuses transport',
+        'Keep patient calm — avoid sirens if possible, dim lights, minimal stimulation',
+        'Pre-alert: "Acute psychosis, verbal de-escalation, chemical restraint given — needs psychiatric assessment"',
+        'Al Amal Hospital Dubai (specialised psychiatric) or Rashid Hospital'
+      ]
     },
     studentChecklist: [
       { id: 'psych2-1', category: 'safety', description: 'Scene safety assessment before approaching', points: 15, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'], critical: true },
@@ -6975,6 +7211,36 @@ export const caseDatabase: CaseScenario[] = [
       differentialDiagnoses: ['Multiple traumatic injuries across 8 patients - see individual profiles'],
       mostLikelyDiagnosis: 'Mass Casualty Incident - Multiple Trauma Patients'
     },
+    managementPathway: {
+      immediate: [
+        'Scene safety assessment — fuel leak, downed wires, unstable vehicles; do NOT enter until safe',
+        'Declare MCI immediately — call dispatch, request additional ambulances, fire, police, HEMS',
+        'Establish Incident Command Structure — designate Incident Commander, Triage Officer, Treatment Officer, Transport Officer',
+        'START triage — assess all 8 patients within 60 seconds each: Respiration, Perfusion, Mental Status',
+        'Apply colour-coded triage tags: RED (immediate), YELLOW (delayed), GREEN (minor), BLACK (expectant)',
+        'Life-saving interventions for RED patients only: airway adjuncts, haemorrhage control, chest decompression',
+        'Do NOT perform full ABCDE on each patient during triage — triage first, treat second',
+        'Establish helicopter landing zone if HEMS required'
+      ],
+      definitive: [
+        'Coordinate hospital distribution — 2 RED to Rashid Hospital, 1 RED to Dubai Hospital, distribute YELLOW across facilities',
+        'Pre-alert all receiving hospitals with patient count, priority, and ETA',
+        'Request Disaster Medical Assistance Team (DMAT) activation if resource gap',
+        'Document all patient destinations with triage tag numbers'
+      ],
+      monitoring: [
+        'Continuous reassessment of triage categories as interventions change status',
+        'Monitor GREEN patients for delayed deterioration',
+        'Track all patient destinations for accountability',
+        'Manage responder welfare — rotate crews every 30 minutes in 40°C heat'
+      ],
+      transportConsiderations: [
+        'Distribute patients across Rashid Hospital, Dubai Hospital, and Mediclinic City to avoid overwhelming single facility',
+        'RED patients first, but transport must be coordinated not sequential',
+        'HEMS for critical patients if road traffic delays are >20 minutes to nearest trauma centre',
+        'Police escort for RED priority transports on Sheikh Zayed Road'
+      ]
+    },
     studentChecklist: [
       { id: 'mci-1', category: 'safety', description: 'Scene safety assessment - identify all hazards before entry', points: 15, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced', 'expert'], critical: true },
       { id: 'mci-2', category: 'communication', description: 'Declare MCI and request additional resources (multiple ambulances, fire, police)', points: 15, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced', 'expert'], critical: true },
@@ -7345,14 +7611,40 @@ export const caseDatabase: CaseScenario[] = [
       differentialDiagnoses: ['Stable angina', 'Unstable angina', 'GERD', 'Musculoskeletal pain'],
       mostLikelyDiagnosis: 'Stable Angina'
     },
+    managementPathway: {
+      immediate: [
+        'Obtain 12-lead ECG — within 10 minutes of arrival',
+        'Measure vital signs including blood pressure bilaterally',
+        'Detailed chest pain history using SOCRATES',
+        'Aspirin 300mg PO (crushed/chewed) if not already on daily aspirin and no contraindication',
+        'GTN spray 400mcg sublingual if SBP >90 mmHg and no PDE5 inhibitor use in last 48 hours',
+        'IV access if pain persists or ECG changes present',
+        'Check blood glucose'
+      ],
+      definitive: [
+        'Hospital evaluation for serial troponins and risk stratification',
+        'Repeat ECG at 15 minutes to detect evolving changes',
+        'Cardiology follow-up for optimisation of anti-anginal therapy'
+      ],
+      monitoring: [
+        'Continuous ECG monitoring',
+        'SpO2 and BP every 5 minutes',
+        'Reassess pain score after each intervention'
+      ],
+      transportConsiderations: [
+        'Transport to facility with chest pain assessment unit — American Hospital Dubai or Dubai Hospital',
+        'Do not delay transport waiting for pain relief',
+        'Pre-alert if ECG changes or haemodynamic instability develop en route'
+      ]
+    },
     studentChecklist: [
-      { id: 'c5-1', category: 'history', description: 'Characterize chest pain (SOCRATES)', points: 15, yearLevel: ['2nd-year', 'diploma'], complexity: ['basic', 'intermediate'], critical: true },
-      { id: 'c5-2', category: 'abcde', description: 'Assess vital signs including blood pressure', points: 10, yearLevel: ['2nd-year', 'diploma'], complexity: ['basic', 'intermediate'], critical: true },
+      { id: 'c5-1', category: 'history', description: 'Characterize chest pain (SOCRATES)', points: 15, yearLevel: ['1st-year', '2nd-year', 'diploma'], complexity: ['basic', 'intermediate'], critical: true },
+      { id: 'c5-2', category: 'abcde', description: 'Assess vital signs including blood pressure', points: 10, yearLevel: ['1st-year', '2nd-year', 'diploma'], complexity: ['basic', 'intermediate'], critical: true },
       { id: 'c5-3', category: 'intervention', description: 'Obtain 12-lead ECG if available', points: 15, yearLevel: ['2nd-year', '3rd-year', 'diploma'], complexity: ['basic', 'intermediate'] },
-      { id: 'c5-4', category: 'history', description: 'Ask about cardiac history and medications', points: 10, yearLevel: ['2nd-year', 'diploma'], complexity: ['basic', 'intermediate'], critical: true },
-      { id: 'c5-5', category: 'communication', description: 'Reassure patient while assessing', points: 5, yearLevel: ['2nd-year', 'diploma'], complexity: ['basic'] },
+      { id: 'c5-4', category: 'history', description: 'Ask about cardiac history and medications', points: 10, yearLevel: ['1st-year', '2nd-year', 'diploma'], complexity: ['basic', 'intermediate'], critical: true },
+      { id: 'c5-5', category: 'communication', description: 'Reassure patient while assessing', points: 5, yearLevel: ['1st-year', '2nd-year', 'diploma'], complexity: ['basic'] },
       { id: 'c5-6', category: 'intervention', description: 'Administer aspirin if not contraindicated', points: 15, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced'] },
-      { id: 'c5-7', category: 'communication', description: 'Transport to hospital for evaluation', points: 10, yearLevel: ['2nd-year', 'diploma'], complexity: ['basic', 'intermediate'] }
+      { id: 'c5-7', category: 'communication', description: 'Transport to hospital for evaluation', points: 10, yearLevel: ['1st-year', '2nd-year', 'diploma'], complexity: ['basic', 'intermediate'] }
     ],
     teachingPoints: [
       'Stable angina: Chest pain precipitated by exertion, relieved by rest or nitroglycerin',
@@ -7606,13 +7898,40 @@ export const caseDatabase: CaseScenario[] = [
       differentialDiagnoses: ['SVT (AVNRT most likely)', 'Atrial flutter with 2:1 block', 'Atrial tachycardia', 'Sinus tachycardia'],
       mostLikelyDiagnosis: 'Supraventricular Tachycardia (SVT)'
     },
+    managementPathway: {
+      immediate: [
+        'Assess haemodynamic stability — BP, GCS, chest pain',
+        'Obtain 12-lead ECG to confirm narrow complex tachycardia',
+        'IV access (18G antecubital fossa)',
+        'If STABLE: Modified Valsalva manoeuvre — strain for 15 seconds supine, then raise legs to 45° for 15 seconds',
+        'If vagal fails: Adenosine 6mg rapid IV push with 20mL NS flush, monitor rhythm continuously',
+        'If no conversion after 1-2 minutes: Adenosine 12mg rapid IV push',
+        'If UNSTABLE (SBP <90, chest pain, GCS <14): Synchronized cardioversion 50-100J biphasic with sedation'
+      ],
+      definitive: [
+        'Hospital admission for observation and electrophysiology review',
+        'Consider EP study and ablation for recurrent SVT',
+        'Identify and avoid triggers (caffeine, stress, alcohol)'
+      ],
+      monitoring: [
+        'Continuous ECG monitoring throughout adenosine administration',
+        'BP and SpO2 continuous',
+        'Document rhythm before, during and after each intervention',
+        'Monitor for reversion to SR or deterioration'
+      ],
+      transportConsiderations: [
+        'Transport to cardiac monitoring capable facility — American Hospital or Al Zahra Hospital',
+        'Pre-alert with rate, rhythm, haemodynamic status, and interventions performed',
+        'Continuous monitoring — SVT can recur after successful cardioversion'
+      ]
+    },
     studentChecklist: [
-      { id: 'c6-1', category: 'abcde', description: 'Assess hemodynamic stability (BP, level of consciousness)', points: 20, yearLevel: ['3rd-year', '4th-year', 'diploma'], complexity: ['intermediate', 'advanced', 'expert'], critical: true },
-      { id: 'c6-2', category: 'intervention', description: 'Obtain 12-lead ECG', points: 15, yearLevel: ['3rd-year', '4th-year', 'diploma'], complexity: ['intermediate', 'advanced'], critical: true },
-      { id: 'c6-3', category: 'history', description: 'Ask about previous SVT episodes and triggers', points: 10, yearLevel: ['3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate'] },
+      { id: 'c6-1', category: 'abcde', description: 'Assess hemodynamic stability (BP, level of consciousness)', points: 20, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['intermediate', 'advanced', 'expert'], critical: true },
+      { id: 'c6-2', category: 'intervention', description: 'Obtain 12-lead ECG', points: 15, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['intermediate', 'advanced'], critical: true },
+      { id: 'c6-3', category: 'history', description: 'Ask about previous SVT episodes and triggers', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate'] },
       { id: 'c6-4', category: 'intervention', description: 'Attempt vagal maneuvers (modified Valsalva)', points: 20, yearLevel: ['4th-year'], complexity: ['advanced', 'expert'], critical: true },
       { id: 'c6-5', category: 'intervention', description: 'Consider adenosine if vagal maneuvers fail (6mg, 12mg)', points: 20, yearLevel: ['4th-year'], complexity: ['advanced', 'expert'] },
-      { id: 'c6-6', category: 'communication', description: 'Reassure patient - SVT is rarely life-threatening if stable', points: 5, yearLevel: ['3rd-year', 'diploma'], complexity: ['basic', 'intermediate'] }
+      { id: 'c6-6', category: 'communication', description: 'Reassure patient - SVT is rarely life-threatening if stable', points: 5, yearLevel: ['2nd-year', '3rd-year', 'diploma'], complexity: ['basic', 'intermediate'] }
     ],
     teachingPoints: [
       'SVT typically presents with narrow complex tachycardia (>140 bpm), regular rhythm',
@@ -7868,6 +8187,37 @@ export const caseDatabase: CaseScenario[] = [
       redFlags: ['Vomiting with inferior MI = large infarct', 'Hypotension with bradycardia = RV infarction', 'NO NITRATES in RV infarction!'],
       differentialDiagnoses: ['Inferior STEMI with RV infarction', 'Inferior STEMI without RV involvement', 'Pericarditis', 'Peptic ulcer disease'],
       mostLikelyDiagnosis: 'Acute Inferior STEMI with Right Ventricular Infarction'
+    },
+    managementPathway: {
+      immediate: [
+        '12-lead ECG immediately — identify inferior STE (II, III, aVF)',
+        'Right-sided ECG (V4R) — confirm RV infarction',
+        'DO NOT give nitrates — absolute contraindication in RV infarction',
+        'Keep patient SUPINE — do not sit up (preload dependent)',
+        'High-flow oxygen 15L/min if SpO2 <94%',
+        'IV access x2 (14-16G)',
+        'Aspirin 300mg PO (crushed/chewed)',
+        'Cautious IV fluid bolus 250mL NS for hypotension (RV needs preload)',
+        'Atropine 0.5-1mg IV for symptomatic bradycardia',
+        'Pre-alert cardiac centre — STEMI code with RV involvement'
+      ],
+      definitive: [
+        'Emergency PCI at cardiac catheterisation lab — target door-to-balloon <90 minutes',
+        'Rashid Hospital or American Hospital Dubai for 24/7 PCI capability',
+        'Prepare for AV block — have transcutaneous pacing pads applied'
+      ],
+      monitoring: [
+        'Continuous ECG — watch for progression to complete heart block',
+        'BP every 3 minutes — hypotension may worsen rapidly',
+        'SpO2 continuous',
+        'Repeat ECG if clinical change'
+      ],
+      transportConsiderations: [
+        'Keep supine throughout transport — NO sitting position',
+        'Pre-alert Rashid Hospital STEMI code with RVI confirmed on V4R',
+        'Prepare transcutaneous pacing in case of complete heart block en route',
+        'Rapid transport — do not delay on scene beyond essential interventions'
+      ]
     },
     studentChecklist: [
       { id: 'c7-1', category: 'abcde', description: 'Recognize inferior STEMI pattern (II, III, aVF)', points: 20, yearLevel: ['4th-year'], complexity: ['advanced', 'expert'], critical: true },
@@ -8138,6 +8488,36 @@ export const caseDatabase: CaseScenario[] = [
       differentialDiagnoses: ['MI with LBBB (Sgarbossa positive)', 'Acute heart failure', 'Pulmonary embolism', 'Unstable angina'],
       mostLikelyDiagnosis: 'Myocardial Infarction with LBBB (Sgarbossa Criteria Positive)'
     },
+    managementPathway: {
+      immediate: [
+        '12-lead ECG immediately — identify LBBB pattern (wide QRS, dominant S in V1, broad R in V5-V6)',
+        'Apply Sgarbossa criteria to assess for MI: concordant ST elevation ≥1mm, concordant ST depression V1-V3, or excessively discordant STE ≥5mm',
+        'Treat as STEMI equivalent if Sgarbossa positive or new/presumed new LBBB with chest pain',
+        'High-flow oxygen 15L/min if SpO2 <94%',
+        'IV access x2 (14-16G)',
+        'Aspirin 300mg PO',
+        'GTN only if SBP >90 mmHg — may help acute heart failure',
+        'Patient upright to assist breathing',
+        'Pre-alert cardiac centre — STEMI code with LBBB and Sgarbossa status'
+      ],
+      definitive: [
+        'Emergency PCI — treat as STEMI if criteria met',
+        'Rashid Hospital or Mediclinic City Hospital for 24/7 PCI',
+        'Obtain prior ECGs at hospital for comparison'
+      ],
+      monitoring: [
+        'Continuous ECG monitoring',
+        'BP every 5 minutes — haemodynamic instability indicates severity',
+        'SpO2 continuous',
+        'Monitor respiratory status — pulmonary oedema can worsen rapidly'
+      ],
+      transportConsiderations: [
+        'Rapid transport to PCI-capable facility — do not transport to non-cardiac centre',
+        'Pre-alert: "LBBB with Sgarbossa positive, treating as STEMI equivalent"',
+        'Keep upright during transport — acute heart failure component present',
+        'Have defibrillation pads applied — high risk of VF'
+      ]
+    },
     studentChecklist: [
       { id: 'c8-1', category: 'abcde', description: 'Recognize LBBB pattern on ECG', points: 15, yearLevel: ['4th-year'], complexity: ['advanced', 'expert'] },
       { id: 'c8-2', category: 'abcde', description: 'Apply Sgarbossa criteria to LBBB', points: 25, yearLevel: ['4th-year'], complexity: ['advanced', 'expert'], critical: true },
@@ -8394,6 +8774,33 @@ export const caseDatabase: CaseScenario[] = [
       redFlags: ['Atrial flutter can degenerate into atrial fibrillation', 'Risk of stroke (already on warfarin)'],
       differentialDiagnoses: ['Atrial flutter with variable block', 'Atrial fibrillation with rapid response', 'SVT', 'Sinus tachycardia'],
       mostLikelyDiagnosis: 'Atrial Flutter with 2:1 Block'
+    },
+    managementPathway: {
+      immediate: [
+        'Assess haemodynamic stability — BP, GCS, chest pain',
+        'Obtain 12-lead ECG — identify sawtooth flutter waves in II, III, aVF at ~300 bpm',
+        'IV access (18G)',
+        'If STABLE: Rate control — Metoprolol 5mg IV or Diltiazem 0.25mg/kg IV (patient already on diltiazem — dose adjustment may be needed)',
+        'Check anticoagulation status — warfarin INR range?',
+        'Identify precipitant — missed medication dose confirmed; check electrolytes if available',
+        'If UNSTABLE (SBP <90 or haemodynamic compromise): Synchronized cardioversion 50-100J biphasic'
+      ],
+      definitive: [
+        'Hospital admission for rate or rhythm control and anticoagulation optimisation',
+        'Electrophysiology review — catheter ablation has >90% cure rate for typical flutter',
+        'Anticoagulation essential — stroke risk equivalent to AF'
+      ],
+      monitoring: [
+        'Continuous ECG monitoring',
+        'BP every 5-10 minutes after rate-control medications',
+        'Monitor for degeneration into AF or other arrhythmias',
+        'SpO2 continuous'
+      ],
+      transportConsiderations: [
+        'Transport to facility with cardiology and electrophysiology services — Al Zahra Hospital or American Hospital Dubai',
+        'Pre-alert with rate, rhythm, anticoagulation status, and current medications',
+        'Continue monitoring during transport — be prepared for cardioversion if deterioration'
+      ]
     },
     studentChecklist: [
       { id: 'c9-1', category: 'abcde', description: 'Identify sawtooth flutter waves on ECG', points: 20, yearLevel: ['3rd-year', '4th-year', 'diploma'], complexity: ['intermediate', 'advanced'] },
@@ -8657,13 +9064,42 @@ export const caseDatabase: CaseScenario[] = [
       differentialDiagnoses: ['Vasovagal syncope (most likely)', 'Orthostatic syncope', 'Cardiac syncope (arrhythmia)', 'Neurological (seizure)'],
       mostLikelyDiagnosis: 'Vasovagal Syncope (but must rule out cardiac causes)'
     },
+    managementPathway: {
+      immediate: [
+        'Assess consciousness and airway — patient alert and recovered',
+        'Full vital signs including orthostatic BP (lying, sitting, standing with 1-2 min between positions)',
+        'Check blood glucose — hypoglycaemia is a reversible cause',
+        'Obtain 12-lead ECG — mandatory in all syncope presentations',
+        'IV access if ongoing symptoms or abnormal ECG',
+        'Detailed history of syncopal event: prodrome, position, duration, post-ictal state, witnesses',
+        'Family history of sudden cardiac death'
+      ],
+      definitive: [
+        'All syncope patients require hospital evaluation for risk stratification',
+        'Serial troponins to exclude ACS',
+        'Holter monitoring or implantable loop recorder if recurrent',
+        'Consider tilt table test for suspected vasovagal if investigations negative'
+      ],
+      monitoring: [
+        'Continuous ECG monitoring',
+        'BP and SpO2 continuous',
+        'Reassess GCS serially — post-ictal confusion should resolve within 5 minutes in syncope',
+        'Document and monitor any new symptoms'
+      ],
+      transportConsiderations: [
+        'Transport all syncope patients to ED — even apparent vasovagal requires ED risk stratification',
+        'Pre-alert if ECG changes, ongoing symptoms, or exertional syncope detected',
+        'Supine or semi-reclined during transport',
+        'American Hospital Dubai or Dubai Hospital for cardiology access'
+      ]
+    },
     studentChecklist: [
-      { id: 'c10-1', category: 'history', description: 'Detailed history of syncopal event (witnesses, duration, preceding symptoms)', points: 20, yearLevel: ['2nd-year', '3rd-year', 'diploma'], complexity: ['basic', 'intermediate'], critical: true },
-      { id: 'c10-2', category: 'intervention', description: 'Obtain 12-lead ECG to rule out cardiac cause', points: 20, yearLevel: ['2nd-year', '3rd-year', 'diploma'], complexity: ['intermediate'], critical: true },
-      { id: 'c10-3', category: 'abcde', description: 'Check orthostatic vital signs (lying, sitting, standing)', points: 15, yearLevel: ['2nd-year', '3rd-year', 'diploma'], complexity: ['basic', 'intermediate'] },
-      { id: 'c10-4', category: 'history', description: 'Ask about family history of sudden death, cardiac disease', points: 15, yearLevel: ['2nd-year', '3rd-year', 'diploma'], complexity: ['basic', 'intermediate'] },
-      { id: 'c10-5', category: 'intervention', description: 'Check blood glucose (hypoglycemia can cause syncope)', points: 10, yearLevel: ['2nd-year', 'diploma'], complexity: ['basic'] },
-      { id: 'c10-6', category: 'communication', description: 'Transport to hospital for evaluation (all syncope needs ED workup)', points: 10, yearLevel: ['2nd-year', '3rd-year', 'diploma'], complexity: ['basic', 'intermediate'] }
+      { id: 'c10-1', category: 'history', description: 'Detailed history of syncopal event (witnesses, duration, preceding symptoms)', points: 20, yearLevel: ['1st-year', '2nd-year', '3rd-year', 'diploma', '4th-year'], complexity: ['basic', 'intermediate'], critical: true },
+      { id: 'c10-2', category: 'intervention', description: 'Obtain 12-lead ECG to rule out cardiac cause', points: 20, yearLevel: ['2nd-year', '3rd-year', 'diploma', '4th-year'], complexity: ['intermediate'], critical: true },
+      { id: 'c10-3', category: 'abcde', description: 'Check orthostatic vital signs (lying, sitting, standing)', points: 15, yearLevel: ['1st-year', '2nd-year', '3rd-year', 'diploma', '4th-year'], complexity: ['basic', 'intermediate'] },
+      { id: 'c10-4', category: 'history', description: 'Ask about family history of sudden death, cardiac disease', points: 15, yearLevel: ['1st-year', '2nd-year', '3rd-year', 'diploma', '4th-year'], complexity: ['basic', 'intermediate'] },
+      { id: 'c10-5', category: 'intervention', description: 'Check blood glucose (hypoglycemia can cause syncope)', points: 10, yearLevel: ['1st-year', '2nd-year', 'diploma', '4th-year'], complexity: ['basic'] },
+      { id: 'c10-6', category: 'communication', description: 'Transport to hospital for evaluation (all syncope needs ED workup)', points: 10, yearLevel: ['1st-year', '2nd-year', '3rd-year', 'diploma', '4th-year'], complexity: ['basic', 'intermediate'] }
     ],
     teachingPoints: [
       'Syncope: Transient loss of consciousness due to cerebral hypoperfusion',
@@ -8937,6 +9373,38 @@ export const caseDatabase: CaseScenario[] = [
       redFlags: ["'Crashing asthma' in elderly = think heart failure until proven otherwise", 'Requires aggressive diuresis and BP control', 'CPAP very helpful'],
       differentialDiagnoses: ['Acute decompensated heart failure', 'Acute pulmonary edema', 'COPD exacerbation', 'Pneumonia'],
       mostLikelyDiagnosis: 'Acute Decompensated Heart Failure with Pulmonary Edema'
+    },
+    managementPathway: {
+      immediate: [
+        'Position UPRIGHT — tripod position significantly reduces venous return and work of breathing',
+        'High-flow oxygen 15L/min via non-rebreather mask — titrate to maintain SpO2 92-96%',
+        'CPAP 5-10 cmH2O if available — start early, do not wait for hospital',
+        'IV access (18G)',
+        'GTN spray 400mcg sublingual if SBP >90 mmHg — repeat every 5 minutes x3',
+        'GTN infusion if SBP allows (per DCAS protocol)',
+        'Furosemide 40mg IV if protocols allow',
+        'Obtain 12-lead ECG — identify ischaemia, LVH, arrhythmia',
+        'Do NOT give IV fluids unless hypotensive — these patients are fluid overloaded'
+      ],
+      definitive: [
+        'ICU or high-dependency unit admission',
+        'IV diuresis and vasodilator therapy',
+        'Echo for EF assessment and cause identification',
+        'Treat underlying cause — ischaemia, infection, medication non-compliance'
+      ],
+      monitoring: [
+        'SpO2 continuous — most sensitive indicator of response',
+        'BP every 3-5 minutes — GTN can cause hypotension',
+        'Respiratory rate — key indicator of improvement',
+        'GCS — worsening indicates critical deterioration',
+        'Monitor for intubation trigger: SpO2 <90% despite CPAP, GCS deterioration'
+      ],
+      transportConsiderations: [
+        'Keep UPRIGHT throughout transport — do not lay flat',
+        'Pre-alert: "Acute pulmonary oedema, CPAP in progress, SBP X, SpO2 X%"',
+        'Transport to Al Ain Hospital or Tawam Hospital with cardiology and ICU',
+        'Be prepared to escalate to intubation if CPAP fails en route'
+      ]
     },
     studentChecklist: [
       { id: 'c11-1', category: 'abcde', description: 'Recognize pulmonary edema (crackles, wheezing, JVD, edema)', points: 20, yearLevel: ['3rd-year', '4th-year', 'diploma'], complexity: ['intermediate', 'advanced'], critical: true },
@@ -9229,6 +9697,34 @@ export const caseDatabase: CaseScenario[] = [
       redFlags: ['Pacemaker not capturing is a medical emergency', 'May need to place magnet over pacemaker', 'Need to identify type of pacemaker'],
       differentialDiagnoses: ['Pacemaker failure (lead dislodgement/battery depletion)', 'Oversensing (pacemaker inhibiting inappropriately)', 'Electrolyte abnormality (hyperkalemia)', 'Native junctional rhythm'],
       mostLikelyDiagnosis: 'Pacemaker Malfunction - Failure to Capture'
+    },
+    managementPathway: {
+      immediate: [
+        'Obtain 12-lead ECG — assess pacemaker spikes, capture, and native rhythm',
+        'Identify pacemaker type from identification card or wound pocket inspection',
+        'IV access (18G) — do not use pacemaker-side limb if ICD leads visible on chest',
+        'Atropine 0.5mg IV for symptomatic bradycardia — may not work in pacemaker-dependent patients',
+        'Apply transcutaneous pacing pads — be prepared to pace if haemodynamic compromise',
+        'Consider pacemaker magnet to convert to asynchronous (fixed-rate) mode if oversensing suspected',
+        'Check blood glucose — electrolyte abnormalities (hyperkalaemia) can cause failure to capture'
+      ],
+      definitive: [
+        'Hospital admission for urgent pacemaker programmer assessment',
+        'Cardiology/electrophysiology team review',
+        'Lead revision, battery replacement, or reprogramming as indicated'
+      ],
+      monitoring: [
+        'Continuous ECG monitoring — pacemaker spikes, capture, and native rate',
+        'BP every 3-5 minutes',
+        'GCS — bradycardia-induced cerebral hypoperfusion',
+        'Transcutaneous pacing threshold monitoring if TCP initiated'
+      ],
+      transportConsiderations: [
+        'Transport to hospital with electrophysiology capabilities — American Hospital Dubai or Dubai Heart Centre',
+        'Pre-alert: "Pacemaker malfunction, failure to capture, symptomatic bradycardia, TCP in progress"',
+        'Have TCP running or immediately available throughout transport',
+        'Contact hospital to have pacemaker programmer team on standby'
+      ]
     },
     studentChecklist: [
       { id: 'c12-1', category: 'intervention', description: 'Identify pacemaker and check for pocket infection/erosion', points: 15, yearLevel: ['4th-year'], complexity: ['advanced', 'expert'] },
@@ -10474,22 +10970,22 @@ export const caseDatabase: CaseScenario[] = [
       transportConsiderations: ['Pre-alert: symptomatic bradycardia, medication-induced, may require transvenous pacing', 'Priority 1 transport', 'Bring all medication packets']
     },
     studentChecklist: [
-      { id: 'c15-1', category: 'safety', description: 'Scene safety and access assessment', points: 3, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'] },
-      { id: 'c15-2', category: 'abcde', description: 'Systematic ABCDE assessment', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'] },
+      { id: 'c15-1', category: 'safety', description: 'Scene safety and access assessment', points: 3, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['advanced'] },
+      { id: 'c15-2', category: 'abcde', description: 'Systematic ABCDE assessment', points: 5, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['advanced'] },
       { id: 'c15-3', category: 'clinical-reasoning', description: 'Identify and collect all medication packets from scene', points: 8, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true, rationale: 'Medication identification is key to diagnosing iatrogenic bradycardia' },
       { id: 'c15-4', category: 'clinical-reasoning', description: 'Recognise beta-blocker + CCB combination as cause', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true, rationale: 'This drug interaction is a common cause of iatrogenic bradycardia' },
-      { id: 'c15-5', category: 'intervention', description: 'Obtain 12-lead ECG', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], timeframe: 'Within 5 minutes' },
-      { id: 'c15-6', category: 'intervention', description: 'Establish IV access', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'] },
+      { id: 'c15-5', category: 'intervention', description: 'Obtain 12-lead ECG', points: 5, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['advanced'], timeframe: 'Within 5 minutes' },
+      { id: 'c15-6', category: 'intervention', description: 'Establish IV access', points: 5, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['advanced'] },
       { id: 'c15-7', category: 'medication', description: 'Administer atropine 500mcg IV (correct dose)', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true, rationale: 'Atropine 500mcg is first-line for symptomatic bradycardia — NOT 300mcg' },
       { id: 'c15-8', category: 'medication', description: 'Repeat atropine if inadequate response (up to 3mg total)', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'] },
       { id: 'c15-9', category: 'intervention', description: 'Prepare transcutaneous pacing equipment', points: 8, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], rationale: 'TCP is second-line if atropine fails' },
       { id: 'c15-10', category: 'medication', description: 'Consider calcium chloride 10% for CCB toxicity', points: 8, yearLevel: ['4th-year'], complexity: ['advanced'], rationale: 'Calcium chloride directly antagonises CCB effects' },
       { id: 'c15-11', category: 'medication', description: 'Consider glucagon 5mg IV for beta-blocker toxicity', points: 8, yearLevel: ['4th-year'], complexity: ['advanced'], rationale: 'Glucagon bypasses beta-receptors via cAMP pathway' },
-      { id: 'c15-12', category: 'intervention', description: 'Cautious IV fluid bolus (250ml NS)', points: 3, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'] },
-      { id: 'c15-13', category: 'abcde', description: 'Administer high-flow oxygen', points: 3, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'] },
-      { id: 'c15-14', category: 'intervention', description: 'Continuous cardiac monitoring', points: 3, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'] },
-      { id: 'c15-15', category: 'communication', description: 'Pre-alert hospital: symptomatic bradycardia, drug-induced', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true },
-      { id: 'c15-16', category: 'communication', description: 'Transport as priority with all medications', points: 3, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'] }
+      { id: 'c15-12', category: 'intervention', description: 'Cautious IV fluid bolus (250ml NS)', points: 3, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['advanced'] },
+      { id: 'c15-13', category: 'abcde', description: 'Administer high-flow oxygen', points: 3, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['advanced'] },
+      { id: 'c15-14', category: 'intervention', description: 'Continuous cardiac monitoring', points: 3, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['advanced'] },
+      { id: 'c15-15', category: 'communication', description: 'Pre-alert hospital: symptomatic bradycardia, drug-induced', points: 5, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['advanced'], critical: true },
+      { id: 'c15-16', category: 'communication', description: 'Transport as priority with all medications', points: 3, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['advanced'] }
     ],
     teachingPoints: [
       'Beta-blocker + calcium channel blocker (non-dihydropyridine) combination is a common cause of iatrogenic bradycardia — both suppress the SA and AV nodes synergistically',
@@ -10680,22 +11176,22 @@ export const caseDatabase: CaseScenario[] = [
       transportConsiderations: ['Pre-alert: complete heart block, rate 28, transcutaneous pacing initiated, require cardiology and transvenous pacing capability', 'Priority 1 transport', 'Avoid bumpy roads — can lose pacing capture', 'Defib pads on and charged throughout transport']
     },
     studentChecklist: [
-      { id: 'c16-1', category: 'safety', description: 'Scene management — crowd control, screen patient', points: 3, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'] },
-      { id: 'c16-2', category: 'abcde', description: 'Systematic ABCDE assessment', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'] },
-      { id: 'c16-3', category: 'intervention', description: 'Obtain 12-lead ECG and recognise complete heart block', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true, rationale: 'CHB recognition is essential — drives management decisions' },
+      { id: 'c16-1', category: 'safety', description: 'Scene management — crowd control, screen patient', points: 3, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['advanced'] },
+      { id: 'c16-2', category: 'abcde', description: 'Systematic ABCDE assessment', points: 5, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['advanced'] },
+      { id: 'c16-3', category: 'intervention', description: 'Obtain 12-lead ECG and recognise complete heart block', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['advanced'], critical: true, rationale: 'CHB recognition is essential — drives management decisions' },
       { id: 'c16-4', category: 'clinical-reasoning', description: 'Identify cannon A waves in JVP', points: 5, yearLevel: ['4th-year'], complexity: ['advanced'], rationale: 'Pathognomonic sign of AV dissociation' },
       { id: 'c16-5', category: 'clinical-reasoning', description: 'Identify variable S1 intensity', points: 3, yearLevel: ['4th-year'], complexity: ['advanced'] },
-      { id: 'c16-6', category: 'intervention', description: 'Establish IV access x2', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'] },
+      { id: 'c16-6', category: 'intervention', description: 'Establish IV access x2', points: 5, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['advanced'] },
       { id: 'c16-7', category: 'medication', description: 'Trial atropine 500mcg IV', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'] },
       { id: 'c16-8', category: 'clinical-reasoning', description: 'Recognise atropine is likely ineffective in CHB and prepare TCP immediately', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true, rationale: 'Do not delay TCP waiting for atropine to work in confirmed CHB' },
       { id: 'c16-9', category: 'procedural', description: 'Initiate transcutaneous pacing — correct pad placement', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true },
       { id: 'c16-10', category: 'procedural', description: 'Achieve electrical AND mechanical capture', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true, rationale: 'Electrical capture on monitor does not guarantee mechanical output — must check pulse' },
       { id: 'c16-11', category: 'medication', description: 'Provide sedation for conscious pacing (midazolam or fentanyl)', points: 5, yearLevel: ['4th-year'], complexity: ['advanced'] },
       { id: 'c16-12', category: 'medication', description: 'Consider adrenaline infusion if pacing fails', points: 8, yearLevel: ['4th-year'], complexity: ['advanced'] },
-      { id: 'c16-13', category: 'abcde', description: 'Administer high-flow oxygen', points: 3, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'] },
-      { id: 'c16-14', category: 'intervention', description: 'Continuous cardiac monitoring with defibrillator on standby', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'] },
-      { id: 'c16-15', category: 'communication', description: 'Pre-alert: CHB with pacing, require transvenous pacing', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true },
-      { id: 'c16-16', category: 'documentation', description: 'Document syncope duration, ECG findings, pacing settings, capture confirmation', points: 3, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'] }
+      { id: 'c16-13', category: 'abcde', description: 'Administer high-flow oxygen', points: 3, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['advanced'] },
+      { id: 'c16-14', category: 'intervention', description: 'Continuous cardiac monitoring with defibrillator on standby', points: 5, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['advanced'] },
+      { id: 'c16-15', category: 'communication', description: 'Pre-alert: CHB with pacing, require transvenous pacing', points: 5, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['advanced'], critical: true },
+      { id: 'c16-16', category: 'documentation', description: 'Document syncope duration, ECG findings, pacing settings, capture confirmation', points: 3, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['advanced'] }
     ],
     teachingPoints: [
       'Complete heart block is a medical emergency with HIGH risk of cardiac arrest — the escape rhythm can fail at any time, causing ventricular standstill',

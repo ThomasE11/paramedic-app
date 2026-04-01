@@ -125,6 +125,7 @@ export const secondYearCases: CaseScenario[] = [
         ]
       },
       exposure: {
+        temperature: 37.2,
         findings: [
           'Diaphoresis present',
           'Cyanosis of lips and nail beds',
@@ -256,7 +257,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'abcde',
         description: 'Perform systematic ABCDE assessment without skipping sections',
         points: 5,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         critical: true,
         rationale: 'Systematic approach ensures nothing is missed'
@@ -266,7 +267,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'abcde',
         description: 'Airway assessment including ability to speak and secretions',
         points: 3,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         rationale: 'Airway status can change rapidly in respiratory distress'
       },
@@ -275,7 +276,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'abcde',
         description: 'Breathing: rate, rhythm, depth, SpO2, effort, sounds',
         points: 5,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         critical: true,
         rationale: 'Comprehensive breathing assessment identifies severity and response'
@@ -285,7 +286,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'abcde',
         description: 'Auscultate lung sounds bilaterally',
         points: 4,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         rationale: 'Lung sounds provide crucial diagnostic information'
       },
@@ -294,7 +295,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'abcde',
         description: 'Calculate and document full GCS (E/V/M)',
         points: 4,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         critical: true,
         rationale: 'GCS provides objective measure of consciousness'
@@ -304,7 +305,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'abcde',
         description: 'Check blood glucose level',
         points: 3,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         rationale: 'Hypoglycemia can mimic respiratory distress symptoms'
       },
@@ -313,7 +314,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'abcde',
         description: 'Complete set of vital signs with manual BP',
         points: 4,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         critical: true,
         rationale: 'Complete vitals establish baseline and show trends'
@@ -325,7 +326,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'secondary',
         description: 'Systematic head-to-toe secondary survey',
         points: 4,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         rationale: 'Secondary survey identifies additional findings'
       },
@@ -334,7 +335,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'secondary',
         description: 'Detailed chest assessment - inspection, palpation, auscultation',
         points: 3,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         rationale: 'Chest assessment identifies respiratory conditions'
       },
@@ -343,7 +344,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'secondary',
         description: 'Compare bilateral findings during secondary survey',
         points: 2,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         rationale: 'Bilateral comparison helps identify asymmetry'
       },
@@ -354,7 +355,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'clinical-reasoning',
         description: 'Recognize severity based on failed rescue inhaler use',
         points: 3,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         rationale: 'Failed home treatment indicates severe exacerbation'
       },
@@ -363,7 +364,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'clinical-reasoning',
         description: 'Identify red flags: unable to speak, SpO2 <90%, multiple inhaler use',
         points: 4,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         rationale: 'Red flags indicate need for rapid transport'
       },
@@ -372,7 +373,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'clinical-reasoning',
         description: 'Consider differential diagnoses beyond asthma',
         points: 2,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         rationale: 'Thinking broadly prevents missing other conditions'
       },
@@ -383,7 +384,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'documentation',
         description: 'Document all times (assessment, interventions, changes)',
         points: 2,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         rationale: 'Time documentation shows progression'
       },
@@ -392,7 +393,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'documentation',
         description: 'Document vital signs with trend notes',
         points: 2,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         rationale: 'Trends show improvement or deterioration'
       },
@@ -401,7 +402,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'documentation',
         description: 'Document key assessment findings (wheeze, accessory muscles)',
         points: 2,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         rationale: 'Specific findings support diagnosis and treatment'
       },
@@ -412,7 +413,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'communication',
         description: 'Communicate with patient considering their distress',
         points: 2,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         rationale: 'Patient communication is challenging in respiratory distress'
       },
@@ -421,7 +422,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'communication',
         description: 'Provide reassurance and calm environment',
         points: 2,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         rationale: 'Anxiety worsens respiratory distress'
       },
@@ -430,7 +431,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'intervention',
         description: 'Administer salbutamol 5mg via nebuliser',
         points: 10,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         critical: true,
         rationale: 'Salbutamol is the first-line bronchodilator for acute asthma'
@@ -440,7 +441,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'intervention',
         description: 'Add ipratropium 500mcg to nebuliser (if severe)',
         points: 5,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate']
       },
       {
@@ -448,7 +449,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'intervention',
         description: 'High-flow oxygen (target SpO2 94-98%)',
         points: 5,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         critical: true
       }
@@ -572,6 +573,7 @@ export const secondYearCases: CaseScenario[] = [
         interventions: ['Reassess mental status if condition changes']
       },
       exposure: {
+        temperature: 36.5,
         findings: ['Diaphoresis generalized', 'No signs of trauma', 'Medicalert visible but unreadable at distance'],
         interventions: ['Full exposure while maintaining dignity', 'Check Medicalert']
       }
@@ -686,7 +688,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'abcde',
         description: 'Complete systematic ABCDE assessment',
         points: 5,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         critical: true,
         rationale: 'Systematic approach ensures comprehensive assessment'
@@ -696,7 +698,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'abcde',
         description: 'Calculate and document GCS (E/V/M)',
         points: 4,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         critical: true,
         rationale: 'GCS provides baseline for neurological monitoring'
@@ -706,7 +708,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'abcde',
         description: 'Check blood glucose',
         points: 3,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         rationale: 'Hypoglycemia and hyperglycemia can mimic cardiac symptoms'
       },
@@ -715,7 +717,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'abcde',
         description: '12-lead ECG obtained within 10 minutes',
         points: 5,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         critical: true,
         rationale: '12-lead ECG is essential for cardiac chest pain'
@@ -725,7 +727,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'abcde',
         description: 'Basic ECG interpretation - normal vs abnormal',
         points: 3,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         rationale: 'Recognizing major ECG abnormalities is essential'
       },
@@ -734,7 +736,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'abcde',
         description: 'BP in both arms if dissection suspected',
         points: 2,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         rationale: 'BP difference >20mmHg suggests aortic dissection'
       },
@@ -743,7 +745,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'abcde',
         description: 'Auscultate lung sounds',
         points: 3,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         rationale: 'Lung sounds help differentiate cardiac vs respiratory cause'
       },
@@ -754,7 +756,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'history',
         description: 'Complete SAMPLE with cardiac emphasis',
         points: 4,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         critical: true,
         rationale: 'Cardiac history is crucial for assessment'
@@ -764,7 +766,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'history',
         description: 'OPQRS: Onset, Provokes, Quality, Region/Radiation, Severity, Time',
         points: 5,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         critical: true,
         rationale: 'Detailed pain assessment differentiates cardiac causes'
@@ -774,7 +776,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'history',
         description: 'Identify cardiac risk factors',
         points: 3,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         rationale: 'Risk factors help determine pre-test probability'
       },
@@ -783,7 +785,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'history',
         description: 'Detailed medication history including compliance',
         points: 2,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         rationale: 'Current medications indicate known conditions'
       },
@@ -794,7 +796,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'clinical-reasoning',
         description: 'Recognize cardiac red flags (diaphoresis, radiation, etc.)',
         points: 4,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         rationale: 'Red flags identify high-risk patients'
       },
@@ -803,7 +805,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'clinical-reasoning',
         description: 'Consider non-cardiac differentials',
         points: 2,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         rationale: 'Not all chest pain is cardiac - think broadly'
       },
@@ -812,7 +814,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'clinical-reasoning',
         description: 'Recognize whether ECG is normal or shows concerning changes',
         points: 3,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         rationale: 'ECG interpretation is a core 2nd year skill'
       },
@@ -823,7 +825,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'documentation',
         description: 'Complete documentation with times',
         points: 3,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         rationale: 'Documentation creates record of assessment and findings'
       },
@@ -832,7 +834,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'documentation',
         description: 'Document ECG time and interpretation',
         points: 2,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         rationale: 'ECG timing is important for cardiac care'
       },
@@ -841,7 +843,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'intervention',
         description: 'Aspirin 300mg if no allergy/contraindication',
         points: 10,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         critical: true
       },
@@ -850,7 +852,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'intervention',
         description: 'GTN spray if SBP > 90 and no contraindications',
         points: 5,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate']
       },
       {
@@ -858,7 +860,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'intervention',
         description: 'Morphine 5mg IV titrated for pain (if severe)',
         points: 5,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate']
       },
       {
@@ -866,7 +868,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'intervention',
         description: 'IV access — large bore',
         points: 5,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         critical: true
       }
@@ -978,6 +980,7 @@ export const secondYearCases: CaseScenario[] = [
         ]
       },
       exposure: {
+        temperature: 36.8,
         findings: ['No signs of trauma', 'Incontinence present'],
         interventions: ['Full exposure while maintaining dignity', 'Check for rash signs of infection']
       }
@@ -1094,7 +1097,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'abcde',
         description: 'Accurate GCS calculation including verbal score',
         points: 5,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         critical: true,
         rationale: 'Accurate GCS requires testing each component, not assuming'
@@ -1104,7 +1107,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'abcde',
         description: 'Pupil assessment - size, equality, reactivity',
         points: 4,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         critical: true,
         rationale: 'Pupil changes are critical neurological signs'
@@ -1114,7 +1117,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'abcde',
         description: 'Blood glucose check (stroke mimics)',
         points: 5,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         critical: true,
         rationale: 'Hypo/hyperglycemia can mimic stroke - treatable causes'
@@ -1124,7 +1127,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'abcde',
         description: 'FAST assessment - Face, Arms, Speech, Time',
         points: 4,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         critical: true,
         rationale: 'FAST identifies stroke quickly and accurately'
@@ -1134,7 +1137,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'history',
         description: 'Determine exact time of onset',
         points: 5,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         critical: true,
         rationale: 'Time of onset determines treatment eligibility (thrombolysis window)'
@@ -1144,7 +1147,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'secondary',
         description: 'Complete neurological secondary survey',
         points: 3,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         rationale: 'Secondary survey identifies all neurological deficits'
       },
@@ -1153,7 +1156,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'secondary',
         description: 'Compare bilateral limb strength',
         points: 2,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         rationale: 'Bilateral comparison highlights asymmetry'
       },
@@ -1164,7 +1167,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'clinical-reasoning',
         description: 'Recognize significance of sluggish pupil',
         points: 3,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         rationale: 'Sluggish pupil suggests increased ICP - critical finding'
       },
@@ -1173,7 +1176,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'clinical-reasoning',
         description: 'Consider stroke mimics (hypo/hyperglycemia)',
         points: 3,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         rationale: 'Stroke mimics are treatable - don\'t anchor on stroke'
       },
@@ -1182,7 +1185,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'clinical-reasoning',
         description: 'Identify relevant stroke risk factors',
         points: 2,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         rationale: 'Risk factors support diagnosis and guide management'
       },
@@ -1193,7 +1196,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'documentation',
         description: 'Document time of onset and last known normal',
         points: 3,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         critical: true,
         rationale: 'Time documentation is critical for stroke care'
@@ -1203,7 +1206,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'documentation',
         description: 'Document GCS with breakdown (E/V/M)',
         points: 2,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         rationale: 'GCS breakdown allows tracking changes'
       },
@@ -1212,7 +1215,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'documentation',
         description: 'Document neurological findings (pupils, limbs)',
         points: 2,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         rationale: 'Neuro documentation provides baseline'
       },
@@ -1221,7 +1224,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'intervention',
         description: 'Blood glucose check — exclude hypoglycaemia',
         points: 10,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         critical: true,
         rationale: 'Hypoglycaemia mimics stroke and is immediately treatable'
@@ -1231,7 +1234,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'history',
         description: 'Document exact time of symptom onset (for thrombolysis window)',
         points: 10,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         critical: true
       },
@@ -1240,7 +1243,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'intervention',
         description: 'Position supine or 30-degree head elevation',
         points: 3,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate']
       }
     ],
@@ -1534,7 +1537,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'safety',
         description: 'Assess scene safety including industrial hazards',
         points: 3,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         critical: true,
         rationale: 'Industrial scenes have multiple hazards that must be identified'
@@ -1544,7 +1547,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'abcde',
         description: 'Identify signs of inhalation injury (singed nasal hairs, soot, hoarse voice)',
         points: 5,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         critical: true,
         rationale: 'Inhalation injury is the primary killer in burn patients'
@@ -1554,7 +1557,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'intervention',
         description: 'Apply high-flow oxygen immediately',
         points: 4,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         critical: true,
         rationale: 'High-flow O2 treats potential CO poisoning and supports oxygenation'
@@ -1564,7 +1567,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'intervention',
         description: 'Cool burns with tepid water for 20 minutes',
         points: 3,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         rationale: 'Cooling within 3 hours reduces burn depth and improves outcomes'
       },
@@ -1573,7 +1576,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'abcde',
         description: 'Estimate %TBSA using Rule of Nines',
         points: 4,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         critical: true,
         rationale: 'TBSA estimation guides fluid resuscitation requirements'
@@ -1583,7 +1586,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'intervention',
         description: 'Establish IV access x2 in non-burned areas',
         points: 3,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         rationale: 'Burns >15% TBSA require IV fluid resuscitation'
       },
@@ -1592,7 +1595,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'clinical-reasoning',
         description: 'Awareness of Parkland formula for fluid calculation',
         points: 3,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         rationale: 'Understanding fluid resuscitation principles prevents shock'
       },
@@ -1601,7 +1604,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'intervention',
         description: 'Administer adequate analgesia (IV morphine)',
         points: 4,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         critical: true,
         rationale: 'Burns are extremely painful - adequate analgesia is essential'
@@ -1611,7 +1614,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'intervention',
         description: 'Apply cling film loosely to cooled burns',
         points: 2,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         rationale: 'Cling film protects wounds, reduces pain, and allows ongoing assessment'
       },
@@ -1620,7 +1623,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'intervention',
         description: 'Prevent hypothermia during cooling and transport',
         points: 2,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         rationale: 'Burn patients lose thermoregulation and hypothermia worsens outcomes'
       },
@@ -1629,7 +1632,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'intervention',
         description: 'Remove jewellery and clothing from burned areas',
         points: 2,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         rationale: 'Retained heat and swelling can worsen injury and cause constriction'
       },
@@ -1638,7 +1641,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'abcde',
         description: 'Check GCS and blood glucose',
         points: 3,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         rationale: 'Altered consciousness may indicate CO poisoning or shock'
       },
@@ -1647,7 +1650,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'documentation',
         description: 'Document burn depth, distribution, %TBSA, and time of injury',
         points: 3,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         rationale: 'Accurate documentation guides hospital treatment and fluid timing'
       },
@@ -1656,7 +1659,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'clinical-reasoning',
         description: 'Recognise need for burns centre rather than nearest ED',
         points: 3,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         rationale: 'Burns with inhalation injury require specialist burns care'
       }
@@ -1930,7 +1933,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'abcde',
         description: 'Systematic ABCDE assessment identifying shock signs',
         points: 5,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         critical: true,
         rationale: 'Systematic approach identifies haemodynamic compromise'
@@ -1940,7 +1943,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'clinical-reasoning',
         description: 'Recognise signs of compensated shock (tachycardia, hypotension, cool peripheries)',
         points: 5,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         critical: true,
         rationale: 'Young patients compensate well - BP drops late'
@@ -1950,7 +1953,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'clinical-reasoning',
         description: 'Consider ectopic pregnancy in female of childbearing age with abdominal pain',
         points: 5,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         critical: true,
         rationale: 'Any female of childbearing age with abdominal pain could have ectopic pregnancy'
@@ -1960,7 +1963,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'communication',
         description: 'Sensitively obtain gynaecological history in private',
         points: 4,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         rationale: 'Privacy and sensitivity are essential for accurate history'
       },
@@ -1969,7 +1972,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'intervention',
         description: 'Establish IV access x2 and commence fluid resuscitation',
         points: 4,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         critical: true,
         rationale: 'IV access and fluids are essential for haemorrhagic shock'
@@ -1979,7 +1982,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'intervention',
         description: 'Provide appropriate analgesia (avoiding codeine per allergy)',
         points: 3,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         rationale: 'Pain management improves patient comfort and compliance'
       },
@@ -1988,7 +1991,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'clinical-reasoning',
         description: 'Recognise time-critical nature and minimise on-scene time',
         points: 4,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         critical: true,
         rationale: 'Ruptured ectopic requires urgent surgical intervention'
@@ -1998,7 +2001,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'intervention',
         description: 'Keep patient nil by mouth (potential surgery)',
         points: 2,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         rationale: 'Patient may need emergency surgery'
       },
@@ -2007,7 +2010,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'communication',
         description: 'Ensure privacy and dignity throughout assessment',
         points: 3,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         rationale: 'Sensitive presentation requires appropriate privacy measures'
       },
@@ -2016,7 +2019,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'abcde',
         description: 'Check GCS and blood glucose',
         points: 3,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         rationale: 'Altered consciousness may occur with significant blood loss'
       },
@@ -2025,7 +2028,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'documentation',
         description: 'Document vital signs, LMP, fluid volumes, and times',
         points: 3,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         rationale: 'Accurate documentation guides hospital management'
       },
@@ -2034,7 +2037,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'communication',
         description: 'Pre-alert hospital with suspected ruptured ectopic',
         points: 3,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         rationale: 'Pre-alerting allows surgical team preparation'
       },
@@ -2043,7 +2046,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'intervention',
         description: 'IV fluid resuscitation — NaCl bolus for hypotension',
         points: 10,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         critical: true
       },
@@ -2052,7 +2055,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'intervention',
         description: 'Two large-bore IV access',
         points: 5,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         critical: true
       },
@@ -2061,7 +2064,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'intervention',
         description: 'Left lateral position',
         points: 3,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate']
       }
     ],
@@ -2329,7 +2332,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'abcde',
         description: 'Complete systematic ABCDE assessment despite patient appearing well',
         points: 4,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         critical: true,
         rationale: 'Systematic approach is essential even when patient looks well'
@@ -2339,7 +2342,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'abcde',
         description: 'Perform FAST assessment even though symptoms have resolved',
         points: 4,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         critical: true,
         rationale: 'FAST documents current baseline and identifies any residual deficits'
@@ -2349,7 +2352,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'abcde',
         description: 'Check blood glucose (diabetic patient with neurological symptoms)',
         points: 4,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         critical: true,
         rationale: 'Hypoglycemia can mimic TIA/stroke and is a treatable cause'
@@ -2359,7 +2362,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'history',
         description: 'Document exact time of symptom onset and duration',
         points: 5,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         critical: true,
         rationale: 'Time of onset is critical for stroke/TIA management decisions'
@@ -2369,7 +2372,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'history',
         description: 'Obtain detailed witness account of the episode',
         points: 3,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         rationale: 'Witnesses provide objective account of symptoms patient may minimise'
       },
@@ -2378,7 +2381,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'clinical-reasoning',
         description: 'Do NOT dismiss because symptoms have resolved - recognise TIA as emergency',
         points: 5,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         critical: true,
         rationale: 'TIA is a warning sign of impending stroke - 20% have stroke within 90 days'
@@ -2388,7 +2391,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'clinical-reasoning',
         description: 'Identify cerebrovascular risk factors from history',
         points: 3,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         rationale: 'Risk factors support diagnosis and demonstrate clinical reasoning'
       },
@@ -2397,7 +2400,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'communication',
         description: 'Explain importance of hospital assessment to reluctant patient',
         points: 4,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         critical: true,
         rationale: 'Patient education is crucial when patient wants to refuse transport'
@@ -2407,7 +2410,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'secondary',
         description: 'Complete neurological examination including limb strength comparison',
         points: 3,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         rationale: 'Thorough exam may reveal subtle residual deficits'
       },
@@ -2416,7 +2419,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'abcde',
         description: 'Calculate and document full GCS',
         points: 3,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         rationale: 'GCS provides baseline for monitoring'
       },
@@ -2425,7 +2428,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'abcde',
         description: 'Document hypertension but do NOT treat acutely',
         points: 2,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         rationale: 'Hypertension in TIA/stroke should not be treated pre-hospital'
       },
@@ -2434,7 +2437,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'documentation',
         description: 'Document onset time, duration, symptoms, and current neurological status',
         points: 3,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         rationale: 'Detailed documentation guides hospital investigation and management'
       }
@@ -2697,7 +2700,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'abcde',
         description: 'Systematic ABCDE assessment despite patient appearing well',
         points: 4,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         critical: true,
         rationale: 'Systematic approach identifies baseline before delayed toxicity'
@@ -2707,7 +2710,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'history',
         description: 'Establish WHAT, HOW MUCH, WHEN, and WHY (toxicological history)',
         points: 5,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         critical: true,
         rationale: 'Accurate toxicological history determines treatment pathway'
@@ -2717,7 +2720,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'history',
         description: 'Count tablets/packets to verify ingested amount',
         points: 3,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         rationale: 'Physical evidence helps verify patient report'
       },
@@ -2726,7 +2729,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'clinical-reasoning',
         description: 'Ask about and search for other substances taken',
         points: 3,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         rationale: 'Mixed overdoses are common and change management'
       },
@@ -2735,7 +2738,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'clinical-reasoning',
         description: 'Recognise that looking well does NOT mean safe with paracetamol',
         points: 5,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         critical: true,
         rationale: 'Paracetamol toxicity is delayed 24-72 hours - patient dies looking well initially'
@@ -2745,7 +2748,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'clinical-reasoning',
         description: 'Recognise time-critical nature for N-acetylcysteine treatment',
         points: 4,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         critical: true,
         rationale: 'N-acetylcysteine is most effective within 8 hours of ingestion'
@@ -2755,7 +2758,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'abcde',
         description: 'Check blood glucose (liver damage causes hypoglycemia)',
         points: 3,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         rationale: 'Blood glucose monitoring important for hepatotoxicity detection'
       },
@@ -2764,7 +2767,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'communication',
         description: 'Non-judgmental, compassionate communication',
         points: 4,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         critical: true,
         rationale: 'Patient in mental health crisis requires sensitive approach'
@@ -2774,7 +2777,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'clinical-reasoning',
         description: 'Conduct basic mental health risk assessment',
         points: 3,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         rationale: 'Mental health assessment identifies ongoing risk and informs handover'
       },
@@ -2783,7 +2786,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'intervention',
         description: 'Collect and bring medication packets to hospital',
         points: 2,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         rationale: 'Packets confirm substance and help calculate dose'
       },
@@ -2792,7 +2795,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'clinical-reasoning',
         description: 'Recognise activated charcoal NOT indicated (>2 hours since ingestion)',
         points: 2,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         rationale: 'Charcoal is only effective within 1-2 hours of ingestion'
       },
@@ -2801,7 +2804,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'documentation',
         description: 'Document exact substance, quantity, time, and circumstances',
         points: 3,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         critical: true,
         rationale: 'Accurate documentation is essential for toxicology management'
@@ -2811,7 +2814,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'safety',
         description: 'Do not leave patient unattended at any time',
         points: 3,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         critical: true,
         rationale: 'Patient at risk of further self-harm must not be left alone'
@@ -3099,7 +3102,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'safety',
         description: 'Prioritise scene safety - maintain distance, identify exits, wait for police if needed',
         points: 5,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         critical: true,
         rationale: 'Paranoid patient may become violent - personal safety is paramount'
@@ -3109,7 +3112,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'communication',
         description: 'Use de-escalation techniques: calm voice, open body language, empathic approach',
         points: 5,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         critical: true,
         rationale: 'De-escalation is the primary management tool for acute behavioural disturbance'
@@ -3119,7 +3122,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'communication',
         description: 'Do NOT confront, challenge, or argue with delusions',
         points: 4,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         critical: true,
         rationale: 'Confronting delusions increases agitation and risk of violence'
@@ -3129,7 +3132,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'abcde',
         description: 'Check blood glucose to rule out organic cause',
         points: 5,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         critical: true,
         rationale: 'Hypoglycemia can present as psychosis and is immediately treatable'
@@ -3139,7 +3142,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'abcde',
         description: 'Assess pupils (dilated pupils suggest substance use)',
         points: 3,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         rationale: 'Pupil assessment helps differentiate organic from psychiatric cause'
       },
@@ -3148,7 +3151,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'clinical-reasoning',
         description: 'Consider organic causes: substances, infection, metabolic, head injury',
         points: 4,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         critical: true,
         rationale: 'Organic causes of psychosis require different treatment and may be life-threatening'
@@ -3158,7 +3161,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'abcde',
         description: 'Check temperature (infection screening)',
         points: 3,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         rationale: 'Pyrexia may indicate infection (encephalitis, meningitis, sepsis)'
       },
@@ -3167,7 +3170,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'abcde',
         description: 'Attempt ABCDE assessment when safe (may need to adapt approach)',
         points: 3,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         rationale: 'Medical assessment identifies organic causes even when psychiatric presentation dominant'
       },
@@ -3176,7 +3179,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'clinical-reasoning',
         description: 'Awareness of Mental Health Act provisions for involuntary assessment',
         points: 3,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         rationale: 'Legal framework may be needed if patient refuses transport'
       },
@@ -3185,7 +3188,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'safety',
         description: 'Avoid physical restraint unless absolutely necessary; if used, monitor for positional asphyxia',
         points: 3,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         rationale: 'Restraint carries risk of positional asphyxia and worsens agitation'
       },
@@ -3194,7 +3197,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'history',
         description: 'Search for medications in apartment (may indicate psychiatric history)',
         points: 2,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         rationale: 'Ceased medications may explain relapse; found medications inform hospital team'
       },
@@ -3203,7 +3206,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'documentation',
         description: 'Document behaviour, mental state, and vital signs objectively',
         points: 3,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         rationale: 'Objective documentation supports psychiatric assessment and legal requirements'
       },
@@ -3212,7 +3215,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'abcde',
         description: 'Assess and document GCS',
         points: 3,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         rationale: 'GCS monitors for organic deterioration alongside psychiatric presentation'
       },
@@ -3221,7 +3224,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'intervention',
         description: 'Blood glucose — exclude organic cause',
         points: 5,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate'],
         critical: true
       },
@@ -3230,7 +3233,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'intervention',
         description: 'Temperature check — exclude infection/NMS',
         points: 3,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year', '4th-year'],
         complexity: ['intermediate']
       }
     ],
@@ -3379,6 +3382,7 @@ export const secondYearCases: CaseScenario[] = [
         ]
       },
       exposure: {
+        temperature: 36.0,
         findings: [
           'Overweight male (95kg estimated)',
           'Witnesses report he was sweating heavily before collapse (had been outside in heat)',
@@ -3523,7 +3527,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'abcde',
         description: 'Confirm cardiac arrest (unresponsive, no normal breathing, no pulse)',
         points: 5,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         critical: true,
         rationale: 'Rapid confirmation of cardiac arrest initiates the chain of survival'
@@ -3533,7 +3537,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'abcde',
         description: 'Suction airway to clear vomit before ventilation',
         points: 5,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         critical: true,
         rationale: 'Ventilating without clearing vomit causes aspiration and worsens outcome'
@@ -3543,7 +3547,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'abcde',
         description: 'Initiate high-quality CPR (rate, depth, recoil, minimal interruptions)',
         points: 5,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         critical: true,
         rationale: 'High-quality CPR is the foundation of cardiac arrest management'
@@ -3553,7 +3557,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'abcde',
         description: 'Apply defibrillator/AED pads correctly',
         points: 4,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         critical: true,
         rationale: 'Early defibrillation is the definitive treatment for VF'
@@ -3629,7 +3633,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'intervention',
         description: 'Adrenaline 1mg IV after 2nd shock (then every 3-5 min)',
         points: 10,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
         critical: true
       },
@@ -3638,7 +3642,7 @@ export const secondYearCases: CaseScenario[] = [
         category: 'intervention',
         description: 'Amiodarone 300mg IV after 3rd shock for refractory VF',
         points: 5,
-        yearLevel: ['2nd-year'],
+        yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate']
       }
     ],

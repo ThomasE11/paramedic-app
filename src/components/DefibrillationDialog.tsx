@@ -28,6 +28,7 @@ interface DefibrillationDialogProps {
   onConfirm: (params: DefibrillationParams) => void;
   currentRhythm: string;
   currentPulse: number;
+  isInArrest?: boolean;
 }
 
 const ENERGY_LEVELS = [50, 100, 150, 200, 360] as const;
@@ -38,11 +39,13 @@ export function DefibrillationDialog({
   onConfirm,
   currentRhythm,
   currentPulse,
+  isInArrest = false,
 }: DefibrillationDialogProps) {
   const [selectedEnergy, setSelectedEnergy] = useState<number>(150);
   const [synchronized, setSynchronized] = useState(false);
 
-  const hasPulse = currentPulse > 0;
+  // During arrest (VF/pulseless VT/asystole), pulse is 0 despite residual state values
+  const hasPulse = currentPulse > 0 && !isInArrest;
   const isShockableRhythm = ['Ventricular Fibrillation', 'Ventricular Tachycardia', 'SVT'].includes(currentRhythm);
   const isNonShockable = ['Asystole', 'PEA'].includes(currentRhythm);
   const isVT = currentRhythm === 'Ventricular Tachycardia';

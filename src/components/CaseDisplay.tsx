@@ -287,7 +287,7 @@ export function CaseDisplay({ caseData, studentYear = '3rd-year', isStudentView:
   return (
     <div className="space-y-4 animate-fade-in">
       {/* Dispatch Information */}
-      <Card className="border-l-4 border-l-blue-500 abcde-airway-bg card-interactive animate-fade-in-up stagger-1">
+      <Card className="border-l-4 border-l-blue-500 abcde-airway-bg animate-fade-in-up stagger-1">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-lg">
             <div className="p-1.5 rounded-lg bg-blue-100 dark:bg-blue-900/30">
@@ -348,7 +348,7 @@ export function CaseDisplay({ caseData, studentYear = '3rd-year', isStudentView:
       </Card>
 
       {/* Scene Information */}
-      <Card className="border-l-4 border-l-cyan-500 abcde-breathing-bg card-interactive animate-fade-in-up stagger-2">
+      <Card className="border-l-4 border-l-cyan-500 abcde-breathing-bg animate-fade-in-up stagger-2">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-lg">
             <div className="p-1.5 rounded-lg bg-cyan-100 dark:bg-cyan-900/30">
@@ -417,7 +417,7 @@ export function CaseDisplay({ caseData, studentYear = '3rd-year', isStudentView:
       </Card>
 
       {/* Initial Presentation */}
-      <Card className="border-l-4 border-l-red-500 abcde-circulation-bg card-interactive animate-fade-in-up stagger-3">
+      <Card className="border-l-4 border-l-red-500 abcde-circulation-bg animate-fade-in-up stagger-3">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-lg">
             <div className="p-1.5 rounded-lg bg-red-100 dark:bg-red-900/30">
@@ -473,7 +473,7 @@ export function CaseDisplay({ caseData, studentYear = '3rd-year', isStudentView:
       </Card>
 
       {/* ABCDE Assessment */}
-      <Card className="border-l-4 border-l-purple-500 abcde-disability-bg card-interactive animate-fade-in-up stagger-4">
+      <Card className="border-l-4 border-l-purple-500 abcde-disability-bg animate-fade-in-up stagger-4">
         <CardHeader className="pb-3 cursor-pointer" onClick={() => setShowABCDE(!showABCDE)}>
           <CardTitle className="flex items-center justify-between text-lg">
             <div className="flex items-center gap-2">
@@ -490,7 +490,7 @@ export function CaseDisplay({ caseData, studentYear = '3rd-year', isStudentView:
         {showABCDE && (
           <CardContent className="space-y-4">
           {/* Airway */}
-          <div className="rounded-lg border-l-4 border-l-blue-500 bg-blue-50/50 dark:bg-blue-950/20 p-3 card-hover">
+          <div className="rounded-lg border-l-4 border-l-blue-500 bg-blue-50/50 dark:bg-blue-950/20 p-3">
             <h4 className="mb-2 font-semibold text-blue-600 dark:text-blue-400 flex items-center gap-2">
               <div className="p-1 rounded bg-blue-100 dark:bg-blue-900/30">
                 <Wind className="h-4 w-4" />
@@ -526,7 +526,7 @@ export function CaseDisplay({ caseData, studentYear = '3rd-year', isStudentView:
           </div>
 
           {/* Breathing */}
-          <div className="rounded-lg border-l-4 border-l-cyan-500 bg-cyan-50/50 dark:bg-cyan-950/20 p-3 card-hover">
+          <div className="rounded-lg border-l-4 border-l-cyan-500 bg-cyan-50/50 dark:bg-cyan-950/20 p-3">
             <h4 className="mb-2 font-semibold text-cyan-600 dark:text-cyan-400 flex items-center gap-2">
               <div className="p-1 rounded bg-cyan-100 dark:bg-cyan-900/30">
                 <Droplets className="h-4 w-4" />
@@ -595,7 +595,7 @@ export function CaseDisplay({ caseData, studentYear = '3rd-year', isStudentView:
           </div>
 
           {/* Circulation */}
-          <div className="rounded-lg border-l-4 border-l-red-500 bg-red-50/50 dark:bg-red-950/20 p-3 card-hover">
+          <div className="rounded-lg border-l-4 border-l-red-500 bg-red-50/50 dark:bg-red-950/20 p-3">
             <h4 className="mb-2 font-semibold text-red-600 dark:text-red-400 flex items-center gap-2">
               <div className="p-1 rounded bg-red-100 dark:bg-red-900/30">
                 <Heart className="h-4 w-4" />
@@ -650,7 +650,7 @@ export function CaseDisplay({ caseData, studentYear = '3rd-year', isStudentView:
           </div>
 
           {/* Disability */}
-          <div className="rounded-lg border-l-4 border-l-purple-500 bg-purple-50/50 dark:bg-purple-950/20 p-3 card-hover">
+          <div className="rounded-lg border-l-4 border-l-purple-500 bg-purple-50/50 dark:bg-purple-950/20 p-3">
             <h4 className="mb-2 font-semibold text-purple-600 dark:text-purple-400 flex items-center gap-2">
               <div className="p-1 rounded bg-purple-100 dark:bg-purple-900/30">
                 <Brain className="h-4 w-4" />
@@ -694,7 +694,7 @@ export function CaseDisplay({ caseData, studentYear = '3rd-year', isStudentView:
           </div>
 
           {/* Exposure */}
-          <div className="rounded-lg border-l-4 border-l-amber-500 bg-amber-50/50 dark:bg-amber-950/20 p-3 card-hover">
+          <div className="rounded-lg border-l-4 border-l-amber-500 bg-amber-50/50 dark:bg-amber-950/20 p-3">
             <h4 className="mb-2 font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-2">
               <div className="p-1 rounded bg-amber-100 dark:bg-amber-900/30">
                 <Thermometer className="h-4 w-4" />
@@ -738,7 +738,7 @@ export function CaseDisplay({ caseData, studentYear = '3rd-year', isStudentView:
       </Card>
 
       {/* Secondary Survey */}
-      <Card className="border-l-4 border-l-amber-500 abcde-exposure-bg card-interactive animate-fade-in-up stagger-5">
+      <Card className="border-l-4 border-l-amber-500 abcde-exposure-bg animate-fade-in-up stagger-5">
         <CardHeader className="pb-3 cursor-pointer" onClick={() => setShowSecondarySurvey(!showSecondarySurvey)}>
           <CardTitle className="flex items-center justify-between text-lg">
             <div className="flex items-center gap-2">

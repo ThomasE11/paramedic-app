@@ -389,6 +389,58 @@ function applyStandardTreatment(
     if (state.isInArrest) {
       categoryModifier = 1.0;
       effectiveness = 80;
+
+      // ROSC pathway for non-shockable rhythms (Asystole/PEA) after repeated adrenaline + CPR
+      const isNonShockable = state.currentRhythm === 'Asystole' || state.currentRhythm === 'PEA';
+      if (isNonShockable && applicationCount >= 2) {
+        // Probability of ROSC increases with each adrenaline dose
+        const roscChance = applicationCount === 2 ? 0.30
+          : applicationCount === 3 ? 0.50
+          : 0.70; // 4th dose and beyond
+
+        // Deterministic ROSC trigger: achieve ROSC once enough doses are given
+        // Use a threshold approach — ROSC occurs when chance >= 0.5 (i.e., 3rd dose)
+        // OR on 2nd dose if CPR has been running (timeWithoutTreatment is low)
+        const cprActive = state.timeWithoutTreatment < 30; // CPR resets this timer
+        const shouldROSC = roscChance >= 0.50 || (roscChance >= 0.30 && cprActive);
+
+        if (shouldROSC) {
+          // ROSC achieved on non-shockable rhythm
+          const roscHR = 90 + Math.floor(applicationCount * 5); // 95-110 range
+          const roscSpO2 = 85 + Math.floor(applicationCount * 2); // 87-92 range
+          const oldPulse = vitals.pulse;
+          const oldBP = vitals.bp;
+          const oldSpO2 = vitals.spo2;
+
+          vitals.pulse = Math.min(110, roscHR);
+          vitals.bp = '90/60';
+          vitals.spo2 = Math.min(92, roscSpO2);
+          vitals.respiration = 8;
+          state.isInArrest = false;
+          state.currentRhythm = 'Sinus Tachycardia';
+          state.deteriorationLevel = 2;
+
+          changes.push(
+            { vital: 'HR', oldValue: oldPulse, newValue: vitals.pulse, direction: 'improved' },
+            { vital: 'BP', oldValue: oldBP, newValue: '90/60', direction: 'improved' },
+            { vital: 'SpO2', oldValue: `${oldSpO2}%`, newValue: `${vitals.spo2}%`, direction: 'improved' },
+          );
+
+          return {
+            description: `Adrenaline 1mg IV (dose ${applicationCount}) — ROSC achieved! ${state.currentRhythm} restored. HR ${vitals.pulse}, BP 90/60, SpO2 ${vitals.spo2}%. Continue post-ROSC care.`,
+            effectivenessPercent: 100,
+            isPartialResponse: false,
+            requiresRepeat: false,
+            criticalEvent: {
+              type: 'rosc',
+              description: `Return of Spontaneous Circulation achieved after ${applicationCount} doses of adrenaline on ${isNonShockable ? state.currentRhythm : 'non-shockable rhythm'}.`,
+              newRhythm: 'Sinus Tachycardia',
+              requiresAction: ['Continue ventilation', 'IV access', 'Post-ROSC care bundle', '12-lead ECG', 'Targeted temperature management'],
+            },
+            vitalChanges: changes,
+          };
+        }
+      }
     } else if (caseSubcategory.includes('anaphylaxis') || caseCategory === 'environmental') {
       categoryModifier = 2.0; // Life-saving in anaphylaxis
       effectiveness = 95;

@@ -94,7 +94,7 @@ export function DebriefingResourcesPanel({
   const uniqueSources = new Set(resources.map(r => r.source));
 
   return (
-    <Card className="card-interactive animate-fade-in-up border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
+    <Card className="animate-fade-in-up border-primary/20 bg-primary/5">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-lg">
           <div className="p-1.5 rounded-lg bg-primary/20">

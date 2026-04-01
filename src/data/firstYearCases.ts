@@ -94,6 +94,7 @@ export const firstYearCases: CaseScenario[] = [
         interventions: ['No intervention needed']
       },
       exposure: {
+        temperature: 36.5,
         findings: ['No obvious injuries', 'Possible bruise on right hip'],
         interventions: ['Check for injuries while maintaining dignity']
       }
@@ -181,7 +182,7 @@ export const firstYearCases: CaseScenario[] = [
         category: 'safety',
         description: 'Assess scene safety before approaching patient',
         points: 5,
-        yearLevel: ['1st-year'],
+        yearLevel: ['1st-year', '2nd-year', 'diploma'],
         complexity: ['basic'],
         critical: true,
         rationale: 'Scene safety is always the first priority'
@@ -191,7 +192,7 @@ export const firstYearCases: CaseScenario[] = [
         category: 'safety',
         description: 'Apply appropriate PPE (gloves at minimum)',
         points: 5,
-        yearLevel: ['1st-year'],
+        yearLevel: ['1st-year', '2nd-year', 'diploma'],
         complexity: ['basic'],
         critical: true,
         rationale: 'BSI protects both provider and patient'
@@ -201,7 +202,7 @@ export const firstYearCases: CaseScenario[] = [
         category: 'communication',
         description: 'Introduce self, name, and role to patient',
         points: 3,
-        yearLevel: ['1st-year'],
+        yearLevel: ['1st-year', '2nd-year', 'diploma'],
         complexity: ['basic'],
         rationale: 'Professional introduction builds trust'
       },
@@ -210,7 +211,7 @@ export const firstYearCases: CaseScenario[] = [
         category: 'communication',
         description: 'Ask permission before touching/examining patient',
         points: 3,
-        yearLevel: ['1st-year'],
+        yearLevel: ['1st-year', '2nd-year', 'diploma'],
         complexity: ['basic'],
         rationale: 'Respect patient autonomy and dignity'
       },
@@ -219,7 +220,7 @@ export const firstYearCases: CaseScenario[] = [
         category: 'communication',
         description: 'Get to patient\'s level (kneel/sit) when speaking',
         points: 2,
-        yearLevel: ['1st-year'],
+        yearLevel: ['1st-year', '2nd-year', 'diploma'],
         complexity: ['basic'],
         rationale: 'Eye level communication shows respect and improves connection'
       },
@@ -230,7 +231,7 @@ export const firstYearCases: CaseScenario[] = [
         category: 'history',
         description: 'SAMPLE: Signs/Symptoms - What prompted the call?',
         points: 3,
-        yearLevel: ['1st-year'],
+        yearLevel: ['1st-year', '2nd-year', 'diploma'],
         complexity: ['basic'],
         rationale: 'Understanding chief complaint guides assessment'
       },
@@ -239,7 +240,7 @@ export const firstYearCases: CaseScenario[] = [
         category: 'history',
         description: 'SAMPLE: Allergies - Ask about allergies to meds/food/environment',
         points: 3,
-        yearLevel: ['1st-year'],
+        yearLevel: ['1st-year', '2nd-year', 'diploma'],
         complexity: ['basic'],
         rationale: 'Allergy information is critical for safety'
       },
@@ -248,7 +249,7 @@ export const firstYearCases: CaseScenario[] = [
         category: 'history',
         description: 'SAMPLE: Medications - Current medications and compliance',
         points: 3,
-        yearLevel: ['1st-year'],
+        yearLevel: ['1st-year', '2nd-year', 'diploma'],
         complexity: ['basic'],
         rationale: 'Medications help understand medical history and interactions'
       },
@@ -257,7 +258,7 @@ export const firstYearCases: CaseScenario[] = [
         category: 'history',
         description: 'SAMPLE: Past medical history - Relevant conditions',
         points: 3,
-        yearLevel: ['1st-year'],
+        yearLevel: ['1st-year', '2nd-year', 'diploma'],
         complexity: ['basic'],
         rationale: 'Past history provides context for current presentation'
       },
@@ -266,7 +267,7 @@ export const firstYearCases: CaseScenario[] = [
         category: 'history',
         description: 'SAMPLE: Last oral intake - When did patient last eat/drink?',
         points: 2,
-        yearLevel: ['1st-year'],
+        yearLevel: ['1st-year', '2nd-year', 'diploma'],
         complexity: ['basic'],
         rationale: 'Important if procedures or anesthesia might be needed'
       },
@@ -275,7 +276,7 @@ export const firstYearCases: CaseScenario[] = [
         category: 'history',
         description: 'SAMPLE: Events leading - Detailed history of what happened',
         points: 3,
-        yearLevel: ['1st-year'],
+        yearLevel: ['1st-year', '2nd-year', 'diploma'],
         complexity: ['basic'],
         rationale: 'Understanding mechanism provides clues to injuries'
       },
@@ -284,7 +285,7 @@ export const firstYearCases: CaseScenario[] = [
         category: 'history',
         description: 'OPQRS assessment for pain - Onset, Provokes, Quality, Region, Severity',
         points: 5,
-        yearLevel: ['1st-year'],
+        yearLevel: ['1st-year', '2nd-year', 'diploma'],
         complexity: ['basic'],
         rationale: 'Thorough pain assessment is essential for understanding complaints'
       },
@@ -295,7 +296,7 @@ export const firstYearCases: CaseScenario[] = [
         category: 'abcde',
         description: 'Assess AVPU (Alert, Voice, Pain, Unresponsive)',
         points: 3,
-        yearLevel: ['1st-year'],
+        yearLevel: ['1st-year', '2nd-year', 'diploma'],
         complexity: ['basic'],
         rationale: 'AVPU is fundamental level of consciousness assessment'
       },
@@ -304,7 +305,7 @@ export const firstYearCases: CaseScenario[] = [
         category: 'abcde',
         description: 'Breathing assessment - rate, effort, sounds',
         points: 3,
-        yearLevel: ['1st-year'],
+        yearLevel: ['1st-year', '2nd-year', 'diploma'],
         complexity: ['basic'],
         rationale: 'Basic breathing assessment identifies problems early'
       },
@@ -313,7 +314,7 @@ export const firstYearCases: CaseScenario[] = [
         category: 'abcde',
         description: 'Circulation check - pulse rate, skin color, temperature',
         points: 3,
-        yearLevel: ['1st-year'],
+        yearLevel: ['1st-year', '2nd-year', 'diploma'],
         complexity: ['basic'],
         rationale: 'Basic circulation assessment identifies shock'
       },
@@ -322,7 +323,7 @@ export const firstYearCases: CaseScenario[] = [
         category: 'abcde',
         description: 'Obtain blood pressure',
         points: 4,
-        yearLevel: ['1st-year'],
+        yearLevel: ['1st-year', '2nd-year', 'diploma'],
         complexity: ['basic'],
         critical: true,
         rationale: 'Blood pressure is a vital sign that must be measured'
@@ -332,7 +333,7 @@ export const firstYearCases: CaseScenario[] = [
         category: 'abcde',
         description: 'Obtain pulse rate and quality',
         points: 2,
-        yearLevel: ['1st-year'],
+        yearLevel: ['1st-year', '2nd-year', 'diploma'],
         complexity: ['basic'],
         rationale: 'Pulse provides information about circulation'
       },
@@ -341,7 +342,7 @@ export const firstYearCases: CaseScenario[] = [
         category: 'abcde',
         description: 'Obtain respiratory rate',
         points: 2,
-        yearLevel: ['1st-year'],
+        yearLevel: ['1st-year', '2nd-year', 'diploma'],
         complexity: ['basic'],
         rationale: 'Respiratory rate is an important vital sign'
       },
@@ -350,7 +351,7 @@ export const firstYearCases: CaseScenario[] = [
         category: 'abcde',
         description: 'Obtain SpO2 reading',
         points: 2,
-        yearLevel: ['1st-year'],
+        yearLevel: ['1st-year', '2nd-year', 'diploma'],
         complexity: ['basic'],
         rationale: 'Oxygen saturation assesses oxygenation'
       },
@@ -359,7 +360,7 @@ export const firstYearCases: CaseScenario[] = [
         category: 'secondary',
         description: 'Perform basic head-to-toe examination',
         points: 4,
-        yearLevel: ['1st-year'],
+        yearLevel: ['1st-year', '2nd-year', 'diploma'],
         complexity: ['basic'],
         rationale: 'Systematic exam ensures nothing is missed'
       },
@@ -370,7 +371,7 @@ export const firstYearCases: CaseScenario[] = [
         category: 'documentation',
         description: 'Document all vital signs obtained',
         points: 2,
-        yearLevel: ['1st-year'],
+        yearLevel: ['1st-year', '2nd-year', 'diploma'],
         complexity: ['basic'],
         rationale: 'Documentation creates permanent record of assessment'
       },
@@ -379,7 +380,7 @@ export const firstYearCases: CaseScenario[] = [
         category: 'documentation',
         description: 'Document SAMPLE history findings',
         points: 2,
-        yearLevel: ['1st-year'],
+        yearLevel: ['1st-year', '2nd-year', 'diploma'],
         complexity: ['basic'],
         rationale: 'History documentation is essential for continuity of care'
       },
@@ -388,7 +389,7 @@ export const firstYearCases: CaseScenario[] = [
         category: 'documentation',
         description: 'Document assessment time',
         points: 1,
-        yearLevel: ['1st-year'],
+        yearLevel: ['1st-year', '2nd-year', 'diploma'],
         complexity: ['basic'],
         rationale: 'Time documentation is important for tracking'
       }
@@ -483,6 +484,7 @@ export const firstYearCases: CaseScenario[] = [
         interventions: []
       },
       exposure: {
+        temperature: 37.8,
         findings: ['Guarding right lower quadrant', 'No obvious external signs of trauma'],
         interventions: ['Expose abdomen for examination while maintaining modesty']
       }
@@ -563,27 +565,27 @@ export const firstYearCases: CaseScenario[] = [
     },
     studentChecklist: [
       // Safety and Communication
-      { id: 'y1-002-scene', category: 'safety', description: 'Assess scene safety', points: 3, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-002-intro', category: 'communication', description: 'Introduce self and obtain consent', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-002-privacy', category: 'communication', description: 'Maintain patient privacy during exam', points: 2, yearLevel: ['1st-year'], complexity: ['basic'] },
+      { id: 'y1-002-scene', category: 'safety', description: 'Assess scene safety', points: 3, yearLevel: ['1st-year', '2nd-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-002-intro', category: 'communication', description: 'Introduce self and obtain consent', points: 3, yearLevel: ['1st-year', '2nd-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-002-privacy', category: 'communication', description: 'Maintain patient privacy during exam', points: 2, yearLevel: ['1st-year', '2nd-year', 'diploma'], complexity: ['basic'] },
 
       // History - KEY EMPHASIS for abdominal pain case
-      { id: 'y1-002-sample-full', category: 'history', description: 'Complete SAMPLE history', points: 5, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-002-opqrs-onset', category: 'history', description: 'OPQRS: Onset - When did pain start?', points: 2, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-002-opqrs-provokes', category: 'history', description: 'OPQRS: Provokes - What makes it better/worse?', points: 2, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-002-opqrs-quality', category: 'history', description: 'OPQRS: Quality - Describe the pain', points: 2, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-002-opqrs-region', category: 'history', description: 'OPQRS: Region/Radiation - Where does pain go?', points: 2, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-002-opqrs-severity', category: 'history', description: 'OPQRS: Severity - Pain scale 1-10', points: 2, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-002-last-meal', category: 'history', description: 'Determine last oral intake', points: 3, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-002-surgical', category: 'history', description: 'Surgical history - especially abdominal', points: 2, yearLevel: ['1st-year'], complexity: ['basic'] },
+      { id: 'y1-002-sample-full', category: 'history', description: 'Complete SAMPLE history', points: 5, yearLevel: ['1st-year', '2nd-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-002-opqrs-onset', category: 'history', description: 'OPQRS: Onset - When did pain start?', points: 2, yearLevel: ['1st-year', '2nd-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-002-opqrs-provokes', category: 'history', description: 'OPQRS: Provokes - What makes it better/worse?', points: 2, yearLevel: ['1st-year', '2nd-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-002-opqrs-quality', category: 'history', description: 'OPQRS: Quality - Describe the pain', points: 2, yearLevel: ['1st-year', '2nd-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-002-opqrs-region', category: 'history', description: 'OPQRS: Region/Radiation - Where does pain go?', points: 2, yearLevel: ['1st-year', '2nd-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-002-opqrs-severity', category: 'history', description: 'OPQRS: Severity - Pain scale 1-10', points: 2, yearLevel: ['1st-year', '2nd-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-002-last-meal', category: 'history', description: 'Determine last oral intake', points: 3, yearLevel: ['1st-year', '2nd-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-002-surgical', category: 'history', description: 'Surgical history - especially abdominal', points: 2, yearLevel: ['1st-year', '2nd-year', 'diploma'], complexity: ['basic'] },
 
       // Assessment
-      { id: 'y1-002-vitals', category: 'abcde', description: 'Full set of vital signs', points: 5, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-002-abdomen-assess', category: 'secondary', description: 'Abdominal assessment - inspection, auscultation', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-002-npo', category: 'intervention', description: 'Keep patient NPO (nothing by mouth)', points: 2, yearLevel: ['1st-year'], complexity: ['basic'] },
+      { id: 'y1-002-vitals', category: 'abcde', description: 'Full set of vital signs', points: 5, yearLevel: ['1st-year', '2nd-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-002-abdomen-assess', category: 'secondary', description: 'Abdominal assessment - inspection, auscultation', points: 3, yearLevel: ['1st-year', '2nd-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-002-npo', category: 'intervention', description: 'Keep patient NPO (nothing by mouth)', points: 2, yearLevel: ['1st-year', '2nd-year', 'diploma'], complexity: ['basic'] },
 
       // Documentation
-      { id: 'y1-002-document', category: 'documentation', description: 'Document history and findings', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] }
+      { id: 'y1-002-document', category: 'documentation', description: 'Document history and findings', points: 3, yearLevel: ['1st-year', '2nd-year', 'diploma'], complexity: ['basic'] }
     ],
     teachingPoints: [
       'Abdominal pain requires thorough history - physical exam has limitations',
@@ -675,6 +677,7 @@ export const firstYearCases: CaseScenario[] = [
         interventions: ['Consider oral glucose if patient able to swallow safely']
       },
       exposure: {
+        temperature: 36.5,
         findings: ['Diaphoresis present', 'No signs of trauma'],
         interventions: []
       }
@@ -757,25 +760,25 @@ export const firstYearCases: CaseScenario[] = [
     },
     studentChecklist: [
       // Safety and Communication
-      { id: 'y1-003-scene', category: 'safety', description: 'Scene safety assessment', points: 3, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-003-bsi', category: 'safety', description: 'BSI - gloves at minimum', points: 2, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-003-intro', category: 'communication', description: 'Introduction and consent', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-003-family', category: 'communication', description: 'Include family in information gathering', points: 2, yearLevel: ['1st-year'], complexity: ['basic'] },
+      { id: 'y1-003-scene', category: 'safety', description: 'Scene safety assessment', points: 3, yearLevel: ['1st-year', '2nd-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-003-bsi', category: 'safety', description: 'BSI - gloves at minimum', points: 2, yearLevel: ['1st-year', '2nd-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-003-intro', category: 'communication', description: 'Introduction and consent', points: 3, yearLevel: ['1st-year', '2nd-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-003-family', category: 'communication', description: 'Include family in information gathering', points: 2, yearLevel: ['1st-year', '2nd-year', 'diploma'], complexity: ['basic'] },
 
       // History - DIABETES FOCUS
-      { id: 'y1-003-sample', category: 'history', description: 'Complete SAMPLE history', points: 5, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-003-diabetes-meds', category: 'history', description: 'Specific diabetes medications and timing', points: 3, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-003-meal-times', category: 'history', description: 'Last meal and eating pattern', points: 3, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-003-symptoms', category: 'history', description: 'Current symptoms and onset', points: 2, yearLevel: ['1st-year'], complexity: ['basic'] },
+      { id: 'y1-003-sample', category: 'history', description: 'Complete SAMPLE history', points: 5, yearLevel: ['1st-year', '2nd-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-003-diabetes-meds', category: 'history', description: 'Specific diabetes medications and timing', points: 3, yearLevel: ['1st-year', '2nd-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-003-meal-times', category: 'history', description: 'Last meal and eating pattern', points: 3, yearLevel: ['1st-year', '2nd-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-003-symptoms', category: 'history', description: 'Current symptoms and onset', points: 2, yearLevel: ['1st-year', '2nd-year', 'diploma'], complexity: ['basic'] },
 
       // Assessment - GLUCOSE FOCUS
-      { id: 'y1-003-avpu', category: 'abcde', description: 'AVPU assessment', points: 2, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-003-glucose', category: 'abcde', description: 'Check blood glucose', points: 5, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-003-vitals', category: 'abcde', description: 'Full set of vital signs', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-003-skin', category: 'abcde', description: 'Skin assessment (diaphoresis)', points: 2, yearLevel: ['1st-year'], complexity: ['basic'] },
+      { id: 'y1-003-avpu', category: 'abcde', description: 'AVPU assessment', points: 2, yearLevel: ['1st-year', '2nd-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-003-glucose', category: 'abcde', description: 'Check blood glucose', points: 5, yearLevel: ['1st-year', '2nd-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-003-vitals', category: 'abcde', description: 'Full set of vital signs', points: 3, yearLevel: ['1st-year', '2nd-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-003-skin', category: 'abcde', description: 'Skin assessment (diaphoresis)', points: 2, yearLevel: ['1st-year', '2nd-year', 'diploma'], complexity: ['basic'] },
 
       // Documentation
-      { id: 'y1-003-document-glucose', category: 'documentation', description: 'Document glucose reading and time', points: 3, yearLevel: ['1st-year'], complexity: ['basic'], critical: true }
+      { id: 'y1-003-document-glucose', category: 'documentation', description: 'Document glucose reading and time', points: 3, yearLevel: ['1st-year', '2nd-year', 'diploma'], complexity: ['basic'], critical: true }
     ],
     teachingPoints: [
       'Always check blood glucose in altered mental status',
@@ -865,6 +868,7 @@ export const firstYearCases: CaseScenario[] = [
         interventions: []
       },
       exposure: {
+        temperature: 36.8,
         findings: [
           'Left forearm: partial thickness burn, erythema with blistering',
           'Burn area approximately 5% TBSA (anterior forearm and dorsum of hand)',
@@ -954,20 +958,20 @@ export const firstYearCases: CaseScenario[] = [
       ]
     },
     studentChecklist: [
-      { id: 'y1-004-scene', category: 'safety', description: 'Scene safety - manage hot water and stove hazards', points: 5, yearLevel: ['1st-year'], complexity: ['basic'], critical: true, rationale: 'Burns scenes often have ongoing hazards' },
-      { id: 'y1-004-bsi', category: 'safety', description: 'BSI - gloves (sterile if available for burn)', points: 3, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-004-intro', category: 'communication', description: 'Introduce self, calm and reassure patient', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-004-cool', category: 'intervention', description: 'Cool running water for 20 minutes from time of burn', points: 5, yearLevel: ['1st-year'], complexity: ['basic'], critical: true, rationale: 'Cooling reduces burn depth progression' },
-      { id: 'y1-004-jewellery', category: 'intervention', description: 'Remove jewellery and watches from affected limb', points: 3, yearLevel: ['1st-year'], complexity: ['basic'], rationale: 'Swelling may make removal difficult later' },
-      { id: 'y1-004-tbsa', category: 'abcde', description: 'Estimate burn TBSA using Rule of Nines', points: 4, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-004-depth', category: 'abcde', description: 'Assess burn depth (superficial/partial/full)', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-004-distal', category: 'abcde', description: 'Check distal neurovascular status', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-004-vitals', category: 'abcde', description: 'Full set of vital signs including pain score', points: 4, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-004-cling', category: 'intervention', description: 'Apply cling film lengthways (not circumferentially)', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-004-analgesia', category: 'intervention', description: 'Pain management - paracetamol', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-004-warmth', category: 'intervention', description: 'Maintain patient warmth during and after cooling', points: 2, yearLevel: ['1st-year'], complexity: ['basic'], rationale: 'Hypothermia risk from prolonged cooling' },
-      { id: 'y1-004-sample', category: 'history', description: 'Complete SAMPLE history', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-004-document', category: 'documentation', description: 'Document burn size, depth, location, and time of injury', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] }
+      { id: 'y1-004-scene', category: 'safety', description: 'Scene safety - manage hot water and stove hazards', points: 5, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true, rationale: 'Burns scenes often have ongoing hazards' },
+      { id: 'y1-004-bsi', category: 'safety', description: 'BSI - gloves (sterile if available for burn)', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-004-intro', category: 'communication', description: 'Introduce self, calm and reassure patient', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-004-cool', category: 'intervention', description: 'Cool running water for 20 minutes from time of burn', points: 5, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true, rationale: 'Cooling reduces burn depth progression' },
+      { id: 'y1-004-jewellery', category: 'intervention', description: 'Remove jewellery and watches from affected limb', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], rationale: 'Swelling may make removal difficult later' },
+      { id: 'y1-004-tbsa', category: 'abcde', description: 'Estimate burn TBSA using Rule of Nines', points: 4, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-004-depth', category: 'abcde', description: 'Assess burn depth (superficial/partial/full)', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-004-distal', category: 'abcde', description: 'Check distal neurovascular status', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-004-vitals', category: 'abcde', description: 'Full set of vital signs including pain score', points: 4, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-004-cling', category: 'intervention', description: 'Apply cling film lengthways (not circumferentially)', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-004-analgesia', category: 'intervention', description: 'Pain management - paracetamol', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-004-warmth', category: 'intervention', description: 'Maintain patient warmth during and after cooling', points: 2, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], rationale: 'Hypothermia risk from prolonged cooling' },
+      { id: 'y1-004-sample', category: 'history', description: 'Complete SAMPLE history', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-004-document', category: 'documentation', description: 'Document burn size, depth, location, and time of injury', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] }
     ],
     teachingPoints: [
       'Cool running water for 20 minutes is the single most important first aid for burns',
@@ -1148,19 +1152,19 @@ export const firstYearCases: CaseScenario[] = [
       ]
     },
     studentChecklist: [
-      { id: 'y1-005-scene', category: 'safety', description: 'Scene safety assessment', points: 3, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-005-bsi', category: 'safety', description: 'BSI - gloves', points: 2, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-005-intro', category: 'communication', description: 'Introduce self to parents, calm and reassure', points: 4, yearLevel: ['1st-year'], complexity: ['basic'], rationale: 'Parents are extremely anxious during paediatric seizures' },
-      { id: 'y1-005-recovery', category: 'intervention', description: 'Ensure recovery position maintained', points: 3, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-005-airway', category: 'abcde', description: 'Airway assessment - patent, no obstruction', points: 4, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-005-temp', category: 'abcde', description: 'Check temperature', points: 4, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-005-vitals', category: 'abcde', description: 'Full vital signs (age-appropriate normals)', points: 4, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-005-seizure-hx', category: 'history', description: 'Seizure history: duration, type, first ever?', points: 4, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-005-sample', category: 'history', description: 'SAMPLE history from parents', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-005-meningism', category: 'abcde', description: 'Check for rash (non-blanching) and neck stiffness', points: 3, yearLevel: ['1st-year'], complexity: ['basic'], rationale: 'Must rule out meningitis in febrile child with seizure' },
-      { id: 'y1-005-clothing', category: 'intervention', description: 'Remove excess clothing to aid temperature reduction', points: 2, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-005-reassure', category: 'communication', description: 'Explain febrile seizures to parents in simple terms', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-005-document', category: 'documentation', description: 'Document seizure details, duration, and presentation', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] }
+      { id: 'y1-005-scene', category: 'safety', description: 'Scene safety assessment', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-005-bsi', category: 'safety', description: 'BSI - gloves', points: 2, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-005-intro', category: 'communication', description: 'Introduce self to parents, calm and reassure', points: 4, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], rationale: 'Parents are extremely anxious during paediatric seizures' },
+      { id: 'y1-005-recovery', category: 'intervention', description: 'Ensure recovery position maintained', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-005-airway', category: 'abcde', description: 'Airway assessment - patent, no obstruction', points: 4, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-005-temp', category: 'abcde', description: 'Check temperature', points: 4, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-005-vitals', category: 'abcde', description: 'Full vital signs (age-appropriate normals)', points: 4, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-005-seizure-hx', category: 'history', description: 'Seizure history: duration, type, first ever?', points: 4, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-005-sample', category: 'history', description: 'SAMPLE history from parents', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-005-meningism', category: 'abcde', description: 'Check for rash (non-blanching) and neck stiffness', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], rationale: 'Must rule out meningitis in febrile child with seizure' },
+      { id: 'y1-005-clothing', category: 'intervention', description: 'Remove excess clothing to aid temperature reduction', points: 2, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-005-reassure', category: 'communication', description: 'Explain febrile seizures to parents in simple terms', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-005-document', category: 'documentation', description: 'Document seizure details, duration, and presentation', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] }
     ],
     teachingPoints: [
       'Febrile seizures occur in 2-5% of children aged 6 months to 5 years',
@@ -1254,6 +1258,7 @@ export const firstYearCases: CaseScenario[] = [
         interventions: []
       },
       exposure: {
+        temperature: 37.0,
         findings: [
           'Contractions every 2 minutes, lasting 60 seconds',
           'Urge to push present',
@@ -1352,19 +1357,19 @@ export const firstYearCases: CaseScenario[] = [
       ]
     },
     studentChecklist: [
-      { id: 'y1-006-scene', category: 'safety', description: 'Scene safety and BSI (sterile gloves)', points: 4, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-006-intro', category: 'communication', description: 'Introduce self, calm patient and partner', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-006-assess-stage', category: 'abcde', description: 'Determine stage of labour (crowning = deliver on scene)', points: 4, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-006-ob-hx', category: 'history', description: 'Brief obstetric history: gravida, para, gestation, membranes', points: 4, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-006-prepare', category: 'equipment', description: 'Prepare delivery equipment and warm towels', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-006-vitals', category: 'abcde', description: 'Maternal vital signs', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-006-delivery', category: 'intervention', description: 'Support natural delivery - guide, do not pull', points: 5, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-006-nuchal', category: 'intervention', description: 'Check for nuchal cord after head delivery', points: 4, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-006-newborn', category: 'intervention', description: 'Dry, stimulate and warm newborn immediately', points: 5, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-006-apgar', category: 'abcde', description: 'APGAR assessment at 1 and 5 minutes', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-006-placenta', category: 'intervention', description: 'Await placenta - do NOT pull on cord', points: 3, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-006-bleeding', category: 'abcde', description: 'Monitor for postpartum haemorrhage', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-006-document', category: 'documentation', description: 'Document delivery time, APGAR scores, placenta delivery', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] }
+      { id: 'y1-006-scene', category: 'safety', description: 'Scene safety and BSI (sterile gloves)', points: 4, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-006-intro', category: 'communication', description: 'Introduce self, calm patient and partner', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-006-assess-stage', category: 'abcde', description: 'Determine stage of labour (crowning = deliver on scene)', points: 4, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-006-ob-hx', category: 'history', description: 'Brief obstetric history: gravida, para, gestation, membranes', points: 4, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-006-prepare', category: 'equipment', description: 'Prepare delivery equipment and warm towels', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-006-vitals', category: 'abcde', description: 'Maternal vital signs', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-006-delivery', category: 'intervention', description: 'Support natural delivery - guide, do not pull', points: 5, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-006-nuchal', category: 'intervention', description: 'Check for nuchal cord after head delivery', points: 4, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-006-newborn', category: 'intervention', description: 'Dry, stimulate and warm newborn immediately', points: 5, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-006-apgar', category: 'abcde', description: 'APGAR assessment at 1 and 5 minutes', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-006-placenta', category: 'intervention', description: 'Await placenta - do NOT pull on cord', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-006-bleeding', category: 'abcde', description: 'Monitor for postpartum haemorrhage', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-006-document', category: 'documentation', description: 'Document delivery time, APGAR scores, placenta delivery', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] }
     ],
     teachingPoints: [
       'If crowning is visible, prepare for delivery on scene - do NOT attempt transport',
@@ -1548,18 +1553,18 @@ export const firstYearCases: CaseScenario[] = [
       ]
     },
     studentChecklist: [
-      { id: 'y1-007-scene', category: 'safety', description: 'Scene safety and BSI', points: 3, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-007-calm', category: 'communication', description: 'Keep child calm - minimal handling, stay with parent', points: 5, yearLevel: ['1st-year'], complexity: ['basic'], critical: true, rationale: 'Agitation worsens upper airway obstruction in croup' },
-      { id: 'y1-007-no-throat', category: 'safety', description: 'Do NOT examine the throat', points: 4, yearLevel: ['1st-year'], complexity: ['basic'], critical: true, rationale: 'Throat examination can precipitate complete obstruction' },
-      { id: 'y1-007-airway', category: 'abcde', description: 'Assess airway: stridor, barking cough, drooling', points: 4, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-007-breathing', category: 'abcde', description: 'Assess work of breathing: recession, rate, SpO2', points: 4, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-007-severity', category: 'abcde', description: 'Grade croup severity (mild/moderate/severe)', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-007-vitals', category: 'abcde', description: 'Age-appropriate vital signs', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-007-hx', category: 'history', description: 'History: onset, prodrome, foreign body risk, previous episodes', points: 4, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-007-o2', category: 'intervention', description: 'Humidified oxygen if tolerated (blow-by)', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-007-position', category: 'intervention', description: 'Transport upright on parent\'s lap', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-007-reassure', category: 'communication', description: 'Reassure parents and explain condition', points: 2, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-007-document', category: 'documentation', description: 'Document severity, stridor characteristics, SpO2', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] }
+      { id: 'y1-007-scene', category: 'safety', description: 'Scene safety and BSI', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-007-calm', category: 'communication', description: 'Keep child calm - minimal handling, stay with parent', points: 5, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true, rationale: 'Agitation worsens upper airway obstruction in croup' },
+      { id: 'y1-007-no-throat', category: 'safety', description: 'Do NOT examine the throat', points: 4, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true, rationale: 'Throat examination can precipitate complete obstruction' },
+      { id: 'y1-007-airway', category: 'abcde', description: 'Assess airway: stridor, barking cough, drooling', points: 4, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-007-breathing', category: 'abcde', description: 'Assess work of breathing: recession, rate, SpO2', points: 4, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-007-severity', category: 'abcde', description: 'Grade croup severity (mild/moderate/severe)', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-007-vitals', category: 'abcde', description: 'Age-appropriate vital signs', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-007-hx', category: 'history', description: 'History: onset, prodrome, foreign body risk, previous episodes', points: 4, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-007-o2', category: 'intervention', description: 'Humidified oxygen if tolerated (blow-by)', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-007-position', category: 'intervention', description: 'Transport upright on parent\'s lap', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-007-reassure', category: 'communication', description: 'Reassure parents and explain condition', points: 2, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-007-document', category: 'documentation', description: 'Document severity, stridor characteristics, SpO2', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] }
     ],
     teachingPoints: [
       'Croup is most common in children 6 months to 3 years, peak at age 2',
@@ -1653,6 +1658,7 @@ export const firstYearCases: CaseScenario[] = [
         interventions: []
       },
       exposure: {
+        temperature: 36.8,
         findings: ['No rash', 'No oedema', 'Hands in carpopedal spasm posture', 'No signs of anaphylaxis'],
         interventions: []
       }
@@ -1745,17 +1751,17 @@ export const firstYearCases: CaseScenario[] = [
       ]
     },
     studentChecklist: [
-      { id: 'y1-008-scene', category: 'safety', description: 'Scene safety, create quiet private environment', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-008-intro', category: 'communication', description: 'Calm, slow introduction. Validate patient\'s feelings', points: 5, yearLevel: ['1st-year'], complexity: ['basic'], critical: true, rationale: 'Therapeutic communication is the primary intervention' },
-      { id: 'y1-008-vitals', category: 'abcde', description: 'Full vital signs including SpO2 and blood glucose', points: 4, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-008-rule-out', category: 'abcde', description: 'Rule out organic causes (PE, pneumothorax, cardiac)', points: 4, yearLevel: ['1st-year'], complexity: ['basic'], critical: true, rationale: 'Panic attack is a diagnosis of exclusion' },
-      { id: 'y1-008-breathing', category: 'intervention', description: 'Breathing coaching: slow controlled breathing', points: 5, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-008-sample', category: 'history', description: 'SAMPLE history including psychiatric history and medications', points: 4, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-008-previous', category: 'history', description: 'Ask about previous similar episodes', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-008-precipitant', category: 'history', description: 'Identify precipitants (stress, caffeine, sleep)', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-008-reassure', category: 'communication', description: 'Explain what is happening in simple terms', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-008-safety-net', category: 'communication', description: 'Provide safety-netting advice and encourage GP follow-up', points: 2, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-008-document', category: 'documentation', description: 'Document assessment, vital signs, and outcome', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] }
+      { id: 'y1-008-scene', category: 'safety', description: 'Scene safety, create quiet private environment', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-008-intro', category: 'communication', description: 'Calm, slow introduction. Validate patient\'s feelings', points: 5, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true, rationale: 'Therapeutic communication is the primary intervention' },
+      { id: 'y1-008-vitals', category: 'abcde', description: 'Full vital signs including SpO2 and blood glucose', points: 4, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-008-rule-out', category: 'abcde', description: 'Rule out organic causes (PE, pneumothorax, cardiac)', points: 4, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true, rationale: 'Panic attack is a diagnosis of exclusion' },
+      { id: 'y1-008-breathing', category: 'intervention', description: 'Breathing coaching: slow controlled breathing', points: 5, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-008-sample', category: 'history', description: 'SAMPLE history including psychiatric history and medications', points: 4, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-008-previous', category: 'history', description: 'Ask about previous similar episodes', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-008-precipitant', category: 'history', description: 'Identify precipitants (stress, caffeine, sleep)', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-008-reassure', category: 'communication', description: 'Explain what is happening in simple terms', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-008-safety-net', category: 'communication', description: 'Provide safety-netting advice and encourage GP follow-up', points: 2, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-008-document', category: 'documentation', description: 'Document assessment, vital signs, and outcome', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] }
     ],
     teachingPoints: [
       'Panic attack is a diagnosis of EXCLUSION - always rule out organic causes first',
@@ -1849,6 +1855,7 @@ export const firstYearCases: CaseScenario[] = [
         interventions: []
       },
       exposure: {
+        temperature: 36.8,
         findings: ['Redness around lips and chin', 'Drooling - possible oral irritation', 'No burns visible on skin elsewhere', 'Nappy area dry'],
         interventions: ['Examine oral cavity gently if child allows - look for burns']
       }
@@ -1933,19 +1940,19 @@ export const firstYearCases: CaseScenario[] = [
       ]
     },
     studentChecklist: [
-      { id: 'y1-009-scene', category: 'safety', description: 'Scene safety - secure chemical, manage hazards', points: 5, yearLevel: ['1st-year'], complexity: ['basic'], critical: true, rationale: 'Chemical containers must be secured to prevent further exposure' },
-      { id: 'y1-009-bsi', category: 'safety', description: 'BSI - gloves (chemical exposure risk)', points: 3, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-009-intro', category: 'communication', description: 'Calm introduction, reassure panicking mother', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-009-no-vomit', category: 'intervention', description: 'Do NOT induce vomiting', points: 5, yearLevel: ['1st-year'], complexity: ['basic'], critical: true, rationale: 'Vomiting re-exposes oesophagus to caustic substance' },
-      { id: 'y1-009-airway', category: 'abcde', description: 'Assess and continuously monitor airway', points: 5, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-009-identify', category: 'history', description: 'Identify the product - read label, bring container', points: 4, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-009-amount', category: 'history', description: 'Estimate amount potentially ingested and time', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-009-poison', category: 'intervention', description: 'Call Poison Control Centre for advice', points: 4, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-009-vitals', category: 'abcde', description: 'Full vital signs', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-009-oral', category: 'abcde', description: 'Gentle oral cavity inspection for chemical burns', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-009-sample', category: 'history', description: 'SAMPLE history from mother', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-009-transport', category: 'intervention', description: 'Urgent transport to ED with product container', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-009-document', category: 'documentation', description: 'Document product name, estimated amount, time, and findings', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] }
+      { id: 'y1-009-scene', category: 'safety', description: 'Scene safety - secure chemical, manage hazards', points: 5, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true, rationale: 'Chemical containers must be secured to prevent further exposure' },
+      { id: 'y1-009-bsi', category: 'safety', description: 'BSI - gloves (chemical exposure risk)', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-009-intro', category: 'communication', description: 'Calm introduction, reassure panicking mother', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-009-no-vomit', category: 'intervention', description: 'Do NOT induce vomiting', points: 5, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true, rationale: 'Vomiting re-exposes oesophagus to caustic substance' },
+      { id: 'y1-009-airway', category: 'abcde', description: 'Assess and continuously monitor airway', points: 5, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-009-identify', category: 'history', description: 'Identify the product - read label, bring container', points: 4, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-009-amount', category: 'history', description: 'Estimate amount potentially ingested and time', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-009-poison', category: 'intervention', description: 'Call Poison Control Centre for advice', points: 4, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-009-vitals', category: 'abcde', description: 'Full vital signs', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-009-oral', category: 'abcde', description: 'Gentle oral cavity inspection for chemical burns', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-009-sample', category: 'history', description: 'SAMPLE history from mother', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-009-transport', category: 'intervention', description: 'Urgent transport to ED with product container', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-009-document', category: 'documentation', description: 'Document product name, estimated amount, time, and findings', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] }
     ],
     teachingPoints: [
       'NEVER induce vomiting with caustic or corrosive ingestions',
@@ -2039,6 +2046,7 @@ export const firstYearCases: CaseScenario[] = [
         interventions: []
       },
       exposure: {
+        temperature: 36.5,
         findings: [
           'Left wrist: obvious dorsal deformity ("dinner fork" appearance)',
           'Mild swelling over distal radius',
@@ -2142,22 +2150,22 @@ export const firstYearCases: CaseScenario[] = [
       ]
     },
     studentChecklist: [
-      { id: 'y1-010-scene', category: 'safety', description: 'Scene safety - move hazards (bicycle)', points: 3, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-010-bsi', category: 'safety', description: 'BSI - gloves', points: 2, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-010-intro', category: 'communication', description: 'Introduce self, address patient directly (not just bystanders)', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-010-mechanism', category: 'history', description: 'Establish mechanism of injury (FOOSH)', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-010-helmet', category: 'history', description: 'Confirm helmet worn, no head injury, no LOC', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-010-other', category: 'secondary', description: 'Check for other injuries (not just the obvious one)', points: 3, yearLevel: ['1st-year'], complexity: ['basic'], rationale: 'Distracting injury can mask other injuries' },
-      { id: 'y1-010-nv-pre', category: 'abcde', description: 'Neurovascular check BEFORE splinting: pulse, sensation, movement', points: 5, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-010-opqrs', category: 'history', description: 'OPQRS pain assessment', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-010-splint', category: 'intervention', description: 'Splint in position found (do not realign)', points: 5, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-010-ice', category: 'intervention', description: 'Ice pack wrapped in cloth over splint', points: 2, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-010-sling', category: 'intervention', description: 'Elevation with sling', points: 2, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-010-nv-post', category: 'abcde', description: 'Neurovascular check AFTER splinting', points: 4, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-010-analgesia', category: 'intervention', description: 'Pain management - paracetamol', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-010-vitals', category: 'abcde', description: 'Full vital signs', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-010-sample', category: 'history', description: 'SAMPLE history', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-010-document', category: 'documentation', description: 'Document injury, NV status pre/post splint, pain score', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] }
+      { id: 'y1-010-scene', category: 'safety', description: 'Scene safety - move hazards (bicycle)', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-010-bsi', category: 'safety', description: 'BSI - gloves', points: 2, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-010-intro', category: 'communication', description: 'Introduce self, address patient directly (not just bystanders)', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-010-mechanism', category: 'history', description: 'Establish mechanism of injury (FOOSH)', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-010-helmet', category: 'history', description: 'Confirm helmet worn, no head injury, no LOC', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-010-other', category: 'secondary', description: 'Check for other injuries (not just the obvious one)', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], rationale: 'Distracting injury can mask other injuries' },
+      { id: 'y1-010-nv-pre', category: 'abcde', description: 'Neurovascular check BEFORE splinting: pulse, sensation, movement', points: 5, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-010-opqrs', category: 'history', description: 'OPQRS pain assessment', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-010-splint', category: 'intervention', description: 'Splint in position found (do not realign)', points: 5, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-010-ice', category: 'intervention', description: 'Ice pack wrapped in cloth over splint', points: 2, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-010-sling', category: 'intervention', description: 'Elevation with sling', points: 2, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-010-nv-post', category: 'abcde', description: 'Neurovascular check AFTER splinting', points: 4, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-010-analgesia', category: 'intervention', description: 'Pain management - paracetamol', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-010-vitals', category: 'abcde', description: 'Full vital signs', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-010-sample', category: 'history', description: 'SAMPLE history', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-010-document', category: 'documentation', description: 'Document injury, NV status pre/post splint, pain score', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] }
     ],
     teachingPoints: [
       'FOOSH (Fall On Outstretched Hand) is the classic mechanism for distal radius fractures',
@@ -2252,6 +2260,7 @@ export const firstYearCases: CaseScenario[] = [
         interventions: []
       },
       exposure: {
+        temperature: 36.5,
         findings: [
           'Posterior neck midline tenderness on palpation',
           'No step deformity',
@@ -2347,20 +2356,20 @@ export const firstYearCases: CaseScenario[] = [
       ]
     },
     studentChecklist: [
-      { id: 'y1-011-scene', category: 'safety', description: 'Scene safety - traffic management, hi-vis, positioning', points: 5, yearLevel: ['1st-year'], complexity: ['basic'], critical: true, rationale: 'RTC scenes are high-risk for rescuer injury' },
-      { id: 'y1-011-bsi', category: 'safety', description: 'BSI - gloves', points: 2, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-011-cspine', category: 'intervention', description: 'Manual in-line stabilisation of C-spine', points: 5, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-011-intro', category: 'communication', description: 'Introduction, consent, instruct patient not to move', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-011-mechanism', category: 'history', description: 'Detailed mechanism: speed, seatbelt, airbag, LOC', points: 4, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-011-neuro', category: 'abcde', description: 'Full neurological exam: power, sensation all limbs', points: 5, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-011-palpate', category: 'secondary', description: 'Palpate cervical spine: midline tenderness, step deformity', points: 4, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-011-red-flags', category: 'abcde', description: 'Assess for C-spine red flags (neuro deficit, LOC, intoxication)', points: 4, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-011-vitals', category: 'abcde', description: 'Full vital signs', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-011-collar', category: 'intervention', description: 'Apply cervical collar if indicated', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-011-sample', category: 'history', description: 'SAMPLE history', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-011-secondary', category: 'secondary', description: 'Full secondary survey for other injuries', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-011-analgesia', category: 'intervention', description: 'Analgesia - paracetamol', points: 2, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-011-document', category: 'documentation', description: 'Document mechanism, neuro exam findings, C-spine status', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] }
+      { id: 'y1-011-scene', category: 'safety', description: 'Scene safety - traffic management, hi-vis, positioning', points: 5, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true, rationale: 'RTC scenes are high-risk for rescuer injury' },
+      { id: 'y1-011-bsi', category: 'safety', description: 'BSI - gloves', points: 2, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-011-cspine', category: 'intervention', description: 'Manual in-line stabilisation of C-spine', points: 5, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-011-intro', category: 'communication', description: 'Introduction, consent, instruct patient not to move', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-011-mechanism', category: 'history', description: 'Detailed mechanism: speed, seatbelt, airbag, LOC', points: 4, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-011-neuro', category: 'abcde', description: 'Full neurological exam: power, sensation all limbs', points: 5, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-011-palpate', category: 'secondary', description: 'Palpate cervical spine: midline tenderness, step deformity', points: 4, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-011-red-flags', category: 'abcde', description: 'Assess for C-spine red flags (neuro deficit, LOC, intoxication)', points: 4, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-011-vitals', category: 'abcde', description: 'Full vital signs', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-011-collar', category: 'intervention', description: 'Apply cervical collar if indicated', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-011-sample', category: 'history', description: 'SAMPLE history', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-011-secondary', category: 'secondary', description: 'Full secondary survey for other injuries', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-011-analgesia', category: 'intervention', description: 'Analgesia - paracetamol', points: 2, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-011-document', category: 'documentation', description: 'Document mechanism, neuro exam findings, C-spine status', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] }
     ],
     teachingPoints: [
       'Scene safety at RTCs is paramount - always manage traffic hazards first',
@@ -2455,6 +2464,7 @@ export const firstYearCases: CaseScenario[] = [
         interventions: []
       },
       exposure: {
+        temperature: 36.8,
         findings: ['Mild carpopedal spasm in both hands', 'No rash', 'No chest wall deformity', 'No signs of anaphylaxis'],
         interventions: []
       }
@@ -2544,18 +2554,18 @@ export const firstYearCases: CaseScenario[] = [
       ]
     },
     studentChecklist: [
-      { id: 'y1-012-scene', category: 'safety', description: 'Scene safety, create calm environment', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-012-intro', category: 'communication', description: 'Calm introduction, reassuring manner', points: 4, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-012-spo2', category: 'abcde', description: 'Check SpO2 (key: should be 99-100% in hyperventilation)', points: 4, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-012-chest', category: 'abcde', description: 'Auscultate chest - rule out wheeze, reduced air entry', points: 4, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-012-equal', category: 'abcde', description: 'Check for symmetry (unilateral = concern)', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-012-glucose', category: 'abcde', description: 'Check blood glucose (patient fasting)', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-012-vitals', category: 'abcde', description: 'Full vital signs', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-012-rule-out', category: 'abcde', description: 'Systematically rule out PE, pneumothorax, asthma', points: 4, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-012-breathing-coach', category: 'intervention', description: 'Breathing coaching: slow, controlled technique', points: 5, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-012-hx', category: 'history', description: 'History: respiratory disease, triggers, caffeine intake', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-012-sample', category: 'history', description: 'SAMPLE history', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-012-document', category: 'documentation', description: 'Document assessment, SpO2, and response to treatment', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] }
+      { id: 'y1-012-scene', category: 'safety', description: 'Scene safety, create calm environment', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-012-intro', category: 'communication', description: 'Calm introduction, reassuring manner', points: 4, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-012-spo2', category: 'abcde', description: 'Check SpO2 (key: should be 99-100% in hyperventilation)', points: 4, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-012-chest', category: 'abcde', description: 'Auscultate chest - rule out wheeze, reduced air entry', points: 4, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-012-equal', category: 'abcde', description: 'Check for symmetry (unilateral = concern)', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-012-glucose', category: 'abcde', description: 'Check blood glucose (patient fasting)', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-012-vitals', category: 'abcde', description: 'Full vital signs', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-012-rule-out', category: 'abcde', description: 'Systematically rule out PE, pneumothorax, asthma', points: 4, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-012-breathing-coach', category: 'intervention', description: 'Breathing coaching: slow, controlled technique', points: 5, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-012-hx', category: 'history', description: 'History: respiratory disease, triggers, caffeine intake', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-012-sample', category: 'history', description: 'SAMPLE history', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-012-document', category: 'documentation', description: 'Document assessment, SpO2, and response to treatment', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] }
     ],
     teachingPoints: [
       'SpO2 of 100% in a "short of breath" patient is a key indicator of hyperventilation, not hypoxia',
@@ -2649,6 +2659,7 @@ export const firstYearCases: CaseScenario[] = [
         interventions: []
       },
       exposure: {
+        temperature: 36.8,
         findings: ['No oedema', 'No rash', 'Slightly overweight', 'No JVD'],
         interventions: []
       }
@@ -2745,19 +2756,19 @@ export const firstYearCases: CaseScenario[] = [
       ]
     },
     studentChecklist: [
-      { id: 'y1-013-scene', category: 'safety', description: 'Scene safety', points: 2, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-013-intro', category: 'communication', description: 'Introduction and reassurance', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-013-pulse', category: 'abcde', description: 'Assess pulse: rate, rhythm, regularity', points: 5, yearLevel: ['1st-year'], complexity: ['basic'], critical: true, rationale: 'Distinguishing regular from irregular tachycardia guides management' },
-      { id: 'y1-013-red-flags', category: 'history', description: 'Ask about cardiac red flags: chest pain, syncope, dyspnoea', points: 5, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-013-vitals', category: 'abcde', description: 'Full vital signs including BP', points: 4, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-013-sample', category: 'history', description: 'SAMPLE history with cardiac and medication focus', points: 4, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-013-cardiac-hx', category: 'history', description: 'Cardiac history: previous episodes, family history', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-013-caffeine', category: 'history', description: 'Ask about stimulant intake (caffeine, energy drinks)', points: 2, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-013-chest', category: 'abcde', description: 'Chest auscultation: heart sounds and lung fields', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-013-jvd', category: 'abcde', description: 'Check JVD and peripheral oedema', points: 2, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-013-vagal', category: 'intervention', description: 'Consider vagal manoeuvres (Valsalva)', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-013-reassure', category: 'communication', description: 'Reassure patient and explain findings', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-013-document', category: 'documentation', description: 'Document pulse characteristics, red flag screen, and assessment', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] }
+      { id: 'y1-013-scene', category: 'safety', description: 'Scene safety', points: 2, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-013-intro', category: 'communication', description: 'Introduction and reassurance', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-013-pulse', category: 'abcde', description: 'Assess pulse: rate, rhythm, regularity', points: 5, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true, rationale: 'Distinguishing regular from irregular tachycardia guides management' },
+      { id: 'y1-013-red-flags', category: 'history', description: 'Ask about cardiac red flags: chest pain, syncope, dyspnoea', points: 5, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-013-vitals', category: 'abcde', description: 'Full vital signs including BP', points: 4, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-013-sample', category: 'history', description: 'SAMPLE history with cardiac and medication focus', points: 4, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-013-cardiac-hx', category: 'history', description: 'Cardiac history: previous episodes, family history', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-013-caffeine', category: 'history', description: 'Ask about stimulant intake (caffeine, energy drinks)', points: 2, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-013-chest', category: 'abcde', description: 'Chest auscultation: heart sounds and lung fields', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-013-jvd', category: 'abcde', description: 'Check JVD and peripheral oedema', points: 2, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-013-vagal', category: 'intervention', description: 'Consider vagal manoeuvres (Valsalva)', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-013-reassure', category: 'communication', description: 'Reassure patient and explain findings', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-013-document', category: 'documentation', description: 'Document pulse characteristics, red flag screen, and assessment', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] }
     ],
     teachingPoints: [
       'Always assess pulse for rate, rhythm, and regularity - this guides differential',
@@ -2852,6 +2863,7 @@ export const firstYearCases: CaseScenario[] = [
         interventions: ['Continue resuscitation', 'Reassess pupils after ROSC']
       },
       exposure: {
+        temperature: 36.2,
         findings: ['No obvious trauma', 'No medical alert bracelet', 'No obvious needle marks or medication patches'],
         interventions: ['Expose chest for AED pad placement', 'Check for medication patches before AED', 'Maintain dignity with crowd management']
       }
@@ -2932,18 +2944,18 @@ export const firstYearCases: CaseScenario[] = [
       ]
     },
     studentChecklist: [
-      { id: 'y1-014-scene', category: 'safety', description: 'Scene safety and BSI', points: 2, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-014-confirm', category: 'abcde', description: 'Confirm cardiac arrest (danger, response, send for help, no breathing, no pulse)', points: 5, yearLevel: ['1st-year'], complexity: ['basic'], critical: true, rationale: 'Systematic confirmation prevents starting CPR on a breathing patient' },
-      { id: 'y1-014-cpr-start', category: 'intervention', description: 'Start/take over CPR within 10 seconds of confirming arrest', points: 5, yearLevel: ['1st-year'], complexity: ['basic'], critical: true, rationale: 'Every second without compressions reduces survival' },
-      { id: 'y1-014-aed', category: 'intervention', description: 'Apply AED within 2 minutes, deliver shock if advised', points: 5, yearLevel: ['1st-year'], complexity: ['basic'], critical: true, rationale: 'Early defibrillation is the single most important intervention in VF/VT arrest' },
-      { id: 'y1-014-quality', category: 'intervention', description: 'High-quality compressions: rate 100-120/min, depth 5-6cm, full recoil', points: 5, yearLevel: ['1st-year'], complexity: ['basic'], critical: true, rationale: 'Poor quality CPR significantly reduces survival' },
-      { id: 'y1-014-bvm', category: 'intervention', description: 'Effective BVM ventilation with visible chest rise', points: 4, yearLevel: ['1st-year'], complexity: ['basic'], critical: true, rationale: 'Adequate ventilation is essential for oxygenation during CPR' },
-      { id: 'y1-014-interruptions', category: 'intervention', description: 'Minimise interruptions to compressions (<10 seconds for rhythm check)', points: 4, yearLevel: ['1st-year'], complexity: ['basic'], critical: true, rationale: 'Pauses in compressions allow coronary perfusion pressure to drop' },
-      { id: 'y1-014-rotate', category: 'intervention', description: 'Rotate compressors every 2 minutes', points: 3, yearLevel: ['1st-year'], complexity: ['basic'], critical: true, rationale: 'Compressor fatigue degrades CPR quality after 2 minutes' },
-      { id: 'y1-014-opa', category: 'intervention', description: 'OPA sizing and insertion', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-014-rosc', category: 'abcde', description: 'Recognise signs of ROSC and manage accordingly', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-014-handover', category: 'communication', description: 'Structured handover to ALS team (arrest time, CPR details, shocks, ROSC)', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-014-document', category: 'documentation', description: 'Document arrest time, CPR timeline, shocks delivered, and outcomes', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] }
+      { id: 'y1-014-scene', category: 'safety', description: 'Scene safety and BSI', points: 2, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-014-confirm', category: 'abcde', description: 'Confirm cardiac arrest (danger, response, send for help, no breathing, no pulse)', points: 5, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true, rationale: 'Systematic confirmation prevents starting CPR on a breathing patient' },
+      { id: 'y1-014-cpr-start', category: 'intervention', description: 'Start/take over CPR within 10 seconds of confirming arrest', points: 5, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true, rationale: 'Every second without compressions reduces survival' },
+      { id: 'y1-014-aed', category: 'intervention', description: 'Apply AED within 2 minutes, deliver shock if advised', points: 5, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true, rationale: 'Early defibrillation is the single most important intervention in VF/VT arrest' },
+      { id: 'y1-014-quality', category: 'intervention', description: 'High-quality compressions: rate 100-120/min, depth 5-6cm, full recoil', points: 5, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true, rationale: 'Poor quality CPR significantly reduces survival' },
+      { id: 'y1-014-bvm', category: 'intervention', description: 'Effective BVM ventilation with visible chest rise', points: 4, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true, rationale: 'Adequate ventilation is essential for oxygenation during CPR' },
+      { id: 'y1-014-interruptions', category: 'intervention', description: 'Minimise interruptions to compressions (<10 seconds for rhythm check)', points: 4, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true, rationale: 'Pauses in compressions allow coronary perfusion pressure to drop' },
+      { id: 'y1-014-rotate', category: 'intervention', description: 'Rotate compressors every 2 minutes', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'], critical: true, rationale: 'Compressor fatigue degrades CPR quality after 2 minutes' },
+      { id: 'y1-014-opa', category: 'intervention', description: 'OPA sizing and insertion', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-014-rosc', category: 'abcde', description: 'Recognise signs of ROSC and manage accordingly', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-014-handover', category: 'communication', description: 'Structured handover to ALS team (arrest time, CPR details, shocks, ROSC)', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-014-document', category: 'documentation', description: 'Document arrest time, CPR timeline, shocks delivered, and outcomes', points: 3, yearLevel: ['1st-year', 'diploma'], complexity: ['basic'] }
     ],
     teachingPoints: [
       'Confirm cardiac arrest: unresponsive + not breathing normally + no pulse (take no more than 10 seconds)',
@@ -3142,21 +3154,21 @@ export const firstYearCases: CaseScenario[] = [
       ]
     },
     studentChecklist: [
-      { id: 'y1-015-scene', category: 'safety', description: 'Scene safety and BSI', points: 2, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-015-recognise', category: 'abcde', description: 'Recognise anaphylaxis: skin + airway/breathing + circulation involvement', points: 5, yearLevel: ['1st-year'], complexity: ['basic'], critical: true, rationale: 'Anaphylaxis requires multi-system involvement — skin alone is allergic reaction, not anaphylaxis' },
-      { id: 'y1-015-adrenaline', category: 'intervention', description: 'Administer IM adrenaline 0.5mg (anterolateral thigh) promptly', points: 10, yearLevel: ['1st-year'], complexity: ['basic'], critical: true, rationale: 'IM adrenaline is the ONLY life-saving treatment in anaphylaxis — delays cost lives' },
-      { id: 'y1-015-oxygen', category: 'intervention', description: 'High-flow oxygen 15L/min via non-rebreather', points: 4, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-015-position', category: 'intervention', description: 'Appropriate positioning — flat with legs elevated (or sitting if respiratory distress)', points: 3, yearLevel: ['1st-year'], complexity: ['basic'], critical: true, rationale: 'Laying flat improves venous return in distributive shock — but respiratory distress may require sitting' },
-      { id: 'y1-015-help', category: 'communication', description: 'Call for help / backup early', points: 3, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-015-abcde', category: 'abcde', description: 'Systematic ABCDE assessment', points: 4, yearLevel: ['1st-year'], complexity: ['basic'], critical: true },
-      { id: 'y1-015-vitals', category: 'abcde', description: 'Full vital signs including BP', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-015-history', category: 'history', description: 'Allergy history: known allergens, previous reactions, EpiPen availability', points: 4, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-015-sample', category: 'history', description: 'SAMPLE history', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-015-reassess', category: 'abcde', description: 'Reassess after adrenaline — repeat at 5 minutes if no improvement', points: 4, yearLevel: ['1st-year'], complexity: ['basic'], critical: true, rationale: 'Adrenaline may need repeating — always reassess response' },
+      { id: 'y1-015-scene', category: 'safety', description: 'Scene safety and BSI', points: 2, yearLevel: ['1st-year', '2nd-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-015-recognise', category: 'abcde', description: 'Recognise anaphylaxis: skin + airway/breathing + circulation involvement', points: 5, yearLevel: ['1st-year', '2nd-year', 'diploma'], complexity: ['basic'], critical: true, rationale: 'Anaphylaxis requires multi-system involvement — skin alone is allergic reaction, not anaphylaxis' },
+      { id: 'y1-015-adrenaline', category: 'intervention', description: 'Administer IM adrenaline 0.5mg (anterolateral thigh) promptly', points: 10, yearLevel: ['1st-year', '2nd-year', 'diploma'], complexity: ['basic'], critical: true, rationale: 'IM adrenaline is the ONLY life-saving treatment in anaphylaxis — delays cost lives' },
+      { id: 'y1-015-oxygen', category: 'intervention', description: 'High-flow oxygen 15L/min via non-rebreather', points: 4, yearLevel: ['1st-year', '2nd-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-015-position', category: 'intervention', description: 'Appropriate positioning — flat with legs elevated (or sitting if respiratory distress)', points: 3, yearLevel: ['1st-year', '2nd-year', 'diploma'], complexity: ['basic'], critical: true, rationale: 'Laying flat improves venous return in distributive shock — but respiratory distress may require sitting' },
+      { id: 'y1-015-help', category: 'communication', description: 'Call for help / backup early', points: 3, yearLevel: ['1st-year', '2nd-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-015-abcde', category: 'abcde', description: 'Systematic ABCDE assessment', points: 4, yearLevel: ['1st-year', '2nd-year', 'diploma'], complexity: ['basic'], critical: true },
+      { id: 'y1-015-vitals', category: 'abcde', description: 'Full vital signs including BP', points: 3, yearLevel: ['1st-year', '2nd-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-015-history', category: 'history', description: 'Allergy history: known allergens, previous reactions, EpiPen availability', points: 4, yearLevel: ['1st-year', '2nd-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-015-sample', category: 'history', description: 'SAMPLE history', points: 3, yearLevel: ['1st-year', '2nd-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-015-reassess', category: 'abcde', description: 'Reassess after adrenaline — repeat at 5 minutes if no improvement', points: 4, yearLevel: ['1st-year', '2nd-year', 'diploma'], complexity: ['basic'], critical: true, rationale: 'Adrenaline may need repeating — always reassess response' },
       { id: 'y1-015-fluids', category: 'intervention', description: 'IV access and fluid bolus if trained', points: 3, yearLevel: ['2nd-year'], complexity: ['basic'] },
-      { id: 'y1-015-monitor', category: 'abcde', description: 'Continuous monitoring of airway, breathing, and circulation', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-015-transport', category: 'communication', description: 'Pre-alert hospital and rapid transport', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] },
-      { id: 'y1-015-document', category: 'documentation', description: 'Document allergen, time of exposure, time of adrenaline, response', points: 3, yearLevel: ['1st-year'], complexity: ['basic'] }
+      { id: 'y1-015-monitor', category: 'abcde', description: 'Continuous monitoring of airway, breathing, and circulation', points: 3, yearLevel: ['1st-year', '2nd-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-015-transport', category: 'communication', description: 'Pre-alert hospital and rapid transport', points: 3, yearLevel: ['1st-year', '2nd-year', 'diploma'], complexity: ['basic'] },
+      { id: 'y1-015-document', category: 'documentation', description: 'Document allergen, time of exposure, time of adrenaline, response', points: 3, yearLevel: ['1st-year', '2nd-year', 'diploma'], complexity: ['basic'] }
     ],
     teachingPoints: [
       'Anaphylaxis = acute multi-system allergic reaction involving airway/breathing AND/OR circulation — skin signs alone are NOT anaphylaxis',

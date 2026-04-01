@@ -90,7 +90,7 @@ export function ObjectiveSetupPanel({
   return (
     <div className="space-y-6 animate-fade-in-up">
       {/* Header */}
-      <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
+      <Card className="border-primary/20 bg-primary/5">
         <CardContent className="p-6">
           <div className="flex items-center gap-3 mb-2">
             <div className="p-2 rounded-lg bg-primary/20">
@@ -252,7 +252,7 @@ export function ObjectiveSetupPanel({
             <Button
               onClick={handleConfirm}
               disabled={selectedSkills.length === 0}
-              className="flex-1 btn-glow bg-gradient-to-r from-primary to-primary/90"
+              className="flex-1 bg-primary"
             >
               <Sparkles className="w-4 h-4 mr-2" />
               Generate Guided Case

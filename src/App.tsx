@@ -32,12 +32,12 @@ const ClinicalReferenceDialog = lazy(() => import('@/components/ClinicalReferenc
 const TreatmentsPanel = lazy(() => import('@/components/TreatmentsPanel').then(m => ({ default: m.TreatmentsPanel })));
 const TreatmentApplicationPanel = lazy(() => import('@/components/TreatmentApplicationPanel').then(m => ({ default: m.TreatmentApplicationPanel })));
 const VitalSignsMonitor = lazy(() => import('@/components/VitalSignsMonitor').then(m => ({ default: m.VitalSignsMonitor })));
-const GlassNavigation = lazy(() => import('@/components/GlassNavigation').then(m => ({ default: m.GlassNavigation })));
+const GlassNavigation = lazy(() => import('@/components/TabNavigation').then(m => ({ default: m.TabNavigation })));
 const InstructorNotesPanel = lazy(() => import('@/components/InstructorNotesPanel').then(m => ({ default: m.InstructorNotesPanel })));
 const ObjectiveSetupPanel = lazy(() => import('@/components/ObjectiveSetupPanel').then(m => ({ default: m.ObjectiveSetupPanel })));
 const PreBriefingPanel = lazy(() => import('@/components/PreBriefingPanel').then(m => ({ default: m.PreBriefingPanel })));
 import { ComplicationPanel, useComplicationManager } from '@/components/ComplicationManager';
-import type { GlassLayer } from '@/components/GlassNavigation';
+import type { GlassLayer } from '@/components/TabNavigation';
 
 // Enhanced loading card component with skeleton UI
 function LoadingCard() {
@@ -79,14 +79,14 @@ const createSessionFromCase = (caseData: CaseScenario, yearLevel: StudentYear): 
 function EmptyState({ onGenerate }: { onGenerate: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 px-4 animate-fade-in">
-      <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mb-6 animate-float">
+      <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mb-6">
         <Activity className="w-12 h-12 text-primary/60" />
       </div>
       <h3 className="text-xl font-semibold mb-2">No Case Generated Yet</h3>
       <p className="text-muted-foreground text-center max-w-md mb-6">
         Generate your first case to start training. Select your year level and preferred category, then click Generate.
       </p>
-      <Button onClick={onGenerate} size="lg" className="gap-2 btn-glow">
+      <Button onClick={onGenerate} size="lg" className="gap-2">
         <Sparkles className="h-4 w-4" />
         Generate First Case
       </Button>
@@ -98,13 +98,7 @@ type UserRole = 'none' | 'educator' | 'student';
 
 function RoleSelection({ onSelect }: { onSelect: (role: UserRole) => void }) {
   return (
-    <div className="min-h-screen bg-background bg-mesh flex flex-col relative overflow-hidden">
-      {/* Decorative background orbs */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-[600px] h-[600px] bg-primary/[0.04] rounded-full blur-[100px]" />
-        <div className="absolute -bottom-40 -left-40 w-[500px] h-[500px] bg-accent/[0.06] rounded-full blur-[100px]" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-primary/[0.02] rounded-full blur-[120px] rotate-12" />
-      </div>
+    <div className="min-h-screen bg-background flex flex-col relative overflow-hidden">
 
       {/* Top bar */}
       <div className="relative z-10 flex items-center justify-between px-8 py-5">
@@ -121,11 +115,11 @@ function RoleSelection({ onSelect }: { onSelect: (role: UserRole) => void }) {
         <div className="max-w-3xl w-full space-y-12">
           {/* Header */}
           <div className="text-center space-y-5">
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-primary to-primary/70 shadow-2xl shadow-primary/20 ring-[6px] ring-primary/[0.08]">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-primary ring-[6px] ring-primary/[0.08]">
               <Stethoscope className="h-10 w-10 text-primary-foreground" />
             </div>
             <div className="space-y-3">
-              <h1 className="heading-display text-[2.75rem] leading-[1.1]">
+              <h1 className="heading-clean text-[2.75rem] leading-[1.1]">
                 UAE Paramedic<br />Case Simulator
               </h1>
               <p className="text-muted-foreground text-lg max-w-md mx-auto leading-relaxed">
@@ -139,12 +133,10 @@ function RoleSelection({ onSelect }: { onSelect: (role: UserRole) => void }) {
             {/* Educator */}
             <button
               onClick={() => onSelect('educator')}
-              className="group relative flex flex-col rounded-3xl card-glass p-10 transition-all duration-500 hover:shadow-xl hover:-translate-y-2 text-left overflow-hidden"
+              className="group relative flex flex-col rounded-3xl bg-card border border-border p-10 transition-all duration-300 hover:shadow-md text-left overflow-hidden"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/0 to-emerald-500/0 group-hover:from-emerald-500/[0.04] group-hover:to-emerald-500/[0.08] transition-all duration-700" />
-              <div className="absolute inset-[0] rounded-3xl border border-transparent group-hover:border-emerald-500/20 transition-all duration-500" />
               <div className="relative z-10 flex flex-col items-center gap-6">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500/12 to-emerald-600/5 ring-2 ring-emerald-500/[0.08] group-hover:ring-emerald-500/25 group-hover:from-emerald-500/20 transition-all duration-500">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500/10 ring-2 ring-emerald-500/[0.08] group-hover:ring-emerald-500/25 transition-all duration-300">
                   <Users className="h-8 w-8 text-emerald-500" />
                 </div>
                 <div className="text-center space-y-2.5">
@@ -168,12 +160,10 @@ function RoleSelection({ onSelect }: { onSelect: (role: UserRole) => void }) {
             {/* Student */}
             <button
               onClick={() => onSelect('student')}
-              className="group relative flex flex-col rounded-3xl card-glass p-10 transition-all duration-500 hover:shadow-xl hover:-translate-y-2 text-left overflow-hidden"
+              className="group relative flex flex-col rounded-3xl bg-card border border-border p-10 transition-all duration-300 hover:shadow-md text-left overflow-hidden"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/0 to-blue-500/0 group-hover:from-blue-500/[0.04] group-hover:to-blue-500/[0.08] transition-all duration-700" />
-              <div className="absolute inset-[0] rounded-3xl border border-transparent group-hover:border-blue-500/20 transition-all duration-500" />
               <div className="relative z-10 flex flex-col items-center gap-6">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500/12 to-blue-600/5 ring-2 ring-blue-500/[0.08] group-hover:ring-blue-500/25 group-hover:from-blue-500/20 transition-all duration-500">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-500/10 ring-2 ring-blue-500/[0.08] group-hover:ring-blue-500/25 transition-all duration-300">
                   <GraduationCap className="h-8 w-8 text-blue-500" />
                 </div>
                 <div className="text-center space-y-2.5">
@@ -197,7 +187,7 @@ function RoleSelection({ onSelect }: { onSelect: (role: UserRole) => void }) {
 
           {/* Stats bar */}
           <div className="flex items-center justify-center">
-            <div className="frosted rounded-2xl px-8 py-4 flex items-center gap-10">
+            <div className="bg-muted/50 border border-border rounded-xl px-8 py-4 flex items-center gap-10">
               <div className="flex items-center gap-2.5 text-sm">
                 <div className="w-2 h-2 rounded-full bg-primary" />
                 <span className="font-medium">{allCases.length}+ Cases</span>
@@ -835,17 +825,17 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
   }, [currentCase, goHome, generateCase]);
 
   return (
-    <div className="min-h-screen bg-background paper-texture">
-      {/* Enhanced Header with glassmorphism */}
-      <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 transition-all duration-300">
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="sticky top-0 z-50 bg-background border-b border-border transition-all duration-300">
         <div className="container mx-auto px-3 sm:px-4 py-2.5 sm:py-4">
           <div className="flex items-center justify-between">
             {/* Logo - Clickable to go home */}
             <button
               onClick={goHome}
-              className="flex items-center gap-3 group btn-press"
+              className="flex items-center gap-3 group"
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 group-hover:from-primary/30 group-hover:to-primary/10 transition-all duration-300 shadow-sm group-hover:shadow-md">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 transition-all duration-300">
                 <Stethoscope className="h-5 w-5 text-primary group-hover:scale-110 transition-transform duration-300" />
               </div>
               <div className="text-left min-w-0">
@@ -880,7 +870,7 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
                     size="sm"
                     onClick={generateCase}
                     disabled={isGenerating}
-                    className="gap-1 btn-glow"
+                    className="gap-1"
                   >
                     {isGenerating ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -904,7 +894,7 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
             <div className="hidden sm:flex items-center gap-2 mt-3 text-sm text-muted-foreground border-t pt-3 animate-fade-in">
               <button
                 onClick={goHome}
-                className="hover:text-primary transition-colors flex items-center gap-1 btn-press"
+                className="hover:text-primary transition-colors flex items-center gap-1"
               >
                 <Home className="h-3 w-3" />
                 Home
@@ -913,7 +903,7 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
               <span className="text-foreground font-medium truncate max-w-[300px]">
                 {currentCase.title}
               </span>
-              <Badge variant="outline" className="text-[10px] ml-2 animate-pop-in">
+              <Badge variant="outline" className="text-[10px] ml-2 ">
                 {categoryLookup[currentCase.category]?.label}
               </Badge>
             </div>
@@ -951,17 +941,14 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
           <div className="animate-fade-in space-y-8">
             {/* Professional Hero Section */}
             <div className="mx-auto max-w-3xl">
-              <Card className="overflow-hidden relative border-0 shadow-2xl shadow-primary/10">
-                {/* Gradient Background */}
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-secondary/10 pointer-events-none" />
-                <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-primary/5 to-transparent pointer-events-none" />
+              <Card className="overflow-hidden relative border border-border shadow-sm">
                 
                 <CardHeader className="text-center relative pb-2">
                   {/* Animated Icon Badge */}
-                  <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary/70 shadow-xl shadow-primary/20 animate-float">
+                  <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-primary shadow-sm">
                     <Stethoscope className="h-10 w-10 text-primary-foreground" />
                   </div>
-                  <CardTitle className="heading-display text-3xl">
+                  <CardTitle className="heading-clean text-3xl">
                     Paramedic Case Generator
                   </CardTitle>
                   <p className="text-base text-muted-foreground mt-2 max-w-md mx-auto leading-relaxed">
@@ -982,8 +969,8 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
                           key={year.value}
                           onClick={() => setSelectedYear(year.value as StudentYear)}
                           className={`group relative flex flex-col items-center gap-2 rounded-xl border-2 p-4 transition-all duration-300 ${selectedYear === year.value
-                            ? 'border-primary bg-gradient-to-br from-primary/15 to-primary/5 shadow-lg shadow-primary/10 scale-[1.02]'
-                            : 'border-border/50 bg-card hover:border-primary/40 hover:bg-muted/50 hover:shadow-md hover:-translate-y-0.5'
+                            ? 'border-primary bg-primary/10 shadow-sm'
+                            : 'border-border/50 bg-card hover:border-primary/40 hover:bg-muted/50'
                             }`}
                           style={{ animationDelay: `${index * 75}ms` }}
                         >
@@ -1040,7 +1027,7 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
                       onClick={() => generateCase()}
                       disabled={isGenerating}
                       size="lg"
-                      className="w-full gap-3 text-lg py-7 font-semibold shadow-xl shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 bg-gradient-to-r from-primary to-primary/90"
+                      className="w-full gap-3 text-lg py-7 font-semibold shadow-sm hover:shadow-md active:scale-[0.99] transition-all duration-200 bg-primary"
                     >
                       {isGenerating ? (
                         <>
@@ -1107,7 +1094,7 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
                   {caseCategories.map((cat, index) => (
                     <Card
                       key={cat.value}
-                      className={`group cursor-pointer border transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${
+                      className={`group cursor-pointer border transition-all duration-200 hover:shadow-sm ${
                         selectedCategory === cat.value 
                           ? 'border-primary bg-primary/5 shadow-md shadow-primary/10' 
                           : 'border-border/50 bg-card hover:border-primary/40 hover:bg-muted/30'
@@ -1143,7 +1130,7 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
                   <ClipboardCheck className="h-5 w-5 text-primary" />
                   Quick Guide
                 </h3>
-                <Card className="border-border/50 bg-gradient-to-br from-card to-muted/30">
+                <Card className="border-border/50 bg-card">
                   <CardContent className="p-4 space-y-4">
                     <div className="flex items-start gap-3">
                       <div className="flex-shrink-0 w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
@@ -1231,7 +1218,7 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
                 variant="ghost"
                 size="sm"
                 onClick={goHome}
-                className="gap-1 text-muted-foreground hover:text-foreground btn-press -ml-2 h-8 text-xs sm:text-sm sm:h-9"
+                className="gap-1 text-muted-foreground hover:text-foreground -ml-2 h-8 text-xs sm:text-sm sm:h-9"
               >
                 <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 <span className="hidden sm:inline">Back to Home</span>
@@ -1253,11 +1240,11 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
                 <div className="flex items-center gap-2 mb-2">
                   <Badge 
                     variant={currentCase.priority === 'critical' ? 'destructive' : currentCase.priority === 'high' ? 'default' : 'secondary'}
-                    className={`animate-pop-in ${currentCase.priority === 'critical' ? 'priority-critical' : ''}`}
+                    className={` ${currentCase.priority === 'critical' ? 'priority-critical' : ''}`}
                   >
                     {priorities.find(p => p.value === currentCase.priority)?.label}
                   </Badge>
-                  <Badge variant="outline" className="animate-pop-in stagger-1">
+                  <Badge variant="outline" className=" stagger-1">
                     {categoryLookup[currentCase.category]?.label}
                   </Badge>
                 </div>
@@ -1430,8 +1417,8 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
 
                         {/* Checklist */}
                         {session && (
-                          <Card className="border-2 border-primary/30 shadow-lg shadow-primary/5 card-interactive animate-fade-in-up">
-                            <CardHeader className="pb-3 bg-gradient-to-r from-primary/5 to-transparent">
+                          <Card className="border-2 border-primary/30 shadow-lg shadow-primary/5 animate-fade-in-up">
+                            <CardHeader className="pb-3">
                               <div className="flex items-center justify-between">
                                 <CardTitle className="flex items-center gap-2 text-base">
                                   <div className="p-1.5 rounded-lg bg-primary/10">
@@ -1466,7 +1453,7 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
                                 >
                                   <div className="mt-0.5 flex-shrink-0">
                                     {session.completedItems.includes(item.id) ? (
-                                      <CheckCircle2 className="h-5 w-5 text-green-600 animate-pop-in" />
+                                      <CheckCircle2 className="h-5 w-5 text-green-600 " />
                                     ) : (
                                       <div className={`h-5 w-5 rounded border-2 transition-colors ${item.critical ? 'border-red-400 hover:border-red-500' : 'border-muted-foreground/30 hover:border-primary/50'}`} />
                                     )}

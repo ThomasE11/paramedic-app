@@ -42,8 +42,8 @@ export const TREATMENT_YEAR_ACCESS: Record<string, StudentYear[]> = {
   oxygen_mask:          ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
   oxygen_nonrebreather: ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
 
-  // ----- BREATHING (Year 2+) -----
-  bvm_ventilation:      ['2nd-year', '3rd-year', '4th-year'],
+  // ----- BREATHING (BVM — all years, core CPR skill taught in Year 1) -----
+  bvm_ventilation:      ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
   nebulizer_salbutamol: ['2nd-year', '3rd-year', '4th-year'],
   nebulizer_ipratropium:['2nd-year', '3rd-year', '4th-year'],
   nebulised_adrenaline: ['2nd-year', '3rd-year', '4th-year'],
@@ -68,7 +68,7 @@ export const TREATMENT_YEAR_ACCESS: Record<string, StudentYear[]> = {
   fluids_250ml:         ['2nd-year', '3rd-year', '4th-year'],
   fluids_500ml:         ['2nd-year', '3rd-year', '4th-year'],
   fluids_1000ml:        ['2nd-year', '3rd-year', '4th-year'],
-  pelvic_binder:        ['2nd-year', '3rd-year', '4th-year'],
+  pelvic_binder:        ['diploma', '1st-year', '2nd-year', '3rd-year', '4th-year'],
   io_access:            ['2nd-year', '3rd-year', '4th-year'],
 
   // ----- MEDICATIONS (Year 1 / Diploma — basic meds) -----

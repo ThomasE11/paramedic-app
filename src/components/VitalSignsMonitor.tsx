@@ -56,6 +56,8 @@ interface VitalSignsMonitorProps {
   appliedTreatments?: string[];
   /** Override rhythm from patient state — updates when treatment changes rhythm */
   overrideRhythm?: string;
+  /** Vitals revealed by ABCDE assessment — auto-show on monitor without tap-to-connect */
+  revealedVitals?: Set<string>;
   // Cardiac arrest CPR management — displayed on monitor
   cprState?: {
     active: boolean;
@@ -70,6 +72,8 @@ interface VitalSignsMonitorProps {
     onPauseCPR: () => void;
     onDefibrillate: () => void;
   };
+  /** Called when a LIFEPAK assessment (BGL, pain, temp, 12-lead) completes — awards scoring credit */
+  onAssessmentPerformed?: (stepId: string) => void;
 }
 
 // Assessment method definitions
@@ -162,7 +166,7 @@ class ClinicalAudioEngine {
   private heartbeatInterval: number | null = null;
   private bpInflateTimeout: number | null = null;
   private isPlaying = false;
-  private _volume = 0.15;
+  private _volume = 0.45;
   // Ready tone state — continuous tone after charge completes
   private readyToneOsc: OscillatorNode | null = null;
   private readyToneGain: GainNode | null = null;
@@ -198,7 +202,7 @@ class ClinicalAudioEngine {
         osc.frequency.value = 1000;
         osc.type = 'sine';
 
-        gain.gain.setValueAtTime(this._volume * 0.3, ctx.currentTime);
+        gain.gain.setValueAtTime(this._volume * 0.6, ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
 
         osc.start(ctx.currentTime);
@@ -245,7 +249,7 @@ class ClinicalAudioEngine {
             Math.sin(2 * Math.PI * 60 * t) * 0.6 +
             Math.sin(2 * Math.PI * 120 * t) * 0.3 +
             (Math.random() - 0.5) * 0.4
-          ) * envelope * this._volume * 0.4;
+          ) * envelope * this._volume * 0.6;
         }
       }
 
@@ -420,9 +424,9 @@ class ClinicalAudioEngine {
 // Result: clean, crisp waveform with no ghosting or trailing artifacts.
 // ============================================================================
 
-function ECGWaveform({ heartRate, color, height = 80, isVisible, waveformFn, showPacingSpikes, showShockArtifact, showSyncMarkers }: {
+function ECGWaveform({ heartRate, color, height = 80, isVisible, waveformFn, showPacingSpikes, showShockArtifact, showSyncMarkers, showCprArtifact }: {
   heartRate: number; color: string; height?: number; isVisible: boolean; waveformFn?: WaveformFn;
-  showPacingSpikes?: boolean; showShockArtifact?: boolean; showSyncMarkers?: boolean;
+  showPacingSpikes?: boolean; showShockArtifact?: boolean; showSyncMarkers?: boolean; showCprArtifact?: boolean;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number>(0);
@@ -510,6 +514,17 @@ function ECGWaveform({ heartRate, color, height = 80, isVisible, waveformFn, sho
         // Shock artifact: random noise
         if (showShockArtifact) {
           val = (Math.random() - 0.5) * 1.5;
+        }
+
+        // CPR artifact: large regular oscillations at ~100 compressions/min (1.67 Hz)
+        // Modelled as a broad sine wave that dominates the ECG during active compressions
+        if (showCprArtifact) {
+          const cprFreq = 100 / 60; // compressions per second
+          const cprPhase = (i / pixelsPerSec) * cprFreq;
+          const cprWave = Math.sin(cprPhase * 2 * Math.PI) * 0.75
+            + Math.sin(cprPhase * 2 * Math.PI * 2) * 0.15; // slight harmonic for realism
+          // Blend: CPR artifact is dominant but underlying rhythm still faintly visible
+          val = cprWave * 0.9 + val * 0.15;
         }
 
         buffer[bufIdx] = midY - val * (h * 0.38);
@@ -619,7 +634,7 @@ function ECGWaveform({ heartRate, color, height = 80, isVisible, waveformFn, sho
 
     return () => cancelAnimationFrame(animRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [heartRate, color, height, isVisible, waveformFn, !!showPacingSpikes, !!showShockArtifact, !!showSyncMarkers]);
+  }, [heartRate, color, height, isVisible, waveformFn, !!showPacingSpikes, !!showShockArtifact, !!showSyncMarkers, !!showCprArtifact]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!isVisible) return null;
 
@@ -1474,6 +1489,13 @@ function LP20Button({
 // MAIN LIFEPAK 20 MONITOR COMPONENT
 // ============================================================================
 
+// Map LIFEPAK vital keys to scoring framework assessment step IDs
+const VITAL_KEY_TO_STEP_ID: Record<string, string> = {
+  bloodGlucose: 'blood-glucose',
+  painScore: 'pain-assessment',
+  temperature: 'temperature',
+};
+
 export function VitalSignsMonitor({
   initialVitals,
   previousVitals,
@@ -1485,7 +1507,9 @@ export function VitalSignsMonitor({
   ecgFindings,
   appliedTreatments = [],
   overrideRhythm,
+  revealedVitals,
   cprState,
+  onAssessmentPerformed,
 }: VitalSignsMonitorProps) {
   const [currentVitals, setCurrentVitals] = useState<VitalSigns>(initialVitals);
   const [visibleVitals, setVisibleVitals] = useState<Set<string>>(new Set());
@@ -1495,6 +1519,27 @@ export function VitalSignsMonitor({
   const [alarmsEnabled, setAlarmsEnabled] = useState(true);
   const [activeAlarms, setActiveAlarms] = useState<Set<string>>(new Set());
   const [audioEnabled, setAudioEnabled] = useState(false);
+  // Track which assessment step IDs have already been reported to prevent repeated calls
+  const reportedAssessmentsRef = useRef(new Set<string>());
+  // Snapshot of vitals at last assessment — display these instead of live values
+  // so BP/SpO2/etc. don't change on-screen until the student re-assesses
+  const [assessedVitals, setAssessedVitals] = useState<Partial<VitalSigns>>({});
+
+  // Sync externally revealed vitals (from ABCDE assessments) into visibleVitals
+  useEffect(() => {
+    if (!revealedVitals || revealedVitals.size === 0) return;
+    if (!assessmentMode) {
+      // Only auto-reveal when assessment mode is off (bypass mode)
+      setVisibleVitals(prev => {
+        const next = new Set(prev);
+        let changed = false;
+        revealedVitals.forEach(v => {
+          if (!next.has(v)) { next.add(v); changed = true; }
+        });
+        return changed ? next : prev;
+      });
+    }
+  }, [revealedVitals, assessmentMode]);
 
   // LIFEPAK-specific states
   const [monitorMode, setMonitorMode] = useState<'monitor' | 'defib' | 'pacer'>('monitor');
@@ -1721,7 +1766,7 @@ export function VitalSignsMonitor({
     const pulse = parseInt(String(currentVitals.pulse)) || 80;
     const spo2 = currentVitals.spo2 || 98;
     const respiration = currentVitals.respiration || 16;
-    const gcs = currentVitals.gcs || 15;
+    const gcs = Math.round(currentVitals.gcs || 15);
     const bpParts = String(currentVitals.bp || '120/80').split('/');
     const systolic = parseInt(bpParts[0]) || 120;
     const temp = currentVitals.temperature || 36.5;
@@ -1809,6 +1854,35 @@ export function VitalSignsMonitor({
         // If pain assessment completed but painScore was not in initial vitals, set a default
         if (completed.includes('painScore') && currentVitals.painScore === undefined) {
           setCurrentVitals(prev => ({ ...prev, painScore: 0 }));
+        }
+
+        // Snapshot current vital values at time of assessment — display freezes until re-assessed
+        setAssessedVitals(prev => {
+          const next = { ...prev };
+          completed.forEach(key => {
+            if (key === 'bp') next.bp = currentVitals.bp;
+            if (key === 'pulse') next.pulse = currentVitals.pulse;
+            if (key === 'spo2') next.spo2 = currentVitals.spo2;
+            if (key === 'respiration') next.respiration = currentVitals.respiration;
+            if (key === 'temperature') next.temperature = currentVitals.temperature;
+            if (key === 'bloodGlucose') next.bloodGlucose = currentVitals.bloodGlucose;
+            if (key === 'gcs') next.gcs = currentVitals.gcs;
+            if (key === 'painScore') next.painScore = currentVitals.painScore ?? 0;
+            if (key === 'etco2') next.etco2 = currentVitals.etco2;
+          });
+          return next;
+        });
+
+        // Award assessment scoring credit for BGL, pain, and temperature via LIFEPAK
+        // Guard: only fire onAssessmentPerformed once per stepId to prevent repeated prompts
+        if (onAssessmentPerformed) {
+          completed.forEach(key => {
+            const stepId = VITAL_KEY_TO_STEP_ID[key];
+            if (stepId && !reportedAssessmentsRef.current.has(stepId)) {
+              reportedAssessmentsRef.current.add(stepId);
+              onAssessmentPerformed(stepId);
+            }
+          });
         }
 
         if (audioEnabled && audioEngineRef.current && completed.includes('spo2')) {
@@ -2449,6 +2523,7 @@ export function VitalSignsMonitor({
                   showPacingSpikes={pacerActive && monitorMode === 'pacer'}
                   showShockArtifact={shockArtifact}
                   showSyncMarkers={syncMode && monitorMode === 'defib'}
+                  showCprArtifact={cprState?.running === true}
                 />
                 {!visibleVitals.has('pulse') && (
                   <div className="h-[70px] flex items-center justify-center"
@@ -2591,7 +2666,7 @@ export function VitalSignsMonitor({
                       ? 'text-amber-400 text-3xl sm:text-4xl'
                       : 'text-cyan-400 text-3xl sm:text-4xl'
                 }`}>
-                  {visibleVitals.has('spo2') ? Math.round(currentVitals.spo2) : '---'}
+                  {visibleVitals.has('spo2') ? Math.round(assessedVitals.spo2 ?? currentVitals.spo2) : '---'}
                 </div>
               </div>
 
@@ -2608,7 +2683,7 @@ export function VitalSignsMonitor({
                     getVitalAlarmState('bp').isAlarm ? 'text-red-500' :
                     getVitalAlarmState('bp').isWarning ? 'text-amber-400' : 'text-white'
                   }`}>
-                    {currentVitals.bp}
+                    {assessedVitals.bp || currentVitals.bp}
                   </div>
                 ) : activeAssessments.has('bp') ? (
                   <div>
@@ -2706,7 +2781,7 @@ export function VitalSignsMonitor({
                       ? getVitalAlarmState('gcs').isAlarm ? 'text-red-500' : 'text-white'
                       : 'text-white/20'
                   }`}>
-                    {visibleVitals.has('gcs') ? currentVitals.gcs : '---'}
+                    {visibleVitals.has('gcs') ? Math.round(currentVitals.gcs) : '---'}
                   </div>
                 </div>
               )}
@@ -2890,7 +2965,13 @@ export function VitalSignsMonitor({
             <LP20Button
               label="12-LEAD"
               sublabel="ECG"
-              onClick={() => setShow12Lead(!show12Lead)}
+              onClick={() => {
+                if (!show12Lead) {
+                  // Opening 12-lead — award assessment credit once
+                  onAssessmentPerformed?.('12-lead-ecg');
+                }
+                setShow12Lead(!show12Lead);
+              }}
               variant={show12Lead ? 'green' : 'default'}
               active={show12Lead}
             />
@@ -3170,7 +3251,7 @@ export function VitalSignsMonitor({
                       <span className="text-[9px] font-mono text-gray-300">GCS</span>
                       <span className={`text-sm font-mono font-bold ${
                         getVitalAlarmState('gcs').isAlarm ? 'text-red-400' : 'text-white'
-                      }`}>{currentVitals.gcs}/15</span>
+                      }`}>{Math.round(currentVitals.gcs)}/15</span>
                     </div>
                   )}
                   {currentVitals.bloodGlucose !== undefined && visibleVitals.has('bloodGlucose') && (

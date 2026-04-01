@@ -209,7 +209,7 @@ export function SessionTimer({
       {/* Alarm Overlay */}
       {showAlarm && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
-          <div className="bg-gradient-to-br from-red-600 to-red-700 text-white p-8 rounded-2xl shadow-2xl text-center max-w-md mx-4 animate-pop-in">
+          <div className="bg-red-600 text-white p-8 rounded-2xl shadow-sm text-center max-w-md mx-4 animate-fade-in">
             <div className="relative">
               <AlarmClock className="w-20 h-20 mx-auto mb-4 animate-bounce" />
               <div className="absolute inset-0 animate-ping opacity-30">
@@ -231,7 +231,7 @@ export function SessionTimer({
       )}
 
       {/* Timer Card */}
-      <Card className={`card-interactive ${className}`}>
+      <Card className={`${className}`}>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2 text-base">
@@ -276,9 +276,8 @@ export function SessionTimer({
               <div
                 className={`h-full bg-gradient-to-r ${getTimeGradient()} transition-all duration-1000 ease-linear relative`}
                 style={{ width: `${progressPercent}%` }}
-              >
-                <div className="absolute inset-0 bg-white/20 animate-shimmer" />
-              </div>
+              />
+
             </div>
 
             {/* Time markers */}
@@ -295,7 +294,7 @@ export function SessionTimer({
               <Button
                 onClick={startTimer}
                 size="lg"
-                className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-lg btn-glow"
+                className="bg-green-600 hover:bg-green-700 text-white"
               >
                 <Play className="w-5 h-5 mr-2" />
                 Start Case
@@ -316,7 +315,7 @@ export function SessionTimer({
                   <Button
                     onClick={resumeTimer}
                     size="lg"
-                    className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
                   >
                     <Play className="w-5 h-5 mr-2" />
                     Resume

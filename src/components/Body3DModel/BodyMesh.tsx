@@ -58,15 +58,15 @@ interface ExtendedRegionRange extends RegionRange {
 }
 
 const REGION_RANGES: ExtendedRegionRange[] = [
-  { id: 'head', label: 'Head', description: 'Inspect and palpate scalp, skull, ears', yMin: 1.71, yMax: 1.81 },
-  { id: 'face', label: 'Face', description: 'Eyes, nose, mouth, jaw, facial symmetry', yMin: 1.565, yMax: 1.71 },
+  { id: 'head', label: 'Head', description: 'Inspect and palpate scalp, skull, ears', yMin: 1.71, yMax: 1.81, highlightRadius: 0.18 },
+  { id: 'face', label: 'Face', description: 'Eyes, nose, mouth, jaw, facial symmetry', yMin: 1.565, yMax: 1.71, highlightRadius: 0.15 },
   { id: 'neck-cspine', label: 'Neck & C-Spine', description: 'Trachea, JVD, C-spine, subcutaneous emphysema', yMin: 1.44, yMax: 1.565 },
   { id: 'chest', label: 'Chest', description: 'Inspect, palpate, percuss, auscultate', yMin: 1.20, yMax: 1.44 },
   { id: 'abdomen', label: 'Abdomen', description: 'Inspect, auscultate, percuss, palpate', yMin: 0.98, yMax: 1.20 },
   { id: 'pelvis', label: 'Pelvis', description: 'Stability test, perineal inspection', yMin: 0.83, yMax: 0.98 },
   // Arms — positioned laterally (x offset from center)
-  { id: 'right-arm', label: 'Right Arm', description: 'Pulses, sensation, motor, deformity', yMin: 0.60, yMax: 1.40, xOffset: -0.45, highlightRadius: 0.08 },
-  { id: 'left-arm', label: 'Left Arm', description: 'Pulses, sensation, motor, deformity', yMin: 0.60, yMax: 1.40, xOffset: 0.45, highlightRadius: 0.08 },
+  { id: 'right-arm', label: 'Right Arm', description: 'Pulses, sensation, motor, deformity', yMin: 0.40, yMax: 1.40, xOffset: -0.45, highlightRadius: 0.14 },
+  { id: 'left-arm', label: 'Left Arm', description: 'Pulses, sensation, motor, deformity', yMin: 0.40, yMax: 1.40, xOffset: 0.45, highlightRadius: 0.14 },
   // Legs — positioned laterally
   { id: 'right-leg', label: 'Right Leg', description: 'Pulses, sensation, motor, deformity', yMin: 0.0, yMax: 0.83, xOffset: -0.10, highlightRadius: 0.08 },
   { id: 'left-leg', label: 'Left Leg', description: 'Pulses, sensation, motor, deformity', yMin: 0.0, yMax: 0.83, xOffset: 0.10, highlightRadius: 0.08 },
@@ -89,23 +89,31 @@ function getRegionAtPoint(point: THREE.Vector3): RegionRange | null {
   }
 
   // Arms detection: if click is lateral (|X| > threshold) AND in the
-  // torso Y range, it's an arm, not chest/abdomen. The model's arms
+  // arm Y range, it's an arm, not chest/abdomen. The model's arms
   // extend outward from X ≈ ±0.20 at shoulders to ±0.85 at hands.
   //
   // Use a graduated X threshold: near the shoulder (Y 1.2-1.44) the arms
   // are closer to the body midline, so use a lower threshold (0.15).
   // Below the shoulder (Y < 1.2) arms extend further out, use 0.20.
+  // Arms extend down to Y ≈ 0.40 (hands/wrists) on most models.
   const absX = Math.abs(point.x);
   const armXThreshold = point.y >= 1.20 ? 0.15 : 0.20;
-  if (absX > armXThreshold && point.y >= 0.60 && point.y < 1.44) {
+  if (absX > armXThreshold && point.y >= 0.40 && point.y < 1.44) {
     // Determine which arm based on X sign (model faces forward, +X = model's left = viewer's right)
     const limbId = point.x > 0 ? 'left-arm' : 'right-arm';
     lastClickedLimb = limbId;
-    return { id: limbId as SecondaryAssessmentStep, label: limbId === 'left-arm' ? 'Left Arm' : 'Right Arm', description: 'Pulses, sensation, motor, deformity', yMin: 0.60, yMax: 1.44 };
+    return { id: limbId as SecondaryAssessmentStep, label: limbId === 'left-arm' ? 'Left Arm' : 'Right Arm', description: 'Pulses, sensation, motor, deformity', yMin: 0.40, yMax: 1.44 };
   }
 
   // Legs detection: below pelvis, determine left vs right by X
+  // Exclude lateral clicks that are likely arms/hands (absX > 0.20)
   if (point.y < 0.83) {
+    if (absX > 0.20 && point.y >= 0.40) {
+      // Lateral click in the overlap zone — treat as arm/hand
+      const limbId = point.x > 0 ? 'left-arm' : 'right-arm';
+      lastClickedLimb = limbId;
+      return { id: limbId as SecondaryAssessmentStep, label: limbId === 'left-arm' ? 'Left Arm' : 'Right Arm', description: 'Pulses, sensation, motor, deformity', yMin: 0.40, yMax: 1.44 };
+    }
     const limbId = point.x > 0 ? 'left-leg' : 'right-leg';
     lastClickedLimb = limbId;
     return { id: limbId as SecondaryAssessmentStep, label: limbId === 'left-leg' ? 'Left Leg' : 'Right Leg', description: 'Pulses, sensation, motor, deformity', yMin: 0.0, yMax: 0.83 };
@@ -217,8 +225,7 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions }: Bo
       const xOffset = (region as ExtendedRegionRange).xOffset || 0;
       // Width varies by body part — use custom radius if defined
       const radius = (region as ExtendedRegionRange).highlightRadius
-        || (region.id === 'head' || region.id === 'face' ? 0.12
-          : region.id === 'neck-cspine' ? 0.08
+        || (region.id === 'neck-cspine' ? 0.08
           : 0.18);
 
       // Determine color and opacity based on state
