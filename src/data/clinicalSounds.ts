@@ -1522,7 +1522,7 @@ export function playHeartSound(soundType: HeartSoundType, durationMs: number = 5
   }
 
   const masterGain = ctx.createGain();
-  masterGain.gain.setValueAtTime(0.55, ctx.currentTime);
+  masterGain.gain.setValueAtTime(0.85, ctx.currentTime);
   masterGain.connect(ctx.destination);
   currentGainNode = masterGain;
 
@@ -1564,17 +1564,18 @@ export function playHeartSound(soundType: HeartSoundType, durationMs: number = 5
 
   // Add very faint background noise (body sounds / stethoscope contact)
   for (let i = 0; i < bufferSize; i++) {
-    data[i] = (Math.random() * 2 - 1) * 0.005;
+    data[i] = (Math.random() * 2 - 1) * 0.008;
   }
 
   const isMuffled = soundType === 'muffled';
-  const s1Freq = isMuffled ? 22 : 35;      // S1: lower frequency
-  const s2Freq = isMuffled ? 30 : 55;      // S2: slightly higher
+  // Raised base frequencies so they're audible on laptop/phone speakers
+  const s1Freq = isMuffled ? 40 : 60;      // S1: thump (was 35Hz, now 60Hz)
+  const s2Freq = isMuffled ? 55 : 90;      // S2: slightly higher (was 55Hz, now 90Hz)
   const s1Duration = isMuffled ? 120 : 100; // ms
   const s2Duration = isMuffled ? 90 : 70;   // ms
-  const s1Vol = isMuffled ? 0.25 : 0.7;
-  const s2Vol = isMuffled ? 0.15 : 0.5;
-  const harmonicCount = isMuffled ? 1 : 3;
+  const s1Vol = isMuffled ? 0.35 : 0.9;
+  const s2Vol = isMuffled ? 0.2 : 0.65;
+  const harmonicCount = isMuffled ? 2 : 4;
 
   let t = 0;
   while (t < duration) {
@@ -1624,12 +1625,12 @@ export function playHeartSound(soundType: HeartSoundType, durationMs: number = 5
   const source = ctx.createBufferSource();
   source.buffer = buffer;
 
-  // Low-pass filter: body-transmitted sound character
-  // Heart sounds as heard through chest wall are predominantly < 150 Hz
+  // Low-pass filter: body-transmitted sound character through stethoscope
+  // Raised cutoff for audibility on typical device speakers
   const filter = ctx.createBiquadFilter();
   filter.type = 'lowpass';
-  filter.frequency.value = isMuffled ? 80 : 150;
-  filter.Q.value = 0.7;
+  filter.frequency.value = isMuffled ? 120 : 280;
+  filter.Q.value = 0.8;
 
   source.connect(filter);
   filter.connect(masterGain);

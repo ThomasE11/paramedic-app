@@ -1001,7 +1001,7 @@ export const firstYearCases: CaseScenario[] = [
   createCase({
     id: 'y1-005',
     title: 'Toddler - Simple Febrile Seizure',
-    category: 'neurological',
+    category: 'pediatric',
     subcategory: 'febrile-seizure',
     priority: 'moderate',
     complexity: 'basic',
@@ -2402,7 +2402,7 @@ export const firstYearCases: CaseScenario[] = [
     id: 'y1-012',
     title: 'Student - Hyperventilation Syndrome',
     category: 'respiratory',
-    subcategory: 'upper-airway-obstruction',
+    subcategory: 'hyperventilation-syndrome',
     priority: 'moderate',
     complexity: 'basic',
     yearLevels: ['1st-year', 'diploma'],
@@ -2989,7 +2989,7 @@ export const firstYearCases: CaseScenario[] = [
   createCase({
     id: 'y1-015',
     title: 'Severe Allergic Reaction — Restaurant',
-    category: 'respiratory',
+    category: 'metabolic',
     subcategory: 'anaphylaxis',
     priority: 'critical',
     complexity: 'basic',

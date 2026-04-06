@@ -1,18 +1,17 @@
 /**
- * LIFEPAK 20 Defibrillator/Monitor Simulator
+ * TLC Monitor — Defibrillator/Monitor Simulator
  *
- * Hyper-realistic recreation of the Stryker/Physio-Control LIFEPAK 20e:
- * - Dark charcoal housing with physical button layout
- * - 320x240 color LCD screen with green ECG, cyan SpO2 pleth
- * - Large numeric readouts: HR (green), SpO2 (cyan), NIBP (white), RR (yellow)
- * - EtCO2 capnography waveform (pink/magenta)
- * - Mode selector: MONITOR / DEFIB / PACER
- * - Energy selector, CHARGE, SHOCK, SYNC controls
- * - Code timer, alarm indicators
+ * iSimulate Training Unit-style layout with full hardware fidelity:
+ * - Dark charcoal housing with green protective case accent
+ * - Left sidebar: PRINT, CODE SUMMARY, TRANSMIT, 12 LEAD buttons + paper slot + speed dial
+ * - Central LCD screen with parameter bar, waveforms, battery/timer indicators
+ * - Bottom control panel: HOME SCREEN, EVENT, OPTIONS, ALARMS, NIBP, SYNC, SIZE, LEAD, ANALYZE, CPR
+ * - Lead selectors (1, 2, 3), PAUSE, CURRENT, RATE, PACER, CHARGE, ENERGY SELECT, ON
+ * - "TLC Monitor" vertical branding on right side
+ * - Power ON/OFF with boot sequence
+ * - PRINT: ECG strip on graph paper with printing sound
+ * - Hospital-accurate beep/alarm sounds (IEC 60601-1-8)
  * - Assessment mode for student interaction
- * - Audio feedback: heartbeat beep, SpO2 tone, BP cuff, alarms
- *
- * Inspired by iSimulate REALITi 360 premium screen simulations
  */
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
@@ -43,6 +42,60 @@ import {
   type WaveformFn,
   type WaveformContext,
 } from '@/data/ecgRhythms';
+// LITFL ECG library — image URLs are mapped in RHYTHM_TO_LITFL_IMAGE below
+
+// Map rhythm IDs to local 12-lead ECG reference images.
+// Sourced from Life in the Fast Lane (litfl.com) ECG Library under their
+// Creative Commons educational licence. Stored locally to avoid cross-origin
+// blocking and ensure instant loading.
+// When a LITFL image is not available, the system falls back to the
+// programmatically generated 12-lead canvas display.
+const RHYTHM_TO_LITFL_IMAGE: Record<string, string> = {
+  // ----- Normal / Rate-based -----
+  'nsr': '/images/ecg/nsr.jpg',
+  'sinus-tachy': '/images/ecg/sinus-tachy.jpg',
+  'sinus-brady': '/images/ecg/sinus-brady.jpg',
+  'pea': '/images/ecg/nsr.jpg',  // PEA shows electrical activity (sinus) without pulse
+
+  // ----- Arrhythmias -----
+  'afib': '/images/ecg/afib.jpg',
+  'aflutter': '/images/ecg/aflutter.jpg',
+  'svt': '/images/ecg/svt.jpg',
+  'vt': '/images/ecg/vt.jpg',
+  'vfib': '/images/ecg/vfib.jpg',
+  'vfib-fine': '/images/ecg/vfib-fine.jpg',
+  'torsades': '/images/ecg/torsades.jpg',
+  'pacs': '/images/ecg/pacs.jpg',
+  'pvcs': '/images/ecg/pvcs.jpg',
+
+  // ----- STEMI / ACS -----
+  'anterior-stemi': '/images/ecg/anterior-stemi.jpg',
+  'inferior-stemi': '/images/ecg/inferior-stemi.jpg',
+  'lateral-stemi': '/images/ecg/lateral-stemi.jpg',
+  'posterior-stemi': '/images/ecg/posterior-stemi.jpg',
+
+  // ----- Heart blocks -----
+  'first-degree-block': '/images/ecg/first-degree-block.jpg',
+  'wenckebach': '/images/ecg/wenckebach.jpg',
+  'mobitz2': '/images/ecg/mobitz2.jpg',
+  'chb': '/images/ecg/chb.jpg',
+
+  // ----- Escape / slow rhythms -----
+  'junctional': '/images/ecg/junctional.jpg',
+  'aivr': '/images/ecg/aivr.jpg',
+
+  // ----- Conduction / Other -----
+  'wpw': '/images/ecg/wpw.jpg',
+  'lbbb': '/images/ecg/lbbb.jpg',
+  'rbbb': '/images/ecg/rbbb.png',
+
+  // ----- Metabolic -----
+  'hyperkalemia': '/images/ecg/hyperkalemia.jpg',
+};
+
+function getLitflImageForRhythm(rhythmId: string): string | null {
+  return RHYTHM_TO_LITFL_IMAGE[rhythmId] || null;
+}
 
 interface VitalSignsMonitorProps {
   initialVitals: VitalSigns;
@@ -72,7 +125,7 @@ interface VitalSignsMonitorProps {
     onPauseCPR: () => void;
     onDefibrillate: () => void;
   };
-  /** Called when a LIFEPAK assessment (BGL, pain, temp, 12-lead) completes — awards scoring credit */
+  /** Called when a TLC Monitor assessment (BGL, pain, temp, 12-lead) completes — awards scoring credit */
   onAssessmentPerformed?: (stepId: string) => void;
 }
 
@@ -158,6 +211,69 @@ function checkAlarm(value: number, thresholds: AlarmThreshold): { isWarning: boo
 }
 
 // ============================================================================
+// RHYTHM NAME NORMALIZER — maps ECG display names to engine short names
+// ============================================================================
+
+function normalizeRhythmName(displayName: string): string {
+  const n = displayName.toLowerCase().trim();
+  if (n.includes('ventricular fibrillation') || n.includes('fine ventricular fibrillation')) return 'Ventricular Fibrillation';
+  if (n.includes('ventricular tachycardia') && !n.includes('supraventricular')) return 'Ventricular Tachycardia';
+  if (n.includes('supraventricular') || n === 'svt') return 'SVT';
+  if (n.includes('atrial flutter')) return 'Atrial Flutter';
+  if (n.includes('atrial fibrillation')) return 'Atrial Fibrillation';
+  if (n.includes('asystole')) return 'Asystole';
+  if (n.includes('pulseless electrical') || n === 'pea') return 'PEA';
+  if (n.includes('torsades')) return 'Torsades de Pointes';
+  if (n.includes('normal sinus')) return 'Normal Sinus Rhythm';
+  if (n.includes('sinus tachycardia')) return 'Sinus Tachycardia';
+  if (n.includes('sinus bradycardia')) return 'Sinus Bradycardia';
+  return displayName; // pass through for STEMI, blocks, etc.
+}
+
+// ============================================================================
+// SPO2 RECOVERY PROFILES — condition-specific oxygen response
+// ============================================================================
+
+function getSpO2RecoveryProfile(
+  caseCategory: string, caseSubcategory: string | undefined,
+  caseTitle: string | undefined, treatments: string
+): { rateMultiplier: number; ceiling: number } {
+  const cat = (caseCategory || '').toLowerCase();
+  const sub = (caseSubcategory || '').toLowerCase();
+  const title = (caseTitle || '').toLowerCase();
+  const tx = treatments.toLowerCase();
+
+  // Carbon monoxide — SpO2 reads falsely high, minimal real improvement
+  if (sub.includes('carbon monoxide') || title.includes('carbon monoxide') || sub.includes('co poisoning')) {
+    return { rateMultiplier: 0.3, ceiling: 99 };
+  }
+  // Pneumothorax
+  if (sub.includes('pneumothorax') || title.includes('pneumothorax')) {
+    const decompressed = tx.includes('decompress') || tx.includes('needle') || tx.includes('chest drain');
+    return decompressed ? { rateMultiplier: 0.8, ceiling: 97 } : { rateMultiplier: 0.1, ceiling: 85 };
+  }
+  // Asthma / COPD
+  if (cat === 'respiratory' && (sub.includes('asthma') || sub.includes('copd') || title.includes('asthma') || title.includes('copd'))) {
+    const hasBronchodilator = tx.includes('salbutamol') || tx.includes('ipratropium') || tx.includes('nebuli') || tx.includes('bronchodilator');
+    return hasBronchodilator ? { rateMultiplier: 0.5, ceiling: 96 } : { rateMultiplier: 0.15, ceiling: 90 };
+  }
+  // Pulmonary edema
+  if (sub.includes('pulmonary edema') || sub.includes('pulmonary oedema') || title.includes('pulmonary edema') || title.includes('flash pulmonary')) {
+    const hasCPAP = tx.includes('cpap') || tx.includes('bipap') || tx.includes('niv');
+    return hasCPAP ? { rateMultiplier: 0.6, ceiling: 95 } : { rateMultiplier: 0.25, ceiling: 88 };
+  }
+  // Pneumonia
+  if (sub.includes('pneumonia') || title.includes('pneumonia')) {
+    return { rateMultiplier: 0.4, ceiling: 94 };
+  }
+  // Simple hypoxia — trauma, seizure, overdose, drowning
+  if (['trauma', 'neurological', 'toxicology'].includes(cat) || title.includes('seizure') || title.includes('drowning') || title.includes('overdose')) {
+    return { rateMultiplier: 1.5, ceiling: 99 };
+  }
+  return { rateMultiplier: 1.0, ceiling: 98 };
+}
+
+// ============================================================================
 // AUDIO ENGINE - Clinical monitor sounds
 // ============================================================================
 
@@ -167,6 +283,8 @@ class ClinicalAudioEngine {
   private bpInflateTimeout: number | null = null;
   private isPlaying = false;
   private _volume = 0.45;
+  // SpO2-driven pitch: when set, heartbeat beep uses variable pitch like real pulse ox
+  _currentSpo2: number | null = null;
   // Ready tone state — continuous tone after charge completes
   private readyToneOsc: OscillatorNode | null = null;
   private readyToneGain: GainNode | null = null;
@@ -193,20 +311,34 @@ class ClinicalAudioEngine {
     const beep = () => {
       try {
         const ctx = this.getCtx();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
+        // Real pulse ox: pitch varies with SpO2 (400Hz at 70%, 950Hz at 100%)
+        // When SpO2 not connected, use standard 1000Hz QRS beep
+        const baseFreq = this._currentSpo2 != null
+          ? 400 + ((Math.max(70, Math.min(100, this._currentSpo2)) - 70) / 30) * 550
+          : 1000;
+        const osc1 = ctx.createOscillator();
+        const gain1 = ctx.createGain();
+        osc1.connect(gain1);
+        gain1.connect(ctx.destination);
+        osc1.frequency.value = baseFreq;
+        osc1.type = 'sine';
+        gain1.gain.setValueAtTime(this._volume * 0.5, ctx.currentTime);
+        gain1.gain.setValueAtTime(this._volume * 0.5, ctx.currentTime + 0.03);
+        gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
+        osc1.start(ctx.currentTime);
+        osc1.stop(ctx.currentTime + 0.1);
 
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-
-        osc.frequency.value = 1000;
-        osc.type = 'sine';
-
-        gain.gain.setValueAtTime(this._volume * 0.6, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
-
-        osc.start(ctx.currentTime);
-        osc.stop(ctx.currentTime + 0.08);
+        // Harmonic overlay at 2x base frequency for crispness
+        const osc2 = ctx.createOscillator();
+        const gain2 = ctx.createGain();
+        osc2.connect(gain2);
+        gain2.connect(ctx.destination);
+        osc2.frequency.value = baseFreq * 2;
+        osc2.type = 'sine';
+        gain2.gain.setValueAtTime(this._volume * 0.15, ctx.currentTime);
+        gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06);
+        osc2.start(ctx.currentTime);
+        osc2.stop(ctx.currentTime + 0.06);
       } catch {
         // Audio context may not be available
       }
@@ -233,36 +365,111 @@ class ClinicalAudioEngine {
   playBPInflation(durationMs: number) {
     try {
       const ctx = this.getCtx();
-      const bufferSize = ctx.sampleRate * (durationMs / 1000);
-      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-      const data = buffer.getChannelData(0);
+      const vol = this._volume;
+      const now = ctx.currentTime;
+      const totalSec = durationMs / 1000;
 
-      const pumpCycles = Math.floor(durationMs / 800);
-      const samplesPerPump = Math.floor(bufferSize / pumpCycles);
+      // Phase timing: 60% inflate, 25% measure/deflate, 15% final deflation + beep
+      const inflateEnd = totalSec * 0.60;
+      const measureEnd = totalSec * 0.85;
+      const fullEnd = totalSec;
 
-      for (let pump = 0; pump < pumpCycles; pump++) {
-        const pumpStart = pump * samplesPerPump;
-        for (let i = 0; i < samplesPerPump; i++) {
+      // --- Motor whir (continuous low hum during inflation) ---
+      const motorOsc = ctx.createOscillator();
+      const motorGain = ctx.createGain();
+      const motorFilter = ctx.createBiquadFilter();
+      motorOsc.type = 'sawtooth';
+      motorOsc.frequency.setValueAtTime(45, now);
+      motorOsc.frequency.linearRampToValueAtTime(75, now + inflateEnd);
+      motorFilter.type = 'lowpass';
+      motorFilter.frequency.value = 200;
+      motorGain.gain.setValueAtTime(0, now);
+      motorGain.gain.linearRampToValueAtTime(vol * 0.25, now + 0.3);
+      motorGain.gain.setValueAtTime(vol * 0.25, now + inflateEnd - 0.2);
+      motorGain.gain.linearRampToValueAtTime(0, now + inflateEnd);
+      motorOsc.connect(motorFilter);
+      motorFilter.connect(motorGain);
+      motorGain.connect(ctx.destination);
+      motorOsc.start(now);
+      motorOsc.stop(now + inflateEnd);
+
+      // --- Pump pulses (rhythmic "chuff-chuff" during inflation) ---
+      const pumpCount = Math.floor(inflateEnd / 0.6);
+      for (let p = 0; p < pumpCount; p++) {
+        const pStart = now + p * 0.6;
+        const pumpBuf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.25), ctx.sampleRate);
+        const pumpData = pumpBuf.getChannelData(0);
+        for (let i = 0; i < pumpData.length; i++) {
           const t = i / ctx.sampleRate;
-          const envelope = Math.sin(Math.PI * i / samplesPerPump) * 0.5;
-          data[pumpStart + i] = (
-            Math.sin(2 * Math.PI * 60 * t) * 0.6 +
-            Math.sin(2 * Math.PI * 120 * t) * 0.3 +
-            (Math.random() - 0.5) * 0.4
-          ) * envelope * this._volume * 0.6;
+          const env = Math.exp(-t * 12) * Math.sin(Math.PI * t / 0.25);
+          pumpData[i] = (
+            Math.sin(2 * Math.PI * 80 * t) * 0.5 +
+            Math.sin(2 * Math.PI * 160 * t) * 0.25 +
+            (Math.random() - 0.5) * 0.6
+          ) * env * vol * 0.4;
         }
+        const pSrc = ctx.createBufferSource();
+        pSrc.buffer = pumpBuf;
+        const pFilt = ctx.createBiquadFilter();
+        pFilt.type = 'lowpass';
+        pFilt.frequency.value = 350;
+        pSrc.connect(pFilt);
+        pFilt.connect(ctx.destination);
+        pSrc.start(pStart);
       }
 
-      const source = ctx.createBufferSource();
-      source.buffer = buffer;
+      // --- Slow deflation hiss (during measurement phase) ---
+      const hissLen = measureEnd - inflateEnd;
+      const hissBuf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * hissLen), ctx.sampleRate);
+      const hissData = hissBuf.getChannelData(0);
+      for (let i = 0; i < hissData.length; i++) {
+        const progress = i / hissData.length;
+        const env = (1 - progress * 0.5) * 0.15;
+        hissData[i] = (Math.random() - 0.5) * env * vol;
+      }
+      const hissSrc = ctx.createBufferSource();
+      hissSrc.buffer = hissBuf;
+      const hissFilt = ctx.createBiquadFilter();
+      hissFilt.type = 'bandpass';
+      hissFilt.frequency.value = 2000;
+      hissFilt.Q.value = 0.5;
+      hissSrc.connect(hissFilt);
+      hissFilt.connect(ctx.destination);
+      hissSrc.start(now + inflateEnd);
 
-      const filter = ctx.createBiquadFilter();
-      filter.type = 'lowpass';
-      filter.frequency.value = 300;
+      // --- Final rapid deflation (short air release) ---
+      const deflatLen = fullEnd - measureEnd - 0.3;
+      if (deflatLen > 0) {
+        const defBuf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * deflatLen), ctx.sampleRate);
+        const defData = defBuf.getChannelData(0);
+        for (let i = 0; i < defData.length; i++) {
+          const env = Math.exp(-(i / ctx.sampleRate) * 6);
+          defData[i] = (Math.random() - 0.5) * env * vol * 0.3;
+        }
+        const defSrc = ctx.createBufferSource();
+        defSrc.buffer = defBuf;
+        const defFilt = ctx.createBiquadFilter();
+        defFilt.type = 'lowpass';
+        defFilt.frequency.value = 1500;
+        defSrc.connect(defFilt);
+        defFilt.connect(ctx.destination);
+        defSrc.start(now + measureEnd);
+      }
 
-      source.connect(filter);
-      filter.connect(ctx.destination);
-      source.start();
+      // --- Completion double-beep (monitor "done" tone) ---
+      for (let b = 0; b < 2; b++) {
+        const beepOsc = ctx.createOscillator();
+        const beepGain = ctx.createGain();
+        beepOsc.type = 'sine';
+        beepOsc.frequency.value = 800;
+        beepGain.gain.setValueAtTime(0, now + fullEnd - 0.25 + b * 0.15);
+        beepGain.gain.linearRampToValueAtTime(vol * 0.35, now + fullEnd - 0.22 + b * 0.15);
+        beepGain.gain.linearRampToValueAtTime(0, now + fullEnd - 0.12 + b * 0.15);
+        beepOsc.connect(beepGain);
+        beepGain.connect(ctx.destination);
+        beepOsc.start(now + fullEnd - 0.25 + b * 0.15);
+        beepOsc.stop(now + fullEnd + b * 0.15);
+      }
     } catch {
       // Audio may not be available
     }
@@ -271,25 +478,38 @@ class ClinicalAudioEngine {
   playAlarm(isCritical: boolean) {
     try {
       const ctx = this.getCtx();
-      const freq = isCritical ? 880 : 660;
-      const duration = isCritical ? 0.15 : 0.2;
-
-      for (let i = 0; i < 3; i++) {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-
-        osc.frequency.value = freq;
-        osc.type = 'square';
-
-        const startTime = ctx.currentTime + (i * (duration + 0.05));
-        gain.gain.setValueAtTime(this._volume * 0.5, startTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
-
-        osc.start(startTime);
-        osc.stop(startTime + duration);
+      if (isCritical) {
+        // IEC 60601-1-8 HIGH PRIORITY: ♩♩♩-♩♩ pattern (3 fast + pause + 2 fast)
+        const pattern = [0, 0.12, 0.24, 0.48, 0.60];
+        pattern.forEach(offset => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.frequency.value = 880;
+          osc.type = 'square';
+          const t = ctx.currentTime + offset;
+          gain.gain.setValueAtTime(this._volume * 0.45, t);
+          gain.gain.setValueAtTime(this._volume * 0.45, t + 0.06);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+          osc.start(t);
+          osc.stop(t + 0.1);
+        });
+      } else {
+        // MEDIUM PRIORITY: ♩♩♩ pattern (3 slower tones)
+        for (let i = 0; i < 3; i++) {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.frequency.value = 660;
+          osc.type = 'sine';
+          const t = ctx.currentTime + i * 0.22;
+          gain.gain.setValueAtTime(this._volume * 0.35, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+          osc.start(t);
+          osc.stop(t + 0.18);
+        }
       }
     } catch {
       // Audio may not be available
@@ -299,27 +519,27 @@ class ClinicalAudioEngine {
   playSpo2Beep(spo2: number) {
     try {
       const ctx = this.getCtx();
+      // Real pulse ox: pitch drops as SpO2 drops (audible desaturation warning)
+      // 100% = ~900Hz, 90% = ~600Hz, 80% = ~400Hz
+      const freq = 400 + ((Math.max(70, Math.min(100, spo2)) - 70) / 30) * 550;
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
-
       osc.connect(gain);
       gain.connect(ctx.destination);
-
-      const freq = 400 + ((spo2 - 80) / 20) * 500;
-      osc.frequency.value = Math.max(400, Math.min(900, freq));
+      osc.frequency.value = freq;
       osc.type = 'sine';
-
-      gain.gain.setValueAtTime(this._volume * 0.2, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06);
-
+      // Softer, slightly longer tone than QRS beep
+      gain.gain.setValueAtTime(this._volume * 0.18, ctx.currentTime);
+      gain.gain.setValueAtTime(this._volume * 0.18, ctx.currentTime + 0.04);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
       osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + 0.06);
+      osc.stop(ctx.currentTime + 0.08);
     } catch {
       // Audio may not be available
     }
   }
 
-  // LIFEPAK charge-up sound
+  // TLC Monitor charge-up sound
   playChargeSound() {
     try {
       const ctx = this.getCtx();
@@ -384,7 +604,7 @@ class ClinicalAudioEngine {
     }
   }
 
-  // LIFEPAK shock delivered sound
+  // TLC Monitor shock delivered sound
   playShockSound() {
     try {
       const ctx = this.getCtx();
@@ -403,6 +623,158 @@ class ClinicalAudioEngine {
       osc.start(ctx.currentTime);
       osc.stop(ctx.currentTime + 0.3);
     } catch {}
+  }
+
+  // Printing sound — rhythmic mechanical dot-matrix ticking
+  playPrintingSound(durationMs: number) {
+    try {
+      const ctx = this.getCtx();
+      const tickInterval = 0.035; // seconds between ticks
+      const ticks = Math.floor((durationMs / 1000) / tickInterval);
+      for (let i = 0; i < ticks; i++) {
+        const startTime = ctx.currentTime + i * tickInterval;
+        // High-frequency click
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const filter = ctx.createBiquadFilter();
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+        filter.type = 'highpass';
+        filter.frequency.value = 2000;
+        osc.frequency.value = 4000 + Math.random() * 1000;
+        osc.type = 'square';
+        gain.gain.setValueAtTime(this._volume * 0.12, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.015);
+        osc.start(startTime);
+        osc.stop(startTime + 0.015);
+        // Mechanical noise component
+        const noise = ctx.createBufferSource();
+        const noiseBuffer = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.008), ctx.sampleRate);
+        const noiseData = noiseBuffer.getChannelData(0);
+        for (let j = 0; j < noiseData.length; j++) noiseData[j] = (Math.random() - 0.5) * 0.3;
+        noise.buffer = noiseBuffer;
+        const nGain = ctx.createGain();
+        noise.connect(nGain);
+        nGain.connect(ctx.destination);
+        nGain.gain.setValueAtTime(this._volume * 0.08, startTime);
+        nGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.008);
+        noise.start(startTime);
+      }
+    } catch { /* Audio may not be available */ }
+  }
+
+  // Power-on chime — ascending 3-tone sequence
+  playPowerOnSound() {
+    try {
+      const ctx = this.getCtx();
+      const tones = [523.25, 659.25, 783.99]; // C5, E5, G5
+      tones.forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.value = freq;
+        osc.type = 'sine';
+        const start = ctx.currentTime + i * 0.15;
+        gain.gain.setValueAtTime(this._volume * 0.3, start);
+        gain.gain.exponentialRampToValueAtTime(0.001, start + 0.25);
+        osc.start(start);
+        osc.stop(start + 0.25);
+      });
+    } catch { /* Audio may not be available */ }
+  }
+
+  // Rhythm analysis announcement tone — two-tone alert
+  playAnalyzeSound() {
+    try {
+      const ctx = this.getCtx();
+      [880, 1100].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.value = freq;
+        osc.type = 'sine';
+        const start = ctx.currentTime + i * 0.3;
+        gain.gain.setValueAtTime(this._volume * 0.25, start);
+        gain.gain.exponentialRampToValueAtTime(0.001, start + 0.25);
+        osc.start(start);
+        osc.stop(start + 0.25);
+      });
+    } catch { /* Audio may not be available */ }
+  }
+
+  // IEC 60601-1-8 compliant medical alarm patterns
+  playMedicalAlarm(priority: 'high' | 'medium' | 'low') {
+    try {
+      const ctx = this.getCtx();
+      if (priority === 'high') {
+        // High priority: 5 rapid pulses (IEC pattern)
+        const freq = 880;
+        for (let i = 0; i < 5; i++) {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.frequency.value = freq;
+          osc.type = 'square';
+          const start = ctx.currentTime + i * 0.12;
+          gain.gain.setValueAtTime(this._volume * 0.4, start);
+          gain.gain.exponentialRampToValueAtTime(0.001, start + 0.08);
+          osc.start(start);
+          osc.stop(start + 0.08);
+        }
+      } else if (priority === 'medium') {
+        // Medium priority: 3 pulses
+        for (let i = 0; i < 3; i++) {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.frequency.value = 660;
+          osc.type = 'sine';
+          const start = ctx.currentTime + i * 0.2;
+          gain.gain.setValueAtTime(this._volume * 0.3, start);
+          gain.gain.exponentialRampToValueAtTime(0.001, start + 0.15);
+          osc.start(start);
+          osc.stop(start + 0.15);
+        }
+      } else {
+        // Low priority: single tone
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.value = 440;
+        osc.type = 'sine';
+        gain.gain.setValueAtTime(this._volume * 0.2, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.3);
+      }
+    } catch { /* Audio may not be available */ }
+  }
+
+  // Rhythm change alert — three ascending tones
+  playRhythmChangeAlert() {
+    try {
+      const ctx = this.getCtx();
+      const freqs = [600, 800, 1000];
+      freqs.forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.value = freq;
+        osc.type = 'sine';
+        const t = ctx.currentTime + i * 0.15;
+        gain.gain.setValueAtTime(this._volume * 0.35, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+        osc.start(t);
+        osc.stop(t + 0.12);
+      });
+    } catch { /* Audio may not be available */ }
   }
 
   dispose() {
@@ -461,7 +833,7 @@ function ECGWaveform({ heartRate, color, height = 80, isVisible, waveformFn, sho
     const pacingSpikes = pacingSpikeRef.current;
     const syncMarkers = syncMarkerRef.current;
 
-    // Real LIFEPAK 20: constant 25mm/s sweep speed
+    // Real TLC Monitor 20: constant 25mm/s sweep speed
     // At ~3.5px/mm on a 700px canvas, 25mm/s ≈ 87.5px/s
     // This means at HR 60 (1 beat/s), one beat spans ~87.5px → ~8 beats visible
     // At HR 200 (3.33 beats/s), beats are tightly spaced → ~26 beats visible
@@ -960,13 +1332,20 @@ function TwelveLeadECG({ rhythm, heartRate, onClose, onExport }: { rhythm: ECGRh
     // Bottom edge markers
     ctx.fillStyle = '#888';
     ctx.font = '8px monospace';
-    ctx.fillText('UAE Paramedic Case Generator — LIFEPAK 20 Simulator', 8, totalH - 6);
+    ctx.fillText('UAE Paramedic Case Generator — TLC Monitor 20 Simulator', 8, totalH - 6);
     ctx.fillText(dateStr, totalW - 150, totalH - 6);
 
     return exportCanvas.toDataURL('image/png');
   };
 
   const handleDownload = () => {
+    // Prefer LITFL image for download (clinically accurate), fall back to generated
+    const litflImage = getLitflImageForRhythm(rhythm.id);
+    if (litflImage) {
+      // Open LITFL image in new tab for saving (cross-origin prevents direct download)
+      window.open(litflImage, '_blank');
+      return;
+    }
     const dataUrl = generateImage();
     if (!dataUrl) return;
     const link = document.createElement('a');
@@ -976,10 +1355,18 @@ function TwelveLeadECG({ rhythm, heartRate, onClose, onExport }: { rhythm: ECGRh
   };
 
   const handlePreview = () => {
-    const dataUrl = generateImage();
-    if (dataUrl) {
-      setPreviewDataUrl(dataUrl);
+    // Use LITFL 12-lead ECG image if available (clinically accurate reference ECGs)
+    // Falls back to generated image only if LITFL doesn't have this rhythm
+    const litflImage = getLitflImageForRhythm(rhythm.id);
+    if (litflImage) {
+      setPreviewDataUrl(litflImage);
       setShowPreview(true);
+    } else {
+      const dataUrl = generateImage();
+      if (dataUrl) {
+        setPreviewDataUrl(dataUrl);
+        setShowPreview(true);
+      }
     }
   };
 
@@ -1422,9 +1809,74 @@ function CapnographyWaveform({ respiratoryRate, etco2, color, height = 45, isVis
 }
 
 // ============================================================================
-// LIFEPAK 20 BUTTON COMPONENT
+// iSIMULATE-STYLE BUTTON COMPONENTS
 // ============================================================================
 
+// Dark physical button (top sidebar: PRINT, CODE SUMMARY, TRANSMIT, 12 LEAD)
+function SideButton({ label, onClick, active = false, disabled = false }: {
+  label: string; onClick?: () => void; active?: boolean; disabled?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`px-3 py-1.5 rounded-sm font-mono font-bold text-[8px] tracking-wider uppercase select-none
+        transition-all duration-100
+        bg-gradient-to-b from-[#3a3d42] to-[#2a2d31] text-gray-300 border border-[#555]/60
+        hover:from-[#4a4d52] hover:to-[#3a3d42] active:from-[#222] active:to-[#333]
+        shadow-[0_2px_3px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.08)]
+        active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.6)]
+        ${active ? 'ring-1 ring-green-400/50 text-green-300' : ''}
+        ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
+    >
+      {label}
+    </button>
+  );
+}
+
+// Control panel button (bottom: HOME SCREEN, EVENT, OPTIONS, etc.)
+function ControlButton({ label, onClick, variant = 'dark', active = false, disabled = false, led, className = '' }: {
+  label: string; onClick?: () => void;
+  variant?: 'dark' | 'yellow' | 'red' | 'green' | 'orange';
+  active?: boolean; disabled?: boolean; led?: 'green' | 'orange' | 'red' | 'off'; className?: string;
+}) {
+  const variants: Record<string, string> = {
+    dark: 'bg-gradient-to-b from-[#4a4d52] to-[#3a3d40] text-gray-200 border-[#555]/50 hover:from-[#555] hover:to-[#444]',
+    yellow: 'bg-gradient-to-b from-amber-500 to-amber-600 text-black border-amber-400/60 hover:from-amber-400 hover:to-amber-500',
+    red: 'bg-gradient-to-b from-red-600 to-red-700 text-white border-red-500/60 hover:from-red-500 hover:to-red-600',
+    green: 'bg-gradient-to-b from-green-600 to-green-700 text-white border-green-500/60 hover:from-green-500 hover:to-green-600',
+    orange: 'bg-gradient-to-b from-orange-500 to-orange-600 text-white border-orange-400/60 hover:from-orange-400 hover:to-orange-500',
+  };
+
+  const ledColors: Record<string, string> = {
+    green: 'bg-green-400 shadow-green-400/60',
+    orange: 'bg-orange-400 shadow-orange-400/60',
+    red: 'bg-red-500 shadow-red-500/60 animate-pulse',
+    off: 'bg-gray-600',
+  };
+
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`relative px-2 py-1.5 rounded-sm font-mono font-bold text-[7px] tracking-wider uppercase select-none
+        transition-all duration-100 border
+        shadow-[0_2px_3px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.06)]
+        active:shadow-[inset_0_2px_3px_rgba(0,0,0,0.5)]
+        ${variants[variant]}
+        ${active ? 'ring-1 ring-white/30' : ''}
+        ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}
+        ${className}`}
+    >
+      {led && (
+        <span className={`absolute -top-0.5 right-0.5 w-1.5 h-1.5 rounded-full shadow-sm ${ledColors[led]}`} />
+      )}
+      <span className="block leading-tight text-center">{label}</span>
+    </button>
+  );
+}
+
+// Legacy LP20Button — kept for internal use
 function LP20Button({
   label,
   sublabel,
@@ -1486,10 +1938,176 @@ function LP20Button({
 }
 
 // ============================================================================
-// MAIN LIFEPAK 20 MONITOR COMPONENT
+// ECG PRINT STRIP COMPONENT — Graph paper with real-time printing
 // ============================================================================
 
-// Map LIFEPAK vital keys to scoring framework assessment step IDs
+function ECGPrintStrip({ rhythm, heartRate, spo2, onClose, audioEngine }: {
+  rhythm: ECGRhythm; heartRate: number; spo2: number; onClose: () => void; audioEngine: ClinicalAudioEngine | null;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animRef = useRef<number>(0);
+  const posRef = useRef(0);
+
+  useEffect(() => {
+    // Play printing sound
+    audioEngine?.playPrintingSound(8000);
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const w = canvas.width;
+    const h = canvas.height;
+    let lastTime = performance.now();
+    const pixelsPerSec = 87.5;
+    const beatsPerSec = heartRate / 60;
+    const pixelsPerBeat = pixelsPerSec / beatsPerSec;
+    const smallSq = 4; // 1mm = 4px
+    const largeSq = 20; // 5mm
+
+    const ecgMidY = h * 0.3;
+    const plethMidY = h * 0.7;
+
+    const draw = (now: number) => {
+      const dt = (now - lastTime) / 1000;
+      lastTime = now;
+      posRef.current += pixelsPerSec * dt;
+
+      // Clear with ECG paper background
+      ctx.fillStyle = '#fff8f0';
+      ctx.fillRect(0, 0, w, h);
+
+      // Small grid
+      ctx.strokeStyle = 'rgba(255, 180, 180, 0.45)';
+      ctx.lineWidth = 0.5;
+      for (let y = 0; y < h; y += smallSq) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+      }
+      for (let x = 0; x < w; x += smallSq) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+      }
+
+      // Large grid
+      ctx.strokeStyle = 'rgba(220, 120, 120, 0.55)';
+      ctx.lineWidth = 1;
+      for (let y = 0; y < h; y += largeSq) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+      }
+      for (let x = 0; x < w; x += largeSq) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+      }
+
+      // Print boundary — only draw up to current position
+      const printHead = Math.min(posRef.current, w);
+
+      // ECG waveform (Lead II) — black on paper
+      const wfn = rhythm.leads['II'];
+      ctx.strokeStyle = '#111';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      let first = true;
+      let prevBP = 0;
+      let bIdx = 0;
+      for (let x = 0; x < printHead; x++) {
+        const bp = (x / pixelsPerBeat) % 1;
+        if (bp < prevBP && prevBP > 0.5) bIdx++;
+        prevBP = bp;
+        const val = wfn(bp, { heartRate, beatIndex: bIdx });
+        const y = ecgMidY - val * (h * 0.2);
+        if (first) { ctx.moveTo(x, y); first = false; }
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+
+      // SpO2 pleth waveform — blue on paper
+      const plethWave = (t: number): number => {
+        if (t < 0.12) return Math.pow(t / 0.12, 1.8);
+        if (t < 0.28) return 1.0 - Math.pow((t - 0.12) / 0.16, 0.7) * 0.45;
+        if (t < 0.35) return 0.55 - Math.sin((t - 0.28) * Math.PI / 0.07) * 0.08;
+        if (t < 0.45) return 0.50 + Math.sin((t - 0.35) * Math.PI / 0.10) * 0.08;
+        if (t < 0.85) return 0.50 * Math.exp(-(t - 0.45) * 3.5);
+        return 0.50 * Math.exp(-0.4 * 3.5) * Math.max(0, 1 - (t - 0.85) / 0.15);
+      };
+
+      ctx.strokeStyle = '#2255aa';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      first = true;
+      prevBP = 0;
+      bIdx = 0;
+      for (let x = 0; x < printHead; x++) {
+        const bp = (x / pixelsPerBeat) % 1;
+        if (bp < prevBP && prevBP > 0.5) bIdx++;
+        prevBP = bp;
+        const val = plethWave(bp);
+        const y = plethMidY - val * (h * 0.15);
+        if (first) { ctx.moveTo(x, y); first = false; }
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+
+      // Channel labels (rotated on left side like iSimulate print)
+      ctx.save();
+      ctx.fillStyle = '#666';
+      ctx.font = '10px monospace';
+      ctx.translate(12, ecgMidY - 25);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillText('II', 0, 0);
+      ctx.restore();
+
+      ctx.save();
+      ctx.fillStyle = '#336';
+      ctx.font = '10px monospace';
+      ctx.translate(12, plethMidY - 25);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillText('SpO2', 0, 0);
+      ctx.restore();
+
+      animRef.current = requestAnimationFrame(draw);
+    };
+
+    animRef.current = requestAnimationFrame(draw);
+    return () => cancelAnimationFrame(animRef.current);
+  }, [rhythm, heartRate, spo2, audioEngine]);
+
+  return (
+    <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center"
+      style={{ background: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(4px)' }}>
+      <div className="relative w-full max-w-4xl mx-4">
+        {/* Close button */}
+        <button onClick={onClose}
+          className="absolute -top-2 -right-2 z-10 w-8 h-8 rounded-full bg-gray-800 border border-gray-600 flex items-center justify-center text-gray-300 hover:text-white hover:bg-gray-700 transition-colors">
+          <X className="h-4 w-4" />
+        </button>
+        {/* Labels */}
+        <div className="flex items-center gap-4 mb-2 px-2">
+          <span className="text-[10px] font-mono text-gray-400">CO2</span>
+          <span className="text-[10px] font-mono text-blue-400">SpO2</span>
+          <span className="text-[10px] font-mono text-gray-300">II</span>
+        </div>
+        {/* Canvas */}
+        <canvas
+          ref={canvasRef}
+          width={1200}
+          height={300}
+          className="w-full rounded border border-gray-600"
+          style={{ imageRendering: 'crisp-edges' }}
+        />
+        <div className="flex items-center justify-between mt-2 px-2">
+          <span className="text-[9px] font-mono text-gray-500">25mm/s | 10mm/mV</span>
+          <span className="text-[9px] font-mono text-gray-500">TLC Monitor ECG Strip</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// MAIN TLC MONITOR COMPONENT
+// ============================================================================
+
+// Map vital keys to scoring framework assessment step IDs
 const VITAL_KEY_TO_STEP_ID: Record<string, string> = {
   bloodGlucose: 'blood-glucose',
   painScore: 'pain-assessment',
@@ -1516,9 +2134,9 @@ export function VitalSignsMonitor({
   const [assessmentMode, setAssessmentMode] = useState(true);
   const [activeAssessments, setActiveAssessments] = useState<Map<string, { startTime: number; duration: number }>>(new Map());
   const [assessmentProgress, setAssessmentProgress] = useState<Map<string, number>>(new Map());
-  const [alarmsEnabled, setAlarmsEnabled] = useState(true);
+  const [alarmsEnabled, setAlarmsEnabled] = useState(true); // Alarms ON by default
   const [activeAlarms, setActiveAlarms] = useState<Set<string>>(new Set());
-  const [audioEnabled, setAudioEnabled] = useState(false);
+  const [audioEnabled, setAudioEnabled] = useState(true); // Audio ON by default for realistic experience
   // Track which assessment step IDs have already been reported to prevent repeated calls
   const reportedAssessmentsRef = useRef(new Set<string>());
   // Snapshot of vitals at last assessment — display these instead of live values
@@ -1541,7 +2159,7 @@ export function VitalSignsMonitor({
     }
   }, [revealedVitals, assessmentMode]);
 
-  // LIFEPAK-specific states
+  // TLC Monitor-specific states
   const [monitorMode, setMonitorMode] = useState<'monitor' | 'defib' | 'pacer'>('monitor');
   const [selectedEnergy, setSelectedEnergy] = useState(200);
   const [isCharging, setIsCharging] = useState(false);
@@ -1564,6 +2182,24 @@ export function VitalSignsMonitor({
   const [pacerRate, setPacerRate] = useState(60);
   const [pacerOutput, setPacerOutput] = useState(80);
   const [shockArtifact, setShockArtifact] = useState(false);
+  // Rhythm override from shock outcomes (takes priority over parent prop)
+  const [localRhythmOverride, setLocalRhythmOverride] = useState<string | null>(null);
+  const [shockFeedbackMessage, setShockFeedbackMessage] = useState<{ text: string; severity: 'critical' | 'success' | 'warning' } | null>(null);
+  const shockCountRef = useRef(0);
+
+  // TLC Monitor states
+  const [powerOn, setPowerOn] = useState(true);
+  const [bootPhase, setBootPhase] = useState<'off' | 'booting' | 'ready'>('ready');
+  const [printMode, setPrintMode] = useState(false);
+  const [showOptions, setShowOptions] = useState(false);
+  const [waveformGain, setWaveformGain] = useState<0.5 | 1.0 | 1.5 | 2.0>(1.0);
+  const [showAnalyze, setShowAnalyze] = useState(false);
+  const [sweepPaused, setSweepPaused] = useState(false);
+  const [showCodeSummary, setShowCodeSummary] = useState(false);
+  const [aedMode, setAedMode] = useState(false);
+  const [nibpMode, setNibpMode] = useState<'manual' | 'auto'>('manual');
+  const [showNibpMenu, setShowNibpMenu] = useState(false);
+  const [show12LeadImage, setShow12LeadImage] = useState(false); // Show LITFL image-based 12-lead
 
   // Deterioration state (must be declared before any useEffect)
   const [caseSeverity] = useState<CaseSeverity>(() => determineSeverity(caseCategory || 'general', initialVitals));
@@ -1606,38 +2242,38 @@ export function VitalSignsMonitor({
     }
   }, [monitorMode, isCharged]);
 
+  // Auto-clear shock feedback message after 8 seconds
+  useEffect(() => {
+    if (!shockFeedbackMessage) return;
+    const t = setTimeout(() => setShockFeedbackMessage(null), 8000);
+    return () => clearTimeout(t);
+  }, [shockFeedbackMessage]);
+
   // ECG Rhythm - from override (dynamic patient state) or case category
+  // Clear local rhythm override when parent sends a new one (parent takes priority)
+  useEffect(() => {
+    if (overrideRhythm) setLocalRhythmOverride(null);
+  }, [overrideRhythm]);
+
   const currentRhythm = useMemo<ECGRhythm>(() => {
     const hr = parseInt(String(currentVitals.pulse)) || 75;
-    // If patient state provides a rhythm override (e.g., after defibrillation, atropine),
-    // resolve it directly from the rhythm registry before falling back to category matching.
-    // The override can be either a rhythm ID ('nsr', 'sinus-tachy') or a display name
-    // ('Normal Sinus Rhythm', 'Sinus Tachycardia').
-    if (overrideRhythm) {
-      // 1. Try direct rhythm ID match (e.g., 'nsr', 'sinus-tachy', 'vfib')
-      if (RHYTHM_MAP[overrideRhythm]) {
-        return RHYTHM_MAP[overrideRhythm];
-      }
-      // 2. Try matching by display name (e.g., 'Sinus Rhythm', 'Sinus Tachycardia')
-      const byName = ALL_RHYTHMS.find(r => r.name.toLowerCase() === overrideRhythm.toLowerCase());
+    // Local override (from handleShock) takes priority, then parent prop
+    const effectiveOverride = localRhythmOverride || overrideRhythm;
+    if (effectiveOverride) {
+      if (RHYTHM_MAP[effectiveOverride]) return RHYTHM_MAP[effectiveOverride];
+      const byName = ALL_RHYTHMS.find(r => r.name.toLowerCase() === effectiveOverride.toLowerCase());
       if (byName) return byName;
-      // 3. Try partial name match for common variations
-      const lowerOverride = overrideRhythm.toLowerCase();
-      if (lowerOverride === 'sinus rhythm' || lowerOverride === 'normal sinus rhythm') {
-        return RHYTHM_MAP['nsr'];
-      }
-      if (lowerOverride.includes('sinus tachycardia')) {
-        return RHYTHM_MAP['sinus-tachy'];
-      }
-      if (lowerOverride.includes('sinus bradycardia')) {
-        return RHYTHM_MAP['sinus-brady'];
-      }
-      // 4. Fallback to category-based matching using the override as search text
-      const overrideResult = getRhythmForCase('cardiac', overrideRhythm, hr, overrideRhythm);
+      const lowerOverride = effectiveOverride.toLowerCase();
+      if (lowerOverride === 'sinus rhythm' || lowerOverride === 'normal sinus rhythm') return RHYTHM_MAP['nsr'];
+      if (lowerOverride.includes('sinus tachycardia')) return RHYTHM_MAP['sinus-tachy'];
+      if (lowerOverride.includes('sinus bradycardia')) return RHYTHM_MAP['sinus-brady'];
+      if (lowerOverride.includes('ventricular fibrillation')) return RHYTHM_MAP['vfib'];
+      if (lowerOverride.includes('asystole')) return RHYTHM_MAP['asystole'];
+      const overrideResult = getRhythmForCase('cardiac', effectiveOverride, hr, effectiveOverride);
       return overrideResult;
     }
     return getRhythmForCase(caseCategory || 'general', caseSubcategory, hr, caseTitle, ecgFindings);
-  }, [caseCategory, caseSubcategory, currentVitals.pulse, caseTitle, ecgFindings, overrideRhythm]);
+  }, [caseCategory, caseSubcategory, currentVitals.pulse, caseTitle, ecgFindings, overrideRhythm, localRhythmOverride]);
 
   // Get the waveform function for the selected lead
   const getWaveformForLead = useCallback((lead: string): WaveformFn => {
@@ -1720,9 +2356,12 @@ export function VitalSignsMonitor({
     };
   }, [codeTimerRunning]);
 
-  // Manage heartbeat sound — no heartbeat during arrest rhythms
+  // Manage heartbeat sound — pitch varies with SpO2 when probe connected (like real pulse ox)
   useEffect(() => {
     if (!audioEngineRef.current) return;
+
+    // Set SpO2 pitch: when SpO2 probe is connected, heartbeat beep pitch varies with saturation
+    audioEngineRef.current._currentSpo2 = visibleVitals.has('spo2') ? (currentVitals.spo2 || 98) : null;
 
     if (audioEnabled && visibleVitals.has('pulse') && currentRhythm.category !== 'arrest') {
       const hr = parseInt(String(currentVitals.pulse)) || 80;
@@ -1737,7 +2376,7 @@ export function VitalSignsMonitor({
     } else {
       audioEngineRef.current.stopHeartbeat();
     }
-  }, [audioEnabled, visibleVitals, currentVitals.pulse, currentRhythm.category]);
+  }, [audioEnabled, visibleVitals, currentVitals.pulse, currentVitals.spo2, currentRhythm.category]);
 
   // Available vitals
   const availableVitals = useMemo(() => {
@@ -1873,7 +2512,7 @@ export function VitalSignsMonitor({
           return next;
         });
 
-        // Award assessment scoring credit for BGL, pain, and temperature via LIFEPAK
+        // Award assessment scoring credit for BGL, pain, and temperature via TLC Monitor
         // Guard: only fire onAssessmentPerformed once per stepId to prevent repeated prompts
         if (onAssessmentPerformed) {
           completed.forEach(key => {
@@ -1885,9 +2524,7 @@ export function VitalSignsMonitor({
           });
         }
 
-        if (audioEnabled && audioEngineRef.current && completed.includes('spo2')) {
-          audioEngineRef.current.playSpo2Beep(currentVitals.spo2 || 98);
-        }
+        // SpO2 tone now continuous via heartbeat pitch variation — no one-shot beep needed
       }
 
       if (activeAssessments.size > 0) {
@@ -1901,8 +2538,10 @@ export function VitalSignsMonitor({
     };
   }, [activeAssessments, audioEnabled, currentVitals.spo2]);
 
-  const startAssessment = useCallback((vitalKey: string, method: AssessmentMethod) => {
-    if (activeAssessments.has(vitalKey) || visibleVitals.has(vitalKey)) return;
+  const startAssessment = useCallback((vitalKey: string, method: AssessmentMethod, forceRecycle?: boolean) => {
+    // Allow BP to re-cycle even if already visible (re-measurement)
+    if (activeAssessments.has(vitalKey)) return;
+    if (visibleVitals.has(vitalKey) && !forceRecycle) return;
 
     if (audioEnabled && audioEngineRef.current && vitalKey === 'bp') {
       audioEngineRef.current.playBPInflation(method.duration * 1000);
@@ -2027,18 +2666,18 @@ export function VitalSignsMonitor({
         const updated = { ...prev };
         let changed = false;
 
-        // Oxygen therapy -> SpO2 gradually rises (skip during arrest — no perfusion for SpO2 reading)
-        // More aggressive improvement when critically low (proportional to deficit)
+        // Oxygen therapy -> SpO2 gradually rises (condition-specific recovery)
         if (hasOxygen && !isInCardiacArrest) {
           const currentSpo2 = prev.spo2 || 92;
-          if (currentSpo2 < 98) {
-            // Bigger improvement when SpO2 is very low (clinical: high-flow O2 works fast)
-            const deficit = 98 - currentSpo2;
-            const improvement = deficit > 30 ? Math.random() * 8 + 6    // Critical (<68%): +6-14 per tick
-                              : deficit > 15 ? Math.random() * 5 + 3    // Severe (<83%): +3-8 per tick
-                              : deficit > 5  ? Math.random() * 3 + 1.5  // Moderate (<93%): +1.5-4.5
-                              : Math.random() * 1.5 + 0.5;              // Mild: +0.5-2
-            updated.spo2 = Math.min(99, Math.round((currentSpo2 + improvement) * 10) / 10);
+          const profile = getSpO2RecoveryProfile(caseCategory || '', caseSubcategory, caseTitle, allTx);
+          if (currentSpo2 < profile.ceiling) {
+            const deficit = profile.ceiling - currentSpo2;
+            const baseImprovement = deficit > 30 ? Math.random() * 8 + 6
+                              : deficit > 15 ? Math.random() * 5 + 3
+                              : deficit > 5  ? Math.random() * 3 + 1.5
+                              : Math.random() * 1.5 + 0.5;
+            const improvement = baseImprovement * profile.rateMultiplier;
+            updated.spo2 = Math.min(profile.ceiling, Math.round((currentSpo2 + improvement) * 10) / 10);
             changed = true;
           }
           // Improved oxygenation reduces compensatory tachycardia
@@ -2256,7 +2895,7 @@ export function VitalSignsMonitor({
     return () => clearInterval(arrestPhysiologyInterval);
   }, [cprState?.active, cprState?.running]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // LIFEPAK charge handler
+  // TLC Monitor charge handler
   const handleCharge = () => {
     if (isCharging || monitorMode !== 'defib') return;
     setIsCharging(true);
@@ -2282,37 +2921,169 @@ export function VitalSignsMonitor({
       audioEngineRef.current.playShockSound();
     }
 
-    // Show shock delivered indicator
     setShockDelivered(true);
     setShockArtifact(true);
-    setShockCount(prev => prev + 1);
+    const thisShock = shockCountRef.current + 1;
+    shockCountRef.current = thisShock;
+    setShockCount(thisShock);
     setIsCharged(false);
 
-    // Log the intervention
-    logIntervention(
-      syncMode ? 'SYNC CARDIOVERSION' : 'DEFIBRILLATION',
-      `${selectedEnergy}J delivered - Shock #${shockCount + 1}`
-    );
-
-    // Shock artifact on ECG (brief disturbance) - clears after 1.5s
     setTimeout(() => setShockArtifact(false), 1500);
-
-    // "SHOCK DELIVERED" banner - shows for 4 seconds
     setTimeout(() => setShockDelivered(false), 4000);
 
-    // Rhythm disturbance effect - briefly alter HR to simulate rhythm change
-    setCurrentVitals(prev => {
-      const updated = { ...prev };
-      // Simulate post-shock rhythm change
-      if (syncMode) {
-        // Synchronized cardioversion - rhythm typically converts to slower rate
-        updated.pulse = Math.max(60, Math.min(100, (prev.pulse || 150) - Math.floor(Math.random() * 40 + 30)));
-      } else {
-        // Defibrillation - brief asystole then rhythm change
-        updated.pulse = Math.max(40, Math.min(110, 60 + Math.floor(Math.random() * 30)));
+    // Rhythm-aware shock logic
+    const rhythmName = normalizeRhythmName(currentRhythm.name);
+    const energy = selectedEnergy;
+    const isSynced = syncMode;
+
+    // --- VF / Fine VF ---
+    if (rhythmName === 'Ventricular Fibrillation') {
+      if (isSynced) {
+        logIntervention('SYNC CARDIOVERSION', `${energy}J on VF — sync may fail to find R wave`);
+        setShockFeedbackMessage({ text: 'SYNC on VF — sync may not identify R wave. Use unsynchronized defibrillation.', severity: 'warning' });
+        return;
       }
-      return updated;
+      const success = energy >= 150 || (energy >= 100 && thisShock >= 2);
+      if (success) {
+        logIntervention('DEFIBRILLATION', `${energy}J — VF terminated! ROSC — Shock #${thisShock}`);
+        setLocalRhythmOverride('sinus-tachy');
+        setCurrentVitals(prev => ({ ...prev, pulse: 80, bp: '100/65', spo2: Math.min(98, (prev.spo2 || 60) + 30) }));
+        setShockFeedbackMessage({ text: `ROSC! VF terminated at ${energy}J. Sinus tachycardia restored.`, severity: 'success' });
+        if (audioEnabled) audioEngineRef.current?.playRhythmChangeAlert();
+      } else {
+        logIntervention('DEFIBRILLATION', `${energy}J — VF persists — Shock #${thisShock}`);
+        setShockFeedbackMessage({ text: `VF persists after ${energy}J. Continue CPR 2 min. Consider increasing energy.`, severity: 'warning' });
+      }
+      return;
+    }
+
+    // --- Torsades de Pointes (treat like VF for defibrillation) ---
+    if (rhythmName === 'Torsades de Pointes') {
+      if (!isSynced && energy >= 150) {
+        logIntervention('DEFIBRILLATION', `${energy}J — Torsades terminated — Shock #${thisShock}`);
+        setLocalRhythmOverride('sinus-tachy');
+        setCurrentVitals(prev => ({ ...prev, pulse: 85, bp: '105/65' }));
+        setShockFeedbackMessage({ text: `Torsades terminated at ${energy}J. Give IV Magnesium 2g.`, severity: 'success' });
+        if (audioEnabled) audioEngineRef.current?.playRhythmChangeAlert();
+      } else {
+        logIntervention('DEFIBRILLATION', `${energy}J — Torsades persists — Shock #${thisShock}`);
+        setShockFeedbackMessage({ text: 'Torsades persists. Increase energy. Give Magnesium 2g IV.', severity: 'warning' });
+      }
+      return;
+    }
+
+    // --- VT ---
+    if (rhythmName === 'Ventricular Tachycardia') {
+      if (!isSynced) {
+        // WRONG: Unsync shock on VT → degenerates to VF
+        logIntervention('DEFIBRILLATION', `${energy}J UNSYNC on VT — DEGENERATED TO VF! Shock #${thisShock}`);
+        setLocalRhythmOverride('vfib');
+        setCurrentVitals(prev => ({ ...prev, pulse: 0, bp: '0/0', spo2: Math.max(40, (prev.spo2 || 94) - 40) }));
+        setShockFeedbackMessage({ text: 'CRITICAL: Unsync shock on VT caused VF! Cardiac arrest — begin CPR!', severity: 'critical' });
+        if (audioEnabled) audioEngineRef.current?.playRhythmChangeAlert();
+        return;
+      }
+      const success = energy >= 100 || (energy >= 50 && thisShock >= 2);
+      if (success) {
+        logIntervention('SYNC CARDIOVERSION', `${energy}J — VT converted to NSR — Shock #${thisShock}`);
+        setLocalRhythmOverride('nsr');
+        setCurrentVitals(prev => ({ ...prev, pulse: 78, bp: '110/70' }));
+        setShockFeedbackMessage({ text: `VT cardioverted to NSR at ${energy}J. HR 78, BP 110/70.`, severity: 'success' });
+        if (audioEnabled) audioEngineRef.current?.playRhythmChangeAlert();
+      } else {
+        logIntervention('SYNC CARDIOVERSION', `${energy}J — VT persists — Shock #${thisShock}`);
+        setShockFeedbackMessage({ text: `VT persists after ${energy}J sync. Increase energy. Consider Amiodarone 300mg.`, severity: 'warning' });
+      }
+      return;
+    }
+
+    // --- SVT ---
+    if (rhythmName === 'SVT') {
+      if (!isSynced) {
+        logIntervention('DEFIBRILLATION', `${energy}J UNSYNC on SVT — risk of VF!`);
+        setShockFeedbackMessage({ text: 'SVT requires SYNCHRONIZED cardioversion! Risk of inducing VF.', severity: 'critical' });
+        return;
+      }
+      if (energy >= 50) {
+        logIntervention('SYNC CARDIOVERSION', `${energy}J — SVT terminated — Shock #${thisShock}`);
+        setLocalRhythmOverride('nsr');
+        setCurrentVitals(prev => ({ ...prev, pulse: 80 }));
+        setShockFeedbackMessage({ text: `SVT cardioverted to NSR at ${energy}J. HR 80.${energy > 100 ? ' Lower energy (50-100J) is sufficient for SVT.' : ''}`, severity: 'success' });
+        if (audioEnabled) audioEngineRef.current?.playRhythmChangeAlert();
+      } else {
+        logIntervention('SYNC CARDIOVERSION', `${energy}J — SVT persists`);
+        setShockFeedbackMessage({ text: `SVT persists. Increase to 50-100J.`, severity: 'warning' });
+      }
+      return;
+    }
+
+    // --- AF ---
+    if (rhythmName === 'Atrial Fibrillation') {
+      if (!isSynced) {
+        logIntervention('DEFIBRILLATION', `${energy}J UNSYNC on AF — risk of VF!`);
+        setShockFeedbackMessage({ text: 'AF requires SYNCHRONIZED cardioversion!', severity: 'critical' });
+        return;
+      }
+      if (energy >= 120 || (energy >= 100 && thisShock >= 2)) {
+        logIntervention('SYNC CARDIOVERSION', `${energy}J — AF terminated — Shock #${thisShock}`);
+        setLocalRhythmOverride('nsr');
+        setCurrentVitals(prev => ({ ...prev, pulse: 76, bp: '118/72' }));
+        setShockFeedbackMessage({ text: `AF cardioverted to NSR at ${energy}J. HR 76, BP 118/72.`, severity: 'success' });
+        if (audioEnabled) audioEngineRef.current?.playRhythmChangeAlert();
+      } else {
+        logIntervention('SYNC CARDIOVERSION', `${energy}J — AF persists`);
+        setShockFeedbackMessage({ text: `AF persists. Consider 120-200J for AF.`, severity: 'warning' });
+      }
+      return;
+    }
+
+    // --- Atrial Flutter ---
+    if (rhythmName === 'Atrial Flutter') {
+      if (!isSynced) {
+        logIntervention('DEFIBRILLATION', `${energy}J UNSYNC on flutter — risk of VF!`);
+        setShockFeedbackMessage({ text: 'Atrial flutter requires SYNCHRONIZED cardioversion!', severity: 'critical' });
+        return;
+      }
+      if (energy >= 50) {
+        logIntervention('SYNC CARDIOVERSION', `${energy}J — Flutter terminated — Shock #${thisShock}`);
+        setLocalRhythmOverride('nsr');
+        setCurrentVitals(prev => ({ ...prev, pulse: 78, bp: '120/75' }));
+        setShockFeedbackMessage({ text: `Flutter cardioverted to NSR at ${energy}J.`, severity: 'success' });
+        if (audioEnabled) audioEngineRef.current?.playRhythmChangeAlert();
+      } else {
+        logIntervention('SYNC CARDIOVERSION', `${energy}J — Flutter persists`);
+        setShockFeedbackMessage({ text: `Flutter persists. Increase to 50-100J.`, severity: 'warning' });
+      }
+      return;
+    }
+
+    // --- Non-shockable: Asystole / PEA ---
+    if (rhythmName === 'Asystole' || rhythmName === 'PEA') {
+      logIntervention('DEFIBRILLATION', `${energy}J on ${rhythmName} — NON-SHOCKABLE — Shock #${thisShock}`);
+      setShockFeedbackMessage({ text: `${rhythmName} is NON-SHOCKABLE! Do not defibrillate. Continue CPR + Adrenaline.`, severity: 'critical' });
+      return;
+    }
+
+    // --- Perfusing / Normal rhythm — HARMFUL SHOCK ---
+    logIntervention(isSynced ? 'SYNC CARDIOVERSION' : 'DEFIBRILLATION', `${energy}J on ${rhythmName} — INAPPROPRIATE — Shock #${thisShock}`);
+    const roll = Math.random();
+    let newRhythm: string;
+    if (roll < 0.7) { newRhythm = 'vfib'; }
+    else if (roll < 0.9) { newRhythm = 'asystole'; }
+    else { newRhythm = 'pea'; }
+    setLocalRhythmOverride(newRhythm);
+    setCurrentVitals(prev => ({
+      ...prev,
+      pulse: 0,
+      bp: '0/0',
+      spo2: Math.max(30, (prev.spo2 || 98) - 55),
+    }));
+    const rhythmLabel = newRhythm === 'vfib' ? 'VF' : newRhythm === 'asystole' ? 'Asystole' : 'PEA';
+    setShockFeedbackMessage({
+      text: `CRITICAL: Shock on perfusing rhythm caused ${rhythmLabel}! Cardiac arrest — begin CPR immediately!`,
+      severity: 'critical',
     });
+    if (audioEnabled) audioEngineRef.current?.playRhythmChangeAlert();
   };
 
   const handleEnergyUp = () => {
@@ -2387,1135 +3158,767 @@ export function VitalSignsMonitor({
     );
   };
 
+  // Power ON/OFF handler
+  const handlePowerToggle = useCallback(() => {
+    if (powerOn) {
+      setPowerOn(false);
+      setBootPhase('off');
+      audioEngineRef.current?.stopHeartbeat();
+      audioEngineRef.current?.stopReadyTone();
+    } else {
+      setBootPhase('booting');
+      setPowerOn(true);
+      audioEngineRef.current?.playPowerOnSound();
+      setTimeout(() => setBootPhase('ready'), 1500);
+    }
+  }, [powerOn]);
+
+  const handleHomeScreen = useCallback(() => {
+    setShow12Lead(false); setPrintMode(false); setShowOptions(false);
+    setShowAnalyze(false); setShowCodeSummary(false); setShowAssessPanel(false);
+    setAedMode(false); setShow12LeadImage(false); setShowNibpMenu(false);
+  }, []);
+
+  const handleAnalyze = useCallback(() => {
+    setAedMode(true);
+    setMonitorMode('defib');
+    audioEngineRef.current?.playAnalyzeSound();
+    logIntervention('ANALYZE', `AED: ${currentRhythm.name} — ${
+      currentRhythm.id === 'vfib' || currentRhythm.id === 'vtach' ? 'SHOCK ADVISED' : 'NO SHOCK ADVISED'
+    }`);
+  }, [currentRhythm, logIntervention]);
+
+  const handlePrint = useCallback(() => {
+    setShow12LeadImage(true);
+    logIntervention('PRINT', '12-Lead ECG printed');
+    if (audioEnabled && audioEngineRef.current) audioEngineRef.current.playPrintingSound(3000);
+  }, [logIntervention, audioEnabled]);
+
+  const handleGainCycle = useCallback(() => {
+    const gains: (0.5 | 1.0 | 1.5 | 2.0)[] = [0.5, 1.0, 1.5, 2.0];
+    setWaveformGain(gains[(gains.indexOf(waveformGain) + 1) % gains.length]);
+  }, [waveformGain]);
+
+  const litflImageUrl = useMemo(() => getLitflImageForRhythm(currentRhythm.id), [currentRhythm.id]);
+
   return (
     <div className="select-none">
       {/* ================================================================ */}
-      {/* LIFEPAK 20 OUTER HOUSING                                        */}
+      {/* TLC MONITOR — FULL REDESIGN                                      */}
       {/* ================================================================ */}
-      <div className="relative rounded-2xl overflow-hidden"
+      <div className="relative rounded-xl overflow-hidden"
         style={{
           background: 'linear-gradient(145deg, #3a3d42 0%, #2a2d31 30%, #1e2024 60%, #2a2d31 100%)',
           boxShadow: '0 8px 32px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05)',
-        }}
-      >
-        {/* Top housing bar - brand area */}
-        <div className="px-4 py-2 flex items-center justify-between"
-          style={{
-            background: 'linear-gradient(180deg, #3a3d42 0%, #2e3136 100%)',
-            borderBottom: '1px solid rgba(0,0,0,0.4)',
-          }}
-        >
-          <div className="flex items-center gap-3">
-            {/* Power indicator LED */}
-            <div className={`w-2.5 h-2.5 rounded-full shadow-lg ${
-              alarmStatus.hasCritical
-                ? 'bg-red-500 shadow-red-500/50 animate-pulse'
-                : alarmStatus.hasWarning
-                  ? 'bg-amber-400 shadow-amber-400/50 animate-pulse'
-                  : 'bg-green-500 shadow-green-500/50'
-            }`} />
-            <div>
-              <span className="text-[11px] font-bold tracking-[0.2em] text-gray-300"
-                style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-                LIFEPAK<span className="text-[8px] align-super ml-0.5">&reg;</span> 20
-              </span>
-              <span className="text-[8px] text-gray-500 ml-2 tracking-wider">DEFIBRILLATOR/MONITOR</span>
-            </div>
-          </div>
+          border: '3px solid #4a8c3f',
+        }}>
 
-          <div className="flex items-center gap-2">
-            {/* Assessment mode badge */}
+        {/* ================================================================ */}
+        {/* TOP BAR — ON button + PRINT/CODE SUMMARY/TRANSMIT/12 LEAD       */}
+        {/* ================================================================ */}
+        <div className="flex items-center gap-2 px-3 py-2"
+          style={{ background: 'linear-gradient(180deg, #333639 0%, #2a2d31 100%)', borderBottom: '1px solid rgba(0,0,0,0.3)' }}>
+
+          {/* BIG ON BUTTON */}
+          <button onClick={handlePowerToggle}
+            className={`w-12 h-12 rounded-lg font-mono font-bold text-sm tracking-wider select-none
+              transition-all duration-200 border-2 flex items-center justify-center
+              ${powerOn
+                ? 'bg-gradient-to-b from-green-500 to-green-700 text-white border-green-400 shadow-[0_0_12px_rgba(74,222,128,0.4)]'
+                : 'bg-gradient-to-b from-gray-600 to-gray-800 text-gray-400 border-gray-500'
+              }
+              hover:brightness-110 active:brightness-90`}
+          >
+            ON
+          </button>
+
+          {/* Side buttons */}
+          <SideButton label="PRINT" onClick={handlePrint} active={show12LeadImage} />
+          <SideButton label="CODE SUMMARY" onClick={() => setShowCodeSummary(!showCodeSummary)} active={showCodeSummary} />
+          <SideButton label="TRANSMIT" onClick={() => logIntervention('TRANSMIT', 'Data transmitted')} />
+          <SideButton label="12 LEAD" onClick={() => {
+            if (!show12Lead) onAssessmentPerformed?.('12-lead-ecg');
+            setShow12Lead(!show12Lead);
+          }} active={show12Lead} />
+
+          {/* Right: mode selector + branding */}
+          <div className="ml-auto flex items-center gap-2">
             {assessmentMode && (
-              <Badge variant="outline" className="text-[8px] border-amber-600/50 text-amber-400 h-4 bg-amber-950/30">
-                ASSESS MODE
-              </Badge>
+              <Badge variant="outline" className="text-[7px] border-amber-600/50 text-amber-400 h-4 bg-amber-950/30">ASSESS</Badge>
             )}
-            {/* Mode selector */}
-            <div className="flex rounded overflow-hidden border border-gray-600/50">
+            <div className="flex rounded-sm overflow-hidden border border-gray-600/50">
               {(['monitor', 'defib', 'pacer'] as const).map(mode => (
-                <button
-                  key={mode}
-                  onClick={() => setMonitorMode(mode)}
-                  className={`px-2 py-0.5 text-[8px] font-mono font-bold tracking-wider transition-colors ${
+                <button key={mode} onClick={() => { setMonitorMode(mode); setAedMode(false); }}
+                  className={`px-2.5 py-1 text-[8px] font-mono font-bold tracking-wider transition-colors ${
                     monitorMode === mode
-                      ? mode === 'defib'
-                        ? 'bg-red-700 text-white'
-                        : mode === 'pacer'
-                          ? 'bg-blue-700 text-white'
-                          : 'bg-green-700 text-white'
+                      ? mode === 'defib' ? 'bg-red-700 text-white' : mode === 'pacer' ? 'bg-blue-700 text-white' : 'bg-green-700 text-white'
                       : 'bg-gray-700/50 text-gray-400 hover:bg-gray-600/50'
-                  }`}
-                >
-                  {mode.toUpperCase()}
-                </button>
+                  }`}>{mode.toUpperCase()}</button>
               ))}
             </div>
+            <span className="text-[9px] font-bold tracking-wider text-gray-400"
+              style={{ fontFamily: 'system-ui' }}>TLC Monitor</span>
           </div>
         </div>
 
         {/* ================================================================ */}
-        {/* LCD SCREEN AREA - The actual monitor display                     */}
+        {/* LCD SCREEN — Full width, no sidebar                             */}
         {/* ================================================================ */}
-        <div className="mx-3 my-2 rounded-lg overflow-hidden border-2 border-gray-800"
-          style={{
-            background: '#001000',
-            boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.8), 0 1px 0 rgba(255,255,255,0.03)',
-          }}
-        >
-          {/* Screen Header - Status Bar */}
-          <div className="flex items-center justify-between px-3 py-1 border-b border-gray-800/50"
-            style={{ background: 'rgba(0,20,0,0.5)' }}>
-            <div className="flex items-center gap-3">
-              {/* Lead indicator */}
-              <div className="flex items-center gap-1">
-                <span className="text-[9px] font-mono text-green-500/80">LEAD</span>
-                <span className="text-[10px] font-mono font-bold text-green-400">{selectedLead}</span>
-              </div>
-              {/* Sweep speed */}
-              <span className="text-[8px] font-mono text-gray-500">25mm/s</span>
-              {/* Sync indicator */}
-              {syncMode && (
-                <span className="text-[8px] font-mono text-yellow-400 animate-pulse">SYNC</span>
-              )}
-            </div>
-            <div className="flex items-center gap-3">
-              {/* Alarm indicator */}
-              {alarmStatus.count > 0 && alarmsEnabled && (
-                <span className={`text-[9px] font-mono font-bold animate-pulse ${
-                  alarmStatus.hasCritical ? 'text-red-500' : 'text-yellow-500'
-                }`}>
-                  {alarmStatus.hasCritical ? 'ALARM' : 'ALERT'}
-                </span>
-              )}
-              {/* Heart icon - flashes with each QRS */}
-              <Heart
-                className={`h-3 w-3 transition-all duration-75 ${
-                  heartFlash && visibleVitals.has('pulse')
-                    ? 'text-green-400 scale-110 fill-green-400'
-                    : 'text-green-800 scale-100'
-                }`}
-              />
-              {/* Clock */}
-              <span className="text-[9px] font-mono text-gray-500">
-                {new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
-              </span>
-            </div>
-          </div>
+        <div className="mx-2 my-2 rounded-lg overflow-hidden border-2 border-gray-700"
+          style={{ background: '#001000', boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.8)' }}>
 
-          {/* Main Screen Content */}
-          <div className="flex">
-            {/* ============================================================ */}
-            {/* LEFT: Waveform Area (takes ~70% width)                       */}
-            {/* ============================================================ */}
-            <div className="flex-1 min-w-0">
-              {/* ECG Waveform Channel */}
-              <div className="relative">
-                <div className="absolute top-1 left-2 z-10 flex items-center gap-1">
-                  <span className="text-[9px] font-mono font-bold text-green-500/90">{selectedLead}</span>
-                  <span className="text-[8px] font-mono text-green-500/50">ECG</span>
+          {!powerOn && (
+            <div className="h-[280px] flex items-center justify-center" style={{ background: '#0a0a0a' }}>
+              <span className="text-[12px] font-mono text-gray-700">MONITOR OFF — Press ON to start</span>
+            </div>
+          )}
+
+          {powerOn && bootPhase === 'booting' && (
+            <div className="h-[280px] flex flex-col items-center justify-center" style={{ background: '#001000' }}>
+              <span className="text-xl font-mono font-bold text-green-400 tracking-[0.3em] animate-pulse">TLC Monitor</span>
+              <span className="text-[9px] font-mono text-green-600 mt-2">SYSTEM SELF-TEST...</span>
+              <div className="w-32 h-1 bg-green-900 rounded mt-2 overflow-hidden">
+                <div className="h-full bg-green-500 rounded animate-pulse" style={{ width: '60%' }} />
+              </div>
+            </div>
+          )}
+
+          {powerOn && bootPhase === 'ready' && (
+            <>
+              {/* PARAMETER BAR — Click any vital to toggle it on (triggers assessment + sound) */}
+              <div className="flex items-stretch border-b border-gray-800/50" style={{ background: 'rgba(0,10,0,0.6)' }}>
+                <div className="flex-1 px-1.5 py-0.5 border-r border-gray-800/30 text-center cursor-pointer hover:bg-yellow-900/20 transition-colors"
+                  onClick={() => {
+                    if (!visibleVitals.has('respiration') && !activeAssessments.has('respiration')) {
+                      startAssessment('respiration', ASSESSMENT_METHODS.respiration[0]);
+                      logIntervention('ASSESS', 'Respiratory rate assessment');
+                    }
+                  }}>
+                  <span className="text-[7px] font-mono text-yellow-500/70 block">RR</span>
+                  <span className={`text-sm font-mono font-bold ${visibleVitals.has('respiration') ? 'text-yellow-400' : 'text-yellow-400/20'}`}>
+                    {visibleVitals.has('respiration') ? Math.round(currentVitals.respiration) : '--'}
+                  </span>
                 </div>
-                <ECGWaveform
-                  heartRate={hrValue}
-                  color="#00ff41"
-                  height={70}
-                  isVisible={visibleVitals.has('pulse')}
-                  waveformFn={getWaveformForLead(selectedLead)}
-                  showPacingSpikes={pacerActive && monitorMode === 'pacer'}
-                  showShockArtifact={shockArtifact}
-                  showSyncMarkers={syncMode && monitorMode === 'defib'}
-                  showCprArtifact={cprState?.running === true}
-                />
-                {!visibleVitals.has('pulse') && (
-                  <div className="h-[70px] flex items-center justify-center"
-                    style={{ background: '#001000' }}>
-                    {activeAssessments.has('pulse') ? (
-                      <div className="text-center">
-                        <span className="text-[10px] font-mono text-green-600 block">ACQUIRING ECG...</span>
-                        <Progress value={assessmentProgress.get('pulse') || 0} className="h-1 w-24 mt-1" />
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => startAssessment('pulse', ASSESSMENT_METHODS.pulse[2])}
-                        className="text-[10px] font-mono text-green-700 hover:text-green-500 transition-colors cursor-pointer"
-                      >
-                        LEADS OFF - TAP TO CONNECT
-                      </button>
-                    )}
+                <div className="flex-1 px-1.5 py-0.5 border-r border-gray-800/30 text-center cursor-pointer hover:bg-white/5 transition-colors"
+                  onClick={() => {
+                    if (!activeAssessments.has('bp')) {
+                      startAssessment('bp', ASSESSMENT_METHODS.bp[1], true);
+                      logIntervention('NIBP', 'Blood pressure measurement');
+                    }
+                  }}>
+                  <span className="text-[7px] font-mono text-white/60 block">NIBP</span>
+                  <span className={`text-sm font-mono font-bold ${visibleVitals.has('bp') ? 'text-white' : 'text-white/20'}`}>
+                    {visibleVitals.has('bp') ? (assessedVitals.bp || currentVitals.bp) : '--/--'}
+                  </span>
+                  {activeAssessments.has('bp') && <span className="text-[6px] font-mono text-blue-400 block animate-pulse">MEASURING...</span>}
+                </div>
+                <div className="flex-1 px-1.5 py-0.5 border-r border-gray-800/30 text-center cursor-pointer hover:bg-orange-900/20 transition-colors"
+                  onClick={() => {
+                    if (!visibleVitals.has('temperature') && !activeAssessments.has('temperature') && currentVitals.temperature) {
+                      startAssessment('temperature', ASSESSMENT_METHODS.temperature[0]);
+                      logIntervention('ASSESS', 'Temperature assessment');
+                    }
+                  }}>
+                  <span className="text-[7px] font-mono text-orange-400/70 block">Temp</span>
+                  <span className={`text-sm font-mono font-bold ${visibleVitals.has('temperature') ? 'text-orange-400' : 'text-orange-400/20'}`}>
+                    {visibleVitals.has('temperature') && currentVitals.temperature ? currentVitals.temperature.toFixed(1) : '--'}
+                  </span>
+                </div>
+                <div className="flex-1 px-1.5 py-0.5 border-r border-gray-800/30 text-center cursor-pointer hover:bg-fuchsia-900/20 transition-colors"
+                  onClick={() => {
+                    if (!visibleVitals.has('etco2') && etco2Value) {
+                      setVisibleVitals(prev => { const next = new Set(prev); next.add('etco2'); return next; });
+                      logIntervention('ASSESS', 'EtCO2 connected');
+                    }
+                  }}>
+                  <span className="text-[7px] font-mono text-fuchsia-400/70 block">CO2</span>
+                  <span className={`text-sm font-mono font-bold ${visibleVitals.has('etco2') ? 'text-fuchsia-400' : 'text-fuchsia-400/20'}`}>
+                    {visibleVitals.has('etco2') && etco2Value ? etco2Value : '--'}
+                  </span>
+                </div>
+                <div className="flex-1 px-1.5 py-0.5 border-r border-gray-800/30 text-center cursor-pointer hover:bg-cyan-900/20 transition-colors"
+                  onClick={() => {
+                    if (!visibleVitals.has('spo2') && !activeAssessments.has('spo2')) {
+                      startAssessment('spo2', ASSESSMENT_METHODS.spo2[0]);
+                      logIntervention('ASSESS', 'SpO2 probe applied');
+                    }
+                  }}>
+                  <span className="text-[7px] font-mono text-cyan-400/70 block">SpO2</span>
+                  <span className={`text-xl font-mono font-bold ${
+                    visibleVitals.has('spo2') ? (getVitalAlarmState('spo2').isAlarm ? 'text-red-500' : 'text-cyan-400') : 'text-cyan-400/20'
+                  }`}>{visibleVitals.has('spo2') ? Math.round(assessedVitals.spo2 ?? currentVitals.spo2) : '--'}</span>
+                  <span className="text-[6px] font-mono text-cyan-400/40 block">%</span>
+                </div>
+                <div className="px-2 py-0.5 text-center min-w-[55px] cursor-pointer hover:bg-green-900/20 transition-colors"
+                  onClick={() => {
+                    if (!visibleVitals.has('pulse') && !activeAssessments.has('pulse')) {
+                      startAssessment('pulse', ASSESSMENT_METHODS.pulse[0]);
+                      logIntervention('ASSESS', 'Pulse check');
+                      if (audioEnabled && audioEngineRef.current) audioEngineRef.current.playHeartbeat(currentVitals.pulse || 80);
+                    }
+                  }}>
+                  <span className="text-[7px] font-mono text-green-500/70 block">HR</span>
+                  <span className={`text-2xl font-mono font-bold leading-none ${
+                    visibleVitals.has('pulse')
+                      ? getVitalAlarmState('pulse').isAlarm ? 'text-red-500 animate-pulse' : getVitalAlarmState('pulse').isWarning ? 'text-amber-400' : 'text-green-400'
+                      : 'text-green-400/20'
+                  }`}>{visibleVitals.has('pulse') ? (currentRhythm.category === 'arrest' ? 0 : Math.round(currentVitals.pulse)) : '--'}</span>
+                </div>
+                {/* Extra vitals: GCS, BGL */}
+                {currentVitals.gcs !== undefined && (
+                  <div className="px-1.5 py-0.5 border-l border-gray-800/30 text-center cursor-pointer hover:bg-gray-700/20 transition-colors"
+                    onClick={() => {
+                      if (!visibleVitals.has('gcs') && !activeAssessments.has('gcs')) {
+                        startAssessment('gcs', ASSESSMENT_METHODS.gcs[0]);
+                        logIntervention('ASSESS', 'GCS assessment');
+                      }
+                    }}>
+                    <span className="text-[7px] font-mono text-gray-300/60 block">GCS</span>
+                    <span className={`text-sm font-mono font-bold ${visibleVitals.has('gcs') ? 'text-white' : 'text-white/20'}`}>
+                      {visibleVitals.has('gcs') ? Math.round(currentVitals.gcs) : '--'}
+                    </span>
                   </div>
                 )}
-                {/* 1mV calibration marker */}
-                <div className="absolute bottom-1 right-2 text-[7px] font-mono text-green-500/40">
-                  1mV
-                </div>
-              </div>
-
-              {/* Channel Divider */}
-              <div className="h-[3px]" style={{ background: 'linear-gradient(to right, rgba(0,40,0,0.5), rgba(0,60,0,0.3), rgba(0,40,0,0.5))' }} />
-
-              {/* SpO2 Pleth Channel */}
-              <div className="relative">
-                <div className="absolute top-1 left-2 z-10 flex items-center gap-1">
-                  <span className="text-[9px] font-mono font-bold text-cyan-400/90">Pleth</span>
-                  <span className="text-[8px] font-mono text-cyan-400/50">SpO2</span>
-                </div>
-                <PlethWaveform
-                  heartRate={hrValue}
-                  spo2={spo2Value}
-                  color="#00e5ff"
-                  height={70}
-                  isVisible={visibleVitals.has('spo2')}
-                />
-                {!visibleVitals.has('spo2') && (
-                  <div className="h-[70px] flex items-center justify-center"
-                    style={{ background: '#000810' }}>
-                    {activeAssessments.has('spo2') ? (
-                      <div className="text-center">
-                        <span className="text-[10px] font-mono text-cyan-600 block">ACQUIRING SpO2...</span>
-                        <Progress value={assessmentProgress.get('spo2') || 0} className="h-1 w-24 mt-1" />
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => startAssessment('spo2', ASSESSMENT_METHODS.spo2[0])}
-                        className="text-[10px] font-mono text-cyan-700 hover:text-cyan-500 transition-colors cursor-pointer"
-                      >
-                        SENSOR OFF - TAP TO CONNECT
-                      </button>
-                    )}
+                {currentVitals.bloodGlucose !== undefined && (
+                  <div className="px-1.5 py-0.5 border-l border-gray-800/30 text-center cursor-pointer hover:bg-purple-900/20 transition-colors"
+                    onClick={() => {
+                      if (!visibleVitals.has('bloodGlucose') && !activeAssessments.has('bloodGlucose')) {
+                        startAssessment('bloodGlucose', ASSESSMENT_METHODS.glucose[0]);
+                        logIntervention('ASSESS', 'Blood glucose check');
+                      }
+                    }}>
+                    <span className="text-[7px] font-mono text-purple-400/70 block">BGL</span>
+                    <span className={`text-sm font-mono font-bold ${visibleVitals.has('bloodGlucose') ? 'text-purple-400' : 'text-purple-400/20'}`}>
+                      {visibleVitals.has('bloodGlucose') ? (typeof currentVitals.bloodGlucose === 'number' ? currentVitals.bloodGlucose.toFixed(1) : currentVitals.bloodGlucose) : '--'}
+                    </span>
                   </div>
                 )}
               </div>
 
-              {/* Channel Divider */}
-              <div className="h-[3px]" style={{ background: 'linear-gradient(to right, rgba(0,40,40,0.5), rgba(0,60,60,0.3), rgba(0,40,40,0.5))' }} />
-
-              {/* EtCO2 Capnography Channel (if available) */}
-              {etco2Value !== undefined && (
-                <div className="relative">
-                  <div className="absolute top-1 left-2 z-10 flex items-center gap-1">
-                    <span className="text-[9px] font-mono font-bold text-fuchsia-400/90">CO2</span>
-                    <span className="text-[8px] font-mono text-fuchsia-400/50">mmHg</span>
+              {/* WAVEFORM AREA + RIGHT STRIP */}
+              <div className="flex">
+                <div className="flex-1 min-w-0">
+                  {/* ECG */}
+                  <div className="relative">
+                    <div className="absolute top-0.5 left-1.5 z-10"><span className="text-[8px] font-mono text-green-500/70">{selectedLead}</span></div>
+                    <ECGWaveform heartRate={hrValue} color="#00ff41" height={80} isVisible={visibleVitals.has('pulse') && !sweepPaused}
+                      waveformFn={getWaveformForLead(selectedLead)} showPacingSpikes={pacerActive && monitorMode === 'pacer'}
+                      showShockArtifact={shockArtifact} showSyncMarkers={syncMode && monitorMode === 'defib'} showCprArtifact={cprState?.running === true} />
+                    {!visibleVitals.has('pulse') && (
+                      <div className="h-[80px] flex items-center justify-center" style={{ background: '#001000' }}>
+                        {activeAssessments.has('pulse') ? (
+                          <div className="text-center"><span className="text-[9px] font-mono text-green-600 block">ACQUIRING ECG...</span>
+                            <Progress value={assessmentProgress.get('pulse') || 0} className="h-1 w-20 mt-1" /></div>
+                        ) : (<button onClick={() => startAssessment('pulse', ASSESSMENT_METHODS.pulse[2])}
+                          className="text-[9px] font-mono text-green-700 hover:text-green-500 transition-colors cursor-pointer">LEADS OFF - TAP TO CONNECT</button>)}
+                      </div>
+                    )}
                   </div>
-                  <CapnographyWaveform
-                    respiratoryRate={rrValue}
-                    etco2={etco2Value}
-                    color="#ff66ff"
-                    height={70}
-                    isVisible={visibleVitals.has('etco2')}
-                  />
-                  {!visibleVitals.has('etco2') && (
-                    <div className="h-[70px] flex items-center justify-center"
-                      style={{ background: '#080010' }}>
-                      {activeAssessments.has('etco2') ? (
-                        <div className="text-center">
-                          <span className="text-[10px] font-mono text-fuchsia-600 block">ACQUIRING CO2...</span>
-                          <Progress value={assessmentProgress.get('etco2') || 0} className="h-1 w-24 mt-1" />
+                  {/* SpO2 */}
+                  <div className="relative">
+                    <div className="absolute top-0.5 left-1.5 z-10"><span className="text-[8px] font-mono text-cyan-400/70">SpO2</span></div>
+                    <PlethWaveform heartRate={hrValue} spo2={spo2Value} color="#00e5ff" height={65} isVisible={visibleVitals.has('spo2') && !sweepPaused} />
+                    {!visibleVitals.has('spo2') && (
+                      <div className="h-[65px] flex items-center justify-center" style={{ background: '#000810' }}>
+                        {activeAssessments.has('spo2') ? (
+                          <div className="text-center"><span className="text-[9px] font-mono text-cyan-600 block">ACQUIRING SpO2...</span>
+                            <Progress value={assessmentProgress.get('spo2') || 0} className="h-1 w-20 mt-1" /></div>
+                        ) : (<button onClick={() => startAssessment('spo2', ASSESSMENT_METHODS.spo2[0])}
+                          className="text-[9px] font-mono text-cyan-700 hover:text-cyan-500 cursor-pointer">SENSOR OFF - TAP TO CONNECT</button>)}
+                      </div>
+                    )}
+                  </div>
+                  {/* CO2 */}
+                  {etco2Value !== undefined && (
+                    <div className="relative">
+                      <div className="absolute top-0.5 left-1.5 z-10"><span className="text-[8px] font-mono text-fuchsia-400/70">CO2</span></div>
+                      <CapnographyWaveform respiratoryRate={rrValue} etco2={etco2Value} color="#ff66ff" height={60} isVisible={visibleVitals.has('etco2') && !sweepPaused} />
+                      {!visibleVitals.has('etco2') && (
+                        <div className="h-[60px] flex items-center justify-center" style={{ background: '#080010' }}>
+                          {activeAssessments.has('etco2') ? (
+                            <div className="text-center"><span className="text-[9px] font-mono text-fuchsia-600 block">ACQUIRING CO2...</span>
+                              <Progress value={assessmentProgress.get('etco2') || 0} className="h-1 w-20 mt-1" /></div>
+                          ) : (<button onClick={() => startAssessment('etco2', ASSESSMENT_METHODS.etco2[0])}
+                            className="text-[9px] font-mono text-fuchsia-700 hover:text-fuchsia-500 cursor-pointer">CO2 OFF - TAP TO CONNECT</button>)}
                         </div>
-                      ) : (
-                        <button
-                          onClick={() => startAssessment('etco2', ASSESSMENT_METHODS.etco2[0])}
-                          className="text-[10px] font-mono text-fuchsia-700 hover:text-fuchsia-500 transition-colors cursor-pointer"
-                        >
-                          CO2 OFF - TAP TO CONNECT
-                        </button>
+                      )}
+                    </div>
+                  )}
+                  {/* Status bar */}
+                  {(cprState?.active || (alarmStatus.count > 0 && alarmsEnabled)) && (
+                    <div className="px-2 py-1 border-t border-gray-800/40 flex items-center gap-3" style={{ background: 'rgba(0,0,0,0.5)' }}>
+                      {cprState?.active && <span className="text-[8px] font-mono text-yellow-300 font-bold">CPR: Adult - {cprState.running ? 'Active' : 'Paused'} 30:2</span>}
+                      {alarmStatus.count > 0 && alarmsEnabled && (
+                        <span className={`text-[8px] font-mono font-bold ${alarmStatus.hasCritical ? 'text-red-400 animate-pulse' : 'text-yellow-400'}`}>
+                          {alarmStatus.count} Alarm{alarmStatus.count > 1 ? 's' : ''} {formatCodeTimer(codeTimerSeconds)}
+                        </span>
                       )}
                     </div>
                   )}
                 </div>
-              )}
-            </div>
-
-            {/* ============================================================ */}
-            {/* RIGHT: Numeric Values Panel (~30% width)                     */}
-            {/* ============================================================ */}
-            <div className="w-[140px] sm:w-[180px] border-l border-gray-800/50 flex flex-col"
-              style={{ background: 'rgba(0,0,0,0.6)' }}>
-
-              {/* HR - Heart Rate (Green) */}
-              <div className={`px-3 py-1.5 border-b border-gray-800/30 ${
-                getVitalAlarmState('pulse').isAlarm ? 'bg-red-950/40 animate-pulse' : ''
-              }`}>
-                <div className="flex items-center justify-between">
-                  <span className="text-[9px] font-mono font-bold text-green-500/80">HR</span>
-                  <span className="text-[7px] font-mono text-green-500/50">bpm</span>
-                </div>
-                <div className={`font-mono font-bold tracking-tight leading-none mt-0.5 ${
-                  getVitalAlarmState('pulse').isAlarm
-                    ? 'text-red-500 text-3xl sm:text-4xl'
-                    : getVitalAlarmState('pulse').isWarning
-                      ? 'text-amber-400 text-3xl sm:text-4xl'
-                      : 'text-green-400 text-3xl sm:text-4xl'
-                }`}>
-                  {visibleVitals.has('pulse')
-                    ? (currentRhythm.category === 'arrest' ? 0 : Math.round(currentVitals.pulse))
-                    : '---'}
+                {/* RIGHT STRIP — timer, battery, status */}
+                <div className="w-[65px] border-l border-gray-800/30 flex flex-col items-center justify-between py-1 shrink-0" style={{ background: 'rgba(0,0,0,0.5)' }}>
+                  <div className="text-center">
+                    <span className={`text-[10px] font-mono font-bold ${codeTimerRunning ? 'text-green-400' : 'text-gray-600'}`}>{formatCodeTimer(codeTimerSeconds)}</span>
+                    <button onClick={() => { if (codeTimerRunning) setCodeTimerRunning(false); else { setCodeTimerSeconds(0); setCodeTimerRunning(true); } }}
+                      className="text-[6px] font-mono text-gray-500 hover:text-white block cursor-pointer">{codeTimerRunning ? 'STOP' : 'START'}</button>
+                  </div>
+                  {syncMode && <span className="text-cyan-400 text-[9px]">SYNC</span>}
+                  <div className="space-y-0.5">
+                    {[1, 2].map(n => (
+                      <div key={n} className="flex items-center gap-0.5">
+                        <span className="text-[7px] font-mono text-gray-400">{n}</span>
+                        <div className="w-5 h-2.5 rounded-sm border border-gray-500/50 flex items-center px-0.5" style={{ background: '#1a1a1a' }}>
+                          <div className="flex gap-px">{[0,1,2].map(i => <div key={i} className="w-0.5 h-1.5 bg-green-500 rounded-[1px]" />)}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <span className="text-[7px] font-mono text-gray-400">{selectedLead}x{waveformGain}</span>
+                  {monitorMode === 'defib' && (
+                    <div className="text-center"><span className="text-[8px] font-mono font-bold text-yellow-400">{selectedEnergy}J</span></div>
+                  )}
+                  {monitorMode === 'pacer' && (
+                    <div className="text-center"><span className="text-[7px] font-mono text-blue-400">{pacerRate}/{pacerOutput}</span></div>
+                  )}
                 </div>
               </div>
 
-              {/* SpO2 (Cyan) */}
-              <div className={`px-3 py-1.5 border-b border-gray-800/30 ${
-                getVitalAlarmState('spo2').isAlarm ? 'bg-red-950/40 animate-pulse' : ''
-              }`}>
-                <div className="flex items-center justify-between">
-                  <span className="text-[9px] font-mono font-bold text-cyan-400/80">SpO2</span>
-                  <span className="text-[7px] font-mono text-cyan-400/50">%</span>
-                </div>
-                <div className={`font-mono font-bold tracking-tight leading-none mt-0.5 ${
-                  getVitalAlarmState('spo2').isAlarm
-                    ? 'text-red-500 text-3xl sm:text-4xl'
-                    : getVitalAlarmState('spo2').isWarning
-                      ? 'text-amber-400 text-3xl sm:text-4xl'
-                      : 'text-cyan-400 text-3xl sm:text-4xl'
-                }`}>
-                  {visibleVitals.has('spo2') ? Math.round(assessedVitals.spo2 ?? currentVitals.spo2) : '---'}
-                </div>
-              </div>
-
-              {/* NIBP - Blood Pressure (White/Red) */}
-              <div className={`px-3 py-1.5 border-b border-gray-800/30 ${
-                getVitalAlarmState('bp').isAlarm ? 'bg-red-950/40 animate-pulse' : ''
-              }`}>
-                <div className="flex items-center justify-between">
-                  <span className="text-[9px] font-mono font-bold text-white/80">NIBP</span>
-                  <span className="text-[7px] font-mono text-white/50">mmHg</span>
-                </div>
-                {visibleVitals.has('bp') ? (
-                  <div className={`font-mono font-bold tracking-tight leading-none mt-0.5 text-xl sm:text-2xl ${
-                    getVitalAlarmState('bp').isAlarm ? 'text-red-500' :
-                    getVitalAlarmState('bp').isWarning ? 'text-amber-400' : 'text-white'
-                  }`}>
-                    {assessedVitals.bp || currentVitals.bp}
-                  </div>
-                ) : activeAssessments.has('bp') ? (
-                  <div>
-                    <div className="text-xl sm:text-2xl font-mono font-bold text-white/30 mt-0.5">---/---</div>
-                    <Progress value={assessmentProgress.get('bp') || 0} className="h-0.5 mt-1" />
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => startAssessment('bp', ASSESSMENT_METHODS.bp[1])}
-                    className="text-xl sm:text-2xl font-mono font-bold text-white/20 mt-0.5 cursor-pointer hover:text-white/40 transition-colors"
-                  >
-                    ---/---
-                  </button>
-                )}
-              </div>
-
-              {/* RR - Respiratory Rate (Yellow) */}
-              <div className={`px-3 py-1.5 border-b border-gray-800/30 ${
-                getVitalAlarmState('respiration').isAlarm ? 'bg-red-950/40 animate-pulse' : ''
-              }`}>
-                <div className="flex items-center justify-between">
-                  <span className="text-[9px] font-mono font-bold text-yellow-400/80">RR</span>
-                  <span className="text-[7px] font-mono text-yellow-400/50">/min</span>
-                </div>
-                {visibleVitals.has('respiration') ? (
-                  <div className={`font-mono font-bold tracking-tight leading-none mt-0.5 text-2xl sm:text-3xl ${
-                    getVitalAlarmState('respiration').isAlarm
-                      ? 'text-red-500'
-                      : getVitalAlarmState('respiration').isWarning
-                        ? 'text-amber-400'
-                        : 'text-yellow-400'
-                  }`}>
-                    {Math.round(currentVitals.respiration)}
-                  </div>
-                ) : activeAssessments.has('respiration') ? (
-                  <div>
-                    <div className="text-xl sm:text-2xl font-mono font-bold text-yellow-400/30 mt-0.5">---</div>
-                    <Progress value={assessmentProgress.get('respiration') || 0} className="h-0.5 mt-1" />
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => startAssessment('respiration', ASSESSMENT_METHODS.respiration[0])}
-                    className="text-xl sm:text-2xl font-mono font-bold text-yellow-400/20 mt-0.5 cursor-pointer hover:text-yellow-400/40 transition-colors"
-                  >
-                    ---
-                  </button>
-                )}
-              </div>
-
-              {/* EtCO2 (Magenta/Pink) */}
-              {etco2Value !== undefined && (
-                <div className="px-3 py-1.5 border-b border-gray-800/30">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[9px] font-mono font-bold text-fuchsia-400/80">EtCO2</span>
-                    <span className="text-[7px] font-mono text-fuchsia-400/50">mmHg</span>
-                  </div>
-                  <div className={`font-mono font-bold tracking-tight leading-none mt-0.5 text-2xl sm:text-3xl ${
-                    visibleVitals.has('etco2') ? 'text-fuchsia-400' : 'text-fuchsia-400/20'
-                  }`}>
-                    {visibleVitals.has('etco2') ? etco2Value : '---'}
-                  </div>
-                </div>
-              )}
-
-              {/* Temperature (Orange) */}
-              {currentVitals.temperature !== undefined && (
-                <div className={`px-3 py-1 border-b border-gray-800/30 ${
-                  getVitalAlarmState('temperature').isAlarm ? 'bg-red-950/40 animate-pulse' : ''
-                }`}>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[8px] font-mono font-bold text-orange-400/80">TEMP</span>
-                    <span className="text-[7px] font-mono text-orange-400/50">&deg;C</span>
-                  </div>
-                  <div className={`font-mono font-bold tracking-tight leading-none mt-0.5 text-lg sm:text-xl ${
-                    visibleVitals.has('temperature')
-                      ? getVitalAlarmState('temperature').isAlarm ? 'text-red-500' : 'text-orange-400'
-                      : 'text-orange-400/20'
-                  }`}>
-                    {visibleVitals.has('temperature') ? currentVitals.temperature?.toFixed(1) : '---'}
-                  </div>
-                </div>
-              )}
-
-              {/* GCS (White) */}
-              {currentVitals.gcs !== undefined && (
-                <div className={`px-3 py-1 border-b border-gray-800/30 ${
-                  getVitalAlarmState('gcs').isAlarm ? 'bg-red-950/40 animate-pulse' : ''
-                }`}>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[8px] font-mono font-bold text-gray-300/80">GCS</span>
-                    <span className="text-[7px] font-mono text-gray-400/50">/15</span>
-                  </div>
-                  <div className={`font-mono font-bold tracking-tight leading-none mt-0.5 text-lg sm:text-xl ${
-                    visibleVitals.has('gcs')
-                      ? getVitalAlarmState('gcs').isAlarm ? 'text-red-500' : 'text-white'
-                      : 'text-white/20'
-                  }`}>
-                    {visibleVitals.has('gcs') ? Math.round(currentVitals.gcs) : '---'}
-                  </div>
-                </div>
-              )}
-
-              {/* Blood Glucose (Purple) */}
-              {currentVitals.bloodGlucose !== undefined && (
-                <div className={`px-3 py-1 border-b border-gray-800/30 ${
-                  getVitalAlarmState('bloodGlucose').isAlarm ? 'bg-red-950/40 animate-pulse' : ''
-                }`}>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[8px] font-mono font-bold text-purple-400/80">BGL</span>
-                    <span className="text-[7px] font-mono text-purple-400/50">mmol/L</span>
-                  </div>
-                  <div className={`font-mono font-bold tracking-tight leading-none mt-0.5 text-lg sm:text-xl ${
-                    visibleVitals.has('bloodGlucose')
-                      ? getVitalAlarmState('bloodGlucose').isAlarm ? 'text-red-500' : 'text-purple-400'
-                      : 'text-purple-400/20'
-                  }`}>
-                    {visibleVitals.has('bloodGlucose') ? (typeof currentVitals.bloodGlucose === 'number' ? currentVitals.bloodGlucose.toFixed(1) : currentVitals.bloodGlucose) : '---'}
-                  </div>
-                </div>
-              )}
-
-              {/* Pain Score (Red/Pink) - Always visible for assessment */}
-              <div className="px-3 py-1 border-b border-gray-800/30">
-                <div className="flex items-center justify-between">
-                  <span className="text-[8px] font-mono font-bold text-rose-400/80">PAIN</span>
-                  <span className="text-[7px] font-mono text-rose-400/50">/10</span>
-                </div>
-                {visibleVitals.has('painScore') ? (
-                  <div className="font-mono font-bold tracking-tight leading-none mt-0.5 text-lg sm:text-xl text-rose-400">
-                    {currentVitals.painScore}
-                  </div>
-                ) : activeAssessments.has('painScore') ? (
-                  <div>
-                    <div className="text-lg sm:text-xl font-mono font-bold text-rose-400/30 mt-0.5">---</div>
-                    <Progress value={assessmentProgress.get('painScore') || 0} className="h-0.5 mt-1" />
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => startAssessment('painScore', ASSESSMENT_METHODS.painScore[0])}
-                    className="text-lg sm:text-xl font-mono font-bold text-rose-400/20 mt-0.5 cursor-pointer hover:text-rose-400/40 transition-colors"
-                  >
-                    ---
-                  </button>
-                )}
-              </div>
-
-              {/* Code Timer */}
-              <div className="px-3 py-2 mt-auto" style={{ background: 'rgba(0,0,0,0.4)' }}>
-                <div className="flex items-center justify-between">
-                  <span className="text-[8px] font-mono text-gray-500">CODE</span>
-                  <button
-                    onClick={() => {
-                      if (codeTimerRunning) {
-                        setCodeTimerRunning(false);
-                      } else {
-                        setCodeTimerSeconds(0);
-                        setCodeTimerRunning(true);
-                      }
-                    }}
-                    className="text-[8px] font-mono text-gray-400 hover:text-white cursor-pointer"
-                  >
-                    {codeTimerRunning ? 'STOP' : 'START'}
-                  </button>
-                </div>
-                <div className={`text-xl sm:text-2xl font-mono font-bold tracking-wider leading-none mt-0.5 ${
-                  codeTimerRunning ? 'text-yellow-300' : 'text-gray-600'
-                }`}>
-                  {formatCodeTimer(codeTimerSeconds)}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Screen Footer - Energy / Status */}
-          {monitorMode === 'defib' && (
-            <div className={`flex items-center justify-between px-3 py-1.5 border-t border-gray-800/50 ${
-              shockArtifact ? 'bg-white/20' : ''
-            }`}
-              style={{ background: shockArtifact ? 'rgba(255,255,255,0.15)' : 'rgba(20,0,0,0.4)' }}>
-              <div className="flex items-center gap-2">
-                <Zap className={`h-3.5 w-3.5 ${shockArtifact ? 'text-white' : 'text-yellow-500'}`} />
-                <span className="text-[10px] font-mono font-bold text-yellow-400">
-                  {selectedEnergy}J
-                </span>
-                {syncMode && (
-                  <span className="text-[9px] font-mono text-yellow-300 animate-pulse flex items-center gap-1">
-                    SYNC
-                    {/* Sync markers - small triangles indicating R-wave sync points */}
-                    <span className="inline-flex gap-0.5">
-                      <span className="w-1 h-1.5 bg-yellow-400 inline-block" style={{ clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)' }} />
-                      <span className="w-1 h-1.5 bg-yellow-400 inline-block" style={{ clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)' }} />
+              {/* Charging/Shock status */}
+              {monitorMode === 'defib' && (isCharging || isCharged || shockArtifact || aedMode) && (
+                <div className={`flex items-center justify-center px-2 py-1.5 border-t border-gray-800/50 ${
+                  shockArtifact ? 'bg-white/20' : isCharged ? 'bg-red-950/40' : aedMode ? 'bg-yellow-950/30' : ''}`}>
+                  {shockArtifact && <span className="text-sm font-mono text-white font-bold animate-pulse">SHOCK DELIVERED</span>}
+                  {isCharging && !shockArtifact && <span className="text-sm font-mono text-yellow-400 animate-pulse">CHARGING {selectedEnergy}J...</span>}
+                  {isCharged && !shockArtifact && <span className="text-sm font-mono text-red-400 animate-pulse font-bold">CHARGED {selectedEnergy}J — PRESS SHOCK</span>}
+                  {aedMode && !isCharging && !isCharged && !shockArtifact && (
+                    <span className="text-[10px] font-mono text-yellow-300 font-bold">
+                      AED: {currentRhythm.id === 'vfib' || currentRhythm.id === 'vtach' ? 'SHOCK ADVISED — Press CHARGE' : 'NO SHOCK ADVISED — Continue CPR'}
                     </span>
-                  </span>
-                )}
-                {shockCount > 0 && (
-                  <span className="text-[8px] font-mono text-red-400/70">#{shockCount}</span>
-                )}
-              </div>
-              <div className="flex items-center gap-1">
-                {shockArtifact && (
-                  <span className="text-[10px] font-mono text-white font-bold">SHOCK DELIVERED</span>
-                )}
-                {isCharging && !shockArtifact && (
-                  <span className="text-[10px] font-mono text-yellow-400 animate-pulse">CHARGING...</span>
-                )}
-                {isCharged && !shockArtifact && (
-                  <span className="text-[10px] font-mono text-red-400 animate-pulse font-bold">CHARGED - READY</span>
-                )}
-              </div>
-            </div>
-          )}
+                  )}
+                </div>
+              )}
 
-          {/* Screen Footer - Pacer Status */}
-          {monitorMode === 'pacer' && (
-            <div className="flex items-center justify-between px-3 py-1.5 border-t border-gray-800/50"
-              style={{ background: 'rgba(0,0,20,0.4)' }}>
-              <div className="flex items-center gap-2">
-                <Zap className="h-3.5 w-3.5 text-blue-500" />
-                <span className="text-[10px] font-mono font-bold text-blue-400">
-                  {pacerActive ? 'PACING' : 'STANDBY'}
-                </span>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-[9px] font-mono text-blue-300">{pacerRate}ppm</span>
-                <span className="text-[9px] font-mono text-blue-300">{pacerOutput}mA</span>
-                {pacerActive && pacerOutput >= 60 && (
-                  <span className="text-[8px] font-mono text-green-400 animate-pulse">CAPTURE</span>
-                )}
-              </div>
-            </div>
+              {/* Clinical shock feedback message */}
+              {shockFeedbackMessage && (
+                <div className={`flex items-center justify-center px-2 py-1.5 border-t border-gray-800/50 ${
+                  shockFeedbackMessage.severity === 'critical' ? 'bg-red-950/60' :
+                  shockFeedbackMessage.severity === 'success' ? 'bg-green-950/50' : 'bg-yellow-950/40'
+                }`}>
+                  <span className={`text-[10px] font-mono font-bold animate-pulse ${
+                    shockFeedbackMessage.severity === 'critical' ? 'text-red-400' :
+                    shockFeedbackMessage.severity === 'success' ? 'text-green-400' : 'text-yellow-400'
+                  }`}>{shockFeedbackMessage.text}</span>
+                </div>
+              )}
+            </>
           )}
         </div>
 
         {/* ================================================================ */}
-        {/* PHYSICAL BUTTONS AREA                                           */}
+        {/* CONTROL PANEL                                                    */}
         {/* ================================================================ */}
-        <div className="px-3 py-2 space-y-2">
+        <div className="px-3 py-2 space-y-1.5"
+          style={{ background: 'linear-gradient(180deg, #444 0%, #3a3d40 20%, #333 100%)', borderTop: '1px solid rgba(0,0,0,0.4)' }}>
 
-          {/* Top button row: LEAD, SIZE, ALARM, AUDIO, ASSESS */}
-          <div className="flex items-center gap-1.5 flex-wrap">
-            {/* Lead Select */}
-            <LP20Button
-              label="LEAD"
-              sublabel={selectedLead}
-              onClick={() => {
-                const leads: ('I' | 'II' | 'III' | 'PADDLES')[] = ['I', 'II', 'III', 'PADDLES'];
-                const idx = leads.indexOf(selectedLead);
-                setSelectedLead(leads[(idx + 1) % leads.length]);
-              }}
-            />
+          {/* ---- MONITOR MODE CONTROLS ---- */}
+          {monitorMode === 'monitor' && (
+            <>
+              <div className="flex items-center gap-1 flex-wrap">
+                <ControlButton label="HOME" onClick={handleHomeScreen} />
+                <ControlButton label="EVENT" onClick={() => {
+                  const now = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                  const snap = [visibleVitals.has('pulse') ? `HR:${Math.round(currentVitals.pulse)}` : null,
+                    visibleVitals.has('bp') ? `BP:${currentVitals.bp}` : null,
+                    visibleVitals.has('spo2') ? `SpO2:${Math.round(currentVitals.spo2)}` : null].filter(Boolean).join(' ');
+                  logIntervention('EVENT', `${now} — ${snap || 'Vitals pending'}`);
+                  if (audioEnabled) audioEngineRef.current?.playAnalyzeSound();
+                }} />
+                <ControlButton label="OPTIONS" onClick={() => setShowOptions(!showOptions)} led={showOptions ? 'green' : 'off'} />
+                <ControlButton label="ALARMS" variant={alarmStatus.hasCritical ? 'orange' : 'dark'}
+                  onClick={() => setAlarmsEnabled(!alarmsEnabled)}
+                  led={alarmsEnabled ? (alarmStatus.hasCritical ? 'red' : alarmStatus.hasWarning ? 'orange' : 'green') : 'off'} />
+                <ControlButton label="NIBP" onClick={() => {
+                  if (!activeAssessments.has('bp')) { startAssessment('bp', ASSESSMENT_METHODS.bp[1]); logIntervention('NIBP', 'Auto measurement'); }
+                }} led={activeAssessments.has('bp') ? 'green' : nibpCycling ? 'orange' : 'off'} />
+                <ControlButton label="SIZE" onClick={handleGainCycle} />
+                <ControlButton label="LEAD" onClick={() => {
+                  const leads: ('I' | 'II' | 'III' | 'PADDLES')[] = ['I', 'II', 'III', 'PADDLES'];
+                  setSelectedLead(leads[(leads.indexOf(selectedLead) + 1) % leads.length]);
+                }} />
+              </div>
+              <div className="flex items-center gap-1 flex-wrap">
+                <ControlButton label="PAUSE" onClick={() => setSweepPaused(!sweepPaused)} led={sweepPaused ? 'orange' : 'off'} />
+                <ControlButton label="VITALS" onClick={() => setShowAssessPanel(!showAssessPanel)} led={showAssessPanel ? 'green' : 'off'} />
+                <ControlButton label="AUDIO" onClick={() => setAudioEnabled(!audioEnabled)} led={audioEnabled ? 'green' : 'off'} />
+                <ControlButton label="NIBP CYCLE" onClick={() => {
+                  const ns = !nibpCycling; setNibpCycling(ns);
+                  logIntervention('NIBP', ns ? 'Auto-cycle q2min' : 'Auto-cycle stopped');
+                }} led={nibpCycling ? 'green' : 'off'} />
+                {interventionLog.length > 0 && <span className="ml-auto text-[7px] font-mono text-gray-500">{interventionLog.length} events</span>}
+              </div>
+            </>
+          )}
 
-            {/* Alarm */}
-            <LP20Button
-              label="ALARM"
-              sublabel={alarmsEnabled ? 'ON' : 'OFF'}
-              onClick={() => setAlarmsEnabled(!alarmsEnabled)}
-              active={alarmsEnabled}
-              variant={alarmStatus.hasCritical ? 'red' : alarmStatus.hasWarning ? 'yellow' : 'default'}
-            />
-
-            {/* Audio */}
-            <LP20Button
-              label="AUDIO"
-              sublabel={audioEnabled ? 'ON' : 'MUTE'}
-              onClick={() => setAudioEnabled(!audioEnabled)}
-              active={audioEnabled}
-              variant={audioEnabled ? 'green' : 'default'}
-            />
-
-            {/* Assess toggle */}
-            <LP20Button
-              label={assessmentMode ? 'SHOW ALL' : 'ASSESS'}
-              sublabel={assessmentMode ? 'BYPASS' : 'MODE'}
-              onClick={assessmentMode ? showAllVitals : hideAllVitals}
-              variant="blue"
-            />
-
-            {/* 12-Lead ECG */}
-            <LP20Button
-              label="12-LEAD"
-              sublabel="ECG"
-              onClick={() => {
-                if (!show12Lead) {
-                  // Opening 12-lead — award assessment credit once
-                  onAssessmentPerformed?.('12-lead-ecg');
-                }
-                setShow12Lead(!show12Lead);
-              }}
-              variant={show12Lead ? 'green' : 'default'}
-              active={show12Lead}
-            />
-
-            {/* Expand assess panel */}
-            <LP20Button
-              label="VITALS"
-              sublabel="PANEL"
-              onClick={() => setShowAssessPanel(!showAssessPanel)}
-              active={showAssessPanel}
-            />
-          </div>
-
-          {/* Defib controls row (only in defib mode) */}
+          {/* ---- DEFIB MODE CONTROLS ---- */}
           {monitorMode === 'defib' && (
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <LP20Button
-                label="-"
-                onClick={handleEnergyDown}
-                size="small"
-              />
-              <div className="px-3 py-1 rounded bg-black/50 border border-gray-600/50">
-                <span className="text-[8px] font-mono text-gray-400 block text-center">ENERGY</span>
-                <span className="text-lg font-mono font-bold text-yellow-400 block text-center leading-tight">{selectedEnergy}J</span>
-              </div>
-              <LP20Button
-                label="+"
-                onClick={handleEnergyUp}
-                size="small"
-              />
-
-              <LP20Button
-                label="SYNC"
-                onClick={() => setSyncMode(!syncMode)}
-                active={syncMode}
-                variant="yellow"
-              />
-
-              <LP20Button
-                label="CHARGE"
-                onClick={handleCharge}
-                variant="yellow"
-                disabled={isCharging}
-                size="large"
-              />
-
-              <LP20Button
-                label="SHOCK"
-                onClick={handleShock}
-                variant="red"
-                disabled={!isCharged}
-                size="large"
-                className={isCharged ? 'animate-pulse ring-2 ring-red-400/60' : ''}
-              />
-            </div>
-          )}
-
-          {/* Pacer controls (only in pacer mode) */}
-          {monitorMode === 'pacer' && (
-            <div className="flex items-center gap-1.5 flex-wrap">
-              {/* Pacer Rate controls */}
-              <LP20Button label="-" onClick={() => {
-                const newRate = Math.max(30, pacerRate - 10);
-                setPacerRate(newRate);
-                if (pacerActive && pacerOutput >= 60) {
-                  setCurrentVitals(prev => ({ ...prev, pulse: newRate }));
-                }
-              }} size="small" />
-              <div className="px-2 py-1 rounded bg-black/50 border border-blue-600/50 min-w-[60px]">
-                <span className="text-[7px] font-mono text-blue-400 block text-center">RATE</span>
-                <span className="text-sm font-mono font-bold text-blue-300 block text-center leading-tight">{pacerRate}<span className="text-[7px] text-blue-500">ppm</span></span>
-              </div>
-              <LP20Button label="+" onClick={() => {
-                const newRate = Math.min(180, pacerRate + 10);
-                setPacerRate(newRate);
-                if (pacerActive && pacerOutput >= 60) {
-                  setCurrentVitals(prev => ({ ...prev, pulse: newRate }));
-                }
-              }} size="small" />
-
-              {/* Pacer Output controls */}
-              <LP20Button label="-" onClick={() => {
-                const newOutput = Math.max(0, pacerOutput - 10);
-                setPacerOutput(newOutput);
-                if (pacerActive && newOutput < 60) {
-                  // Lost capture - revert to intrinsic rate
-                  logIntervention('PACER', `Output decreased to ${newOutput}mA - LOSS OF CAPTURE`);
-                }
-              }} size="small" />
-              <div className="px-2 py-1 rounded bg-black/50 border border-blue-600/50 min-w-[60px]">
-                <span className="text-[7px] font-mono text-blue-400 block text-center">OUTPUT</span>
-                <span className="text-sm font-mono font-bold text-blue-300 block text-center leading-tight">{pacerOutput}<span className="text-[7px] text-blue-500">mA</span></span>
-              </div>
-              <LP20Button label="+" onClick={() => {
-                const newOutput = Math.min(200, pacerOutput + 10);
-                setPacerOutput(newOutput);
-                if (pacerActive && newOutput >= 60) {
-                  // Regained capture
-                  setCurrentVitals(prev => ({ ...prev, pulse: pacerRate }));
-                }
-              }} size="small" />
-
-              {/* Start/Stop Pacer */}
-              <LP20Button
-                label={pacerActive ? 'STOP' : 'START'}
-                sublabel="PACER"
-                onClick={() => {
-                  const newState = !pacerActive;
-                  setPacerActive(newState);
-                  logIntervention('PACER', newState
-                    ? `Pacing started - Rate: ${pacerRate}ppm, Output: ${pacerOutput}mA`
-                    : 'Pacing stopped'
-                  );
-                  if (newState) {
-                    // Pacing effect - set HR to pacer rate if output is sufficient (>= 60mA threshold)
-                    if (pacerOutput >= 60) {
-                      setCurrentVitals(prev => ({ ...prev, pulse: pacerRate }));
+            <>
+              <div className="flex items-center gap-1 flex-wrap">
+                <ControlButton label="SYNC" onClick={() => { setSyncMode(!syncMode); }}
+                  led={syncMode ? 'green' : 'off'} />
+                <ControlButton label="ANALYZE" variant="yellow" onClick={handleAnalyze} />
+                <ControlButton label="CPR" variant={cprState?.active ? 'red' : 'dark'}
+                  led={cprState?.running ? 'red' : cprState?.active ? 'orange' : 'off'}
+                  onClick={() => {
+                    if (cprState?.active) {
+                      if (cprState.running) { cprState.onPauseCPR(); logIntervention('CPR', 'PAUSED'); }
+                      else { cprState.onStartCPR(); logIntervention('CPR', 'RESUMED'); }
+                    } else if (cprState) {
+                      cprState.onStartCPR();
+                      logIntervention('CPR', 'CARDIAC ARREST — CPR started');
+                      if (audioEnabled) audioEngineRef.current?.playMedicalAlarm('high');
                     }
-                  }
-                }}
-                variant={pacerActive ? 'red' : 'blue'}
-                active={pacerActive}
-                size="large"
-              />
-            </div>
+                  }} />
+                <ControlButton label="LEAD" onClick={() => {
+                  const leads: ('I' | 'II' | 'III' | 'PADDLES')[] = ['I', 'II', 'III', 'PADDLES'];
+                  setSelectedLead(leads[(leads.indexOf(selectedLead) + 1) % leads.length]);
+                }} />
+                <ControlButton label="AUDIO" onClick={() => setAudioEnabled(!audioEnabled)} led={audioEnabled ? 'green' : 'off'} />
+              </div>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {/* Lead 1/2/3 */}
+                {(['I', 'II', 'III'] as const).map((lead, i) => (
+                  <button key={lead} onClick={() => setSelectedLead(lead)}
+                    className={`w-7 h-7 rounded text-[10px] font-mono font-bold flex items-center justify-center transition-colors border
+                      ${selectedLead === lead ? 'bg-gray-500/60 text-white border-gray-400/60' : 'bg-gray-700/40 text-gray-400 border-gray-600/30 hover:bg-gray-600/40'}`}>
+                    {i + 1}
+                  </button>
+                ))}
+
+                <div className="w-px h-6 bg-gray-600/40 mx-1" />
+
+                {/* ENERGY SELECT */}
+                <div className="flex items-center gap-0.5">
+                  <ControlButton label="▼" className="!px-1.5 !py-2" variant="yellow" onClick={handleEnergyDown} />
+                  <div className="px-2 py-1 rounded-sm border border-amber-600/40 text-center min-w-[50px]" style={{ background: 'rgba(80,60,0,0.4)' }}>
+                    <span className="text-[6px] font-mono text-amber-400 block">ENERGY</span>
+                    <span className="text-sm font-mono font-bold text-amber-300 block leading-tight">{selectedEnergy}J</span>
+                  </div>
+                  <ControlButton label="▲" className="!px-1.5 !py-2" variant="yellow" onClick={handleEnergyUp} />
+                </div>
+
+                {/* CHARGE */}
+                <ControlButton label="CHARGE" variant="red" className={`!px-3 !py-2 ${isCharged ? 'animate-pulse ring-2 ring-red-400/60' : ''}`}
+                  onClick={() => { handleCharge(); }} disabled={isCharging} />
+
+                {/* SHOCK — BIG BUTTON */}
+                <button onClick={handleShock} disabled={!isCharged}
+                  className={`px-5 py-2.5 rounded-lg font-mono font-bold text-sm tracking-wider select-none transition-all border-2 flex items-center gap-2
+                    ${isCharged
+                      ? 'bg-gradient-to-b from-red-500 to-red-700 text-white border-red-400 shadow-[0_0_16px_rgba(239,68,68,0.5)] animate-pulse cursor-pointer hover:brightness-110'
+                      : 'bg-gradient-to-b from-gray-600 to-gray-800 text-gray-500 border-gray-600 cursor-not-allowed'
+                    }`}>
+                  <Zap className="h-4 w-4" />
+                  SHOCK
+                </button>
+              </div>
+            </>
           )}
 
-          {/* NIBP Auto-cycle button (all modes) */}
-          <div className="flex items-center gap-1.5">
-            <LP20Button
-              label="NIBP"
-              sublabel={nibpCycling ? `q2min (${Math.floor(nibpCountdown / 60)}:${(nibpCountdown % 60).toString().padStart(2, '0')})` : 'CYCLE'}
-              onClick={() => {
-                const newState = !nibpCycling;
-                setNibpCycling(newState);
-                if (newState) {
-                  logIntervention('NIBP', 'Auto-cycle started (q2min)');
-                } else {
-                  logIntervention('NIBP', 'Auto-cycle stopped');
-                  setNibpCountdown(0);
-                }
-              }}
-              variant={nibpCycling ? 'green' : 'default'}
-              active={nibpCycling}
-            />
-
-            {/* Quick single NIBP measurement */}
-            <LP20Button
-              label="NIBP"
-              sublabel="STAT"
-              onClick={() => {
-                if (!activeAssessments.has('bp')) {
-                  startAssessment('bp', ASSESSMENT_METHODS.bp[1]);
-                  logIntervention('NIBP', 'STAT measurement initiated');
-                }
-              }}
-              variant="default"
-              disabled={activeAssessments.has('bp')}
-            />
-
-            {/* Show intervention log */}
-            {interventionLog.length > 0 && (
-              <div className="ml-auto flex items-center gap-1">
-                <span className="text-[8px] font-mono text-gray-500">{interventionLog.length} events logged</span>
+          {/* ---- PACER MODE CONTROLS ---- */}
+          {monitorMode === 'pacer' && (
+            <>
+              <div className="flex items-center gap-1 flex-wrap">
+                <ControlButton label="LEAD" onClick={() => {
+                  const leads: ('I' | 'II' | 'III' | 'PADDLES')[] = ['I', 'II', 'III', 'PADDLES'];
+                  setSelectedLead(leads[(leads.indexOf(selectedLead) + 1) % leads.length]);
+                }} />
+                <ControlButton label="AUDIO" onClick={() => setAudioEnabled(!audioEnabled)} led={audioEnabled ? 'green' : 'off'} />
+                <ControlButton label="ALARMS" variant={alarmStatus.hasCritical ? 'orange' : 'dark'}
+                  onClick={() => setAlarmsEnabled(!alarmsEnabled)}
+                  led={alarmsEnabled ? (alarmStatus.hasCritical ? 'red' : alarmStatus.hasWarning ? 'orange' : 'green') : 'off'} />
               </div>
-            )}
-          </div>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {/* Lead 1/2/3 */}
+                {(['I', 'II', 'III'] as const).map((lead, i) => (
+                  <button key={lead} onClick={() => setSelectedLead(lead)}
+                    className={`w-7 h-7 rounded text-[10px] font-mono font-bold flex items-center justify-center transition-colors border
+                      ${selectedLead === lead ? 'bg-gray-500/60 text-white border-gray-400/60' : 'bg-gray-700/40 text-gray-400 border-gray-600/30 hover:bg-gray-600/40'}`}>
+                    {i + 1}
+                  </button>
+                ))}
+
+                <div className="w-px h-6 bg-gray-600/40 mx-1" />
+
+                {/* PACER RATE */}
+                <div className="flex items-center gap-0.5">
+                  <ControlButton label="▼" className="!px-1" onClick={() => setPacerRate(prev => Math.max(30, prev - 10))} />
+                  <div className="px-1 py-0.5 rounded-sm bg-black/40 border border-blue-600/40 text-center min-w-[40px]">
+                    <span className="text-[6px] font-mono text-blue-400 block">RATE</span>
+                    <span className="text-[9px] font-mono font-bold text-blue-300">{pacerRate}</span>
+                  </div>
+                  <ControlButton label="▲" className="!px-1" onClick={() => setPacerRate(prev => Math.min(180, prev + 10))} />
+                </div>
+
+                {/* PACER OUTPUT mA */}
+                <div className="flex items-center gap-0.5">
+                  <ControlButton label="▼" className="!px-1" onClick={() => setPacerOutput(prev => Math.max(0, prev - 10))} />
+                  <div className="px-1 py-0.5 rounded-sm bg-black/40 border border-blue-600/40 text-center min-w-[40px]">
+                    <span className="text-[6px] font-mono text-blue-400 block">mA</span>
+                    <span className="text-[9px] font-mono font-bold text-blue-300">{pacerOutput}</span>
+                  </div>
+                  <ControlButton label="▲" className="!px-1" onClick={() => setPacerOutput(prev => Math.min(200, prev + 10))} />
+                </div>
+
+                {/* START/STOP PACE */}
+                <ControlButton label={pacerActive ? 'STOP PACE' : 'START PACE'} variant={pacerActive ? 'red' : 'green'}
+                  led={pacerActive ? 'green' : 'off'}
+                  onClick={() => {
+                    const ns = !pacerActive; setPacerActive(ns);
+                    logIntervention('PACER', ns ? `Started ${pacerRate}ppm/${pacerOutput}mA` : 'Stopped');
+                    if (ns && pacerOutput >= 60) setCurrentVitals(prev => ({ ...prev, pulse: pacerRate }));
+                  }} />
+              </div>
+            </>
+          )}
         </div>
 
         {/* ================================================================ */}
-        {/* CPR MANAGEMENT — integrated into monitor display               */}
+        {/* OVERLAY PANELS                                                   */}
         {/* ================================================================ */}
-        {cprState?.active && (
-          <div className="mx-3 mb-2 p-2 rounded-lg border border-red-600/60"
-            style={{ background: 'rgba(80,0,0,0.5)' }}>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] font-mono text-red-400 font-bold tracking-wider animate-pulse">
-                ● CARDIAC ARREST
-              </span>
-              <span className="text-[10px] font-mono text-red-300">
-                Cycle {cprState.cycleNumber} | Shocks: {cprState.shockCount}
-              </span>
-            </div>
 
-            {/* CPR Timer */}
+        {/* CPR Management */}
+        {cprState?.active && (
+          <div className="mx-3 mb-2 p-2 rounded-lg border border-red-600/60" style={{ background: 'rgba(80,0,0,0.5)' }}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] font-mono text-red-400 font-bold tracking-wider animate-pulse">CARDIAC ARREST</span>
+              <span className="text-[10px] font-mono text-red-300">Cycle {cprState.cycleNumber} | Shocks: {cprState.shockCount}</span>
+            </div>
             <div className="flex items-center gap-2 mb-2">
-              <div className={`flex-1 text-center py-1.5 rounded font-mono text-lg font-bold ${
+              <div className={`flex-1 text-center py-2 rounded font-mono text-xl font-bold ${
                 cprState.timerSeconds <= 10 ? 'text-red-400 animate-pulse' : 'text-green-400'
-              }`}
-                style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(100,100,100,0.3)' }}>
+              }`} style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(100,100,100,0.3)' }}>
                 {Math.floor(cprState.timerSeconds / 60)}:{String(cprState.timerSeconds % 60).padStart(2, '0')}
               </div>
-              <LP20Button
-                label={cprState.running ? 'PAUSE' : 'START'}
-                sublabel="CPR"
+              <LP20Button label={cprState.running ? 'PAUSE' : 'START'} sublabel="CPR"
                 onClick={() => cprState.running ? cprState.onPauseCPR() : cprState.onStartCPR()}
-                variant={cprState.running ? 'red' : 'green'}
-                active={cprState.running}
-              />
-              <LP20Button
-                label="SHOCK"
-                sublabel={`${cprState.shockCount}`}
-                onClick={cprState.onDefibrillate}
-                variant="red"
-              />
+                variant={cprState.running ? 'red' : 'green'} active={cprState.running} size="large" />
+              <LP20Button label="DEFIB" sublabel={`#${cprState.shockCount}`}
+                onClick={cprState.onDefibrillate} variant="red" size="large" />
             </div>
-
-            {/* Drug timing indicators */}
             <div className="flex gap-1.5">
               <div className={`flex-1 text-center py-1 rounded text-[8px] font-mono ${
                 cprState.lastAdrenalineTime && (Date.now() - cprState.lastAdrenalineTime) > 300000
                   ? 'text-red-300 bg-red-900/40 border border-red-600/50 animate-pulse'
-                  : cprState.lastAdrenalineTime && (Date.now() - cprState.lastAdrenalineTime) > 180000
-                  ? 'text-yellow-300 bg-yellow-900/30 border border-yellow-600/30'
                   : 'text-gray-400 bg-black/30 border border-gray-700/30'
-              }`}>
-                ADRENALINE: {cprState.adrenalineDoses}x
-                {cprState.lastAdrenalineTime
-                  ? ` (${Math.floor((Date.now() - cprState.lastAdrenalineTime) / 60000)}m)`
-                  : cprState.shockCount >= 2 ? ' DUE' : ''}
-              </div>
+              }`}>ADRENALINE: {cprState.adrenalineDoses}x{cprState.lastAdrenalineTime ? ` (${Math.floor((Date.now() - cprState.lastAdrenalineTime) / 60000)}m)` : cprState.shockCount >= 2 ? ' DUE' : ''}</div>
               <div className="flex-1 text-center py-1 rounded text-[8px] font-mono text-gray-400 bg-black/30 border border-gray-700/30">
-                AMIODARONE: {cprState.amiodaroneDoses}/2
-                {cprState.amiodaroneDoses === 0 && cprState.shockCount >= 3 ? ' DUE' : ''}
+                AMIODARONE: {cprState.amiodaroneDoses}/2{cprState.amiodaroneDoses === 0 && cprState.shockCount >= 3 ? ' DUE' : ''}
               </div>
             </div>
           </div>
         )}
 
-        {/* ================================================================ */}
-        {/* EXPANDED ASSESSMENT PANEL (for non-monitor vitals)              */}
-        {/* ================================================================ */}
+        {/* Assessment Panel */}
         {showAssessPanel && assessmentMode && (
-          <div className="mx-3 mb-2 p-2 rounded-lg border border-gray-700/50 space-y-1"
-            style={{ background: 'rgba(0,0,0,0.4)' }}>
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[9px] font-mono text-gray-400 font-bold">ADDITIONAL PARAMETERS</span>
-              <span className="text-[8px] font-mono text-gray-600">
-                {visibleVitals.size}/{availableVitals.length}
-              </span>
-            </div>
-
+          <div className="mx-3 mb-2 p-2 rounded-lg border border-gray-700/50 space-y-1" style={{ background: 'rgba(0,0,0,0.4)' }}>
+            <span className="text-[9px] font-mono text-gray-400 font-bold block mb-1">ADDITIONAL PARAMETERS ({visibleVitals.size}/{availableVitals.length})</span>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
-              {/* Temperature */}
               {currentVitals.temperature !== undefined && renderAssessButton('temperature', 'TEMP', ASSESSMENT_METHODS.temperature)}
-
-              {/* GCS */}
               {currentVitals.gcs !== undefined && renderAssessButton('gcs', 'GCS', ASSESSMENT_METHODS.gcs)}
-
-              {/* Blood Glucose */}
               {currentVitals.bloodGlucose !== undefined && renderAssessButton('bloodGlucose', 'BGL', ASSESSMENT_METHODS.glucose)}
-
-              {/* BP (if not yet visible) */}
               {!visibleVitals.has('bp') && !activeAssessments.has('bp') && renderAssessButton('bp', 'NIBP', ASSESSMENT_METHODS.bp)}
-
-              {/* Respiratory Rate */}
               {!visibleVitals.has('respiration') && !activeAssessments.has('respiration') && renderAssessButton('respiration', 'RR', ASSESSMENT_METHODS.respiration)}
-
-              {/* Pain Score - always available for assessment */}
-              {renderAssessButton('painScore', 'PAIN', ASSESSMENT_METHODS.painScore)}
+              {currentVitals.painScore !== undefined && renderAssessButton('painScore', 'PAIN', ASSESSMENT_METHODS.painScore)}
             </div>
-
-            {/* Visible vitals summary */}
-            {visibleVitals.size > 0 && (
-              <div className="mt-2 pt-1 border-t border-gray-800/50">
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1">
-                  {currentVitals.temperature !== undefined && visibleVitals.has('temperature') && (
-                    <div className="flex items-center justify-between px-2 py-1 rounded" style={{ background: 'rgba(255,153,51,0.1)' }}>
-                      <span className="text-[9px] font-mono text-orange-400">TEMP</span>
-                      <span className="text-sm font-mono font-bold text-orange-300">{currentVitals.temperature}&deg;</span>
-                    </div>
-                  )}
-                  {currentVitals.gcs !== undefined && visibleVitals.has('gcs') && (
-                    <div className={`flex items-center justify-between px-2 py-1 rounded ${
-                      getVitalAlarmState('gcs').isAlarm ? 'animate-pulse' : ''
-                    }`} style={{ background: 'rgba(255,255,255,0.05)' }}>
-                      <span className="text-[9px] font-mono text-gray-300">GCS</span>
-                      <span className={`text-sm font-mono font-bold ${
-                        getVitalAlarmState('gcs').isAlarm ? 'text-red-400' : 'text-white'
-                      }`}>{Math.round(currentVitals.gcs)}/15</span>
-                    </div>
-                  )}
-                  {currentVitals.bloodGlucose !== undefined && visibleVitals.has('bloodGlucose') && (
-                    <div className={`flex items-center justify-between px-2 py-1 rounded ${
-                      getVitalAlarmState('bloodGlucose').isAlarm ? 'animate-pulse' : ''
-                    }`} style={{ background: 'rgba(204,153,255,0.1)' }}>
-                      <span className="text-[9px] font-mono text-purple-300">BGL</span>
-                      <span className={`text-sm font-mono font-bold ${
-                        getVitalAlarmState('bloodGlucose').isAlarm ? 'text-red-400' : 'text-purple-300'
-                      }`}>{currentVitals.bloodGlucose}</span>
-                    </div>
-                  )}
-                  {visibleVitals.has('painScore') && (
-                    <div className="flex items-center justify-between px-2 py-1 rounded" style={{ background: 'rgba(255,100,100,0.1)' }}>
-                      <span className="text-[9px] font-mono text-red-300">PAIN</span>
-                      <span className="text-sm font-mono font-bold text-red-300">{currentVitals.painScore ?? 0}/10</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
           </div>
         )}
 
-        {/* ================================================================ */}
-        {/* 12-LEAD ECG DISPLAY                                            */}
-        {/* ================================================================ */}
-        {show12Lead && visibleVitals.has('pulse') && (
+        {/* 12-Lead ECG */}
+        {show12Lead && (
           <div className="mx-3 mb-2">
-            <TwelveLeadECG
-              rhythm={currentRhythm}
-              heartRate={hrValue}
-              onClose={() => setShow12Lead(false)}
-            />
-          </div>
-        )}
-
-        {/* ================================================================ */}
-        {/* SHOCK DELIVERED OVERLAY                                         */}
-        {/* ================================================================ */}
-        {shockDelivered && (
-          <div className="mx-3 mb-2 p-3 rounded-lg border-2 border-red-500 bg-red-950/80 animate-pulse">
-            <div className="flex items-center justify-center gap-3">
-              <Zap className="h-5 w-5 text-yellow-400" />
-              <div className="text-center">
-                <span className="text-lg font-mono font-bold text-red-400 tracking-widest block">SHOCK DELIVERED</span>
-                <span className="text-[10px] font-mono text-yellow-300 block mt-0.5">
-                  {selectedEnergy}J {syncMode ? 'SYNCHRONIZED' : 'UNSYNCHRONIZED'} - Shock #{shockCount}
-                </span>
-              </div>
-              <Zap className="h-5 w-5 text-yellow-400" />
-            </div>
-          </div>
-        )}
-
-        {/* Pacer active indicator */}
-        {pacerActive && monitorMode === 'pacer' && (
-          <div className="mx-3 mb-2 p-2 rounded border border-blue-500/60 bg-blue-950/40">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Zap className="h-3.5 w-3.5 text-blue-400 animate-pulse" />
-                <span className="text-[10px] font-mono font-bold text-blue-400">PACING ACTIVE</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-[9px] font-mono text-blue-300">Rate: {pacerRate}ppm</span>
-                <span className="text-[9px] font-mono text-blue-300">Output: {pacerOutput}mA</span>
-                {pacerOutput >= 60 ? (
-                  <span className="text-[8px] font-mono text-green-400">CAPTURE</span>
-                ) : (
-                  <span className="text-[8px] font-mono text-red-400">NO CAPTURE</span>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ================================================================ */}
-        {/* TREATMENT EFFECT INDICATOR                                      */}
-        {/* ================================================================ */}
-        {treatmentEffectIndicator && (
-          <div className="mx-3 mb-2 p-2 rounded border border-green-700/50 bg-green-950/30 animate-pulse">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-3.5 w-3.5 text-green-400" />
-              <span className="text-[10px] font-mono font-bold text-green-400">TREATMENT APPLIED</span>
-            </div>
-            <span className="text-[9px] font-mono text-green-300/80 block mt-0.5">{treatmentEffectIndicator}</span>
-            <span className="text-[8px] font-mono text-green-500/50 block mt-0.5">Monitoring for vital sign changes...</span>
-          </div>
-        )}
-
-        {/* Rhythm identification banner */}
-        {visibleVitals.has('pulse') && currentRhythm.id !== 'nsr' && (
-          <div className={`mx-3 mb-2 p-2 rounded border ${
-            currentRhythm.category === 'arrest' ? 'border-red-600/60 bg-red-950/40' :
-            currentRhythm.category === 'stemi' ? 'border-orange-600/50 bg-orange-950/30' :
-            currentRhythm.category === 'arrhythmia' ? 'border-yellow-600/50 bg-yellow-950/30' :
-            'border-gray-600/50 bg-gray-950/30'
-          }`}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Activity className="h-3 w-3 text-yellow-400" />
-                <span className={`text-[10px] font-mono font-bold ${
-                  currentRhythm.category === 'arrest' ? 'text-red-400' :
-                  currentRhythm.category === 'stemi' ? 'text-orange-400' :
-                  'text-yellow-400'
-                }`}>
-                  RHYTHM: {currentRhythm.name.toUpperCase()}
-                </span>
-              </div>
-              {currentRhythm.category === 'stemi' && (
-                <button
-                  onClick={() => setShow12Lead(true)}
-                  className="text-[8px] font-mono text-green-400 hover:text-green-300 cursor-pointer"
-                >
-                  VIEW 12-LEAD
-                </button>
-              )}
-            </div>
-            <span className="text-[8px] font-mono text-gray-400 block mt-0.5">
-              {currentRhythm.description}
-            </span>
-          </div>
-        )}
-
-        {/* ================================================================ */}
-        {/* ALARM & DETERIORATION BAR                                       */}
-        {/* ================================================================ */}
-        {(alarmStatus.count > 0 || minutesElapsed >= 2) && (
-          <div className="mx-3 mb-2 space-y-1">
-            {/* Alarm Banner */}
-            {alarmStatus.count > 0 && alarmsEnabled && (
-              <div className={`p-2 rounded border ${
-                alarmStatus.hasCritical
-                  ? 'bg-red-950/60 border-red-700 animate-pulse'
-                  : 'bg-amber-950/40 border-amber-700'
-              }`}>
-                <div className="flex items-center gap-2">
-                  <AlertTriangle className={`h-3.5 w-3.5 ${alarmStatus.hasCritical ? 'text-red-400' : 'text-amber-400'}`} />
-                  <span className={`text-[10px] font-mono font-bold ${alarmStatus.hasCritical ? 'text-red-400' : 'text-amber-400'}`}>
-                    {alarmStatus.count} ALARM{alarmStatus.count > 1 ? 'S' : ''} ACTIVE
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {/* Deterioration Status */}
-            {(() => {
-              const status = getDeteriorationStatus(caseSeverity, minutesElapsed);
-              const reassessmentInterval = getReassessmentInterval(caseSeverity);
-
-              if (status.urgency === 'low' && minutesElapsed < 2) return null;
-
-              const urgencyColors: Record<string, string> = {
-                low: 'border-green-800/50 text-green-400',
-                medium: 'border-yellow-800/50 text-yellow-400',
-                high: 'border-orange-800/50 text-orange-400',
-                extreme: 'border-red-700/50 text-red-400 animate-pulse'
-              };
-
-              return (
-                <div className={`p-2 rounded border bg-black/40 ${urgencyColors[status.urgency]}`}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Activity className="h-3 w-3" />
-                      <span className="text-[9px] font-mono font-bold">
-                        {status.status.toUpperCase()}
-                      </span>
-                      {activeTreatments.length > 0 && (
-                        <span className="text-[8px] opacity-60 font-mono">[TX]</span>
-                      )}
-                    </div>
-                    <span className="text-[8px] font-mono opacity-50">
-                      q{reassessmentInterval}min
-                    </span>
+            {litflImageUrl ? (
+              /* LITFL reference ECG — no diagnosis label, just the ECG image */
+              <div className="rounded-lg border border-gray-600/50 overflow-hidden" style={{ background: 'rgba(0,0,0,0.6)' }}>
+                <div className="flex items-center justify-between px-3 py-1.5 border-b border-gray-700/50">
+                  <div className="flex items-center gap-2">
+                    <FileHeart className="h-3.5 w-3.5 text-green-400" />
+                    <span className="text-[10px] font-mono font-bold text-green-400">12-LEAD ECG</span>
                   </div>
-
-                  {status.percentDeteriorated > 20 && (
-                    <div className="mt-1">
-                      <Progress value={status.percentDeteriorated} className="h-0.5" />
-                    </div>
-                  )}
+                  <button onClick={() => setShow12Lead(false)} className="text-gray-400 hover:text-white"><X className="h-4 w-4" /></button>
                 </div>
-              );
-            })()}
+                <div className="p-2">
+                  <img src={litflImageUrl} alt="12-Lead ECG"
+                    className="w-full h-auto rounded border border-gray-700" style={{ maxHeight: '400px', objectFit: 'contain' }} />
+                </div>
+              </div>
+            ) : (
+              /* Fallback: generated 12-lead only when no LITFL image exists */
+              <TwelveLeadECG rhythm={currentRhythm} heartRate={hrValue} onClose={() => setShow12Lead(false)} />
+            )}
           </div>
         )}
 
-        {/* Active Assessments Banner */}
-        {activeAssessments.size > 0 && (
-          <div className="mx-3 mb-2 p-2 rounded border border-blue-800/50 bg-blue-950/30">
-            <div className="flex items-center gap-2 text-blue-400">
-              <Timer className="h-3 w-3 animate-pulse" />
-              <span className="text-[9px] font-mono font-bold">
-                {activeAssessments.size} ASSESSMENT{activeAssessments.size > 1 ? 'S' : ''} IN PROGRESS
-              </span>
+        {/* 12-Lead ECG Image from LITFL (shown on PRINT) */}
+        {show12LeadImage && (
+          <div className="mx-3 mb-2 rounded-lg border border-gray-600/50 overflow-hidden" style={{ background: 'rgba(0,0,0,0.6)' }}>
+            <div className="flex items-center justify-between px-3 py-1.5 border-b border-gray-700/50">
+              <span className="text-[10px] font-mono font-bold text-green-400">12-LEAD ECG — {currentRhythm.name}</span>
+              <button onClick={() => setShow12LeadImage(false)} className="text-gray-400 hover:text-white"><X className="h-4 w-4" /></button>
+            </div>
+            {litflImageUrl ? (
+              <div className="p-2">
+                <img src={litflImageUrl} alt={`12-Lead ECG: ${currentRhythm.name}`}
+                  className="w-full h-auto rounded border border-gray-700" style={{ maxHeight: '300px', objectFit: 'contain' }}
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                <div className="mt-1 text-[8px] font-mono text-gray-500">Source: Life in the Fast Lane (LITFL) ECG Library</div>
+              </div>
+            ) : (
+              <div className="p-4 text-center text-[10px] font-mono text-gray-500">
+                No LITFL image available for this rhythm. Use 12 LEAD button for generated ECG.
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Options */}
+        {showOptions && (
+          <div className="mx-3 mb-2 p-3 rounded-lg border border-gray-600/50" style={{ background: 'rgba(0,0,0,0.5)' }}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] font-mono font-bold text-gray-300">OPTIONS</span>
+              <button onClick={() => setShowOptions(false)} className="text-gray-400 hover:text-white"><X className="h-3.5 w-3.5" /></button>
+            </div>
+            <div className="grid grid-cols-3 gap-2 text-[9px] font-mono">
+              {[['Sweep', '25mm/s'], ['Gain', `${waveformGain}x`], ['Lead', selectedLead],
+                ['Audio', audioEnabled ? 'ON' : 'OFF'], ['Alarms', alarmsEnabled ? 'ON' : 'OFF'], ['Mode', monitorMode.toUpperCase()]
+              ].map(([k, v]) => (
+                <div key={k} className="flex items-center justify-between px-2 py-1 bg-gray-800/40 rounded">
+                  <span className="text-gray-400">{k}</span><span className="text-white">{v}</span>
+                </div>
+              ))}
             </div>
           </div>
         )}
 
-        {/* ================================================================ */}
-        {/* INTERVENTION LOG                                               */}
-        {/* ================================================================ */}
-        {interventionLog.length > 0 && (
-          <div className="mx-3 mb-2">
-            <details className="group">
-              <summary className="cursor-pointer flex items-center gap-2 px-2 py-1.5 rounded-t border border-gray-700/50 bg-gray-900/50 hover:bg-gray-800/50 transition-colors">
-                <Timer className="h-3 w-3 text-gray-400" />
-                <span className="text-[9px] font-mono font-bold text-gray-400">INTERVENTION LOG</span>
-                <span className="text-[8px] font-mono text-gray-600 ml-auto">{interventionLog.length} events</span>
-              </summary>
-              <div className="border border-t-0 border-gray-700/50 rounded-b bg-black/40 max-h-[200px] overflow-y-auto">
+        {/* Code Summary — scrollable */}
+        {showCodeSummary && (
+          <div className="mx-3 mb-2 p-2 rounded-lg border border-gray-600/50" style={{ background: 'rgba(0,0,0,0.5)' }}>
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[10px] font-mono font-bold text-gray-300">CODE SUMMARY ({interventionLog.length} events)</span>
+              <button onClick={() => setShowCodeSummary(false)} className="text-gray-400 hover:text-white"><X className="h-3.5 w-3.5" /></button>
+            </div>
+            <div className="max-h-[250px] overflow-y-auto scrollbar-thin">
+              {interventionLog.length === 0 ? (
+                <span className="text-[9px] font-mono text-gray-500 block py-2 text-center">No events recorded yet</span>
+              ) : (
                 <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-800/50">
-                      <th className="text-[7px] font-mono text-gray-500 text-left px-2 py-1 w-[70px]">TIME</th>
-                      <th className="text-[7px] font-mono text-gray-500 text-left px-2 py-1 w-[90px]">ACTION</th>
-                      <th className="text-[7px] font-mono text-gray-500 text-left px-2 py-1">DETAIL</th>
-                    </tr>
-                  </thead>
+                  <thead><tr className="border-b border-gray-800/50">
+                    <th className="text-[7px] font-mono text-gray-500 text-left px-2 py-1 w-[65px]">TIME</th>
+                    <th className="text-[7px] font-mono text-gray-500 text-left px-2 py-1 w-[80px]">ACTION</th>
+                    <th className="text-[7px] font-mono text-gray-500 text-left px-2 py-1">DETAIL</th>
+                  </tr></thead>
                   <tbody>
-                    {[...interventionLog].reverse().map((entry, i) => (
+                    {[...interventionLog].reverse().map((e, i) => (
                       <tr key={i} className={`border-b border-gray-800/20 ${i === 0 ? 'bg-green-950/20' : ''}`}>
-                        <td className="text-[8px] font-mono text-gray-400 px-2 py-0.5">{entry.time}</td>
+                        <td className="text-[8px] font-mono text-gray-400 px-2 py-0.5">{e.time}</td>
                         <td className={`text-[8px] font-mono font-bold px-2 py-0.5 ${
-                          entry.action.includes('SHOCK') || entry.action.includes('DEFIB') ? 'text-red-400' :
-                          entry.action.includes('SYNC') ? 'text-yellow-400' :
-                          entry.action.includes('PACER') ? 'text-blue-400' :
-                          entry.action.includes('NIBP') ? 'text-white' :
-                          'text-green-400'
-                        }`}>{entry.action}</td>
-                        <td className="text-[8px] font-mono text-gray-300 px-2 py-0.5">{entry.detail}</td>
+                          e.action.includes('SHOCK') || e.action.includes('DEFIB') ? 'text-red-400' :
+                          e.action.includes('PACER') ? 'text-blue-400' : 'text-green-400'}`}>{e.action}</td>
+                        <td className="text-[8px] font-mono text-gray-300 px-2 py-0.5">{e.detail}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-              </div>
-            </details>
+              )}
+            </div>
           </div>
         )}
 
-        {/* Bottom housing bar */}
-        <div className="px-4 py-1.5 flex items-center justify-between"
-          style={{
-            background: 'linear-gradient(180deg, #2e3136 0%, #3a3d42 100%)',
-            borderTop: '1px solid rgba(255,255,255,0.03)',
-          }}
-        >
-          <span className="text-[8px] font-mono text-gray-500 tracking-wider">
-            SIM TRAINER v2.0
-          </span>
+        {/* Shock Delivered */}
+        {shockDelivered && (
+          <div className="mx-3 mb-2 p-3 rounded-lg border-2 border-red-500 bg-red-950/80 animate-pulse">
+            <div className="flex items-center justify-center gap-3">
+              <Zap className="h-6 w-6 text-yellow-400" />
+              <div className="text-center">
+                <span className="text-xl font-mono font-bold text-red-400 tracking-widest block">SHOCK DELIVERED</span>
+                <span className="text-[10px] font-mono text-yellow-300">{selectedEnergy}J {syncMode ? 'SYNC' : 'ASYNC'} — #{shockCount}</span>
+              </div>
+              <Zap className="h-6 w-6 text-yellow-400" />
+            </div>
+          </div>
+        )}
+
+        {/* Pacer active */}
+        {pacerActive && monitorMode === 'pacer' && (
+          <div className="mx-3 mb-2 p-2 rounded border border-blue-500/60 bg-blue-950/40">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-mono font-bold text-blue-400"><Zap className="h-3 w-3 inline animate-pulse" /> PACING ACTIVE</span>
+              <span className="text-[9px] font-mono text-blue-300">{pacerRate}ppm / {pacerOutput}mA — {pacerOutput >= 60 ? 'CAPTURE' : 'NO CAPTURE'}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Treatment effect */}
+        {treatmentEffectIndicator && (
+          <div className="mx-3 mb-2 p-2 rounded border border-green-700/50 bg-green-950/30 animate-pulse">
+            <span className="text-[10px] font-mono font-bold text-green-400"><TrendingUp className="h-3 w-3 inline" /> TREATMENT: </span>
+            <span className="text-[9px] font-mono text-green-300/80">{treatmentEffectIndicator}</span>
+          </div>
+        )}
+
+        {/* Rhythm banner */}
+        {visibleVitals.has('pulse') && currentRhythm.id !== 'nsr' && (
+          <div className={`mx-3 mb-2 p-2 rounded border ${
+            currentRhythm.category === 'arrest' ? 'border-red-600/60 bg-red-950/40' :
+            currentRhythm.category === 'stemi' ? 'border-orange-600/50 bg-orange-950/30' : 'border-yellow-600/50 bg-yellow-950/30'}`}>
+            <div className="flex items-center justify-between">
+              <span className={`text-[10px] font-mono font-bold ${
+                currentRhythm.category === 'arrest' ? 'text-red-400' : currentRhythm.category === 'stemi' ? 'text-orange-400' : 'text-yellow-400'
+              }`}>RHYTHM: {currentRhythm.name.toUpperCase()}</span>
+              {currentRhythm.category === 'stemi' && (
+                <button onClick={() => setShow12Lead(true)} className="text-[8px] font-mono text-green-400 hover:text-green-300 cursor-pointer">VIEW 12-LEAD</button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Alarms & deterioration */}
+        {(alarmStatus.count > 0 || minutesElapsed >= 2) && (
+          <div className="mx-3 mb-2 space-y-1">
+            {alarmStatus.count > 0 && alarmsEnabled && (
+              <div className={`p-2 rounded border ${alarmStatus.hasCritical ? 'bg-red-950/60 border-red-700 animate-pulse' : 'bg-amber-950/40 border-amber-700'}`}>
+                <span className={`text-[10px] font-mono font-bold ${alarmStatus.hasCritical ? 'text-red-400' : 'text-amber-400'}`}>
+                  <AlertTriangle className="h-3.5 w-3.5 inline mr-1" />{alarmStatus.count} ALARM{alarmStatus.count > 1 ? 'S' : ''} ACTIVE
+                </span>
+              </div>
+            )}
+            {(() => {
+              const status = getDeteriorationStatus(caseSeverity, minutesElapsed);
+              if (status.urgency === 'low' && minutesElapsed < 2) return null;
+              const colors: Record<string, string> = { low: 'text-green-400 border-green-800/50', medium: 'text-yellow-400 border-yellow-800/50',
+                high: 'text-orange-400 border-orange-800/50', extreme: 'text-red-400 border-red-700/50 animate-pulse' };
+              return (<div className={`p-2 rounded border bg-black/40 ${colors[status.urgency]}`}>
+                <span className="text-[9px] font-mono font-bold">{status.status.toUpperCase()}</span>
+                {status.percentDeteriorated > 20 && <Progress value={status.percentDeteriorated} className="h-0.5 mt-1" />}
+              </div>);
+            })()}
+          </div>
+        )}
+
+        {activeAssessments.size > 0 && (
+          <div className="mx-3 mb-2 p-2 rounded border border-blue-800/50 bg-blue-950/30">
+            <span className="text-[9px] font-mono font-bold text-blue-400"><Timer className="h-3 w-3 inline animate-pulse mr-1" />
+              {activeAssessments.size} ASSESSMENT{activeAssessments.size > 1 ? 'S' : ''} IN PROGRESS</span>
+          </div>
+        )}
+
+        {/* Footer */}
+        <div className="px-4 py-1 flex items-center justify-between"
+          style={{ background: 'linear-gradient(180deg, #2e3136 0%, #3a3d42 100%)', borderTop: '1px solid rgba(255,255,255,0.03)' }}>
+          <span className="text-[8px] font-mono text-gray-500 tracking-wider">TLC Monitor v1.0</span>
           <div className="flex items-center gap-3">
-            <span className="text-[8px] font-mono text-gray-600">
-              {visibleVitals.size}/{availableVitals.length} PARAMS
-            </span>
-            {shockCount > 0 && (
-              <span className="text-[8px] font-mono text-red-500">
-                <Zap className="h-2.5 w-2.5 inline" /> x{shockCount}
-              </span>
-            )}
-            {audioEnabled && (
-              <span className="text-[8px] font-mono text-green-600 flex items-center gap-1">
-                <Volume2 className="h-2.5 w-2.5" /> ON
-              </span>
-            )}
+            <span className="text-[8px] font-mono text-gray-600">{visibleVitals.size}/{availableVitals.length}</span>
+            {shockCount > 0 && <span className="text-[8px] font-mono text-red-500"><Zap className="h-2.5 w-2.5 inline" /> x{shockCount}</span>}
           </div>
         </div>
       </div>

@@ -891,6 +891,33 @@ export const pvcs: ECGRhythm = {
 };
 
 // ============================================================================
+// HYPERKALEMIA — Peaked T waves, wide QRS, prolonged PR, sine wave tendency
+// ============================================================================
+const hyperkalemiaWave: WaveformFn = (t) => {
+  // Small/absent P wave
+  const p = pWave(t, 0.04, 0.05, 0.06);
+  // Wide QRS complex (160ms+)
+  const qrs = wideQRS(t, 0.85, 0.14, 0.16);
+  // Peaked, tall, symmetric T wave — hallmark of hyperkalemia
+  const peakedT = hyperacuteT(t, 0.55, 0.32, 0.14);
+  return p + qrs + peakedT;
+};
+
+export const hyperkalemia: ECGRhythm = {
+  id: 'hyperkalemia',
+  name: 'Hyperkalemia — Peaked T Waves, Wide QRS',
+  description: 'Peaked T waves, widened QRS, prolonged PR, risk of sine wave pattern',
+  category: 'metabolic',
+  defaultRate: 55,
+  rateRange: [30, 90],
+  regular: true,
+  leads: makeLeadSet(hyperkalemiaWave, {
+    I: 0.7, II: 1.0, III: 0.6, aVR: -0.5, aVL: 0.4, aVF: 0.8,
+    V1: 0.5, V2: 1.0, V3: 1.1, V4: 1.0, V5: 0.8, V6: 0.6,
+  }),
+};
+
+// ============================================================================
 // RHYTHM REGISTRY
 // ============================================================================
 
@@ -923,6 +950,7 @@ export const ALL_RHYTHMS: ECGRhythm[] = [
   rbbb,
   pacs,
   pvcs,
+  hyperkalemia,
 ];
 
 export const RHYTHM_MAP: Record<string, ECGRhythm> = Object.fromEntries(
@@ -1010,7 +1038,7 @@ export function getRhythmForCase(category: string, subcategory?: string, heartRa
   if (searchText.includes('first degree') || searchText.includes('1st degree') || sub.includes('first-degree') || sub.includes('1st-degree')) return firstDegreeBlock;
 
   // ===== Specific conditions =====
-  if (searchText.includes('hyperkalemia') || searchText.includes('hyperkalaemia')) return sinusBradycardia; // Broad QRS bradycardia
+  if (searchText.includes('hyperkalemia') || searchText.includes('hyperkalaemia') || searchText.includes('hyperkal')) return hyperkalemia; // Peaked T, wide QRS
   if (searchText.includes('hypothermia')) return sinusBradycardia; // Osborn waves + bradycardia
   if (searchText.includes('pulmonary embolism') || searchText.includes('pe ') || sub.includes('pulmonary-embolism')) return sinusTachycardia; // Sinus tachy with RV strain
 

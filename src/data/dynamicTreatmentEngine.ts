@@ -1008,14 +1008,40 @@ function handleDefibrillation(
     };
   }
 
-  // Normal/other rhythm — unnecessary shock
+  // Normal/other rhythm — HARMFUL: shock causes arrest
+  const roll = Math.random();
+  let arrestRhythm: string;
+  if (roll < 0.7) arrestRhythm = 'Ventricular Fibrillation';
+  else if (roll < 0.9) arrestRhythm = 'Asystole';
+  else arrestRhythm = 'PEA';
+
+  const oldPulse = vitals.pulse;
+  const oldBP = vitals.bp;
+  state.currentRhythm = arrestRhythm;
+  state.isInArrest = true;
+  state.deteriorationLevel = 4;
+  vitals.pulse = 0;
+  vitals.bp = '0/0';
+  vitals.spo2 = Math.max(30, (vitals.spo2 || 98) - 55);
+
+  changes.push(
+    { vital: 'HR', oldValue: oldPulse, newValue: 0, direction: 'worsened' },
+    { vital: 'BP', oldValue: oldBP, newValue: '0/0', direction: 'worsened' },
+  );
+
   return {
-    description: 'Shock delivered to patient with perfusing rhythm — this was unnecessary and may cause harm.',
+    description: `CRITICAL: Shock delivered to patient with perfusing rhythm caused ${arrestRhythm}! Cardiac arrest — begin CPR immediately.`,
     effectivenessPercent: 0,
     isPartialResponse: false,
     requiresRepeat: false,
     warningMessage: 'Defibrillation is only indicated for VF/pulseless VT!',
-    vitalChanges: [],
+    criticalEvent: {
+      type: 'cardiac-arrest',
+      description: `Inappropriate shock on perfusing rhythm caused ${arrestRhythm}. Patient now in cardiac arrest.`,
+      newRhythm: arrestRhythm,
+      requiresAction: ['Start CPR immediately', 'Prepare for defibrillation if VF', 'Adrenaline 1mg IV'],
+    },
+    vitalChanges: changes,
   };
 }
 

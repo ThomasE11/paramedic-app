@@ -45,6 +45,8 @@ export interface Treatment {
   effects: TreatmentEffect[];
   contraindications?: string[];
   requiresMonitoring?: boolean;
+  /** If true, IV access must be established before this treatment can be administered */
+  requiresIVAccess?: boolean;
 }
 
 // Individual vital sign effect
@@ -348,6 +350,7 @@ export const TREATMENTS: Treatment[] = [
       { vitalSign: 'pulse', changeType: 'decrease', value: 8, minValue: 60 },
     ],
     contraindications: ['Heart failure (use with caution)', 'Pulmonary oedema'],
+    requiresIVAccess: true,
   },
   {
     id: 'fluids_500ml',
@@ -364,6 +367,7 @@ export const TREATMENTS: Treatment[] = [
       { vitalSign: 'pulse', changeType: 'decrease', value: 15, minValue: 60 },
     ],
     contraindications: ['Heart failure', 'Pulmonary oedema', 'Fluid overload'],
+    requiresIVAccess: true,
   },
   {
     id: 'fluids_1000ml',
@@ -380,6 +384,7 @@ export const TREATMENTS: Treatment[] = [
       { vitalSign: 'pulse', changeType: 'decrease', value: 25, minValue: 60 },
     ],
     contraindications: ['Heart failure', 'Pulmonary oedema', 'Renal failure (use with caution)', 'Fluid overload'],
+    requiresIVAccess: true,
   },
   {
     id: 'bleeding_control',
@@ -510,6 +515,7 @@ export const TREATMENTS: Treatment[] = [
     ],
     requiresMonitoring: true,
     contraindications: ['Respiratory rate < 12', 'Systolic BP < 90', 'Head injury (use with caution)', 'Known opioid allergy', 'Severe asthma/COPD (use with caution)'],
+    requiresIVAccess: true,
   },
   {
     id: 'fentanyl_50mcg',
@@ -528,6 +534,7 @@ export const TREATMENTS: Treatment[] = [
     ],
     requiresMonitoring: true,
     contraindications: ['Respiratory rate < 12', 'Systolic BP < 90', 'Head injury (use with caution)', 'Known opioid allergy'],
+    requiresIVAccess: true,
   },
   {
     id: 'adrenaline_1mg',
@@ -543,6 +550,7 @@ export const TREATMENTS: Treatment[] = [
       { vitalSign: 'pulse', changeType: 'increase', value: 30, maxValue: 160 },
       { vitalSign: 'bp', changeType: 'increase', value: 30 },
     ],
+    requiresIVAccess: true,
   },
   {
     id: 'atropine_05mg',
@@ -558,6 +566,7 @@ export const TREATMENTS: Treatment[] = [
       { vitalSign: 'pulse', changeType: 'increase', value: 25, maxValue: 140 },
       { vitalSign: 'bp', changeType: 'increase', value: 15 },
     ],
+    requiresIVAccess: true,
   },
   {
     id: 'adenosine_6mg',
@@ -573,6 +582,7 @@ export const TREATMENTS: Treatment[] = [
       { vitalSign: 'pulse', changeType: 'set', value: 80 },
     ],
     contraindications: ['Asthma (severe bronchospasm risk)', '2nd/3rd degree heart block', 'Denervated transplant heart'],
+    requiresIVAccess: true,
   },
   {
     id: 'adenosine_12mg',
@@ -588,6 +598,7 @@ export const TREATMENTS: Treatment[] = [
       { vitalSign: 'pulse', changeType: 'set', value: 75 },
     ],
     contraindications: ['Asthma (severe bronchospasm risk)', '2nd/3rd degree heart block', 'Denervated transplant heart'],
+    requiresIVAccess: true,
   },
   {
     id: 'metoprolol_5mg',
@@ -604,6 +615,7 @@ export const TREATMENTS: Treatment[] = [
       { vitalSign: 'bp', changeType: 'decrease', value: 10 },
     ],
     contraindications: ['HR < 60', 'SBP < 100', 'Heart failure (acute decompensated)', 'Asthma', '2nd/3rd degree heart block'],
+    requiresIVAccess: true,
   },
   {
     id: 'diltiazem_20mg',
@@ -635,6 +647,7 @@ export const TREATMENTS: Treatment[] = [
       { vitalSign: 'pulse', changeType: 'decrease', value: 15, minValue: 60 },
       { vitalSign: 'bp', changeType: 'decrease', value: 10 },
     ],
+    requiresIVAccess: true,
   },
   {
     id: 'glucose_10g',
@@ -683,6 +696,7 @@ export const TREATMENTS: Treatment[] = [
       { vitalSign: 'respiration', changeType: 'decrease', value: 3, minValue: 10 },
     ],
     requiresMonitoring: true,
+    requiresIVAccess: true,
   },
   {
     id: 'naloxone_04mg',
@@ -730,6 +744,7 @@ export const TREATMENTS: Treatment[] = [
       { vitalSign: 'bp', changeType: 'increase', value: 15 },
       { vitalSign: 'pulse', changeType: 'decrease', value: 10, minValue: 60 },
     ],
+    requiresIVAccess: true,
   },
 
   // ===== PSYCHOLOGICAL/COMFORT =====
@@ -952,6 +967,7 @@ export const TREATMENTS: Treatment[] = [
       { vitalSign: 'gcs', changeType: 'increase', value: 4, maxValue: 15 },
       { vitalSign: 'pulse', changeType: 'decrease', value: 10, minValue: 60 },
     ],
+    requiresIVAccess: true,
   },
   {
     id: 'magnesium_2g',
@@ -969,6 +985,7 @@ export const TREATMENTS: Treatment[] = [
       { vitalSign: 'bp', changeType: 'decrease', value: 10 },
     ],
     contraindications: ['Myasthenia gravis', 'Heart block', 'Severe renal impairment'],
+    requiresIVAccess: true,
   },
   {
     id: 'ondansetron_4mg',
@@ -984,6 +1001,7 @@ export const TREATMENTS: Treatment[] = [
       { vitalSign: 'pulse', changeType: 'decrease', value: 5, minValue: 60 },
     ],
     contraindications: ['Congenital long QT syndrome', 'Concurrent QT-prolonging drugs'],
+    requiresIVAccess: true,
   },
 
   // ================================================================
@@ -1085,6 +1103,7 @@ export const TREATMENTS: Treatment[] = [
       { vitalSign: 'bp', changeType: 'decrease', value: 5 },
     ],
     contraindications: ['Not given amiodarone 300mg first', 'Non-shockable rhythm'],
+    requiresIVAccess: true,
   },
   {
     id: 'lucas_device',
@@ -1117,6 +1136,7 @@ export const TREATMENTS: Treatment[] = [
       { vitalSign: 'bp', changeType: 'increase', value: 5 },
     ],
     contraindications: ['Routine use in cardiac arrest (not recommended)'],
+    requiresIVAccess: true,
   },
   {
     id: 'calcium_chloride',
@@ -1133,6 +1153,7 @@ export const TREATMENTS: Treatment[] = [
       { vitalSign: 'bp', changeType: 'increase', value: 10 },
     ],
     contraindications: ['Digoxin toxicity (relative)', 'Concurrent sodium bicarbonate (precipitates)'],
+    requiresIVAccess: true,
   },
 
   // ================================================================
@@ -1169,6 +1190,7 @@ export const TREATMENTS: Treatment[] = [
       { vitalSign: 'bp', changeType: 'increase', value: 10 },
     ],
     contraindications: ['Eclampsia', 'Severe hypertension (SBP >180)'],
+    requiresIVAccess: true,
   },
   {
     id: 'suxamethonium',
@@ -1184,6 +1206,7 @@ export const TREATMENTS: Treatment[] = [
       { vitalSign: 'respiration', changeType: 'set', value: 0 },
     ],
     contraindications: ['Known hyperkalaemia', 'Burns >24hrs old', 'Denervation injuries', 'Known malignant hyperthermia', 'Neuromuscular disease (myasthenia gravis, muscular dystrophy)', 'Spinal cord injury >72hrs'],
+    requiresIVAccess: true,
   },
   {
     id: 'rocuronium',
@@ -1199,6 +1222,7 @@ export const TREATMENTS: Treatment[] = [
       { vitalSign: 'respiration', changeType: 'set', value: 0 },
     ],
     contraindications: ['No sugammadex available for reversal'],
+    requiresIVAccess: true,
   },
   {
     id: 'metoclopramide_10mg',
@@ -1230,6 +1254,7 @@ export const TREATMENTS: Treatment[] = [
       { vitalSign: 'pulse', changeType: 'decrease', value: 5, minValue: 55 },
     ],
     contraindications: ['Hypovolaemia', 'Renal failure', 'Pulmonary oedema'],
+    requiresIVAccess: true,
   },
   {
     id: 'hypertonic_saline',
@@ -1282,6 +1307,7 @@ export const TREATMENTS: Treatment[] = [
       { vitalSign: 'pulse', changeType: 'decrease', value: 5, minValue: 50 },
     ],
     contraindications: ['Peripheral vascular disease'],
+    requiresIVAccess: true,
   },
   {
     id: 'dopamine_infusion',
@@ -1298,6 +1324,7 @@ export const TREATMENTS: Treatment[] = [
       { vitalSign: 'pulse', changeType: 'increase', value: 15, maxValue: 140 },
     ],
     contraindications: ['Phaeochromocytoma', 'Tachyarrhythmias'],
+    requiresIVAccess: true,
   },
   {
     id: 'propofol_infusion',
@@ -1315,6 +1342,7 @@ export const TREATMENTS: Treatment[] = [
       { vitalSign: 'respiration', changeType: 'decrease', value: 3, minValue: 8 },
     ],
     contraindications: ['Haemodynamic instability', 'Egg/soy allergy'],
+    requiresIVAccess: true,
   },
   {
     id: 'midazolam_infusion',
@@ -1331,6 +1359,7 @@ export const TREATMENTS: Treatment[] = [
       { vitalSign: 'respiration', changeType: 'decrease', value: 2, minValue: 10 },
     ],
     contraindications: ['Respiratory depression', 'Severe hepatic impairment'],
+    requiresIVAccess: true,
   },
   {
     id: 'fentanyl_infusion',
@@ -1348,6 +1377,7 @@ export const TREATMENTS: Treatment[] = [
       { vitalSign: 'respiration', changeType: 'decrease', value: 2, minValue: 8 },
     ],
     contraindications: ['Respiratory depression without ventilation'],
+    requiresIVAccess: true,
   },
 
   // ================================================================
@@ -1539,6 +1569,7 @@ export const TREATMENTS: Treatment[] = [
       { vitalSign: 'gcs', changeType: 'increase', value: 3, maxValue: 15 },
     ],
     contraindications: ['Hyperglycaemia'],
+    requiresIVAccess: true,
   },
   {
     id: 'salbutamol_iv',
@@ -1624,6 +1655,7 @@ export const TREATMENTS: Treatment[] = [
       { vitalSign: 'bp', changeType: 'decrease', value: 25 },
     ],
     contraindications: ['Asthma', 'Heart failure', 'HR < 60', '2nd/3rd degree heart block'],
+    requiresIVAccess: true,
   },
   {
     id: 'lorazepam_4mg',
@@ -1641,6 +1673,7 @@ export const TREATMENTS: Treatment[] = [
       { vitalSign: 'respiration', changeType: 'decrease', value: 2, minValue: 8 },
     ],
     contraindications: ['Respiratory depression', 'Myasthenia gravis', 'Severe hepatic impairment'],
+    requiresIVAccess: true,
   },
 
   // ============================================================================
@@ -1759,6 +1792,7 @@ export const TREATMENTS: Treatment[] = [
       { vitalSign: 'bp', changeType: 'increase', value: 5 },
     ],
     contraindications: ['Age < 3 months', 'Known psychosis (relative)', 'Severe hypertension (SBP >180)'],
+    requiresIVAccess: true,
   },
   {
     id: 'ketamine_sedation',

@@ -76,8 +76,33 @@ function getStudentCaseTitle(caseData: CaseScenario): string {
 
   // Use dispatch reason as the case title
   if (reason) {
-    // Clean up the reason to be a good title
-    const cleanReason = reason.charAt(0).toUpperCase() + reason.slice(1);
+    // Strip redundant age/gender from callReason to avoid duplication with patient description
+    let cleanReason = reason;
+    if (age) {
+      // Pattern 1: "32-year-old female difficulty breathing" or "45-year-old diabetic feeling..."
+      // Strips "N-year-old" + optional gender/descriptor word
+      cleanReason = cleanReason.replace(
+        /^\d{1,3}[- ]?(?:year[- ]?old|yo|y\.?o\.?)\s+(?:male|female|man|woman|patient|child|boy|girl)\b[,\s-]*/i,
+        ''
+      );
+      // Pattern 1b: "N-year-old" followed by non-gender word (e.g., "45-year-old diabetic")
+      // Only strip the age part, keep the descriptor
+      cleanReason = cleanReason.replace(
+        /^\d{1,3}[- ]?(?:year[- ]?old|yo|y\.?o\.?)\s+/i,
+        ''
+      );
+      // Pattern 2: "Male, 64, difficulty breathing" or "Female, 32, ..."
+      cleanReason = cleanReason.replace(
+        /^(?:male|female|man|woman|patient|child|boy|girl)[,\s]+\d{1,3}[,\s]+/i,
+        ''
+      );
+      // Pattern 3: "64 male ..." or "32 female ..."
+      cleanReason = cleanReason.replace(
+        /^\d{1,3}[,\s]+(?:male|female|man|woman|patient|child|boy|girl)[,\s-]*/i,
+        ''
+      );
+    }
+    cleanReason = cleanReason.charAt(0).toUpperCase() + cleanReason.slice(1);
     return `${patient} — ${cleanReason}`;
   }
 
@@ -162,6 +187,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
   const [pendingDefibTreatment, setPendingDefibTreatment] = useState<Treatment | null>(null);
   // Medication safety confirmation (replaces window.confirm which auto-dismisses on re-render)
   const [pendingMedConfirm, setPendingMedConfirm] = useState<{ treatment: Treatment; allergyText: string; contraText: string } | null>(null);
+  const [pendingIVTreatment, setPendingIVTreatment] = useState<Treatment | null>(null);
   const deteriorationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const medicationConfirmedRef = useRef<Set<string>>(new Set());
 
@@ -572,6 +598,12 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
     if (treatment.id === 'defibrillation' && !defibParams) {
       setPendingDefibTreatment(treatment);
       setShowDefibDialog(true);
+      return;
+    }
+
+    // IV prerequisite check — student must establish IV access before giving IV drugs/fluids
+    if (treatment.requiresIVAccess && !appliedTreatmentIds.includes('iv_access')) {
+      setPendingIVTreatment(treatment);
       return;
     }
 
@@ -2430,6 +2462,50 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                       applyTreatment(t);
                     }}>
                       Confirm &amp; Administer
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            )}
+
+            {/* IV Access Prerequisite Dialog */}
+            {pendingIVTreatment && (
+              <Dialog open={!!pendingIVTreatment} onOpenChange={(open) => { if (!open) setPendingIVTreatment(null); }}>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2 text-blue-600">
+                      <AlertTriangle className="h-5 w-5" />
+                      IV Access Required
+                    </DialogTitle>
+                    <DialogDescription>
+                      IV access must be established before administering IV medications or fluids.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-3 py-2">
+                    <div className="rounded-lg border border-border bg-muted/30 p-3">
+                      <p className="text-sm font-semibold">{pendingIVTreatment.name}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        This treatment requires intravenous access. You have not yet established an IV line.
+                      </p>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Do you want to set up an IV first?
+                    </p>
+                  </div>
+                  <DialogFooter className="gap-2">
+                    <Button variant="outline" onClick={() => setPendingIVTreatment(null)}>Cancel</Button>
+                    <Button onClick={() => {
+                      const pendingTreatment = pendingIVTreatment;
+                      setPendingIVTreatment(null);
+                      // Find the iv_access treatment and apply it first
+                      const ivAccessTreatment = TREATMENTS.find(t => t.id === 'iv_access');
+                      if (ivAccessTreatment) {
+                        applyTreatment(ivAccessTreatment);
+                        // Then apply the originally intended treatment after a short delay
+                        setTimeout(() => applyTreatment(pendingTreatment), 500);
+                      }
+                    }}>
+                      Yes, Set Up IV
                     </Button>
                   </DialogFooter>
                 </DialogContent>

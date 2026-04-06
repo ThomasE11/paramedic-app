@@ -777,7 +777,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   // Phase 2B: Determine required regions from assessment profile
   const requiredRegions = useMemo<Set<string>>(() => {
     if (!caseCategory) return new Set<string>();
-    const profile = getAssessmentProfile(caseCategory as CaseCategory);
+    const profile = getAssessmentProfile(caseCategory as CaseCategory, caseData?.subcategory);
     const regions = new Set<string>();
     for (const step of profile.requiredSecondary) {
       // 'extremities' requirement maps to all 4 individual limbs

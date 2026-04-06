@@ -7,10 +7,17 @@ dist
 .claude/worktrees
 .claude/launch.json
 
-# Test artifacts & screenshots
+# Test artifacts & screenshots (but allow ECG images and clinical images)
+!public/images/**
 *.png
 *.jpg
 *.jpeg
+!public/images/ecg/*.jpg
+!public/images/ecg/*.png
+!public/images/clinical/*.jpg
+!public/images/clinical/*.png
+!public/images/placeholders/*.jpg
+!public/images/placeholders/*.png
 comprehensive-test.ts
 run-tests.cjs
 test-suite.js

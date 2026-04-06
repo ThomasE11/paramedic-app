@@ -563,30 +563,30 @@ const TRAUMA_PROFILE: CaseAssessmentProfile = {
 };
 
 const CARDIAC_PROFILE: CaseAssessmentProfile = {
-  requiredSecondary: ['chest', 'neck-cspine'],
-  recommendedSecondary: ['abdomen', 'extremities'],
-  requiredSpecial: ['12-lead-ecg', 'pain-assessment'],
-  recommendedSpecial: ['blood-glucose'],
+  requiredSecondary: ['chest'],
+  recommendedSecondary: ['abdomen', 'extremities', 'neck-cspine'],
+  requiredSpecial: ['12-lead-ecg'],
+  recommendedSpecial: ['pain-assessment', 'blood-glucose'],
   secondarySurveyLabel: 'Focused Cardiac Assessment',
   secondarySurveyDescription: 'Focused chest and cardiovascular examination. 12-lead ECG is critical.',
 };
 
 const RESPIRATORY_PROFILE: CaseAssessmentProfile = {
-  requiredSecondary: ['chest', 'neck-cspine'],
-  recommendedSecondary: ['abdomen'],
-  requiredSpecial: ['pain-assessment'],
-  recommendedSpecial: ['blood-glucose', 'temperature'],
+  requiredSecondary: ['chest'],
+  recommendedSecondary: ['abdomen', 'neck-cspine'],
+  requiredSpecial: [],
+  recommendedSpecial: ['pain-assessment', 'blood-glucose', 'temperature'],
   secondarySurveyLabel: 'Focused Respiratory Assessment',
   secondarySurveyDescription: 'Detailed chest examination with auscultation, percussion, and work of breathing assessment.',
 };
 
 const NEUROLOGICAL_PROFILE: CaseAssessmentProfile = {
-  requiredSecondary: ['head', 'neck-cspine', 'extremities'],
-  recommendedSecondary: ['face'],
-  requiredSpecial: ['stroke-screen', 'blood-glucose'],
-  recommendedSpecial: ['temperature'],
+  requiredSecondary: ['head', 'extremities'],
+  recommendedSecondary: ['face', 'neck-cspine'],
+  requiredSpecial: ['blood-glucose'],
+  recommendedSpecial: ['stroke-screen', 'temperature'],
   secondarySurveyLabel: 'Focused Neurological Assessment',
-  secondarySurveyDescription: 'Detailed neurological exam with stroke screening. BGL is essential to exclude hypoglycaemia.',
+  secondarySurveyDescription: 'Detailed neurological exam with BGL. Stroke screening when indicated.',
 };
 
 const TOXICOLOGY_PROFILE: CaseAssessmentProfile = {
@@ -652,6 +652,68 @@ const GENERAL_PROFILE: CaseAssessmentProfile = {
   secondarySurveyDescription: 'Conduct a focused assessment based on the chief complaint.',
 };
 
+// ---- SUBCATEGORY-SPECIFIC OVERRIDES ----
+// These override the category profile for specific conditions where the
+// generic category profile would impose clinically inappropriate requirements.
+
+const ANAPHYLAXIS_PROFILE: CaseAssessmentProfile = {
+  requiredSecondary: ['chest'],
+  recommendedSecondary: ['abdomen', 'extremities'],
+  requiredSpecial: [],
+  recommendedSpecial: ['blood-glucose'],
+  secondarySurveyLabel: 'Focused Anaphylaxis Assessment',
+  secondarySurveyDescription: 'Airway patency, breathing adequacy, and circulatory status. Full secondary survey not required — focus on life threats.',
+};
+
+const CARDIAC_ARREST_PROFILE: CaseAssessmentProfile = {
+  requiredSecondary: [],
+  recommendedSecondary: ['chest'],
+  requiredSpecial: [],
+  recommendedSpecial: ['12-lead-ecg'],
+  secondarySurveyLabel: 'Cardiac Arrest Management',
+  secondarySurveyDescription: 'Focus on high-quality CPR and reversible causes. Secondary survey after ROSC.',
+};
+
+const STROKE_PROFILE: CaseAssessmentProfile = {
+  requiredSecondary: ['head', 'extremities'],
+  recommendedSecondary: ['face', 'neck-cspine'],
+  requiredSpecial: ['stroke-screen', 'blood-glucose'],
+  recommendedSpecial: ['12-lead-ecg', 'temperature'],
+  secondarySurveyLabel: 'Focused Stroke Assessment',
+  secondarySurveyDescription: 'Stroke screening with FAST/NIHSS. BGL essential to exclude hypoglycaemia mimicking stroke.',
+};
+
+const PULMONARY_EMBOLISM_PROFILE: CaseAssessmentProfile = {
+  requiredSecondary: ['chest', 'extremities'],
+  recommendedSecondary: ['abdomen'],
+  requiredSpecial: ['12-lead-ecg'],
+  recommendedSpecial: ['pain-assessment', 'blood-glucose'],
+  secondarySurveyLabel: 'Focused PE Assessment',
+  secondarySurveyDescription: 'Chest and extremity examination. 12-lead ECG for right heart strain. Assess for DVT.',
+};
+
+const HYPERVENTILATION_PROFILE: CaseAssessmentProfile = {
+  requiredSecondary: ['chest'],
+  recommendedSecondary: [],
+  requiredSpecial: ['blood-glucose'],
+  recommendedSpecial: ['temperature'],
+  secondarySurveyLabel: 'Focused Respiratory Assessment',
+  secondarySurveyDescription: 'Auscultate chest to rule out organic causes. SpO2 key differentiator (99-100% = hyperventilation).',
+};
+
+/** Subcategory overrides — checked BEFORE category profiles */
+const SUBCATEGORY_PROFILES: Record<string, CaseAssessmentProfile> = {
+  'anaphylaxis': ANAPHYLAXIS_PROFILE,
+  'cardiac-arrest': CARDIAC_ARREST_PROFILE,
+  'asystole': CARDIAC_ARREST_PROFILE,
+  'vfib': CARDIAC_ARREST_PROFILE,
+  'stroke': STROKE_PROFILE,
+  'tia': STROKE_PROFILE,
+  'pulmonary-embolism': PULMONARY_EMBOLISM_PROFILE,
+  'hyperventilation-syndrome': HYPERVENTILATION_PROFILE,
+  'upper-airway-obstruction': HYPERVENTILATION_PROFILE, // legacy subcategory for hyperventilation
+};
+
 /** Map case categories to assessment profiles */
 const CATEGORY_PROFILES: Record<string, CaseAssessmentProfile> = {
   'trauma': TRAUMA_PROFILE,
@@ -668,7 +730,7 @@ const CATEGORY_PROFILES: Record<string, CaseAssessmentProfile> = {
   'psychiatric': PSYCHIATRIC_PROFILE,
   'environmental': ENVIRONMENTAL_PROFILE,
   'burns': BURNS_PROFILE,
-  'metabolic': { ...GENERAL_PROFILE, requiredSpecial: ['blood-glucose'], recommendedSpecial: ['temperature', '12-lead-ecg'] },
+  'metabolic': { ...GENERAL_PROFILE, requiredSpecial: ['blood-glucose', '12-lead-ecg'], recommendedSpecial: ['temperature'] },
   'general': GENERAL_PROFILE,
   'post-discharge': GENERAL_PROFILE,
   'anxiety-related': PSYCHIATRIC_PROFILE,
@@ -686,9 +748,15 @@ const CATEGORY_PROFILES: Record<string, CaseAssessmentProfile> = {
 // ============================================================================
 
 /**
- * Get the assessment profile for a given case
+ * Get the assessment profile for a given case.
+ * Checks subcategory-specific overrides first, then falls back to category profile.
  */
-export function getAssessmentProfile(category: CaseCategory): CaseAssessmentProfile {
+export function getAssessmentProfile(category: CaseCategory, subcategory?: string): CaseAssessmentProfile {
+  // Subcategory overrides take priority (e.g., anaphylaxis, cardiac arrest, stroke)
+  if (subcategory) {
+    const subProfile = SUBCATEGORY_PROFILES[subcategory];
+    if (subProfile) return subProfile;
+  }
   return CATEGORY_PROFILES[category] || GENERAL_PROFILE;
 }
 
@@ -700,7 +768,7 @@ export function getRequiredSteps(caseData: CaseScenario, yearLevel?: string): {
   required: AssessmentStepId[];
   recommended: AssessmentStepId[];
 } {
-  const profile = getAssessmentProfile(caseData.category);
+  const profile = getAssessmentProfile(caseData.category, caseData.subcategory);
 
   // Primary survey is always fully required
   const required: AssessmentStepId[] = [

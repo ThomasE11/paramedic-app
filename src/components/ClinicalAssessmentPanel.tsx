@@ -69,6 +69,7 @@ function getIcon(iconName: string) {
 
 interface ClinicalAssessmentPanelProps {
   caseCategory: CaseCategory;
+  caseSubcategory?: string;
   tracker: AssessmentTracker;
   onPerformAssessment: (stepId: AssessmentStepId) => void;
   /** Currently revealed findings (from the most recent assessment) */
@@ -294,12 +295,13 @@ function PhaseSection({
 
 export function ClinicalAssessmentPanel({
   caseCategory,
+  caseSubcategory,
   tracker,
   onPerformAssessment,
   activeFindings,
   isStudentView = false,
 }: ClinicalAssessmentPanelProps) {
-  const profile = useMemo(() => getAssessmentProfile(caseCategory), [caseCategory]);
+  const profile = useMemo(() => getAssessmentProfile(caseCategory, caseSubcategory), [caseCategory, caseSubcategory]);
 
   // Filter secondary steps to only show relevant ones for this case profile
   const relevantSecondarySteps = useMemo(() => {
@@ -318,8 +320,7 @@ export function ClinicalAssessmentPanel({
       ...profile.requiredSpecial,
       ...profile.recommendedSpecial,
     ]);
-    // Always include pain and BGL as they're universal
-    relevant.add('pain-assessment');
+    // BGL is always relevant; pain only if required or recommended by the case profile
     relevant.add('blood-glucose');
     return SPECIAL_STEPS.filter(s => relevant.has(s.id));
   }, [profile]);

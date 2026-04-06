@@ -262,7 +262,7 @@ export const litflCaseDatabase: CaseScenario[] = [
   createCase({
     id: 'litfl-003',
     title: 'Life-Threatening Hyperkalemia — Renal Failure',
-    category: 'cardiac',
+    category: 'metabolic',
     subcategory: 'electrolyte-emergency',
     priority: 'critical',
     complexity: 'advanced',
@@ -484,7 +484,7 @@ export const litflCaseDatabase: CaseScenario[] = [
   createCase({
     id: 'litfl-007',
     title: 'Massive Pulmonary Embolism with RV Strain',
-    category: 'cardiac',
+    category: 'respiratory',
     subcategory: 'pulmonary-embolism',
     priority: 'critical',
     complexity: 'advanced',

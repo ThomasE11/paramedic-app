@@ -448,6 +448,57 @@ const subcategoryKeywords: Record<string, { boost: string[]; demote: string[] }>
 
   // Rule-out / Diagnostic
   'rule-out': { boost: ['differential', 'assessment', 'systematic', 'clinical reasoning', 'red flags'], demote: [] },
+
+  // Anaphylaxis (multi-system: airway + cardiovascular + skin)
+  'anaphylaxis': { boost: ['anaphylaxis', 'anaphylactic', 'adrenaline', 'epinephrine', 'allergen', 'angioedema', 'urticaria', 'airway', 'shock', 'im adrenaline'], demote: ['asthma', 'copd', 'pneumothorax', 'stemi', 'stroke', 'seizure', 'dka', 'diabetic', 'diabetes', 'ketoacidosis', 'sepsis', 'electrolyte', 'hypoglycaemia', 'hypoglycemia', 'hyperkal'] },
+
+  // Cardiac subcategories missing keywords
+  'cardiac-arrest': { boost: ['cardiac arrest', 'cpr', 'als', 'resuscitation', 'adrenaline', 'defibrillation', 'reversible causes', 'rosc'], demote: ['syncope', 'af ', 'stable'] },
+  'stable-angina': { boost: ['angina', 'exertional', 'chest pain', 'gtn', 'nitrate', 'stress test'], demote: ['stemi', 'reperfusion', 'thrombol'] },
+  'lbbb-stemi': { boost: ['lbbb', 'left bundle', 'sgarbossa', 'stemi', 'occlusion', 'pci', 'cath lab'], demote: ['syncope', 'af '] },
+  'heart-failure': { boost: ['heart failure', 'pulmonary oedema', 'diuretic', 'furosemide', 'niv', 'cpap', 'fluid overload'], demote: ['stemi', 'arrhythmia'] },
+  'pacemaker': { boost: ['pacemaker', 'pacing', 'capture', 'sensing', 'lead'], demote: ['stemi', 'af '] },
+  'bradycardia': { boost: ['bradycardia', 'slow rate', 'atropine', 'pacing', 'heart block', 'sick sinus'], demote: ['tachycardia', 'stemi'] },
+  'heart-block': { boost: ['heart block', 'av block', 'mobitz', 'third degree', 'complete', 'pacing', 'atropine'], demote: ['stemi', 'af '] },
+
+  // Metabolic subcategories
+  'hypoglycemia': { boost: ['hypoglycaemia', 'hypoglycemia', 'glucose', 'bgl', 'dextrose', 'glucagon', 'diabetic'], demote: ['dka', 'ketoacidosis'] },
+  'dka': { boost: ['dka', 'diabetic ketoacidosis', 'ketones', 'insulin', 'acidosis', 'fluid resuscitation'], demote: ['hypoglycaemia'] },
+  'electrolyte-emergency': { boost: ['electrolyte', 'hyperkal', 'hypokalaemia', 'calcium', 'potassium', 'renal', 'ecg changes'], demote: ['stemi', 'acs'] },
+
+  // Respiratory subcategories
+  'hyperventilation-syndrome': { boost: ['hyperventilation', 'anxiety', 'panic', 'respiratory alkalosis', 'tingling', 'breathing'], demote: ['asthma', 'pneumothorax', 'pe'] },
+
+  // Toxicology subcategories
+  'opioid-overdose': { boost: ['opioid', 'naloxone', 'narcan', 'heroin', 'respiratory depression', 'pinpoint pupils'], demote: ['paracetamol', 'organophosphate'] },
+  'organophosphate': { boost: ['organophosphate', 'cholinergic', 'atropine', 'pralidoxime', 'sludge', 'dumbels'], demote: ['opioid', 'paracetamol'] },
+  'paracetamol-overdose': { boost: ['paracetamol', 'acetaminophen', 'nac', 'acetylcysteine', 'nomogram', 'liver'], demote: ['opioid', 'organophosphate'] },
+
+  // Obstetric subcategories
+  'normal-delivery': { boost: ['delivery', 'birth', 'labour', 'contractions', 'crowning', 'apgar'], demote: ['eclampsia', 'haemorrhage'] },
+  'ectopic-pregnancy': { boost: ['ectopic', 'pregnancy', 'abdominal pain', 'vaginal bleeding', 'bhcg', 'rupture'], demote: ['delivery', 'eclampsia'] },
+  'obstetric-haemorrhage': { boost: ['haemorrhage', 'bleeding', 'placenta', 'abruption', 'praevia', 'uterine'], demote: ['ectopic'] },
+  'eclampsia': { boost: ['eclampsia', 'pre-eclampsia', 'seizure', 'magnesium', 'hypertension', 'proteinuria'], demote: ['ectopic', 'delivery'] },
+
+  // Trauma subcategories
+  'extremity-trauma': { boost: ['amputation', 'extremity', 'limb', 'tourniquet', 'haemorrhage', 'fracture'], demote: ['head injury', 'pelvic'] },
+
+  // Burns subcategories (fill gap for 'scald')
+  'scald': { boost: ['scald', 'burns', 'hot water', 'tbsa', 'paediatric', 'fluid resuscitation', 'cool running water'], demote: ['chemical', 'electrical'] },
+
+  // Other missing
+  'post-surgical': { boost: ['post-operative', 'wound', 'infection', 'sepsis', 'surgery', 'discharge'], demote: [] },
+  'abdominal-pain': { boost: ['abdominal', 'pain', 'appendicitis', 'obstruction', 'peritonitis', 'rebound'], demote: ['chest pain', 'headache'] },
+  'fall': { boost: ['fall', 'injury', 'head', 'hip', 'fracture', 'mechanism'], demote: ['paediatric'] },
+  'long-bone-fracture': { boost: ['fracture', 'splint', 'immobilise', 'deformity', 'neurovascular', 'traction'], demote: ['head injury', 'pelvic'] },
+  'spinal-cord-injury': { boost: ['spinal', 'spine', 'cord', 'immobilis', 'neurogenic shock', 'log roll', 'whiplash'], demote: [] },
+  'acute-coronary-syndrome': { boost: ['acs', 'stemi', 'nstemi', 'troponin', 'chest pain', 'aspirin', 'ecg', 'coronary', 'myocardial'], demote: ['syncope', 'af '] },
+  'cerebrovascular-emergency': { boost: ['stroke', 'cerebrovascular', 'sah', 'subarachnoid', 'haemorrhage', 'ct head', 'headache'], demote: ['seizure'] },
+  'flash-burn': { boost: ['flash burn', 'burns', 'arc flash', 'welding', 'tbsa', 'corneal burn'], demote: ['chemical', 'electrical'] },
+  'acute-psychosis': { boost: ['psychosis', 'schizophrenia', 'behavioural', 'sedation', 'antipsychotic', 'agitation'], demote: ['anxiety', 'self-harm'] },
+  'panic-attack': { boost: ['panic', 'anxiety', 'hyperventilation', 'crisis', 'reassurance', 'breathing'], demote: ['psychosis', 'overdose'] },
+  'accidental-ingestion': { boost: ['ingestion', 'poisoning', 'pediatric', 'paediatric', 'toxicology', 'activated charcoal'], demote: ['adult', 'overdose'] },
+  'sinus-tachycardia': { boost: ['sinus tachycardia', 'tachycardia', 'heart rate', 'anxiety', 'dehydration', 'fever'], demote: ['svt', 'af ', 'vfib'] },
 };
 
 // ============================================================================
@@ -473,17 +524,23 @@ function scoreResourceRelevance(resource: DebriefingResource, caseData: CaseScen
   const caseTitleLower = caseData.title.toLowerCase();
   const keywords = subcategoryKeywords[subcategory];
 
+  // Track whether this resource has ANY relevance to the specific condition
+  let hasConditionMatch = false;
+
   // Strong match (+20): Resource title contains the exact diagnosis or subcategory name
   const subcategoryReadable = subcategory.replace(/-/g, ' ').toLowerCase();
   if (diagnosisLower && titleLower.includes(diagnosisLower)) {
     score += 20;
-  } else if (subcategoryReadable && titleLower.includes(subcategoryReadable)) {
+    hasConditionMatch = true;
+  } else if (subcategoryReadable && subcategoryReadable.length > 2 && titleLower.includes(subcategoryReadable)) {
     score += 20;
-  } else if (caseTitleLower && titleLower.includes(caseTitleLower)) {
-    score += 20;
+    hasConditionMatch = true;
+  } else if (caseTitleLower && caseTitleLower.length > 3 && titleLower.includes(caseTitleLower)) {
+    score += 15;
+    hasConditionMatch = true;
   }
 
-  // Medium match (+10): Resource matches condition family keywords (e.g., arrhythmia resources for flutter)
+  // Medium match (+10): Resource matches condition family keywords
   if (keywords) {
     let boostHits = 0;
     for (const kw of keywords.boost) {
@@ -491,54 +548,34 @@ function scoreResourceRelevance(resource: DebriefingResource, caseData: CaseScen
         boostHits++;
       }
     }
-    // Only give medium match if we didn't already get a strong match
-    if (boostHits > 0 && score < 20) {
-      score += 10;
-    } else if (boostHits > 0) {
-      // Additional boost for keyword matches on top of strong match
-      score += Math.min(boostHits * 2, 6);
+    if (boostHits > 0) {
+      hasConditionMatch = true;
+      if (score < 20) {
+        score += 10;
+      } else {
+        // Additional boost for keyword matches on top of strong match
+        score += Math.min(boostHits * 2, 6);
+      }
     }
   }
 
-  // Negative match (-10): Resource is for a DIFFERENT subcondition within the same category
-  // e.g., cardiac tamponade resource for an arrhythmia case
+  // Negative match: Resource is for a DIFFERENT subcondition
   if (keywords) {
     for (const kw of keywords.demote) {
       if (titleLower.includes(kw.toLowerCase())) {
-        score -= 10;
+        score -= 15;
       }
     }
   }
 
-  // Additional negative: check if the resource title matches a DIFFERENT subcategory's
-  // specific boost keywords (indicating it's for a different condition in the same category)
-  if (subcategory) {
-    for (const [otherSubcat, otherKw] of Object.entries(subcategoryKeywords)) {
-      if (otherSubcat === subcategory) continue;
-      // Only penalize within the same broad category
-      const otherCatPrefix = otherSubcat.split('-')[0];
-      const thisCatPrefix = subcategory.split('-')[0];
-      // Check if they share the same category family
-      const sameFamily = otherCatPrefix === thisCatPrefix ||
-        (resource.category === caseData.category);
-      if (!sameFamily) continue;
-
-      // If the resource title contains a very specific keyword from another subcategory
-      // (like the subcategory name itself), penalize it
-      const otherReadable = otherSubcat.replace(/-/g, ' ').toLowerCase();
-      if (otherReadable.length > 3 && titleLower.includes(otherReadable) && !titleLower.includes(subcategoryReadable)) {
-        score -= 10;
-        break; // One penalty is enough
-      }
-    }
+  // STRICT FILTERING: If subcategory keywords are defined and this resource
+  // has NO condition match at all, exclude it entirely.
+  // This prevents "Pleural Effusion" showing up for asthma, or "Cardiac Tamponade" for STEMI.
+  if (keywords && !hasConditionMatch) {
+    return 0; // No relevance to this specific condition
   }
 
-  // Weak match (+2): Same category only, no keyword or diagnosis match
-  if (score === 0 && resource.category === caseData.category) {
-    score += 2;
-  }
-
-  // Relevance baseline
+  // Relevance tier bonus (only for resources that passed the condition match)
   const relevanceBase = { essential: 3, important: 2, supplementary: 1 };
   score += relevanceBase[resource.relevance] || 0;
 
@@ -570,10 +607,24 @@ export function getResourcesForDebriefing(
     'drowning': ['respiratory'],               // Drowning → respiratory failure
   };
   const relatedCategories = crossCategoryMap[caseData.subcategory || ''] || [];
+  const crossKeywords = subcategoryKeywords[caseData.subcategory || ''];
   for (const relCat of relatedCategories) {
     if (relCat !== caseData.category) {
       const crossRes = getResourcesForCategory(relCat);
-      allResources.push(...crossRes.filter(r => r.relevance === 'essential' || r.relevance === 'important'));
+      // Only pull cross-category resources that are relevant to the actual condition
+      // (e.g., for anaphylaxis, pull airway management but NOT STEMI content from cardiac)
+      allResources.push(...crossRes.filter(r => {
+        if (r.relevance !== 'essential' && r.relevance !== 'important') return false;
+        // If we have subcategory keywords, only include cross-category resources
+        // that match at least one boost keyword (condition-relevant)
+        if (crossKeywords) {
+          const titleLower = r.title.toLowerCase();
+          const hasBoostMatch = crossKeywords.boost.some(kw => titleLower.includes(kw.toLowerCase()));
+          const hasDemoteMatch = crossKeywords.demote.some(kw => titleLower.includes(kw.toLowerCase()));
+          return hasBoostMatch && !hasDemoteMatch;
+        }
+        return true; // No keywords defined — include all essential/important
+      }));
     }
   }
 
