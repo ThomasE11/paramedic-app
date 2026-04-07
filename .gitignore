@@ -1,3 +1,11 @@
+
+# Environment variables - NEVER commit real credentials
+.env
+.env.*
+.env.local
+.env.production
+.env.development
+!.env.example
 .vercel
 node_modules
 dist
