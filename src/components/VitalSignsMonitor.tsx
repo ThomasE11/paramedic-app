@@ -3370,9 +3370,12 @@ export function VitalSignsMonitor({
                     {visibleVitals.has('respiration') ? Math.round(currentVitals.respiration) : '--'}
                   </span>
                   {activeAssessments.has('respiration') && (
-                    <div className="h-0.5 w-full bg-yellow-900/50 mt-0.5 rounded-full overflow-hidden">
-                      <div className="h-full bg-yellow-400 rounded-full transition-all duration-300" style={{ width: `${assessmentProgress.get('respiration') || 0}%` }} />
-                    </div>
+                    <>
+                      <span className="text-[5px] font-mono text-yellow-400/80 block animate-pulse">CHECKING</span>
+                      <div className="h-1 w-full bg-yellow-900/50 rounded-full overflow-hidden">
+                        <div className="h-full bg-yellow-400 rounded-full transition-all duration-300" style={{ width: `${assessmentProgress.get('respiration') || 0}%` }} />
+                      </div>
+                    </>
                   )}
                 </div>
                 <div className="flex-1 px-1.5 py-0.5 border-r border-gray-800/30 text-center cursor-pointer hover:bg-white/5 transition-colors"
@@ -3388,8 +3391,8 @@ export function VitalSignsMonitor({
                   </span>
                   {activeAssessments.has('bp') && (
                     <>
-                      <span className="text-[6px] font-mono text-blue-400 block animate-pulse">MEASURING...</span>
-                      <div className="h-0.5 w-full bg-blue-900/50 mt-0.5 rounded-full overflow-hidden">
+                      <span className="text-[5px] font-mono text-blue-400/80 block animate-pulse">MEASURING</span>
+                      <div className="h-1 w-full bg-blue-900/50 rounded-full overflow-hidden">
                         <div className="h-full bg-blue-400 rounded-full transition-all duration-300" style={{ width: `${assessmentProgress.get('bp') || 0}%` }} />
                       </div>
                     </>
@@ -3407,9 +3410,12 @@ export function VitalSignsMonitor({
                     {visibleVitals.has('temperature') && currentVitals.temperature ? currentVitals.temperature.toFixed(1) : '--'}
                   </span>
                   {activeAssessments.has('temperature') && (
-                    <div className="h-0.5 w-full bg-orange-900/50 mt-0.5 rounded-full overflow-hidden">
-                      <div className="h-full bg-orange-400 rounded-full transition-all duration-300" style={{ width: `${assessmentProgress.get('temperature') || 0}%` }} />
-                    </div>
+                    <>
+                      <span className="text-[5px] font-mono text-orange-400/80 block animate-pulse">CHECKING</span>
+                      <div className="h-1 w-full bg-orange-900/50 rounded-full overflow-hidden">
+                        <div className="h-full bg-orange-400 rounded-full transition-all duration-300" style={{ width: `${assessmentProgress.get('temperature') || 0}%` }} />
+                      </div>
+                    </>
                   )}
                 </div>
                 <div className="flex-1 px-1.5 py-0.5 border-r border-gray-800/30 text-center cursor-pointer hover:bg-fuchsia-900/20 transition-colors"
@@ -3437,9 +3443,12 @@ export function VitalSignsMonitor({
                   }`}>{visibleVitals.has('spo2') ? Math.round(assessedVitals.spo2 ?? currentVitals.spo2) : '--'}</span>
                   <span className="text-[6px] font-mono text-cyan-400/40 block">%</span>
                   {activeAssessments.has('spo2') && (
-                    <div className="h-0.5 w-full bg-cyan-900/50 mt-0.5 rounded-full overflow-hidden">
-                      <div className="h-full bg-cyan-400 rounded-full transition-all duration-300" style={{ width: `${assessmentProgress.get('spo2') || 0}%` }} />
-                    </div>
+                    <>
+                      <span className="text-[5px] font-mono text-cyan-400/80 block animate-pulse">ACQUIRING</span>
+                      <div className="h-1 w-full bg-cyan-900/50 rounded-full overflow-hidden">
+                        <div className="h-full bg-cyan-400 rounded-full transition-all duration-300" style={{ width: `${assessmentProgress.get('spo2') || 0}%` }} />
+                      </div>
+                    </>
                   )}
                 </div>
                 <div className="px-2 py-0.5 text-center min-w-[55px] cursor-pointer hover:bg-green-900/20 transition-colors"
@@ -3457,9 +3466,12 @@ export function VitalSignsMonitor({
                       : 'text-green-400/20'
                   }`}>{visibleVitals.has('pulse') ? (currentRhythm.category === 'arrest' ? 0 : Math.round(currentVitals.pulse)) : '--'}</span>
                   {activeAssessments.has('pulse') && (
-                    <div className="h-0.5 w-full bg-green-900/50 mt-0.5 rounded-full overflow-hidden">
-                      <div className="h-full bg-green-400 rounded-full transition-all duration-300" style={{ width: `${assessmentProgress.get('pulse') || 0}%` }} />
-                    </div>
+                    <>
+                      <span className="text-[5px] font-mono text-green-400/80 block animate-pulse">ACQUIRING</span>
+                      <div className="h-1 w-full bg-green-900/50 rounded-full overflow-hidden">
+                        <div className="h-full bg-green-400 rounded-full transition-all duration-300" style={{ width: `${assessmentProgress.get('pulse') || 0}%` }} />
+                      </div>
+                    </>
                   )}
                 </div>
                 {/* Extra vitals: GCS, BGL — always visible so students can initiate assessment */}
@@ -3475,9 +3487,12 @@ export function VitalSignsMonitor({
                     {visibleVitals.has('gcs') ? Math.min(15, Math.round(currentVitals.gcs ?? 15)) : '--'}
                   </span>
                   {activeAssessments.has('gcs') && (
-                    <div className="h-0.5 w-full bg-gray-700/50 mt-0.5 rounded-full overflow-hidden">
-                      <div className="h-full bg-white/60 rounded-full transition-all duration-300" style={{ width: `${assessmentProgress.get('gcs') || 0}%` }} />
-                    </div>
+                    <>
+                      <span className="text-[5px] font-mono text-white/60 block animate-pulse">ASSESSING</span>
+                      <div className="h-1 w-full bg-gray-700/50 rounded-full overflow-hidden">
+                        <div className="h-full bg-white/60 rounded-full transition-all duration-300" style={{ width: `${assessmentProgress.get('gcs') || 0}%` }} />
+                      </div>
+                    </>
                   )}
                 </div>
                 <div className="flex-1 px-2 py-0.5 border-l border-gray-800/30 text-center cursor-pointer hover:bg-purple-900/20 transition-colors"
@@ -3492,9 +3507,12 @@ export function VitalSignsMonitor({
                       {visibleVitals.has('bloodGlucose') ? (typeof currentVitals.bloodGlucose === 'number' ? currentVitals.bloodGlucose.toFixed(1) : currentVitals.bloodGlucose) : '--'}
                     </span>
                     {activeAssessments.has('bloodGlucose') && (
-                      <div className="h-0.5 w-full bg-purple-900/50 mt-0.5 rounded-full overflow-hidden">
-                        <div className="h-full bg-purple-400 rounded-full transition-all duration-300" style={{ width: `${assessmentProgress.get('bloodGlucose') || 0}%` }} />
-                      </div>
+                      <>
+                        <span className="text-[5px] font-mono text-purple-400/80 block animate-pulse">CHECKING</span>
+                        <div className="h-1 w-full bg-purple-900/50 rounded-full overflow-hidden">
+                          <div className="h-full bg-purple-400 rounded-full transition-all duration-300" style={{ width: `${assessmentProgress.get('bloodGlucose') || 0}%` }} />
+                        </div>
+                      </>
                     )}
                   </div>
               </div>
