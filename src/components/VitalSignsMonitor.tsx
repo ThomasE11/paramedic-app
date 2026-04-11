@@ -2501,9 +2501,15 @@ export function VitalSignsMonitor({
           return next;
         });
 
-        // If pain assessment completed but painScore was not in initial vitals, set a default
+        // If assessments completed but values were not in initial vitals, set clinically appropriate defaults
         if (completed.includes('painScore') && currentVitals.painScore === undefined) {
           setCurrentVitals(prev => ({ ...prev, painScore: 0 }));
+        }
+        if (completed.includes('bloodGlucose') && currentVitals.bloodGlucose === undefined) {
+          setCurrentVitals(prev => ({ ...prev, bloodGlucose: 5.5 })); // Normal BGL default
+        }
+        if (completed.includes('gcs') && currentVitals.gcs === undefined) {
+          setCurrentVitals(prev => ({ ...prev, gcs: 15 })); // Normal GCS default
         }
 
         // Snapshot current vital values at time of assessment — display freezes until re-assessed
@@ -3456,34 +3462,31 @@ export function VitalSignsMonitor({
                     </div>
                   )}
                 </div>
-                {/* Extra vitals: GCS, BGL */}
-                {currentVitals.gcs !== undefined && (
-                  <div className="flex-1 px-2 py-0.5 border-l border-gray-800/30 text-center cursor-pointer hover:bg-gray-700/20 transition-colors"
-                    onClick={() => {
-                      if (!visibleVitals.has('gcs') && !activeAssessments.has('gcs')) {
-                        startAssessment('gcs', ASSESSMENT_METHODS.gcs[0]);
-                        logIntervention('ASSESS', 'GCS assessment');
-                      }
-                    }}>
-                    <span className="text-[7px] font-mono text-gray-300/60 block">GCS</span>
-                    <span className={`text-sm font-mono font-bold ${visibleVitals.has('gcs') ? 'text-white' : 'text-white/20'}`}>
-                      {visibleVitals.has('gcs') ? Math.min(15, Math.round(currentVitals.gcs)) : '--'}
-                    </span>
-                    {activeAssessments.has('gcs') && (
-                      <div className="h-0.5 w-full bg-gray-700/50 mt-0.5 rounded-full overflow-hidden">
-                        <div className="h-full bg-white/60 rounded-full transition-all duration-300" style={{ width: `${assessmentProgress.get('gcs') || 0}%` }} />
-                      </div>
-                    )}
-                  </div>
-                )}
-                {currentVitals.bloodGlucose !== undefined && (
-                  <div className="flex-1 px-2 py-0.5 border-l border-gray-800/30 text-center cursor-pointer hover:bg-purple-900/20 transition-colors"
-                    onClick={() => {
-                      if (!visibleVitals.has('bloodGlucose') && !activeAssessments.has('bloodGlucose')) {
-                        startAssessment('bloodGlucose', ASSESSMENT_METHODS.glucose[0]);
-                        logIntervention('ASSESS', 'Blood glucose check');
-                      }
-                    }}>
+                {/* Extra vitals: GCS, BGL — always visible so students can initiate assessment */}
+                <div className="flex-1 px-2 py-0.5 border-l border-gray-800/30 text-center cursor-pointer hover:bg-gray-700/20 transition-colors"
+                  onClick={() => {
+                    if (!visibleVitals.has('gcs') && !activeAssessments.has('gcs')) {
+                      startAssessment('gcs', ASSESSMENT_METHODS.gcs[0]);
+                      logIntervention('ASSESS', 'GCS assessment');
+                    }
+                  }}>
+                  <span className="text-[7px] font-mono text-gray-300/60 block">GCS</span>
+                  <span className={`text-sm font-mono font-bold ${visibleVitals.has('gcs') ? 'text-white' : 'text-white/20'}`}>
+                    {visibleVitals.has('gcs') ? Math.min(15, Math.round(currentVitals.gcs ?? 15)) : '--'}
+                  </span>
+                  {activeAssessments.has('gcs') && (
+                    <div className="h-0.5 w-full bg-gray-700/50 mt-0.5 rounded-full overflow-hidden">
+                      <div className="h-full bg-white/60 rounded-full transition-all duration-300" style={{ width: `${assessmentProgress.get('gcs') || 0}%` }} />
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 px-2 py-0.5 border-l border-gray-800/30 text-center cursor-pointer hover:bg-purple-900/20 transition-colors"
+                  onClick={() => {
+                    if (!visibleVitals.has('bloodGlucose') && !activeAssessments.has('bloodGlucose')) {
+                      startAssessment('bloodGlucose', ASSESSMENT_METHODS.glucose[0]);
+                      logIntervention('ASSESS', 'Blood glucose check');
+                    }
+                  }}>
                     <span className="text-[7px] font-mono text-purple-400/70 block">BGL</span>
                     <span className={`text-sm font-mono font-bold ${visibleVitals.has('bloodGlucose') ? 'text-purple-400' : 'text-purple-400/20'}`}>
                       {visibleVitals.has('bloodGlucose') ? (typeof currentVitals.bloodGlucose === 'number' ? currentVitals.bloodGlucose.toFixed(1) : currentVitals.bloodGlucose) : '--'}
@@ -3494,7 +3497,6 @@ export function VitalSignsMonitor({
                       </div>
                     )}
                   </div>
-                )}
               </div>
 
               {/* WAVEFORM AREA + RIGHT STRIP */}
