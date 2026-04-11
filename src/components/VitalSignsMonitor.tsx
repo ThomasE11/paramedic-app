@@ -2287,8 +2287,14 @@ export function VitalSignsMonitor({
       if (lowerOverride === 'rbbb' || lowerOverride.includes('right bundle branch')) return RHYTHM_MAP['rbbb'];
       if (lowerOverride.includes('sinus tachycardia')) return RHYTHM_MAP['sinus-tachy'];
       if (lowerOverride.includes('sinus bradycardia')) return RHYTHM_MAP['sinus-brady'];
+      if (lowerOverride.includes('ventricular tachycardia') && !lowerOverride.includes('supraventricular')) return RHYTHM_MAP['vt'];
       if (lowerOverride.includes('ventricular fibrillation')) return RHYTHM_MAP['vfib'];
+      if (lowerOverride === 'pea' || lowerOverride.includes('pulseless electrical')) return RHYTHM_MAP['pea'];
       if (lowerOverride.includes('asystole')) return RHYTHM_MAP['asystole'];
+      if (lowerOverride.includes('atrial fibrillation')) return RHYTHM_MAP['afib'];
+      if (lowerOverride.includes('atrial flutter')) return RHYTHM_MAP['aflutter'];
+      if (lowerOverride.includes('supraventricular tachycardia') || lowerOverride === 'svt') return RHYTHM_MAP['svt'];
+      if (lowerOverride.includes('torsades')) return RHYTHM_MAP['torsades'];
       const overrideResult = getRhythmForCase('cardiac', effectiveOverride, hr, effectiveOverride);
       return overrideResult;
     }
