@@ -1122,10 +1122,11 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
             gl={{ antialias: true, alpha: true }}
             style={{ background: 'transparent' }}
           >
-            <ambientLight intensity={0.5} />
-            <directionalLight position={[4, 8, 4]} intensity={1.0} color="#fff5ee" />
-            <directionalLight position={[-3, 5, -2]} intensity={0.4} color="#e8e0ff" />
-            <directionalLight position={[0, -2, 3]} intensity={0.2} color="#ffe8d0" />
+            <ambientLight intensity={0.6} />
+            <directionalLight position={[4, 8, 4]} intensity={1.2} color="#f0f4ff" />
+            <directionalLight position={[-3, 5, -2]} intensity={0.5} color="#e0e8ff" />
+            <directionalLight position={[0, -2, 3]} intensity={0.25} color="#f0f0ff" />
+            <directionalLight position={[0, 3, 5]} intensity={0.3} color="#ffffff" />
 
             <BodyMesh assessedRegions={assessedRegions} onRegionClick={handleRegionClick} requiredRegions={requiredRegions} />
 

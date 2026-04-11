@@ -111,12 +111,20 @@
 .heading-premium { font-family: 'Plus Jakarta Sans', 'Geist', sans-serif; letter-spacing: -0.02em; font-weight: 600; }
 .heading-display { font-family: 'Plus Jakarta Sans', 'Geist', sans-serif; letter-spacing: -0.02em; font-weight: 600; }
 
+/* Hide scrollbar utility */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: hsl(var(--muted)); border-radius: 4px; }
 ::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 4px; transition: background 0.2s ease; }
 ::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground)); }
 ::-webkit-scrollbar-corner { background: hsl(var(--muted)); }
+
+/* Safe area insets for mobile notch/home indicator */
+.safe-top { padding-top: env(safe-area-inset-top); }
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
 
 html { scroll-behavior: smooth; }
 

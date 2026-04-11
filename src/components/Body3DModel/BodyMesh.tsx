@@ -141,10 +141,15 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions }: Bo
     clone.traverse((child) => {
       if ((child as THREE.Mesh).isMesh) {
         const mesh = child as THREE.Mesh;
-        mesh.material = new THREE.MeshStandardMaterial({
+        mesh.material = new THREE.MeshPhysicalMaterial({
           color: SKIN_COLOR,
-          roughness: 0.65,
-          metalness: 0.02,
+          roughness: 0.45,
+          metalness: 0.05,
+          clearcoat: 0.15,
+          clearcoatRoughness: 0.4,
+          sheen: 0.3,
+          sheenRoughness: 0.5,
+          sheenColor: new THREE.Color('#8aa8c0'),
         });
       }
     });

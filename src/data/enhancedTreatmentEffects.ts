@@ -419,7 +419,7 @@ export const TREATMENTS: Treatment[] = [
   {
     id: 'cpr',
     name: 'Chest Compressions',
-    description: 'Cardiopulmonary resuscitation',
+    description: 'Cardiopulmonary resuscitation — compressions only. Apply BVM ventilation separately for respiratory support.',
     category: 'circulation',
     onset: 'immediate',
     onsetTimeSeconds: 0,
@@ -430,7 +430,8 @@ export const TREATMENTS: Treatment[] = [
       { vitalSign: 'pulse', changeType: 'set', value: 60 },
       { vitalSign: 'bp', changeType: 'set', value: 60 }, // Systolic
       { vitalSign: 'spo2', changeType: 'set', value: 85 }, // CPR generates some oxygenation
-      { vitalSign: 'respiration', changeType: 'set', value: 10 }, // With BVM ventilation
+      // Respiration NOT set here — CPR alone doesn't ventilate
+      // BVM ventilation must be applied separately to set a respiratory rate
     ],
   },
   {
@@ -538,8 +539,8 @@ export const TREATMENTS: Treatment[] = [
   },
   {
     id: 'adrenaline_1mg',
-    name: 'Adrenaline 1mg IV',
-    description: '1mg IV (1:10,000) for CARDIAC ARREST ONLY. Give every 3-5 minutes. NOT for anaphylaxis (use IM route).',
+    name: 'Adrenaline 1mg IV (1:10,000)',
+    description: '1mg (10mL of 1:10,000) IV for CARDIAC ARREST ONLY. Give every 3-5 minutes. NOT for anaphylaxis (use IM route).',
     category: 'medication',
     onset: 'immediate',
     onsetTimeSeconds: 0,
@@ -1386,7 +1387,7 @@ export const TREATMENTS: Treatment[] = [
   {
     id: 'adrenaline_im',
     name: 'Adrenaline 0.5mg IM (Anaphylaxis — Adult)',
-    description: 'First-line treatment for anaphylaxis in adults >12 years',
+    description: 'First-line treatment for anaphylaxis in adults >12 years. 0.5mg (0.5mL of 1:1,000) IM anterolateral thigh.',
     category: 'medication',
     onset: 'moderate',
     onsetTimeSeconds: 8,
@@ -1403,7 +1404,7 @@ export const TREATMENTS: Treatment[] = [
   {
     id: 'adrenaline_im_child',
     name: 'Adrenaline 0.15mg IM (Anaphylaxis — Child <6y)',
-    description: 'First-line treatment for anaphylaxis in children under 6 years',
+    description: 'First-line treatment for anaphylaxis in children under 6 years. 0.15mg (0.15mL of 1:1,000) IM anterolateral thigh.',
     category: 'medication',
     onset: 'moderate',
     onsetTimeSeconds: 8,
@@ -1420,7 +1421,7 @@ export const TREATMENTS: Treatment[] = [
   {
     id: 'adrenaline_im_older',
     name: 'Adrenaline 0.3mg IM (Anaphylaxis — Child 6-12y)',
-    description: 'First-line treatment for anaphylaxis in children 6-12 years',
+    description: 'First-line treatment for anaphylaxis in children 6-12 years. 0.3mg (0.3mL of 1:1,000) IM anterolateral thigh.',
     category: 'medication',
     onset: 'moderate',
     onsetTimeSeconds: 8,
@@ -1590,8 +1591,8 @@ export const TREATMENTS: Treatment[] = [
   },
   {
     id: 'nebulised_adrenaline',
-    name: 'Nebulised Adrenaline (5mg/5ml)',
-    description: 'For croup, stridor, upper airway oedema',
+    name: 'Nebulised Adrenaline (5mg/5mL of 1:1,000)',
+    description: 'For croup, stridor, upper airway oedema. 5mg (5mL of 1:1,000) via nebuliser.',
     category: 'breathing',
     onset: 'moderate',
     onsetTimeSeconds: 10,

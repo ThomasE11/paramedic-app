@@ -54,6 +54,7 @@ import {
 import { toast } from 'sonner';
 // AuscultationPanel removed — sounds now play inline from 3D Physical Examination
 import { DebriefingResourcesPanel } from '@/components/DebriefingResourcesPanel';
+import { OnboardingTour, useOnboardingTour } from '@/components/OnboardingTour';
 import { exportSessionToPDF } from '@/lib/pdf-export';
 import { getResourcesForDebriefing } from '@/data/diversifiedResources';
 
@@ -146,10 +147,23 @@ const Body3DModel = lazy(() => import('@/components/Body3DModel').then(m => ({ d
 
 function LoadingCard() {
   return (
-    <Card>
-      <CardContent className="p-8 flex flex-col items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-primary mb-3" />
-        <p className="text-sm text-muted-foreground animate-pulse">Loading...</p>
+    <Card className="overflow-hidden">
+      <CardContent className="p-4 space-y-3">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-muted animate-pulse shrink-0" />
+          <div className="flex-1 space-y-2">
+            <div className="h-4 w-3/4 rounded bg-muted animate-pulse" />
+            <div className="h-3 w-1/2 rounded bg-muted/60 animate-pulse" />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <div className="h-3 w-full rounded bg-muted/50 animate-pulse" />
+          <div className="h-3 w-5/6 rounded bg-muted/40 animate-pulse" />
+          <div className="h-3 w-2/3 rounded bg-muted/30 animate-pulse" />
+        </div>
+        <div className="flex items-center justify-center pt-2">
+          <Loader2 className="h-5 w-5 animate-spin text-primary/50" />
+        </div>
       </CardContent>
     </Card>
   );
@@ -162,8 +176,30 @@ interface StudentPanelProps {
 }
 
 export function StudentPanel({ onExit }: StudentPanelProps) {
+  // Onboarding tour for first-time users
+  const { showTour, dismissTour } = useOnboardingTour();
+
   // Core state
-  const [phase, setPhase] = useState<StudentPhase>('select');
+  const [phase, _setPhase] = useState<StudentPhase>('select');
+  const [phaseHistory, setPhaseHistory] = useState<StudentPhase[]>([]);
+
+  // Wrap setPhase to track history for back navigation
+  const setPhase = useCallback((newPhase: StudentPhase) => {
+    _setPhase(prev => {
+      if (prev !== newPhase) {
+        setPhaseHistory(h => [...h, prev]);
+      }
+      return newPhase;
+    });
+  }, []);
+
+  const canGoBack = phaseHistory.length > 0 && phase !== 'select' && phase !== 'postcase';
+  const goBack = useCallback(() => {
+    if (phaseHistory.length === 0) return;
+    const prev = phaseHistory[phaseHistory.length - 1];
+    setPhaseHistory(h => h.slice(0, -1));
+    _setPhase(prev);
+  }, [phaseHistory]);
   const [currentCase, setCurrentCase] = useState<CaseScenario | null>(null);
   const [selectedYear, setSelectedYear] = useState<StudentYear>('3rd-year');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -886,7 +922,86 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
 
     const scoreEarned = assessmentScore + treatmentBonus;
     const totalPossible = assessmentTotal + treatmentBonusCap;
-    const percentage = totalPossible > 0 ? Math.round((scoreEarned / totalPossible) * 100) : 0;
+    const basePercentage = totalPossible > 0 ? Math.round((scoreEarned / totalPossible) * 100) : 0;
+
+    // Penalty system: deduct for critical omissions and unresolved dangerous vitals
+    // Use assessment debrief critical missed (primary) OR checklist critical missed (fallback)
+    const checklistCriticalMissed = criticalItems.filter(item => !session.completedItems.includes(item.id));
+    const debriefCriticalCount = debrief?.criticalMissed?.length || 0;
+    const criticalMissedCount = Math.max(debriefCriticalCount, checklistCriticalMissed.length);
+    const penaltyReasons: { label: string; amount: number }[] = [];
+    let penaltyTotal = 0;
+
+    if (criticalMissedCount > 0) {
+      const amt = Math.min(criticalMissedCount * 5, 25);
+      penaltyReasons.push({ label: `${criticalMissedCount} critical action${criticalMissedCount > 1 ? 's' : ''} missed`, amount: amt });
+      penaltyTotal += amt;
+    }
+
+    const finalVitals = vitalsHistory[vitalsHistory.length - 1];
+    if (finalVitals) {
+      const fSpO2 = parseInt(String(finalVitals.spo2)) || 0;
+      const fRR = parseInt(String(finalVitals.respiration)) || 0;
+      const fHR = parseInt(String(finalVitals.pulse)) || 0;
+      if (fSpO2 > 0 && fSpO2 < 90) {
+        penaltyReasons.push({ label: `SpO2 critically low at ${fSpO2}%`, amount: 10 });
+        penaltyTotal += 10;
+      } else if (fSpO2 > 0 && fSpO2 < 94) {
+        penaltyReasons.push({ label: `SpO2 still below target at ${fSpO2}%`, amount: 5 });
+        penaltyTotal += 5;
+      }
+      if (fRR > 0 && (fRR > 30 || fRR < 8)) {
+        penaltyReasons.push({ label: `Respiratory rate dangerous at ${fRR}/min`, amount: 5 });
+        penaltyTotal += 5;
+      }
+      if (fHR > 0 && (fHR > 150 || fHR < 40)) {
+        penaltyReasons.push({ label: `Heart rate dangerous at ${fHR} bpm`, amount: 5 });
+        penaltyTotal += 5;
+      }
+    }
+
+    // Cardiac arrest & hypothermia-specific penalties
+    const sub = (currentCase.subcategory || '').toLowerCase();
+    const isArrestCase = sub.includes('cardiac-arrest') || sub.includes('arrest') || sub.includes('vfib') || sub.includes('asystole')
+      || patientState?.isInArrest || appliedTreatmentIds.includes('cpr');
+    const isSevereHypothermiaCase = (currentCase.vitalSignsProgression?.initial?.temperature ?? 37) < 30;
+
+    if (isArrestCase) {
+      const hasCPR = appliedTreatmentIds.includes('cpr');
+      const hasAdrenaline = appliedTreatmentIds.includes('adrenaline_1mg');
+      const hasDefib = appliedTreatmentIds.includes('defibrillation');
+      const hasBVM = appliedTreatmentIds.includes('bvm_ventilation') || appliedTreatmentIds.includes('oxygen_15l');
+      const isShockableCase = currentCase.abcde?.circulation?.ecgFindings?.some(
+        (f: string) => f.toLowerCase().includes('vf') || f.toLowerCase().includes('ventricular fibrillation')
+      );
+
+      if (!hasCPR) {
+        penaltyReasons.push({ label: 'CPR not started — critical in cardiac arrest', amount: 15 });
+        penaltyTotal += 15;
+      }
+      if (!hasBVM) {
+        penaltyReasons.push({ label: 'No ventilation provided during arrest', amount: 10 });
+        penaltyTotal += 10;
+      }
+      if (!hasAdrenaline && !isSevereHypothermiaCase) {
+        penaltyReasons.push({ label: 'Adrenaline not given in cardiac arrest', amount: 10 });
+        penaltyTotal += 10;
+      }
+      if (isShockableCase && !hasDefib) {
+        penaltyReasons.push({ label: 'Shockable rhythm not defibrillated', amount: 15 });
+        penaltyTotal += 15;
+      }
+    }
+    if (isSevereHypothermiaCase) {
+      const hasRewarming = appliedTreatmentIds.some(id => id.includes('warm') || id.includes('blanket') || id.includes('space_blanket'));
+      const checkedTemp = assessmentTracker?.performed.some(p => p.stepId === 'temperature');
+      if (!checkedTemp) {
+        penaltyReasons.push({ label: 'Core temperature not assessed in hypothermia case', amount: 10 });
+        penaltyTotal += 10;
+      }
+    }
+
+    const percentage = Math.max(0, basePercentage - penaltyTotal);
 
     // Treatment analysis
     const treatmentCount = appliedTreatments.length;
@@ -907,7 +1022,10 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
       criticalCompleted,
       scoreEarned,
       totalPossible,
+      basePercentage,
       percentage,
+      penaltyTotal,
+      penaltyReasons,
       treatmentCount,
       timeToFirstTreatment,
       totalTime: elapsedSeconds,
@@ -977,6 +1095,9 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Onboarding Tour */}
+      {showTour && phase === 'select' && <OnboardingTour onDismiss={dismissTour} />}
+
       {/* Student Header */}
       <header className="sticky top-0 z-50 bg-background border-b border-border/30 safe-top">
         <div className="container mx-auto px-3 sm:px-4 py-2 sm:py-3">
@@ -995,6 +1116,16 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
             </div>
 
             <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+              {/* Back button */}
+              {canGoBack && (
+                <button
+                  onClick={goBack}
+                  className="flex items-center justify-center h-8 w-8 sm:h-9 sm:w-9 rounded-lg border border-border/50 bg-muted/30 hover:bg-muted/60 active:bg-muted transition-colors touch-manipulation"
+                  title="Go back"
+                >
+                  <ArrowLeft className="h-4 w-4 text-muted-foreground" />
+                </button>
+              )}
               {/* Phase indicator - compact on mobile, full on desktop */}
               {phase !== 'select' && (
                 <div className="flex items-center gap-0.5 sm:gap-1">
@@ -1856,7 +1987,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-2 sm:p-3">
-                    <div className="grid grid-cols-6 gap-1 sm:gap-1.5">
+                    <div className="grid grid-cols-6 gap-1.5 sm:gap-2">
                       {([
                         { key: 'scene-safety' as const, letter: 'S', label: 'Scene', stepId: 'scene-safety' as AssessmentStepId },
                         { key: 'airway' as const, letter: 'A', label: 'Airway', stepId: 'airway' as AssessmentStepId },
@@ -1875,18 +2006,18 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                               handlePerformAssessment(item.stepId);
                               setActivePrimarySurvey(isActive ? null : item.key);
                             }}
-                            className={`flex flex-col items-center gap-0.5 p-2 sm:p-3 rounded-xl border-2 transition-all text-center ${
+                            className={`flex flex-col items-center justify-center gap-0.5 min-h-[44px] sm:min-h-[56px] p-2 sm:p-3 rounded-xl border-2 transition-all text-center touch-manipulation ${
                               isActive
                                 ? 'border-blue-500 bg-blue-500/10 ring-1 ring-blue-500/30'
                                 : isAssessed
                                   ? 'border-green-500/40 bg-green-500/5'
-                                  : 'border-border/40 hover:border-blue-500/40 hover:bg-accent/30'
+                                  : 'border-border/40 hover:border-blue-500/40 hover:bg-accent/30 active:bg-accent/50'
                             }`}
                           >
-                            <span className={`text-base sm:text-xl font-bold ${isAssessed ? 'text-green-600 dark:text-green-400' : 'text-foreground'}`}>
+                            <span className={`text-lg sm:text-xl font-bold ${isAssessed ? 'text-green-600 dark:text-green-400' : 'text-foreground'}`}>
                               {item.letter}
                             </span>
-                            <span className="text-[8px] sm:text-[10px] text-muted-foreground leading-tight">{item.label}</span>
+                            <span className="text-[9px] sm:text-[10px] text-muted-foreground leading-tight">{item.label}</span>
                             {isAssessed && <CheckCircle2 className="h-3 w-3 text-green-500" />}
                           </button>
                         );
@@ -1940,7 +2071,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-2 sm:p-3">
-                    <div className="grid grid-cols-6 gap-1 sm:gap-1.5">
+                    <div className="grid grid-cols-6 gap-1.5 sm:gap-2">
                       {([
                         { key: 'signs-symptoms' as const, letter: 'S', label: 'Signs', stepId: 'signs-symptoms' as AssessmentStepId },
                         { key: 'allergies' as const, letter: 'A', label: 'Allergies', stepId: 'allergies' as AssessmentStepId },
@@ -1959,18 +2090,18 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                               handlePerformAssessment(item.stepId);
                               setActiveHistoryStep(isActive ? null : item.key);
                             }}
-                            className={`flex flex-col items-center gap-0.5 p-1.5 sm:p-2 rounded-lg border-2 transition-all text-center ${
+                            className={`flex flex-col items-center justify-center gap-0.5 min-h-[44px] sm:min-h-[52px] p-1.5 sm:p-2 rounded-lg border-2 transition-all text-center touch-manipulation ${
                               isActive
                                 ? 'border-purple-500 bg-purple-500/10 ring-1 ring-purple-500/30'
                                 : isAssessed
                                   ? 'border-green-500/40 bg-green-500/5'
-                                  : 'border-border/40 hover:border-purple-500/40 hover:bg-accent/30'
+                                  : 'border-border/40 hover:border-purple-500/40 hover:bg-accent/30 active:bg-accent/50'
                             }`}
                           >
-                            <span className={`text-sm sm:text-lg font-bold ${isAssessed ? 'text-green-600 dark:text-green-400' : 'text-foreground'}`}>
+                            <span className={`text-base sm:text-lg font-bold ${isAssessed ? 'text-green-600 dark:text-green-400' : 'text-foreground'}`}>
                               {item.letter}
                             </span>
-                            <span className="text-[7px] sm:text-[9px] text-muted-foreground leading-tight">{item.label}</span>
+                            <span className="text-[8px] sm:text-[9px] text-muted-foreground leading-tight">{item.label}</span>
                             {isAssessed && <CheckCircle2 className="h-2.5 w-2.5 text-green-500" />}
                           </button>
                         );
@@ -2568,7 +2699,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
 
             {/* Overall Score */}
             <Card className="bg-card border border-border rounded-2xl border-primary/15 overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/3 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/3 to-transparent pointer-events-none" />
               <CardContent className="p-4 sm:p-6 relative">
                 <div className="grid grid-cols-3 gap-3 sm:gap-6 text-center">
                   <div className="space-y-0.5 sm:space-y-1">
@@ -2590,6 +2721,34 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                 <Progress value={performanceMetrics.percentage} className="mt-4 sm:mt-5 h-2" />
               </CardContent>
             </Card>
+
+            {/* Penalty Breakdown */}
+            {performanceMetrics.penaltyTotal > 0 && (
+              <Card className="bg-card border-2 border-orange-400 dark:border-orange-500/50 rounded-2xl overflow-hidden">
+                <CardContent className="p-4 sm:p-5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <AlertTriangle className="w-4 h-4 text-orange-500" />
+                    <span className="font-semibold text-sm text-orange-700 dark:text-orange-300">Score Penalties Applied</span>
+                  </div>
+                  <div className="space-y-1.5 text-xs sm:text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Base score</span>
+                      <span className="font-medium">{performanceMetrics.basePercentage}%</span>
+                    </div>
+                    {performanceMetrics.penaltyReasons.map((reason: { label: string; amount: number }, idx: number) => (
+                      <div key={idx} className="flex justify-between">
+                        <span className="text-orange-700 dark:text-orange-400">{reason.label}</span>
+                        <span className="font-medium text-red-500">-{reason.amount}%</span>
+                      </div>
+                    ))}
+                    <div className="border-t border-orange-300 dark:border-orange-700 pt-1.5 mt-1.5 flex justify-between font-bold">
+                      <span>Adjusted score</span>
+                      <span>{performanceMetrics.percentage}%</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Transport & Clinical Decisions */}
             {transportDecisions && (

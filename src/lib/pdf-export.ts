@@ -271,7 +271,42 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
   // ========== PERFORMANCE SUMMARY ==========
   addSectionHeader('Performance Summary');
 
-  const percentage = session.totalPossible > 0 ? Math.round((session.score / session.totalPossible) * 100) : 0;
+  const basePercentage = session.totalPossible > 0 ? Math.round((session.score / session.totalPossible) * 100) : 0;
+
+  // Calculate penalties (mirrors SessionSummary logic)
+  const pdfMissedItems = (caseData.studentChecklist || []).filter(item =>
+    !session.completedItems.includes(item.id) && item.yearLevel?.includes(session.studentYear)
+  );
+  const pdfCriticalMissed = pdfMissedItems.filter(item => item.critical);
+  const penaltyReasons: { label: string; amount: number }[] = [];
+  let penaltyTotal = 0;
+
+  if (pdfCriticalMissed.length > 0) {
+    const amt = Math.min(pdfCriticalMissed.length * 5, 25);
+    penaltyReasons.push({ label: `${pdfCriticalMissed.length} critical action${pdfCriticalMissed.length > 1 ? 's' : ''} missed`, amount: amt });
+    penaltyTotal += amt;
+  }
+
+  const pdfFinalVitals = options.vitalsHistory && options.vitalsHistory.length > 0 ? options.vitalsHistory[options.vitalsHistory.length - 1] : null;
+  if (pdfFinalVitals) {
+    if (pdfFinalVitals.spo2 !== undefined && pdfFinalVitals.spo2 < 90) {
+      penaltyReasons.push({ label: `SpO2 critically low at ${pdfFinalVitals.spo2}%`, amount: 10 });
+      penaltyTotal += 10;
+    } else if (pdfFinalVitals.spo2 !== undefined && pdfFinalVitals.spo2 < 94) {
+      penaltyReasons.push({ label: `SpO2 below target at ${pdfFinalVitals.spo2}%`, amount: 5 });
+      penaltyTotal += 5;
+    }
+    if (pdfFinalVitals.respiration !== undefined && (pdfFinalVitals.respiration > 30 || pdfFinalVitals.respiration < 8)) {
+      penaltyReasons.push({ label: `Respiratory rate dangerous at ${pdfFinalVitals.respiration}/min`, amount: 5 });
+      penaltyTotal += 5;
+    }
+    if (pdfFinalVitals.pulse !== undefined && (pdfFinalVitals.pulse > 150 || pdfFinalVitals.pulse < 40)) {
+      penaltyReasons.push({ label: `Heart rate dangerous at ${pdfFinalVitals.pulse} bpm`, amount: 5 });
+      penaltyTotal += 5;
+    }
+  }
+
+  const percentage = Math.max(0, basePercentage - penaltyTotal);
 
   let grade = 'Needs Improvement';
   let gradeColor: [number, number, number] = COLOR.RED;
@@ -315,6 +350,22 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
   }
 
   yPosition = scoreBoxY + scoreBoxHeight + 3;
+
+  // Penalty breakdown (if any)
+  if (penaltyTotal > 0) {
+    checkPageBreak(6 + penaltyReasons.length * 5 + 6);
+    addFilledRoundedRect(margin, yPosition, contentWidth, 5 + penaltyReasons.length * 5 + 5, 2, [255, 243, 224] as unknown as [number, number, number]);
+    addStrokeRoundedRect(margin, yPosition, contentWidth, 5 + penaltyReasons.length * 5 + 5, 2, COLOR.YELLOW);
+    yPosition += 4;
+    addTextAt(`Base score: ${basePercentage}%`, margin + 4, yPosition + 2, FONT.LABEL, 'normal', COLOR.MUTED);
+    yPosition += 5;
+    penaltyReasons.forEach(r => {
+      addTextAt(`-${r.amount}%  ${r.label}`, margin + 4, yPosition + 2, FONT.LABEL, 'normal', COLOR.RED);
+      yPosition += 5;
+    });
+    addTextAt(`Adjusted score: ${percentage}%`, margin + 4, yPosition + 2, FONT.LABEL, 'bold', COLOR.TEXT);
+    yPosition += 6;
+  }
 
   // ========== COMPLETED ACTIONS ==========
   const completedItems = (caseData.studentChecklist || []).filter(item => session.completedItems.includes(item.id));
@@ -454,6 +505,36 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
         });
         yPosition += 2;
       }
+    });
+  }
+
+  // ========== MANAGEMENT SUMMARY ==========
+  const mgmt = caseData.managementPathway;
+  if (mgmt && (mgmt.immediate.length > 0 || mgmt.definitive.length > 0 || mgmt.monitoring.length > 0)) {
+    addSectionHeader('Management Summary');
+
+    const sections: { label: string; items: string[]; color: [number, number, number] }[] = [];
+    if (mgmt.immediate.length > 0) sections.push({ label: 'Immediate', items: mgmt.immediate, color: COLOR.RED });
+    if (mgmt.definitive.length > 0) sections.push({ label: 'Definitive', items: mgmt.definitive, color: COLOR.PRIMARY });
+    if (mgmt.monitoring.length > 0) sections.push({ label: 'Monitoring', items: mgmt.monitoring, color: COLOR.GREEN });
+    if (mgmt.transportConsiderations && mgmt.transportConsiderations.length > 0) {
+      sections.push({ label: 'Transport', items: mgmt.transportConsiderations, color: COLOR.YELLOW });
+    }
+
+    sections.forEach(({ label, items, color }) => {
+      checkPageBreak(6 + items.length * 5);
+      addTextAt(label, margin + 2, yPosition + 3, FONT.BODY, 'bold', color);
+      yPosition += 5;
+      items.forEach(item => {
+        checkPageBreak(6);
+        const lines = doc.splitTextToSize(sanitizeText(item), contentWidth - 12) as string[];
+        addTextAt('•', margin + 4, yPosition + 3, FONT.BODY, 'normal', COLOR.MUTED);
+        lines.forEach((line: string, idx: number) => {
+          addTextAt(line, margin + 10, yPosition + 3 + (idx * LINE_HEIGHT.BODY), FONT.BODY, 'normal', COLOR.BODY_TEXT);
+        });
+        yPosition += lines.length * LINE_HEIGHT.BODY + 2;
+      });
+      yPosition += 2;
     });
   }
 
@@ -925,6 +1006,9 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
   link.download = `Case-${caseData.category}-${session.studentYear}-${new Date().toISOString().split('T')[0]}.pdf`;
   document.body.appendChild(link);
   link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  // Delay cleanup so the browser can initiate the download
+  setTimeout(() => {
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }, 1000);
 }

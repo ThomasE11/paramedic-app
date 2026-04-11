@@ -50,47 +50,50 @@ import {
 // blocking and ensure instant loading.
 // When a LITFL image is not available, the system falls back to the
 // programmatically generated 12-lead canvas display.
+// Use Vite's BASE_URL so paths work on GitHub Pages or any subpath deployment
+const BASE = import.meta.env.BASE_URL;
+
 const RHYTHM_TO_LITFL_IMAGE: Record<string, string> = {
   // ----- Normal / Rate-based -----
-  'nsr': '/images/ecg/nsr.jpg',
-  'sinus-tachy': '/images/ecg/sinus-tachy.jpg',
-  'sinus-brady': '/images/ecg/sinus-brady.jpg',
-  'pea': '/images/ecg/nsr.jpg',  // PEA shows electrical activity (sinus) without pulse
+  'nsr': `${BASE}images/ecg/nsr.jpg`,
+  'sinus-tachy': `${BASE}images/ecg/sinus-tachy.jpg`,
+  'sinus-brady': `${BASE}images/ecg/sinus-brady.jpg`,
+  'pea': `${BASE}images/ecg/nsr.jpg`,  // PEA shows electrical activity (sinus) without pulse
 
   // ----- Arrhythmias -----
-  'afib': '/images/ecg/afib.jpg',
-  'aflutter': '/images/ecg/aflutter.jpg',
-  'svt': '/images/ecg/svt.jpg',
-  'vt': '/images/ecg/vt.jpg',
-  'vfib': '/images/ecg/vfib.jpg',
-  'vfib-fine': '/images/ecg/vfib-fine.jpg',
-  'torsades': '/images/ecg/torsades.jpg',
-  'pacs': '/images/ecg/pacs.jpg',
-  'pvcs': '/images/ecg/pvcs.jpg',
+  'afib': `${BASE}images/ecg/afib.jpg`,
+  'aflutter': `${BASE}images/ecg/aflutter.jpg`,
+  'svt': `${BASE}images/ecg/svt.jpg`,
+  'vt': `${BASE}images/ecg/vt.jpg`,
+  'vfib': `${BASE}images/ecg/vfib.jpg`,
+  'vfib-fine': `${BASE}images/ecg/vfib-fine.jpg`,
+  'torsades': `${BASE}images/ecg/torsades.jpg`,
+  'pacs': `${BASE}images/ecg/pacs.jpg`,
+  'pvcs': `${BASE}images/ecg/pvcs.jpg`,
 
   // ----- STEMI / ACS -----
-  'anterior-stemi': '/images/ecg/anterior-stemi.jpg',
-  'inferior-stemi': '/images/ecg/inferior-stemi.jpg',
-  'lateral-stemi': '/images/ecg/lateral-stemi.jpg',
-  'posterior-stemi': '/images/ecg/posterior-stemi.jpg',
+  'anterior-stemi': `${BASE}images/ecg/anterior-stemi.jpg`,
+  'inferior-stemi': `${BASE}images/ecg/inferior-stemi.jpg`,
+  'lateral-stemi': `${BASE}images/ecg/lateral-stemi.jpg`,
+  'posterior-stemi': `${BASE}images/ecg/posterior-stemi.jpg`,
 
   // ----- Heart blocks -----
-  'first-degree-block': '/images/ecg/first-degree-block.jpg',
-  'wenckebach': '/images/ecg/wenckebach.jpg',
-  'mobitz2': '/images/ecg/mobitz2.jpg',
-  'chb': '/images/ecg/chb.jpg',
+  'first-degree-block': `${BASE}images/ecg/first-degree-block.jpg`,
+  'wenckebach': `${BASE}images/ecg/wenckebach.jpg`,
+  'mobitz2': `${BASE}images/ecg/mobitz2.jpg`,
+  'chb': `${BASE}images/ecg/chb.jpg`,
 
   // ----- Escape / slow rhythms -----
-  'junctional': '/images/ecg/junctional.jpg',
-  'aivr': '/images/ecg/aivr.jpg',
+  'junctional': `${BASE}images/ecg/junctional.jpg`,
+  'aivr': `${BASE}images/ecg/aivr.jpg`,
 
   // ----- Conduction / Other -----
-  'wpw': '/images/ecg/wpw.jpg',
-  'lbbb': '/images/ecg/lbbb.jpg',
-  'rbbb': '/images/ecg/rbbb.png',
+  'wpw': `${BASE}images/ecg/wpw.jpg`,
+  'lbbb': `${BASE}images/ecg/lbbb.jpg`,
+  'rbbb': `${BASE}images/ecg/rbbb.png`,
 
   // ----- Metabolic -----
-  'hyperkalemia': '/images/ecg/hyperkalemia.jpg',
+  'hyperkalemia': `${BASE}images/ecg/hyperkalemia.jpg`,
 };
 
 function getLitflImageForRhythm(rhythmId: string): string | null {
@@ -2265,6 +2268,19 @@ export function VitalSignsMonitor({
       if (byName) return byName;
       const lowerOverride = effectiveOverride.toLowerCase();
       if (lowerOverride === 'sinus rhythm' || lowerOverride === 'normal sinus rhythm') return RHYTHM_MAP['nsr'];
+      // STEMI rhythms must be checked BEFORE generic "sinus tachycardia" to avoid substring match
+      if (lowerOverride.includes('anterior stemi') || lowerOverride === 'stem-anterior') return RHYTHM_MAP['anterior-stemi'];
+      if (lowerOverride.includes('inferior stemi') || lowerOverride === 'stem-inferior') return RHYTHM_MAP['inferior-stemi'];
+      if (lowerOverride.includes('lateral stemi') || lowerOverride === 'stem-lateral') return RHYTHM_MAP['lateral-stemi'];
+      if (lowerOverride === 'nstemi' || lowerOverride.includes('non-st elevation')) return RHYTHM_MAP['nstemi'];
+      // Conduction blocks
+      if (lowerOverride.includes('complete heart block') || lowerOverride.includes('3rd degree') || lowerOverride.includes('third degree')) return RHYTHM_MAP['chb'];
+      if (lowerOverride.includes('wenckebach') || lowerOverride.includes('mobitz type i')) return RHYTHM_MAP['wenckebach'];
+      if (lowerOverride.includes('mobitz type ii') || lowerOverride.includes('mobitz 2')) return RHYTHM_MAP['mobitz2'];
+      if (lowerOverride.includes('first degree block') || lowerOverride.includes('1st degree')) return RHYTHM_MAP['first-degree-block'];
+      if (lowerOverride.includes('junctional')) return RHYTHM_MAP['junctional'];
+      if (lowerOverride === 'lbbb' || lowerOverride.includes('left bundle branch')) return RHYTHM_MAP['lbbb'];
+      if (lowerOverride === 'rbbb' || lowerOverride.includes('right bundle branch')) return RHYTHM_MAP['rbbb'];
       if (lowerOverride.includes('sinus tachycardia')) return RHYTHM_MAP['sinus-tachy'];
       if (lowerOverride.includes('sinus bradycardia')) return RHYTHM_MAP['sinus-brady'];
       if (lowerOverride.includes('ventricular fibrillation')) return RHYTHM_MAP['vfib'];
@@ -2405,7 +2421,7 @@ export function VitalSignsMonitor({
     const pulse = parseInt(String(currentVitals.pulse)) || 80;
     const spo2 = currentVitals.spo2 || 98;
     const respiration = currentVitals.respiration || 16;
-    const gcs = Math.round(currentVitals.gcs || 15);
+    const gcs = Math.min(15, Math.max(3, Math.round(currentVitals.gcs || 15)));
     const bpParts = String(currentVitals.bp || '120/80').split('/');
     const systolic = parseInt(bpParts[0]) || 120;
     const temp = currentVitals.temperature || 36.5;
@@ -2442,23 +2458,18 @@ export function VitalSignsMonitor({
     }
   }, [currentVitals, audioEnabled, alarmsEnabled]);
 
-  // Deterioration timer
+  // Deterioration timer — DISABLED: StudentPanel runs its own deterioration via dynamicTreatmentEngine
+  // which is more sophisticated (case-specific, staged). Running both caused double deterioration.
+  // This timer only tracks elapsed minutes for display purposes now.
   useEffect(() => {
     deteriorationTimerRef.current = window.setInterval(() => {
-      setMinutesElapsed(prev => {
-        const newMinutes = prev + 1;
-        const result = applyDeterioration(currentVitals, caseSeverity, 1, activeTreatments);
-        setCurrentVitals(result.newVitals);
-        setDeteriorationWarningSigns(result.warningSigns);
-        setDeteriorationChanges(result.changes);
-        return newMinutes;
-      });
+      setMinutesElapsed(prev => prev + 1);
     }, 60000);
 
     return () => {
       if (deteriorationTimerRef.current) clearInterval(deteriorationTimerRef.current);
     };
-  }, [currentVitals, caseSeverity, activeTreatments]);
+  }, []);
 
   // Assessment progress animation
   useEffect(() => {
@@ -2646,22 +2657,27 @@ export function VitalSignsMonitor({
     const hasOpioid = allTx.includes('morphine') || allTx.includes('fentanyl');
     const hasBronchodilator = allTx.includes('salbutamol') || allTx.includes('nebuli') || allTx.includes('broncho') ||
       allTx.includes('ipratropium') || allTx.includes('ventolin') || allTx.includes('combivent');
-    const hasAdrenaline = latest.includes('adrenaline') || latest.includes('epinephrine');
-    const hasAtropine = latest.includes('atropine');
-    const hasGlucose = latest.includes('glucose') || latest.includes('dextrose') || latest.includes('glucagon');
-    const hasAmiodarone = latest.includes('amiodarone');
-    const hasAdenosine = latest.includes('adenosine');
+    // Bolus drugs — check ALL treatments, but only apply once per new treatment (see bolusApplied flag below)
+    const hasAdrenaline = allTx.includes('adrenaline') || allTx.includes('epinephrine');
+    const hasAtropine = allTx.includes('atropine');
+    const hasGlucose = allTx.includes('glucose') || allTx.includes('dextrose') || allTx.includes('glucagon');
+    const hasAmiodarone = allTx.includes('amiodarone');
+    const hasAdenosine = allTx.includes('adenosine');
     const hasGTN = allTx.includes('gtn') || allTx.includes('nitroglycerin') || allTx.includes('nitro');
     const hasAntiemetic = allTx.includes('ondansetron') || allTx.includes('metoclopramide') || allTx.includes('antiemetic');
-    const hasMidazolam = latest.includes('midazolam') || latest.includes('diazepam') || latest.includes('lorazepam');
-    const hasNaloxone = latest.includes('naloxone') || latest.includes('narcan');
+    const hasMidazolam = allTx.includes('midazolam') || allTx.includes('diazepam') || allTx.includes('lorazepam');
+    const hasNaloxone = allTx.includes('naloxone') || allTx.includes('narcan');
     const hasAspirin = allTx.includes('aspirin');
+
+    // Track whether bolus effects have already fired for this treatment set
+    // Bolus drugs should apply their effect 1-2 times, not on every interval tick
+    let bolusApplied = false;
 
     // During cardiac arrest, treatment effects on SpO2 are meaningless (no perfusion)
     const isInCardiacArrest = cprState?.active === true;
 
-    // Apply gradual treatment effects
-    const applyEffects = () => {
+    // === MAINTENANCE EFFECTS (run on every interval tick — ongoing treatments) ===
+    const applyMaintenanceEffects = () => {
       setCurrentVitals(prev => {
         const updated = { ...prev };
         let changed = false;
@@ -2693,42 +2709,39 @@ export function VitalSignsMonitor({
         }
 
         // IV fluids -> BP gradually rises, HR decreases (volume resuscitation)
-        // More aggressive response proportional to how hypotensive the patient is
         if (hasFluid) {
           const bp = String(prev.bp || '100/60').split('/');
           const sys = parseInt(bp[0]) || 100;
           const dia = parseInt(bp[1]) || 60;
           if (sys < 120) {
-            // Bigger improvement when BP is very low
             const deficit = 120 - sys;
-            const sysImprove = deficit > 50 ? Math.floor(Math.random() * 10 + 8)  // Severe shock: +8-18
-                             : deficit > 25 ? Math.floor(Math.random() * 6 + 4)   // Moderate: +4-10
-                             : Math.floor(Math.random() * 4 + 2);                  // Mild: +2-6
+            const sysImprove = deficit > 50 ? Math.floor(Math.random() * 10 + 8)
+                             : deficit > 25 ? Math.floor(Math.random() * 6 + 4)
+                             : Math.floor(Math.random() * 4 + 2);
             const diaImprove = Math.floor(sysImprove * 0.5);
             const newSys = Math.min(125, sys + sysImprove);
             const newDia = Math.min(80, dia + diaImprove);
             updated.bp = `${newSys}/${newDia}`;
             changed = true;
           }
-          // Fluid resuscitation reduces compensatory tachycardia (proportional to HR elevation)
           const hr = prev.pulse || 100;
           if (hr > 85) {
-            const hrReduce = hr > 140 ? Math.floor(Math.random() * 8 + 5)  // Very tachy: -5-13
-                           : hr > 110 ? Math.floor(Math.random() * 5 + 3)  // Moderate: -3-8
-                           : Math.floor(Math.random() * 3 + 1);             // Mild: -1-4
+            const hrReduce = hr > 140 ? Math.floor(Math.random() * 8 + 5)
+                           : hr > 110 ? Math.floor(Math.random() * 5 + 3)
+                           : Math.floor(Math.random() * 3 + 1);
             updated.pulse = Math.max(75, hr - hrReduce);
             changed = true;
           }
         }
 
-        // Analgesics -> pain score decreases
+        // Analgesics -> pain score decreases (ongoing absorption)
         if (hasAnalgesic) {
           const pain = prev.painScore;
           if (pain !== undefined && pain > 2) {
             updated.painScore = Math.max(1, pain - Math.floor(Math.random() * 2 + 1));
             changed = true;
           }
-          // Opioids depress RR
+          // Opioids depress RR (ongoing effect while active)
           if (hasOpioid) {
             const rr = prev.respiration || 16;
             if (rr > 10) {
@@ -2749,43 +2762,15 @@ export function VitalSignsMonitor({
           // HR may increase slightly with salbutamol
           const hr = prev.pulse || 80;
           if (hr < 110) { updated.pulse = Math.min(110, hr + Math.floor(Math.random() * 3 + 1)); changed = true; }
+          // EtCO2 normalizes with effective bronchodilation (trapped CO2 released)
+          const etco2 = prev.etco2;
+          if (etco2 !== undefined && etco2 > 40) {
+            updated.etco2 = Math.max(35, etco2 - Math.floor(Math.random() * 3 + 1));
+            changed = true;
+          }
         }
 
-        // Adrenaline/Epinephrine -> HR up, BP up (rapid onset)
-        if (hasAdrenaline) {
-          updated.pulse = Math.min(150, (prev.pulse || 80) + Math.floor(Math.random() * 8 + 5));
-          const bp = String(prev.bp || '90/50').split('/');
-          updated.bp = `${Math.min(160, (parseInt(bp[0]) || 90) + Math.floor(Math.random() * 12 + 8))}/${Math.min(95, (parseInt(bp[1]) || 50) + Math.floor(Math.random() * 4 + 2))}`;
-          changed = true;
-        }
-
-        // Atropine -> HR increases
-        if (hasAtropine) {
-          updated.pulse = Math.min(120, (prev.pulse || 40) + Math.floor(Math.random() * 12 + 8));
-          changed = true;
-        }
-
-        // Glucose/Dextrose -> BGL rises, GCS may improve
-        if (hasGlucose) {
-          const bgl = prev.bloodGlucose || 2.0;
-          if (bgl < 6) { updated.bloodGlucose = Math.round(Math.min(8, bgl + Math.random() * 1.5 + 0.5) * 10) / 10; changed = true; }
-          const gcs = prev.gcs || 10;
-          if (gcs < 15) { updated.gcs = Math.min(15, gcs + Math.floor(Math.random() * 2 + 1)); changed = true; }
-        }
-
-        // Amiodarone -> HR decreases
-        if (hasAmiodarone) {
-          updated.pulse = Math.max(60, (prev.pulse || 120) - Math.floor(Math.random() * 8 + 5));
-          changed = true;
-        }
-
-        // Adenosine -> brief asystole then reset (rapid effect)
-        if (hasAdenosine) {
-          updated.pulse = Math.max(50, Math.min(100, 60 + Math.floor(Math.random() * 20)));
-          changed = true;
-        }
-
-        // GTN -> BP may decrease, pain may decrease
+        // GTN -> BP may decrease, pain may decrease (ongoing patch/infusion effect)
         if (hasGTN) {
           const bp = String(prev.bp || '140/90').split('/');
           const sys = parseInt(bp[0]) || 140;
@@ -2797,7 +2782,80 @@ export function VitalSignsMonitor({
           if (pain !== undefined && pain > 2) { updated.painScore = Math.max(1, pain - 1); changed = true; }
         }
 
-        // Midazolam/Benzos -> RR may decrease, GCS may decrease
+        // Aspirin -> mild pain reduction for cardiac chest pain (ongoing)
+        if (hasAspirin) {
+          const pain = prev.painScore;
+          if (pain !== undefined && pain > 3) { updated.painScore = Math.max(2, pain - 1); changed = true; }
+        }
+
+        // Active warming -> temperature gradually increases for hypothermic patients
+        const hasWarming = allTx.includes('warm') || allTx.includes('blanket') || allTx.includes('bair hugger') || allTx.includes('heating');
+        if (hasWarming) {
+          const temp = prev.temperature || 36.5;
+          if (temp < 36.5) {
+            updated.temperature = Math.round(Math.min(37, temp + Math.random() * 0.3 + 0.1) * 10) / 10;
+            changed = true;
+          }
+        }
+
+        // Active cooling -> temperature gradually decreases for hyperthermic patients
+        const hasCooling = allTx.includes('cool') || allTx.includes('ice') || allTx.includes('cold') || allTx.includes('ttm') || allTx.includes('targeted temperature');
+        if (hasCooling) {
+          const temp = prev.temperature || 37;
+          if (temp > 37.5) {
+            updated.temperature = Math.round(Math.max(36, temp - Math.random() * 0.3 - 0.1) * 10) / 10;
+            changed = true;
+          }
+        }
+
+        return changed ? updated : prev;
+      });
+    };
+
+    // === BOLUS EFFECTS (fire once per new treatment application — immediate-onset drugs) ===
+    const applyBolusEffects = () => {
+      if (bolusApplied) return;
+      bolusApplied = true;
+
+      setCurrentVitals(prev => {
+        const updated = { ...prev };
+        let changed = false;
+
+        // Adrenaline/Epinephrine -> HR up, BP up (rapid onset, wears off in 3-5 min)
+        if (hasAdrenaline) {
+          updated.pulse = Math.min(150, (prev.pulse || 80) + Math.floor(Math.random() * 8 + 5));
+          const bp = String(prev.bp || '90/50').split('/');
+          updated.bp = `${Math.min(160, (parseInt(bp[0]) || 90) + Math.floor(Math.random() * 12 + 8))}/${Math.min(95, (parseInt(bp[1]) || 50) + Math.floor(Math.random() * 4 + 2))}`;
+          changed = true;
+        }
+
+        // Atropine -> HR increases (immediate onset)
+        if (hasAtropine) {
+          updated.pulse = Math.min(120, (prev.pulse || 40) + Math.floor(Math.random() * 12 + 8));
+          changed = true;
+        }
+
+        // Glucose/Dextrose -> BGL rises, GCS may improve
+        if (hasGlucose) {
+          const bgl = prev.bloodGlucose || 2.0;
+          if (bgl < 6) { updated.bloodGlucose = Math.round(Math.min(8, bgl + Math.random() * 2.5 + 1.5) * 10) / 10; changed = true; }
+          const gcs = prev.gcs || 10;
+          if (gcs < 15) { updated.gcs = Math.min(15, gcs + Math.floor(Math.random() * 3 + 2)); changed = true; }
+        }
+
+        // Amiodarone -> HR decreases (loading dose effect)
+        if (hasAmiodarone) {
+          updated.pulse = Math.max(60, (prev.pulse || 120) - Math.floor(Math.random() * 8 + 5));
+          changed = true;
+        }
+
+        // Adenosine -> brief asystole then reset (6-second drug)
+        if (hasAdenosine) {
+          updated.pulse = Math.max(50, Math.min(100, 60 + Math.floor(Math.random() * 20)));
+          changed = true;
+        }
+
+        // Midazolam/Benzos -> RR may decrease (onset 2-5 min)
         if (hasMidazolam) {
           const rr = prev.respiration || 16;
           if (rr > 8) { updated.respiration = Math.max(8, rr - 2); changed = true; }
@@ -2819,17 +2877,23 @@ export function VitalSignsMonitor({
       });
     };
 
-    // Gradual onset - apply effects after 5-15 seconds
-    const t1 = setTimeout(applyEffects, 5000 + Math.random() * 5000);
-    const t2 = setTimeout(applyEffects, 15000 + Math.random() * 10000);
-    const t3 = setTimeout(applyEffects, 30000 + Math.random() * 15000);
+    // Bolus effects fire once (at 3-5s onset) per new treatment application
+    const bolusTimeout = setTimeout(() => {
+      applyBolusEffects();
+      // Second bolus application for dose-dependent drugs (e.g., glucose needs ~5 min to peak)
+      setTimeout(applyBolusEffects, 15000 + Math.random() * 10000);
+    }, 3000 + Math.random() * 2000);
+
+    // Maintenance effects fire on a recurring interval (ongoing treatment response)
+    const t1 = setTimeout(applyMaintenanceEffects, 3000 + Math.random() * 2000);
+    const interval = setInterval(applyMaintenanceEffects, 12000 + Math.random() * 6000);
 
     return () => {
+      clearTimeout(bolusTimeout);
       clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
+      clearInterval(interval);
     };
-  }, [appliedTreatments.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [appliedTreatments.length, caseCategory, caseSubcategory, caseTitle, cprState?.active]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ============================================================================
   // CARDIAC ARREST PHYSIOLOGY — EtCO2 and SpO2 alignment
@@ -3216,13 +3280,13 @@ export function VitalSignsMonitor({
         {/* ================================================================ */}
         {/* TOP BAR — ON button + PRINT/CODE SUMMARY/TRANSMIT/12 LEAD       */}
         {/* ================================================================ */}
-        <div className="flex items-center gap-2 px-3 py-2"
+        <div className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 flex-wrap"
           style={{ background: 'linear-gradient(180deg, #333639 0%, #2a2d31 100%)', borderBottom: '1px solid rgba(0,0,0,0.3)' }}>
 
           {/* BIG ON BUTTON */}
           <button onClick={handlePowerToggle}
-            className={`w-12 h-12 rounded-lg font-mono font-bold text-sm tracking-wider select-none
-              transition-all duration-200 border-2 flex items-center justify-center
+            className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg font-mono font-bold text-xs sm:text-sm tracking-wider select-none
+              transition-all duration-200 border-2 flex items-center justify-center shrink-0 touch-manipulation
               ${powerOn
                 ? 'bg-gradient-to-b from-green-500 to-green-700 text-white border-green-400 shadow-[0_0_12px_rgba(74,222,128,0.4)]'
                 : 'bg-gradient-to-b from-gray-600 to-gray-800 text-gray-400 border-gray-500'
@@ -3232,31 +3296,32 @@ export function VitalSignsMonitor({
             ON
           </button>
 
-          {/* Side buttons */}
-          <SideButton label="PRINT" onClick={handlePrint} active={show12LeadImage} />
-          <SideButton label="CODE SUMMARY" onClick={() => setShowCodeSummary(!showCodeSummary)} active={showCodeSummary} />
-          <SideButton label="TRANSMIT" onClick={() => logIntervention('TRANSMIT', 'Data transmitted')} />
-          <SideButton label="12 LEAD" onClick={() => {
-            if (!show12Lead) onAssessmentPerformed?.('12-lead-ecg');
-            setShow12Lead(!show12Lead);
-          }} active={show12Lead} />
+          {/* Side buttons — wrap on mobile */}
+          <div className="flex items-center gap-1 flex-wrap flex-1 min-w-0">
+            <SideButton label="PRINT" onClick={handlePrint} active={show12LeadImage} />
+            <SideButton label="CODE" onClick={() => setShowCodeSummary(!showCodeSummary)} active={showCodeSummary} />
+            <SideButton label="12 LEAD" onClick={() => {
+              if (!show12Lead) onAssessmentPerformed?.('12-lead-ecg');
+              setShow12Lead(!show12Lead);
+            }} active={show12Lead} />
+          </div>
 
           {/* Right: mode selector + branding */}
-          <div className="ml-auto flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {assessmentMode && (
               <Badge variant="outline" className="text-[7px] border-amber-600/50 text-amber-400 h-4 bg-amber-950/30">ASSESS</Badge>
             )}
             <div className="flex rounded-sm overflow-hidden border border-gray-600/50">
               {(['monitor', 'defib', 'pacer'] as const).map(mode => (
                 <button key={mode} onClick={() => { setMonitorMode(mode); setAedMode(false); }}
-                  className={`px-2.5 py-1 text-[8px] font-mono font-bold tracking-wider transition-colors ${
+                  className={`px-2 sm:px-2.5 py-1 text-[7px] sm:text-[8px] font-mono font-bold tracking-wider transition-colors touch-manipulation ${
                     monitorMode === mode
                       ? mode === 'defib' ? 'bg-red-700 text-white' : mode === 'pacer' ? 'bg-blue-700 text-white' : 'bg-green-700 text-white'
                       : 'bg-gray-700/50 text-gray-400 hover:bg-gray-600/50'
                   }`}>{mode.toUpperCase()}</button>
               ))}
             </div>
-            <span className="text-[9px] font-bold tracking-wider text-gray-400"
+            <span className="text-[8px] sm:text-[9px] font-bold tracking-wider text-gray-400 hidden sm:inline"
               style={{ fontFamily: 'system-ui' }}>TLC Monitor</span>
           </div>
         </div>
@@ -3286,7 +3351,7 @@ export function VitalSignsMonitor({
           {powerOn && bootPhase === 'ready' && (
             <>
               {/* PARAMETER BAR — Click any vital to toggle it on (triggers assessment + sound) */}
-              <div className="flex items-stretch border-b border-gray-800/50" style={{ background: 'rgba(0,10,0,0.6)' }}>
+              <div className="flex items-stretch border-b border-gray-800/50 overflow-x-auto scrollbar-hide" style={{ background: 'rgba(0,10,0,0.6)' }}>
                 <div className="flex-1 px-1.5 py-0.5 border-r border-gray-800/30 text-center cursor-pointer hover:bg-yellow-900/20 transition-colors"
                   onClick={() => {
                     if (!visibleVitals.has('respiration') && !activeAssessments.has('respiration')) {
@@ -3298,6 +3363,11 @@ export function VitalSignsMonitor({
                   <span className={`text-sm font-mono font-bold ${visibleVitals.has('respiration') ? 'text-yellow-400' : 'text-yellow-400/20'}`}>
                     {visibleVitals.has('respiration') ? Math.round(currentVitals.respiration) : '--'}
                   </span>
+                  {activeAssessments.has('respiration') && (
+                    <div className="h-0.5 w-full bg-yellow-900/50 mt-0.5 rounded-full overflow-hidden">
+                      <div className="h-full bg-yellow-400 rounded-full transition-all duration-300" style={{ width: `${assessmentProgress.get('respiration') || 0}%` }} />
+                    </div>
+                  )}
                 </div>
                 <div className="flex-1 px-1.5 py-0.5 border-r border-gray-800/30 text-center cursor-pointer hover:bg-white/5 transition-colors"
                   onClick={() => {
@@ -3310,7 +3380,14 @@ export function VitalSignsMonitor({
                   <span className={`text-sm font-mono font-bold ${visibleVitals.has('bp') ? 'text-white' : 'text-white/20'}`}>
                     {visibleVitals.has('bp') ? (assessedVitals.bp || currentVitals.bp) : '--/--'}
                   </span>
-                  {activeAssessments.has('bp') && <span className="text-[6px] font-mono text-blue-400 block animate-pulse">MEASURING...</span>}
+                  {activeAssessments.has('bp') && (
+                    <>
+                      <span className="text-[6px] font-mono text-blue-400 block animate-pulse">MEASURING...</span>
+                      <div className="h-0.5 w-full bg-blue-900/50 mt-0.5 rounded-full overflow-hidden">
+                        <div className="h-full bg-blue-400 rounded-full transition-all duration-300" style={{ width: `${assessmentProgress.get('bp') || 0}%` }} />
+                      </div>
+                    </>
+                  )}
                 </div>
                 <div className="flex-1 px-1.5 py-0.5 border-r border-gray-800/30 text-center cursor-pointer hover:bg-orange-900/20 transition-colors"
                   onClick={() => {
@@ -3323,6 +3400,11 @@ export function VitalSignsMonitor({
                   <span className={`text-sm font-mono font-bold ${visibleVitals.has('temperature') ? 'text-orange-400' : 'text-orange-400/20'}`}>
                     {visibleVitals.has('temperature') && currentVitals.temperature ? currentVitals.temperature.toFixed(1) : '--'}
                   </span>
+                  {activeAssessments.has('temperature') && (
+                    <div className="h-0.5 w-full bg-orange-900/50 mt-0.5 rounded-full overflow-hidden">
+                      <div className="h-full bg-orange-400 rounded-full transition-all duration-300" style={{ width: `${assessmentProgress.get('temperature') || 0}%` }} />
+                    </div>
+                  )}
                 </div>
                 <div className="flex-1 px-1.5 py-0.5 border-r border-gray-800/30 text-center cursor-pointer hover:bg-fuchsia-900/20 transition-colors"
                   onClick={() => {
@@ -3348,6 +3430,11 @@ export function VitalSignsMonitor({
                     visibleVitals.has('spo2') ? (getVitalAlarmState('spo2').isAlarm ? 'text-red-500' : 'text-cyan-400') : 'text-cyan-400/20'
                   }`}>{visibleVitals.has('spo2') ? Math.round(assessedVitals.spo2 ?? currentVitals.spo2) : '--'}</span>
                   <span className="text-[6px] font-mono text-cyan-400/40 block">%</span>
+                  {activeAssessments.has('spo2') && (
+                    <div className="h-0.5 w-full bg-cyan-900/50 mt-0.5 rounded-full overflow-hidden">
+                      <div className="h-full bg-cyan-400 rounded-full transition-all duration-300" style={{ width: `${assessmentProgress.get('spo2') || 0}%` }} />
+                    </div>
+                  )}
                 </div>
                 <div className="px-2 py-0.5 text-center min-w-[55px] cursor-pointer hover:bg-green-900/20 transition-colors"
                   onClick={() => {
@@ -3363,10 +3450,15 @@ export function VitalSignsMonitor({
                       ? getVitalAlarmState('pulse').isAlarm ? 'text-red-500 animate-pulse' : getVitalAlarmState('pulse').isWarning ? 'text-amber-400' : 'text-green-400'
                       : 'text-green-400/20'
                   }`}>{visibleVitals.has('pulse') ? (currentRhythm.category === 'arrest' ? 0 : Math.round(currentVitals.pulse)) : '--'}</span>
+                  {activeAssessments.has('pulse') && (
+                    <div className="h-0.5 w-full bg-green-900/50 mt-0.5 rounded-full overflow-hidden">
+                      <div className="h-full bg-green-400 rounded-full transition-all duration-300" style={{ width: `${assessmentProgress.get('pulse') || 0}%` }} />
+                    </div>
+                  )}
                 </div>
                 {/* Extra vitals: GCS, BGL */}
                 {currentVitals.gcs !== undefined && (
-                  <div className="px-1.5 py-0.5 border-l border-gray-800/30 text-center cursor-pointer hover:bg-gray-700/20 transition-colors"
+                  <div className="flex-1 px-2 py-0.5 border-l border-gray-800/30 text-center cursor-pointer hover:bg-gray-700/20 transition-colors"
                     onClick={() => {
                       if (!visibleVitals.has('gcs') && !activeAssessments.has('gcs')) {
                         startAssessment('gcs', ASSESSMENT_METHODS.gcs[0]);
@@ -3375,12 +3467,17 @@ export function VitalSignsMonitor({
                     }}>
                     <span className="text-[7px] font-mono text-gray-300/60 block">GCS</span>
                     <span className={`text-sm font-mono font-bold ${visibleVitals.has('gcs') ? 'text-white' : 'text-white/20'}`}>
-                      {visibleVitals.has('gcs') ? Math.round(currentVitals.gcs) : '--'}
+                      {visibleVitals.has('gcs') ? Math.min(15, Math.round(currentVitals.gcs)) : '--'}
                     </span>
+                    {activeAssessments.has('gcs') && (
+                      <div className="h-0.5 w-full bg-gray-700/50 mt-0.5 rounded-full overflow-hidden">
+                        <div className="h-full bg-white/60 rounded-full transition-all duration-300" style={{ width: `${assessmentProgress.get('gcs') || 0}%` }} />
+                      </div>
+                    )}
                   </div>
                 )}
                 {currentVitals.bloodGlucose !== undefined && (
-                  <div className="px-1.5 py-0.5 border-l border-gray-800/30 text-center cursor-pointer hover:bg-purple-900/20 transition-colors"
+                  <div className="flex-1 px-2 py-0.5 border-l border-gray-800/30 text-center cursor-pointer hover:bg-purple-900/20 transition-colors"
                     onClick={() => {
                       if (!visibleVitals.has('bloodGlucose') && !activeAssessments.has('bloodGlucose')) {
                         startAssessment('bloodGlucose', ASSESSMENT_METHODS.glucose[0]);
@@ -3391,6 +3488,11 @@ export function VitalSignsMonitor({
                     <span className={`text-sm font-mono font-bold ${visibleVitals.has('bloodGlucose') ? 'text-purple-400' : 'text-purple-400/20'}`}>
                       {visibleVitals.has('bloodGlucose') ? (typeof currentVitals.bloodGlucose === 'number' ? currentVitals.bloodGlucose.toFixed(1) : currentVitals.bloodGlucose) : '--'}
                     </span>
+                    {activeAssessments.has('bloodGlucose') && (
+                      <div className="h-0.5 w-full bg-purple-900/50 mt-0.5 rounded-full overflow-hidden">
+                        <div className="h-full bg-purple-400 rounded-full transition-all duration-300" style={{ width: `${assessmentProgress.get('bloodGlucose') || 0}%` }} />
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -3401,11 +3503,11 @@ export function VitalSignsMonitor({
                   {/* ECG */}
                   <div className="relative">
                     <div className="absolute top-0.5 left-1.5 z-10"><span className="text-[8px] font-mono text-green-500/70">{selectedLead}</span></div>
-                    <ECGWaveform heartRate={hrValue} color="#00ff41" height={80} isVisible={visibleVitals.has('pulse') && !sweepPaused}
+                    <ECGWaveform heartRate={hrValue} color="#00ff41" height={typeof window !== 'undefined' && window.innerWidth < 640 ? 60 : 80} isVisible={visibleVitals.has('pulse') && !sweepPaused}
                       waveformFn={getWaveformForLead(selectedLead)} showPacingSpikes={pacerActive && monitorMode === 'pacer'}
                       showShockArtifact={shockArtifact} showSyncMarkers={syncMode && monitorMode === 'defib'} showCprArtifact={cprState?.running === true} />
                     {!visibleVitals.has('pulse') && (
-                      <div className="h-[80px] flex items-center justify-center" style={{ background: '#001000' }}>
+                      <div className="h-[60px] sm:h-[80px] flex items-center justify-center" style={{ background: '#001000' }}>
                         {activeAssessments.has('pulse') ? (
                           <div className="text-center"><span className="text-[9px] font-mono text-green-600 block">ACQUIRING ECG...</span>
                             <Progress value={assessmentProgress.get('pulse') || 0} className="h-1 w-20 mt-1" /></div>
@@ -3417,9 +3519,9 @@ export function VitalSignsMonitor({
                   {/* SpO2 */}
                   <div className="relative">
                     <div className="absolute top-0.5 left-1.5 z-10"><span className="text-[8px] font-mono text-cyan-400/70">SpO2</span></div>
-                    <PlethWaveform heartRate={hrValue} spo2={spo2Value} color="#00e5ff" height={65} isVisible={visibleVitals.has('spo2') && !sweepPaused} />
+                    <PlethWaveform heartRate={hrValue} spo2={spo2Value} color="#00e5ff" height={typeof window !== 'undefined' && window.innerWidth < 640 ? 50 : 65} isVisible={visibleVitals.has('spo2') && !sweepPaused} />
                     {!visibleVitals.has('spo2') && (
-                      <div className="h-[65px] flex items-center justify-center" style={{ background: '#000810' }}>
+                      <div className="h-[50px] sm:h-[65px] flex items-center justify-center" style={{ background: '#000810' }}>
                         {activeAssessments.has('spo2') ? (
                           <div className="text-center"><span className="text-[9px] font-mono text-cyan-600 block">ACQUIRING SpO2...</span>
                             <Progress value={assessmentProgress.get('spo2') || 0} className="h-1 w-20 mt-1" /></div>
@@ -3432,9 +3534,9 @@ export function VitalSignsMonitor({
                   {etco2Value !== undefined && (
                     <div className="relative">
                       <div className="absolute top-0.5 left-1.5 z-10"><span className="text-[8px] font-mono text-fuchsia-400/70">CO2</span></div>
-                      <CapnographyWaveform respiratoryRate={rrValue} etco2={etco2Value} color="#ff66ff" height={60} isVisible={visibleVitals.has('etco2') && !sweepPaused} />
+                      <CapnographyWaveform respiratoryRate={rrValue} etco2={etco2Value} color="#ff66ff" height={typeof window !== 'undefined' && window.innerWidth < 640 ? 45 : 60} isVisible={visibleVitals.has('etco2') && !sweepPaused} />
                       {!visibleVitals.has('etco2') && (
-                        <div className="h-[60px] flex items-center justify-center" style={{ background: '#080010' }}>
+                        <div className="h-[45px] sm:h-[60px] flex items-center justify-center" style={{ background: '#080010' }}>
                           {activeAssessments.has('etco2') ? (
                             <div className="text-center"><span className="text-[9px] font-mono text-fuchsia-600 block">ACQUIRING CO2...</span>
                               <Progress value={assessmentProgress.get('etco2') || 0} className="h-1 w-20 mt-1" /></div>
@@ -3456,8 +3558,8 @@ export function VitalSignsMonitor({
                     </div>
                   )}
                 </div>
-                {/* RIGHT STRIP — timer, battery, status */}
-                <div className="w-[65px] border-l border-gray-800/30 flex flex-col items-center justify-between py-1 shrink-0" style={{ background: 'rgba(0,0,0,0.5)' }}>
+                {/* RIGHT STRIP — timer, battery, status (hidden on mobile for space) */}
+                <div className="hidden sm:flex w-[65px] border-l border-gray-800/30 flex-col items-center justify-between py-1 shrink-0" style={{ background: 'rgba(0,0,0,0.5)' }}>
                   <div className="text-center">
                     <span className={`text-[10px] font-mono font-bold ${codeTimerRunning ? 'text-green-400' : 'text-gray-600'}`}>{formatCodeTimer(codeTimerSeconds)}</span>
                     <button onClick={() => { if (codeTimerRunning) setCodeTimerRunning(false); else { setCodeTimerSeconds(0); setCodeTimerRunning(true); } }}

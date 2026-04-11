@@ -1183,6 +1183,7 @@ export const uaeMedications: UAEMedication[] = [
     indications: [
       'Bradycardia with signs of hypoperfusion',
       'Bradycardia with SBP <90',
+      'Symptomatic AV block (1st, 2nd, or 3rd degree with hemodynamic compromise)',
       'Organophosphate poisoning',
       'Cholinergic crisis',
       'Before suctioning (to prevent bradycardia)',

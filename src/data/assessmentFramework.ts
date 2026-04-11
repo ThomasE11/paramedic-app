@@ -666,12 +666,12 @@ const ANAPHYLAXIS_PROFILE: CaseAssessmentProfile = {
 };
 
 const CARDIAC_ARREST_PROFILE: CaseAssessmentProfile = {
-  requiredSecondary: [],
-  recommendedSecondary: ['chest'],
-  requiredSpecial: [],
-  recommendedSpecial: ['12-lead-ecg'],
+  requiredSecondary: ['chest'],
+  recommendedSecondary: ['head', 'extremities'],
+  requiredSpecial: ['12-lead-ecg', 'blood-glucose', 'temperature'],
+  recommendedSpecial: ['pain-assessment'],
   secondarySurveyLabel: 'Cardiac Arrest Management',
-  secondarySurveyDescription: 'Focus on high-quality CPR and reversible causes. Secondary survey after ROSC.',
+  secondarySurveyDescription: 'Focus on high-quality CPR, rhythm identification, and reversible causes (H\'s & T\'s). 12-lead ECG, BGL, and core temperature are critical. Full secondary survey after ROSC.',
 };
 
 const STROKE_PROFILE: CaseAssessmentProfile = {

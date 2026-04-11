@@ -146,7 +146,20 @@ export function createInitialPatientState(caseData: CaseScenario): PatientState 
   else if (matchWord('atrial flutter') || matchWord('flutter')) rhythm = 'Atrial Flutter';
   else if (matchWord('asystole')) rhythm = 'Asystole';
   else if (matchWord('pulseless electrical activity') || (matchWord('pea') && !allFindings.includes('peanut') && !allFindings.includes('appear'))) rhythm = 'PEA';
-  else if (matchWord('stemi') || matchWord('st elevation')) rhythm = 'Sinus Tachycardia with ST Elevation';
+  else if (matchWord('anterior stemi') || (matchWord('stemi') && allFindings.includes('anterior')) || allFindings.includes('stem-anterior')) rhythm = 'Anterior STEMI';
+  else if (matchWord('inferior stemi') || (matchWord('stemi') && allFindings.includes('inferior')) || allFindings.includes('stem-inferior')) rhythm = 'Inferior STEMI';
+  else if (matchWord('lateral stemi') || (matchWord('stemi') && allFindings.includes('lateral')) || allFindings.includes('stem-lateral')) rhythm = 'Lateral STEMI';
+  else if (matchWord('posterior stemi') || (matchWord('stemi') && allFindings.includes('posterior')) || allFindings.includes('stem-posterior')) rhythm = 'Inferior STEMI';
+  else if (matchWord('nstemi') || matchWord('non-st elevation')) rhythm = 'NSTEMI';
+  else if (matchWord('stemi') || matchWord('st elevation')) rhythm = 'Anterior STEMI';
+  // Conduction blocks — check BEFORE generic bradycardia to avoid masking
+  else if (allFindings.includes('complete heart block') || allFindings.includes('3rd degree') || allFindings.includes('third degree') || allFindings.includes('heart-block')) rhythm = 'Complete Heart Block';
+  else if (allFindings.includes('wenckebach') || allFindings.includes('mobitz type i') || allFindings.includes('2nd degree type i')) rhythm = 'Wenckebach';
+  else if (allFindings.includes('mobitz type ii') || allFindings.includes('mobitz 2') || allFindings.includes('2nd degree type ii')) rhythm = 'Mobitz Type II';
+  else if (allFindings.includes('first degree') || allFindings.includes('1st degree')) rhythm = 'First Degree Block';
+  else if (allFindings.includes('junctional')) rhythm = 'Junctional Rhythm';
+  else if (allFindings.includes('lbbb') || allFindings.includes('left bundle branch')) rhythm = 'LBBB';
+  else if (allFindings.includes('rbbb') || allFindings.includes('right bundle branch')) rhythm = 'RBBB';
   else if (matchWord('bradycardia') || (vitals.pulse && vitals.pulse < 60)) rhythm = 'Sinus Bradycardia';
   else if (vitals.pulse && vitals.pulse > 100) rhythm = 'Sinus Tachycardia';
 
@@ -218,6 +231,25 @@ export function applyDynamicTreatment(
   // Reset deterioration timer on meaningful treatment
   if (treatment.effects.length > 0) {
     state.timeWithoutTreatment = 0;
+  }
+
+  // HYPOTHERMIA PROTOCOL: Block ALL medications when core temp < 30°C
+  // Drug metabolism is severely impaired. Drugs accumulate to toxic levels.
+  // Exception: CPR, airway, breathing, positioning, comfort treatments are allowed.
+  const patientTemp = state.vitals.temperature ?? 37;
+  const isSevereHypothermia = patientTemp < 30;
+  if (isSevereHypothermia && treatment.category === 'medication' && treatment.id !== 'defibrillation') {
+    return {
+      newState: state,
+      response: {
+        description: `${treatment.name} WITHHELD — core temperature ${patientTemp}°C is below 30°C. All medications are withheld in severe hypothermia due to impaired drug metabolism and risk of toxic accumulation. Focus on CPR, active rewarming, and airway management. Resume medications once core temperature exceeds 30°C.`,
+        effectivenessPercent: 0,
+        isPartialResponse: false,
+        requiresRepeat: false,
+        warningMessage: 'Hypothermia protocol: Withhold all drugs below 30°C.',
+        vitalChanges: [],
+      },
+    };
   }
 
   let response: ClinicalResponse;
@@ -694,6 +726,21 @@ function handleDefibrillation(
   const vitals = state.vitals;
   const changes: VitalChange[] = [];
   const { energy, synchronized, currentRhythm } = params;
+
+  // HYPOTHERMIA PROTOCOL: Limit defibrillation when core temp < 30°C
+  // Give up to 3 shocks, then withhold until rewarmed above 30°C
+  const coreTemp = vitals.temperature ?? 37;
+  const shocksSoFar = state.treatmentCounts['defibrillation'] || 0;
+  if (coreTemp < 30 && shocksSoFar >= 3) {
+    return {
+      description: `Defibrillation WITHHELD — core temperature ${coreTemp}°C. Maximum 3 shocks have been delivered in severe hypothermia (<30°C). The myocardium is refractory to defibrillation when cold. Continue CPR and focus on active rewarming. Attempt further shocks once core temp exceeds 30°C.`,
+      effectivenessPercent: 0,
+      isPartialResponse: false,
+      requiresRepeat: false,
+      warningMessage: 'Hypothermia: max 3 shocks below 30°C. Rewarm before further attempts.',
+      vitalChanges: [],
+    };
+  }
 
   // === SHOCKABLE RHYTHMS ===
   // VF: Defibrillation (unsynchronized) is correct

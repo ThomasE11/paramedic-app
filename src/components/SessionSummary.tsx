@@ -224,9 +224,49 @@ export function SessionSummary({
     [missedItems]
   );
 
-  const percentage = useMemo(() =>
+  // Calculate penalties for critical omissions and unresolved dangerous vitals
+  const penalties = useMemo(() => {
+    const reasons: { label: string; amount: number }[] = [];
+    let total = 0;
+
+    // Penalty 1: Critical items missed (5% each, max 25%)
+    if (criticalMissedItems.length > 0) {
+      const critPenalty = Math.min(criticalMissedItems.length * 5, 25);
+      reasons.push({ label: `${criticalMissedItems.length} critical action${criticalMissedItems.length > 1 ? 's' : ''} missed`, amount: critPenalty });
+      total += critPenalty;
+    }
+
+    // Penalty 2: Unresolved dangerous vitals at case end
+    const finalVitals = vitalsHistory && vitalsHistory.length > 0 ? vitalsHistory[vitalsHistory.length - 1] : null;
+    if (finalVitals) {
+      if (finalVitals.spo2 !== undefined && finalVitals.spo2 < 90) {
+        reasons.push({ label: `SpO2 critically low at ${finalVitals.spo2}%`, amount: 10 });
+        total += 10;
+      } else if (finalVitals.spo2 !== undefined && finalVitals.spo2 < 94) {
+        reasons.push({ label: `SpO2 still below target at ${finalVitals.spo2}%`, amount: 5 });
+        total += 5;
+      }
+      if (finalVitals.respiration !== undefined && (finalVitals.respiration > 30 || finalVitals.respiration < 8)) {
+        reasons.push({ label: `Respiratory rate dangerous at ${finalVitals.respiration}/min`, amount: 5 });
+        total += 5;
+      }
+      if (finalVitals.pulse !== undefined && (finalVitals.pulse > 150 || finalVitals.pulse < 40)) {
+        reasons.push({ label: `Heart rate dangerous at ${finalVitals.pulse} bpm`, amount: 5 });
+        total += 5;
+      }
+    }
+
+    return { total, reasons };
+  }, [criticalMissedItems, vitalsHistory]);
+
+  const basePercentage = useMemo(() =>
     session.totalPossible > 0 ? Math.round((session.score / session.totalPossible) * 100) : 0,
     [session.score, session.totalPossible]
+  );
+
+  const percentage = useMemo(() =>
+    Math.max(0, basePercentage - penalties.total),
+    [basePercentage, penalties.total]
   );
 
   const grade = useMemo(() => getGrade(percentage), [percentage]);
@@ -301,6 +341,34 @@ export function SessionSummary({
           </div>
         </CardContent>
       </Card>
+
+      {/* Penalty Breakdown - shown when penalties applied */}
+      {penalties.total > 0 && (
+        <Card className="border-2 border-orange-400 bg-orange-50 dark:bg-orange-950/20 animate-fade-in-up stagger-2">
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <AlertTriangle className="w-4 h-4 text-orange-600" />
+              <span className="font-semibold text-sm text-orange-800 dark:text-orange-300">Score Penalties Applied</span>
+            </div>
+            <div className="space-y-1.5">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Base score</span>
+                <span className="font-medium">{basePercentage}%</span>
+              </div>
+              {penalties.reasons.map((reason, idx) => (
+                <div key={idx} className="flex justify-between text-sm">
+                  <span className="text-orange-700 dark:text-orange-400">{reason.label}</span>
+                  <span className="font-medium text-red-600">-{reason.amount}%</span>
+                </div>
+              ))}
+              <div className="border-t border-orange-300 dark:border-orange-700 pt-1.5 mt-1.5 flex justify-between text-sm font-bold">
+                <span>Adjusted score</span>
+                <span>{percentage}%</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Quick Stats Row - always 3 columns */}
       <div className="grid grid-cols-3 gap-2 sm:gap-4">

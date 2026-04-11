@@ -188,7 +188,7 @@ export const BODY_REGIONS: BodyRegionDef[] = [
 ];
 
 /** Skin tone colors */
-export const SKIN_COLOR = '#d4a574';
+export const SKIN_COLOR = '#b0c4d8';
 /** Highlight color for hovering — bright cyan, high contrast against skin */
 export const HOVER_COLOR = '#22d3ee';
 /** Color for assessed regions — bright green */

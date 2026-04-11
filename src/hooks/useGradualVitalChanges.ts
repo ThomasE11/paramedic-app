@@ -89,8 +89,8 @@ export function useGradualVitalChanges() {
           ? lerp(config.startVitals.temperature, config.targetVitals.temperature, easedProgress)
           : config.targetVitals.temperature,
         gcs: config.startVitals.gcs !== undefined && config.targetVitals.gcs !== undefined
-          ? Math.round(lerp(config.startVitals.gcs, config.targetVitals.gcs, easedProgress))
-          : config.targetVitals.gcs,
+          ? Math.min(15, Math.max(3, Math.round(lerp(config.startVitals.gcs, config.targetVitals.gcs, easedProgress))))
+          : config.targetVitals.gcs !== undefined ? Math.min(15, Math.max(3, config.targetVitals.gcs)) : config.targetVitals.gcs,
         bloodGlucose: config.startVitals.bloodGlucose !== undefined && config.targetVitals.bloodGlucose !== undefined
           ? lerp(config.startVitals.bloodGlucose, config.targetVitals.bloodGlucose, easedProgress)
           : config.targetVitals.bloodGlucose,

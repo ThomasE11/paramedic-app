@@ -60,15 +60,23 @@ export const DETERIORATION_PROFILES: Record<CaseSeverity, DeteriorationProfile> 
       { vitalSign: 'spo2', changePerMinute: -0.8, minValue: 75, maxValue: 100 },
       { vitalSign: 'pulse', changePerMinute: 1.0, minValue: 50, maxValue: 130 },
       { vitalSign: 'respiration', changePerMinute: 0.8, minValue: 8, maxValue: 35 },
-      { 
-        vitalSign: 'bp', 
-        changePerMinute: -0.5, 
-        minValue: 70, 
+      {
+        vitalSign: 'bp',
+        changePerMinute: -0.5,
+        minValue: 70,
         maxValue: 200,
         triggerCondition: (vitals) => {
           const systolic = parseInt(String(vitals.bp || '120/80').split('/')[0]);
           return systolic < 90; // Only drop BP if already hypotensive
         }
+      },
+      // Hypoglycemic patients continue to deteriorate
+      {
+        vitalSign: 'bloodGlucose',
+        changePerMinute: -0.1,
+        minValue: 1.5,
+        maxValue: 20,
+        triggerCondition: (vitals) => (vitals.bloodGlucose || 5.5) < 4.0
       },
     ],
     warningSigns: ['Significant hypoxia', 'Tachycardia', 'Increased respiratory distress'],
@@ -82,13 +90,21 @@ export const DETERIORATION_PROFILES: Record<CaseSeverity, DeteriorationProfile> 
       { vitalSign: 'spo2', changePerMinute: -2.0, minValue: 60, maxValue: 100 },
       { vitalSign: 'pulse', changePerMinute: 2.0, minValue: 40, maxValue: 160 },
       { vitalSign: 'respiration', changePerMinute: 2.0, minValue: 6, maxValue: 50 },
-      { 
-        vitalSign: 'bp', 
-        changePerMinute: -2.0, 
-        minValue: 50, 
-        maxValue: 200 
+      {
+        vitalSign: 'bp',
+        changePerMinute: -2.0,
+        minValue: 50,
+        maxValue: 200
       },
       { vitalSign: 'gcs', changePerMinute: -0.5, minValue: 3, maxValue: 15 },
+      // Hypoglycemic patients: BGL continues dropping without glucose administration
+      {
+        vitalSign: 'bloodGlucose',
+        changePerMinute: -0.2,
+        minValue: 1.0,
+        maxValue: 20,
+        triggerCondition: (vitals) => (vitals.bloodGlucose || 5.5) < 4.0 // Only if already hypoglycemic
+      },
     ],
     warningSigns: ['Severe hypoxia', 'Shock developing', 'Altered consciousness'],
   },
@@ -196,11 +212,16 @@ export function applyDeterioration(
         break;
         
       case 'bp':
-        const oldBP = parseBPValue(String(newVitals.bp || '120/80'));
-        const newSystolic = Math.max(rate.minValue, Math.min(rate.maxValue, oldBP + totalChange));
-        newVitals.bp = formatBP(newSystolic);
-        if (Math.abs(newSystolic - oldBP) > 2) {
-          changes.push(`BP: ${oldBP} → ${Math.round(newSystolic)} mmHg`);
+        const bpParts = String(newVitals.bp || '120/80').split('/');
+        const oldSystolic = parseInt(bpParts[0]) || 120;
+        const oldDiastolic = parseInt(bpParts[1]) || 80;
+        const newSystolic = Math.max(rate.minValue, Math.min(rate.maxValue, oldSystolic + totalChange));
+        // Diastolic changes proportionally to systolic (preserves original ratio)
+        const diastolicChange = totalChange * (oldDiastolic / Math.max(1, oldSystolic));
+        const newDiastolic = Math.max(Math.round(rate.minValue * 0.6), Math.round(oldDiastolic + diastolicChange));
+        newVitals.bp = `${Math.round(newSystolic)}/${newDiastolic}`;
+        if (Math.abs(newSystolic - oldSystolic) > 2) {
+          changes.push(`BP: ${oldSystolic}/${oldDiastolic} → ${Math.round(newSystolic)}/${newDiastolic} mmHg`);
         }
         if (newSystolic < 70) isCritical = true;
         break;

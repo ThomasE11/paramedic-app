@@ -981,70 +981,103 @@ export function playBreathSound(soundType: BreathSoundType, durationMs: number =
 
     case 'wheeze': {
       // POLYPHONIC EXPIRATORY WHEEZE
-      // Multiple musical tones (200-1500 Hz) heard primarily during expiration.
-      // Caused by airway narrowing in asthma/COPD.
-      // Key features: multiple harmonics, expiratory dominance, slight pitch wandering.
+      // Real wheezes: breathy, musical tones caused by turbulent airflow through narrowed airways.
+      // Key features: noise-modulated tonal quality, expiratory dominance, pitch wandering,
+      // layered with audible breath sounds underneath.
       const breathRate = 0.3; // ~18/min
       const cycleSamples = Math.floor(ctx.sampleRate / breathRate);
-      const inspirationLen = Math.floor(cycleSamples * 0.35); // Short inspiration, prolonged expiration
+      const inspirationLen = Math.floor(cycleSamples * 0.35);
 
-      // Layer 1: Background vesicular breath sounds (quieter)
+      // Layer 1: Background breath sounds (more prominent than before — wheezes sit ON breath)
       const noiseBuffer = createPinkNoiseBuffer(ctx, duration);
       const noiseData = noiseBuffer.getChannelData(0);
       applyBreathingEnvelope(noiseData, ctx.sampleRate, breathRate, 0.35, 1.0, 0.03);
-      // Reduce noise volume
-      for (let i = 0; i < noiseData.length; i++) noiseData[i] *= 0.3;
+      for (let i = 0; i < noiseData.length; i++) noiseData[i] *= 0.5;
 
       const noiseSource = ctx.createBufferSource();
       noiseSource.buffer = noiseBuffer;
       const noiseLp = ctx.createBiquadFilter();
       noiseLp.type = 'lowpass';
-      noiseLp.frequency.value = 600;
+      noiseLp.frequency.value = 800;
       noiseSource.connect(noiseLp);
       noiseLp.connect(masterGain);
       noiseSource.start();
       noiseSource.stop(ctx.currentTime + duration);
 
-      // Layer 2: Polyphonic wheeze tones (3 oscillators at different frequencies)
-      const wheezeFreqs = [320, 480, 640]; // Multiple harmonics for polyphonic wheeze
+      // Layer 2: Filtered noise band for breathy wheeze texture (the "air" component)
+      const wheezeNoiseBuffer = createPinkNoiseBuffer(ctx, duration);
+      const wheezeNoiseData = wheezeNoiseBuffer.getChannelData(0);
+      // Apply expiratory-dominant envelope to the noise
+      for (let i = 0; i < wheezeNoiseData.length; i++) {
+        const t = i / ctx.sampleRate;
+        const cyclePos = (t * breathRate) % 1;
+        const isExpiring = cyclePos > 0.35;
+        wheezeNoiseData[i] *= isExpiring ? 0.35 : 0.05;
+      }
+      const wheezeNoiseSrc = ctx.createBufferSource();
+      wheezeNoiseSrc.buffer = wheezeNoiseBuffer;
+      const wheezeNoiseBp = ctx.createBiquadFilter();
+      wheezeNoiseBp.type = 'bandpass';
+      wheezeNoiseBp.frequency.value = 450;
+      wheezeNoiseBp.Q.value = 2;
+      wheezeNoiseSrc.connect(wheezeNoiseBp);
+      wheezeNoiseBp.connect(masterGain);
+      wheezeNoiseSrc.start();
+      wheezeNoiseSrc.stop(ctx.currentTime + duration);
+
+      // Layer 3: Polyphonic wheeze tones — sawtooth for richer harmonics, wider bandwidth
+      const wheezeFreqs = [280, 420, 560, 750]; // Wider spread, 4 harmonics
       wheezeFreqs.forEach((baseFreq, idx) => {
         const osc = ctx.createOscillator();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(baseFreq, ctx.currentTime);
+        osc.type = 'sawtooth'; // Richer harmonic content than sine
 
-        // Pitch wandering — slight natural variation
-        for (let t = 0; t < duration; t += 0.15) {
-          const drift = baseFreq * (1 + (Math.random() - 0.5) * 0.06);
-          osc.frequency.exponentialRampToValueAtTime(drift, ctx.currentTime + t + 0.15);
+        // More pronounced pitch wandering — wheezes naturally fluctuate
+        osc.frequency.setValueAtTime(baseFreq, ctx.currentTime);
+        for (let t = 0; t < duration; t += 0.1) {
+          const drift = baseFreq * (1 + (Math.random() - 0.5) * 0.12);
+          osc.frequency.exponentialRampToValueAtTime(drift, ctx.currentTime + t + 0.1);
         }
 
+        // Amplitude modulation with LFO for natural flutter/wavering
+        const lfo = ctx.createOscillator();
+        lfo.type = 'sine';
+        lfo.frequency.value = 3 + Math.random() * 4; // 3-7 Hz tremolo
+        const lfoGain = ctx.createGain();
+        lfoGain.gain.value = 0.3 + idx * 0.05; // Modulation depth
+        lfo.connect(lfoGain);
+
         const wheezeGain = ctx.createGain();
-        // Expiratory-dominant envelope: quiet during inspiration, loud during expiration
+        lfoGain.connect(wheezeGain.gain); // AM modulation
+
+        // Expiratory-dominant envelope
         for (let t = 0; t < duration; t += 1 / breathRate) {
           const inspEnd = t + inspirationLen / ctx.sampleRate;
           const cycleEnd = t + cycleSamples / ctx.sampleRate;
-          const vol = 0.06 - idx * 0.015; // Higher harmonics slightly quieter
+          const vol = 0.04 - idx * 0.008; // Each harmonic slightly quieter
           // Inspiration: very quiet
-          wheezeGain.gain.setValueAtTime(0.005, ctx.currentTime + t);
-          wheezeGain.gain.linearRampToValueAtTime(0.01, ctx.currentTime + inspEnd);
-          // Expiration: ramp up, sustain, ramp down
-          wheezeGain.gain.linearRampToValueAtTime(vol * 0.8, ctx.currentTime + inspEnd + 0.15);
-          wheezeGain.gain.setValueAtTime(vol, ctx.currentTime + inspEnd + 0.4);
-          wheezeGain.gain.linearRampToValueAtTime(vol * 0.3, ctx.currentTime + cycleEnd - 0.15);
-          wheezeGain.gain.linearRampToValueAtTime(0.005, ctx.currentTime + cycleEnd);
+          wheezeGain.gain.setValueAtTime(0.003, ctx.currentTime + t);
+          wheezeGain.gain.linearRampToValueAtTime(0.005, ctx.currentTime + inspEnd);
+          // Expiration: ramp up with slight attack, sustain, natural decay
+          wheezeGain.gain.linearRampToValueAtTime(vol * 0.6, ctx.currentTime + inspEnd + 0.12);
+          wheezeGain.gain.linearRampToValueAtTime(vol, ctx.currentTime + inspEnd + 0.3);
+          wheezeGain.gain.setValueAtTime(vol * 0.9, ctx.currentTime + cycleEnd - 0.4);
+          wheezeGain.gain.linearRampToValueAtTime(vol * 0.2, ctx.currentTime + cycleEnd - 0.1);
+          wheezeGain.gain.linearRampToValueAtTime(0.003, ctx.currentTime + cycleEnd);
         }
 
-        // Narrow bandpass to make each tone distinct
+        // Wider bandpass — breathy, not electronic (Q=3 instead of 8)
         const bp = ctx.createBiquadFilter();
         bp.type = 'bandpass';
         bp.frequency.value = baseFreq;
-        bp.Q.value = 8;
+        bp.Q.value = 3;
 
         osc.connect(wheezeGain);
         wheezeGain.connect(bp);
         bp.connect(masterGain);
         osc.start();
         osc.stop(ctx.currentTime + duration);
+        lfo.start();
+        lfo.stop(ctx.currentTime + duration);
         currentOscillators.push(osc);
       });
       break;
