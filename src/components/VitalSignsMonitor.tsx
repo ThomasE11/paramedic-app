@@ -53,12 +53,15 @@ import {
 // Use Vite's BASE_URL so paths work on GitHub Pages or any subpath deployment
 const BASE = import.meta.env.BASE_URL;
 
+// Only map rhythms that have proper 12-lead ECG images (not single rhythm strips).
+// Rhythms without a 12-lead image here will fall back to the programmatic
+// TwelveLeadECG canvas component which renders all 12 leads + rhythm strip.
 const RHYTHM_TO_LITFL_IMAGE: Record<string, string> = {
   // ----- Normal / Rate-based -----
-  'nsr': `${BASE}images/ecg/nsr.jpg`,
+  // 'nsr' — single strip only, use canvas
   'sinus-tachy': `${BASE}images/ecg/sinus-tachy.jpg`,
-  'sinus-brady': `${BASE}images/ecg/sinus-brady.jpg`,
-  'pea': `${BASE}images/ecg/nsr.jpg`,  // PEA shows electrical activity (sinus) without pulse
+  // 'sinus-brady' — borderline single strip, use canvas for better 12-lead view
+  // 'pea' — reused nsr which is single strip, use canvas
 
   // ----- Arrhythmias -----
   'afib': `${BASE}images/ecg/afib.jpg`,
@@ -66,25 +69,25 @@ const RHYTHM_TO_LITFL_IMAGE: Record<string, string> = {
   'svt': `${BASE}images/ecg/svt.jpg`,
   'vt': `${BASE}images/ecg/vt.jpg`,
   'vfib': `${BASE}images/ecg/vfib.jpg`,
-  'vfib-fine': `${BASE}images/ecg/vfib-fine.jpg`,
-  'torsades': `${BASE}images/ecg/torsades.jpg`,
+  // 'vfib-fine' — single strip only, use canvas
+  // 'torsades' — single strip only, use canvas
   'pacs': `${BASE}images/ecg/pacs.jpg`,
   'pvcs': `${BASE}images/ecg/pvcs.jpg`,
 
   // ----- STEMI / ACS -----
-  'anterior-stemi': `${BASE}images/ecg/anterior-stemi.jpg`,
-  'inferior-stemi': `${BASE}images/ecg/inferior-stemi.jpg`,
-  'lateral-stemi': `${BASE}images/ecg/lateral-stemi.jpg`,
+  // 'anterior-stemi' — single strip, use canvas for proper 12-lead ST changes
+  // 'inferior-stemi' — single strip, use canvas
+  // 'lateral-stemi' — single strip, use canvas
   'posterior-stemi': `${BASE}images/ecg/posterior-stemi.jpg`,
 
   // ----- Heart blocks -----
-  'first-degree-block': `${BASE}images/ecg/first-degree-block.jpg`,
+  // 'first-degree-block' — single strip, use canvas
   'wenckebach': `${BASE}images/ecg/wenckebach.jpg`,
-  'mobitz2': `${BASE}images/ecg/mobitz2.jpg`,
+  // 'mobitz2' — single strip, use canvas
   'chb': `${BASE}images/ecg/chb.jpg`,
 
   // ----- Escape / slow rhythms -----
-  'junctional': `${BASE}images/ecg/junctional.jpg`,
+  // 'junctional' — single strip, use canvas
   'aivr': `${BASE}images/ecg/aivr.jpg`,
 
   // ----- Conduction / Other -----
