@@ -53,15 +53,15 @@ import {
 // Use Vite's BASE_URL so paths work on GitHub Pages or any subpath deployment
 const BASE = import.meta.env.BASE_URL;
 
-// Only map rhythms that have proper 12-lead ECG images (not single rhythm strips).
-// Rhythms without a 12-lead image here will fall back to the programmatic
-// TwelveLeadECG canvas component which renders all 12 leads + rhythm strip.
+// Map rhythm IDs to local 12-lead ECG reference images from LITFL.
+// Only rhythms with verified 12-lead images are mapped here.
+// Unmapped rhythms fall back to the programmatic TwelveLeadECG canvas.
 const RHYTHM_TO_LITFL_IMAGE: Record<string, string> = {
   // ----- Normal / Rate-based -----
-  // 'nsr' — single strip only, use canvas
+  // 'nsr' — LITFL only has single strip; use canvas 12-lead
   'sinus-tachy': `${BASE}images/ecg/sinus-tachy.jpg`,
-  // 'sinus-brady' — borderline single strip, use canvas for better 12-lead view
-  // 'pea' — reused nsr which is single strip, use canvas
+  'sinus-brady': `${BASE}images/ecg/sinus-brady.jpg`,
+  // 'pea' — use canvas (shows organized rhythm without pulse)
 
   // ----- Arrhythmias -----
   'afib': `${BASE}images/ecg/afib.jpg`,
@@ -69,25 +69,26 @@ const RHYTHM_TO_LITFL_IMAGE: Record<string, string> = {
   'svt': `${BASE}images/ecg/svt.jpg`,
   'vt': `${BASE}images/ecg/vt.jpg`,
   'vfib': `${BASE}images/ecg/vfib.jpg`,
-  // 'vfib-fine' — single strip only, use canvas
-  // 'torsades' — single strip only, use canvas
+  'vfib-fine': `${BASE}images/ecg/vfib-fine.jpg`,
+  // 'torsades' — LITFL only has single strip; use canvas
   'pacs': `${BASE}images/ecg/pacs.jpg`,
   'pvcs': `${BASE}images/ecg/pvcs.jpg`,
 
   // ----- STEMI / ACS -----
-  // 'anterior-stemi' — single strip, use canvas for proper 12-lead ST changes
-  // 'inferior-stemi' — single strip, use canvas
-  // 'lateral-stemi' — single strip, use canvas
+  'anterior-stemi': `${BASE}images/ecg/anterior-stemi.jpg`,
+  'inferior-stemi': `${BASE}images/ecg/inferior-stemi.jpg`,
+  'lateral-stemi': `${BASE}images/ecg/lateral-stemi.jpg`,
   'posterior-stemi': `${BASE}images/ecg/posterior-stemi.jpg`,
+  'nstemi': `${BASE}images/ecg/nstemi.jpg`,
 
   // ----- Heart blocks -----
-  // 'first-degree-block' — single strip, use canvas
+  // 'first-degree-block' — LITFL only has single strip; use canvas
   'wenckebach': `${BASE}images/ecg/wenckebach.jpg`,
-  // 'mobitz2' — single strip, use canvas
+  // 'mobitz2' — LITFL only has single strip; use canvas
   'chb': `${BASE}images/ecg/chb.jpg`,
 
   // ----- Escape / slow rhythms -----
-  // 'junctional' — single strip, use canvas
+  'junctional': `${BASE}images/ecg/junctional.jpg`,
   'aivr': `${BASE}images/ecg/aivr.jpg`,
 
   // ----- Conduction / Other -----
