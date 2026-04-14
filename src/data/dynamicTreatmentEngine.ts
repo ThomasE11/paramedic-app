@@ -270,6 +270,9 @@ export function applyDynamicTreatment(
     allAppliedIds, caseData.subcategory,
   );
 
+  // CROSS-SYSTEM PHYSIOLOGY — adjust vitals based on multi-organ interactions
+  applyCrossSystemPhysiology(treatment, state, caseData, response);
+
   // Record the application
   state.treatmentHistory.push({
     treatmentId: treatment.id,
@@ -1220,4 +1223,128 @@ export function applyDeterioration(
   }
 
   return newState;
+}
+
+// ============================================================================
+// CROSS-SYSTEM PHYSIOLOGY
+// ============================================================================
+
+/**
+ * Apply realistic cross-system interactions after a treatment.
+ *
+ * Real patients don't respond in isolation — giving fluid to a heart failure
+ * patient drops SpO2 because you've pushed them into pulmonary oedema.
+ * Giving 100% O2 to a hypercapnic COPD patient can drop their respiratory drive.
+ * Adrenaline causes tachycardia and hypertension and arrhythmia risk.
+ *
+ * This function adjusts vitals AFTER the treatment's primary effect has been
+ * applied, modelling the second-order consequences.
+ */
+function applyCrossSystemPhysiology(
+  treatment: Treatment,
+  state: PatientState,
+  caseData: CaseScenario,
+  response: ClinicalResponse,
+): void {
+  const vitals = state.vitals;
+  const sub = (caseData.subcategory || '').toLowerCase();
+  const warnings: string[] = [];
+
+  // --- 1. FLUID OVERLOAD IN HEART FAILURE ---
+  // Giving IV fluids to a heart failure / pulmonary oedema patient worsens SpO2
+  const isFluidBolus = treatment.id.includes('fluid') || treatment.id.includes('saline_bolus') || treatment.id.includes('hartmanns') || treatment.id.includes('crystalloid');
+  const isHeartFailure = sub.includes('heart failure') || sub.includes('chf') || sub.includes('pulmonary oedema') || sub.includes('pulmonary edema');
+  if (isFluidBolus && isHeartFailure) {
+    const oldSpO2 = vitals.spo2;
+    vitals.spo2 = Math.max(70, vitals.spo2 - 5);
+    vitals.respiration = Math.min(40, vitals.respiration + 4);
+    warnings.push(`Fluid bolus in heart failure — SpO2 dropped from ${oldSpO2}% to ${vitals.spo2}% as you've pushed the patient into worsening pulmonary oedema. Avoid IV fluids in CHF unless hypotensive.`);
+  }
+
+  // --- 2. HIGH-FLOW OXYGEN IN COPD ---
+  // 100% O2 in a hypercapnic COPD patient can drop respiratory drive (CO2 retention)
+  const isHighFlowO2 = treatment.id === 'oxygen_15l' || treatment.id === 'oxygen_nrb';
+  const isCOPD = sub.includes('copd') || sub.includes('chronic obstructive');
+  if (isHighFlowO2 && isCOPD) {
+    const oldRR = vitals.respiration;
+    vitals.respiration = Math.max(8, vitals.respiration - 2);
+    vitals.gcs = Math.max(10, (vitals.gcs ?? 15) - 1);
+    warnings.push(`High-flow O2 in COPD — respiratory rate dropped from ${oldRR} to ${vitals.respiration} as CO2 retention reduces respiratory drive. Target SpO2 88-92% with controlled O2 (nasal cannula 2-4L or 28% Venturi).`);
+  }
+
+  // --- 3. ADRENALINE IN INTACT CIRCULATION ---
+  // IV adrenaline in a patient with a pulse causes tachycardia, hypertension, arrhythmia risk
+  const isAdrenalineIV = treatment.id === 'adrenaline_1mg';
+  if (isAdrenalineIV && !state.isInArrest && vitals.pulse > 0) {
+    const oldHR = vitals.pulse;
+    vitals.pulse = Math.min(180, vitals.pulse + 30);
+    const bp = parseBP(vitals.bp);
+    vitals.bp = formatBP(Math.min(220, bp.systolic + 40), Math.min(130, bp.diastolic + 25));
+    warnings.push(`IV adrenaline in a perfusing patient — HR jumped from ${oldHR} to ${vitals.pulse}, BP hypertensive. This is the wrong dose/route for anything other than cardiac arrest. Use IM 1:1,000 for anaphylaxis.`);
+  }
+
+  // --- 4. EXCESSIVE HYPERVENTILATION / BVM ---
+  // Over-ventilating a patient causes respiratory alkalosis and reduces cerebral perfusion
+  const isBVM = treatment.id === 'bvm_ventilation';
+  if (isBVM && (state.treatmentCounts['bvm_ventilation'] ?? 0) > 3) {
+    warnings.push('Avoid over-ventilation — target 10 breaths per minute in cardiac arrest, 12-16 otherwise. Hyperventilation causes respiratory alkalosis and reduces cerebral perfusion.');
+  }
+
+  // --- 5. GTN / NITRATE IN RIGHT VENTRICULAR INFARCT ---
+  // Inferior STEMI may involve RV — GTN drops preload and causes severe hypotension
+  const isGTN = treatment.id === 'gtn_spray' || treatment.id === 'gtn_sl' || treatment.id === 'nitroglycerin';
+  const isInferiorSTEMI = sub.includes('inferior') && (sub.includes('stemi') || sub.includes('mi'));
+  if (isGTN && isInferiorSTEMI) {
+    const bp = parseBP(vitals.bp);
+    const oldSBP = bp.systolic;
+    bp.systolic = Math.max(60, bp.systolic - 30);
+    bp.diastolic = Math.max(40, bp.diastolic - 15);
+    vitals.bp = formatBP(bp.systolic, bp.diastolic);
+    warnings.push(`GTN in inferior STEMI — SBP crashed from ${oldSBP} to ${bp.systolic}. Inferior MI may involve the right ventricle, which is preload-dependent. Check V4R before giving GTN in inferior STEMI. Give fluids immediately.`);
+  }
+
+  // --- 6. BETA-BLOCKER IN ASTHMA ---
+  const isBetaBlocker = treatment.id.includes('metoprolol') || treatment.id.includes('propranolol') || treatment.id.includes('atenolol') || treatment.id.includes('bisoprolol');
+  const isAsthma = sub.includes('asthma');
+  if (isBetaBlocker && isAsthma) {
+    const oldSpO2 = vitals.spo2;
+    vitals.spo2 = Math.max(75, vitals.spo2 - 6);
+    vitals.respiration = Math.min(40, vitals.respiration + 4);
+    warnings.push(`Beta-blocker in asthma — SpO2 dropped from ${oldSpO2}% to ${vitals.spo2}% from bronchospasm. Non-selective beta-blockers are contraindicated in asthma.`);
+  }
+
+  // --- 7. OPIOID DOSING AND RESPIRATORY DEPRESSION ---
+  const isOpioid = treatment.id.includes('morphine') || treatment.id.includes('fentanyl') || treatment.id.includes('pethidine');
+  const opioidCount = (state.treatmentCounts['morphine_2_5mg'] ?? 0) + (state.treatmentCounts['morphine_5mg'] ?? 0) + (state.treatmentCounts['fentanyl_100mcg'] ?? 0);
+  if (isOpioid && opioidCount >= 2) {
+    const oldRR = vitals.respiration;
+    vitals.respiration = Math.max(6, vitals.respiration - 3);
+    vitals.gcs = Math.max(8, (vitals.gcs ?? 15) - 2);
+    warnings.push(`Repeated opioid dosing — respiratory rate dropped from ${oldRR} to ${vitals.respiration}, GCS decreasing. Watch for respiratory depression; have naloxone ready.`);
+  }
+
+  // --- 8. NALOXONE REVERSAL ---
+  if (treatment.id.includes('naloxone')) {
+    const oldRR = vitals.respiration;
+    if (oldRR < 12) {
+      vitals.respiration = Math.min(22, vitals.respiration + 6);
+      vitals.gcs = Math.min(15, (vitals.gcs ?? 10) + 4);
+      vitals.spo2 = Math.min(98, vitals.spo2 + 8);
+    }
+  }
+
+  // --- 9. HYPERTONIC SALINE IN CEREBRAL OEDEMA (head injury / stroke) ---
+  if (treatment.id.includes('hypertonic_saline') || treatment.id.includes('mannitol')) {
+    const isHeadInjury = sub.includes('head') || sub.includes('tbi') || sub.includes('intracranial') || sub.includes('stroke');
+    if (isHeadInjury) {
+      vitals.gcs = Math.min(15, (vitals.gcs ?? 15) + 1);
+    }
+  }
+
+  // Attach warnings to the response
+  if (warnings.length > 0 && !response.warningMessage) {
+    response.warningMessage = warnings[0];
+  } else if (warnings.length > 0 && response.warningMessage) {
+    response.warningMessage = `${response.warningMessage} | ${warnings.join(' | ')}`;
+  }
 }

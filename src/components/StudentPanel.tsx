@@ -55,6 +55,11 @@ import { toast } from 'sonner';
 // AuscultationPanel removed — sounds now play inline from 3D Physical Examination
 import { DebriefingResourcesPanel } from '@/components/DebriefingResourcesPanel';
 import { OnboardingTour, useOnboardingTour } from '@/components/OnboardingTour';
+import { NarrationButton, VoiceToggleButton } from '@/components/NarrationButton';
+import { useVoiceNarration } from '@/hooks/useVoiceNarration';
+import { MedicalControlDialog } from '@/components/MedicalControlDialog';
+import { generateNarrativeReport } from '@/lib/narrativeReport';
+import { generateEDOutcome } from '@/lib/edOutcome';
 import { exportSessionToPDF } from '@/lib/pdf-export';
 import { getResourcesForDebriefing } from '@/data/diversifiedResources';
 
@@ -178,6 +183,12 @@ interface StudentPanelProps {
 export function StudentPanel({ onExit }: StudentPanelProps) {
   // Onboarding tour for first-time users
   const { showTour, dismissTour } = useOnboardingTour();
+
+  // Voice narration for dispatch/scene/patient info
+  const { speak: speakNarration } = useVoiceNarration();
+
+  // Medical control dialog
+  const [showMedicalControl, setShowMedicalControl] = useState(false);
 
   // Core state
   const [phase, _setPhase] = useState<StudentPhase>('select');
@@ -610,6 +621,23 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
     setPhase('vitals');
     toast.success('Case started — begin your assessment', { duration: 3000 });
 
+    // Auto-narrate the dispatch info and scene in a dispatcher voice
+    if (currentCase) {
+      const dispatch = currentCase.dispatchInfo;
+      const patient = currentCase.patientInfo;
+      const scene = currentCase.sceneInfo;
+      const parts: string[] = [];
+      parts.push(`Dispatch. ${dispatch?.callReason || 'Unknown call'}.`);
+      if (dispatch?.location) parts.push(`Location: ${dispatch.location}.`);
+      if (patient?.age && patient?.gender) {
+        parts.push(`Patient is a ${patient.age} year old ${patient.gender}.`);
+      }
+      if (scene?.description) parts.push(`On arrival: ${scene.description}`);
+      const fullText = parts.join(' ');
+      // Small delay so the UI settles first
+      setTimeout(() => speakNarration(fullText, { role: 'dispatcher' }), 500);
+    }
+
     // Start deterioration timer — patient deteriorates if not treated
     if (deteriorationIntervalRef.current) clearInterval(deteriorationIntervalRef.current);
     deteriorationIntervalRef.current = setInterval(() => {
@@ -1039,6 +1067,38 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
     };
   }, [currentCase, session, selectedYear, appliedTreatments, vitalsHistory, elapsedSeconds, caseStartTime, assessmentTracker]);
 
+  // AI-style narrative report — only computed when the case is complete
+  const narrativeReport = useMemo(() => {
+    if (!currentCase || !performanceMetrics || phase !== 'postcase') return null;
+    return generateNarrativeReport({
+      caseData: currentCase,
+      appliedTreatments,
+      appliedTreatmentIds,
+      vitalsHistory,
+      caseStartTime,
+      assessmentPerformedIds: assessmentTracker?.performed.map(p => p.stepId) ?? [],
+      transportDecision: transportDecisions ? 'transport' : null,
+      totalScore: performanceMetrics.percentage,
+    });
+  }, [currentCase, performanceMetrics, phase, appliedTreatments, appliedTreatmentIds, vitalsHistory, caseStartTime, assessmentTracker, transportDecisions]);
+
+  // ED outcome / continuity of care — only when transported
+  const edOutcome = useMemo(() => {
+    if (!currentCase || !performanceMetrics || phase !== 'postcase') return null;
+    if (!transportDecisions) return null; // Only generate if patient was transported
+    const finalVitals = vitalsHistory[vitalsHistory.length - 1] || currentVitals;
+    if (!finalVitals) return null;
+    return generateEDOutcome({
+      caseData: currentCase,
+      finalVitals,
+      appliedTreatmentIds,
+      totalScore: performanceMetrics.percentage,
+      transportPreAlert: transportDecisions.preAlert,
+      transportDestination: transportDecisions.destination,
+      suspectedDiagnosis: transportDecisions.provisionalDiagnosis,
+    });
+  }, [currentCase, performanceMetrics, phase, appliedTreatmentIds, vitalsHistory, currentVitals, transportDecisions]);
+
   // Reset to start
   const resetToStart = useCallback(() => {
     setCurrentCase(null);
@@ -1116,6 +1176,8 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
             </div>
 
             <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+              {/* Voice toggle */}
+              <VoiceToggleButton />
               {/* Back button */}
               {canGoBack && (
                 <button
@@ -1610,6 +1672,12 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                     {currentCase.dispatchInfo.location}
                   </p>
                 </div>
+                <NarrationButton
+                  role="dispatcher"
+                  size="md"
+                  label="Replay dispatch briefing"
+                  text={`Dispatch. ${currentCase.dispatchInfo?.callReason || ''}. Location: ${currentCase.dispatchInfo?.location || ''}. Patient is a ${currentCase.patientInfo?.age || ''} year old ${currentCase.patientInfo?.gender || ''}. On arrival: ${currentCase.sceneInfo?.description || ''}`}
+                />
                 <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 dark:bg-primary/15 border border-primary/20 shrink-0">
                   <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-primary" />
                   <span className="font-mono text-xs sm:text-sm font-semibold text-primary">{formatTime(elapsedSeconds)}</span>
@@ -1623,6 +1691,14 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                   className="gap-1 sm:gap-1.5 text-[10px] sm:text-xs rounded-lg flex-1 sm:flex-none h-8 dark:border-slate-700"
                 >
                   <FileText className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> <span className="hidden xs:inline">Case </span>Details
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowMedicalControl(true)}
+                  className="gap-1 sm:gap-1.5 text-[10px] sm:text-xs rounded-lg flex-1 sm:flex-none h-8 border-blue-500/40 text-blue-600 dark:text-blue-400 hover:bg-blue-500/10"
+                >
+                  <Phone className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> <span className="hidden xs:inline">Call </span>Med Control
                 </Button>
                 <div className="relative flex-1 sm:flex-none">
                   <Button
@@ -2431,13 +2507,36 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                           .map(treatment => {
                             const isApplied = appliedTreatmentIds.includes(treatment.id);
                             const isCurrentlyApplying = applyingTreatmentId === treatment.id;
+                            // Determine if treatment is gated and why
+                            const coreTemp = currentVitals?.temperature ?? 37;
+                            const isSevereHypothermia = coreTemp < 30;
+                            const needsIV = treatment.requiresIVAccess && !appliedTreatmentIds.includes('iv_access');
+                            const hypothermiaBlock = isSevereHypothermia && treatment.category === 'medication';
+                            let gateReason: string | null = null;
+                            if (needsIV) gateReason = 'Requires IV access first. Establish IV before giving this medication.';
+                            else if (hypothermiaBlock) gateReason = `Withheld — core temperature ${coreTemp}°C is below 30°C. All medications are withheld in severe hypothermia. Rewarm first.`;
+                            const isGated = gateReason !== null;
                             return (
                               <div key={treatment.id} className={`flex items-center gap-2 p-2 rounded-lg border text-xs transition-all ${
-                                isApplied ? 'bg-green-500/5 border-green-500/20' : 'border-border/30 hover:bg-accent/20'
+                                isApplied ? 'bg-green-500/5 border-green-500/20' :
+                                isGated ? 'bg-amber-500/5 border-amber-500/20' :
+                                'border-border/30 hover:bg-accent/20'
                               }`}>
                                 <div className="flex-1 min-w-0">
-                                  <span className="font-medium">{treatment.name}</span>
-                                  <p className="text-[10px] text-muted-foreground truncate">{treatment.description}</p>
+                                  <div className="flex items-center gap-1">
+                                    <span className="font-medium">{treatment.name}</span>
+                                    {isGated && (
+                                      <span
+                                        title={gateReason!}
+                                        className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-amber-500/15 border border-amber-500/40 shrink-0 cursor-help"
+                                      >
+                                        <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400">i</span>
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="text-[10px] text-muted-foreground truncate">
+                                    {isGated ? gateReason : treatment.description}
+                                  </p>
                                 </div>
                                 <Button
                                   size="sm"
@@ -2556,6 +2655,18 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                 currentRhythm={patientState.currentRhythm}
                 currentPulse={currentVitals?.pulse || 0}
                 isInArrest={patientState.isInArrest}
+              />
+            )}
+
+            {/* Medical Control Dialog */}
+            {currentCase && currentVitals && (
+              <MedicalControlDialog
+                open={showMedicalControl}
+                onClose={() => setShowMedicalControl(false)}
+                caseData={currentCase}
+                currentVitals={currentVitals}
+                appliedTreatmentIds={appliedTreatmentIds}
+                isInArrest={patientState?.isInArrest ?? false}
               />
             )}
 
@@ -2721,6 +2832,215 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                 <Progress value={performanceMetrics.percentage} className="mt-4 sm:mt-5 h-2" />
               </CardContent>
             </Card>
+
+            {/* AI-Style Narrative Debrief */}
+            {narrativeReport && (
+              <Card className={`bg-card border-2 rounded-2xl overflow-hidden ${
+                narrativeReport.clinicalVerdict === 'excellent' ? 'border-green-500/40' :
+                narrativeReport.clinicalVerdict === 'good' ? 'border-blue-500/40' :
+                narrativeReport.clinicalVerdict === 'acceptable' ? 'border-amber-500/40' :
+                'border-red-500/40'
+              }`}>
+                <CardHeader className="pb-3 border-b border-border/30">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <div className={`flex h-6 w-6 items-center justify-center rounded-lg ${
+                      narrativeReport.clinicalVerdict === 'excellent' ? 'bg-green-500/15' :
+                      narrativeReport.clinicalVerdict === 'good' ? 'bg-blue-500/15' :
+                      narrativeReport.clinicalVerdict === 'acceptable' ? 'bg-amber-500/15' :
+                      'bg-red-500/15'
+                    }`}>
+                      <Sparkles className={`h-3.5 w-3.5 ${
+                        narrativeReport.clinicalVerdict === 'excellent' ? 'text-green-500' :
+                        narrativeReport.clinicalVerdict === 'good' ? 'text-blue-500' :
+                        narrativeReport.clinicalVerdict === 'acceptable' ? 'text-amber-500' :
+                        'text-red-500'
+                      }`} />
+                    </div>
+                    Clinical Debrief
+                    <NarrationButton
+                      size="sm"
+                      label="Read debrief aloud"
+                      role="narrator"
+                      text={`${narrativeReport.summary} What went well: ${narrativeReport.whatWentWell.join('. ')}. Timing observations: ${narrativeReport.timingObservations.join('. ')}. Patterns to develop: ${narrativeReport.patternsToImprove.join('. ')}`}
+                      className="ml-auto"
+                    />
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-4 space-y-4 text-sm">
+                  {/* Summary paragraph */}
+                  <p className="leading-relaxed text-foreground/90 italic">
+                    {narrativeReport.summary}
+                  </p>
+
+                  {/* What went well */}
+                  {narrativeReport.whatWentWell.length > 0 && (
+                    <div>
+                      <h4 className="text-[11px] font-semibold uppercase tracking-wider text-green-600 dark:text-green-400 mb-2 flex items-center gap-1.5">
+                        <CheckCircle2 className="h-3.5 w-3.5" /> What Went Well
+                      </h4>
+                      <ul className="space-y-1.5">
+                        {narrativeReport.whatWentWell.map((item, idx) => (
+                          <li key={idx} className="flex gap-2 text-xs sm:text-sm leading-relaxed">
+                            <span className="text-green-500 shrink-0 mt-0.5">✓</span>
+                            <span className="text-foreground/85">{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Timing observations */}
+                  {narrativeReport.timingObservations.length > 0 && (
+                    <div>
+                      <h4 className="text-[11px] font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400 mb-2 flex items-center gap-1.5">
+                        <Clock className="h-3.5 w-3.5" /> Timing Observations
+                      </h4>
+                      <ul className="space-y-1.5">
+                        {narrativeReport.timingObservations.map((item, idx) => (
+                          <li key={idx} className="flex gap-2 text-xs sm:text-sm leading-relaxed">
+                            <span className="text-blue-500 shrink-0 mt-0.5">◆</span>
+                            <span className="text-foreground/85">{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Patterns to improve */}
+                  {narrativeReport.patternsToImprove.length > 0 && (
+                    <div>
+                      <h4 className="text-[11px] font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400 mb-2 flex items-center gap-1.5">
+                        <TrendingUp className="h-3.5 w-3.5" /> Patterns to Develop
+                      </h4>
+                      <ul className="space-y-1.5">
+                        {narrativeReport.patternsToImprove.map((item, idx) => (
+                          <li key={idx} className="flex gap-2 text-xs sm:text-sm leading-relaxed">
+                            <span className="text-amber-500 shrink-0 mt-0.5">→</span>
+                            <span className="text-foreground/85">{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* ED Outcome / Continuity of Care */}
+            {edOutcome && (
+              <Card className="bg-card border-2 border-indigo-500/30 rounded-2xl overflow-hidden">
+                <CardHeader className="pb-3 border-b border-border/30 bg-indigo-500/5">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-500/15">
+                      <HeartPulse className="h-3.5 w-3.5 text-indigo-500" />
+                    </div>
+                    What Happened Next — ED Continuity
+                    <NarrationButton
+                      size="sm"
+                      label="Read ED outcome aloud"
+                      role="narrator"
+                      text={`${edOutcome.edAssessment} ${edOutcome.confirmedDiagnosis}. Disposition: ${edOutcome.dispositionLabel}. 24-hour outcome: ${edOutcome.twentyFourHourOutcome}`}
+                      className="ml-auto"
+                    />
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-4 space-y-4 text-sm">
+                  {/* ED assessment */}
+                  <div>
+                    <h4 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">ED Physician's Note</h4>
+                    <p className="text-xs sm:text-sm text-foreground/85 leading-relaxed bg-muted/30 rounded-xl p-3 border border-border/30">
+                      {edOutcome.edAssessment}
+                    </p>
+                  </div>
+
+                  {/* Confirmed diagnosis */}
+                  <div>
+                    <h4 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Confirmed Diagnosis</h4>
+                    <div className="flex items-center gap-2 bg-blue-500/5 border border-blue-500/20 rounded-xl p-3">
+                      <CheckCircle2 className="h-4 w-4 text-blue-500 shrink-0" />
+                      <p className="text-xs sm:text-sm font-medium">{edOutcome.confirmedDiagnosis}</p>
+                    </div>
+                  </div>
+
+                  {/* Your suspicion accuracy */}
+                  <div>
+                    <h4 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Your Working Diagnosis</h4>
+                    <div className={`rounded-xl p-3 border ${
+                      edOutcome.suspicionAccuracy === 'correct' ? 'bg-green-500/5 border-green-500/30' :
+                      edOutcome.suspicionAccuracy === 'partial' ? 'bg-amber-500/5 border-amber-500/30' :
+                      'bg-red-500/5 border-red-500/30'
+                    }`}>
+                      <div className="flex items-center gap-2 mb-1">
+                        <Badge className={`text-[9px] ${
+                          edOutcome.suspicionAccuracy === 'correct' ? 'bg-green-500' :
+                          edOutcome.suspicionAccuracy === 'partial' ? 'bg-amber-500' :
+                          'bg-red-500'
+                        } text-white`}>
+                          {edOutcome.suspicionAccuracy === 'correct' ? 'CORRECT' :
+                           edOutcome.suspicionAccuracy === 'partial' ? 'PARTIAL' :
+                           'INCORRECT'}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-foreground/85 leading-relaxed">{edOutcome.suspicionComment}</p>
+                    </div>
+                  </div>
+
+                  {/* Pre-alert impact */}
+                  <div>
+                    <h4 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Pre-Alert Impact</h4>
+                    <div className={`rounded-xl p-3 border ${
+                      edOutcome.preAlertImpact === 'helpful' ? 'bg-green-500/5 border-green-500/30' :
+                      edOutcome.preAlertImpact === 'neutral' ? 'bg-muted/30 border-border/30' :
+                      'bg-amber-500/5 border-amber-500/30'
+                    }`}>
+                      <div className="flex items-center gap-2 mb-1">
+                        <Badge className={`text-[9px] ${
+                          edOutcome.preAlertImpact === 'helpful' ? 'bg-green-500' :
+                          edOutcome.preAlertImpact === 'neutral' ? 'bg-gray-500' :
+                          'bg-amber-500'
+                        } text-white`}>
+                          {edOutcome.preAlertImpact === 'helpful' ? 'HELPFUL' :
+                           edOutcome.preAlertImpact === 'neutral' ? 'NEUTRAL' :
+                           'MISSED OPPORTUNITY'}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-foreground/85 leading-relaxed">{edOutcome.preAlertComment}</p>
+                    </div>
+                  </div>
+
+                  {/* ED treatment */}
+                  {edOutcome.treatmentInED.length > 0 && (
+                    <div>
+                      <h4 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Treatment in ED</h4>
+                      <ul className="space-y-1">
+                        {edOutcome.treatmentInED.map((item, idx) => (
+                          <li key={idx} className="flex gap-2 text-xs text-foreground/85">
+                            <span className="text-indigo-500 shrink-0">•</span>
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Disposition */}
+                  <div>
+                    <h4 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Disposition</h4>
+                    <div className="bg-indigo-500/10 rounded-xl p-3 border border-indigo-500/30">
+                      <p className="text-sm font-semibold text-indigo-700 dark:text-indigo-300">{edOutcome.dispositionLabel}</p>
+                    </div>
+                  </div>
+
+                  {/* 24-hour outcome */}
+                  <div>
+                    <h4 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">24-Hour Outcome</h4>
+                    <p className="text-xs sm:text-sm text-foreground/90 leading-relaxed italic bg-muted/30 rounded-xl p-3 border border-border/30">
+                      {edOutcome.twentyFourHourOutcome}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Penalty Breakdown */}
             {performanceMetrics.penaltyTotal > 0 && (
