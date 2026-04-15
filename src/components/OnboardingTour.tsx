@@ -9,8 +9,9 @@ import { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Shield, Stethoscope, Activity, Pill, Ambulance,
-  GraduationCap, ChevronRight, ChevronLeft, X, Sparkles,
+  GraduationCap, ChevronRight, ChevronLeft, X, Sparkles, Compass,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const TOUR_STORAGE_KEY = 'paramedic-studio-tour-completed';
 
@@ -19,6 +20,10 @@ interface TourStep {
   description: string;
   icon: React.ReactNode;
   color: string;
+  /** Optional i18n key for the title — falls back to `title` when absent. */
+  i18nKeyTitle?: string;
+  /** Optional i18n key for the body — falls back to `description` when absent. */
+  i18nKeyBody?: string;
 }
 
 const TOUR_STEPS: TourStep[] = [
@@ -46,6 +51,15 @@ const TOUR_STEPS: TourStep[] = [
     icon: <Stethoscope className="h-8 w-8" />,
     color: 'text-purple-500',
   },
+  {
+    // Localised at render time via i18nKeyTitle / i18nKeyBody below.
+    title: 'Guided Exam Mode',
+    description: 'Turn on Guided mode to assess the patient in clinically correct head-to-toe order. Out-of-sequence regions are locked until you complete the previous step.',
+    i18nKeyTitle: 'guidedExam.tourTitle',
+    i18nKeyBody: 'guidedExam.tourBody',
+    icon: <Compass className="h-8 w-8" />,
+    color: 'text-indigo-500',
+  } as TourStep,
   {
     title: 'Treatments & Interventions',
     description: 'Apply treatments based on your assessment findings. Medications require IV access first. The patient responds dynamically — vitals change based on what you do (or don\'t do).',
@@ -91,9 +105,14 @@ interface OnboardingTourProps {
 }
 
 export function OnboardingTour({ onDismiss }: OnboardingTourProps) {
+  const { t } = useTranslation();
   const [step, setStep] = useState(0);
   const current = TOUR_STEPS[step];
   const isLast = step === TOUR_STEPS.length - 1;
+  // Phase 2 — honour per-step i18n keys when provided; otherwise use the
+  // hard-coded English copy so existing steps keep rendering verbatim.
+  const localisedTitle = current.i18nKeyTitle ? t(current.i18nKeyTitle) : current.title;
+  const localisedBody = current.i18nKeyBody ? t(current.i18nKeyBody) : current.description;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
@@ -123,12 +142,12 @@ export function OnboardingTour({ onDismiss }: OnboardingTourProps) {
 
           {/* Title */}
           <h2 className="text-lg sm:text-xl font-bold mb-2 text-foreground">
-            {current.title}
+            {localisedTitle}
           </h2>
 
           {/* Description */}
           <p className="text-sm text-muted-foreground leading-relaxed mb-6">
-            {current.description}
+            {localisedBody}
           </p>
 
           {/* Step dots */}

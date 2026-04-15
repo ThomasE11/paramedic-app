@@ -1341,6 +1341,133 @@ function applyCrossSystemPhysiology(
     }
   }
 
+  // ============================================================================
+  // Phase 3 — additional cross-system interaction chains
+  // ============================================================================
+
+  const age = caseData.patientInfo?.age ?? 0;
+  const cat = (caseData.category || '').toLowerCase();
+  const history = (caseData.history?.medicalConditions || []).join(' ').toLowerCase();
+  const meds = (caseData.history?.medications || []).join(' ').toLowerCase();
+
+  // --- 10. FLUID OVERLOAD IN ELDERLY / STIFF HEARTS ---
+  // Aggressive crystalloid in the elderly or anyone with cardiac history eventually
+  // tips into iatrogenic pulmonary oedema even when they're not a classic CHF case.
+  // Fires on the third+ bolus, or a second bolus in the elderly.
+  const boluses =
+    (state.treatmentCounts['saline_bolus_250ml'] ?? 0) +
+    (state.treatmentCounts['saline_bolus_500ml'] ?? 0) +
+    (state.treatmentCounts['saline_bolus_1000ml'] ?? 0) +
+    (state.treatmentCounts['hartmanns_500ml'] ?? 0) +
+    (state.treatmentCounts['hartmanns_1000ml'] ?? 0) +
+    (state.treatmentCounts['crystalloid_bolus'] ?? 0);
+  const cardiacHistory = history.includes('chf') || history.includes('heart failure') ||
+    history.includes('cardiomyopathy') || history.includes('ef ') || history.includes('ejection fraction');
+  const overloadThreshold = age >= 70 || cardiacHistory ? 2 : 3;
+  if (isFluidBolus && !isHeartFailure && boluses >= overloadThreshold) {
+    const oldSpO2 = vitals.spo2;
+    vitals.spo2 = Math.max(82, vitals.spo2 - 3);
+    vitals.respiration = Math.min(38, vitals.respiration + 3);
+    const ageNote = age >= 70 ? ` Age ${age} — stiffer ventricles tolerate much less volume` : cardiacHistory ? ' Prior cardiac history reduces fluid tolerance' : '';
+    warnings.push(`Volume overload — SpO2 ${oldSpO2}% \u2192 ${vitals.spo2}% after ${boluses} boluses.${ageNote}. Reassess lung bases before the next bolus; consider stopping fluids and sitting the patient up.`);
+  }
+
+  // --- 11. NSAIDs / ACE INHIBITORS IN ACUTE KIDNEY INJURY OR HYPOVOLAEMIA ---
+  // Pre-renal AKI is worsened by anything that drops glomerular perfusion.
+  const isNsaid = treatment.id.includes('ibuprofen') || treatment.id.includes('ketorolac') ||
+    treatment.id.includes('diclofenac') || treatment.id.includes('naproxen') || treatment.id.includes('nsaid');
+  const isAcei = treatment.id.includes('captopril') || treatment.id.includes('enalapril') ||
+    treatment.id.includes('lisinopril') || treatment.id.includes('ramipril') || treatment.id.includes('perindopril');
+  const bpNow = parseBP(vitals.bp);
+  const isHypovolaemic = bpNow.systolic < 100 || vitals.pulse > 110;
+  const renalRisk = history.includes('ckd') || history.includes('renal') || history.includes('kidney') ||
+    sub.includes('sepsis') || sub.includes('dehydr') || sub.includes('vomit') || sub.includes('diarrh') || isHypovolaemic;
+  if ((isNsaid || isAcei) && renalRisk) {
+    vitals.pulse = Math.min(160, vitals.pulse + 8);
+    bpNow.systolic = Math.max(60, bpNow.systolic - 12);
+    bpNow.diastolic = Math.max(40, bpNow.diastolic - 6);
+    vitals.bp = formatBP(bpNow.systolic, bpNow.diastolic);
+    const drugClass = isNsaid ? 'NSAID' : 'ACE-inhibitor';
+    warnings.push(`${drugClass} in a kidney-vulnerable patient — BP ${bpNow.systolic}/${bpNow.diastolic}. Both NSAIDs (efferent vasoconstriction block) and ACE-inhibitors (efferent dilatation) crash GFR in pre-renal states. Hold until euvolaemia confirmed.`);
+  }
+
+  // --- 12. TEMPERATURE CASCADE FROM MASSIVE COLD TRANSFUSION / COOL FLUIDS ---
+  // The lethal triad: hypothermia \u2192 coagulopathy \u2192 acidosis. We don't track pH, but
+  // we can push temperature down on every further cold bolus beyond the second.
+  if (isFluidBolus && boluses >= 2 && !sub.includes('hypothermia')) {
+    const oldTemp = vitals.temperature ?? 37;
+    // Assume ~1L cold crystalloid drops core ~0.3\u00b0C in an average adult.
+    const tempDrop = 0.25;
+    if (oldTemp > 34.5) {
+      vitals.temperature = Math.max(34, Math.round((oldTemp - tempDrop) * 10) / 10);
+      if (vitals.temperature <= 35.5 && oldTemp > 35.5) {
+        warnings.push(`Patient now hypothermic (${vitals.temperature}\u00b0C) from ${boluses} cold fluid boluses. Coagulopathy risk \u2014 warm fluids, cover the patient, and reassess. This is the first step of the lethal triad in trauma.`);
+      }
+    }
+  }
+
+  // --- 13. INOTROPE / VASOPRESSOR CEILING — TACHYPHYLAXIS ---
+  // Repeat pushes of the same pressor stop giving linear HR/BP response.
+  // Also flag when HR > 150: myocardial O2 demand outstrips supply, especially in ACS.
+  const isPressor = treatment.id.includes('adrenaline') || treatment.id.includes('noradrenaline') ||
+    treatment.id.includes('norepinephrine') || treatment.id.includes('metaraminol') || treatment.id.includes('phenylephrine') || treatment.id.includes('ephedrine');
+  const pressorCount = (state.treatmentCounts[treatment.id] ?? 0);
+  if (isPressor && pressorCount >= 3) {
+    warnings.push(`${treatment.name} \u00d7${pressorCount} \u2014 receptor desensitisation (tachyphylaxis) reduces each subsequent dose's effect. Swap agent, add a second line, or look for an unaddressed cause (occult haemorrhage, tension pneumothorax, tamponade, pH < 7.2).`);
+  }
+  if (isPressor && vitals.pulse >= 150) {
+    const acsRisk = sub.includes('stemi') || sub.includes('nstemi') || sub.includes('acs') ||
+      sub.includes('angina') || history.includes('cad') || history.includes('coronary');
+    if (acsRisk) {
+      warnings.push(`HR ${vitals.pulse} on pressors with coronary disease \u2014 every bpm above 150 increases myocardial O2 demand while dropping diastolic filling time. Risk of demand ischaemia. Consider rate control vs. fixing underlying cause.`);
+    }
+  }
+
+  // --- 14. BRONCHOCONSTRICTION CHAIN: beta-blockers, NSAIDs, cold air triggers ---
+  // NSAIDs/aspirin trigger bronchospasm in "Samter's triad" / aspirin-exacerbated respiratory disease.
+  if (isNsaid || treatment.id.includes('aspirin_300mg') || treatment.id.includes('aspirin_325mg')) {
+    const hasAERD = history.includes('samter') || history.includes('nasal polyp') || history.includes('aspirin sensitiv') || history.includes('aerd');
+    if (hasAERD || (isAsthma && (treatment.id.includes('aspirin') || isNsaid))) {
+      const oldSpO2 = vitals.spo2;
+      vitals.spo2 = Math.max(80, vitals.spo2 - 4);
+      vitals.respiration = Math.min(36, vitals.respiration + 3);
+      warnings.push(`${treatment.name} in aspirin-sensitive asthma \u2014 SpO2 ${oldSpO2}% \u2192 ${vitals.spo2}% from bronchospasm. Samter's triad (asthma + nasal polyps + AERD) contraindicates all COX inhibitors. Stop the drug; salbutamol nebuliser + IM adrenaline if severe.`);
+    }
+  }
+
+  // --- 15. GTN + LOOP DIURETIC + UPRIGHT POSITION = SYNCOPE RISK ---
+  // Classic pre-hospital over-treatment of dyspnoea: stacking preload reduction.
+  const gtnCount = (state.treatmentCounts['gtn_spray'] ?? 0) + (state.treatmentCounts['gtn_sl'] ?? 0) + (state.treatmentCounts['nitroglycerin'] ?? 0);
+  const loopCount = (state.treatmentCounts['frusemide_40mg'] ?? 0) + (state.treatmentCounts['frusemide_80mg'] ?? 0) + (state.treatmentCounts['furosemide'] ?? 0) + (state.treatmentCounts['lasix'] ?? 0);
+  const justGaveGTN = isGTN || treatment.id.includes('gtn');
+  const justGaveLoop = treatment.id.includes('frusemide') || treatment.id.includes('furosemide') || treatment.id.includes('lasix');
+  if ((justGaveGTN && loopCount >= 1) || (justGaveLoop && gtnCount >= 1)) {
+    const bp = parseBP(vitals.bp);
+    const oldSBP = bp.systolic;
+    bp.systolic = Math.max(70, bp.systolic - 18);
+    bp.diastolic = Math.max(45, bp.diastolic - 10);
+    vitals.bp = formatBP(bp.systolic, bp.diastolic);
+    if (bp.systolic < 90) {
+      warnings.push(`Stacked preload reduction (GTN + loop diuretic) \u2014 SBP ${oldSBP} \u2192 ${bp.systolic}. The patient is now pre-syncopal. Lay them flat, stop further GTN, and consider a small fluid challenge. Classic over-treatment error in APO.`);
+    } else {
+      warnings.push(`GTN + loop diuretic stacked \u2014 BP dropping (${oldSBP} \u2192 ${bp.systolic}). Re-check BP before the next dose; don't chase oedema into hypotension.`);
+    }
+  }
+
+  // --- 16. LONG-TERM BETA-BLOCKER MASKING ANAPHYLAXIS / SHOCK ---
+  // Home-medication context: beta-blocker users need higher adrenaline doses and
+  // glucagon may be required when adrenaline under-responds.
+  const onChronicBB = meds.includes('metoprolol') || meds.includes('bisoprolol') || meds.includes('atenolol') ||
+    meds.includes('carvedilol') || meds.includes('propranolol') || meds.includes('nebivolol');
+  if (onChronicBB && (sub.includes('anaphylax') || sub.includes('shock')) && treatment.id.includes('adrenaline')) {
+    // Blunt the expected HR/BP bump from adrenaline.
+    const bp = parseBP(vitals.bp);
+    vitals.pulse = Math.max(40, vitals.pulse - 6);
+    bp.systolic = Math.max(60, bp.systolic - 8);
+    vitals.bp = formatBP(bp.systolic, bp.diastolic);
+    warnings.push(`Chronic beta-blocker on board (${meds.includes('carvedilol') ? 'carvedilol' : 'beta-blocker'}) \u2014 adrenaline response is blunted at the beta receptor. Consider IV glucagon 1-2 mg as rescue, and expect to repeat adrenaline more frequently. This is why a "normal" anaphylaxis dose may fail.`);
+  }
+
   // Attach warnings to the response
   if (warnings.length > 0 && !response.warningMessage) {
     response.warningMessage = warnings[0];

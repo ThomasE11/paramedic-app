@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { CaseScenario, StudentYear, CaseSession, VitalSigns, AppliedTreatment, SimulationObjective, DebriefingResource, InstructorAssessmentNote } from '@/types';
 import { useGradualVitalChanges } from '@/hooks/useGradualVitalChanges';
 import { allCases, getRandomCase, yearLevels, caseCategories, priorities } from '@/data/cases';
@@ -7,6 +8,7 @@ import { getResourcesForDebriefing } from '@/data/diversifiedResources';
 import { applyTreatmentEffectEnhanced, ensureCompleteVitals } from '@/data/treatmentEffects';
 import { applyTreatmentEffectGradual, type Treatment } from '@/data/enhancedTreatmentEffects';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -21,6 +23,14 @@ import { Toaster, toast } from 'sonner';
 
 // Lazy load the student panel
 const StudentPanel = lazy(() => import('@/components/StudentPanel'));
+
+// Lazy load classroom multiplayer UIs (Phase 4) — only loaded when the user
+// clicks into one of the classroom entry points, so single-player bundles
+// aren't penalised.
+const ClassroomLobby = lazy(() => import('@/components/classroom/ClassroomLobby'));
+const ClassroomJoin = lazy(() => import('@/components/classroom/ClassroomJoin'));
+
+import { isSupabaseConfigured } from '@/lib/supabase';
 
 // Lazy load heavy components for better performance
 const CaseDisplay = lazy(() => import('@/components/CaseDisplay').then(m => ({ default: m.CaseDisplay })));
@@ -94,9 +104,11 @@ function EmptyState({ onGenerate }: { onGenerate: () => void }) {
   );
 }
 
-type UserRole = 'none' | 'educator' | 'student';
+type UserRole = 'none' | 'educator' | 'student' | 'classroom-host' | 'classroom-join';
 
 function RoleSelection({ onSelect }: { onSelect: (role: UserRole) => void }) {
+  const { t } = useTranslation();
+  const classroomEnabled = isSupabaseConfigured();
   return (
     <div className="min-h-screen bg-background flex flex-col relative overflow-hidden">
 
@@ -106,9 +118,12 @@ function RoleSelection({ onSelect }: { onSelect: (role: UserRole) => void }) {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
             <Activity className="h-4 w-4 text-primary" />
           </div>
-          <span className="text-sm font-semibold tracking-tight text-foreground/80">ParaMedic Studio</span>
+          <span className="text-sm font-semibold tracking-tight text-foreground/80">{t('app.name')}</span>
         </div>
-        <ThemeToggle />
+        <div className="flex items-center gap-2">
+          <LanguageSwitcher />
+          <ThemeToggle />
+        </div>
       </div>
 
       <div className="relative z-10 flex-1 flex items-center justify-center p-6">
@@ -120,10 +135,10 @@ function RoleSelection({ onSelect }: { onSelect: (role: UserRole) => void }) {
             </div>
             <div className="space-y-3">
               <h1 className="heading-clean text-[2.75rem] leading-[1.1]">
-                UAE Paramedic<br />Case Simulator
+                {t('app.tagline')}
               </h1>
               <p className="text-muted-foreground text-lg max-w-md mx-auto leading-relaxed">
-                Immersive clinical training with real-time LIFEPAK 20 monitoring and evidence-based scenarios
+                {t('app.subtitle')}
               </p>
             </div>
           </div>
@@ -140,9 +155,9 @@ function RoleSelection({ onSelect }: { onSelect: (role: UserRole) => void }) {
                   <Users className="h-8 w-8 text-emerald-500" />
                 </div>
                 <div className="text-center space-y-2.5">
-                  <h2 className="heading-premium text-xl">Educator Panel</h2>
+                  <h2 className="heading-premium text-xl">{t('role.educator')}</h2>
                   <p className="text-sm text-muted-foreground leading-relaxed max-w-[240px]">
-                    Generate cases, set objectives, run simulations, and guide debriefing sessions
+                    {t('role.educatorDescription')}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-1.5 justify-center">
@@ -151,9 +166,21 @@ function RoleSelection({ onSelect }: { onSelect: (role: UserRole) => void }) {
                   ))}
                 </div>
                 <div className="flex items-center gap-2 text-sm font-semibold text-emerald-600 dark:text-emerald-400 group-hover:gap-3 transition-all duration-300 mt-1">
-                  Open Educator Panel
-                  <ChevronRight className="h-4 w-4" />
+                  {t('role.educatorCta')}
+                  <ChevronRight className="h-4 w-4 rtl:rotate-180" />
                 </div>
+                {classroomEnabled && (
+                  <button
+                    type="button"
+                    onClick={e => {
+                      e.stopPropagation();
+                      onSelect('classroom-host');
+                    }}
+                    className="mt-2 text-xs font-medium text-emerald-700/80 dark:text-emerald-400/80 underline decoration-dotted underline-offset-4 hover:text-emerald-600 dark:hover:text-emerald-300 transition-colors"
+                  >
+                    {t('classroom.hostCta')}
+                  </button>
+                )}
               </div>
             </button>
 
@@ -167,9 +194,9 @@ function RoleSelection({ onSelect }: { onSelect: (role: UserRole) => void }) {
                   <GraduationCap className="h-8 w-8 text-blue-500" />
                 </div>
                 <div className="text-center space-y-2.5">
-                  <h2 className="heading-premium text-xl">Student Training</h2>
+                  <h2 className="heading-premium text-xl">{t('role.student')}</h2>
                   <p className="text-sm text-muted-foreground leading-relaxed max-w-[240px]">
-                    Work through real scenarios with live vitals, apply treatments, and get performance feedback
+                    {t('role.studentDescription')}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-1.5 justify-center">
@@ -178,9 +205,21 @@ function RoleSelection({ onSelect }: { onSelect: (role: UserRole) => void }) {
                   ))}
                 </div>
                 <div className="flex items-center gap-2 text-sm font-semibold text-blue-600 dark:text-blue-400 group-hover:gap-3 transition-all duration-300 mt-1">
-                  Start Training
-                  <ChevronRight className="h-4 w-4" />
+                  {t('role.studentCta')}
+                  <ChevronRight className="h-4 w-4 rtl:rotate-180" />
                 </div>
+                {classroomEnabled && (
+                  <button
+                    type="button"
+                    onClick={e => {
+                      e.stopPropagation();
+                      onSelect('classroom-join');
+                    }}
+                    className="mt-2 text-xs font-medium text-blue-700/80 dark:text-blue-400/80 underline decoration-dotted underline-offset-4 hover:text-blue-600 dark:hover:text-blue-300 transition-colors"
+                  >
+                    {t('classroom.joinCta')}
+                  </button>
+                )}
               </div>
             </button>
           </div>
@@ -190,24 +229,24 @@ function RoleSelection({ onSelect }: { onSelect: (role: UserRole) => void }) {
             <div className="bg-muted/50 border border-border rounded-xl px-8 py-4 flex items-center gap-10">
               <div className="flex items-center gap-2.5 text-sm">
                 <div className="w-2 h-2 rounded-full bg-primary" />
-                <span className="font-medium">{allCases.length}+ Cases</span>
+                <span className="font-medium">{t('role.stats.cases', { count: allCases.length })}</span>
               </div>
               <div className="w-px h-4 bg-border/50" />
               <div className="flex items-center gap-2.5 text-sm">
                 <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                <span className="font-medium">15+ ECG Rhythms</span>
+                <span className="font-medium">{t('role.stats.rhythms')}</span>
               </div>
               <div className="w-px h-4 bg-border/50" />
               <div className="flex items-center gap-2.5 text-sm">
                 <div className="w-2 h-2 rounded-full bg-blue-500" />
-                <span className="font-medium">LIFEPAK 20 Sim</span>
+                <span className="font-medium">{t('role.stats.lifepak')}</span>
               </div>
             </div>
           </div>
 
           {/* Footer */}
           <p className="text-center text-xs text-muted-foreground/50 tracking-wide">
-            For educational purposes only  |  Evidence-based paramedic training
+            {t('app.footerEducational')}  |  {t('app.footerEvidence')}
           </p>
         </div>
       </div>
@@ -233,19 +272,49 @@ function App() {
     localStorage.removeItem('paramedic-role');
   }, []);
 
+  // Classroom entry points are ephemeral — never persisted, so if the user
+  // reloads they land back at role selection. We strip them on mount.
+  useEffect(() => {
+    if (userRole === 'classroom-host' || userRole === 'classroom-join') {
+      localStorage.removeItem('paramedic-role');
+    }
+  }, [userRole]);
+
   // Role selection screen
   if (userRole === 'none') {
     return <RoleSelection onSelect={setUserRole} />;
   }
 
+  const suspenseFallback = (
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    </div>
+  );
+
+  // Classroom instructor lobby
+  if (userRole === 'classroom-host') {
+    return (
+      <Suspense fallback={suspenseFallback}>
+        <ClassroomLobby onExit={handleRoleExit} />
+        <Toaster position="top-right" richColors closeButton />
+      </Suspense>
+    );
+  }
+
+  // Classroom student join
+  if (userRole === 'classroom-join') {
+    return (
+      <Suspense fallback={suspenseFallback}>
+        <ClassroomJoin onExit={handleRoleExit} />
+        <Toaster position="top-right" richColors closeButton />
+      </Suspense>
+    );
+  }
+
   // Student panel
   if (userRole === 'student') {
     return (
-      <Suspense fallback={
-        <div className="min-h-screen bg-background flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      }>
+      <Suspense fallback={suspenseFallback}>
         <StudentPanel onExit={handleRoleExit} />
         <Toaster position="top-right" richColors closeButton />
       </Suspense>
@@ -257,6 +326,7 @@ function App() {
 }
 
 function EducatorPanel({ onExit }: { onExit: () => void }) {
+  const { t } = useTranslation();
   const [currentCase, setCurrentCase] = useState<CaseScenario | null>(null);
   const [selectedYear, setSelectedYear] = useState<StudentYear>('3rd-year');
   const [session, setSession] = useState<CaseSession | null>(null);
@@ -841,11 +911,11 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
               <div className="text-left min-w-0">
                 <div className="flex items-center gap-2">
                   <h1 className="heading-premium text-base sm:text-lg group-hover:text-primary transition-colors leading-tight truncate">
-                    ParaMedic Studio
+                    {t('app.name')}
                   </h1>
-                  <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 border-emerald-500/30 text-emerald-600 shrink-0">Educator</Badge>
+                  <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 border-emerald-500/30 text-emerald-600 shrink-0">{t('role.educatorBadge')}</Badge>
                 </div>
-                <p className="text-[10px] sm:text-xs text-muted-foreground truncate">Case generation &amp; student assessment</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground truncate">{t('header.caseGeneration')}</p>
               </div>
             </button>
 
@@ -863,7 +933,7 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
                     className="hidden sm:flex gap-1 hover:bg-muted/80 transition-colors"
                   >
                     <Home className="h-4 w-4" />
-                    <span>Home</span>
+                    <span>{t('header.home')}</span>
                   </Button>
                   <Button
                     variant="outline"
@@ -877,14 +947,15 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
                     ) : (
                       <RotateCcw className="h-4 w-4" />
                     )}
-                    <span className="hidden sm:inline">{isGenerating ? 'Generating...' : 'New Case'}</span>
+                    <span className="hidden sm:inline">{isGenerating ? t('header.generating') : t('header.newCase')}</span>
                   </Button>
                 </>
               )}
               <Button variant="ghost" size="sm" onClick={onExit} className="gap-1 text-xs text-muted-foreground hover:text-foreground">
-                <ArrowLeft className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Switch Role</span>
+                <ArrowLeft className="h-3.5 w-3.5 rtl:rotate-180" />
+                <span className="hidden sm:inline">{t('header.switchRole')}</span>
               </Button>
+              <LanguageSwitcher />
               <ThemeToggle />
             </div>
           </div>
@@ -949,19 +1020,19 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
                     <Stethoscope className="h-10 w-10 text-primary-foreground" />
                   </div>
                   <CardTitle className="heading-clean text-3xl">
-                    Paramedic Case Generator
+                    {t('generator.title')}
                   </CardTitle>
                   <p className="text-base text-muted-foreground mt-2 max-w-md mx-auto leading-relaxed">
-                    Select your training level and generate realistic emergency scenarios to sharpen your clinical skills
+                    {t('generator.subtitle')}
                   </p>
                 </CardHeader>
-                
+
                 <CardContent className="space-y-8 relative">
                   {/* Year Level Selection - Visual Cards */}
                   <div className="space-y-3">
                     <label className="text-sm font-semibold flex items-center gap-2 text-foreground/80">
                       <GraduationCap className="h-4 w-4 text-primary" />
-                      Select Your Year Level
+                      {t('generator.selectYear')}
                     </label>
                     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                       {yearLevels.map((year, index) => (
@@ -992,7 +1063,7 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
                   <div className="space-y-3">
                     <label className="text-sm font-semibold flex items-center gap-2 text-foreground/80">
                       <BarChart3 className="h-4 w-4 text-primary" />
-                      Choose Category (Optional)
+                      {t('generator.selectCategory')}
                     </label>
                     <div className="flex flex-wrap gap-2">
                       <button
@@ -1003,7 +1074,7 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
                         }`}
                       >
                         <Sparkles className="h-4 w-4 shrink-0" />
-                        All Cases
+                        {t('generator.allCases')}
                       </button>
                       {caseCategories.slice(0, 7).map((cat) => (
                         <button
@@ -1032,12 +1103,12 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
                       {isGenerating ? (
                         <>
                           <Loader2 className="h-5 w-5 animate-spin" />
-                          Generating Case...
+                          {t('generator.generatingCase')}
                         </>
                       ) : (
                         <>
                           <Sparkles className="h-5 w-5" />
-                          Quick Generate Case
+                          {t('generator.quickGenerate')}
                         </>
                       )}
                     </Button>
@@ -1049,7 +1120,7 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
                       className="w-full gap-3 text-base py-6 font-medium border-primary/30 hover:border-primary/60 hover:bg-primary/5 transition-all duration-200"
                     >
                       <Target className="h-5 w-5 text-primary" />
-                      Guided Simulation Setup
+                      {t('generator.guidedSetup')}
                       <Badge variant="secondary" className="ml-2 text-[10px]">INACSL</Badge>
                     </Button>
                   </div>
@@ -1061,21 +1132,21 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
                         <FileText className="h-4 w-4 text-primary/70 group-hover:text-primary transition-colors" />
                         <div className="text-2xl font-bold text-foreground">{allCases.length}+</div>
                       </div>
-                      <div className="text-xs font-medium text-muted-foreground">Case Scenarios</div>
+                      <div className="text-xs font-medium text-muted-foreground">{t('generator.caseScenarios')}</div>
                     </div>
                     <div className="text-center p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors duration-200 group">
                       <div className="flex items-center justify-center gap-2 mb-1">
                         <BarChart3 className="h-4 w-4 text-primary/70 group-hover:text-primary transition-colors" />
                         <div className="text-2xl font-bold text-foreground">{caseCategories.length}</div>
                       </div>
-                      <div className="text-xs font-medium text-muted-foreground">Categories</div>
+                      <div className="text-xs font-medium text-muted-foreground">{t('generator.categoriesLabel')}</div>
                     </div>
                     <div className="text-center p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors duration-200 group">
                       <div className="flex items-center justify-center gap-2 mb-1">
                         <GraduationCap className="h-4 w-4 text-primary/70 group-hover:text-primary transition-colors" />
                         <div className="text-2xl font-bold text-foreground">4</div>
                       </div>
-                      <div className="text-xs font-medium text-muted-foreground">Year Levels</div>
+                      <div className="text-xs font-medium text-muted-foreground">{t('generator.yearLevels')}</div>
                     </div>
                   </div>
                 </CardContent>
@@ -1220,16 +1291,16 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
                 onClick={goHome}
                 className="gap-1 text-muted-foreground hover:text-foreground -ml-2 h-8 text-xs sm:text-sm sm:h-9"
               >
-                <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                <span className="hidden sm:inline">Back to Home</span>
-                <span className="sm:hidden">Back</span>
+                <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4 rtl:rotate-180" />
+                <span className="hidden sm:inline">{t('header.backToHome')}</span>
+                <span className="sm:hidden">{t('header.back')}</span>
               </Button>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-muted-foreground hidden sm:inline">
-                  Press <kbd className="px-1.5 py-0.5 bg-muted rounded text-[10px] font-mono">ESC</kbd> for home
+                  {t('header.pressEscForHome')} <kbd className="px-1.5 py-0.5 bg-muted rounded text-[10px] font-mono">ESC</kbd>
                 </span>
                 <span className="text-xs text-muted-foreground hidden sm:inline">
-                  <kbd className="px-1.5 py-0.5 bg-muted rounded text-[10px] font-mono">N</kbd> for new case
+                  <kbd className="px-1.5 py-0.5 bg-muted rounded text-[10px] font-mono">N</kbd> {t('header.pressNForNewCase')}
                 </span>
               </div>
             </div>

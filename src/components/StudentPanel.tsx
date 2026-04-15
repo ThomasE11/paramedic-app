@@ -12,6 +12,42 @@
 import { useState, useCallback, useMemo, lazy, Suspense, useEffect, useRef } from 'react';
 import type { CaseScenario, StudentYear, CaseSession, VitalSigns, AppliedTreatment } from '@/types';
 
+/**
+ * Build a radio-call style dispatch narration for voice playback.
+ * Mimics the cadence of a real paramedic radio dispatch:
+ *   "Control to responding unit. Priority one job for you. Caller reports…
+ *    Patient is a… On arrival you'll find…"
+ * The pauses and phrasing give the humanised voice engine natural beats.
+ */
+function buildDispatchNarration(caseData: CaseScenario): string {
+  const dispatch = caseData.dispatchInfo;
+  const patient = caseData.patientInfo;
+  const scene = caseData.sceneInfo;
+  const priorityWord = dispatch?.priority
+    ? (String(dispatch.priority).includes('1') ? 'priority one' : String(dispatch.priority).includes('2') ? 'priority two' : 'priority three')
+    : 'priority one';
+
+  const parts: string[] = [];
+  parts.push(`Control to responding unit.`);
+  parts.push(`We've got a ${priorityWord} job for you.`);
+  if (dispatch?.callReason) {
+    parts.push(`Caller reports ${dispatch.callReason.replace(/\.$/, '')}.`);
+  }
+  if (dispatch?.location) {
+    parts.push(`Location, ${dispatch.location.replace(/\.$/, '')}.`);
+  }
+  if (patient?.age && patient?.gender) {
+    parts.push(`Patient is a ${patient.age}-year-old ${patient.gender}.`);
+  } else if (patient?.age) {
+    parts.push(`Patient is ${patient.age} years old.`);
+  }
+  if (scene?.description) {
+    parts.push(`On arrival, ${scene.description.replace(/^On arrival[:,]?\s*/i, '').replace(/\.$/, '')}.`);
+  }
+  parts.push(`Acknowledge when you're on scene.`);
+  return parts.join(' ');
+}
+
 function seededShuffle<T>(array: T[], seed: string): T[] {
   const shuffled = [...array];
   let hash = 0;
@@ -57,6 +93,8 @@ import { DebriefingResourcesPanel } from '@/components/DebriefingResourcesPanel'
 import { OnboardingTour, useOnboardingTour } from '@/components/OnboardingTour';
 import { NarrationButton, VoiceToggleButton } from '@/components/NarrationButton';
 import { useVoiceNarration } from '@/hooks/useVoiceNarration';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { useTranslation } from 'react-i18next';
 import { MedicalControlDialog } from '@/components/MedicalControlDialog';
 import { generateNarrativeReport } from '@/lib/narrativeReport';
 import { generateEDOutcome } from '@/lib/edOutcome';
@@ -181,6 +219,7 @@ interface StudentPanelProps {
 }
 
 export function StudentPanel({ onExit }: StudentPanelProps) {
+  const { t } = useTranslation();
   // Onboarding tour for first-time users
   const { showTour, dismissTour } = useOnboardingTour();
 
@@ -623,17 +662,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
 
     // Auto-narrate the dispatch info and scene in a dispatcher voice
     if (currentCase) {
-      const dispatch = currentCase.dispatchInfo;
-      const patient = currentCase.patientInfo;
-      const scene = currentCase.sceneInfo;
-      const parts: string[] = [];
-      parts.push(`Dispatch. ${dispatch?.callReason || 'Unknown call'}.`);
-      if (dispatch?.location) parts.push(`Location: ${dispatch.location}.`);
-      if (patient?.age && patient?.gender) {
-        parts.push(`Patient is a ${patient.age} year old ${patient.gender}.`);
-      }
-      if (scene?.description) parts.push(`On arrival: ${scene.description}`);
-      const fullText = parts.join(' ');
+      const fullText = buildDispatchNarration(currentCase);
       // Small delay so the UI settles first
       setTimeout(() => speakNarration(fullText, { role: 'dispatcher' }), 500);
     }
@@ -1168,14 +1197,16 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <h1 className="text-xs sm:text-sm font-bold tracking-tight heading-premium truncate">Student Training</h1>
-                  <Badge variant="outline" className="text-[8px] sm:text-[9px] px-1 sm:px-1.5 py-0 h-3.5 sm:h-4 border-blue-500/30 text-blue-600 dark:text-blue-400 font-medium shrink-0 hidden xs:inline-flex">Student</Badge>
+                  <h1 className="text-xs sm:text-sm font-bold tracking-tight heading-premium truncate">{t('role.student')}</h1>
+                  <Badge variant="outline" className="text-[8px] sm:text-[9px] px-1 sm:px-1.5 py-0 h-3.5 sm:h-4 border-blue-500/30 text-blue-600 dark:text-blue-400 font-medium shrink-0 hidden xs:inline-flex">{t('role.studentBadge')}</Badge>
                 </div>
-                <p className="text-[9px] sm:text-[10px] text-muted-foreground hidden sm:block">ParaMedic Studio</p>
+                <p className="text-[9px] sm:text-[10px] text-muted-foreground hidden sm:block">{t('app.name')}</p>
               </div>
             </div>
 
             <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+              {/* Language switcher */}
+              <LanguageSwitcher />
               {/* Voice toggle */}
               <VoiceToggleButton />
               {/* Back button */}
@@ -1183,9 +1214,9 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                 <button
                   onClick={goBack}
                   className="flex items-center justify-center h-8 w-8 sm:h-9 sm:w-9 rounded-lg border border-border/50 bg-muted/30 hover:bg-muted/60 active:bg-muted transition-colors touch-manipulation"
-                  title="Go back"
+                  title={t('header.back')}
                 >
-                  <ArrowLeft className="h-4 w-4 text-muted-foreground" />
+                  <ArrowLeft className="h-4 w-4 text-muted-foreground rtl:rotate-180" />
                 </button>
               )}
               {/* Phase indicator - compact on mobile, full on desktop */}
@@ -1676,7 +1707,7 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                   role="dispatcher"
                   size="md"
                   label="Replay dispatch briefing"
-                  text={`Dispatch. ${currentCase.dispatchInfo?.callReason || ''}. Location: ${currentCase.dispatchInfo?.location || ''}. Patient is a ${currentCase.patientInfo?.age || ''} year old ${currentCase.patientInfo?.gender || ''}. On arrival: ${currentCase.sceneInfo?.description || ''}`}
+                  text={buildDispatchNarration(currentCase)}
                 />
                 <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 dark:bg-primary/15 border border-primary/20 shrink-0">
                   <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-primary" />

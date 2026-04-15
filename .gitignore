@@ -1,16 +1,14 @@
-
-# Environment variables - NEVER commit real credentials
-.env
-.env.*
-.env.local
-.env.production
-.env.development
-!.env.example
 .vercel
 node_modules
 dist
 *.log
 *.log.gz
+
+# Environment files — never commit real credentials
+.env
+.env.local
+.env.*.local
+
 .playwright-mcp
 .claude/worktrees
 .claude/launch.json

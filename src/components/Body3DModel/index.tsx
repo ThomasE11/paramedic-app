@@ -14,9 +14,11 @@ import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls, ContactShadows } from '@react-three/drei';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { RotateCcw, User, Eye, Hand, Activity, Stethoscope, Heart, X, ChevronRight, ChevronDown, AlertTriangle } from 'lucide-react';
+import { RotateCcw, User, Eye, Hand, Activity, Stethoscope, Heart, X, ChevronRight, ChevronDown, AlertTriangle, Compass, Unlock } from 'lucide-react';
 import { BodyMesh, getLastClickedLimb } from './BodyMesh';
 import type { LimbSide } from './BodyMesh';
+import { getNextGuidedStep, EXAM_SEQUENCE } from './bodyRegions';
+import { useTranslation } from 'react-i18next';
 import type { AssessmentStepId, SecondaryAssessmentStep } from '@/data/assessmentFramework';
 import { getAssessmentProfile } from '@/data/assessmentFramework';
 import type { CaseScenario, CaseCategory } from '@/types';
@@ -759,7 +761,29 @@ interface Body3DModelProps {
   isInArrest?: boolean;
 }
 
+// Phase 2 — guided exam mode: persist preference across sessions
+const GUIDED_MODE_STORAGE_KEY = 'paramedic-studio-guided-exam-mode';
+
+function loadGuidedModePreference(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    return window.localStorage.getItem(GUIDED_MODE_STORAGE_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+function saveGuidedModePreference(value: boolean): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(GUIDED_MODE_STORAGE_KEY, value ? 'true' : 'false');
+  } catch {
+    /* noop */
+  }
+}
+
 export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientSounds, caseCategory, isInArrest = false }: Body3DModelProps) {
+  const { t } = useTranslation();
   const controlsRef = useRef<any>(null);
   const [isFlipped, setIsFlipped] = useState(false);
   const [activeRegion, setActiveRegion] = useState<string | null>(null);
@@ -771,6 +795,48 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   const [playingSound, setPlayingSound] = useState<string | null>(null);
   const [soundProgress, setSoundProgress] = useState(0);
   const soundTimerRef = useRef<number | null>(null);
+
+  // Phase 2 — guided exam mode state + transient "blocked" flash
+  const [guidedMode, setGuidedMode] = useState<boolean>(loadGuidedModePreference);
+  const [blockedNudge, setBlockedNudge] = useState<{ attempted: string; expected: string } | null>(null);
+  const nudgeTimerRef = useRef<number | null>(null);
+
+  const nextGuidedStep = useMemo(
+    () => (guidedMode ? getNextGuidedStep(assessedRegions) : null),
+    [guidedMode, assessedRegions],
+  );
+
+  const guidedStepIndex = useMemo(() => {
+    if (!nextGuidedStep) return -1;
+    return EXAM_SEQUENCE.indexOf(nextGuidedStep);
+  }, [nextGuidedStep]);
+
+  const handleToggleGuidedMode = useCallback(() => {
+    setGuidedMode(prev => {
+      const next = !prev;
+      saveGuidedModePreference(next);
+      return next;
+    });
+  }, []);
+
+  const handleBlockedClick = useCallback((attempted: string, expected: string) => {
+    setBlockedNudge({ attempted, expected });
+    if (nudgeTimerRef.current !== null) {
+      window.clearTimeout(nudgeTimerRef.current);
+    }
+    nudgeTimerRef.current = window.setTimeout(() => {
+      setBlockedNudge(null);
+      nudgeTimerRef.current = null;
+    }, 2600);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (nudgeTimerRef.current !== null) {
+        window.clearTimeout(nudgeTimerRef.current);
+      }
+    };
+  }, []);
 
   const animateCamera = useCameraAnimation();
 
@@ -1040,6 +1106,18 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
           )}
         </div>
         <div className="flex items-center gap-2">
+          {/* Phase 2 — guided exam mode toggle */}
+          <Button
+            variant={guidedMode ? 'default' : 'ghost'}
+            size="sm"
+            className={`h-6 gap-1 px-2 text-[9px] rounded-lg ${guidedMode ? 'bg-indigo-500 hover:bg-indigo-600 text-white' : ''}`}
+            onClick={handleToggleGuidedMode}
+            aria-pressed={guidedMode}
+            title={t('guidedExam.toggleHint')}
+          >
+            {guidedMode ? <Compass className="h-3 w-3" /> : <Unlock className="h-3 w-3" />}
+            {guidedMode ? t('guidedExam.on') : t('guidedExam.off')}
+          </Button>
           {/* Phase 2B: Required vs optional badge */}
           <Badge variant={assessedCount === TOTAL_REGIONS ? 'default' : 'secondary'}
             className={`text-[9px] ${assessedCount === TOTAL_REGIONS ? 'bg-green-500' : ''}`}>
@@ -1055,6 +1133,37 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
           )}
         </div>
       </div>
+
+      {/* Phase 2 — guided exam mode: step indicator + blocked-click nudge */}
+      {guidedMode && !activeRegion && (
+        <div className="px-3 py-1.5 border-b border-indigo-200/60 dark:border-indigo-800/40 bg-indigo-50/70 dark:bg-indigo-950/30 flex items-center gap-2">
+          <Compass className="h-3 w-3 text-indigo-500 shrink-0" />
+          {nextGuidedStep ? (
+            <p className="text-[10px] text-indigo-700 dark:text-indigo-200">
+              <span className="font-semibold">
+                {t('guidedExam.stepOf', { current: guidedStepIndex + 1, total: EXAM_SEQUENCE.length })}
+              </span>
+              <span className="mx-1.5 text-indigo-400">{'\u2192'}</span>
+              <span>{REGION_LABELS[nextGuidedStep] || nextGuidedStep}</span>
+            </p>
+          ) : (
+            <p className="text-[10px] text-indigo-700 dark:text-indigo-200 font-semibold">
+              {t('guidedExam.complete')}
+            </p>
+          )}
+        </div>
+      )}
+      {guidedMode && blockedNudge && (
+        <div className="px-3 py-1.5 bg-amber-50 dark:bg-amber-950/30 border-b border-amber-200/60 dark:border-amber-800/50 flex items-center gap-2 animate-in fade-in slide-in-from-top-1">
+          <AlertTriangle className="h-3 w-3 text-amber-500 shrink-0" />
+          <p className="text-[10px] text-amber-700 dark:text-amber-200">
+            {t('guidedExam.blocked', {
+              attempted: REGION_LABELS[blockedNudge.attempted] || blockedNudge.attempted,
+              expected: REGION_LABELS[blockedNudge.expected] || blockedNudge.expected,
+            })}
+          </p>
+        </div>
+      )}
 
       {/* 3-column layout when region active: LEFT(techniques) | CENTER(body) | RIGHT(findings)
            On mobile: stacks vertically. On desktop (sm+): side-by-side with flexible columns. */}
@@ -1128,7 +1237,14 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
             <directionalLight position={[0, -2, 3]} intensity={0.25} color="#f0f0ff" />
             <directionalLight position={[0, 3, 5]} intensity={0.3} color="#ffffff" />
 
-            <BodyMesh assessedRegions={assessedRegions} onRegionClick={handleRegionClick} requiredRegions={requiredRegions} />
+            <BodyMesh
+              assessedRegions={assessedRegions}
+              onRegionClick={handleRegionClick}
+              requiredRegions={requiredRegions}
+              guidedMode={guidedMode}
+              nextGuidedStep={nextGuidedStep}
+              onBlockedClick={handleBlockedClick}
+            />
 
             <ContactShadows position={[0, -0.01, 0]} opacity={0.4} scale={3} blur={2.5} far={3} />
 

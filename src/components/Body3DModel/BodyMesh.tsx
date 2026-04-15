@@ -12,13 +12,19 @@ import { Html } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { ThreeEvent } from '@react-three/fiber';
-import { SKIN_COLOR, HOVER_COLOR, ASSESSED_COLOR, ACTIVE_COLOR } from './bodyRegions';
+import { SKIN_COLOR, HOVER_COLOR, ASSESSED_COLOR, ACTIVE_COLOR, GUIDED_NEXT_COLOR, GUIDED_LOCKED_COLOR } from './bodyRegions';
 import type { SecondaryAssessmentStep } from '@/data/assessmentFramework';
 
 interface BodyMeshProps {
   assessedRegions: Set<string>;
   onRegionClick: (stepId: string) => void;
   requiredRegions?: Set<string>;
+  /** Phase 2 — guided exam mode. When true, only `nextGuidedStep` is clickable. */
+  guidedMode?: boolean;
+  /** Phase 2 — the region the student is expected to assess next. */
+  nextGuidedStep?: SecondaryAssessmentStep | null;
+  /** Phase 2 — called when the student clicks a locked region in guided mode. */
+  onBlockedClick?: (attemptedStepId: string, expectedStepId: string) => void;
 }
 
 /**
@@ -126,7 +132,7 @@ function getRegionAtPoint(point: THREE.Vector3): RegionRange | null {
   return REGION_RANGES.find(r => !r.condition && point.y >= r.yMin && point.y < r.yMax) || null;
 }
 
-export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions }: BodyMeshProps) {
+export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guidedMode = false, nextGuidedStep = null, onBlockedClick }: BodyMeshProps) {
   const { scene } = useGLTF('/models/patient.glb');
   const [hoveredRegion, setHoveredRegion] = useState<RegionRange | null>(null);
   const [tooltipPos, setTooltipPos] = useState<[number, number, number]>([0, 0, 0]);
@@ -172,8 +178,9 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions }: Bo
   }, []);
 
   // Drive continuous rendering for pulse animation when required regions exist
+  // or when guided mode is active (next-step ring needs to pulse).
   useFrame((_, delta) => {
-    if (requiredRegions && requiredRegions.size > 0) {
+    if ((requiredRegions && requiredRegions.size > 0) || (guidedMode && nextGuidedStep)) {
       pulseRef.current += delta;
     }
   });
@@ -202,10 +209,17 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions }: Bo
   const handleClick = useCallback((e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
     const region = getRegionAtPoint(e.point);
-    if (region) {
-      onRegionClick(region.id);
+    if (!region) return;
+
+    // Phase 2 — in guided mode, block clicks on anything other than the
+    // expected next step. Let the parent know so it can nudge the student.
+    if (guidedMode && nextGuidedStep && region.id !== nextGuidedStep) {
+      onBlockedClick?.(region.id, nextGuidedStep);
+      return;
     }
-  }, [onRegionClick]);
+
+    onRegionClick(region.id);
+  }, [onRegionClick, guidedMode, nextGuidedStep, onBlockedClick]);
 
   // Render region highlight overlays using transparent cylinders
   const regionHighlights = useMemo(() => {
@@ -213,6 +227,8 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions }: Bo
     const required = requiredRegions || new Set<string>();
     // Compute pulse opacity for amber ring
     const pulseOpacity = 0.15 + Math.sin(pulseRef.current * 3) * 0.1;
+    // Phase 2 — stronger pulse for the guided "next" region so it really pops.
+    const guidedPulseOpacity = 0.35 + Math.sin(pulseRef.current * 2.5) * 0.2;
 
     for (const region of REGION_RANGES) {
       if (region.condition === 'back') continue; // Don't show overlay for posterior
@@ -221,9 +237,13 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions }: Bo
       const isAssessed = assessedRegions.has(region.id) || (isLimbId && assessedRegions.has('extremities'));
       const isHovered = hoveredRegion?.id === region.id;
       const isRequired = required.has(region.id);
+      // Phase 2 — guided mode states
+      const isGuidedNext = guidedMode && nextGuidedStep === region.id && !isAssessed;
+      const isGuidedLocked = guidedMode && !!nextGuidedStep && region.id !== nextGuidedStep && !isAssessed;
 
-      // Show highlights for: assessed, hovered, or required-but-unassessed
-      if (!isAssessed && !isHovered && !isRequired) continue;
+      // Show highlights for: assessed, hovered, required-but-unassessed,
+      // or (in guided mode) the next step and locked regions.
+      if (!isAssessed && !isHovered && !isRequired && !isGuidedNext && !isGuidedLocked) continue;
 
       const height = region.yMax - region.yMin;
       const centerY = region.yMin + height / 2;
@@ -237,7 +257,16 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions }: Bo
       let color: string;
       let opacity: number;
 
-      if (isAssessed && isRequired) {
+      if (isGuidedNext) {
+        // Guided: indigo pulse on the current step, overrides other states
+        color = GUIDED_NEXT_COLOR;
+        opacity = isHovered ? 0.65 : guidedPulseOpacity;
+      } else if (isGuidedLocked) {
+        // Guided: dim grey wash on everything else — still visible so the
+        // student can see where they'll go next, but obviously disabled.
+        color = GUIDED_LOCKED_COLOR;
+        opacity = 0.22;
+      } else if (isAssessed && isRequired) {
         color = ASSESSED_COLOR;
         opacity = isHovered ? 0.5 : 0.35;
       } else if (isAssessed) {
@@ -270,7 +299,7 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions }: Bo
       );
 
       // Phase 2B: Add emissive outline ring for required unassessed regions
-      if (isRequired && !isAssessed) {
+      if (isRequired && !isAssessed && !isGuidedNext) {
         highlights.push(
           <mesh
             key={`${region.id}-ring`}
@@ -289,11 +318,32 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions }: Bo
           </mesh>
         );
       }
+
+      // Phase 2 — glowing indigo ring on the guided next step
+      if (isGuidedNext) {
+        highlights.push(
+          <mesh
+            key={`${region.id}-guided-ring`}
+            position={[xOffset, centerY, 0]}
+          >
+            <cylinderGeometry args={[radius + 0.008, radius + 0.008, height, 16, 1, true]} />
+            <meshStandardMaterial
+              color={GUIDED_NEXT_COLOR}
+              transparent
+              opacity={0.5 + Math.sin(pulseRef.current * 2.5) * 0.25}
+              side={THREE.DoubleSide}
+              depthWrite={false}
+              emissive={GUIDED_NEXT_COLOR}
+              emissiveIntensity={0.55 + Math.sin(pulseRef.current * 2.5) * 0.3}
+            />
+          </mesh>
+        );
+      }
     }
 
     return highlights;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [assessedRegions, hoveredRegion, requiredRegions, pulseRef.current]);
+  }, [assessedRegions, hoveredRegion, requiredRegions, guidedMode, nextGuidedStep, pulseRef.current]);
 
   return (
     <group ref={meshRef}>
@@ -319,6 +369,12 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions }: Bo
               )}
               {requiredRegions?.has(hoveredRegion.id) && !assessedRegions.has(hoveredRegion.id) && (
                 <span className="ml-1.5 text-amber-400 text-[10px]">required</span>
+              )}
+              {guidedMode && nextGuidedStep && hoveredRegion.id === nextGuidedStep && (
+                <span className="ml-1.5 text-indigo-300 text-[10px]">next step</span>
+              )}
+              {guidedMode && nextGuidedStep && hoveredRegion.id !== nextGuidedStep && !assessedRegions.has(hoveredRegion.id) && (
+                <span className="ml-1.5 text-slate-400 text-[10px]">locked</span>
               )}
             </div>
             <div className="text-[10px] text-white/60 mt-0.5 max-w-[200px] leading-relaxed">
