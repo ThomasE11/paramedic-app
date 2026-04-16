@@ -30,7 +30,7 @@ const StudentPanel = lazy(() => import('@/components/StudentPanel'));
 const ClassroomLobby = lazy(() => import('@/components/classroom/ClassroomLobby'));
 const ClassroomJoin = lazy(() => import('@/components/classroom/ClassroomJoin'));
 
-import { isSupabaseConfigured } from '@/lib/supabase';
+import { isSupabaseConfigured } from '@/lib/supabaseConfig';
 
 // Lazy load heavy components for better performance
 const CaseDisplay = lazy(() => import('@/components/CaseDisplay').then(m => ({ default: m.CaseDisplay })));

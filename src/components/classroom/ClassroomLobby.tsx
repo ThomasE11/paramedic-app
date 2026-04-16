@@ -63,6 +63,7 @@ export function ClassroomLobby({ onExit }: ClassroomLobbyProps) {
     createSession,
     startCase,
     leaveSession,
+    clearError,
   } = useClassroomSession();
 
   const [instructorName, setInstructorName] = useState('');
@@ -196,9 +197,13 @@ export function ClassroomLobby({ onExit }: ClassroomLobbyProps) {
                 </label>
                 <Input
                   value={instructorName}
-                  onChange={e => setInstructorName(e.target.value)}
+                  onChange={e => {
+                    setInstructorName(e.target.value);
+                    if (error) clearError();
+                  }}
                   placeholder={t('classroom.instructorNamePlaceholder')}
                   disabled={status === 'connecting'}
+                  autoFocus
                   onKeyDown={e => e.key === 'Enter' && handleOpenLobby()}
                 />
               </div>

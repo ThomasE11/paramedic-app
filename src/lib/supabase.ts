@@ -1,39 +1,39 @@
 /**
- * Supabase client singleton.
+ * Supabase client — lazy singleton.
  *
- * Used by the classroom multiplayer feature (Phase 4). Only ever imports the
- * public anon key — RLS policies on the database enforce actual per-row
- * access. Never put service-role keys or database passwords here.
+ * Only imported by the classroom feature (useClassroomSession + classroom
+ * components). The role-selection screen uses `supabaseConfig.ts` for the
+ * bare env-var check so single-player users never pay the @supabase/supabase-js
+ * bundle cost.
  *
  * Usage:
- *   import { supabase, isSupabaseConfigured } from '@/lib/supabase';
- *   if (!isSupabaseConfigured()) return null;
- *   const { data, error } = await supabase.from('classroom_sessions').select();
+ *   import { getSupabaseClient } from '@/lib/supabase';
+ *   const supa = getSupabaseClient();
+ *   if (!supa) return; // Supabase env vars missing
+ *   const { data } = await supa.from('classroom_sessions').select();
+ *
+ * Security: only the anon key ever lives here. RLS policies on the Supabase
+ * project enforce actual per-row access. Never put service-role keys or DB
+ * passwords in a VITE_* variable — anything prefixed VITE_ ships in the
+ * client bundle.
  */
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import {
+  getSupabaseUrl,
+  getSupabaseAnonKey,
+  isSupabaseConfigured,
+} from './supabaseConfig';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+// Re-export the config check so existing callers keep working.
+export { isSupabaseConfigured };
 
-/**
- * True when both env vars are present. Classroom features gracefully degrade
- * (hide entry points, show a helpful message) when this returns false.
- */
-export function isSupabaseConfigured(): boolean {
-  return Boolean(supabaseUrl && supabaseAnonKey);
-}
-
-/**
- * Lazily-constructed client. We deliberately don't throw when env vars are
- * missing — the rest of the app (single-player mode) must keep working.
- */
 let _client: SupabaseClient | null = null;
 
 export function getSupabaseClient(): SupabaseClient | null {
   if (!isSupabaseConfigured()) return null;
   if (!_client) {
-    _client = createClient(supabaseUrl!, supabaseAnonKey!, {
+    _client = createClient(getSupabaseUrl()!, getSupabaseAnonKey()!, {
       auth: {
         // We don't use Supabase auth — students join with a PIN, not an account.
         persistSession: false,
@@ -47,6 +47,3 @@ export function getSupabaseClient(): SupabaseClient | null {
   }
   return _client;
 }
-
-/** Convenience export — may be null when env vars are missing. */
-export const supabase: SupabaseClient | null = getSupabaseClient();

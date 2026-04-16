@@ -55,6 +55,7 @@ export function ClassroomJoin({ onExit }: ClassroomJoinProps) {
     lastBroadcast,
     joinSession,
     leaveSession,
+    clearError,
   } = useClassroomSession();
 
   const [pinInput, setPinInput] = useState('');
@@ -208,11 +209,13 @@ export function ClassroomJoin({ onExit }: ClassroomJoinProps) {
                     // Digits only, max 6
                     const clean = e.target.value.replace(/\D/g, '').slice(0, 6);
                     setPinInput(clean);
+                    if (error) clearError();
                   }}
                   placeholder="123456"
                   inputMode="numeric"
                   pattern="\d{6}"
                   maxLength={6}
+                  autoFocus
                   className="text-2xl tracking-[0.3em] tabular-nums text-center font-semibold"
                   disabled={status === 'connecting'}
                 />
@@ -224,7 +227,10 @@ export function ClassroomJoin({ onExit }: ClassroomJoinProps) {
                 </label>
                 <Input
                   value={displayName}
-                  onChange={e => setDisplayName(e.target.value)}
+                  onChange={e => {
+                    setDisplayName(e.target.value);
+                    if (error) clearError();
+                  }}
                   placeholder={t('classroom.displayNamePlaceholder')}
                   disabled={status === 'connecting'}
                   onKeyDown={e => e.key === 'Enter' && handleJoin()}

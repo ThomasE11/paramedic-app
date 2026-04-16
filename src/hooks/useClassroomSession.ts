@@ -27,6 +27,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { getSupabaseClient, isSupabaseConfigured } from '@/lib/supabase';
+import { getSupabaseUrl, getSupabaseAnonKey } from '@/lib/supabaseConfig';
 
 // ============================================================================
 // Types
@@ -109,6 +110,8 @@ interface UseClassroomSessionResult {
   leaveSession: () => Promise<void>;
   /** Send an arbitrary broadcast event through the session's channel. */
   sendBroadcast: (payload: ClassroomBroadcast) => Promise<void>;
+  /** Clear a stale error banner — call from input `onChange` so users retrying don't stare at the old message. */
+  clearError: () => void;
 }
 
 export function useClassroomSession(): UseClassroomSessionResult {
@@ -304,6 +307,13 @@ export function useClassroomSession(): UseClassroomSessionResult {
   // Broadcast helpers
   // --------------------------------------------------------------------------
 
+  const clearError = useCallback(() => {
+    // Drop any stale banner + reset status away from 'error' so the join
+    // button (and similar gated UI) becomes usable again without a reload.
+    setError(null);
+    setStatus(prev => (prev === 'error' ? 'idle' : prev));
+  }, []);
+
   const sendBroadcast = useCallback(async (payload: ClassroomBroadcast) => {
     const channel = channelRef.current;
     if (!channel) return;
@@ -384,6 +394,69 @@ export function useClassroomSession(): UseClassroomSessionResult {
     };
   }, []);
 
+  // Graceful tab-close / page-hide handler.
+  //
+  // Without this, an instructor who closes their tab leaves the session in
+  // 'lobby'/'running' state in the DB and students stuck on the "Waiting…"
+  // screen until the 24h pg_cron cleanup fires. We can't run an async DB
+  // update reliably from `beforeunload` — but `navigator.sendBeacon` is
+  // designed for exactly this: a tiny fire-and-forget POST that the browser
+  // flushes after the document is gone.
+  //
+  // We target Supabase's PATCH endpoint directly via sendBeacon's blob form
+  // (with the right headers encoded via a Blob MIME type). For students we
+  // also opportunistically untrack presence so the instructor's list drops
+  // them immediately.
+  useEffect(() => {
+    const onBeforeUnload = () => {
+      const channel = channelRef.current;
+      const current = sessionRef.current;
+      const currentRole = roleRef.current;
+
+      // Students: best-effort untrack so the instructor sees them leave.
+      if (channel) {
+        try { channel.untrack(); } catch { /* noop */ }
+      }
+
+      // Instructors: flip the row to 'ended' via sendBeacon.
+      if (currentRole === 'instructor' && current) {
+        const url = getSupabaseUrl();
+        const key = getSupabaseAnonKey();
+        if (!url || !key) return;
+        const endpoint = `${url}/rest/v1/classroom_sessions?id=eq.${current.id}`;
+        const body = JSON.stringify({
+          status: 'ended',
+          ended_at: new Date().toISOString(),
+        });
+        // sendBeacon won't let us set custom headers directly, so we smuggle
+        // the apikey + auth via the URL + a crafted Blob. On modern browsers
+        // we can use `fetch(..., { keepalive: true })` instead, which *does*
+        // support headers and runs after unload.
+        try {
+          fetch(endpoint, {
+            method: 'PATCH',
+            keepalive: true,
+            headers: {
+              'Content-Type': 'application/json',
+              apikey: key,
+              Authorization: `Bearer ${key}`,
+              Prefer: 'return=minimal',
+            },
+            body,
+          });
+        } catch { /* best-effort */ }
+      }
+    };
+
+    window.addEventListener('beforeunload', onBeforeUnload);
+    // Safari fires pagehide reliably on tab-close where beforeunload doesn't.
+    window.addEventListener('pagehide', onBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', onBeforeUnload);
+      window.removeEventListener('pagehide', onBeforeUnload);
+    };
+  }, []);
+
   return useMemo(
     () => ({
       supported,
@@ -399,7 +472,8 @@ export function useClassroomSession(): UseClassroomSessionResult {
       endCase,
       leaveSession,
       sendBroadcast,
+      clearError,
     }),
-    [supported, status, error, role, session, participants, lastBroadcast, createSession, joinSession, startCase, endCase, leaveSession, sendBroadcast],
+    [supported, status, error, role, session, participants, lastBroadcast, createSession, joinSession, startCase, endCase, leaveSession, sendBroadcast, clearError],
   );
 }
