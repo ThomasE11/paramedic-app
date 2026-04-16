@@ -3357,7 +3357,7 @@ export const secondYearCases: CaseScenario[] = [
           'Resume CPR immediately after shock for 2 minutes',
           'Shock 2: Defibrillate persistent VF',
           'IV access during CPR — AHA 2025: IV preferred over IO in adult arrest (do not stop compressions)',
-          'Adrenaline 1mg IV after 2nd shock (repeat every 3-5 min)',
+          'Adrenaline 1mg IV after 3rd shock (repeat every 3-5 min)',
           'If VF persists after 3rd shock: Amiodarone 300mg IV',
           'Post-ROSC: 12-lead ECG, maintain SpO2 94-98%'
         ],
@@ -3490,7 +3490,7 @@ export const secondYearCases: CaseScenario[] = [
         'Resume CPR for 2 minutes',
         'Reanalyse - persistent VF - Shock 2',
         'IV access during CPR (AHA 2025: IV preferred over IO in adult arrest; IO is second-line)',
-        'Adrenaline 1mg IV after 2nd shock'
+        'Adrenaline 1mg IV after 3rd shock'
       ],
       definitive: [
         'Continue 2-minute CPR cycles with rhythm checks',
@@ -3565,7 +3565,7 @@ export const secondYearCases: CaseScenario[] = [
       {
         id: 'y2-009-defibrillate-vf',
         category: 'treatment',
-        description: 'Recognise VF and defibrillate (up to 3 shocks with CPR between)',
+        description: 'Recognise VF and defibrillate — single biphasic shock (150-200J) followed by 2 min of uninterrupted CPR, then rhythm check. Repeat cycle (NOT stacked shocks — stacked 3-shock sequence is only for witnessed monitored arrest in cath-lab/ICU).',
         points: 5,
         yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
@@ -3584,7 +3584,7 @@ export const secondYearCases: CaseScenario[] = [
       {
         id: 'y2-009-adrenaline-timing',
         category: 'treatment',
-        description: 'Administer adrenaline 1mg IV after 2nd shock (every 3-5 min)',
+        description: 'Administer adrenaline 1mg IV after 3rd shock (ERC 2021 / AHA 2020 — shockable rhythm) (every 3-5 min)',
         points: 5,
         yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
@@ -3631,7 +3631,7 @@ export const secondYearCases: CaseScenario[] = [
       {
         id: 'y2-009-adr-timing',
         category: 'intervention',
-        description: 'Adrenaline 1mg IV after 2nd shock (then every 3-5 min)',
+        description: 'Adrenaline 1mg IV after 3rd shock (then every 3-5 min)',
         points: 10,
         yearLevel: ['2nd-year', '3rd-year'],
         complexity: ['intermediate'],
@@ -3651,7 +3651,7 @@ export const secondYearCases: CaseScenario[] = [
       'AHA 2025: Breaths WITH compressions (30:2) recommended for both HCPs and lay rescuers who are willing and capable',
       'Rhythm recognition: VF is shockable - defibrillate early and defibrillate often',
       'AHA 2025: IV access preferred over IO in adult cardiac arrest. IO is second-line when IV is not achievable. Never stop compressions to gain access.',
-      'Adrenaline 1mg IV after 2nd shock in shockable rhythms (every 3-5 minutes thereafter)',
+      'Adrenaline 1mg IV after 3rd shock in shockable rhythms (every 3-5 minutes thereafter)',
       'Amiodarone 300mg IV after 3rd shock for refractory VF (150mg can be repeated)',
       'Reversible causes (4H\'s: Hypoxia, Hypovolaemia, Hypo/Hyperkalaemia, Hypothermia; 4T\'s: Tension pneumothorax, Tamponade, Toxins, Thrombosis)',
       'Post-ROSC care (AHA 2025): 12-lead ECG immediately, maintain SpO2 94-98%, do not hyperventilate. Temperature control at 32-36°C for at least 36 hours in adults who remain unresponsive',

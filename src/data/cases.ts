@@ -75,7 +75,7 @@ export const caseDatabase: CaseScenario[] = [
         depth: 'Normal',
         spo2: 94,
         findings: ['Tachypneic', 'Bilateral air entry', 'Bibasal fine crackles'],
-        interventions: ['High-flow oxygen 15L/min via non-rebreather'],
+        interventions: ['Titrate oxygen to SpO2 94-98% (only supplement if <94% per NICE CG95 / ESC ACS 2023 — routine high-flow O2 in ACS may increase infarct size: AVOID / DETO2X-AMI)'],
         auscultation: ['Clear air entry bilaterally', 'Bibasal fine crackles', 'No wheeze']
       },
       circulation: {
@@ -367,7 +367,7 @@ export const caseDatabase: CaseScenario[] = [
       mostLikelyDiagnosis: 'Cardiac arrest secondary to recurrent myocardial infarction'
     },
     managementPathway: {
-      immediate: ['Immediate CPR on firm surface - 30:2 ratio, depth 5-6cm, rate 100-120/min, optimize hand position and body position (AHA 2025)', 'AED/defibrillator application and rhythm analysis', 'Defibrillation if VF/pVT (150-200J biphasic)', 'Adrenaline 1mg IV every 3-5 minutes (AHA 2025: IV preferred over IO in adult cardiac arrest; IO is second-line if IV not achievable)', 'Airway management with OPA/LMA/ETT', 'IV access establishment (preferred over IO per AHA 2025)', 'Reversible causes assessment (Hs and Ts)'],
+      immediate: ['Immediate CPR on firm surface - 30:2 ratio, depth 5-6cm, rate 100-120/min, optimize hand position and body position (AHA 2025)', 'AED/defibrillator application and rhythm analysis', 'Defibrillation if VF/pVT (150-200J biphasic)', 'Adrenaline 1mg IV every 3-5 minutes (Either IV or IO — AHA 2024 focused update weakly prefers IV when rapidly achievable without interrupting compressions; IO remains equally valid (PARAMEDIC-2, IVIO trials show equivalence). Do not delay CPR for access.)', 'Airway management with OPA/LMA/ETT', 'IV or IO access — either acceptable (AHA 2024 focused update; do NOT delay CPR for access)', 'Reversible causes assessment (Hs and Ts)'],
       definitive: ['24/7 Cardiac Catheterization Lab for PCI', 'Temperature control post-ROSC: target 32-36°C for at least 36 hours in adults who remain unresponsive (AHA 2025)', 'ECMO support if available', 'Cardiac surgery if indicated'],
       monitoring: ['Continuous ECG monitoring', 'End-tidal CO2 (ETCO2) - target >10mmHg', 'Blood pressure monitoring', 'SpO2 monitoring', 'Temperature monitoring', 'Blood glucose monitoring'],
       transportConsiderations: ['Pre-alert receiving hospital with ETA and clinical status', 'Do not delay transport for prolonged resuscitation on scene', 'Consider HEMS for rural areas or long transport times', 'Family notification and counseling', 'Continue CPR during transport unless ROSC achieved']
@@ -378,7 +378,7 @@ export const caseDatabase: CaseScenario[] = [
       { id: 'c2-3', category: 'abcde', description: 'Initiate immediate high-quality CPR - 30:2 ratio, depth 5-6cm, rate 100-120/min', points: 15, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'], critical: true },
       { id: 'c2-4', category: 'intervention', description: 'Apply AED/defibrillator and analyze rhythm immediately', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'], critical: true },
       { id: 'c2-5', category: 'intervention', description: 'Defibrillate if VF/pVT - 150-200J biphasic, resume CPR immediately', points: 15, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'], critical: true },
-      { id: 'c2-6', category: 'intervention', description: 'Establish IV access for medication administration (AHA 2025: IV preferred over IO in adult arrest)', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
+      { id: 'c2-6', category: 'intervention', description: 'Establish IV or IO access (AHA 2024 update: IV weakly preferred when not interrupting compressions, IO equally valid)', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
       { id: 'c2-7', category: 'intervention', description: 'Administer adrenaline 1mg IV/IO every 3-5 minutes', points: 15, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'], critical: true },
       { id: 'c2-8', category: 'intervention', description: 'Secure airway with OPA, LMA, or ETT - minimize CPR interruptions', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced', 'expert'] },
       { id: 'c2-9', category: 'intervention', description: 'Check blood glucose - rule out hypoglycemia as reversible cause', points: 5, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
@@ -656,7 +656,7 @@ export const caseDatabase: CaseScenario[] = [
         'Obtain 12-lead ECG to confirm rhythm',
         'IV access x1 (18G)',
         'If UNSTABLE (SBP <90, chest pain, GCS <14): Synchronized cardioversion 100-200J biphasic with procedural sedation',
-        'If STABLE: Rate control — Metoprolol 5mg IV slow push over 5 min (repeat x2), or Diltiazem 0.25mg/kg IV',
+        'If STABLE: prehospital focus is continuous monitoring, IV access, identifying precipitants (infection, PE, dehydration, thyroid, alcohol). IV rate-control agents (metoprolol 5mg IV or diltiazem 0.25mg/kg IV) are administered in ED under cardiac monitoring — not routinely within UK JRCALC / UAE DCAS paramedic scope.',
         'Oxygen if SpO2 <94%',
         'Check anticoagulation status — warfarin/DOAC compliance'
       ],
@@ -681,7 +681,7 @@ export const caseDatabase: CaseScenario[] = [
       { id: 'c3-1', category: 'abcde', description: 'Assess hemodynamic stability - BP, mental status, signs of shock, chest pain', points: 15, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'], critical: true },
       { id: 'c3-2', category: 'intervention', description: 'Obtain 12-lead ECG immediately to confirm rhythm', points: 15, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'], critical: true },
       { id: 'c3-3', category: 'intervention', description: 'Establish IV access for medication administration', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
-      { id: 'c3-4', category: 'intervention', description: 'Administer rate control - Metoprolol 5mg IV or Diltiazem 0.25mg/kg IV', points: 15, yearLevel: ['4th-year'], complexity: ['advanced', 'expert'] },
+      { id: 'c3-4', category: 'intervention', description: 'Recognise that IV rate-control (metoprolol / diltiazem) is an in-hospital decision under continuous monitoring — prehospital paramedic role is monitoring, IV access, precipitant identification, and pre-alert.', points: 15, yearLevel: ['4th-year'], complexity: ['advanced', 'expert'] },
       { id: 'c3-5', category: 'intervention', description: 'Check INR if on warfarin - assess stroke risk', points: 10, yearLevel: ['4th-year'], complexity: ['advanced', 'expert'] },
       { id: 'c3-6', category: 'intervention', description: 'Administer fluids if hypovolemic - consider dehydration as trigger', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
       { id: 'c3-7', category: 'history', description: 'Identify triggers: infection, thyroid, alcohol, dehydration, PE', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
@@ -935,7 +935,7 @@ export const caseDatabase: CaseScenario[] = [
       mostLikelyDiagnosis: 'Hypertensive Emergency with Encephalopathy'
     },
     managementPathway: {
-      immediate: ['Confirm BP in both arms', 'Establish IV access', 'Continuous BP monitoring', 'ECG monitoring', 'Neurological assessment (GCS, pupils)', 'Administer antihypertensive: Labetalol 20mg IV or Hydralazine 10mg IV', 'Target 10-20% BP reduction in first hour'],
+      immediate: ['Confirm BP in both arms', 'Establish IV access', 'Continuous BP monitoring', 'ECG monitoring', 'Neurological assessment (GCS, pupils)', 'Gentle transport — prehospital paramedic focus is recognition, IV access, monitoring and pre-alert. IV labetalol 20mg or nicardipine infusion is ED-administered under invasive BP monitoring (not routine UK JRCALC / UAE DCAS paramedic scope; uncontrolled rapid BP reduction → stroke / MI).', 'Target BP reduction: 10-20% in first hour (ED-level, not prehospital)'],
       definitive: ['ICU admission for invasive BP monitoring', 'IV antihypertensive infusion (Labetalol/Nicardipine)', 'Brain CT/MRI to rule out stroke/bleed', 'Ophthalmology consult for papilledema', 'Renal function monitoring'],
       monitoring: ['BP every 5-10 minutes initially', 'Continuous ECG monitoring', 'Neurological status (GCS)', 'Urine output', 'Oxygen saturation', 'Cardiac monitoring for ischemia/arrhythmias'],
       transportConsiderations: ['Continuous BP monitoring en route', 'IV access maintained', 'Cardiac monitoring', 'Avoid rapid BP reduction during transport', 'Pre-alert receiving hospital with BP readings and end-organ damage', 'Consider stroke center if neurological deficits']
@@ -944,7 +944,7 @@ export const caseDatabase: CaseScenario[] = [
       { id: 'c4-1', category: 'intervention', description: 'Confirm BP in both arms - check for significant difference', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
       { id: 'c4-2', category: 'intervention', description: 'Establish IV access for antihypertensive medications', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
       { id: 'c4-3', category: 'abcde', description: 'Assess for end-organ damage: neuro exam, chest auscultation, urine output', points: 20, yearLevel: ['4th-year'], complexity: ['advanced', 'expert'], critical: true },
-      { id: 'c4-4', category: 'intervention', description: 'Administer antihypertensive: Labetalol 20mg IV or Hydralazine 10mg IV', points: 20, yearLevel: ['4th-year'], complexity: ['advanced', 'expert'] },
+      { id: 'c4-4', category: 'intervention', description: 'Recognise that IV antihypertensives (labetalol, nicardipine) are ED-administered under invasive monitoring — prehospital role is monitoring, IV access, pre-alert, and avoiding rapid BP reduction', points: 20, yearLevel: ['4th-year'], complexity: ['advanced', 'expert'] },
       { id: 'c4-5', category: 'intervention', description: 'Obtain 12-lead ECG - assess for LVH, ischemia, arrhythmias', points: 15, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
       { id: 'c4-6', category: 'intervention', description: 'Check serum creatinine and electrolytes if available', points: 10, yearLevel: ['4th-year'], complexity: ['advanced', 'expert'] },
       { id: 'c4-7', category: 'intervention', description: 'Monitor BP every 5-10 minutes', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
@@ -1220,7 +1220,7 @@ export const caseDatabase: CaseScenario[] = [
       mostLikelyDiagnosis: 'Life-threatening Asthma Exacerbation'
     },
     managementPathway: {
-      immediate: ['High-flow oxygen 15L/min via non-rebreather', 'Continuous salbutamol nebulizer (5mg every 15-20 min)', 'Ipratropium bromide 500mcg nebulizer', 'IV hydrocortisone 200mg early', 'IV access establishment', 'Consider magnesium sulfate 2g IV over 20 min'],
+      immediate: ['High-flow oxygen 15L/min via non-rebreather (aim SpO2 94-98%)', 'Continuous salbutamol nebulizer (5mg every 15-20 min, back-to-back if life-threatening)', 'Ipratropium bromide 500mcg nebulizer (added for severe / life-threat features)', 'IV hydrocortisone 200mg early (or methylprednisolone 80mg)', 'IV access establishment (large-bore)', 'Magnesium sulfate 2g IV over 20 min for severe / life-threatening features', 'IM Adrenaline 500mcg (0.5mL 1:1000, anterolateral thigh) if life-threatening / peri-arrest / not responding to nebulisers — GINA 2024 / BTS 2019 / JRCALC. Repeat every 5 min as needed.'],
       definitive: ['ICU admission for potential intubation', 'Mechanical ventilation if respiratory failure', 'Continuous beta-agonist infusion', 'Systemic corticosteroids', 'Chest X-ray to rule out pneumothorax'],
       monitoring: ['Continuous SpO2 monitoring', 'Respiratory rate and pattern', 'Auscultation for silent chest', 'Peak expiratory flow if cooperative', 'Heart rate and rhythm', 'Level of consciousness', 'Accessory muscle use'],
       transportConsiderations: ['Pre-alert hospital for potential intubation', 'Continuous nebulized therapy during transport', 'Continuous monitoring of SpO2 and respiratory rate', 'Have intubation equipment ready', 'Transport to facility with ICU capabilities', 'Minimize transport time - do not delay for full stabilization']
@@ -2113,7 +2113,7 @@ export const caseDatabase: CaseScenario[] = [
       'Signs of right heart strain on ECG indicate hemodynamically significant PE',
       'D-dimer not helpful in high pre-test probability - proceed to imaging',
       'Prehospital management: Oxygen, IV access, hemodynamic support, rapid transport',
-      'Consider underlying DVT - examine calves but do NOT massage (risk of dislodging more clots)',
+      'Consider underlying DVT — gently examine calves for asymmetric swelling, tenderness, warmth. (The popular "do not touch the calf" myth is not evidence-based per NICE NG158/BMJ Best Practice; gentle examination is safe. Just avoid vigorous squeezing / DVT-massage manoeuvres.)',
       'High suspicion in postpartum women, long-haul travelers, post-surgical patients, cancer patients',
       'Dubai is major travel hub - high index of suspicion in recent arrivals',
       'Pregnancy and postpartum period significantly increase PE risk',
@@ -8206,10 +8206,11 @@ export const caseDatabase: CaseScenario[] = [
         'Right-sided ECG (V4R) — confirm RV infarction',
         'DO NOT give nitrates — absolute contraindication in RV infarction',
         'Keep patient SUPINE — do not sit up (preload dependent)',
-        'High-flow oxygen 15L/min if SpO2 <94%',
+        'AVOID morphine / use fentanyl or very small titrated morphine (1-2mg) — morphine venodilates and can precipitate catastrophic hypotension in preload-dependent RV infarct; analgesia only if BP stable, reassess after each dose',
+        'Titrate oxygen to SpO2 94-98% (supplement only if <94%)',
         'IV access x2 (14-16G)',
         'Aspirin 300mg PO (crushed/chewed)',
-        'Cautious IV fluid bolus 250mL NS for hypotension (RV needs preload)',
+        'Cautious IV fluid bolus 250mL NS titrated to BP — RV needs preload but avoid overload',
         'Atropine 0.5-1mg IV for symptomatic bradycardia',
         'Pre-alert cardiac centre — STEMI code with RV involvement'
       ],
@@ -8792,7 +8793,7 @@ export const caseDatabase: CaseScenario[] = [
         'Assess haemodynamic stability — BP, GCS, chest pain',
         'Obtain 12-lead ECG — identify sawtooth flutter waves in II, III, aVF at ~300 bpm',
         'IV access (18G)',
-        'If STABLE: Rate control — Metoprolol 5mg IV or Diltiazem 0.25mg/kg IV (patient already on diltiazem — dose adjustment may be needed)',
+        'If STABLE: prehospital focus is continuous monitoring, IV access, identifying precipitants. Rate-control agents (metoprolol 5mg IV or diltiazem 0.25mg/kg IV) are ED-administered — not within UK JRCALC / UAE DCAS paramedic scope. Transport under monitoring.',
         'Check anticoagulation status — warfarin INR range?',
         'Identify precipitant — missed medication dose confirmed; check electrolytes if available',
         'If UNSTABLE (SBP <90 or haemodynamic compromise): Synchronized cardioversion 50-100J biphasic'
@@ -9394,7 +9395,7 @@ export const caseDatabase: CaseScenario[] = [
         'IV access (18G)',
         'GTN spray 400mcg sublingual if SBP >90 mmHg — repeat every 5 minutes x3',
         'GTN infusion if SBP allows (per DCAS protocol)',
-        'Furosemide 40mg IV if protocols allow',
+        'Furosemide 40mg IV ONLY if confirmed fluid overload and protocols allow — NOT front-line. GTN + CPAP are the priority for acute pulmonary oedema; furosemide onset of diuresis is 15-30 min, too slow for acute relief (ESC 2023 HF guideline, DOSE-AHF).',
         'Obtain 12-lead ECG — identify ischaemia, LVH, arrhythmia',
         'Do NOT give IV fluids unless hypotensive — these patients are fluid overloaded'
       ],
