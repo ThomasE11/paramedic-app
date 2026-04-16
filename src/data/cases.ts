@@ -4134,7 +4134,7 @@ export const caseDatabase: CaseScenario[] = [
       mostLikelyDiagnosis: 'Diabetic Ketoacidosis'
     },
     managementPathway: {
-      immediate: ['IV access with large-bore cannula (14-16G)', 'Aggressive fluid resuscitation with 0.9% NaCl - 1L in first hour', 'Second liter over next 2 hours', 'Check and document blood glucose and ketones', 'Regular insulin 0.1 units/kg IV bolus then infusion', 'Potassium replacement when K+ <5.3 mmol/L', 'Continuous cardiac monitoring'],
+      immediate: ['IV access with large-bore cannula (14-16G)', 'Fluid resuscitation: 0.9% NaCl 1L over first hour (fluid FIRST, then insulin). Second litre over next 2h.', 'Check and document blood glucose and ketones (capillary + urine)', 'DO NOT give insulin bolus prehospital. Hospital pathway: fixed-rate insulin INFUSION 0.1 units/kg/hr ONLY after first litre of saline is running (UK JBDS 2023 — bolus insulin is associated with cerebral oedema, especially in young patients). Do not start insulin prehospital if transport <30 min.', 'Potassium replacement when K+ is 3.5-5.5 mmol/L (add 40 mmol KCl to fluids); if K+ <3.5, senior review (UK JBDS threshold, not <5.3)', 'Continuous cardiac monitoring for hypokalaemia-related arrhythmia'],
       definitive: ['ICU admission for close monitoring', 'Continue fluid resuscitation with 0.9% NaCl', 'Insulin infusion until ketosis resolves and anion gap closes', 'Transition to subcutaneous insulin when eating', 'Identify and treat precipitating cause'],
       monitoring: ['Blood glucose hourly', 'Vital signs every 15-30 minutes', 'Neurological status - monitor for cerebral edema (headache, altered mental status, bradycardia, hypertension)', 'Fluid balance and urine output', 'Electrolytes (especially potassium)', 'ECG monitoring for arrhythmias'],
       transportConsiderations: ['Rapid transport to hospital with endocrinology/ICU capabilities', 'Continue fluid resuscitation en route', 'Do not delay for detailed history - fluids are life-saving', 'Monitor airway and neurological status closely', 'Air-conditioned transport essential']
@@ -4142,7 +4142,7 @@ export const caseDatabase: CaseScenario[] = [
     studentChecklist: [
       { id: 'm2-1', category: 'abcde', description: 'Check blood glucose and ketones', points: 15, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'], critical: true },
       { id: 'm2-2', category: 'intervention', description: 'IV access and fluid resuscitation', points: 15, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
-      { id: 'm2-3', category: 'intervention', description: 'Insulin therapy', points: 10, yearLevel: ['4th-year'], complexity: ['advanced', 'expert'] },
+      { id: 'm2-3', category: 'intervention', description: 'Recognise that insulin is given as a FIXED-RATE IV INFUSION (0.1 units/kg/hr) only AFTER the first litre of saline is running — NO bolus (UK JBDS 2023: bolus insulin → cerebral oedema risk). Paramedic role is fluid resuscitation first; insulin is hospital-initiated.', points: 10, yearLevel: ['4th-year'], complexity: ['advanced', 'expert'] },
       { id: 'm2-4', category: 'abcde', description: 'Monitor for cerebral edema', points: 10, yearLevel: ['4th-year'], complexity: ['advanced', 'expert'] }
     ],
     teachingPoints: [
@@ -4416,7 +4416,7 @@ export const caseDatabase: CaseScenario[] = [
       ],
       definitive: [
         'Medical exclusion of organic causes (PE, ACS, pneumothorax) before accepting panic diagnosis',
-        'Benzodiazepine (lorazepam 1-2mg PO or midazolam 2.5mg IM) only if de-escalation fails and organic cause excluded',
+        'Benzodiazepines are NOT first-line for panic attack prehospital (NICE CG113 / WHO mhGAP 2.0) — they mask symptoms, carry dependence risk, and blunt future CBT efficacy. If the patient already has prescribed PRN alprazolam / lorazepam they may self-administer under paramedic observation after full vital signs + ECG. Avoid paramedic-administered benzos. Continue breathing coaching and therapeutic communication. Complete structured suicide risk screen (Columbia-SSRS principles) — ideation, plan, means, intent, prior attempts, protective factors.',
         'Refer to GP or mental health services for ongoing anxiety management'
       ],
       monitoring: [
@@ -6381,11 +6381,14 @@ export const caseDatabase: CaseScenario[] = [
     managementPathway: {
       immediate: [
         'Scene safety assessment BEFORE entry — identify exit routes, remove breakable objects if possible, request police backup if violence risk',
-        'Verbal de-escalation — calm voice, respectful tone, stand at an angle (not face-on), do not crowd patient',
+        'Verbal de-escalation — calm voice, respectful tone, stand at an angle (not face-on), do not crowd patient; allow time — most escalation resolves with skilled communication',
         'Maintain safe distance — remain beyond arm\'s reach until patient is calmer',
-        'Check blood glucose and vital signs when patient allows — rule out organic cause',
+        'Organic screen: blood glucose, SpO2, temperature, GCS — "behavioural change is organic until proven otherwise". Hyperthermia + diaphoresis + superhuman strength + bizarre speech + sudden tranquillity = Acute Behavioural Disturbance (ABD): medical emergency with risk of sudden cardiac death — continuous cardiac + temperature monitoring, NEVER prone restraint (positional asphyxia).',
+        'Structured suicide risk screen (Columbia-SSRS principles): document ideation, plan, means, intent, prior attempts, protective factors — all six domains.',
+        'Capacity assessment per UAE Federal Law 10/2023 (Mental Health Law) — 4-part test: can the patient understand, retain, weigh, and communicate the decision? Document. Least-restrictive principle.',
         'Gather collateral history from family — medication history, previous episodes, recent drug/alcohol use',
-        'Chemical restraint if verbal fails: Midazolam 5mg IM or Haloperidol 5mg IM (per DCAS protocol) — last resort after verbal de-escalation fails',
+        'Chemical sedation only after verbal de-escalation fails AND organic causes excluded. Per NICE NG10: (1) IM lorazepam 1-2mg first-line if benzo-naive, (2) IM olanzapine 10mg, OR (3) IM haloperidol 5mg + PROMETHAZINE 25-50mg (never haloperidol alone — QT prolongation + EPSE risk; obtain 12-lead ECG before if possible). Avoid benzos in elderly delirium (paradoxical agitation).',
+        'If physical restraint required: supine/lateral ONLY (never prone — positional asphyxia), max 10 minutes, continuous cardiorespiratory + temperature monitoring, debrief afterwards per NICE NG10.',
         'Document baseline GCS before any sedation'
       ],
       definitive: [
@@ -6549,7 +6552,7 @@ export const caseDatabase: CaseScenario[] = [
         capillaryRefill: 4,
         skin: 'Diaphoretic, cyanotic, clammy',
         findings: ['Bradycardic', 'Hypotensive', 'Poor perfusion', 'Signs of cholinergic crisis'],
-        interventions: ['IV access', 'Atropine 0.5mg IV', 'Remove contaminated clothing']
+        interventions: ['IV access', 'Atropine 1-3mg IV initial (adult cholinergic crisis — NOT 0.5mg which is bradycardia dose), then DOUBLE every 3-5 min titrated to drying of tracheobronchial secretions (NOT heart rate, NOT pupils). Total dose may reach grams.', 'Pralidoxime 1-2g IV over 30 min alongside', 'Remove contaminated clothing (PPE for responders — nitrile gloves, eye protection, avoid contact with secretions)']
       },
       disability: {
         avpu: 'P',
@@ -6641,7 +6644,7 @@ export const caseDatabase: CaseScenario[] = [
     studentChecklist: [
       { id: 'tox1-1', category: 'safety', description: 'SCENE SAFETY - Don PPE before approaching', points: 20, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'], critical: true, timeframe: 'Before patient contact' },
       { id: 'tox1-2', category: 'intervention', description: 'Remove contaminated clothing immediately', points: 15, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'], critical: true, rationale: 'Continues absorption until clothing removed' },
-      { id: 'tox1-3', category: 'intervention', description: 'Administer Atropine 0.5mg IV/IM', points: 15, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'], critical: true, timeframe: 'As soon as IV established' },
+      { id: 'tox1-3', category: 'intervention', description: 'Administer Atropine 1-3mg IV initial (adult cholinergic crisis), then DOUBLE every 3-5 min titrated to drying of tracheobronchial secretions — NOT 0.5mg (bradycardia dose), NOT titrated to HR/pupils. Total dose may reach grams.', points: 15, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'], critical: true, timeframe: 'As soon as IV established' },
       { id: 'tox1-4', category: 'intervention', description: 'Prepare for advanced airway (RSI equipment)', points: 15, yearLevel: ['4th-year'], complexity: ['advanced', 'expert'], critical: true },
       { id: 'tox1-5', category: 'abcde', description: 'Recognize SLUDGE-BBB mnemonic signs', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
       { id: 'tox1-6', category: 'communication', description: 'Request HazMat support and additional ambulances', points: 15, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'], critical: true },
@@ -6653,7 +6656,7 @@ export const caseDatabase: CaseScenario[] = [
       'Atropine reverses muscarinic effects (secretions, bronchoconstriction, bradycardia) but NOT nicotinic effects (muscle weakness)',
       'Pralidoxime (2-PAM) regenerates acetylcholinesterase - ACP level',
       'Decontamination: remove clothing, wash skin with soap and water, protect self',
-      'Antidote: Atropine (0.5-2mg IV q3-5min) + Pralidoxime (1-2g IV over 30 min, then infusion)',
+      'Antidote: Atropine 1-3mg IV initial, then DOUBLE the dose every 3-5 min titrated to drying tracheobronchial secretions (not HR, not pupils — pupils are unreliable). Total dose may reach grams in severe poisoning. Pralidoxime 1-2g IV over 30 min alongside (then infusion) — reactivates acetylcholinesterase. Call Poison Control early.',
       'Contact Poison Control Center: 800-4111 (UAE)'
     ],
     commonPitfalls: [

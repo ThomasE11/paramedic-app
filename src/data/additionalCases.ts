@@ -3913,19 +3913,20 @@ export const additionalObstetricCases: CaseScenario[] = [
     },
     studentChecklist: [
       { id: 'obs2-1', category: 'abcde', description: 'Left lateral tilt to prevent aortocaval compression', points: 10, yearLevel: ['4th-year'], complexity: ['expert'], critical: true },
-      { id: 'obs2-2', category: 'intervention', description: 'Magnesium sulfate for seizure prophylaxis', points: 20, yearLevel: ['4th-year'], complexity: ['expert'], critical: true },
+      { id: 'obs2-2', category: 'intervention', description: 'Magnesium sulphate 4g IV in 100mL over 5-10 min LOADING + 1g/hr maintenance infusion — first-line TREATMENT for active eclamptic seizure (NOT prophylaxis; patient has seized). Have calcium gluconate 10mL 10% IV drawn up as magnesium-toxicity antidote (respiratory depression if mg toxic — check patellar reflex).', points: 20, yearLevel: ['4th-year'], complexity: ['expert'], critical: true },
       { id: 'obs2-3', category: 'intervention', description: 'Control severe hypertension (labetalol/hydralazine)', points: 15, yearLevel: ['4th-year'], complexity: ['expert'] },
       { id: 'obs2-4', category: 'abcde', description: 'Monitor fetus (heart rate if possible)', points: 10, yearLevel: ['4th-year'], complexity: ['expert'] },
       { id: 'obs2-5', category: 'intervention', description: 'Prepare for urgent delivery', points: 10, yearLevel: ['4th-year'], complexity: ['expert'] }
     ],
     teachingPoints: [
       'Eclampsia = seizures in pregnancy with preeclampsia features',
-      'Magnesium sulfate is first-line for seizure prophylaxis',
+'Magnesium sulphate is first-line TREATMENT for active eclamptic seizure AND prevention of recurrence (Magpie Trial 2002 established superiority over diazepam and phenytoin). Loading 4g IV in 100mL over 5-10 min, then 1g/hr maintenance.',
       'Left lateral tilt essential in pregnancy >20 weeks',
       'Urgent delivery is definitive treatment'
     ],
     commonPitfalls: [
-      'Delaying magnesium sulfate administration - give immediately to prevent recurrent seizures',
+      'Delaying magnesium sulphate administration - give immediately to prevent recurrent seizures',
+      'Giving diazepam or midazolam first-line for eclampsia — magnesium is definitive (Magpie Trial 2002). Benzodiazepines only for refractory seizures AFTER magnesium has been loaded. NICE NG133, RCOG.',
       'Placing patient supine - causes aortocaval compression and reduces uteroplacental perfusion',
       'Not recognizing magnesium sulfate toxicity (loss of reflexes, respiratory depression, cardiac arrest)',
       'Failing to control severe hypertension - increases risk of stroke and cerebral hemorrhage',

@@ -1345,7 +1345,7 @@ export const firstYearCases: CaseScenario[] = [
         'Support delivery of shoulders (anterior then posterior)',
         'Dry and stimulate newborn immediately',
         'Keep newborn warm - skin to skin with mother',
-        'Clamp and cut cord',
+        'DELAYED cord clamping: wait 1-3 minutes after delivery if term and vigorous infant (WHO / ILCOR 2020 / NICE CG190 / RCOG). Keep baby at or below level of placenta, dry and stimulate during the delay. Clamp early only if resuscitation required or heavy maternal bleeding. Then two clamps 15-20cm from umbilicus, cut between.',
         'Await placental delivery (do NOT pull on cord)',
         'Monitor for postpartum haemorrhage'
       ],
