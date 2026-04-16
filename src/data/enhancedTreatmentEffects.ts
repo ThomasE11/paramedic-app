@@ -306,9 +306,9 @@ export const TREATMENTS: Treatment[] = [
     ],
   },
   {
-    id: 'occlusive_dressing_3sided',
-    name: '3-Sided Occlusive Dressing',
-    description: '3-sided occlusive dressing for sucking chest wound — taped on three sides to create a flutter valve effect, allowing trapped air to escape on exhalation.',
+    id: 'vented_chest_seal',
+    name: 'Vented Chest Seal',
+    description: 'Vented chest seal (HyFin Vent / Russell / SAM) for sucking chest wound — preferred over improvised 3-sided dressings per TCCC 2022 / PHTLS 10. Reliably vents outgoing air while preventing re-entry; covers both entry and exit wounds. Non-vented seal is a fallback — monitor closely for tension pneumothorax.',
     category: 'breathing',
     onset: 'fast',
     onsetTimeSeconds: 15,

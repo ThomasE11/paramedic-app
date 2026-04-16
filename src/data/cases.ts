@@ -1511,7 +1511,7 @@ export const caseDatabase: CaseScenario[] = [
       mostLikelyDiagnosis: 'Tension Pneumothorax'
     },
     managementPathway: {
-      immediate: ['High-flow oxygen 15L/min', 'Immediate needle decompression 2nd ICS mid-clavicular line OR 4th/5th ICS mid-axillary line', 'Use 14G or 16G cannula (5cm length for obese patients)', 'IV access and fluid resuscitation', 'Continuous monitoring'],
+      immediate: ['High-flow oxygen 15L/min', 'Immediate needle decompression — PREFERRED site is 4th-5th ICS anterior-to-mid axillary line per TCCC 2022 (2nd ICS mid-clavicular fails in >30% of adults due to chest-wall thickness and risks vessel injury)', 'Use 14G x 8cm catheter (5cm catheters demonstrably fail in ~1/3 of adults)', 'IV access + small-volume fluid challenges titrated to radial pulse (avoid large crystalloid boluses)', 'Continuous monitoring — reassess after decompression for recurrence'],
       definitive: ['Formal chest drain insertion (28-32F)', 'Chest X-ray to confirm lung re-expansion', 'Thoracic surgery consult if ongoing air leak', 'Pain management', 'Antibiotics if traumatic'],
       monitoring: ['Continuous SpO2 monitoring', 'Respiratory rate and effort', 'Blood pressure', 'Heart rate', 'Breath sounds after decompression', 'Tracheal position', 'Monitor for re-tensioning'],
       transportConsiderations: ['Immediate transport after decompression', 'Pre-alert trauma center', 'Continue high-flow oxygen', 'Monitor for deterioration or re-tensioning', 'Chest drain should be inserted at receiving facility', 'Do NOT delay transport for chest drain insertion in prehospital setting']
@@ -2387,7 +2387,7 @@ export const caseDatabase: CaseScenario[] = [
       mostLikelyDiagnosis: 'Multi-trauma with TBI'
     },
     managementPathway: {
-      immediate: ['Scene safety and PPE', 'Manual C-spine stabilization', 'Airway management (suction, jaw thrust, OPA/LMA/ETT)', 'High-flow oxygen and BVM if needed', 'Control catastrophic hemorrhage with direct pressure/tourniquets', 'Needle decompression if tension pneumothorax suspected', 'IV access x2 large bore (14-16G)', 'Fluid resuscitation (crystalloids/blood products)', 'TXA 1g IV within 3 hours of injury', 'Pelvic binder if pelvic fracture suspected', 'Long bone fracture splinting'],
+      immediate: ['Scene safety and PPE', '<C>ATASTROPHIC HAEMORRHAGE FIRST — CAT tourniquet 5-7cm proximal to open femur bleed (not over joint), note time; wound-pack arterial bleeds — this is step 1 of MARCH, before airway (exsanguination kills faster than airway failure in first minutes)', 'Manual C-spine stabilisation (selective — rigid collar only if mechanism + midline tenderness + neuro deficit)', 'Airway management (suction, jaw thrust, OPA/LMA/ETT)', 'High-flow oxygen and BVM if needed — aim SpO2 ≥94% (TBI protective)', 'Needle decompression if tension pneumothorax suspected (5th ICS AAL, 14G x 8cm preferred per TCCC 2022)', 'IV access x2 large bore (14-16G)', 'Small-volume Hartmann\'s aliquots (250mL) titrated — target SBP ≥110 mmHg if TBI (BTF 4th Ed; old SBP >90 is outdated), SBP 80-90 if penetrating without TBI', 'TXA 1g IV slow push within 3 hours of injury (CRASH-2 / CRASH-3)', 'Pelvic binder EMPIRICALLY at greater trochanters (NOT iliac crests) in high-mechanism polytrauma with shock — DO NOT spring/compress pelvis (outdated, disrupts clot)', 'Long bone fracture splinting', 'Activate Major Haemorrhage Protocol early for blood products'],
       definitive: ['Damage control surgery', 'CT imaging of head/chest/abdomen/pelvis', 'Neurosurgical intervention if indicated', 'Chest tube insertion if pneumothorax/hemothorax', 'Operative fixation of fractures', 'Massive transfusion protocol if ongoing bleeding', 'ICU admission for multi-system support'],
       monitoring: ['Continuous SpO2 and cardiac monitoring', 'Blood pressure monitoring', 'GCS and pupillary response', 'Capillary refill and peripheral perfusion', 'Urinary output (catheterize if indicated)', 'Temperature monitoring', 'Hemorrhage reassessment'],
       transportConsiderations: ['Rapid transport to Level I Trauma Center', 'Load and go approach', 'Consider HEMS activation for GCS <9 or hemodynamic instability', 'Pre-alert trauma team with mechanism and injuries', 'Continue resuscitation en route', 'Minimize scene time to <10 minutes', 'Bypass closer hospitals for trauma center']
@@ -2565,7 +2565,7 @@ export const caseDatabase: CaseScenario[] = [
     },
     managementPathway: {
       immediate: ['C-spine immobilization with rigid collar and blocks', 'Airway management with cervical spine precautions (suction, jaw thrust)', 'High-flow oxygen', 'IV access x2 with isotonic fluids (Normal Saline only)', 'Hyperventilation (ETCO2 30-35 mmHg) if signs of herniation', 'Head elevated 30 degrees', 'Mannitol 0.25-1g/kg or hypertonic saline if herniation suspected'],
-      definitive: ['Emergency CT head', 'Neurosurgical intervention (craniotomy/craniectomy)', 'ICU admission with intracranial pressure monitoring', 'Mechanical ventilation with neuroprotective strategy', 'Avoid hypoxia and hypotension (SBP >90 mmHg)'],
+      definitive: ['Emergency CT head', 'Neurosurgical intervention (craniotomy/craniectomy)', 'ICU admission with intracranial pressure monitoring', 'Mechanical ventilation with neuroprotective strategy', 'Avoid hypoxia (SpO2 ≥94%) and hypotension — TBI BP target SBP ≥110 mmHg and MAP ≥80 mmHg per BTF 4th Ed / NICE NG232 (SBP >90 is outdated; even a single episode of SBP <110 doubles mortality)'],
       monitoring: ['GCS every 5-10 minutes', 'Pupillary response (size, equality, reactivity)', 'Vital signs (BP, HR, RR, SpO2)', 'Watch for Cushing triad (HTN, bradycardia, irregular resp)', 'Signs of increasing ICP or herniation', 'Airway patency if GCS declining'],
       transportConsiderations: ['Immediate transport to neurosurgical center', 'Rapid sequence intubation if GCS <8 or airway compromise', 'Maintain C-spine immobilization throughout', 'Pre-alert neurosurgical team with GCS and mechanism', 'Airway equipment ready for deterioration', 'Do NOT delay for IV access if deteriorating']
     },
@@ -2684,7 +2684,7 @@ export const caseDatabase: CaseScenario[] = [
         depth: 'Shallow',
         spo2: 90,
         findings: ['Sucking chest wound left side', 'Tachypnea', 'Reduced air entry left'],
-        interventions: ['Seal wound with occlusive dressing (3 sides)', 'High-flow oxygen']
+        interventions: ['Apply vented chest seal (HyFin Vent / Russell / SAM) — current TCCC 2022 / PHTLS 10 standard; non-vented only as fallback, monitoring closely for tension', 'High-flow oxygen']
       },
       circulation: {
         pulseRate: 115,
@@ -2737,19 +2737,19 @@ export const caseDatabase: CaseScenario[] = [
       mostLikelyDiagnosis: 'Open Pneumothorax (Sucking Chest Wound)'
     },
     managementPathway: {
-      immediate: ['Apply occlusive dressing sealed on 3 sides (allowing air escape)', 'High-flow oxygen 15L/min', 'IV access x2 large-bore (14-16G)', 'Fluid resuscitation with crystalloids', 'Position patient with injured side down if possible', 'Prepare for tension pneumothorax development'],
+      immediate: ['Apply vented chest seal (HyFin Vent / Russell / SAM) — TCCC 2022 / PHTLS 10 standard. Improvised 3-sided taped dressings are unreliable (fail when wet/bloody) and no longer first-line.', 'High-flow oxygen 15L/min', 'IV access x2 large-bore (14-16G)', 'PERMISSIVE HYPOTENSION target SBP 80-90 mmHg (penetrating, no TBI): 250mL Hartmann\'s aliquots titrated to radial pulse / mentation — avoid large crystalloid volumes (dilutional coagulopathy). Activate Major Haemorrhage Protocol for blood products.', 'TRANEXAMIC ACID 1g IV slow push over 10 min within 3h of injury (CRASH-2, JRCALC 2024) — then 1g infusion over 8h in-hospital.', 'Position patient with injured side down if possible', 'Prepare for tension pneumothorax development — be ready to burp the seal or needle-decompress'],
       definitive: ['Chest X-ray to assess for pneumothorax/hemothorax', 'Chest tube insertion (if trained) or at hospital', 'Surgical exploration if ongoing air leak or bleeding', 'Blood transfusion if significant blood loss', 'Thoracic surgery consultation'],
       monitoring: ['Continuous SpO2 monitoring', 'Respiratory rate and effort', 'Blood pressure and heart rate', 'Breath sounds bilaterally', 'Signs of tension pneumothorax (remove dressing if develops)', 'Tracheal deviation', 'Signs of cardiac tamponade (Beck triad)'],
       transportConsiderations: ['Immediate transport to trauma center', 'Do NOT remove occlusive dressing unless tension develops', 'Pre-alert trauma team with mechanism and injuries', 'Continue oxygen during transport', 'Monitor closely for tension pneumothorax', 'Position injured side down if tolerated']
     },
     studentChecklist: [
-      { id: 't3-1', category: 'intervention', description: 'Seal wound with occlusive dressing (3 sides)', points: 20, yearLevel: ['4th-year'], complexity: ['advanced', 'expert'], critical: true },
+      { id: 't3-1', category: 'intervention', description: 'Apply vented chest seal (HyFin Vent / Russell / SAM) — current TCCC 2022 / PHTLS 10 standard; non-vented only as fallback, monitoring closely for tension', points: 20, yearLevel: ['4th-year'], complexity: ['advanced', 'expert'], critical: true },
       { id: 't3-2', category: 'intervention', description: 'High-flow oxygen', points: 5, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
       { id: 't3-3', category: 'intervention', description: 'IV access and fluids', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
       { id: 't3-4', category: 'abcde', description: 'Monitor for tension pneumothorax', points: 15, yearLevel: ['4th-year'], complexity: ['advanced', 'expert'] }
     ],
     teachingPoints: [
-      'Occlusive dressing sealed on 3 sides allows air escape',
+      'Vented chest seal (HyFin Vent / Russell) is the current TCCC 2022 / PHTLS 10 standard. The improvised 3-sided taped dressing fails in ~1/3 of field uses (wet/bloody environment, inadvertent 4-sided seal) and is no longer first-line.',
       'If tension develops, remove dressing temporarily',
       'Position injured side down if possible',
       'Rapid transport to trauma center'
@@ -6901,7 +6901,7 @@ export const caseDatabase: CaseScenario[] = [
         capillaryRefill: 4,
         skin: 'Burned areas, pale elsewhere',
         findings: ['Tachycardic', 'Hypotensive', 'Signs of hypovolemic shock'],
-        interventions: ['IV access x2 large bore', 'Normal saline or Plasma-Lyte 250mL bolus', 'Burn fluid resuscitation']
+        interventions: ['IV access x2 large bore', 'Hartmann\'s (Ringer\'s Lactate) 250mL titrated — NOT 0.9% NaCl (causes hyperchloraemic acidosis)', 'Burn fluid resuscitation using Parkland formula']
       },
       disability: {
         avpu: 'A',
@@ -6947,7 +6947,9 @@ export const caseDatabase: CaseScenario[] = [
     },
     managementPathway: {
       immediate: [
-        'Stop the burning process - remove from heat source',
+        'Stop the burning process — remove from heat source, remove smouldering clothing and jewellery (will continue to burn and become constricting as oedema forms)',
+        'Cool the burn with cool (NOT cold) running water for 20 minutes if within 3 hours of injury — cooling limited to burn site only; actively WARM the rest of the patient (hypothermia + large TBSA = lethal triad)',
+        'Dress with loose cling film applied lengthwise (never circumferential — constricts as oedema forms). Do NOT use wet dressings on large TBSA (hypothermia risk)',
         'Assess airway - early intubation if soot around mouth/nose, hoarseness/stridor, facial burns, or singed nasal hairs',
         '100% oxygen via non-rebreather (treat CO/CN poisoning)',
         'IV access x2 with large-bore catheters',
@@ -6992,7 +6994,7 @@ export const caseDatabase: CaseScenario[] = [
       { id: 'burn1-2', category: 'intervention', description: 'Calculate TBSA (Total Body Surface Area) burned', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'], critical: true, rationale: 'Rule of 9s: head 9%, each arm 9%, each leg 18%, anterior torso 18%, posterior torso 18%, genitalia 1%' },
       { id: 'burn1-3', category: 'intervention', description: 'Remove jewelry and constricting items immediately', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'], critical: true },
       { id: 'burn1-4', category: 'intervention', description: 'IV access through burned skin if necessary', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
-      { id: 'burn1-5', category: 'intervention', description: 'Fluid resuscitation: 2-4 mL/kg x TBSA%', points: 15, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'], critical: true, rationale: 'Parkland formula for burn fluid resuscitation' },
+      { id: 'burn1-5', category: 'intervention', description: 'Parkland formula: 4 mL × kg × %TBSA of Hartmann\'s / Ringer\'s Lactate over 24h (half in first 8h from time of burn). Exclude superficial burns from TBSA (erythema only, like sunburn — do NOT count).', points: 15, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'], critical: true, rationale: 'EBA 2023 / JRCALC 2024 / ABA consensus: adult Parkland is 4 mL × kg × %TBSA with Hartmann\'s (balanced crystalloid). Over-inclusion of superficial burns drives over-resuscitation → abdominal compartment syndrome, ARDS.' },
       { id: 'burn1-6', category: 'intervention', description: 'Pain management (Morphine)', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
       { id: 'burn1-7', category: 'intervention', description: 'Cover burns with sterile non-adhesive dressing', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
       { id: 'burn1-8', category: 'communication', description: 'Transport to burn center', points: 15, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'], critical: true },
@@ -7000,7 +7002,7 @@ export const caseDatabase: CaseScenario[] = [
     ],
     teachingPoints: [
       'Rule of 9s for TBSA estimation: Head 9%, Arms 9% each, Legs 18% each, Anterior trunk 18%, Posterior trunk 18%, Genitalia 1%',
-      'Parkland formula: 2-4 mL/kg x %TBSA in first 24 hours, half in first 8 hours',
+      'Parkland formula (adult): 4 mL × kg × %TBSA of Hartmann\'s / Ringer\'s Lactate in first 24h, half in first 8h from time of burn. Include only partial-thickness and full-thickness burns in %TBSA — EXCLUDE superficial (erythema only, sunburn-like) burns; over-inclusion drives over-resuscitation (abdominal compartment syndrome, ARDS).',
       'Burn depth: Superficial (like sunburn), Partial-thickness (blisters, painful), Full-thickness (white/charred, painless)',
       'Inhalation injury signs: facial burns, soot in sputum, hoarseness, stridor, cough',
       'Circumferential burns (around limb/body) require escharotomy to restore circulation',

@@ -89,7 +89,7 @@ export const moreTraumaCases: CaseScenario[] = [
         capillaryRefill: 5,
         skin: 'Pale, cold, clammy, mottled',
         findings: ['Severe tachycardia', 'Severe hypotension', 'Poor perfusion', 'JVD present'],
-        interventions: ['IV access x2 large bore', 'Aggressive fluid resuscitation', 'Rapid bolus NS 1L'],
+        interventions: ['IV access x2 large bore', 'Permissive hypotension (SBP 80-90 mmHg if no TBI) via small-volume fluid titration + early blood products', 'Small-volume Hartmann\'s aliquots (250mL) titrated to radial pulse (avoid large crystalloid volumes — dilutional coagulopathy, worse mortality in penetrating / haemorrhagic trauma)'],
         ecgFindings: ['Sinus tachycardia', 'Possible electrical alternans', 'Low voltage QRS'],
         ivAccess: ['14G left AC fossa', '14G right AC fossa']
       },
@@ -104,7 +104,7 @@ export const moreTraumaCases: CaseScenario[] = [
       exposure: {
         temperature: 36.8,
         findings: ['Small stab wound left parasternal, 3rd intercostal space', 'Minimal external bleeding', 'No exit wound', 'Muffled heart sounds'],
-        interventions: ['Cover wound with occlusive dressing (3-sided)', 'Full exposure while maintaining temperature', 'Log roll for spine assessment']
+        interventions: ['Cover wound with vented chest seal (HyFin Vent / Russell / SAM) — TCCC 2022 / PHTLS 10', 'Full exposure while maintaining temperature (hypothermia prevention)', 'Log roll for spine assessment ONLY if no pelvic instability']
       }
     },
     secondarySurvey: {
@@ -240,15 +240,15 @@ export const moreTraumaCases: CaseScenario[] = [
       {
         id: 't1-4',
         category: 'intervention',
-        description: 'Aggressive fluid resuscitation - 1L NS bolus immediately',
+        description: 'Small-volume fluid challenge (250mL warmed Hartmann\'s or blood) titrated to radial pulse — permissive hypotension target SBP 80-90 mmHg (no TBI)',
         points: 15,
         yearLevel: ['3rd-year', '4th-year'],
         complexity: ['intermediate', 'advanced', 'expert'],
         critical: true,
         timeframe: 'Immediately',
-        rationale: 'Tamponade causes decreased cardiac output. Fluids increase preload and can temporarily improve output while arranging definitive care.',
-        commonErrors: ['Under-resuscitating', 'Using small-bore IVs', 'Not giving rapid bolus'],
-        details: ['Use 14G or 16G catheters', 'Push bolus rapidly', 'Reassess after each liter', 'Consider blood products if available'],
+        rationale: 'Penetrating trauma with tamponade physiology: small aliquots titrated to perfusion temporarily improve preload while arranging definitive care. Large crystalloid volumes (1L+ boluses) worsen tamponade, cause dilutional coagulopathy, and increase mortality (CRASH-2, NICE NG39, JRCALC 2024). Blood products preferred as soon as available via MHP.',
+        commonErrors: ['Large crystalloid boluses (1L+) without perfusion reassessment', 'Chasing normal BP instead of permissive target', 'Using 0.9% NaCl in volume (hyperchloraemic acidosis) — Hartmann\'s preferred', 'Not activating Major Haemorrhage Protocol for blood'],
+        details: ['14G or 16G x2 catheters', '250mL Hartmann\'s aliquots — reassess after each', 'Target SBP 80-90 / palpable radial pulse / preserved mentation', 'Activate MHP for 1:1:1 FFP:plt:RBC early', 'TXA 1g IV slow push over 10 min within 3h of injury (CRASH-2)'],
       },
       {
         id: 't1-5',
@@ -266,14 +266,14 @@ export const moreTraumaCases: CaseScenario[] = [
       {
         id: 't1-6',
         category: 'procedural',
-        description: 'Apply 3-sided occlusive dressing for open chest wound',
+        description: 'Apply vented chest seal (HyFin Vent / Russell / SAM) for open chest wound',
         points: 10,
         yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'],
         complexity: ['intermediate', 'advanced', 'expert'],
         critical: true,
-        rationale: 'Open chest wounds can cause pneumothorax or allow air entry. 3-sided dressing allows escape of air while preventing entry.',
-        commonErrors: ['Applying fully occlusive dressing (causes tension pneumo)', 'Not taping appropriately', 'Placing dressing incorrectly'],
-        details: ['Use petroleum gauze or plastic', 'Tape three sides only', 'Leave one side untaped as flutter valve'],
+        rationale: 'Current TCCC 2022 / PHTLS 10 standard is a commercial VENTED chest seal, which reliably vents air out while preventing re-entry. The improvised 3-sided taped dressing is no longer first-line (fails in wet/bloody environments, frequently becomes fully occlusive in practice). If only non-vented seal is available, monitor for tension and be ready to burp or needle-decompress.',
+        commonErrors: ['Applying a fully occlusive non-vented seal without monitoring for tension', 'Not cleaning/drying skin before adhesion', 'Missing the exit wound (always look for second hole)'],
+        details: ['Preferred: commercial vented chest seal (HyFin Vent, Russell, SAM)', 'Clean and dry skin before application', 'Cover both entry AND exit wounds', 'Reassess for tension pneumothorax every 5 min — be ready to burp the seal or needle-decompress'],
       },
       {
         id: 't1-7',
@@ -768,8 +768,8 @@ export const moreTraumaCases: CaseScenario[] = [
           'Not listening for rush of air'
         ],
         details: [
-          'Location: 2nd intercostal space, midclavicular line on affected side',
-          'Use 14-16 gauge catheter, minimum 5cm length',
+          'PREFERRED location: 4th-5th intercostal space, anterior-to-mid axillary line on affected side (TCCC 2022). 2nd ICS midclavicular is a valid alternate but fails in >30% of adults due to chest-wall thickness and carries higher great-vessel injury risk.',
+          'Use 14G x 8cm catheter (5cm catheters fail in ~1/3 of adults)',
           'Insert perpendicular to chest wall',
           'Aim toward lateral aspect of rib (avoid neurovascular bundle)',
           'Listen for rush of air',
@@ -1175,7 +1175,7 @@ export const moreTraumaCases: CaseScenario[] = [
         ],
         interventions: [
           '2x large bore IV',
-          'Aggressive fluid resuscitation',
+          'Permissive hypotension (SBP 80-90 mmHg if no TBI) via small-volume fluid titration + early blood products',
           'Blood products if available',
           'Prepare for massive transfusion protocol'
         ],
@@ -1260,7 +1260,7 @@ export const moreTraumaCases: CaseScenario[] = [
         'Occlusive dressing for chest wound',
         'High-flow oxygen',
         '2x large bore IV',
-        'Aggressive fluid resuscitation',
+        'Permissive hypotension (SBP 80-90 mmHg if no TBI) via small-volume fluid titration + early blood products',
         'Place large bore chest tube (36-40F)',
         'Measure output carefully'
       ],
@@ -2110,7 +2110,7 @@ export const moreTraumaCases: CaseScenario[] = [
         capillaryRefill: 5,
         skin: 'Pale, cold, clammy',
         findings: ['Severe tachycardia', 'Severe hypotension', 'Signs of hemorrhagic shock', 'Decreased distal pulses'],
-        interventions: ['IV access x2', 'Aggressive fluid resuscitation', 'Consider pelvic binder', 'Blood products'],
+        interventions: ['IV access x2', 'Permissive hypotension (SBP 80-90 mmHg if no TBI) via small-volume fluid titration + early blood products', 'Consider pelvic binder', 'Blood products'],
         ecgFindings: ['Sinus tachycardia']
       },
       disability: {
@@ -2189,7 +2189,7 @@ export const moreTraumaCases: CaseScenario[] = [
         'ABC approach with spinal precautions',
         'Apply pelvic binder ASAP',
         'IV access x2',
-        'Aggressive fluid resuscitation',
+        'Permissive hypotension (SBP 80-90 mmHg if no TBI) via small-volume fluid titration + early blood products',
         'Blood products',
         'DO NOT insert Foley catheter if blood at meatus',
         'Pre-alert trauma center',
@@ -2250,13 +2250,13 @@ export const moreTraumaCases: CaseScenario[] = [
       {
         id: 't8-4',
         category: 'abcde',
-        description: 'Assess pelvic instability carefully',
+        description: 'Recognise suspected pelvic instability from mechanism + deformity + haemodynamic instability — apply pelvic binder EMPIRICALLY, do NOT spring/compress the pelvis',
         points: 15,
         yearLevel: ['3rd-year', '4th-year'],
         complexity: ['intermediate', 'advanced', 'expert'],
-        rationale: 'Careful assessment confirms unstable fracture. Do NOT rock pelvis aggressively.',
-        commonErrors: ['Rocking pelvis too hard', 'Causing more bleeding', 'Missing subtle instability'],
-        details: ['Gentle compression', 'Downward pressure on iliac crests', 'Observe for pain/movement']
+        rationale: 'Pelvic springing / compression testing is OUTDATED per RCEM 2019, ATLS 11, and JRCALC 2024. Springing disrupts clot in an unstable pelvic fracture and worsens haemorrhage. Clinical suspicion from mechanism (RTC, fall from height), deformity, and haemodynamic instability is sufficient — apply binder empirically at the greater trochanters (NOT iliac crests).',
+        commonErrors: ['Springing / rocking the pelvis (outdated, harmful)', 'Placing binder over iliac crests instead of greater trochanters', 'Log-rolling a suspected pelvic fracture (extend instability, lose clot)'],
+        details: ['Apply binder at the level of the greater trochanters, not iliac crests', 'Do NOT spring, compress, or palpate to confirm instability', 'Do NOT log-roll suspected pelvic fractures — use a scoop or flat-lift', 'Reassess haemodynamics continuously']
       },
       {
         id: 't8-5',
