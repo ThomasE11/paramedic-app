@@ -42,6 +42,10 @@ export function getSupabaseClient(): SupabaseClient | null {
       realtime: {
         // Bump max events/sec to handle live vital-sign updates during a case.
         params: { eventsPerSecond: 20 },
+        // Default subscribe timeout is 10s — that's tight for mobile networks
+        // on classroom days where students crowd onto the same wifi. 20s still
+        // feels responsive but gives a cold WebSocket the head-room it needs.
+        timeout: 20_000,
       },
     });
   }

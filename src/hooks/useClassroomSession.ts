@@ -205,23 +205,30 @@ export function useClassroomSession(): UseClassroomSessionResult {
     [],
   );
 
-  // Public: subscribe + one automatic retry on timeout.
+  // Public: subscribe with up to 3 total attempts and exponential backoff.
   //
-  // Supabase's realtime handshake occasionally times out on the first attempt
-  // when the client is cold (the WebSocket upgrade can race with page setup).
-  // A single retry after a short backoff clears nearly all of these without
-  // forcing the user to hit a "retry" button manually.
+  // Supabase's realtime handshake occasionally times out on a cold client
+  // (the WebSocket upgrade can race with page setup, the Edge needs to
+  // warm up after idle). Multiple retries with escalating backoff clears
+  // nearly all transient failures without forcing the user to click retry.
   const attachChannel = useCallback(
     async (pin: string, displayName: string, asRole: ClassroomRole): Promise<void> => {
-      try {
-        await attachChannelOnce(pin, displayName, asRole);
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : '';
-        if (msg !== 'classroom.errors.realtimeTimeout') throw e;
-        // Back off briefly, then retry once.
-        await new Promise(r => setTimeout(r, 800));
-        await attachChannelOnce(pin, displayName, asRole);
+      const backoffs = [0, 1000, 3000]; // immediate, 1s, 3s
+      let lastError: unknown = null;
+      for (const delay of backoffs) {
+        if (delay > 0) await new Promise(r => setTimeout(r, delay));
+        try {
+          await attachChannelOnce(pin, displayName, asRole);
+          return;
+        } catch (e) {
+          lastError = e;
+          // Only retry on timeout — a hard CHANNEL_ERROR typically means
+          // the channel config itself is bad and retrying won't help.
+          const msg = e instanceof Error ? e.message : '';
+          if (msg !== 'classroom.errors.realtimeTimeout') throw e;
+        }
       }
+      throw lastError;
     },
     [attachChannelOnce],
   );
@@ -274,6 +281,7 @@ export function useClassroomSession(): UseClassroomSessionResult {
       try {
         await attachChannel(created.pin, instructorName, 'instructor');
         setStatus('lobby');
+        return created;
       } catch (e) {
         // Channel subscribe failed even after retry. Tear down the row so we
         // don't leave a dangling 'lobby' session that students could join but
@@ -288,8 +296,10 @@ export function useClassroomSession(): UseClassroomSessionResult {
         setSession(null);
         setError(e instanceof Error ? e.message : 'classroom.errors.realtimeFailed');
         setStatus('error');
+        // Return null so callers don't fire a "lobby opened!" toast for a
+        // session that never actually came online.
+        return null;
       }
-      return created;
     },
     [supported, attachChannel],
   );
