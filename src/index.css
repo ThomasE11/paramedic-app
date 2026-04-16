@@ -230,6 +230,33 @@ html { scroll-behavior: smooth; }
 .focus-ring:focus-visible::after { content: ''; position: absolute; inset: -2px; border-radius: calc(var(--radius) + 2px); border: 2px solid hsl(var(--primary)); pointer-events: none; }
 .focus-visible-ring:focus-visible { outline: 2px solid hsl(var(--primary)); outline-offset: 2px; }
 
+/* Skip link — invisible until Tab-focused, then jumps to the main content.
+   Critical for screen-reader and keyboard users navigating past the sticky
+   header on every page load. */
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -3rem;
+  z-index: 100;
+  padding: 0.5rem 1rem;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  border-radius: 0.5rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-decoration: none;
+  transition: top 160ms ease-out;
+}
+.skip-link:focus { top: 0.75rem; outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }
+
+/* Default focus-visible on every interactive element that doesn't override it —
+   catches buttons / links / inputs we haven't explicitly styled. */
+:where(button, a, [role="button"], input, select, textarea, summary):focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+  border-radius: calc(var(--radius) * 0.5);
+}
+
 /* ABCDE section colors — clinically meaningful */
 .abcde-airway { @apply border-l-4 border-l-blue-500; }
 .abcde-breathing { @apply border-l-4 border-l-cyan-500; }

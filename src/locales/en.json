@@ -113,7 +113,12 @@
     "enable": "Enable voice narration",
     "disable": "Disable voice narration",
     "readAloud": "Read aloud",
-    "stopNarration": "Stop narration"
+    "stopNarration": "Stop narration",
+    "talk": "Voice",
+    "listening": "Listening",
+    "micHint": "Tap and say \"check airway\", \"examine chest\", \"blood glucose\"…",
+    "micDenied": "Microphone access blocked. Enable it in browser settings to use voice commands.",
+    "unsupported": "Voice commands require Chrome, Edge, or Safari."
   },
   "common": {
     "loading": "Loading case data...",

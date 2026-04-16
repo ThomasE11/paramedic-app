@@ -31,6 +31,8 @@ const ClassroomLobby = lazy(() => import('@/components/classroom/ClassroomLobby'
 const ClassroomJoin = lazy(() => import('@/components/classroom/ClassroomJoin'));
 
 import { isSupabaseConfigured } from '@/lib/supabaseConfig';
+import { CommandPalette } from '@/components/CommandPalette';
+import { CaseSkeleton } from '@/components/CaseSkeleton';
 
 // Lazy load heavy components for better performance
 const CaseDisplay = lazy(() => import('@/components/CaseDisplay').then(m => ({ default: m.CaseDisplay })));
@@ -111,6 +113,9 @@ function RoleSelection({ onSelect }: { onSelect: (role: UserRole) => void }) {
   const classroomEnabled = isSupabaseConfigured();
   return (
     <div className="min-h-screen bg-background flex flex-col relative overflow-hidden">
+      {/* Skip link — keyboard users can jump past the brand bar straight to
+          the role cards. Invisible until Tab-focused. */}
+      <a href="#main-content" className="skip-link">Skip to main content</a>
 
       {/* Top bar */}
       <div className="relative z-10 flex items-center justify-between px-8 py-5">
@@ -126,7 +131,7 @@ function RoleSelection({ onSelect }: { onSelect: (role: UserRole) => void }) {
         </div>
       </div>
 
-      <div className="relative z-10 flex-1 flex items-center justify-center p-6">
+      <main id="main-content" className="relative z-10 flex-1 flex items-center justify-center p-6">
         <div className="max-w-3xl w-full space-y-12">
           {/* Header */}
           <div className="text-center space-y-5">
@@ -249,7 +254,7 @@ function RoleSelection({ onSelect }: { onSelect: (role: UserRole) => void }) {
             {t('app.footerEducational')}  |  {t('app.footerEvidence')}
           </p>
         </div>
-      </div>
+      </main>
       <Toaster position="top-right" richColors closeButton />
     </div>
   );
@@ -282,14 +287,20 @@ function App() {
 
   // Role selection screen
   if (userRole === 'none') {
-    return <RoleSelection onSelect={setUserRole} />;
+    return (
+      <>
+        <RoleSelection onSelect={setUserRole} />
+        {/* ⌘K works on the landing screen too — jump straight into a case. */}
+        <CommandPalette
+          onCaseSelect={() => setUserRole('educator')}
+        />
+      </>
+    );
   }
 
-  const suspenseFallback = (
-    <div className="min-h-screen bg-background flex items-center justify-center">
-      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-    </div>
-  );
+  // Suspense fallback is a structured skeleton rather than a lonely spinner —
+  // perceived-performance win: users see layout immediately instead of blank.
+  const suspenseFallback = <CaseSkeleton />;
 
   // Classroom instructor lobby
   if (userRole === 'classroom-host') {
@@ -316,6 +327,7 @@ function App() {
     return (
       <Suspense fallback={suspenseFallback}>
         <StudentPanel onExit={handleRoleExit} />
+        <CommandPalette onSwitchRole={handleRoleExit} />
         <Toaster position="top-right" richColors closeButton />
       </Suspense>
     );
@@ -896,6 +908,8 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* ⌘K command palette — fast case search + actions, any screen. */}
+      <CommandPalette onCaseSelect={loadCaseFromHistory} onSwitchRole={onExit} />
       {/* Header */}
       <header className="sticky top-0 z-50 bg-background border-b border-border transition-all duration-300">
         <div className="container mx-auto px-3 sm:px-4 py-2.5 sm:py-4">

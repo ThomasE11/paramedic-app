@@ -283,6 +283,26 @@ export function useVoiceNarration() {
     // Drop novelty voices immediately
     const usable = voices.filter(v => !VOICE_BLACKLIST.test(v.name));
 
+    // Respect the <html lang> attribute. Arabic users should hear an Arabic
+    // voice; anything else falls back to the English priority list below.
+    const docLang = typeof document !== 'undefined' ? (document.documentElement.lang || '').toLowerCase() : '';
+    if (docLang.startsWith('ar')) {
+      // Prefer high-quality Arabic voices by common names, then any ar-* voice.
+      const arabicPriority = [
+        'Majed (Enhanced)', 'Majed', 'Tarik', 'Maged', 'Laila',
+        'Microsoft Hamed', 'Microsoft Naayf', 'Microsoft Shakir', 'Microsoft Salma',
+        'Google العربية',
+      ];
+      for (const name of arabicPriority) {
+        const m = usable.find(v => v.name === name || v.name.toLowerCase().includes(name.toLowerCase()));
+        if (m) return m;
+      }
+      const anyArabic = usable.find(v => v.lang.toLowerCase().startsWith('ar'));
+      if (anyArabic) return anyArabic;
+      // No Arabic voice installed — fall through to English rather than a
+      // novelty voice or whatever is first in the list.
+    }
+
     // Prefer English locales
     const englishVoices = usable.filter(v => v.lang.startsWith('en-'));
     const pool = englishVoices.length > 0 ? englishVoices : usable;
