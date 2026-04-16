@@ -205,15 +205,24 @@ export function useClassroomSession(): UseClassroomSessionResult {
     [],
   );
 
-  // Public: subscribe with up to 3 total attempts and exponential backoff.
+  // Public: subscribe with up to 4 attempts and exponential backoff.
   //
-  // Supabase's realtime handshake occasionally times out on a cold client
-  // (the WebSocket upgrade can race with page setup, the Edge needs to
-  // warm up after idle). Multiple retries with escalating backoff clears
-  // nearly all transient failures without forcing the user to click retry.
+  // Supabase realtime has two transient failure modes we care about:
+  //   - TIMED_OUT: the WebSocket upgrade raced with page setup, or the mobile
+  //     network is slow on classroom day.
+  //   - CHANNEL_ERROR: the realtime server briefly rejects subscribes, usually
+  //     during a free-tier project spin-up after idle. Also transient.
+  //
+  // Both resolve within a few seconds of warm-up. We escalate the backoff
+  // aggressively (0 / 2s / 5s / 10s) so the 4th attempt lands after the
+  // realtime container has had 17s to warm up — past the observed cold-start.
   const attachChannel = useCallback(
     async (pin: string, displayName: string, asRole: ClassroomRole): Promise<void> => {
-      const backoffs = [0, 1000, 3000]; // immediate, 1s, 3s
+      const backoffs = [0, 2000, 5000, 10000];
+      const transient = new Set([
+        'classroom.errors.realtimeTimeout',
+        'classroom.errors.realtimeFailed',
+      ]);
       let lastError: unknown = null;
       for (const delay of backoffs) {
         if (delay > 0) await new Promise(r => setTimeout(r, delay));
@@ -222,10 +231,9 @@ export function useClassroomSession(): UseClassroomSessionResult {
           return;
         } catch (e) {
           lastError = e;
-          // Only retry on timeout — a hard CHANNEL_ERROR typically means
-          // the channel config itself is bad and retrying won't help.
           const msg = e instanceof Error ? e.message : '';
-          if (msg !== 'classroom.errors.realtimeTimeout') throw e;
+          // Non-transient (e.g. notConfigured) → bail immediately.
+          if (!transient.has(msg)) throw e;
         }
       }
       throw lastError;
