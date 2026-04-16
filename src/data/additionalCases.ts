@@ -1949,7 +1949,7 @@ export const additionalNeurologicalCases: CaseScenario[] = [
   createCase({
     id: 'neuro-004',
     title: 'Bacterial Meningitis',
-    category: 'pediatric',
+    category: 'neurological',
     subcategory: 'meningitis',
     priority: 'critical',
     complexity: 'advanced',
@@ -2052,7 +2052,7 @@ export const additionalNeurologicalCases: CaseScenario[] = [
         'ABC assessment — airway at risk with GCS 14; be prepared to escalate to advanced airway',
         'IV access x2 (large bore 16G)',
         'IV fluid resuscitation — 500mL NS bolus for septic shock (SBP 90/60)',
-        'IV Ceftriaxone 2g IV (third-generation cephalosporin) — do not delay for LP or CT',
+        'Benzylpenicillin 1.2g IM/IV (adult) — UK JRCALC / NICE CG102 prehospital first-line for suspected meningococcal disease with non-blanching rash (ceftriaxone 2g IV is hospital-initiated; benzylpenicillin is in every UK ambulance drug bag). Use ceftriaxone 2g IV only if penicillin-allergic alternative required or benzylpenicillin unavailable — do NOT delay transport to give antibiotics.',
         'Dexamethasone 10mg IV with or before first antibiotic dose (reduces inflammation)',
         'Blood glucose check',
         'Assess for non-blanching rash — glass test; positive rash = meningococcal septicaemia'
@@ -2104,7 +2104,7 @@ export const additionalNeurologicalCases: CaseScenario[] = [
       'Missing subtle rash on dark skin - examine carefully in good lighting',
       'Delaying lumbar puncture argument - LP is contraindicated in sepsis/severe ICP only',
       'Not asking about sick contacts or recent travel - crucial for contact tracing',
-      'Giving steroids before antibiotics - reduces antibiotic CSF penetration',
+      'Giving steroids AFTER antibiotics — dexamethasone must be given WITH or IMMEDIATELY BEFORE the first antibiotic dose to blunt the inflammatory cascade triggered by bacterial lysis (NICE NG240, IDSA). Delayed dex loses its benefit.',
       'Overlooking that triad is absent in up to 20% of bacterial meningitis cases',
       'Not monitoring for cerebral herniation signs - papilledema, unequal pupils',
       'Attributing confusion solely to fever - may indicate developing encephalitis'
@@ -3106,7 +3106,7 @@ export const additionalPediatricCases: CaseScenario[] = [
         'Position lateral (recovery) if possible — prevents aspiration',
         'Airway management — jaw thrust if airway obstructed; suction if secretions/vomit present',
         'Oxygen via face mask or blow-by if SpO2 <95% or cyanosis present',
-        'If seizure >5 minutes — Midazolam 0.2-0.5mg/kg buccal (max 10mg), or IV/IO if access available',
+        'If seizure >5 minutes — Midazolam 0.3mg/kg buccal (max 10mg) per APLS / NICE CG137 / BNF-C, OR 0.1mg/kg IV/IO if access available, OR 0.2mg/kg intranasal. (Older 0.5mg/kg upper-range exceeds current paediatric guideline ceiling — respiratory depression risk.)',
         'Temperature assessment — rectal or axillary; paracetamol suppository 15mg/kg if >38.5°C',
         'Blood glucose check — exclude hypoglycaemia as seizure cause',
         'Reassure parents — febrile seizures are terrifying to witness but usually benign'
@@ -3126,7 +3126,7 @@ export const additionalPediatricCases: CaseScenario[] = [
         'Watch for second seizure — risk in first 24 hours is 20-30%'
       ],
       transportConsiderations: [
-        'Pre-alert paediatric ED — "18-month-old, febrile seizure, temperature 39.6°C, post-ictal now"',
+        'Pre-alert paediatric ED — "2-year-old, simple febrile seizure, temperature 39.5°C, post-ictal now, weight ~12kg"',
         'Position lateral during transport — maintain airway protection',
         'Paediatric oxygen delivery equipment (age-appropriate mask size)',
         'Have midazolam drawn and labelled for weight-based dose in case of second seizure en route',
@@ -3441,7 +3441,7 @@ export const additionalEnvironmentalCases: CaseScenario[] = [
     },
     managementPathway: {
       immediate: ['Immediate aggressive cooling - start on scene', 'Remove clothing completely', 'Ice packs to neck, axilla, groin (major vascular areas)', 'Evaporative cooling with mist and fan', 'Cold IV fluids (0.9% NaCl)', 'High-flow oxygen', 'Check blood glucose', 'Monitor airway and be prepared to intubate if GCS drops'],
-      definitive: ['ICU admission with continuous cooling', 'Target temperature 38-39°C (do not overcool)', 'Continuous monitoring for multi-organ failure', 'Serial labs: CK, coagulation profile, liver function', 'Treatment of rhabdomyolysis and DIC if present', 'Continuous renal replacement therapy if needed'],
+      definitive: ['ICU admission with continuous cooling', 'Target core temperature 38.5°C — stop active cooling at this point to prevent overshoot and shivering-induced heat production (WMS / Resus Council)', 'Continuous monitoring for multi-organ failure', 'Serial labs: CK, coagulation profile, liver function', 'Treatment of rhabdomyolysis and DIC if present', 'Continuous renal replacement therapy if needed'],
       monitoring: ['Core temperature continuously (rectal/esophageal)', 'Heart rate and rhythm', 'Blood pressure', 'Urine output (catheterize)', 'Neurological status (GCS)', 'Electrolytes (especially potassium)', 'Coagulation profile (DIC risk)', 'Muscle enzymes (CK for rhabdomyolysis)'],
       transportConsiderations: ['Continue aggressive cooling during transport', 'Do not delay transport for full cooling - cool en route', 'Pre-alert hospital for cooling protocol', 'Air-conditioned ambulance essential', 'Monitor for seizures and cardiac arrhythmias', 'Rapid transport to ICU-capable facility']
     },
@@ -3463,7 +3463,7 @@ export const additionalEnvironmentalCases: CaseScenario[] = [
       'Heat stroke is a medical emergency - mortality increases with time to cooling',
       'Classic heat stroke: dry hot skin (anhidrosis)',
       'Exertional heat stroke: sweaty (common in athletes/military)',
-      'Goal: cool to 39°C within 30 minutes - evaporative cooling + ice packs'
+      'Goal: cool to core 38.5°C within 30 minutes and STOP (ice-water immersion most effective if available; evaporative + convective cooling otherwise). Overcooling risks shivering-driven rebound hyperthermia.'
     ],
     commonPitfalls: [
       'Confusing heat stroke with heat exhaustion — heat stroke requires immediate aggressive cooling; the key differentiator is altered mental status and core temperature >40°C',
@@ -4493,11 +4493,12 @@ export const additionalTraumaCases: CaseScenario[] = [
         'Rescue from water safely — do not enter dangerous water without trained water rescue; use reach and throw techniques',
         'C-spine precautions if dive/fall mechanism — log roll for spinal management during rescue if safe to do so',
         'Airway suctioning — water and vomit in upper airway; use rigid suction catheter',
+        'Drowning is ASPHYXIAL arrest — start with 5 RESCUE BREATHS before compressions (ERC / Resus Council UK drowning algorithm). Then reassess for signs of life.',
         'Assess for respiratory effort and pulse — up to 60 seconds for hypothermic pulse check',
-        'If no pulse or apnoea — CPR immediately; ratio 30:2; rescue breaths are critical in drowning',
+        'If no pulse or apnoea after rescue breaths — CPR immediately. Paediatric ratio 15:2 (two rescuers), depth 1/3 AP chest diameter (~4-5cm), rate 100-120/min. Adult 30:2.',
         'High-flow oxygen 15L/min via NRB or BVM — SpO2 83% is critically low',
         'Remove wet clothing — wet clothing accelerates heat loss',
-        'Passive rewarming — blankets, metallic foil emergency blanket; avoid active warming without monitoring',
+        'Moderate hypothermia (32°C): active external rewarming — warm blankets, Bair Hugger if available, warm humidified O2, warmed IV fluids (~40°C). Remove wet clothing first. Avoid vigorous movement (VF risk). Active internal rewarming (ECMO/lavage) is hospital-only.',
         'IV access (warmed fluids if available) — avoid cold crystalloid, use warmed NS if possible'
       ],
       definitive: [
@@ -4515,7 +4516,7 @@ export const additionalTraumaCases: CaseScenario[] = [
         'Secondary drowning — pulmonary oedema may develop 4-24 hours later; all drowning patients need observation'
       ],
       transportConsiderations: [
-        'Pre-alert with "drowning with hypothermia, temperature 29°C, CPR ongoing/breathing spontaneously"',
+        'Pre-alert with "drowning with hypothermia, core temperature 32°C, ROSC achieved after 5 rescue breaths + CPR, now breathing spontaneously, active rewarming in progress"',
         'Keep patient horizontal during transport — vasodilation of hypothermic peripheries on standing causes cardiac arrest',
         'Maintain rewarming in transport — heater on maximum, foil blanket',
         'Do NOT stop CPR for hypothermic arrest — rewarming is the treatment',

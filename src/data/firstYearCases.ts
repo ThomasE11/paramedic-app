@@ -493,8 +493,8 @@ export const firstYearCases: CaseScenario[] = [
       head: ['Normal'],
       neck: ['Supple, no meningismus'],
       chest: ['Clear bilaterally'],
-      abdomen: ['Guarding RLQ', 'Rebound tenderness present', 'McBurnery\'s point tender', 'Bowel sounds diminished'],
-      pelvis: ['Normal'],
+      abdomen: ['Guarding RLQ', 'Rebound tenderness present', "McBurney's point tender", 'Bowel sounds diminished'],
+      pelvis: ['Normal — genitourinary exam with chaperone: testes descended bilaterally, no swelling, no tenderness (testicular torsion excluded — mandatory differential in males with abdominal pain; 6h window for salvage)'],
       extremities: ['No peripheral oedema', 'Peripheral pulses present'],
       posterior: ['Normal'],
       neurological: ['Normal']

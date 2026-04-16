@@ -3538,7 +3538,7 @@ export const caseDatabase: CaseScenario[] = [
       mostLikelyDiagnosis: 'Bacterial Meningitis (Meningococcal)'
     },
     managementPathway: {
-      immediate: ['Immediate IV antibiotics (Ceftriaxone 2g IV) if transport time >30 min', 'IV access with large-bore cannula', 'Fluid resuscitation 30ml/kg if septic shock', 'High-flow oxygen', 'Check blood glucose', 'Dexamethasone 10mg IV (give with or just after antibiotics)', 'Droplet precautions (mask, eye protection, gloves)'],
+      immediate: ['Benzylpenicillin 1.2g IM/IV (adult) — UK JRCALC / NICE CG102 prehospital first-line for suspected meningococcal disease with non-blanching rash (in every UK ambulance drug bag; ceftriaxone 2g IV reserved for hospital or penicillin-allergic alternative). Do NOT delay transport to give antibiotics.', 'IV access with large-bore cannula', 'Fluid resuscitation 30ml/kg if septic shock', 'High-flow oxygen (target SpO2 ≥94%)', 'Check blood glucose', 'Dexamethasone 10mg IV WITH or JUST BEFORE the first antibiotic dose (blunts cytokine response at bacterial lysis — loses benefit if given after)', 'Droplet precautions (FFP3 mask, eye protection, gloves)'],
       definitive: ['Urgent CT head (if indicated) followed by lumbar puncture', 'Continue IV antibiotics (Ceftriaxone + Vancomycin)', 'ICU admission for monitoring', 'Contact tracing and prophylaxis for close contacts', 'Isolation for 24 hours after antibiotics started'],
       monitoring: ['Vital signs every 15 minutes', 'Glasgow Coma Scale', 'Skin for progression of rash (petechiae to purpura)', 'Signs of septic shock (hypotension, tachycardia)', 'Neurological status', 'Response to antibiotics'],
       transportConsiderations: ['Rapid transport to hospital with infectious disease capability', 'Pre-alert with droplet precautions required', 'Continue antibiotics during transport if started', 'Monitor for deterioration', 'Minimize time - antibiotics within 1 hour is critical', 'Use droplet precautions throughout transport']
@@ -3564,7 +3564,7 @@ export const caseDatabase: CaseScenario[] = [
       'Missing early signs of septic shock - tachycardia and hypotension may be subtle initially',
       'Not using droplet precautions immediately - healthcare worker exposure risk',
       'Overlooking petechiae on dark skin - examine carefully under good lighting',
-      'Giving steroids before antibiotics - reduces antibiotic penetration into CSF',
+      'Giving steroids AFTER antibiotics — dexamethasone should be given WITH or IMMEDIATELY BEFORE the first antibiotic dose to blunt the inflammatory cascade at bacterial lysis (NICE NG240 / IDSA). Delayed dex loses its benefit.',
       'Not asking about sick contacts or recent travel - important epidemiological data',
       'Attributing altered mental status solely to fever - may indicate encephalitis'
     ],
@@ -10353,7 +10353,7 @@ export const caseDatabase: CaseScenario[] = [
           'No assessable reflexes'
         ],
         interventions: [
-          'Dextrose 10% 5ml/kg IV (140ml of 10% dextrose) for hypoglycaemia',
+          'Dextrose 10% 2ml/kg IV/IO (0.2g/kg = 56ml for a 28kg child) for hypoglycaemia — per APLS; may repeat if BGL remains <4.0 mmol/L',
           'If 10% unavailable: Dextrose 25% 2ml/kg (56ml)',
           'Recheck BGL every 5-10 minutes',
           'Do NOT use pupil response as prognostic indicator in hypothermia'
@@ -10468,8 +10468,8 @@ export const caseDatabase: CaseScenario[] = [
       ],
       definitive: [
         'Active rewarming: dry blankets, space blanket, warm IV fluids, heat packs to axillae/groin',
-        'Treat hypoglycaemia immediately — Dextrose 10% 5ml/kg IV/IO',
-        'Adrenaline: withhold until core temp >30°C, then give 10mcg/kg at DOUBLE intervals (every 6-10 minutes)',
+        'Treat hypoglycaemia immediately — Dextrose 10% 2ml/kg IV (0.2g/kg)/IO',
+        'Adrenaline: WITHHOLD entirely while core temperature <30°C (drugs do not work, accumulate → post-rewarming toxicity). Once core >30°C, give 10mcg/kg IV/IO at DOUBLE intervals (every 10 minutes, not the usual 3-5 min) per Resus Council UK Hypothermia 2021.',
         'If rhythm changes to VF: defibrillate at 4J/kg (112J), up to 3 shocks — withhold further shocks until >30°C',
         'Warm IV fluids: Normal saline warmed to 40°C, 20ml/kg bolus',
         'Advanced airway: cuffed ETT 5.5mm or pediatric i-gel for definitive airway and aspiration prevention',
