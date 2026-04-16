@@ -183,7 +183,9 @@ export function ClassroomJoin({ onExit }: ClassroomJoinProps) {
           <Card className="border-destructive/50 bg-destructive/5">
             <CardContent className="flex items-center gap-3 py-4">
               <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
-              <p className="text-sm text-destructive">{error}</p>
+              <p className="text-sm text-destructive">
+                {error.startsWith('classroom.') ? t(error) : error}
+              </p>
             </CardContent>
           </Card>
         )}

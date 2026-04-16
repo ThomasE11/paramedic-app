@@ -137,12 +137,15 @@ export function useClassroomSession(): UseClassroomSessionResult {
   // Channel subscription
   // --------------------------------------------------------------------------
 
-  const attachChannel = useCallback(
+  // Single attempt at subscribing to a Supabase realtime channel. Wrapped by
+  // `attachChannel` which retries once on transient timeouts (common on the
+  // first connection from a cold client).
+  const attachChannelOnce = useCallback(
     (pin: string, displayName: string, asRole: ClassroomRole): Promise<void> =>
       new Promise((resolve, reject) => {
         const supa = getSupabaseClient();
         if (!supa) {
-          reject(new Error('Supabase not configured'));
+          reject(new Error('classroom.errors.notConfigured'));
           return;
         }
 
@@ -189,11 +192,38 @@ export function useClassroomSession(): UseClassroomSessionResult {
             channelRef.current = channel;
             resolve();
           } else if (subscribeStatus === 'CHANNEL_ERROR' || subscribeStatus === 'TIMED_OUT') {
-            reject(new Error(`Realtime subscribe failed: ${subscribeStatus}`));
+            // Throw the i18n key, not the raw status code. The UI layer
+            // resolves it via t(). A string-valued error.message is the path
+            // of least resistance: React components `catch(e)` and call t(e.message).
+            supa.removeChannel(channel);
+            reject(new Error(subscribeStatus === 'TIMED_OUT'
+              ? 'classroom.errors.realtimeTimeout'
+              : 'classroom.errors.realtimeFailed'));
           }
         });
       }),
     [],
+  );
+
+  // Public: subscribe + one automatic retry on timeout.
+  //
+  // Supabase's realtime handshake occasionally times out on the first attempt
+  // when the client is cold (the WebSocket upgrade can race with page setup).
+  // A single retry after a short backoff clears nearly all of these without
+  // forcing the user to hit a "retry" button manually.
+  const attachChannel = useCallback(
+    async (pin: string, displayName: string, asRole: ClassroomRole): Promise<void> => {
+      try {
+        await attachChannelOnce(pin, displayName, asRole);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : '';
+        if (msg !== 'classroom.errors.realtimeTimeout') throw e;
+        // Back off briefly, then retry once.
+        await new Promise(r => setTimeout(r, 800));
+        await attachChannelOnce(pin, displayName, asRole);
+      }
+    },
+    [attachChannelOnce],
   );
 
   // --------------------------------------------------------------------------
@@ -234,7 +264,7 @@ export function useClassroomSession(): UseClassroomSessionResult {
       }
 
       if (!created) {
-        const msg = lastErr instanceof Error ? lastErr.message : 'Could not create classroom session';
+        const msg = lastErr instanceof Error ? lastErr.message : 'classroom.errors.createFailed';
         setError(msg);
         setStatus('error');
         return null;
@@ -245,7 +275,18 @@ export function useClassroomSession(): UseClassroomSessionResult {
         await attachChannel(created.pin, instructorName, 'instructor');
         setStatus('lobby');
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Realtime subscribe failed');
+        // Channel subscribe failed even after retry. Tear down the row so we
+        // don't leave a dangling 'lobby' session that students could join but
+        // never see progress on. Best-effort — if this PATCH fails the pg_cron
+        // janitor will clean it up within 24h.
+        try {
+          await supa
+            .from('classroom_sessions')
+            .update({ status: 'ended', ended_at: new Date().toISOString() })
+            .eq('id', created.id);
+        } catch { /* swallow */ }
+        setSession(null);
+        setError(e instanceof Error ? e.message : 'classroom.errors.realtimeFailed');
         setStatus('error');
       }
       return created;
@@ -265,7 +306,7 @@ export function useClassroomSession(): UseClassroomSessionResult {
 
       const normalisedPin = pin.trim();
       if (!/^\d{6}$/.test(normalisedPin)) {
-        setError('PIN must be 6 digits');
+        setError('classroom.errors.pinInvalid');
         setStatus('error');
         return null;
       }
@@ -283,7 +324,7 @@ export function useClassroomSession(): UseClassroomSessionResult {
         .maybeSingle();
 
       if (selectError || !data) {
-        setError(selectError?.message || 'No live session with that PIN');
+        setError(selectError?.message || 'classroom.errors.notFound');
         setStatus('error');
         return null;
       }
@@ -295,7 +336,8 @@ export function useClassroomSession(): UseClassroomSessionResult {
         await attachChannel(row.pin, displayName, 'student');
         setStatus(row.status === 'running' ? 'running' : 'lobby');
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Realtime subscribe failed');
+        setSession(null);
+        setError(e instanceof Error ? e.message : 'classroom.errors.realtimeFailed');
         setStatus('error');
       }
       return row;

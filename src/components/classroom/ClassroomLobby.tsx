@@ -171,12 +171,15 @@ export function ClassroomLobby({ onExit }: ClassroomLobbyProps) {
       </div>
 
       <div className="max-w-5xl mx-auto p-6 space-y-6">
-        {/* Error banner */}
+        {/* Error banner — routes i18n-key errors through t(), falls back to the
+            raw message for anything that looks like an already-translated string. */}
         {error && (
           <Card className="border-destructive/50 bg-destructive/5">
             <CardContent className="flex items-center gap-3 py-4">
               <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
-              <p className="text-sm text-destructive">{error}</p>
+              <p className="text-sm text-destructive">
+                {error.startsWith('classroom.') ? t(error) : error}
+              </p>
             </CardContent>
           </Card>
         )}

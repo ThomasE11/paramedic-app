@@ -175,6 +175,14 @@
     "leaveSession": "Leave session",
     "caseStartedToast": "Case started",
     "caseEndedToast": "Case ended — waiting for the next one",
-    "sessionEndedToast": "The instructor ended the session"
+    "sessionEndedToast": "The instructor ended the session",
+    "errors": {
+      "notConfigured": "Classroom mode isn't available on this deployment.",
+      "createFailed": "Couldn't open a classroom lobby. Please try again.",
+      "pinInvalid": "PIN must be exactly 6 digits.",
+      "notFound": "No live session with that PIN. Double-check with your instructor.",
+      "realtimeTimeout": "Couldn't connect to the live session (connection timed out). Try again.",
+      "realtimeFailed": "Couldn't connect to the live session. Check your network and try again."
+    }
   }
 }
