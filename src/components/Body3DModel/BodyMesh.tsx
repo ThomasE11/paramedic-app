@@ -63,20 +63,38 @@ interface ExtendedRegionRange extends RegionRange {
   highlightRadius?: number;
 }
 
+// Region Y-bounds aligned to real human anatomy on a 1.81m model
+// (percentages from Gray's Anatomy / Drake/Vogl/Mitchell):
+//   Head crown:      Y 1.81 (100%)
+//   Eyes:            Y ~1.71 (95%)
+//   Chin / mandible: Y ~1.56 (86%)
+//   Suprasternal notch: Y ~1.46 (81%) — top of chest
+//   Nipple line:     Y ~1.30 (72%)
+//   Xiphoid / costal margin: Y ~1.16 (64%) — chest / abdomen boundary
+//   Umbilicus:       Y ~1.09 (60%) — middle of abdomen
+//   ASIS / pelvic crest: Y ~1.00 (55%)
+//   Pubic symphysis: Y ~0.91 (50%) — abdomen / pelvis boundary
+//   Groin crease:    Y ~0.87 (48%)
+//   Greater trochanter: Y ~0.83 (46%) — pelvis / leg boundary
 const REGION_RANGES: ExtendedRegionRange[] = [
   { id: 'head', label: 'Head', description: 'Inspect and palpate scalp, skull, ears', yMin: 1.71, yMax: 1.81, highlightRadius: 0.18 },
-  { id: 'face', label: 'Face', description: 'Eyes, nose, mouth, jaw, facial symmetry', yMin: 1.565, yMax: 1.71, highlightRadius: 0.15 },
-  { id: 'neck-cspine', label: 'Neck & C-Spine', description: 'Trachea, JVD, C-spine, subcutaneous emphysema', yMin: 1.44, yMax: 1.565 },
-  { id: 'chest', label: 'Chest', description: 'Inspect, palpate, percuss, auscultate', yMin: 1.20, yMax: 1.44 },
-  { id: 'abdomen', label: 'Abdomen', description: 'Inspect, auscultate, percuss, palpate', yMin: 0.98, yMax: 1.20 },
-  { id: 'pelvis', label: 'Pelvis', description: 'Stability test, perineal inspection', yMin: 0.83, yMax: 0.98 },
+  { id: 'face', label: 'Face', description: 'Eyes, nose, mouth, jaw, facial symmetry', yMin: 1.56, yMax: 1.71, highlightRadius: 0.15 },
+  { id: 'neck-cspine', label: 'Neck & C-Spine', description: 'Trachea, JVD, C-spine, subcutaneous emphysema', yMin: 1.46, yMax: 1.56 },
+  // Chest: suprasternal notch down to xiphoid / costal margin
+  { id: 'chest', label: 'Chest', description: 'Inspect, palpate, percuss, auscultate', yMin: 1.16, yMax: 1.46 },
+  // Abdomen: xiphoid down to pubic symphysis (wraps umbilicus at 1.09)
+  { id: 'abdomen', label: 'Abdomen', description: 'Inspect, auscultate, percuss, palpate', yMin: 0.91, yMax: 1.16 },
+  // Pelvis: pubic symphysis down to greater trochanter — the narrow band
+  // where the pelvic ring + perineum live. Previous 0.83-0.98 was too wide
+  // and hijacked mid-abdominal clicks.
+  { id: 'pelvis', label: 'Pelvis', description: 'Stability test, perineal inspection', yMin: 0.83, yMax: 0.91 },
   // Arms — positioned laterally (x offset from center)
   { id: 'right-arm', label: 'Right Arm', description: 'Pulses, sensation, motor, deformity', yMin: 0.40, yMax: 1.40, xOffset: -0.45, highlightRadius: 0.14 },
   { id: 'left-arm', label: 'Left Arm', description: 'Pulses, sensation, motor, deformity', yMin: 0.40, yMax: 1.40, xOffset: 0.45, highlightRadius: 0.14 },
   // Legs — positioned laterally
   { id: 'right-leg', label: 'Right Leg', description: 'Pulses, sensation, motor, deformity', yMin: 0.0, yMax: 0.83, xOffset: -0.10, highlightRadius: 0.08 },
   { id: 'left-leg', label: 'Left Leg', description: 'Pulses, sensation, motor, deformity', yMin: 0.0, yMax: 0.83, xOffset: 0.10, highlightRadius: 0.08 },
-  { id: 'posterior-logroll', label: 'Posterior / Log Roll', description: 'Log roll with C-spine control. Palpate entire spine.', yMin: 0.83, yMax: 1.565, condition: 'back' },
+  { id: 'posterior-logroll', label: 'Posterior / Log Roll', description: 'Log roll with C-spine control. Palpate entire spine.', yMin: 0.83, yMax: 1.56, condition: 'back' },
 ];
 
 // Amber color for required-but-unassessed regions
@@ -135,10 +153,13 @@ const BONE_REGION_MAP: Array<{ bone: string; region: RegionId; weight?: number }
 
   // Torso: Spine2 = upper chest (sternum/manubrium level), Spine1 = mid
   // chest (xiphoid-ish), Spine = upper abdomen (epigastrium), Hips = pelvis.
+  // Spine gets a slight weight bump so the full abdominal expanse between
+  // xiphoid and pubic bone reliably resolves to "abdomen" rather than
+  // drifting down to the Hips bone at the pelvic-crest level.
   { bone: 'mixamorig:Spine2', region: 'chest', weight: 1.0 },
-  { bone: 'mixamorig:Spine1', region: 'chest', weight: 1.0 },
-  { bone: 'mixamorig:Spine', region: 'abdomen', weight: 1.0 },
-  { bone: 'mixamorig:Hips', region: 'pelvis', weight: 1.0 },
+  { bone: 'mixamorig:Spine1', region: 'chest', weight: 1.1 },
+  { bone: 'mixamorig:Spine', region: 'abdomen', weight: 1.3 },
+  { bone: 'mixamorig:Hips', region: 'pelvis', weight: 0.9 },
 
   // Arms — shoulder is on the body edge, so weight it lower than Arm/ForeArm/Hand
   // so a click on the upper lateral chest doesn't drift to the arm.
