@@ -2672,7 +2672,7 @@ export const additionalMetabolicCases: CaseScenario[] = [
 export const additionalToxicologyCases: CaseScenario[] = [
   createCase({
     id: 'tox-002',
-    title: 'Opioid Overdose with Respiratory Arrest',
+    title: 'Opioid Overdose with Severe Respiratory Depression',
     category: 'toxicology',
     subcategory: 'opioid-overdose',
     priority: 'critical',
@@ -3865,11 +3865,11 @@ export const additionalObstetricCases: CaseScenario[] = [
         interventions: ['IV access', 'Magnesium sulfate']
       },
       disability: {
-        avpu: 'A',
+        avpu: 'V',
         gcs: { eye: 4, verbal: 4, motor: 6, total: 14 },
         pupils: 'Equal and reactive',
         bloodGlucose: 5.4,
-        findings: ['Post-ictal', 'Hyperreflexia', 'Clonus present'],
+        findings: ['Post-ictal — responds to voice (AVPU = V)', 'Hyperreflexia', 'Clonus present'],
         interventions: ['Magnesium sulfate', 'Protect from injury']
       },
       exposure: {
@@ -4254,7 +4254,7 @@ export const additionalTraumaCases: CaseScenario[] = [
     },
     studentChecklist: [
       { id: 't11-1', category: 'intervention', description: 'Control bleeding with direct pressure/tourniquet', points: 15, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced', 'expert'], critical: true },
-      { id: 't11-2', category: 'intervention', description: 'Proper care of amputated part (dry, cool, do not immerse)', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced', 'expert'] },
+      { id: 't11-2', category: 'intervention', description: 'Proper care of amputated part (moist gauze → sealed bag → ice water; not directly on ice)', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced', 'expert'] },
       { id: 't11-3', category: 'intervention', description: 'IV access and fluid resuscitation', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced'] },
       { id: 't11-4', category: 'intervention', description: 'Analgesia and transport to trauma center', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced'] }
     ],
@@ -4481,7 +4481,7 @@ export const additionalTraumaCases: CaseScenario[] = [
       eventsLeading: 'Fell into pool while unsupervised, estimated submersion 5 minutes'
     },
     vitalSignsProgression: {
-      initial: { bp: '70/40', pulse: 50, respiration: 4, spo2: 70, gcs: 5, temperature: 32 }
+      initial: { bp: '70/40', pulse: 50, respiration: 0, spo2: 70, gcs: 5, temperature: 32 }
     },
     expectedFindings: {
       keyObservations: ['Drowning', 'Hypothermia', 'Respiratory arrest', 'Aspiration'],

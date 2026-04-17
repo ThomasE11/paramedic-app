@@ -151,7 +151,7 @@ export const caseDatabase: CaseScenario[] = [
     },
     studentChecklist: [
       { id: 'c1-1', category: 'abcde', description: 'Assess airway patency', points: 5, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'], rationale: 'Airway is first priority in ABCDE approach' },
-      { id: 'c1-2', category: 'abcde', description: 'Administer high-flow oxygen', points: 5, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'], rationale: 'Maintain oxygenation in ACS' },
+      { id: 'c1-2', category: 'abcde', description: 'Titrate oxygen to SpO2 94–98% (avoid routine high-flow O2 in ACS — DETO2X-AMI)', points: 5, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'], rationale: 'Hyperoxia in ACS is associated with worse outcomes (DETO2X-AMI 2017); titrate only if SpO2 < 94%' },
       { id: 'c1-3', category: 'abcde', description: 'Establish IV access', points: 5, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
       { id: 'c1-4', category: 'intervention', description: 'Give Aspirin 300mg', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'], critical: true, timeframe: 'Within 5 minutes', rationale: 'Antiplatelet therapy reduces mortality in STEMI' },
       { id: 'c1-5', category: 'intervention', description: 'Administer GTN (if BP allows)', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'], rationale: 'GTN contraindicated if SBP < 90 mmHg' },
@@ -925,7 +925,10 @@ export const caseDatabase: CaseScenario[] = [
     },
     vitalSignsProgression: {
       initial: { bp: '240/130', pulse: 95, respiration: 20, spo2: 98, gcs: 14 },
-      afterIntervention: { bp: '200/110', pulse: 85, respiration: 18, spo2: 99, gcs: 15 },
+      // Prehospital management is monitoring + calm transport (no BP-lowering
+      // agents in the field for hypertensive emergency — labetalol is ED-only).
+      // Vitals stay broadly static; mild improvement reflects anxiolysis + analgesia.
+      afterIntervention: { bp: '235/125', pulse: 88, respiration: 18, spo2: 99, gcs: 15 },
       deterioration: { bp: '260/140', pulse: 110, respiration: 26, spo2: 94, gcs: 12 }
     },
     expectedFindings: {
@@ -2507,27 +2510,27 @@ export const caseDatabase: CaseScenario[] = [
         interventions: ['Suction', 'Recovery position if C-spine cleared']
       },
       breathing: {
-        rate: 18,
-        rhythm: 'Regular',
-        depth: 'Normal',
-        spo2: 96,
-        findings: ['Normal'],
-        interventions: ['Oxygen']
+        rate: 8,
+        rhythm: 'Irregular — Cheyne-Stokes pattern',
+        depth: 'Variable',
+        spo2: 92,
+        findings: ['Cushing triad feature — irregular respirations', 'Periodic apnoea episodes'],
+        interventions: ['Assisted BVM ventilation targeting ETCO2 35-40', 'High-flow O2']
       },
       circulation: {
-        pulseRate: 95,
-        pulseQuality: 'Regular',
-        bp: { systolic: 140, diastolic: 90 },
+        pulseRate: 48,
+        pulseQuality: 'Bounding',
+        bp: { systolic: 190, diastolic: 110 },
         capillaryRefill: 2,
         skin: 'Normal',
-        findings: ['Hypertensive - Cushing response?'],
-        interventions: ['IV access']
+        findings: ['Cushing triad — hypertension + bradycardia + irregular respirations = impending herniation'],
+        interventions: ['IV access', 'Avoid hypotension (SBP > 110 target)']
       },
       disability: {
         avpu: 'U',
         gcs: { eye: 1, verbal: 1, motor: 3, total: 5 },
-        pupils: 'Right dilated, non-reactive',
-        findings: ['GCS 5', 'Unilateral dilated pupil', 'Decerebrate posturing'],
+        pupils: 'Right dilated, non-reactive (blown pupil — uncal herniation)',
+        findings: ['GCS 5', 'Unilateral dilated pupil', 'Decerebrate posturing', 'Full Cushing triad present'],
         interventions: ['Spinal precautions', 'Hyperventilation if signs of herniation']
       },
       exposure: {
@@ -2555,7 +2558,7 @@ export const caseDatabase: CaseScenario[] = [
       eventsLeading: 'Fell from scaffolding approximately 4 meters, struck head on concrete'
     },
     vitalSignsProgression: {
-      initial: { bp: '140/90', pulse: 95, respiration: 18, spo2: 96, gcs: 5 }
+      initial: { bp: '190/110', pulse: 48, respiration: 8, spo2: 92, gcs: 5 }
     },
     expectedFindings: {
       keyObservations: ['GCS 5', 'Blown pupil', 'Basal skull fracture signs'],
@@ -4104,11 +4107,11 @@ export const caseDatabase: CaseScenario[] = [
         ecgFindings: ['Sinus tachycardia ~110 bpm', 'Check for peaked T waves (hyperkalaemia risk in DKA)']
       },
       disability: {
-        avpu: 'A',
+        avpu: 'V',
         gcs: { eye: 4, verbal: 4, motor: 6, total: 14 },
         pupils: 'Equal and reactive',
         bloodGlucose: 28.5,
-        findings: ['Drowsy', 'Confused', 'Severe hyperglycaemia — BGL 28.5 mmol/L'],
+        findings: ['Drowsy', 'Confused', 'Oriented to person only — responds to voice (AVPU = V)', 'Severe hyperglycaemia — BGL 28.5 mmol/L'],
         interventions: []
       },
       exposure: {
@@ -5405,7 +5408,7 @@ export const caseDatabase: CaseScenario[] = [
     id: 'env-001',
     title: 'Heat Exhaustion',
     category: 'environmental',
-    subcategory: 'heat-stroke',
+    subcategory: 'heat-exhaustion',
     priority: 'moderate',
     complexity: 'basic',
     yearLevels: ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
@@ -5694,7 +5697,7 @@ export const caseDatabase: CaseScenario[] = [
       },
       exposure: {
         temperature: 36.8,
-        findings: ['Active vaginal bleeding - moderate', 'Abdomen tender to palpation'],
+        findings: ['Active vaginal bleeding - moderate', 'Abdomen soft, non-tender (painless bleeding — hallmark of previa)'],
         interventions: ['DO NOT perform vaginal examination', 'Place in left lateral position', 'Absorbent pads']
       }
     },
@@ -5702,7 +5705,7 @@ export const caseDatabase: CaseScenario[] = [
       head: ['Normal'],
       neck: ['Normal'],
       chest: ['Normal'],
-      abdomen: ['Uterus tender, fundal height consistent with 34 weeks', 'No contractions felt'],
+      abdomen: ['Uterus soft, non-tender, fundal height consistent with 34 weeks', 'No contractions felt (painless bleeding suggests previa, not abruption)'],
       pelvis: ['Avoid examination'],
       extremities: ['Normal'],
       posterior: ['Normal'],
@@ -6937,7 +6940,7 @@ export const caseDatabase: CaseScenario[] = [
     secondarySurvey: {
       head: ['Singed facial hair', 'No direct trauma'],
       neck: ['Burned circumferentially - may need escharotomy'],
-      chest: ['Full-thickness burns', 'No breath sounds on right (possible lung injury)'],
+      chest: ['Full-thickness circumferential burns — escharotomy may be needed to allow chest wall excursion', 'Breath sounds equal bilaterally at this stage'],
       abdomen: ['Partial-thickness burns', 'Soft, non-tender'],
       pelvis: ['No burns'],
       extremities: ['Full-thickness burns to both arms', 'Partial-thickness to hands', 'Edema developing'],
@@ -9389,10 +9392,10 @@ export const caseDatabase: CaseScenario[] = [
       medications: [
         { name: 'Furosemide', dose: '40mg', frequency: 'Daily', indication: 'Heart failure' },
         { name: 'Lisinopril', dose: '20mg', frequency: 'Daily', indication: 'Blood pressure' },
-        { name: 'Albuterol inhaler', dose: '2 puffs', frequency: 'PRN', indication: 'Asthma (misdiagnosed)' }
+        { name: 'Albuterol inhaler', dose: '2 puffs', frequency: 'PRN', indication: 'Breathlessness' }
       ],
       allergies: ['None'],
-      medicalConditions: ['Heart failure', 'Hypertension', 'COPD (actually heart failure)'],
+      medicalConditions: ['Heart failure', 'Hypertension', 'Previous "COPD" label by GP (note — likely mislabelled cardiac asthma)'],
       surgicalHistory: ['Coronary stent x3 - 3 years ago'],
       lastMeal: 'Dinner 4 hours ago',
       eventsLeading: 'Progressive shortness of breath over 3 days, worse tonight, been sleeping in recliner for a week'
@@ -10617,7 +10620,7 @@ export const caseDatabase: CaseScenario[] = [
   createCase({
     id: 'resp-010',
     title: 'Refractory Anaphylaxis — Bee Sting',
-    category: 'metabolic',
+    category: 'respiratory',
     subcategory: 'anaphylaxis',
     priority: 'critical',
     complexity: 'advanced',
@@ -11292,7 +11295,7 @@ export const caseDatabase: CaseScenario[] = [
     id: 'cardiac-017',
     title: 'Paediatric Bradycardia — Infant with Poor Perfusion',
     category: 'pediatric',
-    subcategory: 'bradycardia',
+    subcategory: 'sepsis',
     priority: 'critical',
     complexity: 'intermediate',
     yearLevels: ['2nd-year', '3rd-year'],

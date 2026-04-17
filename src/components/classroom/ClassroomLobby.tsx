@@ -48,6 +48,21 @@ import { toast } from 'sonner';
 import { useClassroomSession } from '@/hooks/useClassroomSession';
 import type { UseClassroomSessionResult } from '@/hooks/useClassroomSession';
 import { allCases } from '@/data/cases';
+import type { StudentYear } from '@/types';
+
+// Year levels the case library is tagged against. 'all' is a UI-only
+// sentinel meaning "don't filter". Keep this in sync with the
+// `StudentYear` union in src/types.
+type YearFilter = StudentYear | 'all';
+
+const YEAR_OPTIONS: { value: YearFilter; label: string }[] = [
+  { value: 'all', label: 'All year levels' },
+  { value: '1st-year', label: '1st year' },
+  { value: '2nd-year', label: '2nd year' },
+  { value: '3rd-year', label: '3rd year' },
+  { value: '4th-year', label: '4th year' },
+  { value: 'diploma', label: 'Diploma' },
+];
 
 interface ClassroomLobbyProps {
   onExit: () => void;
@@ -85,10 +100,41 @@ export function ClassroomLobby({ onExit, sessionHook }: ClassroomLobbyProps) {
 
   const [instructorName, setInstructorName] = useState('');
   const [selectedCaseId, setSelectedCaseId] = useState<string>('');
+  const [yearFilter, setYearFilter] = useState<YearFilter>('all');
   const [copied, setCopied] = useState(false);
   // Duration in minutes. 0 / null = unlimited. Default 20 minutes —
   // feels right for a paramedic scenario teaching slot.
   const [durationMinutes, setDurationMinutes] = useState<number>(20);
+
+  // Cases filtered by the selected year. Grouped by `category` so the
+  // dropdown surfaces related scenarios together (cardiac, trauma,
+  // respiratory, …) instead of a flat alphabetical list.
+  const filteredCases = useMemo(() => {
+    if (yearFilter === 'all') return allCases;
+    return allCases.filter(c => c.yearLevels?.includes(yearFilter));
+  }, [yearFilter]);
+
+  const groupedCases = useMemo(() => {
+    const groups = new Map<string, typeof allCases>();
+    for (const c of filteredCases) {
+      const key = c.category || 'other';
+      const existing = groups.get(key);
+      if (existing) existing.push(c);
+      else groups.set(key, [c]);
+    }
+    // Alphabetise each group's contents + the category order itself so
+    // the dropdown is deterministic.
+    const ordered = Array.from(groups.entries()).sort(([a], [b]) => a.localeCompare(b));
+    for (const [, list] of ordered) list.sort((a, b) => a.title.localeCompare(b.title));
+    return ordered;
+  }, [filteredCases]);
+
+  // Clear the selection if the current pick no longer belongs to the
+  // filtered list — otherwise the trigger shows a stale case title.
+  const selectedStillValid = useMemo(
+    () => filteredCases.some(c => c.id === selectedCaseId),
+    [filteredCases, selectedCaseId],
+  );
 
   // Only count students in the "joined" badge — we don't want the instructor
   // counted as one of their own participants.
@@ -330,19 +376,77 @@ export function ClassroomLobby({ onExit, sessionHook }: ClassroomLobbyProps) {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  {/* Year-level filter. Keeps the case list bite-sized — a 4th-year
+                      instructor shouldn't have to scroll past 1st-year basics. */}
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                      {t('classroom.selectCase')}
+                      Year level
                     </label>
-                    <Select value={selectedCaseId} onValueChange={setSelectedCaseId}>
+                    <Select
+                      value={yearFilter}
+                      onValueChange={v => {
+                        setYearFilter(v as YearFilter);
+                        // If the currently-picked case doesn't match the new
+                        // year, clear the selection so the dropdown prompts again.
+                        setSelectedCaseId(prev => {
+                          if (v === 'all') return prev;
+                          const stillValid = allCases.some(
+                            c => c.id === prev && c.yearLevels?.includes(v as StudentYear),
+                          );
+                          return stillValid ? prev : '';
+                        });
+                      }}
+                    >
                       <SelectTrigger>
-                        <SelectValue placeholder={t('classroom.selectCase')} />
+                        <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {allCases.slice(0, 60).map(c => (
-                          <SelectItem key={c.id} value={c.id}>
-                            {c.title}
+                        {YEAR_OPTIONS.map(o => (
+                          <SelectItem key={o.value} value={o.value}>
+                            {o.label}
                           </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center justify-between">
+                      <span>{t('classroom.selectCase')}</span>
+                      <span className="text-[10px] text-muted-foreground normal-case tracking-normal">
+                        {filteredCases.length} case{filteredCases.length !== 1 ? 's' : ''}
+                      </span>
+                    </label>
+                    <Select
+                      value={selectedStillValid ? selectedCaseId : ''}
+                      onValueChange={setSelectedCaseId}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={
+                          filteredCases.length === 0
+                            ? 'No cases for this year level'
+                            : t('classroom.selectCase')
+                        } />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-[60vh]">
+                        {groupedCases.map(([category, cases]) => (
+                          <div key={category}>
+                            <div className="px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground bg-muted/40 sticky top-0">
+                              {category.replace(/-/g, ' ')}
+                            </div>
+                            {cases.map(c => (
+                              <SelectItem key={c.id} value={c.id}>
+                                <span className="flex items-center gap-2">
+                                  <span>{c.title}</span>
+                                  {c.complexity && (
+                                    <span className="text-[10px] text-muted-foreground uppercase">
+                                      · {c.complexity}
+                                    </span>
+                                  )}
+                                </span>
+                              </SelectItem>
+                            ))}
+                          </div>
                         ))}
                       </SelectContent>
                     </Select>

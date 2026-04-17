@@ -2198,7 +2198,7 @@ export const firstYearCases: CaseScenario[] = [
     id: 'y1-011',
     title: 'Adult - Minor Road Traffic Collision with Neck Pain',
     category: 'trauma',
-    subcategory: 'spinal-cord-injury',
+    subcategory: 'whiplash',
     priority: 'moderate',
     complexity: 'basic',
     yearLevels: ['1st-year', 'diploma'],
@@ -2989,7 +2989,7 @@ export const firstYearCases: CaseScenario[] = [
   createCase({
     id: 'y1-015',
     title: 'Severe Allergic Reaction — Restaurant',
-    category: 'metabolic',
+    category: 'respiratory',
     subcategory: 'anaphylaxis',
     priority: 'critical',
     complexity: 'basic',
