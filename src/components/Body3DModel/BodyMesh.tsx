@@ -222,62 +222,75 @@ function updateSkeleton(root: THREE.Object3D | null): void {
  * in that case; the primary path still wins when the bones are available.
  */
 function getRegionAtPoint(point: THREE.Vector3): RegionRange | null {
-  // --- Primary: bone-based nearest-anchor ---------------------------------
-  if (anchors.length > 0) {
-    let best: { anchor: Anchor; score: number } | null = null;
-    for (const a of anchors) {
-      const d = point.distanceTo(a.position);
-      // Higher weight → shorter effective distance (more attractive).
-      const score = d / (a.weight ?? 1);
-      if (!best || score < best.score) best = { anchor: a, score };
-    }
-    // Sanity check: if the best match is further than ~40cm the click
-    // almost certainly landed outside the body envelope, and the old
-    // Y-range logic handles "close but not quite on anatomy" hits better.
-    if (best && best.score < 0.45) {
-      let regionId: RegionId = best.anchor.region;
-      // Posterior override for torso clicks on the back surface.
-      const isTorso = regionId === 'chest' || regionId === 'abdomen' || regionId === 'pelvis';
-      if (isTorso && point.z < -0.08) regionId = 'posterior-logroll';
+  // Strategy:
+  //   Limbs (arms, legs) — use the bone rig when available (pose-agnostic,
+  //     correct for patient's-left vs patient's-right) with an X-threshold
+  //     fallback when the rig isn't traversable.
+  //   Anterior midline (head, face, neck, chest, abdomen, pelvis) — use the
+  //     anatomically-tuned Y-range table. Bones like Hips sit at the pelvic
+  //     centre, which is physically inside the abdomen band anatomically;
+  //     trusting nearest-bone there produced "Pelvis" labels for mid-abdomen
+  //     hits. The Y-range table now uses real landmarks (xiphoid, pubic
+  //     symphysis, greater trochanter) so it's authoritative for midline.
+  //   Posterior — z < -0.05 on torso returns the log-roll region.
 
-      if (regionId === 'left-arm' || regionId === 'right-arm' || regionId === 'left-leg' || regionId === 'right-leg') {
-        lastClickedLimb = regionId;
-      } else {
-        lastClickedLimb = null;
-      }
-      const fromTable = REGION_RANGES.find(r => r.id === regionId);
-      if (fromTable) return fromTable;
-    }
-  }
-
-  // --- Fallback: the original Y-range + X-threshold heuristic -------------
-  // This is the exact logic that shipped before the bone-based rewrite,
-  // preserved verbatim so we never regress below the prior behaviour.
+  // --- 1. Posterior first -------------------------------------------------
   if (point.z < -0.05) {
     const posterior = REGION_RANGES.find(r => r.condition === 'back' && point.y >= r.yMin && point.y < r.yMax);
     if (posterior) { lastClickedLimb = null; return posterior; }
   }
+
+  // --- 2. Limb check via bones when available -----------------------------
+  // Compare the nearest LIMB bone to the nearest TORSO/HEAD bone. If a limb
+  // bone wins decisively, classify as that limb. Otherwise fall through to
+  // the Y-range midline decision.
+  if (anchors.length > 0) {
+    let bestLimb: { anchor: Anchor; score: number } | null = null;
+    let bestTorso: { anchor: Anchor; score: number } | null = null;
+    for (const a of anchors) {
+      const d = point.distanceTo(a.position);
+      const score = d / (a.weight ?? 1);
+      const isLimb = a.region === 'left-arm' || a.region === 'right-arm' || a.region === 'left-leg' || a.region === 'right-leg';
+      if (isLimb) {
+        if (!bestLimb || score < bestLimb.score) bestLimb = { anchor: a, score };
+      } else {
+        if (!bestTorso || score < bestTorso.score) bestTorso = { anchor: a, score };
+      }
+    }
+    // Limb wins only if clearly closer — prevents a shoulder click from
+    // hijacking the upper chest (where Arm and Spine2 can be similar).
+    if (bestLimb && (!bestTorso || bestLimb.score < bestTorso.score * 0.85)) {
+      const limbId = bestLimb.anchor.region;
+      lastClickedLimb = limbId as LimbSide;
+      return REGION_RANGES.find(r => r.id === limbId)
+        || { id: limbId, label: limbId, description: '', yMin: 0, yMax: 0 };
+    }
+  }
+
+  // --- 3. X-threshold limb fallback (when rig isn't available) -----------
   const absX = Math.abs(point.x);
-  const armXThreshold = point.y >= 1.20 ? 0.15 : 0.20;
-  if (absX > armXThreshold && point.y >= 0.40 && point.y < 1.44) {
-    // Mixamo's convention: character faces +Z, so +X = character's left.
+  const armXThreshold = point.y >= 1.16 ? 0.15 : 0.20;
+  if (absX > armXThreshold && point.y >= 0.40 && point.y < 1.46) {
+    // Mixamo convention: character faces +Z, +X = patient's left side.
     const limbId = point.x > 0 ? 'left-arm' : 'right-arm';
     lastClickedLimb = limbId;
     const r = REGION_RANGES.find(rr => rr.id === limbId);
-    return r || { id: limbId, label: limbId, description: '', yMin: 0.40, yMax: 1.44 };
+    return r || { id: limbId, label: limbId, description: '', yMin: 0.40, yMax: 1.46 };
   }
   if (point.y < 0.83) {
     if (absX > 0.20 && point.y >= 0.40) {
       const limbId = point.x > 0 ? 'left-arm' : 'right-arm';
       lastClickedLimb = limbId;
       const r = REGION_RANGES.find(rr => rr.id === limbId);
-      return r || { id: limbId, label: limbId, description: '', yMin: 0.40, yMax: 1.44 };
+      return r || { id: limbId, label: limbId, description: '', yMin: 0.40, yMax: 1.46 };
     }
     const limbId = point.x > 0 ? 'left-leg' : 'right-leg';
     lastClickedLimb = limbId;
     const r = REGION_RANGES.find(rr => rr.id === limbId);
     return r || { id: limbId, label: limbId, description: '', yMin: 0.0, yMax: 0.83 };
   }
+
+  // --- 4. Anterior midline via anatomically-tuned Y-range ----------------
   lastClickedLimb = null;
   return REGION_RANGES.find(r => !r.condition && point.y >= r.yMin && point.y < r.yMax) || null;
 }
