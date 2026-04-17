@@ -232,9 +232,24 @@ interface StudentPanelProps {
    * doesn't need to know anything about classroom state or Supabase.
    */
   topBanner?: React.ReactNode;
+  /**
+   * When set, the panel broadcasts its observable state (vitals,
+   * applied treatments, completed checklist items, performed assessment
+   * steps, revealed monitor vitals) whenever they change. Used by the
+   * classroom host so every watching student sees the instructor's
+   * actions in real time. No-op for single-player mode.
+   */
+  onClassroomStateChange?: (patch: {
+    vitals?: Partial<Record<string, number | string>>;
+    appliedTreatments?: Array<{ id: string; name: string; detail?: string; appliedAt: string }>;
+    completedItems?: string[];
+    assessmentPerformed?: string[];
+    caseStartedAt?: string;
+    monitorRevealedVitals?: string[];
+  }) => void;
 }
 
-export function StudentPanel({ onExit, preloadedCase, topBanner }: StudentPanelProps) {
+export function StudentPanel({ onExit, preloadedCase, topBanner, onClassroomStateChange }: StudentPanelProps) {
   const { t, i18n } = useTranslation();
   // Onboarding tour for first-time users
   const { showTour, dismissTour } = useOnboardingTour();
@@ -494,6 +509,67 @@ export function StudentPanel({ onExit, preloadedCase, topBanner }: StudentPanelP
       }
     };
   }, []);
+
+  // ------------------------------------------------------------------------
+  // Classroom-host: broadcast state mutations so every spectator sees live
+  // what the driver is doing. These effects are gated by
+  // `onClassroomStateChange` — in single-player mode they're no-ops.
+  // ------------------------------------------------------------------------
+
+  // Vitals — the most important live signal for spectators (they watch
+  // the LIFEPAK change as the driver treats the patient).
+  useEffect(() => {
+    if (!onClassroomStateChange || !currentVitals) return;
+    onClassroomStateChange({
+      vitals: {
+        bp: currentVitals.bp as string | undefined,
+        pulse: currentVitals.pulse as number | undefined,
+        respiration: currentVitals.respiration as number | undefined,
+        spo2: currentVitals.spo2 as number | undefined,
+        temperature: currentVitals.temperature as number | undefined,
+        gcs: (currentVitals.gcs && typeof currentVitals.gcs === 'object' ? currentVitals.gcs.total : currentVitals.gcs) as number | undefined,
+        bloodGlucose: currentVitals.bloodGlucose as number | undefined,
+      },
+    });
+  }, [currentVitals, onClassroomStateChange]);
+
+  // Applied treatments — ordered action log. Spectators see every
+  // medication / intervention the driver applies.
+  useEffect(() => {
+    if (!onClassroomStateChange) return;
+    onClassroomStateChange({
+      appliedTreatments: appliedTreatments.map(t => ({
+        id: t.id,
+        name: (t.description || t.name || t.id) as string,
+        detail: typeof t.description === 'string' && t.description !== t.name ? t.description : undefined,
+        appliedAt: typeof t.appliedAt === 'string' ? t.appliedAt : new Date(t.appliedAt).toISOString(),
+      })),
+    });
+  }, [appliedTreatments, onClassroomStateChange]);
+
+  // Checklist completion — spectators see critical-action ticks in real time.
+  useEffect(() => {
+    if (!onClassroomStateChange || !session) return;
+    onClassroomStateChange({ completedItems: session.completedItems });
+  }, [session?.completedItems, onClassroomStateChange, session]);
+
+  // Primary / secondary survey steps — spectators see the assessment pattern.
+  useEffect(() => {
+    if (!onClassroomStateChange || !assessmentTracker) return;
+    onClassroomStateChange({
+      assessmentPerformed: assessmentTracker.performed.map(p => p.stepId),
+    });
+  }, [assessmentTracker, onClassroomStateChange]);
+
+  // Case start time + revealed monitor vitals.
+  useEffect(() => {
+    if (!onClassroomStateChange) return;
+    const iso = caseStartTime ? new Date(caseStartTime).toISOString() : undefined;
+    onClassroomStateChange({
+      caseStartedAt: iso,
+      monitorRevealedVitals: Array.from(monitorRevealedVitals),
+    });
+  }, [caseStartTime, monitorRevealedVitals, onClassroomStateChange]);
 
   // Inactivity coaching — nudge students who are stuck
   useEffect(() => {

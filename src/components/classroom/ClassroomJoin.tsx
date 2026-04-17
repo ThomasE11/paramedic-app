@@ -40,6 +40,7 @@ import { toast } from 'sonner';
 import { useClassroomSession } from '@/hooks/useClassroomSession';
 import { allCases } from '@/data/cases';
 import type { CaseScenario } from '@/types';
+import { ClassroomSpectatorView } from './ClassroomSpectatorView';
 
 interface ClassroomJoinProps {
   onExit: () => void;
@@ -53,9 +54,14 @@ export function ClassroomJoin({ onExit }: ClassroomJoinProps) {
     error,
     session,
     lastBroadcast,
+    participants,
+    selfKey,
+    currentDriverKey,
+    sharedState,
     joinSession,
     leaveSession,
     clearError,
+    requestStateSnapshot,
   } = useClassroomSession();
 
   const [pinInput, setPinInput] = useState('');
@@ -92,21 +98,25 @@ export function ClassroomJoin({ onExit }: ClassroomJoinProps) {
 
   // If the student joined after a case was already running, pick it up
   // from the session row's snapshot (instructor already broadcast to
-  // everyone else).
+  // everyone else). Then ask the driver for a fresh state snapshot so
+  // we see all the treatments / vitals changes that happened before we
+  // arrived.
   useEffect(() => {
     if (session?.status === 'running' && !activeCase) {
       if (session.case_id) {
         const byId = allCases.find(c => c.id === session.case_id);
         if (byId) {
           setActiveCase(byId);
+          void requestStateSnapshot();
           return;
         }
       }
       if (session.case_snapshot) {
         setActiveCase(session.case_snapshot as CaseScenario);
+        void requestStateSnapshot();
       }
     }
-  }, [session, activeCase]);
+  }, [session, activeCase, requestStateSnapshot]);
 
   const pinValid = useMemo(() => /^\d{6}$/.test(pinInput.trim()), [pinInput]);
 
@@ -157,7 +167,26 @@ export function ClassroomJoin({ onExit }: ClassroomJoinProps) {
   };
 
   // ------------------------------------------------------------
-  // Layout
+  // Case is live → render the full-screen spectator mirror view.
+  // This replaces the old static case card with a live dashboard
+  // showing vitals, action feed, and presence.
+  // ------------------------------------------------------------
+  if (session && activeCase) {
+    return (
+      <ClassroomSpectatorView
+        caseData={activeCase}
+        sharedState={sharedState}
+        participants={participants}
+        currentDriverKey={currentDriverKey}
+        selfKey={selfKey}
+        lastBroadcast={lastBroadcast}
+        onLeave={handleLeave}
+      />
+    );
+  }
+
+  // ------------------------------------------------------------
+  // Layout (pre-join + waiting room)
   // ------------------------------------------------------------
   return (
     <div className="min-h-screen bg-background">
@@ -284,86 +313,9 @@ export function ClassroomJoin({ onExit }: ClassroomJoinProps) {
           </Card>
         )}
 
-        {/* ----------- Active case (read-only broadcast view) ----------- */}
-        {session && activeCase && (
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0">
-              <CardTitle className="flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-                {activeCase.title}
-              </CardTitle>
-              <Badge variant="secondary" className="gap-1">
-                <Radio className="h-3 w-3 text-emerald-500" />
-                {t('classroom.live')}
-              </Badge>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {activeCase.dispatchInfo?.callReason && (
-                <div>
-                  <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">
-                    {t('case.dispatchBriefing')}
-                  </h3>
-                  <p className="text-sm leading-relaxed">
-                    {activeCase.dispatchInfo.callReason}
-                  </p>
-                  {activeCase.dispatchInfo.location && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {activeCase.dispatchInfo.location}
-                    </p>
-                  )}
-                </div>
-              )}
-              {activeCase.patientInfo && (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-                  <div>
-                    <div className="text-xs text-muted-foreground">{t('case.age')}</div>
-                    <div className="font-medium">{activeCase.patientInfo.age}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-muted-foreground">{t('case.gender')}</div>
-                    <div className="font-medium">{activeCase.patientInfo.gender}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-muted-foreground">{t('case.weight')}</div>
-                    <div className="font-medium">{activeCase.patientInfo.weight} kg</div>
-                  </div>
-                  {activeCase.priority && (
-                    <div>
-                      <div className="text-xs text-muted-foreground">{t('case.priority')}</div>
-                      <div className="font-medium uppercase">{activeCase.priority}</div>
-                    </div>
-                  )}
-                </div>
-              )}
-              {activeCase.sceneInfo?.description && (
-                <div>
-                  <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">
-                    {t('case.details')}
-                  </h3>
-                  <p className="text-sm leading-relaxed">
-                    {activeCase.sceneInfo.description}
-                  </p>
-                </div>
-              )}
-              {activeCase.initialPresentation?.generalImpression && (
-                <div>
-                  <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">
-                    {t('case.primarySurvey')}
-                  </h3>
-                  <p className="text-sm leading-relaxed">
-                    {activeCase.initialPresentation.generalImpression}
-                  </p>
-                </div>
-              )}
-              <div className="pt-4 flex justify-end">
-                <Button variant="outline" onClick={handleLeave} className="gap-2">
-                  <LogOut className="h-4 w-4" />
-                  {t('classroom.leaveSession')}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        {/* When `session && activeCase` the component early-returns at the
+            top with `ClassroomSpectatorView`. Nothing to render here for
+            the live-case path. */}
       </div>
     </div>
   );

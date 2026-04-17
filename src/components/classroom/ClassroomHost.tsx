@@ -42,7 +42,15 @@ interface Props {
  */
 export function ClassroomHost({ onExit }: Props) {
   const sessionHook = useClassroomSession();
-  const { session, participants, sendBroadcast, endCase, leaveSession } = sessionHook;
+  const {
+    session,
+    participants,
+    sendBroadcast,
+    endCase,
+    leaveSession,
+    broadcastStatePatch,
+    isDriver,
+  } = sessionHook;
 
   // Before a case is live, show the lobby (includes pre-lobby name entry,
   // PIN, student list, and case picker). Also renders during the 'lobby'
@@ -74,6 +82,10 @@ export function ClassroomHost({ onExit }: Props) {
       <StudentPanel
         onExit={handleEndSession}
         preloadedCase={caseSnapshot}
+        // Only the current driver broadcasts state changes. In Phase 1 that's
+        // always the instructor; when control-handoff ships the student who
+        // has been granted driver privileges will take over broadcasting.
+        onClassroomStateChange={isDriver ? broadcastStatePatch : undefined}
         topBanner={
           <ClassroomBroadcastBar
             caseData={caseSnapshot}

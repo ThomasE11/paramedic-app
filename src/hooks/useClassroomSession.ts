@@ -57,6 +57,53 @@ export interface ClassroomParticipant {
 }
 
 /**
+ * Shared live-case state mirrored to every participant in a classroom
+ * session. The current driver (instructor by default, a delegated student
+ * if control was granted) owns writes and broadcasts patches; everybody
+ * else renders those patches.
+ *
+ * Kept deliberately small: only the observable signals that matter for
+ * spectator teaching — vital signs, treatments, assessment progress,
+ * current phase, optional timer start. Everything else (UI micro-state
+ * like which accordion is open) stays local to each client.
+ */
+export interface SharedCaseState {
+  /** Current vital signs (what the LIFEPAK monitor shows). */
+  vitals?: Partial<{
+    bp: string; pulse: number; respiration: number; spo2: number;
+    temperature: number; gcs: number; bloodGlucose: number;
+  }>;
+  /**
+   * Running ordered list of treatments the driver has applied.
+   * Each entry is a minimal shape — name, dose/route, and a timestamp —
+   * so the spectator side can render an action feed without needing the
+   * full Treatment object.
+   */
+  appliedTreatments?: Array<{
+    id: string;
+    name: string;
+    detail?: string;
+    appliedAt: string;
+  }>;
+  /** IDs of studentChecklist items marked complete. */
+  completedItems?: string[];
+  /** Assessment step IDs performed (primary + secondary survey etc.). */
+  assessmentPerformed?: string[];
+  /** ISO timestamp the driver pressed Start Case. */
+  caseStartedAt?: string;
+  /** Which LIFEPAK vitals the driver has revealed so far (assess-required). */
+  monitorRevealedVitals?: string[];
+  /** Current transport decision state, if the wizard is in flight. */
+  transportDecision?: {
+    priority?: string;
+    position?: string;
+    preAlert?: boolean;
+    destination?: string;
+    provisionalDiagnosis?: string;
+  };
+}
+
+/**
  * Broadcast event vocabulary. Everything that moves through the session
  * goes through this union so both sides stay in lockstep.
  */
@@ -66,11 +113,42 @@ export type ClassroomBroadcast =
   | { kind: 'session_ended'; reason?: string }
   | { kind: 'instructor_message'; text: string }
   | { kind: 'student_action'; participant: string; action: string; timestamp: string }
-  | { kind: 'student_score'; participant: string; score: number };
+  | { kind: 'student_score'; participant: string; score: number }
+  /** Partial update to the shared case state. Sent by the driver. */
+  | { kind: 'state_patch'; patch: SharedCaseState; fromKey: string }
+  /** Full snapshot of the shared case state. Used to bootstrap late-joiners. */
+  | { kind: 'state_snapshot'; state: SharedCaseState; fromKey: string }
+  /** A participant asking the driver for a fresh snapshot on join. */
+  | { kind: 'state_request'; askerKey: string }
+  /** Instructor granting driver privileges to a specific participant. */
+  | { kind: 'control_grant'; toKey: string; fromKey: string }
+  /** Instructor reclaiming control from whoever currently has it. */
+  | { kind: 'control_revoke'; fromKey: string };
 
 // ============================================================================
 // Helpers
 // ============================================================================
+
+/**
+ * Merge a partial shared-state update into the current aggregate.
+ *
+ * Simple shallow merge with two carve-outs: `appliedTreatments` replaces
+ * wholesale (the driver always sends the latest ordered list, so replace
+ * is correct and cheaper than trying to dedupe by id), and `vitals` /
+ * `transportDecision` merge field-by-field (preserves any keys the
+ * driver didn't touch).
+ */
+function mergePatch(current: SharedCaseState, patch: SharedCaseState): SharedCaseState {
+  const next: SharedCaseState = { ...current };
+  if (patch.vitals !== undefined) next.vitals = { ...current.vitals, ...patch.vitals };
+  if (patch.appliedTreatments !== undefined) next.appliedTreatments = patch.appliedTreatments;
+  if (patch.completedItems !== undefined) next.completedItems = patch.completedItems;
+  if (patch.assessmentPerformed !== undefined) next.assessmentPerformed = patch.assessmentPerformed;
+  if (patch.caseStartedAt !== undefined) next.caseStartedAt = patch.caseStartedAt;
+  if (patch.monitorRevealedVitals !== undefined) next.monitorRevealedVitals = patch.monitorRevealedVitals;
+  if (patch.transportDecision !== undefined) next.transportDecision = { ...current.transportDecision, ...patch.transportDecision };
+  return next;
+}
 
 /** Generate a 6-digit classroom PIN. Zero-padded, never leading zero. */
 function generatePin(): string {
@@ -97,6 +175,19 @@ export interface UseClassroomSessionResult {
   session: ClassroomSessionRow | null;
   participants: ClassroomParticipant[];
   lastBroadcast: ClassroomBroadcast | null;
+  /**
+   * Presence key of THIS client. Stable for the lifetime of the hook
+   * instance. Used to detect "am I the driver?" without a round-trip.
+   */
+  selfKey: string;
+  /**
+   * Presence key of whoever currently has driving privileges. Instructors
+   * start as the driver; control can be delegated to a student via
+   * `giveControl`. Defaults to the instructor's key while the case is live.
+   */
+  currentDriverKey: string | null;
+  /** Convenience: true when this client is currently the driver. */
+  isDriver: boolean;
 
   /** Instructor: open a new lobby and return the PIN students should type. */
   createSession: (instructorName: string) => Promise<ClassroomSessionRow | null>;
@@ -112,6 +203,20 @@ export interface UseClassroomSessionResult {
   sendBroadcast: (payload: ClassroomBroadcast) => Promise<void>;
   /** Clear a stale error banner — call from input `onChange` so users retrying don't stare at the old message. */
   clearError: () => void;
+
+  /** Running aggregate of the shared case state, rebuilt from every state_patch. */
+  sharedState: SharedCaseState;
+  /** Driver-only: push a partial state update to all participants. No-op for non-drivers. */
+  broadcastStatePatch: (patch: SharedCaseState) => Promise<void>;
+  /** Driver-only: push a full snapshot (in response to `state_request`). */
+  broadcastStateSnapshot: (state: SharedCaseState) => Promise<void>;
+  /** Late-joiner: ask the current driver for a fresh snapshot. */
+  requestStateSnapshot: () => Promise<void>;
+
+  /** Instructor: hand driving privileges to a student. */
+  giveControl: (toKey: string) => Promise<void>;
+  /** Instructor: reclaim driving privileges. */
+  takeControl: () => Promise<void>;
 }
 
 export function useClassroomSession(): UseClassroomSessionResult {
@@ -123,15 +228,27 @@ export function useClassroomSession(): UseClassroomSessionResult {
   const [session, setSession] = useState<ClassroomSessionRow | null>(null);
   const [participants, setParticipants] = useState<ClassroomParticipant[]>([]);
   const [lastBroadcast, setLastBroadcast] = useState<ClassroomBroadcast | null>(null);
+  // Aggregated shared case state rebuilt from every state_patch we see.
+  // Starts empty; fills as the driver broadcasts updates or a late-joiner
+  // requests a snapshot.
+  const [sharedState, setSharedState] = useState<SharedCaseState>({});
+  // Presence-key of whoever currently has driving privileges. `null` until
+  // the first driver is established (either by being the instructor who
+  // creates the session, or by receiving a `control_grant`).
+  const [currentDriverKey, setCurrentDriverKey] = useState<string | null>(null);
 
   // Mutable refs so callbacks don't capture stale state.
   const channelRef = useRef<RealtimeChannel | null>(null);
   const selfKeyRef = useRef<string>(crypto.randomUUID());
   const sessionRef = useRef<ClassroomSessionRow | null>(null);
   const roleRef = useRef<ClassroomRole | null>(null);
+  const sharedStateRef = useRef<SharedCaseState>({});
+  const currentDriverKeyRef = useRef<string | null>(null);
 
   useEffect(() => { sessionRef.current = session; }, [session]);
   useEffect(() => { roleRef.current = role; }, [role]);
+  useEffect(() => { sharedStateRef.current = sharedState; }, [sharedState]);
+  useEffect(() => { currentDriverKeyRef.current = currentDriverKey; }, [currentDriverKey]);
 
   // --------------------------------------------------------------------------
   // Channel subscription
@@ -178,6 +295,42 @@ export function useClassroomSession(): UseClassroomSessionResult {
         channel.on('broadcast', { event: 'classroom' }, (msg) => {
           const payload = msg.payload as ClassroomBroadcast;
           setLastBroadcast(payload);
+
+          // Intercept shared-state + control events up front so every
+          // participant's UI reflects them without each caller having to
+          // re-handle them. Components can still react via `lastBroadcast`.
+          if (payload.kind === 'state_patch') {
+            setSharedState(prev => mergePatch(prev, payload.patch));
+          } else if (payload.kind === 'state_snapshot') {
+            setSharedState(payload.state);
+          } else if (payload.kind === 'state_request') {
+            // Only the current driver responds — use the ref so this
+            // callback stays stable across re-renders.
+            if (currentDriverKeyRef.current === selfKeyRef.current) {
+              // Fire-and-forget snapshot reply.
+              queueMicrotask(() => {
+                void channel.send({
+                  type: 'broadcast',
+                  event: 'classroom',
+                  payload: {
+                    kind: 'state_snapshot',
+                    state: sharedStateRef.current,
+                    fromKey: selfKeyRef.current,
+                  } satisfies ClassroomBroadcast,
+                });
+              });
+            }
+          } else if (payload.kind === 'control_grant') {
+            setCurrentDriverKey(payload.toKey);
+          } else if (payload.kind === 'control_revoke') {
+            // Control returns to whoever sent the revoke (typically the
+            // instructor who spawned the session).
+            setCurrentDriverKey(payload.fromKey);
+          } else if (payload.kind === 'case_ended') {
+            // Case boundary — clear shared state so the next case starts
+            // with a clean slate on every client.
+            setSharedState({});
+          }
         });
 
         channel.subscribe(async (subscribeStatus) => {
@@ -403,15 +556,76 @@ export function useClassroomSession(): UseClassroomSessionResult {
         setSession(data as ClassroomSessionRow);
       }
       setStatus('running');
+      // Instructor claims the driver role by default when a case starts.
+      // Control can be delegated via giveControl() later.
+      setCurrentDriverKey(selfKeyRef.current);
+      // Reset shared state so the new case starts clean.
+      setSharedState({ caseStartedAt: startedAt });
       await sendBroadcast({ kind: 'case_started', caseId, startedAt });
     },
     [sendBroadcast],
   );
 
+  // ------ Shared-state + control helpers ----------------------------------
+  // All four of these are thin wrappers around sendBroadcast. They exist as
+  // named methods so callers (spectator view, broadcast bar) don't need to
+  // know the protocol vocabulary — the hook owns the shape.
+
+  const broadcastStatePatch = useCallback(async (patch: SharedCaseState) => {
+    // Optimistically apply locally so the instructor's own UI reacts
+    // instantly without waiting for the broadcast to round-trip.
+    setSharedState(prev => mergePatch(prev, patch));
+    await sendBroadcast({
+      kind: 'state_patch',
+      patch,
+      fromKey: selfKeyRef.current,
+    });
+  }, [sendBroadcast]);
+
+  const broadcastStateSnapshot = useCallback(async (state: SharedCaseState) => {
+    setSharedState(state);
+    await sendBroadcast({
+      kind: 'state_snapshot',
+      state,
+      fromKey: selfKeyRef.current,
+    });
+  }, [sendBroadcast]);
+
+  const requestStateSnapshot = useCallback(async () => {
+    await sendBroadcast({
+      kind: 'state_request',
+      askerKey: selfKeyRef.current,
+    });
+  }, [sendBroadcast]);
+
+  const giveControl = useCallback(async (toKey: string) => {
+    // Instructor-initiated. Local state updates immediately so the
+    // instructor's own UI flips to read-only at once; everyone else hears
+    // about it via the broadcast.
+    setCurrentDriverKey(toKey);
+    await sendBroadcast({
+      kind: 'control_grant',
+      toKey,
+      fromKey: selfKeyRef.current,
+    });
+  }, [sendBroadcast]);
+
+  const takeControl = useCallback(async () => {
+    setCurrentDriverKey(selfKeyRef.current);
+    await sendBroadcast({
+      kind: 'control_revoke',
+      fromKey: selfKeyRef.current,
+    });
+  }, [sendBroadcast]);
+
   const endCase = useCallback(async () => {
     const endedAt = new Date().toISOString();
     const supa = getSupabaseClient();
     const current = sessionRef.current;
+
+    // Clear our local aggregate first so the instructor's own UI wipes
+    // between cases even before the broadcast round-trips.
+    setSharedState({});
 
     // Broadcast first so every student sees the case wind down in real time.
     await sendBroadcast({ kind: 'case_ended', endedAt });
@@ -534,6 +748,8 @@ export function useClassroomSession(): UseClassroomSessionResult {
     };
   }, []);
 
+  const isDriver = currentDriverKey !== null && currentDriverKey === selfKeyRef.current;
+
   return useMemo(
     () => ({
       supported,
@@ -543,6 +759,10 @@ export function useClassroomSession(): UseClassroomSessionResult {
       session,
       participants,
       lastBroadcast,
+      selfKey: selfKeyRef.current,
+      currentDriverKey,
+      isDriver,
+      sharedState,
       createSession,
       joinSession,
       startCase,
@@ -550,7 +770,15 @@ export function useClassroomSession(): UseClassroomSessionResult {
       leaveSession,
       sendBroadcast,
       clearError,
+      broadcastStatePatch,
+      broadcastStateSnapshot,
+      requestStateSnapshot,
+      giveControl,
+      takeControl,
     }),
-    [supported, status, error, role, session, participants, lastBroadcast, createSession, joinSession, startCase, endCase, leaveSession, sendBroadcast, clearError],
+    [supported, status, error, role, session, participants, lastBroadcast,
+      currentDriverKey, isDriver, sharedState,
+      createSession, joinSession, startCase, endCase, leaveSession, sendBroadcast, clearError,
+      broadcastStatePatch, broadcastStateSnapshot, requestStateSnapshot, giveControl, takeControl],
   );
 }
