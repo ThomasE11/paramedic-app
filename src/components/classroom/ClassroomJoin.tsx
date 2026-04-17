@@ -36,11 +36,18 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Suspense, lazy } from 'react';
 import { toast } from 'sonner';
 import { useClassroomSession } from '@/hooks/useClassroomSession';
 import { allCases } from '@/data/cases';
 import type { CaseScenario } from '@/types';
-import { ClassroomSpectatorView } from './ClassroomSpectatorView';
+import { ClassroomWatchBanner } from './ClassroomWatchBanner';
+import { ClassroomChatSidebar } from './ClassroomChatSidebar';
+
+// Students run the SAME StudentPanel the instructor drives — just with
+// `readOnly` flipped on and live state piped in from broadcasts. Lazy-load
+// so non-classroom routes don't pay the bundle cost.
+const StudentPanel = lazy(() => import('@/components/StudentPanel'));
 
 interface ClassroomJoinProps {
   onExit: () => void;
@@ -48,21 +55,21 @@ interface ClassroomJoinProps {
 
 export function ClassroomJoin({ onExit }: ClassroomJoinProps) {
   const { t } = useTranslation();
+  const sessionHook = useClassroomSession();
   const {
     supported,
     status,
     error,
     session,
     lastBroadcast,
-    participants,
-    selfKey,
-    currentDriverKey,
     sharedState,
     joinSession,
     leaveSession,
     clearError,
     requestStateSnapshot,
-  } = useClassroomSession();
+    isDriver,
+    sendBroadcast,
+  } = sessionHook;
 
   const [pinInput, setPinInput] = useState('');
   const [displayName, setDisplayName] = useState('');
@@ -167,21 +174,48 @@ export function ClassroomJoin({ onExit }: ClassroomJoinProps) {
   };
 
   // ------------------------------------------------------------
-  // Case is live → render the full-screen spectator mirror view.
-  // This replaces the old static case card with a live dashboard
-  // showing vitals, action feed, and presence.
+  // Case is live → student renders the SAME full-case UI the
+  // instructor drives. When the student is a driver (control has
+  // been granted to them), buttons are interactive; otherwise the
+  // panel is read-only and the UI mirrors the current driver's
+  // state via `externalState`.
   // ------------------------------------------------------------
   if (session && activeCase) {
     return (
-      <ClassroomSpectatorView
-        caseData={activeCase}
-        sharedState={sharedState}
-        participants={participants}
-        currentDriverKey={currentDriverKey}
-        selfKey={selfKey}
-        lastBroadcast={lastBroadcast}
-        onLeave={handleLeave}
-      />
+      <Suspense fallback={<div className="min-h-screen bg-background" />}>
+        <ClassroomChatSidebar
+          messages={sessionHook.chatMessages}
+          onSend={sessionHook.sendChat}
+          selfKey={sessionHook.selfKey}
+          driverKeys={sessionHook.driverKeys}
+        />
+        <StudentPanel
+          onExit={handleLeave}
+          preloadedCase={activeCase}
+          readOnly={!isDriver}
+          externalState={{
+            vitals: sharedState.vitals,
+            appliedTreatments: sharedState.appliedTreatments,
+            completedItems: sharedState.completedItems,
+            assessmentPerformed: sharedState.assessmentPerformed,
+            caseStartedAt: sharedState.caseStartedAt,
+            monitorRevealedVitals: sharedState.monitorRevealedVitals,
+          }}
+          // If control is ever granted to this student, THEY become the
+          // driver and their actions broadcast to everyone else.
+          onClassroomStateChange={isDriver ? sessionHook.broadcastStatePatch : undefined}
+          topBanner={
+            <ClassroomWatchBanner
+              pin={session.pin}
+              participants={sessionHook.participants}
+              driverKeys={sessionHook.driverKeys}
+              selfKey={sessionHook.selfKey}
+              timerEndsAt={sessionHook.timerEndsAt}
+              onLeave={handleLeave}
+            />
+          }
+        />
+      </Suspense>
     );
   }
 

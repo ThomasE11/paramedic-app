@@ -247,9 +247,37 @@ interface StudentPanelProps {
     caseStartedAt?: string;
     monitorRevealedVitals?: string[];
   }) => void;
+  /**
+   * Spectator mode — disable every interactive control. Students who are
+   * watching (but not currently driving) a classroom case use this so
+   * they see the full clinical interface but can't mutate it.
+   */
+  readOnly?: boolean;
+  /**
+   * When provided, the panel mirrors this state into its local state on
+   * every update. Used by the classroom spectator flow so incoming
+   * state_patch broadcasts flow through into the LIFEPAK monitor,
+   * treatment list, assessment ticks, etc. — without the spectator ever
+   * clicking anything.
+   */
+  externalState?: {
+    vitals?: Record<string, number | string | undefined>;
+    appliedTreatments?: Array<{ id: string; name: string; detail?: string; appliedAt: string }>;
+    completedItems?: string[];
+    assessmentPerformed?: string[];
+    caseStartedAt?: string;
+    monitorRevealedVitals?: string[];
+  };
 }
 
-export function StudentPanel({ onExit, preloadedCase, topBanner, onClassroomStateChange }: StudentPanelProps) {
+export function StudentPanel({
+  onExit,
+  preloadedCase,
+  topBanner,
+  onClassroomStateChange,
+  readOnly = false,
+  externalState,
+}: StudentPanelProps) {
   const { t, i18n } = useTranslation();
   // Onboarding tour for first-time users
   const { showTour, dismissTour } = useOnboardingTour();
@@ -571,6 +599,67 @@ export function StudentPanel({ onExit, preloadedCase, topBanner, onClassroomStat
     });
   }, [caseStartTime, monitorRevealedVitals, onClassroomStateChange]);
 
+  // ------------------------------------------------------------------------
+  // Classroom-spectator: mirror incoming state from the driver into local
+  // state so the full UI renders the driver's live actions. This makes the
+  // student's screen a live reflection of whatever the instructor's doing.
+  // ------------------------------------------------------------------------
+  useEffect(() => {
+    if (!externalState) return;
+
+    // Vitals — merge into current vitals so we preserve fields the driver
+    // hasn't touched yet.
+    if (externalState.vitals) {
+      setCurrentVitals(prev => {
+        const base = (prev || {}) as VitalSigns;
+        const incoming = externalState.vitals as Record<string, unknown>;
+        const merged: VitalSigns = { ...base };
+        if (incoming.bp !== undefined) merged.bp = incoming.bp as string;
+        if (incoming.pulse !== undefined) merged.pulse = incoming.pulse as number;
+        if (incoming.respiration !== undefined) merged.respiration = incoming.respiration as number;
+        if (incoming.spo2 !== undefined) merged.spo2 = incoming.spo2 as number;
+        if (incoming.temperature !== undefined) merged.temperature = incoming.temperature as number;
+        if (incoming.bloodGlucose !== undefined) merged.bloodGlucose = incoming.bloodGlucose as number;
+        if (incoming.gcs !== undefined && typeof incoming.gcs === 'number') {
+          merged.gcs = { total: incoming.gcs as number } as VitalSigns['gcs'];
+        }
+        return merged;
+      });
+    }
+
+    // Applied treatments — full replace so the spectator's list stays in
+    // lock-step with the driver's. Map the compact broadcast shape back
+    // into the full AppliedTreatment shape the UI expects.
+    if (externalState.appliedTreatments) {
+      setAppliedTreatments(
+        externalState.appliedTreatments.map(t => ({
+          id: t.id,
+          name: t.name,
+          description: t.detail ?? t.name,
+          appliedAt: t.appliedAt,
+          effects: [],
+        }) as unknown as AppliedTreatment),
+      );
+      setAppliedTreatmentIds(externalState.appliedTreatments.map(t => t.id));
+    }
+
+    // Revealed monitor vitals — as the driver reveals them via ABCDE
+    // assessment, spectators' monitors light up too.
+    if (externalState.monitorRevealedVitals) {
+      setMonitorRevealedVitals(new Set(externalState.monitorRevealedVitals));
+    }
+
+    // Case start time — keeps the ticking timer in sync.
+    if (externalState.caseStartedAt && !caseStartTime) {
+      setCaseStartTime(new Date(externalState.caseStartedAt).getTime());
+    }
+
+    // Session.completedItems — for the student-checklist ticks.
+    if (externalState.completedItems && session) {
+      setSession(prev => prev ? { ...prev, completedItems: externalState.completedItems ?? prev.completedItems } : prev);
+    }
+  }, [externalState, caseStartTime, session]);
+
   // Inactivity coaching — nudge students who are stuck
   useEffect(() => {
     if (!caseStartTime || caseEndTime || phase !== 'vitals') return;
@@ -785,6 +874,7 @@ export function StudentPanel({ onExit, preloadedCase, topBanner, onClassroomStat
 
   // Start case (from pre-briefing)
   const startCase = useCallback(() => {
+    if (readOnly) return;
     setCaseStartTime(Date.now());
     lastActivityRef.current = Date.now();
     setPhase('vitals');
@@ -813,6 +903,10 @@ export function StudentPanel({ onExit, preloadedCase, topBanner, onClassroomStat
 
   // Apply treatment — uses dynamic treatment engine
   const applyTreatment = useCallback((treatment: Treatment, defibParams?: DefibrillationParams) => {
+    if (readOnly) {
+      toast.info('You are watching — the driver is treating this case.', { duration: 1800 });
+      return;
+    }
     if (!currentVitals || !currentCase || !patientState) return;
     lastActivityRef.current = Date.now();
     setHintVisible(false);
@@ -966,6 +1060,10 @@ export function StudentPanel({ onExit, preloadedCase, topBanner, onClassroomStat
 
   // Handle assessment step
   const handlePerformAssessment = useCallback((stepId: AssessmentStepId) => {
+    if (readOnly) {
+      toast.info('You are watching — the driver is running this case.', { duration: 1800 });
+      return;
+    }
     if (!assessmentTrackerRef.current || !currentCase || !caseStartTime) return;
     lastActivityRef.current = Date.now();
     setHintVisible(false);
@@ -1211,6 +1309,7 @@ export function StudentPanel({ onExit, preloadedCase, topBanner, onClassroomStat
 
   // End case — show transport decision wizard from step 1
   const endCase = useCallback((action: 'transport' | 'end') => {
+    if (readOnly) return;
     setTransportStep(1);
     setShowTransportDecision(true);
   }, []);

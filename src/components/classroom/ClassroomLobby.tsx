@@ -81,10 +81,14 @@ export function ClassroomLobby({ onExit, sessionHook }: ClassroomLobbyProps) {
     // view (ClassroomHost + broadcast bar) needs them — the lobby just
     // picks a case and hands over.
   } = sessionHook ?? localHook;
+  const { setTimer } = sessionHook ?? localHook;
 
   const [instructorName, setInstructorName] = useState('');
   const [selectedCaseId, setSelectedCaseId] = useState<string>('');
   const [copied, setCopied] = useState(false);
+  // Duration in minutes. 0 / null = unlimited. Default 20 minutes —
+  // feels right for a paramedic scenario teaching slot.
+  const [durationMinutes, setDurationMinutes] = useState<number>(20);
 
   // Only count students in the "joined" badge — we don't want the instructor
   // counted as one of their own participants.
@@ -158,6 +162,11 @@ export function ClassroomLobby({ onExit, sessionHook }: ClassroomLobbyProps) {
     }
     // Pass a snapshot of the case so students who join late still see it.
     await startCase(selectedCase.id, selectedCase);
+    // If the instructor set a duration, broadcast the endsAt timestamp so
+    // every student's banner starts counting down immediately.
+    if (durationMinutes > 0) {
+      await setTimer(durationMinutes);
+    }
     toast.success(t('classroom.caseBroadcast', { title: selectedCase.title }));
   };
 
@@ -321,21 +330,50 @@ export function ClassroomLobby({ onExit, sessionHook }: ClassroomLobbyProps) {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <Select
-                    value={selectedCaseId}
-                    onValueChange={setSelectedCaseId}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={t('classroom.selectCase')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {allCases.slice(0, 60).map(c => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                      {t('classroom.selectCase')}
+                    </label>
+                    <Select value={selectedCaseId} onValueChange={setSelectedCaseId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t('classroom.selectCase')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {allCases.slice(0, 60).map(c => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {/* Duration — sets a shared countdown on every participant's
+                      screen and auto-ends the case when it expires. */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                      {t('classroom.duration', { defaultValue: 'Session duration' })}
+                    </label>
+                    <Select
+                      value={String(durationMinutes)}
+                      onValueChange={v => setDurationMinutes(Number(v))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="0">No limit</SelectItem>
+                        <SelectItem value="10">10 minutes</SelectItem>
+                        <SelectItem value="15">15 minutes</SelectItem>
+                        <SelectItem value="20">20 minutes</SelectItem>
+                        <SelectItem value="30">30 minutes</SelectItem>
+                        <SelectItem value="45">45 minutes</SelectItem>
+                        <SelectItem value="60">60 minutes</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-[11px] text-muted-foreground">
+                      Every student will see a live countdown. The case auto-ends when time is up.
+                    </p>
+                  </div>
                   <div className="flex gap-2">
                     <Button
                       onClick={handleStartCase}

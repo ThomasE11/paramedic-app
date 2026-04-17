@@ -20,11 +20,13 @@
  * with no case view to drive.
  */
 
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { useClassroomSession } from '@/hooks/useClassroomSession';
 import { ClassroomLobby } from './ClassroomLobby';
 import { ClassroomBroadcastBar } from './ClassroomBroadcastBar';
+import { ClassroomChatSidebar } from './ClassroomChatSidebar';
 import type { CaseScenario } from '@/types';
 
 // Reuse the student panel — it contains the full case-running UI.
@@ -50,6 +52,14 @@ export function ClassroomHost({ onExit }: Props) {
     leaveSession,
     broadcastStatePatch,
     isDriver,
+    driverKeys,
+    selfKey,
+    timerEndsAt,
+    sharedState,
+    giveControl,
+    addDriver,
+    setDrivers,
+    takeControl,
   } = sessionHook;
 
   // Before a case is live, show the lobby (includes pre-lobby name entry,
@@ -65,12 +75,46 @@ export function ClassroomHost({ onExit }: Props) {
     await endCase();
   };
 
+  // Auto-end when the countdown expires — only the instructor triggers the
+  // DB update so we don't get multi-writer races with students.
+  useEffect(() => {
+    if (!timerEndsAt) return;
+    if (!isDriver && session?.status !== 'running') return;
+    const remaining = new Date(timerEndsAt).getTime() - Date.now();
+    if (remaining <= 0) {
+      void endCase();
+      toast.info('⏰ Session time is up — case ended');
+      return;
+    }
+    const id = window.setTimeout(() => {
+      void endCase();
+      toast.info('⏰ Session time is up — case ended');
+    }, remaining);
+    return () => window.clearTimeout(id);
+    // Only instructors re-arm the timeout; students just render the countdown.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timerEndsAt, isDriver]);
+
+  // Friendly 2-minute warning toast for everyone.
+  useEffect(() => {
+    if (!timerEndsAt) return;
+    const warnAt = new Date(timerEndsAt).getTime() - 2 * 60_000;
+    const wait = warnAt - Date.now();
+    if (wait <= 0) return;
+    const id = window.setTimeout(() => {
+      toast.warning('⏰ 2 minutes left', { duration: 5000 });
+    }, wait);
+    return () => window.clearTimeout(id);
+  }, [timerEndsAt]);
+
   const handleEndSession = async () => {
     await leaveSession();
     onExit();
   };
 
-  // Case is live — render the full case panel with a broadcast overlay.
+  // Case is live — render the full case panel with a broadcast overlay
+  // + chat sidebar. Both instructor and student mount the sidebar so
+  // everyone can see / send messages in the same live thread.
   return (
     <Suspense
       fallback={
@@ -79,19 +123,41 @@ export function ClassroomHost({ onExit }: Props) {
         </div>
       }
     >
+      <ClassroomChatSidebar
+        messages={sessionHook.chatMessages}
+        onSend={sessionHook.sendChat}
+        selfKey={selfKey}
+        driverKeys={driverKeys}
+      />
       <StudentPanel
         onExit={handleEndSession}
         preloadedCase={caseSnapshot}
-        // Only the current driver broadcasts state changes. In Phase 1 that's
-        // always the instructor; when control-handoff ships the student who
-        // has been granted driver privileges will take over broadcasting.
+        // Only the current driver broadcasts state changes. When control is
+        // handed to a student, the instructor stops broadcasting and starts
+        // RECEIVING patches via externalState.
         onClassroomStateChange={isDriver ? broadcastStatePatch : undefined}
+        readOnly={!isDriver}
+        externalState={!isDriver ? {
+          vitals: sharedState.vitals,
+          appliedTreatments: sharedState.appliedTreatments,
+          completedItems: sharedState.completedItems,
+          assessmentPerformed: sharedState.assessmentPerformed,
+          caseStartedAt: sharedState.caseStartedAt,
+          monitorRevealedVitals: sharedState.monitorRevealedVitals,
+        } : undefined}
         topBanner={
           <ClassroomBroadcastBar
             caseData={caseSnapshot}
             participants={participants}
             pin={session?.pin ?? ''}
+            timerEndsAt={timerEndsAt}
+            driverKeys={driverKeys}
+            selfKey={selfKey}
             onBroadcast={sendBroadcast}
+            onGiveControl={giveControl}
+            onAddDriver={addDriver}
+            onOpenFloor={setDrivers}
+            onTakeControl={takeControl}
             onEndCase={handleEndCase}
             onEndSession={handleEndSession}
           />

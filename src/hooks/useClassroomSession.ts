@@ -120,10 +120,28 @@ export type ClassroomBroadcast =
   | { kind: 'state_snapshot'; state: SharedCaseState; fromKey: string }
   /** A participant asking the driver for a fresh snapshot on join. */
   | { kind: 'state_request'; askerKey: string }
-  /** Instructor granting driver privileges to a specific participant. */
-  | { kind: 'control_grant'; toKey: string; fromKey: string }
-  /** Instructor reclaiming control from whoever currently has it. */
-  | { kind: 'control_revoke'; fromKey: string };
+  /**
+   * Instructor setting who has driving privileges. `toKeys` is the set of
+   * presence keys allowed to mutate. Empty array = nobody (pause); a single
+   * key = solo driver; multiple keys = a group working together; including
+   * every connected student's key = "open floor" / everyone-can-treat mode.
+   */
+  | { kind: 'driver_set'; toKeys: string[]; fromKey: string }
+  /** A chat message sent to everyone in the session. */
+  | {
+      kind: 'chat_message';
+      fromKey: string;
+      fromName: string;
+      fromRole: ClassroomRole;
+      text: string;
+      sentAt: string;
+    }
+  /**
+   * Timer countdown announcement from the instructor. `endsAt` is the ISO
+   * timestamp the case auto-ends. Broadcast once at case start and can be
+   * re-sent if the instructor adjusts duration mid-case.
+   */
+  | { kind: 'timer_set'; endsAt: string; fromKey: string };
 
 // ============================================================================
 // Helpers
@@ -181,12 +199,18 @@ export interface UseClassroomSessionResult {
    */
   selfKey: string;
   /**
-   * Presence key of whoever currently has driving privileges. Instructors
-   * start as the driver; control can be delegated to a student via
-   * `giveControl`. Defaults to the instructor's key while the case is live.
+   * Set of presence keys that currently hold driving privileges. The
+   * instructor starts as the only driver; they can broaden to a group
+   * (multiple students co-driving), pick a single student, or open the
+   * floor (everyone). Empty means "paused, nobody can act".
+   */
+  driverKeys: string[];
+  /**
+   * @deprecated Prefer `driverKeys.includes(...)`. Kept for back-compat
+   * while callers migrate; returns the first key in the set or null.
    */
   currentDriverKey: string | null;
-  /** Convenience: true when this client is currently the driver. */
+  /** Convenience: true when this client is currently a driver. */
   isDriver: boolean;
 
   /** Instructor: open a new lobby and return the PIN students should type. */
@@ -213,10 +237,34 @@ export interface UseClassroomSessionResult {
   /** Late-joiner: ask the current driver for a fresh snapshot. */
   requestStateSnapshot: () => Promise<void>;
 
-  /** Instructor: hand driving privileges to a student. */
+  /** Instructor: set the driver set explicitly. Pass [] to pause (nobody drives). */
+  setDrivers: (toKeys: string[]) => Promise<void>;
+  /** Instructor: hand driving privileges to a single student (replaces current set). */
   giveControl: (toKey: string) => Promise<void>;
-  /** Instructor: reclaim driving privileges. */
+  /** Instructor: add another participant to the current driver set (for groups). */
+  addDriver: (toKey: string) => Promise<void>;
+  /** Instructor: reclaim driving privileges (makes instructor the sole driver). */
   takeControl: () => Promise<void>;
+
+  /**
+   * Rolling list of chat messages sent in this session. Kept capped at the
+   * last 200 so a long session doesn't balloon memory. Newest last.
+   */
+  chatMessages: Array<{
+    id: string;
+    fromKey: string;
+    fromName: string;
+    fromRole: ClassroomRole;
+    text: string;
+    sentAt: string;
+  }>;
+  /** Send a chat message to everyone in the session. */
+  sendChat: (text: string) => Promise<void>;
+
+  /** ISO timestamp the case is scheduled to auto-end, or null for no timer. */
+  timerEndsAt: string | null;
+  /** Instructor: set / clear the auto-end timer. Pass 0 / null to disable. */
+  setTimer: (durationMinutes: number | null) => Promise<void>;
 }
 
 export function useClassroomSession(): UseClassroomSessionResult {
@@ -232,10 +280,14 @@ export function useClassroomSession(): UseClassroomSessionResult {
   // Starts empty; fills as the driver broadcasts updates or a late-joiner
   // requests a snapshot.
   const [sharedState, setSharedState] = useState<SharedCaseState>({});
-  // Presence-key of whoever currently has driving privileges. `null` until
-  // the first driver is established (either by being the instructor who
-  // creates the session, or by receiving a `control_grant`).
-  const [currentDriverKey, setCurrentDriverKey] = useState<string | null>(null);
+  // Set of presence keys with driving privileges. The instructor claims
+  // the sole driver slot when a case starts; they can then broaden the
+  // set via setDrivers/addDriver/giveControl.
+  const [driverKeys, setDriverKeysState] = useState<string[]>([]);
+  // Rolling chat log for the session. Capped at 200 most-recent messages.
+  const [chatMessages, setChatMessages] = useState<UseClassroomSessionResult['chatMessages']>([]);
+  // ISO timestamp the case auto-ends, or null when no timer is set.
+  const [timerEndsAt, setTimerEndsAtState] = useState<string | null>(null);
 
   // Mutable refs so callbacks don't capture stale state.
   const channelRef = useRef<RealtimeChannel | null>(null);
@@ -243,12 +295,12 @@ export function useClassroomSession(): UseClassroomSessionResult {
   const sessionRef = useRef<ClassroomSessionRow | null>(null);
   const roleRef = useRef<ClassroomRole | null>(null);
   const sharedStateRef = useRef<SharedCaseState>({});
-  const currentDriverKeyRef = useRef<string | null>(null);
+  const driverKeysRef = useRef<string[]>([]);
 
   useEffect(() => { sessionRef.current = session; }, [session]);
   useEffect(() => { roleRef.current = role; }, [role]);
   useEffect(() => { sharedStateRef.current = sharedState; }, [sharedState]);
-  useEffect(() => { currentDriverKeyRef.current = currentDriverKey; }, [currentDriverKey]);
+  useEffect(() => { driverKeysRef.current = driverKeys; }, [driverKeys]);
 
   // --------------------------------------------------------------------------
   // Channel subscription
@@ -304,10 +356,10 @@ export function useClassroomSession(): UseClassroomSessionResult {
           } else if (payload.kind === 'state_snapshot') {
             setSharedState(payload.state);
           } else if (payload.kind === 'state_request') {
-            // Only the current driver responds — use the ref so this
-            // callback stays stable across re-renders.
-            if (currentDriverKeyRef.current === selfKeyRef.current) {
-              // Fire-and-forget snapshot reply.
+            // Only a driver responds. Use the ref so this callback stays
+            // stable across re-renders. In a multi-driver setup we pick
+            // the first driver; they all have the same sharedState anyway.
+            if (driverKeysRef.current.includes(selfKeyRef.current)) {
               queueMicrotask(() => {
                 void channel.send({
                   type: 'broadcast',
@@ -320,16 +372,28 @@ export function useClassroomSession(): UseClassroomSessionResult {
                 });
               });
             }
-          } else if (payload.kind === 'control_grant') {
-            setCurrentDriverKey(payload.toKey);
-          } else if (payload.kind === 'control_revoke') {
-            // Control returns to whoever sent the revoke (typically the
-            // instructor who spawned the session).
-            setCurrentDriverKey(payload.fromKey);
+          } else if (payload.kind === 'driver_set') {
+            setDriverKeysState(payload.toKeys);
+          } else if (payload.kind === 'chat_message') {
+            setChatMessages(prev => [
+              ...prev.slice(-199),
+              {
+                id: `${payload.fromKey}-${payload.sentAt}`,
+                fromKey: payload.fromKey,
+                fromName: payload.fromName,
+                fromRole: payload.fromRole,
+                text: payload.text,
+                sentAt: payload.sentAt,
+              },
+            ]);
+          } else if (payload.kind === 'timer_set') {
+            setTimerEndsAtState(payload.endsAt);
           } else if (payload.kind === 'case_ended') {
-            // Case boundary — clear shared state so the next case starts
-            // with a clean slate on every client.
+            // Case boundary — clear shared + timer state so the next case
+            // starts with a clean slate on every client.
             setSharedState({});
+            setTimerEndsAtState(null);
+            setDriverKeysState([]);
           }
         });
 
@@ -556,9 +620,16 @@ export function useClassroomSession(): UseClassroomSessionResult {
         setSession(data as ClassroomSessionRow);
       }
       setStatus('running');
-      // Instructor claims the driver role by default when a case starts.
-      // Control can be delegated via giveControl() later.
-      setCurrentDriverKey(selfKeyRef.current);
+      // Instructor claims the sole driver slot by default when a case
+      // starts. Control can be broadened via setDrivers / giveControl.
+      const soloInstructorKeys = [selfKeyRef.current];
+      setDriverKeysState(soloInstructorKeys);
+      // Broadcast the driver set so every participant knows who's driving.
+      await sendBroadcast({
+        kind: 'driver_set',
+        toKeys: soloInstructorKeys,
+        fromKey: selfKeyRef.current,
+      });
       // Reset shared state so the new case starts clean.
       setSharedState({ caseStartedAt: startedAt });
       await sendBroadcast({ kind: 'case_started', caseId, startedAt });
@@ -598,22 +669,74 @@ export function useClassroomSession(): UseClassroomSessionResult {
     });
   }, [sendBroadcast]);
 
-  const giveControl = useCallback(async (toKey: string) => {
-    // Instructor-initiated. Local state updates immediately so the
-    // instructor's own UI flips to read-only at once; everyone else hears
-    // about it via the broadcast.
-    setCurrentDriverKey(toKey);
+  const setDrivers = useCallback(async (toKeys: string[]) => {
+    // Local state updates immediately so the instructor's own UI flips
+    // at once; everyone else hears about it via the broadcast.
+    setDriverKeysState(toKeys);
     await sendBroadcast({
-      kind: 'control_grant',
-      toKey,
+      kind: 'driver_set',
+      toKeys,
       fromKey: selfKeyRef.current,
     });
   }, [sendBroadcast]);
 
+  const giveControl = useCallback(async (toKey: string) => {
+    // Single-student handoff — replaces the driver set with just that key.
+    await setDrivers([toKey]);
+  }, [setDrivers]);
+
+  const addDriver = useCallback(async (toKey: string) => {
+    const existing = driverKeysRef.current;
+    if (existing.includes(toKey)) return;
+    await setDrivers([...existing, toKey]);
+  }, [setDrivers]);
+
   const takeControl = useCallback(async () => {
-    setCurrentDriverKey(selfKeyRef.current);
+    await setDrivers([selfKeyRef.current]);
+  }, [setDrivers]);
+
+  const sendChat = useCallback(async (text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    // Identify self via the participant list — presence track will have
+    // set the display name. Fall back to a stable label if missing.
+    const me = participants.find(p => p.key === selfKeyRef.current);
+    const fromName = me?.displayName || (roleRef.current === 'instructor' ? 'Instructor' : 'Student');
+    const fromRole: ClassroomRole = roleRef.current ?? 'student';
+    const sentAt = new Date().toISOString();
+    // Append locally first so the sender sees their message instantly
+    // (broadcasts use { self: false } so we don't get our own back).
+    setChatMessages(prev => [
+      ...prev.slice(-199),
+      { id: `${selfKeyRef.current}-${sentAt}`, fromKey: selfKeyRef.current, fromName, fromRole, text: trimmed, sentAt },
+    ]);
     await sendBroadcast({
-      kind: 'control_revoke',
+      kind: 'chat_message',
+      fromKey: selfKeyRef.current,
+      fromName,
+      fromRole,
+      text: trimmed,
+      sentAt,
+    });
+  }, [participants, sendBroadcast]);
+
+  const setTimer = useCallback(async (durationMinutes: number | null) => {
+    if (!durationMinutes || durationMinutes <= 0) {
+      setTimerEndsAtState(null);
+      // There's no dedicated "clear timer" broadcast kind — sending a
+      // timer_set with an already-past endsAt has the same effect.
+      await sendBroadcast({
+        kind: 'timer_set',
+        endsAt: new Date(0).toISOString(),
+        fromKey: selfKeyRef.current,
+      });
+      return;
+    }
+    const endsAt = new Date(Date.now() + durationMinutes * 60_000).toISOString();
+    setTimerEndsAtState(endsAt);
+    await sendBroadcast({
+      kind: 'timer_set',
+      endsAt,
       fromKey: selfKeyRef.current,
     });
   }, [sendBroadcast]);
@@ -748,7 +871,8 @@ export function useClassroomSession(): UseClassroomSessionResult {
     };
   }, []);
 
-  const isDriver = currentDriverKey !== null && currentDriverKey === selfKeyRef.current;
+  const isDriver = driverKeys.includes(selfKeyRef.current);
+  const currentDriverKey = driverKeys[0] ?? null; // back-compat
 
   return useMemo(
     () => ({
@@ -760,6 +884,7 @@ export function useClassroomSession(): UseClassroomSessionResult {
       participants,
       lastBroadcast,
       selfKey: selfKeyRef.current,
+      driverKeys,
       currentDriverKey,
       isDriver,
       sharedState,
@@ -773,12 +898,20 @@ export function useClassroomSession(): UseClassroomSessionResult {
       broadcastStatePatch,
       broadcastStateSnapshot,
       requestStateSnapshot,
+      setDrivers,
       giveControl,
+      addDriver,
       takeControl,
+      chatMessages,
+      sendChat,
+      timerEndsAt,
+      setTimer,
     }),
     [supported, status, error, role, session, participants, lastBroadcast,
-      currentDriverKey, isDriver, sharedState,
+      driverKeys, currentDriverKey, isDriver, sharedState,
       createSession, joinSession, startCase, endCase, leaveSession, sendBroadcast, clearError,
-      broadcastStatePatch, broadcastStateSnapshot, requestStateSnapshot, giveControl, takeControl],
+      broadcastStatePatch, broadcastStateSnapshot, requestStateSnapshot,
+      setDrivers, giveControl, addDriver, takeControl,
+      chatMessages, sendChat, timerEndsAt, setTimer],
   );
 }
