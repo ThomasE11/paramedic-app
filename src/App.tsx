@@ -27,7 +27,7 @@ const StudentPanel = lazy(() => import('@/components/StudentPanel'));
 // Lazy load classroom multiplayer UIs (Phase 4) — only loaded when the user
 // clicks into one of the classroom entry points, so single-player bundles
 // aren't penalised.
-const ClassroomLobby = lazy(() => import('@/components/classroom/ClassroomLobby'));
+const ClassroomHost = lazy(() => import('@/components/classroom/ClassroomHost'));
 const ClassroomJoin = lazy(() => import('@/components/classroom/ClassroomJoin'));
 
 import { isSupabaseConfigured } from '@/lib/supabaseConfig';
@@ -302,11 +302,11 @@ function App() {
   // perceived-performance win: users see layout immediately instead of blank.
   const suspenseFallback = <CaseSkeleton />;
 
-  // Classroom instructor lobby
+  // Classroom instructor host — lobby + live case view
   if (userRole === 'classroom-host') {
     return (
       <Suspense fallback={suspenseFallback}>
-        <ClassroomLobby onExit={handleRoleExit} />
+        <ClassroomHost onExit={handleRoleExit} />
         <Toaster position="top-right" richColors closeButton />
       </Suspense>
     );

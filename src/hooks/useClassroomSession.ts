@@ -88,7 +88,7 @@ function channelName(pin: string): string {
 // Hook
 // ============================================================================
 
-interface UseClassroomSessionResult {
+export interface UseClassroomSessionResult {
   /** `false` when Supabase isn't configured — UI should hide classroom entry points. */
   supported: boolean;
   status: ClassroomStatus;

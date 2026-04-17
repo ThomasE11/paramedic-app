@@ -219,9 +219,22 @@ type StudentPhase = 'select' | 'prebriefing' | 'case' | 'vitals' | 'postcase';
 
 interface StudentPanelProps {
   onExit: () => void;
+  /**
+   * If set, the panel skips the case-selection phase and runs this case
+   * directly. Used by the classroom-host route so an instructor can drive
+   * the exact same full case experience (LIFEPAK, 3D body, ABCDE,
+   * treatments, etc.) that students see in single-player mode.
+   */
+  preloadedCase?: CaseScenario;
+  /**
+   * Optional banner rendered above the case header — typically the
+   * classroom broadcast toolbar. Kept as a ReactNode slot so the panel
+   * doesn't need to know anything about classroom state or Supabase.
+   */
+  topBanner?: React.ReactNode;
 }
 
-export function StudentPanel({ onExit }: StudentPanelProps) {
+export function StudentPanel({ onExit, preloadedCase, topBanner }: StudentPanelProps) {
   const { t, i18n } = useTranslation();
   // Onboarding tour for first-time users
   const { showTour, dismissTour } = useOnboardingTour();
@@ -580,6 +593,22 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
     setSession(newSession);
     setPhase('prebriefing');
   }, [selectedYear]);
+
+  // Classroom-host: when a preloaded case is passed in (e.g. the instructor
+  // just picked a case in the classroom lobby), bootstrap it directly and
+  // skip the select/prebriefing phases so the instructor lands in the live
+  // case view with LIFEPAK, 3D body, and all management functions.
+  useEffect(() => {
+    if (!preloadedCase) return;
+    if (currentCase && currentCase.id === preloadedCase.id) return;
+    initializeCase(preloadedCase, false);
+    // Jump straight into the running case rather than pre-briefing — the
+    // instructor already knows the case they just picked.
+    // setPhase('case') is intentionally deferred to the next tick so the
+    // state-setters inside initializeCase have landed first.
+    const t = setTimeout(() => setPhase('case'), 0);
+    return () => clearTimeout(t);
+  }, [preloadedCase, currentCase, initializeCase, setPhase]);
 
   // Generate case — standard mode
   const generateCase = useCallback(async () => {
@@ -1434,6 +1463,12 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
       </header>
 
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 safe-bottom">
+        {/* Optional top banner slot — used by classroom-host for the
+            broadcast toolbar. Rendered above every phase so it stays
+            visible whether the instructor is pre-briefing, running the
+            case, or on the post-case summary. */}
+        {topBanner}
+
         {/* ================================================================ */}
         {/* PHASE 1: Case Selection */}
         {/* ================================================================ */}

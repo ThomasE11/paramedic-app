@@ -46,16 +46,27 @@ import {
 } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { useClassroomSession } from '@/hooks/useClassroomSession';
+import type { UseClassroomSessionResult } from '@/hooks/useClassroomSession';
 import { allCases } from '@/data/cases';
-import { ClassroomInstructorCaseView } from './ClassroomInstructorCaseView';
-import type { CaseScenario } from '@/types';
 
 interface ClassroomLobbyProps {
   onExit: () => void;
+  /**
+   * Optional externally-provided session hook values. When this lobby is
+   * mounted inside `ClassroomHost` (the full-case route), the host owns
+   * the hook instance and passes it down here so both paths share a
+   * single Supabase channel / participant list. When `undefined`, the
+   * lobby calls `useClassroomSession` itself for standalone use.
+   */
+  sessionHook?: UseClassroomSessionResult;
 }
 
-export function ClassroomLobby({ onExit }: ClassroomLobbyProps) {
+export function ClassroomLobby({ onExit, sessionHook }: ClassroomLobbyProps) {
   const { t } = useTranslation();
+  // Always call the hook unconditionally to keep hook order stable across
+  // renders — but use the injected values when a parent is driving the
+  // session. The local hook stays idle if it's never touched.
+  const localHook = useClassroomSession();
   const {
     supported,
     status,
@@ -64,11 +75,12 @@ export function ClassroomLobby({ onExit }: ClassroomLobbyProps) {
     participants,
     createSession,
     startCase,
-    endCase,
     leaveSession,
-    sendBroadcast,
     clearError,
-  } = useClassroomSession();
+    // `endCase` and `sendBroadcast` live on the hook but only the live-case
+    // view (ClassroomHost + broadcast bar) needs them — the lobby just
+    // picks a case and hands over.
+  } = sessionHook ?? localHook;
 
   const [instructorName, setInstructorName] = useState('');
   const [selectedCaseId, setSelectedCaseId] = useState<string>('');
@@ -230,71 +242,10 @@ export function ClassroomLobby({ onExit }: ClassroomLobbyProps) {
           </Card>
         )}
 
-        {/* ----------- Case live: full teaching view ----------- */}
-        {session && session.status === 'running' && session.case_snapshot && (
-          <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
-            {/* Main: tabletop teaching view */}
-            <div className="min-w-0">
-              <ClassroomInstructorCaseView
-                caseData={session.case_snapshot as CaseScenario}
-                caseStartedAt={session.started_at}
-                onBroadcast={sendBroadcast}
-                onEndCase={async () => {
-                  await endCase();
-                  toast.info(t('classroom.caseEndedToast'));
-                }}
-              />
-            </div>
-            {/* Sidebar: compact PIN + student list while case runs */}
-            <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
-              <Card>
-                <CardContent className="pt-5 pb-4 flex flex-col items-center text-center gap-2">
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">PIN</p>
-                  <div className="text-2xl font-bold tracking-[0.2em] tabular-nums text-primary">{session.pin}</div>
-                  <Button variant="ghost" size="sm" onClick={handleCopyPin} className="gap-1.5 h-7 text-xs">
-                    {copied ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3" />}
-                    {copied ? t('classroom.copied') : t('classroom.copyPin')}
-                  </Button>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
-                    {t('classroom.joined')}
-                  </CardTitle>
-                  <Badge variant="secondary" className="gap-1">
-                    <Users className="h-3 w-3" />
-                    {students.length}
-                  </Badge>
-                </CardHeader>
-                <CardContent>
-                  {students.length === 0 ? (
-                    <p className="text-xs text-muted-foreground italic py-2">
-                      {t('classroom.waitingForStudents')}
-                    </p>
-                  ) : (
-                    <ul className="divide-y divide-border">
-                      {students.map(p => (
-                        <li key={p.key} className="flex items-center justify-between py-1.5 text-xs">
-                          <span className="font-medium truncate">{p.displayName}</span>
-                          <span className="text-[10px] text-muted-foreground tabular-nums shrink-0">
-                            {new Date(p.joinedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </CardContent>
-              </Card>
-              <Button variant="outline" size="sm" onClick={handleLeave} className="w-full gap-2">
-                <LogOut className="h-4 w-4" />
-                {t('classroom.endSession')}
-              </Button>
-            </aside>
-          </div>
-        )}
-
-        {/* ----------- Active lobby (pre-case-start) ----------- */}
+        {/* ----------- Active lobby (pre-case-start) -----------
+            When a case goes live, the parent `ClassroomHost` swaps this
+            lobby out for the full `StudentPanel` + broadcast bar combo.
+            So the lobby only ever renders the pre-case branch. */}
         {session && session.status !== 'running' && (
           <div className="grid gap-6 lg:grid-cols-[1fr_1.1fr]">
             {/* PIN display — huge and centered so it's readable from across a room */}
