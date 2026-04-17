@@ -72,6 +72,10 @@ import {
   applyDynamicTreatment,
   applyDeterioration,
 } from '@/data/dynamicTreatmentEngine';
+import {
+  findProtocol,
+  determineSeverityFromVitals,
+} from '@/data/treatmentProtocols';
 import { useGradualVitalChanges } from '@/hooks/useGradualVitalChanges';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -332,6 +336,15 @@ export function StudentPanel({
   const [pendingDefibTreatment, setPendingDefibTreatment] = useState<Treatment | null>(null);
   const [showVentilatorDialog, setShowVentilatorDialog] = useState(false);
   const [ventilatorSettings, setVentilatorSettings] = useState<VentilatorSettings | null>(null);
+  // BVM bag-valve-mask ventilation rate the student picked (breaths / min).
+  // Separate from full mechanical ventilation because BVM is the common
+  // prehospital airway intervention and deserves a lighter-weight picker.
+  const [bvmVentilationRate, setBvmVentilationRate] = useState<number | null>(null);
+  const [showBvmRateDialog, setShowBvmRateDialog] = useState(false);
+  const [pendingBvmTreatment, setPendingBvmTreatment] = useState<Treatment | null>(null);
+  // LUCAS prompt — offered ONCE when CPR has been running for ≥4 min and
+  // no LUCAS has been applied yet. Tracked here so it can't re-nag.
+  const [lucasPromptShown, setLucasPromptShown] = useState(false);
   // Medication safety confirmation (replaces window.confirm which auto-dismisses on re-render)
   const [pendingMedConfirm, setPendingMedConfirm] = useState<{ treatment: Treatment; allergyText: string; contraText: string } | null>(null);
   const [pendingIVTreatment, setPendingIVTreatment] = useState<Treatment | null>(null);
@@ -901,6 +914,100 @@ export function StudentPanel({
     }, 30000); // Check every 30 seconds
   }, [currentCase]);
 
+  // LUCAS device nudge — if CPR has been running for ≥4 minutes and no
+  // mechanical CPR device has been applied yet, offer one via a single,
+  // dismissible toast. Deliberately low-friction: no blocking dialog,
+  // no repeat nagging — the student can ignore it and keep compressing.
+  useEffect(() => {
+    if (!cprRunning || lucasPromptShown) return;
+    if (appliedTreatmentIds.includes('lucas_device')) return;
+    const id = window.setTimeout(() => {
+      setLucasPromptShown(true);
+      toast('Consider LUCAS mechanical CPR?', {
+        description: 'CPR has been running for 4 minutes. A LUCAS device can maintain high-quality compressions and free a team member.',
+        duration: 10000,
+        action: {
+          label: 'Apply LUCAS',
+          onClick: () => {
+            const lucas = TREATMENTS.find(t => t.id === 'lucas_device');
+            if (lucas) applyTreatment(lucas);
+          },
+        },
+      });
+    }, 4 * 60 * 1000);
+    return () => window.clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cprRunning, lucasPromptShown, appliedTreatmentIds]);
+
+  // Continuous-effect tick — simulates ongoing physiology from active
+  // treatments so vitals keep responding between one-shot `applyTreatment`
+  // calls. Previously the engine applied a single vital bump on treatment
+  // apply and then nothing: if the student hit BVM once on an apnoeic
+  // patient, SpO2 never climbed over time, and after ROSC the RR / SpO2
+  // would sit frozen. This closes that loop every 5 s.
+  //
+  // Rules (minimal and explainable):
+  //  - If oxygen (NRB / nasal / BVM / ventilator) was applied AND SpO2 < 96
+  //    → SpO2 climbs toward 96-98 by 2/tick (slower over 92).
+  //  - If CPR is running AND patient is in arrest → maintain pseudo-pulse
+  //    between 50-65 (compression-generated perfusion). Engine's ROSC path
+  //    remains the ONLY way to clear `isInArrest`.
+  //  - If RR is 0 (apnoeic) AND BVM/vent is active AND ventilationRate is
+  //    set → show that assisted rate on the monitor so the student can see
+  //    they're ventilating at X/min rather than a flat 0.
+  //  - Otherwise no-op. Deterioration timer (30 s) continues to run and
+  //    wins if both fire — so a student walking away still sees decline.
+  useEffect(() => {
+    if (phase !== 'vitals' || readOnly) return;
+    const id = window.setInterval(() => {
+      setPatientState(prev => {
+        if (!prev) return prev;
+        const v = { ...prev.vitals };
+        let changed = false;
+
+        const hasO2 =
+          appliedTreatmentIds.includes('oxygen_15l') ||
+          appliedTreatmentIds.includes('oxygen_nrb') ||
+          appliedTreatmentIds.includes('oxygen_nasal') ||
+          appliedTreatmentIds.includes('bvm_ventilation') ||
+          appliedTreatmentIds.includes('mechanical_ventilation');
+
+        // SpO2 recovery toward target while O2 therapy is active.
+        if (hasO2 && (v.spo2 ?? 0) < 96) {
+          const step = (v.spo2 ?? 70) < 92 ? 3 : 2;
+          v.spo2 = Math.min(98, (v.spo2 ?? 70) + step);
+          changed = true;
+        }
+
+        // CPR compression-generated pulse while CPR is running in arrest.
+        if (cprRunning && prev.isInArrest) {
+          if ((v.pulse ?? 0) < 50) { v.pulse = 55; changed = true; }
+          // BP during good CPR typically peaks ~60-70 systolic.
+          if (!v.bp || v.bp === '0/0' || v.bp === '--/--') {
+            v.bp = '60/40';
+            changed = true;
+          }
+        }
+
+        // Assisted ventilation rate — surface the student-set rate on the
+        // monitor when the patient is apnoeic and being ventilated.
+        const ventRate =
+          ventilatorSettings?.respiratoryRate ??
+          bvmVentilationRate;
+        if ((v.respiration ?? 0) === 0 && hasO2 && ventRate && ventRate > 0) {
+          v.respiration = ventRate;
+          changed = true;
+        }
+
+        if (!changed) return prev;
+        setCurrentVitals(ensureCompleteVitals(v));
+        return { ...prev, vitals: v };
+      });
+    }, 5000);
+    return () => window.clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, readOnly, appliedTreatmentIds, cprRunning, ventilatorSettings, bvmVentilationRate]);
+
   // Apply treatment — uses dynamic treatment engine
   const applyTreatment = useCallback((treatment: Treatment, defibParams?: DefibrillationParams) => {
     if (readOnly) {
@@ -921,6 +1028,15 @@ export function StudentPanel({
     // Mechanical ventilation requires mode/parameter setup before delivery
     if (treatment.id === 'mechanical_ventilation' && !ventilatorSettings) {
       setShowVentilatorDialog(true);
+      return;
+    }
+
+    // BVM needs a ventilation rate — light-weight prompt (10/12/20) so the
+    // student picks an age-appropriate cadence. Once set, the monitor
+    // surfaces the assisted RR to make the intervention visible.
+    if (treatment.id === 'bvm_ventilation' && bvmVentilationRate === null) {
+      setPendingBvmTreatment(treatment);
+      setShowBvmRateDialog(true);
       return;
     }
 
@@ -1407,10 +1523,25 @@ export function StudentPanel({
     const isSevereHypothermiaCase = (currentCase.vitalSignsProgression?.initial?.temperature ?? 37) < 30;
 
     if (isArrestCase) {
-      const hasCPR = appliedTreatmentIds.includes('cpr');
+      // CPR is started via the CPR button (cprRunning + timeline entry) —
+      // not via applyTreatment — so checking `appliedTreatmentIds` alone
+      // falsely flagged "no CPR". Treat any of these as proof CPR happened:
+      // an 'cpr-start' arrest-timeline entry, cprRunning being true now,
+      // or a manually-applied cpr treatment (belt-and-braces).
+      const hasCPR =
+        appliedTreatmentIds.includes('cpr') ||
+        appliedTreatmentIds.includes('cpr_compressions') ||
+        cprRunning ||
+        arrestTimeline.some(e => e.type === 'cpr-start' || /cpr/i.test(e.event));
       const hasAdrenaline = appliedTreatmentIds.includes('adrenaline_1mg');
-      const hasDefib = appliedTreatmentIds.includes('defibrillation');
-      const hasBVM = appliedTreatmentIds.includes('bvm_ventilation') || appliedTreatmentIds.includes('oxygen_15l');
+      const hasDefib =
+        appliedTreatmentIds.includes('defibrillation') ||
+        arrestTimeline.some(e => e.type === 'shock');
+      const hasBVM =
+        appliedTreatmentIds.includes('bvm_ventilation') ||
+        appliedTreatmentIds.includes('oxygen_15l') ||
+        appliedTreatmentIds.includes('mechanical_ventilation') ||
+        appliedTreatmentIds.includes('oxygen_nrb');
       const isShockableCase = currentCase.abcde?.circulation?.ecgFindings?.some(
         (f: string) => f.toLowerCase().includes('vf') || f.toLowerCase().includes('ventricular fibrillation')
       );
@@ -1439,6 +1570,48 @@ export function StudentPanel({
         penaltyReasons.push({ label: 'Core temperature not assessed in hypothermia case', amount: 10 });
         penaltyTotal += 10;
       }
+    }
+
+    // ---- CONTRAINDICATED MEDICATION PENALTIES ----
+    // Until now, giving the wrong drug had no score consequence. This wires
+    // the existing `contraindicatedTreatments` table (per-severity) into the
+    // grade: each contraindicated treatment the student applied burns 12
+    // points and surfaces a named penalty in the session summary. The
+    // engine's `applyCrossSystemPhysiology` separately handles the physio-
+    // logical consequence (e.g. GTN in inferior STEMI → BP crash); this is
+    // the accountability half of that feedback loop.
+    try {
+      const protocol = findProtocol(currentCase.subcategory || '', currentCase.category || '');
+      if (protocol && currentCase.vitalSignsProgression?.initial) {
+        const initialVitals = {
+          pulse: currentCase.vitalSignsProgression.initial.pulse ?? 80,
+          respiration: currentCase.vitalSignsProgression.initial.respiration ?? 16,
+          spo2: currentCase.vitalSignsProgression.initial.spo2 ?? 98,
+          gcs: currentCase.vitalSignsProgression.initial.gcs ?? 15,
+          bp: currentCase.vitalSignsProgression.initial.bp ?? '120/80',
+          temperature: currentCase.vitalSignsProgression.initial.temperature ?? 37,
+        } as const;
+        const severity = determineSeverityFromVitals(protocol, initialVitals as unknown as Parameters<typeof determineSeverityFromVitals>[1]);
+        const contraindicatedGiven = (severity.contraindicatedTreatments ?? []).filter(
+          t => appliedTreatmentIds.includes(t),
+        );
+        if (contraindicatedGiven.length > 0) {
+          // Resolve friendlier names where available so the summary reads
+          // "GTN given in inferior STEMI" rather than "gtn_spray given".
+          const nameFor = (id: string) =>
+            TREATMENTS.find(tr => tr.id === id)?.name ?? id.replace(/_/g, ' ');
+          for (const id of contraindicatedGiven) {
+            penaltyReasons.push({
+              label: `Contraindicated: ${nameFor(id)} — should NOT be given in this presentation`,
+              amount: 12,
+            });
+            penaltyTotal += 12;
+          }
+        }
+      }
+    } catch (e) {
+      // Non-fatal — don't let a scoring edge case break the summary.
+      console.warn('[scoring] contraindication check failed', e);
     }
 
     const percentage = Math.max(0, basePercentage - penaltyTotal);
@@ -1477,7 +1650,7 @@ export function StudentPanel({
       // Assessment debrief (reuse already-computed debrief)
       assessmentDebrief: debrief,
     };
-  }, [currentCase, session, selectedYear, appliedTreatments, vitalsHistory, elapsedSeconds, caseStartTime, assessmentTracker]);
+  }, [currentCase, session, selectedYear, appliedTreatments, vitalsHistory, elapsedSeconds, caseStartTime, assessmentTracker, cprRunning, arrestTimeline, patientState, appliedTreatmentIds]);
 
   // AI-style narrative report — only computed when the case is complete
   const narrativeReport = useMemo(() => {
@@ -3083,6 +3256,46 @@ export function StudentPanel({
                 currentPulse={currentVitals?.pulse || 0}
                 isInArrest={patientState.isInArrest}
               />
+            )}
+
+            {/* BVM rate picker — compact, three-button. Paeds / adult / arrest. */}
+            {showBvmRateDialog && (
+              <Dialog open={showBvmRateDialog} onOpenChange={(o) => { if (!o) { setShowBvmRateDialog(false); setPendingBvmTreatment(null); } }}>
+                <DialogContent className="max-w-sm">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <Wind className="w-4 h-4 text-primary" /> BVM ventilation rate
+                    </DialogTitle>
+                    <DialogDescription>
+                      Choose the breaths/min you'll deliver. You can change this any time.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid grid-cols-1 gap-2 py-2">
+                    {[
+                      { rate: 10, label: '10 / min — arrest (asynchronous with CPR)', sub: 'Adult in cardiac arrest; 1 breath every 6 s.' },
+                      { rate: 12, label: '12 / min — adult respiratory failure', sub: 'Apnoeic adult with pulse; 1 breath every 5 s.' },
+                      { rate: 20, label: '20 / min — paediatric', sub: 'Infant / child in respiratory distress or arrest.' },
+                      { rate: 25, label: '25 / min — neonate / newborn', sub: '40-60 / min for true neonates; start 25 for infants.' },
+                    ].map(opt => (
+                      <button
+                        key={opt.rate}
+                        onClick={() => {
+                          setBvmVentilationRate(opt.rate);
+                          setShowBvmRateDialog(false);
+                          const t = pendingBvmTreatment;
+                          setPendingBvmTreatment(null);
+                          if (t) setTimeout(() => applyTreatment(t), 0);
+                          toast.success(`Ventilating at ${opt.rate}/min`, { duration: 2500 });
+                        }}
+                        className="text-left px-3 py-2 rounded-md border border-border hover:border-primary hover:bg-primary/5 transition-colors"
+                      >
+                        <div className="font-medium text-sm">{opt.label}</div>
+                        <div className="text-[11px] text-muted-foreground mt-0.5">{opt.sub}</div>
+                      </button>
+                    ))}
+                  </div>
+                </DialogContent>
+              </Dialog>
             )}
 
             {/* Mechanical Ventilator Setup Dialog */}

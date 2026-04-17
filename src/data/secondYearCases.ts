@@ -3280,6 +3280,7 @@ export const secondYearCases: CaseScenario[] = [
     title: 'Cardiac Arrest - Workplace Collapse',
     category: 'cardiac',
     subcategory: 'cardiac-arrest',
+    initialRhythm: 'Ventricular Fibrillation',
     priority: 'critical',
     complexity: 'intermediate',
     yearLevels: ['2nd-year', '3rd-year'],

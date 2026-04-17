@@ -204,9 +204,14 @@ export function createInitialPatientState(caseData: CaseScenario): PatientState 
   else if (matchWord('bradycardia') || (vitals.pulse && vitals.pulse < 60)) rhythm = 'Sinus Bradycardia';
   else if (vitals.pulse && vitals.pulse > 100) rhythm = 'Sinus Tachycardia';
 
-  // If pulse is 0 but no arrest rhythm was matched, default to VF (most common shockable arrest)
+  // If pulse is 0 but no arrest rhythm was matched, default to Asystole.
+  // Rationale: defaulting to VF was unsafe — it meant any un-tagged arrest
+  // case became shockable-with-ROSC, even when the author intended a non-
+  // shockable presentation. Asystole is the safer default: authors MUST
+  // explicitly mark a case as VF (via initialRhythm, ecgFindings, or
+  // subcategory) for it to be shockable.
   if (rhythm === 'Normal Sinus Rhythm' && vitals.pulse !== undefined && vitals.pulse === 0) {
-    rhythm = 'Ventricular Fibrillation';
+    rhythm = 'Asystole';
   }
 
   const isInArrest = ['Ventricular Fibrillation', 'Asystole', 'PEA'].includes(rhythm) ||
@@ -770,6 +775,40 @@ function handleDefibrillation(
   const vitals = state.vitals;
   const changes: VitalChange[] = [];
   const { energy, synchronized, currentRhythm } = params;
+
+  // ---- SAFETY GUARD (non-shockable short-circuit) ----
+  // Defensive check ahead of all rhythm branches: if the rhythm label
+  // contains "asystole" or "pea" (case-insensitive), this patient MUST
+  // NOT convert to ROSC from a shock. A stray label mismatch upstream —
+  // e.g. keyword detection picking "VF" out of a differentials list for
+  // a narrative-asystole case — once produced the critical bug where
+  // shocking flatline restored a perfusing rhythm. Catch that here at
+  // the defib boundary so it's impossible to get there.
+  const rhythmLower = (currentRhythm || '').toLowerCase();
+  const looksNonShockable =
+    rhythmLower.includes('asystole') ||
+    rhythmLower.includes('pea') ||
+    rhythmLower.includes('pulseless electrical');
+  if (looksNonShockable) {
+    return {
+      description: `Shock delivered but ${currentRhythm || 'the displayed rhythm'} is a NON-SHOCKABLE rhythm. Defibrillation is NOT indicated. Resume high-quality CPR immediately and give Adrenaline 1mg IV every 3–5 minutes. Search for reversible causes (4H's & 4T's).`,
+      effectivenessPercent: 0,
+      isPartialResponse: false,
+      requiresRepeat: false,
+      warningMessage: `${currentRhythm} is non-shockable — do NOT defibrillate`,
+      criticalEvent: {
+        type: 'adverse-reaction',
+        description: `Shock delivered on ${currentRhythm}. This is incorrect management — asystole and PEA are never shocked.`,
+        requiresAction: [
+          'Resume CPR immediately (minimise pause <10 s)',
+          'Adrenaline 1mg IV every 3–5 min',
+          'Identify reversible causes (4H & 4T)',
+          'Rhythm check at next 2-min cycle',
+        ],
+      },
+      vitalChanges: [],
+    };
+  }
 
   // HYPOTHERMIA PROTOCOL: Limit defibrillation when core temp < 30°C
   // Give up to 3 shocks, then withhold until rewarmed above 30°C

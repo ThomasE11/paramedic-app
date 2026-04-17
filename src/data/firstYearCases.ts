@@ -2801,6 +2801,8 @@ export const firstYearCases: CaseScenario[] = [
     title: 'Witnessed Cardiac Arrest - Shopping Mall',
     category: 'cardiac',
     subcategory: 'cardiac-arrest',
+    // Witnessed OHCA in an adult — VF is the expected initial rhythm.
+    initialRhythm: 'Ventricular Fibrillation',
     priority: 'critical',
     complexity: 'basic',
     yearLevels: ['1st-year', 'diploma'],

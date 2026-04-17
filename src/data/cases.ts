@@ -9953,6 +9953,7 @@ export const caseDatabase: CaseScenario[] = [
     title: 'Refractory VF Cardiac Arrest',
     category: 'cardiac',
     subcategory: 'cardiac-arrest',
+    initialRhythm: 'Ventricular Fibrillation',
     priority: 'critical',
     complexity: 'advanced',
     yearLevels: ['4th-year'],
