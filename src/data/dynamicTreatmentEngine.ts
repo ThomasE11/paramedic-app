@@ -121,23 +121,64 @@ export function createInitialPatientState(caseData: CaseScenario): PatientState 
     caseData.initialPresentation?.generalImpression || '',
   ];
 
-  // Determine initial ECG rhythm from case data
-  // Include subcategory, title, differentials, and circulation findings for comprehensive matching
+  // Determine initial ECG rhythm from case data.
+  //
+  // Priority order (first match wins):
+  //   1. Explicit `initialRhythm` on the case — authors can nail the
+  //      rhythm when free-text fields are ambiguous (e.g. an asystole
+  //      arrest whose differentials mention "VF").
+  //   2. Subcategory shortcuts — `subcategory: 'asystole'` forces
+  //      Asystole regardless of other mentions.
+  //   3. Keyword detection across a weighted haystack. The *primary*
+  //      haystack (ecgFindings, subcategory, circulation.findings) is
+  //      treated as authoritative; the *secondary* haystack
+  //      (keyObservations, differentials, title, most-likely-dx) is
+  //      only used if the primary yields nothing — this stops stray
+  //      mentions of alternate rhythms in differential lists from
+  //      hijacking the chosen rhythm.
   let rhythm = 'Normal Sinus Rhythm';
   const ecgFindings = caseData.abcde?.circulation?.ecgFindings || [];
-  const allFindings = [
+
+  // ---- 1. Explicit override --------------------------------------------
+  if (caseData.initialRhythm && caseData.initialRhythm.trim().length > 0) {
+    rhythm = caseData.initialRhythm.trim();
+  }
+  // ---- 2. Subcategory shortcuts ----------------------------------------
+  else if ((caseData.subcategory || '').toLowerCase() === 'asystole') {
+    rhythm = 'Asystole';
+  }
+  else if ((caseData.subcategory || '').toLowerCase() === 'pea') {
+    rhythm = 'PEA';
+  }
+
+  // ---- 3. Keyword detection (only if override/shortcut didn't fire) ----
+  const primaryFindings = [
     ...ecgFindings,
+    caseData.subcategory || '',
+    ...(caseData.abcde?.circulation?.findings || []),
+  ].join(' ').toLowerCase();
+  const secondaryFindings = [
     ...(caseData.expectedFindings?.keyObservations || []),
     ...(caseData.expectedFindings?.differentialDiagnoses || []),
     caseData.expectedFindings?.mostLikelyDiagnosis || '',
-    caseData.subcategory || '',
     caseData.title || '',
-    ...(caseData.abcde?.circulation?.findings || []),
   ].join(' ').toLowerCase();
+  const allFindings = `${primaryFindings} ${secondaryFindings}`;
 
-  // Use word-boundary regex to avoid matching substrings
-  // e.g., 'pea' in 'peanut', 'af' in 'after', 'vf' in 'verfied'
-  const matchWord = (word: string) => new RegExp(`\\b${word}\\b`, 'i').test(allFindings);
+  // Prefer primary when it speaks — a rhythm mentioned in ecgFindings /
+  // subcategory / circulation.findings beats one mentioned only in a
+  // differential list. If primary is silent, fall back to the combined
+  // haystack so cases that only tagged rhythm in keyObservations still
+  // match.
+  const matchIn = (haystack: string, word: string) =>
+    new RegExp(`\\b${word}\\b`, 'i').test(haystack);
+  const matchPrimary = (word: string) => matchIn(primaryFindings, word);
+  const matchWord = (word: string) =>
+    matchPrimary(word) || matchIn(secondaryFindings, word);
+
+  if (rhythm !== 'Normal Sinus Rhythm') {
+    // Override/shortcut already claimed the rhythm; skip keyword tree.
+  } else
 
   if (matchWord('ventricular fibrillation') || (matchWord('vf') && !allFindings.includes('lvf'))) rhythm = 'Ventricular Fibrillation';
   else if (matchWord('ventricular tachycardia') || (matchWord('vt') && !allFindings.includes('avt'))) rhythm = 'Ventricular Tachycardia';

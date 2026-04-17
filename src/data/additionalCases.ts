@@ -4690,6 +4690,10 @@ export const additionalBurnsCases: CaseScenario[] = [
     title: 'Electrical Burn with Cardiac Arrest',
     category: 'burns',
     subcategory: 'cardiac-arrest',
+    // Electrocution arrest — primary rhythm is asystole per the narrative.
+    // VF is mentioned in differentials but the monitor should show flatline
+    // so the student's clinical picture (flatline + no shock) matches.
+    initialRhythm: 'Asystole',
     priority: 'critical',
     complexity: 'expert',
     yearLevels: ['4th-year'],

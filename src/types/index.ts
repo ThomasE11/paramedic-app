@@ -356,6 +356,15 @@ export interface CaseScenario {
   title: string;
   category: CaseCategory;
   subcategory?: string;
+  /**
+   * Explicit initial ECG rhythm — overrides keyword-based rhythm detection.
+   * Use this whenever the narrative's primary rhythm could be ambiguous
+   * from the free-text fields (e.g. asystole arrests where a differential
+   * list mentions "VF"). Accepts the same strings the monitor renders:
+   * 'Asystole', 'Ventricular Fibrillation', 'Ventricular Tachycardia',
+   * 'PEA', 'Sinus Tachycardia', 'Normal Sinus Rhythm', etc.
+   */
+  initialRhythm?: string;
   priority: CasePriority;
   complexity: ComplexityLevel;
   yearLevels: StudentYear[];

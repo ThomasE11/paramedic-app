@@ -203,6 +203,35 @@ export function useClassroomVoice({
     return pc;
   }, [selfKey, sendBroadcast, attachRemoteAudio]);
 
+  /**
+   * Create a peer (if missing), attach all local audio tracks, send an
+   * SDP offer. Factored out so startBroadcast AND the late-joiner
+   * reconcile effect can share the same path.
+   */
+  const openAndOfferTo = useCallback(async (remoteKey: string, stream: MediaStream) => {
+    const pc = makePeer(remoteKey);
+    for (const track of stream.getAudioTracks()) {
+      // addTrack throws if the track is already on this connection.
+      const already = pc.getSenders().some(s => s.track === track);
+      if (!already) {
+        try { pc.addTrack(track, stream); } catch { /* noop */ }
+      }
+    }
+    try {
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      await sendBroadcast({
+        kind: 'webrtc_offer',
+        fromKey: selfKey,
+        toKey: remoteKey,
+        sdp: JSON.stringify(offer),
+      });
+      console.info('[classroom-voice] offered to', remoteKey);
+    } catch (e) {
+      console.warn('[classroom-voice] failed to offer', remoteKey, e);
+    }
+  }, [makePeer, selfKey, sendBroadcast]);
+
   // ------ start / stop broadcasting --------------------------------------
 
   const startBroadcast = useCallback(async () => {
@@ -235,22 +264,14 @@ export function useClassroomVoice({
 
       // Open a peer connection to every OTHER participant and send them
       // an SDP offer. Listeners reply with answers; we hook up ICE
-      // candidates as they arrive.
+      // candidates as they arrive. NOTE: any late-joining students are
+      // handled separately by the reconcile-on-participants effect below,
+      // so even if they weren't in the list when we hit Talk, they still
+      // get offered once they show up.
       const others = participantsRef.current.filter(p => p.key !== selfKey);
+      console.info('[classroom-voice] startBroadcast — offering to', others.length, 'peer(s)');
       for (const peer of others) {
-        const pc = makePeer(peer.key);
-        // Add local audio track(s) so the offer contains them.
-        for (const track of stream.getAudioTracks()) {
-          try { pc.addTrack(track, stream); } catch { /* already added */ }
-        }
-        const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
-        await sendBroadcast({
-          kind: 'webrtc_offer',
-          fromKey: selfKey,
-          toKey: peer.key,
-          sdp: JSON.stringify(offer),
-        });
+        await openAndOfferTo(peer.key, stream);
       }
     } catch (e) {
       const msg = (e as { name?: string })?.name === 'NotAllowedError'
@@ -347,6 +368,32 @@ export function useClassroomVoice({
       closeAllPeers();
     }
   }, [lastBroadcast, selfKey, sendBroadcast, makePeer, closePeer, closeAllPeers, stopBroadcast]);
+
+  // Reconcile peers when the participant list changes while broadcasting.
+  // Without this, anyone who joins AFTER the instructor hits Talk never
+  // receives an SDP offer and hears nothing. We also tear down peers for
+  // participants who left.
+  useEffect(() => {
+    if (!isBroadcasting) return;
+    const stream = localStreamRef.current;
+    if (!stream) return;
+
+    const liveKeys = new Set(participants.map(p => p.key));
+    liveKeys.delete(selfKey);
+
+    // Drop peers for participants that left.
+    for (const key of Array.from(peersRef.current.keys())) {
+      if (!liveKeys.has(key)) closePeer(key);
+    }
+
+    // Open + offer to any participant we don't already have a peer for.
+    for (const key of liveKeys) {
+      if (!peersRef.current.has(key)) {
+        console.info('[classroom-voice] reconcile: offering to late-joiner', key);
+        void openAndOfferTo(key, stream);
+      }
+    }
+  }, [participants, isBroadcasting, selfKey, openAndOfferTo, closePeer]);
 
   // Tear down on unmount — releases the mic + peer connections.
   useEffect(() => {

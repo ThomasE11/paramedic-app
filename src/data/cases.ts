@@ -10261,6 +10261,9 @@ export const caseDatabase: CaseScenario[] = [
     title: 'Hypothermic Drowning - Cardiac Arrest',
     category: 'environmental',
     subcategory: 'cardiac-arrest',
+    // Primary rhythm is asystole — VF mention in ecgFindings is a
+    // downstream contingency during rewarming, not the presenting strip.
+    initialRhythm: 'Asystole',
     priority: 'critical',
     complexity: 'advanced',
     yearLevels: ['3rd-year', '4th-year'],

@@ -40,7 +40,11 @@ function timeShort(iso: string): string {
 }
 
 export function ClassroomChatSidebar({ messages, onSend, selfKey, driverKeys }: Props) {
-  const [open, setOpen] = useState(true);
+  // Start collapsed so the sidebar doesn't cover the patient presentation
+  // when someone first drops into the live case. They can always pop it
+  // open via the floating tab on the right edge, and unread counts keep
+  // them aware of activity.
+  const [open, setOpen] = useState(false);
   const [text, setText] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
