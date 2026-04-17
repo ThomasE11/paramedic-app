@@ -970,6 +970,111 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
     }
   }, [assessmentTracker, session]);
 
+  // Bridge: keyword-match student actions to loose-text checklist items.
+  //
+  // The `studentChecklist` is free-text (e.g. "Pre-alert stroke center",
+  // "Establish exact time last known well") whereas the assessment tracker
+  // only knows discrete step IDs (`airway`, `circulation`, `sample-history`).
+  // Without a bridge, several checklist items can NEVER be credited:
+  //   - "Pre-alert …" → captured by transportDecisions.preAlert=true
+  //   - "Last known well / time of onset" → captured by sample-history / events-leading
+  //   - "Do NOT give food or drink" → there's no discrete step; infer from
+  //     the fact that the student reached transport without performing it
+  //     (pragmatic — credit if case is transported).
+  // This effect walks the checklist whenever one of those signals changes
+  // and adds matching item IDs to completedItems. Also auto-credits items
+  // whose description is satisfied by assessment steps already performed.
+  useEffect(() => {
+    if (!currentCase || !session) return;
+    const checklist = currentCase.studentChecklist || [];
+    if (checklist.length === 0) return;
+    const already = new Set(session.completedItems);
+    const performed = new Set(assessmentTracker?.performed?.map(p => p.stepId) || []);
+    const toCredit: string[] = [];
+
+    // Pre-alert — any checklist item mentioning "pre-alert" / "pre alert" /
+    // "alert hospital" / "alert receiving" credits if the student chose to
+    // pre-alert during transport decisions.
+    if (transportDecisions?.preAlert === true) {
+      for (const item of checklist) {
+        if (already.has(item.id)) continue;
+        if (/pre[- ]?alert|alert (the )?(hospital|receiving|stroke|cardiac|trauma)/i.test(item.description)) {
+          toCredit.push(item.id);
+        }
+      }
+    }
+
+    // Last known well / time of onset — credited by doing sample-history or
+    // events-leading assessment. Those steps already pull the "events" field
+    // which in every stroke / seizure / ACS case contains the time reference.
+    if (performed.has('sample-history') || performed.has('events-leading') || performed.has('opqrst')) {
+      for (const item of checklist) {
+        if (already.has(item.id)) continue;
+        if (/last known well|time of onset|onset time|time last seen|exact time/i.test(item.description)) {
+          toCredit.push(item.id);
+        }
+      }
+    }
+
+    // Destination choice — any checklist item about choosing a stroke /
+    // cardiac / trauma centre.
+    if (transportDecisions?.destination) {
+      for (const item of checklist) {
+        if (already.has(item.id)) continue;
+        if (/transport to.*(centre|center|unit|hospital)|bypass.*hospital|destination|specialist centre/i.test(item.description)) {
+          toCredit.push(item.id);
+        }
+      }
+    }
+
+    // Provisional diagnosis — credit documentation items that reference a
+    // working dx / ATMIST.
+    if (transportDecisions?.provisionalDiagnosis) {
+      for (const item of checklist) {
+        if (already.has(item.id)) continue;
+        if (/provisional|working diagnosis|atmist|handover/i.test(item.description)) {
+          toCredit.push(item.id);
+        }
+      }
+    }
+
+    // Assessment-step-backed credits: e.g. "Perform FAST assessment" is
+    // satisfied by doing disability/face steps. "Check blood glucose" is
+    // satisfied by the blood-glucose step.
+    const stepCreditMap: Array<{ pattern: RegExp; steps: string[] }> = [
+      { pattern: /fast assessment|fast positive/i, steps: ['disability', 'face', 'head'] },
+      { pattern: /blood glucose|bgl|bm\b/i, steps: ['blood-glucose', 'disability'] },
+      { pattern: /iv access|establish iv/i, steps: ['iv-access'] },
+      { pattern: /gcs|glasgow/i, steps: ['disability'] },
+      { pattern: /pupils?/i, steps: ['disability'] },
+      { pattern: /temperature|temp check/i, steps: ['temperature', 'exposure'] },
+      { pattern: /pain (score|assessment)|ocqrsta|pqrst/i, steps: ['pain-assessment', 'opqrst'] },
+      { pattern: /allerg/i, steps: ['allergies', 'sample-history'] },
+      { pattern: /medicat/i, steps: ['medications', 'sample-history'] },
+      { pattern: /sample history/i, steps: ['sample-history'] },
+      { pattern: /document.*gcs|document.*neuro/i, steps: ['disability', 'neurological'] },
+    ];
+    for (const item of checklist) {
+      if (already.has(item.id)) continue;
+      for (const { pattern, steps } of stepCreditMap) {
+        if (pattern.test(item.description) && steps.some(s => performed.has(s))) {
+          toCredit.push(item.id);
+          break;
+        }
+      }
+    }
+
+    if (toCredit.length > 0) {
+      setSession(prev => prev ? {
+        ...prev,
+        completedItems: [...new Set([...prev.completedItems, ...toCredit])],
+      } : prev);
+    }
+    // Dependency list intentionally includes the action signals; session
+    // is read via a functional setter so the effect doesn't re-run on every
+    // checklist credit it just performed.
+  }, [currentCase, assessmentTracker, transportDecisions, session]);
+
   // End case — show transport decision wizard from step 1
   const endCase = useCallback((action: 'transport' | 'end') => {
     setTransportStep(1);

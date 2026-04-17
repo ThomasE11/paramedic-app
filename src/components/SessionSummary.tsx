@@ -312,6 +312,42 @@ export function SessionSummary({
               <span>{session.totalPossible}</span> points
             </p>
 
+            {/* Inline "Why this score?" chip — always visible when score < 100,
+                so the user doesn't have to scroll to understand the number. */}
+            {percentage < 100 && (
+              <div className="mt-4 w-full max-w-md mx-auto rounded-xl border border-border bg-muted/40 p-3 animate-fade-in-up stagger-2 text-left">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+                  Why this score
+                </p>
+                <ul className="space-y-1.5 text-sm">
+                  {missedItems.length > 0 && (
+                    <li className="flex items-start gap-2">
+                      <span className="text-red-500 shrink-0">✕</span>
+                      <span>
+                        <strong>{missedItems.filter(i => i.critical).length}</strong> critical +{' '}
+                        <strong>{missedItems.filter(i => !i.critical).length}</strong> non-critical action(s) missed
+                        <span className="text-muted-foreground"> — worth {missedItems.reduce((s, i) => s + (i.points || 0), 0)} pts</span>
+                      </span>
+                    </li>
+                  )}
+                  {penalties.reasons.map((r, i) => (
+                    <li key={i} className="flex items-start gap-2">
+                      <span className="text-orange-500 shrink-0">⚠</span>
+                      <span>{r.label} <span className="text-muted-foreground">(−{r.amount}%)</span></span>
+                    </li>
+                  ))}
+                  {missedItems.length === 0 && penalties.reasons.length === 0 && (
+                    <li className="text-muted-foreground text-xs italic">
+                      No missed items — score reflects partial credit on assessment quality.
+                    </li>
+                  )}
+                </ul>
+                <p className="mt-2 text-[11px] text-muted-foreground italic">
+                  Scroll down for each missed item, why it matters, and a learning point.
+                </p>
+              </div>
+            )}
+
             {/* Time Display */}
             {elapsedTime && (
               <div className="mt-4 flex items-center gap-3 animate-fade-in-up stagger-3">

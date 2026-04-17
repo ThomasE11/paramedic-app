@@ -986,25 +986,27 @@ export const secondYearCases: CaseScenario[] = [
       }
     },
     secondarySurvey: {
-      head: ['Facial asymmetry - left-sided droop', 'No trauma signs', 'No tongue bite'],
+      head: ['Facial asymmetry — left-sided droop', 'Left nasolabial fold flattened', 'No trauma signs', 'No tongue bite'],
       neck: ['Supple, no meningismus', 'Carotids equal without bruit'],
       chest: ['Clear bilaterally', 'Regular heart rate and rhythm'],
       abdomen: ['Soft, non-tender', 'No guarding'],
       pelvis: ['Normal'],
       extremities: [
-        'Left arm: decreased tone, weak grip (0/5 strength)',
-        'Left leg: decreased tone, weak (2/5 strength)',
-        'Right side: normal strength (5/5)',
+        'Left arm: decreased tone, weak grip (0/5 strength), pronator drift on outstretched arms',
+        'Left leg: decreased tone, weak hip flexion (2/5 strength)',
+        'Right side: normal strength (5/5), normal tone',
         'No deformities',
         'No peripheral oedema'
       ],
       posterior: ['Normal spine, no tenderness'],
       neurological: [
+        'FAST positive — Face droop left, Arm drift left, Speech slurred (dysarthria), Time critical',
         'Left facial droop',
         'Dysarthria (slurred speech)',
-        'Left hemiparesis',
+        'Left hemiparesis — upper limb > lower limb weakness (MCA territory pattern)',
         'Left-sided hyperreflexia',
-        'Babinski sign present on left'
+        'Babinski sign present on the left',
+        'Conjugate gaze deviation to the RIGHT (patient looks toward the side of the lesion)'
       ]
     },
     history: {

@@ -2885,14 +2885,28 @@ export const caseDatabase: CaseScenario[] = [
       }
     },
     secondarySurvey: {
-      head: ['Facial asymmetry', 'Right nasolabial fold flattened'],
-      neck: ['Normal'],
-      chest: ['Normal'],
-      abdomen: ['Normal'],
+      head: ['Facial asymmetry — right-sided droop', 'Right nasolabial fold flattened', 'Unable to smile symmetrically'],
+      neck: ['Supple, no meningismus', 'Carotids palpable, no bruit'],
+      chest: ['Clear bilaterally', 'Regular rhythm'],
+      abdomen: ['Soft, non-tender'],
       pelvis: ['Normal'],
-      extremities: ['Right arm weakness', 'Right leg weakness', 'Normal left side', 'No peripheral oedema'],
-      posterior: ['Normal'],
-      neurological: ['FAST positive', 'Expressive aphasia', 'Right hemiparesis']
+      extremities: [
+        'Right arm: decreased tone, weak grip (1/5 strength), pronator drift on outstretched arms',
+        'Right leg: decreased tone, weak hip flexion (2/5 strength), unable to resist gravity',
+        'Left side: normal strength (5/5), normal tone',
+        'No peripheral oedema',
+        'Peripheral pulses equal and strong bilaterally',
+      ],
+      posterior: ['Not examined — patient transferred supine'],
+      neurological: [
+        'FAST positive — Face droop right, Arm drift right, Speech abnormal (expressive aphasia), Time critical',
+        'Expressive (Broca\'s) aphasia — comprehension intact, speech non-fluent',
+        'Right hemiparesis — upper limb > lower limb weakness (MCA territory pattern)',
+        'Right-sided hyperreflexia',
+        'Babinski sign present on the right',
+        'Conjugate gaze deviation to the LEFT (patient looks toward the side of the lesion)',
+        'No visual field cut identified on crude confrontation (limited by aphasia)',
+      ]
     },
     history: {
       medications: [

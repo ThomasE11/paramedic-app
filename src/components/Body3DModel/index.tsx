@@ -427,10 +427,19 @@ function getFinding(caseData: CaseScenario, regionId: string, actionId: string, 
     return 'Equal bilaterally.';
   }
   if (actionId === 'eyes-inspect') {
-    const faceFindings = ss?.headDetailed?.face || [];
-    const eyeFindings = faceFindings.filter(f => f.toLowerCase().includes('eye') || f.toLowerCase().includes('periorbital') || f.toLowerCase().includes('racoon') || f.toLowerCase().includes('conjunctiv') || f.toLowerCase().includes('sclera'));
-    if (eyeFindings.length) return eyeFindings.join('. ');
-    return 'Conjunctiva pink. Sclera white. No periorbital bruising. No foreign bodies.';
+    // Look across face-detail, head, and neurological for eye-relevant signs:
+    // periorbital bruising (trauma), gaze deviation (stroke), ptosis, nystagmus,
+    // field cut / hemianopia. Previous logic only checked face-detail and
+    // missed stroke-relevant gaze signs documented in the neurological line.
+    const haystack = [
+      ...(ss?.headDetailed?.face || []),
+      ...(ss?.head || []),
+      ...(ss?.neurological || []),
+    ];
+    const needles = ['eye', 'gaze', 'ptosis', 'nystagmus', 'hemianopia', 'field cut', 'periorbital', 'racoon', 'raccoon', 'conjunctiv', 'sclera', 'pupil'];
+    const matches = haystack.filter(f => needles.some(n => f.toLowerCase().includes(n)));
+    if (matches.length) return matches.join('. ');
+    return 'Conjunctiva pink. Sclera white. No periorbital bruising. No foreign bodies. No gaze deviation or nystagmus.';
   }
   // ===== FACE — Nose =====
   if (actionId === 'nose-inspect') return ss?.headDetailed?.nose?.join('. ') || 'No CSF rhinorrhoea. No epistaxis. No deformity. Septum midline.';
@@ -453,15 +462,41 @@ function getFinding(caseData: CaseScenario, regionId: string, actionId: string, 
   if (actionId === 'teeth-inspect') return 'Dentition intact. No loose or broken teeth. No dentures.';
   // ===== FACE — Facial Assessment =====
   if (actionId === 'face-symmetry-inspect') {
+    // Pull from every place facial-droop evidence might live: face-detail,
+    // disability findings, secondary survey head + neurological. Previous
+    // logic only looked at the first two, so a case with "Right nasolabial
+    // fold flattened" / "Right hemiparesis" sitting in head/neurological
+    // would return the generic "Symmetrical" lie.
     const faceFinding = (ss?.headDetailed?.face || []).join(' ').toLowerCase();
     const neuro = (disability?.findings || []).join(' ').toLowerCase();
-    if (faceFinding.includes('droop') || neuro.includes('droop') || neuro.includes('facial weakness')) return 'Asymmetry noted. Droop present.';
+    const headLine = (ss?.head || []).join(' ').toLowerCase();
+    const neuroSS = (ss?.neurological || []).join(' ').toLowerCase();
+    const haystack = `${faceFinding} ${neuro} ${headLine} ${neuroSS}`;
+    if (/droop|facial weakness|facial asymm|nasolabial|hemipar|hemipleg|fast positive/.test(haystack)) {
+      // Side it if we can — "right droop" reads better than a generic message.
+      const right = /right.*droop|right.*nasolabial|right.*hemipar|right.*facial|facial.*right/.test(haystack);
+      const left = /left.*droop|left.*nasolabial|left.*hemipar|left.*facial|facial.*left/.test(haystack);
+      const side = right && !left ? ' on the RIGHT' : left && !right ? ' on the LEFT' : '';
+      return `Asymmetry noted. Facial droop present${side} — nasolabial fold flattened, unable to smile equally.`;
+    }
     return 'Symmetrical. No droop. Equal movement bilaterally on smile and brow raise.';
   }
   if (actionId === 'face-speech') {
+    // Also consult the neurological section — aphasia/dysphasia is usually
+    // documented there, not in disability findings.
     const neuro = (disability?.findings || []).join(' ').toLowerCase();
-    if (neuro.includes('slur') || neuro.includes('dysarthria')) return 'Slurred speech noted.';
-    if (neuro.includes('aphasia') || neuro.includes('dysphasia')) return 'Difficulty with speech. Words garbled or absent.';
+    const neuroSS = (ss?.neurological || []).join(' ').toLowerCase();
+    const hay = `${neuro} ${neuroSS}`;
+    // Aphasia takes precedence over slurred speech when both present — more
+    // specific finding, points towards dominant-hemisphere stroke.
+    if (/aphasia|dysphasia/.test(hay)) {
+      const expressive = /expressive|broca/.test(hay);
+      const receptive = /receptive|wernicke/.test(hay);
+      if (expressive) return 'Expressive aphasia — patient can understand but struggles to produce words; speech non-fluent, frustrated.';
+      if (receptive) return 'Receptive aphasia — fluent but non-sensical speech; patient does not understand commands.';
+      return 'Aphasia — difficulty producing or understanding speech. Words garbled, absent, or out of sequence.';
+    }
+    if (/slur|dysarthria/.test(hay)) return 'Slurred speech (dysarthria) — articulation affected, comprehension intact.';
     return 'Clear, coherent speech. Repeats phrases correctly.';
   }
   if (actionId === 'face-inspect') return ss?.headDetailed?.face?.join('. ') || 'Symmetrical. No lacerations, bruising, or swelling.';
@@ -524,10 +559,38 @@ function getFinding(caseData: CaseScenario, regionId: string, actionId: string, 
   // Search case data for specific limb pathology
   const extFindings = ss?.extremities || [];
   const allExtText = extFindings.join(' ').toLowerCase();
+  // Neurological findings (hemiparesis / aphasia / cranial nerve signs) are
+  // stored on `ss.neurological` in case data. We MUST include this field when
+  // the student examines a limb, otherwise a stroke case with "Right arm
+  // weakness" in extremities and "Right hemiparesis" in neurological will
+  // silently fall through to the generic "Motor power 5/5" default (real bug
+  // reported: right-MCA stroke case showing 5/5 on arms).
+  const neuroFindings = ss?.neurological || [];
 
-  // Helper: find findings matching keywords for a specific area
+  // Helper: find findings matching keywords for a specific area. Searches BOTH
+  // extremities and neurological arrays so limb-strength findings documented
+  // in the neuro line ("Right hemiparesis", "Left arm 0/5", "Pronator drift
+  // on the right") surface correctly on the 3D body.
   const findFor = (keywords: string[]): string | null => {
-    const matches = extFindings.filter(f => keywords.some(k => f.toLowerCase().includes(k)));
+    const matchIn = (arr: string[]) =>
+      arr.filter(f => keywords.some(k => f.toLowerCase().includes(k)));
+    const matches = [...matchIn(extFindings), ...matchIn(neuroFindings)];
+    return matches.length ? matches.join('. ') : null;
+  };
+
+  // Neuro-specific helper: looks for limb strength / tone / reflex findings
+  // that describe a whole side (hemiparesis, hemiplegia, pronator drift) so a
+  // per-limb click can surface them. Without this, clicking "right arm neuro"
+  // on a left-hemisphere stroke case returns the stock "5/5" lie.
+  const sideNeuroFor = (side: 'right' | 'left'): string | null => {
+    const needles = side === 'right'
+      ? ['right hemipar', 'right hemipleg', 'right-sided weak', 'right sided weak', 'right pronator drift', 'right arm drift', 'right leg drift', 'right arm weak', 'right leg weak', 'right leg 0/5', 'right arm 0/5', 'right 0/5', 'right 1/5', 'right 2/5', 'right 3/5', 'right 4/5', 'babinski.*right', 'right.*babinski', 'right hyperreflex']
+      : ['left hemipar', 'left hemipleg', 'left-sided weak', 'left sided weak', 'left pronator drift', 'left arm drift', 'left leg drift', 'left arm weak', 'left leg weak', 'left leg 0/5', 'left arm 0/5', 'left 0/5', 'left 1/5', 'left 2/5', 'left 3/5', 'left 4/5', 'babinski.*left', 'left.*babinski', 'left hyperreflex'];
+    const all = [...extFindings, ...neuroFindings];
+    const matches = all.filter(f => {
+      const lower = f.toLowerCase();
+      return needles.some(n => new RegExp(n).test(lower));
+    });
     return matches.length ? matches.join('. ') : null;
   };
 
@@ -542,7 +605,11 @@ function getFinding(caseData: CaseScenario, regionId: string, actionId: string, 
   if (actionId === 'r-thumb-palpate') return findFor(['right thumb', 'r thumb', 'gamekeeper', 'bennett']) || 'Thumb: no tenderness at MCP or IP joints. Full opposition. No instability.';
   if (actionId === 'r-fingers-palpate') return findFor(['right finger', 'r finger', 'right digit', 'mallet', 'boutonniere', 'phalanx']) || 'All digits: no tenderness. No deformity. Full range of motion. No mallet or boutonniere deformity.';
   if (actionId === 'r-arm-pulses') return findFor(['right radial', 'r radial']) || 'Right radial pulse present, strong, regular. CRT <2 seconds. Nailbed perfusion normal.';
-  if (actionId === 'r-arm-neuro') return findFor(['right arm sensation', 'right upper limb']) || 'Sensation intact all dermatomes (median/ulnar/radial). Motor power 5/5. Grip strength equal.';
+  if (actionId === 'r-arm-neuro') {
+    return sideNeuroFor('right')
+      || findFor(['right arm', 'right upper limb', 'right arm sensation', 'right grip', 'r arm weak', 'right arm weak'])
+      || 'Sensation intact all dermatomes (median/ulnar/radial). Motor power 5/5. Grip strength equal.';
+  }
 
   // LEFT ARM
   if (actionId === 'l-arm-inspect') return findFor(['left arm', 'left upper limb', 'left forearm', 'left hand']) || 'No deformity. No swelling. No wounds. No bruising. Skin colour normal.';
@@ -555,7 +622,11 @@ function getFinding(caseData: CaseScenario, regionId: string, actionId: string, 
   if (actionId === 'l-thumb-palpate') return findFor(['left thumb', 'l thumb']) || 'Thumb: no tenderness at MCP or IP joints. Full opposition. No instability.';
   if (actionId === 'l-fingers-palpate') return findFor(['left finger', 'l finger', 'left digit']) || 'All digits: no tenderness. No deformity. Full range of motion. No mallet or boutonniere deformity.';
   if (actionId === 'l-arm-pulses') return findFor(['left radial', 'l radial']) || 'Left radial pulse present, strong, regular. CRT <2 seconds. Nailbed perfusion normal.';
-  if (actionId === 'l-arm-neuro') return findFor(['left arm sensation', 'left upper limb']) || 'Sensation intact all dermatomes (median/ulnar/radial). Motor power 5/5. Grip strength equal.';
+  if (actionId === 'l-arm-neuro') {
+    return sideNeuroFor('left')
+      || findFor(['left arm', 'left upper limb', 'left arm sensation', 'left grip', 'l arm weak', 'left arm weak'])
+      || 'Sensation intact all dermatomes (median/ulnar/radial). Motor power 5/5. Grip strength equal.';
+  }
 
   // Helper: check for oedema findings in ankle/foot exam
   const getOedemaFindings = (): string | null => {
@@ -590,7 +661,11 @@ function getFinding(caseData: CaseScenario, regionId: string, actionId: string, 
   }
   if (actionId === 'r-toes-palpate') return findFor(['right toe', 'r toe', 'right digit', 'right hallux']) || 'All toes: no tenderness. No deformity. Capillary refill brisk. Sensation intact.';
   if (actionId === 'r-leg-pulses') return findFor(['right dorsalis', 'right pedal', 'r dorsalis']) || 'Right dorsalis pedis and posterior tibial pulses present. CRT <2 seconds. Nailbed perfusion normal.';
-  if (actionId === 'r-leg-neuro') return findFor(['right leg sensation', 'right lower limb']) || 'Sensation intact L2-S1. Motor power 5/5. Dorsi/plantar flexion normal.';
+  if (actionId === 'r-leg-neuro') {
+    return sideNeuroFor('right')
+      || findFor(['right leg', 'right lower limb', 'right leg sensation', 'right leg weak', 'r leg weak'])
+      || 'Sensation intact L2-S1. Motor power 5/5. Dorsi/plantar flexion normal.';
+  }
   if (actionId === 'r-leg-compartment' || actionId === 'r-thigh-compartment' || actionId === 'r-shin-compartment') return allExtText.includes('compartment') && allExtText.includes('right') ? 'TENSE compartment \u2014 pain on passive stretch.' : 'Compartments soft. No pain on passive stretch. No paraesthesia.';
   if (actionId === 'r-thigh-inspect') return findFor(['right thigh', 'right femur', 'r thigh']) || 'No deformity. No swelling. No shortening or rotation.';
   if (actionId === 'r-knee-inspect') return findFor(['right knee', 'r knee']) || 'No swelling. No deformity. No effusion visible.';
@@ -620,7 +695,11 @@ function getFinding(caseData: CaseScenario, regionId: string, actionId: string, 
   }
   if (actionId === 'l-toes-palpate') return findFor(['left toe', 'l toe', 'left digit', 'left hallux']) || 'All toes: no tenderness. No deformity. Capillary refill brisk. Sensation intact.';
   if (actionId === 'l-leg-pulses') return findFor(['left dorsalis', 'left pedal', 'l dorsalis']) || 'Left dorsalis pedis and posterior tibial pulses present. CRT <2 seconds. Nailbed perfusion normal.';
-  if (actionId === 'l-leg-neuro') return findFor(['left leg sensation', 'left lower limb']) || 'Sensation intact L2-S1. Motor power 5/5. Dorsi/plantar flexion normal.';
+  if (actionId === 'l-leg-neuro') {
+    return sideNeuroFor('left')
+      || findFor(['left leg', 'left lower limb', 'left leg sensation', 'left leg weak', 'l leg weak'])
+      || 'Sensation intact L2-S1. Motor power 5/5. Dorsi/plantar flexion normal.';
+  }
   if (actionId === 'l-leg-compartment' || actionId === 'l-thigh-compartment' || actionId === 'l-shin-compartment') return allExtText.includes('compartment') && allExtText.includes('left') ? 'TENSE compartment \u2014 pain on passive stretch.' : 'Compartments soft. No pain on passive stretch. No paraesthesia.';
   if (actionId === 'l-thigh-inspect') return findFor(['left thigh', 'left femur', 'l thigh']) || 'No deformity. No swelling. No shortening or rotation.';
   if (actionId === 'l-knee-inspect') return findFor(['left knee', 'l knee']) || 'No swelling. No deformity. No effusion visible.';

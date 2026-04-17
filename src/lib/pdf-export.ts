@@ -208,10 +208,15 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
   ];
 
   caseInfo.forEach(([label, value]) => {
-    checkPageBreak(6);
+    // Wrap long values (e.g. long case titles, verbose locations). Previously
+    // overflowed the right margin because addTextAt doesn't wrap.
+    const valueLines = doc.splitTextToSize(value, contentWidth - 32) as string[];
+    checkPageBreak(Math.max(6, valueLines.length * LINE_HEIGHT.BODY + 1));
     addTextAt(label, margin, yPosition, FONT.BODY, 'bold', COLOR.BLACK);
-    addTextAt(value, margin + 30, yPosition, FONT.BODY, 'normal', COLOR.BODY_TEXT);
-    yPosition += LINE_HEIGHT.BODY + 1;
+    valueLines.forEach((line: string, i: number) => {
+      addTextAt(line, margin + 30, yPosition + i * LINE_HEIGHT.BODY, FONT.BODY, 'normal', COLOR.BODY_TEXT);
+    });
+    yPosition += valueLines.length * LINE_HEIGHT.BODY + 1;
   });
 
   // ========== SIMULATION OBJECTIVE ==========
@@ -378,17 +383,23 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
     addSectionHeader('Completed Actions');
 
     completedItems.forEach((item) => {
-      checkPageBreak(8);
-      addFilledRoundedRect(margin, yPosition - 1, contentWidth, 6, 1, COLOR.BG_GREEN);
-      addStrokeRoundedRect(margin, yPosition - 1, contentWidth, 6, 1, COLOR.GREEN);
-
-      addTextAt('+', margin + 3, yPosition + 3, FONT.BODY, 'bold', COLOR.GREEN);
-
       const text = sanitizeText(item.description) + (item.critical ? ' (Critical)' : '');
       const lines = doc.splitTextToSize(text, contentWidth - 12) as string[];
-      addTextAt(lines[0], margin + 8, yPosition + 3, FONT.BODY, 'normal', COLOR.BODY_TEXT);
+      // Grow the box to fit every wrapped line — previously only lines[0] was
+      // rendered into a fixed 6mm pill, which silently truncated long items
+      // and overflowed visually.
+      const boxH = Math.max(6, lines.length * LINE_HEIGHT.BODY + 2);
+      checkPageBreak(boxH + 3);
 
-      yPosition += 8;
+      addFilledRoundedRect(margin, yPosition - 1, contentWidth, boxH, 1, COLOR.BG_GREEN);
+      addStrokeRoundedRect(margin, yPosition - 1, contentWidth, boxH, 1, COLOR.GREEN);
+
+      addTextAt('+', margin + 3, yPosition + 3, FONT.BODY, 'bold', COLOR.GREEN);
+      lines.forEach((line: string, i: number) => {
+        addTextAt(line, margin + 8, yPosition + 3 + (i * LINE_HEIGHT.BODY), FONT.BODY, 'normal', COLOR.BODY_TEXT);
+      });
+
+      yPosition += boxH + 2;
     });
   }
 
@@ -423,17 +434,21 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
     addSectionHeader('Other Items to Review');
 
     nonCriticalMissed.forEach((item) => {
-      checkPageBreak(8);
+      // Wrap and grow instead of silently truncating at 90 chars — some of
+      // the audited checklist items (paramedic scope clarifications, etc.)
+      // run 150+ chars and were getting "..." in the middle of a clinical
+      // fact.
+      const lines = doc.splitTextToSize(sanitizeText(item.description), contentWidth - 12) as string[];
+      const boxH = Math.max(6, lines.length * LINE_HEIGHT.BODY + 2);
+      checkPageBreak(boxH + 3);
 
-      addStrokeRoundedRect(margin, yPosition - 1, contentWidth, 6, 1, COLOR.ORANGE);
+      addStrokeRoundedRect(margin, yPosition - 1, contentWidth, boxH, 1, COLOR.ORANGE);
       addTextAt('-', margin + 3, yPosition + 3, FONT.BODY, 'bold', COLOR.ORANGE);
+      lines.forEach((line: string, i: number) => {
+        addTextAt(line, margin + 8, yPosition + 3 + (i * LINE_HEIGHT.BODY), FONT.BODY, 'normal', COLOR.MUTED);
+      });
 
-      const truncatedText = item.description.length > 90
-        ? item.description.substring(0, 87) + '...'
-        : item.description;
-      addTextAt(sanitizeText(truncatedText), margin + 8, yPosition + 3, FONT.BODY, 'normal', COLOR.MUTED);
-
-      yPosition += 8;
+      yPosition += boxH + 2;
     });
   }
 
@@ -461,8 +476,6 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
     addSectionHeader('Applied Treatments & Interventions');
 
     options.appliedTreatments.forEach((treatment, index) => {
-      checkPageBreak(18);
-
       // Clean description: strip vital-change suffixes like "-- SpO2: 85% -> 92%, HR: 120 -> 105."
       const cleanDesc = sanitizeText(treatment.description || treatment.name)
         // Strip "-- VitalSign: old -> new, VitalSign: old -> new." patterns
@@ -475,20 +488,31 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
         .replace(/,\s*$/, '')
         .trim();
 
-      // Treatment box
-      addFilledRoundedRect(margin, yPosition, contentWidth, 14, 2, COLOR.BG_GREEN);
-      addStrokeRoundedRect(margin, yPosition, contentWidth, 14, 2, COLOR.GREEN);
+      // Wrap the description within the box width; grow the box around the
+      // number of wrapped lines instead of fixed 14mm (which clipped long
+      // treatment names — e.g. "IM Adrenaline 500mcg 1:1000 anterolateral
+      // thigh" wraps to two lines).
+      const descLines = doc.splitTextToSize(cleanDesc, contentWidth - 18) as string[];
+      const boxH = Math.max(14, descLines.length * LINE_HEIGHT.BODY + 9); // +9 for time line + padding
+      checkPageBreak(boxH + 4);
+
+      addFilledRoundedRect(margin, yPosition, contentWidth, boxH, 2, COLOR.BG_GREEN);
+      addStrokeRoundedRect(margin, yPosition, contentWidth, boxH, 2, COLOR.GREEN);
 
       addTextAt(`${index + 1}.`, margin + 3, yPosition + 5, FONT.BODY, 'bold', COLOR.GREEN);
-
-      // Wrap the description within the box width
-      const descLines = doc.splitTextToSize(cleanDesc, contentWidth - 18) as string[];
-      addTextAt(descLines[0], margin + 10, yPosition + 5, FONT.BODY, 'bold', COLOR.BLACK);
+      descLines.forEach((line: string, i: number) => {
+        addTextAt(line, margin + 10, yPosition + 5 + (i * LINE_HEIGHT.BODY), FONT.BODY, 'bold', COLOR.BLACK);
+      });
 
       const timeStr = new Date(treatment.appliedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-      addTextAt(`Applied at: ${timeStr}`, margin + 10, yPosition + 10, FONT.LABEL, 'normal', COLOR.MUTED);
+      addTextAt(
+        `Applied at: ${timeStr}`,
+        margin + 10,
+        yPosition + 5 + descLines.length * LINE_HEIGHT.BODY + 3,
+        FONT.LABEL, 'normal', COLOR.MUTED,
+      );
 
-      yPosition += 17;
+      yPosition += boxH + 3;
 
       // Treatment effects
       if (treatment.effects.length > 0) {
