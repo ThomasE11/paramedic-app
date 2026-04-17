@@ -169,8 +169,8 @@ const ASSESSMENT_METHODS: Record<string, AssessmentMethod[]> = {
     { id: 'spo2_forehead', name: 'Forehead Sensor', description: 'Reflectance oximetry on forehead', duration: 10, icon: 'ScanLine', equipment: ['Forehead SpO2 Sensor'] },
   ],
   gcs: [
-    { id: 'gcs_assessment', name: 'GCS Assessment', description: 'Full Glasgow Coma Scale assessment', duration: 60, icon: 'Brain' },
-    { id: 'gcs_avpu', name: 'AVPU Quick', description: 'Alert, Voice, Pain, Unresponsive', duration: 15, icon: 'Activity' },
+    { id: 'gcs_assessment', name: 'GCS Assessment', description: 'Glasgow Coma Scale (eye / verbal / motor)', duration: 12, icon: 'Brain' },
+    { id: 'gcs_avpu', name: 'AVPU Quick', description: 'Alert, Voice, Pain, Unresponsive', duration: 5, icon: 'Activity' },
   ],
   temperature: [
     { id: 'temp_oral', name: 'Oral Thermometer', description: 'Digital oral thermometer', duration: 30, icon: 'Thermometer', equipment: ['Thermometer'] },
@@ -302,9 +302,15 @@ class ClinicalAudioEngine {
   private getCtx(): AudioContext {
     if (!this.audioCtx) {
       this.audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      // Register for unlock on first user gesture (iOS Safari can't resume
+      // AudioContexts outside of user interaction — this covers the alarms
+      // and heartbeat sounds that start automatically via useEffect).
+      import('@/data/clinicalSounds').then(({ registerAudioContextForUnlock }) => {
+        if (this.audioCtx) registerAudioContextForUnlock(this.audioCtx);
+      }).catch(() => {});
     }
     if (this.audioCtx.state === 'suspended') {
-      this.audioCtx.resume();
+      this.audioCtx.resume().catch(() => { /* awaits user gesture */ });
     }
     return this.audioCtx;
   }

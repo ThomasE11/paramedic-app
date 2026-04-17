@@ -954,6 +954,21 @@ export const TREATMENTS: Treatment[] = [
     ],
   },
   {
+    id: 'mechanical_ventilation',
+    name: 'Mechanical Ventilation Setup',
+    description: 'Configure invasive ventilator (mode, Vt, RR, FiO2, PEEP). Opens setup dialog before delivery.',
+    category: 'airway',
+    onset: 'fast',
+    onsetTimeSeconds: 2,
+    durationSeconds: 30,
+    icon: 'Wind',
+    color: 'blue',
+    effects: [
+      { vitalSign: 'spo2', changeType: 'increase', value: 15, minValue: 85, maxValue: 99 },
+      { vitalSign: 'respiration', changeType: 'set', value: 14, minValue: 10, maxValue: 20 },
+    ],
+  },
+  {
     id: 'dextrose_10',
     name: 'Dextrose 10% IV',
     description: 'IV glucose for hypoglycemia',

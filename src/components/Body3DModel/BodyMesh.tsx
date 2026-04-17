@@ -6,7 +6,7 @@
  * the click intersection point, mapped to secondary survey assessment steps.
  */
 
-import { useState, useRef, useCallback, useMemo } from 'react';
+import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { useGLTF } from '@react-three/drei';
 import { Html } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
@@ -87,49 +87,151 @@ export type LimbSide = 'right-arm' | 'left-arm' | 'right-leg' | 'left-leg' | nul
 let lastClickedLimb: LimbSide = null;
 export function getLastClickedLimb(): LimbSide { return lastClickedLimb; }
 
+// ---------------------------------------------------------------------------
+// Bone-based anatomical hit-testing
+// ---------------------------------------------------------------------------
+// The mesh is a Mixamo Beta rig with 67 named skeletal bones (Head, Neck,
+// Spine/Spine1/Spine2, Hips, L/R Shoulder/Arm/ForeArm/Hand/UpLeg/Leg/Foot).
+// We use those bones as anatomical anchors — every hit-point is assigned to
+// the region whose anchor(s) it sits closest to.
+//
+// Why bones, not Y-ranges? Three reasons.
+//   1. Anatomically correct. Character's left arm stays the character's left
+//      regardless of pose, camera angle, or scene rotation. (Mixamo convention:
+//      "Left" / "Right" are from the character's frame — which is exactly
+//      clinical documentation convention: "patient's left", "patient's right".)
+//   2. Pose-agnostic. If the character is repositioned (arms raised, bent,
+//      seated) the bone positions still partition the body correctly.
+//   3. Boundary accuracy. Costal margin, umbilicus, ASIS — these sit at
+//      specific bone positions (Spine1 tail, Spine base, Hips), not at
+//      fixed world-Y values. Using bones keeps our "chest vs abdomen vs
+//      pelvis" boundaries on real anatomical landmarks.
+
+type RegionId = SecondaryAssessmentStep;
+
+interface Anchor {
+  region: RegionId;
+  /** Weight multiplier — favour more specific/local bones (e.g. Hand > ForeArm). */
+  weight?: number;
+  /**
+   * World position of the bone, recomputed when the rig mounts. Populated
+   * by `updateSkeleton()` below.
+   */
+  position: THREE.Vector3;
+}
+
+// Bone name → anatomical region + relative pull weight. Distal bones (hands,
+// feet) get a higher weight so a click on the hand wins over the shoulder
+// even when geometrically similar.
+const BONE_REGION_MAP: Array<{ bone: string; region: RegionId; weight?: number }> = [
+  // Head + face + neck
+  { bone: 'mixamorig:HeadTop_End', region: 'head', weight: 1.2 },
+  { bone: 'mixamorig:Head', region: 'head', weight: 1.0 },
+  // Eyes live inside the Head bone — using them biases toward "face" for
+  // anything below the crown.
+  { bone: 'mixamorig:LeftEye', region: 'face', weight: 1.3 },
+  { bone: 'mixamorig:RightEye', region: 'face', weight: 1.3 },
+  { bone: 'mixamorig:Neck', region: 'neck-cspine', weight: 1.2 },
+
+  // Torso: Spine2 = upper chest (sternum/manubrium level), Spine1 = mid
+  // chest (xiphoid-ish), Spine = upper abdomen (epigastrium), Hips = pelvis.
+  { bone: 'mixamorig:Spine2', region: 'chest', weight: 1.0 },
+  { bone: 'mixamorig:Spine1', region: 'chest', weight: 1.0 },
+  { bone: 'mixamorig:Spine', region: 'abdomen', weight: 1.0 },
+  { bone: 'mixamorig:Hips', region: 'pelvis', weight: 1.0 },
+
+  // Arms — shoulder is on the body edge, so weight it lower than Arm/ForeArm/Hand
+  // so a click on the upper lateral chest doesn't drift to the arm.
+  { bone: 'mixamorig:LeftShoulder', region: 'left-arm', weight: 0.85 },
+  { bone: 'mixamorig:LeftArm', region: 'left-arm', weight: 1.0 },
+  { bone: 'mixamorig:LeftForeArm', region: 'left-arm', weight: 1.2 },
+  { bone: 'mixamorig:LeftHand', region: 'left-arm', weight: 1.4 },
+  { bone: 'mixamorig:RightShoulder', region: 'right-arm', weight: 0.85 },
+  { bone: 'mixamorig:RightArm', region: 'right-arm', weight: 1.0 },
+  { bone: 'mixamorig:RightForeArm', region: 'right-arm', weight: 1.2 },
+  { bone: 'mixamorig:RightHand', region: 'right-arm', weight: 1.4 },
+
+  // Legs — UpLeg is close to the hip crease, so slightly lower weight than
+  // thigh/shin/foot (otherwise groin clicks drift to the leg).
+  { bone: 'mixamorig:LeftUpLeg', region: 'left-leg', weight: 0.9 },
+  { bone: 'mixamorig:LeftLeg', region: 'left-leg', weight: 1.1 },
+  { bone: 'mixamorig:LeftFoot', region: 'left-leg', weight: 1.3 },
+  { bone: 'mixamorig:RightUpLeg', region: 'right-leg', weight: 0.9 },
+  { bone: 'mixamorig:RightLeg', region: 'right-leg', weight: 1.1 },
+  { bone: 'mixamorig:RightFoot', region: 'right-leg', weight: 1.3 },
+];
+
+// Populated once the rig mounts. Kept module-level so both hover and click
+// paths share the same snapshot.
+let anchors: Anchor[] = [];
+
+/**
+ * Walk a scene tree to collect world positions of every anchor bone.
+ * Call after the mesh is added to the scene so world matrices are valid.
+ */
+function updateSkeleton(root: THREE.Object3D | null): void {
+  if (!root) return;
+  root.updateMatrixWorld(true);
+  const byName = new Map<string, THREE.Object3D>();
+  root.traverse((obj) => { if (obj.name) byName.set(obj.name, obj); });
+
+  anchors = BONE_REGION_MAP
+    .map(({ bone, region, weight }) => {
+      const node = byName.get(bone);
+      if (!node) return null;
+      const pos = new THREE.Vector3();
+      node.getWorldPosition(pos);
+      return { region, weight, position: pos } as Anchor;
+    })
+    .filter((a): a is Anchor => a !== null);
+}
+
+/**
+ * Find the anatomical region for a hit point. Uses weighted nearest-anchor
+ * with a posterior-aware tie-break: when the hit is clearly on the back of
+ * the torso (negative Z relative to the spine) we redirect torso clicks to
+ * the posterior / log-roll region.
+ */
 function getRegionAtPoint(point: THREE.Vector3): RegionRange | null {
-  // Check posterior first (back of model, z < -0.05)
-  if (point.z < -0.05) {
-    const posterior = REGION_RANGES.find(r => r.condition === 'back' && point.y >= r.yMin && point.y < r.yMax);
-    if (posterior) return posterior;
+  if (anchors.length === 0) return null;
+
+  let best: { anchor: Anchor; score: number } | null = null;
+  for (const a of anchors) {
+    const d = point.distanceTo(a.position);
+    // Higher weight → shorter effective distance (more attractive).
+    const score = d / (a.weight ?? 1);
+    if (!best || score < best.score) best = { anchor: a, score };
+  }
+  if (!best) return null;
+
+  let regionId: RegionId = best.anchor.region;
+
+  // Posterior override: if click is behind the spine for a torso region,
+  // reroute to the log-roll region. The spine bones sit at z ≈ -0.05 to
+  // 0.0 in rest pose — anything ≤ -0.08 is clearly the back surface.
+  const isTorso = regionId === 'chest' || regionId === 'abdomen' || regionId === 'pelvis';
+  if (isTorso && point.z < -0.08) {
+    regionId = 'posterior-logroll';
   }
 
-  // Arms detection: if click is lateral (|X| > threshold) AND in the
-  // arm Y range, it's an arm, not chest/abdomen. The model's arms
-  // extend outward from X ≈ ±0.20 at shoulders to ±0.85 at hands.
-  //
-  // Use a graduated X threshold: near the shoulder (Y 1.2-1.44) the arms
-  // are closer to the body midline, so use a lower threshold (0.15).
-  // Below the shoulder (Y < 1.2) arms extend further out, use 0.20.
-  // Arms extend down to Y ≈ 0.40 (hands/wrists) on most models.
-  const absX = Math.abs(point.x);
-  const armXThreshold = point.y >= 1.20 ? 0.15 : 0.20;
-  if (absX > armXThreshold && point.y >= 0.40 && point.y < 1.44) {
-    // Determine which arm based on X sign (model faces forward, +X = model's left = viewer's right)
-    const limbId = point.x > 0 ? 'left-arm' : 'right-arm';
-    lastClickedLimb = limbId;
-    return { id: limbId as SecondaryAssessmentStep, label: limbId === 'left-arm' ? 'Left Arm' : 'Right Arm', description: 'Pulses, sensation, motor, deformity', yMin: 0.40, yMax: 1.44 };
+  // Remember the specific limb for the exam panel filter.
+  if (regionId === 'left-arm' || regionId === 'right-arm' || regionId === 'left-leg' || regionId === 'right-leg') {
+    lastClickedLimb = regionId;
+  } else {
+    lastClickedLimb = null;
   }
 
-  // Legs detection: below pelvis, determine left vs right by X
-  // Exclude lateral clicks that are likely arms/hands (absX > 0.20)
-  if (point.y < 0.83) {
-    if (absX > 0.20 && point.y >= 0.40) {
-      // Lateral click in the overlap zone — treat as arm/hand
-      const limbId = point.x > 0 ? 'left-arm' : 'right-arm';
-      lastClickedLimb = limbId;
-      return { id: limbId as SecondaryAssessmentStep, label: limbId === 'left-arm' ? 'Left Arm' : 'Right Arm', description: 'Pulses, sensation, motor, deformity', yMin: 0.40, yMax: 1.44 };
-    }
-    const limbId = point.x > 0 ? 'left-leg' : 'right-leg';
-    lastClickedLimb = limbId;
-    return { id: limbId as SecondaryAssessmentStep, label: limbId === 'left-leg' ? 'Left Leg' : 'Right Leg', description: 'Pulses, sensation, motor, deformity', yMin: 0.0, yMax: 0.83 };
-  }
-
-  // Clear limb selection for non-extremity clicks
-  lastClickedLimb = null;
-
-  // Then check front/lateral regions (no condition)
-  return REGION_RANGES.find(r => !r.condition && point.y >= r.yMin && point.y < r.yMax) || null;
+  // Build the RegionRange shape the rest of the component expects. The Y
+  // bounds are kept for compatibility with the highlight-overlay renderer
+  // downstream but aren't used for hit-testing any more.
+  const fromTable = REGION_RANGES.find(r => r.id === regionId);
+  if (fromTable) return fromTable;
+  return {
+    id: regionId,
+    label: regionId,
+    description: '',
+    yMin: 0, yMax: 0,
+  };
 }
 
 export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guidedMode = false, nextGuidedStep = null, onBlockedClick }: BodyMeshProps) {
@@ -159,6 +261,9 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
         });
       }
     });
+    // Snapshot the skeleton's world-space bone positions for hit-testing.
+    // Runs once per scene clone — cheap (67 bones, one matrix update).
+    updateSkeleton(clone);
     return clone;
   }, [scene]);
 
@@ -176,6 +281,14 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
       }
     });
   }, []);
+
+  // Refresh the skeleton snapshot on mount, after the primitive has been
+  // inserted into the r3f scene graph. The useMemo snapshot above runs before
+  // any parent transforms could apply — this effect guarantees anchors are in
+  // the same world frame as the pointer hit-points.
+  useEffect(() => {
+    if (meshRef.current) updateSkeleton(meshRef.current);
+  }, [clonedScene]);
 
   // Drive continuous rendering for pulse animation when required regions exist
   // or when guided mode is active (next-step ring needs to pulse).

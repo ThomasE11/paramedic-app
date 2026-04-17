@@ -163,6 +163,7 @@ function getStudentCaseTitle(caseData: CaseScenario): string {
   return `${patient} — Emergency Call`;
 }
 import { DefibrillationDialog } from '@/components/DefibrillationDialog';
+import { VentilatorSetupDialog, type VentilatorSettings } from '@/components/VentilatorSetupDialog';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 // ClinicalAssessmentPanel removed — replaced by inline ABCDE Primary Survey + 3D Physical Exam
 import {
@@ -273,6 +274,8 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
   const [patientState, setPatientState] = useState<PatientState | null>(null);
   const [showDefibDialog, setShowDefibDialog] = useState(false);
   const [pendingDefibTreatment, setPendingDefibTreatment] = useState<Treatment | null>(null);
+  const [showVentilatorDialog, setShowVentilatorDialog] = useState(false);
+  const [ventilatorSettings, setVentilatorSettings] = useState<VentilatorSettings | null>(null);
   // Medication safety confirmation (replaces window.confirm which auto-dismisses on re-render)
   const [pendingMedConfirm, setPendingMedConfirm] = useState<{ treatment: Treatment; allergyText: string; contraText: string } | null>(null);
   const [pendingIVTreatment, setPendingIVTreatment] = useState<Treatment | null>(null);
@@ -511,11 +514,17 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
   };
 
   // Filtered conditions list for search dropdown
+  // Prioritise conditions that actually have cases for the selected year —
+  // otherwise 1st-year students see a mostly-disabled alphabetical list.
   const filteredConditions = useMemo(() => {
-    if (!conditionSearch.trim()) return allConditionNames.slice(0, 30);
-    const q = conditionSearch.toLowerCase();
-    return allConditionNames.filter(c => c.toLowerCase().includes(q)).slice(0, 30);
-  }, [conditionSearch]);
+    const q = conditionSearch.trim().toLowerCase();
+    const pool = q
+      ? allConditionNames.filter(c => c.toLowerCase().includes(q))
+      : allConditionNames;
+    const withCases = pool.filter(c => getCasesByCondition(c, selectedYear).length > 0);
+    const withoutCases = pool.filter(c => getCasesByCondition(c, selectedYear).length === 0);
+    return [...withCases, ...withoutCases].slice(0, 30);
+  }, [conditionSearch, selectedYear]);
 
   // Shared case initialization helper
   const initializeCase = useCallback((newCase: CaseScenario, conditionMode: boolean, condition?: string) => {
@@ -693,6 +702,12 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
     if (treatment.id === 'defibrillation' && !defibParams) {
       setPendingDefibTreatment(treatment);
       setShowDefibDialog(true);
+      return;
+    }
+
+    // Mechanical ventilation requires mode/parameter setup before delivery
+    if (treatment.id === 'mechanical_ventilation' && !ventilatorSettings) {
+      setShowVentilatorDialog(true);
       return;
     }
 
@@ -1842,8 +1857,8 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
         {phase === 'vitals' && currentCase && (
           <div className="animate-fade-in space-y-3 sm:space-y-4">
             {/* ===== TOP: Patient Banner (full width) ===== */}
-            <div className="p-3 sm:p-5 rounded-2xl bg-card border border-border dark:bg-slate-900/60 space-y-3">
-              <div className="flex items-center gap-2 sm:gap-3">
+            <div className="p-3 sm:p-5 rounded-2xl bg-card border border-border dark:bg-slate-900/60 space-y-3 overflow-hidden">
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                 <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-blue-600/10 shrink-0">
                   <Activity className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                 </div>
@@ -1859,12 +1874,12 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                   label="Replay dispatch briefing"
                   text={buildDispatchNarration(currentCase)}
                 />
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 dark:bg-primary/15 border border-primary/20 shrink-0">
+                <div className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-primary/10 dark:bg-primary/15 border border-primary/20 shrink-0">
                   <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-primary" />
-                  <span className="font-mono text-xs sm:text-sm font-semibold text-primary">{formatTime(elapsedSeconds)}</span>
+                  <span className="font-mono text-[11px] sm:text-sm font-semibold text-primary">{formatTime(elapsedSeconds)}</span>
                 </div>
               </div>
-              <div className="flex gap-1.5 sm:gap-2 mb-3">
+              <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-3">
                 <Button
                   variant="outline"
                   size="sm"
@@ -2227,11 +2242,15 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
               </div>
             )}
 
-            {/* ===== SPLIT LAYOUT: Left (Assessment) + Right (Monitor/Treatment) ===== */}
-            <div className="flex flex-col lg:grid lg:grid-cols-2 lg:gap-4">
+            {/* ===== SPLIT LAYOUT =====
+                Mobile order: Monitor → Primary Survey → Secondary (3D) → History → Management.
+                Desktop: 2-col grid — Monitor + PulseCheck sticky top-right, Management bottom-right,
+                Assessment (Primary / 3D / History) spans both rows on the left.
+            */}
+            <div className="flex flex-col lg:grid lg:grid-cols-2 lg:gap-4 lg:grid-rows-[auto_auto]">
 
-              {/* ===== LEFT COLUMN ===== */}
-              <div className="order-2 lg:order-1 space-y-4">
+              {/* ===== ASSESSMENT COLUMN (Primary / 3D / History) ===== */}
+              <div className="order-2 lg:order-none lg:col-start-1 lg:row-start-1 lg:row-span-2 space-y-4">
 
                 {/* --- PRIMARY SURVEY (ABCDE) --- */}
                 <Card className="bg-card border border-border rounded-xl sm:rounded-2xl overflow-hidden">
@@ -2482,8 +2501,8 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                 {/* Clinical Assessment Panel removed — replaced by inline ABCDE Primary Survey + 3D Physical Exam above */}
               </div>
 
-              {/* ===== RIGHT COLUMN (sticky on desktop) ===== */}
-              <div className="order-1 lg:order-2 mb-4 lg:mb-0 lg:sticky lg:top-16 lg:self-start space-y-4">
+              {/* ===== MONITOR + PULSE CHECK (sticky top-right on desktop, first on mobile) ===== */}
+              <div className="order-1 lg:order-none lg:col-start-2 lg:row-start-1 mb-4 lg:mb-0 lg:sticky lg:top-16 lg:self-start space-y-4">
 
                 {/* --- LIFEPAK MONITOR --- */}
                 <Suspense fallback={<LoadingCard />}>
@@ -2597,7 +2616,10 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                     </Button>
                   )}
                 </div>
+              </div>
 
+              {/* ===== MANAGEMENT COLUMN (bottom-right on desktop, last on mobile) ===== */}
+              <div className="order-3 lg:order-none lg:col-start-2 lg:row-start-2 space-y-4">
                 {/* --- MANAGEMENT (ABCDE) --- */}
                 <Card className="bg-card border border-border rounded-xl sm:rounded-2xl overflow-hidden">
                   <CardHeader className="pb-2 px-3 sm:px-4 border-b border-border/30">
@@ -2836,6 +2858,34 @@ export function StudentPanel({ onExit }: StudentPanelProps) {
                 currentRhythm={patientState.currentRhythm}
                 currentPulse={currentVitals?.pulse || 0}
                 isInArrest={patientState.isInArrest}
+              />
+            )}
+
+            {/* Mechanical Ventilator Setup Dialog */}
+            {showVentilatorDialog && currentCase && (
+              <VentilatorSetupDialog
+                open={showVentilatorDialog}
+                onClose={() => setShowVentilatorDialog(false)}
+                onConfirm={(settings) => {
+                  setVentilatorSettings(settings);
+                  setShowVentilatorDialog(false);
+                  // Apply the treatment now that settings exist; the second call
+                  // skips the dialog gate above because ventilatorSettings is set.
+                  const ventTreatment = TREATMENTS.find(t => t.id === 'mechanical_ventilation');
+                  if (ventTreatment) {
+                    setTimeout(() => applyTreatment(ventTreatment), 0);
+                  }
+                  toast.success('Ventilator initiated', {
+                    description: `${settings.mode} • Vt ${settings.tidalVolumeMl} mL • RR ${settings.respiratoryRate} • FiO2 ${settings.fio2Percent}% • PEEP ${settings.peepCmH2O}`,
+                  });
+                }}
+                patientWeightKg={currentCase.patientInfo?.weight}
+                context={
+                  currentCase.subcategory?.includes('arrest') ? 'arrest' :
+                  currentCase.subcategory?.includes('copd') ? 'copd' :
+                  currentCase.subcategory?.includes('ards') || currentCase.title?.toLowerCase().includes('ards') ? 'ards' :
+                  currentCase.category === 'pediatric' ? 'pediatric' : 'default'
+                }
               />
             )}
 

@@ -1167,6 +1167,14 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
             />
           </div>
         )}
+        {/* Inline finding — mobile-only, appears immediately below the clicked technique
+            so students don't have to scroll to the bottom of the techniques list. */}
+        {isSelected && isRevealed && (
+          <div className="sm:hidden mt-1 p-2 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-300 dark:border-green-700 animate-fade-in">
+            <p className="text-[10px] font-bold text-green-800 dark:text-green-200 mb-0.5">{action.label}</p>
+            <p className="text-[11px] text-green-700 dark:text-green-300 leading-relaxed">{revealedFindings.get(action.id)}</p>
+          </div>
+        )}
       </div>
     );
   };

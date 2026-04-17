@@ -243,6 +243,118 @@ export function getInitialSounds(
 
   // ----- LEGACY CATEGORY-BASED MAPPING (fallback) -----
 
+  // Upper airway obstruction — stridor-dominant conditions
+  // (croup, epiglottitis, bacterial tracheitis, severe anaphylaxis with angioedema,
+  // foreign-body upper airway, post-extubation stridor)
+  const hasStridorFeatures =
+    sub.includes('croup') ||
+    sub.includes('epiglottitis') ||
+    sub.includes('tracheitis') ||
+    sub.includes('upper-airway') ||
+    sub.includes('laryng') ||
+    findingsStr.includes('stridor') ||
+    findingsStr.includes('barking cough') ||
+    findingsStr.includes('laryngospasm') ||
+    findingsStr.includes('angioedema');
+  if (hasStridorFeatures) {
+    const spo2 = initialVitals?.spo2 ?? 95;
+    // Critical — silent chest with exhaustion (pre-arrest)
+    if (spo2 < 85) {
+      return {
+        leftLung: 'diminished',
+        rightLung: 'diminished',
+        heartSound: 'tachycardic',
+        additionalSounds: ['Stridor audible without stethoscope', 'Severe tracheal tug', 'Near-complete upper airway obstruction'],
+        description: 'Critical upper airway obstruction — diminished air entry with loud inspiratory stridor transmitted over trachea and chest.',
+      };
+    }
+    return {
+      leftLung: 'stridor',
+      rightLung: 'stridor',
+      heartSound: spo2 < 94 ? 'tachycardic' : 'normal',
+      additionalSounds: [
+        'Harsh inspiratory stridor (transmitted over chest)',
+        'Worse with agitation/crying',
+        ...(findingsStr.includes('barking') ? ['Barking/seal-like cough'] : []),
+      ],
+      description: 'Inspiratory stridor transmitted over the upper chest from upper airway narrowing. Lung fields otherwise clear — stridor is an upper airway sound.',
+    };
+  }
+
+  // Anaphylaxis — combination of stridor (upper airway) and wheeze (lower airway)
+  if (
+    sub.includes('anaphyla') ||
+    findingsStr.includes('anaphyla') ||
+    (cat === 'metabolic' && sub.includes('allerg'))
+  ) {
+    const spo2 = initialVitals?.spo2 ?? 94;
+    // Severe anaphylaxis — stridor from laryngeal angioedema + tachycardia
+    if (spo2 < 90 || findingsStr.includes('angioedema') || findingsStr.includes('throat swelling')) {
+      return {
+        leftLung: 'stridor',
+        rightLung: 'wheeze',
+        heartSound: 'tachycardic',
+        additionalSounds: ['Stridor from laryngeal oedema', 'Expiratory wheeze (lower airway)', 'Urticaria', 'Hypotension'],
+        description: 'Mixed stridor (upper airway oedema) and wheeze (bronchospasm). Severe anaphylactic airway compromise.',
+      };
+    }
+    // Typical anaphylaxis — bronchospasm
+    return {
+      leftLung: 'wheeze',
+      rightLung: 'wheeze',
+      heartSound: 'tachycardic',
+      additionalSounds: ['Bilateral wheeze', 'Urticaria / flushing', 'Tachycardia'],
+      description: 'Bilateral expiratory wheeze from bronchospasm. Anaphylaxis.',
+    };
+  }
+
+  // Opioid overdose / unconscious with depressed respiration — snoring respirations
+  if (
+    sub.includes('opioid') ||
+    sub.includes('heroin') ||
+    sub.includes('fentanyl') ||
+    findingsStr.includes('pinpoint pupils') ||
+    ((cat === 'toxicology' || cat === 'toxicological') &&
+      initialVitals?.respiration !== undefined && initialVitals.respiration < 10)
+  ) {
+    const rr = initialVitals?.respiration ?? 8;
+    if (rr === 0 || findingsStr.includes('apnea') || findingsStr.includes('respiratory arrest')) {
+      return {
+        leftLung: 'absent',
+        rightLung: 'absent',
+        heartSound: 'bradycardic',
+        additionalSounds: ['Apnea — no air movement', 'Pinpoint pupils', 'Requires immediate BVM'],
+        description: 'No breath sounds — respiratory arrest. Bradycardia. Opioid toxidrome.',
+      };
+    }
+    return {
+      leftLung: 'snoring',
+      rightLung: 'snoring',
+      heartSound: 'bradycardic',
+      additionalSounds: ['Sonorous respirations', 'Pinpoint pupils', 'Shallow, slow breathing'],
+      description: 'Snoring respirations from opioid-induced CNS depression. Shallow rate. Requires airway support.',
+    };
+  }
+
+  // Cardiac arrest — catch all subcategories (asystole, PEA, VF, VT arrest, drowning arrest, etc.)
+  if (
+    sub.includes('asystole') ||
+    sub.includes('pea') ||
+    sub === 'cardiac-arrest' ||
+    sub === 'vf-arrest' ||
+    sub === 'vt-arrest' ||
+    (findingsStr.includes('pulseless') && findingsStr.includes('apneic')) ||
+    (sub.includes('arrest') && (cat === 'cardiac' || cat === 'environmental' || cat === 'burns' || cat === 'trauma'))
+  ) {
+    return {
+      leftLung: 'absent',
+      rightLung: 'absent',
+      heartSound: 'absent',
+      additionalSounds: ['No pulse palpable', 'Agonal gasps may be present'],
+      description: 'No breath sounds. No heart sounds. Cardiac arrest.',
+    };
+  }
+
   // Respiratory cases
   if (cat === 'respiratory') {
     if (sub.includes('asthma') || findingsStr.includes('wheez') || findingsStr.includes('bronchospasm')) {
@@ -831,11 +943,57 @@ let audioContext: AudioContext | null = null;
 let currentOscillators: OscillatorNode[] = [];
 let currentGainNode: GainNode | null = null;
 
+// Mobile browsers (iOS Safari especially) create AudioContexts in a suspended
+// state and refuse to resume unless the resume() call originates inside a
+// user gesture. Track contexts that need unlocking so we can resume them
+// on the first touch/click anywhere in the app.
+const pendingContexts = new Set<AudioContext>();
+let unlockListenerAttached = false;
+
+function attachUnlockListener() {
+  if (unlockListenerAttached || typeof window === 'undefined') return;
+  unlockListenerAttached = true;
+  const unlock = () => {
+    pendingContexts.forEach(ctx => {
+      if (ctx.state === 'suspended') {
+        ctx.resume().catch(() => { /* iOS may still refuse; next gesture will retry */ });
+      }
+    });
+    pendingContexts.clear();
+  };
+  // Use capture + passive so we don't interfere with other handlers, and listen
+  // for both pointer and touch events because iOS is finicky.
+  const opts = { capture: true, passive: true } as AddEventListenerOptions;
+  window.addEventListener('touchstart', unlock, opts);
+  window.addEventListener('touchend', unlock, opts);
+  window.addEventListener('mousedown', unlock, opts);
+  window.addEventListener('click', unlock, opts);
+  window.addEventListener('keydown', unlock, opts);
+}
+
 function getAudioContext(): AudioContext {
   if (!audioContext || audioContext.state === 'closed') {
-    audioContext = new AudioContext();
+    const Ctor: typeof AudioContext = (window as any).AudioContext || (window as any).webkitAudioContext;
+    audioContext = new Ctor();
+  }
+  if (audioContext.state === 'suspended') {
+    audioContext.resume().catch(() => { /* needs user gesture */ });
+    pendingContexts.add(audioContext);
+    attachUnlockListener();
   }
   return audioContext;
+}
+
+/**
+ * Register an external AudioContext so it will be resumed on the next user
+ * gesture. Used by the VitalSignsMonitor audio engine to share the unlock
+ * mechanism with the clinical sounds system.
+ */
+export function registerAudioContextForUnlock(ctx: AudioContext): void {
+  if (ctx.state === 'suspended') {
+    pendingContexts.add(ctx);
+    attachUnlockListener();
+  }
 }
 
 /**
