@@ -335,11 +335,18 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
   const updateMeshColors = useCallback((region: RegionRange | null) => {
     if (!meshRef.current) return;
     meshRef.current.traverse((child) => {
-      if ((child as THREE.Mesh).isMesh) {
-        const mesh = child as THREE.Mesh;
-        const mat = mesh.material as THREE.MeshStandardMaterial;
-        // Default skin color
-        mat.color.set(SKIN_COLOR);
+      if (!(child as THREE.Mesh).isMesh) return;
+      const mesh = child as THREE.Mesh;
+      // Skip non-body meshes (highlight cylinders / invisible catch-all plane
+      // carry a marker in userData). Their materials aren't MeshPhysical and
+      // don't have emissive — setting it throws a TypeError.
+      if (mesh.userData?.skipRecolor) return;
+      const mat = mesh.material as THREE.MeshStandardMaterial;
+      if (!mat || typeof (mat as unknown as { color?: unknown }).color === 'undefined') return;
+      mat.color.set(SKIN_COLOR);
+      // `emissive` only exists on StandardMaterial / PhysicalMaterial — guard
+      // the access so a basic-material catch-all plane doesn't crash us.
+      if (mat.emissive && typeof mat.emissive.set === 'function') {
         mat.emissive.set('#000000');
         mat.emissiveIntensity = 0;
       }
@@ -472,6 +479,7 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
         <mesh
           key={region.id}
           position={[xOffset, centerY, 0]}
+          userData={{ skipRecolor: true }}
         >
           <cylinderGeometry args={[radius, radius, height, 16, 1, true]} />
           <meshStandardMaterial
@@ -490,6 +498,7 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
           <mesh
             key={`${region.id}-ring`}
             position={[xOffset, centerY, 0]}
+            userData={{ skipRecolor: true }}
           >
             <cylinderGeometry args={[radius + 0.005, radius + 0.005, height, 16, 1, true]} />
             <meshStandardMaterial
@@ -511,6 +520,7 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
           <mesh
             key={`${region.id}-guided-ring`}
             position={[xOffset, centerY, 0]}
+            userData={{ skipRecolor: true }}
           >
             <cylinderGeometry args={[radius + 0.008, radius + 0.008, height, 16, 1, true]} />
             <meshStandardMaterial
@@ -537,9 +547,12 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
           onPointerMove on the mesh the raycast hits, so moving the pointer
           from the body to empty canvas space left the hover state stuck.
           This plane sits behind the model and catches any pointer event
-          that missed the anatomy — when it fires, we clear the hover. */}
+          that missed the anatomy — when it fires, we clear the hover.
+          userData.skipRecolor keeps updateMeshColors from recolouring it
+          (it has no emissive property → would throw). */}
       <mesh
         position={[0, 0.9, -1.5]}
+        userData={{ skipRecolor: true }}
         onPointerMove={(e) => {
           e.stopPropagation();
           handlePointerOut();
