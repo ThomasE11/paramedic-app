@@ -47,6 +47,8 @@ import {
 import { toast } from 'sonner';
 import { useClassroomSession } from '@/hooks/useClassroomSession';
 import { allCases } from '@/data/cases';
+import { ClassroomInstructorCaseView } from './ClassroomInstructorCaseView';
+import type { CaseScenario } from '@/types';
 
 interface ClassroomLobbyProps {
   onExit: () => void;
@@ -62,7 +64,9 @@ export function ClassroomLobby({ onExit }: ClassroomLobbyProps) {
     participants,
     createSession,
     startCase,
+    endCase,
     leaveSession,
+    sendBroadcast,
     clearError,
   } = useClassroomSession();
 
@@ -226,8 +230,72 @@ export function ClassroomLobby({ onExit }: ClassroomLobbyProps) {
           </Card>
         )}
 
-        {/* ----------- Active lobby ----------- */}
-        {session && (
+        {/* ----------- Case live: full teaching view ----------- */}
+        {session && session.status === 'running' && session.case_snapshot && (
+          <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
+            {/* Main: tabletop teaching view */}
+            <div className="min-w-0">
+              <ClassroomInstructorCaseView
+                caseData={session.case_snapshot as CaseScenario}
+                caseStartedAt={session.started_at}
+                onBroadcast={sendBroadcast}
+                onEndCase={async () => {
+                  await endCase();
+                  toast.info(t('classroom.caseEndedToast'));
+                }}
+              />
+            </div>
+            {/* Sidebar: compact PIN + student list while case runs */}
+            <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
+              <Card>
+                <CardContent className="pt-5 pb-4 flex flex-col items-center text-center gap-2">
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">PIN</p>
+                  <div className="text-2xl font-bold tracking-[0.2em] tabular-nums text-primary">{session.pin}</div>
+                  <Button variant="ghost" size="sm" onClick={handleCopyPin} className="gap-1.5 h-7 text-xs">
+                    {copied ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3" />}
+                    {copied ? t('classroom.copied') : t('classroom.copyPin')}
+                  </Button>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
+                    {t('classroom.joined')}
+                  </CardTitle>
+                  <Badge variant="secondary" className="gap-1">
+                    <Users className="h-3 w-3" />
+                    {students.length}
+                  </Badge>
+                </CardHeader>
+                <CardContent>
+                  {students.length === 0 ? (
+                    <p className="text-xs text-muted-foreground italic py-2">
+                      {t('classroom.waitingForStudents')}
+                    </p>
+                  ) : (
+                    <ul className="divide-y divide-border">
+                      {students.map(p => (
+                        <li key={p.key} className="flex items-center justify-between py-1.5 text-xs">
+                          <span className="font-medium truncate">{p.displayName}</span>
+                          <span className="text-[10px] text-muted-foreground tabular-nums shrink-0">
+                            {new Date(p.joinedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </CardContent>
+              </Card>
+              <Button variant="outline" size="sm" onClick={handleLeave} className="w-full gap-2">
+                <LogOut className="h-4 w-4" />
+                {t('classroom.endSession')}
+              </Button>
+            </aside>
+          </div>
+        )}
+
+        {/* ----------- Active lobby (pre-case-start) ----------- */}
+        {session && session.status !== 'running' && (
           <div className="grid gap-6 lg:grid-cols-[1fr_1.1fr]">
             {/* PIN display — huge and centered so it's readable from across a room */}
             <Card>

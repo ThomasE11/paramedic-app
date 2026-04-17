@@ -181,6 +181,14 @@
     "caseStartedToast": "بدأت الحالة",
     "caseEndedToast": "انتهت الحالة — في انتظار التالية",
     "sessionEndedToast": "أنهى المدرب الجلسة",
+    "instructor": {
+      "broadcastTitle": "بث إلى الطلاب",
+      "messagePlaceholder": "اكتب ملاحظة تدريسية لإرسالها لكل طالب…",
+      "messageSent": "أُرسلت الرسالة إلى الطلاب",
+      "dxRevealed": "كُشف التشخيص للطلاب",
+      "flagsRevealed": "تمت مشاركة العلامات التحذيرية مع الطلاب",
+      "vitalsPushed": "أُرسلت العلامات الحيوية للطلاب"
+    },
     "errors": {
       "notConfigured": "وضع الفصل غير متاح على هذا النشر.",
       "createFailed": "تعذّر فتح غرفة الفصل. يُرجى المحاولة مرة أخرى.",

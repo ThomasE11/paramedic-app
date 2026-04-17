@@ -181,6 +181,14 @@
     "caseStartedToast": "Case started",
     "caseEndedToast": "Case ended — waiting for the next one",
     "sessionEndedToast": "The instructor ended the session",
+    "instructor": {
+      "broadcastTitle": "Broadcast to students",
+      "messagePlaceholder": "Type a teaching note to push to every student…",
+      "messageSent": "Message sent to students",
+      "dxRevealed": "Diagnosis revealed to students",
+      "flagsRevealed": "Red flags shared with students",
+      "vitalsPushed": "Vitals pushed to students"
+    },
     "errors": {
       "notConfigured": "Classroom mode isn't available on this deployment.",
       "createFailed": "Couldn't open a classroom lobby. Please try again.",

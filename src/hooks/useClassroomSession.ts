@@ -410,8 +410,25 @@ export function useClassroomSession(): UseClassroomSessionResult {
 
   const endCase = useCallback(async () => {
     const endedAt = new Date().toISOString();
-    setStatus('lobby'); // back to lobby — instructor can run another case
+    const supa = getSupabaseClient();
+    const current = sessionRef.current;
+
+    // Broadcast first so every student sees the case wind down in real time.
     await sendBroadcast({ kind: 'case_ended', endedAt });
+
+    // Flip the DB row back to 'lobby' so late-joiners don't get re-hydrated
+    // with a running case that already ended, and so the instructor view
+    // re-renders out of the teaching layout back into the case-picker.
+    if (supa && current) {
+      const { data } = await supa
+        .from('classroom_sessions')
+        .update({ status: 'lobby', case_id: null, case_snapshot: null })
+        .eq('id', current.id)
+        .select()
+        .single();
+      if (data) setSession(data as ClassroomSessionRow);
+    }
+    setStatus('lobby'); // back to lobby — instructor can run another case
   }, [sendBroadcast]);
 
   const leaveSession = useCallback(async () => {
