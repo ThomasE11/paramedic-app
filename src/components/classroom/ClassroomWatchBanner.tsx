@@ -6,7 +6,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Radio, Users, Stethoscope, Clock, LogOut } from 'lucide-react';
+import { Radio, Users, Stethoscope, Clock, LogOut, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,18 @@ interface Props {
   selfKey: string;
   timerEndsAt: string | null;
   onLeave: () => void;
+  /** Voice-chat state piped in from useClassroomVoice. */
+  voice?: {
+    isBroadcasting: boolean;
+    activeSpeakers: string[];
+    listenerMuted: boolean;
+    hasIncomingAudio: boolean;
+    canBroadcast: boolean;
+    error: string | null;
+    startBroadcast: () => Promise<void> | void;
+    stopBroadcast: () => void;
+    toggleListenerMute: () => void;
+  };
 }
 
 function formatCountdown(endsAt: string | null): { text: string; urgent: boolean; expired: boolean } {
@@ -31,7 +43,10 @@ function formatCountdown(endsAt: string | null): { text: string; urgent: boolean
   return { text: `${mm}:${ss}`, urgent: total <= 120, expired: false };
 }
 
-export function ClassroomWatchBanner({ pin, participants, driverKeys, selfKey, timerEndsAt, onLeave }: Props) {
+export function ClassroomWatchBanner({ pin, participants, driverKeys, selfKey, timerEndsAt, onLeave, voice }: Props) {
+  const speakerNames = (voice?.activeSpeakers ?? [])
+    .map(k => participants.find(p => p.key === k)?.displayName)
+    .filter((n): n is string => Boolean(n));
   // Tick every second so the countdown refreshes.
   const [, setTick] = useState(0);
   useEffect(() => {
@@ -91,7 +106,46 @@ export function ClassroomWatchBanner({ pin, participants, driverKeys, selfKey, t
           </Badge>
         )}
 
+        {voice?.hasIncomingAudio && speakerNames.length > 0 && (
+          <Badge variant="default" className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
+            </span>
+            <span className="text-xs font-medium">{speakerNames.join(', ')} speaking</span>
+          </Badge>
+        )}
+
         <div className="flex-1" />
+
+        {voice && voice.canBroadcast && (
+          <Button
+            size="sm"
+            variant={voice.isBroadcasting ? 'default' : 'outline'}
+            onClick={() => {
+              if (voice.isBroadcasting) voice.stopBroadcast();
+              else void voice.startBroadcast();
+            }}
+            className={`h-7 gap-1.5 text-xs ${voice.isBroadcasting ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}`}
+            aria-pressed={voice.isBroadcasting}
+          >
+            {voice.isBroadcasting ? <Mic className="w-3.5 h-3.5" /> : <MicOff className="w-3.5 h-3.5" />}
+            {voice.isBroadcasting ? 'Speaking' : 'Talk'}
+          </Button>
+        )}
+
+        {voice?.hasIncomingAudio && (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={voice.toggleListenerMute}
+            className="h-7 gap-1.5 text-xs"
+            aria-pressed={voice.listenerMuted}
+            aria-label={voice.listenerMuted ? 'Unmute audio' : 'Mute audio'}
+          >
+            {voice.listenerMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5 text-emerald-500" />}
+          </Button>
+        )}
 
         <Button
           size="sm"

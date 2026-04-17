@@ -141,7 +141,25 @@ export type ClassroomBroadcast =
    * timestamp the case auto-ends. Broadcast once at case start and can be
    * re-sent if the instructor adjusts duration mid-case.
    */
-  | { kind: 'timer_set'; endsAt: string; fromKey: string };
+  | { kind: 'timer_set'; endsAt: string; fromKey: string }
+  /**
+   * WebRTC signaling — offer / answer / ICE candidate exchange. The
+   * classroom realtime channel doubles as a WebRTC signaling bus so the
+   * voice feature adds zero new infrastructure.
+   */
+  | { kind: 'webrtc_offer'; fromKey: string; toKey: string; sdp: string }
+  | { kind: 'webrtc_answer'; fromKey: string; toKey: string; sdp: string }
+  | {
+      kind: 'webrtc_ice';
+      fromKey: string;
+      toKey: string;
+      candidate: RTCIceCandidateInit | null;
+    }
+  /**
+   * Voice broadcast state — tells every participant who's currently
+   * transmitting audio so UIs can show a "speaking" indicator.
+   */
+  | { kind: 'voice_state'; fromKey: string; broadcasting: boolean };
 
 // ============================================================================
 // Helpers

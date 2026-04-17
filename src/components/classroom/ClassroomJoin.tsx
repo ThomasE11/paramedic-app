@@ -39,6 +39,7 @@ import { Badge } from '@/components/ui/badge';
 import { Suspense, lazy } from 'react';
 import { toast } from 'sonner';
 import { useClassroomSession } from '@/hooks/useClassroomSession';
+import { useClassroomVoice } from '@/hooks/useClassroomVoice';
 import { allCases } from '@/data/cases';
 import type { CaseScenario } from '@/types';
 import { ClassroomWatchBanner } from './ClassroomWatchBanner';
@@ -70,6 +71,17 @@ export function ClassroomJoin({ onExit }: ClassroomJoinProps) {
     isDriver,
     sendBroadcast,
   } = sessionHook;
+
+  // Voice-chat mesh. Students can only transmit if the instructor has
+  // given them driving rights; otherwise they're receive-only and hear the
+  // current broadcaster via a hidden <audio> element.
+  const voice = useClassroomVoice({
+    selfKey: sessionHook.selfKey,
+    participants: sessionHook.participants,
+    lastBroadcast,
+    sendBroadcast,
+    canBroadcast: isDriver,
+  });
 
   const [pinInput, setPinInput] = useState('');
   const [displayName, setDisplayName] = useState('');
@@ -212,6 +224,7 @@ export function ClassroomJoin({ onExit }: ClassroomJoinProps) {
               selfKey={sessionHook.selfKey}
               timerEndsAt={sessionHook.timerEndsAt}
               onLeave={handleLeave}
+              voice={{ ...voice, canBroadcast: isDriver }}
             />
           }
         />

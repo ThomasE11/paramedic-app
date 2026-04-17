@@ -24,6 +24,7 @@ import { Suspense, lazy, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useClassroomSession } from '@/hooks/useClassroomSession';
+import { useClassroomVoice } from '@/hooks/useClassroomVoice';
 import { ClassroomLobby } from './ClassroomLobby';
 import { ClassroomBroadcastBar } from './ClassroomBroadcastBar';
 import { ClassroomChatSidebar } from './ClassroomChatSidebar';
@@ -60,7 +61,19 @@ export function ClassroomHost({ onExit }: Props) {
     addDriver,
     setDrivers,
     takeControl,
+    lastBroadcast,
   } = sessionHook;
+
+  // Voice-chat mesh. The instructor is allowed to broadcast whenever they
+  // are currently driving (which is the default). When they hand control to
+  // a student, the student's hook takes over the `canBroadcast=true` side.
+  const voice = useClassroomVoice({
+    selfKey,
+    participants,
+    lastBroadcast,
+    sendBroadcast,
+    canBroadcast: isDriver,
+  });
 
   // Before a case is live, show the lobby (includes pre-lobby name entry,
   // PIN, student list, and case picker). Also renders during the 'lobby'
@@ -166,6 +179,7 @@ export function ClassroomHost({ onExit }: Props) {
             onTakeControl={takeControl}
             onEndCase={handleEndCase}
             onEndSession={handleEndSession}
+            voice={voice}
           />
         }
       />

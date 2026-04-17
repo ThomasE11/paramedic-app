@@ -20,7 +20,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   Radio, Users, TrendingDown, Activity, Target,
   AlertTriangle, MessageSquare, X, LogOut, UserCog,
-  Check, Clock, Stethoscope,
+  Check, Clock, Stethoscope, Mic, MicOff, Volume2, VolumeX,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -58,6 +58,17 @@ interface Props {
   onTakeControl: () => Promise<void> | void;
   onEndCase: () => Promise<void> | void;
   onEndSession: () => Promise<void> | void;
+  /** Voice-chat state piped in from useClassroomVoice. */
+  voice?: {
+    isBroadcasting: boolean;
+    activeSpeakers: string[];
+    listenerMuted: boolean;
+    hasIncomingAudio: boolean;
+    error: string | null;
+    startBroadcast: () => Promise<void> | void;
+    stopBroadcast: () => void;
+    toggleListenerMute: () => void;
+  };
 }
 
 function formatCountdown(endsAt: string | null): { text: string; urgent: boolean; expired: boolean } {
@@ -87,7 +98,11 @@ export function ClassroomBroadcastBar({
   onBroadcast,
   onGiveControl, onAddDriver, onOpenFloor, onTakeControl,
   onEndCase, onEndSession,
+  voice,
 }: Props) {
+  const speakerNames = (voice?.activeSpeakers ?? [])
+    .map(k => participants.find(p => p.key === k)?.displayName)
+    .filter((n): n is string => Boolean(n));
   const [expanded, setExpanded] = useState(false);
   const [message, setMessage] = useState('');
   const [revealedDx, setRevealedDx] = useState(false);
@@ -211,6 +226,61 @@ export function ClassroomBroadcastBar({
           <div className="flex-1" />
 
           <div className="flex items-center gap-1.5 flex-wrap">
+            {/* Voice controls */}
+            {voice && (
+              <>
+                <Button
+                  size="sm"
+                  variant={voice.isBroadcasting ? 'default' : 'outline'}
+                  onClick={() => {
+                    if (voice.isBroadcasting) voice.stopBroadcast();
+                    else void voice.startBroadcast();
+                  }}
+                  className={`h-7 gap-1.5 text-xs ${voice.isBroadcasting ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}`}
+                  aria-pressed={voice.isBroadcasting}
+                  aria-label={voice.isBroadcasting ? 'Stop speaking' : 'Start speaking'}
+                  title={
+                    voice.error === 'mic-denied'
+                      ? 'Microphone permission denied — enable in browser settings'
+                      : voice.error === 'no-mic'
+                        ? 'No microphone detected'
+                        : voice.isBroadcasting
+                          ? 'Click to mute your microphone'
+                          : 'Click to talk to the class'
+                  }
+                >
+                  {voice.isBroadcasting ? (
+                    <>
+                      <Mic className="w-3.5 h-3.5" />
+                      <span className="relative flex h-1.5 w-1.5">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
+                        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-white" />
+                      </span>
+                      Speaking
+                    </>
+                  ) : (
+                    <>
+                      <MicOff className="w-3.5 h-3.5" />
+                      Talk
+                    </>
+                  )}
+                </Button>
+                {voice.hasIncomingAudio && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={voice.toggleListenerMute}
+                    className="h-7 gap-1.5 text-xs"
+                    aria-pressed={voice.listenerMuted}
+                    aria-label={voice.listenerMuted ? 'Unmute incoming audio' : 'Mute incoming audio'}
+                    title={speakerNames.length > 0 ? `Hearing: ${speakerNames.join(', ')}` : 'Incoming audio'}
+                  >
+                    {voice.listenerMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5 text-emerald-500" />}
+                  </Button>
+                )}
+              </>
+            )}
+
             {/* Hand off / control menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
