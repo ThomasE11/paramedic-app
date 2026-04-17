@@ -67,19 +67,17 @@ export function ClassroomHost({ onExit }: Props) {
   // state between cases after endCase() so the instructor can pick another.
   const caseSnapshot = session?.status === 'running' ? (session.case_snapshot as CaseScenario | null) : null;
 
-  if (!caseSnapshot) {
-    return <ClassroomLobby onExit={onExit} sessionHook={sessionHook} />;
-  }
+  // --- Hooks must sit BEFORE any conditional return (rules of hooks).
+  // These effects are no-ops when no timer is set or when the case isn't
+  // running, but they still need to register in the same order on every
+  // render to keep React's hook-sequence invariant.
 
-  const handleEndCase = async () => {
-    await endCase();
-  };
-
-  // Auto-end when the countdown expires — only the instructor triggers the
-  // DB update so we don't get multi-writer races with students.
+  // Auto-end when the countdown expires — only the instructor re-arms the
+  // setTimeout so we don't get multi-writer races with students.
   useEffect(() => {
+    if (!caseSnapshot) return;
     if (!timerEndsAt) return;
-    if (!isDriver && session?.status !== 'running') return;
+    if (!isDriver) return;
     const remaining = new Date(timerEndsAt).getTime() - Date.now();
     if (remaining <= 0) {
       void endCase();
@@ -91,12 +89,12 @@ export function ClassroomHost({ onExit }: Props) {
       toast.info('⏰ Session time is up — case ended');
     }, remaining);
     return () => window.clearTimeout(id);
-    // Only instructors re-arm the timeout; students just render the countdown.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [timerEndsAt, isDriver]);
+  }, [timerEndsAt, isDriver, caseSnapshot]);
 
   // Friendly 2-minute warning toast for everyone.
   useEffect(() => {
+    if (!caseSnapshot) return;
     if (!timerEndsAt) return;
     const warnAt = new Date(timerEndsAt).getTime() - 2 * 60_000;
     const wait = warnAt - Date.now();
@@ -105,7 +103,15 @@ export function ClassroomHost({ onExit }: Props) {
       toast.warning('⏰ 2 minutes left', { duration: 5000 });
     }, wait);
     return () => window.clearTimeout(id);
-  }, [timerEndsAt]);
+  }, [timerEndsAt, caseSnapshot]);
+
+  if (!caseSnapshot) {
+    return <ClassroomLobby onExit={onExit} sessionHook={sessionHook} />;
+  }
+
+  const handleEndCase = async () => {
+    await endCase();
+  };
 
   const handleEndSession = async () => {
     await leaveSession();
