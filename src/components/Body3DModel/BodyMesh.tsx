@@ -533,6 +533,22 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
 
   return (
     <group ref={meshRef}>
+      {/* Invisible "catch-all" plane behind the body. r3f only fires
+          onPointerMove on the mesh the raycast hits, so moving the pointer
+          from the body to empty canvas space left the hover state stuck.
+          This plane sits behind the model and catches any pointer event
+          that missed the anatomy — when it fires, we clear the hover. */}
+      <mesh
+        position={[0, 0.9, -1.5]}
+        onPointerMove={(e) => {
+          e.stopPropagation();
+          handlePointerOut();
+        }}
+      >
+        <planeGeometry args={[8, 4]} />
+        <meshBasicMaterial visible={false} side={THREE.DoubleSide} />
+      </mesh>
+
       {/* The actual model */}
       <primitive
         object={clonedScene}
