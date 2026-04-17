@@ -598,17 +598,31 @@ export function StudentPanel({ onExit, preloadedCase, topBanner }: StudentPanelP
   // just picked a case in the classroom lobby), bootstrap it directly and
   // skip the select/prebriefing phases so the instructor lands in the live
   // case view with LIFEPAK, 3D body, and all management functions.
+  const preloadInitializedRef = useRef<string | null>(null);
   useEffect(() => {
     if (!preloadedCase) return;
-    if (currentCase && currentCase.id === preloadedCase.id) return;
+    if (preloadInitializedRef.current === preloadedCase.id) return;
+    preloadInitializedRef.current = preloadedCase.id;
     initializeCase(preloadedCase, false);
-    // Jump straight into the running case rather than pre-briefing — the
-    // instructor already knows the case they just picked.
-    // setPhase('case') is intentionally deferred to the next tick so the
-    // state-setters inside initializeCase have landed first.
-    const t = setTimeout(() => setPhase('case'), 0);
-    return () => clearTimeout(t);
-  }, [preloadedCase, currentCase, initializeCase, setPhase]);
+  }, [preloadedCase, initializeCase]);
+
+  // Once the case is bootstrapped (phase landed on 'prebriefing' from
+  // initializeCase), advance automatically into the live case phase so
+  // the instructor's view is the full running-case UI with LIFEPAK,
+  // 3D body, ABCDE, and treatments. The live phase is named 'vitals'
+  // in the student flow (phase 'case' is a separate case-details
+  // reference tab accessible during the live case). Also start the
+  // case timer so the case clock begins immediately. Separate effect
+  // from the initialize call above so the React cleanup/re-run dance
+  // doesn't cancel this state transition.
+  useEffect(() => {
+    if (!preloadedCase) return;
+    if (!currentCase || currentCase.id !== preloadedCase.id) return;
+    if (phase === 'prebriefing') {
+      if (caseStartTime == null) setCaseStartTime(Date.now());
+      setPhase('vitals');
+    }
+  }, [preloadedCase, currentCase, phase, setPhase, caseStartTime]);
 
   // Generate case — standard mode
   const generateCase = useCallback(async () => {
