@@ -187,51 +187,78 @@ function updateSkeleton(root: THREE.Object3D | null): void {
 }
 
 /**
- * Find the anatomical region for a hit point. Uses weighted nearest-anchor
- * with a posterior-aware tie-break: when the hit is clearly on the back of
- * the torso (negative Z relative to the spine) we redirect torso clicks to
- * the posterior / log-roll region.
+ * Find the anatomical region for a hit point.
+ *
+ * Primary path: weighted nearest-anchor across the rig's skeletal bones.
+ * Fallback path: the original Y-coordinate range + lateral-X heuristic,
+ * used whenever the bone snapshot is empty or the nearest bone is so far
+ * from the hit point that the result would be nonsense.
+ *
+ * The fallback matters in practice. `scene.clone(true)` on a Mixamo rig
+ * does not always produce a tree where the bones are traversable as
+ * independent named Object3D nodes (skeleton references can get flattened
+ * depending on the GLB exporter). The fallback keeps the feature working
+ * in that case; the primary path still wins when the bones are available.
  */
 function getRegionAtPoint(point: THREE.Vector3): RegionRange | null {
-  if (anchors.length === 0) return null;
+  // --- Primary: bone-based nearest-anchor ---------------------------------
+  if (anchors.length > 0) {
+    let best: { anchor: Anchor; score: number } | null = null;
+    for (const a of anchors) {
+      const d = point.distanceTo(a.position);
+      // Higher weight → shorter effective distance (more attractive).
+      const score = d / (a.weight ?? 1);
+      if (!best || score < best.score) best = { anchor: a, score };
+    }
+    // Sanity check: if the best match is further than ~40cm the click
+    // almost certainly landed outside the body envelope, and the old
+    // Y-range logic handles "close but not quite on anatomy" hits better.
+    if (best && best.score < 0.45) {
+      let regionId: RegionId = best.anchor.region;
+      // Posterior override for torso clicks on the back surface.
+      const isTorso = regionId === 'chest' || regionId === 'abdomen' || regionId === 'pelvis';
+      if (isTorso && point.z < -0.08) regionId = 'posterior-logroll';
 
-  let best: { anchor: Anchor; score: number } | null = null;
-  for (const a of anchors) {
-    const d = point.distanceTo(a.position);
-    // Higher weight → shorter effective distance (more attractive).
-    const score = d / (a.weight ?? 1);
-    if (!best || score < best.score) best = { anchor: a, score };
+      if (regionId === 'left-arm' || regionId === 'right-arm' || regionId === 'left-leg' || regionId === 'right-leg') {
+        lastClickedLimb = regionId;
+      } else {
+        lastClickedLimb = null;
+      }
+      const fromTable = REGION_RANGES.find(r => r.id === regionId);
+      if (fromTable) return fromTable;
+    }
   }
-  if (!best) return null;
 
-  let regionId: RegionId = best.anchor.region;
-
-  // Posterior override: if click is behind the spine for a torso region,
-  // reroute to the log-roll region. The spine bones sit at z ≈ -0.05 to
-  // 0.0 in rest pose — anything ≤ -0.08 is clearly the back surface.
-  const isTorso = regionId === 'chest' || regionId === 'abdomen' || regionId === 'pelvis';
-  if (isTorso && point.z < -0.08) {
-    regionId = 'posterior-logroll';
+  // --- Fallback: the original Y-range + X-threshold heuristic -------------
+  // This is the exact logic that shipped before the bone-based rewrite,
+  // preserved verbatim so we never regress below the prior behaviour.
+  if (point.z < -0.05) {
+    const posterior = REGION_RANGES.find(r => r.condition === 'back' && point.y >= r.yMin && point.y < r.yMax);
+    if (posterior) { lastClickedLimb = null; return posterior; }
   }
-
-  // Remember the specific limb for the exam panel filter.
-  if (regionId === 'left-arm' || regionId === 'right-arm' || regionId === 'left-leg' || regionId === 'right-leg') {
-    lastClickedLimb = regionId;
-  } else {
-    lastClickedLimb = null;
+  const absX = Math.abs(point.x);
+  const armXThreshold = point.y >= 1.20 ? 0.15 : 0.20;
+  if (absX > armXThreshold && point.y >= 0.40 && point.y < 1.44) {
+    // Mixamo's convention: character faces +Z, so +X = character's left.
+    const limbId = point.x > 0 ? 'left-arm' : 'right-arm';
+    lastClickedLimb = limbId;
+    const r = REGION_RANGES.find(rr => rr.id === limbId);
+    return r || { id: limbId, label: limbId, description: '', yMin: 0.40, yMax: 1.44 };
   }
-
-  // Build the RegionRange shape the rest of the component expects. The Y
-  // bounds are kept for compatibility with the highlight-overlay renderer
-  // downstream but aren't used for hit-testing any more.
-  const fromTable = REGION_RANGES.find(r => r.id === regionId);
-  if (fromTable) return fromTable;
-  return {
-    id: regionId,
-    label: regionId,
-    description: '',
-    yMin: 0, yMax: 0,
-  };
+  if (point.y < 0.83) {
+    if (absX > 0.20 && point.y >= 0.40) {
+      const limbId = point.x > 0 ? 'left-arm' : 'right-arm';
+      lastClickedLimb = limbId;
+      const r = REGION_RANGES.find(rr => rr.id === limbId);
+      return r || { id: limbId, label: limbId, description: '', yMin: 0.40, yMax: 1.44 };
+    }
+    const limbId = point.x > 0 ? 'left-leg' : 'right-leg';
+    lastClickedLimb = limbId;
+    const r = REGION_RANGES.find(rr => rr.id === limbId);
+    return r || { id: limbId, label: limbId, description: '', yMin: 0.0, yMax: 0.83 };
+  }
+  lastClickedLimb = null;
+  return REGION_RANGES.find(r => !r.condition && point.y >= r.yMin && point.y < r.yMax) || null;
 }
 
 export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guidedMode = false, nextGuidedStep = null, onBlockedClick }: BodyMeshProps) {
@@ -261,9 +288,12 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
         });
       }
     });
-    // Snapshot the skeleton's world-space bone positions for hit-testing.
-    // Runs once per scene clone — cheap (67 bones, one matrix update).
-    updateSkeleton(clone);
+    // Snapshot anchors from the ORIGINAL scene. The original rig always has
+    // its bones traversable as named Object3D nodes; a deep clone sometimes
+    // flattens the skeleton depending on the GLB exporter, which is why we
+    // snapshot from the source rather than the clone. The bones sit in the
+    // same local frame either way, so the positions are interchangeable.
+    updateSkeleton(scene);
     return clone;
   }, [scene]);
 
@@ -283,12 +313,21 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
   }, []);
 
   // Refresh the skeleton snapshot on mount, after the primitive has been
-  // inserted into the r3f scene graph. The useMemo snapshot above runs before
-  // any parent transforms could apply — this effect guarantees anchors are in
-  // the same world frame as the pointer hit-points.
+  // inserted into the r3f scene graph. Walks the MOUNTED group so the bone
+  // world matrices are computed in the same frame as pointer hit-points. If
+  // the scan finds no bones (skinned-clone flattened the rig) the earlier
+  // snapshot from the original scene, taken in the useMemo above, stays
+  // valid — the frames match because the parent group is identity.
   useEffect(() => {
-    if (meshRef.current) updateSkeleton(meshRef.current);
-  }, [clonedScene]);
+    if (!meshRef.current) return;
+    const before = anchors.length;
+    updateSkeleton(meshRef.current);
+    // If the mounted group doesn't expose the bones by name (some GLB
+    // exporters flatten the skeleton on clone), anchors end up empty —
+    // re-populate from the original scene so the primary path keeps
+    // working. The fallback getRegionAtPoint() still works regardless.
+    if (anchors.length === 0 && before > 0) updateSkeleton(scene);
+  }, [clonedScene, scene]);
 
   // Drive continuous rendering for pulse animation when required regions exist
   // or when guided mode is active (next-step ring needs to pulse).
