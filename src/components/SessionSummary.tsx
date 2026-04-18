@@ -19,6 +19,7 @@ import {
   type TreatmentQualityResult,
   type FeedbackResource,
 } from '@/data/clinicalRealism';
+import { getAbcdeMeta } from '@/lib/abcdeClassifier';
 
 interface SessionSummaryProps {
   session: CaseSession;
@@ -547,27 +548,47 @@ export function SessionSummary({
               Completed Actions ({completedItems.length})
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
-            {completedItems.map((item, index) => (
-              <div 
-                key={item.id} 
-                className="flex items-center justify-between rounded-lg bg-emerald-50/50 dark:bg-emerald-950/20 p-3 hover:bg-emerald-100/50 dark:hover:bg-emerald-900/30 transition-colors animate-slide-in"
-                style={{ animationDelay: `${index * 50}ms` }}
-              >
-                <div className="flex items-start gap-3">
+          <CardContent className="space-y-1.5">
+            {completedItems.map((item, index) => {
+              // Colour-rail the row by its ABCDE channel. Non-ABCDE items
+              // (pre-alert, documentation, hand-off) fall back to the
+              // neutral emerald done-state treatment.
+              const abcde = getAbcdeMeta(item.description, item.category);
+              return (
+                <div
+                  key={item.id}
+                  className={`flex items-start gap-3 rounded-lg border-l-[3px] p-3 transition-colors animate-slide-in ${
+                    abcde
+                      ? `${abcde.railClass} ${abcde.fillClass} hover:brightness-[0.98]`
+                      : 'border-l-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20 hover:bg-emerald-100/50 dark:hover:bg-emerald-900/30'
+                  }`}
+                  style={{ animationDelay: `${index * 50}ms` }}
+                >
                   <div className="p-1 rounded-full bg-emerald-500/20 shrink-0 mt-0.5">
                     <CheckCircle className="h-3.5 w-3.5 text-emerald-600" />
                   </div>
-                  <div>
+                  <div className="flex-1 min-w-0">
                     <span className="text-sm">{item.description}</span>
                     {item.critical && (
                       <Badge className="ml-2 bg-red-600 text-white text-[10px]">Critical</Badge>
                     )}
                   </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {abcde && (
+                      <span
+                        className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${abcde.chipClass}`}
+                        aria-label={abcde.label}
+                      >
+                        {abcde.channel}
+                      </span>
+                    )}
+                    <Badge variant="outline" className="text-xs bg-emerald-100/50 border-emerald-300 text-emerald-700">
+                      +{item.points}
+                    </Badge>
+                  </div>
                 </div>
-                <Badge variant="outline" className="text-xs bg-emerald-100/50 border-emerald-300 text-emerald-700">+{item.points}</Badge>
-              </div>
-            ))}
+              );
+            })}
           </CardContent>
         </Card>
       )}
@@ -583,28 +604,42 @@ export function SessionSummary({
               Review Items ({missedItems.filter(i => !i.critical).length})
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="space-y-1.5">
             {missedItems.filter(item => !item.critical).map((item, index) => {
               const feedback = generateFeedbackForItem(item, caseData);
+              const abcde = getAbcdeMeta(item.description, item.category);
               return (
-                <div 
-                  key={item.id} 
-                  className="rounded-lg bg-orange-50/50 dark:bg-orange-950/20 p-3 hover:bg-orange-100/50 dark:hover:bg-orange-900/30 transition-colors animate-slide-in"
+                <div
+                  key={item.id}
+                  className={`rounded-lg border-l-[3px] p-3 transition-colors animate-slide-in ${
+                    abcde
+                      ? `${abcde.railClass} ${abcde.fillClass} hover:brightness-[0.98]`
+                      : 'border-l-orange-500 bg-orange-50/50 dark:bg-orange-950/20 hover:bg-orange-100/50 dark:hover:bg-orange-900/30'
+                  }`}
                   style={{ animationDelay: `${index * 50}ms` }}
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-start gap-3">
+                    <div className="flex items-start gap-3 min-w-0">
                       <div className="p-1 rounded-full bg-orange-500/20 shrink-0 mt-0.5">
                         <XCircle className="h-3.5 w-3.5 text-orange-600" />
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <span className="text-sm">{item.description}</span>
-                        <Badge variant="outline" className="ml-2 text-[10px]">{item.category}</Badge>
+                        {abcde ? (
+                          <span
+                            className={`ml-2 inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${abcde.chipClass}`}
+                          >
+                            <span className="text-[10px] font-bold">{abcde.channel}</span>
+                            <span>{abcde.label}</span>
+                          </span>
+                        ) : (
+                          <Badge variant="outline" className="ml-2 text-[10px]">{item.category}</Badge>
+                        )}
                       </div>
                     </div>
                     <span className="text-sm text-muted-foreground whitespace-nowrap">{item.points} pts</span>
                   </div>
-                  
+
                   <div className="mt-2 p-2 bg-amber-50 dark:bg-amber-900/30 rounded text-xs ml-6">
                     <p className="text-amber-700 dark:text-amber-300 flex items-start gap-1">
                       <BookOpen className="w-3 h-3 shrink-0 mt-0.5" />
