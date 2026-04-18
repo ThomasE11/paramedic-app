@@ -44,6 +44,7 @@ import { allCases } from '@/data/cases';
 import type { CaseScenario } from '@/types';
 import { ClassroomWatchBanner } from './ClassroomWatchBanner';
 import { ClassroomChatSidebar } from './ClassroomChatSidebar';
+import { ClassroomVideoTiles } from './ClassroomVideoTiles';
 
 // Students run the SAME StudentPanel the instructor drives — just with
 // `readOnly` flipped on and live state piped in from broadcasts. Lazy-load
@@ -195,6 +196,13 @@ export function ClassroomJoin({ onExit }: ClassroomJoinProps) {
   if (session && activeCase) {
     return (
       <Suspense fallback={<div className="min-h-screen bg-background" />}>
+        <ClassroomVideoTiles
+          localStream={voice.localVideoStream}
+          remoteStreams={voice.remoteVideoStreams}
+          participants={sessionHook.participants}
+          selfKey={sessionHook.selfKey}
+          onStopCamera={voice.stopCamera}
+        />
         <ClassroomChatSidebar
           messages={sessionHook.chatMessages}
           onSend={sessionHook.sendChat}

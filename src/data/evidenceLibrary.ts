@@ -193,7 +193,7 @@ export const EVIDENCE_LIBRARY: EvidenceTopic[] = [
     practiceStatement:
       'Supraglottic airways (i-gel / LMA) are first-line for paramedic-managed OHCA — faster to insert, fewer compression pauses, and non-inferior to ETI for 30-day outcomes.',
     topics: ['cardiac-arrest', 'airway'],
-    treatmentIds: ['i_gel', 'igel_airway', 'supraglottic_airway', 'lma', 'intubation', 'endotracheal_intubation'],
+    treatmentIds: ['i_gel', 'igel_airway', 'supraglottic_airway', 'lma', 'intubation', 'rsi_intubation'],
     channel: 'A',
     minYearLevel: '3rd-year',
     papers: [

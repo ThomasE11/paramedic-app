@@ -1364,7 +1364,10 @@ function applyCrossSystemPhysiology(
 
   // --- 2. HIGH-FLOW OXYGEN IN COPD ---
   // 100% O2 in a hypercapnic COPD patient can drop respiratory drive (CO2 retention)
-  const isHighFlowO2 = treatment.id === 'oxygen_15l' || treatment.id === 'oxygen_nrb';
+  // Real treatment IDs from enhancedTreatmentEffects.ts — the earlier
+  // `oxygen_15l`/`oxygen_nrb` names don't exist and the high-flow COPD
+  // adverse-event branch never fired.
+  const isHighFlowO2 = treatment.id === 'oxygen_nonrebreather' || treatment.id === 'oxygen_mask';
   const isCOPD = sub.includes('copd') || sub.includes('chronic obstructive');
   if (isHighFlowO2 && isCOPD) {
     const oldRR = vitals.respiration;

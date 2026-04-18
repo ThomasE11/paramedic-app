@@ -1114,7 +1114,7 @@ export function StudentPanel({
           appliedTreatmentIds.includes('cpap_niv') ||
           appliedTreatmentIds.includes('bvm_ventilation') ||
           appliedTreatmentIds.includes('mechanical_ventilation') ||
-          appliedTreatmentIds.includes('ventilator_setup');
+          (appliedTreatmentIds.includes('ventilator_setup') && !!ventilatorSettings);
         // CPAP/NIV physiologically reverses hypoxia faster than passive
         // O2 because it recruits alveoli — bump the per-tick step.
         const hasCpap = appliedTreatmentIds.includes('cpap_niv');
@@ -1122,11 +1122,33 @@ export function StudentPanel({
         // SpO2 recovery toward target while O2 therapy is active. CPAP
         // climbs faster than simple O2 because it recruits collapsed
         // alveoli (cardiogenic pulm oedema, severe asthma, etc.).
+        // Mechanical ventilation scales further with FiO2 + PEEP: 100%
+        // FiO2 + 10 PEEP is a very different patient from 40% + 5.
         if (hasO2 && (v.spo2 ?? 0) < 96) {
-          const baseStep = (v.spo2 ?? 70) < 92 ? 3 : 2;
-          const step = hasCpap ? baseStep + 2 : baseStep;
+          let step = (v.spo2 ?? 70) < 92 ? 3 : 2;
+          if (hasCpap) step += 2;
+          // Mechanical ventilator bonus — scales with FiO2 and PEEP.
+          if (ventilatorSettings) {
+            const fio2Bonus = Math.max(0, (ventilatorSettings.fio2Percent - 40) / 30); // 0 at 40%, 2 at 100%
+            const peepBonus = Math.max(0, (ventilatorSettings.peepCmH2O - 5) / 5);     // 0 at 5, 3 at 20
+            step += Math.round(fio2Bonus + peepBonus);
+          }
           v.spo2 = Math.min(98, (v.spo2 ?? 70) + step);
           changed = true;
+        }
+
+        // Ventilator side-effects — high PEEP + high tidal volume can
+        // drop BP via increased intrathoracic pressure (preload
+        // reduction). Start to manifest > 10 min of vent if settings
+        // are aggressive.
+        if (ventilatorSettings && ventilatorSettings.peepCmH2O >= 12) {
+          const bpStr = String(v.bp ?? '120/80');
+          const [sys, dia] = bpStr.split('/').map(x => parseInt(x, 10));
+          if (!isNaN(sys) && sys > 90) {
+            const newSys = Math.max(85, sys - 2);
+            v.bp = `${newSys}/${Math.max(55, (dia || 80) - 1)}`;
+            changed = true;
+          }
         }
 
         // CPR compression-generated pulse while CPR is running in arrest.
@@ -1274,8 +1296,26 @@ export function StudentPanel({
       return;
     }
 
-    // Mechanical ventilation requires mode/parameter setup before delivery
+    // Mechanical ventilation requires an RSI / secured airway first.
+    // You can't put a conscious, un-paralysed patient on a ventilator —
+    // they'll fight it, desaturate, and aspirate. Gate the dialog on
+    // proof of RSI (rsi_intubation treatment) or at minimum a secured
+    // airway. GCS <= 3 (unresponsive) is an alternative clinical path
+    // (e.g. in-arrest already intubated) — allow that too.
     if (treatment.id === 'mechanical_ventilation' && !ventilatorSettings) {
+      const hasRsi = appliedTreatmentIds.includes('rsi_intubation');
+      const hasIntubation = appliedTreatmentIds.includes('intubation') || appliedTreatmentIds.includes('endotracheal_intubation');
+      const gcsTotal = (patientState?.vitals?.gcs as number | undefined)
+        ?? (currentCase?.vitalSignsProgression?.initial?.gcs as number | undefined)
+        ?? 15;
+      const profoundlyUnresponsive = gcsTotal <= 3;
+      if (!hasRsi && !hasIntubation && !profoundlyUnresponsive) {
+        toast.error('RSI required first', {
+          description: 'A mechanical ventilator can only be started once the airway is secured. Perform RSI (rapid sequence intubation) or confirm ETT placement first.',
+          duration: 6000,
+        });
+        return;
+      }
       setShowVentilatorDialog(true);
       return;
     }

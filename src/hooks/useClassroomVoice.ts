@@ -76,6 +76,16 @@ interface UseClassroomVoiceResult {
   toggleListenerMute: () => void;
   /** True when at least one other peer is currently speaking. */
   hasIncomingAudio: boolean;
+  /** Video: true when local camera track is being published. */
+  isCameraOn: boolean;
+  /** Local camera MediaStream — bind to a local preview <video>. */
+  localVideoStream: MediaStream | null;
+  /** Remote video streams keyed by participant presence key. */
+  remoteVideoStreams: Map<string, MediaStream>;
+  /** Start publishing the local camera (adds video track to every peer). */
+  startCamera: () => Promise<void>;
+  /** Stop the camera — removes tracks from peers, releases hardware. */
+  stopCamera: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -107,6 +117,13 @@ export function useClassroomVoice({
   const listenerMutedRef = useRef(false);
   const participantsRef = useRef<ClassroomParticipant[]>([]);
 
+  // -- Video state -----------------------------------------------------------
+  const [isCameraOn, setIsCameraOn] = useState(false);
+  const [localVideoStream, setLocalVideoStream] = useState<MediaStream | null>(null);
+  const [remoteVideoStreams, setRemoteVideoStreams] = useState<Map<string, MediaStream>>(new Map());
+  const localVideoTrackRef = useRef<MediaStreamTrack | null>(null);
+  const videoSendersRef = useRef<Map<string, RTCRtpSender>>(new Map());
+
   useEffect(() => { isBroadcastingRef.current = isBroadcasting; }, [isBroadcasting]);
   useEffect(() => { listenerMutedRef.current = listenerMuted; }, [listenerMuted]);
   useEffect(() => { participantsRef.current = participants; }, [participants]);
@@ -126,6 +143,13 @@ export function useClassroomVoice({
       audio.remove();
       audioEls.current.delete(remoteKey);
     }
+    videoSendersRef.current.delete(remoteKey);
+    setRemoteVideoStreams(prev => {
+      if (!prev.has(remoteKey)) return prev;
+      const next = new Map(prev);
+      next.delete(remoteKey);
+      return next;
+    });
     setActiveSpeakers(prev => prev.filter(k => k !== remoteKey));
   }, []);
 
@@ -188,8 +212,27 @@ export function useClassroomVoice({
     pc.ontrack = (ev) => {
       const [stream] = ev.streams;
       if (!stream) return;
-      attachRemoteAudio(remoteKey, stream);
-      setActiveSpeakers(prev => Array.from(new Set([...prev, remoteKey])));
+      // Audio track: attach to hidden audio element + update speakers.
+      if (ev.track.kind === 'audio') {
+        attachRemoteAudio(remoteKey, stream);
+        setActiveSpeakers(prev => Array.from(new Set([...prev, remoteKey])));
+      }
+      // Video track: expose the stream so the UI can render a tile.
+      if (ev.track.kind === 'video') {
+        setRemoteVideoStreams(prev => {
+          const next = new Map(prev);
+          next.set(remoteKey, stream);
+          return next;
+        });
+        // If the remote ends the track, drop the tile.
+        ev.track.onended = () => {
+          setRemoteVideoStreams(prev => {
+            const next = new Map(prev);
+            next.delete(remoteKey);
+            return next;
+          });
+        };
+      }
     };
 
     pc.oniceconnectionstatechange = () => {
@@ -417,6 +460,74 @@ export function useClassroomVoice({
 
   const hasIncomingAudio = activeSpeakers.some(k => k !== selfKey);
 
+  // -- Camera (video) --------------------------------------------------------
+  // Video is added as an ADDITIONAL track to existing peer connections.
+  // Each peer gets the same video track via RTCPeerConnection.addTrack.
+  // Turning the camera off stops the track + removes the sender + renegotiates.
+  const startCamera = useCallback(async () => {
+    if (localVideoTrackRef.current) return; // already on
+    try {
+      const videoStream = await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 320 }, height: { ideal: 240 }, frameRate: { ideal: 15, max: 24 } },
+        audio: false,
+      });
+      const track = videoStream.getVideoTracks()[0];
+      if (!track) throw new Error('no-video-track');
+      localVideoTrackRef.current = track;
+      setLocalVideoStream(videoStream);
+      setIsCameraOn(true);
+
+      // Attach to every existing peer. Renegotiation required.
+      const peers = Array.from(peersRef.current.entries());
+      for (const [remoteKey, pc] of peers) {
+        try {
+          const sender = pc.addTrack(track, videoStream);
+          videoSendersRef.current.set(remoteKey, sender);
+          const offer = await pc.createOffer();
+          await pc.setLocalDescription(offer);
+          await sendBroadcast({
+            kind: 'webrtc_offer',
+            fromKey: selfKey,
+            toKey: remoteKey,
+            sdp: JSON.stringify(offer),
+          });
+        } catch (e) {
+          console.warn('[classroom-voice] camera addTrack failed', remoteKey, e);
+        }
+      }
+
+      // End track if user stops it externally (e.g. OS revoke).
+      track.onended = () => stopCamera();
+    } catch (e) {
+      const msg = (e as { name?: string })?.name === 'NotAllowedError'
+        ? 'camera-denied'
+        : (e as { name?: string })?.name === 'NotFoundError'
+          ? 'no-camera'
+          : 'camera-error';
+      setError(msg);
+      setIsCameraOn(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selfKey, sendBroadcast]);
+
+  const stopCamera = useCallback(() => {
+    const track = localVideoTrackRef.current;
+    if (track) {
+      try { track.stop(); } catch { /* noop */ }
+      localVideoTrackRef.current = null;
+    }
+    // Remove video senders from every peer + renegotiate.
+    for (const [remoteKey, sender] of videoSendersRef.current.entries()) {
+      const pc = peersRef.current.get(remoteKey);
+      if (pc) {
+        try { pc.removeTrack(sender); } catch { /* noop */ }
+      }
+    }
+    videoSendersRef.current.clear();
+    setLocalVideoStream(null);
+    setIsCameraOn(false);
+  }, []);
+
   return {
     isBroadcasting,
     activeSpeakers: activeSpeakers.filter(k => k !== selfKey),
@@ -426,5 +537,10 @@ export function useClassroomVoice({
     stopBroadcast,
     toggleListenerMute,
     hasIncomingAudio,
+    isCameraOn,
+    localVideoStream,
+    remoteVideoStreams,
+    startCamera,
+    stopCamera,
   };
 }

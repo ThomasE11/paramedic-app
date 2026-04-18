@@ -29,6 +29,7 @@ import { ClassroomLobby } from './ClassroomLobby';
 import { InstructorLiveControls, type InstructorOverride } from './InstructorLiveControls';
 import { ClassroomBroadcastBar } from './ClassroomBroadcastBar';
 import { ClassroomChatSidebar } from './ClassroomChatSidebar';
+import { ClassroomVideoTiles } from './ClassroomVideoTiles';
 import type { CaseScenario } from '@/types';
 
 // Reuse the student panel — it contains the full case-running UI.
@@ -149,6 +150,13 @@ export function ClassroomHost({ onExit }: Props) {
         </div>
       }
     >
+      <ClassroomVideoTiles
+        localStream={voice.localVideoStream}
+        remoteStreams={voice.remoteVideoStreams}
+        participants={participants}
+        selfKey={selfKey}
+        onStopCamera={voice.stopCamera}
+      />
       <ClassroomChatSidebar
         messages={sessionHook.chatMessages}
         onSend={sessionHook.sendChat}

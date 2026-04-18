@@ -20,7 +20,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   Radio, Users, TrendingDown, Activity, Target,
   AlertTriangle, MessageSquare, X, LogOut, UserCog,
-  Check, Clock, Stethoscope, Mic, MicOff, Volume2, VolumeX,
+  Check, Clock, Stethoscope, Mic, MicOff, Volume2, VolumeX, Video, VideoOff,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -68,6 +68,9 @@ interface Props {
     startBroadcast: () => Promise<void> | void;
     stopBroadcast: () => void;
     toggleListenerMute: () => void;
+    isCameraOn: boolean;
+    startCamera: () => Promise<void> | void;
+    stopCamera: () => void;
   };
 }
 
@@ -303,6 +306,23 @@ export function ClassroomBroadcastBar({
                     {voice.listenerMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5 text-emerald-500" />}
                   </Button>
                 )}
+                {/* Camera toggle — adds a local video track to the peer
+                    mesh so other participants get a small video tile. */}
+                <Button
+                  size="sm"
+                  variant={voice.isCameraOn ? 'default' : 'outline'}
+                  onClick={() => {
+                    if (voice.isCameraOn) voice.stopCamera();
+                    else void voice.startCamera();
+                  }}
+                  className={`h-7 gap-1.5 text-xs ${voice.isCameraOn ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : ''}`}
+                  aria-pressed={voice.isCameraOn}
+                  aria-label={voice.isCameraOn ? 'Turn off camera' : 'Turn on camera'}
+                  title={voice.isCameraOn ? 'Camera on — click to turn off' : 'Click to turn on your camera'}
+                >
+                  {voice.isCameraOn ? <Video className="w-3.5 h-3.5" /> : <VideoOff className="w-3.5 h-3.5" />}
+                  {voice.isCameraOn ? 'Camera' : 'Video'}
+                </Button>
               </>
             )}
 

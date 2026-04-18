@@ -137,7 +137,14 @@ export function generateNarrativeReport(inputs: NarrativeInputs): NarrativeRepor
   // CASE-SPECIFIC OBSERVATIONS
   // ============================================================================
   if (isRespiratory) {
-    const o2 = appliedTreatmentIds.includes('oxygen_15l') || appliedTreatmentIds.includes('oxygen_6l') || appliedTreatmentIds.includes('bvm_ventilation');
+    // Real treatment IDs from enhancedTreatmentEffects.ts — earlier code
+    // referenced oxygen_15l / oxygen_6l which don't exist.
+    const o2 = appliedTreatmentIds.includes('oxygen_nonrebreather')
+      || appliedTreatmentIds.includes('oxygen_mask')
+      || appliedTreatmentIds.includes('oxygen_nasal')
+      || appliedTreatmentIds.includes('cpap_niv')
+      || appliedTreatmentIds.includes('bvm_ventilation')
+      || appliedTreatmentIds.includes('mechanical_ventilation');
     if (o2) whatWentWell.push('Applied supplemental oxygen early — correct first move in respiratory distress.');
     else patternsToImprove.push('No supplemental oxygen was given in a respiratory case. Oxygen is always your first intervention when SpO2 is low.');
 
