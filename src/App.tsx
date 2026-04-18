@@ -132,45 +132,52 @@ function RoleSelection({ onSelect }: { onSelect: (role: UserRole) => void }) {
       </div>
 
       <main id="main-content" className="relative z-10 flex-1 flex items-center justify-center p-6">
-        <div className="max-w-3xl w-full space-y-12">
-          {/* Header */}
-          <div className="text-center space-y-5">
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-primary ring-[6px] ring-primary/[0.08]">
-              <Stethoscope className="h-10 w-10 text-primary-foreground" />
+        <div className="max-w-3xl w-full space-y-14">
+          {/* ─── Header — matches the exported design system landing card ─── */}
+          <div className="text-center space-y-6">
+            <div className="mx-auto flex h-[88px] w-[88px] items-center justify-center rounded-[24px] bg-primary ring-8 ring-primary/[0.08]">
+              <Stethoscope className="h-11 w-11 text-primary-foreground" />
             </div>
             <div className="space-y-3">
-              <h1 className="heading-clean text-[2.75rem] leading-[1.1]">
+              <h1 className="heading-clean text-[2.75rem] leading-[1.08] tracking-[-0.02em]">
                 {t('app.tagline')}
               </h1>
-              <p className="text-muted-foreground text-lg max-w-md mx-auto leading-relaxed">
+              <p className="text-muted-foreground text-[17px] max-w-[560px] mx-auto leading-[1.55]">
                 {t('app.subtitle')}
               </p>
             </div>
           </div>
 
-          {/* Role Cards */}
+          {/* ─── Role Cards — aligned to the design system's role-landing.
+               Educator takes the primary cyan (brand colour); Trainee
+               takes a blue secondary. Hover adds a subtle -2px lift. ─── */}
           <div className="grid gap-6 sm:grid-cols-2">
             {/* Educator */}
             <button
               onClick={() => onSelect('educator')}
-              className="group relative flex flex-col rounded-3xl bg-card border border-border p-10 transition-all duration-300 hover:shadow-md text-left overflow-hidden"
+              className="group relative flex flex-col rounded-[24px] bg-card border border-border p-9 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 text-left overflow-hidden"
             >
-              <div className="relative z-10 flex flex-col items-center gap-6">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500/10 ring-2 ring-emerald-500/[0.08] group-hover:ring-emerald-500/25 transition-all duration-300">
-                  <Users className="h-8 w-8 text-emerald-500" />
+              <div className="relative z-10 flex flex-col items-start gap-5">
+                <div className="flex h-16 w-16 items-center justify-center rounded-[20px] bg-primary/10 ring-[6px] ring-primary/[0.05] group-hover:ring-primary/15 transition-all duration-200">
+                  <Users className="h-[30px] w-[30px] text-primary" />
                 </div>
-                <div className="text-center space-y-2.5">
-                  <h2 className="heading-premium text-xl">{t('role.educator')}</h2>
-                  <p className="text-sm text-muted-foreground leading-relaxed max-w-[240px]">
+                <div className="space-y-2">
+                  <h2 className="heading-premium text-[22px] tracking-[-0.02em] leading-[1.15]">{t('role.educator')}</h2>
+                  <p className="text-sm text-muted-foreground leading-[1.55]">
                     {t('role.educatorDescription')}
                   </p>
                 </div>
-                <div className="flex flex-wrap gap-1.5 justify-center">
-                  {['Cases', 'Pre-Brief', 'Tracking', 'Debrief', 'Export'].map(tag => (
-                    <span key={tag} className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-500/[0.07] text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/[0.08]">{tag}</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {['Case generation', 'Assessment checklist', 'Classroom host'].map(tag => (
+                    <span
+                      key={tag}
+                      className="text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-secondary text-secondary-foreground/80 border border-border"
+                    >
+                      {tag}
+                    </span>
                   ))}
                 </div>
-                <div className="flex items-center gap-2 text-sm font-semibold text-emerald-600 dark:text-emerald-400 group-hover:gap-3 transition-all duration-300 mt-1">
+                <div className="flex items-center gap-2 text-sm font-semibold text-primary group-hover:gap-3 transition-all duration-200 mt-0.5">
                   {t('role.educatorCta')}
                   <ChevronRight className="h-4 w-4 rtl:rotate-180" />
                 </div>
@@ -181,7 +188,7 @@ function RoleSelection({ onSelect }: { onSelect: (role: UserRole) => void }) {
                       e.stopPropagation();
                       onSelect('classroom-host');
                     }}
-                    className="mt-2 text-xs font-medium text-emerald-700/80 dark:text-emerald-400/80 underline decoration-dotted underline-offset-4 hover:text-emerald-600 dark:hover:text-emerald-300 transition-colors"
+                    className="text-xs font-medium text-primary/80 underline decoration-dotted underline-offset-4 hover:text-primary transition-colors"
                   >
                     {t('classroom.hostCta')}
                   </button>
@@ -189,27 +196,32 @@ function RoleSelection({ onSelect }: { onSelect: (role: UserRole) => void }) {
               </div>
             </button>
 
-            {/* Student */}
+            {/* Student / Trainee */}
             <button
               onClick={() => onSelect('student')}
-              className="group relative flex flex-col rounded-3xl bg-card border border-border p-10 transition-all duration-300 hover:shadow-md text-left overflow-hidden"
+              className="group relative flex flex-col rounded-[24px] bg-card border border-border p-9 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 text-left overflow-hidden"
             >
-              <div className="relative z-10 flex flex-col items-center gap-6">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-500/10 ring-2 ring-blue-500/[0.08] group-hover:ring-blue-500/25 transition-all duration-300">
-                  <GraduationCap className="h-8 w-8 text-blue-500" />
+              <div className="relative z-10 flex flex-col items-start gap-5">
+                <div className="flex h-16 w-16 items-center justify-center rounded-[20px] bg-blue-500/10 ring-[6px] ring-blue-500/[0.05] group-hover:ring-blue-500/15 transition-all duration-200">
+                  <GraduationCap className="h-[30px] w-[30px] text-blue-500" />
                 </div>
-                <div className="text-center space-y-2.5">
-                  <h2 className="heading-premium text-xl">{t('role.student')}</h2>
-                  <p className="text-sm text-muted-foreground leading-relaxed max-w-[240px]">
+                <div className="space-y-2">
+                  <h2 className="heading-premium text-[22px] tracking-[-0.02em] leading-[1.15]">{t('role.student')}</h2>
+                  <p className="text-sm text-muted-foreground leading-[1.55]">
                     {t('role.studentDescription')}
                   </p>
                 </div>
-                <div className="flex flex-wrap gap-1.5 justify-center">
-                  {['Scenarios', 'LIFEPAK 20', 'Treatments', 'Feedback', 'Resources'].map(tag => (
-                    <span key={tag} className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-blue-500/[0.07] text-blue-600 dark:text-blue-400 ring-1 ring-blue-500/[0.08]">{tag}</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {['Practice cases', 'Performance feedback', 'Join classroom'].map(tag => (
+                    <span
+                      key={tag}
+                      className="text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-secondary text-secondary-foreground/80 border border-border"
+                    >
+                      {tag}
+                    </span>
                   ))}
                 </div>
-                <div className="flex items-center gap-2 text-sm font-semibold text-blue-600 dark:text-blue-400 group-hover:gap-3 transition-all duration-300 mt-1">
+                <div className="flex items-center gap-2 text-sm font-semibold text-blue-600 dark:text-blue-400 group-hover:gap-3 transition-all duration-200 mt-0.5">
                   {t('role.studentCta')}
                   <ChevronRight className="h-4 w-4 rtl:rotate-180" />
                 </div>
@@ -220,7 +232,7 @@ function RoleSelection({ onSelect }: { onSelect: (role: UserRole) => void }) {
                       e.stopPropagation();
                       onSelect('classroom-join');
                     }}
-                    className="mt-2 text-xs font-medium text-blue-700/80 dark:text-blue-400/80 underline decoration-dotted underline-offset-4 hover:text-blue-600 dark:hover:text-blue-300 transition-colors"
+                    className="text-xs font-medium text-blue-700/80 dark:text-blue-400/80 underline decoration-dotted underline-offset-4 hover:text-blue-600 dark:hover:text-blue-300 transition-colors"
                   >
                     {t('classroom.joinCta')}
                   </button>
