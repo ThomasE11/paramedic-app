@@ -18,6 +18,7 @@ import {
   type ClinicalSoundState,
   getInitialSounds,
   updateSoundsAfterTreatment,
+  rhythmToHeartSound,
 } from './clinicalSounds';
 import {
   getTreatmentEffectivenessMultiplier,
@@ -315,6 +316,16 @@ export function applyDynamicTreatment(
     state.sounds, treatment.id, count, caseCategory,
     allAppliedIds, caseData.subcategory,
   );
+
+  // Heart sound follows rhythm — when the rhythm has changed (e.g. shock
+  // converted VF → Sinus Tachycardia, or deterioration dropped a patient
+  // into AF), the auscultated heart sound must change with it. Skip when
+  // the rhythm doesn't dictate a specific sound (normal sinus) so severity-
+  // based defaults (muffled tamponade, gallop in CHF) still apply.
+  const rhythmDictatedHeart = rhythmToHeartSound(state.currentRhythm);
+  if (rhythmDictatedHeart && state.sounds.heartSound !== rhythmDictatedHeart) {
+    state.sounds = { ...state.sounds, heartSound: rhythmDictatedHeart };
+  }
 
   // CROSS-SYSTEM PHYSIOLOGY — adjust vitals based on multi-organ interactions
   applyCrossSystemPhysiology(treatment, state, caseData, response);
@@ -1300,6 +1311,13 @@ export function applyDeterioration(
   // Critical check: if vitals reach dangerous levels, flag cardiac arrest risk
   if (bp.systolic < 50 || newState.vitals.spo2 < 50 || newState.vitals.pulse > 180) {
     newState.deteriorationLevel = 4;
+  }
+
+  // Keep heart sound aligned with any rhythm change driven by deterioration
+  // (e.g. normal sinus → VT → VF as the patient crashes).
+  const deteriorationHeart = rhythmToHeartSound(newState.currentRhythm);
+  if (deteriorationHeart && newState.sounds.heartSound !== deteriorationHeart) {
+    newState.sounds = { ...newState.sounds, heartSound: deteriorationHeart };
   }
 
   return newState;

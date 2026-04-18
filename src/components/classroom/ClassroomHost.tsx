@@ -163,6 +163,9 @@ export function ClassroomHost({ onExit }: Props) {
           assessmentPerformed: sharedState.assessmentPerformed,
           caseStartedAt: sharedState.caseStartedAt,
           monitorRevealedVitals: sharedState.monitorRevealedVitals,
+          currentRhythm: sharedState.currentRhythm,
+          isInArrest: sharedState.isInArrest,
+          arrestState: sharedState.arrestState,
         } : undefined}
         topBanner={
           <ClassroomBroadcastBar

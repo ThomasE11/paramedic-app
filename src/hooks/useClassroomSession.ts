@@ -101,6 +101,25 @@ export interface SharedCaseState {
     destination?: string;
     provisionalDiagnosis?: string;
   };
+  /**
+   * Current cardiac rhythm string as the engine sees it on the driver's
+   * side (e.g. 'Asystole', 'Ventricular Fibrillation', 'Sinus Tachycardia').
+   * Broadcasting this is essential for the spectator's LIFEPAK monitor to
+   * render the same waveform the driver sees — without it, the student's
+   * monitor falls back to static case data and doesn't evolve through
+   * shock → ROSC transitions.
+   */
+  currentRhythm?: string;
+  /** True while the patient is in cardiac arrest on the driver's side. */
+  isInArrest?: boolean;
+  /** Arrest-run state: CPR running, shock count, drug counts, cycle number. */
+  arrestState?: {
+    cprRunning?: boolean;
+    shockCount?: number;
+    adrenalineDoses?: number;
+    amiodaroneDoses?: number;
+    cycleNumber?: number;
+  };
 }
 
 /**
@@ -183,6 +202,9 @@ function mergePatch(current: SharedCaseState, patch: SharedCaseState): SharedCas
   if (patch.caseStartedAt !== undefined) next.caseStartedAt = patch.caseStartedAt;
   if (patch.monitorRevealedVitals !== undefined) next.monitorRevealedVitals = patch.monitorRevealedVitals;
   if (patch.transportDecision !== undefined) next.transportDecision = { ...current.transportDecision, ...patch.transportDecision };
+  if (patch.currentRhythm !== undefined) next.currentRhythm = patch.currentRhythm;
+  if (patch.isInArrest !== undefined) next.isInArrest = patch.isInArrest;
+  if (patch.arrestState !== undefined) next.arrestState = { ...current.arrestState, ...patch.arrestState };
   return next;
 }
 

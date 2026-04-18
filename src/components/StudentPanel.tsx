@@ -250,6 +250,15 @@ interface StudentPanelProps {
     assessmentPerformed?: string[];
     caseStartedAt?: string;
     monitorRevealedVitals?: string[];
+    currentRhythm?: string;
+    isInArrest?: boolean;
+    arrestState?: {
+      cprRunning?: boolean;
+      shockCount?: number;
+      adrenalineDoses?: number;
+      amiodaroneDoses?: number;
+      cycleNumber?: number;
+    };
   }) => void;
   /**
    * Spectator mode — disable every interactive control. Students who are
@@ -271,6 +280,15 @@ interface StudentPanelProps {
     assessmentPerformed?: string[];
     caseStartedAt?: string;
     monitorRevealedVitals?: string[];
+    currentRhythm?: string;
+    isInArrest?: boolean;
+    arrestState?: {
+      cprRunning?: boolean;
+      shockCount?: number;
+      adrenalineDoses?: number;
+      amiodaroneDoses?: number;
+      cycleNumber?: number;
+    };
   };
 }
 
@@ -612,6 +630,33 @@ export function StudentPanel({
     });
   }, [caseStartTime, monitorRevealedVitals, onClassroomStateChange]);
 
+  // Rhythm + arrest flags — this is what makes the spectator LIFEPAK draw
+  // the same waveform the instructor sees. Without it, the student's
+  // monitor falls back to static case-inferred rhythm and won't update
+  // through shock → ROSC / deterioration transitions.
+  useEffect(() => {
+    if (!onClassroomStateChange) return;
+    onClassroomStateChange({
+      currentRhythm: patientState?.currentRhythm,
+      isInArrest: patientState?.isInArrest,
+    });
+  }, [patientState?.currentRhythm, patientState?.isInArrest, onClassroomStateChange]);
+
+  // Arrest-run state — lets students see the CPR clock, shock count,
+  // adrenaline doses their instructor is tracking.
+  useEffect(() => {
+    if (!onClassroomStateChange) return;
+    onClassroomStateChange({
+      arrestState: {
+        cprRunning,
+        shockCount,
+        adrenalineDoses,
+        amiodaroneDoses,
+        cycleNumber: cprCycleNumber,
+      },
+    });
+  }, [cprRunning, shockCount, adrenalineDoses, amiodaroneDoses, cprCycleNumber, onClassroomStateChange]);
+
   // ------------------------------------------------------------------------
   // Classroom-spectator: mirror incoming state from the driver into local
   // state so the full UI renders the driver's live actions. This makes the
@@ -671,7 +716,35 @@ export function StudentPanel({
     if (externalState.completedItems && session) {
       setSession(prev => prev ? { ...prev, completedItems: externalState.completedItems ?? prev.completedItems } : prev);
     }
-  }, [externalState, caseStartTime, session]);
+
+    // Rhythm + arrest flags — feed them into patientState so the LIFEPAK
+    // monitor's `overrideRhythm` prop picks them up, the arrest UI reflects
+    // the instructor's state, and heart-sound selection can follow rhythm.
+    if (externalState.currentRhythm !== undefined || externalState.isInArrest !== undefined) {
+      setPatientState(prev => {
+        const base = prev ?? (currentCase ? createInitialPatientState(currentCase) : null);
+        if (!base) return prev;
+        const next = { ...base, vitals: { ...base.vitals } };
+        if (externalState.currentRhythm && next.currentRhythm !== externalState.currentRhythm) {
+          next.currentRhythm = externalState.currentRhythm;
+        }
+        if (externalState.isInArrest !== undefined && next.isInArrest !== externalState.isInArrest) {
+          next.isInArrest = externalState.isInArrest;
+        }
+        return next;
+      });
+    }
+
+    // Arrest-run UI state (CPR clock, shock count, drug counts).
+    if (externalState.arrestState) {
+      const a = externalState.arrestState;
+      if (a.cprRunning !== undefined) setCprRunning(a.cprRunning);
+      if (a.shockCount !== undefined) setShockCount(a.shockCount);
+      if (a.adrenalineDoses !== undefined) setAdrenalineDoses(a.adrenalineDoses);
+      if (a.amiodaroneDoses !== undefined) setAmiodaroneDoses(a.amiodaroneDoses);
+      if (a.cycleNumber !== undefined) setCprCycleNumber(a.cycleNumber);
+    }
+  }, [externalState, caseStartTime, session, currentCase]);
 
   // Inactivity coaching — nudge students who are stuck
   useEffect(() => {

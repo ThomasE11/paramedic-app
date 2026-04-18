@@ -58,6 +58,55 @@ export interface ClinicalSoundState {
   description: string;         // Human-readable description for display
 }
 
+/**
+ * Map the engine's `currentRhythm` string to the most clinically-accurate
+ * auscultation heart sound. Lets the sound library stay in sync with what
+ * the LIFEPAK monitor is drawing — e.g. atrial fibrillation produces an
+ * irregularly-irregular S1, arrest rhythms produce no audible heart sound,
+ * VT/SVT produce tachycardic sounds, bradyarrhythmias produce bradycardic.
+ *
+ * Returns `null` when the rhythm doesn't dictate a specific sound (so
+ * severity/category defaults win — e.g. "Normal Sinus Rhythm" doesn't
+ * force normal if the case has tamponade and should sound muffled).
+ */
+export function rhythmToHeartSound(rhythm: string | undefined): HeartSoundType | null {
+  if (!rhythm) return null;
+  const r = rhythm.toLowerCase();
+
+  // Arrest — no mechanical cardiac activity = no audible sound.
+  if (r.includes('asystole') || r.includes('ventricular fibrillation')
+    || r.includes('pea') || r.includes('pulseless electrical')) {
+    return 'absent';
+  }
+  // Pulseless VT — also no audible sound.
+  if (r.includes('pulseless vt') || r.includes('pulseless ventricular')) {
+    return 'absent';
+  }
+
+  // Irregularly-irregular rhythms.
+  if (r.includes('atrial fibrillation') || r.includes('atrial flutter') || r === 'af') {
+    return 'irregular';
+  }
+
+  // Tachyarrhythmias.
+  if (r.includes('ventricular tachycardia') || r.includes('svt')
+    || r.includes('supraventricular tachycardia') || r.includes('sinus tachycardia')) {
+    return 'tachycardic';
+  }
+
+  // Bradyarrhythmias & AV blocks.
+  if (r.includes('sinus bradycardia') || r.includes('bradycardia')
+    || r.includes('complete heart block') || r.includes('mobitz')
+    || r.includes('junctional') || r.includes('first degree')) {
+    return 'bradycardic';
+  }
+
+  // Normal sinus — let severity-based logic choose (gallop, muffled, etc.).
+  if (r.includes('normal sinus') || r === 'sinus rhythm') return null;
+
+  return null;
+}
+
 export interface AuscultationFinding {
   location: 'left-upper' | 'left-lower' | 'right-upper' | 'right-lower' | 'anterior' | 'posterior';
   sound: BreathSoundType;
