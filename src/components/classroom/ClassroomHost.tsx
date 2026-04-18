@@ -20,12 +20,13 @@
  * with no case view to drive.
  */
 
-import { Suspense, lazy, useEffect } from 'react';
+import { Suspense, lazy, useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useClassroomSession } from '@/hooks/useClassroomSession';
 import { useClassroomVoice } from '@/hooks/useClassroomVoice';
 import { ClassroomLobby } from './ClassroomLobby';
+import { InstructorLiveControls, type InstructorOverride } from './InstructorLiveControls';
 import { ClassroomBroadcastBar } from './ClassroomBroadcastBar';
 import { ClassroomChatSidebar } from './ClassroomChatSidebar';
 import type { CaseScenario } from '@/types';
@@ -63,6 +64,12 @@ export function ClassroomHost({ onExit }: Props) {
     takeControl,
     lastBroadcast,
   } = sessionHook;
+
+  // Instructor "puppet-master" override state. The InstructorLiveControls
+  // panel bumps this; StudentPanel (on the driver side) merges the payload
+  // into its patientState, and the existing broadcast effects carry the
+  // change to every watching student automatically.
+  const [instructorOverride, setInstructorOverride] = useState<InstructorOverride | null>(null);
 
   // Voice-chat mesh. The instructor is allowed to broadcast whenever they
   // are currently driving (which is the default). When they hand control to
@@ -148,9 +155,22 @@ export function ClassroomHost({ onExit }: Props) {
         selfKey={selfKey}
         driverKeys={driverKeys}
       />
+      {/* Instructor-only live controls — lets the educator steer the live
+          case (force rhythm change, override vitals, flip to/from arrest)
+          without editing the case script. Only rendered on the driver
+          (instructor) side; students never see this panel. */}
+      {isDriver && (
+        <InstructorLiveControls
+          override={instructorOverride}
+          setOverride={setInstructorOverride}
+          currentVitals={sharedState.vitals}
+          currentRhythm={sharedState.currentRhythm}
+        />
+      )}
       <StudentPanel
         onExit={handleEndSession}
         preloadedCase={caseSnapshot}
+        instructorOverride={isDriver ? instructorOverride ?? undefined : undefined}
         // Only the current driver broadcasts state changes. When control is
         // handed to a student, the instructor stops broadcasting and starts
         // RECEIVING patches via externalState.

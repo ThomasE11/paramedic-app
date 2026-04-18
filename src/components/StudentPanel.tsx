@@ -290,6 +290,22 @@ interface StudentPanelProps {
       cycleNumber?: number;
     };
   };
+  /**
+   * Instructor-side live override. Every commit bumps `nonce`; whenever
+   * the nonce changes, the panel merges the payload into its local
+   * patientState and vitals, then the existing broadcast effects carry
+   * the change to every student. See InstructorLiveControls.
+   */
+  instructorOverride?: {
+    nonce: number;
+    vitals?: Partial<{
+      bp: string; pulse: number; respiration: number;
+      spo2: number; temperature: number; gcs: number; bloodGlucose: number;
+    }>;
+    currentRhythm?: string;
+    isInArrest?: boolean;
+    reason?: string;
+  };
 }
 
 export function StudentPanel({
@@ -299,6 +315,7 @@ export function StudentPanel({
   onClassroomStateChange,
   readOnly = false,
   externalState,
+  instructorOverride,
 }: StudentPanelProps) {
   const { t, i18n } = useTranslation();
   // Onboarding tour for first-time users
@@ -745,6 +762,52 @@ export function StudentPanel({
       if (a.cycleNumber !== undefined) setCprCycleNumber(a.cycleNumber);
     }
   }, [externalState, caseStartTime, session, currentCase]);
+
+  // ---------------- Instructor live override ------------------------------
+  // When the instructor pushes a change via InstructorLiveControls, the
+  // parent bumps `instructorOverride.nonce`. Merge the payload into local
+  // patientState + currentVitals. The existing broadcast effects on
+  // patientState.currentRhythm / isInArrest / currentVitals will then
+  // propagate the change to every watching student.
+  const lastOverrideNonceRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!instructorOverride) return;
+    if (lastOverrideNonceRef.current === instructorOverride.nonce) return;
+    lastOverrideNonceRef.current = instructorOverride.nonce;
+
+    // Apply vital overrides directly to the animated display state and the
+    // underlying patientState so the engine agrees with the monitor.
+    if (instructorOverride.vitals) {
+      setCurrentVitals(prev => {
+        const base = (prev || {}) as VitalSigns;
+        const v = instructorOverride.vitals ?? {};
+        const merged: VitalSigns = { ...base };
+        if (v.bp !== undefined) merged.bp = v.bp;
+        if (v.pulse !== undefined) merged.pulse = v.pulse;
+        if (v.respiration !== undefined) merged.respiration = v.respiration;
+        if (v.spo2 !== undefined) merged.spo2 = v.spo2;
+        if (v.temperature !== undefined) merged.temperature = v.temperature;
+        if (v.bloodGlucose !== undefined) merged.bloodGlucose = v.bloodGlucose;
+        if (v.gcs !== undefined) merged.gcs = { total: v.gcs } as VitalSigns['gcs'];
+        return merged;
+      });
+    }
+
+    if (instructorOverride.vitals || instructorOverride.currentRhythm !== undefined || instructorOverride.isInArrest !== undefined) {
+      setPatientState(prev => {
+        const base = prev ?? (currentCase ? createInitialPatientState(currentCase) : null);
+        if (!base) return prev;
+        const next = { ...base, vitals: { ...base.vitals } };
+        if (instructorOverride.vitals) {
+          Object.assign(next.vitals, instructorOverride.vitals);
+        }
+        if (instructorOverride.currentRhythm) next.currentRhythm = instructorOverride.currentRhythm;
+        if (instructorOverride.isInArrest !== undefined) next.isInArrest = instructorOverride.isInArrest;
+        return next;
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [instructorOverride?.nonce]);
 
   // Inactivity coaching — nudge students who are stuck
   useEffect(() => {
