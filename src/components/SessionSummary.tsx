@@ -11,6 +11,7 @@ import {
 import { exportSessionToPDF } from '@/lib/pdf-export';
 import { toast } from 'sonner';
 import { DebriefingResourcesPanel } from '@/components/DebriefingResourcesPanel';
+import { EvidenceResearchPanel } from '@/components/EvidenceResearchPanel';
 import {
   evaluateTreatmentQuality,
   getResourcesForCase,
@@ -1000,6 +1001,18 @@ export function SessionSummary({
         caseData={caseData}
         objective={simulationObjective}
         resources={debriefingResources}
+      />
+
+      {/* Evidence-Based Practice — Y3/Y4 only.
+          Landmark trials that inform the protocols the student just
+          followed, each in a five-question mind-map (who / why / how /
+          findings / meaning). Renders nothing for 1st/2nd year or
+          diploma so the summary stays focused on clinical skills. */}
+      <EvidenceResearchPanel
+        caseCategory={caseData.category}
+        caseSubcategory={caseData.subcategory || ''}
+        appliedTreatmentIds={(appliedTreatments ?? []).map(t => t.id)}
+        studentYear={session.studentYear}
       />
 
       {/* Action Buttons */}
