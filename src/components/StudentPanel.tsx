@@ -1100,6 +1100,7 @@ export function StudentPanel({
         if (!prev) return prev;
         const v = { ...prev.vitals };
         let changed = false;
+        let roscTriggered = false;
 
         const hasO2 =
           appliedTreatmentIds.includes('oxygen_15l') ||
@@ -1135,14 +1136,72 @@ export function StudentPanel({
           changed = true;
         }
 
+        // ---- CONTINUOUS ROSC EVALUATOR (non-shockable rhythms) ----
+        // Real ACLS doesn't require the student to press "apply adrenaline"
+        // for ROSC to happen — if they're running high-quality CPR,
+        // ventilating properly, and have given adrenaline, the rhythm can
+        // convert at any time. Previously ROSC was locked to the moment
+        // the engine saw applyTreatment('adrenaline_1mg'), which felt
+        // unresponsive when students were doing all the right things
+        // between doses.
+        //
+        // Conditions (ALL must be true):
+        //  - patient currently in asystole or PEA (non-shockable arrest)
+        //  - CPR is running right now
+        //  - at least one adrenaline dose administered
+        //  - O2/ventilation active (no unmanaged airway)
+        //  - been in arrest for > 90 seconds (gives the scenario time to
+        //    feel real; avoids instant ROSC theatrics)
+        //
+        // Per-tick probability is modest (~6% every 5s = ~50% by 1 min,
+        // ~90% by 3 min) so the rhythm conversion feels clinically earned
+        // rather than scripted. Ramps up with each additional adrenaline
+        // dose the student gives.
+        const isNonShockable =
+          prev.currentRhythm === 'Asystole' || prev.currentRhythm === 'PEA';
+        const arrestDurationMs = caseStartTime ? Date.now() - caseStartTime : 0;
+        const canRoscTick =
+          prev.isInArrest &&
+          isNonShockable &&
+          cprRunning &&
+          hasO2 &&
+          adrenalineDoses >= 1 &&
+          arrestDurationMs > 90_000;
+
+        if (canRoscTick) {
+          // Base 6% per tick; +4% per additional adrenaline dose after the first.
+          const perTickChance = Math.min(0.25, 0.06 + (adrenalineDoses - 1) * 0.04);
+          if (Math.random() < perTickChance) {
+            // ROSC — restore a modest post-arrest rhythm.
+            v.pulse = 95 + Math.floor(Math.random() * 15); // 95-110
+            v.bp = '95/60';
+            v.spo2 = Math.max(v.spo2 ?? 85, 90);
+            v.respiration = ventRate || 10;
+            roscTriggered = true;
+            changed = true;
+          }
+        }
+
         if (!changed) return prev;
         setCurrentVitals(ensureCompleteVitals(v));
-        return { ...prev, vitals: v };
+        const next = { ...prev, vitals: v };
+        if (roscTriggered) {
+          next.isInArrest = false;
+          next.currentRhythm = 'Sinus Tachycardia';
+          next.deteriorationLevel = 2;
+          // Fire off a one-shot toast so the student's attention is
+          // pulled back to the monitor exactly when the rhythm changes.
+          toast.success('ROSC — Return of Spontaneous Circulation', {
+            description: 'Sinus tachycardia restored. Begin post-ROSC care: 12-lead ECG, titrate O2 to 94–98%, targeted temperature management.',
+            duration: 12000,
+          });
+        }
+        return next;
       });
     }, 5000);
     return () => window.clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, readOnly, appliedTreatmentIds, cprRunning, ventilatorSettings, bvmVentilationRate]);
+  }, [phase, readOnly, appliedTreatmentIds, cprRunning, ventilatorSettings, bvmVentilationRate, adrenalineDoses, caseStartTime]);
 
   // Apply treatment — uses dynamic treatment engine
   const applyTreatment = useCallback((treatment: Treatment, defibParams?: DefibrillationParams) => {

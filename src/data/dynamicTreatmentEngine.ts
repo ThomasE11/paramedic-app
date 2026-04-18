@@ -485,15 +485,18 @@ function applyStandardTreatment(
       // ROSC pathway for non-shockable rhythms (Asystole/PEA) after repeated adrenaline + CPR
       const isNonShockable = state.currentRhythm === 'Asystole' || state.currentRhythm === 'PEA';
       if (isNonShockable && applicationCount >= 2) {
-        // Probability of ROSC increases with each adrenaline dose
-        const roscChance = applicationCount === 2 ? 0.30
-          : applicationCount === 3 ? 0.50
-          : 0.70; // 4th dose and beyond
+        // Probability of ROSC increases with each adrenaline dose. Tuned so
+        // dose 2 + active CPR reliably converts — feedback was that the
+        // simulation didn't feel responsive when the student was doing
+        // everything right.
+        const roscChance = applicationCount === 2 ? 0.45
+          : applicationCount === 3 ? 0.70
+          : 0.85; // 4th dose and beyond
 
-        // Deterministic ROSC trigger: achieve ROSC once enough doses are given
-        // Use a threshold approach — ROSC occurs when chance >= 0.5 (i.e., 3rd dose)
-        // OR on 2nd dose if CPR has been running (timeWithoutTreatment is low)
-        const cprActive = state.timeWithoutTreatment < 30; // CPR resets this timer
+        // Deterministic ROSC trigger. We consider the student's effort
+        // adequate if treatments have been flowing (timeWithoutTreatment
+        // < 45 s — set while CPR is running or any treatment is applied).
+        const cprActive = state.timeWithoutTreatment < 45;
         const shouldROSC = roscChance >= 0.50 || (roscChance >= 0.30 && cprActive);
 
         if (shouldROSC) {
