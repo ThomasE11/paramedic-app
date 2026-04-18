@@ -107,6 +107,10 @@ export function ClassroomBroadcastBar({
   const [message, setMessage] = useState('');
   const [revealedDx, setRevealedDx] = useState(false);
   const [revealedFlags, setRevealedFlags] = useState(false);
+  // Record the most recent instructor broadcast so the panel can show
+  // a "Latest broadcast" receipt — design-system pattern for giving
+  // the instructor a quick visual confirmation of what they just sent.
+  const [lastSent, setLastSent] = useState<{ text: string; at: Date } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const students = participants.filter(p => p.role === 'student');
@@ -132,6 +136,8 @@ export function ClassroomBroadcastBar({
     return () => window.removeEventListener('keydown', onKey);
   }, [expanded]);
 
+  const recordSent = (text: string) => setLastSent({ text, at: new Date() });
+
   const pushVitals = async (stage: 'afterIntervention' | 'enRoute' | 'deterioration') => {
     const v = caseData.vitalSignsProgression?.[stage];
     if (!v) return;
@@ -140,17 +146,18 @@ export function ClassroomBroadcastBar({
       enRoute: 'En route',
       deterioration: '⚠ Deterioration',
     } as const;
-    await onBroadcast({
-      kind: 'instructor_message',
-      text: `📊 ${labels[stage]} vitals — ${vitalsToSummary(v)}`,
-    });
+    const text = `📊 ${labels[stage]} vitals — ${vitalsToSummary(v)}`;
+    await onBroadcast({ kind: 'instructor_message', text });
+    recordSent(text);
     toast.success(`${labels[stage]} vitals sent to students`);
   };
 
   const revealDx = async () => {
     const dx = caseData.expectedFindings?.mostLikelyDiagnosis;
     if (!dx) return;
-    await onBroadcast({ kind: 'instructor_message', text: `🎯 Working diagnosis: ${dx}` });
+    const text = `🎯 Working diagnosis: ${dx}`;
+    await onBroadcast({ kind: 'instructor_message', text });
+    recordSent(text);
     setRevealedDx(true);
     toast.success('Diagnosis revealed to students');
   };
@@ -158,10 +165,9 @@ export function ClassroomBroadcastBar({
   const revealFlags = async () => {
     const flags = caseData.expectedFindings?.redFlags ?? [];
     if (flags.length === 0) return;
-    await onBroadcast({
-      kind: 'instructor_message',
-      text: `🚩 Red flags to recognise:\n${flags.map(f => `• ${f}`).join('\n')}`,
-    });
+    const text = `🚩 Red flags to recognise:\n${flags.map(f => `• ${f}`).join('\n')}`;
+    await onBroadcast({ kind: 'instructor_message', text });
+    recordSent(text);
     setRevealedFlags(true);
     toast.success('Red flags shared with students');
   };
@@ -170,9 +176,19 @@ export function ClassroomBroadcastBar({
     const text = message.trim();
     if (!text) return;
     await onBroadcast({ kind: 'instructor_message', text });
+    recordSent(text);
     toast.success('Message sent to students');
     setMessage('');
     inputRef.current?.focus();
+  };
+
+  // Format the last-sent timestamp as HH:MM:SS — matches the design
+  // bundle's mono clock style for broadcast receipts.
+  const formatBroadcastTime = (d: Date) => {
+    const h = String(d.getHours()).padStart(2, '0');
+    const m = String(d.getMinutes()).padStart(2, '0');
+    const s = String(d.getSeconds()).padStart(2, '0');
+    return `${h}:${m}:${s}`;
   };
 
   const countdown = formatCountdown(timerEndsAt);
@@ -212,13 +228,22 @@ export function ClassroomBroadcastBar({
             </Badge>
           )}
 
-          {/* Countdown */}
+          {/* Countdown — running-state chip. Adds a pulsing dot when less
+              than 2 minutes remain so the instructor's peripheral vision
+              can see "time is nearly up" without reading the digits. */}
           {timerEndsAt && (
             <Badge
               variant={countdown.urgent ? 'destructive' : 'outline'}
-              className={`gap-1 text-xs font-mono tabular-nums ${countdown.expired ? 'opacity-70' : ''}`}
+              className={`gap-1.5 text-xs font-mono tabular-nums ${countdown.expired ? 'opacity-70' : ''}`}
             >
-              <Clock className="w-3 h-3" />
+              {countdown.urgent && !countdown.expired ? (
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-current opacity-75" />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-current" />
+                </span>
+              ) : (
+                <Clock className="w-3 h-3" />
+              )}
               {countdown.text}
             </Badge>
           )}
@@ -374,6 +399,25 @@ export function ClassroomBroadcastBar({
         {/* --- Expanded broadcast panel --- */}
         {expanded && (
           <div className="mt-3 pt-3 border-t border-border/50 space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
+            {/* Latest broadcast receipt — gives the instructor a quick
+                visual confirmation of what they just pushed, and when.
+                Matches the design system's broadcast-panel pattern. */}
+            {lastSent && (
+              <div className="rounded-lg bg-muted/60 border border-border/60 px-3 py-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    Latest broadcast
+                  </span>
+                  <span className="text-[10px] font-mono text-muted-foreground tabular-nums">
+                    {formatBroadcastTime(lastSent.at)}
+                  </span>
+                </div>
+                <p className="text-xs mt-0.5 leading-snug whitespace-pre-wrap line-clamp-2">
+                  {lastSent.text}
+                </p>
+              </div>
+            )}
+
             <div className="flex items-center gap-1.5 flex-wrap">
               <Button size="sm" variant="outline" onClick={() => void pushVitals('afterIntervention')} disabled={!caseData.vitalSignsProgression?.afterIntervention} className="h-7 gap-1.5 text-xs">
                 <Activity className="w-3 h-3" /> Push post-int vitals

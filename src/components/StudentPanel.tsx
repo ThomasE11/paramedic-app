@@ -2796,14 +2796,20 @@ export function StudentPanel({
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-2 sm:p-3">
+                    {/* ABCDE channel colours per tile — matches the design-system
+                        primary-survey pattern. Scene-safety is neutral; airway /
+                        breathing / circulation / disability / exposure each pick
+                        up their channel's colour when idle, reinforcing the
+                        clinical hierarchy at a glance. Assessed state keeps the
+                        green check; active state ramps up ring intensity. */}
                     <div className="grid grid-cols-6 gap-1.5 sm:gap-2">
                       {([
-                        { key: 'scene-safety' as const, letter: 'S', label: 'Scene', stepId: 'scene-safety' as AssessmentStepId },
-                        { key: 'airway' as const, letter: 'A', label: 'Airway', stepId: 'airway' as AssessmentStepId },
-                        { key: 'breathing' as const, letter: 'B', label: 'Breathing', stepId: 'breathing' as AssessmentStepId },
-                        { key: 'circulation' as const, letter: 'C', label: 'Circulation', stepId: 'circulation' as AssessmentStepId },
-                        { key: 'disability' as const, letter: 'D', label: 'Disability', stepId: 'disability' as AssessmentStepId },
-                        { key: 'exposure' as const, letter: 'E', label: 'Exposure', stepId: 'exposure' as AssessmentStepId },
+                        { key: 'scene-safety' as const, letter: 'S', label: 'Scene',      stepId: 'scene-safety' as AssessmentStepId, idle: 'border-slate-400/40 bg-slate-400/5 text-slate-500', hover: 'hover:border-slate-500/60 hover:bg-slate-500/10', active: 'border-slate-500 bg-slate-500/10 ring-2 ring-slate-500/30 text-slate-600' },
+                        { key: 'airway' as const,       letter: 'A', label: 'Airway',     stepId: 'airway' as AssessmentStepId,       idle: 'border-blue-400/40 bg-blue-400/5 text-blue-600',   hover: 'hover:border-blue-500/60 hover:bg-blue-500/10',   active: 'border-blue-500 bg-blue-500/10 ring-2 ring-blue-500/30 text-blue-600' },
+                        { key: 'breathing' as const,    letter: 'B', label: 'Breathing',  stepId: 'breathing' as AssessmentStepId,    idle: 'border-cyan-400/40 bg-cyan-400/5 text-cyan-600',   hover: 'hover:border-cyan-500/60 hover:bg-cyan-500/10',   active: 'border-cyan-500 bg-cyan-500/10 ring-2 ring-cyan-500/30 text-cyan-600' },
+                        { key: 'circulation' as const,  letter: 'C', label: 'Circulation',stepId: 'circulation' as AssessmentStepId,  idle: 'border-red-400/40 bg-red-400/5 text-red-600',      hover: 'hover:border-red-500/60 hover:bg-red-500/10',     active: 'border-red-500 bg-red-500/10 ring-2 ring-red-500/30 text-red-600' },
+                        { key: 'disability' as const,   letter: 'D', label: 'Disability', stepId: 'disability' as AssessmentStepId,   idle: 'border-purple-400/40 bg-purple-400/5 text-purple-600', hover: 'hover:border-purple-500/60 hover:bg-purple-500/10', active: 'border-purple-500 bg-purple-500/10 ring-2 ring-purple-500/30 text-purple-600' },
+                        { key: 'exposure' as const,     letter: 'E', label: 'Exposure',   stepId: 'exposure' as AssessmentStepId,     idle: 'border-amber-400/40 bg-amber-400/5 text-amber-600', hover: 'hover:border-amber-500/60 hover:bg-amber-500/10',  active: 'border-amber-500 bg-amber-500/10 ring-2 ring-amber-500/30 text-amber-600' },
                       ]).map(item => {
                         const isAssessed = assessmentTracker?.performed.some(p => p.stepId === item.stepId);
                         const isActive = activePrimarySurvey === item.key;
@@ -2811,19 +2817,18 @@ export function StudentPanel({
                           <button
                             key={item.key}
                             onClick={() => {
-                              // Always call to refresh activeFindings for display
                               handlePerformAssessment(item.stepId);
                               setActivePrimarySurvey(isActive ? null : item.key);
                             }}
-                            className={`flex flex-col items-center justify-center gap-0.5 min-h-[44px] sm:min-h-[56px] p-2 sm:p-3 rounded-xl border-2 transition-all text-center touch-manipulation ${
+                            className={`flex flex-col items-center justify-center gap-0.5 min-h-[44px] sm:min-h-[56px] p-2 sm:p-3 rounded-xl border transition-all text-center touch-manipulation ${
                               isActive
-                                ? 'border-blue-500 bg-blue-500/10 ring-1 ring-blue-500/30'
+                                ? item.active
                                 : isAssessed
-                                  ? 'border-green-500/40 bg-green-500/5'
-                                  : 'border-border/40 hover:border-blue-500/40 hover:bg-accent/30 active:bg-accent/50'
+                                  ? 'border-green-500/40 bg-green-500/5 text-green-600'
+                                  : `${item.idle} ${item.hover}`
                             }`}
                           >
-                            <span className={`text-lg sm:text-xl font-bold ${isAssessed ? 'text-green-600 dark:text-green-400' : 'text-foreground'}`}>
+                            <span className={`text-lg sm:text-xl font-bold ${isAssessed ? 'text-green-600 dark:text-green-400' : ''}`}>
                               {item.letter}
                             </span>
                             <span className="text-[9px] sm:text-[10px] text-muted-foreground leading-tight">{item.label}</span>
