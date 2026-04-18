@@ -1139,44 +1139,82 @@ export function StudentPanel({
         // ---- CONTINUOUS ROSC EVALUATOR (non-shockable rhythms) ----
         // Real ACLS doesn't require the student to press "apply adrenaline"
         // for ROSC to happen — if they're running high-quality CPR,
-        // ventilating properly, and have given adrenaline, the rhythm can
-        // convert at any time. Previously ROSC was locked to the moment
-        // the engine saw applyTreatment('adrenaline_1mg'), which felt
-        // unresponsive when students were doing all the right things
-        // between doses.
+        // ventilating properly, AND the pharmacologic picture the
+        // guidelines actually call for, the rhythm can convert at any
+        // time. Previously ROSC was locked to the moment the engine saw
+        // applyTreatment('adrenaline_1mg'), which felt unresponsive.
         //
-        // Conditions (ALL must be true):
-        //  - patient currently in asystole or PEA (non-shockable arrest)
-        //  - CPR is running right now
-        //  - at least one adrenaline dose administered
-        //  - O2/ventilation active (no unmanaged airway)
-        //  - been in arrest for > 90 seconds (gives the scenario time to
-        //    feel real; avoids instant ROSC theatrics)
+        // Two parallel pathways based on core temperature, matching
+        // ERC 2021 / JRCALC / AHA hypothermic-arrest guidance:
+        //
+        //  • Normothermic (temp ≥ 30°C) — requires at least one
+        //    adrenaline dose. Standard ACLS.
+        //
+        //  • Severe hypothermia (temp < 30°C) — adrenaline is
+        //    CONTRAINDICATED (impaired metabolism, toxic accumulation
+        //    on rewarming). Requires active rewarming intervention
+        //    instead. Drugs would never be given here, so we must
+        //    recognise the hypothermic resuscitation as complete when
+        //    rewarming + CPR + ventilation are in flight.
         //
         // Per-tick probability is modest (~6% every 5s = ~50% by 1 min,
-        // ~90% by 3 min) so the rhythm conversion feels clinically earned
-        // rather than scripted. Ramps up with each additional adrenaline
-        // dose the student gives.
+        // ~90% by 3 min in normothermic; slower in hypothermic because
+        // rewarming takes longer to physiologically reverse the arrest).
         const isNonShockable =
           prev.currentRhythm === 'Asystole' || prev.currentRhythm === 'PEA';
         const arrestDurationMs = caseStartTime ? Date.now() - caseStartTime : 0;
+        const coreTemp = prev.vitals.temperature ?? 37;
+        const isSevereHypothermia = coreTemp < 30;
+        const hasRewarming = appliedTreatmentIds.some(id =>
+          /warm|blanket|hypotherm/i.test(id),
+        );
+
+        // Normothermic ACLS — needs adrenaline.
+        const canRoscNormothermic =
+          !isSevereHypothermia &&
+          adrenalineDoses >= 1;
+
+        // Hypothermic ACLS — needs active rewarming, NOT adrenaline.
+        // Guideline basis: ERC 2021 §5.3 (Hypothermic cardiac arrest) —
+        // withhold IV drugs <30°C, focus on CPR + active rewarming.
+        const canRoscHypothermic =
+          isSevereHypothermia &&
+          hasRewarming;
+
         const canRoscTick =
           prev.isInArrest &&
           isNonShockable &&
           cprRunning &&
           hasO2 &&
-          adrenalineDoses >= 1 &&
-          arrestDurationMs > 90_000;
+          arrestDurationMs > 90_000 &&
+          (canRoscNormothermic || canRoscHypothermic);
 
         if (canRoscTick) {
-          // Base 6% per tick; +4% per additional adrenaline dose after the first.
-          const perTickChance = Math.min(0.25, 0.06 + (adrenalineDoses - 1) * 0.04);
+          // Normothermic: base 6% + 4% per extra adrenaline dose (cap 25%).
+          // Hypothermic: base 3% — slower because rewarming needs time to
+          // physiologically reverse drug-refractory cold myocardium.
+          const perTickChance = canRoscHypothermic
+            ? 0.03
+            : Math.min(0.25, 0.06 + Math.max(0, adrenalineDoses - 1) * 0.04);
+
           if (Math.random() < perTickChance) {
-            // ROSC — restore a modest post-arrest rhythm.
-            v.pulse = 95 + Math.floor(Math.random() * 15); // 95-110
-            v.bp = '95/60';
-            v.spo2 = Math.max(v.spo2 ?? 85, 90);
-            v.respiration = ventRate || 10;
+            // ROSC — restore a modest post-arrest rhythm. Hypothermic
+            // patients typically come back with a lower HR initially
+            // (cold sinus rather than sinus tachy).
+            if (canRoscHypothermic) {
+              v.pulse = 60 + Math.floor(Math.random() * 15); // 60-75
+              v.bp = '95/60';
+              v.spo2 = Math.max(v.spo2 ?? 85, 88);
+              v.respiration = ventRate || 8;
+              // Small rewarming bump on conversion so the patient is above
+              // the drug-withholding threshold for post-ROSC care.
+              v.temperature = Math.max(v.temperature ?? 28, 30.5);
+            } else {
+              v.pulse = 95 + Math.floor(Math.random() * 15); // 95-110
+              v.bp = '95/60';
+              v.spo2 = Math.max(v.spo2 ?? 85, 90);
+              v.respiration = ventRate || 10;
+            }
             roscTriggered = true;
             changed = true;
           }
@@ -1187,12 +1225,15 @@ export function StudentPanel({
         const next = { ...prev, vitals: v };
         if (roscTriggered) {
           next.isInArrest = false;
-          next.currentRhythm = 'Sinus Tachycardia';
+          // Hypothermic comes back with cold sinus (lower rate); normo
+          // comes back with sinus tachy. Matches the physiology of the
+          // respective conversions.
+          next.currentRhythm = isSevereHypothermia ? 'Normal Sinus Rhythm' : 'Sinus Tachycardia';
           next.deteriorationLevel = 2;
-          // Fire off a one-shot toast so the student's attention is
-          // pulled back to the monitor exactly when the rhythm changes.
           toast.success('ROSC — Return of Spontaneous Circulation', {
-            description: 'Sinus tachycardia restored. Begin post-ROSC care: 12-lead ECG, titrate O2 to 94–98%, targeted temperature management.',
+            description: isSevereHypothermia
+              ? 'Sinus rhythm restored with rewarming. Continue active rewarming to 32–36 °C, titrate O2 94–98%, 12-lead ECG, handle gently (arrhythmia risk).'
+              : 'Sinus tachycardia restored. Begin post-ROSC care: 12-lead ECG, titrate O2 to 94–98%, targeted temperature management.',
             duration: 12000,
           });
         }
