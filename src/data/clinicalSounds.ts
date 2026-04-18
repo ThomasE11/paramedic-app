@@ -1187,105 +1187,105 @@ export function playBreathSound(soundType: BreathSoundType, durationMs: number =
     }
 
     case 'wheeze': {
-      // POLYPHONIC EXPIRATORY WHEEZE
-      // Real wheezes: breathy, musical tones caused by turbulent airflow through narrowed airways.
-      // Key features: noise-modulated tonal quality, expiratory dominance, pitch wandering,
-      // layered with audible breath sounds underneath.
-      const breathRate = 0.3; // ~18/min
+      // EXPIRATORY WHEEZE
+      //
+      // Physics: turbulent airflow through narrowed bronchi creates a
+      // whistle whose pitch depends on the narrowed airway's resonant
+      // frequency. The ACOUSTIC truth is "noise forced through a narrow
+      // resonance" — not an oscillator. So we synthesise it the same way:
+      //
+      //   pink noise  ─►  narrow bandpass (Q≈18)  ─►  expiratory envelope
+      //
+      // That alone produces the characteristic breathy whistle without any
+      // oscillator artefacts. We layer two such resonances at slightly
+      // different pitches for the faint "polyphonic" colouring real wheeze
+      // has, and glide the centre frequency up through each expiration
+      // (classic rising wheeze as airways narrow with the outbreath). The
+      // result is breathy, musical, organic — no sawtooth buzz.
+
+      const breathRate = 0.3; // ~18 /min
       const cycleSamples = Math.floor(ctx.sampleRate / breathRate);
-      const inspirationLen = Math.floor(cycleSamples * 0.35);
+      const inspirationLen = Math.floor(cycleSamples * 0.38);
 
-      // Layer 1: Background breath sounds (more prominent than before — wheezes sit ON breath)
-      const noiseBuffer = createPinkNoiseBuffer(ctx, duration);
-      const noiseData = noiseBuffer.getChannelData(0);
-      applyBreathingEnvelope(noiseData, ctx.sampleRate, breathRate, 0.35, 1.0, 0.03);
-      for (let i = 0; i < noiseData.length; i++) noiseData[i] *= 0.5;
+      // ---- Underlying vesicular breath sounds (quiet bed) -----------------
+      const bedBuffer = createPinkNoiseBuffer(ctx, duration);
+      const bedData = bedBuffer.getChannelData(0);
+      applyBreathingEnvelope(bedData, ctx.sampleRate, breathRate, 0.38, 1.0, 0.03);
+      for (let i = 0; i < bedData.length; i++) bedData[i] *= 0.35;
+      const bedSrc = ctx.createBufferSource();
+      bedSrc.buffer = bedBuffer;
+      const bedLp = ctx.createBiquadFilter();
+      bedLp.type = 'lowpass';
+      bedLp.frequency.value = 900;
+      bedSrc.connect(bedLp);
+      bedLp.connect(masterGain);
+      bedSrc.start();
+      bedSrc.stop(ctx.currentTime + duration);
 
-      const noiseSource = ctx.createBufferSource();
-      noiseSource.buffer = noiseBuffer;
-      const noiseLp = ctx.createBiquadFilter();
-      noiseLp.type = 'lowpass';
-      noiseLp.frequency.value = 800;
-      noiseSource.connect(noiseLp);
-      noiseLp.connect(masterGain);
-      noiseSource.start();
-      noiseSource.stop(ctx.currentTime + duration);
+      // ---- The wheeze itself: two resonant noise streams ------------------
+      // Fundamental resonance ~350 Hz + a weaker "buddy" a minor-3rd up.
+      // This double-band is what makes a wheeze sound *musical* rather than
+      // whistled — real wheezes often have 2-3 audible tones.
+      const resonances: Array<{ base: number; gain: number; q: number }> = [
+        { base: 360, gain: 0.42, q: 18 },
+        { base: 430, gain: 0.22, q: 22 },
+      ];
 
-      // Layer 2: Filtered noise band for breathy wheeze texture (the "air" component)
-      const wheezeNoiseBuffer = createPinkNoiseBuffer(ctx, duration);
-      const wheezeNoiseData = wheezeNoiseBuffer.getChannelData(0);
-      // Apply expiratory-dominant envelope to the noise
-      for (let i = 0; i < wheezeNoiseData.length; i++) {
-        const t = i / ctx.sampleRate;
-        const cyclePos = (t * breathRate) % 1;
-        const isExpiring = cyclePos > 0.35;
-        wheezeNoiseData[i] *= isExpiring ? 0.35 : 0.05;
-      }
-      const wheezeNoiseSrc = ctx.createBufferSource();
-      wheezeNoiseSrc.buffer = wheezeNoiseBuffer;
-      const wheezeNoiseBp = ctx.createBiquadFilter();
-      wheezeNoiseBp.type = 'bandpass';
-      wheezeNoiseBp.frequency.value = 450;
-      wheezeNoiseBp.Q.value = 2;
-      wheezeNoiseSrc.connect(wheezeNoiseBp);
-      wheezeNoiseBp.connect(masterGain);
-      wheezeNoiseSrc.start();
-      wheezeNoiseSrc.stop(ctx.currentTime + duration);
+      resonances.forEach(({ base, gain: bandGain, q }) => {
+        // Fresh pink noise for each resonance so they're uncorrelated.
+        const noiseBuf = createPinkNoiseBuffer(ctx, duration);
+        const noiseSrc = ctx.createBufferSource();
+        noiseSrc.buffer = noiseBuf;
 
-      // Layer 3: Polyphonic wheeze tones — sawtooth for richer harmonics, wider bandwidth
-      const wheezeFreqs = [280, 420, 560, 750]; // Wider spread, 4 harmonics
-      wheezeFreqs.forEach((baseFreq, idx) => {
-        const osc = ctx.createOscillator();
-        osc.type = 'sawtooth'; // Richer harmonic content than sine
-
-        // More pronounced pitch wandering — wheezes naturally fluctuate
-        osc.frequency.setValueAtTime(baseFreq, ctx.currentTime);
-        for (let t = 0; t < duration; t += 0.1) {
-          const drift = baseFreq * (1 + (Math.random() - 0.5) * 0.12);
-          osc.frequency.exponentialRampToValueAtTime(drift, ctx.currentTime + t + 0.1);
-        }
-
-        // Amplitude modulation with LFO for natural flutter/wavering
-        const lfo = ctx.createOscillator();
-        lfo.type = 'sine';
-        lfo.frequency.value = 3 + Math.random() * 4; // 3-7 Hz tremolo
-        const lfoGain = ctx.createGain();
-        lfoGain.gain.value = 0.3 + idx * 0.05; // Modulation depth
-        lfo.connect(lfoGain);
-
-        const wheezeGain = ctx.createGain();
-        lfoGain.connect(wheezeGain.gain); // AM modulation
-
-        // Expiratory-dominant envelope
-        for (let t = 0; t < duration; t += 1 / breathRate) {
-          const inspEnd = t + inspirationLen / ctx.sampleRate;
-          const cycleEnd = t + cycleSamples / ctx.sampleRate;
-          const vol = 0.04 - idx * 0.008; // Each harmonic slightly quieter
-          // Inspiration: very quiet
-          wheezeGain.gain.setValueAtTime(0.003, ctx.currentTime + t);
-          wheezeGain.gain.linearRampToValueAtTime(0.005, ctx.currentTime + inspEnd);
-          // Expiration: ramp up with slight attack, sustain, natural decay
-          wheezeGain.gain.linearRampToValueAtTime(vol * 0.6, ctx.currentTime + inspEnd + 0.12);
-          wheezeGain.gain.linearRampToValueAtTime(vol, ctx.currentTime + inspEnd + 0.3);
-          wheezeGain.gain.setValueAtTime(vol * 0.9, ctx.currentTime + cycleEnd - 0.4);
-          wheezeGain.gain.linearRampToValueAtTime(vol * 0.2, ctx.currentTime + cycleEnd - 0.1);
-          wheezeGain.gain.linearRampToValueAtTime(0.003, ctx.currentTime + cycleEnd);
-        }
-
-        // Wider bandpass — breathy, not electronic (Q=3 instead of 8)
         const bp = ctx.createBiquadFilter();
         bp.type = 'bandpass';
-        bp.frequency.value = baseFreq;
-        bp.Q.value = 3;
+        bp.frequency.setValueAtTime(base, ctx.currentTime);
+        bp.Q.value = q;
 
-        osc.connect(wheezeGain);
-        wheezeGain.connect(bp);
-        bp.connect(masterGain);
-        osc.start();
-        osc.stop(ctx.currentTime + duration);
+        // Per-expiration glissando: pitch climbs ~80 Hz through each
+        // outbreath. Restarts on the next cycle. Smooth, not stepped.
+        for (let t = 0; t < duration; t += 1 / breathRate) {
+          const expStart = t + inspirationLen / ctx.sampleRate;
+          const cycleEnd = t + cycleSamples / ctx.sampleRate;
+          // Reset to base at start of cycle
+          bp.frequency.setValueAtTime(base, ctx.currentTime + t);
+          // Hold through inspiration
+          bp.frequency.setValueAtTime(base, ctx.currentTime + expStart);
+          // Glide up through expiration
+          bp.frequency.linearRampToValueAtTime(base + 85, ctx.currentTime + cycleEnd - 0.1);
+        }
+
+        // Per-expiration volume envelope — quiet during inspiration,
+        // crescendos through expiration, decays into next cycle.
+        const env = ctx.createGain();
+        for (let t = 0; t < duration; t += 1 / breathRate) {
+          const expStart = t + inspirationLen / ctx.sampleRate;
+          const cycleEnd = t + cycleSamples / ctx.sampleRate;
+          env.gain.setValueAtTime(0.01, ctx.currentTime + t);
+          env.gain.linearRampToValueAtTime(0.02, ctx.currentTime + expStart);
+          env.gain.linearRampToValueAtTime(bandGain * 0.7, ctx.currentTime + expStart + 0.12);
+          env.gain.linearRampToValueAtTime(bandGain, ctx.currentTime + expStart + 0.35);
+          env.gain.setValueAtTime(bandGain * 0.95, ctx.currentTime + cycleEnd - 0.35);
+          env.gain.linearRampToValueAtTime(bandGain * 0.25, ctx.currentTime + cycleEnd - 0.08);
+          env.gain.linearRampToValueAtTime(0.01, ctx.currentTime + cycleEnd);
+        }
+
+        // Faint 4-6 Hz tremolo so the whistle has a natural flutter.
+        const lfo = ctx.createOscillator();
+        lfo.type = 'sine';
+        lfo.frequency.value = 4 + Math.random() * 2;
+        const lfoGain = ctx.createGain();
+        lfoGain.gain.value = bandGain * 0.12;
+        lfo.connect(lfoGain);
+        lfoGain.connect(env.gain);
+
+        noiseSrc.connect(bp);
+        bp.connect(env);
+        env.connect(masterGain);
+        noiseSrc.start();
+        noiseSrc.stop(ctx.currentTime + duration);
         lfo.start();
         lfo.stop(ctx.currentTime + duration);
-        currentOscillators.push(osc);
       });
       break;
     }
@@ -1403,84 +1403,81 @@ export function playBreathSound(soundType: BreathSoundType, durationMs: number =
 
     case 'stridor': {
       // STRIDOR
-      // Harsh, high-pitched, predominantly inspiratory sound caused by turbulent
-      // airflow through a narrowed upper airway (larynx/trachea).
-      // Often audible without stethoscope in severe cases.
-      // Characteristics: 500-1500 Hz, harsh/raspy quality, inspiratory dominance,
-      // may have overtones. Think of air forced through a narrow pipe.
-      const breathRate = 0.35; // Slightly faster due to distress
+      //
+      // Harsh, high-pitched, predominantly INSPIRATORY noise from turbulent
+      // airflow through a narrowed extra-thoracic airway (larynx/trachea).
+      // Often audible without a stethoscope in severe obstruction.
+      //
+      // Acoustically it's a more chaotic cousin of wheeze — higher pitch
+      // (~700-1200 Hz), broader spectral content, harsh/raspy rather than
+      // musical. Synthesised the same physically-correct way: noise through
+      // resonant bandpass, but with a wider Q (less pure tone) and a
+      // heavier broadband noise bed to preserve the "rush" character.
+      const breathRate = 0.35; // ~21/min — distressed
       const cycleSamples = Math.floor(ctx.sampleRate / breathRate);
-      const inspirationLen = Math.floor(cycleSamples * 0.5);
+      const inspirationLen = Math.floor(cycleSamples * 0.55);
 
-      // Layer 1: Turbulent noise base
-      const noiseBuffer = createPinkNoiseBuffer(ctx, duration);
-      const noiseData = noiseBuffer.getChannelData(0);
-      // Strong inspiratory emphasis
-      applyBreathingEnvelope(noiseData, ctx.sampleRate, breathRate, 0.5, 2.0, 0.02);
+      // ---- Broadband turbulent-air bed, inspiratory dominant --------------
+      const bedBuffer = createPinkNoiseBuffer(ctx, duration);
+      const bedData = bedBuffer.getChannelData(0);
+      applyBreathingEnvelope(bedData, ctx.sampleRate, breathRate, 0.55, 2.2, 0.02);
+      const bedSrc = ctx.createBufferSource();
+      bedSrc.buffer = bedBuffer;
+      const bedBp = ctx.createBiquadFilter();
+      bedBp.type = 'bandpass';
+      bedBp.frequency.value = 900;
+      bedBp.Q.value = 0.7;
+      const bedGain = ctx.createGain();
+      bedGain.gain.value = 0.55;
+      bedSrc.connect(bedBp);
+      bedBp.connect(bedGain);
+      bedGain.connect(masterGain);
+      bedSrc.start();
+      bedSrc.stop(ctx.currentTime + duration);
 
-      const noiseSource = ctx.createBufferSource();
-      noiseSource.buffer = noiseBuffer;
+      // ---- Harsh resonant noise whistle (noise → narrow BP → envelope) ----
+      // Wider Q than wheeze (8 instead of 18) for rougher, less musical
+      // character. Slight pitch fluctuation on each breath to sound organic.
+      const noiseBuf = createPinkNoiseBuffer(ctx, duration);
+      const noiseSrc = ctx.createBufferSource();
+      noiseSrc.buffer = noiseBuf;
+      const bp = ctx.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.Q.value = 8;
 
-      // Narrow bandpass for harsh character
-      const bp1 = ctx.createBiquadFilter();
-      bp1.type = 'bandpass';
-      bp1.frequency.value = 700;
-      bp1.Q.value = 2;
-
-      const noiseGain = ctx.createGain();
-      noiseGain.gain.setValueAtTime(0.5, ctx.currentTime);
-
-      noiseSource.connect(bp1);
-      bp1.connect(noiseGain);
-      noiseGain.connect(masterGain);
-      noiseSource.start();
-      noiseSource.stop(ctx.currentTime + duration);
-
-      // Layer 2: Harmonic tonal component (vibrating narrowed airway walls)
-      const osc1 = ctx.createOscillator();
-      osc1.type = 'sawtooth';
-      osc1.frequency.setValueAtTime(280, ctx.currentTime);
-      const osc2 = ctx.createOscillator();
-      osc2.type = 'sawtooth';
-      osc2.frequency.setValueAtTime(560, ctx.currentTime); // Octave harmonic
-
-      // Pitch variation for organic feel
-      for (let t = 0; t < duration; t += 0.1) {
-        osc1.frequency.setValueAtTime(270 + Math.random() * 30, ctx.currentTime + t);
-        osc2.frequency.setValueAtTime(545 + Math.random() * 40, ctx.currentTime + t);
+      for (let t = 0; t < duration; t += 1 / breathRate) {
+        const inspStart = t;
+        const inspEnd = t + inspirationLen / ctx.sampleRate;
+        const cycleEnd = t + cycleSamples / ctx.sampleRate;
+        // Centre frequency jitters between breaths (650-900 Hz)
+        const f = 700 + (Math.random() - 0.5) * 120;
+        bp.frequency.setValueAtTime(f, ctx.currentTime + inspStart);
+        // Drop pitch slightly through inspiration as the patient runs out
+        // of pressure (mild "sigh" effect at the end).
+        bp.frequency.linearRampToValueAtTime(f - 40, ctx.currentTime + inspEnd);
+        bp.frequency.setValueAtTime(f, ctx.currentTime + cycleEnd);
       }
 
-      const stridorGain = ctx.createGain();
-      // Inspiratory-dominant envelope
+      const env = ctx.createGain();
       for (let t = 0; t < duration; t += 1 / breathRate) {
         const inspEnd = t + inspirationLen / ctx.sampleRate;
         const cycleEnd = t + cycleSamples / ctx.sampleRate;
-        // Quiet start
-        stridorGain.gain.setValueAtTime(0.005, ctx.currentTime + t);
-        // Inspiration: ramp up harshly
-        stridorGain.gain.linearRampToValueAtTime(0.12, ctx.currentTime + t + 0.15);
-        stridorGain.gain.setValueAtTime(0.14, ctx.currentTime + inspEnd - 0.1);
-        // Expiration: much quieter
-        stridorGain.gain.linearRampToValueAtTime(0.03, ctx.currentTime + inspEnd + 0.1);
-        stridorGain.gain.linearRampToValueAtTime(0.01, ctx.currentTime + cycleEnd - 0.1);
-        stridorGain.gain.setValueAtTime(0.005, ctx.currentTime + cycleEnd);
+        // Quiet at cycle start
+        env.gain.setValueAtTime(0.015, ctx.currentTime + t);
+        // Inspiration: harsh crescendo
+        env.gain.linearRampToValueAtTime(0.45, ctx.currentTime + t + 0.18);
+        env.gain.setValueAtTime(0.55, ctx.currentTime + inspEnd - 0.12);
+        // Expiration: much quieter, tapering
+        env.gain.linearRampToValueAtTime(0.12, ctx.currentTime + inspEnd + 0.12);
+        env.gain.linearRampToValueAtTime(0.03, ctx.currentTime + cycleEnd - 0.08);
+        env.gain.linearRampToValueAtTime(0.015, ctx.currentTime + cycleEnd);
       }
 
-      // Harsh bandpass
-      const bp2 = ctx.createBiquadFilter();
-      bp2.type = 'bandpass';
-      bp2.frequency.value = 400;
-      bp2.Q.value = 1.5;
-
-      osc1.connect(stridorGain);
-      osc2.connect(stridorGain);
-      stridorGain.connect(bp2);
-      bp2.connect(masterGain);
-      osc1.start();
-      osc2.start();
-      osc1.stop(ctx.currentTime + duration);
-      osc2.stop(ctx.currentTime + duration);
-      currentOscillators.push(osc1, osc2);
+      noiseSrc.connect(bp);
+      bp.connect(env);
+      env.connect(masterGain);
+      noiseSrc.start();
+      noiseSrc.stop(ctx.currentTime + duration);
       break;
     }
 
@@ -1508,48 +1505,51 @@ export function playBreathSound(soundType: BreathSoundType, durationMs: number =
       noiseSource.start();
       noiseSource.stop(ctx.currentTime + duration);
 
-      // Layer 2: Low-frequency rumbling oscillators (3 tones for richness)
-      const rumbleFreqs = [85, 130, 175];
-      rumbleFreqs.forEach((baseFreq) => {
-        const osc = ctx.createOscillator();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(baseFreq, ctx.currentTime);
+      // Layer 2: Low-frequency rumble — noise through two low resonances.
+      // Sounds like air bubbling through thick secretions in a pipe, not an
+      // electronic buzz. Two resonances (~130 Hz + 210 Hz) with wide Q give
+      // the "rattle" character without oscillator harshness.
+      const rumbleBands: Array<{ f: number; q: number; gain: number }> = [
+        { f: 130, q: 6, gain: 0.42 },
+        { f: 210, q: 8, gain: 0.28 },
+      ];
+      rumbleBands.forEach(({ f, q, gain: bandGain }) => {
+        const noiseBuf = createPinkNoiseBuffer(ctx, duration);
+        const noiseSrc = ctx.createBufferSource();
+        noiseSrc.buffer = noiseBuf;
+        const bp = ctx.createBiquadFilter();
+        bp.type = 'bandpass';
+        bp.frequency.value = f;
+        bp.Q.value = q;
 
-        // Organic wobble
-        for (let t = 0; t < duration; t += 0.2) {
-          osc.frequency.setValueAtTime(
-            baseFreq * (0.92 + Math.random() * 0.16),
+        // Slow, organic wobble of the centre frequency (the secretions
+        // shift as air passes them).
+        for (let t = 0.4; t < duration; t += 0.4) {
+          bp.frequency.linearRampToValueAtTime(
+            f * (0.88 + Math.random() * 0.24),
             ctx.currentTime + t,
           );
         }
 
-        const rumbleGain = ctx.createGain();
-        // Expiratory emphasis
+        const env = ctx.createGain();
         const cycleSamples = Math.floor(ctx.sampleRate / breathRate);
         const inspLen = Math.floor(cycleSamples * 0.4);
         for (let t = 0; t < duration; t += 1 / breathRate) {
           const inspEnd = t + inspLen / ctx.sampleRate;
           const cycleEnd = t + cycleSamples / ctx.sampleRate;
-          const vol = 0.06;
-          rumbleGain.gain.setValueAtTime(0.01, ctx.currentTime + t);
-          rumbleGain.gain.linearRampToValueAtTime(vol * 0.5, ctx.currentTime + t + 0.2);
-          rumbleGain.gain.setValueAtTime(vol * 0.4, ctx.currentTime + inspEnd);
-          rumbleGain.gain.linearRampToValueAtTime(vol, ctx.currentTime + inspEnd + 0.2);
-          rumbleGain.gain.setValueAtTime(vol * 0.9, ctx.currentTime + cycleEnd - 0.2);
-          rumbleGain.gain.linearRampToValueAtTime(0.01, ctx.currentTime + cycleEnd);
+          env.gain.setValueAtTime(0.03, ctx.currentTime + t);
+          env.gain.linearRampToValueAtTime(bandGain * 0.55, ctx.currentTime + t + 0.2);
+          env.gain.setValueAtTime(bandGain * 0.45, ctx.currentTime + inspEnd);
+          env.gain.linearRampToValueAtTime(bandGain, ctx.currentTime + inspEnd + 0.2);
+          env.gain.setValueAtTime(bandGain * 0.9, ctx.currentTime + cycleEnd - 0.2);
+          env.gain.linearRampToValueAtTime(0.03, ctx.currentTime + cycleEnd);
         }
 
-        const lp = ctx.createBiquadFilter();
-        lp.type = 'lowpass';
-        lp.frequency.value = 300;
-        lp.Q.value = 1.5;
-
-        osc.connect(rumbleGain);
-        rumbleGain.connect(lp);
-        lp.connect(masterGain);
-        osc.start();
-        osc.stop(ctx.currentTime + duration);
-        currentOscillators.push(osc);
+        noiseSrc.connect(bp);
+        bp.connect(env);
+        env.connect(masterGain);
+        noiseSrc.start();
+        noiseSrc.stop(ctx.currentTime + duration);
       });
       break;
     }
