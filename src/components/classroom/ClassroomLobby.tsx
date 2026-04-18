@@ -311,8 +311,12 @@ export function ClassroomLobby({ onExit, sessionHook }: ClassroomLobbyProps) {
                 </CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col items-center gap-4 py-8">
-                <div className="text-6xl font-bold tracking-[0.3em] tabular-nums text-primary">
-                  {session.pin}
+                {/* PIN rendered in mono font with a subtle mid-gap so a student
+                    reading from across a room parses the six digits as two
+                    groups of three, not one long number. Matches the
+                    design-system classroom PIN card spec. */}
+                <div className="font-mono text-[3.5rem] font-medium leading-none tracking-[0.14em] tabular-nums text-primary">
+                  {session.pin.slice(0, 3)} {session.pin.slice(3)}
                 </div>
                 <Button
                   variant="outline"
@@ -327,7 +331,25 @@ export function ClassroomLobby({ onExit, sessionHook }: ClassroomLobbyProps) {
                   )}
                   {copied ? t('classroom.copied') : t('classroom.copyPin')}
                 </Button>
-                <p className="text-xs text-muted-foreground text-center max-w-xs">
+                {/* LIVE badge + live participant count — pulses once a student joins */}
+                <div className="flex items-center gap-2 pt-1">
+                  <Badge
+                    variant="outline"
+                    className="gap-1.5 border-emerald-500/40 text-emerald-700 dark:text-emerald-400 bg-emerald-500/5"
+                  >
+                    <span className="relative flex h-1.5 w-1.5">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-75" />
+                      <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                    </span>
+                    <span className="text-[10px] font-semibold tracking-wider uppercase">Live</span>
+                  </Badge>
+                  <span className="text-xs text-muted-foreground">
+                    {students.length === 0
+                      ? 'Waiting for students…'
+                      : `${students.length} joined`}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground text-center max-w-xs mt-1">
                   {t('classroom.sharePinHint')}
                 </p>
               </CardContent>
@@ -345,25 +367,49 @@ export function ClassroomLobby({ onExit, sessionHook }: ClassroomLobbyProps) {
                     {students.length}
                   </Badge>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-2">
                   {students.length === 0 ? (
-                    <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2 py-6 px-3 text-sm text-muted-foreground">
                       <Loader2 className="h-4 w-4 animate-spin" />
                       {t('classroom.waitingForStudents')}
                     </div>
                   ) : (
-                    <ul className="divide-y divide-border">
-                      {students.map(p => (
-                        <li
-                          key={p.key}
-                          className="flex items-center justify-between py-2 text-sm"
-                        >
-                          <span className="font-medium">{p.displayName}</span>
-                          <span className="text-xs text-muted-foreground">
-                            {new Date(p.joinedAt).toLocaleTimeString()}
-                          </span>
-                        </li>
-                      ))}
+                    <ul className="space-y-0.5">
+                      {students.map(p => {
+                        // Initials from the display name — up to two letters.
+                        const initials = p.displayName
+                          .trim()
+                          .split(/\s+/)
+                          .map(w => w[0]?.toUpperCase())
+                          .filter(Boolean)
+                          .slice(0, 2)
+                          .join('');
+                        return (
+                          <li
+                            key={p.key}
+                            className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted/60 transition-colors"
+                          >
+                            {/* Avatar — accent-tinted circle with initials.
+                                Matches the design-system roster spec. */}
+                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-accent text-accent-foreground text-[13px] font-semibold shrink-0">
+                              {initials || '·'}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm font-medium truncate leading-tight">
+                                {p.displayName}
+                              </div>
+                              <div className="text-[11px] text-muted-foreground font-mono">
+                                joined {new Date(p.joinedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </div>
+                            </div>
+                            {/* Status dot — green pulse = connected. */}
+                            <span className="relative flex h-2 w-2 shrink-0" aria-label="connected">
+                              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-60" />
+                              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                            </span>
+                          </li>
+                        );
+                      })}
                     </ul>
                   )}
                 </CardContent>
