@@ -1292,56 +1292,90 @@ export function playBreathSound(soundType: BreathSoundType, durationMs: number =
 
     case 'crackles-fine': {
       // FINE INSPIRATORY CRACKLES (Rales)
-      // Brief, high-pitched popping sounds heard during late inspiration.
-      // Caused by sudden opening of collapsed alveoli (pulmonary fibrosis, CHF, pneumonia).
-      // Characteristics: each crackle ~5ms, frequency 650-2000 Hz,
-      // clusters of 3-8 crackles, predominantly late-inspiratory.
+      //
+      // Brief, high-pitched popping sounds heard during late inspiration
+      // from sudden opening of collapsed alveoli (pulmonary oedema, CHF,
+      // pneumonia, fibrosis). Each crackle is a tiny pressure transient:
+      // 3-6 ms, broadband content 400-1500 Hz, sharp attack + exponential
+      // decay. You hear them as **discrete pops** — not a hiss.
+      //
+      // Previous implementation used Math.random() < 0.015 per SAMPLE,
+      // which at 44.1 kHz produced ~660 events/sec — they merged into a
+      // continuous wash that sounded like normal air entry. Rewritten to
+      // schedule a fixed number of discrete pop events per inspiration
+      // (~12-18) with proper exponential-decay impulses.
       const bufferSize = Math.floor(ctx.sampleRate * duration);
       const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
       const data = buffer.getChannelData(0);
-      const breathCycleSamples = Math.floor(ctx.sampleRate / 0.28);
-      const inspirationLen = Math.floor(breathCycleSamples * 0.5);
+      const breathRate = 0.28; // ~17 /min
+      const cycleSamples = Math.floor(ctx.sampleRate / breathRate);
+      const inspirationLen = Math.floor(cycleSamples * 0.48);
+      const cycles = Math.floor(duration * breathRate) + 1;
 
-      // Background vesicular sounds
+      // ----- Background vesicular bed (quiet, so the crackles pop) -----
       const pinkBuf = createPinkNoiseBuffer(ctx, duration);
       const pinkData = pinkBuf.getChannelData(0);
-      applyBreathingEnvelope(pinkData, ctx.sampleRate, 0.28, 0.5, 1.2, 0.05);
-
+      applyBreathingEnvelope(pinkData, ctx.sampleRate, breathRate, 0.48, 1.0, 0.04);
       for (let i = 0; i < bufferSize; i++) {
-        data[i] = pinkData[i] * 0.25; // Quiet background breathing
+        data[i] = pinkData[i] * 0.18; // Quiet; crackles must dominate
       }
 
-      // Add fine crackle clusters during late inspiration
-      for (let i = 0; i < bufferSize; i++) {
-        const posInCycle = i % breathCycleSamples;
-        const inspProgress = posInCycle / inspirationLen;
+      // ----- Single-crackle impulse stamp ------------------------------
+      // Proper crackle waveform: sharp transient attack + short noise
+      // tail with exponential decay. Biphasic (small negative dip before
+      // the positive spike) for that distinctive "tick" character.
+      const stampCrackle = (startSample: number) => {
+        const len = Math.floor(ctx.sampleRate * (0.004 + Math.random() * 0.004)); // 4-8 ms
+        const centreFreq = 900 + Math.random() * 600; // 900-1500 Hz per crackle
+        for (let j = 0; j < len && startSample + j < bufferSize; j++) {
+          const t = j / ctx.sampleRate;
+          // Exponential decay with 2 ms time-constant — gives the "tick"
+          const decay = Math.exp(-t / 0.002);
+          // Filtered noise burst at the crackle's centre frequency.
+          // We approximate a bandpass by multiplying a sine carrier by
+          // broadband noise — result is energy concentrated around the
+          // carrier with enough spectral spread to sound like a pop,
+          // not a beep.
+          const carrier = Math.sin(2 * Math.PI * centreFreq * t);
+          const noise = Math.random() * 2 - 1;
+          const sample = (carrier * 0.65 + noise * 0.85) * decay;
+          // Biphasic shape — small negative pre-tick for the sharpness.
+          const shape = j < 2 ? -0.4 : 1.0;
+          data[startSample + j] += sample * shape * 0.55;
+        }
+      };
 
-        // Fine crackles: late-inspiratory (last 40% of inspiration)
-        if (posInCycle < inspirationLen && inspProgress > 0.6 && inspProgress < 0.95) {
-          // Higher probability of crackles in this window
-          if (Math.random() < 0.015) {
-            // Each crackle: 3-7ms burst of damped high-frequency content
-            const crackleLen = Math.floor(ctx.sampleRate * (0.003 + Math.random() * 0.004));
-            const crackleFreq = 800 + Math.random() * 1200; // 800-2000 Hz
-            for (let j = 0; j < crackleLen && (i + j) < bufferSize; j++) {
-              const decay = Math.exp(-j / (crackleLen * 0.25));
-              const tone = Math.sin(2 * Math.PI * crackleFreq * j / ctx.sampleRate);
-              const noise = (Math.random() * 2 - 1) * 0.3;
-              data[i + j] += (tone * 0.6 + noise) * decay * 0.5;
-            }
-          }
+      // ----- Schedule 12-18 crackles per late-inspiration -------------
+      for (let c = 0; c < cycles; c++) {
+        const cycleStart = c * cycleSamples;
+        // Crackle window: 55-98% of inspiration (late-inspiratory zone)
+        const windowStart = cycleStart + Math.floor(inspirationLen * 0.55);
+        const windowEnd = cycleStart + Math.floor(inspirationLen * 0.98);
+        const windowLen = windowEnd - windowStart;
+        const crackleCount = 12 + Math.floor(Math.random() * 7); // 12-18
+
+        for (let k = 0; k < crackleCount; k++) {
+          const pos = windowStart + Math.floor(Math.random() * windowLen);
+          if (pos < bufferSize) stampCrackle(pos);
         }
       }
 
       const source = ctx.createBufferSource();
       source.buffer = buffer;
-      // Bandpass to keep crackles in realistic range
-      const bp = ctx.createBiquadFilter();
-      bp.type = 'bandpass';
-      bp.frequency.value = 800;
-      bp.Q.value = 0.3;
-      source.connect(bp);
-      bp.connect(masterGain);
+      // Gentle high-pass to clear rumble, light lowpass to keep the tops
+      // from sounding shrill. Narrow overall bandpass would smother the
+      // crackles — let them breathe.
+      const hp = ctx.createBiquadFilter();
+      hp.type = 'highpass';
+      hp.frequency.value = 350;
+      hp.Q.value = 0.4;
+      const lp = ctx.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.value = 2200;
+      lp.Q.value = 0.5;
+      source.connect(hp);
+      hp.connect(lp);
+      lp.connect(masterGain);
       source.start();
       source.stop(ctx.currentTime + duration);
       break;

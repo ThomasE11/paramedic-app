@@ -1102,16 +1102,29 @@ export function StudentPanel({
         let changed = false;
         let roscTriggered = false;
 
+        // Match the ACTUAL oxygen/ventilation treatment IDs defined in
+        // enhancedTreatmentEffects.ts — earlier revisions of this block
+        // checked `oxygen_nrb` / `oxygen_15l` which don't exist, so the
+        // SpO2 tick never fired when a student applied NRB or CPAP. That
+        // was the "patient at 89% stays 89% no matter what I do" bug.
         const hasO2 =
-          appliedTreatmentIds.includes('oxygen_15l') ||
-          appliedTreatmentIds.includes('oxygen_nrb') ||
+          appliedTreatmentIds.includes('oxygen_nonrebreather') ||
+          appliedTreatmentIds.includes('oxygen_mask') ||
           appliedTreatmentIds.includes('oxygen_nasal') ||
+          appliedTreatmentIds.includes('cpap_niv') ||
           appliedTreatmentIds.includes('bvm_ventilation') ||
-          appliedTreatmentIds.includes('mechanical_ventilation');
+          appliedTreatmentIds.includes('mechanical_ventilation') ||
+          appliedTreatmentIds.includes('ventilator_setup');
+        // CPAP/NIV physiologically reverses hypoxia faster than passive
+        // O2 because it recruits alveoli — bump the per-tick step.
+        const hasCpap = appliedTreatmentIds.includes('cpap_niv');
 
-        // SpO2 recovery toward target while O2 therapy is active.
+        // SpO2 recovery toward target while O2 therapy is active. CPAP
+        // climbs faster than simple O2 because it recruits collapsed
+        // alveoli (cardiogenic pulm oedema, severe asthma, etc.).
         if (hasO2 && (v.spo2 ?? 0) < 96) {
-          const step = (v.spo2 ?? 70) < 92 ? 3 : 2;
+          const baseStep = (v.spo2 ?? 70) < 92 ? 3 : 2;
+          const step = hasCpap ? baseStep + 2 : baseStep;
           v.spo2 = Math.min(98, (v.spo2 ?? 70) + step);
           changed = true;
         }
@@ -1775,9 +1788,10 @@ export function StudentPanel({
         arrestTimeline.some(e => e.type === 'shock');
       const hasBVM =
         appliedTreatmentIds.includes('bvm_ventilation') ||
-        appliedTreatmentIds.includes('oxygen_15l') ||
         appliedTreatmentIds.includes('mechanical_ventilation') ||
-        appliedTreatmentIds.includes('oxygen_nrb');
+        appliedTreatmentIds.includes('oxygen_nonrebreather') ||
+        appliedTreatmentIds.includes('oxygen_mask') ||
+        appliedTreatmentIds.includes('cpap_niv');
       const isShockableCase = currentCase.abcde?.circulation?.ecgFindings?.some(
         (f: string) => f.toLowerCase().includes('vf') || f.toLowerCase().includes('ventricular fibrillation')
       );

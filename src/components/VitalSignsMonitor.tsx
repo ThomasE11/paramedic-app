@@ -3285,7 +3285,17 @@ export function VitalSignsMonitor({
     setWaveformGain(gains[(gains.indexOf(waveformGain) + 1) % gains.length]);
   }, [waveformGain]);
 
-  const litflImageUrl = useMemo(() => getLitflImageForRhythm(currentRhythm.id), [currentRhythm.id]);
+  // LITFL static image is only valid when the UNDERLYING rhythm is what the
+  // 12-lead captures. If the pacer is active and capturing, the ECG actually
+  // shows wide-QRS paced complexes with pacing spikes — NOT the underlying
+  // rhythm (e.g. complete heart block). Force the canvas fallback in that
+  // case so the strip draws pacing spikes instead of a misleading static
+  // image of the underlying block.
+  const isPacedRhythm = pacerActive && pacerOutput >= 60;
+  const litflImageUrl = useMemo(
+    () => (isPacedRhythm ? null : getLitflImageForRhythm(currentRhythm.id)),
+    [currentRhythm.id, isPacedRhythm],
+  );
 
   return (
     <div className="select-none">
@@ -3891,8 +3901,24 @@ export function VitalSignsMonitor({
                 </div>
               </div>
             ) : (
-              /* Fallback: generated 12-lead only when no LITFL image exists */
-              <TwelveLeadECG rhythm={currentRhythm} heartRate={hrValue} onClose={() => setShow12Lead(false)} />
+              /* Fallback: generated 12-lead. When pacing is active we also
+                 show a banner explaining the displayed rhythm is paced, so
+                 the student doesn't mis-read "still shows CHB" — the ECG
+                 shows the paced complexes; the underlying block hasn't
+                 gone anywhere and is still the diagnosis under the pacing. */
+              <>
+                {isPacedRhythm && (
+                  <div className="mb-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-[11px] leading-snug">
+                    <span className="font-semibold text-amber-700 dark:text-amber-400">
+                      Paced rhythm — TCP capturing at {pacerRate} bpm.
+                    </span>{' '}
+                    <span className="text-amber-700/80 dark:text-amber-400/80">
+                      The 12-lead shows wide-QRS paced complexes with pacing spikes. The underlying rhythm ({currentRhythm.name}) is unchanged — pacing doesn't fix the block, it overrides it.
+                    </span>
+                  </div>
+                )}
+                <TwelveLeadECG rhythm={currentRhythm} heartRate={hrValue} onClose={() => setShow12Lead(false)} />
+              </>
             )}
           </div>
         )}

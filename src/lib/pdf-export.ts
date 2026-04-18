@@ -1,6 +1,7 @@
 import { jsPDF } from 'jspdf';
 import type { CaseScenario, CaseSession, AppliedTreatment, VitalSigns, SimulationObjective, DebriefingResource, InstructorAssessmentNote } from '@/types';
 import { getVideosByFindings, getVideosByCategory, referenceArticles, getYouTubeWatchUrl } from '@/data/localClinicalResources';
+import { getRelevantEvidence } from '@/data/evidenceLibrary';
 
 interface ExportOptions {
   session: CaseSession;
@@ -988,6 +989,93 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
         }
         yPosition += 2;
       }
+    }
+  }
+
+  // ========== EVIDENCE-BASED PRACTICE APPENDIX (Y3/Y4 ONLY) ==========
+  // For 3rd-year and above, append the landmark trials that inform the
+  // protocols they followed — so the downloadable PDF can keep teaching
+  // after the session. Each topic shows: the "why do we do this?"
+  // question, the protocol statement, and a list of citations with DOIs
+  // the student can follow up on.
+  const evidenceTopics = getRelevantEvidence(
+    caseData.category,
+    caseData.subcategory || '',
+    (appliedTreatments ?? []).map(t => t.id),
+    session.studentYear,
+  );
+  if (evidenceTopics.length > 0) {
+    doc.addPage();
+    yPosition = margin + 5;
+    addSectionHeader('Evidence-Based Practice Appendix');
+    addWrappedText(
+      'The landmark trials informing the protocols you followed in this case. For 3rd-year and above — use these for continued reading after the session.',
+      FONT.LABEL, LINE_HEIGHT.LABEL, 'normal', COLOR.MUTED,
+    );
+    yPosition += 2;
+
+    for (const topic of evidenceTopics) {
+      checkPageBreak(30);
+      // Question headline
+      doc.setFontSize(FONT.BODY);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(COLOR.BLACK[0], COLOR.BLACK[1], COLOR.BLACK[2]);
+      const qLines = doc.splitTextToSize(`? ${topic.question}`, contentWidth) as string[];
+      for (const line of qLines) {
+        checkPageBreak(6);
+        doc.text(line, margin, yPosition);
+        yPosition += LINE_HEIGHT.BODY;
+      }
+      // Protocol statement
+      addWrappedText(
+        `Protocol: ${topic.practiceStatement}`,
+        FONT.LABEL, LINE_HEIGHT.LABEL, 'normal', COLOR.MUTED,
+      );
+      yPosition += 1;
+
+      // Papers — each as one line: [short · year] title (clickable DOI)
+      for (const paper of topic.papers) {
+        checkPageBreak(10);
+        const tag = `[${paper.shortName} · ${paper.year}]`;
+        addTextAt(tag, margin + 2, yPosition, FONT.LABEL, 'bold', COLOR.PRIMARY);
+        const titleX = margin + 38;
+        const titleWidth = contentWidth - 36;
+        const titleLines = doc.splitTextToSize(paper.title, titleWidth) as string[];
+        if (paper.url) {
+          // First line clickable; subsequent lines plain.
+          addClickableLink(titleLines[0], paper.url, titleX, yPosition);
+          for (let li = 1; li < titleLines.length; li++) {
+            yPosition += LINE_HEIGHT.BODY;
+            checkPageBreak(6);
+            addTextAt(titleLines[li], titleX, yPosition, FONT.BODY, 'normal', COLOR.BODY_TEXT);
+          }
+        } else {
+          addTextAt(titleLines[0], titleX, yPosition, FONT.BODY, 'normal', COLOR.BODY_TEXT);
+          for (let li = 1; li < titleLines.length; li++) {
+            yPosition += LINE_HEIGHT.BODY;
+            checkPageBreak(6);
+            addTextAt(titleLines[li], titleX, yPosition, FONT.BODY, 'normal', COLOR.BODY_TEXT);
+          }
+        }
+        yPosition += LINE_HEIGHT.BODY;
+        // Authors + journal
+        const cite = `${paper.authors} · ${paper.journal}`;
+        const citeLines = doc.splitTextToSize(cite, contentWidth - 36) as string[];
+        for (const line of citeLines) {
+          checkPageBreak(5);
+          addTextAt(line, titleX, yPosition, FONT.LABEL, 'normal', COLOR.LIGHT_MUTED);
+          yPosition += LINE_HEIGHT.LABEL;
+        }
+        // Meaning (what it means for practice)
+        const meaningLines = doc.splitTextToSize(`Meaning: ${paper.meaning}`, contentWidth - 36) as string[];
+        for (const line of meaningLines) {
+          checkPageBreak(5);
+          addTextAt(line, titleX, yPosition, FONT.LABEL, 'normal', COLOR.MUTED);
+          yPosition += LINE_HEIGHT.LABEL;
+        }
+        yPosition += 2;
+      }
+      yPosition += 3;
     }
   }
 

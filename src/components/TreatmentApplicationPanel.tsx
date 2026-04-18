@@ -78,7 +78,15 @@ export function TreatmentApplicationPanel({
   studentYear,
   isStudentView = false,
 }: TreatmentApplicationPanelProps) {
-  const [expandedCategory, setExpandedCategory] = useState<TreatmentCategory | null>('airway');
+  // Multiple categories can be expanded at once — previously one at a time,
+  // which meant positioning (the category with Fowler's, recovery, left
+  // lateral, leg elevation) was hidden behind a click. Feedback: students
+  // couldn't find positioning options. Now Airway + Positioning open by
+  // default so both clinical surfaces the student reaches for first are
+  // visible without a click.
+  const [expandedCategories, setExpandedCategories] = useState<Set<TreatmentCategory>>(
+    () => new Set(['airway', 'positioning']),
+  );
   const [searchQuery, setSearchQuery] = useState('');
 
   const categories = useMemo(() => getTreatmentCategories(), []);
@@ -106,7 +114,12 @@ export function TreatmentApplicationPanel({
   }, [filteredTreatments]);
 
   const toggleCategory = useCallback((cat: TreatmentCategory) => {
-    setExpandedCategory(prev => prev === cat ? null : cat);
+    setExpandedCategories(prev => {
+      const next = new Set(prev);
+      if (next.has(cat)) next.delete(cat);
+      else next.add(cat);
+      return next;
+    });
   }, []);
 
   const handleApply = useCallback((treatment: Treatment) => {
@@ -163,7 +176,7 @@ export function TreatmentApplicationPanel({
             {categories.map(({ category, label }) => {
               const treatments = treatmentsByCategory[category];
               if (!treatments || treatments.length === 0) return null;
-              const isExpanded = expandedCategory === category;
+              const isExpanded = expandedCategories.has(category);
 
               return (
                 <div key={category} className="rounded-lg overflow-hidden">
