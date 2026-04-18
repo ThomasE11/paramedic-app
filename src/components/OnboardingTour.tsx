@@ -40,7 +40,7 @@ const TOUR_STEPS: TourStep[] = [
     color: 'text-blue-500',
   },
   {
-    title: 'TLC Monitor',
+    title: 'Cardiac Monitor',
     description: 'Your defibrillator/monitor simulator. Tap vital signs to connect sensors and reveal readings. Use the parameter bar to check HR, SpO2, BP, temperature, and more — just like real equipment.',
     icon: <Activity className="h-8 w-8" />,
     color: 'text-green-500',

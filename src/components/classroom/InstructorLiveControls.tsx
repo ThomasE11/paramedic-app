@@ -238,7 +238,7 @@ export function InstructorLiveControls({
             <Activity className="w-3 h-3" /> Push vitals live
           </Button>
           <p className="text-[10px] text-muted-foreground mt-1.5 leading-snug">
-            Fill one or more fields and press <strong>Push vitals live</strong>. Students will see the new values on their LIFEPAK instantly.
+            Fill one or more fields and press <strong>Push vitals live</strong>. Students will see the new values on their monitor instantly.
           </p>
         </section>
       </div>

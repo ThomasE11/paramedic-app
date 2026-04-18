@@ -55,13 +55,15 @@ import type { StudentYear } from '@/types';
 // `StudentYear` union in src/types.
 type YearFilter = StudentYear | 'all';
 
+// Cohort order — Diploma first (primary UAE paramedic cohort), then the
+// degree pathway in ascending order. Matches CaseGenerator.
 const YEAR_OPTIONS: { value: YearFilter; label: string }[] = [
   { value: 'all', label: 'All year levels' },
+  { value: 'diploma', label: 'Diploma' },
   { value: '1st-year', label: '1st year' },
   { value: '2nd-year', label: '2nd year' },
   { value: '3rd-year', label: '3rd year' },
   { value: '4th-year', label: '4th year' },
-  { value: 'diploma', label: 'Diploma' },
 ];
 
 interface ClassroomLobbyProps {

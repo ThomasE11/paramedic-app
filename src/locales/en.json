@@ -2,7 +2,7 @@
   "app": {
     "name": "ParaMedic Studio",
     "tagline": "UAE Paramedic Case Simulator",
-    "subtitle": "Immersive clinical training with real-time LIFEPAK 20 monitoring and evidence-based scenarios",
+    "subtitle": "Immersive clinical training with real-time cardiac monitoring and evidence-based scenarios",
     "footerEducational": "For educational purposes only",
     "footerEvidence": "Evidence-based paramedic training"
   },
@@ -18,7 +18,7 @@
     "stats": {
       "cases": "{{count}}+ Cases",
       "rhythms": "15+ ECG Rhythms",
-      "lifepak": "LIFEPAK 20 Sim"
+      "lifepak": "Cardiac Monitor Sim"
     }
   },
   "header": {

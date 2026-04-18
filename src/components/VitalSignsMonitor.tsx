@@ -1345,7 +1345,7 @@ function TwelveLeadECG({ rhythm, heartRate, onClose, onExport }: { rhythm: ECGRh
     // Bottom edge markers
     ctx.fillStyle = '#888';
     ctx.font = '8px monospace';
-    ctx.fillText('UAE Paramedic Case Generator — TLC Monitor 20 Simulator', 8, totalH - 6);
+    ctx.fillText('UAE Paramedic Case Generator — Monitor Simulator', 8, totalH - 6);
     ctx.fillText(dateStr, totalW - 150, totalH - 6);
 
     return exportCanvas.toDataURL('image/png');
@@ -2109,7 +2109,7 @@ function ECGPrintStrip({ rhythm, heartRate, spo2, onClose, audioEngine }: {
         />
         <div className="flex items-center justify-between mt-2 px-2">
           <span className="text-[9px] font-mono text-gray-500">25mm/s | 10mm/mV</span>
-          <span className="text-[9px] font-mono text-gray-500">TLC Monitor ECG Strip</span>
+          <span className="text-[9px] font-mono text-gray-500">ECG Strip</span>
         </div>
       </div>
     </div>
@@ -3343,8 +3343,8 @@ export function VitalSignsMonitor({
                   }`}>{mode.toUpperCase()}</button>
               ))}
             </div>
-            <span className="text-[8px] sm:text-[9px] font-bold tracking-wider text-gray-400 hidden sm:inline"
-              style={{ fontFamily: 'system-ui' }}>TLC Monitor</span>
+            {/* Model-name label removed — keeps the monitor chrome
+                un-branded. */}
           </div>
         </div>
 
@@ -3362,9 +3362,9 @@ export function VitalSignsMonitor({
 
           {powerOn && bootPhase === 'booting' && (
             <div className="h-[280px] flex flex-col items-center justify-center" style={{ background: '#001000' }}>
-              <span className="text-xl font-mono font-bold text-green-400 tracking-[0.3em] animate-pulse">TLC Monitor</span>
-              <span className="text-[9px] font-mono text-green-600 mt-2">SYSTEM SELF-TEST...</span>
-              <div className="w-32 h-1 bg-green-900 rounded mt-2 overflow-hidden">
+              {/* Boot screen — generic self-test. Product branding removed. */}
+              <span className="text-sm font-mono text-green-400 tracking-[0.2em] animate-pulse">SYSTEM SELF-TEST</span>
+              <div className="w-32 h-1 bg-green-900 rounded mt-3 overflow-hidden">
                 <div className="h-full bg-green-500 rounded animate-pulse" style={{ width: '60%' }} />
               </div>
             </div>
@@ -4053,7 +4053,8 @@ export function VitalSignsMonitor({
         {/* Footer */}
         <div className="px-4 py-1 flex items-center justify-between"
           style={{ background: 'linear-gradient(180deg, #2e3136 0%, #3a3d42 100%)', borderTop: '1px solid rgba(255,255,255,0.03)' }}>
-          <span className="text-[8px] font-mono text-gray-500 tracking-wider">TLC Monitor v1.0</span>
+          {/* Footer model tag removed — monitor chrome stays generic. */}
+          <span className="text-[8px] font-mono text-gray-500 tracking-wider"></span>
           <div className="flex items-center gap-3">
             <span className="text-[8px] font-mono text-gray-600">{visibleVitals.size}/{availableVitals.length}</span>
             {shockCount > 0 && <span className="text-[8px] font-mono text-red-500"><Zap className="h-2.5 w-2.5 inline" /> x{shockCount}</span>}

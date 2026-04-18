@@ -11615,12 +11615,14 @@ export const caseCategories = existingCategories.map(cat => ({
 })).sort((a, b) => a.label.localeCompare(b.label));
 
 // Get year levels
+// Cohort order — Diploma first (primary UAE paramedic cohort), then the
+// four-year degree pathway in ascending order.
 export const yearLevels = [
+  { value: 'diploma', label: 'Diploma' },
   { value: '1st-year', label: '1st Year' },
   { value: '2nd-year', label: '2nd Year' },
   { value: '3rd-year', label: '3rd Year' },
   { value: '4th-year', label: '4th Year' },
-  { value: 'diploma', label: 'Diploma' }
 ];
 
 // Get complexity levels

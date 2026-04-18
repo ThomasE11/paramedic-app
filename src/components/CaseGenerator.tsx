@@ -165,11 +165,14 @@ const categoryStructure = [
   }
 ];
 
+// Cohort order — Diploma first (most common UAE paramedic cohort),
+// then the four-year degree pathway in ascending order.
 const yearLevels: { value: StudentYear; label: string }[] = [
+  { value: 'diploma', label: 'Diploma' },
+  { value: '1st-year', label: '1st Year' },
   { value: '2nd-year', label: '2nd Year' },
   { value: '3rd-year', label: '3rd Year' },
   { value: '4th-year', label: '4th Year (Final)' },
-  { value: 'diploma', label: 'Diploma' },
 ];
 
 export function CaseGenerator({ onGenerate }: CaseGeneratorProps) {
