@@ -218,23 +218,30 @@ export function CaseGenerator({ onGenerate }: CaseGeneratorProps) {
           <CardTitle className="text-lg">Select Year Level</CardTitle>
         </CardHeader>
         <CardContent>
+          {/* Year-level tiles — aligned with design-system button style:
+              rounded-2xl (18px), single-weight border, subtle shadow on
+              hover, selected state uses a ring + bg wash rather than a
+              thick border that jumps the layout. */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {yearLevels.map((year) => (
-              <button
-                key={year.value}
-                onClick={() => setSelectedYear(year.value)}
-                className={`rounded-lg border-2 p-4 text-center transition-all ${
-                  selectedYear === year.value
-                    ? 'border-primary bg-primary/5'
-                    : 'border-border hover:border-primary/50 hover:bg-muted'
-                }`}
-              >
-                <Clock className={`mx-auto mb-2 h-5 w-5 ${selectedYear === year.value ? 'text-primary' : 'text-muted-foreground'}`} />
-                <span className={`text-sm font-medium ${selectedYear === year.value ? 'text-primary' : 'text-muted-foreground'}`}>
-                  {year.label}
-                </span>
-              </button>
-            ))}
+            {yearLevels.map((year) => {
+              const active = selectedYear === year.value;
+              return (
+                <button
+                  key={year.value}
+                  onClick={() => setSelectedYear(year.value)}
+                  className={`group relative rounded-2xl border p-4 text-center transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
+                    active
+                      ? 'border-primary/60 bg-primary/5 ring-2 ring-primary/10 shadow-sm'
+                      : 'border-border bg-card hover:border-primary/40'
+                  }`}
+                >
+                  <Clock className={`mx-auto mb-2 h-5 w-5 transition-colors ${active ? 'text-primary' : 'text-muted-foreground group-hover:text-primary/70'}`} />
+                  <span className={`text-sm font-medium tracking-tight ${active ? 'text-primary' : 'text-foreground/80'}`}>
+                    {year.label}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </CardContent>
       </Card>
@@ -251,14 +258,14 @@ export function CaseGenerator({ onGenerate }: CaseGeneratorProps) {
               onClick={() => {
                 clearSelections();
               }}
-              className={`rounded-lg border-2 p-3 text-center transition-all ${
+              className={`group rounded-2xl border p-3 text-center transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
                 selectedCategory === ''
-                  ? 'border-primary bg-primary/5'
-                  : 'border-border hover:border-primary/50 hover:bg-muted'
+                  ? 'border-primary/60 bg-primary/5 ring-2 ring-primary/10 shadow-sm'
+                  : 'border-border bg-card hover:border-primary/40'
               }`}
             >
-              <Stethoscope className={`mx-auto mb-1 h-5 w-5 ${selectedCategory === '' ? 'text-primary' : 'text-muted-foreground'}`} />
-              <span className={`text-xs font-medium ${selectedCategory === '' ? 'text-primary' : 'text-muted-foreground'}`}>
+              <Stethoscope className={`mx-auto mb-1 h-5 w-5 transition-colors ${selectedCategory === '' ? 'text-primary' : 'text-muted-foreground group-hover:text-primary/70'}`} />
+              <span className={`text-xs font-medium tracking-tight ${selectedCategory === '' ? 'text-primary' : 'text-foreground/80'}`}>
                 All Categories
               </span>
             </button>
@@ -274,15 +281,15 @@ export function CaseGenerator({ onGenerate }: CaseGeneratorProps) {
                 <div key={cat.value} className="relative">
                   <button
                     onClick={() => handleCategoryClick(cat.value)}
-                    className={`w-full rounded-lg border-2 p-3 text-center transition-all ${
+                    className={`group w-full rounded-2xl border p-3 text-center transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
                       isSelected
-                        ? 'border-primary bg-primary/5'
-                        : 'border-border hover:border-primary/50 hover:bg-muted'
+                        ? 'border-primary/60 bg-primary/5 ring-2 ring-primary/10 shadow-sm'
+                        : 'border-border bg-card hover:border-primary/40'
                     }`}
                   >
                     <div className="flex items-center justify-center gap-1">
-                      <Icon className={`h-4 w-4 ${isSelected ? 'text-primary' : cat.color}`} />
-                      <span className={`text-xs font-medium ${isSelected ? 'text-primary' : 'text-muted-foreground'}`}>
+                      <Icon className={`h-4 w-4 transition-colors ${isSelected ? 'text-primary' : cat.color}`} />
+                      <span className={`text-xs font-medium tracking-tight ${isSelected ? 'text-primary' : 'text-foreground/80'}`}>
                         {cat.label}
                       </span>
                       {hasSubcategories && (
