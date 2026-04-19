@@ -640,7 +640,11 @@ function getFinding(caseData: CaseScenario, regionId: string, actionId: string, 
   };
 
   // RIGHT LEG
-  if (actionId === 'r-leg-inspect') return findFor(['right leg', 'right lower limb', 'right thigh', 'right shin']) || 'No deformity. No swelling. No wounds. Skin colour normal. No shortening or rotation.';
+  // Bilateral findings like "Bilateral pitting oedema to mid-calf (2+)"
+  // don't match limb-specific keywords — check the oedema helper too so
+  // that pulmonary-oedema / heart-failure / DVT cases show their
+  // expected leg findings instead of a generic "no swelling".
+  if (actionId === 'r-leg-inspect') return findFor(['right leg', 'right lower limb', 'right thigh', 'right shin']) || getOedemaFindings() || 'No deformity. No swelling. No wounds. Skin colour normal. No shortening or rotation.';
   if (actionId === 'r-hip-palpate') return findFor(['right hip', 'r hip']) || 'No tenderness. No shortening or rotation.';
   if (actionId === 'r-femur-palpate') return findFor(['right femur', 'r femur', 'right thigh', 'r thigh']) || 'No tenderness. No deformity. No swelling.';
   if (actionId === 'r-knee-palpate') return findFor(['right knee', 'r knee', 'patella']) || 'No tenderness. No effusion. Stable to valgus/varus stress.';
@@ -669,12 +673,12 @@ function getFinding(caseData: CaseScenario, regionId: string, actionId: string, 
   if (actionId === 'r-leg-compartment' || actionId === 'r-thigh-compartment' || actionId === 'r-shin-compartment') return allExtText.includes('compartment') && allExtText.includes('right') ? 'TENSE compartment \u2014 pain on passive stretch.' : 'Compartments soft. No pain on passive stretch. No paraesthesia.';
   if (actionId === 'r-thigh-inspect') return findFor(['right thigh', 'right femur', 'r thigh']) || 'No deformity. No swelling. No shortening or rotation.';
   if (actionId === 'r-knee-inspect') return findFor(['right knee', 'r knee']) || 'No swelling. No deformity. No effusion visible.';
-  if (actionId === 'r-shin-inspect') return findFor(['right shin', 'right tibia', 'r shin']) || 'No deformity. No open wounds. Skin intact.';
-  if (actionId === 'r-ankle-inspect') return findFor(['right ankle', 'r ankle']) || 'No swelling. No deformity. No bruising.';
+  if (actionId === 'r-shin-inspect') return findFor(['right shin', 'right tibia', 'r shin']) || getOedemaFindings() || 'No deformity. No open wounds. Skin intact.';
+  if (actionId === 'r-ankle-inspect') return findFor(['right ankle', 'r ankle']) || getOedemaFindings() || 'No swelling. No deformity. No bruising.';
   if (actionId === 'r-toes-inspect') return findFor(['right toe', 'r toe']) || 'Colour normal. Cap refill <2 seconds. No cyanosis.';
 
   // LEFT LEG
-  if (actionId === 'l-leg-inspect') return findFor(['left leg', 'left lower limb', 'left thigh', 'left shin']) || 'No deformity. No swelling. No wounds. Skin colour normal. No shortening or rotation.';
+  if (actionId === 'l-leg-inspect') return findFor(['left leg', 'left lower limb', 'left thigh', 'left shin']) || getOedemaFindings() || 'No deformity. No swelling. No wounds. Skin colour normal. No shortening or rotation.';
   if (actionId === 'l-hip-palpate') return findFor(['left hip', 'l hip']) || 'No tenderness. No shortening or rotation.';
   if (actionId === 'l-femur-palpate') return findFor(['left femur', 'l femur', 'left thigh', 'l thigh']) || 'No tenderness. No deformity. No swelling.';
   if (actionId === 'l-knee-palpate') return findFor(['left knee', 'l knee']) || 'No tenderness. No effusion. Stable to valgus/varus stress.';
@@ -703,8 +707,8 @@ function getFinding(caseData: CaseScenario, regionId: string, actionId: string, 
   if (actionId === 'l-leg-compartment' || actionId === 'l-thigh-compartment' || actionId === 'l-shin-compartment') return allExtText.includes('compartment') && allExtText.includes('left') ? 'TENSE compartment \u2014 pain on passive stretch.' : 'Compartments soft. No pain on passive stretch. No paraesthesia.';
   if (actionId === 'l-thigh-inspect') return findFor(['left thigh', 'left femur', 'l thigh']) || 'No deformity. No swelling. No shortening or rotation.';
   if (actionId === 'l-knee-inspect') return findFor(['left knee', 'l knee']) || 'No swelling. No deformity. No effusion visible.';
-  if (actionId === 'l-shin-inspect') return findFor(['left shin', 'left tibia', 'l shin']) || 'No deformity. No open wounds. Skin intact.';
-  if (actionId === 'l-ankle-inspect') return findFor(['left ankle', 'l ankle']) || 'No swelling. No deformity. No bruising.';
+  if (actionId === 'l-shin-inspect') return findFor(['left shin', 'left tibia', 'l shin']) || getOedemaFindings() || 'No deformity. No open wounds. Skin intact.';
+  if (actionId === 'l-ankle-inspect') return findFor(['left ankle', 'l ankle']) || getOedemaFindings() || 'No swelling. No deformity. No bruising.';
   if (actionId === 'l-toes-inspect') return findFor(['left toe', 'l toe']) || 'Colour normal. Cap refill <2 seconds. No cyanosis.';
   // Posterior
   if (actionId === 'logroll-inspect') {

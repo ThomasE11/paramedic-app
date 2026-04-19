@@ -2184,6 +2184,23 @@ export function VitalSignsMonitor({
   // so BP/SpO2/etc. don't change on-screen until the student re-assesses
   const [assessedVitals, setAssessedVitals] = useState<Partial<VitalSigns>>({});
 
+  // Auto-refresh continuous-monitor vitals (SpO2, pulse, RR) whenever the
+  // underlying currentVitals changes. Real SpO2 probes read continuously,
+  // not at discrete assessment points, so freezing the display at the last
+  // assessed value meant oxygen / CPAP treatments appeared to "do nothing".
+  // Non-continuous measurements (BP via NIBP, temperature, BGL, GCS) still
+  // require an explicit re-assessment — those are genuinely one-shot in
+  // real practice.
+  useEffect(() => {
+    setAssessedVitals(prev => {
+      const next = { ...prev };
+      if (visibleVitals.has('spo2') && prev.spo2 !== currentVitals.spo2) next.spo2 = currentVitals.spo2;
+      if (visibleVitals.has('pulse') && prev.pulse !== currentVitals.pulse) next.pulse = currentVitals.pulse;
+      if (visibleVitals.has('respiration') && prev.respiration !== currentVitals.respiration) next.respiration = currentVitals.respiration;
+      return next;
+    });
+  }, [currentVitals.spo2, currentVitals.pulse, currentVitals.respiration, visibleVitals]);
+
   // Sync externally revealed vitals (from ABCDE assessments) into visibleVitals
   useEffect(() => {
     if (!revealedVitals || revealedVitals.size === 0) return;
@@ -3521,9 +3538,13 @@ export function VitalSignsMonitor({
                 </div>
                 <div className="flex-1 px-1.5 py-0.5 border-r border-gray-800/30 text-center cursor-pointer hover:bg-cyan-900/20 transition-colors"
                   onClick={() => {
-                    if (!visibleVitals.has('spo2') && !activeAssessments.has('spo2')) {
-                      startAssessment('spo2', ASSESSMENT_METHODS.spo2[0]);
-                      logIntervention('ASSESS', 'SpO2 probe applied');
+                    // Allow re-assessment even after the probe is connected —
+                    // essential for seeing SpO2 respond to oxygen / CPAP /
+                    // BVM treatments. Previously the click was no-op once
+                    // visible, so the student saw a frozen 89% forever.
+                    if (!activeAssessments.has('spo2')) {
+                      startAssessment('spo2', ASSESSMENT_METHODS.spo2[0], true);
+                      logIntervention('ASSESS', visibleVitals.has('spo2') ? 'SpO2 re-read' : 'SpO2 probe applied');
                     }
                   }}>
                   <span className="text-[7px] font-mono text-cyan-400/70 block">SpO2</span>
