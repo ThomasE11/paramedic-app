@@ -134,6 +134,11 @@ interface VitalSignsMonitorProps {
   };
   /** Called when a TLC Monitor assessment (BGL, pain, temp, 12-lead) completes — awards scoring credit */
   onAssessmentPerformed?: (stepId: string) => void;
+  /** Fired when pacer state changes — classroom broadcast uses this. */
+  onPacerStateChange?: (state: { active: boolean; rate: number; output: number }) => void;
+  /** When set, writes into local pacer state — lets a spectator mirror the
+   *  instructor's pacer (active / rate / output). Bumps on every broadcast. */
+  overridePacerState?: { active: boolean; rate: number; output: number };
 }
 
 // Assessment method definitions
@@ -2162,6 +2167,8 @@ export function VitalSignsMonitor({
   revealedVitals,
   cprState,
   onAssessmentPerformed,
+  onPacerStateChange,
+  overridePacerState,
 }: VitalSignsMonitorProps) {
   const [currentVitals, setCurrentVitals] = useState<VitalSigns>(initialVitals);
   const [visibleVitals, setVisibleVitals] = useState<Set<string>>(new Set());
@@ -2215,6 +2222,23 @@ export function VitalSignsMonitor({
   const [pacerActive, setPacerActive] = useState(false);
   const [pacerRate, setPacerRate] = useState(60);
   const [pacerOutput, setPacerOutput] = useState(80);
+
+  // Broadcast pacer state on every change — classroom spectators mirror.
+  useEffect(() => {
+    onPacerStateChange?.({ active: pacerActive, rate: pacerRate, output: pacerOutput });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pacerActive, pacerRate, pacerOutput]);
+
+  // Mirror pacer state when a spectator receives the driver's pacer.
+  // The override prop is bumped on every broadcast; we compare to our
+  // current local state and apply only what's different to avoid loops.
+  useEffect(() => {
+    if (!overridePacerState) return;
+    if (overridePacerState.active !== pacerActive) setPacerActive(overridePacerState.active);
+    if (overridePacerState.rate !== pacerRate) setPacerRate(overridePacerState.rate);
+    if (overridePacerState.output !== pacerOutput) setPacerOutput(overridePacerState.output);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [overridePacerState?.active, overridePacerState?.rate, overridePacerState?.output]);
   const [shockArtifact, setShockArtifact] = useState(false);
   // Rhythm override from shock outcomes (takes priority over parent prop)
   const [localRhythmOverride, setLocalRhythmOverride] = useState<string | null>(null);

@@ -146,6 +146,12 @@ export interface SharedCaseState {
     event: string;
     type: string;
   }>;
+  /** Transcutaneous pacer state. Rate in ppm, output in mA. */
+  pacerState?: {
+    active: boolean;
+    rate: number;
+    output: number;
+  };
 }
 
 /**
@@ -237,6 +243,7 @@ function mergePatch(current: SharedCaseState, patch: SharedCaseState): SharedCas
   // authoritative order is preserved. The spectator-side mirror only
   // ever sets, never mutates, so we don't need smart merging.
   if (patch.arrestTimeline !== undefined) next.arrestTimeline = patch.arrestTimeline;
+  if (patch.pacerState !== undefined) next.pacerState = patch.pacerState;
   return next;
 }
 

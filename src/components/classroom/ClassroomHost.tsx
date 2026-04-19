@@ -198,6 +198,7 @@ export function ClassroomHost({ onExit }: Props) {
           bvmVentilationRate: sharedState.bvmVentilationRate,
           arrestTimeline: sharedState.arrestTimeline,
           transportDecision: sharedState.transportDecision,
+          pacerState: sharedState.pacerState,
         } : undefined}
         topBanner={
           <ClassroomBroadcastBar

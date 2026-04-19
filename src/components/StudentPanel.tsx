@@ -277,6 +277,7 @@ interface StudentPanelProps {
       destination?: string;
       provisionalDiagnosis?: string;
     };
+    pacerState?: { active: boolean; rate: number; output: number };
   }) => void;
   /**
    * Spectator mode — disable every interactive control. Students who are
@@ -324,6 +325,7 @@ interface StudentPanelProps {
       destination?: string;
       provisionalDiagnosis?: string;
     };
+    pacerState?: { active: boolean; rate: number; output: number };
   };
   /**
    * Instructor-side live override. Every commit bumps `nonce`; whenever
@@ -3389,6 +3391,10 @@ export function StudentPanel({
                       setVitalsHistory(prev => [...prev, completeVitals]);
                     }}
                     onAssessmentPerformed={handlePerformAssessment}
+                    onPacerStateChange={(state) => {
+                      if (onClassroomStateChange) onClassroomStateChange({ pacerState: state });
+                    }}
+                    overridePacerState={externalState?.pacerState}
                     caseCategory={currentCase.category}
                     caseSubcategory={currentCase.subcategory}
                     caseTitle={currentCase.title}
