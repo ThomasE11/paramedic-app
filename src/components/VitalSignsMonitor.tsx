@@ -852,7 +852,22 @@ function ECGWaveform({ heartRate, color, height = 80, isVisible, waveformFn, sho
     // At HR 200 (3.33 beats/s), beats are tightly spaced → ~26 beats visible
     const pixelsPerSec = 87.5; // constant sweep speed (25mm/s equivalent)
     const beatsPerSec = heartRate / 60;
-    const pixelsPerBeat = pixelsPerSec / beatsPerSec;
+    // When HR = 0 (arrest), beatsPerSec = 0 and pixelsPerBeat = Infinity —
+    // beatProgress stays pinned at 0 and the waveform function is called
+    // with the same t every pixel. VF then renders as a flatline because
+    // vfibWave(0) is constant. Use a synthetic "beat period" for arrest
+    // rhythms that's short enough to let the chaotic generator tick
+    // (120 ms ≈ 500 bpm equivalent — not a real rate, just drives `t`
+    // through the waveform so it modulates). Asystole's random-noise
+    // generator works either way.
+    const isArrestNoPulse = heartRate <= 0;
+    // Arrest rhythms with HR=0 need a synthetic "t-period" to drive their
+    // waveform generators; VF's vfibWave modulates with t and otherwise
+    // freezes to a flat value. ~0.2 s period → 5 cycles/sec ≈ coarse VF
+    // at ~300 bpm-equivalent electrical activity (real VF 150-500/min).
+    const pixelsPerBeat = isArrestNoPulse
+      ? pixelsPerSec * 0.2
+      : pixelsPerSec / beatsPerSec;
 
     // Default PQRST waveform if none provided
     const ecgWave = waveformFn || ((t: number): number => {
@@ -1056,7 +1071,13 @@ function TwelveLeadECG({ rhythm, heartRate, onClose, onExport }: { rhythm: ECGRh
     // Constant 25mm/s sweep speed — same as main monitor
     const pixelsPerSec = 87.5;
     const beatsPerSec = heartRate / 60;
-    const pixelsPerBeat = pixelsPerSec / beatsPerSec;
+    // Match the fix in the main ECGWaveform: when HR=0 (arrest), fall back
+    // to a synthetic 200 ms period so waveform functions that depend on t
+    // (VF's vfibWave) actually tick. Without this, arrest 12-leads render
+    // as a flatline regardless of underlying rhythm.
+    const pixelsPerBeat = heartRate <= 0
+      ? pixelsPerSec * 0.2
+      : pixelsPerSec / beatsPerSec;
 
     const draw = (now: number) => {
       const dt = (now - lastTime) / 1000;
