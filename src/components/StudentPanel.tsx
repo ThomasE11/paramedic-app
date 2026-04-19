@@ -2722,10 +2722,15 @@ export function StudentPanel({
         )}
 
         {/* ================================================================ */}
-        {/* PHASE 3: Vitals & Treatment (Active Case) */}
+        {/* PHASE 3: Vitals & Treatment (Active Case)
+            Rendered whenever a case is live (vitals OR case-details phase)
+            and hidden with CSS when the student jumps to Case Details —
+            keeps the monitor mounted so its internal power/boot/visible-
+            vitals state doesn't reset on tab switch. Returning to the
+            monitor view then feels instant, not like a cold boot. */}
         {/* ================================================================ */}
-        {phase === 'vitals' && currentCase && (
-          <div className="animate-fade-in space-y-3 sm:space-y-4">
+        {(phase === 'vitals' || phase === 'case') && currentCase && (
+          <div className={`animate-fade-in space-y-3 sm:space-y-4 ${phase !== 'vitals' ? 'hidden' : ''}`}>
             {/* ===== TOP: Patient Banner (full width) ===== */}
             <div className="p-3 sm:p-5 rounded-2xl bg-card border border-border dark:bg-slate-900/60 space-y-3 overflow-hidden">
               <div className="flex items-center gap-2 sm:gap-3 min-w-0">

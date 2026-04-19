@@ -2245,9 +2245,12 @@ export function VitalSignsMonitor({
   const [shockFeedbackMessage, setShockFeedbackMessage] = useState<{ text: string; severity: 'critical' | 'success' | 'warning' } | null>(null);
   const shockCountRef = useRef(0);
 
-  // TLC Monitor states
-  const [powerOn, setPowerOn] = useState(true);
-  const [bootPhase, setBootPhase] = useState<'off' | 'booting' | 'ready'>('ready');
+  // Monitor boots OFF — the student must press the ON button to start.
+  // Previously this defaulted to on; feedback was that it removed the
+  // real-world ritual of connecting + powering a monitor, and students
+  // missed the learnable moment of "I need to turn this on first".
+  const [powerOn, setPowerOn] = useState(false);
+  const [bootPhase, setBootPhase] = useState<'off' | 'booting' | 'ready'>('off');
   const [printMode, setPrintMode] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
   const [waveformGain, setWaveformGain] = useState<0.5 | 1.0 | 1.5 | 2.0>(1.0);
@@ -3360,15 +3363,21 @@ export function VitalSignsMonitor({
         <div className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 flex-wrap"
           style={{ background: 'linear-gradient(180deg, #333639 0%, #2a2d31 100%)', borderBottom: '1px solid rgba(0,0,0,0.3)' }}>
 
-          {/* BIG ON BUTTON */}
+          {/* BIG ON BUTTON
+              Off state: red, pulsing, bright — attracts the eye so the
+              student knows the monitor needs powering on before it will
+              show anything (clinically this is the first step with a real
+              LIFEPAK/ZOLL too).
+              On state: solid green with a subtle glow. */}
           <button onClick={handlePowerToggle}
             className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg font-mono font-bold text-xs sm:text-sm tracking-wider select-none
               transition-all duration-200 border-2 flex items-center justify-center shrink-0 touch-manipulation
               ${powerOn
-                ? 'bg-gradient-to-b from-green-500 to-green-700 text-white border-green-400 shadow-[0_0_12px_rgba(74,222,128,0.4)]'
-                : 'bg-gradient-to-b from-gray-600 to-gray-800 text-gray-400 border-gray-500'
+                ? 'bg-gradient-to-b from-green-500 to-green-700 text-white border-green-400 shadow-[0_0_12px_rgba(74,222,128,0.5)]'
+                : 'bg-gradient-to-b from-red-500 to-red-700 text-white border-red-400 shadow-[0_0_18px_rgba(239,68,68,0.6)] animate-pulse'
               }
               hover:brightness-110 active:brightness-90`}
+            aria-label={powerOn ? 'Monitor is on — press to turn off' : 'Press ON to power the monitor'}
           >
             ON
           </button>
@@ -3410,8 +3419,17 @@ export function VitalSignsMonitor({
           style={{ background: '#001000', boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.8)' }}>
 
           {!powerOn && (
-            <div className="h-[280px] flex items-center justify-center" style={{ background: '#0a0a0a' }}>
-              <span className="text-[12px] font-mono text-gray-700">MONITOR OFF — Press ON to start</span>
+            <div className="h-[280px] flex flex-col items-center justify-center gap-3" style={{ background: '#0a0a0a' }}>
+              <div className="flex items-center gap-2 text-red-400/80">
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-60" />
+                  <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-500" />
+                </span>
+                <span className="text-[13px] font-mono font-bold tracking-[0.18em]">MONITOR OFF</span>
+              </div>
+              <span className="text-[11px] font-mono text-gray-400 tracking-wider">
+                Press the pulsing <span className="text-red-400 font-bold">ON</span> button to start
+              </span>
             </div>
           )}
 
