@@ -823,7 +823,12 @@ export const TREATMENTS: Treatment[] = [
     icon: 'Move',
     color: 'gray',
     effects: [
-      { vitalSign: 'spo2', changeType: 'increase', value: 3, minValue: 88, maxValue: 96 },
+      // SpO2 ceiling is 99 (not 96) so repositioning a near-normal
+      // patient still shows a visible nudge — previous 96 cap meant
+      // students who put the patient in a good position saw no change.
+      // minValue is the floor (can't force up to 88); removed so low
+      // sats aren't artificially bumped up just by lying on their side.
+      { vitalSign: 'spo2', changeType: 'increase', value: 3, maxValue: 99 },
       { vitalSign: 'respiration', changeType: 'decrease', value: 2, minValue: 12 },
     ],
   },
@@ -839,7 +844,9 @@ export const TREATMENTS: Treatment[] = [
     color: 'gray',
     effects: [
       { vitalSign: 'respiration', changeType: 'decrease', value: 4, minValue: 12 },
-      { vitalSign: 'spo2', changeType: 'increase', value: 5, minValue: 88, maxValue: 96 },
+      // Sitting upright visibly improves oxygenation — ceiling raised
+      // so the effect is observable even in mildly hypoxic patients.
+      { vitalSign: 'spo2', changeType: 'increase', value: 5, maxValue: 99 },
       { vitalSign: 'bp', changeType: 'decrease', value: 8 },
     ],
   },

@@ -1058,7 +1058,27 @@ function ECGWaveform({ heartRate, color, height = 80, isVisible, waveformFn, sho
 // 12-LEAD ECG DISPLAY COMPONENT
 // ============================================================================
 
-function TwelveLeadECG({ rhythm, heartRate, onClose, onExport }: { rhythm: ECGRhythm; heartRate: number; onClose: () => void; onExport?: () => void }) {
+// Paced ventricular complex — LBBB-like wide QRS with a discordant T wave.
+// Used for the 12-lead when transcutaneous pacing is capturing: the intrinsic
+// rhythm (e.g. complete heart block) is overridden by the paced ventricular
+// complexes. The leading spike is drawn separately on top of the trace.
+function pacedComplexWave(t: number): number {
+  // Wide QRS: negative deflection (LBBB-like) centred around t=0.18
+  let v = 0;
+  if (t >= 0.12 && t <= 0.34) {
+    const pos = (t - 0.12) / 0.22;
+    // Sharp negative trough then slow return — classic "wide bizarre" paced QRS
+    v = -0.95 * Math.sin(pos * Math.PI);
+  }
+  // Discordant T wave (opposite polarity to QRS — positive here)
+  if (t >= 0.40 && t <= 0.70) {
+    const pos = (t - 0.40) / 0.30;
+    v += 0.28 * Math.sin(pos * Math.PI);
+  }
+  return v;
+}
+
+function TwelveLeadECG({ rhythm, heartRate, onClose, onExport, isPaced = false }: { rhythm: ECGRhythm; heartRate: number; onClose: () => void; onExport?: () => void; isPaced?: boolean }) {
   const canvasRefs = useRef<Record<string, HTMLCanvasElement | null>>({});
   const animRef = useRef<number>(0);
   const posRef = useRef(0);
@@ -1114,9 +1134,15 @@ function TwelveLeadECG({ rhythm, heartRate, onClose, onExport }: { rhythm: ECGRh
           ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
         }
 
-        // Determine waveform function - rhythm strip uses Lead II
+        // Determine waveform function - rhythm strip uses Lead II.
+        // When pacing is capturing, override with the paced-complex waveform
+        // so the 12-lead actually reflects what the banner describes
+        // (wide-QRS paced complexes). Without this, the 12-lead still drew
+        // the underlying rhythm (e.g. CHB) while the text said "paced".
         const leadName = key === 'rhythm-strip' ? 'II' : key;
-        const wfn = rhythm.leads[leadName as LeadName] || rhythm.leads['II'];
+        const wfn = isPaced
+          ? pacedComplexWave
+          : (rhythm.leads[leadName as LeadName] || rhythm.leads['II']);
 
         ctx.strokeStyle = '#00ff41';
         ctx.lineWidth = 1.5;
@@ -1126,6 +1152,7 @@ function TwelveLeadECG({ rhythm, heartRate, onClose, onExport }: { rhythm: ECGRh
         ctx.beginPath();
         let prevBeatProgress = 0;
         let viewerBeatIndex = 0;
+        const spikeXs: number[] = [];
         for (let x = 0; x < w; x++) {
           const adjustedX = (x + posRef.current) % (w * 2);
           const beatProgress = (adjustedX / pixelsPerBeat) % 1;
@@ -1133,6 +1160,10 @@ function TwelveLeadECG({ rhythm, heartRate, onClose, onExport }: { rhythm: ECGRh
             viewerBeatIndex++;
           }
           prevBeatProgress = beatProgress;
+          // Capture the x-coord where the pacing spike should land (~10% of beat)
+          if (isPaced && Math.abs(beatProgress - 0.10) < 0.008) {
+            spikeXs.push(x);
+          }
           const ctx12: WaveformContext = { heartRate, beatIndex: viewerBeatIndex };
           const y = midY - wfn(beatProgress, ctx12) * (h * 0.35);
           if (x === 0) ctx.moveTo(x, y);
@@ -1140,6 +1171,22 @@ function TwelveLeadECG({ rhythm, heartRate, onClose, onExport }: { rhythm: ECGRh
         }
         ctx.stroke();
         ctx.shadowBlur = 0;
+
+        // Overlay pacing spikes — tall thin vertical marks in cyan so they
+        // clearly stand out from the trace and read as artifacts, not QRS.
+        if (isPaced && spikeXs.length > 0) {
+          ctx.strokeStyle = '#00ccff';
+          ctx.lineWidth = 1.25;
+          ctx.shadowColor = '#00ccff';
+          ctx.shadowBlur = 2;
+          for (const sx of spikeXs) {
+            ctx.beginPath();
+            ctx.moveTo(sx, midY + h * 0.30);
+            ctx.lineTo(sx, midY - h * 0.40);
+            ctx.stroke();
+          }
+          ctx.shadowBlur = 0;
+        }
 
         // Sweep cursor for rhythm strip
         if (key === 'rhythm-strip') {
@@ -1159,7 +1206,7 @@ function TwelveLeadECG({ rhythm, heartRate, onClose, onExport }: { rhythm: ECGRh
 
     animRef.current = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(animRef.current);
-  }, [rhythm, heartRate]);
+  }, [rhythm, heartRate, isPaced]);
 
   const setRef = (lead: string) => (el: HTMLCanvasElement | null) => {
     canvasRefs.current[lead] = el;
@@ -2279,8 +2326,13 @@ export function VitalSignsMonitor({
   const [showNibpMenu, setShowNibpMenu] = useState(false);
   const [show12LeadImage, setShow12LeadImage] = useState(false); // Show LITFL image-based 12-lead
 
-  // Deterioration state (must be declared before any useEffect)
-  const [caseSeverity] = useState<CaseSeverity>(() => determineSeverity(caseCategory || 'general', initialVitals));
+  // Deterioration state (must be declared before any useEffect).
+  // Severity is re-evaluated as currentVitals change (see effect below) so
+  // that effective treatment visibly downgrades the status — previously it
+  // was frozen at mount and stayed "peri-arrest" long after stabilisation.
+  const [caseSeverity, setCaseSeverity] = useState<CaseSeverity>(
+    () => determineSeverity(caseCategory || 'general', initialVitals),
+  );
   const [minutesElapsed, setMinutesElapsed] = useState(0);
   const [deteriorationWarningSigns, setDeteriorationWarningSigns] = useState<string[]>([]);
   const [deteriorationChanges, setDeteriorationChanges] = useState<string[]>([]);
@@ -2551,6 +2603,25 @@ export function VitalSignsMonitor({
       if (deteriorationTimerRef.current) clearInterval(deteriorationTimerRef.current);
     };
   }, []);
+
+  // Re-evaluate severity from the CURRENT vitals. We only call setState when
+  // the severity band actually changes, so this doesn't loop on each vitals
+  // tween frame. When severity improves (e.g. oxygen has pulled SpO2 back
+  // above 80), reset the elapsed-minutes counter so the deterioration status
+  // badge reflects the rescued patient instead of displaying "peri-arrest —
+  // 0m to death" long after stabilisation.
+  useEffect(() => {
+    const next = determineSeverity(caseCategory || 'general', currentVitals);
+    if (next !== caseSeverity) {
+      const order: Record<CaseSeverity, number> = {
+        stable: 0, moderate: 1, severe: 2, critical: 3, periarrest: 4,
+      };
+      if (order[next] < order[caseSeverity]) {
+        setMinutesElapsed(0);
+      }
+      setCaseSeverity(next);
+    }
+  }, [caseCategory, currentVitals, caseSeverity]);
 
   // Assessment progress animation
   useEffect(() => {
@@ -3268,9 +3339,27 @@ export function VitalSignsMonitor({
     const progress = assessmentProgress.get(key) || 0;
 
     if (isVisible) {
+      // Show the measured value next to the label so the student can
+      // actually see what they assessed. Without this the PAIN button
+      // collapses to just the label "PAIN" with a HIDE control and the
+      // score is invisible.
+      let displayValue: string = '';
+      if (key === 'painScore') {
+        const p = currentVitals.painScore ?? assessedVitals.painScore ?? 0;
+        displayValue = `${p}/10`;
+      } else if (key === 'bloodGlucose' && currentVitals.bloodGlucose !== undefined) {
+        displayValue = `${Number(currentVitals.bloodGlucose).toFixed(1)} mmol/L`;
+      } else if (key === 'temperature' && currentVitals.temperature !== undefined) {
+        displayValue = `${Number(currentVitals.temperature).toFixed(1)}°C`;
+      } else if (key === 'gcs' && currentVitals.gcs !== undefined) {
+        displayValue = `${Math.round(currentVitals.gcs)}/15`;
+      }
       return (
         <div key={key} className="flex items-center justify-between px-2 py-1 bg-green-950/30 rounded border border-green-900/50">
           <span className="text-[10px] text-green-400 font-mono">{label}</span>
+          {displayValue && (
+            <span className="text-[11px] text-green-300 font-mono font-bold">{displayValue}</span>
+          )}
           <button
             onClick={() => hideVital(key)}
             className="text-[8px] text-gray-500 hover:text-red-400 font-mono"
@@ -3861,6 +3950,13 @@ export function VitalSignsMonitor({
           {monitorMode === 'pacer' && (
             <>
               <div className="flex items-center gap-1 flex-wrap">
+                {/* Mode badge — LIFEPAK/Zoll TCP is fixed-rate DEMAND by default
+                    (paces when intrinsic rate falls below the set rate). Showing
+                    the mode explicitly so students can cite it in handover. */}
+                <div className="px-2 py-1 rounded-sm border border-blue-600/40 text-center" style={{ background: 'rgba(0,30,80,0.4)' }}>
+                  <span className="text-[6px] font-mono text-blue-400 block">MODE</span>
+                  <span className="text-[9px] font-mono font-bold text-blue-300">DEMAND</span>
+                </div>
                 <ControlButton label="LEAD" onClick={() => {
                   const leads: ('I' | 'II' | 'III' | 'PADDLES')[] = ['I', 'II', 'III', 'PADDLES'];
                   setSelectedLead(leads[(leads.indexOf(selectedLead) + 1) % leads.length]);
@@ -3951,23 +4047,19 @@ export function VitalSignsMonitor({
           </div>
         )}
 
-        {/* Assessment Panel */}
+        {/* Assessment Panel intentionally empty — PAIN moved to SAMPLE
+            (Signs/Symptoms) because it's subjective and belongs with
+            history-taking. Temp/GCS/BGL/NIBP/RR live on the monitor's
+            parameter bar. Keeping the panel shell in case future
+            monitor-only assessments are added. */}
         {showAssessPanel && assessmentMode && (
           <div className="mx-3 mb-2 p-2 rounded-lg border border-gray-700/50 space-y-1" style={{ background: 'rgba(0,0,0,0.4)' }}>
-            <span className="text-[9px] font-mono text-gray-400 font-bold block mb-1">ADDITIONAL PARAMETERS ({visibleVitals.size}/{availableVitals.length})</span>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
-              {currentVitals.temperature !== undefined && renderAssessButton('temperature', 'TEMP', ASSESSMENT_METHODS.temperature)}
-              {currentVitals.gcs !== undefined && renderAssessButton('gcs', 'GCS', ASSESSMENT_METHODS.gcs)}
-              {currentVitals.bloodGlucose !== undefined && renderAssessButton('bloodGlucose', 'BGL', ASSESSMENT_METHODS.glucose)}
-              {!visibleVitals.has('bp') && !activeAssessments.has('bp') && renderAssessButton('bp', 'NIBP', ASSESSMENT_METHODS.bp)}
-              {!visibleVitals.has('respiration') && !activeAssessments.has('respiration') && renderAssessButton('respiration', 'RR', ASSESSMENT_METHODS.respiration)}
-              {/* Pain assessment is always available — a student can ask
-                  every patient their pain score even if the case author
-                  didn't hard-code an initial painScore. Without this, MSK
-                  chest pain / most cases showed no PAIN button and the
-                  debrief always flagged pain assessment as missed. */}
-              {renderAssessButton('painScore', 'PAIN', ASSESSMENT_METHODS.painScore)}
-            </div>
+            <span className="text-[9px] font-mono text-gray-400 font-bold block">
+              Use the monitor's parameter bar above to assess vitals.
+            </span>
+            <span className="text-[8px] font-mono text-gray-500 block">
+              Pain is assessed under SAMPLE → Signs/Symptoms.
+            </span>
           </div>
         )}
 
@@ -4006,7 +4098,7 @@ export function VitalSignsMonitor({
                     </span>
                   </div>
                 )}
-                <TwelveLeadECG rhythm={currentRhythm} heartRate={hrValue} onClose={() => setShow12Lead(false)} />
+                <TwelveLeadECG rhythm={currentRhythm} heartRate={hrValue} onClose={() => setShow12Lead(false)} isPaced={isPacedRhythm} />
               </>
             )}
           </div>
@@ -4119,44 +4211,14 @@ export function VitalSignsMonitor({
           </div>
         )}
 
-        {/* Rhythm banner */}
-        {visibleVitals.has('pulse') && currentRhythm.id !== 'nsr' && (
-          <div className={`mx-3 mb-2 p-2 rounded border ${
-            currentRhythm.category === 'arrest' ? 'border-red-600/60 bg-red-950/40' :
-            currentRhythm.category === 'stemi' ? 'border-orange-600/50 bg-orange-950/30' : 'border-yellow-600/50 bg-yellow-950/30'}`}>
-            <div className="flex items-center justify-between">
-              <span className={`text-[10px] font-mono font-bold ${
-                currentRhythm.category === 'arrest' ? 'text-red-400' : currentRhythm.category === 'stemi' ? 'text-orange-400' : 'text-yellow-400'
-              }`}>RHYTHM: {currentRhythm.name.toUpperCase()}</span>
-              {currentRhythm.category === 'stemi' && (
-                <button onClick={() => setShow12Lead(true)} className="text-[8px] font-mono text-green-400 hover:text-green-300 cursor-pointer">VIEW 12-LEAD</button>
-              )}
-            </div>
-          </div>
-        )}
+        {/* Rhythm banner removed — naming the rhythm on the monitor
+            gave the answer away. Audible alarm tones, the waveform, and
+            the 12-lead are the clinical cues students should use. */}
 
-        {/* Alarms & deterioration */}
-        {(alarmStatus.count > 0 || minutesElapsed >= 2) && (
-          <div className="mx-3 mb-2 space-y-1">
-            {alarmStatus.count > 0 && alarmsEnabled && (
-              <div className={`p-2 rounded border ${alarmStatus.hasCritical ? 'bg-red-950/60 border-red-700 animate-pulse' : 'bg-amber-950/40 border-amber-700'}`}>
-                <span className={`text-[10px] font-mono font-bold ${alarmStatus.hasCritical ? 'text-red-400' : 'text-amber-400'}`}>
-                  <AlertTriangle className="h-3.5 w-3.5 inline mr-1" />{alarmStatus.count} ALARM{alarmStatus.count > 1 ? 'S' : ''} ACTIVE
-                </span>
-              </div>
-            )}
-            {(() => {
-              const status = getDeteriorationStatus(caseSeverity, minutesElapsed);
-              if (status.urgency === 'low' && minutesElapsed < 2) return null;
-              const colors: Record<string, string> = { low: 'text-green-400 border-green-800/50', medium: 'text-yellow-400 border-yellow-800/50',
-                high: 'text-orange-400 border-orange-800/50', extreme: 'text-red-400 border-red-700/50 animate-pulse' };
-              return (<div className={`p-2 rounded border bg-black/40 ${colors[status.urgency]}`}>
-                <span className="text-[9px] font-mono font-bold">{status.status.toUpperCase()}</span>
-                {status.percentDeteriorated > 20 && <Progress value={status.percentDeteriorated} className="h-0.5 mt-1" />}
-              </div>);
-            })()}
-          </div>
-        )}
+        {/* Alarm count banner removed — critical vitals already flash/
+            pulse red on the monitor face, and the audio alarm still
+            fires. A separate "N ALARMS ACTIVE" badge just added noise
+            without giving clinically useful info. */}
 
         {activeAssessments.size > 0 && (
           <div className="mx-3 mb-2 p-2 rounded border border-blue-800/50 bg-blue-950/30">

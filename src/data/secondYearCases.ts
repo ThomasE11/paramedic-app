@@ -109,7 +109,7 @@ export const secondYearCases: CaseScenario[] = [
         ivAccess: ['Consider 18G or 20G in AC if protocols allow']
       },
       disability: {
-        avpu: 'A',
+        avpu: 'V',
         gcs: { eye: 4, verbal: 4, motor: 6, total: 14 },
         pupils: 'Equal 3mm, reactive',
         bloodGlucose: 5.4,
@@ -182,7 +182,7 @@ export const secondYearCases: CaseScenario[] = [
       }
     },
     vitalSignsProgression: {
-      initial: { bp: '145/85', pulse: 125, respiration: 32, spo2: 88, gcs: 14, temperature: 37.2 },
+      initial: { bp: '145/85', pulse: 125, respiration: 32, spo2: 88, gcs: 14, temperature: 37.2, bloodGlucose: 5.4 },
       afterIntervention: { bp: '138/80', pulse: 110, respiration: 26, spo2: 94, gcs: 15 },
       deterioration: { bp: '155/95', pulse: 145, respiration: 40, spo2: 82, gcs: 12 }
     },
@@ -617,7 +617,7 @@ export const secondYearCases: CaseScenario[] = [
       }
     },
     vitalSignsProgression: {
-      initial: { bp: '155/95', pulse: 95, respiration: 22, spo2: 95, gcs: 15, temperature: 37.0 },
+      initial: { bp: '155/95', pulse: 95, respiration: 22, spo2: 95, gcs: 15, temperature: 37.0, bloodGlucose: 6.1 },
       afterIntervention: { bp: '150/90', pulse: 92, respiration: 20, spo2: 96, gcs: 15 },
       deterioration: { bp: '135/80', pulse: 60, respiration: 14, spo2: 92, gcs: 14 }
     },
@@ -669,7 +669,7 @@ export const secondYearCases: CaseScenario[] = [
         'Aspirin if not already taken and within protocols',
         'Transport to cardiac-capable hospital',
         'Pre-alert for possible STEMI',
-        'Consider nitroglycerin if protocols allow and BP adequate',
+        'Consider GTN (nitroglycerin / glyceryl trinitrate) spray sublingually if SBP ≥ 90 and no contraindications (PDE-5 inhibitor use, RV infarct)',
         'Monitor for arrhythmias',
         'Reassess after interventions'
       ],
@@ -959,7 +959,7 @@ export const secondYearCases: CaseScenario[] = [
         interventions: ['Monitor BP', 'Establish IV if protocols allow']
       },
       disability: {
-        avpu: 'A',
+        avpu: 'V',
         gcs: { eye: 4, verbal: 3, motor: 5, total: 12 },
         pupils: ['Right: 3mm reactive', 'Left: 4mm sluggish'],
         bloodGlucose: 8.2,
@@ -1459,7 +1459,7 @@ export const secondYearCases: CaseScenario[] = [
       }
     },
     vitalSignsProgression: {
-      initial: { bp: '130/85', pulse: 110, respiration: 22, spo2: 96, gcs: 15, temperature: 37.4 },
+      initial: { bp: '130/85', pulse: 110, respiration: 22, spo2: 96, gcs: 15, temperature: 37.4, bloodGlucose: 7.8 },
       afterIntervention: { bp: '125/80', pulse: 100, respiration: 20, spo2: 99, gcs: 15 },
       deterioration: { bp: '100/60', pulse: 130, respiration: 28, spo2: 92, gcs: 14 }
     },
@@ -1854,7 +1854,7 @@ export const secondYearCases: CaseScenario[] = [
       }
     },
     vitalSignsProgression: {
-      initial: { bp: '95/60', pulse: 105, respiration: 20, spo2: 98, gcs: 15, temperature: 37.1 },
+      initial: { bp: '95/60', pulse: 105, respiration: 20, spo2: 98, gcs: 15, temperature: 37.1, bloodGlucose: 5.2 },
       afterIntervention: { bp: '100/65', pulse: 98, respiration: 18, spo2: 99, gcs: 15 },
       deterioration: { bp: '80/50', pulse: 125, respiration: 26, spo2: 96, gcs: 14 }
     },
@@ -2622,7 +2622,7 @@ export const secondYearCases: CaseScenario[] = [
       }
     },
     vitalSignsProgression: {
-      initial: { bp: '115/70', pulse: 85, respiration: 16, spo2: 99, gcs: 15, temperature: 36.9 },
+      initial: { bp: '115/70', pulse: 85, respiration: 16, spo2: 99, gcs: 15, temperature: 36.9, bloodGlucose: 4.8 },
       afterIntervention: { bp: '118/72', pulse: 82, respiration: 16, spo2: 99, gcs: 15 },
       deterioration: { bp: '105/65', pulse: 95, respiration: 20, spo2: 98, gcs: 14 }
     },
@@ -2932,7 +2932,7 @@ export const secondYearCases: CaseScenario[] = [
         ]
       },
       disability: {
-        avpu: 'A',
+        avpu: 'V',
         gcs: { eye: 4, verbal: 4, motor: 6, total: 14 },
         pupils: 'Equal 5mm, reactive (dilated)',
         bloodGlucose: 5.6,
@@ -3444,7 +3444,7 @@ export const secondYearCases: CaseScenario[] = [
       }
     },
     vitalSignsProgression: {
-      initial: { bp: '0/0', pulse: 0, respiration: 0, spo2: 0, gcs: 3 },
+      initial: { bp: '0/0', pulse: 0, respiration: 0, spo2: 0, gcs: 3, bloodGlucose: 8.2 },
       afterIntervention: { bp: '85/55', pulse: 110, respiration: 14, spo2: 92, gcs: 4 },
       deterioration: { bp: '60/30', pulse: 40, respiration: 6, spo2: 82, gcs: 3 }
     },

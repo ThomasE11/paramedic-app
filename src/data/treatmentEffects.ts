@@ -31,6 +31,54 @@ const ensureCompleteVitals = (vitals: Partial<VitalSigns>): VitalSigns => ({
   time: vitals.time || new Date().toISOString(),
 });
 
+// Build initial vitals for a case, merging vitalSignsProgression.initial with
+// abcde.disability / exposure values. Some case authors put BGL, GCS,
+// temperature in the ABCDE narrative but forget to duplicate them in
+// vitalSignsProgression.initial — which meant the monitor showed generic defaults
+// (BGL 5.5, Temp 36.5) while the case-details popup showed the real values
+// (e.g. BGL 28.5 in DKA).
+const buildInitialVitalsFromCase = (caseData: {
+  vitalSignsProgression?: { initial?: Partial<VitalSigns> };
+  abcde?: {
+    breathing?: { spo2?: number; rate?: number };
+    circulation?: { pulseRate?: number; bp?: { systolic?: number; diastolic?: number } };
+    disability?: {
+      bloodGlucose?: number;
+      gcs?: number | { total?: number };
+    };
+    exposure?: { temperature?: number };
+  };
+}): VitalSigns => {
+  const base: Partial<VitalSigns> = { ...(caseData?.vitalSignsProgression?.initial || {}) };
+  const abcde = caseData?.abcde;
+  const disability = abcde?.disability;
+  const exposure = abcde?.exposure;
+  const breathing = abcde?.breathing;
+  const circulation = abcde?.circulation;
+  if (disability) {
+    if (base.bloodGlucose === undefined && typeof disability.bloodGlucose === 'number') {
+      base.bloodGlucose = disability.bloodGlucose;
+    }
+    if (base.gcs === undefined && disability.gcs !== undefined) {
+      base.gcs = typeof disability.gcs === 'number' ? disability.gcs : disability.gcs?.total;
+    }
+  }
+  if (exposure && base.temperature === undefined && typeof exposure.temperature === 'number') {
+    base.temperature = exposure.temperature;
+  }
+  if (breathing) {
+    if (base.spo2 === undefined && typeof breathing.spo2 === 'number') base.spo2 = breathing.spo2;
+    if (base.respiration === undefined && typeof breathing.rate === 'number') base.respiration = breathing.rate;
+  }
+  if (circulation) {
+    if (base.pulse === undefined && typeof circulation.pulseRate === 'number') base.pulse = circulation.pulseRate;
+    if (!base.bp && circulation.bp?.systolic && circulation.bp?.diastolic) {
+      base.bp = `${circulation.bp.systolic}/${circulation.bp.diastolic}`;
+    }
+  }
+  return ensureCompleteVitals(base);
+};
+
 // Helper to determine case type from category
 const getCaseType = (category: string): 'cardiac' | 'respiratory' | 'trauma' | 'neurological' | 'metabolic' | 'psychosis' | 'general' => {
   const lowerCategory = category.toLowerCase();
@@ -599,4 +647,4 @@ export function applyTreatmentEffectEnhanced(
 }
 
 // Re-export ensureCompleteVitals for use in other modules
-export { ensureCompleteVitals, getCaseType, parseBP, formatBP };
+export { ensureCompleteVitals, buildInitialVitalsFromCase, getCaseType, parseBP, formatBP };

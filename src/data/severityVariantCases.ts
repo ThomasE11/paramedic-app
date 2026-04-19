@@ -115,7 +115,7 @@ export const asthmaSeverityCases: CaseScenario[] = [
       neurological: ['Alert, oriented'],
     },
     vitalSignsProgression: {
-      initial: { pulse: 92, respiration: 20, spo2: 95, bp: '120/75', gcs: 15, temperature: 36.6 },
+      initial: { pulse: 92, respiration: 20, spo2: 95, bp: '120/75', gcs: 15, temperature: 36.6, bloodGlucose: 5.8 },
       afterIntervention: { pulse: 78, respiration: 16, spo2: 98, bp: '115/72', gcs: 15, temperature: 36.6 },
       deterioration: { pulse: 105, respiration: 24, spo2: 92, bp: '125/80', gcs: 15, temperature: 36.6 },
     },
@@ -281,7 +281,7 @@ export const asthmaSeverityCases: CaseScenario[] = [
       neurological: ['Alert, oriented'],
     },
     vitalSignsProgression: {
-      initial: { pulse: 112, respiration: 26, spo2: 91, bp: '135/85', gcs: 15, temperature: 36.8 },
+      initial: { pulse: 112, respiration: 26, spo2: 91, bp: '135/85', gcs: 15, temperature: 36.8, bloodGlucose: 6.2 },
       afterIntervention: { pulse: 88, respiration: 18, spo2: 96, bp: '120/75', gcs: 15, temperature: 36.8 },
       deterioration: { pulse: 135, respiration: 34, spo2: 84, bp: '140/90', gcs: 14, temperature: 36.8 },
     },
@@ -436,7 +436,7 @@ export const asthmaSeverityCases: CaseScenario[] = [
         ivAccess: [],
       },
       disability: {
-        avpu: 'A',
+        avpu: 'V',
         gcs: { eye: 4, verbal: 4, motor: 6, total: 14 },
         pupils: 'Equal and reactive',
         bloodGlucose: 7.8,
@@ -460,7 +460,7 @@ export const asthmaSeverityCases: CaseScenario[] = [
       neurological: ['Alert, oriented'],
     },
     vitalSignsProgression: {
-      initial: { pulse: 138, respiration: 34, spo2: 85, bp: '110/70', gcs: 14, temperature: 37.0 },
+      initial: { pulse: 138, respiration: 34, spo2: 85, bp: '110/70', gcs: 14, temperature: 37.0, bloodGlucose: 7.8 },
       afterIntervention: { pulse: 100, respiration: 22, spo2: 94, bp: '115/72', gcs: 15, temperature: 37.0 },
       deterioration: { pulse: 160, respiration: 10, spo2: 70, bp: '90/55', gcs: 8, temperature: 37.0 },
     },

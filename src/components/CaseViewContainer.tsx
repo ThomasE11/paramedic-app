@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import type { CaseScenario, StudentYear, VitalSigns } from '@/types';
 import { VitalSignsMonitor } from './VitalSignsMonitor';
-import { ensureCompleteVitals } from '@/data/treatmentEffects';
+import { ensureCompleteVitals, buildInitialVitalsFromCase } from '@/data/treatmentEffects';
 import { CaseDisplay } from './CaseDisplay';
 
 interface CaseViewContainerProps {
@@ -322,7 +322,7 @@ export function CaseViewContainer({
             {activeTab === 'vitals' && (
               <div className="space-y-4">
                 <VitalSignsMonitor
-                  initialVitals={currentVitals || ensureCompleteVitals(caseData.vitalSignsProgression.initial)}
+                  initialVitals={currentVitals || buildInitialVitalsFromCase(caseData)}
                   deteriorationVitals={caseData.vitalSignsProgression.deterioration ?
                     ensureCompleteVitals(caseData.vitalSignsProgression.deterioration) : undefined}
                   onVitalChange={onVitalChange}

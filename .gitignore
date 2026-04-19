@@ -33,3 +33,7 @@ youtube-video-ids.json
 *_CHECKLIST.md
 TEST_PLAN.md
 .gstack/
+
+# Audit tooling artifacts — the scripts in scripts/ are checked in, but
+# their timestamped JSON outputs are not.
+test-results/

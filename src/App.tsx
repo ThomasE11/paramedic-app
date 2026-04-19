@@ -5,7 +5,7 @@ import { useGradualVitalChanges } from '@/hooks/useGradualVitalChanges';
 import { allCases, getRandomCase, yearLevels, caseCategories, priorities } from '@/data/cases';
 import { matchObjectiveToCase } from '@/data/simulationObjectives';
 import { getResourcesForDebriefing } from '@/data/diversifiedResources';
-import { applyTreatmentEffectEnhanced, ensureCompleteVitals } from '@/data/treatmentEffects';
+import { applyTreatmentEffectEnhanced, ensureCompleteVitals, buildInitialVitalsFromCase } from '@/data/treatmentEffects';
 import { applyTreatmentEffectGradual, type Treatment } from '@/data/enhancedTreatmentEffects';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
@@ -150,12 +150,25 @@ function RoleSelection({ onSelect }: { onSelect: (role: UserRole) => void }) {
 
           {/* ─── Role Cards — aligned to the design system's role-landing.
                Educator takes the primary cyan (brand colour); Trainee
-               takes a blue secondary. Hover adds a subtle -2px lift. ─── */}
+               takes a blue secondary. Hover adds a subtle -2px lift.
+               The outer element is a div[role="button"] (not a <button>)
+               so we can nest the optional classroom-link <button> inside
+               without triggering React's hydration error for nested
+               buttons. Keyboard activation (Enter/Space) and focus ring
+               are preserved explicitly. ─── */}
           <div className="grid gap-6 sm:grid-cols-2">
             {/* Educator */}
-            <button
+            <div
+              role="button"
+              tabIndex={0}
               onClick={() => onSelect('educator')}
-              className="group relative flex flex-col rounded-[24px] bg-card border border-border p-9 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 text-left overflow-hidden"
+              onKeyDown={e => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onSelect('educator');
+                }
+              }}
+              className="group relative flex flex-col rounded-[24px] bg-card border border-border p-9 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 text-left overflow-hidden cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             >
               <div className="relative z-10 flex flex-col items-start gap-5">
                 <div className="flex h-16 w-16 items-center justify-center rounded-[20px] bg-primary/10 ring-[6px] ring-primary/[0.05] group-hover:ring-primary/15 transition-all duration-200">
@@ -194,12 +207,20 @@ function RoleSelection({ onSelect }: { onSelect: (role: UserRole) => void }) {
                   </button>
                 )}
               </div>
-            </button>
+            </div>
 
             {/* Student / Trainee */}
-            <button
+            <div
+              role="button"
+              tabIndex={0}
               onClick={() => onSelect('student')}
-              className="group relative flex flex-col rounded-[24px] bg-card border border-border p-9 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 text-left overflow-hidden"
+              onKeyDown={e => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onSelect('student');
+                }
+              }}
+              className="group relative flex flex-col rounded-[24px] bg-card border border-border p-9 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 text-left overflow-hidden cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
             >
               <div className="relative z-10 flex flex-col items-start gap-5">
                 <div className="flex h-16 w-16 items-center justify-center rounded-[20px] bg-blue-500/10 ring-[6px] ring-blue-500/[0.05] group-hover:ring-blue-500/15 transition-all duration-200">
@@ -238,7 +259,7 @@ function RoleSelection({ onSelect }: { onSelect: (role: UserRole) => void }) {
                   </button>
                 )}
               </div>
-            </button>
+            </div>
           </div>
 
           {/* Stats bar */}
@@ -647,7 +668,7 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
     setCurrentCase(newCase);
 
     // Initialize vitals with complete fields
-    const initialVitals = ensureCompleteVitals(newCase.vitalSignsProgression.initial);
+    const initialVitals = buildInitialVitalsFromCase(newCase);
     setCurrentVitals(initialVitals);
     setVitalsHistory([initialVitals]);
 
@@ -869,7 +890,7 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
     setSession(newSession);
     
     // Initialize vitals with complete fields
-    const initialVitals = ensureCompleteVitals(caseItem.vitalSignsProgression.initial);
+    const initialVitals = buildInitialVitalsFromCase(caseItem);
     setCurrentVitals(initialVitals);
     setVitalsHistory([initialVitals]);
     
@@ -1471,7 +1492,7 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
                       {currentCase && (
                         <Suspense fallback={<Card><CardContent className="p-4"><div className="animate-pulse h-32 bg-muted rounded" /></CardContent></Card>}>
                           <VitalSignsMonitor
-                            initialVitals={currentVitals || ensureCompleteVitals(currentCase.vitalSignsProgression.initial)}
+                            initialVitals={currentVitals || buildInitialVitalsFromCase(currentCase)}
                             previousVitals={previousVitals}
                             deteriorationVitals={currentCase.vitalSignsProgression.deterioration ? ensureCompleteVitals(currentCase.vitalSignsProgression.deterioration) : undefined}
                             onVitalChange={(vitals) => {

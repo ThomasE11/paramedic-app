@@ -115,7 +115,25 @@ export const DETERIORATION_PROFILES: Record<CaseSeverity, DeteriorationProfile> 
     timeToDeath: 3, // 3 minutes
     rates: [
       { vitalSign: 'spo2', changePerMinute: -5.0, minValue: 40, maxValue: 100 },
-      { vitalSign: 'pulse', changePerMinute: 5.0, minValue: 20, maxValue: 200 },
+      // Compensatory tachycardia while the myocardium is still
+      // perfused — HR climbs as hypoxia and hypovolaemia worsen.
+      {
+        vitalSign: 'pulse',
+        changePerMinute: 5.0,
+        minValue: 20,
+        maxValue: 180,
+        triggerCondition: (v) => (v.spo2 ?? 98) >= 70 && v.pulse < 180,
+      },
+      // Decompensatory bradycardia — once SpO2 collapses below ~70%
+      // or HR has already reached very high levels, the heart can no
+      // longer sustain the tachycardia and rate falls toward arrest.
+      {
+        vitalSign: 'pulse',
+        changePerMinute: -8.0,
+        minValue: 20,
+        maxValue: 200,
+        triggerCondition: (v) => (v.spo2 ?? 98) < 70 || v.pulse >= 180,
+      },
       { vitalSign: 'respiration', changePerMinute: 4.0, minValue: 4, maxValue: 60 },
       { vitalSign: 'bp', changePerMinute: -5.0, minValue: 30, maxValue: 200 },
       { vitalSign: 'gcs', changePerMinute: -2.0, minValue: 3, maxValue: 15 },

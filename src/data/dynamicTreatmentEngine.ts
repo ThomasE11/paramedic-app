@@ -595,7 +595,16 @@ function applyStandardTreatment(
   // ===== APPLY TREATMENT EFFECTS =====
   const effectMultiplier = diminishingFactor * categoryModifier * pathologyMultiplier * protocolSynergyMultiplier;
 
+  // In cardiac arrest the perfusing vitals (pulse, BP) are physiologically
+  // zero and only the explicit ROSC pathway (adrenaline dose ≥ 2 + CPR, or
+  // successful defibrillation) should restore them. Without this guard, the
+  // generic `pulse +30` effect on adrenaline artificially bumped the arrest
+  // HR from 0 to 40 on the very first dose, which is both clinically wrong
+  // and masks the student's ROSC decision point.
+  const skipPerfusingEffects = state.isInArrest;
+
   treatment.effects.forEach(effect => {
+    if (skipPerfusingEffects && (effect.vitalSign === 'pulse' || effect.vitalSign === 'bp')) return;
     const adjustedValue = effect.value * effectMultiplier;
 
     switch (effect.vitalSign) {
@@ -628,9 +637,14 @@ function applyStandardTreatment(
       case 'pulse': {
         const oldPulse = vitals.pulse;
         if (effect.changeType === 'increase') {
-          vitals.pulse = Math.round(clamp(vitals.pulse + adjustedValue, effect.minValue || 40, effect.maxValue || 200));
+          // Never lower the pulse via an "increase" effect — if the
+          // current pulse is already above the treatment's cap, leave it.
+          const proposed = Math.min(effect.maxValue || 200, oldPulse + adjustedValue);
+          vitals.pulse = Math.round(Math.max(oldPulse, Math.max(effect.minValue || 40, proposed)));
         } else if (effect.changeType === 'decrease') {
-          vitals.pulse = Math.round(clamp(vitals.pulse - adjustedValue, effect.minValue || 40, effect.maxValue || 200));
+          // Never raise the pulse via a "decrease" effect.
+          const proposed = Math.max(effect.minValue || 40, oldPulse - adjustedValue);
+          vitals.pulse = Math.round(Math.min(oldPulse, Math.min(effect.maxValue || 200, proposed)));
         } else if (effect.changeType === 'set') {
           vitals.pulse = Math.round(vitals.pulse + (effect.value - vitals.pulse) * effectMultiplier);
         }
@@ -648,9 +662,11 @@ function applyStandardTreatment(
       case 'respiration': {
         const oldRR = vitals.respiration;
         if (effect.changeType === 'increase') {
-          vitals.respiration = Math.round(clamp(vitals.respiration + adjustedValue, effect.minValue || 6, effect.maxValue || 50));
+          const proposed = Math.min(effect.maxValue || 50, oldRR + adjustedValue);
+          vitals.respiration = Math.round(Math.max(oldRR, Math.max(effect.minValue || 6, proposed)));
         } else if (effect.changeType === 'decrease') {
-          vitals.respiration = Math.round(clamp(vitals.respiration - adjustedValue, effect.minValue || 8, effect.maxValue || 50));
+          const proposed = Math.max(effect.minValue || 8, oldRR - adjustedValue);
+          vitals.respiration = Math.round(Math.min(oldRR, Math.min(effect.maxValue || 50, proposed)));
         } else if (effect.changeType === 'set') {
           vitals.respiration = Math.round(vitals.respiration + (effect.value - vitals.respiration) * effectMultiplier);
         } else if (effect.changeType === 'stabilize') {
@@ -671,7 +687,12 @@ function applyStandardTreatment(
         // Apply pathology-based SpO2 ceiling (e.g., COPD 88-92%, tension PTX limited until decompressed)
         const effectiveMaxSpo2 = spo2Ceiling !== undefined ? Math.min(spo2Ceiling, effect.maxValue || 100) : (effect.maxValue || 100);
         if (effect.changeType === 'increase') {
-          vitals.spo2 = Math.round(clamp(vitals.spo2 + adjustedValue, effect.minValue || 60, effectiveMaxSpo2));
+          // An "increase" effect should never LOWER SpO2. If the patient is
+          // already above the treatment's target ceiling (e.g. SpO2 98 from
+          // prior O2 and we apply salbutamol capped at 96), leave the current
+          // value alone instead of clamping it down.
+          const proposed = Math.min(effectiveMaxSpo2, oldSpO2 + adjustedValue);
+          vitals.spo2 = Math.round(Math.max(oldSpO2, proposed));
         } else if (effect.changeType === 'set') {
           const target = spo2Ceiling !== undefined ? Math.min(effect.value, spo2Ceiling) : effect.value;
           vitals.spo2 = Math.round(vitals.spo2 + (target - vitals.spo2) * effectMultiplier);
@@ -1352,9 +1373,13 @@ function applyCrossSystemPhysiology(
   const warnings: string[] = [];
 
   // --- 1. FLUID OVERLOAD IN HEART FAILURE ---
-  // Giving IV fluids to a heart failure / pulmonary oedema patient worsens SpO2
+  // Giving IV fluids to a heart failure / pulmonary oedema patient worsens SpO2.
+  // Normalise dashes → spaces so hyphenated subcategory slugs like
+  // "heart-failure" still match the intent-matching substrings. Previously
+  // this branch silently failed for any case with a hyphen in subcategory.
+  const normalisedSub = sub.replace(/[-_]/g, ' ');
   const isFluidBolus = treatment.id.includes('fluid') || treatment.id.includes('saline_bolus') || treatment.id.includes('hartmanns') || treatment.id.includes('crystalloid');
-  const isHeartFailure = sub.includes('heart failure') || sub.includes('chf') || sub.includes('pulmonary oedema') || sub.includes('pulmonary edema');
+  const isHeartFailure = normalisedSub.includes('heart failure') || normalisedSub.includes('chf') || normalisedSub.includes('pulmonary oedema') || normalisedSub.includes('pulmonary edema');
   if (isFluidBolus && isHeartFailure) {
     const oldSpO2 = vitals.spo2;
     vitals.spo2 = Math.max(70, vitals.spo2 - 5);
@@ -1368,7 +1393,7 @@ function applyCrossSystemPhysiology(
   // `oxygen_15l`/`oxygen_nrb` names don't exist and the high-flow COPD
   // adverse-event branch never fired.
   const isHighFlowO2 = treatment.id === 'oxygen_nonrebreather' || treatment.id === 'oxygen_mask';
-  const isCOPD = sub.includes('copd') || sub.includes('chronic obstructive');
+  const isCOPD = normalisedSub.includes('copd') || normalisedSub.includes('chronic obstructive');
   if (isHighFlowO2 && isCOPD) {
     const oldRR = vitals.respiration;
     vitals.respiration = Math.max(8, vitals.respiration - 2);
@@ -1397,7 +1422,7 @@ function applyCrossSystemPhysiology(
   // --- 5. GTN / NITRATE IN RIGHT VENTRICULAR INFARCT ---
   // Inferior STEMI may involve RV — GTN drops preload and causes severe hypotension
   const isGTN = treatment.id === 'gtn_spray' || treatment.id === 'gtn_sl' || treatment.id === 'nitroglycerin';
-  const isInferiorSTEMI = sub.includes('inferior') && (sub.includes('stemi') || sub.includes('mi'));
+  const isInferiorSTEMI = normalisedSub.includes('inferior') && (normalisedSub.includes('stemi') || /\bmi\b/.test(normalisedSub));
   if (isGTN && isInferiorSTEMI) {
     const bp = parseBP(vitals.bp);
     const oldSBP = bp.systolic;
@@ -1409,7 +1434,7 @@ function applyCrossSystemPhysiology(
 
   // --- 6. BETA-BLOCKER IN ASTHMA ---
   const isBetaBlocker = treatment.id.includes('metoprolol') || treatment.id.includes('propranolol') || treatment.id.includes('atenolol') || treatment.id.includes('bisoprolol');
-  const isAsthma = sub.includes('asthma');
+  const isAsthma = normalisedSub.includes('asthma');
   if (isBetaBlocker && isAsthma) {
     const oldSpO2 = vitals.spo2;
     vitals.spo2 = Math.max(75, vitals.spo2 - 6);
@@ -1439,7 +1464,7 @@ function applyCrossSystemPhysiology(
 
   // --- 9. HYPERTONIC SALINE IN CEREBRAL OEDEMA (head injury / stroke) ---
   if (treatment.id.includes('hypertonic_saline') || treatment.id.includes('mannitol')) {
-    const isHeadInjury = sub.includes('head') || sub.includes('tbi') || sub.includes('intracranial') || sub.includes('stroke');
+    const isHeadInjury = normalisedSub.includes('head') || normalisedSub.includes('tbi') || normalisedSub.includes('intracranial') || normalisedSub.includes('stroke');
     if (isHeadInjury) {
       vitals.gcs = Math.min(15, (vitals.gcs ?? 15) + 1);
     }

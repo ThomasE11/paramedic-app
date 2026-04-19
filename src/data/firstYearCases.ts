@@ -669,7 +669,7 @@ export const firstYearCases: CaseScenario[] = [
         interventions: []
       },
       disability: {
-        avpu: 'A',
+        avpu: 'V',
         gcs: { eye: 4, verbal: 4, motor: 6, total: 14 },
         pupils: 'Equal 3mm, reactive',
         bloodGlucose: 3.2,
@@ -3086,7 +3086,7 @@ export const firstYearCases: CaseScenario[] = [
       eventsLeading: 'Ordered a salad at restaurant, unaware it contained prawns. Within 10 minutes developed tingling lips, then rapid onset of facial swelling, rash, and difficulty breathing. EpiPen was left at home.'
     },
     vitalSignsProgression: {
-      initial: { bp: '85/50', pulse: 125, respiration: 28, spo2: 93, gcs: 15 },
+      initial: { bp: '85/50', pulse: 125, respiration: 28, spo2: 93, gcs: 15, bloodGlucose: 6.2 },
       afterIntervention: { bp: '110/70', pulse: 100, respiration: 18, spo2: 97, gcs: 15 }
     },
     expectedFindings: {

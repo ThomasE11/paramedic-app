@@ -577,7 +577,7 @@ export const litflCaseDatabase: CaseScenario[] = [
         ivAccess: ['18G right AC fossa', '18G left hand']
       },
       disability: {
-        avpu: 'A',
+        avpu: 'V',
         gcs: { eye: 4, verbal: 4, motor: 6, total: 14 },
         pupils: 'Equal and reactive',
         bloodGlucose: 6.8,
@@ -624,7 +624,7 @@ export const litflCaseDatabase: CaseScenario[] = [
       { name: '12-lead ECG', indication: 'Collapse with dyspnea post-flight', findings: 'RV strain pattern consistent with massive PE', interpretation: 'Sinus tachy, S1Q3T3, T inversions V1-V4, right axis deviation', urgency: 'immediate' }
     ],
     vitalSignsProgression: {
-      initial: { bp: '88/52', pulse: 128, respiration: 32, spo2: 83, gcs: 14, temperature: 37.1, etco2: 22 },
+      initial: { bp: '88/52', pulse: 128, respiration: 32, spo2: 83, gcs: 14, temperature: 37.1, etco2: 22, bloodGlucose: 6.8 },
       afterIntervention: { bp: '95/60', pulse: 115, respiration: 26, spo2: 90, gcs: 15, etco2: 28 },
       deterioration: { bp: '65/35', pulse: 140, respiration: 40, spo2: 70, gcs: 8, etco2: 15 }
     },
@@ -1276,7 +1276,7 @@ export const litflCaseDatabase: CaseScenario[] = [
         ivAccess: ['18G right AC fossa']
       },
       disability: {
-        avpu: 'P',
+        avpu: 'U',
         gcs: { eye: 1, verbal: 1, motor: 3, total: 5 },
         pupils: 'Left pupil 6mm fixed, right 3mm reactive — UNEQUAL (uncal herniation)',
         bloodGlucose: 9.5,

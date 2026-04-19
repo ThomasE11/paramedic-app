@@ -63,7 +63,7 @@ function seededShuffle<T>(array: T[], seed: string): T[] {
   return shuffled;
 }
 import { allCases, getRandomCase, yearLevels, caseCategories, allConditionNames, getCasesByCondition } from '@/data/cases';
-import { ensureCompleteVitals } from '@/data/treatmentEffects';
+import { ensureCompleteVitals, buildInitialVitalsFromCase } from '@/data/treatmentEffects';
 import { type Treatment, type TreatmentCategory, TREATMENTS } from '@/data/enhancedTreatmentEffects';
 import {
   type PatientState,
@@ -995,7 +995,7 @@ export function StudentPanel({
   // Shared case initialization helper
   const initializeCase = useCallback((newCase: CaseScenario, conditionMode: boolean, condition?: string) => {
     setCurrentCase(newCase);
-    const initialVitals = ensureCompleteVitals(newCase.vitalSignsProgression.initial);
+    const initialVitals = buildInitialVitalsFromCase(newCase);
     setCurrentVitals(initialVitals);
     setVitalsHistory([initialVitals]);
     setAppliedTreatments([]);
@@ -2749,6 +2749,28 @@ export function StudentPanel({
                   label="Replay dispatch briefing"
                   text={buildDispatchNarration(currentCase)}
                 />
+                {/* Persistent pain readout — once scored under SAMPLE →
+                    Signs/Symptoms, carries through the case on the header
+                    so handover/reassessment always sees the current score. */}
+                {currentVitals?.painScore !== undefined && (
+                  <div className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg border shrink-0 ${
+                    currentVitals.painScore >= 7
+                      ? 'bg-red-500/10 dark:bg-red-500/15 border-red-500/30'
+                      : currentVitals.painScore >= 4
+                        ? 'bg-orange-500/10 dark:bg-orange-500/15 border-orange-500/30'
+                        : currentVitals.painScore > 0
+                          ? 'bg-yellow-500/10 dark:bg-yellow-500/15 border-yellow-500/30'
+                          : 'bg-green-500/10 dark:bg-green-500/15 border-green-500/30'
+                  }`} title="Pain score — reassess periodically">
+                    <span className="text-[9px] sm:text-[10px] font-mono font-semibold opacity-70">PAIN</span>
+                    <span className={`font-mono text-[11px] sm:text-sm font-bold ${
+                      currentVitals.painScore >= 7 ? 'text-red-600 dark:text-red-400'
+                      : currentVitals.painScore >= 4 ? 'text-orange-600 dark:text-orange-400'
+                      : currentVitals.painScore > 0 ? 'text-yellow-700 dark:text-yellow-400'
+                      : 'text-green-700 dark:text-green-400'
+                    }`}>{currentVitals.painScore}/10</span>
+                  </div>
+                )}
                 <div className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-primary/10 dark:bg-primary/15 border border-primary/20 shrink-0">
                   <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-primary" />
                   <span className="font-mono text-[11px] sm:text-sm font-semibold text-primary">{formatTime(elapsedSeconds)}</span>
@@ -3276,6 +3298,57 @@ export function StudentPanel({
                             </div>
                           ))}
                         </div>
+
+                        {/* Pain assessment — lives under Signs/Symptoms in
+                            SAMPLE because pain is subjective and belongs with
+                            history-taking, not the monitor. Scoring here
+                            awards the 'pain-assessment' step credit and
+                            surfaces a persistent readout on the case header. */}
+                        {activeHistoryStep === 'signs-symptoms' && (
+                          <div className="mt-3 pt-3 border-t border-border/40">
+                            <div className="flex items-center justify-between mb-2">
+                              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                                Pain Score (0–10)
+                              </p>
+                              {currentVitals?.painScore !== undefined && (
+                                <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
+                                  {currentVitals.painScore}/10
+                                </span>
+                              )}
+                            </div>
+                            <div className="grid grid-cols-11 gap-1">
+                              {[0,1,2,3,4,5,6,7,8,9,10].map(n => {
+                                const selected = currentVitals?.painScore === n;
+                                const severity = n === 0 ? 'none' : n <= 3 ? 'mild' : n <= 6 ? 'moderate' : 'severe';
+                                const base = severity === 'none' ? 'text-green-600 border-green-500/30'
+                                  : severity === 'mild' ? 'text-yellow-600 border-yellow-500/30'
+                                  : severity === 'moderate' ? 'text-orange-600 border-orange-500/30'
+                                  : 'text-red-600 border-red-500/30';
+                                return (
+                                  <button
+                                    key={n}
+                                    onClick={() => {
+                                      if (readOnly) return;
+                                      setCurrentVitals(prev => prev ? { ...prev, painScore: n } : prev);
+                                      handlePerformAssessment('pain-assessment');
+                                    }}
+                                    className={`h-8 rounded-md border text-[11px] font-mono font-bold transition-all touch-manipulation ${
+                                      selected
+                                        ? 'bg-amber-500 text-white border-amber-600 shadow-sm scale-105'
+                                        : `bg-card hover:bg-accent/40 ${base}`
+                                    }`}
+                                  >
+                                    {n}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                            <p className="text-[9px] text-muted-foreground mt-1.5">
+                              Ask the patient to rate their pain from 0 (no pain) to 10 (worst imaginable).
+                              Document location, onset, character (OPQRST) in your handover.
+                            </p>
+                          </div>
+                        )}
                       </div>
                     )}
                   </CardContent>
@@ -3387,7 +3460,7 @@ export function StudentPanel({
                 {/* --- LIFEPAK MONITOR --- */}
                 <Suspense fallback={<LoadingCard />}>
                   <VitalSignsMonitor
-                    initialVitals={currentVitals || ensureCompleteVitals(currentCase.vitalSignsProgression.initial)}
+                    initialVitals={currentVitals || buildInitialVitalsFromCase(currentCase)}
                     previousVitals={previousVitals}
                     deteriorationVitals={currentCase.vitalSignsProgression.deterioration ? ensureCompleteVitals(currentCase.vitalSignsProgression.deterioration) : undefined}
                     onVitalChange={(vitals) => {

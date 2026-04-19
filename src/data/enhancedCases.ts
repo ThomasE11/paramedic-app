@@ -136,7 +136,7 @@ export const moreTraumaCases: CaseScenario[] = [
       { name: 'FAST scan', indication: 'Assess for pericardial fluid', findings: 'Pericardial effusion present with right ventricular collapse during diastole', interpretation: 'Cardiac tamponade confirmed', urgency: 'immediate' }
     ],
     vitalSignsProgression: {
-      initial: { bp: '70/50', pulse: 140, respiration: 32, spo2: 88, gcs: 8 },
+      initial: { bp: '70/50', pulse: 140, respiration: 32, spo2: 88, gcs: 8, bloodGlucose: 5.4 },
       afterIntervention: { bp: '85/60', pulse: 130, respiration: 28, spo2: 92, gcs: 10 },
       deterioration: { bp: '50/30', pulse: 160, respiration: 8, spo2: 75, gcs: 3 }
     },
@@ -602,7 +602,7 @@ export const moreTraumaCases: CaseScenario[] = [
         ivAccess: ['16G left AC fossa', '16G right AC fossa']
       },
       disability: {
-        avpu: 'A',
+        avpu: 'V',
         gcs: { eye: 4, verbal: 4, motor: 6, total: 14 },
         pupils: 'Equal 4mm, reactive',
         findings: ['Anxious', 'Verbal responses limited due to dyspnea'],
@@ -1260,6 +1260,7 @@ export const moreTraumaCases: CaseScenario[] = [
         'Occlusive dressing for chest wound',
         'High-flow oxygen',
         '2x large bore IV',
+        'Tranexamic acid (TXA) 1g IV within 3 hours of injury — CRASH-2 evidence for mortality benefit in bleeding trauma patients',
         'Permissive hypotension (SBP 80-90 mmHg if no TBI) via small-volume fluid titration + early blood products',
         'Place large bore chest tube (36-40F)',
         'Measure output carefully'
@@ -1686,7 +1687,7 @@ export const moreTraumaCases: CaseScenario[] = [
       { name: 'Pelvic X-ray', indication: 'Rule out pelvic fracture', findings: 'Normal', interpretation: 'No pelvic fracture', urgency: 'routine' }
     ],
     vitalSignsProgression: {
-      initial: { bp: '100/70', pulse: 115, respiration: 22, spo2: 96, gcs: 15 },
+      initial: { bp: '100/70', pulse: 115, respiration: 22, spo2: 96, gcs: 15, bloodGlucose: 5.4 },
       afterIntervention: { bp: '95/65', pulse: 125, respiration: 24, spo2: 95, gcs: 15 },
       deterioration: { bp: '75/45', pulse: 140, respiration: 28, spo2: 92, gcs: 14 }
     },
@@ -1724,7 +1725,8 @@ export const moreTraumaCases: CaseScenario[] = [
       immediate: [
         'ABC approach',
         'IV access x2',
-        'Fluid resuscitation',
+        'Tranexamic acid (TXA) 1g IV within 3 hours of injury — CRASH-2 mortality benefit for bleeding trauma',
+        'Fluid resuscitation (permissive hypotension if no TBI)',
         'FAST exam',
         'Abdominal examination',
         'Pre-alert trauma center'
@@ -2151,7 +2153,7 @@ export const moreTraumaCases: CaseScenario[] = [
       { name: 'FAST scan', indication: 'Hemorrhagic shock', findings: 'Free fluid in pelvis', interpretation: 'Active bleeding', urgency: 'immediate' }
     ],
     vitalSignsProgression: {
-      initial: { bp: '75/50', pulse: 135, respiration: 26, spo2: 93, gcs: 15 },
+      initial: { bp: '75/50', pulse: 135, respiration: 26, spo2: 93, gcs: 15, bloodGlucose: 5.4 },
       afterIntervention: { bp: '90/60', pulse: 120, respiration: 22, spo2: 96, gcs: 15 },
       deterioration: { bp: '60/40', pulse: 155, respiration: 30, spo2: 88, gcs: 14 }
     },
@@ -2189,6 +2191,7 @@ export const moreTraumaCases: CaseScenario[] = [
         'ABC approach with spinal precautions',
         'Apply pelvic binder ASAP',
         'IV access x2',
+        'Tranexamic acid (TXA) 1g IV within 3 hours of injury — CRASH-2 mortality benefit for haemorrhagic shock',
         'Permissive hypotension (SBP 80-90 mmHg if no TBI) via small-volume fluid titration + early blood products',
         'Blood products',
         'DO NOT insert Foley catheter if blood at meatus',
@@ -2594,7 +2597,7 @@ export const moreTraumaCases: CaseScenario[] = [
         ecgFindings: ['Sinus bradycardia']
       },
       disability: {
-        avpu: 'U',
+        avpu: 'P',
         gcs: { eye: 1, verbal: 1, motor: 4, total: 6 },
         pupils: ['Right dilated 6mm non-reactive', 'Left 4mm sluggish'],
         findings: ['Uncal herniation signs', 'Dilated fixed pupil = blowout'],
@@ -3067,7 +3070,7 @@ export const moreTraumaCases: CaseScenario[] = [
       { name: 'MRI Spine', indication: 'Assess cord injury', findings: 'Complete cord transection at C5 level', interpretation: 'Complete spinal cord injury', urgency: 'urgent' }
     ],
     vitalSignsProgression: {
-      initial: { bp: '95/60', pulse: 52, respiration: 24, spo2: 94, gcs: 15 },
+      initial: { bp: '95/60', pulse: 52, respiration: 24, spo2: 94, gcs: 15, bloodGlucose: 5.4 },
       afterIntervention: { bp: '100/65', pulse: 68, respiration: 20, spo2: 96, gcs: 15 },
       deterioration: { bp: '70/45', pulse: 50, respiration: 8, spo2: 88, gcs: 14 }
     },
@@ -3563,7 +3566,7 @@ export const cardiacECGCases: CaseScenario[] = [
       }
     ],
     vitalSignsProgression: {
-      initial: { bp: '85/55', pulse: 55, respiration: 20, spo2: 96, gcs: 15 },
+      initial: { bp: '85/55', pulse: 55, respiration: 20, spo2: 96, gcs: 15, bloodGlucose: 5.4 },
       afterIntervention: { bp: '95/60', pulse: 65, respiration: 18, spo2: 98, gcs: 15 }
     },
     expectedFindings: {
@@ -4000,7 +4003,7 @@ export const cardiacECGCases: CaseScenario[] = [
       }
     ],
     vitalSignsProgression: {
-      initial: { bp: '130/85', pulse: 78, respiration: 16, spo2: 98, gcs: 15 },
+      initial: { bp: '130/85', pulse: 78, respiration: 16, spo2: 98, gcs: 15, bloodGlucose: 5.4 },
       afterIntervention: { bp: '128/82', pulse: 75, respiration: 16, spo2: 98, gcs: 15 }
     },
     expectedFindings: {

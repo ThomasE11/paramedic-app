@@ -133,7 +133,7 @@ export const caseDatabase: CaseScenario[] = [
       { name: '12-lead ECG', indication: 'Chest pain', findings: 'ST elevation V1-V4 with reciprocal ST depression in II, III, aVF', interpretation: 'Acute anterior STEMI', urgency: 'immediate' }
     ],
     vitalSignsProgression: {
-      initial: { bp: '90/60', pulse: 110, respiration: 24, spo2: 94, gcs: 15 },
+      initial: { bp: '90/60', pulse: 110, respiration: 24, spo2: 94, gcs: 15, bloodGlucose: 5.4 },
       afterIntervention: { bp: '100/70', pulse: 105, respiration: 22, spo2: 98, gcs: 15 }
     },
     expectedFindings: {
@@ -367,7 +367,7 @@ export const caseDatabase: CaseScenario[] = [
       mostLikelyDiagnosis: 'Cardiac arrest secondary to recurrent myocardial infarction'
     },
     managementPathway: {
-      immediate: ['Immediate CPR on firm surface - 30:2 ratio, depth 5-6cm, rate 100-120/min, optimize hand position and body position (AHA 2025)', 'AED/defibrillator application and rhythm analysis', 'Defibrillation if VF/pVT (150-200J biphasic)', 'Adrenaline 1mg IV every 3-5 minutes (Either IV or IO — AHA 2024 focused update weakly prefers IV when rapidly achievable without interrupting compressions; IO remains equally valid (PARAMEDIC-2, IVIO trials show equivalence). Do not delay CPR for access.)', 'Airway management with OPA/LMA/ETT', 'IV or IO access — either acceptable (AHA 2024 focused update; do NOT delay CPR for access)', 'Reversible causes assessment (Hs and Ts)'],
+      immediate: ['Immediate CPR on firm surface - 30:2 ratio, depth 5-6cm, rate 100-120/min, optimize hand position and body position (AHA 2025)', 'AED/defibrillator application and rhythm analysis', 'Defibrillation if VF/pVT (150-200J biphasic)', 'Adrenaline 1mg IV every 3-5 minutes (Either IV or IO — AHA 2024 focused update weakly prefers IV when rapidly achievable without interrupting compressions; IO remains equally valid (PARAMEDIC-2, IVIO trials show equivalence). Do not delay CPR for access.)', 'Amiodarone 300mg IV/IO bolus after 3rd shock in refractory VF/pVT (further 150mg after 5th shock if still refractory)', 'Airway management with OPA/LMA/ETT', 'IV or IO access — either acceptable (AHA 2024 focused update; do NOT delay CPR for access)', 'Reversible causes assessment (Hs and Ts)'],
       definitive: ['24/7 Cardiac Catheterization Lab for PCI', 'Temperature control post-ROSC: target 32-36°C for at least 36 hours in adults who remain unresponsive (AHA 2025)', 'ECMO support if available', 'Cardiac surgery if indicated'],
       monitoring: ['Continuous ECG monitoring', 'End-tidal CO2 (ETCO2) - target >10mmHg', 'Blood pressure monitoring', 'SpO2 monitoring', 'Temperature monitoring', 'Blood glucose monitoring'],
       transportConsiderations: ['Pre-alert receiving hospital with ETA and clinical status', 'Do not delay transport for prolonged resuscitation on scene', 'Consider HEMS for rural areas or long transport times', 'Family notification and counseling', 'Continue CPR during transport unless ROSC achieved']
@@ -640,7 +640,7 @@ export const caseDatabase: CaseScenario[] = [
       eventsLeading: 'Sudden onset of palpitations while working at desk'
     },
     vitalSignsProgression: {
-      initial: { bp: '110/70', pulse: 150, respiration: 22, spo2: 96, gcs: 15 },
+      initial: { bp: '110/70', pulse: 150, respiration: 22, spo2: 96, gcs: 15, bloodGlucose: 5.4 },
       afterIntervention: { bp: '125/75', pulse: 95, respiration: 18, spo2: 98, gcs: 15 },
       deterioration: { bp: '90/60', pulse: 165, respiration: 28, spo2: 92, gcs: 13 }
     },
@@ -891,7 +891,7 @@ export const caseDatabase: CaseScenario[] = [
         ecgFindings: ['LVH pattern', 'ST-T wave changes']
       },
       disability: {
-        avpu: 'A',
+        avpu: 'V',
         gcs: { eye: 4, verbal: 4, motor: 6, total: 14 },
         pupils: 'Equal, sluggish',
         findings: ['Confused', 'Papilledema on fundoscopy'],
@@ -1177,7 +1177,7 @@ export const caseDatabase: CaseScenario[] = [
         interventions: ['IV access', 'Fluids if dehydrated']
       },
       disability: {
-        avpu: 'A',
+        avpu: 'V',
         gcs: { eye: 4, verbal: 4, motor: 6, total: 14 },
         pupils: 'Equal and reactive',
         bloodGlucose: 5.4,
@@ -1213,7 +1213,7 @@ export const caseDatabase: CaseScenario[] = [
       eventsLeading: 'Started feeling tight chest after cleaning dusty room, used inhaler 10 times with no relief'
     },
     vitalSignsProgression: {
-      initial: { bp: '130/80', pulse: 120, respiration: 32, spo2: 88, gcs: 14 },
+      initial: { bp: '130/80', pulse: 120, respiration: 32, spo2: 88, gcs: 14, bloodGlucose: 5.4 },
       afterIntervention: { bp: '125/78', pulse: 110, respiration: 26, spo2: 92, gcs: 15 }
     },
     expectedFindings: {
@@ -1473,7 +1473,7 @@ export const caseDatabase: CaseScenario[] = [
         interventions: ['IV access', 'Fluid resuscitation']
       },
       disability: {
-        avpu: 'A',
+        avpu: 'V',
         gcs: { eye: 4, verbal: 4, motor: 6, total: 14 },
         pupils: 'Equal and reactive',
         bloodGlucose: 5.4,
@@ -1505,7 +1505,7 @@ export const caseDatabase: CaseScenario[] = [
       eventsLeading: 'Fell from scaffolding approximately 3 meters, landed on right side, sudden onset chest pain and breathlessness'
     },
     vitalSignsProgression: {
-      initial: { bp: '80/50', pulse: 135, respiration: 36, spo2: 82, gcs: 14 }
+      initial: { bp: '80/50', pulse: 135, respiration: 36, spo2: 82, gcs: 14, bloodGlucose: 5.4 }
     },
     expectedFindings: {
       keyObservations: ['Tracheal deviation', 'Absent breath sounds', 'Hypotension', 'JVD'],
@@ -1790,7 +1790,7 @@ export const caseDatabase: CaseScenario[] = [
       }
     },
     vitalSignsProgression: {
-      initial: { bp: '150/85', pulse: 105, respiration: 28, spo2: 85, gcs: 15 }
+      initial: { bp: '150/85', pulse: 105, respiration: 28, spo2: 85, gcs: 15, bloodGlucose: 5.4 }
     },
     expectedFindings: {
       keyObservations: ['Barrel chest', 'Type 2 RF history', 'Infective exacerbation'],
@@ -1842,7 +1842,8 @@ export const caseDatabase: CaseScenario[] = [
       'Inadequate reassessment after interventions',
       'Not preparing for potential respiratory arrest',
       'Poor documentation of baseline status and oxygen requirements',
-      'Transporting to inappropriate facility without respiratory support'
+      'Transporting to inappropriate facility without respiratory support',
+      'AVOID opioids (morphine, fentanyl) in COPD exacerbation — they cause respiratory depression on top of hypercapnic failure and can precipitate arrest. If the patient is in severe distress/agitation, treat the cause (hypoxia, bronchospasm) rather than sedating. If opioid is unavoidable (e.g. trauma with COPD), use smallest dose, have naloxone ready, and monitor RR/EtCO2 continuously.',
     ],
     equipmentNeeded: [
       'Controlled oxygen delivery device (Venturi mask 24-28%)',
@@ -2079,7 +2080,7 @@ export const caseDatabase: CaseScenario[] = [
       }
     },
     vitalSignsProgression: {
-      initial: { bp: '100/65', pulse: 115, respiration: 28, spo2: 89, gcs: 15 }
+      initial: { bp: '100/65', pulse: 115, respiration: 28, spo2: 89, gcs: 15, bloodGlucose: 5.4 }
     },
     expectedFindings: {
       keyObservations: ['Recent long-haul flight', 'Pleuritic chest pain', 'Tachypnea', 'DVT signs'],
@@ -2731,7 +2732,7 @@ export const caseDatabase: CaseScenario[] = [
       eventsLeading: 'Involved in altercation, stabbed in chest'
     },
     vitalSignsProgression: {
-      initial: { bp: '95/60', pulse: 115, respiration: 26, spo2: 90, gcs: 15 }
+      initial: { bp: '95/60', pulse: 115, respiration: 26, spo2: 90, gcs: 15, bloodGlucose: 5.4 }
     },
     expectedFindings: {
       keyObservations: ['Sucking chest wound', 'Hemodynamic compromise', 'Open pneumothorax'],
@@ -2924,7 +2925,7 @@ export const caseDatabase: CaseScenario[] = [
       eventsLeading: 'Wife noticed husband slumped while reading newspaper, unable to speak clearly'
     },
     vitalSignsProgression: {
-      initial: { bp: '180/100', pulse: 88, respiration: 18, spo2: 96, gcs: 10 }
+      initial: { bp: '180/100', pulse: 88, respiration: 18, spo2: 96, gcs: 10, bloodGlucose: 5.4 }
     },
     expectedFindings: {
       keyObservations: ['FAST positive', 'Clear time of onset', 'On anticoagulation'],
@@ -3546,7 +3547,7 @@ export const caseDatabase: CaseScenario[] = [
       eventsLeading: 'Fever and headache for 2 days, rapidly worsening, rash appeared this morning'
     },
     vitalSignsProgression: {
-      initial: { bp: '110/70', pulse: 110, respiration: 20, spo2: 97, temperature: 39.2, gcs: 15 }
+      initial: { bp: '110/70', pulse: 110, respiration: 20, spo2: 97, temperature: 39.2, gcs: 15, bloodGlucose: 5.4 }
     },
     expectedFindings: {
       keyObservations: ['Fever', 'Headache', 'Neck stiffness', 'Rash'],
@@ -4142,7 +4143,7 @@ export const caseDatabase: CaseScenario[] = [
       eventsLeading: 'Vomiting for 2 days, stopped insulin, progressive drowsiness'
     },
     vitalSignsProgression: {
-      initial: { bp: '95/60', pulse: 110, respiration: 30, spo2: 96, temperature: 37.5, gcs: 14 }
+      initial: { bp: '95/60', pulse: 110, respiration: 30, spo2: 96, temperature: 37.5, gcs: 14, bloodGlucose: 28.5 }
     },
     expectedFindings: {
       keyObservations: ['Kussmaul breathing', 'Hyperglycemia', 'Ketones', 'Dehydration'],
@@ -4413,7 +4414,7 @@ export const caseDatabase: CaseScenario[] = [
       eventsLeading: 'Argument with husband, sudden onset of chest tightness, fear of dying'
     },
     vitalSignsProgression: {
-      initial: { bp: '130/85', pulse: 110, respiration: 30, spo2: 99, gcs: 15 }
+      initial: { bp: '130/85', pulse: 110, respiration: 30, spo2: 99, gcs: 15, bloodGlucose: 5.4 }
     },
     expectedFindings: {
       keyObservations: ['Classic panic attack presentation', 'Carpal spasm from hypocapnia', 'Must rule out medical causes'],
@@ -4626,7 +4627,7 @@ export const caseDatabase: CaseScenario[] = [
       eventsLeading: 'Slipped on wet bathroom floor while getting out of shower'
     },
     vitalSignsProgression: {
-      initial: { bp: '140/85', pulse: 95, respiration: 20, spo2: 95, gcs: 15 }
+      initial: { bp: '140/85', pulse: 95, respiration: 20, spo2: 95, gcs: 15, bloodGlucose: 5.4 }
     },
     expectedFindings: {
       keyObservations: ['Classic hip fracture deformity', 'Osteoporosis risk', 'Fall risk factors present'],
@@ -4842,7 +4843,7 @@ export const caseDatabase: CaseScenario[] = [
       eventsLeading: 'Wound increasingly painful over 2 days, noticed drainage and fever today'
     },
     vitalSignsProgression: {
-      initial: { bp: '130/80', pulse: 105, respiration: 20, spo2: 97, temperature: 38.5, gcs: 15 }
+      initial: { bp: '130/80', pulse: 105, respiration: 20, spo2: 97, temperature: 38.5, gcs: 15, bloodGlucose: 5.4 }
     },
     expectedFindings: {
       keyObservations: ['Surgical site infection', 'Post-discharge complication', 'Diabetes risk factor'],
@@ -5056,7 +5057,7 @@ export const caseDatabase: CaseScenario[] = [
       eventsLeading: 'Sharp chest pain after working long hours at computer, worse with movement, patient anxious about family history of heart disease'
     },
     vitalSignsProgression: {
-      initial: { bp: '125/75', pulse: 85, respiration: 16, spo2: 99, gcs: 15 }
+      initial: { bp: '125/75', pulse: 85, respiration: 16, spo2: 99, gcs: 15, bloodGlucose: 5.4 }
     },
     expectedFindings: {
       keyObservations: ['Atypical chest pain', 'Low cardiovascular risk', 'Musculoskeletal features'],
@@ -5494,7 +5495,7 @@ export const caseDatabase: CaseScenario[] = [
       eventsLeading: 'Working outdoors since 6 AM, limited breaks, started feeling unwell after lunch'
     },
     vitalSignsProgression: {
-      initial: { bp: '100/65', pulse: 110, respiration: 22, spo2: 97, temperature: 38.2, gcs: 15 }
+      initial: { bp: '100/65', pulse: 110, respiration: 22, spo2: 97, temperature: 38.2, gcs: 15, bloodGlucose: 5.4 }
     },
     expectedFindings: {
       keyObservations: ['Heat exhaustion', 'Volume depletion', 'Normal mental status'],
@@ -5723,7 +5724,7 @@ export const caseDatabase: CaseScenario[] = [
       eventsLeading: 'Woke up to use bathroom, noticed blood soaking through pad. Called husband immediately. No pain contractions reported.'
     },
     vitalSignsProgression: {
-      initial: { bp: '95/60', pulse: 118, respiration: 24, spo2: 96, temperature: 36.8, gcs: 15 }
+      initial: { bp: '95/60', pulse: 118, respiration: 24, spo2: 96, temperature: 36.8, gcs: 15, bloodGlucose: 5.4 }
     },
     expectedFindings: {
       keyObservations: ['Painless vaginal bleeding in 3rd trimester', 'Placenta previa likely', 'No contractions', 'Stable vital signs with mild tachycardia'],
@@ -6019,7 +6020,7 @@ export const caseDatabase: CaseScenario[] = [
         interventions: ['IV access if possible (challenge)', 'Fluid bolus if signs of shock']
       },
       disability: {
-        avpu: 'P',
+        avpu: 'V',
         gcs: { eye: 2, verbal: 3, motor: 5, total: 10 },
         pupils: 'Equal but sluggish',
         bloodGlucose: 5.4,
@@ -6053,7 +6054,7 @@ export const caseDatabase: CaseScenario[] = [
       eventsLeading: 'Fever started 2 days ago, mother gave paracetamol. Today became very lethargic then had seizure lasting ~3 minutes. Outside playing in heat.'
     },
     vitalSignsProgression: {
-      initial: { bp: '85/50', pulse: 150, respiration: 28, spo2: 94, temperature: 40.2, gcs: 10 },
+      initial: { bp: '85/50', pulse: 150, respiration: 28, spo2: 94, temperature: 40.2, gcs: 10, bloodGlucose: 5.4 },
       afterIntervention: { bp: '90/55', pulse: 140, respiration: 26, spo2: 98, temperature: 39.1, gcs: 14 }
     },
     expectedFindings: {
@@ -6353,7 +6354,7 @@ export const caseDatabase: CaseScenario[] = [
         interventions: ['Monitor for deterioration']
       },
       disability: {
-        avpu: 'A',
+        avpu: 'V',
         gcs: { eye: 4, verbal: 4, motor: 6, total: 14 },
         pupils: 'Dilated but reactive',
         bloodGlucose: 5.4,
@@ -6387,7 +6388,7 @@ export const caseDatabase: CaseScenario[] = [
       eventsLeading: 'Parents report patient stopped taking his medication about 2 weeks ago. Started becoming more withdrawn, then yesterday began talking about "people watching him" and became aggressive this evening.'
     },
     vitalSignsProgression: {
-      initial: { bp: '145/95', pulse: 125, respiration: 22, spo2: 98, gcs: 14 }
+      initial: { bp: '145/95', pulse: 125, respiration: 22, spo2: 98, gcs: 14, bloodGlucose: 5.4 }
     },
     expectedFindings: {
       keyObservations: ['Acute psychotic episode', 'Paranoid delusions', 'Medication non-adherence', 'Agitated but not violent at present', 'No medical cause apparent'],
@@ -6609,7 +6610,7 @@ export const caseDatabase: CaseScenario[] = [
       { name: '12-lead ECG', indication: 'Assess for arrhythmias', findings: 'Sinus bradycardia with PVCs', urgency: 'urgent' }
     ],
     vitalSignsProgression: {
-      initial: { bp: '75/45', pulse: 45, respiration: 32, spo2: 88, temperature: 37.8, gcs: 8 },
+      initial: { bp: '75/45', pulse: 45, respiration: 32, spo2: 88, temperature: 37.8, gcs: 8, bloodGlucose: 5.4 },
       afterIntervention: { bp: '95/60', pulse: 80, respiration: 28, spo2: 94, gcs: 10 }
     },
     expectedFindings: {
@@ -6924,7 +6925,7 @@ export const caseDatabase: CaseScenario[] = [
         interventions: ['IV access x2 large bore', 'Hartmann\'s (Ringer\'s Lactate) 250mL titrated — NOT 0.9% NaCl (causes hyperchloraemic acidosis)', 'Burn fluid resuscitation using Parkland formula']
       },
       disability: {
-        avpu: 'A',
+        avpu: 'V',
         gcs: { eye: 4, verbal: 4, motor: 6, total: 14 },
         pupils: 'Equal and reactive',
         bloodGlucose: 5.4,
@@ -6956,7 +6957,7 @@ export const caseDatabase: CaseScenario[] = [
       eventsLeading: 'Chemical reaction and explosion in factory where he works. He was near the source when it happened. Clothes caught fire, he ran out, others helped put out flames with fire extinguisher but he\'s badly burned.'
     },
     vitalSignsProgression: {
-      initial: { bp: '85/55', pulse: 135, respiration: 28, spo2: 91, temperature: 37.2, gcs: 14 },
+      initial: { bp: '85/55', pulse: 135, respiration: 28, spo2: 91, temperature: 37.2, gcs: 14, bloodGlucose: 5.4 },
       afterIntervention: { bp: '95/60', pulse: 120, respiration: 26, spo2: 96, gcs: 14 }
     },
     expectedFindings: {
@@ -7220,7 +7221,7 @@ export const caseDatabase: CaseScenario[] = [
       eventsLeading: 'Bus travelling on SZR toward Abu Dhabi. Car reportedly changed lanes suddenly, side-swiped bus. Bus driver lost control, bus overturned onto side. Car spun into barrier. Incident occurred approximately 20 minutes ago. Multiple 999 calls received.'
     },
     vitalSignsProgression: {
-      initial: { bp: 'Various', pulse: 95, respiration: 20, spo2: 97, gcs: 15 },
+      initial: { bp: 'Various', pulse: 95, respiration: 20, spo2: 97, gcs: 15, bloodGlucose: 5.4 },
       afterIntervention: { bp: 'Various - depending on patient', pulse: 95, respiration: 20, spo2: 97, gcs: 15 }
     },
     expectedFindings: {
@@ -7637,7 +7638,7 @@ export const caseDatabase: CaseScenario[] = [
       eventsLeading: 'Developed chest pressure while walking in mall, sat down to rest, pain improved'
     },
     vitalSignsProgression: {
-      initial: { bp: '145/85', pulse: 82, respiration: 18, spo2: 97, gcs: 15 }
+      initial: { bp: '145/85', pulse: 82, respiration: 18, spo2: 97, gcs: 15, bloodGlucose: 5.4 }
     },
     expectedFindings: {
       keyObservations: ['Chest pain improved with rest', 'No acute distress', 'Vital signs stable'],
@@ -7924,7 +7925,7 @@ export const caseDatabase: CaseScenario[] = [
       eventsLeading: 'Was drinking coffee at work when heart started racing, felt lightheaded, came home and called ambulance'
     },
     vitalSignsProgression: {
-      initial: { bp: '110/70', pulse: 185, respiration: 22, spo2: 98, gcs: 15 }
+      initial: { bp: '110/70', pulse: 185, respiration: 22, spo2: 98, gcs: 15, bloodGlucose: 5.4 }
     },
     expectedFindings: {
       keyObservations: ['Narrow complex tachycardia ~185 bpm', 'Regular rhythm', 'Hemodynamically stable', 'History of SVT'],
@@ -8180,7 +8181,7 @@ export const caseDatabase: CaseScenario[] = [
         ecgFindings: ['ST elevation II, III, aVF', 'Reciprocal ST depression in I, aVL', 'ST depression V1-V3 (posterior extension)', 'ST elevation greater in III than II = RCA', 'Right-sided ECG shows V4R elevation = RV infarction']
       },
       disability: {
-        avpu: 'A',
+        avpu: 'V',
         gcs: { eye: 4, verbal: 4, motor: 6, total: 14 },
         pupils: 'Equal and reactive',
         bloodGlucose: 5.4,
@@ -8214,7 +8215,7 @@ export const caseDatabase: CaseScenario[] = [
       eventsLeading: 'Woke up with severe chest pain, nausea, sweating. Called hotel desk who called ambulance'
     },
     vitalSignsProgression: {
-      initial: { bp: '85/55', pulse: 58, respiration: 26, spo2: 94, gcs: 14 }
+      initial: { bp: '85/55', pulse: 58, respiration: 26, spo2: 94, gcs: 14, bloodGlucose: 5.4 }
     },
     expectedFindings: {
       keyObservations: ['Inferior STEMI (II, III, aVF ST elevation)', 'Hypotension, bradycardia', 'Right ventricular infarction suspected', 'CRITICAL: Preload dependent - avoid nitrates!'],
@@ -8515,7 +8516,7 @@ export const caseDatabase: CaseScenario[] = [
       eventsLeading: 'Chest pain started 1 hour ago, similar to previous heart attack, took nitro without relief'
     },
     vitalSignsProgression: {
-      initial: { bp: '95/60', pulse: 105, respiration: 28, spo2: 91, gcs: 15 }
+      initial: { bp: '95/60', pulse: 105, respiration: 28, spo2: 91, gcs: 15, bloodGlucose: 5.4 }
     },
     expectedFindings: {
       keyObservations: ['LBBB with chest pain', 'Sgarbossa criteria positive', 'Acute heart failure', 'Possible MI'],
@@ -8802,7 +8803,7 @@ export const caseDatabase: CaseScenario[] = [
       eventsLeading: 'Missed dose of diltiazem yesterday, heart started racing this morning'
     },
     vitalSignsProgression: {
-      initial: { bp: '135/80', pulse: 148, respiration: 20, spo2: 96, gcs: 15 }
+      initial: { bp: '135/80', pulse: 148, respiration: 20, spo2: 96, gcs: 15, bloodGlucose: 5.4 }
     },
     expectedFindings: {
       keyObservations: ['Atrial flutter with 2:1 block', 'Rate ~150', 'Hemodynamically stable', 'History of atrial flutter'],
@@ -9091,7 +9092,7 @@ export const caseDatabase: CaseScenario[] = [
       eventsLeading: 'Standing in long checkout line, felt lightheaded and nauseous, then passed out briefly. Woke up on floor within 30 seconds.'
     },
     vitalSignsProgression: {
-      initial: { bp: '125/75', pulse: 88, respiration: 18, spo2: 98, gcs: 15 }
+      initial: { bp: '125/75', pulse: 88, respiration: 18, spo2: 98, gcs: 15, bloodGlucose: 5.4 }
     },
     expectedFindings: {
       keyObservations: ['Brief syncope (<1 min)', 'Standing for long time', 'Prodromal symptoms (nausea, lightheaded)', 'Normal ECG', 'No signs of trauma'],
@@ -9365,7 +9366,7 @@ export const caseDatabase: CaseScenario[] = [
         ecgFindings: ['Sinus tachycardia', 'LVH pattern', 'Possible ischemic changes']
       },
       disability: {
-        avpu: 'A',
+        avpu: 'V',
         gcs: { eye: 4, verbal: 4, motor: 6, total: 14 },
         pupils: 'Equal and reactive',
         bloodGlucose: 5.4,
@@ -9401,7 +9402,7 @@ export const caseDatabase: CaseScenario[] = [
       eventsLeading: 'Progressive shortness of breath over 3 days, worse tonight, been sleeping in recliner for a week'
     },
     vitalSignsProgression: {
-      initial: { bp: '165/100', pulse: 125, respiration: 34, spo2: 87, gcs: 14 }
+      initial: { bp: '165/100', pulse: 125, respiration: 34, spo2: 87, gcs: 14, bloodGlucose: 5.4 }
     },
     expectedFindings: {
       keyObservations: ['Acute pulmonary edema', "Cardiac asthma (wheezing from heart failure not asthma)", 'Hypertensive', 'Signs of fluid overload', 'History of heart failure'],
@@ -9725,7 +9726,7 @@ export const caseDatabase: CaseScenario[] = [
       eventsLeading: 'Progressively more tired and weak over 2 days, fell yesterday due to dizziness'
     },
     vitalSignsProgression: {
-      initial: { bp: '88/55', pulse: 42, respiration: 16, spo2: 96, gcs: 15 }
+      initial: { bp: '88/55', pulse: 42, respiration: 16, spo2: 96, gcs: 15, bloodGlucose: 5.4 }
     },
     expectedFindings: {
       keyObservations: ['Bradycardia 42 bpm', 'Hypotension', 'Pacemaker visible but not capturing', 'Possible pacemaker malfunction'],
@@ -10091,7 +10092,7 @@ export const caseDatabase: CaseScenario[] = [
       { name: '12-lead ECG (post-ROSC)', indication: 'Identify cause of arrest', findings: 'ST elevation V1-V4, reciprocal depression II, III, aVF', interpretation: 'Acute anterior STEMI — likely cause of refractory VF. Activate cath lab.', urgency: 'immediate' }
     ],
     vitalSignsProgression: {
-      initial: { bp: '0/0', pulse: 0, respiration: 0, spo2: 0, gcs: 3, etco2: 15 },
+      initial: { bp: '0/0', pulse: 0, respiration: 0, spo2: 0, gcs: 3, etco2: 15, bloodGlucose: 12.8 },
       afterIntervention: { bp: '75/50', pulse: 120, respiration: 12, spo2: 90, gcs: 3, etco2: 38, bloodGlucose: 12.8 },
       enRoute: { bp: '85/55', pulse: 115, respiration: 14, spo2: 93, gcs: 3, etco2: 35 },
       deterioration: { bp: '0/0', pulse: 0, respiration: 0, spo2: 0, gcs: 3, etco2: 8 }
@@ -10717,7 +10718,7 @@ export const caseDatabase: CaseScenario[] = [
       eventsLeading: 'Stung by bee on right forearm while working on site 20 minutes ago. Initially had local swelling only, then within 5 minutes developed widespread rash, facial swelling, and difficulty breathing. Collapsed 10 minutes after sting. Co-workers called ambulance. No EpiPen available on site.'
     },
     vitalSignsProgression: {
-      initial: { bp: '65/30', pulse: 140, respiration: 36, spo2: 82, gcs: 12 },
+      initial: { bp: '65/30', pulse: 140, respiration: 36, spo2: 82, gcs: 12, bloodGlucose: 7.8 },
       afterIntervention: { bp: '95/60', pulse: 110, respiration: 22, spo2: 94, gcs: 13 },
       deterioration: { bp: '0/0', pulse: 0, respiration: 0, spo2: 0, gcs: 3 }
     },
@@ -10991,7 +10992,7 @@ export const caseDatabase: CaseScenario[] = [
       { name: '12-lead ECG', indication: 'Severe bradycardia', findings: 'Sinus bradycardia 32 bpm, no heart block, no ST changes', interpretation: 'Drug-induced sinus bradycardia — beta-blocker + CCB synergistic effect', urgency: 'immediate' }
     ],
     vitalSignsProgression: {
-      initial: { bp: '75/45', pulse: 32, respiration: 14, spo2: 94, gcs: 13, temperature: 36.2 },
+      initial: { bp: '75/45', pulse: 32, respiration: 14, spo2: 94, gcs: 13, temperature: 36.2, bloodGlucose: 6.2 },
       afterIntervention: { bp: '92/58', pulse: 52, respiration: 14, spo2: 97, gcs: 14 },
       enRoute: { bp: '100/65', pulse: 58, respiration: 14, spo2: 98, gcs: 15 }
     },
@@ -11150,7 +11151,7 @@ export const caseDatabase: CaseScenario[] = [
         ivAccess: ['18G cannula right AC fossa', '20G cannula left hand']
       },
       disability: {
-        avpu: 'A',
+        avpu: 'V',
         gcs: { eye: 4, verbal: 4, motor: 6, total: 14 },
         pupils: 'Equal and reactive, 3mm',
         bloodGlucose: 5.8,
@@ -11197,7 +11198,7 @@ export const caseDatabase: CaseScenario[] = [
       { name: '12-lead ECG', indication: 'Syncope with profound bradycardia', findings: 'Complete heart block: P waves at ~75/min, ventricular escape rhythm at 28/min, broad QRS complexes, complete AV dissociation', interpretation: 'Complete (3rd degree) AV block with broad complex escape rhythm — high risk of cardiac arrest', urgency: 'immediate' }
     ],
     vitalSignsProgression: {
-      initial: { bp: '82/50', pulse: 28, respiration: 20, spo2: 92, gcs: 14 },
+      initial: { bp: '82/50', pulse: 28, respiration: 20, spo2: 92, gcs: 14, bloodGlucose: 5.8 },
       afterIntervention: { bp: '95/60', pulse: 65, respiration: 16, spo2: 97, gcs: 15 },
       deterioration: { bp: '60/35', pulse: 20, respiration: 24, spo2: 85, gcs: 10 }
     },
@@ -11401,7 +11402,7 @@ export const caseDatabase: CaseScenario[] = [
       { name: 'Temperature', indication: 'Febrile illness', findings: '38.8°C', interpretation: 'Febrile — likely underlying infection (meningococcal sepsis suspected given petechiae)', urgency: 'immediate' }
     ],
     vitalSignsProgression: {
-      initial: { bp: '50/30', pulse: 55, respiration: 8, spo2: 75, gcs: 8, temperature: 38.8 },
+      initial: { bp: '50/30', pulse: 55, respiration: 8, spo2: 75, gcs: 8, temperature: 38.8, bloodGlucose: 2.8 },
       afterIntervention: { bp: '65/40', pulse: 130, respiration: 30, spo2: 94, gcs: 10 },
       deterioration: { bp: '40/20', pulse: 40, respiration: 4, spo2: 60, gcs: 3 }
     },

@@ -109,7 +109,7 @@ export const additionalRespiratoryCases: CaseScenario[] = [
       eventsLeading: 'Woke up severely short of breath, inhalers not helping'
     },
     vitalSignsProgression: {
-      initial: { bp: '160/90', pulse: 110, respiration: 32, spo2: 78, gcs: 15, temperature: 37.2 }
+      initial: { bp: '160/90', pulse: 110, respiration: 32, spo2: 78, gcs: 15, temperature: 37.2, bloodGlucose: 5.4 }
     },
     expectedFindings: {
       keyObservations: ['Severe COPD exacerbation', 'CO2 retention likely', 'Respiratory failure imminent'],
@@ -172,7 +172,8 @@ export const additionalRespiratoryCases: CaseScenario[] = [
       'Inadequate reassessment after interventions - need serial ABGs',
       'Not preparing for potential intubation early',
       'Failing to identify precipitating causes (infection, heart failure, PE)',
-      'Not communicating with family about potential need for mechanical ventilation'
+      'Not communicating with family about potential need for mechanical ventilation',
+      'AVOID opioids (morphine, fentanyl) — they stack respiratory depression on top of hypercapnic failure and can tip a tiring COPD patient into arrest. Treat the bronchospasm/hypoxia first. If opioid is truly required (e.g. coexisting fracture pain), use the smallest dose, keep naloxone at the bedside, and watch RR/EtCO2 continuously.',
     ],
     equipmentNeeded: [
       'Oxygen therapy equipment with flowmeters (0-15L)',
@@ -423,7 +424,7 @@ export const additionalRespiratoryCases: CaseScenario[] = [
       eventsLeading: 'Fell from 3-meter ladder, landed on right side'
     },
     vitalSignsProgression: {
-      initial: { bp: '110/70', pulse: 120, respiration: 28, spo2: 88, gcs: 15 }
+      initial: { bp: '110/70', pulse: 120, respiration: 28, spo2: 88, gcs: 15, bloodGlucose: 5.4 }
     },
     expectedFindings: {
       keyObservations: ['Tension pneumothorax developing', 'Tracheal deviation', 'Respiratory distress'],
@@ -726,7 +727,7 @@ export const additionalRespiratoryCases: CaseScenario[] = [
       eventsLeading: 'Started with cold symptoms 2 days ago, barking cough started tonight'
     },
     vitalSignsProgression: {
-      initial: { bp: '90/55', pulse: 130, respiration: 40, spo2: 94, gcs: 15 }
+      initial: { bp: '90/55', pulse: 130, respiration: 40, spo2: 94, gcs: 15, bloodGlucose: 5.4 }
     },
     expectedFindings: {
       keyObservations: ['Classic croup presentation', 'Stridor at rest indicates moderate severity'],
@@ -1063,7 +1064,7 @@ export const additionalRespiratoryCases: CaseScenario[] = [
       eventsLeading: 'Woke up gasping for air, unable to lie flat'
     },
     vitalSignsProgression: {
-      initial: { bp: '190/110', pulse: 130, respiration: 36, spo2: 82, gcs: 15 }
+      initial: { bp: '190/110', pulse: 130, respiration: 36, spo2: 82, gcs: 15, bloodGlucose: 5.4 }
     },
     expectedFindings: {
       keyObservations: ['Acute pulmonary edema', 'Cardiac asthma', 'Flash pulmonary edema'],
@@ -1128,7 +1129,8 @@ export const additionalRespiratoryCases: CaseScenario[] = [
       'Missing contributing factors (MI, arrhythmia, medication non-compliance)',
       'Inadequate pain relief - morphine reduces catecholamine surge',
       'Not reassuring and calming anxious patient (fear worsens symptoms)',
-      'Forgetting to check for signs of cardiogenic shock (cool peripheries, confusion)'
+      'Forgetting to check for signs of cardiogenic shock (cool peripheries, confusion)',
+      'AVOID routine IV fluid boluses — pulmonary oedema is a fluid-overload state, not hypovolaemia. Further crystalloid will worsen SpO2 and respiratory distress. Give fluids ONLY for cardiogenic shock with confirmed hypovolaemia, in small (250mL) titrated boluses with close reassessment.',
     ],
     equipmentNeeded: [
       'High-flow oxygen therapy (15L/min non-rebreather or CPAP)',
@@ -1380,7 +1382,7 @@ export const additionalRespiratoryCases: CaseScenario[] = [
       eventsLeading: 'Started choking while eating steak'
     },
     vitalSignsProgression: {
-      initial: { bp: '100/60', pulse: 140, respiration: 0, spo2: 70, gcs: 11 }
+      initial: { bp: '100/60', pulse: 140, respiration: 0, spo2: 70, gcs: 11, bloodGlucose: 5.4 }
     },
     expectedFindings: {
       keyObservations: ['Complete airway obstruction', 'Unable to speak or cough'],
@@ -1696,7 +1698,7 @@ export const additionalRespiratoryCases: CaseScenario[] = [
       eventsLeading: '3 days of fever, productive cough, pleuritic chest pain'
     },
     vitalSignsProgression: {
-      initial: { bp: '110/70', pulse: 110, respiration: 28, spo2: 88, gcs: 15, temperature: 39.0 }
+      initial: { bp: '110/70', pulse: 110, respiration: 28, spo2: 88, gcs: 15, temperature: 39.0, bloodGlucose: 5.4 }
     },
     expectedFindings: {
       keyObservations: ['Consolidation right lower lobe', 'CURB-65 score 2'],
@@ -2038,7 +2040,7 @@ export const additionalNeurologicalCases: CaseScenario[] = [
       eventsLeading: '2-day history of headache, fever, now confused with neck stiffness'
     },
     vitalSignsProgression: {
-      initial: { bp: '90/60', pulse: 120, respiration: 22, spo2: 96, gcs: 14, temperature: 40.0 }
+      initial: { bp: '90/60', pulse: 120, respiration: 22, spo2: 96, gcs: 14, temperature: 40.0, bloodGlucose: 5.4 }
     },
     expectedFindings: {
       keyObservations: ['Triad: fever, headache, neck stiffness', 'Altered consciousness', 'Possible meningococcemia'],
@@ -2409,7 +2411,7 @@ export const additionalMetabolicCases: CaseScenario[] = [
       eventsLeading: 'Missed dialysis session yesterday, now weak with palpitations'
     },
     vitalSignsProgression: {
-      initial: { bp: '90/60', pulse: 38, respiration: 18, spo2: 96, gcs: 15 }
+      initial: { bp: '90/60', pulse: 38, respiration: 18, spo2: 96, gcs: 15, bloodGlucose: 5.4 }
     },
     expectedFindings: {
       keyObservations: ['ECG: peaked T waves, wide QRS, sine wave pattern', 'Muscle weakness', 'Missed dialysis'],
@@ -2730,7 +2732,7 @@ export const additionalToxicologyCases: CaseScenario[] = [
         interventions: ['IV access', 'Fluids']
       },
       disability: {
-        avpu: 'U',
+        avpu: 'P',
         gcs: { eye: 1, verbal: 1, motor: 4, total: 6 },
         pupils: 'Bilateral pinpoint pupils',
         bloodGlucose: 5.4,
@@ -2762,7 +2764,7 @@ export const additionalToxicologyCases: CaseScenario[] = [
       eventsLeading: 'Found by security guard in parking garage'
     },
     vitalSignsProgression: {
-      initial: { bp: '80/50', pulse: 50, respiration: 6, spo2: 70, gcs: 6 },
+      initial: { bp: '80/50', pulse: 50, respiration: 6, spo2: 70, gcs: 6, bloodGlucose: 5.4 },
       afterIntervention: { bp: '120/80', pulse: 90, respiration: 16, spo2: 96, gcs: 15 }
     },
     expectedFindings: {
@@ -3059,7 +3061,7 @@ export const additionalPediatricCases: CaseScenario[] = [
         interventions: []
       },
       disability: {
-        avpu: 'U',
+        avpu: 'P',
         gcs: { eye: 1, verbal: 1, motor: 4, total: 6 },
         pupils: 'Responsive but sluggish',
         bloodGlucose: 5.4,
@@ -3091,7 +3093,7 @@ export const additionalPediatricCases: CaseScenario[] = [
       eventsLeading: 'Fever since this morning, suddenly started jerking 2 minutes ago'
     },
     vitalSignsProgression: {
-      initial: { bp: '90/55', pulse: 150, respiration: 30, spo2: 90, gcs: 6, temperature: 39.5 }
+      initial: { bp: '90/55', pulse: 150, respiration: 30, spo2: 90, gcs: 6, temperature: 39.5, bloodGlucose: 5.4 }
     },
     expectedFindings: {
       keyObservations: ['Simple febrile seizure: age 6m-5y, fever, generalized, <15 min', 'First seizure'],
@@ -3431,7 +3433,7 @@ export const additionalEnvironmentalCases: CaseScenario[] = [
       eventsLeading: 'Working outside all day, stopped sweating, became confused and collapsed'
     },
     vitalSignsProgression: {
-      initial: { bp: '80/50', pulse: 140, respiration: 28, spo2: 95, gcs: 12, temperature: 41.5 }
+      initial: { bp: '80/50', pulse: 140, respiration: 28, spo2: 95, gcs: 12, temperature: 41.5, bloodGlucose: 5.4 }
     },
     expectedFindings: {
       keyObservations: ['Heat stroke: temp >40°C + altered consciousness', 'Dry hot skin (anhidrosis)', 'Hypotension'],
@@ -3632,7 +3634,7 @@ export const additionalPsychiatricCases: CaseScenario[] = [
         interventions: []
       },
       disability: {
-        avpu: 'A',
+        avpu: 'V',
         gcs: { eye: 4, verbal: 4, motor: 6, total: 14 },
         pupils: 'Equal and reactive',
         bloodGlucose: 5.4,
@@ -3666,7 +3668,7 @@ export const additionalPsychiatricCases: CaseScenario[] = [
       eventsLeading: 'Stopped taking medications, behavior became increasingly bizarre over past week'
     },
     vitalSignsProgression: {
-      initial: { bp: '140/90', pulse: 100, respiration: 20, spo2: 98, gcs: 14 }
+      initial: { bp: '140/90', pulse: 100, respiration: 20, spo2: 98, gcs: 14, bloodGlucose: 5.4 }
     },
     expectedFindings: {
       keyObservations: ['Acute psychosis', 'Medication non-compliance', 'Paranoia', 'Auditory hallucinations'],
@@ -3897,7 +3899,7 @@ export const additionalObstetricCases: CaseScenario[] = [
       eventsLeading: 'Headache and vision changes for 2 days, had seizure 5 minutes ago'
     },
     vitalSignsProgression: {
-      initial: { bp: '180/110', pulse: 100, respiration: 18, spo2: 94, gcs: 14 }
+      initial: { bp: '180/110', pulse: 100, respiration: 18, spo2: 94, gcs: 14, bloodGlucose: 5.4 }
     },
     expectedFindings: {
       keyObservations: ['Eclampsia: seizures in pregnancy + hypertension + proteinuria', 'Hyperreflexia and clonus'],
@@ -4210,7 +4212,7 @@ export const additionalTraumaCases: CaseScenario[] = [
       eventsLeading: 'Hand caught in printing press machine'
     },
     vitalSignsProgression: {
-      initial: { bp: '90/60', pulse: 120, respiration: 24, spo2: 95, gcs: 15 },
+      initial: { bp: '90/60', pulse: 120, respiration: 24, spo2: 95, gcs: 15, bloodGlucose: 5.4 },
       afterIntervention: { bp: '110/70', pulse: 100, respiration: 20, spo2: 98, gcs: 15 }
     },
     expectedFindings: {
@@ -4481,7 +4483,7 @@ export const additionalTraumaCases: CaseScenario[] = [
       eventsLeading: 'Fell into pool while unsupervised, estimated submersion 5 minutes'
     },
     vitalSignsProgression: {
-      initial: { bp: '70/40', pulse: 50, respiration: 0, spo2: 70, gcs: 5, temperature: 32 }
+      initial: { bp: '70/40', pulse: 50, respiration: 0, spo2: 70, gcs: 5, temperature: 32, bloodGlucose: 5.4 }
     },
     expectedFindings: {
       keyObservations: ['Drowning', 'Hypothermia', 'Respiratory arrest', 'Aspiration'],
@@ -4726,17 +4728,17 @@ export const additionalBurnsCases: CaseScenario[] = [
     },
     abcde: {
       airway: {
-        patent: true,
-        findings: ['Patent'],
-        interventions: ['Airway adjunct']
+        patent: false,
+        findings: ['Unprotected airway — unresponsive, no gag reflex', 'At risk of aspiration', 'Requires definitive airway management during CPR'],
+        interventions: ['Head tilt / chin lift', 'OPA sized', 'BVM with 2-person seal', 'Supraglottic airway (i-gel) or ETT during CPR cycles']
       },
       breathing: {
         rate: 0,
         rhythm: 'Absent',
         depth: 'None',
         spo2: 0,
-        findings: ['Apneic'],
-        interventions: ['BVM', 'Intubation'],
+        findings: ['Apnoeic — no spontaneous respiratory effort'],
+        interventions: ['BVM 10 breaths/min once airway secured (asynchronous during continuous CPR)', 'Confirm ETT with EtCO2'],
         auscultation: ['No breath sounds — apnoeic']
       },
       circulation: {
@@ -4752,7 +4754,8 @@ export const additionalBurnsCases: CaseScenario[] = [
         avpu: 'U',
         gcs: { eye: 1, verbal: 1, motor: 1, total: 3 },
         pupils: 'Dilated, fixed',
-        findings: ['Cardiac arrest'],
+        bloodGlucose: 5.4,
+        findings: ['Cardiac arrest — GCS 3/15, unprotected airway'],
         interventions: []
       },
       exposure: {
@@ -4780,7 +4783,7 @@ export const additionalBurnsCases: CaseScenario[] = [
       eventsLeading: 'Working on electrical panel, sudden flash and collapse'
     },
     vitalSignsProgression: {
-      initial: { bp: '0/0', pulse: 0, respiration: 0, spo2: 0, gcs: 3 }
+      initial: { bp: '0/0', pulse: 0, respiration: 0, spo2: 0, gcs: 3, bloodGlucose: 5.4 }
     },
     expectedFindings: {
       keyObservations: ['Electrical injury', 'Cardiac arrest (asystole or VF)', 'Entry and exit wounds'],

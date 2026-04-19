@@ -618,6 +618,36 @@ export function getInitialSounds(
   else if (findingsStr.includes('aortic aneurysm') || findingsStr.includes('aaa')) bowelSounds = 'bruit';
   else if (findingsStr.includes('hunger') || findingsStr.includes('fasting') || findingsStr.includes('borborygmi')) bowelSounds = 'borborygmi';
 
+  // Findings-driven lung-sound override for any case that the category
+  // branches above didn't match. If the case notes say crackles /
+  // wheeze / stridor / diminished, we should play those — otherwise a
+  // metabolic case with "bibasilar crackles" as a fluid-overload finding
+  // ended up silently returning 'clear'.
+  const mapLungFromFindings = (): BreathSoundType | null => {
+    if (findingsStr.includes('crackle') || findingsStr.includes('rales') || findingsStr.includes('pulmonary oedema') || findingsStr.includes('pulmonary edema')) {
+      return findingsStr.includes('coarse') ? 'crackles-coarse' : 'crackles-fine';
+    }
+    if (findingsStr.includes('wheeze')) return 'wheeze';
+    if (findingsStr.includes('rhonchi')) return 'rhonchi';
+    if (findingsStr.includes('stridor')) return 'stridor';
+    if (findingsStr.includes('absent breath') || findingsStr.includes('silent chest')) return 'absent';
+    if (findingsStr.includes('diminished') || findingsStr.includes('reduced air entry')) return 'diminished';
+    return null;
+  };
+  const findingsLung = mapLungFromFindings();
+  if (findingsLung) {
+    return {
+      leftLung: findingsLung,
+      rightLung: findingsLung,
+      heartSound: 'normal',
+      bowelSounds,
+      additionalSounds: [],
+      description: findingsStr.includes('bibasilar') || findingsStr.includes('bases')
+        ? 'Bilateral basal crackles on auscultation.'
+        : `${findingsLung.replace('-', ' ')} on auscultation.`,
+    };
+  }
+
   // Default for all other cases
   return {
     leftLung: 'clear',
