@@ -3940,7 +3940,12 @@ export function VitalSignsMonitor({
               {currentVitals.bloodGlucose !== undefined && renderAssessButton('bloodGlucose', 'BGL', ASSESSMENT_METHODS.glucose)}
               {!visibleVitals.has('bp') && !activeAssessments.has('bp') && renderAssessButton('bp', 'NIBP', ASSESSMENT_METHODS.bp)}
               {!visibleVitals.has('respiration') && !activeAssessments.has('respiration') && renderAssessButton('respiration', 'RR', ASSESSMENT_METHODS.respiration)}
-              {currentVitals.painScore !== undefined && renderAssessButton('painScore', 'PAIN', ASSESSMENT_METHODS.painScore)}
+              {/* Pain assessment is always available — a student can ask
+                  every patient their pain score even if the case author
+                  didn't hard-code an initial painScore. Without this, MSK
+                  chest pain / most cases showed no PAIN button and the
+                  debrief always flagged pain assessment as missed. */}
+              {renderAssessButton('painScore', 'PAIN', ASSESSMENT_METHODS.painScore)}
             </div>
           </div>
         )}

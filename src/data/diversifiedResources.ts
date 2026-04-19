@@ -370,7 +370,12 @@ export const categoryResources: Partial<Record<string, DebriefingResource[]>> = 
   'multiple-patients': multiplePatientResources,
   'elderly-fall': [...traumaResources, ...generalResources],
   'post-discharge': generalResources,
-  'rule-out': generalResources,
+  // Rule-out cases are almost always chest-pain differentials (MSK chest
+  // pain, pericarditis, ACS rule-out). Lead with cardiac resources;
+  // general (syncope-heavy) comes last. Previously the general bucket
+  // showed syncope / cardiac syncope red-flag articles on MSK chest pain
+  // cases, which confused students.
+  'rule-out': [...cardiacResources, ...generalResources],
   'anxiety-related': psychiatricResources,
 };
 
@@ -493,6 +498,10 @@ const subcategoryKeywords: Record<string, { boost: string[]; demote: string[] }>
   'long-bone-fracture': { boost: ['fracture', 'splint', 'immobilise', 'deformity', 'neurovascular', 'traction'], demote: ['head injury', 'pelvic'] },
   'spinal-cord-injury': { boost: ['spinal', 'spine', 'cord', 'immobilis', 'neurogenic shock', 'log roll', 'whiplash'], demote: [] },
   'acute-coronary-syndrome': { boost: ['acs', 'stemi', 'nstemi', 'troponin', 'chest pain', 'aspirin', 'ecg', 'coronary', 'myocardial'], demote: ['syncope', 'af '] },
+  // Rule-out ACS / chest-pain differential cases — boost chest-pain,
+  // ECG, and atypical-ACS resources; strongly demote syncope (the
+  // general bucket's default bias).
+  'rule-out': { boost: ['chest pain', 'acs', 'ecg', 'angina', 'troponin', 'musculoskeletal', 'costochondritis', 'pericarditis', 'gerd', 'atypical'], demote: ['syncope', 'cardiac arrest'] },
   'cerebrovascular-emergency': { boost: ['stroke', 'cerebrovascular', 'sah', 'subarachnoid', 'haemorrhage', 'ct head', 'headache'], demote: ['seizure'] },
   'flash-burn': { boost: ['flash burn', 'burns', 'arc flash', 'welding', 'tbsa', 'corneal burn'], demote: ['chemical', 'electrical'] },
   'acute-psychosis': { boost: ['psychosis', 'schizophrenia', 'behavioural', 'sedation', 'antipsychotic', 'agitation'], demote: ['anxiety', 'self-harm'] },
