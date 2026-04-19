@@ -135,6 +135,17 @@ export interface SharedCaseState {
   };
   /** BVM rate the driver picked (10/12/20/25 bpm). */
   bvmVentilationRate?: number | null;
+  /**
+   * Ordered timeline of arrest events the driver has logged
+   * (CPR start/pause, shocks, drug doses, rhythm checks, ROSC).
+   * Broadcasting this lets spectators see the ACLS progression as it
+   * happens rather than reconstructing it from counters.
+   */
+  arrestTimeline?: Array<{
+    time: number;
+    event: string;
+    type: string;
+  }>;
 }
 
 /**
@@ -222,6 +233,10 @@ function mergePatch(current: SharedCaseState, patch: SharedCaseState): SharedCas
   if (patch.arrestState !== undefined) next.arrestState = { ...current.arrestState, ...patch.arrestState };
   if (patch.ventilatorSettings !== undefined) next.ventilatorSettings = patch.ventilatorSettings;
   if (patch.bvmVentilationRate !== undefined) next.bvmVentilationRate = patch.bvmVentilationRate;
+  // Arrest timeline is append-only — replace wholesale so the driver's
+  // authoritative order is preserved. The spectator-side mirror only
+  // ever sets, never mutates, so we don't need smart merging.
+  if (patch.arrestTimeline !== undefined) next.arrestTimeline = patch.arrestTimeline;
   return next;
 }
 

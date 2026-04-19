@@ -269,6 +269,14 @@ interface StudentPanelProps {
       ieRatio: string;
     } | undefined;
     bvmVentilationRate?: number | undefined;
+    arrestTimeline?: Array<{ time: number; event: string; type: string }>;
+    transportDecision?: {
+      priority?: string;
+      position?: string;
+      preAlert?: boolean;
+      destination?: string;
+      provisionalDiagnosis?: string;
+    };
   }) => void;
   /**
    * Spectator mode — disable every interactive control. Students who are
@@ -308,6 +316,14 @@ interface StudentPanelProps {
       ieRatio: string;
     };
     bvmVentilationRate?: number;
+    arrestTimeline?: Array<{ time: number; event: string; type: string }>;
+    transportDecision?: {
+      priority?: string;
+      position?: string;
+      preAlert?: boolean;
+      destination?: string;
+      provisionalDiagnosis?: string;
+    };
   };
   /**
    * Instructor-side live override. Every commit bumps `nonce`; whenever
@@ -705,6 +721,33 @@ export function StudentPanel({
     });
   }, [ventilatorSettings, bvmVentilationRate, onClassroomStateChange]);
 
+  // Arrest timeline — broadcast the full ordered event log so spectators
+  // see the CPR / shock / drug events in the same sequence the driver
+  // logged them. Append-only on the driver side; the mirror just replaces.
+  useEffect(() => {
+    if (!onClassroomStateChange) return;
+    if (arrestTimeline.length === 0) return;
+    onClassroomStateChange({ arrestTimeline });
+  }, [arrestTimeline, onClassroomStateChange]);
+
+  // Transport decision — the priority / position / pre-alert /
+  // destination / provisional-dx the driver picked. Spectators need this
+  // so the transport-wizard UI shows the right state, and so the debrief
+  // receipts (pre-alert given? destination chosen?) converge.
+  useEffect(() => {
+    if (!onClassroomStateChange) return;
+    if (!transportDecisions) return;
+    onClassroomStateChange({
+      transportDecision: {
+        priority: transportDecisions.priority,
+        position: transportDecisions.position,
+        preAlert: transportDecisions.preAlert,
+        destination: transportDecisions.destination,
+        provisionalDiagnosis: transportDecisions.provisionalDiagnosis,
+      },
+    });
+  }, [transportDecisions, onClassroomStateChange]);
+
   // ------------------------------------------------------------------------
   // Classroom-spectator: mirror incoming state from the driver into local
   // state so the full UI renders the driver's live actions. This makes the
@@ -810,6 +853,32 @@ export function StudentPanel({
     }
     if (externalState.bvmVentilationRate !== undefined) {
       setBvmVentilationRate(externalState.bvmVentilationRate);
+    }
+
+    // Arrest timeline mirror — wholesale replace so driver's authoritative
+    // sequence wins. Skip if the incoming list is shorter than ours (a
+    // stale patch arriving out of order shouldn't erase newer events).
+    if (externalState.arrestTimeline) {
+      setArrestTimeline(prev => (
+        externalState.arrestTimeline!.length >= prev.length
+          ? externalState.arrestTimeline!
+          : prev
+      ));
+    }
+
+    // Transport decision mirror — the wizard shape on the driver side
+    // uses required strings; the broadcast shape uses optional strings.
+    // Fill missing fields with '' so the shape matches and the wizard
+    // renders consistently on spectators.
+    if (externalState.transportDecision) {
+      const td = externalState.transportDecision;
+      setTransportDecisions({
+        priority: td.priority ?? '',
+        position: td.position ?? '',
+        preAlert: td.preAlert ?? false,
+        destination: td.destination ?? '',
+        provisionalDiagnosis: td.provisionalDiagnosis ?? '',
+      });
     }
 
     // assessmentPerformed mirror — students see ABCDE ticks as the
