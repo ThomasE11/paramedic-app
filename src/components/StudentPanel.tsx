@@ -1301,13 +1301,61 @@ export function StudentPanel({
         }
 
         // Assisted ventilation rate — surface the student-set rate on the
-        // monitor when the patient is apnoeic and being ventilated.
+        // monitor while ventilation is active. A patient on a mechanical
+        // ventilator (paralysed / heavily sedated) has an RR dictated by
+        // the ventilator — the monitor should read that rate, not the
+        // patient's own drive. For BVM, the ventilator-provided rate is
+        // what the monitor sees since the provider is setting the cadence.
+        // Previously this gate was `v.respiration === 0`, so once the
+        // patient regained any spontaneous drive post-ROSC the monitor
+        // showed the intrinsic rate and the student had no way to see
+        // whether their set ventilator rate had been accepted.
+        const onVentilator = appliedTreatmentIds.includes('mechanical_ventilation') && !!ventilatorSettings;
+        const onBvm = appliedTreatmentIds.includes('bvm_ventilation') && !!bvmVentilationRate;
         const ventRate =
-          ventilatorSettings?.respiratoryRate ??
-          bvmVentilationRate;
-        if ((v.respiration ?? 0) === 0 && hasO2 && ventRate && ventRate > 0) {
-          v.respiration = ventRate;
-          changed = true;
+          (onVentilator ? ventilatorSettings!.respiratoryRate : null) ??
+          (onBvm ? bvmVentilationRate : null);
+        if (ventRate && ventRate > 0 && (onVentilator || onBvm)) {
+          if (v.respiration !== ventRate) {
+            v.respiration = ventRate;
+            changed = true;
+          }
+        }
+
+        // EtCO2 physiology driven by minute ventilation. Target EtCO2
+        // range is 35–45 mmHg. Minute volume = TV × RR. Inadequate MV
+        // → CO2 climbs (hypercapnia); over-ventilation → CO2 falls
+        // (hypocapnia — reduces cerebral perfusion, bad post-arrest).
+        // Previously EtCO2 was set once by the treatment's static
+        // effect and never moved, so students saw it stuck low forever
+        // despite normalised ventilation.
+        const weightKg = currentCase?.patientInfo?.weight ?? 70;
+        const targetMv = weightKg * 0.1; // ≈100 mL/kg/min
+        let providedMv: number | null = null;
+        if (onVentilator) {
+          providedMv = (ventilatorSettings!.tidalVolumeMl / 1000) * ventilatorSettings!.respiratoryRate;
+        } else if (onBvm) {
+          // Adult BVM squeeze ≈500 mL; paediatric ≈250 mL if weight<30kg.
+          const assumedTvLitres = weightKg < 30 ? 0.25 : 0.5;
+          providedMv = assumedTvLitres * bvmVentilationRate!;
+        }
+        if (providedMv != null) {
+          const currentEtco2 = v.etco2 ?? 35;
+          // Ratio of delivered MV to target MV predicts EtCO2 steady state.
+          // Over-ventilated patient drifts EtCO2 toward 25; under-ventilated
+          // drifts toward 55. Tick moves EtCO2 one step per second toward
+          // the predicted steady state.
+          const ratio = providedMv / targetMv;
+          const targetEtco2 = ratio >= 1.5 ? 25
+            : ratio >= 1.1 ? 32
+            : ratio >= 0.85 ? 40
+            : ratio >= 0.6 ? 50
+            : 60;
+          if (Math.abs(currentEtco2 - targetEtco2) > 0.5) {
+            const step = currentEtco2 < targetEtco2 ? 1 : -1;
+            v.etco2 = Math.max(15, Math.min(80, currentEtco2 + step));
+            changed = true;
+          }
         }
 
         // ---- CONTINUOUS ROSC EVALUATOR (non-shockable rhythms) ----
@@ -1441,7 +1489,11 @@ export function StudentPanel({
     // proof of RSI (rsi_intubation treatment) or at minimum a secured
     // airway. GCS <= 3 (unresponsive) is an alternative clinical path
     // (e.g. in-arrest already intubated) — allow that too.
-    if (treatment.id === 'mechanical_ventilation' && !ventilatorSettings) {
+    //
+    // The dialog is reusable: clicking mechanical_ventilation again
+    // opens it with the current settings so the student can adjust
+    // FiO2 / PEEP / RR / TV without tearing down and re-intubating.
+    if (treatment.id === 'mechanical_ventilation') {
       const hasRsi = appliedTreatmentIds.includes('rsi_intubation');
       const hasIntubation = appliedTreatmentIds.includes('intubation') || appliedTreatmentIds.includes('endotracheal_intubation');
       const gcsTotal = (patientState?.vitals?.gcs as number | undefined)
@@ -1462,7 +1514,10 @@ export function StudentPanel({
     // BVM needs a ventilation rate — light-weight prompt (10/12/20) so the
     // student picks an age-appropriate cadence. Once set, the monitor
     // surfaces the assisted RR to make the intervention visible.
-    if (treatment.id === 'bvm_ventilation' && bvmVentilationRate === null) {
+    // Re-clicking bvm_ventilation reopens the rate dialog so the student
+    // can change the rate (e.g. switching from 10/min CPR-sync to 12/min
+    // normoventilation post-ROSC).
+    if (treatment.id === 'bvm_ventilation') {
       setPendingBvmTreatment(treatment);
       setShowBvmRateDialog(true);
       return;
@@ -3883,6 +3938,7 @@ export function StudentPanel({
                   currentCase.subcategory?.includes('ards') || currentCase.title?.toLowerCase().includes('ards') ? 'ards' :
                   currentCase.category === 'pediatric' ? 'pediatric' : 'default'
                 }
+                initialSettings={ventilatorSettings}
               />
             )}
 

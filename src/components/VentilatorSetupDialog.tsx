@@ -44,6 +44,13 @@ interface VentilatorSetupDialogProps {
   patientWeightKg?: number;
   /** Used to pre-populate sensible defaults based on case context. */
   context?: 'ards' | 'copd' | 'arrest' | 'pediatric' | 'default';
+  /**
+   * Existing ventilator settings. When the dialog is reopened to adjust
+   * an already-active ventilator (e.g. post-ROSC the student wants to
+   * back off the rate or wean FiO2), the sliders land on the current
+   * values instead of snapping back to defaults.
+   */
+  initialSettings?: VentilatorSettings | null;
 }
 
 const MODE_OPTIONS: { value: VentilatorMode; label: string; hint: string }[] = [
@@ -61,17 +68,18 @@ export function VentilatorSetupDialog({
   onConfirm,
   patientWeightKg = 70,
   context = 'default',
+  initialSettings = null,
 }: VentilatorSetupDialogProps) {
   // Defaults scale with patient weight using 6 mL/kg (protective ventilation).
   const targetTv = Math.round(patientWeightKg * 6);
   const isPed = context === 'pediatric' || patientWeightKg < 30;
 
-  const [mode, setMode] = useState<VentilatorMode>(context === 'copd' ? 'BiPAP' : 'AC-VC');
-  const [tidalVolume, setTidalVolume] = useState(targetTv);
-  const [rate, setRate] = useState(isPed ? 20 : context === 'arrest' ? 10 : 14);
-  const [fio2, setFio2] = useState(context === 'arrest' || context === 'ards' ? 100 : 40);
-  const [peep, setPeep] = useState(context === 'ards' ? 8 : 5);
-  const [ieRatio, setIeRatio] = useState(context === 'copd' ? '1:3' : '1:2');
+  const [mode, setMode] = useState<VentilatorMode>(initialSettings?.mode ?? (context === 'copd' ? 'BiPAP' : 'AC-VC'));
+  const [tidalVolume, setTidalVolume] = useState(initialSettings?.tidalVolumeMl ?? targetTv);
+  const [rate, setRate] = useState(initialSettings?.respiratoryRate ?? (isPed ? 20 : context === 'arrest' ? 10 : 14));
+  const [fio2, setFio2] = useState(initialSettings?.fio2Percent ?? (context === 'arrest' || context === 'ards' ? 100 : 40));
+  const [peep, setPeep] = useState(initialSettings?.peepCmH2O ?? (context === 'ards' ? 8 : 5));
+  const [ieRatio, setIeRatio] = useState(initialSettings?.ieRatio ?? (context === 'copd' ? '1:3' : '1:2'));
 
   const warnings = useMemo(() => {
     const w: string[] = [];
