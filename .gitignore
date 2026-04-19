@@ -24,16 +24,18 @@ dist
 !public/images/clinical/*.png
 !public/images/placeholders/*.jpg
 !public/images/placeholders/*.png
-comprehensive-test.ts
-run-tests.cjs
-test-suite.js
-download-images.sh
-youtube-video-ids.json
-*_REPORT.md
-*_CHECKLIST.md
-TEST_PLAN.md
+# Old agent framework + AI tooling caches
 .gstack/
+.bmad/
+.ralph/
 
 # Audit tooling artifacts — the scripts in scripts/ are checked in, but
 # their timestamped JSON outputs are not.
 test-results/
+
+# Obsolete report / summary / checklist stubs regenerated ad-hoc; keep
+# the patterns so no-one recommits them.
+*_REPORT.md
+*_SUMMARY.md
+*_CHECKLIST.md
+TEST_PLAN.md
