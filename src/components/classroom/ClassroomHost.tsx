@@ -194,6 +194,8 @@ export function ClassroomHost({ onExit }: Props) {
           currentRhythm: sharedState.currentRhythm,
           isInArrest: sharedState.isInArrest,
           arrestState: sharedState.arrestState,
+          ventilatorSettings: sharedState.ventilatorSettings,
+          bvmVentilationRate: sharedState.bvmVentilationRate,
         } : undefined}
         topBanner={
           <ClassroomBroadcastBar

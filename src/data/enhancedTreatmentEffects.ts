@@ -726,6 +726,7 @@ export const TREATMENTS: Treatment[] = [
     durationSeconds: 60,
     icon: 'Droplets',
     color: 'red',
+    requiresIVAccess: true,
     effects: [
       { vitalSign: 'bp', changeType: 'increase', value: 10 },
       { vitalSign: 'pulse', changeType: 'decrease', value: 8, minValue: 60 },
@@ -1082,6 +1083,7 @@ export const TREATMENTS: Treatment[] = [
     durationSeconds: 20,
     icon: 'Thermometer',
     color: 'blue',
+    requiresIVAccess: true,
     effects: [
       { vitalSign: 'temperature', changeType: 'decrease', value: 1.5, minValue: 36.5 },
       { vitalSign: 'pulse', changeType: 'decrease', value: 10, minValue: 60 },
@@ -1597,6 +1599,7 @@ export const TREATMENTS: Treatment[] = [
     durationSeconds: 30,
     icon: 'Wind',
     color: 'blue',
+    requiresIVAccess: true,
     effects: [
       { vitalSign: 'spo2', changeType: 'increase', value: 10, maxValue: 97 },
       { vitalSign: 'respiration', changeType: 'decrease', value: 8, minValue: 14 },

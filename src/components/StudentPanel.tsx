@@ -76,6 +76,7 @@ import {
   findProtocol,
   determineSeverityFromVitals,
 } from '@/data/treatmentProtocols';
+import { checkRuntimeContraindications } from '@/lib/runtimeContraindications';
 import { useGradualVitalChanges } from '@/hooks/useGradualVitalChanges';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -259,6 +260,15 @@ interface StudentPanelProps {
       amiodaroneDoses?: number;
       cycleNumber?: number;
     };
+    ventilatorSettings?: {
+      mode: string;
+      tidalVolumeMl: number;
+      respiratoryRate: number;
+      fio2Percent: number;
+      peepCmH2O: number;
+      ieRatio: string;
+    } | undefined;
+    bvmVentilationRate?: number | undefined;
   }) => void;
   /**
    * Spectator mode — disable every interactive control. Students who are
@@ -289,6 +299,15 @@ interface StudentPanelProps {
       amiodaroneDoses?: number;
       cycleNumber?: number;
     };
+    ventilatorSettings?: {
+      mode: string;
+      tidalVolumeMl: number;
+      respiratoryRate: number;
+      fio2Percent: number;
+      peepCmH2O: number;
+      ieRatio: string;
+    };
+    bvmVentilationRate?: number;
   };
   /**
    * Instructor-side live override. Every commit bumps `nonce`; whenever
@@ -674,6 +693,18 @@ export function StudentPanel({
     });
   }, [cprRunning, shockCount, adrenalineDoses, amiodaroneDoses, cprCycleNumber, onClassroomStateChange]);
 
+  // Ventilator settings + BVM rate — pipe into the shared state so the
+  // spectator's SpO2 tick uses the same FiO2/PEEP trajectory as the
+  // driver. Previously these were driver-only, and student monitors
+  // silently diverged from what the instructor was actually doing.
+  useEffect(() => {
+    if (!onClassroomStateChange) return;
+    onClassroomStateChange({
+      ventilatorSettings: ventilatorSettings ?? undefined,
+      bvmVentilationRate: bvmVentilationRate ?? undefined,
+    });
+  }, [ventilatorSettings, bvmVentilationRate, onClassroomStateChange]);
+
   // ------------------------------------------------------------------------
   // Classroom-spectator: mirror incoming state from the driver into local
   // state so the full UI renders the driver's live actions. This makes the
@@ -761,7 +792,44 @@ export function StudentPanel({
       if (a.amiodaroneDoses !== undefined) setAmiodaroneDoses(a.amiodaroneDoses);
       if (a.cycleNumber !== undefined) setCprCycleNumber(a.cycleNumber);
     }
-  }, [externalState, caseStartTime, session, currentCase]);
+
+    // Ventilator settings mirrored so the spectator's SpO2 tick uses the
+    // same FiO2/PEEP trajectory the instructor set. Without this, the
+    // spectator's SpO2 climbs slower than the instructor's.
+    if (externalState.ventilatorSettings !== undefined) {
+      const v = externalState.ventilatorSettings;
+      // Narrow to our local VentilatorSettings shape (mode is a union).
+      setVentilatorSettings(v ? {
+        mode: v.mode as VentilatorSettings['mode'],
+        tidalVolumeMl: v.tidalVolumeMl,
+        respiratoryRate: v.respiratoryRate,
+        fio2Percent: v.fio2Percent,
+        peepCmH2O: v.peepCmH2O,
+        ieRatio: v.ieRatio,
+      } : null);
+    }
+    if (externalState.bvmVentilationRate !== undefined) {
+      setBvmVentilationRate(externalState.bvmVentilationRate);
+    }
+
+    // assessmentPerformed mirror — students see ABCDE ticks as the
+    // instructor assesses. Previously broadcast but never mirrored.
+    // We use the same pure performAssessmentStep the driver uses and
+    // replay any missing steps so the tracker state converges.
+    if (externalState.assessmentPerformed && assessmentTracker && currentCase) {
+      const incoming = externalState.assessmentPerformed;
+      const already = new Set(assessmentTracker.performed.map(p => p.stepId));
+      const missing = incoming.filter(id => !already.has(id));
+      if (missing.length > 0) {
+        let tracker = assessmentTracker;
+        for (const stepId of missing) {
+          const { tracker: next } = performAssessmentStep(tracker, currentCase, stepId as AssessmentStepId);
+          tracker = next;
+        }
+        setAssessmentTracker(tracker);
+      }
+    }
+  }, [externalState, caseStartTime, session, currentCase, assessmentTracker]);
 
   // ---------------- Instructor live override ------------------------------
   // When the instructor pushes a change via InstructorLiveControls, the
@@ -1335,15 +1403,59 @@ export function StudentPanel({
       return;
     }
 
+    // Runtime contraindication checker — evaluates the drug against the
+    // CURRENT vitals/rhythm/findings, not just the static list. Blocks
+    // hard contras (GTN in SBP<90, beta-blocker in CHB, aspirin in ICH)
+    // and folds soft warnings into the med-confirm dialog so the
+    // student sees the concrete reason, not a generic string.
+    const runtimeContras = checkRuntimeContraindications(treatment, {
+      bp: String(currentVitals?.bp ?? ''),
+      pulse: typeof currentVitals?.pulse === 'number' ? currentVitals.pulse : undefined,
+      spo2: typeof currentVitals?.spo2 === 'number' ? currentVitals.spo2 : undefined,
+      respiration: typeof currentVitals?.respiration === 'number' ? currentVitals.respiration : undefined,
+      temperature: typeof currentVitals?.temperature === 'number' ? currentVitals.temperature : undefined,
+      gcs: typeof currentVitals?.gcs === 'number' ? currentVitals.gcs : undefined,
+      currentRhythm: patientState?.currentRhythm,
+      isInArrest: patientState?.isInArrest,
+      findings: [
+        ...(currentCase.abcde?.circulation?.findings ?? []),
+        ...(currentCase.expectedFindings?.keyObservations ?? []),
+        ...(currentCase.expectedFindings?.differentialDiagnoses ?? []),
+        currentCase.expectedFindings?.mostLikelyDiagnosis ?? '',
+        currentCase.title ?? '',
+      ],
+      caseSubcategory: currentCase.subcategory,
+    });
+    // Hard blocks: refuse + surface the reason. No override here — the
+    // blocked list is deliberately short (only the most dangerous combos).
+    const hardBlocks = runtimeContras.filter(c => c.severity === 'block');
+    if (hardBlocks.length > 0 && !medicationConfirmedRef.current.has(treatment.id)) {
+      const primary = hardBlocks[0];
+      toast.error(`Blocked: ${treatment.name}`, {
+        description: primary.alternative
+          ? `${primary.reason}\n\nAlternative: ${primary.alternative}`
+          : primary.reason,
+        duration: 10000,
+      });
+      return;
+    }
+
     // Medication safety check — show React dialog (window.confirm auto-dismisses on re-render)
     if (treatment.category === 'medication' && !medicationConfirmedRef.current.has(treatment.id)) {
       const allergies = currentCase.history?.allergies || [];
       const allergyText = allergies.length > 0 && allergies[0] !== 'NKDA' && !allergies[0]?.toLowerCase().includes('no known')
         ? `Patient allergies: ${allergies.map(a => typeof a === 'string' ? a : a.name || a).join(', ')}`
         : 'No known drug allergies (NKDA)';
-      const contraText = treatment.contraindications?.length
-        ? `Contraindications: ${treatment.contraindications.slice(0, 3).join('; ')}`
-        : '';
+      // Concrete contraindication lines (smart) take priority over the
+      // static list on the treatment.
+      const smartContraLines = runtimeContras.map(c =>
+        c.alternative ? `${c.reason} — ${c.alternative}` : c.reason,
+      );
+      const contraText = smartContraLines.length > 0
+        ? `Contraindications flagged: ${smartContraLines.slice(0, 3).join(' | ')}`
+        : treatment.contraindications?.length
+          ? `Contraindications: ${treatment.contraindications.slice(0, 3).join('; ')}`
+          : '';
       setPendingMedConfirm({ treatment, allergyText, contraText });
       return; // Wait for dialog confirmation
     }

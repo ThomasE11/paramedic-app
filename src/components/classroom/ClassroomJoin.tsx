@@ -223,6 +223,8 @@ export function ClassroomJoin({ onExit }: ClassroomJoinProps) {
             currentRhythm: sharedState.currentRhythm,
             isInArrest: sharedState.isInArrest,
             arrestState: sharedState.arrestState,
+            ventilatorSettings: sharedState.ventilatorSettings,
+            bvmVentilationRate: sharedState.bvmVentilationRate,
           }}
           // If control is ever granted to this student, THEY become the
           // driver and their actions broadcast to everyone else.

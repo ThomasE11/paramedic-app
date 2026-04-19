@@ -120,6 +120,21 @@ export interface SharedCaseState {
     amiodaroneDoses?: number;
     cycleNumber?: number;
   };
+  /**
+   * Ventilator settings the driver chose — students need to see the mode
+   * / tidal volume / FiO2 / PEEP the instructor set so their monitor's
+   * SpO2 trajectory and vent-related cues stay in sync.
+   */
+  ventilatorSettings?: {
+    mode: string;
+    tidalVolumeMl: number;
+    respiratoryRate: number;
+    fio2Percent: number;
+    peepCmH2O: number;
+    ieRatio: string;
+  };
+  /** BVM rate the driver picked (10/12/20/25 bpm). */
+  bvmVentilationRate?: number | null;
 }
 
 /**
@@ -205,6 +220,8 @@ function mergePatch(current: SharedCaseState, patch: SharedCaseState): SharedCas
   if (patch.currentRhythm !== undefined) next.currentRhythm = patch.currentRhythm;
   if (patch.isInArrest !== undefined) next.isInArrest = patch.isInArrest;
   if (patch.arrestState !== undefined) next.arrestState = { ...current.arrestState, ...patch.arrestState };
+  if (patch.ventilatorSettings !== undefined) next.ventilatorSettings = patch.ventilatorSettings;
+  if (patch.bvmVentilationRate !== undefined) next.bvmVentilationRate = patch.bvmVentilationRate;
   return next;
 }
 
