@@ -20,7 +20,7 @@
  * with no case view to drive.
  */
 
-import { Suspense, lazy, useEffect, useState } from 'react';
+import { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useClassroomSession } from '@/hooks/useClassroomSession';
@@ -125,6 +125,29 @@ export function ClassroomHost({ onExit }: Props) {
     }, wait);
     return () => window.clearTimeout(id);
   }, [timerEndsAt, caseSnapshot]);
+
+  // When a case goes live, prompt the instructor to turn on camera + mic
+  // so students can actually see and hear them. Browsers require a user
+  // gesture to open the media stream, so we can't auto-start — instead we
+  // offer a one-click toast action. Fires once per case transition.
+  const broadcastPromptedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!caseSnapshot || !isDriver) return;
+    const sessionKey = session?.id ?? 'live';
+    if (broadcastPromptedRef.current === sessionKey) return;
+    if (voice.isBroadcasting && voice.isCameraOn) return; // already on — nothing to prompt
+    broadcastPromptedRef.current = sessionKey;
+    toast.info('Start your camera + mic so students can see and hear you', {
+      duration: 10000,
+      action: {
+        label: 'Go live',
+        onClick: () => {
+          void voice.startBroadcast();
+          void voice.startCamera();
+        },
+      },
+    });
+  }, [caseSnapshot, isDriver, session?.id, voice]);
 
   if (!caseSnapshot) {
     return <ClassroomLobby onExit={onExit} sessionHook={sessionHook} />;

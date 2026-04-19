@@ -103,6 +103,11 @@ export function ClassroomJoin({ onExit }: ClassroomJoinProps) {
         setActiveCase(session.case_snapshot as CaseScenario);
       }
       toast.success(t('classroom.caseStartedToast'));
+      // Request a full snapshot from the driver so the student picks up
+      // any vitals / treatments the instructor has already touched. Without
+      // this, students could see blank vitals until the instructor's next
+      // broadcast patch arrived (race with case_started).
+      void requestStateSnapshot();
     } else if (lastBroadcast.kind === 'case_ended') {
       setActiveCase(null);
       toast.info(t('classroom.caseEndedToast'));
@@ -114,7 +119,7 @@ export function ClassroomJoin({ onExit }: ClassroomJoinProps) {
     } else if (lastBroadcast.kind === 'instructor_message') {
       toast(lastBroadcast.text);
     }
-  }, [lastBroadcast, session, t, onExit]);
+  }, [lastBroadcast, session, t, onExit, requestStateSnapshot]);
 
   // If the student joined after a case was already running, pick it up
   // from the session row's snapshot (instructor already broadcast to

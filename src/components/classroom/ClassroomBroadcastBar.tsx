@@ -212,10 +212,35 @@ export function ClassroomBroadcastBar({
           </div>
 
           <Badge variant="outline" className="gap-1 text-xs font-mono">PIN {pin}</Badge>
-          <Badge variant="secondary" className="gap-1">
-            <Users className="w-3 h-3" />
-            <span className="text-xs font-medium">{students.length} student{students.length !== 1 ? 's' : ''}</span>
-          </Badge>
+          {/* Student roster — show actual names inline instead of a bare
+              count. Instructors need to see *who* has joined (and who's
+              driving) without opening the Hand-off dropdown. Long rosters
+              truncate to N names + "+X more" to keep the bar compact. */}
+          {students.length === 0 ? (
+            <Badge variant="secondary" className="gap-1">
+              <Users className="w-3 h-3" />
+              <span className="text-xs font-medium text-muted-foreground">Waiting for students…</span>
+            </Badge>
+          ) : (
+            <Badge variant="secondary" className="gap-1.5 items-center" title={students.map(s => s.displayName).join(', ')}>
+              <Users className="w-3 h-3" />
+              <span className="text-xs font-medium">{students.length}</span>
+              <span className="text-xs text-muted-foreground">·</span>
+              <span className="text-xs font-medium flex items-center gap-1 flex-wrap">
+                {students.slice(0, 3).map((s, i) => {
+                  const isDriver = driverKeys.includes(s.key);
+                  return (
+                    <span key={s.key} className={isDriver ? 'font-semibold text-emerald-700 dark:text-emerald-300' : ''}>
+                      {s.displayName}{isDriver ? ' 🩺' : ''}{i < Math.min(students.length, 3) - 1 ? ',' : ''}
+                    </span>
+                  );
+                })}
+                {students.length > 3 && (
+                  <span className="text-muted-foreground">+{students.length - 3} more</span>
+                )}
+              </span>
+            </Badge>
+          )}
 
           {/* Driver status */}
           {driverKeys.length > 0 && (
