@@ -307,6 +307,18 @@ export interface UseClassroomSessionResult {
   /** Clear a stale error banner — call from input `onChange` so users retrying don't stare at the old message. */
   clearError: () => void;
 
+  /**
+   * Currently-live case ID (set by `case_started`, cleared by `case_ended`
+   * / `session_ended`). Exposed as a durable field on the hook rather
+   * than requiring subscribers to parse `lastBroadcast`, because
+   * back-to-back Supabase broadcast frames can clobber `lastBroadcast`
+   * within a single React batch and the listener never sees the
+   * lifecycle event at all. This is what ClassroomJoin should gate its
+   * case-panel rendering on.
+   */
+  liveCaseId: string | null;
+  /** Timestamp the current case went live, so late-joiners can anchor timers. */
+  liveCaseStartedAt: string | null;
   /** Running aggregate of the shared case state, rebuilt from every state_patch. */
   sharedState: SharedCaseState;
   /** Driver-only: push a partial state update to all participants. No-op for non-drivers. */
@@ -359,6 +371,8 @@ export function useClassroomSession(): UseClassroomSessionResult {
   // Starts empty; fills as the driver broadcasts updates or a late-joiner
   // requests a snapshot.
   const [sharedState, setSharedState] = useState<SharedCaseState>({});
+  const [liveCaseId, setLiveCaseId] = useState<string | null>(null);
+  const [liveCaseStartedAt, setLiveCaseStartedAt] = useState<string | null>(null);
   // Set of presence keys with driving privileges. The instructor claims
   // the sole driver slot when a case starts; they can then broaden the
   // set via setDrivers/addDriver/giveControl.
@@ -467,12 +481,28 @@ export function useClassroomSession(): UseClassroomSessionResult {
             ]);
           } else if (payload.kind === 'timer_set') {
             setTimerEndsAtState(payload.endsAt);
+          } else if (payload.kind === 'case_started') {
+            // Durable lifecycle state — ClassroomJoin can gate its case
+            // panel on `liveCaseId` without risking the broadcast being
+            // clobbered by a later state_patch in the same React batch.
+            // (That's the bug that kept students stuck on "Waiting for
+            //  instructor to start a case…" even though the instructor
+            //  HAD started — case_started and a flood of state_patches
+            //  arrived in the same tick, and lastBroadcast only surfaced
+            //  the state_patch to the useEffect.)
+            setLiveCaseId(payload.caseId);
+            setLiveCaseStartedAt(payload.startedAt);
           } else if (payload.kind === 'case_ended') {
             // Case boundary — clear shared + timer state so the next case
             // starts with a clean slate on every client.
             setSharedState({});
             setTimerEndsAtState(null);
             setDriverKeysState([]);
+            setLiveCaseId(null);
+            setLiveCaseStartedAt(null);
+          } else if (payload.kind === 'session_ended') {
+            setLiveCaseId(null);
+            setLiveCaseStartedAt(null);
           }
         });
 
@@ -711,6 +741,10 @@ export function useClassroomSession(): UseClassroomSessionResult {
       });
       // Reset shared state so the new case starts clean.
       setSharedState({ caseStartedAt: startedAt });
+      // Mirror the lifecycle state locally on the instructor too so both
+      // sides read from the same source of truth.
+      setLiveCaseId(caseId);
+      setLiveCaseStartedAt(startedAt);
       await sendBroadcast({ kind: 'case_started', caseId, startedAt });
     },
     [sendBroadcast],
@@ -988,6 +1022,8 @@ export function useClassroomSession(): UseClassroomSessionResult {
       driverKeys,
       currentDriverKey,
       isDriver,
+      liveCaseId,
+      liveCaseStartedAt,
       sharedState,
       createSession,
       joinSession,
@@ -1009,7 +1045,7 @@ export function useClassroomSession(): UseClassroomSessionResult {
       setTimer,
     }),
     [supported, status, error, role, session, participants, lastBroadcast,
-      driverKeys, currentDriverKey, isDriver, sharedState,
+      driverKeys, currentDriverKey, isDriver, liveCaseId, liveCaseStartedAt, sharedState,
       createSession, joinSession, startCase, endCase, leaveSession, sendBroadcast, clearError,
       broadcastStatePatch, broadcastStateSnapshot, requestStateSnapshot,
       setDrivers, giveControl, addDriver, takeControl,

@@ -71,6 +71,7 @@ export function ClassroomJoin({ onExit }: ClassroomJoinProps) {
     requestStateSnapshot,
     isDriver,
     sendBroadcast,
+    liveCaseId,
   } = sessionHook;
 
   // Voice-chat mesh. Students can only transmit if the instructor has
@@ -88,38 +89,54 @@ export function ClassroomJoin({ onExit }: ClassroomJoinProps) {
   const [displayName, setDisplayName] = useState('');
   const [activeCase, setActiveCase] = useState<CaseScenario | null>(null);
 
-  // React to broadcast events from the instructor.
+  // Gate the case panel on the hook's durable `liveCaseId` state rather
+  // than the fragile `lastBroadcast` field. `lastBroadcast` only surfaces
+  // the most recent broadcast — if `case_started` and a flurry of
+  // `state_patch` events arrive in the same React batch, the useEffect
+  // only fires once, for the last one, and the student never transitions
+  // out of the "Waiting for instructor to start a case…" screen.
+  //
+  // The hook now tracks `liveCaseId` inside its broadcast dispatcher, so
+  // every `case_started` frame is captured regardless of what arrives
+  // after it.
+  useEffect(() => {
+    if (!liveCaseId) {
+      // Clear on case_ended / session_ended (hook has already zeroed the
+      // live-case state by the time this effect runs).
+      setActiveCase(null);
+      return;
+    }
+    // Case is live — resolve it. Prefer the local bundle (full data);
+    // fall back to the snapshot on the session row (supports custom
+    // cases authored outside the bundle).
+    const byId = allCases.find(c => c.id === liveCaseId);
+    if (byId) {
+      setActiveCase(byId);
+    } else if (session?.case_snapshot) {
+      setActiveCase(session.case_snapshot as CaseScenario);
+    }
+    toast.success(t('classroom.caseStartedToast'));
+    // Request a full snapshot from the driver so we catch any vitals /
+    // treatments the instructor has already touched between their click
+    // on "Start case" and our subscription being ready.
+    void requestStateSnapshot();
+  }, [liveCaseId, session, t, requestStateSnapshot]);
+
+  // Session / instructor-message side-effects still flow via the
+  // one-shot broadcast channel. These are rare and idempotent, so the
+  // batching risk doesn't apply the same way it does to lifecycle
+  // events.
   useEffect(() => {
     if (!lastBroadcast) return;
-
-    if (lastBroadcast.kind === 'case_started') {
-      // Prefer the local case object (full data) — fall back to the
-      // snapshot in the session row if the case isn't in the bundle
-      // (e.g. instructor is running a custom case).
-      const byId = allCases.find(c => c.id === lastBroadcast.caseId);
-      if (byId) {
-        setActiveCase(byId);
-      } else if (session?.case_snapshot) {
-        setActiveCase(session.case_snapshot as CaseScenario);
-      }
-      toast.success(t('classroom.caseStartedToast'));
-      // Request a full snapshot from the driver so the student picks up
-      // any vitals / treatments the instructor has already touched. Without
-      // this, students could see blank vitals until the instructor's next
-      // broadcast patch arrived (race with case_started).
-      void requestStateSnapshot();
-    } else if (lastBroadcast.kind === 'case_ended') {
-      setActiveCase(null);
-      toast.info(t('classroom.caseEndedToast'));
-    } else if (lastBroadcast.kind === 'session_ended') {
+    if (lastBroadcast.kind === 'session_ended') {
       toast.info(t('classroom.sessionEndedToast'));
-      setActiveCase(null);
-      // Hand control back to the role selection screen.
       onExit();
     } else if (lastBroadcast.kind === 'instructor_message') {
       toast(lastBroadcast.text);
+    } else if (lastBroadcast.kind === 'case_ended') {
+      toast.info(t('classroom.caseEndedToast'));
     }
-  }, [lastBroadcast, session, t, onExit, requestStateSnapshot]);
+  }, [lastBroadcast, t, onExit]);
 
   // If the student joined after a case was already running, pick it up
   // from the session row's snapshot (instructor already broadcast to
