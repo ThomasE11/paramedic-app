@@ -86,14 +86,56 @@ interface UseClassroomVoiceResult {
   startCamera: () => Promise<void>;
   /** Stop the camera — removes tracks from peers, releases hardware. */
   stopCamera: () => void;
+  /** True when the browser's autoplay policy has blocked a remote audio
+   *  element from playing. The UI should show a tap-to-unlock banner. */
+  audioBlocked: boolean;
+  /** Retry playback on all remote audio elements. MUST be called from a
+   *  user-gesture handler (click/touch) for browsers to honour it. */
+  unlockAudio: () => Promise<void>;
 }
 
 // ---------------------------------------------------------------------------
 
-const ICE_SERVERS: RTCIceServer[] = [
-  { urls: 'stun:stun.l.google.com:19302' },
-  { urls: 'stun:stun1.l.google.com:19302' },
-];
+// ICE servers used by every RTCPeerConnection. We always include public
+// Google STUN (free, low-latency, sufficient for most home/office/campus
+// networks). Without TURN, ~20% of users behind symmetric NAT (common on
+// corporate Wi-Fi, some mobile carriers, and hotel networks) fail silently:
+// peers never connect, student never hears instructor, camera tile never
+// appears.
+//
+// Two TURN sources, in preference order:
+//   1. Self-hosted — supply VITE_TURN_URL / VITE_TURN_USERNAME / VITE_TURN_PASSWORD
+//      in Vercel env for production. Recommended for real classroom deployments.
+//   2. Metered.ca's OpenRelay free public TURN — no credentials, works over
+//      tcp:443 which bypasses most firewalls. Rate-limited and not SLA-backed
+//      but gets us the critical "student can connect at all" case.
+function buildIceServers(): RTCIceServer[] {
+  const servers: RTCIceServer[] = [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+  ];
+
+  const customUrl = import.meta.env.VITE_TURN_URL as string | undefined;
+  const customUser = import.meta.env.VITE_TURN_USERNAME as string | undefined;
+  const customPass = import.meta.env.VITE_TURN_PASSWORD as string | undefined;
+  if (customUrl && customUser && customPass) {
+    servers.push({ urls: customUrl, username: customUser, credential: customPass });
+  }
+
+  // Always include OpenRelay as a last-resort fallback. The ICE agent will
+  // prefer a peer-reflexive (STUN) candidate when available and only fall
+  // through to TURN when no direct path exists, so this doesn't meaningfully
+  // cost latency for the 80% who'd succeed on STUN alone.
+  servers.push(
+    { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+    { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+    { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' },
+  );
+
+  return servers;
+}
+
+const ICE_SERVERS: RTCIceServer[] = buildIceServers();
 
 export function useClassroomVoice({
   selfKey,
@@ -157,6 +199,13 @@ export function useClassroomVoice({
     for (const key of Array.from(peersRef.current.keys())) closePeer(key);
   }, [closePeer]);
 
+  // True when at least one remote audio element was blocked by the browser's
+  // autoplay policy (common on iOS Safari and some mobile Chrome versions
+  // when the user never tapped the page). The UI uses this to show a
+  // "Tap to enable audio" banner that re-triggers .play() from a user
+  // gesture, which is the one thing that unblocks the stream.
+  const [audioBlocked, setAudioBlocked] = useState(false);
+
   /** Attach a fresh <audio> element for an incoming remote stream. */
   const attachRemoteAudio = useCallback((remoteKey: string, stream: MediaStream) => {
     let el = audioEls.current.get(remoteKey);
@@ -173,9 +222,21 @@ export function useClassroomVoice({
     }
     el.srcObject = stream;
     el.muted = listenerMutedRef.current;
-    // `.play()` may reject on autoplay policy — swallow. The UI has a
-    // "Unmute" toggle the user can click to resume.
-    el.play().catch(() => { /* ignored */ });
+    // .play() may reject because the user hasn't interacted with the page
+    // yet (autoplay policy). Surface that so the UI can prompt a tap.
+    el.play().catch((err) => {
+      if (err && typeof err === 'object' && 'name' in err && (err as DOMException).name === 'NotAllowedError') {
+        setAudioBlocked(true);
+      }
+    });
+  }, []);
+
+  /** Retry playback on every remote <audio> element — must be called from
+   *  a user gesture (e.g. click handler) to satisfy autoplay policies. */
+  const unlockAudio = useCallback(async () => {
+    const attempts = Array.from(audioEls.current.values()).map(el => el.play().catch(() => undefined));
+    await Promise.all(attempts);
+    setAudioBlocked(false);
   }, []);
 
   /** Keep every mounted <audio> muted state in sync with listenerMuted. */
@@ -542,5 +603,7 @@ export function useClassroomVoice({
     remoteVideoStreams,
     startCamera,
     stopCamera,
+    audioBlocked,
+    unlockAudio,
   };
 }

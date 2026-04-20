@@ -201,12 +201,28 @@ export function ClassroomJoin({ onExit }: ClassroomJoinProps) {
   if (session && activeCase) {
     return (
       <Suspense fallback={<div className="min-h-screen bg-background" />}>
+        {/* Tap-to-unlock banner — browsers (especially iOS Safari) block
+            remote audio playback until the user interacts with the page.
+            The hook surfaces `audioBlocked=true` when it detects the
+            NotAllowedError; a tap here calls unlockAudio() from a user
+            gesture which is what the browser needs. Without this, students
+            silently have no audio from the instructor even though the
+            mesh is connected. */}
+        {voice.audioBlocked && (
+          <button
+            onClick={() => void voice.unlockAudio()}
+            className="fixed top-3 left-1/2 -translate-x-1/2 z-50 rounded-full bg-amber-500 text-amber-950 px-4 py-2 text-xs font-semibold shadow-lg hover:bg-amber-400 transition-colors animate-pulse"
+          >
+            🔊 Tap to enable instructor audio
+          </button>
+        )}
         <ClassroomVideoTiles
           localStream={voice.localVideoStream}
           remoteStreams={voice.remoteVideoStreams}
           participants={sessionHook.participants}
           selfKey={sessionHook.selfKey}
           onStopCamera={voice.stopCamera}
+          spectator
         />
         <ClassroomChatSidebar
           messages={sessionHook.chatMessages}

@@ -721,16 +721,38 @@ export function useClassroomSession(): UseClassroomSessionResult {
   // named methods so callers (spectator view, broadcast bar) don't need to
   // know the protocol vocabulary — the hook owns the shape.
 
-  const broadcastStatePatch = useCallback(async (patch: SharedCaseState) => {
-    // Optimistically apply locally so the instructor's own UI reacts
-    // instantly without waiting for the broadcast to round-trip.
-    setSharedState(prev => mergePatch(prev, patch));
+  // Coalesce high-frequency patches (vitals tweening up to 20×/sec) into at
+  // most one broadcast every 200 ms. The local sharedState is still updated
+  // optimistically on every call so the driver's own UI stays responsive.
+  // Supabase realtime is configured for eventsPerSecond: 20, and above ~5
+  // broadcasts/sec we start to see events queue or drop — students saw
+  // stale vitals as a result. The pending merge buffer accumulates updates
+  // across the throttle window so nothing is lost, just batched.
+  const pendingPatchRef = useRef<SharedCaseState | null>(null);
+  const patchFlushTimerRef = useRef<number | null>(null);
+  const flushPatch = useCallback(async () => {
+    const next = pendingPatchRef.current;
+    pendingPatchRef.current = null;
+    patchFlushTimerRef.current = null;
+    if (!next) return;
     await sendBroadcast({
       kind: 'state_patch',
-      patch,
+      patch: next,
       fromKey: selfKeyRef.current,
     });
   }, [sendBroadcast]);
+
+  const broadcastStatePatch = useCallback(async (patch: SharedCaseState) => {
+    // Optimistic local merge — driver sees their own action immediately.
+    setSharedState(prev => mergePatch(prev, patch));
+    // Buffer the patch and schedule a single flush within the throttle window.
+    pendingPatchRef.current = pendingPatchRef.current
+      ? mergePatch(pendingPatchRef.current, patch)
+      : { ...patch };
+    if (patchFlushTimerRef.current == null) {
+      patchFlushTimerRef.current = window.setTimeout(() => { void flushPatch(); }, 200);
+    }
+  }, [flushPatch]);
 
   const broadcastStateSnapshot = useCallback(async (state: SharedCaseState) => {
     setSharedState(state);
