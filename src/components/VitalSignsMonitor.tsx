@@ -139,6 +139,11 @@ interface VitalSignsMonitorProps {
   /** When set, writes into local pacer state — lets a spectator mirror the
    *  instructor's pacer (active / rate / output). Bumps on every broadcast. */
   overridePacerState?: { active: boolean; rate: number; output: number };
+  /** Skip the boot animation and come up powered-on. Used for classroom
+   *  spectators so they don't stare at "MONITOR OFF" while the instructor
+   *  drives — they can't press the ON button (read-only) and they need
+   *  the monitor lit up to watch the vitals mirror. */
+  autoPowerOn?: boolean;
 }
 
 // Assessment method definitions
@@ -2216,6 +2221,7 @@ export function VitalSignsMonitor({
   onAssessmentPerformed,
   onPacerStateChange,
   overridePacerState,
+  autoPowerOn = false,
 }: VitalSignsMonitorProps) {
   const [currentVitals, setCurrentVitals] = useState<VitalSigns>(initialVitals);
   const [visibleVitals, setVisibleVitals] = useState<Set<string>>(new Set());
@@ -2263,6 +2269,22 @@ export function VitalSignsMonitor({
       });
     }
   }, [revealedVitals, assessmentMode]);
+
+  // Classroom spectators can't tap-to-connect the SpO2/ECG leads (read-only),
+  // so auto-reveal the standard waveforms + pulse the moment autoPowerOn flips
+  // true. Without this the spectator sees a lit monitor with every tile stuck
+  // on "LEADS OFF — TAP TO CONNECT", which defeats the point of mirroring.
+  useEffect(() => {
+    if (!autoPowerOn) return;
+    setVisibleVitals(prev => {
+      const next = new Set(prev);
+      let changed = false;
+      for (const k of ['pulse', 'spo2', 'respiration', 'bp']) {
+        if (!next.has(k)) { next.add(k); changed = true; }
+      }
+      return changed ? next : prev;
+    });
+  }, [autoPowerOn]);
 
   // TLC Monitor-specific states
   const [monitorMode, setMonitorMode] = useState<'monitor' | 'defib' | 'pacer'>('monitor');
@@ -2313,8 +2335,12 @@ export function VitalSignsMonitor({
   // Previously this defaulted to on; feedback was that it removed the
   // real-world ritual of connecting + powering a monitor, and students
   // missed the learnable moment of "I need to turn this on first".
-  const [powerOn, setPowerOn] = useState(false);
-  const [bootPhase, setBootPhase] = useState<'off' | 'booting' | 'ready'>('off');
+  // Spectators (readOnly classroom students) can't press the ON button, so
+  // seed the monitor powered-on when `autoPowerOn` is set. Skips the boot
+  // animation too — they'd never see it complete anyway since they can't
+  // interact with the device.
+  const [powerOn, setPowerOn] = useState(autoPowerOn);
+  const [bootPhase, setBootPhase] = useState<'off' | 'booting' | 'ready'>(autoPowerOn ? 'ready' : 'off');
   const [printMode, setPrintMode] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
   const [waveformGain, setWaveformGain] = useState<0.5 | 1.0 | 1.5 | 2.0>(1.0);

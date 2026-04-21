@@ -3528,6 +3528,10 @@ export function StudentPanel({
                       if (onClassroomStateChange) onClassroomStateChange({ pacerState: state });
                     }}
                     overridePacerState={externalState?.pacerState}
+                    // Classroom spectators can't press the ON button (read-only),
+                    // so boot the monitor powered-on so they actually see the
+                    // vitals mirror instead of "MONITOR OFF".
+                    autoPowerOn={readOnly}
                     caseCategory={currentCase.category}
                     caseSubcategory={currentCase.subcategory}
                     caseTitle={currentCase.title}
