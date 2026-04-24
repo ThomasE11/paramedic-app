@@ -1187,7 +1187,11 @@ export function StudentPanel({
         return newState;
       });
     }, 30000); // Check every 30 seconds
-  }, [currentCase]);
+    // readOnly in deps so hand-off to a student rebuilds the callback
+    // with readOnly=false; otherwise the student-as-driver can't actually
+    // start the case (silent `if (readOnly) return;` hit from stale
+    // closure).
+  }, [currentCase, readOnly]);
 
   // LUCAS device nudge — if CPR has been running for ≥4 minutes and no
   // mechanical CPR device has been applied yet, offer one via a single,
@@ -1688,7 +1692,10 @@ export function StudentPanel({
         setArrestTimeline(prev => [...prev, { time: Date.now(), event: `${treatment.name} applied`, type: 'treatment' }]);
       }
     }
-  }, [currentVitals, currentCase, patientState, startGradualChange, arrestActive, adrenalineDoses, shockCount]);
+    // readOnly must be in deps — when control is handed to this student
+    // the callback needs to be rebuilt so applyTreatment can actually run
+    // instead of hitting the stale "you are watching" toast branch.
+  }, [currentVitals, currentCase, patientState, startGradualChange, arrestActive, adrenalineDoses, shockCount, readOnly]);
 
   // Handle defibrillation dialog confirmation
   const handleDefibConfirm = useCallback((params: DefibrillationParams) => {
@@ -1784,7 +1791,8 @@ export function StudentPanel({
     } else {
       // Normal findings — no toast needed, findings panel shows them
     }
-  }, [currentCase, caseStartTime]); // assessmentTracker read via ref — always current
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentCase, caseStartTime, readOnly, monitorRevealedVitals]); // assessmentTracker read via ref — always current. readOnly MUST stay in deps so handing control to a student rebuilds this callback with readOnly=false; otherwise every click silently hits the "you are watching" toast from the stale closure.
 
   // --------------------------------------------------------------------------
   // Hands-free voice commands
@@ -1950,12 +1958,13 @@ export function StudentPanel({
     // checklist credit it just performed.
   }, [currentCase, assessmentTracker, transportDecisions, session]);
 
-  // End case — show transport decision wizard from step 1
-  const endCase = useCallback((action: 'transport' | 'end') => {
+  // End case — show transport decision wizard from step 1.
+  // readOnly in deps so hand-off to a student rebuilds the callback.
+  const endCase = useCallback((_action: 'transport' | 'end') => {
     if (readOnly) return;
     setTransportStep(1);
     setShowTransportDecision(true);
-  }, []);
+  }, [readOnly]);
 
   // Finalize case after transport decisions are made
   const finalizeCase = useCallback(() => {
