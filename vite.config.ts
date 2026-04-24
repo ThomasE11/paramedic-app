@@ -16,6 +16,18 @@ export default defineConfig({
     // bundle + engine) and the split below already peels off the obvious
     // vendor wins. Keep the warning enabled but at a less noisy level.
     chunkSizeWarningLimit: 750,
+    // Filter modulepreload: Vite's default preloads the *entire* lazy
+    // dependency graph into the initial HTML — so even though StudentPanel
+    // / pdf-export / three.js are lazy at runtime, the browser still
+    // downloads them on first paint. For students on 4G joining a
+    // classroom, we want the truly lazy chunks to stay lazy. Strip
+    // heavy vendor/lazy chunks from the preload list; React / Supabase
+    // / Radix still preload because every route needs them.
+    modulePreload: {
+      resolveDependencies: (_filename, deps) => deps.filter((dep) => {
+        return !/vendor-(three|pdf|other)|cases-|StudentPanel|ClassroomHost|ClassroomVideoTiles|pdf-export|ClinicalReferenceDialog|CaseDisplay|SessionSummary|InstructorNotesPanel/.test(dep);
+      }),
+    },
     rollupOptions: {
       output: {
         // Split the vendor code into stable, cache-friendly chunks. Before
@@ -25,6 +37,20 @@ export default defineConfig({
         // returning students on 4G. These groupings cache independently
         // and load lazily when their route actually uses them.
         manualChunks: (id: string) => {
+          // Split the enormous case bundle + its satellite case files
+          // into one 'cases' chunk. This gets loaded lazily by StudentPanel
+          // / ClassroomLobby / App.tsx's loadCases() — without this manual
+          // chunk, Rollup kept inlining case data into the entry chunk
+          // because multiple lazy routes depend on it.
+          if (id.includes('/src/data/cases.ts')
+            || id.includes('/src/data/enhancedCases.ts')
+            || id.includes('/src/data/additionalCases.ts')
+            || id.includes('/src/data/firstYearCases.ts')
+            || id.includes('/src/data/secondYearCases.ts')
+            || id.includes('/src/data/litflCases.ts')
+            || id.includes('/src/data/severityVariantCases.ts')) {
+            return 'cases';
+          }
           if (!id.includes('node_modules')) return undefined;
           if (id.includes('react-dom') || id.match(/\/react\//) || id.includes('scheduler')) return 'vendor-react';
           if (id.includes('three')) return 'vendor-three';

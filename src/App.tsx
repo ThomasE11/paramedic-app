@@ -1,8 +1,20 @@
-import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { CaseScenario, StudentYear, CaseSession, VitalSigns, AppliedTreatment, SimulationObjective, DebriefingResource, InstructorAssessmentNote } from '@/types';
 import { useGradualVitalChanges } from '@/hooks/useGradualVitalChanges';
-import { allCases, getRandomCase, yearLevels, caseCategories, priorities } from '@/data/cases';
+import { yearLevels, caseCategories, priorities } from '@/data/caseFilters';
+// Heavy case bundle — lazy-imported on mount so it's not in the initial
+// chunk. App.tsx only needs lookups (savedCaseId restore, random case
+// generation), so the slight async delay is invisible to the user.
+// Everything else (StudentPanel, ClassroomLobby, CommandPalette) is
+// already behind React.lazy and continues to import from '@/data/cases'
+// directly, landing in its own on-demand chunk.
+type CasesModule = typeof import('@/data/cases');
+let _casesPromise: Promise<CasesModule> | null = null;
+const loadCases = (): Promise<CasesModule> => {
+  if (!_casesPromise) _casesPromise = import('@/data/cases');
+  return _casesPromise;
+};
 import { matchObjectiveToCase } from '@/data/simulationObjectives';
 import { getResourcesForDebriefing } from '@/data/diversifiedResources';
 import { applyTreatmentEffectEnhanced, ensureCompleteVitals, buildInitialVitalsFromCase } from '@/data/treatmentEffects';
@@ -267,7 +279,7 @@ function RoleSelection({ onSelect }: { onSelect: (role: UserRole) => void }) {
             <div className="bg-muted/50 border border-border rounded-xl px-8 py-4 flex items-center gap-10">
               <div className="flex items-center gap-2.5 text-sm">
                 <div className="w-2 h-2 rounded-full bg-primary" />
-                <span className="font-medium">{t('role.stats.cases', { count: allCases.length })}</span>
+                <span className="font-medium">{t('role.stats.cases', { count: allCases.length > 0 ? allCases.length : 100 })}</span>
               </div>
               <div className="w-px h-4 bg-border/50" />
               <div className="flex items-center gap-2.5 text-sm">
@@ -297,6 +309,23 @@ function App() {
   const [userRole, setUserRole] = useState<UserRole>(() => {
     return (localStorage.getItem('paramedic-role') as UserRole) || 'none';
   });
+
+  // Lazy-loaded case bundle. Starts empty; populates on mount so the
+  // initial paint doesn't block on 400+ KB of case data. Consumers that
+  // look up or iterate `allCases` gracefully degrade to an empty list
+  // until this resolves (visible stat numbers default to a "100+"
+  // marketing placeholder; lookups re-run when the state populates).
+  const [allCases, setAllCases] = useState<CaseScenario[]>([]);
+  const casesModuleRef = useMemo<{ current: CasesModule | null }>(() => ({ current: null }), []);
+  useEffect(() => {
+    let cancelled = false;
+    void loadCases().then((mod) => {
+      if (cancelled) return;
+      casesModuleRef.current = mod;
+      setAllCases(mod.allCases);
+    });
+    return () => { cancelled = true; };
+  }, [casesModuleRef]);
 
   // Persist role selection
   useEffect(() => {
@@ -403,8 +432,15 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
     clearComplications,
   } = useComplicationManager();
 
-  // Load saved session from localStorage on mount
+  // Load saved session from localStorage once the case bundle is ready.
+  // Re-runs when `allCases` populates (async on mount) so the savedCaseId
+  // lookup finds the right case instead of silently no-op'ing against
+  // the initial empty array.
+  const hasRestoredRef = useRef(false);
   useEffect(() => {
+    if (hasRestoredRef.current) return;
+    if (allCases.length === 0) return;
+    hasRestoredRef.current = true;
     const savedSession = localStorage.getItem('paramedic-session');
     const savedVitals = localStorage.getItem('paramedic-vitals');
     const savedVitalsHistory = localStorage.getItem('paramedic-vitals-history');
@@ -443,7 +479,7 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
         }
       }
     }
-  }, []);
+  }, [allCases]);
 
   // Save session to localStorage whenever it changes
   useEffect(() => {
@@ -525,12 +561,17 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
     }
   }, []);
 
-  // URL state management for deep linking and browser history
+  // URL state management for deep linking and browser history.
+  // Re-runs when `allCases` populates so a deep-linked case-id in the
+  // URL still resolves after the lazy case bundle finishes loading.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const caseId = params.get('case');
     const tab = params.get('tab');
     const year = params.get('year');
+    // Skip the case-id lookup until the bundle is ready; this effect
+    // will re-fire when allCases populates.
+    if (caseId && allCases.length === 0) return;
 
     // Schedule state updates to avoid synchronous setState in render phase
     const scheduleUpdate = () => {
@@ -558,7 +599,7 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
     // Use setTimeout to defer state updates to next tick
     const timeoutId = setTimeout(scheduleUpdate, 0);
     return () => clearTimeout(timeoutId);
-  }, []);
+  }, [allCases]);
 
   // Update URL when case changes
   useEffect(() => {
@@ -636,17 +677,23 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
   const generateCase = useCallback(async (objective?: SimulationObjective) => {
     setIsGenerating(true);
 
-    // Simulate brief delay for better UX
+    // Ensure the case bundle is resolved before picking one — on a fresh
+    // page load this await completes immediately because the initial
+    // useEffect already kicked off loadCases(). Keeps the UX delay from
+    // prior `await 300` but removes any chance of undefined references
+    // if the user spam-clicks Generate before cases have resolved.
+    const mod = await loadCases();
+    casesModuleRef.current = mod;
     await new Promise(resolve => setTimeout(resolve, 300));
 
     let newCase: CaseScenario;
 
     if (objective) {
       // Objective-driven: score all cases and pick the best match
-      const scoredCases = matchObjectiveToCase(objective, allCases);
+      const scoredCases = matchObjectiveToCase(objective, mod.allCases);
       newCase = scoredCases.length > 0
         ? scoredCases[Math.floor(Math.random() * Math.min(3, scoredCases.length))] // Pick from top 3
-        : getRandomCase({
+        : mod.getRandomCase({
             yearLevel: selectedYear,
             category: objective.relatedCategories[0] || (selectedCategory !== 'all' ? selectedCategory : undefined)
           });
@@ -655,7 +702,7 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
       const resources = getResourcesForDebriefing(newCase, objective);
       setDebriefingResources(resources);
     } else {
-      newCase = getRandomCase({
+      newCase = mod.getRandomCase({
         yearLevel: selectedYear,
         category: selectedCategory !== 'all' ? selectedCategory : undefined
       });
@@ -1177,7 +1224,7 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
                     <div className="text-center p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors duration-200 group">
                       <div className="flex items-center justify-center gap-2 mb-1">
                         <FileText className="h-4 w-4 text-primary/70 group-hover:text-primary transition-colors" />
-                        <div className="text-2xl font-bold text-foreground">{allCases.length}+</div>
+                        <div className="text-2xl font-bold text-foreground">{allCases.length > 0 ? allCases.length : 100}+</div>
                       </div>
                       <div className="text-xs font-medium text-muted-foreground">{t('generator.caseScenarios')}</div>
                     </div>
