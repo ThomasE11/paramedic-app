@@ -1184,17 +1184,26 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   };
 
   return (
-    <div className="rounded-2xl overflow-hidden border border-border/40 bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-950">
+    <div className="relative rounded-2xl overflow-hidden border border-white/5 dark:border-white/[0.06] bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950/80 dark:via-slate-900/50 dark:to-slate-950/80 shadow-[0_4px_20px_-8px_rgba(0,0,0,0.1)] dark:shadow-[0_8px_40px_-16px_rgba(0,0,0,0.7)] backdrop-blur-xl">
+      {/* Teal accent hairline — "hands on patient" phase */}
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-teal-400/40 to-transparent" />
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2 border-b border-border/30 bg-white/50 dark:bg-black/20">
-        <div className="flex items-center gap-2">
-          <User className="h-4 w-4 text-blue-500" />
-          <span className="text-xs font-semibold">Physical Examination</span>
-          {activeRegion && (
-            <span className="text-xs text-muted-foreground">
-              {'\u2014'} {REGION_LABELS[activeRegion] || activeRegion}
-            </span>
-          )}
+      <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-slate-200/50 dark:border-white/5">
+        <div className="flex items-center gap-3">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-teal-500/10 ring-1 ring-teal-500/15">
+            <User className="h-3.5 w-3.5 text-teal-500/80" />
+          </div>
+          <div>
+            <p className="text-[9px] font-medium tracking-[0.25em] uppercase text-muted-foreground/60">Phase&nbsp;3</p>
+            <h2 className="text-sm font-semibold tracking-tight leading-tight">
+              Physical Examination
+              {activeRegion && (
+                <span className="ml-2 text-xs font-light text-muted-foreground">
+                  {'\u2014'} {REGION_LABELS[activeRegion] || activeRegion}
+                </span>
+              )}
+            </h2>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           {/* Phase 2 — guided exam mode toggle */}

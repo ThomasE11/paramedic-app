@@ -623,59 +623,82 @@ export function RegionAssessmentPanel({
     sum + sr.actions.filter(a => revealedFindings.has(`${regionId}:${sr.id}:${a.id}`)).length, 0);
 
   return (
-    <Card className="border-2 border-blue-300 dark:border-blue-700 rounded-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
-      <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950/30 dark:to-cyan-950/30 border-b border-blue-200/50">
-        <CardTitle className="text-sm flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-500/15">
-              <Icon className="h-4 w-4 text-blue-500" />
+    <Card className="relative overflow-hidden rounded-2xl border border-white/5 dark:border-white/[0.06] bg-gradient-to-br from-white via-slate-50 to-white dark:from-slate-950/80 dark:via-slate-900/50 dark:to-slate-950/80 shadow-[0_8px_40px_-12px_rgba(0,0,0,0.15)] dark:shadow-[0_12px_50px_-16px_rgba(0,0,0,0.75)] backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-500">
+      {/* Teal accent hairline — matches the Physical Examination container */}
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-teal-400/50 to-transparent" />
+
+      <CardHeader className="pb-3 pt-4 px-4 sm:px-5">
+        <CardTitle className="flex items-center justify-between text-sm">
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-teal-500/10 ring-1 ring-teal-500/15">
+              <Icon className="h-4 w-4 text-teal-500/80" />
             </div>
-            {config.title}
+            <div>
+              <p className="text-[9px] font-medium tracking-[0.25em] uppercase text-muted-foreground/60">Regional Exam</p>
+              <h3 className="text-base font-light tracking-tight text-foreground/90 mt-0.5">{config.title}</h3>
+            </div>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant={completedActions === totalActions ? 'default' : 'secondary'}
-              className={`text-[9px] ${completedActions === totalActions ? 'bg-green-500' : ''}`}>
-              {completedActions}/{totalActions}
-            </Badge>
-            <Button variant="ghost" size="sm" onClick={onClose} className="h-7 w-7 p-0">
+            {/* Completion progress pill */}
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100/60 dark:bg-slate-900/40 border border-slate-200/50 dark:border-white/5">
+              <span className={`h-1.5 w-1.5 rounded-full ${completedActions === totalActions ? 'bg-emerald-400 shadow-[0_0_6px_rgb(52_211_153/0.8)]' : 'bg-white/20'}`} />
+              <span className="text-[10px] font-mono tabular-nums text-muted-foreground">{completedActions}<span className="text-muted-foreground/40">/{totalActions}</span></span>
+            </div>
+            <Button variant="ghost" size="sm" onClick={onClose} className="h-8 w-8 p-0 rounded-xl hover:bg-white/5">
               <X className="h-4 w-4" />
             </Button>
           </div>
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-2 space-y-1.5">
+
+      <CardContent className="p-3 sm:p-4 pt-0 space-y-2">
         {config.subRegions.map(subRegion => {
           const isExpanded = expandedSub === subRegion.id;
           const subCompleted = subRegion.actions.filter(a =>
             revealedFindings.has(`${regionId}:${subRegion.id}:${a.id}`)
           ).length;
+          const subTotal = subRegion.actions.length;
+          const allDone = subCompleted === subTotal;
 
           return (
-            <div key={subRegion.id} className="rounded-xl border border-border/50 overflow-hidden">
-              {/* Sub-region header */}
+            <div key={subRegion.id} className={`relative overflow-hidden rounded-xl border transition-all duration-300 ${isExpanded ? 'border-white/10 bg-white/40 dark:bg-slate-900/40 shadow-[0_4px_20px_-8px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_20px_-8px_rgba(0,0,0,0.5)]' : 'border-slate-200/50 dark:border-white/[0.04] bg-white/20 dark:bg-slate-900/20 hover:border-white/10'}`}>
+              {/* Sub-region header — no chevron; expand via area tap */}
               <button
                 onClick={() => setExpandedSub(isExpanded ? null : subRegion.id)}
-                className="flex items-center gap-2 w-full text-left p-2 hover:bg-muted/40 transition-colors"
+                className="flex items-center justify-between w-full text-left px-4 py-3 group"
               >
-                <ChevronRight className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
-                <span className="text-xs font-semibold flex-1">{subRegion.label}</span>
-                {subCompleted > 0 && (
-                  <Badge variant="outline" className={`text-[8px] py-0 h-4 ${subCompleted === subRegion.actions.length ? 'bg-green-50 text-green-600 border-green-200' : ''}`}>
-                    {subCompleted}/{subRegion.actions.length}
-                  </Badge>
-                )}
+                <div className="flex items-center gap-3">
+                  {/* Expansion indicator — hairline bar that grows when active */}
+                  <span className={`h-4 w-0.5 rounded-full bg-gradient-to-b from-teal-400 to-cyan-500 transition-all duration-300 ${isExpanded ? 'opacity-100' : allDone ? 'opacity-50' : 'opacity-20 group-hover:opacity-60'}`} />
+                  <span className="text-xs font-medium tracking-tight text-foreground/80">{subRegion.label}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {subCompleted > 0 && (
+                    <span className={`text-[10px] font-mono tabular-nums ${allDone ? 'text-emerald-500' : 'text-muted-foreground/60'}`}>
+                      {subCompleted}<span className="text-muted-foreground/30">/{subTotal}</span>
+                    </span>
+                  )}
+                  <span className={`h-1 w-1 rounded-full transition-colors ${allDone ? 'bg-emerald-400' : isExpanded ? 'bg-teal-400' : 'bg-white/10'}`} />
+                </div>
               </button>
 
-              {/* Exam actions */}
+              {/* Exam actions — animated reveal */}
               {isExpanded && (
-                <div className="px-2 pb-2 space-y-1 animate-in fade-in duration-200">
+                <div className="px-3 pb-3 space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-300">
                   {subRegion.actions.map(action => {
                     const findingKey = `${regionId}:${subRegion.id}:${action.id}`;
                     const isRevealed = revealedFindings.has(findingKey);
                     const TechIcon = TECHNIQUE_ICONS[action.technique] || Eye;
+                    // Jewel-tone per technique
+                    const technique = action.technique;
+                    const tone =
+                      technique === 'inspect'     ? { rail: 'from-sky-400 to-blue-500',     bg: 'hover:bg-sky-500/5',     text: 'text-sky-500' } :
+                      technique === 'palpate'     ? { rail: 'from-rose-400 to-red-500',     bg: 'hover:bg-rose-500/5',    text: 'text-rose-500' } :
+                      technique === 'percuss'     ? { rail: 'from-amber-400 to-orange-500', bg: 'hover:bg-amber-500/5',   text: 'text-amber-500' } :
+                                                    { rail: 'from-violet-400 to-fuchsia-500', bg: 'hover:bg-violet-500/5',text: 'text-violet-500' };
 
                     return (
-                      <div key={action.id}>
+                      <div key={action.id} className="space-y-1.5">
                         <button
                           onClick={() => {
                             if (!isRevealed) {
@@ -683,28 +706,38 @@ export function RegionAssessmentPanel({
                             }
                           }}
                           disabled={isRevealed}
-                          className={`flex items-center gap-2 w-full text-left p-2 rounded-lg border text-xs transition-all ${
+                          className={`relative flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-lg border border-slate-200/50 dark:border-white/[0.04] transition-all duration-300 ${
                             isRevealed
-                              ? 'bg-green-50/80 border-green-200 dark:bg-green-950/20 dark:border-green-800'
-                              : TECHNIQUE_COLORS[action.technique]
+                              ? 'bg-emerald-500/5 border-emerald-500/20 cursor-default'
+                              : `${tone.bg} hover:border-white/10 hover:-translate-y-0.5`
                           }`}
                         >
-                          <TechIcon className="h-3.5 w-3.5 shrink-0" />
+                          {/* Left rail */}
+                          <span className={`absolute left-0 inset-y-2 w-0.5 rounded-full bg-gradient-to-b ${isRevealed ? 'from-emerald-400 to-emerald-500' : tone.rail} ${isRevealed ? 'opacity-100' : 'opacity-60'}`} />
+                          <TechIcon className={`h-4 w-4 shrink-0 ${isRevealed ? 'text-emerald-500' : tone.text}`} />
                           <div className="flex-1 min-w-0">
-                            <span className="font-medium">{TECHNIQUE_LABELS[action.technique]}</span>
-                            <span className="text-muted-foreground ml-1.5">{action.label}</span>
+                            <p className={`text-[9px] font-medium tracking-[0.2em] uppercase ${isRevealed ? 'text-emerald-500/60' : 'text-muted-foreground/50'}`}>
+                              {TECHNIQUE_LABELS[technique]}
+                            </p>
+                            <p className="text-xs font-medium tracking-tight text-foreground/80 mt-0.5">{action.label}</p>
                           </div>
                           {!isRevealed && (
-                            <Badge variant="outline" className="text-[8px] py-0 shrink-0">
-                              Perform
-                            </Badge>
+                            <span className="text-[9px] font-mono uppercase tracking-[0.15em] text-muted-foreground/40 shrink-0">Tap</span>
+                          )}
+                          {isRevealed && (
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgb(52_211_153/0.9)] shrink-0" />
                           )}
                         </button>
 
-                        {/* Revealed finding */}
+                        {/* Revealed finding — chapter-style clinical note */}
                         {isRevealed && (
-                          <div className="ml-6 mt-1 p-2 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200/50 dark:border-green-800/50 text-xs text-green-800 dark:text-green-300 animate-in fade-in duration-300">
-                            {getFindings(caseData, regionId, subRegion.id, action.id)}
+                          <div className="ml-6 relative overflow-hidden rounded-lg bg-gradient-to-br from-emerald-500/[0.03] via-transparent to-transparent border border-emerald-500/10 animate-in fade-in slide-in-from-top-1 duration-500">
+                            <div className="px-3 py-2.5">
+                              <p className="text-[9px] font-medium tracking-[0.25em] uppercase text-emerald-500/70 mb-1">Finding</p>
+                              <p className="font-mono text-[11px] sm:text-xs text-foreground/80 leading-relaxed">
+                                {getFindings(caseData, regionId, subRegion.id, action.id)}
+                              </p>
+                            </div>
                           </div>
                         )}
                       </div>

@@ -3213,31 +3213,39 @@ export function StudentPanel({
               {/* ===== ASSESSMENT COLUMN (Primary / 3D / History) ===== */}
               <div className="order-2 lg:order-none lg:col-start-1 lg:row-start-1 lg:row-span-2 space-y-4">
 
-                {/* --- PRIMARY SURVEY (ABCDE) --- */}
-                <Card className="bg-card border border-border rounded-xl sm:rounded-2xl overflow-hidden">
-                  <CardHeader className="pb-2 px-3 sm:px-4 border-b border-border/30">
-                    <CardTitle className="text-xs sm:text-sm flex items-center gap-2">
-                      <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-lg bg-blue-500/15">
-                        <Shield className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-blue-500" />
+                {/* --- PRIMARY SURVEY (ABCDE) ---
+                    Premium redesign: each system is a glass "channel" with a
+                    jewel-tone gradient rail per clinical hierarchy. The
+                    assessed state is a minimal LED dot (emerald) rather than
+                    a pill/check; the active state lights up the rail and
+                    adds a subtle accent glow. Findings render as a chapter
+                    panel beneath the tiles, not a utility dropdown. */}
+                <Card className="relative overflow-hidden rounded-2xl border border-white/5 dark:border-white/[0.06] bg-gradient-to-br from-white via-slate-50 to-white dark:from-slate-950/70 dark:via-slate-900/40 dark:to-slate-950/70 shadow-[0_4px_20px_-8px_rgba(0,0,0,0.1)] dark:shadow-[0_8px_40px_-16px_rgba(0,0,0,0.7)] backdrop-blur-xl">
+                  {/* Accent hairline across the top */}
+                  <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+                  <CardHeader className="pb-3 px-4 sm:px-5 pt-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 ring-1 ring-primary/10">
+                          <Shield className="h-3.5 w-3.5 text-primary/80" />
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-medium tracking-[0.25em] uppercase text-muted-foreground/60">Phase&nbsp;1</p>
+                          <h2 className="text-sm font-semibold tracking-tight leading-tight">Primary Survey</h2>
+                        </div>
                       </div>
-                      Primary Survey
-                    </CardTitle>
+                      <span className="text-[10px] font-mono tracking-[0.15em] text-muted-foreground/40">SABCDE</span>
+                    </div>
                   </CardHeader>
-                  <CardContent className="p-2 sm:p-3">
-                    {/* ABCDE channel colours per tile — matches the design-system
-                        primary-survey pattern. Scene-safety is neutral; airway /
-                        breathing / circulation / disability / exposure each pick
-                        up their channel's colour when idle, reinforcing the
-                        clinical hierarchy at a glance. Assessed state keeps the
-                        green check; active state ramps up ring intensity. */}
+                  <CardContent className="p-3 sm:p-4 pt-0 space-y-3">
                     <div className="grid grid-cols-6 gap-1.5 sm:gap-2">
                       {([
-                        { key: 'scene-safety' as const, letter: 'S', label: 'Scene',      stepId: 'scene-safety' as AssessmentStepId, idle: 'border-slate-400/40 bg-slate-400/5 text-slate-500', hover: 'hover:border-slate-500/60 hover:bg-slate-500/10', active: 'border-slate-500 bg-slate-500/10 ring-2 ring-slate-500/30 text-slate-600' },
-                        { key: 'airway' as const,       letter: 'A', label: 'Airway',     stepId: 'airway' as AssessmentStepId,       idle: 'border-blue-400/40 bg-blue-400/5 text-blue-600',   hover: 'hover:border-blue-500/60 hover:bg-blue-500/10',   active: 'border-blue-500 bg-blue-500/10 ring-2 ring-blue-500/30 text-blue-600' },
-                        { key: 'breathing' as const,    letter: 'B', label: 'Breathing',  stepId: 'breathing' as AssessmentStepId,    idle: 'border-cyan-400/40 bg-cyan-400/5 text-cyan-600',   hover: 'hover:border-cyan-500/60 hover:bg-cyan-500/10',   active: 'border-cyan-500 bg-cyan-500/10 ring-2 ring-cyan-500/30 text-cyan-600' },
-                        { key: 'circulation' as const,  letter: 'C', label: 'Circulation',stepId: 'circulation' as AssessmentStepId,  idle: 'border-red-400/40 bg-red-400/5 text-red-600',      hover: 'hover:border-red-500/60 hover:bg-red-500/10',     active: 'border-red-500 bg-red-500/10 ring-2 ring-red-500/30 text-red-600' },
-                        { key: 'disability' as const,   letter: 'D', label: 'Disability', stepId: 'disability' as AssessmentStepId,   idle: 'border-purple-400/40 bg-purple-400/5 text-purple-600', hover: 'hover:border-purple-500/60 hover:bg-purple-500/10', active: 'border-purple-500 bg-purple-500/10 ring-2 ring-purple-500/30 text-purple-600' },
-                        { key: 'exposure' as const,     letter: 'E', label: 'Exposure',   stepId: 'exposure' as AssessmentStepId,     idle: 'border-amber-400/40 bg-amber-400/5 text-amber-600', hover: 'hover:border-amber-500/60 hover:bg-amber-500/10',  active: 'border-amber-500 bg-amber-500/10 ring-2 ring-amber-500/30 text-amber-600' },
+                        { key: 'scene-safety' as const, letter: 'S', label: 'Scene',      stepId: 'scene-safety' as AssessmentStepId, rail: 'from-slate-400 to-slate-500',  glow: 'shadow-[0_0_20px_-4px_rgb(148_163_184/0.35)]',  text: 'text-slate-600 dark:text-slate-300' },
+                        { key: 'airway' as const,       letter: 'A', label: 'Airway',     stepId: 'airway' as AssessmentStepId,       rail: 'from-amber-400 to-orange-500',  glow: 'shadow-[0_0_20px_-4px_rgb(251_146_60/0.45)]', text: 'text-amber-700 dark:text-amber-300' },
+                        { key: 'breathing' as const,    letter: 'B', label: 'Breathing',  stepId: 'breathing' as AssessmentStepId,    rail: 'from-sky-400 to-cyan-500',      glow: 'shadow-[0_0_20px_-4px_rgb(56_189_248/0.45)]', text: 'text-sky-700 dark:text-sky-300' },
+                        { key: 'circulation' as const,  letter: 'C', label: 'Circulation',stepId: 'circulation' as AssessmentStepId,  rail: 'from-rose-400 to-red-500',      glow: 'shadow-[0_0_20px_-4px_rgb(251_113_133/0.45)]',text: 'text-rose-700 dark:text-rose-300' },
+                        { key: 'disability' as const,   letter: 'D', label: 'Disability', stepId: 'disability' as AssessmentStepId,   rail: 'from-violet-400 to-purple-500', glow: 'shadow-[0_0_20px_-4px_rgb(167_139_250/0.45)]',text: 'text-violet-700 dark:text-violet-300' },
+                        { key: 'exposure' as const,     letter: 'E', label: 'Exposure',   stepId: 'exposure' as AssessmentStepId,     rail: 'from-emerald-400 to-teal-500',  glow: 'shadow-[0_0_20px_-4px_rgb(52_211_153/0.45)]', text: 'text-emerald-700 dark:text-emerald-300' },
                       ]).map(item => {
                         const isAssessed = assessmentTracker?.performed.some(p => p.stepId === item.stepId);
                         const isActive = activePrimarySurvey === item.key;
@@ -3248,33 +3256,37 @@ export function StudentPanel({
                               handlePerformAssessment(item.stepId);
                               setActivePrimarySurvey(isActive ? null : item.key);
                             }}
-                            className={`flex flex-col items-center justify-center gap-0.5 min-h-[44px] sm:min-h-[56px] p-2 sm:p-3 rounded-xl border transition-all text-center touch-manipulation ${
-                              isActive
-                                ? item.active
-                                : isAssessed
-                                  ? 'border-green-500/40 bg-green-500/5 text-green-600'
-                                  : `${item.idle} ${item.hover}`
-                            }`}
+                            className={`group relative flex flex-col items-center justify-center min-h-[54px] sm:min-h-[68px] pt-3 pb-2 px-1 rounded-xl bg-white/50 dark:bg-slate-900/40 backdrop-blur-sm border border-slate-200/60 dark:border-white/[0.04] transition-all duration-300 touch-manipulation hover:-translate-y-0.5 hover:border-white/10 ${isActive ? `${item.glow} border-white/10` : ''}`}
                           >
-                            <span className={`text-lg sm:text-xl font-bold ${isAssessed ? 'text-green-600 dark:text-green-400' : ''}`}>
+                            {/* Jewel-tone rail: visible at low opacity at rest, bright when active */}
+                            <span className={`absolute inset-x-3 top-0 h-[2px] rounded-full bg-gradient-to-r ${item.rail} transition-opacity duration-300 ${isActive ? 'opacity-100' : isAssessed ? 'opacity-60' : 'opacity-20 group-hover:opacity-50'}`} />
+                            {/* Status LED */}
+                            <span className={`absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full transition-colors ${isAssessed ? 'bg-emerald-400 shadow-[0_0_6px_rgb(52_211_153/0.8)]' : 'bg-white/[0.08] dark:bg-white/[0.06]'}`} />
+                            {/* Letter — thin, large, premium */}
+                            <span className={`text-xl sm:text-2xl font-extralight tracking-tight leading-none ${isActive ? item.text : 'text-foreground/80'}`}>
                               {item.letter}
                             </span>
-                            <span className="text-[9px] sm:text-[10px] text-muted-foreground leading-tight">{item.label}</span>
-                            {isAssessed && <CheckCircle2 className="h-3 w-3 text-green-500" />}
+                            {/* Label — tiny spaced-out uppercase */}
+                            <span className="text-[8px] sm:text-[9px] font-medium tracking-[0.15em] uppercase text-muted-foreground/60 mt-1">{item.label}</span>
                           </button>
                         );
                       })}
                     </div>
-                    {/* Findings dropdown for active primary survey step */}
+                    {/* Chapter-style findings reveal */}
                     {activePrimarySurvey && activeFindings && activeFindings.stepId === activePrimarySurvey && (
-                      <div className="mt-2 p-2.5 rounded-xl bg-muted/30 border border-border/30 animate-fade-in">
-                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
-                          {activePrimarySurvey.charAt(0).toUpperCase() + activePrimarySurvey.slice(1)} Findings
-                        </p>
-                        <div className="space-y-1">
+                      <div className="relative overflow-hidden rounded-xl border border-white/5 dark:border-white/[0.06] bg-gradient-to-br from-slate-50/80 via-white/40 to-transparent dark:from-slate-900/60 dark:via-slate-900/20 dark:to-transparent backdrop-blur-sm animate-in slide-in-from-top-2 fade-in-50 duration-500">
+                        <div className="px-4 py-3 border-b border-slate-200/50 dark:border-white/5">
+                          <p className="text-[9px] font-medium tracking-[0.25em] uppercase text-muted-foreground/60">Findings</p>
+                          <h3 className="text-base font-light tracking-tight text-foreground/90 mt-0.5 capitalize">
+                            {activePrimarySurvey.replace(/-/g, ' ')}
+                          </h3>
+                        </div>
+                        <div className="p-4 space-y-2">
                           {activeFindings.findings.map((f, i) => (
-                            <div key={i} className="text-xs p-1.5 rounded-lg border bg-muted/20 border-border/30 text-foreground">
-                              <span className="font-medium">{f.label}:</span> {f.value}
+                            <div key={i} className="group relative pl-3">
+                              <span className="absolute left-0 top-1.5 h-1 w-1 rounded-full bg-foreground/20" />
+                              <p className="text-[10px] font-medium tracking-[0.1em] uppercase text-muted-foreground/60">{f.label}</p>
+                              <p className="font-mono text-[11px] sm:text-xs text-foreground/80 leading-relaxed mt-0.5">{f.value}</p>
                             </div>
                           ))}
                         </div>
@@ -3302,25 +3314,36 @@ export function StudentPanel({
                   </Suspense>
                 )}
 
-                {/* --- HISTORY (SAMPLE) --- */}
-                <Card className="bg-card border border-border rounded-xl sm:rounded-2xl overflow-hidden">
-                  <CardHeader className="pb-2 px-3 sm:px-4 border-b border-border/30">
-                    <CardTitle className="text-xs sm:text-sm flex items-center gap-2">
-                      <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-lg bg-purple-500/15">
-                        <ClipboardCheck className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-purple-500" />
+                {/* --- HISTORY (SAMPLE) ---
+                    Mirrors the Primary Survey visual language with an
+                    amethyst/fuchsia accent rail — history-taking is the
+                    "memory" phase. Same glass card, same chapter-style
+                    findings panel, same LED dot for completed steps. */}
+                <Card className="relative overflow-hidden rounded-2xl border border-white/5 dark:border-white/[0.06] bg-gradient-to-br from-white via-slate-50 to-white dark:from-slate-950/70 dark:via-slate-900/40 dark:to-slate-950/70 shadow-[0_4px_20px_-8px_rgba(0,0,0,0.1)] dark:shadow-[0_8px_40px_-16px_rgba(0,0,0,0.7)] backdrop-blur-xl">
+                  <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-fuchsia-400/40 to-transparent" />
+                  <CardHeader className="pb-3 px-4 sm:px-5 pt-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-fuchsia-500/10 ring-1 ring-fuchsia-500/15">
+                          <ClipboardCheck className="h-3.5 w-3.5 text-fuchsia-500/80" />
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-medium tracking-[0.25em] uppercase text-muted-foreground/60">Phase&nbsp;2</p>
+                          <h2 className="text-sm font-semibold tracking-tight leading-tight">History</h2>
+                        </div>
                       </div>
-                      History (SAMPLE)
-                    </CardTitle>
+                      <span className="text-[10px] font-mono tracking-[0.15em] text-muted-foreground/40">SAMPLE</span>
+                    </div>
                   </CardHeader>
-                  <CardContent className="p-2 sm:p-3">
+                  <CardContent className="p-3 sm:p-4 pt-0 space-y-3">
                     <div className="grid grid-cols-6 gap-1.5 sm:gap-2">
                       {([
-                        { key: 'signs-symptoms' as const, letter: 'S', label: 'Signs', stepId: 'signs-symptoms' as AssessmentStepId },
-                        { key: 'allergies' as const, letter: 'A', label: 'Allergies', stepId: 'allergies' as AssessmentStepId },
-                        { key: 'medications' as const, letter: 'M', label: 'Meds', stepId: 'medications' as AssessmentStepId },
-                        { key: 'past-medical' as const, letter: 'P', label: 'PMHx', stepId: 'past-medical' as AssessmentStepId },
-                        { key: 'last-meal' as const, letter: 'L', label: 'Last Meal', stepId: 'last-meal' as AssessmentStepId },
-                        { key: 'events-leading' as const, letter: 'E', label: 'Events', stepId: 'events-leading' as AssessmentStepId },
+                        { key: 'signs-symptoms' as const, letter: 'S', label: 'Signs',     stepId: 'signs-symptoms' as AssessmentStepId },
+                        { key: 'allergies' as const,     letter: 'A', label: 'Allergies', stepId: 'allergies' as AssessmentStepId },
+                        { key: 'medications' as const,   letter: 'M', label: 'Meds',      stepId: 'medications' as AssessmentStepId },
+                        { key: 'past-medical' as const,  letter: 'P', label: 'PMHx',      stepId: 'past-medical' as AssessmentStepId },
+                        { key: 'last-meal' as const,     letter: 'L', label: 'Last Meal', stepId: 'last-meal' as AssessmentStepId },
+                        { key: 'events-leading' as const,letter: 'E', label: 'Events',    stepId: 'events-leading' as AssessmentStepId },
                       ]).map(item => {
                         const isAssessed = assessmentTracker?.performed.some(p => p.stepId === item.stepId);
                         const isActive = activeHistoryStep === item.key;
@@ -3328,88 +3351,93 @@ export function StudentPanel({
                           <button
                             key={item.key}
                             onClick={() => {
-                              // Always call to refresh activeFindings for display
                               handlePerformAssessment(item.stepId);
                               setActiveHistoryStep(isActive ? null : item.key);
                             }}
-                            className={`flex flex-col items-center justify-center gap-0.5 min-h-[44px] sm:min-h-[52px] p-1.5 sm:p-2 rounded-lg border-2 transition-all text-center touch-manipulation ${
-                              isActive
-                                ? 'border-purple-500 bg-purple-500/10 ring-1 ring-purple-500/30'
-                                : isAssessed
-                                  ? 'border-green-500/40 bg-green-500/5'
-                                  : 'border-border/40 hover:border-purple-500/40 hover:bg-accent/30 active:bg-accent/50'
-                            }`}
+                            className={`group relative flex flex-col items-center justify-center min-h-[54px] sm:min-h-[68px] pt-3 pb-2 px-1 rounded-xl bg-white/50 dark:bg-slate-900/40 backdrop-blur-sm border border-slate-200/60 dark:border-white/[0.04] transition-all duration-300 touch-manipulation hover:-translate-y-0.5 hover:border-white/10 ${isActive ? 'shadow-[0_0_20px_-4px_rgb(232_121_249/0.45)] border-white/10' : ''}`}
                           >
-                            <span className={`text-base sm:text-lg font-bold ${isAssessed ? 'text-green-600 dark:text-green-400' : 'text-foreground'}`}>
+                            <span className={`absolute inset-x-3 top-0 h-[2px] rounded-full bg-gradient-to-r from-fuchsia-400 to-purple-500 transition-opacity duration-300 ${isActive ? 'opacity-100' : isAssessed ? 'opacity-60' : 'opacity-20 group-hover:opacity-50'}`} />
+                            <span className={`absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full transition-colors ${isAssessed ? 'bg-emerald-400 shadow-[0_0_6px_rgb(52_211_153/0.8)]' : 'bg-white/[0.08] dark:bg-white/[0.06]'}`} />
+                            <span className={`text-xl sm:text-2xl font-extralight tracking-tight leading-none ${isActive ? 'text-fuchsia-700 dark:text-fuchsia-300' : 'text-foreground/80'}`}>
                               {item.letter}
                             </span>
-                            <span className="text-[8px] sm:text-[9px] text-muted-foreground leading-tight">{item.label}</span>
-                            {isAssessed && <CheckCircle2 className="h-2.5 w-2.5 text-green-500" />}
+                            <span className="text-[8px] sm:text-[9px] font-medium tracking-[0.15em] uppercase text-muted-foreground/60 mt-1">{item.label}</span>
                           </button>
                         );
                       })}
                     </div>
-                    {/* Findings dropdown for active history step */}
+                    {/* Chapter-style history findings */}
                     {activeHistoryStep && activeFindings && activeFindings.stepId === activeHistoryStep && (
-                      <div className="mt-2 p-2.5 rounded-xl bg-muted/30 border border-border/30 animate-fade-in">
-                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
-                          {activeHistoryStep.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())} Findings
-                        </p>
-                        <div className="space-y-1">
+                      <div className="relative overflow-hidden rounded-xl border border-white/5 dark:border-white/[0.06] bg-gradient-to-br from-slate-50/80 via-white/40 to-transparent dark:from-slate-900/60 dark:via-slate-900/20 dark:to-transparent backdrop-blur-sm animate-in slide-in-from-top-2 fade-in-50 duration-500">
+                        <div className="px-4 py-3 border-b border-slate-200/50 dark:border-white/5">
+                          <p className="text-[9px] font-medium tracking-[0.25em] uppercase text-muted-foreground/60">History</p>
+                          <h3 className="text-base font-light tracking-tight text-foreground/90 mt-0.5 capitalize">
+                            {activeHistoryStep.replace(/-/g, ' ')}
+                          </h3>
+                        </div>
+                        <div className="p-4 space-y-2">
                           {activeFindings.findings.map((f, i) => (
-                            <div key={i} className="text-xs p-1.5 rounded-lg border bg-muted/20 border-border/30 text-foreground">
-                              <span className="font-medium">{f.label}:</span> {f.value}
+                            <div key={i} className="group relative pl-3">
+                              <span className="absolute left-0 top-1.5 h-1 w-1 rounded-full bg-foreground/20" />
+                              <p className="text-[10px] font-medium tracking-[0.1em] uppercase text-muted-foreground/60">{f.label}</p>
+                              <p className="font-mono text-[11px] sm:text-xs text-foreground/80 leading-relaxed mt-0.5">{f.value}</p>
                             </div>
                           ))}
                         </div>
 
                         {/* Pain assessment — lives under Signs/Symptoms in
                             SAMPLE because pain is subjective and belongs with
-                            history-taking, not the monitor. Scoring here
-                            awards the 'pain-assessment' step credit and
-                            surfaces a persistent readout on the case header. */}
+                            history-taking, not the monitor. Premium slider
+                            style: numbers are hairline nodes on a gradient
+                            continuum (green→amber→red), the selected value
+                            scales up and glows. */}
                         {activeHistoryStep === 'signs-symptoms' && (
-                          <div className="mt-3 pt-3 border-t border-border/40">
-                            <div className="flex items-center justify-between mb-2">
-                              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                                Pain Score (0–10)
-                              </p>
+                          <div className="px-4 pb-4 pt-3 border-t border-slate-200/50 dark:border-white/5">
+                            <div className="flex items-baseline justify-between mb-3">
+                              <div>
+                                <p className="text-[9px] font-medium tracking-[0.25em] uppercase text-muted-foreground/60">Pain Score</p>
+                                <p className="text-[10px] text-muted-foreground/50 mt-0.5">0 = none · 10 = worst imaginable</p>
+                              </div>
                               {currentVitals?.painScore !== undefined && (
-                                <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
-                                  {currentVitals.painScore}/10
-                                </span>
+                                <div className="flex items-baseline gap-1">
+                                  <span className="text-2xl font-extralight tracking-tight text-foreground/90 tabular-nums">{currentVitals.painScore}</span>
+                                  <span className="text-[10px] font-mono text-muted-foreground/50">/ 10</span>
+                                </div>
                               )}
                             </div>
-                            <div className="grid grid-cols-11 gap-1">
-                              {[0,1,2,3,4,5,6,7,8,9,10].map(n => {
-                                const selected = currentVitals?.painScore === n;
-                                const severity = n === 0 ? 'none' : n <= 3 ? 'mild' : n <= 6 ? 'moderate' : 'severe';
-                                const base = severity === 'none' ? 'text-green-600 border-green-500/30'
-                                  : severity === 'mild' ? 'text-yellow-600 border-yellow-500/30'
-                                  : severity === 'moderate' ? 'text-orange-600 border-orange-500/30'
-                                  : 'text-red-600 border-red-500/30';
-                                return (
-                                  <button
-                                    key={n}
-                                    onClick={() => {
-                                      if (readOnly) return;
-                                      setCurrentVitals(prev => prev ? { ...prev, painScore: n } : prev);
-                                      handlePerformAssessment('pain-assessment');
-                                    }}
-                                    className={`h-8 rounded-md border text-[11px] font-mono font-bold transition-all touch-manipulation ${
-                                      selected
-                                        ? 'bg-amber-500 text-white border-amber-600 shadow-sm scale-105'
-                                        : `bg-card hover:bg-accent/40 ${base}`
-                                    }`}
-                                  >
-                                    {n}
-                                  </button>
-                                );
-                              })}
+                            {/* Gradient continuum underline */}
+                            <div className="relative">
+                              <div className="absolute inset-x-1 top-1/2 h-px -translate-y-1/2 bg-gradient-to-r from-emerald-400/30 via-amber-400/30 to-rose-500/30" />
+                              <div className="relative grid grid-cols-11 gap-1">
+                                {[0,1,2,3,4,5,6,7,8,9,10].map(n => {
+                                  const selected = currentVitals?.painScore === n;
+                                  const severity = n === 0 ? 'none' : n <= 3 ? 'mild' : n <= 6 ? 'moderate' : 'severe';
+                                  const selectedClr = severity === 'none' ? 'from-emerald-400 to-emerald-500 shadow-[0_0_12px_rgb(52_211_153/0.55)]'
+                                    : severity === 'mild' ? 'from-yellow-300 to-amber-400 shadow-[0_0_12px_rgb(251_191_36/0.55)]'
+                                    : severity === 'moderate' ? 'from-amber-400 to-orange-500 shadow-[0_0_12px_rgb(251_146_60/0.55)]'
+                                    : 'from-rose-400 to-red-500 shadow-[0_0_14px_rgb(244_63_94/0.65)]';
+                                  return (
+                                    <button
+                                      key={n}
+                                      onClick={() => {
+                                        if (readOnly) return;
+                                        setCurrentVitals(prev => prev ? { ...prev, painScore: n } : prev);
+                                        handlePerformAssessment('pain-assessment');
+                                      }}
+                                      className={`h-9 rounded-full text-[11px] font-mono font-medium tabular-nums transition-all duration-300 touch-manipulation ${
+                                        selected
+                                          ? `bg-gradient-to-b ${selectedClr} text-white border-0 scale-110 ring-2 ring-white/20`
+                                          : 'bg-white/60 dark:bg-slate-900/40 border border-slate-200/60 dark:border-white/[0.06] text-foreground/70 hover:text-foreground hover:border-white/10 hover:-translate-y-0.5'
+                                      }`}
+                                    >
+                                      {n}
+                                    </button>
+                                  );
+                                })}
+                              </div>
                             </div>
-                            <p className="text-[9px] text-muted-foreground mt-1.5">
-                              Ask the patient to rate their pain from 0 (no pain) to 10 (worst imaginable).
-                              Document location, onset, character (OPQRST) in your handover.
+                            <p className="text-[10px] text-muted-foreground/60 mt-3 leading-relaxed">
+                              Ask the patient to rate their pain. Document location, onset, character, radiation, severity, timing (<span className="font-mono">OPQRST</span>) in your handover.
                             </p>
                           </div>
                         )}
