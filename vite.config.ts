@@ -25,7 +25,7 @@ export default defineConfig({
     // / Radix still preload because every route needs them.
     modulePreload: {
       resolveDependencies: (_filename, deps) => deps.filter((dep) => {
-        return !/vendor-(three|pdf|other|supabase)|cases-|StudentPanel|ClassroomHost|ClassroomVideoTiles|pdf-export|ClinicalReferenceDialog|CaseDisplay|SessionSummary|InstructorNotesPanel/.test(dep);
+        return !/vendor-(three|pdf)|cases-|StudentPanel|ClassroomHost|ClassroomVideoTiles|pdf-export|ClinicalReferenceDialog|CaseDisplay|SessionSummary|InstructorNotesPanel/.test(dep);
       }),
     },
     rollupOptions: {
@@ -36,12 +36,23 @@ export default defineConfig({
         // change anywhere invalidated the entire vendor bundle for
         // returning students on 4G. These groupings cache independently
         // and load lazily when their route actually uses them.
+        // Keep the chunk strategy CONSERVATIVE: Rollup's default share-
+        // graph handles React + everything that depends on React
+        // correctly out of the box. Any attempt to carve React or its
+        // peers (Radix, sonner, i18next, etc.) into separate chunks
+        // created circular init orders and "Cannot access X before
+        // initialization" crashes on first paint.
+        //
+        // Only split:
+        //   (1) the big case bundle — purely static data, no deps on
+        //       anything React-ish, safe to lazy-load.
+        //   (2) three.js and jspdf+html2canvas — both are fully
+        //       self-contained heavy libs that only run on specific
+        //       screens (3D body, PDF export) and have no upstream
+        //       React coupling.
+        // Everything else stays in the single default vendor chunk so
+        // the load graph is linear and deterministic.
         manualChunks: (id: string) => {
-          // Split the enormous case bundle + its satellite case files
-          // into one 'cases' chunk. This gets loaded lazily by StudentPanel
-          // / ClassroomLobby / App.tsx's loadCases() — without this manual
-          // chunk, Rollup kept inlining case data into the entry chunk
-          // because multiple lazy routes depend on it.
           if (id.includes('/src/data/cases.ts')
             || id.includes('/src/data/enhancedCases.ts')
             || id.includes('/src/data/additionalCases.ts')
@@ -52,20 +63,9 @@ export default defineConfig({
             return 'cases';
           }
           if (!id.includes('node_modules')) return undefined;
-          // Merge React + Radix into one chunk. Radix components import
-          // React hooks eagerly, and Rollup's split creates a circular
-          // load order between the two chunks (vendor-radix trying to
-          // read a React internal before vendor-react has finished
-          // initialising its exports). Symptom was a fatal
-          // "Cannot access 'xt' before initialization" on first paint.
-          if (id.includes('react-dom') || id.match(/\/react\//) || id.includes('scheduler') || id.includes('@radix-ui')) return 'vendor-react';
-          if (id.includes('three')) return 'vendor-three';
-          if (id.includes('@supabase')) return 'vendor-supabase';
-          if (id.includes('framer-motion')) return 'vendor-motion';
-          if (id.includes('recharts') || id.includes('d3-')) return 'vendor-recharts';
-          if (id.includes('lucide-react')) return 'vendor-icons';
+          if (id.includes('/three/') || id.includes('node_modules/three')) return 'vendor-three';
           if (id.includes('jspdf') || id.includes('html2canvas')) return 'vendor-pdf';
-          return 'vendor-other';
+          return undefined;
         },
       },
     },
