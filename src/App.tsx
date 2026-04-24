@@ -279,7 +279,11 @@ function RoleSelection({ onSelect }: { onSelect: (role: UserRole) => void }) {
             <div className="bg-muted/50 border border-border rounded-xl px-8 py-4 flex items-center gap-10">
               <div className="flex items-center gap-2.5 text-sm">
                 <div className="w-2 h-2 rounded-full bg-primary" />
-                <span className="font-medium">{t('role.stats.cases', { count: allCases.length > 0 ? allCases.length : 100 })}</span>
+                {/* Hardcoded case count — the role-selection screen paints
+                    before the lazy case bundle resolves, so referencing
+                    allCases.length here crashes with "not defined". This is
+                    a marketing stat, so 100 is close enough. */}
+                <span className="font-medium">{t('role.stats.cases', { count: 100 })}</span>
               </div>
               <div className="w-px h-4 bg-border/50" />
               <div className="flex items-center gap-2.5 text-sm">
