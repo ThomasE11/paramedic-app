@@ -25,7 +25,7 @@ export default defineConfig({
     // / Radix still preload because every route needs them.
     modulePreload: {
       resolveDependencies: (_filename, deps) => deps.filter((dep) => {
-        return !/vendor-(three|pdf|other)|cases-|StudentPanel|ClassroomHost|ClassroomVideoTiles|pdf-export|ClinicalReferenceDialog|CaseDisplay|SessionSummary|InstructorNotesPanel/.test(dep);
+        return !/vendor-(three|pdf|other|supabase)|cases-|StudentPanel|ClassroomHost|ClassroomVideoTiles|pdf-export|ClinicalReferenceDialog|CaseDisplay|SessionSummary|InstructorNotesPanel/.test(dep);
       }),
     },
     rollupOptions: {
@@ -52,9 +52,14 @@ export default defineConfig({
             return 'cases';
           }
           if (!id.includes('node_modules')) return undefined;
-          if (id.includes('react-dom') || id.match(/\/react\//) || id.includes('scheduler')) return 'vendor-react';
+          // Merge React + Radix into one chunk. Radix components import
+          // React hooks eagerly, and Rollup's split creates a circular
+          // load order between the two chunks (vendor-radix trying to
+          // read a React internal before vendor-react has finished
+          // initialising its exports). Symptom was a fatal
+          // "Cannot access 'xt' before initialization" on first paint.
+          if (id.includes('react-dom') || id.match(/\/react\//) || id.includes('scheduler') || id.includes('@radix-ui')) return 'vendor-react';
           if (id.includes('three')) return 'vendor-three';
-          if (id.includes('@radix-ui')) return 'vendor-radix';
           if (id.includes('@supabase')) return 'vendor-supabase';
           if (id.includes('framer-motion')) return 'vendor-motion';
           if (id.includes('recharts') || id.includes('d3-')) return 'vendor-recharts';
