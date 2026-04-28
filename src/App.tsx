@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { CaseScenario, StudentYear, CaseSession, VitalSigns, AppliedTreatment, SimulationObjective, DebriefingResource, InstructorAssessmentNote } from '@/types';
+import type { CaseScenario, StudentYear, CaseSession, VitalSigns, AppliedTreatment, SimulationObjective } from '@/types';
 import { useGradualVitalChanges } from '@/hooks/useGradualVitalChanges';
 import { yearLevels, caseCategories, priorities } from '@/data/caseFilters';
 // Heavy case bundle — lazy-imported on mount so it's not in the initial
@@ -16,16 +16,16 @@ const loadCases = (): Promise<CasesModule> => {
   return _casesPromise;
 };
 import { matchObjectiveToCase } from '@/data/simulationObjectives';
-import { getResourcesForDebriefing } from '@/data/diversifiedResources';
 import { applyTreatmentEffectEnhanced, ensureCompleteVitals, buildInitialVitalsFromCase } from '@/data/treatmentEffects';
 import { applyTreatmentEffectGradual, type Treatment } from '@/data/enhancedTreatmentEffects';
+import { applyDeterioration, getDeteriorationStatus, determineSeverity, type CaseSeverity } from '@/data/deteriorationSystem';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 import {
   Stethoscope, GraduationCap, ClipboardCheck, RotateCcw,
   FileText, Sparkles, CheckCircle2, Home, ChevronRight, ArrowLeft,
@@ -53,15 +53,10 @@ const ManagementView = lazy(() => import('@/components/ManagementView').then(m =
 const SessionSummary = lazy(() => import('@/components/SessionSummary').then(m => ({ default: m.SessionSummary })));
 const SessionTimer = lazy(() => import('@/components/SessionTimer').then(m => ({ default: m.SessionTimer })));
 const ClinicalReferenceDialog = lazy(() => import('@/components/ClinicalReferenceDialog').then(m => ({ default: m.ClinicalReferenceDialog })));
-const TreatmentsPanel = lazy(() => import('@/components/TreatmentsPanel').then(m => ({ default: m.TreatmentsPanel })));
-const TreatmentApplicationPanel = lazy(() => import('@/components/TreatmentApplicationPanel').then(m => ({ default: m.TreatmentApplicationPanel })));
-const VitalSignsMonitor = lazy(() => import('@/components/VitalSignsMonitor').then(m => ({ default: m.VitalSignsMonitor })));
-const GlassNavigation = lazy(() => import('@/components/TabNavigation').then(m => ({ default: m.TabNavigation })));
-const InstructorNotesPanel = lazy(() => import('@/components/InstructorNotesPanel').then(m => ({ default: m.InstructorNotesPanel })));
 const ObjectiveSetupPanel = lazy(() => import('@/components/ObjectiveSetupPanel').then(m => ({ default: m.ObjectiveSetupPanel })));
-const PreBriefingPanel = lazy(() => import('@/components/PreBriefingPanel').then(m => ({ default: m.PreBriefingPanel })));
+const WorkspaceLayout = lazy(() => import('@/components/Workspace').then(m => ({ default: m.WorkspaceLayout })));
 import { ComplicationPanel, useComplicationManager } from '@/components/ComplicationManager';
-import type { GlassLayer } from '@/components/TabNavigation';
+import { LandingPage } from '@/components/LandingPage';
 
 // Enhanced loading card component with skeleton UI
 function LoadingCard() {
@@ -120,195 +115,6 @@ function EmptyState({ onGenerate }: { onGenerate: () => void }) {
 
 type UserRole = 'none' | 'educator' | 'student' | 'classroom-host' | 'classroom-join';
 
-function RoleSelection({ onSelect }: { onSelect: (role: UserRole) => void }) {
-  const { t } = useTranslation();
-  const classroomEnabled = isSupabaseConfigured();
-  return (
-    <div className="min-h-screen bg-background flex flex-col relative overflow-hidden">
-      {/* Skip link — keyboard users can jump past the brand bar straight to
-          the role cards. Invisible until Tab-focused. */}
-      <a href="#main-content" className="skip-link">Skip to main content</a>
-
-      {/* Top bar */}
-      <div className="relative z-10 flex items-center justify-between px-8 py-5">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-            <Activity className="h-4 w-4 text-primary" />
-          </div>
-          <span className="text-sm font-semibold tracking-tight text-foreground/80">{t('app.name')}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <LanguageSwitcher />
-          <ThemeToggle />
-        </div>
-      </div>
-
-      <main id="main-content" className="relative z-10 flex-1 flex items-center justify-center p-6">
-        <div className="max-w-3xl w-full space-y-14">
-          {/* ─── Header — matches the exported design system landing card ─── */}
-          <div className="text-center space-y-6">
-            <div className="mx-auto flex h-[88px] w-[88px] items-center justify-center rounded-[24px] bg-primary ring-8 ring-primary/[0.08]">
-              <Stethoscope className="h-11 w-11 text-primary-foreground" />
-            </div>
-            <div className="space-y-3">
-              <h1 className="heading-clean text-[2.75rem] leading-[1.08] tracking-[-0.02em]">
-                {t('app.tagline')}
-              </h1>
-              <p className="text-muted-foreground text-[17px] max-w-[560px] mx-auto leading-[1.55]">
-                {t('app.subtitle')}
-              </p>
-            </div>
-          </div>
-
-          {/* ─── Role Cards — aligned to the design system's role-landing.
-               Educator takes the primary cyan (brand colour); Trainee
-               takes a blue secondary. Hover adds a subtle -2px lift.
-               The outer element is a div[role="button"] (not a <button>)
-               so we can nest the optional classroom-link <button> inside
-               without triggering React's hydration error for nested
-               buttons. Keyboard activation (Enter/Space) and focus ring
-               are preserved explicitly. ─── */}
-          <div className="grid gap-6 sm:grid-cols-2">
-            {/* Educator */}
-            <div
-              role="button"
-              tabIndex={0}
-              onClick={() => onSelect('educator')}
-              onKeyDown={e => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  onSelect('educator');
-                }
-              }}
-              className="group relative flex flex-col rounded-[24px] bg-card border border-border p-9 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 text-left overflow-hidden cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-            >
-              <div className="relative z-10 flex flex-col items-start gap-5">
-                <div className="flex h-16 w-16 items-center justify-center rounded-[20px] bg-primary/10 ring-[6px] ring-primary/[0.05] group-hover:ring-primary/15 transition-all duration-200">
-                  <Users className="h-[30px] w-[30px] text-primary" />
-                </div>
-                <div className="space-y-2">
-                  <h2 className="heading-premium text-[22px] tracking-[-0.02em] leading-[1.15]">{t('role.educator')}</h2>
-                  <p className="text-sm text-muted-foreground leading-[1.55]">
-                    {t('role.educatorDescription')}
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {['Case generation', 'Assessment checklist', 'Classroom host'].map(tag => (
-                    <span
-                      key={tag}
-                      className="text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-secondary text-secondary-foreground/80 border border-border"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-                <div className="flex items-center gap-2 text-sm font-semibold text-primary group-hover:gap-3 transition-all duration-200 mt-0.5">
-                  {t('role.educatorCta')}
-                  <ChevronRight className="h-4 w-4 rtl:rotate-180" />
-                </div>
-                {classroomEnabled && (
-                  <button
-                    type="button"
-                    onClick={e => {
-                      e.stopPropagation();
-                      onSelect('classroom-host');
-                    }}
-                    className="text-xs font-medium text-primary/80 underline decoration-dotted underline-offset-4 hover:text-primary transition-colors"
-                  >
-                    {t('classroom.hostCta')}
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Student / Trainee */}
-            <div
-              role="button"
-              tabIndex={0}
-              onClick={() => onSelect('student')}
-              onKeyDown={e => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  onSelect('student');
-                }
-              }}
-              className="group relative flex flex-col rounded-[24px] bg-card border border-border p-9 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 text-left overflow-hidden cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-            >
-              <div className="relative z-10 flex flex-col items-start gap-5">
-                <div className="flex h-16 w-16 items-center justify-center rounded-[20px] bg-blue-500/10 ring-[6px] ring-blue-500/[0.05] group-hover:ring-blue-500/15 transition-all duration-200">
-                  <GraduationCap className="h-[30px] w-[30px] text-blue-500" />
-                </div>
-                <div className="space-y-2">
-                  <h2 className="heading-premium text-[22px] tracking-[-0.02em] leading-[1.15]">{t('role.student')}</h2>
-                  <p className="text-sm text-muted-foreground leading-[1.55]">
-                    {t('role.studentDescription')}
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {['Practice cases', 'Performance feedback', 'Join classroom'].map(tag => (
-                    <span
-                      key={tag}
-                      className="text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-secondary text-secondary-foreground/80 border border-border"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-                <div className="flex items-center gap-2 text-sm font-semibold text-blue-600 dark:text-blue-400 group-hover:gap-3 transition-all duration-200 mt-0.5">
-                  {t('role.studentCta')}
-                  <ChevronRight className="h-4 w-4 rtl:rotate-180" />
-                </div>
-                {classroomEnabled && (
-                  <button
-                    type="button"
-                    onClick={e => {
-                      e.stopPropagation();
-                      onSelect('classroom-join');
-                    }}
-                    className="text-xs font-medium text-blue-700/80 dark:text-blue-400/80 underline decoration-dotted underline-offset-4 hover:text-blue-600 dark:hover:text-blue-300 transition-colors"
-                  >
-                    {t('classroom.joinCta')}
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Stats bar */}
-          <div className="flex items-center justify-center">
-            <div className="bg-muted/50 border border-border rounded-xl px-8 py-4 flex items-center gap-10">
-              <div className="flex items-center gap-2.5 text-sm">
-                <div className="w-2 h-2 rounded-full bg-primary" />
-                {/* Hardcoded case count — the role-selection screen paints
-                    before the lazy case bundle resolves, so referencing
-                    allCases.length here crashes with "not defined". This is
-                    a marketing stat, so 100 is close enough. */}
-                <span className="font-medium">{t('role.stats.cases', { count: 100 })}</span>
-              </div>
-              <div className="w-px h-4 bg-border/50" />
-              <div className="flex items-center gap-2.5 text-sm">
-                <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                <span className="font-medium">{t('role.stats.rhythms')}</span>
-              </div>
-              <div className="w-px h-4 bg-border/50" />
-              <div className="flex items-center gap-2.5 text-sm">
-                <div className="w-2 h-2 rounded-full bg-blue-500" />
-                <span className="font-medium">{t('role.stats.lifepak')}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Footer */}
-          <p className="text-center text-xs text-muted-foreground/50 tracking-wide">
-            {t('app.footerEducational')}  |  {t('app.footerEvidence')}
-          </p>
-        </div>
-      </main>
-      <Toaster position="top-right" richColors closeButton />
-    </div>
-  );
-}
-
 function App() {
   const [userRole, setUserRole] = useState<UserRole>(() => {
     return (localStorage.getItem('paramedic-role') as UserRole) || 'none';
@@ -351,11 +157,14 @@ function App() {
     }
   }, [userRole]);
 
-  // Role selection screen
+  // Landing page
   if (userRole === 'none') {
     return (
       <>
-        <RoleSelection onSelect={setUserRole} />
+        <LandingPage 
+          onRoleSelect={(role) => setUserRole(role)} 
+          caseCount={allCases.length}
+        />
         {/* ⌘K works on the landing screen too — jump straight into a case. */}
         <CommandPalette
           onCaseSelect={() => setUserRole('educator')}
@@ -400,15 +209,14 @@ function App() {
   }
 
   // Educator panel (existing App component below)
-  return <EducatorPanel onExit={handleRoleExit} />;
+  return <EducatorPanel onExit={handleRoleExit} allCases={allCases} />;
 }
 
-function EducatorPanel({ onExit }: { onExit: () => void }) {
+function EducatorPanel({ onExit, allCases }: { onExit: () => void; allCases: CaseScenario[] }) {
   const { t } = useTranslation();
   const [currentCase, setCurrentCase] = useState<CaseScenario | null>(null);
   const [selectedYear, setSelectedYear] = useState<StudentYear>('3rd-year');
   const [session, setSession] = useState<CaseSession | null>(null);
-  const [activeTab, setActiveTab] = useState('case');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [caseHistory, setCaseHistory] = useState<CaseScenario[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -416,16 +224,13 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
   const [previousVitals, setPreviousVitals] = useState<VitalSigns | null>(null);
   const [vitalsHistory, setVitalsHistory] = useState<VitalSigns[]>([]);
   const [appliedTreatments, setAppliedTreatments] = useState<AppliedTreatment[]>([]);
-  const [glassLayer, setGlassLayer] = useState<GlassLayer>('case');
 
-  // Instructor feedback state (lifted from InstructorNotesPanel for persistence)
-  const [instructorAssessmentNotes, setInstructorAssessmentNotes] = useState<InstructorAssessmentNote[]>([]);
+  // Deterioration state
+  const [deteriorationSeverity, setDeteriorationSeverity] = useState<CaseSeverity>('stable');
+  const [deteriorationMinutes, setDeteriorationMinutes] = useState(0);
 
   // Guided simulation flow state
   const [showObjectiveSetup, setShowObjectiveSetup] = useState(false);
-  const [simulationObjective, setSimulationObjective] = useState<SimulationObjective | null>(null);
-  const [preBriefingCompleted, setPreBriefingCompleted] = useState(false);
-  const [debriefingResources, setDebriefingResources] = useState<DebriefingResource[]>([]);
 
   // Complication manager hook
   const {
@@ -435,6 +240,39 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
     ignoreComplication,
     clearComplications,
   } = useComplicationManager();
+
+  // Deterioration timer — applies vital decay every 30 seconds based on case severity
+  useEffect(() => {
+    if (!currentCase || !currentVitals) return;
+    
+    const interval = setInterval(() => {
+      setDeteriorationMinutes(prev => {
+        const newMinutes = prev + 0.5; // 30 seconds = 0.5 minutes
+        
+        // Apply deterioration
+        const treatmentNames = appliedTreatments.map(t => t.description);
+        const result = applyDeterioration(currentVitals, deteriorationSeverity, 0.5, treatmentNames);
+        
+        if (result.changes.length > 0) {
+          setCurrentVitals(result.newVitals);
+          setVitalsHistory(prevHistory => [...prevHistory, result.newVitals]);
+          setPreviousVitals(currentVitals);
+          
+          // Show toast for critical changes
+          if (result.isCritical) {
+            toast.warning('Patient deteriorating!', {
+              description: result.changes.slice(0, 2).join(', '),
+              icon: <Activity className="h-4 w-4 text-red-500" />,
+            });
+          }
+        }
+        
+        return newMinutes;
+      });
+    }, 30000); // Every 30 seconds
+    
+    return () => clearInterval(interval);
+  }, [currentCase, currentVitals, deteriorationSeverity, appliedTreatments]);
 
   // Load saved session from localStorage once the case bundle is ready.
   // Re-runs when `allCases` populates (async on mount) so the savedCaseId
@@ -583,10 +421,6 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
         setSelectedYear(year as StudentYear);
       }
 
-      if (tab && ['case', 'assessment', 'management'].includes(tab)) {
-        setActiveTab(tab);
-      }
-
       if (caseId) {
         const foundCase = allCases.find(c => c.id === caseId);
         if (foundCase) {
@@ -610,14 +444,12 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
     const params = new URLSearchParams(window.location.search);
     if (currentCase) {
       params.set('case', currentCase.id);
-      params.set('tab', activeTab);
       window.history.replaceState({}, '', `?${params.toString()}`);
     } else {
       params.delete('case');
-      params.delete('tab');
       window.history.replaceState({}, '', window.location.pathname);
     }
-  }, [currentCase, activeTab]);
+  }, [currentCase]);
 
   // Timer state
   const [elapsedTime, setElapsedTime] = useState<string>('');
@@ -657,20 +489,15 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
       counts[cat.value] = allCases.filter(c => c.category === cat.value).length;
     });
     return counts;
-  }, []);
+  }, [allCases]);
 
   // Memoize goHome to avoid recreation
   const goHome = useCallback(() => {
     setCurrentCase(null);
     setSession(null);
-    setActiveTab('case');
-    setGlassLayer('case');
     setAppliedTreatments([]);
     setAppliedTreatmentIds([]);
     setShowObjectiveSetup(false);
-    setSimulationObjective(null);
-    setPreBriefingCompleted(false);
-    setDebriefingResources([]);
     toast.info('Returned to home', {
       icon: <Home className="h-4 w-4" />,
     });
@@ -687,7 +514,6 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
     // prior `await 300` but removes any chance of undefined references
     // if the user spam-clicks Generate before cases have resolved.
     const mod = await loadCases();
-    casesModuleRef.current = mod;
     await new Promise(resolve => setTimeout(resolve, 300));
 
     let newCase: CaseScenario;
@@ -702,18 +528,11 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
             category: objective.relatedCategories[0] || (selectedCategory !== 'all' ? selectedCategory : undefined)
           });
 
-      // Generate debriefing resources for this case + objective
-      const resources = getResourcesForDebriefing(newCase, objective);
-      setDebriefingResources(resources);
     } else {
       newCase = mod.getRandomCase({
         yearLevel: selectedYear,
         category: selectedCategory !== 'all' ? selectedCategory : undefined
       });
-
-      // Generate debriefing resources without objective
-      const resources = getResourcesForDebriefing(newCase);
-      setDebriefingResources(resources);
     }
 
     setCurrentCase(newCase);
@@ -723,37 +542,29 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
     setCurrentVitals(initialVitals);
     setVitalsHistory([initialVitals]);
 
+    // Determine deterioration severity based on case category and initial vitals
+    const severity = determineSeverity(newCase.category, initialVitals);
+    setDeteriorationSeverity(severity);
+    setDeteriorationMinutes(0);
+
     // Add to history
     setCaseHistory(prev => [newCase, ...prev].slice(0, 10));
 
     // Create new session using helper
     const newSession = createSessionFromCase(newCase, selectedYear);
     setSession(newSession);
-    setActiveTab('case');
     setIsGenerating(false);
 
     // Clear any previous state
     clearComplications();
     setAppliedTreatments([]);
     setAppliedTreatmentIds([]);
-    setInstructorAssessmentNotes([]);
     setApplyingTreatmentId(undefined);
 
-    // Route to pre-briefing if guided flow, otherwise straight to case
-    if (objective) {
-      setGlassLayer('prebriefing');
-      setPreBriefingCompleted(false);
-      toast.success('Guided case generated!', {
-        description: `${newCase.title} — Review pre-briefing before starting`,
-        icon: <Target className="h-4 w-4" />,
-      });
-    } else {
-      setGlassLayer('case');
-      toast.success('New case generated!', {
-        description: newCase.title,
-        icon: <Sparkles className="h-4 w-4" />,
-      });
-    }
+    toast.success(objective ? 'Guided case generated!' : 'New case generated!', {
+      description: newCase.title,
+      icon: objective ? <Target className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />,
+    });
   }, [selectedYear, selectedCategory]);
 
   // Toggle checklist item - optimized with treatment effects
@@ -922,7 +733,6 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
 
   // Handle objective setup completion - generates guided case
   const handleObjectiveSet = useCallback((objective: SimulationObjective) => {
-    setSimulationObjective(objective);
     setShowObjectiveSetup(false);
     generateCase(objective);
   }, [generateCase]);
@@ -930,7 +740,6 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
   // Handle skipping objective setup - generates random case
   const handleSkipObjective = useCallback(() => {
     setShowObjectiveSetup(false);
-    setSimulationObjective(null);
     generateCase();
   }, [generateCase]);
 
@@ -945,7 +754,6 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
     setCurrentVitals(initialVitals);
     setVitalsHistory([initialVitals]);
     
-    setActiveTab('case');
     toast.info(`Loaded: ${caseItem.title}`);
   }, [selectedYear]);
 
@@ -977,14 +785,7 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
           document.activeElement?.tagName !== 'TEXTAREA') {
         generateCase();
       }
-      // Alt+number navigation for layers and tabs
-      if (currentCase && e.altKey) {
-        if (e.key === '1') { setGlassLayer('case'); setActiveTab('case'); }
-        if (e.key === '2') { setGlassLayer('case'); setActiveTab('assessment'); }
-        if (e.key === '3') { setGlassLayer('case'); setActiveTab('management'); }
-        if (e.key === '4') setGlassLayer('vitals');
-        if (e.key === '5') setGlassLayer('summary');
-      }
+      // Workspace shortcuts could be added here later
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -1425,321 +1226,165 @@ function EducatorPanel({ onExit }: { onExit: () => void }) {
               </div>
             </div>
 
-            {/* Glassmorphism Three-Layer Navigation */}
+            {/* Non-Linear Workspace Layout */}
             <Suspense fallback={<LoadingCard />}>
-              <GlassNavigation
-                activeLayer={glassLayer}
-                onLayerChange={setGlassLayer}
-                showPreBriefing={!!simulationObjective}
-                children={{
-                  prebriefing: simulationObjective && currentCase ? (
-                    <Suspense fallback={<LoadingCard />}>
-                      <PreBriefingPanel
-                        caseData={currentCase}
-                        objective={simulationObjective}
-                        onStartSimulation={() => {
-                          setPreBriefingCompleted(true);
-                          setGlassLayer('case');
-                          toast.success('Pre-briefing complete — simulation started', {
-                            icon: <Activity className="h-4 w-4" />,
-                          });
-                        }}
-                        onSkip={() => {
-                          setGlassLayer('case');
-                          toast.info('Pre-briefing skipped');
-                        }}
-                      />
-                    </Suspense>
-                  ) : undefined,
-                  case: (
-                    <div className="space-y-6">
-                      {/* Tabs within Case Layer */}
-                      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                        <TabsList className="grid w-full grid-cols-3">
-                          <TabsTrigger value="case" className="gap-1">
-                            <FileText className="h-4 w-4" />
-                            Case
-                          </TabsTrigger>
-                          <TabsTrigger value="assessment" className="gap-1">
-                            <Stethoscope className="h-4 w-4" />
-                            Assessment
-                          </TabsTrigger>
-                          <TabsTrigger value="management" className="gap-1">
-                            <Activity className="h-4 w-4" />
-                            Management
-                          </TabsTrigger>
-                        </TabsList>
-
-                        <TabsContent value="case" className="mt-4 animate-fade-in">
-                          <Suspense fallback={<LoadingCard />}>
-                            {currentCase ? (
-                              <CaseDisplay caseData={currentCase} studentYear={selectedYear} showAllContent={true} />
-                            ) : (
-                              <LoadingCard />
-                            )}
-                          </Suspense>
-                        </TabsContent>
-
-                        <TabsContent value="assessment" className="mt-4 animate-fade-in">
-                          <Suspense fallback={<LoadingCard />}>
-                            {currentCase ? (
-                              <AssessmentPanel caseData={currentCase} studentYear={selectedYear} showAllContent={true} />
-                            ) : (
-                              <LoadingCard />
-                            )}
-                          </Suspense>
-                        </TabsContent>
-
-                        <TabsContent value="management" className="mt-4 animate-fade-in">
-                          <Suspense fallback={<LoadingCard />}>
-                            {currentCase ? (
-                              <ManagementView caseData={currentCase} />
-                            ) : (
-                              <LoadingCard />
-                            )}
-                          </Suspense>
-                        </TabsContent>
-                      </Tabs>
-                    </div>
-                  ),
-                  vitals: (
-                    <div className="space-y-4">
-                      {/* Session Timer */}
-                      {currentCase && (
-                        <Suspense fallback={
-                          <Card>
-                            <CardContent className="p-4 flex items-center justify-center">
-                              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                            </CardContent>
-                          </Card>
-                        }>
-                          <SessionTimer
-                            duration={currentCase.estimatedDuration || 20}
-                            onTimerComplete={() => {
-                              setGlassLayer('summary');
-                              toast.info('Timer complete! Case finished.', {
-                                icon: <Clock className="h-4 w-4" />,
-                              });
-                            }}
-                            onTimerStart={() => {
-                              toast.success('Timer started - Case in progress', {
-                                icon: <Activity className="h-4 w-4" />,
-                              });
-                            }}
-                            onElapsedTimeChange={(formattedTime, seconds) => {
-                              setElapsedTime(formattedTime);
-                              setTimeTakenSeconds(seconds);
-                              
-                              // Trigger random complications (5% chance per 30 seconds)
-                              if (seconds > 0 && seconds % 30 === 0 && Math.random() < 0.05) {
-                                triggerComplication(currentCase?.category);
-                              }
-                            }}
-                          />
-                        </Suspense>
-                      )}
-
-                      {/* Interactive Vital Signs Monitor */}
-                      {currentCase && (
-                        <Suspense fallback={<Card><CardContent className="p-4"><div className="animate-pulse h-32 bg-muted rounded" /></CardContent></Card>}>
-                          <VitalSignsMonitor
-                            initialVitals={currentVitals || buildInitialVitalsFromCase(currentCase)}
-                            previousVitals={previousVitals}
-                            deteriorationVitals={currentCase.vitalSignsProgression.deterioration ? ensureCompleteVitals(currentCase.vitalSignsProgression.deterioration) : undefined}
-                            onVitalChange={(vitals) => {
-                              const completeVitals = ensureCompleteVitals(vitals);
-                              setCurrentVitals(completeVitals);
-                              setVitalsHistory(prev => [...prev, completeVitals]);
-                            }}
-                            caseCategory={currentCase.category}
-                            caseSubcategory={currentCase.subcategory}
-                            caseTitle={currentCase.title}
-                            ecgFindings={currentCase.abcde?.circulation?.ecgFindings}
-                            appliedTreatments={appliedTreatments.map(t => t.description)}
-                          />
-                        </Suspense>
-                      )}
-
-                      {/* Complication Panel */}
-                      {activeComplications.length > 0 && (
-                        <ComplicationPanel
-                          activeComplications={activeComplications}
-                          onResolve={resolveComplication}
-                          onIgnore={ignoreComplication}
-                        />
-                      )}
-
-                      {/* Two-Column: Treatment Panel + Checklist */}
-                      <div className="grid gap-4 lg:grid-cols-2">
-                        {/* Treatment Application Panel */}
-                        {currentCase && currentVitals && (
-                          <Suspense fallback={<Card><CardContent className="p-4"><div className="animate-pulse h-48 bg-muted rounded" /></CardContent></Card>}>
-                            <TreatmentApplicationPanel
-                              currentVitals={currentVitals}
-                              onApplyTreatment={applyEnhancedTreatment}
-                              appliedTreatmentIds={appliedTreatmentIds}
-                              isApplying={!!applyingTreatmentId}
-                              applyingTreatmentId={applyingTreatmentId}
-                            />
-                          </Suspense>
-                        )}
-
-                        {/* Checklist */}
-                        {session && (
-                          <Card className="border-2 border-primary/30 shadow-lg shadow-primary/5 animate-fade-in-up">
-                            <CardHeader className="pb-3">
-                              <div className="flex items-center justify-between">
-                                <CardTitle className="flex items-center gap-2 text-base">
-                                  <div className="p-1.5 rounded-lg bg-primary/10">
-                                    <ClipboardCheck className="h-5 w-5 text-primary" />
-                                  </div>
-                                  <span>Student Checklist</span>
-                                </CardTitle>
-                                <Badge 
-                                  variant={filteredChecklist.filter(i => !session.completedItems.includes(i.id)).length === 0 ? "default" : "secondary"}
-                                  className="ml-2"
-                                >
-                                  {session.completedItems.length}/{filteredChecklist.length}
-                                </Badge>
-                              </div>
-                              <p className="text-xs text-muted-foreground mt-1">
-                                {filteredChecklist.filter(i => !session.completedItems.includes(i.id)).length === 0 
-                                  ? "All items completed!" 
-                                  : `${filteredChecklist.filter(i => !session.completedItems.includes(i.id)).length} items remaining`}
-                              </p>
-                            </CardHeader>
-                            <CardContent className="space-y-2 max-h-[400px] overflow-y-auto pr-1 pt-4">
-                              {filteredChecklist.map((item, index) => (
-                                <label
-                                  key={item.id}
-                                  className={`flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-all duration-200 hover-lift ${session.completedItems.includes(item.id)
-                                    ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
-                                    : item.critical 
-                                      ? 'bg-red-50/50 dark:bg-red-950/20 border-red-200 dark:border-red-800/50 hover:bg-red-50 hover:border-red-300'
-                                      : 'hover:bg-muted/50 hover:border-primary/30'
-                                    }`}
-                                  style={{ animationDelay: `${index * 30}ms` }}
-                                >
-                                  <div className="mt-0.5 flex-shrink-0">
-                                    {session.completedItems.includes(item.id) ? (
-                                      <CheckCircle2 className="h-5 w-5 text-green-600 " />
-                                    ) : (
-                                      <div className={`h-5 w-5 rounded border-2 transition-colors ${item.critical ? 'border-red-400 hover:border-red-500' : 'border-muted-foreground/30 hover:border-primary/50'}`} />
-                                    )}
-                                  </div>
-                                  <input
-                                    type="checkbox"
-                                    checked={session.completedItems.includes(item.id)}
-                                    onChange={(e) => toggleChecklistItem(item.id, e.target.checked)}
-                                    className="sr-only"
-                                  />
-                                  <div className="flex-1 min-w-0">
-                                    <p className={`text-sm leading-tight transition-all duration-200 ${session.completedItems.includes(item.id) ? 'line-through text-muted-foreground' : ''}`}>
-                                      {item.description}
-                                    </p>
-                                    <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5">
-                                        {item.category}
-                                      </Badge>
-                                      <span className="text-[10px] text-muted-foreground font-medium">
-                                        {item.points} pts
-                                      </span>
-                                      {item.critical && (
-                                        <Badge variant="destructive" className="text-[10px] px-1.5 py-0 h-5 animate-pulse">
-                                          Critical
-                                        </Badge>
-                                      )}
-                                    </div>
-                                    {item.rationale && !session.completedItems.includes(item.id) && (
-                                      <p className="text-[11px] text-muted-foreground mt-2 italic bg-muted/30 p-1.5 rounded">
-                                        {item.rationale}
-                                      </p>
-                                    )}
-                                  </div>
-                                </label>
-                              ))}
-                            </CardContent>
-                          </Card>
-                        )}
-                      </div>
-
-                      {/* Applied Treatments History */}
-                      {currentCase && appliedTreatments.length > 0 && (
-                        <Suspense fallback={<Card><CardContent className="p-4"><div className="animate-pulse h-24 bg-muted rounded" /></CardContent></Card>}>
-                          <TreatmentsPanel
-                            treatments={appliedTreatments}
-                            isAnimating={isVitalsAnimating}
-                            animationProgress={vitalChangeProgress}
-                          />
-                        </Suspense>
-                      )}
-
-                      {/* Patient Info */}
-                      <Card className="card-hover">
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-sm flex items-center gap-2">
-                            <Stethoscope className="h-4 w-4 text-muted-foreground" />
-                            Patient
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-1.5 text-sm">
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Age/Gender:</span>
-                            <span className="font-medium">{currentCase.patientInfo.age}y / {currentCase.patientInfo.gender}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Weight:</span>
-                            <span className="font-medium">{currentCase.patientInfo.weight} kg</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Language:</span>
-                            <span className="font-medium">{currentCase.patientInfo.language}</span>
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      {/* Instructor Feedback Panel - Available During Active Case */}
-                      {currentCase && session && (
-                        <Suspense fallback={<Card><CardContent className="p-4"><div className="animate-pulse h-32 bg-muted rounded" /></CardContent></Card>}>
-                          <InstructorNotesPanel
-                            caseId={currentCase.id}
-                            studentYear={selectedYear}
-                            sessionNotes={session.notes}
-                            completedItems={session.completedItems}
-                            totalItems={(currentCase.studentChecklist || []).filter(item => item.yearLevel?.includes(selectedYear)).length}
-                            assessmentNotes={instructorAssessmentNotes}
-                            onAssessmentNotesChange={setInstructorAssessmentNotes}
-                            onSessionNotesChange={(notes) => setSession(prev => prev ? { ...prev, notes } : prev)}
-                          />
-                        </Suspense>
-                      )}
-                    </div>
-                  ),
-                  summary: (
-                    <div className="space-y-6">
-                      {session && currentCase ? (
-                        <Suspense fallback={<LoadingCard />}>
-                          <SessionSummary
-                            session={session}
-                            caseData={currentCase}
-                            elapsedTime={elapsedTime}
-                            timeTakenSeconds={timeTakenSeconds}
-                            appliedTreatments={appliedTreatments}
-                            vitalsHistory={vitalsHistory}
-                            instructorNotes={session.notes}
-                            instructorAssessmentNotes={instructorAssessmentNotes}
-                            simulationObjective={simulationObjective || undefined}
-                            debriefingResources={debriefingResources.length > 0 ? debriefingResources : undefined}
-                          />
-                        </Suspense>
-                      ) : (
-                        <EmptyState onGenerate={generateCase} />
-                      )}
-                    </div>
-                  )
+              <WorkspaceLayout
+                caseData={currentCase}
+                vitals={currentVitals}
+                previousVitals={previousVitals}
+                activeComplications={activeComplications}
+                onResolveComplication={resolveComplication}
+                onIgnoreComplication={ignoreComplication}
+                deteriorationStatus={getDeteriorationStatus(deteriorationSeverity, deteriorationMinutes)}
+                session={session}
+                onAction={(actionId) => {
+                  const actionMessages: Record<string, { title: string; description: string }> = {
+                    'defibrillate': { title: 'Defibrillation', description: '200J biphasic shock delivered' },
+                    'drug': { title: 'Drug Administration', description: 'Medication administered per protocol' },
+                    'airway': { title: 'Airway Management', description: 'Airway secured and managed' },
+                    'iv': { title: 'IV Access', description: 'Intravenous access established' },
+                    'cardiac': { title: 'Cardiac Monitoring', description: '12-lead ECG acquired and monitoring initiated' },
+                    'transport': { title: 'Transport', description: 'Patient packaged for transport' },
+                    'backup': { title: 'Backup Requested', description: 'Additional resources requested' },
+                  };
+                  const msg = actionMessages[actionId] || { title: 'Action', description: actionId };
+                  toast.success(msg.title, { description: msg.description });
+                }}
+                onDecision={(itemId, optionId) => {
+                  // Try to find a matching checklist item and toggle it
+                  const checklistItem = currentCase.studentChecklist?.find(item => item.id === itemId || item.id === optionId);
+                  if (checklistItem && session) {
+                    const isCompleted = session.completedItems.includes(checklistItem.id);
+                    toggleChecklistItem(checklistItem.id, !isCompleted);
+                  } else {
+                    toast.success('Decision recorded', { description: `Option ${optionId} selected` });
+                  }
                 }}
               />
             </Suspense>
+
+            {/* Keep existing vitals monitor, complications, and checklist below workspace */}
+            {currentCase && (
+              <div className="mt-6 space-y-4">
+                {/* Session Timer */}
+                <Suspense fallback={<Card><CardContent className="p-4"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></CardContent></Card>}>
+                  <SessionTimer
+                    duration={currentCase.estimatedDuration || 20}
+                    onTimerComplete={() => {
+                      toast.info('Timer complete! Case finished.', {
+                        icon: <Clock className="h-4 w-4" />,
+                      });
+                    }}
+                    onTimerStart={() => {
+                      toast.success('Timer started - Case in progress', {
+                        icon: <Activity className="h-4 w-4" />,
+                      });
+                    }}
+                    onElapsedTimeChange={(formattedTime, seconds) => {
+                      setElapsedTime(formattedTime);
+                      setTimeTakenSeconds(seconds);
+                      
+                      // Trigger random complications (5% chance per 30 seconds)
+                      if (seconds > 0 && seconds % 30 === 0 && Math.random() < 0.05) {
+                        triggerComplication(currentCase?.category);
+                      }
+                    }}
+                  />
+                </Suspense>
+
+                {/* Complication Panel */}
+                {activeComplications.length > 0 && (
+                  <ComplicationPanel
+                    activeComplications={activeComplications}
+                    onResolve={resolveComplication}
+                    onIgnore={ignoreComplication}
+                  />
+                )}
+
+                {/* Checklist */}
+                {session && (
+                  <Card className="border-2 border-primary/30 shadow-lg shadow-primary/5 animate-fade-in-up">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="flex items-center gap-2 text-base">
+                          <div className="p-1.5 rounded-lg bg-primary/10">
+                            <ClipboardCheck className="h-5 w-5 text-primary" />
+                          </div>
+                          <span>Student Checklist</span>
+                        </CardTitle>
+                        <Badge 
+                          variant={filteredChecklist.filter(i => !session.completedItems.includes(i.id)).length === 0 ? "default" : "secondary"}
+                          className="ml-2"
+                        >
+                          {session.completedItems.length}/{filteredChecklist.length}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-2 max-h-[400px] overflow-y-auto pr-1 pt-4">
+                      {filteredChecklist.map((item, index) => (
+                        <label
+                          key={item.id}
+                          className={`flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-all duration-200 hover-lift ${session.completedItems.includes(item.id)
+                            ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                            : item.critical 
+                              ? 'bg-red-50/50 dark:bg-red-950/20 border-red-200 dark:border-red-800/50 hover:bg-red-50 hover:border-red-300'
+                              : 'hover:bg-muted/50 hover:border-primary/30'
+                            }`}
+                          style={{ animationDelay: `${index * 30}ms` }}
+                        >
+                          <div className="mt-0.5 flex-shrink-0">
+                            {session.completedItems.includes(item.id) ? (
+                              <CheckCircle2 className="h-5 w-5 text-green-600 " />
+                            ) : (
+                              <div className={`h-5 w-5 rounded border-2 transition-colors ${item.critical ? 'border-red-400 hover:border-red-500' : 'border-muted-foreground/30 hover:border-primary/50'}`} />
+                            )}
+                          </div>
+                          <input
+                            type="checkbox"
+                            checked={session.completedItems.includes(item.id)}
+                            onChange={(e) => toggleChecklistItem(item.id, e.target.checked)}
+                            className="sr-only"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-sm leading-tight transition-all duration-200 ${session.completedItems.includes(item.id) ? 'line-through text-muted-foreground' : ''}`}>
+                              {item.description}
+                            </p>
+                            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                              <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5">
+                                {item.category}
+                              </Badge>
+                              <span className="text-[10px] text-muted-foreground font-medium">
+                                {item.points} pts
+                              </span>
+                              {item.critical && (
+                                <Badge variant="destructive" className="text-[10px] px-1.5 py-0 h-5 animate-pulse">
+                                  Critical
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        </label>
+                      ))}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Session Summary */}
+                {session && (
+                  <Suspense fallback={<LoadingCard />}>
+                    <SessionSummary
+                      session={session}
+                      caseData={currentCase}
+                      elapsedTime={elapsedTime}
+                      timeTakenSeconds={timeTakenSeconds}
+                      appliedTreatments={appliedTreatments}
+                      vitalsHistory={vitalsHistory}
+                      instructorNotes={session.notes}
+                    />
+                  </Suspense>
+                )}
+              </div>
+            )}
           </div>
         )}
       </main>

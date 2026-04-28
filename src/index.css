@@ -325,8 +325,566 @@ body.case-active { overscroll-behavior-y: contain; }
   .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 }
 
+/* ============================================
+   GLASSMORPHISM DESIGN SYSTEM
+   ============================================ */
+
+/* Glass cards */
+.glass {
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 
+    0 1px 2px rgba(0, 0, 0, 0.02),
+    0 4px 8px rgba(0, 0, 0, 0.02),
+    0 8px 16px rgba(0, 0, 0, 0.02),
+    0 16px 32px rgba(0, 0, 0, 0.02),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.dark .glass {
+  background: rgba(30, 30, 40, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 
+    0 1px 2px rgba(0, 0, 0, 0.1),
+    0 4px 8px rgba(0, 0, 0, 0.1),
+    0 8px 16px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.glass-strong {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 
+    0 1px 3px rgba(0, 0, 0, 0.04),
+    0 8px 16px rgba(0, 0, 0, 0.04),
+    0 24px 48px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.dark .glass-strong {
+  background: rgba(30, 30, 40, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #7c3aed 0%, #db2777 50%, #7c3aed 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradientShift 8s ease infinite;
+}
+
+@keyframes gradientShift {
+  0%, 100% { background-position: 0% center; }
+  50% { background-position: 100% center; }
+}
+
+/* Primary button */
+.btn-primary {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  box-shadow: 
+    0 1px 2px rgba(124, 58, 237, 0.1),
+    0 4px 12px rgba(124, 58, 237, 0.15),
+    0 8px 24px rgba(124, 58, 237, 0.1);
+  transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 
+    0 2px 4px rgba(124, 58, 237, 0.15),
+    0 8px 20px rgba(124, 58, 237, 0.2),
+    0 16px 40px rgba(124, 58, 237, 0.15);
+}
+
+/* Card hover */
+.card-premium {
+  transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.card-premium:hover {
+  transform: translateY(-4px);
+  box-shadow: 
+    0 1px 2px rgba(0, 0, 0, 0.02),
+    0 4px 8px rgba(0, 0, 0, 0.03),
+    0 12px 24px rgba(0, 0, 0, 0.04),
+    0 24px 48px rgba(0, 0, 0, 0.06),
+    0 0 0 1px rgba(139, 92, 246, 0.1);
+}
+
+/* ABCDE steps */
+.abcde-step {
+  transition: all 0.4s ease;
+}
+
+.abcde-step.active {
+  background: rgba(139, 92, 246, 0.08);
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
+.abcde-step.active .step-letter {
+  background: linear-gradient(135deg, #7c3aed, #6d28d9);
+  color: white;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+}
+
+.abcde-step.completed {
+  opacity: 0.7;
+}
+
+.abcde-step.completed .step-letter {
+  background: #10b981;
+  color: white;
+}
+
+.step-letter {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 11px;
+  transition: all 0.4s ease;
+  background: #f5f5f5;
+  color: #a3a3a3;
+}
+
+.dark .step-letter {
+  background: #374151;
+  color: #9ca3af;
+}
+
+/* Monitor screen */
+.monitor-screen {
+  background: #0c0c0c;
+  border-radius: 14px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 
+    inset 0 0 60px rgba(0, 0, 0, 0.8),
+    0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.monitor-screen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: 
+    linear-gradient(rgba(20, 184, 166, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(20, 184, 166, 0.02) 1px, transparent 1px);
+  background-size: 20px 20px;
+  pointer-events: none;
+}
+
+/* ECG trace */
+.ecg-trace {
+  fill: none;
+  stroke: #14b8a6;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 4px rgba(20, 184, 166, 0.5));
+  animation: ecgDraw 2.5s linear infinite;
+}
+
+.ecg-trace-alt {
+  stroke: #38bdf8;
+  filter: drop-shadow(0 0 4px rgba(56, 189, 248, 0.5));
+  animation-duration: 3s;
+  opacity: 0.7;
+}
+
+@keyframes ecgDraw {
+  0% { stroke-dasharray: 2000; stroke-dashoffset: 2000; }
+  100% { stroke-dasharray: 2000; stroke-dashoffset: 0; }
+}
+
+/* Vital pulse */
+.vital-pulse {
+  animation: vitalPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes vitalPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* Anatomy model */
+.anatomy-model {
+  transform-style: preserve-3d;
+  animation: modelFloat 8s ease-in-out infinite;
+}
+
+@keyframes modelFloat {
+  0%, 100% { transform: rotateY(-8deg) rotateX(3deg); }
+  50% { transform: rotateY(8deg) rotateX(-3deg); }
+}
+
+/* Body zone hover */
+.body-zone {
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.body-zone:hover {
+  filter: brightness(1.15) drop-shadow(0 0 12px rgba(139, 92, 246, 0.4));
+  transform: scale(1.03);
+}
+
+/* Decision options */
+.decision-option {
+  transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+  cursor: pointer;
+  border: 1.5px solid transparent;
+}
+
+.decision-option:hover {
+  border-color: rgba(139, 92, 246, 0.2);
+  background: rgba(139, 92, 246, 0.03);
+  transform: translateX(4px);
+}
+
+.decision-option.selected {
+  border-color: rgba(139, 92, 246, 0.4);
+  background: rgba(139, 92, 246, 0.06);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.08);
+}
+
+/* Check items */
+.check-item {
+  transition: all 0.2s ease;
+}
+
+.check-item:hover {
+  background: rgba(139, 92, 246, 0.03);
+}
+
+.check-item.checked .check-box {
+  background: #7c3aed;
+  border-color: #7c3aed;
+}
+
+.check-item.checked .check-box svg {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.check-box {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 2px solid #d4d4d4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.dark .check-box {
+  border-color: #4b5563;
+}
+
+.check-box svg {
+  opacity: 0;
+  transform: scale(0.5);
+  transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+/* Monitor alert */
+.monitor-alert {
+  animation: alertFlash 1.5s ease-in-out infinite;
+}
+
+@keyframes alertFlash {
+  0%, 100% { 
+    background: rgba(239, 68, 68, 0.08); 
+    border-color: rgba(239, 68, 68, 0.2); 
+  }
+  50% { 
+    background: rgba(239, 68, 68, 0.15); 
+    border-color: rgba(239, 68, 68, 0.35); 
+  }
+}
+
+/* Input premium */
+.input-premium {
+  transition: all 0.3s ease;
+}
+
+.input-premium:focus {
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.12), 0 1px 2px rgba(0, 0, 0, 0.05);
+  border-color: rgba(139, 92, 246, 0.25);
+}
+
+/* Floating orbs */
+@keyframes float {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(30px, -30px) scale(1.05); }
+  66% { transform: translate(-20px, 20px) scale(0.95); }
+}
+
+.floating-orb {
+  animation: float 20s ease-in-out infinite;
+}
+
+.floating-orb-delayed {
+  animation: float 25s ease-in-out infinite;
+  animation-delay: -10s;
+}
+
+/* Gentle float for badges */
+@keyframes gentleFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+.gentle-float {
+  animation: gentleFloat 6s ease-in-out infinite;
+}
+
+/* Selection styling */
+::selection {
+  background: rgba(139, 92, 246, 0.2);
+  color: #4c1d95;
+}
+
+.dark ::selection {
+  background: rgba(139, 92, 246, 0.3);
+  color: #e9d5ff;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(139, 92, 246, 0.2);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 92, 246, 0.4);
+}
+
+/* ============================================
+   WORKSPACE STYLES - Glassmorphism & Non-Linear
+   ============================================ */
+
+/* Glass morphism cards */
+.glass {
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 
+    0 1px 2px rgba(0, 0, 0, 0.02),
+    0 4px 8px rgba(0, 0, 0, 0.02),
+    0 8px 16px rgba(0, 0, 0, 0.02),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.dark .glass {
+  background: rgba(30, 30, 35, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 
+    0 1px 2px rgba(0, 0, 0, 0.1),
+    0 4px 8px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.glass-strong {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 
+    0 1px 3px rgba(0, 0, 0, 0.04),
+    0 8px 16px rgba(0, 0, 0, 0.04),
+    0 24px 48px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.dark .glass-strong {
+  background: rgba(35, 35, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 
+    0 1px 3px rgba(0, 0, 0, 0.2),
+    0 8px 16px rgba(0, 0, 0, 0.2),
+    0 24px 48px rgba(0, 0, 0, 0.25);
+}
+
+/* Monitor grid background */
+.monitor-grid {
+  background: #0a0a0a;
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+.monitor-grid::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(rgba(20, 184, 166, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(20, 184, 166, 0.03) 1px, transparent 1px);
+  background-size: 20px 20px;
+  pointer-events: none;
+}
+
+/* Vital values monospace */
+.vital-value {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Vital pulse animation */
+.vital-pulse {
+  animation: vitalPulse 1s ease-in-out infinite;
+}
+
+@keyframes vitalPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* Monitor alert flash */
+.monitor-alert {
+  animation: alertFlash 1s ease-in-out infinite;
+}
+
+@keyframes alertFlash {
+  0%, 100% {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.3);
+  }
+  50% {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.5);
+  }
+}
+
+/* 3D Anatomy */
+.anatomy-container {
+  perspective: 1000px;
+  transform-style: preserve-3d;
+}
+
+.anatomy-body {
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.body-part {
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.body-part:hover {
+  filter: brightness(1.15) drop-shadow(0 0 8px rgba(139, 92, 246, 0.4));
+}
+
+/* Timeline */
+.timeline-line {
+  position: absolute;
+  left: 20px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, rgba(139, 92, 246, 0.3), rgba(139, 92, 246, 0.1), transparent);
+}
+
+.timeline-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.3);
+  transition: all 0.3s ease;
+}
+
+.timeline-item:hover .timeline-dot {
+  box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.2);
+  transform: scale(1.2);
+}
+
+/* Intervention cards */
+.intervention-card {
+  transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+  cursor: pointer;
+}
+
+.intervention-card:hover {
+  transform: translateX(2px);
+}
+
+/* Score ring */
+.score-ring {
+  transform: rotate(-90deg);
+}
+
+.score-ring-circle {
+  transition: stroke-dashoffset 1.5s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+/* Ambient background orbs */
+.ambient-bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.35;
+  animation: orbFloat 20s ease-in-out infinite;
+}
+
+@keyframes orbFloat {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(30px, -30px) scale(1.05); }
+  66% { transform: translate(-20px, 20px) scale(0.95); }
+}
+
 /* Responsive card hover — disable on touch */
 @media (hover: none) {
   .card-hover:hover { background-color: inherit; }
   .card-hover:active { transform: scale(0.99); }
+  
+  .intervention-card:hover {
+    transform: none;
+  }
+}
+
+/* Mobile optimizations */
+@media (max-width: 1024px) {
+  .glass,
+  .glass-strong {
+    backdrop-filter: blur(10px) saturate(150%);
+    -webkit-backdrop-filter: blur(10px) saturate(150%);
+  }
+  
+  .anatomy-body {
+    max-width: 150px;
+    margin: 0 auto;
+  }
 }

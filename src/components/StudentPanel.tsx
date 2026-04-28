@@ -473,6 +473,57 @@ export function StudentPanel({
   // Ref always holds latest tracker — prevents stale closure when handlePerformAssessment is called rapidly
   const assessmentTrackerRef = useRef(assessmentTracker);
 
+  // CPR Metronome — Web Audio API beep at 110 bpm (100-120 range)
+  const metronomeRef = useRef<{
+    audioCtx: AudioContext | null;
+    intervalId: ReturnType<typeof setInterval> | null;
+    isRunning: boolean;
+  }>({ audioCtx: null, intervalId: null, isRunning: false });
+
+  const startMetronome = useCallback(() => {
+    if (metronomeRef.current.isRunning) return;
+    
+    const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    metronomeRef.current.audioCtx = audioCtx;
+    metronomeRef.current.isRunning = true;
+
+    const bpm = 110; // Target middle of 100-120 range
+    const intervalMs = 60000 / bpm;
+
+    const playBeep = () => {
+      if (!metronomeRef.current.isRunning) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      osc.frequency.value = 800; // Hz — audible tick
+      osc.type = 'sine';
+      
+      gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+      
+      osc.start(audioCtx.currentTime);
+      osc.stop(audioCtx.currentTime + 0.05);
+    };
+
+    playBeep(); // First beat immediately
+    metronomeRef.current.intervalId = setInterval(playBeep, intervalMs);
+  }, []);
+
+  const stopMetronome = useCallback(() => {
+    if (metronomeRef.current.intervalId) {
+      clearInterval(metronomeRef.current.intervalId);
+      metronomeRef.current.intervalId = null;
+    }
+    if (metronomeRef.current.audioCtx) {
+      metronomeRef.current.audioCtx.close();
+      metronomeRef.current.audioCtx = null;
+    }
+    metronomeRef.current.isRunning = false;
+  }, []);
+
   // Timer
   const [caseStartTime, setCaseStartTime] = useState<number | null>(null);
   const [caseEndTime, setCaseEndTime] = useState<number | null>(null);
@@ -500,6 +551,21 @@ export function StudentPanel({
     }, 1000);
     return () => clearInterval(interval);
   }, [caseStartTime, caseEndTime]);
+
+  // CPR Metronome — start/stop with CPR state
+  useEffect(() => {
+    if (cprRunning && arrestActive) {
+      startMetronome();
+      toast.info('CPR Metronome started', {
+        description: '110 bpm — Follow the beep for optimal compression rate',
+        icon: <Activity className="h-4 w-4" />,
+        duration: 3000,
+      });
+    } else {
+      stopMetronome();
+    }
+    return () => stopMetronome();
+  }, [cprRunning, arrestActive, startMetronome, stopMetronome]);
 
   // Scene time warnings — paramedic standard is 15 minutes on scene
   useEffect(() => {
@@ -1298,7 +1364,10 @@ export function StudentPanel({
         if (cprRunning && prev.isInArrest) {
           if ((v.pulse ?? 0) < 50) { v.pulse = 55; changed = true; }
           // BP during good CPR typically peaks ~60-70 systolic.
-          if (!v.bp || v.bp === '0/0' || v.bp === '--/--') {
+          // Force override any existing BP to realistic CPR values.
+          const bpStr = String(v.bp ?? '120/80');
+          const [sys] = bpStr.split('/').map(x => parseInt(x, 10));
+          if (!sys || sys > 75) {
             v.bp = '60/40';
             changed = true;
           }
@@ -1521,7 +1590,7 @@ export function StudentPanel({
     // Re-clicking bvm_ventilation reopens the rate dialog so the student
     // can change the rate (e.g. switching from 10/min CPR-sync to 12/min
     // normoventilation post-ROSC).
-    if (treatment.id === 'bvm_ventilation') {
+    if (treatment.id === 'bvm_ventilation' && bvmVentilationRate == null) {
       setPendingBvmTreatment(treatment);
       setShowBvmRateDialog(true);
       return;
@@ -1666,10 +1735,16 @@ export function StudentPanel({
 
     // Track arrest-specific drug timing
     if (arrestActive) {
-      if (treatment.id === 'adrenaline_1mg') {
+      const adrenalineIds = ['adrenaline_1mg', 'adrenaline_im', 'adrenaline_im_child', 'adrenaline_im_older', 'adrenaline_im_infant', 'adrenaline_infusion'];
+      if (adrenalineIds.includes(treatment.id)) {
         setLastAdrenalineTime(Date.now());
         setAdrenalineDoses(prev => prev + 1);
-        setArrestTimeline(prev => [...prev, { time: Date.now(), event: `Adrenaline 1mg IV (dose #${adrenalineDoses + 1})`, type: 'drug' }]);
+        const doseLabel = treatment.id === 'adrenaline_im_child' ? '0.15mg IM' :
+                         treatment.id === 'adrenaline_im_older' ? '0.3mg IM' :
+                         treatment.id === 'adrenaline_im_infant' ? '0.1mg IM' :
+                         treatment.id === 'adrenaline_im' ? '0.5mg IM' :
+                         treatment.id === 'adrenaline_infusion' ? 'infusion' : '1mg IV';
+        setArrestTimeline(prev => [...prev, { time: Date.now(), event: `Adrenaline ${doseLabel} (dose #${adrenalineDoses + 1})`, type: 'drug' }]);
       }
       if (treatment.id === 'amiodarone_300mg' || treatment.id === 'amiodarone_150mg') {
         setAmiodaroneDoses(prev => prev + 1);
@@ -1688,7 +1763,7 @@ export function StudentPanel({
         setArrestTimeline(prev => [...prev, { time: Date.now(), event: 'LUCAS mechanical CPR device applied', type: 'lucas' }]);
       }
       // Track any other treatment
-      if (!['adrenaline_1mg', 'amiodarone_300mg', 'amiodarone_150mg', 'defibrillation', 'lucas_device'].includes(treatment.id)) {
+      if (!adrenalineIds.includes(treatment.id) && !['amiodarone_300mg', 'amiodarone_150mg', 'defibrillation', 'lucas_device'].includes(treatment.id)) {
         setArrestTimeline(prev => [...prev, { time: Date.now(), event: `${treatment.name} applied`, type: 'treatment' }]);
       }
     }
@@ -2373,25 +2448,27 @@ export function StudentPanel({
         {/* ================================================================ */}
         {phase === 'select' && (
           <div className="max-w-2xl mx-auto animate-fade-in space-y-6 sm:space-y-10">
-            {/* Hero Section */}
+            {/* Hero Section — Premium */}
             <div className="text-center mb-2 sm:mb-4 relative">
               <div className="absolute inset-0 -top-8 -z-10 overflow-hidden">
-                <div className="mx-auto w-64 h-64 rounded-full bg-gradient-to-br from-blue-500/8 via-indigo-500/5 to-cyan-500/8 blur-3xl" />
+                <div className="mx-auto w-72 h-72 rounded-full bg-gradient-to-br from-violet-500/10 via-purple-500/8 to-pink-500/5 blur-3xl" />
               </div>
-              <div className="mx-auto mb-5 sm:mb-6 flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-2xl bg-blue-600 shadow-sm ring-4 ring-blue-500/10">
+              <div className="mx-auto mb-5 sm:mb-6 flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 shadow-lg shadow-brand-500/20 ring-4 ring-brand-500/10">
                 <Stethoscope className="h-8 w-8 sm:h-10 sm:w-10 text-white drop-shadow-sm" />
               </div>
-              <h2 className="heading-clean text-2xl sm:text-[2.25rem] leading-tight text-foreground">Paramedic Case Generator</h2>
+              <h2 className="text-2xl sm:text-[2.5rem] leading-tight text-foreground font-bold tracking-tight">
+                <span className="gradient-text">Paramedic</span> Case Generator
+              </h2>
               <p className="text-muted-foreground mt-2 sm:mt-3 text-sm sm:text-base max-w-lg mx-auto leading-relaxed">
                 Select your training level and generate realistic emergency scenarios to sharpen your clinical skills
               </p>
             </div>
 
-            {/* Year Level */}
-            <Card className="bg-card border border-border rounded-2xl dark:bg-slate-900/60">
+            {/* Year Level — Premium */}
+            <Card className="glass rounded-2xl border border-white/60 shadow-[0_4px_20px_-8px_rgba(0,0,0,0.1)]">
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm flex items-center gap-2 heading-premium">
-                  <GraduationCap className="h-4 w-4 text-blue-500" />
+                <CardTitle className="text-sm flex items-center gap-2 font-semibold">
+                  <GraduationCap className="h-4 w-4 text-brand-500" />
                   Select Your Year Level
                 </CardTitle>
               </CardHeader>
@@ -2401,13 +2478,13 @@ export function StudentPanel({
                     <button
                       key={year.value}
                       onClick={() => setSelectedYear(year.value as StudentYear)}
-                      className={`group flex flex-col items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-3 sm:py-4 rounded-xl border-2 text-xs sm:text-sm font-medium transition-all duration-300 ${
+                      className={`group flex flex-col items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-3 sm:py-4 rounded-xl border-2 text-xs sm:text-sm font-medium transition-all duration-500 card-premium ${
                         selectedYear === year.value
-                          ? 'border-blue-500 bg-gradient-to-b from-blue-500/15 to-blue-500/5 text-blue-600 dark:text-blue-400 shadow-lg shadow-blue-500/15 ring-2 ring-blue-500/20 scale-[1.02]'
-                          : 'border-border/50 hover:border-blue-400/60 text-muted-foreground hover:text-foreground hover:bg-accent/40 hover:shadow-md hover:-translate-y-0.5 dark:border-slate-700/60'
+                          ? 'border-brand-500 bg-gradient-to-b from-brand-500/15 to-brand-500/5 text-brand-600 dark:text-brand-400 shadow-lg shadow-brand-500/15 ring-2 ring-brand-500/20 scale-[1.02]'
+                          : 'border-border/50 hover:border-brand-400/60 text-muted-foreground hover:text-foreground hover:bg-accent/40 hover:shadow-md hover:-translate-y-0.5 dark:border-slate-700/60'
                       }`}
                     >
-                      <GraduationCap className={`h-5 w-5 sm:h-6 sm:w-6 transition-all duration-300 ${selectedYear === year.value ? 'text-blue-500 scale-110' : 'text-muted-foreground/40 group-hover:text-blue-400/70'}`} />
+                      <GraduationCap className={`h-5 w-5 sm:h-6 sm:w-6 transition-all duration-300 ${selectedYear === year.value ? 'text-brand-500 scale-110' : 'text-muted-foreground/40 group-hover:text-brand-400/70'}`} />
                       {year.label}
                     </button>
                   ))}
@@ -2415,11 +2492,11 @@ export function StudentPanel({
               </CardContent>
             </Card>
 
-            {/* Selection Mode Tabs */}
-            <Card className="bg-card border border-border rounded-2xl dark:bg-slate-900/60">
+            {/* Selection Mode Tabs — Premium */}
+            <Card className="glass rounded-2xl border border-white/60 shadow-[0_4px_20px_-8px_rgba(0,0,0,0.1)]">
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm flex items-center gap-2 heading-premium">
-                  <BarChart3 className="h-4 w-4 text-blue-500" />
+                <CardTitle className="text-sm flex items-center gap-2 font-semibold">
+                  <BarChart3 className="h-4 w-4 text-brand-500" />
                   How would you like to select a case?
                 </CardTitle>
               </CardHeader>
@@ -2434,13 +2511,13 @@ export function StudentPanel({
                     <button
                       key={mode}
                       onClick={() => setSelectionMode(mode)}
-                      className={`flex flex-col items-center gap-1 px-2 py-3 rounded-xl border-2 text-xs transition-all duration-300 ${
+                      className={`flex flex-col items-center gap-1 px-2 py-3 rounded-xl border-2 text-xs transition-all duration-500 card-premium ${
                         selectionMode === mode
-                          ? 'border-blue-500 bg-gradient-to-b from-blue-500/15 to-blue-500/5 text-blue-600 dark:text-blue-400 shadow-md ring-1 ring-blue-500/20'
-                          : 'border-border/50 hover:border-blue-400/50 text-muted-foreground hover:bg-accent/40 dark:border-slate-700/60'
+                          ? 'border-brand-500 bg-gradient-to-b from-brand-500/15 to-brand-500/5 text-brand-600 dark:text-brand-400 shadow-md ring-1 ring-brand-500/20'
+                          : 'border-border/50 hover:border-brand-400/50 text-muted-foreground hover:bg-accent/40 dark:border-slate-700/60'
                       }`}
                     >
-                      <ModeIcon className={`h-4 w-4 ${selectionMode === mode ? 'text-blue-500' : 'text-muted-foreground/50'}`} />
+                      <ModeIcon className={`h-4 w-4 ${selectionMode === mode ? 'text-brand-500' : 'text-muted-foreground/50'}`} />
                       <span className="font-medium text-[11px] sm:text-xs">{label}</span>
                       <span className="text-[9px] text-muted-foreground hidden sm:block">{desc}</span>
                     </button>
@@ -2453,10 +2530,10 @@ export function StudentPanel({
                     <div className="flex flex-wrap gap-2">
                       <button
                         onClick={() => setSelectedCategory('all')}
-                        className={`px-4 py-2.5 rounded-xl border text-sm transition-all duration-300 ${
+                        className={`px-4 py-2.5 rounded-xl border text-sm transition-all duration-500 card-premium ${
                           selectedCategory === 'all'
-                            ? 'border-blue-500 bg-gradient-to-r from-blue-500/15 to-blue-500/5 text-blue-600 dark:text-blue-400 font-semibold ring-1 ring-blue-500/25 shadow-md shadow-blue-500/10'
-                            : 'border-border/50 hover:border-blue-400/50 text-muted-foreground hover:bg-accent/40 hover:shadow-sm dark:border-slate-700/60'
+                            ? 'border-brand-500 bg-gradient-to-r from-brand-500/15 to-brand-500/5 text-brand-600 dark:text-brand-400 font-semibold ring-1 ring-brand-500/25 shadow-md shadow-brand-500/10'
+                            : 'border-border/50 hover:border-brand-400/50 text-muted-foreground hover:bg-accent/40 hover:shadow-sm dark:border-slate-700/60'
                         }`}
                       >
                         <span className="flex items-center gap-1.5">
@@ -2477,14 +2554,14 @@ export function StudentPanel({
                         <button
                           key={cat.value}
                           onClick={() => setSelectedCategory(cat.value)}
-                          className={`px-4 py-2.5 rounded-xl border text-sm transition-all duration-300 ${
+                          className={`px-4 py-2.5 rounded-xl border text-sm transition-all duration-500 card-premium ${
                             selectedCategory === cat.value
-                              ? 'border-blue-500 bg-gradient-to-r from-blue-500/15 to-blue-500/5 text-blue-600 dark:text-blue-400 font-semibold ring-1 ring-blue-500/25 shadow-md shadow-blue-500/10'
-                              : 'border-border/50 hover:border-blue-400/50 text-muted-foreground hover:bg-accent/40 hover:shadow-sm dark:border-slate-700/60'
+                              ? 'border-brand-500 bg-gradient-to-r from-brand-500/15 to-brand-500/5 text-brand-600 dark:text-brand-400 font-semibold ring-1 ring-brand-500/25 shadow-md shadow-brand-500/10'
+                              : 'border-border/50 hover:border-brand-400/50 text-muted-foreground hover:bg-accent/40 hover:shadow-sm dark:border-slate-700/60'
                           }`}
                         >
                           <span className="flex items-center gap-1.5">
-                            <span className={`h-2 w-2 rounded-full ${selectedCategory === cat.value ? 'bg-blue-500' : dotColor}`} />
+                            <span className={`h-2 w-2 rounded-full ${selectedCategory === cat.value ? 'bg-brand-500' : dotColor}`} />
                             {cat.label}
                           </span>
                         </button>
@@ -2585,7 +2662,7 @@ export function StudentPanel({
                 onClick={generateCase}
                 disabled={isGenerating}
                 size="lg"
-                className="w-full gap-2.5 sm:gap-3 text-sm sm:text-lg py-6 sm:py-8 rounded-2xl bg-blue-600 hover:bg-blue-700 shadow-sm transition-all duration-300 hover:-translate-y-1 font-semibold tracking-tight"
+                className="w-full gap-2.5 sm:gap-3 text-sm sm:text-lg py-6 sm:py-8 rounded-2xl btn-primary text-white border-0 shadow-lg shadow-brand-500/25 hover:shadow-brand-500/40 transition-all duration-500 hover:-translate-y-1 font-semibold tracking-tight"
               >
                 {isGenerating ? (
                   <><Loader2 className="h-5 w-5 sm:h-6 sm:w-6 animate-spin" /> Generating Case...</>
@@ -2631,12 +2708,12 @@ export function StudentPanel({
               <p className="text-xs sm:text-sm text-muted-foreground mt-1">Review the dispatch and scene information before starting</p>
             </div>
 
-            {/* Dispatch Information */}
-            <Card className="bg-card border border-border rounded-2xl overflow-hidden">
-              <CardHeader className="pb-3 bg-gradient-to-r from-blue-500/8 via-blue-500/3 to-transparent border-b border-border/30">
+            {/* Dispatch Information — Premium */}
+            <Card className="glass rounded-2xl overflow-hidden border border-white/60 shadow-[0_4px_20px_-8px_rgba(0,0,0,0.1)]">
+              <CardHeader className="pb-3 bg-gradient-to-r from-brand-500/8 via-brand-500/3 to-transparent border-b border-border/30">
                 <CardTitle className="text-sm flex items-center gap-2">
-                  <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue-500/15">
-                    <Activity className="h-3.5 w-3.5 text-blue-500" />
+                  <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-brand-500/15">
+                    <Activity className="h-3.5 w-3.5 text-brand-500" />
                   </div>
                   Dispatch Information
                 </CardTitle>
@@ -2649,18 +2726,18 @@ export function StudentPanel({
                     { label: 'Time', value: currentCase.dispatchInfo.timeOfDay },
                     { label: 'Caller', value: currentCase.dispatchInfo.callerInfo },
                   ].map((item) => (
-                    <div key={item.label} className="p-2.5 sm:p-3 rounded-xl bg-muted/30 border border-border/30">
-                      <span className="text-[10px] sm:text-[11px] text-muted-foreground uppercase tracking-wider font-medium">{item.label}</span>
-                      <p className="font-medium mt-0.5 text-xs sm:text-sm">{item.value}</p>
+                    <div key={item.label} className="p-2.5 sm:p-3 rounded-xl bg-surface-50/80 border border-surface-200/60">
+                      <span className="text-[10px] sm:text-[11px] text-surface-500 uppercase tracking-wider font-semibold">{item.label}</span>
+                      <p className="font-medium mt-0.5 text-xs sm:text-sm text-surface-800">{item.value}</p>
                     </div>
                   ))}
                 </div>
                 {currentCase.dispatchInfo.additionalInfo && (
-                  <div className="bg-amber-500/8 border border-amber-500/15 rounded-xl p-3.5 mt-2">
-                    <p className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 mb-1.5 uppercase tracking-wider">Additional Information</p>
+                  <div className="bg-amber-50/80 border border-amber-200/40 rounded-xl p-3.5 mt-2">
+                    <p className="text-[11px] font-semibold text-amber-700 mb-1.5 uppercase tracking-wider">Additional Information</p>
                     <ul className="text-sm space-y-1.5">
                       {currentCase.dispatchInfo.additionalInfo.map((info, i) => (
-                        <li key={i} className="flex items-start gap-2">
+                        <li key={i} className="flex items-start gap-2 text-amber-800">
                           <ChevronRight className="h-3 w-3 text-amber-500 mt-1 shrink-0" />
                           {info}
                         </li>
@@ -2671,42 +2748,42 @@ export function StudentPanel({
               </CardContent>
             </Card>
 
-            {/* Scene Information */}
-            <Card className="bg-card border border-border rounded-2xl overflow-hidden">
+            {/* Scene Information — Premium */}
+            <Card className="glass rounded-2xl overflow-hidden border border-white/60 shadow-[0_4px_20px_-8px_rgba(0,0,0,0.1)]">
               <CardHeader className="pb-3 border-b border-border/30">
                 <CardTitle className="text-sm flex items-center gap-2">
-                  <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue-500/15">
-                    <Shield className="h-3.5 w-3.5 text-blue-500" />
+                  <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-brand-500/15">
+                    <Shield className="h-3.5 w-3.5 text-brand-500" />
                   </div>
                   Scene Information
                 </CardTitle>
               </CardHeader>
               <CardContent className="text-sm space-y-3 pt-4">
-                <p className="leading-relaxed">{currentCase.sceneInfo.description}</p>
+                <p className="leading-relaxed text-surface-700">{currentCase.sceneInfo.description}</p>
                 {currentCase.sceneInfo.hazards && currentCase.sceneInfo.hazards.length > 0 && (
-                  <div className="bg-red-500/8 border border-red-500/15 rounded-xl p-3.5">
-                    <p className="text-[11px] font-semibold text-red-600 dark:text-red-400 mb-1.5 uppercase tracking-wider">Hazards Identified</p>
+                  <div className="bg-red-50/80 border border-red-200/40 rounded-xl p-3.5">
+                    <p className="text-[11px] font-semibold text-red-700 mb-1.5 uppercase tracking-wider">Hazards Identified</p>
                     <ul className="space-y-1">
                       {currentCase.sceneInfo.hazards.map((h, i) => (
-                        <li key={i} className="text-red-700 dark:text-red-400 flex items-start gap-2">
-                          <AlertTriangle className="h-3 w-3 shrink-0 mt-0.5" />{h}
+                        <li key={i} className="text-red-800 flex items-start gap-2">
+                          <AlertTriangle className="h-3 w-3 shrink-0 mt-0.5 text-red-500" />{h}
                         </li>
                       ))}
                     </ul>
                   </div>
                 )}
                 {currentCase.sceneInfo.bystanders && (
-                  <p className="text-muted-foreground">Bystanders: {currentCase.sceneInfo.bystanders}</p>
+                  <p className="text-surface-500">Bystanders: {currentCase.sceneInfo.bystanders}</p>
                 )}
               </CardContent>
             </Card>
 
-            {/* Patient Info */}
-            <Card className="bg-card border border-border rounded-2xl overflow-hidden">
+            {/* Patient Info — Premium */}
+            <Card className="glass rounded-2xl overflow-hidden border border-white/60 shadow-[0_4px_20px_-8px_rgba(0,0,0,0.1)]">
               <CardHeader className="pb-3 border-b border-border/30">
                 <CardTitle className="text-sm flex items-center gap-2">
-                  <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue-500/15">
-                    <Heart className="h-3.5 w-3.5 text-blue-500" />
+                  <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-brand-500/15">
+                    <Heart className="h-3.5 w-3.5 text-brand-500" />
                   </div>
                   Patient Information
                 </CardTitle>
@@ -2719,15 +2796,15 @@ export function StudentPanel({
                     { label: 'Weight', value: `${currentCase.patientInfo.weight} kg` },
                     { label: 'Language', value: currentCase.patientInfo.language },
                   ].map((item) => (
-                    <div key={item.label} className="p-2 sm:p-3 rounded-xl bg-muted/30 border border-border/30 text-center">
-                      <span className="text-[10px] sm:text-[11px] text-muted-foreground uppercase tracking-wider font-medium">{item.label}</span>
-                      <p className="font-semibold mt-0.5 capitalize text-xs sm:text-sm">{item.value}</p>
+                    <div key={item.label} className="p-2 sm:p-3 rounded-xl bg-surface-50/80 border border-surface-200/60 text-center">
+                      <span className="text-[10px] sm:text-[11px] text-surface-500 uppercase tracking-wider font-semibold">{item.label}</span>
+                      <p className="font-semibold mt-0.5 capitalize text-xs sm:text-sm text-surface-800">{item.value}</p>
                     </div>
                   ))}
                 </div>
                 {currentCase.patientInfo.culturalConsiderations && currentCase.patientInfo.culturalConsiderations.length > 0 && (
-                  <div className="mt-3 text-xs text-muted-foreground bg-accent/30 rounded-xl p-3 border border-border/20">
-                    <strong>Cultural Note:</strong> {currentCase.patientInfo.culturalConsiderations.join('. ')}
+                  <div className="mt-3 text-xs text-surface-600 bg-brand-50/50 rounded-xl p-3 border border-brand-200/30">
+                    <strong className="text-brand-700">Cultural Note:</strong> {currentCase.patientInfo.culturalConsiderations.join('. ')}
                   </div>
                 )}
               </CardContent>
@@ -3262,12 +3339,12 @@ export function StudentPanel({
                             <span className={`absolute inset-x-3 top-0 h-[2px] rounded-full bg-gradient-to-r ${item.rail} transition-opacity duration-300 ${isActive ? 'opacity-100' : isAssessed ? 'opacity-60' : 'opacity-20 group-hover:opacity-50'}`} />
                             {/* Status LED */}
                             <span className={`absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full transition-colors ${isAssessed ? 'bg-emerald-400 shadow-[0_0_6px_rgb(52_211_153/0.8)]' : 'bg-white/[0.08] dark:bg-white/[0.06]'}`} />
-                            {/* Letter — thin, large, premium */}
-                            <span className={`text-xl sm:text-2xl font-extralight tracking-tight leading-none ${isActive ? item.text : 'text-foreground/80'}`}>
-                              {item.letter}
-                            </span>
-                            {/* Label — tiny spaced-out uppercase */}
-                            <span className="text-[8px] sm:text-[9px] font-medium tracking-[0.15em] uppercase text-muted-foreground/60 mt-1">{item.label}</span>
+                             {/* Letter — thin, large, premium */}
+                             <span className={`text-xl sm:text-2xl font-light tracking-tight leading-none ${isActive ? item.text : 'text-foreground/90'}`}>
+                               {item.letter}
+                             </span>
+                             {/* Label — tiny spaced-out uppercase */}
+                             <span className={`text-[8px] sm:text-[9px] font-semibold tracking-[0.12em] uppercase mt-1 ${isActive ? item.text : 'text-foreground/70'}`}>{item.label}</span>
                           </button>
                         );
                       })}
