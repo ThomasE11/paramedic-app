@@ -147,22 +147,44 @@ export function PatientMonitor({ vitals, previousVitals, deteriorationStatus }: 
         </div>
       </div>
 
-      <div className="bg-[#0a0a0a] p-4 space-y-4">
-        {/* ECG Canvas */}
-        <div className="relative overflow-hidden rounded-lg">
+      <div className="monitor-grid p-4 space-y-4">
+        {/* ECG Lead II */}
+        <div className="relative overflow-hidden">
           <div className="flex items-center justify-between mb-1">
             <span className="text-[10px] font-mono text-emerald-400/70">LEAD II</span>
             <span className={`text-[10px] font-mono vital-value vital-pulse ${data.hr > 100 ? 'text-red-400' : 'text-emerald-400'}`}>
               {data.hr}
             </span>
           </div>
-          <canvas
-            ref={canvasRef}
-            width={300}
-            height={60}
-            className="w-full h-14"
-            style={{ imageRendering: 'crisp-edges' }}
-          />
+          <svg viewBox="0 0 300 60" className="w-full h-14">
+            <path 
+              className="ecg-path" 
+              d="M0,30 L20,30 L25,20 L30,40 L35,30 L50,30 L55,15 L60,45 L65,30 L80,30 L85,25 L90,35 L95,30 L110,30 L115,10 L120,50 L125,30 L140,30 L145,20 L150,40 L155,30 L170,30 L175,15 L180,45 L185,30 L200,30 L205,25 L210,35 L215,30 L230,30 L235,10 L240,50 L245,30 L260,30 L265,20 L270,40 L275,30 L290,30 L295,25 L300,35"
+              fill="none"
+              stroke="#14b8a6"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{ filter: 'drop-shadow(0 0 4px rgba(20,184,166,0.5)) drop-shadow(0 0 8px rgba(20,184,166,0.3))' }}
+            />
+          </svg>
+        </div>
+
+        {/* SpO2 Waveform */}
+        <div className="relative overflow-hidden">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[10px] font-mono text-sky-400/70">SpO2</span>
+            <span className="text-[10px] font-mono text-sky-400 vital-value">{data.spo2}%</span>
+          </div>
+          <svg viewBox="0 0 300 40" className="w-full h-10">
+            <path 
+              d="M0,20 Q15,5 30,20 Q45,35 60,20 Q75,5 90,20 Q105,35 120,20 Q135,5 150,20 Q165,35 180,20 Q195,5 210,20 Q225,35 240,20 Q255,5 270,20 Q285,35 300,20"
+              fill="none"
+              stroke="#38bdf8"
+              strokeWidth="2"
+              style={{ filter: 'drop-shadow(0 0 4px rgba(56,189,248,0.5))' }}
+            />
+          </svg>
         </div>
 
         {/* Numeric Vitals Grid */}

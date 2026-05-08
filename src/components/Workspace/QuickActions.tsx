@@ -31,16 +31,16 @@ const actions: QuickAction[] = [
   },
   {
     id: 'drug',
-    label: 'Administer Drug',
-    description: 'Aspirin, GTN, Morphine',
+    label: 'Medication',
+    description: 'Give protocol drug',
     icon: <Pill className="w-4 h-4 text-sky-500" />,
     color: 'bg-sky-50',
     hoverColor: 'hover:bg-sky-100',
   },
   {
     id: 'airway',
-    label: 'Manage Airway',
-    description: 'OPA, NPA, Suction',
+    label: 'Airway',
+    description: 'O2, suction, adjuncts',
     icon: <Wind className="w-4 h-4 text-emerald-500" />,
     color: 'bg-emerald-50',
     hoverColor: 'hover:bg-emerald-100',
@@ -55,7 +55,7 @@ const actions: QuickAction[] = [
   },
   {
     id: 'cardiac',
-    label: 'Cardiac Monitor',
+    label: 'Monitor',
     description: '12-lead, pacing',
     icon: <HeartPulse className="w-4 h-4 text-rose-500" />,
     color: 'bg-rose-50',
@@ -71,7 +71,7 @@ const actions: QuickAction[] = [
   },
   {
     id: 'backup',
-    label: 'Call for Backup',
+    label: 'Backup',
     description: 'ALS team, cath lab',
     icon: <Phone className="w-4 h-4 text-emerald-500" />,
     color: 'bg-emerald-50',
@@ -82,19 +82,22 @@ const actions: QuickAction[] = [
 export function QuickActions({ onAction }: QuickActionsProps) {
   return (
     <div className="glass rounded-xl p-4">
-      <h4 className="text-xs font-semibold text-surface-500 uppercase tracking-wider mb-3">Quick Actions</h4>
-      <div className="space-y-2">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <h4 className="text-xs font-semibold text-surface-600 uppercase tracking-wider">Quick Actions</h4>
+        <span className="text-[10px] text-surface-400">Logged to timeline</span>
+      </div>
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {actions.map((action) => (
           <button
             key={action.id}
             onClick={() => onAction?.(action.id)}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-white/60 border border-surface-200/60 hover:border-brand-300 hover:bg-brand-50/50 transition-all text-left group"
+            className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg bg-white/80 border border-surface-200 hover:border-brand-300 hover:bg-brand-50/70 transition-all text-left group"
           >
-            <div className={`w-8 h-8 rounded-lg ${action.color} flex items-center justify-center ${action.hoverColor} transition-colors`}>
+            <div className={`w-7 h-7 rounded-lg ${action.color} flex items-center justify-center ${action.hoverColor} transition-colors flex-shrink-0`}>
               {action.icon}
             </div>
-            <div>
-              <div className="text-sm font-medium text-surface-800">{action.label}</div>
+            <div className="min-w-0">
+              <div className="truncate text-xs font-semibold text-surface-800">{action.label}</div>
               <div className="text-[10px] text-surface-400">{action.description}</div>
             </div>
           </button>

@@ -501,7 +501,7 @@ const subcategoryKeywords: Record<string, { boost: string[]; demote: string[] }>
   // Rule-out ACS / chest-pain differential cases — boost chest-pain,
   // ECG, and atypical-ACS resources; strongly demote syncope (the
   // general bucket's default bias).
-  'rule-out': { boost: ['chest pain', 'acs', 'ecg', 'angina', 'troponin', 'musculoskeletal', 'costochondritis', 'pericarditis', 'gerd', 'atypical'], demote: ['syncope', 'cardiac arrest'] },
+  'rule-out-chest': { boost: ['chest pain', 'acs', 'ecg', 'angina', 'troponin', 'musculoskeletal', 'costochondritis', 'pericarditis', 'gerd', 'atypical'], demote: ['syncope', 'cardiac arrest'] },
   'cerebrovascular-emergency': { boost: ['stroke', 'cerebrovascular', 'sah', 'subarachnoid', 'haemorrhage', 'ct head', 'headache'], demote: ['seizure'] },
   'flash-burn': { boost: ['flash burn', 'burns', 'arc flash', 'welding', 'tbsa', 'corneal burn'], demote: ['chemical', 'electrical'] },
   'acute-psychosis': { boost: ['psychosis', 'schizophrenia', 'behavioural', 'sedation', 'antipsychotic', 'agitation'], demote: ['anxiety', 'self-harm'] },

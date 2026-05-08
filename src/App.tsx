@@ -29,7 +29,7 @@ import { Badge } from '@/components/ui/badge';
 import {
   Stethoscope, GraduationCap, ClipboardCheck, RotateCcw,
   FileText, Sparkles, CheckCircle2, Home, ChevronRight, ArrowLeft,
-  History, BarChart3, Loader2, Activity, Clock, Target, BookOpen, Users
+  History, BarChart3, Loader2, Activity, Target, BookOpen, Users
 } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
 
@@ -50,8 +50,7 @@ import { CaseSkeleton } from '@/components/CaseSkeleton';
 const CaseDisplay = lazy(() => import('@/components/CaseDisplay').then(m => ({ default: m.CaseDisplay })));
 const AssessmentPanel = lazy(() => import('@/components/AssessmentPanel').then(m => ({ default: m.AssessmentPanel })));
 const ManagementView = lazy(() => import('@/components/ManagementView').then(m => ({ default: m.ManagementView })));
-const SessionSummary = lazy(() => import('@/components/SessionSummary').then(m => ({ default: m.SessionSummary })));
-const SessionTimer = lazy(() => import('@/components/SessionTimer').then(m => ({ default: m.SessionTimer })));
+
 const ClinicalReferenceDialog = lazy(() => import('@/components/ClinicalReferenceDialog').then(m => ({ default: m.ClinicalReferenceDialog })));
 const ObjectiveSetupPanel = lazy(() => import('@/components/ObjectiveSetupPanel').then(m => ({ default: m.ObjectiveSetupPanel })));
 const WorkspaceLayout = lazy(() => import('@/components/Workspace').then(m => ({ default: m.WorkspaceLayout })));
@@ -224,6 +223,8 @@ function EducatorPanel({ onExit, allCases }: { onExit: () => void; allCases: Cas
   const [previousVitals, setPreviousVitals] = useState<VitalSigns | null>(null);
   const [vitalsHistory, setVitalsHistory] = useState<VitalSigns[]>([]);
   const [appliedTreatments, setAppliedTreatments] = useState<AppliedTreatment[]>([]);
+  const [timelineEvents, setTimelineEvents] = useState<Array<{ id: string; type: 'assessment' | 'intervention' | 'decision' | 'finding' | 'milestone'; title: string; time: string; description: string; tags?: { label: string; variant: 'success' | 'warning' | 'danger' | 'info' }[] }>>([]);
+  const pendingUrlCaseRef = useRef(false);
 
   // Deterioration state
   const [deteriorationSeverity, setDeteriorationSeverity] = useState<CaseSeverity>('stable');
@@ -240,6 +241,11 @@ function EducatorPanel({ onExit, allCases }: { onExit: () => void; allCases: Cas
     ignoreComplication,
     clearComplications,
   } = useComplicationManager();
+
+  // Helper to add timeline events
+  const addTimelineEvent = useCallback((event: { id: string; type: 'assessment' | 'intervention' | 'decision' | 'finding' | 'milestone'; title: string; description: string; tags?: { label: string; variant: 'success' | 'warning' | 'danger' | 'info' }[] }) => {
+    setTimelineEvents(prev => [...prev, { ...event, time: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }) }]);
+  }, []);
 
   // Deterioration timer — applies vital decay every 30 seconds based on case severity
   useEffect(() => {
@@ -413,7 +419,10 @@ function EducatorPanel({ onExit, allCases }: { onExit: () => void; allCases: Cas
     const year = params.get('year');
     // Skip the case-id lookup until the bundle is ready; this effect
     // will re-fire when allCases populates.
-    if (caseId && allCases.length === 0) return;
+    if (caseId && allCases.length === 0) {
+      pendingUrlCaseRef.current = true;
+      return;
+    }
 
     // Schedule state updates to avoid synchronous setState in render phase
     const scheduleUpdate = () => {
@@ -424,13 +433,18 @@ function EducatorPanel({ onExit, allCases }: { onExit: () => void; allCases: Cas
       if (caseId) {
         const foundCase = allCases.find(c => c.id === caseId);
         if (foundCase) {
+          pendingUrlCaseRef.current = true;
           setCurrentCase(foundCase);
           const yearLevel = (year === '1st-year' || year === '2nd-year' || year === '3rd-year' || year === '4th-year' || year === 'diploma') 
             ? year as StudentYear 
             : selectedYear;
           const newSession = createSessionFromCase(foundCase, yearLevel);
           setSession(newSession);
+        } else {
+          pendingUrlCaseRef.current = false;
         }
+      } else {
+        pendingUrlCaseRef.current = false;
       }
     };
 
@@ -443,10 +457,13 @@ function EducatorPanel({ onExit, allCases }: { onExit: () => void; allCases: Cas
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (currentCase) {
+      pendingUrlCaseRef.current = false;
       params.set('case', currentCase.id);
       window.history.replaceState({}, '', `?${params.toString()}`);
     } else {
+      if (params.has('case') && pendingUrlCaseRef.current) return;
       params.delete('case');
+      pendingUrlCaseRef.current = false;
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, [currentCase]);
@@ -493,6 +510,7 @@ function EducatorPanel({ onExit, allCases }: { onExit: () => void; allCases: Cas
 
   // Memoize goHome to avoid recreation
   const goHome = useCallback(() => {
+    pendingUrlCaseRef.current = false;
     setCurrentCase(null);
     setSession(null);
     setAppliedTreatments([]);
@@ -882,7 +900,7 @@ function EducatorPanel({ onExit, allCases }: { onExit: () => void; allCases: Cas
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-6">
+      <main className={currentCase ? "px-0 py-0" : "container mx-auto px-4 py-6"}>
         {showObjectiveSetup && !currentCase ? (
           /* Guided Objective Setup Screen */
           <div className="animate-fade-in max-w-3xl mx-auto">
@@ -1183,7 +1201,7 @@ function EducatorPanel({ onExit, allCases }: { onExit: () => void; allCases: Cas
           /* Case Display Screen with Glassmorphism Navigation */
           <div className="animate-fade-in">
             {/* Action Bar */}
-            <div className="flex items-center justify-between mb-2 sm:mb-4">
+            <div className="container mx-auto flex items-center justify-between px-4 py-3">
               <Button
                 variant="ghost"
                 size="sm"
@@ -1204,28 +1222,6 @@ function EducatorPanel({ onExit, allCases }: { onExit: () => void; allCases: Cas
               </div>
             </div>
 
-            {/* Case Header - Always visible */}
-            <div className="flex flex-wrap items-start justify-between gap-2 sm:gap-4 mb-3 sm:mb-4">
-              <div className="animate-fade-in-up">
-                <div className="flex items-center gap-2 mb-2">
-                  <Badge 
-                    variant={currentCase.priority === 'critical' ? 'destructive' : currentCase.priority === 'high' ? 'default' : 'secondary'}
-                    className={` ${currentCase.priority === 'critical' ? 'priority-critical' : ''}`}
-                  >
-                    {priorities.find(p => p.value === currentCase.priority)?.label}
-                  </Badge>
-                  <Badge variant="outline" className=" stagger-1">
-                    {categoryLookup[currentCase.category]?.label}
-                  </Badge>
-                </div>
-                <h2 className="text-2xl font-bold">{currentCase.title}</h2>
-                <p className="text-sm text-muted-foreground flex items-center gap-1">
-                  <Activity className="h-3 w-3" />
-                  {currentCase.dispatchInfo.location} • {currentCase.dispatchInfo.timeOfDay}
-                </p>
-              </div>
-            </div>
-
             {/* Non-Linear Workspace Layout */}
             <Suspense fallback={<LoadingCard />}>
               <WorkspaceLayout
@@ -1237,18 +1233,26 @@ function EducatorPanel({ onExit, allCases }: { onExit: () => void; allCases: Cas
                 onIgnoreComplication={ignoreComplication}
                 deteriorationStatus={getDeteriorationStatus(deteriorationSeverity, deteriorationMinutes)}
                 session={session}
+                timelineEvents={timelineEvents}
                 onAction={(actionId) => {
                   const actionMessages: Record<string, { title: string; description: string }> = {
                     'defibrillate': { title: 'Defibrillation', description: '200J biphasic shock delivered' },
-                    'drug': { title: 'Drug Administration', description: 'Medication administered per protocol' },
+                    'drug': { title: 'Medication', description: 'Protocol medication administered' },
                     'airway': { title: 'Airway Management', description: 'Airway secured and managed' },
                     'iv': { title: 'IV Access', description: 'Intravenous access established' },
-                    'cardiac': { title: 'Cardiac Monitoring', description: '12-lead ECG acquired and monitoring initiated' },
+                    'cardiac': { title: 'Monitoring', description: '12-lead ECG acquired and monitoring initiated' },
                     'transport': { title: 'Transport', description: 'Patient packaged for transport' },
                     'backup': { title: 'Backup Requested', description: 'Additional resources requested' },
                   };
                   const msg = actionMessages[actionId] || { title: 'Action', description: actionId };
                   toast.success(msg.title, { description: msg.description });
+                  addTimelineEvent({
+                    id: `action-${Date.now()}`,
+                    type: 'intervention',
+                    title: msg.title,
+                    description: msg.description,
+                    tags: [{ label: 'Action', variant: 'success' }],
+                  });
                 }}
                 onDecision={(itemId, optionId) => {
                   // Try to find a matching checklist item and toggle it
@@ -1260,131 +1264,14 @@ function EducatorPanel({ onExit, allCases }: { onExit: () => void; allCases: Cas
                     toast.success('Decision recorded', { description: `Option ${optionId} selected` });
                   }
                 }}
+                onVitalChange={(vitals) => {
+                  setCurrentVitals(vitals);
+                  setVitalsHistory(prev => [...prev, vitals]);
+                }}
+                appliedTreatments={appliedTreatmentIds}
               />
             </Suspense>
 
-            {/* Keep existing vitals monitor, complications, and checklist below workspace */}
-            {currentCase && (
-              <div className="mt-6 space-y-4">
-                {/* Session Timer */}
-                <Suspense fallback={<Card><CardContent className="p-4"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></CardContent></Card>}>
-                  <SessionTimer
-                    duration={currentCase.estimatedDuration || 20}
-                    onTimerComplete={() => {
-                      toast.info('Timer complete! Case finished.', {
-                        icon: <Clock className="h-4 w-4" />,
-                      });
-                    }}
-                    onTimerStart={() => {
-                      toast.success('Timer started - Case in progress', {
-                        icon: <Activity className="h-4 w-4" />,
-                      });
-                    }}
-                    onElapsedTimeChange={(formattedTime, seconds) => {
-                      setElapsedTime(formattedTime);
-                      setTimeTakenSeconds(seconds);
-                      
-                      // Trigger random complications (5% chance per 30 seconds)
-                      if (seconds > 0 && seconds % 30 === 0 && Math.random() < 0.05) {
-                        triggerComplication(currentCase?.category);
-                      }
-                    }}
-                  />
-                </Suspense>
-
-                {/* Complication Panel */}
-                {activeComplications.length > 0 && (
-                  <ComplicationPanel
-                    activeComplications={activeComplications}
-                    onResolve={resolveComplication}
-                    onIgnore={ignoreComplication}
-                  />
-                )}
-
-                {/* Checklist */}
-                {session && (
-                  <Card className="border-2 border-primary/30 shadow-lg shadow-primary/5 animate-fade-in-up">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="flex items-center gap-2 text-base">
-                          <div className="p-1.5 rounded-lg bg-primary/10">
-                            <ClipboardCheck className="h-5 w-5 text-primary" />
-                          </div>
-                          <span>Student Checklist</span>
-                        </CardTitle>
-                        <Badge 
-                          variant={filteredChecklist.filter(i => !session.completedItems.includes(i.id)).length === 0 ? "default" : "secondary"}
-                          className="ml-2"
-                        >
-                          {session.completedItems.length}/{filteredChecklist.length}
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-2 max-h-[400px] overflow-y-auto pr-1 pt-4">
-                      {filteredChecklist.map((item, index) => (
-                        <label
-                          key={item.id}
-                          className={`flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-all duration-200 hover-lift ${session.completedItems.includes(item.id)
-                            ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
-                            : item.critical 
-                              ? 'bg-red-50/50 dark:bg-red-950/20 border-red-200 dark:border-red-800/50 hover:bg-red-50 hover:border-red-300'
-                              : 'hover:bg-muted/50 hover:border-primary/30'
-                            }`}
-                          style={{ animationDelay: `${index * 30}ms` }}
-                        >
-                          <div className="mt-0.5 flex-shrink-0">
-                            {session.completedItems.includes(item.id) ? (
-                              <CheckCircle2 className="h-5 w-5 text-green-600 " />
-                            ) : (
-                              <div className={`h-5 w-5 rounded border-2 transition-colors ${item.critical ? 'border-red-400 hover:border-red-500' : 'border-muted-foreground/30 hover:border-primary/50'}`} />
-                            )}
-                          </div>
-                          <input
-                            type="checkbox"
-                            checked={session.completedItems.includes(item.id)}
-                            onChange={(e) => toggleChecklistItem(item.id, e.target.checked)}
-                            className="sr-only"
-                          />
-                          <div className="flex-1 min-w-0">
-                            <p className={`text-sm leading-tight transition-all duration-200 ${session.completedItems.includes(item.id) ? 'line-through text-muted-foreground' : ''}`}>
-                              {item.description}
-                            </p>
-                            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                              <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5">
-                                {item.category}
-                              </Badge>
-                              <span className="text-[10px] text-muted-foreground font-medium">
-                                {item.points} pts
-                              </span>
-                              {item.critical && (
-                                <Badge variant="destructive" className="text-[10px] px-1.5 py-0 h-5 animate-pulse">
-                                  Critical
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                        </label>
-                      ))}
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Session Summary */}
-                {session && (
-                  <Suspense fallback={<LoadingCard />}>
-                    <SessionSummary
-                      session={session}
-                      caseData={currentCase}
-                      elapsedTime={elapsedTime}
-                      timeTakenSeconds={timeTakenSeconds}
-                      appliedTreatments={appliedTreatments}
-                      vitalsHistory={vitalsHistory}
-                      instructorNotes={session.notes}
-                    />
-                  </Suspense>
-                )}
-              </div>
-            )}
           </div>
         )}
       </main>

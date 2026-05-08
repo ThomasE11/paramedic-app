@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "/Users/eliastlcthomas/Desktop/Projects/app/logs/.7fed5a8384b8142d8cf82a3641d7397e6ba9603c-audit.json",
+    "files": [
+        {
+            "date": 1778236816544,
+            "name": "/Users/eliastlcthomas/Desktop/Projects/app/logs/mcp-puppeteer-2026-05-08.log",
+            "hash": "bebd02ad918b27ff561f2ca6bdd354a0d072559a42297f50500ba6ba01c8b6e6"
+        }
+    ],
+    "hashType": "sha256"
+}

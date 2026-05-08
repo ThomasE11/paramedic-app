@@ -5,7 +5,7 @@
  * and clear information hierarchy.
  */
 
-import { AlertTriangle, MapPin, Clock, Thermometer, Activity } from 'lucide-react';
+import { AlertTriangle, MapPin, Activity } from 'lucide-react';
 
 interface ScenarioContextProps {
   title: string;
@@ -31,13 +31,13 @@ export function ScenarioContext({
   tags,
 }: ScenarioContextProps) {
   return (
-    <div className="glass-strong rounded-xl p-5 border border-white/60">
+    <div className="glass-strong rounded-xl p-4 sm:p-5 border border-white/60">
       <div className="flex items-start gap-4">
         <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center flex-shrink-0 border border-red-100">
           <AlertTriangle className="w-5 h-5 text-red-500" />
         </div>
         <div className="flex-1">
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex flex-wrap items-center gap-2 mb-1">
             <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
             <span className="text-xs font-semibold text-red-600 uppercase tracking-wider">Live Case</span>
             <span className="text-surface-300">·</span>
@@ -54,7 +54,7 @@ export function ScenarioContext({
           
           <p className="text-sm text-surface-600 leading-relaxed">{description}</p>
           
-          <div className="flex gap-2 mt-3">
+          <div className="flex flex-wrap gap-2 mt-3">
             {tags.map((tag) => (
               <span
                 key={tag}
@@ -67,12 +67,12 @@ export function ScenarioContext({
 
           {/* Critical Findings */}
           {criticalFindings.length > 0 && (
-            <div className="mt-4 p-3 rounded-lg bg-red-50/50 border border-red-200/50">
+            <div className="mt-4 p-3 rounded-lg bg-red-50/70 border border-red-200/70">
               <div className="flex items-center gap-1.5 mb-2">
                 <Activity className="w-3.5 h-3.5 text-red-500" />
                 <span className="text-xs font-semibold text-red-700">Critical Findings</span>
               </div>
-              <ul className="space-y-1">
+              <ul className="space-y-1 max-h-44 overflow-y-auto pr-1">
                 {criticalFindings.map((finding, i) => (
                   <li key={i} className="text-xs text-red-600 flex items-start gap-1.5">
                     <span className="w-1 h-1 rounded-full bg-red-400 mt-1 flex-shrink-0"></span>

@@ -84,7 +84,7 @@
     @apply bg-background text-foreground min-h-screen;
     font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-feature-settings: "ss01", "ss02", "cv01";
-    letter-spacing: -0.01em;
+    letter-spacing: 0;
   }
   #root {
     @apply min-h-screen;
@@ -103,13 +103,13 @@
 /* Clean heading typography */
 .heading-clean {
   font-family: 'Plus Jakarta Sans', 'Geist', sans-serif;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
   font-weight: 600;
 }
 
 /* Legacy class aliases — mapped to heading-clean */
-.heading-premium { font-family: 'Plus Jakarta Sans', 'Geist', sans-serif; letter-spacing: -0.02em; font-weight: 600; }
-.heading-display { font-family: 'Plus Jakarta Sans', 'Geist', sans-serif; letter-spacing: -0.02em; font-weight: 600; }
+.heading-premium { font-family: 'Plus Jakarta Sans', 'Geist', sans-serif; letter-spacing: 0; font-weight: 600; }
+.heading-display { font-family: 'Plus Jakarta Sans', 'Geist', sans-serif; letter-spacing: 0; font-weight: 600; }
 
 /* Hide scrollbar utility */
 .scrollbar-hide::-webkit-scrollbar { display: none; }
@@ -887,4 +887,31 @@ body.case-active { overscroll-behavior-y: contain; }
     max-width: 150px;
     margin: 0 auto;
   }
+}
+
+/* ECG Waveform Animation */
+.ecg-path {
+  fill: none;
+  stroke: #14b8a6;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 4px rgba(20,184,166,0.5)) drop-shadow(0 0 8px rgba(20,184,166,0.3));
+  animation: ecgDraw 3s linear infinite;
+}
+
+@keyframes ecgDraw {
+  0% { stroke-dasharray: 2000; stroke-dashoffset: 2000; }
+  100% { stroke-dasharray: 2000; stroke-dashoffset: 0; }
+}
+
+/* Ambient background animation */
+@keyframes float {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(30px, -30px) scale(1.05); }
+  66% { transform: translate(-20px, 20px) scale(0.95); }
+}
+
+.animate-float {
+  animation: float 20s ease-in-out infinite;
 }

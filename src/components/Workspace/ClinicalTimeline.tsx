@@ -13,7 +13,7 @@ import { GitBranch, Clock, CheckCircle2, AlertTriangle, Stethoscope, Pill, Activ
 
 interface TimelineItem {
   id: string;
-  type: 'assessment' | 'intervention' | 'decision' | 'finding';
+  type: 'assessment' | 'intervention' | 'decision' | 'finding' | 'milestone';
   title: string;
   time: string;
   description: string;
@@ -28,7 +28,7 @@ interface TimelineItem {
 }
 
 interface ClinicalTimelineProps {
-  items: TimelineItem[];
+  items?: TimelineItem[];
   onDecision?: (itemId: string, optionId: string) => void;
 }
 
@@ -37,6 +37,7 @@ const typeIcons = {
   intervention: Pill,
   decision: GitBranch,
   finding: AlertTriangle,
+  milestone: Activity,
 };
 
 const typeColors = {
@@ -44,6 +45,7 @@ const typeColors = {
   intervention: 'bg-sky-50 border-sky-200 text-sky-700',
   decision: 'bg-amber-50 border-amber-200 text-amber-700',
   finding: 'bg-red-50 border-red-200 text-red-700',
+  milestone: 'bg-emerald-50 border-emerald-200 text-emerald-700',
 };
 
 const tagVariants = {
@@ -57,9 +59,12 @@ export function ClinicalTimeline({ items, onDecision }: ClinicalTimelineProps) {
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
   const [filter, setFilter] = useState<'All' | 'Assessments' | 'Interventions' | 'Decisions'>('All');
 
+  // Use provided items only — timeline starts empty and populates as actions happen
+  const timelineItems: TimelineItem[] = items || [];
+
   const filteredItems = filter === 'All' 
-    ? items 
-    : items.filter(item => {
+    ? timelineItems 
+    : timelineItems.filter(item => {
         const map = { 'Assessments': 'assessment', 'Interventions': 'intervention', 'Decisions': 'decision' };
         return item.type === map[filter];
       });
@@ -70,10 +75,10 @@ export function ClinicalTimeline({ items, onDecision }: ClinicalTimelineProps) {
   };
 
   return (
-    <div className="glass rounded-xl p-5">
-      <div className="flex items-center justify-between mb-5">
+    <div className="glass rounded-xl p-4 sm:p-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-5">
         <h3 className="text-sm font-semibold text-surface-900">Clinical Timeline</h3>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 overflow-x-auto">
           {(['All', 'Assessments', 'Interventions', 'Decisions'] as const).map((f) => (
             <button
               key={f}
@@ -90,8 +95,18 @@ export function ClinicalTimeline({ items, onDecision }: ClinicalTimelineProps) {
         </div>
       </div>
 
-      <div className="relative space-y-4">
-        <div className="timeline-line"></div>
+      <div className="relative space-y-4 min-h-[120px]">
+        {filteredItems.length > 0 && <div className="timeline-line"></div>}
+
+        {filteredItems.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-8 text-center">
+            <Clock className="w-8 h-8 text-surface-300 mb-2" />
+            <p className="text-sm text-surface-500 font-medium">No actions recorded yet</p>
+            <p className="text-xs text-surface-400 mt-1 max-w-[260px]">
+              Use quick actions or decision prompts to build a visible debrief trail.
+            </p>
+          </div>
+        )}
 
         {filteredItems.map((item) => {
           const Icon = typeIcons[item.type];
