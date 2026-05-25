@@ -314,23 +314,6 @@ function App() {
     return (localStorage.getItem('paramedic-role') as UserRole) || 'none';
   });
 
-  // Lazy-loaded case bundle. Starts empty; populates on mount so the
-  // initial paint doesn't block on 400+ KB of case data. Consumers that
-  // look up or iterate `allCases` gracefully degrade to an empty list
-  // until this resolves (visible stat numbers default to a "100+"
-  // marketing placeholder; lookups re-run when the state populates).
-  const [allCases, setAllCases] = useState<CaseScenario[]>([]);
-  const casesModuleRef = useMemo<{ current: CasesModule | null }>(() => ({ current: null }), []);
-  useEffect(() => {
-    let cancelled = false;
-    void loadCases().then((mod) => {
-      if (cancelled) return;
-      casesModuleRef.current = mod;
-      setAllCases(mod.allCases);
-    });
-    return () => { cancelled = true; };
-  }, [casesModuleRef]);
-
   // Persist role selection
   useEffect(() => {
     if (userRole !== 'none') {
@@ -405,6 +388,20 @@ function App() {
 
 function EducatorPanel({ onExit }: { onExit: () => void }) {
   const { t } = useTranslation();
+
+  // Lazy-loaded case bundle — starts empty, populates on mount.
+  const [allCases, setAllCases] = useState<CaseScenario[]>([]);
+  const casesModuleRef = useMemo<{ current: CasesModule | null }>(() => ({ current: null }), []);
+  useEffect(() => {
+    let cancelled = false;
+    void loadCases().then((mod) => {
+      if (cancelled) return;
+      casesModuleRef.current = mod;
+      setAllCases(mod.allCases);
+    });
+    return () => { cancelled = true; };
+  }, [casesModuleRef]);
+
   const [currentCase, setCurrentCase] = useState<CaseScenario | null>(null);
   const [selectedYear, setSelectedYear] = useState<StudentYear>('3rd-year');
   const [session, setSession] = useState<CaseSession | null>(null);
