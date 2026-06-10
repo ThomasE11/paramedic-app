@@ -195,9 +195,6 @@ const ASSESSMENT_METHODS: Record<string, AssessmentMethod[]> = {
     { id: 'etco2_nasal', name: 'Nasal Cannula', description: 'ETCO2 via nasal cannula adapter', duration: 10, icon: 'Gauge', equipment: ['Capnography', 'Nasal Cannula'] },
     { id: 'etco2_et', name: 'ET Tube Adapter', description: 'In-line ETCO2 for intubated patients', duration: 5, icon: 'Gauge', equipment: ['Capnography', 'ETCO2 Adapter'] },
   ],
-  painScore: [
-    { id: 'pain_scale', name: 'Pain Scale', description: 'Verbal or visual pain scale assessment', duration: 15, icon: 'Activity' },
-  ],
 };
 
 // Alarm thresholds
@@ -2237,6 +2234,16 @@ export function VitalSignsMonitor({
   // so BP/SpO2/etc. don't change on-screen until the student re-assesses
   const [assessedVitals, setAssessedVitals] = useState<Partial<VitalSigns>>({});
 
+  useEffect(() => {
+    setCurrentVitals(initialVitals);
+    setVisibleVitals(new Set());
+    setActiveAssessments(new Map());
+    setAssessmentProgress(new Map());
+    setActiveAlarms(new Set());
+    setAssessedVitals({});
+    reportedAssessmentsRef.current.clear();
+  }, [caseTitle]);
+
   // Auto-refresh continuous-monitor vitals (SpO2, pulse, RR) whenever the
   // underlying currentVitals changes. Real SpO2 probes read continuously,
   // not at discrete assessment points, so freezing the display at the last
@@ -2257,18 +2264,25 @@ export function VitalSignsMonitor({
   // Sync externally revealed vitals (from ABCDE assessments) into visibleVitals
   useEffect(() => {
     if (!revealedVitals || revealedVitals.size === 0) return;
-    if (!assessmentMode) {
-      // Only auto-reveal when assessment mode is off (bypass mode)
-      setVisibleVitals(prev => {
-        const next = new Set(prev);
-        let changed = false;
-        revealedVitals.forEach(v => {
-          if (!next.has(v)) { next.add(v); changed = true; }
-        });
-        return changed ? next : prev;
+    setVisibleVitals(prev => {
+      const next = new Set(prev);
+      let changed = false;
+      revealedVitals.forEach(v => {
+        if (!next.has(v)) { next.add(v); changed = true; }
       });
-    }
-  }, [revealedVitals, assessmentMode]);
+      return changed ? next : prev;
+    });
+    setAssessedVitals(prev => {
+      const next = { ...prev };
+      revealedVitals.forEach(v => {
+        const key = v as keyof VitalSigns;
+        if (currentVitals[key] !== undefined) {
+          next[key] = currentVitals[key] as never;
+        }
+      });
+      return next;
+    });
+  }, [revealedVitals, currentVitals]);
 
   // Classroom spectators can't tap-to-connect the SpO2/ECG leads (read-only),
   // so auto-reveal the standard waveforms + pulse the moment autoPowerOn flips
@@ -2564,10 +2578,9 @@ export function VitalSignsMonitor({
       { key: 'gcs' as keyof VitalSigns, label: 'GCS', unit: '/15' },
       { key: 'temperature' as keyof VitalSigns, label: 'Temp', unit: '\u00b0C' },
       { key: 'bloodGlucose' as keyof VitalSigns, label: 'BGL', unit: 'mmol/L' },
-      { key: 'painScore' as keyof VitalSigns, label: 'Pain', unit: '/10' },
     ].filter(config => {
-      // Pain score is always available for assessment even if not in initial vitals
-      if (config.key === 'painScore') return true;
+      // Pain is obtained by ASKING the patient in history-taking (like allergies),
+      // not read off the monitor — so it is intentionally not a vital tile here.
       const value = currentVitals[config.key];
       return value !== undefined && value !== null;
     });
@@ -3445,14 +3458,16 @@ export function VitalSignsMonitor({
     setAedMode(false); setShow12LeadImage(false); setShowNibpMenu(false);
   }, []);
 
+  const isCurrentRhythmShockable = currentRhythm.id === 'vfib' || currentRhythm.id === 'vfib-fine' || currentRhythm.id === 'vt';
+
   const handleAnalyze = useCallback(() => {
     setAedMode(true);
     setMonitorMode('defib');
     audioEngineRef.current?.playAnalyzeSound();
     logIntervention('ANALYZE', `AED: ${currentRhythm.name} — ${
-      currentRhythm.id === 'vfib' || currentRhythm.id === 'vtach' ? 'SHOCK ADVISED' : 'NO SHOCK ADVISED'
+      isCurrentRhythmShockable ? 'SHOCK ADVISED' : 'NO SHOCK ADVISED'
     }`);
-  }, [currentRhythm, logIntervention]);
+  }, [currentRhythm, isCurrentRhythmShockable, logIntervention]);
 
   const handlePrint = useCallback(() => {
     setShow12LeadImage(true);
@@ -3482,18 +3497,32 @@ export function VitalSignsMonitor({
       {/* ================================================================ */}
       {/* TLC MONITOR — FULL REDESIGN                                      */}
       {/* ================================================================ */}
-      <div className="relative rounded-xl overflow-hidden"
+      <div className="relative rounded-[22px] overflow-hidden"
         style={{
-          background: 'linear-gradient(145deg, #3a3d42 0%, #2a2d31 30%, #1e2024 60%, #2a2d31 100%)',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05)',
-          border: '3px solid #4a8c3f',
+          background: 'linear-gradient(145deg, #53595f 0%, #2d3237 28%, #15191e 58%, #30363b 100%)',
+          boxShadow: '0 22px 55px rgba(0,0,0,0.58), inset 0 2px 0 rgba(255,255,255,0.08), inset 0 -10px 20px rgba(0,0,0,0.28)',
+          border: '4px solid #3f7d36',
         }}>
+        <div className="pointer-events-none absolute left-8 right-8 top-0 h-4 rounded-b-xl bg-black/35 shadow-inner" />
+        {[
+          'left-1 top-1 rounded-br-2xl',
+          'right-1 top-1 rounded-bl-2xl',
+          'left-1 bottom-1 rounded-tr-2xl',
+          'right-1 bottom-1 rounded-tl-2xl',
+        ].map(pos => (
+          <div key={pos} className={`pointer-events-none absolute h-9 w-9 bg-[#376f32] shadow-[inset_0_1px_0_rgba(255,255,255,0.14),inset_0_-4px_8px_rgba(0,0,0,0.28)] ${pos}`} />
+        ))}
+        {[
+          'left-12 top-3', 'right-12 top-3', 'left-12 bottom-3', 'right-12 bottom-3',
+        ].map(pos => (
+          <div key={pos} className={`pointer-events-none absolute h-2 w-2 rounded-full border border-black/50 bg-slate-500/70 shadow-inner ${pos}`} />
+        ))}
 
         {/* ================================================================ */}
         {/* TOP BAR — ON button + PRINT/CODE SUMMARY/TRANSMIT/12 LEAD       */}
         {/* ================================================================ */}
-        <div className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 flex-wrap"
-          style={{ background: 'linear-gradient(180deg, #333639 0%, #2a2d31 100%)', borderBottom: '1px solid rgba(0,0,0,0.3)' }}>
+        <div className="relative flex items-center gap-1 sm:gap-2 px-3 sm:px-5 py-2.5 sm:py-3 flex-wrap"
+          style={{ background: 'linear-gradient(180deg, #3c4146 0%, #292f34 100%)', borderBottom: '1px solid rgba(0,0,0,0.45)' }}>
 
           {/* BIG ON BUTTON
               Off state: red, pulsing, bright — attracts the eye so the
@@ -3516,6 +3545,10 @@ export function VitalSignsMonitor({
 
           {/* Side buttons — wrap on mobile */}
           <div className="flex items-center gap-1 flex-wrap flex-1 min-w-0">
+            <div className="mr-1 hidden min-w-[105px] rounded border border-black/35 bg-black/35 px-2 py-1 shadow-inner md:block">
+              <span className="block text-[8px] font-mono font-bold tracking-[0.2em] text-emerald-300">TRANSPORT</span>
+              <span className="block text-[7px] font-mono tracking-[0.18em] text-gray-400">ALS MONITOR</span>
+            </div>
             <SideButton label="PRINT" onClick={handlePrint} active={show12LeadImage} />
             <SideButton label="CODE" onClick={() => setShowCodeSummary(!showCodeSummary)} active={showCodeSummary} />
             <SideButton label="12 LEAD" onClick={() => {
@@ -3547,8 +3580,8 @@ export function VitalSignsMonitor({
         {/* ================================================================ */}
         {/* LCD SCREEN — Full width, no sidebar                             */}
         {/* ================================================================ */}
-        <div className="mx-2 my-2 rounded-lg overflow-hidden border-2 border-gray-700"
-          style={{ background: '#001000', boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.8)' }}>
+        <div className="relative mx-3 my-3 rounded-[12px] overflow-hidden border-[3px] border-black"
+          style={{ background: '#001000', boxShadow: '0 4px 0 rgba(0,0,0,0.35), inset 0 2px 16px rgba(0,0,0,0.9), 0 0 0 1px rgba(255,255,255,0.05)' }}>
 
           {!powerOn && (
             <div className="h-[280px] flex flex-col items-center justify-center gap-3" style={{ background: '#0a0a0a' }}>
@@ -3803,31 +3836,67 @@ export function VitalSignsMonitor({
                     </div>
                   )}
                 </div>
-                {/* RIGHT STRIP — timer, battery, status (hidden on mobile for space) */}
-                <div className="hidden sm:flex w-[65px] border-l border-gray-800/30 flex-col items-center justify-between py-1 shrink-0" style={{ background: 'rgba(0,0,0,0.5)' }}>
-                  <div className="text-center">
-                    <span className={`text-[10px] font-mono font-bold ${codeTimerRunning ? 'text-green-400' : 'text-gray-600'}`}>{formatCodeTimer(codeTimerSeconds)}</span>
+                {/* RIGHT STRIP — large transport-monitor numerics */}
+                <div className="hidden sm:flex w-[118px] shrink-0 flex-col border-l border-gray-800/70" style={{ background: 'linear-gradient(180deg,rgba(0,0,0,0.72),rgba(0,0,0,0.52))' }}>
+                  <div className="grid grid-cols-2 border-b border-gray-800/60">
+                    <div className="px-1.5 py-1">
+                      <span className="block text-[6px] font-mono text-gray-500">TIME</span>
+                      <span className={`block text-[10px] font-mono font-bold ${codeTimerRunning ? 'text-green-400' : 'text-gray-500'}`}>{formatCodeTimer(codeTimerSeconds)}</span>
+                    </div>
                     <button onClick={() => { if (codeTimerRunning) setCodeTimerRunning(false); else { setCodeTimerSeconds(0); setCodeTimerRunning(true); } }}
-                      className="text-[6px] font-mono text-gray-500 hover:text-white block cursor-pointer">{codeTimerRunning ? 'STOP' : 'START'}</button>
+                      className="border-l border-gray-800/60 text-[7px] font-mono text-gray-400 hover:bg-white/5 hover:text-white">{codeTimerRunning ? 'STOP' : 'START'}</button>
                   </div>
-                  {syncMode && <span className="text-cyan-400 text-[9px]">SYNC</span>}
-                  <div className="space-y-0.5">
-                    {[1, 2].map(n => (
-                      <div key={n} className="flex items-center gap-0.5">
-                        <span className="text-[7px] font-mono text-gray-400">{n}</span>
-                        <div className="w-5 h-2.5 rounded-sm border border-gray-500/50 flex items-center px-0.5" style={{ background: '#1a1a1a' }}>
-                          <div className="flex gap-px">{[0,1,2].map(i => <div key={i} className="w-0.5 h-1.5 bg-green-500 rounded-[1px]" />)}</div>
-                        </div>
+                  <div className="grid flex-1 grid-rows-4">
+                    <div className="border-b border-gray-800/60 px-2 py-1">
+                      <div className="flex items-baseline justify-between">
+                        <span className="text-[8px] font-mono text-green-500/80">HR</span>
+                        <span className="text-[7px] font-mono text-gray-500">{selectedLead}</span>
                       </div>
-                    ))}
+                      <span className={`block text-3xl font-mono font-bold leading-none ${visibleVitals.has('pulse') ? getVitalAlarmState('pulse').isAlarm ? 'text-red-500 animate-pulse' : 'text-green-400' : 'text-green-400/20'}`}>
+                        {visibleVitals.has('pulse') ? (currentRhythm.category === 'arrest' ? 0 : Math.round(currentVitals.pulse)) : '--'}
+                      </span>
+                    </div>
+                    <div className="border-b border-gray-800/60 px-2 py-1">
+                      <div className="flex items-baseline justify-between">
+                        <span className="text-[8px] font-mono text-cyan-400/80">SpO2</span>
+                        <span className="text-[7px] font-mono text-cyan-400/50">%</span>
+                      </div>
+                      <span className={`block text-2xl font-mono font-bold leading-none ${visibleVitals.has('spo2') ? getVitalAlarmState('spo2').isAlarm ? 'text-red-500 animate-pulse' : 'text-cyan-400' : 'text-cyan-400/20'}`}>
+                        {visibleVitals.has('spo2') ? Math.round(assessedVitals.spo2 ?? currentVitals.spo2) : '--'}
+                      </span>
+                    </div>
+                    <div className="border-b border-gray-800/60 px-2 py-1">
+                      <div className="flex items-baseline justify-between">
+                        <span className="text-[8px] font-mono text-white/75">NIBP</span>
+                        <span className="text-[7px] font-mono text-gray-500">mmHg</span>
+                      </div>
+                      <span className={`block text-xl font-mono font-bold leading-tight ${visibleVitals.has('bp') ? 'text-white' : 'text-white/20'}`}>
+                        {visibleVitals.has('bp') ? (assessedVitals.bp || currentVitals.bp) : '--/--'}
+                      </span>
+                    </div>
+                    <div className="px-2 py-1">
+                      <div className="flex items-baseline justify-between">
+                        <span className="text-[8px] font-mono text-fuchsia-400/80">EtCO2</span>
+                        <span className="text-[7px] font-mono text-yellow-400/70">RR {visibleVitals.has('respiration') ? Math.round(currentVitals.respiration) : '--'}</span>
+                      </div>
+                      <span className={`block text-xl font-mono font-bold leading-tight ${visibleVitals.has('etco2') ? 'text-fuchsia-400' : 'text-fuchsia-400/20'}`}>
+                        {visibleVitals.has('etco2') && etco2Value ? etco2Value : '--'}
+                      </span>
+                    </div>
                   </div>
-                  <span className="text-[7px] font-mono text-gray-400">{selectedLead}x{waveformGain}</span>
-                  {monitorMode === 'defib' && (
-                    <div className="text-center"><span className="text-[8px] font-mono font-bold text-yellow-400">{selectedEnergy}J</span></div>
-                  )}
-                  {monitorMode === 'pacer' && (
-                    <div className="text-center"><span className="text-[7px] font-mono text-blue-400">{pacerRate}/{pacerOutput}</span></div>
-                  )}
+                  <div className="flex items-center justify-between border-t border-gray-800/70 px-2 py-1">
+                    <div className="flex items-center gap-1">
+                      {[1, 2].map(n => (
+                        <div key={n} className="flex items-center gap-0.5">
+                          <span className="text-[7px] font-mono text-gray-500">{n}</span>
+                          <div className="flex h-2.5 w-5 items-center gap-px rounded-sm border border-gray-500/50 bg-[#1a1a1a] px-0.5">
+                            {[0,1,2].map(i => <div key={i} className="h-1.5 w-0.5 rounded-[1px] bg-green-500" />)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <span className="text-[7px] font-mono text-gray-500">{syncMode ? 'SYNC' : `${waveformGain}x`}</span>
+                  </div>
                 </div>
               </div>
 
@@ -3840,7 +3909,7 @@ export function VitalSignsMonitor({
                   {isCharged && !shockArtifact && <span className="text-sm font-mono text-red-400 animate-pulse font-bold">CHARGED {selectedEnergy}J — PRESS SHOCK</span>}
                   {aedMode && !isCharging && !isCharged && !shockArtifact && (
                     <span className="text-[10px] font-mono text-yellow-300 font-bold">
-                      AED: {currentRhythm.id === 'vfib' || currentRhythm.id === 'vtach' ? 'SHOCK ADVISED — Press CHARGE' : 'NO SHOCK ADVISED — Continue CPR'}
+                      AED: {isCurrentRhythmShockable ? 'SHOCK ADVISED — Press CHARGE' : 'NO SHOCK ADVISED — Continue CPR'}
                     </span>
                   )}
                 </div>
@@ -3860,6 +3929,15 @@ export function VitalSignsMonitor({
               )}
             </>
           )}
+          <div
+            className="pointer-events-none absolute inset-0 opacity-[0.07]"
+            style={{
+              backgroundImage: 'linear-gradient(rgba(255,255,255,0.45) 1px, transparent 1px)',
+              backgroundSize: '100% 4px',
+              mixBlendMode: 'screen',
+            }}
+          />
+          <div className="pointer-events-none absolute inset-0 rounded-[9px] ring-1 ring-inset ring-white/5" />
         </div>
 
         {/* ================================================================ */}

@@ -140,7 +140,7 @@ const EXAM_LANDMARKS: ExamLandmark[] = [
   { id: 'lung-lu', region: 'chest', label: 'L upper zone', sublabel: 'left apex / upper field', position: [0.09, 1.34, 0.205], level: 'detail', actionId: 'chest-auscultate-lu', tone: 'breathing' },
   { id: 'lung-ll', region: 'chest', label: 'L lower zone', sublabel: 'left base', position: [0.10, 1.22, 0.205], level: 'detail', actionId: 'chest-auscultate-ll', tone: 'breathing' },
   { id: 'sternum-detail', region: 'chest', label: 'Chest wall', sublabel: 'tenderness, crepitus, flail', position: [0, 1.245, 0.215], level: 'detail', actionId: 'chest-palpate', tone: 'warning' },
-  { id: 'heart-detail', region: 'chest', label: 'Heart', sublabel: 'aortic, pulmonic, apex', position: [0.065, 1.205, 0.215], level: 'detail', actionId: 'chest-auscultate-heart', tone: 'circulation' },
+  { id: 'heart-detail', region: 'chest', label: 'Heart', sublabel: 'aortic, pulmonic, apex', position: [0.04, 1.19, 0.215], level: 'detail', actionId: 'chest-auscultate-heart', tone: 'circulation' },
 
   { id: 'ruq-detail', region: 'abdomen', label: 'RUQ', sublabel: 'liver / gallbladder', position: [-0.095, 1.085, 0.245], level: 'detail', actionId: 'abd-ruq-auscultate', tone: 'abdomen' },
   { id: 'luq-detail', region: 'abdomen', label: 'LUQ', sublabel: 'stomach / spleen', position: [0.095, 1.085, 0.245], level: 'detail', actionId: 'abd-luq-auscultate', tone: 'abdomen' },
@@ -251,6 +251,10 @@ function LandmarkMarkers({
     warning: 'border-amber-300/80 bg-amber-50/95 text-amber-900 dark:border-amber-400/35 dark:bg-amber-950/85 dark:text-amber-100',
   };
 
+  // Higher df = smaller on-screen marker. Face/neck zoom in very tight, which
+  // otherwise balloons their dots; shrink them so the clustered facial/airway
+  // landmarks stay separate and tappable.
+  const DETAIL_DF: Record<string, number> = { face: 1.25, 'neck-cspine': 1.4 };
   return (
     <>
       {visibleMarkers.map(marker => {
@@ -272,7 +276,7 @@ function LandmarkMarkers({
         // cockpit already name the targets, so hover labels would just clutter
         // the patient surface.
         return (
-          <MarkerHtml key={marker.id} position={pos} distanceFactor={isDetail ? 8.2 : 3.0} zIndexRange={[80, 0]}>
+          <MarkerHtml key={marker.id} position={pos} distanceFactor={isDetail ? (DETAIL_DF[activeRegion ?? ''] ?? 2.0) : 3.0} zIndexRange={[80, 0]}>
             <button
               type="button"
               onPointerDown={(event) => event.stopPropagation()}
@@ -376,7 +380,19 @@ function RevealedFindingMarkers({
   sampler: ((x: number, y: number) => [number, number, number]) | null;
 }) {
   const injuries = useMemo(() => inferInjuries(caseData), [caseData]);
-  if (!injuries.length) return null;
+  // Floating injury badges are an OVERVIEW discovery layer. In a focused
+  // region view they piled on top of the exam landmarks / loupe (the
+  // "overlapping pop-ups" problem) while duplicating what the cockpit and
+  // findings panel already show — so they hide whenever a region is active.
+  if (!injuries.length || activeRegion) return null;
+
+  // Per-region slot counter so multiple findings in the SAME region fan out
+  // instead of stacking on the identical FINDING_ANCHORS point (which made
+  // abdominal findings pile up over the quadrant markers). Injuries flank the
+  // LEFT of the region midline and stack DOWNWARD; realism cues mirror this on
+  // the right (see CaseRealismMarkers), keeping the centre clear for the exam
+  // landmark dots.
+  const injurySlots: Record<string, number> = {};
 
   return (
     <>
@@ -389,10 +405,13 @@ function RevealedFindingMarkers({
         if (!revealed) return null;
         const fallback = FINDING_ANCHORS[region3d];
         if (!fallback) return null;
-        // Anchor the finding badge to the real surface at the region's (x, y).
+        const slot = (injurySlots[region3d] = (injurySlots[region3d] ?? -1) + 1);
+        const fx = fallback[0] - 0.055;
+        const fy = fallback[1] - slot * 0.11; // ~21px steps at overview zoom — clears the badge height
+        // Anchor the finding badge to the real surface at the offset (x, y).
         const anchor: [number, number, number] = sampler && region3d !== 'posterior-logroll'
-          ? sampler(fallback[0], fallback[1])
-          : fallback;
+          ? sampler(fx, fy)
+          : [fx, fy, fallback[2]];
         return (
           <MarkerHtml key={inj.id} position={anchor} distanceFactor={3.2} zIndexRange={[90, 0]} interactive={false}>
             <div className="scale-[0.6] pointer-events-none animate-in fade-in zoom-in-50 duration-500">
@@ -422,25 +441,52 @@ function CaseRealismMarkers({
   activeRegion: string | null;
   sampler: ((x: number, y: number) => [number, number, number]) | null;
 }) {
+  // Cue rings are an OVERVIEW breadcrumb. In a focused region view they
+  // ballooned (~90px) over the loupe and exam landmarks — the detail panels
+  // already convey patient state, so the rings hide whenever a region is active.
+  if (activeRegion) return null;
+
   const visibleCues = cues.filter(item => shouldRevealRealismCue(item, assessedRegions, activeRegion)).slice(0, 5);
   if (!visibleCues.length) return null;
 
+  // Collapse to ONE ring per region (highest severity wins, +N chip for the
+  // rest). Stacked same-region rings overlapped heavily at overview zoom and
+  // conveyed nothing a count doesn't. Rings flank the RIGHT of the region
+  // midline, mirroring the injury badges on the left, keeping the centre
+  // clear for the exam landmark dots.
+  const severityRank: Record<RealismSeverity, number> = { critical: 3, warning: 2, observe: 1, normal: 0 };
+  const byRegion = new Map<string, { top: PatientRealismCue; count: number }>();
+  for (const item of visibleCues) {
+    const cur = byRegion.get(item.region);
+    if (!cur) byRegion.set(item.region, { top: item, count: 1 });
+    else {
+      cur.count += 1;
+      if (severityRank[item.severity] > severityRank[cur.top.severity]) cur.top = item;
+    }
+  }
+
   return (
     <>
-      {visibleCues.map((item, index) => {
-        const fallback = FINDING_ANCHORS[item.region] || FINDING_ANCHORS.chest;
-        const anchor: [number, number, number] = sampler && item.region !== 'posterior-logroll'
-          ? sampler(fallback[0], fallback[1])
-          : fallback;
-        const style = REALISM_CUE_STYLE[item.severity];
+      {[...byRegion.values()].map(({ top, count }, index) => {
+        const fallback = FINDING_ANCHORS[top.region] || FINDING_ANCHORS.chest;
+        const fx = fallback[0] + 0.055;
+        const anchor: [number, number, number] = sampler && top.region !== 'posterior-logroll'
+          ? sampler(fx, fallback[1])
+          : [fx, fallback[1], fallback[2]];
+        const style = REALISM_CUE_STYLE[top.severity];
         return (
-          <MarkerHtml key={item.id} position={anchor} distanceFactor={3.05} zIndexRange={[82 - index, 0]} interactive={false}>
+          <MarkerHtml key={top.id} position={anchor} distanceFactor={2.7} zIndexRange={[82 - index, 0]} interactive={false}>
             <div
-              className="pointer-events-none relative flex h-5 w-5 items-center justify-center animate-in fade-in zoom-in-75 duration-500"
+              className="pointer-events-none relative flex h-4 w-4 items-center justify-center animate-in fade-in zoom-in-75 duration-500"
               aria-hidden="true"
             >
-              <span className={`absolute h-5 w-5 rounded-full border backdrop-blur-md ${style.marker}`} />
-              <span className={`relative h-2 w-2 rounded-full ${style.dot} ${item.severity === 'critical' ? 'animate-pulse' : ''}`} />
+              <span className={`absolute h-4 w-4 rounded-full border backdrop-blur-md ${style.marker}`} />
+              <span className={`relative h-1.5 w-1.5 rounded-full ${style.dot} ${top.severity === 'critical' ? 'animate-pulse' : ''}`} />
+              {count > 1 && (
+                <span className="absolute -right-1.5 -top-1.5 rounded-full border border-white/25 bg-slate-900/85 px-1 text-[7px] font-bold leading-[10px] text-white">
+                  +{count - 1}
+                </span>
+              )}
             </div>
           </MarkerHtml>
         );
@@ -2603,7 +2649,7 @@ function RegionalZoomLoupe({
 
   if (activeRegion === 'chest') {
     return (
-      <div className="max-h-[19rem] overflow-y-auto rounded-2xl border border-sky-100/35 bg-slate-950/58 p-2 shadow-2xl backdrop-blur-xl">
+      <div className="max-h-[15rem] overflow-y-auto rounded-2xl border border-sky-100/35 bg-slate-950/58 p-2 shadow-2xl backdrop-blur-xl">
         <div className="mb-2 flex items-center justify-between gap-2 px-1">
           <div>
             <p className="text-[8px] font-semibold uppercase tracking-[0.22em] text-sky-100/55">Zoom loupe</p>
@@ -3133,8 +3179,21 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
         focus.pos[1] - focus.target[1],
         focus.pos[2] - focus.target[2],
       ];
-      const pos = fitCameraPos(controlsRef.current, focus.target, dir, REGION_RADIUS[stepId] ?? 0.28);
-      animateCamera(controlsRef.current, pos, focus.target, 460);
+      // HUD-aware framing. Chest/abdomen show the zoom loupe (top-right) and the
+      // assessment cockpit (bottom-left). Bias the patient LEFT of the loupe (x),
+      // and for the marker-dense chest also lift it ABOVE the cockpit (y), so no
+      // exam landmark ever hides under a panel.
+      const wide = typeof window !== 'undefined' && window.innerWidth >= 640;
+      // Lift each region's framing above the bottom-left cockpit (values tuned per
+      // region zoom — tighter regions need a smaller world-space lift) and shift
+      // the loupe regions left of the top-right zoom panel.
+      const Y_LIFT: Record<string, number> = { chest: -0.09, abdomen: -0.06, face: -0.19, 'neck-cspine': -0.13 };
+      const X_BIAS: Record<string, number> = { chest: 0.13, abdomen: 0.13 };
+      const xBias = wide ? (X_BIAS[stepId] ?? 0) : 0;
+      const yBias = wide ? (Y_LIFT[stepId] ?? 0) : 0;
+      const target: [number, number, number] = [focus.target[0] + xBias, focus.target[1] + yBias, focus.target[2]];
+      const pos = fitCameraPos(controlsRef.current, target, dir, REGION_RADIUS[stepId] ?? 0.28);
+      animateCamera(controlsRef.current, pos, target, 460);
     }
     setIsFlipped(stepId === 'posterior-logroll');
   }, [onRegionClick, animateCamera, clearPatientReaction]);
@@ -3323,9 +3382,10 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
     && !!selectedAction
     && (selectedAction.includes('pupil') || selectedAction.includes('eyes'));
   const showRegionalLoupe = showEyeContext || activeRegion === 'chest' || activeRegion === 'abdomen';
-  const loupeWidthClass = activeRegion === 'abdomen'
-    ? 'w-[min(18rem,calc(100%-1.5rem))]'
-    : 'w-[min(21rem,calc(100%-1.5rem))]';
+  // Narrow enough that the right-side exam landmarks (LUQ/LLQ, left lung
+  // zones) clear the panel once the camera's loupe bias shifts the patient
+  // left — the loupe must never sit on top of clickable anatomy.
+  const loupeWidthClass = 'w-[min(14rem,calc(100%-1.5rem))]';
 
   // Phase 2D: Log roll hint
   const showLogRollHint = assessedRegions.size >= 8 && !assessedRegions.has('posterior-logroll');
@@ -3408,7 +3468,11 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <div className="hidden items-center rounded-lg border border-slate-200/70 bg-white/70 p-0.5 dark:border-white/10 dark:bg-slate-900/60 sm:flex">
+          {/* ONE view switch (skin ↔ skeleton). Previously labelled
+              "Surface | Anatomy", which read as two unrelated controls —
+              renamed so it is obviously a single mutually-exclusive toggle. */}
+          <div className="hidden items-center gap-1 rounded-lg border border-slate-200/70 bg-white/70 p-0.5 dark:border-white/10 dark:bg-slate-900/60 sm:flex" role="group" aria-label="Model view layer">
+            <span className="pl-1 text-[8px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/50">View</span>
             <button
               type="button"
               onClick={() => setAnatomyLayer('surface')}
@@ -3418,10 +3482,10 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                   : 'text-muted-foreground hover:text-foreground'
               }`}
               aria-pressed={anatomyLayer === 'surface'}
-              title="Surface patient view"
+              title="Skin / surface examination view"
             >
               <User className="h-2.5 w-2.5" />
-              Surface
+              Skin
             </button>
             <button
               type="button"
@@ -3432,10 +3496,10 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                   : 'text-muted-foreground hover:text-foreground'
               }`}
               aria-pressed={anatomyLayer === 'skeleton'}
-              title="Skeletal anatomy reference"
+              title="Skeletal anatomy reference overlay"
             >
               <Activity className="h-2.5 w-2.5" />
-              Anatomy
+              Skeleton
             </button>
           </div>
           {/* Phase 2 — guided exam mode toggle */}
@@ -3527,6 +3591,45 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
         />
       )}
 
+      {!activeRegion && (
+        <div className="border-b border-slate-200/60 bg-white/55 px-3 py-2 dark:border-white/5 dark:bg-slate-950/30">
+          <div className="mb-1.5 flex items-center justify-between gap-2">
+            <p className="text-[8px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/65">Examine region</p>
+            <p className="text-[8px] text-muted-foreground/55">Select here or on the patient</p>
+          </div>
+          <div className="grid grid-cols-5 gap-1.5">
+            {[
+              { id: 'face', label: 'Face', Icon: Eye },
+              { id: 'neck-cspine', label: 'Neck', Icon: User },
+              { id: 'chest', label: 'Chest', Icon: Stethoscope },
+              { id: 'abdomen', label: 'Abdomen', Icon: Activity },
+              { id: 'right-arm', label: 'Limbs', Icon: Hand },
+            ].map(({ id, label, Icon }) => {
+              const assessed = isRegionAssessed(id);
+              const required = requiredRegions.has(id);
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  aria-label={`Examine ${label}`}
+                  onClick={() => handleRegionClick(id)}
+                  className={`relative flex min-h-11 flex-col items-center justify-center gap-1 rounded-lg border px-1.5 py-1.5 text-[8px] font-semibold transition-colors ${
+                    assessed
+                      ? 'border-emerald-300/70 bg-emerald-50/80 text-emerald-700 dark:border-emerald-700/50 dark:bg-emerald-950/30 dark:text-emerald-300'
+                      : 'border-slate-200/80 bg-white/75 text-slate-700 hover:border-cyan-300 hover:bg-cyan-50/70 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:border-cyan-700/60 dark:hover:bg-cyan-950/25'
+                  }`}
+                >
+                  {required && !assessed && <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-amber-400" />}
+                  {assessed && <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-emerald-400" />}
+                  <Icon className="h-3.5 w-3.5" />
+                  <span>{label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Patient frame. When a region is active, the exam tools live inside
           this grey mannequin area rather than in an external side panel. */}
       <div>
@@ -3540,11 +3643,17 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
               style={{ background: 'transparent' }}
               onPointerMissed={() => { if (activeRegion) handleCloseRegion(); }}
             >
-              <ambientLight intensity={0.6} />
-              <directionalLight position={[4, 8, 4]} intensity={1.2} color="#f0f4ff" />
-              <directionalLight position={[-3, 5, -2]} intensity={0.5} color="#e0e8ff" />
-              <directionalLight position={[0, -2, 3]} intensity={0.25} color="#f0f0ff" />
-              <directionalLight position={[0, 3, 5]} intensity={0.3} color="#ffffff" />
+              {/* Natural studio lighting: warm sky / cool ground hemisphere for
+                  organic skin tone, a warm key, a cool fill for dimension, and a
+                  rim light to separate the patient from the backdrop. The old rig
+                  was all cool-blue + flat, which made the anatomy look pale and
+                  underlit. */}
+              <ambientLight intensity={0.55} />
+              <hemisphereLight color="#fff4e8" groundColor="#cad3de" intensity={0.85} />
+              <directionalLight position={[4, 8, 5]} intensity={1.6} color="#fff2e6" />
+              <directionalLight position={[-4, 4, 3]} intensity={0.6} color="#e4ecff" />
+              <directionalLight position={[0, 4, -5]} intensity={0.65} color="#ffffff" />
+              <directionalLight position={[0, -2, 3]} intensity={0.2} color="#fff6ef" />
 
               <PatientSceneEnvironment />
 

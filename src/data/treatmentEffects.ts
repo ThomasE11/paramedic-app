@@ -50,6 +50,10 @@ const buildInitialVitalsFromCase = (caseData: {
   };
 }): VitalSigns => {
   const base: Partial<VitalSigns> = { ...(caseData?.vitalSignsProgression?.initial || {}) };
+  // Pain is HISTORY, not a known initial vital — the student discovers it by
+  // asking the patient (or notes it can't be self-reported when GCS is low).
+  // Keep it out of the starting vitals so it isn't leaked before being asked.
+  delete base.painScore;
   const abcde = caseData?.abcde;
   const disability = abcde?.disability;
   const exposure = abcde?.exposure;

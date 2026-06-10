@@ -21,29 +21,21 @@ import type { CaseScenario, StudentYear, CaseSession, VitalSigns, AppliedTreatme
  */
 function buildDispatchNarration(caseData: CaseScenario): string {
   const dispatch = caseData.dispatchInfo;
-  const patient = caseData.patientInfo;
-  const scene = caseData.sceneInfo;
   const priorityWord = dispatch?.priority
     ? (String(dispatch.priority).includes('1') ? 'priority one' : String(dispatch.priority).includes('2') ? 'priority two' : 'priority three')
     : 'priority one';
 
-  const parts: string[] = [];
-  parts.push(`Control to responding unit.`);
-  parts.push(`We've got a ${priorityWord} job for you.`);
-  if (dispatch?.callReason) {
-    parts.push(`Caller reports ${dispatch.callReason.replace(/\.$/, '')}.`);
-  }
-  if (dispatch?.location) {
-    parts.push(`Location, ${dispatch.location.replace(/\.$/, '')}.`);
-  }
-  if (patient?.age && patient?.gender) {
-    parts.push(`Patient is a ${patient.age}-year-old ${patient.gender}.`);
-  } else if (patient?.age) {
-    parts.push(`Patient is ${patient.age} years old.`);
-  }
-  if (scene?.description) {
-    parts.push(`On arrival, ${scene.description.replace(/^On arrival[:,]?\s*/i, '').replace(/\.$/, '')}.`);
-  }
+  // PUNCHY by design. The whole narration is synthesised in ONE continuous TTS
+  // request (no inter-sentence gaps), and this server is ~50ms/char, so a short
+  // script = a short wait before the seamless read. We speak just the priority
+  // + the CORE call reason (mechanism/secondary clauses and location are
+  // dropped from the audio — they're all shown on the brief card).
+  const core = (dispatch?.callReason || '')
+    .split(/,|\bafter\b|\bwhile\b|\bwhilst\b/i)[0]
+    .replace(/[.!?]+$/, '')
+    .trim();
+  const parts: string[] = [`Control to responding unit, ${priorityWord}.`];
+  if (core) parts.push(`${core}.`);
   parts.push(`Acknowledge when you're on scene.`);
   return parts.join(' ');
 }
@@ -64,7 +56,7 @@ function seededShuffle<T>(array: T[], seed: string): T[] {
 }
 import { allCases, getRandomCase, yearLevels, caseCategories, allConditionNames, getCasesByCondition } from '@/data/cases';
 import { ensureCompleteVitals, buildInitialVitalsFromCase } from '@/data/treatmentEffects';
-import { type Treatment, type TreatmentCategory, TREATMENTS } from '@/data/enhancedTreatmentEffects';
+import { type Treatment, TREATMENTS } from '@/data/enhancedTreatmentEffects';
 import {
   type PatientState,
   type DefibrillationParams,
@@ -77,24 +69,41 @@ import {
   determineSeverityFromVitals,
 } from '@/data/treatmentProtocols';
 import { checkRuntimeContraindications } from '@/lib/runtimeContraindications';
+import { evaluateTreatmentRealism } from '@/lib/patientRealism';
+import {
+  buildReactionForTreatment,
+  projectReactionVitals,
+  isDefinitiveRescue,
+  type AdverseReaction,
+} from '@/data/adverseReactions';
+import { computeSmartGrade } from '@/data/smartGrader';
+import { useAuth } from '@/lib/auth';
+import { saveStudentResult } from '@/lib/studentResults';
 import { useGradualVitalChanges } from '@/hooks/useGradualVitalChanges';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
+import { AmbientBackground } from '@/components/AmbientBackground';
 import {
   Stethoscope, GraduationCap, Activity, Clock, ArrowLeft, ArrowRight,
   Sparkles, CheckCircle2, AlertTriangle, FileText, Loader2, BookOpen,
   Ambulance, XCircle, Heart, Shield, ChevronRight, BarChart3,
   ClipboardCheck, Star, TrendingUp, TrendingDown, Minus, ExternalLink,
-  RotateCcw, Zap, Volume2, Phone, Eye, Thermometer, ChevronDown, ChevronUp,
+  RotateCcw, Zap, Volume2, Phone, Thermometer, ChevronDown, ChevronUp,
   Wind, Droplets, Brain, Pill, Syringe, Search, Shuffle, Target,
   Flame, Baby, FlaskConical, ListChecks, HeartPulse, Gauge,
 } from 'lucide-react';
 import { toast } from 'sonner';
 // AuscultationPanel removed — sounds now play inline from 3D Physical Examination
 import { DebriefingResourcesPanel } from '@/components/DebriefingResourcesPanel';
+import { SceneSurveyPanel, type SceneSurveyResult } from '@/components/SceneSurveyPanel';
+import { VoiceHistoryPanel } from '@/components/VoiceHistoryPanel';
+import { TreatmentJumpBagPanel, type ManagementTab } from '@/components/TreatmentJumpBagPanel';
+import type { HistoryCategory } from '@/lib/historyTaking';
+// InjuryMap retained for a future debrief/instructor summary — not shown in
+// the student exam view (findings must be discovered, not listed up front).
 import { OnboardingTour, useOnboardingTour } from '@/components/OnboardingTour';
 import { NarrationButton, VoiceToggleButton } from '@/components/NarrationButton';
 import { useVoiceNarration } from '@/hooks/useVoiceNarration';
@@ -193,7 +202,6 @@ import {
 // Lazy load heavy components
 const CaseDisplay = lazy(() => import('@/components/CaseDisplay').then(m => ({ default: m.CaseDisplay })));
 const VitalSignsMonitor = lazy(() => import('@/components/VitalSignsMonitor').then(m => ({ default: m.VitalSignsMonitor })));
-const TreatmentApplicationPanel = lazy(() => import('@/components/TreatmentApplicationPanel').then(m => ({ default: m.TreatmentApplicationPanel })));
 const Body3DModel = lazy(() => import('@/components/Body3DModel').then(m => ({ default: m.Body3DModel })));
 
 function LoadingCard() {
@@ -220,8 +228,7 @@ function LoadingCard() {
   );
 }
 
-type StudentPhase = 'select' | 'prebriefing' | 'case' | 'vitals' | 'postcase';
-
+type StudentPhase = 'select' | 'prebriefing' | 'scene-survey' | 'case' | 'vitals' | 'postcase';
 interface StudentPanelProps {
   onExit: () => void;
   /**
@@ -345,6 +352,165 @@ interface StudentPanelProps {
   };
 }
 
+interface TreatmentPracticalityContext {
+  treatment: Treatment;
+  currentVitals: VitalSigns;
+  currentCase: CaseScenario;
+  patientState: PatientState;
+}
+
+interface TreatmentChallenge {
+  level: 'block' | 'challenge';
+  title: string;
+  clinicalReason: string;
+  patientQuote?: string;
+  proceedLabel?: string;
+}
+
+interface PendingTreatmentChallenge {
+  treatment: Treatment;
+  challenge: TreatmentChallenge;
+  defibParams?: DefibrillationParams;
+}
+
+function getVitalGcsTotal(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (value && typeof value === 'object' && 'total' in value) {
+    const total = Number((value as { total?: unknown }).total);
+    return Number.isFinite(total) ? total : null;
+  }
+  return null;
+}
+
+function getPatientGcsTotal(currentVitals: VitalSigns, currentCase: CaseScenario, patientState: PatientState): number {
+  return getVitalGcsTotal(currentVitals.gcs)
+    ?? getVitalGcsTotal(patientState.vitals?.gcs)
+    ?? getVitalGcsTotal(currentCase.abcde?.disability?.gcs)
+    ?? getVitalGcsTotal(currentCase.vitalSignsProgression?.initial?.gcs)
+    ?? 15;
+}
+
+function getCaseClinicalText(caseData: CaseScenario): string {
+  return [
+    caseData.title,
+    caseData.dispatchInfo?.callReason,
+    caseData.initialPresentation?.appearance,
+    caseData.initialPresentation?.generalImpression,
+    caseData.initialPresentation?.position,
+    caseData.abcde?.airway?.patent === false ? 'airway not patent' : '',
+    ...(caseData.abcde?.airway?.findings ?? []),
+    ...(caseData.abcde?.breathing?.findings ?? []),
+    ...(caseData.abcde?.disability?.findings ?? []),
+    ...(caseData.expectedFindings?.keyObservations ?? []),
+    ...(caseData.secondarySurvey?.face ?? []),
+    ...(caseData.secondarySurvey?.chest ?? []),
+  ].filter(Boolean).join(' ').toLowerCase();
+}
+
+function canPatientVocalize(currentVitals: VitalSigns, currentCase: CaseScenario, patientState: PatientState): boolean {
+  if (patientState.isInArrest) return false;
+  const gcs = getPatientGcsTotal(currentVitals, currentCase, patientState);
+  const rr = currentVitals.respiration ?? patientState.vitals?.respiration ?? 0;
+  const text = getCaseClinicalText(currentCase);
+  if (gcs < 13 || rr <= 0) return false;
+  if (/(unconscious|unresponsive|obtunded|seizing|actively seizing|agonal|apnoeic|apneic|cardiac arrest|unable to speak)/.test(text)) return false;
+  return true;
+}
+
+function hasAirwayCompromise(currentVitals: VitalSigns, currentCase: CaseScenario, patientState: PatientState): boolean {
+  const text = getCaseClinicalText(currentCase);
+  const rr = currentVitals.respiration ?? patientState.vitals?.respiration ?? 0;
+  const spo2 = currentVitals.spo2 ?? patientState.vitals?.spo2 ?? 100;
+  return currentCase.abcde?.airway?.patent === false
+    || rr <= 8
+    || spo2 < 90
+    || /(stridor|gurgling|snoring|obstruct|vomit|secretions|foreign body|airway compromise|unable to protect airway|silent chest|cyanosis|apnoeic|apneic|agonal)/.test(text);
+}
+
+function assessTreatmentPracticality({
+  treatment,
+  currentVitals,
+  currentCase,
+  patientState,
+}: TreatmentPracticalityContext): TreatmentChallenge | null {
+  const id = treatment.id;
+  const gcs = getPatientGcsTotal(currentVitals, currentCase, patientState);
+  const rr = currentVitals.respiration ?? patientState.vitals?.respiration ?? 0;
+  const spo2 = currentVitals.spo2 ?? patientState.vitals?.spo2 ?? 100;
+  const text = getCaseClinicalText(currentCase);
+  const vocal = canPatientVocalize(currentVitals, currentCase, patientState);
+  const airwayCompromise = hasAirwayCompromise(currentVitals, currentCase, patientState);
+  const respiratoryDistress = spo2 < 94 || rr >= 26 || /severe distress|accessory|tripod|wheeze|cyanosis|pulmonary oedema|pulmonary edema/.test(text);
+
+  if (id === 'opa_insert' && !patientState.isInArrest && (gcs > 8 || vocal)) {
+    return {
+      level: 'block',
+      title: 'Patient rejects OPA',
+      clinicalReason: 'The patient appears conscious enough to have a gag reflex. An oropharyngeal airway is for an unconscious patient without a gag reflex.',
+      patientQuote: vocal ? 'No, stop. That is making me gag.' : undefined,
+    };
+  }
+
+  if ((id === 'intubation' || id === 'rsi_intubation') && !patientState.isInArrest && gcs > 8 && !airwayCompromise) {
+    return {
+      level: 'block',
+      title: 'Airway escalation not justified',
+      clinicalReason: 'This patient is not showing a current airway failure or GCS threshold for intubation. Escalate only if they cannot protect the airway, cannot oxygenate/ventilate, or deteriorate.',
+      patientQuote: vocal ? 'Wait, I can breathe. What are you doing?' : undefined,
+    };
+  }
+
+  if (id === 'bvm_ventilation' && vocal && rr >= 10 && spo2 >= 90 && !airwayCompromise) {
+    return {
+      level: 'block',
+      title: 'Patient fights the BVM',
+      clinicalReason: 'An awake, talking patient with spontaneous ventilation will not tolerate bag-mask ventilation. Coach breathing, apply appropriate oxygen, and reassess.',
+      patientQuote: 'I am breathing. Please do not put that over my face.',
+    };
+  }
+
+  if (id === 'cpap_niv' && !patientState.isInArrest && (gcs <= 8 || /vomit|facial trauma|unconscious|unresponsive/.test(text))) {
+    return {
+      level: 'block',
+      title: 'CPAP unsafe',
+      clinicalReason: 'Non-invasive ventilation requires a cooperative patient who can protect their airway. Reduced consciousness, vomiting, or facial trauma makes CPAP unsafe.',
+      patientQuote: vocal ? 'I cannot tolerate that mask.' : undefined,
+    };
+  }
+
+  if (id === 'cpap_niv' && vocal && !respiratoryDistress) {
+    return {
+      level: 'challenge',
+      title: 'Question CPAP indication',
+      clinicalReason: 'The patient is speaking and does not currently look like they need positive-pressure support. CPAP is usually reserved for significant respiratory distress, pulmonary oedema, COPD, or persistent hypoxia.',
+      patientQuote: 'Do I really need that tight mask?',
+      proceedLabel: 'Apply CPAP anyway',
+    };
+  }
+
+  if (id === 'oxygen_nonrebreather' && vocal && spo2 >= 94 && !respiratoryDistress) {
+    return {
+      level: 'challenge',
+      title: 'High-flow oxygen may be excessive',
+      clinicalReason: 'SpO2 is already acceptable and the patient is able to speak. Consider titrated oxygen or no oxygen unless clinical context demands high-flow therapy.',
+      patientQuote: 'Why do I need the big mask? I can talk to you.',
+      proceedLabel: 'Use high-flow anyway',
+    };
+  }
+
+  if (id === 'suction' && vocal && !/(secretions|vomit|blood in airway|gurgling|foreign body)/.test(text)) {
+    return {
+      level: 'challenge',
+      title: 'No obvious suction target',
+      clinicalReason: 'The patient is speaking and there is no documented blood, vomit, gurgling, or secretions. Suction may distress them without benefit.',
+      patientQuote: 'No, please do not put that in my mouth.',
+      proceedLabel: 'Suction anyway',
+    };
+  }
+
+  return null;
+}
+
 export function StudentPanel({
   onExit,
   preloadedCase,
@@ -359,7 +525,7 @@ export function StudentPanel({
   const { showTour, dismissTour } = useOnboardingTour();
 
   // Voice narration for dispatch/scene/patient info
-  const { speak: speakNarration } = useVoiceNarration();
+  const { speak: speakNarration, isSpeaking: isDispatchSpeaking, stop: stopNarration } = useVoiceNarration();
 
   // Medical control dialog
   const [showMedicalControl, setShowMedicalControl] = useState(false);
@@ -367,6 +533,10 @@ export function StudentPanel({
   // Core state
   const [phase, _setPhase] = useState<StudentPhase>('select');
   const [phaseHistory, setPhaseHistory] = useState<StudentPhase[]>([]);
+  // Scene survey result — captured pre-arrival, surfaced in the debrief so
+  // students can see whether they verbalised safety, picked appropriate PPE,
+  // and formed an early impression. Reset when a new case loads.
+  const [sceneSurvey, setSceneSurvey] = useState<SceneSurveyResult | null>(null);
 
   // Wrap setPhase to track history for back navigation
   const setPhase = useCallback((newPhase: StudentPhase) => {
@@ -396,6 +566,9 @@ export function StudentPanel({
   // Session tracking
   const [session, setSession] = useState<CaseSession | null>(null);
   const [currentVitals, setCurrentVitals] = useState<VitalSigns | null>(null);
+  // Live mirror of currentVitals for reading inside timer callbacks (which
+  // would otherwise capture a stale value).
+  const currentVitalsRef = useRef<VitalSigns | null>(null);
   const [previousVitals, setPreviousVitals] = useState<VitalSigns | null>(null);
   const [vitalsHistory, setVitalsHistory] = useState<VitalSigns[]>([]);
   const [appliedTreatments, setAppliedTreatments] = useState<AppliedTreatment[]>([]);
@@ -412,6 +585,7 @@ export function StudentPanel({
   // Separate from full mechanical ventilation because BVM is the common
   // prehospital airway intervention and deserves a lighter-weight picker.
   const [bvmVentilationRate, setBvmVentilationRate] = useState<number | null>(null);
+  const bvmVentilationRateRef = useRef<number | null>(null);
   const [showBvmRateDialog, setShowBvmRateDialog] = useState(false);
   const [pendingBvmTreatment, setPendingBvmTreatment] = useState<Treatment | null>(null);
   // LUCAS prompt — offered ONCE when CPR has been running for ≥4 min and
@@ -419,9 +593,29 @@ export function StudentPanel({
   const [lucasPromptShown, setLucasPromptShown] = useState(false);
   // Medication safety confirmation (replaces window.confirm which auto-dismisses on re-render)
   const [pendingMedConfirm, setPendingMedConfirm] = useState<{ treatment: Treatment; allergyText: string; contraText: string } | null>(null);
+  const [pendingTreatmentChallenge, setPendingTreatmentChallenge] = useState<PendingTreatmentChallenge | null>(null);
   const [pendingIVTreatment, setPendingIVTreatment] = useState<Treatment | null>(null);
   const deteriorationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const medicationConfirmedRef = useRef<Set<string>>(new Set());
+  const treatmentChallengeConfirmedRef = useRef<Set<string>>(new Set());
+
+  // ── Adverse drug reaction (allergy) cascade ──────────────────────────────
+  // Set when the student administers a drug the patient is allergic to.
+  // `activeReaction` drives the on-screen banner; the refs let timer callbacks
+  // and applyTreatment read the live state without stale closures.
+  const [activeReaction, setActiveReaction] = useState<AdverseReaction | null>(null);
+  const activeReactionRef = useRef<AdverseReaction | null>(null);
+  const reactionTimersRef = useRef<number[]>([]);
+  // One record per allergen administered — consumed by the grader (per-case).
+  const adverseEventsRef = useRef<Array<{
+    reactionId: string; treatmentId: string; treatmentName: string;
+    kind: AdverseReaction['kind']; allergy: string;
+    administeredAt: number; recognizedRescueAt: number | null; reachedArrest: boolean;
+  }>>([]);
+
+  // Optional signed-in account (magic link) — used to persist graded results.
+  const auth = useAuth();
+  const savedResultRef = useRef(false);
 
   // Assessment tracking
   const [assessmentTracker, setAssessmentTracker] = useState<AssessmentTracker | null>(null);
@@ -431,6 +625,10 @@ export function StudentPanel({
   // Scene time warnings & coaching
   const [sceneTimeWarnings, setSceneTimeWarnings] = useState<Set<string>>(new Set());
   const lastActivityRef = useRef<number>(Date.now());
+
+  useEffect(() => {
+    bvmVentilationRateRef.current = bvmVentilationRate;
+  }, [bvmVentilationRate]);
   const [hintVisible, setHintVisible] = useState(false);
   const [currentHint, setCurrentHint] = useState<string>('');
 
@@ -438,7 +636,7 @@ export function StudentPanel({
   const [showScene, setShowScene] = useState(false);
   const [activePrimarySurvey, setActivePrimarySurvey] = useState<'scene-safety' | 'airway' | 'breathing' | 'circulation' | 'disability' | 'exposure' | null>(null);
   const [activeHistoryStep, setActiveHistoryStep] = useState<'signs-symptoms' | 'allergies' | 'medications' | 'past-medical' | 'last-meal' | 'events-leading' | null>(null);
-  const [activeManagementTab, setActiveManagementTab] = useState<'airway' | 'breathing' | 'circulation' | 'disability' | 'exposure' | 'medications' | null>(null);
+  const [activeManagementTab, setActiveManagementTab] = useState<ManagementTab>('airway');
   const [medSearch, setMedSearch] = useState('');
 
   // Transport decision wizard — step-by-step flow
@@ -460,6 +658,32 @@ export function StudentPanel({
   // Pulse check state
   const [pulseCheckInProgress, setPulseCheckInProgress] = useState(false);
   const [pulseCheckResult, setPulseCheckResult] = useState<string | null>(null);
+  // Pulse check — now triggered by tapping the carotid (neck) / radial (wrist)
+  // points on the mannequin. 5s palpation delay; present iff a perfusing pulse
+  // exists and the patient isn't in arrest. Feeds the arrest-confirm prompt.
+  const runPulseCheck = useCallback((site?: string) => {
+    if (pulseCheckInProgress) return;
+    setPulseCheckInProgress(true);
+    setPulseCheckResult(null);
+    lastActivityRef.current = Date.now();
+    const where = site === 'pulse-carotid' ? 'carotid' : site === 'pulse-radial' ? 'radial' : 'central';
+    setTimeout(() => {
+      const hasPulse = !!currentVitals && currentVitals.pulse > 0 && !(patientState?.isInArrest);
+      setPulseCheckResult(hasPulse ? 'present' : 'absent');
+      setPulseCheckInProgress(false);
+      if (!hasPulse) {
+        toast.error('No pulse detected', {
+          description: `No ${where} pulse palpable — patient is pulseless. Consider the cardiac arrest protocol.`,
+          duration: 8000,
+        });
+      } else {
+        toast.success('Pulse present', {
+          description: `${where.charAt(0).toUpperCase()}${where.slice(1)} pulse palpable — rate approximately ${currentVitals?.pulse || '?'} bpm.`,
+          duration: 5000,
+        });
+      }
+    }, 5000);
+  }, [pulseCheckInProgress, currentVitals, patientState]);
   const [cprCycleTimer, setCprCycleTimer] = useState(120); // 2 min countdown
   const [cprCycleNumber, setCprCycleNumber] = useState(0);
   const [cprRunning, setCprRunning] = useState(false);
@@ -542,6 +766,10 @@ export function StudentPanel({
       setCurrentVitals(animatedVitals);
     }
   }, [animatedVitals]);
+
+  // Keep refs in step with state so timer callbacks read live values.
+  useEffect(() => { currentVitalsRef.current = currentVitals; }, [currentVitals]);
+  useEffect(() => { activeReactionRef.current = activeReaction; }, [activeReaction]);
 
   // Timer effect
   useEffect(() => {
@@ -682,6 +910,8 @@ export function StudentPanel({
         clearInterval(deteriorationIntervalRef.current);
         deteriorationIntervalRef.current = null;
       }
+      reactionTimersRef.current.forEach(id => window.clearTimeout(id));
+      reactionTimersRef.current = [];
       if (cprTimerRef.current) {
         clearInterval(cprTimerRef.current);
         cprTimerRef.current = null;
@@ -1060,16 +1290,21 @@ export function StudentPanel({
 
   // Shared case initialization helper
   const initializeCase = useCallback((newCase: CaseScenario, conditionMode: boolean, condition?: string) => {
+    stopNarration();
     setCurrentCase(newCase);
     const initialVitals = buildInitialVitalsFromCase(newCase);
     setCurrentVitals(initialVitals);
     setVitalsHistory([initialVitals]);
     setAppliedTreatments([]);
     setAppliedTreatmentIds([]);
+    medicationConfirmedRef.current = new Set();
+    treatmentChallengeConfirmedRef.current = new Set();
+    setPendingTreatmentChallenge(null);
     setCaseStartTime(null);
     setCaseEndTime(null);
     setElapsedSeconds(0);
     setSceneTimeWarnings(new Set());
+    setSceneSurvey(null);
     setHintVisible(false);
     setCurrentHint('');
     lastActivityRef.current = Date.now();
@@ -1087,6 +1322,13 @@ export function StudentPanel({
     setAmiodaroneDoses(0);
     setArrestStartTime(null);
     setArrestTimeline([]);
+
+    // Clear any adverse reaction carried over from a previous case
+    reactionTimersRef.current.forEach(id => window.clearTimeout(id));
+    reactionTimersRef.current = [];
+    activeReactionRef.current = null;
+    setActiveReaction(null);
+    adverseEventsRef.current = [];
 
     const initialPatientState = createInitialPatientState(newCase);
     setPatientState(initialPatientState);
@@ -1111,7 +1353,7 @@ export function StudentPanel({
     };
     setSession(newSession);
     setPhase('prebriefing');
-  }, [selectedYear]);
+  }, [selectedYear, stopNarration]);
 
   // Classroom-host: when a preloaded case is passed in (e.g. the instructor
   // just picked a case in the classroom lobby), bootstrap it directly and
@@ -1142,6 +1384,27 @@ export function StudentPanel({
       setPhase('vitals');
     }
   }, [preloadedCase, currentCase, phase, setPhase, caseStartTime]);
+
+  // Auto-play the dispatch radio call when a new case lands in Pre-Brief.
+  // This mirrors the real workflow: the radio crackles to life on the way
+  // to scene, the crew listens, then decides their approach — they don't
+  // hear dispatch info for the first time after stepping out of the truck.
+  // Keyed on the case ID so each new case fires exactly once (re-entering
+  // Pre-Brief for the same case won't re-trigger it).
+  const dispatchPlayedForRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!currentCase) return;
+    if (phase !== 'prebriefing') return;
+    if (dispatchPlayedForRef.current === currentCase.id) return;
+    dispatchPlayedForRef.current = currentCase.id;
+    const t = setTimeout(() => {
+      speakNarration(buildDispatchNarration(currentCase), { role: 'dispatcher' });
+    }, 600);
+    return () => clearTimeout(t);
+    // speakNarration intentionally omitted — its identity is stable and
+    // including it would re-fire when the hook re-rendered.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentCase, phase]);
 
   // Generate case — standard mode
   const generateCase = useCallback(async () => {
@@ -1226,26 +1489,51 @@ export function StudentPanel({
     }
   }, [selectedYear, initializeCase]);
 
-  // Start case (from pre-briefing)
+  // Start case (from pre-briefing) — routes to Scene Survey first.
+  // The timer doesn't start yet; scene survey is "pre-arrival" and
+  // shouldn't eat into the student's case time.
   const startCase = useCallback(() => {
     if (readOnly) return;
-    setCaseStartTime(Date.now());
-    lastActivityRef.current = Date.now();
+    stopNarration();
+    setPhase('scene-survey');
+  }, [readOnly, setPhase, stopNarration]);
+
+  // Enter the scene (from scene survey) — this is where the real case
+  // clock starts and deterioration begins ticking. The dispatch radio
+  // call no longer plays here — it's been moved upstream to fire once
+  // when the case first lands in Pre-Brief (see the useEffect below)
+  // so the workflow matches reality: dispatch arrives → review → scene
+  // survey → on-scene. Called by SceneSurveyPanel.onComplete.
+  const enterScene = useCallback(() => {
+    if (readOnly) return;
+    stopNarration();
+    const startedAt = Date.now();
+    setCaseStartTime(startedAt);
+    lastActivityRef.current = startedAt;
+
+    // The scene survey happens before the live-case clock starts, so routing
+    // it through handlePerformAssessment would silently discard it while
+    // caseStartTime is still null. Credit the completed survey at time zero.
+    if (assessmentTrackerRef.current && currentCase) {
+      const { tracker: updatedTracker } = performAssessmentStep(
+        assessmentTrackerRef.current,
+        'scene-safety',
+        currentCase,
+        startedAt,
+      );
+      assessmentTrackerRef.current = updatedTracker;
+      setAssessmentTracker(updatedTracker);
+    }
+
     setPhase('vitals');
     toast.success('Case started — begin your assessment', { duration: 3000 });
-
-    // Auto-narrate the dispatch info and scene in a dispatcher voice
-    if (currentCase) {
-      const fullText = buildDispatchNarration(currentCase);
-      // Small delay so the UI settles first
-      setTimeout(() => speakNarration(fullText, { role: 'dispatcher' }), 500);
-    }
 
     // Start deterioration timer — patient deteriorates if not treated
     if (deteriorationIntervalRef.current) clearInterval(deteriorationIntervalRef.current);
     deteriorationIntervalRef.current = setInterval(() => {
       setPatientState(prev => {
         if (!prev || !currentCase) return prev;
+        if (activeReactionRef.current) return prev; // reaction owns vitals — pause deterioration
         const newState = applyDeterioration(prev, currentCase, 30);
         if (newState.vitals.spo2 !== prev.vitals.spo2 || newState.vitals.pulse !== prev.vitals.pulse) {
           setCurrentVitals(ensureCompleteVitals(newState.vitals));
@@ -1257,7 +1545,7 @@ export function StudentPanel({
     // with readOnly=false; otherwise the student-as-driver can't actually
     // start the case (silent `if (readOnly) return;` hit from stale
     // closure).
-  }, [currentCase, readOnly]);
+  }, [currentCase, readOnly, stopNarration]);
 
   // LUCAS device nudge — if CPR has been running for ≥4 minutes and no
   // mechanical CPR device has been applied yet, offer one via a single,
@@ -1307,6 +1595,7 @@ export function StudentPanel({
     const id = window.setInterval(() => {
       setPatientState(prev => {
         if (!prev) return prev;
+        if (activeReactionRef.current) return prev; // adverse reaction owns the monitor
         const v = { ...prev.vitals };
         let changed = false;
         let roscTriggered = false;
@@ -1540,6 +1829,116 @@ export function StudentPanel({
   }, [phase, readOnly, appliedTreatmentIds, cprRunning, ventilatorSettings, bvmVentilationRate, adrenalineDoses, caseStartTime]);
 
   // Apply treatment — uses dynamic treatment engine
+  // ── Adverse reaction cascade helpers ─────────────────────────────────────
+  // Administering an allergen kicks off a time-evolving reaction. We reuse the
+  // existing vitals animation (startGradualChange → animatedVitals → monitor),
+  // pause deterioration/continuous-O2 while it runs (guards above), and — for
+  // anaphylaxis left untreated — escalate into the normal arrest workflow.
+  // In a classroom session the vitals + arrest mirrors broadcast it to
+  // spectators automatically, so students watching see the same cascade.
+  const clearReactionTimers = useCallback(() => {
+    reactionTimersRef.current.forEach(id => window.clearTimeout(id));
+    reactionTimersRef.current = [];
+  }, []);
+
+  const triggerAdverseReaction = useCallback((reaction: AdverseReaction) => {
+    clearReactionTimers();
+    activeReactionRef.current = reaction;
+    setActiveReaction(reaction);
+    adverseEventsRef.current.push({
+      reactionId: reaction.id,
+      treatmentId: reaction.treatmentId,
+      treatmentName: reaction.treatmentName,
+      kind: reaction.kind,
+      allergy: reaction.match.allergy,
+      administeredAt: Date.now(),
+      recognizedRescueAt: null,
+      reachedArrest: false,
+    });
+
+    toast.error(reaction.headline, {
+      description: `${reaction.findings.onset[0]}. Recognise it and treat — IM adrenaline is the priority.`,
+      duration: 10000,
+    });
+
+    const animateTo = (stage: 'onset' | 'peak' | 'arrest') => {
+      const from = currentVitalsRef.current;
+      if (!from) return;
+      const target = ensureCompleteVitals(projectReactionVitals(from, reaction.kind, stage));
+      setPreviousVitals(from);
+      if (startGradualChange) startGradualChange(from, target, 3000);
+      else setCurrentVitals(target);
+    };
+
+    // Onset → peak → (if untreated) peri-arrest.
+    reactionTimersRef.current.push(window.setTimeout(() => animateTo('onset'), reaction.onsetMs));
+    reactionTimersRef.current.push(window.setTimeout(() => {
+      if (!activeReactionRef.current) return;
+      animateTo('peak');
+      toast.error('Reaction worsening', {
+        description: reaction.findings.peak.slice(0, 2).join('. '),
+        duration: 8000,
+      });
+    }, reaction.onsetMs + 8000));
+
+    if (reaction.canProgressToArrest) {
+      reactionTimersRef.current.push(window.setTimeout(() => {
+        if (!activeReactionRef.current) return; // rescued in time
+        animateTo('arrest');
+        setPatientState(prev => prev ? { ...prev, isInArrest: true, currentRhythm: 'PEA' } : prev);
+        setArrestConfirmed(true);
+        const ev = adverseEventsRef.current.find(e => e.reactionId === reaction.id);
+        if (ev) ev.reachedArrest = true;
+        toast.error('CARDIAC ARREST — untreated anaphylaxis', {
+          description: 'PEA arrest. Begin CPR, adrenaline 1mg IV, IV fluids, treat the cause.',
+          duration: 12000,
+        });
+      }, reaction.escalateMs));
+    }
+  }, [clearReactionTimers, startGradualChange]);
+
+  const resolveAdverseReaction = useCallback(() => {
+    const reaction = activeReactionRef.current;
+    if (!reaction) return;
+    clearReactionTimers();
+    activeReactionRef.current = null;
+    setActiveReaction(null);
+    const ev = adverseEventsRef.current.find(e => e.reactionId === reaction.id && e.recognizedRescueAt == null);
+    if (ev) ev.recognizedRescueAt = Date.now();
+
+    // Adrenaline reverses it — animate recovery and stand down any arrest.
+    const from = currentVitalsRef.current;
+    const recovered = from ? ensureCompleteVitals(projectReactionVitals(from, reaction.kind, 'recovery')) : null;
+    if (from && recovered) {
+      setPreviousVitals(from);
+      if (startGradualChange) startGradualChange(from, recovered, 6000);
+      else setCurrentVitals(recovered);
+    }
+    // Clear the arrest AND restore a perfusing rhythm + synced pulse. The
+    // monitor forces HR 0 for any 'arrest'-category rhythm (PEA/asystole)
+    // even after ROSC — so if we only flip isInArrest the monitor keeps
+    // showing HR 0 while a pulse is present. Move the rhythm back to a
+    // perfusing one and sync patientState.vitals to the recovered values.
+    setPatientState(prev => {
+      if (!prev) return prev;
+      const wasArrestRhythm = prev.isInArrest
+        || prev.currentRhythm === 'PEA'
+        || prev.currentRhythm === 'Asystole';
+      return {
+        ...prev,
+        isInArrest: false,
+        currentRhythm: wasArrestRhythm ? 'Sinus Tachycardia' : prev.currentRhythm,
+        vitals: recovered ? { ...prev.vitals, ...recovered } : prev.vitals,
+      };
+    });
+    setArrestConfirmed(false);
+
+    toast.success('Anaphylaxis treated — adrenaline working', {
+      description: 'BP and SpO2 recovering. Continue high-flow O2 and IV fluids; add chlorphenamine + hydrocortisone. Reassess.',
+      duration: 7000,
+    });
+  }, [clearReactionTimers, startGradualChange]);
+
   const applyTreatment = useCallback((treatment: Treatment, defibParams?: DefibrillationParams) => {
     if (readOnly) {
       toast.info('You are watching — the driver is treating this case.', { duration: 1800 });
@@ -1548,6 +1947,41 @@ export function StudentPanel({
     if (!currentVitals || !currentCase || !patientState) return;
     lastActivityRef.current = Date.now();
     setHintVisible(false);
+
+    // Active anaphylaxis + adrenaline = the rescue. Resolve the reaction
+    // (animate recovery, stand down any arrest) instead of the normal effect.
+    if (activeReactionRef.current && isDefinitiveRescue(treatment.id)) {
+      setAppliedTreatments(prev => [...prev, {
+        id: treatment.id, name: treatment.name,
+        description: `${treatment.name} — anaphylaxis rescue`,
+        appliedAt: new Date().toISOString(), effects: [],
+        category: treatment.category, isActive: true,
+      }]);
+      setAppliedTreatmentIds(prev => prev.includes(treatment.id) ? prev : [...prev, treatment.id]);
+      resolveAdverseReaction();
+      return;
+    }
+
+    const practicalChallenge = assessTreatmentPracticality({
+      treatment,
+      currentVitals,
+      currentCase,
+      patientState,
+    });
+    if (practicalChallenge && !treatmentChallengeConfirmedRef.current.has(treatment.id)) {
+      if (practicalChallenge.patientQuote) {
+        speakNarration(practicalChallenge.patientQuote, { role: 'patient' });
+      }
+      if (practicalChallenge.level === 'block') {
+        toast.error(practicalChallenge.title, {
+          description: practicalChallenge.clinicalReason,
+          duration: 8000,
+        });
+        return;
+      }
+      setPendingTreatmentChallenge({ treatment, challenge: practicalChallenge, defibParams });
+      return;
+    }
 
     // Defibrillation requires energy/mode selection
     if (treatment.id === 'defibrillation' && !defibParams) {
@@ -1590,7 +2024,7 @@ export function StudentPanel({
     // Re-clicking bvm_ventilation reopens the rate dialog so the student
     // can change the rate (e.g. switching from 10/min CPR-sync to 12/min
     // normoventilation post-ROSC).
-    if (treatment.id === 'bvm_ventilation' && bvmVentilationRate == null) {
+    if (treatment.id === 'bvm_ventilation' && bvmVentilationRateRef.current == null) {
       setPendingBvmTreatment(treatment);
       setShowBvmRateDialog(true);
       return;
@@ -1659,6 +2093,24 @@ export function StudentPanel({
       return; // Wait for dialog confirmation
     }
 
+    // Allergy violation — giving a drug the patient is allergic to triggers a
+    // real, time-evolving adverse reaction instead of the therapeutic effect.
+    const reaction = buildReactionForTreatment(treatment, {
+      vitals: currentVitals,
+      allergies: currentCase.history?.allergies,
+    });
+    if (reaction) {
+      setAppliedTreatments(prev => [...prev, {
+        id: treatment.id, name: treatment.name,
+        description: `${treatment.name} — administered despite documented allergy`,
+        appliedAt: new Date().toISOString(), effects: [],
+        category: treatment.category, isActive: true,
+      }]);
+      setAppliedTreatmentIds(prev => prev.includes(treatment.id) ? prev : [...prev, treatment.id]);
+      triggerAdverseReaction(reaction);
+      return; // an allergen provides no therapeutic benefit
+    }
+
     setApplyingTreatmentId(treatment.id);
 
     // Use dynamic treatment engine
@@ -1668,6 +2120,15 @@ export function StudentPanel({
       currentCase,
       defibParams,
     );
+    const realismResponse = evaluateTreatmentRealism({
+      treatment,
+      caseData: currentCase,
+      vitals: currentVitals,
+      appliedTreatmentIds,
+    });
+    if (realismResponse.patientQuote) {
+      speakNarration(realismResponse.patientQuote, { role: 'patient' });
+    }
 
     // Update patient state
     setPatientState(newState);
@@ -1676,7 +2137,7 @@ export function StudentPanel({
     const newTreatment: AppliedTreatment = {
       id: treatment.id,
       name: treatment.name,
-      description: response.description,
+      description: `${response.description}${realismResponse.debriefNote ? ` — ${realismResponse.debriefNote}` : ''}`,
       appliedAt: new Date().toISOString(),
       effects: response.vitalChanges.map(vc => ({
         vitalSign: vc.vital,
@@ -1716,15 +2177,29 @@ export function StudentPanel({
         description: response.warningMessage,
         duration: 8000,
       });
-    } else if (response.warningMessage) {
-      toast.warning(`${treatment.name} applied`, {
-        description: 'Monitor the patient to assess response.',
-        duration: 5000,
+    } else if (realismResponse.status === 'harmful') {
+      toast.error(realismResponse.title, {
+        description: realismResponse.clinicalFeedback,
+        duration: 8500,
       });
-    } else if (response.isPartialResponse) {
-      toast.info(`${treatment.name} applied`, {
-        description: 'Monitor the patient — reassess vitals to evaluate response.',
-        duration: 4000,
+    } else if (realismResponse.status === 'mismatch' || response.warningMessage) {
+      toast.warning(realismResponse.status === 'mismatch' ? realismResponse.title : `${treatment.name} applied`, {
+        description: realismResponse.status === 'mismatch'
+          ? realismResponse.clinicalFeedback
+          : 'Monitor the patient to assess response.',
+        duration: 6500,
+      });
+    } else if (realismResponse.status === 'partial' || response.isPartialResponse) {
+      toast.info(realismResponse.status === 'partial' ? realismResponse.title : `${treatment.name} applied`, {
+        description: realismResponse.status === 'partial'
+          ? realismResponse.clinicalFeedback
+          : 'Monitor the patient — reassess vitals to evaluate response.',
+        duration: 5200,
+      });
+    } else if (realismResponse.status === 'matched') {
+      toast.success(realismResponse.title, {
+        description: realismResponse.clinicalFeedback,
+        duration: 4500,
       });
     } else {
       toast.success(`Applied: ${treatment.name}`, {
@@ -1770,7 +2245,7 @@ export function StudentPanel({
     // readOnly must be in deps — when control is handed to this student
     // the callback needs to be rebuilt so applyTreatment can actually run
     // instead of hitting the stale "you are watching" toast branch.
-  }, [currentVitals, currentCase, patientState, startGradualChange, arrestActive, adrenalineDoses, shockCount, readOnly]);
+	  }, [currentVitals, currentCase, patientState, startGradualChange, arrestActive, adrenalineDoses, shockCount, readOnly, triggerAdverseReaction, resolveAdverseReaction, speakNarration, appliedTreatmentIds]);
 
   // Handle defibrillation dialog confirmation
   const handleDefibConfirm = useCallback((params: DefibrillationParams) => {
@@ -2069,13 +2544,34 @@ export function StudentPanel({
     const assessmentScore = debrief ? debrief.score : completed.reduce((sum, item) => sum + (item.points || 0), 0);
     const assessmentTotal = debrief ? debrief.totalPossible : checklist.reduce((sum, item) => sum + (item.points || 0), 0);
 
-    // Treatment bonus: appropriate treatments earn points (up to 30% of total possible)
+    const initialVitalsForRealism = buildInitialVitalsFromCase(currentCase);
+    const uniqueAppliedTreatmentIds = [...new Set(appliedTreatments.map(t => t.id))];
+    const treatmentRealism = uniqueAppliedTreatmentIds.flatMap(id => {
+      const treatment = TREATMENTS.find(item => item.id === id);
+      if (!treatment) return [];
+      return [{
+        treatment,
+        result: evaluateTreatmentRealism({
+          treatment,
+          caseData: currentCase,
+          vitals: initialVitalsForRealism,
+          appliedTreatmentIds: uniqueAppliedTreatmentIds,
+        }),
+      }];
+    });
+    const mismatchTreatments = treatmentRealism.filter(item => item.result.status === 'mismatch');
+    const harmfulTreatments = treatmentRealism.filter(item => item.result.status === 'harmful');
+    const bonusEligibleTreatmentCount = treatmentRealism.filter(
+      item => item.result.status !== 'mismatch' && item.result.status !== 'harmful',
+    ).length;
+
+    // Treatment bonus: clinically plausible treatments earn points (up to 30%
+    // of total possible). Mismatched and harmful actions are excluded here and
+    // receive named safety deductions below.
     const treatmentBonusCap = Math.round(assessmentTotal * 0.3);
     let treatmentBonus = 0;
-    if (appliedTreatments.length > 0 && currentCase) {
-      // Deduplicate by treatment ID so repeat applications don't inflate score
-      const uniqueTreatmentCount = new Set(appliedTreatments.map(t => t.id)).size;
-      treatmentBonus = Math.min(uniqueTreatmentCount * 5, treatmentBonusCap);
+    if (bonusEligibleTreatmentCount > 0) {
+      treatmentBonus = Math.min(bonusEligibleTreatmentCount * 5, treatmentBonusCap);
       // Extra bonus if vitals improved (patient got better)
       const initialSpO2Check = parseInt(String(vitalsHistory[0]?.spo2)) || 0;
       const finalSpO2Check = parseInt(String(vitalsHistory[vitalsHistory.length - 1]?.spo2)) || 0;
@@ -2094,8 +2590,14 @@ export function StudentPanel({
     // Penalty system: deduct for critical omissions and unresolved dangerous vitals
     // Use assessment debrief critical missed (primary) OR checklist critical missed (fallback)
     const checklistCriticalMissed = criticalItems.filter(item => !session.completedItems.includes(item.id));
-    const debriefCriticalCount = debrief?.criticalMissed?.length || 0;
-    const criticalMissedCount = Math.max(debriefCriticalCount, checklistCriticalMissed.length);
+    const debriefCriticalItems = debrief?.items.filter(item => item.critical) || [];
+    const debriefCriticalCompleted = debriefCriticalItems.filter(item => item.status === 'completed').length;
+    // The assessment tracker is the authoritative scoring system whenever it
+    // exists. The legacy free-text checklist remains a fallback for older
+    // sessions, but its IDs are not a reliable proxy for live interactions.
+    const criticalMissedCount = debrief
+      ? debrief.criticalMissed.length
+      : checklistCriticalMissed.length;
     const penaltyReasons: { label: string; amount: number }[] = [];
     let penaltyTotal = 0;
 
@@ -2192,6 +2694,8 @@ export function StudentPanel({
     // engine's `applyCrossSystemPhysiology` separately handles the physio-
     // logical consequence (e.g. GTN in inferior STEMI → BP crash); this is
     // the accountability half of that feedback loop.
+    let contraindicationCount = 0;
+    const contraindicatedGivenIds = new Set<string>();
     try {
       const protocol = findProtocol(currentCase.subcategory || '', currentCase.category || '');
       if (protocol && currentCase.vitalSignsProgression?.initial) {
@@ -2207,6 +2711,8 @@ export function StudentPanel({
         const contraindicatedGiven = (severity.contraindicatedTreatments ?? []).filter(
           t => appliedTreatmentIds.includes(t),
         );
+        contraindicationCount = contraindicatedGiven.length;
+        contraindicatedGiven.forEach(id => contraindicatedGivenIds.add(id));
         if (contraindicatedGiven.length > 0) {
           // Resolve friendlier names where available so the summary reads
           // "GTN given in inferior STEMI" rather than "gtn_spray given".
@@ -2226,6 +2732,55 @@ export function StudentPanel({
       console.warn('[scoring] contraindication check failed', e);
     }
 
+    // ---- CLINICAL-REALISM PENALTIES ----
+    // The treatment engine already evaluates whether an intervention fits the
+    // presentation. Previously that result was feedback-only, so a clearly
+    // inappropriate intervention could still help produce a 100% score.
+    // Deduplicate by treatment ID and avoid charging a second penalty when the
+    // protocol has already classified the same action as contraindicated.
+    const unaccountedMismatchTreatments = mismatchTreatments.filter(
+      item => !contraindicatedGivenIds.has(item.treatment.id),
+    );
+    const unaccountedHarmfulTreatments = harmfulTreatments.filter(
+      item => !contraindicatedGivenIds.has(item.treatment.id),
+    );
+    for (const item of unaccountedMismatchTreatments) {
+      penaltyReasons.push({
+        label: `Inappropriate: ${item.treatment.name} — ${item.result.debriefNote}`,
+        amount: 5,
+      });
+      penaltyTotal += 5;
+    }
+    for (const item of unaccountedHarmfulTreatments) {
+      penaltyReasons.push({
+        label: `Harmful: ${item.treatment.name} — ${item.result.debriefNote}`,
+        amount: 12,
+      });
+      penaltyTotal += 12;
+    }
+
+    // ---- ALLERGY / ADVERSE-REACTION PENALTIES ----
+    // Administering a drug the patient is documented allergic to is a serious
+    // safety error. Inducing anaphylaxis is heavily penalised; letting it
+    // progress to arrest more so. Recognising it and giving adrenaline
+    // mitigates the penalty — the student recovered the situation.
+    const adverseEvents = adverseEventsRef.current;
+    let anaphylaxisInduced = 0;
+    let anaphylaxisRescued = 0;
+    for (const ev of adverseEvents) {
+      let amt = ev.kind === 'anaphylaxis' ? 25 : 12;
+      let label = `${ev.kind === 'anaphylaxis' ? 'Anaphylaxis induced' : 'Allergic reaction caused'}: ${ev.treatmentName} given despite documented “${ev.allergy}” allergy`;
+      if (ev.reachedArrest) { amt += 15; label += ' — progressed to cardiac arrest'; }
+      if (ev.recognizedRescueAt) {
+        amt = Math.round(amt * 0.4);
+        label += ' (recognised & treated with IM adrenaline)';
+        anaphylaxisRescued += 1;
+      }
+      anaphylaxisInduced += 1;
+      penaltyReasons.push({ label, amount: amt });
+      penaltyTotal += amt;
+    }
+
     const percentage = Math.max(0, basePercentage - penaltyTotal);
 
     // Treatment analysis
@@ -2240,11 +2795,40 @@ export function StudentPanel({
     const initialSpO2 = parseInt(String(vitalsHistory[0]?.spo2)) || 0;
     const finalSpO2 = parseInt(String(vitalsHistory[vitalsHistory.length - 1]?.spo2)) || 0;
 
+    const finalV = vitalsHistory[vitalsHistory.length - 1];
+    const finalVitalsDangerous = !!finalV && (
+      ((parseInt(String(finalV.spo2)) || 100) < 94) ||
+      ((parseInt(String(finalV.respiration)) || 16) > 30) ||
+      ((parseInt(String(finalV.respiration)) || 16) < 8) ||
+      ((parseInt(String(finalV.pulse)) || 80) > 150) ||
+      ((parseInt(String(finalV.pulse)) || 80) < 40)
+    );
+    const smartGrade = computeSmartGrade({
+      overall: percentage,
+      assessmentScore,
+      assessmentTotal,
+      criticalItems: debrief ? debriefCriticalItems.length : criticalItems.length,
+      criticalCompleted: debrief ? debriefCriticalCompleted : criticalCompleted.length,
+      treatmentCount,
+      timeToFirstTreatmentSec: timeToFirstTreatment,
+      totalTimeSec: elapsedSeconds,
+      estimatedDurationMin: currentCase.estimatedDuration || 30,
+      spo2Improved: finalSpO2 > initialSpO2,
+      contraindicationCount,
+      inappropriateTreatmentCount: unaccountedMismatchTreatments.length,
+      harmfulTreatmentCount: unaccountedHarmfulTreatments.length,
+      adverseInduced: anaphylaxisInduced,
+      adverseRescued: anaphylaxisRescued,
+      adverseArrests: adverseEventsRef.current.filter(e => e.reachedArrest).length,
+      finalVitalsDangerous,
+    });
+
     return {
       checklist,
       completed,
       criticalItems,
       criticalCompleted,
+      smartGrade,
       scoreEarned,
       totalPossible,
       basePercentage,
@@ -2263,6 +2847,28 @@ export function StudentPanel({
       assessmentDebrief: debrief,
     };
   }, [currentCase, session, selectedYear, appliedTreatments, vitalsHistory, elapsedSeconds, caseStartTime, assessmentTracker, cprRunning, arrestTimeline, patientState, appliedTreatmentIds]);
+
+  // Persist the graded result for a signed-in student (best-effort, once per
+  // completed case). Anonymous PIN play simply skips this — saveStudentResult
+  // no-ops without a user or Supabase config.
+  useEffect(() => {
+    if (phase !== 'postcase') { savedResultRef.current = false; return; }
+    if (savedResultRef.current || !auth.user || !currentCase || !session) return;
+    const grade = performanceMetrics?.smartGrade;
+    if (!grade) return;
+    savedResultRef.current = true;
+    void saveStudentResult({
+      studentId: auth.user.id,
+      studentName: auth.displayName,
+      caseId: currentCase.id,
+      caseTitle: currentCase.title,
+      category: currentCase.category,
+      studentYear: session.studentYear,
+      score: performanceMetrics.percentage,
+      grade,
+      adverseEvents: adverseEventsRef.current,
+    });
+  }, [phase, auth.user, auth.displayName, performanceMetrics, currentCase, session]);
 
   // AI-style narrative report — only computed when the case is complete
   const narrativeReport = useMemo(() => {
@@ -2298,6 +2904,7 @@ export function StudentPanel({
 
   // Reset to start
   const resetToStart = useCallback(() => {
+    stopNarration();
     setCurrentCase(null);
     setSession(null);
     setCurrentVitals(null);
@@ -2312,9 +2919,17 @@ export function StudentPanel({
     setMonitorRevealedVitals(new Set());
     setPhase('select');
     medicationConfirmedRef.current = new Set();
+    treatmentChallengeConfirmedRef.current = new Set();
+    setPendingTreatmentChallenge(null);
     // Reset transport / patient state
     setShowTransportDecision(false);
     setPatientState(null);
+    // Clear any active adverse reaction + its timers
+    reactionTimersRef.current.forEach(id => window.clearTimeout(id));
+    reactionTimersRef.current = [];
+    activeReactionRef.current = null;
+    setActiveReaction(null);
+    adverseEventsRef.current = [];
     setSceneTimeWarnings(new Set());
     // Clear deterioration timer
     if (deteriorationIntervalRef.current) {
@@ -2335,7 +2950,7 @@ export function StudentPanel({
     setAmiodaroneDoses(0);
     setArrestStartTime(null);
     setArrestTimeline([]);
-  }, []);
+  }, [stopNarration]);
 
   // ============================================================================
   // RENDER
@@ -2344,29 +2959,33 @@ export function StudentPanel({
   const phaseLabels: Record<StudentPhase, string> = {
     select: 'Select',
     prebriefing: 'Pre-Brief',
+    'scene-survey': 'Scene Survey',
     vitals: 'Assess & Treat',
     case: 'Case Detail',
     postcase: 'Report',
   };
-  const phaseOrder: StudentPhase[] = ['prebriefing', 'vitals', 'case', 'postcase'];
+  const phaseOrder: StudentPhase[] = ['prebriefing', 'scene-survey', 'vitals', 'case', 'postcase'];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="clinical-shell min-h-screen relative overflow-x-hidden">
+      {/* Shared clinical wash across the student, educator, and classroom shells. */}
+      <AmbientBackground />
+
       {/* Onboarding Tour */}
       {showTour && phase === 'select' && <OnboardingTour onDismiss={dismissTour} />}
 
-      {/* Student Header */}
-      <header className="sticky top-0 z-50 bg-background border-b border-border/30 safe-top">
+      {/* Student Header — promoted to nav-blur over the ambient bg */}
+      <header className="sticky top-0 z-50 nav-blur border-b border-black/5 safe-top">
         <div className="container mx-auto px-3 sm:px-4 py-2 sm:py-3">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-              <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl bg-blue-600 shadow-md shrink-0">
+              <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 to-emerald-600 shadow-md shadow-cyan-500/20 shrink-0">
                 <GraduationCap className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
                   <h1 className="text-xs sm:text-sm font-bold tracking-tight heading-premium truncate">{t('role.student')}</h1>
-                  <Badge variant="outline" className="text-[8px] sm:text-[9px] px-1 sm:px-1.5 py-0 h-3.5 sm:h-4 border-blue-500/30 text-blue-600 dark:text-blue-400 font-medium shrink-0 hidden xs:inline-flex">{t('role.studentBadge')}</Badge>
+                  <Badge variant="outline" className="text-[8px] sm:text-[9px] px-1 sm:px-1.5 py-0 h-3.5 sm:h-4 border-cyan-500/30 text-cyan-700 dark:text-cyan-300 font-medium shrink-0 hidden xs:inline-flex">{t('role.studentBadge')}</Badge>
                 </div>
                 <p className="text-[9px] sm:text-[10px] text-muted-foreground hidden sm:block">{t('app.name')}</p>
               </div>
@@ -2381,7 +3000,7 @@ export function StudentPanel({
               {canGoBack && (
                 <button
                   onClick={goBack}
-                  className="flex items-center justify-center h-8 w-8 sm:h-9 sm:w-9 rounded-lg border border-border/50 bg-muted/30 hover:bg-muted/60 active:bg-muted transition-colors touch-manipulation"
+                  className="flex items-center justify-center h-8 w-8 sm:h-9 sm:w-9 rounded-lg glass-control active:bg-muted transition-colors touch-manipulation"
                   title={t('header.back')}
                 >
                   <ArrowLeft className="h-4 w-4 text-muted-foreground rtl:rotate-180" />
@@ -2397,7 +3016,7 @@ export function StudentPanel({
                     return (
                       <div key={p} className="flex items-center gap-0.5 sm:gap-1">
                         <div className={`flex items-center justify-center transition-all duration-300 ${
-                          isActive ? 'w-auto px-1.5 sm:px-2.5 py-0.5 rounded-full bg-blue-500/15 text-blue-600 dark:text-blue-400 text-[9px] sm:text-[10px] font-semibold ring-1 ring-blue-500/30' :
+                          isActive ? 'w-auto px-1.5 sm:px-2.5 py-0.5 rounded-full bg-primary/15 text-primary text-[9px] sm:text-[10px] font-semibold ring-1 ring-primary/30' :
                           isComplete ? 'w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-green-500/15 ring-1 ring-green-500/30' :
                           'w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-muted'
                         }`}>
@@ -2427,7 +3046,7 @@ export function StudentPanel({
                 </Badge>
               )}
 
-              <Button variant="ghost" size="sm" onClick={onExit} className="text-[10px] sm:text-xs gap-1 text-muted-foreground hover:text-foreground h-7 sm:h-8 px-2 sm:px-3">
+              <Button variant="ghost" size="sm" onClick={() => { stopNarration(); onExit(); }} className="text-[10px] sm:text-xs gap-1 text-muted-foreground hover:text-foreground h-7 sm:h-8 px-2 sm:px-3">
                 <ArrowLeft className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                 <span className="hidden sm:inline">Exit</span>
               </Button>
@@ -2436,7 +3055,7 @@ export function StudentPanel({
         </div>
       </header>
 
-      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 safe-bottom">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 safe-bottom relative z-10">
         {/* Optional top banner slot — used by classroom-host for the
             broadcast toolbar. Rendered above every phase so it stays
             visible whether the instructor is pre-briefing, running the
@@ -2450,9 +3069,6 @@ export function StudentPanel({
           <div className="max-w-2xl mx-auto animate-fade-in space-y-6 sm:space-y-10">
             {/* Hero Section — Premium */}
             <div className="text-center mb-2 sm:mb-4 relative">
-              <div className="absolute inset-0 -top-8 -z-10 overflow-hidden">
-                <div className="mx-auto w-72 h-72 rounded-full bg-gradient-to-br from-violet-500/10 via-purple-500/8 to-pink-500/5 blur-3xl" />
-              </div>
               <div className="mx-auto mb-5 sm:mb-6 flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 shadow-lg shadow-brand-500/20 ring-4 ring-brand-500/10">
                 <Stethoscope className="h-8 w-8 sm:h-10 sm:w-10 text-white drop-shadow-sm" />
               </div>
@@ -2546,8 +3162,8 @@ export function StudentPanel({
                         .map(cat => {
                         const catColors: Record<string, string> = {
                           cardiac: 'bg-red-500', respiratory: 'bg-cyan-500', trauma: 'bg-orange-500',
-                          neurological: 'bg-purple-500', medical: 'bg-emerald-500', paediatric: 'bg-pink-500',
-                          obstetric: 'bg-rose-400', environmental: 'bg-amber-500', psychiatric: 'bg-violet-500',
+                          neurological: 'bg-blue-500', medical: 'bg-emerald-500', paediatric: 'bg-teal-500',
+                          obstetric: 'bg-rose-400', environmental: 'bg-amber-500', psychiatric: 'bg-cyan-500',
                         };
                         const dotColor = catColors[cat.value.toLowerCase()] || 'bg-blue-500';
                         return (
@@ -2582,12 +3198,12 @@ export function StudentPanel({
                           cardiac: 'from-red-500/15 to-red-500/5 border-red-400 text-red-600 dark:text-red-400',
                           respiratory: 'from-cyan-500/15 to-cyan-500/5 border-cyan-400 text-cyan-600 dark:text-cyan-400',
                           trauma: 'from-orange-500/15 to-orange-500/5 border-orange-400 text-orange-600 dark:text-orange-400',
-                          neurological: 'from-purple-500/15 to-purple-500/5 border-purple-400 text-purple-600 dark:text-purple-400',
+                          neurological: 'from-blue-500/15 to-blue-500/5 border-blue-400 text-blue-600 dark:text-blue-400',
                           medical: 'from-emerald-500/15 to-emerald-500/5 border-emerald-400 text-emerald-600 dark:text-emerald-400',
-                          paediatric: 'from-pink-500/15 to-pink-500/5 border-pink-400 text-pink-600 dark:text-pink-400',
+                          paediatric: 'from-teal-500/15 to-teal-500/5 border-teal-400 text-teal-600 dark:text-teal-400',
                           obstetric: 'from-rose-500/15 to-rose-500/5 border-rose-400 text-rose-600 dark:text-rose-400',
                           environmental: 'from-amber-500/15 to-amber-500/5 border-amber-400 text-amber-600 dark:text-amber-400',
-                          psychiatric: 'from-violet-500/15 to-violet-500/5 border-violet-400 text-violet-600 dark:text-violet-400',
+                          psychiatric: 'from-cyan-500/15 to-cyan-500/5 border-cyan-400 text-cyan-600 dark:text-cyan-400',
                         };
                         const colors = catColors[cat.value.toLowerCase()] || 'from-blue-500/15 to-blue-500/5 border-blue-400 text-blue-600 dark:text-blue-400';
                         const count = allCases.filter(c => c.category === cat.value && c.yearLevels?.includes(selectedYear as any)).length;
@@ -2618,7 +3234,7 @@ export function StudentPanel({
                         value={conditionSearch}
                         onChange={(e) => { setConditionSearch(e.target.value); setSelectedCondition(null); }}
                         placeholder="Search conditions... (e.g. STEMI, Asthma, Pneumothorax)"
-                        className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-border/50 bg-background text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all"
+                        className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-border/50 bg-white/55 text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all dark:bg-white/[0.05]"
                       />
                     </div>
                     <div className="max-h-52 overflow-y-auto rounded-xl border border-border/30 divide-y divide-border/20">
@@ -2632,10 +3248,10 @@ export function StudentPanel({
                               key={condition}
                               onClick={() => generateCaseByCondition(condition)}
                               disabled={isGenerating || matchCount === 0}
-                              className="flex items-center justify-between w-full px-3 py-2 text-left text-sm hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                              className="flex items-center justify-between w-full px-3 py-2 text-left text-sm hover:bg-primary/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                             >
                               <span className="flex items-center gap-2">
-                                <Target className="h-3 w-3 text-blue-500 shrink-0" />
+                                <Target className="h-3 w-3 text-primary shrink-0" />
                                 <span>{condition}</span>
                               </span>
                               <Badge variant="secondary" className="text-[10px] py-0 h-4 shrink-0">
@@ -2692,174 +3308,207 @@ export function StudentPanel({
         {/* PHASE 2: Pre-Briefing */}
         {/* ================================================================ */}
         {phase === 'prebriefing' && currentCase && (
-          <div className="max-w-3xl mx-auto animate-fade-in space-y-4 sm:space-y-6">
-            {/* Phase header */}
-            <div className="flex items-center justify-between flex-wrap gap-2 sm:gap-3">
-              <div className="flex items-center gap-2 sm:gap-3">
-                <Badge className="gap-1 sm:gap-1.5 text-[10px] sm:text-xs bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20 hover:bg-blue-500/15">
-                  <BookOpen className="h-3 w-3" /> Pre-Briefing
-                </Badge>
-                <Badge variant="secondary" className="capitalize text-[10px] sm:text-xs">{currentCase.category}</Badge>
+          <div className="max-w-4xl mx-auto animate-fade-in space-y-4">
+            {/* ---- DISPATCH HERO ----
+                Dark gradient panel that reads as a radio-room moment, not a
+                form. Matches the Scene Survey's "Dispatch Arrival" vocab so
+                the visual continuity from Pre-Brief → Scene Survey is
+                seamless. The voice you hear playing is dispatched from this
+                very card — the "Now reading…" pill ties the audio to the
+                visual so the student understands the radio is in their ear. */}
+            <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white shadow-[0_30px_60px_-30px_rgba(0,0,0,0.65)]">
+              {/* ambient radio-blue glow */}
+              <div className="pointer-events-none absolute -top-32 -left-32 h-72 w-72 rounded-full bg-sky-500/20 blur-[100px]" />
+              <div className="pointer-events-none absolute -bottom-32 -right-24 h-72 w-72 rounded-full bg-indigo-500/15 blur-[100px]" />
+              {/* scanline */}
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-sky-400/60 to-transparent" />
+
+              <div className="relative p-5 sm:p-7">
+                {/* Channel header */}
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div className="flex items-center gap-2.5">
+                    <span className="relative flex h-2.5 w-2.5">
+                      <span className={`absolute inline-flex h-full w-full rounded-full bg-emerald-400 ${isDispatchSpeaking ? 'opacity-90 animate-ping' : 'opacity-0'}`} />
+                      <span className={`relative inline-flex h-2.5 w-2.5 rounded-full ${isDispatchSpeaking ? 'bg-emerald-400 shadow-[0_0_10px_rgb(74_222_128/0.8)]' : 'bg-slate-500'}`} />
+                    </span>
+                    <span className="text-[10px] uppercase tracking-[0.28em] text-white/70 font-medium">
+                      {isDispatchSpeaking ? 'Dispatch · live' : 'Incoming case'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] uppercase tracking-[0.22em] text-white/40 font-medium">Channel 998</span>
+                    <span className="rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] text-white/70 capitalize">
+                      {currentCase.category}
+                    </span>
+                    {currentCase.dispatchInfo.dispatchCode && (
+                      <span className="rounded-full border border-amber-300/40 bg-amber-300/10 px-2 py-0.5 text-[10px] font-mono uppercase tracking-[0.16em] text-amber-200">
+                        {currentCase.dispatchInfo.dispatchCode}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Case title — read-aloud hero */}
+                <h2 className="mt-4 text-xl sm:text-3xl font-semibold tracking-tight leading-tight text-white">
+                  {getStudentCaseTitle(currentCase)}
+                </h2>
+                <p className="mt-1.5 text-sm text-white/70 leading-relaxed max-w-2xl">
+                  {currentCase.dispatchInfo.callReason}
+                </p>
+
+                {/* Dispatch tiles — only what the radio actually tells you */}
+                <div className="mt-5 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  {[
+                    { label: 'Location',  value: currentCase.dispatchInfo.location },
+                    { label: 'Time',      value: String(currentCase.dispatchInfo.timeOfDay) },
+                    { label: 'Caller',    value: currentCase.dispatchInfo.callerInfo },
+                    { label: 'Priority',  value: currentCase.dispatchInfo.dispatchCode || currentCase.priority || '—' },
+                  ].map(item => (
+                    <div key={item.label} className="rounded-xl border border-white/10 bg-white/[0.04] backdrop-blur-md px-3 py-2.5">
+                      <p className="text-[9px] uppercase tracking-[0.2em] text-white/45 font-semibold">{item.label}</p>
+                      <p className="mt-0.5 text-xs sm:text-sm font-medium text-white/90 capitalize line-clamp-2">{item.value}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Additional dispatch info (en-route updates) */}
+                {currentCase.dispatchInfo.additionalInfo && currentCase.dispatchInfo.additionalInfo.length > 0 && (
+                  <div className="mt-4 rounded-xl border border-amber-300/25 bg-amber-300/[0.06] p-3.5">
+                    <p className="text-[10px] uppercase tracking-[0.2em] text-amber-200/85 font-semibold mb-2">En-route updates</p>
+                    <ul className="space-y-1.5">
+                      {currentCase.dispatchInfo.additionalInfo.map((info, i) => (
+                        <li key={i} className="flex items-start gap-2 text-xs sm:text-sm text-amber-50/85">
+                          <ChevronRight className="h-3 w-3 text-amber-300/70 mt-0.5 shrink-0" />
+                          <span>{info}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Replay narration */}
+                <div className="mt-4 flex items-center justify-between gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (isDispatchSpeaking) { stopNarration(); return; }
+                      speakNarration(buildDispatchNarration(currentCase), { role: 'dispatcher' });
+                    }}
+                    className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.18em] text-white/60 hover:text-white transition-colors"
+                  >
+                    <Activity className="h-3 w-3" />
+                    {isDispatchSpeaking ? 'Stop replay' : 'Replay dispatch'}
+                  </button>
+                  <p className="text-[10px] uppercase tracking-[0.18em] text-white/30">
+                    Clock starts after Scene Survey
+                  </p>
+                </div>
               </div>
             </div>
 
-            <div>
-              <h2 className="heading-premium text-lg sm:text-2xl">{getStudentCaseTitle(currentCase)}</h2>
-              <p className="text-xs sm:text-sm text-muted-foreground mt-1">Review the dispatch and scene information before starting</p>
-            </div>
-
-            {/* Dispatch Information — Premium */}
-            <Card className="glass rounded-2xl overflow-hidden border border-white/60 shadow-[0_4px_20px_-8px_rgba(0,0,0,0.1)]">
-              <CardHeader className="pb-3 bg-gradient-to-r from-brand-500/8 via-brand-500/3 to-transparent border-b border-border/30">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-brand-500/15">
-                    <Activity className="h-3.5 w-3.5 text-brand-500" />
+            {/* ---- DEMOGRAPHICS + PRESENTATION ----
+                Sober white card under the dark hero. Two columns: who the
+                patient is (demographic block) and the dispatch-conveyed
+                first impression. Scene Information removed entirely — it
+                belongs in Scene Survey, which is literally the next click. */}
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-3">
+              {/* Patient demographics */}
+              <Card className="rounded-2xl border border-border/60 bg-card overflow-hidden">
+                <CardHeader className="pb-2 px-4 pt-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground font-semibold">Patient</p>
+                    <Heart className="h-3.5 w-3.5 text-muted-foreground/50" />
                   </div>
-                  Dispatch Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 pt-3 sm:pt-4">
-                <div className="grid grid-cols-1 xs:grid-cols-2 gap-2 sm:gap-3 text-sm">
-                  {[
-                    { label: 'Call Reason', value: currentCase.dispatchInfo.callReason },
-                    { label: 'Location', value: currentCase.dispatchInfo.location },
-                    { label: 'Time', value: currentCase.dispatchInfo.timeOfDay },
-                    { label: 'Caller', value: currentCase.dispatchInfo.callerInfo },
-                  ].map((item) => (
-                    <div key={item.label} className="p-2.5 sm:p-3 rounded-xl bg-surface-50/80 border border-surface-200/60">
-                      <span className="text-[10px] sm:text-[11px] text-surface-500 uppercase tracking-wider font-semibold">{item.label}</span>
-                      <p className="font-medium mt-0.5 text-xs sm:text-sm text-surface-800">{item.value}</p>
-                    </div>
-                  ))}
-                </div>
-                {currentCase.dispatchInfo.additionalInfo && (
-                  <div className="bg-amber-50/80 border border-amber-200/40 rounded-xl p-3.5 mt-2">
-                    <p className="text-[11px] font-semibold text-amber-700 mb-1.5 uppercase tracking-wider">Additional Information</p>
-                    <ul className="text-sm space-y-1.5">
-                      {currentCase.dispatchInfo.additionalInfo.map((info, i) => (
-                        <li key={i} className="flex items-start gap-2 text-amber-800">
-                          <ChevronRight className="h-3 w-3 text-amber-500 mt-1 shrink-0" />
-                          {info}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Scene Information — Premium */}
-            <Card className="glass rounded-2xl overflow-hidden border border-white/60 shadow-[0_4px_20px_-8px_rgba(0,0,0,0.1)]">
-              <CardHeader className="pb-3 border-b border-border/30">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-brand-500/15">
-                    <Shield className="h-3.5 w-3.5 text-brand-500" />
-                  </div>
-                  Scene Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm space-y-3 pt-4">
-                <p className="leading-relaxed text-surface-700">{currentCase.sceneInfo.description}</p>
-                {currentCase.sceneInfo.hazards && currentCase.sceneInfo.hazards.length > 0 && (
-                  <div className="bg-red-50/80 border border-red-200/40 rounded-xl p-3.5">
-                    <p className="text-[11px] font-semibold text-red-700 mb-1.5 uppercase tracking-wider">Hazards Identified</p>
-                    <ul className="space-y-1">
-                      {currentCase.sceneInfo.hazards.map((h, i) => (
-                        <li key={i} className="text-red-800 flex items-start gap-2">
-                          <AlertTriangle className="h-3 w-3 shrink-0 mt-0.5 text-red-500" />{h}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {currentCase.sceneInfo.bystanders && (
-                  <p className="text-surface-500">Bystanders: {currentCase.sceneInfo.bystanders}</p>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Patient Info — Premium */}
-            <Card className="glass rounded-2xl overflow-hidden border border-white/60 shadow-[0_4px_20px_-8px_rgba(0,0,0,0.1)]">
-              <CardHeader className="pb-3 border-b border-border/30">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-brand-500/15">
-                    <Heart className="h-3.5 w-3.5 text-brand-500" />
-                  </div>
-                  Patient Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm pt-3 sm:pt-4">
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-                  {[
-                    { label: 'Age', value: `${currentCase.patientInfo.age} years` },
-                    { label: 'Gender', value: currentCase.patientInfo.gender },
-                    { label: 'Weight', value: `${currentCase.patientInfo.weight} kg` },
-                    { label: 'Language', value: currentCase.patientInfo.language },
-                  ].map((item) => (
-                    <div key={item.label} className="p-2 sm:p-3 rounded-xl bg-surface-50/80 border border-surface-200/60 text-center">
-                      <span className="text-[10px] sm:text-[11px] text-surface-500 uppercase tracking-wider font-semibold">{item.label}</span>
-                      <p className="font-semibold mt-0.5 capitalize text-xs sm:text-sm text-surface-800">{item.value}</p>
-                    </div>
-                  ))}
-                </div>
-                {currentCase.patientInfo.culturalConsiderations && currentCase.patientInfo.culturalConsiderations.length > 0 && (
-                  <div className="mt-3 text-xs text-surface-600 bg-brand-50/50 rounded-xl p-3 border border-brand-200/30">
-                    <strong className="text-brand-700">Cultural Note:</strong> {currentCase.patientInfo.culturalConsiderations.join('. ')}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Initial Presentation */}
-            {currentCase.initialPresentation && (
-              <Card className="bg-card border border-border rounded-2xl overflow-hidden">
-                <CardHeader className="pb-3 border-b border-border/30">
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue-500/15">
-                      <Stethoscope className="h-3.5 w-3.5 text-blue-500" />
-                    </div>
-                    Initial Presentation
-                  </CardTitle>
                 </CardHeader>
-                <CardContent className="text-sm space-y-2 pt-4">
-                  <p><strong>General Impression:</strong> {currentCase.initialPresentation.generalImpression}</p>
-                  {currentCase.initialPresentation.position && (
-                    <p><strong>Position:</strong> {currentCase.initialPresentation.position}</p>
-                  )}
-                  {currentCase.initialPresentation.appearance && (
-                    <p><strong>Appearance:</strong> {currentCase.initialPresentation.appearance}</p>
+                <CardContent className="px-4 pb-4 pt-1">
+                  <div className="flex items-baseline gap-2 mb-3">
+                    <span className="text-3xl font-extralight tracking-tight tabular-nums">{currentCase.patientInfo.age}</span>
+                    <span className="text-xs text-muted-foreground uppercase tracking-wider">{currentCase.patientInfo.gender}</span>
+                    <span className="text-xs text-muted-foreground/60 ml-auto">{currentCase.patientInfo.weight} kg</span>
+                  </div>
+                  <dl className="grid grid-cols-2 gap-x-3 gap-y-2 text-[11px]">
+                    <div>
+                      <dt className="text-muted-foreground/60 uppercase tracking-wider text-[9px]">Language</dt>
+                      <dd className="font-medium mt-0.5">{currentCase.patientInfo.language}</dd>
+                    </div>
+                    {currentCase.patientInfo.occupation && (
+                      <div>
+                        <dt className="text-muted-foreground/60 uppercase tracking-wider text-[9px]">Occupation</dt>
+                        <dd className="font-medium mt-0.5">{currentCase.patientInfo.occupation}</dd>
+                      </div>
+                    )}
+                  </dl>
+                  {currentCase.patientInfo.culturalConsiderations && currentCase.patientInfo.culturalConsiderations.length > 0 && (
+                    <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground border-t border-border/30 pt-2.5">
+                      <span className="font-medium text-foreground/70">Cultural note —</span> {currentCase.patientInfo.culturalConsiderations.join('. ')}
+                    </p>
                   )}
                 </CardContent>
               </Card>
-            )}
 
-            {/* Ready to start callout */}
-            <Card className="border-blue-500/20 bg-gradient-to-r from-blue-500/5 to-primary/5 shadow-sm overflow-hidden">
-              <CardContent className="p-3 sm:p-5">
-                <div className="flex items-start gap-3 sm:gap-4">
-                  <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-blue-500/15 shrink-0">
-                    <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500" />
-                  </div>
-                  <div>
-                    <p className="text-xs sm:text-sm font-semibold">Ready to begin?</p>
-                    <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 leading-relaxed">
-                      Once you click <strong>Start Case</strong>, the timer begins. Assess the patient, apply treatments, and manage the case.
+              {/* Initial impression — what dispatch can tell you about the
+                  pre-arrival look. Frame it as "what to expect" so it's
+                  clearly second-hand info, not direct observation. */}
+              {currentCase.initialPresentation && (
+                <Card className="rounded-2xl border border-border/60 bg-card overflow-hidden">
+                  <CardHeader className="pb-2 px-4 pt-4">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground font-semibold">Expected presentation</p>
+                      <Stethoscope className="h-3.5 w-3.5 text-muted-foreground/50" />
+                    </div>
+                  </CardHeader>
+                  <CardContent className="px-4 pb-4 pt-1 space-y-1.5 text-xs leading-relaxed">
+                    <p className="text-foreground/85">
+                      <span className="text-muted-foreground/70">What dispatch can tell you —</span> {currentCase.initialPresentation.generalImpression}
                     </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                    {currentCase.initialPresentation.position && (
+                      <p className="text-muted-foreground"><span className="font-medium text-foreground/70">Position:</span> {currentCase.initialPresentation.position}</p>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+            </div>
 
-            <div className="flex gap-2 sm:gap-3">
-              <Button variant="outline" onClick={resetToStart} className="gap-1.5 sm:gap-2 rounded-xl text-xs sm:text-sm h-10 sm:h-11 px-3 sm:px-4">
-                <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> <span className="hidden xs:inline">Different </span>Back
-              </Button>
-              <Button onClick={startCase} size="lg" className="flex-1 gap-2 rounded-xl bg-green-600 hover:bg-green-700 text-white shadow-sm transition-all hover:-translate-y-0.5 text-sm sm:text-base h-10 sm:h-12">
+            {/* ---- ACTION BAR ----
+                Single dominant CTA + subtle secondary back link. The Begin
+                Scene Survey button is the only thing the student should be
+                looking for after the dispatch tile reads. */}
+            <div className="flex items-center justify-between gap-3 pt-1">
+              <button
+                type="button"
+                onClick={resetToStart}
+                className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <ArrowLeft className="h-3.5 w-3.5" /> Different case
+              </button>
+              <Button
+                onClick={startCase}
+                size="lg"
+                className="gap-2 rounded-full px-6 sm:px-8 h-11 sm:h-12 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white shadow-[0_8px_24px_-8px_rgba(16,185,129,0.5)] transition-all hover:-translate-y-0.5 text-sm sm:text-base"
+              >
                 <Activity className="h-4 w-4 sm:h-5 sm:w-5" />
-                Start Case
+                Begin Scene Survey
+                <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
           </div>
+        )}
+
+        {/* ================================================================ */}
+        {/* PHASE 2.5: Scene Survey (between Pre-Brief and Active Case)
+            Hard-gated walkthrough — hazard ID, scene safety declaration,
+            PPE selection, general impression. Pre-arrival, so case clock
+            doesn't start until "Enter Scene" is pressed. */}
+        {/* ================================================================ */}
+        {phase === 'scene-survey' && currentCase && (
+          <SceneSurveyPanel
+            caseData={currentCase}
+            onBack={() => setPhase('prebriefing')}
+            onEnterScene={(survey) => {
+              setSceneSurvey(survey);
+              enterScene();
+            }}
+          />
         )}
 
         {/* ================================================================ */}
@@ -2873,56 +3522,59 @@ export function StudentPanel({
         {(phase === 'vitals' || phase === 'case') && currentCase && (
           <div className={`animate-fade-in space-y-3 sm:space-y-4 ${phase !== 'vitals' ? 'hidden' : ''}`}>
             {/* ===== TOP: Patient Banner (full width) ===== */}
-            <div className="p-3 sm:p-5 rounded-2xl bg-card border border-border dark:bg-slate-900/60 space-y-3 overflow-hidden">
-              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-blue-600/10 shrink-0">
-                  <Activity className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h2 className="text-sm sm:text-base font-bold tracking-tight truncate">{getStudentCaseTitle(currentCase)}</h2>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
-                    {currentCase.dispatchInfo.location}
-                  </p>
-                </div>
-                <NarrationButton
-                  role="dispatcher"
-                  size="md"
-                  label="Replay dispatch briefing"
-                  text={buildDispatchNarration(currentCase)}
-                />
-                {/* Persistent pain readout — once scored under SAMPLE →
-                    Signs/Symptoms, carries through the case on the header
-                    so handover/reassessment always sees the current score. */}
-                {currentVitals?.painScore !== undefined && (
-                  <div className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg border shrink-0 ${
-                    currentVitals.painScore >= 7
-                      ? 'bg-red-500/10 dark:bg-red-500/15 border-red-500/30'
-                      : currentVitals.painScore >= 4
-                        ? 'bg-orange-500/10 dark:bg-orange-500/15 border-orange-500/30'
-                        : currentVitals.painScore > 0
-                          ? 'bg-yellow-500/10 dark:bg-yellow-500/15 border-yellow-500/30'
-                          : 'bg-green-500/10 dark:bg-green-500/15 border-green-500/30'
-                  }`} title="Pain score — reassess periodically">
-                    <span className="text-[9px] sm:text-[10px] font-mono font-semibold opacity-70">PAIN</span>
-                    <span className={`font-mono text-[11px] sm:text-sm font-bold ${
-                      currentVitals.painScore >= 7 ? 'text-red-600 dark:text-red-400'
-                      : currentVitals.painScore >= 4 ? 'text-orange-600 dark:text-orange-400'
-                      : currentVitals.painScore > 0 ? 'text-yellow-700 dark:text-yellow-400'
-                      : 'text-green-700 dark:text-green-400'
-                    }`}>{currentVitals.painScore}/10</span>
+            <div className="glass-panel p-3 sm:p-4 rounded-xl space-y-3 overflow-hidden shadow-sm">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4 min-w-0">
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                  <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500/15 to-emerald-500/10 shrink-0 border border-cyan-300/30">
+                    <Activity className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                   </div>
-                )}
-                <div className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-primary/10 dark:bg-primary/15 border border-primary/20 shrink-0">
-                  <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-primary" />
-                  <span className="font-mono text-[11px] sm:text-sm font-semibold text-primary">{formatTime(elapsedSeconds)}</span>
+                  <div className="min-w-0 flex-1">
+                    <h2 className="text-sm sm:text-base font-bold tracking-tight truncate">{getStudentCaseTitle(currentCase)}</h2>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
+                      {currentCase.dispatchInfo.location}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                  <NarrationButton
+                    role="dispatcher"
+                    size="md"
+                    label="Replay dispatch briefing"
+                    text={buildDispatchNarration(currentCase)}
+                  />
+                  {/* Persistent pain readout - once scored under SAMPLE,
+                      carries through the case on the header for handover. */}
+                  {currentVitals?.painScore !== undefined && (
+                    <div className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg border shrink-0 ${
+                      currentVitals.painScore >= 7
+                        ? 'bg-red-500/10 dark:bg-red-500/15 border-red-500/30'
+                        : currentVitals.painScore >= 4
+                          ? 'bg-orange-500/10 dark:bg-orange-500/15 border-orange-500/30'
+                          : currentVitals.painScore > 0
+                            ? 'bg-yellow-500/10 dark:bg-yellow-500/15 border-yellow-500/30'
+                            : 'bg-green-500/10 dark:bg-green-500/15 border-green-500/30'
+                    }`} title="Pain score - reassess periodically">
+                      <span className="text-[9px] sm:text-[10px] font-mono font-semibold opacity-70">PAIN</span>
+                      <span className={`font-mono text-[11px] sm:text-sm font-bold ${
+                        currentVitals.painScore >= 7 ? 'text-red-600 dark:text-red-400'
+                        : currentVitals.painScore >= 4 ? 'text-orange-600 dark:text-orange-400'
+                        : currentVitals.painScore > 0 ? 'text-yellow-700 dark:text-yellow-400'
+                        : 'text-green-700 dark:text-green-400'
+                      }`}>{currentVitals.painScore}/10</span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-primary/10 dark:bg-primary/15 border border-primary/20 shrink-0">
+                    <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-primary" />
+                    <span className="font-mono text-[11px] sm:text-sm font-semibold text-primary">{formatTime(elapsedSeconds)}</span>
+                  </div>
                 </div>
               </div>
-              <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-3">
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setPhase('case')}
-                  className="gap-1 sm:gap-1.5 text-[10px] sm:text-xs rounded-lg flex-1 sm:flex-none h-8 dark:border-slate-700"
+                  className="gap-1 sm:gap-1.5 text-[10px] sm:text-xs rounded-lg h-8 dark:border-slate-700"
                 >
                   <FileText className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> <span className="hidden xs:inline">Case </span>Details
                 </Button>
@@ -2930,27 +3582,22 @@ export function StudentPanel({
                   variant="outline"
                   size="sm"
                   onClick={() => setShowMedicalControl(true)}
-                  className="gap-1 sm:gap-1.5 text-[10px] sm:text-xs rounded-lg flex-1 sm:flex-none h-8 border-blue-500/40 text-blue-600 dark:text-blue-400 hover:bg-blue-500/10"
+                  className="gap-1 sm:gap-1.5 text-[10px] sm:text-xs rounded-lg h-8 border-cyan-500/40 text-cyan-700 dark:text-cyan-300 hover:bg-cyan-500/10"
                 >
                   <Phone className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> <span className="hidden xs:inline">Call </span>Med Control
                 </Button>
-                <div className="relative flex-1 sm:flex-none">
-                  <Button
-                    size="sm"
-                    onClick={() => endCase('transport')}
-                    className="gap-1 sm:gap-1.5 text-[10px] sm:text-xs rounded-lg bg-amber-600 hover:bg-amber-700 text-white shadow-sm w-full h-8 ring-2 ring-amber-400/30"
-                  >
-                    <Ambulance className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> Transport
-                  </Button>
-                  <span className="absolute -bottom-4 left-1/2 -translate-x-1/2 text-[8px] text-amber-600 dark:text-amber-400 whitespace-nowrap font-medium pointer-events-none">
-                    Ready to transport?
-                  </span>
-                </div>
+                <Button
+                  size="sm"
+                  onClick={() => endCase('transport')}
+                  className="gap-1 sm:gap-1.5 text-[10px] sm:text-xs rounded-lg bg-amber-600 hover:bg-amber-700 text-white shadow-sm h-8"
+                >
+                  <Ambulance className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> Transport
+                </Button>
                 <Button
                   variant="destructive"
                   size="sm"
                   onClick={() => endCase('end')}
-                  className="gap-1 sm:gap-1.5 text-[10px] sm:text-xs rounded-lg shadow-sm flex-1 sm:flex-none h-8"
+                  className="gap-1 sm:gap-1.5 text-[10px] sm:text-xs rounded-lg shadow-sm h-8"
                 >
                   <XCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> <span className="hidden xs:inline">End </span>Care
                 </Button>
@@ -2960,21 +3607,40 @@ export function StudentPanel({
             {/* ===== Scene Toggle ===== */}
             <button
               onClick={() => setShowScene(!showScene)}
-              className={`w-full flex items-center gap-3 px-5 py-4 rounded-xl border-2 transition-all duration-300 font-semibold ${
+              className={`w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 rounded-xl border transition-all font-semibold ${
                 showScene
-                  ? 'border-blue-400 bg-blue-50/80 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 shadow-sm'
-                  : 'border-amber-400 bg-gradient-to-r from-amber-50 to-amber-100/60 dark:from-amber-950/40 dark:to-amber-900/20 text-amber-700 dark:text-amber-300 shadow-md shadow-amber-500/10 hover:shadow-lg hover:shadow-amber-500/15 hover:-translate-y-0.5'
+                  ? 'border-cyan-400/50 bg-cyan-500/10 text-cyan-800 dark:text-cyan-200'
+                  : 'border-border/70 bg-white/50 text-foreground hover:border-amber-400/60 hover:bg-amber-50/60 dark:bg-white/[0.04] dark:hover:bg-amber-950/20'
               }`}
             >
-              <Shield className="h-5 w-5 shrink-0" />
-              <span className="flex-1 text-left text-sm sm:text-base">
-                {showScene ? 'Scene Details' : 'Assess Scene — Click to View Details'}
+              <Shield className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+              <span className="flex-1 text-left">
+                <span className="block text-xs sm:text-sm">{showScene ? 'Hide scene details' : 'Review scene details'}</span>
+                <span className="block text-[10px] font-normal text-muted-foreground">
+                  Scene survey complete. Timer is running.
+                </span>
               </span>
-              {showScene ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+              {showScene ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </button>
             {showScene && (
-              <div className="p-3 rounded-xl bg-muted/20 border border-border/30 text-xs space-y-2 animate-fade-in">
+              <div className="glass-panel p-3 rounded-xl text-xs space-y-2 animate-fade-in">
                 <p className="leading-relaxed">{currentCase.sceneInfo.description}</p>
+                {sceneSurvey && (
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                    <div className="rounded-lg border border-border/40 bg-white/55 p-2 dark:bg-white/[0.05]">
+                      <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">PPE</p>
+                      <p className="mt-0.5 truncate text-[11px]">{sceneSurvey.ppeSelected.join(', ') || 'Not documented'}</p>
+                    </div>
+                    <div className="rounded-lg border border-border/40 bg-white/55 p-2 dark:bg-white/[0.05]">
+                      <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Resources</p>
+                      <p className="mt-0.5 truncate text-[11px]">{sceneSurvey.additionalResourcesRequested.join(', ') || 'None requested'}</p>
+                    </div>
+                    <div className="rounded-lg border border-border/40 bg-white/55 p-2 dark:bg-white/[0.05]">
+                      <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Impression</p>
+                      <p className="mt-0.5 truncate text-[11px]">{sceneSurvey.generalImpression.join(', ') || 'Not documented'}</p>
+                    </div>
+                  </div>
+                )}
                 {currentCase.sceneInfo.hazards && currentCase.sceneInfo.hazards.length > 0 && (
                   <div className="bg-red-500/8 border border-red-500/15 rounded-lg p-2.5">
                     <p className="text-[10px] font-semibold text-red-600 dark:text-red-400 mb-1 uppercase tracking-wider">Hazards</p>
@@ -2992,6 +3658,45 @@ export function StudentPanel({
                 )}
               </div>
             )}
+
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {([
+                {
+                  label: 'Primary survey',
+                  value: `${['airway', 'breathing', 'circulation', 'disability', 'exposure'].filter(stepId => assessmentTracker?.performed.some(p => p.stepId === stepId)).length}/5`,
+                  hint: 'ABCDE',
+                  Icon: Shield,
+                },
+                {
+                  label: 'Anatomy exam',
+                  value: `${assessmentTracker?.performed.filter(p => p.phase === 'secondary').length || 0} regions`,
+                  hint: '3D patient',
+                  Icon: Stethoscope,
+                },
+                {
+                  label: 'Monitor',
+                  value: `${monitorRevealedVitals.size} revealed`,
+                  hint: 'Reassess',
+                  Icon: Activity,
+                },
+                {
+                  label: 'Treatment',
+                  value: `${appliedTreatments.length} applied`,
+                  hint: 'Treat and check',
+                  Icon: Syringe,
+                },
+              ]).map(item => (
+                <div key={item.label} className="flex items-center gap-2 rounded-xl border border-border/60 bg-card/80 px-3 py-2 shadow-sm">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-muted/60">
+                    <item.Icon className="h-3.5 w-3.5 text-muted-foreground" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate text-[11px] font-semibold">{item.label}</p>
+                    <p className="truncate text-[10px] text-muted-foreground">{item.value} - {item.hint}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
 
             {/* Transport Decision Dialog */}
             {/* Transport Decision Wizard — Step-by-step */}
@@ -3281,14 +3986,14 @@ export function StudentPanel({
             )}
 
             {/* ===== SPLIT LAYOUT =====
-                Mobile order: Monitor → Primary Survey → Secondary (3D) → History → Management.
-                Desktop: 2-col grid — Monitor + PulseCheck sticky top-right, Management bottom-right,
-                Assessment (Primary / 3D / History) spans both rows on the left.
+                Mobile order: Primary Survey -> Anatomy -> Monitor -> Treatment.
+                Desktop: 2-col grid with Monitor + PulseCheck sticky top-right,
+                Management bottom-right, and Assessment spanning the left.
             */}
             <div className="flex flex-col lg:grid lg:grid-cols-2 lg:gap-4 lg:grid-rows-[auto_auto]">
 
               {/* ===== ASSESSMENT COLUMN (Primary / 3D / History) ===== */}
-              <div className="order-2 lg:order-none lg:col-start-1 lg:row-start-1 lg:row-span-2 space-y-4">
+              <div className="order-1 lg:order-none lg:col-start-1 lg:row-start-1 lg:row-span-2 space-y-4">
 
                 {/* --- PRIMARY SURVEY (ABCDE) ---
                     Premium redesign: each system is a glass "channel" with a
@@ -3315,13 +4020,31 @@ export function StudentPanel({
                     </div>
                   </CardHeader>
                   <CardContent className="p-3 sm:p-4 pt-0 space-y-3">
-                    <div className="grid grid-cols-6 gap-1.5 sm:gap-2">
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                      {[
+                        { label: 'First Look', value: currentCase.initialPresentation?.generalImpression || currentCase.dispatchInfo?.callReason || 'Form a general impression' },
+                        { label: 'Position', value: currentCase.initialPresentation?.position || 'Observe patient position' },
+                        { label: 'Visible Cues', value: currentCase.initialPresentation?.appearance || 'Scan skin, work of breathing, bleeding' },
+                      ].map(item => (
+                        <div key={item.label} className="rounded-xl border border-slate-200/70 bg-white/65 px-3 py-2 dark:border-white/[0.06] dark:bg-slate-900/45">
+                          <p className="text-[8px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/60">{item.label}</p>
+                          <p className="mt-0.5 line-clamp-2 text-[11px] font-medium leading-relaxed text-foreground/80">{item.value}</p>
+                        </div>
+                      ))}
+                    </div>
+                    {/* ABCDE grid — Scene Safety/BSI is intentionally
+                        absent here because it's already performed and
+                        scored in the Scene Survey phase before the case
+                        clock starts. Duplicating it as an in-case action
+                        would reward the same skill twice and contradict
+                        real practice (you don't reassess scene safety
+                        from inside the back of the truck). */}
+                    <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
                       {([
-                        { key: 'scene-safety' as const, letter: 'S', label: 'Scene',      stepId: 'scene-safety' as AssessmentStepId, rail: 'from-slate-400 to-slate-500',  glow: 'shadow-[0_0_20px_-4px_rgb(148_163_184/0.35)]',  text: 'text-slate-600 dark:text-slate-300' },
                         { key: 'airway' as const,       letter: 'A', label: 'Airway',     stepId: 'airway' as AssessmentStepId,       rail: 'from-amber-400 to-orange-500',  glow: 'shadow-[0_0_20px_-4px_rgb(251_146_60/0.45)]', text: 'text-amber-700 dark:text-amber-300' },
                         { key: 'breathing' as const,    letter: 'B', label: 'Breathing',  stepId: 'breathing' as AssessmentStepId,    rail: 'from-sky-400 to-cyan-500',      glow: 'shadow-[0_0_20px_-4px_rgb(56_189_248/0.45)]', text: 'text-sky-700 dark:text-sky-300' },
                         { key: 'circulation' as const,  letter: 'C', label: 'Circulation',stepId: 'circulation' as AssessmentStepId,  rail: 'from-rose-400 to-red-500',      glow: 'shadow-[0_0_20px_-4px_rgb(251_113_133/0.45)]',text: 'text-rose-700 dark:text-rose-300' },
-                        { key: 'disability' as const,   letter: 'D', label: 'Disability', stepId: 'disability' as AssessmentStepId,   rail: 'from-violet-400 to-purple-500', glow: 'shadow-[0_0_20px_-4px_rgb(167_139_250/0.45)]',text: 'text-violet-700 dark:text-violet-300' },
+                        { key: 'disability' as const,   letter: 'D', label: 'Disability', stepId: 'disability' as AssessmentStepId,   rail: 'from-indigo-400 to-blue-500', glow: 'shadow-[0_0_20px_-4px_rgb(96_165_250/0.45)]',text: 'text-blue-700 dark:text-blue-300' },
                         { key: 'exposure' as const,     letter: 'E', label: 'Exposure',   stepId: 'exposure' as AssessmentStepId,     rail: 'from-emerald-400 to-teal-500',  glow: 'shadow-[0_0_20px_-4px_rgb(52_211_153/0.45)]', text: 'text-emerald-700 dark:text-emerald-300' },
                       ]).map(item => {
                         const isAssessed = assessmentTracker?.performed.some(p => p.stepId === item.stepId);
@@ -3372,6 +4095,14 @@ export function StudentPanel({
                   </CardContent>
                 </Card>
 
+                {/* Injury Map (up-front findings list) intentionally REMOVED
+                    from the student view — listing findings before assessment
+                    spoils the discovery that IS the assessment skill. Findings
+                    now reveal ON the 3D body only once the student examines the
+                    region (see RevealedFindingMarkers in Body3DModel). The
+                    InjuryMap component is retained for a future debrief/
+                    instructor summary surface. */}
+
                 {/* --- 3D PHYSICAL EXAMINATION --- */}
                 {assessmentTracker && (
                   <Suspense fallback={<LoadingCard />}>
@@ -3386,142 +4117,99 @@ export function StudentPanel({
                       patientSounds={patientState?.sounds}
                       isStudentView={true}
                       caseCategory={currentCase.category}
+                      appliedTreatmentIds={appliedTreatmentIds}
                       isInArrest={patientState?.isInArrest ?? false}
+                      onPulse={runPulseCheck}
                     />
                   </Suspense>
                 )}
 
-                {/* --- HISTORY (SAMPLE) ---
-                    Mirrors the Primary Survey visual language with an
-                    amethyst/fuchsia accent rail — history-taking is the
-                    "memory" phase. Same glass card, same chapter-style
-                    findings panel, same LED dot for completed steps. */}
-                <Card className="relative overflow-hidden rounded-2xl border border-white/5 dark:border-white/[0.06] bg-gradient-to-br from-white via-slate-50 to-white dark:from-slate-950/70 dark:via-slate-900/40 dark:to-slate-950/70 shadow-[0_4px_20px_-8px_rgba(0,0,0,0.1)] dark:shadow-[0_8px_40px_-16px_rgba(0,0,0,0.7)] backdrop-blur-xl">
-                  <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-fuchsia-400/40 to-transparent" />
-                  <CardHeader className="pb-3 px-4 sm:px-5 pt-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-fuchsia-500/10 ring-1 ring-fuchsia-500/15">
-                          <ClipboardCheck className="h-3.5 w-3.5 text-fuchsia-500/80" />
-                        </div>
-                        <div>
-                          <p className="text-[9px] font-medium tracking-[0.25em] uppercase text-muted-foreground/60">Phase&nbsp;2</p>
-                          <h2 className="text-sm font-semibold tracking-tight leading-tight">History</h2>
-                        </div>
-                      </div>
-                      <span className="text-[10px] font-mono tracking-[0.15em] text-muted-foreground/40">SAMPLE</span>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="p-3 sm:p-4 pt-0 space-y-3">
-                    <div className="grid grid-cols-6 gap-1.5 sm:gap-2">
-                      {([
-                        { key: 'signs-symptoms' as const, letter: 'S', label: 'Signs',     stepId: 'signs-symptoms' as AssessmentStepId },
-                        { key: 'allergies' as const,     letter: 'A', label: 'Allergies', stepId: 'allergies' as AssessmentStepId },
-                        { key: 'medications' as const,   letter: 'M', label: 'Meds',      stepId: 'medications' as AssessmentStepId },
-                        { key: 'past-medical' as const,  letter: 'P', label: 'PMHx',      stepId: 'past-medical' as AssessmentStepId },
-                        { key: 'last-meal' as const,     letter: 'L', label: 'Last Meal', stepId: 'last-meal' as AssessmentStepId },
-                        { key: 'events-leading' as const,letter: 'E', label: 'Events',    stepId: 'events-leading' as AssessmentStepId },
-                      ]).map(item => {
-                        const isAssessed = assessmentTracker?.performed.some(p => p.stepId === item.stepId);
-                        const isActive = activeHistoryStep === item.key;
-                        return (
-                          <button
-                            key={item.key}
-                            onClick={() => {
-                              handlePerformAssessment(item.stepId);
-                              setActiveHistoryStep(isActive ? null : item.key);
-                            }}
-                            className={`group relative flex flex-col items-center justify-center min-h-[54px] sm:min-h-[68px] pt-3 pb-2 px-1 rounded-xl bg-white/50 dark:bg-slate-900/40 backdrop-blur-sm border border-slate-200/60 dark:border-white/[0.04] transition-all duration-300 touch-manipulation hover:-translate-y-0.5 hover:border-white/10 ${isActive ? 'shadow-[0_0_20px_-4px_rgb(232_121_249/0.45)] border-white/10' : ''}`}
-                          >
-                            <span className={`absolute inset-x-3 top-0 h-[2px] rounded-full bg-gradient-to-r from-fuchsia-400 to-purple-500 transition-opacity duration-300 ${isActive ? 'opacity-100' : isAssessed ? 'opacity-60' : 'opacity-20 group-hover:opacity-50'}`} />
-                            <span className={`absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full transition-colors ${isAssessed ? 'bg-emerald-400 shadow-[0_0_6px_rgb(52_211_153/0.8)]' : 'bg-white/[0.08] dark:bg-white/[0.06]'}`} />
-                            <span className={`text-xl sm:text-2xl font-extralight tracking-tight leading-none ${isActive ? 'text-fuchsia-700 dark:text-fuchsia-300' : 'text-foreground/80'}`}>
-                              {item.letter}
-                            </span>
-                            <span className="text-[8px] sm:text-[9px] font-medium tracking-[0.15em] uppercase text-muted-foreground/60 mt-1">{item.label}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                    {/* Chapter-style history findings */}
-                    {activeHistoryStep && activeFindings && activeFindings.stepId === activeHistoryStep && (
-                      <div className="relative overflow-hidden rounded-xl border border-white/5 dark:border-white/[0.06] bg-gradient-to-br from-slate-50/80 via-white/40 to-transparent dark:from-slate-900/60 dark:via-slate-900/20 dark:to-transparent backdrop-blur-sm animate-in slide-in-from-top-2 fade-in-50 duration-500">
-                        <div className="px-4 py-3 border-b border-slate-200/50 dark:border-white/5">
-                          <p className="text-[9px] font-medium tracking-[0.25em] uppercase text-muted-foreground/60">History</p>
-                          <h3 className="text-base font-light tracking-tight text-foreground/90 mt-0.5 capitalize">
-                            {activeHistoryStep.replace(/-/g, ' ')}
-                          </h3>
-                        </div>
-                        <div className="p-4 space-y-2">
-                          {activeFindings.findings.map((f, i) => (
-                            <div key={i} className="group relative pl-3">
-                              <span className="absolute left-0 top-1.5 h-1 w-1 rounded-full bg-foreground/20" />
-                              <p className="text-[10px] font-medium tracking-[0.1em] uppercase text-muted-foreground/60">{f.label}</p>
-                              <p className="font-mono text-[11px] sm:text-xs text-foreground/80 leading-relaxed mt-0.5">{f.value}</p>
-                            </div>
-                          ))}
-                        </div>
-
-                        {/* Pain assessment — lives under Signs/Symptoms in
-                            SAMPLE because pain is subjective and belongs with
-                            history-taking, not the monitor. Premium slider
-                            style: numbers are hairline nodes on a gradient
-                            continuum (green→amber→red), the selected value
-                            scales up and glows. */}
-                        {activeHistoryStep === 'signs-symptoms' && (
-                          <div className="px-4 pb-4 pt-3 border-t border-slate-200/50 dark:border-white/5">
-                            <div className="flex items-baseline justify-between mb-3">
-                              <div>
-                                <p className="text-[9px] font-medium tracking-[0.25em] uppercase text-muted-foreground/60">Pain Score</p>
-                                <p className="text-[10px] text-muted-foreground/50 mt-0.5">0 = none · 10 = worst imaginable</p>
-                              </div>
-                              {currentVitals?.painScore !== undefined && (
-                                <div className="flex items-baseline gap-1">
-                                  <span className="text-2xl font-extralight tracking-tight text-foreground/90 tabular-nums">{currentVitals.painScore}</span>
-                                  <span className="text-[10px] font-mono text-muted-foreground/50">/ 10</span>
-                                </div>
-                              )}
-                            </div>
-                            {/* Gradient continuum underline */}
-                            <div className="relative">
-                              <div className="absolute inset-x-1 top-1/2 h-px -translate-y-1/2 bg-gradient-to-r from-emerald-400/30 via-amber-400/30 to-rose-500/30" />
-                              <div className="relative grid grid-cols-11 gap-1">
-                                {[0,1,2,3,4,5,6,7,8,9,10].map(n => {
-                                  const selected = currentVitals?.painScore === n;
-                                  const severity = n === 0 ? 'none' : n <= 3 ? 'mild' : n <= 6 ? 'moderate' : 'severe';
-                                  const selectedClr = severity === 'none' ? 'from-emerald-400 to-emerald-500 shadow-[0_0_12px_rgb(52_211_153/0.55)]'
-                                    : severity === 'mild' ? 'from-yellow-300 to-amber-400 shadow-[0_0_12px_rgb(251_191_36/0.55)]'
-                                    : severity === 'moderate' ? 'from-amber-400 to-orange-500 shadow-[0_0_12px_rgb(251_146_60/0.55)]'
-                                    : 'from-rose-400 to-red-500 shadow-[0_0_14px_rgb(244_63_94/0.65)]';
-                                  return (
-                                    <button
-                                      key={n}
-                                      onClick={() => {
-                                        if (readOnly) return;
-                                        setCurrentVitals(prev => prev ? { ...prev, painScore: n } : prev);
-                                        handlePerformAssessment('pain-assessment');
-                                      }}
-                                      className={`h-9 rounded-full text-[11px] font-mono font-medium tabular-nums transition-all duration-300 touch-manipulation ${
-                                        selected
-                                          ? `bg-gradient-to-b ${selectedClr} text-white border-0 scale-110 ring-2 ring-white/20`
-                                          : 'bg-white/60 dark:bg-slate-900/40 border border-slate-200/60 dark:border-white/[0.06] text-foreground/70 hover:text-foreground hover:border-white/10 hover:-translate-y-0.5'
-                                      }`}
-                                    >
-                                      {n}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                            <p className="text-[10px] text-muted-foreground/60 mt-3 leading-relaxed">
-                              Ask the patient to rate their pain. Document location, onset, character, radiation, severity, timing (<span className="font-mono">OPQRST</span>) in your handover.
-                            </p>
-                          </div>
-                        )}
+                {/* --- HISTORY (voice-driven) ---
+                    The old SAMPLE letter grid was replaced with a live
+                    spoken conversation: student presses mic, asks any
+                    history question, classifier maps it to SAMPLE/OPQRST,
+                    patient (or bystander when unconscious) answers via
+                    Supertonic. Coverage chips track which SAMPLE letters
+                    have been obtained for debrief scoring. */}
+                {currentCase && (
+                  <VoiceHistoryPanel
+                    caseData={currentCase}
+                    onCategoryObtained={(cat: HistoryCategory) => {
+                      // Map voice categories back to the legacy tracker step IDs
+                      // so the existing scoring / progress logic keeps working.
+                      const stepId: AssessmentStepId | null = (() => {
+                        switch (cat) {
+                          case 'signs-symptoms': return 'signs-symptoms';
+                          case 'allergies': return 'allergies';
+                          case 'medications': return 'medications';
+                          case 'past-medical': return 'past-medical';
+                          case 'last-meal': return 'last-meal';
+                          case 'events': return 'events-leading';
+                          // All OPQRST categories roll up under signs-symptoms
+                          case 'opqrst-onset':
+                          case 'opqrst-provocation':
+                          case 'opqrst-quality':
+                          case 'opqrst-radiation':
+                          case 'opqrst-severity':
+                          case 'opqrst-time':
+                          case 'pain-current':
+                            return 'signs-symptoms';
+                          default:
+                            return null;
+                        }
+                      })();
+                      if (stepId) handlePerformAssessment(stepId);
+                    }}
+                    footer={(
+                      // Pain severity (OPQRST "S") folded INTO history-taking —
+                      // a compact row in the history card footer rather than a
+                      // separate card. Voice history can also set it when the
+                      // student asks the patient to rate their pain.
+                      <div className="border-t border-border/40 px-4 py-3">
+                        <p className="mb-2 text-[9px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/60">Pain · OPQRST severity</p>
+                        {(() => {
+                          // Pain is HISTORY, not a dial: ask the patient and they report
+                          // it (revealing the case's authored severity). If they can't
+                          // self-report (reduced GCS), prompt non-verbal assessment instead.
+                          const gcs = currentVitals?.gcs ?? 15;
+                          const canSelfReport = gcs >= 9;
+                          const revealed = monitorRevealedVitals.has('painScore');
+                          const p = currentVitals?.painScore;
+                          if (revealed && p !== undefined) {
+                            const sev = p === 0 ? 'no pain' : p <= 3 ? 'mild' : p <= 6 ? 'moderate' : 'severe';
+                            return (
+                              <p className="text-[11px] text-foreground/75">
+                                Patient reports <span className="font-semibold tabular-nums">{p}/10</span> — {sev}.
+                              </p>
+                            );
+                          }
+                          if (!canSelfReport) {
+                            return (
+                              <p className="text-[11px] text-muted-foreground/70">
+                                Patient cannot self-report pain (GCS {gcs}). Look for non-verbal cues — guarding, grimacing, restlessness.
+                              </p>
+                            );
+                          }
+                          return (
+                            <button
+                              onClick={() => {
+                                if (readOnly) return;
+                                const reported = currentVitals?.painScore
+                                  ?? currentCase?.vitalSignsProgression?.initial?.painScore
+                                  ?? 0;
+                                setCurrentVitals(prev => prev ? { ...prev, painScore: reported } : prev);
+                                handlePerformAssessment('pain-assessment');
+                              }}
+                              className="w-full rounded-md border border-slate-200/60 dark:border-white/[0.06] bg-white/60 dark:bg-slate-900/40 px-3 py-2 text-[11px] font-medium text-foreground/75 transition-colors hover:border-primary/40 hover:text-foreground touch-manipulation"
+                            >
+                              Ask the patient to rate their pain (0–10)
+                            </button>
+                          );
+                        })()}
                       </div>
                     )}
-                  </CardContent>
-                </Card>
+                  />
+                )}
 
                 {/* ===== SPECIAL ASSESSMENTS (contextual, driven by assessment framework) ===== */}
                 {assessmentTracker && (() => {
@@ -3624,7 +4312,7 @@ export function StudentPanel({
               </div>
 
               {/* ===== MONITOR + PULSE CHECK (sticky top-right on desktop, first on mobile) ===== */}
-              <div className="order-1 lg:order-none lg:col-start-2 lg:row-start-1 mb-4 lg:mb-0 lg:sticky lg:top-16 lg:self-start space-y-4">
+              <div className="order-2 mt-4 lg:order-none lg:col-start-2 lg:row-start-1 lg:mt-0 lg:sticky lg:top-16 lg:self-start space-y-4">
 
                 {/* --- LIFEPAK MONITOR --- */}
                 <Suspense fallback={<LoadingCard />}>
@@ -3690,45 +4378,23 @@ export function StudentPanel({
 
                 {/* --- PULSE CHECK + CONFIRM ARREST BUTTONS --- */}
                 <div className="flex flex-col gap-2">
-                  {/* Quick Pulse Check button — always visible during active case */}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className={`gap-2 text-xs ${pulseCheckInProgress ? 'animate-pulse border-amber-500 text-amber-600' : pulseCheckResult ? (pulseCheckResult === 'absent' ? 'border-red-500 text-red-600' : 'border-green-500 text-green-600') : ''}`}
-                    disabled={pulseCheckInProgress}
-                    onClick={() => {
-                      setPulseCheckInProgress(true);
-                      setPulseCheckResult(null);
-                      lastActivityRef.current = Date.now();
-                      // 5-second assessment delay
-                      setTimeout(() => {
-                        const hasPulse = currentVitals && currentVitals.pulse > 0 && !(patientState?.isInArrest);
-                        const result = hasPulse ? 'present' : 'absent';
-                        setPulseCheckResult(result);
-                        setPulseCheckInProgress(false);
-                        if (result === 'absent') {
-                          toast.error('No pulse detected', {
-                            description: 'Patient is pulseless. Consider cardiac arrest protocol.',
-                            duration: 8000,
-                          });
-                        } else {
-                          toast.success('Pulse present', {
-                            description: `Pulse detected — rate approximately ${currentVitals?.pulse || '?'} bpm.`,
-                            duration: 5000,
-                          });
-                        }
-                      }, 5000);
-                    }}
-                  >
-                    <Heart className="h-3.5 w-3.5" />
-                    {pulseCheckInProgress
-                      ? 'Checking pulse...'
-                      : pulseCheckResult === 'absent'
-                        ? 'No pulse detected'
-                        : pulseCheckResult === 'present'
-                          ? 'Pulse present'
-                          : 'Check Pulse'}
-                  </Button>
+                  {/* Pulse is now checked on the mannequin — tap the carotid
+                      (neck) or radial (wrist) point. This shows the status; the
+                      arrest-confirm prompt below still triggers on 'absent'. */}
+                  <div className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] ${
+                    pulseCheckInProgress ? 'border-amber-500/50 text-amber-600'
+                    : pulseCheckResult === 'absent' ? 'border-red-500/50 text-red-600'
+                    : pulseCheckResult === 'present' ? 'border-green-500/50 text-green-600'
+                    : 'border-border/60 text-muted-foreground'
+                  }`}>
+                    <Heart className="h-3.5 w-3.5 shrink-0" />
+                    <span>
+                      {pulseCheckInProgress ? 'Checking pulse…'
+                        : pulseCheckResult === 'absent' ? 'No pulse detected — tap a pulse point to recheck'
+                        : pulseCheckResult === 'present' ? 'Pulse present'
+                        : 'Tap the carotid (neck) or radial (wrist) point on the patient to check a pulse'}
+                    </span>
+                  </div>
 
                   {/* Confirm Cardiac Arrest — only appears when pulse check shows absent AND arrest not yet confirmed */}
                   {pulseCheckResult === 'absent' && !arrestConfirmed && (
@@ -3751,151 +4417,18 @@ export function StudentPanel({
               {/* ===== MANAGEMENT COLUMN (bottom-right on desktop, last on mobile) ===== */}
               <div className="order-3 lg:order-none lg:col-start-2 lg:row-start-2 space-y-4">
                 {/* --- MANAGEMENT (ABCDE) --- */}
-                <Card className="bg-card border border-border rounded-xl sm:rounded-2xl overflow-hidden">
-                  <CardHeader className="pb-2 px-3 sm:px-4 border-b border-border/30">
-                    <CardTitle className="text-xs sm:text-sm flex items-center gap-2">
-                      <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-lg bg-green-500/15">
-                        <Syringe className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-green-500" />
-                      </div>
-                      Management (ABCDE)
-                      <Badge variant="secondary" className="ml-auto text-[9px] sm:text-[10px]">{appliedTreatments.length} applied</Badge>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-2 sm:p-3">
-                    <div className="grid grid-cols-6 gap-1 sm:gap-1.5">
-                      {([
-                        { key: 'airway' as const, letter: 'A', label: 'Airway', categories: ['airway'] as TreatmentCategory[] },
-                        { key: 'breathing' as const, letter: 'B', label: 'Breathing', categories: ['breathing'] as TreatmentCategory[] },
-                        { key: 'circulation' as const, letter: 'C', label: 'Circulation', categories: ['circulation'] as TreatmentCategory[] },
-                        { key: 'disability' as const, letter: 'D', label: 'Disability', categories: [] as TreatmentCategory[] },
-                        { key: 'exposure' as const, letter: 'E', label: 'Exposure', categories: ['comfort', 'positioning'] as TreatmentCategory[] },
-                        { key: 'medications' as const, letter: 'Rx', label: 'Meds', categories: ['medication'] as TreatmentCategory[] },
-                      ]).map(item => {
-                        const isActive = activeManagementTab === item.key;
-                        // Count treatments applied in this category
-                        const appliedInCat = appliedTreatments.filter(t => {
-                          if (item.key === 'disability') {
-                            return ['glucose_oral', 'glucose_iv', 'midazolam', 'diazepam', 'mannitol', 'naloxone', 'flumazenil'].includes(t.id);
-                          }
-                          return item.categories.includes(t.category as TreatmentCategory);
-                        }).length;
-                        return (
-                          <button
-                            key={item.key}
-                            onClick={() => setActiveManagementTab(isActive ? null : item.key)}
-                            className={`flex flex-col items-center gap-0.5 p-1.5 sm:p-2 rounded-lg border-2 transition-all text-center relative ${
-                              isActive
-                                ? 'border-green-500 bg-green-500/10 ring-1 ring-green-500/30'
-                                : 'border-border/40 hover:border-green-500/40 hover:bg-accent/30'
-                            }`}
-                          >
-                            <span className="text-sm sm:text-lg font-bold">{item.letter}</span>
-                            <span className="text-[7px] sm:text-[9px] text-muted-foreground leading-tight">{item.label}</span>
-                            {appliedInCat > 0 && (
-                              <Badge className="absolute -top-1.5 -right-1.5 h-4 w-4 p-0 flex items-center justify-center text-[8px] bg-green-500">{appliedInCat}</Badge>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    {/* Treatment options for active management tab */}
-                    {activeManagementTab && currentVitals && (
-                      <div className="mt-2 p-2 rounded-xl bg-muted/20 border border-border/30 animate-fade-in max-h-72 overflow-y-auto">
-                        <div className="flex items-center justify-between mb-1.5">
-                          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                            {activeManagementTab === 'medications' ? 'Medications' : activeManagementTab.charAt(0).toUpperCase() + activeManagementTab.slice(1)} Treatments
-                          </p>
-                        </div>
-                        {/* Search input for medications */}
-                        {activeManagementTab === 'medications' && (
-                          <input
-                            type="text"
-                            value={medSearch}
-                            onChange={e => setMedSearch(e.target.value)}
-                            placeholder="Search medications..."
-                            className="w-full mb-2 px-2.5 py-1.5 rounded-lg border border-border/40 bg-white dark:bg-black/20 text-xs placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-blue-400"
-                          />
-                        )}
-                        <div className="space-y-1">
-                          {TREATMENTS.filter(t => {
-                            if (activeManagementTab === 'disability') {
-                              return [
-                                'glucose_10g', 'dextrose_10', 'dextrose_10_250ml', 'midazolam_5mg', 'midazolam_buccal',
-                                'diazepam_rectal', 'mannitol_20', 'naloxone_04mg', 'ketamine_iv',
-                                'ondansetron_4mg', 'metoclopramide_10mg', 'hypertonic_saline',
-                                'lorazepam_4mg', 'flumazenil_02mg',
-                              ].includes(t.id) || t.description?.toLowerCase().includes('seizure') || t.description?.toLowerCase().includes('glucose');
-                            }
-                            if (activeManagementTab === 'exposure') {
-                              return t.category === 'comfort' || t.category === 'positioning';
-                            }
-                            if (activeManagementTab === 'medications') {
-                              const matchesSearch = !medSearch || t.name.toLowerCase().includes(medSearch.toLowerCase()) || t.description.toLowerCase().includes(medSearch.toLowerCase());
-                              return t.category === 'medication' && matchesSearch;
-                            }
-                            const catMap: Record<string, TreatmentCategory> = { airway: 'airway', breathing: 'breathing', circulation: 'circulation' };
-                            return t.category === catMap[activeManagementTab];
-                          })
-                          .sort((a, b) => a.name.localeCompare(b.name)) // Alphabetical
-                          .map(treatment => {
-                            const isApplied = appliedTreatmentIds.includes(treatment.id);
-                            const isCurrentlyApplying = applyingTreatmentId === treatment.id;
-                            // Determine if treatment is gated and why
-                            const coreTemp = currentVitals?.temperature ?? 37;
-                            const isSevereHypothermia = coreTemp < 30;
-                            const needsIV = treatment.requiresIVAccess && !appliedTreatmentIds.includes('iv_access');
-                            const hypothermiaBlock = isSevereHypothermia && treatment.category === 'medication';
-                            let gateReason: string | null = null;
-                            if (needsIV) gateReason = 'Requires IV access first. Establish IV before giving this medication.';
-                            else if (hypothermiaBlock) gateReason = `Withheld — core temperature ${coreTemp}°C is below 30°C. All medications are withheld in severe hypothermia. Rewarm first.`;
-                            const isGated = gateReason !== null;
-                            return (
-                              <div key={treatment.id} className={`flex items-center gap-2 p-2 rounded-lg border text-xs transition-all ${
-                                isApplied ? 'bg-green-500/5 border-green-500/20' :
-                                isGated ? 'bg-amber-500/5 border-amber-500/20' :
-                                'border-border/30 hover:bg-accent/20'
-                              }`}>
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-1">
-                                    <span className="font-medium">{treatment.name}</span>
-                                    {isGated && (
-                                      <span
-                                        title={gateReason!}
-                                        className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-amber-500/15 border border-amber-500/40 shrink-0 cursor-help"
-                                      >
-                                        <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400">i</span>
-                                      </span>
-                                    )}
-                                  </div>
-                                  <p className="text-[10px] text-muted-foreground truncate">
-                                    {isGated ? gateReason : treatment.description}
-                                  </p>
-                                </div>
-                                <Button
-                                  size="sm"
-                                  variant={isApplied ? 'outline' : 'default'}
-                                  className="h-6 px-2 text-[10px] rounded-md shrink-0"
-                                  onClick={() => applyTreatment(treatment)}
-                                  disabled={isCurrentlyApplying}
-                                >
-                                  {isCurrentlyApplying ? (
-                                    <Loader2 className="h-3 w-3 animate-spin" />
-                                  ) : isApplied ? (
-                                    <>
-                                      <RotateCcw className="h-2.5 w-2.5 mr-0.5" /> Repeat
-                                    </>
-                                  ) : (
-                                    'Apply'
-                                  )}
-                                </Button>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                <TreatmentJumpBagPanel
+                  currentVitals={currentVitals}
+                  appliedTreatments={appliedTreatments}
+                  appliedTreatmentIds={appliedTreatmentIds}
+                  applyingTreatmentId={applyingTreatmentId}
+                  patientState={patientState}
+                  activeManagementTab={activeManagementTab}
+                  setActiveManagementTab={setActiveManagementTab}
+                  medSearch={medSearch}
+                  setMedSearch={setMedSearch}
+                  applyTreatment={applyTreatment}
+                />
 
                 {/* Auscultation integrated into 3D Physical Exam — click lung/heart regions to listen */}
 
@@ -3910,68 +4443,6 @@ export function StudentPanel({
                       </Badge>
                     </div>
                   </div>
-                )}
-
-                {/* --- Applied Treatments Log --- */}
-                {appliedTreatments.length > 0 && (
-                  <Card className="bg-card border border-border rounded-xl sm:rounded-2xl">
-                    <CardHeader className="pb-2 border-b border-border/30 px-3 sm:px-4">
-                      <CardTitle className="text-xs sm:text-sm flex items-center gap-2">
-                        <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-lg bg-green-500/15">
-                          <ClipboardCheck className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-green-500" />
-                        </div>
-                        Treatments Applied
-                        <Badge variant="secondary" className="ml-auto text-[9px] sm:text-[10px]">{appliedTreatments.length}</Badge>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-2 sm:pt-3 px-3 sm:px-4">
-                      <div className="space-y-1.5 max-h-40 overflow-y-auto">
-                        {appliedTreatments.map((t, i) => {
-                          const hasWarning = t.description?.includes('CRITICAL') || t.description?.includes('ADVERSE') || t.description?.includes('CONTRAINDICATED');
-                          const isPartial = t.description?.includes('Partial') || t.description?.includes('Consider repeat');
-                          return (
-                            <div key={i} className={`flex items-start gap-2 text-[10px] sm:text-xs p-2 rounded-lg border ${
-                              hasWarning
-                                ? 'bg-red-500/5 border-red-500/15'
-                                : isPartial
-                                  ? 'bg-amber-500/5 border-amber-500/15'
-                                  : 'bg-green-500/5 border-green-500/10'
-                            }`}>
-                              {hasWarning ? (
-                                <AlertTriangle className="h-3.5 w-3.5 text-red-500 mt-0.5 shrink-0" />
-                              ) : isPartial ? (
-                                <Activity className="h-3.5 w-3.5 text-amber-500 mt-0.5 shrink-0" />
-                              ) : (
-                                <CheckCircle2 className="h-3.5 w-3.5 text-green-500 mt-0.5 shrink-0" />
-                              )}
-                              <div className="flex-1 min-w-0">
-                                <span className="font-semibold">{t.name}</span>
-                                {patientState && patientState.treatmentCounts[t.id] > 1 && (
-                                  <Badge variant="outline" className="ml-1.5 text-[9px] py-0 h-4">
-                                    x{patientState.treatmentCounts[t.id]}
-                                  </Badge>
-                                )}
-                                <p className="text-muted-foreground mt-0.5 leading-relaxed">
-                                  {(() => {
-                                    const desc = t.description || '';
-                                    const cleaned = desc
-                                      .replace(/\s*—\s*(?:[A-Z][A-Za-z\d]+:\s*[\d./]+[%°]?[A-Za-z]?\s*→\s*[\d./]+[%°]?[A-Za-z]?(?:,\s*)?)+\.?/g, '.')
-                                      .replace(/\s*—\s*\d+\s*vitals?\s*improving\.?\s*(?:Consider\s*repeat\s*dose\.?)?/g, '.')
-                                      .replace(/\.{2,}/g, '.')
-                                      .trim();
-                                    return cleaned;
-                                  })()}
-                                </p>
-                              </div>
-                              <span className="text-muted-foreground/60 text-[10px] shrink-0">
-                                {new Date(t.appliedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </CardContent>
-                  </Card>
                 )}
               </div>
             </div>
@@ -4013,6 +4484,7 @@ export function StudentPanel({
                       <button
                         key={opt.rate}
                         onClick={() => {
+                          bvmVentilationRateRef.current = opt.rate;
                           setBvmVentilationRate(opt.rate);
                           setShowBvmRateDialog(false);
                           const t = pendingBvmTreatment;
@@ -4072,7 +4544,73 @@ export function StudentPanel({
               />
             )}
 
+            {/* Practicality challenge — patient/context pushes back before the treatment is applied. */}
+            {pendingTreatmentChallenge && (
+              <Dialog open={!!pendingTreatmentChallenge} onOpenChange={(open) => { if (!open) setPendingTreatmentChallenge(null); }}>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2 text-amber-600">
+                      <AlertTriangle className="h-5 w-5" />
+                      {pendingTreatmentChallenge.challenge.title}
+                    </DialogTitle>
+                    <DialogDescription>
+                      The patient and clinical context are challenging this treatment choice.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-3 py-2">
+                    {pendingTreatmentChallenge.challenge.patientQuote && (
+                      <div className="rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-950 dark:border-sky-900/50 dark:bg-sky-950/30 dark:text-sky-100">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] opacity-70">Patient says</p>
+                        <p className="mt-1 italic">"{pendingTreatmentChallenge.challenge.patientQuote}"</p>
+                      </div>
+                    )}
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm leading-relaxed text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/25 dark:text-amber-100">
+                      {pendingTreatmentChallenge.challenge.clinicalReason}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Treatment selected: <span className="font-semibold text-foreground">{pendingTreatmentChallenge.treatment.name}</span>
+                    </p>
+                  </div>
+                  <DialogFooter className="gap-2">
+                    <Button variant="outline" onClick={() => setPendingTreatmentChallenge(null)}>
+                      Reconsider
+                    </Button>
+                    <Button
+                      className="bg-amber-600 hover:bg-amber-700"
+                      onClick={() => {
+                        const pending = pendingTreatmentChallenge;
+                        if (!pending) return;
+                        treatmentChallengeConfirmedRef.current.add(pending.treatment.id);
+                        setPendingTreatmentChallenge(null);
+                        applyTreatment(pending.treatment, pending.defibParams);
+                      }}
+                    >
+                      {pendingTreatmentChallenge.challenge.proceedLabel || 'Proceed anyway'}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            )}
+
             {/* Medication Safety Confirmation Dialog */}
+            {/* Live adverse-reaction banner — appears when an allergen has been
+                administered, until adrenaline rescues the patient. */}
+            {activeReaction && (
+              <div className="fixed top-16 left-1/2 -translate-x-1/2 z-[60] w-[min(92vw,560px)] rounded-xl border border-red-500/40 bg-red-950/90 px-4 py-3 shadow-2xl backdrop-blur animate-fade-in">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 text-red-300 shrink-0 mt-0.5 animate-pulse" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-red-100">
+                      {activeReaction.kind === 'anaphylaxis' ? 'ANAPHYLAXIS in progress' : 'Allergic reaction in progress'}
+                    </p>
+                    <p className="text-xs text-red-200/90 mt-0.5">
+                      {activeReaction.treatmentName} given despite documented “{activeReaction.match.allergy}” allergy — give IM adrenaline now, plus high-flow O₂ and IV fluids.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {pendingMedConfirm && (
               <Dialog open={!!pendingMedConfirm} onOpenChange={(open) => { if (!open) setPendingMedConfirm(null); }}>
                 <DialogContent className="sm:max-w-md">
@@ -4156,20 +4694,6 @@ export function StudentPanel({
               </Dialog>
             )}
 
-            {/* TreatmentApplicationPanel removed — replaced by inline Management ABCDE tabs above */}
-            {false && currentVitals && (
-              <Suspense fallback={<LoadingCard />}>
-                <TreatmentApplicationPanel
-                  currentVitals={currentVitals}
-                  onApplyTreatment={applyTreatment}
-                  appliedTreatmentIds={appliedTreatmentIds}
-                  isApplying={!!applyingTreatmentId}
-                  applyingTreatmentId={applyingTreatmentId}
-                  studentYear={selectedYear}
-                  isStudentView={true}
-                />
-              </Suspense>
-            )}
           </div>
         )}
 
@@ -4398,7 +4922,7 @@ export function StudentPanel({
                       <div className="flex items-center gap-2 mb-1">
                         <Badge className={`text-[9px] ${
                           edOutcome.preAlertImpact === 'helpful' ? 'bg-green-500' :
-                          edOutcome.preAlertImpact === 'neutral' ? 'bg-gray-500' :
+                          edOutcome.preAlertImpact === 'neutral' ? 'bg-slate-500' :
                           'bg-amber-500'
                         } text-white`}>
                           {edOutcome.preAlertImpact === 'helpful' ? 'HELPFUL' :
@@ -4466,6 +4990,69 @@ export function StudentPanel({
                     <div className="border-t border-orange-300 dark:border-orange-700 pt-1.5 mt-1.5 flex justify-between font-bold">
                       <span>Adjusted score</span>
                       <span>{performanceMetrics.percentage}%</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Performance Assessment — deterministic dimension breakdown */}
+            {performanceMetrics.smartGrade && (
+              <Card className="bg-card border border-border rounded-2xl overflow-hidden">
+                <CardHeader className="pb-3 border-b border-border/30">
+                  <CardTitle className="text-sm flex items-center justify-between gap-2">
+                    <span className="flex items-center gap-2">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-primary/15">
+                        <Sparkles className="h-3.5 w-3.5 text-primary" />
+                      </div>
+                      Performance Assessment
+                    </span>
+                    <Badge variant="outline" className={`text-[10px] ${
+                      performanceMetrics.smartGrade.band.tone === 'excellent' ? 'border-emerald-400 text-emerald-600'
+                      : performanceMetrics.smartGrade.band.tone === 'good' ? 'border-blue-400 text-blue-600'
+                      : performanceMetrics.smartGrade.band.tone === 'fair' ? 'border-amber-400 text-amber-600'
+                      : 'border-red-400 text-red-600'
+                    }`}>{performanceMetrics.smartGrade.band.label}</Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 sm:p-5 space-y-4">
+                  <p className="text-sm leading-relaxed text-muted-foreground">{performanceMetrics.smartGrade.narrative}</p>
+
+                  <div className="space-y-2.5">
+                    {performanceMetrics.smartGrade.dimensions.map((d) => (
+                      <div key={d.key}>
+                        <div className="flex items-center justify-between text-xs mb-1">
+                          <span className="font-medium">{d.label}</span>
+                          <span className="font-mono text-muted-foreground">{d.score}%</span>
+                        </div>
+                        <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                          <div className={`h-full rounded-full transition-all duration-700 ${
+                            d.score >= 80 ? 'bg-emerald-500' : d.score >= 60 ? 'bg-blue-500' : d.score >= 40 ? 'bg-amber-500' : 'bg-red-500'
+                          }`} style={{ width: `${d.score}%` }} />
+                        </div>
+                        <p className="text-[11px] text-muted-foreground mt-1">{d.summary}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="grid sm:grid-cols-2 gap-3 pt-1">
+                    {performanceMetrics.smartGrade.strengths.length > 0 && (
+                      <div className="rounded-lg border border-emerald-200 dark:border-emerald-900/40 bg-emerald-50/50 dark:bg-emerald-950/20 p-3">
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400 mb-1.5">Strengths</p>
+                        <ul className="space-y-1">
+                          {performanceMetrics.smartGrade.strengths.map((s: string, i: number) => (
+                            <li key={i} className="text-xs flex items-start gap-1.5"><span className="text-emerald-500 mt-0.5">✓</span><span>{s}</span></li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    <div className="rounded-lg border border-amber-200 dark:border-amber-900/40 bg-amber-50/50 dark:bg-amber-950/20 p-3">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400 mb-1.5">Focus Next</p>
+                      <ul className="space-y-1">
+                        {performanceMetrics.smartGrade.improvements.map((s: string, i: number) => (
+                          <li key={i} className="text-xs flex items-start gap-1.5"><span className="text-amber-500 mt-0.5">→</span><span>{s}</span></li>
+                        ))}
+                      </ul>
                     </div>
                   </div>
                 </CardContent>
@@ -4784,7 +5371,7 @@ export function StudentPanel({
                         'cpr-pause': 'text-amber-600 bg-amber-50',
                         'rhythm-check': 'text-blue-600 bg-blue-50',
                         'shock': 'text-yellow-600 bg-yellow-50',
-                        'drug': 'text-purple-600 bg-purple-50',
+                        'drug': 'text-cyan-700 bg-cyan-50',
                         'rosc': 'text-emerald-600 bg-emerald-50',
                         'lucas': 'text-slate-600 bg-slate-50',
                         'treatment': 'text-cyan-600 bg-cyan-50',
@@ -4850,11 +5437,11 @@ export function StudentPanel({
               };
 
               return (
-                <Card className="bg-card border border-border rounded-2xl overflow-hidden">
+                <Card className="border border-border rounded-2xl overflow-hidden">
                   <CardHeader className="pb-3 border-b border-border/30">
                     <CardTitle className="text-sm flex items-center gap-2">
-                      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-violet-500/15">
-                        <Activity className="h-3.5 w-3.5 text-violet-500" />
+                      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-cyan-500/15">
+                        <Activity className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-300" />
                       </div>
                       Treatment Quality Analysis
                     </CardTitle>
@@ -4868,7 +5455,7 @@ export function StudentPanel({
                         </div>
                         <p className="text-xs text-muted-foreground leading-relaxed">{qr.result.feedback}</p>
                         {qr.result.yearLevelNote && (
-                          <p className="text-xs mt-2 p-2 bg-violet-50 dark:bg-violet-900/20 rounded-lg text-violet-700 dark:text-violet-300 italic">
+                          <p className="text-xs mt-2 p-2 bg-cyan-50 dark:bg-cyan-950/20 rounded-lg text-cyan-800 dark:text-cyan-200 italic">
                             {qr.result.yearLevelNote}
                           </p>
                         )}
@@ -5038,6 +5625,12 @@ export function StudentPanel({
                       appliedTreatments,
                       vitalsHistory,
                       debriefingResources: getResourcesForDebriefing(currentCase),
+                      scoreSummary: {
+                        basePercentage: performanceMetrics.basePercentage,
+                        percentage: performanceMetrics.percentage,
+                        penaltyReasons: performanceMetrics.penaltyReasons,
+                      },
+                      assessmentItems: performanceMetrics.assessmentDebrief?.items,
                     });
                     toast.dismiss();
                     toast.success('PDF report downloaded');
