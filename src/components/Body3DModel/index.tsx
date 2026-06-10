@@ -120,7 +120,7 @@ const EXAM_LANDMARKS: ExamLandmark[] = [
   { id: 'abdomen-overview', region: 'abdomen', label: 'Abdomen', sublabel: 'quadrants, guarding', position: [0.03, 1.02, 0.24], level: 'overview', tone: 'abdomen' },
   { id: 'radial-overview', region: 'right-arm', label: 'Radial pulse', sublabel: 'CRT / motor', position: [-0.18, 0.82, 0.20], level: 'overview', tone: 'circulation' },
   // Minimal anatomical pulse points — click to check (works from any view).
-  { id: 'pulse-carotid', region: 'neck-cspine', label: 'Carotid', sublabel: 'central pulse', position: [-0.05, 1.44, 0.20], level: 'overview', actionId: 'pulse-carotid', tone: 'circulation' },
+  { id: 'pulse-carotid', region: 'neck-cspine', label: 'Carotid', sublabel: 'central pulse', position: [-0.12, 1.39, 0.20], level: 'overview', actionId: 'pulse-carotid', tone: 'circulation' },
   { id: 'pulse-radial-r', region: 'right-arm', label: 'Radial', sublabel: 'wrist pulse', position: [-0.20, 0.80, 0.18], level: 'overview', actionId: 'pulse-radial', tone: 'circulation' },
   { id: 'pulse-radial-l', region: 'left-arm', label: 'Radial', sublabel: 'wrist pulse', position: [0.20, 0.80, 0.18], level: 'overview', actionId: 'pulse-radial', tone: 'circulation' },
   { id: 'pedal-overview', region: 'right-leg', label: 'Pedal pulse', sublabel: 'DP / PT', position: [-0.13, 0.14, 0.20], level: 'overview', tone: 'circulation' },
@@ -140,7 +140,7 @@ const EXAM_LANDMARKS: ExamLandmark[] = [
   { id: 'lung-lu', region: 'chest', label: 'L upper zone', sublabel: 'left apex / upper field', position: [0.09, 1.34, 0.205], level: 'detail', actionId: 'chest-auscultate-lu', tone: 'breathing' },
   { id: 'lung-ll', region: 'chest', label: 'L lower zone', sublabel: 'left base', position: [0.10, 1.22, 0.205], level: 'detail', actionId: 'chest-auscultate-ll', tone: 'breathing' },
   { id: 'sternum-detail', region: 'chest', label: 'Chest wall', sublabel: 'tenderness, crepitus, flail', position: [0, 1.245, 0.215], level: 'detail', actionId: 'chest-palpate', tone: 'warning' },
-  { id: 'heart-detail', region: 'chest', label: 'Heart', sublabel: 'aortic, pulmonic, apex', position: [0.04, 1.19, 0.215], level: 'detail', actionId: 'chest-auscultate-heart', tone: 'circulation' },
+  { id: 'heart-detail', region: 'chest', label: 'Heart', sublabel: 'aortic, pulmonic, apex', position: [0.05, 1.165, 0.215], level: 'detail', actionId: 'chest-auscultate-heart', tone: 'circulation' },
 
   { id: 'ruq-detail', region: 'abdomen', label: 'RUQ', sublabel: 'liver / gallbladder', position: [-0.095, 1.085, 0.245], level: 'detail', actionId: 'abd-ruq-auscultate', tone: 'abdomen' },
   { id: 'luq-detail', region: 'abdomen', label: 'LUQ', sublabel: 'stomach / spleen', position: [0.095, 1.085, 0.245], level: 'detail', actionId: 'abd-luq-auscultate', tone: 'abdomen' },
@@ -406,7 +406,7 @@ function RevealedFindingMarkers({
         const fallback = FINDING_ANCHORS[region3d];
         if (!fallback) return null;
         const slot = (injurySlots[region3d] = (injurySlots[region3d] ?? -1) + 1);
-        const fx = fallback[0] - 0.055;
+        const fx = fallback[0] - 0.17;
         const fy = fallback[1] - slot * 0.11; // ~21px steps at overview zoom — clears the badge height
         // Anchor the finding badge to the real surface at the offset (x, y).
         const anchor: [number, number, number] = sampler && region3d !== 'posterior-logroll'
@@ -469,7 +469,7 @@ function CaseRealismMarkers({
     <>
       {[...byRegion.values()].map(({ top, count }, index) => {
         const fallback = FINDING_ANCHORS[top.region] || FINDING_ANCHORS.chest;
-        const fx = fallback[0] + 0.055;
+        const fx = fallback[0] + 0.17;
         const anchor: [number, number, number] = sampler && top.region !== 'posterior-logroll'
           ? sampler(fx, fallback[1])
           : [fx, fallback[1], fallback[2]];
@@ -477,10 +477,10 @@ function CaseRealismMarkers({
         return (
           <MarkerHtml key={top.id} position={anchor} distanceFactor={2.7} zIndexRange={[82 - index, 0]} interactive={false}>
             <div
-              className="pointer-events-none relative flex h-4 w-4 items-center justify-center animate-in fade-in zoom-in-75 duration-500"
+              className="pointer-events-none relative flex h-3 w-3 items-center justify-center animate-in fade-in zoom-in-75 duration-500"
               aria-hidden="true"
             >
-              <span className={`absolute h-4 w-4 rounded-full border backdrop-blur-md ${style.marker}`} />
+              <span className={`absolute h-3 w-3 rounded-full border backdrop-blur-md ${style.marker}`} />
               <span className={`relative h-1.5 w-1.5 rounded-full ${style.dot} ${top.severity === 'critical' ? 'animate-pulse' : ''}`} />
               {count > 1 && (
                 <span className="absolute -right-1.5 -top-1.5 rounded-full border border-white/25 bg-slate-900/85 px-1 text-[7px] font-bold leading-[10px] text-white">
