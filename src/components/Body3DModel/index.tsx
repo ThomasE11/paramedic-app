@@ -14,10 +14,11 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, ContactShadows, Html } from '@react-three/drei';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { RotateCcw, User, Eye, Hand, Activity, Stethoscope, X, ChevronRight, ChevronDown, AlertTriangle, Compass, Unlock, Wind } from 'lucide-react';
+import { RotateCcw, User, Eye, Hand, Activity, Stethoscope, X, ChevronRight, ChevronDown, AlertTriangle, Compass, Unlock, Wind, Shirt } from 'lucide-react';
 import { BodyMesh } from './BodyMesh';
 import type { LimbSide } from './BodyMesh';
 import { AnatomyReferenceLayer } from './AnatomyReferenceLayer';
+import { ClothingLayer } from './ClothingLayer';
 import { getNextGuidedStep, EXAM_SEQUENCE } from './bodyRegions';
 import { useTranslation } from 'react-i18next';
 import type { AssessmentStepId, SecondaryAssessmentStep } from '@/data/assessmentFramework';
@@ -2980,7 +2981,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   const [selectedAction, setSelectedAction] = useState<string | null>(null);
   const [patientReaction, setPatientReaction] = useState<PatientReaction | null>(null);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
-  const [anatomyLayer, setAnatomyLayer] = useState<'surface' | 'skeleton'>('surface');
+  const [anatomyLayer, setAnatomyLayer] = useState<'surface' | 'skeleton' | 'dressed'>('surface');
   // Phase 2F: Sound playback progress
   const [playingSound, setPlayingSound] = useState<string | null>(null);
   const [soundProgress, setSoundProgress] = useState(0);
@@ -3501,6 +3502,20 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
               <Activity className="h-2.5 w-2.5" />
               Skeleton
             </button>
+            <button
+              type="button"
+              onClick={() => setAnatomyLayer('dressed')}
+              className={`flex h-5 items-center gap-1 rounded-md px-1.5 text-[9px] font-medium transition-colors ${
+                anatomyLayer === 'dressed'
+                  ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-950'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+              aria-pressed={anatomyLayer === 'dressed'}
+              title="Clothed view — clothing parts over the region you assess"
+            >
+              <Shirt className="h-2.5 w-2.5" />
+              Dressed
+            </button>
           </div>
           {/* Phase 2 — guided exam mode toggle */}
           <Button
@@ -3678,6 +3693,9 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 // Wrap in an arrow so React stores the function rather than calling it.
                 onSurfaceSampler={(fn) => setSurfaceSampler(() => fn)}
               />
+
+              {/* Dressed view — stylised scrubs that part over the region in focus. */}
+              <ClothingLayer visible={anatomyLayer === 'dressed'} activeRegion={activeRegion} />
 
               <AnatomyReferenceLayer visible={anatomyLayer === 'skeleton'} />
 
