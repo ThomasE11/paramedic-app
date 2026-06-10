@@ -52,10 +52,41 @@ export type BowelSoundType =
 export interface ClinicalSoundState {
   leftLung: BreathSoundType;
   rightLung: BreathSoundType;
+  // Optional per-zone refinement of the breath sounds. When a zone is left
+  // undefined the per-side value (leftLung / rightLung) is heard there. This
+  // lets basal-predominant pathology — pneumonia over a consolidated base,
+  // cardiogenic oedema crackling at the bases — sound distinct from the
+  // apices, which the four chest zones on the 3D body auscultate
+  // independently. Uniform pathology (pneumothorax, bronchospasm, transmitted
+  // stridor) leaves these undefined and is correctly heard the same
+  // top-to-bottom via the per-side fallback.
+  leftUpperLung?: BreathSoundType;
+  leftLowerLung?: BreathSoundType;
+  rightUpperLung?: BreathSoundType;
+  rightLowerLung?: BreathSoundType;
   heartSound: HeartSoundType;
   bowelSounds?: BowelSoundType;  // Abdominal auscultation
   additionalSounds: string[];  // e.g., "audible wheeze", "gurgling", "stridor heard without stethoscope"
   description: string;         // Human-readable description for display
+}
+
+/** A single auscultation zone on the chest — the four lung fields the 3D body
+ *  exposes as separate listening points (right/left × upper/lower). */
+export type LungZone = 'right-upper' | 'right-lower' | 'left-upper' | 'left-lower';
+
+/**
+ * Resolve the breath sound for one chest zone, falling back to the per-side
+ * value (leftLung / rightLung) when no zone-specific sound is set. Callers
+ * always get a concrete sound to play, and cases only specify zones when the
+ * upper and lower fields genuinely differ.
+ */
+export function getZoneBreathSound(sounds: ClinicalSoundState, zone: LungZone): BreathSoundType {
+  switch (zone) {
+    case 'right-upper': return sounds.rightUpperLung ?? sounds.rightLung;
+    case 'right-lower': return sounds.rightLowerLung ?? sounds.rightLung;
+    case 'left-upper':  return sounds.leftUpperLung  ?? sounds.leftLung;
+    case 'left-lower':  return sounds.leftLowerLung  ?? sounds.leftLung;
+  }
 }
 
 /**
@@ -277,12 +308,18 @@ export function getInitialSounds(
       };
       const severityLevel = determineSeverityFromVitals(protocol, vitals);
       if (severityLevel?.initialSounds) {
+        const s = severityLevel.initialSounds;
         return {
-          leftLung: severityLevel.initialSounds.leftLung,
-          rightLung: severityLevel.initialSounds.rightLung,
-          heartSound: severityLevel.initialSounds.heartSound,
-          additionalSounds: severityLevel.initialSounds.additionalSounds,
-          description: severityLevel.initialSounds.description,
+          leftLung: s.leftLung,
+          rightLung: s.rightLung,
+          // Carry through per-zone overrides when a protocol defines them.
+          ...(s.leftUpperLung ? { leftUpperLung: s.leftUpperLung } : {}),
+          ...(s.leftLowerLung ? { leftLowerLung: s.leftLowerLung } : {}),
+          ...(s.rightUpperLung ? { rightUpperLung: s.rightUpperLung } : {}),
+          ...(s.rightLowerLung ? { rightLowerLung: s.rightLowerLung } : {}),
+          heartSound: s.heartSound,
+          additionalSounds: s.additionalSounds,
+          description: s.description,
         };
       }
     }
@@ -489,6 +526,11 @@ export function getInitialSounds(
       return {
         leftLung: affectedRight ? 'clear' : 'crackles-fine',
         rightLung: affectedRight ? 'crackles-fine' : 'clear',
+        // Lobar pneumonia is basal-predominant — fine crackles and bronchial
+        // breathing over the consolidated base, a clearer apex above it.
+        ...(affectedRight
+          ? { rightUpperLung: 'clear' as const, rightLowerLung: 'crackles-fine' as const }
+          : { leftUpperLung: 'clear' as const, leftLowerLung: 'crackles-fine' as const }),
         heartSound: 'tachycardic',
         additionalSounds: ['Productive cough', 'Fever'],
         description: affectedRight
@@ -530,6 +572,12 @@ export function getInitialSounds(
       return {
         leftLung: 'crackles-fine',
         rightLung: 'crackles-fine',
+        // Cardiogenic pulmonary oedema fills the bases first — fine crackles
+        // bibasally to the mid-zones, with relatively clear apices above.
+        leftUpperLung: 'clear',
+        rightUpperLung: 'clear',
+        leftLowerLung: 'crackles-fine',
+        rightLowerLung: 'crackles-fine',
         heartSound: 'gallop',
         additionalSounds: ['Peripheral edema', 'JVP elevated', 'Pink frothy sputum'],
         description: 'Bilateral fine crackles to mid-zones. S3 gallop rhythm. Signs of fluid overload.'
@@ -636,9 +684,23 @@ export function getInitialSounds(
   };
   const findingsLung = mapLungFromFindings();
   if (findingsLung) {
+    // Basal-predominant crackle findings (bibasilar / "at the bases") crackle
+    // at the lower zones with clearer apices; any other pattern stays uniform.
+    const isBasalCrackle =
+      (findingsLung === 'crackles-fine' || findingsLung === 'crackles-coarse') &&
+      (findingsStr.includes('bibasilar') || findingsStr.includes('bibasal') ||
+        findingsStr.includes('bases') || findingsStr.includes('basal'));
     return {
       leftLung: findingsLung,
       rightLung: findingsLung,
+      ...(isBasalCrackle
+        ? {
+            leftUpperLung: 'clear' as const,
+            rightUpperLung: 'clear' as const,
+            leftLowerLung: findingsLung,
+            rightLowerLung: findingsLung,
+          }
+        : {}),
       heartSound: 'normal',
       bowelSounds,
       additionalSounds: [],
@@ -691,6 +753,7 @@ export function updateSoundsAfterTreatment(
       const hasRespiratoryFindings = sounds.leftLung === 'wheeze' || sounds.rightLung === 'wheeze' ||
         sounds.leftLung === 'diminished' || sounds.rightLung === 'diminished' ||
         sounds.leftLung === 'rhonchi' || sounds.rightLung === 'rhonchi' ||
+        sounds.leftLung === 'crackles-coarse' || sounds.rightLung === 'crackles-coarse' ||
         sounds.leftLung === 'absent' || sounds.rightLung === 'absent';
 
       if (hasRespiratoryFindings && isAsthmaOrCopd) {
@@ -759,9 +822,31 @@ export function updateSoundsAfterTreatment(
               ? ['Lungs clear with dual bronchodilation', 'Good air entry bilaterally']
               : ['Wheeze resolved', 'Good air entry returning', 'Monitor for recurrence'];
           } else {
-            // First dose, no combination
-            sounds.description = 'Wheeze slightly improved after first salbutamol nebulizer. Still significant bronchospasm. Consider repeat dose and add ipratropium.';
-            sounds.additionalSounds = ['Wheeze improving but still present', 'Work of breathing slightly reduced'];
+            // First salbutamol on MODERATE wheeze — moderate asthma responds
+            // well to a single nebuliser, so give a perceptible improvement
+            // (audible wheeze → clear) rather than no change. Severe/silent
+            // chest still requires escalation (handled above).
+            sounds.leftLung = sounds.leftLung === 'wheeze' ? 'clear' : sounds.leftLung;
+            sounds.rightLung = sounds.rightLung === 'wheeze' ? 'clear' : sounds.rightLung;
+            sounds.description = 'Good response to salbutamol — wheeze largely resolved, air entry improved. Reassess; repeat if it recurs and add ipratropium if the response is incomplete.';
+            sounds.additionalSounds = ['Wheeze resolving — air entry improving', 'Work of breathing reducing', 'Reassess and repeat as needed'];
+          }
+          break;
+        }
+
+        // Coarse crackles (secretions) — modest response to bronchodilator +
+        // anticholinergic (ipratropium dries secretions). NOTE: fine crackles
+        // (pulmonary oedema) are deliberately NOT eased by bronchodilators —
+        // they need CPAP / GTN / diuresis, handled elsewhere.
+        if (sounds.leftLung === 'crackles-coarse' || sounds.rightLung === 'crackles-coarse') {
+          if (applicationCount >= 2 || hasIpratropium) {
+            sounds.leftLung = sounds.leftLung === 'crackles-coarse' ? 'clear' : sounds.leftLung;
+            sounds.rightLung = sounds.rightLung === 'crackles-coarse' ? 'clear' : sounds.rightLung;
+            sounds.description = 'Coarse crackles clearing with bronchodilator + anticholinergic therapy. Air entry improving.';
+            sounds.additionalSounds = ['Secretions clearing', 'Improving air entry'];
+          } else {
+            sounds.description = 'Partial response. Coarse crackles persist — add ipratropium to dry secretions and repeat salbutamol.';
+            sounds.additionalSounds = ['Some improvement', 'Coarse crackles persisting'];
           }
           break;
         }
@@ -799,6 +884,7 @@ export function updateSoundsAfterTreatment(
       const hasSalbutamol = applied.has('nebulizer_salbutamol');
       const hasRespiratoryIssues = sounds.leftLung === 'wheeze' || sounds.rightLung === 'wheeze' ||
         sounds.leftLung === 'rhonchi' || sounds.rightLung === 'rhonchi' ||
+        sounds.leftLung === 'crackles-coarse' || sounds.rightLung === 'crackles-coarse' ||
         sounds.leftLung === 'diminished' || sounds.rightLung === 'diminished' ||
         sounds.leftLung === 'absent' || sounds.rightLung === 'absent';
 
@@ -819,8 +905,8 @@ export function updateSoundsAfterTreatment(
             sounds.description = 'Dual bronchodilation showing effect — air movement improving. Wheeze now audible (positive sign). Continue treatment.';
             sounds.additionalSounds = ['Air entry improving with combination therapy', 'Wheeze returning as airways open'];
           } else {
-            sounds.leftLung = sounds.leftLung === 'wheeze' ? 'clear' : sounds.leftLung === 'rhonchi' ? 'clear' : sounds.leftLung;
-            sounds.rightLung = sounds.rightLung === 'wheeze' ? 'clear' : sounds.rightLung === 'rhonchi' ? 'clear' : sounds.rightLung;
+            sounds.leftLung = (sounds.leftLung === 'wheeze' || sounds.leftLung === 'rhonchi' || sounds.leftLung === 'crackles-coarse') ? 'clear' : sounds.leftLung;
+            sounds.rightLung = (sounds.rightLung === 'wheeze' || sounds.rightLung === 'rhonchi' || sounds.rightLung === 'crackles-coarse') ? 'clear' : sounds.rightLung;
             sounds.description = 'Good response to combined salbutamol and ipratropium. Bronchospasm resolved.';
             sounds.additionalSounds = ['Dual bronchodilation effective', 'Lungs clearing', 'Air entry normalising'];
           }
@@ -1011,6 +1097,20 @@ export function updateSoundsAfterTreatment(
     }
   }
 
+  // Per-zone overrides describe the *initial* presentation (e.g. basal
+  // crackles with clear apices). Once a treatment changes a side's overall
+  // breath sound, that lung is evolving as a whole — drop the side's zone
+  // overrides so the new per-side value is heard across both of its zones,
+  // rather than leaving a stale basal crackle behind after the lung clears.
+  if (sounds.leftLung !== currentSounds.leftLung) {
+    delete sounds.leftUpperLung;
+    delete sounds.leftLowerLung;
+  }
+  if (sounds.rightLung !== currentSounds.rightLung) {
+    delete sounds.rightUpperLung;
+    delete sounds.rightLowerLung;
+  }
+
   return sounds;
 }
 
@@ -1021,6 +1121,84 @@ export function updateSoundsAfterTreatment(
 let audioContext: AudioContext | null = null;
 let currentOscillators: OscillatorNode[] = [];
 let currentGainNode: GainNode | null = null;
+
+// ============================================================================
+// Real recordings layer — when a CC-licensed recording exists for a sound
+// type, we play that instead of the WebAudio synthesis. Synthesis stays as
+// the fallback for any type without a recording, so coverage can grow file
+// by file. Files live in /public/sounds/auscultation/ and are listed in
+// public/sounds/auscultation/CREDITS.md with their source + licence.
+//
+// To add a recording: drop the file in that folder and add its path here.
+// A `null`/absent entry means "synthesise this one".
+// ============================================================================
+const BREATH_RECORDINGS: Partial<Record<BreathSoundType, string>> = {
+  'clear': '/sounds/auscultation/breath-clear.mp3',                // CC BY 4.0, SPRSound (normal vesicular, paediatric)
+  'wheeze': '/sounds/auscultation/breath-wheeze.mp3',               // CC BY-SA 3.0, James Heilman MD
+  'crackles-fine': '/sounds/auscultation/breath-crackles-fine.mp3', // CC BY-SA 3.0, James Heilman MD
+  'crackles-coarse': '/sounds/auscultation/breath-crackles-coarse.mp3', // CC BY 4.0, SPRSound
+  'rhonchi': '/sounds/auscultation/breath-rhonchi.mp3',            // CC BY 4.0, SPRSound
+  'stridor': '/sounds/auscultation/breath-stridor.mp3',            // CC BY-SA 3.0, James Heilman MD
+  'diminished': '/sounds/auscultation/breath-diminished.mp3',      // CC BY 4.0, SPRSound (real vesicular, attenuated)
+  'snoring': '/sounds/auscultation/breath-snoring.mp3',            // CC0, Daxter31/Freesound
+  // absent: synthesised (it is silence by definition).
+};
+const HEART_RECORDINGS: Partial<Record<HeartSoundType, string>> = {
+  'normal': '/sounds/auscultation/heart-normal.mp3',               // CC BY 3.0, Benboncan/Freesound
+  'murmur': '/sounds/auscultation/heart-murmur.mp3',               // CC BY-SA 4.0, EmilyHopeS (systolic MVP)
+  'irregular': '/sounds/auscultation/heart-irregular.mp3',         // CC BY-SA 3.0, James Heilman MD (AF)
+  // gallop (S3/S4) / muffled: synthesised (no labelled CC recording exists).
+};
+const BOWEL_RECORDINGS: Partial<Record<BowelSoundType, string>> = {
+  'normal': '/sounds/auscultation/bowel-normal.mp3',               // CC BY 4.0, Z. Mansour/Figshare (active bowel sounds)
+  'hyperactive': '/sounds/auscultation/bowel-hyperactive.mp3',     // CC BY-SA 3.0, James Heilman MD (SBO borborygmi)
+  'hypoactive': '/sounds/auscultation/bowel-hypoactive.mp3',       // CC BY 4.0, Z. Mansour/Figshare (sparse window)
+  // absent: synthesised (it is silence by definition).
+};
+
+// Active recorded-audio elements, tracked so stopAllSounds() can halt them.
+const activeRecordings = new Set<HTMLAudioElement>();
+
+/**
+ * Play a recorded clinical sound, looping it to fill `durationMs` (real
+ * auscultation clips are short; the student listens for several seconds).
+ * Returns true if playback started, false on any failure so the caller can
+ * fall back to synthesis. Honours the same gesture-unlock as the rest of the
+ * audio — by the time a student auscultates, audio is already unlocked.
+ */
+function playRecordedSound(url: string, durationMs: number): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    const audio = new Audio(url);
+    audio.loop = true;
+    audio.volume = 0.9;
+    activeRecordings.add(audio);
+    const stopAt = window.setTimeout(() => {
+      try { audio.pause(); } catch { /* noop */ }
+      activeRecordings.delete(audio);
+    }, durationMs);
+    audio.addEventListener('error', () => {
+      window.clearTimeout(stopAt);
+      activeRecordings.delete(audio);
+    });
+    const p = audio.play();
+    if (p && typeof p.catch === 'function') {
+      p.catch(() => {
+        window.clearTimeout(stopAt);
+        activeRecordings.delete(audio);
+      });
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Stop any recorded sounds currently playing (called by stopAllSounds). */
+function stopRecordedSounds(): void {
+  activeRecordings.forEach((a) => { try { a.pause(); } catch { /* noop */ } });
+  activeRecordings.clear();
+}
 
 // Mobile browsers (iOS Safari especially) create AudioContexts in a suspended
 // state and refuse to resume unless the resume() call originates inside a
@@ -1087,6 +1265,7 @@ export function stopAllSounds(): void {
     currentGainNode.disconnect();
     currentGainNode = null;
   }
+  stopRecordedSounds();
 }
 
 /**
@@ -1168,6 +1347,10 @@ function applyBreathingEnvelope(
  */
 export function playBreathSound(soundType: BreathSoundType, durationMs: number = 4000): void {
   stopAllSounds();
+
+  // Prefer a real recording when one exists for this sound type.
+  const rec = BREATH_RECORDINGS[soundType];
+  if (rec && playRecordedSound(rec, durationMs)) return;
 
   const ctx = getAudioContext();
   if (ctx.state === 'suspended') {
@@ -1820,6 +2003,10 @@ function writeHeartThump(
 export function playHeartSound(soundType: HeartSoundType, durationMs: number = 5000): void {
   stopAllSounds();
 
+  // Prefer a real recording when one exists for this sound type.
+  const rec = HEART_RECORDINGS[soundType];
+  if (rec && playRecordedSound(rec, durationMs)) return;
+
   const ctx = getAudioContext();
   if (ctx.state === 'suspended') {
     ctx.resume();
@@ -1951,6 +2138,26 @@ export function playHeartSound(soundType: HeartSoundType, durationMs: number = 5
  * Uses filtered noise bursts and tonal elements to simulate peristaltic gurgling.
  */
 export function playBowelSound(soundType: BowelSoundType, durationMs: number = 6000): void {
+  // Always auscultate to a REAL recording. We only have clips for normal /
+  // hyperactive / hypoactive, so the rarer types fall back to the closest
+  // recorded sound rather than thin synthesis (which sounded "broken"):
+  //   borborygmi / tinkling → hyperactive (loud, rushing rushes)
+  //   bruit                 → normal (a bruit is a whoosh over otherwise
+  //                           normal bowel; we have no dedicated clip)
+  //   absent                → no recording on purpose; it is near-silence.
+  const RECORDING_FALLBACK: Record<BowelSoundType, BowelSoundType | null> = {
+    normal: 'normal',
+    hyperactive: 'hyperactive',
+    hypoactive: 'hypoactive',
+    borborygmi: 'hyperactive',
+    tinkling: 'hyperactive',
+    bruit: 'normal',
+    absent: null,
+  };
+  const recType = RECORDING_FALLBACK[soundType];
+  const rec = recType ? BOWEL_RECORDINGS[recType] : undefined;
+  if (rec && playRecordedSound(rec, durationMs)) return;
+
   const ctx = getAudioContext();
   const dur = durationMs / 1000;
 
@@ -2222,53 +2429,68 @@ export function playBowelSound(soundType: BowelSoundType, durationMs: number = 6
 export function playPercussionSound(type: 'resonant' | 'hyper-resonant' | 'dull' | 'tympanic', count: number = 2): void {
   const ctx = getAudioContext();
 
-  const params: { freq: number; duration: number; resonance: number } = (() => {
+  // A real percussion note is a sharp finger STRIKE exciting a damped body
+  // resonance — not a tonal beep. We model two layers per tap:
+  //   (1) impact   — a few-ms broadband click (the pleximeter strike), and
+  //   (2) body     — band-passed noise that RINGS at the note's pitch.
+  // The clinical note is encoded by the body's centre frequency, its Q (how
+  // musically it rings) and its decay (how long it rings):
+  //   resonant       normal lung — hollow, medium ring
+  //   hyper-resonant pneumothorax/COPD — lower, boomy, long ring
+  //   dull           consolidation/fluid/liver — short high thud, almost no ring
+  //   tympanic       gas/distended bowel — drum-like, musical, sustained
+  const profile: { freq: number; q: number; decay: number; gain: number } = (() => {
     switch (type) {
-      case 'resonant':
-        return { freq: 200, duration: 0.1, resonance: 0.6 };
-      case 'hyper-resonant':
-        return { freq: 300, duration: 0.15, resonance: 0.8 };
-      case 'dull':
-        return { freq: 100, duration: 0.05, resonance: 0.1 };
-      case 'tympanic':
-        return { freq: 250, duration: 0.12, resonance: 0.7 };
+      case 'resonant':       return { freq: 180, q: 6,   decay: 0.18, gain: 0.5 };
+      case 'hyper-resonant': return { freq: 130, q: 9,   decay: 0.34, gain: 0.6 };
+      case 'dull':           return { freq: 340, q: 2.5, decay: 0.07, gain: 0.42 };
+      case 'tympanic':       return { freq: 240, q: 12,  decay: 0.26, gain: 0.55 };
     }
   })();
 
-  const masterGain = ctx.createGain();
-  masterGain.gain.setValueAtTime(0.5, ctx.currentTime);
-  masterGain.connect(ctx.destination);
+  // One short shared white-noise buffer drives both the click and the body.
+  const sr = ctx.sampleRate;
+  const noiseLen = Math.ceil(sr * 0.5);
+  const noiseBuf = ctx.createBuffer(1, noiseLen, sr);
+  const nd = noiseBuf.getChannelData(0);
+  for (let i = 0; i < noiseLen; i++) nd[i] = Math.random() * 2 - 1;
+
+  const master = ctx.createGain();
+  master.gain.setValueAtTime(1, ctx.currentTime);
+  master.connect(ctx.destination);
 
   for (let i = 0; i < count; i++) {
-    const startTime = ctx.currentTime + i * 0.2; // 200ms gap between taps
+    const t0 = ctx.currentTime + i * 0.28; // ~280ms between the paired taps
 
-    const osc = ctx.createOscillator();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(params.freq, startTime);
+    // (1) Impact click — very short, high-passed broadband transient.
+    const click = ctx.createBufferSource();
+    click.buffer = noiseBuf;
+    const clickHP = ctx.createBiquadFilter();
+    clickHP.type = 'highpass';
+    clickHP.frequency.value = 1600;
+    const clickEnv = ctx.createGain();
+    clickEnv.gain.setValueAtTime(0.0001, t0);
+    clickEnv.gain.exponentialRampToValueAtTime(profile.gain * 0.45, t0 + 0.002);
+    clickEnv.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.022);
+    click.connect(clickHP).connect(clickEnv).connect(master);
+    click.start(t0);
+    click.stop(t0 + 0.05);
 
-    const env = ctx.createGain();
-    env.gain.setValueAtTime(0, startTime);
-    // Quick attack
-    env.gain.linearRampToValueAtTime(0.6, startTime + 0.005);
-    // Exponential decay — duration controls how quickly it fades
-    env.gain.exponentialRampToValueAtTime(0.001, startTime + params.duration);
-
-    // Resonance filter for hollow / drum-like quality
-    if (params.resonance > 0.2) {
-      const filter = ctx.createBiquadFilter();
-      filter.type = 'bandpass';
-      filter.frequency.value = params.freq;
-      filter.Q.value = params.resonance * 10;
-      osc.connect(filter).connect(env).connect(masterGain);
-    } else {
-      // Dull — no resonance, direct connection
-      osc.connect(env).connect(masterGain);
-    }
-
-    osc.start(startTime);
-    osc.stop(startTime + params.duration + 0.05);
+    // (2) Resonant body — band-passed noise ringing at the note's pitch.
+    const body = ctx.createBufferSource();
+    body.buffer = noiseBuf;
+    const bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.value = profile.freq;
+    bp.Q.value = profile.q;
+    const bodyEnv = ctx.createGain();
+    bodyEnv.gain.setValueAtTime(0.0001, t0);
+    bodyEnv.gain.exponentialRampToValueAtTime(profile.gain, t0 + 0.006);
+    bodyEnv.gain.exponentialRampToValueAtTime(0.0001, t0 + profile.decay);
+    body.connect(bp).connect(bodyEnv).connect(master);
+    body.start(t0);
+    body.stop(t0 + profile.decay + 0.06);
   }
-
 }
 
 /**

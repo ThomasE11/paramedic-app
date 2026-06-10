@@ -1,36 +1,1458 @@
 /**
  * 3D Physical Examination
  *
- * Three-panel layout when a body region is clicked:
- * LEFT: Assessment options (inspect, palpate, percuss, auscultate)
- * CENTER: 3D body model
- * RIGHT: Findings revealed when an assessment action is clicked
+ * Interactive patient examination frame.
  *
- * When no region is selected, the body model fills the full width.
+ * Clicking a body region zooms the mannequin and opens an in-frame exam tray:
+ * technique choices, clinical maps, flow cues, and findings all remain inside
+ * the patient area so the student stays oriented to the anatomy.
  */
 
 import { useRef, useCallback, useState, useMemo, useEffect } from 'react';
-import { Canvas, useThree } from '@react-three/fiber';
-import { OrbitControls, ContactShadows } from '@react-three/drei';
+import type { CSSProperties, ElementRef } from 'react';
+import { Canvas, useFrame } from '@react-three/fiber';
+import { OrbitControls, ContactShadows, Html } from '@react-three/drei';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { RotateCcw, User, Eye, Hand, Activity, Stethoscope, Heart, X, ChevronRight, ChevronDown, AlertTriangle, Compass, Unlock } from 'lucide-react';
-import { BodyMesh, getLastClickedLimb } from './BodyMesh';
+import { RotateCcw, User, Eye, Hand, Activity, Stethoscope, X, ChevronRight, ChevronDown, AlertTriangle, Compass, Unlock, Wind } from 'lucide-react';
+import { BodyMesh } from './BodyMesh';
 import type { LimbSide } from './BodyMesh';
+import { AnatomyReferenceLayer } from './AnatomyReferenceLayer';
 import { getNextGuidedStep, EXAM_SEQUENCE } from './bodyRegions';
 import { useTranslation } from 'react-i18next';
 import type { AssessmentStepId, SecondaryAssessmentStep } from '@/data/assessmentFramework';
 import { getAssessmentProfile } from '@/data/assessmentFramework';
 import type { CaseScenario, CaseCategory } from '@/types';
 import type { ClinicalSoundState } from '@/data/clinicalSounds';
-import { playBreathSound, playHeartSound, playPercussionSound, playBowelSound, stopAllSounds } from '@/data/clinicalSounds';
+import { playBreathSound, playHeartSound, playPercussionSound, playBowelSound, stopAllSounds, getZoneBreathSound } from '@/data/clinicalSounds';
 import type { BowelSoundType, BreathSoundType } from '@/data/clinicalSounds';
+import { inferInjuries, injuryRegionTo3D } from '@/lib/injuryMap';
+import {
+  deriveAppliedTreatmentRealismCues,
+  deriveCaseRealismProfile,
+  shouldRevealRealismCue,
+  type PatientRealismCue,
+  type PatientRealismProfile,
+  type RealismSeverity,
+} from '@/lib/patientRealism';
 
 const TOTAL_REGIONS = 11;
+type OrbitControlsHandle = ElementRef<typeof OrbitControls>;
 
 /** Helper: is this a limb region ID? */
 const isLimbRegion = (id: string): boolean =>
   id === 'right-arm' || id === 'left-arm' || id === 'right-leg' || id === 'left-leg';
+
+interface ExamLandmark {
+  id: string;
+  region: SecondaryAssessmentStep;
+  label: string;
+  sublabel: string;
+  position: [number, number, number];
+  level: 'overview' | 'detail';
+  actionId?: string;
+  tone?: 'neutral' | 'airway' | 'breathing' | 'circulation' | 'abdomen' | 'neuro' | 'warning';
+}
+
+interface PupilProfile {
+  leftMm: number;
+  rightMm: number;
+  leftReaction: string;
+  rightReaction: string;
+  note: string;
+  abnormal: boolean;
+}
+
+type OxygenVisualMode = 'nasal' | 'simple-mask' | 'nonrebreather' | 'nebulizer' | 'bvm' | 'cpap' | 'ventilator';
+
+interface OxygenEquipmentVisual {
+  mode: OxygenVisualMode;
+  label: string;
+  detail: string;
+}
+
+interface AppliedEquipmentVisualState {
+  oxygen: OxygenEquipmentVisual | null;
+  hasIvAccess: boolean;
+  hasFluids: boolean;
+  hasDefibPads: boolean;
+  hasLucas: boolean;
+  hasEtTube: boolean;
+  hasOpa: boolean;
+}
+
+const TREATMENT_ASSET_PATHS = {
+  nasal: '/treatment-assets/nasal-cannula.svg',
+  simpleMask: '/treatment-assets/simple-mask.svg',
+  nonrebreather: '/treatment-assets/nonrebreather-mask.svg',
+  nebulizer: '/treatment-assets/nebulizer-mask.svg',
+  bvm: '/treatment-assets/bvm.svg',
+  cpap: '/treatment-assets/cpap-mask.svg',
+  ventilator: '/treatment-assets/ventilator-circuit.svg',
+  ivCannula: '/treatment-assets/iv-cannula.svg',
+  fluidBag: '/treatment-assets/fluid-bag.svg',
+  defibPads: '/treatment-assets/defib-pads.svg',
+  lucas: '/treatment-assets/lucas-device.svg',
+  etTube: '/treatment-assets/et-tube.svg',
+  opa: '/treatment-assets/opa.svg',
+} as const;
+
+type AbdomenQuadrant = 'ruq' | 'luq' | 'rlq' | 'llq';
+
+const ABDOMEN_QUADRANTS: Array<{ id: AbdomenQuadrant; label: string; full: string; hint: string }> = [
+  { id: 'ruq', label: 'RUQ', full: 'Right upper quadrant', hint: 'liver, gallbladder' },
+  { id: 'luq', label: 'LUQ', full: 'Left upper quadrant', hint: 'stomach, spleen' },
+  { id: 'rlq', label: 'RLQ', full: 'Right lower quadrant', hint: 'appendix, pelvis' },
+  { id: 'llq', label: 'LLQ', full: 'Left lower quadrant', hint: 'colon, pelvis' },
+];
+
+// Anchors measured from the ACTUAL decoded mesh (scripts/measure-anatomy.cjs)
+// in the exact in-app frame: feet Y=0, head Y≈1.8, centred on X/Z, anatomical
+// front at +Z (camera side). The body's front surface sits at only z ≈ 0.16
+// (face/chest) to 0.22 (belly) — NOT 0.3+ — so anything past ~0.25 floats in
+// the air in front of the patient. Torso half-width is ~0.15 and the forearm/
+// wrist sits at x ≈ ±0.18 (the upper arm bulges out to ±0.49). These positions
+// sit just proud of the real camera-facing surface.
+const EXAM_LANDMARKS: ExamLandmark[] = [
+  { id: 'eyes-overview', region: 'face', label: 'Face / eyes', sublabel: 'pupils, lips, speech', position: [0.0, 1.62, 0.20], level: 'overview', tone: 'neuro' },
+  { id: 'airway-overview', region: 'neck-cspine', label: 'Airway / neck', sublabel: 'mouth, trachea, JVD', position: [0.0, 1.46, 0.22], level: 'overview', tone: 'airway' },
+  { id: 'chest-overview', region: 'chest', label: 'Chest', sublabel: 'rise, wall, lungs, heart', position: [0.02, 1.27, 0.20], level: 'overview', tone: 'breathing' },
+  { id: 'abdomen-overview', region: 'abdomen', label: 'Abdomen', sublabel: 'quadrants, guarding', position: [0.03, 1.02, 0.24], level: 'overview', tone: 'abdomen' },
+  { id: 'radial-overview', region: 'right-arm', label: 'Radial pulse', sublabel: 'CRT / motor', position: [-0.18, 0.82, 0.20], level: 'overview', tone: 'circulation' },
+  // Minimal anatomical pulse points — click to check (works from any view).
+  { id: 'pulse-carotid', region: 'neck-cspine', label: 'Carotid', sublabel: 'central pulse', position: [-0.05, 1.44, 0.20], level: 'overview', actionId: 'pulse-carotid', tone: 'circulation' },
+  { id: 'pulse-radial-r', region: 'right-arm', label: 'Radial', sublabel: 'wrist pulse', position: [-0.20, 0.80, 0.18], level: 'overview', actionId: 'pulse-radial', tone: 'circulation' },
+  { id: 'pulse-radial-l', region: 'left-arm', label: 'Radial', sublabel: 'wrist pulse', position: [0.20, 0.80, 0.18], level: 'overview', actionId: 'pulse-radial', tone: 'circulation' },
+  { id: 'pedal-overview', region: 'right-leg', label: 'Pedal pulse', sublabel: 'DP / PT', position: [-0.13, 0.14, 0.20], level: 'overview', tone: 'circulation' },
+  { id: 'posterior-overview', region: 'posterior-logroll', label: 'Posterior', sublabel: 'log roll / spine', position: [0.0, 1.10, -0.20], level: 'overview', tone: 'neutral' },
+
+  { id: 'right-eye', region: 'face', label: 'Right eye', sublabel: 'pupil size, reactivity', position: [-0.052, 1.635, 0.205], level: 'detail', actionId: 'pupils-size', tone: 'neuro' },
+  { id: 'left-eye', region: 'face', label: 'Left eye', sublabel: 'compare equality', position: [0.052, 1.635, 0.205], level: 'detail', actionId: 'pupils-equality', tone: 'neuro' },
+  { id: 'nose-detail', region: 'face', label: 'Nose', sublabel: 'CSF, bleeding, deformity', position: [0, 1.595, 0.21], level: 'detail', actionId: 'nose-inspect', tone: 'neutral' },
+  { id: 'mouth-detail', region: 'face', label: 'Mouth / lips', sublabel: 'cyanosis, secretions, tongue', position: [0, 1.555, 0.215], level: 'detail', actionId: 'mouth-inspect', tone: 'airway' },
+
+  { id: 'trachea-detail', region: 'neck-cspine', label: 'Trachea', sublabel: 'midline / deviated', position: [0, 1.44, 0.22], level: 'detail', actionId: 'trachea-palpate', tone: 'airway' },
+  { id: 'jvd-detail', region: 'neck-cspine', label: 'JVD', sublabel: 'neck veins', position: [0.09, 1.47, 0.19], level: 'detail', actionId: 'jvd-inspect', tone: 'circulation' },
+  { id: 'cspine-detail', region: 'neck-cspine', label: 'C-spine', sublabel: 'midline tenderness', position: [0, 1.49, -0.12], level: 'detail', actionId: 'cspine-palpate', tone: 'warning' },
+
+  { id: 'lung-ru', region: 'chest', label: 'R upper zone', sublabel: 'right apex / upper field', position: [-0.09, 1.34, 0.205], level: 'detail', actionId: 'chest-auscultate-ru', tone: 'breathing' },
+  { id: 'lung-rl', region: 'chest', label: 'R lower zone', sublabel: 'right base', position: [-0.10, 1.22, 0.205], level: 'detail', actionId: 'chest-auscultate-rl', tone: 'breathing' },
+  { id: 'lung-lu', region: 'chest', label: 'L upper zone', sublabel: 'left apex / upper field', position: [0.09, 1.34, 0.205], level: 'detail', actionId: 'chest-auscultate-lu', tone: 'breathing' },
+  { id: 'lung-ll', region: 'chest', label: 'L lower zone', sublabel: 'left base', position: [0.10, 1.22, 0.205], level: 'detail', actionId: 'chest-auscultate-ll', tone: 'breathing' },
+  { id: 'sternum-detail', region: 'chest', label: 'Chest wall', sublabel: 'tenderness, crepitus, flail', position: [0, 1.245, 0.215], level: 'detail', actionId: 'chest-palpate', tone: 'warning' },
+  { id: 'heart-detail', region: 'chest', label: 'Heart', sublabel: 'aortic, pulmonic, apex', position: [0.065, 1.205, 0.215], level: 'detail', actionId: 'chest-auscultate-heart', tone: 'circulation' },
+
+  { id: 'ruq-detail', region: 'abdomen', label: 'RUQ', sublabel: 'liver / gallbladder', position: [-0.095, 1.085, 0.245], level: 'detail', actionId: 'abd-ruq-auscultate', tone: 'abdomen' },
+  { id: 'luq-detail', region: 'abdomen', label: 'LUQ', sublabel: 'stomach / spleen', position: [0.095, 1.085, 0.245], level: 'detail', actionId: 'abd-luq-auscultate', tone: 'abdomen' },
+  { id: 'rlq-detail', region: 'abdomen', label: 'RLQ', sublabel: 'appendix / pelvis', position: [-0.095, 0.985, 0.245], level: 'detail', actionId: 'abd-rlq-auscultate', tone: 'abdomen' },
+  { id: 'llq-detail', region: 'abdomen', label: 'LLQ', sublabel: 'colon / pelvis', position: [0.095, 0.985, 0.245], level: 'detail', actionId: 'abd-llq-auscultate', tone: 'abdomen' },
+  { id: 'umbilicus-detail', region: 'abdomen', label: 'Umbilicus', sublabel: 'distension / bruising', position: [0, 1.035, 0.255], level: 'detail', actionId: 'abd-inspect', tone: 'abdomen' },
+];
+
+function PatientSceneEnvironment() {
+  return (
+    <group>
+      <mesh position={[0, 0.9, -0.78]} raycast={() => null}>
+        <planeGeometry args={[2.75, 2.25]} />
+        <meshStandardMaterial color="#edf4f8" roughness={0.94} transparent opacity={0.42} />
+      </mesh>
+      <mesh position={[0, -0.04, 0]} rotation={[-Math.PI / 2, 0, 0]} raycast={() => null}>
+        <planeGeometry args={[4.2, 4.2]} />
+        <meshStandardMaterial color="#e7edf3" roughness={0.92} transparent opacity={0.45} />
+      </mesh>
+    </group>
+  );
+}
+
+/**
+ * Floating marker wrapper that fades/hides itself as its anchored body
+ * surface rotates away from the camera. Outward direction at an anchor is
+ * approximated as the horizontal vector from the body's central axis to the
+ * point; the dot product with the camera direction drives opacity. This keeps
+ * region dots/labels from piling up and overlapping at any rotation
+ * (top-down, posterior, oblique) — only the surfaces actually facing the
+ * viewer show a marker.
+ */
+function MarkerHtml({
+  position,
+  distanceFactor,
+  zIndexRange,
+  interactive = true,
+  children,
+}: {
+  position: [number, number, number];
+  distanceFactor?: number;
+  zIndexRange?: [number, number];
+  interactive?: boolean;
+  children: React.ReactNode;
+}) {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  useFrame(({ camera }) => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const [x, y, z] = position;
+    const ol = Math.hypot(x, z) || 1;            // outward (horizontal) magnitude
+    const dx = camera.position.x - x;
+    const dy = camera.position.y - y;
+    const dz = camera.position.z - z;
+    const dl = Math.hypot(dx, dy, dz) || 1;
+    // 1 = camera dead-on the surface, 0 = edge / straight above, <0 = behind.
+    const facing = (x / ol) * (dx / dl) + (z / ol) * (dz / dl);
+    const op = Math.max(0, Math.min(1, (facing - 0.12) / 0.32));
+    el.style.opacity = String(op);
+    el.style.pointerEvents = interactive && op >= 0.2 ? 'auto' : 'none';
+  });
+  return (
+    <Html position={position} center distanceFactor={distanceFactor} zIndexRange={zIndexRange}>
+      <div ref={wrapRef} style={{ transition: 'opacity 120ms linear' }}>
+        {children}
+      </div>
+    </Html>
+  );
+}
+
+function LandmarkMarkers({
+  activeRegion,
+  assessedRegions,
+  requiredRegions,
+  onSelect,
+  onAction,
+  onPulse,
+  sampler,
+}: {
+  activeRegion: string | null;
+  assessedRegions: Set<string>;
+  requiredRegions: Set<string>;
+  onSelect: (region: SecondaryAssessmentStep) => void;
+  onAction?: (actionId: string) => void;
+  onPulse?: (site: string) => void;
+  sampler: ((x: number, y: number) => [number, number, number]) | null;
+}) {
+  const visibleMarkers = activeRegion
+    ? EXAM_LANDMARKS.filter(marker => marker.region === activeRegion && marker.level === 'detail')
+    : EXAM_LANDMARKS.filter(marker => marker.level === 'overview' && (
+      requiredRegions.has(marker.region)
+      || marker.id === 'eyes-overview'
+      || marker.id === 'airway-overview'
+      || marker.id === 'chest-overview'
+      || marker.id === 'abdomen-overview'
+      || marker.id === 'pulse-carotid'
+      || marker.id === 'pulse-radial-r'
+      || marker.id === 'pulse-radial-l'
+    ));
+
+  const toneClasses: Record<NonNullable<ExamLandmark['tone']>, string> = {
+    neutral: 'border-slate-200/80 bg-white/90 text-slate-800 dark:border-white/10 dark:bg-slate-950/85 dark:text-slate-100',
+    airway: 'border-sky-300/80 bg-sky-50/95 text-sky-900 dark:border-sky-400/35 dark:bg-sky-950/85 dark:text-sky-100',
+    breathing: 'border-cyan-300/80 bg-cyan-50/95 text-cyan-900 dark:border-cyan-400/35 dark:bg-cyan-950/85 dark:text-cyan-100',
+    circulation: 'border-rose-300/80 bg-rose-50/95 text-rose-900 dark:border-rose-400/35 dark:bg-rose-950/85 dark:text-rose-100',
+    abdomen: 'border-emerald-300/80 bg-emerald-50/95 text-emerald-900 dark:border-emerald-400/35 dark:bg-emerald-950/85 dark:text-emerald-100',
+    neuro: 'border-blue-300/80 bg-blue-50/95 text-blue-900 dark:border-blue-400/35 dark:bg-blue-950/85 dark:text-blue-100',
+    warning: 'border-amber-300/80 bg-amber-50/95 text-amber-900 dark:border-amber-400/35 dark:bg-amber-950/85 dark:text-amber-100',
+  };
+
+  return (
+    <>
+      {visibleMarkers.map(marker => {
+        const assessed = assessedRegions.has(marker.region) || (isLimbRegion(marker.region) && assessedRegions.has('extremities'));
+        const required = requiredRegions.has(marker.region);
+        // Project the label's intended (x, y) onto the real patient surface.
+        // 'posterior' lives on the back, which the front-facing sampler can't
+        // resolve, so it keeps its authored anchor.
+        const pos: [number, number, number] = sampler && marker.region !== 'posterior-logroll'
+          ? sampler(marker.position[0], marker.position[1])
+          : marker.position;
+        const isDetail = marker.level === 'detail';
+        const dotColor = assessed
+          ? 'bg-emerald-400'
+          : required
+            ? 'bg-amber-400'
+            : isDetail ? 'bg-cyan-300' : 'bg-sky-400';
+        // Focused-region landmarks stay as quiet touch targets; the loupe and
+        // cockpit already name the targets, so hover labels would just clutter
+        // the patient surface.
+        return (
+          <MarkerHtml key={marker.id} position={pos} distanceFactor={isDetail ? 8.2 : 3.0} zIndexRange={[80, 0]}>
+            <button
+              type="button"
+              onPointerDown={(event) => event.stopPropagation()}
+              onPointerUp={(event) => event.stopPropagation()}
+              onClick={(event) => {
+                event.stopPropagation();
+                // Pulse points work from any view — one click checks the pulse.
+                if (marker.actionId?.startsWith('pulse-') && onPulse) {
+                  onPulse(marker.actionId);
+                  return;
+                }
+                if (activeRegion === marker.region && marker.actionId && onAction) {
+                  onAction(marker.actionId);
+                  return;
+                }
+                onSelect(marker.region);
+              }}
+              className={`group pointer-events-auto relative flex items-center justify-center ${isDetail ? 'h-3 w-3' : 'h-4 w-4'}`}
+              title={`${marker.label} — ${marker.sublabel}`}
+            >
+              <span className={`block rounded-full ring-[1.5px] ring-white/85 shadow-md transition-transform duration-150 group-hover:scale-125 ${isDetail ? 'h-1 w-1' : 'h-2.5 w-2.5'} ${dotColor}`} />
+              {!isDetail && (
+                <span className={`pointer-events-none absolute left-1/2 top-[125%] z-10 -translate-x-1/2 whitespace-nowrap rounded-md border px-1.5 py-0.5 text-[8px] font-semibold leading-none opacity-0 shadow-lg backdrop-blur-md transition-opacity duration-150 group-hover:opacity-100 ${toneClasses[marker.tone ?? 'neutral']}`}>
+                  {marker.label}
+                </span>
+              )}
+            </button>
+          </MarkerHtml>
+        );
+      })}
+    </>
+  );
+}
+
+// 3D anchor positions per region for revealed-finding markers. Reuses the
+// EXAM_LANDMARK coordinate space; adds the regions landmarks don't cover.
+// Measured from the actual mesh (see EXAM_LANDMARKS note). Sit just proud of
+// the real camera-facing (+Z) surface; arms anchor mid-upper-arm.
+const FINDING_ANCHORS: Record<string, [number, number, number]> = {
+  'head': [0.0, 1.70, 0.19],
+  'face': [0.0, 1.62, 0.20],
+  'neck-cspine': [0.0, 1.46, 0.22],
+  'chest': [0.0, 1.27, 0.20],
+  'abdomen': [0.0, 1.02, 0.24],
+  'pelvis': [0.0, 0.90, 0.24],
+  'right-arm': [-0.34, 1.08, 0.12],
+  'left-arm': [0.34, 1.08, 0.12],
+  'right-leg': [-0.14, 0.48, 0.20],
+  'left-leg': [0.14, 0.48, 0.20],
+  'posterior-logroll': [0.0, 1.10, -0.20],
+};
+
+const FINDING_SEVERITY_STYLE: Record<string, string> = {
+  critical: 'border-rose-300/70 bg-rose-600/90 text-white shadow-[0_0_14px_rgba(244,63,94,0.6)]',
+  major: 'border-orange-300/70 bg-orange-600/90 text-white shadow-[0_0_12px_rgba(249,115,22,0.5)]',
+  minor: 'border-amber-300/70 bg-amber-400/90 text-amber-950 shadow-[0_0_10px_rgba(251,191,36,0.5)]',
+};
+
+const REALISM_CUE_STYLE: Record<RealismSeverity, { marker: string; dot: string; chip: string }> = {
+  normal: {
+    marker: 'border-emerald-200/45 bg-emerald-950/72 text-emerald-50 shadow-[0_0_16px_rgba(16,185,129,0.25)]',
+    dot: 'bg-emerald-300',
+    chip: 'border-emerald-200/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-200',
+  },
+  observe: {
+    marker: 'border-sky-200/45 bg-sky-950/72 text-sky-50 shadow-[0_0_16px_rgba(14,165,233,0.25)]',
+    dot: 'bg-sky-300',
+    chip: 'border-sky-200/40 bg-sky-500/10 text-sky-700 dark:text-sky-200',
+  },
+  warning: {
+    marker: 'border-amber-200/55 bg-amber-950/78 text-amber-50 shadow-[0_0_18px_rgba(245,158,11,0.35)]',
+    dot: 'bg-amber-300',
+    chip: 'border-amber-200/50 bg-amber-500/12 text-amber-800 dark:text-amber-100',
+  },
+  critical: {
+    marker: 'border-rose-200/60 bg-rose-950/82 text-rose-50 shadow-[0_0_20px_rgba(244,63,94,0.42)]',
+    dot: 'bg-rose-300',
+    chip: 'border-rose-200/55 bg-rose-500/12 text-rose-800 dark:text-rose-100',
+  },
+};
+
+/**
+ * Renders injury findings ON the body — but ONLY for regions the student has
+ * already assessed. This is the core discovery mechanic: you don't see the
+ * JVD until you go to the neck and examine it. Findings for un-assessed
+ * regions stay hidden, so the student must work the systematic survey to
+ * uncover them (the whole point of assessment).
+ *
+ * Model-agnostic: anchors to region coordinates, so it works on the current
+ * placeholder mesh and the future Character Creator patient alike.
+ */
+function RevealedFindingMarkers({
+  caseData,
+  assessedRegions,
+  activeRegion,
+  sampler,
+}: {
+  caseData: CaseScenario;
+  assessedRegions: Set<string>;
+  activeRegion: string | null;
+  sampler: ((x: number, y: number) => [number, number, number]) | null;
+}) {
+  const injuries = useMemo(() => inferInjuries(caseData), [caseData]);
+  if (!injuries.length) return null;
+
+  return (
+    <>
+      {injuries.map((inj) => {
+        const region3d = injuryRegionTo3D(inj.region);
+        // Reveal gate: region examined (with limb-group + extremities fallback)
+        const revealed = assessedRegions.has(region3d)
+          || (isLimbRegion(region3d) && assessedRegions.has('extremities'))
+          || activeRegion === region3d;
+        if (!revealed) return null;
+        const fallback = FINDING_ANCHORS[region3d];
+        if (!fallback) return null;
+        // Anchor the finding badge to the real surface at the region's (x, y).
+        const anchor: [number, number, number] = sampler && region3d !== 'posterior-logroll'
+          ? sampler(fallback[0], fallback[1])
+          : fallback;
+        return (
+          <MarkerHtml key={inj.id} position={anchor} distanceFactor={3.2} zIndexRange={[90, 0]} interactive={false}>
+            <div className="scale-[0.6] pointer-events-none animate-in fade-in zoom-in-50 duration-500">
+              <div className={`flex items-center gap-1 rounded-full border px-1.5 py-0.5 backdrop-blur-md ${FINDING_SEVERITY_STYLE[inj.severity] || FINDING_SEVERITY_STYLE.major}`}>
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white/70" />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-white" />
+                </span>
+                <span className="whitespace-nowrap text-[8px] font-bold uppercase tracking-[0.1em] leading-none">{inj.label}</span>
+              </div>
+            </div>
+          </MarkerHtml>
+        );
+      })}
+    </>
+  );
+}
+
+function CaseRealismMarkers({
+  cues,
+  assessedRegions,
+  activeRegion,
+  sampler,
+}: {
+  cues: PatientRealismCue[];
+  assessedRegions: Set<string>;
+  activeRegion: string | null;
+  sampler: ((x: number, y: number) => [number, number, number]) | null;
+}) {
+  const visibleCues = cues.filter(item => shouldRevealRealismCue(item, assessedRegions, activeRegion)).slice(0, 5);
+  if (!visibleCues.length) return null;
+
+  return (
+    <>
+      {visibleCues.map((item, index) => {
+        const fallback = FINDING_ANCHORS[item.region] || FINDING_ANCHORS.chest;
+        const anchor: [number, number, number] = sampler && item.region !== 'posterior-logroll'
+          ? sampler(fallback[0], fallback[1])
+          : fallback;
+        const style = REALISM_CUE_STYLE[item.severity];
+        return (
+          <MarkerHtml key={item.id} position={anchor} distanceFactor={3.05} zIndexRange={[82 - index, 0]} interactive={false}>
+            <div
+              className="pointer-events-none relative flex h-5 w-5 items-center justify-center animate-in fade-in zoom-in-75 duration-500"
+              aria-hidden="true"
+            >
+              <span className={`absolute h-5 w-5 rounded-full border backdrop-blur-md ${style.marker}`} />
+              <span className={`relative h-2 w-2 rounded-full ${style.dot} ${item.severity === 'critical' ? 'animate-pulse' : ''}`} />
+            </div>
+          </MarkerHtml>
+        );
+      })}
+    </>
+  );
+}
+
+const OXYGEN_VISUAL_PRIORITY: Array<{
+  ids: string[];
+  mode: OxygenVisualMode;
+  label: string;
+  detail: string;
+}> = [
+  { ids: ['mechanical_ventilation', 'ventilator_setup'], mode: 'ventilator', label: 'Ventilator circuit', detail: 'Secured airway with circuit attached' },
+  { ids: ['bvm_ventilation'], mode: 'bvm', label: 'BVM ventilation', detail: 'Mask seal and bag-valve device in use' },
+  { ids: ['cpap_niv'], mode: 'cpap', label: 'CPAP mask', detail: 'Strapped mask with pressure circuit' },
+  { ids: ['nebulizer_salbutamol', 'nebulizer_ipratropium'], mode: 'nebulizer', label: 'Nebulizer mask', detail: 'Aerosol chamber attached to mask' },
+  { ids: ['oxygen_nonrebreather'], mode: 'nonrebreather', label: 'Non-rebreather', detail: 'Reservoir mask with high-flow oxygen' },
+  { ids: ['oxygen_mask'], mode: 'simple-mask', label: 'Simple oxygen mask', detail: 'Mask and oxygen tubing connected' },
+  { ids: ['oxygen_nasal'], mode: 'nasal', label: 'Nasal cannula', detail: 'Nasal prongs and tubing fitted' },
+];
+
+const IV_MEDICATION_LINE_IDS = new Set([
+  'adrenaline_1mg',
+  'adrenaline_infusion',
+  'amiodarone_300mg',
+  'amiodarone_150mg',
+  'morphine_5mg',
+  'fentanyl_50mcg',
+  'midazolam_5mg',
+  'hydrocortisone_200mg',
+  'magnesium_2g',
+  'txa_1g',
+  'naloxone_iv',
+  'dextrose_iv',
+  'glucose_iv',
+]);
+
+function buildTreatmentEquipmentState(appliedTreatmentIds: string[]): AppliedEquipmentVisualState {
+  const applied = new Set(appliedTreatmentIds);
+  const oxygenMatch = OXYGEN_VISUAL_PRIORITY.find(option => option.ids.some(id => applied.has(id)));
+  const hasFluids = appliedTreatmentIds.some(id => id.startsWith('fluids_'));
+  const hasMedicationLine = appliedTreatmentIds.some(id =>
+    IV_MEDICATION_LINE_IDS.has(id) || id.endsWith('_iv') || id.includes('_infusion'),
+  );
+  const hasEtTube = applied.has('intubation')
+    || applied.has('endotracheal_intubation')
+    || applied.has('rsi_intubation')
+    || applied.has('mechanical_ventilation')
+    || applied.has('ventilator_setup');
+
+  return {
+    oxygen: oxygenMatch ? { mode: oxygenMatch.mode, label: oxygenMatch.label, detail: oxygenMatch.detail } : null,
+    hasIvAccess: applied.has('iv_access') || hasFluids || hasMedicationLine,
+    hasFluids,
+    hasDefibPads: applied.has('defibrillation') || applied.has('aed') || applied.has('monitor_pads'),
+    hasLucas: applied.has('lucas_device'),
+    hasEtTube,
+    hasOpa: applied.has('opa_insert'),
+  };
+}
+
+function EquipmentPill({
+  label,
+  detail,
+  tone,
+  children,
+}: {
+  label: string;
+  detail: string;
+  tone: 'oxygen' | 'iv' | 'defib' | 'device';
+  children: React.ReactNode;
+}) {
+  const toneClass = {
+    oxygen: 'border-cyan-200/45 bg-cyan-950/58 text-cyan-50 shadow-cyan-950/35',
+    iv: 'border-emerald-200/45 bg-emerald-950/58 text-emerald-50 shadow-emerald-950/35',
+    defib: 'border-rose-200/45 bg-rose-950/58 text-rose-50 shadow-rose-950/35',
+    device: 'border-slate-200/40 bg-slate-950/62 text-slate-50 shadow-slate-950/40',
+  }[tone];
+
+  return (
+    <div className={`pointer-events-none flex min-w-[142px] max-w-[176px] items-center gap-2 rounded-2xl border px-2.5 py-2 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-75 duration-300 ${toneClass}`}>
+      <div className="relative h-14 w-16 shrink-0">{children}</div>
+      <div className="min-w-0">
+        <p className="text-[9px] font-bold uppercase tracking-[0.12em] leading-tight text-white/92">{label}</p>
+        <p className="mt-0.5 text-[8px] leading-snug text-white/70">{detail}</p>
+      </div>
+    </div>
+  );
+}
+
+function OxygenDeviceGraphic({ equipment }: { equipment: OxygenEquipmentVisual }) {
+  const src = {
+    nasal: TREATMENT_ASSET_PATHS.nasal,
+    'simple-mask': TREATMENT_ASSET_PATHS.simpleMask,
+    nonrebreather: TREATMENT_ASSET_PATHS.nonrebreather,
+    nebulizer: TREATMENT_ASSET_PATHS.nebulizer,
+    bvm: TREATMENT_ASSET_PATHS.bvm,
+    cpap: TREATMENT_ASSET_PATHS.cpap,
+    ventilator: TREATMENT_ASSET_PATHS.ventilator,
+  }[equipment.mode];
+  return (
+    <img
+      src={src}
+      alt=""
+      className="absolute inset-0 h-full w-full object-contain drop-shadow-[0_10px_12px_rgba(8,47,73,0.22)]"
+      draggable={false}
+    />
+  );
+}
+
+function IvCannulaGraphic({ hasFluids }: { hasFluids: boolean }) {
+  return (
+    <>
+      <img
+        src={TREATMENT_ASSET_PATHS.ivCannula}
+        alt=""
+        className="absolute inset-0 h-full w-full object-contain drop-shadow-[0_10px_12px_rgba(6,78,59,0.24)]"
+        draggable={false}
+      />
+      {hasFluids && (
+        <div className="absolute left-[49px] top-[37px] h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-100" />
+      )}
+    </>
+  );
+}
+
+function FluidBagGraphic() {
+  return (
+    <div className="pointer-events-none flex min-w-[118px] items-center gap-2 rounded-2xl border border-emerald-100/45 bg-slate-950/60 px-2.5 py-2 text-white shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-75 duration-300">
+      <div className="relative h-16 w-11 shrink-0">
+        <img src={TREATMENT_ASSET_PATHS.fluidBag} alt="" className="absolute inset-0 h-full w-full object-contain" draggable={false} />
+      </div>
+      <div>
+        <p className="text-[9px] font-bold uppercase tracking-[0.12em] leading-tight">Fluid running</p>
+        <p className="mt-0.5 text-[8px] leading-snug text-white/70">Bag and line connected to IV cannula</p>
+      </div>
+    </div>
+  );
+}
+
+function DefibPadsGraphic() {
+  return (
+    <div className="pointer-events-none relative h-28 w-32 animate-in fade-in zoom-in-75 duration-300">
+      <img src={TREATMENT_ASSET_PATHS.defibPads} alt="" className="absolute inset-0 h-full w-full object-contain drop-shadow-[0_12px_14px_rgba(136,19,55,0.28)]" draggable={false} />
+      <div className="absolute left-[54px] top-[22px] rounded-full border border-rose-200/45 bg-rose-950/60 px-2 py-0.5 text-[8px] font-bold uppercase tracking-[0.12em] text-rose-50 backdrop-blur">
+        Pads on
+      </div>
+    </div>
+  );
+}
+
+function LucasGraphic() {
+  return (
+    <div className="pointer-events-none relative h-20 w-36 animate-in fade-in zoom-in-75 duration-300">
+      <img src={TREATMENT_ASSET_PATHS.lucas} alt="" className="absolute inset-0 h-full w-full object-contain drop-shadow-[0_12px_14px_rgba(15,23,42,0.32)]" draggable={false} />
+      <div className="absolute left-[48px] top-0 rounded-full border border-slate-100/35 bg-slate-950/62 px-2 py-0.5 text-[8px] font-bold uppercase tracking-[0.12em] text-slate-50 backdrop-blur">
+        LUCAS
+      </div>
+    </div>
+  );
+}
+
+function EtTubeGraphic() {
+  return (
+    <div className="pointer-events-none flex min-w-[124px] items-center gap-2 rounded-2xl border border-sky-100/45 bg-slate-950/62 px-2.5 py-2 text-white shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-75 duration-300">
+      <div className="relative h-14 w-16 shrink-0">
+        <img src={TREATMENT_ASSET_PATHS.etTube} alt="" className="absolute inset-0 h-full w-full object-contain" draggable={false} />
+      </div>
+      <div>
+        <p className="text-[9px] font-bold uppercase tracking-[0.12em] leading-tight">ET tube</p>
+        <p className="mt-0.5 text-[8px] leading-snug text-white/70">Airway secured and tube visible at mouth</p>
+      </div>
+    </div>
+  );
+}
+
+function OpaGraphic() {
+  return (
+    <div className="pointer-events-none flex min-w-[124px] items-center gap-2 rounded-2xl border border-orange-100/45 bg-slate-950/62 px-2.5 py-2 text-white shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-75 duration-300">
+      <div className="relative h-14 w-16 shrink-0">
+        <img src={TREATMENT_ASSET_PATHS.opa} alt="" className="absolute inset-0 h-full w-full object-contain" draggable={false} />
+      </div>
+      <div>
+        <p className="text-[9px] font-bold uppercase tracking-[0.12em] leading-tight">OPA inserted</p>
+        <p className="mt-0.5 text-[8px] leading-snug text-white/70">Only appropriate without gag reflex</p>
+      </div>
+    </div>
+  );
+}
+
+function TreatmentEquipmentOverlay({
+  appliedTreatmentIds,
+  sampler,
+}: {
+  appliedTreatmentIds: string[];
+  sampler: ((x: number, y: number) => [number, number, number]) | null;
+}) {
+  const equipment = useMemo(
+    () => buildTreatmentEquipmentState(appliedTreatmentIds),
+    [appliedTreatmentIds],
+  );
+  const hasVisibleEquipment = equipment.oxygen
+    || equipment.hasIvAccess
+    || equipment.hasDefibPads
+    || equipment.hasLucas
+    || equipment.hasEtTube
+    || equipment.hasOpa;
+
+  if (!hasVisibleEquipment) return null;
+
+  const anchor = (x: number, y: number, z: number): [number, number, number] =>
+    sampler ? sampler(x, y) : [x, y, z];
+
+  return (
+    <>
+      {equipment.oxygen && (
+        <MarkerHtml position={anchor(0, 1.565, 0.215)} distanceFactor={2.15} zIndexRange={[76, 0]} interactive={false}>
+          <EquipmentPill label={equipment.oxygen.label} detail={equipment.oxygen.detail} tone="oxygen">
+            <OxygenDeviceGraphic equipment={equipment.oxygen} />
+          </EquipmentPill>
+        </MarkerHtml>
+      )}
+
+      {equipment.hasEtTube && equipment.oxygen?.mode !== 'ventilator' && (
+        <MarkerHtml position={anchor(0.02, 1.545, 0.215)} distanceFactor={2.35} zIndexRange={[74, 0]} interactive={false}>
+          <EtTubeGraphic />
+        </MarkerHtml>
+      )}
+
+      {equipment.hasOpa && !equipment.hasEtTube && (
+        <MarkerHtml position={anchor(-0.02, 1.54, 0.215)} distanceFactor={2.35} zIndexRange={[73, 0]} interactive={false}>
+          <OpaGraphic />
+        </MarkerHtml>
+      )}
+
+      {equipment.hasIvAccess && (
+        <MarkerHtml position={anchor(-0.205, 0.82, 0.2)} distanceFactor={2.65} zIndexRange={[72, 0]} interactive={false}>
+          <EquipmentPill
+            label="IV cannula"
+            detail={equipment.hasFluids ? 'Cannula taped down with fluid line attached' : 'Cannula inserted and secured at the forearm'}
+            tone="iv"
+          >
+            <IvCannulaGraphic hasFluids={equipment.hasFluids} />
+          </EquipmentPill>
+        </MarkerHtml>
+      )}
+
+      {equipment.hasFluids && (
+        <MarkerHtml position={[-0.36, 1.08, 0.22]} distanceFactor={2.9} zIndexRange={[70, 0]} interactive={false}>
+          <FluidBagGraphic />
+        </MarkerHtml>
+      )}
+
+      {equipment.hasDefibPads && (
+        <MarkerHtml position={anchor(0.01, 1.24, 0.218)} distanceFactor={2.4} zIndexRange={[68, 0]} interactive={false}>
+          <DefibPadsGraphic />
+        </MarkerHtml>
+      )}
+
+      {equipment.hasLucas && (
+        <MarkerHtml position={anchor(0, 1.19, 0.22)} distanceFactor={2.55} zIndexRange={[69, 0]} interactive={false}>
+          <LucasGraphic />
+        </MarkerHtml>
+      )}
+    </>
+  );
+}
+
+function getPupilProfile(caseData: CaseScenario): PupilProfile {
+  const raw = Array.isArray(caseData.abcde?.disability?.pupils)
+    ? caseData.abcde.disability.pupils.join(' ')
+    : caseData.abcde?.disability?.pupils || '';
+  const text = raw.toLowerCase();
+  const sideSegment = (side: 'left' | 'right'): string => {
+    const otherSide = side === 'left' ? 'right' : 'left';
+    const start = text.indexOf(side);
+    if (start < 0) return '';
+    const nextSide = text.indexOf(otherSide, start + side.length);
+    return nextSide > start ? text.slice(start, nextSide) : text.slice(start);
+  };
+  const parseSideMm = (side: 'left' | 'right'): number | null => {
+    const segment = sideSegment(side);
+    const match = segment.match(/(\d+(?:\.\d+)?)\s*mm/);
+    return match ? Number(match[1]) : null;
+  };
+  const parseSideReaction = (side: 'left' | 'right'): string | null => {
+    const segment = sideSegment(side);
+    if (!segment) return null;
+    if (/fixed|non-reactive|non reactive|unreactive/.test(segment)) return 'fixed';
+    if (/sluggish|slow/.test(segment)) return 'sluggish';
+    if (/brisk|reactive|pearl|perrl/.test(segment)) return 'brisk';
+    return null;
+  };
+  const leftSpecificMm = parseSideMm('left');
+  const rightSpecificMm = parseSideMm('right');
+  const leftSpecificReaction = parseSideReaction('left');
+  const rightSpecificReaction = parseSideReaction('right');
+
+  if (leftSpecificMm !== null || rightSpecificMm !== null || leftSpecificReaction || rightSpecificReaction) {
+    const fallbackMm = text.includes('pinpoint') || text.includes('constrict') ? 1 : text.includes('dilated') ? 6 : 3;
+    const leftMm = leftSpecificMm ?? fallbackMm;
+    const rightMm = rightSpecificMm ?? fallbackMm;
+    const leftReaction = leftSpecificReaction ?? (text.includes('fixed') || text.includes('non-reactive') ? 'fixed' : text.includes('sluggish') ? 'sluggish' : 'brisk');
+    const rightReaction = rightSpecificReaction ?? (text.includes('fixed') || text.includes('non-reactive') ? 'fixed' : text.includes('sluggish') ? 'sluggish' : 'brisk');
+
+    return {
+      leftMm,
+      rightMm,
+      leftReaction,
+      rightReaction,
+      note: raw || 'Compare pupil size, equality, and direct response.',
+      abnormal: leftMm !== rightMm || leftReaction !== 'brisk' || rightReaction !== 'brisk',
+    };
+  }
+
+  if (text.includes('pinpoint') || text.includes('constrict')) {
+    return {
+      leftMm: 1,
+      rightMm: 1,
+      leftReaction: text.includes('fixed') ? 'fixed' : 'sluggish',
+      rightReaction: text.includes('fixed') ? 'fixed' : 'sluggish',
+      note: raw || 'Pinpoint pupils. Check toxidrome and ventilation.',
+      abnormal: true,
+    };
+  }
+  if (text.includes('unequal') || text.includes('anisocoria')) {
+    return {
+      leftMm: 5,
+      rightMm: 2,
+      leftReaction: text.includes('fixed') ? 'fixed' : 'sluggish',
+      rightReaction: 'reactive',
+      note: raw || 'Unequal pupils. Consider raised ICP, trauma, or focal neurological pathology.',
+      abnormal: true,
+    };
+  }
+  if (text.includes('dilated')) {
+    return {
+      leftMm: 6,
+      rightMm: 6,
+      leftReaction: text.includes('fixed') || text.includes('non-reactive') ? 'fixed' : 'sluggish',
+      rightReaction: text.includes('fixed') || text.includes('non-reactive') ? 'fixed' : 'sluggish',
+      note: raw || 'Dilated pupils. Correlate with GCS, drugs, hypoxia, and perfusion.',
+      abnormal: true,
+    };
+  }
+
+  return {
+    leftMm: 3,
+    rightMm: 3,
+    leftReaction: 'brisk',
+    rightReaction: 'brisk',
+    note: raw || 'Equal, round, reactive pupils. Compare both eyes in ambient and direct light.',
+    abnormal: false,
+  };
+}
+
+function getAirwayCue(caseData: CaseScenario): { status: string; cues: string[]; compromised: boolean } {
+  const airway = caseData.abcde?.airway;
+  const findings = airway?.findings || [];
+  const cues = findings.length > 0 ? findings : ['No visible obstruction', 'No gurgling or stridor', 'Airway patent on first look'];
+  return {
+    status: airway?.patent ? 'Patent' : 'Compromised',
+    cues,
+    compromised: airway?.patent === false,
+  };
+}
+
+function getWorkflowForRegion(regionId: string | null): string[] {
+  switch (regionId) {
+    case 'head':
+      return ['Inspect scalp and hairline', 'Palpate skull and facial bones', 'Check ears for blood or CSF', 'Move to eyes, lips, mouth, and speech', 'Escalate any altered LOC or head injury signs'];
+    case 'face':
+      return ['Inspect face, eyes, lips, and gaze', 'Measure pupils in mm', 'Compare equality', 'Assess direct and consensual response', 'Check oral cavity, speech, and facial symmetry'];
+    case 'neck-cspine':
+      return ['Maintain C-spine awareness', 'Look into mouth and listen at neck', 'Check tracheal position', 'Assess JVD and neck swelling', 'Palpate for crepitus or midline tenderness'];
+    case 'chest':
+      return ['Expose chest', 'Inspect breathing pattern and chest rise', 'Palpate expansion and crepitus', 'Percuss both sides', 'Auscultate apices, bases, and heart'];
+    case 'abdomen':
+      return ['Inspect before touching', 'Auscultate RUQ, LUQ, RLQ, LLQ', 'Percuss each quadrant', 'Palpate away from pain first', 'Note guarding, rigidity, distension'];
+    case 'right-arm':
+    case 'left-arm':
+      return ['Inspect from shoulder to fingers', 'Palpate joints and long bones', 'Check radial pulse and CRT', 'Test sensation', 'Test motor function and grip'];
+    case 'right-leg':
+    case 'left-leg':
+      return ['Inspect limb alignment and wounds', 'Palpate femur, knee, tib/fib, ankle, foot', 'Check DP/PT pulses and CRT', 'Assess sensation and motor', 'Screen compartments'];
+    case 'posterior-logroll':
+      return ['Assign C-spine control', 'Log roll on command', 'Inspect posterior surface', 'Palpate whole spine', 'Return patient safely'];
+    default:
+      return ['Select a region', 'Inspect first', 'Palpate only when indicated', 'Compare sides', 'Document what you find'];
+  }
+}
+
+function getWorkflowStepForAction(regionId: string | null, actionId: string | null): number | null {
+  if (!regionId || !actionId) return null;
+
+  if (regionId === 'head') {
+    if (actionId === 'scalp-inspect') return 0;
+    if (actionId === 'scalp-palpate') return 1;
+    if (actionId === 'ears-inspect') return 2;
+  }
+
+  if (regionId === 'face') {
+    if (actionId === 'eyes-inspect' || actionId === 'lips-inspect') return 0;
+    if (actionId === 'pupils-size') return 1;
+    if (actionId === 'pupils-equality') return 2;
+    if (actionId === 'pupils-reactivity') return 3;
+    if (actionId.includes('mouth') || actionId.includes('teeth') || actionId.includes('tongue') || actionId === 'face-symmetry-inspect' || actionId === 'face-speech') return 4;
+  }
+
+  if (regionId === 'neck-cspine') {
+    if (actionId === 'cspine-inspect') return 0;
+    if (actionId === 'mouth-inspect' || actionId === 'airway-listen') return 1;
+    if (actionId === 'trachea-palpate') return 2;
+    if (actionId === 'jvd-inspect') return 3;
+    if (actionId === 'neck-emphysema' || actionId === 'cspine-palpate') return 4;
+  }
+
+  if (regionId === 'chest') {
+    if (actionId === 'chest-inspect') return 1;
+    if (actionId === 'chest-palpate') return 2;
+    if (actionId === 'chest-percuss') return 3;
+    if (actionId === 'chest-auscultate-lungs' || actionId === 'chest-auscultate-heart' || actionId.startsWith('chest-auscultate-')) return 4;
+  }
+
+  if (regionId === 'abdomen') {
+    if (actionId === 'abd-inspect') return 0;
+    if (actionId === 'abd-auscultate' || (actionId.startsWith('abd-') && actionId.includes('auscultate'))) return 1;
+    if (actionId === 'abd-percuss' || (actionId.startsWith('abd-') && actionId.includes('percuss'))) return 2;
+    if (actionId === 'abd-palpate' || (actionId.startsWith('abd-') && actionId.includes('palpate'))) return 3;
+  }
+
+  if (regionId === 'posterior-logroll') {
+    if (actionId === 'logroll-inspect') return 1;
+    if (actionId === 'spine-inspect') return 2;
+    if (actionId === 'spine-palpate') return 3;
+  }
+
+  if (isLimbRegion(regionId)) {
+    if (actionId.includes('inspect')) return 0;
+    if (actionId.includes('palpate') || actionId.includes('femur') || actionId.includes('tibia') || actionId.includes('ankle') || actionId.includes('foot')) return 1;
+    if (actionId.includes('pulse')) return 2;
+    if (actionId.includes('neuro') || actionId.includes('sensation')) return 3;
+    if (actionId.includes('compartment')) return 4;
+  }
+
+  return null;
+}
+
+function getQuadrantFromAction(actionId: string | null | undefined): AbdomenQuadrant | null {
+  if (!actionId) return null;
+  const match = actionId.match(/^abd-(ruq|luq|rlq|llq)-/);
+  return match ? (match[1] as AbdomenQuadrant) : null;
+}
+
+function getQuadrantMeta(quadrant: AbdomenQuadrant) {
+  return ABDOMEN_QUADRANTS.find(q => q.id === quadrant) || ABDOMEN_QUADRANTS[0];
+}
+
+function getAbdomenText(caseData: CaseScenario): string {
+  return [
+    caseData.title,
+    caseData.dispatchInfo?.callReason,
+    caseData.initialPresentation?.generalImpression,
+    caseData.initialPresentation?.appearance,
+    ...(caseData.secondarySurvey?.abdomen || []),
+    ...(caseData.expectedFindings?.keyObservations || []),
+  ].filter(Boolean).join(' ').toLowerCase();
+}
+
+function getBowelSoundTypeForCase(caseData: CaseScenario): BowelSoundType {
+  const abdText = getAbdomenText(caseData);
+  if (/bruit|aneurysm|aortic|vascular|renal artery/.test(abdText)) return 'bruit';
+  if (/absent bowel|ileus|paralytic|peritonitis|silent abdomen/.test(abdText)) return 'absent';
+  if (/tinkling|mechanical obstruction|bowel obstruction/.test(abdText)) return 'tinkling';
+  if (/borborygmi|loud gurgling|hunger/.test(abdText)) return 'borborygmi';
+  if (/hyperactive|diarrh|gastroenter|vomiting/.test(abdText)) return 'hyperactive';
+  if (/hypoactive|post-op|postoperative|opioid|constipat/.test(abdText)) return 'hypoactive';
+  return 'normal';
+}
+
+function getQuadrantRelevantFindings(caseData: CaseScenario, quadrant: AbdomenQuadrant): string[] {
+  const abdomen = caseData.secondarySurvey?.abdomen || [];
+  const qNeedles: Record<AbdomenQuadrant, RegExp[]> = {
+    ruq: [/ruq|right upper|right hypochond|liver|hepatic|gallbladder|murphy|right costal/],
+    luq: [/luq|left upper|left hypochond|spleen|splenic|stomach|epigastric.*left/],
+    rlq: [/rlq|right lower|right iliac|appendix|appendic|mcburney|right pelvic|right flank/],
+    llq: [/llq|left lower|left iliac|sigmoid|divertic|left pelvic|left flank/],
+  };
+  const generic = /diffuse|general|all quadrants|periton|rigid|guard|distend|bloated|tender abdomen|abdominal tenderness/;
+  const needles = qNeedles[quadrant];
+  const specific = abdomen.filter(f => needles.some(rx => rx.test(f.toLowerCase())));
+  if (specific.length) return specific;
+  return abdomen.filter(f => generic.test(f.toLowerCase()));
+}
+
+function getQuadrantPercussionFinding(caseData: CaseScenario, quadrant: AbdomenQuadrant): string {
+  const meta = getQuadrantMeta(quadrant);
+  const abdText = getAbdomenText(caseData);
+  if (/ascites|free fluid|shifting dullness|fluid thrill/.test(abdText)) {
+    return `${meta.label}: Dullness shifts with position — possible free fluid.`;
+  }
+  if (/obstruction|distend|tympan/.test(abdText)) {
+    return `${meta.label}: Hyper-tympanic note over distended bowel loops.`;
+  }
+  if (quadrant === 'ruq') return 'RUQ: Expected liver dullness at the costal margin, with tympany over bowel inferiorly.';
+  return `${meta.label}: Tympanic percussion note, no focal dullness.`;
+}
+
+function getQuadrantPalpationFinding(caseData: CaseScenario, quadrant: AbdomenQuadrant): string {
+  const meta = getQuadrantMeta(quadrant);
+  const findings = getQuadrantRelevantFindings(caseData, quadrant);
+  if (findings.length) return `${meta.label}: ${findings.join('. ')}`;
+  return `${meta.label}: Soft, non-tender. No guarding, rigidity, rebound tenderness, or palpable mass.`;
+}
+
+function getBreathingPattern(caseData: CaseScenario) {
+  const rr = caseData.vitalSignsProgression?.initial?.respiration ?? 16;
+  const text = [
+    caseData.title,
+    caseData.initialPresentation?.appearance,
+    caseData.initialPresentation?.generalImpression,
+    ...(caseData.initialPresentation?.sounds || []),
+    ...(caseData.abcde?.breathing?.findings || []),
+    ...(caseData.secondarySurvey?.chest || []),
+  ].filter(Boolean).join(' ').toLowerCase();
+
+  if (/apnoea|apnea|not breathing|respiratory arrest/.test(text) || rr === 0) {
+    return { label: 'Apnoeic', rate: 0, detail: 'No visible chest rise. Begin ventilation immediately.', severity: 'critical' as const, asymmetry: null as string | null };
+  }
+  if (/agonal|gasp/.test(text)) {
+    return { label: 'Agonal gasps', rate: rr || 6, detail: 'Irregular gasping respirations with poor tidal volume.', severity: 'critical' as const, asymmetry: null as string | null };
+  }
+  if (/pneumothorax|absent.*right|right.*absent|absent.*left|left.*absent|unequal|asymmetric/.test(text)) {
+    const side = /right/.test(text) && !/left.*absent/.test(text) ? 'right' : /left/.test(text) ? 'left' : 'one side';
+    return { label: 'Asymmetric chest rise', rate: rr, detail: `Reduced movement on the ${side}; compare percussion and breath sounds.`, severity: 'warning' as const, asymmetry: side };
+  }
+  if (rr >= 30 || /severe distress|accessory|tripod|unable to speak|wheeze|asthma|copd/.test(text)) {
+    return { label: 'Tachypnoeic, laboured', rate: rr, detail: 'Fast work of breathing with accessory muscle use and short phrases.', severity: 'warning' as const, asymmetry: null as string | null };
+  }
+  if (rr <= 8 || /shallow|hypoventilat|opioid|reduced respiratory/.test(text)) {
+    return { label: 'Slow / shallow', rate: rr, detail: 'Reduced chest excursion; watch ventilation and consciousness closely.', severity: 'warning' as const, asymmetry: null as string | null };
+  }
+  if (/pain|splint|rib|chest injury|abdominal pain/.test(text)) {
+    return { label: 'Shallow, splinting', rate: rr, detail: 'Smaller chest movement consistent with pain or guarding.', severity: 'observe' as const, asymmetry: null as string | null };
+  }
+  return { label: 'Regular chest rise', rate: rr, detail: 'Symmetrical rise and fall without obvious accessory muscle use.', severity: 'normal' as const, asymmetry: null as string | null };
+}
+
+function PupilCloseUp({ profile }: { profile: PupilProfile }) {
+  const pupilStyle = (mm: number): CSSProperties => ({
+    width: `${Math.max(10, Math.min(34, mm * 5.4))}px`,
+    height: `${Math.max(10, Math.min(34, mm * 5.4))}px`,
+  });
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-slate-800/80 bg-[radial-gradient(circle_at_50%_0%,rgba(56,189,248,0.22),transparent_34%),linear-gradient(180deg,#111827,#020617)] p-3 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_18px_40px_-28px_rgba(2,6,23,0.95)]">
+      <div className="mb-3 flex items-start justify-between gap-2">
+        <div>
+          <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-slate-300">Pupil Close-Up</p>
+          <p className="mt-0.5 text-[10px] text-slate-400">Direct light, compare left and right</p>
+        </div>
+        <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[8px] font-semibold ${
+          profile.abnormal
+            ? 'border-amber-300/30 bg-amber-400/15 text-amber-100'
+            : 'border-emerald-300/30 bg-emerald-400/15 text-emerald-100'
+        }`}>
+          {profile.abnormal ? 'Abnormal finding' : 'Normal finding'}
+        </span>
+      </div>
+      <div className="grid grid-cols-1 gap-2 min-[360px]:grid-cols-2">
+        {[
+          { side: 'Left', mm: profile.leftMm, reaction: profile.leftReaction },
+          { side: 'Right', mm: profile.rightMm, reaction: profile.rightReaction },
+        ].map(eye => (
+          <div key={eye.side} className="rounded-xl border border-white/10 bg-white/[0.07] p-2 shadow-[inset_0_1px_12px_rgba(255,255,255,0.03)]">
+            <div className="relative mx-auto h-[76px] w-full min-w-[110px] max-w-[168px] overflow-hidden rounded-[50%] border border-white/15 bg-[#b9876e] shadow-[0_10px_22px_-18px_rgba(0,0,0,0.9)]">
+              <div className="absolute inset-x-2 top-1/2 h-[48px] -translate-y-1/2 rounded-[999px] bg-gradient-to-b from-white via-slate-100 to-slate-300 shadow-[inset_0_2px_8px_rgba(15,23,42,0.34)]" />
+              <div className="absolute inset-x-5 top-3 h-5 rounded-[100%] border-t-[10px] border-[#7a493d]/55" />
+              <div className="absolute inset-x-5 bottom-3 h-5 rounded-[100%] border-b-[8px] border-[#6b3f35]/45" />
+              <div className="absolute left-1/2 top-1/2 h-[47px] w-[47px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle_at_35%_32%,#67e8f9_0%,#0891b2_31%,#155e75_55%,#082f49_76%,#020617_100%)] shadow-[inset_0_0_10px_rgba(255,255,255,0.2),inset_0_0_18px_rgba(2,6,23,0.75)]" />
+              <div className="absolute left-1/2 top-1/2 h-[54px] w-[54px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-cyan-100/20" />
+              <div
+                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-black shadow-[0_0_12px_rgba(0,0,0,0.75)]"
+                style={pupilStyle(eye.mm)}
+              />
+              <div className="absolute left-[42%] top-[35%] h-2.5 w-2.5 rounded-full bg-white/90 blur-[0.5px]" />
+              <div className="absolute left-[54%] top-[29%] h-1.5 w-1.5 rounded-full bg-white/60" />
+              <div className="absolute left-[18%] top-[48%] h-px w-8 rotate-[-10deg] bg-red-400/25" />
+              <div className="absolute right-[18%] top-[54%] h-px w-7 rotate-[12deg] bg-red-400/20" />
+            </div>
+            <div className="mt-2 flex items-center justify-between gap-2 text-[9px]">
+              <span className="font-semibold text-slate-100">{eye.side}</span>
+              <span className="rounded-full bg-black/25 px-1.5 py-0.5 font-mono text-slate-100">{eye.mm} mm</span>
+            </div>
+            <div className="mt-1 flex items-center gap-1.5">
+              <span className={`h-1.5 w-1.5 rounded-full ${eye.reaction.includes('fixed') ? 'bg-red-300' : eye.reaction.includes('sluggish') ? 'bg-amber-300' : 'bg-emerald-300'}`} />
+              <p className="truncate text-[8px] uppercase tracking-[0.12em] text-slate-300">{eye.reaction}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="mt-3 grid grid-cols-[auto_1fr] gap-2 rounded-lg border border-white/10 bg-black/20 p-2">
+        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-sky-400/15 text-[10px] font-semibold text-sky-100">mm</div>
+        <p className="text-[10px] leading-relaxed text-slate-200">{profile.note}</p>
+      </div>
+    </div>
+  );
+}
+
+function AirwayCloseUp({ caseData }: { caseData: CaseScenario }) {
+  const airway = getAirwayCue(caseData);
+  return (
+    <div className="overflow-hidden rounded-xl border border-slate-200/70 bg-gradient-to-br from-slate-50 via-white to-sky-50/70 p-3 shadow-sm dark:border-white/10 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+      <div className="mb-2 flex items-center justify-between">
+        <div>
+          <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Airway View</p>
+          <p className="mt-0.5 text-[10px] text-muted-foreground">Look, listen, then palpate neck structures</p>
+        </div>
+        <span className={`rounded-full border px-2 py-0.5 text-[8px] font-semibold ${airway.compromised ? 'border-red-300/40 bg-red-500/15 text-red-600 dark:text-red-300' : 'border-emerald-300/40 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'}`}>
+          {airway.status}
+        </span>
+      </div>
+      <div className="relative mx-auto h-28 max-w-[190px] rounded-2xl bg-gradient-to-b from-slate-100 to-slate-200/70 dark:from-slate-800 dark:to-slate-900">
+        <div className="absolute left-1/2 top-1 h-20 w-28 -translate-x-1/2 rounded-[48%] bg-gradient-to-b from-[#d6a688] to-[#a96d54] shadow-lg" />
+        <div className="absolute left-[42%] top-7 h-2.5 w-2.5 rounded-full bg-slate-900/85" />
+        <div className="absolute right-[42%] top-7 h-2.5 w-2.5 rounded-full bg-slate-900/85" />
+        <div className="absolute left-1/2 top-11 h-3 w-5 -translate-x-1/2 rounded-b-full border-b-2 border-[#8f5749]/80" />
+        <div className={`absolute left-1/2 top-14 h-8 w-16 -translate-x-1/2 rounded-b-full border-4 border-[#9f5f4e] shadow-inner ${airway.compromised ? 'bg-red-950' : 'bg-slate-900'}`}>
+          <div className={`absolute left-1/2 top-2 h-3 w-6 -translate-x-1/2 rounded-full ${airway.compromised ? 'bg-red-500/70' : 'bg-pink-300/80'}`} />
+        </div>
+        <div className={`absolute bottom-0 left-1/2 h-12 w-10 -translate-x-1/2 rounded-t-full ${airway.compromised ? 'bg-red-500/20 ring-2 ring-red-400/40' : 'bg-sky-500/15 ring-1 ring-sky-300/50'}`} />
+      </div>
+      <div className="mt-2 space-y-1">
+        {airway.cues.slice(0, 3).map(cue => (
+          <div key={cue} className="rounded-lg border border-border/50 bg-muted/30 px-2 py-1 text-[10px] leading-relaxed">
+            {cue}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function BreathingPatternPanel({ caseData }: { caseData: CaseScenario }) {
+  const pattern = getBreathingPattern(caseData);
+  const cycleSeconds = pattern.rate > 0 ? Math.max(0.85, Math.min(4, 60 / pattern.rate)) : 2.8;
+  const color = pattern.severity === 'critical' ? 'text-red-500 border-red-400/40 bg-red-500/10'
+    : pattern.severity === 'warning' ? 'text-amber-500 border-amber-400/40 bg-amber-500/10'
+      : pattern.severity === 'observe' ? 'text-sky-600 border-sky-400/40 bg-sky-500/10'
+        : 'text-emerald-600 border-emerald-400/40 bg-emerald-500/10';
+  const leftScale = pattern.asymmetry === 'left' ? 0.55 : 1;
+  const rightScale = pattern.asymmetry === 'right' ? 0.55 : 1;
+
+  return (
+    <div className="rounded-xl border border-slate-200/70 bg-white p-3 shadow-sm dark:border-white/10 dark:bg-slate-900/70">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-500/10">
+            <Wind className="h-3.5 w-3.5 text-sky-500" />
+          </div>
+          <div>
+            <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Breathing Pattern</p>
+            <p className="text-[10px] text-muted-foreground">RR {pattern.rate || '--'} /min</p>
+          </div>
+        </div>
+        <span className={`rounded-full border px-2 py-0.5 text-[8px] font-semibold ${color}`}>{pattern.label}</span>
+      </div>
+      <div className="relative h-24 overflow-hidden rounded-xl border border-slate-200 bg-[linear-gradient(180deg,#f8fafc,#e2e8f0)] dark:border-white/10 dark:bg-[linear-gradient(180deg,#020617,#0f172a)]">
+        <div className="absolute inset-x-8 bottom-4 h-14 rounded-t-[50px] border-t border-slate-400/30" />
+        {[
+          { side: 'L', scale: leftScale },
+          { side: 'R', scale: rightScale },
+        ].map(chest => (
+          <div
+            key={chest.side}
+            className={`absolute bottom-5 h-12 w-12 rounded-[45%] border ${chest.scale < 1 ? 'border-amber-400/70 bg-amber-400/20' : 'border-sky-400/45 bg-sky-400/15'} animate-pulse`}
+            style={{
+              ...(chest.side === 'L' ? { left: '27%' } : { right: '27%' }),
+              transform: `scaleY(${chest.scale})`,
+              transformOrigin: 'bottom center',
+              animationDuration: `${cycleSeconds}s`,
+            }}
+          >
+            <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[9px] font-bold text-slate-500 dark:text-slate-300">{chest.side}</span>
+          </div>
+        ))}
+        <div className="absolute left-1/2 bottom-4 h-16 w-px -translate-x-1/2 bg-slate-400/30" />
+      </div>
+      <p className="mt-2 rounded-lg bg-muted/35 px-2 py-1.5 text-[10px] leading-relaxed text-foreground/80">{pattern.detail}</p>
+    </div>
+  );
+}
+
+function ChestAssessmentMap({ selectedAction, caseData }: { selectedAction: string | null; caseData: CaseScenario }) {
+  const pattern = getBreathingPattern(caseData);
+  const chestText = [
+    ...(caseData.abcde?.breathing?.findings || []),
+    ...(caseData.secondarySurvey?.chest || []),
+    ...(caseData.abcde?.breathing?.auscultation || []),
+  ].join(' ').toLowerCase();
+  const rightFlag = /right|r hemithorax/.test(chestText) && /(absent|diminished|reduced|tender|wound|bruise|crepitus)/.test(chestText);
+  const leftFlag = /left|l hemithorax/.test(chestText) && /(absent|diminished|reduced|tender|wound|bruise|crepitus)/.test(chestText);
+  const activeTone = selectedAction?.includes('auscultate')
+    ? 'Auscultation'
+    : selectedAction?.includes('percuss')
+      ? 'Percussion'
+      : selectedAction?.includes('palpate')
+        ? 'Palpation'
+        : selectedAction?.includes('inspect')
+          ? 'Inspection'
+          : 'Ready';
+
+  const lungClass = (side: 'right' | 'left', zone: 'upper' | 'lower') => {
+    const flagged = side === 'right' ? rightFlag : leftFlag;
+    const zoneActionId = `chest-auscultate-${side === 'right' ? 'r' : 'l'}${zone === 'upper' ? 'u' : 'l'}`;
+    const active = selectedAction === 'chest-auscultate-lungs'
+      || selectedAction === 'chest-percuss'
+      || selectedAction === zoneActionId;
+    if (flagged) return 'border-amber-300 bg-amber-400/20 shadow-[0_0_18px_rgba(251,191,36,0.22)]';
+    if (active) return zone === 'upper' ? 'border-cyan-300 bg-cyan-400/20' : 'border-sky-300 bg-sky-400/15';
+    return 'border-slate-300/70 bg-white/70 dark:border-white/15 dark:bg-slate-900/70';
+  };
+
+  return (
+    <div className="rounded-xl border border-slate-200/70 bg-gradient-to-br from-white to-cyan-50/45 p-3 shadow-sm dark:border-white/10 dark:from-slate-950 dark:to-cyan-950/15">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <div>
+          <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Chest Landmarks</p>
+          <p className="text-[10px] text-muted-foreground">Compare sides, then listen in matching fields</p>
+        </div>
+        <span className="rounded-full border border-cyan-300/40 bg-cyan-500/10 px-2 py-0.5 text-[8px] font-semibold text-cyan-700 dark:text-cyan-300">
+          {activeTone}
+        </span>
+      </div>
+
+      <div className="grid gap-2 min-[430px]:grid-cols-[150px_1fr]">
+        <div className="relative mx-auto h-40 w-36 rounded-[34px] border border-slate-200 bg-[linear-gradient(180deg,#f8fafc,#e2e8f0)] shadow-inner dark:border-white/10 dark:bg-[linear-gradient(180deg,#020617,#0f172a)]">
+          <div className="absolute left-1/2 top-2 h-[132px] w-[108px] -translate-x-1/2 rounded-[40%] border border-slate-300/50 bg-white/45 dark:border-white/10 dark:bg-white/5" />
+          <div className="absolute left-1/2 top-4 h-[116px] w-px -translate-x-1/2 bg-slate-400/35" />
+          {[
+            { key: 'right-upper', side: 'right' as const, zone: 'upper' as const, label: 'R upper', style: { left: '18px', top: '26px' } },
+            { key: 'left-upper', side: 'left' as const, zone: 'upper' as const, label: 'L upper', style: { right: '18px', top: '26px' } },
+            { key: 'right-lower', side: 'right' as const, zone: 'lower' as const, label: 'R lower', style: { left: '17px', top: '78px' } },
+            { key: 'left-lower', side: 'left' as const, zone: 'lower' as const, label: 'L lower', style: { right: '17px', top: '78px' } },
+          ].map(zone => (
+            <div
+              key={zone.key}
+              className={`absolute h-[46px] w-[46px] rounded-[45%] border p-1 text-center text-[8px] font-semibold leading-[1.1] text-slate-700 transition-colors dark:text-slate-100 ${lungClass(zone.side, zone.zone)}`}
+              style={zone.style}
+            >
+              <span className="absolute inset-0 rounded-[45%] border-t border-white/60" />
+              <span className="relative top-3">{zone.label}</span>
+            </div>
+          ))}
+          <div className={`absolute left-1/2 top-[74px] h-[42px] w-[34px] -translate-x-[18%] rounded-[45%_55%_55%_45%] border text-center text-[8px] font-bold leading-[42px] ${
+            selectedAction === 'chest-auscultate-heart'
+              ? 'border-rose-300 bg-rose-500/20 text-rose-700 shadow-[0_0_18px_rgba(244,63,94,0.22)] dark:text-rose-200'
+              : 'border-rose-200 bg-rose-50/80 text-rose-700 dark:border-rose-400/25 dark:bg-rose-950/40 dark:text-rose-200'
+          }`}>
+            Heart
+          </div>
+          <div className={`absolute inset-x-7 top-[18px] h-[112px] rounded-[40%] border-2 border-dashed ${
+            selectedAction === 'chest-palpate' || selectedAction === 'chest-inspect'
+              ? 'border-amber-400/70'
+              : 'border-transparent'
+          }`} />
+        </div>
+        <div className="grid content-start gap-1.5">
+          {[
+            ['Pattern', pattern.label],
+            ['Chest wall', 'symmetry, tenderness, crepitus, flail'],
+            ['Lungs', 'upper and lower fields, compare right to left'],
+            ['Heart', 'aortic, pulmonic, tricuspid, mitral/apex'],
+          ].map(([label, detail]) => (
+            <div key={label} className="rounded-lg border border-border/50 bg-white/65 px-2 py-1.5 dark:bg-slate-950/35">
+              <p className="text-[9px] font-semibold text-foreground">{label}</p>
+              <p className="text-[9px] leading-relaxed text-muted-foreground">{detail}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AbdominalQuadrantPanel({ selectedAction, caseData, compact = false }: { selectedAction: string | null; caseData: CaseScenario; compact?: boolean }) {
+  const selectedQuadrant = getQuadrantFromAction(selectedAction);
+  const bowelType = getBowelSoundTypeForCase(caseData);
+  const painText = getAbdomenText(caseData);
+  const technique = selectedAction?.includes('palpate')
+    ? 'Palpation'
+    : selectedAction?.includes('percuss')
+      ? 'Percussion'
+      : selectedAction?.includes('auscultate')
+        ? 'Auscultation'
+        : selectedAction?.includes('inspect')
+          ? 'Inspection'
+          : 'Ready';
+  const isLikelyRelevant = (quadrant: AbdomenQuadrant) => quadrant === 'ruq' ? /ruq|right upper|liver|gallbladder/.test(painText)
+    : quadrant === 'luq' ? /luq|left upper|spleen|stomach/.test(painText)
+      : quadrant === 'rlq' ? /rlq|right lower|append/.test(painText)
+        : /llq|left lower|sigmoid|divertic/.test(painText);
+
+  if (compact) {
+    return (
+      <div className="rounded-xl border border-white/14 bg-white/92 p-2 text-slate-900 shadow-sm dark:bg-slate-950/80 dark:text-white">
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <p className="text-[8px] font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-white/45">Quadrants</p>
+            <p className="truncate text-[10px] font-semibold text-slate-800 dark:text-white/88">IAPP sequence</p>
+          </div>
+          <span className="shrink-0 rounded-full border border-emerald-300/50 bg-emerald-500/10 px-2 py-0.5 text-[8px] font-semibold text-emerald-700 dark:text-emerald-200">
+            {technique}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-[6.3rem_1fr] gap-2">
+          <div className="relative h-28 w-[6.3rem] rounded-[2rem] border border-slate-200 bg-[linear-gradient(180deg,#f8fafc,#e2e8f0)] shadow-inner dark:border-white/10 dark:bg-[linear-gradient(180deg,#020617,#0f172a)]">
+            <div className="absolute left-1/2 top-3 h-[5.4rem] w-[4.6rem] -translate-x-1/2 rounded-[42%] border border-slate-300/50 bg-white/55 dark:border-white/10 dark:bg-white/5" />
+            <div className="absolute left-1/2 top-[1.2rem] h-[4.7rem] w-px -translate-x-1/2 bg-slate-400/35" />
+            <div className="absolute left-[1rem] right-[1rem] top-[3.55rem] h-px bg-slate-400/35" />
+            <div className="absolute left-1/2 top-[3.15rem] h-2.5 w-2.5 -translate-x-1/2 rounded-full border border-slate-400/45 bg-slate-100 shadow-sm dark:bg-slate-700" />
+            {ABDOMEN_QUADRANTS.map(q => {
+              const isActive = selectedQuadrant === q.id;
+              const likelyRelevant = isLikelyRelevant(q.id);
+              const position = q.id === 'ruq' ? 'left-[0.95rem] top-[1.4rem]'
+                : q.id === 'luq' ? 'right-[0.95rem] top-[1.4rem]'
+                  : q.id === 'rlq' ? 'left-[0.95rem] top-[4.35rem]'
+                    : 'right-[0.95rem] top-[4.35rem]';
+              return (
+                <div
+                  key={q.id}
+                  className={`absolute flex h-9 w-9 items-center justify-center rounded-xl border text-[8px] font-bold transition-colors ${position} ${
+                    isActive
+                      ? 'border-emerald-400 bg-emerald-500/25 text-emerald-950 ring-1 ring-emerald-400/40 dark:text-emerald-100'
+                      : likelyRelevant
+                        ? 'border-amber-300/80 bg-amber-300/20 text-amber-900 dark:text-amber-100'
+                        : 'border-slate-300/70 bg-white/72 text-slate-700 dark:border-white/15 dark:bg-slate-900/70 dark:text-slate-100'
+                  }`}
+                >
+                  {q.label}
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="grid grid-cols-2 gap-1">
+            {ABDOMEN_QUADRANTS.map(q => {
+              const isActive = selectedQuadrant === q.id;
+              const likelyRelevant = isLikelyRelevant(q.id);
+              return (
+                <div
+                  key={q.id}
+                  className={`rounded-lg border px-1.5 py-1 text-[8px] leading-tight ${
+                    isActive
+                      ? 'border-emerald-400 bg-emerald-500/15 text-emerald-900 dark:text-emerald-100'
+                      : likelyRelevant
+                        ? 'border-amber-300/70 bg-amber-300/12 text-amber-900 dark:text-amber-100'
+                        : 'border-slate-200 bg-slate-50/85 text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-white/65'
+                  }`}
+                >
+                  <p className="font-bold">{q.label}</p>
+                  <p className="mt-0.5 line-clamp-2">{q.hint}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-xl border border-slate-200/70 bg-gradient-to-br from-white to-emerald-50/40 p-3 shadow-sm dark:border-white/10 dark:from-slate-950 dark:to-emerald-950/20">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <div>
+          <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Abdominal Quadrants</p>
+          <p className="text-[10px] text-muted-foreground">Auscultate, percuss, then palpate each area</p>
+        </div>
+        <div className="flex gap-1">
+          <span className="rounded-full border border-emerald-300/40 bg-emerald-500/10 px-2 py-0.5 text-[8px] font-semibold text-emerald-700 dark:text-emerald-300">
+            {bowelType}
+          </span>
+          <span className="rounded-full border border-slate-300/60 bg-white/70 px-2 py-0.5 text-[8px] font-semibold text-slate-600 dark:border-white/10 dark:bg-slate-950/50 dark:text-slate-300">
+            {technique}
+          </span>
+        </div>
+      </div>
+      <div className="grid gap-2 min-[430px]:grid-cols-[132px_1fr]">
+        <div className="relative mx-auto h-40 w-32 rounded-[38px] border border-slate-200 bg-[linear-gradient(180deg,#f8fafc,#e2e8f0)] shadow-inner dark:border-white/10 dark:bg-[linear-gradient(180deg,#020617,#0f172a)]">
+          <div className="absolute left-1/2 top-4 h-[126px] w-[96px] -translate-x-1/2 rounded-[42%] border border-slate-300/50 bg-white/50 dark:border-white/10 dark:bg-white/5" />
+          <div className="absolute left-1/2 top-[22px] h-[106px] w-px -translate-x-1/2 bg-slate-400/35" />
+          <div className="absolute left-[19px] right-[19px] top-[77px] h-px bg-slate-400/35" />
+          <div className="absolute left-1/2 top-[69px] h-3 w-3 -translate-x-1/2 rounded-full border border-slate-400/45 bg-slate-100 shadow-sm dark:bg-slate-700" />
+          {ABDOMEN_QUADRANTS.map(q => {
+            const isActive = selectedQuadrant === q.id;
+            const likelyRelevant = isLikelyRelevant(q.id);
+            const position = q.id === 'ruq' ? 'left-[21px] top-[30px]'
+              : q.id === 'luq' ? 'right-[21px] top-[30px]'
+                : q.id === 'rlq' ? 'left-[21px] top-[83px]'
+                  : 'right-[21px] top-[83px]';
+            return (
+              <div
+                key={q.id}
+                className={`absolute h-[44px] w-[42px] rounded-2xl border px-1 pt-2 text-center text-[9px] font-bold transition-colors ${position} ${
+                  isActive
+                    ? 'border-emerald-400 bg-emerald-500/20 text-emerald-900 ring-1 ring-emerald-400/30 dark:text-emerald-100'
+                    : likelyRelevant
+                      ? 'border-amber-300/80 bg-amber-400/15 text-amber-900 dark:text-amber-100'
+                      : 'border-slate-300/70 bg-white/70 text-slate-700 dark:border-white/15 dark:bg-slate-900/70 dark:text-slate-100'
+                }`}
+              >
+                {q.label}
+                {isActive && <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.7)]" />}
+              </div>
+            );
+          })}
+        </div>
+        <div className="grid grid-cols-2 gap-1.5">
+          {ABDOMEN_QUADRANTS.map(q => {
+            const isActive = selectedQuadrant === q.id;
+            const likelyRelevant = isLikelyRelevant(q.id);
+            return (
+              <div
+                key={q.id}
+                className={`min-h-[58px] rounded-xl border p-2 transition-colors ${
+                  isActive
+                    ? 'border-emerald-400 bg-emerald-500/15 ring-1 ring-emerald-400/30'
+                    : likelyRelevant
+                      ? 'border-amber-300/70 bg-amber-400/10'
+                      : 'border-border/60 bg-white/70 dark:bg-slate-900/60'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-1">
+                  <p className="text-[11px] font-bold">{q.label}</p>
+                  {likelyRelevant && <span className="rounded-full bg-amber-400/20 px-1 text-[7px] font-semibold text-amber-700 dark:text-amber-300">focus</span>}
+                </div>
+                <p className="mt-0.5 text-[8px] leading-tight text-muted-foreground">{q.full}</p>
+                <p className="mt-1 text-[8px] leading-tight text-muted-foreground/80">{q.hint}</p>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SecondaryAssessmentOutline({ activeRegion, selectedAction, caseData }: {
+  activeRegion: string | null;
+  selectedAction: string | null;
+  caseData: CaseScenario;
+}) {
+  const profile = activeRegion === 'face' ? getPupilProfile(caseData) : null;
+  const workflow = getWorkflowForRegion(activeRegion);
+  const activeWorkflowStep = getWorkflowStepForAction(activeRegion, selectedAction);
+  const shouldShowPupils = activeRegion === 'face' && (!selectedAction || selectedAction.includes('pupil') || selectedAction.includes('eyes'));
+  const shouldShowAirway = activeRegion === 'neck-cspine' && (!selectedAction || selectedAction.includes('airway') || selectedAction.includes('trachea') || selectedAction.includes('jvd'));
+  const shouldShowBreathing = activeRegion === 'chest';
+  const shouldShowAbdomen = activeRegion === 'abdomen';
+
+  return (
+    <div className="space-y-2">
+      {shouldShowPupils && profile && <PupilCloseUp profile={profile} />}
+      {shouldShowAirway && <AirwayCloseUp caseData={caseData} />}
+      {shouldShowBreathing && <ChestAssessmentMap selectedAction={selectedAction} caseData={caseData} />}
+      {shouldShowBreathing && <BreathingPatternPanel caseData={caseData} />}
+      {shouldShowAbdomen && <AbdominalQuadrantPanel selectedAction={selectedAction} caseData={caseData} />}
+      <div className="rounded-xl border border-border/50 bg-white/80 p-2.5 shadow-sm dark:bg-slate-900/60">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Secondary Assessment Flow</p>
+          {activeWorkflowStep !== null && (
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[8px] font-semibold text-primary">
+              Step {activeWorkflowStep + 1}
+            </span>
+          )}
+        </div>
+        <div className="mt-2 space-y-0.5">
+          {workflow.map((item, index) => {
+            const isActive = activeWorkflowStep === index;
+            const isBeforeActive = activeWorkflowStep !== null && index < activeWorkflowStep;
+            return (
+              <div
+                key={item}
+                className={`grid grid-cols-[18px_1fr] gap-2 rounded-lg px-1.5 py-1.5 text-[10px] leading-relaxed transition-colors ${
+                  isActive
+                    ? 'bg-primary/10 text-primary ring-1 ring-primary/15'
+                    : isBeforeActive
+                      ? 'text-emerald-700 dark:text-emerald-300'
+                      : 'text-foreground/80 dark:text-slate-300'
+                }`}
+              >
+                <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full font-mono text-[8px] ${
+                  isActive
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : isBeforeActive
+                      ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
+                      : 'bg-muted text-muted-foreground'
+                }`}>
+                {index + 1}
+                </span>
+                <span className={isActive ? 'font-semibold' : ''}>{item}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ============================================================================
 // Region config — what exams can be done per body region
@@ -57,12 +1479,36 @@ interface ActionGroup {
 }
 
 const TECHNIQUE_ICONS = { inspect: Eye, palpate: Hand, percuss: Activity, auscultate: Stethoscope };
-const TECHNIQUE_COLORS: Record<string, string> = {
-  inspect: 'text-blue-600 bg-blue-50 border-blue-200 hover:bg-blue-100 dark:bg-blue-950/30 dark:border-blue-800',
-  palpate: 'text-amber-600 bg-amber-50 border-amber-200 hover:bg-amber-100 dark:bg-amber-950/30 dark:border-amber-800',
-  percuss: 'text-purple-600 bg-purple-50 border-purple-200 hover:bg-purple-100 dark:bg-purple-950/30 dark:border-purple-800',
-  auscultate: 'text-cyan-600 bg-cyan-50 border-cyan-200 hover:bg-cyan-100 dark:bg-cyan-950/30 dark:border-cyan-800',
+type ExamTechnique = ExamAction['technique'];
+
+const TECHNIQUE_META: Record<ExamTechnique, { label: string; hint: string; tone: string; active: string }> = {
+  inspect: {
+    label: 'Inspect',
+    hint: 'look first',
+    tone: 'border-sky-300/40 bg-sky-400/10 text-sky-800 dark:text-sky-100',
+    active: 'border-sky-300 bg-sky-400/20 text-sky-900 shadow-[0_0_18px_rgba(56,189,248,0.22)] dark:text-sky-50',
+  },
+  palpate: {
+    label: 'Palpate',
+    hint: 'hands on',
+    tone: 'border-amber-300/40 bg-amber-400/10 text-amber-800 dark:text-amber-100',
+    active: 'border-amber-300 bg-amber-400/20 text-amber-900 shadow-[0_0_18px_rgba(251,191,36,0.22)] dark:text-amber-50',
+  },
+  percuss: {
+    label: 'Percuss',
+    hint: 'compare sides',
+    tone: 'border-violet-300/40 bg-violet-400/10 text-violet-800 dark:text-violet-100',
+    active: 'border-violet-300 bg-violet-400/20 text-violet-900 shadow-[0_0_18px_rgba(167,139,250,0.22)] dark:text-violet-50',
+  },
+  auscultate: {
+    label: 'Listen',
+    hint: 'stethoscope',
+    tone: 'border-emerald-300/40 bg-emerald-400/10 text-emerald-800 dark:text-emerald-100',
+    active: 'border-emerald-300 bg-emerald-400/20 text-emerald-900 shadow-[0_0_18px_rgba(52,211,153,0.22)] dark:text-emerald-50',
+  },
 };
+
+const TECHNIQUE_ORDER: ExamTechnique[] = ['inspect', 'palpate', 'percuss', 'auscultate'];
 
 // ============================================================================
 // Collapsible action groups for limb regions (Phase 2A)
@@ -71,8 +1517,6 @@ const TECHNIQUE_COLORS: Record<string, string> = {
 function getLimbActionGroups(regionId: string): ActionGroup[] | null {
   const prefix = regionId === 'right-arm' ? 'r' : regionId === 'left-arm' ? 'l' : regionId === 'right-leg' ? 'r' : regionId === 'left-leg' ? 'l' : null;
   if (!prefix) return null;
-
-  const side = regionId.startsWith('right') ? 'right' : 'left';
 
   if (regionId === 'right-arm' || regionId === 'left-arm') {
     return [
@@ -177,6 +1621,8 @@ function getSubRegions(regionId: string): SubRegion[] {
       { id: 'head-exam', label: 'Head', actions: [
         { id: 'scalp-inspect', label: 'Inspect Scalp', technique: 'inspect' },
         { id: 'scalp-palpate', label: 'Palpate Skull', technique: 'palpate' },
+        { id: 'face-inspect', label: 'Inspect Face (bruising, swelling)', technique: 'inspect' },
+        { id: 'jaw-palpate', label: 'Palpate Facial Bones / Jaw', technique: 'palpate' },
         { id: 'ears-inspect', label: 'Ears (Battle sign, CSF, haemotympanum)', technique: 'inspect' },
       ]},
     ];
@@ -195,7 +1641,10 @@ function getSubRegions(regionId: string): SubRegion[] {
         { id: 'nose-palpate', label: 'Palpate (crepitus, deviation)', technique: 'palpate' },
       ]},
       { id: 'face-mouth', label: 'Mouth', actions: [
+        { id: 'lips-inspect', label: 'Lips (colour, cyanosis, dryness)', technique: 'inspect' },
         { id: 'mouth-inspect', label: 'Inspect (foreign body, blood, vomit, substances)', technique: 'inspect' },
+        { id: 'mouth-mucosa', label: 'Mucosa / Hydration', technique: 'inspect' },
+        { id: 'tongue-inspect', label: 'Tongue (swelling, bite, deviation)', technique: 'inspect' },
         { id: 'mouth-smell', label: 'Note Odour (alcohol, ketones, toxins)', technique: 'inspect' },
         { id: 'teeth-inspect', label: 'Teeth (loose, broken, dentures)', technique: 'inspect' },
       ]},
@@ -223,24 +1672,36 @@ function getSubRegions(regionId: string): SubRegion[] {
 
     // ===== CHEST =====
     case 'chest': return [
-      { id: 'chest-exam', label: 'Chest', actions: [
-        { id: 'chest-inspect', label: 'Inspect (symmetry, wounds, flail)', technique: 'inspect' },
-        { id: 'chest-palpate', label: 'Palpate (tenderness, crepitus)', technique: 'palpate' },
-        { id: 'chest-percuss', label: 'Percuss', technique: 'percuss' },
-        { id: 'chest-auscultate-lungs', label: 'Auscultate Lungs (bilateral)', technique: 'auscultate' },
-        { id: 'chest-auscultate-heart', label: 'Auscultate Heart', technique: 'auscultate' },
+      { id: 'chest-core', label: 'Core Chest Exam', actions: [
+        { id: 'chest-inspect', label: 'Inspect chest rise, accessory muscles, wounds', technique: 'inspect' },
+        { id: 'chest-palpate', label: 'Palpate expansion, tenderness, crepitus, flail', technique: 'palpate' },
+        { id: 'chest-percuss', label: 'Percuss right and left lung fields', technique: 'percuss' },
+        { id: 'chest-auscultate-lungs', label: 'Auscultate apices, mid-zones, bases', technique: 'auscultate' },
+        { id: 'chest-auscultate-heart', label: 'Auscultate heart sounds at four points', technique: 'auscultate' },
+      ]},
+      { id: 'chest-zones', label: 'Specific Lung Fields', actions: [
+        { id: 'chest-auscultate-ru', label: 'Auscultate right upper zone', technique: 'auscultate' },
+        { id: 'chest-auscultate-rl', label: 'Auscultate right base', technique: 'auscultate' },
+        { id: 'chest-auscultate-lu', label: 'Auscultate left upper zone', technique: 'auscultate' },
+        { id: 'chest-auscultate-ll', label: 'Auscultate left base', technique: 'auscultate' },
       ]},
     ];
 
     // ===== ABDOMEN =====
     // Clinical exam order: Inspect -> Auscultate -> Percuss -> Palpate
     case 'abdomen': return [
-      { id: 'abd-exam', label: 'Abdomen', actions: [
+      { id: 'abd-general', label: 'General Look', actions: [
         { id: 'abd-inspect', label: 'Inspect (distension, bruising, wounds)', technique: 'inspect' },
-        { id: 'abd-auscultate', label: 'Auscultate (bowel sounds, bruits)', technique: 'auscultate' },
-        { id: 'abd-percuss', label: 'Percuss (tympany, dullness)', technique: 'percuss' },
-        { id: 'abd-palpate', label: 'Palpate (tenderness, guarding, rigidity)', technique: 'palpate' },
       ]},
+      ...ABDOMEN_QUADRANTS.map(q => ({
+        id: `abd-${q.id}`,
+        label: `${q.label} - ${q.full}`,
+        actions: [
+          { id: `abd-${q.id}-auscultate`, label: `${q.label} bowel sounds and bruits`, technique: 'auscultate' as const },
+          { id: `abd-${q.id}-percuss`, label: `${q.label} percussion note`, technique: 'percuss' as const },
+          { id: `abd-${q.id}-palpate`, label: `${q.label} light/deep palpation`, technique: 'palpate' as const },
+        ],
+      })),
     ];
 
     // ===== PELVIS =====
@@ -349,7 +1810,7 @@ function getSubRegions(regionId: string): SubRegion[] {
 // Finding generator — case-specific
 // ============================================================================
 
-function getFinding(caseData: CaseScenario, regionId: string, actionId: string, isInArrest = false): string {
+function getFinding(caseData: CaseScenario, actionId: string, isInArrest = false): string {
   // During cardiac arrest, all pulses are absent
   if (actionId.includes('pulse') && (isInArrest || caseData.vitalSignsProgression?.initial?.pulse === 0)) {
     return 'No pulse detected.';
@@ -357,7 +1818,6 @@ function getFinding(caseData: CaseScenario, regionId: string, actionId: string, 
 
   const ss = caseData.secondarySurvey;
   const breathing = caseData.abcde?.breathing;
-  const circ = caseData.abcde?.circulation;
   const disability = caseData.abcde?.disability;
   const airway = caseData.abcde?.airway;
 
@@ -381,14 +1841,35 @@ function getFinding(caseData: CaseScenario, regionId: string, actionId: string, 
   if (actionId === 'chest-auscultate-lungs') {
     return 'Auscultating lung fields — listen carefully.';
   }
+  if (actionId.startsWith('chest-auscultate-')) {
+    const zone: Record<string, string> = {
+      'chest-auscultate-ru': 'right upper zone',
+      'chest-auscultate-rl': 'right base',
+      'chest-auscultate-lu': 'left upper zone',
+      'chest-auscultate-ll': 'left base',
+    };
+    const z = zone[actionId];
+    if (z) return `Auscultating the ${z} — listen for air entry, wheeze, or crackles.`;
+  }
   if (actionId === 'chest-auscultate-heart') {
     return 'Auscultating heart — listen carefully.';
   }
+  const abdomenQuadrant = getQuadrantFromAction(actionId);
   // Abdomen — consolidated techniques (each covers the whole abdomen)
   if (actionId === 'abd-inspect') {
     const abd = ss?.abdomen || [];
     const inspectFindings = abd.filter(f => f.toLowerCase().includes('distend') || f.toLowerCase().includes('bruis') || f.toLowerCase().includes('scar') || f.toLowerCase().includes('visible'));
     return inspectFindings.length ? inspectFindings.join('. ') : 'Abdomen flat, symmetrical. No distension. No visible bruising, scars, or peristalsis.';
+  }
+  if (abdomenQuadrant && actionId.endsWith('-auscultate')) {
+    const meta = getQuadrantMeta(abdomenQuadrant);
+    return `${meta.label}: Auscultating for bowel sounds and bruits — listen for pitch, frequency, and vascular whoosh.`;
+  }
+  if (abdomenQuadrant && actionId.endsWith('-percuss')) {
+    return getQuadrantPercussionFinding(caseData, abdomenQuadrant);
+  }
+  if (abdomenQuadrant && actionId.endsWith('-palpate')) {
+    return getQuadrantPalpationFinding(caseData, abdomenQuadrant);
   }
   if (actionId === 'abd-auscultate') {
     return 'Auscultating abdomen — listen to all 4 quadrants.';
@@ -450,6 +1931,25 @@ function getFinding(caseData: CaseScenario, regionId: string, actionId: string, 
     const mouthFindings = airwayFindings.filter(f => f.toLowerCase().includes('blood') || f.toLowerCase().includes('vomit') || f.toLowerCase().includes('foreign') || f.toLowerCase().includes('secretion') || f.toLowerCase().includes('obstruct'));
     if (mouthFindings.length) return mouthFindings.join('. ');
     return airway?.patent ? 'Clear. No foreign body, blood, vomit, or secretions. Mucosa moist.' : 'Airway compromised. Check for obstruction.';
+  }
+  if (actionId === 'lips-inspect') {
+    const appearance = `${caseData.initialPresentation?.appearance || ''} ${caseData.initialPresentation?.generalImpression || ''}`.toLowerCase();
+    const mouth = ss?.headDetailed?.mouth || [];
+    const matched = mouth.filter(f => /lip|cyan|pale|dry|mucosa|dehydrat/.test(f.toLowerCase()));
+    if (matched.length) return matched.join('. ');
+    if (appearance.includes('cyan')) return 'Lips cyanotic with bluish discoloration — correlate with SpO2 and work of breathing.';
+    if (appearance.includes('pale')) return 'Lips pale. Oral mucosa appears less perfused.';
+    return 'Lips pink. No cyanosis, swelling, burns, or laceration.';
+  }
+  if (actionId === 'mouth-mucosa') {
+    const mouth = ss?.headDetailed?.mouth || [];
+    const matched = mouth.filter(f => /mucosa|dry|moist|dehydrat|tongue|oral/.test(f.toLowerCase()));
+    return matched.length ? matched.join('. ') : 'Oral mucosa moist and pink. No dryness, burns, ulcers, or secretions.';
+  }
+  if (actionId === 'tongue-inspect') {
+    const mouth = ss?.headDetailed?.mouth || [];
+    const matched = mouth.filter(f => /tongue|bite|swelling|deviation|angioedema/.test(f.toLowerCase()));
+    return matched.length ? matched.join('. ') : 'Tongue midline. No swelling, bite mark, fasciculation, or deviation.';
   }
   if (actionId === 'mouth-smell') {
     // Alcohol, ketones (fruity/DKA), uraemia (ammonia), hepatic fetor
@@ -762,7 +2262,7 @@ function useCameraAnimation() {
   const animationRef = useRef<number | null>(null);
 
   const animateCamera = useCallback((
-    controls: any,
+    controls: OrbitControlsHandle | null,
     targetPos: [number, number, number],
     targetLookAt: [number, number, number],
     duration = 400,
@@ -818,16 +2318,65 @@ function useCameraAnimation() {
   return animateCamera;
 }
 
-// ============================================================================
-// Sound duration estimates for progress bar
-// ============================================================================
-const SOUND_DURATIONS: Record<string, number> = {
-  'chest-auscultate-lungs': 4000,
-  'chest-auscultate-heart': 5000,
-  'abd-auscultate': 5000,
-  'airway-listen': 3000,
-};
 const PERCUSSION_DURATION = 800;
+
+const DEFAULT_CAMERA_FOCUS = {
+  pos: [0, 0.95, 4.25] as [number, number, number],
+  target: [0, 0.92, 0] as [number, number, number],
+};
+
+const REGION_CAMERA_FOCUS: Record<string, { pos: [number, number, number]; target: [number, number, number] }> = {
+  head: { pos: [0, 1.68, 1.72], target: [0, 1.68, 0.06] },
+  face: { pos: [0, 1.61, 1.42], target: [0, 1.61, 0.07] },
+  'neck-cspine': { pos: [0, 1.46, 1.6], target: [0, 1.46, 0.06] },
+  chest: { pos: [0, 1.26, 1.78], target: [0, 1.26, 0.08] },
+  abdomen: { pos: [0, 1.03, 1.84], target: [0, 1.03, 0.10] },
+  pelvis: { pos: [0, 0.88, 2.28], target: [0, 0.88, 0.08] },
+  'right-arm': { pos: [-0.32, 0.98, 2.42], target: [-0.22, 0.98, 0.06] },
+  'left-arm': { pos: [0.32, 0.98, 2.42], target: [0.22, 0.98, 0.06] },
+  'right-leg': { pos: [-0.14, 0.48, 2.55], target: [-0.10, 0.48, 0.06] },
+  'left-leg': { pos: [0.14, 0.48, 2.55], target: [0.10, 0.48, 0.06] },
+  extremities: { pos: [0, 0.62, 2.85], target: [0, 0.62, 0.06] },
+  'posterior-logroll': { pos: [0, 1.10, -2.55], target: [0, 1.10, 0] },
+};
+
+// Approximate framing radius (metres) per region — the vertical half-extent
+// the zoom should fill. Distance is derived from this + the live fov/aspect
+// so the region fills the frame instead of sitting low with empty space
+// above (the old fixed distances framed the head at only ~22% of height).
+const REGION_RADIUS: Record<string, number> = {
+  head: 0.16, face: 0.12, 'neck-cspine': 0.13, chest: 0.30, abdomen: 0.26,
+  pelvis: 0.28, 'right-arm': 0.40, 'left-arm': 0.40, 'right-leg': 0.46,
+  'left-leg': 0.46, extremities: 0.55, 'posterior-logroll': 0.55,
+};
+
+/**
+ * Compute a camera position that frames a sphere of `radius` metres around
+ * `target`, viewed from direction `dir`, filling ~`fill` of the viewport.
+ * Distance comes from the LIVE perspective fov + aspect, so framing is
+ * correct for any canvas shape (tall/narrow included).
+ */
+function fitCameraPos(
+  controls: OrbitControlsHandle,
+  target: [number, number, number],
+  dir: [number, number, number],
+  radius: number,
+  fill = 0.82,
+): [number, number, number] {
+  const cam = controls.object as unknown as { fov?: number; aspect?: number };
+  const vFov = ((cam.fov ?? 38) * Math.PI) / 180;
+  const aspect = cam.aspect && cam.aspect > 0 ? cam.aspect : 1;
+  const tan = Math.tan(vFov / 2);
+  const distV = radius / tan / fill;
+  const distH = radius / (tan * aspect) / fill;
+  const dist = Math.max(distV, distH, 0.45);
+  const len = Math.hypot(dir[0], dir[1], dir[2]) || 1;
+  return [
+    target[0] + (dir[0] / len) * dist,
+    target[1] + (dir[1] / len) * dist,
+    target[2] + (dir[2] / len) * dist,
+  ];
+}
 
 // ============================================================================
 // Main Component
@@ -840,8 +2389,12 @@ interface Body3DModelProps {
   patientSounds?: ClinicalSoundState | null;
   isStudentView?: boolean;
   caseCategory?: string;
+  /** Treatments already applied, used to render visible devices on the mannequin. */
+  appliedTreatmentIds?: string[];
   /** Whether the patient is currently in cardiac arrest (all pulses absent) */
   isInArrest?: boolean;
+  /** Run a pulse check from a mannequin pulse point (radial wrist / carotid neck). */
+  onPulse?: (site: string) => void;
 }
 
 // Phase 2 — guided exam mode: persist preference across sessions
@@ -865,15 +2418,523 @@ function saveGuidedModePreference(value: boolean): void {
   }
 }
 
-export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientSounds, caseCategory, isInArrest = false }: Body3DModelProps) {
+/**
+ * Premium in-frame findings overlay. Renders the revealed exam findings as
+ * small, semi-transparent glass cards layered over the bottom of the 3D
+ * frame (instead of dropping into a panel below the mannequin). The active
+ * finding is shown prominently; previously-revealed findings for the region
+ * collapse into compact chips. Severity is inferred from the finding text
+ * (findings are plain strings) so the card colour reads at a glance.
+ */
+function InFrameFindings({
+  selectedAction,
+  revealedFindings,
+  allActions,
+  offsetForEyeContext = false,
+}: {
+  selectedAction: string | null;
+  revealedFindings: Map<string, string>;
+  allActions: { id: string; label: string }[];
+  offsetForEyeContext?: boolean;
+}) {
+  const labelFor = (id: string) => allActions.find(a => a.id === id)?.label ?? 'Finding';
+  const active = selectedAction && revealedFindings.has(selectedAction)
+    ? { label: labelFor(selectedAction), text: revealedFindings.get(selectedAction)! }
+    : null;
+  const regionIds = new Set(allActions.map(a => a.id));
+  const others = [...revealedFindings.entries()].filter(([id]) => regionIds.has(id) && id !== selectedAction);
+  if (!active && others.length === 0) return null;
+
+  const severity = (t: string): 'crit' | 'warn' | 'ok' => {
+    const s = t.toLowerCase();
+    if (/no pulse|pulseless|absent|silent chest|stridor|cyanos|severe|critical|haemorrhag|hemorrhag|arrest|unequal|deviat|fixed|blown/.test(s)) return 'crit';
+    if (/reduced|decreased|diminish|wheeze|crackle|delayed|abnormal|prolonged|weak|guard|tender|sluggish|distress/.test(s)) return 'warn';
+    return 'ok';
+  };
+  const tone = {
+    crit: 'border-red-400/40',
+    warn: 'border-amber-300/40',
+    ok: 'border-emerald-300/30',
+  } as const;
+  const dotTone = { crit: 'bg-red-400', warn: 'bg-amber-300', ok: 'bg-emerald-400' } as const;
+
+  return (
+    <div className={`pointer-events-none absolute right-3 z-10 flex w-[min(18rem,calc(100%-1.5rem))] flex-col items-stretch gap-1.5 ${offsetForEyeContext ? 'top-[15.5rem]' : 'top-14'}`}>
+      {active && (() => {
+        const sv = severity(active.text);
+        return (
+          <div className={`pointer-events-auto rounded-2xl border ${tone[sv]} bg-slate-950/55 px-3.5 py-2.5 shadow-2xl backdrop-blur-xl animate-fade-in`}>
+            <div className="flex items-center gap-1.5">
+              <span className={`h-1.5 w-1.5 rounded-full ${dotTone[sv]} animate-pulse`} />
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/70">{active.label}</p>
+            </div>
+            <p className="mt-1 text-[12px] leading-relaxed text-white/95">{active.text}</p>
+          </div>
+        );
+      })()}
+      {others.length > 0 && (
+        <div className="pointer-events-auto flex flex-wrap gap-1.5">
+          {others.map(([id, text]) => (
+            <span key={id} className="rounded-full border border-white/10 bg-slate-950/45 px-2.5 py-1 text-[10px] text-white/75 backdrop-blur-md">
+              <span className="font-semibold text-white/90">{labelFor(id)}:</span>{' '}
+              {text.length > 44 ? `${text.slice(0, 42)}…` : text}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AssessmentActionDock({
+  activeRegion,
+  actions,
+  selectedAction,
+  revealedFindings,
+  onAction,
+}: {
+  activeRegion: string;
+  actions: ExamAction[];
+  selectedAction: string | null;
+  revealedFindings: Map<string, string>;
+  onAction: (actionId: string) => void;
+}) {
+  const grouped = TECHNIQUE_ORDER
+    .map(technique => {
+      const items = actions.filter(action => action.technique === technique);
+      if (items.length === 0) return null;
+      const selected = items.find(action => action.id === selectedAction);
+      const primary = selected ?? items[0];
+      const completed = items.filter(action => revealedFindings.has(action.id)).length;
+      return { technique, items, primary, selected, completed };
+    })
+    .filter((item): item is NonNullable<typeof item> => Boolean(item));
+
+  if (grouped.length === 0) return null;
+
+  const selectedGroup = grouped.find(group => group.items.some(action => action.id === selectedAction)) ?? grouped[0];
+
+  return (
+    <div className="pointer-events-auto absolute bottom-2 left-2 z-20 w-[min(18rem,calc(100%-1rem))] overflow-hidden rounded-xl border border-white/16 bg-slate-950/54 text-white shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-bottom-2 duration-300">
+      <div className="flex items-center justify-between gap-3 border-b border-white/10 px-2.5 py-1.5">
+        <div className="min-w-0">
+          <p className="text-[7px] font-semibold uppercase tracking-[0.2em] text-white/45">Assessment cockpit</p>
+          <p className="truncate text-[11px] font-semibold text-white/92">{REGION_LABELS[activeRegion] || activeRegion}</p>
+        </div>
+        <span className="rounded-full border border-white/10 bg-white/8 px-2 py-0.5 text-[7px] font-semibold text-white/65">
+          {actions.filter(action => revealedFindings.has(action.id)).length}/{actions.length}
+        </span>
+      </div>
+
+      <div className="grid grid-cols-4 gap-1 p-1.5">
+        {grouped.map(group => {
+          const Icon = TECHNIQUE_ICONS[group.technique];
+          const isActive = group.items.some(action => action.id === selectedAction);
+          const meta = TECHNIQUE_META[group.technique];
+          return (
+            <button
+              key={group.technique}
+              type="button"
+              onClick={() => onAction(group.primary.id)}
+              className={`group flex min-h-[3.55rem] flex-col justify-between rounded-lg border px-1.5 py-1.5 text-left transition-all hover:-translate-y-0.5 ${isActive ? meta.active : `${meta.tone} hover:border-white/24`}`}
+            >
+              <span className="flex items-center justify-between gap-1">
+                <Icon className="h-3 w-3 shrink-0" />
+                <span className="rounded-full bg-white/12 px-1.5 py-0.5 text-[6px] font-bold text-current/80">
+                  {group.completed}/{group.items.length}
+                </span>
+              </span>
+              <span>
+                <span className="block text-[9px] font-bold leading-tight">{meta.label}</span>
+                <span className="mt-0.5 block text-[7px] font-medium leading-tight opacity-70">{meta.hint}</span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="border-t border-white/10 px-1.5 pb-1.5">
+        <p className="px-1 pt-1 text-[7px] font-semibold uppercase tracking-[0.14em] text-white/42">
+          Targets
+        </p>
+        <div className="mt-1 flex gap-1.5 overflow-x-auto pb-0.5">
+          {selectedGroup.items.map(action => {
+            const isSelected = selectedAction === action.id;
+            const isDone = revealedFindings.has(action.id);
+            return (
+              <button
+                key={action.id}
+                type="button"
+                onClick={() => onAction(action.id)}
+                className={`shrink-0 rounded-full border px-2 py-0.5 text-[8px] font-medium transition-colors ${
+                  isSelected
+                    ? 'border-white/35 bg-white/22 text-white'
+                    : isDone
+                      ? 'border-emerald-300/35 bg-emerald-400/14 text-emerald-50'
+                      : 'border-white/10 bg-white/7 text-white/70 hover:bg-white/12'
+                }`}
+              >
+                {action.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RegionalZoomLoupe({
+  activeRegion,
+  selectedAction,
+  caseData,
+  pupilProfile,
+}: {
+  activeRegion: string | null;
+  selectedAction: string | null;
+  caseData: CaseScenario;
+  pupilProfile: PupilProfile;
+}) {
+  const isEyeFocused = activeRegion === 'face'
+    && !!selectedAction
+    && (selectedAction.includes('pupil') || selectedAction.includes('eyes'));
+
+  if (isEyeFocused) return <PupilCloseUp profile={pupilProfile} />;
+
+  if (activeRegion === 'chest') {
+    return (
+      <div className="max-h-[19rem] overflow-y-auto rounded-2xl border border-sky-100/35 bg-slate-950/58 p-2 shadow-2xl backdrop-blur-xl">
+        <div className="mb-2 flex items-center justify-between gap-2 px-1">
+          <div>
+            <p className="text-[8px] font-semibold uppercase tracking-[0.22em] text-sky-100/55">Zoom loupe</p>
+            <p className="text-[11px] font-semibold text-white/92">Chest exam map</p>
+          </div>
+          <span className="rounded-full border border-sky-200/25 bg-sky-300/12 px-2 py-0.5 text-[8px] font-semibold text-sky-100">
+            lungs + heart
+          </span>
+        </div>
+        <ChestAssessmentMap selectedAction={selectedAction} caseData={caseData} />
+      </div>
+    );
+  }
+
+  if (activeRegion === 'abdomen') {
+    return (
+      <div className="overflow-hidden rounded-2xl border border-emerald-100/30 bg-slate-950/52 p-2 shadow-2xl backdrop-blur-xl">
+        <div className="mb-1.5 flex items-center justify-between gap-2 px-1">
+          <div>
+            <p className="text-[7px] font-semibold uppercase tracking-[0.2em] text-emerald-100/55">Zoom loupe</p>
+            <p className="text-[10px] font-semibold text-white/92">Abdominal quadrants</p>
+          </div>
+          <span className="rounded-full border border-emerald-200/25 bg-emerald-300/12 px-2 py-0.5 text-[7px] font-semibold text-emerald-100">
+            IAPP order
+          </span>
+        </div>
+        <AbdominalQuadrantPanel selectedAction={selectedAction} caseData={caseData} compact />
+      </div>
+    );
+  }
+
+  return null;
+}
+
+type PatientReactionTone = 'patient' | 'coach' | 'warning' | 'calm';
+
+interface PatientReaction {
+  id: string;
+  tone: PatientReactionTone;
+  title: string;
+  message: string;
+  quote?: string;
+  regionId: string;
+  actionId: string;
+}
+
+function getPatientResponsiveness(caseData: CaseScenario) {
+  const gcs = caseData.abcde?.disability?.gcs?.total
+    ?? caseData.vitalSignsProgression?.initial?.gcs;
+  const avpu = String(caseData.abcde?.disability?.avpu || '').toUpperCase();
+  const consciousness = String(caseData.initialPresentation?.consciousness || '').toLowerCase();
+  const appearance = [
+    caseData.initialPresentation?.appearance,
+    caseData.initialPresentation?.generalImpression,
+  ].filter(Boolean).join(' ').toLowerCase();
+  const apneic = caseData.abcde?.breathing?.rate === 0;
+  const arrest = /asystole|pea|vf|cardiac arrest|unresponsive|no response/.test(consciousness) || avpu === 'U';
+  const canVocalize = !apneic && !arrest && !(typeof gcs === 'number' && gcs <= 8);
+  const isAwake = canVocalize && (
+    avpu === 'A'
+    || (typeof gcs === 'number' && gcs >= 13)
+    || /alert|awake|oriented|talk|speaking|responding|verbal/.test(consciousness)
+  );
+
+  return {
+    canVocalize,
+    isAwake,
+    isDistressed: /distress|anxious|pain|cry|gasping|moaning|uncomfortable|miserable|agitated/.test(appearance),
+  };
+}
+
+function hasRevealedMatching(revealedFindings: Map<string, string>, predicate: (actionId: string) => boolean): boolean {
+  for (const actionId of revealedFindings.keys()) {
+    if (predicate(actionId)) return true;
+  }
+  return false;
+}
+
+function getPatientReaction(
+  caseData: CaseScenario,
+  regionId: string,
+  actionId: string,
+  finding: string,
+  revealedFindings: Map<string, string>,
+): PatientReaction | null {
+  const patient = getPatientResponsiveness(caseData);
+  const lowerFinding = finding.toLowerCase();
+  const reactionBase = { regionId, actionId };
+
+  if (/no pulse|absent pulse|pulseless/.test(lowerFinding)) {
+    return {
+      ...reactionBase,
+      id: `${actionId}-no-pulse`,
+      tone: 'warning',
+      title: 'Critical finding',
+      message: 'Treat this as absent perfusion. Confirm quickly, call for help, and move straight into the relevant resuscitation pathway.',
+    };
+  }
+
+  if (regionId === 'abdomen' && actionId.includes('palpate')) {
+    const auscultated = hasRevealedMatching(
+      revealedFindings,
+      id => id === 'abd-auscultate' || /^abd-(ruq|luq|rlq|llq)-.*auscultate$/.test(id),
+    );
+
+    if (!auscultated) {
+      return {
+        ...reactionBase,
+        id: `${actionId}-abd-sequence`,
+        tone: 'warning',
+        title: 'Sequence critique',
+        quote: patient.canVocalize ? 'Can you tell me before you press there?' : undefined,
+        message: 'Auscultate before palpation when bowel sounds matter. Palpation can change bowel activity and can increase guarding.',
+      };
+    }
+  }
+
+  const closeAirwayCheck = actionId === 'mouth-inspect'
+    || actionId === 'mouth-mucosa'
+    || actionId === 'tongue-inspect'
+    || actionId === 'teeth-inspect';
+
+  if (closeAirwayCheck && patient.isAwake) {
+    return {
+      ...reactionBase,
+      id: `${actionId}-awake-airway`,
+      tone: 'warning',
+      title: 'Patient tolerance',
+      quote: 'What are you doing? That makes me gag.',
+      message: 'Explain first and keep the check gentle. Awake patients may refuse or gag with invasive airway checks or adjuncts such as an OPA.',
+    };
+  }
+
+  if (actionId.includes('palpate') && /tender|pain|sore|guard|rigid|rebound|crepitus|deform|fracture|swelling|unstable|bruise|contusion|burn/.test(lowerFinding)) {
+    return {
+      ...reactionBase,
+      id: `${actionId}-pain-response`,
+      tone: 'patient',
+      title: 'Patient response',
+      quote: patient.canVocalize
+        ? (patient.isDistressed ? 'Please stop, that really hurts.' : 'Ow, that is sore there.')
+        : undefined,
+      message: 'The patient guards away from your hand. Reassess pain, distal perfusion, and explain before continuing.',
+    };
+  }
+
+  if (regionId === 'posterior-logroll' && actionId === 'logroll-inspect') {
+    return {
+      ...reactionBase,
+      id: `${actionId}-logroll`,
+      tone: 'coach',
+      title: 'Movement cue',
+      quote: patient.canVocalize ? 'My back hurts when you move me.' : undefined,
+      message: 'Coordinate the roll on one count, maintain C-spine control, and keep the patient aligned while you inspect the posterior surface.',
+    };
+  }
+
+  if (actionId.includes('pupil') || actionId.includes('eyes')) {
+    return {
+      ...reactionBase,
+      id: `${actionId}-eye-light`,
+      tone: 'calm',
+      title: 'Patient response',
+      quote: patient.canVocalize ? 'The light is bright.' : undefined,
+      message: 'Keep context: compare both eyes, note size in millimetres, equality, and direct or consensual response.',
+    };
+  }
+
+  if (actionId.includes('auscultate')) {
+    return {
+      ...reactionBase,
+      id: `${actionId}-listen-cue`,
+      tone: 'coach',
+      title: 'Technique cue',
+      quote: patient.canVocalize && regionId === 'chest' ? 'I will try to stay still.' : undefined,
+      message: regionId === 'chest'
+        ? 'Ask for normal open-mouth breaths and compare matching positions side to side.'
+        : 'Pause long enough to hear a real pattern before moving to the next site.',
+    };
+  }
+
+  if (actionId.includes('percuss')) {
+    return {
+      ...reactionBase,
+      id: `${actionId}-percussion-cue`,
+      tone: 'coach',
+      title: 'Technique cue',
+      message: 'Percuss equivalent points right-to-left at the same level so dullness, resonance, or hyper-resonance means something.',
+    };
+  }
+
+  return null;
+}
+
+function PatientReactionCard({ reaction }: { reaction: PatientReaction | null }) {
+  if (!reaction) return null;
+
+  const tone: Record<PatientReactionTone, { wrap: string; dot: string; label: string; icon: typeof User }> = {
+    patient: {
+      wrap: 'border-cyan-200/35 bg-slate-950/62 shadow-[0_24px_60px_-26px_rgba(34,211,238,0.7)]',
+      dot: 'bg-cyan-300',
+      label: 'Patient response',
+      icon: User,
+    },
+    coach: {
+      wrap: 'border-violet-200/35 bg-slate-950/62 shadow-[0_24px_60px_-26px_rgba(167,139,250,0.7)]',
+      dot: 'bg-violet-300',
+      label: 'Clinical coach',
+      icon: Activity,
+    },
+    warning: {
+      wrap: 'border-amber-200/45 bg-slate-950/68 shadow-[0_24px_60px_-26px_rgba(251,191,36,0.75)]',
+      dot: 'bg-amber-300',
+      label: 'Clinical critique',
+      icon: AlertTriangle,
+    },
+    calm: {
+      wrap: 'border-emerald-200/35 bg-slate-950/58 shadow-[0_24px_60px_-26px_rgba(52,211,153,0.6)]',
+      dot: 'bg-emerald-300',
+      label: 'Encounter cue',
+      icon: User,
+    },
+  };
+  const meta = tone[reaction.tone];
+  const Icon = meta.icon;
+
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className={`pointer-events-none absolute left-3 top-14 z-30 w-[min(16rem,calc(100%-1.5rem))] rounded-2xl border px-3.5 py-3 text-white backdrop-blur-xl animate-in fade-in slide-in-from-left-2 duration-300 ${meta.wrap}`}
+    >
+      <div className="flex items-start gap-2.5">
+        <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl border border-white/12 bg-white/10">
+          <Icon className="h-3.5 w-3.5" />
+        </span>
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5">
+            <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} />
+            <p className="text-[8px] font-semibold uppercase tracking-[0.18em] text-white/50">{meta.label}</p>
+          </div>
+          <p className="mt-0.5 text-[12px] font-semibold leading-tight text-white/95">{reaction.title}</p>
+        </div>
+      </div>
+
+      {reaction.quote && (
+        <p className="mt-2 rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-[12px] font-medium italic leading-snug text-white/92">
+          "{reaction.quote}"
+        </p>
+      )}
+      <p className="mt-2 text-[11px] leading-relaxed text-white/78">{reaction.message}</p>
+    </div>
+  );
+}
+
+function PatientRealismStrip({
+  profile,
+  cues,
+  assessedRegions,
+  activeRegion,
+}: {
+  profile: PatientRealismProfile;
+  cues: PatientRealismCue[];
+  assessedRegions: Set<string>;
+  activeRegion: string | null;
+}) {
+  const visibleCues = cues
+    .filter(item => shouldRevealRealismCue(item, assessedRegions, activeRegion))
+    .slice(0, 4);
+  const priorities = profile.assessmentPriorities.slice(0, 4);
+
+  if (!visibleCues.length && !priorities.length) return null;
+
+  return (
+    <div className="border-b border-slate-200/50 bg-gradient-to-r from-white/72 via-cyan-50/50 to-white/55 px-3 py-2 dark:border-white/5 dark:from-slate-950/70 dark:via-cyan-950/20 dark:to-slate-950/55">
+      <div className="grid gap-2 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,0.85fr)]">
+        <div className="min-w-0 rounded-xl border border-white/70 bg-white/68 px-3 py-2 shadow-sm backdrop-blur-md dark:border-white/10 dark:bg-slate-900/55">
+          <div className="mb-1.5 flex items-center gap-2">
+            <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.75)]" />
+            <p className="text-[8px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/65">Live Patient Cues</p>
+          </div>
+          <div className="flex gap-1.5 overflow-x-auto pb-0.5">
+            {visibleCues.map(item => {
+              const style = REALISM_CUE_STYLE[item.severity];
+              return (
+                <span key={item.id} className={`shrink-0 rounded-full border px-2.5 py-1 text-[9px] font-semibold ${style.chip}`}>
+                  {item.label}
+                </span>
+              );
+            })}
+            {visibleCues.length === 0 && (
+              <span className="rounded-full border border-slate-200 bg-white/70 px-2.5 py-1 text-[9px] font-semibold text-muted-foreground dark:border-white/10 dark:bg-slate-900/60">
+                Cues reveal as you assess
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="min-w-0 rounded-xl border border-white/70 bg-white/60 px-3 py-2 shadow-sm backdrop-blur-md dark:border-white/10 dark:bg-slate-900/45">
+          <div className="mb-1.5 flex items-center gap-2">
+            <span className="h-1.5 w-1.5 rounded-full bg-violet-400 shadow-[0_0_10px_rgba(167,139,250,0.65)]" />
+            <p className="text-[8px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/65">Assessment Targets</p>
+          </div>
+          <div className="flex gap-1.5 overflow-x-auto pb-0.5">
+            {priorities.map(item => (
+              <span key={item} className="shrink-0 rounded-full border border-slate-200/80 bg-slate-50/80 px-2.5 py-1 text-[9px] font-medium text-slate-700 dark:border-white/10 dark:bg-white/8 dark:text-slate-200">
+                {item}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientSounds, caseCategory, appliedTreatmentIds = [], isInArrest = false, onPulse }: Body3DModelProps) {
   const { t } = useTranslation();
-  const controlsRef = useRef<any>(null);
+  const controlsRef = useRef<OrbitControlsHandle | null>(null);
   const [isFlipped, setIsFlipped] = useState(false);
+  // Surface projector emitted by BodyMesh once the patient mesh loads — used to
+  // anchor every floating label/finding onto the real body surface (works for
+  // the male, female, or any future GLB without per-model coordinate tuning).
+  const [surfaceSampler, setSurfaceSampler] = useState<((x: number, y: number) => [number, number, number]) | null>(null);
   const [activeRegion, setActiveRegion] = useState<string | null>(null);
   const [activeLimb, setActiveLimb] = useState<LimbSide>(null);
   const [revealedFindings, setRevealedFindings] = useState<Map<string, string>>(new Map());
   const [selectedAction, setSelectedAction] = useState<string | null>(null);
+  const [patientReaction, setPatientReaction] = useState<PatientReaction | null>(null);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [anatomyLayer, setAnatomyLayer] = useState<'surface' | 'skeleton'>('surface');
   // Phase 2F: Sound playback progress
   const [playingSound, setPlayingSound] = useState<string | null>(null);
   const [soundProgress, setSoundProgress] = useState(0);
@@ -883,16 +2944,60 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   const [guidedMode, setGuidedMode] = useState<boolean>(loadGuidedModePreference);
   const [blockedNudge, setBlockedNudge] = useState<{ attempted: string; expected: string } | null>(null);
   const nudgeTimerRef = useRef<number | null>(null);
+  const reactionTimerRef = useRef<number | null>(null);
 
   const nextGuidedStep = useMemo(
     () => (guidedMode ? getNextGuidedStep(assessedRegions) : null),
     [guidedMode, assessedRegions],
   );
 
+  const realismProfile = useMemo(
+    () => deriveCaseRealismProfile(caseData),
+    [caseData],
+  );
+  const appliedRealismCues = useMemo(
+    () => deriveAppliedTreatmentRealismCues(caseData, appliedTreatmentIds),
+    [caseData, appliedTreatmentIds],
+  );
+  const visibleRealismCues = useMemo(
+    () => [...appliedRealismCues, ...realismProfile.observableCues],
+    [appliedRealismCues, realismProfile.observableCues],
+  );
+
+  // Respiratory rate that drives the breathing morph (chest rise).
+  const breathRateRpm = useMemo(() => {
+    const rr = caseData.abcde?.breathing?.rate ?? caseData.vitalSignsProgression?.initial?.respiration;
+    return typeof rr === 'number' ? rr : 0;
+  }, [caseData]);
+
+  // Which finding morphs are REVEALED — a finding's morph activates only
+  // once the student has assessed its region. This is the discovery
+  // mechanic expressed on the mesh: no JVD bulge until you examine the neck.
+  const activeFindingMorphs = useMemo(() => {
+    const injuries = inferInjuries(caseData);
+    // Map a detected finding to the morph that depicts it.
+    const MORPH_FOR_KIND: Record<string, string> = {
+      distension: 'finding_abdo_distension', // abdominal distension
+    };
+    const out = new Set<string>();
+    for (const inj of injuries) {
+      const region3d = injuryRegionTo3D(inj.region);
+      const revealed = assessedRegions.has(region3d)
+        || (isLimbRegion(region3d) && assessedRegions.has('extremities'));
+      if (!revealed) continue;
+      // JVD: neck distension finding → finding_jvd morph
+      if (inj.region === 'neck' && inj.kind === 'distension') { out.add('finding_jvd'); continue; }
+      const morph = MORPH_FOR_KIND[inj.kind];
+      if (morph) out.add(morph);
+    }
+    return Array.from(out);
+  }, [caseData, assessedRegions]);
+
   const guidedStepIndex = useMemo(() => {
     if (!nextGuidedStep) return -1;
     return EXAM_SEQUENCE.indexOf(nextGuidedStep);
   }, [nextGuidedStep]);
+  const caseSubcategory = caseData.subcategory;
 
   const handleToggleGuidedMode = useCallback(() => {
     setGuidedMode(prev => {
@@ -913,10 +3018,21 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
     }, 2600);
   }, []);
 
+  const clearPatientReaction = useCallback(() => {
+    if (reactionTimerRef.current !== null) {
+      window.clearTimeout(reactionTimerRef.current);
+      reactionTimerRef.current = null;
+    }
+    setPatientReaction(null);
+  }, []);
+
   useEffect(() => {
     return () => {
       if (nudgeTimerRef.current !== null) {
         window.clearTimeout(nudgeTimerRef.current);
+      }
+      if (reactionTimerRef.current !== null) {
+        window.clearTimeout(reactionTimerRef.current);
       }
     };
   }, []);
@@ -926,7 +3042,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   // Phase 2B: Determine required regions from assessment profile
   const requiredRegions = useMemo<Set<string>>(() => {
     if (!caseCategory) return new Set<string>();
-    const profile = getAssessmentProfile(caseCategory as CaseCategory, caseData?.subcategory);
+    const profile = getAssessmentProfile(caseCategory as CaseCategory, caseSubcategory);
     const regions = new Set<string>();
     for (const step of profile.requiredSecondary) {
       // 'extremities' requirement maps to all 4 individual limbs
@@ -940,7 +3056,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
       }
     }
     return regions;
-  }, [caseCategory]);
+  }, [caseCategory, caseSubcategory]);
 
   // Phase 2B: Count required regions that have been assessed
   const regionIds = ['head', 'face', 'neck-cspine', 'chest', 'abdomen', 'pelvis', 'right-arm', 'left-arm', 'right-leg', 'left-leg', 'posterior-logroll'];
@@ -959,20 +3075,11 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
     setIsFlipped(!isFlipped);
   }, [isFlipped]);
 
-  // Y-center positions for each region (must match BodyMesh REGION_RANGES)
-  // Camera Y-center targets per region — keep model centered in canvas, don't overshoot
-  const regionCenters: Record<string, number> = useMemo(() => ({
-    'head': 1.55, 'face': 1.50, 'neck-cspine': 1.40,
-    'chest': 1.25, 'abdomen': 1.05, 'pelvis': 0.90,
-    'right-arm': 1.05, 'left-arm': 1.05,
-    'right-leg': 0.50, 'left-leg': 0.50,
-    'extremities': 0.50, 'posterior-logroll': 1.10,
-  }), []);
-
   // Phase 2E: Consolidated close handler
   const handleCloseRegion = useCallback(() => {
     setActiveRegion(null);
     setSelectedAction(null);
+    clearPatientReaction();
     setPlayingSound(null);
     setSoundProgress(0);
     if (soundTimerRef.current !== null) {
@@ -982,21 +3089,30 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
     stopAllSounds();
     // Animate camera back to default
     if (controlsRef.current) {
-      const currentPos = controlsRef.current.object.position;
       animateCamera(
         controlsRef.current,
-        [0, 0.9, 3.2],
-        [0, 0.85, 0],
+        DEFAULT_CAMERA_FOCUS.pos,
+        DEFAULT_CAMERA_FOCUS.target,
         400,
       );
     }
-  }, [animateCamera]);
+  }, [animateCamera, clearPatientReaction]);
+
+  // Esc deselects the focused region — alongside the in-frame "Full body"
+  // pill and click-on-empty-space (onPointerMissed on the Canvas).
+  useEffect(() => {
+    if (!activeRegion) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') handleCloseRegion(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [activeRegion, handleCloseRegion]);
 
   const handleRegionClick = useCallback((stepId: string) => {
     setActiveRegion(stepId);
     // Individual limb regions are directly the active limb
     setActiveLimb(isLimbRegion(stepId) ? stepId as LimbSide : null);
     setSelectedAction(null);
+    clearPatientReaction();
     // Initialize expanded groups for limb regions
     const groups = getLimbActionGroups(stepId);
     if (groups) {
@@ -1007,22 +3123,21 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
     // Also mark 'extremities' as assessed when any limb is assessed (for backward compatibility)
     onRegionClick(stepId as AssessmentStepId);
 
-    // Zoom camera to focus on the selected region (Phase 2C: smooth animation)
+    // Zoom camera to a clinically useful close-up. Region presets are more
+    // reliable than "current orbit direction" because the student may have
+    // rotated to a posterior view before selecting an anterior structure.
     if (controlsRef.current) {
-      const centerY = regionCenters[stepId] ?? 0.85;
-      const zoomDistance = isLimbRegion(stepId) || stepId === 'extremities' ? 3.2 : stepId === 'head' || stepId === 'face' ? 2.8 : 2.8;
-      const currentPos = controlsRef.current.object.position;
-      const currentTarget = controlsRef.current.target;
-      const dir = currentPos.clone().sub(currentTarget).normalize();
-      const newTarget: [number, number, number] = [0, centerY, 0];
-      const newPos: [number, number, number] = [
-        dir.x * zoomDistance + newTarget[0],
-        dir.y * zoomDistance + newTarget[1],
-        dir.z * zoomDistance + newTarget[2],
+      const focus = REGION_CAMERA_FOCUS[stepId] ?? REGION_CAMERA_FOCUS.chest;
+      const dir: [number, number, number] = [
+        focus.pos[0] - focus.target[0],
+        focus.pos[1] - focus.target[1],
+        focus.pos[2] - focus.target[2],
       ];
-      animateCamera(controlsRef.current, newPos, newTarget, 400);
+      const pos = fitCameraPos(controlsRef.current, focus.target, dir, REGION_RADIUS[stepId] ?? 0.28);
+      animateCamera(controlsRef.current, pos, focus.target, 460);
     }
-  }, [onRegionClick, regionCenters, animateCamera]);
+    setIsFlipped(stepId === 'posterior-logroll');
+  }, [onRegionClick, animateCamera, clearPatientReaction]);
 
   // Phase 2F: Sound progress animation
   const startSoundProgress = useCallback((actionId: string, durationMs: number) => {
@@ -1051,7 +3166,74 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   const handleExamAction = useCallback((actionId: string) => {
     if (!activeRegion) return;
     setSelectedAction(actionId);
-    const finding = getFinding(caseData, activeRegion, actionId, isInArrest);
+
+    if (controlsRef.current) {
+      const focus: Record<string, { pos: [number, number, number]; target: [number, number, number] }> = {
+        'pupils-size': { pos: [0, 1.63, 1.22], target: [0, 1.63, 0.08] },
+        'pupils-reactivity': { pos: [0, 1.63, 1.18], target: [0, 1.63, 0.08] },
+        'pupils-equality': { pos: [0, 1.63, 1.2], target: [0, 1.63, 0.08] },
+        'eyes-inspect': { pos: [0, 1.61, 1.34], target: [0, 1.61, 0.06] },
+        'nose-inspect': { pos: [0, 1.59, 1.22], target: [0, 1.59, 0.08] },
+        'nose-palpate': { pos: [0, 1.59, 1.22], target: [0, 1.59, 0.08] },
+        'lips-inspect': { pos: [0, 1.56, 1.24], target: [0, 1.56, 0.08] },
+        'mouth-mucosa': { pos: [0, 1.56, 1.22], target: [0, 1.55, 0.08] },
+        'tongue-inspect': { pos: [0, 1.56, 1.22], target: [0, 1.55, 0.08] },
+        'airway-listen': { pos: [0, 1.46, 1.38], target: [0, 1.45, 0.05] },
+        'mouth-inspect': { pos: [0, 1.56, 1.28], target: [0, 1.54, 0.08] },
+        'trachea-palpate': { pos: [0, 1.42, 1.44], target: [0, 1.42, 0.04] },
+        'jvd-inspect': { pos: [0.08, 1.47, 1.38], target: [0.06, 1.47, 0.06] },
+        'cspine-inspect': { pos: [0, 1.47, 1.54], target: [0, 1.47, 0.02] },
+        'cspine-palpate': { pos: [0, 1.47, 1.50], target: [0, 1.47, 0.02] },
+        'neck-emphysema': { pos: [0, 1.43, 1.42], target: [0, 1.43, 0.04] },
+        // Chest exam — zoom in tight on the chest like the eyes/airway do, so
+        // the student is looking right at the chest wall while they work.
+        'chest-inspect': { pos: [0, 1.27, 1.42], target: [0, 1.27, 0.1] },
+        'chest-palpate': { pos: [0, 1.25, 1.34], target: [0, 1.25, 0.1] },
+        'chest-percuss': { pos: [0, 1.27, 1.36], target: [0, 1.27, 0.1] },
+        'chest-auscultate-lungs': { pos: [0, 1.30, 1.38], target: [0, 1.28, 0.1] },
+        'chest-auscultate-ru': { pos: [-0.09, 1.34, 1.20], target: [-0.09, 1.34, 0.1] },
+        'chest-auscultate-rl': { pos: [-0.10, 1.22, 1.20], target: [-0.10, 1.22, 0.1] },
+        'chest-auscultate-lu': { pos: [0.09, 1.34, 1.20], target: [0.09, 1.34, 0.1] },
+        'chest-auscultate-ll': { pos: [0.10, 1.22, 1.20], target: [0.10, 1.22, 0.1] },
+        'chest-auscultate-heart': { pos: [0.06, 1.22, 1.28], target: [0.05, 1.21, 0.1] },
+        'abd-inspect': { pos: [0, 1.03, 1.28], target: [0, 1.03, 0.10] },
+      };
+      const abdomenQuadrant = getQuadrantFromAction(actionId);
+      const quadrantX: Record<AbdomenQuadrant, number> = { ruq: -0.10, luq: 0.10, rlq: -0.10, llq: 0.10 };
+      const quadrantY: Record<AbdomenQuadrant, number> = { ruq: 1.08, luq: 1.08, rlq: 0.98, llq: 0.98 };
+      const exactFocus = abdomenQuadrant
+        ? { pos: [quadrantX[abdomenQuadrant], quadrantY[abdomenQuadrant], 1.26] as [number, number, number], target: [quadrantX[abdomenQuadrant], quadrantY[abdomenQuadrant], 0.10] as [number, number, number] }
+        : focus[actionId];
+      if (exactFocus) {
+        const actionRadius =
+          /pupil|eyes/.test(actionId) ? 0.045 :
+          /nose|lips|mouth|tongue/.test(actionId) ? 0.065 :
+          /chest/.test(actionId) ? 0.18 :
+          (abdomenQuadrant || /abd/.test(actionId)) ? 0.14 :
+          0.10;
+        const dir: [number, number, number] = [
+          exactFocus.pos[0] - exactFocus.target[0],
+          exactFocus.pos[1] - exactFocus.target[1],
+          exactFocus.pos[2] - exactFocus.target[2],
+        ];
+        const pos = fitCameraPos(controlsRef.current, exactFocus.target, dir, actionRadius);
+        animateCamera(controlsRef.current, pos, exactFocus.target, 500);
+      }
+    }
+
+    const finding = getFinding(caseData, actionId, isInArrest);
+    const reaction = getPatientReaction(caseData, activeRegion, actionId, finding, revealedFindings);
+    if (reactionTimerRef.current !== null) {
+      window.clearTimeout(reactionTimerRef.current);
+      reactionTimerRef.current = null;
+    }
+    setPatientReaction(reaction);
+    if (reaction) {
+      reactionTimerRef.current = window.setTimeout(() => {
+        setPatientReaction(null);
+        reactionTimerRef.current = null;
+      }, 6200);
+    }
     setRevealedFindings(prev => {
       const next = new Map(prev);
       next.set(actionId, finding);
@@ -1059,31 +3241,43 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
     });
 
     // Play sounds for auscultation actions
-    if (actionId.includes('auscultate') && patientSounds) {
+    if (actionId.includes('auscultate')) {
       stopAllSounds();
-      if (actionId === 'chest-auscultate-lungs') {
+      if (actionId === 'chest-auscultate-lungs' && patientSounds) {
         // Play left lung (3s), then right lung (3s) — bilateral auscultation
         playBreathSound(patientSounds.leftLung, 3000);
         setTimeout(() => {
           playBreathSound(patientSounds.rightLung, 3000);
         }, 3200);
         startSoundProgress(actionId, 6200);
-      } else if (actionId === 'chest-auscultate-heart') {
+      } else if (actionId === 'chest-auscultate-ru' && patientSounds) {
+        // Right apex — upper zone may differ from the base (e.g. a clear apex
+        // over a consolidated/oedematous lower zone).
+        playBreathSound(getZoneBreathSound(patientSounds, 'right-upper'), 4000);
+        startSoundProgress(actionId, 4000);
+      } else if (actionId === 'chest-auscultate-rl' && patientSounds) {
+        // Right base.
+        playBreathSound(getZoneBreathSound(patientSounds, 'right-lower'), 4000);
+        startSoundProgress(actionId, 4000);
+      } else if (actionId === 'chest-auscultate-lu' && patientSounds) {
+        // Left apex.
+        playBreathSound(getZoneBreathSound(patientSounds, 'left-upper'), 4000);
+        startSoundProgress(actionId, 4000);
+      } else if (actionId === 'chest-auscultate-ll' && patientSounds) {
+        // Left base.
+        playBreathSound(getZoneBreathSound(patientSounds, 'left-lower'), 4000);
+        startSoundProgress(actionId, 4000);
+      } else if (actionId === 'chest-auscultate-heart' && patientSounds) {
         // Heart sounds — realistic listening duration
         playHeartSound(patientSounds.heartSound, 8000);
         startSoundProgress(actionId, 8000);
-      } else if (actionId === 'abd-auscultate') {
-        // Bowel sounds are ongoing — play for a realistic 15 seconds
-        // In real practice you listen for at least 2 minutes if sounds are absent
-        const abd = caseData.secondarySurvey?.abdomen || [];
-        const abdText = abd.join(' ').toLowerCase();
-        let bowelType: BowelSoundType = 'normal';
-        if (abdText.includes('absent bowel') || abdText.includes('ileus') || abdText.includes('paralytic')) bowelType = 'absent';
-        else if (abdText.includes('hyperactive') || abdText.includes('diarrh') || abdText.includes('gastroenter')) bowelType = 'hyperactive';
-        else if (abdText.includes('tinkling') || abdText.includes('obstruct')) bowelType = 'tinkling';
-        else if (abdText.includes('hypoactive') || abdText.includes('post-op') || abdText.includes('opioid')) bowelType = 'hypoactive';
-        playBowelSound(bowelType, 15000);
-        startSoundProgress(actionId, 15000);
+      } else if (activeRegion === 'abdomen' && (actionId === 'abd-auscultate' || getQuadrantFromAction(actionId))) {
+        // Bowel sounds are ongoing. Real practice may require much longer
+        // listening for absent sounds, but this gives students a usable cue.
+        const bowelType: BowelSoundType = patientSounds?.bowelSounds ?? getBowelSoundTypeForCase(caseData);
+        const duration = bowelType === 'absent' ? 15000 : 12000;
+        playBowelSound(bowelType, duration);
+        startSoundProgress(actionId, duration);
       }
     }
     // Airway sounds — separate from chest auscultation (stridor/gurgling/snoring, not lung sounds)
@@ -1103,7 +3297,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
     // Play percussion sound
     if (actionId.includes('percuss')) {
       stopAllSounds();
-      const percFinding = getFinding(caseData, activeRegion!, actionId);
+      const percFinding = getFinding(caseData, actionId);
       const percType = percFinding.toLowerCase().includes('hyper') ? 'hyper-resonant'
         : percFinding.toLowerCase().includes('dull') ? 'dull'
         : percFinding.toLowerCase().includes('tympanic') ? 'tympanic'
@@ -1111,7 +3305,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
       playPercussionSound(percType);
       startSoundProgress(actionId, PERCUSSION_DURATION);
     }
-  }, [activeRegion, caseData, patientSounds, startSoundProgress, isInArrest]);
+  }, [activeRegion, animateCamera, caseData, patientSounds, revealedFindings, startSoundProgress, isInArrest]);
 
   const allSubRegions = activeRegion ? getSubRegions(activeRegion) : [];
   const subRegions = allSubRegions;
@@ -1124,6 +3318,14 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
     }
     return subRegions.flatMap(sr => sr.actions);
   }, [limbGroups, subRegions]);
+  const pupilProfile = useMemo(() => getPupilProfile(caseData), [caseData]);
+  const showEyeContext = activeRegion === 'face'
+    && !!selectedAction
+    && (selectedAction.includes('pupil') || selectedAction.includes('eyes'));
+  const showRegionalLoupe = showEyeContext || activeRegion === 'chest' || activeRegion === 'abdomen';
+  const loupeWidthClass = activeRegion === 'abdomen'
+    ? 'w-[min(18rem,calc(100%-1.5rem))]'
+    : 'w-[min(21rem,calc(100%-1.5rem))]';
 
   // Phase 2D: Log roll hint
   const showLogRollHint = assessedRegions.size >= 8 && !assessedRegions.has('posterior-logroll');
@@ -1184,7 +3386,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   };
 
   return (
-    <div className="relative rounded-2xl overflow-hidden border border-white/5 dark:border-white/[0.06] bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950/80 dark:via-slate-900/50 dark:to-slate-950/80 shadow-[0_4px_20px_-8px_rgba(0,0,0,0.1)] dark:shadow-[0_8px_40px_-16px_rgba(0,0,0,0.7)] backdrop-blur-xl">
+    <div className="glass-panel relative rounded-2xl overflow-hidden border border-white/45 dark:border-white/[0.06] shadow-[0_4px_20px_-8px_rgba(0,0,0,0.1)] dark:shadow-[0_8px_40px_-16px_rgba(0,0,0,0.7)] backdrop-blur-xl">
       {/* Teal accent hairline — "hands on patient" phase */}
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-teal-400/40 to-transparent" />
       {/* Header */}
@@ -1196,7 +3398,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
           <div>
             <p className="text-[9px] font-medium tracking-[0.25em] uppercase text-muted-foreground/60">Phase&nbsp;3</p>
             <h2 className="text-sm font-semibold tracking-tight leading-tight">
-              Physical Examination
+              Patient Examination
               {activeRegion && (
                 <span className="ml-2 text-xs font-light text-muted-foreground">
                   {'\u2014'} {REGION_LABELS[activeRegion] || activeRegion}
@@ -1206,11 +3408,41 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <div className="hidden items-center rounded-lg border border-slate-200/70 bg-white/70 p-0.5 dark:border-white/10 dark:bg-slate-900/60 sm:flex">
+            <button
+              type="button"
+              onClick={() => setAnatomyLayer('surface')}
+              className={`flex h-5 items-center gap-1 rounded-md px-1.5 text-[9px] font-medium transition-colors ${
+                anatomyLayer === 'surface'
+                  ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-950'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+              aria-pressed={anatomyLayer === 'surface'}
+              title="Surface patient view"
+            >
+              <User className="h-2.5 w-2.5" />
+              Surface
+            </button>
+            <button
+              type="button"
+              onClick={() => setAnatomyLayer('skeleton')}
+              className={`flex h-5 items-center gap-1 rounded-md px-1.5 text-[9px] font-medium transition-colors ${
+                anatomyLayer === 'skeleton'
+                  ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-950'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+              aria-pressed={anatomyLayer === 'skeleton'}
+              title="Skeletal anatomy reference"
+            >
+              <Activity className="h-2.5 w-2.5" />
+              Anatomy
+            </button>
+          </div>
           {/* Phase 2 — guided exam mode toggle */}
           <Button
             variant={guidedMode ? 'default' : 'ghost'}
             size="sm"
-            className={`h-6 gap-1 px-2 text-[9px] rounded-lg ${guidedMode ? 'bg-indigo-500 hover:bg-indigo-600 text-white' : ''}`}
+            className={`h-6 gap-1 px-2 text-[9px] rounded-lg ${guidedMode ? 'bg-cyan-600 hover:bg-cyan-700 text-white' : ''}`}
             onClick={handleToggleGuidedMode}
             aria-pressed={guidedMode}
             title={t('guidedExam.toggleHint')}
@@ -1236,7 +3468,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
 
       {/* Phase 2 — guided exam mode: step indicator + blocked-click nudge */}
       {guidedMode && !activeRegion && (
-        <div className="px-3 py-1.5 border-b border-indigo-200/60 dark:border-indigo-800/40 bg-indigo-50/70 dark:bg-indigo-950/30 flex items-center gap-2">
+        <div className="px-3 py-1.5 border-b border-cyan-200/60 dark:border-cyan-800/40 bg-cyan-50/70 dark:bg-cyan-950/30 flex items-center gap-2">
           <Compass className="h-3 w-3 text-indigo-500 shrink-0" />
           {nextGuidedStep ? (
             <p className="text-[10px] text-indigo-700 dark:text-indigo-200">
@@ -1265,148 +3497,257 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
         </div>
       )}
 
-      {/* 3-column layout when region active: LEFT(techniques) | CENTER(body) | RIGHT(findings)
-           On mobile: stacks vertically. On desktop (sm+): side-by-side with flexible columns. */}
-      <div className={`${activeRegion ? 'grid grid-cols-1 sm:grid-cols-[160px_1fr_200px]' : ''}`}>
-
-        {/* LEFT PANEL: Exam techniques — only when region is active, desktop only inline */}
-        {activeRegion && (
-          <div className="hidden sm:block border-r border-border/30 bg-white/60 dark:bg-slate-900/60 overflow-y-auto max-h-[480px]">
-            <div className="p-2.5 space-y-1">
-              <p className="text-[10px] font-bold text-foreground dark:text-white mb-1.5 px-1">
-                {activeLimb ? LIMB_LABELS[activeLimb] : REGION_LABELS[activeRegion]}
-              </p>
-
-              {limbGroups ? (
-                limbGroups.map(group => {
-                  const isGroupExpanded = expandedGroups.has(group.id);
-                  const groupRevealedCount = group.actions.filter(a => revealedFindings.has(a.id)).length;
-                  const isCore = group.defaultExpanded;
-                  return (
-                    <div key={group.id} className={`rounded-lg overflow-hidden ${!isCore ? 'border border-border/30' : ''}`}>
-                      <button
-                        onClick={() => toggleGroup(group.id)}
-                        className={`flex items-center gap-1.5 w-full text-left px-2 py-1.5 transition-colors ${
-                          !isCore ? 'bg-muted/50 hover:bg-muted border-b border-border/20' : ''
-                        }`}
-                      >
-                        {isGroupExpanded
-                          ? <ChevronDown className="h-2.5 w-2.5 text-muted-foreground shrink-0" />
-                          : <ChevronRight className="h-2.5 w-2.5 text-muted-foreground shrink-0" />
-                        }
-                        <span className="text-[10px] font-semibold flex-1">{group.label}</span>
-                        <Badge variant="outline" className={`text-[7px] py-0 h-3.5 ${
-                          groupRevealedCount === group.actions.length && groupRevealedCount > 0
-                            ? 'bg-green-50 text-green-600 border-green-200 dark:bg-green-950/30'
-                            : ''
-                        }`}>
-                          {groupRevealedCount}/{group.actions.length}
-                        </Badge>
-                      </button>
-                      {isGroupExpanded && (
-                        <div className={`space-y-0.5 ${!isCore ? 'p-1.5' : 'py-0.5'}`}>
-                          {group.actions.map(action => renderActionButton(action))}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })
-              ) : (
-                subRegions.map(sr => (
-                  <div key={sr.id} className="space-y-0.5">
-                    {sr.actions.map(action => renderActionButton(action))}
-                  </div>
-                ))
-              )}
-            </div>
+      {!activeRegion && (
+        <div className="grid grid-cols-2 gap-2 px-3 py-2 border-b border-slate-200/50 bg-white/45 text-[10px] dark:border-white/5 dark:bg-slate-950/30 sm:grid-cols-4">
+          <div className="rounded-lg border border-slate-200/70 bg-white/70 px-2 py-1.5 dark:border-white/10 dark:bg-slate-900/60">
+            <p className="text-[8px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/60">Patient</p>
+            <p className="truncate font-medium">{caseData.patientInfo?.age}y {caseData.patientInfo?.gender}</p>
           </div>
-        )}
-
-        {/* CENTER: 3D Body */}
-        <div className={`min-w-0 overflow-hidden ${activeRegion ? 'h-[480px]' : 'h-[320px] sm:h-[380px] lg:h-[420px]'}`}>
-          <Canvas
-            camera={{ position: [0, 0.9, 3.2], fov: 40 }}
-            dpr={Math.min(window.devicePixelRatio, 2)}
-            frameloop="demand"
-            gl={{ antialias: true, alpha: true }}
-            style={{ background: 'transparent' }}
-          >
-            <ambientLight intensity={0.6} />
-            <directionalLight position={[4, 8, 4]} intensity={1.2} color="#f0f4ff" />
-            <directionalLight position={[-3, 5, -2]} intensity={0.5} color="#e0e8ff" />
-            <directionalLight position={[0, -2, 3]} intensity={0.25} color="#f0f0ff" />
-            <directionalLight position={[0, 3, 5]} intensity={0.3} color="#ffffff" />
-
-            <BodyMesh
-              assessedRegions={assessedRegions}
-              onRegionClick={handleRegionClick}
-              requiredRegions={requiredRegions}
-              guidedMode={guidedMode}
-              nextGuidedStep={nextGuidedStep}
-              onBlockedClick={handleBlockedClick}
-            />
-
-            <ContactShadows position={[0, -0.01, 0]} opacity={0.4} scale={3} blur={2.5} far={3} />
-
-            <OrbitControls
-              ref={controlsRef}
-              enablePan={false}
-              minDistance={2}
-              maxDistance={7}
-              minPolarAngle={Math.PI * 0.15}
-              maxPolarAngle={Math.PI * 0.85}
-              target={[0, 0.85, 0]}
-            />
-          </Canvas>
+          <div className="rounded-lg border border-slate-200/70 bg-white/70 px-2 py-1.5 dark:border-white/10 dark:bg-slate-900/60">
+            <p className="text-[8px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/60">Posture</p>
+            <p className="truncate font-medium">{caseData.initialPresentation?.position || 'Supine for exam'}</p>
+          </div>
+          <div className="rounded-lg border border-slate-200/70 bg-white/70 px-2 py-1.5 dark:border-white/10 dark:bg-slate-900/60">
+            <p className="text-[8px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/60">Appearance</p>
+            <p className="truncate font-medium">{caseData.initialPresentation?.appearance || 'Observe closely'}</p>
+          </div>
+          <div className="rounded-lg border border-slate-200/70 bg-white/70 px-2 py-1.5 dark:border-white/10 dark:bg-slate-900/60">
+            <p className="text-[8px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/60">Focus</p>
+            <p className="truncate font-medium">{requiredTotal > 0 ? `${requiredTotal} required regions` : 'Head-to-toe survey'}</p>
+          </div>
         </div>
+      )}
 
-        {/* RIGHT PANEL: Findings — only when region is active, desktop only inline */}
-        {activeRegion && (
-          <div className="hidden sm:block border-l border-border/30 bg-white/60 dark:bg-slate-900/60 overflow-y-auto max-h-[480px]">
-            <div className="p-2.5">
-              <p className="text-[10px] font-bold text-foreground dark:text-white mb-1.5 px-1">Findings</p>
-              {selectedAction && revealedFindings.has(selectedAction) ? (
-                <div className="space-y-1.5">
-                  <div className="p-3 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-300 dark:border-green-700">
-                    <p className="text-[10px] font-bold text-green-800 dark:text-green-200 mb-0.5">
-                      {allActions.find(a => a.id === selectedAction)?.label}
-                    </p>
-                    <p className="text-xs text-green-700 dark:text-green-300 leading-relaxed">
-                      {revealedFindings.get(selectedAction)}
-                    </p>
-                  </div>
-                  {(() => {
-                    const regionActionIds = allActions.map(a => a.id);
-                    const others = [...revealedFindings.entries()].filter(([id]) => regionActionIds.includes(id) && id !== selectedAction);
-                    if (others.length === 0) return null;
-                    return (
-                      <div className="space-y-1 pt-1">
-                        {others.map(([id, finding]) => (
-                          <div key={id} className="p-2 rounded-lg bg-muted/30 dark:bg-slate-800/40 border border-border/30">
-                            <span className="text-[10px] font-semibold dark:text-slate-200">{allActions.find(a => a.id === id)?.label}: </span>
-                            <span className="text-[10px] text-muted-foreground dark:text-slate-400">{finding}</span>
-                          </div>
-                        ))}
-                      </div>
-                    );
-                  })()}
-                </div>
-              ) : (
-                <div className="flex items-center justify-center h-20 text-muted-foreground">
-                  <p className="text-[10px] text-center dark:text-slate-500">
-                    Select an exam technique
+      {!activeRegion && (
+        <PatientRealismStrip
+          profile={realismProfile}
+          cues={visibleRealismCues}
+          assessedRegions={assessedRegions}
+          activeRegion={activeRegion}
+        />
+      )}
+
+      {/* Patient frame. When a region is active, the exam tools live inside
+          this grey mannequin area rather than in an external side panel. */}
+      <div>
+        <div className={`relative min-w-0 overflow-hidden ${activeRegion ? 'bg-slate-100/35 dark:bg-slate-950/20' : 'h-[320px] sm:h-[380px] lg:h-[420px]'}`}>
+          <div className={`relative min-w-0 overflow-hidden ${activeRegion ? 'h-[430px] sm:h-[470px]' : 'h-full'}`}>
+            <Canvas
+              camera={{ position: [0, 0.95, 4.25], fov: 38 }}
+              dpr={Math.min(window.devicePixelRatio, 2)}
+              frameloop="always"
+              gl={{ antialias: true, alpha: true }}
+              style={{ background: 'transparent' }}
+              onPointerMissed={() => { if (activeRegion) handleCloseRegion(); }}
+            >
+              <ambientLight intensity={0.6} />
+              <directionalLight position={[4, 8, 4]} intensity={1.2} color="#f0f4ff" />
+              <directionalLight position={[-3, 5, -2]} intensity={0.5} color="#e0e8ff" />
+              <directionalLight position={[0, -2, 3]} intensity={0.25} color="#f0f0ff" />
+              <directionalLight position={[0, 3, 5]} intensity={0.3} color="#ffffff" />
+
+              <PatientSceneEnvironment />
+
+              <BodyMesh
+                assessedRegions={assessedRegions}
+                onRegionClick={handleRegionClick}
+                requiredRegions={requiredRegions}
+                guidedMode={guidedMode}
+                nextGuidedStep={nextGuidedStep}
+                onBlockedClick={handleBlockedClick}
+                // See public/models/REALISTIC_ANATOMY.md for the vetted model
+                // sources and the required export/validation path.
+                patientGender={caseData.patientInfo?.gender}
+                surfaceOpacity={anatomyLayer === 'skeleton' ? 0.28 : 1}
+                // Finding morphs reveal ONLY once their region is assessed —
+                // the discovery mechanic, now expressed on the mesh itself.
+                activeFindingMorphs={activeFindingMorphs}
+                // Breathing morph driven at the case respiratory rate (0 when
+                // apnoeic / in arrest — stillness is itself a finding).
+                breathRateRpm={isInArrest ? 0 : breathRateRpm}
+                // Receive the surface projector so labels anchor to the real mesh.
+                // Wrap in an arrow so React stores the function rather than calling it.
+                onSurfaceSampler={(fn) => setSurfaceSampler(() => fn)}
+              />
+
+              <AnatomyReferenceLayer visible={anatomyLayer === 'skeleton'} />
+
+              <LandmarkMarkers
+                activeRegion={activeRegion}
+                assessedRegions={assessedRegions}
+                requiredRegions={requiredRegions}
+                onSelect={handleRegionClick}
+                onAction={handleExamAction}
+                onPulse={onPulse}
+                sampler={surfaceSampler}
+              />
+
+              <CaseRealismMarkers
+                cues={visibleRealismCues}
+                assessedRegions={assessedRegions}
+                activeRegion={activeRegion}
+                sampler={surfaceSampler}
+              />
+
+              {/* Findings revealed ON the body, only once their region has
+                  been assessed — the discovery mechanic. */}
+              <RevealedFindingMarkers
+                caseData={caseData}
+                assessedRegions={assessedRegions}
+                activeRegion={activeRegion}
+                sampler={surfaceSampler}
+              />
+
+              <TreatmentEquipmentOverlay
+                appliedTreatmentIds={appliedTreatmentIds}
+                sampler={surfaceSampler}
+              />
+
+              <ContactShadows position={[0, -0.01, 0]} opacity={0.4} scale={3} blur={2.5} far={3} />
+
+              <OrbitControls
+                ref={controlsRef}
+                enablePan={false}
+                minDistance={activeRegion ? 0.7 : 2}
+                maxDistance={7}
+                minPolarAngle={Math.PI * 0.15}
+                maxPolarAngle={Math.PI * 0.85}
+                target={[0, 0.92, 0]}
+              />
+            </Canvas>
+
+            {/* Floating deselect — effortless "back to full body" while focused */}
+            {activeRegion && (
+              <button
+                onClick={handleCloseRegion}
+                className="absolute left-3 top-3 z-20 inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-slate-950/55 px-3 py-1.5 text-[11px] font-medium text-white/90 shadow-lg backdrop-blur-md transition hover:bg-slate-900/70 active:scale-95"
+                aria-label="Back to full body"
+              >
+                <X className="h-3 w-3" /> Full body
+              </button>
+            )}
+
+            {activeRegion && <PatientReactionCard reaction={patientReaction} />}
+
+            {activeRegion && (
+              <AssessmentActionDock
+                activeRegion={activeRegion}
+                actions={allActions}
+                selectedAction={selectedAction}
+                revealedFindings={revealedFindings}
+                onAction={handleExamAction}
+              />
+            )}
+
+            {showRegionalLoupe && (
+              <div className={`pointer-events-none absolute right-3 top-3 z-20 ${loupeWidthClass} animate-in fade-in slide-in-from-top-2 duration-300 ${showEyeContext ? '' : 'hidden sm:block'}`}>
+                <RegionalZoomLoupe
+                  activeRegion={activeRegion}
+                  selectedAction={selectedAction}
+                  caseData={caseData}
+                  pupilProfile={pupilProfile}
+                />
+              </div>
+            )}
+
+            {/* In-frame premium glass findings — replaces the drop-below panel */}
+            {activeRegion && (
+              <InFrameFindings
+                selectedAction={selectedAction}
+                revealedFindings={revealedFindings}
+                allActions={allActions}
+                offsetForEyeContext={showRegionalLoupe}
+              />
+            )}
+          </div>
+
+          {activeRegion && (
+            <div className="glass-panel relative z-20 m-2 mt-0 max-h-[290px] overflow-hidden rounded-2xl border border-white/45 shadow-[0_24px_60px_-24px_rgba(15,23,42,0.45)] backdrop-blur-xl dark:border-white/10 sm:m-3 sm:mt-0">
+              <div className="flex items-center justify-between gap-3 border-b border-slate-200/70 px-3 py-2 dark:border-white/10">
+                <div className="min-w-0">
+                  <p className="text-[8px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+                    Hands-on exam station
+                  </p>
+                  <p className="truncate text-sm font-semibold text-foreground">
+                    {activeLimb ? LIMB_LABELS[activeLimb] : REGION_LABELS[activeRegion]}
                   </p>
                 </div>
-              )}
+                <Badge variant="secondary" className="shrink-0 rounded-full text-[9px]">
+                  {allActions.filter(action => revealedFindings.has(action.id)).length}/{allActions.length} checked
+                </Badge>
+              </div>
+
+              <div className="grid max-h-[calc(100%-3rem)] gap-0 overflow-hidden sm:grid-cols-[minmax(220px,0.9fr)_minmax(280px,1.1fr)]">
+                <div className="min-h-0 overflow-y-auto border-b border-slate-200/70 p-2.5 dark:border-white/10 sm:border-b-0 sm:border-r">
+                  <div className="space-y-1.5">
+                    {limbGroups ? (
+                      limbGroups.map(group => {
+                        const isGroupExpanded = expandedGroups.has(group.id);
+                        const groupRevealedCount = group.actions.filter(a => revealedFindings.has(a.id)).length;
+                        const isCore = group.defaultExpanded;
+                        return (
+                          <div key={group.id} className={`rounded-xl overflow-hidden ${!isCore ? 'border border-border/40 bg-white/45 dark:bg-slate-900/40' : ''}`}>
+                            <button
+                              onClick={() => toggleGroup(group.id)}
+                              className={`flex items-center gap-1.5 w-full text-left px-2 py-1.5 transition-colors ${
+                                !isCore ? 'bg-muted/50 hover:bg-muted border-b border-border/20' : ''
+                              }`}
+                            >
+                              {isGroupExpanded
+                                ? <ChevronDown className="h-2.5 w-2.5 text-muted-foreground shrink-0" />
+                                : <ChevronRight className="h-2.5 w-2.5 text-muted-foreground shrink-0" />
+                              }
+                              <span className="text-[10px] font-semibold flex-1">{group.label}</span>
+                              <Badge variant="outline" className={`h-3.5 py-0 text-[7px] ${
+                                groupRevealedCount === group.actions.length && groupRevealedCount > 0
+                                  ? 'bg-green-50 text-green-600 border-green-200 dark:bg-green-950/30'
+                                  : ''
+                              }`}>
+                                {groupRevealedCount}/{group.actions.length}
+                              </Badge>
+                            </button>
+                            {isGroupExpanded && (
+                              <div className={`space-y-0.5 ${!isCore ? 'p-1.5' : 'py-0.5'}`}>
+                                {group.actions.map(action => renderActionButton(action))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })
+                    ) : (
+                      subRegions.map(sr => (
+                        <div key={sr.id} className="space-y-0.5">
+                          {subRegions.length > 1 && (
+                            <p className="px-1 pt-1 text-[8px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                              {sr.label}
+                            </p>
+                          )}
+                          {sr.actions.map(action => renderActionButton(action))}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                <div className="min-h-0 overflow-y-auto p-2.5">
+                  <SecondaryAssessmentOutline
+                    activeRegion={activeRegion}
+                    selectedAction={selectedAction}
+                    caseData={caseData}
+                  />
+                </div>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Controls + footer */}
       <div className="flex items-center justify-between px-3 py-1.5 bg-white/50 dark:bg-black/20 border-t border-border/30">
         <p className="text-[9px] text-muted-foreground">
-          {activeRegion ? 'Perform each examination technique below' : 'Click a body region to examine'}
+          {activeRegion
+            ? 'Work inside the patient frame: choose a technique, watch the anatomy, then reassess.'
+            : '🔊 Click the chest, heart, or abdomen to listen — breath, heart & bowel sounds play live'}
         </p>
         <div className="flex gap-1.5">
           {activeRegion && (
@@ -1452,68 +3793,6 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
         </div>
       )}
 
-      {/* ===== MOBILE EXAM PANEL: Below body on small screens ===== */}
-      {activeRegion && (
-        <div className="sm:hidden border-t border-border/30 bg-white/60 dark:bg-slate-900/60">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-0 divide-y sm:divide-y-0 sm:divide-x divide-border/30">
-            {/* LEFT: Exam techniques */}
-            <div className="p-2.5 space-y-1">
-              <p className="text-[10px] font-bold text-foreground dark:text-white mb-1.5">
-                {activeLimb ? LIMB_LABELS[activeLimb] : REGION_LABELS[activeRegion]}
-              </p>
-              {limbGroups ? (
-                limbGroups.map(group => {
-                  const isGroupExpanded = expandedGroups.has(group.id);
-                  const groupRevealedCount = group.actions.filter(a => revealedFindings.has(a.id)).length;
-                  const isCore = group.defaultExpanded;
-                  return (
-                    <div key={group.id} className={`rounded-lg overflow-hidden ${!isCore ? 'border border-border/30' : ''}`}>
-                      <button onClick={() => toggleGroup(group.id)}
-                        className={`flex items-center gap-1.5 w-full text-left px-2 py-1.5 transition-colors ${!isCore ? 'bg-muted/50 hover:bg-muted' : ''}`}>
-                        {isGroupExpanded ? <ChevronDown className="h-2.5 w-2.5 text-muted-foreground shrink-0" /> : <ChevronRight className="h-2.5 w-2.5 text-muted-foreground shrink-0" />}
-                        <span className="text-[10px] font-semibold flex-1">{group.label}</span>
-                        <Badge variant="outline" className={`text-[7px] py-0 h-3.5 ${groupRevealedCount === group.actions.length && groupRevealedCount > 0 ? 'bg-green-50 text-green-600 border-green-200' : ''}`}>
-                          {groupRevealedCount}/{group.actions.length}
-                        </Badge>
-                      </button>
-                      {isGroupExpanded && <div className={`space-y-0.5 ${!isCore ? 'p-1.5' : 'py-0.5'}`}>{group.actions.map(action => renderActionButton(action))}</div>}
-                    </div>
-                  );
-                })
-              ) : (
-                subRegions.map(sr => <div key={sr.id} className="space-y-0.5">{sr.actions.map(action => renderActionButton(action))}</div>)
-              )}
-            </div>
-            {/* RIGHT: Findings */}
-            <div className="p-2.5">
-              <p className="text-[10px] font-bold text-foreground dark:text-white mb-1.5">Findings</p>
-              {selectedAction && revealedFindings.has(selectedAction) ? (
-                <div className="space-y-1.5">
-                  <div className="p-3 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-300 dark:border-green-700">
-                    <p className="text-[10px] font-bold text-green-800 dark:text-green-200 mb-0.5">{allActions.find(a => a.id === selectedAction)?.label}</p>
-                    <p className="text-xs text-green-700 dark:text-green-300 leading-relaxed">{revealedFindings.get(selectedAction)}</p>
-                  </div>
-                  {(() => {
-                    const regionActionIds = allActions.map(a => a.id);
-                    const others = [...revealedFindings.entries()].filter(([id]) => regionActionIds.includes(id) && id !== selectedAction);
-                    if (others.length === 0) return null;
-                    return <div className="space-y-1 pt-1">{others.map(([id, finding]) => (
-                      <div key={id} className="p-2 rounded-lg bg-muted/30 border border-border/30">
-                        <span className="text-[10px] font-semibold">{allActions.find(a => a.id === id)?.label}: </span>
-                        <span className="text-[10px] text-muted-foreground">{finding}</span>
-                      </div>
-                    ))}</div>;
-                  })()}
-                </div>
-              ) : (
-                <div className="flex items-center justify-center h-16 text-muted-foreground">
-                  <p className="text-[10px] text-center">Select an exam technique</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
