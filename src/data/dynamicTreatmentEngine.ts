@@ -96,9 +96,13 @@ export interface PatientState {
 // ============================================================================
 
 const parseBP = (bp: string): { systolic: number; diastolic: number } => {
-  const parts = bp.split('/').map(p => parseInt(p.trim()));
-  // Use nullish coalescing — 0 is a valid BP value (cardiac arrest)
-  return { systolic: parts[0] ?? 120, diastolic: parts[1] ?? 80 };
+  const parts = String(bp).split('/').map(p => parseInt(p.trim(), 10));
+  // Number.isFinite (not ??) so an unparseable BP like the MCI "Various" sentinel
+  // falls back to 120/80 instead of leaking NaN — 0 is still a valid arrest BP.
+  return {
+    systolic: Number.isFinite(parts[0]) ? parts[0] : 120,
+    diastolic: Number.isFinite(parts[1]) ? parts[1] : 80,
+  };
 };
 
 const formatBP = (systolic: number, diastolic: number): string =>
@@ -328,7 +332,7 @@ export function applyDynamicTreatment(
   }
 
   // CROSS-SYSTEM PHYSIOLOGY — adjust vitals based on multi-organ interactions
-  applyCrossSystemPhysiology(treatment, state, caseData, response);
+  applyCrossSystemPhysiology(treatment, state, caseData, response, vitalsBefore);
 
   // Record the application
   state.treatmentHistory.push({
@@ -1296,6 +1300,54 @@ export function applyDeterioration(
     }
   }
 
+  // ===== AUTHORED-TARGET DETERIORATION (data-driven, generic) =====
+  // ~45 cases hand-author the vitals an untreated patient drifts toward
+  // (vitalSignsProgression.deterioration). Interpolate from the case's initial
+  // vitals to that target over a window scaled by the matched protocol's
+  // deteriorationRate, so every such case worsens in its OWN clinically-correct
+  // direction instead of the blunt category fallback below. This is what finally
+  // consumes the authored .deterioration block AND the protocol deteriorationRate
+  // field — both were previously dead data, the root of the "untreated patients
+  // don't really deteriorate" gap for metabolic / tox / obstetric / etc. cases.
+  const deteriorationTarget = caseData.vitalSignsProgression?.deterioration;
+  if (deteriorationTarget) {
+    const initialVitals = caseData.vitalSignsProgression.initial;
+    const proto = findProtocol(caseData.subcategory || '', caseData.category);
+    const rate = proto ? determineSeverityFromVitals(proto, initialVitals).deteriorationRate : 'moderate';
+    const windowMin = rate === 'rapid' ? 3 : rate === 'fast' ? 5 : rate === 'slow' ? 12 : 8;
+    const frac = Math.min(1, totalUntreatedMinutes / windowMin);
+    const lerp = (from: number, to: number) => from + (to - from) * frac;
+
+    newState.vitals.pulse = Math.max(0, Math.round(lerp(initialVitals.pulse, deteriorationTarget.pulse)));
+    newState.vitals.spo2 = Math.max(0, Math.round(lerp(initialVitals.spo2, deteriorationTarget.spo2)));
+    newState.vitals.respiration = Math.max(0, Math.round(lerp(initialVitals.respiration, deteriorationTarget.respiration)));
+    if (initialVitals.gcs !== undefined && deteriorationTarget.gcs !== undefined) {
+      newState.vitals.gcs = Math.round(lerp(initialVitals.gcs, deteriorationTarget.gcs));
+    }
+    if (initialVitals.bloodGlucose !== undefined && deteriorationTarget.bloodGlucose !== undefined) {
+      newState.vitals.bloodGlucose = +lerp(initialVitals.bloodGlucose, deteriorationTarget.bloodGlucose).toFixed(1);
+    }
+    if (initialVitals.temperature !== undefined && deteriorationTarget.temperature !== undefined) {
+      newState.vitals.temperature = +lerp(initialVitals.temperature, deteriorationTarget.temperature).toFixed(1);
+    }
+    const bpInit = parseBP(initialVitals.bp);
+    const bpTarget = parseBP(deteriorationTarget.bp);
+    const sbpNow = Math.round(lerp(bpInit.systolic, bpTarget.systolic));
+    newState.vitals.bp = formatBP(sbpNow, Math.round(lerp(bpInit.diastolic, bpTarget.diastolic)));
+
+    // Progress-based level, but reserve 'critical' (4) for genuinely dangerous
+    // vitals so a mild authored drift (e.g. a stable scald) can't masquerade as
+    // critical just because it reached the end of its own gentle curve.
+    newState.deteriorationLevel = Math.min(3, Math.round(frac * 3));
+    if (newState.vitals.pulse <= 0) {
+      newState.isInArrest = true;
+      newState.deteriorationLevel = 4;
+    } else if (newState.vitals.spo2 < 50 || sbpNow < 70 || newState.vitals.pulse > 180) {
+      newState.deteriorationLevel = 4;
+    }
+    return newState;
+  }
+
   // ===== FALLBACK: GENERIC CATEGORY-BASED DETERIORATION =====
   const cat = caseData.category.toLowerCase();
   const bp = parseBP(newState.vitals.bp);
@@ -1367,10 +1419,18 @@ function applyCrossSystemPhysiology(
   state: PatientState,
   caseData: CaseScenario,
   response: ClinicalResponse,
+  vitalsBefore: VitalSigns,
 ): void {
   const vitals = state.vitals;
   const sub = (caseData.subcategory || '').toLowerCase();
   const warnings: string[] = [];
+  // Snapshot so the generic contraindication-harm pass (chain 17) can tell
+  // whether one of the specific chains below already moved a vital for this
+  // treatment — if so it skips, so harm is never double-counted.
+  const harmSnapshot = {
+    pulse: vitals.pulse, spo2: vitals.spo2, respiration: vitals.respiration,
+    bp: vitals.bp, gcs: vitals.gcs ?? 15,
+  };
 
   // --- 1. FLUID OVERLOAD IN HEART FAILURE ---
   // Giving IV fluids to a heart failure / pulmonary oedema patient worsens SpO2.
@@ -1597,10 +1657,129 @@ function applyCrossSystemPhysiology(
     warnings.push(`Chronic beta-blocker on board (${meds.includes('carvedilol') ? 'carvedilol' : 'beta-blocker'}) \u2014 adrenaline response is blunted at the beta receptor. Consider IV glucagon 1-2 mg as rescue, and expect to repeat adrenaline more frequently. This is why a "normal" anaphylaxis dose may fail.`);
   }
 
+  // --- 17. GENERIC PROTOCOL-DRIVEN CONTRAINDICATION HARM ---
+  // Any treatment the matched protocol lists as contraindicated should actually
+  // worsen the patient, not just print a warning. The specific chains above
+  // cover the headline interactions; this generalises harm to EVERY protocol's
+  // contraindicatedTreatments list, so newly-authored conditions get a real
+  // bidirectional "wrong-drug" branch for free. Skipped when a specific chain
+  // already moved a vital for this treatment (no double-counting), and in arrest
+  // (vital harm is moot — handled by the arrest/defib paths).
+  const movedHere =
+    harmSnapshot.pulse !== vitals.pulse || harmSnapshot.spo2 !== vitals.spo2 ||
+    harmSnapshot.respiration !== vitals.respiration || harmSnapshot.bp !== vitals.bp ||
+    harmSnapshot.gcs !== (vitals.gcs ?? 15);
+  if (!movedHere && !state.isInArrest) {
+    const proto = findProtocol(caseData.subcategory || '', caseData.category);
+    if (proto) {
+      const sev = determineSeverityFromVitals(proto, vitals);
+      if (sev.contraindicatedTreatments.includes(treatment.id)) {
+        // A contraindicated drug must never net-help: undo any undeserved primary
+        // benefit (e.g. needle decompression's nominal effect applied in tamponade)
+        // before the class-based harm, so the patient ends up worse than baseline.
+        vitals.pulse = vitalsBefore.pulse;
+        vitals.spo2 = vitalsBefore.spo2;
+        vitals.respiration = vitalsBefore.respiration;
+        vitals.bp = vitalsBefore.bp;
+        if (vitalsBefore.gcs !== undefined) vitals.gcs = vitalsBefore.gcs;
+        if (vitalsBefore.bloodGlucose !== undefined) vitals.bloodGlucose = vitalsBefore.bloodGlucose;
+        if (vitalsBefore.temperature !== undefined) vitals.temperature = vitalsBefore.temperature;
+        applyContraindicatedHarm(treatment, vitals, warnings, proto.conditionName);
+      }
+    }
+  }
+
   // Attach warnings to the response
   if (warnings.length > 0 && !response.warningMessage) {
     response.warningMessage = warnings[0];
   } else if (warnings.length > 0 && response.warningMessage) {
     response.warningMessage = `${response.warningMessage} | ${warnings.join(' | ')}`;
   }
+}
+
+/**
+ * Generic, drug-class-based harm for giving a treatment the matched protocol
+ * lists as contraindicated. Models the dominant physiological consequence by
+ * drug class so every protocol's contraindicatedTreatments entry produces a
+ * real vital change — the "wrong-drug" branch — rather than only a scoring
+ * penalty and a warning string. Called once, only when no specific cross-system
+ * chain already handled this treatment.
+ */
+function applyContraindicatedHarm(
+  treatment: Treatment,
+  vitals: VitalSigns,
+  warnings: string[],
+  conditionName: string,
+): void {
+  const id = treatment.id.toLowerCase();
+  const name = treatment.name;
+  const bp = parseBP(vitals.bp);
+
+  // Vasodilators / nitrates → preload & afterload drop → hypotension
+  if (id.includes('gtn') || id.includes('nitr') || id.includes('glyceryl') || id.includes('isosorbide')) {
+    const old = bp.systolic;
+    bp.systolic = Math.max(60, bp.systolic - 25);
+    bp.diastolic = Math.max(35, bp.diastolic - 12);
+    vitals.bp = formatBP(bp.systolic, bp.diastolic);
+    warnings.push(`${name} is contraindicated in ${conditionName} — SBP fell ${old}→${bp.systolic} from vasodilatation. Stop it and support the blood pressure.`);
+    return;
+  }
+  // Opioids / sedatives / benzodiazepines → respiratory depression
+  if (id.includes('morphine') || id.includes('fentanyl') || id.includes('pethidine') ||
+      id.includes('midazolam') || id.includes('diazepam') || id.includes('lorazepam') ||
+      id.includes('propofol') || id.includes('ketamine_sedation') || id.includes('droperidol')) {
+    const oldRR = vitals.respiration;
+    vitals.respiration = Math.max(5, vitals.respiration - 4);
+    vitals.spo2 = Math.max(70, vitals.spo2 - 4);
+    vitals.gcs = Math.max(5, (vitals.gcs ?? 15) - 2);
+    warnings.push(`${name} is contraindicated in ${conditionName} — RR fell ${oldRR}→${vitals.respiration} with dropping SpO2/GCS from respiratory depression. Support ventilation; consider reversal.`);
+    return;
+  }
+  // AV-nodal blockers / negative chronotropes → bradycardia + hypotension
+  if (id.includes('adenosine') || id.includes('metoprolol') || id.includes('diltiazem') ||
+      id.includes('verapamil') || id.includes('labetalol') || id.includes('atenolol') ||
+      id.includes('bisoprolol') || id.includes('propranolol')) {
+    const oldHR = vitals.pulse;
+    vitals.pulse = Math.max(28, vitals.pulse - 28);
+    bp.systolic = Math.max(60, bp.systolic - 18);
+    bp.diastolic = Math.max(35, bp.diastolic - 10);
+    vitals.bp = formatBP(bp.systolic, bp.diastolic);
+    warnings.push(`${name} is contraindicated in ${conditionName} — HR fell ${oldHR}→${vitals.pulse} with hypotension from AV-nodal / negative-chronotropic block. Be ready to pace; atropine and fluids as indicated.`);
+    return;
+  }
+  // Fluids → volume overload → falling SpO2 (pulmonary oedema)
+  if (id.includes('fluid') || id.includes('saline') || id.includes('hartmann') || id.includes('crystalloid')) {
+    const oldSpO2 = vitals.spo2;
+    vitals.spo2 = Math.max(70, vitals.spo2 - 5);
+    vitals.respiration = Math.min(40, vitals.respiration + 4);
+    warnings.push(`${name} is contraindicated in ${conditionName} — SpO2 fell ${oldSpO2}→${vitals.spo2} as volume tipped the patient toward pulmonary oedema. Stop fluids and sit them up.`);
+    return;
+  }
+  // High-flow oxygen → loss of hypoxic drive in CO2 retainers
+  if (id === 'oxygen_nonrebreather' || id === 'oxygen_mask') {
+    const oldRR = vitals.respiration;
+    vitals.respiration = Math.max(6, vitals.respiration - 3);
+    vitals.gcs = Math.max(8, (vitals.gcs ?? 15) - 1);
+    warnings.push(`${name} is contraindicated in ${conditionName} — RR fell ${oldRR}→${vitals.respiration} from loss of hypoxic drive. Titrate to SpO2 88–92% with controlled O2.`);
+    return;
+  }
+  // Supine positioning → worsens respiratory distress / aspiration risk
+  if (id.includes('supine')) {
+    const oldSpO2 = vitals.spo2;
+    vitals.spo2 = Math.max(75, vitals.spo2 - 4);
+    vitals.respiration = Math.min(40, vitals.respiration + 3);
+    warnings.push(`Lying this patient flat worsened ventilation in ${conditionName} — SpO2 ${oldSpO2}→${vitals.spo2}. Sit them up.`);
+    return;
+  }
+  // Antiplatelets / anticoagulants → bleeding risk (flag hard; no instant vital)
+  if (id.includes('aspirin') || id.includes('clopidogrel') || id.includes('ticagrelor') ||
+      id.includes('enoxaparin') || id.includes('heparin') || id.includes('warfarin')) {
+    warnings.push(`${name} is contraindicated in ${conditionName} — bleeding risk outweighs benefit. Withhold and reassess the working diagnosis (e.g. exclude haemorrhagic stroke before any antiplatelet).`);
+    return;
+  }
+  // Fallback — modest non-specific deterioration so harm is never a silent no-op
+  const oldHR = vitals.pulse;
+  vitals.pulse = Math.min(170, vitals.pulse + 8);
+  vitals.spo2 = Math.max(80, vitals.spo2 - 2);
+  warnings.push(`${name} is contraindicated in ${conditionName} — the patient is deteriorating (HR ${oldHR}→${vitals.pulse}). Stop the offending treatment and reassess.`);
 }

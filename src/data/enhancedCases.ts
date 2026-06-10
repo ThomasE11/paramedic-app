@@ -29,7 +29,7 @@ export const moreTraumaCases: CaseScenario[] = [
     id: 'trauma-004',
     title: 'Penetrating Chest Trauma - Cardiac Tamponade',
     category: 'trauma',
-    subcategory: 'chest-trauma',
+    subcategory: 'tamponade',
     priority: 'critical',
     complexity: 'expert',
     yearLevels: ['3rd-year', '4th-year'],
@@ -589,7 +589,7 @@ export const moreTraumaCases: CaseScenario[] = [
         findings: [
           'Severe tachycardia',
           'Hypotensive',
-          'JVD present on left',
+          'JVD bilaterally elevated (impaired RV filling from rising intrathoracic pressure)',
           'Delayed capillary refill'
         ],
         interventions: [
@@ -628,7 +628,7 @@ export const moreTraumaCases: CaseScenario[] = [
     },
     secondarySurvey: {
       head: ['No obvious trauma', 'Helmet not worn (not applicable)'],
-      neck: ['No JVD on right (due to tension pneumo)', 'Trachea deviated to LEFT', 'C-spine tenderness - cannot fully assess until extricated'],
+      neck: ['Bilateral JVD elevated (impaired venous return from rising intrathoracic pressure)', 'Trachea deviated to LEFT (mediastinal shift away from right tension)', 'C-spine tenderness - cannot fully assess until extricated'],
       chest: [
         'Flail segment right anterior ribs 3-5',
         'Paradoxical movement',
@@ -671,7 +671,7 @@ export const moreTraumaCases: CaseScenario[] = [
         'Absent breath sounds on right side',
         'Tracheal deviation to LEFT (away from affected side)',
         'Hyperresonance on right percussion',
-        'JVD present on left (absent on right due to pneumothorax)',
+        'JVD bilaterally elevated (impaired RV filling from rising intrathoracic pressure — both jugulars distend, not just the contralateral one)',
         'Flail segment right anterior chest ribs 3-5',
         'Paradoxical chest wall movement',
         'Severe respiratory distress',
@@ -2083,13 +2083,15 @@ export const moreTraumaCases: CaseScenario[] = [
       language: 'English'
     },
     sceneInfo: {
-      description: 'Patient supine on roadside, leg shortened and externally rotated',
-      hazards: ['Traffic', 'Poor lighting'],
-      bystanders: 'Security, bystanders',
-      environment: 'Nighttime, street lighting'
+      description: 'Female pedestrian lying supine in the kerbside lane of a four-lane road. Left leg visibly shortened and externally rotated at the hip — foot turned outward roughly 45°. Patient is moaning, conscious but pale. A handbag and one sandal are on the road ~5m up-traffic, marking the impact point. The striking vehicle (silver sedan) is stopped 20m further with hazard lights on; driver standing nearby, visibly shaken. A small blood pool is forming under the left buttock. Bystanders have placed a hi-vis vest beside the patient. No fluid leaking from ears or nose; no head laceration visible.',
+      hazards: ['Live traffic (two lanes still open)', 'Poor lighting beyond streetlamp pool', 'Glass and vehicle debris on road'],
+      bystanders: 'Security guard from adjacent hotel directing traffic; ~6 bystanders crowding; English-speaking witness who saw the impact',
+      environment: 'Nighttime, street lighting from overhead lamp ~3m away; warm and humid; asphalt road surface dry',
+      accessIssues: ['Patient lying on hot road surface', 'Crew approach from upstream traffic side carries risk if oncoming lane not closed'],
+      extricationNeeded: false,
     },
     initialPresentation: {
-      generalImpression: 'Female, pale, in severe pain, leg deformity',
+      generalImpression: 'Approximately 45-year-old female, supine on the road, pale and diaphoretic, in obvious severe pain. Left lower limb is shortened by 3-4cm and externally rotated — classic pelvic ring / femoral neck appearance. Conscious, eyes open, answering questions in short sentences. Visibly bruised over the pubic symphysis.',
       position: 'Supine',
       appearance: 'Pale, diaphoretic, distressed',
       consciousness: 'Alert but in pain'
@@ -2357,7 +2359,6 @@ export const moreTraumaCases: CaseScenario[] = [
       'O-negative blood (massive transfusion protocol)',
       'TXA 1g IV (if within 3 hours of injury)',
       'Rigid cervical collar and spinal board',
-      'MAST trousers (if available)',
       'Pressure infuser bags',
       'ABG syringe',
       'Urinary catheter kit (contraindicated if blood at meatus)',

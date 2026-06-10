@@ -32,7 +32,7 @@ export const caseDatabase: CaseScenario[] = [
     yearLevels: ['3rd-year', '4th-year'],
     estimatedDuration: 25,
     dispatchInfo: {
-      callReason: 'Severe chest pain, patient called 999 himself',
+      callReason: 'Severe chest pain, patient called 998 himself',
       timeOfDay: 'morning',
       location: 'Private villa in Al Barsha, Dubai',
       callerInfo: 'Patient (45-year-old male)',
@@ -377,8 +377,8 @@ export const caseDatabase: CaseScenario[] = [
       { id: 'c2-2', category: 'abcde', description: 'Confirm cardiac arrest - check responsiveness, breathing, and carotid pulse (within 10 seconds)', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'], critical: true },
       { id: 'c2-3', category: 'abcde', description: 'Initiate immediate high-quality CPR - 30:2 ratio, depth 5-6cm, rate 100-120/min', points: 15, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'], critical: true },
       { id: 'c2-4', category: 'intervention', description: 'Apply AED/defibrillator and analyze rhythm immediately', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'], critical: true },
-      { id: 'c2-5', category: 'intervention', description: 'Defibrillate if VF/pVT - 150-200J biphasic, resume CPR immediately', points: 15, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'], critical: true },
-      { id: 'c2-6', category: 'intervention', description: 'Establish IV or IO access (AHA 2024 update: IV weakly preferred when not interrupting compressions, IO equally valid)', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
+      { id: 'c2-5', category: 'intervention', description: 'If rhythm reveals VF/pVT, defibrillate 150-200J biphasic and resume CPR immediately. This patient presents in ASYSTOLE — defibrillation is NOT indicated. Continue compressions and adrenaline.', points: 15, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'], critical: false, rationale: 'Defibrillation is only for shockable rhythms (VF/pVT). Shocking asystole is contraindicated and wastes time off the chest.' },
+      { id: 'c2-6', category: 'intervention', description: 'Establish vascular access — AHA 2024 focused update: IV is preferred as first-attempt route; IO is acceptable backup if IV not achievable without prolonged compression interruption.', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
       { id: 'c2-7', category: 'intervention', description: 'Administer adrenaline 1mg IV/IO every 3-5 minutes', points: 15, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'], critical: true },
       { id: 'c2-8', category: 'intervention', description: 'Secure airway with OPA, LMA, or ETT - minimize CPR interruptions', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced', 'expert'] },
       { id: 'c2-9', category: 'intervention', description: 'Check blood glucose - rule out hypoglycemia as reversible cause', points: 5, yearLevel: ['2nd-year', '3rd-year', '4th-year', 'diploma'], complexity: ['basic', 'intermediate', 'advanced', 'expert'] },
@@ -386,7 +386,7 @@ export const caseDatabase: CaseScenario[] = [
       { id: 'c2-11', category: 'communication', description: 'Coordinate team roles - compressor, airway, medications, documentation', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
       { id: 'c2-12', category: 'communication', description: 'Communicate with family - provide updates, explain procedures sensitively', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
       { id: 'c2-13', category: 'documentation', description: 'Document arrest time, downtime, interventions, and response to treatment', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['intermediate', 'advanced', 'expert'] },
-      { id: 'c2-amio', category: 'intervention', description: 'Amiodarone 300mg IV after 3rd shock for shockable rhythms', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true, rationale: 'Amiodarone improves ROSC rates in refractory VF/pVT' }
+      { id: 'c2-amio', category: 'intervention', description: 'Amiodarone 300mg IV after 3rd shock — ONLY if rhythm becomes VF/pVT. NOT indicated for asystole or PEA (the patient is in asystole here).', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: false, rationale: 'Amiodarone is reserved for refractory shockable rhythms. It has no role in non-shockable arrests and giving it for asystole reflects a flawed mental model of the ACLS algorithm.' }
     ],
     teachingPoints: [
       'High-quality CPR is the most important intervention - depth 5-6cm, rate 100-120/min, full recoil, minimal interruptions (<10 seconds). AHA 2025 emphasizes optimizing hand position, body position, and patient positioning on a firm surface',
@@ -1313,7 +1313,7 @@ export const caseDatabase: CaseScenario[] = [
         'Al Ain is inland desert city - sandstorms (shamal) common in summer',
         'Dust storms can trigger severe asthma attacks - check recent weather',
         'Many villas have carpeted rooms that trap dust mites and allergens',
-        'Family may be hesitant to call 999 - emphasize importance of early intervention',
+        'Family may be hesitant to call 998 (ambulance) - emphasize importance of early intervention',
         'Language barriers common - use translation apps or bilingual crew',
         'Cultural consideration: Male providers may be preferred for male patients in some families',
         'Summer temperatures can reach 50°C - ensure ambulance AC is functioning',
@@ -1562,7 +1562,7 @@ export const caseDatabase: CaseScenario[] = [
       'Not recognizing re-tensioning en route'
     ],
     equipmentNeeded: [
-      '14G or 16G IV cannula (5cm length preferred)',
+      '14G or 16G IV cannula — 8cm length preferred (5cm cannulas fail to reach the pleural space in >30% of adults, especially at the 2nd ICS midclavicular site)',
       'Antiseptic swabs (chlorhexidine)',
       'Gloves and sterile drapes',
       'High-flow oxygen with reservoir mask',
@@ -2039,8 +2039,8 @@ export const caseDatabase: CaseScenario[] = [
         bp: { systolic: 100, diastolic: 65 },
         capillaryRefill: 2,
         skin: 'Warm, pale',
-        findings: ['Tachycardic', 'Hypotensive'],
-        interventions: ['IV access']
+        findings: ['Tachycardic', 'Borderline-low SBP (100) for a 42-year-old — watch for haemodynamic collapse as PE clot burden shifts'],
+        interventions: ['IV access', 'Frequent BP — recheck every 3 minutes; PE patients can drop catastrophically without warning']
       },
       disability: {
         avpu: 'A',
@@ -4326,6 +4326,7 @@ export const caseDatabase: CaseScenario[] = [
     id: 'psych-001',
     title: 'Panic Attack with Hyperventilation',
     category: 'anxiety-related',
+    subcategory: 'panic-attack',
     priority: 'moderate',
     complexity: 'basic',
     yearLevels: ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
@@ -4661,7 +4662,7 @@ export const caseDatabase: CaseScenario[] = [
       transportConsiderations: [
         'Gentle handling to minimise pain and prevent fat embolism',
         'Padded splinting for comfort during transport',
-        'Pre-alert: "78-year-old female, NOF fracture, anticoagulated on amlodipine — analgesia given"',
+        'Pre-alert: "78-year-old female, NOF fracture, no anticoagulation, on amlodipine for hypertension — analgesia given"',
         'Transport to orthopaedic trauma-capable facility with geriatric services'
       ]
     },
@@ -6014,18 +6015,18 @@ export const caseDatabase: CaseScenario[] = [
         pulseRate: 150,
         pulseQuality: 'Strong, bounding',
         bp: { systolic: 85, diastolic: 50 },
-        capillaryRefill: 1,
+        capillaryRefill: 2,
         skin: 'Hot, flushed, dry',
-        findings: ['Tachycardic with good perfusion', 'Delayed capillary refill initially but improving', 'Signs of dehydration'],
-        interventions: ['IV access if possible (challenge)', 'Fluid bolus if signs of shock']
+        findings: ['Tachycardic from fever and post-ictal sympathetic surge', 'Brisk capillary refill (2s) and flushed peripheries — vasodilation from high fever, not shock', 'Mild dehydration signs on mucous membranes'],
+        interventions: ['IV access if possible (challenge in distressed child — consider IO if shocked)', 'Fluid bolus 20 mL/kg only if true signs of shock develop (poor perfusion, prolonged cap refill, mottling)']
       },
       disability: {
         avpu: 'V',
         gcs: { eye: 2, verbal: 3, motor: 5, total: 10 },
         pupils: 'Equal but sluggish',
-        bloodGlucose: 5.4,
-        findings: ['Post-ictal state', 'Lethargic'],
-        interventions: ['Monitor GCS', 'Protect from injury during seizure activity']
+        bloodGlucose: 5.8,
+        findings: ['Post-ictal state', 'Lethargic', 'Glucose measured — confirmed not hypoglycaemic mimic'],
+        interventions: ['Monitor GCS', 'Protect from injury during seizure activity', 'Measure glucose to exclude hypoglycaemia as cause of seizure']
       },
       exposure: {
         temperature: 40.2,
@@ -6054,7 +6055,7 @@ export const caseDatabase: CaseScenario[] = [
       eventsLeading: 'Fever started 2 days ago, mother gave paracetamol. Today became very lethargic then had seizure lasting ~3 minutes. Outside playing in heat.'
     },
     vitalSignsProgression: {
-      initial: { bp: '85/50', pulse: 150, respiration: 28, spo2: 94, temperature: 40.2, gcs: 10, bloodGlucose: 5.4 },
+      initial: { bp: '85/50', pulse: 150, respiration: 28, spo2: 94, temperature: 40.2, gcs: 10, bloodGlucose: 5.8 },
       afterIntervention: { bp: '90/55', pulse: 140, respiration: 26, spo2: 98, temperature: 39.1, gcs: 14 }
     },
     expectedFindings: {
@@ -6080,7 +6081,7 @@ export const caseDatabase: CaseScenario[] = [
         'Latifa Hospital Dubai or Al Wasl Hospital Paediatric ED',
         'Lumbar puncture if <18 months, prolonged seizure, focal features, or meningism signs',
         'Investigations: FBC, CRP, blood culture, urine culture, electrolytes',
-        'Parental education: seizure first aid, when to call 999, prognosis'
+        'Parental education: seizure first aid, when to call 998 (ambulance), prognosis'
       ],
       monitoring: [
         'Temperature every 5-10 minutes — cooling effectiveness',
@@ -6624,7 +6625,7 @@ export const caseDatabase: CaseScenario[] = [
         'Scene safety - don full PPE before approaching patient',
         'Remove contaminated clothing immediately',
         'Decontaminate skin with soap and water (wet wipe if water unavailable)',
-        'Atropine 2mg IV/IM bolus - repeat every 3-5 minutes until dry skin/secretions, HR >80 bpm, and pupils dilate',
+        'Atropine 2mg IV/IM bolus — DOUBLE the dose every 3-5 minutes until secretions dry up (clear chest on auscultation, no bronchorrhoea). Titrate to DRYING of secretions ONLY — do NOT target heart rate or pupil size (mydriasis lags and is unreliable; tachycardia is expected from hypoxia/agitation). Total dose often exceeds 50mg in severe OP poisoning.',
         'Pralidoxime (2-PAM) 1-2g IV over 30 minutes (if available)',
         'High-flow oxygen and suction for secretions',
         'IV access and fluid resuscitation',
@@ -6636,7 +6637,7 @@ export const caseDatabase: CaseScenario[] = [
         'ICU admission for respiratory support',
         'Mechanical ventilation if respiratory failure',
         'Seizure management with benzodiazepines if needed',
-        'Contact Poison Control Center (800-424 in UAE)',
+        'Contact Poison Control Centre (UAE: 80042426)',
         'Skin decontamination with thorough washing'
       ],
       monitoring: [
@@ -7124,7 +7125,7 @@ export const caseDatabase: CaseScenario[] = [
       timeOfDay: 'morning',
       location: 'Sheikh Zayed Road, near Mall of Emirates, Dubai',
       callerInfo: 'Police Control Room (999)',
-      dispatchCode: 'MCI-1 (Mass Casualty Incident)',
+      dispatchCode: 'Echo-1',
       additionalInfo: [
         'Bus carrying 28 passengers overturned',
         'Car with 3 occupants - severe front-end damage',
@@ -10265,7 +10266,7 @@ export const caseDatabase: CaseScenario[] = [
     id: 'cardiac-014',
     title: 'Hypothermic Drowning - Cardiac Arrest',
     category: 'environmental',
-    subcategory: 'cardiac-arrest',
+    subcategory: 'drowning',
     // Primary rhythm is asystole — VF mention in ecgFindings is a
     // downstream contingency during rewarming, not the presenting strip.
     initialRhythm: 'Asystole',

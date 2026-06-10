@@ -135,6 +135,10 @@ export const TREATMENT_YEAR_ACCESS: Record<string, StudentYear[]> = {
   warming_blanket:      ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
   active_cooling:       ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
   splinting:            ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
+  sam_splint:           ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
+  box_splint:           ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
+  vacuum_limb_splint:   ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
+  air_splint:           ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
   reassurance:          ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
   calm_environment:     ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
   family_presence:      ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
@@ -191,6 +195,16 @@ export const TREATMENT_YEAR_ACCESS: Record<string, StudentYear[]> = {
   chlorphenamine_10mg:  ['3rd-year', '4th-year'],
   clopidogrel_300mg:    ['3rd-year', '4th-year'],
   enoxaparin_1mg:       ['3rd-year', '4th-year'],
+  // ----- ADVANCED / ANTIDOTE drugs (added 2026-06-10) -----
+  insulin_actrapid:      ['3rd-year', '4th-year'],
+  antibiotics_iv:        ['3rd-year', '4th-year'],
+  dexamethasone:         ['2nd-year', '3rd-year', '4th-year'],
+  acetylcysteine:        ['4th-year'],
+  pralidoxime:           ['4th-year'],
+  pacing_transcutaneous: ['3rd-year', '4th-year'],
+  calcium_gluconate:     ['3rd-year', '4th-year'],
+  furosemide_40mg:       ['3rd-year', '4th-year'],
+  pericardiocentesis:    ['4th-year'],
 };
 
 /**
@@ -938,6 +952,14 @@ const SUBCATEGORY_ALIAS: Record<string, string> = {
   'cerebrovascular-emergency':'stroke',
   'electrolyte-emergency':    'electrolyte',
   'aflutter':                 'afib',        // atrial flutter — similar rate-control management
+  'extremity-trauma':         'multi-trauma',
+  'heat-exhaustion':          'heat-stroke',
+  'post-surgical':            'sepsis',
+  'junctional':               'bradycardia',
+  'acute-psychosis':          'psychosis',
+  'panic-attack':             'panic',
+  'hyperventilation-syndrome':'panic',
+  'febrile-seizure':          'seizure',
 };
 
 /** Resolve a subcategory to its canonical key for modifier/timeline lookup */
@@ -1054,28 +1076,6 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
     },
   ],
 
-  'stem-inferior': [
-    {
-      triggerMinutes: 5,
-      vitalChanges: { pulse: 50, spo2: 93, bpSystolicDelta: -10 },
-      clinicalSigns: 'Vagal response — bradycardia developing, nausea, diaphoresis',
-      rhythm: 'Sinus Bradycardia',
-    },
-    {
-      triggerMinutes: 10,
-      vitalChanges: { pulse: 42, spo2: 90, bpSystolicDelta: -25 },
-      clinicalSigns: 'Significant bradycardia, JVD if RV involvement, hypotension worsening',
-      rhythm: 'Sinus Bradycardia',
-      isCritical: true,
-    },
-    {
-      triggerMinutes: 15,
-      vitalChanges: { pulse: 35, spo2: 85, bpSystolicDelta: -40, respiration: 28 },
-      clinicalSigns: 'Complete heart block developing, profound hypotension, altered mental status',
-      rhythm: 'Third Degree Heart Block',
-      isCritical: true,
-    },
-  ],
 
   'asthma': [
     {
@@ -1227,26 +1227,6 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
     },
   ],
 
-  'pulmonary-embolism': [
-    {
-      triggerMinutes: 5,
-      vitalChanges: { pulse: 130, spo2: 85, bpSystolicDelta: -10, respiration: 30 },
-      clinicalSigns: 'Increasing dyspnea, pleuritic chest pain, tachycardia, anxiety',
-    },
-    {
-      triggerMinutes: 10,
-      vitalChanges: { pulse: 145, spo2: 75, bpSystolicDelta: -25, respiration: 35 },
-      clinicalSigns: 'RV strain — distended neck veins, S1Q3T3 on ECG, worsening hypoxia',
-      isCritical: true,
-    },
-    {
-      triggerMinutes: 15,
-      vitalChanges: { pulse: 160, spo2: 60, bpSystolicDelta: -45 },
-      clinicalSigns: 'Massive PE — obstructive shock, PEA arrest imminent',
-      rhythm: 'Sinus Tachycardia',
-      isCritical: true,
-    },
-  ],
 
   'hypoglycemia': [
     {
@@ -1391,27 +1371,6 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
   ],
 
   // --- ELECTROLYTE EMERGENCY (hyperkalemia) ---
-  'electrolyte': [
-    {
-      triggerMinutes: 5,
-      vitalChanges: { pulse: 55, bpSystolicDelta: -5 },
-      clinicalSigns: 'Muscle weakness, paresthesias, peaked T-waves on monitor, mild bradycardia',
-    },
-    {
-      triggerMinutes: 12,
-      vitalChanges: { pulse: 45, bpSystolicDelta: -15 },
-      clinicalSigns: 'Widening QRS, bradycardia worsening, risk of sine-wave pattern',
-      rhythm: 'Sinus Bradycardia',
-      isCritical: true,
-    },
-    {
-      triggerMinutes: 18,
-      vitalChanges: { pulse: 0, spo2: 60 },
-      clinicalSigns: 'Cardiac arrest from hyperkalemia — sine-wave → VF/asystole. Give calcium chloride STAT.',
-      rhythm: 'Ventricular Fibrillation',
-      isCritical: true,
-    },
-  ],
 
   // --- OVERDOSE / TOXICOLOGY ---
   'overdose': [
@@ -1561,6 +1520,871 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       isCritical: true,
     },
   ],
+
+  // ===========================================================================
+  // ACUTE HEART FAILURE / CARDIOGENIC PULMONARY OEDEMA — untreated decline
+  // Cases: cardiac-011, resp-008 (both subcategory 'heart-failure').
+  // Story: hypertensive APO → progressive flooding → rising RR + falling SpO2
+  // → frothy sputum → respiratory exhaustion (RR paradoxically falls) → PEA.
+  // bpSystolicDelta: starts hypertensive, climbs further with sympathetic surge,
+  // then collapses as the exhausted LV fails into cardiogenic shock.
+  // This is a NEW key (no 'heart-failure' entry currently exists in
+  // CASE_DETERIORATION_TIMELINES) — safe to add.
+  // ===========================================================================
+  'heart-failure': [
+    {
+      triggerMinutes: 3,
+      vitalChanges: { respiration: 38, spo2: 84, pulse: 130, bpSystolicDelta: 15 },
+      clinicalSigns: 'Crackles climbing from the bases toward the mid-zones, louder cardiac wheeze, rising sympathetic surge — BP climbing, diaphoresis worsening, increasing air hunger',
+    },
+    {
+      triggerMinutes: 7,
+      vitalChanges: { respiration: 42, spo2: 76, pulse: 140, bpSystolicDelta: 25 },
+      clinicalSigns: 'Pink frothy sputum appearing, coarse crackles throughout all zones, orthopnoea severe — the alveoli are flooding. Hypertensive crisis (SCAPE) driving the oedema.',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 12,
+      vitalChanges: { respiration: 12, spo2: 66, pulse: 120, bpSystolicDelta: -40, gcs: 11 },
+      clinicalSigns: 'Respiratory EXHAUSTION — rate paradoxically falling, GCS dropping, secretions gurgling in the airway. LV now failing: BP collapsing into cardiogenic shock. Peri-arrest.',
+      rhythm: 'Sinus Tachycardia',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 16,
+      vitalChanges: { respiration: 4, spo2: 45, pulse: 0, bpSystolicDelta: -90 },
+      clinicalSigns: 'Hypoxic respiratory arrest progressing to cardiac arrest — PEA. Airway full of frothy oedema fluid. Begin CPR.',
+      rhythm: 'PEA',
+      isCritical: true,
+    },
+  ],
+
+  // ===========================================================================
+  // PULMONARY EMBOLISM — untreated massive-PE decline
+  // Cases: resp-004 (submassive, will progress), litfl-007 (already massive).
+  // Story: tachycardia + O2-resistant hypoxia → RV strain (raised JVP, S1Q3T3)
+  // → obstructive shock (BP collapse) → PEA arrest. Chest stays CLEAR throughout
+  // (shunt/dead-space physiology) — saturations fall despite oxygen.
+  // NOTE: a 'pulmonary-embolism' key ALREADY EXISTS in CASE_DETERIORATION_TIMELINES
+  // (a basic 3-stage version). This is a clinically-staged REPLACEMENT, not an
+  // addition — drop it IN PLACE of the existing entry to avoid a duplicate key.
+  // ===========================================================================
+  'pulmonary-embolism': [
+    {
+      triggerMinutes: 4,
+      vitalChanges: { pulse: 130, spo2: 84, respiration: 32, bpSystolicDelta: -10 },
+      clinicalSigns: 'Worsening tachypnoea and pleuritic pain, rising tachycardia, hypoxia creeping down despite high-flow oxygen — chest still clear. Anxiety mounting.',
+    },
+    {
+      triggerMinutes: 8,
+      vitalChanges: { pulse: 142, spo2: 76, respiration: 38, bpSystolicDelta: -22 },
+      clinicalSigns: 'Acute RV strain — distended neck veins, RV heave, S1Q3T3 and right-axis shift on the monitor, accentuated P2. Clot burden shifting, BP starting to give way.',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 13,
+      vitalChanges: { pulse: 155, spo2: 64, respiration: 40, bpSystolicDelta: -38 },
+      clinicalSigns: 'Obstructive shock — profound O2-resistant hypoxia, hypotension, central cyanosis, cool peripheries. Right heart failing against fixed outflow obstruction. PEA arrest imminent.',
+      rhythm: 'Sinus Tachycardia',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 17,
+      vitalChanges: { pulse: 0, spo2: 45, respiration: 0, bpSystolicDelta: -70 },
+      clinicalSigns: 'Cardiac arrest — PEA, the classic arrest rhythm of massive PE. No output against the obstructed pulmonary circulation. Begin CPR; consider thrombolysis in arrest.',
+      rhythm: 'PEA',
+      isCritical: true,
+    },
+  ],
+
+  // --- HEAT STROKE / HEAT ILLNESS ---
+  // Untreated hyperthermia: rising core temp + tachycardia + falling GCS -> heat-induced seizures -> VF/arrest.
+  // Routes from subcategory 'heat-stroke' (env-002) and via alias 'heat-exhaustion' -> 'heat-stroke' (env-001).
+  'heat-stroke': [
+    {
+      triggerMinutes: 5,
+      vitalChanges: { pulse: 140, respiration: 28, bpSystolicDelta: -10, gcs: 13, temperature: 40 },
+      clinicalSigns: 'Core temperature climbing past 40°C. Sweating stops (anhidrosis) — skin now hot and dry. Confusion and agitation developing. Tachycardia worsening.',
+    },
+    {
+      triggerMinutes: 12,
+      vitalChanges: { pulse: 160, respiration: 34, bpSystolicDelta: -25, gcs: 9, spo2: 92, temperature: 41.5 },
+      clinicalSigns: 'Hyperthermia 41-42°C with obtundation. Hypotension from vasodilation. Muscle rigidity and twitching — heat-induced seizures beginning. Metabolic acidosis (tachypnoea).',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 18,
+      vitalChanges: { pulse: 0, spo2: 60, bpSystolicDelta: -90, gcs: 3, temperature: 42 },
+      clinicalSigns: 'Hyperthermic VF/arrest following sustained seizures and multi-organ failure (rhabdomyolysis, DIC). "Cool and resuscitate." Begin aggressive cooling + CPR.',
+      rhythm: 'Ventricular Fibrillation',
+      isCritical: true,
+    },
+  ],
+
+  // --- DROWNING (ASPHYXIAL) ---
+  // Untreated submersion injury: hypoxia -> bradycardia -> asphyxial (hypoxic) cardiac arrest.
+  // Routes from subcategory 'drowning' (trauma-012). NOTE: cardiac-014 has subcategory 'cardiac-arrest'
+  // and therefore routes to the EXISTING 'cardiac-arrest' timeline, NOT this one (see notes.md).
+  'drowning': [
+    {
+      triggerMinutes: 2,
+      vitalChanges: { spo2: 78, respiration: 6, pulse: 60, gcs: 9 },
+      clinicalSigns: 'Worsening hypoxia from aspirated water and laryngospasm. Agonal/ineffective breathing. Cyanosis deepening, level of consciousness dropping.',
+    },
+    {
+      triggerMinutes: 5,
+      vitalChanges: { spo2: 65, respiration: 2, pulse: 45, gcs: 3, bpSystolicDelta: -20 },
+      clinicalSigns: 'Profound hypoxia driving hypoxic bradycardia. Near-apnoeic. Pulse weak and slow — peri-arrest. Ventilation is the priority.',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 8,
+      vitalChanges: { pulse: 0, spo2: 50, respiration: 0, gcs: 3 },
+      clinicalSigns: 'Asphyxial (hypoxic) cardiac arrest. Give 5 rescue breaths FIRST, then compressions. Often hypothermic — "not dead until warm and dead."',
+      rhythm: 'Asystole',
+      isCritical: true,
+    },
+  ],
+
+  // --- ECLAMPSIA ---
+  // Untreated eclampsia: recurrent seizures -> hypoxia -> maternal/fetal compromise -> arrest.
+  // Routes from subcategory 'eclampsia' (obs-002).
+  'eclampsia': [
+    {
+      triggerMinutes: 4,
+      vitalChanges: { pulse: 125, spo2: 88, respiration: 8, gcs: 3, bpSystolicDelta: 20 },
+      clinicalSigns: 'Recurrent tonic-clonic seizure without magnesium. Apnoea during seizure causing hypoxia. BP climbing — risk of intracerebral haemorrhage. Fetal bradycardia likely.',
+    },
+    {
+      triggerMinutes: 10,
+      vitalChanges: { pulse: 140, spo2: 78, respiration: 6, gcs: 3, bpSystolicDelta: 35 },
+      clinicalSigns: 'Status eclampticus — repeated seizures, severe hypoxia, aspiration risk. Maternal and fetal compromise. Placental abruption / HELLP risk rising.',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 18,
+      vitalChanges: { pulse: 45, spo2: 60, respiration: 4, gcs: 3, bpSystolicDelta: -40 },
+      clinicalSigns: 'Maternal cardiorespiratory collapse from prolonged seizures and hypoxia (or intracerebral haemorrhage). Imminent maternal + fetal arrest. Magnesium + delivery are the cure.',
+      rhythm: 'Sinus Bradycardia',
+      isCritical: true,
+    },
+  ],
+
+// ===========================================================================
+// REPLACEMENT 'electrolyte' deterioration timeline.
+// In src/data/clinicalRealism.ts, REPLACE the existing CASE_DETERIORATION_TIMELINES
+// entry keyed 'electrolyte' (currently ~lines 1397-1418, the 3-stage version) with
+// the 4-stage version below. This makes the untreated hyperkalaemic decline explicit:
+//   peaked T waves -> widening QRS -> sine wave -> VF/asystole, with a rhythm label
+//   at every stage. Field shape = DeteriorationStage (triggerMinutes, vitalChanges,
+//   clinicalSigns, rhythm?, isCritical?). vitalChanges supports bpSystolicDelta.
+// Anchored to metab-003 / litfl-003 (bradycardic, wide-QRS, pre-arrest dialysis pts).
+// ===========================================================================
+
+  // --- ELECTROLYTE EMERGENCY (hyperkalaemia) ---
+  'electrolyte': [
+    {
+      triggerMinutes: 4,
+      vitalChanges: { pulse: 52, bpSystolicDelta: -5 },
+      clinicalSigns:
+        'Generalised muscle weakness and paraesthesias. Monitor shows tall, peaked, tented T waves (V2-V5). Early bradycardia.',
+      rhythm: 'Sinus Bradycardia (peaked T waves)',
+    },
+    {
+      triggerMinutes: 9,
+      vitalChanges: { pulse: 44, bpSystolicDelta: -12 },
+      clinicalSigns:
+        'QRS broadening (>120ms), P waves flattening/lost, PR prolonging. Worsening bradycardia. Membrane stabilisation (calcium chloride) needed NOW.',
+      rhythm: 'Wide-complex bradycardia (broadened QRS, loss of P waves)',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 14,
+      vitalChanges: { pulse: 32, bpSystolicDelta: -25, spo2: 86 },
+      clinicalSigns:
+        'QRS and T waves merging into a sine-wave pattern — immediate pre-arrest. Calcium chloride STAT or the patient will arrest.',
+      rhythm: 'Sine-wave pattern (pre-arrest)',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 18,
+      vitalChanges: { pulse: 0, spo2: 55 },
+      clinicalSigns:
+        'Hyperkalaemic cardiac arrest — sine wave has degenerated to VF then asystole. Calcium chloride + bicarbonate during CPR; this rhythm is refractory to defibrillation until the potassium is treated.',
+      rhythm: 'Ventricular Fibrillation -> Asystole',
+      isCritical: true,
+    },
+  ],
+
+  // Untreated inferior/RV STEMI: RCA territory → vagal/nodal bradycardia + a
+  // preload-dependent RV that fails into cardiogenic shock, then high-grade AV
+  // block, then PEA/asystolic arrest. (Note: the existing 3-stage entry ends at
+  // heart block; this replacement extends the course through to arrest and adds
+  // the RV-shock stage. Replace the current 'stem-inferior' key with this.)
+  'stem-inferior': [
+    {
+      triggerMinutes: 4,
+      vitalChanges: { pulse: 50, spo2: 93, bpSystolicDelta: -10 },
+      clinicalSigns: 'Vagal/nodal response from RCA occlusion — sinus bradycardia, nausea, increasing diaphoresis. Chest stays clear.',
+      rhythm: 'Sinus Bradycardia',
+    },
+    {
+      triggerMinutes: 9,
+      vitalChanges: { pulse: 44, spo2: 90, bpSystolicDelta: -25, respiration: 26 },
+      clinicalSigns: 'RV failure declaring itself — hypotension worsening, raised JVP with clear lungs, cool peripheries. Preload-dependent shock developing.',
+      rhythm: 'Sinus Bradycardia',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 14,
+      vitalChanges: { pulse: 36, spo2: 85, bpSystolicDelta: -42, respiration: 30 },
+      clinicalSigns: 'High-grade/complete AV block, profound RV cardiogenic shock, altered mental status. Atropine/fluids/pacing territory.',
+      rhythm: 'Third Degree Heart Block',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 19,
+      vitalChanges: { pulse: 0, spo2: 55, bpSystolicDelta: -75 },
+      clinicalSigns: 'Cardiac arrest — bradyasystolic / PEA from RV pump failure and AV block. No output. Begin CPR.',
+      rhythm: 'Asystole',
+      isCritical: true,
+    },
+  ],
+
+// ============================================================================
+// PASTE-READY DeteriorationStage TIMELINES
+// Insert into CASE_DETERIORATION_TIMELINES in src/data/clinicalRealism.ts
+// (the object that closes at line ~1568).
+//
+// DeteriorationStage shape (clinicalRealism.ts ~1015):
+//   triggerMinutes: number
+//   vitalChanges: Partial<VitalSigns> & { bpSystolicDelta?, bpDiastolicDelta? }
+//   clinicalSigns: string
+//   rhythm?: string
+//   isCritical?: boolean
+// ============================================================================
+
+
+  // ===========================================================================
+  // NEW — CARDIAC TAMPONADE (obstructive shock → PEA)
+  // ---------------------------------------------------------------------------
+  // Untreated natural history of an unrelieved pericardial tamponade:
+  //   compensation (narrowing pulse pressure, rising HR) → falling SBP / pulsus
+  //   paradoxus → loss of cardiac output → PEA arrest.
+  // Note `bpDiastolicDelta` RISES while `bpSystolicDelta` FALLS in the early
+  // stage — that is the narrowing pulse pressure that is the hallmark of
+  // tamponade compensation. Baseline trauma-004 vitals: HR 140, SpO2 88,
+  // BP 70/50 — so deltas are deliberately modest before the terminal collapse.
+  //
+  // REQUIRES routing: this timeline only fires if the case subcategory resolves
+  // to 'tamponade'. trauma-004 is currently 'chest-trauma' (which has its own,
+  // more generic chest-trauma timeline). Set trauma-004.subcategory = 'tamponade'
+  // (preferred) or alias 'chest-trauma' → 'tamponade'. See trauma.notes.md.
+  // ===========================================================================
+  'tamponade': [
+    {
+      triggerMinutes: 3,
+      vitalChanges: { pulse: 150, bpSystolicDelta: -8, bpDiastolicDelta: 6, spo2: 86, respiration: 36 },
+      clinicalSigns: 'Compensating obstructive shock — pulse pressure narrowing (SBP falling, DBP rising), tachycardia climbing, muffled heart sounds, rising JVP. Pulsus paradoxus palpable.',
+    },
+    {
+      triggerMinutes: 7,
+      vitalChanges: { pulse: 160, bpSystolicDelta: -22, spo2: 80, respiration: 40, gcs: 12 },
+      clinicalSigns: 'Decompensating — pulse pressure critically narrow, SBP dropping, thready central pulse, increasingly obtunded. Diastolic filling failing against pericardial pressure.',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 11,
+      vitalChanges: { pulse: 40, bpSystolicDelta: -55, spo2: 60, respiration: 6, gcs: 4 },
+      clinicalSigns: 'Cardiac output lost — PEA arrest. Organised electrical activity on the monitor but no palpable output (obstruction not perfusion). Needs decompression + CPR.',
+      rhythm: 'PEA',
+      isCritical: true,
+    },
+  ],
+
+
+  // ===========================================================================
+  // EXISTING TIMELINES — REUSED, NOT REPLACED  (informational; do not paste)
+  // ---------------------------------------------------------------------------
+  // 'abdominal-trauma'  (clinicalRealism.ts ~1318)  → trauma-007
+  //     Existing 3-stage timeline (guarding → rigid/peritonism → haemorrhagic
+  //     shock, SBP -10/-25/-45, HR 110/130/145) is clinically sound and already
+  //     matched to the splenic-laceration presentation. REUSE AS-IS.
+  //
+  // 'pelvic-fracture'   (clinicalRealism.ts ~1549)  → trauma-008
+  //     Existing 3-stage timeline (instability/occult bleed → Class III
+  //     retroperitoneal, "pelvic binder urgently needed" → massive haemorrhage,
+  //     SBP -10/-30/-50) is excellent and references the binder. REUSE AS-IS.
+  //
+  // 'multi-trauma'      (clinicalRealism.ts ~1506)  → trauma-011 (via alias)
+  //     Strong Class II→III→IV polytrauma haemorrhage model. REUSE AS-IS; once
+  //     'extremity-trauma' is aliased to 'multi-trauma' (see notes), trauma-011
+  //     inherits this timeline. (The 'massive-hemorrhage' timeline ~1194 is an
+  //     equally good alternative target if a limb-specific feel is preferred.)
+  //
+  // No replacements proposed — the authored protocols above are consistent with
+  // these existing timelines (permissive hypotension, lethal-triad framing).
+  // ===========================================================================
+
+// ============================================================================
+// DKA deterioration timeline.
+// ADD this entry to CASE_DETERIORATION_TIMELINES in src/data/clinicalRealism.ts
+// (no 'dka' key currently exists — safe to ADD, not replace).
+// Routes from subcategory 'dka' (case metab-002): getCaseDeteriorationTimeline()
+// calls resolveSubcategory('dka') → no alias → 'dka' → direct key match.
+// Field shape = DeteriorationStage (triggerMinutes, vitalChanges, clinicalSigns,
+// rhythm?, isCritical?). vitalChanges supports bpSystolicDelta + bloodGlucose.
+//
+// Untreated DKA: rising HR + deepening/quickening Kussmaul RR + falling BP & GCS
+// from worsening dehydration and acidosis → obtunded, exhausted (RR paradoxically
+// drops as compensation fails) → bradycardic peri-arrest → arrest. BGL keeps
+// climbing throughout (osmotic diuresis). Lungs stay clear; this is a metabolic,
+// not respiratory, death. Anchored to metab-002 (HR 110, BP 95/60, RR 30, GCS 14,
+// BGL 28.5).
+// ============================================================================
+
+  // --- DIABETIC KETOACIDOSIS (DKA) ---
+  'dka': [
+    {
+      triggerMinutes: 5,
+      vitalChanges: { pulse: 124, respiration: 34, bpSystolicDelta: -8, gcs: 13, bloodGlucose: 31 },
+      clinicalSigns:
+        'Worsening dehydration — Kussmaul breathing deepening and quickening to blow off more acid, tachycardia climbing, BP creeping down, increasingly drowsy. Acetone breath stronger. BGL still rising.',
+    },
+    {
+      triggerMinutes: 11,
+      vitalChanges: { pulse: 138, respiration: 38, bpSystolicDelta: -18, gcs: 9, bloodGlucose: 34 },
+      clinicalSigns:
+        'Decompensating — hypovolaemic shock developing (thready pulse, cold mottled peripheries, prolonged cap refill). Obtunded and vomiting with aspiration risk. Severe acidosis. Watch the monitor for peaked T waves (hyperkalaemia).',
+      rhythm: 'Sinus Tachycardia',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 17,
+      vitalChanges: { pulse: 50, respiration: 8, bpSystolicDelta: -32, gcs: 5, spo2: 88, bloodGlucose: 36 },
+      clinicalSigns:
+        'Exhaustion and pre-terminal collapse — Kussmaul effort failing (RR paradoxically falling), profound dehydration and acidosis driving bradycardia and unconsciousness. Peri-arrest. Fluids first, then insulin in hospital.',
+      rhythm: 'Sinus Bradycardia',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 22,
+      vitalChanges: { pulse: 0, respiration: 0, bpSystolicDelta: -60, gcs: 3, spo2: 60 },
+      clinicalSigns:
+        'Cardiac arrest from uncorrected hypovolaemia, profound acidosis and electrolyte derangement (hyperkalaemia). PEA the likely rhythm. Begin CPR; this arrest is the end-stage of untreated DKA.',
+      rhythm: 'PEA',
+      isCritical: true,
+    },
+  ],
+
+// ============================================================================
+// INFECTION / SEPSIS-SOURCE DETERIORATION TIMELINES
+// Insert these three entries into CASE_DETERIORATION_TIMELINES in
+// src/data/clinicalRealism.ts (the Record<string, DeteriorationStage[]>).
+//
+// DeteriorationStage shape (clinicalRealism.ts ~1027):
+//   { triggerMinutes: number;
+//     vitalChanges: Partial<VitalSigns> & { bpSystolicDelta?: number; bpDiastolicDelta?: number };
+//     clinicalSigns: string;
+//     rhythm?: string;
+//     isCritical?: boolean; }
+//
+// vitalChanges sets ABSOLUTE values for pulse/respiration/spo2/gcs, and a DELTA
+// for systolic BP (bpSystolicDelta), matching every existing timeline in the file.
+//
+// Lookup: getCaseDeteriorationTimeline() resolves via SUBCATEGORY_ALIAS → then
+// raw subcategory → then category. So:
+//   'sepsis'      ← cardiac-017 (subcategory 'sepsis')  AND
+//                   postd-001  (subcategory 'post-surgical' VIA the alias in notes)
+//   'meningitis'  ← neuro-003, neuro-004 (subcategory 'meningitis')
+//   'pneumonia'   ← resp-011 (subcategory 'pneumonia')
+// Add 'post-surgical': 'sepsis' to SUBCATEGORY_ALIAS so postd-001 inherits this
+// septic timeline (see infection.notes.md).
+// ============================================================================
+
+  // Untreated sepsis → compensated tachycardia/tachypnoea → falling BP and rising
+  // RR as compensation fails → falling GCS and "cold shock" → refractory septic
+  // shock → arrest. (Covers the compensated postd-001 start AND the already-
+  // decompensated paediatric cardiac-017 picture as the same physiological arc.)
+  'sepsis': [
+    {
+      triggerMinutes: 5,
+      vitalChanges: { pulse: 125, respiration: 26, spo2: 94 },
+      clinicalSigns: 'Worsening hyperdynamic sepsis — climbing tachycardia and tachypnoea, warm flushed peripheries, rising temperature. Blood pressure still compensated but lactate rising.',
+    },
+    {
+      triggerMinutes: 12,
+      vitalChanges: { pulse: 140, respiration: 32, spo2: 90, bpSystolicDelta: -25 },
+      clinicalSigns: 'Compensation failing — blood pressure now falling, respiratory rate climbing, urine output dropping. Peripheries cooling as "warm shock" turns "cold". Mottling appears.',
+    },
+    {
+      triggerMinutes: 18,
+      vitalChanges: { pulse: 150, respiration: 36, spo2: 86, bpSystolicDelta: -45, gcs: 12 },
+      clinicalSigns: 'Decompensated septic shock — hypotension refractory to compensation, capillary refill >4 s, GCS falling, non-blanching petechiae may appear (meningococcaemia). Lactic acidosis.',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 25,
+      vitalChanges: { pulse: 160, respiration: 40, spo2: 80, bpSystolicDelta: -65, gcs: 8 },
+      clinicalSigns: 'Refractory shock — profound hypotension, obtundation, anuria, multi-organ failure. In children, heart rate and respiratory effort now begin to FALL (pre-arrest). Peri-arrest.',
+      rhythm: 'Sinus Tachycardia',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 32,
+      vitalChanges: { pulse: 0, respiration: 0, spo2: 50, bpSystolicDelta: -90, gcs: 3 },
+      clinicalSigns: 'Cardiac arrest from refractory septic shock / hypoxia. Pulseless electrical activity. Begin CPR.',
+      rhythm: 'PEA',
+      isCritical: true,
+    },
+  ],
+
+  // Untreated meningococcal disease → sepsis with spreading petechiae/purpura →
+  // distributive shock → falling GCS → arrest. (Raised-ICP phenotype runs in
+  // parallel: Cushing response then coning — captured in the clinicalSigns.)
+  'meningitis': [
+    {
+      triggerMinutes: 5,
+      vitalChanges: { pulse: 120, respiration: 24, spo2: 96 },
+      clinicalSigns: 'Worsening systemic infection — rising fever and tachycardia, increasing headache and photophobia, new irritability/agitation. First sparse non-blanching petechiae may appear.',
+    },
+    {
+      triggerMinutes: 11,
+      vitalChanges: { pulse: 135, respiration: 30, spo2: 93, bpSystolicDelta: -20 },
+      clinicalSigns: 'Meningococcal sepsis declaring — purpuric rash spreading, blood pressure falling, peripheries cooling with prolonged capillary refill. GCS beginning to drift.',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 17,
+      vitalChanges: { pulse: 145, respiration: 34, spo2: 88, bpSystolicDelta: -40, gcs: 10 },
+      clinicalSigns: 'Distributive (septic) shock with widespread purpura, OR — if ICP-driven — falling GCS with the Cushing response (relative bradycardia, hypertension, irregular respiration). Seizures possible.',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 24,
+      vitalChanges: { pulse: 155, respiration: 36, spo2: 82, bpSystolicDelta: -55, gcs: 6 },
+      clinicalSigns: 'Decompensation — refractory shock with mottled, cold skin, or progressive brainstem compromise from rising ICP. Obtunded, peri-arrest.',
+      rhythm: 'Sinus Tachycardia',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 30,
+      vitalChanges: { pulse: 0, respiration: 0, spo2: 48, bpSystolicDelta: -80, gcs: 3 },
+      clinicalSigns: 'Cardiac arrest from fulminant meningococcal septic shock (or coning from raised ICP). Pulseless electrical activity. Begin CPR.',
+      rhythm: 'PEA',
+      isCritical: true,
+    },
+  ],
+
+  // Untreated pneumonia → worsening V/Q-mismatch hypoxia + sepsis physiology →
+  // exhaustion → type-1 respiratory failure → hypoxic arrest.
+  'pneumonia': [
+    {
+      triggerMinutes: 5,
+      vitalChanges: { pulse: 120, respiration: 32, spo2: 85 },
+      clinicalSigns: 'Worsening hypoxia and tachypnoea — consolidation extending, increasing work of breathing, accessory muscle use. Febrile and rigoring.',
+    },
+    {
+      triggerMinutes: 12,
+      vitalChanges: { pulse: 130, respiration: 38, spo2: 80, bpSystolicDelta: -15 },
+      clinicalSigns: 'Hypoxia poorly responsive to effort — crackles now multi-lobar, early cyanosis, blood pressure beginning to fall as CAP-sepsis develops. New confusion (CURB-65).',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 19,
+      vitalChanges: { pulse: 140, respiration: 42, spo2: 72, bpSystolicDelta: -30, gcs: 12 },
+      clinicalSigns: 'Type-1 respiratory failure with septic shock — refractory hypoxaemia, central cyanosis, hypotension, falling GCS. Patient visibly tiring.',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 25,
+      vitalChanges: { pulse: 130, respiration: 8, spo2: 60, bpSystolicDelta: -45, gcs: 8 },
+      clinicalSigns: 'EXHAUSTION — respiratory rate paradoxically falling as the patient tires, profound hypoxia, deepening shock. Imminent respiratory arrest.',
+      rhythm: 'Sinus Tachycardia',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 30,
+      vitalChanges: { pulse: 0, respiration: 0, spo2: 45, bpSystolicDelta: -60, gcs: 3 },
+      clinicalSigns: 'Hypoxic cardiac arrest from respiratory failure. Pulseless electrical activity / asystole. Begin CPR.',
+      rhythm: 'PEA',
+      isCritical: true,
+    },
+  ],
+
+// ============================================================================
+// TWO NEW DeteriorationStage TIMELINES — paste into the
+// CASE_DETERIORATION_TIMELINES object in src/data/clinicalRealism.ts
+// (the Record that closes at ~line 1823, just before the closing `};`).
+//
+// DeteriorationStage shape (clinicalRealism.ts ~1027):
+//   triggerMinutes: number
+//   vitalChanges: Partial<VitalSigns> & { bpSystolicDelta?, bpDiastolicDelta? }
+//   clinicalSigns: string
+//   rhythm?: string
+//   isCritical?: boolean
+//
+// vitalChanges set ABSOLUTE values for pulse/respiration/spo2/gcs and use
+// bpSystolicDelta for BP (matching every existing entry in this file).
+// Both keys ('paracetamol-overdose', 'organophosphate') are the case
+// subcategories — no alias needed (y2-007 / tox-001 already use them).
+// ============================================================================
+
+  // ===========================================================================
+  // NEW — PARACETAMOL OVERDOSE (DELAYED HEPATIC CLOCK)
+  // ---------------------------------------------------------------------------
+  // The pedagogically important shape: the patient is RELATIVELY STABLE early
+  // (the deceptive window — this is the whole teaching point of y2-007), then,
+  // if untreated, fulminant hepatic failure declares LATE — rising HR, falling
+  // BP and GCS, compensatory tachypnoea (metabolic acidosis), hypoglycaemia.
+  // triggerMinutes are stretched deliberately long: paracetamol toxicity is a
+  // clock measured in hours/days, not minutes. Baseline y2-007 vitals: HR 85,
+  // RR 16, SpO2 99, BP 115/70, GCS 15. Early stages barely move — that is the
+  // trap. The terminal stage is hepatic encephalopathy → coma, NOT a sudden
+  // primary cardiac arrest.
+  // ===========================================================================
+  'paracetamol-overdose': [
+    {
+      triggerMinutes: 8,
+      vitalChanges: { pulse: 92, respiration: 18, spo2: 99, bpSystolicDelta: -3 },
+      clinicalSigns:
+        'Still looks well — mild nausea, maybe one vomit. Obs essentially normal. THIS IS THE TRAP: normal vitals do not exclude a lethal ingestion. A timed paracetamol level and timely N-acetylcysteine are what matter now.',
+    },
+    {
+      triggerMinutes: 16,
+      vitalChanges: { pulse: 104, respiration: 20, spo2: 98, bpSystolicDelta: -6 },
+      clinicalSigns:
+        'Persistent vomiting, mild malaise and right-upper-quadrant discomfort beginning. Vitals only slightly off. Biochemically the hepatocyte injury is already underway even though the patient looks deceptively stable.',
+    },
+    {
+      triggerMinutes: 24,
+      vitalChanges: { pulse: 120, respiration: 26, spo2: 95, bpSystolicDelta: -18, gcs: 12 },
+      clinicalSigns:
+        'Hepatotoxicity declaring — RUQ pain, jaundice, tender liver, deepening (Kussmaul) breathing from metabolic/lactic acidosis, early hepatic encephalopathy and hypoglycaemia. Tachycardic and hypotensive. This is fulminant hepatic failure developing.',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 32,
+      vitalChanges: { pulse: 135, respiration: 30, spo2: 92, bpSystolicDelta: -32, gcs: 6 },
+      clinicalSigns:
+        'Fulminant hepatic failure — Grade III–IV encephalopathy / coma, coagulopathy, profound hypoglycaemia, lactic acidosis and worsening shock. Airway no longer protected. Transplant-pathway patient; without antidote and a liver unit this is fatal.',
+      isCritical: true,
+    },
+  ],
+
+
+  // ===========================================================================
+  // NEW — ORGANOPHOSPHATE POISONING (CHOLINERGIC CRISIS → RESP FAILURE → ARREST)
+  // ---------------------------------------------------------------------------
+  // Untreated natural history of a cholinergic crisis: worsening bronchorrhoea
+  // and bradycardia → respiratory failure from secretions + nicotinic muscle
+  // weakness → bradyasystolic / hypoxic arrest. Baseline tox-001 vitals: HR 45,
+  // RR 32, SpO2 88, BP 75/45, GCS 8, pinpoint pupils, fasciculations. The chest
+  // gets WETTER and the respiratory effort FAILS as muscle weakness sets in
+  // (RR paradoxically falls toward the end — exhaustion + paralysis). Death is
+  // bradyasystolic from hypoxia and unopposed vagal/muscarinic tone.
+  // ===========================================================================
+  'organophosphate': [
+    {
+      triggerMinutes: 3,
+      vitalChanges: { pulse: 42, respiration: 34, spo2: 84, bpSystolicDelta: -6 },
+      clinicalSigns:
+        'Worsening cholinergic crisis — increasing bronchorrhoea (airway filling with secretions), profuse salivation/lacrimation, bradycardia deepening, pinpoint pupils, generalised fasciculations. The patient is drowning in their own secretions.',
+      rhythm: 'Sinus Bradycardia',
+    },
+    {
+      triggerMinutes: 7,
+      vitalChanges: { pulse: 38, respiration: 26, spo2: 76, bpSystolicDelta: -12, gcs: 6 },
+      clinicalSigns:
+        'Respiratory failure declaring — torrential secretions plus nicotinic respiratory-muscle weakness; effort beginning to fail. Hypoxia worsening despite oxygen, GCS dropping. Needs escalating atropine (to a dry chest) + pralidoxime + suction + assisted ventilation NOW.',
+      rhythm: 'Sinus Bradycardia',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 11,
+      vitalChanges: { pulse: 30, respiration: 8, spo2: 60, bpSystolicDelta: -25, gcs: 3 },
+      clinicalSigns:
+        'Near-terminal — respiratory muscles failing/paralysed, RR collapsing, airway flooded, profound hypoxia and bradycardia. Unopposed muscarinic/vagal tone. Pre-arrest: this is the last window for aggressive antidote + ventilation.',
+      rhythm: 'Severe Sinus Bradycardia',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 15,
+      vitalChanges: { pulse: 0, respiration: 0, spo2: 40 },
+      clinicalSigns:
+        'Hypoxic bradyasystolic arrest from respiratory failure and unopposed cholinergic tone. No output. Begin CPR; continue atropine and pralidoxime — the rhythm will not recover until the cholinergic crisis is treated and the patient is oxygenated.',
+      rhythm: 'Asystole',
+      isCritical: true,
+    },
+  ],
+
+  // --- SYMPTOMATIC BRADYCARDIA ---
+  // Untreated symptomatic bradycardia (and medication-induced BB/CCB toxicity)
+  // drifts down: the rate falls further, BP follows, GCS clouds, and the escape
+  // rhythm fails into ventricular standstill / PEA arrest. Mirrors cardiac-015
+  // (HR 32, 75/45, GCS 13) and cardiac-012 (HR 42, 88/55) as starting points.
+  'bradycardia': [
+    {
+      triggerMinutes: 4,
+      vitalChanges: { pulse: 36, bpSystolicDelta: -10, gcs: 13 },
+      clinicalSigns: 'Rate slipping further, BP sagging, increasingly drowsy and confused. Peripheries cold, cap refill lengthening.',
+      rhythm: 'Sinus Bradycardia',
+    },
+    {
+      triggerMinutes: 10,
+      vitalChanges: { pulse: 30, bpSystolicDelta: -20, spo2: 90, gcs: 10 },
+      clinicalSigns: 'Decompensating — profound bradycardia with hypotension and poor perfusion. Pre-syncopal, barely rousable. Atropine alone failing against the medication blockade.',
+      rhythm: 'Junctional Bradycardia',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 16,
+      vitalChanges: { pulse: 20, bpSystolicDelta: -35, spo2: 85, gcs: 6 },
+      clinicalSigns: 'Agonal slow rhythm, unrecordable BP, near-arrest. Escape rhythm failing.',
+      rhythm: 'Idioventricular',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 21,
+      vitalChanges: { pulse: 0, bpSystolicDelta: -55, spo2: 70 },
+      clinicalSigns: 'Ventricular standstill → PEA arrest. No palpable output. Start CPR; pace, adrenaline, and treat the cause (glucagon / calcium for BB-CCB toxicity).',
+      rhythm: 'PEA',
+      isCritical: true,
+    },
+  ],
+
+  // --- COMPLETE (THIRD-DEGREE) HEART BLOCK ---
+  // Untreated complete heart block (case cardiac-016: HR 28, 82/50, GCS 14) is one
+  // failed escape beat from disaster: recurrent syncope as the escape rate falls,
+  // then a ventricular pause that does not recover → asystole. Pacing is the only
+  // reliable rescue — atropine does not capture an infranodal block.
+  'heart-block': [
+    {
+      triggerMinutes: 3,
+      vitalChanges: { pulse: 25, bpSystolicDelta: -12, gcs: 13 },
+      clinicalSigns: 'Escape rate falling, BP dropping. Another syncopal episode — pale, sweaty, briefly unresponsive then rouses. Cannon A waves persist.',
+      rhythm: 'Complete Heart Block',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 8,
+      vitalChanges: { pulse: 18, bpSystolicDelta: -25, spo2: 86, gcs: 9 },
+      clinicalSigns: 'Profound, broad-complex ventricular escape failing to perfuse. Recurrent syncope, hypotension, clouding consciousness. Atropine ineffective — capture with pacing NOW.',
+      rhythm: 'Complete Heart Block',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 13,
+      vitalChanges: { pulse: 0, bpSystolicDelta: -50, spo2: 65, gcs: 3 },
+      clinicalSigns: 'Ventricular escape fails — asystolic arrest. No output. Begin CPR; transcutaneous pacing, adrenaline, urgent transvenous pacing.',
+      rhythm: 'Asystole',
+      isCritical: true,
+    },
+  ],
+
+// ============================================================================
+// PASTE-READY DeteriorationStage TIMELINES
+// Insert into CASE_DETERIORATION_TIMELINES in src/data/clinicalRealism.ts
+//
+// DeteriorationStage shape (clinicalRealism.ts ~1027):
+//   { triggerMinutes, vitalChanges: Partial<VitalSigns> & { bpSystolicDelta?, bpDiastolicDelta? },
+//     clinicalSigns, rhythm?, isCritical? }
+//
+// Lookup (getCaseDeteriorationTimeline): resolves subcategory via SUBCATEGORY_ALIAS,
+// then raw subcategory, then CATEGORY.
+//   * Croup cases: subcategory 'croup' -> direct key 'croup'. OK.
+//   * Burns cases: subcategories 'thermal-burns' / 'flash-burn' / 'scald' are NOT
+//     in SUBCATEGORY_ALIAS, so lookup falls through to the CATEGORY key 'burns'.
+//     One 'burns' timeline therefore serves ALL three burns cases. (The shared
+//     untreated trajectory = burn shock ± inhalation airway loss, which is correct
+//     for the worst-case of each.) No timeline-side alias entries are required.
+//
+// These describe the UNTREATED decline only.
+// ============================================================================
+
+  'croup': [
+    {
+      triggerMinutes: 4,
+      vitalChanges: { respiration: 48, spo2: 90, pulse: 150 },
+      clinicalSigns:
+        'Child increasingly distressed and agitated — agitation worsens the dynamic upper-airway obstruction. Louder biphasic stridor, increasing sternal recession and tracheal tug. Keep calm: handling and crying are making it worse.',
+    },
+    {
+      triggerMinutes: 9,
+      vitalChanges: { respiration: 54, spo2: 84, pulse: 165, bpSystolicDelta: 5 },
+      clinicalSigns:
+        'Severe rising work of breathing — marked recession, head-bobbing, nasal flaring, air entry now reducing despite loud stridor (ominous). Pallor and early cyanosis. Needs nebulised adrenaline + steroid NOW.',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 14,
+      vitalChanges: { respiration: 16, spo2: 74, pulse: 80, bpSystolicDelta: -10 },
+      clinicalSigns:
+        'EXHAUSTION — the child tires, stridor paradoxically quietens as air movement fails, respiratory rate and effort falling, becoming lethargic/obtunded. This quiet chest is pre-terminal, not improvement. Bradycardia developing.',
+      rhythm: 'Sinus Bradycardia',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 18,
+      vitalChanges: { respiration: 4, spo2: 50, pulse: 0 },
+      clinicalSigns:
+        'Complete airway obstruction — respiratory arrest progressing to hypoxic cardiac arrest. PEA/asystole.',
+      rhythm: 'PEA',
+      isCritical: true,
+    },
+  ],
+
+  'burns': [
+    {
+      triggerMinutes: 5,
+      vitalChanges: { respiration: 30, spo2: 90, pulse: 130, bpSystolicDelta: -10 },
+      clinicalSigns:
+        'Burn shock beginning — plasma leaking into burned/interstitial tissue. Rising tachycardia, BP starting to drift down, cap refill prolonging. If inhalation injury: voice increasingly hoarse, soot in sputum, early inspiratory stridor as laryngeal oedema develops.',
+    },
+    {
+      triggerMinutes: 12,
+      vitalChanges: { respiration: 36, spo2: 84, pulse: 145, bpSystolicDelta: -25 },
+      clinicalSigns:
+        'Decompensating burn shock — hypotension, cool clammy non-burned skin, agitation. With inhalation injury the airway is critically narrowing (stridor at rest, swelling lips/tongue): the intubation window is closing. Aggressive Parkland fluids + early airway needed.',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 20,
+      vitalChanges: { respiration: 8, spo2: 70, pulse: 160, bpSystolicDelta: -45, gcs: 8 },
+      clinicalSigns:
+        'Profound hypovolaemic shock and (if inhalation) near-complete airway obstruction with falling consciousness. Hypoxia + uncorrected volume loss — peri-arrest.',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 26,
+      vitalChanges: { respiration: 0, spo2: 45, pulse: 0, bpSystolicDelta: -70 },
+      clinicalSigns:
+        'Cardiac arrest from combined airway loss (inhalation injury) and irreversible hypovolaemic burn shock. PEA/asystole.',
+      rhythm: 'PEA',
+      isCritical: true,
+    },
+  ],
+
+// ============================================================================
+// PASTE-READY DeteriorationStage TIMELINES
+// Insert into CASE_DETERIORATION_TIMELINES in src/data/clinicalRealism.ts.
+//
+// DeteriorationStage shape (clinicalRealism.ts ~1027):
+//   { triggerMinutes: number;
+//     vitalChanges: Partial<VitalSigns> & { bpSystolicDelta?; bpDiastolicDelta? };
+//     clinicalSigns: string; rhythm?: string; isCritical?: boolean }
+// VitalSigns keys usable in vitalChanges: pulse, respiration, spo2, temperature,
+//   gcs, bloodGlucose, etco2, painScore (+ bpSystolicDelta). (temperature used below
+//   for the stimulant-toxidrome hyperthermia stage — same pattern as 'heat-stroke'.)
+//
+// Lookup: getCaseDeteriorationTimeline → resolveSubcategory(SUBCATEGORY_ALIAS) → exact
+//   key on subcategory, else category. So:
+//     'psychosis' ← psych-002, psych-003 (sub 'psychosis'); y2-008 via alias
+//                   'acute-psychosis'→'psychosis'.
+//     'panic'     ← y1-008 via alias 'panic-attack'→'panic'; y1-012 via alias
+//                   'hyperventilation-syndrome'→'panic'. psych-001 has NO subcategory
+//                   (category 'anxiety-related') → also key 'anxiety-related' below so
+//                   the category-fallback lands on the benign panic course. (See notes.md.)
+//     'choking'   ← resp-009 (sub 'choking').
+// ============================================================================
+
+
+  // --- ACUTE BEHAVIOURAL DISTURBANCE / PSYCHOSIS ---
+  // Behavioural emergency: this is NOT a vital-collapse condition. Untreated SEVERE
+  // agitation harms via sustained exertion → exhaustion, hyperthermia and rhabdo, not
+  // via primary cardiorespiratory failure. Vitals drift MODESTLY (catecholamine
+  // tachycardia/hypertension, gradual temp rise). The terminal stage models the
+  // stimulant-toxidrome / excited-delirium branch where hyperthermia + acidosis tip
+  // into arrest — kept LATE (15+ min) and explicitly flagged. GCS held high until the
+  // pre-arrest stage (the patient is agitated-but-alert, not obtunded).
+  'psychosis': [
+    {
+      triggerMinutes: 6,
+      vitalChanges: { pulse: 140, respiration: 26, bpSystolicDelta: 15, temperature: 37.8 },
+      clinicalSigns: 'Escalating agitation — pacing, shouting, sustained struggling. Catecholamine surge: tachycardia and BP climbing, diaphoresis worsening, core temperature beginning to rise. Still alert. De-escalation (and, if dangerous, single-agent sedation) needed before exhaustion sets in.',
+    },
+    {
+      triggerMinutes: 12,
+      vitalChanges: { pulse: 155, respiration: 30, bpSystolicDelta: 10, temperature: 39.2 },
+      clinicalSigns: 'Sustained psychomotor exertion causing hyperthermia (>39°C), profuse sweating and early exhaustion. Metabolic acidosis from prolonged struggling; rhabdomyolysis risk rising (consider IV fluids). If this is a stimulant toxidrome / excited delirium, this is the pre-arrest window.',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 18,
+      vitalChanges: { pulse: 170, respiration: 34, bpSystolicDelta: -20, temperature: 40.5, gcs: 11, spo2: 92 },
+      clinicalSigns: 'Excited delirium / stimulant toxidrome decompensating — extreme hyperthermia (>40°C), exhaustion, sudden quieting and falling GCS (an OMINOUS sign), acidosis. This is the classic pre-arrest collapse: catecholamine storm + hyperthermia + acidosis. Aggressive cooling, fluids and airway support now.',
+      rhythm: 'Sinus Tachycardia',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 22,
+      vitalChanges: { pulse: 0, spo2: 55, respiration: 0, bpSystolicDelta: -80, temperature: 40.5, gcs: 3 },
+      clinicalSigns: 'Sudden cardiac arrest following excited-delirium hyperthermia and metabolic acidosis (the classic "sudden death" of restraint/stimulant agitation). Rhythm often PEA/asystole. Begin CPR, cool aggressively, correct acidosis. NEVER leave a struggling patient prone — positional asphyxia compounds this.',
+      rhythm: 'PEA',
+      isCritical: true,
+    },
+  ],
+
+  // --- PANIC ATTACK / HYPERVENTILATION SYNDROME ---
+  // BENIGN by design. A panic patient must NOT be destabilised by the generic clock —
+  // so this timeline asserts a deliberately minimal, self-limiting course. The single
+  // stage describes the EXPECTED settling/tiring of hyperventilation: numbers barely
+  // move (SpO2 stays high-normal, mild tachy/tachypnoea persists or eases). Nothing is
+  // marked isCritical; there is no decline to arrest. Keyed under 'panic' (via aliases)
+  // AND 'anxiety-related' (psych-001's category, no subcategory → category fallback).
+  'panic': [
+    {
+      triggerMinutes: 10,
+      vitalChanges: { pulse: 105, respiration: 26, spo2: 99 },
+      clinicalSigns: 'Symptoms persist but do NOT progress — this is a benign, self-limiting episode. Tachypnoea and tachycardia gradually ease as the panic peaks and settles; paraesthesia/carpopedal spasm resolve as breathing normalises. SpO2 remains high-normal throughout. No organic deterioration. Reassurance and coached breathing remain the treatment; exclude organic mimics but do not over-investigate.',
+    },
+  ],
+
+  // psych-001 has category 'anxiety-related' with NO subcategory, so the timeline
+  // lookup falls through to the CATEGORY key. Mirror the benign 'panic' course here so
+  // psych-001 cannot be destabilised by a missing-key fallthrough. (Identical content.)
+  'anxiety-related': [
+    {
+      triggerMinutes: 10,
+      vitalChanges: { pulse: 105, respiration: 26, spo2: 99 },
+      clinicalSigns: 'Symptoms persist but do NOT progress — benign, self-limiting panic/hyperventilation. Tachypnoea and tachycardia ease as the episode settles; perioral/peripheral tingling resolves as breathing normalises. SpO2 stays high-normal. No organic deterioration. Treat with reassurance and coached breathing; avoid high-flow oxygen and over-investigation.',
+    },
+  ],
+
+  // --- CHOKING / FOREIGN BODY AIRWAY OBSTRUCTION (FBAO) ---
+  // Untreated COMPLETE obstruction is FAST and lethal: no air entry → precipitous
+  // hypoxia → loss of consciousness (the relax of muscle tone can itself help, but
+  // physiologically the patient is now peri-arrest) → hypoxic cardiac arrest within a
+  // few minutes. Chest stays ABSENT/silent throughout (nothing moves past the FB).
+  // SpO2 and GCS crash; pulse rises briefly (hypoxic stress) then collapses.
+  'choking': [
+    {
+      triggerMinutes: 1,
+      vitalChanges: { spo2: 70, pulse: 140, respiration: 0, gcs: 13 },
+      clinicalSigns: 'Complete obstruction — no air movement despite maximal effort. Universal choking sign, silent/absent cough, rapidly deepening cyanosis. Hypoxic tachycardia. Back blows then abdominal thrusts NOW; every second of delay costs oxygenation.',
+    },
+    {
+      triggerMinutes: 2,
+      vitalChanges: { spo2: 55, pulse: 150, respiration: 0, gcs: 7 },
+      clinicalSigns: 'Profound hypoxia — patient losing consciousness and slumping. As tone is lost, lower to the ground, START CPR, look in the mouth and remove a VISIBLE foreign body with Magill forceps under laryngoscopy. Surgical airway if unrelievable.',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 3,
+      vitalChanges: { spo2: 35, pulse: 40, respiration: 0, gcs: 3, bpSystolicDelta: -30 },
+      clinicalSigns: 'Hypoxic bradycardia → peri-arrest. The airway is still obstructed. CPR ongoing, continue attempts to remove the FB; this is the final window before arrest.',
+      rhythm: 'Sinus Bradycardia',
+      isCritical: true,
+    },
+    {
+      triggerMinutes: 4,
+      vitalChanges: { pulse: 0, spo2: 20, respiration: 0, gcs: 3 },
+      clinicalSigns: 'Hypoxic cardiac arrest from unrelieved complete FBAO. Rhythm typically PEA → asystole. CPR (compressions help generate airway pressure), remove the FB (Magill/laryngoscopy) and oxygenate the instant the airway is clear; surgical cricothyroidotomy if it cannot be cleared.',
+      rhythm: 'PEA',
+      isCritical: true,
+    },
+  ],
+
 };
 
 /**

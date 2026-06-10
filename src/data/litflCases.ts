@@ -23,7 +23,7 @@ export const litflCaseDatabase: CaseScenario[] = [
     id: 'litfl-001',
     title: 'Inferior STEMI with Right Ventricular Infarction',
     category: 'cardiac',
-    subcategory: 'acute-coronary-syndrome',
+    subcategory: 'stem-inferior',
     priority: 'critical',
     complexity: 'advanced',
     yearLevels: ['3rd-year', '4th-year'],
