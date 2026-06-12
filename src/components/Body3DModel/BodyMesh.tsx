@@ -1,18 +1,20 @@
 /**
  * Realistic 3D human body mesh loaded from GLB model.
  *
- * Uses the Michelle model from Three.js examples — a properly proportioned
- * realistic human figure. Body regions are determined by Y-coordinate of
- * the click intersection point, mapped to secondary survey assessment steps.
+ * Female cases use a gender-matched GLB. Male cases deliberately fall back to
+ * the legacy patient mesh until a complete, browser-safe male GLB is added.
+ * We do not render a stylised procedural mannequin in clinical mode because it
+ * breaks assessment realism.
  */
 
 import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { useGLTF } from '@react-three/drei';
-import { Html } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js';
+import { buildScrubs, CLOTHING_PARTING } from './ClothingLayer';
 import type { ThreeEvent } from '@react-three/fiber';
-import { SKIN_COLOR, HOVER_COLOR, ASSESSED_COLOR, ACTIVE_COLOR, GUIDED_NEXT_COLOR, GUIDED_LOCKED_COLOR } from './bodyRegions';
+import { HOVER_COLOR, ASSESSED_COLOR, GUIDED_NEXT_COLOR, GUIDED_LOCKED_COLOR } from './bodyRegions';
 import type { SecondaryAssessmentStep } from '@/data/assessmentFramework';
 
 interface BodyMeshProps {
@@ -25,6 +27,63 @@ interface BodyMeshProps {
   nextGuidedStep?: SecondaryAssessmentStep | null;
   /** Phase 2 — called when the student clicks a locked region in guided mode. */
   onBlockedClick?: (attemptedStepId: string, expectedStepId: string) => void;
+  /** Optional patient gender — switches to a sex-matched mesh when the
+   * project has a complete, browser-safe asset for that sex. */
+  patientGender?: 'male' | 'female';
+  /** Fade the surface patient when an internal anatomy reference is shown. */
+  surfaceOpacity?: number;
+  /** Names of finding morph targets that should be ACTIVE (revealed) — e.g.
+   *  ['finding_jvd']. BodyMesh ramps these toward full influence and others
+   *  back to 0. Driven by the parent from assessed-region + case findings. */
+  activeFindingMorphs?: string[];
+  /** Respiratory rate (breaths/min). When > 0, drives the breathe_chest_rise
+   *  morph as a continuous sine so the patient visibly breathes at the case
+   *  rate. 0 / undefined = no breathing animation (e.g. apnoea/arrest). */
+  breathRateRpm?: number;
+  /** Emits a surface-projection function once the mesh is loaded + normalised.
+   *  Given an intended (x, y) it returns [x, y, z] on the patient's actual
+   *  camera-facing surface, so floating labels/finding markers anchor to the
+   *  real body regardless of which GLB (male/female/future) is loaded. Emits
+   *  null on unmount/model-swap. */
+  onSurfaceSampler?: (sampler: ((x: number, y: number) => [number, number, number]) | null) => void;
+  /** Dressed view on/off — shows the scrubs layer derived from this mesh (see ClothingLayer). */
+  dressed?: boolean;
+  /** Focused region id — the garment piece covering it parts so the skin can be assessed. */
+  dressedActiveRegion?: string | null;
+}
+
+/**
+ * Resolve which GLB to load. Three meshes ship in `public/models/`:
+ *   • patient-female.glb — Ready Player Me brunette-t, A-pose
+ *     (~2.7 MB, CC BY-NC 4.0)
+ *   • patient-male.glb   — reserved for a validated male patient shell. The
+ *     current MPFB/TalkingHead source is not active because it reads visually
+ *     female in this examination context.
+ *   • patient.glb        — legacy Beta_Surface, T-pose, kept as the
+ *     last-resort fallback (~2.8 MB)
+ *
+ * Why dropping the new meshes in works without retuning the Y-range
+ * hit-test table: the primary hit-test path in `getRegionAtPoint`
+ * uses weighted nearest-bone against the `mixamorig:*` skeleton, and
+ * we re-prefixed the joint names on both new meshes (see
+ * `/tmp/prefix-bones.mjs`) so they slot straight into the existing
+ * `BONE_REGION_MAP`. The Y-range table is only consulted when the
+ * rig isn't traversable, and even then the new meshes are within ±5%
+ * of the legacy 1.81m height (1.77m female, 1.92m male) so the
+ * Y-band assignments still land in the right region for midline
+ * clicks. Pose-induced arm position is irrelevant because the bones
+ * carry their region label regardless of where the limb hangs.
+ *
+ * Tier-1 multi-layer anatomy (Z-Anatomy skin/muscle/skeleton toggles)
+ * is a separate component — see `public/models/REALISTIC_ANATOMY.md`.
+ */
+function resolveModelPath(gender?: 'male' | 'female'): string {
+  // The available male candidate is not acceptable for this simulator yet, so
+  // keep male cases on the known-good legacy body until a validated MakeHuman
+  // or Z-Anatomy-derived shell is exported.
+  if (gender === 'male') return '/models/patient.glb';
+  if (gender === 'female') return '/models/patient-female.glb';
+  return '/models/patient.glb';
 }
 
 /**
@@ -295,62 +354,205 @@ function getRegionAtPoint(point: THREE.Vector3): RegionRange | null {
   return REGION_RANGES.find(r => !r.condition && point.y >= r.yMin && point.y < r.yMax) || null;
 }
 
-export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guidedMode = false, nextGuidedStep = null, onBlockedClick }: BodyMeshProps) {
-  const { scene } = useGLTF('/models/patient.glb');
+// ---------------------------------------------------------------------------
+// Runtime label anchoring — the ONLY reliable way to label across models.
+// ---------------------------------------------------------------------------
+// Hardcoded label coordinates can never be correct across different GLBs: the
+// legacy (`patient.glb`) and female (`patient-female.glb`) meshes have different
+// geometry and proportions. We sample the ACTUAL loaded + normalised mesh and
+// project each label onto the
+// patient's real camera-facing surface (the camera sits at +Z, so the visible
+// front surface for any (x,y) is the vertex with the largest Z there). This
+// self-calibrates for any model — no per-model tuning, no guessing.
+function buildSurfaceSampler(root: THREE.Object3D | null): ((x: number, y: number) => [number, number, number]) | null {
+  if (!root) return null;
+  root.updateMatrixWorld(true);
+  // The body is the mesh with the most vertices (skips eye/hair/lash meshes).
+  let mesh: THREE.Mesh | null = null;
+  let best = -1;
+  root.traverse((o) => {
+    const m = o as THREE.Mesh;
+    const geom = m.geometry as THREE.BufferGeometry | undefined;
+    if (m.isMesh && geom && geom.attributes && geom.attributes.position) {
+      const c = geom.attributes.position.count;
+      if (c > best) { best = c; mesh = m; }
+    }
+  });
+  if (!mesh) return null;
+  const posAttr = ((mesh as THREE.Mesh).geometry as THREE.BufferGeometry).attributes.position as THREE.BufferAttribute;
+  const mw = (mesh as THREE.Mesh).matrixWorld;
+  const N = posAttr.count;
+  // Transform every vertex into world (the exam coordinate frame) once, and
+  // measure the model's ACTUAL rendered bounds while we're at it.
+  const wx = new Float32Array(N), wy = new Float32Array(N), wz = new Float32Array(N);
+  const v = new THREE.Vector3();
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity, maxZ = -Infinity;
+  for (let i = 0; i < N; i++) {
+    v.set(posAttr.getX(i), posAttr.getY(i), posAttr.getZ(i)).applyMatrix4(mw);
+    wx[i] = v.x; wy[i] = v.y; wz[i] = v.z;
+    if (v.x < minX) minX = v.x; if (v.x > maxX) maxX = v.x;
+    if (v.y < minY) minY = v.y; if (v.y > maxY) maxY = v.y;
+    if (v.z > maxZ) maxZ = v.z;
+  }
+
+  // Markers are authored in a normalised frame: feet at y=0, head ≈ y=1.8,
+  // centred on x, half-width ≈ 0.5. The real rendered model is frequently NOT
+  // that exact size/position (different GLB, normalisation quirks), which made
+  // fixed coordinates float ABOVE the head / off the side. Remap every
+  // requested point from the authoring frame onto the model's MEASURED bounds
+  // so labels land on the actual body regardless of its rendered scale.
+  const AUTHOR_H = 1.8, AUTHOR_HALFW = 0.5;
+  const H = (maxY - minY) || AUTHOR_H;
+  const cx = (minX + maxX) / 2;
+  const halfW = ((maxX - minX) / 2) || AUTHOR_HALFW;
+  const s = H / AUTHOR_H; // overall scale factor (tolerances/offsets scale too)
+  const PROUD = 0.03 * s; // lift the label just off the skin toward the camera
+
+  return (xAuthor: number, yAuthor: number): [number, number, number] => {
+    const x = cx + xAuthor * (halfW / AUTHOR_HALFW);
+    const y = minY + (yAuthor / AUTHOR_H) * H;
+    // Front surface at (x,y) = the largest Z among nearby verts. Try a tight
+    // window first, widen if nothing is close (e.g. a lateral limb point).
+    const scan = (xTol: number, yTol: number): number | null => {
+      let bz = -Infinity, found = false;
+      for (let i = 0; i < N; i++) {
+        if (Math.abs(wx[i] - x) < xTol && Math.abs(wy[i] - y) < yTol) {
+          if (wz[i] > bz) { bz = wz[i]; found = true; }
+        }
+      }
+      return found ? bz : null;
+    };
+    const z = scan(0.07 * s, 0.05 * s) ?? scan(0.16 * s, 0.11 * s) ?? scan(0.30 * s, 0.18 * s);
+    return [x, y, (z ?? maxZ) + PROUD];
+  };
+}
+
+export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guidedMode = false, nextGuidedStep = null, onBlockedClick, patientGender, surfaceOpacity = 1, activeFindingMorphs, breathRateRpm = 0, onSurfaceSampler, dressed = false, dressedActiveRegion = null }: BodyMeshProps) {
+  // The path is recomputed per render so a `caseData.patientInfo.gender`
+  // change (e.g. user picks a different case) swaps the mesh without
+  // remounting the parent. useGLTF caches by URL.
+  const modelPath = resolveModelPath(patientGender);
+  const { scene } = useGLTF(modelPath);
   const [hoveredRegion, setHoveredRegion] = useState<RegionRange | null>(null);
-  const [tooltipPos, setTooltipPos] = useState<[number, number, number]>([0, 0, 0]);
   const meshRef = useRef<THREE.Group>(null);
   // For pulsing animation on required regions
   const pulseRef = useRef(0);
+  // Morph-target driving: the skinned mesh that carries the clinical morphs
+  // (finding_jvd, finding_abdo_distension, breathe_chest_rise), plus the
+  // smoothed per-morph influence we ramp toward each frame, and a breathing
+  // phase accumulator.
+  const morphMeshRef = useRef<THREE.Mesh | null>(null);
+  const morphInfluenceRef = useRef<Record<string, number>>({});
+  const breathPhaseRef = useRef(0);
 
-  // Clone the scene so we can modify materials
+  // Clone the rig with SkeletonUtils so skinned meshes keep their own bone
+  // bindings. A regular deep clone can detach limbs on some exported GLBs.
   const clonedScene = useMemo(() => {
-    const clone = scene.clone(true);
-    // Set initial material to skin tone
+    const clone = cloneSkeleton(scene) as THREE.Group;
+    const useSolidMaleBodyMaterial = modelPath.includes('patient-male');
+    // Both active exam meshes are normalised to face the default camera (+Z).
+    // Rotating the legacy patient here shows the posterior surface first while
+    // landmarks still describe anterior anatomy, so keep the loaded orientation.
+    const rotateLegacyToCamera = false;
+
+    // Preserve the source model's visual detail. The previous implementation
+    // replaced every material with one skin shader, which erased eyes, hair,
+    // mouth, clothing and texture cues that students need for examination.
     clone.traverse((child) => {
       if ((child as THREE.Mesh).isMesh) {
         const mesh = child as THREE.Mesh;
-        mesh.material = new THREE.MeshPhysicalMaterial({
-          color: SKIN_COLOR,
-          roughness: 0.45,
-          metalness: 0.05,
-          clearcoat: 0.15,
-          clearcoatRoughness: 0.4,
-          sheen: 0.3,
-          sheenRoughness: 0.5,
-          sheenColor: new THREE.Color('#8aa8c0'),
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        // Capture the mesh that carries the clinical morph targets so
+        // useFrame can drive its influences (breathing + revealed findings).
+        if (mesh.morphTargetDictionary && mesh.morphTargetInfluences) {
+          morphMeshRef.current = mesh;
+        }
+        const meshName = mesh.name.toLowerCase();
+        if (useSolidMaleBodyMaterial && meshName === 'human') {
+          // The compact MPFB male GLB carries a diffuse texture that can render
+          // patchily after compression in Safari/Chromium. Use a solid clinical
+          // skin material for the body mesh while preserving the separate eye
+          // mesh material, so the patient never appears as disconnected limbs.
+          mesh.material = new THREE.MeshStandardMaterial({
+            color: '#c58f72',
+            roughness: 0.68,
+            metalness: 0,
+            side: THREE.DoubleSide,
+          });
+        } else {
+          mesh.material = Array.isArray(mesh.material)
+            ? mesh.material.map(material => material.clone())
+            : mesh.material.clone();
+        }
+        const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+        materials.forEach((material) => {
+          material.transparent = surfaceOpacity < 1;
+          material.opacity = surfaceOpacity;
+          material.depthWrite = surfaceOpacity >= 1;
+          material.needsUpdate = true;
         });
       }
     });
-    // Snapshot anchors from the ORIGINAL scene. The original rig always has
-    // its bones traversable as named Object3D nodes; a deep clone sometimes
-    // flattens the skeleton depending on the GLB exporter, which is why we
-    // snapshot from the source rather than the clone. The bones sit in the
-    // same local frame either way, so the positions are interchangeable.
-    updateSkeleton(scene);
-    return clone;
-  }, [scene]);
 
-  // Update mesh colors based on hover/assessed state
-  const updateMeshColors = useCallback((region: RegionRange | null) => {
-    if (!meshRef.current) return;
-    meshRef.current.traverse((child) => {
-      if (!(child as THREE.Mesh).isMesh) return;
-      const mesh = child as THREE.Mesh;
-      // Skip non-body meshes (highlight cylinders / invisible catch-all plane
-      // carry a marker in userData). Their materials aren't MeshPhysical and
-      // don't have emissive — setting it throws a TypeError.
-      if (mesh.userData?.skipRecolor) return;
-      const mat = mesh.material as THREE.MeshStandardMaterial;
-      if (!mat || typeof (mat as unknown as { color?: unknown }).color === 'undefined') return;
-      mat.color.set(SKIN_COLOR);
-      // `emissive` only exists on StandardMaterial / PhysicalMaterial — guard
-      // the access so a basic-material catch-all plane doesn't crash us.
-      if (mat.emissive && typeof mat.emissive.set === 'function') {
-        mat.emissive.set('#000000');
-        mat.emissiveIntensity = 0;
+    if (rotateLegacyToCamera) {
+      clone.rotation.y = Math.PI;
+    }
+
+    // Normalise all GLBs into the clinical exam coordinate frame: feet at Y=0,
+    // head near Y=1.8, body centred on X/Z. The male MPFB mesh ships with a
+    // baked +0.92m vertical offset, which made the torso/camera alignment look
+    // broken and left floating limbs in the viewport.
+    clone.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(clone);
+    const height = box.max.y - box.min.y;
+    if (Number.isFinite(height) && height > 0.5) {
+      const targetHeight = 1.8;
+      const modelScale = targetHeight / height;
+      const center = box.getCenter(new THREE.Vector3());
+      clone.scale.setScalar(modelScale);
+      clone.position.set(
+        -center.x * modelScale,
+        -box.min.y * modelScale,
+        -center.z * modelScale,
+      );
+      clone.updateMatrixWorld(true);
+    }
+
+    // Snapshot anchors from the aligned clone so bone hit-testing and floating
+    // labels share the same coordinate frame as the rendered patient.
+    updateSkeleton(clone);
+
+    // Dressed view: cut scrubs out of the body mesh itself so the garment
+    // follows this patient's real geometry (ClothingLayer.buildScrubs).
+    // Cosmetic only — a rig/geometry surprise must never break the exam.
+    try {
+      let bodyMesh: THREE.Mesh | null = null;
+      let bestCount = -1;
+      clone.traverse((child) => {
+        const m = child as THREE.Mesh;
+        const g = m.geometry as THREE.BufferGeometry | undefined;
+        if (m.isMesh && g && g.attributes && g.attributes.position && g.attributes.position.count > bestCount) {
+          bestCount = g.attributes.position.count;
+          bodyMesh = m;
+        }
+      });
+      if (bodyMesh) {
+        const scrubs = buildScrubs(bodyMesh as THREE.Mesh);
+        // Child of the body mesh at identity → inherits its exact placement.
+        if (scrubs) (bodyMesh as THREE.Mesh).add(scrubs);
       }
-    });
+    } catch {
+      // dressing is cosmetic; the exam continues undressed
+    }
+    return clone;
+  }, [scene, modelPath, surfaceOpacity]);
+
+  // Region state is now communicated with anatomical overlays and landmarks,
+  // not by recolouring the whole patient. Keep this callback for the pointer
+  // path, but leave the model's real materials untouched.
+  const updateMeshColors = useCallback((region: RegionRange | null) => {
+    void region;
   }, []);
 
   // Refresh the skeleton snapshot on mount, after the primitive has been
@@ -367,14 +569,68 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
     // exporters flatten the skeleton on clone), anchors end up empty —
     // re-populate from the original scene so the primary path keeps
     // working. The fallback getRegionAtPoint() still works regardless.
-    if (anchors.length === 0 && before > 0) updateSkeleton(scene);
-  }, [clonedScene, scene]);
+    if (anchors.length === 0 && before > 0) updateSkeleton(clonedScene);
+  }, [clonedScene]);
+
+  // Emit a surface-projection sampler built from the actual mounted mesh, so
+  // the parent can anchor every floating label/finding marker onto the real
+  // patient surface (self-calibrating across the male/female/any GLB).
+  useEffect(() => {
+    if (!onSurfaceSampler) return;
+    const sampler = buildSurfaceSampler(meshRef.current ?? clonedScene);
+    onSurfaceSampler(sampler);
+    return () => onSurfaceSampler(null);
+  }, [clonedScene, onSurfaceSampler]);
+
+  // Dressed-view garment: layer on only in dressed mode, and the piece
+  // covering the focused region parts so the skin underneath is assessable.
+  useEffect(() => {
+    const layer = clonedScene.getObjectByName('clothing-layer');
+    if (!layer) return;
+    layer.visible = dressed;
+    const parted = new Set(dressed ? CLOTHING_PARTING[dressedActiveRegion ?? ''] ?? [] : []);
+    for (const piece of layer.children) piece.visible = !parted.has(piece.name);
+  }, [clonedScene, dressed, dressedActiveRegion]);
 
   // Drive continuous rendering for pulse animation when required regions exist
   // or when guided mode is active (next-step ring needs to pulse).
   useFrame((_, delta) => {
     if ((requiredRegions && requiredRegions.size > 0) || (guidedMode && nextGuidedStep)) {
       pulseRef.current += delta;
+    }
+
+    // ---- Drive clinical morph targets ----
+    const mesh = morphMeshRef.current;
+    if (mesh && mesh.morphTargetDictionary && mesh.morphTargetInfluences) {
+      const dict = mesh.morphTargetDictionary;
+      const infl = mesh.morphTargetInfluences;
+      const active = activeFindingMorphs ?? [];
+
+      // Findings: ramp active morphs toward 1, inactive toward 0 (~0.6s).
+      for (const name of Object.keys(dict)) {
+        if (name === 'breathe_chest_rise') continue; // handled below
+        const target = active.includes(name) ? 1 : 0;
+        const cur = morphInfluenceRef.current[name] ?? 0;
+        const next = cur + (target - cur) * Math.min(1, delta * 4);
+        morphInfluenceRef.current[name] = next;
+        const idx = dict[name];
+        if (idx !== undefined) infl[idx] = next;
+      }
+
+      // Breathing: continuous sine at the case respiratory rate. Apnoea
+      // (rate 0) leaves the chest still — itself a finding.
+      const idx = dict['breathe_chest_rise'];
+      if (idx !== undefined) {
+        if (breathRateRpm > 0) {
+          const hz = breathRateRpm / 60;
+          breathPhaseRef.current += delta * hz * Math.PI * 2;
+          // 0..1 raised-sine; shallower when tachypnoeic reads as "fast shallow"
+          const amp = breathRateRpm >= 28 ? 0.55 : 1.0;
+          infl[idx] = (0.5 - 0.5 * Math.cos(breathPhaseRef.current)) * amp;
+        } else {
+          infl[idx] = 0;
+        }
+      }
     }
   });
 
@@ -387,9 +643,6 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
       setHoveredRegion(region);
       updateMeshColors(region);
       document.body.style.cursor = region ? 'pointer' : 'auto';
-    }
-    if (region) {
-      setTooltipPos([point.x + 0.3, point.y + 0.1, point.z]);
     }
   }, [hoveredRegion, updateMeshColors]);
 
@@ -416,7 +669,13 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
 
   // Render region highlight overlays using transparent cylinders
   const regionHighlights = useMemo(() => {
+    // The big torus ring overlays were removed — they cluttered the view and
+    // hid the patient. Region affordance now comes from the small landmark
+    // dots (rendered by the parent) plus the hover tooltip. The legacy ring
+    // builder below stays in place but is disabled by this guard.
+    const ringsEnabled = false;
     const highlights: JSX.Element[] = [];
+    if (!ringsEnabled) return highlights;
     const required = requiredRegions || new Set<string>();
     // Compute pulse opacity for amber ring
     const pulseOpacity = 0.15 + Math.sin(pulseRef.current * 3) * 0.1;
@@ -434,9 +693,11 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
       const isGuidedNext = guidedMode && nextGuidedStep === region.id && !isAssessed;
       const isGuidedLocked = guidedMode && !!nextGuidedStep && region.id !== nextGuidedStep && !isAssessed;
 
-      // Show highlights for: assessed, hovered, required-but-unassessed,
-      // or (in guided mode) the next step and locked regions.
-      if (!isAssessed && !isHovered && !isRequired && !isGuidedNext && !isGuidedLocked) continue;
+      // Show highlights only when they are instructional: hovered,
+      // required, guided next/locked, or assessed+required. Assessed-only
+      // regions stay clean so focused face/airway views do not grow large
+      // floating outlines over the patient.
+      if (!isHovered && !isRequired && !isGuidedNext && !isGuidedLocked) continue;
 
       const height = region.yMax - region.yMin;
       const centerY = region.yMin + height / 2;
@@ -475,19 +736,25 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
         opacity = 0.45;
       }
 
+      const ringDepth = region.id === 'posterior-logroll' ? -0.36 : 0.42;
+      const ringHeightScale = Math.max(0.72, Math.min(3.2, height / Math.max(radius * 2, 0.01)));
+
       highlights.push(
         <mesh
           key={region.id}
-          position={[xOffset, centerY, 0]}
+          position={[xOffset, centerY, ringDepth]}
+          scale={[1, ringHeightScale, 1]}
           userData={{ skipRecolor: true }}
         >
-          <cylinderGeometry args={[radius, radius, height, 16, 1, true]} />
+          <torusGeometry args={[radius, 0.008, 8, 48]} />
           <meshStandardMaterial
             color={color}
             transparent
-            opacity={opacity}
+            opacity={Math.min(opacity + 0.18, 0.72)}
             side={THREE.DoubleSide}
             depthWrite={false}
+            emissive={color}
+            emissiveIntensity={0.08}
           />
         </mesh>
       );
@@ -497,10 +764,11 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
         highlights.push(
           <mesh
             key={`${region.id}-ring`}
-            position={[xOffset, centerY, 0]}
+            position={[xOffset, centerY, ringDepth + 0.01]}
+            scale={[1, ringHeightScale, 1]}
             userData={{ skipRecolor: true }}
           >
-            <cylinderGeometry args={[radius + 0.005, radius + 0.005, height, 16, 1, true]} />
+            <torusGeometry args={[radius + 0.012, 0.006, 8, 48]} />
             <meshStandardMaterial
               color={REQUIRED_UNASSESSED_COLOR}
               transparent
@@ -519,10 +787,11 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
         highlights.push(
           <mesh
             key={`${region.id}-guided-ring`}
-            position={[xOffset, centerY, 0]}
+            position={[xOffset, centerY, ringDepth + 0.012]}
+            scale={[1, ringHeightScale, 1]}
             userData={{ skipRecolor: true }}
           >
-            <cylinderGeometry args={[radius + 0.008, radius + 0.008, height, 16, 1, true]} />
+            <torusGeometry args={[radius + 0.018, 0.007, 8, 48]} />
             <meshStandardMaterial
               color={GUIDED_NEXT_COLOR}
               transparent
@@ -573,34 +842,17 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
       {/* Region highlight overlays */}
       {regionHighlights}
 
-      {/* Hover tooltip */}
-      {hoveredRegion && (
-        <Html position={tooltipPos} distanceFactor={4} zIndexRange={[100, 0]}>
-          <div className="px-3 py-2 rounded-xl bg-black/90 text-white text-xs font-medium pointer-events-none shadow-xl border border-white/10 backdrop-blur-sm max-w-[220px]">
-            <div className="font-bold text-sm">
-              {hoveredRegion.label}
-              {(assessedRegions.has(hoveredRegion.id) || ((hoveredRegion.id === 'right-arm' || hoveredRegion.id === 'left-arm' || hoveredRegion.id === 'right-leg' || hoveredRegion.id === 'left-leg') && assessedRegions.has('extremities'))) && (
-                <span className="ml-1.5 text-green-400">{'\u2713'}</span>
-              )}
-              {requiredRegions?.has(hoveredRegion.id) && !assessedRegions.has(hoveredRegion.id) && (
-                <span className="ml-1.5 text-amber-400 text-[10px]">required</span>
-              )}
-              {guidedMode && nextGuidedStep && hoveredRegion.id === nextGuidedStep && (
-                <span className="ml-1.5 text-indigo-300 text-[10px]">next step</span>
-              )}
-              {guidedMode && nextGuidedStep && hoveredRegion.id !== nextGuidedStep && !assessedRegions.has(hoveredRegion.id) && (
-                <span className="ml-1.5 text-slate-400 text-[10px]">locked</span>
-              )}
-            </div>
-            <div className="text-[10px] text-white/60 mt-0.5 max-w-[200px] leading-relaxed">
-              {hoveredRegion.description}
-            </div>
-          </div>
-        </Html>
-      )}
+      {/* The big black hover tooltip was removed \u2014 the small dot markers
+          (rendered by the parent) already name each region/landmark on hover,
+          so the bulky black label is redundant clutter. Hovering still sets
+          the pointer cursor so the body reads as clickable. */}
     </group>
   );
 }
 
-// Preload the model
+// Preload all candidate models. The browser parallelises the requests
+// during the initial paint so the first case-open doesn't pay the GLB
+// download cost. drei's loader is idempotent — preloading a URL that's
+// never used costs ~one HEAD request and nothing else.
 useGLTF.preload('/models/patient.glb');
+useGLTF.preload('/models/patient-female.glb');

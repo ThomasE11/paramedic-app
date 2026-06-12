@@ -18,7 +18,6 @@ import { RotateCcw, User, Eye, Hand, Activity, Stethoscope, X, ChevronRight, Che
 import { BodyMesh } from './BodyMesh';
 import type { LimbSide } from './BodyMesh';
 import { AnatomyReferenceLayer } from './AnatomyReferenceLayer';
-import { ClothingLayer } from './ClothingLayer';
 import { getNextGuidedStep, EXAM_SEQUENCE } from './bodyRegions';
 import { useTranslation } from 'react-i18next';
 import type { AssessmentStepId, SecondaryAssessmentStep } from '@/data/assessmentFramework';
@@ -3654,7 +3653,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
               camera={{ position: [0, 0.95, 4.25], fov: 38 }}
               dpr={Math.min(window.devicePixelRatio, 2)}
               frameloop="always"
-              gl={{ antialias: true, alpha: true }}
+              gl={{ antialias: true, alpha: true, preserveDrawingBuffer: new URLSearchParams(window.location.search).has('capture') }}
               style={{ background: 'transparent' }}
               onPointerMissed={() => { if (activeRegion) handleCloseRegion(); }}
             >
@@ -3692,10 +3691,9 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 // Receive the surface projector so labels anchor to the real mesh.
                 // Wrap in an arrow so React stores the function rather than calling it.
                 onSurfaceSampler={(fn) => setSurfaceSampler(() => fn)}
+                dressed={anatomyLayer === 'dressed'}
+                dressedActiveRegion={activeRegion}
               />
-
-              {/* Dressed view — stylised scrubs that part over the region in focus. */}
-              <ClothingLayer visible={anatomyLayer === 'dressed'} activeRegion={activeRegion} />
 
               <AnatomyReferenceLayer visible={anatomyLayer === 'skeleton'} />
 
