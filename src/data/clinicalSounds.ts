@@ -15,6 +15,8 @@
 // TYPES
 // ============================================================================
 
+import { getBreathPhase01, getBreathRpm } from '@/lib/breathClock';
+
 export type BreathSoundType =
   | 'clear'           // Normal vesicular breath sounds
   | 'wheeze'          // High-pitched musical sound (asthma/COPD)
@@ -1156,6 +1158,20 @@ const BOWEL_RECORDINGS: Partial<Record<BowelSoundType, string>> = {
   // absent: synthesised (it is silence by definition).
 };
 
+// Respiratory-cycle length (seconds) of each breath recording, measured from
+// the source files (duration / cycle count). Used to phase-lock and
+// rate-match the loop to the on-screen chest rise.
+const BREATH_CYCLE_SEC: Partial<Record<BreathSoundType, number>> = {
+  'clear': 3.5,            // 7.0s / 2 cycles
+  'wheeze': 4.23,          // 8.46s / 2
+  'crackles-fine': 4.65,   // 13.95s / 3
+  'crackles-coarse': 3.15, // 6.3s / 2
+  'rhonchi': 4.05,         // 8.1s / 2
+  'stridor': 3.84,         // 15.37s / 4
+  'diminished': 3.5,       // 7.0s / 2
+  'snoring': 3.9,          // 46.8s / 12
+};
+
 // Active recorded-audio elements, tracked so stopAllSounds() can halt them.
 const activeRecordings = new Set<HTMLAudioElement>();
 
@@ -1166,12 +1182,36 @@ const activeRecordings = new Set<HTMLAudioElement>();
  * fall back to synthesis. Honours the same gesture-unlock as the rest of the
  * audio — by the time a student auscultates, audio is already unlocked.
  */
-function playRecordedSound(url: string, durationMs: number): boolean {
+function playRecordedSound(
+  url: string,
+  durationMs: number,
+  breathSync?: { cycleSec: number },
+): boolean {
   if (typeof window === 'undefined') return false;
   try {
     const audio = new Audio(url);
     audio.loop = true;
     audio.volume = 0.9;
+    if (breathSync) {
+      // Match the recording's respiratory cycle to the on-screen chest rise:
+      // rate-match (clamped so it still sounds like breathing), then seek to
+      // the body's current point in the breath so inhale lines up.
+      const rpm = getBreathRpm();
+      if (rpm > 0) {
+        const targetCycleSec = 60 / rpm;
+        const rate = Math.max(0.55, Math.min(2.0, breathSync.cycleSec / targetCycleSec));
+        audio.playbackRate = rate;
+        audio.preservesPitch = false;
+        const seek = getBreathPhase01() * breathSync.cycleSec;
+        audio.addEventListener('loadedmetadata', () => {
+          try {
+            if (Number.isFinite(audio.duration) && audio.duration > 0) {
+              audio.currentTime = seek % audio.duration;
+            }
+          } catch { /* seek is best-effort */ }
+        }, { once: true });
+      }
+    }
     activeRecordings.add(audio);
     const stopAt = window.setTimeout(() => {
       try { audio.pause(); } catch { /* noop */ }
@@ -1348,9 +1388,18 @@ function applyBreathingEnvelope(
 export function playBreathSound(soundType: BreathSoundType, durationMs: number = 4000): void {
   stopAllSounds();
 
-  // Prefer a real recording when one exists for this sound type.
+  // Apnoea: no airflow means no breath sounds — an accurate, important
+  // "finding" in itself. Don't loop a breathing recording over a still chest.
+  if (getBreathRpm() <= 0 && soundType !== 'absent') {
+    return;
+  }
+
+  // Prefer a real recording when one exists for this sound type — phase- and
+  // rate-locked to the visible chest rise so inhale/exhale match what the
+  // student sees.
   const rec = BREATH_RECORDINGS[soundType];
-  if (rec && playRecordedSound(rec, durationMs)) return;
+  const cycleSec = BREATH_CYCLE_SEC[soundType];
+  if (rec && playRecordedSound(rec, durationMs, cycleSec ? { cycleSec } : undefined)) return;
 
   const ctx = getAudioContext();
   if (ctx.state === 'suspended') {

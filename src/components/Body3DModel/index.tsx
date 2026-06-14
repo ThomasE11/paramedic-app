@@ -18,6 +18,8 @@ import { RotateCcw, User, Eye, Hand, Activity, Stethoscope, X, ChevronRight, Che
 import { BodyMesh } from './BodyMesh';
 import type { LimbSide } from './BodyMesh';
 import { AnatomyReferenceLayer } from './AnatomyReferenceLayer';
+import { CLOTHING_PARTING } from './ClothingLayer';
+import { usePatientVoice } from '@/hooks/usePatientVoice';
 import { getNextGuidedStep, EXAM_SEQUENCE } from './bodyRegions';
 import { useTranslation } from 'react-i18next';
 import type { AssessmentStepId, SecondaryAssessmentStep } from '@/data/assessmentFramework';
@@ -2974,13 +2976,29 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   // anchor every floating label/finding onto the real body surface (works for
   // the male, female, or any future GLB without per-model coordinate tuning).
   const [surfaceSampler, setSurfaceSampler] = useState<((x: number, y: number) => [number, number, number]) | null>(null);
+  // Stable callback for BodyMesh — it lives in an effect dependency array, so
+  // a fresh inline arrow each render would re-run that effect → setState →
+  // re-render every frame (an infinite "Maximum update depth" loop that read
+  // on-screen as the vitals/3D flickering). useCallback pins it once.
+  const handleSurfaceSampler = useCallback(
+    (fn: ((x: number, y: number) => [number, number, number]) | null) =>
+      setSurfaceSampler(() => fn),
+    [],
+  );
   const [activeRegion, setActiveRegion] = useState<string | null>(null);
   const [activeLimb, setActiveLimb] = useState<LimbSide>(null);
   const [revealedFindings, setRevealedFindings] = useState<Map<string, string>>(new Map());
   const [selectedAction, setSelectedAction] = useState<string | null>(null);
   const [patientReaction, setPatientReaction] = useState<PatientReaction | null>(null);
+  // The patient's spoken voice — exam reactions are read aloud through the
+  // same ElevenLabs → Supertonic → Web Speech chain as history answers.
+  const patientVoice = usePatientVoice(caseData);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [anatomyLayer, setAnatomyLayer] = useState<'surface' | 'skeleton' | 'dressed'>('surface');
+  // Dressed view: zooming does NOT undress the patient. Exposure is a
+  // deliberate clinical act — this flags that the student chose to expose
+  // the focused region (reset on every region change/close).
+  const [regionExposed, setRegionExposed] = useState(false);
   // Phase 2F: Sound playback progress
   const [playingSound, setPlayingSound] = useState<string | null>(null);
   const [soundProgress, setSoundProgress] = useState(0);
@@ -3124,6 +3142,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   // Phase 2E: Consolidated close handler
   const handleCloseRegion = useCallback(() => {
     setActiveRegion(null);
+    setRegionExposed(false);
     setSelectedAction(null);
     clearPatientReaction();
     setPlayingSound(null);
@@ -3155,6 +3174,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
 
   const handleRegionClick = useCallback((stepId: string) => {
     setActiveRegion(stepId);
+    setRegionExposed(false);
     // Individual limb regions are directly the active limb
     setActiveLimb(isLimbRegion(stepId) ? stepId as LimbSide : null);
     setSelectedAction(null);
@@ -3264,6 +3284,12 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
         ? { pos: [quadrantX[abdomenQuadrant], quadrantY[abdomenQuadrant], 1.26] as [number, number, number], target: [quadrantX[abdomenQuadrant], quadrantY[abdomenQuadrant], 0.10] as [number, number, number] }
         : focus[actionId];
       if (exactFocus) {
+        const sampled = surfaceSampler
+          ? surfaceSampler(exactFocus.target[0], exactFocus.target[1])
+          : null;
+        const projected = sampled
+          ? { pos: exactFocus.pos, target: sampled }
+          : exactFocus;
         const actionRadius =
           /pupil|eyes/.test(actionId) ? 0.045 :
           /nose|lips|mouth|tongue/.test(actionId) ? 0.065 :
@@ -3275,8 +3301,8 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
           exactFocus.pos[1] - exactFocus.target[1],
           exactFocus.pos[2] - exactFocus.target[2],
         ];
-        const pos = fitCameraPos(controlsRef.current, exactFocus.target, dir, actionRadius);
-        animateCamera(controlsRef.current, pos, exactFocus.target, 500);
+        const pos = fitCameraPos(controlsRef.current, projected.target, dir, actionRadius);
+        animateCamera(controlsRef.current, pos, projected.target, 500);
       }
     }
 
@@ -3288,6 +3314,9 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
     }
     setPatientReaction(reaction);
     if (reaction) {
+      // Every quote is the PATIENT speaking ("Please stop, that really
+      // hurts") — make it audible, not just a caption.
+      if (reaction.quote) patientVoice.say(reaction.quote);
       reactionTimerRef.current = window.setTimeout(() => {
         setPatientReaction(null);
         reactionTimerRef.current = null;
@@ -3364,7 +3393,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
       playPercussionSound(percType);
       startSoundProgress(actionId, PERCUSSION_DURATION);
     }
-  }, [activeRegion, animateCamera, caseData, patientSounds, revealedFindings, startSoundProgress, isInArrest]);
+  }, [activeRegion, animateCamera, caseData, patientSounds, revealedFindings, startSoundProgress, isInArrest, patientVoice.say, surfaceSampler]);
 
   const allSubRegions = activeRegion ? getSubRegions(activeRegion) : [];
   const subRegions = allSubRegions;
@@ -3516,6 +3545,20 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
               Dressed
             </button>
           </div>
+          {/* Dressed view: deliberate exposure of the focused region. */}
+          {anatomyLayer === 'dressed' && activeRegion && (CLOTHING_PARTING[activeRegion]?.length ?? 0) > 0 && (
+            <Button
+              variant={regionExposed ? 'default' : 'ghost'}
+              size="sm"
+              className={`h-6 gap-1 px-2 text-[9px] rounded-lg ${regionExposed ? 'bg-teal-600 hover:bg-teal-700 text-white' : 'border border-teal-500/30 text-teal-600 dark:text-teal-300'}`}
+              onClick={() => setRegionExposed(v => !v)}
+              aria-pressed={regionExposed}
+              title={regionExposed ? 'Re-dress this region' : 'Expose this region for examination'}
+            >
+              <Shirt className="h-3 w-3" />
+              {regionExposed ? 'Re-dress' : 'Expose'}
+            </Button>
+          )}
           {/* Phase 2 — guided exam mode toggle */}
           <Button
             variant={guidedMode ? 'default' : 'ghost'}
@@ -3690,9 +3733,11 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 breathRateRpm={isInArrest ? 0 : breathRateRpm}
                 // Receive the surface projector so labels anchor to the real mesh.
                 // Wrap in an arrow so React stores the function rather than calling it.
-                onSurfaceSampler={(fn) => setSurfaceSampler(() => fn)}
+                onSurfaceSampler={handleSurfaceSampler}
                 dressed={anatomyLayer === 'dressed'}
-                dressedActiveRegion={activeRegion}
+                dressedActiveRegion={regionExposed ? activeRegion : null}
+                pupilLeftMm={pupilProfile.leftMm}
+                pupilRightMm={pupilProfile.rightMm}
               />
 
               <AnatomyReferenceLayer visible={anatomyLayer === 'skeleton'} />

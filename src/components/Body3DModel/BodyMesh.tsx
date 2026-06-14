@@ -13,6 +13,8 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { buildScrubs, CLOTHING_PARTING } from './ClothingLayer';
+import { paintEyesOnTexture } from './EyesLayer';
+import { setBreathClock } from '@/lib/breathClock';
 import type { ThreeEvent } from '@react-three/fiber';
 import { HOVER_COLOR, ASSESSED_COLOR, GUIDED_NEXT_COLOR, GUIDED_LOCKED_COLOR } from './bodyRegions';
 import type { SecondaryAssessmentStep } from '@/data/assessmentFramework';
@@ -50,6 +52,9 @@ interface BodyMeshProps {
   dressed?: boolean;
   /** Focused region id — the garment piece covering it parts so the skin can be assessed. */
   dressedActiveRegion?: string | null;
+  /** Case pupil diameters (mm) — rendered as the model's actual pupils. */
+  pupilLeftMm?: number;
+  pupilRightMm?: number;
 }
 
 /**
@@ -427,7 +432,7 @@ function buildSurfaceSampler(root: THREE.Object3D | null): ((x: number, y: numbe
   };
 }
 
-export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guidedMode = false, nextGuidedStep = null, onBlockedClick, patientGender, surfaceOpacity = 1, activeFindingMorphs, breathRateRpm = 0, onSurfaceSampler, dressed = false, dressedActiveRegion = null }: BodyMeshProps) {
+export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guidedMode = false, nextGuidedStep = null, onBlockedClick, patientGender, surfaceOpacity = 1, activeFindingMorphs, breathRateRpm = 0, onSurfaceSampler, dressed = false, dressedActiveRegion = null, pupilLeftMm = 3.5, pupilRightMm = 3.5 }: BodyMeshProps) {
   // The path is recomputed per render so a `caseData.patientInfo.gender`
   // change (e.g. user picks a different case) swaps the mesh without
   // remounting the parent. useGLTF caches by URL.
@@ -541,12 +546,81 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
         const scrubs = buildScrubs(bodyMesh as THREE.Mesh);
         // Child of the body mesh at identity → inherits its exact placement.
         if (scrubs) (bodyMesh as THREE.Mesh).add(scrubs);
+        // Eyes — the skin texture paints the sockets bright red (a placeholder);
+        // repaint those texels into proper eyes (sclera/iris/pupil) in place, so
+        // they land exactly on the sockets via the model's own UVs and the case
+        // pupil size shows. Works on any of the textured patient meshes.
+        paintEyesOnTexture(bodyMesh as THREE.Mesh, pupilLeftMm, pupilRightMm);
+
+        // Invisible, generously-sized hit boxes over each arm. The rendered
+        // forearm is only a few pixels wide at the overview zoom, so honest
+        // clicks slip past it (or graze the torso and read as "abdomen"). Each
+        // box spans the arm's measured lateral region — filling it, unlike a
+        // thin capsule whose bounding box is mostly empty air — and is tagged
+        // with its limb id; the click handler resolves the tag before any
+        // geometric guessing. Added to the normalised root (no rotation) so a
+        // world-axis box stays world-aligned regardless of the GLB's own node
+        // transform.
+        try {
+          clone.updateMatrixWorld(true);
+          const invClone = clone.matrixWorld.clone().invert();
+          const cloneScale = clone.scale.x || 1;
+          const bm = bodyMesh as THREE.Mesh;
+          const posB = (bm.geometry as THREE.BufferGeometry).attributes.position as THREE.BufferAttribute;
+          bm.updateWorldMatrix(true, false);
+          const mwB = bm.matrixWorld;
+          const vB = new THREE.Vector3();
+          let minYB = Infinity, maxYB = -Infinity;
+          const wpos: Array<[number, number, number]> = new Array(posB.count);
+          for (let i = 0; i < posB.count; i++) {
+            vB.fromBufferAttribute(posB, i).applyMatrix4(mwB);
+            wpos[i] = [vB.x, vB.y, vB.z];
+            if (vB.y < minYB) minYB = vB.y;
+            if (vB.y > maxYB) maxYB = vB.y;
+          }
+          const HB = maxYB - minYB;
+          const sB = HB / 1.8;
+          for (const side of [1, -1] as const) {
+            let xn = Infinity, xx = -Infinity, yn = Infinity, yx = -Infinity, zn = Infinity, zx = -Infinity, cnt = 0;
+            for (let i = 0; i < posB.count; i++) {
+              const [x, y, z] = wpos[i];
+              // Clearly-lateral verts (beyond shoulder width) from the upper
+              // arm down to the hanging hand. Excludes the shoulder root so the
+              // box never steals a lateral-chest click.
+              if (Math.sign(x) !== side || Math.abs(x) < 0.18 * sB || y < minYB + 0.42 * HB || y > minYB + 0.86 * HB) continue;
+              cnt++;
+              if (x < xn) xn = x; if (x > xx) xx = x;
+              if (y < yn) yn = y; if (y > yx) yx = y;
+              if (z < zn) zn = z; if (z > zx) zx = z;
+            }
+            if (cnt < 20) continue;
+            // Pad so near-misses beside the arm still land on it.
+            const padXY = 0.03 * sB, padZ = 0.06 * sB;
+            const wCenter = new THREE.Vector3((xn + xx) / 2, (yn + yx) / 2, (zn + zx) / 2);
+            const box = new THREE.Mesh(
+              new THREE.BoxGeometry(
+                ((xx - xn) + 2 * padXY) / cloneScale,
+                ((yx - yn) + 2 * padXY) / cloneScale,
+                ((zx - zn) + 2 * padZ) / cloneScale,
+              ),
+              new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }),
+            );
+            box.position.copy(wCenter).applyMatrix4(invClone);
+            // Mixamo convention: +X is the PATIENT'S left.
+            box.userData.limbRegion = side > 0 ? 'left-arm' : 'right-arm';
+            box.userData.skipRecolor = true;
+            box.name = side > 0 ? 'hit-left-arm' : 'hit-right-arm';
+            clone.add(box);
+          }
+        } catch {
+          // hit volumes are a convenience — never break the exam
+        }
       }
     } catch {
       // dressing is cosmetic; the exam continues undressed
     }
     return clone;
-  }, [scene, modelPath, surfaceOpacity]);
+  }, [scene, modelPath, surfaceOpacity, pupilLeftMm, pupilRightMm]);
 
   // Region state is now communicated with anatomical overlays and landmarks,
   // not by recolouring the whole patient. Keep this callback for the pointer
@@ -630,6 +704,9 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
         } else {
           infl[idx] = 0;
         }
+        // Publish the phase so auscultation audio can inhale/exhale in sync
+        // with the chest the student is watching.
+        setBreathClock(breathPhaseRef.current, breathRateRpm);
       }
     }
   });
@@ -654,6 +731,20 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
 
   const handleClick = useCallback((e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
+    // A tagged limb hit-box beats coordinate guessing — thin forearms are
+    // nearly impossible to ray-hit honestly at the overview zoom.
+    const limbHit = (e.intersections ?? [])
+      .map(i => i.object.userData?.limbRegion as SecondaryAssessmentStep | undefined)
+      .find(Boolean);
+    if (limbHit) {
+      lastClickedLimb = limbHit as LimbSide;
+      if (guidedMode && nextGuidedStep && limbHit !== nextGuidedStep) {
+        onBlockedClick?.(limbHit, nextGuidedStep);
+        return;
+      }
+      onRegionClick(limbHit);
+      return;
+    }
     const region = getRegionAtPoint(e.point);
     if (!region) return;
 

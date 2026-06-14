@@ -1090,9 +1090,6 @@ function TwelveLeadECG({ rhythm, heartRate, onClose, onExport, isPaced = false }
 
   const litflData = getLitflDataForRhythm(rhythm.id);
 
-  // All canvas keys including rhythm strip
-  const allCanvasKeys = [...ALL_LEADS, 'rhythm-strip'];
-
   useEffect(() => {
     let lastTime = performance.now();
     // Constant 25mm/s sweep speed — same as main monitor
@@ -1111,7 +1108,7 @@ function TwelveLeadECG({ rhythm, heartRate, onClose, onExport, isPaced = false }
       lastTime = now;
       posRef.current += pixelsPerSec * dt;
 
-      for (const key of allCanvasKeys) {
+      for (const key of [...ALL_LEADS, 'rhythm-strip']) {
         const canvas = canvasRefs.current[key];
         if (!canvas) continue;
 
@@ -2242,7 +2239,7 @@ export function VitalSignsMonitor({
     setActiveAlarms(new Set());
     setAssessedVitals({});
     reportedAssessmentsRef.current.clear();
-  }, [caseTitle]);
+  }, [caseTitle, initialVitals]);
 
   // Auto-refresh continuous-monitor vitals (SpO2, pulse, RR) whenever the
   // underlying currentVitals changes. Real SpO2 probes read continuously,
@@ -2380,6 +2377,7 @@ export function VitalSignsMonitor({
 
   // Refs
   const assessmentIntervalRef = useRef<number | null>(null);
+  const lastAlarmAnnunciationRef = useRef<{ level: 'none' | 'warning' | 'critical'; at: number }>({ level: 'none', at: 0 });
   const deteriorationTimerRef = useRef<number | null>(null);
   const audioEngineRef = useRef<ClinicalAudioEngine | null>(null);
   const codeTimerRef = useRef<number | null>(null);
@@ -2620,13 +2618,33 @@ export function VitalSignsMonitor({
     if (checkAlarm(glucose, ALARM_THRESHOLDS.bloodGlucose).isCritical) newAlarms.add('glucose-critical');
     else if (checkAlarm(glucose, ALARM_THRESHOLDS.bloodGlucose).isWarning) newAlarms.add('glucose-warning');
 
-    setActiveAlarms(newAlarms);
+    // Only commit when membership actually changed — vitals tween every few
+    // seconds and a fresh Set each tick re-rendered the whole monitor.
+    setActiveAlarms(prev => {
+      if (prev.size === newAlarms.size && [...newAlarms].every(a => prev.has(a))) return prev;
+      return newAlarms;
+    });
 
+    // Real monitors annunciate on a cadence (IEC 60601-1-8 burst-interburst),
+    // they do not replay the alarm pattern every time a value updates. High
+    // priority repeats every 10s, medium every 25s; a NEW alarm condition
+    // (or escalation) annunciates immediately.
     if (audioEnabled && audioEngineRef.current && alarmsEnabled) {
       const hasCritical = Array.from(newAlarms).some(a => a.includes('critical'));
       const hasWarning = Array.from(newAlarms).some(a => a.includes('warning'));
-      if (hasCritical) audioEngineRef.current.playAlarm(true);
-      else if (hasWarning) audioEngineRef.current.playAlarm(false);
+      const level = hasCritical ? 'critical' : hasWarning ? 'warning' : 'none';
+      const now = Date.now();
+      const last = lastAlarmAnnunciationRef.current;
+      const escalated = level !== 'none' && last.level !== level;
+      const interval = level === 'critical' ? 10000 : 25000;
+      if (level === 'none') {
+        lastAlarmAnnunciationRef.current = { level, at: 0 };
+      } else if (escalated || now - last.at >= interval) {
+        audioEngineRef.current.playAlarm(level === 'critical');
+        lastAlarmAnnunciationRef.current = { level, at: now };
+      }
+    } else {
+      lastAlarmAnnunciationRef.current = { level: 'none', at: 0 };
     }
   }, [currentVitals, audioEnabled, alarmsEnabled]);
 
@@ -2666,6 +2684,7 @@ export function VitalSignsMonitor({
   useEffect(() => {
     if (activeAssessments.size === 0) return;
 
+    let lastProgressCommit = 0;
     const updateProgress = () => {
       const now = Date.now();
       const newProgress = new Map<string, number>();
@@ -2678,7 +2697,12 @@ export function VitalSignsMonitor({
         if (progress >= 100) completed.push(vitalKey);
       });
 
-      setAssessmentProgress(newProgress);
+      // Commit at ~6fps. Setting state on every animation frame re-rendered
+      // the whole monitor 60×/s, which read as the vitals "flickering".
+      if (completed.length > 0 || now - lastProgressCommit >= 160) {
+        lastProgressCommit = now;
+        setAssessmentProgress(newProgress);
+      }
 
       if (completed.length > 0) {
         setVisibleVitals(prev => {
@@ -2744,7 +2768,20 @@ export function VitalSignsMonitor({
     return () => {
       if (assessmentIntervalRef.current) cancelAnimationFrame(assessmentIntervalRef.current);
     };
-  }, [activeAssessments, audioEnabled, currentVitals.spo2]);
+  }, [
+    activeAssessments,
+    audioEnabled,
+    currentVitals.bloodGlucose,
+    currentVitals.bp,
+    currentVitals.etco2,
+    currentVitals.gcs,
+    currentVitals.painScore,
+    currentVitals.pulse,
+    currentVitals.respiration,
+    currentVitals.spo2,
+    currentVitals.temperature,
+    onAssessmentPerformed,
+  ]);
 
   const startAssessment = useCallback((vitalKey: string, method: AssessmentMethod, forceRecycle?: boolean) => {
     // Allow BP to re-cycle even if already visible (re-measurement)
