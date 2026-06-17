@@ -4130,6 +4130,7 @@ export function StudentPanel({
                       caseCategory={currentCase.category}
                       appliedTreatmentIds={appliedTreatmentIds}
                       isInArrest={patientState?.isInArrest ?? false}
+                      liveRespiration={currentVitals?.respiration}
                       onPulse={runPulseCheck}
                     />
                   </Suspense>

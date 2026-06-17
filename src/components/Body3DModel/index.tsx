@@ -28,7 +28,7 @@ import type { CaseScenario, CaseCategory } from '@/types';
 import type { ClinicalSoundState } from '@/data/clinicalSounds';
 import { playBreathSound, playHeartSound, playPercussionSound, playBowelSound, stopAllSounds, getZoneBreathSound } from '@/data/clinicalSounds';
 import type { BowelSoundType, BreathSoundType } from '@/data/clinicalSounds';
-import { inferInjuries, injuryRegionTo3D } from '@/lib/injuryMap';
+import { inferInjuries, injuryRegionTo3D, inferGeneralAppearance, type InjuryKind, type InjurySeverity } from '@/lib/injuryMap';
 import {
   deriveAppliedTreatmentRealismCues,
   deriveCaseRealismProfile,
@@ -149,6 +149,49 @@ const EXAM_LANDMARKS: ExamLandmark[] = [
   { id: 'rlq-detail', region: 'abdomen', label: 'RLQ', sublabel: 'appendix / pelvis', position: [-0.095, 0.985, 0.245], level: 'detail', actionId: 'abd-rlq-auscultate', tone: 'abdomen' },
   { id: 'llq-detail', region: 'abdomen', label: 'LLQ', sublabel: 'colon / pelvis', position: [0.095, 0.985, 0.245], level: 'detail', actionId: 'abd-llq-auscultate', tone: 'abdomen' },
   { id: 'umbilicus-detail', region: 'abdomen', label: 'Umbilicus', sublabel: 'distension / bruising', position: [0, 1.035, 0.255], level: 'detail', actionId: 'abd-inspect', tone: 'abdomen' },
+
+  // ===== HEAD (cranium — face/eyes/mouth live on the separate 'face' region) =====
+  { id: 'scalp-detail', region: 'head', label: 'Scalp', sublabel: 'lacerations, haematoma', position: [-0.02, 1.79, 0.12], level: 'detail', actionId: 'scalp-inspect', tone: 'warning' },
+  { id: 'skull-detail', region: 'head', label: 'Skull', sublabel: 'deformity, step, boggy', position: [0.03, 1.73, 0.16], level: 'detail', actionId: 'scalp-palpate', tone: 'warning' },
+  { id: 'ear-right-detail', region: 'head', label: 'R ear', sublabel: 'Battle sign, CSF otorrhoea', position: [-0.135, 1.66, 0.05], level: 'detail', actionId: 'ears-inspect', tone: 'neutral' },
+  { id: 'ear-left-detail', region: 'head', label: 'L ear', sublabel: 'Battle sign, CSF otorrhoea', position: [0.135, 1.66, 0.05], level: 'detail', actionId: 'ears-inspect', tone: 'neutral' },
+
+  // ===== RIGHT ARM (patient's right = camera-left = negative X) =====
+  { id: 'r-shoulder-detail', region: 'right-arm', label: 'Shoulder', sublabel: 'clavicle, ROM', position: [-0.28, 1.36, 0.10], level: 'detail', actionId: 'r-shoulder-palpate', tone: 'warning' },
+  { id: 'r-humerus-detail', region: 'right-arm', label: 'Upper arm', sublabel: 'humerus, deformity', position: [-0.35, 1.14, 0.08], level: 'detail', actionId: 'r-humerus-palpate', tone: 'warning' },
+  { id: 'r-elbow-detail', region: 'right-arm', label: 'Elbow', sublabel: 'effusion, ROM', position: [-0.34, 0.98, 0.09], level: 'detail', actionId: 'r-elbow-palpate', tone: 'warning' },
+  { id: 'r-forearm-detail', region: 'right-arm', label: 'Forearm', sublabel: 'radius / ulna', position: [-0.27, 0.86, 0.13], level: 'detail', actionId: 'r-forearm-palpate', tone: 'warning' },
+  { id: 'r-wrist-detail', region: 'right-arm', label: 'Wrist', sublabel: 'radial pulse, CRT', position: [-0.215, 0.78, 0.16], level: 'detail', actionId: 'r-arm-pulses', tone: 'circulation' },
+  { id: 'r-hand-detail', region: 'right-arm', label: 'Hand', sublabel: 'grip, sensation, digits', position: [-0.205, 0.69, 0.16], level: 'detail', actionId: 'r-hand-palpate', tone: 'neuro' },
+
+  // ===== LEFT ARM (patient's left = camera-right = positive X) =====
+  { id: 'l-shoulder-detail', region: 'left-arm', label: 'Shoulder', sublabel: 'clavicle, ROM', position: [0.28, 1.36, 0.10], level: 'detail', actionId: 'l-shoulder-palpate', tone: 'warning' },
+  { id: 'l-humerus-detail', region: 'left-arm', label: 'Upper arm', sublabel: 'humerus, deformity', position: [0.35, 1.14, 0.08], level: 'detail', actionId: 'l-humerus-palpate', tone: 'warning' },
+  { id: 'l-elbow-detail', region: 'left-arm', label: 'Elbow', sublabel: 'effusion, ROM', position: [0.34, 0.98, 0.09], level: 'detail', actionId: 'l-elbow-palpate', tone: 'warning' },
+  { id: 'l-forearm-detail', region: 'left-arm', label: 'Forearm', sublabel: 'radius / ulna', position: [0.27, 0.86, 0.13], level: 'detail', actionId: 'l-forearm-palpate', tone: 'warning' },
+  { id: 'l-wrist-detail', region: 'left-arm', label: 'Wrist', sublabel: 'radial pulse, CRT', position: [0.215, 0.78, 0.16], level: 'detail', actionId: 'l-arm-pulses', tone: 'circulation' },
+  { id: 'l-hand-detail', region: 'left-arm', label: 'Hand', sublabel: 'grip, sensation, digits', position: [0.205, 0.69, 0.16], level: 'detail', actionId: 'l-hand-palpate', tone: 'neuro' },
+
+  // ===== RIGHT LEG (upper thigh → foot) =====
+  { id: 'r-hip-detail', region: 'right-leg', label: 'Hip', sublabel: 'shortening, rotation', position: [-0.16, 0.86, 0.15], level: 'detail', actionId: 'r-hip-palpate', tone: 'warning' },
+  { id: 'r-thigh-detail', region: 'right-leg', label: 'Upper thigh', sublabel: 'femur, quadriceps', position: [-0.155, 0.70, 0.17], level: 'detail', actionId: 'r-femur-palpate', tone: 'warning' },
+  { id: 'r-knee-detail', region: 'right-leg', label: 'Knee', sublabel: 'patella, effusion', position: [-0.15, 0.47, 0.17], level: 'detail', actionId: 'r-knee-palpate', tone: 'warning' },
+  { id: 'r-shin-detail', region: 'right-leg', label: 'Lower leg', sublabel: 'tibia, compartments', position: [-0.15, 0.30, 0.17], level: 'detail', actionId: 'r-tibia-palpate', tone: 'warning' },
+  { id: 'r-ankle-detail', region: 'right-leg', label: 'Ankle', sublabel: 'malleoli, oedema', position: [-0.14, 0.15, 0.17], level: 'detail', actionId: 'r-ankle-palpate', tone: 'warning' },
+  { id: 'r-foot-detail', region: 'right-leg', label: 'Foot', sublabel: 'pedal pulse, CRT', position: [-0.13, 0.07, 0.20], level: 'detail', actionId: 'r-leg-pulses', tone: 'circulation' },
+
+  // ===== LEFT LEG (upper thigh → foot) =====
+  { id: 'l-hip-detail', region: 'left-leg', label: 'Hip', sublabel: 'shortening, rotation', position: [0.16, 0.86, 0.15], level: 'detail', actionId: 'l-hip-palpate', tone: 'warning' },
+  { id: 'l-thigh-detail', region: 'left-leg', label: 'Upper thigh', sublabel: 'femur, quadriceps', position: [0.155, 0.70, 0.17], level: 'detail', actionId: 'l-femur-palpate', tone: 'warning' },
+  { id: 'l-knee-detail', region: 'left-leg', label: 'Knee', sublabel: 'patella, effusion', position: [0.15, 0.47, 0.17], level: 'detail', actionId: 'l-knee-palpate', tone: 'warning' },
+  { id: 'l-shin-detail', region: 'left-leg', label: 'Lower leg', sublabel: 'tibia, compartments', position: [0.15, 0.30, 0.17], level: 'detail', actionId: 'l-tibia-palpate', tone: 'warning' },
+  { id: 'l-ankle-detail', region: 'left-leg', label: 'Ankle', sublabel: 'malleoli, oedema', position: [0.14, 0.15, 0.17], level: 'detail', actionId: 'l-ankle-palpate', tone: 'warning' },
+  { id: 'l-foot-detail', region: 'left-leg', label: 'Foot', sublabel: 'pedal pulse, CRT', position: [0.13, 0.07, 0.20], level: 'detail', actionId: 'l-leg-pulses', tone: 'circulation' },
+
+  // ===== PELVIS =====
+  { id: 'pelvis-right-detail', region: 'pelvis', label: 'R iliac crest', sublabel: 'spring test', position: [-0.13, 0.92, 0.16], level: 'detail', actionId: 'pelvis-palpate', tone: 'warning' },
+  { id: 'pelvis-left-detail', region: 'pelvis', label: 'L iliac crest', sublabel: 'spring test', position: [0.13, 0.92, 0.16], level: 'detail', actionId: 'pelvis-palpate', tone: 'warning' },
+  { id: 'pelvis-symphysis-detail', region: 'pelvis', label: 'Symphysis', sublabel: 'deformity, bruising', position: [0, 0.84, 0.20], level: 'detail', actionId: 'pelvis-inspect', tone: 'abdomen' },
 ];
 
 function PatientSceneEnvironment() {
@@ -425,6 +468,76 @@ function RevealedFindingMarkers({
                 <span className="whitespace-nowrap text-[8px] font-bold uppercase tracking-[0.1em] leading-none">{inj.label}</span>
               </div>
             </div>
+          </MarkerHtml>
+        );
+      })}
+    </>
+  );
+}
+
+// Visible wounds painted on the skin — blood, bruising, burns — at the injured
+// region, sized by severity and coloured by kind. Unlike the text badges these
+// stay visible when you zoom INTO a region, so a described injury is actually
+// THERE on the mannequin to inspect. Shape-only findings (deformity, rotation,
+// fracture, distension) are conveyed by badges/morphs, not a skin mark.
+const WOUND_STYLE: Partial<Record<InjuryKind, { core: string; edge: string }>> = {
+  bleeding: { core: 'rgba(150,16,22,0.92)', edge: 'rgba(120,10,14,0)' },
+  wound: { core: 'rgba(140,14,20,0.92)', edge: 'rgba(110,8,12,0)' },
+  amputation: { core: 'rgba(105,8,10,0.96)', edge: 'rgba(80,4,6,0)' },
+  burn: { core: 'rgba(92,42,20,0.9)', edge: 'rgba(150,60,30,0)' },
+  bruising: { core: 'rgba(74,28,104,0.8)', edge: 'rgba(60,20,90,0)' },
+  flail: { core: 'rgba(80,32,96,0.72)', edge: 'rgba(60,22,80,0)' },
+  swelling: { core: 'rgba(176,132,110,0.62)', edge: 'rgba(176,132,110,0)' },
+};
+const WOUND_SIZE: Record<InjurySeverity, number> = { critical: 42, major: 31, minor: 23 };
+
+function InjuryWoundMarkers({
+  caseData,
+  assessedRegions,
+  activeRegion,
+  sampler,
+}: {
+  caseData: CaseScenario;
+  assessedRegions: Set<string>;
+  activeRegion: string | null;
+  sampler: ((x: number, y: number) => [number, number, number]) | null;
+}) {
+  const injuries = useMemo(() => inferInjuries(caseData), [caseData]);
+  if (!injuries.length) return null;
+  const slots: Record<string, number> = {};
+  return (
+    <>
+      {injuries.map((inj) => {
+        const style = WOUND_STYLE[inj.kind];
+        if (!style) return null; // shape-only finding — no skin mark
+        const region3d = injuryRegionTo3D(inj.region);
+        const revealed = assessedRegions.has(region3d)
+          || (isLimbRegion(region3d) && assessedRegions.has('extremities'))
+          || activeRegion === region3d;
+        if (!revealed) return null;
+        const base = FINDING_ANCHORS[region3d];
+        if (!base) return null;
+        const n = (slots[region3d] = (slots[region3d] ?? -1) + 1);
+        // Small fan so several wounds in one region don't stack dead-centre.
+        const bx = base[0] + (n % 2 === 0 ? 0.03 : -0.03) * Math.ceil(n / 2);
+        const by = base[1] - 0.04 * n;
+        const anchor: [number, number, number] = sampler && region3d !== 'posterior-logroll'
+          ? sampler(bx, by)
+          : [bx, by, base[2]];
+        const d = WOUND_SIZE[inj.severity] ?? 26;
+        return (
+          <MarkerHtml key={`wound-${inj.id}`} position={anchor} distanceFactor={2.4} zIndexRange={[60, 0]} interactive={false}>
+            <div
+              aria-hidden
+              className="pointer-events-none animate-in fade-in duration-700"
+              style={{
+                width: d,
+                height: d,
+                borderRadius: '50%',
+                background: `radial-gradient(circle at 42% 40%, ${style.core} 0%, ${style.core} 26%, ${style.edge} 80%)`,
+                filter: 'blur(1px)',
+              }}
+            />
           </MarkerHtml>
         );
       })}
@@ -2441,6 +2554,10 @@ interface Body3DModelProps {
   appliedTreatmentIds?: string[];
   /** Whether the patient is currently in cardiac arrest (all pulses absent) */
   isInArrest?: boolean;
+  /** Live respiratory rate from the monitor (breaths/min). Drives the visible
+   *  chest-rise so the mannequin breathes IN SYNC with the monitor — fast when
+   *  tachypnoeic, absent at 0. Falls back to the case rate when undefined. */
+  liveRespiration?: number;
   /** Run a pulse check from a mannequin pulse point (radial wrist / carotid neck). */
   onPulse?: (site: string) => void;
 }
@@ -2968,7 +3085,7 @@ function PatientRealismStrip({
   );
 }
 
-export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientSounds, caseCategory, appliedTreatmentIds = [], isInArrest = false, onPulse }: Body3DModelProps) {
+export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientSounds, caseCategory, appliedTreatmentIds = [], isInArrest = false, liveRespiration, onPulse }: Body3DModelProps) {
   const { t } = useTranslation();
   const controlsRef = useRef<OrbitControlsHandle | null>(null);
   const [isFlipped, setIsFlipped] = useState(false);
@@ -3029,9 +3146,44 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   );
 
   // Respiratory rate that drives the breathing morph (chest rise).
+  // Drive the visible chest-rise from the LIVE monitor respiration so the
+  // mannequin breathes in sync with the number on the screen (and stops when
+  // it reads 0 — respiratory arrest). Fall back to the case rate only before
+  // the monitor is connected.
   const breathRateRpm = useMemo(() => {
-    const rr = caseData.abcde?.breathing?.rate ?? caseData.vitalSignsProgression?.initial?.respiration;
-    return typeof rr === 'number' ? rr : 0;
+    const rr = typeof liveRespiration === 'number'
+      ? liveRespiration
+      : caseData.abcde?.breathing?.rate ?? caseData.vitalSignsProgression?.initial?.respiration;
+    return typeof rr === 'number' && rr > 0 ? rr : 0;
+  }, [caseData, liveRespiration]);
+
+  // Depth factor for the chest-rise amplitude so SHALLOW breathing (opioid tox,
+  // exhaustion, agonal) looks visibly shallow and DEEP/laboured breathing (DKA
+  // Kussmaul, severe distress) looks visibly deep — not just faster/slower.
+  const breathDepthFactor = useMemo(() => {
+    const depth = String(caseData.abcde?.breathing?.depth ?? '').toLowerCase();
+    if (/shallow|reduced|poor|agonal|gasp|minimal/.test(depth)) return 0.45;
+    if (/deep|laboured|labored|kussmaul|increased|heav/.test(depth)) return 1.2;
+    return 1.0;
+  }, [caseData]);
+
+  // Visible signs of shock / poor perfusion painted onto the whole patient: a
+  // colour multiply that washes the skin pale (hypovolaemia/anaphylaxis) or
+  // dusky-blue (cyanosis/hypoxia), plus a wet sheen for diaphoresis. Driven by
+  // the case's described appearance + live hypoxia (SpO2 surrogate via low RR
+  // states is unreliable, so cyanosis stays case/■SpO2-described).
+  const skinAppearance = useMemo(() => {
+    const a = inferGeneralAppearance(caseData);
+    const spo2 = caseData.vitalSignsProgression?.initial?.spo2;
+    const cyanotic = a.cyanotic || (typeof spo2 === 'number' && spo2 < 88);
+    // Multiply tints (white = unchanged). Pale lifts toward cool grey; cyanosis
+    // pulls blue; combined = mottled dusky. Tuned to stay recognisable on the
+    // tanned base skin without looking cartoonish.
+    let tint: string | null = null;
+    if (cyanotic && a.pale) tint = '#aebccb';
+    else if (cyanotic) tint = '#a9bbcf';
+    else if (a.pale) tint = '#d9dad2';
+    return { tint, diaphoretic: a.diaphoretic };
   }, [caseData]);
 
   // Which finding morphs are REVEALED — a finding's morph activates only
@@ -3731,6 +3883,9 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 // Breathing morph driven at the case respiratory rate (0 when
                 // apnoeic / in arrest — stillness is itself a finding).
                 breathRateRpm={isInArrest ? 0 : breathRateRpm}
+                breathDepthFactor={breathDepthFactor}
+                skinTint={skinAppearance.tint}
+                skinDiaphoretic={skinAppearance.diaphoretic}
                 // Receive the surface projector so labels anchor to the real mesh.
                 // Wrap in an arrow so React stores the function rather than calling it.
                 onSurfaceSampler={handleSurfaceSampler}
@@ -3762,6 +3917,13 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
               {/* Findings revealed ON the body, only once their region has
                   been assessed — the discovery mechanic. */}
               <RevealedFindingMarkers
+                caseData={caseData}
+                assessedRegions={assessedRegions}
+                activeRegion={activeRegion}
+                sampler={surfaceSampler}
+              />
+
+              <InjuryWoundMarkers
                 caseData={caseData}
                 assessedRegions={assessedRegions}
                 activeRegion={activeRegion}

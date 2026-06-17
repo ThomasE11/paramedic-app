@@ -2378,6 +2378,12 @@ export function VitalSignsMonitor({
   // Refs
   const assessmentIntervalRef = useRef<number | null>(null);
   const lastAlarmAnnunciationRef = useRef<{ level: 'none' | 'warning' | 'critical'; at: number }>({ level: 'none', at: 0 });
+  // Debounce the raw threshold level → an "effective" level that must persist
+  // before it counts. Vitals tween continuously, so without this a value sitting
+  // on a limit flickers none↔warning↔critical every tick and machine-guns the
+  // alarm. Quick to raise (catch real deterioration), slow to clear.
+  const alarmCandidateRef = useRef<{ level: 'none' | 'warning' | 'critical'; since: number }>({ level: 'none', since: 0 });
+  const effectiveAlarmRef = useRef<'none' | 'warning' | 'critical'>('none');
   const deteriorationTimerRef = useRef<number | null>(null);
   const audioEngineRef = useRef<ClinicalAudioEngine | null>(null);
   const codeTimerRef = useRef<number | null>(null);
@@ -2630,21 +2636,49 @@ export function VitalSignsMonitor({
     // priority repeats every 10s, medium every 25s; a NEW alarm condition
     // (or escalation) annunciates immediately.
     if (audioEnabled && audioEngineRef.current && alarmsEnabled) {
+      const rank = { none: 0, warning: 1, critical: 2 } as const;
       const hasCritical = Array.from(newAlarms).some(a => a.includes('critical'));
       const hasWarning = Array.from(newAlarms).some(a => a.includes('warning'));
-      const level = hasCritical ? 'critical' : hasWarning ? 'warning' : 'none';
+      const rawLevel: 'none' | 'warning' | 'critical' = hasCritical ? 'critical' : hasWarning ? 'warning' : 'none';
       const now = Date.now();
+
+      // 1) Debounce raw → effective. A new raw level must HOLD before it takes
+      //    effect: ~1.2s to rise (still catches real deterioration), 4s to clear.
+      //    Threshold flicker from tweening vitals never holds long enough, so it
+      //    no longer triggers the alarm at all.
+      if (rawLevel !== alarmCandidateRef.current.level) {
+        alarmCandidateRef.current = { level: rawLevel, since: now };
+      }
+      const eff = effectiveAlarmRef.current;
+      if (rawLevel !== eff) {
+        const rising = rank[rawLevel] > rank[eff];
+        const holdNeeded = rising ? 1200 : 4000;
+        if (now - alarmCandidateRef.current.since >= holdNeeded) {
+          effectiveAlarmRef.current = rawLevel;
+        }
+      }
+      const level = effectiveAlarmRef.current;
+
+      // 2) Annunciate (IEC 60601-1-8 burst) only when meaningful: on a genuine
+      //    WORSENING (rank rises), or the steady-state repeat cadence (critical
+      //    10s, warning 25s). Improvement (critical→warning) switches cadence
+      //    silently — it never sounds the alarm.
       const last = lastAlarmAnnunciationRef.current;
-      const escalated = level !== 'none' && last.level !== level;
+      const worsened = rank[level] > rank[last.level];
       const interval = level === 'critical' ? 10000 : 25000;
       if (level === 'none') {
-        lastAlarmAnnunciationRef.current = { level, at: 0 };
-      } else if (escalated || now - last.at >= interval) {
+        lastAlarmAnnunciationRef.current = { level: 'none', at: 0 };
+      } else if (worsened || now - last.at >= interval) {
         audioEngineRef.current.playAlarm(level === 'critical');
         lastAlarmAnnunciationRef.current = { level, at: now };
+      } else if (level !== last.level) {
+        // de-escalation within the cadence window — track level, keep timer, no sound
+        lastAlarmAnnunciationRef.current = { level, at: last.at };
       }
     } else {
       lastAlarmAnnunciationRef.current = { level: 'none', at: 0 };
+      effectiveAlarmRef.current = 'none';
+      alarmCandidateRef.current = { level: 'none', since: 0 };
     }
   }, [currentVitals, audioEnabled, alarmsEnabled]);
 

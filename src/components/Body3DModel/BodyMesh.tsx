@@ -42,6 +42,14 @@ interface BodyMeshProps {
    *  morph as a continuous sine so the patient visibly breathes at the case
    *  rate. 0 / undefined = no breathing animation (e.g. apnoea/arrest). */
   breathRateRpm?: number;
+  /** Chest-rise depth multiplier (1 = normal). <1 = shallow (opioid/agonal),
+   *  >1 = deep/laboured (Kussmaul). Combined with a fast-breathing taper. */
+  breathDepthFactor?: number;
+  /** Shock/perfusion skin tint as a colour-multiply (null = normal skin).
+   *  Pale grey = hypovolaemia/anaphylaxis; dusky blue = cyanosis/hypoxia. */
+  skinTint?: string | null;
+  /** Diaphoresis — drops skin roughness for a clammy/sweaty sheen. */
+  skinDiaphoretic?: boolean;
   /** Emits a surface-projection function once the mesh is loaded + normalised.
    *  Given an intended (x, y) it returns [x, y, z] on the patient's actual
    *  camera-facing surface, so floating labels/finding markers anchor to the
@@ -432,7 +440,7 @@ function buildSurfaceSampler(root: THREE.Object3D | null): ((x: number, y: numbe
   };
 }
 
-export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guidedMode = false, nextGuidedStep = null, onBlockedClick, patientGender, surfaceOpacity = 1, activeFindingMorphs, breathRateRpm = 0, onSurfaceSampler, dressed = false, dressedActiveRegion = null, pupilLeftMm = 3.5, pupilRightMm = 3.5 }: BodyMeshProps) {
+export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guidedMode = false, nextGuidedStep = null, onBlockedClick, patientGender, surfaceOpacity = 1, activeFindingMorphs, breathRateRpm = 0, breathDepthFactor = 1, skinTint = null, skinDiaphoretic = false, onSurfaceSampler, dressed = false, dressedActiveRegion = null, pupilLeftMm = 3.5, pupilRightMm = 3.5 }: BodyMeshProps) {
   // The path is recomputed per render so a `caseData.patientInfo.gender`
   // change (e.g. user picks a different case) swaps the mesh without
   // remounting the parent. useGLTF caches by URL.
@@ -690,6 +698,29 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
     });
   }, [clonedScene, surfaceOpacity]);
 
+  // Shock / perfusion appearance: a colour-multiply on the skin (pale grey or
+  // dusky blue) plus a clammy sheen (lower roughness) for diaphoresis. Same body
+  // mesh set as the opacity effect; white tint = normal skin. The base roughness
+  // is captured once so the sheen toggles without clobbering the model's value.
+  useEffect(() => {
+    clonedScene.traverse((o) => {
+      const m = o as THREE.Mesh;
+      if (!m.isMesh || m.userData?.skipRecolor) return;
+      const mats = Array.isArray(m.material) ? m.material : m.material ? [m.material] : [];
+      for (const mat of mats) {
+        const std = mat as THREE.MeshStandardMaterial;
+        if (!std.color) continue;
+        std.color.set(skinTint ?? '#ffffff');
+        if (std.userData.baseRoughness === undefined && typeof std.roughness === 'number') {
+          std.userData.baseRoughness = std.roughness;
+        }
+        const base = typeof std.userData.baseRoughness === 'number' ? std.userData.baseRoughness : 0.7;
+        std.roughness = skinDiaphoretic ? Math.min(base, 0.32) : base;
+        std.needsUpdate = true;
+      }
+    });
+  }, [clonedScene, skinTint, skinDiaphoretic]);
+
   // Free the GPU resources WE created on the PREVIOUS clone when a new one
   // replaces it (e.g. a male↔female model switch): the scrubs/hit-box
   // geometry+materials and the painted eye CanvasTexture. The body geometry and
@@ -749,8 +780,13 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
         if (breathRateRpm > 0) {
           const hz = breathRateRpm / 60;
           breathPhaseRef.current += delta * hz * Math.PI * 2;
-          // 0..1 raised-sine; shallower when tachypnoeic reads as "fast shallow"
-          const amp = breathRateRpm >= 28 ? 0.55 : 1.0;
+          // Visible chest-rise depth: case-driven shallow/deep factor, tapered a
+          // little more when very tachypnoeic (fast breathing rides shallower).
+          // Clamped so shallow stays perceptible and deep never clips. This makes
+          // the four states unmistakable: fast (high hz), shallow (low amp), deep
+          // (high amp), absent (rpm 0 → no movement, handled below).
+          const fastTaper = breathRateRpm >= 34 ? 0.7 : breathRateRpm >= 26 ? 0.85 : 1.0;
+          const amp = Math.min(1.35, Math.max(0.25, breathDepthFactor * fastTaper));
           infl[idx] = (0.5 - 0.5 * Math.cos(breathPhaseRef.current)) * amp;
         } else {
           infl[idx] = 0;
