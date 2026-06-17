@@ -91,6 +91,16 @@ export function SessionTimer({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeRemaining]);
 
+  const handleTimerComplete = useCallback(() => {
+    setIsRunning(false);
+    setIsPaused(false);
+    setShowAlarm(true);
+    playAlarmTone();
+    if (onTimerComplete) {
+      onTimerComplete();
+    }
+  }, [onTimerComplete, playAlarmTone]);
+
   // Timer effect
   useEffect(() => {
     if (isRunning && !isPaused && timeRemaining > 0) {
@@ -113,17 +123,7 @@ export function SessionTimer({
         clearInterval(intervalRef.current);
       }
     };
-  }, [isRunning, isPaused, timeRemaining]);
-
-  const handleTimerComplete = useCallback(() => {
-    setIsRunning(false);
-    setIsPaused(false);
-    setShowAlarm(true);
-    playAlarmTone();
-    if (onTimerComplete) {
-      onTimerComplete();
-    }
-  }, [onTimerComplete, playAlarmTone]);
+  }, [handleTimerComplete, isPaused, isRunning, timeRemaining]);
 
   const startTimer = useCallback(() => {
     setIsRunning(true);

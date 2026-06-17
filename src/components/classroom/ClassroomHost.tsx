@@ -28,6 +28,7 @@ import { useClassroomVoice } from '@/hooks/useClassroomVoice';
 import { ClassroomLobby } from './ClassroomLobby';
 import { InstructorLiveControls, type InstructorOverride } from './InstructorLiveControls';
 import { ClassroomBroadcastBar } from './ClassroomBroadcastBar';
+import { MarkingView } from './MarkingView';
 import { ClassroomChatSidebar } from './ClassroomChatSidebar';
 import { ClassroomVideoTiles } from './ClassroomVideoTiles';
 import type { CaseScenario } from '@/types';
@@ -64,6 +65,8 @@ export function ClassroomHost({ onExit }: Props) {
     setDrivers,
     takeControl,
     lastBroadcast,
+    avFloorOpen,
+    setAvFloor,
   } = sessionHook;
 
   // Instructor "puppet-master" override state. The InstructorLiveControls
@@ -71,6 +74,10 @@ export function ClassroomHost({ onExit }: Props) {
   // into its patientState, and the existing broadcast effects carry the
   // change to every watching student automatically.
   const [instructorOverride, setInstructorOverride] = useState<InstructorOverride | null>(null);
+  // Host mode: 'live' = full digital spectator sim (students watch/take over);
+  // 'marking' = lean pre-brief + checklist for a manikin sim while students
+  // still join on the same code. The instructor toggles this in the lobby.
+  const [markingMode, setMarkingMode] = useState(false);
 
   // Voice-chat mesh. The instructor is allowed to broadcast whenever they
   // are currently driving (which is the default). When they hand control to
@@ -150,7 +157,15 @@ export function ClassroomHost({ onExit }: Props) {
   }, [caseSnapshot, isDriver, session?.id, voice]);
 
   if (!caseSnapshot) {
-    return <ClassroomLobby onExit={onExit} sessionHook={sessionHook} />;
+    return (
+      <>
+        <HostModeToggle
+          mode={markingMode ? 'marking' : 'live'}
+          onChange={(m) => setMarkingMode(m === 'marking')}
+        />
+        <ClassroomLobby onExit={onExit} sessionHook={sessionHook} />
+      </>
+    );
   }
 
   const handleEndCase = async () => {
@@ -161,6 +176,29 @@ export function ClassroomHost({ onExit }: Props) {
     await leaveSession();
     onExit();
   };
+
+  // Built once so both the live spectator sim and the marking view share the
+  // exact same control bar (PIN, timer, hand-off, AV, end).
+  const broadcastBar = (
+    <ClassroomBroadcastBar
+      caseData={caseSnapshot}
+      participants={participants}
+      pin={session?.pin ?? ''}
+      timerEndsAt={timerEndsAt}
+      driverKeys={driverKeys}
+      selfKey={selfKey}
+      onBroadcast={sendBroadcast}
+      onGiveControl={giveControl}
+      onAddDriver={addDriver}
+      onOpenFloor={setDrivers}
+      avFloorOpen={avFloorOpen}
+      onToggleAvFloor={() => setAvFloor(!avFloorOpen)}
+      onTakeControl={takeControl}
+      onEndCase={handleEndCase}
+      onEndSession={handleEndSession}
+      voice={voice}
+    />
+  );
 
   // Case is live — render the full case panel with a broadcast overlay
   // + chat sidebar. Both instructor and student mount the sidebar so
@@ -198,51 +236,70 @@ export function ClassroomHost({ onExit }: Props) {
           currentRhythm={sharedState.currentRhythm}
         />
       )}
-      <StudentPanel
-        onExit={handleEndSession}
-        preloadedCase={caseSnapshot}
-        instructorOverride={isDriver ? instructorOverride ?? undefined : undefined}
-        // Only the current driver broadcasts state changes. When control is
-        // handed to a student, the instructor stops broadcasting and starts
-        // RECEIVING patches via externalState.
-        onClassroomStateChange={isDriver ? broadcastStatePatch : undefined}
-        readOnly={!isDriver}
-        externalState={!isDriver ? {
-          vitals: sharedState.vitals,
-          appliedTreatments: sharedState.appliedTreatments,
-          completedItems: sharedState.completedItems,
-          assessmentPerformed: sharedState.assessmentPerformed,
-          caseStartedAt: sharedState.caseStartedAt,
-          monitorRevealedVitals: sharedState.monitorRevealedVitals,
-          currentRhythm: sharedState.currentRhythm,
-          isInArrest: sharedState.isInArrest,
-          arrestState: sharedState.arrestState,
-          ventilatorSettings: sharedState.ventilatorSettings,
-          bvmVentilationRate: sharedState.bvmVentilationRate,
-          arrestTimeline: sharedState.arrestTimeline,
-          transportDecision: sharedState.transportDecision,
-          pacerState: sharedState.pacerState,
-        } : undefined}
-        topBanner={
-          <ClassroomBroadcastBar
+      {markingMode ? (
+        <>
+          {broadcastBar}
+          <MarkingView
             caseData={caseSnapshot}
-            participants={participants}
             pin={session?.pin ?? ''}
-            timerEndsAt={timerEndsAt}
-            driverKeys={driverKeys}
-            selfKey={selfKey}
-            onBroadcast={sendBroadcast}
-            onGiveControl={giveControl}
-            onAddDriver={addDriver}
-            onOpenFloor={setDrivers}
-            onTakeControl={takeControl}
+            participantCount={participants.length}
             onEndCase={handleEndCase}
-            onEndSession={handleEndSession}
-            voice={voice}
           />
-        }
-      />
+        </>
+      ) : (
+        <StudentPanel
+          onExit={handleEndSession}
+          preloadedCase={caseSnapshot}
+          instructorOverride={isDriver ? instructorOverride ?? undefined : undefined}
+          // Only the current driver broadcasts state changes. When control is
+          // handed to a student, the instructor stops broadcasting and starts
+          // RECEIVING patches via externalState.
+          onClassroomStateChange={isDriver ? broadcastStatePatch : undefined}
+          readOnly={!isDriver}
+          externalState={!isDriver ? {
+            vitals: sharedState.vitals,
+            appliedTreatments: sharedState.appliedTreatments,
+            completedItems: sharedState.completedItems,
+            assessmentPerformed: sharedState.assessmentPerformed,
+            caseStartedAt: sharedState.caseStartedAt,
+            monitorRevealedVitals: sharedState.monitorRevealedVitals,
+            currentRhythm: sharedState.currentRhythm,
+            isInArrest: sharedState.isInArrest,
+            arrestState: sharedState.arrestState,
+            ventilatorSettings: sharedState.ventilatorSettings,
+            bvmVentilationRate: sharedState.bvmVentilationRate,
+            arrestTimeline: sharedState.arrestTimeline,
+            transportDecision: sharedState.transportDecision,
+            pacerState: sharedState.pacerState,
+          } : undefined}
+          topBanner={broadcastBar}
+        />
+      )}
     </Suspense>
+  );
+}
+
+/**
+ * Live-sim vs Marking segmented toggle, shown over the lobby so the instructor
+ * picks how they'll run this session before starting a case.
+ */
+function HostModeToggle({ mode, onChange }: { mode: 'live' | 'marking'; onChange: (m: 'live' | 'marking') => void }) {
+  return (
+    <div className="fixed top-[4.25rem] left-1/2 z-50 inline-flex -translate-x-1/2 items-center rounded-xl border border-white/55 bg-background/90 p-1 shadow-xl backdrop-blur-xl sm:left-auto sm:right-4 sm:top-4 sm:translate-x-0 dark:border-white/10">
+      {(['live', 'marking'] as const).map((m) => (
+        <button
+          key={m}
+          onClick={() => onChange(m)}
+          className={`rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-colors ${
+            mode === m ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+          }`}
+          aria-pressed={mode === m}
+          title={m === 'live' ? 'Full digital sim — students watch and can take control' : 'Pre-brief + checklist for a manikin sim; students join on the code'}
+        >
+          {m === 'live' ? 'Live sim' : 'Marking'}
+        </button>
+      ))}
+    </div>
   );
 }
 

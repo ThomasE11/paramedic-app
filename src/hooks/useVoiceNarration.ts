@@ -1,8 +1,10 @@
 /**
  * Voice Narration Hook — Humanised Edition
  *
- * Uses the browser Web Speech API (SpeechSynthesis) to read text aloud.
- * Zero cost, works offline, no API keys required.
+ * Primary path: ElevenLabs through same-origin /api/tts. Production serves
+ * that endpoint via Vercel Functions; local dev serves it via Vite middleware.
+ * Supertonic remains a local-dev backup at 127.0.0.1:7788, and browser
+ * SpeechSynthesis is the final fallback so narration still works offline.
  *
  * Humanisation techniques used here:
  * 1. Explicit priority list for highest-quality OS voices (Samantha, Daniel,
@@ -27,7 +29,140 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 
 const VOICE_PREF_KEY = 'paramedic-studio-voice-enabled';
 
+// Supertonic local server (dev only). We use the NATIVE /v1/tts endpoint
+// (not /v1/audio/speech) because only the native route exposes `steps` —
+// the diffusion step count that dominates latency. Measured on this machine:
+// steps 2≈4s, 4≈7s, 8≈12s, default≈14.5s for a 3-sentence paragraph. The
+// OpenAI-compat route ran at the default and always blew the timeout, which
+// is why narration kept falling back to the robotic Web Speech voice.
+//
+// We synthesise sentence-by-sentence with one-ahead prefetch, so the FIRST
+// words start in ~1.5s instead of waiting for the whole paragraph.
+const SUPERTONIC_URL = 'http://127.0.0.1:7788/v1/tts';
+const SUPERTONIC_HEALTH = 'http://127.0.0.1:7788/v1/health';
+// Diffusion steps — quality/speed tradeoff. The server is SERIAL (~50ms/char
+// at steps 4), so to keep latency reasonable on a one-shot whole-utterance
+// synth we run at 3 (still clean, ~25-35% faster than 4).
+const SUPERTONIC_STEPS = 3;
+// Whole-utterance timeout. We now synthesise the entire narration in ONE
+// request (see SINGLE_SHOT_MAX_CHARS) so allow generous headroom for a long
+// paragraph before declaring the server dead.
+const SUPERTONIC_TIMEOUT_MS = 26000;
+
+// --- Autoplay unlock --------------------------------------------------------
+// Chrome/Safari block HTMLAudioElement.play() that isn't tied to a user
+// gesture. The dispatch narration fires from a timer (no gesture on the call
+// stack), so its Supertonic audio gets blocked and the app silently falls
+// back to the robotic Web Speech voice — exactly the bug the Director hit.
+//
+// Standard fix: on the first real user gesture, play a tiny silent clip to
+// "unlock" the page's audio for the rest of the session. After that,
+// timer-initiated Audio.play() is permitted. The user always clicks through
+// role-select → category → Generate before the dispatch fires, so by the time
+// it plays, audio is unlocked.
+let audioUnlocked = false;
+let unlockListenersAttached = false;
+// 44-byte silent WAV (RIFF header + empty data chunk).
+const SILENT_WAV = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+function attemptAudioUnlock(): void {
+  if (audioUnlocked || typeof window === 'undefined') return;
+  try {
+    const a = new Audio(SILENT_WAV);
+    a.volume = 0;
+    const p = a.play();
+    if (p && typeof p.then === 'function') {
+      p.then(() => { audioUnlocked = true; }).catch(() => { /* gesture not yet trusted */ });
+    } else {
+      audioUnlocked = true;
+    }
+  } catch { /* ignore */ }
+}
+function ensureUnlockListeners(): void {
+  if (unlockListenersAttached || typeof window === 'undefined') return;
+  unlockListenersAttached = true;
+  const handler = () => attemptAudioUnlock();
+  for (const evt of ['pointerdown', 'keydown', 'touchstart', 'click'] as const) {
+    window.addEventListener(evt, handler, { capture: true, passive: true });
+  }
+}
+
+// --- Global playback arbitration -------------------------------------------
+// Several surfaces call useVoiceNarration independently: dispatch replay,
+// SceneSurveyPanel, patient reactions, and generic NarrationButton instances.
+// Browser SpeechSynthesis is global, but ElevenLabs/Supertonic playback uses
+// HTMLAudioElement objects. If those are stored per-hook, each surface can
+// pause only its own audio, which lets dispatch and scene narration overlap.
+// These module-level refs make narration a single shared lane across the app.
+let globalVoiceSessionId = 0;
+let globalActiveAudio: HTMLAudioElement | null = null;
+let globalQueueTimers: number[] = [];
+let globalIsSpeaking = false;
+const globalSpeakingListeners = new Set<(speaking: boolean) => void>();
+
+function setGlobalSpeaking(next: boolean): void {
+  globalIsSpeaking = next;
+  globalSpeakingListeners.forEach(listener => listener(next));
+}
+
+function clearGlobalQueueTimers(): void {
+  if (typeof window === 'undefined') {
+    globalQueueTimers = [];
+    return;
+  }
+  globalQueueTimers.forEach(id => window.clearTimeout(id));
+  globalQueueTimers = [];
+}
+
+function stopActiveAudio(): void {
+  if (!globalActiveAudio) return;
+  const audio = globalActiveAudio;
+  globalActiveAudio = null;
+  try { audio.pause(); } catch { /* ignore */ }
+  try { audio.currentTime = 0; } catch { /* ignore */ }
+  try { if (audio.src.startsWith('blob:')) URL.revokeObjectURL(audio.src); } catch { /* ignore */ }
+}
+
+function stopCurrentPlayback(): void {
+  if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+  }
+  stopActiveAudio();
+  clearGlobalQueueTimers();
+}
+
+function startNarrationSession(): number {
+  globalVoiceSessionId += 1;
+  stopCurrentPlayback();
+  setGlobalSpeaking(true);
+  return globalVoiceSessionId;
+}
+
+function stopNarrationSession(): void {
+  globalVoiceSessionId += 1;
+  stopCurrentPlayback();
+  setGlobalSpeaking(false);
+}
+
+function isCurrentNarrationSession(sessionId: number): boolean {
+  return sessionId === globalVoiceSessionId;
+}
+
+function registerQueueTimer(id: number): void {
+  globalQueueTimers.push(id);
+}
+
+function setActiveAudio(audio: HTMLAudioElement | null): void {
+  if (globalActiveAudio && globalActiveAudio !== audio) stopActiveAudio();
+  globalActiveAudio = audio;
+}
+
 type VoiceRole = 'dispatcher' | 'patient' | 'narrator';
+
+const SUPERTONIC_VOICE_BY_ROLE: Record<VoiceRole, string> = {
+  dispatcher: 'M2',
+  patient: 'F1',
+  narrator: 'F2',
+};
 
 interface SpeakOptions {
   role?: VoiceRole;
@@ -214,9 +349,65 @@ function normaliseForSpeech(text: string): string {
     .trim();
 }
 
+// One-shot probe to detect a running Supertonic server. Cached for the
+// session so we only pay the round-trip once. Returns false in prod builds
+// (import.meta.env.DEV is false), bypassing the network entirely.
+let supertonicProbe: Promise<boolean> | null = null;
+function probeSupertonic(): Promise<boolean> {
+  if (!import.meta.env.DEV) return Promise.resolve(false);
+  if (supertonicProbe) return supertonicProbe;
+  supertonicProbe = (async () => {
+    try {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 800);
+      // /v1/health is the real health route — checking it (rather than /)
+      // keeps the devtools console clean of 404s during the probe.
+      const res = await fetch(SUPERTONIC_HEALTH, { method: 'GET', signal: ctrl.signal });
+      clearTimeout(timer);
+      return res.ok;
+    } catch {
+      return false;
+    }
+  })();
+  return supertonicProbe;
+}
+
+function docLangForSupertonic(): string {
+  if (typeof document === 'undefined') return 'en';
+  const l = (document.documentElement.lang || '').toLowerCase();
+  if (l.startsWith('ar')) return 'ar';
+  return 'en';
+}
+
+// ElevenLabs cloud TTS, reached through the same-origin /api/tts endpoint so
+// the API key stays server-side. Local dev serves this via Vite middleware;
+// production serves it via Vercel Functions in api/tts/*.ts. This is the
+// PRIMARY voice when configured — it's fast (~1-2s) and returns one continuous
+// clip, which avoids the robotic browser SpeechSynthesis fallback.
+const TTS_PROXY_URL = '/api/tts';
+const TTS_PROXY_HEALTH = '/api/tts/health';
+let elevenProbe: Promise<boolean> | null = null;
+function probeElevenLabs(): Promise<boolean> {
+  if (elevenProbe) return elevenProbe;
+  elevenProbe = (async () => {
+    try {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 1500);
+      const res = await fetch(TTS_PROXY_HEALTH, { method: 'GET', signal: ctrl.signal });
+      clearTimeout(timer);
+      if (!res.ok) return false;
+      const j = await res.json().catch(() => ({} as { ok?: boolean }));
+      return !!j.ok;
+    } catch {
+      return false;
+    }
+  })();
+  return elevenProbe;
+}
+
 export function useVoiceNarration() {
   const [voicesReady, setVoicesReady] = useState(false);
-  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(globalIsSpeaking);
   const [enabled, setEnabled] = useState<boolean>(() => {
     try {
       const stored = localStorage.getItem(VOICE_PREF_KEY);
@@ -226,9 +417,19 @@ export function useVoiceNarration() {
     }
   });
   const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
-  // Track pending chunk timeouts so we can cancel them
-  const queueTimersRef = useRef<number[]>([]);
-  const sessionIdRef = useRef(0);
+
+  // Attach the one-time audio-unlock gesture listeners as early as possible
+  // so the page is audio-unlocked before the dispatch narration fires.
+  useEffect(() => { ensureUnlockListeners(); }, []);
+
+  useEffect(() => {
+    const listener = (speaking: boolean) => setIsSpeaking(speaking);
+    globalSpeakingListeners.add(listener);
+    setIsSpeaking(globalIsSpeaking);
+    return () => {
+      globalSpeakingListeners.delete(listener);
+    };
+  }, []);
 
   // Load voices (async in some browsers)
   useEffect(() => {
@@ -252,25 +453,16 @@ export function useVoiceNarration() {
     };
   }, []);
 
-  const clearQueueTimers = useCallback(() => {
-    queueTimersRef.current.forEach(id => window.clearTimeout(id));
-    queueTimersRef.current = [];
-  }, []);
-
   const toggleEnabled = useCallback(() => {
     setEnabled(prev => {
       const next = !prev;
       try {
         localStorage.setItem(VOICE_PREF_KEY, String(next));
       } catch { /* ignore */ }
-      if (!next && typeof window !== 'undefined' && 'speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        clearQueueTimers();
-        setIsSpeaking(false);
-      }
+      if (!next) stopNarrationSession();
       return next;
     });
-  }, [clearQueueTimers]);
+  }, []);
 
   /**
    * Pick the best voice for a given role using an explicit priority list,
@@ -333,35 +525,134 @@ export function useVoiceNarration() {
   }, []);
 
   /**
-   * Speak the given text aloud. Cancels any currently-speaking utterance first.
-   * Long text is broken into chunks so the voice has natural pauses and breath.
+   * Synthesise one sentence via Supertonic's native /v1/tts (returns an
+   * <audio> element ready to play, or null on failure). Kept separate so the
+   * speak loop can PREFETCH the next sentence while the current one plays.
    */
-  const speak = useCallback((text: string, options: SpeakOptions = {}) => {
-    if (!enabled) return;
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
-    if (!text || !text.trim()) return;
+  const synthSentence = useCallback(async (text: string, role: VoiceRole): Promise<HTMLAudioElement | null> => {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), SUPERTONIC_TIMEOUT_MS);
+    try {
+      const res = await fetch(SUPERTONIC_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text,
+          voice: SUPERTONIC_VOICE_BY_ROLE[role],
+          lang: docLangForSupertonic(),
+          steps: SUPERTONIC_STEPS,
+        }),
+        signal: ctrl.signal,
+      });
+      clearTimeout(timer);
+      if (!res.ok) return null;
+      const blob = await res.blob();
+      if (!blob || blob.size < 64) return null; // empty/invalid audio
+      const audio = new Audio(URL.createObjectURL(blob));
+      return audio;
+    } catch {
+      clearTimeout(timer);
+      return null;
+    }
+  }, []);
 
-    // Cancel any ongoing speech and pending queue
-    window.speechSynthesis.cancel();
-    clearQueueTimers();
+  /**
+   * Speak via Supertonic, sentence-by-sentence with one-ahead prefetch so the
+   * first words start ASAP and playback stays continuous. Resolves true when
+   * Supertonic owns the narration (reachable + first sentence synthesised),
+   * false only when the server is unreachable / the first synth fails — the
+   * single point where the caller may fall back to Web Speech. Never returns
+   * false just because autoplay was momentarily blocked (that would reintroduce
+   * the robotic-voice regression).
+   */
+  const speakViaSupertonic = useCallback(async (
+    normalised: string,
+    role: VoiceRole,
+    mySession: number,
+    onEnd?: () => void,
+  ): Promise<boolean> => {
+    const reachable = await probeSupertonic();
+    if (!reachable) return false;
+    if (!isCurrentNarrationSession(mySession)) return true;
 
-    const role = options.role || 'narrator';
+    // CONTINUITY: the server is serial and ~50ms/char, so sentence-by-sentence
+    // playback starves — synthesis can't keep up with playback, leaving audible
+    // GAPS between sentences (the "pauses / delayed words / fragmented" effect).
+    // Synthesising the WHOLE utterance in ONE request returns a single
+    // continuous audio clip with zero internal gaps. We accept a one-time
+    // upfront synth latency (hidden behind the pulsing "speaking" indicator) in
+    // exchange for a seamless read. Only absurdly long text (>600 chars, which
+    // no narration here hits) falls back to chunking.
+    const SINGLE_SHOT_MAX_CHARS = 600;
+    const sentences = normalised.length <= SINGLE_SHOT_MAX_CHARS
+      ? [normalised]
+      : chunkText(normalised).map(c => c.text).filter(Boolean);
+    if (sentences.length === 0) return true;
+
+    // Synthesise the first sentence up front. If even this fails, the server
+    // is effectively unusable for this utterance → allow Web Speech fallback.
+    let current = await synthSentence(sentences[0], role);
+    if (!current) return false;
+    if (!isCurrentNarrationSession(mySession)) return true;
+
+    // Drive the queue with one-ahead prefetch.
+    (async () => {
+      for (let i = 0; i < sentences.length; i++) {
+        if (!isCurrentNarrationSession(mySession)) return;
+        const audio = current!;
+        // Kick off synth of the NEXT sentence while this one plays.
+        const nextPromise = i + 1 < sentences.length
+          ? synthSentence(sentences[i + 1], role)
+          : Promise.resolve(null);
+
+        setActiveAudio(audio);
+        await new Promise<void>((resolve) => {
+          let settled = false;
+          const done = () => { if (!settled) { settled = true; try { URL.revokeObjectURL(audio.src); } catch {} resolve(); } };
+          audio.onended = done;
+          audio.onerror = done;
+          audio.play().catch(async () => {
+            // Autoplay blocked — unlock + one retry; never fall to robotic.
+            attemptAudioUnlock();
+            await new Promise(r => setTimeout(r, 120));
+            if (!isCurrentNarrationSession(mySession)) { done(); return; }
+            audio.play().catch(() => done());
+          });
+        });
+
+        if (!isCurrentNarrationSession(mySession)) return;
+        current = await nextPromise;
+        if (!current) break; // a later sentence failed to synth — stop cleanly
+      }
+      if (isCurrentNarrationSession(mySession)) {
+        if (globalActiveAudio) globalActiveAudio = null;
+        setGlobalSpeaking(false);
+        onEnd?.();
+      }
+    })();
+
+    return true;
+  }, [synthSentence]);
+
+  /**
+   * Web Speech queue — used directly in production, and as fallback when
+   * Supertonic isn't reachable. Sentence-chunked with role-based prosody.
+   */
+  const speakViaWebSpeech = useCallback((
+    normalised: string,
+    role: VoiceRole,
+    mySession: number,
+    options: SpeakOptions,
+  ) => {
     const profile = ROLE_PROFILES[role];
     const voice = pickVoice(role);
-    const normalised = normaliseForSpeech(text);
     const chunks = chunkText(normalised);
-
-    // Bump session id — any timers from prior calls that fire late will bail out
-    sessionIdRef.current += 1;
-    const mySession = sessionIdRef.current;
-
-    setIsSpeaking(true);
 
     let chunkIndex = 0;
     const speakNext = () => {
-      if (mySession !== sessionIdRef.current) return; // superseded
+      if (!isCurrentNarrationSession(mySession)) return;
       if (chunkIndex >= chunks.length) {
-        setIsSpeaking(false);
+        setGlobalSpeaking(false);
         options.onEnd?.();
         return;
       }
@@ -371,7 +662,6 @@ export function useVoiceNarration() {
       const utterance = new SpeechSynthesisUtterance(chunk.text);
       if (voice) utterance.voice = voice;
 
-      // Apply role profile with subtle per-chunk jitter for natural variation
       const baseRate = options.rate ?? profile.baseRate;
       const basePitch = options.pitch ?? profile.basePitch;
       utterance.rate = Math.max(0.7, Math.min(1.3, jitter(baseRate, 0.02)));
@@ -379,43 +669,120 @@ export function useVoiceNarration() {
       utterance.volume = 1;
 
       utterance.onend = () => {
-        if (mySession !== sessionIdRef.current) return;
+        if (!isCurrentNarrationSession(mySession)) return;
         const gap = chunk.terminal ? profile.interSentenceGapMs : profile.interClauseGapMs;
-        // Small randomisation on the gap too, so cadence isn't metronomic
         const gapWithJitter = gap + Math.random() * 80 - 40;
-        const timer = window.setTimeout(speakNext, Math.max(30, gapWithJitter));
-        queueTimersRef.current.push(timer);
+        const t = window.setTimeout(speakNext, Math.max(30, gapWithJitter));
+        registerQueueTimer(t);
       };
       utterance.onerror = () => {
-        if (mySession !== sessionIdRef.current) return;
-        // On error, advance to next chunk rather than stalling the whole queue
-        const timer = window.setTimeout(speakNext, 60);
-        queueTimersRef.current.push(timer);
+        if (!isCurrentNarrationSession(mySession)) return;
+        const t = window.setTimeout(speakNext, 60);
+        registerQueueTimer(t);
       };
 
       window.speechSynthesis.speak(utterance);
     };
 
     speakNext();
-  }, [enabled, pickVoice, clearQueueTimers]);
+  }, [pickVoice]);
+
+  /**
+   * ElevenLabs (cloud) via the dev proxy — PRIMARY voice when configured.
+   * Synthesises the WHOLE utterance in one request and plays it as a single
+   * continuous clip (no inter-sentence gaps), fast enough that the start delay
+   * is ~1-2s. Returns true once ElevenLabs owns the narration; false only when
+   * it's unconfigured / unreachable / failed, so the caller falls back to
+   * Supertonic → Web Speech.
+   */
+  const speakViaElevenLabs = useCallback(async (
+    normalised: string,
+    role: VoiceRole,
+    mySession: number,
+    onEnd?: () => void,
+  ): Promise<boolean> => {
+    const configured = await probeElevenLabs();
+    if (!configured) return false;
+    if (!isCurrentNarrationSession(mySession)) return true;
+
+    let blob: Blob;
+    try {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 22000);
+      const res = await fetch(TTS_PROXY_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: normalised, role }),
+        signal: ctrl.signal,
+      });
+      clearTimeout(timer);
+      if (!res.ok) return false;
+      blob = await res.blob();
+    } catch {
+      return false;
+    }
+    if (!blob || blob.size < 64) return false;           // empty/invalid audio
+    if (!isCurrentNarrationSession(mySession)) return true;  // superseded mid-synth
+
+    const audio = new Audio(URL.createObjectURL(blob));
+    setActiveAudio(audio); // shared "current audio" ref for stop()/interrupt
+    const finish = () => {
+      if (!isCurrentNarrationSession(mySession)) return;
+      try { URL.revokeObjectURL(audio.src); } catch { /* ignore */ }
+      if (globalActiveAudio === audio) globalActiveAudio = null;
+      setGlobalSpeaking(false);
+      onEnd?.();
+    };
+    audio.onended = finish;
+    audio.onerror = finish;
+    audio.play().catch(async () => {
+      // Autoplay blocked — unlock + one retry; never regress to chunked.
+      attemptAudioUnlock();
+      await new Promise(r => setTimeout(r, 120));
+      if (!isCurrentNarrationSession(mySession)) return;
+      audio.play().catch(() => { /* leave silent rather than fall back mid-play */ });
+    });
+    return true;
+  }, []);
+
+  /**
+   * Speak the given text aloud. Cancels any currently-speaking utterance first.
+   * Engine priority: ElevenLabs → Supertonic → Web Speech.
+   */
+  const speak = useCallback((text: string, options: SpeakOptions = {}) => {
+    if (!enabled) return;
+    if (typeof window === 'undefined') return;
+    if (!text || !text.trim()) return;
+
+    const role = options.role || 'narrator';
+    const normalised = normaliseForSpeech(text);
+
+    // Cancel any ongoing dispatch, scene narration, patient voice, or generic
+    // narration before starting the new utterance.
+    const mySession = startNarrationSession();
+
+    // Engine priority: ElevenLabs (fast, continuous) → Supertonic (local) →
+    // Web Speech (always available). Each returns false only if it can't own
+    // the narration, so the chain falls through cleanly with no double-play.
+    speakViaElevenLabs(normalised, role, mySession, options.onEnd).then(elOk => {
+      if (elOk) return;
+      if (!isCurrentNarrationSession(mySession)) return;
+      return speakViaSupertonic(normalised, role, mySession, options.onEnd).then(ok => {
+        if (ok) return;
+        if (!isCurrentNarrationSession(mySession)) return; // superseded
+        if (!('speechSynthesis' in window)) {
+          setGlobalSpeaking(false);
+          return;
+        }
+        speakViaWebSpeech(normalised, role, mySession, options);
+      });
+    });
+  }, [enabled, speakViaElevenLabs, speakViaSupertonic, speakViaWebSpeech]);
 
   const stop = useCallback(() => {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
-    sessionIdRef.current += 1; // invalidate any pending callbacks
-    window.speechSynthesis.cancel();
-    clearQueueTimers();
-    setIsSpeaking(false);
-  }, [clearQueueTimers]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-      }
-      clearQueueTimers();
-    };
-  }, [clearQueueTimers]);
+    if (typeof window === 'undefined') return;
+    stopNarrationSession();
+  }, []);
 
   const isSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
 

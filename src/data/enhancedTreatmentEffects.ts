@@ -306,6 +306,23 @@ export const TREATMENTS: Treatment[] = [
     ],
   },
   {
+    id: 'occlusive_dressing_3sided',
+    name: 'Three-Sided Occlusive Dressing',
+    description: 'Improvised fallback for an open pneumothorax when a commercial vented chest seal is unavailable. Monitor closely because wet or fully sealed dressings may fail or create tension.',
+    category: 'breathing',
+    onset: 'fast',
+    onsetTimeSeconds: 20,
+    durationSeconds: 1,
+    icon: 'Square',
+    color: 'orange',
+    effects: [
+      { vitalSign: 'spo2', changeType: 'increase', value: 3, minValue: 70, maxValue: 94 },
+      { vitalSign: 'respiration', changeType: 'decrease', value: 1, minValue: 14 },
+      { vitalSign: 'pulse', changeType: 'decrease', value: 2, minValue: 60 },
+    ],
+    requiresMonitoring: true,
+  },
+  {
     id: 'vented_chest_seal',
     name: 'Vented Chest Seal',
     description: 'Vented chest seal (HyFin Vent / Russell / SAM) for sucking chest wound — preferred over improvised 3-sided dressings per TCCC 2022 / PHTLS 10. Reliably vents outgoing air while preventing re-entry; covers both entry and exit wounds. Non-vented seal is a fallback — monitor closely for tension pneumothorax.',

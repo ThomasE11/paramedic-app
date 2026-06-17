@@ -81,8 +81,8 @@ export const additionalRespiratoryCases: CaseScenario[] = [
         interventions: ['Reassurance', 'Calm environment']
       },
       exposure: {
-        temperature: 36.8,
-        findings: ['Barrel chest', 'Accessory muscle use', 'Cyanosis'],
+        temperature: 37.2,
+        findings: ['Barrel chest', 'Accessory muscle use', 'Cyanosis', 'Low-grade fever (37.2°C) — supports infective trigger for this exacerbation'],
         interventions: ['Remove restrictive clothing']
       }
     },
@@ -802,7 +802,7 @@ export const additionalRespiratoryCases: CaseScenario[] = [
     ],
     equipmentNeeded: [
       'Pediatric nebulizer with mask appropriate for age',
-      'Racemic epinephrine or L-epinephrine (1:1000)',
+      'L-adrenaline 1:1000 — 5 mL nebulised (UAE-stocked; racemic epinephrine is a legacy US formulation, not on UAE ambulance formulary)',
       'Dexamethasone (oral or IV)',
       'Pediatric oxygen masks and nasal cannulas',
       'Pulse oximeter (pediatric probe)',
@@ -2435,7 +2435,7 @@ export const additionalMetabolicCases: CaseScenario[] = [
       definitive: [
         'Emergency haemodialysis — definitive treatment to remove potassium from body',
         'Rashid Hospital or American Hospital Dubai for nephrology and dialysis access',
-        'Kayexalate (sodium polystyrene sulphonate) or Patiromer — GI potassium binders if stable',
+        'Kayexalate (sodium polystyrene sulphonate) — GI potassium binder if stable; UAE-stocked. Patiromer not on UAE formulary as of 2026',
         'ICU admission for continuous cardiac monitoring post-treatment',
         'Repeat ECG after each intervention to assess response'
       ],
@@ -3064,9 +3064,9 @@ export const additionalPediatricCases: CaseScenario[] = [
         avpu: 'P',
         gcs: { eye: 1, verbal: 1, motor: 4, total: 6 },
         pupils: 'Responsive but sluggish',
-        bloodGlucose: 5.4,
-        findings: ['Generalized tonic-clonic seizure'],
-        interventions: ['Buccal midazolam if prolonged >5 min']
+        bloodGlucose: 4.7,
+        findings: ['Generalized tonic-clonic seizure', 'Glucose checked — normal, excludes hypoglycaemia as cause'],
+        interventions: ['Buccal midazolam if prolonged >5 min', 'Measure BGL — mandatory in any paediatric seizure to exclude hypoglycaemic mimic']
       },
       exposure: {
         temperature: 39.5,
@@ -3093,7 +3093,7 @@ export const additionalPediatricCases: CaseScenario[] = [
       eventsLeading: 'Fever since this morning, suddenly started jerking 2 minutes ago'
     },
     vitalSignsProgression: {
-      initial: { bp: '90/55', pulse: 150, respiration: 30, spo2: 90, gcs: 6, temperature: 39.5, bloodGlucose: 5.4 }
+      initial: { bp: '90/55', pulse: 150, respiration: 30, spo2: 90, gcs: 6, temperature: 39.5, bloodGlucose: 4.7 }
     },
     expectedFindings: {
       keyObservations: ['Simple febrile seizure: age 6m-5y, fever, generalized, <15 min', 'First seizure'],

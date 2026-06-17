@@ -7,14 +7,90 @@
  * Right: Body3DModel (interactive 3D exam) + Patient Info + Performance
  */
 
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { ClinicalTimeline } from './ClinicalTimeline';
 import { ScenarioContext } from './ScenarioContext';
 import { QuickActions } from './QuickActions';
 import { ComplicationPanel } from '@/components/ComplicationManager';
+import { AmbientBackground } from '@/components/AmbientBackground';
 import { LayoutGrid, Loader2 } from 'lucide-react';
 import type { VitalSigns, CaseScenario } from '@/types';
 import type { ActiveComplication } from '@/components/ComplicationManager';
+
+/**
+ * Kimi spec: the timeline opens with a "Primary Survey" entry whose tags
+ * are inline (Airway ✓ / Breathing ⚠ / Circulation ✗) — NOT a rigid ABCDE
+ * step gate. This helper folds `caseData.abcde` into that single entry so
+ * the timeline reads like a paramedic's narrative on arrival.
+ *
+ * Status thresholds are intentionally generous; the goal is a quick read
+ * for the educator, not a clinical scoring system (which lives elsewhere
+ * in the runtime contraindications + dynamic treatment engine).
+ */
+function buildPrimarySurveyEntry(caseData: CaseScenario) {
+  const abc = caseData.abcde;
+  if (!abc) return null;
+
+  type TagVariant = 'success' | 'warning' | 'danger' | 'info';
+  const tag = (label: string, variant: TagVariant) => ({ label, variant });
+
+  // Airway: patent vs. compromised
+  const airwayTag = abc.airway?.patent
+    ? tag('Airway ✓', 'success')
+    : tag('Airway ✗', 'danger');
+
+  // Breathing: combine rate + SpO2 into a single severity tag
+  const rr = abc.breathing?.rate;
+  const spo2 = abc.breathing?.spo2;
+  const breathingBad = (rr !== undefined && (rr < 10 || rr > 28)) || (spo2 !== undefined && spo2 < 90);
+  const breathingMild = (rr !== undefined && (rr < 12 || rr > 22)) || (spo2 !== undefined && spo2 < 94);
+  const breathingTag = breathingBad
+    ? tag('Breathing ✗', 'danger')
+    : breathingMild
+      ? tag('Breathing ⚠', 'warning')
+      : tag('Breathing ✓', 'success');
+
+  // Circulation: BP, pulse, cap refill
+  const sys = abc.circulation?.bp?.systolic;
+  const crt = abc.circulation?.capillaryRefill;
+  const pulseBad = (sys !== undefined && sys < 90) || (crt !== undefined && crt > 3);
+  const pulseMild = (sys !== undefined && sys < 100) || (crt !== undefined && crt > 2);
+  const circulationTag = pulseBad
+    ? tag('Circulation ✗', 'danger')
+    : pulseMild
+      ? tag('Circulation ⚠', 'warning')
+      : tag('Circulation ✓', 'success');
+
+  // Disability: AVPU / GCS
+  const gcs = abc.disability?.gcs?.total;
+  const avpu = abc.disability?.avpu;
+  const disabilityBad = (gcs !== undefined && gcs < 9) || avpu === 'U' || avpu === 'P';
+  const disabilityMild = (gcs !== undefined && gcs < 14) || avpu === 'V';
+  const disabilityTag = disabilityBad
+    ? tag('Disability ✗', 'danger')
+    : disabilityMild
+      ? tag('Disability ⚠', 'warning')
+      : tag('Disability ✓', 'success');
+
+  // Description: a one-sentence narrative built from whichever fields the
+  // case author filled in. Falls back gracefully if any are missing.
+  const parts: string[] = [];
+  if (abc.airway?.patent) parts.push('Airway patent.');
+  else if (abc.airway?.findings?.length) parts.push(`Airway: ${abc.airway.findings[0]}.`);
+  if (rr !== undefined) parts.push(`Breathing ${rr}/min, SpO₂ ${spo2 ?? '—'}%.`);
+  if (sys !== undefined) parts.push(`BP ${sys}/${abc.circulation?.bp?.diastolic ?? '—'}, pulse ${abc.circulation?.pulseQuality ?? 'normal'}.`);
+  if (gcs !== undefined) parts.push(`GCS ${gcs}.`);
+
+  return {
+    id: 'primary-survey-initial',
+    type: 'assessment' as const,
+    title: 'Primary Survey',
+    time: 'T+0:00',
+    description: parts.join(' ') || 'Initial primary survey on patient contact.',
+    tags: [airwayTag, breathingTag, circulationTag, disabilityTag],
+    completed: true,
+  };
+}
 
 // Lazy-load the heavy full-featured components
 const VitalSignsMonitor = lazy(() => import('@/components/VitalSignsMonitor').then(m => ({ default: m.VitalSignsMonitor })));
@@ -131,16 +207,41 @@ export function WorkspaceLayout({
   };
 
   const criticalFindings = caseData.expectedFindings?.redFlags || [];
-  
+
   const tags = [
     ...(caseData.dispatchInfo?.additionalInfo || []),
     ...(caseData.sceneInfo?.hazards || []),
   ].slice(0, 5);
 
+  /**
+   * Kimi spec: derive a Primary Survey timeline entry from caseData.abcde
+   * and prepend it to whatever the parent has seeded. If the parent has
+   * already pushed its OWN primary-survey entry (id starts with the same
+   * prefix), don't duplicate. Memoized on caseData so we don't rebuild
+   * the tag bag on every vitals tick.
+   */
+  const derivedPrimarySurvey = useMemo(
+    () => buildPrimarySurveyEntry(caseData),
+    [caseData],
+  );
+  const timelineWithSurvey = useMemo(() => {
+    if (!derivedPrimarySurvey) return timelineEvents;
+    const alreadyPresent = timelineEvents.some(
+      (e) => e.id === derivedPrimarySurvey.id || (e.type === 'assessment' && e.title.toLowerCase().startsWith('primary survey')),
+    );
+    if (alreadyPresent) return timelineEvents;
+    return [derivedPrimarySurvey, ...timelineEvents];
+  }, [derivedPrimarySurvey, timelineEvents]);
+
   return (
-    <div className="relative border-y border-border/60 bg-surface-50/80 dark:bg-background">
-      {/* Case Header */}
-      <div className="border-b border-border/70 bg-background/95 relative z-10">
+    <div className="workspace-shell relative border-y border-black/5 bg-[#f8f7fa] dark:bg-background overflow-hidden">
+      {/* Ambient background orbs (Kimi spec) — scoped to this surface
+          via the `absolute` variant so they don't double up with the
+          App.tsx page-level <AmbientBackground/> when both are mounted. */}
+      <AmbientBackground variant="absolute" />
+
+      {/* Case Header — translucent strip over the ambient bg */}
+      <div className="border-b border-black/5 bg-white/40 backdrop-blur-sm relative z-10">
         <div className="max-w-[1536px] mx-auto px-4 sm:px-6 py-3">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex min-w-0 items-start gap-3 sm:items-center sm:gap-4">
@@ -148,10 +249,10 @@ export function WorkspaceLayout({
                 <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
                 <span className="text-xs font-semibold text-red-600 uppercase tracking-wider">Live Case</span>
               </div>
-              <div className="hidden h-4 w-px bg-border sm:block"></div>
+              <div className="hidden h-4 w-px bg-black/10 sm:block"></div>
               <div className="min-w-0">
                 <h1 className="truncate text-base font-bold text-surface-900 sm:text-lg">{caseData.title}</h1>
-                <p className="text-xs text-surface-500">
+                <p className="text-xs text-surface-400">
                   {caseData.patientInfo.age}-year-old {caseData.patientInfo.gender} · Category: {caseData.category} · Difficulty: {caseData.complexity}
                 </p>
               </div>
@@ -159,15 +260,15 @@ export function WorkspaceLayout({
             <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
               {deteriorationStatus && (
                 <div className={`px-2.5 py-1 rounded-lg border text-[10px] font-semibold uppercase tracking-wider ${
-                  deteriorationStatus.urgency === 'extreme' ? 'border-red-200 bg-red-50 text-red-700' :
+                  deteriorationStatus.urgency === 'extreme' ? 'border-critical-200 bg-critical-50 text-critical-700' :
                   deteriorationStatus.urgency === 'high' ? 'border-orange-200 bg-orange-50 text-orange-700' :
-                  deteriorationStatus.urgency === 'medium' ? 'border-amber-200 bg-amber-50 text-amber-700' :
-                  'border-emerald-200 bg-emerald-50 text-emerald-700'
+                  deteriorationStatus.urgency === 'medium' ? 'border-warning-200 bg-warning-50 text-warning-600' :
+                  'border-success-200 bg-success-50 text-success-600'
                 }`}>
                   {deteriorationStatus.status}
                 </div>
               )}
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-100 text-xs font-mono text-surface-700 border border-surface-200">
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-100 text-xs font-mono text-surface-600 border border-surface-200">
                 <LayoutGrid className="w-3 h-3" />
                 <span>{formatTime(caseTimer)}</span>
               </div>
@@ -176,12 +277,16 @@ export function WorkspaceLayout({
         </div>
       </div>
 
-      {/* Workspace Grid */}
-      <div className="max-w-[1536px] mx-auto px-4 sm:px-6 py-4 relative z-10">
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[360px_minmax(0,1fr)_320px] items-start">
+      {/* Workspace Grid — Kimi 3-6-3 of 12 columns at xl+. Below xl we
+          collapse to one column so the mobile/tablet experience stays
+          readable. */}
+      <div className="max-w-[1536px] mx-auto px-4 sm:px-6 py-5 relative z-10">
+        <div className="grid grid-cols-12 gap-5 items-start">
           
-          {/* LEFT: Quick Actions + VitalSignsMonitor */}
-          <div className="space-y-4 min-w-0">
+          {/* LEFT (3 of 12): Patient Monitor + Quick Actions. Kimi mockup
+              order: monitor first, actions below — mirrors the way a
+              paramedic glances at the screen on arrival. */}
+          <div className="col-span-12 lg:col-span-3 space-y-4 min-w-0">
             <QuickActions onAction={onAction} />
 
             <Suspense fallback={<LoadingCard />}>
@@ -214,8 +319,12 @@ export function WorkspaceLayout({
             )}
           </div>
 
-          {/* CENTER: Scenario + Timeline */}
-          <div className="space-y-4 min-w-0">
+          {/* CENTER (6 of 12): Scenario context + Clinical Timeline.
+              This IS the primary workspace surface — the timeline drives
+              the case forward via Primary Survey -> findings -> decision
+              points -> interventions, instead of the rigid ABCDE step
+              gate the old layout used. */}
+          <div className="col-span-12 lg:col-span-6 space-y-4 min-w-0">
             <ScenarioContext
               title={caseData.title}
               category={caseData.category}
@@ -229,13 +338,14 @@ export function WorkspaceLayout({
             />
             
             <ClinicalTimeline
-              items={timelineEvents}
+              items={timelineWithSurvey}
               onDecision={onDecision}
             />
           </div>
 
-          {/* RIGHT: Body3DModel + Info + Performance */}
-          <div className="space-y-4 min-w-0">
+          {/* RIGHT (3 of 12): 3D anatomy explorer + Patient profile +
+              Performance score ring + Clinical guidelines. */}
+          <div className="col-span-12 lg:col-span-3 space-y-4 min-w-0">
             <Suspense fallback={<LoadingCard />}>
               <Body3DModel
                 onRegionClick={onRegionClick}

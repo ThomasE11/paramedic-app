@@ -8,7 +8,7 @@
  * - Educational Resources
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, type ReactNode } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -45,7 +45,7 @@ import { clinicalGuidelines } from '@/data/clinicalGuidelines';
 import { ecgLibrary } from '@/data/ecgLibrary';
 import type { AssessmentGuideline } from '@/data/clinicalGuidelines';
 
-export function ClinicalReferenceDialog() {
+export function ClinicalReferenceDialog({ trigger }: { trigger?: ReactNode } = {}) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMedication, setSelectedMedication] = useState<typeof uaeMedications[0] | null>(null);
   const [selectedGuideline, setSelectedGuideline] = useState<AssessmentGuideline | null>(null);
@@ -91,10 +91,12 @@ export function ClinicalReferenceDialog() {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
-          <BookOpen className="h-4 w-4" />
-          <span className="hidden sm:inline">Clinical Resources</span>
-        </Button>
+        {trigger ?? (
+          <Button variant="outline" size="sm" className="gap-2">
+            <BookOpen className="h-4 w-4" />
+            <span className="hidden sm:inline">Clinical Resources</span>
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="max-w-4xl max-h-[80vh] p-0">
         <DialogHeader className="p-6 pb-0">

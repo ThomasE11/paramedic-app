@@ -641,7 +641,7 @@ export const TREATMENT_PROTOCOLS: TreatmentProtocol[] = [
           description: 'Bilateral fine crackles at lung bases — pulmonary oedema. S3 gallop rhythm. Signs of cardiogenic shock.',
         },
         essentialTreatments: ['aspirin', 'oxygen_nonrebreather', 'iv_access'],
-        optimalTreatments: ['aspirin', 'oxygen_nonrebreather', 'iv_access', 'morphine_5mg', 'cpap_niv', 'fowlers_position'],
+        optimalTreatments: ['aspirin', 'oxygen_nonrebreather', 'iv_access', 'fowlers_position'],
         beneficialTreatments: ['cpap_niv', 'fowlers_position', 'reassurance'],
         contraindicatedTreatments: ['gtn_spray', 'fluids_500ml', 'fluids_1000ml'], // GTN contraindicated in hypotension, fluids worsen pulmonary oedema
         deteriorationRate: 'fast',
@@ -821,7 +821,7 @@ export const TREATMENT_PROTOCOLS: TreatmentProtocol[] = [
           description: 'Clear lungs bilaterally. Tachycardic. Patient post-ictal.',
         },
         essentialTreatments: ['oxygen_nasal', 'recovery_position'],
-        optimalTreatments: ['oxygen_nasal', 'recovery_position', 'glucose_10g', 'reassurance'],
+        optimalTreatments: ['oxygen_nasal', 'recovery_position', 'reassurance'],
         beneficialTreatments: ['reassurance', 'glucose_10g', 'iv_access'],
         // POST-ICTAL / self-terminated seizure (incl. simple febrile seizures): a
         // benzodiazepine is now contraindicated — the seizure is over, so it adds no
@@ -863,9 +863,9 @@ export const TREATMENT_PROTOCOLS: TreatmentProtocol[] = [
           description: 'Sonorous/snoring respirations during seizure. Tachycardic. Active convulsions.',
         },
         essentialTreatments: ['midazolam_5mg', 'oxygen_nonrebreather', 'airway_open', 'suction', 'iv_access'],
-        optimalTreatments: ['midazolam_5mg', 'oxygen_nonrebreather', 'airway_open', 'suction', 'iv_access', 'glucose_10g', 'recovery_position'],
-        beneficialTreatments: ['glucose_10g', 'recovery_position', 'dextrose_10'],
-        contraindicatedTreatments: [],
+        optimalTreatments: ['midazolam_5mg', 'oxygen_nonrebreather', 'airway_open', 'suction', 'iv_access', 'dextrose_10', 'recovery_position'],
+        beneficialTreatments: ['recovery_position', 'dextrose_10'],
+        contraindicatedTreatments: ['glucose_10g'],
         deteriorationRate: 'fast',
         synergies: [
           {
@@ -879,9 +879,9 @@ export const TREATMENT_PROTOCOLS: TreatmentProtocol[] = [
             description: 'Full seizure protocol: terminate seizure + maintain airway + clear secretions + oxygenate',
           },
           {
-            treatments: ['midazolam_5mg', 'glucose_10g'],
+            treatments: ['midazolam_5mg', 'dextrose_10'],
             synergyMultiplier: 1.3,
-            description: 'If seizure is hypoglycaemia-driven, glucose correction prevents recurrence',
+            description: 'If seizure is hypoglycaemia-driven, airway-safe IV glucose correction prevents recurrence',
           },
         ],
         positioningEffects: [
@@ -1334,6 +1334,134 @@ export const TREATMENT_PROTOCOLS: TreatmentProtocol[] = [
   },
 
   // ===========================================================================
+  // CARDIAC ARREST (ASYSTOLE / NON-SHOCKABLE)
+  // ===========================================================================
+  {
+    condition: 'asystole',
+    conditionName: 'Cardiac Arrest (Asystole / Non-Shockable Rhythm)',
+    severityLevels: [
+      {
+        severity: 'life-threatening',
+        description: 'Confirmed asystole — no pulse, no output, non-shockable rhythm. Prioritise uninterrupted CPR, ventilation, adrenaline, and reversible causes.',
+        typicalVitals: {
+          pulse: [0, 0],
+          respiration: [0, 4],
+          spo2: [0, 60],
+          bpSystolic: [0, 0],
+          gcs: [3, 3],
+        },
+        initialSounds: {
+          leftLung: 'absent',
+          rightLung: 'absent',
+          heartSound: 'absent',
+          additionalSounds: ['No pulse palpable', 'No purposeful response', 'Asystole confirmed in more than one lead'],
+          description: 'No breath sounds or heart sounds. Monitor confirms asystole. This is a non-shockable arrest.',
+        },
+        essentialTreatments: ['cpr', 'adrenaline_1mg', 'airway_open', 'bvm_ventilation'],
+        optimalTreatments: ['cpr', 'adrenaline_1mg', 'airway_open', 'bvm_ventilation', 'iv_access', 'io_access', 'oxygen_nonrebreather'],
+        beneficialTreatments: ['iv_access', 'io_access', 'intubation'],
+        contraindicatedTreatments: ['defibrillation', 'amiodarone_300mg'],
+        deteriorationRate: 'rapid',
+        synergies: [
+          {
+            treatments: ['cpr', 'adrenaline_1mg'],
+            synergyMultiplier: 1.8,
+            description: 'High-quality uninterrupted CPR with timely adrenaline is the core non-shockable arrest pathway.',
+          },
+          {
+            treatments: ['cpr', 'airway_open', 'bvm_ventilation', 'oxygen_nonrebreather'],
+            synergyMultiplier: 1.6,
+            description: 'Airway opening and effective oxygenated ventilation support CPR while reversible causes are sought.',
+          },
+          {
+            treatments: ['cpr', 'adrenaline_1mg', 'airway_open', 'bvm_ventilation', 'io_access'],
+            synergyMultiplier: 2.1,
+            description: 'Complete asystole bundle: CPR, oxygenated ventilation, rapid vascular access, and adrenaline without inappropriate shocks.',
+          },
+        ],
+        positioningEffects: [
+          {
+            positionId: 'supine_position',
+            spo2Bonus: 0,
+            rrReduction: 0,
+            hrChange: 0,
+            description: 'Patient must be supine on a hard surface for effective compressions.',
+          },
+        ],
+        responseCeilings: {
+          partialCeiling: 10,
+          fullCeiling: 55,
+          timeToResponse: 180,
+        },
+      },
+    ],
+  },
+
+  // ===========================================================================
+  // OPIOID OVERDOSE / RESPIRATORY DEPRESSION
+  // ===========================================================================
+  {
+    condition: 'opioid-overdose',
+    conditionName: 'Opioid Overdose with Respiratory Depression',
+    severityLevels: [
+      {
+        severity: 'life-threatening',
+        description: 'Opioid toxidrome with severe hypoventilation, hypoxia, reduced consciousness, and shock. Ventilate first and titrate naloxone to adequate breathing.',
+        typicalVitals: {
+          pulse: [35, 80],
+          respiration: [0, 8],
+          spo2: [50, 85],
+          bpSystolic: [60, 100],
+          gcs: [3, 10],
+        },
+        initialSounds: {
+          leftLung: 'diminished',
+          rightLung: 'diminished',
+          heartSound: 'bradycardic',
+          additionalSounds: ['Slow shallow respirations', 'Pinpoint pupils', 'Reduced consciousness', 'Possible aspiration'],
+          description: 'Minimal respiratory effort with reduced bilateral air entry. Pinpoint pupils and depressed consciousness support an opioid toxidrome.',
+        },
+        essentialTreatments: ['airway_open', 'bvm_ventilation', 'oxygen_nonrebreather', 'naloxone_04mg'],
+        optimalTreatments: ['airway_open', 'bvm_ventilation', 'oxygen_nonrebreather', 'naloxone_04mg', 'suction', 'iv_access', 'recovery_position'],
+        beneficialTreatments: ['suction', 'iv_access', 'io_access', 'recovery_position', 'fluids_500ml'],
+        contraindicatedTreatments: ['glucose_10g'],
+        deteriorationRate: 'rapid',
+        synergies: [
+          {
+            treatments: ['airway_open', 'bvm_ventilation', 'oxygen_nonrebreather'],
+            synergyMultiplier: 1.8,
+            description: 'Airway opening plus oxygenated BVM ventilation reverses the immediate life threat before the antidote takes effect.',
+          },
+          {
+            treatments: ['bvm_ventilation', 'naloxone_04mg'],
+            synergyMultiplier: 2.0,
+            description: 'Ventilation supports the patient while titrated naloxone restores respiratory drive.',
+          },
+          {
+            treatments: ['airway_open', 'bvm_ventilation', 'oxygen_nonrebreather', 'naloxone_04mg', 'suction'],
+            synergyMultiplier: 2.3,
+            description: 'Complete overdose pathway: ventilate, reverse respiratory depression, and protect against vomiting or aspiration.',
+          },
+        ],
+        positioningEffects: [
+          {
+            positionId: 'recovery_position',
+            spo2Bonus: 2,
+            rrReduction: 0,
+            hrChange: 0,
+            description: 'Once spontaneous breathing returns, lateral positioning helps protect the airway during re-sedation or vomiting.',
+          },
+        ],
+        responseCeilings: {
+          partialCeiling: 35,
+          fullCeiling: 95,
+          timeToResponse: 180,
+        },
+      },
+    ],
+  },
+
+  // ===========================================================================
   // ANAPHYLAXIS (bonus — commonly tested)
   // ===========================================================================
   {
@@ -1587,21 +1715,19 @@ export const TREATMENT_PROTOCOLS: TreatmentProtocol[] = [
           additionalSounds: ['Severe headache', 'Visual disturbance', 'Nausea', 'Bounding pulse'],
           description: 'Clear lungs bilaterally. Normal heart sounds. Bounding, regular pulse.',
         },
-        // GTN is FIRST-LINE here (controlled afterload reduction to lower BP ~20-25%
-        // in the first hour) — it was previously mis-listed as contraindicated, which
-        // the new harm engine turned into a BP crash every time a student gave the
-        // correct drug. The genuine danger is a precipitous BP drop (a rate, not a
-        // drug), so the contraindicated list is correctly empty.
-        essentialTreatments: ['iv_access', 'gtn_spray'],
-        optimalTreatments: ['iv_access', 'gtn_spray', 'labetalol_20mg', 'reassurance', 'fowlers_position'],
+        // Pre-hospital priority is recognition, repeated BP/neuro assessment,
+        // monitoring, IV access, gentle transport, and a clear pre-alert. Rapid
+        // unsupervised BP reduction can cause cerebral or coronary hypoperfusion.
+        essentialTreatments: ['iv_access', 'reassurance'],
+        optimalTreatments: ['iv_access', 'reassurance', 'fowlers_position'],
         beneficialTreatments: ['fowlers_position', 'oxygen_nasal'],
-        contraindicatedTreatments: [],
+        contraindicatedTreatments: ['gtn_spray'],
         deteriorationRate: 'moderate',
         synergies: [
           {
-            treatments: ['iv_access', 'gtn_spray'],
+            treatments: ['iv_access', 'reassurance', 'fowlers_position'],
             synergyMultiplier: 1.4,
-            description: 'IV access + titratable GTN: controlled afterload reduction is first-line to lower BP ~20-25% in the first hour — not a precipitous drop',
+            description: 'Calm, monitored, head-up transport with IV access limits avoidable sympathetic stress while preserving cerebral perfusion for controlled hospital treatment',
           },
         ],
         positioningEffects: [
@@ -1629,27 +1755,22 @@ export const TREATMENT_PROTOCOLS: TreatmentProtocol[] = [
           bpSystolic: [220, 280],
         },
         initialSounds: {
-          leftLung: 'crackles-fine',
-          rightLung: 'crackles-fine',
+          leftLung: 'clear',
+          rightLung: 'clear',
           heartSound: 'normal',
-          additionalSounds: ['Altered consciousness', 'Seizures', 'Papilledema', 'Pulmonary oedema'],
-          description: 'Bilateral fine crackles (pulmonary oedema). Regular but bounding pulse.',
+          additionalSounds: ['Altered consciousness', 'Papilledema', 'Severe headache', 'Bounding pulse'],
+          description: 'Clear lungs in hypertensive encephalopathy. Regular but bounding pulse. Reassess continuously for evolving end-organ damage.',
         },
-        essentialTreatments: ['iv_access', 'oxygen_nonrebreather', 'gtn_spray', 'fowlers_position'],
-        optimalTreatments: ['iv_access', 'oxygen_nonrebreather', 'gtn_spray', 'labetalol_20mg', 'fowlers_position', 'midazolam_5mg'],
-        beneficialTreatments: ['midazolam_5mg', 'cpap_niv'],
-        contraindicatedTreatments: [],
+        essentialTreatments: ['iv_access', 'reassurance', 'fowlers_position'],
+        optimalTreatments: ['iv_access', 'reassurance', 'fowlers_position'],
+        beneficialTreatments: ['oxygen_nasal', 'midazolam_5mg'],
+        contraindicatedTreatments: ['gtn_spray'],
         deteriorationRate: 'fast',
         synergies: [
           {
-            treatments: ['iv_access', 'oxygen_nonrebreather'],
-            synergyMultiplier: 1.4,
-            description: 'IV access + high-flow O2: Stabilize while preparing for antihypertensive infusion in ED',
-          },
-          {
-            treatments: ['iv_access', 'midazolam_5mg'],
+            treatments: ['iv_access', 'reassurance', 'fowlers_position'],
             synergyMultiplier: 1.5,
-            description: 'IV midazolam for seizure control in hypertensive encephalopathy',
+            description: 'Head-up monitored transport, reassurance, and IV access preserve cerebral perfusion while expediting controlled hospital treatment',
           },
         ],
         positioningEffects: [
@@ -1949,7 +2070,7 @@ export const TREATMENT_PROTOCOLS: TreatmentProtocol[] = [
           description: 'Coarse crackles throughout both lung fields with audible bubbling secretions and pink frothy sputum — the alveoli are flooding. Patient tiring; this is peri-arrest pulmonary oedema.',
         },
         essentialTreatments: ['oxygen_nonrebreather', 'cpap_niv', 'gtn_spray', 'fowlers_position', 'iv_access'],
-        optimalTreatments: ['oxygen_nonrebreather', 'cpap_niv', 'gtn_spray', 'fowlers_position', 'iv_access', 'bvm_ventilation', 'intubation'],
+        optimalTreatments: ['oxygen_nonrebreather', 'cpap_niv', 'gtn_spray', 'fowlers_position', 'iv_access'],
         beneficialTreatments: ['bvm_ventilation', 'intubation', 'morphine_5mg', 'suction'],
         // GTN only while SBP supports it — but in the hypertensive SCAPE phenotype it is essential.
         // Fluids and supine remain frankly harmful regardless of phenotype.
@@ -3670,7 +3791,7 @@ export const TREATMENT_PROTOCOLS: TreatmentProtocol[] = [
         },
         // io_access for the collapsed patient; antibiotics still essential and urgent.
         essentialTreatments: ['antibiotics_iv', 'io_access', 'oxygen_nonrebreather', 'fluids_500ml'],
-        optimalTreatments: ['antibiotics_iv', 'io_access', 'iv_access', 'oxygen_nonrebreather', 'fluids_1000ml', 'dexamethasone', 'bvm_ventilation'],
+        optimalTreatments: ['antibiotics_iv', 'io_access', 'iv_access', 'oxygen_nonrebreather', 'fluids_1000ml', 'dexamethasone'],
         beneficialTreatments: ['iv_access', 'dexamethasone', 'bvm_ventilation', 'intubation'],
         // gtn_spray lethal in shock; supine worsens raised ICP. Both real, both harmful.
         contraindicatedTreatments: ['gtn_spray', 'supine_position'],
@@ -4776,7 +4897,7 @@ export const TREATMENT_PROTOCOLS: TreatmentProtocol[] = [
         // displace CO; large-bore IV access + Parkland-guided fluids for burn
         // shock; potent analgesia. BVM available to support if needed.
         essentialTreatments: ['intubation', 'oxygen_nonrebreather', 'iv_access', 'fluids_1000ml'],
-        optimalTreatments: ['intubation', 'oxygen_nonrebreather', 'iv_access', 'fluids_1000ml', 'io_access', 'fentanyl_50mcg', 'ketamine_analgesic', 'active_cooling', 'bvm_ventilation'],
+        optimalTreatments: ['intubation', 'oxygen_nonrebreather', 'iv_access', 'fluids_1000ml', 'io_access', 'fentanyl_50mcg', 'ketamine_analgesic', 'active_cooling'],
         beneficialTreatments: ['io_access', 'fentanyl_50mcg', 'ketamine_analgesic', 'morphine_5mg', 'active_cooling', 'bvm_ventilation', 'warming_blanket'],
         // Honest, genuinely dangerous entries:
         // - furosemide_40mg: diuresis in a burn-shock patient who needs aggressive
@@ -5266,6 +5387,12 @@ export function determineSeverityFromVitals(
   // Score each severity level by how well vitals match
   let bestMatch: SeverityProtocol = protocol.severityLevels[0];
   let bestScore = -Infinity;
+  const severityRank: Record<ConditionSeverity, number> = {
+    mild: 0,
+    moderate: 1,
+    severe: 2,
+    'life-threatening': 3,
+  };
 
   for (const level of protocol.severityLevels) {
     let score = 0;
@@ -5293,10 +5420,29 @@ export function determineSeverityFromVitals(
       if (vitals.gcs >= tv.gcs[0] && vitals.gcs <= tv.gcs[1]) score += 3;
     }
 
-    if (score > bestScore) {
+    // When two tiers fit equally well, bias toward the higher-acuity pathway.
+    // This prevents a hypotensive patient from inheriting a stable protocol
+    // merely because the stable tier appeared first in the data array.
+    if (score > bestScore || (score === bestScore && severityRank[level.severity] > severityRank[bestMatch.severity])) {
       bestScore = score;
       bestMatch = level;
     }
+  }
+
+  // Do not route a hypotensive patient through a lower-acuity tier whose own
+  // BP range excludes them when a higher-acuity tier explicitly includes that
+  // pressure. This is particularly important for therapies such as GTN, where
+  // the stable and shock pathways intentionally diverge.
+  const bpSys = parseInt(String(vitals.bp).split('/')[0]) || 120;
+  if (bpSys < 100 && !(bpSys >= bestMatch.typicalVitals.bpSystolic[0] && bpSys <= bestMatch.typicalVitals.bpSystolic[1])) {
+    const hypotensiveHigherAcuity = protocol.severityLevels
+      .filter(level =>
+        severityRank[level.severity] > severityRank[bestMatch.severity]
+        && bpSys >= level.typicalVitals.bpSystolic[0]
+        && bpSys <= level.typicalVitals.bpSystolic[1])
+      .sort((a, b) => severityRank[b.severity] - severityRank[a.severity])[0];
+
+    if (hypotensiveHigherAcuity) bestMatch = hypotensiveHigherAcuity;
   }
 
   return bestMatch;

@@ -1,5 +1,9 @@
-/* Font Imports — Geist for UI, Plus Jakarta Sans for headings */
-@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+/* Font Imports — Kimi-spec: Plus Jakarta Sans for UI, IBM Plex Mono for
+   monitor/vital values. Geist is kept loaded as a fallback because
+   ~15 legacy components still reference it; the Tailwind `font-sans`
+   default is Plus Jakarta first, so new code picks up the new typeface
+   automatically. */
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -82,16 +86,23 @@
   }
   body {
     @apply bg-background text-foreground min-h-screen;
-    font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    /* Kimi spec: Plus Jakarta Sans as the body face. Geist stays in the
+       fallback chain because a handful of legacy components hard-set
+       `font-family: 'Geist'` and we don't want them to regress while
+       the typography migration is in flight. */
+    font-family: 'Plus Jakarta Sans', 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-feature-settings: "ss01", "ss02", "cv01";
     letter-spacing: 0;
   }
   #root {
     @apply min-h-screen;
   }
-  code, pre, .mono {
-    font-family: 'Geist Mono', 'Fira Code', 'JetBrains Mono', monospace;
-    font-feature-settings: "ss01", "ss02", "zero";
+  code, pre, .mono, .vital-value, .font-mono {
+    /* Kimi spec: IBM Plex Mono for monitor digits + any tabular numerics.
+       Geist Mono retained as fallback for legacy code paths. */
+    font-family: 'IBM Plex Mono', 'Geist Mono', 'Fira Code', 'JetBrains Mono', monospace;
+    font-feature-settings: "zero", "ss01";
+    font-variant-numeric: tabular-nums;
   }
 
   ::selection {
@@ -261,13 +272,13 @@ html { scroll-behavior: smooth; }
 .abcde-airway { @apply border-l-4 border-l-blue-500; }
 .abcde-breathing { @apply border-l-4 border-l-cyan-500; }
 .abcde-circulation { @apply border-l-4 border-l-red-500; }
-.abcde-disability { @apply border-l-4 border-l-purple-500; }
+.abcde-disability { @apply border-l-4 border-l-blue-500; }
 .abcde-exposure { @apply border-l-4 border-l-amber-500; }
 
 .abcde-airway-bg { @apply border-l-4 border-l-blue-500 bg-blue-50/50 dark:bg-blue-950/20; }
 .abcde-breathing-bg { @apply border-l-4 border-l-cyan-500 bg-cyan-50/50 dark:bg-cyan-950/20; }
 .abcde-circulation-bg { @apply border-l-4 border-l-red-500 bg-red-50/50 dark:bg-red-950/20; }
-.abcde-disability-bg { @apply border-l-4 border-l-purple-500 bg-purple-50/50 dark:bg-purple-950/20; }
+.abcde-disability-bg { @apply border-l-4 border-l-blue-500 bg-blue-50/50 dark:bg-blue-950/20; }
 .abcde-exposure-bg { @apply border-l-4 border-l-amber-500 bg-amber-50/50 dark:bg-amber-950/20; }
 
 /* Status indicators */
@@ -685,6 +696,41 @@ body.case-active { overscroll-behavior-y: contain; }
    WORKSPACE STYLES - Glassmorphism & Non-Linear
    ============================================ */
 
+/* Top navigation blur — Kimi spec. Sits over the ambient orbs so the
+   surface tint blends with the content beneath. */
+.nav-blur {
+  background: rgba(248, 247, 250, 0.7);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+}
+.dark .nav-blur {
+  background: rgba(15, 15, 20, 0.7);
+}
+
+/* Waveform container with right-edge fade — gives the ECG the
+   "scrolling off the right" CRT feel from the mockup. */
+.waveform-container {
+  position: relative;
+  overflow: hidden;
+}
+.waveform-container::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 40px;
+  background: linear-gradient(to right, transparent, #0a0a0a);
+  pointer-events: none;
+}
+
+/* Slow ECG trace variant for the secondary lead (V1) — half opacity so
+   Lead II reads as the primary. */
+.ecg-path-slow {
+  animation-duration: 4s;
+  opacity: 0.6;
+}
+
 /* Glass morphism cards */
 .glass {
   background: rgba(255, 255, 255, 0.65);
@@ -914,4 +960,205 @@ body.case-active { overscroll-behavior-y: contain; }
 
 .animate-float {
   animation: float 20s ease-in-out infinite;
+}
+
+/* ============================================
+   CLINICAL GLASS FOUNDATION
+   Final overrides for the 2026 simulator redesign.
+   ============================================ */
+
+:root {
+  --background: 198 32% 96%;
+  --foreground: 216 24% 14%;
+  --card: 0 0% 100%;
+  --card-foreground: 216 24% 14%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 216 24% 14%;
+  --primary: 190 86% 36%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 196 25% 91%;
+  --secondary-foreground: 214 22% 22%;
+  --muted: 202 22% 92%;
+  --muted-foreground: 214 12% 44%;
+  --accent: 184 42% 88%;
+  --accent-foreground: 191 76% 24%;
+  --border: 202 20% 82%;
+  --input: 202 22% 86%;
+  --ring: 188 80% 40%;
+
+  --clinical-glass-bg: rgba(255, 255, 255, 0.68);
+  --clinical-glass-bg-strong: rgba(255, 255, 255, 0.82);
+  --clinical-glass-border: rgba(255, 255, 255, 0.62);
+  --clinical-glass-shadow: 0 18px 46px -34px rgba(15, 23, 42, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.78);
+  --clinical-control-bg: rgba(255, 255, 255, 0.58);
+  --clinical-grid-line: rgba(8, 145, 178, 0.055);
+  --clinical-room-wash: rgba(6, 182, 212, 0.08);
+  --clinical-warm-wash: rgba(245, 158, 11, 0.055);
+}
+
+.dark {
+  --background: 215 22% 9%;
+  --foreground: 202 25% 92%;
+  --card: 215 18% 13%;
+  --card-foreground: 202 25% 92%;
+  --popover: 215 18% 12%;
+  --popover-foreground: 202 25% 92%;
+  --primary: 188 82% 52%;
+  --primary-foreground: 214 28% 9%;
+  --secondary: 216 18% 17%;
+  --secondary-foreground: 202 25% 88%;
+  --muted: 216 16% 15%;
+  --muted-foreground: 206 13% 62%;
+  --accent: 190 32% 18%;
+  --accent-foreground: 188 76% 72%;
+  --border: 214 15% 24%;
+  --input: 214 15% 22%;
+  --ring: 188 82% 52%;
+
+  --clinical-glass-bg: rgba(15, 23, 32, 0.62);
+  --clinical-glass-bg-strong: rgba(15, 23, 32, 0.78);
+  --clinical-glass-border: rgba(255, 255, 255, 0.10);
+  --clinical-glass-shadow: 0 22px 60px -34px rgba(0, 0, 0, 0.86), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  --clinical-control-bg: rgba(255, 255, 255, 0.065);
+  --clinical-grid-line: rgba(103, 232, 249, 0.055);
+  --clinical-room-wash: rgba(34, 211, 238, 0.08);
+  --clinical-warm-wash: rgba(245, 158, 11, 0.045);
+}
+
+body {
+  background:
+    linear-gradient(90deg, var(--clinical-grid-line) 1px, transparent 1px),
+    linear-gradient(0deg, var(--clinical-grid-line) 1px, transparent 1px),
+    radial-gradient(circle at 50% -10%, var(--clinical-room-wash), transparent 34rem),
+    radial-gradient(circle at 8% 100%, var(--clinical-warm-wash), transparent 28rem),
+    hsl(var(--background));
+  background-size: 44px 44px, 44px 44px, auto, auto, auto;
+}
+
+.glass,
+.glass-strong,
+.glass-panel,
+.card-glass,
+.frosted {
+  background: var(--clinical-glass-bg);
+  border-color: var(--clinical-glass-border);
+  box-shadow: var(--clinical-glass-shadow);
+  backdrop-filter: blur(22px) saturate(155%);
+  -webkit-backdrop-filter: blur(22px) saturate(155%);
+}
+
+.glass-strong,
+.glass-panel {
+  background: var(--clinical-glass-bg-strong);
+}
+
+.glass-control,
+.nav-glass,
+.nav-blur {
+  background: var(--clinical-control-bg);
+  border-color: var(--clinical-glass-border);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.46), 0 12px 30px -26px rgba(15, 23, 42, 0.42);
+  backdrop-filter: blur(18px) saturate(145%);
+  -webkit-backdrop-filter: blur(18px) saturate(145%);
+}
+
+.clinical-shell {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.52), rgba(255, 255, 255, 0.18)),
+    hsl(var(--background));
+}
+
+.dark .clinical-shell {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.012)),
+    hsl(var(--background));
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #0e7490 0%, #059669 44%, #0891b2 100%);
+  background-size: 140% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #0891b2 0%, #0f766e 58%, #047857 100%);
+  box-shadow: 0 14px 30px -18px rgba(8, 145, 178, 0.68), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 18px 38px -20px rgba(8, 145, 178, 0.78), inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+.card-premium:hover,
+.card-interactive:hover,
+.card-hover:hover,
+.card-lift:hover {
+  background: rgba(255, 255, 255, 0.76);
+  box-shadow: 0 20px 46px -34px rgba(15, 23, 42, 0.48), inset 0 1px 0 rgba(255, 255, 255, 0.68);
+}
+
+.dark .card-premium:hover,
+.dark .card-interactive:hover,
+.dark .card-hover:hover,
+.dark .card-lift:hover {
+  background: rgba(255, 255, 255, 0.085);
+}
+
+.timeline-line {
+  background: linear-gradient(to bottom, rgba(8, 145, 178, 0.34), rgba(16, 185, 129, 0.18), transparent);
+}
+
+.timeline-dot {
+  box-shadow: 0 0 0 2px rgba(8, 145, 178, 0.28);
+}
+
+.timeline-item:hover .timeline-dot {
+  box-shadow: 0 0 0 4px rgba(8, 145, 178, 0.16);
+}
+
+.body-part:hover {
+  filter: brightness(1.12) drop-shadow(0 0 8px rgba(6, 182, 212, 0.34));
+}
+
+.ambient-bg,
+.clinical-ambient {
+  background:
+    linear-gradient(90deg, var(--clinical-grid-line) 1px, transparent 1px),
+    linear-gradient(0deg, var(--clinical-grid-line) 1px, transparent 1px),
+    radial-gradient(circle at 50% 0%, var(--clinical-room-wash), transparent 34rem);
+  background-size: 44px 44px, 44px 44px, auto;
+}
+
+.ambient-bg::after,
+.clinical-ambient::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.36), transparent 36%, rgba(15, 23, 42, 0.035));
+  pointer-events: none;
+}
+
+.dark .ambient-bg::after,
+.dark .clinical-ambient::after {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 40%, rgba(0, 0, 0, 0.20));
+}
+
+.orb,
+.floating-orb,
+.floating-orb-delayed {
+  display: none;
+}
+
+@media (max-width: 1024px) {
+  .glass,
+  .glass-strong,
+  .glass-panel,
+  .card-glass,
+  .frosted {
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+  }
 }

@@ -19,9 +19,9 @@
  *     writes on every join/leave.
  *   - Broadcast is fire-and-forget — good fit for classroom events.
  *
- * Graceful degradation: if Supabase env vars are missing (`isSupabaseConfigured()`
- * returns false), the hook returns `supported: false` and every action is
- * a no-op. The rest of the app still works in single-player mode.
+ * Graceful degradation: if Supabase env vars are missing, the hook runs a
+ * local preview backend. That keeps the classroom UI reviewable in local
+ * development while preserving the real Supabase path for actual multiplayer.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -210,7 +210,13 @@ export type ClassroomBroadcast =
    * Voice broadcast state — tells every participant who's currently
    * transmitting audio so UIs can show a "speaking" indicator.
    */
-  | { kind: 'voice_state'; fromKey: string; broadcasting: boolean };
+  | { kind: 'voice_state'; fromKey: string; broadcasting: boolean }
+  /**
+   * Instructor opening / closing the "AV floor". When open, every joined
+   * student may broadcast mic + camera for a many-to-many tabletop
+   * discussion — not just the current driver.
+   */
+  | { kind: 'av_floor'; open: boolean; fromKey: string };
 
 // ============================================================================
 // Helpers
@@ -264,8 +270,10 @@ function channelName(pin: string): string {
 // ============================================================================
 
 export interface UseClassroomSessionResult {
-  /** `false` when Supabase isn't configured — UI should hide classroom entry points. */
+  /** True when the classroom UI can render. Local preview counts as supported. */
   supported: boolean;
+  /** True when running the local, non-networked classroom preview backend. */
+  isPreviewMode: boolean;
   status: ClassroomStatus;
   error: string | null;
   role: ClassroomRole | null;
@@ -356,10 +364,17 @@ export interface UseClassroomSessionResult {
   timerEndsAt: string | null;
   /** Instructor: set / clear the auto-end timer. Pass 0 / null to disable. */
   setTimer: (durationMinutes: number | null) => Promise<void>;
+
+  /** True when the instructor has opened the floor for all-participant AV. */
+  avFloorOpen: boolean;
+  /** Instructor: open/close many-to-many mic+camera for the whole room. */
+  setAvFloor: (open: boolean) => Promise<void>;
 }
 
 export function useClassroomSession(): UseClassroomSessionResult {
-  const supported = isSupabaseConfigured();
+  const supabaseConfigured = isSupabaseConfigured();
+  const supported = true;
+  const isPreviewMode = !supabaseConfigured;
 
   const [status, setStatus] = useState<ClassroomStatus>('idle');
   const [error, setError] = useState<string | null>(null);
@@ -381,6 +396,9 @@ export function useClassroomSession(): UseClassroomSessionResult {
   const [chatMessages, setChatMessages] = useState<UseClassroomSessionResult['chatMessages']>([]);
   // ISO timestamp the case auto-ends, or null when no timer is set.
   const [timerEndsAt, setTimerEndsAtState] = useState<string | null>(null);
+  // True when the instructor has opened the floor so every student can
+  // broadcast mic + camera (collaborative tabletop), not just the driver.
+  const [avFloorOpen, setAvFloorOpenState] = useState<boolean>(false);
 
   // Mutable refs so callbacks don't capture stale state.
   const channelRef = useRef<RealtimeChannel | null>(null);
@@ -481,6 +499,8 @@ export function useClassroomSession(): UseClassroomSessionResult {
             ]);
           } else if (payload.kind === 'timer_set') {
             setTimerEndsAtState(payload.endsAt);
+          } else if (payload.kind === 'av_floor') {
+            setAvFloorOpenState(payload.open);
           } else if (payload.kind === 'case_started') {
             // Durable lifecycle state — ClassroomJoin can gate its case
             // panel on `liveCaseId` without risking the broadcast being
@@ -498,6 +518,7 @@ export function useClassroomSession(): UseClassroomSessionResult {
             setSharedState({});
             setTimerEndsAtState(null);
             setDriverKeysState([]);
+            setAvFloorOpenState(false);
             setLiveCaseId(null);
             setLiveCaseStartedAt(null);
           } else if (payload.kind === 'session_ended') {
@@ -573,7 +594,43 @@ export function useClassroomSession(): UseClassroomSessionResult {
 
   const createSession = useCallback(
     async (instructorName: string): Promise<ClassroomSessionRow | null> => {
-      if (!supported) return null;
+      if (isPreviewMode) {
+        const now = new Date().toISOString();
+        const pin = generatePin();
+        const created: ClassroomSessionRow = {
+          id: `preview-${pin}`,
+          pin,
+          instructor_name: instructorName,
+          case_id: null,
+          case_snapshot: null,
+          status: 'lobby',
+          created_at: now,
+          started_at: null,
+          ended_at: null,
+        };
+
+        setStatus('lobby');
+        setError(null);
+        setRole('instructor');
+        roleRef.current = 'instructor';
+        setSession(created);
+        setParticipants([
+          { key: selfKeyRef.current, displayName: instructorName, role: 'instructor', joinedAt: now },
+          { key: 'preview-learner-1', displayName: 'Aisha Rahman', role: 'student', joinedAt: now },
+          { key: 'preview-learner-2', displayName: 'Omar Al Mansoori', role: 'student', joinedAt: now },
+          { key: 'preview-learner-3', displayName: 'Maya Thomas', role: 'student', joinedAt: now },
+        ]);
+        setChatMessages([]);
+        setSharedState({});
+        setTimerEndsAtState(null);
+        setDriverKeysState([]);
+        setAvFloorOpenState(false);
+        setLiveCaseId(null);
+        setLiveCaseStartedAt(null);
+        return created;
+      }
+
+      if (!supabaseConfigured) return null;
       const supa = getSupabaseClient();
       if (!supa) return null;
 
@@ -635,7 +692,7 @@ export function useClassroomSession(): UseClassroomSessionResult {
         return null;
       }
     },
-    [supported, attachChannel],
+    [isPreviewMode, supabaseConfigured, attachChannel],
   );
 
   // --------------------------------------------------------------------------
@@ -644,16 +701,48 @@ export function useClassroomSession(): UseClassroomSessionResult {
 
   const joinSession = useCallback(
     async (pin: string, displayName: string): Promise<ClassroomSessionRow | null> => {
-      if (!supported) return null;
-      const supa = getSupabaseClient();
-      if (!supa) return null;
-
       const normalisedPin = pin.trim();
       if (!/^\d{6}$/.test(normalisedPin)) {
         setError('classroom.errors.pinInvalid');
         setStatus('error');
         return null;
       }
+
+      if (isPreviewMode) {
+        const now = new Date().toISOString();
+        const row: ClassroomSessionRow = {
+          id: `preview-${normalisedPin}`,
+          pin: normalisedPin,
+          instructor_name: 'Preview Instructor',
+          case_id: null,
+          case_snapshot: null,
+          status: 'lobby',
+          created_at: now,
+          started_at: null,
+          ended_at: null,
+        };
+        setStatus('lobby');
+        setError(null);
+        setRole('student');
+        roleRef.current = 'student';
+        setSession(row);
+        setParticipants([
+          { key: 'preview-instructor', displayName: 'Preview Instructor', role: 'instructor', joinedAt: now },
+          { key: selfKeyRef.current, displayName, role: 'student', joinedAt: now },
+        ]);
+        setChatMessages([]);
+        setSharedState({});
+        setTimerEndsAtState(null);
+        setDriverKeysState([]);
+        setAvFloorOpenState(false);
+        setLiveCaseId(null);
+        setLiveCaseStartedAt(null);
+        return row;
+      }
+
+      if (!supabaseConfigured) return null;
+      const supa = getSupabaseClient();
+      if (!supa) return null;
 
       setStatus('connecting');
       setError(null);
@@ -686,7 +775,7 @@ export function useClassroomSession(): UseClassroomSessionResult {
       }
       return row;
     },
-    [supported, attachChannel],
+    [isPreviewMode, supabaseConfigured, attachChannel],
   );
 
   // --------------------------------------------------------------------------
@@ -700,14 +789,87 @@ export function useClassroomSession(): UseClassroomSessionResult {
     setStatus(prev => (prev === 'error' ? 'idle' : prev));
   }, []);
 
+  const applyLocalBroadcast = useCallback((payload: ClassroomBroadcast) => {
+    setLastBroadcast(payload);
+
+    if (payload.kind === 'state_patch') {
+      setSharedState(prev => mergePatch(prev, payload.patch));
+    } else if (payload.kind === 'state_snapshot') {
+      setSharedState(payload.state);
+    } else if (payload.kind === 'driver_set') {
+      setDriverKeysState(payload.toKeys);
+    } else if (payload.kind === 'chat_message') {
+      if (payload.fromKey === selfKeyRef.current) return;
+      setChatMessages(prev => [
+        ...prev.slice(-199),
+        {
+          id: `${payload.fromKey}-${payload.sentAt}`,
+          fromKey: payload.fromKey,
+          fromName: payload.fromName,
+          fromRole: payload.fromRole,
+          text: payload.text,
+          sentAt: payload.sentAt,
+        },
+      ]);
+    } else if (payload.kind === 'timer_set') {
+      setTimerEndsAtState(payload.endsAt);
+    } else if (payload.kind === 'av_floor') {
+      setAvFloorOpenState(payload.open);
+    } else if (payload.kind === 'case_started') {
+      setLiveCaseId(payload.caseId);
+      setLiveCaseStartedAt(payload.startedAt);
+    } else if (payload.kind === 'case_ended') {
+      setSharedState({});
+      setTimerEndsAtState(null);
+      setDriverKeysState([]);
+      setAvFloorOpenState(false);
+      setLiveCaseId(null);
+      setLiveCaseStartedAt(null);
+    } else if (payload.kind === 'session_ended') {
+      setLiveCaseId(null);
+      setLiveCaseStartedAt(null);
+    }
+  }, []);
+
   const sendBroadcast = useCallback(async (payload: ClassroomBroadcast) => {
     const channel = channelRef.current;
-    if (!channel) return;
+    if (!channel) {
+      if (isPreviewMode) applyLocalBroadcast(payload);
+      return;
+    }
     await channel.send({ type: 'broadcast', event: 'classroom', payload });
-  }, []);
+  }, [applyLocalBroadcast, isPreviewMode]);
 
   const startCase = useCallback(
     async (caseId: string, caseSnapshot?: unknown) => {
+      if (isPreviewMode) {
+        const current = sessionRef.current;
+        if (!current) return;
+        const startedAt = new Date().toISOString();
+        const nextSession: ClassroomSessionRow = {
+          ...current,
+          case_id: caseId,
+          case_snapshot: caseSnapshot ?? null,
+          status: 'running',
+          started_at: startedAt,
+        };
+        setSession(nextSession);
+        setStatus('running');
+        setSharedState({ caseStartedAt: startedAt });
+        setLiveCaseId(caseId);
+        setLiveCaseStartedAt(startedAt);
+
+        const soloInstructorKeys = [selfKeyRef.current];
+        setDriverKeysState(soloInstructorKeys);
+        await sendBroadcast({
+          kind: 'driver_set',
+          toKeys: soloInstructorKeys,
+          fromKey: selfKeyRef.current,
+        });
+        await sendBroadcast({ kind: 'case_started', caseId, startedAt });
+        return;
+      }
+
       const supa = getSupabaseClient();
       const current = sessionRef.current;
       if (!supa || !current) return;
@@ -747,7 +909,7 @@ export function useClassroomSession(): UseClassroomSessionResult {
       setLiveCaseStartedAt(startedAt);
       await sendBroadcast({ kind: 'case_started', caseId, startedAt });
     },
-    [sendBroadcast],
+    [isPreviewMode, sendBroadcast],
   );
 
   // ------ Shared-state + control helpers ----------------------------------
@@ -876,8 +1038,29 @@ export function useClassroomSession(): UseClassroomSessionResult {
     });
   }, [sendBroadcast]);
 
+  const setAvFloor = useCallback(async (open: boolean) => {
+    setAvFloorOpenState(open);
+    await sendBroadcast({ kind: 'av_floor', open, fromKey: selfKeyRef.current });
+  }, [sendBroadcast]);
+
   const endCase = useCallback(async () => {
     const endedAt = new Date().toISOString();
+
+    if (isPreviewMode) {
+      setSharedState({});
+      await sendBroadcast({ kind: 'case_ended', endedAt });
+      setSession(prev => prev
+        ? { ...prev, status: 'lobby', case_id: null, case_snapshot: null }
+        : prev);
+      setStatus('lobby');
+      setTimerEndsAtState(null);
+      setDriverKeysState([]);
+      setAvFloorOpenState(false);
+      setLiveCaseId(null);
+      setLiveCaseStartedAt(null);
+      return;
+    }
+
     const supa = getSupabaseClient();
     const current = sessionRef.current;
 
@@ -901,7 +1084,7 @@ export function useClassroomSession(): UseClassroomSessionResult {
       if (data) setSession(data as ClassroomSessionRow);
     }
     setStatus('lobby'); // back to lobby — instructor can run another case
-  }, [sendBroadcast]);
+  }, [isPreviewMode, sendBroadcast]);
 
   const leaveSession = useCallback(async () => {
     const supa = getSupabaseClient();
@@ -930,6 +1113,13 @@ export function useClassroomSession(): UseClassroomSessionResult {
     setStatus('idle');
     setError(null);
     setLastBroadcast(null);
+    setSharedState({});
+    setTimerEndsAtState(null);
+    setDriverKeysState([]);
+    setAvFloorOpenState(false);
+    setLiveCaseId(null);
+    setLiveCaseStartedAt(null);
+    setChatMessages([]);
   }, [sendBroadcast]);
 
   // Cleanup on unmount — prevents dangling channels.
@@ -1012,6 +1202,7 @@ export function useClassroomSession(): UseClassroomSessionResult {
   return useMemo(
     () => ({
       supported,
+      isPreviewMode,
       status,
       error,
       role,
@@ -1043,12 +1234,14 @@ export function useClassroomSession(): UseClassroomSessionResult {
       sendChat,
       timerEndsAt,
       setTimer,
+      avFloorOpen,
+      setAvFloor,
     }),
-    [supported, status, error, role, session, participants, lastBroadcast,
+    [supported, isPreviewMode, status, error, role, session, participants, lastBroadcast,
       driverKeys, currentDriverKey, isDriver, liveCaseId, liveCaseStartedAt, sharedState,
       createSession, joinSession, startCase, endCase, leaveSession, sendBroadcast, clearError,
       broadcastStatePatch, broadcastStateSnapshot, requestStateSnapshot,
       setDrivers, giveControl, addDriver, takeControl,
-      chatMessages, sendChat, timerEndsAt, setTimer],
+      chatMessages, sendChat, timerEndsAt, setTimer, avFloorOpen, setAvFloor],
   );
 }

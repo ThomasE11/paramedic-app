@@ -7,7 +7,11 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "audit:cases": "node scripts/audit-cases.mjs",
+    "audit:clinical": "node scripts/audit-clinical-regressions.mjs",
+    "audit:scene-assets": "node scripts/audit-scene-assets.mjs",
+    "verify:pdf": "node scripts/run-verify-pdf-export.mjs"
   },
   "dependencies": {
     "@babel/runtime": "^7.22.0",

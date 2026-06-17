@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,7 @@ interface CaseViewContainerProps {
 }
 
 type ViewTab = 'case' | 'vitals' | 'management';
+const VIEW_TABS: ViewTab[] = ['case', 'vitals', 'management'];
 
 export function CaseViewContainer({ 
   caseData, 
@@ -31,6 +32,20 @@ export function CaseViewContainer({
   const containerRef = useRef<HTMLDivElement>(null);
   const [touchStart, setTouchStart] = useState(0);
   const [touchEnd, setTouchEnd] = useState(0);
+
+  const navigateNext = useCallback(() => {
+    const currentIndex = VIEW_TABS.indexOf(activeTab);
+    if (currentIndex < VIEW_TABS.length - 1) {
+      setActiveTab(VIEW_TABS[currentIndex + 1]);
+    }
+  }, [activeTab]);
+
+  const navigatePrev = useCallback(() => {
+    const currentIndex = VIEW_TABS.indexOf(activeTab);
+    if (currentIndex > 0) {
+      setActiveTab(VIEW_TABS[currentIndex - 1]);
+    }
+  }, [activeTab]);
 
   // Handle keyboard navigation
   useEffect(() => {
@@ -44,23 +59,7 @@ export function CaseViewContainer({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeTab]);
-
-  const tabs: ViewTab[] = ['case', 'vitals', 'management'];
-
-  const navigateNext = () => {
-    const currentIndex = tabs.indexOf(activeTab);
-    if (currentIndex < tabs.length - 1) {
-      setActiveTab(tabs[currentIndex + 1]);
-    }
-  };
-
-  const navigatePrev = () => {
-    const currentIndex = tabs.indexOf(activeTab);
-    if (currentIndex > 0) {
-      setActiveTab(tabs[currentIndex - 1]);
-    }
-  };
+  }, [navigateNext, navigatePrev]);
 
   // Touch/swipe handlers for mobile
   const handleTouchStart = (e: React.TouchEvent) => {

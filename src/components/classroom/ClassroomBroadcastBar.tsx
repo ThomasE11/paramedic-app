@@ -21,6 +21,7 @@ import {
   Radio, Users, TrendingDown, Activity, Target,
   AlertTriangle, MessageSquare, X, LogOut, UserCog,
   Check, Clock, Stethoscope, Mic, MicOff, Volume2, VolumeX, Video, VideoOff,
+  MonitorUp,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -54,6 +55,10 @@ interface Props {
   onAddDriver: (toKey: string) => Promise<void> | void;
   /** Instructor: open-floor mode — everyone can treat. */
   onOpenFloor: (studentKeys: string[]) => Promise<void> | void;
+  /** Instructor: AV open-floor state — true when everyone can broadcast mic+cam. */
+  avFloorOpen?: boolean;
+  /** Instructor: toggle the AV open floor (collaborative tabletop). */
+  onToggleAvFloor?: () => void;
   /** Instructor: take control back. */
   onTakeControl: () => Promise<void> | void;
   onEndCase: () => Promise<void> | void;
@@ -71,6 +76,8 @@ interface Props {
     isCameraOn: boolean;
     startCamera: () => Promise<void> | void;
     stopCamera: () => void;
+    isScreenSharing: boolean;
+    startScreenShare: () => Promise<void> | void;
   };
 }
 
@@ -101,6 +108,7 @@ export function ClassroomBroadcastBar({
   onBroadcast,
   onGiveControl, onAddDriver, onOpenFloor, onTakeControl,
   onEndCase, onEndSession,
+  avFloorOpen, onToggleAvFloor,
   voice,
 }: Props) {
   const speakerNames = (voice?.activeSpeakers ?? [])
@@ -348,7 +356,40 @@ export function ClassroomBroadcastBar({
                   {voice.isCameraOn ? <Video className="w-3.5 h-3.5" /> : <VideoOff className="w-3.5 h-3.5" />}
                   {voice.isCameraOn ? 'Camera' : 'Video'}
                 </Button>
+                {/* Screen-share — broadcasts the instructor's screen to the
+                    mesh (Teams-style), on top of the interactive case mirror. */}
+                <Button
+                  size="sm"
+                  variant={voice.isScreenSharing ? 'default' : 'outline'}
+                  onClick={() => {
+                    if (voice.isScreenSharing) voice.stopCamera();
+                    else void voice.startScreenShare();
+                  }}
+                  className={`h-7 gap-1.5 text-xs ${voice.isScreenSharing ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : ''}`}
+                  aria-pressed={voice.isScreenSharing}
+                  aria-label={voice.isScreenSharing ? 'Stop sharing screen' : 'Share your screen'}
+                  title={voice.isScreenSharing ? 'Sharing screen — click to stop' : 'Share your screen with the class'}
+                >
+                  <MonitorUp className="w-3.5 h-3.5" />
+                  {voice.isScreenSharing ? 'Sharing' : 'Screen'}
+                </Button>
               </>
+            )}
+
+            {/* AV open-floor toggle — lets every student share mic + camera
+                for a tabletop discussion, not just the driver. */}
+            {onToggleAvFloor && (
+              <Button
+                size="sm"
+                variant={avFloorOpen ? 'default' : 'outline'}
+                onClick={onToggleAvFloor}
+                className={`h-7 gap-1.5 text-xs ${avFloorOpen ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}`}
+                aria-pressed={!!avFloorOpen}
+                title={avFloorOpen ? 'Open floor on — every student can talk. Click to close.' : 'Open the floor so every student can share mic + camera'}
+              >
+                <Users className="w-3.5 h-3.5" />
+                {avFloorOpen ? 'Floor open' : 'Open floor'}
+              </Button>
             )}
 
             {/* Hand off / control menu */}

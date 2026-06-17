@@ -167,7 +167,7 @@ const metabolicResources: DebriefingResource[] = [
   { id: 'meta-rebelem-anaphylaxis', title: 'Anaphylaxis - Evidence Review', url: 'https://rebelem.com/anaphylactic-shock/', type: 'article', source: 'REBEL EM', relevance: 'essential', category: 'metabolic' },
   { id: 'meta-emcrit-sepsis', title: 'Sepsis Management Essentials', url: 'https://emcrit.org/emcrit/sepsis/', type: 'article', source: 'EMCrit', relevance: 'essential', category: 'metabolic' },
   { id: 'meta-litfl-electrolytes', title: 'Electrolyte Emergencies', url: 'https://litfl.com/hyperkalaemia/', type: 'article', source: 'LITFL', relevance: 'important', category: 'metabolic' },
-  { id: 'meta-emcases-anaphylaxis', title: 'Anaphylaxis Management - Case Review', url: 'https://emergencymedicinecases.com/anaphylaxis/', type: 'podcast', source: 'EM Cases', relevance: 'important', category: 'metabolic' },
+  { id: 'meta-wao-anaphylaxis', title: 'World Allergy Organization Anaphylaxis Guidance', url: 'https://pmc.ncbi.nlm.nih.gov/articles/PMC7607509/', type: 'guideline', source: 'World Allergy Organization', relevance: 'essential', category: 'metabolic' },
 
   // Guidelines
   { id: 'meta-nice-diabetes', title: 'NICE: Type 1 Diabetes - DKA Management (PDF)', url: 'https://www.nice.org.uk/guidance/ng17/resources/type-1-diabetes-in-adults-diagnosis-and-management-pdf-1837276469701', type: 'guideline', source: 'NICE', relevance: 'essential', category: 'metabolic' },
@@ -611,7 +611,7 @@ export function getResourcesForDebriefing(
   const crossCategoryMap: Record<string, string[]> = {
     'pulmonary-embolism': ['respiratory'],   // PE cases need respiratory resources too
     'cardiac-tamponade': ['trauma'],          // Tamponade may be traumatic
-    'anaphylaxis': ['respiratory', 'cardiac'], // Anaphylaxis spans airway + cardiac
+    'anaphylaxis': ['metabolic', 'respiratory', 'cardiac'], // Dedicated anaphylaxis resources live in metabolic; also spans airway + cardiac
     'choking': ['airway'],                     // FBAO is an airway emergency
     'drowning': ['respiratory'],               // Drowning → respiratory failure
   };
@@ -666,6 +666,25 @@ export function getResourcesForDebriefing(
 
   // Sort by score descending, then by relevance tier
   relevant.sort((a, b) => b.score - a.score);
+
+  // When the library contains a useful set of resources that explicitly name
+  // the condition, prefer that focused set over generic category material.
+  // This keeps an anaphylaxis debrief about anaphylaxis instead of padding it
+  // with broad airway or pressor articles merely because those words appeared
+  // in the condition's supporting keywords.
+  const exactConditionTerms = [
+    (caseData.subcategory || '').replace(/-/g, ' ').toLowerCase(),
+    caseData.expectedFindings?.mostLikelyDiagnosis?.toLowerCase() || '',
+  ]
+    .map(term => term.replace(/\s*\([^)]*\)\s*/g, ' ').replace(/\s+/g, ' ').trim())
+    .filter(term => term.length > 3);
+  const exactMatches = relevant.filter(({ resource }) => {
+    const title = resource.title.toLowerCase();
+    return exactConditionTerms.some(term => title.includes(term));
+  });
+  if (exactMatches.length >= 3) {
+    return exactMatches.slice(0, 12).map(s => s.resource);
+  }
 
   // Return top resources — enough variety but not overwhelming
   return relevant.slice(0, 12).map(s => s.resource);

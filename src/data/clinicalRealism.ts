@@ -368,11 +368,6 @@ export const PATHOLOGY_MODIFIERS: Record<string, PathologyModifier[]> = {
       effectivenessMultiplier: 0.5,
       rationale: 'Large-volume fluid bolus in cardiogenic shock risks pulmonary edema. Use cautious 250ml boluses.',
     },
-    {
-      treatmentId: 'gtn_spray',
-      effectivenessMultiplier: 0.0,
-      rationale: 'GTN is CONTRAINDICATED in hypotensive STEMI. Risk of further BP drop and cardiogenic collapse.',
-    },
   ],
   'stem-inferior': [
     {

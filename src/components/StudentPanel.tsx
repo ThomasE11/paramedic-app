@@ -65,6 +65,7 @@ import {
   applyDeterioration,
 } from '@/data/dynamicTreatmentEngine';
 import {
+  assessProtocolCompliance,
   findProtocol,
   determineSeverityFromVitals,
 } from '@/data/treatmentProtocols';
@@ -1353,7 +1354,7 @@ export function StudentPanel({
     };
     setSession(newSession);
     setPhase('prebriefing');
-  }, [selectedYear, stopNarration]);
+  }, [selectedYear, setPhase, stopNarration]);
 
   // Classroom-host: when a preloaded case is passed in (e.g. the instructor
   // just picked a case in the classroom lobby), bootstrap it directly and
@@ -1545,7 +1546,7 @@ export function StudentPanel({
     // with readOnly=false; otherwise the student-as-driver can't actually
     // start the case (silent `if (readOnly) return;` hit from stale
     // closure).
-  }, [currentCase, readOnly, stopNarration]);
+  }, [currentCase, readOnly, setPhase, stopNarration]);
 
   // LUCAS device nudge — if CPR has been running for ≥4 minutes and no
   // mechanical CPR device has been applied yet, offer one via a single,
@@ -2526,7 +2527,7 @@ export function StudentPanel({
       deteriorationIntervalRef.current = null;
     }
     toast.info('Care ended — generating report...');
-  }, []);
+  }, [setPhase]);
 
   // Calculate performance metrics for post-case
   const performanceMetrics = useMemo(() => {
@@ -2565,14 +2566,24 @@ export function StudentPanel({
       item => item.result.status !== 'mismatch' && item.result.status !== 'harmful',
     ).length;
 
-    // Treatment bonus: clinically plausible treatments earn points (up to 30%
-    // of total possible). Mismatched and harmful actions are excluded here and
-    // receive named safety deductions below.
+    // Treatment bonus: protocol-covered cases reward completion of the
+    // condition/severity pathway, not the raw number of things applied. This
+    // prevents the scoring model from nudging students into unnecessary care
+    // just to fill a treatment-count quota. Cases without a protocol retain the
+    // conservative appropriate-treatment fallback.
     const treatmentBonusCap = Math.round(assessmentTotal * 0.3);
     let treatmentBonus = 0;
-    if (bonusEligibleTreatmentCount > 0) {
+    const matchedProtocol = findProtocol(currentCase.subcategory || '', currentCase.category || '');
+    const protocolSeverity = matchedProtocol
+      ? determineSeverityFromVitals(matchedProtocol, initialVitalsForRealism)
+      : null;
+    if (protocolSeverity) {
+      const protocolCompliance = assessProtocolCompliance(protocolSeverity, uniqueAppliedTreatmentIds);
+      treatmentBonus = Math.round(treatmentBonusCap * (protocolCompliance.completionPercent / 100));
+    } else if (bonusEligibleTreatmentCount > 0) {
       treatmentBonus = Math.min(bonusEligibleTreatmentCount * 5, treatmentBonusCap);
-      // Extra bonus if vitals improved (patient got better)
+      // For cases without an authored executable protocol, retain quality
+      // bonuses so appropriate early care and meaningful improvement count.
       const initialSpO2Check = parseInt(String(vitalsHistory[0]?.spo2)) || 0;
       const finalSpO2Check = parseInt(String(vitalsHistory[vitalsHistory.length - 1]?.spo2)) || 0;
       if (finalSpO2Check > initialSpO2Check + 5) treatmentBonus = Math.min(treatmentBonus + 10, treatmentBonusCap);
@@ -2950,7 +2961,7 @@ export function StudentPanel({
     setAmiodaroneDoses(0);
     setArrestStartTime(null);
     setArrestTimeline([]);
-  }, [stopNarration]);
+  }, [setPhase, stopNarration]);
 
   // ============================================================================
   // RENDER

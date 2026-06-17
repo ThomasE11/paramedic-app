@@ -41,6 +41,7 @@ export function BodyRegion({ def, isAssessed, onRegionClick }: BodyRegionProps) 
   const color = isAssessed ? ASSESSED_COLOR : hovered ? HOVER_COLOR : SKIN_COLOR;
   const emissive = hovered ? (isAssessed ? '#16a34a' : '#2563eb') : '#000000';
   const emissiveIntensity = hovered ? HOVER_EMISSIVE_INTENSITY : 0;
+  const geometry = useMemo(() => createGeometry(def.geometry), [def.geometry]);
 
   const handleClick = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
@@ -82,10 +83,9 @@ export function BodyRegion({ def, isAssessed, onRegionClick }: BodyRegionProps) 
       <group>
         {/* Main mesh */}
         {(() => {
-          const geo = createGeometry(def.geometry);
           return (
             <mesh
-              geometry={geo}
+              geometry={geometry}
               position={def.position}
               rotation={def.rotation}
               scale={def.scale}
@@ -135,8 +135,6 @@ export function BodyRegion({ def, isAssessed, onRegionClick }: BodyRegionProps) 
   }
 
   // Single region mesh
-  const geometry = useMemo(() => createGeometry(def.geometry), [def.geometry]);
-
   return (
     <mesh
       geometry={geometry}

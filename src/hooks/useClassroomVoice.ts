@@ -84,8 +84,12 @@ interface UseClassroomVoiceResult {
   remoteVideoStreams: Map<string, MediaStream>;
   /** Start publishing the local camera (adds video track to every peer). */
   startCamera: () => Promise<void>;
-  /** Stop the camera — removes tracks from peers, releases hardware. */
+  /** Stop the camera / screen-share — removes tracks from peers, releases hardware. */
   stopCamera: () => void;
+  /** True when sharing the screen (getDisplayMedia) rather than the camera. */
+  isScreenSharing: boolean;
+  /** Start sharing the screen to all peers (replaces the camera if it's on). */
+  startScreenShare: () => Promise<void>;
   /** True when the browser's autoplay policy has blocked a remote audio
    *  element from playing. The UI should show a tap-to-unlock banner. */
   audioBlocked: boolean;
@@ -161,6 +165,7 @@ export function useClassroomVoice({
 
   // -- Video state -----------------------------------------------------------
   const [isCameraOn, setIsCameraOn] = useState(false);
+  const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [localVideoStream, setLocalVideoStream] = useState<MediaStream | null>(null);
   const [remoteVideoStreams, setRemoteVideoStreams] = useState<Map<string, MediaStream>>(new Map());
   const localVideoTrackRef = useRef<MediaStreamTrack | null>(null);
@@ -386,7 +391,7 @@ export function useClassroomVoice({
       setError(msg);
       setIsBroadcasting(false);
     }
-  }, [canBroadcast, selfKey, sendBroadcast, makePeer]);
+  }, [canBroadcast, selfKey, sendBroadcast, openAndOfferTo]);
 
   const stopBroadcast = useCallback(() => {
     // Stop local mic tracks — releases the OS mic indicator too.
@@ -416,18 +421,32 @@ export function useClassroomVoice({
     if (!lastBroadcast) return;
     // Only handle messages addressed to us (by `toKey`).
     if (lastBroadcast.kind === 'webrtc_offer' && lastBroadcast.toKey === selfKey) {
+      const fromKey = lastBroadcast.fromKey;
+      const sdp = lastBroadcast.sdp;
       (async () => {
         try {
-          const pc = makePeer(lastBroadcast.fromKey);
+          const pc = makePeer(fromKey);
+          // Perfect-negotiation glare handling. When two peers offer at the
+          // same time (the normal case in open-floor many-to-many AV), the
+          // "impolite" peer (higher key) ignores the incoming offer and lets
+          // its own proceed; the "polite" peer rolls its offer back and
+          // accepts. Deterministic by key so exactly one side yields — and
+          // the one-broadcaster→many path never collides, so it's unaffected.
+          const polite = selfKey < fromKey;
+          const collision = pc.signalingState !== 'stable';
+          if (collision && !polite) return;
+          if (collision && polite) {
+            try { await pc.setLocalDescription({ type: 'rollback' }); } catch { /* noop */ }
+          }
           await pc.setRemoteDescription(
-            new RTCSessionDescription(JSON.parse(lastBroadcast.sdp)),
+            new RTCSessionDescription(JSON.parse(sdp)),
           );
           const answer = await pc.createAnswer();
           await pc.setLocalDescription(answer);
           await sendBroadcast({
             kind: 'webrtc_answer',
             fromKey: selfKey,
-            toKey: lastBroadcast.fromKey,
+            toKey: fromKey,
             sdp: JSON.stringify(answer),
           });
         } catch (e) {
@@ -436,7 +455,9 @@ export function useClassroomVoice({
       })();
     } else if (lastBroadcast.kind === 'webrtc_answer' && lastBroadcast.toKey === selfKey) {
       const pc = peersRef.current.get(lastBroadcast.fromKey);
-      if (pc && pc.signalingState !== 'closed') {
+      // Only apply an answer when we're actually awaiting one. A rolled-back
+      // or duplicate answer arriving in a stable state would otherwise throw.
+      if (pc && pc.signalingState === 'have-local-offer') {
         (async () => {
           try {
             await pc.setRemoteDescription(
@@ -501,6 +522,9 @@ export function useClassroomVoice({
 
   // Tear down on unmount — releases the mic + peer connections.
   useEffect(() => {
+    const peers = peersRef.current;
+    const mountedAudioEls = audioEls.current;
+
     return () => {
       if (localStreamRef.current) {
         for (const t of localStreamRef.current.getTracks()) {
@@ -508,14 +532,14 @@ export function useClassroomVoice({
         }
         localStreamRef.current = null;
       }
-      for (const pc of peersRef.current.values()) {
+      for (const pc of peers.values()) {
         try { pc.close(); } catch { /* noop */ }
       }
-      peersRef.current.clear();
-      for (const el of audioEls.current.values()) {
+      peers.clear();
+      for (const el of mountedAudioEls.values()) {
         try { el.pause(); el.srcObject = null; el.remove(); } catch { /* noop */ }
       }
-      audioEls.current.clear();
+      mountedAudioEls.clear();
     };
   }, []);
 
@@ -525,8 +549,51 @@ export function useClassroomVoice({
   // Video is added as an ADDITIONAL track to existing peer connections.
   // Each peer gets the same video track via RTCPeerConnection.addTrack.
   // Turning the camera off stops the track + removes the sender + renegotiates.
+  // Stop whichever video is publishing (camera OR screen-share) and remove
+  // its senders from every peer.
+  const stopCamera = useCallback(() => {
+    const track = localVideoTrackRef.current;
+    if (track) {
+      try { track.stop(); } catch { /* noop */ }
+      localVideoTrackRef.current = null;
+    }
+    for (const [remoteKey, sender] of videoSendersRef.current.entries()) {
+      const pc = peersRef.current.get(remoteKey);
+      if (pc) {
+        try { pc.removeTrack(sender); } catch { /* noop */ }
+      }
+    }
+    videoSendersRef.current.clear();
+    setLocalVideoStream(null);
+    setIsCameraOn(false);
+    setIsScreenSharing(false);
+  }, []);
+
+  // Shared publish path: attach a freshly-acquired video track (camera OR
+  // screen) to every peer and renegotiate. Only one local video track is
+  // published at a time, so camera and screen-share are mutually exclusive.
+  const publishVideoTrack = useCallback(async (track: MediaStreamTrack, stream: MediaStream) => {
+    const peers = Array.from(peersRef.current.entries());
+    for (const [remoteKey, pc] of peers) {
+      try {
+        const sender = pc.addTrack(track, stream);
+        videoSendersRef.current.set(remoteKey, sender);
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        await sendBroadcast({
+          kind: 'webrtc_offer',
+          fromKey: selfKey,
+          toKey: remoteKey,
+          sdp: JSON.stringify(offer),
+        });
+      } catch (e) {
+        console.warn('[classroom-voice] video addTrack failed', remoteKey, e);
+      }
+    }
+  }, [selfKey, sendBroadcast]);
+
   const startCamera = useCallback(async () => {
-    if (localVideoTrackRef.current) return; // already on
+    if (localVideoTrackRef.current) return; // already publishing video
     try {
       const videoStream = await navigator.mediaDevices.getUserMedia({
         video: { width: { ideal: 320 }, height: { ideal: 240 }, frameRate: { ideal: 15, max: 24 } },
@@ -537,26 +604,8 @@ export function useClassroomVoice({
       localVideoTrackRef.current = track;
       setLocalVideoStream(videoStream);
       setIsCameraOn(true);
-
-      // Attach to every existing peer. Renegotiation required.
-      const peers = Array.from(peersRef.current.entries());
-      for (const [remoteKey, pc] of peers) {
-        try {
-          const sender = pc.addTrack(track, videoStream);
-          videoSendersRef.current.set(remoteKey, sender);
-          const offer = await pc.createOffer();
-          await pc.setLocalDescription(offer);
-          await sendBroadcast({
-            kind: 'webrtc_offer',
-            fromKey: selfKey,
-            toKey: remoteKey,
-            sdp: JSON.stringify(offer),
-          });
-        } catch (e) {
-          console.warn('[classroom-voice] camera addTrack failed', remoteKey, e);
-        }
-      }
-
+      setIsScreenSharing(false);
+      await publishVideoTrack(track, videoStream);
       // End track if user stops it externally (e.g. OS revoke).
       track.onended = () => stopCamera();
     } catch (e) {
@@ -568,26 +617,35 @@ export function useClassroomVoice({
       setError(msg);
       setIsCameraOn(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selfKey, sendBroadcast]);
+  }, [publishVideoTrack, stopCamera]);
 
-  const stopCamera = useCallback(() => {
-    const track = localVideoTrackRef.current;
-    if (track) {
-      try { track.stop(); } catch { /* noop */ }
-      localVideoTrackRef.current = null;
+  // Screen-share — the "share your screen like Teams" path. Publishes the
+  // captured display as the single video track. Stops any active camera
+  // first so only one video track is live at a time.
+  const startScreenShare = useCallback(async () => {
+    try {
+      if (localVideoTrackRef.current) stopCamera();
+      const displayStream = await navigator.mediaDevices.getDisplayMedia({
+        video: { frameRate: { ideal: 8, max: 15 } },
+        audio: false,
+      });
+      const track = displayStream.getVideoTracks()[0];
+      if (!track) throw new Error('no-display-track');
+      localVideoTrackRef.current = track;
+      setLocalVideoStream(displayStream);
+      setIsScreenSharing(true);
+      setIsCameraOn(false);
+      await publishVideoTrack(track, displayStream);
+      // The browser's own "Stop sharing" control ends the track → revert.
+      track.onended = () => stopCamera();
+    } catch (e) {
+      const msg = (e as { name?: string })?.name === 'NotAllowedError'
+        ? 'screen-denied'
+        : 'screen-error';
+      setError(msg);
+      setIsScreenSharing(false);
     }
-    // Remove video senders from every peer + renegotiate.
-    for (const [remoteKey, sender] of videoSendersRef.current.entries()) {
-      const pc = peersRef.current.get(remoteKey);
-      if (pc) {
-        try { pc.removeTrack(sender); } catch { /* noop */ }
-      }
-    }
-    videoSendersRef.current.clear();
-    setLocalVideoStream(null);
-    setIsCameraOn(false);
-  }, []);
+  }, [publishVideoTrack, stopCamera]);
 
   return {
     isBroadcasting,
@@ -603,6 +661,8 @@ export function useClassroomVoice({
     remoteVideoStreams,
     startCamera,
     stopCamera,
+    isScreenSharing,
+    startScreenShare,
     audioBlocked,
     unlockAudio,
   };

@@ -63,7 +63,7 @@ export function VoiceCommandButton({
   if (!isSupported) return null;
 
   const wrapperClass = floating
-    ? 'fixed bottom-6 right-6 z-40 flex flex-col items-end gap-2 rtl:right-auto rtl:left-6'
+    ? 'fixed bottom-3 right-3 z-40 flex flex-col items-end gap-1 rtl:right-auto rtl:left-3 sm:bottom-6 sm:right-6 sm:gap-2 sm:rtl:left-6'
     : 'inline-flex flex-col items-end gap-2';
 
   return (
@@ -94,11 +94,11 @@ export function VoiceCommandButton({
         aria-label={isListening ? 'Stop voice commands' : 'Start voice commands'}
         aria-pressed={isListening}
         className={cn(
-          'group relative flex h-14 w-14 items-center justify-center rounded-full border shadow-lg transition-all duration-200',
+          'group relative flex h-11 w-11 items-center justify-center rounded-full border shadow-lg transition-all duration-200 sm:h-14 sm:w-14',
           'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
           isListening
             ? 'bg-destructive text-destructive-foreground border-destructive'
-            : 'bg-primary text-primary-foreground border-primary hover:scale-105',
+            : 'bg-gradient-to-br from-cyan-500 to-emerald-600 text-white border-white/40 hover:scale-105',
           className,
         )}
       >
@@ -110,13 +110,13 @@ export function VoiceCommandButton({
           </>
         )}
         {isListening ? (
-          <Radio className="relative h-6 w-6" />
+          <Radio className="relative h-5 w-5 sm:h-6 sm:w-6" />
         ) : (
-          <Mic className="relative h-6 w-6" />
+          <Mic className="relative h-5 w-5 sm:h-6 sm:w-6" />
         )}
       </button>
       {/* Static text label under the mic for clarity */}
-      <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+      <span className="hidden text-[10px] font-medium uppercase tracking-wider text-muted-foreground sm:block">
         {isListening ? listeningLabel : idleLabel}
       </span>
     </div>

@@ -2,6 +2,7 @@ import { jsPDF } from 'jspdf';
 import type { CaseScenario, CaseSession, AppliedTreatment, VitalSigns, SimulationObjective, DebriefingResource, InstructorAssessmentNote } from '@/types';
 import { getVideosByFindings, getVideosByCategory, referenceArticles, getYouTubeWatchUrl } from '@/data/localClinicalResources';
 import { getRelevantEvidence } from '@/data/evidenceLibrary';
+import type { AssessmentDebriefItem } from '@/data/assessmentFramework';
 
 interface ExportOptions {
   session: CaseSession;
@@ -13,6 +14,14 @@ interface ExportOptions {
   instructorAssessmentNotes?: InstructorAssessmentNote[];
   simulationObjective?: SimulationObjective;
   debriefingResources?: DebriefingResource[];
+  scoreSummary?: {
+    basePercentage: number;
+    percentage: number;
+    penaltyReasons: { label: string; amount: number }[];
+  };
+  assessmentItems?: AssessmentDebriefItem[];
+  /** Skip the browser download when generating a PDF for automated verification. */
+  download?: boolean;
 }
 
 // ==========================================================================
@@ -57,8 +66,9 @@ const COLOR = {
 /**
  * Generate a PDF export of the session summary
  */
-export async function exportSessionToPDF(options: ExportOptions): Promise<void> {
+export async function exportSessionToPDF(options: ExportOptions): Promise<Blob> {
   const { session, caseData, elapsedTime } = options;
+  const completedItemIds = Array.isArray(session.completedItems) ? session.completedItems : [];
 
   const doc = new jsPDF({
     orientation: 'portrait',
@@ -97,7 +107,7 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
     text: string,
     fontSize: number,
     lineHeight: number,
-    fontStyle: 'normal' | 'bold' = 'normal',
+    fontStyle: 'normal' | 'bold' | 'italic' | 'bolditalic' = 'normal',
     rgbColor: [number, number, number] = COLOR.BODY_TEXT,
     xOffset = 0,
   ): void => {
@@ -119,7 +129,9 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
   // Helper: add a section header with consistent spacing
   const addSectionHeader = (text: string): void => {
     yPosition += SECTION_GAP;
-    checkPageBreak(15);
+    // Reserve enough room for the heading and the first meaningful content
+    // row so section titles are not stranded at the bottom of a page.
+    checkPageBreak(28);
     // Draw blue accent line
     doc.setDrawColor(COLOR.PRIMARY[0], COLOR.PRIMARY[1], COLOR.PRIMARY[2]);
     doc.setLineWidth(0.5);
@@ -152,7 +164,7 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
     x: number,
     y: number,
     fontSize: number,
-    fontStyle: 'normal' | 'bold' = 'normal',
+    fontStyle: 'normal' | 'bold' | 'italic' | 'bolditalic' = 'normal',
     rgbColor: [number, number, number] = COLOR.BLACK,
   ): void => {
     doc.setFontSize(fontSize);
@@ -166,7 +178,7 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
     text: string,
     y: number,
     fontSize: number,
-    fontStyle: 'normal' | 'bold' = 'normal',
+    fontStyle: 'normal' | 'bold' | 'italic' | 'bolditalic' = 'normal',
     rgbColor: [number, number, number] = COLOR.BLACK,
   ): void => {
     doc.setFontSize(fontSize);
@@ -277,24 +289,28 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
   // ========== PERFORMANCE SUMMARY ==========
   addSectionHeader('Performance Summary');
 
-  const basePercentage = session.totalPossible > 0 ? Math.round((session.score / session.totalPossible) * 100) : 0;
+  const basePercentage = options.scoreSummary?.basePercentage
+    ?? (session.totalPossible > 0 ? Math.round((session.score / session.totalPossible) * 100) : 0);
 
-  // Calculate penalties (mirrors SessionSummary logic)
+  // Use the live session's authoritative score summary when supplied. Older
+  // callers still fall back to checklist-based penalty calculation.
   const pdfMissedItems = (caseData.studentChecklist || []).filter(item =>
-    !session.completedItems.includes(item.id) && item.yearLevel?.includes(session.studentYear)
+    !completedItemIds.includes(item.id) && item.yearLevel?.includes(session.studentYear)
   );
   const pdfCriticalMissed = pdfMissedItems.filter(item => item.critical);
-  const penaltyReasons: { label: string; amount: number }[] = [];
-  let penaltyTotal = 0;
+  const penaltyReasons: { label: string; amount: number }[] = options.scoreSummary
+    ? [...options.scoreSummary.penaltyReasons]
+    : [];
+  let penaltyTotal = penaltyReasons.reduce((sum, reason) => sum + reason.amount, 0);
 
-  if (pdfCriticalMissed.length > 0) {
+  if (!options.scoreSummary && pdfCriticalMissed.length > 0) {
     const amt = Math.min(pdfCriticalMissed.length * 5, 25);
     penaltyReasons.push({ label: `${pdfCriticalMissed.length} critical action${pdfCriticalMissed.length > 1 ? 's' : ''} missed`, amount: amt });
     penaltyTotal += amt;
   }
 
   const pdfFinalVitals = options.vitalsHistory && options.vitalsHistory.length > 0 ? options.vitalsHistory[options.vitalsHistory.length - 1] : null;
-  if (pdfFinalVitals) {
+  if (!options.scoreSummary && pdfFinalVitals) {
     if (pdfFinalVitals.spo2 !== undefined && pdfFinalVitals.spo2 < 90) {
       penaltyReasons.push({ label: `SpO2 critically low at ${pdfFinalVitals.spo2}%`, amount: 10 });
       penaltyTotal += 10;
@@ -312,7 +328,7 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
     }
   }
 
-  const percentage = Math.max(0, basePercentage - penaltyTotal);
+  const percentage = options.scoreSummary?.percentage ?? Math.max(0, basePercentage - penaltyTotal);
 
   let grade = 'Needs Improvement';
   let gradeColor: [number, number, number] = COLOR.RED;
@@ -359,28 +375,38 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
 
   // Penalty breakdown (if any)
   if (penaltyTotal > 0) {
-    checkPageBreak(6 + penaltyReasons.length * 5 + 6);
-    addFilledRoundedRect(margin, yPosition, contentWidth, 5 + penaltyReasons.length * 5 + 5, 2, [255, 243, 224] as unknown as [number, number, number]);
-    addStrokeRoundedRect(margin, yPosition, contentWidth, 5 + penaltyReasons.length * 5 + 5, 2, COLOR.YELLOW);
-    yPosition += 4;
-    addTextAt(`Base score: ${basePercentage}%`, margin + 4, yPosition + 2, FONT.LABEL, 'normal', COLOR.MUTED);
-    yPosition += 5;
+    const penaltyBoxHeight = 14 + penaltyReasons.length * 5;
+    checkPageBreak(penaltyBoxHeight + 4);
+    const penaltyBoxTop = yPosition;
+    addFilledRoundedRect(margin, penaltyBoxTop, contentWidth, penaltyBoxHeight, 2, [255, 243, 224] as unknown as [number, number, number]);
+    addStrokeRoundedRect(margin, penaltyBoxTop, contentWidth, penaltyBoxHeight, 2, COLOR.YELLOW);
+    addTextAt(`Base score: ${basePercentage}%`, margin + 4, penaltyBoxTop + 6, FONT.LABEL, 'normal', COLOR.MUTED);
+    let penaltyRowY = penaltyBoxTop + 11;
     penaltyReasons.forEach(r => {
-      addTextAt(`-${r.amount}%  ${r.label}`, margin + 4, yPosition + 2, FONT.LABEL, 'normal', COLOR.RED);
-      yPosition += 5;
+      addTextAt(`-${r.amount}%  ${r.label}`, margin + 4, penaltyRowY, FONT.LABEL, 'normal', COLOR.RED);
+      penaltyRowY += 5;
     });
-    addTextAt(`Adjusted score: ${percentage}%`, margin + 4, yPosition + 2, FONT.LABEL, 'bold', COLOR.TEXT);
-    yPosition += 6;
+    addTextAt(`Adjusted score: ${percentage}%`, margin + 4, penaltyBoxTop + penaltyBoxHeight - 3, FONT.LABEL, 'bold', COLOR.BODY_TEXT);
+    yPosition = penaltyBoxTop + penaltyBoxHeight + 3;
   }
 
   // ========== COMPLETED ACTIONS ==========
-  const completedItems = (caseData.studentChecklist || []).filter(item => session.completedItems.includes(item.id));
-  const missedItems = (caseData.studentChecklist || []).filter(item =>
-    !session.completedItems.includes(item.id) && item.yearLevel?.includes(session.studentYear)
-  );
+  const completedItems = options.assessmentItems?.length
+    ? options.assessmentItems
+        .filter(item => item.status === 'completed' || item.status === 'bonus')
+        .map(item => ({ description: item.label, critical: item.critical }))
+    : (caseData.studentChecklist || []).filter(item => completedItemIds.includes(item.id));
+  const missedItems = options.assessmentItems?.length
+    ? options.assessmentItems
+        .filter(item => item.status === 'missed-required' || item.status === 'missed-recommended')
+        .map(item => ({ description: item.label, critical: item.critical }))
+    : (caseData.studentChecklist || []).filter(item =>
+        !completedItemIds.includes(item.id) && item.yearLevel?.includes(session.studentYear)
+      );
   const criticalMissedItems = missedItems.filter(item => item.critical);
 
   if (completedItems.length > 0) {
+    checkPageBreak(SECTION_GAP + 24);
     addSectionHeader('Completed Actions');
 
     completedItems.forEach((item) => {
@@ -477,6 +503,16 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
     addSectionHeader('Applied Treatments & Interventions');
 
     options.appliedTreatments.forEach((treatment, index) => {
+      const treatmentSearchText = `${treatment.name || ''} ${treatment.id}`.toLowerCase();
+      const flaggedPenalty = penaltyReasons.find(reason => {
+        const penaltyText = reason.label.toLowerCase();
+        return treatmentSearchText
+          .split(/\s+/)
+          .some(term => term.length >= 5 && penaltyText.includes(term));
+      });
+      const treatmentFill = flaggedPenalty ? COLOR.BG_YELLOW : COLOR.BG_GREEN;
+      const treatmentAccent = flaggedPenalty ? COLOR.ORANGE : COLOR.GREEN;
+
       // Clean description: strip vital-change suffixes like "-- SpO2: 85% -> 92%, HR: 120 -> 105."
       const cleanDesc = sanitizeText(treatment.description || treatment.name)
         // Strip "-- VitalSign: old -> new, VitalSign: old -> new." patterns
@@ -497,10 +533,10 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
       const boxH = Math.max(14, descLines.length * LINE_HEIGHT.BODY + 9); // +9 for time line + padding
       checkPageBreak(boxH + 4);
 
-      addFilledRoundedRect(margin, yPosition, contentWidth, boxH, 2, COLOR.BG_GREEN);
-      addStrokeRoundedRect(margin, yPosition, contentWidth, boxH, 2, COLOR.GREEN);
+      addFilledRoundedRect(margin, yPosition, contentWidth, boxH, 2, treatmentFill);
+      addStrokeRoundedRect(margin, yPosition, contentWidth, boxH, 2, treatmentAccent);
 
-      addTextAt(`${index + 1}.`, margin + 3, yPosition + 5, FONT.BODY, 'bold', COLOR.GREEN);
+      addTextAt(`${index + 1}.`, margin + 3, yPosition + 5, FONT.BODY, 'bold', treatmentAccent);
       descLines.forEach((line: string, i: number) => {
         addTextAt(line, margin + 10, yPosition + 5 + (i * LINE_HEIGHT.BODY), FONT.BODY, 'bold', COLOR.BLACK);
       });
@@ -516,8 +552,9 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
       yPosition += boxH + 3;
 
       // Treatment effects
-      if (treatment.effects.length > 0) {
-        treatment.effects.forEach((effect) => {
+      const treatmentEffects = Array.isArray(treatment.effects) ? treatment.effects : [];
+      if (treatmentEffects.length > 0) {
+        treatmentEffects.forEach((effect) => {
           checkPageBreak(6);
 
           addTextAt('>', margin + 6, yPosition, FONT.LABEL, 'normal', COLOR.MUTED);
@@ -855,6 +892,14 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
     const diagnosisStr = caseData.expectedFindings?.mostLikelyDiagnosis || '';
     const subcategoryStr = caseData.subcategory || '';
     const subcategoryReadable = subcategoryStr.replace(/-/g, ' ').toLowerCase();
+    const genericConditionWords = new Set(['acute', 'severe', 'likely', 'most', 'with', 'without', 'secondary']);
+    const conditionTerms = [...new Set(
+      `${subcategoryReadable} ${diagnosisStr.toLowerCase()}`
+        .split(/[^a-z0-9]+/)
+        .filter(term => term.length >= 5 && !genericConditionWords.has(term))
+    )];
+    const matchesSpecificCondition = (text: string): boolean =>
+      !subcategoryStr || conditionTerms.some(term => text.toLowerCase().includes(term));
 
     // Exclusion map: conditions that should NOT appear in video results
     const videoExclusions: Record<string, string[]> = {
@@ -878,13 +923,13 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
         subcategory: subcategoryStr,
         category: caseData.category,
       }),
-      ...getVideosByCategory(caseData.category),
+      ...(!subcategoryStr ? getVideosByCategory(caseData.category) : []),
     ]
       .filter((v, i, arr) => arr.findIndex(x => x.id === v.id) === i)
       .filter(v => {
         // Filter out videos for excluded conditions
         const searchText = [v.name, v.description || '', ...(v.tags || [])].join(' ').toLowerCase();
-        return !exclusions.some(ex => searchText.includes(ex));
+        return matchesSpecificCondition(searchText) && !exclusions.some(ex => searchText.includes(ex));
       })
       .sort((a, b) => {
         const scoreVideo = (v: typeof a) => {
@@ -914,10 +959,7 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
       .slice(0, 4);
 
     const matchedArticles = referenceArticles
-      .filter(a =>
-        a.category === caseData.category ||
-        caseFindings.some(f => a.title.toLowerCase().includes(f.toLowerCase()) || f.toLowerCase().includes(a.category))
-      )
+      .filter(a => matchesSpecificCondition(a.title))
       .sort((a, b) => {
         const scoreMatch = (article: typeof a): number => {
           let score = 0;
@@ -1001,7 +1043,7 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
   const evidenceTopics = getRelevantEvidence(
     caseData.category,
     caseData.subcategory || '',
-    (appliedTreatments ?? []).map(t => t.id),
+    (options.appliedTreatments ?? []).map(t => t.id),
     session.studentYear,
   );
   if (evidenceTopics.length > 0) {
@@ -1110,17 +1152,21 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<void> 
     );
   }
 
-  // Save the PDF
+  // Save the PDF. Returning the Blob keeps the browser behavior unchanged
+  // while allowing automated checks to inspect the real generated artifact.
   const pdfBlob = doc.output('blob');
-  const url = URL.createObjectURL(pdfBlob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `Case-${caseData.category}-${session.studentYear}-${new Date().toISOString().split('T')[0]}.pdf`;
-  document.body.appendChild(link);
-  link.click();
-  // Delay cleanup so the browser can initiate the download
-  setTimeout(() => {
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  }, 1000);
+  if (options.download !== false) {
+    const url = URL.createObjectURL(pdfBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Case-${caseData.category}-${session.studentYear}-${new Date().toISOString().split('T')[0]}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    // Delay cleanup so the browser can initiate the download
+    setTimeout(() => {
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }, 1000);
+  }
+  return pdfBlob;
 }

@@ -6,15 +6,17 @@
  * with realistic onset times and gradual vital sign changes.
  */
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, type ReactNode } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
 import {
   Wind, Droplets, Heart, Pill, Brain, Move, ThermometerSun,
   Syringe, ChevronDown, ChevronUp, Clock, AlertTriangle,
-  CheckCircle2, Loader2, Activity
+  CheckCircle2, Loader2, Activity, Search, ShieldCheck,
+  TimerReset, ClipboardCheck
 } from 'lucide-react';
 import {
   TREATMENTS,
@@ -27,7 +29,7 @@ import type { VitalSigns, StudentYear } from '@/types';
 import { filterTreatmentsForYear } from '@/data/clinicalRealism';
 
 // Map category to icon
-const categoryIcons: Record<TreatmentCategory, React.ReactNode> = {
+const categoryIcons: Record<TreatmentCategory, ReactNode> = {
   airway: <Wind className="h-4 w-4" />,
   breathing: <Droplets className="h-4 w-4" />,
   circulation: <Heart className="h-4 w-4" />,
@@ -44,10 +46,10 @@ const categoryColors: Record<TreatmentCategory, string> = {
   breathing: 'bg-cyan-100 text-cyan-800 border-cyan-200 dark:bg-cyan-900/30 dark:text-cyan-300 dark:border-cyan-800',
   circulation: 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800',
   medication: 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800',
-  procedure: 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800',
+  procedure: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800',
   comfort: 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800',
-  positioning: 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900/30 dark:text-gray-300 dark:border-gray-800',
-  psychological: 'bg-pink-100 text-pink-800 border-pink-200 dark:bg-pink-900/30 dark:text-pink-300 dark:border-pink-800',
+  positioning: 'bg-slate-100 text-slate-800 border-slate-200 dark:bg-slate-900/30 dark:text-slate-300 dark:border-slate-800',
+  psychological: 'bg-teal-100 text-teal-800 border-teal-200 dark:bg-teal-900/30 dark:text-teal-300 dark:border-teal-800',
 };
 
 // Onset color
@@ -57,6 +59,56 @@ const onsetColors: Record<string, string> = {
   moderate: 'text-amber-600 dark:text-amber-400',
   gradual: 'text-orange-600 dark:text-orange-400',
   delayed: 'text-red-600 dark:text-red-400',
+};
+
+const compactOnsetLabels: Record<string, string> = {
+  immediate: 'Immediate',
+  fast: 'Fast onset',
+  moderate: 'Moderate onset',
+  gradual: 'Gradual onset',
+  delayed: 'Delayed onset',
+};
+
+const vitalLabels: Record<string, string> = {
+  bp: 'BP',
+  pulse: 'HR',
+  respiration: 'RR',
+  spo2: 'SpO2',
+  gcs: 'GCS',
+  bloodGlucose: 'BGL',
+  temperature: 'Temp',
+};
+
+const categoryTone: Record<TreatmentCategory, string> = {
+  airway: 'from-blue-500/15 via-blue-500/5 to-transparent border-blue-200/70 dark:border-blue-800/60',
+  breathing: 'from-cyan-500/15 via-cyan-500/5 to-transparent border-cyan-200/70 dark:border-cyan-800/60',
+  circulation: 'from-rose-500/15 via-rose-500/5 to-transparent border-rose-200/70 dark:border-rose-800/60',
+  medication: 'from-amber-500/15 via-amber-500/5 to-transparent border-amber-200/70 dark:border-amber-800/60',
+  procedure: 'from-blue-500/15 via-blue-500/5 to-transparent border-blue-200/70 dark:border-blue-800/60',
+  comfort: 'from-orange-500/15 via-orange-500/5 to-transparent border-orange-200/70 dark:border-orange-800/60',
+  positioning: 'from-slate-500/15 via-slate-500/5 to-transparent border-slate-200/70 dark:border-slate-800/60',
+  psychological: 'from-teal-500/15 via-teal-500/5 to-transparent border-teal-200/70 dark:border-teal-800/60',
+};
+
+const categoryAccent: Record<TreatmentCategory, string> = {
+  airway: 'bg-blue-500',
+  breathing: 'bg-cyan-500',
+  circulation: 'bg-rose-500',
+  medication: 'bg-amber-500',
+  procedure: 'bg-blue-500',
+  comfort: 'bg-orange-500',
+  positioning: 'bg-slate-500',
+  psychological: 'bg-teal-500',
+};
+
+const formatEffects = (treatment: Treatment) => {
+  if (treatment.effects.length === 0) return 'Observe response';
+
+  return treatment.effects.map(e => {
+    const sign = e.changeType === 'increase' ? '+' : e.changeType === 'decrease' ? '-' : e.changeType === 'set' ? '→' : '';
+    const vital = vitalLabels[e.vitalSign] ?? String(e.vitalSign);
+    return `${vital} ${sign}${e.value}`;
+  }).join(' · ');
 };
 
 interface TreatmentApplicationPanelProps {
@@ -113,6 +165,18 @@ export function TreatmentApplicationPanel({
     return grouped;
   }, [filteredTreatments]);
 
+  const appliedCount = appliedTreatmentIds.length;
+
+  const appliedByCategory = useMemo(() => {
+    const counts: Partial<Record<TreatmentCategory, number>> = {};
+    appliedTreatmentIds.forEach(id => {
+      const treatment = TREATMENTS.find(t => t.id === id);
+      if (!treatment) return;
+      counts[treatment.category] = (counts[treatment.category] ?? 0) + 1;
+    });
+    return counts;
+  }, [appliedTreatmentIds]);
+
   const toggleCategory = useCallback((cat: TreatmentCategory) => {
     setExpandedCategories(prev => {
       const next = new Set(prev);
@@ -139,73 +203,111 @@ export function TreatmentApplicationPanel({
   }, [currentVitals]);
 
   return (
-    <Card className="border-2 border-primary/20 shadow-lg">
-      <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-6 bg-gradient-to-r from-primary/5 to-transparent">
-        <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
-          <div className="p-1 sm:p-1.5 rounded-lg bg-primary/10">
-            <Syringe className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+    <Card className="glass-panel overflow-hidden border border-primary/15 shadow-xl shadow-primary/5">
+      <CardHeader className="space-y-3 border-b border-border/70 bg-gradient-to-br from-primary/10 via-white/35 to-transparent px-3 pb-3 pt-3 dark:via-white/[0.04] sm:px-5 sm:pt-4">
+        <div className="flex items-start gap-3">
+          <div className="rounded-xl bg-primary/10 p-2 ring-1 ring-primary/15">
+            <Syringe className="h-4 w-4 text-primary sm:h-5 sm:w-5" />
           </div>
-          <span>Apply Treatment</span>
-          {!isStudentView && (
-            <Badge variant="secondary" className="ml-auto text-[10px] sm:text-xs">
-              {filteredTreatments.length} available
-            </Badge>
-          )}
-        </CardTitle>
-        <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 hidden sm:block">
-          {isStudentView
-            ? 'Select a treatment to apply. Monitor the patient to observe effects.'
-            : 'Select a treatment to apply. Effects will change vitals gradually based on onset time.'}
-        </p>
+          <div className="min-w-0 flex-1">
+            <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+              <span>Treatment Plan</span>
+              {isApplying && (
+                <Badge variant="outline" className="gap-1 border-blue-200 bg-blue-50 text-[10px] text-blue-700 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-300">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Applying
+                </Badge>
+              )}
+            </CardTitle>
+            <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground sm:text-xs">
+              {isStudentView
+                ? 'Choose an intervention, then reassess the patient response.'
+                : 'Interventions are grouped by clinical priority with onset, monitoring, and vital sign effects.'}
+            </p>
+          </div>
+        </div>
 
-        {/* Search */}
-        <div className="mt-1.5 sm:mt-2">
+        <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+          <div className="glass-control rounded-lg border px-2 py-1.5">
+            <div className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+              <ClipboardCheck className="h-3 w-3" />
+              Given
+            </div>
+            <div className="text-sm font-semibold">{appliedCount}</div>
+          </div>
+          <div className="glass-control rounded-lg border px-2 py-1.5">
+            <div className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+              <Activity className="h-3 w-3" />
+              Visible
+            </div>
+            <div className="text-sm font-semibold">{filteredTreatments.length}</div>
+          </div>
+          <div className="glass-control rounded-lg border px-2 py-1.5">
+            <div className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+              <ShieldCheck className="h-3 w-3" />
+              Scope
+            </div>
+            <div className="truncate text-sm font-semibold">{studentYear ?? 'All'}</div>
+          </div>
+        </div>
+
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
-            placeholder="Search treatments..."
+            placeholder="Search oxygen, aspirin, positioning..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm rounded-lg border bg-background/50 focus:outline-none focus:ring-2 focus:ring-primary/20 placeholder:text-muted-foreground/60"
+            className="glass-control h-9 w-full rounded-xl border pl-8 pr-3 text-xs shadow-inner shadow-muted/20 outline-none transition focus:border-primary/45 focus:ring-2 focus:ring-primary/15 sm:text-sm"
           />
         </div>
       </CardHeader>
 
       <CardContent className="p-0">
-        <ScrollArea className="h-[300px] sm:h-[400px]">
-          <div className="p-2 sm:p-3 space-y-1">
+        <ScrollArea className="h-[340px] sm:h-[440px]">
+          <div className="space-y-2 p-2 sm:p-3">
             {categories.map(({ category, label }) => {
               const treatments = treatmentsByCategory[category];
               if (!treatments || treatments.length === 0) return null;
               const isExpanded = expandedCategories.has(category);
+              const categoryAppliedCount = appliedByCategory[category] ?? 0;
 
               return (
-                <div key={category} className="rounded-lg overflow-hidden">
-                  {/* Category Header */}
+                <section
+                  key={category}
+                  className={cn(
+                    'overflow-hidden rounded-xl border bg-gradient-to-r transition-all',
+                    isExpanded ? categoryTone[category] : 'border-border/70 from-muted/35 to-background',
+                  )}
+                >
                   <button
                     onClick={() => toggleCategory(category)}
-                    className={`w-full flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-2 sm:py-2.5 text-xs sm:text-sm font-medium transition-all rounded-lg ${
-                      isExpanded
-                        ? `${categoryColors[category]} border`
-                        : 'hover:bg-muted/60 text-muted-foreground hover:text-foreground'
-                    }`}
+                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-xs transition hover:bg-white/45 dark:hover:bg-white/[0.08] sm:text-sm"
                   >
-                    {categoryIcons[category]}
-                    <span className="flex-1 text-left">{label}</span>
+                    <span className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white shadow-sm', categoryAccent[category])}>
+                      {categoryIcons[category]}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-semibold text-foreground">{label}</span>
+                      <span className="block text-[10px] text-muted-foreground sm:text-[11px]">
+                        {treatments.length} option{treatments.length === 1 ? '' : 's'}
+                        {categoryAppliedCount > 0 ? ` · ${categoryAppliedCount} given` : ''}
+                      </span>
+                    </span>
                     {!isStudentView && (
-                      <Badge variant="outline" className="text-[9px] sm:text-[10px] mr-0.5 sm:mr-1">
-                        {treatments.length}
+                      <Badge variant="outline" className={cn('hidden border bg-white/55 text-[10px] dark:bg-white/[0.05] sm:inline-flex', categoryColors[category])}>
+                        {categoryAppliedCount > 0 ? `${categoryAppliedCount}/${treatments.length}` : treatments.length}
                       </Badge>
                     )}
                     {isExpanded ? (
-                      <ChevronUp className="h-4 w-4" />
+                      <ChevronUp className="h-4 w-4 text-muted-foreground" />
                     ) : (
-                      <ChevronDown className="h-4 w-4" />
+                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
                     )}
                   </button>
 
-                  {/* Treatment Items */}
                   {isExpanded && (
-                    <div className="space-y-1.5 py-2 px-1">
+                    <div className="grid gap-2 border-t border-border/60 bg-white/35 p-2 dark:bg-white/[0.04]">
                       {treatments.map((treatment) => {
                         const isApplied = appliedTreatmentIds.includes(treatment.id);
                         const isCurrentlyApplying = isApplying && applyingTreatmentId === treatment.id;
@@ -214,58 +316,63 @@ export function TreatmentApplicationPanel({
                         return (
                           <div
                             key={treatment.id}
-                            className={`rounded-lg border p-2 sm:p-3 transition-all duration-200 ${
-                              isApplied
-                                ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
-                                : contra
-                                  ? 'bg-red-50/50 dark:bg-red-950/20 border-red-200/50'
-                                  : 'bg-card hover:bg-accent/30 hover:border-primary/30'
-                            }`}
+                            className={cn(
+                              'group relative overflow-hidden rounded-xl border bg-white/65 p-3 shadow-sm backdrop-blur-md transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md dark:bg-white/[0.05]',
+                              isApplied && 'border-emerald-300 bg-emerald-50/60 dark:border-emerald-800 dark:bg-emerald-950/20',
+                              isCurrentlyApplying && 'border-blue-300 bg-blue-50/60 ring-2 ring-blue-200/60 dark:border-blue-800 dark:bg-blue-950/20 dark:ring-blue-900/50',
+                              contra && !isApplied && 'border-red-200 bg-red-50/50 dark:border-red-900/70 dark:bg-red-950/20',
+                            )}
                           >
-                            <div className="flex items-start gap-2 sm:gap-3">
+                            <div className={cn('absolute inset-y-0 left-0 w-1', isApplied ? 'bg-emerald-500' : contra ? 'bg-red-500' : categoryAccent[category])} />
+                            <div className="flex items-start gap-3 pl-1">
                               <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                                  <span className="font-medium text-xs sm:text-sm">{treatment.name}</span>
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                  <span className="font-semibold leading-snug text-xs sm:text-sm">{treatment.name}</span>
+                                  {isCurrentlyApplying && (
+                                    <Badge className="gap-1 bg-blue-600 text-[10px] text-white hover:bg-blue-600">
+                                      <Loader2 className="h-3 w-3 animate-spin" />
+                                      In progress
+                                    </Badge>
+                                  )}
                                   {isApplied && (
-                                    <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
+                                    <Badge className="gap-1 bg-emerald-600 text-[10px] text-white hover:bg-emerald-600">
+                                      <CheckCircle2 className="h-3 w-3" />
+                                      Given
+                                    </Badge>
                                   )}
                                   {treatment.requiresMonitoring && (
-                                    <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                                    <Badge variant="outline" className="gap-1 border-amber-200 bg-amber-50 text-[10px] text-amber-700 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-300">
+                                      <AlertTriangle className="h-3 w-3" />
+                                      Monitor
+                                    </Badge>
                                   )}
                                 </div>
-                                <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 line-clamp-2 sm:line-clamp-none">
+                                <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground sm:text-xs">
                                   {treatment.description}
                                 </p>
-                                {!isStudentView && (
-                                <div className="flex items-center gap-2 sm:gap-3 mt-1 sm:mt-1.5 flex-wrap">
-                                  <span className={`text-[11px] font-medium flex items-center gap-1 ${onsetColors[treatment.onset]}`}>
+                                <div className="mt-2 flex flex-wrap gap-1.5">
+                                  <span className={cn('inline-flex items-center gap-1 rounded-full border bg-white/55 px-2 py-1 text-[10px] font-medium dark:bg-white/[0.05]', onsetColors[treatment.onset])}>
                                     <Clock className="h-3 w-3" />
-                                    {getOnsetDescription(treatment.onset)}
+                                    {compactOnsetLabels[treatment.onset] ?? getOnsetDescription(treatment.onset)}
                                   </span>
-                                  {treatment.effects.length > 0 && (
-                                    <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-                                      <Activity className="h-3 w-3" />
-                                      {treatment.effects.map(e => {
-                                        const sign = e.changeType === 'increase' ? '+' : e.changeType === 'decrease' ? '-' : '';
-                                        const vital = e.vitalSign === 'bp' ? 'BP'
-                                          : e.vitalSign === 'pulse' ? 'HR'
-                                          : e.vitalSign === 'respiration' ? 'RR'
-                                          : e.vitalSign === 'spo2' ? 'SpO2'
-                                          : e.vitalSign === 'gcs' ? 'GCS'
-                                          : e.vitalSign === 'bloodGlucose' ? 'BGL'
-                                          : e.vitalSign === 'temperature' ? 'Temp'
-                                          : e.vitalSign;
-                                        return `${vital}${sign}${e.value}`;
-                                      }).join(', ')}
-                                    </span>
+                                  {!isStudentView && (
+                                    <>
+                                      <span className="inline-flex items-center gap-1 rounded-full border bg-white/55 px-2 py-1 text-[10px] text-muted-foreground dark:bg-white/[0.05]">
+                                        <TimerReset className="h-3 w-3" />
+                                        Full effect {treatment.durationSeconds}s
+                                      </span>
+                                      <span className="inline-flex max-w-full items-center gap-1 rounded-full border bg-white/55 px-2 py-1 text-[10px] text-muted-foreground dark:bg-white/[0.05]">
+                                        <Activity className="h-3 w-3 shrink-0" />
+                                        <span className="truncate">{formatEffects(treatment)}</span>
+                                      </span>
+                                    </>
                                   )}
                                 </div>
-                                )}
                                 {contra && (
-                                  <p className="text-[11px] text-red-600 dark:text-red-400 mt-1 flex items-center gap-1">
-                                    <AlertTriangle className="h-3 w-3" />
-                                    Contraindicated: {contra}
-                                  </p>
+                                  <div className="mt-2 flex items-start gap-1.5 rounded-lg border border-red-200 bg-red-100/60 px-2 py-1.5 text-[11px] text-red-700 dark:border-red-900/70 dark:bg-red-950/35 dark:text-red-300">
+                                    <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
+                                    <span><span className="font-semibold">Contraindication:</span> {contra}</span>
+                                  </div>
                                 )}
                               </div>
 
@@ -274,7 +381,10 @@ export function TreatmentApplicationPanel({
                                 variant={isApplied ? 'secondary' : contra ? 'destructive' : 'default'}
                                 disabled={isCurrentlyApplying}
                                 onClick={() => handleApply(treatment)}
-                                className="shrink-0 text-[10px] sm:text-xs h-7 sm:h-8 px-2 sm:px-3"
+                                className={cn(
+                                  'h-8 shrink-0 rounded-lg px-2.5 text-[10px] font-semibold sm:px-3 sm:text-xs',
+                                  isApplied && 'border border-emerald-200 bg-emerald-100 text-emerald-800 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200',
+                                )}
                               >
                                 {isCurrentlyApplying ? (
                                   <>
@@ -282,7 +392,7 @@ export function TreatmentApplicationPanel({
                                     Applying
                                   </>
                                 ) : isApplied ? (
-                                  'Re-apply'
+                                  'Repeat'
                                 ) : (
                                   'Apply'
                                 )}
@@ -293,7 +403,7 @@ export function TreatmentApplicationPanel({
                       })}
                     </div>
                   )}
-                </div>
+                </section>
               );
             })}
           </div>

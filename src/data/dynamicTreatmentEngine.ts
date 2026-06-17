@@ -333,6 +333,7 @@ export function applyDynamicTreatment(
 
   // CROSS-SYSTEM PHYSIOLOGY — adjust vitals based on multi-organ interactions
   applyCrossSystemPhysiology(treatment, state, caseData, response, vitalsBefore);
+  applyBeneficialResponseCeiling(treatment, state, caseData, response, vitalsBefore);
 
   // Record the application
   state.treatmentHistory.push({
@@ -348,6 +349,49 @@ export function applyDynamicTreatment(
   });
 
   return { newState: state, response };
+}
+
+/**
+ * Keep cumulative appropriate care near the case author's expected response.
+ * Individual treatments still improve hypotension, but stacking several
+ * correct interventions should not turn distributive shock into severe
+ * iatrogenic hypertension.
+ */
+function applyBeneficialResponseCeiling(
+  treatment: Treatment,
+  state: PatientState,
+  caseData: CaseScenario,
+  response: ClinicalResponse,
+  vitalsBefore: VitalSigns,
+): void {
+  if (state.isInArrest || response.criticalEvent?.type === 'adverse-reaction') return;
+
+  const targetBP = caseData.vitalSignsProgression.afterIntervention?.bp;
+  if (!targetBP || !treatment.effects.some(effect => effect.vitalSign === 'bp' && effect.changeType === 'increase')) return;
+
+  const initial = parseBP(caseData.vitalSignsProgression.initial.bp);
+  const target = parseBP(targetBP);
+  const before = parseBP(vitalsBefore.bp);
+  const current = parseBP(state.vitals.bp);
+  if (initial.systolic >= 100 || current.systolic <= target.systolic + 15) return;
+
+  const bounded = {
+    systolic: target.systolic + 15,
+    diastolic: Math.min(current.diastolic, target.diastolic + 10),
+  };
+  state.vitals.bp = formatBP(bounded.systolic, bounded.diastolic);
+
+  const bpChange = response.vitalChanges.find(change => change.vital === 'BP');
+  if (bpChange) {
+    bpChange.newValue = state.vitals.bp;
+  } else {
+    response.vitalChanges.push({
+      vital: 'BP',
+      oldValue: vitalsBefore.bp,
+      newValue: state.vitals.bp,
+      direction: 'improved',
+    });
+  }
 }
 
 // ============================================================================
@@ -410,17 +454,14 @@ function applyStandardTreatment(
   }
 
   // ===== TREATMENT PROTOCOL SYNERGY =====
-  // Check if a severity-aware protocol exists and apply synergy multipliers
-  let protocolSynergyMultiplier = 1.0;
+  // Check if a severity-aware protocol exists. Synergies are described in
+  // the response, but do not multiply each individual vital-sign delta.
   let protocolSeverity: SeverityProtocol | undefined;
   if (caseData) {
     const protocol = findProtocol(caseSubcategory || '', caseCategory);
     if (protocol) {
       protocolSeverity = determineSeverityFromVitals(protocol, vitals);
       if (protocolSeverity && appliedTreatmentIds) {
-        const synergy = getSynergyMultiplier(protocolSeverity, appliedTreatmentIds);
-        protocolSynergyMultiplier = synergy.multiplier;
-
         // Check for contraindicated treatments
         if (protocolSeverity.contraindicatedTreatments.includes(treatment.id)) {
           warningMessage = `CAUTION: ${treatment.name} may be contraindicated in ${protocolSeverity.severity} ${protocol.conditionName}`;
@@ -597,7 +638,11 @@ function applyStandardTreatment(
   }
 
   // ===== APPLY TREATMENT EFFECTS =====
-  const effectMultiplier = diminishingFactor * categoryModifier * pathologyMultiplier * protocolSynergyMultiplier;
+  // Protocol synergy improves the overall care bundle, but must not multiply
+  // every individual drug/device vital delta. Doing so compounds appropriate
+  // stacked care into physiologically implausible overshoot (for example,
+  // severe hypertension after treating anaphylactic shock).
+  const effectMultiplier = diminishingFactor * categoryModifier * pathologyMultiplier;
 
   // In cardiac arrest the perfusing vitals (pulse, BP) are physiologically
   // zero and only the explicit ROSC pathway (adrenaline dose ≥ 2 + CPR, or

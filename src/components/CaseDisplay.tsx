@@ -171,18 +171,6 @@ export function CaseDisplay({ caseData, studentYear = '3rd-year', isStudentView:
   // When showAllContent is true (instructor override), force all content visible
   const isStudentView = showAllContent ? false : isStudentViewProp;
 
-  // Guard against null/undefined caseData
-  if (!caseData) {
-    return (
-      <Card className="border-yellow-500/30 bg-yellow-950/10">
-        <CardContent className="p-8 text-center">
-          <Loader2 className="h-6 w-6 animate-spin text-yellow-600 mx-auto mb-3" />
-          <p className="text-sm text-yellow-600">Loading case data...</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
   // ECG Display state
   const [showECGModal, setShowECGModal] = useState(false);
 

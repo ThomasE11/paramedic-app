@@ -35,9 +35,13 @@ export function getSupabaseClient(): SupabaseClient | null {
   if (!_client) {
     _client = createClient(getSupabaseUrl()!, getSupabaseAnonKey()!, {
       auth: {
-        // We don't use Supabase auth — students join with a PIN, not an account.
-        persistSession: false,
-        autoRefreshToken: false,
+        // Magic-link accounts (Phase 5) are optional, but when used they must
+        // persist across reloads and pick up the session from the redirect
+        // link. The PIN flow does not depend on auth, so enabling this is safe
+        // for anonymous users too (no session simply means no user).
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
       },
       realtime: {
         // Bump max events/sec to handle live vital-sign updates during a case.

@@ -32,7 +32,18 @@ import {
   Loader2,
   AlertTriangle,
   Sparkles,
+  Radio,
+  Monitor,
+  Clock,
+  ShieldCheck,
+  UserCheck,
+  Stethoscope,
+  ListChecks,
+  Search,
+  X,
+  Star,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -47,8 +58,9 @@ import {
 import { toast } from 'sonner';
 import { useClassroomSession } from '@/hooks/useClassroomSession';
 import type { UseClassroomSessionResult } from '@/hooks/useClassroomSession';
+import { AmbientBackground } from '@/components/AmbientBackground';
 import { allCases } from '@/data/cases';
-import type { StudentYear } from '@/types';
+import type { CaseScenario, StudentYear } from '@/types';
 
 // Year levels the case library is tagged against. 'all' is a UI-only
 // sentinel meaning "don't filter". Keep this in sync with the
@@ -65,6 +77,68 @@ const YEAR_OPTIONS: { value: YearFilter; label: string }[] = [
   { value: '3rd-year', label: '3rd year' },
   { value: '4th-year', label: '4th year' },
 ];
+
+const CLASSROOM_FLOW: { label: string; detail: string; icon: LucideIcon }[] = [
+  { label: 'Lobby', detail: 'secure PIN', icon: Radio },
+  { label: 'Learners', detail: 'roster live', icon: UserCheck },
+  { label: 'Case', detail: 'scenario ready', icon: Stethoscope },
+  { label: 'Broadcast', detail: 'shared state', icon: Monitor },
+];
+
+const CLASSROOM_SIGNALS: { label: string; value: string; icon: LucideIcon }[] = [
+  { label: 'Live case sync', value: 'Patient state mirrors to every device', icon: Monitor },
+  { label: 'Instructor control', value: 'Handoff, voice, camera and vitals override', icon: ShieldCheck },
+  { label: 'Teaching rhythm', value: 'Brief, run, pause, debrief', icon: ListChecks },
+];
+
+function formatCategoryLabel(category: string): string {
+  return category
+    .split('-')
+    .filter(Boolean)
+    .map(part => part[0]?.toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
+function getInitials(name: string): string {
+  return name
+    .trim()
+    .split(/\s+/)
+    .map(w => w[0]?.toUpperCase())
+    .filter(Boolean)
+    .slice(0, 2)
+    .join('');
+}
+
+function formatDurationLabel(minutes: number): string {
+  if (minutes <= 0) return 'No limit';
+  if (minutes === 60) return '1 hour';
+  return `${minutes} min`;
+}
+
+function caseSearchText(c: CaseScenario): string {
+  return [
+    c.title,
+    c.category,
+    c.subcategory,
+    c.priority,
+    c.complexity,
+    c.dispatchInfo?.callReason,
+    c.dispatchInfo?.location,
+    c.initialPresentation?.generalImpression,
+    c.patientInfo?.age,
+    c.patientInfo?.gender,
+    ...(c.yearLevels ?? []),
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+}
+
+function caseSubtitle(c: CaseScenario): string {
+  const age = c.patientInfo?.age ? `${c.patientInfo.age}y` : '';
+  const reason = c.dispatchInfo?.callReason;
+  return [age, reason].filter(Boolean).join(' · ');
+}
 
 interface ClassroomLobbyProps {
   onExit: () => void;
@@ -86,6 +160,7 @@ export function ClassroomLobby({ onExit, sessionHook }: ClassroomLobbyProps) {
   const localHook = useClassroomSession();
   const {
     supported,
+    isPreviewMode,
     status,
     error,
     session,
@@ -103,18 +178,24 @@ export function ClassroomLobby({ onExit, sessionHook }: ClassroomLobbyProps) {
   const [instructorName, setInstructorName] = useState('');
   const [selectedCaseId, setSelectedCaseId] = useState<string>('');
   const [yearFilter, setYearFilter] = useState<YearFilter>('all');
+  const [caseSearch, setCaseSearch] = useState('');
   const [copied, setCopied] = useState(false);
   // Duration in minutes. 0 / null = unlimited. Default 20 minutes —
   // feels right for a paramedic scenario teaching slot.
   const [durationMinutes, setDurationMinutes] = useState<number>(20);
 
-  // Cases filtered by the selected year. Grouped by `category` so the
-  // dropdown surfaces related scenarios together (cardiac, trauma,
-  // respiratory, …) instead of a flat alphabetical list.
-  const filteredCases = useMemo(() => {
+  // Cases filtered by the selected year. Search is applied in a second pass
+  // so changing the text query doesn't invalidate an already-selected case.
+  const yearFilteredCases = useMemo(() => {
     if (yearFilter === 'all') return allCases;
     return allCases.filter(c => c.yearLevels?.includes(yearFilter));
   }, [yearFilter]);
+
+  const filteredCases = useMemo(() => {
+    const q = caseSearch.trim().toLowerCase();
+    if (!q) return yearFilteredCases;
+    return yearFilteredCases.filter(c => caseSearchText(c).includes(q));
+  }, [caseSearch, yearFilteredCases]);
 
   const groupedCases = useMemo(() => {
     const groups = new Map<string, typeof allCases>();
@@ -132,11 +213,21 @@ export function ClassroomLobby({ onExit, sessionHook }: ClassroomLobbyProps) {
   }, [filteredCases]);
 
   // Clear the selection if the current pick no longer belongs to the
-  // filtered list — otherwise the trigger shows a stale case title.
+  // selected cohort — search narrowing should not erase the instructor's pick.
   const selectedStillValid = useMemo(
-    () => filteredCases.some(c => c.id === selectedCaseId),
-    [filteredCases, selectedCaseId],
+    () => yearFilteredCases.some(c => c.id === selectedCaseId),
+    [yearFilteredCases, selectedCaseId],
   );
+
+  const fastStartCases = useMemo(() => {
+    const source = caseSearch.trim() ? filteredCases : yearFilteredCases;
+    const preferred = source.filter(c =>
+      c.priority === 'critical'
+      || c.complexity === 'intermediate'
+      || c.complexity === 'advanced',
+    );
+    return (preferred.length > 0 ? preferred : source).slice(0, 3);
+  }, [caseSearch, filteredCases, yearFilteredCases]);
 
   // Only count students in the "joined" badge — we don't want the instructor
   // counted as one of their own participants.
@@ -149,6 +240,14 @@ export function ClassroomLobby({ onExit, sessionHook }: ClassroomLobbyProps) {
     () => allCases.find(c => c.id === selectedCaseId) || null,
     [selectedCaseId],
   );
+
+  const activeFlowStep = !session
+    ? 0
+    : selectedCase
+      ? 2
+      : students.length > 0
+        ? 1
+        : 0;
 
   // ------------------------------------------------------------
   // Graceful degradation when Supabase isn't configured
@@ -192,6 +291,15 @@ export function ClassroomLobby({ onExit, sessionHook }: ClassroomLobbyProps) {
     }
   };
 
+  const handleOpenPreviewLobby = async () => {
+    const name = instructorName.trim() || 'Dr Hassan';
+    setInstructorName(name);
+    const created = await createSession(name);
+    if (created) {
+      toast.success(t('classroom.lobbyOpened', { pin: created.pin }));
+    }
+  };
+
   const handleCopyPin = async () => {
     if (!session?.pin) return;
     try {
@@ -227,9 +335,12 @@ export function ClassroomLobby({ onExit, sessionHook }: ClassroomLobbyProps) {
   // Layout
   // ------------------------------------------------------------
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative overflow-x-hidden">
+      {/* Kimi-spec ambient orbs — extracted into <AmbientBackground/>. */}
+      <AmbientBackground />
+      <div className="relative z-10">
       {/* Top bar */}
-      <div className="border-b border-border">
+      <div className="border-b border-black/5 nav-blur">
         <div className="max-w-5xl mx-auto flex items-center justify-between px-6 py-4">
           <Button variant="ghost" size="sm" onClick={handleLeave} className="gap-2">
             <ArrowLeft className="h-4 w-4 rtl:rotate-180" />
@@ -257,46 +368,152 @@ export function ClassroomLobby({ onExit, sessionHook }: ClassroomLobbyProps) {
           </Card>
         )}
 
-        {/* ----------- Pre-lobby form ----------- */}
-        {!session && (
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('classroom.openLobbyTitle')}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 max-w-md">
-              <p className="text-sm text-muted-foreground">
-                {t('classroom.openLobbyBody')}
-              </p>
-              <div className="space-y-2">
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  {t('classroom.instructorName')}
-                </label>
-                <Input
-                  value={instructorName}
-                  onChange={e => {
-                    setInstructorName(e.target.value);
-                    if (error) clearError();
-                  }}
-                  placeholder={t('classroom.instructorNamePlaceholder')}
-                  disabled={status === 'connecting'}
-                  autoFocus
-                  onKeyDown={e => e.key === 'Enter' && handleOpenLobby()}
-                />
+        {isPreviewMode && (
+          <Card className="glass rounded-2xl border border-amber-400/30 bg-amber-500/8">
+            <CardContent className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/12 text-amber-600 dark:text-amber-300">
+                  <ShieldCheck className="h-4 w-4" />
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-foreground">Local classroom preview</div>
+                  <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                    Supabase is not configured on this dev server, so this room uses demo learners and local-only state for UI review.
+                  </p>
+                </div>
               </div>
-              <Button
-                onClick={handleOpenLobby}
-                disabled={status === 'connecting' || !instructorName.trim()}
-                className="gap-2"
-              >
-                {status === 'connecting' ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Sparkles className="h-4 w-4" />
-                )}
-                {t('classroom.openLobbyButton')}
-              </Button>
+              <Badge variant="outline" className="w-fit border-amber-500/35 bg-background/50 text-amber-700 dark:text-amber-300">
+                Preview mode
+              </Badge>
             </CardContent>
           </Card>
+        )}
+
+        {/* ----------- Pre-lobby form ----------- */}
+        {!session && (
+          <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr] items-stretch">
+            <section className="glass-strong rounded-2xl border border-white/55 dark:border-white/10 p-6 sm:p-7 overflow-hidden">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="outline" className="gap-1.5 border-emerald-500/35 bg-emerald-500/8 text-emerald-700 dark:text-emerald-300">
+                  <Radio className="h-3.5 w-3.5" />
+                  Instructor console
+                </Badge>
+                <Badge variant="secondary" className="gap-1.5">
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                  Secure classroom
+                </Badge>
+              </div>
+              <div className="mt-7 max-w-2xl">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-muted-foreground">
+                  Online simulation
+                </p>
+                <h1 className="mt-2 text-3xl sm:text-4xl font-semibold tracking-tight text-foreground">
+                  Run a live paramedic case with the whole class in sync.
+                </h1>
+                <p className="mt-3 text-sm leading-6 text-muted-foreground max-w-xl">
+                  Open the lobby, let students join on their devices, then launch one shared patient scenario with live teaching controls.
+                </p>
+              </div>
+
+              <div className="mt-7">
+                <ClassroomFlowStrip activeIndex={activeFlowStep} />
+              </div>
+
+              <div className="mt-6 grid gap-3 md:grid-cols-3">
+                {CLASSROOM_SIGNALS.map(signal => {
+                  const Icon = signal.icon;
+                  return (
+                    <div
+                      key={signal.label}
+                      className="rounded-xl border border-white/45 dark:border-white/10 bg-white/48 dark:bg-slate-950/35 p-3.5 shadow-sm"
+                    >
+                      <Icon className="h-4 w-4 text-primary" />
+                      <div className="mt-2 text-xs font-semibold text-foreground">
+                        {signal.label}
+                      </div>
+                      <p className="mt-1 text-[11px] leading-4 text-muted-foreground">
+                        {signal.value}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+
+            <Card className="glass-strong rounded-2xl border border-white/55 dark:border-white/10 shadow-xl">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <CardTitle>{t('classroom.openLobbyTitle')}</CardTitle>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {t('classroom.openLobbyBody')}
+                    </p>
+                  </div>
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
+                    <Sparkles className="h-5 w-5" />
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    {t('classroom.instructorName')}
+                  </label>
+                  <Input
+                    value={instructorName}
+                    onChange={e => {
+                      setInstructorName(e.target.value);
+                      if (error) clearError();
+                    }}
+                    placeholder={t('classroom.instructorNamePlaceholder')}
+                    disabled={status === 'connecting'}
+                    autoFocus
+                    onKeyDown={e => e.key === 'Enter' && handleOpenLobby()}
+                    className="h-11"
+                  />
+                </div>
+                <Button
+                  onClick={handleOpenLobby}
+                  disabled={status === 'connecting' || !instructorName.trim()}
+                  className="w-full h-11 gap-2"
+                >
+                  {status === 'connecting' ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4" />
+                  )}
+                  {t('classroom.openLobbyButton')}
+                </Button>
+                {isPreviewMode && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleOpenPreviewLobby}
+                    disabled={status === 'connecting'}
+                    className="w-full h-10 gap-2"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    Open demo lobby
+                  </Button>
+                )}
+                <div className="grid grid-cols-3 gap-2 pt-2">
+                  {['PIN', 'Roster', 'Case'].map((label, index) => (
+                    <div
+                      key={label}
+                      className="rounded-lg border border-border/60 bg-background/45 px-2.5 py-2 text-center"
+                    >
+                      <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        {label}
+                      </div>
+                      <div className="mt-0.5 text-xs font-medium text-foreground">
+                        {index === 0 ? 'Auto' : index === 1 ? 'Live' : 'Ready'}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         )}
 
         {/* ----------- Active lobby (pre-case-start) -----------
@@ -304,253 +521,493 @@ export function ClassroomLobby({ onExit, sessionHook }: ClassroomLobbyProps) {
             lobby out for the full `StudentPanel` + broadcast bar combo.
             So the lobby only ever renders the pre-case branch. */}
         {session && session.status !== 'running' && (
-          <div className="grid gap-6 lg:grid-cols-[1fr_1.1fr]">
-            {/* PIN display — huge and centered so it's readable from across a room */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm text-muted-foreground font-normal">
-                  {t('classroom.sharePinLabel')}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-col items-center gap-4 py-8">
-                {/* PIN rendered in mono font with a subtle mid-gap so a student
-                    reading from across a room parses the six digits as two
-                    groups of three, not one long number. Matches the
-                    design-system classroom PIN card spec. */}
-                <div className="font-mono text-[3.5rem] font-medium leading-none tracking-[0.14em] tabular-nums text-primary">
-                  {session.pin.slice(0, 3)} {session.pin.slice(3)}
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleCopyPin}
-                  className="gap-2"
-                >
-                  {copied ? (
-                    <Check className="h-4 w-4 text-emerald-500" />
-                  ) : (
-                    <Copy className="h-4 w-4" />
-                  )}
-                  {copied ? t('classroom.copied') : t('classroom.copyPin')}
-                </Button>
-                {/* LIVE badge + live participant count — pulses once a student joins */}
-                <div className="flex items-center gap-2 pt-1">
-                  <Badge
-                    variant="outline"
-                    className="gap-1.5 border-emerald-500/40 text-emerald-700 dark:text-emerald-400 bg-emerald-500/5"
-                  >
-                    <span className="relative flex h-1.5 w-1.5">
-                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-75" />
-                      <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                    </span>
-                    <span className="text-[10px] font-semibold tracking-wider uppercase">Live</span>
-                  </Badge>
-                  <span className="text-xs text-muted-foreground">
-                    {students.length === 0
-                      ? 'Waiting for students…'
-                      : `${students.length} joined`}
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground text-center max-w-xs mt-1">
-                  {t('classroom.sharePinHint')}
-                </p>
-              </CardContent>
-            </Card>
+          <div className="space-y-6">
+            <ClassroomFlowStrip activeIndex={activeFlowStep} />
 
-            {/* Participants + case controls */}
-            <div className="space-y-6">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0">
-                  <CardTitle className="text-base">
-                    {t('classroom.joined')}
-                  </CardTitle>
-                  <Badge variant="secondary" className="gap-1">
-                    <Users className="h-3 w-3" />
-                    {students.length}
-                  </Badge>
-                </CardHeader>
-                <CardContent className="p-2">
-                  {students.length === 0 ? (
-                    <div className="flex items-center gap-2 py-6 px-3 text-sm text-muted-foreground">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      {t('classroom.waitingForStudents')}
+            <div className="grid gap-6 lg:grid-cols-[0.92fr_1.08fr] items-start">
+              <Card className="glass-strong rounded-2xl border border-white/55 dark:border-white/10 overflow-hidden shadow-xl">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <CardTitle className="text-base">{t('classroom.sharePinLabel')}</CardTitle>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {t('classroom.sharePinHint')}
+                      </p>
                     </div>
-                  ) : (
-                    <ul className="space-y-0.5">
-                      {students.map(p => {
-                        // Initials from the display name — up to two letters.
-                        const initials = p.displayName
-                          .trim()
-                          .split(/\s+/)
-                          .map(w => w[0]?.toUpperCase())
-                          .filter(Boolean)
-                          .slice(0, 2)
-                          .join('');
-                        return (
-                          <li
-                            key={p.key}
-                            className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted/60 transition-colors"
-                          >
-                            {/* Avatar — accent-tinted circle with initials.
-                                Matches the design-system roster spec. */}
-                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-accent text-accent-foreground text-[13px] font-semibold shrink-0">
-                              {initials || '·'}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="text-sm font-medium truncate leading-tight">
-                                {p.displayName}
-                              </div>
-                              <div className="text-[11px] text-muted-foreground font-mono">
-                                joined {new Date(p.joinedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                              </div>
-                            </div>
-                            {/* Status dot — green pulse = connected. */}
-                            <span className="relative flex h-2 w-2 shrink-0" aria-label="connected">
-                              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-60" />
-                              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-                            </span>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  )}
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">
-                    {t('classroom.startCaseTitle')}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Year-level filter. Keeps the case list bite-sized — a 4th-year
-                      instructor shouldn't have to scroll past 1st-year basics. */}
-                  <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                      Year level
-                    </label>
-                    <Select
-                      value={yearFilter}
-                      onValueChange={v => {
-                        setYearFilter(v as YearFilter);
-                        // If the currently-picked case doesn't match the new
-                        // year, clear the selection so the dropdown prompts again.
-                        setSelectedCaseId(prev => {
-                          if (v === 'all') return prev;
-                          const stillValid = allCases.some(
-                            c => c.id === prev && c.yearLevels?.includes(v as StudentYear),
-                          );
-                          return stillValid ? prev : '';
-                        });
-                      }}
+                    <Badge
+                      variant="outline"
+                      className="gap-1.5 border-emerald-500/40 bg-emerald-500/8 text-emerald-700 dark:text-emerald-300"
                     >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {YEAR_OPTIONS.map(o => (
-                          <SelectItem key={o.value} value={o.value}>
-                            {o.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center justify-between">
-                      <span>{t('classroom.selectCase')}</span>
-                      <span className="text-[10px] text-muted-foreground normal-case tracking-normal">
-                        {filteredCases.length} case{filteredCases.length !== 1 ? 's' : ''}
+                      <span className="relative flex h-1.5 w-1.5">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-75" />
+                        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
                       </span>
-                    </label>
-                    <Select
-                      value={selectedStillValid ? selectedCaseId : ''}
-                      onValueChange={setSelectedCaseId}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder={
-                          filteredCases.length === 0
-                            ? 'No cases for this year level'
-                            : t('classroom.selectCase')
-                        } />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-[60vh]">
-                        {groupedCases.map(([category, cases]) => (
-                          <div key={category}>
-                            <div className="px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground bg-muted/40 sticky top-0">
-                              {category.replace(/-/g, ' ')}
-                            </div>
-                            {cases.map(c => (
-                              <SelectItem key={c.id} value={c.id}>
-                                <span className="flex items-center gap-2">
-                                  <span>{c.title}</span>
-                                  {c.complexity && (
-                                    <span className="text-[10px] text-muted-foreground uppercase">
-                                      · {c.complexity}
-                                    </span>
-                                  )}
-                                </span>
-                              </SelectItem>
-                            ))}
-                          </div>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      <span className="text-[10px] font-semibold uppercase tracking-wider">Live</span>
+                    </Badge>
                   </div>
-                  {/* Duration — sets a shared countdown on every participant's
-                      screen and auto-ends the case when it expires. */}
-                  <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                      {t('classroom.duration', { defaultValue: 'Session duration' })}
-                    </label>
-                    <Select
-                      value={String(durationMinutes)}
-                      onValueChange={v => setDurationMinutes(Number(v))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="0">No limit</SelectItem>
-                        <SelectItem value="10">10 minutes</SelectItem>
-                        <SelectItem value="15">15 minutes</SelectItem>
-                        <SelectItem value="20">20 minutes</SelectItem>
-                        <SelectItem value="30">30 minutes</SelectItem>
-                        <SelectItem value="45">45 minutes</SelectItem>
-                        <SelectItem value="60">60 minutes</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-[11px] text-muted-foreground">
-                      Every student will see a live countdown. The case auto-ends when time is up.
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={handleStartCase}
-                      disabled={!selectedCase || status === 'running'}
-                      className="gap-2 flex-1"
-                    >
-                      <Play className="h-4 w-4" />
-                      {status === 'running'
-                        ? t('classroom.caseRunning')
-                        : t('classroom.startCase')}
-                    </Button>
+                </CardHeader>
+                <CardContent className="space-y-5">
+                  <div className="rounded-2xl border border-primary/15 bg-primary/[0.045] px-3 py-7 text-center shadow-inner">
+                    <div className="whitespace-nowrap font-mono text-[clamp(2.45rem,5.6vw,4.4rem)] font-semibold leading-none tracking-[0.08em] tabular-nums text-primary">
+                      {session.pin.slice(0, 3)} {session.pin.slice(3)}
+                    </div>
                     <Button
                       variant="outline"
-                      onClick={handleLeave}
-                      className="gap-2"
+                      size="sm"
+                      onClick={handleCopyPin}
+                      className="mt-5 gap-2 bg-background/65"
                     >
-                      <LogOut className="h-4 w-4" />
-                      {t('classroom.endSession')}
+                      {copied ? (
+                        <Check className="h-4 w-4 text-emerald-500" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                      {copied ? t('classroom.copied') : t('classroom.copyPin')}
                     </Button>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2">
+                    <StatusTile icon={Users} label="Learners" value={String(students.length)} />
+                    <StatusTile icon={Clock} label="Duration" value={formatDurationLabel(durationMinutes)} />
+                    <StatusTile icon={Stethoscope} label="Case" value={selectedCase ? 'Selected' : 'Pending'} />
                   </div>
                 </CardContent>
               </Card>
+
+              <div className="space-y-6">
+                <Card className="glass rounded-2xl border border-white/45 dark:border-white/10">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                    <div>
+                      <CardTitle className="text-base">{t('classroom.joined')}</CardTitle>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {students.length === 0 ? t('classroom.waitingForStudents') : `${students.length} learner${students.length !== 1 ? 's' : ''} connected`}
+                      </p>
+                    </div>
+                    <Badge variant="secondary" className="gap-1">
+                      <Users className="h-3 w-3" />
+                      {students.length}
+                    </Badge>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <LearnerRoster students={students} />
+                  </CardContent>
+                </Card>
+
+                <Card className="glass-strong rounded-2xl border border-white/55 dark:border-white/10 shadow-xl">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <CardTitle className="text-base">
+                          {t('classroom.startCaseTitle')}
+                        </CardTitle>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Select the cohort, scenario, and session clock before broadcasting.
+                        </p>
+                      </div>
+                      <Badge variant={selectedCase ? 'default' : 'secondary'} className="gap-1.5">
+                        <ListChecks className="h-3.5 w-3.5" />
+                        {selectedCase ? 'Ready' : 'Setup'}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid gap-3 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                          Year level
+                        </label>
+                        <Select
+                          value={yearFilter}
+                          onValueChange={v => {
+                            setYearFilter(v as YearFilter);
+                            // If the currently-picked case doesn't match the new
+                            // year, clear the selection so the dropdown prompts again.
+                            setSelectedCaseId(prev => {
+                              if (v === 'all') return prev;
+                              const stillValid = allCases.some(
+                                c => c.id === prev && c.yearLevels?.includes(v as StudentYear),
+                              );
+                              return stillValid ? prev : '';
+                            });
+                          }}
+                        >
+                          <SelectTrigger className="h-10">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {YEAR_OPTIONS.map(o => (
+                              <SelectItem key={o.value} value={o.value}>
+                                {o.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                          {t('classroom.duration', { defaultValue: 'Session duration' })}
+                        </label>
+                        <Select
+                          value={String(durationMinutes)}
+                          onValueChange={v => setDurationMinutes(Number(v))}
+                        >
+                          <SelectTrigger className="h-10">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="0">No limit</SelectItem>
+                            <SelectItem value="10">10 minutes</SelectItem>
+                            <SelectItem value="15">15 minutes</SelectItem>
+                            <SelectItem value="20">20 minutes</SelectItem>
+                            <SelectItem value="30">30 minutes</SelectItem>
+                            <SelectItem value="45">45 minutes</SelectItem>
+                            <SelectItem value="60">60 minutes</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        Search scenarios
+                      </label>
+                      <div className="relative">
+                        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          value={caseSearch}
+                          onChange={e => setCaseSearch(e.target.value)}
+                          placeholder="Chest pain, asthma, trauma, arrest..."
+                          className="h-10 pl-9 pr-9"
+                        />
+                        {caseSearch.trim() && (
+                          <button
+                            type="button"
+                            onClick={() => setCaseSearch('')}
+                            className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+                            aria-label="Clear case search"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    <QuickCasePicker
+                      cases={fastStartCases}
+                      selectedCaseId={selectedCaseId}
+                      title={caseSearch.trim() ? 'Best matches' : 'Fast start'}
+                      emptyLabel={caseSearch.trim() ? 'No matching scenarios' : 'No scenarios for this cohort'}
+                      onSelect={setSelectedCaseId}
+                    />
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center justify-between">
+                        <span>{t('classroom.selectCase')}</span>
+                        <span className="text-[10px] text-muted-foreground normal-case tracking-normal">
+                          {filteredCases.length} shown · {yearFilteredCases.length} total
+                        </span>
+                      </label>
+                      <Select
+                        value={selectedStillValid ? selectedCaseId : ''}
+                        onValueChange={setSelectedCaseId}
+                      >
+                        <SelectTrigger className="h-11">
+                          <SelectValue placeholder={
+                            filteredCases.length === 0
+                              ? 'No cases match these filters'
+                              : t('classroom.selectCase')
+                          } />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-[60vh]">
+                          {groupedCases.map(([category, cases]) => (
+                            <div key={category}>
+                              <div className="px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground bg-muted/40 sticky top-0">
+                                {formatCategoryLabel(category)}
+                              </div>
+                              {cases.map(c => (
+                                <SelectItem key={c.id} value={c.id}>
+                                  <span className="flex items-center gap-2">
+                                    <span>{c.title}</span>
+                                    {c.complexity && (
+                                      <span className="text-[10px] text-muted-foreground uppercase">
+                                        · {c.complexity}
+                                      </span>
+                                    )}
+                                  </span>
+                                </SelectItem>
+                              ))}
+                            </div>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <SelectedCasePreview selectedCase={selectedCase} yearFilter={yearFilter} durationMinutes={durationMinutes} />
+
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                      <Button
+                        onClick={handleStartCase}
+                        disabled={!selectedCase || status === 'running'}
+                        className="h-11 gap-2 flex-1"
+                      >
+                        <Play className="h-4 w-4" />
+                        {status === 'running'
+                          ? t('classroom.caseRunning')
+                          : t('classroom.startCase')}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={handleLeave}
+                        className="h-11 gap-2"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        {t('classroom.endSession')}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           </div>
         )}
+      </div>
+      </div>{/* /relative z-10 — ambient-bg wrapper */}
+    </div>
+  );
+}
+
+function ClassroomFlowStrip({ activeIndex }: { activeIndex: number }) {
+  return (
+    <div className="grid gap-2 sm:grid-cols-4">
+      {CLASSROOM_FLOW.map((step, index) => {
+        const Icon = step.icon;
+        const active = index <= activeIndex;
+        return (
+          <div
+            key={step.label}
+            className={`relative overflow-hidden rounded-xl border px-3 py-3 transition-colors ${
+              active
+                ? 'border-primary/25 bg-primary/10 text-primary'
+                : 'border-border/60 bg-background/45 text-muted-foreground'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <span className={`flex h-8 w-8 items-center justify-center rounded-lg ${
+                active ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+              }`}>
+                <Icon className="h-4 w-4" />
+              </span>
+              <div className="min-w-0">
+                <div className="truncate text-xs font-semibold text-foreground">
+                  {step.label}
+                </div>
+                <div className="truncate text-[10px] uppercase tracking-wider opacity-75">
+                  {step.detail}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function StatusTile({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded-xl border border-border/60 bg-background/55 px-3 py-3">
+      <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        <Icon className="h-3.5 w-3.5" />
+        {label}
+      </div>
+      <div className="mt-1 text-sm font-semibold text-foreground">
+        {value}
+      </div>
+    </div>
+  );
+}
+
+function LearnerRoster({ students }: { students: UseClassroomSessionResult['participants'] }) {
+  if (students.length === 0) {
+    return (
+      <div className="rounded-xl border border-dashed border-border/70 bg-background/35 px-4 py-5">
+        <div className="flex items-center gap-3 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin text-primary" />
+          Waiting for students to join
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <ul className="grid gap-2 sm:grid-cols-2">
+      {students.map(p => (
+        <li
+          key={p.key}
+          className="flex items-center gap-3 rounded-xl border border-border/55 bg-background/55 px-3 py-2.5"
+        >
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent text-[13px] font-semibold text-accent-foreground">
+            {getInitials(p.displayName) || '•'}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-sm font-medium leading-tight">
+              {p.displayName}
+            </div>
+            <div className="font-mono text-[11px] text-muted-foreground">
+              joined {new Date(p.joinedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </div>
+          </div>
+          <span className="relative flex h-2 w-2 shrink-0" aria-label="connected">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-60" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function QuickCasePicker({
+  cases,
+  selectedCaseId,
+  title,
+  emptyLabel,
+  onSelect,
+}: {
+  cases: CaseScenario[];
+  selectedCaseId: string;
+  title: string;
+  emptyLabel: string;
+  onSelect: (id: string) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          <Star className="h-3.5 w-3.5" />
+          {title}
+        </div>
+        {cases.length > 0 && (
+          <span className="text-[10px] text-muted-foreground">
+            Tap to select
+          </span>
+        )}
+      </div>
+      {cases.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-border/70 bg-background/35 px-4 py-3 text-xs text-muted-foreground">
+          {emptyLabel}
+        </div>
+      ) : (
+        <div className="grid gap-2">
+          {cases.map(c => {
+            const selected = c.id === selectedCaseId;
+            return (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => onSelect(c.id)}
+                className={`group rounded-xl border px-3 py-3 text-left transition-colors ${
+                  selected
+                    ? 'border-primary/35 bg-primary/10'
+                    : 'border-border/60 bg-background/45 hover:border-primary/25 hover:bg-primary/[0.045]'
+                }`}
+                aria-pressed={selected}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-semibold text-foreground">
+                      {c.title}
+                    </div>
+                    <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">
+                      {caseSubtitle(c)}
+                    </p>
+                  </div>
+                  <Badge variant={selected ? 'default' : 'outline'} className="shrink-0 text-[10px] uppercase">
+                    {c.complexity}
+                  </Badge>
+                </div>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  <Badge variant="outline" className="text-[10px]">
+                    {formatCategoryLabel(c.category)}
+                  </Badge>
+                  <Badge variant="secondary" className="text-[10px]">
+                    {c.estimatedDuration ?? 20} min
+                  </Badge>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SelectedCasePreview({
+  selectedCase,
+  yearFilter,
+  durationMinutes,
+}: {
+  selectedCase: (typeof allCases)[number] | null;
+  yearFilter: YearFilter;
+  durationMinutes: number;
+}) {
+  if (!selectedCase) {
+    return (
+      <div className="rounded-xl border border-dashed border-border/70 bg-background/35 px-4 py-4">
+        <div className="flex items-start gap-3">
+          <Stethoscope className="mt-0.5 h-4 w-4 text-muted-foreground" />
+          <div>
+            <div className="text-sm font-medium text-foreground">No case selected</div>
+            <p className="mt-1 text-xs leading-5 text-muted-foreground">
+              Pick a scenario to unlock the live broadcast button.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-xl border border-primary/20 bg-primary/[0.055] px-4 py-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="text-sm font-semibold text-foreground">
+            {selectedCase.title}
+          </div>
+          <div className="mt-1 flex flex-wrap gap-1.5">
+            {selectedCase.category && (
+              <Badge variant="outline" className="text-[10px]">
+                {formatCategoryLabel(selectedCase.category)}
+              </Badge>
+            )}
+            {selectedCase.complexity && (
+              <Badge variant="secondary" className="text-[10px] uppercase">
+                {selectedCase.complexity}
+              </Badge>
+            )}
+            <Badge variant="outline" className="text-[10px]">
+              {yearFilter === 'all' ? 'Mixed cohort' : YEAR_OPTIONS.find(o => o.value === yearFilter)?.label}
+            </Badge>
+            <Badge variant="outline" className="gap-1 text-[10px]">
+              <Clock className="h-3 w-3" />
+              {formatDurationLabel(durationMinutes)}
+            </Badge>
+          </div>
+        </div>
+        <Badge className="gap-1.5 bg-emerald-600 text-white hover:bg-emerald-700">
+          <Check className="h-3 w-3" />
+          Ready
+        </Badge>
       </div>
     </div>
   );

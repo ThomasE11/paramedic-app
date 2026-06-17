@@ -176,7 +176,6 @@ class ClinicalSoundSynthesizer {
       const breathEnv = isInspiring ? Math.sin((breathPhase - 0.05) / 0.4 * Math.PI) * 0.15 : 0;
 
       // Random crackles during inspiration
-      let crackle = 0;
       if (isInspiring && Math.random() < 0.015) {
         const crackleLen = Math.floor(sr * 0.003);
         for (let j = 0; j < crackleLen && (i + j) < data.length; j++) {

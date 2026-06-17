@@ -74,6 +74,13 @@ export interface UseVoiceInputOptions {
   onCommand?: (match: VoiceMatch) => void;
   /** Minimum score to fire `onCommand`. Default 0.5. */
   minConfidence?: number;
+  /**
+   * Fires for EVERY finalised utterance (after wake-word stripping), whether
+   * or not it matched a command — including repeated identical phrases. Use
+   * this for free-text dictation (e.g. history-taking) where relying on the
+   * `finalTranscript` value would drop a question the student asks twice.
+   */
+  onFinalTranscript?: (text: string) => void;
   /** BCP-47 language tag. Defaults to navigator language → en-US. */
   lang?: string;
   /**
@@ -138,7 +145,7 @@ function normalise(s: string): string {
     .replace(/\bmilligrams?\b/g, 'mg')
     .replace(/\bmicrograms?\b/g, 'mcg')
     // Strip punctuation that doesn't carry semantic weight.
-    .replace(/[.,;:!?'"()\-]/g, ' ')
+    .replace(/[.,;:!?'"()-]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -228,7 +235,7 @@ function getRecognitionCtor(): AnyRecognition {
 }
 
 export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInputResult {
-  const { commands = [], onCommand, minConfidence = 0.5, lang, wakeWord } = options;
+  const { commands = [], onCommand, minConfidence = 0.5, lang, wakeWord, onFinalTranscript } = options;
 
   const [isListening, setIsListening] = useState(false);
   const [interimTranscript, setInterimTranscript] = useState('');
@@ -244,11 +251,13 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
   const onCommandRef = useRef(onCommand);
   const minConfidenceRef = useRef(minConfidence);
   const wakeWordRef = useRef(wakeWord);
+  const onFinalTranscriptRef = useRef(onFinalTranscript);
 
   useEffect(() => { commandsRef.current = commands; }, [commands]);
   useEffect(() => { onCommandRef.current = onCommand; }, [onCommand]);
   useEffect(() => { minConfidenceRef.current = minConfidence; }, [minConfidence]);
   useEffect(() => { wakeWordRef.current = wakeWord; }, [wakeWord]);
+  useEffect(() => { onFinalTranscriptRef.current = onFinalTranscript; }, [onFinalTranscript]);
 
   const isSupported = getRecognitionCtor() !== null;
 
@@ -262,6 +271,9 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
       if (!re.test(text)) return;
       text = text.replace(re, '');
     }
+    // Fire the free-text callback for EVERY final utterance (handles repeats).
+    const trimmed = text.trim();
+    if (trimmed) onFinalTranscriptRef.current?.(trimmed);
     const match = matchCommand(text, commandsRef.current, minConfidenceRef.current);
     if (match) {
       const result: VoiceMatch = {

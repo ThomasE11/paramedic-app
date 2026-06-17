@@ -40,16 +40,16 @@ export function TabNavigation({ activeLayer, onLayerChange, showPreBriefing = fa
   return (
     <div className="space-y-4">
       {/* Navigation Tabs */}
-      <div className="sticky top-[56px] sm:top-[73px] z-40 -mx-4 px-4 py-1.5 sm:py-2 bg-background border-b border-border">
-        <div className="flex items-center gap-1 p-1 rounded-xl bg-muted/40">
+      <div className="sticky top-[56px] sm:top-[73px] z-40 -mx-4 px-4 py-1.5 sm:py-2 nav-blur border-b border-white/40 dark:border-white/10">
+        <div className="flex items-center gap-1 p-1 rounded-xl glass-control">
           {layers.map((layer) => (
             <button
               key={layer.id}
               onClick={() => handleLayerChange(layer.id)}
               className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium transition-colors duration-150 ${
                 activeLayer === layer.id
-                  ? 'bg-background text-foreground shadow-sm border border-border/50'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
+                  ? 'bg-white/75 dark:bg-white/10 text-foreground shadow-sm border border-white/55 dark:border-white/10'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-white/45 dark:hover:bg-white/[0.08]'
               }`}
             >
               {layer.icon}
