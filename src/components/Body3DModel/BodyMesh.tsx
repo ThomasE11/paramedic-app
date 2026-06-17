@@ -620,7 +620,12 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
       // dressing is cosmetic; the exam continues undressed
     }
     return clone;
-  }, [scene, modelPath, surfaceOpacity, pupilLeftMm, pupilRightMm]);
+    // surfaceOpacity & pupil sizes are deliberately omitted from deps: a
+    // Skin/Skeleton toggle or pupil change must NOT rebuild the clone (mesh +
+    // scrubs + 2048² eye texture repaint). Opacity is applied live by the
+    // effect below; the eyes are baked once (live pupil reading is the 2D panel).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scene, modelPath]);
 
   // Region state is now communicated with anatomical overlays and landmarks,
   // not by recolouring the whole patient. Keep this callback for the pointer
@@ -665,6 +670,52 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
     const parted = new Set(dressed ? CLOTHING_PARTING[dressedActiveRegion ?? ''] ?? [] : []);
     for (const piece of layer.children) piece.visible = !parted.has(piece.name);
   }, [clonedScene, dressed, dressedActiveRegion]);
+
+  // Surface opacity (Skin = 1, Skeleton = 0.28) is applied to the body material
+  // HERE, not baked into the clone build — so toggling the view layer flips a
+  // material flag instead of rebuilding the mesh/scrubs/eyes. Scrubs and arm
+  // hit-boxes carry skipRecolor and are left untouched (they manage their own
+  // visibility).
+  useEffect(() => {
+    clonedScene.traverse((o) => {
+      const m = o as THREE.Mesh;
+      if (!m.isMesh || m.userData?.skipRecolor) return;
+      const mats = Array.isArray(m.material) ? m.material : m.material ? [m.material] : [];
+      for (const mat of mats) {
+        mat.transparent = surfaceOpacity < 1;
+        mat.opacity = surfaceOpacity;
+        mat.depthWrite = surfaceOpacity >= 1;
+        mat.needsUpdate = true;
+      }
+    });
+  }, [clonedScene, surfaceOpacity]);
+
+  // Free the GPU resources WE created on the PREVIOUS clone when a new one
+  // replaces it (e.g. a male↔female model switch): the scrubs/hit-box
+  // geometry+materials and the painted eye CanvasTexture. The body geometry and
+  // any un-painted skin texture are SHARED with the useGLTF cache
+  // (SkeletonUtils.clone shares them) and are never disposed. We compare the
+  // previous ref instead of returning a cleanup, so React StrictMode's
+  // double-invoke can't dispose the live clone.
+  const prevCloneRef = useRef<THREE.Object3D | null>(null);
+  useEffect(() => {
+    const prev = prevCloneRef.current;
+    if (prev && prev !== clonedScene) {
+      prev.traverse((o) => {
+        const m = o as THREE.Mesh;
+        if (!m.isMesh) return;
+        const created = m.userData?.skipRecolor === true || m.name.startsWith('hit-');
+        if (created && m.geometry) m.geometry.dispose();
+        const mats = Array.isArray(m.material) ? m.material : m.material ? [m.material] : [];
+        for (const mat of mats) {
+          const map = (mat as THREE.MeshStandardMaterial).map;
+          if (map instanceof THREE.CanvasTexture) map.dispose(); // our painted eye texture
+          mat.dispose(); // every material in this clone is a per-instance clone/fresh
+        }
+      });
+    }
+    prevCloneRef.current = clonedScene;
+  }, [clonedScene]);
 
   // Drive continuous rendering for pulse animation when required regions exist
   // or when guided mode is active (next-step ring needs to pulse).
