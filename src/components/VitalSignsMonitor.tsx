@@ -2239,6 +2239,8 @@ export function VitalSignsMonitor({
     setActiveAlarms(new Set());
     setAssessedVitals({});
     reportedAssessmentsRef.current.clear();
+    committedAlarmsRef.current = new Set();
+    alarmClearAtRef.current.clear();
   }, [caseTitle, initialVitals]);
 
   // Auto-refresh continuous-monitor vitals (SpO2, pulse, RR) whenever the
@@ -2384,6 +2386,13 @@ export function VitalSignsMonitor({
   // alarm. Quick to raise (catch real deterioration), slow to clear.
   const alarmCandidateRef = useRef<{ level: 'none' | 'warning' | 'critical'; since: number }>({ level: 'none', since: 0 });
   const effectiveAlarmRef = useRef<'none' | 'warning' | 'critical'>('none');
+  // Visual alarm latching: the committed set shown on the monitor, plus the time
+  // each alarm last LEFT the raw set. New alarms show immediately; a cleared
+  // alarm lingers ALARM_LATCH_MS so a vital blipping back and forth across a
+  // threshold keeps the indicator STEADY instead of flickering (and stops the
+  // monitor re-rendering every tween).
+  const committedAlarmsRef = useRef<Set<string>>(new Set());
+  const alarmClearAtRef = useRef<Map<string, number>>(new Map());
   const deteriorationTimerRef = useRef<number | null>(null);
   const audioEngineRef = useRef<ClinicalAudioEngine | null>(null);
   const codeTimerRef = useRef<number | null>(null);
@@ -2624,12 +2633,32 @@ export function VitalSignsMonitor({
     if (checkAlarm(glucose, ALARM_THRESHOLDS.bloodGlucose).isCritical) newAlarms.add('glucose-critical');
     else if (checkAlarm(glucose, ALARM_THRESHOLDS.bloodGlucose).isWarning) newAlarms.add('glucose-warning');
 
-    // Only commit when membership actually changed — vitals tween every few
-    // seconds and a fresh Set each tick re-rendered the whole monitor.
-    setActiveAlarms(prev => {
-      if (prev.size === newAlarms.size && [...newAlarms].every(a => prev.has(a))) return prev;
-      return newAlarms;
-    });
+    // Latch the VISUAL alarm set so it doesn't flicker. New alarm conditions
+    // show at once, but one that clears lingers for ALARM_LATCH_MS — a vital
+    // tweening across a threshold re-enters before the timer expires, so the
+    // indicator stays steady. A genuinely resolved alarm clears after the
+    // window. We commit only on a real membership change, so a stable patient
+    // no longer re-renders the monitor every vitals tween.
+    {
+      const nowV = Date.now();
+      const ALARM_LATCH_MS = 2000;
+      const committed = committedAlarmsRef.current;
+      const next = new Set(newAlarms); // additions appear immediately
+      committed.forEach(a => {
+        if (newAlarms.has(a)) { alarmClearAtRef.current.delete(a); return; }
+        let leftAt = alarmClearAtRef.current.get(a);
+        if (leftAt === undefined) { leftAt = nowV; alarmClearAtRef.current.set(a, nowV); }
+        if (nowV - leftAt < ALARM_LATCH_MS) next.add(a); // still latched — keep showing
+      });
+      for (const a of [...alarmClearAtRef.current.keys()]) {
+        if (!next.has(a)) alarmClearAtRef.current.delete(a);
+      }
+      const changed = next.size !== committed.size || [...next].some(a => !committed.has(a));
+      if (changed) {
+        committedAlarmsRef.current = next;
+        setActiveAlarms(next);
+      }
+    }
 
     // Real monitors annunciate on a cadence (IEC 60601-1-8 burst-interburst),
     // they do not replay the alarm pattern every time a value updates. High
