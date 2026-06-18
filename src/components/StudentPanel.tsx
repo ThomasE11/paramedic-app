@@ -55,7 +55,7 @@ function seededShuffle<T>(array: T[], seed: string): T[] {
   return shuffled;
 }
 import { allCases, getRandomCase, yearLevels, caseCategories, allConditionNames, getCasesByCondition } from '@/data/cases';
-import { ensureCompleteVitals, buildInitialVitalsFromCase } from '@/data/treatmentEffects';
+import { ensureCompleteVitals, vitalsEqual, buildInitialVitalsFromCase } from '@/data/treatmentEffects';
 import { type Treatment, TREATMENTS } from '@/data/enhancedTreatmentEffects';
 import {
   type PatientState,
@@ -108,8 +108,6 @@ import type { HistoryCategory } from '@/lib/historyTaking';
 import { OnboardingTour, useOnboardingTour } from '@/components/OnboardingTour';
 import { NarrationButton, VoiceToggleButton } from '@/components/NarrationButton';
 import { useVoiceNarration } from '@/hooks/useVoiceNarration';
-import { VoiceCommandButton } from '@/components/VoiceCommandButton';
-import type { VoiceCommand } from '@/hooks/useVoiceInput';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useTranslation } from 'react-i18next';
 import { MedicalControlDialog } from '@/components/MedicalControlDialog';
@@ -2345,48 +2343,9 @@ export function StudentPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentCase, caseStartTime, readOnly, monitorRevealedVitals]); // assessmentTracker read via ref — always current. readOnly MUST stay in deps so handing control to a student rebuilds this callback with readOnly=false; otherwise every click silently hits the "you are watching" toast from the stale closure.
 
-  // --------------------------------------------------------------------------
-  // Hands-free voice commands
-  // --------------------------------------------------------------------------
-  // Maps spoken phrases to assessment step IDs so a student can run through
-  // ABCDE + secondary survey without touching the screen. Aliases cover the
-  // common rephrasings paramedic students actually use in-scenario, plus the
-  // misrecognitions browsers produce for clinical words.
-  const voiceCommands: VoiceCommand[] = useMemo(() => [
-    { id: 'scene-safety', label: 'scene safety', aliases: ['check the scene', 'scene safe', 'assess scene', 'bsi', 'ppe'] },
-    { id: 'airway', label: 'check airway', aliases: ['assess airway', 'open airway', 'airway', 'a'] },
-    { id: 'breathing', label: 'check breathing', aliases: ['assess breathing', 'breathing', 'listen to chest', 'auscultate chest', 'b'] },
-    { id: 'circulation', label: 'check circulation', aliases: ['assess circulation', 'pulse', 'capillary refill', 'circulation', 'c'] },
-    { id: 'disability', label: 'check disability', aliases: ['neuro assessment', 'gcs', 'assess neuro', 'pupils', 'avpu', 'd'] },
-    { id: 'exposure', label: 'expose patient', aliases: ['exposure', 'head to toe', 'e'] },
-    { id: 'head', label: 'examine head', aliases: ['check head', 'head assessment', 'head', 'face', 'scalp'] },
-    { id: 'neck-cspine', label: 'examine neck', aliases: ['check neck', 'cspine', 'c spine', 'cervical spine'] },
-    { id: 'chest', label: 'examine chest', aliases: ['check chest', 'palpate chest', 'chest'] },
-    { id: 'abdomen', label: 'examine abdomen', aliases: ['check abdomen', 'palpate abdomen', 'belly', 'tummy'] },
-    { id: 'pelvis', label: 'examine pelvis', aliases: ['check pelvis', 'pelvis'] },
-    { id: 'extremities', label: 'examine extremities', aliases: ['check limbs', 'limbs', 'arms and legs'] },
-    { id: 'posterior-logroll', label: 'log roll', aliases: ['log-roll', 'check back', 'examine posterior'] },
-    { id: 'blood-glucose', label: 'check glucose', aliases: ['blood sugar', 'bm', 'bgl', 'sugar'] },
-    { id: 'temperature', label: 'check temperature', aliases: ['temp', 'take temperature'] },
-    { id: 'pain-assessment', label: 'pain assessment', aliases: ['assess pain', 'pain score', 'ask about pain', 'pqrst', 'ocqrsta'] },
-    { id: 'sample-history', label: 'sample history', aliases: ['take history', 'history', 'sample'] },
-    { id: 'allergies', label: 'ask allergies', aliases: ['allergy', 'any allergies'] },
-    { id: 'medications', label: 'ask medications', aliases: ['current medications', 'medication list', 'meds'] },
-  ], []);
-
-  const handleVoiceCommand = useCallback((match: { command: VoiceCommand; score: number; rawTranscript: string }) => {
-    // The command id is a canonical assessment step id — cast once.
-    const stepId = match.command.id as AssessmentStepId;
-    // Light feedback so the user sees the recognised intent.
-    toast.success(`🎙 ${match.command.label}`, {
-      description: match.rawTranscript,
-      duration: 2400,
-    });
-    // Run the same code path as tapping the button.
-    if (currentCase && caseStartTime && assessmentTrackerRef.current) {
-      handlePerformAssessment(stepId);
-    }
-  }, [currentCase, caseStartTime, handlePerformAssessment]);
+  // Hands-free voice-command mic removed (2026-06-18) — it was unused and
+  // cluttered the assessment view. The kept voice feature is patient
+  // communication during history taking (VoiceHistoryPanel / usePatientVoice).
 
   // Sync assessmentTracker.performed step IDs into session.completedItems
   // so that checklist-based scoring (12-lead ECG, pain assessment, etc.) works
@@ -4334,8 +4293,15 @@ export function StudentPanel({
                     deteriorationVitals={currentCase.vitalSignsProgression.deterioration ? ensureCompleteVitals(currentCase.vitalSignsProgression.deterioration) : undefined}
                     onVitalChange={(vitals) => {
                       const completeVitals = ensureCompleteVitals(vitals);
-                      setCurrentVitals(completeVitals);
-                      setVitalsHistory(prev => [...prev, completeVitals]);
+                      // Ignore echoes that don't change the displayed numbers —
+                      // otherwise every tween frame mints a new object, re-renders
+                      // the monitor, and grows vitalsHistory without bound.
+                      setCurrentVitals(prev => (vitalsEqual(prev, completeVitals) ? prev : completeVitals));
+                      setVitalsHistory(prev => (
+                        prev.length && vitalsEqual(prev[prev.length - 1], completeVitals)
+                          ? prev
+                          : [...prev, completeVitals]
+                      ));
                     }}
                     onAssessmentPerformed={handlePerformAssessment}
                     onPacerStateChange={(state) => {
@@ -5661,19 +5627,8 @@ export function StudentPanel({
             </div>
           </div>
         )}
-        {/* Hands-free voice command — visible only when running a live case.
-            Student can tap the mic and say "check airway" / "blood glucose" /
-            "examine chest" to trigger the same action as the on-screen button.
-            Hidden on phases where assessment actions aren't meaningful. */}
-        {(phase === 'case' || phase === 'vitals') && currentCase && (
-          <VoiceCommandButton
-            commands={voiceCommands}
-            onCommand={handleVoiceCommand}
-            lang={i18n.language === 'ar' ? 'ar-AE' : 'en-GB'}
-            listeningLabel={t('voice.listening', { defaultValue: 'Listening' })}
-            idleLabel={t('voice.talk', { defaultValue: 'Voice' })}
-          />
-        )}
+        {/* Hands-free voice-command mic removed — the patient-communication
+            voice (history taking) is the only voice feature we keep. */}
       </main>
     </div>
   );

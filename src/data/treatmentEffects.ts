@@ -31,6 +31,27 @@ const ensureCompleteVitals = (vitals: Partial<VitalSigns>): VitalSigns => ({
   time: vitals.time || new Date().toISOString(),
 });
 
+// Compare the DISPLAYED vital values only — deliberately IGNORING the `time`
+// stamp, which the gradual-change tween rewrites on every animation frame.
+// Used by the parent↔monitor sync effects so they stop committing state (and
+// stop tearing down the waveform canvases) when the numbers on screen have
+// not actually changed. This is the guard that stops SpO2/RR/HR twitching.
+const gcsTotalValue = (g: unknown): number | undefined =>
+  g != null && typeof g === 'object' ? (g as { total?: number }).total : (g as number | undefined);
+const vitalsEqual = (a?: Partial<VitalSigns> | null, b?: Partial<VitalSigns> | null): boolean => {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  return a.bp === b.bp
+    && a.pulse === b.pulse
+    && a.respiration === b.respiration
+    && a.spo2 === b.spo2
+    && a.temperature === b.temperature
+    && gcsTotalValue(a.gcs) === gcsTotalValue(b.gcs)
+    && a.bloodGlucose === b.bloodGlucose
+    && a.etco2 === b.etco2
+    && a.painScore === b.painScore;
+};
+
 // Build initial vitals for a case, merging vitalSignsProgression.initial with
 // abcde.disability / exposure values. Some case authors put BGL, GCS,
 // temperature in the ABCDE narrative but forget to duplicate them in
@@ -651,4 +672,4 @@ export function applyTreatmentEffectEnhanced(
 }
 
 // Re-export ensureCompleteVitals for use in other modules
-export { ensureCompleteVitals, buildInitialVitalsFromCase, getCaseType, parseBP, formatBP };
+export { ensureCompleteVitals, vitalsEqual, buildInitialVitalsFromCase, getCaseType, parseBP, formatBP };

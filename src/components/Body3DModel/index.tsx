@@ -97,6 +97,7 @@ const TREATMENT_ASSET_PATHS = {
   lucas: '/treatment-assets/lucas-device.svg',
   etTube: '/treatment-assets/et-tube.svg',
   opa: '/treatment-assets/opa.svg',
+  ivPole: '/treatment-assets/iv-pole.svg',
 } as const;
 
 type AbdomenQuadrant = 'ruq' | 'luq' | 'rlq' | 'llq';
@@ -665,134 +666,74 @@ function buildTreatmentEquipmentState(appliedTreatmentIds: string[]): AppliedEqu
   };
 }
 
-function EquipmentPill({
-  label,
-  detail,
-  tone,
-  children,
-}: {
-  label: string;
-  detail: string;
-  tone: 'oxygen' | 'iv' | 'defib' | 'device';
-  children: React.ReactNode;
-}) {
-  const toneClass = {
-    oxygen: 'border-cyan-200/45 bg-cyan-950/58 text-cyan-50 shadow-cyan-950/35',
-    iv: 'border-emerald-200/45 bg-emerald-950/58 text-emerald-50 shadow-emerald-950/35',
-    defib: 'border-rose-200/45 bg-rose-950/58 text-rose-50 shadow-rose-950/35',
-    device: 'border-slate-200/40 bg-slate-950/62 text-slate-50 shadow-slate-950/40',
-  }[tone];
+type EquipTone = 'oxygen' | 'iv' | 'defib' | 'device';
 
-  return (
-    <div className={`pointer-events-none flex min-w-[142px] max-w-[176px] items-center gap-2 rounded-2xl border px-2.5 py-2 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-75 duration-300 ${toneClass}`}>
-      <div className="relative h-14 w-16 shrink-0">{children}</div>
-      <div className="min-w-0">
-        <p className="text-[9px] font-bold uppercase tracking-[0.12em] leading-tight text-white/92">{label}</p>
-        <p className="mt-0.5 text-[8px] leading-snug text-white/70">{detail}</p>
+const OXYGEN_SRC: Record<OxygenEquipmentVisual['mode'], string> = {
+  nasal: TREATMENT_ASSET_PATHS.nasal,
+  'simple-mask': TREATMENT_ASSET_PATHS.simpleMask,
+  nonrebreather: TREATMENT_ASSET_PATHS.nonrebreather,
+  nebulizer: TREATMENT_ASSET_PATHS.nebulizer,
+  bvm: TREATMENT_ASSET_PATHS.bvm,
+  cpap: TREATMENT_ASSET_PATHS.cpap,
+  ventilator: TREATMENT_ASSET_PATHS.ventilator,
+};
+
+const EQUIP_PIN_RING: Record<EquipTone, string> = {
+  oxygen: 'border-cyan-300/70',
+  iv: 'border-emerald-300/70',
+  defib: 'border-rose-300/70',
+  device: 'border-slate-300/60',
+};
+
+// Small icon-only marker pinned to the relevant body part. Replaced the old
+// large labelled cards that crowded the assessment view — the human-readable
+// labels now live in the compact AppliedEquipmentTray below the model.
+function EquipmentPin({ tone, src, bare = false }: { tone: EquipTone; src: string; bare?: boolean }) {
+  // Bare = sits directly on the patient (the oxygen mask on the face), no badge
+  // chrome, so it reads as a worn device rather than an icon button.
+  if (bare) {
+    return (
+      <div className="pointer-events-none h-12 w-12 animate-in fade-in zoom-in-75 duration-200 drop-shadow-[0_3px_5px_rgba(8,47,73,0.4)]">
+        <img src={src} alt="" className="h-full w-full object-contain" draggable={false} />
       </div>
+    );
+  }
+  return (
+    <div className={`pointer-events-none flex h-8 w-8 items-center justify-center rounded-xl border ${EQUIP_PIN_RING[tone]} bg-slate-950/70 p-1 shadow-lg backdrop-blur-sm animate-in fade-in zoom-in-75 duration-200`}>
+      <img src={src} alt="" className="h-full w-full object-contain" draggable={false} />
     </div>
   );
 }
 
-function OxygenDeviceGraphic({ equipment }: { equipment: OxygenEquipmentVisual }) {
-  const src = {
-    nasal: TREATMENT_ASSET_PATHS.nasal,
-    'simple-mask': TREATMENT_ASSET_PATHS.simpleMask,
-    nonrebreather: TREATMENT_ASSET_PATHS.nonrebreather,
-    nebulizer: TREATMENT_ASSET_PATHS.nebulizer,
-    bvm: TREATMENT_ASSET_PATHS.bvm,
-    cpap: TREATMENT_ASSET_PATHS.cpap,
-    ventilator: TREATMENT_ASSET_PATHS.ventilator,
-  }[equipment.mode];
+// Compact, fixed corner list of everything currently applied — restores the
+// labels the on-body pins omit, without floating cards over the patient.
+function AppliedEquipmentTray({ appliedTreatmentIds }: { appliedTreatmentIds: string[] }) {
+  const equipment = useMemo(() => buildTreatmentEquipmentState(appliedTreatmentIds), [appliedTreatmentIds]);
+  const chips: Array<{ src: string; label: string }> = [];
+  if (equipment.oxygen) chips.push({ src: OXYGEN_SRC[equipment.oxygen.mode], label: equipment.oxygen.label });
+  if (equipment.hasEtTube && equipment.oxygen?.mode !== 'ventilator') chips.push({ src: TREATMENT_ASSET_PATHS.etTube, label: 'ET tube' });
+  if (equipment.hasOpa && !equipment.hasEtTube) chips.push({ src: TREATMENT_ASSET_PATHS.opa, label: 'OPA inserted' });
+  if (equipment.hasFluids) chips.push({ src: TREATMENT_ASSET_PATHS.ivPole, label: 'Fluids running' });
+  else if (equipment.hasIvAccess) chips.push({ src: TREATMENT_ASSET_PATHS.ivCannula, label: 'IV access' });
+  if (equipment.hasDefibPads) chips.push({ src: TREATMENT_ASSET_PATHS.defibPads, label: 'Defib pads on' });
+  if (equipment.hasLucas) chips.push({ src: TREATMENT_ASSET_PATHS.lucas, label: 'LUCAS running' });
+  if (chips.length === 0) return null;
   return (
-    <img
-      src={src}
-      alt=""
-      className="absolute inset-0 h-full w-full object-contain drop-shadow-[0_10px_12px_rgba(8,47,73,0.22)]"
-      draggable={false}
-    />
-  );
-}
-
-function IvCannulaGraphic({ hasFluids }: { hasFluids: boolean }) {
-  return (
-    <>
-      <img
-        src={TREATMENT_ASSET_PATHS.ivCannula}
-        alt=""
-        className="absolute inset-0 h-full w-full object-contain drop-shadow-[0_10px_12px_rgba(6,78,59,0.24)]"
-        draggable={false}
-      />
-      {hasFluids && (
-        <div className="absolute left-[49px] top-[37px] h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-100" />
-      )}
-    </>
-  );
-}
-
-function FluidBagGraphic() {
-  return (
-    <div className="pointer-events-none flex min-w-[118px] items-center gap-2 rounded-2xl border border-emerald-100/45 bg-slate-950/60 px-2.5 py-2 text-white shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-75 duration-300">
-      <div className="relative h-16 w-11 shrink-0">
-        <img src={TREATMENT_ASSET_PATHS.fluidBag} alt="" className="absolute inset-0 h-full w-full object-contain" draggable={false} />
-      </div>
-      <div>
-        <p className="text-[9px] font-bold uppercase tracking-[0.12em] leading-tight">Fluid running</p>
-        <p className="mt-0.5 text-[8px] leading-snug text-white/70">Bag and line connected to IV cannula</p>
-      </div>
+    <div className="pointer-events-none absolute bottom-3 right-3 z-20 flex max-w-[44%] flex-col items-end gap-1.5">
+      {chips.map((chip, i) => (
+        <div key={i} className="flex items-center gap-1.5 rounded-full border border-white/15 bg-slate-950/70 py-0.5 pl-0.5 pr-2.5 text-[10px] font-medium text-white/90 shadow-md backdrop-blur-md">
+          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/10">
+            <img src={chip.src} alt="" className="h-3.5 w-3.5 object-contain" draggable={false} />
+          </span>
+          {chip.label}
+        </div>
+      ))}
     </div>
   );
 }
 
-function DefibPadsGraphic() {
-  return (
-    <div className="pointer-events-none relative h-28 w-32 animate-in fade-in zoom-in-75 duration-300">
-      <img src={TREATMENT_ASSET_PATHS.defibPads} alt="" className="absolute inset-0 h-full w-full object-contain drop-shadow-[0_12px_14px_rgba(136,19,55,0.28)]" draggable={false} />
-      <div className="absolute left-[54px] top-[22px] rounded-full border border-rose-200/45 bg-rose-950/60 px-2 py-0.5 text-[8px] font-bold uppercase tracking-[0.12em] text-rose-50 backdrop-blur">
-        Pads on
-      </div>
-    </div>
-  );
-}
-
-function LucasGraphic() {
-  return (
-    <div className="pointer-events-none relative h-20 w-36 animate-in fade-in zoom-in-75 duration-300">
-      <img src={TREATMENT_ASSET_PATHS.lucas} alt="" className="absolute inset-0 h-full w-full object-contain drop-shadow-[0_12px_14px_rgba(15,23,42,0.32)]" draggable={false} />
-      <div className="absolute left-[48px] top-0 rounded-full border border-slate-100/35 bg-slate-950/62 px-2 py-0.5 text-[8px] font-bold uppercase tracking-[0.12em] text-slate-50 backdrop-blur">
-        LUCAS
-      </div>
-    </div>
-  );
-}
-
-function EtTubeGraphic() {
-  return (
-    <div className="pointer-events-none flex min-w-[124px] items-center gap-2 rounded-2xl border border-sky-100/45 bg-slate-950/62 px-2.5 py-2 text-white shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-75 duration-300">
-      <div className="relative h-14 w-16 shrink-0">
-        <img src={TREATMENT_ASSET_PATHS.etTube} alt="" className="absolute inset-0 h-full w-full object-contain" draggable={false} />
-      </div>
-      <div>
-        <p className="text-[9px] font-bold uppercase tracking-[0.12em] leading-tight">ET tube</p>
-        <p className="mt-0.5 text-[8px] leading-snug text-white/70">Airway secured and tube visible at mouth</p>
-      </div>
-    </div>
-  );
-}
-
-function OpaGraphic() {
-  return (
-    <div className="pointer-events-none flex min-w-[124px] items-center gap-2 rounded-2xl border border-orange-100/45 bg-slate-950/62 px-2.5 py-2 text-white shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-75 duration-300">
-      <div className="relative h-14 w-16 shrink-0">
-        <img src={TREATMENT_ASSET_PATHS.opa} alt="" className="absolute inset-0 h-full w-full object-contain" draggable={false} />
-      </div>
-      <div>
-        <p className="text-[9px] font-bold uppercase tracking-[0.12em] leading-tight">OPA inserted</p>
-        <p className="mt-0.5 text-[8px] leading-snug text-white/70">Only appropriate without gag reflex</p>
-      </div>
-    </div>
-  );
-}
+// Per-device graphic components removed — the overlay now renders small
+// EquipmentPin markers driven directly by TREATMENT_ASSET_PATHS / OXYGEN_SRC.
 
 function TreatmentEquipmentOverlay({
   appliedTreatmentIds,
@@ -820,52 +761,44 @@ function TreatmentEquipmentOverlay({
   return (
     <>
       {equipment.oxygen && (
-        <MarkerHtml position={anchor(0, 1.565, 0.215)} distanceFactor={2.15} zIndexRange={[76, 0]} interactive={false}>
-          <EquipmentPill label={equipment.oxygen.label} detail={equipment.oxygen.detail} tone="oxygen">
-            <OxygenDeviceGraphic equipment={equipment.oxygen} />
-          </EquipmentPill>
+        <MarkerHtml position={anchor(0, 1.55, 0.215)} distanceFactor={1.9} zIndexRange={[76, 0]} interactive={false}>
+          <EquipmentPin tone="oxygen" src={OXYGEN_SRC[equipment.oxygen.mode]} bare />
         </MarkerHtml>
       )}
 
       {equipment.hasEtTube && equipment.oxygen?.mode !== 'ventilator' && (
-        <MarkerHtml position={anchor(0.02, 1.545, 0.215)} distanceFactor={2.35} zIndexRange={[74, 0]} interactive={false}>
-          <EtTubeGraphic />
+        <MarkerHtml position={anchor(0.07, 1.55, 0.215)} distanceFactor={2.4} zIndexRange={[74, 0]} interactive={false}>
+          <EquipmentPin tone="oxygen" src={TREATMENT_ASSET_PATHS.etTube} />
         </MarkerHtml>
       )}
 
       {equipment.hasOpa && !equipment.hasEtTube && (
-        <MarkerHtml position={anchor(-0.02, 1.54, 0.215)} distanceFactor={2.35} zIndexRange={[73, 0]} interactive={false}>
-          <OpaGraphic />
+        <MarkerHtml position={anchor(-0.07, 1.55, 0.215)} distanceFactor={2.4} zIndexRange={[73, 0]} interactive={false}>
+          <EquipmentPin tone="device" src={TREATMENT_ASSET_PATHS.opa} />
         </MarkerHtml>
       )}
 
       {equipment.hasIvAccess && (
-        <MarkerHtml position={anchor(-0.205, 0.82, 0.2)} distanceFactor={2.65} zIndexRange={[72, 0]} interactive={false}>
-          <EquipmentPill
-            label="IV cannula"
-            detail={equipment.hasFluids ? 'Cannula taped down with fluid line attached' : 'Cannula inserted and secured at the forearm'}
-            tone="iv"
-          >
-            <IvCannulaGraphic hasFluids={equipment.hasFluids} />
-          </EquipmentPill>
+        <MarkerHtml position={anchor(-0.205, 0.82, 0.2)} distanceFactor={2.5} zIndexRange={[72, 0]} interactive={false}>
+          <EquipmentPin tone="iv" src={TREATMENT_ASSET_PATHS.ivCannula} />
         </MarkerHtml>
       )}
 
       {equipment.hasFluids && (
-        <MarkerHtml position={[-0.36, 1.08, 0.22]} distanceFactor={2.9} zIndexRange={[70, 0]} interactive={false}>
-          <FluidBagGraphic />
+        <MarkerHtml position={[-0.46, 1.16, 0.12]} distanceFactor={3.0} zIndexRange={[71, 0]} interactive={false}>
+          <EquipmentPin tone="iv" src={TREATMENT_ASSET_PATHS.ivPole} />
         </MarkerHtml>
       )}
 
       {equipment.hasDefibPads && (
-        <MarkerHtml position={anchor(0.01, 1.24, 0.218)} distanceFactor={2.4} zIndexRange={[68, 0]} interactive={false}>
-          <DefibPadsGraphic />
+        <MarkerHtml position={anchor(0.01, 1.24, 0.218)} distanceFactor={2.5} zIndexRange={[68, 0]} interactive={false}>
+          <EquipmentPin tone="defib" src={TREATMENT_ASSET_PATHS.defibPads} />
         </MarkerHtml>
       )}
 
       {equipment.hasLucas && (
-        <MarkerHtml position={anchor(0, 1.19, 0.22)} distanceFactor={2.55} zIndexRange={[69, 0]} interactive={false}>
-          <LucasGraphic />
+        <MarkerHtml position={anchor(0, 1.19, 0.22)} distanceFactor={2.6} zIndexRange={[69, 0]} interactive={false}>
+          <EquipmentPin tone="device" src={TREATMENT_ASSET_PATHS.lucas} />
         </MarkerHtml>
       )}
     </>
@@ -2766,22 +2699,9 @@ function RegionalZoomLoupe({
 
   if (isEyeFocused) return <PupilCloseUp profile={pupilProfile} />;
 
-  if (activeRegion === 'chest') {
-    return (
-      <div className="max-h-[15rem] overflow-y-auto rounded-2xl border border-sky-100/35 bg-slate-950/58 p-2 shadow-2xl backdrop-blur-xl">
-        <div className="mb-2 flex items-center justify-between gap-2 px-1">
-          <div>
-            <p className="text-[8px] font-semibold uppercase tracking-[0.22em] text-sky-100/55">Zoom loupe</p>
-            <p className="text-[11px] font-semibold text-white/92">Chest exam map</p>
-          </div>
-          <span className="rounded-full border border-sky-200/25 bg-sky-300/12 px-2 py-0.5 text-[8px] font-semibold text-sky-100">
-            lungs + heart
-          </span>
-        </div>
-        <ChestAssessmentMap selectedAction={selectedAction} caseData={caseData} />
-      </div>
-    );
-  }
+  // Chest "zoom loupe" intentionally removed — it duplicated the full chest
+  // map already shown in the bottom Hands-On Exam Station. Chest detail now
+  // lives in exactly one place to keep the assessment view uncluttered.
 
   if (activeRegion === 'abdomen') {
     return (
@@ -3947,6 +3867,9 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 target={[0, 0.92, 0]}
               />
             </Canvas>
+
+            {/* Compact list of applied equipment — labels for the on-body pins */}
+            <AppliedEquipmentTray appliedTreatmentIds={appliedTreatmentIds} />
 
             {/* Floating deselect — effortless "back to full body" while focused */}
             {activeRegion && (
