@@ -2231,8 +2231,19 @@ export function VitalSignsMonitor({
   // so BP/SpO2/etc. don't change on-screen until the student re-assesses
   const [assessedVitals, setAssessedVitals] = useState<Partial<VitalSigns>>({});
 
+  // Tracks the last vitals we pushed UP to the parent or pulled DOWN from it,
+  // so the onVitalChange echo effect below never ping-pongs with the parent.
+  const prevVitalsRef = useRef(currentVitals);
+
+  // CASE RESET — only when the case itself changes (caseTitle), NOT on every
+  // vitals tween. This used to also depend on `initialVitals`, but the parent
+  // rebinds initialVitals to its LIVE vitals every change, so it re-ran on
+  // every tween: it wiped the assessed/visible vitals each tick AND, via
+  // setCurrentVitals → onVitalChange → parent setState → new initialVitals,
+  // drove an infinite update loop that froze the monitor ("times out").
   useEffect(() => {
     setCurrentVitals(initialVitals);
+    prevVitalsRef.current = initialVitals; // case load is parent-originated — don't echo
     setVisibleVitals(new Set());
     setActiveAssessments(new Map());
     setAssessmentProgress(new Map());
@@ -2241,7 +2252,18 @@ export function VitalSignsMonitor({
     reportedAssessmentsRef.current.clear();
     committedAlarmsRef.current = new Set();
     alarmClearAtRef.current.clear();
-  }, [caseTitle, initialVitals]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [caseTitle]);
+
+  // LIVE SYNC — mirror the parent's deteriorating/treated vitals into the
+  // monitor WITHOUT clearing assessment state and WITHOUT echoing back through
+  // onVitalChange: we advance prevVitalsRef so the echo effect sees no change.
+  // Monitor-ORIGINATED changes (assessment defaults, pacer) still propagate up
+  // because they don't touch prevVitalsRef.
+  useEffect(() => {
+    setCurrentVitals(initialVitals);
+    prevVitalsRef.current = initialVitals;
+  }, [initialVitals]);
 
   // Auto-refresh continuous-monitor vitals (SpO2, pulse, RR) whenever the
   // underlying currentVitals changes. Real SpO2 probes read continuously,
@@ -2514,8 +2536,9 @@ export function VitalSignsMonitor({
     };
   }, []);
 
-  // Sync currentVitals to parent via onVitalChange - avoids setState-during-render errors
-  const prevVitalsRef = useRef(currentVitals);
+  // Push MONITOR-ORIGINATED vitals changes (assessment defaults, pacer) UP to
+  // the parent. Parent-originated changes don't reach here because the live-sync
+  // effect advances prevVitalsRef, so this never echoes them back (no loop).
   useEffect(() => {
     if (onVitalChange && currentVitals !== prevVitalsRef.current) {
       prevVitalsRef.current = currentVitals;
