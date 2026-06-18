@@ -2274,11 +2274,12 @@ export function VitalSignsMonitor({
   // real practice.
   useEffect(() => {
     setAssessedVitals(prev => {
+      let changed = false;
       const next = { ...prev };
-      if (visibleVitals.has('spo2') && prev.spo2 !== currentVitals.spo2) next.spo2 = currentVitals.spo2;
-      if (visibleVitals.has('pulse') && prev.pulse !== currentVitals.pulse) next.pulse = currentVitals.pulse;
-      if (visibleVitals.has('respiration') && prev.respiration !== currentVitals.respiration) next.respiration = currentVitals.respiration;
-      return next;
+      if (visibleVitals.has('spo2') && prev.spo2 !== currentVitals.spo2) { next.spo2 = currentVitals.spo2; changed = true; }
+      if (visibleVitals.has('pulse') && prev.pulse !== currentVitals.pulse) { next.pulse = currentVitals.pulse; changed = true; }
+      if (visibleVitals.has('respiration') && prev.respiration !== currentVitals.respiration) { next.respiration = currentVitals.respiration; changed = true; }
+      return changed ? next : prev; // don't churn a new object (and re-render) when nothing changed
     });
   }, [currentVitals.spo2, currentVitals.pulse, currentVitals.respiration, visibleVitals]);
 
