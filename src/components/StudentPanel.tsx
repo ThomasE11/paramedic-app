@@ -1284,7 +1284,11 @@ export function StudentPanel({
       : allConditionNames;
     const withCases = pool.filter(c => getCasesByCondition(c, selectedYear).length > 0);
     const withoutCases = pool.filter(c => getCasesByCondition(c, selectedYear).length === 0);
-    return [...withCases, ...withoutCases].slice(0, 30);
+    // The list scrolls (max-h-52 container), so don't cap the browse: a
+    // `.slice(0, 30)` over the ALPHABETICAL condition list meant only "A…"
+    // conditions ever appeared when no search was typed. When browsing (no
+    // query) show every playable condition; when searching, keep a generous cap.
+    return q ? [...withCases, ...withoutCases].slice(0, 50) : withCases;
   }, [conditionSearch, selectedYear]);
 
   // Shared case initialization helper
