@@ -37,6 +37,13 @@ interface ExportOptions {
     destination: string;
     provisionalDiagnosis: string;
   };
+  /** Encounter times — mirrors the on-screen Response Timing block. */
+  times?: {
+    arrival?: string | null;
+    departed?: string | null;
+    onScene?: string | null;
+    firstIntervention?: string | null;
+  };
   /** Skip the browser download when generating a PDF for automated verification. */
   download?: boolean;
 }
@@ -470,12 +477,16 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<Blob> 
     const prio = t.priority === 'lights' ? 'Lights & Sirens'
       : t.priority === 'urgent' ? 'Urgent (no L&S)'
         : t.priority === 'routine' ? 'Routine' : t.priority;
+    const tm = options.times || {};
     const rows: [string, string][] = [
       ['Priority', prio],
       ['Position', t.position],
       ['Pre-alert', t.preAlert ? `Yes — ${t.destination || 'receiving hospital'}` : 'No pre-alert'],
       ['Working Dx', t.provisionalDiagnosis],
-      ['Time on scene', options.elapsedTime || '—'],
+      ['Arrival on scene', tm.arrival || ''],
+      ['Departed (handover)', tm.departed || ''],
+      ['On-scene time', tm.onScene || options.elapsedTime || '—'],
+      ['Time to first Rx', tm.firstIntervention || ''],
     ];
     const visible = rows.filter(([, v]) => v && String(v).trim());
     checkPageBreak(SECTION_GAP + visible.length * 6 + 6);

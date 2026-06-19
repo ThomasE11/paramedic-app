@@ -5126,11 +5126,19 @@ export function StudentPanel({
                   <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Response Timing</h4>
                   <div className="grid grid-cols-2 gap-2 sm:gap-3 text-sm">
                     <div className="p-2.5 sm:p-3.5 rounded-xl bg-muted/30 border border-border/30">
-                      <span className="text-[10px] sm:text-[11px] text-muted-foreground uppercase tracking-wider font-medium">Total Duration</span>
+                      <span className="text-[10px] sm:text-[11px] text-muted-foreground uppercase tracking-wider font-medium">Arrival on scene</span>
+                      <p className="font-bold text-base sm:text-lg mt-0.5 sm:mt-1 font-mono">{caseStartTime ? new Date(caseStartTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '—'}</p>
+                    </div>
+                    <div className="p-2.5 sm:p-3.5 rounded-xl bg-muted/30 border border-border/30">
+                      <span className="text-[10px] sm:text-[11px] text-muted-foreground uppercase tracking-wider font-medium">Departed (handover)</span>
+                      <p className="font-bold text-base sm:text-lg mt-0.5 sm:mt-1 font-mono">{caseEndTime ? new Date(caseEndTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '—'}</p>
+                    </div>
+                    <div className="p-2.5 sm:p-3.5 rounded-xl bg-muted/30 border border-border/30">
+                      <span className="text-[10px] sm:text-[11px] text-muted-foreground uppercase tracking-wider font-medium">On-scene time</span>
                       <p className="font-bold text-base sm:text-lg mt-0.5 sm:mt-1 font-mono">{formatTime(performanceMetrics.totalTime)}</p>
                     </div>
                     <div className="p-2.5 sm:p-3.5 rounded-xl bg-muted/30 border border-border/30">
-                      <span className="text-[10px] sm:text-[11px] text-muted-foreground uppercase tracking-wider font-medium">First Treatment</span>
+                      <span className="text-[10px] sm:text-[11px] text-muted-foreground uppercase tracking-wider font-medium">Time to first Rx</span>
                       <p className="font-bold text-base sm:text-lg mt-0.5 sm:mt-1 font-mono">
                         {performanceMetrics.timeToFirstTreatment
                           ? formatTime(performanceMetrics.timeToFirstTreatment)
@@ -5635,6 +5643,12 @@ export function StudentPanel({
                       assessmentItems: performanceMetrics.assessmentDebrief?.items,
                       smartGrade: performanceMetrics.smartGrade,
                       transport: transportDecisions ?? undefined,
+                      times: {
+                        arrival: caseStartTime ? new Date(caseStartTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : null,
+                        departed: caseEndTime ? new Date(caseEndTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : null,
+                        onScene: formatTime(performanceMetrics.totalTime),
+                        firstIntervention: performanceMetrics.timeToFirstTreatment ? formatTime(performanceMetrics.timeToFirstTreatment) : null,
+                      },
                     });
                     toast.dismiss();
                     toast.success('PDF report downloaded');

@@ -124,6 +124,12 @@ const blob = await exportSessionToPDF({
     destination: 'Nearest ED',
     provisionalDiagnosis: 'Anaphylaxis',
   },
+  times: {
+    arrival: '00:18:05',
+    departed: '00:26:47',
+    onScene: '08:42',
+    firstIntervention: '1:12',
+  },
   download: false,
 });
 
