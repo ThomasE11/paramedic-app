@@ -408,13 +408,16 @@ function buildSurfaceSampler(root: THREE.Object3D | null): ((x: number, y: numbe
     if (v.z > maxZ) maxZ = v.z;
   }
 
-  // Markers are authored in a normalised frame: feet at y=0, head ≈ y=1.8,
-  // centred on x, half-width ≈ 0.5. The real rendered model is frequently NOT
-  // that exact size/position (different GLB, normalisation quirks), which made
-  // fixed coordinates float ABOVE the head / off the side. Remap every
-  // requested point from the authoring frame onto the model's MEASURED bounds
-  // so labels land on the actual body regardless of its rendered scale.
-  const AUTHOR_H = 1.8, AUTHOR_HALFW = 0.5;
+  // Markers are authored in the SAME frame the app renders the reference
+  // patient in: feet at y=0, head y=1.8, centred on x. The reference patient
+  // (patient.glb AND patient-female.glb both measure a half-width of 0.536 via
+  // scripts/measure-anatomy.cjs) defines the authoring half-width, so this
+  // remap is the IDENTITY for the shipped models and only rescales x for a
+  // future GLB of a different build. (It used to be 0.5 — a guess — which
+  // multiplied every x by 0.536/0.5 ≈ 1.072, pushing arm/leg dots ~7% laterally
+  // off the limb.) The y-remap is already identity because every model is
+  // height-normalised to 1.8.
+  const AUTHOR_H = 1.8, AUTHOR_HALFW = 0.536;
   const H = (maxY - minY) || AUTHOR_H;
   const cx = (minX + maxX) / 2;
   const halfW = ((maxX - minX) / 2) || AUTHOR_HALFW;

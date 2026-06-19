@@ -113,9 +113,13 @@ const ABDOMEN_QUADRANTS: Array<{ id: AbdomenQuadrant; label: string; full: strin
 // in the exact in-app frame: feet Y=0, head Y≈1.8, centred on X/Z, anatomical
 // front at +Z (camera side). The body's front surface sits at only z ≈ 0.16
 // (face/chest) to 0.22 (belly) — NOT 0.3+ — so anything past ~0.25 floats in
-// the air in front of the patient. Torso half-width is ~0.15 and the forearm/
-// wrist sits at x ≈ ±0.18 (the upper arm bulges out to ±0.49). These positions
-// sit just proud of the real camera-facing surface.
+// the air in front of the patient. The arms hang at the sides: although the
+// upper arm's OUTER edge reaches ±0.49, the camera-FACING surface of the whole
+// arm (shoulder→hand) sits at only x ≈ ±0.13–0.15, so arm dots belong there,
+// not splayed out to ±0.3. The legs are slightly apart — the leg front runs
+// from x ≈ ±0.15 (thigh) out to ±0.20 (ankle/foot). These positions sit just
+// proud of the real camera-facing surface; the surface sampler then snaps z
+// (and lightly rescales x for non-reference models).
 const EXAM_LANDMARKS: ExamLandmark[] = [
   { id: 'eyes-overview', region: 'face', label: 'Face / eyes', sublabel: 'pupils, lips, speech', position: [0.0, 1.62, 0.20], level: 'overview', tone: 'neuro' },
   { id: 'airway-overview', region: 'neck-cspine', label: 'Airway / neck', sublabel: 'mouth, trachea, JVD', position: [0.0, 1.46, 0.22], level: 'overview', tone: 'airway' },
@@ -124,10 +128,10 @@ const EXAM_LANDMARKS: ExamLandmark[] = [
   // Minimal anatomical pulse points — click to check (works from any view).
   // (Removed the duplicate 'radial-overview' dot that sat ~2 cm from
   // 'pulse-radial-r' on the same wrist — it created the cluttered arm cluster.)
-  { id: 'pulse-carotid', region: 'neck-cspine', label: 'Carotid', sublabel: 'central pulse', position: [-0.12, 1.39, 0.20], level: 'overview', actionId: 'pulse-carotid', tone: 'circulation' },
-  { id: 'pulse-radial-r', region: 'right-arm', label: 'Radial', sublabel: 'wrist pulse', position: [-0.20, 0.80, 0.18], level: 'overview', actionId: 'pulse-radial', tone: 'circulation' },
-  { id: 'pulse-radial-l', region: 'left-arm', label: 'Radial', sublabel: 'wrist pulse', position: [0.20, 0.80, 0.18], level: 'overview', actionId: 'pulse-radial', tone: 'circulation' },
-  { id: 'pedal-overview', region: 'right-leg', label: 'Pedal pulse', sublabel: 'DP / PT', position: [-0.13, 0.14, 0.20], level: 'overview', tone: 'circulation' },
+  { id: 'pulse-carotid', region: 'neck-cspine', label: 'Carotid', sublabel: 'central pulse', position: [-0.11, 1.42, 0.19], level: 'overview', actionId: 'pulse-carotid', tone: 'circulation' },
+  { id: 'pulse-radial-r', region: 'right-arm', label: 'Radial', sublabel: 'wrist pulse', position: [-0.135, 0.81, 0.18], level: 'overview', actionId: 'pulse-radial', tone: 'circulation' },
+  { id: 'pulse-radial-l', region: 'left-arm', label: 'Radial', sublabel: 'wrist pulse', position: [0.135, 0.81, 0.18], level: 'overview', actionId: 'pulse-radial', tone: 'circulation' },
+  { id: 'pedal-overview', region: 'right-leg', label: 'Pedal pulse', sublabel: 'DP / PT', position: [-0.20, 0.13, 0.18], level: 'overview', tone: 'circulation' },
   { id: 'posterior-overview', region: 'posterior-logroll', label: 'Posterior', sublabel: 'log roll / spine', position: [0.0, 1.10, -0.20], level: 'overview', tone: 'neutral' },
 
   { id: 'right-eye', region: 'face', label: 'Right eye', sublabel: 'pupil size, reactivity', position: [-0.052, 1.635, 0.205], level: 'detail', actionId: 'pupils-size', tone: 'neuro' },
@@ -159,41 +163,41 @@ const EXAM_LANDMARKS: ExamLandmark[] = [
   { id: 'ear-left-detail', region: 'head', label: 'L ear', sublabel: 'Battle sign, CSF otorrhoea', position: [0.135, 1.66, 0.05], level: 'detail', actionId: 'ears-inspect', tone: 'neutral' },
 
   // ===== RIGHT ARM (patient's right = camera-left = negative X) =====
-  { id: 'r-shoulder-detail', region: 'right-arm', label: 'Shoulder', sublabel: 'clavicle, ROM', position: [-0.28, 1.36, 0.10], level: 'detail', actionId: 'r-shoulder-palpate', tone: 'warning' },
-  { id: 'r-humerus-detail', region: 'right-arm', label: 'Upper arm', sublabel: 'humerus, deformity', position: [-0.35, 1.14, 0.08], level: 'detail', actionId: 'r-humerus-palpate', tone: 'warning' },
-  { id: 'r-elbow-detail', region: 'right-arm', label: 'Elbow', sublabel: 'effusion, ROM', position: [-0.34, 0.98, 0.09], level: 'detail', actionId: 'r-elbow-palpate', tone: 'warning' },
-  { id: 'r-forearm-detail', region: 'right-arm', label: 'Forearm', sublabel: 'radius / ulna', position: [-0.27, 0.86, 0.13], level: 'detail', actionId: 'r-forearm-palpate', tone: 'warning' },
-  { id: 'r-wrist-detail', region: 'right-arm', label: 'Wrist', sublabel: 'radial pulse, CRT', position: [-0.215, 0.78, 0.16], level: 'detail', actionId: 'r-arm-pulses', tone: 'circulation' },
-  { id: 'r-hand-detail', region: 'right-arm', label: 'Hand', sublabel: 'grip, sensation, digits', position: [-0.205, 0.69, 0.16], level: 'detail', actionId: 'r-hand-palpate', tone: 'neuro' },
+  { id: 'r-shoulder-detail', region: 'right-arm', label: 'Shoulder', sublabel: 'clavicle, ROM', position: [-0.15, 1.39, 0.18], level: 'detail', actionId: 'r-shoulder-palpate', tone: 'warning' },
+  { id: 'r-humerus-detail', region: 'right-arm', label: 'Upper arm', sublabel: 'humerus, deformity', position: [-0.145, 1.12, 0.16], level: 'detail', actionId: 'r-humerus-palpate', tone: 'warning' },
+  { id: 'r-elbow-detail', region: 'right-arm', label: 'Elbow', sublabel: 'effusion, ROM', position: [-0.14, 0.95, 0.19], level: 'detail', actionId: 'r-elbow-palpate', tone: 'warning' },
+  { id: 'r-forearm-detail', region: 'right-arm', label: 'Forearm', sublabel: 'radius / ulna', position: [-0.145, 0.88, 0.19], level: 'detail', actionId: 'r-forearm-palpate', tone: 'warning' },
+  { id: 'r-wrist-detail', region: 'right-arm', label: 'Wrist', sublabel: 'radial pulse, CRT', position: [-0.135, 0.81, 0.18], level: 'detail', actionId: 'r-arm-pulses', tone: 'circulation' },
+  { id: 'r-hand-detail', region: 'right-arm', label: 'Hand', sublabel: 'grip, sensation, digits', position: [-0.15, 0.72, 0.17], level: 'detail', actionId: 'r-hand-palpate', tone: 'neuro' },
 
   // ===== LEFT ARM (patient's left = camera-right = positive X) =====
-  { id: 'l-shoulder-detail', region: 'left-arm', label: 'Shoulder', sublabel: 'clavicle, ROM', position: [0.28, 1.36, 0.10], level: 'detail', actionId: 'l-shoulder-palpate', tone: 'warning' },
-  { id: 'l-humerus-detail', region: 'left-arm', label: 'Upper arm', sublabel: 'humerus, deformity', position: [0.35, 1.14, 0.08], level: 'detail', actionId: 'l-humerus-palpate', tone: 'warning' },
-  { id: 'l-elbow-detail', region: 'left-arm', label: 'Elbow', sublabel: 'effusion, ROM', position: [0.34, 0.98, 0.09], level: 'detail', actionId: 'l-elbow-palpate', tone: 'warning' },
-  { id: 'l-forearm-detail', region: 'left-arm', label: 'Forearm', sublabel: 'radius / ulna', position: [0.27, 0.86, 0.13], level: 'detail', actionId: 'l-forearm-palpate', tone: 'warning' },
-  { id: 'l-wrist-detail', region: 'left-arm', label: 'Wrist', sublabel: 'radial pulse, CRT', position: [0.215, 0.78, 0.16], level: 'detail', actionId: 'l-arm-pulses', tone: 'circulation' },
-  { id: 'l-hand-detail', region: 'left-arm', label: 'Hand', sublabel: 'grip, sensation, digits', position: [0.205, 0.69, 0.16], level: 'detail', actionId: 'l-hand-palpate', tone: 'neuro' },
+  { id: 'l-shoulder-detail', region: 'left-arm', label: 'Shoulder', sublabel: 'clavicle, ROM', position: [0.15, 1.39, 0.18], level: 'detail', actionId: 'l-shoulder-palpate', tone: 'warning' },
+  { id: 'l-humerus-detail', region: 'left-arm', label: 'Upper arm', sublabel: 'humerus, deformity', position: [0.145, 1.12, 0.16], level: 'detail', actionId: 'l-humerus-palpate', tone: 'warning' },
+  { id: 'l-elbow-detail', region: 'left-arm', label: 'Elbow', sublabel: 'effusion, ROM', position: [0.14, 0.95, 0.19], level: 'detail', actionId: 'l-elbow-palpate', tone: 'warning' },
+  { id: 'l-forearm-detail', region: 'left-arm', label: 'Forearm', sublabel: 'radius / ulna', position: [0.145, 0.88, 0.19], level: 'detail', actionId: 'l-forearm-palpate', tone: 'warning' },
+  { id: 'l-wrist-detail', region: 'left-arm', label: 'Wrist', sublabel: 'radial pulse, CRT', position: [0.135, 0.81, 0.18], level: 'detail', actionId: 'l-arm-pulses', tone: 'circulation' },
+  { id: 'l-hand-detail', region: 'left-arm', label: 'Hand', sublabel: 'grip, sensation, digits', position: [0.15, 0.72, 0.17], level: 'detail', actionId: 'l-hand-palpate', tone: 'neuro' },
 
   // ===== RIGHT LEG (upper thigh → foot) =====
-  { id: 'r-hip-detail', region: 'right-leg', label: 'Hip', sublabel: 'shortening, rotation', position: [-0.16, 0.86, 0.15], level: 'detail', actionId: 'r-hip-palpate', tone: 'warning' },
-  { id: 'r-thigh-detail', region: 'right-leg', label: 'Upper thigh', sublabel: 'femur, quadriceps', position: [-0.155, 0.70, 0.17], level: 'detail', actionId: 'r-femur-palpate', tone: 'warning' },
-  { id: 'r-knee-detail', region: 'right-leg', label: 'Knee', sublabel: 'patella, effusion', position: [-0.15, 0.47, 0.17], level: 'detail', actionId: 'r-knee-palpate', tone: 'warning' },
-  { id: 'r-shin-detail', region: 'right-leg', label: 'Lower leg', sublabel: 'tibia, compartments', position: [-0.15, 0.30, 0.17], level: 'detail', actionId: 'r-tibia-palpate', tone: 'warning' },
-  { id: 'r-ankle-detail', region: 'right-leg', label: 'Ankle', sublabel: 'malleoli, oedema', position: [-0.14, 0.15, 0.17], level: 'detail', actionId: 'r-ankle-palpate', tone: 'warning' },
-  { id: 'r-foot-detail', region: 'right-leg', label: 'Foot', sublabel: 'pedal pulse, CRT', position: [-0.13, 0.07, 0.20], level: 'detail', actionId: 'r-leg-pulses', tone: 'circulation' },
+  { id: 'r-hip-detail', region: 'right-leg', label: 'Hip', sublabel: 'shortening, rotation', position: [-0.14, 0.88, 0.19], level: 'detail', actionId: 'r-hip-palpate', tone: 'warning' },
+  { id: 'r-thigh-detail', region: 'right-leg', label: 'Upper thigh', sublabel: 'femur, quadriceps', position: [-0.15, 0.70, 0.18], level: 'detail', actionId: 'r-femur-palpate', tone: 'warning' },
+  { id: 'r-knee-detail', region: 'right-leg', label: 'Knee', sublabel: 'patella, effusion', position: [-0.165, 0.46, 0.18], level: 'detail', actionId: 'r-knee-palpate', tone: 'warning' },
+  { id: 'r-shin-detail', region: 'right-leg', label: 'Lower leg', sublabel: 'tibia, compartments', position: [-0.18, 0.31, 0.19], level: 'detail', actionId: 'r-tibia-palpate', tone: 'warning' },
+  { id: 'r-ankle-detail', region: 'right-leg', label: 'Ankle', sublabel: 'malleoli, oedema', position: [-0.20, 0.17, 0.18], level: 'detail', actionId: 'r-ankle-palpate', tone: 'warning' },
+  { id: 'r-foot-detail', region: 'right-leg', label: 'Foot', sublabel: 'pedal pulse, CRT', position: [-0.20, 0.06, 0.18], level: 'detail', actionId: 'r-leg-pulses', tone: 'circulation' },
 
   // ===== LEFT LEG (upper thigh → foot) =====
-  { id: 'l-hip-detail', region: 'left-leg', label: 'Hip', sublabel: 'shortening, rotation', position: [0.16, 0.86, 0.15], level: 'detail', actionId: 'l-hip-palpate', tone: 'warning' },
-  { id: 'l-thigh-detail', region: 'left-leg', label: 'Upper thigh', sublabel: 'femur, quadriceps', position: [0.155, 0.70, 0.17], level: 'detail', actionId: 'l-femur-palpate', tone: 'warning' },
-  { id: 'l-knee-detail', region: 'left-leg', label: 'Knee', sublabel: 'patella, effusion', position: [0.15, 0.47, 0.17], level: 'detail', actionId: 'l-knee-palpate', tone: 'warning' },
-  { id: 'l-shin-detail', region: 'left-leg', label: 'Lower leg', sublabel: 'tibia, compartments', position: [0.15, 0.30, 0.17], level: 'detail', actionId: 'l-tibia-palpate', tone: 'warning' },
-  { id: 'l-ankle-detail', region: 'left-leg', label: 'Ankle', sublabel: 'malleoli, oedema', position: [0.14, 0.15, 0.17], level: 'detail', actionId: 'l-ankle-palpate', tone: 'warning' },
-  { id: 'l-foot-detail', region: 'left-leg', label: 'Foot', sublabel: 'pedal pulse, CRT', position: [0.13, 0.07, 0.20], level: 'detail', actionId: 'l-leg-pulses', tone: 'circulation' },
+  { id: 'l-hip-detail', region: 'left-leg', label: 'Hip', sublabel: 'shortening, rotation', position: [0.14, 0.88, 0.19], level: 'detail', actionId: 'l-hip-palpate', tone: 'warning' },
+  { id: 'l-thigh-detail', region: 'left-leg', label: 'Upper thigh', sublabel: 'femur, quadriceps', position: [0.15, 0.70, 0.18], level: 'detail', actionId: 'l-femur-palpate', tone: 'warning' },
+  { id: 'l-knee-detail', region: 'left-leg', label: 'Knee', sublabel: 'patella, effusion', position: [0.165, 0.46, 0.18], level: 'detail', actionId: 'l-knee-palpate', tone: 'warning' },
+  { id: 'l-shin-detail', region: 'left-leg', label: 'Lower leg', sublabel: 'tibia, compartments', position: [0.18, 0.31, 0.19], level: 'detail', actionId: 'l-tibia-palpate', tone: 'warning' },
+  { id: 'l-ankle-detail', region: 'left-leg', label: 'Ankle', sublabel: 'malleoli, oedema', position: [0.20, 0.17, 0.18], level: 'detail', actionId: 'l-ankle-palpate', tone: 'warning' },
+  { id: 'l-foot-detail', region: 'left-leg', label: 'Foot', sublabel: 'pedal pulse, CRT', position: [0.20, 0.06, 0.18], level: 'detail', actionId: 'l-leg-pulses', tone: 'circulation' },
 
   // ===== PELVIS =====
-  { id: 'pelvis-right-detail', region: 'pelvis', label: 'R iliac crest', sublabel: 'spring test', position: [-0.13, 0.92, 0.16], level: 'detail', actionId: 'pelvis-palpate', tone: 'warning' },
-  { id: 'pelvis-left-detail', region: 'pelvis', label: 'L iliac crest', sublabel: 'spring test', position: [0.13, 0.92, 0.16], level: 'detail', actionId: 'pelvis-palpate', tone: 'warning' },
-  { id: 'pelvis-symphysis-detail', region: 'pelvis', label: 'Symphysis', sublabel: 'deformity, bruising', position: [0, 0.84, 0.20], level: 'detail', actionId: 'pelvis-inspect', tone: 'abdomen' },
+  { id: 'pelvis-right-detail', region: 'pelvis', label: 'R iliac crest', sublabel: 'spring test', position: [-0.14, 0.93, 0.18], level: 'detail', actionId: 'pelvis-palpate', tone: 'warning' },
+  { id: 'pelvis-left-detail', region: 'pelvis', label: 'L iliac crest', sublabel: 'spring test', position: [0.14, 0.93, 0.18], level: 'detail', actionId: 'pelvis-palpate', tone: 'warning' },
+  { id: 'pelvis-symphysis-detail', region: 'pelvis', label: 'Symphysis', sublabel: 'deformity, bruising', position: [0, 0.86, 0.21], level: 'detail', actionId: 'pelvis-inspect', tone: 'abdomen' },
 ];
 
 function PatientSceneEnvironment() {
@@ -369,10 +373,10 @@ const FINDING_ANCHORS: Record<string, [number, number, number]> = {
   'chest': [0.0, 1.27, 0.20],
   'abdomen': [0.0, 1.02, 0.24],
   'pelvis': [0.0, 0.90, 0.24],
-  'right-arm': [-0.34, 1.08, 0.12],
-  'left-arm': [0.34, 1.08, 0.12],
-  'right-leg': [-0.14, 0.48, 0.20],
-  'left-leg': [0.14, 0.48, 0.20],
+  'right-arm': [-0.145, 1.10, 0.16],
+  'left-arm': [0.145, 1.10, 0.16],
+  'right-leg': [-0.165, 0.46, 0.18],
+  'left-leg': [0.165, 0.46, 0.18],
   'posterior-logroll': [0.0, 1.10, -0.20],
 };
 

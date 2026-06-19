@@ -667,22 +667,56 @@ export function StudentPanel({
     lastActivityRef.current = Date.now();
     const where = site === 'pulse-carotid' ? 'carotid' : site === 'pulse-radial' ? 'radial' : 'central';
     setTimeout(() => {
-      const hasPulse = !!currentVitals && currentVitals.pulse > 0 && !(patientState?.isInArrest);
-      setPulseCheckResult(hasPulse ? 'present' : 'absent');
-      setPulseCheckInProgress(false);
-      if (!hasPulse) {
+      const inArrest = !!patientState?.isInArrest;
+      const pulse = currentVitals?.pulse || 0;
+      const sbp = parseInt(String(currentVitals?.bp ?? '').split('/')[0], 10) || 0;
+      // Peripheral pulses are lost before central ones as perfusion falls: the
+      // radial typically disappears below ~80 mmHg systolic while the carotid
+      // persists to ~60 — so a hypotensive patient can have an absent radial
+      // but a present carotid. That contrast is the teachable, realistic cue.
+      // sbp === 0 means the case carries no BP — don't fabricate an absent
+      // radial from a missing value; only call it absent when we KNOW SBP<80.
+      const sitePalpable = inArrest || pulse <= 0 ? false
+        : where === 'radial' ? (sbp === 0 || sbp >= 80)
+          : true;
+      const Where = `${where.charAt(0).toUpperCase()}${where.slice(1)}`;
+      if (inArrest || pulse <= 0) {
+        setPulseCheckResult('absent');
+        setPulseCheckInProgress(false);
         toast.error('No pulse detected', {
           description: `No ${where} pulse palpable — patient is pulseless. Consider the cardiac arrest protocol.`,
           duration: 8000,
         });
-      } else {
-        toast.success('Pulse present', {
-          description: `${where.charAt(0).toUpperCase()}${where.slice(1)} pulse palpable — rate approximately ${currentVitals?.pulse || '?'} bpm.`,
-          duration: 5000,
-        });
+        return;
       }
+      if (!sitePalpable) {
+        // Radial gone but a central pulse is still there — classic shock finding.
+        setPulseCheckResult('absent');
+        setPulseCheckInProgress(false);
+        toast('Radial pulse absent', {
+          description: `No radial pulse — suggests systolic BP under ~80 mmHg. Palpate a central (carotid) pulse and treat for shock.`,
+          duration: 8000,
+        });
+        return;
+      }
+      // Pulse character + capillary refill — what you actually feel on the finger.
+      const rhythm = String(patientState?.currentRhythm ?? '');
+      const irregular = /fib|flutter|irregular|ectopic|bigemin|\baf\b/i.test(rhythm);
+      const character = (sbp > 0 && sbp < 90) || pulse > 130 ? 'weak and thready'
+        : sbp >= 160 || (pulse < 55 && sbp >= 110) ? 'strong and bounding'
+          : 'good volume';
+      const crt = currentCase?.abcde?.circulation?.capillaryRefill;
+      const crtTxt = where === 'radial' && typeof crt === 'number'
+        ? ` Capillary refill ${crt}s at the fingertip — ${crt > 2 ? 'delayed, poor peripheral perfusion' : 'normal'}.`
+        : '';
+      setPulseCheckResult('present');
+      setPulseCheckInProgress(false);
+      toast.success(`${Where} pulse present`, {
+        description: `Rate ~${pulse} bpm, ${irregular ? 'irregular' : 'regular'}, ${character}.${crtTxt}`,
+        duration: 6000,
+      });
     }, 5000);
-  }, [pulseCheckInProgress, currentVitals, patientState]);
+  }, [pulseCheckInProgress, currentVitals, patientState, currentCase]);
   const [cprCycleTimer, setCprCycleTimer] = useState(120); // 2 min countdown
   const [cprCycleNumber, setCprCycleNumber] = useState(0);
   const [cprRunning, setCprRunning] = useState(false);
