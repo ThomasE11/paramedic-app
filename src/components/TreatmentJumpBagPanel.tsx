@@ -918,8 +918,14 @@ export function TreatmentJumpBagPanel({
       || treatment.category.toLowerCase().includes(query)
       || treatment.effects.some(effect => String(effect.vitalSign).toLowerCase().includes(query));
 
-    return TREATMENTS
-      .filter(treatment => query ? matchesQuery(treatment) : treatmentBelongsToBag(treatment, activeBag))
+    // Search the OPEN bag first ("open the pouch → search it"), so typing
+    // filters the current bag in place instead of dumping every bag's items.
+    // Only fall back to all bags when nothing in this bag matches, so a
+    // treatment is always findable without losing your place.
+    const inBag = TREATMENTS.filter(treatment => treatmentBelongsToBag(treatment, activeBag));
+    const inBagMatches = query ? inBag.filter(matchesQuery) : inBag;
+    const pool = query && inBagMatches.length === 0 ? TREATMENTS.filter(matchesQuery) : inBagMatches;
+    return pool
       .sort((a, b) => {
         const aSuggested = suggestedIds.has(a.id) ? 1 : 0;
         const bSuggested = suggestedIds.has(b.id) ? 1 : 0;
@@ -1687,7 +1693,7 @@ export function TreatmentJumpBagPanel({
             type="text"
             value={medSearch}
             onChange={event => setMedSearch(event.target.value)}
-            placeholder="Search all bags: oxygen, airway, pain, IV, adrenaline..."
+            placeholder={`Search ${activeBag.label} — drug or device…`}
             className="glass-control h-10 w-full rounded-lg border border-border pl-8 pr-9 text-xs font-medium outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/15"
           />
           {medSearch && (
@@ -1727,7 +1733,7 @@ export function TreatmentJumpBagPanel({
 
       <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
           {TREATMENT_JUMP_BAGS.map(bag => {
-            const isActive = activeBag.key === bag.key && !query;
+            const isActive = activeBag.key === bag.key;
             const treatmentCount = TREATMENTS.filter(treatment => treatmentBelongsToBag(treatment, bag)).length;
             const appliedCount = appliedTreatments.filter(applied => {
               const treatment = TREATMENTS.find(item => item.id === applied.id);

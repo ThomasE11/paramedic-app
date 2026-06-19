@@ -693,7 +693,7 @@ function EquipmentPin({ tone, src, bare = false }: { tone: EquipTone; src: strin
   // chrome, so it reads as a worn device rather than an icon button.
   if (bare) {
     return (
-      <div className="pointer-events-none h-12 w-12 animate-in fade-in zoom-in-75 duration-200 drop-shadow-[0_3px_5px_rgba(8,47,73,0.4)]">
+      <div className="pointer-events-none h-8 w-8 animate-in fade-in zoom-in-75 duration-200 drop-shadow-[0_3px_5px_rgba(8,47,73,0.4)]">
         <img src={src} alt="" className="h-full w-full object-contain" draggable={false} />
       </div>
     );
@@ -761,7 +761,7 @@ function TreatmentEquipmentOverlay({
   return (
     <>
       {equipment.oxygen && (
-        <MarkerHtml position={anchor(0, 1.55, 0.215)} distanceFactor={1.9} zIndexRange={[76, 0]} interactive={false}>
+        <MarkerHtml position={anchor(0.05, 1.52, 0.215)} distanceFactor={1.5} zIndexRange={[76, 0]} interactive={false}>
           <EquipmentPin tone="oxygen" src={OXYGEN_SRC[equipment.oxygen.mode]} bare />
         </MarkerHtml>
       )}
