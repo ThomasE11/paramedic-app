@@ -36,7 +36,7 @@ import {
   type PatientRealismCue,
   type PatientRealismProfile,
   type RealismSeverity,
-} from '@/lib/patientRealism';
+} from '@/data/clinicalRealism';
 
 const TOTAL_REGIONS = 11;
 type OrbitControlsHandle = ElementRef<typeof OrbitControls>;

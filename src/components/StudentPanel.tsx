@@ -70,7 +70,7 @@ import {
   determineSeverityFromVitals,
 } from '@/data/treatmentProtocols';
 import { checkRuntimeContraindications } from '@/lib/runtimeContraindications';
-import { evaluateTreatmentRealism } from '@/lib/patientRealism';
+import { evaluateTreatmentRealism } from '@/data/clinicalRealism';
 import {
   buildReactionForTreatment,
   projectReactionVitals,
