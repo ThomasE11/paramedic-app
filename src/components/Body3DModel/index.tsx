@@ -121,8 +121,9 @@ const EXAM_LANDMARKS: ExamLandmark[] = [
   { id: 'airway-overview', region: 'neck-cspine', label: 'Airway / neck', sublabel: 'mouth, trachea, JVD', position: [0.0, 1.46, 0.22], level: 'overview', tone: 'airway' },
   { id: 'chest-overview', region: 'chest', label: 'Chest', sublabel: 'rise, wall, lungs, heart', position: [0.02, 1.27, 0.20], level: 'overview', tone: 'breathing' },
   { id: 'abdomen-overview', region: 'abdomen', label: 'Abdomen', sublabel: 'quadrants, guarding', position: [0.03, 1.02, 0.24], level: 'overview', tone: 'abdomen' },
-  { id: 'radial-overview', region: 'right-arm', label: 'Radial pulse', sublabel: 'CRT / motor', position: [-0.18, 0.82, 0.20], level: 'overview', tone: 'circulation' },
   // Minimal anatomical pulse points — click to check (works from any view).
+  // (Removed the duplicate 'radial-overview' dot that sat ~2 cm from
+  // 'pulse-radial-r' on the same wrist — it created the cluttered arm cluster.)
   { id: 'pulse-carotid', region: 'neck-cspine', label: 'Carotid', sublabel: 'central pulse', position: [-0.12, 1.39, 0.20], level: 'overview', actionId: 'pulse-carotid', tone: 'circulation' },
   { id: 'pulse-radial-r', region: 'right-arm', label: 'Radial', sublabel: 'wrist pulse', position: [-0.20, 0.80, 0.18], level: 'overview', actionId: 'pulse-radial', tone: 'circulation' },
   { id: 'pulse-radial-l', region: 'left-arm', label: 'Radial', sublabel: 'wrist pulse', position: [0.20, 0.80, 0.18], level: 'overview', actionId: 'pulse-radial', tone: 'circulation' },
@@ -340,10 +341,10 @@ function LandmarkMarkers({
                 }
                 onSelect(marker.region);
               }}
-              className={`group pointer-events-auto relative flex items-center justify-center ${isDetail ? 'h-3 w-3' : 'h-4 w-4'}`}
+              className={`group pointer-events-auto relative flex items-center justify-center ${isDetail ? 'h-2.5 w-2.5' : 'h-3 w-3'}`}
               title={`${marker.label} — ${marker.sublabel}`}
             >
-              <span className={`block rounded-full ring-[1.5px] ring-white/85 shadow-md transition-transform duration-150 group-hover:scale-125 ${isDetail ? 'h-1 w-1' : 'h-2.5 w-2.5'} ${dotColor}`} />
+              <span className={`block rounded-full ring-1 ring-white/80 shadow-md transition-transform duration-150 group-hover:scale-150 ${isDetail ? 'h-1 w-1' : 'h-1.5 w-1.5'} ${dotColor}`} />
               {!isDetail && (
                 <span className={`pointer-events-none absolute left-1/2 top-[125%] z-10 -translate-x-1/2 whitespace-nowrap rounded-md border px-1.5 py-0.5 text-[8px] font-semibold leading-none opacity-0 shadow-lg backdrop-blur-md transition-opacity duration-150 group-hover:opacity-100 ${toneClasses[marker.tone ?? 'neutral']}`}>
                   {marker.label}
