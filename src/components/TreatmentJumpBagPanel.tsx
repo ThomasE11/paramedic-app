@@ -15,6 +15,7 @@ import {
   Ambulance,
   Brain,
   CheckCircle2,
+  ChevronDown,
   ClipboardCheck,
   Clock,
   Droplets,
@@ -346,6 +347,12 @@ const MED_GROUP_TONE: Record<string, string> = {
   resus: '#ef4444', anaphylaxis: '#f97316', cardiac: '#2563eb', respiratory: '#06b6d4',
   analgesia: '#0ea5e9', sedation: '#7c3aed', glycaemic: '#f59e0b', antiemetic: '#64748b',
   tox: '#0f766e', rsi: '#9333ea', infusion: '#475569', other: '#64748b',
+};
+
+const MED_GROUP_LABEL: Record<string, string> = {
+  resus: 'Resuscitation', anaphylaxis: 'Anaphylaxis', cardiac: 'Cardiac', respiratory: 'Respiratory',
+  analgesia: 'Analgesia', sedation: 'Sedation', glycaemic: 'Glycaemic', antiemetic: 'Antiemetic',
+  tox: 'Toxicology / antidotes', rsi: 'RSI', infusion: 'Infusions', other: 'Other',
 };
 
 function medGroup(id: string, name: string): string {
@@ -877,6 +884,11 @@ export function TreatmentJumpBagPanel({
   applyTreatment,
 }: TreatmentJumpBagPanelProps) {
   const [stagedEquipmentId, setStagedEquipmentId] = useState<string | null>(null);
+  // Per-clinical-group expand/collapse override for the medication pouch (68
+  // drugs is overwhelming as a flat list). Undefined = use the auto rule
+  // (expand only groups holding a suggested/applied drug); a boolean = the
+  // student explicitly toggled that group.
+  const [medGroupOverride, setMedGroupOverride] = useState<Record<string, boolean>>({});
   const activeBag = TREATMENT_JUMP_BAGS.find(bag => bag.key === activeManagementTab) ?? TREATMENT_JUMP_BAGS[0];
   const equipmentItems = BAG_EQUIPMENT[activeBag.key] ?? [];
   const stagedEquipment = equipmentItems.find(item => item.id === stagedEquipmentId) ?? null;
@@ -973,6 +985,45 @@ export function TreatmentJumpBagPanel({
     const treatment = TREATMENTS.find(candidate => candidate.id === item.treatmentId);
     if (treatment) applyTreatment(treatment);
   };
+
+  // The medication pouch holds ~68 drugs — a flat list is overwhelming. When
+  // browsing it (not searching), fold the drugs into collapsible clinical
+  // groups, auto-expanding only the ones holding a suggested or already-given
+  // drug so the relevant agents are visible and the rest stay tucked away.
+  // Other bags (≤20 items) and any active search render as a flat list.
+  type RowEntry =
+    | { type: 'row'; treatment: Treatment }
+    | { type: 'header'; key: string; label: string; tone: string; count: number; given: number; expanded: boolean };
+  const isMedGrouped = activeBag.key === 'medications' && !query && filteredTreatments.length > 1;
+  const displayEntries: RowEntry[] = [];
+  if (isMedGrouped) {
+    const byGroup = new Map<string, Treatment[]>();
+    for (const treatment of filteredTreatments) {
+      const group = medGroup(treatment.id, treatment.name);
+      const bucket = byGroup.get(group) ?? byGroup.set(group, []).get(group)!;
+      bucket.push(treatment);
+    }
+    const ordered = MED_GROUP_ORDER.filter(group => byGroup.has(group));
+    const isRelevant = (items: Treatment[]) =>
+      items.some(treatment => suggestedIds.has(treatment.id) || appliedTreatmentIds.includes(treatment.id));
+    const anyRelevant = ordered.some(group => isRelevant(byGroup.get(group)!));
+    ordered.forEach((group, index) => {
+      const items = byGroup.get(group)!;
+      const expanded = medGroupOverride[group] ?? (isRelevant(items) || (!anyRelevant && index === 0));
+      displayEntries.push({
+        type: 'header',
+        key: group,
+        label: MED_GROUP_LABEL[group] ?? group,
+        tone: MED_GROUP_TONE[group] ?? '#64748b',
+        count: items.length,
+        given: items.filter(treatment => appliedTreatmentIds.includes(treatment.id)).length,
+        expanded,
+      });
+      if (expanded) for (const treatment of items) displayEntries.push({ type: 'row', treatment });
+    });
+  } else {
+    for (const treatment of filteredTreatments) displayEntries.push({ type: 'row', treatment });
+  }
 
   return (
     <Card className="glass-panel relative overflow-hidden rounded-2xl border shadow-[0_12px_34px_-24px_rgba(15,23,42,0.45)]">
@@ -1842,7 +1893,28 @@ export function TreatmentJumpBagPanel({
               </div>
             ) : (
               <div className="space-y-2">
-                {filteredTreatments.map(treatment => {
+                {displayEntries.map(entry => {
+                  if (entry.type === 'header') {
+                    return (
+                      <button
+                        key={`group-${entry.key}`}
+                        type="button"
+                        onClick={() => setMedGroupOverride(prev => ({ ...prev, [entry.key]: !entry.expanded }))}
+                        className="flex w-full items-center justify-between gap-2 rounded-lg border border-slate-200 bg-muted/40 px-2.5 py-1.5 text-left transition hover:bg-muted/70 dark:border-slate-800"
+                      >
+                        <span className="flex min-w-0 items-center gap-2">
+                          <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: entry.tone }} />
+                          <span className="truncate text-[11px] font-bold">{entry.label}</span>
+                          <Badge variant="outline" className="h-4 shrink-0 px-1.5 text-[8px]">{entry.count}</Badge>
+                          {entry.given > 0 && (
+                            <Badge className="h-4 shrink-0 bg-green-600 px-1.5 text-[8px]">{entry.given} given</Badge>
+                          )}
+                        </span>
+                        <ChevronDown className={`h-3.5 w-3.5 shrink-0 transition-transform ${entry.expanded ? 'rotate-180' : ''}`} />
+                      </button>
+                    );
+                  }
+                  const treatment = entry.treatment;
                   const isApplied = appliedTreatmentIds.includes(treatment.id);
                   const isCurrentlyApplying = applyingTreatmentId === treatment.id;
                   const coreTemp = currentVitals.temperature ?? 37;
