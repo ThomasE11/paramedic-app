@@ -104,6 +104,26 @@ const blob = await exportSessionToPDF({
     }],
   },
   assessmentItems,
+  smartGrade: {
+    overall: 95,
+    band: { label: 'Excellent', tone: 'excellent' },
+    dimensions: [
+      { key: 'assessment', label: 'Assessment & Recognition', score: 96, summary: 'Systematic ABCDE; key findings identified.' },
+      { key: 'management', label: 'Clinical Management', score: 94, summary: 'Adrenaline-first, oxygen and fluids supported.' },
+      { key: 'timing', label: 'Timing & Efficiency', score: 90, summary: 'Prompt first intervention.' },
+      { key: 'safety', label: 'Patient Safety', score: 100, summary: 'No contraindicated or allergenic drugs given.' },
+    ],
+    strengths: ['Strong systematic assessment (ABCDE).', 'Interventions improved oxygenation.'],
+    improvements: ['Reassess after each intervention.'],
+    narrative: 'Excellent performance. Systematic, thorough assessment with the decisive intervention given early.',
+  },
+  transport: {
+    priority: 'lights',
+    position: 'Sitting Upright',
+    preAlert: true,
+    destination: 'Nearest ED',
+    provisionalDiagnosis: 'Anaphylaxis',
+  },
   download: false,
 });
 

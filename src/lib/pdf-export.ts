@@ -20,6 +20,23 @@ interface ExportOptions {
     penaltyReasons: { label: string; amount: number }[];
   };
   assessmentItems?: AssessmentDebriefItem[];
+  /** SmartGrade breakdown — mirrors the on-screen summary so the PDF matches the preview. */
+  smartGrade?: {
+    overall: number;
+    band: { label: string; tone: string };
+    dimensions: { key: string; label: string; score: number; summary: string }[];
+    strengths: string[];
+    improvements: string[];
+    narrative: string;
+  };
+  /** The student's ACTUAL transport/handover decisions (not the case template). */
+  transport?: {
+    priority: string;
+    position: string;
+    preAlert: boolean;
+    destination: string;
+    provisionalDiagnosis: string;
+  };
   /** Skip the browser download when generating a PDF for automated verification. */
   download?: boolean;
 }
@@ -388,6 +405,88 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<Blob> 
     });
     addTextAt(`Adjusted score: ${percentage}%`, margin + 4, penaltyBoxTop + penaltyBoxHeight - 3, FONT.LABEL, 'bold', COLOR.BODY_TEXT);
     yPosition = penaltyBoxTop + penaltyBoxHeight + 3;
+  }
+
+  // ========== PERFORMANCE BREAKDOWN (mirrors the on-screen SmartGrade) ==========
+  if (options.smartGrade) {
+    const sg = options.smartGrade;
+    const dimColor = (s: number): [number, number, number] =>
+      s >= 80 ? COLOR.GREEN : s >= 60 ? COLOR.PRIMARY : s >= 40 ? COLOR.YELLOW : COLOR.RED;
+    checkPageBreak(SECTION_GAP + 40);
+    addSectionHeader('Performance Breakdown');
+
+    addTextAt(`Overall: ${sg.band.label} (${sg.overall}%)`, margin, yPosition, FONT.BODY, 'bold', COLOR.PRIMARY);
+    yPosition += LINE_HEIGHT.BODY + 1;
+    (doc.splitTextToSize(sanitizeText(sg.narrative), contentWidth) as string[]).forEach(line => {
+      addTextAt(line, margin, yPosition, FONT.LABEL, 'normal', COLOR.MUTED);
+      yPosition += LINE_HEIGHT.LABEL;
+    });
+    yPosition += 2;
+
+    sg.dimensions.forEach(d => {
+      checkPageBreak(14);
+      addTextAt(d.label, margin, yPosition, FONT.BODY, 'bold', COLOR.BODY_TEXT);
+      addTextAt(`${d.score}%`, margin + contentWidth - 12, yPosition, FONT.BODY, 'bold', dimColor(d.score));
+      yPosition += LINE_HEIGHT.BODY - 1;
+      addFilledRoundedRect(margin, yPosition, contentWidth, 2, 1, COLOR.BORDER_GRAY);
+      addFilledRoundedRect(margin, yPosition, Math.max(0.5, (contentWidth * d.score) / 100), 2, 1, dimColor(d.score));
+      yPosition += 4;
+      (doc.splitTextToSize(sanitizeText(d.summary), contentWidth) as string[]).slice(0, 2).forEach(line => {
+        addTextAt(line, margin, yPosition, FONT.LABEL, 'normal', COLOR.MUTED);
+        yPosition += LINE_HEIGHT.LABEL;
+      });
+      yPosition += 2;
+    });
+
+    if (sg.strengths.length > 0) {
+      checkPageBreak(8 + sg.strengths.length * 4);
+      addTextAt('Strengths', margin, yPosition, FONT.LABEL, 'bold', COLOR.GREEN);
+      yPosition += LINE_HEIGHT.LABEL + 1;
+      sg.strengths.forEach(s => {
+        (doc.splitTextToSize(`+ ${sanitizeText(s)}`, contentWidth - 4) as string[]).forEach(line => {
+          addTextAt(line, margin + 2, yPosition, FONT.LABEL, 'normal', COLOR.BODY_TEXT);
+          yPosition += LINE_HEIGHT.LABEL;
+        });
+      });
+      yPosition += 1;
+    }
+    if (sg.improvements.length > 0) {
+      checkPageBreak(8 + sg.improvements.length * 4);
+      addTextAt('Focus Next', margin, yPosition, FONT.LABEL, 'bold', COLOR.ORANGE);
+      yPosition += LINE_HEIGHT.LABEL + 1;
+      sg.improvements.forEach(s => {
+        (doc.splitTextToSize(`> ${sanitizeText(s)}`, contentWidth - 4) as string[]).forEach(line => {
+          addTextAt(line, margin + 2, yPosition, FONT.LABEL, 'normal', COLOR.BODY_TEXT);
+          yPosition += LINE_HEIGHT.LABEL;
+        });
+      });
+      yPosition += 3;
+    }
+  }
+
+  // ========== TRANSPORT & HANDOVER (the student's actual decisions) ==========
+  if (options.transport) {
+    const t = options.transport;
+    const prio = t.priority === 'lights' ? 'Lights & Sirens'
+      : t.priority === 'urgent' ? 'Urgent (no L&S)'
+        : t.priority === 'routine' ? 'Routine' : t.priority;
+    const rows: [string, string][] = [
+      ['Priority', prio],
+      ['Position', t.position],
+      ['Pre-alert', t.preAlert ? `Yes — ${t.destination || 'receiving hospital'}` : 'No pre-alert'],
+      ['Working Dx', t.provisionalDiagnosis],
+      ['Time on scene', options.elapsedTime || '—'],
+    ];
+    const visible = rows.filter(([, v]) => v && String(v).trim());
+    checkPageBreak(SECTION_GAP + visible.length * 6 + 6);
+    addSectionHeader('Transport & Handover');
+    visible.forEach(([label, val]) => {
+      addTextAt(label, margin, yPosition, FONT.BODY, 'bold', COLOR.BODY_TEXT);
+      const vLines = doc.splitTextToSize(sanitizeText(String(val)), contentWidth - 42) as string[];
+      vLines.forEach((line, i) => addTextAt(line, margin + 42, yPosition + i * LINE_HEIGHT.BODY, FONT.BODY, 'normal', COLOR.MUTED));
+      yPosition += Math.max(LINE_HEIGHT.BODY, vLines.length * LINE_HEIGHT.BODY) + 1.5;
+    });
+    yPosition += 3;
   }
 
   // ========== COMPLETED ACTIONS ==========

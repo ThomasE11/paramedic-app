@@ -5609,6 +5609,8 @@ export function StudentPanel({
                         penaltyReasons: performanceMetrics.penaltyReasons,
                       },
                       assessmentItems: performanceMetrics.assessmentDebrief?.items,
+                      smartGrade: performanceMetrics.smartGrade,
+                      transport: transportDecisions ?? undefined,
                     });
                     toast.dismiss();
                     toast.success('PDF report downloaded');
