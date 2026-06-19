@@ -1538,6 +1538,26 @@ export function StudentPanel({
         if (!prev || !currentCase) return prev;
         if (activeReactionRef.current) return prev; // reaction owns vitals — pause deterioration
         const newState = applyDeterioration(prev, currentCase, 30);
+        // Treatment-aware deterioration. applyDeterioration models the UNTREATED
+        // decline and can drag a vital BELOW what active treatment is currently
+        // holding it at. That fight — treatment pushes SpO2 up, the next
+        // deterioration tick slams it back down, treatment pushes up again — was
+        // the SpO2/BP "sawtooth" that read as a buggy, flickering monitor. While
+        // the sustaining treatment for a vital is running, hold the line (don't
+        // let deterioration worsen it). Arrest still progresses (SpO2 must fall).
+        const tx = Object.keys(prev.treatmentCounts || {}).join(' ').toLowerCase();
+        if (!prev.isInArrest) {
+          if (/oxygen|rebreather|nasal|_mask|cpap|bipap|bvm|ventilat|nebuli[sz]|salbutamol|ipratropium|high.?flow/.test(tx)) {
+            newState.vitals.spo2 = Math.max(newState.vitals.spo2, prev.vitals.spo2);
+          }
+          if (/fluid|saline|hartmann|crystalloid|bolus|blood|plasma/.test(tx)) {
+            const sysOf = (b: string) => parseInt(String(b).split('/')[0], 10) || 0;
+            if (sysOf(newState.vitals.bp) < sysOf(prev.vitals.bp)) newState.vitals.bp = prev.vitals.bp;
+          }
+        }
+        if (/glucose|dextrose|glucagon/.test(tx) && prev.vitals.bloodGlucose != null && newState.vitals.bloodGlucose != null) {
+          newState.vitals.bloodGlucose = Math.max(newState.vitals.bloodGlucose, prev.vitals.bloodGlucose);
+        }
         if (newState.vitals.spo2 !== prev.vitals.spo2 || newState.vitals.pulse !== prev.vitals.pulse) {
           setCurrentVitals(ensureCompleteVitals(newState.vitals));
         }
