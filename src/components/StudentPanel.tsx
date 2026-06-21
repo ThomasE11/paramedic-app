@@ -102,7 +102,7 @@ import { DebriefingResourcesPanel } from '@/components/DebriefingResourcesPanel'
 import { SceneSurveyPanel, type SceneSurveyResult } from '@/components/SceneSurveyPanel';
 import { VoiceHistoryPanel } from '@/components/VoiceHistoryPanel';
 import { TreatmentJumpBagPanel, type ManagementTab } from '@/components/TreatmentJumpBagPanel';
-import type { HistoryCategory } from '@/lib/historyTaking';
+import { type HistoryCategory, inferPainScore } from '@/lib/historyTaking';
 // InjuryMap retained for a future debrief/instructor summary — not shown in
 // the student exam view (findings must be discovered, not listed up front).
 import { OnboardingTour, useOnboardingTour } from '@/components/OnboardingTour';
@@ -4225,7 +4225,7 @@ export function StudentPanel({
                                 if (readOnly) return;
                                 const reported = currentVitals?.painScore
                                   ?? currentCase?.vitalSignsProgression?.initial?.painScore
-                                  ?? 0;
+                                  ?? (currentCase ? inferPainScore(currentCase) : 0);
                                 setCurrentVitals(prev => prev ? { ...prev, painScore: reported } : prev);
                                 handlePerformAssessment('pain-assessment');
                               }}

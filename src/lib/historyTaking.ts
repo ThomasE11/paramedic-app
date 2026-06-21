@@ -218,6 +218,39 @@ function inferPainRegion(caseData: CaseScenario): string {
 }
 
 /**
+ * Patient mental-status severity, derived from the same vitals the voice
+ * engine uses (so a caller that doesn't have the ResponseContext gets the
+ * identical answer). Severe = hypoxic, hypotensive, or moderately altered.
+ */
+function derivePainSeverity(caseData: CaseScenario): 'mild' | 'severe' {
+  const gcs = caseData.abcde?.disability?.gcs?.total ?? caseData.vitalSignsProgression?.initial?.gcs;
+  const spo2 = caseData.abcde?.breathing?.spo2 ?? caseData.vitalSignsProgression?.initial?.spo2;
+  const sbp = caseData.abcde?.circulation?.bp?.systolic;
+  return ((typeof spo2 === 'number' && spo2 < 88)
+    || (typeof gcs === 'number' && gcs >= 9 && gcs <= 12)
+    || (typeof sbp === 'number' && sbp < 90)) ? 'severe' : 'mild';
+}
+
+/**
+ * THE single source of truth for "how much pain is this patient in" (0–10).
+ * The voice engine (OPQRST severity / current-pain) AND the on-screen pain
+ * button both call this, so they can never contradict each other (the old
+ * button defaulted to 0 = "no pain" while the patient said "it's really bad").
+ * Order: authored painScore → a "N/10" written into disability findings →
+ * inferred from a painful diagnosis (severe 8, otherwise 5) → 0 (no pain).
+ */
+export function inferPainScore(caseData: CaseScenario): number {
+  const authored = caseData.vitalSignsProgression?.initial?.painScore;
+  if (typeof authored === 'number') return authored;
+  const finding = caseData.abcde?.disability?.findings?.join(' ').match(/(\d+)\s*\/\s*10/)?.[1];
+  if (finding) return Number(finding);
+  const dx = String(caseData.expectedFindings?.mostLikelyDiagnosis || '').toLowerCase();
+  const dxPainful = /pain|stemi|\bmi\b|angina|infarct|fracture|appendic|colic|biliary|renal|burn|scald|trauma|injur|dissection|periton|ischaem/.test(dx);
+  if (!dxPainful) return 0;
+  return derivePainSeverity(caseData) === 'severe' ? 8 : 5;
+}
+
+/**
  * Build the patient's answer for a given history category. Returns null
  * when the patient genuinely can't or shouldn't answer (e.g. unknown
  * category with no graceful re-prompt available).
@@ -346,14 +379,11 @@ export function generatePatientResponse(
     }
 
     case 'opqrst-severity': {
-      // Prefer the recorded pain score; else infer from severity context.
-      const vitalsPain = caseData.vitalSignsProgression?.initial?.painScore;
-      const findingPain = caseData.abcde?.disability?.findings?.join(' ').match(/(\d+)\s*\/\s*10/)?.[1];
-      const num = (typeof vitalsPain === 'number' ? String(vitalsPain) : undefined) ?? findingPain;
-      if (num) return `It's about ${num} out of 10.`;
-      return ctx.severity === 'severe'
-        ? pick([`Nine out of ten — it's the worst I've ever felt.`, `Easily an eight or nine. It's bad.`])
-        : pick([`Maybe a four or five out of ten.`, `It's there but bearable — a three, four maybe.`]);
+      // Single source of truth — matches the on-screen pain button exactly.
+      const score = inferPainScore(caseData);
+      if (score <= 0) return pick([`Honestly, no real pain — I just don't feel right.`, `It's not pain so much... I just feel off.`]);
+      if (score >= 8) return pick([`It's about ${score} out of 10 — the worst I've ever felt.`, `${score} out of 10. It's bad.`]);
+      return `It's about ${score} out of 10.`;
     }
 
     case 'opqrst-time':
@@ -381,12 +411,9 @@ export function generatePatientResponse(
     }
 
     case 'pain-current': {
-      // Don't invent pain. If the case carries no real pain (e.g. syncope,
-      // hypoglycaemia) the patient should say so rather than claim soreness.
-      const painScore = caseData.vitalSignsProgression?.initial?.painScore;
-      const dxPainful = /pain|stemi|\bmi\b|angina|infarct|fracture|appendic|colic|biliary|renal|burn|scald|trauma|injur|dissection|periton|ischaem/.test(dx);
-      const noPain = (typeof painScore === 'number' && painScore <= 1)
-        || (painScore === undefined && !dxPainful);
+      // Don't invent pain. Same source as the pain button / OPQRST severity so
+      // "any pain?" can never contradict the rated score.
+      const noPain = inferPainScore(caseData) <= 1;
       if (noPain) {
         return hesitate(pick([
           `No, not really any pain — I just felt dizzy and faint.`,
