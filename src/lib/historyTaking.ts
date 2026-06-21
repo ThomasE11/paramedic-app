@@ -250,6 +250,44 @@ export function inferPainScore(caseData: CaseScenario): number {
   return derivePainSeverity(caseData) === 'severe' ? 8 : 5;
 }
 
+// Patient identity. Cases don't carry a name, so derive a stable, plausible
+// one from the case id (same case → same name every render) using gender-
+// matched, culturally-coherent buckets reflecting the UAE patient mix. Lets
+// "what's your name?" get a real answer instead of a generic re-prompt.
+const NAME_BUCKETS: Array<{ male: string[]; female: string[]; last: string[] }> = [
+  { // Emirati / Arab
+    male: ['Mohammed', 'Ahmed', 'Omar', 'Khalid', 'Rashid', 'Saeed', 'Hamdan', 'Tariq'],
+    female: ['Aisha', 'Fatima', 'Maryam', 'Noura', 'Layla', 'Hessa', 'Reem', 'Shaikha'],
+    last: ['Al Marri', 'Al Mansoori', 'Al Hashimi', 'Al Suwaidi', 'Al Nuaimi', 'Al Balushi'],
+  },
+  { // South Asian
+    male: ['Rajesh', 'Arun', 'Vikram', 'Suresh', 'Imran', 'Bilal', 'Pradeep', 'Anil'],
+    female: ['Priya', 'Anjali', 'Deepa', 'Sunita', 'Ayesha', 'Fariha', 'Meera', 'Nisha'],
+    last: ['Khan', 'Kumar', 'Sharma', 'Patel', 'Iqbal', 'Reddy', "D'Souza", 'Nair'],
+  },
+  { // Western expat
+    male: ['James', 'David', 'Michael', 'Daniel', 'Liam', 'Peter', 'Thomas', 'Mark'],
+    female: ['Emma', 'Sarah', 'Hannah', 'Grace', 'Olivia', 'Claire', 'Laura', 'Megan'],
+    last: ['Smith', 'Brown', 'Wilson', 'Taylor', 'Clarke', 'Walker', 'Hughes', 'Bennett'],
+  },
+];
+
+function hashString(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
+/** Stable full name for a case (first + surname from one cultural bucket). */
+export function patientName(caseData: CaseScenario): { full: string; first: string } {
+  const h = hashString(caseData.id || caseData.title || 'patient');
+  const bucket = NAME_BUCKETS[h % NAME_BUCKETS.length];
+  const firsts = caseData.patientInfo?.gender === 'female' ? bucket.female : bucket.male;
+  const first = firsts[(h >> 3) % firsts.length];
+  const last = bucket.last[(h >> 6) % bucket.last.length];
+  return { full: `${first} ${last}`, first };
+}
+
 /**
  * Build the patient's answer for a given history category. Returns null
  * when the patient genuinely can't or shouldn't answer (e.g. unknown
@@ -286,16 +324,23 @@ export function generatePatientResponse(
   const dx = String(caseData.expectedFindings?.mostLikelyDiagnosis || '').toLowerCase();
 
   switch (category) {
-    case 'introduction':
+    case 'introduction': {
+      const { first } = patientName(caseData);
+      if (ctx.altered) return pick([`Hello... I'm ${first}, I think. It's all a bit fuzzy.`, `I'm... ${first}. Sorry, I feel really off.`]);
       return pick([
-        `Hello... yes, I can hear you.`,
-        `Hi... thank you for coming.`,
-        `Oh, thank god you're here.`,
+        `Hello... I'm ${first}. Yes, I can hear you.`,
+        `Hi, I'm ${first}... thank you for coming.`,
+        `Oh, thank god you're here. I'm ${first}.`,
       ]);
+    }
 
-    case 'orientation':
-      if (ctx.altered) return pick([`I... I'm not sure where... what year is it?`, `Where... where am I? I feel funny.`]);
-      return `Yes — I know who I am, I know where I am, and I know roughly the time. ${pick(['I feel a bit shaken though.', "I'm just not feeling right."])}`;
+    case 'orientation': {
+      const { full, first } = patientName(caseData);
+      // Person is preserved longest — an altered patient still knows their
+      // name but is hazy on place/time (realistic A&O grading).
+      if (ctx.altered) return pick([`I'm ${first}... but where am I? What year is it?`, `${first}... that's my name. But where... I feel funny.`]);
+      return `I'm ${full} — I know where I am, and roughly the time. ${pick(['I feel a bit shaken though.', "I'm just not feeling right."])}`;
+    }
 
     case 'allergies': {
       const real = hasRealAllergies(h?.allergies);
