@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import {
   Activity,
   Ambulance,
+  ArrowDownAZ,
   Brain,
   CheckCircle2,
   ChevronDown,
@@ -470,6 +471,20 @@ const BAG_EQUIPMENT: Record<ManagementTab, EquipmentInventoryItem[]> = {
   ],
 };
 
+// The richest per-treatment image lookup: every drug photo (MED_ASSET_BY_ID)
+// plus every featured-card image (BAG_EQUIPMENT), keyed by treatment id. The
+// unified treatment panel resolves row images through this so it shows the same
+// product art the old separate image board used to — no more CSS-only drugs.
+const ASSET_BY_TREATMENT_ID: Record<string, string> = {
+  ...MED_ASSET_BY_ID,
+  ...Object.fromEntries(
+    Object.values(BAG_EQUIPMENT)
+      .flat()
+      .filter(item => item.treatmentId && item.assetPath)
+      .map(item => [item.treatmentId as string, item.assetPath as string]),
+  ),
+};
+
 function getProductMiniatureKind(treatment: Treatment): ProductMiniatureKind {
   const id = treatment.id.toLowerCase();
   const text = `${treatment.name} ${treatment.description}`.toLowerCase();
@@ -483,6 +498,8 @@ function getProductMiniatureKind(treatment: Treatment): ProductMiniatureKind {
 }
 
 function getProductMiniatureAsset(treatment: Treatment, kind: ProductMiniatureKind): string {
+  const direct = ASSET_BY_TREATMENT_ID[treatment.id];
+  if (direct) return direct;
   const id = treatment.id.toLowerCase();
   if (id === 'oxygen_nasal') return PRODUCT_ASSET_PATHS.nasal;
   if (id === 'oxygen_nonrebreather') return PRODUCT_ASSET_PATHS.nonrebreather;
@@ -623,241 +640,6 @@ function JumpBagIllustration({
   );
 }
 
-function EquipmentReplica({
-  item,
-  bag,
-  isApplied,
-}: {
-  item: EquipmentInventoryItem;
-  bag: TreatmentJumpBag;
-  isApplied: boolean;
-}) {
-  const tone = item.tone ?? bag.bagColor;
-  const style = {
-    '--equipment-color': tone,
-    '--equipment-soft': `${tone}22`,
-  } as CSSProperties;
-
-  return (
-    <div
-      className={`equipment-replica ${item.wide ? 'equipment-replica-wide' : ''} ${isApplied ? 'equipment-replica-applied' : ''}`}
-      style={style}
-      aria-hidden="true"
-    >
-      {item.assetPath ? (
-        <img src={item.assetPath} alt="" className="h-full w-full object-contain" draggable={false} />
-      ) : (
-        <CssEquipmentArt art={item.art ?? 'case'} />
-      )}
-    </div>
-  );
-}
-
-function CssEquipmentArt({ art }: { art: EquipmentArtKind }) {
-  switch (art) {
-    case 'oxygen-cylinder':
-      return (
-        <div className="eq-cylinder">
-          <span className="eq-cylinder-valve" />
-          <span className="eq-cylinder-body" />
-          <span className="eq-cylinder-label">O2</span>
-        </div>
-      );
-    case 'suction':
-      return (
-        <div className="eq-suction">
-          <span className="eq-suction-handle" />
-          <span className="eq-suction-body" />
-          <span className="eq-suction-canister" />
-          <span className="eq-suction-tube" />
-        </div>
-      );
-    case 'aed':
-      return (
-        <div className="eq-aed">
-          <span className="eq-aed-screen" />
-          <span className="eq-aed-bolt">AED</span>
-        </div>
-      );
-    case 'tourniquet':
-      return (
-        <div className="eq-tourniquet">
-          <span />
-          <span />
-        </div>
-      );
-    case 'collar':
-      return (
-        <div className="eq-collar">
-          <span className="eq-collar-shell" />
-          <span className="eq-collar-chin" />
-        </div>
-      );
-    case 'splint':
-      return (
-        <div className="eq-splints">
-          <span />
-          <span />
-          <span />
-        </div>
-      );
-    case 'bandage':
-      return (
-        <div className="eq-bandage">
-          <span />
-          <span />
-          <span />
-        </div>
-      );
-    case 'blanket':
-      return (
-        <div className="eq-blanket">
-          <span />
-          <span />
-          <span />
-        </div>
-      );
-    case 'vial':
-      return (
-        <div className="eq-vials">
-          <span />
-          <span />
-          <span />
-        </div>
-      );
-    case 'syringe':
-      return (
-        <div className="eq-syringe">
-          <span className="eq-syringe-barrel" />
-          <span className="eq-syringe-plunger" />
-          <span className="eq-syringe-needle" />
-        </div>
-      );
-    case 'tablet':
-      return (
-        <div className="eq-tablets">
-          <span />
-          <span />
-          <span />
-        </div>
-      );
-    case 'glucose':
-      return (
-        <div className="eq-glucose">
-          <span>GLU</span>
-        </div>
-      );
-    case 'cooling':
-      return (
-        <div className="eq-cooling">
-          <span />
-          <span />
-        </div>
-      );
-    case 'position':
-      return (
-        <div className="eq-position">
-          <span />
-          <span />
-          <span />
-        </div>
-      );
-    case 'case':
-    default:
-      return (
-        <div className="eq-case">
-          <span />
-          <span />
-        </div>
-      );
-  }
-}
-
-function EquipmentInventoryBoard({
-  bag,
-  items,
-  appliedTreatmentIds,
-  applyingTreatmentId,
-  stagedItemId,
-  currentVitals,
-  onSelect,
-}: {
-  bag: TreatmentJumpBag;
-  items: EquipmentInventoryItem[];
-  appliedTreatmentIds: string[];
-  applyingTreatmentId: string | null;
-  stagedItemId: string | null;
-  currentVitals: VitalSigns | null;
-  onSelect: (item: EquipmentInventoryItem) => void;
-}) {
-  return (
-    <div
-      className="equipment-board overflow-hidden rounded-xl border p-2.5"
-      style={bagStyleVars(bag)}
-    >
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-2">
-          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[10px] font-black text-white shadow-sm" style={{ backgroundColor: bag.bagColor }}>
-            {TREATMENT_JUMP_BAGS.findIndex(item => item.key === bag.key) + 1}
-          </span>
-          <div className="min-w-0">
-            <p className="truncate text-[10px] font-black uppercase tracking-[0.18em] text-white/90">
-              {bag.key === 'airway' ? 'Airway & Oxygen' : bag.label}
-            </p>
-            <p className="truncate text-[9px] text-cyan-100/70">Open kit inventory · tap equipment to apply</p>
-          </div>
-        </div>
-        <Badge variant="outline" className="h-5 border-white/20 bg-white/10 text-[9px] text-white">
-          {items.length} tools
-        </Badge>
-      </div>
-
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-        {items.map(item => {
-          const isApplied = Boolean(item.treatmentId && appliedTreatmentIds.includes(item.treatmentId));
-          const isApplying = item.treatmentId === applyingTreatmentId;
-          const isStaged = item.id === stagedItemId;
-          const canApply = Boolean(currentVitals && item.treatmentId && !isApplied);
-
-          return (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => onSelect(item)}
-              disabled={isApplying}
-              aria-label={`${isApplied ? 'Connected' : 'Select'} ${item.label}`}
-              className={`equipment-tile group relative min-h-[106px] rounded-lg border p-1.5 text-left transition disabled:cursor-wait ${
-                isApplied
-                  ? 'border-emerald-300/70 bg-emerald-400/15'
-                  : isStaged
-                    ? 'border-cyan-300/80 bg-cyan-300/15'
-                    : 'border-white/10 bg-white/[0.065] hover:border-white/25 hover:bg-white/[0.11]'
-              }`}
-            >
-              <EquipmentReplica item={item} bag={bag} isApplied={isApplied} />
-              <div className="mt-2 min-w-0">
-                <p className="truncate text-[11px] font-bold text-white">{item.label}</p>
-                <p className="line-clamp-2 text-[9px] leading-snug text-cyan-100/70">{item.caption}</p>
-              </div>
-              <span className={`mt-2 inline-flex h-5 items-center rounded px-1.5 text-[8px] font-bold uppercase tracking-[0.08em] ${
-                isApplied
-                  ? 'bg-emerald-400/20 text-emerald-100'
-                  : isApplying
-                    ? 'bg-amber-400/20 text-amber-100'
-                    : canApply
-                      ? 'bg-white/12 text-white'
-                      : 'bg-white/7 text-white/45'
-              }`}>
-                {isApplied ? 'Connected' : isApplying ? 'Applying' : item.treatmentId ? currentVitals ? 'Apply' : 'Vitals first' : 'Inspect'}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 interface TreatmentJumpBagPanelProps {
   currentVitals: VitalSigns | null;
   appliedTreatments: AppliedTreatment[];
@@ -883,15 +665,16 @@ export function TreatmentJumpBagPanel({
   setMedSearch,
   applyTreatment,
 }: TreatmentJumpBagPanelProps) {
-  const [stagedEquipmentId, setStagedEquipmentId] = useState<string | null>(null);
   // Per-clinical-group expand/collapse override for the medication pouch (68
   // drugs is overwhelming as a flat list). Undefined = use the auto rule
   // (expand only groups holding a suggested/applied drug); a boolean = the
   // student explicitly toggled that group.
   const [medGroupOverride, setMedGroupOverride] = useState<Record<string, boolean>>({});
+  // A–Z toggle: when on, the panel is a flat alphabetical list (no clinical
+  // grouping, no suggested-first reordering) so a known drug/device is fast to
+  // find by name.
+  const [sortAZ, setSortAZ] = useState(false);
   const activeBag = TREATMENT_JUMP_BAGS.find(bag => bag.key === activeManagementTab) ?? TREATMENT_JUMP_BAGS[0];
-  const equipmentItems = BAG_EQUIPMENT[activeBag.key] ?? [];
-  const stagedEquipment = equipmentItems.find(item => item.id === stagedEquipmentId) ?? null;
   const query = medSearch.trim().toLowerCase();
   const systolic = getSystolicFromBp(currentVitals?.bp);
 
@@ -939,6 +722,7 @@ export function TreatmentJumpBagPanel({
     const pool = query && inBagMatches.length === 0 ? TREATMENTS.filter(matchesQuery) : inBagMatches;
     return pool
       .sort((a, b) => {
+        if (sortAZ) return a.name.localeCompare(b.name);
         const aSuggested = suggestedIds.has(a.id) ? 1 : 0;
         const bSuggested = suggestedIds.has(b.id) ? 1 : 0;
         if (aSuggested !== bSuggested) return bSuggested - aSuggested;
@@ -955,7 +739,7 @@ export function TreatmentJumpBagPanel({
 
         return a.name.localeCompare(b.name);
       });
-  }, [activeBag, appliedTreatmentIds, query, suggestedIds]);
+  }, [activeBag, appliedTreatmentIds, query, suggestedIds, sortAZ]);
 
   const lastTreatment = appliedTreatments[appliedTreatments.length - 1];
   const lastBag = lastTreatment ? TREATMENT_JUMP_BAGS.find(bag => {
@@ -975,16 +759,6 @@ export function TreatmentJumpBagPanel({
             ? 'C-spine, comfort, distal pulses, sensation, transport readiness'
             : 'Temperature, pain, skin, comfort';
 
-  const handleEquipmentSelect = (item: EquipmentInventoryItem) => {
-    setStagedEquipmentId(item.id);
-    setMedSearch('');
-
-    if (!currentVitals || !item.treatmentId) return;
-    if (appliedTreatmentIds.includes(item.treatmentId)) return;
-
-    const treatment = TREATMENTS.find(candidate => candidate.id === item.treatmentId);
-    if (treatment) applyTreatment(treatment);
-  };
 
   // The medication pouch holds ~68 drugs — a flat list is overwhelming. When
   // browsing it (not searching), fold the drugs into collapsible clinical
@@ -994,7 +768,7 @@ export function TreatmentJumpBagPanel({
   type RowEntry =
     | { type: 'row'; treatment: Treatment }
     | { type: 'header'; key: string; label: string; tone: string; count: number; given: number; expanded: boolean };
-  const isMedGrouped = activeBag.key === 'medications' && !query && filteredTreatments.length > 1;
+  const isMedGrouped = activeBag.key === 'medications' && !query && !sortAZ && filteredTreatments.length > 1;
   const displayEntries: RowEntry[] = [];
   if (isMedGrouped) {
     const byGroup = new Map<string, Treatment[]>();
@@ -1801,7 +1575,6 @@ export function TreatmentJumpBagPanel({
                 onClick={() => {
                   setActiveManagementTab(bag.key);
                   setMedSearch('');
-                  setStagedEquipmentId(null);
                 }}
                 className={`jump-bag-button group relative min-h-[164px] overflow-hidden rounded-lg border p-2 text-left transition hover:border-slate-300 hover:bg-white/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40 dark:hover:bg-white/[0.08] ${
                   isActive ? bag.selectedClass : 'glass-control border-slate-200 dark:border-slate-800'
@@ -1828,39 +1601,6 @@ export function TreatmentJumpBagPanel({
           })}
         </div>
 
-        {!query && (
-          <EquipmentInventoryBoard
-            bag={activeBag}
-            items={equipmentItems}
-            appliedTreatmentIds={appliedTreatmentIds}
-            applyingTreatmentId={applyingTreatmentId}
-            stagedItemId={stagedEquipmentId}
-            currentVitals={currentVitals}
-            onSelect={handleEquipmentSelect}
-          />
-        )}
-
-        {stagedEquipment && !query && (
-          <div className="glass-control rounded-xl border border-cyan-500/20 px-3 py-2 text-xs">
-            <div className="flex items-center justify-between gap-2">
-              <div className="min-w-0">
-                <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Selected equipment</p>
-                <p className="truncate font-semibold">{stagedEquipment.label}</p>
-                <p className="text-[10px] leading-relaxed text-muted-foreground">
-                  {stagedEquipment.treatmentId && appliedTreatmentIds.includes(stagedEquipment.treatmentId)
-                    ? 'Connected to the patient model and recorded on the resuscitation card.'
-                    : stagedEquipment.treatmentId
-                      ? 'Staged for treatment selection once the patient is ready.'
-                      : 'Inspected from the bag; no linked patient action yet.'}
-                </p>
-              </div>
-              <Badge variant="outline" className="h-5 shrink-0 text-[9px]">
-                {stagedEquipment.treatmentId && appliedTreatmentIds.includes(stagedEquipment.treatmentId) ? 'Connected' : 'Staged'}
-              </Badge>
-            </div>
-          </div>
-        )}
-
         <div className="glass-panel overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
           <div className="flex items-center justify-between border-b border-slate-200 px-3 py-2 dark:border-slate-800">
             <div>
@@ -1871,9 +1611,25 @@ export function TreatmentJumpBagPanel({
                 {query ? 'spanning every bag' : 'dose, apply, repeat, and monitor effects'}
               </p>
             </div>
-            <Badge variant="outline" className="h-5 text-[9px]">
-              {filteredTreatments.length} item{filteredTreatments.length === 1 ? '' : 's'}
-            </Badge>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setSortAZ(v => !v)}
+                aria-pressed={sortAZ}
+                title={sortAZ ? 'Sorted A–Z — tap for clinical order' : 'Sort alphabetically (A–Z)'}
+                className={`flex h-5 items-center gap-1 rounded-md border px-1.5 text-[9px] font-bold transition ${
+                  sortAZ
+                    ? 'border-emerald-400/60 bg-emerald-500/15 text-emerald-700 dark:text-emerald-200'
+                    : 'border-border text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <ArrowDownAZ className="h-3 w-3" />
+                A–Z
+              </button>
+              <Badge variant="outline" className="h-5 text-[9px]">
+                {filteredTreatments.length} item{filteredTreatments.length === 1 ? '' : 's'}
+              </Badge>
+            </div>
           </div>
 
           <div className="max-h-[25rem] overflow-y-auto p-2">
