@@ -4043,7 +4043,7 @@ export function StudentPanel({
                 arrest patient gets this always-at-top alert with the
                 time-critical actions one tap away. ===== */}
             {patientState?.isInArrest && (
-              <div className="mb-4 rounded-2xl border-2 border-red-500/70 bg-red-50/90 p-3 shadow-lg animate-in fade-in slide-in-from-top-2 dark:bg-red-950/40">
+              <div className="sticky top-16 z-30 mb-4 rounded-2xl border-2 border-red-500/70 bg-red-50/95 p-3 shadow-lg backdrop-blur animate-in fade-in slide-in-from-top-2 dark:bg-red-950/70">
                 {!arrestConfirmed ? (
                   <>
                     <div className="flex items-center gap-2">
