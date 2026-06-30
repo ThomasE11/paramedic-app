@@ -4013,6 +4013,57 @@ export function StudentPanel({
               </div>
             )}
 
+            {/* ===== CARDIAC ARREST — top-priority pathway. The on-mannequin
+                pulse dots and the monitor's pulse card sit far down the stacked
+                tablet/phone layout (the assessment column renders first), so an
+                arrest patient gets this always-at-top alert with the
+                time-critical actions one tap away. ===== */}
+            {patientState?.isInArrest && !arrestConfirmed && (
+              <div className="mb-4 rounded-2xl border-2 border-red-500/70 bg-red-50/90 p-3 shadow-lg animate-in fade-in slide-in-from-top-2 dark:bg-red-950/40">
+                <div className="flex items-center gap-2">
+                  <Heart className="h-5 w-5 shrink-0 animate-pulse text-red-600" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-bold text-red-700 dark:text-red-300">Patient unresponsive &amp; pulseless</p>
+                    <p className="text-[11px] text-red-600/90 dark:text-red-300/80">
+                      {pulseCheckInProgress ? 'Checking pulse…'
+                        : pulseCheckResult === 'absent' ? 'No pulse confirmed — start the cardiac arrest protocol.'
+                        : 'Confirm a pulse check to start the cardiac arrest protocol.'}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 border-red-400/50 text-[11px]"
+                    disabled={pulseCheckInProgress || readOnly}
+                    onClick={() => runPulseCheck('pulse-carotid')}
+                  >
+                    <Heart className="h-3.5 w-3.5" /> Check carotid
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 border-red-400/50 text-[11px]"
+                    disabled={pulseCheckInProgress || readOnly}
+                    onClick={() => runPulseCheck('pulse-radial')}
+                  >
+                    <Heart className="h-3.5 w-3.5" /> Check radial
+                  </Button>
+                  {pulseCheckResult === 'absent' && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="animate-pulse gap-2 text-xs font-bold"
+                      onClick={() => { setArrestConfirmed(true); lastActivityRef.current = Date.now(); }}
+                    >
+                      <Zap className="h-3.5 w-3.5" /> Confirm Cardiac Arrest — Start Protocol
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* ===== SPLIT LAYOUT =====
                 Mobile order: Primary Survey -> Anatomy -> Monitor -> Treatment.
                 Desktop: 2-col grid with Monitor + PulseCheck sticky top-right,
