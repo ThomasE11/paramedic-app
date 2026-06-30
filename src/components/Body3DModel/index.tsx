@@ -12,6 +12,7 @@ import { useRef, useCallback, useState, useMemo, useEffect } from 'react';
 import type { CSSProperties, ElementRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, ContactShadows, Html } from '@react-three/drei';
+import { TOUCH } from 'three';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { RotateCcw, User, Eye, Hand, Activity, Stethoscope, X, ChevronRight, ChevronDown, AlertTriangle, Compass, Unlock, Wind, Shirt } from 'lucide-react';
@@ -3778,7 +3779,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
               dpr={Math.min(window.devicePixelRatio, 2)}
               frameloop="always"
               gl={{ antialias: true, alpha: true, preserveDrawingBuffer: new URLSearchParams(window.location.search).has('capture') }}
-              style={{ background: 'transparent' }}
+              style={{ background: 'transparent', touchAction: 'pan-y' }}
               onPointerMissed={() => { if (activeRegion) handleCloseRegion(); }}
             >
               {/* Natural studio lighting: warm sky / cool ground hemisphere for
@@ -3869,6 +3870,13 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
               <OrbitControls
                 ref={controlsRef}
                 enablePan={false}
+                // One-finger touch maps to PAN, which is disabled (enablePan
+                // false) → OrbitControls drops to state NONE and does NOT
+                // preventDefault, so a one-finger swipe SCROLLS THE PAGE on
+                // tablet/phone (the bug: dragging the model used to eat the
+                // scroll, trapping the assessments below it). Taps still select
+                // regions; two fingers rotate + zoom the model.
+                touches={{ ONE: TOUCH.PAN, TWO: TOUCH.DOLLY_ROTATE }}
                 minDistance={activeRegion ? 0.7 : 2}
                 maxDistance={7}
                 minPolarAngle={Math.PI * 0.15}
