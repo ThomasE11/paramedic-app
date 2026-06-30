@@ -1036,6 +1036,17 @@ export interface DeteriorationStage {
   rhythm?: string;
   /** Is this a critical/arrest event? */
   isCritical?: boolean;
+  /**
+   * Treatment ids that, when applied recently (within haltWindowSeconds),
+   * halt this stage's driver — the patient stops deteriorating past this
+   * stage because the underlying problem is being treated. Treatments not
+   * listed here (e.g. oxygen for anaphylaxis) do NOT halt the stage.
+   * Ids match the `id` field in TREATMENTS (enhancedTreatmentEffects.ts).
+   * Undefined = fall back to the blanket "any recent treatment halts" rule.
+   */
+  driverTreatments?: string[];
+  /** How recently a driver treatment must have been applied to halt. Default 60s. */
+  haltWindowSeconds?: number;
 }
 
 /**
@@ -1048,18 +1059,21 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       triggerMinutes: 3,
       vitalChanges: { pulse: 120, spo2: 92, bpSystolicDelta: -5 },
       clinicalSigns: 'Increasing diaphoresis, worsening chest pain, patient becoming more anxious',
+      driverTreatments: ['aspirin', 'gtn_spray', 'oxygen_mask', 'oxygen_nasal', 'oxygen_nonrebreather', 'morphine_5mg', 'fentanyl_50mcg'],
     },
     {
       triggerMinutes: 7,
       vitalChanges: { pulse: 135, spo2: 89, bpSystolicDelta: -15 },
       clinicalSigns: 'PVCs on monitor, BP dropping, skin cool and mottled, pain 9/10',
       rhythm: 'Normal Sinus Rhythm',
+      driverTreatments: ['aspirin', 'gtn_spray', 'oxygen_nonrebreather', 'oxygen_mask', 'morphine_5mg', 'fentanyl_50mcg'],
     },
     {
       triggerMinutes: 12,
       vitalChanges: { pulse: 150, spo2: 85, bpSystolicDelta: -25, respiration: 30 },
       clinicalSigns: 'Runs of VT on monitor, cardiogenic shock developing, crackles in lung bases',
       rhythm: 'Ventricular Tachycardia',
+      driverTreatments: ['aspirin', 'gtn_spray', 'oxygen_nonrebreather', 'morphine_5mg', 'fentanyl_50mcg', 'amiodarone_300mg', 'defibrillation'],
       isCritical: true,
     },
     {
@@ -1067,6 +1081,7 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       vitalChanges: { pulse: 0, spo2: 60, bpSystolicDelta: -90 },
       clinicalSigns: 'VF arrest! No pulse. Begin CPR immediately.',
       rhythm: 'Ventricular Fibrillation',
+      driverTreatments: ['cpr', 'defibrillation', 'adrenaline_1mg', 'amiodarone_300mg', 'intubation', 'bvm_ventilation', 'oxygen_nonrebreather'],
       isCritical: true,
     },
   ],
@@ -1077,11 +1092,13 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       triggerMinutes: 3,
       vitalChanges: { respiration: 36, spo2: 84, pulse: 130 },
       clinicalSigns: 'Accessory muscle use, intercostal recession, audible wheeze, tripod positioning',
+      driverTreatments: ['nebulizer_salbutamol', 'nebulizer_ipratropium', 'oxygen_nonrebreather', 'oxygen_mask', 'hydrocortisone_200mg', 'magnesium_2g', 'adrenaline_im', 'adrenaline_im_child', 'adrenaline_im_older', 'adrenaline_im_infant'],
     },
     {
       triggerMinutes: 8,
       vitalChanges: { respiration: 40, spo2: 78, pulse: 140, bpSystolicDelta: -10 },
       clinicalSigns: 'Silent chest developing — OMINOUS sign. Air entry minimal. Unable to speak.',
+      driverTreatments: ['nebulizer_salbutamol', 'nebulizer_ipratropium', 'oxygen_nonrebreather', 'oxygen_mask', 'hydrocortisone_200mg', 'magnesium_2g', 'adrenaline_im', 'adrenaline_im_child', 'adrenaline_im_older', 'adrenaline_im_infant', 'bvm_ventilation', 'intubation'],
       isCritical: true,
     },
     {
@@ -1089,6 +1106,7 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       vitalChanges: { respiration: 12, spo2: 65, pulse: 50, bpSystolicDelta: -30 },
       clinicalSigns: 'EXHAUSTION — respiratory rate paradoxically dropping. Bradycardia. Peri-arrest.',
       rhythm: 'Sinus Bradycardia',
+      driverTreatments: ['nebulizer_salbutamol', 'nebulizer_ipratropium', 'oxygen_nonrebreather', 'hydrocortisone_200mg', 'magnesium_2g', 'adrenaline_im', 'adrenaline_im_child', 'adrenaline_im_older', 'adrenaline_im_infant', 'bvm_ventilation', 'intubation'],
       isCritical: true,
     },
     {
@@ -1096,6 +1114,7 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       vitalChanges: { respiration: 4, spo2: 40, pulse: 0 },
       clinicalSigns: 'Respiratory arrest progressing to cardiac arrest. PEA/Asystole.',
       rhythm: 'PEA',
+      driverTreatments: ['cpr', 'bvm_ventilation', 'intubation', 'adrenaline_1mg', 'nebulizer_salbutamol', 'nebulizer_ipratropium', 'hydrocortisone_200mg', 'magnesium_2g'],
       isCritical: true,
     },
   ],
@@ -1105,17 +1124,20 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       triggerMinutes: 5,
       vitalChanges: { respiration: 34, spo2: 75, pulse: 115 },
       clinicalSigns: 'Pursed lip breathing, barrel chest, prolonged expiration, use of accessory muscles',
+      driverTreatments: ['oxygen_nasal', 'oxygen_mask', 'nebulizer_salbutamol', 'nebulizer_ipratropium', 'hydrocortisone_200mg'],
     },
     {
       triggerMinutes: 12,
       vitalChanges: { respiration: 38, spo2: 70, pulse: 125, bpSystolicDelta: 10 },
       clinicalSigns: 'CO2 retention — drowsiness, confusion, flapping tremor (asterixis)',
+      driverTreatments: ['oxygen_nasal', 'oxygen_mask', 'nebulizer_salbutamol', 'nebulizer_ipratropium', 'hydrocortisone_200mg', 'bvm_ventilation', 'cpap_niv'],
       isCritical: true,
     },
     {
       triggerMinutes: 20,
       vitalChanges: { respiration: 10, spo2: 60, gcs: 8, bpSystolicDelta: 20 },
       clinicalSigns: 'CO2 narcosis — GCS dropping, hypertension from hypercapnia, apneic episodes',
+      driverTreatments: ['bvm_ventilation', 'intubation', 'cpap_niv', 'nebulizer_salbutamol', 'nebulizer_ipratropium', 'cpr'],
       isCritical: true,
     },
   ],
@@ -1125,11 +1147,13 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       triggerMinutes: 2,
       vitalChanges: { spo2: 78, pulse: 140, bpSystolicDelta: -15, respiration: 38 },
       clinicalSigns: 'Tracheal deviation, distended neck veins, absent breath sounds on affected side',
+      driverTreatments: ['needle_decompression'],
     },
     {
       triggerMinutes: 5,
       vitalChanges: { spo2: 65, pulse: 160, bpSystolicDelta: -35, respiration: 42 },
       clinicalSigns: 'Severe respiratory distress, pulsus paradoxus, mediastinal shift',
+      driverTreatments: ['needle_decompression'],
       isCritical: true,
     },
     {
@@ -1137,6 +1161,7 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       vitalChanges: { spo2: 40, pulse: 30, bpSystolicDelta: -60 },
       clinicalSigns: 'PEA arrest imminent — obstructive shock. Decompress NOW or patient dies.',
       rhythm: 'PEA',
+      driverTreatments: ['needle_decompression', 'cpr'],
       isCritical: true,
     },
   ],
@@ -1144,20 +1169,23 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
   'cardiac-arrest': [
     {
       triggerMinutes: 1,
-      vitalChanges: { spo2: 50, gcs: 3 },
+      vitalChanges: { spo2: 50, gcs: 3, etco2: 20 },
       clinicalSigns: 'No pulse, no breathing. Brain damage begins within 4-6 minutes without CPR.',
+      driverTreatments: ['cpr', 'defibrillation', 'adrenaline_1mg', 'intubation', 'bvm_ventilation', 'oxygen_nonrebreather'],
     },
     {
       triggerMinutes: 4,
-      vitalChanges: { spo2: 20 },
+      vitalChanges: { spo2: 20, etco2: 15 },
       clinicalSigns: 'Irreversible brain damage imminent. Fixed dilated pupils developing.',
+      driverTreatments: ['cpr', 'defibrillation', 'adrenaline_1mg', 'intubation', 'bvm_ventilation', 'oxygen_nonrebreather'],
       isCritical: true,
     },
     {
       triggerMinutes: 10,
-      vitalChanges: { spo2: 0 },
+      vitalChanges: { spo2: 0, etco2: 10 },
       clinicalSigns: 'Prolonged arrest without intervention. Survival unlikely.',
       rhythm: 'Asystole',
+      driverTreatments: ['cpr', 'defibrillation', 'adrenaline_1mg', 'intubation', 'bvm_ventilation', 'oxygen_nonrebreather'],
       isCritical: true,
     },
   ],
@@ -1167,17 +1195,20 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       triggerMinutes: 2,
       vitalChanges: { pulse: 130, bpSystolicDelta: -20, respiration: 30, spo2: 90 },
       clinicalSigns: 'Urticaria spreading, facial swelling, stridor developing, tachycardia',
+      driverTreatments: ['adrenaline_im', 'adrenaline_im_child', 'adrenaline_im_older', 'adrenaline_im_infant', 'adrenaline_infusion'],
     },
     {
       triggerMinutes: 5,
       vitalChanges: { pulse: 150, bpSystolicDelta: -40, respiration: 36, spo2: 80 },
       clinicalSigns: 'Severe angioedema, audible stridor, wheeze, distributive shock',
+      driverTreatments: ['adrenaline_im', 'adrenaline_im_child', 'adrenaline_im_older', 'adrenaline_im_infant', 'adrenaline_infusion', 'intubation', 'bvm_ventilation'],
       isCritical: true,
     },
     {
       triggerMinutes: 8,
       vitalChanges: { pulse: 160, bpSystolicDelta: -60, respiration: 8, spo2: 60 },
       clinicalSigns: 'Complete airway obstruction, cardiovascular collapse, peri-arrest',
+      driverTreatments: ['adrenaline_im', 'adrenaline_im_child', 'adrenaline_im_older', 'adrenaline_im_infant', 'adrenaline_infusion', 'intubation', 'bvm_ventilation', 'cpr', 'adrenaline_1mg'],
       isCritical: true,
     },
   ],
@@ -1187,17 +1218,20 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       triggerMinutes: 2,
       vitalChanges: { pulse: 120, bpSystolicDelta: -15, spo2: 95 },
       clinicalSigns: 'Class II hemorrhage: tachycardia, cool extremities, narrowing pulse pressure',
+      driverTreatments: ['tourniquet', 'bleeding_control', 'pelvic_binder', 'fluids_250ml', 'fluids_500ml', 'fluids_1000ml'],
     },
     {
       triggerMinutes: 5,
       vitalChanges: { pulse: 140, bpSystolicDelta: -35, spo2: 92, respiration: 28 },
       clinicalSigns: 'Class III hemorrhage: confused, markedly tachycardic, cold/clammy, SBP dropping',
+      driverTreatments: ['tourniquet', 'bleeding_control', 'pelvic_binder', 'fluids_500ml', 'fluids_1000ml'],
       isCritical: true,
     },
     {
       triggerMinutes: 10,
       vitalChanges: { pulse: 150, bpSystolicDelta: -55, spo2: 85, gcs: 10, respiration: 35 },
       clinicalSigns: 'Class IV hemorrhage: moribund, obtunded, thread pulse, imminent arrest',
+      driverTreatments: ['tourniquet', 'bleeding_control', 'pelvic_binder', 'fluids_500ml', 'fluids_1000ml', 'cpr'],
       isCritical: true,
     },
   ],
@@ -1228,17 +1262,20 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       triggerMinutes: 5,
       vitalChanges: { gcs: 12, pulse: 110, bloodGlucose: 2.5 },
       clinicalSigns: 'Diaphoresis, tremor, confusion, slurred speech, combative behavior',
+      driverTreatments: ['glucose_10g', 'glucagon_1mg', 'dextrose_10'],
     },
     {
       triggerMinutes: 10,
       vitalChanges: { gcs: 8, pulse: 120, bloodGlucose: 1.8 },
       clinicalSigns: 'Seizure risk increasing, obtundation, unable to protect airway',
+      driverTreatments: ['glucose_10g', 'glucagon_1mg', 'dextrose_10'],
       isCritical: true,
     },
     {
       triggerMinutes: 15,
       vitalChanges: { gcs: 4, pulse: 55, bloodGlucose: 1.0 },
       clinicalSigns: 'Hypoglycemic coma, seizures, bradycardia, brain damage risk',
+      driverTreatments: ['glucose_10g', 'glucagon_1mg', 'dextrose_10', 'cpr'],
       isCritical: true,
     },
   ],
@@ -1270,17 +1307,20 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       triggerMinutes: 5,
       vitalChanges: { pulse: 50, bpSystolicDelta: -20, spo2: 94 },
       clinicalSigns: 'Neurogenic shock developing — bradycardia, hypotension, warm dry skin below injury level',
+      driverTreatments: ['cervical_collar', 'atropine_05mg', 'fluids_500ml', 'fluids_1000ml', 'oxygen_mask'],
     },
     {
       triggerMinutes: 10,
       vitalChanges: { pulse: 42, bpSystolicDelta: -35, spo2: 90, respiration: 24 },
       clinicalSigns: 'Worsening neurogenic shock, loss of motor function progressing, diaphragmatic breathing if high cervical',
+      driverTreatments: ['cervical_collar', 'atropine_05mg', 'fluids_500ml', 'fluids_1000ml', 'oxygen_nonrebreather', 'bvm_ventilation'],
       isCritical: true,
     },
     {
       triggerMinutes: 18,
       vitalChanges: { pulse: 35, bpSystolicDelta: -50, spo2: 82, respiration: 10 },
       clinicalSigns: 'High cervical injury: respiratory failure from phrenic nerve involvement, severe bradycardia',
+      driverTreatments: ['cervical_collar', 'atropine_05mg', 'intubation', 'bvm_ventilation', 'oxygen_nonrebreather', 'cpr', 'adrenaline_1mg'],
       isCritical: true,
     },
   ],
@@ -1312,17 +1352,20 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       triggerMinutes: 5,
       vitalChanges: { pulse: 180, bpSystolicDelta: -10, spo2: 95 },
       clinicalSigns: 'Palpitations, dizziness, chest tightness, anxiety',
+      driverTreatments: ['adenosine_6mg', 'adenosine_12mg', 'metoprolol_5mg', 'diltiazem_20mg'],
     },
     {
       triggerMinutes: 12,
       vitalChanges: { pulse: 200, bpSystolicDelta: -25, spo2: 92, respiration: 26 },
       clinicalSigns: 'Hemodynamic compromise developing — hypotension, pallor, near-syncope',
+      driverTreatments: ['adenosine_6mg', 'adenosine_12mg', 'metoprolol_5mg', 'diltiazem_20mg'],
       isCritical: true,
     },
     {
       triggerMinutes: 20,
       vitalChanges: { pulse: 220, bpSystolicDelta: -40, spo2: 88 },
       clinicalSigns: 'Cardiogenic shock from prolonged SVT, altered consciousness, signs of heart failure',
+      driverTreatments: ['adenosine_6mg', 'adenosine_12mg', 'metoprolol_5mg', 'diltiazem_20mg', 'cpr', 'defibrillation'],
       isCritical: true,
     },
   ],
@@ -1333,11 +1376,13 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       triggerMinutes: 8,
       vitalChanges: { pulse: 150, bpSystolicDelta: -10, spo2: 94 },
       clinicalSigns: 'Irregularly irregular pulse, patient symptomatic with palpitations and dyspnea',
+      driverTreatments: ['metoprolol_5mg', 'diltiazem_20mg', 'amiodarone_300mg'],
     },
     {
       triggerMinutes: 18,
       vitalChanges: { pulse: 165, bpSystolicDelta: -20, spo2: 91, respiration: 24 },
       clinicalSigns: 'Worsening hemodynamic instability, pulmonary edema risk in patients with LV dysfunction',
+      driverTreatments: ['metoprolol_5mg', 'diltiazem_20mg', 'amiodarone_300mg'],
       isCritical: true,
     },
   ],
@@ -1348,12 +1393,14 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       triggerMinutes: 10,
       vitalChanges: { pulse: 50, bpSystolicDelta: -10, respiration: 10, gcs: 13 },
       clinicalSigns: 'Shivering stopped (ominous), bradycardia, confusion, clumsy movements',
+      driverTreatments: ['warming_blanket'],
     },
     {
       triggerMinutes: 20,
       vitalChanges: { pulse: 40, bpSystolicDelta: -20, respiration: 8, gcs: 8 },
       clinicalSigns: 'Severe hypothermia — muscle rigidity, fixed dilated pupils (may mimic death), Osborn J-waves on ECG',
       rhythm: 'Sinus Bradycardia',
+      driverTreatments: ['warming_blanket'],
       isCritical: true,
     },
     {
@@ -1361,6 +1408,7 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       vitalChanges: { pulse: 0, spo2: 50 },
       clinicalSigns: 'VF arrest from severe hypothermia. "Not dead until warm and dead." Begin rewarming + CPR.',
       rhythm: 'Ventricular Fibrillation',
+      driverTreatments: ['warming_blanket', 'cpr', 'defibrillation', 'adrenaline_1mg'],
       isCritical: true,
     },
   ],
@@ -1373,17 +1421,20 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       triggerMinutes: 3,
       vitalChanges: { respiration: 8, spo2: 88, gcs: 10, pulse: 55 },
       clinicalSigns: 'Respiratory depression, miosis (pinpoint pupils), decreased consciousness',
+      driverTreatments: ['naloxone_04mg', 'oxygen_nonrebreather', 'oxygen_mask', 'bvm_ventilation'],
     },
     {
       triggerMinutes: 8,
       vitalChanges: { respiration: 4, spo2: 75, gcs: 5, pulse: 50 },
       clinicalSigns: 'Severe respiratory failure, cyanosis, barely rousable, aspiration risk',
+      driverTreatments: ['naloxone_04mg', 'bvm_ventilation', 'intubation', 'oxygen_nonrebreather'],
       isCritical: true,
     },
     {
       triggerMinutes: 12,
       vitalChanges: { respiration: 0, spo2: 40, gcs: 3, pulse: 30 },
       clinicalSigns: 'Respiratory arrest → hypoxic cardiac arrest. BVM ventilation + naloxone urgently needed.',
+      driverTreatments: ['cpr', 'bvm_ventilation', 'intubation', 'naloxone_04mg', 'adrenaline_1mg'],
       isCritical: true,
     },
   ],
@@ -1394,11 +1445,13 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       triggerMinutes: 10,
       vitalChanges: { pulse: 105, spo2: 93, bpSystolicDelta: -5 },
       clinicalSigns: 'Ongoing chest pain, mild tachycardia, diaphoresis — slower progression than STEMI',
+      driverTreatments: ['aspirin', 'gtn_spray', 'enoxaparin_1mg', 'oxygen_mask', 'oxygen_nasal', 'morphine_5mg', 'fentanyl_50mcg'],
     },
     {
       triggerMinutes: 20,
       vitalChanges: { pulse: 115, spo2: 90, bpSystolicDelta: -15 },
       clinicalSigns: 'Pain worsening, dynamic ECG changes (ST depression deepening), nausea, anxiety increasing',
+      driverTreatments: ['aspirin', 'gtn_spray', 'enoxaparin_1mg', 'oxygen_mask', 'oxygen_nasal', 'morphine_5mg', 'fentanyl_50mcg'],
       isCritical: true,
     },
     {
@@ -1406,6 +1459,7 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       vitalChanges: { pulse: 130, spo2: 85, bpSystolicDelta: -30, respiration: 26 },
       clinicalSigns: 'Evolving to STEMI or cardiogenic shock — new ST elevation, crackles in bases, hypotension',
       rhythm: 'Sinus Tachycardia with ST changes',
+      driverTreatments: ['aspirin', 'gtn_spray', 'enoxaparin_1mg', 'oxygen_nonrebreather', 'oxygen_mask', 'morphine_5mg', 'fentanyl_50mcg'],
       isCritical: true,
     },
   ],
@@ -1416,17 +1470,20 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       triggerMinutes: 8,
       vitalChanges: { bpSystolicDelta: 20, pulse: 100, respiration: 22 },
       clinicalSigns: 'Severe headache worsening, visual disturbances, nausea — end-organ damage developing',
+      driverTreatments: ['gtn_spray', 'metoprolol_5mg', 'diltiazem_20mg'],
     },
     {
       triggerMinutes: 15,
       vitalChanges: { bpSystolicDelta: 35, pulse: 110, gcs: 13, respiration: 26 },
       clinicalSigns: 'Hypertensive encephalopathy — confusion, papilledema, focal neurological signs emerging',
+      driverTreatments: ['gtn_spray', 'metoprolol_5mg', 'diltiazem_20mg'],
       isCritical: true,
     },
     {
       triggerMinutes: 25,
       vitalChanges: { bpSystolicDelta: 50, pulse: 55, gcs: 9, respiration: 12 },
       clinicalSigns: 'Intracerebral hemorrhage or aortic dissection risk — Cushing response, obtundation, seizure risk',
+      driverTreatments: ['gtn_spray', 'metoprolol_5mg', 'diltiazem_20mg', 'midazolam_buccal', 'lorazepam_4mg', 'intubation', 'cpr'],
       isCritical: true,
     },
   ],
@@ -1437,17 +1494,20 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       triggerMinutes: 5,
       vitalChanges: { pulse: 130, spo2: 85, respiration: 8, gcs: 3 },
       clinicalSigns: 'Ongoing generalized seizure > 5 minutes — status epilepticus. Hypoxia from airway compromise and apnea.',
+      driverTreatments: ['midazolam_buccal', 'lorazepam_4mg', 'airway_open', 'suction', 'oxygen_nonrebreather', 'bvm_ventilation'],
     },
     {
       triggerMinutes: 10,
       vitalChanges: { pulse: 140, spo2: 75, respiration: 6, gcs: 3 },
       clinicalSigns: 'Refractory status — prolonged seizure causing metabolic acidosis, hyperthermia, rhabdomyolysis risk',
+      driverTreatments: ['midazolam_buccal', 'lorazepam_4mg', 'airway_open', 'suction', 'oxygen_nonrebreather', 'bvm_ventilation', 'intubation'],
       isCritical: true,
     },
     {
       triggerMinutes: 20,
       vitalChanges: { pulse: 50, spo2: 60, respiration: 4, gcs: 3 },
       clinicalSigns: 'Cardiorespiratory collapse from prolonged status — bradycardia, severe hypoxia, brain damage imminent',
+      driverTreatments: ['midazolam_buccal', 'lorazepam_4mg', 'cpr', 'bvm_ventilation', 'intubation', 'adrenaline_1mg', 'oxygen_nonrebreather'],
       isCritical: true,
     },
   ],
@@ -1458,17 +1518,20 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       triggerMinutes: 3,
       vitalChanges: { pulse: 120, bpSystolicDelta: -15, spo2: 92, respiration: 28 },
       clinicalSigns: 'Multiple injury sites bleeding, tachycardia developing, patient becoming restless and anxious',
+      driverTreatments: ['tourniquet', 'bleeding_control', 'pelvic_binder', 'fluids_250ml', 'fluids_500ml', 'fluids_1000ml', 'cervical_collar', 'splinting', 'traction_splint'],
     },
     {
       triggerMinutes: 8,
       vitalChanges: { pulse: 140, bpSystolicDelta: -30, spo2: 85, gcs: 12, respiration: 32 },
       clinicalSigns: 'Hemorrhagic shock Class III — confused, cold/clammy, weak radial pulse, distended abdomen or hemothorax',
+      driverTreatments: ['tourniquet', 'bleeding_control', 'pelvic_binder', 'fluids_500ml', 'fluids_1000ml', 'oxygen_nonrebreather', 'cervical_collar'],
       isCritical: true,
     },
     {
       triggerMinutes: 15,
       vitalChanges: { pulse: 155, bpSystolicDelta: -50, spo2: 75, gcs: 8, respiration: 36 },
       clinicalSigns: 'Decompensated shock — moribund, obtunded, imminent cardiac arrest without immediate intervention',
+      driverTreatments: ['tourniquet', 'bleeding_control', 'pelvic_binder', 'fluids_500ml', 'fluids_1000ml', 'cpr', 'oxygen_nonrebreather'],
       isCritical: true,
     },
   ],
@@ -1479,11 +1542,13 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       triggerMinutes: 3,
       vitalChanges: { spo2: 90, pulse: 115, bpSystolicDelta: -10, respiration: 28 },
       clinicalSigns: 'Increasing respiratory distress, paradoxical chest wall movement (flail), subcutaneous emphysema',
+      driverTreatments: ['needle_decompression', 'chest_seal_vented', 'oxygen_nonrebreather', 'splinting'],
     },
     {
       triggerMinutes: 8,
       vitalChanges: { spo2: 80, pulse: 135, bpSystolicDelta: -25, respiration: 36 },
       clinicalSigns: 'Tension physiology developing — tracheal deviation, absent breath sounds, JVD, hemodynamic instability',
+      driverTreatments: ['needle_decompression', 'chest_seal_vented', 'oxygen_nonrebreather'],
       isCritical: true,
     },
     {
@@ -1491,6 +1556,7 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       vitalChanges: { spo2: 65, pulse: 40, bpSystolicDelta: -50, respiration: 8 },
       clinicalSigns: 'Cardiac tamponade or massive hemothorax — pulseless electrical activity, obstructive shock',
       rhythm: 'PEA',
+      driverTreatments: ['needle_decompression', 'chest_seal_vented', 'cpr', 'pericardiocentesis', 'oxygen_nonrebreather'],
       isCritical: true,
     },
   ],
@@ -1501,17 +1567,20 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       triggerMinutes: 3,
       vitalChanges: { pulse: 115, bpSystolicDelta: -10, spo2: 96 },
       clinicalSigns: 'Pelvic instability on gentle compression, perineal bruising, tachycardia — occult hemorrhage',
+      driverTreatments: ['pelvic_binder', 'fluids_250ml', 'fluids_500ml', 'fluids_1000ml', 'tourniquet', 'bleeding_control'],
     },
     {
       triggerMinutes: 8,
       vitalChanges: { pulse: 135, bpSystolicDelta: -30, spo2: 93, respiration: 26 },
       clinicalSigns: 'Class III hemorrhage — retroperitoneal bleeding, cold/clammy, pelvic binder urgently needed',
+      driverTreatments: ['pelvic_binder', 'fluids_500ml', 'fluids_1000ml', 'tourniquet', 'bleeding_control', 'oxygen_nonrebreather'],
       isCritical: true,
     },
     {
       triggerMinutes: 15,
       vitalChanges: { pulse: 150, bpSystolicDelta: -50, spo2: 86, gcs: 10 },
       clinicalSigns: 'Massive hemorrhage — exsanguination risk, altered consciousness, thready pulse, imminent arrest',
+      driverTreatments: ['pelvic_binder', 'fluids_500ml', 'fluids_1000ml', 'tourniquet', 'bleeding_control', 'cpr', 'oxygen_nonrebreather'],
       isCritical: true,
     },
   ],
@@ -1531,11 +1600,13 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       triggerMinutes: 3,
       vitalChanges: { respiration: 38, spo2: 84, pulse: 130, bpSystolicDelta: 15 },
       clinicalSigns: 'Crackles climbing from the bases toward the mid-zones, louder cardiac wheeze, rising sympathetic surge — BP climbing, diaphoresis worsening, increasing air hunger',
+      driverTreatments: ['gtn_spray', 'furosemide_40mg', 'cpap_niv', 'oxygen_nonrebreather', 'oxygen_mask'],
     },
     {
       triggerMinutes: 7,
       vitalChanges: { respiration: 42, spo2: 76, pulse: 140, bpSystolicDelta: 25 },
       clinicalSigns: 'Pink frothy sputum appearing, coarse crackles throughout all zones, orthopnoea severe — the alveoli are flooding. Hypertensive crisis (SCAPE) driving the oedema.',
+      driverTreatments: ['gtn_spray', 'furosemide_40mg', 'cpap_niv', 'oxygen_nonrebreather', 'intubation', 'bvm_ventilation'],
       isCritical: true,
     },
     {
@@ -1543,6 +1614,7 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       vitalChanges: { respiration: 12, spo2: 66, pulse: 120, bpSystolicDelta: -40, gcs: 11 },
       clinicalSigns: 'Respiratory EXHAUSTION — rate paradoxically falling, GCS dropping, secretions gurgling in the airway. LV now failing: BP collapsing into cardiogenic shock. Peri-arrest.',
       rhythm: 'Sinus Tachycardia',
+      driverTreatments: ['gtn_spray', 'furosemide_40mg', 'cpap_niv', 'intubation', 'bvm_ventilation', 'oxygen_nonrebreather'],
       isCritical: true,
     },
     {
@@ -1550,6 +1622,7 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       vitalChanges: { respiration: 4, spo2: 45, pulse: 0, bpSystolicDelta: -90 },
       clinicalSigns: 'Hypoxic respiratory arrest progressing to cardiac arrest — PEA. Airway full of frothy oedema fluid. Begin CPR.',
       rhythm: 'PEA',
+      driverTreatments: ['cpr', 'intubation', 'bvm_ventilation', 'adrenaline_1mg', 'gtn_spray', 'furosemide_40mg', 'oxygen_nonrebreather'],
       isCritical: true,
     },
   ],
@@ -1569,11 +1642,13 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       triggerMinutes: 4,
       vitalChanges: { pulse: 130, spo2: 84, respiration: 32, bpSystolicDelta: -10 },
       clinicalSigns: 'Worsening tachypnoea and pleuritic pain, rising tachycardia, hypoxia creeping down despite high-flow oxygen — chest still clear. Anxiety mounting.',
+      driverTreatments: ['enoxaparin_1mg', 'oxygen_nonrebreather', 'oxygen_mask', 'bvm_ventilation'],
     },
     {
       triggerMinutes: 8,
       vitalChanges: { pulse: 142, spo2: 76, respiration: 38, bpSystolicDelta: -22 },
       clinicalSigns: 'Acute RV strain — distended neck veins, RV heave, S1Q3T3 and right-axis shift on the monitor, accentuated P2. Clot burden shifting, BP starting to give way.',
+      driverTreatments: ['enoxaparin_1mg', 'oxygen_nonrebreather', 'bvm_ventilation', 'intubation'],
       isCritical: true,
     },
     {
@@ -1581,6 +1656,7 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       vitalChanges: { pulse: 155, spo2: 64, respiration: 40, bpSystolicDelta: -38 },
       clinicalSigns: 'Obstructive shock — profound O2-resistant hypoxia, hypotension, central cyanosis, cool peripheries. Right heart failing against fixed outflow obstruction. PEA arrest imminent.',
       rhythm: 'Sinus Tachycardia',
+      driverTreatments: ['enoxaparin_1mg', 'oxygen_nonrebreather', 'bvm_ventilation', 'intubation', 'cpr'],
       isCritical: true,
     },
     {
@@ -1588,6 +1664,7 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       vitalChanges: { pulse: 0, spo2: 45, respiration: 0, bpSystolicDelta: -70 },
       clinicalSigns: 'Cardiac arrest — PEA, the classic arrest rhythm of massive PE. No output against the obstructed pulmonary circulation. Begin CPR; consider thrombolysis in arrest.',
       rhythm: 'PEA',
+      driverTreatments: ['cpr', 'adrenaline_1mg', 'intubation', 'bvm_ventilation', 'enoxaparin_1mg', 'oxygen_nonrebreather'],
       isCritical: true,
     },
   ],
@@ -1600,11 +1677,13 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       triggerMinutes: 5,
       vitalChanges: { pulse: 140, respiration: 28, bpSystolicDelta: -10, gcs: 13, temperature: 40 },
       clinicalSigns: 'Core temperature climbing past 40°C. Sweating stops (anhidrosis) — skin now hot and dry. Confusion and agitation developing. Tachycardia worsening.',
+      driverTreatments: ['active_cooling', 'fluids_500ml', 'fluids_1000ml', 'oxygen_nonrebreather'],
     },
     {
       triggerMinutes: 12,
       vitalChanges: { pulse: 160, respiration: 34, bpSystolicDelta: -25, gcs: 9, spo2: 92, temperature: 41.5 },
       clinicalSigns: 'Hyperthermia 41-42°C with obtundation. Hypotension from vasodilation. Muscle rigidity and twitching — heat-induced seizures beginning. Metabolic acidosis (tachypnoea).',
+      driverTreatments: ['active_cooling', 'fluids_500ml', 'fluids_1000ml', 'midazolam_buccal', 'lorazepam_4mg', 'oxygen_nonrebreather'],
       isCritical: true,
     },
     {
@@ -1612,6 +1691,7 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       vitalChanges: { pulse: 0, spo2: 60, bpSystolicDelta: -90, gcs: 3, temperature: 42 },
       clinicalSigns: 'Hyperthermic VF/arrest following sustained seizures and multi-organ failure (rhabdomyolysis, DIC). "Cool and resuscitate." Begin aggressive cooling + CPR.',
       rhythm: 'Ventricular Fibrillation',
+      driverTreatments: ['active_cooling', 'cpr', 'defibrillation', 'adrenaline_1mg', 'intubation', 'bvm_ventilation', 'fluids_500ml', 'fluids_1000ml'],
       isCritical: true,
     },
   ],
@@ -1625,11 +1705,13 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       triggerMinutes: 2,
       vitalChanges: { spo2: 78, respiration: 6, pulse: 60, gcs: 9 },
       clinicalSigns: 'Worsening hypoxia from aspirated water and laryngospasm. Agonal/ineffective breathing. Cyanosis deepening, level of consciousness dropping.',
+      driverTreatments: ['oxygen_nonrebreather', 'bvm_ventilation', 'airway_open', 'suction'],
     },
     {
       triggerMinutes: 5,
       vitalChanges: { spo2: 65, respiration: 2, pulse: 45, gcs: 3, bpSystolicDelta: -20 },
       clinicalSigns: 'Profound hypoxia driving hypoxic bradycardia. Near-apnoeic. Pulse weak and slow — peri-arrest. Ventilation is the priority.',
+      driverTreatments: ['bvm_ventilation', 'intubation', 'oxygen_nonrebreather', 'airway_open', 'cpr'],
       isCritical: true,
     },
     {
@@ -1637,6 +1719,7 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       vitalChanges: { pulse: 0, spo2: 50, respiration: 0, gcs: 3 },
       clinicalSigns: 'Asphyxial (hypoxic) cardiac arrest. Give 5 rescue breaths FIRST, then compressions. Often hypothermic — "not dead until warm and dead."',
       rhythm: 'Asystole',
+      driverTreatments: ['cpr', 'bvm_ventilation', 'intubation', 'adrenaline_1mg', 'oxygen_nonrebreather', 'warming_blanket'],
       isCritical: true,
     },
   ],
@@ -1649,11 +1732,13 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       triggerMinutes: 4,
       vitalChanges: { pulse: 125, spo2: 88, respiration: 8, gcs: 3, bpSystolicDelta: 20 },
       clinicalSigns: 'Recurrent tonic-clonic seizure without magnesium. Apnoea during seizure causing hypoxia. BP climbing — risk of intracerebral haemorrhage. Fetal bradycardia likely.',
+      driverTreatments: ['magnesium_2g', 'midazolam_buccal', 'lorazepam_4mg', 'oxygen_nonrebreather', 'bvm_ventilation', 'airway_open'],
     },
     {
       triggerMinutes: 10,
       vitalChanges: { pulse: 140, spo2: 78, respiration: 6, gcs: 3, bpSystolicDelta: 35 },
       clinicalSigns: 'Status eclampticus — repeated seizures, severe hypoxia, aspiration risk. Maternal and fetal compromise. Placental abruption / HELLP risk rising.',
+      driverTreatments: ['magnesium_2g', 'midazolam_buccal', 'lorazepam_4mg', 'intubation', 'bvm_ventilation', 'oxygen_nonrebreather'],
       isCritical: true,
     },
     {
@@ -1661,6 +1746,7 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       vitalChanges: { pulse: 45, spo2: 60, respiration: 4, gcs: 3, bpSystolicDelta: -40 },
       clinicalSigns: 'Maternal cardiorespiratory collapse from prolonged seizures and hypoxia (or intracerebral haemorrhage). Imminent maternal + fetal arrest. Magnesium + delivery are the cure.',
       rhythm: 'Sinus Bradycardia',
+      driverTreatments: ['magnesium_2g', 'midazolam_buccal', 'lorazepam_4mg', 'cpr', 'intubation', 'bvm_ventilation', 'adrenaline_1mg', 'oxygen_nonrebreather'],
       isCritical: true,
     },
   ],
@@ -1684,6 +1770,7 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       clinicalSigns:
         'Generalised muscle weakness and paraesthesias. Monitor shows tall, peaked, tented T waves (V2-V5). Early bradycardia.',
       rhythm: 'Sinus Bradycardia (peaked T waves)',
+      driverTreatments: ['calcium_chloride', 'calcium_gluconate', 'insulin_actrapid', 'sodium_bicarbonate'],
     },
     {
       triggerMinutes: 9,
@@ -1691,6 +1778,7 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       clinicalSigns:
         'QRS broadening (>120ms), P waves flattening/lost, PR prolonging. Worsening bradycardia. Membrane stabilisation (calcium chloride) needed NOW.',
       rhythm: 'Wide-complex bradycardia (broadened QRS, loss of P waves)',
+      driverTreatments: ['calcium_chloride', 'calcium_gluconate', 'insulin_actrapid', 'sodium_bicarbonate'],
       isCritical: true,
     },
     {
@@ -1699,6 +1787,7 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       clinicalSigns:
         'QRS and T waves merging into a sine-wave pattern — immediate pre-arrest. Calcium chloride STAT or the patient will arrest.',
       rhythm: 'Sine-wave pattern (pre-arrest)',
+      driverTreatments: ['calcium_chloride', 'calcium_gluconate', 'insulin_actrapid', 'sodium_bicarbonate', 'cpr'],
       isCritical: true,
     },
     {
@@ -1707,6 +1796,7 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       clinicalSigns:
         'Hyperkalaemic cardiac arrest — sine wave has degenerated to VF then asystole. Calcium chloride + bicarbonate during CPR; this rhythm is refractory to defibrillation until the potassium is treated.',
       rhythm: 'Ventricular Fibrillation -> Asystole',
+      driverTreatments: ['cpr', 'defibrillation', 'adrenaline_1mg', 'calcium_chloride', 'calcium_gluconate', 'insulin_actrapid', 'sodium_bicarbonate', 'intubation', 'bvm_ventilation'],
       isCritical: true,
     },
   ],
@@ -1722,12 +1812,14 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       vitalChanges: { pulse: 50, spo2: 93, bpSystolicDelta: -10 },
       clinicalSigns: 'Vagal/nodal response from RCA occlusion — sinus bradycardia, nausea, increasing diaphoresis. Chest stays clear.',
       rhythm: 'Sinus Bradycardia',
+      driverTreatments: ['aspirin', 'gtn_spray', 'atropine_05mg', 'fluids_500ml', 'fluids_1000ml', 'oxygen_mask', 'oxygen_nasal', 'morphine_5mg', 'fentanyl_50mcg'],
     },
     {
       triggerMinutes: 9,
       vitalChanges: { pulse: 44, spo2: 90, bpSystolicDelta: -25, respiration: 26 },
       clinicalSigns: 'RV failure declaring itself — hypotension worsening, raised JVP with clear lungs, cool peripheries. Preload-dependent shock developing.',
       rhythm: 'Sinus Bradycardia',
+      driverTreatments: ['aspirin', 'gtn_spray', 'atropine_05mg', 'fluids_500ml', 'fluids_1000ml', 'oxygen_nonrebreather', 'pacing_transcutaneous'],
       isCritical: true,
     },
     {
@@ -1735,6 +1827,7 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       vitalChanges: { pulse: 36, spo2: 85, bpSystolicDelta: -42, respiration: 30 },
       clinicalSigns: 'High-grade/complete AV block, profound RV cardiogenic shock, altered mental status. Atropine/fluids/pacing territory.',
       rhythm: 'Third Degree Heart Block',
+      driverTreatments: ['aspirin', 'gtn_spray', 'atropine_05mg', 'fluids_500ml', 'fluids_1000ml', 'pacing_transcutaneous', 'oxygen_nonrebreather', 'adrenaline_1mg'],
       isCritical: true,
     },
     {
@@ -1742,6 +1835,7 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       vitalChanges: { pulse: 0, spo2: 55, bpSystolicDelta: -75 },
       clinicalSigns: 'Cardiac arrest — bradyasystolic / PEA from RV pump failure and AV block. No output. Begin CPR.',
       rhythm: 'Asystole',
+      driverTreatments: ['cpr', 'adrenaline_1mg', 'atropine_05mg', 'pacing_transcutaneous', 'intubation', 'bvm_ventilation', 'fluids_500ml', 'fluids_1000ml', 'oxygen_nonrebreather'],
       isCritical: true,
     },
   ],
@@ -1781,11 +1875,13 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       triggerMinutes: 3,
       vitalChanges: { pulse: 150, bpSystolicDelta: -8, bpDiastolicDelta: 6, spo2: 86, respiration: 36 },
       clinicalSigns: 'Compensating obstructive shock — pulse pressure narrowing (SBP falling, DBP rising), tachycardia climbing, muffled heart sounds, rising JVP. Pulsus paradoxus palpable.',
+      driverTreatments: ['pericardiocentesis', 'fluids_500ml', 'fluids_1000ml', 'oxygen_nonrebreather'],
     },
     {
       triggerMinutes: 7,
       vitalChanges: { pulse: 160, bpSystolicDelta: -22, spo2: 80, respiration: 40, gcs: 12 },
       clinicalSigns: 'Decompensating — pulse pressure critically narrow, SBP dropping, thready central pulse, increasingly obtunded. Diastolic filling failing against pericardial pressure.',
+      driverTreatments: ['pericardiocentesis', 'fluids_500ml', 'fluids_1000ml', 'oxygen_nonrebreather'],
       isCritical: true,
     },
     {
@@ -1793,6 +1889,7 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       vitalChanges: { pulse: 40, bpSystolicDelta: -55, spo2: 60, respiration: 6, gcs: 4 },
       clinicalSigns: 'Cardiac output lost — PEA arrest. Organised electrical activity on the monitor but no palpable output (obstruction not perfusion). Needs decompression + CPR.',
       rhythm: 'PEA',
+      driverTreatments: ['pericardiocentesis', 'cpr', 'adrenaline_1mg', 'fluids_500ml', 'fluids_1000ml', 'intubation', 'bvm_ventilation', 'oxygen_nonrebreather'],
       isCritical: true,
     },
   ],
@@ -1845,6 +1942,7 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       vitalChanges: { pulse: 124, respiration: 34, bpSystolicDelta: -8, gcs: 13, bloodGlucose: 31 },
       clinicalSigns:
         'Worsening dehydration — Kussmaul breathing deepening and quickening to blow off more acid, tachycardia climbing, BP creeping down, increasingly drowsy. Acetone breath stronger. BGL still rising.',
+      driverTreatments: ['insulin_actrapid', 'fluids_500ml', 'fluids_1000ml', 'fluids_250ml', 'oxygen_mask'],
     },
     {
       triggerMinutes: 11,
@@ -1852,6 +1950,7 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       clinicalSigns:
         'Decompensating — hypovolaemic shock developing (thready pulse, cold mottled peripheries, prolonged cap refill). Obtunded and vomiting with aspiration risk. Severe acidosis. Watch the monitor for peaked T waves (hyperkalaemia).',
       rhythm: 'Sinus Tachycardia',
+      driverTreatments: ['insulin_actrapid', 'fluids_500ml', 'fluids_1000ml', 'oxygen_mask'],
       isCritical: true,
     },
     {
@@ -1860,6 +1959,7 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       clinicalSigns:
         'Exhaustion and pre-terminal collapse — Kussmaul effort failing (RR paradoxically falling), profound dehydration and acidosis driving bradycardia and unconsciousness. Peri-arrest. Fluids first, then insulin in hospital.',
       rhythm: 'Sinus Bradycardia',
+      driverTreatments: ['insulin_actrapid', 'fluids_500ml', 'fluids_1000ml', 'oxygen_nonrebreather', 'bvm_ventilation'],
       isCritical: true,
     },
     {
@@ -1868,6 +1968,7 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       clinicalSigns:
         'Cardiac arrest from uncorrected hypovolaemia, profound acidosis and electrolyte derangement (hyperkalaemia). PEA the likely rhythm. Begin CPR; this arrest is the end-stage of untreated DKA.',
       rhythm: 'PEA',
+      driverTreatments: ['cpr', 'adrenaline_1mg', 'intubation', 'bvm_ventilation', 'insulin_actrapid', 'fluids_500ml', 'fluids_1000ml', 'oxygen_nonrebreather'],
       isCritical: true,
     },
   ],
@@ -1906,16 +2007,19 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       triggerMinutes: 5,
       vitalChanges: { pulse: 125, respiration: 26, spo2: 94 },
       clinicalSigns: 'Worsening hyperdynamic sepsis — climbing tachycardia and tachypnoea, warm flushed peripheries, rising temperature. Blood pressure still compensated but lactate rising.',
+      driverTreatments: ['antibiotics_iv', 'fluids_500ml', 'fluids_1000ml', 'fluids_250ml', 'oxygen_mask', 'oxygen_nonrebreather'],
     },
     {
       triggerMinutes: 12,
       vitalChanges: { pulse: 140, respiration: 32, spo2: 90, bpSystolicDelta: -25 },
       clinicalSigns: 'Compensation failing — blood pressure now falling, respiratory rate climbing, urine output dropping. Peripheries cooling as "warm shock" turns "cold". Mottling appears.',
+      driverTreatments: ['antibiotics_iv', 'fluids_500ml', 'fluids_1000ml', 'oxygen_nonrebreather'],
     },
     {
       triggerMinutes: 18,
       vitalChanges: { pulse: 150, respiration: 36, spo2: 86, bpSystolicDelta: -45, gcs: 12 },
       clinicalSigns: 'Decompensated septic shock — hypotension refractory to compensation, capillary refill >4 s, GCS falling, non-blanching petechiae may appear (meningococcaemia). Lactic acidosis.',
+      driverTreatments: ['antibiotics_iv', 'fluids_500ml', 'fluids_1000ml', 'oxygen_nonrebreather', 'adrenaline_im', 'adrenaline_infusion'],
       isCritical: true,
     },
     {
@@ -1923,6 +2027,7 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       vitalChanges: { pulse: 160, respiration: 40, spo2: 80, bpSystolicDelta: -65, gcs: 8 },
       clinicalSigns: 'Refractory shock — profound hypotension, obtundation, anuria, multi-organ failure. In children, heart rate and respiratory effort now begin to FALL (pre-arrest). Peri-arrest.',
       rhythm: 'Sinus Tachycardia',
+      driverTreatments: ['antibiotics_iv', 'fluids_500ml', 'fluids_1000ml', 'adrenaline_im', 'adrenaline_infusion', 'oxygen_nonrebreather', 'intubation', 'bvm_ventilation'],
       isCritical: true,
     },
     {
@@ -1930,6 +2035,7 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       vitalChanges: { pulse: 0, respiration: 0, spo2: 50, bpSystolicDelta: -90, gcs: 3 },
       clinicalSigns: 'Cardiac arrest from refractory septic shock / hypoxia. Pulseless electrical activity. Begin CPR.',
       rhythm: 'PEA',
+      driverTreatments: ['cpr', 'adrenaline_1mg', 'intubation', 'bvm_ventilation', 'antibiotics_iv', 'fluids_500ml', 'fluids_1000ml', 'oxygen_nonrebreather'],
       isCritical: true,
     },
   ],
@@ -1942,17 +2048,20 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       triggerMinutes: 5,
       vitalChanges: { pulse: 120, respiration: 24, spo2: 96 },
       clinicalSigns: 'Worsening systemic infection — rising fever and tachycardia, increasing headache and photophobia, new irritability/agitation. First sparse non-blanching petechiae may appear.',
+      driverTreatments: ['antibiotics_iv', 'fluids_500ml', 'fluids_1000ml', 'oxygen_mask', 'oxygen_nonrebreather'],
     },
     {
       triggerMinutes: 11,
       vitalChanges: { pulse: 135, respiration: 30, spo2: 93, bpSystolicDelta: -20 },
       clinicalSigns: 'Meningococcal sepsis declaring — purpuric rash spreading, blood pressure falling, peripheries cooling with prolonged capillary refill. GCS beginning to drift.',
+      driverTreatments: ['antibiotics_iv', 'fluids_500ml', 'fluids_1000ml', 'oxygen_nonrebreather'],
       isCritical: true,
     },
     {
       triggerMinutes: 17,
       vitalChanges: { pulse: 145, respiration: 34, spo2: 88, bpSystolicDelta: -40, gcs: 10 },
       clinicalSigns: 'Distributive (septic) shock with widespread purpura, OR — if ICP-driven — falling GCS with the Cushing response (relative bradycardia, hypertension, irregular respiration). Seizures possible.',
+      driverTreatments: ['antibiotics_iv', 'fluids_500ml', 'fluids_1000ml', 'oxygen_nonrebreather', 'midazolam_buccal', 'lorazepam_4mg'],
       isCritical: true,
     },
     {
@@ -1960,6 +2069,7 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       vitalChanges: { pulse: 155, respiration: 36, spo2: 82, bpSystolicDelta: -55, gcs: 6 },
       clinicalSigns: 'Decompensation — refractory shock with mottled, cold skin, or progressive brainstem compromise from rising ICP. Obtunded, peri-arrest.',
       rhythm: 'Sinus Tachycardia',
+      driverTreatments: ['antibiotics_iv', 'fluids_500ml', 'fluids_1000ml', 'adrenaline_im', 'adrenaline_infusion', 'oxygen_nonrebreather', 'intubation', 'bvm_ventilation'],
       isCritical: true,
     },
     {
@@ -1967,6 +2077,7 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       vitalChanges: { pulse: 0, respiration: 0, spo2: 48, bpSystolicDelta: -80, gcs: 3 },
       clinicalSigns: 'Cardiac arrest from fulminant meningococcal septic shock (or coning from raised ICP). Pulseless electrical activity. Begin CPR.',
       rhythm: 'PEA',
+      driverTreatments: ['cpr', 'adrenaline_1mg', 'intubation', 'bvm_ventilation', 'antibiotics_iv', 'fluids_500ml', 'fluids_1000ml', 'oxygen_nonrebreather'],
       isCritical: true,
     },
   ],
@@ -1978,17 +2089,20 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       triggerMinutes: 5,
       vitalChanges: { pulse: 120, respiration: 32, spo2: 85 },
       clinicalSigns: 'Worsening hypoxia and tachypnoea — consolidation extending, increasing work of breathing, accessory muscle use. Febrile and rigoring.',
+      driverTreatments: ['antibiotics_iv', 'oxygen_nonrebreather', 'oxygen_mask', 'fluids_500ml', 'fluids_1000ml'],
     },
     {
       triggerMinutes: 12,
       vitalChanges: { pulse: 130, respiration: 38, spo2: 80, bpSystolicDelta: -15 },
       clinicalSigns: 'Hypoxia poorly responsive to effort — crackles now multi-lobar, early cyanosis, blood pressure beginning to fall as CAP-sepsis develops. New confusion (CURB-65).',
+      driverTreatments: ['antibiotics_iv', 'oxygen_nonrebreather', 'fluids_500ml', 'fluids_1000ml', 'cpap_niv'],
       isCritical: true,
     },
     {
       triggerMinutes: 19,
       vitalChanges: { pulse: 140, respiration: 42, spo2: 72, bpSystolicDelta: -30, gcs: 12 },
       clinicalSigns: 'Type-1 respiratory failure with septic shock — refractory hypoxaemia, central cyanosis, hypotension, falling GCS. Patient visibly tiring.',
+      driverTreatments: ['antibiotics_iv', 'oxygen_nonrebreather', 'cpap_niv', 'intubation', 'bvm_ventilation', 'fluids_500ml', 'fluids_1000ml'],
       isCritical: true,
     },
     {
@@ -1996,6 +2110,7 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       vitalChanges: { pulse: 130, respiration: 8, spo2: 60, bpSystolicDelta: -45, gcs: 8 },
       clinicalSigns: 'EXHAUSTION — respiratory rate paradoxically falling as the patient tires, profound hypoxia, deepening shock. Imminent respiratory arrest.',
       rhythm: 'Sinus Tachycardia',
+      driverTreatments: ['antibiotics_iv', 'intubation', 'bvm_ventilation', 'oxygen_nonrebreather', 'fluids_500ml', 'fluids_1000ml', 'cpr'],
       isCritical: true,
     },
     {
@@ -2003,6 +2118,7 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       vitalChanges: { pulse: 0, respiration: 0, spo2: 45, bpSystolicDelta: -60, gcs: 3 },
       clinicalSigns: 'Hypoxic cardiac arrest from respiratory failure. Pulseless electrical activity / asystole. Begin CPR.',
       rhythm: 'PEA',
+      driverTreatments: ['cpr', 'adrenaline_1mg', 'intubation', 'bvm_ventilation', 'antibiotics_iv', 'oxygen_nonrebreather', 'fluids_500ml', 'fluids_1000ml'],
       isCritical: true,
     },
   ],
@@ -2044,18 +2160,21 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       vitalChanges: { pulse: 92, respiration: 18, spo2: 99, bpSystolicDelta: -3 },
       clinicalSigns:
         'Still looks well — mild nausea, maybe one vomit. Obs essentially normal. THIS IS THE TRAP: normal vitals do not exclude a lethal ingestion. A timed paracetamol level and timely N-acetylcysteine are what matter now.',
+      driverTreatments: ['acetylcysteine'],
     },
     {
       triggerMinutes: 16,
       vitalChanges: { pulse: 104, respiration: 20, spo2: 98, bpSystolicDelta: -6 },
       clinicalSigns:
         'Persistent vomiting, mild malaise and right-upper-quadrant discomfort beginning. Vitals only slightly off. Biochemically the hepatocyte injury is already underway even though the patient looks deceptively stable.',
+      driverTreatments: ['acetylcysteine'],
     },
     {
       triggerMinutes: 24,
       vitalChanges: { pulse: 120, respiration: 26, spo2: 95, bpSystolicDelta: -18, gcs: 12 },
       clinicalSigns:
         'Hepatotoxicity declaring — RUQ pain, jaundice, tender liver, deepening (Kussmaul) breathing from metabolic/lactic acidosis, early hepatic encephalopathy and hypoglycaemia. Tachycardic and hypotensive. This is fulminant hepatic failure developing.',
+      driverTreatments: ['acetylcysteine', 'fluids_500ml', 'fluids_1000ml', 'glucose_10g', 'dextrose_10', 'oxygen_mask'],
       isCritical: true,
     },
     {
@@ -2063,6 +2182,7 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       vitalChanges: { pulse: 135, respiration: 30, spo2: 92, bpSystolicDelta: -32, gcs: 6 },
       clinicalSigns:
         'Fulminant hepatic failure — Grade III–IV encephalopathy / coma, coagulopathy, profound hypoglycaemia, lactic acidosis and worsening shock. Airway no longer protected. Transplant-pathway patient; without antidote and a liver unit this is fatal.',
+      driverTreatments: ['acetylcysteine', 'intubation', 'bvm_ventilation', 'fluids_500ml', 'fluids_1000ml', 'glucose_10g', 'dextrose_10', 'oxygen_nonrebreather', 'cpr'],
       isCritical: true,
     },
   ],
@@ -2086,6 +2206,7 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       clinicalSigns:
         'Worsening cholinergic crisis — increasing bronchorrhoea (airway filling with secretions), profuse salivation/lacrimation, bradycardia deepening, pinpoint pupils, generalised fasciculations. The patient is drowning in their own secretions.',
       rhythm: 'Sinus Bradycardia',
+      driverTreatments: ['atropine_05mg', 'pralidoxime', 'suction', 'airway_open', 'oxygen_nonrebreather', 'bvm_ventilation'],
     },
     {
       triggerMinutes: 7,
@@ -2093,6 +2214,7 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       clinicalSigns:
         'Respiratory failure declaring — torrential secretions plus nicotinic respiratory-muscle weakness; effort beginning to fail. Hypoxia worsening despite oxygen, GCS dropping. Needs escalating atropine (to a dry chest) + pralidoxime + suction + assisted ventilation NOW.',
       rhythm: 'Sinus Bradycardia',
+      driverTreatments: ['atropine_05mg', 'pralidoxime', 'suction', 'intubation', 'bvm_ventilation', 'oxygen_nonrebreather'],
       isCritical: true,
     },
     {
@@ -2101,6 +2223,7 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       clinicalSigns:
         'Near-terminal — respiratory muscles failing/paralysed, RR collapsing, airway flooded, profound hypoxia and bradycardia. Unopposed muscarinic/vagal tone. Pre-arrest: this is the last window for aggressive antidote + ventilation.',
       rhythm: 'Severe Sinus Bradycardia',
+      driverTreatments: ['atropine_05mg', 'pralidoxime', 'intubation', 'bvm_ventilation', 'suction', 'oxygen_nonrebreather', 'cpr'],
       isCritical: true,
     },
     {
@@ -2109,6 +2232,7 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       clinicalSigns:
         'Hypoxic bradyasystolic arrest from respiratory failure and unopposed cholinergic tone. No output. Begin CPR; continue atropine and pralidoxime — the rhythm will not recover until the cholinergic crisis is treated and the patient is oxygenated.',
       rhythm: 'Asystole',
+      driverTreatments: ['cpr', 'adrenaline_1mg', 'atropine_05mg', 'pralidoxime', 'intubation', 'bvm_ventilation', 'oxygen_nonrebreather'],
       isCritical: true,
     },
   ],
@@ -2124,12 +2248,14 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       vitalChanges: { pulse: 36, bpSystolicDelta: -10, gcs: 13 },
       clinicalSigns: 'Rate slipping further, BP sagging, increasingly drowsy and confused. Peripheries cold, cap refill lengthening.',
       rhythm: 'Sinus Bradycardia',
+      driverTreatments: ['atropine_05mg', 'pacing_transcutaneous', 'adrenaline_1mg', 'oxygen_mask'],
     },
     {
       triggerMinutes: 10,
       vitalChanges: { pulse: 30, bpSystolicDelta: -20, spo2: 90, gcs: 10 },
       clinicalSigns: 'Decompensating — profound bradycardia with hypotension and poor perfusion. Pre-syncopal, barely rousable. Atropine alone failing against the medication blockade.',
       rhythm: 'Junctional Bradycardia',
+      driverTreatments: ['atropine_05mg', 'pacing_transcutaneous', 'adrenaline_1mg', 'oxygen_nonrebreather'],
       isCritical: true,
     },
     {
@@ -2137,6 +2263,7 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       vitalChanges: { pulse: 20, bpSystolicDelta: -35, spo2: 85, gcs: 6 },
       clinicalSigns: 'Agonal slow rhythm, unrecordable BP, near-arrest. Escape rhythm failing.',
       rhythm: 'Idioventricular',
+      driverTreatments: ['pacing_transcutaneous', 'adrenaline_1mg', 'atropine_05mg', 'cpr', 'oxygen_nonrebreather'],
       isCritical: true,
     },
     {
@@ -2144,6 +2271,7 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       vitalChanges: { pulse: 0, bpSystolicDelta: -55, spo2: 70 },
       clinicalSigns: 'Ventricular standstill → PEA arrest. No palpable output. Start CPR; pace, adrenaline, and treat the cause (glucagon / calcium for BB-CCB toxicity).',
       rhythm: 'PEA',
+      driverTreatments: ['cpr', 'adrenaline_1mg', 'pacing_transcutaneous', 'atropine_05mg', 'calcium_chloride', 'calcium_gluconate', 'intubation', 'bvm_ventilation', 'oxygen_nonrebreather'],
       isCritical: true,
     },
   ],
@@ -2159,6 +2287,7 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       vitalChanges: { pulse: 25, bpSystolicDelta: -12, gcs: 13 },
       clinicalSigns: 'Escape rate falling, BP dropping. Another syncopal episode — pale, sweaty, briefly unresponsive then rouses. Cannon A waves persist.',
       rhythm: 'Complete Heart Block',
+      driverTreatments: ['pacing_transcutaneous', 'atropine_05mg', 'adrenaline_1mg', 'oxygen_mask'],
       isCritical: true,
     },
     {
@@ -2166,6 +2295,7 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       vitalChanges: { pulse: 18, bpSystolicDelta: -25, spo2: 86, gcs: 9 },
       clinicalSigns: 'Profound, broad-complex ventricular escape failing to perfuse. Recurrent syncope, hypotension, clouding consciousness. Atropine ineffective — capture with pacing NOW.',
       rhythm: 'Complete Heart Block',
+      driverTreatments: ['pacing_transcutaneous', 'adrenaline_1mg', 'atropine_05mg', 'cpr', 'oxygen_nonrebreather'],
       isCritical: true,
     },
     {
@@ -2173,6 +2303,7 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       vitalChanges: { pulse: 0, bpSystolicDelta: -50, spo2: 65, gcs: 3 },
       clinicalSigns: 'Ventricular escape fails — asystolic arrest. No output. Begin CPR; transcutaneous pacing, adrenaline, urgent transvenous pacing.',
       rhythm: 'Asystole',
+      driverTreatments: ['cpr', 'adrenaline_1mg', 'pacing_transcutaneous', 'intubation', 'bvm_ventilation', 'oxygen_nonrebreather'],
       isCritical: true,
     },
   ],
@@ -2203,12 +2334,14 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       vitalChanges: { respiration: 48, spo2: 90, pulse: 150 },
       clinicalSigns:
         'Child increasingly distressed and agitated — agitation worsens the dynamic upper-airway obstruction. Louder biphasic stridor, increasing sternal recession and tracheal tug. Keep calm: handling and crying are making it worse.',
+      driverTreatments: ['nebulised_adrenaline', 'dexamethasone', 'hydrocortisone_200mg', 'oxygen_mask', 'oxygen_nonrebreather'],
     },
     {
       triggerMinutes: 9,
       vitalChanges: { respiration: 54, spo2: 84, pulse: 165, bpSystolicDelta: 5 },
       clinicalSigns:
         'Severe rising work of breathing — marked recession, head-bobbing, nasal flaring, air entry now reducing despite loud stridor (ominous). Pallor and early cyanosis. Needs nebulised adrenaline + steroid NOW.',
+      driverTreatments: ['nebulised_adrenaline', 'dexamethasone', 'hydrocortisone_200mg', 'oxygen_nonrebreather', 'bvm_ventilation', 'intubation'],
       isCritical: true,
     },
     {
@@ -2217,6 +2350,7 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       clinicalSigns:
         'EXHAUSTION — the child tires, stridor paradoxically quietens as air movement fails, respiratory rate and effort falling, becoming lethargic/obtunded. This quiet chest is pre-terminal, not improvement. Bradycardia developing.',
       rhythm: 'Sinus Bradycardia',
+      driverTreatments: ['nebulised_adrenaline', 'dexamethasone', 'hydrocortisone_200mg', 'intubation', 'bvm_ventilation', 'oxygen_nonrebreather', 'cpr'],
       isCritical: true,
     },
     {
@@ -2225,6 +2359,7 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       clinicalSigns:
         'Complete airway obstruction — respiratory arrest progressing to hypoxic cardiac arrest. PEA/asystole.',
       rhythm: 'PEA',
+      driverTreatments: ['cpr', 'adrenaline_1mg', 'intubation', 'bvm_ventilation', 'nebulised_adrenaline', 'oxygen_nonrebreather'],
       isCritical: true,
     },
   ],
@@ -2235,12 +2370,14 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       vitalChanges: { respiration: 30, spo2: 90, pulse: 130, bpSystolicDelta: -10 },
       clinicalSigns:
         'Burn shock beginning — plasma leaking into burned/interstitial tissue. Rising tachycardia, BP starting to drift down, cap refill prolonging. If inhalation injury: voice increasingly hoarse, soot in sputum, early inspiratory stridor as laryngeal oedema develops.',
+      driverTreatments: ['fluids_500ml', 'fluids_1000ml', 'fluids_250ml', 'oxygen_nonrebreather', 'oxygen_mask', 'intubation'],
     },
     {
       triggerMinutes: 12,
       vitalChanges: { respiration: 36, spo2: 84, pulse: 145, bpSystolicDelta: -25 },
       clinicalSigns:
         'Decompensating burn shock — hypotension, cool clammy non-burned skin, agitation. With inhalation injury the airway is critically narrowing (stridor at rest, swelling lips/tongue): the intubation window is closing. Aggressive Parkland fluids + early airway needed.',
+      driverTreatments: ['fluids_500ml', 'fluids_1000ml', 'intubation', 'bvm_ventilation', 'oxygen_nonrebreather'],
       isCritical: true,
     },
     {
@@ -2248,6 +2385,7 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       vitalChanges: { respiration: 8, spo2: 70, pulse: 160, bpSystolicDelta: -45, gcs: 8 },
       clinicalSigns:
         'Profound hypovolaemic shock and (if inhalation) near-complete airway obstruction with falling consciousness. Hypoxia + uncorrected volume loss — peri-arrest.',
+      driverTreatments: ['fluids_500ml', 'fluids_1000ml', 'intubation', 'bvm_ventilation', 'oxygen_nonrebreather', 'cpr'],
       isCritical: true,
     },
     {
@@ -2256,6 +2394,7 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       clinicalSigns:
         'Cardiac arrest from combined airway loss (inhalation injury) and irreversible hypovolaemic burn shock. PEA/asystole.',
       rhythm: 'PEA',
+      driverTreatments: ['cpr', 'adrenaline_1mg', 'intubation', 'bvm_ventilation', 'fluids_500ml', 'fluids_1000ml', 'oxygen_nonrebreather'],
       isCritical: true,
     },
   ],
@@ -2297,11 +2436,13 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       triggerMinutes: 6,
       vitalChanges: { pulse: 140, respiration: 26, bpSystolicDelta: 15, temperature: 37.8 },
       clinicalSigns: 'Escalating agitation — pacing, shouting, sustained struggling. Catecholamine surge: tachycardia and BP climbing, diaphoresis worsening, core temperature beginning to rise. Still alert. De-escalation (and, if dangerous, single-agent sedation) needed before exhaustion sets in.',
+      driverTreatments: ['verbal_deescalation', 'midazolam_buccal', 'lorazepam_4mg', 'droperidol_5mg', 'ketamine_sedation'],
     },
     {
       triggerMinutes: 12,
       vitalChanges: { pulse: 155, respiration: 30, bpSystolicDelta: 10, temperature: 39.2 },
       clinicalSigns: 'Sustained psychomotor exertion causing hyperthermia (>39°C), profuse sweating and early exhaustion. Metabolic acidosis from prolonged struggling; rhabdomyolysis risk rising (consider IV fluids). If this is a stimulant toxidrome / excited delirium, this is the pre-arrest window.',
+      driverTreatments: ['midazolam_buccal', 'lorazepam_4mg', 'droperidol_5mg', 'ketamine_sedation', 'fluids_500ml', 'fluids_1000ml', 'active_cooling', 'oxygen_nonrebreather'],
       isCritical: true,
     },
     {
@@ -2309,6 +2450,7 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       vitalChanges: { pulse: 170, respiration: 34, bpSystolicDelta: -20, temperature: 40.5, gcs: 11, spo2: 92 },
       clinicalSigns: 'Excited delirium / stimulant toxidrome decompensating — extreme hyperthermia (>40°C), exhaustion, sudden quieting and falling GCS (an OMINOUS sign), acidosis. This is the classic pre-arrest collapse: catecholamine storm + hyperthermia + acidosis. Aggressive cooling, fluids and airway support now.',
       rhythm: 'Sinus Tachycardia',
+      driverTreatments: ['midazolam_buccal', 'lorazepam_4mg', 'droperidol_5mg', 'ketamine_sedation', 'active_cooling', 'fluids_500ml', 'fluids_1000ml', 'intubation', 'bvm_ventilation', 'oxygen_nonrebreather'],
       isCritical: true,
     },
     {
@@ -2316,6 +2458,7 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       vitalChanges: { pulse: 0, spo2: 55, respiration: 0, bpSystolicDelta: -80, temperature: 40.5, gcs: 3 },
       clinicalSigns: 'Sudden cardiac arrest following excited-delirium hyperthermia and metabolic acidosis (the classic "sudden death" of restraint/stimulant agitation). Rhythm often PEA/asystole. Begin CPR, cool aggressively, correct acidosis. NEVER leave a struggling patient prone — positional asphyxia compounds this.',
       rhythm: 'PEA',
+      driverTreatments: ['cpr', 'adrenaline_1mg', 'intubation', 'bvm_ventilation', 'active_cooling', 'fluids_500ml', 'fluids_1000ml', 'sodium_bicarbonate', 'oxygen_nonrebreather'],
       isCritical: true,
     },
   ],
@@ -2357,11 +2500,13 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       triggerMinutes: 1,
       vitalChanges: { spo2: 70, pulse: 140, respiration: 0, gcs: 13 },
       clinicalSigns: 'Complete obstruction — no air movement despite maximal effort. Universal choking sign, silent/absent cough, rapidly deepening cyanosis. Hypoxic tachycardia. Back blows then abdominal thrusts NOW; every second of delay costs oxygenation.',
+      driverTreatments: ['back_blows', 'abdominal_thrusts', 'magill_forceps', 'suction', 'airway_open'],
     },
     {
       triggerMinutes: 2,
       vitalChanges: { spo2: 55, pulse: 150, respiration: 0, gcs: 7 },
       clinicalSigns: 'Profound hypoxia — patient losing consciousness and slumping. As tone is lost, lower to the ground, START CPR, look in the mouth and remove a VISIBLE foreign body with Magill forceps under laryngoscopy. Surgical airway if unrelievable.',
+      driverTreatments: ['back_blows', 'abdominal_thrusts', 'magill_forceps', 'suction', 'cpr', 'oxygen_nonrebreather', 'bvm_ventilation'],
       isCritical: true,
     },
     {
@@ -2369,6 +2514,7 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       vitalChanges: { spo2: 35, pulse: 40, respiration: 0, gcs: 3, bpSystolicDelta: -30 },
       clinicalSigns: 'Hypoxic bradycardia → peri-arrest. The airway is still obstructed. CPR ongoing, continue attempts to remove the FB; this is the final window before arrest.',
       rhythm: 'Sinus Bradycardia',
+      driverTreatments: ['cpr', 'magill_forceps', 'suction', 'back_blows', 'abdominal_thrusts', 'bvm_ventilation', 'oxygen_nonrebreather'],
       isCritical: true,
     },
     {
@@ -2376,6 +2522,7 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       vitalChanges: { pulse: 0, spo2: 20, respiration: 0, gcs: 3 },
       clinicalSigns: 'Hypoxic cardiac arrest from unrelieved complete FBAO. Rhythm typically PEA → asystole. CPR (compressions help generate airway pressure), remove the FB (Magill/laryngoscopy) and oxygenate the instant the airway is clear; surgical cricothyroidotomy if it cannot be cleared.',
       rhythm: 'PEA',
+      driverTreatments: ['cpr', 'adrenaline_1mg', 'magill_forceps', 'suction', 'bvm_ventilation', 'intubation', 'oxygen_nonrebreather'],
       isCritical: true,
     },
   ],

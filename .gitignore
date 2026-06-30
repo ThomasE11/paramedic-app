@@ -24,6 +24,8 @@ dist
 !public/images/clinical/*.png
 !public/images/placeholders/*.jpg
 !public/images/placeholders/*.png
+!public/scene-assets/
+!public/scene-assets/*.png
 # Old agent framework + AI tooling caches
 .gstack/
 .bmad/

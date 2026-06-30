@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 120" role="img" aria-label="Simple oxygen mask">
+  <defs>
+    <linearGradient id="mask" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#efffff" stop-opacity=".95"/>
+      <stop offset=".58" stop-color="#a5f3fc" stop-opacity=".68"/>
+      <stop offset="1" stop-color="#67e8f9" stop-opacity=".42"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="5" flood-color="#155e75" flood-opacity=".25"/>
+    </filter>
+  </defs>
+  <rect width="180" height="120" rx="22" fill="#f8fdff"/>
+  <path d="M30 46h38M112 46h38" stroke="#38bdf8" stroke-width="7" stroke-linecap="round"/>
+  <path d="M54 50c0-25 72-25 72 0 0 28-13 47-36 47S54 78 54 50Z" fill="url(#mask)" stroke="#0891b2" stroke-width="4" filter="url(#shadow)"/>
+  <path d="M75 51c8 5 22 5 30 0" fill="none" stroke="#0e7490" stroke-width="3" stroke-linecap="round" opacity=".4"/>
+  <path d="M90 92v22" stroke="#38bdf8" stroke-width="7" stroke-linecap="round"/>
+  <circle cx="90" cy="78" r="10" fill="#cffafe" stroke="#0891b2" stroke-width="3"/>
+  <text x="90" y="108" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="700" fill="#155e75">OXYGEN MASK</text>
+</svg>

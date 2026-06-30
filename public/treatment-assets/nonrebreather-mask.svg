@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 120" role="img" aria-label="Non-rebreather oxygen mask">
+  <rect width="180" height="120" rx="22" fill="#f8fdff"/>
+  <path d="M27 43h40M113 43h40" stroke="#38bdf8" stroke-width="7" stroke-linecap="round"/>
+  <path d="M55 48c0-25 70-25 70 0 0 24-13 39-35 39S55 72 55 48Z" fill="#bae6fd" fill-opacity=".58" stroke="#0369a1" stroke-width="4"/>
+  <circle cx="75" cy="64" r="8" fill="#e0f2fe" stroke="#0284c7" stroke-width="2"/>
+  <circle cx="105" cy="64" r="8" fill="#e0f2fe" stroke="#0284c7" stroke-width="2"/>
+  <path d="M90 84v11" stroke="#0ea5e9" stroke-width="7" stroke-linecap="round"/>
+  <rect x="71" y="90" width="38" height="25" rx="14" fill="#dbeafe" stroke="#0284c7" stroke-width="3"/>
+  <path d="M78 104c9 5 15 5 24 0" fill="none" stroke="#38bdf8" stroke-width="3" stroke-linecap="round"/>
+  <text x="90" y="18" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="700" fill="#075985">NON-REBREATHER</text>
+</svg>

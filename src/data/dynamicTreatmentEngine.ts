@@ -804,6 +804,42 @@ function applyStandardTreatment(
         }
         break;
       }
+
+      case 'painScore': {
+        const oldPain = vitals.painScore ?? 0;
+        if (effect.changeType === 'decrease') {
+          vitals.painScore = Math.round(clamp(oldPain - adjustedValue, effect.minValue ?? 0, effect.maxValue ?? 10) * 10) / 10;
+        } else if (effect.changeType === 'increase') {
+          vitals.painScore = Math.round(clamp(oldPain + adjustedValue, effect.minValue ?? 0, effect.maxValue ?? 10) * 10) / 10;
+        } else if (effect.changeType === 'set') {
+          vitals.painScore = Math.round((oldPain + (effect.value - oldPain) * effectMultiplier) * 10) / 10;
+        }
+        if (vitals.painScore !== oldPain) {
+          changes.push({
+            vital: 'Pain', oldValue: `${oldPain}/10`, newValue: `${vitals.painScore}/10`,
+            direction: vitals.painScore < oldPain ? 'improved' : 'worsened'
+          });
+        }
+        break;
+      }
+
+      case 'etco2': {
+        const oldEtco2 = vitals.etco2 ?? 35;
+        if (effect.changeType === 'set') {
+          vitals.etco2 = Math.round((oldEtco2 + (effect.value - oldEtco2) * effectMultiplier) * 10) / 10;
+        } else if (effect.changeType === 'increase') {
+          vitals.etco2 = Math.round(clamp(oldEtco2 + adjustedValue, effect.minValue ?? 0, effect.maxValue ?? 80) * 10) / 10;
+        } else if (effect.changeType === 'decrease') {
+          vitals.etco2 = Math.round(clamp(oldEtco2 - adjustedValue, effect.minValue ?? 0, effect.maxValue ?? 80) * 10) / 10;
+        }
+        if (vitals.etco2 !== oldEtco2) {
+          changes.push({
+            vital: 'EtCO2', oldValue: `${oldEtco2}`, newValue: `${vitals.etco2}`,
+            direction: Math.abs(vitals.etco2 - 35) < Math.abs(oldEtco2 - 35) ? 'improved' : 'worsened'
+          });
+        }
+        break;
+      }
     }
   });
 
@@ -1280,8 +1316,11 @@ export function applyDeterioration(
     timeWithoutTreatment: state.timeWithoutTreatment + secondsElapsed,
   };
 
-  // Only deteriorate if no treatment applied recently (>60 seconds)
-  if (newState.timeWithoutTreatment < 60) return newState;
+  // NOTE: the blanket "any treatment in the last 60s halts ALL deterioration"
+  // gate used to live here. It is removed for staged-timeline cases so that
+  // non-driver treatments (e.g. oxygen for anaphylaxis) no longer pause decay.
+  // Per-driver halting is handled inside the staged branch below; the
+  // authored-target and generic branches keep their own 60s gates.
 
   const totalUntreatedMinutes = newState.timeWithoutTreatment / 60;
 
@@ -1299,6 +1338,24 @@ export function applyDeterioration(
     }
 
     if (activeStage) {
+      // Per-driver halting: if this stage declares driverTreatments, only a
+      // recent application of one of those specific treatments halts it. If
+      // the stage doesn't declare drivers, fall back to the legacy blanket
+      // rule (any recent treatment halts) so existing timelines without
+      // driverTreatments keep their behaviour.
+      const driverIds = activeStage.driverTreatments;
+      const haltWindowSec = activeStage.haltWindowSeconds ?? 60;
+      let stageHalted: boolean;
+      if (driverIds && driverIds.length > 0) {
+        const cutoff = Date.now() - haltWindowSec * 1000;
+        stageHalted = state.treatmentHistory.some(
+          r => driverIds.includes(r.treatmentId) && r.timestamp >= cutoff,
+        );
+      } else {
+        stageHalted = newState.timeWithoutTreatment < haltWindowSec;
+      }
+      if (stageHalted) return newState;
+
       const bp = parseBP(newState.vitals.bp);
 
       // Apply stage-specific vital changes
@@ -1316,6 +1373,12 @@ export function applyDeterioration(
       }
       if (activeStage.vitalChanges.bloodGlucose !== undefined) {
         newState.vitals.bloodGlucose = activeStage.vitalChanges.bloodGlucose;
+      }
+      if (activeStage.vitalChanges.etco2 !== undefined) {
+        newState.vitals.etco2 = activeStage.vitalChanges.etco2;
+      }
+      if (activeStage.vitalChanges.painScore !== undefined) {
+        newState.vitals.painScore = activeStage.vitalChanges.painScore;
       }
       if (activeStage.vitalChanges.bpSystolicDelta !== undefined) {
         const initialBP = parseBP(caseData.vitalSignsProgression.initial.bp);
@@ -1356,6 +1419,9 @@ export function applyDeterioration(
   // don't really deteriorate" gap for metabolic / tox / obstetric / etc. cases.
   const deteriorationTarget = caseData.vitalSignsProgression?.deterioration;
   if (deteriorationTarget) {
+    // Non-staged cases keep the legacy blanket gate: any treatment in the
+    // last 60s halts decay. Staged cases use per-driver halting above.
+    if (newState.timeWithoutTreatment < 60) return newState;
     const initialVitals = caseData.vitalSignsProgression.initial;
     const proto = findProtocol(caseData.subcategory || '', caseData.category);
     const rate = proto ? determineSeverityFromVitals(proto, initialVitals).deteriorationRate : 'moderate';
@@ -1394,6 +1460,8 @@ export function applyDeterioration(
   }
 
   // ===== FALLBACK: GENERIC CATEGORY-BASED DETERIORATION =====
+  // Non-staged, non-authored cases keep the legacy blanket gate.
+  if (newState.timeWithoutTreatment < 60) return newState;
   const cat = caseData.category.toLowerCase();
   const bp = parseBP(newState.vitals.bp);
   const deteriorationRate = Math.min(4, Math.floor(newState.timeWithoutTreatment / 120));

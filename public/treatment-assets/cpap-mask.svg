@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 120" role="img" aria-label="CPAP mask">
+  <rect width="180" height="120" rx="22" fill="#f8fdff"/>
+  <path d="M25 40h42M113 40h42M24 74h41M115 74h41" stroke="#2563eb" stroke-width="6" stroke-linecap="round"/>
+  <path d="M52 51c0-30 76-30 76 0 0 28-14 45-38 45S52 79 52 51Z" fill="#dbeafe" stroke="#1d4ed8" stroke-width="5"/>
+  <path d="M68 51c11 9 33 9 44 0" fill="none" stroke="#60a5fa" stroke-width="4" stroke-linecap="round"/>
+  <path d="M90 91v22" stroke="#2563eb" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="90" cy="75" r="11" fill="#eff6ff" stroke="#1d4ed8" stroke-width="3"/>
+  <text x="90" y="18" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="700" fill="#1e3a8a">CPAP / NIV</text>
+</svg>

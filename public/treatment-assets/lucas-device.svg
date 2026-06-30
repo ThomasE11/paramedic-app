@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 120" role="img" aria-label="Mechanical CPR device">
+  <rect width="180" height="120" rx="22" fill="#f8fafc"/>
+  <path d="M35 73h110" stroke="#475569" stroke-width="12" stroke-linecap="round"/>
+  <path d="M42 73v25M138 73v25" stroke="#334155" stroke-width="7" stroke-linecap="round"/>
+  <rect x="71" y="28" width="38" height="55" rx="11" fill="#1e293b" stroke="#94a3b8" stroke-width="4"/>
+  <circle cx="90" cy="55" r="15" fill="#e2e8f0" stroke="#64748b" stroke-width="4"/>
+  <path d="M90 40v30" stroke="#94a3b8" stroke-width="3" stroke-linecap="round"/>
+  <text x="90" y="19" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="800" fill="#334155">LUCAS CPR</text>
+</svg>

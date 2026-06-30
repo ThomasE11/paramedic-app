@@ -12,6 +12,7 @@ import { useRef, useCallback, useState, useMemo, useEffect } from 'react';
 import type { CSSProperties, ElementRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, ContactShadows, Html } from '@react-three/drei';
+import * as THREE from 'three';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { RotateCcw, User, Eye, Hand, Activity, Stethoscope, X, ChevronRight, ChevronDown, AlertTriangle, Compass, Unlock, Wind, Shirt } from 'lucide-react';
@@ -24,7 +25,7 @@ import { getNextGuidedStep, EXAM_SEQUENCE } from './bodyRegions';
 import { useTranslation } from 'react-i18next';
 import type { AssessmentStepId, SecondaryAssessmentStep } from '@/data/assessmentFramework';
 import { getAssessmentProfile } from '@/data/assessmentFramework';
-import type { CaseScenario, CaseCategory } from '@/types';
+import type { CaseScenario, CaseCategory, VitalSigns } from '@/types';
 import type { ClinicalSoundState } from '@/data/clinicalSounds';
 import { playBreathSound, playHeartSound, playPercussionSound, playBowelSound, stopAllSounds, getZoneBreathSound } from '@/data/clinicalSounds';
 import type { BowelSoundType, BreathSoundType } from '@/data/clinicalSounds';
@@ -84,13 +85,13 @@ interface AppliedEquipmentVisualState {
 }
 
 const TREATMENT_ASSET_PATHS = {
-  nasal: '/treatment-assets/nasal-cannula.svg',
-  simpleMask: '/treatment-assets/simple-mask.svg',
-  nonrebreather: '/treatment-assets/nonrebreather-mask.svg',
-  nebulizer: '/treatment-assets/nebulizer-mask.svg',
-  bvm: '/treatment-assets/bvm.svg',
-  cpap: '/treatment-assets/cpap-mask.svg',
-  ventilator: '/treatment-assets/ventilator-circuit.svg',
+  nasal: '/equipment-assets/nasal-cannula.webp',
+  simpleMask: '/equipment-assets/oxygen-mask.webp',
+  nonrebreather: '/equipment-assets/nonrebreather-mask.webp',
+  nebulizer: '/equipment-assets/nebulizer-mask.webp',
+  bvm: '/equipment-assets/bvm.webp',
+  cpap: '/equipment-assets/cpap-circuit.webp',
+  ventilator: '/equipment-assets/ventilator-circuit.webp',
   ivCannula: '/treatment-assets/iv-cannula.svg',
   fluidBag: '/treatment-assets/fluid-bag.svg',
   defibPads: '/treatment-assets/defib-pads.svg',
@@ -128,10 +129,22 @@ const EXAM_LANDMARKS: ExamLandmark[] = [
   { id: 'pedal-overview', region: 'right-leg', label: 'Pedal pulse', sublabel: 'DP / PT', position: [-0.13, 0.14, 0.20], level: 'overview', tone: 'circulation' },
   { id: 'posterior-overview', region: 'posterior-logroll', label: 'Posterior', sublabel: 'log roll / spine', position: [0.0, 1.10, -0.20], level: 'overview', tone: 'neutral' },
 
-  { id: 'right-eye', region: 'face', label: 'Right eye', sublabel: 'pupil size, reactivity', position: [-0.052, 1.635, 0.205], level: 'detail', actionId: 'pupils-size', tone: 'neuro' },
-  { id: 'left-eye', region: 'face', label: 'Left eye', sublabel: 'compare equality', position: [0.052, 1.635, 0.205], level: 'detail', actionId: 'pupils-equality', tone: 'neuro' },
-  { id: 'nose-detail', region: 'face', label: 'Nose', sublabel: 'CSF, bleeding, deformity', position: [0, 1.595, 0.21], level: 'detail', actionId: 'nose-inspect', tone: 'neutral' },
-  { id: 'mouth-detail', region: 'face', label: 'Mouth / lips', sublabel: 'cyanosis, secretions, tongue', position: [0, 1.555, 0.215], level: 'detail', actionId: 'mouth-inspect', tone: 'airway' },
+  // Facial landmarks: x/y are tuned to sit ON the painted features (eyes/lips)
+  // of the actual mesh — the sampler only corrects depth (z), so these x/y are
+  // the calibration knob. Nudge here if a dot drifts off its feature.
+  // x/y computed from the model's own eye-socket texels via UV→geometry
+  // (scripts/calibrate-face.cjs) — deterministic, not eyeballed. The sampler
+  // overrides z to sit each dot on the real surface. Re-run that script if the
+  // patient mesh/texture ever changes.
+  { id: 'right-eye', region: 'face', label: 'Right eye', sublabel: 'pupil size, reactivity', position: [-0.029, 1.664, 0.16], level: 'detail', actionId: 'pupils-size', tone: 'neuro' },
+  { id: 'left-eye', region: 'face', label: 'Left eye', sublabel: 'compare equality', position: [0.029, 1.664, 0.16], level: 'detail', actionId: 'pupils-equality', tone: 'neuro' },
+  { id: 'nose-detail', region: 'face', label: 'Nose', sublabel: 'CSF, bleeding, deformity', position: [0, 1.629, 0.16], level: 'detail', actionId: 'nose-inspect', tone: 'neutral' },
+  { id: 'mouth-detail', region: 'face', label: 'Mouth / lips', sublabel: 'cyanosis, secretions, tongue', position: [0, 1.592, 0.165], level: 'detail', actionId: 'mouth-inspect', tone: 'airway' },
+  // Carotid pulse points sit on the neck, lateral to the midline — tappable
+  // from the face zoom so students feel the central pulse on the patient
+  // (not the monitor). actionId 'pulse-carotid' fires onPulse from any view.
+  { id: 'face-carotid-r', region: 'face', label: 'Carotid (R)', sublabel: 'central pulse', position: [-0.048, 1.495, 0.185], level: 'detail', actionId: 'pulse-carotid', tone: 'circulation' },
+  { id: 'face-carotid-l', region: 'face', label: 'Carotid (L)', sublabel: 'central pulse', position: [0.048, 1.495, 0.185], level: 'detail', actionId: 'pulse-carotid', tone: 'circulation' },
 
   { id: 'trachea-detail', region: 'neck-cspine', label: 'Trachea', sublabel: 'midline / deviated', position: [0, 1.44, 0.22], level: 'detail', actionId: 'trachea-palpate', tone: 'airway' },
   { id: 'jvd-detail', region: 'neck-cspine', label: 'JVD', sublabel: 'neck veins', position: [0.09, 1.47, 0.19], level: 'detail', actionId: 'jvd-inspect', tone: 'circulation' },
@@ -591,13 +604,55 @@ function OxygenDeviceGraphic({ equipment }: { equipment: OxygenEquipmentVisual }
     cpap: TREATMENT_ASSET_PATHS.cpap,
     ventilator: TREATMENT_ASSET_PATHS.ventilator,
   }[equipment.mode];
+
+  const sizeClass = {
+    nasal: 'h-12 w-[4.4rem] -translate-y-1',
+    'simple-mask': 'h-[4.4rem] w-[5rem]',
+    nonrebreather: 'h-[6.4rem] w-[5.6rem] translate-y-4',
+    nebulizer: 'h-[5.8rem] w-[5.7rem] translate-y-3',
+    bvm: 'h-[5rem] w-[6.8rem] translate-y-4',
+    cpap: 'h-[5.2rem] w-[5.6rem] translate-y-2',
+    ventilator: 'h-[4.8rem] w-[6.8rem] translate-y-3',
+  }[equipment.mode];
+
+  const label = {
+    nasal: 'O2',
+    'simple-mask': 'O2',
+    nonrebreather: '15 L',
+    nebulizer: 'Mist',
+    bvm: 'BVM',
+    cpap: 'CPAP',
+    ventilator: 'Vent',
+  }[equipment.mode];
+
   return (
-    <img
-      src={src}
-      alt=""
-      className="absolute inset-0 h-full w-full object-contain drop-shadow-[0_10px_12px_rgba(8,47,73,0.22)]"
-      draggable={false}
-    />
+    <div className={`pointer-events-none relative ${sizeClass} animate-in fade-in zoom-in-75 duration-300`} aria-hidden="true">
+      <img
+        src={src}
+        alt=""
+        className="absolute inset-0 h-full w-full object-contain drop-shadow-[0_10px_12px_rgba(8,47,73,0.24)]"
+        draggable={false}
+      />
+      {(equipment.mode === 'nonrebreather' || equipment.mode === 'simple-mask' || equipment.mode === 'nasal') && (
+        <div className="absolute -right-1 bottom-1 flex items-center gap-0.5">
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-cyan-200 shadow-[0_0_10px_rgba(103,232,249,0.9)]" />
+          <span className="h-1 w-1 rounded-full bg-cyan-100/80" />
+        </div>
+      )}
+      {equipment.mode === 'nebulizer' && (
+        <>
+          <span className="absolute left-1/2 top-[18%] h-2 w-2 -translate-x-1/2 animate-ping rounded-full bg-cyan-100/60" />
+          <span className="absolute left-[58%] top-[30%] h-1.5 w-1.5 animate-pulse rounded-full bg-cyan-50/80" />
+          <span className="absolute left-[42%] top-[36%] h-1 w-1 rounded-full bg-cyan-50/75" />
+        </>
+      )}
+      {(equipment.mode === 'bvm' || equipment.mode === 'cpap' || equipment.mode === 'ventilator') && (
+        <span className="absolute left-1/2 top-[58%] h-2 w-2 -translate-x-1/2 animate-pulse rounded-full bg-sky-100 shadow-[0_0_12px_rgba(186,230,253,0.9)]" />
+      )}
+      <span className="absolute -right-1 -top-1 rounded-full border border-white/30 bg-slate-950/62 px-1.5 py-0.5 text-[7px] font-black uppercase tracking-[0.08em] text-cyan-50 shadow-lg backdrop-blur-md">
+        {label}
+      </span>
+    </div>
   );
 }
 
@@ -707,10 +762,8 @@ function TreatmentEquipmentOverlay({
   return (
     <>
       {equipment.oxygen && (
-        <MarkerHtml position={anchor(0, 1.565, 0.215)} distanceFactor={2.15} zIndexRange={[76, 0]} interactive={false}>
-          <EquipmentPill label={equipment.oxygen.label} detail={equipment.oxygen.detail} tone="oxygen">
-            <OxygenDeviceGraphic equipment={equipment.oxygen} />
-          </EquipmentPill>
+        <MarkerHtml position={anchor(0, 1.565, 0.215)} distanceFactor={2.45} zIndexRange={[62, 0]} interactive={false}>
+          <OxygenDeviceGraphic equipment={equipment.oxygen} />
         </MarkerHtml>
       )}
 
@@ -1444,17 +1497,16 @@ function SecondaryAssessmentOutline({ activeRegion, selectedAction, caseData }: 
   selectedAction: string | null;
   caseData: CaseScenario;
 }) {
-  const profile = activeRegion === 'face' ? getPupilProfile(caseData) : null;
   const workflow = getWorkflowForRegion(activeRegion);
   const activeWorkflowStep = getWorkflowStepForAction(activeRegion, selectedAction);
-  const shouldShowPupils = activeRegion === 'face' && (!selectedAction || selectedAction.includes('pupil') || selectedAction.includes('eyes'));
   const shouldShowAirway = activeRegion === 'neck-cspine' && (!selectedAction || selectedAction.includes('airway') || selectedAction.includes('trachea') || selectedAction.includes('jvd'));
   const shouldShowBreathing = activeRegion === 'chest';
   const shouldShowAbdomen = activeRegion === 'abdomen';
 
   return (
     <div className="space-y-2">
-      {shouldShowPupils && profile && <PupilCloseUp profile={profile} />}
+      {/* Pupil close-up lives in the floating loupe (always shown for the face),
+          so we don't repeat it here — it was the third redundant copy. */}
       {shouldShowAirway && <AirwayCloseUp caseData={caseData} />}
       {shouldShowBreathing && <ChestAssessmentMap selectedAction={selectedAction} caseData={caseData} />}
       {shouldShowBreathing && <BreathingPatternPanel caseData={caseData} />}
@@ -2441,6 +2493,12 @@ interface Body3DModelProps {
   appliedTreatmentIds?: string[];
   /** Whether the patient is currently in cardiac arrest (all pulses absent) */
   isInArrest?: boolean;
+  /**
+   * Live vital signs used to drive perfusion visuals on the mannequin
+   * (skin cyanosis from SpO2, pallor from shock index). When undefined,
+   * the body falls back to the case's initial vitals (no live tint).
+   */
+  vitals?: VitalSigns;
   /** Run a pulse check from a mannequin pulse point (radial wrist / carotid neck). */
   onPulse?: (site: string) => void;
 }
@@ -2486,11 +2544,15 @@ function InFrameFindings({
   offsetForEyeContext?: boolean;
 }) {
   const labelFor = (id: string) => allActions.find(a => a.id === id)?.label ?? 'Finding';
-  const active = selectedAction && revealedFindings.has(selectedAction)
+  // When the eye loupe is open it already shows the pupils in full — so the
+  // pupil/eye finding bubble is redundant AND it's the element the loupe was
+  // overlapping. Drop it here so the loupe is the single source of truth.
+  const isEyeFinding = (id: string) => offsetForEyeContext && (id.includes('pupil') || id.includes('eye'));
+  const active = selectedAction && revealedFindings.has(selectedAction) && !isEyeFinding(selectedAction)
     ? { label: labelFor(selectedAction), text: revealedFindings.get(selectedAction)! }
     : null;
   const regionIds = new Set(allActions.map(a => a.id));
-  const others = [...revealedFindings.entries()].filter(([id]) => regionIds.has(id) && id !== selectedAction);
+  const others = [...revealedFindings.entries()].filter(([id]) => regionIds.has(id) && id !== selectedAction && !isEyeFinding(id));
   if (!active && others.length === 0) return null;
 
   const severity = (t: string): 'crit' | 'warn' | 'ok' => {
@@ -2507,7 +2569,7 @@ function InFrameFindings({
   const dotTone = { crit: 'bg-red-400', warn: 'bg-amber-300', ok: 'bg-emerald-400' } as const;
 
   return (
-    <div className={`pointer-events-none absolute right-3 z-10 flex w-[min(18rem,calc(100%-1.5rem))] flex-col items-stretch gap-1.5 ${offsetForEyeContext ? 'top-[15.5rem]' : 'top-14'}`}>
+    <div className={`pointer-events-none absolute right-3 z-10 flex w-[min(18rem,calc(100%-1.5rem))] flex-col items-stretch gap-1.5 ${offsetForEyeContext ? 'top-[20.5rem]' : 'top-14'}`}>
       {active && (() => {
         const sv = severity(active.text);
         return (
@@ -2968,7 +3030,7 @@ function PatientRealismStrip({
   );
 }
 
-export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientSounds, caseCategory, appliedTreatmentIds = [], isInArrest = false, onPulse }: Body3DModelProps) {
+export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientSounds, caseCategory, appliedTreatmentIds = [], isInArrest = false, vitals, onPulse }: Body3DModelProps) {
   const { t } = useTranslation();
   const controlsRef = useRef<OrbitControlsHandle | null>(null);
   const [isFlipped, setIsFlipped] = useState(false);
@@ -3033,6 +3095,45 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
     const rr = caseData.abcde?.breathing?.rate ?? caseData.vitalSignsProgression?.initial?.respiration;
     return typeof rr === 'number' ? rr : 0;
   }, [caseData]);
+
+  // Live skin perfusion tint driven by SpO2 (cyanosis) and shock index
+  // (pulse / systolic BP → pallor). Returns a target THREE.Color the body
+  // mesh lerps toward per frame, or null when the patient is well-perfused
+  // (no tinting needed — the mesh keeps its authored skin material colour).
+  // Falls back to the case's initial vitals when no live `vitals` prop is
+  // supplied, so non-StudentPanel surfaces (Workspace, exam panel) keep the
+  // case-presentation skin tone instead of going untinted.
+  const skinTint = useMemo<THREE.Color | null>(() => {
+    const source = vitals ?? caseData.vitalSignsProgression?.initial;
+    if (!source) return null;
+    const spo2 = typeof source.spo2 === 'number' ? source.spo2 : null;
+    const pulse = typeof source.pulse === 'number' ? source.pulse : null;
+    // Parse "120/80" → 120. Tolerant of "120/80 mmHg", "120", missing.
+    const bpStr = typeof source.bp === 'string' ? source.bp : '';
+    const bpMatch = bpStr.match(/(\d{2,3})\s*\/\s*(\d{2,3})/);
+    const systolic = bpMatch ? parseInt(bpMatch[1], 10) : null;
+
+    let tint: THREE.Color | null = null;
+    // Cyanosis from hypoxaemia — central, so it tints the whole skin.
+    if (spo2 !== null && spo2 < 95) {
+      const cyan =
+        spo2 >= 90 ? new THREE.Color(0xa8b8c8) // faint
+        : spo2 >= 85 ? new THREE.Color(0x7d9bb5) // noticeable
+        : new THREE.Color(0x5b7a99);            // strong
+      tint = cyan;
+    }
+    // Pallor from poor perfusion — shock index >0.8 desaturates toward grey.
+    if (pulse !== null && systolic !== null && systolic > 0) {
+      const shockIndex = pulse / systolic;
+      if (shockIndex > 0.8) {
+        const pallor = new THREE.Color(0xc9b6a6);
+        // Stronger shock → more pallor. Lerp factor 0.3-0.7.
+        const p = Math.min(0.7, 0.3 + (shockIndex - 0.8) * 0.4);
+        tint = tint ? tint.clone().lerp(pallor, p) : pallor.clone().lerp(new THREE.Color(0xffffff), 1 - p);
+      }
+    }
+    return tint;
+  }, [vitals, caseData.vitalSignsProgression?.initial]);
 
   // Which finding morphs are REVEALED — a finding's morph activates only
   // once the student has assessed its region. This is the discovery
@@ -3393,7 +3494,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
       playPercussionSound(percType);
       startSoundProgress(actionId, PERCUSSION_DURATION);
     }
-  }, [activeRegion, animateCamera, caseData, patientSounds, revealedFindings, startSoundProgress, isInArrest, patientVoice.say, surfaceSampler]);
+  }, [activeRegion, animateCamera, caseData, patientSounds, patientVoice, revealedFindings, startSoundProgress, isInArrest, surfaceSampler]);
 
   const allSubRegions = activeRegion ? getSubRegions(activeRegion) : [];
   const subRegions = allSubRegions;
@@ -3699,6 +3800,14 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
               gl={{ antialias: true, alpha: true, preserveDrawingBuffer: new URLSearchParams(window.location.search).has('capture') }}
               style={{ background: 'transparent' }}
               onPointerMissed={() => { if (activeRegion) handleCloseRegion(); }}
+              onCreated={(state) => {
+                // ponytail: dev-only calibration hook — lets a script reach the
+                // live scene/camera to compute exact facial-landmark positions
+                // from the model's own geometry+texture (see scripts/calibrate).
+                if (import.meta.env.DEV) {
+                  (window as unknown as { __r3f?: unknown }).__r3f = state;
+                }
+              }}
             >
               {/* Natural studio lighting: warm sky / cool ground hemisphere for
                   organic skin tone, a warm key, a cool fill for dimension, and a
@@ -3731,6 +3840,9 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 // Breathing morph driven at the case respiratory rate (0 when
                 // apnoeic / in arrest — stillness is itself a finding).
                 breathRateRpm={isInArrest ? 0 : breathRateRpm}
+                // Live skin perfusion tint — cyanosis from SpO2, pallor from
+                // shock index. null when well-perfused (no tint applied).
+                skinTint={skinTint}
                 // Receive the surface projector so labels anchor to the real mesh.
                 // Wrap in an arrow so React stores the function rather than calling it.
                 onSurfaceSampler={handleSurfaceSampler}

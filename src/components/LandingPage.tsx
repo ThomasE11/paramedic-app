@@ -223,7 +223,7 @@ export function LandingPage({ onRoleSelect, caseCount }: LandingPageProps) {
       <div className="clinical-ambient fixed inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true" />
 
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 nav-blur border-b border-white/45 dark:border-white/10">
+      <nav className="fixed top-0 left-0 right-0 z-50 nav-blur border-b border-white/45 dark:border-white/10 safe-top">
         <div className="max-w-6xl mx-auto px-6 flex items-center justify-between h-14">
           <div className="flex items-center gap-3">
             <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">

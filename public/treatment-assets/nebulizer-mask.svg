@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 120" role="img" aria-label="Nebulizer mask">
+  <rect width="180" height="120" rx="22" fill="#f8fdff"/>
+  <path d="M31 42h39M110 42h39" stroke="#38bdf8" stroke-width="7" stroke-linecap="round"/>
+  <path d="M56 47c0-24 68-24 68 0 0 24-13 38-34 38S56 71 56 47Z" fill="#cffafe" fill-opacity=".64" stroke="#0284c7" stroke-width="4"/>
+  <rect x="73" y="83" width="34" height="29" rx="9" fill="#ccfbf1" stroke="#0f766e" stroke-width="3"/>
+  <path d="M79 96h22" stroke="#14b8a6" stroke-width="3" stroke-linecap="round"/>
+  <path d="M90 111c22-7 39-5 55 4" fill="none" stroke="#2dd4bf" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="58" cy="28" r="4" fill="#99f6e4" opacity=".9"/>
+  <circle cx="70" cy="19" r="3" fill="#99f6e4" opacity=".7"/>
+  <circle cx="121" cy="25" r="3.5" fill="#99f6e4" opacity=".75"/>
+  <text x="90" y="17" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="700" fill="#115e59">NEBULIZER</text>
+</svg>

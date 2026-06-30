@@ -481,6 +481,200 @@ const RULES = [
       return findings;
     },
   },
+
+  // ---- Gender consistency for patient-focused fields ---------------------
+  // Born from the trauma-008 audit: case said `gender: 'female'` but the
+  // scene image showed a male and pronouns drifted. Only scans fields that
+  // describe the PATIENT (not bystanders) — bystanders/callerInfo naturally
+  // contain opposite-gender terms (a male patient often has a wife present)
+  // and including them produces a false-positive flood.
+  //
+  // Only flag patient-pronouns/nouns in `initialPresentation.appearance`
+  // and `initialPresentation.generalImpression`, and exclude clauses that
+  // clearly reference other people ("with mother", "wife holding her hand").
+  {
+    id: 'gender-mismatch-patient-narrative',
+    severity: 'ERROR',
+    check: (c) => {
+      const g = String(c.patientInfo?.gender || '').toLowerCase();
+      if (g !== 'male' && g !== 'female') return [];
+      const maleTokens = /\b(he|him|his|man|male|father|husband|son|boy|gentleman|grandfather)\b/i;
+      const femaleTokens = /\b(she|her|hers|woman|female|mother|wife|daughter|girl|lady|grandmother)\b/i;
+      const wrongTokens = g === 'male' ? femaleTokens : maleTokens;
+      const fields = {
+        'initialPresentation.generalImpression': c.initialPresentation?.generalImpression,
+        'initialPresentation.appearance': c.initialPresentation?.appearance,
+      };
+      // Skip the rule entirely for paediatric cases — the impression field
+      // almost always mentions a parent/caregiver ("toddler on mother's lap",
+      // "infant being comforted by father") and those are correct, not bugs.
+      const age = c.patientInfo?.age;
+      if (typeof age === 'number' && age < 14) return [];
+
+      const findings = [];
+      for (const [field, value] of Object.entries(fields)) {
+        if (typeof value !== 'string') continue;
+        // Drop clauses that introduce a bystander before checking pronouns.
+        // Splits on "with", "by", "near", "next to", "on", "alongside" —
+        // common bystander/positional intros — and only scans the leading
+        // clause, which is patient-focused in every adult case I sampled.
+        const patientClause = value.split(/\s+(with|by|near|next to|on|alongside)\s+/i)[0];
+        const m = patientClause.match(wrongTokens);
+        if (m) {
+          findings.push({ message: `patientInfo.gender=${g} but ${field} (patient clause) contains "${m[0]}". Excerpt: "${patientClause.slice(0, 120)}".` });
+        }
+      }
+      return findings;
+    },
+  },
+
+  // ---- Glucose-by-category sanity ---------------------------------------
+  // ~60 cases use the hardcoded default BGL 5.4. For most cases that's
+  // fine — glucose isn't relevant. But for DKA, hypoglycaemia, sepsis,
+  // and seizures the glucose value carries the diagnosis and 5.4 is
+  // either wrong or a missed teaching opportunity.
+  {
+    id: 'glucose-implausible-for-condition',
+    severity: 'WARN',
+    check: (c) => {
+      const dx = String(c.expectedFindings?.mostLikelyDiagnosis || '').toLowerCase();
+      const sub = String(c.subcategory || '').toLowerCase();
+      const cat = String(c.category || '').toLowerCase();
+      const haystack = `${dx} ${sub} ${cat}`;
+      const bgl = c.abcde?.disability?.bloodGlucose ?? c.vitalSignsProgression?.initial?.bloodGlucose;
+      if (typeof bgl !== 'number') return [];
+
+      const isDKA = /\bdka\b|diabetic ketoacid|hyperglyc|\bhhs\b|hyperosmolar/.test(haystack);
+      const isHypo = /hypoglyc|insulin overdose|insulin shock/.test(haystack);
+      const isSeizureUnknown = /seizure|status epilept|convuls/.test(haystack);
+
+      if (isDKA && bgl < 14) {
+        return [{ message: `DKA/HHS case but bloodGlucose=${bgl} mmol/L. Expected >14 (and often >30 in HHS).` }];
+      }
+      if (isHypo && bgl >= 4) {
+        return [{ message: `Hypoglycaemia case but bloodGlucose=${bgl} mmol/L (≥4). Symptoms typically start <4, severe <2.8.` }];
+      }
+      // Default-value sniff: 5.4 appears in dozens of seizure / metabolic
+      // cases where the value should actually carry diagnostic weight.
+      // Only flag when the case looks metabolic-relevant and BGL is the
+      // exact default.
+      if (isSeizureUnknown && bgl === 5.4) {
+        return [{ message: `Seizure case with bloodGlucose=5.4 (the default value) — confirm glucose was actually measured at this level vs. left at the schema default.` }];
+      }
+      return [];
+    },
+  },
+
+  // ---- UAE emergency-number sanity --------------------------------------
+  // 998 is UAE ambulance, 999 is police, 997 is fire/civil defence.
+  // Patient-education and pre-arrival fields routinely tell students
+  // to "call 999" for medical events; that routes to police dispatch
+  // rather than direct ambulance and adds delay.
+  {
+    id: 'emergency-number-medical-context-999',
+    severity: 'WARN',
+    check: (c) => {
+      const isUAE = /\bUAE\b|Dubai|Abu Dhabi|Sharjah|Ajman|Fujairah|Ras Al Khaimah|Umm Al Quwain|Al Ain/.test(
+        `${c.dispatchInfo?.location || ''} ${c.sceneInfo?.environment || ''}`
+      );
+      if (!isUAE) return [];
+      const candidates = [
+        ...(c.managementPathway?.transportConsiderations || []),
+        ...(c.teachingPoints || []),
+        ...(c.commonPitfalls || []),
+      ];
+      const findings = [];
+      for (const text of candidates) {
+        if (typeof text !== 'string') continue;
+        // Match "call 999" near ambulance/medical context — and exclude
+        // explicit "police 999" / "999 (police)" phrasing.
+        if (/call\s*999|dial\s*999/i.test(text)
+          && !/police|\(999\)\s*police|999\s*\(police\)/i.test(text)
+          && /ambulance|medical|emergency|when to call|paramedic/i.test(text)) {
+          findings.push({ message: `Medical/EMS context says "call 999" in UAE; should be 998 (direct ambulance) — police 999 routes via dispatch. Excerpt: "${text.slice(0, 100)}".` });
+        }
+      }
+      return findings;
+    },
+  },
+
+  // ---- Anachronistic equipment / interventions --------------------------
+  // Flags equipment off the modern curriculum. Keeping the list narrow so
+  // we don't over-fire: MAST/PASG (off ATLS since early 2000s), routine
+  // bicarbonate in cardiac arrest, atropine in PEA/asystole, lidocaine
+  // first-line for VF (replaced by amiodarone), rotating tourniquets.
+  {
+    id: 'anachronistic-equipment-or-drug',
+    severity: 'ERROR',
+    check: (c) => {
+      const haystack = [
+        ...(c.equipmentNeeded || []),
+        ...(c.managementPathway?.immediate || []),
+        ...(c.managementPathway?.definitive || []),
+        ...(c.teachingPoints || []),
+      ].join(' | ').toLowerCase();
+      const findings = [];
+      const items = [
+        { rx: /\bmast\s*trouser|\bpasg\b|pneumatic anti-shock|shock trousers/i, label: 'MAST / PASG trousers (off ATLS since ~2005; use pelvic binder + permissive hypotension + early blood products)' },
+        { rx: /rotating tourniquet/i, label: 'Rotating tourniquets (obsolete; not part of any current resus guideline)' },
+        { rx: /routine (sodium )?bicarb|empirical bicarb/i, label: 'Routine bicarbonate in cardiac arrest (not in AHA/RCUK guidelines — reserve for hyperkalaemia / TCA OD / prolonged arrest)' },
+        { rx: /atropine.{0,40}(asystole|\bpea\b|non-shockable)|asystole.{0,40}atropine|\bpea\b.{0,40}atropine/i, label: 'Atropine for asystole/PEA (removed from ACLS in 2010)' },
+        { rx: /lidocaine.{0,40}(first|first-line|initial).{0,40}(vf|ventricular fib)|first-line.{0,40}lidocaine.{0,40}(vf|ventricular)/i, label: 'Lidocaine first-line for VF (replaced by amiodarone)' },
+      ];
+      for (const { rx, label } of items) {
+        if (rx.test(haystack)) {
+          findings.push({ message: `Anachronistic item: ${label}.` });
+        }
+      }
+      return findings;
+    },
+  },
+
+  // ---- Dispatch code enum sanity ---------------------------------------
+  // UAE/Dubai ambulance services use ECNS (Medical Priority Dispatch System)
+  // codes: Alpha-Echo + Omega. Free-form values silently bypass any UI
+  // that wants to colour-code or filter by priority.
+  {
+    id: 'dispatch-code-not-recognised',
+    severity: 'INFO',
+    check: (c) => {
+      const code = c.dispatchInfo?.dispatchCode;
+      if (!code) return [];
+      const ok = /^(Alpha|Bravo|Charlie|Delta|Echo|Omega)(-\d{1,2}[A-Z]?)?$/i.test(String(code).trim());
+      if (!ok) {
+        return [{ message: `dispatchCode "${code}" doesn't match ECNS pattern (Alpha|Bravo|Charlie|Delta|Echo|Omega [-NUMBER[LETTER]]).` }];
+      }
+      return [];
+    },
+  },
+
+  // ---- Pedestrian-struck mechanism without lower-limb / pelvic finding --
+  // Triggered by the trauma-008 conversation: a "struck by car" case
+  // should leave at least one anatomical fingerprint on the lower body.
+  {
+    id: 'pedestrian-struck-no-lower-injury',
+    severity: 'INFO',
+    check: (c) => {
+      const callReason = String(c.dispatchInfo?.callReason || '').toLowerCase();
+      const sub = String(c.subcategory || '').toLowerCase();
+      const mech = `${callReason} ${sub}`;
+      const isPedStruck = /pedestrian.{0,20}(struck|hit|knocked)|struck by car|struck by vehicle/.test(mech);
+      if (!isPedStruck) return [];
+      const lowerBody = [
+        ...(c.secondarySurvey?.extremities || []),
+        ...(c.secondarySurvey?.pelvis || []),
+        ...(c.abcde?.exposure?.findings || []),
+        ...(c.abcde?.exposure?.deformities || []),
+        c.sceneInfo?.description,
+        c.initialPresentation?.appearance,
+      ].filter(Boolean).join(' ').toLowerCase();
+      const lowerFindings = /(leg|knee|tibia|fibula|femur|hip|pelvi|ankle|foot|lower limb)/.test(lowerBody);
+      if (!lowerFindings) {
+        return [{ message: `Pedestrian-struck mechanism but no lower-limb / pelvic finding in extremities / exposure / scene. The struck pedestrian should have a visible lower-body fingerprint.` }];
+      }
+      return [];
+    },
+  },
 ];
 
 // ============================================================================

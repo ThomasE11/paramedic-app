@@ -331,7 +331,7 @@ function ShowHeader({
   const catLookup = Object.fromEntries(caseCategories.map(c => [c.value, c]));
 
   return (
-    <header className="sticky top-0 z-50 nav-blur border-b border-white/45 dark:border-white/10 transition-all duration-300">
+    <header className="sticky top-0 z-50 nav-blur border-b border-white/45 dark:border-white/10 transition-all duration-300 safe-top">
       <div className="container mx-auto px-3 sm:px-4 py-2.5 sm:py-4">
         <div className="flex items-center justify-between">
           <button onClick={goHome} className="flex items-center gap-3 group">

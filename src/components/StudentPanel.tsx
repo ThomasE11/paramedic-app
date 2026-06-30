@@ -850,6 +850,9 @@ export function StudentPanel({
       setPulseCheckResult(null);
       if (cprTimerRef.current) clearInterval(cprTimerRef.current);
       setArrestTimeline(prev => [...prev, { time: Date.now(), event: 'ROSC achieved', type: 'rosc' }]);
+      // ROSC EtCO2 spike — a classic sign of return of spontaneous circulation:
+      // pulmonary blood flow resumes abruptly, EtCO2 jumps to ~40+ then settles.
+      setCurrentVitals(prev => prev ? { ...prev, etco2: 45 } : prev);
       toast.success('ROSC ACHIEVED', {
         description: 'Return of spontaneous circulation. Begin post-ROSC care: maintain SpO2 94-98%, avoid hyperventilation, 12-lead ECG, temperature management.',
         duration: 15000,
@@ -880,6 +883,27 @@ export function StudentPanel({
     }, 1000);
     return () => { if (cprTimerRef.current) clearInterval(cprTimerRef.current); };
   }, [cprRunning]);
+
+  // CPR-quality → EtCO2 bump. Effective compressions produce EtCO2 ~35-40
+  // (cardiac output ~25% of normal → pulmonary blood flow → CO2 delivery to
+  // lungs). When CPR stops, EtCO2 collapses back toward the arrest-stage
+  // baseline (~15-20). On ROSC, EtCO2 spikes >40 then settles — a classic
+  // ROSC sign. We lerp currentVitals.etco2 toward these targets every 2s so
+  // the capnography waveform on the monitor responds to CPR quality in real
+  // time. Scoped to arrest cases only in v1 (per realism plan workstream 2b).
+  useEffect(() => {
+    if (!arrestActive) return;
+    const etco2Timer = setInterval(() => {
+      setCurrentVitals(prev => {
+        if (!prev) return prev;
+        const target = cprRunning ? 35 : 18;
+        const cur = prev.etco2 ?? 18;
+        const next = cur + (target - cur) * 0.25; // ~half-way in ~4s
+        return { ...prev, etco2: Math.round(next * 10) / 10 };
+      });
+    }, 2000);
+    return () => clearInterval(etco2Timer);
+  }, [arrestActive, cprRunning]);
 
   // Adrenaline timing check — warn when overdue
   useEffect(() => {
@@ -2156,8 +2180,12 @@ export function StudentPanel({
     // Animate vital sign changes
     const targetVitals = ensureCompleteVitals(newState.vitals);
     setPreviousVitals(currentVitals);
+    // Animate over the treatment's own onset duration (adrenaline ~1s,
+    // oxygen/fluids ~60s) rather than a flat 8s — matches enhancedTreatmentEffects
+    // Treatment.durationSeconds metadata.
     if (startGradualChange) {
-      startGradualChange(currentVitals, targetVitals, 8000);
+      const animMs = Math.max(1000, (treatment.durationSeconds ?? 8) * 1000);
+      startGradualChange(currentVitals, targetVitals, animMs);
     } else {
       setCurrentVitals(targetVitals);
     }
@@ -2269,6 +2297,13 @@ export function StudentPanel({
     lastActivityRef.current = Date.now();
     setHintVisible(false);
 
+    // First palpation of an injured region hurts — capture whether this step
+    // was already performed so we only bump painScore on the first encounter
+    // (re-palpating the same region doesn't compound the score indefinitely).
+    const wasAlreadyPerformed = assessmentTrackerRef.current.performed.some(
+      p => p.stepId === stepId,
+    );
+
     const { tracker: updatedTracker, findings } = performAssessmentStep(
       assessmentTrackerRef.current,
       stepId,
@@ -2280,6 +2315,23 @@ export function StudentPanel({
     assessmentTrackerRef.current = updatedTracker;
     setAssessmentTracker(updatedTracker);
     setActiveFindings({ stepId, findings });
+
+    // Pain bump on first palpation of a region that yields abnormal/critical
+    // findings — examining a tender injury hurts. Skipped for the pain-
+    // assessment step itself (that's asking, not palpating) and for re-
+    // assessments. Scope: v1 per realism plan workstream 2b.
+    if (!wasAlreadyPerformed && stepId !== 'pain-assessment') {
+      const hasCritical = findings.some(f => f.severity === 'critical');
+      const hasAbnormal = findings.some(f => f.severity === 'abnormal');
+      if (hasCritical || hasAbnormal) {
+        const bump = hasCritical ? 3 : 2;
+        setCurrentVitals(prev => {
+          if (!prev) return prev;
+          const cur = prev.painScore ?? 0;
+          return { ...prev, painScore: Math.min(10, cur + bump) };
+        });
+      }
+    }
 
     // Reveal vitals on the LIFEPAK monitor when ABCDE assessment exposes them
     if (currentCase) {
@@ -4130,6 +4182,7 @@ export function StudentPanel({
                       caseCategory={currentCase.category}
                       appliedTreatmentIds={appliedTreatmentIds}
                       isInArrest={patientState?.isInArrest ?? false}
+                      vitals={currentVitals ?? undefined}
                       onPulse={runPulseCheck}
                     />
                   </Suspense>

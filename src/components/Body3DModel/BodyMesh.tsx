@@ -55,6 +55,13 @@ interface BodyMeshProps {
   /** Case pupil diameters (mm) — rendered as the model's actual pupils. */
   pupilLeftMm?: number;
   pupilRightMm?: number;
+  /**
+   * Live skin perfusion target colour — cyanosis from SpO2, pallor from
+   * shock index. The body mesh lerps every MeshStandardMaterial's `color`
+   * toward this each frame (skipping meshes flagged `userData.skipRecolor`).
+   * null/undefined = no tinting; the mesh keeps its authored skin colour.
+   */
+  skinTint?: THREE.Color | null;
 }
 
 /**
@@ -432,7 +439,7 @@ function buildSurfaceSampler(root: THREE.Object3D | null): ((x: number, y: numbe
   };
 }
 
-export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guidedMode = false, nextGuidedStep = null, onBlockedClick, patientGender, surfaceOpacity = 1, activeFindingMorphs, breathRateRpm = 0, onSurfaceSampler, dressed = false, dressedActiveRegion = null, pupilLeftMm = 3.5, pupilRightMm = 3.5 }: BodyMeshProps) {
+export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guidedMode = false, nextGuidedStep = null, onBlockedClick, patientGender, surfaceOpacity = 1, activeFindingMorphs, breathRateRpm = 0, onSurfaceSampler, dressed = false, dressedActiveRegion = null, pupilLeftMm = 3.5, pupilRightMm = 3.5, skinTint = null }: BodyMeshProps) {
   // The path is recomputed per render so a `caseData.patientInfo.gender`
   // change (e.g. user picks a different case) swaps the mesh without
   // remounting the parent. useGLTF caches by URL.
@@ -449,6 +456,9 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
   const morphMeshRef = useRef<THREE.Mesh | null>(null);
   const morphInfluenceRef = useRef<Record<string, number>>({});
   const breathPhaseRef = useRef(0);
+  // Reusable temp colour for the per-frame skin-tint lerp so we don't allocate
+  // a THREE.Color every frame (GC pressure under 60fps useFrame).
+  const tintTmpRef = useRef(new THREE.Color());
 
   // Clone the rig with SkeletonUtils so skinned meshes keep their own bone
   // bindings. A regular deep clone can detach limbs on some exported GLBs.
@@ -759,6 +769,33 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
         // with the chest the student is watching.
         setBreathClock(breathPhaseRef.current, breathRateRpm);
       }
+    }
+
+    // ---- Live skin perfusion tint (cyanosis / pallor) ----
+    // Lerp every MeshStandardMaterial's colour toward `skinTint` each frame.
+    // Meshes flagged `userData.skipRecolor` (clothing, eyes, hair, devices) are
+    // left alone so only skin surfaces shift. null tint = no work done. The
+    // easing (`delta * 3`) reaches ~95% of target in ~1s, which reads as a
+    // gradual clinical change rather than a pop when SpO2 crosses a threshold.
+    if (skinTint && clonedScene) {
+      const tmp = tintTmpRef.current;
+      clonedScene.traverse((child) => {
+        const mesh = child as THREE.Mesh;
+        if (!mesh.isMesh) return;
+        if (mesh.userData.skipRecolor) return;
+        const mat = mesh.material as THREE.MeshStandardMaterial | THREE.MeshStandardMaterial[];
+        if (Array.isArray(mat)) {
+          for (const m of mat) {
+            if (m && (m as THREE.MeshStandardMaterial).isMeshStandardMaterial && !m.userData.skipRecolor) {
+              tmp.copy(m.color).lerp(skinTint, Math.min(1, delta * 3));
+              m.color.copy(tmp);
+            }
+          }
+        } else if (mat && (mat as THREE.MeshStandardMaterial).isMeshStandardMaterial && !mat.userData.skipRecolor) {
+          tmp.copy(mat.color).lerp(skinTint, Math.min(1, delta * 3));
+          mat.color.copy(tmp);
+        }
+      });
     }
   });
 

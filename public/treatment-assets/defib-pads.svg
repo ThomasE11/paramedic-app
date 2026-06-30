@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 120" role="img" aria-label="Defibrillation pads">
+  <rect width="180" height="120" rx="22" fill="#fffafa"/>
+  <rect x="33" y="25" width="50" height="43" rx="9" transform="rotate(-13 58 47)" fill="#fff" stroke="#e11d48" stroke-width="4"/>
+  <rect x="97" y="53" width="50" height="43" rx="9" transform="rotate(12 122 75)" fill="#fff" stroke="#e11d48" stroke-width="4"/>
+  <path d="M76 55c20 4 30 10 38 20" fill="none" stroke="#fb7185" stroke-width="5" stroke-linecap="round"/>
+  <path d="M52 46h18M112 74h20" stroke="#f43f5e" stroke-width="4" stroke-linecap="round"/>
+  <path d="M61 35l-11 18h11l-5 17 19-25H63l6-10Z" fill="#e11d48"/>
+  <text x="122" y="80" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="800" fill="#be123c">AED</text>
+</svg>
