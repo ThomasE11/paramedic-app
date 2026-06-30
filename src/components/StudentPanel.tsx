@@ -4426,10 +4426,36 @@ export function StudentPanel({
                     <Heart className="h-3.5 w-3.5 shrink-0" />
                     <span>
                       {pulseCheckInProgress ? 'Checking pulse…'
-                        : pulseCheckResult === 'absent' ? 'No pulse detected — tap a pulse point to recheck'
+                        : pulseCheckResult === 'absent' ? 'No pulse detected — recheck below or on the patient'
                         : pulseCheckResult === 'present' ? 'Pulse present'
-                        : 'Tap the carotid (neck) or radial (wrist) point on the patient to check a pulse'}
+                        : 'Tap a pulse point on the patient, or use the buttons below'}
                     </span>
+                  </div>
+
+                  {/* Tappable pulse-check buttons. The on-mannequin pulse dots can
+                      sit below the fold on tablet/phone (the 3D canvas does not
+                      scroll), which made the arrest protocol they gate impossible
+                      to reach. These guarantee the pulse check — and the cardiac
+                      arrest pathway — is always one tap away on every device. */}
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 gap-1.5 text-[11px]"
+                      disabled={pulseCheckInProgress || readOnly}
+                      onClick={() => runPulseCheck('pulse-carotid')}
+                    >
+                      <Heart className="h-3.5 w-3.5" /> Check carotid
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 gap-1.5 text-[11px]"
+                      disabled={pulseCheckInProgress || readOnly}
+                      onClick={() => runPulseCheck('pulse-radial')}
+                    >
+                      <Heart className="h-3.5 w-3.5" /> Check radial
+                    </Button>
                   </div>
 
                   {/* Confirm Cardiac Arrest — only appears when pulse check shows absent AND arrest not yet confirmed */}
