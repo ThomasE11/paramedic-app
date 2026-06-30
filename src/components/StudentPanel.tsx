@@ -727,6 +727,30 @@ export function StudentPanel({
   const [arrestStartTime, setArrestStartTime] = useState<number | null>(null);
   const [arrestTimeline, setArrestTimeline] = useState<Array<{time: number; event: string; type: string}>>([]);
   const cprTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Shared cardiac-arrest controls — used by BOTH the monitor's cprState and the
+  // always-at-top arrest banner, so "Start CPR" / defib are reachable on any
+  // device (the monitor block sits far down the stacked tablet layout).
+  const handleStartCpr = useCallback(() => {
+    setCprRunning(true);
+    setCprCycleTimer(prev => (prev <= 0 ? 120 : prev));
+    setArrestTimeline(prev => [...prev, { time: Date.now(), event: 'CPR started', type: 'cpr-start' }]);
+    lastActivityRef.current = Date.now();
+  }, []);
+  const handlePauseCpr = useCallback(() => {
+    setCprRunning(false);
+    setArrestTimeline(prev => [...prev, { time: Date.now(), event: 'CPR paused', type: 'cpr-pause' }]);
+  }, []);
+  const handleOpenDefib = useCallback(() => {
+    setPendingDefibTreatment({
+      id: 'defibrillation',
+      name: 'Defibrillation',
+      category: 'procedure',
+      description: 'Deliver electrical shock to restore normal rhythm',
+      effects: [],
+    } as any);
+    setShowDefibDialog(true);
+    lastActivityRef.current = Date.now();
+  }, []);
   // Ref always holds latest tracker — prevents stale closure when handlePerformAssessment is called rapidly
   const assessmentTrackerRef = useRef(assessmentTracker);
 
@@ -4018,49 +4042,63 @@ export function StudentPanel({
                 tablet/phone layout (the assessment column renders first), so an
                 arrest patient gets this always-at-top alert with the
                 time-critical actions one tap away. ===== */}
-            {patientState?.isInArrest && !arrestConfirmed && (
+            {patientState?.isInArrest && (
               <div className="mb-4 rounded-2xl border-2 border-red-500/70 bg-red-50/90 p-3 shadow-lg animate-in fade-in slide-in-from-top-2 dark:bg-red-950/40">
-                <div className="flex items-center gap-2">
-                  <Heart className="h-5 w-5 shrink-0 animate-pulse text-red-600" />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-bold text-red-700 dark:text-red-300">Patient unresponsive &amp; pulseless</p>
-                    <p className="text-[11px] text-red-600/90 dark:text-red-300/80">
-                      {pulseCheckInProgress ? 'Checking pulse…'
-                        : pulseCheckResult === 'absent' ? 'No pulse confirmed — start the cardiac arrest protocol.'
-                        : 'Confirm a pulse check to start the cardiac arrest protocol.'}
-                    </p>
-                  </div>
-                </div>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-1.5 border-red-400/50 text-[11px]"
-                    disabled={pulseCheckInProgress || readOnly}
-                    onClick={() => runPulseCheck('pulse-carotid')}
-                  >
-                    <Heart className="h-3.5 w-3.5" /> Check carotid
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-1.5 border-red-400/50 text-[11px]"
-                    disabled={pulseCheckInProgress || readOnly}
-                    onClick={() => runPulseCheck('pulse-radial')}
-                  >
-                    <Heart className="h-3.5 w-3.5" /> Check radial
-                  </Button>
-                  {pulseCheckResult === 'absent' && (
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      className="animate-pulse gap-2 text-xs font-bold"
-                      onClick={() => { setArrestConfirmed(true); lastActivityRef.current = Date.now(); }}
-                    >
-                      <Zap className="h-3.5 w-3.5" /> Confirm Cardiac Arrest — Start Protocol
-                    </Button>
-                  )}
-                </div>
+                {!arrestConfirmed ? (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <Heart className="h-5 w-5 shrink-0 animate-pulse text-red-600" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-bold text-red-700 dark:text-red-300">Patient unresponsive &amp; pulseless</p>
+                        <p className="text-[11px] text-red-600/90 dark:text-red-300/80">
+                          {pulseCheckInProgress ? 'Checking pulse…'
+                            : pulseCheckResult === 'absent' ? 'No pulse confirmed — start the cardiac arrest protocol.'
+                            : 'Confirm a pulse check to start the cardiac arrest protocol.'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <Button variant="outline" size="sm" className="gap-1.5 border-red-400/50 text-[11px]" disabled={pulseCheckInProgress || readOnly} onClick={() => runPulseCheck('pulse-carotid')}>
+                        <Heart className="h-3.5 w-3.5" /> Check carotid
+                      </Button>
+                      <Button variant="outline" size="sm" className="gap-1.5 border-red-400/50 text-[11px]" disabled={pulseCheckInProgress || readOnly} onClick={() => runPulseCheck('pulse-radial')}>
+                        <Heart className="h-3.5 w-3.5" /> Check radial
+                      </Button>
+                      {pulseCheckResult === 'absent' && (
+                        <Button variant="destructive" size="sm" className="animate-pulse gap-2 text-xs font-bold" disabled={readOnly} onClick={() => { setArrestConfirmed(true); lastActivityRef.current = Date.now(); }}>
+                          <Zap className="h-3.5 w-3.5" /> Confirm Cardiac Arrest — Start Protocol
+                        </Button>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <Zap className="h-5 w-5 shrink-0 animate-pulse text-red-600" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-bold text-red-700 dark:text-red-300">Cardiac arrest — ALS in progress</p>
+                        <p className="text-[11px] text-red-600/90 dark:text-red-300/80">
+                          {cprRunning ? `CPR running · ${formatTime(cprCycleTimer)} to rhythm check` : 'CPR paused — resume compressions now'}
+                          {` · ${shockCount} shock${shockCount === 1 ? '' : 's'} · adrenaline ×${adrenalineDoses}`}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {cprRunning ? (
+                        <Button variant="outline" size="sm" className="gap-1.5 border-red-400/50 text-[11px]" disabled={readOnly} onClick={handlePauseCpr}>
+                          <Heart className="h-3.5 w-3.5" /> Pause CPR
+                        </Button>
+                      ) : (
+                        <Button variant="destructive" size="sm" className="animate-pulse gap-1.5 text-xs font-bold" disabled={readOnly} onClick={handleStartCpr}>
+                          <Heart className="h-3.5 w-3.5" /> Start CPR
+                        </Button>
+                      )}
+                      <Button variant="outline" size="sm" className="gap-1.5 border-red-400/50 text-[11px]" disabled={readOnly} onClick={handleOpenDefib}>
+                        <Zap className="h-3.5 w-3.5" /> Defibrillate
+                      </Button>
+                    </div>
+                  </>
+                )}
               </div>
             )}
 
@@ -4437,28 +4475,9 @@ export function StudentPanel({
                       adrenalineDoses,
                       amiodaroneDoses,
                       lastAdrenalineTime,
-                      onStartCPR: () => {
-                        setCprRunning(true);
-                        if (cprCycleTimer <= 0) setCprCycleTimer(120);
-                        setArrestTimeline(prev => [...prev, { time: Date.now(), event: 'CPR started', type: 'cpr-start' }]);
-                        lastActivityRef.current = Date.now();
-                      },
-                      onPauseCPR: () => {
-                        setCprRunning(false);
-                        setArrestTimeline(prev => [...prev, { time: Date.now(), event: 'CPR paused', type: 'cpr-pause' }]);
-                      },
-                      onDefibrillate: () => {
-                        // Create a defibrillation treatment object for the dialog
-                        setPendingDefibTreatment({
-                          id: 'defibrillation',
-                          name: 'Defibrillation',
-                          category: 'procedure',
-                          description: 'Deliver electrical shock to restore normal rhythm',
-                          effects: [],
-                        } as any);
-                        setShowDefibDialog(true);
-                        lastActivityRef.current = Date.now();
-                      },
+                      onStartCPR: handleStartCpr,
+                      onPauseCPR: handlePauseCpr,
+                      onDefibrillate: handleOpenDefib,
                     } : undefined}
                   />
                 </Suspense>

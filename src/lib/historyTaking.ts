@@ -61,7 +61,7 @@ export function classifyQuestion(rawText: string): HistoryCategory {
   }
 
   // Orientation — A&O x4 questions
-  if (/(do you know (where|what|who))|what(?:'s| is) (today|the day|the date|your name)|where (are we|are you)|can you tell me (your name|where|what)/.test(t)) {
+  if (/(do you know (where|what|who))|what(?:'s| is) (today|the day|the date|your name|your age)|how old are (you|u)|where (are we|are you)|can you tell me (your name|where|what|how old)|date of birth/.test(t)) {
     return 'orientation';
   }
 
@@ -148,6 +148,9 @@ export function classifyQuestion(rawText: string): HistoryCategory {
   // "what doesn't feel right?") are routed by keyword so the patient still answers.
   if (/\bpain\b|\bhurts?\b|\bhurting\b|\bsore\b|ach(e|es|ing)\b|tender|discomfort/.test(t)) return 'pain-current';
   if (/\bfeel\w*\b|symptom\w*|unwell|not (feeling )?right|wrong with you|what'?s up\b/.test(t)) return 'signs-symptoms';
+  // Broad clinical catch — a question naming a symptom or body system should
+  // get a relevant answer rather than a confused "ask again".
+  if (/\b(breath\w*|chest|head\w*|dizz\w*|nause\w*|vomit\w*|sick|cough\w*|fever\w*|temperature|hot|cold|sweat\w*|weak\w*|tired|fatigue|numb\w*|tingl\w*|faint\w*|collaps\w*|palpitation\w*|\bsob\b|thirsty|urine|wee|bowel|bleed\w*)\b/.test(t)) return 'signs-symptoms';
 
   return 'unknown';
 }
@@ -336,10 +339,12 @@ export function generatePatientResponse(
 
     case 'orientation': {
       const { full, first } = patientName(caseData);
+      const age = caseData.patientInfo?.age;
+      const ageBit = typeof age === 'number' ? `, ${age}` : '';
       // Person is preserved longest — an altered patient still knows their
       // name but is hazy on place/time (realistic A&O grading).
-      if (ctx.altered) return pick([`I'm ${first}... but where am I? What year is it?`, `${first}... that's my name. But where... I feel funny.`]);
-      return `I'm ${full} — I know where I am, and roughly the time. ${pick(['I feel a bit shaken though.', "I'm just not feeling right."])}`;
+      if (ctx.altered) return pick([`I'm ${first}${ageBit}... but where am I? What year is it?`, `${first}... that's my name. But where... I feel funny.`]);
+      return `I'm ${full}${ageBit} — I know where I am, and roughly the time. ${pick(['I feel a bit shaken though.', "I'm just not feeling right."])}`;
     }
 
     case 'allergies': {
