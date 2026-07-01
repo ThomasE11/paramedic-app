@@ -2635,7 +2635,13 @@ export function VitalSignsMonitor({
       const level = hasCritical ? 'critical' : hasWarning ? 'warning' : 'none';
       const now = Date.now();
       const last = lastAlarmAnnunciationRef.current;
-      const escalated = level !== 'none' && last.level !== level;
+      // Only annunciate immediately on a genuine ESCALATION to a higher urgency.
+      // A vital tweening across a threshold boundary flips warning<->critical
+      // repeatedly; treating every flip as "escalated" replayed the alarm each
+      // tick (the spam bug). Rank the levels so lateral/downward flips fall back
+      // to the interval throttle instead.
+      const rank: Record<string, number> = { none: 0, warning: 1, critical: 2 };
+      const escalated = rank[level] > rank[last.level];
       const interval = level === 'critical' ? 10000 : 25000;
       if (level === 'none') {
         lastAlarmAnnunciationRef.current = { level, at: 0 };

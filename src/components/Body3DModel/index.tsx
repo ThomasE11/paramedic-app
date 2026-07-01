@@ -1610,6 +1610,34 @@ const TECHNIQUE_META: Record<ExamTechnique, { label: string; hint: string; tone:
 
 const TECHNIQUE_ORDER: ExamTechnique[] = ['inspect', 'palpate', 'percuss', 'auscultate'];
 
+// Vivid, theme-independent tones for the in-frame Assessment Cockpit dock.
+// The dock always sits on a dark glass panel, so it must NOT use the
+// theme-aware TECHNIQUE_META tones (those go dark-text on the dark panel in
+// light mode and wash out behind the blur). Bright icon + saturated fill +
+// near-white text so each technique reads at a glance over the model.
+const DOCK_TONE: Record<ExamTechnique, { tone: string; active: string; icon: string }> = {
+  inspect: {
+    tone: 'border-sky-400/55 bg-sky-500/25 text-sky-50',
+    active: 'border-sky-300 bg-sky-500/45 text-white shadow-[0_0_16px_rgba(56,189,248,0.45)]',
+    icon: 'text-sky-300',
+  },
+  palpate: {
+    tone: 'border-amber-400/55 bg-amber-500/25 text-amber-50',
+    active: 'border-amber-300 bg-amber-500/45 text-white shadow-[0_0_16px_rgba(251,146,60,0.45)]',
+    icon: 'text-amber-300',
+  },
+  percuss: {
+    tone: 'border-violet-400/55 bg-violet-500/25 text-violet-50',
+    active: 'border-violet-300 bg-violet-500/45 text-white shadow-[0_0_16px_rgba(167,139,250,0.45)]',
+    icon: 'text-violet-300',
+  },
+  auscultate: {
+    tone: 'border-emerald-400/55 bg-emerald-500/25 text-emerald-50',
+    active: 'border-emerald-300 bg-emerald-500/45 text-white shadow-[0_0_16px_rgba(52,211,153,0.45)]',
+    icon: 'text-emerald-300',
+  },
+};
+
 // ============================================================================
 // Collapsible action groups for limb regions (Phase 2A)
 // ============================================================================
@@ -2625,13 +2653,13 @@ function AssessmentActionDock({
   const selectedGroup = grouped.find(group => group.items.some(action => action.id === selectedAction)) ?? grouped[0];
 
   return (
-    <div className="pointer-events-auto absolute bottom-2 left-2 z-20 w-[min(18rem,calc(100%-1rem))] overflow-hidden rounded-xl border border-white/16 bg-slate-950/54 text-white shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-bottom-2 duration-300">
-      <div className="flex items-center justify-between gap-3 border-b border-white/10 px-2.5 py-1.5">
+    <div className="pointer-events-auto absolute bottom-2 left-2 z-20 w-[min(18rem,calc(100%-1rem))] overflow-hidden rounded-xl border border-white/20 bg-slate-950/90 text-white shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-bottom-2 duration-300">
+      <div className="flex items-center justify-between gap-3 border-b border-white/12 px-2.5 py-1.5">
         <div className="min-w-0">
-          <p className="text-[7px] font-semibold uppercase tracking-[0.2em] text-white/45">Assessment cockpit</p>
-          <p className="truncate text-[11px] font-semibold text-white/92">{REGION_LABELS[activeRegion] || activeRegion}</p>
+          <p className="text-[7px] font-semibold uppercase tracking-[0.2em] text-white/60">Assessment cockpit</p>
+          <p className="truncate text-[11px] font-bold text-white">{REGION_LABELS[activeRegion] || activeRegion}</p>
         </div>
-        <span className="rounded-full border border-white/10 bg-white/8 px-2 py-0.5 text-[7px] font-semibold text-white/65">
+        <span className="rounded-full border border-white/15 bg-white/12 px-2 py-0.5 text-[7px] font-semibold text-white/85">
           {actions.filter(action => revealedFindings.has(action.id)).length}/{actions.length}
         </span>
       </div>
@@ -2641,33 +2669,34 @@ function AssessmentActionDock({
           const Icon = TECHNIQUE_ICONS[group.technique];
           const isActive = group.items.some(action => action.id === selectedAction);
           const meta = TECHNIQUE_META[group.technique];
+          const dock = DOCK_TONE[group.technique];
           return (
             <button
               key={group.technique}
               type="button"
               onClick={() => onAction(group.primary.id)}
-              className={`group flex min-h-[3.55rem] flex-col justify-between rounded-lg border px-1.5 py-1.5 text-left transition-all hover:-translate-y-0.5 ${isActive ? meta.active : `${meta.tone} hover:border-white/24`}`}
+              className={`group flex min-h-[3.55rem] flex-col justify-between rounded-lg border px-1.5 py-1.5 text-left transition-all hover:-translate-y-0.5 ${isActive ? dock.active : `${dock.tone} hover:border-white/40`}`}
             >
               <span className="flex items-center justify-between gap-1">
-                <Icon className="h-3 w-3 shrink-0" />
-                <span className="rounded-full bg-white/12 px-1.5 py-0.5 text-[6px] font-bold text-current/80">
+                <Icon className={`h-3.5 w-3.5 shrink-0 ${isActive ? 'text-white' : dock.icon}`} />
+                <span className="rounded-full bg-white/20 px-1.5 py-0.5 text-[6px] font-bold text-white/90">
                   {group.completed}/{group.items.length}
                 </span>
               </span>
               <span>
-                <span className="block text-[9px] font-bold leading-tight">{meta.label}</span>
-                <span className="mt-0.5 block text-[7px] font-medium leading-tight opacity-70">{meta.hint}</span>
+                <span className="block text-[9px] font-bold leading-tight text-white">{meta.label}</span>
+                <span className="mt-0.5 block text-[7px] font-semibold leading-tight text-white/80">{meta.hint}</span>
               </span>
             </button>
           );
         })}
       </div>
 
-      <div className="border-t border-white/10 px-1.5 pb-1.5">
-        <p className="px-1 pt-1 text-[7px] font-semibold uppercase tracking-[0.14em] text-white/42">
+      <div className="border-t border-white/12 px-1.5 pb-1.5">
+        <p className="px-1 pt-1 text-[7px] font-semibold uppercase tracking-[0.14em] text-white/65">
           Targets
         </p>
-        <div className="mt-1 flex gap-1.5 overflow-x-auto pb-0.5">
+        <div className="mt-1 flex flex-wrap gap-1.5">
           {selectedGroup.items.map(action => {
             const isSelected = selectedAction === action.id;
             const isDone = revealedFindings.has(action.id);
@@ -2680,8 +2709,8 @@ function AssessmentActionDock({
                   isSelected
                     ? 'border-white/35 bg-white/22 text-white'
                     : isDone
-                      ? 'border-emerald-300/35 bg-emerald-400/14 text-emerald-50'
-                      : 'border-white/10 bg-white/7 text-white/70 hover:bg-white/12'
+                      ? 'border-emerald-300/45 bg-emerald-400/22 text-emerald-50'
+                      : 'border-white/18 bg-white/12 text-white/85 hover:bg-white/20'
                 }`}
               >
                 {action.label}
@@ -2875,10 +2904,13 @@ function getPatientReaction(
     return {
       ...reactionBase,
       id: `${actionId}-eye-light`,
-      tone: 'calm',
-      title: 'Patient response',
-      quote: patient.canVocalize ? 'The light is bright.' : undefined,
-      message: 'Keep context: compare both eyes, note size in millimetres, equality, and direct or consensual response.',
+      tone: 'coach',
+      title: 'Pupil check',
+      // No spoken complaint — a real patient just squints. quote is undefined
+      // so nothing is read aloud (the quote feeds TTS). The teaching point is
+      // to forewarn before shining the light.
+      quote: undefined,
+      message: 'Warn the patient before you shine the light in their eyes — expect them to squint. Then compare both eyes: size in millimetres, equality, and direct + consensual response.',
     };
   }
 
@@ -2911,27 +2943,29 @@ function getPatientReaction(
 function PatientReactionCard({ reaction }: { reaction: PatientReaction | null }) {
   if (!reaction) return null;
 
+  // Near-solid dark backing (not translucent) so the text stays readable over
+  // the bright patient model — the coloured border + glow carry the tone.
   const tone: Record<PatientReactionTone, { wrap: string; dot: string; label: string; icon: typeof User }> = {
     patient: {
-      wrap: 'border-cyan-200/35 bg-slate-950/62 shadow-[0_24px_60px_-26px_rgba(34,211,238,0.7)]',
+      wrap: 'border-cyan-300/60 bg-slate-950/92 shadow-[0_24px_60px_-26px_rgba(34,211,238,0.7)]',
       dot: 'bg-cyan-300',
       label: 'Patient response',
       icon: User,
     },
     coach: {
-      wrap: 'border-violet-200/35 bg-slate-950/62 shadow-[0_24px_60px_-26px_rgba(167,139,250,0.7)]',
+      wrap: 'border-violet-300/60 bg-slate-950/92 shadow-[0_24px_60px_-26px_rgba(167,139,250,0.7)]',
       dot: 'bg-violet-300',
       label: 'Clinical coach',
       icon: Activity,
     },
     warning: {
-      wrap: 'border-amber-200/45 bg-slate-950/68 shadow-[0_24px_60px_-26px_rgba(251,191,36,0.75)]',
+      wrap: 'border-amber-300/65 bg-slate-950/92 shadow-[0_24px_60px_-26px_rgba(251,191,36,0.75)]',
       dot: 'bg-amber-300',
       label: 'Clinical critique',
       icon: AlertTriangle,
     },
     calm: {
-      wrap: 'border-emerald-200/35 bg-slate-950/58 shadow-[0_24px_60px_-26px_rgba(52,211,153,0.6)]',
+      wrap: 'border-emerald-300/60 bg-slate-950/92 shadow-[0_24px_60px_-26px_rgba(52,211,153,0.6)]',
       dot: 'bg-emerald-300',
       label: 'Encounter cue',
       icon: User,
@@ -2944,27 +2978,27 @@ function PatientReactionCard({ reaction }: { reaction: PatientReaction | null })
     <div
       role="status"
       aria-live="polite"
-      className={`pointer-events-none absolute left-3 top-14 z-30 w-[min(16rem,calc(100%-1.5rem))] rounded-2xl border px-3.5 py-3 text-white backdrop-blur-xl animate-in fade-in slide-in-from-left-2 duration-300 ${meta.wrap}`}
+      className={`pointer-events-none absolute left-3 top-14 z-30 w-[min(16rem,calc(100%-1.5rem))] rounded-2xl border px-3.5 py-3 text-white backdrop-blur-md animate-in fade-in slide-in-from-left-2 duration-300 ${meta.wrap}`}
     >
       <div className="flex items-start gap-2.5">
-        <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl border border-white/12 bg-white/10">
+        <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl border border-white/20 bg-white/15">
           <Icon className="h-3.5 w-3.5" />
         </span>
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
             <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} />
-            <p className="text-[8px] font-semibold uppercase tracking-[0.18em] text-white/50">{meta.label}</p>
+            <p className="text-[8px] font-semibold uppercase tracking-[0.18em] text-white/75">{meta.label}</p>
           </div>
-          <p className="mt-0.5 text-[12px] font-semibold leading-tight text-white/95">{reaction.title}</p>
+          <p className="mt-0.5 text-[12px] font-semibold leading-tight text-white">{reaction.title}</p>
         </div>
       </div>
 
       {reaction.quote && (
-        <p className="mt-2 rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-[12px] font-medium italic leading-snug text-white/92">
+        <p className="mt-2 rounded-xl border border-white/15 bg-white/15 px-3 py-2 text-[12px] font-medium italic leading-snug text-white">
           "{reaction.quote}"
         </p>
       )}
-      <p className="mt-2 text-[11px] leading-relaxed text-white/78">{reaction.message}</p>
+      <p className="mt-2 text-[11px] leading-relaxed text-white/90">{reaction.message}</p>
     </div>
   );
 }

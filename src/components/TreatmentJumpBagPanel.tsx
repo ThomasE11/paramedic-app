@@ -1,4 +1,4 @@
-import { useMemo, useState, type ComponentType, type CSSProperties } from 'react';
+import { useMemo, useRef, useState, type ComponentType, type CSSProperties } from 'react';
 import type { AppliedTreatment, VitalSigns } from '@/types';
 import {
   type Treatment,
@@ -21,6 +21,7 @@ import {
   Gauge,
   HeartPulse,
   Loader2,
+  Lightbulb,
   Pill,
   RotateCcw,
   Search,
@@ -794,6 +795,12 @@ export function TreatmentJumpBagPanel({
   applyTreatment,
 }: TreatmentJumpBagPanelProps) {
   const [stagedEquipmentId, setStagedEquipmentId] = useState<string | null>(null);
+  // Scroll the treatment list into view when a bag opens — students didn't
+  // realise the medications live below the bag grid ("you have to scroll down").
+  const treatmentPanelRef = useRef<HTMLDivElement>(null);
+  const revealTreatments = () => {
+    requestAnimationFrame(() => treatmentPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  };
   const activeBag = TREATMENT_JUMP_BAGS.find(bag => bag.key === activeManagementTab) ?? TREATMENT_JUMP_BAGS[0];
   const equipmentItems = BAG_EQUIPMENT[activeBag.key] ?? [];
   const stagedEquipment = equipmentItems.find(item => item.id === stagedEquipmentId) ?? null;
@@ -813,7 +820,7 @@ export function TreatmentJumpBagPanel({
 
     if (currentVitals.respiration <= 8) ids.push('bvm_ventilation');
     if (currentVitals.respiration >= 26 && currentVitals.spo2 < 94) ids.push('cpap_niv');
-    if (systolic < 100 || currentVitals.pulse > 120 || currentVitals.gcs < 15) ids.push('iv_access');
+    if (systolic < 100 || currentVitals.pulse > 120 || (currentVitals.gcs ?? 15) < 15) ids.push('iv_access');
     if (systolic < 90) ids.push('fluids_250ml');
     if (currentVitals.bloodGlucose !== undefined && currentVitals.bloodGlucose < 4) ids.push('glucose_10g');
 
@@ -828,33 +835,43 @@ export function TreatmentJumpBagPanel({
     [suggestedTreatments],
   );
 
-  const filteredTreatments = useMemo(() => {
-    const matchesQuery = (treatment: Treatment) => !query
-      || treatment.name.toLowerCase().includes(query)
+  // Search is scoped to the OPEN bag first (what the student asked for: "search
+  // in the bag I opened"). Only if nothing in the open bag matches do we widen
+  // to every bag, so a mistyped-bag search still finds the drug rather than
+  // showing nothing. `global` drives the header so the student knows the scope.
+  const searchResult = useMemo(() => {
+    const matchesQuery = (treatment: Treatment) =>
+      treatment.name.toLowerCase().includes(query)
       || treatment.description.toLowerCase().includes(query)
       || treatment.category.toLowerCase().includes(query)
       || treatment.effects.some(effect => String(effect.vitalSign).toLowerCase().includes(query));
 
-    return TREATMENTS
-      .filter(treatment => query ? matchesQuery(treatment) : treatmentBelongsToBag(treatment, activeBag))
-      .sort((a, b) => {
-        const aSuggested = suggestedIds.has(a.id) ? 1 : 0;
-        const bSuggested = suggestedIds.has(b.id) ? 1 : 0;
-        if (aSuggested !== bSuggested) return bSuggested - aSuggested;
+    const sortFn = (a: Treatment, b: Treatment) => {
+      const aSuggested = suggestedIds.has(a.id) ? 1 : 0;
+      const bSuggested = suggestedIds.has(b.id) ? 1 : 0;
+      if (aSuggested !== bSuggested) return bSuggested - aSuggested;
 
-        const aApplied = appliedTreatmentIds.includes(a.id) ? 1 : 0;
-        const bApplied = appliedTreatmentIds.includes(b.id) ? 1 : 0;
-        if (aApplied !== bApplied) return bApplied - aApplied;
+      const aApplied = appliedTreatmentIds.includes(a.id) ? 1 : 0;
+      const bApplied = appliedTreatmentIds.includes(b.id) ? 1 : 0;
+      if (aApplied !== bApplied) return bApplied - aApplied;
 
-        if (query) {
-          const aStarts = a.name.toLowerCase().startsWith(query) ? 1 : 0;
-          const bStarts = b.name.toLowerCase().startsWith(query) ? 1 : 0;
-          if (aStarts !== bStarts) return bStarts - aStarts;
-        }
+      if (query) {
+        const aStarts = a.name.toLowerCase().startsWith(query) ? 1 : 0;
+        const bStarts = b.name.toLowerCase().startsWith(query) ? 1 : 0;
+        if (aStarts !== bStarts) return bStarts - aStarts;
+      }
+      return a.name.localeCompare(b.name);
+    };
 
-        return a.name.localeCompare(b.name);
-      });
+    if (!query) {
+      return { items: TREATMENTS.filter(t => treatmentBelongsToBag(t, activeBag)).sort(sortFn), global: false };
+    }
+    const inBag = TREATMENTS.filter(t => treatmentBelongsToBag(t, activeBag) && matchesQuery(t));
+    if (inBag.length > 0) return { items: inBag.sort(sortFn), global: false };
+    return { items: TREATMENTS.filter(matchesQuery).sort(sortFn), global: true };
   }, [activeBag, appliedTreatmentIds, query, suggestedIds]);
+
+  const filteredTreatments = searchResult.items;
 
   const lastTreatment = appliedTreatments[appliedTreatments.length - 1];
   const lastBag = lastTreatment ? TREATMENT_JUMP_BAGS.find(bag => {
@@ -1603,8 +1620,8 @@ export function TreatmentJumpBagPanel({
           <input
             type="text"
             value={medSearch}
-            onChange={event => setMedSearch(event.target.value)}
-            placeholder="Search all bags: oxygen, airway, pain, IV, adrenaline..."
+            onChange={event => { setMedSearch(event.target.value); if (event.target.value) revealTreatments(); }}
+            placeholder={`Search ${activeBag.shortLabel} bag — e.g. oxygen, adrenaline, IV…`}
             className="glass-control h-10 w-full rounded-lg border border-border pl-8 pr-9 text-xs font-medium outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/15"
           />
           {medSearch && (
@@ -1642,6 +1659,11 @@ export function TreatmentJumpBagPanel({
           </div>
         )}
 
+        <div className="flex items-center gap-1.5 rounded-lg border border-emerald-500/25 bg-emerald-50/70 px-2.5 py-1.5 text-[10px] font-medium text-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-100">
+          <Lightbulb className="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-300" />
+          <span>Your treatments live in these bags — <strong>open a bag or search above</strong>, then the list drops in below to apply.</span>
+        </div>
+
       <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
           {TREATMENT_JUMP_BAGS.map(bag => {
             const isActive = activeBag.key === bag.key && !query;
@@ -1662,6 +1684,7 @@ export function TreatmentJumpBagPanel({
                   setActiveManagementTab(bag.key);
                   setMedSearch('');
                   setStagedEquipmentId(null);
+                  revealTreatments();
                 }}
                 className={`jump-bag-button group relative min-h-[164px] overflow-hidden rounded-lg border p-2 text-left transition hover:border-slate-300 hover:bg-white/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40 dark:hover:bg-white/[0.08] ${
                   isActive ? bag.selectedClass : 'glass-control border-slate-200 dark:border-slate-800'
@@ -1688,47 +1711,18 @@ export function TreatmentJumpBagPanel({
           })}
         </div>
 
-        {!query && (
-          <EquipmentInventoryBoard
-            bag={activeBag}
-            items={equipmentItems}
-            appliedTreatmentIds={appliedTreatmentIds}
-            applyingTreatmentId={applyingTreatmentId}
-            stagedItemId={stagedEquipmentId}
-            currentVitals={currentVitals}
-            onSelect={handleEquipmentSelect}
-          />
-        )}
-
-        {stagedEquipment && !query && (
-          <div className="glass-control rounded-xl border border-cyan-500/20 px-3 py-2 text-xs">
-            <div className="flex items-center justify-between gap-2">
-              <div className="min-w-0">
-                <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Selected equipment</p>
-                <p className="truncate font-semibold">{stagedEquipment.label}</p>
-                <p className="text-[10px] leading-relaxed text-muted-foreground">
-                  {stagedEquipment.treatmentId && appliedTreatmentIds.includes(stagedEquipment.treatmentId)
-                    ? 'Connected to the patient model and recorded on the resuscitation card.'
-                    : stagedEquipment.treatmentId
-                      ? 'Staged for treatment selection once the patient is ready.'
-                      : 'Inspected from the bag; no linked patient action yet.'}
-                </p>
-              </div>
-              <Badge variant="outline" className="h-5 shrink-0 text-[9px]">
-                {stagedEquipment.treatmentId && appliedTreatmentIds.includes(stagedEquipment.treatmentId) ? 'Connected' : 'Staged'}
-              </Badge>
-            </div>
-          </div>
-        )}
-
-        <div className="glass-panel overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
+        <div ref={treatmentPanelRef} className="glass-panel overflow-hidden rounded-xl border border-slate-200 scroll-mt-2 dark:border-slate-800">
           <div className="flex items-center justify-between border-b border-slate-200 px-3 py-2 dark:border-slate-800">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                {query ? 'Search results' : `${activeBag.shortLabel} treatment panel`}
+                {!query
+                  ? `${activeBag.shortLabel} treatment panel`
+                  : searchResult.global ? 'Search results' : `${activeBag.shortLabel} — search`}
               </p>
               <p className="text-[9px] text-muted-foreground/75">
-                {query ? 'spanning every bag' : 'dose, apply, repeat, and monitor effects'}
+                {!query
+                  ? 'dose, apply, repeat, and monitor effects'
+                  : searchResult.global ? `nothing in ${activeBag.shortLabel} — showing all bags` : `matches in this bag`}
               </p>
             </div>
             <Badge variant="outline" className="h-5 text-[9px]">
@@ -1851,6 +1845,42 @@ export function TreatmentJumpBagPanel({
             )}
           </div>
         </div>
+
+        {/* Physical equipment inventory sits BELOW the treatment list so opening
+            a bag surfaces the medications/actions first (no hunting past the
+            equipment board). */}
+        {!query && (
+          <EquipmentInventoryBoard
+            bag={activeBag}
+            items={equipmentItems}
+            appliedTreatmentIds={appliedTreatmentIds}
+            applyingTreatmentId={applyingTreatmentId}
+            stagedItemId={stagedEquipmentId}
+            currentVitals={currentVitals}
+            onSelect={handleEquipmentSelect}
+          />
+        )}
+
+        {stagedEquipment && !query && (
+          <div className="glass-control rounded-xl border border-cyan-500/20 px-3 py-2 text-xs">
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Selected equipment</p>
+                <p className="truncate font-semibold">{stagedEquipment.label}</p>
+                <p className="text-[10px] leading-relaxed text-muted-foreground">
+                  {stagedEquipment.treatmentId && appliedTreatmentIds.includes(stagedEquipment.treatmentId)
+                    ? 'Connected to the patient model and recorded on the resuscitation card.'
+                    : stagedEquipment.treatmentId
+                      ? 'Staged for treatment selection once the patient is ready.'
+                      : 'Inspected from the bag; no linked patient action yet.'}
+                </p>
+              </div>
+              <Badge variant="outline" className="h-5 shrink-0 text-[9px]">
+                {stagedEquipment.treatmentId && appliedTreatmentIds.includes(stagedEquipment.treatmentId) ? 'Connected' : 'Staged'}
+              </Badge>
+            </div>
+          </div>
+        )}
 
         <div className="glass-panel grid gap-2 rounded-xl border border-slate-200 p-3 text-xs dark:border-slate-800 sm:grid-cols-[1.1fr_0.9fr]">
           <div>
