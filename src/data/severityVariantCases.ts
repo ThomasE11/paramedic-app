@@ -11,7 +11,19 @@
 
 import type { CaseScenario } from '@/types';
 
-const createCase = (caseData: Partial<CaseScenario> & { id: string; title: string }): CaseScenario => ({
+// `treatmentOptions` is severity-variant-specific authoring data not (yet) part of
+// CaseScenario — carried through untyped for future use by the treatment engine.
+type SeverityVariantCaseInput = Partial<CaseScenario> & {
+  id: string;
+  title: string;
+  treatmentOptions?: {
+    medications: string[];
+    procedures: string[];
+    positioning: string[];
+  };
+};
+
+const createCase = (caseData: SeverityVariantCaseInput): CaseScenario => ({
   version: 1,
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
@@ -122,13 +134,16 @@ export const asthmaSeverityCases: CaseScenario[] = [
     history: {
       chiefComplaint: 'Wheezing and shortness of breath for 2 hours',
       historyOfPresentIllness: 'Developed wheeze after exposure to dust during outdoor PE class. Used salbutamol MDI 2 puffs x2 with partial relief. No previous hospital admissions for asthma.',
-      medications: ['Salbutamol MDI PRN', 'Beclomethasone 200mcg BD (poor compliance)'],
+      medications: [
+        { name: 'Salbutamol MDI', frequency: 'PRN' },
+        { name: 'Beclomethasone', dose: '200mcg', frequency: 'BD (poor compliance)' },
+      ],
       allergies: ['Dust', 'Cats'],
       medicalConditions: ['Mild intermittent asthma since childhood', 'Eczema'],
       surgicalHistory: [],
       lastMeal: 'Lunch 3 hours ago',
-      events: 'Exercised outdoors in dusty conditions',
-    },
+      eventsLeading: 'Exercised outdoors in dusty conditions',
+    } as CaseScenario['history'],
     expectedFindings: {
       keyObservations: ['Mild asthma exacerbation', 'Able to speak in full sentences', 'Good response expected to salbutamol nebulizer'],
       redFlags: ['Monitor for worsening despite treatment', 'Check compliance with preventer inhaler'],
@@ -201,7 +216,7 @@ export const asthmaSeverityCases: CaseScenario[] = [
     estimatedDuration: 20,
     dispatchInfo: {
       callReason: 'Asthma attack, struggling to breathe, not responding to inhalers',
-      timeOfDay: 'night',
+      timeOfDay: 'evening',
       location: 'Apartment in Dubai Marina',
       callerInfo: 'Patient\'s partner',
       dispatchCode: 'Bravo-1',
@@ -288,13 +303,17 @@ export const asthmaSeverityCases: CaseScenario[] = [
     history: {
       chiefComplaint: 'Worsening wheeze and breathlessness over 4 hours',
       historyOfPresentIllness: 'Gradual onset wheeze after visiting friend with cats. Used salbutamol MDI 8 puffs via spacer with minimal relief. Getting progressively worse. No previous ICU admissions. Last severe attack 6 months ago treated with nebulisers in ED.',
-      medications: ['Salbutamol MDI PRN', 'Seretide 250 Evohaler BD', 'Montelukast 10mg nocte'],
+      medications: [
+        { name: 'Salbutamol MDI', frequency: 'PRN' },
+        { name: 'Seretide 250 Evohaler', frequency: 'BD' },
+        { name: 'Montelukast', dose: '10mg', frequency: 'nocte' },
+      ],
       allergies: ['Cat dander', 'Aspirin — causes wheeze'],
       medicalConditions: ['Moderate persistent asthma', 'Allergic rhinitis', 'Aspirin-sensitive asthma'],
       surgicalHistory: [],
       lastMeal: 'Dinner 5 hours ago',
-      events: 'Visited friend with cats 6 hours ago',
-    },
+      eventsLeading: 'Visited friend with cats 6 hours ago',
+    } as CaseScenario['history'],
     expectedFindings: {
       keyObservations: ['Moderate asthma exacerbation', 'Speaking in phrases', 'Accessory muscle use', 'SpO2 90-94%', 'Needs combination therapy'],
       redFlags: ['Watch for deterioration to severe/life-threatening', 'Pulsus paradoxus suggests significant bronchospasm', 'Aspirin allergy — avoid aspirin/NSAIDs'],
@@ -467,13 +486,18 @@ export const asthmaSeverityCases: CaseScenario[] = [
     history: {
       chiefComplaint: 'Cannot breathe — worst attack ever',
       historyOfPresentIllness: 'Rapid onset severe bronchospasm after incense exposure. Used salbutamol MDI 10+ puffs with no relief over 1 hour. Progressive worsening. Has had 3 hospital admissions this year, 1 ICU admission 8 months ago for near-fatal attack.',
-      medications: ['Salbutamol MDI PRN', 'Seretide 500 Accuhaler BD', 'Montelukast 10mg nocte', 'Prednisolone 5mg maintenance dose'],
+      medications: [
+        { name: 'Salbutamol MDI', frequency: 'PRN' },
+        { name: 'Seretide 500 Accuhaler', frequency: 'BD' },
+        { name: 'Montelukast', dose: '10mg', frequency: 'nocte' },
+        { name: 'Prednisolone', dose: '5mg', frequency: 'maintenance dose' },
+      ],
       allergies: ['Strong fragrances', 'NSAIDs'],
       medicalConditions: ['Severe persistent asthma', 'Previous ICU admission', 'Previous near-fatal attack'],
       surgicalHistory: [],
       lastMeal: 'Dinner 3 hours ago',
-      events: 'Incense burning in house triggered acute attack',
-    },
+      eventsLeading: 'Incense burning in house triggered acute attack',
+    } as CaseScenario['history'],
     expectedFindings: {
       keyObservations: ['Severe asthma — approaching life-threatening', 'Previous ICU admission = high risk', 'Needs full escalation protocol', 'Salbutamol alone will NOT resolve this'],
       redFlags: ['Previous near-fatal attack', 'Exhaustion risk', 'Diminished air entry suggests severe obstruction', 'If gets silent chest = imminent arrest'],

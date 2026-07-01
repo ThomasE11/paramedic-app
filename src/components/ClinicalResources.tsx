@@ -27,11 +27,9 @@ import {
   ExternalLink,
   Play,
   Volume2,
-  VolumeX,
   Square,
 } from 'lucide-react';
 import {
-  videoResources,
   referenceArticles,
   getImagesByCategory,
   getImagesByFindings,
@@ -130,7 +128,7 @@ class ClinicalSoundSynthesizer {
   get playing() { return this.isPlaying; }
 
   // Wheeze: high-pitched musical tone modulated by breathing pattern
-  private generateWheeze(data: Float32Array, sr: number, dur: number) {
+  private generateWheeze(data: Float32Array, sr: number, _dur: number) {
     const breathCycle = 4; // seconds per breath
     for (let i = 0; i < data.length; i++) {
       const t = i / sr;
@@ -150,7 +148,7 @@ class ClinicalSoundSynthesizer {
   }
 
   // Stridor: harsh high-pitched inspiratory sound
-  private generateStridor(data: Float32Array, sr: number, dur: number) {
+  private generateStridor(data: Float32Array, sr: number, _dur: number) {
     const breathCycle = 3.5;
     for (let i = 0; i < data.length; i++) {
       const t = i / sr;
@@ -167,7 +165,7 @@ class ClinicalSoundSynthesizer {
   }
 
   // Crackles: short popping sounds during inspiration
-  private generateCrackles(data: Float32Array, sr: number, dur: number) {
+  private generateCrackles(data: Float32Array, sr: number, _dur: number) {
     const breathCycle = 4;
     for (let i = 0; i < data.length; i++) {
       const t = i / sr;
@@ -187,7 +185,7 @@ class ClinicalSoundSynthesizer {
   }
 
   // Rhonchi: low-pitched rumbling
-  private generateRhonchi(data: Float32Array, sr: number, dur: number) {
+  private generateRhonchi(data: Float32Array, sr: number, _dur: number) {
     const breathCycle = 4;
     for (let i = 0; i < data.length; i++) {
       const t = i / sr;
@@ -203,7 +201,7 @@ class ClinicalSoundSynthesizer {
   }
 
   // Pleural rub: creaking/grating sound
-  private generatePleuralRub(data: Float32Array, sr: number, dur: number) {
+  private generatePleuralRub(data: Float32Array, sr: number, _dur: number) {
     const breathCycle = 3.5;
     for (let i = 0; i < data.length; i++) {
       const t = i / sr;
@@ -220,7 +218,7 @@ class ClinicalSoundSynthesizer {
   }
 
   // Normal breath sounds: soft vesicular
-  private generateNormalBreath(data: Float32Array, sr: number, dur: number) {
+  private generateNormalBreath(data: Float32Array, sr: number, _dur: number) {
     const breathCycle = 4;
     for (let i = 0; i < data.length; i++) {
       const t = i / sr;

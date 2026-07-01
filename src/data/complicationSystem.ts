@@ -4,8 +4,6 @@
  * Unexpected events that require problem-solving and adaptation
  */
 
-import type { VitalSigns } from '@/types';
-
 export type ComplicationSeverity = 'minor' | 'moderate' | 'major' | 'critical';
 export type ComplicationTiming = 'immediate' | 'early' | 'mid' | 'late';
 
@@ -304,5 +302,3 @@ export const SCENE_SAFETY_CHECKS = [
   { category: 'People', items: ['Bystanders secured', 'Violence risk', 'Family managed', 'Police present if needed'] },
   { category: 'Equipment', items: ['PPE available', 'Vehicle secured', 'Exit routes clear'] },
 ];
-
-export type { Complication, ComplicationSeverity, ComplicationTiming, SceneHazard, HazardLevel, HazardType };

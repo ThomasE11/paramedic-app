@@ -42,12 +42,6 @@ const TYPE_COLORS: Record<string, string> = {
   podcast: 'text-orange-600',
 };
 
-const RELEVANCE_STYLES: Record<string, { label: string; color: string }> = {
-  essential: { label: 'Essential', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' },
-  important: { label: 'Important', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' },
-  supplementary: { label: 'Further Reading', color: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400' },
-};
-
 const SOURCE_COLORS: Record<string, string> = {
   'NICE': 'bg-blue-50 text-blue-700 border-blue-200',
   'Resuscitation Council UK': 'bg-red-50 text-red-700 border-red-200',

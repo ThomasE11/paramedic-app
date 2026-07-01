@@ -15,19 +15,13 @@
  */
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from "@/components/ui/progress";
 import {
-  Activity, Eye, EyeOff, Timer, Volume2, VolumeX,
-  BellRing, AlertTriangle, Zap, Heart, FileHeart, X,
-  Thermometer, Brain, Droplets, TrendingUp, TrendingDown
+  Timer, Zap, FileHeart, X, TrendingUp,
 } from 'lucide-react';
 import type { VitalSigns } from '@/types';
 import {
-  applyDeterioration,
-  getDeteriorationStatus,
-  getReassessmentInterval,
   determineSeverity,
   type CaseSeverity,
 } from '@/data/deteriorationSystem';
@@ -1080,7 +1074,7 @@ function pacedComplexWave(t: number): number {
   return v;
 }
 
-function TwelveLeadECG({ rhythm, heartRate, onClose, onExport, isPaced = false }: { rhythm: ECGRhythm; heartRate: number; onClose: () => void; onExport?: () => void; isPaced?: boolean }) {
+function TwelveLeadECG({ rhythm, heartRate, onClose, isPaced = false }: { rhythm: ECGRhythm; heartRate: number; onClose: () => void; onExport?: () => void; isPaced?: boolean }) {
   const canvasRefs = useRef<Record<string, HTMLCanvasElement | null>>({});
   const animRef = useRef<number>(0);
   const posRef = useRef(0);
@@ -1506,7 +1500,7 @@ function TwelveLeadECG({ rhythm, heartRate, onClose, onExport, isPaced = false }
             ['I', 'aVR', 'V1', 'V4'],
             ['II', 'aVL', 'V2', 'V5'],
             ['III', 'aVF', 'V3', 'V6'],
-          ].map((row, rowIdx) => (
+          ].map((row) => (
             row.map((lead) => (
               <div key={lead} className={`relative rounded border ${getLeadHighlight(lead as LeadName)}`}>
                 <span className="absolute top-0.5 left-1 text-[8px] font-mono font-bold text-green-500/80 z-10">{lead}</span>
@@ -2023,172 +2017,6 @@ function LP20Button({
 }
 
 // ============================================================================
-// ECG PRINT STRIP COMPONENT — Graph paper with real-time printing
-// ============================================================================
-
-function ECGPrintStrip({ rhythm, heartRate, spo2, onClose, audioEngine }: {
-  rhythm: ECGRhythm; heartRate: number; spo2: number; onClose: () => void; audioEngine: ClinicalAudioEngine | null;
-}) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animRef = useRef<number>(0);
-  const posRef = useRef(0);
-
-  useEffect(() => {
-    // Play printing sound
-    audioEngine?.playPrintingSound(8000);
-
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const w = canvas.width;
-    const h = canvas.height;
-    let lastTime = performance.now();
-    const pixelsPerSec = 87.5;
-    const beatsPerSec = heartRate / 60;
-    const pixelsPerBeat = pixelsPerSec / beatsPerSec;
-    const smallSq = 4; // 1mm = 4px
-    const largeSq = 20; // 5mm
-
-    const ecgMidY = h * 0.3;
-    const plethMidY = h * 0.7;
-
-    const draw = (now: number) => {
-      const dt = (now - lastTime) / 1000;
-      lastTime = now;
-      posRef.current += pixelsPerSec * dt;
-
-      // Clear with ECG paper background
-      ctx.fillStyle = '#fff8f0';
-      ctx.fillRect(0, 0, w, h);
-
-      // Small grid
-      ctx.strokeStyle = 'rgba(255, 180, 180, 0.45)';
-      ctx.lineWidth = 0.5;
-      for (let y = 0; y < h; y += smallSq) {
-        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
-      }
-      for (let x = 0; x < w; x += smallSq) {
-        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
-      }
-
-      // Large grid
-      ctx.strokeStyle = 'rgba(220, 120, 120, 0.55)';
-      ctx.lineWidth = 1;
-      for (let y = 0; y < h; y += largeSq) {
-        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
-      }
-      for (let x = 0; x < w; x += largeSq) {
-        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
-      }
-
-      // Print boundary — only draw up to current position
-      const printHead = Math.min(posRef.current, w);
-
-      // ECG waveform (Lead II) — black on paper
-      const wfn = rhythm.leads['II'];
-      ctx.strokeStyle = '#111';
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      let first = true;
-      let prevBP = 0;
-      let bIdx = 0;
-      for (let x = 0; x < printHead; x++) {
-        const bp = (x / pixelsPerBeat) % 1;
-        if (bp < prevBP && prevBP > 0.5) bIdx++;
-        prevBP = bp;
-        const val = wfn(bp, { heartRate, beatIndex: bIdx });
-        const y = ecgMidY - val * (h * 0.2);
-        if (first) { ctx.moveTo(x, y); first = false; }
-        else ctx.lineTo(x, y);
-      }
-      ctx.stroke();
-
-      // SpO2 pleth waveform — blue on paper
-      const plethWave = (t: number): number => {
-        if (t < 0.12) return Math.pow(t / 0.12, 1.8);
-        if (t < 0.28) return 1.0 - Math.pow((t - 0.12) / 0.16, 0.7) * 0.45;
-        if (t < 0.35) return 0.55 - Math.sin((t - 0.28) * Math.PI / 0.07) * 0.08;
-        if (t < 0.45) return 0.50 + Math.sin((t - 0.35) * Math.PI / 0.10) * 0.08;
-        if (t < 0.85) return 0.50 * Math.exp(-(t - 0.45) * 3.5);
-        return 0.50 * Math.exp(-0.4 * 3.5) * Math.max(0, 1 - (t - 0.85) / 0.15);
-      };
-
-      ctx.strokeStyle = '#2255aa';
-      ctx.lineWidth = 1.2;
-      ctx.beginPath();
-      first = true;
-      prevBP = 0;
-      bIdx = 0;
-      for (let x = 0; x < printHead; x++) {
-        const bp = (x / pixelsPerBeat) % 1;
-        if (bp < prevBP && prevBP > 0.5) bIdx++;
-        prevBP = bp;
-        const val = plethWave(bp);
-        const y = plethMidY - val * (h * 0.15);
-        if (first) { ctx.moveTo(x, y); first = false; }
-        else ctx.lineTo(x, y);
-      }
-      ctx.stroke();
-
-      // Channel labels (rotated on left side like iSimulate print)
-      ctx.save();
-      ctx.fillStyle = '#666';
-      ctx.font = '10px monospace';
-      ctx.translate(12, ecgMidY - 25);
-      ctx.rotate(-Math.PI / 2);
-      ctx.fillText('II', 0, 0);
-      ctx.restore();
-
-      ctx.save();
-      ctx.fillStyle = '#336';
-      ctx.font = '10px monospace';
-      ctx.translate(12, plethMidY - 25);
-      ctx.rotate(-Math.PI / 2);
-      ctx.fillText('SpO2', 0, 0);
-      ctx.restore();
-
-      animRef.current = requestAnimationFrame(draw);
-    };
-
-    animRef.current = requestAnimationFrame(draw);
-    return () => cancelAnimationFrame(animRef.current);
-  }, [rhythm, heartRate, spo2, audioEngine]);
-
-  return (
-    <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center"
-      style={{ background: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(4px)' }}>
-      <div className="relative w-full max-w-4xl mx-4">
-        {/* Close button */}
-        <button onClick={onClose}
-          className="absolute -top-2 -right-2 z-10 w-8 h-8 rounded-full bg-gray-800 border border-gray-600 flex items-center justify-center text-gray-300 hover:text-white hover:bg-gray-700 transition-colors">
-          <X className="h-4 w-4" />
-        </button>
-        {/* Labels */}
-        <div className="flex items-center gap-4 mb-2 px-2">
-          <span className="text-[10px] font-mono text-gray-400">CO2</span>
-          <span className="text-[10px] font-mono text-blue-400">SpO2</span>
-          <span className="text-[10px] font-mono text-gray-300">II</span>
-        </div>
-        {/* Canvas */}
-        <canvas
-          ref={canvasRef}
-          width={1200}
-          height={300}
-          className="w-full rounded border border-gray-600"
-          style={{ imageRendering: 'crisp-edges' }}
-        />
-        <div className="flex items-center justify-between mt-2 px-2">
-          <span className="text-[9px] font-mono text-gray-500">25mm/s | 10mm/mV</span>
-          <span className="text-[9px] font-mono text-gray-500">ECG Strip</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ============================================================================
 // MAIN TLC MONITOR COMPONENT
 // ============================================================================
 
@@ -2201,8 +2029,6 @@ const VITAL_KEY_TO_STEP_ID: Record<string, string> = {
 
 export function VitalSignsMonitor({
   initialVitals,
-  previousVitals,
-  deteriorationVitals,
   onVitalChange,
   caseCategory,
   caseSubcategory,
@@ -2219,7 +2045,7 @@ export function VitalSignsMonitor({
 }: VitalSignsMonitorProps) {
   const [currentVitals, setCurrentVitals] = useState<VitalSigns>(initialVitals);
   const [visibleVitals, setVisibleVitals] = useState<Set<string>>(new Set());
-  const [assessmentMode, setAssessmentMode] = useState(true);
+  const [assessmentMode] = useState(true);
   const [activeAssessments, setActiveAssessments] = useState<Map<string, { startTime: number; duration: number }>>(new Map());
   const [assessmentProgress, setAssessmentProgress] = useState<Map<string, number>>(new Map());
   const [alarmsEnabled, setAlarmsEnabled] = useState(true); // Alarms ON by default
@@ -2306,7 +2132,7 @@ export function VitalSignsMonitor({
   const [selectedLead, setSelectedLead] = useState<'I' | 'II' | 'III' | 'PADDLES'>('II');
   const [codeTimerRunning, setCodeTimerRunning] = useState(false);
   const [codeTimerSeconds, setCodeTimerSeconds] = useState(0);
-  const [heartFlash, setHeartFlash] = useState(false);
+  const [, setHeartFlash] = useState(false);
   const [showAssessPanel, setShowAssessPanel] = useState(false);
   const [show12Lead, setShow12Lead] = useState(false);
   const [treatmentEffectIndicator, setTreatmentEffectIndicator] = useState<string | null>(null);
@@ -2314,7 +2140,7 @@ export function VitalSignsMonitor({
   const [shockDelivered, setShockDelivered] = useState(false);
   const [shockCount, setShockCount] = useState(0);
   const [nibpCycling, setNibpCycling] = useState(false);
-  const [nibpCountdown, setNibpCountdown] = useState(0);
+  const [, setNibpCountdown] = useState(0);
   const [interventionLog, setInterventionLog] = useState<Array<{ time: string; action: string; detail: string }>>([]);
   const [pacerActive, setPacerActive] = useState(false);
   const [pacerRate, setPacerRate] = useState(60);
@@ -2352,15 +2178,14 @@ export function VitalSignsMonitor({
   // interact with the device.
   const [powerOn, setPowerOn] = useState(autoPowerOn);
   const [bootPhase, setBootPhase] = useState<'off' | 'booting' | 'ready'>(autoPowerOn ? 'ready' : 'off');
-  const [printMode, setPrintMode] = useState(false);
+  const [, setPrintMode] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
   const [waveformGain, setWaveformGain] = useState<0.5 | 1.0 | 1.5 | 2.0>(1.0);
-  const [showAnalyze, setShowAnalyze] = useState(false);
+  const [, setShowAnalyze] = useState(false);
   const [sweepPaused, setSweepPaused] = useState(false);
   const [showCodeSummary, setShowCodeSummary] = useState(false);
   const [aedMode, setAedMode] = useState(false);
-  const [nibpMode, setNibpMode] = useState<'manual' | 'auto'>('manual');
-  const [showNibpMenu, setShowNibpMenu] = useState(false);
+  const [, setShowNibpMenu] = useState(false);
   const [show12LeadImage, setShow12LeadImage] = useState(false); // Show LITFL image-based 12-lead
 
   // Deterioration state (must be declared before any useEffect).
@@ -2370,10 +2195,7 @@ export function VitalSignsMonitor({
   const [caseSeverity, setCaseSeverity] = useState<CaseSeverity>(
     () => determineSeverity(caseCategory || 'general', initialVitals),
   );
-  const [minutesElapsed, setMinutesElapsed] = useState(0);
-  const [deteriorationWarningSigns, setDeteriorationWarningSigns] = useState<string[]>([]);
-  const [deteriorationChanges, setDeteriorationChanges] = useState<string[]>([]);
-  const activeTreatments = appliedTreatments;
+  const [, setMinutesElapsed] = useState(0);
 
   // Refs
   const assessmentIntervalRef = useRef<number | null>(null);
@@ -2805,24 +2627,6 @@ export function VitalSignsMonitor({
     });
   }, [activeAssessments, visibleVitals, audioEnabled]);
 
-  const hideVital = (vitalKey: string) => {
-    setVisibleVitals(prev => {
-      const next = new Set(prev);
-      next.delete(vitalKey);
-      return next;
-    });
-  };
-
-  const showAllVitals = () => {
-    setVisibleVitals(new Set(availableVitals.map(v => v.key)));
-    setAssessmentMode(false);
-  };
-
-  const hideAllVitals = () => {
-    setVisibleVitals(new Set());
-    setAssessmentMode(true);
-  };
-
   const getVitalAlarmState = (key: string): { isAlarm: boolean; isWarning: boolean } => {
     return {
       isAlarm: Array.from(activeAlarms).some(a => a.startsWith(key) && a.includes('critical')),
@@ -2885,7 +2689,6 @@ export function VitalSignsMonitor({
 
     // Build a combined treatment profile from all applied treatments
     const allTx = appliedTreatments.map(t => t.toLowerCase()).join(' ');
-    const latest = appliedTreatments[appliedTreatments.length - 1]?.toLowerCase() || '';
 
     const hasOxygen = allTx.includes('oxygen') || allTx.includes('o2') || allTx.includes('nasal cannula') ||
       allTx.includes('nrb') || allTx.includes('bvm') || allTx.includes('high flow') || allTx.includes('mask') ||
@@ -2904,7 +2707,6 @@ export function VitalSignsMonitor({
     const hasAmiodarone = allTx.includes('amiodarone');
     const hasAdenosine = allTx.includes('adenosine');
     const hasGTN = allTx.includes('gtn') || allTx.includes('nitroglycerin') || allTx.includes('nitro');
-    const hasAntiemetic = allTx.includes('ondansetron') || allTx.includes('metoclopramide') || allTx.includes('antiemetic');
     const hasMidazolam = allTx.includes('midazolam') || allTx.includes('diazepam') || allTx.includes('lorazepam');
     const hasNaloxone = allTx.includes('naloxone') || allTx.includes('narcan');
     const hasAspirin = allTx.includes('aspirin');
@@ -3412,72 +3214,6 @@ export function VitalSignsMonitor({
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  // Render vital value for assessment panel
-  const renderAssessButton = (key: string, label: string, methods: AssessmentMethod[]) => {
-    const isVisible = visibleVitals.has(key);
-    const isAssessing = activeAssessments.has(key);
-    const progress = assessmentProgress.get(key) || 0;
-
-    if (isVisible) {
-      // Show the measured value next to the label so the student can
-      // actually see what they assessed. Without this the PAIN button
-      // collapses to just the label "PAIN" with a HIDE control and the
-      // score is invisible.
-      let displayValue: string = '';
-      if (key === 'painScore') {
-        const p = currentVitals.painScore ?? assessedVitals.painScore ?? 0;
-        displayValue = `${p}/10`;
-      } else if (key === 'bloodGlucose' && currentVitals.bloodGlucose !== undefined) {
-        displayValue = `${Number(currentVitals.bloodGlucose).toFixed(1)} mmol/L`;
-      } else if (key === 'temperature' && currentVitals.temperature !== undefined) {
-        displayValue = `${Number(currentVitals.temperature).toFixed(1)}°C`;
-      } else if (key === 'gcs' && currentVitals.gcs !== undefined) {
-        displayValue = `${Math.round(currentVitals.gcs)}/15`;
-      }
-      return (
-        <div key={key} className="flex items-center justify-between px-2 py-1 bg-green-950/30 rounded border border-green-900/50">
-          <span className="text-[10px] text-green-400 font-mono">{label}</span>
-          {displayValue && (
-            <span className="text-[11px] text-green-300 font-mono font-bold">{displayValue}</span>
-          )}
-          <button
-            onClick={() => hideVital(key)}
-            className="text-[8px] text-gray-500 hover:text-red-400 font-mono"
-          >
-            HIDE
-          </button>
-        </div>
-      );
-    }
-
-    if (isAssessing) {
-      return (
-        <div key={key} className="px-2 py-1 bg-blue-950/30 rounded border border-blue-900/50">
-          <span className="text-[10px] text-blue-400 font-mono block">{label}</span>
-          <Progress value={progress} className="h-1 mt-1" />
-          <span className="text-[8px] text-blue-400/60 font-mono">{Math.round(progress)}%</span>
-        </div>
-      );
-    }
-
-    return (
-      <div key={key} className="space-y-0.5">
-        {methods.slice(0, 2).map((method) => (
-          <button
-            key={method.id}
-            onClick={() => startAssessment(key, method)}
-            className="block w-full text-left text-[9px] px-2 py-1 rounded
-                       bg-gray-800/60 hover:bg-gray-700/60 border border-gray-700/50
-                       hover:border-gray-600/50 transition-colors text-gray-300 font-mono"
-          >
-            <span className="text-gray-400">{label}:</span> {method.name}
-            <span className="text-gray-500 ml-1">({method.duration}s)</span>
-          </button>
-        ))}
-      </div>
-    );
   };
 
   // Power ON/OFF handler

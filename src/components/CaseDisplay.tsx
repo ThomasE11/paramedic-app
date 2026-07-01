@@ -9,8 +9,6 @@ import {
   Activity, Eye, Stethoscope,
   Pill, History, Utensils, FileText, Thermometer,
   Droplets, Wind, Heart, Brain, Zap,
-  Image, Video, FileText as FileTextIcon, ExternalLink, Play,
-  Loader2
 } from 'lucide-react';
 import { getECGForCase } from '@/data/litflECGs';
 import { ECGDisplayComponent, EmergencyECGQuickRef } from './ECGDisplay';
@@ -102,46 +100,6 @@ const COMPLEXITY_MAP: Record<ComplexityLevel, number> = {
   'advanced': 3,
   'expert': 4
 } as const;
-
-// Simple Image Component with error handling
-function ExternalImage({
-  src,
-  alt,
-  className = ''
-}: {
-  src: string;
-  alt: string;
-  className?: string;
-}) {
-  const [hasError, setHasError] = useState(false);
-
-  if (hasError) {
-    return (
-      <div className={`flex flex-col items-center justify-center bg-muted p-4 ${className}`}>
-        <Image className="h-8 w-8 text-muted-foreground mb-2" />
-        <p className="text-xs text-muted-foreground text-center">Image unavailable</p>
-        <a
-          href={src}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-primary hover:underline text-xs mt-1"
-        >
-          Open link
-        </a>
-      </div>
-    );
-  }
-
-  return (
-    <img
-      src={src}
-      alt={alt}
-      className={`w-full h-full object-contain ${className}`}
-      onError={() => setHasError(true)}
-      loading="lazy"
-    />
-  );
-}
 
 // Helper function to determine if specific detail should be shown
 function shouldShowDetail(

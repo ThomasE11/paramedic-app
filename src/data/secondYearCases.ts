@@ -3567,7 +3567,7 @@ export const secondYearCases: CaseScenario[] = [
       },
       {
         id: 'y2-009-defibrillate-vf',
-        category: 'treatment',
+        category: 'intervention',
         description: 'Recognise VF and defibrillate — single biphasic shock (150-200J) followed by 2 min of uninterrupted CPR, then rhythm check. Repeat cycle (NOT stacked shocks — stacked 3-shock sequence is only for witnessed monitored arrest in cath-lab/ICU).',
         points: 5,
         yearLevel: ['2nd-year', '3rd-year'],
@@ -3577,7 +3577,7 @@ export const secondYearCases: CaseScenario[] = [
       },
       {
         id: 'y2-009-iv-io-access',
-        category: 'treatment',
+        category: 'intervention',
         description: 'Establish IV access during CPR without stopping compressions (AHA 2025: IV preferred over IO in adult arrest)',
         points: 4,
         yearLevel: ['2nd-year', '3rd-year'],
@@ -3586,7 +3586,7 @@ export const secondYearCases: CaseScenario[] = [
       },
       {
         id: 'y2-009-adrenaline-timing',
-        category: 'treatment',
+        category: 'intervention',
         description: 'Administer adrenaline 1mg IV after 3rd shock (ERC 2021 / AHA 2020 — shockable rhythm) (every 3-5 min)',
         points: 5,
         yearLevel: ['2nd-year', '3rd-year'],
@@ -3596,7 +3596,7 @@ export const secondYearCases: CaseScenario[] = [
       },
       {
         id: 'y2-009-amiodarone',
-        category: 'treatment',
+        category: 'intervention',
         description: 'Administer amiodarone 300mg IV after 3rd shock if still VF (bonus — ALS skill)',
         points: 4,
         yearLevel: ['2nd-year', '3rd-year'],
@@ -3614,7 +3614,7 @@ export const secondYearCases: CaseScenario[] = [
       },
       {
         id: 'y2-009-post-rosc',
-        category: 'treatment',
+        category: 'intervention',
         description: 'Post-ROSC monitoring: 12-lead ECG, SpO2 94-98%, avoid hyperventilation',
         points: 4,
         yearLevel: ['2nd-year', '3rd-year'],

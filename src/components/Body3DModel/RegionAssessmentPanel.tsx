@@ -13,9 +13,8 @@ import type { CaseScenario } from '@/types';
 import { usePatientVoice } from '@/hooks/usePatientVoice';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import {
-  Eye, Hand, Volume2, Activity, X, ChevronRight,
+  Eye, Hand, Activity, X,
   Stethoscope, Brain, Heart, Wind,
 } from 'lucide-react';
 
@@ -67,13 +66,6 @@ const TECHNIQUE_LABELS: Record<string, string> = {
   palpate: 'Palpate',
   percuss: 'Percuss',
   auscultate: 'Auscultate',
-};
-
-const TECHNIQUE_COLORS: Record<string, string> = {
-  inspect: 'text-blue-600 bg-blue-50 border-blue-200 hover:bg-blue-100',
-  palpate: 'text-amber-600 bg-amber-50 border-amber-200 hover:bg-amber-100',
-  percuss: 'text-purple-600 bg-purple-50 border-purple-200 hover:bg-purple-100',
-  auscultate: 'text-cyan-600 bg-cyan-50 border-cyan-200 hover:bg-cyan-100',
 };
 
 // ============================================================================
@@ -456,7 +448,6 @@ function getFindings(
   const breathing = caseData.abcde?.breathing;
   const circ = caseData.abcde?.circulation;
   const disability = caseData.abcde?.disability;
-  const exposure = caseData.abcde?.exposure;
   const ss = caseData.secondarySurvey;
 
   // Chest — lung auscultation

@@ -84,13 +84,15 @@ export function PhysicalExaminationPanel({ caseData, isStudentView = false }: Ph
       rightLung: rightLung as any,
       heartSound: heartSound as any,
       airwaySound: airwaySound as any,
+      additionalSounds: [],
+      description: '',
     };
   }, [caseData]);
 
   // Check if patient is in cardiac arrest
   const isInArrest = useMemo(() => {
     return caseData.vitalSignsProgression?.initial?.pulse === 0 || 
-           caseData.abcde?.circulation?.pulse === 0;
+           caseData.abcde?.circulation?.pulseRate === 0;
   }, [caseData]);
 
   return (

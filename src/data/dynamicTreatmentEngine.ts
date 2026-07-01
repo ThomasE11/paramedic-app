@@ -30,7 +30,6 @@ import {
   determineSeverityFromVitals,
   getSynergyMultiplier,
   getPositioningEffects,
-  assessProtocolCompliance,
   type SeverityProtocol,
 } from './treatmentProtocols';
 
@@ -371,7 +370,6 @@ function applyBeneficialResponseCeiling(
 
   const initial = parseBP(caseData.vitalSignsProgression.initial.bp);
   const target = parseBP(targetBP);
-  const before = parseBP(vitalsBefore.bp);
   const current = parseBP(state.vitals.bp);
   if (initial.systolic >= 100 || current.systolic <= target.systolic + 15) return;
 
@@ -783,7 +781,7 @@ function applyStandardTreatment(
         if (vitals.bloodGlucose !== oldBG) {
           changes.push({
             vital: 'Glucose', oldValue: `${oldBG}`, newValue: `${vitals.bloodGlucose}`,
-            direction: Math.abs(vitals.bloodGlucose - 5.5) < Math.abs(oldBG - 5.5) ? 'improved' : 'worsened'
+            direction: Math.abs((vitals.bloodGlucose ?? oldBG) - 5.5) < Math.abs(oldBG - 5.5) ? 'improved' : 'worsened'
           });
         }
         break;
@@ -799,7 +797,7 @@ function applyStandardTreatment(
         if (vitals.temperature !== oldTemp) {
           changes.push({
             vital: 'Temp', oldValue: `${oldTemp}°C`, newValue: `${vitals.temperature}°C`,
-            direction: Math.abs(vitals.temperature - 37) < Math.abs(oldTemp - 37) ? 'improved' : 'worsened'
+            direction: Math.abs((vitals.temperature ?? oldTemp) - 37) < Math.abs(oldTemp - 37) ? 'improved' : 'worsened'
           });
         }
         break;
@@ -817,7 +815,7 @@ function applyStandardTreatment(
         if (vitals.painScore !== oldPain) {
           changes.push({
             vital: 'Pain', oldValue: `${oldPain}/10`, newValue: `${vitals.painScore}/10`,
-            direction: vitals.painScore < oldPain ? 'improved' : 'worsened'
+            direction: (vitals.painScore ?? oldPain) < oldPain ? 'improved' : 'worsened'
           });
         }
         break;
@@ -835,7 +833,7 @@ function applyStandardTreatment(
         if (vitals.etco2 !== oldEtco2) {
           changes.push({
             vital: 'EtCO2', oldValue: `${oldEtco2}`, newValue: `${vitals.etco2}`,
-            direction: Math.abs(vitals.etco2 - 35) < Math.abs(oldEtco2 - 35) ? 'improved' : 'worsened'
+            direction: Math.abs((vitals.etco2 ?? oldEtco2) - 35) < Math.abs(oldEtco2 - 35) ? 'improved' : 'worsened'
           });
         }
         break;
@@ -890,7 +888,7 @@ function applyStandardTreatment(
 function handleDefibrillation(
   state: PatientState,
   params: DefibrillationParams,
-  caseCategory: string,
+  _caseCategory: string,
 ): ClinicalResponse {
   const vitals = state.vitals;
   const changes: VitalChange[] = [];
@@ -962,12 +960,6 @@ function handleDefibrillation(
 
     // Success depends on energy level and how many shocks already given
     const shockCount = state.treatmentCounts['defibrillation'] || 1;
-    let successChance: number;
-
-    if (energy >= 200) successChance = shockCount <= 2 ? 0.85 : 0.6;
-    else if (energy >= 150) successChance = shockCount <= 2 ? 0.7 : 0.5;
-    else if (energy >= 100) successChance = shockCount <= 2 ? 0.5 : 0.35;
-    else successChance = shockCount <= 2 ? 0.3 : 0.2;
 
     // Simulate success/failure (deterministic based on energy + count for reproducibility)
     const isSuccessful = energy >= 150 || (energy >= 100 && shockCount >= 2);
@@ -1648,7 +1640,6 @@ function applyCrossSystemPhysiology(
   // ============================================================================
 
   const age = caseData.patientInfo?.age ?? 0;
-  const cat = (caseData.category || '').toLowerCase();
   const history = (caseData.history?.medicalConditions || []).join(' ').toLowerCase();
   const meds = (caseData.history?.medications || []).join(' ').toLowerCase();
 

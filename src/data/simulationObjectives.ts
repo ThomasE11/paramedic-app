@@ -241,7 +241,7 @@ export const predefinedObjectives: SimulationObjective[] = [
     primaryObjective: 'Mental health crisis assessment and de-escalation',
     skillsFocus: ['Risk assessment', 'De-escalation techniques', 'Capacity assessment', 'Mental Health Act awareness', 'Communication skills', 'Safety planning'],
     learningDomain: 'affective',
-    relatedCategories: ['mental-health'],
+    relatedCategories: ['psychiatric'],
     relatedKeywords: ['mental health', 'suicide', 'self-harm', 'psychosis', 'agitation', 'capacity', 'sectioning'],
   },
 

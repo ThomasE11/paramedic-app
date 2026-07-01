@@ -8,6 +8,7 @@
  */
 
 import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
+import type { JSX } from 'react';
 import { useGLTF } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
@@ -18,6 +19,23 @@ import { setBreathClock } from '@/lib/breathClock';
 import type { ThreeEvent } from '@react-three/fiber';
 import { HOVER_COLOR, ASSESSED_COLOR, GUIDED_NEXT_COLOR, GUIDED_LOCKED_COLOR } from './bodyRegions';
 import type { SecondaryAssessmentStep } from '@/data/assessmentFramework';
+
+export type SurfaceSamplerSpace = 'author' | 'mesh';
+
+export interface SurfaceSamplerOptions {
+  /**
+   * Most markers are authored in the broad 1.8m / 0.5 half-width body frame.
+   * Facial texel-derived anchors are already in mounted mesh coordinates and
+   * must not be scaled a second time.
+   */
+  coordinateSpace?: SurfaceSamplerSpace;
+}
+
+export type SurfaceSampler = (
+  x: number,
+  y: number,
+  options?: SurfaceSamplerOptions,
+) => [number, number, number];
 
 interface BodyMeshProps {
   assessedRegions: Set<string>;
@@ -47,7 +65,7 @@ interface BodyMeshProps {
    *  camera-facing surface, so floating labels/finding markers anchor to the
    *  real body regardless of which GLB (male/female/future) is loaded. Emits
    *  null on unmount/model-swap. */
-  onSurfaceSampler?: (sampler: ((x: number, y: number) => [number, number, number]) | null) => void;
+  onSurfaceSampler?: (sampler: SurfaceSampler | null) => void;
   /** Dressed view on/off — shows the scrubs layer derived from this mesh (see ClothingLayer). */
   dressed?: boolean;
   /** Focused region id — the garment piece covering it parts so the skin can be assessed. */
@@ -376,7 +394,7 @@ function getRegionAtPoint(point: THREE.Vector3): RegionRange | null {
 // patient's real camera-facing surface (the camera sits at +Z, so the visible
 // front surface for any (x,y) is the vertex with the largest Z there). This
 // self-calibrates for any model — no per-model tuning, no guessing.
-function buildSurfaceSampler(root: THREE.Object3D | null): ((x: number, y: number) => [number, number, number]) | null {
+function buildSurfaceSampler(root: THREE.Object3D | null): SurfaceSampler | null {
   if (!root) return null;
   root.updateMatrixWorld(true);
   // The body is the mesh with the most vertices (skips eye/hair/lash meshes).
@@ -420,9 +438,10 @@ function buildSurfaceSampler(root: THREE.Object3D | null): ((x: number, y: numbe
   const s = H / AUTHOR_H; // overall scale factor (tolerances/offsets scale too)
   const PROUD = 0.03 * s; // lift the label just off the skin toward the camera
 
-  return (xAuthor: number, yAuthor: number): [number, number, number] => {
-    const x = cx + xAuthor * (halfW / AUTHOR_HALFW);
-    const y = minY + (yAuthor / AUTHOR_H) * H;
+  return (xInput: number, yInput: number, options?: SurfaceSamplerOptions): [number, number, number] => {
+    const useMeshSpace = options?.coordinateSpace === 'mesh';
+    const x = useMeshSpace ? xInput : cx + xInput * (halfW / AUTHOR_HALFW);
+    const y = useMeshSpace ? yInput : minY + (yInput / AUTHOR_H) * H;
     // Front surface at (x,y) = the largest Z among nearby verts. Try a tight
     // window first, widen if nothing is close (e.g. a lateral limb point).
     const scan = (xTol: number, yTol: number): number | null => {

@@ -142,18 +142,6 @@ export const DETERIORATION_PROFILES: Record<CaseSeverity, DeteriorationProfile> 
   },
 };
 
-// Parse BP string to get numeric value
-function parseBPValue(bp: string): number {
-  const parts = bp.split('/');
-  return parseInt(parts[0]) || 120;
-}
-
-// Format BP from numeric value
-function formatBP(systolic: number, diastolic?: number): string {
-  const dia = diastolic || Math.round(systolic * 0.6);
-  return `${Math.round(systolic)}/${Math.round(dia)}`;
-}
-
 // Apply deterioration for a given time period
 export function applyDeterioration(
   vitals: VitalSigns,
@@ -339,7 +327,7 @@ export function determineSeverity(
     initialVitals.pulse < 40 ||
     initialVitals.pulse > 150 ||
     initialVitals.spo2 < 80 ||
-    initialVitals.gcs < 8
+    (initialVitals.gcs ?? 15) < 8
   ) {
     return 'periarrest';
   }
@@ -349,7 +337,7 @@ export function determineSeverity(
     initialVitals.pulse < 50 ||
     initialVitals.pulse > 130 ||
     initialVitals.spo2 < 90 ||
-    initialVitals.gcs < 12 ||
+    (initialVitals.gcs ?? 15) < 12 ||
     category.includes('cardiac arrest') ||
     category.includes('trauma')
   ) {
@@ -379,5 +367,3 @@ export function determineSeverity(
   
   return 'stable';
 }
-
-export type { CaseSeverity };

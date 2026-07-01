@@ -15,6 +15,7 @@ import { ComplicationPanel } from '@/components/ComplicationManager';
 import { AmbientBackground } from '@/components/AmbientBackground';
 import { LayoutGrid, Loader2 } from 'lucide-react';
 import type { VitalSigns, CaseScenario } from '@/types';
+import type { ClinicalSoundState } from '@/data/clinicalSounds';
 import type { ActiveComplication } from '@/components/ComplicationManager';
 
 /**
@@ -148,7 +149,7 @@ interface WorkspaceLayoutProps {
   // Props for Body3DModel
   onRegionClick?: (regionId: string) => void;
   assessedRegions?: Set<string>;
-  patientSounds?: unknown;
+  patientSounds?: ClinicalSoundState | null;
   isInArrest?: boolean;
   isStudentView?: boolean;
   // Timeline events (populated by parent as actions happen)
@@ -348,7 +349,7 @@ export function WorkspaceLayout({
           <div className="col-span-12 lg:col-span-3 space-y-4 min-w-0">
             <Suspense fallback={<LoadingCard />}>
               <Body3DModel
-                onRegionClick={onRegionClick}
+                onRegionClick={onRegionClick ?? (() => {})}
                 assessedRegions={assessedRegions || new Set()}
                 caseData={caseData}
                 patientSounds={patientSounds}
@@ -376,11 +377,11 @@ export function WorkspaceLayout({
                   <span className="text-xs text-surface-500">Language</span>
                   <span className="text-xs font-medium text-surface-800">{caseData.patientInfo.language}</span>
                 </div>
-                {caseData.patientInfo.medicalConditions?.length > 0 && (
+                {caseData.history.medicalConditions.length > 0 && (
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-surface-500">PMH</span>
                     <div className="flex gap-1 flex-wrap justify-end">
-                      {caseData.patientInfo.medicalConditions.slice(0, 3).map((condition) => (
+                      {caseData.history.medicalConditions.slice(0, 3).map((condition) => (
                         <span
                           key={condition}
                           className="px-1.5 py-0.5 rounded text-[9px] font-medium bg-surface-100 text-surface-600 border border-surface-200"

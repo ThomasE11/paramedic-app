@@ -2844,7 +2844,6 @@ export const firstYearCases: CaseScenario[] = [
         rhythm: 'Absent',
         depth: 'Absent',
         spo2: 0,
-        spo2Ceiling: 0,
         findings: ['Apnoeic', 'No chest rise', 'No breath sounds', 'Requires BVM ventilation'],
         interventions: ['BVM ventilation - 2 breaths every 30 compressions', 'Ensure visible chest rise with each ventilation']
       },

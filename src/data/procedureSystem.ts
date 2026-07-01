@@ -5,8 +5,6 @@
  * Equipment requirements and skill checks
  */
 
-import type { VitalSigns } from '@/types';
-
 export type ProcedureStatus = 'pending' | 'in-progress' | 'completed' | 'failed';
 export type ProcedureDifficulty = 'basic' | 'intermediate' | 'advanced' | 'expert';
 
@@ -322,5 +320,3 @@ export function formatDuration(seconds: number): string {
   if (remainingSeconds === 0) return `${minutes}min`;
   return `${minutes}min ${remainingSeconds}s`;
 }
-
-export type { ProcedureStatus, ProcedureDifficulty };

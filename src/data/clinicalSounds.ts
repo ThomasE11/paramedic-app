@@ -280,6 +280,10 @@ export const BOWEL_SOUND_DESCRIPTIONS: Record<BowelSoundType, {
 // CONDITION-TO-SOUND MAPPING
 // ============================================================================
 
+// CommonJS `require` used for the lazy circular-dep-safe import below.
+// In pure-ESM browser builds it throws ReferenceError, which the try/catch handles.
+declare const require: (id: './treatmentProtocols') => typeof import('./treatmentProtocols');
+
 /**
  * Determine initial clinical sounds based on case category, presentation,
  * and — when available — the severity-aware treatment protocol system.
@@ -1147,7 +1151,7 @@ const BREATH_RECORDINGS: Partial<Record<BreathSoundType, string>> = {
 };
 const HEART_RECORDINGS: Partial<Record<HeartSoundType, string>> = {
   'normal': '/sounds/auscultation/heart-normal.mp3',               // CC BY 3.0, Benboncan/Freesound
-  'murmur': '/sounds/auscultation/heart-murmur.mp3',               // CC BY-SA 4.0, EmilyHopeS (systolic MVP)
+  'murmur-systolic': '/sounds/auscultation/heart-murmur.mp3',      // CC BY-SA 4.0, EmilyHopeS (systolic MVP)
   'irregular': '/sounds/auscultation/heart-irregular.mp3',         // CC BY-SA 3.0, James Heilman MD (AF)
   // gallop (S3/S4) / muffled: synthesised (no labelled CC recording exists).
 };

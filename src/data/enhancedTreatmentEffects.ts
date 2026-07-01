@@ -2328,10 +2328,14 @@ export function calculateTreatmentProgress(
   if (elapsed < treatment.onsetTimeSeconds) {
     return 0; // Not started yet
   }
-  
+
   const effectiveDuration = treatment.durationSeconds - treatment.onsetTimeSeconds;
+  // duration <= onset (e.g. chest seals: onset 15s, duration 1s) means the
+  // effect is instant once it kicks in — without this guard the negative
+  // window made progress clamp to 0 FOREVER and the treatment never applied.
+  if (effectiveDuration <= 0) return 1;
   const progress = (elapsed - treatment.onsetTimeSeconds) / effectiveDuration;
-  
+
   return Math.min(1, Math.max(0, progress));
 }
 
@@ -2455,9 +2459,16 @@ export function applyTreatmentEffectGradual(
         
       case 'spo2':
         if (effect.changeType === 'increase') {
-          const newSpO2 = Math.min(
-            effect.maxValue || 100,
-            Math.max(effect.minValue || 70, newVitals.spo2 + partialValue)
+          // An 'increase' effect must never LOWER the vital: a patient already
+          // above the treatment's ceiling (SpO2 99 on room air, O2 cap 98)
+          // stays where they are instead of being clamped down. Mirrors the
+          // same guard in dynamicTreatmentEngine's spo2 path.
+          const newSpO2 = Math.max(
+            newVitals.spo2,
+            Math.min(
+              effect.maxValue || 100,
+              Math.max(effect.minValue || 70, newVitals.spo2 + partialValue)
+            )
           );
           newVitals.spo2 = Math.round(newSpO2);
           if (progress >= 0.1) changes.push(`SpO₂ +${Math.round(partialValue)}%`);

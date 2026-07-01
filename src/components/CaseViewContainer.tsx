@@ -285,11 +285,11 @@ export function CaseViewContainer({
         {/* Progress Indicator */}
         <div className="px-4 pb-2">
           <div className="flex gap-1">
-            {tabs.map((tab, idx) => (
+            {VIEW_TABS.map((tab, idx) => (
               <div
                 key={tab}
                 className={`h-1 flex-1 rounded-full transition-colors ${
-                  idx <= tabs.indexOf(activeTab) ? 'bg-primary' : 'bg-muted'
+                  idx <= VIEW_TABS.indexOf(activeTab) ? 'bg-primary' : 'bg-muted'
                 }`}
               />
             ))}

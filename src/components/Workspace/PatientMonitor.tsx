@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { VitalSigns } from '@/types';
 
 interface WaveformData {
@@ -27,7 +27,7 @@ interface PatientMonitorProps {
 export function PatientMonitor({ vitals, previousVitals, deteriorationStatus }: PatientMonitorProps) {
   const [time, setTime] = useState(0);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number | undefined>(undefined);
 
   const data: WaveformData = {
     hr: vitals?.pulse || 72,

@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { RotateCcw, User, Eye, Hand, Activity, Stethoscope, X, ChevronRight, ChevronDown, AlertTriangle, Compass, Unlock, Wind, Shirt } from 'lucide-react';
 import { BodyMesh } from './BodyMesh';
-import type { LimbSide } from './BodyMesh';
+import type { LimbSide, SurfaceSampler } from './BodyMesh';
 import { AnatomyReferenceLayer } from './AnatomyReferenceLayer';
 import { CLOTHING_PARTING } from './ClothingLayer';
 import { usePatientVoice } from '@/hooks/usePatientVoice';
@@ -55,6 +55,7 @@ interface ExamLandmark {
   level: 'overview' | 'detail';
   actionId?: string;
   tone?: 'neutral' | 'airway' | 'breathing' | 'circulation' | 'abdomen' | 'neuro' | 'warning';
+  anchorSpace?: 'author' | 'mesh';
 }
 
 interface PupilProfile {
@@ -136,10 +137,10 @@ const EXAM_LANDMARKS: ExamLandmark[] = [
   // (scripts/calibrate-face.cjs) — deterministic, not eyeballed. The sampler
   // overrides z to sit each dot on the real surface. Re-run that script if the
   // patient mesh/texture ever changes.
-  { id: 'right-eye', region: 'face', label: 'Right eye', sublabel: 'pupil size, reactivity', position: [-0.029, 1.664, 0.16], level: 'detail', actionId: 'pupils-size', tone: 'neuro' },
-  { id: 'left-eye', region: 'face', label: 'Left eye', sublabel: 'compare equality', position: [0.029, 1.664, 0.16], level: 'detail', actionId: 'pupils-equality', tone: 'neuro' },
-  { id: 'nose-detail', region: 'face', label: 'Nose', sublabel: 'CSF, bleeding, deformity', position: [0, 1.629, 0.16], level: 'detail', actionId: 'nose-inspect', tone: 'neutral' },
-  { id: 'mouth-detail', region: 'face', label: 'Mouth / lips', sublabel: 'cyanosis, secretions, tongue', position: [0, 1.592, 0.165], level: 'detail', actionId: 'mouth-inspect', tone: 'airway' },
+  { id: 'right-eye', region: 'face', label: 'Right eye', sublabel: 'pupil size, reactivity', position: [-0.029, 1.607, 0.16], level: 'detail', actionId: 'pupils-size', tone: 'neuro', anchorSpace: 'mesh' },
+  { id: 'left-eye', region: 'face', label: 'Left eye', sublabel: 'compare equality', position: [0.029, 1.607, 0.16], level: 'detail', actionId: 'pupils-equality', tone: 'neuro', anchorSpace: 'mesh' },
+  { id: 'nose-detail', region: 'face', label: 'Nose', sublabel: 'CSF, bleeding, deformity', position: [0, 1.572, 0.16], level: 'detail', actionId: 'nose-inspect', tone: 'neutral', anchorSpace: 'mesh' },
+  { id: 'mouth-detail', region: 'face', label: 'Mouth / lips', sublabel: 'cyanosis, secretions, tongue', position: [0, 1.535, 0.165], level: 'detail', actionId: 'mouth-inspect', tone: 'airway', anchorSpace: 'mesh' },
   // Carotid pulse points sit on the neck, lateral to the midline — tappable
   // from the face zoom so students feel the central pulse on the patient
   // (not the monitor). actionId 'pulse-carotid' fires onPulse from any view.
@@ -241,7 +242,7 @@ function LandmarkMarkers({
   onSelect: (region: SecondaryAssessmentStep) => void;
   onAction?: (actionId: string) => void;
   onPulse?: (site: string) => void;
-  sampler: ((x: number, y: number) => [number, number, number]) | null;
+  sampler: SurfaceSampler | null;
 }) {
   const visibleMarkers = activeRegion
     ? EXAM_LANDMARKS.filter(marker => marker.region === activeRegion && marker.level === 'detail')
@@ -279,7 +280,7 @@ function LandmarkMarkers({
         // 'posterior' lives on the back, which the front-facing sampler can't
         // resolve, so it keeps its authored anchor.
         const pos: [number, number, number] = sampler && marker.region !== 'posterior-logroll'
-          ? sampler(marker.position[0], marker.position[1])
+          ? sampler(marker.position[0], marker.position[1], { coordinateSpace: marker.anchorSpace ?? 'author' })
           : marker.position;
         const isDetail = marker.level === 'detail';
         const dotColor = assessed
@@ -392,7 +393,7 @@ function RevealedFindingMarkers({
   caseData: CaseScenario;
   assessedRegions: Set<string>;
   activeRegion: string | null;
-  sampler: ((x: number, y: number) => [number, number, number]) | null;
+  sampler: SurfaceSampler | null;
 }) {
   const injuries = useMemo(() => inferInjuries(caseData), [caseData]);
   // Floating injury badges are an OVERVIEW discovery layer. In a focused
@@ -454,7 +455,7 @@ function CaseRealismMarkers({
   cues: PatientRealismCue[];
   assessedRegions: Set<string>;
   activeRegion: string | null;
-  sampler: ((x: number, y: number) => [number, number, number]) | null;
+  sampler: SurfaceSampler | null;
 }) {
   // Cue rings are an OVERVIEW breadcrumb. In a focused region view they
   // ballooned (~90px) over the loupe and exam landmarks — the detail panels
@@ -741,7 +742,7 @@ function TreatmentEquipmentOverlay({
   sampler,
 }: {
   appliedTreatmentIds: string[];
-  sampler: ((x: number, y: number) => [number, number, number]) | null;
+  sampler: SurfaceSampler | null;
 }) {
   const equipment = useMemo(
     () => buildTreatmentEquipmentState(appliedTreatmentIds),
@@ -3071,13 +3072,13 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   // Surface projector emitted by BodyMesh once the patient mesh loads — used to
   // anchor every floating label/finding onto the real body surface (works for
   // the male, female, or any future GLB without per-model coordinate tuning).
-  const [surfaceSampler, setSurfaceSampler] = useState<((x: number, y: number) => [number, number, number]) | null>(null);
+  const [surfaceSampler, setSurfaceSampler] = useState<SurfaceSampler | null>(null);
   // Stable callback for BodyMesh — it lives in an effect dependency array, so
   // a fresh inline arrow each render would re-run that effect → setState →
   // re-render every frame (an infinite "Maximum update depth" loop that read
   // on-screen as the vitals/3D flickering). useCallback pins it once.
   const handleSurfaceSampler = useCallback(
-    (fn: ((x: number, y: number) => [number, number, number]) | null) =>
+    (fn: SurfaceSampler | null) =>
       setSurfaceSampler(() => fn),
     [],
   );

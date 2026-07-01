@@ -18,30 +18,6 @@ function clean(value?: string | number | null): string {
   return String(value ?? '').trim();
 }
 
-function textFor(caseData: CaseScenario): string {
-  return [
-    caseData.title,
-    caseData.category,
-    caseData.subcategory,
-    caseData.dispatchInfo?.callReason,
-    caseData.dispatchInfo?.location,
-    caseData.dispatchInfo?.timeOfDay,
-    caseData.sceneInfo?.environment,
-    caseData.sceneInfo?.description,
-    caseData.sceneInfo?.hazards?.join(' '),
-    caseData.initialPresentation?.generalImpression,
-    caseData.initialPresentation?.position,
-    caseData.initialPresentation?.appearance,
-    caseData.secondarySurvey?.head?.join(' '),
-    caseData.secondarySurvey?.chest?.join(' '),
-    caseData.secondarySurvey?.abdomen?.join(' '),
-    caseData.secondarySurvey?.pelvis?.join(' '),
-    caseData.secondarySurvey?.extremities?.join(' '),
-    caseData.abcde?.breathing?.findings?.join(' '),
-    caseData.abcde?.circulation?.findings?.join(' '),
-  ].filter(Boolean).join(' ').toLowerCase();
-}
-
 function sceneTextFor(caseData: CaseScenario): string {
   return [
     caseData.title,

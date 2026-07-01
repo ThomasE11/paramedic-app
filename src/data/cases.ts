@@ -11095,7 +11095,7 @@ export const caseDatabase: CaseScenario[] = [
     estimatedDuration: 25,
     dispatchInfo: {
       callReason: 'Collapse in shopping centre, brief loss of consciousness, now conscious',
-      timeOfDay: 'midday',
+      timeOfDay: 'afternoon',
       location: 'Shopping centre food court',
       callerInfo: 'Shopping centre security guard',
       dispatchCode: 'Delta-1',
@@ -11305,7 +11305,7 @@ export const caseDatabase: CaseScenario[] = [
     estimatedDuration: 20,
     dispatchInfo: {
       callReason: 'Parents report 8-month-old baby "not breathing properly" and "very floppy"',
-      timeOfDay: 'night',
+      timeOfDay: 'evening',
       location: 'Family home, first floor apartment',
       callerInfo: 'Mother (extremely distressed, crying on phone)',
       dispatchCode: 'Echo-1',

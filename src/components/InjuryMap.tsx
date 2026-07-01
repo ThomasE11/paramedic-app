@@ -76,7 +76,6 @@ export function InjuryMap({ caseData, className = '' }: InjuryMapProps) {
 
             {/* Injury markers as SVG pulse rings */}
             {injuries.map((inj) => {
-              const style = SEVERITY_STYLE[inj.severity];
               const cx = inj.x;
               const cy = inj.y * 2; // viewBox is 0-200 tall, coords are 0-100
               const color = inj.severity === 'critical' ? '#f43f5e' : inj.severity === 'major' ? '#f97316' : '#fbbf24';

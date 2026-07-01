@@ -388,18 +388,10 @@ export function pediatricTriage(respiratoryRate: number, pulse: number, alertnes
 
 // Resource allocation helper
 export function allocateResources(
-  patients: MassCasualtyPatient[],
+  _patients: MassCasualtyPatient[],
   availableProviders: number
 ): Map<string, string[]> {
   const allocation = new Map<string, string[]>();
-  
-  // Group patients by triage category
-  const byCategory = {
-    immediate: patients.filter(p => p.triageCategory === 'immediate'),
-    delayed: patients.filter(p => p.triageCategory === 'delayed'),
-    minor: patients.filter(p => p.triageCategory === 'minor'),
-    expectant: patients.filter(p => p.triageCategory === 'expectant'),
-  };
 
   // Allocate providers proportionally
   // Immediate: 60% of resources
@@ -451,6 +443,3 @@ export function calculateTriageAccuracy(
     underTriage: total > 0 ? (under / total) * 100 : 0,
   };
 }
-
-// Export types
-export type { TriageCategory, PatientStatus, MassCasualtyPatient, MCIIncident };

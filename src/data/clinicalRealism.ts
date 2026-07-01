@@ -2628,7 +2628,7 @@ const TREATMENT_QUALITY_RULES: TreatmentQualityRule[] = [
   },
   {
     treatmentId: 'gtn_spray',
-    condition: (vitals, _cat, sub) => sub.includes('stem-inferior'),
+    condition: (_vitals, _cat, sub) => sub.includes('stem-inferior'),
     result: (year) => ({
       score: year === '3rd-year' ? 30 : 15,
       level: 'inappropriate',

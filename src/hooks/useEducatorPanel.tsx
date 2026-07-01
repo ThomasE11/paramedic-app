@@ -18,7 +18,7 @@ interface TimelineEvent {
   id: string;
   type: 'assessment' | 'intervention' | 'decision' | 'finding' | 'milestone';
   title: string;
-  time?: string;
+  time: string;
   description: string;
   tags?: { label: string; variant: 'success' | 'warning' | 'danger' | 'info' }[];
 }

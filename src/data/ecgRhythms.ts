@@ -316,7 +316,7 @@ export const ventricularFibrillation: ECGRhythm = {
 // ============================================================================
 // ASYSTOLE
 // ============================================================================
-const asystoleWave: WaveformFn = (t) =>
+const asystoleWave: WaveformFn = (_t) =>
   (Math.random() - 0.5) * 0.02; // Just noise
 
 export const asystole: ECGRhythm = {
@@ -751,7 +751,7 @@ const lbbbWaveLateral: WaveformFn = (t, context?) =>
 const lbbbWaveV1: WaveformFn = (t, context?) =>
   pWave(t) + lbbbV1QRS(t, context) + lbbbDiscordantST_V1(t, context);
 
-const lbbbWaveNeutral: WaveformFn = (t, context?) =>
+const lbbbWaveNeutral: WaveformFn = (t, _context?) =>
   pWave(t) + wideQRS(t, 0.6, 0.14, 0.16) + tWave(t, 0.1, 0.38, 0.15);
 
 export const lbbb: ECGRhythm = {
@@ -907,7 +907,7 @@ export const hyperkalemia: ECGRhythm = {
   id: 'hyperkalemia',
   name: 'Hyperkalemia — Peaked T Waves, Wide QRS',
   description: 'Peaked T waves, widened QRS, prolonged PR, risk of sine wave pattern',
-  category: 'metabolic',
+  category: 'bradycardia',
   defaultRate: 55,
   rateRange: [30, 90],
   regular: true,

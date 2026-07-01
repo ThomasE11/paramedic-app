@@ -1244,7 +1244,7 @@ function ProceduralPatient({ caseData, tone }: { caseData: CaseScenario; tone: S
         : 'rotate-0';
     const height = l.shortened ? 'h-16' : 'h-24';
     const origin = 'origin-top';
-    return { baseX, rotate, height, origin, injured: l.deformed || l.shortened || l.externallyRotated, bleeding: l.bleeding };
+    return { baseX, rotate, height, origin, injured: l.deformed || l.shortened || l.externallyRotated, bleeding: l.bleeding, externallyRotated: l.externallyRotated, shortened: l.shortened };
   };
 
   const leftL = legStyle('left');

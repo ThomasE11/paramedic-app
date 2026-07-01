@@ -448,5 +448,3 @@ export function getTreatmentApproach(
     rationale: 'Stabilize patient before transport',
   };
 }
-
-export type { FamilyMember, FamilyEmotionalState, CulturalBackground, TransportMode, FacilityLevel, ReceivingFacility };

@@ -20,7 +20,7 @@
  * - DermNet NZ (dermatology)
  */
 
-import type { DebriefingResource, ResourceSource, CaseCategory, CaseScenario, SimulationObjective } from '@/types';
+import type { DebriefingResource, ResourceSource, CaseScenario, SimulationObjective } from '@/types';
 
 // ============================================================================
 // SOURCE REGISTRY
@@ -39,7 +39,7 @@ export const resourceSources: ResourceSource[] = [
   { id: 'jrcalc', name: 'JRCALC', baseUrl: 'https://jrcalcplus.co.uk', type: 'guideline', categories: ['cardiac', 'trauma', 'respiratory', 'metabolic'] },
   { id: 'who', name: 'WHO', baseUrl: 'https://www.who.int', type: 'government', categories: ['pediatric', 'obstetric'] },
   { id: 'medscape', name: 'Medscape', baseUrl: 'https://emedicine.medscape.com', type: 'education', categories: ['cardiac', 'respiratory', 'neurological', 'metabolic', 'trauma'] },
-  { id: 'dermnetnz', name: 'DermNet NZ', baseUrl: 'https://dermnetnz.org', type: 'education', categories: ['dermatological'] },
+  { id: 'dermnetnz', name: 'DermNet NZ', baseUrl: 'https://dermnetnz.org', type: 'education', categories: ['general'] },
 ];
 
 // ============================================================================

@@ -544,5 +544,3 @@ export const EQUIPMENT_FAILURES = [
     effect: 'Repeat test with new strip',
   },
 ];
-
-export type { Equipment, EquipmentStatus, EquipmentCategory };

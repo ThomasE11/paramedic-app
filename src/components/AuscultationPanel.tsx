@@ -15,7 +15,7 @@ import {
   Stethoscope, Volume2, VolumeX, AlertTriangle, Info,
   ChevronDown, ChevronUp,
 } from 'lucide-react';
-import type { ClinicalSoundState, BreathSoundType, BowelSoundType } from '@/data/clinicalSounds';
+import type { ClinicalSoundState, BreathSoundType } from '@/data/clinicalSounds';
 import {
   BREATH_SOUND_DESCRIPTIONS,
   BOWEL_SOUND_DESCRIPTIONS,

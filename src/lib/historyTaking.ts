@@ -420,11 +420,6 @@ const PATIENT_REPROMPTS = [
   `Could you say that another way?`,
 ];
 
-function todayPhrase(): string {
-  const d = new Date();
-  return d.toLocaleDateString(undefined, { weekday: 'long' });
-}
-
 /**
  * If the patient is unconscious or unresponsive, collateral history may
  * still be obtainable from bystanders. Returns the bystander-given line

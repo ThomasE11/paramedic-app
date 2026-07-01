@@ -20,7 +20,9 @@ import type { CaseScenario, StudentYear, CaseSession, VitalSigns, AppliedTreatme
  * The pauses and phrasing give the humanised voice engine natural beats.
  */
 function buildDispatchNarration(caseData: CaseScenario): string {
-  const dispatch = caseData.dispatchInfo;
+  // `priority` isn't part of the typed dispatchInfo shape (no case data sets
+  // it yet) — widen the local so the defensive runtime read still compiles.
+  const dispatch = caseData.dispatchInfo as (CaseScenario['dispatchInfo'] & { priority?: string | number }) | undefined;
   const priorityWord = dispatch?.priority
     ? (String(dispatch.priority).includes('1') ? 'priority one' : String(dispatch.priority).includes('2') ? 'priority two' : 'priority three')
     : 'priority one';
@@ -92,8 +94,8 @@ import {
   Sparkles, CheckCircle2, AlertTriangle, FileText, Loader2, BookOpen,
   Ambulance, XCircle, Heart, Shield, ChevronRight, BarChart3,
   ClipboardCheck, Star, TrendingUp, TrendingDown, Minus, ExternalLink,
-  RotateCcw, Zap, Volume2, Phone, Thermometer, ChevronDown, ChevronUp,
-  Wind, Droplets, Brain, Pill, Syringe, Search, Shuffle, Target,
+  RotateCcw, Zap, Phone, ChevronDown, ChevronUp,
+  Wind, Brain, Syringe, Search, Shuffle, Target,
   Flame, Baby, FlaskConical, ListChecks, HeartPulse, Gauge,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -324,7 +326,7 @@ interface StudentPanelProps {
       peepCmH2O: number;
       ieRatio: string;
     };
-    bvmVentilationRate?: number;
+    bvmVentilationRate?: number | null;
     arrestTimeline?: Array<{ time: number; event: string; type: string }>;
     transportDecision?: {
       priority?: string;
@@ -403,7 +405,7 @@ function getCaseClinicalText(caseData: CaseScenario): string {
     ...(caseData.abcde?.breathing?.findings ?? []),
     ...(caseData.abcde?.disability?.findings ?? []),
     ...(caseData.expectedFindings?.keyObservations ?? []),
-    ...(caseData.secondarySurvey?.face ?? []),
+    ...(caseData.secondarySurvey?.headDetailed?.face ?? []),
     ...(caseData.secondarySurvey?.chest ?? []),
   ].filter(Boolean).join(' ').toLowerCase();
 }
@@ -561,7 +563,7 @@ export function StudentPanel({
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectionMode, setSelectionMode] = useState<'standard' | 'random-category' | 'condition'>('standard');
   const [conditionSearch, setConditionSearch] = useState('');
-  const [selectedCondition, setSelectedCondition] = useState<string | null>(null);
+  const [, setSelectedCondition] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
   // Session tracking
@@ -636,7 +638,7 @@ export function StudentPanel({
   // Scene toggle & ABCDE row states
   const [showScene, setShowScene] = useState(false);
   const [activePrimarySurvey, setActivePrimarySurvey] = useState<'scene-safety' | 'airway' | 'breathing' | 'circulation' | 'disability' | 'exposure' | null>(null);
-  const [activeHistoryStep, setActiveHistoryStep] = useState<'signs-symptoms' | 'allergies' | 'medications' | 'past-medical' | 'last-meal' | 'events-leading' | null>(null);
+  const [, setActiveHistoryStep] = useState<'signs-symptoms' | 'allergies' | 'medications' | 'past-medical' | 'last-meal' | 'events-leading' | null>(null);
   const [activeManagementTab, setActiveManagementTab] = useState<ManagementTab>('airway');
   const [medSearch, setMedSearch] = useState('');
 
@@ -757,8 +759,6 @@ export function StudentPanel({
   // Treatment effects
   const {
     currentVitals: animatedVitals,
-    isAnimating: isVitalsAnimating,
-    progress: vitalChangeProgress,
     startGradualChange,
   } = useGradualVitalChanges();
 
@@ -961,7 +961,7 @@ export function StudentPanel({
         respiration: currentVitals.respiration as number | undefined,
         spo2: currentVitals.spo2 as number | undefined,
         temperature: currentVitals.temperature as number | undefined,
-        gcs: (currentVitals.gcs && typeof currentVitals.gcs === 'object' ? currentVitals.gcs.total : currentVitals.gcs) as number | undefined,
+        gcs: (currentVitals.gcs && typeof currentVitals.gcs === 'object' ? (currentVitals.gcs as { total?: number }).total : currentVitals.gcs) as number | undefined,
         bloodGlucose: currentVitals.bloodGlucose as number | undefined,
       },
     });
@@ -1093,7 +1093,7 @@ export function StudentPanel({
         if (incoming.temperature !== undefined) merged.temperature = incoming.temperature as number;
         if (incoming.bloodGlucose !== undefined) merged.bloodGlucose = incoming.bloodGlucose as number;
         if (incoming.gcs !== undefined && typeof incoming.gcs === 'number') {
-          merged.gcs = { total: incoming.gcs as number } as VitalSigns['gcs'];
+          merged.gcs = { total: incoming.gcs as number } as unknown as VitalSigns['gcs'];
         }
         return merged;
       });
@@ -1210,12 +1210,12 @@ export function StudentPanel({
     // replay any missing steps so the tracker state converges.
     if (externalState.assessmentPerformed && assessmentTracker && currentCase) {
       const incoming = externalState.assessmentPerformed;
-      const already = new Set(assessmentTracker.performed.map(p => p.stepId));
+      const already = new Set<string>(assessmentTracker.performed.map(p => p.stepId));
       const missing = incoming.filter(id => !already.has(id));
       if (missing.length > 0) {
         let tracker = assessmentTracker;
         for (const stepId of missing) {
-          const { tracker: next } = performAssessmentStep(tracker, currentCase, stepId as AssessmentStepId);
+          const { tracker: next } = performAssessmentStep(tracker, stepId as AssessmentStepId, currentCase, caseStartTime ?? Date.now());
           tracker = next;
         }
         setAssessmentTracker(tracker);
@@ -1248,7 +1248,7 @@ export function StudentPanel({
         if (v.spo2 !== undefined) merged.spo2 = v.spo2;
         if (v.temperature !== undefined) merged.temperature = v.temperature;
         if (v.bloodGlucose !== undefined) merged.bloodGlucose = v.bloodGlucose;
-        if (v.gcs !== undefined) merged.gcs = { total: v.gcs } as VitalSigns['gcs'];
+        if (v.gcs !== undefined) merged.gcs = { total: v.gcs } as unknown as VitalSigns['gcs'];
         return merged;
       });
     }
@@ -2102,7 +2102,7 @@ export function StudentPanel({
     if (treatment.category === 'medication' && !medicationConfirmedRef.current.has(treatment.id)) {
       const allergies = currentCase.history?.allergies || [];
       const allergyText = allergies.length > 0 && allergies[0] !== 'NKDA' && !allergies[0]?.toLowerCase().includes('no known')
-        ? `Patient allergies: ${allergies.map(a => typeof a === 'string' ? a : a.name || a).join(', ')}`
+        ? `Patient allergies: ${allergies.map(a => typeof a === 'string' ? a : (a as { name?: string }).name || a).join(', ')}`
         : 'No known drug allergies (NKDA)';
       // Concrete contraindication lines (smart) take priority over the
       // static list on the treatment.
@@ -2475,7 +2475,7 @@ export function StudentPanel({
     const checklist = currentCase.studentChecklist || [];
     if (checklist.length === 0) return;
     const already = new Set(session.completedItems);
-    const performed = new Set(assessmentTracker?.performed?.map(p => p.stepId) || []);
+    const performed = new Set<string>(assessmentTracker?.performed?.map(p => p.stepId) || []);
     const toCredit: string[] = [];
 
     // Pre-alert — any checklist item mentioning "pre-alert" / "pre alert" /
@@ -2741,7 +2741,6 @@ export function StudentPanel({
       }
     }
     if (isSevereHypothermiaCase) {
-      const hasRewarming = appliedTreatmentIds.some(id => id.includes('warm') || id.includes('blanket') || id.includes('space_blanket'));
       const checkedTemp = assessmentTracker?.performed.some(p => p.stepId === 'temperature');
       if (!checkedTemp) {
         penaltyReasons.push({ label: 'Core temperature not assessed in hypothermia case', amount: 10 });
@@ -3028,6 +3027,11 @@ export function StudentPanel({
     postcase: 'Report',
   };
   const phaseOrder: StudentPhase[] = ['prebriefing', 'scene-survey', 'vitals', 'case', 'postcase'];
+
+  // `educationalResources` isn't part of the CaseScenario type (no case data
+  // defines it yet) — read it defensively so the Further Reading card can
+  // render if a future case supplies it.
+  const educationalResources = (currentCase as (CaseScenario & { educationalResources?: Array<{ title: string; url: string; source?: string; type?: string }> }) | null)?.educationalResources;
 
   return (
     <div className="clinical-shell min-h-screen relative overflow-x-hidden">
@@ -4389,7 +4393,7 @@ export function StudentPanel({
                       setCurrentVitals(completeVitals);
                       setVitalsHistory(prev => [...prev, completeVitals]);
                     }}
-                    onAssessmentPerformed={handlePerformAssessment}
+                    onAssessmentPerformed={(stepId) => handlePerformAssessment(stepId as AssessmentStepId)}
                     onPacerStateChange={(state) => {
                       if (onClassroomStateChange) onClassroomStateChange({ pacerState: state });
                     }}
@@ -5538,7 +5542,7 @@ export function StudentPanel({
 
             {/* Year-Level Guidance & Resources */}
             {performanceMetrics.assessmentDebrief && performanceMetrics.assessmentDebrief.criticalMissed.length > 0 && (() => {
-              const missedCategories = [...new Set(performanceMetrics.assessmentDebrief!.criticalMissed.map(m => m.category || 'assessment'))];
+              const missedCategories = [...new Set(performanceMetrics.assessmentDebrief!.criticalMissed.map(m => (m as typeof m & { category?: string }).category || 'assessment'))];
               const resources: FeedbackResource[] = getResourcesForCase(currentCase, missedCategories, selectedYear);
               const guidanceItems = missedCategories.slice(0, 3).map(cat => {
                 const desc = cat === 'assessment' ? 'clinical assessment gaps' : `${cat} assessment gaps`;
@@ -5632,7 +5636,7 @@ export function StudentPanel({
             <DebriefingResourcesPanel caseData={currentCase} />
 
             {/* Additional Resources */}
-            {currentCase.educationalResources && currentCase.educationalResources.length > 0 && (
+            {educationalResources && educationalResources.length > 0 && (
               <Card className="bg-card border border-border rounded-2xl overflow-hidden">
                 <CardHeader className="pb-3 border-b border-border/30">
                   <CardTitle className="text-sm flex items-center gap-2">
@@ -5644,7 +5648,7 @@ export function StudentPanel({
                 </CardHeader>
                 <CardContent className="pt-3">
                   <div className="space-y-1">
-                    {currentCase.educationalResources.slice(0, 6).map((res, i) => (
+                    {educationalResources.slice(0, 6).map((res, i) => (
                       <a
                         key={i}
                         href={res.url}

@@ -324,5 +324,3 @@ export const COMMUNICATION_SCENARIOS = [
     impact: 'medium',
   },
 ];
-
-export type { EnvironmentalConditions, CommunicationConditions, WeatherCondition, EnvironmentType };
