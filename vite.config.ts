@@ -129,6 +129,12 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         output: {
           manualChunks: (id: string) => {
+            // Vite's dynamic-import preload helper is needed by EVERY chunk
+            // that has a dynamic import — including the entry. Left to rollup
+            // it landed inside vendor-pdf, which made the entry statically
+            // import the whole 588KB PDF bundle just to reach a ~1KB helper.
+            // Pin it to its own tiny chunk so the entry stays lean.
+            if (id.includes('vite/preload-helper')) return 'preload-helper'
             if (id.includes('/src/data/cases.ts')
               || id.includes('/src/data/enhancedCases.ts')
               || id.includes('/src/data/additionalCases.ts')

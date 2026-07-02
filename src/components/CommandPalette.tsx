@@ -29,7 +29,6 @@ import {
 } from '@/components/ui/command';
 import { useTranslation } from 'react-i18next';
 import { Activity, Search, Sparkles, Stethoscope, GraduationCap, Languages, Moon, Sun } from 'lucide-react';
-import { allCases } from '@/data/cases';
 import type { CaseScenario } from '@/types';
 import i18n from '@/i18n';
 
@@ -52,6 +51,15 @@ export function CommandPalette({ onCaseSelect, onSwitchRole, extraActions = [] }
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
+  // Case data is ~1.2MB — load it only when the palette first opens so the
+  // landing page doesn't ship the whole case library in its critical path.
+  const [allCases, setAllCases] = useState<CaseScenario[]>([]);
+  useEffect(() => {
+    if (!open || allCases.length) return;
+    let alive = true;
+    import('@/data/cases').then(m => { if (alive) setAllCases(m.allCases); });
+    return () => { alive = false; };
+  }, [open, allCases.length]);
 
   // ⌘K / Ctrl+K globally — unless a text field is focused on the palette itself.
   useEffect(() => {
@@ -100,7 +108,7 @@ export function CommandPalette({ onCaseSelect, onSwitchRole, extraActions = [] }
       .sort((a, b) => b.s - a.s)
       .slice(0, 40)
       .map(x => x.c);
-  }, [query]);
+  }, [query, allCases]);
 
   const onSelectCase = useCallback((c: CaseScenario) => {
     setOpen(false);
