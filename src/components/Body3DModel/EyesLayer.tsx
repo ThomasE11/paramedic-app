@@ -15,6 +15,12 @@
  * scaled from the case's pupil diameter so anisocoria / blown pupils show.
  *
  * Returns true if it repainted (so the caller knows the eyes are handled).
+ *
+ * Blink support: alongside the open-eye texture we pre-render ONE closed-lid
+ * variant (skin-toned lids with a lash-line crease over the same texels) and
+ * stash both on `body.userData.eyesOpenTex` / `body.userData.eyesClosedTex`.
+ * The LifeSigns loop swaps `material.map` between them — a uniform update,
+ * no per-frame canvas repaints or texture uploads.
  */
 
 import * as THREE from 'three';
@@ -115,15 +121,80 @@ export function paintEyesOnTexture(
       ctx.beginPath(); ctx.arc(e.cx - irisR * 0.28, e.cy - irisR * 0.28, Math.max(1, irisR * 0.14), 0, Math.PI * 2); ctx.fill();
     });
 
+    const adoptSettings = (t: THREE.CanvasTexture) => {
+      t.flipY = tex.flipY;
+      t.colorSpace = tex.colorSpace;
+      t.wrapS = tex.wrapS;
+      t.wrapT = tex.wrapT;
+      t.anisotropy = tex.anisotropy;
+      t.needsUpdate = true;
+    };
+
     const newTex = new THREE.CanvasTexture(canvas);
-    newTex.flipY = tex.flipY;
-    newTex.colorSpace = tex.colorSpace;
-    newTex.wrapS = tex.wrapS;
-    newTex.wrapT = tex.wrapT;
-    newTex.anisotropy = tex.anisotropy;
-    newTex.needsUpdate = true;
+    adoptSettings(newTex);
     mat.map = newTex;
     mat.needsUpdate = true;
+
+    // ---- Closed-lid twin texture (blink / unconscious GCS-coupled lids) ----
+    // Copy the finished open-eye atlas, then cover each eye blob with a
+    // skin-toned lid ellipse sampled from the surrounding face texels, plus a
+    // subtle lash-line crease so the closed eye reads as a lid, not a smudge.
+    // Failure here is cosmetic only — blink simply stays disabled.
+    body.userData.eyesOpenTex = newTex;
+    body.userData.eyesClosedTex = null;
+    try {
+      if (eyes.length === 2) {
+        const closedCanvas = document.createElement('canvas');
+        closedCanvas.width = tw;
+        closedCanvas.height = th;
+        const cctx = closedCanvas.getContext('2d');
+        if (cctx) {
+          cctx.drawImage(canvas, 0, 0);
+          for (const e of eyes) {
+            // Average facial skin colour from a ring just outside the blob
+            // (in-atlas). `d` still holds the pre-iris image data; the ring
+            // region was never repainted, so it is genuine skin.
+            const x0 = Math.max(0, Math.round(e.cx - e.w * 1.4));
+            const x1 = Math.min(tw - 1, Math.round(e.cx + e.w * 1.4));
+            const y0 = Math.max(0, Math.round(e.cy - e.h * 1.6));
+            const y1 = Math.min(th - 1, Math.round(e.cy + e.h * 1.6));
+            let r = 0, g = 0, b = 0, n = 0;
+            for (let y = y0; y <= y1; y++) {
+              for (let x = x0; x <= x1; x++) {
+                // ring only — skip the blob itself (may hold sclera paint)
+                if (Math.abs(x - e.cx) < e.w * 0.75 && Math.abs(y - e.cy) < e.h * 0.75) continue;
+                const o = (y * tw + x) * 4;
+                r += d[o]; g += d[o + 1]; b += d[o + 2]; n++;
+              }
+            }
+            if (n === 0) continue;
+            r = Math.round(r / n); g = Math.round(g / n); b = Math.round(b / n);
+            // Generous coverage: the source atlases carry a dull-red rim
+            // around the strict-red mask (eyelid-margin texels) — the lid
+            // must swallow that rim too or a closed eye keeps red edges.
+            const rx = Math.max(2, e.w * 0.85);
+            const ry = Math.max(2, e.h * 0.95);
+            cctx.fillStyle = `rgb(${r},${g},${b})`;
+            cctx.beginPath();
+            cctx.ellipse(e.cx, e.cy, rx, ry, 0, 0, Math.PI * 2);
+            cctx.fill();
+            // Lash-line crease across the lid
+            cctx.strokeStyle = `rgba(${Math.round(r * 0.55)},${Math.round(g * 0.5)},${Math.round(b * 0.5)},0.8)`;
+            cctx.lineWidth = Math.max(1, e.h * 0.14);
+            cctx.beginPath();
+            cctx.moveTo(e.cx - rx * 0.8, e.cy);
+            cctx.quadraticCurveTo(e.cx, e.cy + ry * 0.35, e.cx + rx * 0.8, e.cy);
+            cctx.stroke();
+          }
+          const closedTex = new THREE.CanvasTexture(closedCanvas);
+          adoptSettings(closedTex);
+          body.userData.eyesClosedTex = closedTex;
+        }
+      }
+    } catch {
+      body.userData.eyesClosedTex = null;
+    }
+
     return true;
   } catch {
     return false; // texture not readable — fall back to the model as shipped

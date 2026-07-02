@@ -4930,6 +4930,833 @@ export const additionalBurnsCases: CaseScenario[] = [
 ];
 
 // ============================================================================
+// LEVEL-BANDED EXPANSION (W3) — Year 3/4 multi-system, atypical presentations
+// with competing priorities. Each routes to an existing treatment protocol via
+// subcategory; afterIntervention targets sit at the physiology engine's
+// reachable endpoint so the clinical-regression audit stays clean.
+// ============================================================================
+
+export const additionalLevelBandedCases: CaseScenario[] = [
+  // fall-002: Anticoagulated elderly fall with evolving traumatic brain injury
+  createCase({
+    id: 'fall-002',
+    title: 'Elderly Man on Warfarin - Fall with Declining Consciousness',
+    category: 'elderly-fall',
+    subcategory: 'head-injury',
+    priority: 'critical',
+    complexity: 'expert',
+    yearLevels: ['3rd-year', '4th-year'],
+    estimatedDuration: 25,
+    dispatchInfo: {
+      callReason: '82-year-old male fell down steps, was talking, now drowsy',
+      timeOfDay: 'evening',
+      location: 'Villa in Abu Dhabi',
+      callerInfo: 'Daughter (very worried — "he\'s not himself")',
+      dispatchCode: 'Delta-2'
+    },
+    patientInfo: {
+      age: 82,
+      gender: 'male',
+      weight: 76,
+      occupation: 'Retired',
+      language: 'Arabic',
+      culturalConsiderations: ['Large family present', 'Explain the seriousness clearly and calmly', 'Involve next of kin in decisions']
+    },
+    sceneInfo: {
+      description: 'Patient at bottom of three marble steps, family gathered, walking frame nearby',
+      hazards: ['Marble steps', 'Poor lighting'],
+      bystanders: 'Daughter and grandchildren present',
+      environment: 'Villa entrance, warm evening'
+    },
+    initialPresentation: {
+      generalImpression: 'Elderly man, previously talking, now increasingly drowsy — a "talk and deteriorate" pattern',
+      position: 'Supine at base of steps',
+      appearance: 'Drowsy, bruising to right temple, vomited once',
+      consciousness: 'Was GCS 15 on arrival of family, now responds only to voice'
+    },
+    abcde: {
+      airway: {
+        patent: true,
+        findings: ['Patent currently but at risk with falling GCS', 'Vomited once — aspiration risk'],
+        interventions: ['Suction ready', 'Prepare airway adjuncts', 'Position and protect airway']
+      },
+      breathing: {
+        rate: 14,
+        rhythm: 'Regular',
+        depth: 'Adequate spontaneous ventilation currently',
+        spo2: 94,
+        findings: ['Spontaneously ventilating — monitor for decline', 'No chest injury'],
+        interventions: ['High-flow oxygen', 'Assist ventilation if GCS/ventilation deteriorates']
+      },
+      circulation: {
+        pulseRate: 56,
+        pulseQuality: 'Regular, bounding',
+        bp: { systolic: 178, diastolic: 98 },
+        capillaryRefill: 2,
+        skin: 'Warm and dry',
+        findings: ['Hypertension with bradycardia — evolving Cushing response', 'No external major haemorrhage'],
+        interventions: ['Do NOT lower BP', 'IV access']
+      },
+      disability: {
+        avpu: 'V',
+        gcs: { eye: 3, verbal: 4, motor: 5, total: 12 },
+        bloodGlucose: 6.4,
+        pupils: 'Right pupil 5mm and sluggish, left 3mm reactive (early anisocoria)',
+        findings: ['Falling GCS (talk and deteriorate)', 'Anisocoria — evolving mass lesion', 'On warfarin + aspirin'],
+        interventions: ['Frequent GCS/pupil checks', 'Time-critical transfer']
+      },
+      exposure: {
+        temperature: 36.5,
+        findings: ['Right temporal haematoma/bruise', 'Grazes to forearm', 'No other major injury'],
+        interventions: ['Keep warm', 'Full exposure and log roll with c-spine care']
+      }
+    },
+    secondarySurvey: {
+      head: ['Right temporal boggy haematoma', 'Anisocoria (right sluggish)', 'Vomited'],
+      neck: ['C-spine immobilised — cannot clear (distracting injury, altered GCS)'],
+      chest: ['Clear, no injury'],
+      abdomen: ['Soft'],
+      pelvis: ['Stable'],
+      extremities: ['Forearm grazes', 'No long-bone injury'],
+      posterior: ['No spinal step/tenderness palpable'],
+      neurological: ['Declining GCS', 'Developing right-sided pupillary change', 'Left-sided weakness emerging']
+    },
+    history: {
+      medications: [
+        { name: 'Warfarin', dose: '4mg', frequency: 'Daily', indication: 'Atrial fibrillation' },
+        { name: 'Aspirin', dose: '75mg', frequency: 'Daily', indication: 'Vascular protection' },
+        { name: 'Bisoprolol', dose: '5mg', frequency: 'Daily', indication: 'AF rate control' },
+        { name: 'Ramipril', dose: '10mg', frequency: 'Daily', indication: 'Hypertension' }
+      ],
+      allergies: ['None known'],
+      medicalConditions: ['Atrial fibrillation (anticoagulated)', 'Hypertension', 'Previous TIA'],
+      surgicalHistory: ['TURP'],
+      lastMeal: 'Dinner 1 hour ago',
+      eventsLeading: 'Missed a step and fell, striking his right temple. Initially got up and talked to family (the classic lucid interval), then became progressively drowsy over 20 minutes and vomited. Full anticoagulation dramatically increases intracranial bleeding risk.',
+      socialHistory: { smoking: 'Ex-smoker', alcohol: 'None', occupation: 'Retired', livingSituation: 'Lives with daughter\'s family' }
+    },
+    vitalSignsProgression: {
+      initial: { bp: '178/98', pulse: 56, respiration: 14, spo2: 94, gcs: 12, bloodGlucose: 6.4 },
+      afterIntervention: { bp: '178/98', pulse: 58, respiration: 14, spo2: 98, gcs: 12, bloodGlucose: 6.4 },
+      deterioration: { bp: '204/112', pulse: 44, respiration: 8, spo2: 90, gcs: 6, bloodGlucose: 6.4 }
+    },
+    expectedFindings: {
+      keyObservations: ['Talk-and-deteriorate pattern', 'Anticoagulation + antiplatelet — very high ICH risk', 'Evolving Cushing response (hypertension + bradycardia)', 'Anisocoria = mass effect'],
+      redFlags: ['Falling GCS', 'Anisocoria / fixed dilated pupil', 'Cushing triad (hypertension, bradycardia, irregular breathing)', 'Vomiting', 'Warfarin — needs urgent reversal in hospital'],
+      differentialDiagnoses: ['Acute subdural / extradural haematoma', 'Intracerebral haemorrhage', 'Traumatic brain injury with raised ICP', 'Simple mechanical fall (dangerously wrong anchor)'],
+      mostLikelyDiagnosis: 'Expanding intracranial haematoma on anticoagulation with rising ICP',
+      supportingEvidence: ['Head strike + lucid interval + deterioration', 'Warfarin + aspirin', 'Anisocoria', 'Cushing physiology']
+    },
+    managementPathway: {
+      immediate: [
+        'C-spine control and airway protection (suction ready — has vomited)',
+        'High-flow oxygen; assist ventilation, avoid hypoxia and avoid hyperventilation unless herniating',
+        'Do NOT lower the blood pressure — cerebral perfusion depends on it',
+        'IV access, protect against hypotension (secondary brain injury)'
+      ],
+      definitive: [
+        'Time-critical transfer to a neurosurgical centre — pre-alert',
+        'Flag the anticoagulation early so the ED can arrange urgent warfarin reversal (PCC/vitamin K)',
+        'Minimise scene time — this is a "scoop and run"',
+        'Avoid nitrates / GTN and other BP-lowering agents'
+      ],
+      monitoring: ['GCS and pupils every few minutes', 'Cushing physiology (HR/BP/breathing)', 'SpO2 and end-tidal CO2 if available']
+    },
+    studentChecklist: [
+      { id: 'fall-002-cspine', category: 'intervention', description: 'C-spine control with airway protection (aspiration risk)', points: 8, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced', 'expert'], critical: true },
+      { id: 'fall-002-airway', category: 'abcde', description: 'Protect airway with suction and adjuncts as GCS falls', points: 8, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced', 'expert'], critical: true },
+      { id: 'fall-002-oxy', category: 'intervention', description: 'High-flow oxygen; avoid hypoxia and hypotension (secondary brain injury)', points: 8, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced', 'expert'], critical: true },
+      { id: 'fall-002-bp', category: 'clinical-reasoning', description: 'Recognise NOT to lower blood pressure (cerebral perfusion pressure)', points: 8, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced', 'expert'], critical: true },
+      { id: 'fall-002-anticoag', category: 'clinical-reasoning', description: 'Identify anticoagulation + antiplatelet as a critical ICH multiplier and flag for urgent reversal', points: 12, yearLevel: ['3rd-year', '4th-year'], complexity: ['expert'], critical: true, rationale: 'Warfarin dramatically increases haematoma expansion; early reversal saves lives' },
+      { id: 'fall-002-cushing', category: 'clinical-reasoning', description: 'Recognise the Cushing response and anisocoria as raised-ICP / herniation signs', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['expert'], critical: true },
+      { id: 'fall-002-prealert', category: 'communication', description: 'Pre-alert neurosurgical centre, minimise scene time (scoop and run)', points: 8, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced', 'expert'], critical: true },
+      { id: 'fall-002-gcs', category: 'abcde', description: 'Serial GCS and pupil checks with documentation', points: 6, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced', 'expert'] }
+    ],
+    teachingPoints: [
+      'A minor mechanism in an anticoagulated older patient is NOT a minor head injury — warfarin + aspirin multiply intracranial bleeding risk',
+      '"Talk and deteriorate" (a lucid interval) is the classic story of an expanding intracranial haematoma',
+      'The Cushing response — hypertension with bradycardia and irregular breathing — is a late, ominous sign of raised ICP',
+      'Do not lower the blood pressure: cerebral perfusion pressure depends on it. Avoid hypoxia and hypotension, which cause secondary brain injury',
+      'Flag anticoagulation to the receiving unit early so urgent reversal (PCC/vitamin K) can be prepared'
+    ],
+    commonPitfalls: [
+      'Anchoring on "just a fall" and missing the evolving intracranial bleed',
+      'Failing to recognise anticoagulation as a major risk multiplier',
+      'Trying to treat the high blood pressure',
+      'Prolonged scene time instead of scoop-and-run to neurosurgery',
+      'Not protecting the airway in a vomiting patient with a falling GCS'
+    ],
+    references: ['NICE Head Injury (NG232)', 'JRCALC Head Trauma', 'Brain Trauma Foundation Prehospital Guidelines', 'UAE Anticoagulation Reversal Pathways']
+  }),
+
+  // obs-003: Primary postpartum haemorrhage (obstetric)
+  createCase({
+    id: 'obs-003',
+    title: 'Postpartum Haemorrhage After Home Birth',
+    category: 'obstetric',
+    subcategory: 'obstetric-haemorrhage',
+    priority: 'critical',
+    complexity: 'advanced',
+    yearLevels: ['3rd-year', '4th-year'],
+    estimatedDuration: 22,
+    dispatchInfo: {
+      callReason: '31-year-old female, heavy vaginal bleeding after giving birth at home',
+      timeOfDay: 'evening',
+      location: 'Apartment in Dubai',
+      callerInfo: 'Husband (panicking)',
+      dispatchCode: 'Delta-2'
+    },
+    patientInfo: {
+      age: 31,
+      gender: 'female',
+      weight: 74,
+      language: 'Tagalog',
+      culturalConsiderations: ['Recently delivered — emotional and physical distress', 'Newborn also present — allocate care', 'Female provider preference if possible']
+    },
+    sceneInfo: {
+      description: 'Bedroom, unplanned home birth ~40 minutes ago, significant blood loss on bedding',
+      hazards: ['Body fluids — BSI', 'Newborn requiring attention'],
+      bystanders: 'Husband; newborn wrapped and breathing',
+      environment: 'Apartment bedroom'
+    },
+    initialPresentation: {
+      generalImpression: 'Pale, anxious woman with ongoing heavy vaginal bleeding, feeling faint',
+      position: 'Semi-recumbent on the bed',
+      appearance: 'Pale, sweaty, visibly soaked bedding',
+      consciousness: 'Alert but anxious and lightheaded'
+    },
+    abcde: {
+      airway: { patent: true, findings: ['Patent', 'Talking'], interventions: [] },
+      breathing: { rate: 24, rhythm: 'Regular', depth: 'Normal', spo2: 97, findings: ['Tachypnoeic from blood loss', 'Chest clear'], interventions: ['Oxygen'] },
+      circulation: {
+        pulseRate: 122,
+        pulseQuality: 'Weak, thready',
+        bp: { systolic: 92, diastolic: 58 },
+        capillaryRefill: 3,
+        skin: 'Pale, cool, clammy',
+        findings: ['Ongoing PV haemorrhage', 'Boggy, poorly contracted uterus (atony)', 'Class II–III shock'],
+        interventions: ['Uterine fundal massage', 'IV access ×2', 'Fluids', 'Tranexamic acid']
+      },
+      disability: { avpu: 'A', gcs: { eye: 4, verbal: 5, motor: 6, total: 15 }, pupils: 'Equal and reactive', findings: ['Alert but lightheaded'], interventions: ['Monitor for falling GCS'] },
+      exposure: { temperature: 36.4, findings: ['Heavy ongoing vaginal bleeding', 'Placenta reportedly delivered', 'Boggy uterus'], interventions: ['Keep warm — avoid hypothermia (coagulopathy)', 'Estimate blood loss'] }
+    },
+    secondarySurvey: {
+      head: ['Pale conjunctivae'],
+      neck: ['No abnormality'],
+      chest: ['Clear'],
+      abdomen: ['Uterus palpable, soft and boggy above the umbilicus (atony)'],
+      pelvis: ['Ongoing PV bleeding'],
+      extremities: ['Cool, poorly perfused peripheries'],
+      posterior: ['Blood loss on bedding'],
+      neurological: ['Alert']
+    },
+    history: {
+      medications: [{ name: 'Antenatal vitamins', dose: 'Standard', frequency: 'Daily', indication: 'Pregnancy' }],
+      allergies: ['None known'],
+      medicalConditions: ['G3P3', 'Uncomplicated pregnancy'],
+      surgicalHistory: ['Previous normal deliveries'],
+      lastMeal: 'Several hours ago',
+      eventsLeading: 'Precipitous unplanned home birth ~40 minutes ago. Placenta delivered, but bleeding has been heavy and continuous since. The uterus feels soft — the commonest cause of primary PPH is uterine atony (the first of the 4 T\'s).',
+      socialHistory: { smoking: 'None', alcohol: 'None', occupation: 'Homemaker', livingSituation: 'Lives with husband and children' }
+    },
+    vitalSignsProgression: {
+      initial: { bp: '92/58', pulse: 122, respiration: 24, spo2: 97, gcs: 15 },
+      afterIntervention: { bp: '112/72', pulse: 84, respiration: 18, spo2: 98, gcs: 15 },
+      deterioration: { bp: '66/40', pulse: 140, respiration: 30, spo2: 92, gcs: 12 }
+    },
+    expectedFindings: {
+      keyObservations: ['Primary PPH (within 24h)', 'Soft boggy uterus = atony (commonest cause)', 'Class II–III haemorrhagic shock', 'Time-critical'],
+      redFlags: ['Ongoing uncontrolled bleeding', 'Falling GCS / worsening shock', 'Hypothermia driving coagulopathy', 'Concealed loss underestimated'],
+      differentialDiagnoses: ['Uterine atony (Tone)', 'Retained placenta / products (Tissue)', 'Genital tract trauma (Trauma)', 'Coagulopathy (Thrombin)'],
+      mostLikelyDiagnosis: 'Primary postpartum haemorrhage due to uterine atony',
+      supportingEvidence: ['Recent delivery', 'Boggy uterus', 'Heavy ongoing PV loss', 'Shock physiology']
+    },
+    managementPathway: {
+      immediate: [
+        'BSI and rapid haemorrhage assessment (estimate blood loss)',
+        'Uterine fundal massage ("rubbing up" a contraction) — first mechanical action for atony',
+        'High-flow oxygen',
+        'Two large-bore IV cannulae and warmed fluids titrated to a radial pulse / mentation',
+        'Tranexamic acid early (within 3 hours)'
+      ],
+      definitive: [
+        'Encourage breastfeeding/nipple stimulation if appropriate (endogenous oxytocin) and give uterotonics per protocol',
+        'Keep the patient warm — hypothermia worsens coagulopathy',
+        'Pre-alert obstetric unit; allocate a second responder to the newborn',
+        'Rapid transport — this is a major obstetric emergency'
+      ],
+      monitoring: ['Continuous HR/BP and perfusion', 'Estimate ongoing loss', 'Uterine tone', 'Temperature']
+    },
+    studentChecklist: [
+      { id: 'obs-003-bsi', category: 'safety', description: 'BSI and rapid major-haemorrhage recognition', points: 6, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true },
+      { id: 'obs-003-massage', category: 'intervention', description: 'Uterine fundal massage to treat atony', points: 12, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true, rationale: 'Rubbing up a contraction is the immediate mechanical treatment for atonic PPH' },
+      { id: 'obs-003-oxygen', category: 'intervention', description: 'High-flow oxygen', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'] },
+      { id: 'obs-003-iv', category: 'intervention', description: 'Two large-bore IV cannulae and titrated warmed fluids', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true },
+      { id: 'obs-003-txa', category: 'medication', description: 'Give tranexamic acid early (within 3 hours)', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true },
+      { id: 'obs-003-4ts', category: 'clinical-reasoning', description: 'Work through the 4 T\'s (Tone, Trauma, Tissue, Thrombin)', points: 8, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'] },
+      { id: 'obs-003-warm', category: 'intervention', description: 'Keep patient warm to prevent coagulopathy', points: 5, yearLevel: ['4th-year'], complexity: ['advanced'] },
+      { id: 'obs-003-newborn', category: 'team-lead', description: 'Allocate care to the newborn and pre-alert obstetrics', points: 6, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true }
+    ],
+    teachingPoints: [
+      'The commonest cause of primary PPH is uterine atony — a soft, boggy uterus. Fundal massage is the immediate mechanical treatment',
+      'Work through the 4 T\'s: Tone, Trauma, Tissue, Thrombin',
+      'Give tranexamic acid early — within 3 hours improves survival (WOMAN trial)',
+      'Estimated blood loss is routinely underestimated; treat the physiology (pulse, perfusion, mentation), not the number',
+      'Keep the mother warm — hypothermia drives the lethal coagulopathy of major haemorrhage. Remember there are two patients: mother and newborn'
+    ],
+    commonPitfalls: [
+      'Not performing uterine massage',
+      'Underestimating blood loss and under-resuscitating',
+      'Delaying tranexamic acid',
+      'Letting the patient get cold',
+      'Forgetting to allocate care to the newborn'
+    ],
+    references: ['WOMAN Trial (Lancet 2017)', 'RCOG PPH Guideline (GTG 52)', 'JRCALC Maternity Care — Postpartum Haemorrhage']
+  }),
+
+  // cardiac-018: Profound symptomatic (peri-arrest) bradycardia (cardiac)
+  createCase({
+    id: 'cardiac-018',
+    title: 'Peri-Arrest Bradycardia - Syncope and Shock',
+    category: 'cardiac',
+    subcategory: 'bradycardia',
+    priority: 'critical',
+    complexity: 'advanced',
+    yearLevels: ['3rd-year', '4th-year'],
+    estimatedDuration: 22,
+    dispatchInfo: {
+      callReason: '70-year-old male collapsed, very slow pulse, clammy',
+      timeOfDay: 'morning',
+      location: 'Shopping mall, Abu Dhabi',
+      callerInfo: 'Mall security / first aider',
+      dispatchCode: 'Echo-1'
+    },
+    patientInfo: {
+      age: 70,
+      gender: 'male',
+      weight: 82,
+      occupation: 'Retired',
+      language: 'Arabic',
+      culturalConsiderations: ['Public place — manage crowd and dignity']
+    },
+    sceneInfo: {
+      description: 'Mall walkway, patient laid flat by first aider, AED pads available nearby',
+      hazards: ['Crowd', 'Hard floor'],
+      bystanders: 'Mall first aider giving handover',
+      environment: 'Cool indoor mall'
+    },
+    initialPresentation: {
+      generalImpression: 'Grey, clammy older man, barely rousable, profoundly bradycardic',
+      position: 'Supine on floor',
+      appearance: 'Pale, sweaty, poorly perfused',
+      consciousness: 'Drowsy, responds slowly to voice'
+    },
+    abcde: {
+      airway: { patent: true, findings: ['Patent', 'Able to speak a few words'], interventions: ['Monitor'] },
+      breathing: { rate: 16, rhythm: 'Regular', depth: 'Adequate', spo2: 95, findings: ['Mild breathlessness', 'Chest clear'], interventions: ['Oxygen'] },
+      circulation: {
+        pulseRate: 38,
+        pulseQuality: 'Slow, weak',
+        bp: { systolic: 76, diastolic: 46 },
+        capillaryRefill: 4,
+        skin: 'Cold, clammy, poorly perfused',
+        findings: ['Profound bradycardia with hypotension', 'Signs of shock (adverse features)', 'Monitor: high-grade AV block'],
+        ecgFindings: ['High-grade AV block with slow ventricular response', 'Broad escape complexes'],
+        interventions: ['Atropine', 'Pads on — prepare transcutaneous pacing', 'IV access', 'Fluids']
+      },
+      disability: { avpu: 'V', gcs: { eye: 3, verbal: 4, motor: 6, total: 13 }, bloodGlucose: 6.0, pupils: 'Equal and reactive', findings: ['Drowsy from cerebral hypoperfusion'], interventions: ['Reassess as perfusion restored'] },
+      exposure: { temperature: 36.3, findings: ['No injury from collapse'], interventions: ['Keep warm'] }
+    },
+    secondarySurvey: {
+      head: ['No trauma from collapse'],
+      neck: ['No raised JVP'],
+      chest: ['Clear', 'Monitor shows high-grade AV block'],
+      abdomen: ['Soft'],
+      pelvis: ['Stable'],
+      extremities: ['Cold, poorly perfused', 'No oedema'],
+      posterior: ['No injury'],
+      neurological: ['Drowsy but no focal deficit']
+    },
+    history: {
+      medications: [
+        { name: 'Bisoprolol', dose: '5mg', frequency: 'Daily', indication: 'Hypertension' },
+        { name: 'Amlodipine', dose: '5mg', frequency: 'Daily', indication: 'Hypertension' }
+      ],
+      allergies: ['None known'],
+      medicalConditions: ['Hypertension', 'Ischaemic heart disease'],
+      surgicalHistory: [],
+      lastMeal: 'Breakfast',
+      eventsLeading: 'Sudden dizziness and a brief collapse (syncope) while walking. First aider found a very slow pulse. The monitor shows high-grade AV block with adverse features (shock, syncope, low BP) — this is peri-arrest bradycardia.',
+      socialHistory: { smoking: 'Ex-smoker', alcohol: 'None', occupation: 'Retired', livingSituation: 'Lives with wife' }
+    },
+    vitalSignsProgression: {
+      initial: { bp: '76/46', pulse: 38, respiration: 16, spo2: 95, gcs: 13, bloodGlucose: 6.0 },
+      afterIntervention: { bp: '108/68', pulse: 72, respiration: 15, spo2: 98, gcs: 15, bloodGlucose: 6.0 },
+      deterioration: { bp: '58/34', pulse: 28, respiration: 8, spo2: 88, gcs: 8, bloodGlucose: 6.0 }
+    },
+    expectedFindings: {
+      keyObservations: ['Profound bradycardia with adverse features (shock, syncope, hypotension)', 'High-grade AV block', 'Peri-arrest — needs immediate treatment', 'On rate-limiting drugs (bisoprolol)'],
+      redFlags: ['Shock, syncope, myocardial ischaemia, heart failure = adverse features', 'Risk of asystole (recent asystole, Mobitz II, complete block, ventricular pause >3s)', 'Deterioration to arrest'],
+      differentialDiagnoses: ['High-grade / complete AV block', 'Drug-induced bradycardia (beta-blocker/CCB)', 'Inferior MI with AV nodal ischaemia', 'Hyperkalaemia'],
+      mostLikelyDiagnosis: 'Symptomatic high-grade AV block (peri-arrest bradycardia with adverse features)',
+      supportingEvidence: ['HR 38 with BP 76/46', 'Syncope and shock', 'AV block on monitor', 'Rate-limiting medication']
+    },
+    managementPathway: {
+      immediate: [
+        'High-flow oxygen and IV access',
+        'Identify adverse features (shock, syncope, ischaemia, heart failure)',
+        'Atropine 500 micrograms IV, repeat to a maximum of 3mg',
+        'Apply pacing pads and prepare transcutaneous pacing early (high-grade block responds poorly to atropine)'
+      ],
+      definitive: [
+        'Transcutaneous pacing if atropine ineffective; consider adrenaline infusion per protocol',
+        '12-lead ECG to look for AV block level and inferior MI',
+        'Consider drug causes (beta-blocker/CCB) and treat accordingly',
+        'Pre-alert cardiology / PCI centre for transvenous pacing'
+      ],
+      monitoring: ['Continuous ECG and perfusion', 'Response to atropine/pacing', 'Watch for progression to asystole']
+    },
+    studentChecklist: [
+      { id: 'cardiac-018-adverse', category: 'clinical-reasoning', description: 'Identify adverse features (shock, syncope, ischaemia, heart failure)', points: 12, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true, rationale: 'Adverse features mandate immediate treatment in the bradycardia algorithm' },
+      { id: 'cardiac-018-oxy-iv', category: 'intervention', description: 'High-flow oxygen and IV access', points: 6, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true },
+      { id: 'cardiac-018-atropine', category: 'medication', description: 'Administer atropine 500mcg IV, repeat to max 3mg', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true },
+      { id: 'cardiac-018-pacing', category: 'procedural', description: 'Apply pads and prepare/deliver transcutaneous pacing', points: 12, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true, rationale: 'High-grade AV block often needs pacing rather than atropine' },
+      { id: 'cardiac-018-ecg', category: 'procedural', description: 'Obtain 12-lead ECG (level of block, inferior MI)', points: 8, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'] },
+      { id: 'cardiac-018-cause', category: 'clinical-reasoning', description: 'Consider reversible causes (drugs, ischaemia, hyperkalaemia)', points: 8, yearLevel: ['4th-year'], complexity: ['advanced'] },
+      { id: 'cardiac-018-prealert', category: 'communication', description: 'Pre-alert cardiology / PCI centre for definitive pacing', points: 6, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true }
+    ],
+    teachingPoints: [
+      'The bradycardia algorithm turns on adverse features: shock, syncope, myocardial ischaemia, heart failure',
+      'Atropine 500mcg IV (repeat to max 3mg) is first-line, but high-grade AV block (Mobitz II, complete block) responds poorly — move to pacing early',
+      'Get the pacing pads on before the patient arrests; transcutaneous pacing is a bridge to transvenous pacing',
+      'Always look for reversible causes — beta-blockers/calcium-channel blockers, inferior MI, hyperkalaemia',
+      'Risk factors for asystole: recent asystole, Mobitz II, complete heart block with broad QRS, ventricular pauses > 3 seconds'
+    ],
+    commonPitfalls: [
+      'Waiting for atropine to work in high-grade block instead of pacing',
+      'Not identifying the adverse features that mandate treatment',
+      'Forgetting reversible drug and electrolyte causes',
+      'Delaying application of pacing pads',
+      'Missing an inferior MI on the 12-lead'
+    ],
+    references: ['Resuscitation Council UK — Adult Bradycardia Algorithm', 'JRCALC Bradycardia', 'ACLS Bradycardia Guidelines']
+  }),
+
+  // sepsis-001: Elderly urosepsis / septic shock (general)
+  createCase({
+    id: 'sepsis-001',
+    title: 'Elderly Woman - Confusion, Fever and Low Blood Pressure',
+    category: 'general',
+    subcategory: 'sepsis',
+    priority: 'critical',
+    complexity: 'advanced',
+    yearLevels: ['3rd-year', '4th-year'],
+    estimatedDuration: 22,
+    dispatchInfo: {
+      callReason: '79-year-old female, increasingly confused and unwell for 2 days',
+      timeOfDay: 'afternoon',
+      location: 'Assisted-living residence, Dubai',
+      callerInfo: 'Care assistant',
+      dispatchCode: 'Delta-2'
+    },
+    patientInfo: {
+      age: 79,
+      gender: 'female',
+      weight: 58,
+      language: 'English',
+      culturalConsiderations: ['Frail elderly patient', 'Obtain collateral from carers', 'Establish ceiling-of-care / wishes where possible']
+    },
+    sceneInfo: {
+      description: 'Residential care room, patient in bed, carers concerned about a change in behaviour',
+      hazards: ['None'],
+      bystanders: 'Care assistant with notes',
+      environment: 'Warm care home'
+    },
+    initialPresentation: {
+      generalImpression: 'Frail elderly woman, flushed, drowsy and confused, breathing fast',
+      position: 'In bed, semi-recumbent',
+      appearance: 'Flushed then mottled knees, dry mucous membranes',
+      consciousness: 'Confused — a change from her normal alert self (carers)'
+    },
+    abcde: {
+      airway: { patent: true, findings: ['Patent', 'Confused speech'], interventions: ['Monitor'] },
+      breathing: { rate: 26, rhythm: 'Regular', depth: 'Increased', spo2: 93, findings: ['Tachypnoea (a key early sepsis sign)', 'Chest clear'], interventions: ['Oxygen to target'] },
+      circulation: {
+        pulseRate: 112,
+        pulseQuality: 'Bounding then thready',
+        bp: { systolic: 104, diastolic: 62 },
+        capillaryRefill: 3,
+        skin: 'Warm, flushed centrally, early knee mottling',
+        findings: ['Tachycardia maintaining a borderline, falling BP — occult hypoperfusion (compensated "warm" phase)', 'Decompensation to septic shock is near'],
+        interventions: ['Large-bore IV access', 'Fluid resuscitation and reassess']
+      },
+      disability: {
+        avpu: 'V',
+        gcs: { eye: 3, verbal: 5, motor: 6, total: 14 },
+        bloodGlucose: 7.8,
+        pupils: 'Equal and reactive',
+        findings: ['New confusion (a red-flag sepsis sign in the elderly)'],
+        interventions: ['Reassess as perfusion improves']
+      },
+      exposure: {
+        temperature: 38.9,
+        findings: ['Febrile', 'Offensive, cloudy catheter urine noted by carers', 'Mottled knees'],
+        interventions: ['Expose to find the source; keep dignified and warm']
+      }
+    },
+    secondarySurvey: {
+      head: ['Dry mucous membranes'],
+      neck: ['No stiffness'],
+      chest: ['Clear — not a chest source'],
+      abdomen: ['Mild suprapubic tenderness'],
+      pelvis: ['Long-term urinary catheter, cloudy offensive urine'],
+      extremities: ['Mottled knees', 'Cool peripheries'],
+      posterior: ['No pressure sores infected'],
+      neurological: ['Confused, no focal deficit']
+    },
+    history: {
+      medications: [
+        { name: 'Amlodipine', dose: '5mg', frequency: 'Daily', indication: 'Hypertension' },
+        { name: 'Donepezil', dose: '10mg', frequency: 'Daily', indication: 'Dementia' }
+      ],
+      allergies: ['None documented'],
+      medicalConditions: ['Dementia', 'Hypertension', 'Recurrent UTIs', 'Long-term catheter'],
+      surgicalHistory: [],
+      lastMeal: 'Eating and drinking poorly for 2 days',
+      eventsLeading: 'Two days of reduced intake and increasing confusion; today febrile, tachypnoeic and hypotensive. Carers report cloudy, offensive catheter urine. Sepsis in the elderly often presents atypically as confusion or falls rather than obvious infection.',
+      socialHistory: { smoking: 'Never', alcohol: 'None', occupation: 'Retired', livingSituation: 'Assisted-living residence' }
+    },
+    vitalSignsProgression: {
+      initial: { bp: '104/62', pulse: 112, respiration: 26, spo2: 93, gcs: 14, bloodGlucose: 7.8, temperature: 38.9 },
+      afterIntervention: { bp: '120/72', pulse: 68, respiration: 20, spo2: 98, gcs: 14, bloodGlucose: 7.8, temperature: 38.9 },
+      deterioration: { bp: '70/40', pulse: 132, respiration: 32, spo2: 88, gcs: 10, bloodGlucose: 7.8, temperature: 39.2 }
+    },
+    expectedFindings: {
+      keyObservations: ['Severe sepsis — occult hypoperfusion under a maintained but falling BP', 'Likely urinary source (catheter, offensive urine)', 'New confusion — atypical elderly presentation', 'Tachypnoea is an early warning'],
+      redFlags: ['Falling systolic BP / rising lactate', 'New confusion', 'Early mottling, poor perfusion', 'Tachypnoea', 'Failure to respond to fluids (decompensation to septic shock)'],
+      differentialDiagnoses: ['Severe sepsis / early septic shock (urinary source)', 'Pneumonia (chest clear here)', 'Dehydration', 'Hypoglycaemia (excluded)', 'Stroke'],
+      mostLikelyDiagnosis: 'Severe sepsis, urinary source (catheter-associated urosepsis), compensated but impending septic shock',
+      supportingEvidence: ['Fever + tachycardia + tachypnoea + confusion', 'Cloudy offensive catheter urine', 'Borderline falling BP with early mottling']
+    },
+    managementPathway: {
+      immediate: [
+        'Recognise sepsis and screen with a structured tool (NEWS2 / Sepsis Six)',
+        'High-flow oxygen to target saturations',
+        'Large-bore IV access; balanced crystalloid fluid resuscitation and reassess',
+        'Give paracetamol for fever/comfort; early antibiotics on arrival at hospital'
+      ],
+      definitive: [
+        'Pre-alert the ED as a sepsis / time-critical call so antibiotics and blood cultures are ready',
+        'Identify the likely source (urinary) for handover',
+        'Reassess fluid responsiveness — escalate if refractory',
+        'Establish patient wishes / ceiling of care with carers if available'
+      ],
+      monitoring: ['Repeat BP/HR/RR and perfusion', 'Response to fluids', 'GCS', 'SpO2 and temperature']
+    },
+    studentChecklist: [
+      { id: 'sepsis-001-recognise', category: 'clinical-reasoning', description: 'Recognise sepsis/septic shock and screen (NEWS2 / Sepsis Six)', points: 12, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true, rationale: 'Early recognition drives survival' },
+      { id: 'sepsis-001-atypical', category: 'clinical-reasoning', description: 'Appreciate atypical elderly presentation (confusion/falls, may be afebrile)', points: 8, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'] },
+      { id: 'sepsis-001-oxygen', category: 'intervention', description: 'High-flow oxygen to target saturations', points: 6, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true },
+      { id: 'sepsis-001-fluids', category: 'intervention', description: 'Large-bore IV access and balanced crystalloid resuscitation with reassessment', points: 12, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true },
+      { id: 'sepsis-001-source', category: 'secondary', description: 'Identify the likely source (catheter/urinary)', points: 6, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'] },
+      { id: 'sepsis-001-antibiotics', category: 'clinical-reasoning', description: 'Recognise need for early antibiotics; give paracetamol for fever; pre-alert', points: 8, yearLevel: ['4th-year'], complexity: ['advanced'], critical: true },
+      { id: 'sepsis-001-prealert', category: 'communication', description: 'Pre-alert ED as a sepsis / time-critical call', points: 6, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true }
+    ],
+    teachingPoints: [
+      'Sepsis in the elderly is a great mimic — new confusion, a fall, or "just not right" may be the only clue, and they may not mount a fever',
+      'A tachycardia holding up a borderline, falling blood pressure is compensated sepsis — decompensation to septic shock can be sudden, so treat now',
+      'Tachypnoea is one of the earliest and most reliable warning signs',
+      'Give oxygen, gain IV access and resuscitate with balanced fluids, reassessing responsiveness; pre-alert so hospital antibiotics and cultures are ready',
+      'Always look for the source — here the catheter and offensive urine point to a urinary origin'
+    ],
+    commonPitfalls: [
+      'Missing atypical presentations (confusion/falls) in the elderly',
+      'Being reassured by a normal temperature',
+      'Under-resuscitating with fluids or not reassessing the response',
+      'Not pre-alerting so antibiotics are delayed',
+      'Failing to identify the septic source'
+    ],
+    references: ['Surviving Sepsis Campaign Guidelines', 'UK Sepsis Trust — Sepsis Six', 'NICE Sepsis (NG51)', 'JRCALC Sepsis']
+  }),
+
+  // resp-012: Refractory / biphasic anaphylaxis (respiratory)
+  createCase({
+    id: 'resp-012',
+    title: 'Refractory Anaphylaxis - Worsening After First Adrenaline',
+    category: 'respiratory',
+    subcategory: 'anaphylaxis',
+    priority: 'critical',
+    complexity: 'expert',
+    yearLevels: ['3rd-year', '4th-year'],
+    estimatedDuration: 22,
+    dispatchInfo: {
+      callReason: '44-year-old male, severe allergic reaction after eating, not improving',
+      timeOfDay: 'evening',
+      location: 'Restaurant in a Dubai mall',
+      callerInfo: 'Restaurant manager; a bystander gave an adrenaline auto-injector',
+      dispatchCode: 'Echo-1'
+    },
+    patientInfo: {
+      age: 44,
+      gender: 'male',
+      weight: 90,
+      occupation: 'Engineer',
+      language: 'English',
+      culturalConsiderations: ['Public venue — manage crowd', 'Obtain allergy history quickly']
+    },
+    sceneInfo: {
+      description: 'Restaurant, patient on the floor, one auto-injector already used ~8 minutes ago',
+      hazards: ['Crowd', 'Food allergen still on table'],
+      bystanders: 'Manager and a first-aider',
+      environment: 'Busy restaurant'
+    },
+    initialPresentation: {
+      generalImpression: 'Distressed man with facial/lip swelling, audible wheeze and stridor, becoming exhausted',
+      position: 'Slumped, prefers sitting but hypotensive',
+      appearance: 'Flushed with urticaria, lip and tongue swelling, anxious',
+      consciousness: 'Alert but agitated and tiring'
+    },
+    abcde: {
+      airway: {
+        patent: true,
+        findings: ['Lip and tongue angioedema', 'Inspiratory stridor', 'Hoarse voice — impending airway compromise'],
+        interventions: ['Prepare for a difficult airway', 'Positioning', 'Nebulised adrenaline may buy time', 'Early senior/airway support']
+      },
+      breathing: {
+        rate: 30,
+        rhythm: 'Regular',
+        depth: 'Laboured',
+        spo2: 86,
+        findings: ['Widespread wheeze', 'Reduced air entry', 'Stridor', 'Accessory muscle use'],
+        auscultation: ['Widespread wheeze', 'Reduced air entry bilaterally'],
+        interventions: ['High-flow oxygen', 'Nebulised salbutamol', 'IM adrenaline (repeat)']
+      },
+      circulation: {
+        pulseRate: 132,
+        pulseQuality: 'Weak, thready',
+        bp: { systolic: 74, diastolic: 40 },
+        capillaryRefill: 4,
+        skin: 'Flushed with widespread urticaria, then pale peripherally',
+        findings: ['Distributive shock', 'Poor perfusion'],
+        interventions: ['Repeat IM adrenaline', 'Large-bore IV access', 'Rapid IV fluid bolus']
+      },
+      disability: {
+        avpu: 'V',
+        gcs: { eye: 3, verbal: 4, motor: 6, total: 13 },
+        bloodGlucose: 6.2,
+        pupils: 'Equal and reactive',
+        findings: ['Agitation from hypoxia and shock'],
+        interventions: ['Reassess as perfusion/oxygenation improves']
+      },
+      exposure: { temperature: 36.7, findings: ['Widespread urticaria', 'Known nut allergy — ate a dessert with nuts'], interventions: ['Remove ongoing allergen exposure'] }
+    },
+    secondarySurvey: {
+      head: ['Facial, lip and tongue angioedema'],
+      neck: ['Stridor', 'No trauma'],
+      chest: ['Widespread wheeze', 'Reduced air entry'],
+      abdomen: ['Cramping (mast-cell mediated)'],
+      pelvis: ['Stable'],
+      extremities: ['Urticaria', 'Cool, poorly perfused peripheries'],
+      posterior: ['Urticarial rash on back'],
+      neurological: ['Agitated but no focal deficit']
+    },
+    history: {
+      medications: [{ name: 'Cetirizine', dose: '10mg', frequency: 'PRN', indication: 'Hay fever' }],
+      allergies: ['Tree nuts (known, carries an auto-injector)'],
+      medicalConditions: ['Allergic rhinitis', 'Mild asthma'],
+      surgicalHistory: [],
+      lastMeal: 'Dessert containing nuts ~15 minutes ago',
+      eventsLeading: 'Rapid onset of urticaria, facial swelling, wheeze and collapse after eating a nut-containing dessert. A bystander gave his auto-injector ~8 minutes ago, but he is worsening — this is refractory anaphylaxis requiring repeat adrenaline, fluids and airway preparation.',
+      socialHistory: { smoking: 'None', alcohol: 'Occasional', occupation: 'Engineer', livingSituation: 'Lives with family' }
+    },
+    vitalSignsProgression: {
+      initial: { bp: '74/40', pulse: 132, respiration: 30, spo2: 86, gcs: 13, bloodGlucose: 6.2 },
+      afterIntervention: { bp: '104/66', pulse: 104, respiration: 24, spo2: 96, gcs: 13, bloodGlucose: 6.2 },
+      deterioration: { bp: '55/30', pulse: 150, respiration: 8, spo2: 70, gcs: 8, bloodGlucose: 6.2 }
+    },
+    expectedFindings: {
+      keyObservations: ['Refractory anaphylaxis (worsening after one adrenaline dose)', 'Airway compromise (angioedema, stridor)', 'Distributive shock', 'Known nut allergy with clear trigger'],
+      redFlags: ['Stridor / voice change / tongue swelling — impending airway obstruction', 'Persistent hypotension despite adrenaline', 'Exhaustion / falling respiratory effort', 'Biphasic recurrence'],
+      differentialDiagnoses: ['Anaphylaxis (refractory)', 'Acute severe asthma', 'Angioedema (isolated)', 'Panic attack (excluded by skin/airway/shock signs)'],
+      mostLikelyDiagnosis: 'Refractory anaphylaxis with airway compromise and distributive shock',
+      supportingEvidence: ['Rapid onset after nut exposure', 'Urticaria + angioedema + wheeze + hypotension', 'Failure to improve after first adrenaline']
+    },
+    managementPathway: {
+      immediate: [
+        'Remove the allergen; lay flat with legs raised (do NOT stand the patient up)',
+        'Repeat IM adrenaline (anterolateral thigh) every 5 minutes for refractory features',
+        'High-flow oxygen; nebulised salbutamol for bronchospasm; consider nebulised adrenaline for stridor',
+        'Two large-bore IV cannulae and a rapid IV fluid bolus for shock'
+      ],
+      definitive: [
+        'Prepare early for a difficult airway — call for senior/airway support; anticipate the need for advanced airway',
+        'Give hydrocortisone per protocol (adjunct, not first-line)',
+        'If refractory to repeated IM doses, an adrenaline infusion is the next step (critical-care/hospital)',
+        'Pre-alert the ED; admit for observation — biphasic reactions can recur hours later'
+      ],
+      monitoring: ['Continuous SpO2, BP, HR and airway', 'Response to repeated adrenaline', 'Watch for airway obstruction and biphasic recurrence']
+    },
+    studentChecklist: [
+      { id: 'resp-012-allergen', category: 'intervention', description: 'Remove allergen and position (lay flat, legs raised — do not stand up)', points: 8, yearLevel: ['3rd-year', '4th-year'], complexity: ['expert'], critical: true, rationale: 'Standing an anaphylaxis patient up can cause fatal empty-ventricle arrest' },
+      { id: 'resp-012-adrenaline', category: 'medication', description: 'Repeat IM adrenaline every 5 minutes for refractory features', points: 14, yearLevel: ['3rd-year', '4th-year'], complexity: ['expert'], critical: true, rationale: 'Refractory anaphylaxis needs repeated adrenaline, not antihistamines' },
+      { id: 'resp-012-airway', category: 'clinical-reasoning', description: 'Recognise impending airway obstruction (stridor, voice change, tongue swelling) and prepare early', points: 12, yearLevel: ['3rd-year', '4th-year'], complexity: ['expert'], critical: true },
+      { id: 'resp-012-oxygen', category: 'intervention', description: 'High-flow oxygen and nebulised salbutamol for bronchospasm', points: 8, yearLevel: ['3rd-year', '4th-year'], complexity: ['expert'] },
+      { id: 'resp-012-fluids', category: 'intervention', description: 'Large-bore IV access and rapid fluid bolus for distributive shock', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['expert'], critical: true },
+      { id: 'resp-012-infusion', category: 'clinical-reasoning', description: 'Recognise when to escalate to an adrenaline infusion (refractory)', points: 8, yearLevel: ['4th-year'], complexity: ['expert'] },
+      { id: 'resp-012-adjuncts', category: 'medication', description: 'Give hydrocortisone as an adjunct (not first-line)', points: 5, yearLevel: ['3rd-year', '4th-year'], complexity: ['expert'] },
+      { id: 'resp-012-biphasic', category: 'clinical-reasoning', description: 'Pre-alert and admit for observation (biphasic reaction risk)', points: 6, yearLevel: ['3rd-year', '4th-year'], complexity: ['expert'], critical: true }
+    ],
+    teachingPoints: [
+      'Adrenaline is the treatment for anaphylaxis — refractory reactions need it REPEATED (IM every 5 minutes), then an infusion if still failing',
+      'Antihistamines and steroids are adjuncts, not substitutes for adrenaline, and treat nothing life-threatening acutely',
+      'Never stand an anaphylaxis patient up — the empty ventricle can precipitate cardiac arrest',
+      'Stridor, a hoarse voice, and tongue swelling signal impending airway obstruction — prepare for a difficult airway early and call for help',
+      'Even after improvement, admit for observation: biphasic reactions can recur hours later'
+    ],
+    commonPitfalls: [
+      'Reaching for antihistamines/steroids instead of repeating adrenaline',
+      'Not repeating adrenaline when the patient fails to improve',
+      'Standing the patient up or sitting them forward when hypotensive',
+      'Underestimating airway compromise until it is too late',
+      'Discharging early and missing the biphasic reaction'
+    ],
+    references: ['Resuscitation Council UK — Anaphylaxis Guidelines 2021', 'JRCALC Anaphylaxis', 'NICE Anaphylaxis (CG134)']
+  }),
+
+  // fall-003: Long-lie fall with fractured neck of femur and hypovolaemia (elderly-fall)
+  createCase({
+    id: 'fall-003',
+    title: 'Long Lie - Fractured Hip, Cold and Shocked',
+    category: 'elderly-fall',
+    subcategory: 'fall',
+    priority: 'high',
+    complexity: 'advanced',
+    yearLevels: ['2nd-year', '3rd-year', '4th-year'],
+    estimatedDuration: 22,
+    dispatchInfo: {
+      callReason: '84-year-old female found on the floor, on the ground since last night',
+      timeOfDay: 'morning',
+      location: 'Villa in Sharjah',
+      callerInfo: 'Neighbour with a spare key',
+      dispatchCode: 'Delta-1'
+    },
+    patientInfo: {
+      age: 84,
+      gender: 'female',
+      weight: 55,
+      language: 'Arabic',
+      culturalConsiderations: ['Lives alone', 'Female provider preference if possible', 'Involve family early']
+    },
+    sceneInfo: {
+      description: 'Bathroom floor, patient found by a neighbour after not answering the door; cool tiled floor',
+      hazards: ['Wet bathroom floor', 'Confined space for extrication'],
+      bystanders: 'Neighbour present',
+      environment: 'Villa, air-conditioning left on overnight (cold)'
+    },
+    initialPresentation: {
+      generalImpression: 'Frail elderly woman on the floor for many hours, cold, in pain, shortened externally-rotated leg',
+      position: 'On the floor, right leg shortened and externally rotated',
+      appearance: 'Pale, cold to touch, dry, distressed by pain',
+      consciousness: 'Alert but weak'
+    },
+    abcde: {
+      airway: { patent: true, findings: ['Patent', 'Speaking'], interventions: [] },
+      breathing: { rate: 20, rhythm: 'Regular', depth: 'Normal', spo2: 95, findings: ['Slightly fast', 'Chest clear'], interventions: ['Oxygen if hypoxic'] },
+      circulation: {
+        pulseRate: 92,
+        pulseQuality: 'Weak',
+        bp: { systolic: 104, diastolic: 64 },
+        capillaryRefill: 3,
+        skin: 'Pale, cool peripheries',
+        findings: ['Relative hypovolaemia (occult NOF blood loss, dehydration, long lie)', 'Beta-blocker may blunt the tachycardia'],
+        interventions: ['IV access', 'Cautious fluids', 'Analgesia']
+      },
+      disability: { avpu: 'A', gcs: { eye: 4, verbal: 5, motor: 6, total: 15 }, bloodGlucose: 5.2, pupils: 'Equal and reactive', findings: ['Alert', 'No head injury reported'], interventions: [] },
+      exposure: {
+        temperature: 35.4,
+        findings: ['Hypothermic (35.4°C) from a long lie on a cold floor', 'Right hip shortened and externally rotated', 'Early pressure area over sacrum', 'Incontinent — long lie'],
+        interventions: ['Active rewarming', 'Handle gently', 'Pressure-area care']
+      }
+    },
+    secondarySurvey: {
+      head: ['No injury'],
+      neck: ['No pain'],
+      chest: ['Clear'],
+      abdomen: ['Soft'],
+      pelvis: ['Right hip pain, leg shortened and externally rotated — clinical NOF fracture'],
+      extremities: ['Right leg shortened/externally rotated', 'Distal pulses present', 'Cool peripheries', 'Possible pressure injury heel'],
+      posterior: ['Sacral pressure area developing'],
+      neurological: ['Intact distal sensation and movement (limited by pain)']
+    },
+    history: {
+      medications: [
+        { name: 'Bisoprolol', dose: '2.5mg', frequency: 'Daily', indication: 'Atrial fibrillation' },
+        { name: 'Apixaban', dose: '5mg', frequency: 'Twice daily', indication: 'AF stroke prevention' },
+        { name: 'Furosemide', dose: '20mg', frequency: 'Daily', indication: 'Ankle swelling' }
+      ],
+      allergies: ['None known'],
+      medicalConditions: ['Atrial fibrillation (on apixaban)', 'Osteoporosis', 'Hypertension'],
+      surgicalHistory: ['Right knee replacement'],
+      lastMeal: 'Supper last night — nothing since',
+      eventsLeading: 'Fell going to the bathroom overnight and could not get up; found by a neighbour in the morning. On the cold floor for roughly 10 hours. Shortened, externally-rotated leg indicates a fractured neck of femur, and a long lie brings hypothermia, dehydration, pressure injury and rhabdomyolysis. She is anticoagulated.',
+      socialHistory: { smoking: 'Never', alcohol: 'None', occupation: 'Retired', livingSituation: 'Lives alone, family nearby' }
+    },
+    vitalSignsProgression: {
+      initial: { bp: '104/64', pulse: 92, respiration: 20, spo2: 95, gcs: 15, bloodGlucose: 5.2, temperature: 35.4 },
+      afterIntervention: { bp: '94/58', pulse: 78, respiration: 18, spo2: 96, gcs: 15, bloodGlucose: 5.2, temperature: 35.4 },
+      deterioration: { bp: '84/52', pulse: 108, respiration: 24, spo2: 93, gcs: 14, bloodGlucose: 5.2, temperature: 34.8 }
+    },
+    expectedFindings: {
+      keyObservations: ['Clinical NOF fracture (shortened, externally rotated)', 'Long-lie complications: hypothermia, dehydration, pressure injury, rhabdomyolysis risk', 'Occult blood loss with blunted tachycardia (beta-blocker)', 'Anticoagulated'],
+      redFlags: ['Hypothermia', 'Developing shock (occult NOF blood loss can exceed 1 litre)', 'Rhabdomyolysis / AKI from long lie', 'Anticoagulation increasing bleeding'],
+      differentialDiagnoses: ['Fractured neck of femur', 'Pubic ramus / pelvic fracture', 'Pathological fracture', 'Cause of the fall (syncope, sepsis, stroke) must also be sought'],
+      mostLikelyDiagnosis: 'Fractured neck of femur with long-lie hypothermia and relative hypovolaemia',
+      supportingEvidence: ['Shortened externally-rotated leg', 'Long lie on cold floor', 'Hypothermia 35.4°C', 'Pale, cool, borderline BP']
+    },
+    managementPathway: {
+      immediate: [
+        'Gentle handling; full set of vitals including temperature',
+        'IV access and cautious warmed fluids for hypovolaemia',
+        'Effective analgesia (paracetamol and titrated stronger analgesia per protocol)',
+        'Active rewarming and insulation — treat the hypothermia'
+      ],
+      definitive: [
+        'Immobilise/support the injured limb for transfer; pressure-area care',
+        'Consider the CAUSE of the fall (syncope, sepsis, stroke, arrhythmia), not just the injury',
+        'Flag anticoagulation and long-lie complications (rhabdomyolysis/AKI risk) at handover',
+        'Transport to an appropriate facility; pre-alert if shocked'
+      ],
+      monitoring: ['Repeat vitals and temperature', 'Response to fluids and analgesia', 'Perfusion and pain', 'Watch for worsening shock']
+    },
+    studentChecklist: [
+      { id: 'fall-003-gentle', category: 'intervention', description: 'Gentle handling and full vitals including temperature', points: 8, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['advanced'], critical: true },
+      { id: 'fall-003-nof', category: 'secondary', description: 'Recognise clinical NOF fracture (shortened, externally rotated leg)', points: 8, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['advanced'], critical: true },
+      { id: 'fall-003-hypothermia', category: 'clinical-reasoning', description: 'Recognise and actively treat long-lie hypothermia', points: 10, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['advanced'], critical: true, rationale: 'Hypothermia worsens coagulopathy and outcome' },
+      { id: 'fall-003-fluids', category: 'intervention', description: 'IV access and cautious warmed fluids for occult blood loss', points: 10, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true },
+      { id: 'fall-003-analgesia', category: 'intervention', description: 'Effective analgesia (paracetamol + titrated stronger agent)', points: 8, yearLevel: ['2nd-year', '3rd-year', '4th-year'], complexity: ['advanced'] },
+      { id: 'fall-003-cause', category: 'clinical-reasoning', description: 'Seek the CAUSE of the fall (syncope, sepsis, stroke, arrhythmia)', points: 8, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'], critical: true },
+      { id: 'fall-003-longlie', category: 'clinical-reasoning', description: 'Anticipate rhabdomyolysis/AKI and pressure injury from the long lie', points: 8, yearLevel: ['4th-year'], complexity: ['advanced'] },
+      { id: 'fall-003-anticoag', category: 'history', description: 'Note anticoagulation (apixaban) as a bleeding-risk multiplier', points: 6, yearLevel: ['3rd-year', '4th-year'], complexity: ['advanced'] }
+    ],
+    teachingPoints: [
+      'A shortened, externally-rotated leg is a fractured neck of femur until proven otherwise',
+      'The long lie is the hidden diagnosis: hypothermia, dehydration, pressure injury and rhabdomyolysis/AKI — treat them all',
+      'Occult blood loss into a hip fracture can exceed a litre; a beta-blocker (bisoprolol) blunts the compensatory tachycardia, masking shock',
+      'Always ask WHY they fell — a syncope, arrhythmia, sepsis or stroke may be the real emergency behind the injury',
+      'Handle gently, treat pain well, actively rewarm, and flag anticoagulation at handover'
+    ],
+    commonPitfalls: [
+      'Treating only the hip and missing hypothermia, dehydration and rhabdomyolysis',
+      'Being falsely reassured by a "normal" heart rate in a beta-blocked patient',
+      'Not looking for the cause of the fall',
+      'Under-treating pain or handling roughly',
+      'Ignoring anticoagulation'
+    ],
+    references: ['NICE Hip Fracture (CG124)', 'JRCALC Falls / Older Person', 'BGS Falls and Long-Lie Guidance', 'UAE Prehospital Trauma Guideline']
+  })
+];
+
+// ============================================================================
 // COMBINE ALL ADDITIONAL CASES
 // ============================================================================
 
@@ -4943,7 +5770,8 @@ export const additionalCaseDatabase: CaseScenario[] = [
   ...additionalPsychiatricCases,
   ...additionalObstetricCases,
   ...additionalTraumaCases,
-  ...additionalBurnsCases
+  ...additionalBurnsCases,
+  ...additionalLevelBandedCases
 ];
 
 export default additionalCaseDatabase;

@@ -8,10 +8,10 @@
  * the patient area so the student stays oriented to the anatomy.
  */
 
-import { useRef, useCallback, useState, useMemo, useEffect } from 'react';
+import { useRef, useCallback, useState, useMemo, useEffect, Suspense } from 'react';
 import type { CSSProperties, ElementRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, ContactShadows, Html } from '@react-three/drei';
+import { OrbitControls, ContactShadows, Environment, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -3125,11 +3125,25 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
     [appliedRealismCues, realismProfile.observableCues],
   );
 
-  // Respiratory rate that drives the breathing morph (chest rise).
+  // Respiratory rate that drives the breathing morph (chest rise). This is a
+  // clinical signal, not decoration: prefer the LIVE vitals stream (updates as
+  // the patient deteriorates/responds to treatment), falling back to the
+  // case's authored initial rate for surfaces without a live feed.
   const breathRateRpm = useMemo(() => {
-    const rr = caseData.abcde?.breathing?.rate ?? caseData.vitalSignsProgression?.initial?.respiration;
+    const rr = vitals?.respiration
+      ?? caseData.abcde?.breathing?.rate
+      ?? caseData.vitalSignsProgression?.initial?.respiration;
     return typeof rr === 'number' ? rr : 0;
-  }, [caseData]);
+  }, [vitals?.respiration, caseData]);
+
+  // Unconscious patients (GCS <= 8, AVPU 'U', or arrest) lie still: the
+  // procedural life loop suppresses head sway and keeps the eyelids closed.
+  const patientUnconscious = useMemo(() => {
+    if (isInArrest) return true;
+    const gcs = vitals?.gcs ?? caseData.abcde?.disability?.gcs?.total;
+    if (typeof gcs === 'number' && gcs <= 8) return true;
+    return caseData.abcde?.disability?.avpu === 'U';
+  }, [isInArrest, vitals?.gcs, caseData]);
 
   // Live skin perfusion tint driven by SpO2 (cyanosis) and shock index
   // (pulse / systolic BP → pallor). Returns a target THREE.Color the body
@@ -3832,7 +3846,15 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
               camera={{ position: [0, 0.95, 4.25], fov: 38 }}
               dpr={Math.min(window.devicePixelRatio, 2)}
               frameloop="always"
-              gl={{ antialias: true, alpha: true, preserveDrawingBuffer: new URLSearchParams(window.location.search).has('capture') }}
+              gl={{
+                antialias: true,
+                alpha: true,
+                preserveDrawingBuffer: new URLSearchParams(window.location.search).has('capture'),
+                // Explicit filmic response + exposure tuned against the HDRI
+                // environment so skin holds highlight detail without going muddy.
+                toneMapping: THREE.ACESFilmicToneMapping,
+                toneMappingExposure: 0.9,
+              }}
               style={{ background: 'transparent' }}
               onPointerMissed={() => { if (activeRegion) handleCloseRegion(); }}
               onCreated={(state) => {
@@ -3844,17 +3866,19 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 }
               }}
             >
-              {/* Natural studio lighting: warm sky / cool ground hemisphere for
-                  organic skin tone, a warm key, a cool fill for dimension, and a
-                  rim light to separate the patient from the backdrop. The old rig
-                  was all cool-blue + flat, which made the anatomy look pale and
-                  underlit. */}
-              <ambientLight intensity={0.55} />
-              <hemisphereLight color="#fff4e8" groundColor="#cad3de" intensity={0.85} />
-              <directionalLight position={[4, 8, 5]} intensity={1.6} color="#fff2e6" />
-              <directionalLight position={[-4, 4, 3]} intensity={0.6} color="#e4ecff" />
-              <directionalLight position={[0, 4, -5]} intensity={0.65} color="#ffffff" />
-              <directionalLight position={[0, -2, 3]} intensity={0.2} color="#fff6ef" />
+              {/* Image-based lighting: a CC0 Poly Haven studio HDRI (local file,
+                  NOT a drei preset — presets fetch from a CDN at runtime) does
+                  the ambient/fill work with real directional variation, which is
+                  what gives skin its depth. On top of the IBL we keep exactly one
+                  warm key light for shape and one rim light for silhouette
+                  separation; the old 4-directional + strong ambient rig flattened
+                  every surface to the same value. */}
+              <Suspense fallback={null}>
+                <Environment files="/hdri/studio_small_08_1k.hdr" />
+              </Suspense>
+              <ambientLight intensity={0.1} />
+              <directionalLight position={[4, 8, 5]} intensity={0.95} color="#fff2e6" />
+              <directionalLight position={[0, 4, -5]} intensity={0.5} color="#ffffff" />
 
               <PatientSceneEnvironment />
 
@@ -3875,6 +3899,8 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 // Breathing morph driven at the case respiratory rate (0 when
                 // apnoeic / in arrest — stillness is itself a finding).
                 breathRateRpm={isInArrest ? 0 : breathRateRpm}
+                // Procedural life loop — GCS<=8/arrest = still, eyes closed.
+                unconscious={patientUnconscious}
                 // Live skin perfusion tint — cyanosis from SpO2, pallor from
                 // shock index. null when well-perfused (no tint applied).
                 skinTint={skinTint}

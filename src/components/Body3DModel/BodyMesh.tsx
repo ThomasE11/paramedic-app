@@ -15,6 +15,7 @@ import * as THREE from 'three';
 import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { buildScrubs, CLOTHING_PARTING } from './ClothingLayer';
 import { paintEyesOnTexture } from './EyesLayer';
+import { LifeSigns } from './LifeSigns';
 import { setBreathClock } from '@/lib/breathClock';
 import type { ThreeEvent } from '@react-three/fiber';
 import { HOVER_COLOR, ASSESSED_COLOR, GUIDED_NEXT_COLOR, GUIDED_LOCKED_COLOR } from './bodyRegions';
@@ -80,6 +81,9 @@ interface BodyMeshProps {
    * null/undefined = no tinting; the mesh keeps its authored skin colour.
    */
   skinTint?: THREE.Color | null;
+  /** GCS <= 8 / AVPU 'U' / arrest — suppresses the procedural head sway and
+   *  keeps the eyelids closed (see LifeSigns). */
+  unconscious?: boolean;
 }
 
 /**
@@ -458,7 +462,7 @@ function buildSurfaceSampler(root: THREE.Object3D | null): SurfaceSampler | null
   };
 }
 
-export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guidedMode = false, nextGuidedStep = null, onBlockedClick, patientGender, surfaceOpacity = 1, activeFindingMorphs, breathRateRpm = 0, onSurfaceSampler, dressed = false, dressedActiveRegion = null, pupilLeftMm = 3.5, pupilRightMm = 3.5, skinTint = null }: BodyMeshProps) {
+export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guidedMode = false, nextGuidedStep = null, onBlockedClick, patientGender, surfaceOpacity = 1, activeFindingMorphs, breathRateRpm = 0, onSurfaceSampler, dressed = false, dressedActiveRegion = null, pupilLeftMm = 3.5, pupilRightMm = 3.5, skinTint = null, unconscious = false }: BodyMeshProps) {
   // The path is recomputed per render so a `caseData.patientInfo.gender`
   // change (e.g. user picks a different case) swaps the mesh without
   // remounting the parent. useGLTF caches by URL.
@@ -472,7 +476,15 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
   // (finding_jvd, finding_abdo_distension, breathe_chest_rise), plus the
   // smoothed per-morph influence we ramp toward each frame, and a breathing
   // phase accumulator.
+  //
+  // morphMeshRef is resolved lazily inside useFrame from the COMMITTED
+  // clonedScene (morphRootRef tracks which clone it belongs to). It must NOT
+  // be assigned during the clone-building useMemo: React StrictMode invokes
+  // that memo twice and can mount the clone from one invocation while the ref
+  // holds the mesh from the discarded one — which left the breathing/finding
+  // morphs silently driving an unmounted mesh in dev.
   const morphMeshRef = useRef<THREE.Mesh | null>(null);
+  const morphRootRef = useRef<THREE.Object3D | null>(null);
   const morphInfluenceRef = useRef<Record<string, number>>({});
   const breathPhaseRef = useRef(0);
   // Reusable temp colour for the per-frame skin-tint lerp so we don't allocate
@@ -497,11 +509,6 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
         const mesh = child as THREE.Mesh;
         mesh.castShadow = true;
         mesh.receiveShadow = true;
-        // Capture the mesh that carries the clinical morph targets so
-        // useFrame can drive its influences (breathing + revealed findings).
-        if (mesh.morphTargetDictionary && mesh.morphTargetInfluences) {
-          morphMeshRef.current = mesh;
-        }
         const meshName = mesh.name.toLowerCase();
         if (useSolidMaleBodyMaterial && meshName === 'human') {
           // The compact MPFB male GLB carries a diffuse texture that can render
@@ -521,6 +528,17 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
         }
         const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
         materials.forEach((material) => {
+          // Physically sensible dielectric skin response under the HDRI
+          // environment: the GLBs ship diffuse-only (no roughness map) with an
+          // authored roughness that reads plastic under image-based lighting.
+          // ~0.5 gives soft broad speculars (real skin); envMapIntensity keeps
+          // the IBL contribution just below full so the diffuse tone leads.
+          const std = material as THREE.MeshStandardMaterial;
+          if (std.isMeshStandardMaterial) {
+            std.roughness = 0.5;
+            std.metalness = 0;
+            std.envMapIntensity = 0.65;
+          }
           material.transparent = surfaceOpacity < 1;
           material.opacity = surfaceOpacity;
           material.depthWrite = surfaceOpacity >= 1;
@@ -741,6 +759,12 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
           if (map instanceof THREE.CanvasTexture) map.dispose(); // our painted eye texture
           mat.dispose(); // every material in this clone is a per-instance clone/fresh
         }
+        // The blink pair (open/closed lids) — whichever isn't currently
+        // assigned as `map` would otherwise leak. dispose() is idempotent.
+        const openTex = m.userData?.eyesOpenTex;
+        const closedTex = m.userData?.eyesClosedTex;
+        if (openTex instanceof THREE.CanvasTexture) openTex.dispose();
+        if (closedTex instanceof THREE.CanvasTexture) closedTex.dispose();
       });
     }
     prevCloneRef.current = clonedScene;
@@ -754,6 +778,18 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
     }
 
     // ---- Drive clinical morph targets ----
+    // Resolve the morph-carrying mesh from the CURRENTLY COMMITTED clone
+    // (useFrame's closure always sees the mounted clonedScene). Re-resolved
+    // only when the clone changes — not a per-frame traverse.
+    if (morphRootRef.current !== clonedScene) {
+      let found: THREE.Mesh | null = null;
+      clonedScene.traverse((o) => {
+        const m = o as THREE.Mesh;
+        if (!found && m.isMesh && m.morphTargetDictionary && m.morphTargetInfluences) found = m;
+      });
+      morphMeshRef.current = found;
+      morphRootRef.current = clonedScene;
+    }
     const mesh = morphMeshRef.current;
     if (mesh && mesh.morphTargetDictionary && mesh.morphTargetInfluences) {
       const dict = mesh.morphTargetDictionary;
@@ -1036,6 +1072,10 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
         onPointerMove={handlePointerMove}
         onPointerOut={handlePointerOut}
       />
+
+      {/* Procedural life loop — micro head sway + blink (pre-rendered lid
+          texture swap). Unconscious patients lie still, eyes closed. */}
+      <LifeSigns scene={clonedScene} unconscious={unconscious} />
 
       {/* Region highlight overlays */}
       {regionHighlights}

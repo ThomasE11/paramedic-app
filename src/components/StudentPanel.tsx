@@ -101,6 +101,7 @@ import {
 import { toast } from 'sonner';
 // AuscultationPanel removed — sounds now play inline from 3D Physical Examination
 import { DebriefingResourcesPanel } from '@/components/DebriefingResourcesPanel';
+import { DebriefReplay } from '@/components/DebriefReplay';
 import { SceneSurveyPanel, type SceneSurveyResult } from '@/components/SceneSurveyPanel';
 import { VoiceHistoryPanel } from '@/components/VoiceHistoryPanel';
 import { TreatmentJumpBagPanel, type ManagementTab } from '@/components/TreatmentJumpBagPanel';
@@ -5412,6 +5413,17 @@ export function StudentPanel({
                 </CardContent>
               </Card>
             )}
+
+            {/* Event-synced case replay — scrub the timeline, watch vitals evolve, jump to markers */}
+            <DebriefReplay
+              caseStartTime={caseStartTime}
+              caseEndTime={caseEndTime}
+              vitalsHistory={vitalsHistory}
+              appliedTreatments={appliedTreatments}
+              performedAssessments={assessmentTracker?.performed}
+              arrestEvents={arrestTimeline}
+              adverseEvents={adverseEventsRef.current}
+            />
 
             {/* Cardiac Arrest Timeline */}
             {arrestTimeline.length > 0 && (

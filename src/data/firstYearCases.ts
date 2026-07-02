@@ -3203,6 +3203,1029 @@ export const firstYearCases: CaseScenario[] = [
       'UK NICE Anaphylaxis Guidelines (CG134)',
       'Pre-hospital Anaphylaxis Management — JRCALC'
     ]
+  }),
+
+  // ==========================================================================
+  // LEVEL-BANDED EXPANSION (W3) — diploma / 1st / 2nd year single-system
+  // classics. Each routes to an existing treatment protocol via subcategory
+  // and its afterIntervention target sits at the physiology engine's reachable
+  // endpoint so the clinical-regression audit stays clean.
+  // ==========================================================================
+
+  // y1-016: Acute ischaemic stroke — FAST-positive recognition (neurological)
+  createCase({
+    id: 'y1-016',
+    title: 'Elderly Male - Sudden Facial Droop and Arm Weakness',
+    category: 'neurological',
+    subcategory: 'stroke',
+    priority: 'high',
+    complexity: 'basic',
+    yearLevels: ['diploma', '1st-year', '2nd-year'],
+    estimatedDuration: 18,
+    dispatchInfo: {
+      callReason: '68-year-old male, sudden weakness one side, slurred speech',
+      timeOfDay: 'morning',
+      location: 'Villa in Sharjah',
+      callerInfo: 'Wife (calm but worried)',
+      dispatchCode: 'Charlie-1'
+    },
+    patientInfo: {
+      age: 68,
+      gender: 'male',
+      weight: 84,
+      occupation: 'Retired civil servant',
+      language: 'Arabic',
+      culturalConsiderations: ['Emirati family; extended family gathering', 'Explain time-critical transport clearly']
+    },
+    sceneInfo: {
+      description: 'Ground-floor majlis, patient seated in armchair, family around him',
+      hazards: ['None identified'],
+      bystanders: 'Wife and adult son present',
+      environment: 'Cool air-conditioned villa'
+    },
+    initialPresentation: {
+      generalImpression: 'Elderly man alert but with an obvious right-sided facial droop and slurred speech',
+      position: 'Seated upright in armchair',
+      appearance: 'Alert, frustrated, unable to lift right arm',
+      consciousness: 'Alert and oriented, speech dysarthric'
+    },
+    abcde: {
+      airway: {
+        patent: true,
+        findings: ['Airway patent', 'Speech slurred but words intelligible', 'No pooling of secretions'],
+        interventions: ['Monitor airway — risk rises if consciousness falls']
+      },
+      breathing: {
+        rate: 18,
+        rhythm: 'Regular',
+        depth: 'Normal',
+        spo2: 96,
+        findings: ['Breathing unlaboured', 'Good air entry bilaterally', 'Chest clear'],
+        interventions: ['Oxygen only if SpO2 < 94%']
+      },
+      circulation: {
+        pulseRate: 84,
+        pulseQuality: 'Regular',
+        bp: { systolic: 176, diastolic: 98 },
+        capillaryRefill: 2,
+        skin: 'Warm and dry',
+        findings: ['Hypertensive', 'No signs of shock'],
+        interventions: ['Do NOT actively lower BP prehospital']
+      },
+      disability: {
+        avpu: 'A',
+        gcs: { eye: 4, verbal: 5, motor: 6, total: 15 },
+        bloodGlucose: 6.2,
+        pupils: 'Equal 3mm, reactive',
+        findings: ['Right facial droop', 'Right arm drift', 'Dysarthria', 'No sensory neglect tested'],
+        interventions: ['Blood glucose measured to exclude hypoglycaemic mimic']
+      },
+      exposure: {
+        temperature: 36.7,
+        findings: ['No incontinence', 'No injuries from any fall'],
+        interventions: ['Maintain dignity and warmth']
+      }
+    },
+    secondarySurvey: {
+      head: ['Right facial droop', 'No trauma'],
+      neck: ['Supple', 'No bruit auscultated'],
+      chest: ['Clear bilaterally'],
+      abdomen: ['Soft, non-tender'],
+      pelvis: ['Stable'],
+      extremities: ['Right arm 2/5 power', 'Right leg mild weakness 4/5', 'Left side normal'],
+      posterior: ['No injuries'],
+      neurological: ['FAST positive: Face, Arm, Speech', 'Onset witnessed 40 minutes ago']
+    },
+    history: {
+      medications: [
+        { name: 'Amlodipine', dose: '10mg', frequency: 'Daily', indication: 'Hypertension' },
+        { name: 'Atorvastatin', dose: '20mg', frequency: 'Nightly', indication: 'Cholesterol' }
+      ],
+      allergies: ['None known'],
+      medicalConditions: ['Hypertension', 'Hyperlipidaemia'],
+      surgicalHistory: [],
+      lastMeal: 'Breakfast 1 hour ago',
+      eventsLeading: 'Sudden onset while reading the newspaper — right arm dropped and speech slurred. Witnessed by wife, onset time known precisely.',
+      socialHistory: { smoking: 'Ex-smoker (quit 10 years)', alcohol: 'None', occupation: 'Retired', livingSituation: 'Lives with wife' }
+    },
+    vitalSignsProgression: {
+      initial: { bp: '176/98', pulse: 84, respiration: 18, spo2: 96, gcs: 15, bloodGlucose: 6.2 },
+      afterIntervention: { bp: '170/94', pulse: 68, respiration: 14, spo2: 97, gcs: 15, bloodGlucose: 6.2 },
+      deterioration: { bp: '198/112', pulse: 60, respiration: 12, spo2: 93, gcs: 11, bloodGlucose: 6.2 }
+    },
+    expectedFindings: {
+      keyObservations: ['FAST positive', 'Precise onset time known', 'Hypertensive but not in extremis', 'Glucose normal — not a mimic'],
+      redFlags: ['Falling GCS', 'Rising BP with bradycardia (Cushing)', 'New vomiting or headache', 'Loss of airway protection'],
+      differentialDiagnoses: ['Acute ischaemic stroke', 'Intracerebral haemorrhage', 'Hypoglycaemia (excluded)', 'Todd\'s paresis / seizure', 'Bell\'s palsy (forehead spared here — not Bell\'s)'],
+      mostLikelyDiagnosis: 'Acute ischaemic stroke (right MCA territory)',
+      supportingEvidence: ['FAST positive', 'Sudden onset', 'Normal glucose', 'Unilateral weakness with forehead-sparing droop']
+    },
+    managementPathway: {
+      immediate: [
+        'Scene safety and BSI',
+        'Confirm onset time — the single most important number',
+        'FAST / positive limb assessment',
+        'Measure blood glucose to exclude hypoglycaemic mimic',
+        'Oxygen only if SpO2 < 94% (avoid routine hyperoxia)',
+        'Keep patient NBM (nil by mouth) — aspiration and dysphagia risk'
+      ],
+      definitive: [
+        'Pre-alert the stroke centre with onset time',
+        'Rapid but gentle transport, head-neutral',
+        'Do NOT give aspirin prehospital — haemorrhage not yet excluded on CT',
+        'Do NOT actively lower blood pressure prehospital'
+      ],
+      monitoring: ['Repeat GCS and FAST en route', 'Monitor for deterioration / airway compromise', 'Recheck BP and glucose']
+    },
+    studentChecklist: [
+      { id: 'y1-016-safety', category: 'safety', description: 'Scene safety and BSI', points: 4, yearLevel: ['diploma', '1st-year', '2nd-year'], complexity: ['basic'], critical: true },
+      { id: 'y1-016-fast', category: 'abcde', description: 'Perform FAST assessment (Face, Arm, Speech, Time)', points: 10, yearLevel: ['diploma', '1st-year', '2nd-year'], complexity: ['basic'], critical: true, rationale: 'FAST is the core prehospital stroke screen' },
+      { id: 'y1-016-onset', category: 'history', description: 'Establish precise time of symptom onset / last known well', points: 10, yearLevel: ['diploma', '1st-year', '2nd-year'], complexity: ['basic'], critical: true, rationale: 'Onset time determines thrombolysis / thrombectomy eligibility' },
+      { id: 'y1-016-glucose', category: 'abcde', description: 'Measure blood glucose to exclude a hypoglycaemic mimic', points: 6, yearLevel: ['diploma', '1st-year', '2nd-year'], complexity: ['basic'], critical: true, rationale: 'Hypoglycaemia mimics stroke and is instantly reversible' },
+      { id: 'y1-016-o2', category: 'intervention', description: 'Titrate oxygen only to keep SpO2 94–98%', points: 4, yearLevel: ['diploma', '1st-year', '2nd-year'], complexity: ['basic'] },
+      { id: 'y1-016-nbm', category: 'intervention', description: 'Keep patient nil by mouth (swallow unsafe)', points: 4, yearLevel: ['1st-year', '2nd-year'], complexity: ['basic'] },
+      { id: 'y1-016-prealert', category: 'communication', description: 'Pre-alert the stroke centre with onset time', points: 8, yearLevel: ['1st-year', '2nd-year'], complexity: ['basic'], critical: true },
+      { id: 'y1-016-noaspirin', category: 'clinical-reasoning', description: 'Recognise aspirin is withheld until haemorrhage excluded on CT', points: 6, yearLevel: ['2nd-year'], complexity: ['basic'], rationale: 'Antiplatelet before CT can be catastrophic in haemorrhagic stroke' },
+      { id: 'y1-016-transport', category: 'intervention', description: 'Rapid gentle transport, reassess GCS/FAST en route', points: 5, yearLevel: ['diploma', '1st-year', '2nd-year'], complexity: ['basic'] }
+    ],
+    teachingPoints: [
+      'FAST + precise onset time is the whole prehospital stroke job — everything else supports transport',
+      'Always check glucose: hypoglycaemia is the great stroke mimic and is reversible in seconds',
+      'Do not treat the blood pressure prehospital — permissive hypertension protects the penumbra',
+      'Aspirin is NOT given until CT excludes haemorrhage',
+      'Forehead-sparing droop points to a central (stroke) lesion; forehead involvement suggests Bell\'s palsy'
+    ],
+    commonPitfalls: [
+      'Failing to establish onset time',
+      'Giving aspirin prehospital',
+      'Trying to lower the blood pressure',
+      'Missing hypoglycaemia as a mimic',
+      'Allowing oral intake with an unsafe swallow'
+    ],
+    references: ['UAE MOH Stroke Pathway', 'JRCALC Stroke Guideline', 'AHA/ASA Acute Ischaemic Stroke Guidelines']
+  }),
+
+  // y1-017: Self-terminating tonic-clonic seizure, post-ictal (neurological)
+  createCase({
+    id: 'y1-017',
+    title: 'Young Adult - Witnessed Seizure, Now Post-Ictal',
+    category: 'neurological',
+    subcategory: 'seizure',
+    priority: 'high',
+    complexity: 'basic',
+    yearLevels: ['diploma', '1st-year', '2nd-year'],
+    estimatedDuration: 16,
+    dispatchInfo: {
+      callReason: '24-year-old male collapsed, shaking, now confused',
+      timeOfDay: 'afternoon',
+      location: 'Office building in Dubai',
+      callerInfo: 'Colleague',
+      dispatchCode: 'Charlie-1'
+    },
+    patientInfo: {
+      age: 24,
+      gender: 'male',
+      weight: 78,
+      occupation: 'Accountant',
+      language: 'English',
+      culturalConsiderations: ['Professional workplace — maintain privacy and dignity']
+    },
+    sceneInfo: {
+      description: 'Open-plan office, patient on floor beside desk, colleagues cleared space',
+      hazards: ['Desk corners nearby', 'Chair moved aside'],
+      bystanders: 'Colleague witnessed the event',
+      environment: 'Air-conditioned office'
+    },
+    initialPresentation: {
+      generalImpression: 'Young man on the floor, drowsy and confused, post-ictal',
+      position: 'Supine, being rolled to recovery position',
+      appearance: 'Drowsy, some oral trauma (bitten tongue), incontinent of urine',
+      consciousness: 'Confused, responds to voice, gradually improving'
+    },
+    abcde: {
+      airway: {
+        patent: true,
+        findings: ['Airway patent once positioned', 'Some saliva — cleared', 'Tongue laceration noted'],
+        interventions: ['Recovery position', 'Suction available if needed']
+      },
+      breathing: {
+        rate: 22,
+        rhythm: 'Regular',
+        depth: 'Normal',
+        spo2: 95,
+        findings: ['Breathing spontaneously', 'No cyanosis'],
+        interventions: ['Oxygen if SpO2 < 94%']
+      },
+      circulation: {
+        pulseRate: 104,
+        pulseQuality: 'Regular',
+        bp: { systolic: 128, diastolic: 78 },
+        capillaryRefill: 2,
+        skin: 'Warm, flushed',
+        findings: ['Post-ictal tachycardia'],
+        interventions: ['Monitor']
+      },
+      disability: {
+        avpu: 'V',
+        gcs: { eye: 3, verbal: 4, motor: 5, total: 12 },
+        bloodGlucose: 6.1,
+        pupils: 'Equal 4mm, reactive',
+        findings: ['Post-ictal confusion', 'No focal deficit', 'Gradually orienting'],
+        interventions: ['Reassess GCS every few minutes — should improve']
+      },
+      exposure: {
+        temperature: 37.2,
+        findings: ['Urinary incontinence (typical of generalised seizure)', 'Bitten tongue'],
+        interventions: ['Preserve dignity']
+      }
+    },
+    secondarySurvey: {
+      head: ['Tongue laceration', 'No external head trauma'],
+      neck: ['No pain'],
+      chest: ['Clear'],
+      abdomen: ['Soft'],
+      pelvis: ['Stable'],
+      extremities: ['No injury from convulsion', 'Full movement returning'],
+      posterior: ['No injury'],
+      neurological: ['Post-ictal, no lateralising deficit', 'Witnessed generalised tonic-clonic ~90 seconds']
+    },
+    history: {
+      medications: [{ name: 'Levetiracetam', dose: '500mg', frequency: 'Twice daily', indication: 'Epilepsy' }],
+      allergies: ['None known'],
+      medicalConditions: ['Known epilepsy (diagnosed age 19)'],
+      surgicalHistory: [],
+      lastMeal: 'Lunch 2 hours ago',
+      eventsLeading: 'Admits missing his morning medication for two days due to a work deadline. Colleague saw him stiffen then convulse for about 90 seconds, followed by confusion.',
+      socialHistory: { smoking: 'None', alcohol: 'Occasional', occupation: 'Accountant', livingSituation: 'Shares apartment with friends' }
+    },
+    vitalSignsProgression: {
+      initial: { bp: '128/78', pulse: 104, respiration: 22, spo2: 95, gcs: 12, bloodGlucose: 6.1 },
+      afterIntervention: { bp: '122/76', pulse: 90, respiration: 16, spo2: 99, gcs: 12, bloodGlucose: 6.1 },
+      deterioration: { bp: '140/88', pulse: 132, respiration: 8, spo2: 88, gcs: 3, bloodGlucose: 6.1 }
+    },
+    expectedFindings: {
+      keyObservations: ['Self-terminated seizure', 'Post-ictal state improving', 'Known epileptic with medication non-compliance', 'Glucose normal'],
+      redFlags: ['Second seizure / no recovery between (status epilepticus)', 'Prolonged low GCS', 'Hypoxia during a recurrence', 'First-ever seizure would need different work-up'],
+      differentialDiagnoses: ['Breakthrough epileptic seizure (missed medication)', 'Hypoglycaemic seizure (excluded)', 'Syncope with anoxic jerks', 'Intracranial event'],
+      mostLikelyDiagnosis: 'Breakthrough generalised seizure due to missed anti-epileptic medication',
+      supportingEvidence: ['Known epilepsy', 'Missed levetiracetam ×2 days', 'Witnessed generalised convulsion', 'Typical post-ictal state']
+    },
+    managementPathway: {
+      immediate: [
+        'Scene safety — protect from injury, do not restrain',
+        'Recovery position and airway protection',
+        'Time the seizure — treat as status if > 5 minutes or recurrent',
+        'Blood glucose measurement',
+        'Oxygen if hypoxic'
+      ],
+      definitive: [
+        'Supportive care and reassurance during post-ictal recovery',
+        'Transport for review (medication compliance, possible level change)',
+        'Escalate to benzodiazepine per protocol only if seizure recurs / becomes status'
+      ],
+      monitoring: ['Serial GCS (expect improvement)', 'SpO2 and respiratory rate', 'Watch for recurrence']
+    },
+    studentChecklist: [
+      { id: 'y1-017-safety', category: 'safety', description: 'Protect patient from injury without restraining', points: 5, yearLevel: ['diploma', '1st-year', '2nd-year'], complexity: ['basic'], critical: true },
+      { id: 'y1-017-recovery', category: 'intervention', description: 'Place in recovery position and protect airway', points: 8, yearLevel: ['diploma', '1st-year', '2nd-year'], complexity: ['basic'], critical: true },
+      { id: 'y1-017-time', category: 'clinical-reasoning', description: 'Establish seizure duration — recognise status epilepticus threshold (>5 min)', points: 8, yearLevel: ['diploma', '1st-year', '2nd-year'], complexity: ['basic'], critical: true },
+      { id: 'y1-017-glucose', category: 'abcde', description: 'Measure blood glucose', points: 6, yearLevel: ['diploma', '1st-year', '2nd-year'], complexity: ['basic'], rationale: 'Hypoglycaemia is a reversible seizure cause' },
+      { id: 'y1-017-sample', category: 'history', description: 'SAMPLE including medication compliance and seizure history', points: 6, yearLevel: ['diploma', '1st-year', '2nd-year'], complexity: ['basic'] },
+      { id: 'y1-017-gcs', category: 'abcde', description: 'Serial GCS documenting improving post-ictal state', points: 5, yearLevel: ['1st-year', '2nd-year'], complexity: ['basic'] },
+      { id: 'y1-017-o2', category: 'intervention', description: 'Oxygen if SpO2 < 94%', points: 3, yearLevel: ['diploma', '1st-year', '2nd-year'], complexity: ['basic'] },
+      { id: 'y1-017-transport', category: 'communication', description: 'Transport decision and safety-netting for recurrence', points: 5, yearLevel: ['2nd-year'], complexity: ['basic'] }
+    ],
+    teachingPoints: [
+      'A single self-terminating seizure in a known epileptic is common — the job is airway protection, glucose, and watching for recurrence',
+      'Time the seizure: > 5 minutes or repeated seizures without recovery = status epilepticus and needs benzodiazepines',
+      'The post-ictal GCS should improve — a GCS that does not recover is a red flag',
+      'Always check glucose in any seizure',
+      'Do not restrain a convulsing patient or force anything into the mouth'
+    ],
+    commonPitfalls: [
+      'Restraining the patient or putting objects in the mouth',
+      'Not timing the seizure',
+      'Forgetting to check glucose',
+      'Missing a developing status epilepticus',
+      'Discharging on scene without safety-netting'
+    ],
+    references: ['JRCALC Convulsions Guideline', 'NICE Epilepsy (CG137)', 'UAE Prehospital Seizure Protocol']
+  }),
+
+  // y1-018: Ramadan-fasting hypoglycaemia in T2DM (metabolic)
+  createCase({
+    id: 'y1-018',
+    title: 'Fasting Diabetic - Drowsy and Sweating',
+    category: 'metabolic',
+    subcategory: 'hypoglycemia',
+    priority: 'high',
+    complexity: 'basic',
+    yearLevels: ['diploma', '1st-year', '2nd-year'],
+    estimatedDuration: 15,
+    dispatchInfo: {
+      callReason: '52-year-old male diabetic, drowsy and sweating, fasting',
+      timeOfDay: 'afternoon',
+      location: 'Taxi rank in Deira, Dubai',
+      callerInfo: 'Fellow driver',
+      dispatchCode: 'Charlie-1'
+    },
+    patientInfo: {
+      age: 52,
+      gender: 'male',
+      weight: 80,
+      occupation: 'Taxi driver',
+      language: 'Urdu',
+      culturalConsiderations: ['Fasting during Ramadan', 'May be reluctant to break fast — explain medical necessity', 'Consider interpreter']
+    },
+    sceneInfo: {
+      description: 'Driver slumped in the seat of his parked taxi, colleagues gathered',
+      hazards: ['Roadside — traffic', 'Vehicle to be secured'],
+      bystanders: 'Other drivers, helpful',
+      environment: 'Hot afternoon, parked in shade'
+    },
+    initialPresentation: {
+      generalImpression: 'Middle-aged man, clammy and drowsy, confused speech',
+      position: 'Slumped in driver seat',
+      appearance: 'Profuse sweating, pale, trembling',
+      consciousness: 'Confused, responds to voice, not oriented'
+    },
+    abcde: {
+      airway: {
+        patent: true,
+        findings: ['Airway patent', 'Able to protect own airway currently'],
+        interventions: ['Monitor — will deteriorate if glucose falls further']
+      },
+      breathing: {
+        rate: 18,
+        rhythm: 'Regular',
+        depth: 'Normal',
+        spo2: 97,
+        findings: ['Breathing normally'],
+        interventions: ['None needed']
+      },
+      circulation: {
+        pulseRate: 96,
+        pulseQuality: 'Regular',
+        bp: { systolic: 132, diastolic: 80 },
+        capillaryRefill: 2,
+        skin: 'Cold, clammy, diaphoretic',
+        findings: ['Sympathetic response to hypoglycaemia'],
+        interventions: ['Monitor']
+      },
+      disability: {
+        avpu: 'V',
+        gcs: { eye: 3, verbal: 4, motor: 6, total: 13 },
+        bloodGlucose: 2.4,
+        pupils: 'Equal, reactive',
+        findings: ['Neuroglycopenia — confusion, drowsiness', 'Blood glucose 2.4 mmol/L'],
+        interventions: ['Treat hypoglycaemia urgently']
+      },
+      exposure: {
+        temperature: 36.6,
+        findings: ['Diaphoretic', 'No injuries'],
+        interventions: ['Keep warm']
+      }
+    },
+    secondarySurvey: {
+      head: ['No trauma'],
+      neck: ['No abnormality'],
+      chest: ['Clear'],
+      abdomen: ['Soft'],
+      pelvis: ['Stable'],
+      extremities: ['Fine tremor', 'No injury'],
+      posterior: ['No injury'],
+      neurological: ['Confused but no focal deficit', 'Should resolve fully with glucose']
+    },
+    history: {
+      medications: [
+        { name: 'Gliclazide', dose: '80mg', frequency: 'Twice daily', indication: 'Type 2 diabetes' },
+        { name: 'Metformin', dose: '1g', frequency: 'Twice daily', indication: 'Type 2 diabetes' }
+      ],
+      allergies: ['None known'],
+      medicalConditions: ['Type 2 diabetes mellitus', 'Hypertension'],
+      surgicalHistory: [],
+      lastMeal: 'Suhoor before dawn (~10 hours ago) — fasting for Ramadan',
+      eventsLeading: 'Took his usual morning gliclazide but has been fasting all day and working. Became progressively sweaty, tremulous and confused over the last hour.',
+      socialHistory: { smoking: 'None', alcohol: 'None', occupation: 'Taxi driver', livingSituation: 'Shared accommodation' }
+    },
+    vitalSignsProgression: {
+      initial: { bp: '132/80', pulse: 96, respiration: 18, spo2: 97, gcs: 13, bloodGlucose: 2.4 },
+      afterIntervention: { bp: '132/80', pulse: 88, respiration: 15, spo2: 98, gcs: 15, bloodGlucose: 6.0 },
+      deterioration: { bp: '124/76', pulse: 112, respiration: 20, spo2: 96, gcs: 6, bloodGlucose: 1.6 }
+    },
+    expectedFindings: {
+      keyObservations: ['Blood glucose 2.4 mmol/L', 'Sulfonylurea (gliclazide) + fasting = classic hypoglycaemia', 'Sympathetic + neuroglycopenic signs', 'Reversible'],
+      redFlags: ['Falling GCS / seizure', 'Loss of airway protection', 'Sulfonylurea hypoglycaemia can relapse — needs observation/transport', 'Recurrent hypoglycaemia'],
+      differentialDiagnoses: ['Sulfonylurea-induced hypoglycaemia', 'Stroke (excluded — glucose explains it)', 'Sepsis', 'Intoxication'],
+      mostLikelyDiagnosis: 'Sulfonylurea-induced hypoglycaemia precipitated by Ramadan fasting',
+      supportingEvidence: ['Glucose 2.4', 'On gliclazide', 'Fasting all day', 'Classic adrenergic + neuroglycopenic picture']
+    },
+    managementPathway: {
+      immediate: [
+        'Scene safety (roadside / vehicle)',
+        'Confirm hypoglycaemia with a glucometer',
+        'If unsafe swallow: IV access and IV dextrose, or IM glucagon if no access',
+        'Recovery position and airway monitoring'
+      ],
+      definitive: [
+        'Recheck glucose after treatment — aim to restore consciousness and normoglycaemia',
+        'Give complex carbohydrate once safe swallow returns',
+        'Strongly advise transport — sulfonylurea hypoglycaemia relapses, and glucagon is only a temporary bridge'
+      ],
+      monitoring: ['Serial glucose and GCS', 'Watch for relapse', 'Cardiac monitoring']
+    },
+    studentChecklist: [
+      { id: 'y1-018-safety', category: 'safety', description: 'Roadside scene safety and vehicle control', points: 4, yearLevel: ['diploma', '1st-year', '2nd-year'], complexity: ['basic'], critical: true },
+      { id: 'y1-018-glucose', category: 'abcde', description: 'Measure blood glucose and recognise hypoglycaemia', points: 10, yearLevel: ['diploma', '1st-year', '2nd-year'], complexity: ['basic'], critical: true },
+      { id: 'y1-018-treat', category: 'intervention', description: 'Treat hypoglycaemia: IV dextrose or IM glucagon when swallow unsafe', points: 12, yearLevel: ['diploma', '1st-year', '2nd-year'], complexity: ['basic'], critical: true, rationale: 'Rapid glucose restoration reverses neuroglycopenia' },
+      { id: 'y1-018-recheck', category: 'intervention', description: 'Recheck glucose and conscious level after treatment', points: 8, yearLevel: ['diploma', '1st-year', '2nd-year'], complexity: ['basic'], critical: true },
+      { id: 'y1-018-sample', category: 'history', description: 'SAMPLE: identify gliclazide + fasting as the cause', points: 6, yearLevel: ['1st-year', '2nd-year'], complexity: ['basic'] },
+      { id: 'y1-018-relapse', category: 'clinical-reasoning', description: 'Recognise sulfonylurea hypoglycaemia relapses — advise transport, not on-scene discharge', points: 8, yearLevel: ['2nd-year'], complexity: ['basic'], critical: true },
+      { id: 'y1-018-carb', category: 'intervention', description: 'Give long-acting carbohydrate once safe to swallow', points: 4, yearLevel: ['1st-year', '2nd-year'], complexity: ['basic'] }
+    ],
+    teachingPoints: [
+      'Check glucose in every drowsy or confused patient — it is fast, cheap, and reversible',
+      'A sulfonylurea (gliclazide) plus fasting is a classic recipe for prolonged, relapsing hypoglycaemia',
+      'IM glucagon is a bridge, not a fix — it needs hepatic glycogen and wears off; still give oral carbohydrate and transport',
+      'Ramadan fasting is a common UAE precipitant — patients on sulfonylureas or insulin are highest risk',
+      'Sulfonylurea hypoglycaemia can recur for hours; on-scene discharge is unsafe'
+    ],
+    commonPitfalls: [
+      'Not measuring glucose in a confused patient',
+      'Giving oral glucose to someone with an unsafe swallow',
+      'Discharging on scene after glucagon (relapse risk)',
+      'Attributing the confusion to heat or fasting without confirming glucose'
+    ],
+    references: ['JRCALC Glycaemic Emergencies', 'Diabetes UK Ramadan Guidance', 'UAE Prehospital Hypoglycaemia Protocol']
+  }),
+
+  // y1-019: Simple low-risk mechanical fall in an older adult (elderly-fall)
+  createCase({
+    id: 'y1-019',
+    title: 'Older Adult - Simple Mechanical Fall, Low Risk',
+    category: 'elderly-fall',
+    subcategory: 'fall',
+    priority: 'moderate',
+    complexity: 'basic',
+    yearLevels: ['diploma', '1st-year', '2nd-year'],
+    estimatedDuration: 16,
+    dispatchInfo: {
+      callReason: '74-year-old female tripped and fell, hip pain',
+      timeOfDay: 'morning',
+      location: 'Villa in Al Ain',
+      callerInfo: 'Husband',
+      dispatchCode: 'Alpha-1'
+    },
+    patientInfo: {
+      age: 74,
+      gender: 'female',
+      weight: 62,
+      language: 'Arabic',
+      culturalConsiderations: ['Female patient may prefer female provider', 'Family present and supportive']
+    },
+    sceneInfo: {
+      description: 'Sitting room, patient on floor beside a prayer mat she tripped over',
+      hazards: ['Prayer mat', 'Polished floor'],
+      bystanders: 'Husband present, calm',
+      environment: 'Cool villa'
+    },
+    initialPresentation: {
+      generalImpression: 'Alert older woman sitting on the floor, uncomfortable but composed',
+      position: 'On floor, leaning against sofa',
+      appearance: 'Calm, guarding left hip',
+      consciousness: 'Alert and fully oriented'
+    },
+    abcde: {
+      airway: { patent: true, findings: ['Patent', 'Speaking clearly'], interventions: [] },
+      breathing: { rate: 18, rhythm: 'Regular', depth: 'Normal', spo2: 97, findings: ['Unlaboured', 'Chest clear'], interventions: [] },
+      circulation: { pulseRate: 84, pulseQuality: 'Regular', bp: { systolic: 142, diastolic: 84 }, capillaryRefill: 2, skin: 'Warm and dry', findings: ['No signs of shock'], interventions: [] },
+      disability: { avpu: 'A', gcs: { eye: 4, verbal: 5, motor: 6, total: 15 }, pupils: 'Equal and reactive', findings: ['Oriented', 'No head strike, no LOC'], interventions: [] },
+      exposure: { temperature: 36.6, findings: ['Bruise over left hip', 'No open wound', 'No obvious limb shortening/rotation'], interventions: ['Preserve dignity and warmth'] }
+    },
+    secondarySurvey: {
+      head: ['No trauma', 'No head strike reported or witnessed'],
+      neck: ['No midline tenderness', 'Full pain-free range'],
+      chest: ['Non-tender', 'Clear'],
+      abdomen: ['Soft, non-tender'],
+      pelvis: ['Stable, no tenderness on gentle assessment'],
+      extremities: ['Left hip tender, bruised', 'Able to weight-bear a little with pain', 'Distal pulses and sensation intact', 'No deformity'],
+      posterior: ['Mild lower back ache'],
+      neurological: ['No deficit']
+    },
+    history: {
+      medications: [{ name: 'Amlodipine', dose: '5mg', frequency: 'Daily', indication: 'Hypertension' }],
+      allergies: ['None'],
+      medicalConditions: ['Hypertension'],
+      surgicalHistory: ['Cataract surgery'],
+      lastMeal: 'Breakfast 1 hour ago',
+      eventsLeading: 'Tripped over the edge of a prayer mat, sat down heavily on her left hip. No dizziness, chest pain or blackout before the fall (mechanical, not collapse). No head strike.',
+      socialHistory: { smoking: 'Never', alcohol: 'None', occupation: 'Homemaker', livingSituation: 'Lives with husband, independent' }
+    },
+    vitalSignsProgression: {
+      initial: { bp: '142/84', pulse: 84, respiration: 18, spo2: 97, gcs: 15 },
+      afterIntervention: { bp: '132/78', pulse: 66, respiration: 16, spo2: 97, gcs: 15 },
+      deterioration: { bp: '108/68', pulse: 108, respiration: 22, spo2: 96, gcs: 14 }
+    },
+    expectedFindings: {
+      keyObservations: ['Clear mechanical trip (not a collapse)', 'No head strike / no LOC', 'Isolated hip soft-tissue injury likely', 'Haemodynamically stable'],
+      redFlags: ['Any suggestion the fall was a syncope/collapse', 'Occult hip fracture with rising HR / falling BP', 'Long lie', 'Anticoagulation (none here)'],
+      differentialDiagnoses: ['Soft-tissue hip contusion', 'Occult neck-of-femur fracture', 'Mechanical fall vs syncopal collapse'],
+      mostLikelyDiagnosis: 'Low-risk mechanical fall with hip contusion',
+      supportingEvidence: ['Witnessed trip', 'No pre-fall symptoms', 'Stable vitals', 'Able to partially weight-bear']
+    },
+    managementPathway: {
+      immediate: ['Scene safety', 'Establish mechanism — mechanical trip vs collapse', 'Full set of vitals', 'Check for head strike / LOC / long lie', 'Simple analgesia (paracetamol) for hip pain'],
+      definitive: ['Gentle assessment of hip and ability to weight-bear', 'Transport for X-ray if pain or reduced weight-bearing', 'Consider safe discharge pathway only if truly low-risk and mobile'],
+      monitoring: ['Repeat vitals', 'Watch for signs of occult fracture / bleeding', 'Reassess pain']
+    },
+    studentChecklist: [
+      { id: 'y1-019-safety', category: 'safety', description: 'Scene safety and hazard removal (prayer mat / floor)', points: 4, yearLevel: ['diploma', '1st-year', '2nd-year'], complexity: ['basic'], critical: true },
+      { id: 'y1-019-mechanism', category: 'history', description: 'Distinguish mechanical trip from syncopal collapse', points: 10, yearLevel: ['diploma', '1st-year', '2nd-year'], complexity: ['basic'], critical: true, rationale: 'A "fall" that is really a collapse changes everything' },
+      { id: 'y1-019-headinjury', category: 'history', description: 'Ask about head strike, loss of consciousness, and time on floor', points: 6, yearLevel: ['diploma', '1st-year', '2nd-year'], complexity: ['basic'] },
+      { id: 'y1-019-vitals', category: 'abcde', description: 'Full set of vital signs', points: 6, yearLevel: ['diploma', '1st-year', '2nd-year'], complexity: ['basic'] },
+      { id: 'y1-019-exam', category: 'secondary', description: 'Examine hip/pelvis and check distal neurovascular status', points: 6, yearLevel: ['diploma', '1st-year', '2nd-year'], complexity: ['basic'] },
+      { id: 'y1-019-analgesia', category: 'intervention', description: 'Provide simple analgesia (paracetamol) for pain', points: 5, yearLevel: ['1st-year', '2nd-year'], complexity: ['basic'] },
+      { id: 'y1-019-meds', category: 'history', description: 'Check for anticoagulants / antiplatelets (bleed risk)', points: 5, yearLevel: ['2nd-year'], complexity: ['basic'] },
+      { id: 'y1-019-transport', category: 'communication', description: 'Appropriate transport / referral decision with safety-netting', points: 5, yearLevel: ['diploma', '1st-year', '2nd-year'], complexity: ['basic'] }
+    ],
+    teachingPoints: [
+      'The first question in any elderly fall: did they trip, or did they collapse? The answer drives the whole assessment',
+      'Always ask about head strike, LOC, anticoagulation, and time on the floor',
+      'A patient who can partially weight-bear may still have an occult fracture — image if in doubt',
+      'Simple paracetamol is effective and safe first-line analgesia',
+      'Reassess vitals — a slowly bleeding occult hip fracture reveals itself as rising pulse and falling BP'
+    ],
+    commonPitfalls: [
+      'Assuming "mechanical fall" without excluding a syncopal cause',
+      'Missing anticoagulation as a bleeding-risk multiplier',
+      'Over-analgesing or immobilising unnecessarily',
+      'Not safety-netting for delayed presentation of injury'
+    ],
+    references: ['JRCALC Falls in the Older Person', 'NICE Falls Assessment (CG161)', 'UAE Prehospital Trauma Guideline']
+  }),
+
+  // y1-020: Isolated closed tibial fracture, sports injury (trauma)
+  createCase({
+    id: 'y1-020',
+    title: 'Teenager - Deformed Lower Leg After Football Tackle',
+    category: 'trauma',
+    subcategory: 'long-bone-fracture',
+    priority: 'moderate',
+    complexity: 'basic',
+    yearLevels: ['diploma', '1st-year', '2nd-year'],
+    estimatedDuration: 16,
+    dispatchInfo: {
+      callReason: '17-year-old, twisted leg in football, obvious deformity, severe pain',
+      timeOfDay: 'evening',
+      location: 'School sports field, Dubai',
+      callerInfo: 'PE teacher',
+      dispatchCode: 'Bravo-1'
+    },
+    patientInfo: {
+      age: 17,
+      gender: 'male',
+      weight: 68,
+      occupation: 'Student',
+      language: 'English',
+      culturalConsiderations: ['Minor — involve school and parents/guardian for consent']
+    },
+    sceneInfo: {
+      description: 'Astroturf pitch, patient on the ground holding right lower leg, teammates around',
+      hazards: ['Other players', 'Evening floodlights'],
+      bystanders: 'PE teacher and teammates',
+      environment: 'Outdoor pitch, warm evening'
+    },
+    initialPresentation: {
+      generalImpression: 'Distressed teenager in severe pain, holding a visibly deformed right lower leg',
+      position: 'Supine, guarding right leg',
+      appearance: 'Pale, sweating with pain, obvious mid-shaft deformity',
+      consciousness: 'Alert and oriented'
+    },
+    abcde: {
+      airway: { patent: true, findings: ['Patent', 'Speaking in full sentences'], interventions: [] },
+      breathing: { rate: 20, rhythm: 'Regular', depth: 'Normal', spo2: 99, findings: ['Slightly fast from pain', 'Chest clear'], interventions: [] },
+      circulation: { pulseRate: 104, pulseQuality: 'Regular', bp: { systolic: 128, diastolic: 78 }, capillaryRefill: 2, skin: 'Warm, sweaty from pain', findings: ['Pain-driven tachycardia', 'No signs of significant blood loss'], interventions: ['Monitor'] },
+      disability: { avpu: 'A', gcs: { eye: 4, verbal: 5, motor: 6, total: 15 }, pupils: 'Equal and reactive', findings: ['Alert', 'Severe pain'], interventions: [] },
+      exposure: { temperature: 36.8, findings: ['Closed mid-shaft right tibial deformity', 'No wound / no bone exposed', 'Intact skin'], interventions: ['Expose and inspect, keep warm'] }
+    },
+    secondarySurvey: {
+      head: ['No injury'],
+      neck: ['No injury'],
+      chest: ['Non-tender'],
+      abdomen: ['Soft'],
+      pelvis: ['Stable'],
+      extremities: ['Right mid-tibia deformity and swelling', 'Dorsalis pedis and posterior tibial pulses PRESENT', 'Sensation and capillary refill intact distally', 'No other limb injury'],
+      posterior: ['No injury'],
+      neurological: ['Distal neurovascular status intact']
+    },
+    history: {
+      medications: [],
+      allergies: ['None known'],
+      medicalConditions: ['Fit and well'],
+      surgicalHistory: [],
+      lastMeal: 'Dinner 3 hours ago',
+      eventsLeading: 'Caught studs in the turf during a tackle and twisted, felt and heard a snap, immediate deformity and severe pain. No head or other injury.',
+      socialHistory: { smoking: 'None', alcohol: 'None', occupation: 'Student', livingSituation: 'Lives with parents' }
+    },
+    vitalSignsProgression: {
+      initial: { bp: '128/78', pulse: 104, respiration: 20, spo2: 99, gcs: 15, painScore: 8 },
+      afterIntervention: { bp: '124/76', pulse: 84, respiration: 18, spo2: 99, gcs: 15, painScore: 4 },
+      deterioration: { bp: '110/70', pulse: 118, respiration: 24, spo2: 98, gcs: 15, painScore: 9 }
+    },
+    expectedFindings: {
+      keyObservations: ['Isolated closed long-bone fracture', 'Distal neurovascular status intact', 'Severe pain', 'Otherwise well teenager'],
+      redFlags: ['Loss of distal pulse (vascular compromise)', 'Increasing pain out of proportion (compartment syndrome)', 'Open fracture', 'Signs of significant blood loss'],
+      differentialDiagnoses: ['Closed tibial shaft fracture', 'Tibial plateau fracture', 'Severe sprain/dislocation'],
+      mostLikelyDiagnosis: 'Isolated closed tibial shaft fracture',
+      supportingEvidence: ['Clear mechanism', 'Obvious deformity', 'Intact distal neurovascular status', 'Normal haemodynamics']
+    },
+    managementPathway: {
+      immediate: ['Scene safety', 'Expose and assess the limb', 'Check and document distal pulses, sensation, capillary refill BEFORE and AFTER any movement', 'Analgesia (paracetamol and titrated stronger analgesia per protocol)', 'Align and splint in position of comfort'],
+      definitive: ['Immobilise with a box/SAM splint', 'Elevate and apply cold pack', 'Transport for X-ray and orthopaedic care', 'Involve guardian for consent (minor)'],
+      monitoring: ['Reassess distal neurovascular status after splinting', 'Reassess pain', 'Watch for compartment syndrome']
+    },
+    studentChecklist: [
+      { id: 'y1-020-safety', category: 'safety', description: 'Scene safety and control of the sports environment', points: 4, yearLevel: ['diploma', '1st-year', '2nd-year'], complexity: ['basic'], critical: true },
+      { id: 'y1-020-nvbefore', category: 'secondary', description: 'Assess and document distal pulses/sensation BEFORE splinting', points: 10, yearLevel: ['diploma', '1st-year', '2nd-year'], complexity: ['basic'], critical: true, rationale: 'Baseline neurovascular status must precede any manipulation' },
+      { id: 'y1-020-analgesia', category: 'intervention', description: 'Provide effective analgesia (paracetamol +/- titrated stronger agent)', points: 8, yearLevel: ['diploma', '1st-year', '2nd-year'], complexity: ['basic'], critical: true },
+      { id: 'y1-020-splint', category: 'intervention', description: 'Align and immobilise the limb with a splint', points: 8, yearLevel: ['diploma', '1st-year', '2nd-year'], complexity: ['basic'], critical: true },
+      { id: 'y1-020-nvafter', category: 'secondary', description: 'Reassess distal neurovascular status AFTER splinting', points: 8, yearLevel: ['diploma', '1st-year', '2nd-year'], complexity: ['basic'], critical: true },
+      { id: 'y1-020-consent', category: 'communication', description: 'Involve school/guardian for consent (minor)', points: 4, yearLevel: ['1st-year', '2nd-year'], complexity: ['basic'] },
+      { id: 'y1-020-compartment', category: 'clinical-reasoning', description: 'Recognise compartment syndrome warning signs', points: 6, yearLevel: ['2nd-year'], complexity: ['basic'] }
+    ],
+    teachingPoints: [
+      'Always check and document distal pulses, sensation and capillary refill BEFORE and AFTER splinting',
+      'Splint the limb in a position of comfort and re-check the neurovascular status',
+      'Pain out of proportion to the injury is the earliest sign of compartment syndrome',
+      'An isolated closed tibial fracture rarely causes shock — if the patient is shocked, look elsewhere',
+      'This is a minor — involve the school and guardian for consent'
+    ],
+    commonPitfalls: [
+      'Splinting without checking neurovascular status first',
+      'Under-treating pain',
+      'Missing a developing compartment syndrome',
+      'Forgetting consent processes for a minor'
+    ],
+    references: ['JRCALC Limb Trauma', 'ATLS Musculoskeletal Trauma', 'UAE Prehospital Trauma Guideline']
+  }),
+
+  // y1-021: Infective COPD exacerbation (respiratory)
+  createCase({
+    id: 'y1-021',
+    title: 'Older Smoker - Worsening Breathlessness with Green Sputum',
+    category: 'respiratory',
+    subcategory: 'copd',
+    priority: 'high',
+    complexity: 'intermediate',
+    yearLevels: ['1st-year', '2nd-year'],
+    estimatedDuration: 18,
+    dispatchInfo: {
+      callReason: '66-year-old male, known COPD, increasing breathlessness for 3 days',
+      timeOfDay: 'evening',
+      location: 'Apartment in Sharjah',
+      callerInfo: 'Son',
+      dispatchCode: 'Delta-1'
+    },
+    patientInfo: {
+      age: 66,
+      gender: 'male',
+      weight: 70,
+      occupation: 'Retired mechanic',
+      language: 'Arabic',
+      culturalConsiderations: ['Family present and involved in decisions']
+    },
+    sceneInfo: {
+      description: 'Bedroom, patient sitting upright on edge of bed, tripod position',
+      hazards: ['None'],
+      bystanders: 'Son present',
+      environment: 'Warm apartment'
+    },
+    initialPresentation: {
+      generalImpression: 'Breathless older man sitting forward, pursed-lip breathing, unable to speak full sentences',
+      position: 'Tripod, leaning on knees',
+      appearance: 'Using accessory muscles, mild central cyanosis',
+      consciousness: 'Alert but distracted by breathlessness'
+    },
+    abcde: {
+      airway: { patent: true, findings: ['Patent', 'Speaking in short phrases only'], interventions: ['Position of comfort'] },
+      breathing: {
+        rate: 26,
+        rhythm: 'Regular',
+        depth: 'Shallow, prolonged expiration',
+        spo2: 90,
+        findings: ['Widespread expiratory wheeze', 'Prolonged expiratory phase', 'Accessory muscle use', 'Green sputum'],
+        auscultation: ['Widespread polyphonic wheeze', 'Reduced air entry at bases'],
+        interventions: ['Controlled oxygen targeting SpO2 88–92%', 'Nebulised bronchodilators']
+      },
+      circulation: { pulseRate: 104, pulseQuality: 'Regular', bp: { systolic: 148, diastolic: 86 }, capillaryRefill: 2, skin: 'Warm, mildly cyanosed lips', findings: ['Sinus tachycardia'], interventions: ['Monitor'] },
+      disability: { avpu: 'A', gcs: { eye: 4, verbal: 5, motor: 6, total: 15 }, pupils: 'Equal and reactive', findings: ['Alert', 'Anxious'], interventions: ['Watch for drowsiness (CO2 retention)'] },
+      exposure: { temperature: 37.9, findings: ['Febrile', 'No peripheral oedema of note'], interventions: ['Keep comfortable'] }
+    },
+    secondarySurvey: {
+      head: ['Pursed-lip breathing'],
+      neck: ['Accessory muscle use', 'No raised JVP'],
+      chest: ['Hyperinflated', 'Widespread wheeze', 'Reduced basal air entry'],
+      abdomen: ['Soft'],
+      pelvis: ['Stable'],
+      extremities: ['Nicotine staining', 'No peripheral oedema', 'Warm peripheries'],
+      posterior: ['No sacral oedema'],
+      neurological: ['Alert, no focal deficit']
+    },
+    history: {
+      medications: [
+        { name: 'Salbutamol inhaler', dose: '100mcg', frequency: 'PRN', indication: 'COPD' },
+        { name: 'Tiotropium', dose: '18mcg', frequency: 'Daily', indication: 'COPD' },
+        { name: 'Seretide', dose: '250/25', frequency: 'Twice daily', indication: 'COPD' }
+      ],
+      allergies: ['None known'],
+      medicalConditions: ['COPD (GOLD stage 3)', 'Ex-heavy smoker'],
+      surgicalHistory: [],
+      lastMeal: 'Dinner, ate little',
+      eventsLeading: '3 days of increasing breathlessness, wheeze and green sputum with fever. Using his reliever inhaler far more than usual with little relief.',
+      socialHistory: { smoking: 'Ex-smoker, 45 pack-years', alcohol: 'None', occupation: 'Retired mechanic', livingSituation: 'Lives with son' }
+    },
+    vitalSignsProgression: {
+      initial: { bp: '148/86', pulse: 104, respiration: 26, spo2: 90, gcs: 15, temperature: 37.9 },
+      afterIntervention: { bp: '142/82', pulse: 108, respiration: 15, spo2: 93, gcs: 15, temperature: 37.9 },
+      deterioration: { bp: '160/94', pulse: 122, respiration: 8, spo2: 84, gcs: 12, temperature: 37.9 }
+    },
+    expectedFindings: {
+      keyObservations: ['Infective COPD exacerbation', 'Wheeze with prolonged expiration', 'Target SpO2 88–92%', 'Febrile with purulent sputum'],
+      redFlags: ['Falling respiratory rate with drowsiness (CO2 narcosis / tiring)', 'Silent chest', 'Exhaustion', 'Rising CO2'],
+      differentialDiagnoses: ['Infective COPD exacerbation', 'Community-acquired pneumonia', 'Heart failure (no oedema/JVP here)', 'Pulmonary embolism'],
+      mostLikelyDiagnosis: 'Infective exacerbation of COPD',
+      supportingEvidence: ['Known COPD', '3 days sputum/fever', 'Wheeze', 'Controlled-oxygen target applies']
+    },
+    managementPathway: {
+      immediate: [
+        'Sit upright, position of comfort',
+        'Controlled oxygen titrated to SpO2 88–92% (Venturi 28%)',
+        'Nebulised salbutamol and nebulised ipratropium',
+        'Consider hydrocortisone / steroid per protocol'
+      ],
+      definitive: [
+        'Reassess response to nebulised bronchodilators',
+        'Transport for antibiotics, steroids and possible NIV',
+        'Avoid or minimise opioids — they depress respiratory drive in CO2-retaining COPD'
+      ],
+      monitoring: ['Continuous SpO2 with target range', 'Respiratory rate and level of consciousness', 'Watch for CO2 narcosis / tiring']
+    },
+    studentChecklist: [
+      { id: 'y1-021-position', category: 'intervention', description: 'Sit the patient upright in position of comfort', points: 5, yearLevel: ['1st-year', '2nd-year'], complexity: ['basic', 'intermediate'], critical: true },
+      { id: 'y1-021-o2target', category: 'intervention', description: 'Apply CONTROLLED oxygen to target SpO2 88–92%', points: 10, yearLevel: ['1st-year', '2nd-year'], complexity: ['intermediate'], critical: true, rationale: 'Uncontrolled high-flow O2 can worsen CO2 retention in COPD' },
+      { id: 'y1-021-neb', category: 'medication', description: 'Administer nebulised salbutamol and ipratropium', points: 10, yearLevel: ['1st-year', '2nd-year'], complexity: ['intermediate'], critical: true },
+      { id: 'y1-021-steroid', category: 'medication', description: 'Consider hydrocortisone / steroid per protocol', points: 6, yearLevel: ['2nd-year'], complexity: ['intermediate'] },
+      { id: 'y1-021-assess', category: 'abcde', description: 'Full respiratory assessment including auscultation', points: 6, yearLevel: ['1st-year', '2nd-year'], complexity: ['basic', 'intermediate'] },
+      { id: 'y1-021-opioid', category: 'clinical-reasoning', description: 'Recognise that opioids/sedatives are hazardous (respiratory depression) in COPD', points: 6, yearLevel: ['2nd-year'], complexity: ['intermediate'], rationale: 'CO2-retaining COPD patients are sensitive to respiratory depressants' },
+      { id: 'y1-021-monitor', category: 'abcde', description: 'Monitor for tiring / CO2 narcosis (falling RR, drowsiness)', points: 6, yearLevel: ['1st-year', '2nd-year'], complexity: ['intermediate'], critical: true }
+    ],
+    teachingPoints: [
+      'Target SpO2 88–92% in COPD — controlled oxygen, not routine high-flow',
+      'Nebulised salbutamol and ipratropium are the first-line bronchodilators',
+      'Opioids and sedatives are hazardous in CO2-retaining COPD because they depress respiratory drive — avoid or use with extreme caution',
+      'A falling respiratory rate with drowsiness in a tiring COPD patient is pre-arrest, not improvement',
+      'A silent chest means severe airflow limitation — an emergency'
+    ],
+    commonPitfalls: [
+      'Giving uncontrolled high-flow oxygen and worsening CO2 retention',
+      'Missing the tiring patient whose RR is falling',
+      'Giving opioids without recognising the respiratory-depression risk',
+      'Not reassessing after nebulisers'
+    ],
+    references: ['GOLD COPD Strategy', 'BTS Emergency Oxygen Guideline', 'JRCALC COPD / Dyspnoea']
+  }),
+
+  // y1-022: Undifferentiated abdominal pain with dehydration (general)
+  createCase({
+    id: 'y1-022',
+    title: 'Young Adult - Vomiting, Diarrhoea and Cramping Abdominal Pain',
+    category: 'general',
+    subcategory: 'abdominal-pain',
+    priority: 'moderate',
+    complexity: 'basic',
+    yearLevels: ['diploma', '1st-year', '2nd-year'],
+    estimatedDuration: 18,
+    dispatchInfo: {
+      callReason: '28-year-old female, 2 days vomiting and diarrhoea, abdominal pain',
+      timeOfDay: 'morning',
+      location: 'Apartment in Dubai Marina',
+      callerInfo: 'Flatmate',
+      dispatchCode: 'Alpha-1'
+    },
+    patientInfo: {
+      age: 28,
+      gender: 'female',
+      weight: 60,
+      occupation: 'Teacher',
+      language: 'English',
+      culturalConsiderations: ['Maintain privacy for a young female patient', 'Offer chaperone']
+    },
+    sceneInfo: { description: 'Bedroom, patient curled on the bed clutching her abdomen', hazards: ['None'], bystanders: 'Flatmate present', environment: 'Air-conditioned flat' },
+    initialPresentation: {
+      generalImpression: 'Young woman looking unwell and dehydrated, cramping abdominal pain',
+      position: 'Curled on side, knees drawn up',
+      appearance: 'Pale, dry lips, tired',
+      consciousness: 'Alert and oriented'
+    },
+    abcde: {
+      airway: { patent: true, findings: ['Patent', 'Speaking in full sentences'], interventions: [] },
+      breathing: { rate: 18, rhythm: 'Regular', depth: 'Normal', spo2: 99, findings: ['Chest clear'], interventions: [] },
+      circulation: { pulseRate: 104, pulseQuality: 'Regular, slightly thready', bp: { systolic: 108, diastolic: 68 }, capillaryRefill: 3, skin: 'Warm, reduced turgor, dry mucous membranes', findings: ['Mild dehydration', 'Compensating tachycardia'], interventions: ['IV access, consider fluids'] },
+      disability: { avpu: 'A', gcs: { eye: 4, verbal: 5, motor: 6, total: 15 }, bloodGlucose: 5.6, pupils: 'Equal and reactive', findings: ['Alert', 'No focal deficit'], interventions: [] },
+      exposure: { temperature: 37.6, findings: ['Generalised soft abdominal tenderness, no guarding/rigidity', 'No rebound'], interventions: ['Examine abdomen, preserve dignity'] }
+    },
+    secondarySurvey: {
+      head: ['Dry mucous membranes'],
+      neck: ['No abnormality'],
+      chest: ['Clear'],
+      abdomen: ['Generalised mild tenderness', 'Active bowel sounds', 'No guarding, rigidity or rebound', 'No pulsatile mass'],
+      pelvis: ['No PV symptoms reported'],
+      extremities: ['Cool peripheries', 'Reduced skin turgor'],
+      posterior: ['No abnormality'],
+      neurological: ['No deficit']
+    },
+    history: {
+      medications: [{ name: 'Combined oral contraceptive pill', dose: 'Standard', frequency: 'Daily', indication: 'Contraception' }],
+      allergies: ['None known'],
+      medicalConditions: ['Otherwise well'],
+      surgicalHistory: ['Appendicectomy age 12'],
+      lastMeal: 'Sips of water only — vomiting everything for 2 days',
+      eventsLeading: '2 days of vomiting and watery diarrhoea after a restaurant meal; a flatmate was similarly unwell. Cramping generalised abdominal pain, now feeling faint on standing.',
+      socialHistory: { smoking: 'None', alcohol: 'Occasional', occupation: 'Teacher', livingSituation: 'Shares flat' }
+    },
+    vitalSignsProgression: {
+      initial: { bp: '108/68', pulse: 104, respiration: 18, spo2: 99, gcs: 15, bloodGlucose: 5.6, temperature: 37.6 },
+      afterIntervention: { bp: '100/62', pulse: 78, respiration: 16, spo2: 99, gcs: 15, bloodGlucose: 5.6, temperature: 37.6 },
+      deterioration: { bp: '92/58', pulse: 122, respiration: 22, spo2: 98, gcs: 14, bloodGlucose: 5.6, temperature: 37.6 }
+    },
+    expectedFindings: {
+      keyObservations: ['Gastroenteritis with mild-moderate dehydration', 'Soft abdomen without peritonism', 'Compensating tachycardia', 'Contact history (flatmate unwell)'],
+      redFlags: ['Peritonitis (guarding/rigidity/rebound)', 'Pregnancy — always consider in a woman of childbearing age', 'Progression to hypovolaemic shock', 'Blood in vomit or stool'],
+      differentialDiagnoses: ['Viral/bacterial gastroenteritis', 'Ectopic pregnancy (must exclude)', 'Appendicitis (prior appendicectomy)', 'Urinary tract infection', 'Ovarian pathology'],
+      mostLikelyDiagnosis: 'Acute gastroenteritis with dehydration',
+      supportingEvidence: ['2-day vomiting/diarrhoea', 'Contact history', 'Soft non-peritonitic abdomen', 'Dehydration signs']
+    },
+    managementPathway: {
+      immediate: ['Scene safety and dignity/chaperone', 'ABCDE and full vital signs', 'IV access; cautious fluid resuscitation if hypovolaemic', 'Analgesia (paracetamol) and antiemetic (ondansetron) per protocol'],
+      definitive: ['Assess hydration and reassess after fluids', 'Consider pregnancy in any woman of childbearing age', 'Transport for assessment if unable to tolerate oral intake or red flags present'],
+      monitoring: ['Repeat vitals — response to fluids', 'Reassess abdomen for developing peritonism', 'Fluid balance']
+    },
+    studentChecklist: [
+      { id: 'y1-022-dignity', category: 'communication', description: 'Offer chaperone and preserve dignity', points: 4, yearLevel: ['diploma', '1st-year', '2nd-year'], complexity: ['basic'] },
+      { id: 'y1-022-opqrst', category: 'history', description: 'OPQRST pain assessment and full SAMPLE', points: 8, yearLevel: ['diploma', '1st-year', '2nd-year'], complexity: ['basic'], critical: true },
+      { id: 'y1-022-hydration', category: 'abcde', description: 'Assess hydration status (turgor, mucous membranes, cap refill, HR/BP)', points: 8, yearLevel: ['diploma', '1st-year', '2nd-year'], complexity: ['basic'], critical: true },
+      { id: 'y1-022-abdo', category: 'secondary', description: 'Examine abdomen for peritonism (guarding/rigidity/rebound)', points: 8, yearLevel: ['diploma', '1st-year', '2nd-year'], complexity: ['basic'], critical: true },
+      { id: 'y1-022-preg', category: 'clinical-reasoning', description: 'Consider pregnancy/ectopic in a woman of childbearing age', points: 8, yearLevel: ['2nd-year'], complexity: ['basic'], critical: true, rationale: 'Ectopic pregnancy is a lethal must-not-miss' },
+      { id: 'y1-022-fluids', category: 'intervention', description: 'IV access and cautious fluids; paracetamol and ondansetron per protocol', points: 8, yearLevel: ['1st-year', '2nd-year'], complexity: ['basic'] },
+      { id: 'y1-022-transport', category: 'communication', description: 'Transport / safety-net decision', points: 4, yearLevel: ['diploma', '1st-year', '2nd-year'], complexity: ['basic'] }
+    ],
+    teachingPoints: [
+      'Undifferentiated abdominal pain is a "must-not-miss" screen: peritonitis, ectopic pregnancy, AAA, bowel ischaemia',
+      'Always consider pregnancy in a woman of childbearing age — ectopic can masquerade as gastroenteritis',
+      'A soft, non-peritonitic abdomen with a contact history points to gastroenteritis, but reassess for change',
+      'Treat dehydration with cautious fluids and reassess the response',
+      'Paracetamol and an antiemetic (ondansetron) improve comfort and rehydration tolerance'
+    ],
+    commonPitfalls: [
+      'Anchoring on "gastro" and missing ectopic pregnancy or appendicitis',
+      'Not assessing hydration or fluid response',
+      'Under-recognising compensated shock in a young patient',
+      'Skipping a proper abdominal examination'
+    ],
+    references: ['JRCALC Abdominal Pain', 'NICE Gastroenteritis Guidance', 'UAE Prehospital Assessment Standards']
+  }),
+
+  // y1-023: Opioid overdose with respiratory depression (toxicology)
+  createCase({
+    id: 'y1-023',
+    title: 'Unresponsive Man - Pinpoint Pupils and Slow Breathing',
+    category: 'toxicology',
+    subcategory: 'opioid-overdose',
+    priority: 'critical',
+    complexity: 'intermediate',
+    yearLevels: ['1st-year', '2nd-year'],
+    estimatedDuration: 18,
+    dispatchInfo: {
+      callReason: '30-year-old male found unresponsive, barely breathing',
+      timeOfDay: 'evening',
+      location: 'Labour accommodation, Sharjah',
+      callerInfo: 'Roommate (frightened)',
+      dispatchCode: 'Echo-1'
+    },
+    patientInfo: {
+      age: 30,
+      gender: 'male',
+      weight: 72,
+      occupation: 'Construction worker',
+      language: 'Hindi',
+      culturalConsiderations: ['Consider interpreter for collateral history', 'Non-judgemental approach', 'Confidentiality']
+    },
+    sceneInfo: {
+      description: 'Shared dormitory room, patient on a bunk, roommate found him',
+      hazards: ['Check for needles/sharps before kneeling', 'Cramped space'],
+      bystanders: 'Roommate present',
+      environment: 'Warm dormitory'
+    },
+    initialPresentation: {
+      generalImpression: 'Unresponsive man, cyanosed, breathing very slowly and shallowly',
+      position: 'Supine on bunk',
+      appearance: 'Cyanosed lips, pinpoint pupils, snoring respirations',
+      consciousness: 'Responds only to pain'
+    },
+    abcde: {
+      airway: {
+        patent: true,
+        findings: ['Snoring respirations', 'At risk without support', 'No foreign body seen'],
+        interventions: ['Head-tilt chin-lift / jaw thrust', 'OPA insertion', 'Suction ready', 'BVM ventilation']
+      },
+      breathing: {
+        rate: 6,
+        rhythm: 'Irregular, shallow',
+        depth: 'Very shallow',
+        spo2: 82,
+        findings: ['Hypoventilation', 'Cyanosis', 'Reduced air entry from poor effort'],
+        interventions: ['Assist ventilation with BVM and high-flow oxygen']
+      },
+      circulation: { pulseRate: 52, pulseQuality: 'Regular but slow', bp: { systolic: 108, diastolic: 68 }, capillaryRefill: 3, skin: 'Cool, cyanosed peripheries', findings: ['Bradycardia secondary to hypoxia/opioid'], interventions: ['Monitor'] },
+      disability: {
+        avpu: 'P',
+        gcs: { eye: 1, verbal: 2, motor: 3, total: 6 },
+        bloodGlucose: 5.8,
+        pupils: 'Pinpoint (miosis) bilaterally',
+        findings: ['Reduced consciousness (GCS 6)', 'Pinpoint pupils — opioid toxidrome', 'Airway at risk'],
+        interventions: ['Airway support', 'Naloxone', 'Glucose checked to exclude hypoglycaemia']
+      },
+      exposure: { temperature: 36.2, findings: ['Possible injection marks in antecubital fossae'], interventions: ['Examine for sharps safely, keep warm'] }
+    },
+    secondarySurvey: {
+      head: ['Pinpoint pupils', 'No head trauma seen'],
+      neck: ['No abnormality'],
+      chest: ['Poor air entry from hypoventilation'],
+      abdomen: ['Soft'],
+      pelvis: ['Stable'],
+      extremities: ['Track/injection marks', 'Cyanosed peripheries'],
+      posterior: ['No injury'],
+      neurological: ['GCS 6, responds to pain, no lateralising signs']
+    },
+    history: {
+      medications: [],
+      allergies: ['Unknown'],
+      medicalConditions: ['Unknown — collateral from roommate'],
+      surgicalHistory: [],
+      lastMeal: 'Unknown',
+      eventsLeading: 'Roommate found him unresponsive after he had been out with friends. Empty tablet strips (tramadol) and drug paraphernalia noted nearby. Progressive slow breathing.',
+      socialHistory: { smoking: 'Yes', alcohol: 'Occasional', occupation: 'Construction worker', livingSituation: 'Shared labour accommodation' }
+    },
+    vitalSignsProgression: {
+      initial: { bp: '108/68', pulse: 52, respiration: 6, spo2: 82, gcs: 6, bloodGlucose: 5.8 },
+      afterIntervention: { bp: '112/72', pulse: 78, respiration: 14, spo2: 98, gcs: 11, bloodGlucose: 5.8 },
+      deterioration: { bp: '80/40', pulse: 38, respiration: 2, spo2: 60, gcs: 3, bloodGlucose: 5.8 }
+    },
+    expectedFindings: {
+      keyObservations: ['Opioid toxidrome: reduced consciousness, pinpoint pupils, respiratory depression', 'Hypoxia driving bradycardia', 'Airway at risk', 'Reversible with ventilation + naloxone'],
+      redFlags: ['Apnoea / arrest', 'Aspiration', 'Re-sedation as naloxone wears off (shorter than most opioids)', 'Mixed overdose'],
+      differentialDiagnoses: ['Opioid overdose', 'Hypoglycaemia (excluded)', 'Head injury', 'Other sedative overdose', 'CNS infection'],
+      mostLikelyDiagnosis: 'Opioid (tramadol/heroin) overdose with respiratory depression',
+      supportingEvidence: ['Toxidrome triad', 'Paraphernalia at scene', 'Response to ventilation and naloxone', 'Normal glucose']
+    },
+    managementPathway: {
+      immediate: [
+        'Scene safety — check for sharps before kneeling',
+        'Open and support the airway (adjunct + suction)',
+        'Assist ventilation with BVM and high-flow oxygen — THIS reverses the hypoxia first',
+        'Titrate naloxone to restore adequate ventilation (not full arousal)'
+      ],
+      definitive: [
+        'Reassess after naloxone — repeat/titrate as it wears off',
+        'IV access and monitoring',
+        'Transport ALL opioid overdoses — naloxone is shorter-acting than most opioids and re-sedation is common'
+      ],
+      monitoring: ['Respiratory rate, SpO2 and GCS', 'Watch for re-sedation', 'Cardiac monitoring']
+    },
+    studentChecklist: [
+      { id: 'y1-023-safety', category: 'safety', description: 'Scene safety — inspect for sharps before approaching', points: 6, yearLevel: ['1st-year', '2nd-year'], complexity: ['intermediate'], critical: true },
+      { id: 'y1-023-airway', category: 'abcde', description: 'Open and support the airway with adjunct and suction', points: 10, yearLevel: ['1st-year', '2nd-year'], complexity: ['intermediate'], critical: true },
+      { id: 'y1-023-ventilate', category: 'intervention', description: 'Assist ventilation with BVM and high-flow oxygen', points: 12, yearLevel: ['1st-year', '2nd-year'], complexity: ['intermediate'], critical: true, rationale: 'Oxygenation/ventilation reverses the lethal hypoxia before naloxone acts' },
+      { id: 'y1-023-naloxone', category: 'medication', description: 'Titrate naloxone to adequate ventilation (avoid precipitating acute withdrawal)', points: 12, yearLevel: ['1st-year', '2nd-year'], complexity: ['intermediate'], critical: true },
+      { id: 'y1-023-glucose', category: 'abcde', description: 'Check blood glucose (exclude hypoglycaemia)', points: 5, yearLevel: ['1st-year', '2nd-year'], complexity: ['intermediate'] },
+      { id: 'y1-023-resedation', category: 'clinical-reasoning', description: 'Recognise re-sedation risk — transport all opioid overdoses', points: 8, yearLevel: ['2nd-year'], complexity: ['intermediate'], critical: true },
+      { id: 'y1-023-toxidrome', category: 'clinical-reasoning', description: 'Identify the opioid toxidrome (miosis, hypoventilation, reduced GCS)', points: 6, yearLevel: ['1st-year', '2nd-year'], complexity: ['intermediate'] }
+    ],
+    teachingPoints: [
+      'Oxygenate and ventilate FIRST — hypoxia, not the drug itself, is what kills in opioid overdose',
+      'Titrate naloxone to restore adequate breathing, not to fully wake the patient (avoid violent withdrawal)',
+      'Naloxone is shorter-acting than most opioids — re-sedation is common, so transport every patient',
+      'The opioid toxidrome is miosis + hypoventilation + reduced consciousness',
+      'Check the scene for sharps before kneeling, and check glucose in every unresponsive patient'
+    ],
+    commonPitfalls: [
+      'Giving naloxone before oxygenating/ventilating',
+      'Large naloxone boluses causing acute withdrawal, vomiting and aspiration',
+      'Allowing on-scene discharge after naloxone (re-sedation risk)',
+      'Missing hypoglycaemia or a mixed overdose',
+      'Needlestick injury from unsafe scene approach'
+    ],
+    references: ['JRCALC Overdose and Poisoning', 'Resuscitation Council UK — Toxicological Emergencies', 'UAE Prehospital Naloxone Protocol']
   })
 ];
 
