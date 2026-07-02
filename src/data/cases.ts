@@ -4539,6 +4539,11 @@ export const caseDatabase: CaseScenario[] = [
     id: 'fall-001',
     title: 'Elderly Fall with Hip Fracture',
     category: 'elderly-fall',
+    // ROUTING NOTE: subcategory added so findProtocol() reaches the 'fall'
+    // treatment protocol (moderate/NOF tier) — the case previously had no
+    // subcategory and was unreachable by the treatment engine. Same pattern
+    // as the trauma-004 → 'tamponade' fix.
+    subcategory: 'fall',
     priority: 'high',
     complexity: 'intermediate',
     yearLevels: ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],

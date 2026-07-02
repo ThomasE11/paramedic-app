@@ -5309,6 +5309,1183 @@ export const TREATMENT_PROTOCOLS: TreatmentProtocol[] = [
       },
     ],
   },
+
+  // ===========================================================================
+  // STABLE ANGINA (EXERTIONAL CHEST PAIN, RESOLVING/RESOLVED)
+  // ---------------------------------------------------------------------------
+  // conditionKey: 'stable-angina' → case cardiac-005; also serves 'rule-out'
+  // (ruleout-001, Chest Pain — Rule Out ACS) via PROTOCOL_SUBCATEGORY_ALIAS:
+  // prehospital care for undifferentiated chest pain treats it as cardiac until
+  // excluded — aspirin, GTN if normotensive, 12-lead, transport.
+  //
+  // ROUTING NOTE: findProtocol()'s substring pass means a future subcategory
+  // 'unstable-angina' would ALSO match this key ('unstable-angina' contains
+  // 'stable-angina'). If an unstable-angina case is ever authored, give it an
+  // explicit alias to an ACS protocol (e.g. 'stem-anterior'/'nstemi') FIRST.
+  //
+  // Deliberately SHORT protocol — low-acuity chest pain gets assessment,
+  // aspirin, symptom relief and a transport decision, not aggressive therapy.
+  // The 'severe' tier exists so a hypotensive presentation routes AWAY from
+  // nitrates (GTN contraindicated when SBP is low).
+  // ===========================================================================
+  {
+    condition: 'stable-angina',
+    conditionName: 'Stable Angina (Suspected Cardiac Chest Pain)',
+    severityLevels: [
+      {
+        severity: 'mild',
+        description: 'Exertional chest pain, haemodynamically stable, pain settling with rest — treat as cardiac until excluded: aspirin, GTN if SBP adequate, 12-lead, transport for work-up',
+        typicalVitals: {
+          pulse: [60, 100],
+          respiration: [12, 20],
+          spo2: [95, 100],
+          bpSystolic: [110, 160],
+          gcs: [15, 15],
+        },
+        initialSounds: {
+          leftLung: 'clear',
+          rightLung: 'clear',
+          heartSound: 'normal',
+          additionalSounds: ['No added sounds', 'Pain reproducible with exertion history'],
+          description: 'Clear lungs bilaterally. Normal heart sounds. No signs of failure — this is about the history and the 12-lead.',
+        },
+        essentialTreatments: ['aspirin'],
+        optimalTreatments: ['aspirin', 'gtn_spray', 'iv_access', 'reassurance'],
+        beneficialTreatments: ['reassurance', 'fowlers_position', 'oxygen_nasal'],
+        contraindicatedTreatments: [],
+        deteriorationRate: 'slow',
+        synergies: [
+          {
+            treatments: ['aspirin', 'gtn_spray'],
+            synergyMultiplier: 1.3,
+            description: 'Antiplatelet cover plus nitrate symptom relief — the standard first-line pairing for suspected cardiac chest pain with adequate blood pressure',
+          },
+        ],
+        positioningEffects: [
+          {
+            positionId: 'fowlers_position',
+            spo2Bonus: 0,
+            rrReduction: 0,
+            hrChange: 0,
+            description: 'Position of comfort, usually semi-recumbent — reduces myocardial oxygen demand vs walking/standing',
+          },
+        ],
+        responseCeilings: {
+          partialCeiling: 70,
+          fullCeiling: 95,
+          timeToResponse: 300,
+        },
+      },
+      {
+        severity: 'severe',
+        description: 'Chest pain with hypotension — nitrates now HARMFUL (preload-dependent state / possible RV involvement). Aspirin, IV access, cautious fluids, urgent transport',
+        typicalVitals: {
+          pulse: [90, 130],
+          respiration: [16, 28],
+          spo2: [88, 96],
+          bpSystolic: [70, 105],
+          gcs: [13, 15],
+        },
+        initialSounds: {
+          leftLung: 'clear',
+          rightLung: 'clear',
+          heartSound: 'tachycardic',
+          additionalSounds: ['Pale and clammy', 'Weak radial pulse'],
+          description: 'Clear lungs. Tachycardic heart sounds with poor peripheral perfusion — this chest pain patient is NOT a nitrate candidate.',
+        },
+        essentialTreatments: ['aspirin', 'iv_access', 'fluids_250ml'],
+        optimalTreatments: ['aspirin', 'iv_access', 'fluids_250ml', 'oxygen_nasal'],
+        beneficialTreatments: ['reassurance', 'supine_position'],
+        // GTN in a hypotensive chest-pain patient collapses preload; opioids
+        // stack venodilation and respiratory depression on top.
+        contraindicatedTreatments: ['gtn_spray', 'morphine_5mg'],
+        deteriorationRate: 'moderate',
+        synergies: [
+          {
+            treatments: ['iv_access', 'fluids_250ml'],
+            synergyMultiplier: 1.3,
+            description: 'Access plus a titrated 250ml bolus supports preload while transport is expedited',
+          },
+        ],
+        positioningEffects: [
+          {
+            positionId: 'supine_position',
+            spo2Bonus: 0,
+            rrReduction: 0,
+            hrChange: 0,
+            description: 'Flat positioning supports cerebral perfusion in the hypotensive patient',
+          },
+        ],
+        responseCeilings: {
+          partialCeiling: 40,
+          fullCeiling: 70,
+          timeToResponse: 300,
+        },
+      },
+    ],
+  },
+
+  // ===========================================================================
+  // SYNCOPE (VASOVAGAL / RULE OUT CARDIAC CAUSE)
+  // ---------------------------------------------------------------------------
+  // conditionKey: 'syncope' → cases cardiac-010 and general-001.
+  // 'first-episode-syncope' resolves here via the substring pass AND an
+  // explicit alias (documented intent). Recovered syncope is a LOW-ACUITY
+  // presentation: positioning, orthostatic support, 12-lead/monitoring, and a
+  // transport decision. No aggressive interventions.
+  // ===========================================================================
+  {
+    condition: 'syncope',
+    conditionName: 'Syncope (Transient Loss of Consciousness, Recovered)',
+    severityLevels: [
+      {
+        severity: 'mild',
+        description: 'Witnessed collapse with rapid full recovery, GCS 15 — lie flat, elevate legs, screen for red flags (cardiac history, exertional onset, abnormal ECG), monitor and transport',
+        typicalVitals: {
+          pulse: [50, 100],
+          respiration: [12, 20],
+          spo2: [95, 100],
+          bpSystolic: [90, 140],
+          gcs: [14, 15],
+        },
+        initialSounds: {
+          leftLung: 'clear',
+          rightLung: 'clear',
+          heartSound: 'normal',
+          additionalSounds: ['No added sounds'],
+          description: 'Clear lungs, normal heart sounds. The work here is the ECG, orthostatic assessment, and red-flag screen — not drugs.',
+        },
+        essentialTreatments: ['supine_position'],
+        optimalTreatments: ['supine_position', 'leg_elevation', 'iv_access'],
+        beneficialTreatments: ['reassurance', 'leg_elevation'],
+        // A venodilator in a preload-driven faint reproduces the collapse.
+        contraindicatedTreatments: ['gtn_spray'],
+        deteriorationRate: 'slow',
+        synergies: [
+          {
+            treatments: ['supine_position', 'leg_elevation'],
+            synergyMultiplier: 1.3,
+            description: 'Supine with legs elevated restores venous return — the definitive first-line treatment for vasovagal syncope',
+          },
+        ],
+        positioningEffects: [
+          {
+            positionId: 'supine_position',
+            spo2Bonus: 0,
+            rrReduction: 0,
+            hrChange: 0,
+            description: 'Flat positioning restores cerebral perfusion after a vasovagal event',
+          },
+        ],
+        responseCeilings: {
+          partialCeiling: 80,
+          fullCeiling: 100,
+          timeToResponse: 120,
+        },
+      },
+    ],
+  },
+
+  // ===========================================================================
+  // SINUS TACHYCARDIA (SECONDARY — TREAT THE CAUSE, NOT THE RATE)
+  // ---------------------------------------------------------------------------
+  // conditionKey: 'sinus-tachycardia' → case y1-013 (caffeine/stress).
+  // Teaching core: sinus tachycardia is a SYMPTOM. Management is reassurance,
+  // removal of the driver, and monitoring. Rate-control drugs (adenosine,
+  // beta-blockers) treat the monitor, not the patient — modelled as
+  // contraindicated so the wrong-drug branch has a real consequence.
+  // ===========================================================================
+  {
+    condition: 'sinus-tachycardia',
+    conditionName: 'Sinus Tachycardia (Secondary)',
+    severityLevels: [
+      {
+        severity: 'mild',
+        description: 'Regular narrow-complex tachycardia with visible P waves, stable BP — identify and address the driver (anxiety, caffeine, pain, fever, hypovolaemia); do NOT rate-control',
+        typicalVitals: {
+          pulse: [100, 140],
+          respiration: [14, 24],
+          spo2: [95, 100],
+          bpSystolic: [100, 160],
+          gcs: [15, 15],
+        },
+        initialSounds: {
+          leftLung: 'clear',
+          rightLung: 'clear',
+          heartSound: 'tachycardic',
+          additionalSounds: ['Regular rapid rhythm', 'No murmurs or added sounds'],
+          description: 'Clear lungs. Fast but regular heart sounds — confirm P waves on the 12-lead before calling this anything other than sinus.',
+        },
+        essentialTreatments: ['reassurance'],
+        optimalTreatments: ['reassurance', 'calm_environment', 'iv_access'],
+        beneficialTreatments: ['calm_environment'],
+        // Adenosine / beta-blockade for sinus tachycardia is a classic error:
+        // it masks the compensatory response and can precipitate hypotension.
+        contraindicatedTreatments: ['adenosine_6mg', 'metoprolol_5mg'],
+        deteriorationRate: 'slow',
+        synergies: [
+          {
+            treatments: ['reassurance', 'calm_environment'],
+            synergyMultiplier: 1.3,
+            description: 'Removing the sympathetic driver (reassurance + calm environment) is the actual treatment for anxiety/stimulant-driven sinus tachycardia',
+          },
+        ],
+        positioningEffects: [],
+        responseCeilings: {
+          partialCeiling: 70,
+          fullCeiling: 95,
+          timeToResponse: 300,
+        },
+      },
+    ],
+  },
+
+  // ===========================================================================
+  // TIA (TRANSIENT ISCHAEMIC ATTACK — SYMPTOMS RESOLVED OR RESOLVING)
+  // ---------------------------------------------------------------------------
+  // conditionKey: 'tia' → case y2-006. Kept SEPARATE from 'stroke':
+  // aspirin 300mg is first-line for TIA (NICE NG128) but is contraindicated
+  // pre-CT in acute stroke — the two pathways intentionally diverge on the
+  // single most-tested drug decision. ('tia' is 3 chars, below findProtocol's
+  // substring-pass threshold, so the exact condition key is required.)
+  // ===========================================================================
+  {
+    condition: 'tia',
+    conditionName: 'Transient Ischaemic Attack',
+    severityLevels: [
+      {
+        severity: 'moderate',
+        description: 'Focal neurological deficit resolved/resolving, GCS 15 — aspirin 300mg, BGL to exclude mimic, 12-lead (AF hunt), urgent transport for stroke-clinic work-up. Do NOT lower the BP',
+        typicalVitals: {
+          pulse: [60, 100],
+          respiration: [12, 20],
+          spo2: [95, 100],
+          bpSystolic: [130, 190],
+          gcs: [14, 15],
+        },
+        initialSounds: {
+          leftLung: 'clear',
+          rightLung: 'clear',
+          heartSound: 'normal',
+          additionalSounds: ['No added sounds', 'Check for irregular pulse (AF)'],
+          description: 'Clear lungs, normal heart sounds — palpate for an irregular pulse and get the 12-lead: AF is the classic TIA driver.',
+        },
+        essentialTreatments: ['aspirin'],
+        optimalTreatments: ['aspirin', 'iv_access'],
+        beneficialTreatments: ['reassurance', 'glucose_10g'], // glucose only if BGL confirms a hypoglycaemic mimic
+        // Permissive hypertension: acutely dropping BP (nitrate or IV
+        // antihypertensive) endangers the ischaemic penumbra. Opioids obscure
+        // the serial neuro exam.
+        contraindicatedTreatments: ['gtn_spray', 'labetalol_20mg', 'morphine_5mg'],
+        deteriorationRate: 'slow',
+        synergies: [],
+        positioningEffects: [],
+        responseCeilings: {
+          partialCeiling: 60,
+          fullCeiling: 85, // definitive care is the TIA clinic / imaging pathway
+          timeToResponse: 600,
+        },
+      },
+    ],
+  },
+
+  // ===========================================================================
+  // FALL (ELDERLY / MECHANICAL FALL ± HIP FRACTURE)
+  // ---------------------------------------------------------------------------
+  // conditionKey: 'fall' → cases y1-001 (mechanical fall, query NOF) and
+  // fall-001 (Elderly Fall with Hip Fracture).
+  //
+  // ROUTING NOTE: fall-001 previously had NO subcategory, so findProtocol()
+  // bailed out (the no-subcategory guard). The case now carries
+  // subcategory: 'fall' in cases.ts — same pattern as the trauma-004 →
+  // 'tamponade' fix above.
+  //
+  // Tier split is by physiology: the mild tier is the uninjured/minor-injury
+  // faller (assessment, analgesia, mobility decision); the moderate tier is
+  // the pain-response physiology of a suspected neck-of-femur fracture
+  // (analgesia + scoop/vacuum immobilisation, NOT a traction splint).
+  // ===========================================================================
+  {
+    condition: 'fall',
+    conditionName: 'Fall in the Elderly',
+    severityLevels: [
+      {
+        severity: 'mild',
+        description: 'Mechanical fall, normal vitals, no obvious fracture — full secondary survey, analgesia if needed, cause-of-fall screen (cardiac, postural, medication), safe mobilisation decision',
+        typicalVitals: {
+          pulse: [60, 90],
+          respiration: [12, 18],
+          spo2: [96, 100],
+          bpSystolic: [110, 150],
+          gcs: [14, 15],
+        },
+        initialSounds: {
+          leftLung: 'clear',
+          rightLung: 'clear',
+          heartSound: 'normal',
+          additionalSounds: ['No added sounds'],
+          description: 'Clear chest, normal heart sounds. The clinical work is the injury survey and the WHY-did-they-fall screen.',
+        },
+        essentialTreatments: ['reassurance'],
+        optimalTreatments: ['reassurance', 'paracetamol_oral'],
+        beneficialTreatments: ['paracetamol_oral', 'warming_blanket'], // long lie → hypothermia risk
+        contraindicatedTreatments: [],
+        deteriorationRate: 'slow',
+        synergies: [],
+        positioningEffects: [],
+        responseCeilings: {
+          partialCeiling: 80,
+          fullCeiling: 100,
+          timeToResponse: 300,
+        },
+      },
+      {
+        severity: 'moderate',
+        description: 'Fall with suspected hip/neck-of-femur fracture — shortened, externally rotated leg, pain on movement. Analgesia BEFORE movement, scoop + vacuum-mattress immobilisation, gentle handling',
+        typicalVitals: {
+          pulse: [90, 120],
+          respiration: [16, 24],
+          spo2: [92, 97],
+          bpSystolic: [100, 160],
+          gcs: [14, 15],
+        },
+        initialSounds: {
+          leftLung: 'clear',
+          rightLung: 'clear',
+          heartSound: 'tachycardic',
+          additionalSounds: ['Pain response on movement', 'Shortened externally rotated limb'],
+          description: 'Clear chest. Mild tachycardia consistent with pain. The injured limb is shortened and externally rotated — classic NOF.',
+        },
+        essentialTreatments: ['paracetamol_oral', 'scoop_stretcher'],
+        optimalTreatments: ['paracetamol_oral', 'scoop_stretcher', 'iv_access', 'morphine_5mg', 'vacuum_mattress'],
+        beneficialTreatments: ['reassurance', 'warming_blanket', 'vacuum_mattress'],
+        // A traction splint is for MID-SHAFT femur fractures; applied over a
+        // proximal (NOF) fracture it displaces the fragments and worsens pain.
+        contraindicatedTreatments: ['traction_splint'],
+        deteriorationRate: 'slow',
+        synergies: [
+          {
+            treatments: ['paracetamol_oral', 'scoop_stretcher'],
+            synergyMultiplier: 1.3,
+            description: 'Analgesia given time to work BEFORE the scoop transfer — moving an unanaesthetised NOF is the classic avoidable-pain error',
+          },
+          {
+            treatments: ['scoop_stretcher', 'vacuum_mattress'],
+            synergyMultiplier: 1.4,
+            description: 'Scoop transfer onto a moulded vacuum mattress gives whole-limb immobilisation without log-rolling the fracture',
+          },
+        ],
+        positioningEffects: [],
+        responseCeilings: {
+          partialCeiling: 50,
+          fullCeiling: 80, // definitive care is surgical
+          timeToResponse: 300,
+        },
+      },
+    ],
+  },
+
+  // ===========================================================================
+  // ABDOMINAL PAIN (UNDIFFERENTIATED / SURGICAL ABDOMEN)
+  // ---------------------------------------------------------------------------
+  // conditionKey: 'abdominal-pain' → case y1-002 (query appendicitis).
+  // Prehospital care: analgesia (do NOT withhold — it does not mask the
+  // surgical exam), antiemetic, IV access, nil-by-mouth, position of comfort,
+  // transport. Oral drugs are contraindicated because the patient must stay
+  // fasted for theatre.
+  // ===========================================================================
+  {
+    condition: 'abdominal-pain',
+    conditionName: 'Acute Abdominal Pain (Undifferentiated)',
+    severityLevels: [
+      {
+        severity: 'moderate',
+        description: 'Localising abdominal pain (e.g. RIF migration, guarding) with stable vitals — IV analgesia, antiemetic, nil by mouth, surgical referral. Reassess for peritonism and shock',
+        typicalVitals: {
+          pulse: [70, 110],
+          respiration: [14, 24],
+          spo2: [95, 100],
+          bpSystolic: [100, 150],
+          gcs: [15, 15],
+        },
+        initialSounds: {
+          leftLung: 'clear',
+          rightLung: 'clear',
+          heartSound: 'normal',
+          additionalSounds: ['Guarding on palpation', 'Quiet bowel sounds'],
+          description: 'Clear chest, normal heart sounds. Abdomen is where the findings live: guarding, rebound, quiet bowel sounds.',
+        },
+        essentialTreatments: ['iv_access', 'paracetamol_iv'],
+        optimalTreatments: ['iv_access', 'paracetamol_iv', 'ondansetron_4mg', 'reassurance'],
+        beneficialTreatments: ['fentanyl_50mcg', 'fluids_250ml', 'reassurance'],
+        // Nil by mouth for a possible surgical abdomen — no oral medications.
+        // NSAIDs additionally risk renal injury if the patient becomes septic/dry.
+        contraindicatedTreatments: ['paracetamol_oral', 'ibuprofen_oral'],
+        deteriorationRate: 'slow',
+        synergies: [
+          {
+            treatments: ['paracetamol_iv', 'ondansetron_4mg'],
+            synergyMultiplier: 1.3,
+            description: 'IV analgesia plus antiemetic keeps the patient comfortable and fasted — the correct prep for a surgical abdomen',
+          },
+        ],
+        positioningEffects: [],
+        responseCeilings: {
+          partialCeiling: 60,
+          fullCeiling: 85, // definitive care is surgical
+          timeToResponse: 300,
+        },
+      },
+    ],
+  },
+
+  // ===========================================================================
+  // HYPOTHERMIA (ACCIDENTAL — STAGED BY CORE TEMPERATURE)
+  // ---------------------------------------------------------------------------
+  // conditionKey: 'hypothermia' → case litfl-010 (core 28°C, Osborn waves).
+  // Teaching core: HANDLE GENTLY (rough movement of a cold myocardium triggers
+  // VF), insulate + actively rewarm, oxygenate, support ventilation at low GCS,
+  // and use only WARMED IV fluids (the engine's hypothermia pathology modifier
+  // already discounts room-temperature crystalloid). The engine's <30°C
+  // medication gate independently withholds drugs (e.g. adrenaline) — mirrored
+  // here as contraindicated so the wrong-branch consequence is explicit.
+  // Active cooling is modelled as contraindicated (the direct inverse error).
+  // ===========================================================================
+  {
+    condition: 'hypothermia',
+    conditionName: 'Accidental Hypothermia',
+    severityLevels: [
+      {
+        severity: 'moderate',
+        description: 'Mild-moderate hypothermia (core 32-35°C) — shivering, conscious. Remove wet clothing, insulate, passive + active external rewarming, warm sweet drinks if fully alert',
+        typicalVitals: {
+          pulse: [55, 100],
+          respiration: [12, 22],
+          spo2: [92, 99],
+          bpSystolic: [95, 140],
+          gcs: [12, 15],
+        },
+        initialSounds: {
+          leftLung: 'clear',
+          rightLung: 'clear',
+          heartSound: 'normal',
+          additionalSounds: ['Shivering', 'Cold peripheries'],
+          description: 'Clear lungs. Normal heart sounds with shivering artefact. Still making heat — protect that.',
+        },
+        essentialTreatments: ['warming_blanket'],
+        optimalTreatments: ['warming_blanket', 'iv_access'],
+        beneficialTreatments: ['reassurance', 'calm_environment'],
+        contraindicatedTreatments: ['active_cooling'],
+        deteriorationRate: 'slow',
+        synergies: [],
+        positioningEffects: [],
+        responseCeilings: {
+          partialCeiling: 70,
+          fullCeiling: 95,
+          timeToResponse: 600,
+        },
+      },
+      {
+        severity: 'life-threatening',
+        description: 'Severe hypothermia (core <30°C) — bradycardia, bradypnoea, reduced GCS, Osborn waves. GENTLE handling, active rewarming, BVM support of slow respirations, warmed fluids only. Drugs are withheld below 30°C',
+        typicalVitals: {
+          pulse: [20, 50],
+          respiration: [4, 10],
+          spo2: [80, 92],
+          bpSystolic: [60, 95],
+          gcs: [3, 10],
+        },
+        initialSounds: {
+          leftLung: 'clear',
+          rightLung: 'clear',
+          heartSound: 'bradycardic',
+          additionalSounds: ['Profound bradycardia', 'Slow shallow respirations', 'Cold rigid limbs'],
+          description: 'Slow, quiet chest with profound bradycardia. The cold myocardium is irritable — every rough movement is a VF risk.',
+        },
+        // fluids_500ml here represents WARMED (38-42°C) crystalloid — the
+        // hypothermia pathology modifier already halves the effect of anything
+        // that is not warmed, which is exactly the intended teaching.
+        essentialTreatments: ['warming_blanket', 'oxygen_nonrebreather', 'bvm_ventilation'],
+        optimalTreatments: ['warming_blanket', 'oxygen_nonrebreather', 'bvm_ventilation', 'iv_access', 'fluids_500ml'],
+        beneficialTreatments: ['suction', 'opa_insert'],
+        // active_cooling: the inverse error. adrenaline_1mg: the <30°C drug
+        // gate — metabolism is stalled and doses accumulate to toxicity.
+        contraindicatedTreatments: ['active_cooling', 'adrenaline_1mg'],
+        deteriorationRate: 'moderate',
+        synergies: [
+          {
+            treatments: ['warming_blanket', 'fluids_500ml'],
+            synergyMultiplier: 1.4,
+            description: 'Active external rewarming plus warmed IV fluid rewarms from both sides of the core-shell gradient',
+          },
+          {
+            treatments: ['bvm_ventilation', 'oxygen_nonrebreather'],
+            synergyMultiplier: 1.3,
+            description: 'Assisted ventilation with high-FiO2 reservoir corrects the hypoventilatory hypoxia of the cold patient',
+          },
+        ],
+        positioningEffects: [
+          {
+            positionId: 'supine_position',
+            spo2Bonus: 0,
+            rrReduction: 0,
+            hrChange: 0,
+            description: 'Horizontal, gentle handling — avoid rough movement and keep the patient flat to protect the irritable myocardium',
+          },
+        ],
+        responseCeilings: {
+          partialCeiling: 30,
+          fullCeiling: 70, // definitive rewarming is in-hospital (ECMO for arrest)
+          timeToResponse: 600,
+        },
+      },
+    ],
+  },
+
+  // ===========================================================================
+  // OBSTETRIC HAEMORRHAGE (ANTEPARTUM — e.g. PLACENTA PREVIA)
+  // ---------------------------------------------------------------------------
+  // conditionKey: 'obstetric-haemorrhage' → case obs-001 (third-trimester
+  // bleeding). Teaching core: LEFT LATERAL TILT (aortocaval decompression),
+  // O2, IV access with titrated 250ml boluses (no aggressive crystalloid —
+  // the bleeding source is uncontrollable prehospital), TXA, and rapid
+  // transport to obstetric care. NO vaginal examination; NEVER flat supine.
+  // ===========================================================================
+  {
+    condition: 'obstetric-haemorrhage',
+    conditionName: 'Antepartum Haemorrhage',
+    severityLevels: [
+      {
+        severity: 'severe',
+        description: 'Third-trimester PV bleeding with maternal compensation (tachycardia, borderline BP) — left lateral tilt, O2, access, titrated fluids, TXA, pre-alert and run. Two patients, one uncontrollable bleed',
+        typicalVitals: {
+          pulse: [100, 140],
+          respiration: [18, 30],
+          spo2: [92, 99],
+          bpSystolic: [80, 108],
+          gcs: [13, 15],
+        },
+        initialSounds: {
+          leftLung: 'clear',
+          rightLung: 'clear',
+          heartSound: 'tachycardic',
+          additionalSounds: ['Maternal tachycardia', 'Fetal heart to be auscultated'],
+          description: 'Clear maternal chest with compensatory tachycardia. Listen for the fetal heart — there are two patients here.',
+        },
+        essentialTreatments: ['left_lateral_tilt', 'oxygen_nonrebreather', 'iv_access', 'fluids_250ml'],
+        optimalTreatments: ['left_lateral_tilt', 'oxygen_nonrebreather', 'iv_access', 'fluids_250ml', 'txa_1g', 'reassurance'],
+        beneficialTreatments: ['reassurance', 'warming_blanket'],
+        // Flat supine → aortocaval compression collapses maternal venous
+        // return. Aggressive crystalloid dilutes clotting factors and pops
+        // early clot with the source uncontrolled.
+        contraindicatedTreatments: ['supine_position', 'fluids_1000ml'],
+        deteriorationRate: 'fast',
+        synergies: [
+          {
+            treatments: ['iv_access', 'fluids_250ml', 'txa_1g'],
+            synergyMultiplier: 1.4,
+            description: 'Access, titrated volume, and early TXA — supports perfusion and clot stability while transport gets her to the obstetric team',
+          },
+          {
+            treatments: ['left_lateral_tilt', 'oxygen_nonrebreather'],
+            synergyMultiplier: 1.3,
+            description: 'Aortocaval decompression plus high-flow O2 maximises uteroplacental oxygen delivery',
+          },
+        ],
+        positioningEffects: [
+          {
+            positionId: 'left_lateral_tilt',
+            spo2Bonus: 0,
+            rrReduction: 0,
+            hrChange: 0,
+            description: '15-30° left lateral tilt lifts the gravid uterus off the IVC — restores maternal preload and placental perfusion',
+          },
+        ],
+        responseCeilings: {
+          partialCeiling: 30,
+          fullCeiling: 65, // definitive care is theatre — prehospital ceiling is deliberately low
+          timeToResponse: 180,
+        },
+      },
+    ],
+  },
+
+  // ===========================================================================
+  // NORMAL DELIVERY (IMMINENT — SECOND STAGE)
+  // ---------------------------------------------------------------------------
+  // conditionKey: 'normal-delivery' → case y1-006. This is a PHYSIOLOGICAL
+  // event, not a disease: position the mother semi-recumbent, coach and calm,
+  // prepare equipment, support the head, then dry/warm the newborn. The main
+  // errors are flat supine positioning (aortocaval compression) and turning a
+  // normal birth into a resuscitation.
+  // ===========================================================================
+  {
+    condition: 'normal-delivery',
+    conditionName: 'Imminent Normal Delivery',
+    severityLevels: [
+      {
+        severity: 'mild',
+        description: 'Term labour, second stage, crowning — do not attempt to delay. Semi-recumbent position, calm coaching between contractions, prepare delivery kit, warm towels ready for the newborn',
+        typicalVitals: {
+          pulse: [80, 110],
+          respiration: [18, 28],
+          spo2: [96, 100],
+          bpSystolic: [110, 140],
+          gcs: [15, 15],
+        },
+        initialSounds: {
+          leftLung: 'clear',
+          rightLung: 'clear',
+          heartSound: 'normal',
+          additionalSounds: ['Contraction-timed breathing effort', 'Fetal heart to be auscultated between contractions'],
+          description: 'Clear maternal chest; breathing effort follows contractions. Auscultate the fetal heart between contractions.',
+        },
+        essentialTreatments: ['fowlers_position'],
+        optimalTreatments: ['fowlers_position', 'calm_environment'],
+        beneficialTreatments: ['reassurance', 'warming_blanket'], // warming blanket = dry & warm the newborn
+        // Flat supine in term pregnancy → aortocaval compression.
+        contraindicatedTreatments: ['supine_position'],
+        deteriorationRate: 'slow',
+        synergies: [
+          {
+            treatments: ['fowlers_position', 'calm_environment'],
+            synergyMultiplier: 1.3,
+            description: 'Upright-supported position plus calm coaching lets maternal effort work with the contraction — midwifery, not medicine',
+          },
+        ],
+        positioningEffects: [
+          {
+            positionId: 'fowlers_position',
+            spo2Bonus: 0,
+            rrReduction: 0,
+            hrChange: 0,
+            description: 'Semi-recumbent/supported position for delivery — avoids aortocaval compression and aids maternal effort',
+          },
+        ],
+        responseCeilings: {
+          partialCeiling: 80,
+          fullCeiling: 100,
+          timeToResponse: 120,
+        },
+      },
+    ],
+  },
+
+  // ===========================================================================
+  // ECTOPIC PREGNANCY (RUPTURED UNTIL PROVEN OTHERWISE)
+  // ---------------------------------------------------------------------------
+  // conditionKey: 'ectopic-pregnancy' → case y2-005. Early-pregnancy abdominal
+  // pain + PV spotting + borderline BP = ruptured ectopic until proven
+  // otherwise. Internal, surgically-controlled bleeding: IV access, titrated
+  // 250ml boluses to maintain a radial pulse (permissive strategy), O2, and
+  // time-critical transport. No aggressive crystalloid, no NSAIDs.
+  // ===========================================================================
+  {
+    condition: 'ectopic-pregnancy',
+    conditionName: 'Ectopic Pregnancy (Suspected Rupture)',
+    severityLevels: [
+      {
+        severity: 'severe',
+        description: 'Early-pregnancy lower abdominal pain with tachycardia and borderline hypotension — treat as internal haemorrhage: access, titrated fluid, O2, pre-alert gynae/surgical team',
+        typicalVitals: {
+          pulse: [95, 130],
+          respiration: [16, 26],
+          spo2: [94, 100],
+          bpSystolic: [80, 108],
+          gcs: [14, 15],
+        },
+        initialSounds: {
+          leftLung: 'clear',
+          rightLung: 'clear',
+          heartSound: 'tachycardic',
+          additionalSounds: ['Compensatory tachycardia', 'Guarding in the lower abdomen'],
+          description: 'Clear chest with compensatory tachycardia. The bleeding is where you cannot see it — trend the perfusion, not the abdomen.',
+        },
+        essentialTreatments: ['iv_access', 'fluids_250ml'],
+        optimalTreatments: ['iv_access', 'fluids_250ml', 'oxygen_nasal'],
+        beneficialTreatments: ['reassurance', 'oxygen_nasal'],
+        // Aggressive crystalloid raises the pressure on an uncontrolled
+        // internal bleed; NSAIDs impair platelets and the already-threatened
+        // renal perfusion.
+        contraindicatedTreatments: ['fluids_1000ml', 'ibuprofen_oral'],
+        deteriorationRate: 'fast',
+        synergies: [
+          {
+            treatments: ['iv_access', 'fluids_250ml'],
+            synergyMultiplier: 1.3,
+            description: 'Access plus titrated 250ml boluses to a radial pulse — permissive resuscitation for internal haemorrhage en route to surgery',
+          },
+        ],
+        positioningEffects: [
+          {
+            positionId: 'supine_position',
+            spo2Bonus: 0,
+            rrReduction: 0,
+            hrChange: 0,
+            description: 'Flat positioning supports preload; early ectopic gestation has no aortocaval concern',
+          },
+        ],
+        responseCeilings: {
+          partialCeiling: 35,
+          fullCeiling: 65, // definitive haemorrhage control is theatre
+          timeToResponse: 180,
+        },
+      },
+    ],
+  },
+
+  // ===========================================================================
+  // ACCIDENTAL INGESTION (PAEDIATRIC — CAUSTIC/HOUSEHOLD CHEMICAL)
+  // ---------------------------------------------------------------------------
+  // conditionKey: 'accidental-ingestion' → case y1-009 (toddler, hypochlorite
+  // cleaner). Teaching core for caustics: NOTHING that re-exposes the
+  // oesophagus. NO activated charcoal (does not bind caustics, obscures
+  // endoscopy, aspiration risk), NO gastric tube / induced emptying (re-burn +
+  // perforation risk). Keep the child calm with the parent, watch the airway,
+  // nil by mouth, poisons-centre contact, transport.
+  // ===========================================================================
+  {
+    condition: 'accidental-ingestion',
+    conditionName: 'Paediatric Accidental Ingestion (Caustic)',
+    severityLevels: [
+      {
+        severity: 'moderate',
+        description: 'Witnessed/suspected caustic ingestion, alert child with oropharyngeal irritation and age-appropriate vitals — calm handling on the parent\'s lap, airway observation, nil by mouth, transport with the product container',
+        typicalVitals: {
+          pulse: [110, 150],
+          respiration: [24, 36],
+          spo2: [94, 100],
+          bpSystolic: [80, 105],
+          gcs: [14, 15],
+        },
+        initialSounds: {
+          leftLung: 'clear',
+          rightLung: 'clear',
+          heartSound: 'tachycardic',
+          additionalSounds: ['Distressed crying', 'No stridor at present — reassess frequently'],
+          description: 'Clear lungs between cries; tachycardia of distress. The airway is the watch-point: listen for evolving stridor or drooling.',
+        },
+        essentialTreatments: ['reassurance'],
+        optimalTreatments: ['reassurance', 'iv_access'],
+        beneficialTreatments: ['calm_environment', 'suction'], // suction staged for secretions/vomitus, not prophylactic
+        // The two classic caustic-ingestion errors, both with real consequences:
+        // charcoal (useless for caustics + aspiration hazard) and any gastric
+        // tube / emptying attempt (re-exposes the burned oesophagus).
+        contraindicatedTreatments: ['activated_charcoal', 'orogastric_tube'],
+        deteriorationRate: 'slow',
+        synergies: [
+          {
+            treatments: ['reassurance', 'iv_access'],
+            synergyMultiplier: 1.2,
+            description: 'A calm child on a parent\'s lap tolerates observation and access — crying and struggling worsen oropharyngeal burns and airway swelling',
+          },
+        ],
+        positioningEffects: [],
+        responseCeilings: {
+          partialCeiling: 70,
+          fullCeiling: 90, // definitive assessment is ENT/endoscopy
+          timeToResponse: 300,
+        },
+      },
+    ],
+  },
+
+  // ===========================================================================
+  // CHEST TRAUMA (BLUNT/PENETRATING — TIERED BY PHYSIOLOGY)
+  // ---------------------------------------------------------------------------
+  // conditionKey: 'chest-trauma' → cases resp-006 + trauma-005 (tension
+  // physiology → life-threatening tier), trauma-003 (open pneumothorax) and
+  // trauma-006 (massive haemothorax) (→ severe tier).
+  //
+  // ROUTING NOTE: severity tiers are selected on VITALS, not wound type. The
+  // life-threatening tier is tuned to profound hypoxia (SpO2 ≤89) with marked
+  // tachycardia = tension physiology → decompress FIRST. The severe tier is
+  // the sealed-and-support pathway shared by open pneumothorax and
+  // haemothorax (SpO2 90-95). Dedicated 'pneumothorax-tension' /
+  // 'pneumothorax-open' protocols above remain the deep teaching versions for
+  // cases tagged with those subcategories.
+  //
+  // NOTE FOR CLINICAL REVIEW: high-flow O2 and titrated fluid are listed as
+  // beneficial (not essential/optimal) in the life-threatening tier so the
+  // executable "correct pathway" stays decompression-first; O2 is obviously
+  // still standard adjunct care and is rewarded when given.
+  // ===========================================================================
+  {
+    condition: 'chest-trauma',
+    conditionName: 'Chest Trauma',
+    severityLevels: [
+      {
+        severity: 'severe',
+        description: 'Penetrating/open chest injury with moderate hypoxia and compensated shock (open pneumothorax or haemothorax) — vented seal over any open wound, IV access, titrated 250ml boluses, rapid transport',
+        typicalVitals: {
+          pulse: [100, 135],
+          respiration: [20, 30],
+          spo2: [90, 95],
+          bpSystolic: [80, 115],
+        },
+        initialSounds: {
+          leftLung: 'clear',
+          rightLung: 'diminished',
+          heartSound: 'tachycardic',
+          additionalSounds: ['Diminished sounds over the injured side', 'Possible sucking wound or dullness to percussion'],
+          description: 'DIMINISHED breath sounds on the injured side — sucking wound (open PTX) or basal dullness (haemothorax). Seal what is open, support what is bleeding.',
+        },
+        essentialTreatments: ['chest_seal_vented', 'iv_access'],
+        optimalTreatments: ['chest_seal_vented', 'iv_access', 'fluids_250ml'],
+        beneficialTreatments: ['oxygen_nonrebreather', 'txa_1g', 'occlusive_dressing_3sided', 'reassurance'],
+        // Aggressive crystalloid dilutes clotting factors and re-bleeds the
+        // chest — permissive hypotension until surgical control.
+        contraindicatedTreatments: ['fluids_1000ml'],
+        deteriorationRate: 'fast',
+        synergies: [
+          {
+            treatments: ['chest_seal_vented', 'oxygen_nonrebreather'],
+            synergyMultiplier: 1.8,
+            description: 'Restoring chest-wall integrity first lets supplemental O2 actually reach ventilated alveoli',
+          },
+          {
+            treatments: ['iv_access', 'fluids_250ml'],
+            synergyMultiplier: 1.3,
+            description: 'Access with titrated small boluses — supports perfusion without popping early clot',
+          },
+        ],
+        positioningEffects: [
+          {
+            positionId: 'fowlers_position',
+            spo2Bonus: 2,
+            rrReduction: 2,
+            hrChange: -5,
+            description: 'Semi-upright aids ventilation of the uninjured lung when the spine is cleared',
+          },
+        ],
+        responseCeilings: {
+          partialCeiling: 25,
+          fullCeiling: 75, // haemothorax drainage / thoracotomy is in-hospital
+          timeToResponse: 120,
+        },
+      },
+      {
+        severity: 'life-threatening',
+        description: 'Tension physiology — profound hypoxia, marked tachycardia, hypotension, absent sounds one side ± flail segment. NEEDLE DECOMPRESSION IS THE TREATMENT; everything else waits the 30 seconds it takes',
+        typicalVitals: {
+          pulse: [115, 160],
+          respiration: [26, 40],
+          spo2: [80, 89],
+          bpSystolic: [70, 112],
+        },
+        initialSounds: {
+          leftLung: 'clear',
+          rightLung: 'absent',
+          heartSound: 'tachycardic',
+          additionalSounds: ['Absent breath sounds on the affected side', 'Tracheal deviation (late)', 'Distended neck veins', 'Possible paradoxical flail movement'],
+          description: 'ABSENT breath sounds on the affected side with obstructive-shock physiology. Decompress NOW — reassessment comes after the needle.',
+        },
+        essentialTreatments: ['needle_decompression'],
+        optimalTreatments: ['needle_decompression', 'iv_access'],
+        beneficialTreatments: ['oxygen_nonrebreather', 'fluids_250ml', 'chest_seal_vented'],
+        // Positive pressure BEFORE decompression pumps the pleural space up
+        // faster (same rationale as the pneumothorax-tension protocol above).
+        contraindicatedTreatments: ['bvm_ventilation', 'cpap_niv', 'fluids_1000ml'],
+        deteriorationRate: 'rapid',
+        synergies: [
+          {
+            treatments: ['needle_decompression', 'oxygen_nonrebreather'],
+            synergyMultiplier: 2.2,
+            description: 'Decompression re-expands the lung; high-flow O2 then reaches functioning alveoli. Order is critical — decompress FIRST',
+          },
+        ],
+        positioningEffects: [
+          {
+            positionId: 'fowlers_position',
+            spo2Bonus: 2,
+            rrReduction: 2,
+            hrChange: -5,
+            description: 'Semi-upright may marginally improve ventilation pre-decompression',
+          },
+        ],
+        responseCeilings: {
+          partialCeiling: 15, // nothing meaningfully works before decompression
+          fullCeiling: 85,
+          timeToResponse: 60,
+        },
+      },
+    ],
+  },
+
+  // ===========================================================================
+  // HEAD INJURY (SEVERE TBI — TIERED BY HERNIATION PHYSIOLOGY)
+  // ---------------------------------------------------------------------------
+  // conditionKey: 'head-injury' → cases trauma-002 (skull fracture, Cushing's
+  // triad, GCS 5) → life-threatening tier; trauma-009 (epidural haematoma,
+  // GCS 6, still ventilating adequately) → severe tier.
+  //
+  // Teaching core: secondary brain injury is OURS to prevent — no hypoxia
+  // (SpO2 ≥94%), no hypotension, c-spine protection, 30° head-up. Sedatives,
+  // opioids, nitrates and large crystalloid volumes all worsen outcome and
+  // are modelled as contraindicated. (clinicalRealism already aliases
+  // 'head-injury' → 'traumatic-brain-injury' for pathology modifiers.)
+  // ===========================================================================
+  {
+    condition: 'head-injury',
+    conditionName: 'Severe Traumatic Brain Injury',
+    severityLevels: [
+      {
+        severity: 'severe',
+        description: 'TBI with GCS ≤8-9 but adequate spontaneous ventilation (e.g. epidural haematoma pre-herniation) — airway positioning + suction, c-spine, oxygenate to ≥94%, IV access, serial GCS/pupils, time-critical transfer',
+        typicalVitals: {
+          pulse: [50, 80],
+          respiration: [14, 24],
+          spo2: [85, 94],
+          bpSystolic: [140, 185],
+          gcs: [3, 9],
+        },
+        initialSounds: {
+          leftLung: 'clear',
+          rightLung: 'clear',
+          heartSound: 'bradycardic',
+          additionalSounds: ['Relative bradycardia with rising BP — early Cushing pattern', 'Snoring risk as GCS falls'],
+          description: 'Chest clear but listen to the trend: slowing pulse with climbing pressure is the brain talking. Guard the airway before it is lost.',
+        },
+        essentialTreatments: ['airway_open', 'suction', 'cervical_collar', 'iv_access'],
+        optimalTreatments: ['airway_open', 'suction', 'cervical_collar', 'iv_access', 'vacuum_mattress'],
+        beneficialTreatments: ['oxygen_nonrebreather', 'bvm_ventilation', 'head_blocks', 'hypertonic_saline'],
+        // Opioids/benzodiazepines obscure the GCS trend and depress ventilation;
+        // nitrates crash cerebral perfusion pressure; large crystalloid volumes
+        // drive cerebral oedema.
+        contraindicatedTreatments: ['morphine_5mg', 'midazolam_5mg', 'gtn_spray', 'fluids_1000ml'],
+        deteriorationRate: 'fast',
+        synergies: [
+          {
+            treatments: ['airway_open', 'suction'],
+            synergyMultiplier: 1.4,
+            description: 'Positioned airway plus cleared secretions prevents the hypoxic second hit while GCS is falling',
+          },
+          {
+            treatments: ['cervical_collar', 'vacuum_mattress'],
+            synergyMultiplier: 1.3,
+            description: 'Whole-spine protection for the head-injured patient — the mechanisms travel together',
+          },
+        ],
+        positioningEffects: [],
+        responseCeilings: {
+          partialCeiling: 30,
+          fullCeiling: 60, // definitive care is neurosurgical evacuation
+          timeToResponse: 300,
+        },
+      },
+      {
+        severity: 'life-threatening',
+        description: 'Herniation physiology — Cushing\'s triad (hypertension, bradycardia, irregular/slow respirations), GCS ≤6, unequal pupils. Full airway control with assisted ventilation, c-spine, avoid ANY hypotension or hypoxia',
+        typicalVitals: {
+          pulse: [35, 55],
+          respiration: [4, 12],
+          spo2: [85, 94],
+          bpSystolic: [175, 230],
+          gcs: [3, 6],
+        },
+        initialSounds: {
+          leftLung: 'snoring',
+          rightLung: 'snoring',
+          heartSound: 'bradycardic',
+          additionalSounds: ['Sonorous obstructed breathing', 'Irregular slow respiratory pattern', 'Profound bradycardia with severe hypertension'],
+          description: 'Snoring, failing respirations over a slow forceful heartbeat — Cushing\'s triad at the stethoscope. Ventilate and move.',
+        },
+        essentialTreatments: ['airway_open', 'suction', 'bvm_ventilation', 'cervical_collar'],
+        optimalTreatments: ['airway_open', 'suction', 'bvm_ventilation', 'cervical_collar', 'iv_access', 'oxygen_nonrebreather'],
+        beneficialTreatments: ['head_blocks', 'hypertonic_saline', 'opa_insert'],
+        contraindicatedTreatments: ['morphine_5mg', 'midazolam_5mg', 'gtn_spray', 'fluids_1000ml'],
+        deteriorationRate: 'rapid',
+        synergies: [
+          {
+            treatments: ['airway_open', 'suction', 'bvm_ventilation'],
+            synergyMultiplier: 1.5,
+            description: 'Open, clear, then ventilate — controlled normocapnic ventilation is the only prehospital ICP tool that is always available',
+          },
+        ],
+        positioningEffects: [],
+        responseCeilings: {
+          partialCeiling: 20,
+          fullCeiling: 50, // survival hinges on time to craniotomy
+          timeToResponse: 180,
+        },
+      },
+    ],
+  },
+
+  // ===========================================================================
+  // SPINAL INJURY (CERVICAL CORD INJURY ± NEUROGENIC SHOCK)
+  // ---------------------------------------------------------------------------
+  // conditionKey: 'spinal-injury' → case trauma-010 (C5 injury, diving).
+  // Teaching core: IMMOBILISATION FIRST (collar + blocks before anything
+  // moves), then treat the neurogenic shock triad (hypotension WITH
+  // bradycardia and warm peripheries): titrated fluid, atropine for
+  // symptomatic bradycardia, keep the patient FLAT. Sitting a cervical
+  // injury up is modelled as contraindicated — it drops cerebral perfusion
+  // in a vasoplegic patient and risks mechanical cord damage.
+  // ===========================================================================
+  {
+    condition: 'spinal-injury',
+    conditionName: 'Cervical Spinal Cord Injury (Neurogenic Shock)',
+    severityLevels: [
+      {
+        severity: 'severe',
+        description: 'High cervical cord injury — hypotension with paradoxical bradycardia (neurogenic shock), diaphragmatic breathing pattern. Manual in-line stabilisation → collar + blocks → flat extrication, titrated fluid, watch the ventilation',
+        typicalVitals: {
+          pulse: [40, 70],
+          respiration: [18, 30],
+          spo2: [90, 97],
+          bpSystolic: [80, 110],
+          gcs: [13, 15],
+        },
+        initialSounds: {
+          leftLung: 'clear',
+          rightLung: 'clear',
+          heartSound: 'bradycardic',
+          additionalSounds: ['Diaphragmatic (see-saw) breathing pattern', 'Bradycardia despite hypotension'],
+          description: 'Clear but SHALLOW chest — intercostals are offline, the diaphragm is doing all the work. Slow heart despite low pressure = neurogenic, not hypovolaemic.',
+        },
+        essentialTreatments: ['cervical_collar', 'head_blocks', 'iv_access', 'fluids_250ml'],
+        optimalTreatments: ['cervical_collar', 'head_blocks', 'iv_access', 'fluids_250ml', 'oxygen_nasal', 'vacuum_mattress'],
+        beneficialTreatments: ['atropine_05mg', 'scoop_stretcher', 'warming_blanket'], // cord injury loses thermoregulation
+        // Opioids deepen the vasoplegic hypotension; volume alone cannot fix
+        // vasoplegia (large crystalloid → pulmonary oedema); sitting the
+        // patient up drops cerebral perfusion and endangers the unstable spine.
+        contraindicatedTreatments: ['morphine_5mg', 'fluids_1000ml', 'fowlers_position'],
+        deteriorationRate: 'moderate',
+        synergies: [
+          {
+            treatments: ['cervical_collar', 'head_blocks'],
+            synergyMultiplier: 1.4,
+            description: 'Collar plus blocks-and-straps is the complete cervical package — a collar alone still allows rotation',
+          },
+          {
+            treatments: ['iv_access', 'fluids_250ml'],
+            synergyMultiplier: 1.2,
+            description: 'Titrated volume supports the vasoplegic circulation while avoiding the pulmonary oedema of over-filling a denervated vascular bed',
+          },
+        ],
+        positioningEffects: [
+          {
+            positionId: 'supine_position',
+            spo2Bonus: 0,
+            rrReduction: 0,
+            hrChange: 0,
+            description: 'Flat, neutral alignment — protects the cord and supports cerebral perfusion in the vasoplegic patient',
+          },
+        ],
+        responseCeilings: {
+          partialCeiling: 35,
+          fullCeiling: 70,
+          timeToResponse: 300,
+        },
+      },
+    ],
+  },
+
+  // ===========================================================================
+  // LONG BONE FRACTURE (CLOSED LIMB FRACTURE)
+  // ---------------------------------------------------------------------------
+  // conditionKey: 'long-bone-fracture' → case y1-010 (adolescent distal
+  // radius, FOOSH). Deliberately SHORT: analgesia + anatomical splint +
+  // neurovascular checks + transport. The modelled errors: a traction splint
+  // (femoral-shaft device) on a wrist, and a tourniquet on a closed fracture.
+  // ===========================================================================
+  {
+    condition: 'long-bone-fracture',
+    conditionName: 'Closed Long Bone Fracture',
+    severityLevels: [
+      {
+        severity: 'mild',
+        description: 'Closed, neurovascularly intact limb fracture (e.g. Colles-type wrist) — analgesia BEFORE handling, SAM/box splint in position found, check pulses-motor-sensation before and after, elevate, transport',
+        typicalVitals: {
+          pulse: [80, 110],
+          respiration: [14, 24],
+          spo2: [97, 100],
+          bpSystolic: [100, 140],
+          gcs: [14, 15],
+        },
+        initialSounds: {
+          leftLung: 'clear',
+          rightLung: 'clear',
+          heartSound: 'normal',
+          additionalSounds: ['Mild pain-driven tachycardia'],
+          description: 'Clear chest, normal heart sounds — the physiology here is pain. Treat it, splint it, recheck the distal pulse.',
+        },
+        essentialTreatments: ['sam_splint', 'paracetamol_oral'],
+        optimalTreatments: ['sam_splint', 'paracetamol_oral'],
+        beneficialTreatments: ['reassurance', 'ibuprofen_oral', 'fentanyl_50mcg'], // escalate analgesia to severity
+        // Traction devices are for mid-shaft femur only; a tourniquet on a
+        // closed fracture adds ischaemia to injury.
+        contraindicatedTreatments: ['traction_splint', 'tourniquet'],
+        deteriorationRate: 'slow',
+        synergies: [
+          {
+            treatments: ['sam_splint', 'paracetamol_oral'],
+            synergyMultiplier: 1.3,
+            description: 'Analgesia plus anatomical splinting — immobilisation is itself the most effective pain treatment for a fracture',
+          },
+        ],
+        positioningEffects: [],
+        responseCeilings: {
+          partialCeiling: 70,
+          fullCeiling: 95,
+          timeToResponse: 300,
+        },
+      },
+    ],
+  },
+
+  // ===========================================================================
+  // WHIPLASH (MINOR RTC — CERVICAL STRAIN, LOW-RISK)
+  // ---------------------------------------------------------------------------
+  // conditionKey: 'whiplash' → case y1-011. Deliberately SHORT, low-acuity:
+  // a validated c-spine rule (NEXUS / Canadian C-Spine) drives the decision,
+  // then simple analgesia, advice on early mobilisation, and transport for
+  // assessment. Opioids for a simple muscular strain are the modelled error.
+  // ===========================================================================
+  {
+    condition: 'whiplash',
+    conditionName: 'Whiplash / Cervical Strain (Low-Risk)',
+    severityLevels: [
+      {
+        severity: 'mild',
+        description: 'Low-speed RTC, ambulant at scene, midline-tenderness-free on a validated rule, full pain-free-at-rest range — simple analgesia, reassurance, early-mobilisation advice, assessment referral',
+        typicalVitals: {
+          pulse: [70, 100],
+          respiration: [14, 22],
+          spo2: [97, 100],
+          bpSystolic: [110, 150],
+          gcs: [15, 15],
+        },
+        initialSounds: {
+          leftLung: 'clear',
+          rightLung: 'clear',
+          heartSound: 'normal',
+          additionalSounds: ['No added sounds'],
+          description: 'Clear chest, normal heart sounds — the assessment lives in the structured c-spine rule, not the stethoscope.',
+        },
+        essentialTreatments: ['paracetamol_oral'],
+        optimalTreatments: ['paracetamol_oral', 'reassurance', 'ibuprofen_oral'],
+        beneficialTreatments: ['reassurance', 'calm_environment'],
+        // Opioids for an uncomplicated muscular strain — wrong tool, real harms.
+        contraindicatedTreatments: ['morphine_5mg'],
+        deteriorationRate: 'slow',
+        synergies: [
+          {
+            treatments: ['paracetamol_oral', 'ibuprofen_oral'],
+            synergyMultiplier: 1.3,
+            description: 'Paracetamol + NSAID multimodal simple analgesia — the evidence-based combination for musculoskeletal neck strain',
+          },
+        ],
+        positioningEffects: [],
+        responseCeilings: {
+          partialCeiling: 80,
+          fullCeiling: 100,
+          timeToResponse: 600,
+        },
+      },
+    ],
+  },
 ];
 
 // ============================================================================
@@ -5339,6 +6516,19 @@ const PROTOCOL_SUBCATEGORY_ALIAS: Record<string, string> = {
   'panic-attack': 'panic',
   'hyperventilation-syndrome': 'panic',
   'febrile-seizure': 'seizure',
+  // SAH / intracranial catastrophe (litfl-012) — same prehospital priorities as
+  // severe stroke: airway, oxygenation, no BP-dropping drugs, time-critical
+  // transfer. Mirrors clinicalRealism's SUBCATEGORY_ALIAS for pathology modifiers.
+  'cerebrovascular-emergency': 'stroke',
+  // Substring matching would resolve this anyway ('first-episode-syncope'
+  // contains 'syncope'); alias kept explicit for documented intent.
+  'first-episode-syncope': 'syncope',
+  // ROUTING NOTE: the only 'rule-out' case today (ruleout-001) is chest pain —
+  // rule-out ACS. Undifferentiated chest pain is managed on the stable-angina
+  // pathway (aspirin, GTN if normotensive, monitoring, transport) until ACS is
+  // excluded in hospital. If a non-chest-pain rule-out case is ever authored,
+  // split this alias.
+  'rule-out': 'stable-angina',
 };
 
 export function findProtocol(subcategory: string, category?: string): TreatmentProtocol | null {

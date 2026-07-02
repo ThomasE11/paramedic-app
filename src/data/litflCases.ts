@@ -723,6 +723,12 @@ export const litflCaseDatabase: CaseScenario[] = [
     title: 'Severe Hypothermia with Osborn Waves',
     category: 'environmental',
     subcategory: 'hypothermia',
+    // ROUTING NOTE: explicit rhythm override — the circulation findings contain
+    // the safety phrase "DO NOT defibrillate below 30°C — VF is refractory…",
+    // and the keyword rhythm detector was picking the stray "VF" out of it,
+    // forcing this NON-arrest case (pulse 35, GCS 8) into arrest vitals. The
+    // authored rhythm is severe sinus bradycardia with Osborn waves.
+    initialRhythm: 'Sinus Bradycardia',
     priority: 'critical',
     complexity: 'intermediate',
     yearLevels: ['2nd-year', '3rd-year', '4th-year'],

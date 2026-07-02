@@ -648,6 +648,15 @@ export function evaluateTreatmentRealism({
         visibleCue: makeTreatmentCue('aspirin-started', 'Cardiac pathway', 'Continue ECG, pain, BP, and transport decisions.', 'chest', 'observe'),
       });
     }
+    // TIA with resolved symptoms: aspirin 300mg is first-line (NICE NG128) —
+    // distinct from acute stroke, where antiplatelets wait for imaging. The
+    // completed-stroke pathway is protected by the stroke protocol listing
+    // aspirin as contraindicated; this branch only vouches for plausibility.
+    if (/\btia\b|transient isch/.test(text)) {
+      return result('matched', 'Aspirin given', 'Correct for a resolved TIA: 300mg aspirin unless contraindicated, then urgent stroke-clinic referral. Reconfirm symptom resolution and bleeding risk.', 'Aspirin matched to the resolved-TIA pathway.', {
+        visibleCue: makeTreatmentCue('aspirin-tia-started', 'TIA pathway', 'Serial neuro obs — if deficits return, this becomes a stroke and the drug decision changes.', 'chest', 'observe'),
+      });
+    }
     return result('mismatch', 'Question aspirin indication', 'Aspirin is not a generic collapse treatment. Reassess cardiac features and bleeding risk.', 'Aspirin used without clear cardiac features.', {
       visibleCue: makeTreatmentCue('aspirin-question', 'Medication questioned', 'Indication and bleeding risk need reassessment.', 'chest', 'warning'),
     });
