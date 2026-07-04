@@ -575,6 +575,17 @@ export function StudentPanel({
   const currentVitalsRef = useRef<VitalSigns | null>(null);
   const [previousVitals, setPreviousVitals] = useState<VitalSigns | null>(null);
   const [vitalsHistory, setVitalsHistory] = useState<VitalSigns[]>([]);
+  // Recording throttle: the monitor emits vitals at tween speed (~12/s) and
+  // every emitted object carries the case template's STALE `time` — a session
+  // once recorded 7.7k same-timestamp entries. History needs ~1Hz with a real
+  // clock: throttle at the recording site and stamp fresh ISO time on append.
+  const lastVitalsRecordAtRef = useRef(0);
+  const recordVitalsSample = useCallback((v: VitalSigns, force = false) => {
+    const now = Date.now();
+    if (!force && now - lastVitalsRecordAtRef.current < 1000) return;
+    lastVitalsRecordAtRef.current = now;
+    setVitalsHistory(prev => [...prev, { ...v, time: new Date(now).toISOString() }]);
+  }, []);
   const [appliedTreatments, setAppliedTreatments] = useState<AppliedTreatment[]>([]);
   const [appliedTreatmentIds, setAppliedTreatmentIds] = useState<string[]>([]);
   const [applyingTreatmentId, setApplyingTreatmentId] = useState<string | null>(null);
@@ -2190,7 +2201,8 @@ export function StudentPanel({
     } else {
       setCurrentVitals(targetVitals);
     }
-    setVitalsHistory(prev => [...prev, targetVitals]);
+    // Treatment moments always land in history (bypass the 1Hz throttle).
+    recordVitalsSample(targetVitals, true);
 
     setTimeout(() => setApplyingTreatmentId(null), 1500);
 
@@ -2275,7 +2287,7 @@ export function StudentPanel({
     // readOnly must be in deps — when control is handed to this student
     // the callback needs to be rebuilt so applyTreatment can actually run
     // instead of hitting the stale "you are watching" toast branch.
-	  }, [currentVitals, currentCase, patientState, startGradualChange, arrestActive, adrenalineDoses, shockCount, readOnly, triggerAdverseReaction, resolveAdverseReaction, speakNarration, appliedTreatmentIds]);
+	  }, [currentVitals, currentCase, patientState, startGradualChange, arrestActive, adrenalineDoses, shockCount, readOnly, triggerAdverseReaction, resolveAdverseReaction, speakNarration, appliedTreatmentIds, recordVitalsSample]);
 
   // Handle defibrillation dialog confirmation
   const handleDefibConfirm = useCallback((params: DefibrillationParams) => {
@@ -4392,7 +4404,7 @@ export function StudentPanel({
                     onVitalChange={(vitals) => {
                       const completeVitals = ensureCompleteVitals(vitals);
                       setCurrentVitals(completeVitals);
-                      setVitalsHistory(prev => [...prev, completeVitals]);
+                      recordVitalsSample(completeVitals);
                     }}
                     onAssessmentPerformed={(stepId) => handlePerformAssessment(stepId as AssessmentStepId)}
                     onPacerStateChange={(state) => {
