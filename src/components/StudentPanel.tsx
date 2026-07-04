@@ -80,6 +80,7 @@ import {
   type AdverseReaction,
 } from '@/data/adverseReactions';
 import { computeSmartGrade } from '@/data/smartGrader';
+import { computeAbcdeScore, deriveAbcdeCaseFlags, applyAbcdeToAssessmentScore } from '@/lib/abcdeScoring';
 import { useAuth } from '@/lib/auth';
 import { saveStudentResult } from '@/lib/studentResults';
 import { useGradualVitalChanges } from '@/hooks/useGradualVitalChanges';
@@ -2607,7 +2608,23 @@ export function StudentPanel({
 
     // Use assessment tracker score if available (primary scoring system), fall back to checklist
     const debrief = assessmentTracker ? generateAssessmentDebrief(assessmentTracker) : null;
-    const assessmentScore = debrief ? debrief.score : completed.reduce((sum, item) => sum + (item.points || 0), 0);
+    // Weighted ABCDE spine (Body Interact pattern): the survey share of the
+    // assessment points is scaled by WHAT was assessed, WHEN, and in what
+    // ORDER — not just completeness. History-taking points keep raw value.
+    const abcdeScore = assessmentTracker
+      ? computeAbcdeScore({
+          performed: assessmentTracker.performed,
+          required: assessmentTracker.required,
+          recommended: assessmentTracker.recommended,
+          studentYear: session.studentYear,
+          caseFlags: deriveAbcdeCaseFlags(currentCase),
+        })
+      : null;
+    const assessmentScore = debrief
+      ? (assessmentTracker && abcdeScore
+          ? applyAbcdeToAssessmentScore(assessmentTracker, abcdeScore.overall)
+          : debrief.score)
+      : completed.reduce((sum, item) => sum + (item.points || 0), 0);
     const assessmentTotal = debrief ? debrief.totalPossible : checklist.reduce((sum, item) => sum + (item.points || 0), 0);
 
     const initialVitalsForRealism = buildInitialVitalsFromCase(currentCase);
@@ -2920,6 +2937,8 @@ export function StudentPanel({
       },
       // Assessment debrief (reuse already-computed debrief)
       assessmentDebrief: debrief,
+      // Weighted ABCDE spine breakdown (completeness / sequence / timeliness)
+      abcdeScore,
     };
   }, [currentCase, session, selectedYear, appliedTreatments, vitalsHistory, elapsedSeconds, caseStartTime, assessmentTracker, cprRunning, arrestTimeline, patientState, appliedTreatmentIds]);
 
