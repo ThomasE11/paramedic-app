@@ -87,14 +87,14 @@ interface BodyMeshProps {
 }
 
 /**
- * Resolve which GLB to load. Three meshes ship in `public/models/`:
- *   • patient-female.glb — Ready Player Me brunette-t, A-pose
- *     (~2.7 MB, CC BY-NC 4.0)
- *   • patient-male.glb   — reserved for a validated male patient shell. The
- *     current MPFB/TalkingHead source is not active because it reads visually
- *     female in this examination context.
- *   • patient.glb        — legacy Beta_Surface, T-pose, kept as the
- *     last-resort fallback (~2.8 MB)
+ * Resolve which GLB to load. The meshes in `public/models/`:
+ *   • patient-female.glb — MPFB2/MakeHuman-generated female (CC0), A-pose,
+ *     female shape baked into the basis, real eye meshes + AO-baked skin
+ *     (scripts/blender-mpfb-female-bake.py + blender-stage2-eyes-ao.py,
+ *     ~6.1 MB). Replaced the old Ready Player Me mesh (CC BY-NC — kept
+ *     untracked as patient-female-rpm.bak.glb).
+ *   • patient.glb        — MPFB2/MakeHuman-generated male (CC0), A-pose,
+ *     real eye meshes + AO-baked skin (~7.9 MB)
  *
  * Why dropping the new meshes in works without retuning the Y-range
  * hit-test table: the primary hit-test path in `getRegionAtPoint`
