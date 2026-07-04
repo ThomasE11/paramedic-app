@@ -112,6 +112,14 @@ interface BodyMeshProps {
  * is a separate component — see `public/models/REALISTIC_ANATOMY.md`.
  */
 function resolveModelPath(gender?: 'male' | 'female'): string {
+  // Capture/testing hook: `?model=male|female` forces a specific mesh so
+  // before/after screenshots (scripts/capture-model.mjs) compare the same GLB
+  // regardless of the randomly generated case's gender.
+  if (typeof window !== 'undefined') {
+    const forced = new URLSearchParams(window.location.search).get('model');
+    if (forced === 'male') return '/models/patient.glb';
+    if (forced === 'female') return '/models/patient-female.glb';
+  }
   // The available male candidate is not acceptable for this simulator yet, so
   // keep male cases on the known-good legacy body until a validated MakeHuman
   // or Z-Anatomy-derived shell is exported.
@@ -192,6 +200,16 @@ const REGION_RANGES: ExtendedRegionRange[] = [
 
 // Amber color for required-but-unassessed regions
 const REQUIRED_UNASSESSED_COLOR = '#f59e0b';
+
+// Stage-2 real-eye node names (authored by scripts/blender-stage2-eyes-ao.py).
+// eyeR = the PATIENT'S right eye (app x < 0, screen-left facing the camera);
+// each eye parents its iris + pupil discs so saccade rotations carry them.
+const EYE_NODE_NAMES = ['eyeL', 'eyeR', 'irisL', 'irisR', 'pupilL', 'pupilR'] as const;
+
+/** Case pupil mm -> pupil disc scale. Discs are authored at 5mm diameter. */
+function pupilScale(mm: number): number {
+  return Math.min(1.8, Math.max(0.4, mm / 5));
+}
 
 // Track which specific limb was clicked for exam panel filtering
 export type LimbSide = 'right-arm' | 'left-arm' | 'right-leg' | 'left-leg' | null;
@@ -526,6 +544,11 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
             ? mesh.material.map(material => material.clone())
             : mesh.material.clone();
         }
+        // Stage-2 real eyes: keep their authored PBR values (sclera roughness
+        // .35 etc.) and flag the MATERIALS skipRecolor so the live perfusion
+        // tint never blues the sclera. The mesh-level flag stays unset so the
+        // skeleton-view opacity fade still applies to them with the skin.
+        const isEyeMesh = (EYE_NODE_NAMES as readonly string[]).includes(mesh.name);
         const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
         materials.forEach((material) => {
           // Physically sensible dielectric skin response under the HDRI
@@ -535,9 +558,14 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
           // the IBL contribution just below full so the diffuse tone leads.
           const std = material as THREE.MeshStandardMaterial;
           if (std.isMeshStandardMaterial) {
-            std.roughness = 0.5;
-            std.metalness = 0;
-            std.envMapIntensity = 0.65;
+            if (isEyeMesh) {
+              material.userData.skipRecolor = true;
+              std.envMapIntensity = 0.65;
+            } else {
+              std.roughness = 0.5;
+              std.metalness = 0;
+              std.envMapIntensity = 0.65;
+            }
           }
           material.transparent = surfaceOpacity < 1;
           material.opacity = surfaceOpacity;
@@ -593,11 +621,13 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
         const scrubs = buildScrubs(bodyMesh as THREE.Mesh);
         // Child of the body mesh at identity → inherits its exact placement.
         if (scrubs) (bodyMesh as THREE.Mesh).add(scrubs);
-        // Eyes — the skin texture paints the sockets bright red (a placeholder);
-        // repaint those texels into proper eyes (sclera/iris/pupil) in place, so
-        // they land exactly on the sockets via the model's own UVs and the case
-        // pupil size shows. Works on any of the textured patient meshes.
-        paintEyesOnTexture(bodyMesh as THREE.Mesh, pupilLeftMm, pupilRightMm);
+        // Eyes — the skin texture paints the sockets bright red (a placeholder).
+        // Models WITH real eyeball meshes (Stage 2: getObjectByName('eyeL'))
+        // only need the red texels recoloured to sclera behind the 3D eyes;
+        // models without keep the full painted sclera/iris/pupil path, sized
+        // from the case pupils. Works on any of the textured patient meshes.
+        const hasEyeMeshes = !!clone.getObjectByName('eyeL') && !!clone.getObjectByName('eyeR');
+        paintEyesOnTexture(bodyMesh as THREE.Mesh, pupilLeftMm, pupilRightMm, { hasEyeMeshes });
 
         // Invisible, generously-sized hit boxes over each arm. The rendered
         // forearm is only a few pixels wide at the overview zoom, so honest
@@ -717,6 +747,17 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
     const parted = new Set(dressed ? CLOTHING_PARTING[dressedActiveRegion ?? ''] ?? [] : []);
     for (const piece of layer.children) piece.visible = !parted.has(piece.name);
   }, [clonedScene, dressed, dressedActiveRegion]);
+
+  // Stage-2 real eyes: the case pupil diameters drive the 3D pupil discs
+  // directly (authored at 5mm — scale 1). Live, per-render-cheap, and unlike
+  // the baked texture pupils this shows anisocoria/blown pupils changing
+  // mid-case. pupilL = the PATIENT'S left pupil (app x > 0).
+  useEffect(() => {
+    const pl = clonedScene.getObjectByName('pupilL');
+    const pr = clonedScene.getObjectByName('pupilR');
+    if (pl) pl.scale.setScalar(pupilScale(pupilLeftMm));
+    if (pr) pr.scale.setScalar(pupilScale(pupilRightMm));
+  }, [clonedScene, pupilLeftMm, pupilRightMm]);
 
   // Surface opacity (Skin = 1, Skeleton = 0.28) is applied to the body material
   // HERE, not baked into the clone build — so toggling the view layer flips a

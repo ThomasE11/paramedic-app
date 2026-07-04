@@ -18,14 +18,33 @@ const base = process.argv[3] ?? 'http://localhost:5173';
 // --neutral: disable the live perfusion tint before the shot so before/after
 // captures compare LIGHTING/MATERIAL changes, not the random case's severity.
 const neutral = process.argv.includes('--neutral');
+// --face: click the patient's face (through the real region-select flow) so
+// the app's own camera animation zooms to its face close-up preset before the
+// shot — the view used to judge eye/skin realism.
+const face = process.argv.includes('--face');
+// --model=male|female: force which GLB loads (see resolveModelPath hook) so
+// before/after captures compare the same mesh regardless of the random case.
+const modelArg = process.argv.find((a) => a.startsWith('--model='));
+const modelQuery = modelArg ? `&model=${modelArg.split('=')[1]}` : '';
+// --fov=N: narrow the camera fov before the shot (telephoto close-up without
+// fighting OrbitControls' min-distance clamp). Default fov is 38.
+const fovArg = process.argv.find((a) => a.startsWith('--fov='));
+const fovOverride = fovArg ? Number(fovArg.split('=')[1]) : null;
+// --viewport=WxH: override the browser viewport. A width < 640 keeps the app
+// from Y-lifting the face-region camera target above the cockpit, so a
+// telephoto --fov shot stays centred on the face rather than the neck.
+const vpArg = process.argv.find((a) => a.startsWith('--viewport='));
+const vp = vpArg
+  ? { width: Number(vpArg.split('=')[1].split('x')[0]), height: Number(vpArg.split('=')[1].split('x')[1]) }
+  : { width: 1440, height: 960 };
 mkdirSync(dirname(out), { recursive: true });
 
 const browser = await chromium.launch();
-const page = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+const page = await browser.newPage({ viewport: vp });
 page.setDefaultTimeout(30_000);
 
 try {
-  await page.goto(`${base}/?capture`, { waitUntil: 'networkidle' });
+  await page.goto(`${base}/?capture${modelQuery}`, { waitUntil: 'networkidle' });
 
   // Landing → training
   await page.getByRole('button', { name: /Start Training/i }).first().click();
@@ -66,6 +85,55 @@ try {
       });
     });
     await page.waitForTimeout(400);
+  }
+
+  if (face) {
+    // Select the Face region through the real student flow (the EXAMINE
+    // REGION row) so the app's own camera animation zooms to its face
+    // close-up preset — the view used to judge eye/skin realism.
+    await page.getByText(/^Face$/).first().click();
+    await page.waitForTimeout(2000); // camera animation + panel settle
+  }
+
+  if (fovOverride) {
+    // Telephoto: narrow the fov, then pan the projection window (setViewOffset)
+    // so the shot auto-centres on the model's eyes — the eye mesh nodes when
+    // present, else the authored face point. OrbitControls never touches
+    // either, so this cannot fight the app's camera logic.
+    await page.evaluate((fov) => {
+      const state = window.__r3f;
+      if (!state) return;
+      const cam = state.camera;
+      cam.fov = fov;
+      cam.clearViewOffset();
+      cam.updateProjectionMatrix();
+      const V = state.scene.position.constructor;
+      const eyeL = state.scene.getObjectByName('eyeL');
+      const eyeR = state.scene.getObjectByName('eyeR');
+      const mid = new V();
+      if (eyeL && eyeR) {
+        const a = new V(); const b = new V();
+        eyeL.getWorldPosition(a); eyeR.getWorldPosition(b);
+        mid.copy(a).add(b).multiplyScalar(0.5);
+      } else {
+        mid.set(0, 1.64, 0.15);
+      }
+      const ndc = mid.clone().project(cam);
+      const { width, height } = state.size;
+      const panX = (ndc.x / 2) * width;
+      const panY = (-ndc.y / 2) * height;
+      cam.setViewOffset(width, height, panX, panY, width, height);
+      cam.updateProjectionMatrix();
+      // Telephoto shots are for judging mesh/texture realism — hide the DOM
+      // overlays (landmark dots etc.) that drei <Html> pins over the canvas.
+      const canvasEl = state.gl.domElement;
+      if (canvasEl && canvasEl.parentElement) {
+        for (const sib of canvasEl.parentElement.children) {
+          if (sib !== canvasEl) sib.style.visibility = 'hidden';
+        }
+      }
+    }, fovOverride);
+    await page.waitForTimeout(300);
   }
 
   await canvas.screenshot({ path: out });

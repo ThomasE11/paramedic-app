@@ -21,6 +21,13 @@
  * stash both on `body.userData.eyesOpenTex` / `body.userData.eyesClosedTex`.
  * The LifeSigns loop swaps `material.map` between them — a uniform update,
  * no per-frame canvas repaints or texture uploads.
+ *
+ * Real-eye models (Stage 2): GLBs that ship actual eyeball meshes (nodes
+ * eyeL/eyeR with iris/pupil disc children — see scripts/blender-stage2-eyes-
+ * ao.py) pass `hasEyeMeshes: true`. We then still recolour the red socket
+ * texels to sclera — that cleans the red rim that would otherwise peek out
+ * around the eyeballs — but SKIP painting the flat iris/pupil discs (the 3D
+ * meshes render those), while keeping the closed-lid twin for blinking.
  */
 
 import * as THREE from 'three';
@@ -33,7 +40,9 @@ export function paintEyesOnTexture(
   body: THREE.Mesh,
   pupilLeftMm: number,
   pupilRightMm: number,
+  options?: { hasEyeMeshes?: boolean },
 ): boolean {
+  const hasEyeMeshes = options?.hasEyeMeshes === true;
   const mat = (Array.isArray(body.material) ? body.material[0] : body.material) as
     | THREE.MeshStandardMaterial
     | undefined;
@@ -106,20 +115,24 @@ export function paintEyesOnTexture(
     blobs.sort((a, b) => b.n - a.n);
     const eyes = blobs.slice(0, 2);
     eyes.sort((a, b) => a.cx - b.cx); // left atlas-x → index 0
-    eyes.forEach((e, idx) => {
-      // Use the smaller half-extent so a tall/wide socket still gives a round
-      // iris that fills it (covering the red), leaving just a thin sclera rim.
-      const rEye = Math.min(e.w, e.h) / 2;
-      const irisR = Math.max(2, rEye * 1.05);
-      const pupilMm = idx === 0 ? pupilLeftMm : pupilRightMm;
-      const pupilR = Math.max(irisR * 0.32, Math.min(irisR * 0.9, irisR * (pupilMm / 5)));
-      ctx.fillStyle = IRIS;
-      ctx.beginPath(); ctx.arc(e.cx, e.cy, irisR, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = PUPIL;
-      ctx.beginPath(); ctx.arc(e.cx, e.cy, pupilR, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = 'rgba(255,255,255,0.75)';
-      ctx.beginPath(); ctx.arc(e.cx - irisR * 0.28, e.cy - irisR * 0.28, Math.max(1, irisR * 0.14), 0, Math.PI * 2); ctx.fill();
-    });
+    // With real eyeball meshes in the scene the sclera recolour above is all
+    // the texture needs — the 3D iris/pupil discs replace the painted ones.
+    if (!hasEyeMeshes) {
+      eyes.forEach((e, idx) => {
+        // Use the smaller half-extent so a tall/wide socket still gives a round
+        // iris that fills it (covering the red), leaving just a thin sclera rim.
+        const rEye = Math.min(e.w, e.h) / 2;
+        const irisR = Math.max(2, rEye * 1.05);
+        const pupilMm = idx === 0 ? pupilLeftMm : pupilRightMm;
+        const pupilR = Math.max(irisR * 0.32, Math.min(irisR * 0.9, irisR * (pupilMm / 5)));
+        ctx.fillStyle = IRIS;
+        ctx.beginPath(); ctx.arc(e.cx, e.cy, irisR, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = PUPIL;
+        ctx.beginPath(); ctx.arc(e.cx, e.cy, pupilR, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.75)';
+        ctx.beginPath(); ctx.arc(e.cx - irisR * 0.28, e.cy - irisR * 0.28, Math.max(1, irisR * 0.14), 0, Math.PI * 2); ctx.fill();
+      });
+    }
 
     const adoptSettings = (t: THREE.CanvasTexture) => {
       t.flipY = tex.flipY;
