@@ -38,9 +38,35 @@ import {
   type PatientRealismProfile,
   type RealismSeverity,
 } from '@/lib/patientRealism';
+import {
+  deriveUnwellness,
+  collectUnwellnessText,
+  type UnwellnessState,
+} from '@/lib/unwellnessStates';
 
 const TOTAL_REGIONS = 11;
 type OrbitControlsHandle = ElementRef<typeof OrbitControls>;
+
+// Dev/capture-only forced unwellness state so the capture harness can
+// screenshot each state deterministically (the case library has no
+// hepatic/jaundice-text case). Two hurdles make a naive `location.search` read
+// unreliable: the app strips the query string on mount (useEducatorPanel URL
+// management), AND this component ships in a lazily-loaded chunk that only
+// executes at scene entry — by then the URL is already clean. So the capture
+// harness stashes `?unwell=…` into sessionStorage before any app script runs
+// (scripts/capture-model.mjs addInitScript); we read the live param first, then
+// fall back to that seed. Never consulted in a production build.
+function readForcedUnwell(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const live = new URLSearchParams(window.location.search).get('unwell');
+    if (live) return live;
+    return window.sessionStorage.getItem('captureUnwell');
+  } catch {
+    return null;
+  }
+}
+const CAPTURE_FORCED_UNWELL: string | null = readForcedUnwell();
 
 /** Helper: is this a limb region ID? */
 const isLimbRegion = (id: string): boolean =>
@@ -3145,44 +3171,104 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
     return caseData.abcde?.disability?.avpu === 'U';
   }, [isInArrest, vitals?.gcs, caseData]);
 
-  // Live skin perfusion tint driven by SpO2 (cyanosis) and shock index
-  // (pulse / systolic BP → pallor). Returns a target THREE.Color the body
-  // mesh lerps toward per frame, or null when the patient is well-perfused
-  // (no tinting needed — the mesh keeps its authored skin material colour).
+  // Case text used for the text-driven unwellness states (diaphoresis
+  // appearance, jaundice). Recomputed only when the case changes.
+  const unwellnessCaseText = useMemo(
+    () => collectUnwellnessText(caseData),
+    [caseData],
+  );
+
+  // OMS-style visible unwellness states (diaphoresis / jaundice / mottling)
+  // derived purely from live vitals + case text (see lib/unwellnessStates.ts).
+  // The mottling channel is latched with hysteresis, so we feed the previously
+  // committed state back in via a ref (updated in the effect below). The ref
+  // read is intentionally not a dependency — hysteresis compares against the
+  // LAST committed state, which is exactly what the effect stores.
+  const prevUnwellnessRef = useRef<UnwellnessState>({ diaphoresis: 0, jaundice: 0, mottling: 0 });
+  const unwellness = useMemo<UnwellnessState>(() => {
+    const source = vitals ?? caseData.vitalSignsProgression?.initial;
+    const derived = deriveUnwellness({
+      vitals: source,
+      caseText: unwellnessCaseText,
+      previous: prevUnwellnessRef.current,
+    });
+    // Dev/capture-only override (snapshot taken at module load — see
+    // CAPTURE_FORCED_UNWELL). Forces a single state on so the capture harness can
+    // screenshot each one deterministically. Never active in a production build.
+    if (import.meta.env.DEV && CAPTURE_FORCED_UNWELL) {
+      if (CAPTURE_FORCED_UNWELL === 'diaphoresis') return { ...derived, diaphoresis: 1 };
+      if (CAPTURE_FORCED_UNWELL === 'jaundice') return { ...derived, jaundice: 1 };
+      if (CAPTURE_FORCED_UNWELL === 'mottling') return { ...derived, mottling: 1 };
+    }
+    return derived;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vitals, caseData.vitalSignsProgression?.initial, unwellnessCaseText]);
+  useEffect(() => {
+    prevUnwellnessRef.current = unwellness;
+  }, [unwellness]);
+
+  // Live skin colour tint. Composed in a fixed order so the channels layer
+  // coherently on top of one another:
+  //
+  //   base skin (texture, no tint = white multiplier)
+  //     → jaundice   (yellow-ochre cast — a days-scale hepatic finding)
+  //       → pallor   (shock desaturates toward grey-ochre)
+  //         → cyanosis (hypoxaemia blues the skin — the most acute sign, so
+  //                     it sits on top and dominates when present)
+  //
+  // Rationale: jaundice is the slowest-changing / most "baked into the skin"
+  // colour, so it goes closest to the base; acute perfusion changes (pallor
+  // then cyanosis) layer over it. Diaphoresis (sheen) and mottling (texture
+  // overlay) are ORTHOGONAL channels — they are not colours and take no part
+  // in this lerp chain (handled by material roughness + a texture swap
+  // respectively). Returns a target THREE.Color the mesh lerps toward per
+  // frame, or null when nothing applies (mesh keeps its authored skin colour).
   // Falls back to the case's initial vitals when no live `vitals` prop is
-  // supplied, so non-StudentPanel surfaces (Workspace, exam panel) keep the
-  // case-presentation skin tone instead of going untinted.
+  // supplied, so non-StudentPanel surfaces keep the case-presentation tone.
   const skinTint = useMemo<THREE.Color | null>(() => {
     const source = vitals ?? caseData.vitalSignsProgression?.initial;
-    if (!source) return null;
-    const spo2 = typeof source.spo2 === 'number' ? source.spo2 : null;
-    const pulse = typeof source.pulse === 'number' ? source.pulse : null;
+    const spo2 = typeof source?.spo2 === 'number' ? source.spo2 : null;
+    const pulse = typeof source?.pulse === 'number' ? source.pulse : null;
     // Parse "120/80" → 120. Tolerant of "120/80 mmHg", "120", missing.
-    const bpStr = typeof source.bp === 'string' ? source.bp : '';
+    const bpStr = typeof source?.bp === 'string' ? source.bp : '';
     const bpMatch = bpStr.match(/(\d{2,3})\s*\/\s*(\d{2,3})/);
     const systolic = bpMatch ? parseInt(bpMatch[1], 10) : null;
 
-    let tint: THREE.Color | null = null;
-    // Cyanosis from hypoxaemia — central, so it tints the whole skin.
+    const color = new THREE.Color(0xffffff); // base = untinted texture
+    let touched = false;
+
+    // 1. Jaundice — blend an ochre-yellow cast into the base. Text-driven and
+    //    constant across the case (unwellness.jaundice is 0 or 1).
+    if (unwellness.jaundice > 0) {
+      color.lerp(new THREE.Color(0xd6bd6a), 0.45 * unwellness.jaundice);
+      touched = true;
+    }
+
+    // 2. Pallor — shock index >0.8 desaturates toward a grey-ochre. Same
+    //    colour + strength curve as the original perfusion tint.
+    if (pulse !== null && systolic !== null && systolic > 0) {
+      const shockIndex = pulse / systolic;
+      if (shockIndex > 0.8) {
+        const p = Math.min(0.7, 0.3 + (shockIndex - 0.8) * 0.4);
+        color.lerp(new THREE.Color(0xc9b6a6), p);
+        touched = true;
+      }
+    }
+
+    // 3. Cyanosis — hypoxaemia blues the skin. Applied last so it sits on top
+    //    of jaundice/pallor. Strength banded by SpO2 as before.
     if (spo2 !== null && spo2 < 95) {
       const cyan =
         spo2 >= 90 ? new THREE.Color(0xa8b8c8) // faint
         : spo2 >= 85 ? new THREE.Color(0x7d9bb5) // noticeable
         : new THREE.Color(0x5b7a99);            // strong
-      tint = cyan;
+      const strength = spo2 >= 90 ? 0.45 : spo2 >= 85 ? 0.7 : 0.9;
+      color.lerp(cyan, strength);
+      touched = true;
     }
-    // Pallor from poor perfusion — shock index >0.8 desaturates toward grey.
-    if (pulse !== null && systolic !== null && systolic > 0) {
-      const shockIndex = pulse / systolic;
-      if (shockIndex > 0.8) {
-        const pallor = new THREE.Color(0xc9b6a6);
-        // Stronger shock → more pallor. Lerp factor 0.3-0.7.
-        const p = Math.min(0.7, 0.3 + (shockIndex - 0.8) * 0.4);
-        tint = tint ? tint.clone().lerp(pallor, p) : pallor.clone().lerp(new THREE.Color(0xffffff), 1 - p);
-      }
-    }
-    return tint;
-  }, [vitals, caseData.vitalSignsProgression?.initial]);
+
+    return touched ? color : null;
+  }, [vitals, caseData.vitalSignsProgression?.initial, unwellness.jaundice]);
 
   // Which finding morphs are REVEALED — a finding's morph activates only
   // once the student has assessed its region. This is the discovery
@@ -3902,8 +3988,16 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 // Procedural life loop — GCS<=8/arrest = still, eyes closed.
                 unconscious={patientUnconscious}
                 // Live skin perfusion tint — cyanosis from SpO2, pallor from
-                // shock index. null when well-perfused (no tint applied).
+                // shock index, jaundice cast when the case is hepatic. null
+                // when nothing applies (no tint).
                 skinTint={skinTint}
+                // OMS-style visible unwellness states, orthogonal to the tint:
+                // diaphoresis → sweat sheen (material roughness/envMap),
+                // jaundice → scleral yellowing (eye materials), mottling →
+                // late-shock livedo texture overlay.
+                diaphoresis={unwellness.diaphoresis}
+                jaundice={unwellness.jaundice}
+                mottling={unwellness.mottling}
                 // Receive the surface projector so labels anchor to the real mesh.
                 // Wrap in an arrow so React stores the function rather than calling it.
                 onSurfaceSampler={handleSurfaceSampler}

@@ -15,6 +15,7 @@ import * as THREE from 'three';
 import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { buildScrubs, CLOTHING_PARTING } from './ClothingLayer';
 import { paintEyesOnTexture } from './EyesLayer';
+import { buildMottledTextures } from './MottlingLayer';
 import { LifeSigns } from './LifeSigns';
 import { setBreathClock } from '@/lib/breathClock';
 import type { ThreeEvent } from '@react-three/fiber';
@@ -81,6 +82,27 @@ interface BodyMeshProps {
    * null/undefined = no tinting; the mesh keeps its authored skin colour.
    */
   skinTint?: THREE.Color | null;
+  /**
+   * Diaphoresis (sweat sheen) 0..1 — a MATERIAL channel. Ramps the skin
+   * roughness down (0.5 → ~0.18) and the envMapIntensity up (0.65 → ~1.0) as
+   * it rises, so the HDRI does the wet-glint work. Eased in the frame loop
+   * (fast in ~10 s, dries out over ~60 s). Orthogonal to skinTint.
+   */
+  diaphoresis?: number;
+  /**
+   * Jaundice 0..1 — tints the eye-mesh scleras yellow (the skin cast is
+   * carried by skinTint's colour chain; this handles the separate eye
+   * materials). Constant while the case runs.
+   */
+  jaundice?: number;
+  /**
+   * Mottling 0..1 — late-shock livedo. A TEXTURE channel: at the severe-shock
+   * crossing we composite one pre-rendered purple-grey blotch overlay onto the
+   * diffuse map (legs/lower-body weighted) and swap material.map; we revert to
+   * the clean texture on recovery. State-crossing events only — never a
+   * per-frame upload.
+   */
+  mottling?: number;
   /** GCS <= 8 / AVPU 'U' / arrest — suppresses the procedural head sway and
    *  keeps the eyelids closed (see LifeSigns). */
   unconscious?: boolean;
@@ -480,7 +502,7 @@ function buildSurfaceSampler(root: THREE.Object3D | null): SurfaceSampler | null
   };
 }
 
-export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guidedMode = false, nextGuidedStep = null, onBlockedClick, patientGender, surfaceOpacity = 1, activeFindingMorphs, breathRateRpm = 0, onSurfaceSampler, dressed = false, dressedActiveRegion = null, pupilLeftMm = 3.5, pupilRightMm = 3.5, skinTint = null, unconscious = false }: BodyMeshProps) {
+export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guidedMode = false, nextGuidedStep = null, onBlockedClick, patientGender, surfaceOpacity = 1, activeFindingMorphs, breathRateRpm = 0, onSurfaceSampler, dressed = false, dressedActiveRegion = null, pupilLeftMm = 3.5, pupilRightMm = 3.5, skinTint = null, diaphoresis = 0, jaundice = 0, mottling = 0, unconscious = false }: BodyMeshProps) {
   // The path is recomputed per render so a `caseData.patientInfo.gender`
   // change (e.g. user picks a different case) swaps the mesh without
   // remounting the parent. useGLTF caches by URL.
@@ -508,6 +530,27 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
   // Reusable temp colour for the per-frame skin-tint lerp so we don't allocate
   // a THREE.Color every frame (GC pressure under 60fps useFrame).
   const tintTmpRef = useRef(new THREE.Color());
+
+  // Diaphoresis (sweat sheen): the eased 0..1 scalar the frame loop drives
+  // toward the `diaphoresis` prop (fast up ~10 s, slow dry-out ~60 s), plus a
+  // lazily-resolved cache of the skin materials + their authored roughness /
+  // envMapIntensity so we can lerp them wet↔dry without a per-frame traverse
+  // or any allocation. Resolved from the COMMITTED clone (skinMatRootRef
+  // tracks which clone the cache belongs to — same guard pattern as the morph
+  // mesh, so a StrictMode double-mount can't cache the discarded clone).
+  const diaphoresisEaseRef = useRef(0);
+  const skinMatsRef = useRef<Array<{ mat: THREE.MeshStandardMaterial; roughness: number; envMapIntensity: number }>>([]);
+  const skinMatRootRef = useRef<THREE.Object3D | null>(null);
+  // Mottling: whether the mottled twin textures are currently swapped in, the
+  // clone they belong to (a model switch resets the flag), and a lazily-cached
+  // reference to the body mesh that carries the diffuse atlas. The swap is a
+  // state-crossing event checked in the frame loop — it acts ONCE when the
+  // mottling channel flips (never a per-frame upload), but re-checking each
+  // frame makes it robust to the diffuse texture / painted atlas not being
+  // ready at mount (the crossing self-heals as soon as the body resolves).
+  const mottleRootRef = useRef<THREE.Object3D | null>(null);
+  const mottleAppliedRef = useRef(false);
+  const mottleBodyRef = useRef<THREE.Mesh | null>(null);
 
   // Clone the rig with SkeletonUtils so skinned meshes keep their own bone
   // bindings. A regular deep clone can detach limbs on some exported GLBs.
@@ -759,6 +802,37 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
     if (pr) pr.scale.setScalar(pupilScale(pupilRightMm));
   }, [clonedScene, pupilLeftMm, pupilRightMm]);
 
+  // Jaundice: yellow the eye-mesh scleras. The skin cast is carried by
+  // skinTint's colour chain, but the eye materials are flagged skipRecolor
+  // (so the perfusion tint never blues the whites), which means jaundice has
+  // to reach them separately here. Scleral icterus is one of the earliest,
+  // most recognisable jaundice signs — worth the two extra material writes.
+  // The iris/pupil discs are left alone. Constant while the case runs, so a
+  // cheap effect (not a frame-loop mutation). Real-eye models only; painted-
+  // eye models simply have no eyeL/eyeR node to tint.
+  useEffect(() => {
+    const j = Math.min(1, Math.max(0, jaundice));
+    for (const name of ['eyeL', 'eyeR']) {
+      const eye = clonedScene.getObjectByName(name) as THREE.Mesh | undefined;
+      if (!eye || !eye.isMesh) continue;
+      const list = Array.isArray(eye.material) ? eye.material : eye.material ? [eye.material] : [];
+      for (const mat of list) {
+        const std = mat as THREE.MeshStandardMaterial;
+        if (!std.isMeshStandardMaterial) continue;
+        // Cache the authored sclera colour once so we can restore it exactly
+        // when jaundice clears (avoids drifting the whites on model reuse).
+        if (std.userData.baseScleraColor === undefined) {
+          std.userData.baseScleraColor = std.color.getHex();
+        }
+        const base = tintTmpRef.current.setHex(std.userData.baseScleraColor as number);
+        // Blend the sclera toward an icteric yellow by up to ~0.55 at full.
+        std.color.copy(base).lerp(new THREE.Color(0xd9c24a), 0.55 * j);
+        std.needsUpdate = true;
+      }
+    }
+  }, [clonedScene, jaundice]);
+
+
   // Surface opacity (Skin = 1, Skeleton = 0.28) is applied to the body material
   // HERE, not baked into the clone build — so toggling the view layer flips a
   // material flag instead of rebuilding the mesh/scrubs/eyes. Scrubs and arm
@@ -802,10 +876,16 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
         }
         // The blink pair (open/closed lids) — whichever isn't currently
         // assigned as `map` would otherwise leak. dispose() is idempotent.
+        // When mottling is active these hold the MOTTLED twins; the clean
+        // originals live in cleanOpenTex/cleanClosedTex, so free those too.
         const openTex = m.userData?.eyesOpenTex;
         const closedTex = m.userData?.eyesClosedTex;
+        const cleanOpenTex = m.userData?.cleanOpenTex;
+        const cleanClosedTex = m.userData?.cleanClosedTex;
         if (openTex instanceof THREE.CanvasTexture) openTex.dispose();
         if (closedTex instanceof THREE.CanvasTexture) closedTex.dispose();
+        if (cleanOpenTex instanceof THREE.CanvasTexture) cleanOpenTex.dispose();
+        if (cleanClosedTex instanceof THREE.CanvasTexture) cleanClosedTex.dispose();
       });
     }
     prevCloneRef.current = clonedScene;
@@ -892,6 +972,120 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
           mat.color.copy(tmp);
         }
       });
+    }
+
+    // ---- Diaphoresis (sweat sheen) ----------------------------------------
+    // Ease a single scalar toward the target: sweat breaks fast (~10 s to
+    // full) and dries slowly (~60 s) as physiology recovers — an asymmetric
+    // linear approach, no allocation. When wet, lower the skin roughness and
+    // raise envMapIntensity so the HDRI paints a broad wet glint; the tone
+    // (skinTint) is untouched. Skin materials are cached once per clone.
+    {
+      const target = Math.min(1, Math.max(0, diaphoresis));
+      const cur = diaphoresisEaseRef.current;
+      // Run when the scalar is still easing OR the clone changed under a
+      // settled scalar (a model swap must re-apply the wet level to the fresh
+      // materials — otherwise a sweaty patient looks dry after the swap).
+      const cloneChanged = skinMatRootRef.current !== clonedScene;
+      if (cur !== target || cloneChanged) {
+        const perSec = target > cur ? 1 / 10 : 1 / 60; // ramp-in vs dry-out
+        const step = perSec * delta;
+        const next = target > cur ? Math.min(target, cur + step) : Math.max(target, cur - step);
+        diaphoresisEaseRef.current = next;
+        // (Re)resolve the skin material cache from the committed clone.
+        if (cloneChanged) {
+          const mats: Array<{ mat: THREE.MeshStandardMaterial; roughness: number; envMapIntensity: number }> = [];
+          clonedScene.traverse((child) => {
+            const m = child as THREE.Mesh;
+            if (!m.isMesh || m.userData?.skipRecolor) return;
+            const list = Array.isArray(m.material) ? m.material : m.material ? [m.material] : [];
+            for (const mat of list) {
+              const std = mat as THREE.MeshStandardMaterial;
+              if (std.isMeshStandardMaterial && !std.userData?.skipRecolor) {
+                mats.push({ mat: std, roughness: std.roughness, envMapIntensity: std.envMapIntensity });
+              }
+            }
+          });
+          skinMatsRef.current = mats;
+          skinMatRootRef.current = clonedScene;
+        }
+        const e = diaphoresisEaseRef.current;
+        for (const entry of skinMatsRef.current) {
+          // roughness 0.5 → 0.18 (wet), envMapIntensity 0.65 → 1.0.
+          entry.mat.roughness = entry.roughness + (0.18 - entry.roughness) * e;
+          entry.mat.envMapIntensity = entry.envMapIntensity + (1.0 - entry.envMapIntensity) * e;
+        }
+      }
+    }
+
+    // ---- Mottling (late-shock livedo) — state-crossing texture swap --------
+    // Only acts when the mottling channel disagrees with what's applied. When
+    // it crosses ON we composite ONE mottled twin of the diffuse atlas (see
+    // MottlingLayer) and repoint the body material + blink pair at it; on
+    // recovery we swap back to the clean atlas and free the copies. No work in
+    // steady state; the build/swap happens once per crossing, never per frame.
+    {
+      // A fresh clone starts clean (its textures are freed by the disposal
+      // effect). Reset the cache + applied flag.
+      if (mottleRootRef.current !== clonedScene) {
+        mottleRootRef.current = clonedScene;
+        mottleAppliedRef.current = false;
+        mottleBodyRef.current = null;
+      }
+      const want = mottling > 0.5;
+      if (want !== mottleAppliedRef.current) {
+        // Resolve (and cache) the body mesh carrying the painted diffuse atlas.
+        if (!mottleBodyRef.current) {
+          let found: THREE.Mesh | null = null;
+          clonedScene.traverse((o) => {
+            const m = o as THREE.Mesh;
+            if (!found && m.isMesh && m.userData?.eyesOpenTex) found = m;
+          });
+          mottleBodyRef.current = found;
+        }
+        const bodyMesh = mottleBodyRef.current;
+        const mat = bodyMesh
+          ? ((Array.isArray(bodyMesh.material) ? bodyMesh.material[0] : bodyMesh.material) as
+              | THREE.MeshStandardMaterial
+              | undefined)
+          : undefined;
+        // If the body/atlas isn't ready yet, leave the flag as-is and retry
+        // next frame (self-healing) — never mark applied without doing the work.
+        if (bodyMesh && mat) {
+          if (want) {
+            const twin = buildMottledTextures(bodyMesh);
+            if (twin) {
+              const cleanOpen = bodyMesh.userData.eyesOpenTex as THREE.Texture | undefined;
+              const cleanClosed = bodyMesh.userData.eyesClosedTex as THREE.Texture | null | undefined;
+              bodyMesh.userData.cleanOpenTex = cleanOpen ?? null;
+              bodyMesh.userData.cleanClosedTex = cleanClosed ?? null;
+              bodyMesh.userData.eyesOpenTex = twin.open;
+              bodyMesh.userData.eyesClosedTex = twin.closed ?? cleanClosed ?? null;
+              // Preserve whichever lid state shows so mottling can't flash the
+              // eyes open mid-blink.
+              const showingClosed = mat.map === cleanClosed;
+              mat.map = showingClosed ? (twin.closed ?? twin.open) : twin.open;
+              mat.needsUpdate = true;
+              mottleAppliedRef.current = true;
+            }
+          } else {
+            const cleanOpen = (bodyMesh.userData.cleanOpenTex as THREE.Texture | null) ?? null;
+            const cleanClosed = (bodyMesh.userData.cleanClosedTex as THREE.Texture | null) ?? null;
+            const mottledOpen = bodyMesh.userData.eyesOpenTex as THREE.Texture | undefined;
+            const mottledClosed = bodyMesh.userData.eyesClosedTex as THREE.Texture | null | undefined;
+            const showingClosed = mat.map === mottledClosed;
+            bodyMesh.userData.eyesOpenTex = cleanOpen;
+            bodyMesh.userData.eyesClosedTex = cleanClosed;
+            if (cleanOpen) {
+              mat.map = showingClosed && cleanClosed ? cleanClosed : cleanOpen;
+              mat.needsUpdate = true;
+            }
+            if (mottledOpen instanceof THREE.CanvasTexture && mottledOpen !== cleanOpen) mottledOpen.dispose();
+            if (mottledClosed instanceof THREE.CanvasTexture && mottledClosed !== cleanClosed) mottledClosed.dispose();
+            mottleAppliedRef.current = false;
+          }
+        }
+      }
     }
   });
 

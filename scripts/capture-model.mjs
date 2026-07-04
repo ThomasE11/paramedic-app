@@ -26,6 +26,11 @@ const face = process.argv.includes('--face');
 // before/after captures compare the same mesh regardless of the random case.
 const modelArg = process.argv.find((a) => a.startsWith('--model='));
 const modelQuery = modelArg ? `&model=${modelArg.split('=')[1]}` : '';
+// --unwell=diaphoresis|jaundice|mottling: force an unwellness shader state on
+// (dev-only override in Body3DModel) so each state can be screenshotted
+// deterministically regardless of the random case that loads.
+const unwellArg = process.argv.find((a) => a.startsWith('--unwell='));
+const unwellQuery = unwellArg ? `&unwell=${unwellArg.split('=')[1]}` : '';
 // --fov=N: narrow the camera fov before the shot (telephoto close-up without
 // fighting OrbitControls' min-distance clamp). Default fov is 38.
 const fovArg = process.argv.find((a) => a.startsWith('--fov='));
@@ -43,8 +48,20 @@ const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: vp });
 page.setDefaultTimeout(30_000);
 
+// The app strips the query string on mount and the patient view is a lazy
+// chunk, so a `?unwell=` param is gone by the time it loads. Seed the forced
+// unwellness state into sessionStorage BEFORE any app script runs (addInitScript
+// executes on every navigation ahead of page scripts) so the dev-only override
+// in Body3DModel can still read it. No-op when --unwell isn't passed.
+if (unwellArg) {
+  const forced = unwellArg.split('=')[1];
+  await page.addInitScript((state) => {
+    try { window.sessionStorage.setItem('captureUnwell', state); } catch { /* ignore */ }
+  }, forced);
+}
+
 try {
-  await page.goto(`${base}/?capture${modelQuery}`, { waitUntil: 'networkidle' });
+  await page.goto(`${base}/?capture${modelQuery}${unwellQuery}`, { waitUntil: 'networkidle' });
 
   // Landing → training
   await page.getByRole('button', { name: /Start Training/i }).first().click();
