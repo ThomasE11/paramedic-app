@@ -70,7 +70,7 @@
 - [ ] Tiered input: voice-first mode for senior students (OMS pattern B)
 
 ## 📋 Backlog (valuable, not urgent)
-- [ ] Move repo out of iCloud-synced Desktop (`~/Projects/`) — kills the SIGBUS/duplicate-file class permanently
+- [x] ~~Move repo out of iCloud-synced Desktop~~ — **done 2026-07-05**: repo now at `~/Projects/app` (2,144 evicted files materialized first, worktree repaired, gate green, desktop launcher repointed). Found a stale June-30 clone already at that path holding **23 commits that exist nowhere else** (tablet one-finger swipe, sticky arrest banner — the pre-loss line): pushed to GitHub as `backup/jun30-tablet-arrest-fixes`, local copy kept at `~/Projects/app-jun30-stale`. Worth a cherry-pick review.
 - [ ] In-app Attributions screen (CC0/CC-BY statements drafted in research doc + commits)
 - [ ] Split `cases.ts` chunk per year-level (1.2MB loads on first case entry)
 - [ ] E2E playwright suite in CI (probes exist ad-hoc; formalize the case-flow smoke test)
