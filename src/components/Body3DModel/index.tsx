@@ -3310,8 +3310,11 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   // Which finding morphs are REVEALED — a finding's morph activates only
   // once the student has assessed its region. This is the discovery
   // mechanic expressed on the mesh: no JVD bulge until you examine the neck.
+  // Case injuries drive the finding morphs AND the wound skin decals.
+  const caseInjuries = useMemo(() => inferInjuries(caseData), [caseData]);
+
   const activeFindingMorphs = useMemo(() => {
-    const injuries = inferInjuries(caseData);
+    const injuries = caseInjuries;
     // Map a detected finding to the morph that depicts it.
     const MORPH_FOR_KIND: Record<string, string> = {
       distension: 'finding_abdo_distension', // abdominal distension
@@ -3328,7 +3331,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
       if (morph) out.add(morph);
     }
     return Array.from(out);
-  }, [caseData, assessedRegions]);
+  }, [caseInjuries, assessedRegions]);
 
   const guidedStepIndex = useMemo(() => {
     if (!nextGuidedStep) return -1;
@@ -4054,6 +4057,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 nextGuidedStep={nextGuidedStep}
                 onBlockedClick={handleBlockedClick}
                 onBodyPoint={handleBodyPoint}
+                bodyInjuries={caseInjuries}
                 // See public/models/REALISTIC_ANATOMY.md for the vetted model
                 // sources and the required export/validation path.
                 patientGender={caseData.patientInfo?.gender}

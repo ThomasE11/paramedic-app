@@ -16,6 +16,8 @@ import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.j
 import { buildScrubs, CLOTHING_PARTING } from './ClothingLayer';
 import { paintEyesOnTexture } from './EyesLayer';
 import { buildMottledTextures } from './MottlingLayer';
+import { applyWoundsToTextures } from './WoundLayer';
+import { injuryRegionTo3D, type BodyInjury } from '@/lib/injuryMap';
 import { LifeSigns } from './LifeSigns';
 import { setBreathClock } from '@/lib/breathClock';
 import type { ThreeEvent } from '@react-three/fiber';
@@ -57,6 +59,9 @@ interface BodyMeshProps {
    * region selection.
    */
   onBodyPoint?: (point: THREE.Vector3, regionId: string) => boolean;
+  /** Case injuries to paint as skin decals (WoundLayer) — wound/burn/bruise/
+   * bleeding kinds render at their anatomical site; shape findings don't. */
+  bodyInjuries?: BodyInjury[];
   /** Optional patient gender — switches to a sex-matched mesh when the
    * project has a complete, browser-safe asset for that sex. */
   patientGender?: 'male' | 'female';
@@ -510,7 +515,7 @@ function buildSurfaceSampler(root: THREE.Object3D | null): SurfaceSampler | null
   };
 }
 
-export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guidedMode = false, nextGuidedStep = null, onBlockedClick, onBodyPoint, patientGender, surfaceOpacity = 1, activeFindingMorphs, breathRateRpm = 0, onSurfaceSampler, dressed = false, dressedActiveRegion = null, pupilLeftMm = 3.5, pupilRightMm = 3.5, skinTint = null, diaphoresis = 0, jaundice = 0, mottling = 0, unconscious = false }: BodyMeshProps) {
+export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guidedMode = false, nextGuidedStep = null, onBlockedClick, onBodyPoint, bodyInjuries, patientGender, surfaceOpacity = 1, activeFindingMorphs, breathRateRpm = 0, onSurfaceSampler, dressed = false, dressedActiveRegion = null, pupilLeftMm = 3.5, pupilRightMm = 3.5, skinTint = null, diaphoresis = 0, jaundice = 0, mottling = 0, unconscious = false }: BodyMeshProps) {
   // The path is recomputed per render so a `caseData.patientInfo.gender`
   // change (e.g. user picks a different case) swaps the mesh without
   // remounting the parent. useGLTF caches by URL.
@@ -680,6 +685,14 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
         const hasEyeMeshes = !!clone.getObjectByName('eyeL') && !!clone.getObjectByName('eyeR');
         paintEyesOnTexture(bodyMesh as THREE.Mesh, pupilLeftMm, pupilRightMm, { hasEyeMeshes });
 
+        // Case wounds — drawn INTO the freshly-stashed atlases so the blink
+        // twin and any later mottling twins inherit them. Runs once per clone;
+        // world matrices must be current for the region classification.
+        if (bodyInjuries && bodyInjuries.length) {
+          clone.updateMatrixWorld(true);
+          applyWoundsToTextures(bodyMesh as THREE.Mesh, bodyInjuries, injuryRegionTo3D);
+        }
+
         // Invisible, generously-sized hit boxes over each arm. The rendered
         // forearm is only a few pixels wide at the overview zoom, so honest
         // clicks slip past it (or graze the torso and read as "abdomen"). Each
@@ -753,7 +766,7 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
     // scrubs + 2048² eye texture repaint). Opacity is applied live by the
     // effect below; the eyes are baked once (live pupil reading is the 2D panel).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scene, modelPath]);
+  }, [scene, modelPath, bodyInjuries]); // bodyInjuries: stable per case (memoised upstream + per-case key)
 
   // Region state is now communicated with anatomical overlays and landmarks,
   // not by recolouring the whole patient. Keep this callback for the pointer

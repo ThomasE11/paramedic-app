@@ -4206,6 +4206,7 @@ export function StudentPanel({
                 {assessmentTracker && (
                   <Suspense fallback={<LoadingCard />}>
                     <Body3DModel
+                      key={currentCase.id}
                       onRegionClick={handlePerformAssessment}
                       assessedRegions={new Set(
                         assessmentTracker.performed
