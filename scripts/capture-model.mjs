@@ -60,6 +60,14 @@ if (unwellArg) {
   }, forced);
 }
 
+// Pin the Stage-3 adaptive-quality ladder at full quality for every capture:
+// headless Chromium renders below the degrade threshold, so without the pin
+// the ladder strips the composer/shadows DURING the settle wait and the shot
+// photographs the degraded scene. Same addInitScript timing as above.
+await page.addInitScript(() => {
+  try { window.sessionStorage.setItem('capturePinQuality', '1'); } catch { /* ignore */ }
+});
+
 try {
   await page.goto(`${base}/?capture${modelQuery}${unwellQuery}`, { waitUntil: 'networkidle' });
 

@@ -18,6 +18,8 @@ import { Badge } from '@/components/ui/badge';
 import { RotateCcw, User, Eye, Hand, Activity, Stethoscope, X, ChevronRight, ChevronDown, AlertTriangle, Compass, Unlock, Wind, Shirt } from 'lucide-react';
 import { BodyMesh } from './BodyMesh';
 import type { LimbSide, SurfaceSampler } from './BodyMesh';
+import { AdaptiveQuality, PatientPostEffects, qualityForTier } from './AdaptiveQuality';
+import type { QualityTier } from './AdaptiveQuality';
 import { AnatomyReferenceLayer } from './AnatomyReferenceLayer';
 import { CLOTHING_PARTING } from './ClothingLayer';
 import { usePatientVoice } from '@/hooks/usePatientVoice';
@@ -192,15 +194,23 @@ const EXAM_LANDMARKS: ExamLandmark[] = [
 ];
 
 function PatientSceneEnvironment() {
+  // Colour/alpha retuned for the Stage-3 composer: post-processing tone-maps
+  // AFTER alpha blending (premultiplied), so the old near-white planes at
+  // ~0.4 alpha saturated to pure white over the light page and the wall/floor
+  // depth cue vanished. Deeper colours at higher alpha survive the composer
+  // path and still read as the same light clinical backdrop; the difference
+  // when the degrade ladder drops the composer is small.
   return (
     <group>
       <mesh position={[0, 0.9, -0.78]} raycast={() => null}>
         <planeGeometry args={[2.75, 2.25]} />
-        <meshStandardMaterial color="#edf4f8" roughness={0.94} transparent opacity={0.42} />
+        {/* Deeper than the floor: the wall faces the key light head-on, so it
+            needs a lower albedo to avoid clipping white under the composer. */}
+        <meshStandardMaterial color="#b2c0cb" roughness={0.94} transparent opacity={0.8} />
       </mesh>
       <mesh position={[0, -0.04, 0]} rotation={[-Math.PI / 2, 0, 0]} raycast={() => null}>
         <planeGeometry args={[4.2, 4.2]} />
-        <meshStandardMaterial color="#e7edf3" roughness={0.92} transparent opacity={0.45} />
+        <meshStandardMaterial color="#c4cfd8" roughness={0.92} transparent opacity={0.8} />
       </mesh>
     </group>
   );
@@ -3110,6 +3120,13 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   );
   const [activeRegion, setActiveRegion] = useState<string | null>(null);
   const [activeLimb, setActiveLimb] = useState<LimbSide>(null);
+  // Stage-3 auto-degrade ladder: single tier number, everything derived.
+  // 0 = full (composer+dpr2+shadows) … 4 = minimal (see AdaptiveQuality.tsx).
+  const [qualityTier, setQualityTier] = useState<QualityTier>(0);
+  const quality = qualityForTier(
+    qualityTier,
+    typeof window !== 'undefined' ? Math.min(window.devicePixelRatio, 2) : 2,
+  );
   const [revealedFindings, setRevealedFindings] = useState<Map<string, string>>(new Map());
   const [selectedAction, setSelectedAction] = useState<string | null>(null);
   const [patientReaction, setPatientReaction] = useState<PatientReaction | null>(null);
@@ -3962,6 +3979,13 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
               <Suspense fallback={null}>
                 <Environment files="/hdri/studio_small_08_1k.hdr" />
               </Suspense>
+
+              {/* Stage 3: FPS watchdog + degrade ladder (composer → dpr →
+                  contact shadows). Lives inside the Canvas so it reads the
+                  real frame loop; the tier state lives outside so the JSX
+                  below can derive from it. */}
+              <AdaptiveQuality tier={qualityTier} onTierChange={setQualityTier} />
+
               <ambientLight intensity={0.1} />
               <directionalLight position={[4, 8, 5]} intensity={0.95} color="#fff2e6" />
               <directionalLight position={[0, 4, -5]} intensity={0.5} color="#ffffff" />
@@ -4040,7 +4064,16 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 sampler={surfaceSampler}
               />
 
-              <ContactShadows position={[0, -0.01, 0]} opacity={0.4} scale={3} blur={2.5} far={3} />
+              {quality.contactShadows && (
+                <ContactShadows position={[0, -0.01, 0]} opacity={0.4} scale={3} blur={2.5} far={3} />
+              )}
+
+              {/* Stage 3 post pipeline (N8AO + SMAA — see AdaptiveQuality.tsx
+                  for what's deliberately absent). Mounted last so every scene
+                  object above renders through it; the drei <Html> markers are
+                  DOM, portalled outside the canvas, and sit on top untouched.
+                  Unmounts entirely on the first degrade rung. */}
+              {quality.composerEnabled && <PatientPostEffects />}
 
               <OrbitControls
                 ref={controlsRef}
