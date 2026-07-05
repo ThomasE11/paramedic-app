@@ -49,6 +49,14 @@ interface BodyMeshProps {
   nextGuidedStep?: SecondaryAssessmentStep | null;
   /** Phase 2 — called when the student clicks a locked region in guided mode. */
   onBlockedClick?: (attemptedStepId: string, expectedStepId: string) => void;
+  /**
+   * Fine-grained click hook: fires BEFORE region selection with the exact
+   * mesh intersection point + the region it classified to. Return true to
+   * consume the click (the parent fired a detail exam action at that spot —
+   * "click the eye, get the pupil check"); false falls through to normal
+   * region selection.
+   */
+  onBodyPoint?: (point: THREE.Vector3, regionId: string) => boolean;
   /** Optional patient gender — switches to a sex-matched mesh when the
    * project has a complete, browser-safe asset for that sex. */
   patientGender?: 'male' | 'female';
@@ -502,7 +510,7 @@ function buildSurfaceSampler(root: THREE.Object3D | null): SurfaceSampler | null
   };
 }
 
-export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guidedMode = false, nextGuidedStep = null, onBlockedClick, patientGender, surfaceOpacity = 1, activeFindingMorphs, breathRateRpm = 0, onSurfaceSampler, dressed = false, dressedActiveRegion = null, pupilLeftMm = 3.5, pupilRightMm = 3.5, skinTint = null, diaphoresis = 0, jaundice = 0, mottling = 0, unconscious = false }: BodyMeshProps) {
+export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guidedMode = false, nextGuidedStep = null, onBlockedClick, onBodyPoint, patientGender, surfaceOpacity = 1, activeFindingMorphs, breathRateRpm = 0, onSurfaceSampler, dressed = false, dressedActiveRegion = null, pupilLeftMm = 3.5, pupilRightMm = 3.5, skinTint = null, diaphoresis = 0, jaundice = 0, mottling = 0, unconscious = false }: BodyMeshProps) {
   // The path is recomputed per render so a `caseData.patientInfo.gender`
   // change (e.g. user picks a different case) swaps the mesh without
   // remounting the parent. useGLTF caches by URL.
@@ -1120,6 +1128,7 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
         onBlockedClick?.(limbHit, nextGuidedStep);
         return;
       }
+      if (onBodyPoint?.(e.point, limbHit)) return;
       onRegionClick(limbHit);
       return;
     }
@@ -1133,8 +1142,9 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
       return;
     }
 
+    if (onBodyPoint?.(e.point, region.id)) return;
     onRegionClick(region.id);
-  }, [onRegionClick, guidedMode, nextGuidedStep, onBlockedClick]);
+  }, [onRegionClick, guidedMode, nextGuidedStep, onBlockedClick, onBodyPoint]);
 
   // Render region highlight overlays using transparent cylinders
   const regionHighlights = useMemo(() => {

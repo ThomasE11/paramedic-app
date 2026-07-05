@@ -32,6 +32,7 @@ import type { ClinicalSoundState } from '@/data/clinicalSounds';
 import { playBreathSound, playHeartSound, playPercussionSound, playBowelSound, stopAllSounds, getZoneBreathSound } from '@/data/clinicalSounds';
 import type { BowelSoundType, BreathSoundType } from '@/data/clinicalSounds';
 import { inferInjuries, injuryRegionTo3D } from '@/lib/injuryMap';
+import { classifyBodyPoint } from '@/lib/regionClassifier';
 import {
   deriveAppliedTreatmentRealismCues,
   deriveCaseRealismProfile,
@@ -3667,6 +3668,40 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
     }
   }, [activeRegion, animateCamera, caseData, patientSounds, patientVoice, revealedFindings, startSoundProgress, isInArrest, surfaceSampler]);
 
+  // Click the ANATOMY, not just the dots: inside an active region, a click on
+  // the body fires the nearest detail exam action at that spot — click the
+  // eye and you get the pupil check, the neck spot gives the carotid, the
+  // foot gives foot palpation. Overview clicks (no active region, or a click
+  // on a different region) return false and fall through to BodyMesh's normal
+  // region selection.
+  const handleBodyPoint = useCallback((point: THREE.Vector3, regionId: string): boolean => {
+    if (!activeRegion || regionId !== activeRegion) return false;
+    // Legs have no authored detail landmarks; the bottom of the leg IS the
+    // foot — route it to the existing foot exam action.
+    if ((activeRegion === 'right-leg' || activeRegion === 'left-leg')
+      && classifyBodyPoint(point.x, point.y, point.z).foot) {
+      handleExamAction(`${activeRegion === 'right-leg' ? 'r' : 'l'}-foot-palpate`);
+      return true;
+    }
+    let best: { actionId: string; d2: number } | null = null;
+    for (const lm of EXAM_LANDMARKS) {
+      if (lm.region !== activeRegion || lm.level !== 'detail' || !lm.actionId) continue;
+      const dx = lm.position[0] - point.x;
+      const dy = lm.position[1] - point.y;
+      const dz = lm.position[2] - point.z;
+      const d2 = dx * dx + dy * dy + dz * dz;
+      if (!best || d2 < best.d2) best = { actionId: lm.actionId, d2 };
+    }
+    // ~9cm grab radius — generous enough for eyes/carotid, tight enough that
+    // adjacent chest zones stay distinct.
+    if (best && best.d2 <= 0.09 * 0.09) {
+      if (best.actionId.startsWith('pulse-') && onPulse) onPulse(best.actionId);
+      else handleExamAction(best.actionId);
+      return true;
+    }
+    return false;
+  }, [activeRegion, handleExamAction, onPulse]);
+
   const allSubRegions = activeRegion ? getSubRegions(activeRegion) : [];
   const subRegions = allSubRegions;
   const limbGroups = activeRegion ? getLimbActionGroups(activeRegion) : null;
@@ -4018,6 +4053,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 guidedMode={guidedMode}
                 nextGuidedStep={nextGuidedStep}
                 onBlockedClick={handleBlockedClick}
+                onBodyPoint={handleBodyPoint}
                 // See public/models/REALISTIC_ANATOMY.md for the vetted model
                 // sources and the required export/validation path.
                 patientGender={caseData.patientInfo?.gender}
