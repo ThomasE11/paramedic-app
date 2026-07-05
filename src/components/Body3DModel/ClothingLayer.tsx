@@ -36,8 +36,44 @@
 
 import * as THREE from 'three';
 
-const TOP_COLOR = '#41908b';
-const TROUSER_COLOR = '#33706c';
+// "The way you would find them": casual street clothes, not scrubs —
+// heather-navy tee + grey-brown trousers.
+const TOP_COLOR = '#3a4a63';
+const TROUSER_COLOR = '#4b4a45';
+
+/**
+ * Procedural woven-fabric normal map (lazy singleton). A subtle twill bump
+ * is most of what separates "cloth" from "painted-on plastic" at exam zoom.
+ */
+let fabricNormalTex: THREE.CanvasTexture | null = null;
+function getFabricNormal(): THREE.CanvasTexture | null {
+  if (fabricNormalTex) return fabricNormalTex;
+  if (typeof document === 'undefined') return null;
+  const S = 128;
+  const canvas = document.createElement('canvas');
+  canvas.width = S;
+  canvas.height = S;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return null;
+  const img = ctx.createImageData(S, S);
+  const d = img.data;
+  for (let y = 0; y < S; y++) {
+    for (let x = 0; x < S; x++) {
+      // Twill weave: alternating diagonal ridges + thread-level jitter.
+      const ridge = Math.sin((x + y) * (Math.PI / 4)) * 0.5;
+      const thread = Math.sin(x * Math.PI) * Math.cos(y * Math.PI) * 0.25;
+      const nx = 128 + ridge * 22;
+      const ny = 128 + thread * 22;
+      const o = (y * S + x) * 4;
+      d[o] = nx; d[o + 1] = ny; d[o + 2] = 255; d[o + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  fabricNormalTex = new THREE.CanvasTexture(canvas);
+  fabricNormalTex.wrapS = THREE.RepeatWrapping;
+  fabricNormalTex.wrapT = THREE.RepeatWrapping;
+  return fabricNormalTex;
+}
 
 /** Region id → garment pieces that part (hide) while that region is focused. */
 export const CLOTHING_PARTING: Record<string, string[]> = {
@@ -279,28 +315,63 @@ export function buildScrubs(body: THREE.Mesh): THREE.Group | null {
     }
     g.computeVertexNormals();
 
-    const garment = new THREE.Mesh(
-      g,
-      new THREE.MeshStandardMaterial({
-        color: spec.color,
-        roughness: 0.88,
-        metalness: 0,
-        side: THREE.DoubleSide,
-      }),
-    );
+    // Box-projected UVs so the fabric weave normal map can tile — the shell
+    // has no authored UVs (it's cut from positions only). Scale keeps the
+    // weave thread-fine at exam zoom.
+    const uvArr = new Float32Array(M * 2);
+    for (let m = 0; m < M; m++) {
+      uvArr[m * 2] = (p[m * 3] + p[m * 3 + 2]) * 14;
+      uvArr[m * 2 + 1] = p[m * 3 + 1] * 14;
+    }
+    g.setAttribute('uv', new THREE.BufferAttribute(uvArr, 2));
+
+    // Two draw calls per piece sell "real cloth": a sheened fabric OUTER
+    // face and a darker BackSide INNER face. At every open edge (collar,
+    // cuffs, hem) the viewer sees the dark interior — the thickness cue a
+    // single DoubleSide shell can never give.
+    const fabric = getFabricNormal();
+    const outerMat = new THREE.MeshPhysicalMaterial({
+      color: spec.color,
+      roughness: 0.82,
+      metalness: 0,
+      sheen: 0.5,
+      sheenRoughness: 0.65,
+      sheenColor: new THREE.Color('#cfd6e0'),
+      side: THREE.FrontSide,
+      ...(fabric ? { normalMap: fabric, normalScale: new THREE.Vector2(0.35, 0.35) } : {}),
+    });
+    const innerMat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(spec.color).multiplyScalar(0.45),
+      roughness: 0.96,
+      metalness: 0,
+      side: THREE.BackSide,
+    });
+
+    const garment = new THREE.Mesh(g, outerMat);
     garment.name = spec.name;
+    const lining = new THREE.Mesh(g, innerMat);
+    lining.name = `${spec.name}-lining`;
+    lining.raycast = () => {};
+    lining.userData.skipRecolor = true;
+    garment.add(lining);
     if (srcMorphs.length && body.morphTargetDictionary) {
       garment.morphTargetDictionary = { ...body.morphTargetDictionary };
       garment.morphTargetInfluences = new Array(srcMorphs.length).fill(0);
+      lining.morphTargetDictionary = { ...body.morphTargetDictionary };
+      lining.morphTargetInfluences = new Array(srcMorphs.length).fill(0);
       // Mirror the body's influences at draw time. Several drivers write the
       // body's morphs at different points in the frame (demographic shape,
       // breathing, findings) — onBeforeRender runs after ALL of them, so the
-      // fabric always deforms with the skin it covers.
+      // fabric (and its lining) always deforms with the skin it covers.
       garment.onBeforeRender = () => {
         const bodyInfl = body.morphTargetInfluences;
         const mine = garment.morphTargetInfluences;
+        const lin = lining.morphTargetInfluences;
         if (bodyInfl && mine) {
-          for (let k = 0; k < mine.length; k++) mine[k] = bodyInfl[k] ?? 0;
+          for (let k = 0; k < mine.length; k++) {
+            mine[k] = bodyInfl[k] ?? 0;
+            if (lin) lin[k] = bodyInfl[k] ?? 0;
+          }
         }
       };
     }

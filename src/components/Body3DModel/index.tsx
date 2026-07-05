@@ -3154,7 +3154,10 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   // same ElevenLabs → Supertonic → Web Speech chain as history answers.
   const patientVoice = usePatientVoice(caseData);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
-  const [anatomyLayer, setAnatomyLayer] = useState<'surface' | 'skeleton' | 'dressed'>('surface');
+  // Patients present "as you would find them": dressed by default — the
+  // student exposes regions through the exam (parting per CLOTHING_PARTING),
+  // which is itself the clinical skill. Skin/skeleton stay one click away.
+  const [anatomyLayer, setAnatomyLayer] = useState<'surface' | 'skeleton' | 'dressed'>('dressed');
   // Dressed view: zooming does NOT undress the patient. Exposure is a
   // deliberate clinical act — this flags that the student chose to expose
   // the focused region (reset on every region change/close).
