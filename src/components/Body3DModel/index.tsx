@@ -33,6 +33,7 @@ import { playBreathSound, playHeartSound, playPercussionSound, playBowelSound, s
 import type { BowelSoundType, BreathSoundType } from '@/data/clinicalSounds';
 import { inferInjuries, injuryRegionTo3D } from '@/lib/injuryMap';
 import { classifyBodyPoint } from '@/lib/regionClassifier';
+import { hashInjury } from './WoundLayer';
 import {
   deriveAppliedTreatmentRealismCues,
   deriveCaseRealismProfile,
@@ -166,10 +167,10 @@ const EXAM_LANDMARKS: ExamLandmark[] = [
   // (scripts/calibrate-face.cjs) — deterministic, not eyeballed. The sampler
   // overrides z to sit each dot on the real surface. Re-run that script if the
   // patient mesh/texture ever changes.
-  { id: 'right-eye', region: 'face', label: 'Right eye', sublabel: 'pupil size, reactivity', position: [-0.029, 1.607, 0.16], level: 'detail', actionId: 'pupils-size', tone: 'neuro', anchorSpace: 'mesh' },
-  { id: 'left-eye', region: 'face', label: 'Left eye', sublabel: 'compare equality', position: [0.029, 1.607, 0.16], level: 'detail', actionId: 'pupils-equality', tone: 'neuro', anchorSpace: 'mesh' },
-  { id: 'nose-detail', region: 'face', label: 'Nose', sublabel: 'CSF, bleeding, deformity', position: [0, 1.572, 0.16], level: 'detail', actionId: 'nose-inspect', tone: 'neutral', anchorSpace: 'mesh' },
-  { id: 'mouth-detail', region: 'face', label: 'Mouth / lips', sublabel: 'cyanosis, secretions, tongue', position: [0, 1.535, 0.165], level: 'detail', actionId: 'mouth-inspect', tone: 'airway', anchorSpace: 'mesh' },
+  { id: 'right-eye', region: 'face', label: 'Right eye', sublabel: 'pupil size, reactivity', position: [-0.029, 1.55, 0.16], level: 'detail', actionId: 'pupils-size', tone: 'neuro', anchorSpace: 'mesh' },
+  { id: 'left-eye', region: 'face', label: 'Left eye', sublabel: 'compare equality', position: [0.029, 1.55, 0.16], level: 'detail', actionId: 'pupils-equality', tone: 'neuro', anchorSpace: 'mesh' },
+  { id: 'nose-detail', region: 'face', label: 'Nose', sublabel: 'CSF, bleeding, deformity', position: [0, 1.515, 0.16], level: 'detail', actionId: 'nose-inspect', tone: 'neutral', anchorSpace: 'mesh' },
+  { id: 'mouth-detail', region: 'face', label: 'Mouth / lips', sublabel: 'cyanosis, secretions, tongue', position: [0, 1.478, 0.165], level: 'detail', actionId: 'mouth-inspect', tone: 'airway', anchorSpace: 'mesh' },
   // Carotid pulse points sit on the neck, lateral to the midline — tappable
   // from the face zoom so students feel the central pulse on the patient
   // (not the monitor). actionId 'pulse-carotid' fires onPulse from any view.
@@ -3150,6 +3151,8 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   const [revealedFindings, setRevealedFindings] = useState<Map<string, string>>(new Map());
   const [selectedAction, setSelectedAction] = useState<string | null>(null);
   const [patientReaction, setPatientReaction] = useState<PatientReaction | null>(null);
+  // Regions the patient has already consented to exposing this case.
+  const consentedRegionsRef = useRef<Set<string>>(new Set());
   // The patient's spoken voice — exam reactions are read aloud through the
   // same ElevenLabs → Supertonic → Web Speech chain as history answers.
   const patientVoice = usePatientVoice(caseData);
@@ -3458,6 +3461,32 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
     setActiveLimb(isLimbRegion(stepId) ? stepId as LimbSide : null);
     setSelectedAction(null);
     clearPatientReaction();
+
+    // Consent beat: focusing a clothed region parts the garment — for an
+    // awake patient that's an intimate act, so the patient audibly consents
+    // (as if the student just asked) and the coach reinforces asking first.
+    // Once per region per case (component is keyed per case → ref resets).
+    if (anatomyLayer === 'dressed' && (CLOTHING_PARTING[stepId]?.length ?? 0) > 0
+      && !consentedRegionsRef.current.has(stepId)) {
+      consentedRegionsRef.current.add(stepId);
+      if (getPatientResponsiveness(caseData).isAwake) {
+        const lines = [
+          'Yes, that’s fine — go ahead.',
+          'Okay… do what you need to do.',
+          'Alright, but please be quick — it’s a bit cold.',
+          'Go ahead. Is everything okay?',
+        ];
+        patientVoice.say(lines[hashInjury(stepId) % lines.length]);
+        setPatientReaction({
+          id: `${stepId}-consent`,
+          tone: 'coach',
+          title: 'Exposure with consent',
+          message: 'Always tell the patient before exposing them — “I need to look at your chest, is that alright?” — and keep exposure to the minimum needed.',
+          regionId: stepId,
+          actionId: 'expose-consent',
+        });
+      }
+    }
     // Initialize expanded groups for limb regions
     const groups = getLimbActionGroups(stepId);
     if (groups) {
@@ -3495,7 +3524,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
       animateCamera(controlsRef.current, pos, target, 460);
     }
     setIsFlipped(stepId === 'posterior-logroll');
-  }, [onRegionClick, animateCamera, clearPatientReaction]);
+  }, [onRegionClick, animateCamera, clearPatientReaction, anatomyLayer, caseData, patientVoice]);
 
   // Phase 2F: Sound progress animation
   const startSoundProgress = useCallback((actionId: string, durationMs: number) => {
