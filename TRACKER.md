@@ -65,7 +65,7 @@
 
 ## 🔜 Next build rounds (fresh session recommended — say the phrase)
 - [x] ~~"Masculinize the male patient"~~ — shipped 2026-07-05 (see Visual realism)
-- [ ] **"Design proposal"** — treatment flow + frontier classroom + consolidate case selection (the Training Mission Board already exists in StudentPanel; the older educator generator page may retire). Elias's guide-rails (2026-07-05): click the organ itself → contextual assessment actions (chest → stethoscope/inspect/palpate), **no dots on the patient**, clinically sound for paramedic students, easy to follow from assessment through treatment
+- [x] ~~"Design proposal"~~ — **written 2026-07-05 → `DESIGN_PROPOSAL.md`** (organ-first ring, no dots, finding→treatment bridge, one selection board, independent-run classroom + instructor cockpit). Awaiting Elias's approval per section; each lands independently ("build A1", "build the bridge", …)
 - [ ] Blender-authored garments (only if field test says runtime fabric isn't enough)
 - [ ] Tiered input: voice-first mode for senior students (OMS pattern B)
 
