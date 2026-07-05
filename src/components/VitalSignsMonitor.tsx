@@ -489,40 +489,51 @@ class ClinicalAudioEngine {
     }
   }
 
+  /**
+   * Play one device-voiced alarm pulse at time t. Real monitor alarms (IEC
+   * 60601-1-8, LIFEPAK-style voicing) are not raw square waves — they carry
+   * a harmonic stack (fundamental + ≥4 harmonics) with 75–200ms pulses and a
+   * rounded 10–20ms attack, which is what makes them read as "medical device"
+   * rather than 8-bit buzzer.
+   */
+  private alarmPulse(ctx: AudioContext, t: number, fundamental: number, level: number, durSec: number) {
+    // ponytail: 4 partials via detached oscillators — a PeriodicWave would be
+    // one node but this keeps per-partial level control and is throwaway-cheap.
+    const partials: Array<[number, number]> = [[1, 1], [2, 0.55], [3, 0.30], [4, 0.14]];
+    for (const [mult, amp] of partials) {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.value = fundamental * mult;
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(level * amp, t + 0.015); // rounded attack
+      gain.gain.setValueAtTime(level * amp, t + durSec - 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + durSec);
+      osc.start(t);
+      osc.stop(t + durSec);
+    }
+  }
+
   playAlarm(isCritical: boolean) {
     try {
       const ctx = this.getCtx();
       if (isCritical) {
-        // IEC 60601-1-8 HIGH PRIORITY: ♩♩♩-♩♩ pattern (3 fast + pause + 2 fast)
-        const pattern = [0, 0.12, 0.24, 0.48, 0.60];
-        pattern.forEach(offset => {
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.connect(gain);
-          gain.connect(ctx.destination);
-          osc.frequency.value = 880;
-          osc.type = 'square';
-          const t = ctx.currentTime + offset;
-          gain.gain.setValueAtTime(this._volume * 0.45, t);
-          gain.gain.setValueAtTime(this._volume * 0.45, t + 0.06);
-          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
-          osc.start(t);
-          osc.stop(t + 0.1);
-        });
+        // HIGH PRIORITY, LIFEPAK-style voicing of the IEC 60601-1-8 pattern:
+        // c-c-c — c-c played as a DOUBLE burst with an interburst gap
+        // (…c-c-c—c-c …… c-c-c—c-c). ~660Hz fundamental + harmonics.
+        const burst = [0, 0.17, 0.34, 0.60, 0.77];
+        const interburst = 1.35;
+        for (const rep of [0, interburst]) {
+          for (const offset of burst) {
+            this.alarmPulse(ctx, ctx.currentTime + rep + offset, 660, this._volume * 0.4, 0.11);
+          }
+        }
       } else {
-        // MEDIUM PRIORITY: ♩♩♩ pattern (3 slower tones)
+        // MEDIUM PRIORITY: ♩♩♩ — slower triple, lower pitch, softer
         for (let i = 0; i < 3; i++) {
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.connect(gain);
-          gain.connect(ctx.destination);
-          osc.frequency.value = 660;
-          osc.type = 'sine';
-          const t = ctx.currentTime + i * 0.22;
-          gain.gain.setValueAtTime(this._volume * 0.35, t);
-          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
-          osc.start(t);
-          osc.stop(t + 0.18);
+          this.alarmPulse(ctx, ctx.currentTime + i * 0.26, 520, this._volume * 0.3, 0.18);
         }
       }
     } catch {

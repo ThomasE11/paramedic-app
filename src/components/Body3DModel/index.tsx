@@ -8,7 +8,7 @@
  * the patient area so the student stays oriented to the anatomy.
  */
 
-import { useRef, useCallback, useState, useMemo, useEffect, Suspense } from 'react';
+import { useRef, useCallback, useState, useMemo, useEffect, useSyncExternalStore, Suspense } from 'react';
 import type { CSSProperties, ElementRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, ContactShadows, Environment, Html } from '@react-three/drei';
@@ -193,6 +193,18 @@ const EXAM_LANDMARKS: ExamLandmark[] = [
   { id: 'umbilicus-detail', region: 'abdomen', label: 'Umbilicus', sublabel: 'distension / bruising', position: [0, 1.035, 0.255], level: 'detail', actionId: 'abd-inspect', tone: 'abdomen' },
 ];
 
+/** Follow the app's class-based theme so the 3D backdrop matches the UI card. */
+function useIsDarkTheme(): boolean {
+  return useSyncExternalStore(
+    (onChange) => {
+      const observer = new MutationObserver(onChange);
+      observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+      return () => observer.disconnect();
+    },
+    () => document.documentElement.classList.contains('dark'),
+  );
+}
+
 function PatientSceneEnvironment() {
   // Colour/alpha retuned for the Stage-3 composer: post-processing tone-maps
   // AFTER alpha blending (premultiplied), so the old near-white planes at
@@ -200,17 +212,24 @@ function PatientSceneEnvironment() {
   // depth cue vanished. Deeper colours at higher alpha survive the composer
   // path and still read as the same light clinical backdrop; the difference
   // when the degrade ladder drops the composer is small.
+  //
+  // Dark mode gets its own palette: the 0.8-alpha light planes read as a
+  // glowing light-box inside the dark UI (the Stage-3 caveat) — deep
+  // blue-grey planes keep the depth cue while sitting naturally in the card.
+  const isDark = useIsDarkTheme();
+  const wall = isDark ? '#2a3440' : '#b2c0cb';
+  const floor = isDark ? '#333e4b' : '#c4cfd8';
   return (
     <group>
       <mesh position={[0, 0.9, -0.78]} raycast={() => null}>
         <planeGeometry args={[2.75, 2.25]} />
         {/* Deeper than the floor: the wall faces the key light head-on, so it
             needs a lower albedo to avoid clipping white under the composer. */}
-        <meshStandardMaterial color="#b2c0cb" roughness={0.94} transparent opacity={0.8} />
+        <meshStandardMaterial color={wall} roughness={0.94} transparent opacity={0.8} />
       </mesh>
       <mesh position={[0, -0.04, 0]} rotation={[-Math.PI / 2, 0, 0]} raycast={() => null}>
         <planeGeometry args={[4.2, 4.2]} />
-        <meshStandardMaterial color="#c4cfd8" roughness={0.92} transparent opacity={0.8} />
+        <meshStandardMaterial color={floor} roughness={0.92} transparent opacity={0.8} />
       </mesh>
     </group>
   );
