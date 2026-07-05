@@ -33,6 +33,7 @@ import { playBreathSound, playHeartSound, playPercussionSound, playBowelSound, s
 import type { BowelSoundType, BreathSoundType } from '@/data/clinicalSounds';
 import { inferInjuries, injuryRegionTo3D } from '@/lib/injuryMap';
 import { classifyBodyPoint } from '@/lib/regionClassifier';
+import { deriveRingArms, ringArmOffsets } from '@/lib/ringMenu';
 import { hashInjury } from './WoundLayer';
 import {
   deriveAppliedTreatmentRealismCues,
@@ -301,18 +302,14 @@ function LandmarkMarkers({
   onPulse?: (site: string) => void;
   sampler: SurfaceSampler | null;
 }) {
+  // No dots on the patient (field directive): the body itself is the
+  // interface at overview level — clicking anatomy selects the region and the
+  // action ring offers the verbs at the click point. Detail-level markers
+  // still render INSIDE a focused region, where they anchor precise targets
+  // (pupils, carotid, quadrants) that a bare-skin click can't disambiguate.
   const visibleMarkers = activeRegion
     ? EXAM_LANDMARKS.filter(marker => marker.region === activeRegion && marker.level === 'detail')
-    : EXAM_LANDMARKS.filter(marker => marker.level === 'overview' && (
-      requiredRegions.has(marker.region)
-      || marker.id === 'eyes-overview'
-      || marker.id === 'airway-overview'
-      || marker.id === 'chest-overview'
-      || marker.id === 'abdomen-overview'
-      || marker.id === 'pulse-carotid'
-      || marker.id === 'pulse-radial-r'
-      || marker.id === 'pulse-radial-l'
-    ));
+    : [];
 
   const toneClasses: Record<NonNullable<ExamLandmark['tone']>, string> = {
     neutral: 'border-slate-200/80 bg-white/90 text-slate-800 dark:border-white/10 dark:bg-slate-950/85 dark:text-slate-100',
@@ -3140,6 +3137,10 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
     [],
   );
   const [activeRegion, setActiveRegion] = useState<string | null>(null);
+  // Action ring: anchored at the student's exact click point on the body,
+  // offering the focused region's assessment verbs (derived from its real
+  // actions — src/lib/ringMenu.ts). null = hidden.
+  const [ring, setRing] = useState<{ point: [number, number, number]; region: string } | null>(null);
   const [activeLimb, setActiveLimb] = useState<LimbSide>(null);
   // Stage-3 auto-degrade ladder: single tier number, everything derived.
   // 0 = full (composer+dpr2+shadows) … 4 = minimal (see AdaptiveQuality.tsx).
@@ -3710,11 +3711,20 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   // on a different region) return false and fall through to BodyMesh's normal
   // region selection.
   const handleBodyPoint = useCallback((point: THREE.Vector3, regionId: string): boolean => {
-    if (!activeRegion || regionId !== activeRegion) return false;
+    // Action ring (DESIGN_PROPOSAL.md A2): any click that falls through to
+    // region selection also anchors the verb ring at the exact click point —
+    // click the organ, get its assessment verbs right there. Suppressed for
+    // guided-mode locked regions (BodyMesh blocks the selection anyway).
+    const showRing = () => {
+      if (guidedMode && nextGuidedStep && nextGuidedStep !== regionId) return;
+      setRing({ point: [point.x, point.y, point.z], region: regionId });
+    };
+    if (!activeRegion || regionId !== activeRegion) { showRing(); return false; }
     // Legs have no authored detail landmarks; the bottom of the leg IS the
     // foot — route it to the existing foot exam action.
     if ((activeRegion === 'right-leg' || activeRegion === 'left-leg')
       && classifyBodyPoint(point.x, point.y, point.z).foot) {
+      setRing(null);
       handleExamAction(`${activeRegion === 'right-leg' ? 'r' : 'l'}-foot-palpate`);
       return true;
     }
@@ -3730,12 +3740,30 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
     // ~9cm grab radius — generous enough for eyes/carotid, tight enough that
     // adjacent chest zones stay distinct.
     if (best && best.d2 <= 0.09 * 0.09) {
+      setRing(null);
       if (best.actionId.startsWith('pulse-') && onPulse) onPulse(best.actionId);
       else handleExamAction(best.actionId);
       return true;
     }
+    // Bare skin inside the focused region: re-anchor the ring here.
+    showRing();
     return false;
-  }, [activeRegion, handleExamAction, onPulse]);
+  }, [activeRegion, handleExamAction, onPulse, guidedMode, nextGuidedStep]);
+
+  // Ring arms derive from the clicked region's REAL actions (limb groups or
+  // subregions) — one arm per technique, canon exam order. No arms → no ring.
+  const ringArms = useMemo(() => {
+    if (!ring) return [];
+    const groups = getLimbActionGroups(ring.region);
+    const acts = groups ? groups.flatMap(g => g.actions) : getSubRegions(ring.region).flatMap(sr => sr.actions);
+    return deriveRingArms(acts);
+  }, [ring]);
+  const ringOffsets = useMemo(() => ringArmOffsets(ringArms.length, 52), [ringArms.length]);
+
+  // Closing the region (Esc / Full body / empty-space click) dismisses the ring.
+  useEffect(() => {
+    if (!activeRegion) setRing(null);
+  }, [activeRegion]);
 
   const allSubRegions = activeRegion ? getSubRegions(activeRegion) : [];
   const subRegions = allSubRegions;
@@ -4133,6 +4161,45 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 onPulse={onPulse}
                 sampler={surfaceSampler}
               />
+
+              {/* Action ring — the region's assessment verbs at the exact
+                  click point (A2). Verb click fires the region's primary
+                  action of that technique; ✕ or closing the region dismisses. */}
+              {ring && ringArms.length > 0 && (
+                <Html position={ring.point} center distanceFactor={2.4} zIndexRange={[110, 95]}>
+                  <div className="pointer-events-auto relative" style={{ width: 0, height: 0 }}>
+                    {ringArms.map((arm, i) => (
+                      <button
+                        key={arm.technique}
+                        type="button"
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onPointerUp={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setRing(null);
+                          if (arm.actionId.startsWith('pulse-') && onPulse) onPulse(arm.actionId);
+                          else handleExamAction(arm.actionId);
+                        }}
+                        className="absolute -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full border border-cyan-300/60 bg-slate-900/95 px-2.5 py-1 text-[10px] font-semibold text-cyan-50 shadow-lg backdrop-blur-sm transition-transform duration-100 hover:scale-110 hover:bg-cyan-700/95"
+                        style={{ left: ringOffsets[i]?.x ?? 0, top: ringOffsets[i]?.y ?? 0 }}
+                      >
+                        {arm.label}
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      aria-label="Dismiss actions"
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onPointerUp={(e) => e.stopPropagation()}
+                      onClick={(e) => { e.stopPropagation(); setRing(null); }}
+                      className="absolute flex h-4 w-4 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-slate-950/85 text-[8px] leading-none text-slate-300 shadow hover:text-white"
+                      style={{ left: 0, top: 0 }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </Html>
+              )}
 
               <CaseRealismMarkers
                 cues={visibleRealismCues}

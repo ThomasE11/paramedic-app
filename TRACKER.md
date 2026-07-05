@@ -59,13 +59,14 @@
 ## ⏳ Outstanding — needs Elias (minutes each)
 - [ ] **Monitor quiver — confirm the fix on your machine** (description received 2026-07-05, root-caused + fixed same day; see Interaction & playability)
 - [ ] **LIFEPAK-15 alarm**: judge the shipped voicing against your ear; describe the gap or provide a recording to match
-- [ ] **Landmark dots**: on-screen sign-off (or per-dot nudge directions)
+- [ ] ~~Landmark dots sign-off~~ — moot: overview dots deleted 2026-07-05 (A1); only in-region detail targets remain
 - [ ] **Dark-mode backdrop**: 10-second shade check
 - [ ] **Fabric/clothing verdict**: is the runtime fabric good enough, or escalate to Blender-authored garments?
 
 ## 🔜 Next build rounds (fresh session recommended — say the phrase)
 - [x] ~~"Masculinize the male patient"~~ — shipped 2026-07-05 (see Visual realism)
-- [x] ~~"Design proposal"~~ — **written 2026-07-05 → `DESIGN_PROPOSAL.md`** (organ-first ring, no dots, finding→treatment bridge, one selection board, independent-run classroom + instructor cockpit). Awaiting Elias's approval per section; each lands independently ("build A1", "build the bridge", …)
+- [x] ~~"Design proposal"~~ — **written 2026-07-05 → `DESIGN_PROPOSAL.md`**; remaining sections await approval: **A3 "build the bridge"** (finding→pre-filtered treatment bag), **B "consolidate selection"**, **C "frontier classroom"**
+- [x] **A1+A2 SHIPPED 2026-07-05 — no dots, organ-first action ring.** Overview landmark dots deleted (the body is the interface; in-region detail targets stay). Clicking anatomy anchors a verb ring at the exact click point — Inspect · Palpate · Percuss · Auscultate derived from the region's real actions (`src/lib/ringMenu.ts`, local-worker-authored against hand-written spec tests, 11 tests); verb fires the region's primary action of that technique; ring re-anchors on bare-skin clicks inside a region, respects guided-mode locks, dismisses on action/✕/region close. Verified live: chest click → ring → Auscultate → "Auscultating lung fields". Suite 178.
 - [ ] Blender-authored garments (only if field test says runtime fabric isn't enough)
 - [ ] Tiered input: voice-first mode for senior students (OMS pattern B)
 
