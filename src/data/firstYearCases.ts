@@ -711,7 +711,7 @@ export const firstYearCases: CaseScenario[] = [
     },
     vitalSignsProgression: {
       initial: { bp: '118/72', pulse: 92, respiration: 18, spo2: 98, gcs: 14, bloodGlucose: 3.2 },
-      afterIntervention: { bp: '122/75', pulse: 88, respiration: 18, spo2: 99, gcs: 15, bloodGlucose: 5.8 }
+      afterIntervention: { bp: '112/68', pulse: 82, respiration: 16, spo2: 98, gcs: 15, bloodGlucose: 5.8 }
     },
     expectedFindings: {
       keyObservations: [
@@ -907,7 +907,7 @@ export const firstYearCases: CaseScenario[] = [
     },
     vitalSignsProgression: {
       initial: { bp: '132/80', pulse: 100, respiration: 22, spo2: 99, gcs: 15, painScore: 8 },
-      afterIntervention: { bp: '122/76', pulse: 88, respiration: 18, spo2: 99, gcs: 15, painScore: 5 },
+      afterIntervention: { bp: '122/75', pulse: 70, respiration: 15, spo2: 99, gcs: 15, painScore: 2 },
       deterioration: { bp: '140/88', pulse: 112, respiration: 24, spo2: 99, gcs: 15, painScore: 9 }
     },
     expectedFindings: {
@@ -1095,7 +1095,7 @@ export const firstYearCases: CaseScenario[] = [
     },
     vitalSignsProgression: {
       initial: { bp: '95/58', pulse: 130, respiration: 28, spo2: 97, gcs: 12, temperature: 39.5 },
-      afterIntervention: { bp: '92/56', pulse: 118, respiration: 24, spo2: 99, gcs: 15, temperature: 38.8 },
+      afterIntervention: { bp: '88/54', pulse: 115, respiration: 20, spo2: 99, gcs: 12, temperature: 38.8 },
       deterioration: { bp: '90/55', pulse: 140, respiration: 32, spo2: 94, gcs: 8, temperature: 40.2 }
     },
     expectedFindings: {
@@ -1495,7 +1495,7 @@ export const firstYearCases: CaseScenario[] = [
     },
     vitalSignsProgression: {
       initial: { bp: '90/55', pulse: 120, respiration: 32, spo2: 95, gcs: 15, temperature: 38.2 },
-      afterIntervention: { bp: '88/54', pulse: 110, respiration: 28, spo2: 97, gcs: 15, temperature: 38.0 },
+      afterIntervention: { bp: '80/50', pulse: 95, respiration: 18, spo2: 99, gcs: 15, temperature: 38.0 },
       deterioration: { bp: '85/50', pulse: 145, respiration: 40, spo2: 90, gcs: 14, temperature: 38.5 }
     },
     expectedFindings: {

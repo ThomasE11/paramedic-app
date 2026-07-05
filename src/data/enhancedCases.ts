@@ -137,7 +137,7 @@ export const moreTraumaCases: CaseScenario[] = [
     ],
     vitalSignsProgression: {
       initial: { bp: '70/50', pulse: 140, respiration: 32, spo2: 88, gcs: 8, bloodGlucose: 5.4 },
-      afterIntervention: { bp: '85/60', pulse: 130, respiration: 28, spo2: 92, gcs: 10 },
+      afterIntervention: { bp: '100/68', pulse: 100, respiration: 24, spo2: 98, gcs: 9 },
       deterioration: { bp: '50/30', pulse: 160, respiration: 8, spo2: 75, gcs: 3 }
     },
     expectedFindings: {
@@ -1688,7 +1688,7 @@ export const moreTraumaCases: CaseScenario[] = [
     ],
     vitalSignsProgression: {
       initial: { bp: '100/70', pulse: 115, respiration: 22, spo2: 96, gcs: 15, bloodGlucose: 5.4 },
-      afterIntervention: { bp: '95/65', pulse: 125, respiration: 24, spo2: 95, gcs: 15 },
+      afterIntervention: { bp: '103/70', pulse: 78, respiration: 16, spo2: 97, gcs: 15 },
       deterioration: { bp: '75/45', pulse: 140, respiration: 28, spo2: 92, gcs: 14 }
     },
     expectedFindings: {
@@ -2156,7 +2156,7 @@ export const moreTraumaCases: CaseScenario[] = [
     ],
     vitalSignsProgression: {
       initial: { bp: '75/50', pulse: 135, respiration: 26, spo2: 93, gcs: 15, bloodGlucose: 5.4 },
-      afterIntervention: { bp: '90/60', pulse: 120, respiration: 22, spo2: 96, gcs: 15 },
+      afterIntervention: { bp: '98/64', pulse: 105, respiration: 18, spo2: 98, gcs: 15 },
       deterioration: { bp: '60/40', pulse: 155, respiration: 30, spo2: 88, gcs: 14 }
     },
     expectedFindings: {
@@ -3568,7 +3568,7 @@ export const cardiacECGCases: CaseScenario[] = [
     ],
     vitalSignsProgression: {
       initial: { bp: '85/55', pulse: 55, respiration: 20, spo2: 96, gcs: 15, bloodGlucose: 5.4 },
-      afterIntervention: { bp: '95/60', pulse: 65, respiration: 18, spo2: 98, gcs: 15 }
+      afterIntervention: { bp: '105/68', pulse: 95, respiration: 17, spo2: 99, gcs: 15 }
     },
     expectedFindings: {
       keyObservations: [
@@ -4005,7 +4005,7 @@ export const cardiacECGCases: CaseScenario[] = [
     ],
     vitalSignsProgression: {
       initial: { bp: '130/85', pulse: 78, respiration: 16, spo2: 98, gcs: 15, bloodGlucose: 5.4 },
-      afterIntervention: { bp: '128/82', pulse: 75, respiration: 16, spo2: 98, gcs: 15 }
+      afterIntervention: { bp: '95/62', pulse: 68, respiration: 14, spo2: 99, gcs: 15 }
     },
     expectedFindings: {
       keyObservations: [

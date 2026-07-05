@@ -128,7 +128,7 @@ export const asthmaSeverityCases: CaseScenario[] = [
     },
     vitalSignsProgression: {
       initial: { pulse: 92, respiration: 20, spo2: 95, bp: '120/75', gcs: 15, temperature: 36.6, bloodGlucose: 5.8 },
-      afterIntervention: { pulse: 78, respiration: 16, spo2: 98, bp: '115/72', gcs: 15, temperature: 36.6 },
+      afterIntervention: { pulse: 94, respiration: 15, spo2: 99, bp: '108/68', gcs: 15, temperature: 36.6 },
       deterioration: { pulse: 105, respiration: 24, spo2: 92, bp: '125/80', gcs: 15, temperature: 36.6 },
     },
     history: {
@@ -297,7 +297,7 @@ export const asthmaSeverityCases: CaseScenario[] = [
     },
     vitalSignsProgression: {
       initial: { pulse: 112, respiration: 26, spo2: 91, bp: '135/85', gcs: 15, temperature: 36.8, bloodGlucose: 6.2 },
-      afterIntervention: { pulse: 88, respiration: 18, spo2: 96, bp: '120/75', gcs: 15, temperature: 36.8 },
+      afterIntervention: { pulse: 105, respiration: 15, spo2: 98, bp: '135/84', gcs: 15, temperature: 36.8 },
       deterioration: { pulse: 135, respiration: 34, spo2: 84, bp: '140/90', gcs: 14, temperature: 36.8 },
     },
     history: {

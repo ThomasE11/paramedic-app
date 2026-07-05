@@ -134,7 +134,7 @@ export const caseDatabase: CaseScenario[] = [
     ],
     vitalSignsProgression: {
       initial: { bp: '90/60', pulse: 110, respiration: 24, spo2: 94, gcs: 15, bloodGlucose: 5.4 },
-      afterIntervention: { bp: '100/70', pulse: 105, respiration: 22, spo2: 98, gcs: 15 }
+      afterIntervention: { bp: '88/58', pulse: 98, respiration: 15, spo2: 99, gcs: 15 }
     },
     expectedFindings: {
       keyObservations: ['Crushing chest pain', 'Diaphoresis', 'Radiation to arm/jaw', 'Hypotension'],
@@ -357,7 +357,7 @@ export const caseDatabase: CaseScenario[] = [
     },
     vitalSignsProgression: {
       initial: { bp: '0/0', pulse: 0, respiration: 0, spo2: 0, gcs: 3 },
-      afterIntervention: { bp: '0/0', pulse: 0, respiration: 0, spo2: 0, gcs: 3 },
+      afterIntervention: { bp: '0/0', pulse: 0, respiration: 10, spo2: 95, gcs: 3 },
       deterioration: { bp: '0/0', pulse: 0, respiration: 0, spo2: 0, gcs: 3 }
     },
     expectedFindings: {
@@ -641,7 +641,7 @@ export const caseDatabase: CaseScenario[] = [
     },
     vitalSignsProgression: {
       initial: { bp: '110/70', pulse: 150, respiration: 22, spo2: 96, gcs: 15, bloodGlucose: 5.4 },
-      afterIntervention: { bp: '125/75', pulse: 95, respiration: 18, spo2: 98, gcs: 15 },
+      afterIntervention: { bp: '98/62', pulse: 130, respiration: 15, spo2: 99, gcs: 15 },
       deterioration: { bp: '90/60', pulse: 165, respiration: 28, spo2: 92, gcs: 13 }
     },
     expectedFindings: {
@@ -928,7 +928,7 @@ export const caseDatabase: CaseScenario[] = [
       // Prehospital management is monitoring + calm transport (no BP-lowering
       // agents in the field for hypertensive emergency — labetalol is ED-only).
       // Vitals stay broadly static; mild improvement reflects anxiolysis + analgesia.
-      afterIntervention: { bp: '235/125', pulse: 88, respiration: 18, spo2: 99, gcs: 15 },
+      afterIntervention: { bp: '224/120', pulse: 85, respiration: 15, spo2: 99, gcs: 14 },
       deterioration: { bp: '260/140', pulse: 110, respiration: 26, spo2: 94, gcs: 12 }
     },
     expectedFindings: {
@@ -1214,7 +1214,7 @@ export const caseDatabase: CaseScenario[] = [
     },
     vitalSignsProgression: {
       initial: { bp: '130/80', pulse: 120, respiration: 32, spo2: 88, gcs: 14, bloodGlucose: 5.4 },
-      afterIntervention: { bp: '125/78', pulse: 110, respiration: 26, spo2: 92, gcs: 15 }
+      afterIntervention: { bp: '140/86', pulse: 128, respiration: 15, spo2: 98, gcs: 14 }
     },
     expectedFindings: {
       keyObservations: ['Severe respiratory distress', 'Peak flow <50% predicted', 'Silent chest warning sign'],
@@ -2382,7 +2382,7 @@ export const caseDatabase: CaseScenario[] = [
     },
     vitalSignsProgression: {
       initial: { bp: '80/50', pulse: 125, respiration: 8, spo2: 85, gcs: 5 },
-      afterIntervention: { bp: '90/60', pulse: 115, respiration: 14, spo2: 92, gcs: 5 }
+      afterIntervention: { bp: '96/62', pulse: 95, respiration: 12, spo2: 96, gcs: 5 }
     },
     expectedFindings: {
       keyObservations: ['Multiple trauma', 'Head injury with unequal pupils', 'Hypovolemic shock', 'Chest injury'],
@@ -6061,7 +6061,7 @@ export const caseDatabase: CaseScenario[] = [
     },
     vitalSignsProgression: {
       initial: { bp: '85/50', pulse: 150, respiration: 28, spo2: 94, temperature: 40.2, gcs: 10, bloodGlucose: 5.8 },
-      afterIntervention: { bp: '90/55', pulse: 140, respiration: 26, spo2: 98, temperature: 39.1, gcs: 14 }
+      afterIntervention: { bp: '80/48', pulse: 135, respiration: 20, spo2: 99, temperature: 39.1, gcs: 12 }
     },
     expectedFindings: {
       keyObservations: ['High fever (40.2°C)', 'Seizure (likely febrile)', 'Signs of dehydration', 'Hot environment', 'Recent febrile illness'],
@@ -6964,7 +6964,7 @@ export const caseDatabase: CaseScenario[] = [
     },
     vitalSignsProgression: {
       initial: { bp: '85/55', pulse: 135, respiration: 28, spo2: 91, temperature: 37.2, gcs: 14, bloodGlucose: 5.4 },
-      afterIntervention: { bp: '95/60', pulse: 120, respiration: 26, spo2: 96, gcs: 14 }
+      afterIntervention: { bp: '105/68', pulse: 88, respiration: 12, spo2: 98, gcs: 14 }
     },
     expectedFindings: {
       keyObservations: ['Extensive burns (>30% TBSA)', 'Face/neck/chest burns - high risk for airway', 'Soot around airway - inhalation likely', 'Signs of hypovolemic shock', 'Possible circumferential burns to extremities'],
@@ -10999,7 +10999,7 @@ export const caseDatabase: CaseScenario[] = [
     ],
     vitalSignsProgression: {
       initial: { bp: '75/45', pulse: 32, respiration: 14, spo2: 94, gcs: 13, temperature: 36.2, bloodGlucose: 6.2 },
-      afterIntervention: { bp: '92/58', pulse: 52, respiration: 14, spo2: 97, gcs: 14 },
+      afterIntervention: { bp: '105/66', pulse: 112, respiration: 14, spo2: 98, gcs: 15 },
       enRoute: { bp: '100/65', pulse: 58, respiration: 14, spo2: 98, gcs: 15 }
     },
     expectedFindings: {
@@ -11205,7 +11205,7 @@ export const caseDatabase: CaseScenario[] = [
     ],
     vitalSignsProgression: {
       initial: { bp: '82/50', pulse: 28, respiration: 20, spo2: 92, gcs: 14, bloodGlucose: 5.8 },
-      afterIntervention: { bp: '95/60', pulse: 65, respiration: 16, spo2: 97, gcs: 15 },
+      afterIntervention: { bp: '104/66', pulse: 108, respiration: 15, spo2: 98, gcs: 14 },
       deterioration: { bp: '60/35', pulse: 20, respiration: 24, spo2: 85, gcs: 10 }
     },
     expectedFindings: {

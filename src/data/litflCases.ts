@@ -625,7 +625,7 @@ export const litflCaseDatabase: CaseScenario[] = [
     ],
     vitalSignsProgression: {
       initial: { bp: '88/52', pulse: 128, respiration: 32, spo2: 83, gcs: 14, temperature: 37.1, etco2: 22, bloodGlucose: 6.8 },
-      afterIntervention: { bp: '95/60', pulse: 115, respiration: 26, spo2: 90, gcs: 15, etco2: 28 },
+      afterIntervention: { bp: '92/56', pulse: 115, respiration: 16, spo2: 94, gcs: 14, etco2: 28 },
       deterioration: { bp: '65/35', pulse: 140, respiration: 40, spo2: 70, gcs: 8, etco2: 15 }
     },
     expectedFindings: {
@@ -1101,7 +1101,7 @@ export const litflCaseDatabase: CaseScenario[] = [
     ],
     vitalSignsProgression: {
       initial: { bp: '145/90', pulse: 95, respiration: 24, spo2: 95, gcs: 15, temperature: 36.8, bloodGlucose: 8.2, etco2: 34 },
-      afterIntervention: { bp: '125/78', pulse: 82, respiration: 18, spo2: 98, gcs: 15, etco2: 36 },
+      afterIntervention: { bp: '100/64', pulse: 74, respiration: 14, spo2: 99, gcs: 15, etco2: 36 },
       deterioration: { bp: '85/55', pulse: 130, respiration: 30, spo2: 88, gcs: 13, etco2: 25 }
     },
     expectedFindings: {

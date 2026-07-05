@@ -183,7 +183,7 @@ export const secondYearCases: CaseScenario[] = [
     },
     vitalSignsProgression: {
       initial: { bp: '145/85', pulse: 125, respiration: 32, spo2: 88, gcs: 14, temperature: 37.2, bloodGlucose: 5.4 },
-      afterIntervention: { bp: '138/80', pulse: 110, respiration: 26, spo2: 94, gcs: 15 },
+      afterIntervention: { bp: '150/90', pulse: 128, respiration: 15, spo2: 98, gcs: 14 },
       deterioration: { bp: '155/95', pulse: 145, respiration: 40, spo2: 82, gcs: 12 }
     },
     expectedFindings: {
@@ -618,7 +618,7 @@ export const secondYearCases: CaseScenario[] = [
     },
     vitalSignsProgression: {
       initial: { bp: '155/95', pulse: 95, respiration: 22, spo2: 95, gcs: 15, temperature: 37.0, bloodGlucose: 6.1 },
-      afterIntervention: { bp: '150/90', pulse: 92, respiration: 20, spo2: 96, gcs: 15 },
+      afterIntervention: { bp: '112/70', pulse: 75, respiration: 15, spo2: 98, gcs: 15 },
       deterioration: { bp: '135/80', pulse: 60, respiration: 14, spo2: 92, gcs: 14 }
     },
     expectedFindings: {
@@ -1460,7 +1460,7 @@ export const secondYearCases: CaseScenario[] = [
     },
     vitalSignsProgression: {
       initial: { bp: '130/85', pulse: 110, respiration: 22, spo2: 96, gcs: 15, temperature: 37.4, bloodGlucose: 7.8 },
-      afterIntervention: { bp: '125/80', pulse: 100, respiration: 20, spo2: 99, gcs: 15 },
+      afterIntervention: { bp: '123/80', pulse: 72, respiration: 15, spo2: 99, gcs: 15 },
       deterioration: { bp: '100/60', pulse: 130, respiration: 28, spo2: 92, gcs: 14 }
     },
     expectedFindings: {
@@ -2623,7 +2623,7 @@ export const secondYearCases: CaseScenario[] = [
     },
     vitalSignsProgression: {
       initial: { bp: '115/70', pulse: 85, respiration: 16, spo2: 99, gcs: 15, temperature: 36.9, bloodGlucose: 4.8 },
-      afterIntervention: { bp: '118/72', pulse: 82, respiration: 16, spo2: 99, gcs: 15 },
+      afterIntervention: { bp: '125/76', pulse: 70, respiration: 16, spo2: 99, gcs: 15 },
       deterioration: { bp: '105/65', pulse: 95, respiration: 20, spo2: 98, gcs: 14 }
     },
     expectedFindings: {
