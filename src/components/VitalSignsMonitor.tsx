@@ -3614,17 +3614,22 @@ export function VitalSignsMonitor({
                       )}
                     </div>
                   )}
-                  {/* Status bar */}
-                  {(cprState?.active || (alarmStatus.count > 0 && alarmsEnabled)) && (
-                    <div className="px-2 py-1 border-t border-gray-800/40 flex items-center gap-3" style={{ background: 'rgba(0,0,0,0.5)' }}>
-                      {cprState?.active && <span className="text-[8px] font-mono text-yellow-300 font-bold">CPR: Adult - {cprState.running ? 'Active' : 'Paused'} 30:2</span>}
-                      {alarmStatus.count > 0 && alarmsEnabled && (
-                        <span className={`text-[8px] font-mono font-bold ${alarmStatus.hasCritical ? 'text-red-400 animate-pulse' : 'text-yellow-400'}`}>
-                          {alarmStatus.count} Alarm{alarmStatus.count > 1 ? 's' : ''} {formatCodeTimer(codeTimerSeconds)}
-                        </span>
-                      )}
-                    </div>
-                  )}
+                  {/* Status bar — ALWAYS rendered at a constant height. This row
+                      used to mount only while an alarm/CPR was active, so a vital
+                      hovering at its alarm threshold flipped it in/out at the 1Hz
+                      tick — the monitor's height oscillated and (via the window
+                      scrollbar toggling) the whole page quivered with it. Real
+                      monitors keep a permanent status strip anyway. */}
+                  <div className="h-[22px] px-2 border-t border-gray-800/40 flex items-center gap-3" style={{ background: 'rgba(0,0,0,0.5)' }}>
+                    {cprState?.active && <span className="text-[8px] font-mono text-yellow-300 font-bold">CPR: Adult - {cprState.running ? 'Active' : 'Paused'} 30:2</span>}
+                    {alarmStatus.count > 0 && alarmsEnabled ? (
+                      <span className={`text-[8px] font-mono font-bold ${alarmStatus.hasCritical ? 'text-red-400 animate-pulse' : 'text-yellow-400'}`}>
+                        {alarmStatus.count} Alarm{alarmStatus.count > 1 ? 's' : ''} {formatCodeTimer(codeTimerSeconds)}
+                      </span>
+                    ) : !cprState?.active && (
+                      <span className="text-[8px] font-mono text-gray-600">ALARMS {alarmsEnabled ? 'ON' : 'OFF'}</span>
+                    )}
+                  </div>
                 </div>
                 {/* RIGHT STRIP — large transport-monitor numerics */}
                 <div className="hidden sm:flex w-[118px] shrink-0 flex-col border-l border-gray-800/70" style={{ background: 'linear-gradient(180deg,rgba(0,0,0,0.72),rgba(0,0,0,0.52))' }}>

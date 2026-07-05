@@ -300,6 +300,12 @@ html { scroll-behavior: smooth; }
 
 /* Scroll fixes */
 html, body { overflow-y: auto !important; overflow-x: hidden !important; height: auto !important; min-height: 100vh !important; }
+/* Reserve the scrollbar's width permanently. With classic (non-overlay)
+   scrollbars — macOS with a mouse plugged in, most Windows — any content-height
+   oscillation flickers the scrollbar in/out, re-centering the whole container
+   each time: the field-reported "monitor quivers and the body/bags quiver with
+   it". Overlay-scrollbar platforms ignore this. */
+html { scrollbar-gutter: stable; }
 #root { overflow-y: auto !important; height: auto !important; min-height: 100vh !important; }
 
 /* Toast styles */
