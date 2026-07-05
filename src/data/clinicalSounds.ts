@@ -285,10 +285,84 @@ export const BOWEL_SOUND_DESCRIPTIONS: Record<BowelSoundType, {
 declare const require: (id: './treatmentProtocols') => typeof import('./treatmentProtocols');
 
 /**
+ * Reconcile derived lung sounds with the AUTHORED findings text. The category
+ * and severity-protocol branches return early, so a case whose findings
+ * explicitly say "wheeze" could derive 'diminished' (field bug: "if it's a
+ * wheeze it needs to SOUND like a wheeze"). What the case text tells the
+ * student must match what the stethoscope plays — authored findings win.
+ * Mixed findings (cardiac asthma: wheeze + basal crackles; inhalation burn:
+ * stridor + crackles) split across zones the way they present clinically.
+ */
+export function reconcileLungsWithFindings(state: ClinicalSoundState, findingsStr: string): ClinicalSoundState {
+  const f = findingsStr.toLowerCase();
+  const positive = (term: string) => new RegExp(`(?<!no )(?<!without )(?<!nil )(?<!denies )${term}`).test(f);
+
+  const wantsSilent = positive('silent chest') || positive('absent breath');
+  const wantsStridor = positive('stridor');
+  const wantsWheeze = positive('wheez');
+  const wantsCrackles = positive('crackle') || positive('rales');
+  const crackleType: BreathSoundType = f.includes('coarse') ? 'crackles-coarse' : 'crackles-fine';
+
+  const lungs = [state.leftLung, state.rightLung, state.leftUpperLung, state.leftLowerLung, state.rightUpperLung, state.rightLowerLung]
+    .filter(Boolean) as BreathSoundType[];
+  const has = (t: (s: BreathSoundType) => boolean) => lungs.some(t);
+
+  // Silent chest is the extremis override — authored silence beats everything.
+  if (wantsSilent) {
+    if (has(s => s === 'absent' || s === 'diminished')) return state;
+    return { ...state, leftLung: 'absent', rightLung: 'absent', leftUpperLung: undefined, leftLowerLung: undefined, rightUpperLung: undefined, rightLowerLung: undefined };
+  }
+
+  const next: ClinicalSoundState = { ...state };
+  let changed = false;
+
+  // Primary adventitious sound for the main fields: stridor > wheeze > crackles.
+  const primary: BreathSoundType | null = wantsStridor ? 'stridor' : wantsWheeze ? 'wheeze' : wantsCrackles ? crackleType : null;
+  if (primary && !has(s => s === primary || (primary.startsWith('crackles') && s.startsWith('crackles')))) {
+    next.leftLung = primary;
+    next.rightLung = primary;
+    next.leftUpperLung = undefined; next.leftLowerLung = undefined;
+    next.rightUpperLung = undefined; next.rightLowerLung = undefined;
+    changed = true;
+  }
+
+  // Mixed presentations get zone splits: the secondary sound sits where it
+  // lives clinically — crackles at the bases (cardiac asthma, inhalation
+  // injury); wheeze in the upper fields when crackles took the mains.
+  if (wantsCrackles && (wantsStridor || wantsWheeze)) {
+    next.leftLowerLung = crackleType;
+    next.rightLowerLung = crackleType;
+    next.leftUpperLung = next.leftLung;
+    next.rightUpperLung = next.rightLung;
+    changed = true;
+  } else if (wantsStridor && wantsWheeze) {
+    // Croup/anaphylaxis pattern: upper-airway stridor over lower-field wheeze.
+    next.leftLowerLung = 'wheeze';
+    next.rightLowerLung = 'wheeze';
+    next.leftUpperLung = next.leftLung;
+    next.rightUpperLung = next.rightLung;
+    changed = true;
+  }
+
+  return changed ? next : state;
+}
+
+/**
  * Determine initial clinical sounds based on case category, presentation,
  * and — when available — the severity-aware treatment protocol system.
+ * The authored-findings reconciliation (above) runs as a final pass.
  */
 export function getInitialSounds(
+  caseCategory: string,
+  subcategory?: string,
+  findings?: string[],
+  initialVitals?: { spo2?: number; pulse?: number; respiration?: number; gcs?: number },
+): ClinicalSoundState {
+  const base = computeBaseSounds(caseCategory, subcategory, findings, initialVitals);
+  return reconcileLungsWithFindings(base, (findings || []).join(' '));
+}
+
+function computeBaseSounds(
   caseCategory: string,
   subcategory?: string,
   findings?: string[],
