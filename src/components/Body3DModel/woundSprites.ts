@@ -1,0 +1,176 @@
+export type WoundKind = 'surgical-incision' | 'infected-incision' | 'laceration' | 'abrasion' | 'bruise' | 'burn';
+
+function drawWound(ctx: CanvasRenderingContext2D, kind: WoundKind, cx: number, cy: number, sizePx: number, rotationRad?: number): void {
+  ctx.save();
+  ctx.translate(cx, cy);
+  if (rotationRad) ctx.rotate(rotationRad);
+
+  let s = (cx * 31 + cy * 17) >>> 0;
+  const rand = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
+
+  switch (kind) {
+    case 'surgical-incision':
+      ctx.strokeStyle = '#8B0000';
+      ctx.lineWidth = sizePx * 0.03;
+      ctx.beginPath();
+      ctx.moveTo(-sizePx, 0);
+      ctx.lineTo(sizePx, 0);
+      ctx.stroke();
+
+      for (let i = -sizePx; i <= sizePx; i += sizePx * 0.12) {
+        ctx.beginPath();
+        ctx.moveTo(i, -sizePx * 0.05);
+        ctx.lineTo(i, sizePx * 0.05);
+        ctx.stroke();
+      }
+
+      const incisionGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, sizePx * 1.2);
+      incisionGradient.addColorStop(0, 'rgba(255, 99, 71, 0.3)');
+      incisionGradient.addColorStop(1, 'rgba(255, 99, 71, 0)');
+      ctx.fillStyle = incisionGradient;
+      ctx.fillRect(-sizePx * 1.2, -sizePx * 1.2, sizePx * 2.4, sizePx * 2.4);
+      break;
+
+    case 'infected-incision':
+      // Similar to surgical-incision but with a wider halo and yellowish spots
+      ctx.strokeStyle = '#FF6347';
+      ctx.lineWidth = sizePx * 0.05;
+      ctx.beginPath();
+      ctx.moveTo(-sizePx, 0);
+      ctx.lineTo(sizePx, 0);
+      ctx.stroke();
+
+      for (let i = -sizePx; i <= sizePx; i += sizePx * 0.12) {
+        ctx.beginPath();
+        ctx.moveTo(i, -sizePx * 0.05);
+        ctx.lineTo(i, sizePx * 0.05);
+        ctx.stroke();
+      }
+
+      const infectedGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, sizePx * 1.4);
+      infectedGradient.addColorStop(0, 'rgba(255, 99, 71, 0.6)');
+      infectedGradient.addColorStop(1, 'rgba(255, 99, 71, 0)');
+      ctx.fillStyle = infectedGradient;
+      ctx.fillRect(-sizePx * 1.4, -sizePx * 1.4, sizePx * 2.8, sizePx * 2.8);
+
+      for (let i = 0; i < 3; i++) {
+        const angle = rand() * Math.PI * 2;
+        ctx.beginPath();
+        ctx.arc(Math.cos(angle) * sizePx * 0.5, Math.sin(angle) * sizePx * 0.5, sizePx * 0.1, 0, Math.PI * 2);
+        ctx.fillStyle = '#FFFF99';
+        ctx.fill();
+      }
+      break;
+
+    case 'laceration':
+      // Jagged polyline with seeded jitter
+      ctx.strokeStyle = '#8B0000';
+      ctx.lineWidth = sizePx * 0.03;
+      ctx.beginPath();
+      ctx.moveTo(-sizePx, 0);
+      for (let i = -sizePx; i <= sizePx; i += sizePx / 6) {
+        const jitter = rand() * sizePx * 0.1 - sizePx * 0.05;
+        ctx.lineTo(i + jitter, Math.sin(i / sizePx) * sizePx * 0.2);
+      }
+      ctx.stroke();
+
+      ctx.strokeStyle = '#4B0082';
+      ctx.lineWidth = sizePx * 0.02;
+      ctx.beginPath();
+      ctx.moveTo(-sizePx, 0);
+      for (let i = -sizePx; i <= sizePx; i += sizePx / 6) {
+        const jitter = rand() * sizePx * 0.1 - sizePx * 0.05;
+        ctx.lineTo(i + jitter, Math.sin(i / sizePx) * sizePx * 0.2);
+      }
+      ctx.stroke();
+
+      const lacerationGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, sizePx * 1.6);
+      lacerationGradient.addColorStop(0, 'rgba(139, 0, 0, 0.2)');
+      lacerationGradient.addColorStop(1, 'rgba(139, 0, 0, 0)');
+      ctx.fillStyle = lacerationGradient;
+      ctx.fillRect(-sizePx * 1.6, -sizePx * 1.6, sizePx * 3.2, sizePx * 3.2);
+      break;
+
+    case 'abrasion':
+      // Small seeded dots/short strokes inside an ellipse area
+      for (let i = 0; i < 25; i++) {
+        const angle = rand() * Math.PI * 2;
+        ctx.beginPath();
+        ctx.arc(Math.cos(angle) * sizePx * 0.8, Math.sin(angle) * sizePx * 0.6, sizePx * 0.03, 0, Math.PI * 2);
+        ctx.fillStyle = '#A52A2A';
+        ctx.fill();
+      }
+
+      const abrasionGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, sizePx * 1.6);
+      abrasionGradient.addColorStop(0, 'rgba(165, 42, 42, 0.3)');
+      abrasionGradient.addColorStop(1, 'rgba(165, 42, 42, 0)');
+      ctx.fillStyle = abrasionGradient;
+      ctx.fillRect(-sizePx * 1.6, -sizePx * 1.6, sizePx * 3.2, sizePx * 3.2);
+      break;
+
+    case 'bruise':
+      // Three concentric ellipse fills
+      ctx.globalAlpha = 0.5;
+      ctx.fillStyle = '#800080';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, sizePx * 0.4, sizePx * 0.6, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#ADD8E6';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, sizePx * 0.5, sizePx * 0.7, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#90EE90';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, sizePx * 0.6, sizePx * 0.8, 0, 0, Math.PI * 2);
+      ctx.fill();
+      break;
+
+    case 'burn':
+      // Irregular seeded blob with blister circles
+      ctx.strokeStyle = '#FF4500';
+      ctx.lineWidth = sizePx * 0.03;
+      ctx.beginPath();
+      const points: [number, number][] = [];
+      for (let i = 0; i < 100; i++) {
+        const angle = rand() * Math.PI * 2;
+        points.push([Math.cos(angle) * sizePx * 0.8, Math.sin(angle) * sizePx * 0.6]);
+      }
+      ctx.moveTo(points[0][0], points[0][1]);
+      for (const [x, y] of points.slice(1)) {
+        ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+      ctx.stroke();
+
+      ctx.globalAlpha = 0.5;
+      ctx.fillStyle = '#FF4500';
+      ctx.beginPath();
+      ctx.moveTo(points[0][0], points[0][1]);
+      for (const [x, y] of points.slice(1)) {
+        ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+      ctx.fill();
+
+      const burnGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, sizePx * 1.6);
+      burnGradient.addColorStop(0, 'rgba(255, 69, 0, 0.3)');
+      burnGradient.addColorStop(1, 'rgba(255, 69, 0, 0)');
+      ctx.fillStyle = burnGradient;
+      ctx.fillRect(-sizePx * 1.6, -sizePx * 1.6, sizePx * 3.2, sizePx * 3.2);
+
+      for (let i = 0; i < 8; i++) {
+        const angle = rand() * Math.PI * 2;
+        ctx.beginPath();
+        ctx.arc(Math.cos(angle) * sizePx * 0.9, Math.sin(angle) * sizePx * 0.7, sizePx * 0.05, 0, Math.PI * 2);
+        ctx.fillStyle = '#FFDAB9';
+        ctx.fill();
+      }
+      break;
+  }
+
+  ctx.restore();
+}
+
+export { drawWound };
