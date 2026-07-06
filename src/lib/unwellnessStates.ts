@@ -42,6 +42,10 @@ export interface UnwellnessState {
   jaundice: number;
   /** Late-shock mottling, 0 (clear) .. 1 (mottled). Texture-overlay driver. */
   mottling: number;
+  /** Anaphylaxis facial/lip swelling, 0 (none) .. 1 (swollen). Drives the
+   *  finding_angioedema morph target. Text-driven and constant for the case,
+   *  like jaundice — an "immediate visual" per the realism directive. */
+  angioedema: number;
 }
 
 export interface UnwellnessInputs {
@@ -75,6 +79,7 @@ const MOTTLE_SYS_OFF = 85; // must recover ABOVE this to clear
 
 const DIAPHORESIS_TEXT = /diaphore|sweat|clammy|drenched|perspir/i;
 const JAUNDICE_TEXT = /jaundice|jaundiced|icteric|icterus|yellow scler/i;
+const ANGIOEDEMA_TEXT = /angio-?oedema|angioedema|swollen (lips?|face|tongue)|(lip|facial|tongue) swelling|(lips?|face|tongue) swollen/i;
 
 function clamp01(n: number): number {
   return n < 0 ? 0 : n > 1 ? 1 : n;
@@ -145,6 +150,9 @@ export function deriveUnwellness(inputs: UnwellnessInputs): UnwellnessState {
   // ---- Jaundice (text-driven, constant) ---------------------------------
   const jaundice = JAUNDICE_TEXT.test(text) ? 1 : 0;
 
+  // ---- Angioedema (text-driven, constant) --------------------------------
+  const angioedema = ANGIOEDEMA_TEXT.test(text) ? 1 : 0;
+
   // ---- Mottling (latched with hysteresis) -------------------------------
   const wasMottled = (previous?.mottling ?? 0) > 0.5;
   const systolic = parseSystolic(vitals?.bp);
@@ -170,7 +178,7 @@ export function deriveUnwellness(inputs: UnwellnessInputs): UnwellnessState {
     mottling = severeOn ? 1 : 0;
   }
 
-  return { diaphoresis, jaundice, mottling };
+  return { diaphoresis, jaundice, mottling, angioedema };
 }
 
 /**
@@ -189,6 +197,7 @@ export interface UnwellnessCaseLike {
     consciousness?: string;
   };
   abcde?: {
+    airway?: { findings?: string[] };
     circulation?: { skin?: string; findings?: string[] };
     breathing?: { findings?: string[] };
     exposure?: { findings?: string[] };
@@ -205,6 +214,7 @@ export function collectUnwellnessText(caseData: UnwellnessCaseLike | null | unde
     caseData.initialPresentation?.appearance,
     caseData.initialPresentation?.consciousness,
     caseData.abcde?.circulation?.skin,
+    ...(caseData.abcde?.airway?.findings ?? []),
     ...(caseData.abcde?.circulation?.findings ?? []),
     ...(caseData.abcde?.breathing?.findings ?? []),
     ...(caseData.abcde?.exposure?.findings ?? []),

@@ -6,6 +6,9 @@ import sys, bpy, math
 
 argv = sys.argv[sys.argv.index("--") + 1:]
 SRC, OUT = argv[0], argv[1]
+# Optional 3rd arg "finding_angioedema=1.0": force ONE morph for visual QA of
+# authored shape keys; everything else stays zeroed like the app.
+FORCE = argv[2].split("=") if len(argv) > 2 else None
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=SRC)
@@ -14,6 +17,9 @@ body = max((o for o in bpy.data.objects if o.type == "MESH"), key=lambda o: len(
 if body.data.shape_keys:
     for kb in body.data.shape_keys.key_blocks:
         kb.value = 0.0  # match the app: androgynous basis for the old file
+    if FORCE and FORCE[0] in body.data.shape_keys.key_blocks:
+        body.data.shape_keys.key_blocks[FORCE[0]].value = float(FORCE[1])
+        print("forced", FORCE[0], "=", FORCE[1])
 body.data.update()
 
 # Frame the body: camera on -Y looking at +Y, orthographic so proportions read true.
@@ -23,7 +29,12 @@ for o in bpy.data.objects:
 zmin = min((body.matrix_world @ v.co).z for v in body.data.vertices)
 zmax = max((body.matrix_world @ v.co).z for v in body.data.vertices)
 cz = (zmin + zmax) / 2
-cam_data = bpy.data.cameras.new("cam"); cam_data.type = "ORTHO"; cam_data.ortho_scale = (zmax - zmin) * 1.15
+scale = (zmax - zmin) * 1.15
+# Optional 4th arg "face": frame the head close-up (for facial-morph QA).
+if len(argv) > 3 and argv[3] == "face":
+    cz = zmin + (zmax - zmin) * 0.90
+    scale = (zmax - zmin) * 0.22
+cam_data = bpy.data.cameras.new("cam"); cam_data.type = "ORTHO"; cam_data.ortho_scale = scale
 cam = bpy.data.objects.new("cam", cam_data); bpy.context.collection.objects.link(cam)
 cam.location = (0, -4, cz); cam.rotation_euler = (math.pi/2, 0, 0)
 bpy.context.scene.camera = cam

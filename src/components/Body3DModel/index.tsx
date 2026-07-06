@@ -3233,7 +3233,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   // committed state back in via a ref (updated in the effect below). The ref
   // read is intentionally not a dependency — hysteresis compares against the
   // LAST committed state, which is exactly what the effect stores.
-  const prevUnwellnessRef = useRef<UnwellnessState>({ diaphoresis: 0, jaundice: 0, mottling: 0 });
+  const prevUnwellnessRef = useRef<UnwellnessState>({ diaphoresis: 0, jaundice: 0, mottling: 0, angioedema: 0 });
   const unwellness = useMemo<UnwellnessState>(() => {
     const source = vitals ?? caseData.vitalSignsProgression?.initial;
     const derived = deriveUnwellness({
@@ -3248,6 +3248,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
       if (CAPTURE_FORCED_UNWELL === 'diaphoresis') return { ...derived, diaphoresis: 1 };
       if (CAPTURE_FORCED_UNWELL === 'jaundice') return { ...derived, jaundice: 1 };
       if (CAPTURE_FORCED_UNWELL === 'mottling') return { ...derived, mottling: 1 };
+      if (CAPTURE_FORCED_UNWELL === 'angioedema') return { ...derived, angioedema: 1 };
     }
     return derived;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -3342,8 +3343,12 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
       const morph = MORPH_FOR_KIND[inj.kind];
       if (morph) out.add(morph);
     }
+    // Angioedema (anaphylaxis lip/facial swelling) is an IMMEDIATE visual per
+    // the realism directive — no assessment gate; a swollen face is visible
+    // from the first look, like jaundice. Text-driven via unwellnessStates.
+    if (unwellness.angioedema > 0) out.add('finding_angioedema');
     return Array.from(out);
-  }, [caseInjuries, assessedRegions]);
+  }, [caseInjuries, assessedRegions, unwellness.angioedema]);
 
   const guidedStepIndex = useMemo(() => {
     if (!nextGuidedStep) return -1;
