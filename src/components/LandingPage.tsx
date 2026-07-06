@@ -7,6 +7,7 @@ import {
   Timer, ShieldCheck, ClipboardCheck
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { AttributionsDialog } from '@/components/AttributionsDialog';
 
 const ClinicalReferenceDialog = lazy(() =>
   import('@/components/ClinicalReferenceDialog').then(m => ({ default: m.ClinicalReferenceDialog })),
@@ -567,10 +568,11 @@ export function LandingPage({ onRoleSelect, caseCount }: LandingPageProps) {
 
       {/* Footer */}
       <footer className="py-8 relative z-10 border-t border-white/45 dark:border-white/10">
-        <div className="max-w-6xl mx-auto px-6 text-center">
+        <div className="max-w-6xl mx-auto px-6 flex flex-col items-center gap-2">
           <p className="text-xs text-muted-foreground">
             For educational purposes only | Evidence-based paramedic training
           </p>
+          <AttributionsDialog />
         </div>
       </footer>
     </div>

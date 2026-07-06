@@ -1,4 +1,4 @@
-import type { CaseScenario } from '@/types';
+import type { CaseScenario, StudentYear } from '@/types';
 
 // Import enhanced cases
 import { enhancedCaseDatabase } from './enhancedCases';
@@ -11517,10 +11517,68 @@ export const caseDatabase: CaseScenario[] = [
 // This allows for backward compatibility while adding new detailed cases
 export const allCases: CaseScenario[] = [...caseDatabase, ...enhancedCaseDatabase, ...additionalCaseDatabase, ...firstYearCases, ...secondYearCases, ...litflCaseDatabase, ...severityVariantCases];
 
+type CohortMode = 'exact' | 'progressive';
+
+const DEGREE_YEAR_RANK: Partial<Record<StudentYear, number>> = {
+  '1st-year': 1,
+  '2nd-year': 2,
+  '3rd-year': 3,
+  '4th-year': 4,
+};
+
+const isStudentYear = (year: string): year is StudentYear => (
+  year === 'diploma' ||
+  year === '1st-year' ||
+  year === '2nd-year' ||
+  year === '3rd-year' ||
+  year === '4th-year'
+);
+
+/**
+ * Progressive cohort rule for student-facing case selection.
+ *
+ * Junior learners never see senior cases. Senior learners keep access to
+ * prerequisite cases for review and mixed practice. Diploma follows a practical
+ * core scope: explicit diploma cases plus Year 1/2 fundamentals, while Year 3/4
+ * advanced material stays hidden unless a case is explicitly tagged diploma.
+ */
+export const isCaseAvailableForCohort = (
+  caseYearLevels: readonly StudentYear[] | undefined,
+  selectedYear: StudentYear,
+  mode: CohortMode = 'progressive',
+): boolean => {
+  if (!caseYearLevels?.length) return false;
+  if (mode === 'exact') return caseYearLevels.includes(selectedYear);
+
+  if (selectedYear === 'diploma') {
+    return caseYearLevels.some(year =>
+      year === 'diploma' ||
+      year === '1st-year' ||
+      year === '2nd-year'
+    );
+  }
+
+  const selectedRank = DEGREE_YEAR_RANK[selectedYear];
+  if (!selectedRank) return caseYearLevels.includes(selectedYear);
+
+  return caseYearLevels.some(year => {
+    const caseRank = DEGREE_YEAR_RANK[year];
+    return typeof caseRank === 'number' && caseRank <= selectedRank;
+  });
+};
+
+export const getCasesForCohort = (
+  yearLevel: string | undefined,
+  options?: { mode?: CohortMode },
+): CaseScenario[] => {
+  if (!yearLevel || !isStudentYear(yearLevel)) return allCases;
+  return allCases.filter(c => isCaseAvailableForCohort(c.yearLevels, yearLevel, options?.mode ?? 'progressive'));
+};
+
 // Export function to get cases by filter
-export const getCasesByFilter = (filter: { yearLevel?: string; category?: string; priority?: string; complexity?: string; subcategory?: string }) => {
-  return allCases.filter(c => {
-    if (filter.yearLevel && !c.yearLevels?.includes(filter.yearLevel as any)) return false;
+export const getCasesByFilter = (filter: { yearLevel?: string; category?: string; priority?: string; complexity?: string; subcategory?: string; cohortMode?: CohortMode }) => {
+  const source = filter.yearLevel ? getCasesForCohort(filter.yearLevel, { mode: filter.cohortMode ?? 'exact' }) : allCases;
+  return source.filter(c => {
     if (filter.category && c.category !== filter.category) return false;
     if (filter.priority && c.priority !== filter.priority) return false;
     if (filter.complexity && c.complexity !== filter.complexity) return false;
@@ -11530,13 +11588,12 @@ export const getCasesByFilter = (filter: { yearLevel?: string; category?: string
 };
 
 // Export function to get random case with better fallback logic
-export const getRandomCase = (filters?: { yearLevel?: string; category?: string; complexity?: string; subcategory?: string }) => {
+export const getRandomCase = (filters?: { yearLevel?: string; category?: string; complexity?: string; subcategory?: string; cohortMode?: CohortMode }) => {
   let cases = allCases;
 
   // Filter by year level first
   if (filters?.yearLevel) {
-    const yearFilter = filters.yearLevel as any;
-    cases = cases.filter(c => c.yearLevels?.includes(yearFilter));
+    cases = getCasesForCohort(filters.yearLevel, { mode: filters.cohortMode ?? 'exact' });
   }
 
   // Filter by category
@@ -11682,11 +11739,19 @@ export const allConditionNames: string[] = [...conditionsIndex.keys()].sort((a, 
 );
 
 /** Get cases matching a specific condition (as primary or differential) filtered by year */
-export const getCasesByCondition = (condition: string, yearLevel?: string): CaseScenario[] => {
+export const getCasesByCondition = (
+  condition: string,
+  yearLevel?: string,
+  options?: { cohortMode?: CohortMode },
+): CaseScenario[] => {
   const caseIds = conditionsIndex.get(condition) || [];
   let cases = caseIds.map(id => allCases.find(c => c.id === id)).filter(Boolean) as CaseScenario[];
   if (yearLevel) {
-    cases = cases.filter(c => c.yearLevels?.includes(yearLevel as any));
+    if (isStudentYear(yearLevel)) {
+      cases = cases.filter(c => isCaseAvailableForCohort(c.yearLevels, yearLevel, options?.cohortMode ?? 'exact'));
+    } else {
+      cases = [];
+    }
   }
   return cases;
 };

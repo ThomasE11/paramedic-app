@@ -14,6 +14,7 @@
     "audit:cases": "node scripts/audit-cases.mjs",
     "audit:clinical": "node scripts/audit-clinical-regressions.mjs",
     "audit:scene-assets": "node scripts/audit-scene-assets.mjs",
+    "audit:assets": "node scripts/audit-assets.mjs",
     "verify:pdf": "node scripts/run-verify-pdf-export.mjs"
   },
   "dependencies": {

@@ -1,7 +1,7 @@
 # ParaMedic Studio — Build Tracker
 *Updated 2026-07-05. The single source of truth for what's shipped and what's next. Update this file as items land.*
 
-**Gate status: 167 tests · case audits ERROR/WARN/INFO = 0/0/0 · CI on every push · 20 consecutive green production deploys.**
+**Gate status: 167 tests · case audits ERROR/WARN/INFO = 0/0/0 · CI on every push · 21 consecutive green production deploys.**
 
 ---
 
@@ -37,6 +37,9 @@
 - [x] Weighted ABCDE scoring: order + timing count; year-banded targets (diploma 10:00 → Y4 5:00); arrest/⟨C⟩ABC exceptions
 - [x] Treatment bags: search-within-open-bag, treatments above equipment, discoverability hint
 - [x] Legible assessment cockpit + clinical-critique cards (solid dark, vivid tones)
+- [x] Training Mission Board: case selection consolidated into full scenario, category drill, and condition practice, with smart skill/equipment/time filters and a launch preview
+- [x] Progressive cohort case library: seniors retain prerequisite review cases; juniors are protected from senior complexity; diploma sees diploma + Year 1/2 fundamentals
+- [x] Clinical realism director: live scene constraints, visible patient cues, treatment evidence, and reassessment prompts now sit inside the patient bay flow
 - [x] Device-voiced alarms — field-validated: *"sounds exactly like a real monitor"*
 - [x] **Wheeze routing**: authored findings now drive the recordings (14 cases were wrong: asthma→diminished, croup→diminished, OD→snoring); whole-library audit guards it permanently
 - [x] Carotid pulse points on the neck; landmark dots model-derived
@@ -63,7 +66,9 @@
 
 ## 🔜 Next build rounds (fresh session recommended — say the phrase)
 - [ ] **"Masculinize the male patient"** — Blender pass (jaw, brow, shoulders); root cause of the "male shows female" report
-- [ ] **"Design proposal"** — treatment flow + frontier classroom + consolidate case selection (the Training Mission Board already exists in StudentPanel; the older educator generator page may retire)
+- [ ] **Treatment flow from design proposal** — prepare/apply/reassess loop, visible equipment state, contraindication/refusal reactions
+- [ ] **Frontier classroom from design proposal** — instructor control tower, role assignments, injects, synchronized debrief
+- [ ] **Game-grade clinical bay realism** — continue the PUBG-like patient-care fidelity build-out: anatomy-anchored actions, visible equipment state, patient behavior, and synchronized sound/visual consequences
 - [ ] Blender-authored garments (only if field test says runtime fabric isn't enough)
 - [ ] Tiered input: voice-first mode for senior students (OMS pattern B)
 

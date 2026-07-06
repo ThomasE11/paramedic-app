@@ -56,7 +56,7 @@ function seededShuffle<T>(array: T[], seed: string): T[] {
   }
   return shuffled;
 }
-import { allCases, getRandomCase, yearLevels, caseCategories, allConditionNames, getCasesByCondition } from '@/data/cases';
+import { allCases, getRandomCase, yearLevels, caseCategories, allConditionNames, getCasesByCondition, isCaseAvailableForCohort } from '@/data/cases';
 import { ensureCompleteVitals, buildInitialVitalsFromCase } from '@/data/treatmentEffects';
 import { type Treatment, TREATMENTS } from '@/data/enhancedTreatmentEffects';
 import {
@@ -73,6 +73,7 @@ import {
 } from '@/data/treatmentProtocols';
 import { checkRuntimeContraindications } from '@/lib/runtimeContraindications';
 import { evaluateTreatmentRealism } from '@/lib/patientRealism';
+import { deriveRealismDirectorState, type RealismDirectorState } from '@/lib/patientRealismDirector';
 import {
   buildReactionForTreatment,
   projectReactionVitals,
@@ -181,6 +182,97 @@ function getStudentCaseTitle(caseData: CaseScenario): string {
 
   return `${patient} — Emergency Call`;
 }
+
+type MissionSkillFocus = 'any' | 'assessment' | 'airway' | 'breathing' | 'circulation' | 'medication' | 'trauma';
+type MissionEquipmentFocus = 'any' | 'oxygen' | 'monitoring' | 'medications' | 'immobilisation' | 'ventilation';
+type MissionTimebox = 'untimed' | '10' | '15' | '20';
+
+const missionSkillKeywords: Record<MissionSkillFocus, string[]> = {
+  any: [],
+  assessment: ['assessment', 'primary survey', 'secondary survey', 'history', 'opqrst', 'samps', 'examine', 'inspect', 'palpate'],
+  airway: ['airway', 'choking', 'stridor', 'suction', 'foreign body', 'gurgling', 'anaphylaxis', 'opa', 'npa'],
+  breathing: ['breathing', 'respiratory', 'asthma', 'copd', 'pneumothorax', 'wheeze', 'oxygen', 'spo2', 'nebul'],
+  circulation: ['cardiac', 'chest pain', 'shock', 'bleeding', 'haemorrhage', 'hemorrhage', 'arrhythmia', 'stemi', 'pulse'],
+  medication: ['drug', 'medication', 'overdose', 'poison', 'toxic', 'anaphylaxis', 'diabetic', 'hypoglycaemia', 'hypoglycemia'],
+  trauma: ['trauma', 'fall', 'fracture', 'burn', 'collision', 'immobilisation', 'immobilization', 'splint', 'spinal'],
+};
+
+const missionEquipmentKeywords: Record<MissionEquipmentFocus, string[]> = {
+  any: [],
+  oxygen: ['oxygen', 'hypoxia', 'spo2', 'breathing', 'respiratory', 'asthma', 'copd', 'pneumothorax'],
+  monitoring: ['ecg', 'monitor', 'cardiac', 'arrhythmia', 'chest pain', 'blood pressure', 'spo2', 'vitals'],
+  medications: ['drug', 'medication', 'adrenaline', 'epinephrine', 'salbutamol', 'aspirin', 'gtn', 'naloxone', 'glucose'],
+  immobilisation: ['trauma', 'spinal', 'fracture', 'fall', 'collision', 'splint', 'cervical', 'long board', 'scoop'],
+  ventilation: ['ventilation', 'bvm', 'bag-valve', 'respiratory failure', 'apnoea', 'apnea', 'airway', 'intubation'],
+};
+
+function buildCaseSearchText(caseData: CaseScenario): string {
+  return [
+    caseData.title,
+    caseData.category,
+    caseData.subcategory,
+    caseData.priority,
+    caseData.complexity,
+    caseData.dispatchInfo?.callReason,
+    caseData.sceneInfo?.description,
+    caseData.initialPresentation?.generalImpression,
+    caseData.initialPresentation?.appearance,
+    caseData.initialPresentation?.consciousness,
+    ...(caseData.expectedFindings?.keyObservations ?? []),
+    ...(caseData.expectedFindings?.redFlags ?? []),
+    ...(caseData.expectedFindings?.differentialDiagnoses ?? []),
+    caseData.expectedFindings?.mostLikelyDiagnosis,
+    ...(caseData.managementPathway?.immediate ?? []),
+    ...(caseData.managementPathway?.monitoring ?? []),
+    ...(caseData.criticalActions?.map(action => action.description) ?? []),
+    ...(caseData.teachingPoints ?? []),
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+}
+
+function matchesMissionKeywords(caseData: CaseScenario, keywords: string[]): boolean {
+  if (keywords.length === 0) return true;
+  const text = buildCaseSearchText(caseData);
+  return keywords.some(keyword => text.includes(keyword));
+}
+
+function getCaseCompetencyTags(caseData: CaseScenario, focus: MissionSkillFocus): string[] {
+  const tags = ['Primary survey', 'Clinical reasoning'];
+  const text = buildCaseSearchText(caseData);
+
+  if (focus !== 'any') tags.push(focus === 'medication' ? 'Medication safety' : `${focus.charAt(0).toUpperCase()}${focus.slice(1)} focus`);
+  if (caseData.category === 'cardiac' || text.includes('ecg') || text.includes('chest pain')) tags.push('ECG + monitor');
+  if (caseData.category === 'respiratory' || text.includes('breathing') || text.includes('spo2')) tags.push('Oxygenation');
+  if (caseData.category === 'trauma' || text.includes('fracture') || text.includes('bleeding')) tags.push('Trauma survey');
+  if (caseData.priority === 'critical' || caseData.complexity === 'expert') tags.push('Escalation');
+
+  return [...new Set(tags)].slice(0, 5);
+}
+
+function getCaseEquipmentTags(caseData: CaseScenario, equipmentFocus: MissionEquipmentFocus): string[] {
+  const text = buildCaseSearchText(caseData);
+  const tags = ['Monitor', 'PPE'];
+
+  if (equipmentFocus !== 'any') {
+    const focusLabel = equipmentFocus === 'immobilisation' ? 'Immobilisation' : equipmentFocus.charAt(0).toUpperCase() + equipmentFocus.slice(1);
+    tags.push(focusLabel);
+  }
+  if (text.includes('oxygen') || text.includes('spo2') || text.includes('breathing') || caseData.category === 'respiratory') tags.push('Oxygen kit');
+  if (text.includes('ecg') || text.includes('chest pain') || caseData.category === 'cardiac') tags.push('12-lead ECG');
+  if (text.includes('bleeding') || text.includes('shock') || text.includes('trauma')) tags.push('Circulation bag');
+  if (text.includes('fracture') || text.includes('spinal') || caseData.category === 'trauma') tags.push('Splints');
+  if (text.includes('medication') || text.includes('overdose') || text.includes('anaphylaxis')) tags.push('Medication bag');
+
+  return [...new Set(tags)].slice(0, 5);
+}
+
+function getCohortScopeLabel(year: StudentYear): string {
+  if (year === '1st-year') return 'current cohort only';
+  if (year === 'diploma') return 'diploma + Year 1/2 fundamentals';
+  return `${year} + prerequisite review`;
+}
 import { DefibrillationDialog } from '@/components/DefibrillationDialog';
 import { VentilatorSetupDialog, type VentilatorSettings } from '@/components/VentilatorSetupDialog';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -227,6 +319,120 @@ function LoadingCard() {
         </div>
         <div className="flex items-center justify-center pt-2">
           <Loader2 className="h-5 w-5 animate-spin text-primary/50" />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+const realismSeverityStyles: Record<RealismDirectorState['severity'], {
+  rail: string;
+  icon: string;
+  badge: string;
+  panel: string;
+}> = {
+  normal: {
+    rail: 'from-emerald-400 to-cyan-400',
+    icon: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-300',
+    badge: 'border-emerald-400/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
+    panel: 'border-emerald-400/20 bg-emerald-50/50 dark:bg-emerald-950/10',
+  },
+  observe: {
+    rail: 'from-cyan-400 to-blue-400',
+    icon: 'bg-cyan-500/10 text-cyan-700 dark:text-cyan-300',
+    badge: 'border-cyan-400/40 bg-cyan-500/10 text-cyan-800 dark:text-cyan-200',
+    panel: 'border-cyan-400/20 bg-cyan-50/50 dark:bg-cyan-950/10',
+  },
+  warning: {
+    rail: 'from-amber-400 to-orange-500',
+    icon: 'bg-amber-500/10 text-amber-700 dark:text-amber-300',
+    badge: 'border-amber-400/50 bg-amber-500/10 text-amber-800 dark:text-amber-200',
+    panel: 'border-amber-400/25 bg-amber-50/60 dark:bg-amber-950/15',
+  },
+  critical: {
+    rail: 'from-rose-400 to-red-500',
+    icon: 'bg-red-500/10 text-red-700 dark:text-red-300',
+    badge: 'border-red-400/50 bg-red-500/10 text-red-800 dark:text-red-200',
+    panel: 'border-red-400/25 bg-red-50/60 dark:bg-red-950/15',
+  },
+};
+
+function RealismDirectorCard({ state }: { state: RealismDirectorState }) {
+  const style = realismSeverityStyles[state.severity];
+  const sceneItems = state.sceneConstraints.slice(0, 2);
+  const cueItems = state.visibleCues.slice(0, 3);
+  const treatmentItems = state.treatmentEvidence.slice(0, 2);
+  const reassessmentItems = state.reassessmentPrompts.slice(0, 3);
+
+  return (
+    <Card className={`relative overflow-hidden rounded-2xl border backdrop-blur-xl shadow-[0_8px_32px_-20px_rgba(15,23,42,0.35)] ${style.panel}`}>
+      <div className={`absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r ${style.rail}`} />
+      <CardContent className="p-4 sm:p-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex min-w-0 items-start gap-3">
+            <div className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ring-1 ring-white/30 ${style.icon}`}>
+              <Activity className="h-4 w-4" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[9px] font-semibold uppercase tracking-[0.24em] text-muted-foreground/60">
+                Clinical reality
+              </p>
+              <h3 className="mt-1 text-sm font-semibold leading-snug text-foreground/90">
+                {state.headline}
+              </h3>
+            </div>
+          </div>
+          <Badge variant="outline" className={`w-fit shrink-0 rounded-full px-2.5 py-1 text-[9px] uppercase tracking-[0.14em] ${style.badge}`}>
+            {state.caseFamily} - {state.severity}
+          </Badge>
+        </div>
+
+        <div className="mt-4 grid gap-2 md:grid-cols-3">
+          <div className="rounded-xl border border-white/50 bg-white/55 p-3 dark:border-white/[0.06] dark:bg-slate-950/25">
+            <div className="mb-2 flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/60">
+              <Shield className="h-3.5 w-3.5" />
+              Scene
+            </div>
+            <div className="space-y-1.5">
+              {(sceneItems.length ? sceneItems : ['No special access constraints documented']).map(item => (
+                <p key={item} className="line-clamp-2 text-[11px] leading-relaxed text-foreground/75">{item}</p>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-white/50 bg-white/55 p-3 dark:border-white/[0.06] dark:bg-slate-950/25">
+            <div className="mb-2 flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/60">
+              <Target className="h-3.5 w-3.5" />
+              Patient cues
+            </div>
+            <div className="space-y-1.5">
+              {cueItems.map(item => (
+                <div key={item.id} className="flex gap-2">
+                  <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${
+                    item.severity === 'critical' ? 'bg-red-500' :
+                    item.severity === 'warning' ? 'bg-amber-500' :
+                    item.severity === 'observe' ? 'bg-cyan-500' :
+                    'bg-emerald-500'
+                  }`} />
+                  <p className="line-clamp-2 text-[11px] leading-relaxed text-foreground/75">
+                    <span className="font-semibold text-foreground/85">{item.label}:</span> {item.detail}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-white/50 bg-white/55 p-3 dark:border-white/[0.06] dark:bg-slate-950/25">
+            <div className="mb-2 flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/60">
+              <ClipboardCheck className="h-3.5 w-3.5" />
+              Reassess
+            </div>
+            <div className="space-y-1.5">
+              {[...treatmentItems, ...reassessmentItems].slice(0, 4).map(item => (
+                <p key={item} className="line-clamp-2 text-[11px] leading-relaxed text-foreground/75">{item}</p>
+              ))}
+            </div>
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -564,6 +770,9 @@ export function StudentPanel({
   const [selectedYear, setSelectedYear] = useState<StudentYear>('3rd-year');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectionMode, setSelectionMode] = useState<'standard' | 'random-category' | 'condition'>('standard');
+  const [skillFocus, setSkillFocus] = useState<MissionSkillFocus>('any');
+  const [equipmentFocus, setEquipmentFocus] = useState<MissionEquipmentFocus>('any');
+  const [timebox, setTimebox] = useState<MissionTimebox>('15');
   const [conditionSearch, setConditionSearch] = useState('');
   const [, setSelectedCondition] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -593,6 +802,16 @@ export function StudentPanel({
 
   // Dynamic treatment engine state
   const [patientState, setPatientState] = useState<PatientState | null>(null);
+  const realismDirector = useMemo(() => {
+    if (!currentCase) return null;
+    return deriveRealismDirectorState({
+      caseData: currentCase,
+      vitals: currentVitals,
+      patientState,
+      appliedTreatmentIds,
+      appliedTreatments,
+    });
+  }, [currentCase, currentVitals, patientState, appliedTreatmentIds, appliedTreatments]);
   const [showDefibDialog, setShowDefibDialog] = useState(false);
   const [pendingDefibTreatment, setPendingDefibTreatment] = useState<Treatment | null>(null);
   const [showVentilatorDialog, setShowVentilatorDialog] = useState(false);
@@ -1321,10 +1540,53 @@ export function StudentPanel({
     const pool = q
       ? allConditionNames.filter(c => c.toLowerCase().includes(q))
       : allConditionNames;
-    const withCases = pool.filter(c => getCasesByCondition(c, selectedYear).length > 0);
-    const withoutCases = pool.filter(c => getCasesByCondition(c, selectedYear).length === 0);
+    const withCases = pool.filter(c => getCasesByCondition(c, selectedYear, { cohortMode: 'progressive' }).length > 0);
+    const withoutCases = pool.filter(c => getCasesByCondition(c, selectedYear, { cohortMode: 'progressive' }).length === 0);
     return [...withCases, ...withoutCases].slice(0, 30);
   }, [conditionSearch, selectedYear]);
+
+  const availableCategories = useMemo(() => (
+    caseCategories.filter(cat =>
+      allCases.some(c => c.category === cat.value && isCaseAvailableForCohort(c.yearLevels, selectedYear))
+    )
+  ), [selectedYear]);
+
+  useEffect(() => {
+    if (selectedCategory === 'all') return;
+    if (!availableCategories.some(cat => cat.value === selectedCategory)) {
+      setSelectedCategory('all');
+    }
+  }, [availableCategories, selectedCategory]);
+
+  const baseMissionCases = useMemo(() => (
+    allCases.filter(c => {
+      if (!isCaseAvailableForCohort(c.yearLevels, selectedYear)) return false;
+      if (selectedCategory !== 'all' && c.category !== selectedCategory) return false;
+      return true;
+    })
+  ), [selectedYear, selectedCategory]);
+
+  const strictMissionCases = useMemo(() => {
+    return baseMissionCases.filter(c => (
+      matchesMissionKeywords(c, missionSkillKeywords[skillFocus]) &&
+      matchesMissionKeywords(c, missionEquipmentKeywords[equipmentFocus])
+    ));
+  }, [baseMissionCases, skillFocus, equipmentFocus]);
+
+  const missionCandidateCases = strictMissionCases.length > 0 ? strictMissionCases : baseMissionCases;
+  const missionPreviewCase = useMemo(() => {
+    if (missionCandidateCases.length === 0) return null;
+    return seededShuffle(missionCandidateCases, `${selectedYear}-${selectedCategory}-${skillFocus}-${equipmentFocus}`)[0];
+  }, [missionCandidateCases, selectedYear, selectedCategory, skillFocus, equipmentFocus]);
+  const missionCategoryLabel = selectedCategory === 'all'
+    ? 'all presentations'
+    : caseCategories.find(cat => cat.value === selectedCategory)?.label.toLowerCase() ?? selectedCategory;
+  const cohortScopeLabel = getCohortScopeLabel(selectedYear);
+  const missionDurationLabel = timebox === 'untimed' ? 'Untimed practice' : `${timebox} min target`;
+  const missionDurationShortLabel = timebox === 'untimed' ? 'Untimed' : `${timebox} min`;
+  const missionFilterFallback = strictMissionCases.length === 0 && baseMissionCases.length > 0 && (skillFocus !== 'any' || equipmentFocus !== 'any');
+  const missionCompetencies = missionPreviewCase ? getCaseCompetencyTags(missionPreviewCase, skillFocus) : [];
+  const missionEquipment = missionPreviewCase ? getCaseEquipmentTags(missionPreviewCase, equipmentFocus) : [];
 
   // Shared case initialization helper
   const initializeCase = useCallback((newCase: CaseScenario, conditionMode: boolean, condition?: string) => {
@@ -1450,22 +1712,23 @@ export function StudentPanel({
     await new Promise(resolve => setTimeout(resolve, 400));
 
     try {
-    const newCase = getRandomCase({
-      yearLevel: selectedYear,
-      category: selectedCategory !== 'all' ? selectedCategory : undefined
-    });
+      const newCase = missionCandidateCases.length > 0
+        ? missionCandidateCases[Math.floor(Math.random() * missionCandidateCases.length)]
+        : null;
 
-    if (!newCase) {
+      if (!newCase) {
+        setIsGenerating(false);
+        toast.error('No cases available', {
+          description: `No ${selectedCategory !== 'all' ? selectedCategory : ''} cases are available for ${selectedYear} level. Try a different category.`,
+        });
+        return;
+      }
+
+      initializeCase(newCase, false);
       setIsGenerating(false);
-      toast.error('No cases available', {
-        description: `No ${selectedCategory !== 'all' ? selectedCategory : ''} cases are available for ${selectedYear} level. Try a different category.`,
+      toast.success(`Smart case generated: ${getStudentCaseTitle(newCase)}`, {
+        description: `Matched ${cohortScopeLabel}, ${missionCategoryLabel}, ${missionDurationLabel.toLowerCase()}.`,
       });
-      return;
-    }
-
-    initializeCase(newCase, false);
-    setIsGenerating(false);
-    toast.success(`Case generated: ${getStudentCaseTitle(newCase)}`);
     } catch (err) {
       console.error('Case generation error:', err);
       setIsGenerating(false);
@@ -1473,7 +1736,7 @@ export function StudentPanel({
         description: err instanceof Error ? err.message : 'An unexpected error occurred. Try a different category.',
       });
     }
-  }, [selectedYear, selectedCategory, initializeCase]);
+  }, [missionCandidateCases, selectedYear, selectedCategory, cohortScopeLabel, missionCategoryLabel, missionDurationLabel, initializeCase]);
 
   // Generate case — random by category mode
   const generateCaseByCategory = useCallback(async (category: string) => {
@@ -1481,7 +1744,7 @@ export function StudentPanel({
     await new Promise(resolve => setTimeout(resolve, 400));
 
     try {
-      const newCase = getRandomCase({ yearLevel: selectedYear, category });
+      const newCase = getRandomCase({ yearLevel: selectedYear, category, cohortMode: 'progressive' });
       if (!newCase) {
         setIsGenerating(false);
         toast.error('No cases available', {
@@ -1507,7 +1770,7 @@ export function StudentPanel({
     await new Promise(resolve => setTimeout(resolve, 400));
 
     try {
-      const matchingCases = getCasesByCondition(condition, selectedYear);
+      const matchingCases = getCasesByCondition(condition, selectedYear, { cohortMode: 'progressive' });
       if (matchingCases.length === 0) {
         setIsGenerating(false);
         toast.error('No cases available', {
@@ -3064,6 +3327,34 @@ export function StudentPanel({
   // defines it yet) — read it defensively so the Further Reading card can
   // render if a future case supplies it.
   const educationalResources = (currentCase as (CaseScenario & { educationalResources?: Array<{ title: string; url: string; source?: string; type?: string }> }) | null)?.educationalResources;
+  const selectionModeOptions = [
+    { mode: 'standard' as const, label: 'Full scenario', desc: 'Smart random mission', icon: Sparkles },
+    { mode: 'random-category' as const, label: 'Category drill', desc: 'Focused presentation', icon: Shuffle },
+    { mode: 'condition' as const, label: 'Condition practice', desc: 'Search a diagnosis', icon: Target },
+  ];
+  const skillFocusOptions = [
+    { value: 'any' as const, label: 'Balanced', desc: 'ABCDE flow', icon: ListChecks },
+    { value: 'assessment' as const, label: 'Assessment', desc: 'Findings first', icon: Stethoscope },
+    { value: 'airway' as const, label: 'Airway', desc: 'Patency decisions', icon: Wind },
+    { value: 'breathing' as const, label: 'Breathing', desc: 'Oxygenation', icon: Activity },
+    { value: 'circulation' as const, label: 'Circulation', desc: 'Perfusion + ECG', icon: HeartPulse },
+    { value: 'medication' as const, label: 'Medication', desc: 'Drug safety', icon: Syringe },
+    { value: 'trauma' as const, label: 'Trauma', desc: 'Mechanism + injury', icon: Shield },
+  ];
+  const equipmentFocusOptions = [
+    { value: 'any' as const, label: 'Any kit', icon: Ambulance },
+    { value: 'oxygen' as const, label: 'Oxygen', icon: Wind },
+    { value: 'monitoring' as const, label: 'Monitor', icon: Gauge },
+    { value: 'medications' as const, label: 'Meds', icon: Syringe },
+    { value: 'immobilisation' as const, label: 'Splints', icon: Shield },
+    { value: 'ventilation' as const, label: 'Ventilation', icon: Activity },
+  ];
+  const timeboxOptions = [
+    { value: '10' as const, label: '10 min', desc: 'rapid drill' },
+    { value: '15' as const, label: '15 min', desc: 'standard' },
+    { value: '20' as const, label: '20 min', desc: 'full flow' },
+    { value: 'untimed' as const, label: 'Untimed', desc: 'learning' },
+  ];
 
   return (
     <div className="clinical-shell min-h-screen relative overflow-x-hidden">
@@ -3165,195 +3456,276 @@ export function StudentPanel({
         {/* PHASE 1: Case Selection */}
         {/* ================================================================ */}
         {phase === 'select' && (
-          <div className="max-w-2xl mx-auto animate-fade-in space-y-6 sm:space-y-10">
-            {/* Hero Section — Premium */}
-            <div className="text-center mb-2 sm:mb-4 relative">
-              <div className="mx-auto mb-5 sm:mb-6 flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 shadow-lg shadow-brand-500/20 ring-4 ring-brand-500/10">
-                <Stethoscope className="h-8 w-8 sm:h-10 sm:w-10 text-white drop-shadow-sm" />
+          <div className="mx-auto max-w-6xl animate-fade-in space-y-5 sm:space-y-6">
+            <div className="flex flex-col gap-4 rounded-[28px] border border-white/60 bg-white/70 p-4 shadow-[0_24px_80px_-50px_rgba(15,23,42,0.45)] backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/55 sm:p-5 lg:flex-row lg:items-end lg:justify-between">
+              <div className="space-y-3">
+                <div className="inline-flex items-center gap-2 rounded-full border border-brand-500/20 bg-brand-500/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.24em] text-brand-700 dark:text-brand-300">
+                  <Activity className="h-3.5 w-3.5" />
+                  Training mission board
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-4xl">Choose the next patient encounter</h2>
+                  <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
+                    Build a focused simulation by level, presentation, skill, kit, and time pressure before the radio call starts.
+                  </p>
+                </div>
               </div>
-              <h2 className="text-2xl sm:text-[2.5rem] leading-tight text-foreground font-bold tracking-tight">
-                <span className="gradient-text">Paramedic</span> Case Generator
-              </h2>
-              <p className="text-muted-foreground mt-2 sm:mt-3 text-sm sm:text-base max-w-lg mx-auto leading-relaxed">
-                Select your training level and generate realistic emergency scenarios to sharpen your clinical skills
-              </p>
+              <div className="space-y-2 sm:min-w-[360px]">
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div className="rounded-2xl border border-border/50 bg-white/65 px-3 py-3 shadow-sm dark:bg-white/[0.04]">
+                    <div className="text-xl font-bold text-foreground">{missionCandidateCases.length}</div>
+                    <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">matched</div>
+                  </div>
+                  <div className="rounded-2xl border border-border/50 bg-white/65 px-3 py-3 shadow-sm dark:bg-white/[0.04]">
+                    <div className="truncate text-sm font-bold text-foreground">{yearLevels.find(year => year.value === selectedYear)?.label}</div>
+                    <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">cohort</div>
+                  </div>
+                  <div className="rounded-2xl border border-border/50 bg-white/65 px-3 py-3 shadow-sm dark:bg-white/[0.04]">
+                    <div className="text-sm font-bold text-foreground">{missionDurationShortLabel}</div>
+                    <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">pace</div>
+                  </div>
+                </div>
+                <p className="text-center text-[11px] font-medium text-muted-foreground">{cohortScopeLabel}</p>
+              </div>
             </div>
 
-            {/* Year Level — Premium */}
-            <Card className="glass rounded-2xl border border-white/60 shadow-[0_4px_20px_-8px_rgba(0,0,0,0.1)]">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm flex items-center gap-2 font-semibold">
-                  <GraduationCap className="h-4 w-4 text-brand-500" />
-                  Select Your Year Level
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-5 gap-2.5 sm:gap-3">
-                  {yearLevels.map(year => (
-                    <button
-                      key={year.value}
-                      onClick={() => setSelectedYear(year.value as StudentYear)}
-                      className={`group flex flex-col items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-3 sm:py-4 rounded-xl border-2 text-xs sm:text-sm font-medium transition-all duration-500 card-premium ${
-                        selectedYear === year.value
-                          ? 'border-brand-500 bg-gradient-to-b from-brand-500/15 to-brand-500/5 text-brand-600 dark:text-brand-400 shadow-lg shadow-brand-500/15 ring-2 ring-brand-500/20 scale-[1.02]'
-                          : 'border-border/50 hover:border-brand-400/60 text-muted-foreground hover:text-foreground hover:bg-accent/40 hover:shadow-md hover:-translate-y-0.5 dark:border-slate-700/60'
-                      }`}
-                    >
-                      <GraduationCap className={`h-5 w-5 sm:h-6 sm:w-6 transition-all duration-300 ${selectedYear === year.value ? 'text-brand-500 scale-110' : 'text-muted-foreground/40 group-hover:text-brand-400/70'}`} />
-                      {year.label}
-                    </button>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Selection Mode Tabs — Premium */}
-            <Card className="glass rounded-2xl border border-white/60 shadow-[0_4px_20px_-8px_rgba(0,0,0,0.1)]">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm flex items-center gap-2 font-semibold">
-                  <BarChart3 className="h-4 w-4 text-brand-500" />
-                  How would you like to select a case?
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Mode selector */}
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { mode: 'standard' as const, label: 'Generate Random', icon: Sparkles, desc: 'Filter & randomize' },
-                    { mode: 'random-category' as const, label: 'Random by Category', icon: Shuffle, desc: 'Pick a category' },
-                    { mode: 'condition' as const, label: 'Practice Condition', icon: Target, desc: 'Search conditions' },
-                  ].map(({ mode, label, icon: ModeIcon, desc }) => (
-                    <button
-                      key={mode}
-                      onClick={() => setSelectionMode(mode)}
-                      className={`flex flex-col items-center gap-1 px-2 py-3 rounded-xl border-2 text-xs transition-all duration-500 card-premium ${
-                        selectionMode === mode
-                          ? 'border-brand-500 bg-gradient-to-b from-brand-500/15 to-brand-500/5 text-brand-600 dark:text-brand-400 shadow-md ring-1 ring-brand-500/20'
-                          : 'border-border/50 hover:border-brand-400/50 text-muted-foreground hover:bg-accent/40 dark:border-slate-700/60'
-                      }`}
-                    >
-                      <ModeIcon className={`h-4 w-4 ${selectionMode === mode ? 'text-brand-500' : 'text-muted-foreground/50'}`} />
-                      <span className="font-medium text-[11px] sm:text-xs">{label}</span>
-                      <span className="text-[9px] text-muted-foreground hidden sm:block">{desc}</span>
-                    </button>
-                  ))}
-                </div>
-
-                {/* MODE: Standard — category filter + generate */}
-                {selectionMode === 'standard' && (
-                  <div className="space-y-4 animate-fade-in">
-                    <div className="flex flex-wrap gap-2">
+            <div className="grid gap-5 lg:grid-cols-[minmax(0,1.45fr)_minmax(340px,0.85fr)]">
+              <div className="space-y-5">
+                <div className="rounded-[24px] border border-white/60 bg-white/65 p-4 shadow-[0_18px_70px_-55px_rgba(15,23,42,0.5)] backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/50 sm:p-5">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-muted-foreground">Route</p>
+                      <h3 className="mt-1 text-lg font-bold tracking-tight">How do you want to train?</h3>
+                    </div>
+                    {isGenerating && <Loader2 className="h-5 w-5 animate-spin text-brand-500" />}
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-3">
+                    {selectionModeOptions.map(({ mode, label, icon: ModeIcon, desc }) => (
                       <button
-                        onClick={() => setSelectedCategory('all')}
-                        className={`px-4 py-2.5 rounded-xl border text-sm transition-all duration-500 card-premium ${
-                          selectedCategory === 'all'
-                            ? 'border-brand-500 bg-gradient-to-r from-brand-500/15 to-brand-500/5 text-brand-600 dark:text-brand-400 font-semibold ring-1 ring-brand-500/25 shadow-md shadow-brand-500/10'
-                            : 'border-border/50 hover:border-brand-400/50 text-muted-foreground hover:bg-accent/40 hover:shadow-sm dark:border-slate-700/60'
+                        key={mode}
+                        onClick={() => setSelectionMode(mode)}
+                        className={`group flex min-h-[104px] flex-col items-start justify-between rounded-2xl border p-3 text-left transition-all duration-300 ${
+                          selectionMode === mode
+                            ? 'border-brand-500/70 bg-brand-500/10 text-brand-700 shadow-lg shadow-brand-500/10 ring-2 ring-brand-500/15 dark:text-brand-300'
+                            : 'border-border/50 bg-white/50 text-muted-foreground hover:border-brand-400/50 hover:bg-white/80 hover:text-foreground dark:bg-white/[0.04] dark:hover:bg-white/[0.08]'
                         }`}
                       >
-                        <span className="flex items-center gap-1.5">
-                          <span className={`h-2 w-2 rounded-full ${selectedCategory === 'all' ? 'bg-blue-500' : 'bg-muted-foreground/30'}`} />
-                          All Categories
+                        <span className={`flex h-9 w-9 items-center justify-center rounded-xl transition-colors ${selectionMode === mode ? 'bg-brand-500 text-white' : 'bg-muted text-muted-foreground group-hover:bg-brand-500/10 group-hover:text-brand-600'}`}>
+                          <ModeIcon className="h-4 w-4" />
+                        </span>
+                        <span>
+                          <span className="block text-sm font-bold">{label}</span>
+                          <span className="mt-0.5 block text-xs opacity-75">{desc}</span>
                         </span>
                       </button>
-                      {caseCategories
-                        .filter(cat => allCases.some(c => c.category === cat.value && c.yearLevels?.includes(selectedYear as any)))
-                        .map(cat => {
-                        const catColors: Record<string, string> = {
-                          cardiac: 'bg-red-500', respiratory: 'bg-cyan-500', trauma: 'bg-orange-500',
-                          neurological: 'bg-blue-500', medical: 'bg-emerald-500', paediatric: 'bg-teal-500',
-                          obstetric: 'bg-rose-400', environmental: 'bg-amber-500', psychiatric: 'bg-cyan-500',
-                        };
-                        const dotColor = catColors[cat.value.toLowerCase()] || 'bg-blue-500';
-                        return (
+                    ))}
+                  </div>
+                </div>
+
+                <div className="rounded-[24px] border border-white/60 bg-white/65 p-4 shadow-[0_18px_70px_-55px_rgba(15,23,42,0.5)] backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/50 sm:p-5">
+                  <div className="mb-3 flex items-center gap-2">
+                    <GraduationCap className="h-4 w-4 text-brand-500" />
+                    <div>
+                      <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-muted-foreground">Cohort</p>
+                      <h3 className="text-base font-bold tracking-tight">Training level</h3>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+                    {yearLevels.map(year => (
+                      <button
+                        key={year.value}
+                        onClick={() => setSelectedYear(year.value as StudentYear)}
+                        className={`flex items-center justify-center gap-2 rounded-2xl border px-3 py-3 text-sm font-semibold transition-all duration-300 ${
+                          selectedYear === year.value
+                            ? 'border-brand-500 bg-brand-500 text-white shadow-lg shadow-brand-500/20'
+                            : 'border-border/50 bg-white/55 text-muted-foreground hover:border-brand-400/50 hover:bg-white/80 hover:text-foreground dark:bg-white/[0.04]'
+                        }`}
+                      >
+                        <GraduationCap className="h-4 w-4 shrink-0" />
+                        <span>{year.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {selectionMode === 'standard' && (
+                  <div className="space-y-5 animate-fade-in">
+                    <div className="rounded-[24px] border border-white/60 bg-white/65 p-4 shadow-[0_18px_70px_-55px_rgba(15,23,42,0.5)] backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/50 sm:p-5">
+                      <div className="mb-3 flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-muted-foreground">Presentation</p>
+                          <h3 className="text-base font-bold tracking-tight">Clinical category</h3>
+                        </div>
+                        <Badge variant="secondary" className="rounded-full">{baseMissionCases.length} available</Badge>
+                      </div>
+                      <div className="flex max-h-44 flex-wrap gap-2 overflow-y-auto pr-1">
                         <button
-                          key={cat.value}
-                          onClick={() => setSelectedCategory(cat.value)}
-                          className={`px-4 py-2.5 rounded-xl border text-sm transition-all duration-500 card-premium ${
-                            selectedCategory === cat.value
-                              ? 'border-brand-500 bg-gradient-to-r from-brand-500/15 to-brand-500/5 text-brand-600 dark:text-brand-400 font-semibold ring-1 ring-brand-500/25 shadow-md shadow-brand-500/10'
-                              : 'border-border/50 hover:border-brand-400/50 text-muted-foreground hover:bg-accent/40 hover:shadow-sm dark:border-slate-700/60'
+                          onClick={() => setSelectedCategory('all')}
+                          className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-semibold transition-all ${
+                            selectedCategory === 'all'
+                              ? 'border-brand-500 bg-brand-500 text-white shadow-md shadow-brand-500/20'
+                              : 'border-border/50 bg-white/55 text-muted-foreground hover:border-brand-400/50 hover:text-foreground dark:bg-white/[0.04]'
                           }`}
                         >
-                          <span className="flex items-center gap-1.5">
-                            <span className={`h-2 w-2 rounded-full ${selectedCategory === cat.value ? 'bg-brand-500' : dotColor}`} />
-                            {cat.label}
-                          </span>
+                          <Sparkles className="h-4 w-4" />
+                          All presentations
                         </button>
-                      );})}
+                        {availableCategories.map(cat => {
+                          const count = allCases.filter(c => c.category === cat.value && isCaseAvailableForCohort(c.yearLevels, selectedYear)).length;
+                          return (
+                            <button
+                              key={cat.value}
+                              onClick={() => setSelectedCategory(cat.value)}
+                              className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-semibold transition-all ${
+                                selectedCategory === cat.value
+                                  ? 'border-brand-500 bg-brand-500 text-white shadow-md shadow-brand-500/20'
+                                  : 'border-border/50 bg-white/55 text-muted-foreground hover:border-brand-400/50 hover:text-foreground dark:bg-white/[0.04]'
+                              }`}
+                            >
+                              <span className={`h-2.5 w-2.5 rounded-full ${selectedCategory === cat.value ? 'bg-white' : cat.color}`} />
+                              {cat.label}
+                              <span className="text-[10px] opacity-65">{count}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_280px]">
+                      <div className="rounded-[24px] border border-white/60 bg-white/65 p-4 shadow-[0_18px_70px_-55px_rgba(15,23,42,0.5)] backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/50 sm:p-5">
+                        <div className="mb-3">
+                          <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-muted-foreground">Core skill</p>
+                          <h3 className="text-base font-bold tracking-tight">What should the case stress?</h3>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+                          {skillFocusOptions.map(({ value, label, desc, icon: SkillIcon }) => (
+                            <button
+                              key={value}
+                              onClick={() => setSkillFocus(value)}
+                              className={`min-h-[86px] rounded-2xl border p-3 text-left transition-all duration-300 ${
+                                skillFocus === value
+                                  ? 'border-emerald-400 bg-emerald-500/10 text-emerald-700 shadow-md shadow-emerald-500/10 dark:text-emerald-300'
+                                  : 'border-border/50 bg-white/50 text-muted-foreground hover:border-emerald-400/50 hover:bg-white/80 hover:text-foreground dark:bg-white/[0.04]'
+                              }`}
+                            >
+                              <SkillIcon className="mb-2 h-4 w-4" />
+                              <span className="block text-sm font-bold">{label}</span>
+                              <span className="mt-0.5 block text-[11px] opacity-70">{desc}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div className="rounded-[24px] border border-white/60 bg-white/65 p-4 shadow-[0_18px_70px_-55px_rgba(15,23,42,0.5)] backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/50">
+                          <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-muted-foreground">Kit focus</p>
+                          <div className="mt-3 grid grid-cols-2 gap-2">
+                            {equipmentFocusOptions.map(({ value, label, icon: EquipmentIcon }) => (
+                              <button
+                                key={value}
+                                onClick={() => setEquipmentFocus(value)}
+                                className={`flex items-center gap-2 rounded-xl border px-2.5 py-2 text-xs font-bold transition-all ${
+                                  equipmentFocus === value
+                                    ? 'border-cyan-400 bg-cyan-500/10 text-cyan-700 dark:text-cyan-300'
+                                    : 'border-border/50 bg-white/50 text-muted-foreground hover:border-cyan-400/50 hover:text-foreground dark:bg-white/[0.04]'
+                                }`}
+                              >
+                                <EquipmentIcon className="h-3.5 w-3.5 shrink-0" />
+                                <span className="truncate">{label}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="rounded-[24px] border border-white/60 bg-white/65 p-4 shadow-[0_18px_70px_-55px_rgba(15,23,42,0.5)] backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/50">
+                          <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-muted-foreground">Time target</p>
+                          <div className="mt-3 grid grid-cols-2 gap-2">
+                            {timeboxOptions.map(option => (
+                              <button
+                                key={option.value}
+                                onClick={() => setTimebox(option.value)}
+                                className={`rounded-xl border px-2.5 py-2 text-left transition-all ${
+                                  timebox === option.value
+                                    ? 'border-amber-400 bg-amber-500/10 text-amber-700 dark:text-amber-300'
+                                    : 'border-border/50 bg-white/50 text-muted-foreground hover:border-amber-400/50 hover:text-foreground dark:bg-white/[0.04]'
+                                }`}
+                              >
+                                <span className="block text-xs font-bold">{option.label}</span>
+                                <span className="block text-[10px] opacity-70">{option.desc}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}
 
-                {/* MODE: Random by Category — click a category to instantly get a random case */}
                 {selectionMode === 'random-category' && (
-                  <div className="space-y-2 animate-fade-in">
-                    <p className="text-xs text-muted-foreground">Click a category to get a random case from it:</p>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                      {caseCategories
-                        .filter(cat => allCases.some(c => c.category === cat.value && c.yearLevels?.includes(selectedYear as any)))
-                        .map(cat => {
-                        const catColors: Record<string, string> = {
-                          cardiac: 'from-red-500/15 to-red-500/5 border-red-400 text-red-600 dark:text-red-400',
-                          respiratory: 'from-cyan-500/15 to-cyan-500/5 border-cyan-400 text-cyan-600 dark:text-cyan-400',
-                          trauma: 'from-orange-500/15 to-orange-500/5 border-orange-400 text-orange-600 dark:text-orange-400',
-                          neurological: 'from-blue-500/15 to-blue-500/5 border-blue-400 text-blue-600 dark:text-blue-400',
-                          medical: 'from-emerald-500/15 to-emerald-500/5 border-emerald-400 text-emerald-600 dark:text-emerald-400',
-                          paediatric: 'from-teal-500/15 to-teal-500/5 border-teal-400 text-teal-600 dark:text-teal-400',
-                          obstetric: 'from-rose-500/15 to-rose-500/5 border-rose-400 text-rose-600 dark:text-rose-400',
-                          environmental: 'from-amber-500/15 to-amber-500/5 border-amber-400 text-amber-600 dark:text-amber-400',
-                          psychiatric: 'from-cyan-500/15 to-cyan-500/5 border-cyan-400 text-cyan-600 dark:text-cyan-400',
-                        };
-                        const colors = catColors[cat.value.toLowerCase()] || 'from-blue-500/15 to-blue-500/5 border-blue-400 text-blue-600 dark:text-blue-400';
-                        const count = allCases.filter(c => c.category === cat.value && c.yearLevels?.includes(selectedYear as any)).length;
+                  <div className="rounded-[24px] border border-white/60 bg-white/65 p-4 shadow-[0_18px_70px_-55px_rgba(15,23,42,0.5)] backdrop-blur-2xl animate-fade-in dark:border-white/10 dark:bg-slate-950/50 sm:p-5">
+                    <div className="mb-4">
+                      <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-muted-foreground">Category drill</p>
+                      <h3 className="text-base font-bold tracking-tight">Tap a bag to launch a presentation family</h3>
+                    </div>
+                    <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                      {availableCategories.map(cat => {
+                        const count = allCases.filter(c => c.category === cat.value && isCaseAvailableForCohort(c.yearLevels, selectedYear)).length;
                         return (
-                        <button
-                          key={cat.value}
-                          onClick={() => generateCaseByCategory(cat.value)}
-                          disabled={isGenerating}
-                          className={`flex flex-col items-center gap-1 px-3 py-3.5 rounded-xl border-2 bg-gradient-to-b ${colors} text-sm font-medium transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed`}
-                        >
-                          <Shuffle className="h-4 w-4 mb-0.5" />
-                          <span className="text-xs font-semibold">{cat.label}</span>
-                          <span className="text-[10px] opacity-60">{count} case{count !== 1 ? 's' : ''}</span>
-                        </button>
-                      );})}
+                          <button
+                            key={cat.value}
+                            onClick={() => generateCaseByCategory(cat.value)}
+                            disabled={isGenerating}
+                            className="group flex min-h-[108px] flex-col justify-between rounded-2xl border border-border/50 bg-white/55 p-3 text-left transition-all duration-300 hover:-translate-y-0.5 hover:border-brand-400/50 hover:bg-white/85 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white/[0.04]"
+                          >
+                            <span className="flex items-center justify-between gap-3">
+                              <span className={`h-2 w-12 rounded-full ${cat.color}`} />
+                              <Shuffle className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-brand-500" />
+                            </span>
+                            <span>
+                              <span className="block text-sm font-bold text-foreground">{cat.label}</span>
+                              <span className="mt-1 block text-xs text-muted-foreground">{count} case{count !== 1 ? 's' : ''} for this cohort</span>
+                            </span>
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
 
-                {/* MODE: Practice Specific Condition — searchable dropdown */}
                 {selectionMode === 'condition' && (
-                  <div className="space-y-3 animate-fade-in">
-                    <p className="text-xs text-muted-foreground">Search for a specific condition to practice:</p>
+                  <div className="rounded-[24px] border border-white/60 bg-white/65 p-4 shadow-[0_18px_70px_-55px_rgba(15,23,42,0.5)] backdrop-blur-2xl animate-fade-in dark:border-white/10 dark:bg-slate-950/50 sm:p-5">
+                    <div className="mb-4">
+                      <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-muted-foreground">Condition practice</p>
+                      <h3 className="text-base font-bold tracking-tight">Search a condition or presentation</h3>
+                    </div>
                     <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                       <input
                         type="text"
                         value={conditionSearch}
                         onChange={(e) => { setConditionSearch(e.target.value); setSelectedCondition(null); }}
-                        placeholder="Search conditions... (e.g. STEMI, Asthma, Pneumothorax)"
-                        className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-border/50 bg-white/55 text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all dark:bg-white/[0.05]"
+                        placeholder="STEMI, asthma, pneumothorax, anaphylaxis..."
+                        className="w-full rounded-2xl border border-border/50 bg-white/70 py-3 pl-10 pr-4 text-sm shadow-inner outline-none transition-all placeholder:text-muted-foreground/50 focus:border-brand-500/60 focus:ring-4 focus:ring-brand-500/10 dark:bg-white/[0.05]"
                       />
                     </div>
-                    <div className="max-h-52 overflow-y-auto rounded-xl border border-border/30 divide-y divide-border/20">
+                    <div className="mt-3 max-h-72 overflow-y-auto rounded-2xl border border-border/40 bg-white/45 divide-y divide-border/25 dark:bg-white/[0.03]">
                       {filteredConditions.length === 0 ? (
-                        <p className="text-xs text-muted-foreground text-center py-4">No conditions match your search</p>
+                        <p className="py-6 text-center text-sm text-muted-foreground">No matching conditions found.</p>
                       ) : (
                         filteredConditions.map(condition => {
-                          const matchCount = getCasesByCondition(condition, selectedYear).length;
+                          const matchCount = getCasesByCondition(condition, selectedYear, { cohortMode: 'progressive' }).length;
                           return (
                             <button
                               key={condition}
                               onClick={() => generateCaseByCondition(condition)}
                               disabled={isGenerating || matchCount === 0}
-                              className="flex items-center justify-between w-full px-3 py-2 text-left text-sm hover:bg-primary/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                              className="flex w-full items-center justify-between gap-3 px-3 py-3 text-left text-sm transition-colors hover:bg-brand-500/10 disabled:cursor-not-allowed disabled:opacity-40"
                             >
-                              <span className="flex items-center gap-2">
-                                <Target className="h-3 w-3 text-primary shrink-0" />
-                                <span>{condition}</span>
+                              <span className="flex min-w-0 items-center gap-2">
+                                <Target className="h-3.5 w-3.5 shrink-0 text-brand-500" />
+                                <span className="truncate font-semibold text-foreground">{condition}</span>
                               </span>
-                              <Badge variant="secondary" className="text-[10px] py-0 h-4 shrink-0">
+                              <Badge variant="secondary" className="shrink-0 rounded-full text-[10px]">
                                 {matchCount} case{matchCount !== 1 ? 's' : ''}
                               </Badge>
                             </button>
@@ -3362,44 +3734,109 @@ export function StudentPanel({
                       )}
                     </div>
                     {conditionSearch.trim() === '' && (
-                      <p className="text-[10px] text-muted-foreground/50 text-center">
-                        Showing first 30 conditions. Type to search all {allConditionNames.length} conditions.
+                      <p className="mt-3 text-center text-[11px] text-muted-foreground/60">
+                        Showing 30 of {allConditionNames.length} indexed conditions.
                       </p>
                     )}
                   </div>
                 )}
-              </CardContent>
-            </Card>
-
-            {/* Generate button — only for standard mode */}
-            {selectionMode === 'standard' && (
-              <Button
-                onClick={generateCase}
-                disabled={isGenerating}
-                size="lg"
-                className="w-full gap-2.5 sm:gap-3 text-sm sm:text-lg py-6 sm:py-8 rounded-2xl btn-primary text-white border-0 shadow-lg shadow-brand-500/25 hover:shadow-brand-500/40 transition-all duration-500 hover:-translate-y-1 font-semibold tracking-tight"
-              >
-                {isGenerating ? (
-                  <><Loader2 className="h-5 w-5 sm:h-6 sm:w-6 animate-spin" /> Generating Case...</>
-                ) : (
-                  <><Sparkles className="h-5 w-5 sm:h-6 sm:w-6" /> Generate Case</>
-                )}
-              </Button>
-            )}
-
-            {/* Loading indicator for category/condition modes */}
-            {selectionMode !== 'standard' && isGenerating && (
-              <div className="flex items-center justify-center gap-2 py-4">
-                <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
-                <span className="text-sm text-muted-foreground">Generating case...</span>
               </div>
-            )}
 
-            <p className="text-center text-xs text-muted-foreground/50 pb-4">
-              {selectionMode === 'standard' && 'Cases are randomized within your selected category and year level'}
-              {selectionMode === 'random-category' && 'Click any category above to instantly get a random case from it'}
-              {selectionMode === 'condition' && 'Select a condition to get a case where it appears as diagnosis or differential'}
-            </p>
+              <aside className="rounded-[28px] border border-white/60 bg-slate-950 p-4 text-white shadow-[0_24px_90px_-45px_rgba(15,23,42,0.75)] dark:border-white/10 sm:p-5 lg:sticky lg:top-24 lg:self-start">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-cyan-200/70">Launch preview</p>
+                    <h3 className="mt-1 text-xl font-bold tracking-tight">Your next call</h3>
+                  </div>
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-400/15 text-cyan-200 ring-1 ring-cyan-300/20">
+                    <Ambulance className="h-5 w-5" />
+                  </div>
+                </div>
+
+                {missionPreviewCase ? (
+                  <div className="mt-5 space-y-5">
+                    <div className="rounded-3xl border border-white/10 bg-white/[0.07] p-4 shadow-inner">
+                      <div className="mb-3 flex flex-wrap gap-2">
+                        <span className="rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white/75">{missionPreviewCase.priority}</span>
+                        <span className="rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white/75">{missionPreviewCase.complexity}</span>
+                        <span className="rounded-full bg-cyan-300/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-100">{missionDurationLabel}</span>
+                      </div>
+                      <h4 className="text-lg font-bold leading-tight text-white">{getStudentCaseTitle(missionPreviewCase)}</h4>
+                      <p className="mt-3 text-sm leading-relaxed text-white/65">{missionPreviewCase.dispatchInfo?.callReason}</p>
+                    </div>
+
+                    {selectionMode === 'standard' ? (
+                      <Button
+                        onClick={generateCase}
+                        disabled={isGenerating || missionCandidateCases.length === 0}
+                        size="lg"
+                        className="w-full gap-2 rounded-2xl border-0 bg-cyan-400 py-6 text-base font-bold text-slate-950 shadow-xl shadow-cyan-950/40 transition-all hover:-translate-y-0.5 hover:bg-cyan-300"
+                      >
+                        {isGenerating ? (
+                          <><Loader2 className="h-5 w-5 animate-spin" /> Building mission...</>
+                        ) : (
+                          <><Sparkles className="h-5 w-5" /> Launch smart case</>
+                        )}
+                      </Button>
+                    ) : (
+                      <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-3 text-sm text-white/65">
+                        {selectionMode === 'random-category'
+                          ? 'Category drill ready. Choose one presentation family to launch.'
+                          : 'Condition practice ready. Choose one indexed condition to launch.'}
+                      </div>
+                    )}
+
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+                      <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-3">
+                        <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-white/55">
+                          <ClipboardCheck className="h-3.5 w-3.5" />
+                          Competencies
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {missionCompetencies.map(tag => (
+                            <span key={tag} className="rounded-full bg-emerald-300/15 px-2.5 py-1 text-[11px] font-semibold text-emerald-100">{tag}</span>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-3">
+                        <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-white/55">
+                          <Ambulance className="h-3.5 w-3.5" />
+                          Expected kit
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {missionEquipment.map(tag => (
+                            <span key={tag} className="rounded-full bg-cyan-300/15 px-2.5 py-1 text-[11px] font-semibold text-cyan-100">{tag}</span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-3 text-sm leading-relaxed text-white/65">
+                      <span className="font-semibold text-white">Smart random:</span> matching {cohortScopeLabel}, {missionCategoryLabel}, {skillFocus === 'any' ? 'balanced skills' : skillFocus}, and {equipmentFocus === 'any' ? 'any kit' : equipmentFocus}.
+                      {missionFilterFallback && <span className="block pt-2 text-amber-100/90">No exact kit/skill match was found, so the pool safely widened to the selected cohort and presentation.</span>}
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-2 pt-1">
+                      {[
+                        { label: 'Radio', icon: Phone },
+                        { label: 'Scene', icon: Shield },
+                        { label: 'Treat', icon: Stethoscope },
+                        { label: 'Debrief', icon: FileText },
+                      ].map(({ label, icon: StepIcon }) => (
+                        <div key={label} className="rounded-2xl border border-white/10 bg-white/[0.05] px-2 py-2 text-center">
+                          <StepIcon className="mx-auto h-3.5 w-3.5 text-cyan-100/80" />
+                          <div className="mt-1 text-[10px] font-semibold text-white/55">{label}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-5 rounded-3xl border border-white/10 bg-white/[0.07] p-5 text-sm leading-relaxed text-white/70">
+                    No cases match this cohort yet. Choose another year level or presentation.
+                  </div>
+                )}
+              </aside>
+            </div>
           </div>
         )}
 
@@ -4193,6 +4630,10 @@ export function StudentPanel({
                     )}
                   </CardContent>
                 </Card>
+
+                {realismDirector && (
+                  <RealismDirectorCard state={realismDirector} />
+                )}
 
                 {/* Injury Map (up-front findings list) intentionally REMOVED
                     from the student view — listing findings before assessment
