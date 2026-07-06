@@ -34,6 +34,7 @@ import type { BowelSoundType, BreathSoundType } from '@/data/clinicalSounds';
 import { inferInjuries, injuryRegionTo3D } from '@/lib/injuryMap';
 import { classifyBodyPoint } from '@/lib/regionClassifier';
 import { deriveRingArms, ringArmOffsets } from '@/lib/ringMenu';
+import { bridgeForFinding, type TreatBridge } from '@/lib/findingTreatmentBridge';
 import { hashInjury } from './WoundLayer';
 import {
   deriveAppliedTreatmentRealismCues,
@@ -2584,6 +2585,10 @@ interface Body3DModelProps {
   vitals?: VitalSigns;
   /** Run a pulse check from a mannequin pulse point (radial wrist / carotid neck). */
   onPulse?: (site: string) => void;
+  /** A3 finding→treatment bridge: a revealed finding earns a Treat arm on the
+   * action ring; clicking it hands the parent {bag, query, reason} to open the
+   * right treatment bag pre-filtered. Absent → no Treat arm ever renders. */
+  onOpenTreatments?: (bridge: TreatBridge) => void;
 }
 
 // Phase 2 — guided exam mode: persist preference across sessions
@@ -3119,7 +3124,7 @@ function PatientRealismStrip({
   );
 }
 
-export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientSounds, caseCategory, appliedTreatmentIds = [], isInArrest = false, vitals, onPulse }: Body3DModelProps) {
+export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientSounds, caseCategory, appliedTreatmentIds = [], isInArrest = false, vitals, onPulse, onOpenTreatments }: Body3DModelProps) {
   const { t } = useTranslation();
   const controlsRef = useRef<OrbitControlsHandle | null>(null);
   const [isFlipped, setIsFlipped] = useState(false);
@@ -3758,7 +3763,39 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
     const acts = groups ? groups.flatMap(g => g.actions) : getSubRegions(ring.region).flatMap(sr => sr.actions);
     return deriveRingArms(acts);
   }, [ring]);
-  const ringOffsets = useMemo(() => ringArmOffsets(ringArms.length, 52), [ringArms.length]);
+  // A3: a REVEALED finding in the ring's region that maps to a treatment
+  // earns an extra Treat arm (finding text → {bag, query, reason}). The
+  // student still chooses the drug — the arm only opens the right shelf.
+  // Auscultation findings are deliberately sound-only (the student must HEAR
+  // the wheeze), so for the chest we bridge from what the stethoscope
+  // actually played — but only once the student has auscultated.
+  const ringTreatBridge = useMemo(() => {
+    if (!ring || !onOpenTreatments) return null;
+    const groups = getLimbActionGroups(ring.region);
+    const acts = groups ? groups.flatMap(g => g.actions) : getSubRegions(ring.region).flatMap(sr => sr.actions);
+    for (const a of acts) {
+      const text = revealedFindings.get(a.id);
+      if (!text) continue;
+      const bridge = bridgeForFinding(text);
+      if (bridge) return bridge;
+    }
+    if (ring.region === 'chest' && patientSounds
+      && [...revealedFindings.keys()].some(id => id.startsWith('chest-auscultate'))) {
+      const SOUND_WORD: Partial<Record<BreathSoundType, string>> = {
+        'wheeze': 'wheeze',
+        'crackles-fine': 'crackles',
+        'crackles-coarse': 'crackles',
+        'stridor': 'stridor',
+        'absent': 'silent chest',
+      };
+      const heard = [patientSounds.leftLung, patientSounds.rightLung]
+        .map(s => SOUND_WORD[s]).filter(Boolean).join(' and ');
+      if (heard) return bridgeForFinding(heard);
+    }
+    return null;
+  }, [ring, onOpenTreatments, revealedFindings, patientSounds]);
+  const ringArmCount = ringArms.length + (ringTreatBridge ? 1 : 0);
+  const ringOffsets = useMemo(() => ringArmOffsets(ringArmCount, 52), [ringArmCount]);
 
   // Closing the region (Esc / Full body / empty-space click) dismisses the ring.
   useEffect(() => {
@@ -4186,6 +4223,23 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                         {arm.label}
                       </button>
                     ))}
+                    {ringTreatBridge && (
+                      <button
+                        type="button"
+                        title={ringTreatBridge.reason}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onPointerUp={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setRing(null);
+                          onOpenTreatments?.(ringTreatBridge);
+                        }}
+                        className="absolute -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full border border-amber-300/70 bg-amber-600/95 px-2.5 py-1 text-[10px] font-bold text-amber-50 shadow-lg backdrop-blur-sm transition-transform duration-100 hover:scale-110 hover:bg-amber-500/95"
+                        style={{ left: ringOffsets[ringArms.length]?.x ?? 0, top: ringOffsets[ringArms.length]?.y ?? 0 }}
+                      >
+                        Treat
+                      </button>
+                    )}
                     <button
                       type="button"
                       aria-label="Dismiss actions"
