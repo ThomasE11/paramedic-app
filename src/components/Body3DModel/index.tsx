@@ -33,6 +33,7 @@ import { playBreathSound, playHeartSound, playPercussionSound, playBowelSound, s
 import type { BowelSoundType, BreathSoundType } from '@/data/clinicalSounds';
 import { inferInjuries, injuryRegionTo3D } from '@/lib/injuryMap';
 import { classifyBodyPoint } from '@/lib/regionClassifier';
+import { DeviceLayer, type DeviceOxygenMode } from './DeviceLayer';
 import { deriveRingArms, ringArmOffsets } from '@/lib/ringMenu';
 import { bridgeForFinding, type TreatBridge } from '@/lib/findingTreatmentBridge';
 import { hashInjury } from './WoundLayer';
@@ -621,35 +622,6 @@ function buildTreatmentEquipmentState(appliedTreatmentIds: string[]): AppliedEqu
   };
 }
 
-function EquipmentPill({
-  label,
-  detail,
-  tone,
-  children,
-}: {
-  label: string;
-  detail: string;
-  tone: 'oxygen' | 'iv' | 'defib' | 'device';
-  children: React.ReactNode;
-}) {
-  const toneClass = {
-    oxygen: 'border-cyan-200/45 bg-cyan-950/58 text-cyan-50 shadow-cyan-950/35',
-    iv: 'border-emerald-200/45 bg-emerald-950/58 text-emerald-50 shadow-emerald-950/35',
-    defib: 'border-rose-200/45 bg-rose-950/58 text-rose-50 shadow-rose-950/35',
-    device: 'border-slate-200/40 bg-slate-950/62 text-slate-50 shadow-slate-950/40',
-  }[tone];
-
-  return (
-    <div className={`pointer-events-none flex min-w-[142px] max-w-[176px] items-center gap-2 rounded-2xl border px-2.5 py-2 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-75 duration-300 ${toneClass}`}>
-      <div className="relative h-14 w-16 shrink-0">{children}</div>
-      <div className="min-w-0">
-        <p className="text-[9px] font-bold uppercase tracking-[0.12em] leading-tight text-white/92">{label}</p>
-        <p className="mt-0.5 text-[8px] leading-snug text-white/70">{detail}</p>
-      </div>
-    </div>
-  );
-}
-
 function OxygenDeviceGraphic({ equipment }: { equipment: OxygenEquipmentVisual }) {
   const src = {
     nasal: TREATMENT_ASSET_PATHS.nasal,
@@ -708,36 +680,6 @@ function OxygenDeviceGraphic({ equipment }: { equipment: OxygenEquipmentVisual }
       <span className="absolute -right-1 -top-1 rounded-full border border-white/30 bg-slate-950/62 px-1.5 py-0.5 text-[7px] font-black uppercase tracking-[0.08em] text-cyan-50 shadow-lg backdrop-blur-md">
         {label}
       </span>
-    </div>
-  );
-}
-
-function IvCannulaGraphic({ hasFluids }: { hasFluids: boolean }) {
-  return (
-    <>
-      <img
-        src={TREATMENT_ASSET_PATHS.ivCannula}
-        alt=""
-        className="absolute inset-0 h-full w-full object-contain drop-shadow-[0_10px_12px_rgba(6,78,59,0.24)]"
-        draggable={false}
-      />
-      {hasFluids && (
-        <div className="absolute left-[49px] top-[37px] h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-100" />
-      )}
-    </>
-  );
-}
-
-function FluidBagGraphic() {
-  return (
-    <div className="pointer-events-none flex min-w-[118px] items-center gap-2 rounded-2xl border border-emerald-100/45 bg-slate-950/60 px-2.5 py-2 text-white shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-75 duration-300">
-      <div className="relative h-16 w-11 shrink-0">
-        <img src={TREATMENT_ASSET_PATHS.fluidBag} alt="" className="absolute inset-0 h-full w-full object-contain" draggable={false} />
-      </div>
-      <div>
-        <p className="text-[9px] font-bold uppercase tracking-[0.12em] leading-tight">Fluid running</p>
-        <p className="mt-0.5 text-[8px] leading-snug text-white/70">Bag and line connected to IV cannula</p>
-      </div>
     </div>
   );
 }
@@ -817,7 +759,17 @@ function TreatmentEquipmentOverlay({
 
   return (
     <>
-      {equipment.oxygen && (
+      {/* 3D fitted devices (mask shells, reservoir, mist, cannula, drip
+          stand) — DeviceLayer. Only BVM/ventilator still use the 2D card
+          (hand-held devices pending their own 3D pass). */}
+      <DeviceLayer
+        oxygenMode={(equipment.oxygen && equipment.oxygen.mode !== 'bvm' && equipment.oxygen.mode !== 'ventilator'
+          ? equipment.oxygen.mode : null) as DeviceOxygenMode}
+        hasIvAccess={equipment.hasIvAccess}
+        hasFluids={equipment.hasFluids}
+        sampler={sampler}
+      />
+      {equipment.oxygen && (equipment.oxygen.mode === 'bvm' || equipment.oxygen.mode === 'ventilator') && (
         <MarkerHtml position={anchor(0, 1.565, 0.215)} distanceFactor={2.45} zIndexRange={[62, 0]} interactive={false}>
           <OxygenDeviceGraphic equipment={equipment.oxygen} />
         </MarkerHtml>
@@ -832,24 +784,6 @@ function TreatmentEquipmentOverlay({
       {equipment.hasOpa && !equipment.hasEtTube && (
         <MarkerHtml position={anchor(-0.02, 1.54, 0.215)} distanceFactor={2.35} zIndexRange={[73, 0]} interactive={false}>
           <OpaGraphic />
-        </MarkerHtml>
-      )}
-
-      {equipment.hasIvAccess && (
-        <MarkerHtml position={anchor(-0.205, 0.82, 0.2)} distanceFactor={2.65} zIndexRange={[72, 0]} interactive={false}>
-          <EquipmentPill
-            label="IV cannula"
-            detail={equipment.hasFluids ? 'Cannula taped down with fluid line attached' : 'Cannula inserted and secured at the forearm'}
-            tone="iv"
-          >
-            <IvCannulaGraphic hasFluids={equipment.hasFluids} />
-          </EquipmentPill>
-        </MarkerHtml>
-      )}
-
-      {equipment.hasFluids && (
-        <MarkerHtml position={[-0.36, 1.08, 0.22]} distanceFactor={2.9} zIndexRange={[70, 0]} interactive={false}>
-          <FluidBagGraphic />
         </MarkerHtml>
       )}
 
