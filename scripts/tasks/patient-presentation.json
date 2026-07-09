@@ -1,0 +1,7 @@
+{
+  "goal": "Create src/lib/patientPresentation.ts so the EXISTING hand-written test src/lib/patientPresentation.test.ts passes. Do NOT modify the test file — it is the specification.\n\nThe module maps a case's found-position text to how the 3D patient should be presented.\n\nEXPORT 1: export type Posture = 'upright' | 'supine'\nEXPORT 2: export type Surface = 'none' | 'floor' | 'bed'\nEXPORT 3: export interface PatientPresentation { posture: Posture; surface: Surface }\nEXPORT 4: export function patientPresentationFor(positionText: string | undefined): PatientPresentation\n\nRULES (implement exactly):\n1. If positionText is undefined/null/empty/whitespace → { posture: 'upright', surface: 'none' }.\n2. Lower-case the text. If it contains 'various' → { posture: 'upright', surface: 'none' } (multi-patient/ambiguous).\n3. Else if it contains 'supine' OR 'lying' → posture 'supine', and surface: 'bed' when the text contains 'bed' or 'bunk', otherwise 'floor'.\n4. Else → { posture: 'upright', surface: 'none' } (sitting/tripod/slumped/standing all stay upright — an A-pose mesh can't be rigidly posed seated).\n\nStyle: one pure function, no imports, no classes, no console, no regex needed (plain string.includes on the lower-cased text). Brief JSDoc.",
+  "context": ["src/lib/patientPresentation.test.ts"],
+  "editable": ["src/lib/patientPresentation.ts"],
+  "verify": "npx tsc --noEmit -p tsconfig.app.json && npx vitest run src/lib/patientPresentation.test.ts",
+  "maxRetries": 3
+}

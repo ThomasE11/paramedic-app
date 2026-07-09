@@ -50,6 +50,31 @@ export const TREATMENT_BAY_MODEL_TRANSFORM = {
   scale: 1.04,
 } as const;
 
+/** How the patient is presented in the scene. 'upright' = standing A-pose
+ *  (exam default / patients found seated or standing). 'supine-ground' = found
+ *  lying on the floor/ground (as-found scene position). 'treatment-bay' =
+ *  supine on the raised stretcher (after moving them / bay overview). */
+export type PresentationMode = 'upright' | 'supine-ground' | 'treatment-bay';
+
+interface RigidTransform {
+  position: [number, number, number];
+  rotation: [number, number, number];
+  scale: number;
+}
+
+// Rigid body transforms per presentation. Only rigid poses are honest for an
+// A-pose mesh: standing, or lying flat (a 90° backward tilt). 'supine-ground'
+// reuses the stretcher rotation but sits the body just above the floor.
+export const PRESENTATION_TRANSFORMS: Record<PresentationMode, RigidTransform> = {
+  'upright': { position: [0, 0, 0], rotation: [0, 0, 0], scale: 1 },
+  'supine-ground': { position: [0, 0.06, 0.95], rotation: [-Math.PI / 2, 0, 0], scale: 1.0 },
+  'treatment-bay': {
+    position: TREATMENT_BAY_MODEL_TRANSFORM.position,
+    rotation: TREATMENT_BAY_MODEL_TRANSFORM.rotation,
+    scale: TREATMENT_BAY_MODEL_TRANSFORM.scale,
+  },
+};
+
 export function treatmentBayClinicalToWorld(point: [number, number, number]): [number, number, number] {
   const [x, y, z] = point;
   const { position, scale } = TREATMENT_BAY_MODEL_TRANSFORM;
@@ -142,8 +167,9 @@ interface BodyMeshProps {
   /** GCS <= 8 / AVPU 'U' / arrest — suppresses the procedural head sway and
    *  keeps the eyelids closed (see LifeSigns). */
   unconscious?: boolean;
-  /** Presentation-only transform for the full-body treatment bay overview. */
-  presentation?: 'upright' | 'treatment-bay';
+  /** How the patient is posed in the scene (rigid transform + interaction
+   *  frame): standing, found supine on the ground, or supine on the stretcher. */
+  presentation?: PresentationMode;
 }
 
 /**
@@ -575,7 +601,10 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
   // Reusable temp colour for the per-frame skin-tint lerp so we don't allocate
   // a THREE.Color every frame (GC pressure under 60fps useFrame).
   const tintTmpRef = useRef(new THREE.Color());
-  const treatmentBayPresentation = presentation === 'treatment-bay';
+  // Any lying pose (ground OR stretcher) shares the reclined interaction frame:
+  // clicks are mapped back to the upright "clinical" coordinates for region
+  // hit-testing, and the surface sampler projects in the mounted-mesh space.
+  const reclined = presentation !== 'upright';
 
   // Diaphoresis (sweat sheen): the eased 0..1 scalar the frame loop drives
   // toward the `diaphoresis` prop (fast up ~10 s, slow dry-out ~60 s), plus a
@@ -828,10 +857,10 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
   // patient surface (self-calibrating across the male/female/any GLB).
   useEffect(() => {
     if (!onSurfaceSampler) return;
-    const sampler = buildSurfaceSampler(meshRef.current ?? clonedScene, treatmentBayPresentation ? meshRef.current : null);
+    const sampler = buildSurfaceSampler(meshRef.current ?? clonedScene, reclined ? meshRef.current : null);
     onSurfaceSampler(sampler);
     return () => onSurfaceSampler(null);
-  }, [clonedScene, onSurfaceSampler, treatmentBayPresentation]);
+  }, [clonedScene, onSurfaceSampler, reclined]);
 
   // Dressed-view garment: layer on only in dressed mode, and the piece
   // covering the focused region parts so the skin underneath is assessable.
@@ -1143,21 +1172,21 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
 
   const toClinicalPoint = useCallback((worldPoint: THREE.Vector3): THREE.Vector3 => {
     const point = worldPoint.clone();
-    if (treatmentBayPresentation && meshRef.current) meshRef.current.worldToLocal(point);
+    if (reclined && meshRef.current) meshRef.current.worldToLocal(point);
     return point;
-  }, [treatmentBayPresentation]);
+  }, [reclined]);
 
   const handlePointerMove = useCallback((e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
     const point = toClinicalPoint(e.point);
-    const region = getRegionAtPoint(point, !treatmentBayPresentation);
+    const region = getRegionAtPoint(point, !reclined);
 
     if (region !== hoveredRegion) {
       setHoveredRegion(region);
       updateMeshColors(region);
       document.body.style.cursor = region ? 'pointer' : 'auto';
     }
-  }, [hoveredRegion, updateMeshColors, toClinicalPoint, treatmentBayPresentation]);
+  }, [hoveredRegion, updateMeshColors, toClinicalPoint, reclined]);
 
   const handlePointerOut = useCallback(() => {
     setHoveredRegion(null);
@@ -1184,7 +1213,7 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
       return;
     }
     const clinicalPoint = toClinicalPoint(e.point);
-    const region = getRegionAtPoint(clinicalPoint, !treatmentBayPresentation);
+    const region = getRegionAtPoint(clinicalPoint, !reclined);
     if (!region) return;
 
     // Phase 2 — in guided mode, block clicks on anything other than the
@@ -1196,7 +1225,7 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
 
     if (onBodyPoint?.(clinicalPoint, region.id)) return;
     onRegionClick(region.id);
-  }, [onRegionClick, guidedMode, nextGuidedStep, onBlockedClick, onBodyPoint, toClinicalPoint, treatmentBayPresentation]);
+  }, [onRegionClick, guidedMode, nextGuidedStep, onBlockedClick, onBodyPoint, toClinicalPoint, reclined]);
 
   // Render region highlight overlays using transparent cylinders
   const regionHighlights = useMemo(() => {
@@ -1344,9 +1373,9 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
   return (
     <group
       ref={meshRef}
-      position={treatmentBayPresentation ? TREATMENT_BAY_MODEL_TRANSFORM.position : [0, 0, 0]}
-      rotation={treatmentBayPresentation ? TREATMENT_BAY_MODEL_TRANSFORM.rotation : [0, 0, 0]}
-      scale={treatmentBayPresentation ? TREATMENT_BAY_MODEL_TRANSFORM.scale : 1}
+      position={PRESENTATION_TRANSFORMS[presentation].position}
+      rotation={PRESENTATION_TRANSFORMS[presentation].rotation}
+      scale={PRESENTATION_TRANSFORMS[presentation].scale}
     >
       {/* Invisible "catch-all" plane behind the body. r3f only fires
           onPointerMove on the mesh the raycast hits, so moving the pointer

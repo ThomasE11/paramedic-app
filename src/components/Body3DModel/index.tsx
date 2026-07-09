@@ -16,7 +16,8 @@ import * as THREE from 'three';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { RotateCcw, User, Eye, Hand, Activity, Stethoscope, X, ChevronRight, ChevronDown, AlertTriangle, Compass, Unlock, Wind, Shirt } from 'lucide-react';
-import { BodyMesh, treatmentBayClinicalToWorld } from './BodyMesh';
+import { BodyMesh, treatmentBayClinicalToWorld, type PresentationMode } from './BodyMesh';
+import { patientPresentationFor } from '@/lib/patientPresentation';
 import type { LimbSide, SurfaceSampler } from './BodyMesh';
 import { AdaptiveQuality, PatientPostEffects, qualityForTier } from './AdaptiveQuality';
 import type { QualityTier } from './AdaptiveQuality';
@@ -319,10 +320,11 @@ function useIsDarkTheme(): boolean {
   );
 }
 
-function PatientSceneEnvironment() {
+function PatientSceneEnvironment({ showBed = true }: { showBed?: boolean }) {
   // The treatment bay should read like an ambulance workspace, not a blank
   // mannequin box. Keep this as lightweight geometry instead of a bitmap so
   // the exam remains interactive, camera-safe, and local to the 3D scene.
+  // showBed=false when the patient is found on the FLOOR (no raised stretcher).
   const isDark = useIsDarkTheme();
   const wall = isDark ? '#172231' : '#273847';
   const wallDark = isDark ? '#0a1320' : '#13202d';
@@ -346,21 +348,25 @@ function PatientSceneEnvironment() {
         <meshStandardMaterial color={wallDark} roughness={0.72} metalness={0.04} transparent opacity={0.58} />
       </mesh>
 
-      <mesh position={[0, 0.45, 0.02]} rotation={[-Math.PI / 2, 0, 0]} raycast={() => null}>
-        <boxGeometry args={[1.18, 2.38, 0.08]} />
-        <meshStandardMaterial color={bed} roughness={0.74} metalness={0.02} transparent opacity={0.62} />
-      </mesh>
-      <mesh position={[0, 0.45, 0.06]} rotation={[-Math.PI / 2, 0, 0]} raycast={() => null}>
-        <boxGeometry args={[1.0, 2.14, 0.03]} />
-        <meshStandardMaterial color={isDark ? '#eff6ff' : '#f8fafc'} roughness={0.9} transparent opacity={0.46} />
-      </mesh>
+      {showBed && (
+        <>
+          <mesh position={[0, 0.45, 0.02]} rotation={[-Math.PI / 2, 0, 0]} raycast={() => null}>
+            <boxGeometry args={[1.18, 2.38, 0.08]} />
+            <meshStandardMaterial color={bed} roughness={0.74} metalness={0.02} transparent opacity={0.62} />
+          </mesh>
+          <mesh position={[0, 0.45, 0.06]} rotation={[-Math.PI / 2, 0, 0]} raycast={() => null}>
+            <boxGeometry args={[1.0, 2.14, 0.03]} />
+            <meshStandardMaterial color={isDark ? '#eff6ff' : '#f8fafc'} roughness={0.9} transparent opacity={0.46} />
+          </mesh>
 
-      {[-0.66, 0.66].map(x => (
-        <mesh key={`rail-${x}`} position={[x, 0.49, 0.02]} rotation={[Math.PI / 2, 0, 0]} raycast={() => null}>
-          <cylinderGeometry args={[0.012, 0.012, 2.42, 14]} />
-          <meshStandardMaterial color={rail} roughness={0.36} metalness={0.55} transparent opacity={0.46} />
-        </mesh>
-      ))}
+          {[-0.66, 0.66].map(x => (
+            <mesh key={`rail-${x}`} position={[x, 0.49, 0.02]} rotation={[Math.PI / 2, 0, 0]} raycast={() => null}>
+              <cylinderGeometry args={[0.012, 0.012, 2.42, 14]} />
+              <meshStandardMaterial color={rail} roughness={0.36} metalness={0.55} transparent opacity={0.46} />
+            </mesh>
+          ))}
+        </>
+      )}
 
       {[-1.42, 1.42].map(x => (
         <group key={`cabinet-${x}`} position={[x, 0.93, -0.35]}>
@@ -547,7 +553,7 @@ function TreatmentBayImmersionLayer({
  * (top-down, posterior, oblique) — only the surfaces actually facing the
  * viewer show a marker.
  */
-type MarkerPresentation = 'upright' | 'treatment-bay';
+type MarkerPresentation = PresentationMode;
 
 function MarkerHtml({
   position,
@@ -577,7 +583,7 @@ function MarkerHtml({
     // 1 = camera dead-on the surface, 0 = edge / straight above, <0 = behind.
     // Upright overview uses horizontal outward direction; stretcher overview has
     // the patient's anterior surface facing upward, so the useful normal is +Y.
-    const facing = presentation === 'treatment-bay'
+    const facing = presentation !== 'upright'
       ? dy / dl
       : (x / ol) * (dx / dl) + (z / ol) * (dz / dl);
     const op = Math.max(0, Math.min(1, (facing - 0.12) / 0.32));
@@ -2839,6 +2845,14 @@ const TREATMENT_BAY_CAMERA_FOCUS = {
   target: treatmentBayClinicalToWorld([0, 1.50, 0.27]),
 };
 
+// As-found on the floor: an oblique, elevated look DOWN at the supine patient
+// lying at ground level (transform position z=0.95, rot -π/2 → body runs along
+// -z with the head deep, feet near camera; chest ~z=-0.35). Frame the torso.
+const SUPINE_GROUND_CAMERA_FOCUS = {
+  pos: [1.5, 2.05, 0.75] as [number, number, number],
+  target: [0, 0.12, 0.05] as [number, number, number],
+};
+
 const REGION_CAMERA_FOCUS: Record<string, { pos: [number, number, number]; target: [number, number, number] }> = {
   head: { pos: [0, 1.68, 1.72], target: [0, 1.68, 0.06] },
   face: { pos: [0, 1.61, 1.42], target: [0, 1.61, 0.07] },
@@ -3723,8 +3737,21 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   const treatmentBayOverviewEnabled = treatmentBayMode && anatomyLayer !== 'skeleton';
   const useTreatmentBayPresentation = treatmentBayOverviewEnabled;
   const patientFirstExamLayout = treatmentBayOverviewEnabled && !!activeRegion;
-  const markerPresentation: MarkerPresentation = useTreatmentBayPresentation ? 'treatment-bay' : 'upright';
-  const overviewCameraFocus = treatmentBayOverviewEnabled ? TREATMENT_BAY_CAMERA_FOCUS : DEFAULT_CAMERA_FOCUS;
+  // As-found position: in the bay overview the patient is presented the way
+  // they were found — supine on the FLOOR when the case found them on a hard
+  // surface (position text → patientPresentationFor), otherwise on the raised
+  // stretcher. Moving them onto the stretcher is a future clinical step.
+  const scenePose = useMemo(
+    () => patientPresentationFor(caseData.initialPresentation?.position),
+    [caseData.initialPresentation?.position],
+  );
+  const bayPose: PresentationMode = scenePose.surface === 'floor' ? 'supine-ground' : 'treatment-bay';
+  const patientPresentation: PresentationMode = useTreatmentBayPresentation ? bayPose : 'upright';
+  const onFloorPose = patientPresentation === 'supine-ground';
+  const markerPresentation: MarkerPresentation = patientPresentation;
+  const overviewCameraFocus = !treatmentBayOverviewEnabled
+    ? DEFAULT_CAMERA_FOCUS
+    : onFloorPose ? SUPINE_GROUND_CAMERA_FOCUS : TREATMENT_BAY_CAMERA_FOCUS;
 
   const nextGuidedStep = useMemo(
     () => (guidedMode ? getNextGuidedStep(assessedRegions) : null),
@@ -4719,7 +4746,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
               <directionalLight position={[4, 8, 5]} intensity={0.95} color="#fff2e6" />
               <directionalLight position={[0, 4, -5]} intensity={0.5} color="#ffffff" />
 
-              <PatientSceneEnvironment />
+              <PatientSceneEnvironment showBed={!onFloorPose} />
 
               <BodyMesh
                 assessedRegions={assessedRegions}
@@ -4761,12 +4788,14 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 dressedActiveRegion={regionExposed ? activeRegion : null}
                 pupilLeftMm={pupilProfile.leftMm}
                 pupilRightMm={pupilProfile.rightMm}
-                presentation={useTreatmentBayPresentation ? 'treatment-bay' : 'upright'}
+                presentation={patientPresentation}
               />
 
+              {/* Stretcher straps are stretcher-specific — not shown for a
+                  patient found on the floor. */}
               <TreatmentBayImmersionLayer
                 appliedTreatmentIds={appliedTreatmentIds}
-                active={useTreatmentBayPresentation}
+                active={useTreatmentBayPresentation && !onFloorPose}
               />
 
               <AnatomyReferenceLayer visible={anatomyLayer === 'skeleton'} />
