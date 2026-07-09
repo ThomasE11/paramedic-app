@@ -9,7 +9,7 @@
  * clinical mode because it breaks assessment realism.
  */
 
-import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
+import { useState, useRef, useCallback, useMemo, useEffect, useLayoutEffect } from 'react';
 import type { JSX } from 'react';
 import { useGLTF } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
@@ -605,6 +605,37 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
   // clicks are mapped back to the upright "clinical" coordinates for region
   // hit-testing, and the surface sampler projects in the mounted-mesh space.
   const reclined = presentation !== 'upright';
+
+  // The body's rigid transform is driven imperatively (not via static props) so
+  // a presentation CHANGE — e.g. lifting the patient off the floor onto the
+  // stretcher — eases smoothly instead of teleporting. Snap on mount, then
+  // ease toward the target pose each frame.
+  const poseTarget = PRESENTATION_TRANSFORMS[presentation];
+  const poseInitedRef = useRef(false);
+  useLayoutEffect(() => {
+    const g = meshRef.current;
+    if (!g) return;
+    g.position.set(...poseTarget.position);
+    g.rotation.set(poseTarget.rotation[0], poseTarget.rotation[1], poseTarget.rotation[2]);
+    g.scale.setScalar(poseTarget.scale);
+    poseInitedRef.current = true;
+    // Mount-only snap; subsequent changes animate in useFrame.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useFrame((_, delta) => {
+    const g = meshRef.current;
+    if (!g) return;
+    const k = poseInitedRef.current ? Math.min(1, delta * 5) : 1; // ~0.2s ease
+    g.position.x += (poseTarget.position[0] - g.position.x) * k;
+    g.position.y += (poseTarget.position[1] - g.position.y) * k;
+    g.position.z += (poseTarget.position[2] - g.position.z) * k;
+    g.rotation.x += (poseTarget.rotation[0] - g.rotation.x) * k;
+    g.rotation.y += (poseTarget.rotation[1] - g.rotation.y) * k;
+    g.rotation.z += (poseTarget.rotation[2] - g.rotation.z) * k;
+    const s = g.scale.x + (poseTarget.scale - g.scale.x) * k;
+    g.scale.setScalar(s);
+    poseInitedRef.current = true;
+  });
 
   // Diaphoresis (sweat sheen): the eased 0..1 scalar the frame loop drives
   // toward the `diaphoresis` prop (fast up ~10 s, slow dry-out ~60 s), plus a
@@ -1371,12 +1402,7 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
   }, [assessedRegions, hoveredRegion, requiredRegions, guidedMode, nextGuidedStep, pulseRef.current]);
 
   return (
-    <group
-      ref={meshRef}
-      position={PRESENTATION_TRANSFORMS[presentation].position}
-      rotation={PRESENTATION_TRANSFORMS[presentation].rotation}
-      scale={PRESENTATION_TRANSFORMS[presentation].scale}
-    >
+    <group ref={meshRef}>
       {/* Invisible "catch-all" plane behind the body. r3f only fires
           onPointerMove on the mesh the raycast hits, so moving the pointer
           from the body to empty canvas space left the hover state stuck.

@@ -3745,7 +3745,13 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
     () => patientPresentationFor(caseData.initialPresentation?.position),
     [caseData.initialPresentation?.position],
   );
-  const bayPose: PresentationMode = scenePose.surface === 'floor' ? 'supine-ground' : 'treatment-bay';
+  // "The lift" — a found-on-the-floor patient stays on the floor until the
+  // student moves them onto the stretcher (a clinical step: you assess/CPR on
+  // the hard floor first, then package for transport). Resets per case (the
+  // component is keyed by case id upstream).
+  const patientFoundOnFloor = scenePose.surface === 'floor';
+  const [movedToStretcher, setMovedToStretcher] = useState(false);
+  const bayPose: PresentationMode = patientFoundOnFloor && !movedToStretcher ? 'supine-ground' : 'treatment-bay';
   const patientPresentation: PresentationMode = useTreatmentBayPresentation ? bayPose : 'upright';
   const onFloorPose = patientPresentation === 'supine-ground';
   const markerPresentation: MarkerPresentation = patientPresentation;
@@ -4048,6 +4054,15 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
       );
     }
   }, [animateCamera, clearPatientReaction, overviewCameraFocus.pos, overviewCameraFocus.target, treatmentBayOverviewEnabled]);
+
+  // The lift: when the patient is moved between the floor and the stretcher,
+  // glide the camera to the new pose's framing (the body itself eases via the
+  // BodyMesh transform lerp). Only while the bay overview is showing.
+  useEffect(() => {
+    if (!treatmentBayOverviewEnabled || activeRegion || !controlsRef.current) return;
+    animateCamera(controlsRef.current, overviewCameraFocus.pos, overviewCameraFocus.target, 750);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [movedToStretcher]);
 
   // Esc deselects the focused region — alongside the in-frame "Full body"
   // pill and click-on-empty-space (onPointerMissed on the Canvas).
@@ -4934,6 +4949,19 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 aria-label="Back to full body"
               >
                 <X className="h-3 w-3" /> Full body
+              </button>
+            )}
+
+            {/* The lift — move a floor patient onto the stretcher (and back).
+                Only in the bay overview, when they were found on the floor and
+                you're not mid-exam. The body eases up; the camera glides. */}
+            {treatmentBayOverviewEnabled && patientFoundOnFloor && !activeRegion && (
+              <button
+                onClick={() => setMovedToStretcher(v => !v)}
+                className="absolute right-3 top-3 z-20 inline-flex items-center gap-1.5 rounded-full border border-cyan-300/35 bg-slate-950/60 px-3 py-1.5 text-[11px] font-semibold text-cyan-50 shadow-lg backdrop-blur-md transition hover:bg-slate-900/75 active:scale-95"
+                aria-label={movedToStretcher ? 'Lower patient to the floor' : 'Lift patient onto the stretcher'}
+              >
+                {movedToStretcher ? '↓ Lower to floor' : '↑ Lift onto stretcher'}
               </button>
             )}
 
