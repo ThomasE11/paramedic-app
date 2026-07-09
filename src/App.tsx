@@ -57,6 +57,23 @@ function LazyLoad({ children, name }: { children: React.ReactNode; name: string 
 
 function App() {
   const ep = useEducatorPanel();
+  const devLiveCaseId = import.meta.env.DEV && typeof window !== 'undefined'
+    ? new URLSearchParams(window.location.search).get('devLiveCase')
+    : null;
+  const devLiveCase = devLiveCaseId
+    ? ep.allCases.find(caseItem => caseItem.id === devLiveCaseId)
+    : null;
+
+  if (devLiveCaseId && import.meta.env.DEV) {
+    if (!devLiveCase) return suspenseFallback;
+    return (
+      <LazyLoad name="StudentPanel">
+        <StudentPanel onExit={ep.handleRoleExit} preloadedCase={devLiveCase} />
+        <CommandPalette onSwitchRole={ep.handleRoleExit} />
+        <Toaster position="top-right" richColors closeButton />
+      </LazyLoad>
+    );
+  }
 
   // Landing page
   if (ep.userRole === 'none') {

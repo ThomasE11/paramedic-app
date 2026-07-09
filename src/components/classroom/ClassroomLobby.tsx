@@ -59,7 +59,7 @@ import { toast } from 'sonner';
 import { useClassroomSession } from '@/hooks/useClassroomSession';
 import type { UseClassroomSessionResult } from '@/hooks/useClassroomSession';
 import { AmbientBackground } from '@/components/AmbientBackground';
-import { allCases } from '@/data/cases';
+import { allCases, isCaseAvailableForCohort } from '@/data/cases';
 import type { CaseScenario, StudentYear } from '@/types';
 
 // Year levels the case library is tagged against. 'all' is a UI-only
@@ -188,7 +188,7 @@ export function ClassroomLobby({ onExit, sessionHook }: ClassroomLobbyProps) {
   // so changing the text query doesn't invalidate an already-selected case.
   const yearFilteredCases = useMemo(() => {
     if (yearFilter === 'all') return allCases;
-    return allCases.filter(c => c.yearLevels?.includes(yearFilter));
+    return allCases.filter(c => isCaseAvailableForCohort(c.yearLevels, yearFilter));
   }, [yearFilter]);
 
   const filteredCases = useMemo(() => {
@@ -625,7 +625,7 @@ export function ClassroomLobby({ onExit, sessionHook }: ClassroomLobbyProps) {
                             setSelectedCaseId(prev => {
                               if (v === 'all') return prev;
                               const stillValid = allCases.some(
-                                c => c.id === prev && c.yearLevels?.includes(v as StudentYear),
+      c => c.id === prev && isCaseAvailableForCohort(c.yearLevels, v as StudentYear),
                               );
                               return stillValid ? prev : '';
                             });

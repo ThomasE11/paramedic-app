@@ -3510,7 +3510,7 @@ export function VitalSignsMonitor({
                   <span className="text-[7px] font-mono text-green-500/70 block">HR</span>
                   <span className={`text-2xl font-mono font-bold leading-none ${
                     visibleVitals.has('pulse')
-                      ? getVitalAlarmState('pulse').isAlarm ? 'text-red-500 animate-pulse' : getVitalAlarmState('pulse').isWarning ? 'text-amber-400' : 'text-green-400'
+                      ? getVitalAlarmState('pulse').isAlarm ? 'text-red-500' : getVitalAlarmState('pulse').isWarning ? 'text-amber-400' : 'text-green-400'
                       : 'text-green-400/20'
                   }`}>{visibleVitals.has('pulse') ? (currentRhythm.category === 'arrest' ? 0 : Math.round(currentVitals.pulse)) : '--'}</span>
                   {activeAssessments.has('pulse') && (
@@ -3619,7 +3619,10 @@ export function VitalSignsMonitor({
                     <div className="px-2 py-1 border-t border-gray-800/40 flex items-center gap-3" style={{ background: 'rgba(0,0,0,0.5)' }}>
                       {cprState?.active && <span className="text-[8px] font-mono text-yellow-300 font-bold">CPR: Adult - {cprState.running ? 'Active' : 'Paused'} 30:2</span>}
                       {alarmStatus.count > 0 && alarmsEnabled && (
-                        <span className={`text-[8px] font-mono font-bold ${alarmStatus.hasCritical ? 'text-red-400 animate-pulse' : 'text-yellow-400'}`}>
+                        <span className={`inline-flex items-center gap-1.5 text-[8px] font-mono font-bold ${alarmStatus.hasCritical ? 'text-red-400' : 'text-yellow-400'}`}>
+                          {alarmStatus.hasCritical && (
+                            <span className="h-1.5 w-1.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(248,113,113,0.85)] animate-pulse" aria-hidden="true" />
+                          )}
                           {alarmStatus.count} Alarm{alarmStatus.count > 1 ? 's' : ''} {formatCodeTimer(codeTimerSeconds)}
                         </span>
                       )}
@@ -3642,7 +3645,7 @@ export function VitalSignsMonitor({
                         <span className="text-[8px] font-mono text-green-500/80">HR</span>
                         <span className="text-[7px] font-mono text-gray-500">{selectedLead}</span>
                       </div>
-                      <span className={`block text-3xl font-mono font-bold leading-none ${visibleVitals.has('pulse') ? getVitalAlarmState('pulse').isAlarm ? 'text-red-500 animate-pulse' : 'text-green-400' : 'text-green-400/20'}`}>
+                      <span className={`block text-3xl font-mono font-bold leading-none ${visibleVitals.has('pulse') ? getVitalAlarmState('pulse').isAlarm ? 'text-red-500' : 'text-green-400' : 'text-green-400/20'}`}>
                         {visibleVitals.has('pulse') ? (currentRhythm.category === 'arrest' ? 0 : Math.round(currentVitals.pulse)) : '--'}
                       </span>
                     </div>
@@ -3651,7 +3654,7 @@ export function VitalSignsMonitor({
                         <span className="text-[8px] font-mono text-cyan-400/80">SpO2</span>
                         <span className="text-[7px] font-mono text-cyan-400/50">%</span>
                       </div>
-                      <span className={`block text-2xl font-mono font-bold leading-none ${visibleVitals.has('spo2') ? getVitalAlarmState('spo2').isAlarm ? 'text-red-500 animate-pulse' : 'text-cyan-400' : 'text-cyan-400/20'}`}>
+                      <span className={`block text-2xl font-mono font-bold leading-none ${visibleVitals.has('spo2') ? getVitalAlarmState('spo2').isAlarm ? 'text-red-500' : 'text-cyan-400' : 'text-cyan-400/20'}`}>
                         {visibleVitals.has('spo2') ? Math.round(assessedVitals.spo2 ?? currentVitals.spo2) : '--'}
                       </span>
                     </div>
@@ -4109,10 +4112,10 @@ export function VitalSignsMonitor({
             gave the answer away. Audible alarm tones, the waveform, and
             the 12-lead are the clinical cues students should use. */}
 
-        {/* Alarm count banner removed — critical vitals already flash/
-            pulse red on the monitor face, and the audio alarm still
-            fires. A separate "N ALARMS ACTIVE" badge just added noise
-            without giving clinically useful info. */}
+        {/* Alarm count banner removed — critical vitals stay static red for
+            readability, and the audio alarm plus tiny status dot still
+            provide urgency. A separate "N ALARMS ACTIVE" badge just added
+            noise without giving clinically useful info. */}
 
         {activeAssessments.size > 0 && (
           <div className="mx-3 mb-2 p-2 rounded border border-blue-800/50 bg-blue-950/30">

@@ -36,12 +36,14 @@ interface NarrativeInputs {
   assessmentPerformedIds: string[];
   transportDecision: 'transport' | 'end' | null;
   totalScore: number;  // 0-100
+  pendingTreatmentFollowUps?: string[];
 }
 
 export function generateNarrativeReport(inputs: NarrativeInputs): NarrativeReport {
   const {
     caseData, appliedTreatments, appliedTreatmentIds, vitalsHistory,
     caseStartTime, assessmentPerformedIds, transportDecision, totalScore,
+    pendingTreatmentFollowUps = [],
   } = inputs;
 
   const whatWentWell: string[] = [];
@@ -222,6 +224,12 @@ export function generateNarrativeReport(inputs: NarrativeInputs): NarrativeRepor
   // ============================================================================
   if (transportDecision === 'transport') {
     whatWentWell.push('Made the decision to transport — the right call when you\'ve done what you can on scene and the patient needs definitive care.');
+  }
+
+  if (pendingTreatmentFollowUps.length > 0) {
+    patternsToImprove.push(
+      `Close the treatment loop: ${pendingTreatmentFollowUps.slice(0, 3).join('; ')}. A treatment is incomplete until response and tolerance are reassessed.`,
+    );
   }
 
   // ============================================================================

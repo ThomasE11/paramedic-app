@@ -41,6 +41,22 @@ export type SurfaceSampler = (
   options?: SurfaceSamplerOptions,
 ) => [number, number, number];
 
+export const TREATMENT_BAY_MODEL_TRANSFORM = {
+  position: [0, 0.58, 0.78] as [number, number, number],
+  rotation: [-Math.PI / 2, 0, 0] as [number, number, number],
+  scale: 1.04,
+} as const;
+
+export function treatmentBayClinicalToWorld(point: [number, number, number]): [number, number, number] {
+  const [x, y, z] = point;
+  const { position, scale } = TREATMENT_BAY_MODEL_TRANSFORM;
+  return [
+    position[0] + x * scale,
+    position[1] + z * scale,
+    position[2] - y * scale,
+  ];
+}
+
 interface BodyMeshProps {
   assessedRegions: Set<string>;
   onRegionClick: (stepId: string) => void;
@@ -119,6 +135,8 @@ interface BodyMeshProps {
   /** GCS <= 8 / AVPU 'U' / arrest — suppresses the procedural head sway and
    *  keeps the eyelids closed (see LifeSigns). */
   unconscious?: boolean;
+  /** Presentation-only transform for the full-body treatment bay overview. */
+  presentation?: 'upright' | 'treatment-bay';
 }
 
 /**
@@ -367,7 +385,7 @@ function updateSkeleton(root: THREE.Object3D | null): void {
  * depending on the GLB exporter). The fallback keeps the feature working
  * in that case; the primary path still wins when the bones are available.
  */
-function getRegionAtPoint(point: THREE.Vector3): RegionRange | null {
+function getRegionAtPoint(point: THREE.Vector3, useBoneAnchors = true): RegionRange | null {
   // Strategy:
   //   Limbs (arms, legs) — use the bone rig when available (pose-agnostic,
   //     correct for patient's-left vs patient's-right) with an X-threshold
@@ -390,7 +408,7 @@ function getRegionAtPoint(point: THREE.Vector3): RegionRange | null {
   // Compare the nearest LIMB bone to the nearest TORSO/HEAD bone. If a limb
   // bone wins decisively, classify as that limb. Otherwise fall through to
   // the Y-range midline decision.
-  if (anchors.length > 0) {
+  if (useBoneAnchors && anchors.length > 0) {
     let bestLimb: { anchor: Anchor; score: number } | null = null;
     let bestTorso: { anchor: Anchor; score: number } | null = null;
     for (const a of anchors) {
@@ -451,9 +469,11 @@ function getRegionAtPoint(point: THREE.Vector3): RegionRange | null {
 // patient's real camera-facing surface (the camera sits at +Z, so the visible
 // front surface for any (x,y) is the vertex with the largest Z there). This
 // self-calibrates for any model — no per-model tuning, no guessing.
-function buildSurfaceSampler(root: THREE.Object3D | null): SurfaceSampler | null {
+function buildSurfaceSampler(root: THREE.Object3D | null, presentationRoot?: THREE.Object3D | null): SurfaceSampler | null {
   if (!root) return null;
   root.updateMatrixWorld(true);
+  presentationRoot?.updateMatrixWorld(true);
+  const presentationInverse = presentationRoot ? presentationRoot.matrixWorld.clone().invert() : null;
   // The body is the mesh with the most vertices (skips eye/hair/lash meshes).
   let mesh: THREE.Mesh | null = null;
   let best = -1;
@@ -476,6 +496,7 @@ function buildSurfaceSampler(root: THREE.Object3D | null): SurfaceSampler | null
   let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity, maxZ = -Infinity;
   for (let i = 0; i < N; i++) {
     v.set(posAttr.getX(i), posAttr.getY(i), posAttr.getZ(i)).applyMatrix4(mw);
+    if (presentationInverse) v.applyMatrix4(presentationInverse);
     wx[i] = v.x; wy[i] = v.y; wz[i] = v.z;
     if (v.x < minX) minX = v.x; if (v.x > maxX) maxX = v.x;
     if (v.y < minY) minY = v.y; if (v.y > maxY) maxY = v.y;
@@ -511,11 +532,13 @@ function buildSurfaceSampler(root: THREE.Object3D | null): SurfaceSampler | null
       return found ? bz : null;
     };
     const z = scan(0.07 * s, 0.05 * s) ?? scan(0.16 * s, 0.11 * s) ?? scan(0.30 * s, 0.18 * s);
-    return [x, y, (z ?? maxZ) + PROUD];
+    const projected = new THREE.Vector3(x, y, (z ?? maxZ) + PROUD);
+    if (presentationRoot) projected.applyMatrix4(presentationRoot.matrixWorld);
+    return [projected.x, projected.y, projected.z];
   };
 }
 
-export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guidedMode = false, nextGuidedStep = null, onBlockedClick, onBodyPoint, bodyInjuries, patientGender, surfaceOpacity = 1, activeFindingMorphs, breathRateRpm = 0, onSurfaceSampler, dressed = false, dressedActiveRegion = null, pupilLeftMm = 3.5, pupilRightMm = 3.5, skinTint = null, diaphoresis = 0, jaundice = 0, mottling = 0, unconscious = false }: BodyMeshProps) {
+export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guidedMode = false, nextGuidedStep = null, onBlockedClick, onBodyPoint, bodyInjuries, patientGender, surfaceOpacity = 1, activeFindingMorphs, breathRateRpm = 0, onSurfaceSampler, dressed = false, dressedActiveRegion = null, pupilLeftMm = 3.5, pupilRightMm = 3.5, skinTint = null, diaphoresis = 0, jaundice = 0, mottling = 0, unconscious = false, presentation = 'upright' }: BodyMeshProps) {
   // The path is recomputed per render so a `caseData.patientInfo.gender`
   // change (e.g. user picks a different case) swaps the mesh without
   // remounting the parent. useGLTF caches by URL.
@@ -543,6 +566,7 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
   // Reusable temp colour for the per-frame skin-tint lerp so we don't allocate
   // a THREE.Color every frame (GC pressure under 60fps useFrame).
   const tintTmpRef = useRef(new THREE.Color());
+  const treatmentBayPresentation = presentation === 'treatment-bay';
 
   // Diaphoresis (sweat sheen): the eased 0..1 scalar the frame loop drives
   // toward the `diaphoresis` prop (fast up ~10 s, slow dry-out ~60 s), plus a
@@ -797,10 +821,10 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
   // patient surface (self-calibrating across the male/female/any GLB).
   useEffect(() => {
     if (!onSurfaceSampler) return;
-    const sampler = buildSurfaceSampler(meshRef.current ?? clonedScene);
+    const sampler = buildSurfaceSampler(meshRef.current ?? clonedScene, treatmentBayPresentation ? meshRef.current : null);
     onSurfaceSampler(sampler);
     return () => onSurfaceSampler(null);
-  }, [clonedScene, onSurfaceSampler]);
+  }, [clonedScene, onSurfaceSampler, treatmentBayPresentation]);
 
   // Dressed-view garment: layer on only in dressed mode, and the piece
   // covering the focused region parts so the skin underneath is assessable.
@@ -1110,17 +1134,23 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
     }
   });
 
+  const toClinicalPoint = useCallback((worldPoint: THREE.Vector3): THREE.Vector3 => {
+    const point = worldPoint.clone();
+    if (treatmentBayPresentation && meshRef.current) meshRef.current.worldToLocal(point);
+    return point;
+  }, [treatmentBayPresentation]);
+
   const handlePointerMove = useCallback((e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
-    const point = e.point;
-    const region = getRegionAtPoint(point);
+    const point = toClinicalPoint(e.point);
+    const region = getRegionAtPoint(point, !treatmentBayPresentation);
 
     if (region !== hoveredRegion) {
       setHoveredRegion(region);
       updateMeshColors(region);
       document.body.style.cursor = region ? 'pointer' : 'auto';
     }
-  }, [hoveredRegion, updateMeshColors]);
+  }, [hoveredRegion, updateMeshColors, toClinicalPoint, treatmentBayPresentation]);
 
   const handlePointerOut = useCallback(() => {
     setHoveredRegion(null);
@@ -1141,11 +1171,13 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
         onBlockedClick?.(limbHit, nextGuidedStep);
         return;
       }
-      if (onBodyPoint?.(e.point, limbHit)) return;
+      const clinicalPoint = toClinicalPoint(e.point);
+      if (onBodyPoint?.(clinicalPoint, limbHit)) return;
       onRegionClick(limbHit);
       return;
     }
-    const region = getRegionAtPoint(e.point);
+    const clinicalPoint = toClinicalPoint(e.point);
+    const region = getRegionAtPoint(clinicalPoint, !treatmentBayPresentation);
     if (!region) return;
 
     // Phase 2 — in guided mode, block clicks on anything other than the
@@ -1155,9 +1187,9 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
       return;
     }
 
-    if (onBodyPoint?.(e.point, region.id)) return;
+    if (onBodyPoint?.(clinicalPoint, region.id)) return;
     onRegionClick(region.id);
-  }, [onRegionClick, guidedMode, nextGuidedStep, onBlockedClick, onBodyPoint]);
+  }, [onRegionClick, guidedMode, nextGuidedStep, onBlockedClick, onBodyPoint, toClinicalPoint, treatmentBayPresentation]);
 
   // Render region highlight overlays using transparent cylinders
   const regionHighlights = useMemo(() => {
@@ -1303,7 +1335,12 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
   }, [assessedRegions, hoveredRegion, requiredRegions, guidedMode, nextGuidedStep, pulseRef.current]);
 
   return (
-    <group ref={meshRef}>
+    <group
+      ref={meshRef}
+      position={treatmentBayPresentation ? TREATMENT_BAY_MODEL_TRANSFORM.position : [0, 0, 0]}
+      rotation={treatmentBayPresentation ? TREATMENT_BAY_MODEL_TRANSFORM.rotation : [0, 0, 0]}
+      scale={treatmentBayPresentation ? TREATMENT_BAY_MODEL_TRANSFORM.scale : 1}
+    >
       {/* Invisible "catch-all" plane behind the body. r3f only fires
           onPointerMove on the mesh the raycast hits, so moving the pointer
           from the body to empty canvas space left the hover state stuck.

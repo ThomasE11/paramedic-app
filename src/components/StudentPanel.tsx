@@ -56,7 +56,7 @@ function seededShuffle<T>(array: T[], seed: string): T[] {
   }
   return shuffled;
 }
-import { allCases, getRandomCase, yearLevels, caseCategories, allConditionNames, getCasesByCondition } from '@/data/cases';
+import { allCases, getRandomCase, yearLevels, caseCategories, allConditionNames, getCasesByCondition, isCaseAvailableForCohort } from '@/data/cases';
 import { ensureCompleteVitals, buildInitialVitalsFromCase } from '@/data/treatmentEffects';
 import { type Treatment, TREATMENTS } from '@/data/enhancedTreatmentEffects';
 import {
@@ -73,6 +73,9 @@ import {
 } from '@/data/treatmentProtocols';
 import { checkRuntimeContraindications } from '@/lib/runtimeContraindications';
 import { evaluateTreatmentRealism } from '@/lib/patientRealism';
+import { deriveRealismDirectorState, type RealismDirectorState } from '@/lib/patientRealismDirector';
+import { deriveClinicalManagementDebrief, deriveTreatmentReassessmentMatches } from '@/lib/caseManagementRealism';
+import { derivePatientVisualState } from '@/lib/patientVisualState';
 import {
   buildReactionForTreatment,
   projectReactionVitals,
@@ -98,6 +101,7 @@ import {
   RotateCcw, Zap, Phone, ChevronDown, ChevronUp,
   Wind, Brain, Syringe, Search, Shuffle, Target,
   Flame, Baby, FlaskConical, ListChecks, HeartPulse, Gauge,
+  Eye,
 } from 'lucide-react';
 import { toast } from 'sonner';
 // AuscultationPanel removed — sounds now play inline from 3D Physical Examination
@@ -181,6 +185,97 @@ function getStudentCaseTitle(caseData: CaseScenario): string {
 
   return `${patient} — Emergency Call`;
 }
+
+type MissionSkillFocus = 'any' | 'assessment' | 'airway' | 'breathing' | 'circulation' | 'medication' | 'trauma';
+type MissionEquipmentFocus = 'any' | 'oxygen' | 'monitoring' | 'medications' | 'immobilisation' | 'ventilation';
+type MissionTimebox = 'untimed' | '10' | '15' | '20';
+
+const missionSkillKeywords: Record<MissionSkillFocus, string[]> = {
+  any: [],
+  assessment: ['assessment', 'primary survey', 'secondary survey', 'history', 'opqrst', 'samps', 'examine', 'inspect', 'palpate'],
+  airway: ['airway', 'choking', 'stridor', 'suction', 'foreign body', 'gurgling', 'anaphylaxis', 'opa', 'npa'],
+  breathing: ['breathing', 'respiratory', 'asthma', 'copd', 'pneumothorax', 'wheeze', 'oxygen', 'spo2', 'nebul'],
+  circulation: ['cardiac', 'chest pain', 'shock', 'bleeding', 'haemorrhage', 'hemorrhage', 'arrhythmia', 'stemi', 'pulse'],
+  medication: ['drug', 'medication', 'overdose', 'poison', 'toxic', 'anaphylaxis', 'diabetic', 'hypoglycaemia', 'hypoglycemia'],
+  trauma: ['trauma', 'fall', 'fracture', 'burn', 'collision', 'immobilisation', 'immobilization', 'splint', 'spinal'],
+};
+
+const missionEquipmentKeywords: Record<MissionEquipmentFocus, string[]> = {
+  any: [],
+  oxygen: ['oxygen', 'hypoxia', 'spo2', 'breathing', 'respiratory', 'asthma', 'copd', 'pneumothorax'],
+  monitoring: ['ecg', 'monitor', 'cardiac', 'arrhythmia', 'chest pain', 'blood pressure', 'spo2', 'vitals'],
+  medications: ['drug', 'medication', 'adrenaline', 'epinephrine', 'salbutamol', 'aspirin', 'gtn', 'naloxone', 'glucose'],
+  immobilisation: ['trauma', 'spinal', 'fracture', 'fall', 'collision', 'splint', 'cervical', 'long board', 'scoop'],
+  ventilation: ['ventilation', 'bvm', 'bag-valve', 'respiratory failure', 'apnoea', 'apnea', 'airway', 'intubation'],
+};
+
+function buildCaseSearchText(caseData: CaseScenario): string {
+  return [
+    caseData.title,
+    caseData.category,
+    caseData.subcategory,
+    caseData.priority,
+    caseData.complexity,
+    caseData.dispatchInfo?.callReason,
+    caseData.sceneInfo?.description,
+    caseData.initialPresentation?.generalImpression,
+    caseData.initialPresentation?.appearance,
+    caseData.initialPresentation?.consciousness,
+    ...(caseData.expectedFindings?.keyObservations ?? []),
+    ...(caseData.expectedFindings?.redFlags ?? []),
+    ...(caseData.expectedFindings?.differentialDiagnoses ?? []),
+    caseData.expectedFindings?.mostLikelyDiagnosis,
+    ...(caseData.managementPathway?.immediate ?? []),
+    ...(caseData.managementPathway?.monitoring ?? []),
+    ...(caseData.criticalActions?.map(action => action.description) ?? []),
+    ...(caseData.teachingPoints ?? []),
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+}
+
+function matchesMissionKeywords(caseData: CaseScenario, keywords: string[]): boolean {
+  if (keywords.length === 0) return true;
+  const text = buildCaseSearchText(caseData);
+  return keywords.some(keyword => text.includes(keyword));
+}
+
+function getCaseCompetencyTags(caseData: CaseScenario, focus: MissionSkillFocus): string[] {
+  const tags = ['Primary survey', 'Clinical reasoning'];
+  const text = buildCaseSearchText(caseData);
+
+  if (focus !== 'any') tags.push(focus === 'medication' ? 'Medication safety' : `${focus.charAt(0).toUpperCase()}${focus.slice(1)} focus`);
+  if (caseData.category === 'cardiac' || text.includes('ecg') || text.includes('chest pain')) tags.push('ECG + monitor');
+  if (caseData.category === 'respiratory' || text.includes('breathing') || text.includes('spo2')) tags.push('Oxygenation');
+  if (caseData.category === 'trauma' || text.includes('fracture') || text.includes('bleeding')) tags.push('Trauma survey');
+  if (caseData.priority === 'critical' || caseData.complexity === 'expert') tags.push('Escalation');
+
+  return [...new Set(tags)].slice(0, 5);
+}
+
+function getCaseEquipmentTags(caseData: CaseScenario, equipmentFocus: MissionEquipmentFocus): string[] {
+  const text = buildCaseSearchText(caseData);
+  const tags = ['Monitor', 'PPE'];
+
+  if (equipmentFocus !== 'any') {
+    const focusLabel = equipmentFocus === 'immobilisation' ? 'Immobilisation' : equipmentFocus.charAt(0).toUpperCase() + equipmentFocus.slice(1);
+    tags.push(focusLabel);
+  }
+  if (text.includes('oxygen') || text.includes('spo2') || text.includes('breathing') || caseData.category === 'respiratory') tags.push('Oxygen kit');
+  if (text.includes('ecg') || text.includes('chest pain') || caseData.category === 'cardiac') tags.push('12-lead ECG');
+  if (text.includes('bleeding') || text.includes('shock') || text.includes('trauma')) tags.push('Circulation bag');
+  if (text.includes('fracture') || text.includes('spinal') || caseData.category === 'trauma') tags.push('Splints');
+  if (text.includes('medication') || text.includes('overdose') || text.includes('anaphylaxis')) tags.push('Medication bag');
+
+  return [...new Set(tags)].slice(0, 5);
+}
+
+function getCohortScopeLabel(year: StudentYear): string {
+  if (year === '1st-year') return 'current cohort only';
+  if (year === 'diploma') return 'diploma + Year 1/2 fundamentals';
+  return `${year} + prerequisite review`;
+}
 import { DefibrillationDialog } from '@/components/DefibrillationDialog';
 import { VentilatorSetupDialog, type VentilatorSettings } from '@/components/VentilatorSetupDialog';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -227,6 +322,159 @@ function LoadingCard() {
         </div>
         <div className="flex items-center justify-center pt-2">
           <Loader2 className="h-5 w-5 animate-spin text-primary/50" />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+const realismSeverityStyles: Record<RealismDirectorState['severity'], {
+  rail: string;
+  icon: string;
+  badge: string;
+  panel: string;
+}> = {
+  normal: {
+    rail: 'from-emerald-400 to-cyan-400',
+    icon: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-300',
+    badge: 'border-emerald-400/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
+    panel: 'border-emerald-400/20 bg-emerald-50/50 dark:bg-emerald-950/10',
+  },
+  observe: {
+    rail: 'from-cyan-400 to-blue-400',
+    icon: 'bg-cyan-500/10 text-cyan-700 dark:text-cyan-300',
+    badge: 'border-cyan-400/40 bg-cyan-500/10 text-cyan-800 dark:text-cyan-200',
+    panel: 'border-cyan-400/20 bg-cyan-50/50 dark:bg-cyan-950/10',
+  },
+  warning: {
+    rail: 'from-amber-400 to-orange-500',
+    icon: 'bg-amber-500/10 text-amber-700 dark:text-amber-300',
+    badge: 'border-amber-400/50 bg-amber-500/10 text-amber-800 dark:text-amber-200',
+    panel: 'border-amber-400/25 bg-amber-50/60 dark:bg-amber-950/15',
+  },
+  critical: {
+    rail: 'from-rose-400 to-red-500',
+    icon: 'bg-red-500/10 text-red-700 dark:text-red-300',
+    badge: 'border-red-400/50 bg-red-500/10 text-red-800 dark:text-red-200',
+    panel: 'border-red-400/25 bg-red-50/60 dark:bg-red-950/15',
+  },
+};
+
+function RealismDirectorCard({ state }: { state: RealismDirectorState }) {
+  const style = realismSeverityStyles[state.severity];
+  const sceneItems = state.sceneConstraints.slice(0, 2);
+  const cueItems = state.visibleCues.slice(0, 3);
+  const treatmentItems = state.treatmentEvidence.slice(0, 2);
+  const reassessmentItems = state.reassessmentPrompts.slice(0, 3);
+  const pendingTreatmentLoops = state.treatmentLoopStates
+    .filter(loop => loop.state === 'applied')
+    .slice(0, 3);
+  const completedTreatmentLoops = state.treatmentLoopStates
+    .filter(loop => loop.state === 'reassessed')
+    .slice(0, 2);
+
+  return (
+    <Card className={`relative overflow-hidden rounded-2xl border backdrop-blur-xl shadow-[0_8px_32px_-20px_rgba(15,23,42,0.35)] ${style.panel}`}>
+      <div className={`absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r ${style.rail}`} />
+      <CardContent className="p-4 sm:p-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex min-w-0 items-start gap-3">
+            <div className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ring-1 ring-white/30 ${style.icon}`}>
+              <Activity className="h-4 w-4" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[9px] font-semibold uppercase tracking-[0.24em] text-muted-foreground/60">
+                Clinical reality
+              </p>
+              <h3 className="mt-1 text-sm font-semibold leading-snug text-foreground/90">
+                {state.headline}
+              </h3>
+            </div>
+          </div>
+          <Badge variant="outline" className={`w-fit shrink-0 rounded-full px-2.5 py-1 text-[9px] uppercase tracking-[0.14em] ${style.badge}`}>
+            {state.caseFamily} - {state.severity}
+          </Badge>
+        </div>
+
+        <div className="mt-4 grid gap-2 md:grid-cols-3">
+          <div className="rounded-xl border border-white/50 bg-white/55 p-3 dark:border-white/[0.06] dark:bg-slate-950/25">
+            <div className="mb-2 flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/60">
+              <Shield className="h-3.5 w-3.5" />
+              Scene
+            </div>
+            <div className="space-y-1.5">
+              {(sceneItems.length ? sceneItems : ['No special access constraints documented']).map(item => (
+                <p key={item} className="line-clamp-2 text-[11px] leading-relaxed text-foreground/75">{item}</p>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-white/50 bg-white/55 p-3 dark:border-white/[0.06] dark:bg-slate-950/25">
+            <div className="mb-2 flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/60">
+              <Target className="h-3.5 w-3.5" />
+              Patient cues
+            </div>
+            <div className="space-y-1.5">
+              {cueItems.map(item => (
+                <div key={item.id} className="flex gap-2">
+                  <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${
+                    item.severity === 'critical' ? 'bg-red-500' :
+                    item.severity === 'warning' ? 'bg-amber-500' :
+                    item.severity === 'observe' ? 'bg-cyan-500' :
+                    'bg-emerald-500'
+                  }`} />
+                  <p className="line-clamp-2 text-[11px] leading-relaxed text-foreground/75">
+                    <span className="font-semibold text-foreground/85">{item.label}:</span> {item.detail}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-white/50 bg-white/55 p-3 dark:border-white/[0.06] dark:bg-slate-950/25">
+            <div className="mb-2 flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/60">
+              <ClipboardCheck className="h-3.5 w-3.5" />
+              Reassess
+            </div>
+            <div className="space-y-1.5">
+              {pendingTreatmentLoops.length > 0 ? (
+                <>
+                  {pendingTreatmentLoops.map(loop => (
+                    <div key={loop.treatmentId} className="rounded-lg border border-amber-300/40 bg-amber-50/70 px-2.5 py-2 dark:border-amber-400/20 dark:bg-amber-950/20">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-[10px] font-semibold text-amber-950 dark:text-amber-100">{loop.categoryLabel}</p>
+                        <span className="rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-[0.12em] text-amber-800 dark:text-amber-200">
+                          pending
+                        </span>
+                      </div>
+                      <p className="mt-1 line-clamp-2 text-[10px] leading-relaxed text-amber-950/75 dark:text-amber-100/75">{loop.reassessmentPrompt}</p>
+                    </div>
+                  ))}
+                  {completedTreatmentLoops.length > 0 && (
+                    <p className="text-[10px] leading-relaxed text-emerald-700 dark:text-emerald-300">
+                      {completedTreatmentLoops.length} treatment follow-up{completedTreatmentLoops.length === 1 ? '' : 's'} closed.
+                    </p>
+                  )}
+                </>
+              ) : completedTreatmentLoops.length > 0 ? (
+                completedTreatmentLoops.map(loop => (
+                  <div key={loop.treatmentId} className="rounded-lg border border-emerald-300/40 bg-emerald-50/70 px-2.5 py-2 dark:border-emerald-400/20 dark:bg-emerald-950/20">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-[10px] font-semibold text-emerald-950 dark:text-emerald-100">{loop.categoryLabel}</p>
+                      <span className="rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-[0.12em] text-emerald-800 dark:text-emerald-200">
+                        reassessed
+                      </span>
+                    </div>
+                    <p className="mt-1 line-clamp-2 text-[10px] leading-relaxed text-emerald-950/75 dark:text-emerald-100/75">{loop.reassessmentPrompt}</p>
+                  </div>
+                ))
+              ) : (
+                [...treatmentItems, ...reassessmentItems].slice(0, 4).map(item => (
+                  <p key={item} className="line-clamp-2 text-[11px] leading-relaxed text-foreground/75">{item}</p>
+                ))
+              )}
+            </div>
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -376,6 +624,396 @@ interface PendingTreatmentChallenge {
   treatment: Treatment;
   challenge: TreatmentChallenge;
   defibParams?: DefibrillationParams;
+}
+
+interface TacticalGearStatus {
+  id: string;
+  label: string;
+  status: 'connected' | 'needs-recheck' | 'confirmed';
+  tone: 'airway' | 'circulation' | 'medication' | 'transport' | 'exposure' | 'neutral';
+  detail: string;
+}
+
+interface TacticalCareFeedItem {
+  id: string;
+  label: string;
+  detail: string;
+  tone: 'critical' | 'warning' | 'normal' | 'loop' | 'visual';
+}
+
+interface TacticalTimelineItem {
+  id: string;
+  time: string;
+  title: string;
+  detail: string;
+  tone: 'assessment' | 'treatment' | 'vitals' | 'alert' | 'reassess';
+}
+
+function getGearTone(treatment?: Treatment): TacticalGearStatus['tone'] {
+  if (!treatment) return 'neutral';
+  const text = `${treatment.id} ${treatment.name} ${treatment.description} ${treatment.category}`.toLowerCase();
+  if (/oxygen|mask|bvm|ventilat|cpap|airway|intubat|suction|nebul/.test(text)) return 'airway';
+  if (/iv|fluid|defib|aed|cpr|tourniquet|bleed|txa|circulation/.test(text)) return 'circulation';
+  if (treatment.category === 'medication' || /drug|adrenaline|aspirin|gtn|midazolam|naloxone|glucose/.test(text)) return 'medication';
+  if (/stretcher|board|scoop|collar|transport|extricat|splint|mattress/.test(text)) return 'transport';
+  if (/blanket|cool|warm|position|exposure|dressing/.test(text)) return 'exposure';
+  return 'neutral';
+}
+
+function formatClinicalToken(value: string): string {
+  return value
+    .replace(/[_-]+/g, ' ')
+    .replace(/\b\w/g, char => char.toUpperCase());
+}
+
+function TacticalEquipmentRibbon({
+  statuses,
+  pendingCount,
+  completedCount,
+  activeProblem,
+}: {
+  statuses: TacticalGearStatus[];
+  pendingCount: number;
+  completedCount: number;
+  activeProblem: string;
+}) {
+  const headline = pendingCount > 0
+    ? `${pendingCount} reassessment pending`
+    : completedCount > 0
+      ? `${completedCount} response confirmed`
+      : 'No gear connected yet';
+
+  return (
+    <div className={`tactical-equipment-ribbon ${statuses.length === 0 ? 'is-empty' : ''}`} aria-live="polite">
+      <div className="tactical-equipment-ribbon-head">
+        <div>
+          <p>Patient loadout</p>
+          <strong>{headline}</strong>
+        </div>
+        <span className={pendingCount > 0 ? 'is-pending' : completedCount > 0 ? 'is-confirmed' : ''} />
+      </div>
+      <div className="tactical-gear-track">
+        {statuses.length > 0 ? statuses.map(status => (
+          <div
+            key={status.id}
+            className="tactical-gear-chip"
+            data-status={status.status}
+            data-tone={status.tone}
+          >
+            <CheckCircle2 className="h-3 w-3" />
+            <div className="min-w-0">
+              <p>{status.label}</p>
+              <span>{status.detail}</span>
+            </div>
+          </div>
+        )) : (
+          <div className="tactical-gear-empty">
+            <Target className="h-3.5 w-3.5" />
+            <span>{activeProblem || 'Select a kit and treat what you can see.'}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function TacticalCareFeed({ items }: { items: TacticalCareFeedItem[] }) {
+  if (items.length === 0) return null;
+
+  return (
+    <div className="tactical-care-feed" aria-live="polite">
+      <div className="tactical-care-feed-head">
+        <Activity className="h-3.5 w-3.5" />
+        <span>Live care feed</span>
+      </div>
+      <div className="tactical-care-feed-grid">
+        {items.map(item => {
+          const Icon =
+            item.tone === 'critical' ? AlertTriangle
+              : item.tone === 'loop' ? ClipboardCheck
+                : item.tone === 'normal' ? CheckCircle2
+                  : Activity;
+          return (
+            <div key={item.id} className="tactical-care-feed-item" data-tone={item.tone}>
+              <Icon className="h-3.5 w-3.5" />
+              <div className="min-w-0">
+                <p>{item.label}</p>
+                <span>{item.detail}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function TacticalBayTimeline({
+  items,
+  elapsed,
+}: {
+  items: TacticalTimelineItem[];
+  elapsed: string;
+}) {
+  return (
+    <div className="tactical-bay-timeline">
+      <div className="tactical-bay-timeline-head">
+        <div>
+          <p>Case narrative</p>
+          <strong>{elapsed}</strong>
+        </div>
+        <span>assess {'->'} treat {'->'} reassess</span>
+      </div>
+      <div className="tactical-bay-timeline-track">
+        {items.length > 0 ? items.map(item => {
+          const Icon =
+            item.tone === 'assessment' ? Stethoscope
+              : item.tone === 'treatment' ? Syringe
+                : item.tone === 'alert' ? AlertTriangle
+                  : item.tone === 'reassess' ? ClipboardCheck
+                    : Activity;
+          return (
+            <div key={item.id} className="tactical-bay-timeline-item" data-tone={item.tone}>
+              <div className="tactical-bay-timeline-time">{item.time}</div>
+              <div className="tactical-bay-timeline-dot">
+                <Icon className="h-3.5 w-3.5" />
+              </div>
+              <div className="min-w-0">
+                <p>{item.title}</p>
+                <span>{item.detail}</span>
+              </div>
+            </div>
+          );
+        }) : (
+          <div className="tactical-bay-timeline-empty">
+            <Activity className="h-3.5 w-3.5" />
+            <span>Start with a focused look at the patient, then build the story through assessment and treatment.</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const ROADMAP_BAGS = [
+  { id: 'airway', label: 'Airway', image: '/bag-assets/airway-bag.webp' },
+  { id: 'breathing', label: 'Breathing', image: '/bag-assets/breathing-bag.webp' },
+  { id: 'circulation', label: 'Circulation', image: '/bag-assets/circulation-kit.webp' },
+  { id: 'medications', label: 'Medications', image: '/bag-assets/medication-pouch.webp' },
+  { id: 'transport', label: 'Tools', image: '/bag-assets/transport-kit.webp' },
+] as const;
+
+const ROADMAP_EQUIPMENT_ASSETS: Record<string, string> = {
+  oxygen_nasal: '/equipment-assets/nasal-cannula.webp',
+  oxygen_mask: '/equipment-assets/oxygen-mask.webp',
+  oxygen_nonrebreather: '/equipment-assets/nonrebreather-mask.webp',
+  nebulizer_salbutamol: '/equipment-assets/nebulizer-mask.webp',
+  bvm_ventilation: '/equipment-assets/bvm.webp',
+  cpap_niv: '/equipment-assets/cpap-circuit.webp',
+  mechanical_ventilation: '/equipment-assets/portable-transport-ventilator.webp',
+  iv_access: '/equipment-assets/iv-cannula.webp',
+  iv_cannula: '/equipment-assets/iv-cannula.webp',
+  fluids_250ml: '/equipment-assets/fluid-bag.webp',
+  fluids_500ml: '/equipment-assets/fluid-bag.webp',
+  defibrillation: '/equipment-assets/defib-pads.webp',
+  aed: '/equipment-assets/defib-pads.webp',
+  tourniquet: '/equipment-assets/tourniquet.webp',
+  bleeding_control: '/equipment-assets/bandages.webp',
+  dressing: '/equipment-assets/bandages.webp',
+  aspirin: '/equipment-assets/aspirin-tablets.webp',
+  gtn_spray: '/equipment-assets/gtn-spray.webp',
+  adrenaline_im: '/equipment-assets/adrenaline-vials.webp',
+  naloxone_04mg: '/equipment-assets/naloxone-vial.webp',
+  glucose_10g: '/equipment-assets/glucose-gel.webp',
+  dextrose_10: '/equipment-assets/dextrose-bag.webp',
+  sam_splint: '/equipment-assets/sam-splint.webp',
+  splinting: '/equipment-assets/splints.webp',
+  box_splint: '/equipment-assets/box-splint.webp',
+  vacuum_limb_splint: '/equipment-assets/vacuum-limb-splint.webp',
+  traction_splint: '/equipment-assets/traction-splint.webp',
+  cervical_collar: '/equipment-assets/cervical-collar.webp',
+  spinal_board: '/equipment-assets/spine-board.webp',
+  scoop_stretcher: '/equipment-assets/scoop-stretcher.webp',
+};
+
+const ROADMAP_FALLBACK_EQUIPMENT = [
+  { id: 'oxygen_nonrebreather', name: 'Oxygen Mask' },
+  { id: 'iv_access', name: 'IV Cannula' },
+  { id: 'defibrillation', name: 'Monitor Pads' },
+  { id: 'sam_splint', name: 'Splint' },
+  { id: 'dressing', name: 'Dressing' },
+  { id: 'gtn_spray', name: 'GTN Spray' },
+] as const;
+
+function getRoadmapEquipmentAsset(id: string): string {
+  const exact = ROADMAP_EQUIPMENT_ASSETS[id];
+  if (exact) return exact;
+  const key = Object.keys(ROADMAP_EQUIPMENT_ASSETS).find(assetKey => id.includes(assetKey) || assetKey.includes(id));
+  return key ? ROADMAP_EQUIPMENT_ASSETS[key] : '/equipment-assets/bandages.webp';
+}
+
+function RoadmapStepBadge({ index }: { index: number }) {
+  return <span className="roadmap-step-badge">{index}</span>;
+}
+
+function RoadmapAnatomyPanel({
+  visualState,
+  activeFindings,
+  assessedCount,
+}: {
+  visualState: ReturnType<typeof derivePatientVisualState> | null;
+  activeFindings: { stepId: AssessmentStepId; findings: AssessmentFinding[] } | null;
+  assessedCount: number;
+}) {
+  const eyeDetail = visualState?.eyeEffects.kind !== 'normal'
+    ? `${formatClinicalToken(visualState?.eyeEffects.kind ?? '')} pupils`
+    : 'Pupils';
+  const chestDetail = visualState?.chestRiseAsymmetry?.detail || 'Chest';
+  const abdomenFinding = activeFindings?.stepId === 'abdomen'
+    ? activeFindings.findings[0]?.value
+    : 'Abdomen';
+  const limbFinding = visualState?.woundOverlays[0]?.detail || 'Limbs';
+
+  return (
+    <section className="roadmap-panel roadmap-anatomy-panel">
+      <div className="roadmap-panel-title">
+        <RoadmapStepBadge index={2} />
+        <h3>Anatomy assessment</h3>
+      </div>
+      <div className="roadmap-anatomy-grid">
+        {[
+          { label: 'Eyes', detail: eyeDetail, Icon: Eye },
+          { label: 'Chest', detail: chestDetail, Icon: Stethoscope },
+          { label: 'Abdomen', detail: abdomenFinding, Icon: Activity },
+          { label: 'Limbs', detail: limbFinding, Icon: Target },
+        ].map(item => {
+          const Icon = item.Icon;
+          return (
+            <div key={item.label} className="roadmap-anatomy-tile">
+              <Icon className="h-4 w-4" />
+              <div>
+                <p>{item.label}</p>
+                <span>{item.detail}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="roadmap-anatomy-progress">
+        <span>{assessedCount} regions assessed</span>
+        <strong>{visualState?.equipmentAnchors.length ?? 0} attached devices</strong>
+      </div>
+    </section>
+  );
+}
+
+function RoadmapTreatmentInterventionsPanel({
+  appliedTreatments,
+  activeBag,
+}: {
+  appliedTreatments: AppliedTreatment[];
+  activeBag: ManagementTab;
+}) {
+  const stagedEquipment = appliedTreatments.length > 0
+    ? appliedTreatments.slice(-6).reverse().map(item => ({ id: item.id, name: item.name || formatClinicalToken(item.id) }))
+    : ROADMAP_FALLBACK_EQUIPMENT;
+
+  return (
+    <section className="roadmap-panel roadmap-treatment-panel">
+      <div className="roadmap-panel-title">
+        <RoadmapStepBadge index={3} />
+        <h3>Treatment bags & interventions</h3>
+      </div>
+      <div className="roadmap-bag-strip">
+        {ROADMAP_BAGS.map(bag => (
+          <div key={bag.id} className="roadmap-bag-tile" data-active={activeBag === bag.id}>
+            <img src={bag.image} alt="" draggable={false} />
+            <span>{bag.label}</span>
+          </div>
+        ))}
+      </div>
+      <div className="roadmap-equipment-board">
+        <p>{appliedTreatments.length > 0 ? 'Equipment applied' : 'Equipment staged'}</p>
+        <div className="roadmap-equipment-grid">
+          {stagedEquipment.map(item => (
+            <div key={`${item.id}-${item.name}`} className="roadmap-equipment-tile">
+              <img src={getRoadmapEquipmentAsset(item.id)} alt="" draggable={false} />
+              <span>{item.name}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function RoadmapDebriefPanel({
+  items,
+  currentVitals,
+  appliedTreatments,
+  assessmentTracker,
+}: {
+  items: TacticalTimelineItem[];
+  currentVitals: VitalSigns | null;
+  appliedTreatments: AppliedTreatment[];
+  assessmentTracker: AssessmentTracker | null;
+}) {
+  const assessmentRatio = assessmentTracker
+    ? assessmentTracker.performed.length / Math.max(assessmentTracker.required.length || 1, 1)
+    : 0;
+  const score = Math.max(8, Math.min(100, Math.round(
+    assessmentRatio * 55
+    + Math.min(appliedTreatments.length, 4) * 8
+    + (currentVitals?.spo2 && currentVitals.spo2 >= 94 ? 12 : 0)
+  )));
+
+  return (
+    <section className="roadmap-panel roadmap-debrief-panel">
+      <div className="roadmap-panel-title">
+        <RoadmapStepBadge index={4} />
+        <h3>Debrief timeline</h3>
+      </div>
+      <div className="roadmap-mini-timeline">
+        {(items.length ? items : [{ id: 'start', time: '00:00', title: 'Scene arrival', detail: 'Case started', tone: 'assessment' as const }]).slice(-5).map(item => (
+          <div key={item.id} className="roadmap-mini-event" data-tone={item.tone}>
+            <span>{item.time}</span>
+            <p>{item.title}</p>
+          </div>
+        ))}
+      </div>
+      <div className="roadmap-debrief-grid">
+        <div className="roadmap-vitals-stack">
+          {[
+            { label: 'HR', value: currentVitals?.pulse ? `${currentVitals.pulse}` : '--', unit: 'bpm' },
+            { label: 'SpO2', value: currentVitals?.spo2 ? `${currentVitals.spo2}` : '--', unit: '%' },
+            { label: 'RR', value: currentVitals?.respiration ? `${currentVitals.respiration}` : '--', unit: '/min' },
+            { label: 'BP', value: currentVitals?.bp || '--', unit: 'mmHg' },
+          ].map(vital => (
+            <div key={vital.label}>
+              <span>{vital.label}</span>
+              <strong>{vital.value}</strong>
+              <em>{vital.unit}</em>
+            </div>
+          ))}
+        </div>
+        <div className="roadmap-key-actions">
+          <p>Key actions</p>
+          {[
+            assessmentTracker?.performed.length ? 'Assessment started' : 'Assessment pending',
+            appliedTreatments[0]?.name || 'Treatment pending',
+            appliedTreatments.length > 1 ? `${appliedTreatments.length} interventions` : 'Ongoing monitoring',
+          ].map(action => (
+            <span key={action}><CheckCircle2 className="h-3.5 w-3.5" /> {action}</span>
+          ))}
+        </div>
+        <div className="roadmap-outcome-score">
+          <strong>{score}</strong>
+          <span>/100</span>
+          <p>{score >= 80 ? 'Strong trajectory' : score >= 55 ? 'Developing' : 'Early phase'}</p>
+        </div>
+      </div>
+    </section>
+  );
 }
 
 function getVitalGcsTotal(value: unknown): number | null {
@@ -564,6 +1202,9 @@ export function StudentPanel({
   const [selectedYear, setSelectedYear] = useState<StudentYear>('3rd-year');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectionMode, setSelectionMode] = useState<'standard' | 'random-category' | 'condition'>('standard');
+  const [skillFocus, setSkillFocus] = useState<MissionSkillFocus>('any');
+  const [equipmentFocus, setEquipmentFocus] = useState<MissionEquipmentFocus>('any');
+  const [timebox, setTimebox] = useState<MissionTimebox>('15');
   const [conditionSearch, setConditionSearch] = useState('');
   const [, setSelectedCondition] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -589,10 +1230,49 @@ export function StudentPanel({
   }, []);
   const [appliedTreatments, setAppliedTreatments] = useState<AppliedTreatment[]>([]);
   const [appliedTreatmentIds, setAppliedTreatmentIds] = useState<string[]>([]);
+  const [reassessedTreatmentIds, setReassessedTreatmentIds] = useState<string[]>([]);
   const [applyingTreatmentId, setApplyingTreatmentId] = useState<string | null>(null);
 
   // Dynamic treatment engine state
   const [patientState, setPatientState] = useState<PatientState | null>(null);
+  const realismDirector = useMemo(() => {
+    if (!currentCase) return null;
+    return deriveRealismDirectorState({
+      caseData: currentCase,
+      vitals: currentVitals,
+      patientState,
+      appliedTreatmentIds,
+      appliedTreatments,
+      reassessedTreatmentIds,
+    });
+  }, [currentCase, currentVitals, patientState, appliedTreatmentIds, appliedTreatments, reassessedTreatmentIds]);
+  const patientVisualState = useMemo(
+    () => realismDirector ? derivePatientVisualState(realismDirector) : null,
+    [realismDirector],
+  );
+  const tacticalGearStatuses = useMemo<TacticalGearStatus[]>(() => {
+    const loopByTreatmentId = new Map(
+      (realismDirector?.treatmentLoopStates ?? []).map(loop => [loop.treatmentId, loop]),
+    );
+
+    return appliedTreatments.slice(-5).reverse().map((applied): TacticalGearStatus => {
+      const treatment = TREATMENTS.find(item => item.id === applied.id);
+      const loop = loopByTreatmentId.get(applied.id);
+      const status: TacticalGearStatus['status'] =
+        loop?.state === 'reassessed' ? 'confirmed'
+          : loop ? 'needs-recheck'
+            : 'connected';
+      return {
+        id: `${applied.id}-${applied.appliedAt}`,
+        label: applied.name || treatment?.name || applied.id.replace(/_/g, ' '),
+        status,
+        tone: getGearTone(treatment),
+        detail: status === 'confirmed'
+          ? 'response checked'
+          : loop?.reassessmentPrompt || treatment?.description || 'connected to patient',
+      };
+    });
+  }, [appliedTreatments, realismDirector]);
   const [showDefibDialog, setShowDefibDialog] = useState(false);
   const [pendingDefibTreatment, setPendingDefibTreatment] = useState<Treatment | null>(null);
   const [showVentilatorDialog, setShowVentilatorDialog] = useState(false);
@@ -636,6 +1316,105 @@ export function StudentPanel({
   // Assessment tracking
   const [assessmentTracker, setAssessmentTracker] = useState<AssessmentTracker | null>(null);
   const [activeFindings, setActiveFindings] = useState<{ stepId: AssessmentStepId; findings: AssessmentFinding[] } | null>(null);
+  const tacticalCareFeedItems = useMemo<TacticalCareFeedItem[]>(() => {
+    const items: TacticalCareFeedItem[] = [];
+
+    (realismDirector?.treatmentLoopStates ?? [])
+      .filter(loop => loop.state === 'applied')
+      .slice(0, 2)
+      .forEach(loop => {
+        items.push({
+          id: `loop-${loop.treatmentId}`,
+          label: `${loop.categoryLabel} follow-up`,
+          detail: loop.reassessmentPrompt,
+          tone: 'loop',
+        });
+      });
+
+    if (activeReaction) {
+      items.push({
+        id: `reaction-${activeReaction.id}`,
+        label: activeReaction.headline,
+        detail: activeReaction.kind === 'anaphylaxis'
+          ? 'Airway, breathing, circulation and rescue treatment now matter.'
+          : 'Watch skin, airway, BP and patient tolerance.',
+        tone: activeReaction.kind === 'anaphylaxis' ? 'critical' : 'warning',
+      });
+    }
+
+    if (activeFindings?.findings.length) {
+      const finding =
+        activeFindings.findings.find(item => item.severity === 'critical')
+        ?? activeFindings.findings.find(item => item.severity === 'abnormal')
+        ?? activeFindings.findings[0];
+      const stepLabel = ALL_STEPS[activeFindings.stepId]?.shortLabel
+        || ALL_STEPS[activeFindings.stepId]?.label
+        || formatClinicalToken(activeFindings.stepId);
+      items.push({
+        id: `finding-${activeFindings.stepId}-${finding.label}`,
+        label: `${stepLabel}: ${finding.label}`,
+        detail: finding.value,
+        tone: finding.severity === 'critical' ? 'critical' : finding.severity === 'abnormal' ? 'warning' : 'normal',
+      });
+    }
+
+    const chestRise = patientVisualState?.chestRiseAsymmetry;
+    if (chestRise?.present) {
+      items.push({
+        id: 'visual-chest-rise',
+        label: 'Visible breathing change',
+        detail: chestRise.detail,
+        tone: 'visual',
+      });
+    }
+
+    patientVisualState?.woundOverlays.slice(0, 2).forEach((overlay, index) => {
+      items.push({
+        id: `visual-wound-${overlay.kind}-${index}`,
+        label: formatClinicalToken(overlay.kind),
+        detail: overlay.detail,
+        tone: overlay.kind === 'active_bleeding' || overlay.kind === 'blood_pool' ? 'critical' : 'visual',
+      });
+    });
+
+    patientVisualState?.skinEffects.slice(0, 2).forEach((effect, index) => {
+      items.push({
+        id: `visual-skin-${effect.kind}-${index}`,
+        label: formatClinicalToken(effect.kind),
+        detail: effect.detail,
+        tone: effect.intensity > 0.8 ? 'warning' : 'visual',
+      });
+    });
+
+    if (patientVisualState?.eyeEffects.kind && patientVisualState.eyeEffects.kind !== 'normal') {
+      items.push({
+        id: `visual-eyes-${patientVisualState.eyeEffects.kind}`,
+        label: `${formatClinicalToken(patientVisualState.eyeEffects.kind)} pupils`,
+        detail: patientVisualState.eyeEffects.detail || 'Confirm with focused pupil assessment.',
+        tone: 'visual',
+      });
+    }
+
+    if (items.length < 3) {
+      (realismDirector?.visibleCues ?? []).slice(0, 3 - items.length).forEach(cue => {
+        items.push({
+          id: `cue-${cue.id}`,
+          label: cue.label,
+          detail: cue.detail,
+          tone: cue.severity === 'critical' ? 'critical' : cue.severity === 'warning' ? 'warning' : 'visual',
+        });
+      });
+    }
+
+    const seen = new Set<string>();
+    return items
+      .filter(item => {
+        if (seen.has(item.id)) return false;
+        seen.add(item.id);
+        return true;
+      })
+      .slice(0, 4);
+  }, [activeFindings, activeReaction, patientVisualState, realismDirector]);
   const [monitorRevealedVitals, setMonitorRevealedVitals] = useState<Set<string>>(new Set());
 
   // Scene time warnings & coaching
@@ -1313,6 +2092,90 @@ export function StudentPanel({
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
+  const tacticalTimelineItems = useMemo(() => {
+    const items: Array<TacticalTimelineItem & { sort: number }> = [];
+
+    assessmentTracker?.performed.slice(-3).forEach(performed => {
+      const step = ALL_STEPS[performed.stepId];
+      const critical = performed.findings.find(f => f.severity === 'critical');
+      const abnormal = performed.findings.find(f => f.severity === 'abnormal');
+      const finding = critical ?? abnormal ?? performed.findings[0];
+      items.push({
+        id: `assessment-${performed.stepId}-${performed.order}`,
+        time: formatTime(performed.elapsedSeconds),
+        title: step?.label || formatClinicalToken(performed.stepId),
+        detail: finding ? `${finding.label}: ${finding.value}` : 'Assessment documented.',
+        tone: critical ? 'alert' : 'assessment',
+        sort: performed.elapsedSeconds,
+      });
+    });
+
+    appliedTreatments.slice(-3).forEach((treatment, index) => {
+      const appliedAt = new Date(treatment.appliedAt).getTime();
+      const seconds = caseStartTime ? Math.max(0, Math.floor((appliedAt - caseStartTime) / 1000)) : elapsedSeconds;
+      items.push({
+        id: `treatment-${treatment.id}-${treatment.appliedAt}-${index}`,
+        time: formatTime(seconds),
+        title: treatment.name || formatClinicalToken(treatment.id),
+        detail: treatment.description || 'Treatment applied to patient.',
+        tone: 'treatment',
+        sort: seconds + 0.05,
+      });
+    });
+
+    arrestTimeline.slice(-2).forEach((event, index) => {
+      const seconds = caseStartTime ? Math.max(0, Math.floor((event.time - caseStartTime) / 1000)) : elapsedSeconds;
+      items.push({
+        id: `arrest-${event.type}-${event.time}-${index}`,
+        time: formatTime(seconds),
+        title: formatClinicalToken(event.type),
+        detail: event.event,
+        tone: 'alert',
+        sort: seconds + 0.1,
+      });
+    });
+
+    (realismDirector?.treatmentLoopStates ?? [])
+      .filter(loop => loop.state === 'applied')
+      .slice(0, 2)
+      .forEach((loop, index) => {
+        items.push({
+          id: `reassess-${loop.treatmentId}-${index}`,
+          time: 'now',
+          title: `${loop.categoryLabel} reassessment`,
+          detail: loop.reassessmentPrompt,
+          tone: 'reassess',
+          sort: elapsedSeconds + 0.2 + index / 100,
+        });
+      });
+
+    if (vitalsHistory.length >= 2) {
+      const first = vitalsHistory[0];
+      const latest = vitalsHistory[vitalsHistory.length - 1];
+      const pulseDelta = (Number(latest.pulse) || 0) - (Number(first.pulse) || 0);
+      const spo2Delta = (Number(latest.spo2) || 0) - (Number(first.spo2) || 0);
+      if (pulseDelta !== 0 || spo2Delta !== 0) {
+        const parts = [
+          pulseDelta ? `HR ${pulseDelta > 0 ? '+' : ''}${pulseDelta}` : '',
+          spo2Delta ? `SpO2 ${spo2Delta > 0 ? '+' : ''}${spo2Delta}` : '',
+        ].filter(Boolean);
+        items.push({
+          id: 'vitals-trend',
+          time: formatTime(elapsedSeconds),
+          title: 'Vitals trend',
+          detail: parts.join(' · '),
+          tone: 'vitals',
+          sort: elapsedSeconds + 0.15,
+        });
+      }
+    }
+
+    return items
+      .sort((a, b) => a.sort - b.sort)
+      .slice(-7)
+      .map(({ sort: _sort, ...item }) => item);
+  }, [appliedTreatments, arrestTimeline, assessmentTracker, caseStartTime, elapsedSeconds, realismDirector, vitalsHistory]);
+
   // Filtered conditions list for search dropdown
   // Prioritise conditions that actually have cases for the selected year —
   // otherwise 1st-year students see a mostly-disabled alphabetical list.
@@ -1321,10 +2184,53 @@ export function StudentPanel({
     const pool = q
       ? allConditionNames.filter(c => c.toLowerCase().includes(q))
       : allConditionNames;
-    const withCases = pool.filter(c => getCasesByCondition(c, selectedYear).length > 0);
-    const withoutCases = pool.filter(c => getCasesByCondition(c, selectedYear).length === 0);
+    const withCases = pool.filter(c => getCasesByCondition(c, selectedYear, { cohortMode: 'progressive' }).length > 0);
+    const withoutCases = pool.filter(c => getCasesByCondition(c, selectedYear, { cohortMode: 'progressive' }).length === 0);
     return [...withCases, ...withoutCases].slice(0, 30);
   }, [conditionSearch, selectedYear]);
+
+  const availableCategories = useMemo(() => (
+    caseCategories.filter(cat =>
+      allCases.some(c => c.category === cat.value && isCaseAvailableForCohort(c.yearLevels, selectedYear))
+    )
+  ), [selectedYear]);
+
+  useEffect(() => {
+    if (selectedCategory === 'all') return;
+    if (!availableCategories.some(cat => cat.value === selectedCategory)) {
+      setSelectedCategory('all');
+    }
+  }, [availableCategories, selectedCategory]);
+
+  const baseMissionCases = useMemo(() => (
+    allCases.filter(c => {
+      if (!isCaseAvailableForCohort(c.yearLevels, selectedYear)) return false;
+      if (selectedCategory !== 'all' && c.category !== selectedCategory) return false;
+      return true;
+    })
+  ), [selectedYear, selectedCategory]);
+
+  const strictMissionCases = useMemo(() => {
+    return baseMissionCases.filter(c => (
+      matchesMissionKeywords(c, missionSkillKeywords[skillFocus]) &&
+      matchesMissionKeywords(c, missionEquipmentKeywords[equipmentFocus])
+    ));
+  }, [baseMissionCases, skillFocus, equipmentFocus]);
+
+  const missionCandidateCases = strictMissionCases.length > 0 ? strictMissionCases : baseMissionCases;
+  const missionPreviewCase = useMemo(() => {
+    if (missionCandidateCases.length === 0) return null;
+    return seededShuffle(missionCandidateCases, `${selectedYear}-${selectedCategory}-${skillFocus}-${equipmentFocus}`)[0];
+  }, [missionCandidateCases, selectedYear, selectedCategory, skillFocus, equipmentFocus]);
+  const missionCategoryLabel = selectedCategory === 'all'
+    ? 'all presentations'
+    : caseCategories.find(cat => cat.value === selectedCategory)?.label.toLowerCase() ?? selectedCategory;
+  const cohortScopeLabel = getCohortScopeLabel(selectedYear);
+  const missionDurationLabel = timebox === 'untimed' ? 'Untimed practice' : `${timebox} min target`;
+  const missionDurationShortLabel = timebox === 'untimed' ? 'Untimed' : `${timebox} min`;
+  const missionFilterFallback = strictMissionCases.length === 0 && baseMissionCases.length > 0 && (skillFocus !== 'any' || equipmentFocus !== 'any');
+  const missionCompetencies = missionPreviewCase ? getCaseCompetencyTags(missionPreviewCase, skillFocus) : [];
+  const missionEquipment = missionPreviewCase ? getCaseEquipmentTags(missionPreviewCase, equipmentFocus) : [];
 
   // Shared case initialization helper
   const initializeCase = useCallback((newCase: CaseScenario, conditionMode: boolean, condition?: string) => {
@@ -1335,6 +2241,7 @@ export function StudentPanel({
     setVitalsHistory([initialVitals]);
     setAppliedTreatments([]);
     setAppliedTreatmentIds([]);
+    setReassessedTreatmentIds([]);
     medicationConfirmedRef.current = new Set();
     treatmentChallengeConfirmedRef.current = new Set();
     setPendingTreatmentChallenge(null);
@@ -1450,22 +2357,23 @@ export function StudentPanel({
     await new Promise(resolve => setTimeout(resolve, 400));
 
     try {
-    const newCase = getRandomCase({
-      yearLevel: selectedYear,
-      category: selectedCategory !== 'all' ? selectedCategory : undefined
-    });
+      const newCase = missionCandidateCases.length > 0
+        ? missionCandidateCases[Math.floor(Math.random() * missionCandidateCases.length)]
+        : null;
 
-    if (!newCase) {
+      if (!newCase) {
+        setIsGenerating(false);
+        toast.error('No cases available', {
+          description: `No ${selectedCategory !== 'all' ? selectedCategory : ''} cases are available for ${selectedYear} level. Try a different category.`,
+        });
+        return;
+      }
+
+      initializeCase(newCase, false);
       setIsGenerating(false);
-      toast.error('No cases available', {
-        description: `No ${selectedCategory !== 'all' ? selectedCategory : ''} cases are available for ${selectedYear} level. Try a different category.`,
+      toast.success(`Smart case generated: ${getStudentCaseTitle(newCase)}`, {
+        description: `Matched ${cohortScopeLabel}, ${missionCategoryLabel}, ${missionDurationLabel.toLowerCase()}.`,
       });
-      return;
-    }
-
-    initializeCase(newCase, false);
-    setIsGenerating(false);
-    toast.success(`Case generated: ${getStudentCaseTitle(newCase)}`);
     } catch (err) {
       console.error('Case generation error:', err);
       setIsGenerating(false);
@@ -1473,7 +2381,7 @@ export function StudentPanel({
         description: err instanceof Error ? err.message : 'An unexpected error occurred. Try a different category.',
       });
     }
-  }, [selectedYear, selectedCategory, initializeCase]);
+  }, [missionCandidateCases, selectedYear, selectedCategory, cohortScopeLabel, missionCategoryLabel, missionDurationLabel, initializeCase]);
 
   // Generate case — random by category mode
   const generateCaseByCategory = useCallback(async (category: string) => {
@@ -1481,7 +2389,7 @@ export function StudentPanel({
     await new Promise(resolve => setTimeout(resolve, 400));
 
     try {
-      const newCase = getRandomCase({ yearLevel: selectedYear, category });
+      const newCase = getRandomCase({ yearLevel: selectedYear, category, cohortMode: 'progressive' });
       if (!newCase) {
         setIsGenerating(false);
         toast.error('No cases available', {
@@ -1507,7 +2415,7 @@ export function StudentPanel({
     await new Promise(resolve => setTimeout(resolve, 400));
 
     try {
-      const matchingCases = getCasesByCondition(condition, selectedYear);
+      const matchingCases = getCasesByCondition(condition, selectedYear, { cohortMode: 'progressive' });
       if (matchingCases.length === 0) {
         setIsGenerating(false);
         toast.error('No cases available', {
@@ -2391,6 +3299,21 @@ export function StudentPanel({
       }
     }
 
+    const newlyReassessedTreatmentIds = deriveTreatmentReassessmentMatches(stepId, appliedTreatmentIds)
+      .filter(treatmentId => !reassessedTreatmentIds.includes(treatmentId));
+    if (newlyReassessedTreatmentIds.length > 0) {
+      setReassessedTreatmentIds(prev => [...new Set([...prev, ...newlyReassessedTreatmentIds])]);
+      const treatmentNames = newlyReassessedTreatmentIds
+        .map(treatmentId => appliedTreatments.find(treatment => treatment.id === treatmentId)?.name
+          || appliedTreatments.find(treatment => treatment.id === treatmentId)?.description
+          || treatmentId.replace(/_/g, ' '))
+        .slice(0, 2);
+      toast.success('Treatment reassessed', {
+        description: `${treatmentNames.join(', ')} now has clinical follow-up documented.`,
+        duration: 2800,
+      });
+    }
+
     // Show toast based on findings severity
     const hasCritical = findings.some(f => f.severity === 'critical');
     const hasAbnormal = findings.some(f => f.severity === 'abnormal');
@@ -2409,7 +3332,7 @@ export function StudentPanel({
       // Normal findings — no toast needed, findings panel shows them
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentCase, caseStartTime, readOnly, monitorRevealedVitals]); // assessmentTracker read via ref — always current. readOnly MUST stay in deps so handing control to a student rebuilds this callback with readOnly=false; otherwise every click silently hits the "you are watching" toast from the stale closure.
+  }, [currentCase, caseStartTime, readOnly, monitorRevealedVitals, appliedTreatmentIds, reassessedTreatmentIds, appliedTreatments]); // assessmentTracker read via ref — always current. readOnly MUST stay in deps so handing control to a student rebuilds this callback with readOnly=false; otherwise every click silently hits the "you are watching" toast from the stale closure.
 
   // --------------------------------------------------------------------------
   // Hands-free voice commands
@@ -2647,6 +3570,7 @@ export function StudentPanel({
     const bonusEligibleTreatmentCount = treatmentRealism.filter(
       item => item.result.status !== 'mismatch' && item.result.status !== 'harmful',
     ).length;
+    const managementDebrief = deriveClinicalManagementDebrief(realismDirector?.treatmentLoopStates ?? []);
 
     // Treatment bonus: protocol-covered cases reward completion of the
     // condition/severity pathway, not the raw number of things applied. This
@@ -2851,6 +3775,11 @@ export function StudentPanel({
       penaltyTotal += 12;
     }
 
+    for (const reason of managementDebrief.penaltyReasons) {
+      penaltyReasons.push(reason);
+      penaltyTotal += reason.amount;
+    }
+
     // ---- ALLERGY / ADVERSE-REACTION PENALTIES ----
     // Administering a drug the patient is documented allergic to is a serious
     // safety error. Inducing anaphylaxis is heavily penalised; letting it
@@ -2909,6 +3838,7 @@ export function StudentPanel({
       contraindicationCount,
       inappropriateTreatmentCount: unaccountedMismatchTreatments.length,
       harmfulTreatmentCount: unaccountedHarmfulTreatments.length,
+      unreassessedTreatmentCount: managementDebrief.pendingCount,
       adverseInduced: anaphylaxisInduced,
       adverseRescued: anaphylaxisRescued,
       adverseArrests: adverseEventsRef.current.filter(e => e.reachedArrest).length,
@@ -2927,6 +3857,7 @@ export function StudentPanel({
       percentage,
       penaltyTotal,
       penaltyReasons,
+      managementDebrief,
       treatmentCount,
       timeToFirstTreatment,
       totalTime: elapsedSeconds,
@@ -2940,7 +3871,7 @@ export function StudentPanel({
       // Weighted ABCDE spine breakdown (completeness / sequence / timeliness)
       abcdeScore,
     };
-  }, [currentCase, session, selectedYear, appliedTreatments, vitalsHistory, elapsedSeconds, caseStartTime, assessmentTracker, cprRunning, arrestTimeline, patientState, appliedTreatmentIds]);
+  }, [currentCase, session, selectedYear, appliedTreatments, vitalsHistory, elapsedSeconds, caseStartTime, assessmentTracker, cprRunning, arrestTimeline, patientState, appliedTreatmentIds, realismDirector]);
 
   // Persist the graded result for a signed-in student (best-effort, once per
   // completed case). Anonymous PIN play simply skips this — saveStudentResult
@@ -2976,6 +3907,9 @@ export function StudentPanel({
       assessmentPerformedIds: assessmentTracker?.performed.map(p => p.stepId) ?? [],
       transportDecision: transportDecisions ? 'transport' : null,
       totalScore: performanceMetrics.percentage,
+      pendingTreatmentFollowUps: performanceMetrics.managementDebrief.pendingItems.map(item =>
+        `${item.label} (${item.reassessmentPrompt})`,
+      ),
     });
   }, [currentCase, performanceMetrics, phase, appliedTreatments, appliedTreatmentIds, vitalsHistory, caseStartTime, assessmentTracker, transportDecisions]);
 
@@ -3005,6 +3939,7 @@ export function StudentPanel({
     setVitalsHistory([]);
     setAppliedTreatments([]);
     setAppliedTreatmentIds([]);
+    setReassessedTreatmentIds([]);
     setCaseStartTime(null);
     setCaseEndTime(null);
     setElapsedSeconds(0);
@@ -3064,6 +3999,34 @@ export function StudentPanel({
   // defines it yet) — read it defensively so the Further Reading card can
   // render if a future case supplies it.
   const educationalResources = (currentCase as (CaseScenario & { educationalResources?: Array<{ title: string; url: string; source?: string; type?: string }> }) | null)?.educationalResources;
+  const selectionModeOptions = [
+    { mode: 'standard' as const, label: 'Full scenario', desc: 'Smart random mission', icon: Sparkles },
+    { mode: 'random-category' as const, label: 'Category drill', desc: 'Focused presentation', icon: Shuffle },
+    { mode: 'condition' as const, label: 'Condition practice', desc: 'Search a diagnosis', icon: Target },
+  ];
+  const skillFocusOptions = [
+    { value: 'any' as const, label: 'Balanced', desc: 'ABCDE flow', icon: ListChecks },
+    { value: 'assessment' as const, label: 'Assessment', desc: 'Findings first', icon: Stethoscope },
+    { value: 'airway' as const, label: 'Airway', desc: 'Patency decisions', icon: Wind },
+    { value: 'breathing' as const, label: 'Breathing', desc: 'Oxygenation', icon: Activity },
+    { value: 'circulation' as const, label: 'Circulation', desc: 'Perfusion + ECG', icon: HeartPulse },
+    { value: 'medication' as const, label: 'Medication', desc: 'Drug safety', icon: Syringe },
+    { value: 'trauma' as const, label: 'Trauma', desc: 'Mechanism + injury', icon: Shield },
+  ];
+  const equipmentFocusOptions = [
+    { value: 'any' as const, label: 'Any kit', icon: Ambulance },
+    { value: 'oxygen' as const, label: 'Oxygen', icon: Wind },
+    { value: 'monitoring' as const, label: 'Monitor', icon: Gauge },
+    { value: 'medications' as const, label: 'Meds', icon: Syringe },
+    { value: 'immobilisation' as const, label: 'Splints', icon: Shield },
+    { value: 'ventilation' as const, label: 'Ventilation', icon: Activity },
+  ];
+  const timeboxOptions = [
+    { value: '10' as const, label: '10 min', desc: 'rapid drill' },
+    { value: '15' as const, label: '15 min', desc: 'standard' },
+    { value: '20' as const, label: '20 min', desc: 'full flow' },
+    { value: 'untimed' as const, label: 'Untimed', desc: 'learning' },
+  ];
 
   return (
     <div className="clinical-shell min-h-screen relative overflow-x-hidden">
@@ -3165,195 +4128,276 @@ export function StudentPanel({
         {/* PHASE 1: Case Selection */}
         {/* ================================================================ */}
         {phase === 'select' && (
-          <div className="max-w-2xl mx-auto animate-fade-in space-y-6 sm:space-y-10">
-            {/* Hero Section — Premium */}
-            <div className="text-center mb-2 sm:mb-4 relative">
-              <div className="mx-auto mb-5 sm:mb-6 flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 shadow-lg shadow-brand-500/20 ring-4 ring-brand-500/10">
-                <Stethoscope className="h-8 w-8 sm:h-10 sm:w-10 text-white drop-shadow-sm" />
+          <div className="mx-auto max-w-6xl animate-fade-in space-y-5 sm:space-y-6">
+            <div className="flex flex-col gap-4 rounded-[28px] border border-white/60 bg-white/70 p-4 shadow-[0_24px_80px_-50px_rgba(15,23,42,0.45)] backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/55 sm:p-5 lg:flex-row lg:items-end lg:justify-between">
+              <div className="space-y-3">
+                <div className="inline-flex items-center gap-2 rounded-full border border-brand-500/20 bg-brand-500/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.24em] text-brand-700 dark:text-brand-300">
+                  <Activity className="h-3.5 w-3.5" />
+                  Training mission board
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-4xl">Choose the next patient encounter</h2>
+                  <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
+                    Build a focused simulation by level, presentation, skill, kit, and time pressure before the radio call starts.
+                  </p>
+                </div>
               </div>
-              <h2 className="text-2xl sm:text-[2.5rem] leading-tight text-foreground font-bold tracking-tight">
-                <span className="gradient-text">Paramedic</span> Case Generator
-              </h2>
-              <p className="text-muted-foreground mt-2 sm:mt-3 text-sm sm:text-base max-w-lg mx-auto leading-relaxed">
-                Select your training level and generate realistic emergency scenarios to sharpen your clinical skills
-              </p>
+              <div className="space-y-2 sm:min-w-[360px]">
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div className="rounded-2xl border border-border/50 bg-white/65 px-3 py-3 shadow-sm dark:bg-white/[0.04]">
+                    <div className="text-xl font-bold text-foreground">{missionCandidateCases.length}</div>
+                    <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">matched</div>
+                  </div>
+                  <div className="rounded-2xl border border-border/50 bg-white/65 px-3 py-3 shadow-sm dark:bg-white/[0.04]">
+                    <div className="truncate text-sm font-bold text-foreground">{yearLevels.find(year => year.value === selectedYear)?.label}</div>
+                    <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">cohort</div>
+                  </div>
+                  <div className="rounded-2xl border border-border/50 bg-white/65 px-3 py-3 shadow-sm dark:bg-white/[0.04]">
+                    <div className="text-sm font-bold text-foreground">{missionDurationShortLabel}</div>
+                    <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">pace</div>
+                  </div>
+                </div>
+                <p className="text-center text-[11px] font-medium text-muted-foreground">{cohortScopeLabel}</p>
+              </div>
             </div>
 
-            {/* Year Level — Premium */}
-            <Card className="glass rounded-2xl border border-white/60 shadow-[0_4px_20px_-8px_rgba(0,0,0,0.1)]">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm flex items-center gap-2 font-semibold">
-                  <GraduationCap className="h-4 w-4 text-brand-500" />
-                  Select Your Year Level
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-5 gap-2.5 sm:gap-3">
-                  {yearLevels.map(year => (
-                    <button
-                      key={year.value}
-                      onClick={() => setSelectedYear(year.value as StudentYear)}
-                      className={`group flex flex-col items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-3 sm:py-4 rounded-xl border-2 text-xs sm:text-sm font-medium transition-all duration-500 card-premium ${
-                        selectedYear === year.value
-                          ? 'border-brand-500 bg-gradient-to-b from-brand-500/15 to-brand-500/5 text-brand-600 dark:text-brand-400 shadow-lg shadow-brand-500/15 ring-2 ring-brand-500/20 scale-[1.02]'
-                          : 'border-border/50 hover:border-brand-400/60 text-muted-foreground hover:text-foreground hover:bg-accent/40 hover:shadow-md hover:-translate-y-0.5 dark:border-slate-700/60'
-                      }`}
-                    >
-                      <GraduationCap className={`h-5 w-5 sm:h-6 sm:w-6 transition-all duration-300 ${selectedYear === year.value ? 'text-brand-500 scale-110' : 'text-muted-foreground/40 group-hover:text-brand-400/70'}`} />
-                      {year.label}
-                    </button>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Selection Mode Tabs — Premium */}
-            <Card className="glass rounded-2xl border border-white/60 shadow-[0_4px_20px_-8px_rgba(0,0,0,0.1)]">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm flex items-center gap-2 font-semibold">
-                  <BarChart3 className="h-4 w-4 text-brand-500" />
-                  How would you like to select a case?
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Mode selector */}
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { mode: 'standard' as const, label: 'Generate Random', icon: Sparkles, desc: 'Filter & randomize' },
-                    { mode: 'random-category' as const, label: 'Random by Category', icon: Shuffle, desc: 'Pick a category' },
-                    { mode: 'condition' as const, label: 'Practice Condition', icon: Target, desc: 'Search conditions' },
-                  ].map(({ mode, label, icon: ModeIcon, desc }) => (
-                    <button
-                      key={mode}
-                      onClick={() => setSelectionMode(mode)}
-                      className={`flex flex-col items-center gap-1 px-2 py-3 rounded-xl border-2 text-xs transition-all duration-500 card-premium ${
-                        selectionMode === mode
-                          ? 'border-brand-500 bg-gradient-to-b from-brand-500/15 to-brand-500/5 text-brand-600 dark:text-brand-400 shadow-md ring-1 ring-brand-500/20'
-                          : 'border-border/50 hover:border-brand-400/50 text-muted-foreground hover:bg-accent/40 dark:border-slate-700/60'
-                      }`}
-                    >
-                      <ModeIcon className={`h-4 w-4 ${selectionMode === mode ? 'text-brand-500' : 'text-muted-foreground/50'}`} />
-                      <span className="font-medium text-[11px] sm:text-xs">{label}</span>
-                      <span className="text-[9px] text-muted-foreground hidden sm:block">{desc}</span>
-                    </button>
-                  ))}
-                </div>
-
-                {/* MODE: Standard — category filter + generate */}
-                {selectionMode === 'standard' && (
-                  <div className="space-y-4 animate-fade-in">
-                    <div className="flex flex-wrap gap-2">
+            <div className="grid gap-5 lg:grid-cols-[minmax(0,1.45fr)_minmax(340px,0.85fr)]">
+              <div className="space-y-5">
+                <div className="rounded-[24px] border border-white/60 bg-white/65 p-4 shadow-[0_18px_70px_-55px_rgba(15,23,42,0.5)] backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/50 sm:p-5">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-muted-foreground">Route</p>
+                      <h3 className="mt-1 text-lg font-bold tracking-tight">How do you want to train?</h3>
+                    </div>
+                    {isGenerating && <Loader2 className="h-5 w-5 animate-spin text-brand-500" />}
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-3">
+                    {selectionModeOptions.map(({ mode, label, icon: ModeIcon, desc }) => (
                       <button
-                        onClick={() => setSelectedCategory('all')}
-                        className={`px-4 py-2.5 rounded-xl border text-sm transition-all duration-500 card-premium ${
-                          selectedCategory === 'all'
-                            ? 'border-brand-500 bg-gradient-to-r from-brand-500/15 to-brand-500/5 text-brand-600 dark:text-brand-400 font-semibold ring-1 ring-brand-500/25 shadow-md shadow-brand-500/10'
-                            : 'border-border/50 hover:border-brand-400/50 text-muted-foreground hover:bg-accent/40 hover:shadow-sm dark:border-slate-700/60'
+                        key={mode}
+                        onClick={() => setSelectionMode(mode)}
+                        className={`group flex min-h-[104px] flex-col items-start justify-between rounded-2xl border p-3 text-left transition-all duration-300 ${
+                          selectionMode === mode
+                            ? 'border-brand-500/70 bg-brand-500/10 text-brand-700 shadow-lg shadow-brand-500/10 ring-2 ring-brand-500/15 dark:text-brand-300'
+                            : 'border-border/50 bg-white/50 text-muted-foreground hover:border-brand-400/50 hover:bg-white/80 hover:text-foreground dark:bg-white/[0.04] dark:hover:bg-white/[0.08]'
                         }`}
                       >
-                        <span className="flex items-center gap-1.5">
-                          <span className={`h-2 w-2 rounded-full ${selectedCategory === 'all' ? 'bg-blue-500' : 'bg-muted-foreground/30'}`} />
-                          All Categories
+                        <span className={`flex h-9 w-9 items-center justify-center rounded-xl transition-colors ${selectionMode === mode ? 'bg-brand-500 text-white' : 'bg-muted text-muted-foreground group-hover:bg-brand-500/10 group-hover:text-brand-600'}`}>
+                          <ModeIcon className="h-4 w-4" />
+                        </span>
+                        <span>
+                          <span className="block text-sm font-bold">{label}</span>
+                          <span className="mt-0.5 block text-xs opacity-75">{desc}</span>
                         </span>
                       </button>
-                      {caseCategories
-                        .filter(cat => allCases.some(c => c.category === cat.value && c.yearLevels?.includes(selectedYear as any)))
-                        .map(cat => {
-                        const catColors: Record<string, string> = {
-                          cardiac: 'bg-red-500', respiratory: 'bg-cyan-500', trauma: 'bg-orange-500',
-                          neurological: 'bg-blue-500', medical: 'bg-emerald-500', paediatric: 'bg-teal-500',
-                          obstetric: 'bg-rose-400', environmental: 'bg-amber-500', psychiatric: 'bg-cyan-500',
-                        };
-                        const dotColor = catColors[cat.value.toLowerCase()] || 'bg-blue-500';
-                        return (
+                    ))}
+                  </div>
+                </div>
+
+                <div className="rounded-[24px] border border-white/60 bg-white/65 p-4 shadow-[0_18px_70px_-55px_rgba(15,23,42,0.5)] backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/50 sm:p-5">
+                  <div className="mb-3 flex items-center gap-2">
+                    <GraduationCap className="h-4 w-4 text-brand-500" />
+                    <div>
+                      <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-muted-foreground">Cohort</p>
+                      <h3 className="text-base font-bold tracking-tight">Training level</h3>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+                    {yearLevels.map(year => (
+                      <button
+                        key={year.value}
+                        onClick={() => setSelectedYear(year.value as StudentYear)}
+                        className={`flex items-center justify-center gap-2 rounded-2xl border px-3 py-3 text-sm font-semibold transition-all duration-300 ${
+                          selectedYear === year.value
+                            ? 'border-brand-500 bg-brand-500 text-white shadow-lg shadow-brand-500/20'
+                            : 'border-border/50 bg-white/55 text-muted-foreground hover:border-brand-400/50 hover:bg-white/80 hover:text-foreground dark:bg-white/[0.04]'
+                        }`}
+                      >
+                        <GraduationCap className="h-4 w-4 shrink-0" />
+                        <span>{year.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {selectionMode === 'standard' && (
+                  <div className="space-y-5 animate-fade-in">
+                    <div className="rounded-[24px] border border-white/60 bg-white/65 p-4 shadow-[0_18px_70px_-55px_rgba(15,23,42,0.5)] backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/50 sm:p-5">
+                      <div className="mb-3 flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-muted-foreground">Presentation</p>
+                          <h3 className="text-base font-bold tracking-tight">Clinical category</h3>
+                        </div>
+                        <Badge variant="secondary" className="rounded-full">{baseMissionCases.length} available</Badge>
+                      </div>
+                      <div className="flex max-h-44 flex-wrap gap-2 overflow-y-auto pr-1">
                         <button
-                          key={cat.value}
-                          onClick={() => setSelectedCategory(cat.value)}
-                          className={`px-4 py-2.5 rounded-xl border text-sm transition-all duration-500 card-premium ${
-                            selectedCategory === cat.value
-                              ? 'border-brand-500 bg-gradient-to-r from-brand-500/15 to-brand-500/5 text-brand-600 dark:text-brand-400 font-semibold ring-1 ring-brand-500/25 shadow-md shadow-brand-500/10'
-                              : 'border-border/50 hover:border-brand-400/50 text-muted-foreground hover:bg-accent/40 hover:shadow-sm dark:border-slate-700/60'
+                          onClick={() => setSelectedCategory('all')}
+                          className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-semibold transition-all ${
+                            selectedCategory === 'all'
+                              ? 'border-brand-500 bg-brand-500 text-white shadow-md shadow-brand-500/20'
+                              : 'border-border/50 bg-white/55 text-muted-foreground hover:border-brand-400/50 hover:text-foreground dark:bg-white/[0.04]'
                           }`}
                         >
-                          <span className="flex items-center gap-1.5">
-                            <span className={`h-2 w-2 rounded-full ${selectedCategory === cat.value ? 'bg-brand-500' : dotColor}`} />
-                            {cat.label}
-                          </span>
+                          <Sparkles className="h-4 w-4" />
+                          All presentations
                         </button>
-                      );})}
+                        {availableCategories.map(cat => {
+                          const count = allCases.filter(c => c.category === cat.value && isCaseAvailableForCohort(c.yearLevels, selectedYear)).length;
+                          return (
+                            <button
+                              key={cat.value}
+                              onClick={() => setSelectedCategory(cat.value)}
+                              className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-semibold transition-all ${
+                                selectedCategory === cat.value
+                                  ? 'border-brand-500 bg-brand-500 text-white shadow-md shadow-brand-500/20'
+                                  : 'border-border/50 bg-white/55 text-muted-foreground hover:border-brand-400/50 hover:text-foreground dark:bg-white/[0.04]'
+                              }`}
+                            >
+                              <span className={`h-2.5 w-2.5 rounded-full ${selectedCategory === cat.value ? 'bg-white' : cat.color}`} />
+                              {cat.label}
+                              <span className="text-[10px] opacity-65">{count}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_280px]">
+                      <div className="rounded-[24px] border border-white/60 bg-white/65 p-4 shadow-[0_18px_70px_-55px_rgba(15,23,42,0.5)] backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/50 sm:p-5">
+                        <div className="mb-3">
+                          <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-muted-foreground">Core skill</p>
+                          <h3 className="text-base font-bold tracking-tight">What should the case stress?</h3>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+                          {skillFocusOptions.map(({ value, label, desc, icon: SkillIcon }) => (
+                            <button
+                              key={value}
+                              onClick={() => setSkillFocus(value)}
+                              className={`min-h-[86px] rounded-2xl border p-3 text-left transition-all duration-300 ${
+                                skillFocus === value
+                                  ? 'border-emerald-400 bg-emerald-500/10 text-emerald-700 shadow-md shadow-emerald-500/10 dark:text-emerald-300'
+                                  : 'border-border/50 bg-white/50 text-muted-foreground hover:border-emerald-400/50 hover:bg-white/80 hover:text-foreground dark:bg-white/[0.04]'
+                              }`}
+                            >
+                              <SkillIcon className="mb-2 h-4 w-4" />
+                              <span className="block text-sm font-bold">{label}</span>
+                              <span className="mt-0.5 block text-[11px] opacity-70">{desc}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div className="rounded-[24px] border border-white/60 bg-white/65 p-4 shadow-[0_18px_70px_-55px_rgba(15,23,42,0.5)] backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/50">
+                          <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-muted-foreground">Kit focus</p>
+                          <div className="mt-3 grid grid-cols-2 gap-2">
+                            {equipmentFocusOptions.map(({ value, label, icon: EquipmentIcon }) => (
+                              <button
+                                key={value}
+                                onClick={() => setEquipmentFocus(value)}
+                                className={`flex items-center gap-2 rounded-xl border px-2.5 py-2 text-xs font-bold transition-all ${
+                                  equipmentFocus === value
+                                    ? 'border-cyan-400 bg-cyan-500/10 text-cyan-700 dark:text-cyan-300'
+                                    : 'border-border/50 bg-white/50 text-muted-foreground hover:border-cyan-400/50 hover:text-foreground dark:bg-white/[0.04]'
+                                }`}
+                              >
+                                <EquipmentIcon className="h-3.5 w-3.5 shrink-0" />
+                                <span className="truncate">{label}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="rounded-[24px] border border-white/60 bg-white/65 p-4 shadow-[0_18px_70px_-55px_rgba(15,23,42,0.5)] backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/50">
+                          <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-muted-foreground">Time target</p>
+                          <div className="mt-3 grid grid-cols-2 gap-2">
+                            {timeboxOptions.map(option => (
+                              <button
+                                key={option.value}
+                                onClick={() => setTimebox(option.value)}
+                                className={`rounded-xl border px-2.5 py-2 text-left transition-all ${
+                                  timebox === option.value
+                                    ? 'border-amber-400 bg-amber-500/10 text-amber-700 dark:text-amber-300'
+                                    : 'border-border/50 bg-white/50 text-muted-foreground hover:border-amber-400/50 hover:text-foreground dark:bg-white/[0.04]'
+                                }`}
+                              >
+                                <span className="block text-xs font-bold">{option.label}</span>
+                                <span className="block text-[10px] opacity-70">{option.desc}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}
 
-                {/* MODE: Random by Category — click a category to instantly get a random case */}
                 {selectionMode === 'random-category' && (
-                  <div className="space-y-2 animate-fade-in">
-                    <p className="text-xs text-muted-foreground">Click a category to get a random case from it:</p>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                      {caseCategories
-                        .filter(cat => allCases.some(c => c.category === cat.value && c.yearLevels?.includes(selectedYear as any)))
-                        .map(cat => {
-                        const catColors: Record<string, string> = {
-                          cardiac: 'from-red-500/15 to-red-500/5 border-red-400 text-red-600 dark:text-red-400',
-                          respiratory: 'from-cyan-500/15 to-cyan-500/5 border-cyan-400 text-cyan-600 dark:text-cyan-400',
-                          trauma: 'from-orange-500/15 to-orange-500/5 border-orange-400 text-orange-600 dark:text-orange-400',
-                          neurological: 'from-blue-500/15 to-blue-500/5 border-blue-400 text-blue-600 dark:text-blue-400',
-                          medical: 'from-emerald-500/15 to-emerald-500/5 border-emerald-400 text-emerald-600 dark:text-emerald-400',
-                          paediatric: 'from-teal-500/15 to-teal-500/5 border-teal-400 text-teal-600 dark:text-teal-400',
-                          obstetric: 'from-rose-500/15 to-rose-500/5 border-rose-400 text-rose-600 dark:text-rose-400',
-                          environmental: 'from-amber-500/15 to-amber-500/5 border-amber-400 text-amber-600 dark:text-amber-400',
-                          psychiatric: 'from-cyan-500/15 to-cyan-500/5 border-cyan-400 text-cyan-600 dark:text-cyan-400',
-                        };
-                        const colors = catColors[cat.value.toLowerCase()] || 'from-blue-500/15 to-blue-500/5 border-blue-400 text-blue-600 dark:text-blue-400';
-                        const count = allCases.filter(c => c.category === cat.value && c.yearLevels?.includes(selectedYear as any)).length;
+                  <div className="rounded-[24px] border border-white/60 bg-white/65 p-4 shadow-[0_18px_70px_-55px_rgba(15,23,42,0.5)] backdrop-blur-2xl animate-fade-in dark:border-white/10 dark:bg-slate-950/50 sm:p-5">
+                    <div className="mb-4">
+                      <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-muted-foreground">Category drill</p>
+                      <h3 className="text-base font-bold tracking-tight">Tap a bag to launch a presentation family</h3>
+                    </div>
+                    <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                      {availableCategories.map(cat => {
+                        const count = allCases.filter(c => c.category === cat.value && isCaseAvailableForCohort(c.yearLevels, selectedYear)).length;
                         return (
-                        <button
-                          key={cat.value}
-                          onClick={() => generateCaseByCategory(cat.value)}
-                          disabled={isGenerating}
-                          className={`flex flex-col items-center gap-1 px-3 py-3.5 rounded-xl border-2 bg-gradient-to-b ${colors} text-sm font-medium transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed`}
-                        >
-                          <Shuffle className="h-4 w-4 mb-0.5" />
-                          <span className="text-xs font-semibold">{cat.label}</span>
-                          <span className="text-[10px] opacity-60">{count} case{count !== 1 ? 's' : ''}</span>
-                        </button>
-                      );})}
+                          <button
+                            key={cat.value}
+                            onClick={() => generateCaseByCategory(cat.value)}
+                            disabled={isGenerating}
+                            className="group flex min-h-[108px] flex-col justify-between rounded-2xl border border-border/50 bg-white/55 p-3 text-left transition-all duration-300 hover:-translate-y-0.5 hover:border-brand-400/50 hover:bg-white/85 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white/[0.04]"
+                          >
+                            <span className="flex items-center justify-between gap-3">
+                              <span className={`h-2 w-12 rounded-full ${cat.color}`} />
+                              <Shuffle className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-brand-500" />
+                            </span>
+                            <span>
+                              <span className="block text-sm font-bold text-foreground">{cat.label}</span>
+                              <span className="mt-1 block text-xs text-muted-foreground">{count} case{count !== 1 ? 's' : ''} for this cohort</span>
+                            </span>
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
 
-                {/* MODE: Practice Specific Condition — searchable dropdown */}
                 {selectionMode === 'condition' && (
-                  <div className="space-y-3 animate-fade-in">
-                    <p className="text-xs text-muted-foreground">Search for a specific condition to practice:</p>
+                  <div className="rounded-[24px] border border-white/60 bg-white/65 p-4 shadow-[0_18px_70px_-55px_rgba(15,23,42,0.5)] backdrop-blur-2xl animate-fade-in dark:border-white/10 dark:bg-slate-950/50 sm:p-5">
+                    <div className="mb-4">
+                      <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-muted-foreground">Condition practice</p>
+                      <h3 className="text-base font-bold tracking-tight">Search a condition or presentation</h3>
+                    </div>
                     <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                       <input
                         type="text"
                         value={conditionSearch}
                         onChange={(e) => { setConditionSearch(e.target.value); setSelectedCondition(null); }}
-                        placeholder="Search conditions... (e.g. STEMI, Asthma, Pneumothorax)"
-                        className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-border/50 bg-white/55 text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all dark:bg-white/[0.05]"
+                        placeholder="STEMI, asthma, pneumothorax, anaphylaxis..."
+                        className="w-full rounded-2xl border border-border/50 bg-white/70 py-3 pl-10 pr-4 text-sm shadow-inner outline-none transition-all placeholder:text-muted-foreground/50 focus:border-brand-500/60 focus:ring-4 focus:ring-brand-500/10 dark:bg-white/[0.05]"
                       />
                     </div>
-                    <div className="max-h-52 overflow-y-auto rounded-xl border border-border/30 divide-y divide-border/20">
+                    <div className="mt-3 max-h-72 overflow-y-auto rounded-2xl border border-border/40 bg-white/45 divide-y divide-border/25 dark:bg-white/[0.03]">
                       {filteredConditions.length === 0 ? (
-                        <p className="text-xs text-muted-foreground text-center py-4">No conditions match your search</p>
+                        <p className="py-6 text-center text-sm text-muted-foreground">No matching conditions found.</p>
                       ) : (
                         filteredConditions.map(condition => {
-                          const matchCount = getCasesByCondition(condition, selectedYear).length;
+                          const matchCount = getCasesByCondition(condition, selectedYear, { cohortMode: 'progressive' }).length;
                           return (
                             <button
                               key={condition}
                               onClick={() => generateCaseByCondition(condition)}
                               disabled={isGenerating || matchCount === 0}
-                              className="flex items-center justify-between w-full px-3 py-2 text-left text-sm hover:bg-primary/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                              className="flex w-full items-center justify-between gap-3 px-3 py-3 text-left text-sm transition-colors hover:bg-brand-500/10 disabled:cursor-not-allowed disabled:opacity-40"
                             >
-                              <span className="flex items-center gap-2">
-                                <Target className="h-3 w-3 text-primary shrink-0" />
-                                <span>{condition}</span>
+                              <span className="flex min-w-0 items-center gap-2">
+                                <Target className="h-3.5 w-3.5 shrink-0 text-brand-500" />
+                                <span className="truncate font-semibold text-foreground">{condition}</span>
                               </span>
-                              <Badge variant="secondary" className="text-[10px] py-0 h-4 shrink-0">
+                              <Badge variant="secondary" className="shrink-0 rounded-full text-[10px]">
                                 {matchCount} case{matchCount !== 1 ? 's' : ''}
                               </Badge>
                             </button>
@@ -3362,44 +4406,109 @@ export function StudentPanel({
                       )}
                     </div>
                     {conditionSearch.trim() === '' && (
-                      <p className="text-[10px] text-muted-foreground/50 text-center">
-                        Showing first 30 conditions. Type to search all {allConditionNames.length} conditions.
+                      <p className="mt-3 text-center text-[11px] text-muted-foreground/60">
+                        Showing 30 of {allConditionNames.length} indexed conditions.
                       </p>
                     )}
                   </div>
                 )}
-              </CardContent>
-            </Card>
-
-            {/* Generate button — only for standard mode */}
-            {selectionMode === 'standard' && (
-              <Button
-                onClick={generateCase}
-                disabled={isGenerating}
-                size="lg"
-                className="w-full gap-2.5 sm:gap-3 text-sm sm:text-lg py-6 sm:py-8 rounded-2xl btn-primary text-white border-0 shadow-lg shadow-brand-500/25 hover:shadow-brand-500/40 transition-all duration-500 hover:-translate-y-1 font-semibold tracking-tight"
-              >
-                {isGenerating ? (
-                  <><Loader2 className="h-5 w-5 sm:h-6 sm:w-6 animate-spin" /> Generating Case...</>
-                ) : (
-                  <><Sparkles className="h-5 w-5 sm:h-6 sm:w-6" /> Generate Case</>
-                )}
-              </Button>
-            )}
-
-            {/* Loading indicator for category/condition modes */}
-            {selectionMode !== 'standard' && isGenerating && (
-              <div className="flex items-center justify-center gap-2 py-4">
-                <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
-                <span className="text-sm text-muted-foreground">Generating case...</span>
               </div>
-            )}
 
-            <p className="text-center text-xs text-muted-foreground/50 pb-4">
-              {selectionMode === 'standard' && 'Cases are randomized within your selected category and year level'}
-              {selectionMode === 'random-category' && 'Click any category above to instantly get a random case from it'}
-              {selectionMode === 'condition' && 'Select a condition to get a case where it appears as diagnosis or differential'}
-            </p>
+              <aside className="rounded-[28px] border border-white/60 bg-slate-950 p-4 text-white shadow-[0_24px_90px_-45px_rgba(15,23,42,0.75)] dark:border-white/10 sm:p-5 lg:sticky lg:top-24 lg:self-start">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-cyan-200/70">Launch preview</p>
+                    <h3 className="mt-1 text-xl font-bold tracking-tight">Your next call</h3>
+                  </div>
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-400/15 text-cyan-200 ring-1 ring-cyan-300/20">
+                    <Ambulance className="h-5 w-5" />
+                  </div>
+                </div>
+
+                {missionPreviewCase ? (
+                  <div className="mt-5 space-y-5">
+                    <div className="rounded-3xl border border-white/10 bg-white/[0.07] p-4 shadow-inner">
+                      <div className="mb-3 flex flex-wrap gap-2">
+                        <span className="rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white/75">{missionPreviewCase.priority}</span>
+                        <span className="rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white/75">{missionPreviewCase.complexity}</span>
+                        <span className="rounded-full bg-cyan-300/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-100">{missionDurationLabel}</span>
+                      </div>
+                      <h4 className="text-lg font-bold leading-tight text-white">{getStudentCaseTitle(missionPreviewCase)}</h4>
+                      <p className="mt-3 text-sm leading-relaxed text-white/65">{missionPreviewCase.dispatchInfo?.callReason}</p>
+                    </div>
+
+                    {selectionMode === 'standard' ? (
+                      <Button
+                        onClick={generateCase}
+                        disabled={isGenerating || missionCandidateCases.length === 0}
+                        size="lg"
+                        className="w-full gap-2 rounded-2xl border-0 bg-cyan-400 py-6 text-base font-bold text-slate-950 shadow-xl shadow-cyan-950/40 transition-all hover:-translate-y-0.5 hover:bg-cyan-300"
+                      >
+                        {isGenerating ? (
+                          <><Loader2 className="h-5 w-5 animate-spin" /> Building mission...</>
+                        ) : (
+                          <><Sparkles className="h-5 w-5" /> Launch smart case</>
+                        )}
+                      </Button>
+                    ) : (
+                      <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-3 text-sm text-white/65">
+                        {selectionMode === 'random-category'
+                          ? 'Category drill ready. Choose one presentation family to launch.'
+                          : 'Condition practice ready. Choose one indexed condition to launch.'}
+                      </div>
+                    )}
+
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+                      <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-3">
+                        <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-white/55">
+                          <ClipboardCheck className="h-3.5 w-3.5" />
+                          Competencies
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {missionCompetencies.map(tag => (
+                            <span key={tag} className="rounded-full bg-emerald-300/15 px-2.5 py-1 text-[11px] font-semibold text-emerald-100">{tag}</span>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-3">
+                        <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-white/55">
+                          <Ambulance className="h-3.5 w-3.5" />
+                          Expected kit
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {missionEquipment.map(tag => (
+                            <span key={tag} className="rounded-full bg-cyan-300/15 px-2.5 py-1 text-[11px] font-semibold text-cyan-100">{tag}</span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-3 text-sm leading-relaxed text-white/65">
+                      <span className="font-semibold text-white">Smart random:</span> matching {cohortScopeLabel}, {missionCategoryLabel}, {skillFocus === 'any' ? 'balanced skills' : skillFocus}, and {equipmentFocus === 'any' ? 'any kit' : equipmentFocus}.
+                      {missionFilterFallback && <span className="block pt-2 text-amber-100/90">No exact kit/skill match was found, so the pool safely widened to the selected cohort and presentation.</span>}
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-2 pt-1">
+                      {[
+                        { label: 'Radio', icon: Phone },
+                        { label: 'Scene', icon: Shield },
+                        { label: 'Treat', icon: Stethoscope },
+                        { label: 'Debrief', icon: FileText },
+                      ].map(({ label, icon: StepIcon }) => (
+                        <div key={label} className="rounded-2xl border border-white/10 bg-white/[0.05] px-2 py-2 text-center">
+                          <StepIcon className="mx-auto h-3.5 w-3.5 text-cyan-100/80" />
+                          <div className="mt-1 text-[10px] font-semibold text-white/55">{label}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-5 rounded-3xl border border-white/10 bg-white/[0.07] p-5 text-sm leading-relaxed text-white/70">
+                    No cases match this cohort yet. Choose another year level or presentation.
+                  </div>
+                )}
+              </aside>
+            </div>
           </div>
         )}
 
@@ -3619,9 +4728,9 @@ export function StudentPanel({
             monitor view then feels instant, not like a cold boot. */}
         {/* ================================================================ */}
         {(phase === 'vitals' || phase === 'case') && currentCase && (
-          <div className={`animate-fade-in space-y-3 sm:space-y-4 ${phase !== 'vitals' ? 'hidden' : ''}`}>
+          <div className={`live-management-shell animate-fade-in space-y-3 sm:space-y-4 ${phase !== 'vitals' ? 'hidden' : ''}`}>
             {/* ===== TOP: Patient Banner (full width) ===== */}
-            <div className="glass-panel p-3 sm:p-4 rounded-xl space-y-3 overflow-hidden shadow-sm">
+            <div className="live-patient-banner glass-panel p-3 sm:p-4 rounded-xl space-y-3 overflow-hidden shadow-sm">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4 min-w-0">
                 <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                   <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500/15 to-emerald-500/10 shrink-0 border border-cyan-300/30">
@@ -3706,7 +4815,7 @@ export function StudentPanel({
             {/* ===== Scene Toggle ===== */}
             <button
               onClick={() => setShowScene(!showScene)}
-              className={`w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 rounded-xl border transition-all font-semibold ${
+              className={`live-scene-toggle w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 rounded-xl border transition-all font-semibold ${
                 showScene
                   ? 'border-cyan-400/50 bg-cyan-500/10 text-cyan-800 dark:text-cyan-200'
                   : 'border-border/70 bg-white/50 text-foreground hover:border-amber-400/60 hover:bg-amber-50/60 dark:bg-white/[0.04] dark:hover:bg-amber-950/20'
@@ -3722,7 +4831,7 @@ export function StudentPanel({
               {showScene ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </button>
             {showScene && (
-              <div className="glass-panel p-3 rounded-xl text-xs space-y-2 animate-fade-in">
+              <div className="live-scene-details glass-panel p-3 rounded-xl text-xs space-y-2 animate-fade-in">
                 <p className="leading-relaxed">{currentCase.sceneInfo.description}</p>
                 {sceneSurvey && (
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
@@ -3758,7 +4867,7 @@ export function StudentPanel({
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <div className="live-progress-grid grid grid-cols-2 gap-2 sm:grid-cols-4">
               {([
                 {
                   label: 'Primary survey',
@@ -3785,7 +4894,7 @@ export function StudentPanel({
                   Icon: Syringe,
                 },
               ]).map(item => (
-                <div key={item.label} className="flex items-center gap-2 rounded-xl border border-border/60 bg-card/80 px-3 py-2 shadow-sm">
+                <div key={item.label} className="live-progress-card flex items-center gap-2 rounded-xl border border-border/60 bg-card/80 px-3 py-2 shadow-sm">
                   <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-muted/60">
                     <item.Icon className="h-3.5 w-3.5 text-muted-foreground" />
                   </div>
@@ -4068,31 +5177,148 @@ export function StudentPanel({
               </Card>
             )}
 
-            {/* Coaching hint — shown when student is inactive */}
-            {hintVisible && currentHint && (
-              <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 animate-fade-in">
-                <div className="flex items-start gap-2">
-                  <Sparkles className="h-4 w-4 text-blue-500 mt-0.5 shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-blue-700 dark:text-blue-300">Coaching Hint</p>
-                    <p className="text-xs text-blue-600 dark:text-blue-400 mt-0.5">{currentHint}</p>
-                  </div>
-                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0 shrink-0" onClick={() => setHintVisible(false)}>
-                    <XCircle className="h-3.5 w-3.5 text-blue-400" />
-                  </Button>
-                </div>
-              </div>
-            )}
-
             {/* ===== SPLIT LAYOUT =====
                 Mobile order: Primary Survey -> Anatomy -> Monitor -> Treatment.
                 Desktop: 2-col grid with Monitor + PulseCheck sticky top-right,
                 Management bottom-right, and Assessment spanning the left.
             */}
-            <div className="flex flex-col lg:grid lg:grid-cols-2 lg:gap-4 lg:grid-rows-[auto_auto]">
+            <div className="tactical-treatment-bay">
+              <div className="tactical-corner tactical-corner-tl" aria-hidden="true" />
+              <div className="tactical-corner tactical-corner-tr" aria-hidden="true" />
+              <div className="tactical-corner tactical-corner-bl" aria-hidden="true" />
+              <div className="tactical-corner tactical-corner-br" aria-hidden="true" />
 
-              {/* ===== ASSESSMENT COLUMN (Primary / 3D / History) ===== */}
-              <div className="order-1 lg:order-none lg:col-start-1 lg:row-start-1 lg:row-span-2 space-y-4">
+              <div className="tactical-bay-command relative z-10 border-b border-cyan-300/15 px-3 py-3 sm:px-4">
+                <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+                  <div className="min-w-0">
+                    <p className="text-[9px] font-black uppercase tracking-[0.28em] text-cyan-200/65">Tactical treatment bay</p>
+                    <div className="mt-1 flex flex-wrap items-center gap-2">
+                      <h2 className="text-lg font-black uppercase leading-none tracking-[0.08em] text-white sm:text-xl">Patient management</h2>
+                      <Badge variant="outline" className="border-cyan-300/30 bg-cyan-300/10 text-[9px] uppercase tracking-[0.16em] text-cyan-100">
+                        first-person care
+                      </Badge>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:min-w-[34rem]">
+                    <div className="tactical-hud-tile">
+                      <span>HR</span>
+                      <strong>{currentVitals?.pulse ?? '--'}</strong>
+                      <em>bpm</em>
+                    </div>
+                    <div className="tactical-hud-tile">
+                      <span>SpO2</span>
+                      <strong>{currentVitals?.spo2 ?? '--'}</strong>
+                      <em>%</em>
+                    </div>
+                    <div className="tactical-hud-tile">
+                      <span>RR</span>
+                      <strong>{currentVitals?.respiration ?? '--'}</strong>
+                      <em>/min</em>
+                    </div>
+                    <div className={`tactical-hud-tile ${realismDirector?.pendingReassessmentIds.length ? 'tactical-hud-warning' : 'tactical-hud-clear'}`}>
+                      <span>Loop</span>
+                      <strong>{realismDirector?.pendingReassessmentIds.length ?? 0}</strong>
+                      <em>pending</em>
+                    </div>
+                  </div>
+                </div>
+
+	                <div className="mt-3 grid gap-2 text-[10px] sm:grid-cols-3">
+	                  <div className="tactical-objective-chip">
+	                    <Shield className="h-3.5 w-3.5" />
+                    <span>{currentCase.initialPresentation?.appearance || 'observe patient state'}</span>
+                  </div>
+                  <div className="tactical-objective-chip">
+                    <Target className="h-3.5 w-3.5" />
+                    <span>{realismDirector?.activeProblems[0] || currentCase.dispatchInfo?.callReason || 'identify life threat'}</span>
+                  </div>
+                  <div className="tactical-objective-chip">
+                    <ClipboardCheck className="h-3.5 w-3.5" />
+	                    <span>{realismDirector?.treatmentLoopStates.length ? 'apply -> reassess -> confirm response' : 'open kit, treat, reassess'}</span>
+	                  </div>
+	                </div>
+
+	                {/* Coaching hint — compact in-bay comms strip, so it supports the
+	                    first-person treatment flow without pushing the patient stage
+	                    down the page. */}
+	                {hintVisible && currentHint && (
+	                  <div className="tactical-coaching-strip mt-3">
+	                    <Sparkles className="h-3.5 w-3.5 shrink-0 text-cyan-200" />
+	                    <div className="min-w-0 flex-1">
+	                      <p className="text-[8px] font-black uppercase tracking-[0.22em] text-cyan-200/62">Comms hint</p>
+	                      <p className="mt-0.5 truncate text-[10px] font-medium text-slate-100/86">{currentHint}</p>
+	                    </div>
+	                    <Button variant="ghost" size="sm" className="h-6 w-6 shrink-0 rounded-full p-0 text-cyan-100/70 hover:bg-cyan-300/10 hover:text-white" onClick={() => setHintVisible(false)}>
+	                      <XCircle className="h-3.5 w-3.5" />
+	                    </Button>
+	                  </div>
+	                )}
+
+		              </div>
+
+              <div className="tactical-bay-workspace relative z-10">
+
+              {/* ===== FIRST-PERSON PATIENT VIEWPORT ===== */}
+              {assessmentTracker && (
+                <div className="tactical-patient-viewport tactical-patient-stage order-1">
+                  <div className="tactical-reticle" aria-hidden="true" />
+	                  <div className="tactical-viewport-label" aria-hidden="true">
+	                    <span>body cam</span>
+	                    <strong>{activeManagementTab.toUpperCase()}</strong>
+	                  </div>
+	                  <TacticalEquipmentRibbon
+	                    statuses={tacticalGearStatuses}
+	                    pendingCount={realismDirector?.pendingReassessmentIds.length ?? 0}
+	                    completedCount={realismDirector?.fullyRealizedTreatmentIds.length ?? 0}
+	                    activeProblem={realismDirector?.activeProblems[0] || currentCase.dispatchInfo?.callReason || ''}
+	                  />
+	                  <Suspense fallback={<LoadingCard />}>
+                    <Body3DModel
+                      key={currentCase.id}
+                      onRegionClick={handlePerformAssessment}
+                      assessedRegions={new Set(
+                        assessmentTracker.performed
+                          .filter(p => p.phase === 'secondary')
+                          .map(p => p.stepId)
+                      )}
+                      caseData={currentCase}
+                      patientSounds={patientState?.sounds}
+                      isStudentView={true}
+                      caseCategory={currentCase.category}
+                      appliedTreatmentIds={appliedTreatmentIds}
+                      patientVisualState={patientVisualState}
+                      isInArrest={patientState?.isInArrest ?? false}
+                      vitals={currentVitals ?? undefined}
+                      onPulse={runPulseCheck}
+                      treatmentBayMode
+                    />
+                  </Suspense>
+                </div>
+              )}
+
+              {/* ===== MANAGEMENT SUPPORT COLUMN (Treatment first, then assessment) ===== */}
+              <div className="tactical-assessment-rail order-3 space-y-4">
+                <div className="tactical-loadout-dock tactical-management-options">
+                  <TreatmentJumpBagPanel
+                    currentVitals={currentVitals}
+                    appliedTreatments={appliedTreatments}
+                    appliedTreatmentIds={appliedTreatmentIds}
+                    applyingTreatmentId={applyingTreatmentId}
+                    patientState={patientState}
+                    activeManagementTab={activeManagementTab}
+                    setActiveManagementTab={setActiveManagementTab}
+                    medSearch={medSearch}
+                    setMedSearch={setMedSearch}
+                    applyTreatment={applyTreatment}
+                  />
+                </div>
+
+                <RoadmapAnatomyPanel
+                  visualState={patientVisualState}
+                  activeFindings={activeFindings}
+                  assessedCount={assessmentTracker?.performed.filter(p => p.phase === 'secondary').length ?? 0}
+                />
 
                 {/* --- PRIMARY SURVEY (ABCDE) ---
                     Premium redesign: each system is a glass "channel" with a
@@ -4138,7 +5364,7 @@ export function StudentPanel({
                         would reward the same skill twice and contradict
                         real practice (you don't reassess scene safety
                         from inside the back of the truck). */}
-                    <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
+                    <div className="primary-survey-compact-grid grid grid-cols-5 gap-1.5 sm:gap-2">
                       {([
                         { key: 'airway' as const,       letter: 'A', label: 'Airway',     stepId: 'airway' as AssessmentStepId,       rail: 'from-amber-400 to-orange-500',  glow: 'shadow-[0_0_20px_-4px_rgb(251_146_60/0.45)]', text: 'text-amber-700 dark:text-amber-300' },
                         { key: 'breathing' as const,    letter: 'B', label: 'Breathing',  stepId: 'breathing' as AssessmentStepId,    rail: 'from-sky-400 to-cyan-500',      glow: 'shadow-[0_0_20px_-4px_rgb(56_189_248/0.45)]', text: 'text-sky-700 dark:text-sky-300' },
@@ -4155,18 +5381,18 @@ export function StudentPanel({
                               handlePerformAssessment(item.stepId);
                               setActivePrimarySurvey(isActive ? null : item.key);
                             }}
-                            className={`group relative flex flex-col items-center justify-center min-h-[54px] sm:min-h-[68px] pt-3 pb-2 px-1 rounded-xl bg-white/50 dark:bg-slate-900/40 backdrop-blur-sm border border-slate-200/60 dark:border-white/[0.04] transition-all duration-300 touch-manipulation hover:-translate-y-0.5 hover:border-white/10 ${isActive ? `${item.glow} border-white/10` : ''}`}
+                            className={`primary-survey-button group relative flex flex-col items-center justify-center min-h-[54px] sm:min-h-[68px] pt-3 pb-2 px-1 rounded-xl bg-white/50 dark:bg-slate-900/40 backdrop-blur-sm border border-slate-200/60 dark:border-white/[0.04] transition-all duration-300 touch-manipulation hover:-translate-y-0.5 hover:border-white/10 ${isActive ? `${item.glow} border-white/10` : ''}`}
                           >
                             {/* Jewel-tone rail: visible at low opacity at rest, bright when active */}
                             <span className={`absolute inset-x-3 top-0 h-[2px] rounded-full bg-gradient-to-r ${item.rail} transition-opacity duration-300 ${isActive ? 'opacity-100' : isAssessed ? 'opacity-60' : 'opacity-20 group-hover:opacity-50'}`} />
                             {/* Status LED */}
                             <span className={`absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full transition-colors ${isAssessed ? 'bg-emerald-400 shadow-[0_0_6px_rgb(52_211_153/0.8)]' : 'bg-white/[0.08] dark:bg-white/[0.06]'}`} />
                              {/* Letter — thin, large, premium */}
-                             <span className={`text-xl sm:text-2xl font-light tracking-tight leading-none ${isActive ? item.text : 'text-foreground/90'}`}>
+                             <span className={`primary-survey-letter text-xl sm:text-2xl font-light tracking-tight leading-none ${isActive ? item.text : 'text-foreground/90'}`}>
                                {item.letter}
                              </span>
                              {/* Label — tiny spaced-out uppercase */}
-                             <span className={`text-[8px] sm:text-[9px] font-semibold tracking-[0.12em] uppercase mt-1 ${isActive ? item.text : 'text-foreground/70'}`}>{item.label}</span>
+                             <span className={`primary-survey-label text-[8px] sm:text-[9px] font-semibold tracking-[0.12em] uppercase mt-1 ${isActive ? item.text : 'text-foreground/70'}`}>{item.label}</span>
                           </button>
                         );
                       })}
@@ -4194,6 +5420,10 @@ export function StudentPanel({
                   </CardContent>
                 </Card>
 
+                {realismDirector && (
+                  <RealismDirectorCard state={realismDirector} />
+                )}
+
                 {/* Injury Map (up-front findings list) intentionally REMOVED
                     from the student view — listing findings before assessment
                     spoils the discovery that IS the assessment skill. Findings
@@ -4201,29 +5431,6 @@ export function StudentPanel({
                     region (see RevealedFindingMarkers in Body3DModel). The
                     InjuryMap component is retained for a future debrief/
                     instructor summary surface. */}
-
-                {/* --- 3D PHYSICAL EXAMINATION --- */}
-                {assessmentTracker && (
-                  <Suspense fallback={<LoadingCard />}>
-                    <Body3DModel
-                      key={currentCase.id}
-                      onRegionClick={handlePerformAssessment}
-                      assessedRegions={new Set(
-                        assessmentTracker.performed
-                          .filter(p => p.phase === 'secondary')
-                          .map(p => p.stepId)
-                      )}
-                      caseData={currentCase}
-                      patientSounds={patientState?.sounds}
-                      isStudentView={true}
-                      caseCategory={currentCase.category}
-                      appliedTreatmentIds={appliedTreatmentIds}
-                      isInArrest={patientState?.isInArrest ?? false}
-                      vitals={currentVitals ?? undefined}
-                      onPulse={runPulseCheck}
-                    />
-                  </Suspense>
-                )}
 
                 {/* --- HISTORY (voice-driven) ---
                     The old SAMPLE letter grid was replaced with a live
@@ -4413,69 +5620,76 @@ export function StudentPanel({
               </div>
 
               {/* ===== MONITOR + PULSE CHECK (sticky top-right on desktop, first on mobile) ===== */}
-              <div className="order-2 mt-4 lg:order-none lg:col-start-2 lg:row-start-1 lg:mt-0 lg:sticky lg:top-16 lg:self-start space-y-4">
+              <div className="tactical-monitor-rail order-4 mt-4 space-y-4 lg:mt-0 lg:sticky lg:top-16 lg:self-start">
 
                 {/* --- LIFEPAK MONITOR --- */}
-                <Suspense fallback={<LoadingCard />}>
-                  <VitalSignsMonitor
-                    initialVitals={currentVitals || buildInitialVitalsFromCase(currentCase)}
-                    previousVitals={previousVitals}
-                    deteriorationVitals={currentCase.vitalSignsProgression.deterioration ? ensureCompleteVitals(currentCase.vitalSignsProgression.deterioration) : undefined}
-                    onVitalChange={(vitals) => {
-                      const completeVitals = ensureCompleteVitals(vitals);
-                      setCurrentVitals(completeVitals);
-                      recordVitalsSample(completeVitals);
-                    }}
-                    onAssessmentPerformed={(stepId) => handlePerformAssessment(stepId as AssessmentStepId)}
-                    onPacerStateChange={(state) => {
-                      if (onClassroomStateChange) onClassroomStateChange({ pacerState: state });
-                    }}
-                    overridePacerState={externalState?.pacerState}
-                    // Classroom spectators can't press the ON button (read-only),
-                    // so boot the monitor powered-on so they actually see the
-                    // vitals mirror instead of "MONITOR OFF".
-                    autoPowerOn={readOnly}
-                    caseCategory={currentCase.category}
-                    caseSubcategory={currentCase.subcategory}
-                    caseTitle={currentCase.title}
-                    ecgFindings={currentCase.abcde?.circulation?.ecgFindings}
-                    appliedTreatments={appliedTreatmentIds}
-                    overrideRhythm={patientState?.currentRhythm}
-                    revealedVitals={monitorRevealedVitals}
-                    cprState={arrestActive ? {
-                      active: arrestActive,
-                      running: cprRunning,
-                      timerSeconds: cprCycleTimer,
-                      cycleNumber: cprCycleNumber,
-                      shockCount,
-                      adrenalineDoses,
-                      amiodaroneDoses,
-                      lastAdrenalineTime,
-                      onStartCPR: () => {
-                        setCprRunning(true);
-                        if (cprCycleTimer <= 0) setCprCycleTimer(120);
-                        setArrestTimeline(prev => [...prev, { time: Date.now(), event: 'CPR started', type: 'cpr-start' }]);
-                        lastActivityRef.current = Date.now();
-                      },
-                      onPauseCPR: () => {
-                        setCprRunning(false);
-                        setArrestTimeline(prev => [...prev, { time: Date.now(), event: 'CPR paused', type: 'cpr-pause' }]);
-                      },
-                      onDefibrillate: () => {
-                        // Create a defibrillation treatment object for the dialog
-                        setPendingDefibTreatment({
-                          id: 'defibrillation',
-                          name: 'Defibrillation',
-                          category: 'procedure',
-                          description: 'Deliver electrical shock to restore normal rhythm',
-                          effects: [],
-                        } as any);
-                        setShowDefibDialog(true);
-                        lastActivityRef.current = Date.now();
-                      },
-                    } : undefined}
-                  />
-                </Suspense>
+                <div className="tactical-monitor-card">
+                  <Suspense fallback={<LoadingCard />}>
+                    <VitalSignsMonitor
+                      initialVitals={currentVitals || buildInitialVitalsFromCase(currentCase)}
+                      previousVitals={previousVitals}
+                      deteriorationVitals={currentCase.vitalSignsProgression.deterioration ? ensureCompleteVitals(currentCase.vitalSignsProgression.deterioration) : undefined}
+                      onVitalChange={(vitals) => {
+                        const completeVitals = ensureCompleteVitals(vitals);
+                        setCurrentVitals(completeVitals);
+                        recordVitalsSample(completeVitals);
+                      }}
+                      onAssessmentPerformed={(stepId) => handlePerformAssessment(stepId as AssessmentStepId)}
+                      onPacerStateChange={(state) => {
+                        if (onClassroomStateChange) onClassroomStateChange({ pacerState: state });
+                      }}
+                      overridePacerState={externalState?.pacerState}
+                      // Classroom spectators can't press the ON button (read-only),
+                      // so boot the monitor powered-on so they actually see the
+                      // vitals mirror instead of "MONITOR OFF".
+                      autoPowerOn={readOnly}
+                      caseCategory={currentCase.category}
+                      caseSubcategory={currentCase.subcategory}
+                      caseTitle={currentCase.title}
+                      ecgFindings={currentCase.abcde?.circulation?.ecgFindings}
+                      appliedTreatments={appliedTreatmentIds}
+                      overrideRhythm={patientState?.currentRhythm}
+                      revealedVitals={monitorRevealedVitals}
+                      cprState={arrestActive ? {
+                        active: arrestActive,
+                        running: cprRunning,
+                        timerSeconds: cprCycleTimer,
+                        cycleNumber: cprCycleNumber,
+                        shockCount,
+                        adrenalineDoses,
+                        amiodaroneDoses,
+                        lastAdrenalineTime,
+                        onStartCPR: () => {
+                          setCprRunning(true);
+                          if (cprCycleTimer <= 0) setCprCycleTimer(120);
+                          setArrestTimeline(prev => [...prev, { time: Date.now(), event: 'CPR started', type: 'cpr-start' }]);
+                          lastActivityRef.current = Date.now();
+                        },
+                        onPauseCPR: () => {
+                          setCprRunning(false);
+                          setArrestTimeline(prev => [...prev, { time: Date.now(), event: 'CPR paused', type: 'cpr-pause' }]);
+                        },
+                        onDefibrillate: () => {
+                          // Create a defibrillation treatment object for the dialog
+                          setPendingDefibTreatment({
+                            id: 'defibrillation',
+                            name: 'Defibrillation',
+                            category: 'procedure',
+                            description: 'Deliver electrical shock to restore normal rhythm',
+                            effects: [],
+                          } as any);
+                          setShowDefibDialog(true);
+                          lastActivityRef.current = Date.now();
+                        },
+                      } : undefined}
+                    />
+                  </Suspense>
+                </div>
+
+                <RoadmapTreatmentInterventionsPanel
+                  appliedTreatments={appliedTreatments}
+                  activeBag={activeManagementTab}
+                />
 
                 {/* --- PULSE CHECK + CONFIRM ARREST BUTTONS --- */}
                 <div className="flex flex-col gap-2">
@@ -4513,25 +5727,15 @@ export function StudentPanel({
                     </Button>
                   )}
                 </div>
-              </div>
 
-              {/* ===== MANAGEMENT COLUMN (bottom-right on desktop, last on mobile) ===== */}
-              <div className="order-3 lg:order-none lg:col-start-2 lg:row-start-2 space-y-4">
-                {/* --- MANAGEMENT (ABCDE) --- */}
-                <TreatmentJumpBagPanel
+                <TacticalCareFeed items={tacticalCareFeedItems} />
+
+                <RoadmapDebriefPanel
+                  items={tacticalTimelineItems}
                   currentVitals={currentVitals}
                   appliedTreatments={appliedTreatments}
-                  appliedTreatmentIds={appliedTreatmentIds}
-                  applyingTreatmentId={applyingTreatmentId}
-                  patientState={patientState}
-                  activeManagementTab={activeManagementTab}
-                  setActiveManagementTab={setActiveManagementTab}
-                  medSearch={medSearch}
-                  setMedSearch={setMedSearch}
-                  applyTreatment={applyTreatment}
+                  assessmentTracker={assessmentTracker}
                 />
-
-                {/* Auscultation integrated into 3D Physical Exam — click lung/heart regions to listen */}
 
                 {/* --- Cardiac Arrest Status Bar --- */}
                 {arrestActive && (
@@ -4545,6 +5749,14 @@ export function StudentPanel({
                     </div>
                   </div>
                 )}
+              </div>
+
+              {/* Auscultation integrated into 3D Physical Exam — click lung/heart regions to listen */}
+
+              <TacticalBayTimeline
+                items={tacticalTimelineItems}
+                elapsed={formatTime(elapsedSeconds)}
+              />
               </div>
             </div>
 
@@ -5093,6 +6305,69 @@ export function StudentPanel({
                       <span>{performanceMetrics.percentage}%</span>
                     </div>
                   </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Clinical Management Loop */}
+            {performanceMetrics.managementDebrief.totalCount > 0 && (
+              <Card className="bg-card border border-border rounded-2xl overflow-hidden">
+                <CardHeader className="pb-3 border-b border-border/30">
+                  <CardTitle className="text-sm flex items-center justify-between gap-2">
+                    <span className="flex items-center gap-2">
+                      <div className={`flex h-6 w-6 items-center justify-center rounded-lg ${
+                        performanceMetrics.managementDebrief.pendingCount > 0 ? 'bg-amber-500/15' : 'bg-emerald-500/15'
+                      }`}>
+                        <ClipboardCheck className={`h-3.5 w-3.5 ${
+                          performanceMetrics.managementDebrief.pendingCount > 0 ? 'text-amber-500' : 'text-emerald-500'
+                        }`} />
+                      </div>
+                      Clinical Management Loop
+                    </span>
+                    <Badge variant="outline" className={`text-[10px] ${
+                      performanceMetrics.managementDebrief.pendingCount > 0
+                        ? 'border-amber-400 text-amber-600'
+                        : 'border-emerald-400 text-emerald-600'
+                    }`}>
+                      {performanceMetrics.managementDebrief.pendingCount > 0 ? `${performanceMetrics.managementDebrief.pendingCount} pending` : 'closed'}
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 sm:p-5 space-y-4">
+                  <p className="text-sm leading-relaxed text-muted-foreground">{performanceMetrics.managementDebrief.summary}</p>
+
+                  {performanceMetrics.managementDebrief.pendingItems.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="text-[11px] font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-400">Pending follow-up</h4>
+                      {performanceMetrics.managementDebrief.pendingItems.map(item => (
+                        <div key={item.treatmentId} className="rounded-xl border border-amber-300/40 bg-amber-50/60 p-3 dark:border-amber-500/20 dark:bg-amber-950/20">
+                          <div className="flex items-start gap-2">
+                            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500" />
+                            <div>
+                              <p className="text-xs font-semibold text-foreground">{item.label}</p>
+                              <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">{item.reassessmentPrompt}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {performanceMetrics.managementDebrief.reassessedItems.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="text-[11px] font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">Closed loop</h4>
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        {performanceMetrics.managementDebrief.reassessedItems.slice(0, 6).map(item => (
+                          <div key={item.treatmentId} className="rounded-xl border border-emerald-300/35 bg-emerald-50/50 p-2.5 dark:border-emerald-500/20 dark:bg-emerald-950/20">
+                            <div className="flex items-center gap-2">
+                              <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+                              <p className="truncate text-xs font-medium">{item.label}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}
@@ -5743,6 +7018,7 @@ export function StudentPanel({
                         penaltyReasons: performanceMetrics.penaltyReasons,
                       },
                       assessmentItems: performanceMetrics.assessmentDebrief?.items,
+                      managementDebrief: performanceMetrics.managementDebrief,
                     });
                     toast.dismiss();
                     toast.success('PDF report downloaded');

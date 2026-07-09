@@ -176,7 +176,7 @@ export function deriveCaseRealismProfile(caseData: CaseScenario): PatientRealism
   const anaphylaxisCase = sub.includes('anaphylaxis') || /(anaphylaxis|allergic reaction|urticaria|hives|facial swelling|lip swelling|tongue swelling|stridor after|wheeze after|prawns|peanuts|bee sting)/.test(text);
   const traumaCase = cat === 'trauma' || cat === 'thoracic' || injuries.length > 0 || /(mvc|collision|fall|stab|gunshot|blast|fracture|deformity|laceration|haemorrh|hemorrh|bleeding|amputation|pelvic|flail|pneumothorax|tamponade)/.test(text);
   const burnsCase = cat === 'burns' || /(burn|scald|electrical|smoke inhalation|soot|singed|fire|flash)/.test(text);
-  const cardiacCase = cat === 'cardiac' || cat === 'cardiac-ecg' || /(chest pain|stemi|nstemi|acs|myocardial|arrhythmia|palpitation|syncope|cardiac arrest|vf|vt|asystole|pea)/.test(text);
+  const cardiacCase = cat === 'cardiac' || cat === 'cardiac-ecg' || /(chest pain|stemi|nstemi|acs|myocardial|arrhythmia|palpitation|syncope|cardiac arrest|vf|\bvt\b|asystole|\bpea\b)/.test(text);
   const neuroCase = cat === 'neurological' || /(stroke|facial droop|arm drift|slurred speech|seizure|post-ictal|postictal|gaze deviation|unequal pupils|head injury|tbi)/.test(text);
   const metabolicCase = cat === 'metabolic'
     || /(hypogly|hypergly|diabetic|diabetes|glucose|bgl|blood sugar|dka|insulin|missed meal|tremor)/.test(text);

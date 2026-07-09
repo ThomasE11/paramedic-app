@@ -903,7 +903,7 @@ export function TreatmentJumpBagPanel({
   };
 
   return (
-    <Card className="glass-panel relative overflow-hidden rounded-2xl border shadow-[0_12px_34px_-24px_rgba(15,23,42,0.45)]">
+    <Card className="tactical-loadout-panel glass-panel relative overflow-hidden rounded-2xl border shadow-[0_12px_34px_-24px_rgba(15,23,42,0.45)]">
       <style>{`
         .jump-bag-illustration {
           position: relative;
@@ -1590,11 +1590,11 @@ export function TreatmentJumpBagPanel({
             <Ambulance className="h-4 w-4 text-emerald-700 dark:text-emerald-300" />
           </div>
           <div className="min-w-0">
-            <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-muted-foreground/65">Treatment Jump Bag</p>
-            <span className="block truncate font-semibold">Select, apply, reassess</span>
+            <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-muted-foreground/65">Treatment loadout</p>
+            <span className="block truncate font-semibold">Open kit, deploy, reassess</span>
           </div>
           <Badge variant="secondary" className="ml-auto text-[9px] sm:text-[10px]">
-            {appliedTreatments.length} applied
+            {appliedTreatments.length} deployed
           </Badge>
         </CardTitle>
 
@@ -1621,7 +1621,7 @@ export function TreatmentJumpBagPanel({
             type="text"
             value={medSearch}
             onChange={event => { setMedSearch(event.target.value); if (event.target.value) revealTreatments(); }}
-            placeholder={`Search ${activeBag.shortLabel} bag — e.g. oxygen, adrenaline, IV…`}
+            placeholder={`Search ${activeBag.shortLabel} loadout — e.g. oxygen, adrenaline, IV...`}
             className="glass-control h-10 w-full rounded-lg border border-border pl-8 pr-9 text-xs font-medium outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/15"
           />
           {medSearch && (
@@ -1639,7 +1639,7 @@ export function TreatmentJumpBagPanel({
         {suggestedTreatments.length > 0 && (
           <div className="glass-panel rounded-xl border border-emerald-500/20 p-2">
             <div className="mb-2 flex items-center justify-between gap-2">
-              <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-emerald-800 dark:text-emerald-200">Suggested now</p>
+              <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-emerald-800 dark:text-emerald-200">Priority actions</p>
               <span className="text-[9px] text-muted-foreground">based on current vitals</span>
             </div>
             <div className="flex flex-wrap gap-1.5">
@@ -1661,7 +1661,7 @@ export function TreatmentJumpBagPanel({
 
         <div className="flex items-center gap-1.5 rounded-lg border border-emerald-500/25 bg-emerald-50/70 px-2.5 py-1.5 text-[10px] font-medium text-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-100">
           <Lightbulb className="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-300" />
-          <span>Your treatments live in these bags — <strong>open a bag or search above</strong>, then the list drops in below to apply.</span>
+          <span>Immediate action: choose the kit that matches the life threat, then confirm the response.</span>
         </div>
 
       <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
@@ -1716,12 +1716,12 @@ export function TreatmentJumpBagPanel({
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
                 {!query
-                  ? `${activeBag.shortLabel} treatment panel`
+                  ? `${activeBag.shortLabel} action deck`
                   : searchResult.global ? 'Search results' : `${activeBag.shortLabel} — search`}
               </p>
               <p className="text-[9px] text-muted-foreground/75">
                 {!query
-                  ? 'dose, apply, repeat, and monitor effects'
+                  ? 'dose, deploy, repeat, and monitor effects'
                   : searchResult.global ? `nothing in ${activeBag.shortLabel} — showing all bags` : `matches in this bag`}
               </p>
             </div>

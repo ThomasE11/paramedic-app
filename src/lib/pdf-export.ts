@@ -3,6 +3,7 @@ import type { CaseScenario, CaseSession, AppliedTreatment, VitalSigns, Simulatio
 import { getVideosByFindings, getVideosByCategory, referenceArticles, getYouTubeWatchUrl } from '@/data/localClinicalResources';
 import { getRelevantEvidence } from '@/data/evidenceLibrary';
 import type { AssessmentDebriefItem } from '@/data/assessmentFramework';
+import type { ClinicalManagementDebrief } from '@/lib/caseManagementRealism';
 
 interface ExportOptions {
   session: CaseSession;
@@ -20,6 +21,7 @@ interface ExportOptions {
     penaltyReasons: { label: string; amount: number }[];
   };
   assessmentItems?: AssessmentDebriefItem[];
+  managementDebrief?: ClinicalManagementDebrief;
   /** Skip the browser download when generating a PDF for automated verification. */
   download?: boolean;
 }
@@ -568,6 +570,75 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<Blob> 
         yPosition += 2;
       }
     });
+  }
+
+  // ========== CLINICAL MANAGEMENT LOOP ==========
+  if (options.managementDebrief && options.managementDebrief.totalCount > 0) {
+    addSectionHeader('Clinical Management Loop');
+
+    const loop = options.managementDebrief;
+    const loopTone = loop.pendingCount > 0 ? COLOR.ORANGE : COLOR.GREEN;
+    checkPageBreak(18);
+    addFilledRoundedRect(margin, yPosition, contentWidth, 14, 2, loop.pendingCount > 0 ? COLOR.BG_YELLOW : COLOR.BG_GREEN);
+    addStrokeRoundedRect(margin, yPosition, contentWidth, 14, 2, loopTone);
+    addTextAt(
+      sanitizeText(loop.summary),
+      margin + 4,
+      yPosition + 6,
+      FONT.BODY,
+      'bold',
+      loopTone,
+    );
+    addTextAt(
+      `Closed: ${loop.reassessedCount}  |  Pending: ${loop.pendingCount}`,
+      margin + 4,
+      yPosition + 11,
+      FONT.LABEL,
+      'normal',
+      COLOR.MUTED,
+    );
+    yPosition += 18;
+
+    if (loop.pendingItems.length > 0) {
+      checkPageBreak(8);
+      addTextAt('Pending follow-up', margin, yPosition, FONT.BODY, 'bold', COLOR.ORANGE);
+      yPosition += LINE_HEIGHT.BODY + 2;
+      loop.pendingItems.forEach(item => {
+        const lines = doc.splitTextToSize(
+          sanitizeText(`${item.label}: ${item.reassessmentPrompt}`),
+          contentWidth - 12,
+        ) as string[];
+        const boxH = Math.max(7, lines.length * LINE_HEIGHT.BODY + 3);
+        checkPageBreak(boxH + 3);
+        addStrokeRoundedRect(margin, yPosition - 1, contentWidth, boxH, 1, COLOR.ORANGE);
+        addTextAt('!', margin + 3, yPosition + 3, FONT.BODY, 'bold', COLOR.ORANGE);
+        lines.forEach((line: string, i: number) => {
+          addTextAt(line, margin + 9, yPosition + 3 + i * LINE_HEIGHT.BODY, FONT.BODY, 'normal', COLOR.BODY_TEXT);
+        });
+        yPosition += boxH + 2;
+      });
+    }
+
+    if (loop.reassessedItems.length > 0) {
+      yPosition += 1;
+      checkPageBreak(8);
+      addTextAt('Closed treatment loops', margin, yPosition, FONT.BODY, 'bold', COLOR.GREEN);
+      yPosition += LINE_HEIGHT.BODY + 2;
+      loop.reassessedItems.slice(0, 8).forEach(item => {
+        const lines = doc.splitTextToSize(
+          sanitizeText(`${item.label}: follow-up documented`),
+          contentWidth - 12,
+        ) as string[];
+        const boxH = Math.max(7, lines.length * LINE_HEIGHT.BODY + 3);
+        checkPageBreak(boxH + 3);
+        addStrokeRoundedRect(margin, yPosition - 1, contentWidth, boxH, 1, COLOR.GREEN);
+        addTextAt('+', margin + 3, yPosition + 3, FONT.BODY, 'bold', COLOR.GREEN);
+        lines.forEach((line: string, i: number) => {
+          addTextAt(line, margin + 9, yPosition + 3 + i * LINE_HEIGHT.BODY, FONT.BODY, 'normal', COLOR.BODY_TEXT);
+        });
+        yPosition += boxH + 2;
+      });
+    }
   }
 
   // ========== MANAGEMENT SUMMARY ==========
