@@ -7,18 +7,20 @@ clear.
 
 ## Active policy
 
-- `patient.glb` - current known-good fallback for unknown and male patients.
-  It is not the final visual standard, but it is safer than showing a weak
-  procedural mannequin or a female-looking male model.
-- `patient-female.glb` - active for female cases. Source: Ready Player Me
-  `brunette-t.glb` distributed through the TalkingHead repository. License:
-  CC BY-NC 4.0, so keep the non-commercial constraint visible before any
-  commercial deployment.
-- `patient-male.glb` - intentionally absent from `public/models` until a
-  validated male export exists. The rejected TalkingHead/MPFB candidate has
-  female/casual-suit mesh names and reads incorrectly for male examination.
-  Do not route male cases to this filename until a validated male export
-  replaces it.
+- `patient.glb` - fallback for unknown-gender patients only. It is the pre-bake
+  male MPFB export: the male shape still rides as macrodetail shape keys, which
+  BodyMesh zeroes each frame, so it renders the androgynous MakeHuman basis. No
+  longer routed to male cases.
+- `patient-female.glb` - active for female cases. Source: MPFB2/MakeHuman
+  (CC0), female macrodetail baked into the basis by
+  `scripts/blender-mpfb-female-bake.py`, real eye meshes + AO-baked skin. (The
+  old Ready Player Me / TalkingHead mesh, CC BY-NC 4.0, was replaced and kept
+  untracked as `patient-female-rpm.bak.glb`.)
+- `patient-male.glb` - active for male cases. Source: MPFB2/MakeHuman (CC0),
+  male macrodetail (gender pole ~0.89) baked into the basis by
+  `scripts/blender-mpfb-male-bake.py`, real eye meshes + AO-baked skin (~5.5 MB).
+  Passes `scripts/verify-glb.cjs --expect-eyes` and reads clearly male from the
+  front exam camera.
 - `open3d-skeleton.glb` - active anatomy reference layer. Source:
   AnatomyTOOL/Open3DModel overview skeleton GLB. It is used as a transparent
   skeletal reference in the exam canvas, not as the patient skin.

@@ -210,12 +210,26 @@ const ALARM_THRESHOLDS: Record<string, AlarmThreshold> = {
   bloodGlucose: { warningLow: 3.5, criticalLow: 2.5, warningHigh: 15, criticalHigh: 25 },
 };
 
-function checkAlarm(value: number, thresholds: AlarmThreshold): { isWarning: boolean; isCritical: boolean } {
-  if (thresholds.criticalLow !== undefined && value <= thresholds.criticalLow) return { isWarning: false, isCritical: true };
-  if (thresholds.criticalHigh !== undefined && value >= thresholds.criticalHigh) return { isWarning: false, isCritical: true };
-  if (thresholds.warningLow !== undefined && value <= thresholds.warningLow) return { isWarning: true, isCritical: false };
-  if (thresholds.warningHigh !== undefined && value >= thresholds.warningHigh) return { isWarning: true, isCritical: false };
-  return { isWarning: false, isCritical: false };
+/**
+ * checkAlarm with a latch: an ACTIVE alarm level keeps holding until the value
+ * clears its threshold by `h` (per-vital hysteresis), like a real monitor.
+ * Without this, a vital tweening across its limit (HR 119.7↔120.2 every tick)
+ * flips the alarm state at ~1Hz — the field-reported "alarm keeps quivering":
+ * status text swapping, ALARMS button recolouring, digits flickering red.
+ */
+function checkAlarmLatched(
+  value: number,
+  t: AlarmThreshold,
+  h: number,
+  prev: 'critical' | 'warning' | null,
+): 'critical' | 'warning' | null {
+  const critMargin = prev === 'critical' ? h : 0;
+  if (t.criticalLow !== undefined && value <= t.criticalLow + critMargin) return 'critical';
+  if (t.criticalHigh !== undefined && value >= t.criticalHigh - critMargin) return 'critical';
+  const warnMargin = prev !== null ? h : 0; // downgrading from critical also exits softly
+  if (t.warningLow !== undefined && value <= t.warningLow + warnMargin) return 'warning';
+  if (t.warningHigh !== undefined && value >= t.warningHigh - warnMargin) return 'warning';
+  return null;
 }
 
 // ============================================================================
@@ -2417,10 +2431,15 @@ export function VitalSignsMonitor({
     });
   }, [currentVitals]);
 
-  // Calculate alarms
+  // Calculate alarms — latched with hysteresis, and only from CONNECTED
+  // sensors. Both halves are field-reported quiver bugs:
+  //   1. No sensor gating: the monitor alarmed on vitals it couldn't measure
+  //      yet ("vitals not showing, but the alarm keeps quivering") — a real
+  //      monitor with leads off shows LEADS OFF, it does not alarm on HR.
+  //   2. No hysteresis: a vital tweening across its limit flipped the alarm
+  //      set every tick. The AUDIO side was already throttled for exactly
+  //      this (the spam bug, below) but the visual state still flickered.
   useEffect(() => {
-    const newAlarms = new Set<string>();
-
     const pulse = parseInt(String(currentVitals.pulse)) || 80;
     const spo2 = currentVitals.spo2 || 98;
     const respiration = currentVitals.respiration || 16;
@@ -2430,26 +2449,28 @@ export function VitalSignsMonitor({
     const temp = currentVitals.temperature || 36.5;
     const glucose = currentVitals.bloodGlucose || 5.5;
 
-    if (checkAlarm(pulse, ALARM_THRESHOLDS.pulse).isCritical) newAlarms.add('pulse-critical');
-    else if (checkAlarm(pulse, ALARM_THRESHOLDS.pulse).isWarning) newAlarms.add('pulse-warning');
+    // alias = alarm-set prefix · sensor = visibleVitals key · h = hysteresis
+    // (must exceed the per-tick tween step so a hovering vital can't flicker)
+    const channels: Array<{ alias: string; sensor: string; value: number; t: AlarmThreshold; h: number }> = [
+      { alias: 'pulse', sensor: 'pulse', value: pulse, t: ALARM_THRESHOLDS.pulse, h: 3 },
+      { alias: 'spo2', sensor: 'spo2', value: spo2, t: ALARM_THRESHOLDS.spo2, h: 1 },
+      { alias: 'respiration', sensor: 'respiration', value: respiration, t: ALARM_THRESHOLDS.respiration, h: 1 },
+      { alias: 'bp', sensor: 'bp', value: systolic, t: ALARM_THRESHOLDS.systolic, h: 4 },
+      { alias: 'gcs', sensor: 'gcs', value: gcs, t: ALARM_THRESHOLDS.gcs, h: 0 },
+      { alias: 'temp', sensor: 'temperature', value: temp, t: ALARM_THRESHOLDS.temperature, h: 0.2 },
+      { alias: 'glucose', sensor: 'bloodGlucose', value: glucose, t: ALARM_THRESHOLDS.bloodGlucose, h: 0.4 },
+    ];
 
-    if (checkAlarm(spo2, ALARM_THRESHOLDS.spo2).isCritical) newAlarms.add('spo2-critical');
-    else if (checkAlarm(spo2, ALARM_THRESHOLDS.spo2).isWarning) newAlarms.add('spo2-warning');
-
-    if (checkAlarm(respiration, ALARM_THRESHOLDS.respiration).isCritical) newAlarms.add('respiration-critical');
-    else if (checkAlarm(respiration, ALARM_THRESHOLDS.respiration).isWarning) newAlarms.add('respiration-warning');
-
-    if (checkAlarm(systolic, ALARM_THRESHOLDS.systolic).isCritical) newAlarms.add('bp-critical');
-    else if (checkAlarm(systolic, ALARM_THRESHOLDS.systolic).isWarning) newAlarms.add('bp-warning');
-
-    if (checkAlarm(gcs, ALARM_THRESHOLDS.gcs).isCritical) newAlarms.add('gcs-critical');
-    else if (checkAlarm(gcs, ALARM_THRESHOLDS.gcs).isWarning) newAlarms.add('gcs-warning');
-
-    if (checkAlarm(temp, ALARM_THRESHOLDS.temperature).isCritical) newAlarms.add('temp-critical');
-    else if (checkAlarm(temp, ALARM_THRESHOLDS.temperature).isWarning) newAlarms.add('temp-warning');
-
-    if (checkAlarm(glucose, ALARM_THRESHOLDS.bloodGlucose).isCritical) newAlarms.add('glucose-critical');
-    else if (checkAlarm(glucose, ALARM_THRESHOLDS.bloodGlucose).isWarning) newAlarms.add('glucose-warning');
+    // activeAlarms only changes from this effect, so reading it here as the
+    // latch's previous state is sound (see deps).
+    const newAlarms = new Set<string>();
+    for (const c of channels) {
+      if (!visibleVitals.has(c.sensor)) continue; // not measured -> cannot alarm
+      const prevLevel = activeAlarms.has(`${c.alias}-critical`) ? 'critical' as const
+        : activeAlarms.has(`${c.alias}-warning`) ? 'warning' as const : null;
+      const level = checkAlarmLatched(c.value, c.t, c.h, prevLevel);
+      if (level) newAlarms.add(`${c.alias}-${level}`);
+    }
 
     // Only commit when membership actually changed — vitals tween every few
     // seconds and a fresh Set each tick re-rendered the whole monitor.
@@ -2485,7 +2506,10 @@ export function VitalSignsMonitor({
     } else {
       lastAlarmAnnunciationRef.current = { level: 'none', at: 0 };
     }
-  }, [currentVitals, audioEnabled, alarmsEnabled]);
+    // activeAlarms in deps: the latch reads it as previous state. The re-run
+    // it triggers recomputes the identical set, the membership guard returns
+    // the same reference, and the chain stops — no loop.
+  }, [currentVitals, audioEnabled, alarmsEnabled, visibleVitals, activeAlarms]);
 
   // Deterioration timer — DISABLED: StudentPanel runs its own deterioration via dynamicTreatmentEngine
   // which is more sophisticated (case-specific, staged). Running both caused double deterioration.
@@ -3614,20 +3638,25 @@ export function VitalSignsMonitor({
                       )}
                     </div>
                   )}
-                  {/* Status bar */}
-                  {(cprState?.active || (alarmStatus.count > 0 && alarmsEnabled)) && (
-                    <div className="px-2 py-1 border-t border-gray-800/40 flex items-center gap-3" style={{ background: 'rgba(0,0,0,0.5)' }}>
-                      {cprState?.active && <span className="text-[8px] font-mono text-yellow-300 font-bold">CPR: Adult - {cprState.running ? 'Active' : 'Paused'} 30:2</span>}
-                      {alarmStatus.count > 0 && alarmsEnabled && (
-                        <span className={`inline-flex items-center gap-1.5 text-[8px] font-mono font-bold ${alarmStatus.hasCritical ? 'text-red-400' : 'text-yellow-400'}`}>
-                          {alarmStatus.hasCritical && (
-                            <span className="h-1.5 w-1.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(248,113,113,0.85)] animate-pulse" aria-hidden="true" />
-                          )}
-                          {alarmStatus.count} Alarm{alarmStatus.count > 1 ? 's' : ''} {formatCodeTimer(codeTimerSeconds)}
-                        </span>
-                      )}
-                    </div>
-                  )}
+                  {/* Status bar — ALWAYS rendered at a constant height (my quiver
+                      fix: this row used to mount only while an alarm/CPR was
+                      active, so a vital hovering at its threshold flipped it in
+                      and out at the 1Hz tick and the monitor's height — and the
+                      whole page via the scrollbar — quivered). Real monitors keep
+                      a permanent status strip. Codex's critical pulse dot kept. */}
+                  <div className="h-[22px] px-2 border-t border-gray-800/40 flex items-center gap-3" style={{ background: 'rgba(0,0,0,0.5)' }}>
+                    {cprState?.active && <span className="text-[8px] font-mono text-yellow-300 font-bold">CPR: Adult - {cprState.running ? 'Active' : 'Paused'} 30:2</span>}
+                    {alarmStatus.count > 0 && alarmsEnabled ? (
+                      <span className={`inline-flex items-center gap-1.5 text-[8px] font-mono font-bold ${alarmStatus.hasCritical ? 'text-red-400' : 'text-yellow-400'}`}>
+                        {alarmStatus.hasCritical && (
+                          <span className="h-1.5 w-1.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(248,113,113,0.85)] animate-pulse" aria-hidden="true" />
+                        )}
+                        {alarmStatus.count} Alarm{alarmStatus.count > 1 ? 's' : ''} {formatCodeTimer(codeTimerSeconds)}
+                      </span>
+                    ) : !cprState?.active && (
+                      <span className="text-[8px] font-mono text-gray-600">ALARMS {alarmsEnabled ? 'ON' : 'OFF'}</span>
+                    )}
+                  </div>
                 </div>
                 {/* RIGHT STRIP — large transport-monitor numerics */}
                 <div className="hidden sm:flex w-[118px] shrink-0 flex-col border-l border-gray-800/70" style={{ background: 'linear-gradient(180deg,rgba(0,0,0,0.72),rgba(0,0,0,0.52))' }}>

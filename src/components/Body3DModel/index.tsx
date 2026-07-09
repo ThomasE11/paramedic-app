@@ -33,6 +33,9 @@ import { playBreathSound, playHeartSound, playPercussionSound, playBowelSound, s
 import type { BowelSoundType, BreathSoundType } from '@/data/clinicalSounds';
 import { inferInjuries, injuryRegionTo3D, type BodyInjury, type BodyRegion } from '@/lib/injuryMap';
 import { classifyBodyPoint } from '@/lib/regionClassifier';
+import { DeviceLayer, type DeviceOxygenMode } from './DeviceLayer';
+import { deriveRingArms, ringArmOffsets } from '@/lib/ringMenu';
+import { bridgeForFinding, type TreatBridge } from '@/lib/findingTreatmentBridge';
 import { hashInjury } from './WoundLayer';
 import type { PatientVisualState, PatientWoundOverlay } from '@/lib/patientVisualState';
 import {
@@ -609,18 +612,14 @@ function LandmarkMarkers({
   sampler: SurfaceSampler | null;
   presentation: MarkerPresentation;
 }) {
+  // No dots on the patient (field directive): the body itself is the
+  // interface at overview level — clicking anatomy selects the region and the
+  // action ring offers the verbs at the click point. Detail-level markers
+  // still render INSIDE a focused region, where they anchor precise targets
+  // (pupils, carotid, quadrants) that a bare-skin click can't disambiguate.
   const visibleMarkers = activeRegion
     ? EXAM_LANDMARKS.filter(marker => marker.region === activeRegion && marker.level === 'detail')
-    : EXAM_LANDMARKS.filter(marker => marker.level === 'overview' && (
-      requiredRegions.has(marker.region)
-      || marker.id === 'eyes-overview'
-      || marker.id === 'airway-overview'
-      || marker.id === 'chest-overview'
-      || marker.id === 'abdomen-overview'
-      || marker.id === 'pulse-carotid'
-      || marker.id === 'pulse-radial-r'
-      || marker.id === 'pulse-radial-l'
-    ));
+    : [];
 
   const toneClasses: Record<NonNullable<ExamLandmark['tone']>, string> = {
     neutral: 'border-slate-200/80 bg-white/90 text-slate-800 dark:border-white/10 dark:bg-slate-950/85 dark:text-slate-100',
@@ -1011,35 +1010,6 @@ function buildTreatmentEquipmentState(appliedTreatmentIds: string[]): AppliedEqu
   };
 }
 
-function EquipmentPill({
-  label,
-  detail,
-  tone,
-  children,
-}: {
-  label: string;
-  detail: string;
-  tone: 'oxygen' | 'iv' | 'defib' | 'device';
-  children: React.ReactNode;
-}) {
-  const toneClass = {
-    oxygen: 'border-cyan-200/45 bg-cyan-950/58 text-cyan-50 shadow-cyan-950/35',
-    iv: 'border-emerald-200/45 bg-emerald-950/58 text-emerald-50 shadow-emerald-950/35',
-    defib: 'border-rose-200/45 bg-rose-950/58 text-rose-50 shadow-rose-950/35',
-    device: 'border-slate-200/40 bg-slate-950/62 text-slate-50 shadow-slate-950/40',
-  }[tone];
-
-  return (
-    <div className={`pointer-events-none flex min-w-[142px] max-w-[176px] items-center gap-2 rounded-2xl border px-2.5 py-2 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-75 duration-300 ${toneClass}`}>
-      <div className="relative h-14 w-16 shrink-0">{children}</div>
-      <div className="min-w-0">
-        <p className="text-[9px] font-bold uppercase tracking-[0.12em] leading-tight text-white/92">{label}</p>
-        <p className="mt-0.5 text-[8px] leading-snug text-white/70">{detail}</p>
-      </div>
-    </div>
-  );
-}
-
 function OxygenDeviceGraphic({ equipment }: { equipment: OxygenEquipmentVisual }) {
   const src = {
     nasal: TREATMENT_ASSET_PATHS.nasal,
@@ -1098,36 +1068,6 @@ function OxygenDeviceGraphic({ equipment }: { equipment: OxygenEquipmentVisual }
       <span className="absolute -right-1 -top-1 rounded-full border border-white/30 bg-slate-950/62 px-1.5 py-0.5 text-[7px] font-black uppercase tracking-[0.08em] text-cyan-50 shadow-lg backdrop-blur-md">
         {label}
       </span>
-    </div>
-  );
-}
-
-function IvCannulaGraphic({ hasFluids }: { hasFluids: boolean }) {
-  return (
-    <>
-      <img
-        src={TREATMENT_ASSET_PATHS.ivCannula}
-        alt=""
-        className="absolute inset-0 h-full w-full object-contain drop-shadow-[0_10px_12px_rgba(6,78,59,0.24)]"
-        draggable={false}
-      />
-      {hasFluids && (
-        <div className="absolute left-[49px] top-[37px] h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-100" />
-      )}
-    </>
-  );
-}
-
-function FluidBagGraphic() {
-  return (
-    <div className="pointer-events-none flex min-w-[118px] items-center gap-2 rounded-2xl border border-emerald-100/45 bg-slate-950/60 px-2.5 py-2 text-white shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-75 duration-300">
-      <div className="relative h-16 w-11 shrink-0">
-        <img src={TREATMENT_ASSET_PATHS.fluidBag} alt="" className="absolute inset-0 h-full w-full object-contain" draggable={false} />
-      </div>
-      <div>
-        <p className="text-[9px] font-bold uppercase tracking-[0.12em] leading-tight">Fluid running</p>
-        <p className="mt-0.5 text-[8px] leading-snug text-white/70">Bag and line connected to IV cannula</p>
-      </div>
     </div>
   );
 }
@@ -1209,7 +1149,17 @@ function TreatmentEquipmentOverlay({
 
   return (
     <>
-      {equipment.oxygen && (
+      {/* 3D fitted devices (mask shells, reservoir, mist, cannula, drip
+          stand) — DeviceLayer. Only BVM/ventilator still use the 2D card
+          (hand-held devices pending their own 3D pass). */}
+      <DeviceLayer
+        oxygenMode={(equipment.oxygen && equipment.oxygen.mode !== 'bvm' && equipment.oxygen.mode !== 'ventilator'
+          ? equipment.oxygen.mode : null) as DeviceOxygenMode}
+        hasIvAccess={equipment.hasIvAccess}
+        hasFluids={equipment.hasFluids}
+        sampler={sampler}
+      />
+      {equipment.oxygen && (equipment.oxygen.mode === 'bvm' || equipment.oxygen.mode === 'ventilator') && (
         <MarkerHtml position={anchor(0, 1.565, 0.215)} distanceFactor={2.45} zIndexRange={[62, 0]} interactive={false} presentation={presentation}>
           <OxygenDeviceGraphic equipment={equipment.oxygen} />
         </MarkerHtml>
@@ -1227,24 +1177,7 @@ function TreatmentEquipmentOverlay({
         </MarkerHtml>
       )}
 
-      {equipment.hasIvAccess && (
-        <MarkerHtml position={anchor(-0.205, 0.82, 0.2)} distanceFactor={2.65} zIndexRange={[72, 0]} interactive={false} presentation={presentation}>
-          <EquipmentPill
-            label="IV cannula"
-            detail={equipment.hasFluids ? 'Cannula taped down with fluid line attached' : 'Cannula inserted and secured at the forearm'}
-            tone="iv"
-          >
-            <IvCannulaGraphic hasFluids={equipment.hasFluids} />
-          </EquipmentPill>
-        </MarkerHtml>
-      )}
-
-      {equipment.hasFluids && (
-        <MarkerHtml position={presentation === 'treatment-bay' ? treatmentBayClinicalToWorld([-0.36, 1.08, 0.22]) : [-0.36, 1.08, 0.22]} distanceFactor={2.9} zIndexRange={[70, 0]} interactive={false} presentation={presentation}>
-          <FluidBagGraphic />
-        </MarkerHtml>
-      )}
-
+      {/* IV cannula + fluids now render as 3D meshes in DeviceLayer (above). */}
       {equipment.hasDefibPads && (
         <MarkerHtml position={anchor(0.01, 1.24, 0.218)} distanceFactor={2.4} zIndexRange={[68, 0]} interactive={false} presentation={presentation}>
           <DefibPadsGraphic />
@@ -2986,6 +2919,10 @@ interface Body3DModelProps {
   onPulse?: (site: string) => void;
   /** Use stretcher-side treatment presentation in the full-body overview. */
   treatmentBayMode?: boolean;
+  /** A3 finding→treatment bridge: a revealed finding earns a Treat arm on the
+   * action ring; clicking it hands the parent {bag, query, reason} to open the
+   * right treatment bag pre-filtered. Absent → no Treat arm ever renders. */
+  onOpenTreatments?: (bridge: TreatBridge) => void;
 }
 
 // Phase 2 — guided exam mode: persist preference across sessions
@@ -3726,7 +3663,7 @@ function PatientRealismStrip({
   );
 }
 
-export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientSounds, caseCategory, appliedTreatmentIds = [], patientVisualState = null, isInArrest = false, vitals, onPulse, treatmentBayMode = false }: Body3DModelProps) {
+export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientSounds, caseCategory, appliedTreatmentIds = [], patientVisualState = null, isInArrest = false, vitals, onPulse, treatmentBayMode = false, onOpenTreatments }: Body3DModelProps) {
   const { t } = useTranslation();
   const controlsRef = useRef<OrbitControlsHandle | null>(null);
   const [isFlipped, setIsFlipped] = useState(false);
@@ -3744,6 +3681,10 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
     [],
   );
   const [activeRegion, setActiveRegion] = useState<string | null>(null);
+  // Action ring: anchored at the student's exact click point on the body,
+  // offering the focused region's assessment verbs (derived from its real
+  // actions — src/lib/ringMenu.ts). null = hidden.
+  const [ring, setRing] = useState<{ point: [number, number, number]; region: string } | null>(null);
   const [activeLimb, setActiveLimb] = useState<LimbSide>(null);
   // Stage-3 auto-degrade ladder: single tier number, everything derived.
   // 0 = full (composer+dpr2+shadows) … 4 = minimal (see AdaptiveQuality.tsx).
@@ -3836,7 +3777,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   // committed state back in via a ref (updated in the effect below). The ref
   // read is intentionally not a dependency — hysteresis compares against the
   // LAST committed state, which is exactly what the effect stores.
-  const prevUnwellnessRef = useRef<UnwellnessState>({ diaphoresis: 0, jaundice: 0, mottling: 0 });
+  const prevUnwellnessRef = useRef<UnwellnessState>({ diaphoresis: 0, jaundice: 0, mottling: 0, angioedema: 0, urticaria: 0 });
   const unwellness = useMemo<UnwellnessState>(() => {
     const source = vitals ?? caseData.vitalSignsProgression?.initial;
     const derived = deriveUnwellness({
@@ -3851,6 +3792,8 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
       if (CAPTURE_FORCED_UNWELL === 'diaphoresis') return { ...derived, diaphoresis: 1 };
       if (CAPTURE_FORCED_UNWELL === 'jaundice') return { ...derived, jaundice: 1 };
       if (CAPTURE_FORCED_UNWELL === 'mottling') return { ...derived, mottling: 1 };
+      if (CAPTURE_FORCED_UNWELL === 'angioedema') return { ...derived, angioedema: 1 };
+      if (CAPTURE_FORCED_UNWELL === 'urticaria') return { ...derived, urticaria: 1 };
     }
     return derived;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -3966,8 +3909,12 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
       const morph = MORPH_FOR_KIND[inj.kind];
       if (morph) out.add(morph);
     }
+    // Angioedema (anaphylaxis lip/facial swelling) is an IMMEDIATE visual per
+    // the realism directive — no assessment gate; a swollen face is visible
+    // from the first look, like jaundice. Text-driven via unwellnessStates.
+    if (unwellness.angioedema > 0) out.add('finding_angioedema');
     return Array.from(out);
-  }, [bodyInjuriesForMesh, assessedRegions]);
+  }, [bodyInjuriesForMesh, assessedRegions, unwellness.angioedema]);
 
   const guidedStepIndex = useMemo(() => {
     if (!nextGuidedStep) return -1;
@@ -4340,11 +4287,20 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   // on a different region) return false and fall through to BodyMesh's normal
   // region selection.
   const handleBodyPoint = useCallback((point: THREE.Vector3, regionId: string): boolean => {
-    if (!activeRegion || regionId !== activeRegion) return false;
+    // Action ring (DESIGN_PROPOSAL.md A2): any click that falls through to
+    // region selection also anchors the verb ring at the exact click point —
+    // click the organ, get its assessment verbs right there. Suppressed for
+    // guided-mode locked regions (BodyMesh blocks the selection anyway).
+    const showRing = () => {
+      if (guidedMode && nextGuidedStep && nextGuidedStep !== regionId) return;
+      setRing({ point: [point.x, point.y, point.z], region: regionId });
+    };
+    if (!activeRegion || regionId !== activeRegion) { showRing(); return false; }
     // Legs have no authored detail landmarks; the bottom of the leg IS the
     // foot — route it to the existing foot exam action.
     if ((activeRegion === 'right-leg' || activeRegion === 'left-leg')
       && classifyBodyPoint(point.x, point.y, point.z).foot) {
+      setRing(null);
       handleExamAction(`${activeRegion === 'right-leg' ? 'r' : 'l'}-foot-palpate`);
       return true;
     }
@@ -4360,12 +4316,62 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
     // ~9cm grab radius — generous enough for eyes/carotid, tight enough that
     // adjacent chest zones stay distinct.
     if (best && best.d2 <= 0.09 * 0.09) {
+      setRing(null);
       if (best.actionId.startsWith('pulse-') && onPulse) onPulse(best.actionId);
       else handleExamAction(best.actionId);
       return true;
     }
+    // Bare skin inside the focused region: re-anchor the ring here.
+    showRing();
     return false;
-  }, [activeRegion, handleExamAction, onPulse]);
+  }, [activeRegion, handleExamAction, onPulse, guidedMode, nextGuidedStep]);
+
+  // Ring arms derive from the clicked region's REAL actions (limb groups or
+  // subregions) — one arm per technique, canon exam order. No arms → no ring.
+  const ringArms = useMemo(() => {
+    if (!ring) return [];
+    const groups = getLimbActionGroups(ring.region);
+    const acts = groups ? groups.flatMap(g => g.actions) : getSubRegions(ring.region).flatMap(sr => sr.actions);
+    return deriveRingArms(acts);
+  }, [ring]);
+  // A3: a REVEALED finding in the ring's region that maps to a treatment
+  // earns an extra Treat arm (finding text → {bag, query, reason}). The
+  // student still chooses the drug — the arm only opens the right shelf.
+  // Auscultation findings are deliberately sound-only (the student must HEAR
+  // the wheeze), so for the chest we bridge from what the stethoscope
+  // actually played — but only once the student has auscultated.
+  const ringTreatBridge = useMemo(() => {
+    if (!ring || !onOpenTreatments) return null;
+    const groups = getLimbActionGroups(ring.region);
+    const acts = groups ? groups.flatMap(g => g.actions) : getSubRegions(ring.region).flatMap(sr => sr.actions);
+    for (const a of acts) {
+      const text = revealedFindings.get(a.id);
+      if (!text) continue;
+      const bridge = bridgeForFinding(text);
+      if (bridge) return bridge;
+    }
+    if (ring.region === 'chest' && patientSounds
+      && [...revealedFindings.keys()].some(id => id.startsWith('chest-auscultate'))) {
+      const SOUND_WORD: Partial<Record<BreathSoundType, string>> = {
+        'wheeze': 'wheeze',
+        'crackles-fine': 'crackles',
+        'crackles-coarse': 'crackles',
+        'stridor': 'stridor',
+        'absent': 'silent chest',
+      };
+      const heard = [patientSounds.leftLung, patientSounds.rightLung]
+        .map(s => SOUND_WORD[s]).filter(Boolean).join(' and ');
+      if (heard) return bridgeForFinding(heard);
+    }
+    return null;
+  }, [ring, onOpenTreatments, revealedFindings, patientSounds]);
+  const ringArmCount = ringArms.length + (ringTreatBridge ? 1 : 0);
+  const ringOffsets = useMemo(() => ringArmOffsets(ringArmCount, 52), [ringArmCount]);
+
+  // Closing the region (Esc / Full body / empty-space click) dismisses the ring.
+  useEffect(() => {
+    if (!activeRegion) setRing(null);
+  }, [activeRegion]);
 
   const allSubRegions = activeRegion ? getSubRegions(activeRegion) : [];
   const subRegions = allSubRegions;
@@ -4747,6 +4753,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 diaphoresis={Math.max(unwellness.diaphoresis, scenarioDiaphoresis)}
                 jaundice={unwellness.jaundice}
                 mottling={Math.max(unwellness.mottling, scenarioMottling)}
+                urticaria={unwellness.urticaria > 0}
                 // Receive the surface projector so labels anchor to the real mesh.
                 // Wrap in an arrow so React stores the function rather than calling it.
                 onSurfaceSampler={handleSurfaceSampler}
@@ -4777,6 +4784,62 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
 
               {!useTreatmentBayPresentation && (
                 <>
+                  {/* Action ring — the region's assessment verbs at the exact
+                      click point (A2). Verb click fires the region's primary
+                      action of that technique; ✕ or closing the region dismisses. */}
+                  {ring && ringArms.length > 0 && (
+                    <Html position={ring.point} center distanceFactor={2.4} zIndexRange={[110, 95]}>
+                      <div className="pointer-events-auto relative" style={{ width: 0, height: 0 }}>
+                        {ringArms.map((arm, i) => (
+                          <button
+                            key={arm.technique}
+                            type="button"
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onPointerUp={(e) => e.stopPropagation()}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setRing(null);
+                              if (arm.actionId.startsWith('pulse-') && onPulse) onPulse(arm.actionId);
+                              else handleExamAction(arm.actionId);
+                            }}
+                            className="absolute -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full border border-cyan-300/60 bg-slate-900/95 px-2.5 py-1 text-[10px] font-semibold text-cyan-50 shadow-lg backdrop-blur-sm transition-transform duration-100 hover:scale-110 hover:bg-cyan-700/95"
+                            style={{ left: ringOffsets[i]?.x ?? 0, top: ringOffsets[i]?.y ?? 0 }}
+                          >
+                            {arm.label}
+                          </button>
+                        ))}
+                        {ringTreatBridge && (
+                          <button
+                            type="button"
+                            title={ringTreatBridge.reason}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onPointerUp={(e) => e.stopPropagation()}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setRing(null);
+                              onOpenTreatments?.(ringTreatBridge);
+                            }}
+                            className="absolute -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full border border-amber-300/70 bg-amber-600/95 px-2.5 py-1 text-[10px] font-bold text-amber-50 shadow-lg backdrop-blur-sm transition-transform duration-100 hover:scale-110 hover:bg-amber-500/95"
+                            style={{ left: ringOffsets[ringArms.length]?.x ?? 0, top: ringOffsets[ringArms.length]?.y ?? 0 }}
+                          >
+                            Treat
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          aria-label="Dismiss actions"
+                          onPointerDown={(e) => e.stopPropagation()}
+                          onPointerUp={(e) => e.stopPropagation()}
+                          onClick={(e) => { e.stopPropagation(); setRing(null); }}
+                          className="absolute flex h-4 w-4 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-slate-950/85 text-[8px] leading-none text-slate-300 shadow hover:text-white"
+                          style={{ left: 0, top: 0 }}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </Html>
+                  )}
+
                   <CaseRealismMarkers
                     cues={visibleRealismCues}
                     assessedRegions={assessedRegions}

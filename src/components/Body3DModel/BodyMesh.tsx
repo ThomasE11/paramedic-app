@@ -1,10 +1,12 @@
 /**
  * Realistic 3D human body mesh loaded from GLB model.
  *
- * Female cases use a gender-matched GLB. Male cases deliberately fall back to
- * the legacy patient mesh until a complete, browser-safe male GLB is added.
- * We do not render a stylised procedural mannequin in clinical mode because it
- * breaks assessment realism.
+ * Male and female cases each use a sex-matched GLB with the MakeHuman/MPFB
+ * macrodetail shape baked into the basis (scripts/blender-mpfb-male-bake.py and
+ * blender-mpfb-female-bake.py) — the raw MPFB export ships the sex shape as
+ * shape keys, which BodyMesh zeroes each frame, so an un-baked mesh renders the
+ * androgynous basis. We do not render a stylised procedural mannequin in
+ * clinical mode because it breaks assessment realism.
  */
 
 import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
@@ -17,6 +19,7 @@ import { buildScrubs, CLOTHING_PARTING } from './ClothingLayer';
 import { paintEyesOnTexture } from './EyesLayer';
 import { buildMottledTextures } from './MottlingLayer';
 import { applyWoundsToTextures } from './WoundLayer';
+import { applyUrticariaToTextures } from './UrticariaLayer';
 import { injuryRegionTo3D, type BodyInjury } from '@/lib/injuryMap';
 import { LifeSigns } from './LifeSigns';
 import { setBreathClock } from '@/lib/breathClock';
@@ -132,6 +135,10 @@ interface BodyMeshProps {
    * per-frame upload.
    */
   mottling?: number;
+  /** Urticarial rash (anaphylaxis) — when true, wheal decals are painted onto
+   *  face/chest/arms in the atlas once at clone-build (constant, like wounds).
+   *  UrticariaLayer. */
+  urticaria?: boolean;
   /** GCS <= 8 / AVPU 'U' / arrest — suppresses the procedural head sway and
    *  keeps the eyelids closed (see LifeSigns). */
   unconscious?: boolean;
@@ -146,8 +153,12 @@ interface BodyMeshProps {
  *     (scripts/blender-mpfb-female-bake.py + blender-stage2-eyes-ao.py,
  *     ~6.1 MB). Replaced the old Ready Player Me mesh (CC BY-NC — kept
  *     untracked as patient-female-rpm.bak.glb).
- *   • patient.glb        — MPFB2/MakeHuman-generated male (CC0), A-pose,
- *     real eye meshes + AO-baked skin (~7.9 MB)
+ *   • patient-male.glb   — MPFB2/MakeHuman-generated male (CC0), A-pose, male
+ *     macrodetail baked into the basis (blender-mpfb-male-bake.py), real eye
+ *     meshes + AO-baked skin (~5.5 MB).
+ *   • patient.glb        — the pre-bake male export (androgynous basis; the
+ *     male shape still rides as shape keys). Kept as the unknown-gender
+ *     fallback only — never routed to a male case.
  *
  * Why dropping the new meshes in works without retuning the Y-range
  * hit-test table: the primary hit-test path in `getRegionAtPoint`
@@ -173,11 +184,9 @@ function resolveModelPath(gender?: 'male' | 'female'): string {
     if (forced === 'male') return '/models/patient.glb';
     if (forced === 'female') return '/models/patient-female.glb';
   }
-  // The available male candidate is not acceptable for this simulator yet, so
-  // keep male cases on the known-good legacy body until a validated MakeHuman
-  // or Z-Anatomy-derived shell is exported.
-  if (gender === 'male') return '/models/patient.glb';
+  if (gender === 'male') return '/models/patient-male.glb';
   if (gender === 'female') return '/models/patient-female.glb';
+  // Unknown gender: the pre-bake export (androgynous basis) is the neutral fallback.
   return '/models/patient.glb';
 }
 
@@ -538,7 +547,7 @@ function buildSurfaceSampler(root: THREE.Object3D | null, presentationRoot?: THR
   };
 }
 
-export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guidedMode = false, nextGuidedStep = null, onBlockedClick, onBodyPoint, bodyInjuries, patientGender, surfaceOpacity = 1, activeFindingMorphs, breathRateRpm = 0, onSurfaceSampler, dressed = false, dressedActiveRegion = null, pupilLeftMm = 3.5, pupilRightMm = 3.5, skinTint = null, diaphoresis = 0, jaundice = 0, mottling = 0, unconscious = false, presentation = 'upright' }: BodyMeshProps) {
+export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guidedMode = false, nextGuidedStep = null, onBlockedClick, onBodyPoint, bodyInjuries, patientGender, surfaceOpacity = 1, activeFindingMorphs, breathRateRpm = 0, onSurfaceSampler, dressed = false, dressedActiveRegion = null, pupilLeftMm = 3.5, pupilRightMm = 3.5, skinTint = null, diaphoresis = 0, jaundice = 0, mottling = 0, urticaria = false, unconscious = false, presentation = 'upright' }: BodyMeshProps) {
   // The path is recomputed per render so a `caseData.patientInfo.gender`
   // change (e.g. user picks a different case) swaps the mesh without
   // remounting the parent. useGLTF caches by URL.
@@ -593,7 +602,6 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
   // bindings. A regular deep clone can detach limbs on some exported GLBs.
   const clonedScene = useMemo(() => {
     const clone = cloneSkeleton(scene) as THREE.Group;
-    const useSolidMaleBodyMaterial = modelPath.includes('patient-male');
     // Both active exam meshes are normalised to face the default camera (+Z).
     // Rotating the legacy patient here shows the posterior surface first while
     // landmarks still describe anterior anatomy, so keep the loaded orientation.
@@ -607,23 +615,9 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
         const mesh = child as THREE.Mesh;
         mesh.castShadow = true;
         mesh.receiveShadow = true;
-        const meshName = mesh.name.toLowerCase();
-        if (useSolidMaleBodyMaterial && meshName === 'human') {
-          // The compact MPFB male GLB carries a diffuse texture that can render
-          // patchily after compression in Safari/Chromium. Use a solid clinical
-          // skin material for the body mesh while preserving the separate eye
-          // mesh material, so the patient never appears as disconnected limbs.
-          mesh.material = new THREE.MeshStandardMaterial({
-            color: '#c58f72',
-            roughness: 0.68,
-            metalness: 0,
-            side: THREE.DoubleSide,
-          });
-        } else {
-          mesh.material = Array.isArray(mesh.material)
-            ? mesh.material.map(material => material.clone())
-            : mesh.material.clone();
-        }
+        mesh.material = Array.isArray(mesh.material)
+          ? mesh.material.map(material => material.clone())
+          : mesh.material.clone();
         // Stage-2 real eyes: keep their authored PBR values (sclera roughness
         // .35 etc.) and flag the MATERIALS skipRecolor so the live perfusion
         // tint never blues the sclera. The mesh-level flag stays unset so the
@@ -717,6 +711,14 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
           applyWoundsToTextures(bodyMesh as THREE.Mesh, bodyInjuries, injuryRegionTo3D);
         }
 
+        // Urticarial rash (anaphylaxis) — scattered wheals on face/chest/arms,
+        // painted into the same atlases as wounds so the blink/mottling twins
+        // inherit them. Constant + immediate, like wounds. See UrticariaLayer.
+        if (urticaria) {
+          clone.updateMatrixWorld(true);
+          applyUrticariaToTextures(bodyMesh as THREE.Mesh, true);
+        }
+
         // Invisible, generously-sized hit boxes over each arm. The rendered
         // forearm is only a few pixels wide at the overview zoom, so honest
         // clicks slip past it (or graze the torso and read as "abdomen"). Each
@@ -790,7 +792,7 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
     // scrubs + 2048² eye texture repaint). Opacity is applied live by the
     // effect below; the eyes are baked once (live pupil reading is the 2D panel).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scene, modelPath, bodyInjuries]); // bodyInjuries: stable per case (memoised upstream + per-case key)
+  }, [scene, modelPath, bodyInjuries, urticaria]); // bodyInjuries + urticaria: stable per case (memoised upstream + per-case key)
 
   // Region state is now communicated with anatomical overlays and landmarks,
   // not by recolouring the whole patient. Keep this callback for the pointer
@@ -814,6 +816,11 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
     // re-populate from the original scene so the primary path keeps
     // working. The fallback getRegionAtPoint() still works regardless.
     if (anchors.length === 0 && before > 0) updateSkeleton(clonedScene);
+    // Dev/capture-only handle so probes can inspect the mounted patient
+    // (skin atlas, morphs) — the r3f scene isn't reachable from the DOM.
+    if (import.meta.env.DEV && typeof window !== 'undefined') {
+      (window as unknown as Record<string, unknown>).__patientRoot = clonedScene;
+    }
   }, [clonedScene]);
 
   // Emit a surface-projection sampler built from the actual mounted mesh, so

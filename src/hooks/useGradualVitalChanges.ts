@@ -79,27 +79,29 @@ export function useGradualVitalChanges() {
       
       setProgress(easedProgress);
 
-      // Interpolate all vital signs
+      // Interpolate all vital signs. Optional channels (etco2, temp, GCS,
+      // glucose, pain) fall back to the LAST-KNOWN value when the target
+      // doesn't author them — never to undefined. Emitting undefined here
+      // wiped live capnography on every animation frame whenever a treatment
+      // target lacked etco2; the CPR EtCO2 timer re-added it 2s later, so the
+      // monitor's CO2 block mounted/unmounted rhythmically and the whole page
+      // quivered with it (the field-reported monitor quiver).
+      const optional = (start: number | undefined, target: number | undefined): number | undefined =>
+        start !== undefined && target !== undefined
+          ? lerp(start, target, easedProgress)
+          : target ?? start;
+      const gcsRaw = optional(config.startVitals.gcs, config.targetVitals.gcs);
+      const painRaw = optional(config.startVitals.painScore, config.targetVitals.painScore);
       const newVitals: VitalSigns = {
         bp: lerpBP(config.startVitals.bp, config.targetVitals.bp, easedProgress),
         pulse: Math.round(lerp(config.startVitals.pulse, config.targetVitals.pulse, easedProgress)),
         respiration: Math.round(lerp(config.startVitals.respiration, config.targetVitals.respiration, easedProgress)),
         spo2: Math.round(lerp(config.startVitals.spo2, config.targetVitals.spo2, easedProgress)),
-        temperature: config.startVitals.temperature !== undefined && config.targetVitals.temperature !== undefined
-          ? lerp(config.startVitals.temperature, config.targetVitals.temperature, easedProgress)
-          : config.targetVitals.temperature,
-        gcs: config.startVitals.gcs !== undefined && config.targetVitals.gcs !== undefined
-          ? Math.min(15, Math.max(3, Math.round(lerp(config.startVitals.gcs, config.targetVitals.gcs, easedProgress))))
-          : config.targetVitals.gcs !== undefined ? Math.min(15, Math.max(3, config.targetVitals.gcs)) : config.targetVitals.gcs,
-        bloodGlucose: config.startVitals.bloodGlucose !== undefined && config.targetVitals.bloodGlucose !== undefined
-          ? lerp(config.startVitals.bloodGlucose, config.targetVitals.bloodGlucose, easedProgress)
-          : config.targetVitals.bloodGlucose,
-        etco2: config.startVitals.etco2 !== undefined && config.targetVitals.etco2 !== undefined
-          ? lerp(config.startVitals.etco2, config.targetVitals.etco2, easedProgress)
-          : config.targetVitals.etco2,
-        painScore: config.startVitals.painScore !== undefined && config.targetVitals.painScore !== undefined
-          ? Math.round(lerp(config.startVitals.painScore, config.targetVitals.painScore, easedProgress))
-          : config.targetVitals.painScore,
+        temperature: optional(config.startVitals.temperature, config.targetVitals.temperature),
+        gcs: gcsRaw !== undefined ? Math.min(15, Math.max(3, Math.round(gcsRaw))) : undefined,
+        bloodGlucose: optional(config.startVitals.bloodGlucose, config.targetVitals.bloodGlucose),
+        etco2: optional(config.startVitals.etco2, config.targetVitals.etco2),
+        painScore: painRaw !== undefined ? Math.round(painRaw) : undefined,
         time: new Date().toISOString(),
       };
 
@@ -110,7 +112,16 @@ export function useGradualVitalChanges() {
         animationRef.current = requestAnimationFrame(animate);
       } else {
         setIsAnimating(false);
-        setCurrentVitals(config.targetVitals);
+        // Same preserve-last-known rule as per-frame: committing the raw
+        // target would drop any optional channel the target didn't author.
+        setCurrentVitals({
+          ...config.targetVitals,
+          temperature: config.targetVitals.temperature ?? config.startVitals.temperature,
+          gcs: config.targetVitals.gcs ?? config.startVitals.gcs,
+          bloodGlucose: config.targetVitals.bloodGlucose ?? config.startVitals.bloodGlucose,
+          etco2: config.targetVitals.etco2 ?? config.startVitals.etco2,
+          painScore: config.targetVitals.painScore ?? config.startVitals.painScore,
+        });
         config.onComplete?.();
       }
     };

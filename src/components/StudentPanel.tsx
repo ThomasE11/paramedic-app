@@ -5291,6 +5291,18 @@ export function StudentPanel({
                       isInArrest={patientState?.isInArrest ?? false}
                       vitals={currentVitals ?? undefined}
                       onPulse={runPulseCheck}
+                      onOpenTreatments={(bridge) => {
+                        // A3 finding→treatment bridge: open the right bag. Year
+                        // scaffolding — diploma/1st/2nd get the shelf pre-filtered
+                        // to the finding's treatment family; 3rd/4th get the full
+                        // bag (they should narrow it themselves).
+                        setActiveManagementTab(bridge.bag as ManagementTab);
+                        const scaffolded = selectedYear === 'diploma' || selectedYear === '1st-year' || selectedYear === '2nd-year';
+                        setMedSearch(scaffolded ? bridge.query : '');
+                        requestAnimationFrame(() => {
+                          document.getElementById('treatment-bag-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        });
+                      }}
                       treatmentBayMode
                     />
                   </Suspense>
@@ -5298,7 +5310,7 @@ export function StudentPanel({
               )}
 
               {/* ===== MANAGEMENT SUPPORT COLUMN (Treatment first, then assessment) ===== */}
-              <div className="tactical-assessment-rail order-3 space-y-4">
+              <div id="treatment-bag-panel" className="tactical-assessment-rail order-3 space-y-4">
                 <div className="tactical-loadout-dock tactical-management-options">
                   <TreatmentJumpBagPanel
                     currentVitals={currentVitals}

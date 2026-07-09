@@ -42,11 +42,11 @@ describe('shockIndex', () => {
 
 describe('deriveUnwellness — baseline', () => {
   it('a well-perfused patient shows no unwellness states', () => {
-    expect(derive(HEALTHY)).toEqual({ diaphoresis: 0, jaundice: 0, mottling: 0 });
+    expect(derive(HEALTHY)).toEqual({ diaphoresis: 0, jaundice: 0, mottling: 0, angioedema: 0, urticaria: 0 });
   });
 
   it('missing vitals and empty text derive an all-clear state', () => {
-    expect(derive(null, '')).toEqual({ diaphoresis: 0, jaundice: 0, mottling: 0 });
+    expect(derive(null, '')).toEqual({ diaphoresis: 0, jaundice: 0, mottling: 0, angioedema: 0, urticaria: 0 });
   });
 });
 
@@ -110,7 +110,7 @@ describe('deriveUnwellness — mottling hysteresis (late shock)', () => {
   });
 
   it('stays ON through the hysteresis band and only clears past recovery', () => {
-    const mottled = { diaphoresis: 0, jaundice: 0, mottling: 1 } as const;
+    const mottled = { diaphoresis: 0, jaundice: 0, mottling: 1, angioedema: 0, urticaria: 0 } as const;
     // Recovered into the band (SI 1.2, systolic 80) — still on (hysteresis).
     expect(derive({ bp: '80/50', pulse: 96 }, '', mottled).mottling).toBe(1);
     // Recovered past BOTH off-bands (SI < 1.1 AND systolic > 85) — clears.
@@ -118,7 +118,7 @@ describe('deriveUnwellness — mottling hysteresis (late shock)', () => {
   });
 
   it('does not flap on for a transient dip once previously clear', () => {
-    const clear = { diaphoresis: 0, jaundice: 0, mottling: 0 } as const;
+    const clear = { diaphoresis: 0, jaundice: 0, mottling: 0, angioedema: 0, urticaria: 0 } as const;
     // SI 1.2 with normal-ish systolic — below the ON threshold, stays off.
     expect(derive({ bp: '95/60', pulse: 114 }, '', clear).mottling).toBe(0);
   });
@@ -164,5 +164,69 @@ describe('deriveUnwellness — real case shapes', () => {
     const s = derive({ bp: '65/30', pulse: 140, respiration: 36, spo2: 82 }, 'drenched in sweat, cyanotic lips');
     expect(s.mottling).toBe(1); // systolic 65 <= 75 and SI ~2.15
     expect(s.diaphoresis).toBe(1);
+  });
+});
+
+describe('angioedema (anaphylaxis facial/lip swelling — finding_angioedema driver)', () => {
+  const derive = (caseText: string) =>
+    deriveUnwellness({ vitals: { bp: '110/70', pulse: 100, respiration: 20, spo2: 95 }, caseText });
+
+  it('fires on the classic anaphylaxis phrasings', () => {
+    expect(derive('marked angioedema of the face').angioedema).toBe(1);
+    expect(derive('angio-oedema with stridor').angioedema).toBe(1);
+    expect(derive('swollen lips and tongue, audible wheeze').angioedema).toBe(1);
+    expect(derive('significant lip swelling after eating prawns').angioedema).toBe(1);
+    expect(derive('facial swelling and widespread urticaria').angioedema).toBe(1);
+    expect(derive('tongue swollen, drooling').angioedema).toBe(1);
+  });
+
+  it('stays off for unrelated presentations', () => {
+    expect(derive('crushing central chest pain, diaphoretic').angioedema).toBe(0);
+    expect(derive('ankle swelling after a fall').angioedema).toBe(0);
+    expect(derive('').angioedema).toBe(0);
+  });
+
+  it('is constant like jaundice — vitals do not drive it', () => {
+    const s = deriveUnwellness({ vitals: { bp: '60/30', pulse: 150 }, caseText: 'no facial features of note' });
+    expect(s.angioedema).toBe(0);
+  });
+});
+
+describe('angioedema — real authored case (end-to-end derivation guard)', () => {
+  it('y1-015 (anaphylaxis, prawns) fires angioedema from its shipped text', async () => {
+    const { firstYearCases } = await import('@/data/firstYearCases');
+    const c = firstYearCases.find(x => x.id === 'y1-015');
+    expect(c).toBeDefined();
+    const text = collectUnwellnessText(c as never);
+    const s = deriveUnwellness({ vitals: c!.vitalSignsProgression?.initial, caseText: text });
+    expect(s.angioedema).toBe(1); // "swollen lips and eyes" / airway "Swollen lips and tongue"
+  });
+});
+
+describe('urticaria (anaphylaxis rash — UrticariaLayer driver)', () => {
+  const derive = (caseText: string) =>
+    deriveUnwellness({ vitals: { bp: '110/70', pulse: 100, respiration: 20, spo2: 95 }, caseText });
+
+  it('fires on urticarial phrasings', () => {
+    expect(derive('widespread urticaria on the trunk').urticaria).toBe(1);
+    expect(derive('urticarial rash and facial swelling').urticaria).toBe(1);
+    expect(derive('covered in hives after the sting').urticaria).toBe(1);
+    expect(derive('raised red welts on arms and torso').urticaria).toBe(1);
+    expect(derive('multiple wheals across the chest').urticaria).toBe(1);
+  });
+
+  it('stays OFF for non-urticarial rashes (conservative — no false wheals)', () => {
+    expect(derive('petechial rash, non-blanching').urticaria).toBe(0);
+    expect(derive('maculopapular rash on the trunk').urticaria).toBe(0);
+    expect(derive('nappy rash noted').urticaria).toBe(0);
+    expect(derive('crushing chest pain, diaphoretic').urticaria).toBe(0);
+    expect(derive('').urticaria).toBe(0);
+  });
+
+  it('real case y1-015 (prawns anaphylaxis) fires urticaria from shipped text', async () => {
+    const { firstYearCases } = await import('@/data/firstYearCases');
+    const c = firstYearCases.find(x => x.id === 'y1-015');
+    const text = collectUnwellnessText(c as never);
+    expect(deriveUnwellness({ vitals: c!.vitalSignsProgression?.initial, caseText: text }).urticaria).toBe(1);
   });
 });
