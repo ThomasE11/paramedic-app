@@ -46,6 +46,11 @@ export interface UnwellnessState {
    *  finding_angioedema morph target. Text-driven and constant for the case,
    *  like jaundice — an "immediate visual" per the realism directive. */
   angioedema: number;
+  /** Anaphylaxis urticarial rash, 0 (none) .. 1 (present). Drives the
+   *  UrticariaLayer wheal decals on face/chest/arms. Text-driven and constant,
+   *  like angioedema. Conservative match (urticaria/hives/wheal/welt) so a
+   *  petechial/maculopapular rash never triggers wheals. */
+  urticaria: number;
 }
 
 export interface UnwellnessInputs {
@@ -80,6 +85,7 @@ const MOTTLE_SYS_OFF = 85; // must recover ABOVE this to clear
 const DIAPHORESIS_TEXT = /diaphore|sweat|clammy|drenched|perspir/i;
 const JAUNDICE_TEXT = /jaundice|jaundiced|icteric|icterus|yellow scler/i;
 const ANGIOEDEMA_TEXT = /angio-?oedema|angioedema|swollen (lips?|face|tongue)|(lip|facial|tongue) swelling|(lips?|face|tongue) swollen/i;
+const URTICARIA_TEXT = /urticaria|urticarial|hives|wheals?|welts?/i;
 
 function clamp01(n: number): number {
   return n < 0 ? 0 : n > 1 ? 1 : n;
@@ -153,6 +159,9 @@ export function deriveUnwellness(inputs: UnwellnessInputs): UnwellnessState {
   // ---- Angioedema (text-driven, constant) --------------------------------
   const angioedema = ANGIOEDEMA_TEXT.test(text) ? 1 : 0;
 
+  // ---- Urticaria (text-driven, constant) ---------------------------------
+  const urticaria = URTICARIA_TEXT.test(text) ? 1 : 0;
+
   // ---- Mottling (latched with hysteresis) -------------------------------
   const wasMottled = (previous?.mottling ?? 0) > 0.5;
   const systolic = parseSystolic(vitals?.bp);
@@ -178,7 +187,7 @@ export function deriveUnwellness(inputs: UnwellnessInputs): UnwellnessState {
     mottling = severeOn ? 1 : 0;
   }
 
-  return { diaphoresis, jaundice, mottling, angioedema };
+  return { diaphoresis, jaundice, mottling, angioedema, urticaria };
 }
 
 /**

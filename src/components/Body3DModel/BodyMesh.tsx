@@ -19,6 +19,7 @@ import { buildScrubs, CLOTHING_PARTING } from './ClothingLayer';
 import { paintEyesOnTexture } from './EyesLayer';
 import { buildMottledTextures } from './MottlingLayer';
 import { applyWoundsToTextures } from './WoundLayer';
+import { applyUrticariaToTextures } from './UrticariaLayer';
 import { injuryRegionTo3D, type BodyInjury } from '@/lib/injuryMap';
 import { LifeSigns } from './LifeSigns';
 import { setBreathClock } from '@/lib/breathClock';
@@ -118,6 +119,10 @@ interface BodyMeshProps {
    * per-frame upload.
    */
   mottling?: number;
+  /** Urticarial rash (anaphylaxis) — when true, wheal decals are painted onto
+   *  face/chest/arms in the atlas once at clone-build (constant, like wounds).
+   *  UrticariaLayer. */
+  urticaria?: boolean;
   /** GCS <= 8 / AVPU 'U' / arrest — suppresses the procedural head sway and
    *  keeps the eyelids closed (see LifeSigns). */
   unconscious?: boolean;
@@ -519,7 +524,7 @@ function buildSurfaceSampler(root: THREE.Object3D | null): SurfaceSampler | null
   };
 }
 
-export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guidedMode = false, nextGuidedStep = null, onBlockedClick, onBodyPoint, bodyInjuries, patientGender, surfaceOpacity = 1, activeFindingMorphs, breathRateRpm = 0, onSurfaceSampler, dressed = false, dressedActiveRegion = null, pupilLeftMm = 3.5, pupilRightMm = 3.5, skinTint = null, diaphoresis = 0, jaundice = 0, mottling = 0, unconscious = false }: BodyMeshProps) {
+export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guidedMode = false, nextGuidedStep = null, onBlockedClick, onBodyPoint, bodyInjuries, patientGender, surfaceOpacity = 1, activeFindingMorphs, breathRateRpm = 0, onSurfaceSampler, dressed = false, dressedActiveRegion = null, pupilLeftMm = 3.5, pupilRightMm = 3.5, skinTint = null, diaphoresis = 0, jaundice = 0, mottling = 0, urticaria = false, unconscious = false }: BodyMeshProps) {
   // The path is recomputed per render so a `caseData.patientInfo.gender`
   // change (e.g. user picks a different case) swaps the mesh without
   // remounting the parent. useGLTF caches by URL.
@@ -682,6 +687,14 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
           applyWoundsToTextures(bodyMesh as THREE.Mesh, bodyInjuries, injuryRegionTo3D);
         }
 
+        // Urticarial rash (anaphylaxis) — scattered wheals on face/chest/arms,
+        // painted into the same atlases as wounds so the blink/mottling twins
+        // inherit them. Constant + immediate, like wounds. See UrticariaLayer.
+        if (urticaria) {
+          clone.updateMatrixWorld(true);
+          applyUrticariaToTextures(bodyMesh as THREE.Mesh, true);
+        }
+
         // Invisible, generously-sized hit boxes over each arm. The rendered
         // forearm is only a few pixels wide at the overview zoom, so honest
         // clicks slip past it (or graze the torso and read as "abdomen"). Each
@@ -755,7 +768,7 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
     // scrubs + 2048² eye texture repaint). Opacity is applied live by the
     // effect below; the eyes are baked once (live pupil reading is the 2D panel).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scene, modelPath, bodyInjuries]); // bodyInjuries: stable per case (memoised upstream + per-case key)
+  }, [scene, modelPath, bodyInjuries, urticaria]); // bodyInjuries + urticaria: stable per case (memoised upstream + per-case key)
 
   // Region state is now communicated with anatomical overlays and landmarks,
   // not by recolouring the whole patient. Keep this callback for the pointer
@@ -779,6 +792,11 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
     // re-populate from the original scene so the primary path keeps
     // working. The fallback getRegionAtPoint() still works regardless.
     if (anchors.length === 0 && before > 0) updateSkeleton(clonedScene);
+    // Dev/capture-only handle so probes can inspect the mounted patient
+    // (skin atlas, morphs) — the r3f scene isn't reachable from the DOM.
+    if (import.meta.env.DEV && typeof window !== 'undefined') {
+      (window as unknown as Record<string, unknown>).__patientRoot = clonedScene;
+    }
   }, [clonedScene]);
 
   // Emit a surface-projection sampler built from the actual mounted mesh, so
