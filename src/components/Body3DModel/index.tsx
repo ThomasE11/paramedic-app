@@ -4782,64 +4782,66 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 presentation={markerPresentation}
               />
 
+              {/* Action ring — renders in ANY presentation (upright exam OR the
+                  treatment-bay overview): clicking the patient to get the region's
+                  assessment verbs must always work. Html-anchored at the click
+                  point (A2), so it follows either camera. Verb click fires the
+                  region's primary action; ✕ or closing the region dismisses. */}
+              {ring && ringArms.length > 0 && (
+                <Html position={ring.point} center distanceFactor={2.4} zIndexRange={[110, 95]}>
+                  <div className="pointer-events-auto relative" style={{ width: 0, height: 0 }}>
+                    {ringArms.map((arm, i) => (
+                      <button
+                        key={arm.technique}
+                        type="button"
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onPointerUp={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setRing(null);
+                          if (arm.actionId.startsWith('pulse-') && onPulse) onPulse(arm.actionId);
+                          else handleExamAction(arm.actionId);
+                        }}
+                        className="absolute -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full border border-cyan-300/60 bg-slate-900/95 px-2.5 py-1 text-[10px] font-semibold text-cyan-50 shadow-lg backdrop-blur-sm transition-transform duration-100 hover:scale-110 hover:bg-cyan-700/95"
+                        style={{ left: ringOffsets[i]?.x ?? 0, top: ringOffsets[i]?.y ?? 0 }}
+                      >
+                        {arm.label}
+                      </button>
+                    ))}
+                    {ringTreatBridge && (
+                      <button
+                        type="button"
+                        title={ringTreatBridge.reason}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onPointerUp={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setRing(null);
+                          onOpenTreatments?.(ringTreatBridge);
+                        }}
+                        className="absolute -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full border border-amber-300/70 bg-amber-600/95 px-2.5 py-1 text-[10px] font-bold text-amber-50 shadow-lg backdrop-blur-sm transition-transform duration-100 hover:scale-110 hover:bg-amber-500/95"
+                        style={{ left: ringOffsets[ringArms.length]?.x ?? 0, top: ringOffsets[ringArms.length]?.y ?? 0 }}
+                      >
+                        Treat
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      aria-label="Dismiss actions"
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onPointerUp={(e) => e.stopPropagation()}
+                      onClick={(e) => { e.stopPropagation(); setRing(null); }}
+                      className="absolute flex h-4 w-4 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-slate-950/85 text-[8px] leading-none text-slate-300 shadow hover:text-white"
+                      style={{ left: 0, top: 0 }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </Html>
+              )}
+
               {!useTreatmentBayPresentation && (
                 <>
-                  {/* Action ring — the region's assessment verbs at the exact
-                      click point (A2). Verb click fires the region's primary
-                      action of that technique; ✕ or closing the region dismisses. */}
-                  {ring && ringArms.length > 0 && (
-                    <Html position={ring.point} center distanceFactor={2.4} zIndexRange={[110, 95]}>
-                      <div className="pointer-events-auto relative" style={{ width: 0, height: 0 }}>
-                        {ringArms.map((arm, i) => (
-                          <button
-                            key={arm.technique}
-                            type="button"
-                            onPointerDown={(e) => e.stopPropagation()}
-                            onPointerUp={(e) => e.stopPropagation()}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setRing(null);
-                              if (arm.actionId.startsWith('pulse-') && onPulse) onPulse(arm.actionId);
-                              else handleExamAction(arm.actionId);
-                            }}
-                            className="absolute -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full border border-cyan-300/60 bg-slate-900/95 px-2.5 py-1 text-[10px] font-semibold text-cyan-50 shadow-lg backdrop-blur-sm transition-transform duration-100 hover:scale-110 hover:bg-cyan-700/95"
-                            style={{ left: ringOffsets[i]?.x ?? 0, top: ringOffsets[i]?.y ?? 0 }}
-                          >
-                            {arm.label}
-                          </button>
-                        ))}
-                        {ringTreatBridge && (
-                          <button
-                            type="button"
-                            title={ringTreatBridge.reason}
-                            onPointerDown={(e) => e.stopPropagation()}
-                            onPointerUp={(e) => e.stopPropagation()}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setRing(null);
-                              onOpenTreatments?.(ringTreatBridge);
-                            }}
-                            className="absolute -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full border border-amber-300/70 bg-amber-600/95 px-2.5 py-1 text-[10px] font-bold text-amber-50 shadow-lg backdrop-blur-sm transition-transform duration-100 hover:scale-110 hover:bg-amber-500/95"
-                            style={{ left: ringOffsets[ringArms.length]?.x ?? 0, top: ringOffsets[ringArms.length]?.y ?? 0 }}
-                          >
-                            Treat
-                          </button>
-                        )}
-                        <button
-                          type="button"
-                          aria-label="Dismiss actions"
-                          onPointerDown={(e) => e.stopPropagation()}
-                          onPointerUp={(e) => e.stopPropagation()}
-                          onClick={(e) => { e.stopPropagation(); setRing(null); }}
-                          className="absolute flex h-4 w-4 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-slate-950/85 text-[8px] leading-none text-slate-300 shadow hover:text-white"
-                          style={{ left: 0, top: 0 }}
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    </Html>
-                  )}
-
                   <CaseRealismMarkers
                     cues={visibleRealismCues}
                     assessedRegions={assessedRegions}
