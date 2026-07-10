@@ -3992,12 +3992,41 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
 
   // The lift: when the patient is moved between the floor and the stretcher,
   // glide the camera to the new pose's framing (the body itself eases via the
-  // BodyMesh transform lerp). Only while the bay overview is showing.
+  // BodyMesh transform lerp). Only while the bay overview is showing. Skips
+  // the mount run — arrival framing belongs to the walk-in below, and an
+  // extra mount animation would cancel it (shared animation slot).
+  const liftMountedRef = useRef(false);
   useEffect(() => {
+    if (!liftMountedRef.current) { liftMountedRef.current = true; return; }
     if (!treatmentBayOverviewEnabled || activeRegion || !controlsRef.current) return;
     animateCamera(controlsRef.current, overviewCameraFocus.pos, overviewCameraFocus.target, 750);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [movedToStretcher]);
+
+  // Walk-in arrival: the crew ENTERS the scene. Once per case, the camera
+  // starts at the doorway — same bearing as the working position, pulled
+  // back, standing eye height — and dollies in to the bedside over ~2.2 s.
+  // OrbitControls stays live throughout, so a student who grabs the scene
+  // mid-walk simply takes over from wherever the walk has reached.
+  const walkedInCaseRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (walkedInCaseRef.current === caseData.id) return;
+    let raf = 0;
+    const tryStart = () => {
+      const controls = controlsRef.current;
+      if (!controls) { raf = requestAnimationFrame(tryStart); return; }
+      walkedInCaseRef.current = caseData.id;
+      const [px, , pz] = overviewCameraFocus.pos;
+      const [tx, ty, tz] = overviewCameraFocus.target;
+      controls.object.position.set(tx + (px - tx) * 2.6, 1.55, tz + (pz - tz) * 2.6);
+      controls.target.set(tx, ty + 0.15, tz);
+      controls.update();
+      animateCamera(controls, overviewCameraFocus.pos, overviewCameraFocus.target, 2200);
+    };
+    tryStart();
+    return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [caseData.id]);
 
   // Esc deselects the focused region — alongside the in-frame "Full body"
   // pill and click-on-empty-space (onPointerMissed on the Canvas).
