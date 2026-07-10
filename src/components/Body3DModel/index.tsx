@@ -8,7 +8,7 @@
  * the patient area so the student stays oriented to the anatomy.
  */
 
-import { useRef, useCallback, useState, useMemo, useEffect, useSyncExternalStore, Suspense } from 'react';
+import { useRef, useCallback, useState, useMemo, useEffect, Suspense } from 'react';
 import type { CSSProperties, ElementRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, ContactShadows, Environment, Html } from '@react-three/drei';
@@ -39,6 +39,9 @@ import { deriveRingArms, ringArmOffsets } from '@/lib/ringMenu';
 import { bridgeForFinding, type TreatBridge } from '@/lib/findingTreatmentBridge';
 import { hashInjury } from './WoundLayer';
 import type { PatientVisualState, PatientWoundOverlay } from '@/lib/patientVisualState';
+import { classifySceneEnvironment } from '@/lib/sceneEnvironment';
+import { SceneEnvironment } from './SceneEnvironment';
+import { SceneKit } from './SceneKit';
 import {
   deriveAppliedTreatmentRealismCues,
   deriveCaseRealismProfile,
@@ -308,105 +311,10 @@ const EXAM_LANDMARKS: ExamLandmark[] = [
   { id: 'umbilicus-detail', region: 'abdomen', label: 'Umbilicus', sublabel: 'distension / bruising', position: [0, 1.035, 0.255], level: 'detail', actionId: 'abd-inspect', tone: 'abdomen' },
 ];
 
-/** Follow the app's class-based theme so the 3D backdrop matches the UI card. */
-function useIsDarkTheme(): boolean {
-  return useSyncExternalStore(
-    (onChange) => {
-      const observer = new MutationObserver(onChange);
-      observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-      return () => observer.disconnect();
-    },
-    () => document.documentElement.classList.contains('dark'),
-  );
-}
 
-function PatientSceneEnvironment({ showBed = true }: { showBed?: boolean }) {
-  // The treatment bay should read like an ambulance workspace, not a blank
-  // mannequin box. Keep this as lightweight geometry instead of a bitmap so
-  // the exam remains interactive, camera-safe, and local to the 3D scene.
-  // showBed=false when the patient is found on the FLOOR (no raised stretcher).
-  const isDark = useIsDarkTheme();
-  const wall = isDark ? '#172231' : '#273847';
-  const wallDark = isDark ? '#0a1320' : '#13202d';
-  const floor = isDark ? '#1f2b38' : '#263542';
-  const bed = isDark ? '#d8e1e8' : '#d9e2e8';
-  const rail = isDark ? '#94a3b8' : '#8fa1b1';
-  const cyan = '#22d3ee';
-  return (
-    <group>
-      <mesh position={[0, 0.92, -0.92]} raycast={() => null}>
-        <boxGeometry args={[3.15, 2.35, 0.04]} />
-        <meshStandardMaterial color={wall} roughness={0.86} metalness={0.02} transparent opacity={0.92} />
-      </mesh>
-
-      <mesh position={[0, -0.065, 0.16]} rotation={[-Math.PI / 2, 0, 0]} raycast={() => null}>
-        <boxGeometry args={[3.3, 3.7, 0.035]} />
-        <meshStandardMaterial color={floor} roughness={0.78} metalness={0.04} transparent opacity={0.92} />
-      </mesh>
-      <mesh position={[0, 2.12, -0.08]} rotation={[Math.PI / 2, 0, 0]} raycast={() => null}>
-        <boxGeometry args={[3.2, 3.25, 0.035]} />
-        <meshStandardMaterial color={wallDark} roughness={0.72} metalness={0.04} transparent opacity={0.58} />
-      </mesh>
-
-      {showBed && (
-        <>
-          <mesh position={[0, 0.45, 0.02]} rotation={[-Math.PI / 2, 0, 0]} raycast={() => null}>
-            <boxGeometry args={[1.18, 2.38, 0.08]} />
-            <meshStandardMaterial color={bed} roughness={0.74} metalness={0.02} transparent opacity={0.62} />
-          </mesh>
-          <mesh position={[0, 0.45, 0.06]} rotation={[-Math.PI / 2, 0, 0]} raycast={() => null}>
-            <boxGeometry args={[1.0, 2.14, 0.03]} />
-            <meshStandardMaterial color={isDark ? '#eff6ff' : '#f8fafc'} roughness={0.9} transparent opacity={0.46} />
-          </mesh>
-
-          {[-0.66, 0.66].map(x => (
-            <mesh key={`rail-${x}`} position={[x, 0.49, 0.02]} rotation={[Math.PI / 2, 0, 0]} raycast={() => null}>
-              <cylinderGeometry args={[0.012, 0.012, 2.42, 14]} />
-              <meshStandardMaterial color={rail} roughness={0.36} metalness={0.55} transparent opacity={0.46} />
-            </mesh>
-          ))}
-        </>
-      )}
-
-      {[-1.42, 1.42].map(x => (
-        <group key={`cabinet-${x}`} position={[x, 0.93, -0.35]}>
-          <mesh raycast={() => null}>
-            <boxGeometry args={[0.34, 1.42, 0.26]} />
-            <meshStandardMaterial color={wallDark} roughness={0.62} metalness={0.08} transparent opacity={0.74} />
-          </mesh>
-          {[0.42, 0.06, -0.30].map(y => (
-            <mesh key={y} position={[0, y, 0.135]} raycast={() => null}>
-              <boxGeometry args={[0.25, 0.18, 0.02]} />
-              <meshStandardMaterial color={wall} roughness={0.42} metalness={0.1} transparent opacity={0.84} />
-            </mesh>
-          ))}
-        </group>
-      ))}
-
-      <mesh position={[0.82, 1.38, -0.885]} raycast={() => null}>
-        <boxGeometry args={[0.42, 0.26, 0.025]} />
-        <meshStandardMaterial color="#020617" roughness={0.45} metalness={0.12} emissive={cyan} emissiveIntensity={0.18} />
-      </mesh>
-      {[-0.78, 0, 0.78].map(x => (
-        <mesh key={`light-${x}`} position={[x, 1.98, -0.32]} rotation={[Math.PI / 2, 0, 0]} raycast={() => null}>
-          <boxGeometry args={[0.42, 0.07, 0.02]} />
-          <meshStandardMaterial color="#dbeafe" roughness={0.22} emissive="#bae6fd" emissiveIntensity={0.55} transparent opacity={0.72} />
-        </mesh>
-      ))}
-
-      {[[-1.04, 0.95], [1.04, 0.95], [0, 1.82], [0, 0.12]].map(([x, y], index) => (
-        <mesh key={`door-frame-${index}`} position={[x, y, -0.86]} raycast={() => null}>
-          <boxGeometry args={index < 2 ? [0.035, 1.7, 0.035] : [2.08, 0.035, 0.035]} />
-          <meshStandardMaterial color={rail} roughness={0.38} metalness={0.32} transparent opacity={0.48} />
-        </mesh>
-      ))}
-
-      <pointLight position={[0, 1.55, 0.42]} intensity={0.55} color={cyan} distance={3.3} decay={2} />
-      <pointLight position={[-0.9, 0.72, 0.75]} intensity={0.18} color="#38bdf8" distance={2.2} decay={2} />
-      <pointLight position={[0.9, 0.72, 0.75]} intensity={0.18} color="#22c55e" distance={2.2} decay={2} />
-    </group>
-  );
-}
+// The treatment scene now renders the PLACE the patient was found — a villa
+// living room, an office, the roadside — derived from the case's own scene
+// text. See lib/sceneEnvironment (pure classifier) + SceneEnvironment (sets).
 
 function SceneCable({
   points,
@@ -3930,6 +3838,8 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   // mechanic expressed on the mesh: no JVD bulge until you examine the neck.
   // Case injuries drive the finding morphs AND the wound skin decals.
   const caseInjuries = useMemo(() => inferInjuries(caseData), [caseData]);
+  // Where was this patient FOUND? The set dressing follows the case.
+  const scenePreset = useMemo(() => classifySceneEnvironment(caseData), [caseData]);
   // patientVisualState is a fresh object on every realism-director update
   // (each vitals tick), but the wound set it derives almost never changes.
   // Key the memo on CONTENT, not object identity — bodyInjuries feeds the
@@ -4786,7 +4696,14 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
               <directionalLight position={[4, 8, 5]} intensity={0.95} color="#fff2e6" />
               <directionalLight position={[0, 4, -5]} intensity={0.5} color="#ffffff" />
 
-              <PatientSceneEnvironment showBed={!onFloorPose} />
+              <SceneEnvironment preset={scenePreset} showBed={!onFloorPose} />
+              {/* The kit you carried in — bag, monitor, O2 on the crew side.
+                  Monitor lights once a monitoring treatment is applied. */}
+              <SceneKit
+                monitorOn={appliedTreatmentIds.some(id =>
+                  ['ecg', 'monitor', 'defib', 'pads', 'spo2'].some(f => id.toLowerCase().includes(f)),
+                )}
+              />
 
               <BodyMesh
                 assessedRegions={assessedRegions}
