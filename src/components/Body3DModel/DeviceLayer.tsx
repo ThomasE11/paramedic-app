@@ -25,6 +25,11 @@ interface DeviceLayerProps {
   oxygenMode: DeviceOxygenMode;
   hasIvAccess: boolean;
   hasFluids: boolean;
+  /** Defib pads adhered to the chest (anterior-lateral) with cables. */
+  hasDefibPads?: boolean;
+  /** BVM held over the face — the self-inflating bag squeezes with the
+   *  breath clock so ventilations visibly drive the chest. */
+  bvmActive?: boolean;
   sampler: SurfaceSampler | null;
 }
 
@@ -84,6 +89,41 @@ function ReservoirBag({ position }: { position: [number, number, number] }) {
   );
 }
 
+const PAD_MAT = new THREE.MeshStandardMaterial({ color: '#f4f6f7', roughness: 0.55, metalness: 0 });
+const PAD_EDGE_MAT = new THREE.MeshStandardMaterial({ color: '#e8641b', roughness: 0.6, metalness: 0 });
+const CABLE_MAT = new THREE.MeshStandardMaterial({ color: '#23272b', roughness: 0.7, metalness: 0 });
+const BAG_MAT = new THREE.MeshStandardMaterial({ color: '#2e7dd1', transparent: true, opacity: 0.85, roughness: 0.45, metalness: 0 });
+
+/** One adhesive defib pad: gel face + orange border, flat on the skin. */
+function DefibPad({ position, rotationZ }: { position: [number, number, number]; rotationZ: number }) {
+  return (
+    <group position={position} rotation={[0, 0, rotationZ]}>
+      <mesh raycast={NO_RAYCAST} material={PAD_EDGE_MAT}>
+        <boxGeometry args={[0.085, 0.115, 0.006]} />
+      </mesh>
+      <mesh position={[0, 0, 0.0035]} raycast={NO_RAYCAST} material={PAD_MAT}>
+        <boxGeometry args={[0.07, 0.1, 0.004]} />
+      </mesh>
+    </group>
+  );
+}
+
+/** BVM self-inflating bag — squeezes on each delivered breath. */
+function BvmBag({ position }: { position: [number, number, number] }) {
+  const ref = useRef<THREE.Mesh>(null);
+  useFrame(() => {
+    const m = ref.current;
+    if (!m) return;
+    const squeeze = Math.sin(getBreathPhase01() * Math.PI); // 0→1→0 per breath
+    m.scale.set(1 - squeeze * 0.28, 1, 1 - squeeze * 0.28);
+  });
+  return (
+    <mesh ref={ref} position={position} rotation={[Math.PI * 0.42, 0, 0]} raycast={NO_RAYCAST} material={BAG_MAT}>
+      <capsuleGeometry args={[0.045, 0.09, 8, 16]} />
+    </mesh>
+  );
+}
+
 /** Rising, fading mist puffs above the nebulizer mask. */
 function NebulizerMist({ origin }: { origin: [number, number, number] }) {
   const group = useRef<THREE.Group>(null);
@@ -116,14 +156,14 @@ function NebulizerMist({ origin }: { origin: [number, number, number] }) {
   );
 }
 
-export function DeviceLayer({ oxygenMode, hasIvAccess, hasFluids, sampler }: DeviceLayerProps) {
+export function DeviceLayer({ oxygenMode, hasIvAccess, hasFluids, hasDefibPads = false, bvmActive = false, sampler }: DeviceLayerProps) {
   // Anchor helper: project an authored (x, y) onto the real patient surface.
   const anchor = (x: number, y: number, zFallback: number, forward = 0): [number, number, number] => {
     const p: [number, number, number] = sampler ? sampler(x, y) : [x, y, zFallback];
     return [p[0], p[1], p[2] + forward];
   };
 
-  if (!oxygenMode && !hasIvAccess) return null;
+  if (!oxygenMode && !hasIvAccess && !hasDefibPads && !bvmActive) return null;
 
   // Face anchors (authored frame: feet 0, head ≈1.8 — same for both models
   // via the sampler's self-calibration).
@@ -148,6 +188,56 @@ export function DeviceLayer({ oxygenMode, hasIvAccess, hasFluids, sampler }: Dev
         }
       }}
     >
+      {/* ---- Defib pads: anterior-lateral, cables running off the left ---- */}
+      {hasDefibPads && (
+        <>
+          {/* Right infraclavicular (app frame: +X is patient's LEFT) */}
+          <DefibPad position={anchor(-0.095, 1.335, 0.2, 0.008)} rotationZ={0.25} />
+          {/* Left lateral, below the pectoral */}
+          <DefibPad position={anchor(0.125, 1.14, 0.2, 0.008)} rotationZ={-0.35} />
+          <Tube
+            points={[
+              [anchor(-0.095, 1.335, 0.2, 0.01)[0], anchor(-0.095, 1.335, 0.2, 0.01)[1] - 0.05, anchor(-0.095, 1.335, 0.2, 0.01)[2]],
+              [0.14, 1.2, 0.14],
+              [0.32, 1.05, 0.05],
+              [0.42, 0.95, -0.02],
+            ]}
+            radius={0.0035}
+            material={CABLE_MAT}
+          />
+          <Tube
+            points={[
+              [anchor(0.125, 1.14, 0.2, 0.01)[0] + 0.04, anchor(0.125, 1.14, 0.2, 0.01)[1] - 0.03, anchor(0.125, 1.14, 0.2, 0.01)[2]],
+              [0.3, 1.06, 0.1],
+              [0.42, 0.95, -0.02],
+            ]}
+            radius={0.0035}
+            material={CABLE_MAT}
+          />
+        </>
+      )}
+
+      {/* ---- BVM: mask sealed over the face, bag squeezing with the clock -- */}
+      {bvmActive && (
+        <group>
+          <group position={maskPos}>
+            <mesh
+              raycast={NO_RAYCAST}
+              material={MASK_MAT}
+              rotation={[Math.PI * 0.52, 0, 0]}
+              scale={[0.05, 0.046, 0.06]}
+            >
+              <sphereGeometry args={[1, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.52]} />
+            </mesh>
+            {/* elbow connector between mask and bag */}
+            <mesh position={[0, 0.02, 0.045]} rotation={[Math.PI * 0.42, 0, 0]} raycast={NO_RAYCAST} material={SOFT_PLASTIC_MAT}>
+              <cylinderGeometry args={[0.014, 0.014, 0.045, 12]} />
+            </mesh>
+          </group>
+          <BvmBag position={[maskPos[0], maskPos[1] + 0.07, maskPos[2] + 0.1]} />
+        </group>
+      )}
+
       {/* ---- Oxygen family ------------------------------------------------ */}
       {maskIsShell && (
         <group position={maskPos}>

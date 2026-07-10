@@ -986,16 +986,7 @@ function OxygenDeviceGraphic({ equipment }: { equipment: OxygenEquipmentVisual }
   );
 }
 
-function DefibPadsGraphic() {
-  return (
-    <div className="pointer-events-none relative h-28 w-32 animate-in fade-in zoom-in-75 duration-300">
-      <img src={TREATMENT_ASSET_PATHS.defibPads} alt="" className="absolute inset-0 h-full w-full object-contain drop-shadow-[0_12px_14px_rgba(136,19,55,0.28)]" draggable={false} />
-      <div className="absolute left-[54px] top-[22px] rounded-full border border-rose-200/45 bg-rose-950/60 px-2 py-0.5 text-[8px] font-bold uppercase tracking-[0.12em] text-rose-50 backdrop-blur">
-        Pads on
-      </div>
-    </div>
-  );
-}
+// DefibPadsGraphic (2D card) retired — pads are 3D meshes in DeviceLayer now.
 
 function LucasGraphic() {
   return (
@@ -1071,9 +1062,13 @@ function TreatmentEquipmentOverlay({
           ? equipment.oxygen.mode : null) as DeviceOxygenMode}
         hasIvAccess={equipment.hasIvAccess}
         hasFluids={equipment.hasFluids}
+        hasDefibPads={equipment.hasDefibPads}
+        bvmActive={equipment.oxygen?.mode === 'bvm'}
         sampler={sampler}
       />
-      {equipment.oxygen && (equipment.oxygen.mode === 'bvm' || equipment.oxygen.mode === 'ventilator') && (
+      {/* BVM + defib pads are now real 3D meshes in DeviceLayer; only the
+          ventilator keeps its 2D card until it gets a 3D unit. */}
+      {equipment.oxygen && equipment.oxygen.mode === 'ventilator' && (
         <MarkerHtml position={anchor(0, 1.565, 0.215)} distanceFactor={2.45} zIndexRange={[62, 0]} interactive={false} presentation={presentation}>
           <OxygenDeviceGraphic equipment={equipment.oxygen} />
         </MarkerHtml>
@@ -1091,12 +1086,7 @@ function TreatmentEquipmentOverlay({
         </MarkerHtml>
       )}
 
-      {/* IV cannula + fluids now render as 3D meshes in DeviceLayer (above). */}
-      {equipment.hasDefibPads && (
-        <MarkerHtml position={anchor(0.01, 1.24, 0.218)} distanceFactor={2.4} zIndexRange={[68, 0]} interactive={false} presentation={presentation}>
-          <DefibPadsGraphic />
-        </MarkerHtml>
-      )}
+      {/* IV cannula + fluids + defib pads now render as 3D meshes in DeviceLayer (above). */}
 
       {equipment.hasLucas && (
         <MarkerHtml position={anchor(0, 1.19, 0.22)} distanceFactor={2.55} zIndexRange={[69, 0]} interactive={false} presentation={presentation}>
