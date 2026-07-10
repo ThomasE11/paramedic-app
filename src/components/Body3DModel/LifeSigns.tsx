@@ -45,8 +45,8 @@ interface LifeSignsProps {
    *  muscle use), synced to the shared breath clock so it moves WITH the
    *  chest-rise morph BodyMesh is driving. */
   breathingEffort?: number;
-  /** Fine 9 Hz shiver (hypoglycaemia, sympathomimetic). Conscious only —
-   *  an unconscious patient stays still unless seizing. */
+  /** Fine 9 Hz shiver (hypoglycaemia, rigors, post-ictal myoclonus). Not
+   *  gated on consciousness — obtunded patients tremble too. */
   tremor?: boolean;
   /** Clonic jerking ~3 Hz. OVERRIDES unconscious stillness — a seizing
    *  patient is unconscious AND moving; the motion is the finding. */
@@ -119,7 +119,10 @@ export function LifeSigns({ scene, unconscious, breathingEffort = 0, tremor = fa
     // every ease reaches 0 the writes below are again the exact base pose.
     const k = Math.min(1, delta * 1.5);
     a.effortEase += ((unconscious ? 0 : breathingEffort) - a.effortEase) * k;
-    a.tremorEase += ((tremor && !unconscious ? 1 : 0) - a.tremorEase) * k;
+    // Tremor is NOT gated on consciousness: post-ictal myoclonus, rigors,
+    // and hypoglycaemic shaking all occur in obtunded patients. The channel
+    // only fires when the case/scenario authored it.
+    a.tremorEase += ((tremor ? 1 : 0) - a.tremorEase) * k;
     a.seizureEase += ((seizure ? 1 : 0) - a.seizureEase) * k;
 
     // Labored breathing: the torso heaves WITH the chest — same raised-sine

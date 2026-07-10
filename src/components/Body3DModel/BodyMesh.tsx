@@ -19,7 +19,7 @@ import { buildScrubs, CLOTHING_PARTING } from './ClothingLayer';
 import { paintEyesOnTexture } from './EyesLayer';
 import { buildMottledTextures } from './MottlingLayer';
 import { applyWoundsToTextures } from './WoundLayer';
-import { chestRiseAmplitude } from './patientMotion';
+import { chestRiseAmplitude, ageStatureScale } from './patientMotion';
 import { applyUrticariaToTextures } from './UrticariaLayer';
 import { injuryRegionTo3D, type BodyInjury } from '@/lib/injuryMap';
 import { LifeSigns } from './LifeSigns';
@@ -56,6 +56,7 @@ export const TREATMENT_BAY_MODEL_TRANSFORM = {
  *  lying on the floor/ground (as-found scene position). 'treatment-bay' =
  *  supine on the raised stretcher (after moving them / bay overview). */
 export type PresentationMode = 'upright' | 'supine-ground' | 'treatment-bay';
+
 
 interface RigidTransform {
   position: [number, number, number];
@@ -625,7 +626,26 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
   // a presentation CHANGE — e.g. lifting the patient off the floor onto the
   // stretcher — eases smoothly instead of teleporting. Snap on mount, then
   // ease toward the target pose each frame.
-  const poseTarget = PRESENTATION_TRANSFORMS[presentation];
+  //
+  // Paediatric stature: the age scale multiplies the pose scale, and supine
+  // poses shift along the body axis so the HEAD stays at the pillow end
+  // (camera framing and face anchors expect the head there, and that's where
+  // a real crew positions a child on an adult stretcher).
+  const ageScale = ageStatureScale(patientAge);
+  const poseTarget = useMemo(() => {
+    const base = PRESENTATION_TRANSFORMS[presentation];
+    if (ageScale === 1) return base;
+    const supine = presentation !== 'upright';
+    return {
+      position: [
+        base.position[0],
+        base.position[1],
+        supine ? base.position[2] - 1.8 * base.scale * (1 - ageScale) : base.position[2],
+      ] as [number, number, number],
+      rotation: base.rotation,
+      scale: base.scale * ageScale,
+    };
+  }, [presentation, ageScale]);
   const poseInitedRef = useRef(false);
   useLayoutEffect(() => {
     const g = meshRef.current;
@@ -1219,9 +1239,13 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
 
   const toClinicalPoint = useCallback((worldPoint: THREE.Vector3): THREE.Vector3 => {
     const point = worldPoint.clone();
-    if (reclined && meshRef.current) meshRef.current.worldToLocal(point);
+    // Map into the mesh's 1.8 m clinical frame whenever the presentation
+    // group carries ANY transform — lying poses (rotation) or paediatric
+    // stature (scale). For an upright adult the group is identity and this
+    // is a no-op, so it's safe to apply unconditionally.
+    if ((reclined || ageScale !== 1) && meshRef.current) meshRef.current.worldToLocal(point);
     return point;
-  }, [reclined]);
+  }, [reclined, ageScale]);
 
   const handlePointerMove = useCallback((e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();

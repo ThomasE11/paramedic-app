@@ -126,8 +126,18 @@ function list(value: string | string[] | undefined | null): string[] {
   return Array.isArray(value) ? value : [value];
 }
 
+/**
+ * Strip negated findings before keyword matching — "No rash noted" must not
+ * match the anaphylaxis scenario's "rash" (a real false positive: the febrile
+ * child ped-001 presented with an anaphylaxis realism overlay). Deletes the
+ * negation word plus the 1–2 words it negates.
+ */
+function stripNegatedFindings(text: string): string {
+  return text.replace(/\b(?:no|not|denies|denied|without|nil)\s+\w+(?:[ -]\w+)?/g, ' ');
+}
+
 function collectCaseText(caseData: CaseScenario): string {
-  return [
+  return stripNegatedFindings([
     caseData.id,
     caseData.title,
     caseData.category,
@@ -172,7 +182,7 @@ function collectCaseText(caseData: CaseScenario): string {
     caseData.expectedFindings?.mostLikelyDiagnosis,
     caseData.history?.eventsLeading,
     ...(caseData.history?.medicalConditions || []),
-  ].filter(Boolean).join(' ').toLowerCase();
+  ].filter(Boolean).join(' ').toLowerCase());
 }
 
 function matchesKeyword(text: string, keyword: string): boolean {

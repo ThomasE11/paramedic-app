@@ -527,3 +527,38 @@ describe('deriveAuthoredMotionVisuals', () => {
     expect(state.visualEffects.some(v => v.id === 'authored-tremor' && v.showWhen === 'immediate')).toBe(true);
   });
 });
+
+describe('negated findings do not match scenarios', () => {
+  it('"No rash noted" does not trigger the anaphylaxis scenario', () => {
+    const scenario = baseCase({
+      id: 'test-negated-findings',
+      title: 'Febrile child',
+      category: 'pediatric',
+      abcde: {
+        airway: { patent: true, findings: [], interventions: [] },
+        breathing: { rate: 28, rhythm: 'regular', depth: 'normal', spo2: 96, findings: [], interventions: [], auscultation: [] },
+        circulation: { pulseRate: 150, pulseQuality: 'bounding', bp: { systolic: 95, diastolic: 60 }, capillaryRefill: 2, skin: 'Hot, flushed', findings: [], interventions: [] },
+        disability: { avpu: 'V', gcs: { eye: 2, verbal: 3, motor: 5, total: 10 }, pupils: 'equal and reactive', findings: [], interventions: [] },
+        exposure: { findings: ['Very hot skin', 'No rash noted', 'No signs of trauma'] },
+      } as any,
+    });
+    const state = deriveRealismScenarioState({ caseData: scenario });
+    expect(state.matchedScenarioIds).not.toContain('anaphylaxis-systemic');
+  });
+
+  it('a real rash still matches', () => {
+    const scenario = baseCase({
+      id: 'test-real-rash',
+      title: 'Allergic reaction with urticaria',
+      abcde: {
+        airway: { patent: true, findings: [], interventions: [] },
+        breathing: { rate: 24, rhythm: 'regular', depth: 'normal', spo2: 94, findings: ['Wheeze'], interventions: [], auscultation: ['Wheeze'] },
+        circulation: { pulseRate: 120, pulseQuality: 'weak', bp: { systolic: 92, diastolic: 58 }, capillaryRefill: 3, skin: 'Flushed', findings: [], interventions: [] },
+        disability: { avpu: 'A', gcs: { eye: 4, verbal: 5, motor: 6, total: 15 }, pupils: 'equal and reactive', findings: [], interventions: [] },
+        exposure: { findings: ['Widespread urticarial rash on chest and arms'], rashes: ['Urticaria'] },
+      } as any,
+    });
+    const state = deriveRealismScenarioState({ caseData: scenario });
+    expect(state.matchedScenarioIds).toContain('anaphylaxis-systemic');
+  });
+});
