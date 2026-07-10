@@ -785,6 +785,76 @@ function uniqueVisualsById(visuals: RealismVisualEffect[]): RealismVisualEffect[
   });
 }
 
+/**
+ * Motion the case AUTHORS into the on-arrival presentation — a patient
+ * described as convulsing must convulse, one described as twitching must
+ * twitch — independent of which scenario matched.
+ *
+ * Reads PRESENTATION fields only (what the crew sees on arrival), never the
+ * teaching fields: red flags / key observations / critical actions contain
+ * definitional text like "status epilepticus = >5 min" that must not set the
+ * patient shaking. Dispatch is also excluded — "caller reports seizure" is
+ * minutes old; most seizure patients are post-ictal by arrival.
+ */
+export function deriveAuthoredMotionVisuals(caseData: CaseScenario): RealismVisualEffect[] {
+  const presentationText = [
+    caseData.initialPresentation?.generalImpression,
+    caseData.initialPresentation?.appearance,
+    caseData.initialPresentation?.position,
+    caseData.initialPresentation?.consciousness,
+    ...(caseData.initialPresentation?.sounds || []),
+    caseData.sceneInfo?.description,
+    ...(caseData.abcde?.disability?.findings || []),
+    caseData.abcde?.disability?.seizureActivity,
+  ].filter(Boolean).join(' ').toLowerCase();
+  if (!presentationText) return [];
+
+  const visuals: RealismVisualEffect[] = [];
+
+  if (
+    /\b(actively|currently|still)\s+(seizing|convulsing|fitting)\b/.test(presentationText)
+    || /\bconvulsing\b/.test(presentationText)
+    || /\btonic[- ]clonic\s+(movements?|jerking|activity)\b/.test(presentationText)
+    || /\b(generalized|generalised|rhythmic)\s+jerking\b/.test(presentationText)
+    || /\bjerking\s+movements?\b/.test(presentationText)
+    || /\bseizure\s+in\s+progress\b/.test(presentationText)
+    || /\bstatus\s+epilepticus\b/.test(presentationText)
+  ) {
+    visuals.push({
+      id: 'authored-active-seizure',
+      kind: 'seizure_activity',
+      region: 'chest',
+      intensity: 'severe',
+      showWhen: 'immediate',
+      detail: 'The case presents the patient actively seizing — the body must be convulsing on arrival.',
+    });
+  } else if (/\btwitching\b|\bmyoclon/.test(presentationText)) {
+    // Post-ictal residual twitching (e.g. febrile child) — fine motion, not
+    // full convulsion.
+    visuals.push({
+      id: 'authored-residual-twitching',
+      kind: 'tremor',
+      region: 'chest',
+      intensity: 'moderate',
+      showWhen: 'immediate',
+      detail: 'The case presents residual twitching — visible fine motion on arrival.',
+    });
+  }
+
+  if (/\btremor\b|\btrembling\b|\bshivering\b|\bshaking uncontrollably\b/.test(presentationText)) {
+    visuals.push({
+      id: 'authored-tremor',
+      kind: 'tremor',
+      region: 'left-arm',
+      intensity: 'moderate',
+      showWhen: 'immediate',
+      detail: 'The case presents visible tremor/shivering on arrival.',
+    });
+  }
+
+  return visuals;
+}
+
 export function deriveRealismScenarioState({
   caseData,
   vitals,
@@ -797,12 +867,15 @@ export function deriveRealismScenarioState({
     .filter(anchor => hasTreatment(appliedTreatmentIds, anchor.treatmentIdFragments));
   const activeVisualEffects = deriveScenarioVisuals(caseData, vitals, appliedTreatmentIds);
   const contextualVisualEffects = deriveScenarioVisualContext(caseData, vitals, appliedTreatmentIds);
+  // Case-authored motion (seizing/twitching/tremor in the presentation) rides
+  // alongside the scenario-matched visuals so it works for ANY case family.
+  const authoredMotion = deriveAuthoredMotionVisuals(caseData);
 
   return {
     matchedScenarioIds: scenarios.map(scenario => scenario.id),
     families: unique(scenarios.map(scenario => scenario.family)),
     activeProblems: unique(scenarios.flatMap(scenario => scenario.activeProblems)),
-    visualEffects: uniqueVisualsById([...activeVisualEffects, ...contextualVisualEffects]),
+    visualEffects: uniqueVisualsById([...authoredMotion, ...activeVisualEffects, ...contextualVisualEffects]),
     equipmentAnchors,
     patientBehavior: scenarios.flatMap(scenario => scenario.patientBehavior),
     treatmentResponses,

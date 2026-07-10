@@ -448,3 +448,82 @@ describe('deriveRealismScenarioState', () => {
     expect(state.equipmentAnchors.some(a => a.region === 'face')).toBe(true);
   });
 });
+
+/* ------------------------------------------------------------------ */
+/*  Case-authored motion (seizing / twitching / tremor on arrival)     */
+/* ------------------------------------------------------------------ */
+
+describe('deriveAuthoredMotionVisuals', () => {
+  it('an actively-convulsing presentation seizes immediately', () => {
+    const scenario = baseCase({
+      id: 'test-active-seizure',
+      title: 'Seizure in progress',
+      initialPresentation: {
+        generalImpression: 'Adult male convulsing on the floor',
+        appearance: 'Rhythmic jerking movements of all limbs',
+        position: 'Supine on floor',
+        consciousness: 'Unresponsive during seizure',
+      },
+    });
+    const state = deriveRealismScenarioState({ caseData: scenario });
+    const seizure = state.visualEffects.find(v => v.kind === 'seizure_activity');
+    expect(seizure).toBeDefined();
+    expect(seizure?.showWhen).toBe('immediate');
+    expect(seizure?.intensity).toBe('severe');
+  });
+
+  it('post-ictal residual twitching reads as fine motion, not convulsion', () => {
+    const scenario = baseCase({
+      id: 'test-postictal-twitching',
+      title: 'Febrile seizure, post-ictal',
+      initialPresentation: {
+        generalImpression: 'Small child, post-ictal, hot to touch',
+        appearance: 'Flushed, hot skin, eyes closed, twitching',
+        position: 'Held by mother',
+        consciousness: 'Responding to pain, post-ictal',
+      },
+    });
+    const state = deriveRealismScenarioState({ caseData: scenario });
+    expect(state.visualEffects.some(v => v.kind === 'seizure_activity' && v.showWhen === 'immediate')).toBe(false);
+    const tremor = state.visualEffects.find(v => v.id === 'authored-residual-twitching');
+    expect(tremor).toBeDefined();
+    expect(tremor?.kind).toBe('tremor');
+  });
+
+  it('teaching text about status epilepticus does NOT set the patient shaking', () => {
+    const scenario = baseCase({
+      id: 'test-teaching-text-guard',
+      title: 'Post-ictal patient',
+      initialPresentation: {
+        generalImpression: 'Young female, post-ictal, confused',
+        appearance: 'Drowsy, bitten tongue',
+        position: 'Recovery position',
+        consciousness: 'Post-ictal confusion',
+      },
+      expectedFindings: {
+        keyObservations: ['Status epilepticus: defined as >5 minutes continuous seizure'],
+        redFlags: ['Seizure recurs or >5 min (status epilepticus) — convulsing beyond 5 minutes needs midazolam'],
+        differentialDiagnoses: [],
+        mostLikelyDiagnosis: 'Generalized tonic-clonic seizure, resolved',
+      },
+    });
+    const state = deriveRealismScenarioState({ caseData: scenario });
+    expect(state.visualEffects.some(v => v.id === 'authored-active-seizure')).toBe(false);
+    expect(state.visualEffects.some(v => v.id === 'authored-residual-twitching')).toBe(false);
+  });
+
+  it('authored tremor/shivering in the presentation shows immediately', () => {
+    const scenario = baseCase({
+      id: 'test-authored-tremor',
+      title: 'Hypoglycaemic episode',
+      initialPresentation: {
+        generalImpression: 'Diaphoretic adult, trembling',
+        appearance: 'Pale, sweaty, visible tremor of both hands',
+        position: 'Seated',
+        consciousness: 'Confused',
+      },
+    });
+    const state = deriveRealismScenarioState({ caseData: scenario });
+    expect(state.visualEffects.some(v => v.id === 'authored-tremor' && v.showWhen === 'immediate')).toBe(true);
+  });
+});
