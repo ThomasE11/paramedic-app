@@ -72,6 +72,12 @@
 - [x] `Body3DModel` consumes scenario visuals without importing clinical scenario logic: pupil effects, scenario pallor/cyanosis tint, diaphoresis/mottling strengths, wound/burn/bleeding decals, and compact overview markers
 - [x] Treatment equipment overlay recognizes `iv_cannula` as visible IV access, not only `iv_access`
 
+### Motion channels alive (Round 4C — NEW)
+- [x] The four computed-but-inert `PatientVisualState` channels now move the patient: `breathingEffort` (deeper chest excursion + breath-synced torso heave via the shared breath clock), `chestRiseAsymmetry` (shallow chest rise — one bilateral morph; per-side rise needs new GLB morph targets), `hasTremor` (fine 9 Hz shiver), `hasSeizureActivity` (3 Hz clonic jerking that overrides unconscious stillness)
+- [x] `patientMotion.ts` — pure amplitude math (`chestRiseAmplitude` + MOTION constants as the tuning knobs), **6 tests**; arrest stills every channel
+- [x] All root motion stays in LifeSigns (single writer), eased in/out ~0.7 s so mid-case onset reads as deterioration, not a snap
+- [ ] KNOWN PRE-EXISTING (not this round): `onSurfaceSampler` effect ↔ `setSurfaceSampler` loop can burst "Maximum update depth" in dev and crash StudentPanel to its boundary — reproduced on clean base (57 errors, A/B verified); spawned as its own fix task
+
 ### Interaction & playability
 - [x] Click the anatomy itself: regions + in-region detail actions (eye→pupil check, carotid→pulse, quadrants) + feet
 - [x] Replay debrief: timeline scrubber, jumpable event markers, vitals trends (Body-Interact pattern)

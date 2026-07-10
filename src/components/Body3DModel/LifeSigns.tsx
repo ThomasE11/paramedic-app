@@ -29,6 +29,8 @@
 import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { getBreathPhase01 } from '@/lib/breathClock';
+import { MOTION } from './patientMotion';
 
 const BLINK_SECONDS = 0.12;
 const BLINK_MIN_GAP = 2;
@@ -39,9 +41,19 @@ interface LifeSignsProps {
   scene: THREE.Object3D;
   /** GCS ≤ 8 / AVPU 'U' / arrest — lie still, eyes stay closed. */
   unconscious: boolean;
+  /** Work of breathing 0..1 — torso heaves with each breath (accessory
+   *  muscle use), synced to the shared breath clock so it moves WITH the
+   *  chest-rise morph BodyMesh is driving. */
+  breathingEffort?: number;
+  /** Fine 9 Hz shiver (hypoglycaemia, sympathomimetic). Conscious only —
+   *  an unconscious patient stays still unless seizing. */
+  tremor?: boolean;
+  /** Clonic jerking ~3 Hz. OVERRIDES unconscious stillness — a seizing
+   *  patient is unconscious AND moving; the motion is the finding. */
+  seizure?: boolean;
 }
 
-export function LifeSigns({ scene, unconscious }: LifeSignsProps) {
+export function LifeSigns({ scene, unconscious, breathingEffort = 0, tremor = false, seizure = false }: LifeSignsProps) {
   // Resolve the animated targets once per clone: the model root's base pose
   // (set by BodyMesh's normalisation — must be treated as the neutral) and
   // the mesh whose material holds the pre-rendered open/closed eye textures
@@ -80,6 +92,11 @@ export function LifeSigns({ scene, unconscious }: LifeSignsProps) {
     nextSaccadeAt: 1 + Math.random() * 2,
     saccadeX: 0, // pitch (rad)
     saccadeY: 0, // yaw (rad)
+    // Eased 0..1 factors for the scenario motion channels — ramp in/out over
+    // ~0.7 s so a channel appearing mid-case reads as onset, not a snap.
+    effortEase: 0,
+    tremorEase: 0,
+    seizureEase: 0,
   });
 
   useFrame((_, delta) => {
@@ -93,9 +110,46 @@ export function LifeSigns({ scene, unconscious }: LifeSignsProps) {
     // Sub-degree amplitudes around the feet; incommensurate frequencies so
     // the pattern never visibly repeats. When s → 0 this writes the exact
     // base pose, so hit-testing/landmark anchors stay honest.
-    scene.rotation.x = nodes.baseRotX + Math.sin(a.t * 0.43) * 0.0022 * s;
-    scene.rotation.y = nodes.baseRotY + (Math.sin(a.t * 0.31) * 0.006 + Math.sin(a.t * 0.83) * 0.0025) * s;
-    scene.rotation.z = nodes.baseRotZ + Math.sin(a.t * 0.57) * 0.0028 * s;
+    let rx = Math.sin(a.t * 0.43) * 0.0022 * s;
+    let ry = (Math.sin(a.t * 0.31) * 0.006 + Math.sin(a.t * 0.83) * 0.0025) * s;
+    let rz = Math.sin(a.t * 0.57) * 0.0028 * s;
+
+    // ---- Scenario motion channels ------------------------------------------
+    // Each channel eases in/out (~0.7 s) and ADDS to the sway offsets; when
+    // every ease reaches 0 the writes below are again the exact base pose.
+    const k = Math.min(1, delta * 1.5);
+    a.effortEase += ((unconscious ? 0 : breathingEffort) - a.effortEase) * k;
+    a.tremorEase += ((tremor && !unconscious ? 1 : 0) - a.tremorEase) * k;
+    a.seizureEase += ((seizure ? 1 : 0) - a.seizureEase) * k;
+
+    // Labored breathing: the torso heaves WITH the chest — same raised-sine
+    // shape BodyMesh drives the chest-rise morph with, via the breath clock.
+    if (a.effortEase > 0.01) {
+      const breath = 0.5 - 0.5 * Math.cos(getBreathPhase01() * Math.PI * 2);
+      rx -= breath * MOTION.effortHeaveAmp * a.effortEase;
+    }
+
+    // Tremor: fine fast shiver, incommensurate axes so it reads as shaking,
+    // not nodding.
+    if (a.tremorEase > 0.01) {
+      const tt = a.t * MOTION.tremorHz * Math.PI * 2;
+      rx += Math.sin(tt) * MOTION.tremorAmp * a.tremorEase;
+      rz += Math.sin(tt * 1.13) * MOTION.tremorAmp * 0.8 * a.tremorEase;
+    }
+
+    // Seizure: slow large clonic jerks — a harmonic on top of the base sine
+    // sharpens the edges so it reads as convulsion, not sway. Deliberately
+    // NOT gated on consciousness: seizing patients are unconscious and moving.
+    if (a.seizureEase > 0.01) {
+      const st = a.t * MOTION.seizureHz * Math.PI * 2;
+      rx += (Math.sin(st) + 0.4 * Math.sin(st * 2.7)) * MOTION.seizureAmp * a.seizureEase;
+      ry += Math.sin(st * 1.31) * MOTION.seizureAmp * 0.6 * a.seizureEase;
+      rz += Math.sin(st * 0.93 + 1) * MOTION.seizureAmp * 0.8 * a.seizureEase;
+    }
+
+    scene.rotation.x = nodes.baseRotX + rx;
+    scene.rotation.y = nodes.baseRotY + ry;
+    scene.rotation.z = nodes.baseRotZ + rz;
 
     // ---- Blink / GCS-coupled lids -----------------------------------------
     const eyeMesh = nodes.eyeMesh;

@@ -19,6 +19,7 @@ import { buildScrubs, CLOTHING_PARTING } from './ClothingLayer';
 import { paintEyesOnTexture } from './EyesLayer';
 import { buildMottledTextures } from './MottlingLayer';
 import { applyWoundsToTextures } from './WoundLayer';
+import { chestRiseAmplitude } from './patientMotion';
 import { applyUrticariaToTextures } from './UrticariaLayer';
 import { injuryRegionTo3D, type BodyInjury } from '@/lib/injuryMap';
 import { LifeSigns } from './LifeSigns';
@@ -167,6 +168,16 @@ interface BodyMeshProps {
   /** GCS <= 8 / AVPU 'U' / arrest — suppresses the procedural head sway and
    *  keeps the eyelids closed (see LifeSigns). */
   unconscious?: boolean;
+  /** Work of breathing 0..1 (scenario accessory-muscle use) — deepens the
+   *  chest excursion and adds a breath-synced torso heave (LifeSigns). */
+  breathingEffort?: number;
+  /** Scenario reduced/asymmetric chest rise — the chest stays shallow no
+   *  matter the effort (poor air entry IS the finding). */
+  reducedChestRise?: boolean;
+  /** Fine shiver — hypoglycaemia, sympathomimetic toxidrome (LifeSigns). */
+  tremor?: boolean;
+  /** Clonic seizure jerking — overrides unconscious stillness (LifeSigns). */
+  seizure?: boolean;
   /** How the patient is posed in the scene (rigid transform + interaction
    *  frame): standing, found supine on the ground, or supine on the stretcher. */
   presentation?: PresentationMode;
@@ -573,7 +584,7 @@ function buildSurfaceSampler(root: THREE.Object3D | null, presentationRoot?: THR
   };
 }
 
-export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guidedMode = false, nextGuidedStep = null, onBlockedClick, onBodyPoint, bodyInjuries, patientGender, surfaceOpacity = 1, activeFindingMorphs, breathRateRpm = 0, onSurfaceSampler, dressed = false, dressedActiveRegion = null, pupilLeftMm = 3.5, pupilRightMm = 3.5, skinTint = null, diaphoresis = 0, jaundice = 0, mottling = 0, urticaria = false, unconscious = false, presentation = 'upright' }: BodyMeshProps) {
+export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guidedMode = false, nextGuidedStep = null, onBlockedClick, onBodyPoint, bodyInjuries, patientGender, surfaceOpacity = 1, activeFindingMorphs, breathRateRpm = 0, onSurfaceSampler, dressed = false, dressedActiveRegion = null, pupilLeftMm = 3.5, pupilRightMm = 3.5, skinTint = null, diaphoresis = 0, jaundice = 0, mottling = 0, urticaria = false, unconscious = false, breathingEffort = 0, reducedChestRise = false, tremor = false, seizure = false, presentation = 'upright' }: BodyMeshProps) {
   // The path is recomputed per render so a `caseData.patientInfo.gender`
   // change (e.g. user picks a different case) swaps the mesh without
   // remounting the parent. useGLTF caches by URL.
@@ -1047,8 +1058,9 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
         if (breathRateRpm > 0) {
           const hz = breathRateRpm / 60;
           breathPhaseRef.current += delta * hz * Math.PI * 2;
-          // 0..1 raised-sine; shallower when tachypnoeic reads as "fast shallow"
-          const amp = breathRateRpm >= 28 ? 0.55 : 1.0;
+          // Amplitude carries the clinical read: tachypnoea = fast-shallow,
+          // effort = deeper, reduced rise = shallow wins (patientMotion.ts).
+          const amp = chestRiseAmplitude(breathRateRpm, breathingEffort, reducedChestRise);
           infl[idx] = (0.5 - 0.5 * Math.cos(breathPhaseRef.current)) * amp;
         } else {
           infl[idx] = 0;
@@ -1431,8 +1443,15 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
       />
 
       {/* Procedural life loop — micro head sway + blink (pre-rendered lid
-          texture swap). Unconscious patients lie still, eyes closed. */}
-      <LifeSigns scene={clonedScene} unconscious={unconscious} />
+          texture swap). Unconscious patients lie still, eyes closed — unless
+          seizing/trembling/labouring: those channels ARE the findings. */}
+      <LifeSigns
+        scene={clonedScene}
+        unconscious={unconscious}
+        breathingEffort={breathingEffort}
+        tremor={tremor}
+        seizure={seizure}
+      />
 
       {/* Region highlight overlays */}
       {regionHighlights}

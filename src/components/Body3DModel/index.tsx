@@ -3839,6 +3839,12 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   const scenarioCyanosis = skinEffectStrength(patientVisualState, 'cyanosis');
   const scenarioDiaphoresis = skinEffectStrength(patientVisualState, 'diaphoresis');
   const scenarioMottling = skinEffectStrength(patientVisualState, 'mottling');
+  // Motion channels — the scenario layer's behavioural findings, expressed as
+  // actual patient movement (BodyMesh breath amplitude + LifeSigns root motion).
+  const scenarioBreathingEffort = patientVisualState?.breathingEffort ?? 0;
+  const scenarioReducedChestRise = patientVisualState?.chestRiseAsymmetry?.present ?? false;
+  const scenarioTremor = patientVisualState?.hasTremor ?? false;
+  const scenarioSeizure = patientVisualState?.hasSeizureActivity ?? false;
 
   // Live skin colour tint. Composed in a fixed order so the channels layer
   // coherently on top of one another:
@@ -4784,6 +4790,13 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 breathRateRpm={isInArrest ? 0 : breathRateRpm}
                 // Procedural life loop — GCS<=8/arrest = still, eyes closed.
                 unconscious={patientUnconscious}
+                // Scenario motion channels — labored breathing heave, shallow
+                // chest, tremor, and clonic seizure jerking (patientMotion.ts).
+                // Arrest stills all of them: no perfusion, no movement.
+                breathingEffort={isInArrest ? 0 : scenarioBreathingEffort}
+                reducedChestRise={scenarioReducedChestRise}
+                tremor={scenarioTremor && !isInArrest}
+                seizure={scenarioSeizure && !isInArrest}
                 // Live skin perfusion tint — cyanosis from SpO2, pallor from
                 // shock index, jaundice cast when the case is hepatic. null
                 // when nothing applies (no tint).
