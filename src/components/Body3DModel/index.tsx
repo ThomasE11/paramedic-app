@@ -3689,11 +3689,19 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   // a fresh inline arrow each render would re-run that effect → setState →
   // re-render every frame (an infinite "Maximum update depth" loop that read
   // on-screen as the vitals/3D flickering). useCallback pins it once.
-  const handleSurfaceSampler = useCallback(
-    (fn: SurfaceSampler | null) =>
-      setSurfaceSampler(() => fn),
-    [],
-  );
+  //
+  // The setState is deferred through ONE rAF: BodyMesh's sampler effect emits
+  // null (cleanup) then the fresh sampler in the same commit whenever the
+  // clone rebuilds, and a synchronous setState inside that commit chain is
+  // what React counts toward "Maximum update depth" during remount storms
+  // (error-boundary recreate, StrictMode). Coalescing through a frame keeps
+  // only the final value and breaks the nested-update chain.
+  const samplerRafRef = useRef(0);
+  const handleSurfaceSampler = useCallback((fn: SurfaceSampler | null) => {
+    cancelAnimationFrame(samplerRafRef.current);
+    samplerRafRef.current = requestAnimationFrame(() => setSurfaceSampler(() => fn));
+  }, []);
+  useEffect(() => () => cancelAnimationFrame(samplerRafRef.current), []);
   const [activeRegion, setActiveRegion] = useState<string | null>(null);
   // Action ring: anchored at the student's exact click point on the body,
   // offering the focused region's assessment verbs (derived from its real
@@ -3922,10 +3930,21 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   // mechanic expressed on the mesh: no JVD bulge until you examine the neck.
   // Case injuries drive the finding morphs AND the wound skin decals.
   const caseInjuries = useMemo(() => inferInjuries(caseData), [caseData]);
-  const scenarioBodyInjuries = useMemo(
-    () => buildScenarioBodyInjuries(patientVisualState),
-    [patientVisualState],
-  );
+  // patientVisualState is a fresh object on every realism-director update
+  // (each vitals tick), but the wound set it derives almost never changes.
+  // Key the memo on CONTENT, not object identity — bodyInjuries feeds the
+  // clone-building memo in BodyMesh, and an identity change there rebuilds
+  // the entire patient (SkeletonUtils clone + scrubs cut + atlas repaint)
+  // and re-emits the surface sampler. Stable content = stable identity.
+  const scenarioInjuriesRef = useRef<{ key: string; value: BodyInjury[] }>({ key: '', value: [] });
+  const scenarioBodyInjuries = useMemo(() => {
+    const next = buildScenarioBodyInjuries(patientVisualState);
+    const key = JSON.stringify(next);
+    if (key !== scenarioInjuriesRef.current.key) {
+      scenarioInjuriesRef.current = { key, value: next };
+    }
+    return scenarioInjuriesRef.current.value;
+  }, [patientVisualState]);
   const bodyInjuriesForMesh = useMemo(
     () => [...caseInjuries, ...scenarioBodyInjuries],
     [caseInjuries, scenarioBodyInjuries],

@@ -2082,7 +2082,17 @@ export function VitalSignsMonitor({
   // so BP/SpO2/etc. don't change on-screen until the student re-assesses
   const [assessedVitals, setAssessedVitals] = useState<Partial<VitalSigns>>({});
 
+  // Case-change reset, guarded by CONTENT: `initialVitals` is often built
+  // inline by the parent (`currentVitals || buildInitialVitalsFromCase(...)`),
+  // so a new object identity per parent render is normal. Without the guard,
+  // this effect fired on every parent render — six setStates per pass, which
+  // is exactly the "Maximum update depth" storm during resize/remount
+  // cascades — and silently wiped assessment progress mid-case.
+  const resetKeyRef = useRef('');
   useEffect(() => {
+    const key = caseTitle + '|' + JSON.stringify(initialVitals);
+    if (key === resetKeyRef.current) return;
+    resetKeyRef.current = key;
     setCurrentVitals(initialVitals);
     setVisibleVitals(new Set());
     setActiveAssessments(new Map());
