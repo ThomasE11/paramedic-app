@@ -72,6 +72,14 @@
 - [x] `Body3DModel` consumes scenario visuals without importing clinical scenario logic: pupil effects, scenario pallor/cyanosis tint, diaphoresis/mottling strengths, wound/burn/bleeding decals, and compact overview markers
 - [x] Treatment equipment overlay recognizes `iv_cannula` as visible IV access, not only `iv_access`
 
+### Coherence round (Round 4E — NEW, 2026-07-10 evening)
+- [x] **A convulsing patient does not talk**: canPatientVocalize (lib) supplies case-authored silence (active seizure / arrest / GCS ≤ 8) to every speech surface — voice hook + both StudentPanel treatment-quote paths (which previously spoke unchecked). Post-ictal patients still talk.
+- [x] **Defib pads + BVM are 3D on the patient** — pads anterior-lateral with cables off to the monitor side; BVM bag squeezes with the shared breath clock. Sticker cards retired (ventilator card remains, last one).
+- [x] Paediatric guard: patientInfo.age <= 0 = placeholder, not a newborn (MCI case)
+- [x] Verified: all 11 paediatric-age cases carry correct patientInfo.age — "child renders adult" reports were the stale Vercel preview (pediatric stature deployed 4fe2224a)
+- [ ] **NEXT: CoD-style bag selector** — bag opens into a scrollable equipment carousel (big webp art, quick-apply); public/equipment-assets has the art
+- [ ] NEXT: ventilator 3D unit; collar/splint/dressing meshes on the patient
+
 ### The scene is the place (Round 4D — NEW, 2026-07-10)
 - [x] **Stability root-fix**: the "Maximum update depth" storm is dead — surface-sampler handoff rAF-coalesced, scenarioBodyInjuries content-keyed (was rebuilding the ENTIRE patient clone every vitals tick), VitalSignsMonitor case-reset content-guarded (was firing 6 setStates per parent render and wiping assessment progress). Verified 0 errors through bay mount + GLB load + viewport resize (was 57+ and a StudentPanel crash)
 - [x] **Case-authored motion**: a patient authored convulsing convulses on arrival; ped-001's febrile child twitches; tremor/shivering shows immediately. Presentation-fields-only matching — teaching text ("status epilepticus = >5 min") can never set the patient shaking
