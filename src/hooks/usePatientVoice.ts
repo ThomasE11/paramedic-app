@@ -23,6 +23,7 @@
 import { useCallback, useMemo } from 'react';
 import type { CaseScenario } from '@/types';
 import { useVoiceNarration } from '@/hooks/useVoiceNarration';
+import { canPatientVocalize } from '@/lib/patientVocalization';
 
 /** Kinds of provocative-exam reactions the body scene can request. */
 export type PatientReactionKind = 'tender-palpation' | 'movement-pain';
@@ -49,24 +50,12 @@ function pickLine(lines: string[]): string {
   return lines[Math.floor(Math.random() * lines.length)];
 }
 
-/**
- * Derive whether the patient is physiologically able to speak. Mirrors the
- * canVocalize rule used by the 3D body scene so the two surfaces stay in sync.
- */
-function derivesCanVocalize(caseData: CaseScenario): boolean {
-  const gcs = caseData.abcde?.disability?.gcs?.total
-    ?? caseData.vitalSignsProgression?.initial?.gcs;
-  const avpu = String(caseData.abcde?.disability?.avpu || '').toUpperCase();
-  const consciousness = String(caseData.initialPresentation?.consciousness || '').toLowerCase();
-  const apneic = caseData.abcde?.breathing?.rate === 0;
-  const arrest = /asystole|pea|vf|cardiac arrest|unresponsive|no response/.test(consciousness) || avpu === 'U';
-  return !apneic && !arrest && !(typeof gcs === 'number' && gcs <= 8);
-}
-
 export function usePatientVoice(caseData: CaseScenario) {
   const narration = useVoiceNarration();
 
-  const canVocalize = useMemo(() => derivesCanVocalize(caseData), [caseData]);
+  // Shared predicate (lib/patientVocalization): apnoea, arrest, GCS ≤ 8,
+  // and ACTIVE SEIZURE all silence the patient — on every speech surface.
+  const canVocalize = useMemo(() => canPatientVocalize(caseData), [caseData]);
 
   // Speak an arbitrary line as the patient (used for history answers).
   const say = useCallback((text: string) => {

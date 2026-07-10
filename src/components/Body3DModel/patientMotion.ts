@@ -33,7 +33,9 @@ export function chestRiseAmplitude(rpm: number, effort = 0, reducedRise = false)
  * proper MPFB child mesh replaces this scale when it lands.
  */
 export function ageStatureScale(age?: number): number {
-  if (typeof age !== 'number' || age >= 16) return 1;
+  // age <= 0 is a data placeholder (e.g. the mass-casualty case), not a
+  // newborn — author real newborns as fractional years (0.02 ≈ 1 week).
+  if (typeof age !== 'number' || age <= 0 || age >= 16) return 1;
   if (age <= 1) return 0.42;  // infant ~75 cm
   if (age <= 5) return 0.56;  // toddler/preschool ~100 cm
   if (age <= 12) return 0.74; // school age ~135 cm

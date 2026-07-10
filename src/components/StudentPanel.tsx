@@ -73,6 +73,7 @@ import {
 } from '@/data/treatmentProtocols';
 import { checkRuntimeContraindications } from '@/lib/runtimeContraindications';
 import { evaluateTreatmentRealism } from '@/lib/patientRealism';
+import { canPatientVocalize as caseAllowsVocalization } from '@/lib/patientVocalization';
 import { deriveRealismDirectorState, type RealismDirectorState } from '@/lib/patientRealismDirector';
 import { deriveClinicalManagementDebrief, deriveTreatmentReassessmentMatches } from '@/lib/caseManagementRealism';
 import { derivePatientVisualState } from '@/lib/patientVisualState';
@@ -1052,6 +1053,10 @@ function getCaseClinicalText(caseData: CaseScenario): string {
 
 function canPatientVocalize(currentVitals: VitalSigns, currentCase: CaseScenario, patientState: PatientState): boolean {
   if (patientState.isInArrest) return false;
+  // Case-authored silence — active seizure (convulsing/tonic-clonic/jerking
+  // presentations), arrest wording, GCS ≤ 8 — shared with the voice hook so
+  // every speech surface agrees (lib/patientVocalization).
+  if (!caseAllowsVocalization(currentCase)) return false;
   const gcs = getPatientGcsTotal(currentVitals, currentCase, patientState);
   const rr = currentVitals.respiration ?? patientState.vitals?.respiration ?? 0;
   const text = getCaseClinicalText(currentCase);
@@ -2915,7 +2920,7 @@ export function StudentPanel({
       patientState,
     });
     if (practicalChallenge && !treatmentChallengeConfirmedRef.current.has(treatment.id)) {
-      if (practicalChallenge.patientQuote) {
+      if (practicalChallenge.patientQuote && canPatientVocalize(currentVitals, currentCase, patientState)) {
         speakNarration(practicalChallenge.patientQuote, { role: 'patient' });
       }
       if (practicalChallenge.level === 'block') {
@@ -3072,7 +3077,9 @@ export function StudentPanel({
       vitals: currentVitals,
       appliedTreatmentIds,
     });
-    if (realismResponse.patientQuote) {
+    // A patient who cannot physiologically speak (arrest, GCS ≤ 8, ACTIVE
+    // seizure) stays silent — same predicate every speech surface uses.
+    if (realismResponse.patientQuote && canPatientVocalize(currentVitals, currentCase, patientState)) {
       speakNarration(realismResponse.patientQuote, { role: 'patient' });
     }
 
