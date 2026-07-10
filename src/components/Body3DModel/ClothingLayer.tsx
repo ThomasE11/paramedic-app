@@ -36,10 +36,54 @@
 
 import * as THREE from 'three';
 
-// "The way you would find them": casual street clothes, not scrubs —
-// heather-navy tee + grey-brown trousers.
-const TOP_COLOR = '#3a4a63';
-const TROUSER_COLOR = '#4b4a45';
+// "The way you would find them": casual street clothes, not scrubs.
+// A small curated wardrobe — the outfit is picked deterministically per
+// case (seed) so the same patient always wears the same clothes, but the
+// library stops being one navy tee for every human in the Emirates.
+// ponytail: kandura/abaya-length garments need a different cut topology
+// (below the crotch the legs are separate islands, so the largest-component
+// rule amputates one) — long-hem wardrobe waits for Blender garments.
+interface Outfit {
+  top: string;
+  trouser: string;
+}
+
+const OUTFITS_NEUTRAL: Outfit[] = [
+  { top: '#3a4a63', trouser: '#4b4a45' }, // heather navy / stone
+  { top: '#54586e', trouser: '#2f3338' }, // slate / graphite
+  { top: '#4a6151', trouser: '#54483a' }, // sage / tan
+  { top: '#6e3f3a', trouser: '#33383f' }, // maroon / charcoal
+  { top: '#7a6a4f', trouser: '#3d4750' }, // camel / steel
+  { top: '#e8e3d8', trouser: '#3a4149' }, // off-white / navy
+];
+const OUTFITS_FEMALE_EXTRA: Outfit[] = [
+  { top: '#6e4a63', trouser: '#3a3f4a' }, // plum / slate
+  { top: '#3f6068', trouser: '#443f3a' }, // teal / taupe
+];
+// Elderly patients trend to the mellow end of the wardrobe.
+const OUTFITS_ELDERLY: Outfit[] = [
+  { top: '#8a8272', trouser: '#4b4a45' }, // warm grey / stone
+  { top: '#5c6157', trouser: '#3d3b36' }, // olive-grey / earth
+  { top: '#e8e3d8', trouser: '#4b4a45' }, // off-white / stone
+];
+
+export interface ClothingOptions {
+  /** Deterministic per-case seed — same case, same clothes, every session. */
+  seed?: number;
+  gender?: 'male' | 'female';
+  age?: number;
+}
+
+export function pickOutfit(opts: ClothingOptions = {}): Outfit {
+  const seed = Math.abs(Math.floor(opts.seed ?? 0));
+  if (typeof opts.age === 'number' && opts.age >= 65) {
+    return OUTFITS_ELDERLY[seed % OUTFITS_ELDERLY.length];
+  }
+  const pool = opts.gender === 'female'
+    ? [...OUTFITS_NEUTRAL, ...OUTFITS_FEMALE_EXTRA]
+    : OUTFITS_NEUTRAL;
+  return pool[seed % pool.length];
+}
 
 /**
  * Procedural woven-fabric normal map (lazy singleton). A subtle twill bump
@@ -87,7 +131,96 @@ export const CLOTHING_PARTING: Record<string, string[]> = {
   'right-leg': ['scrub-trousers'],
 };
 
-export function buildScrubs(body: THREE.Mesh): THREE.Group | null {
+/**
+ * Fabric pass — what separates "worn clothing" from "painted-on shell".
+ *
+ *   1. Laplacian smoothing (interior verts only): softens the body's muscle
+ *      and anatomy detail that no real garment transmits.
+ *   2. Wrinkle displacement: band-limited value noise along the normals —
+ *      the low-frequency buckling of cloth hanging on a body.
+ *
+ * Hem/neckline/cuff BOUNDARY verts are pinned through both steps so the
+ * cut lines stay crisp against the skin.
+ */
+function applyFabricPass(g: THREE.BufferGeometry, worldScale: number, seed: number): void {
+  const pos = g.attributes.position as THREE.BufferAttribute;
+  const index = g.index;
+  if (!index) return;
+  const M = pos.count;
+  const p = pos.array as Float32Array;
+
+  // Boundary verts: any vert on an edge used by exactly ONE triangle.
+  const edgeCount = new Map<number, number>();
+  const edgeKey = (a: number, b: number) => (a < b ? a * M + b : b * M + a);
+  const T = index.count / 3;
+  for (let t = 0; t < T; t++) {
+    const a = index.getX(t * 3);
+    const b = index.getX(t * 3 + 1);
+    const c = index.getX(t * 3 + 2);
+    for (const key of [edgeKey(a, b), edgeKey(b, c), edgeKey(c, a)]) {
+      edgeCount.set(key, (edgeCount.get(key) ?? 0) + 1);
+    }
+  }
+  const boundary = new Uint8Array(M);
+  edgeCount.forEach((count, key) => {
+    if (count === 1) {
+      boundary[Math.floor(key / M)] = 1;
+      boundary[key % M] = 1;
+    }
+  });
+
+  // Vertex adjacency for the smoothing pass.
+  const adjacency: number[][] = Array.from({ length: M }, () => []);
+  for (let t = 0; t < T; t++) {
+    const a = index.getX(t * 3);
+    const b = index.getX(t * 3 + 1);
+    const c = index.getX(t * 3 + 2);
+    adjacency[a].push(b, c);
+    adjacency[b].push(a, c);
+    adjacency[c].push(a, b);
+  }
+
+  // Two smoothing passes, interior only, 0.5 lerp toward the neighbour mean.
+  for (let pass = 0; pass < 2; pass++) {
+    const snapshot = p.slice();
+    for (let i = 0; i < M; i++) {
+      if (boundary[i]) continue;
+      const nbs = adjacency[i];
+      if (nbs.length < 3) continue;
+      let sx = 0, sy = 0, sz = 0;
+      for (const nb of nbs) {
+        sx += snapshot[nb * 3];
+        sy += snapshot[nb * 3 + 1];
+        sz += snapshot[nb * 3 + 2];
+      }
+      const inv = 1 / nbs.length;
+      p[i * 3] += (sx * inv - p[i * 3]) * 0.5;
+      p[i * 3 + 1] += (sy * inv - p[i * 3 + 1]) * 0.5;
+      p[i * 3 + 2] += (sz * inv - p[i * 3 + 2]) * 0.5;
+    }
+  }
+
+  // Wrinkles: two octaves of sin-product value noise along the CURRENT
+  // normals. Deterministic per seed so an outfit's folds don't reshuffle
+  // between sessions.
+  g.computeVertexNormals();
+  const n = g.attributes.normal as THREE.BufferAttribute;
+  const amp = 0.006 / worldScale;
+  const s1 = 23 + (seed % 7);
+  const s2 = 41 + (seed % 11);
+  for (let i = 0; i < M; i++) {
+    if (boundary[i]) continue;
+    const x = p[i * 3], y = p[i * 3 + 1], z = p[i * 3 + 2];
+    const octave1 = Math.sin(x * s1 + y * 17.3) * Math.sin(y * s2 * 0.7 + z * 19.1) * Math.sin(z * 27.7 + x * 13.9);
+    const octave2 = Math.sin(x * s2 + y * 51.7) * Math.sin(y * 63.1 + z * 47.3) * 0.35;
+    const w = (octave1 + octave2) * amp;
+    p[i * 3] += n.getX(i) * w;
+    p[i * 3 + 1] += n.getY(i) * w;
+    p[i * 3 + 2] += n.getZ(i) * w;
+  }
+}
+
+export function buildScrubs(body: THREE.Mesh, options: ClothingOptions = {}): THREE.Group | null {
   const geom = body.geometry as THREE.BufferGeometry | undefined;
   const pos = geom?.attributes?.position as THREE.BufferAttribute | undefined;
   if (!geom || !pos) {
@@ -242,9 +375,10 @@ export function buildScrubs(body: THREE.Mesh): THREE.Group | null {
   }
   const trouserKeep = largestComponent(trouserMask);
 
+  const outfit = pickOutfit(options);
   const pieces = [
-    { name: 'scrub-top', color: TOP_COLOR, offset: 0.026, keep: topKeep },
-    { name: 'scrub-trousers', color: TROUSER_COLOR, offset: 0.012, keep: trouserKeep },
+    { name: 'scrub-top', color: outfit.top, offset: 0.026, keep: topKeep },
+    { name: 'scrub-trousers', color: outfit.trouser, offset: 0.012, keep: trouserKeep },
   ];
 
   const group = new THREE.Group();
@@ -313,6 +447,8 @@ export function buildScrubs(body: THREE.Mesh): THREE.Group | null {
       p[o + 1] += n.getY(m) * local;
       p[o + 2] += n.getZ(m) * local;
     }
+    // Fabric pass: smooth away transmitted anatomy, then buckle the cloth.
+    applyFabricPass(g, worldScale, Math.abs(Math.floor(options.seed ?? 0)));
     g.computeVertexNormals();
 
     // Box-projected UVs so the fabric weave normal map can tile — the shell

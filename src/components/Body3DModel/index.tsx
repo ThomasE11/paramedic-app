@@ -3840,6 +3840,12 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   const caseInjuries = useMemo(() => inferInjuries(caseData), [caseData]);
   // Where was this patient FOUND? The set dressing follows the case.
   const scenePreset = useMemo(() => classifySceneEnvironment(caseData), [caseData]);
+  // Stable per-case outfit seed (djb2 over the case id).
+  const clothingSeed = useMemo(() => {
+    let h = 5381;
+    for (let i = 0; i < caseData.id.length; i++) h = ((h << 5) + h + caseData.id.charCodeAt(i)) | 0;
+    return Math.abs(h);
+  }, [caseData.id]);
   // patientVisualState is a fresh object on every realism-director update
   // (each vitals tick), but the wound set it derives almost never changes.
   // Key the memo on CONTENT, not object identity — bodyInjuries feeds the
@@ -4779,6 +4785,10 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 onSurfaceSampler={handleSurfaceSampler}
                 dressed={anatomyLayer === 'dressed'}
                 dressedActiveRegion={regionExposed ? activeRegion : null}
+                // Per-case wardrobe: the same case always wears the same
+                // clothes; different cases stop sharing one navy tee.
+                clothingSeed={clothingSeed}
+                patientAge={caseData.patientInfo?.age}
                 pupilLeftMm={pupilProfile.leftMm}
                 pupilRightMm={pupilProfile.rightMm}
                 presentation={patientPresentation}

@@ -128,6 +128,10 @@ interface BodyMeshProps {
   onSurfaceSampler?: (sampler: SurfaceSampler | null) => void;
   /** Dressed view on/off — shows the scrubs layer derived from this mesh (see ClothingLayer). */
   dressed?: boolean;
+  /** Deterministic per-case seed + demographics for the outfit pick —
+   *  the same case always wears the same clothes (ClothingLayer wardrobe). */
+  clothingSeed?: number;
+  patientAge?: number;
   /** Focused region id — the garment piece covering it parts so the skin can be assessed. */
   dressedActiveRegion?: string | null;
   /** Case pupil diameters (mm) — rendered as the model's actual pupils. */
@@ -584,7 +588,7 @@ function buildSurfaceSampler(root: THREE.Object3D | null, presentationRoot?: THR
   };
 }
 
-export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guidedMode = false, nextGuidedStep = null, onBlockedClick, onBodyPoint, bodyInjuries, patientGender, surfaceOpacity = 1, activeFindingMorphs, breathRateRpm = 0, onSurfaceSampler, dressed = false, dressedActiveRegion = null, pupilLeftMm = 3.5, pupilRightMm = 3.5, skinTint = null, diaphoresis = 0, jaundice = 0, mottling = 0, urticaria = false, unconscious = false, breathingEffort = 0, reducedChestRise = false, tremor = false, seizure = false, presentation = 'upright' }: BodyMeshProps) {
+export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guidedMode = false, nextGuidedStep = null, onBlockedClick, onBodyPoint, bodyInjuries, patientGender, surfaceOpacity = 1, activeFindingMorphs, breathRateRpm = 0, onSurfaceSampler, dressed = false, dressedActiveRegion = null, clothingSeed = 0, patientAge, pupilLeftMm = 3.5, pupilRightMm = 3.5, skinTint = null, diaphoresis = 0, jaundice = 0, mottling = 0, urticaria = false, unconscious = false, breathingEffort = 0, reducedChestRise = false, tremor = false, seizure = false, presentation = 'upright' }: BodyMeshProps) {
   // The path is recomputed per render so a `caseData.patientInfo.gender`
   // change (e.g. user picks a different case) swaps the mesh without
   // remounting the parent. useGLTF caches by URL.
@@ -763,7 +767,7 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
         }
       });
       if (bodyMesh) {
-        const scrubs = buildScrubs(bodyMesh as THREE.Mesh);
+        const scrubs = buildScrubs(bodyMesh as THREE.Mesh, { seed: clothingSeed, gender: patientGender, age: patientAge });
         // Child of the body mesh at identity → inherits its exact placement.
         if (scrubs) (bodyMesh as THREE.Mesh).add(scrubs);
         // Eyes — the skin texture paints the sockets bright red (a placeholder).
@@ -863,7 +867,7 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
     // scrubs + 2048² eye texture repaint). Opacity is applied live by the
     // effect below; the eyes are baked once (live pupil reading is the 2D panel).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scene, modelPath, bodyInjuries, urticaria]); // bodyInjuries + urticaria: stable per case (memoised upstream + per-case key)
+  }, [scene, modelPath, bodyInjuries, urticaria, clothingSeed]); // bodyInjuries/urticaria/clothingSeed: stable per case (memoised upstream + per-case key)
 
   // Region state is now communicated with anatomical overlays and landmarks,
   // not by recolouring the whole patient. Keep this callback for the pointer
