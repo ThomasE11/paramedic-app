@@ -72,11 +72,21 @@
 - [x] `Body3DModel` consumes scenario visuals without importing clinical scenario logic: pupil effects, scenario pallor/cyanosis tint, diaphoresis/mottling strengths, wound/burn/bleeding decals, and compact overview markers
 - [x] Treatment equipment overlay recognizes `iv_cannula` as visible IV access, not only `iv_access`
 
+### The scene is the place (Round 4D — NEW, 2026-07-10)
+- [x] **Stability root-fix**: the "Maximum update depth" storm is dead — surface-sampler handoff rAF-coalesced, scenarioBodyInjuries content-keyed (was rebuilding the ENTIRE patient clone every vitals tick), VitalSignsMonitor case-reset content-guarded (was firing 6 setStates per parent render and wiping assessment progress). Verified 0 errors through bay mount + GLB load + viewport resize (was 57+ and a StudentPanel crash)
+- [x] **Case-authored motion**: a patient authored convulsing convulses on arrival; ped-001's febrile child twitches; tremor/shivering shows immediately. Presentation-fields-only matching — teaching text ("status epilepticus = >5 min") can never set the patient shaking
+- [x] **Environment scenes**: the set dressing follows the case — villa living room, bedroom, bathroom, office, restaurant (with the knocked-over chair), street/roadside, desert heat, construction/industrial; ambulance bay is the fallback. Pure classifier (lib/sceneEnvironment) tested against real library phrasings
+- [x] **SceneKit**: response bag + trauma pouch, cardiac monitor (dark until a monitoring treatment is applied, then live ECG sweep), O2 cylinder — on the floor at the patient's side
+- [x] **Walk-in arrival**: camera starts at the doorway and dollies to the bedside over 2.2 s, once per case; grabbing the scene mid-walk takes over
+- [x] **Clothing v3**: per-case wardrobe (deterministic seed, gender pool, elderly mellow) + fabric pass (Laplacian smoothing erases transmitted anatomy, value-noise wrinkles, hems pinned). ponytail ceiling: kandura/abaya need Blender garments (cut topology)
+- [x] **Paediatric stature**: age scales the presentation group (3yo = 0.56), head stays at the pillow, clicks map back through worldToLocal — ped-001 presents a child-sized patient. Proper MPFB child mesh spawned as its own task
+- [x] **Negation-aware scenario matching**: "No rash noted" no longer matches the anaphylaxis scenario (found live on ped-001; sentinel audit green)
+
 ### Motion channels alive (Round 4C — NEW)
 - [x] The four computed-but-inert `PatientVisualState` channels now move the patient: `breathingEffort` (deeper chest excursion + breath-synced torso heave via the shared breath clock), `chestRiseAsymmetry` (shallow chest rise — one bilateral morph; per-side rise needs new GLB morph targets), `hasTremor` (fine 9 Hz shiver), `hasSeizureActivity` (3 Hz clonic jerking that overrides unconscious stillness)
 - [x] `patientMotion.ts` — pure amplitude math (`chestRiseAmplitude` + MOTION constants as the tuning knobs), **6 tests**; arrest stills every channel
 - [x] All root motion stays in LifeSigns (single writer), eased in/out ~0.7 s so mid-case onset reads as deterioration, not a snap
-- [ ] KNOWN PRE-EXISTING (not this round): `onSurfaceSampler` effect ↔ `setSurfaceSampler` loop can burst "Maximum update depth" in dev and crash StudentPanel to its boundary — reproduced on clean base (57 errors, A/B verified); spawned as its own fix task
+- [x] ~~KNOWN PRE-EXISTING: `onSurfaceSampler` effect loop~~ — FIXED in Round 4D (see above): rAF-coalesced handoff + content-keyed injuries + monitor reset guard; verified 0 errors through mount/load/resize
 
 ### Interaction & playability
 - [x] Click the anatomy itself: regions + in-region detail actions (eye→pupil check, carotid→pulse, quadrants) + feet
