@@ -26,14 +26,24 @@ import { useState } from 'react';
 import {
   Wand2, X, Activity, Heart, HeartPulse, Zap,
   ThermometerSun, Droplet, Brain, AlertOctagon,
+  Siren, Info, AlertTriangle, Radio, Users, Unplug,
+  HandMetal, Stethoscope, CloudRain, Plus,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from '@/components/ui/select';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from '@/components/ui/dialog';
 import { toast } from 'sonner';
+import {
+  INJECT_CATALOGUE, createInject,
+  type ClassroomInject, type InjectType, type InjectSeverity,
+} from '@/lib/classroomInjects';
 
 /** Mirror of the patch StudentPanel will merge into patientState. */
 export interface InstructorOverride {
@@ -66,6 +76,33 @@ interface Props {
     spo2?: number; temperature?: number; gcs?: number; bloodGlucose?: number;
   };
   currentRhythm?: string;
+  /** Fire an inject to every participant. Wired to hook.broadcastInject. */
+  onInject?: (inject: ClassroomInject) => void;
+  /** Injects fired this case (from sharedState.activeInjects), any order. */
+  activeInjects?: ClassroomInject[];
+}
+
+/** Lucide icon + short label per inject type. Static so Tailwind JIT sees it. */
+const INJECT_TYPE_META: Record<InjectType, { label: string; Icon: typeof Info }> = {
+  bystander_update: { label: 'Bystander', Icon: Users },
+  hospital_radio: { label: 'Hospital', Icon: Radio },
+  equipment_failure: { label: 'Equipment', Icon: Unplug },
+  patient_refusal: { label: 'Refusal', Icon: HandMetal },
+  new_finding: { label: 'Finding', Icon: Stethoscope },
+  vitals_change: { label: 'Vitals', Icon: Activity },
+  rhythm_change: { label: 'Rhythm', Icon: HeartPulse },
+  environmental: { label: 'Scene', Icon: CloudRain },
+};
+
+const INJECT_TYPES = Object.keys(INJECT_TYPE_META) as InjectType[];
+
+/** Severity → icon + colour classes. Static map for JIT safety. */
+function severityMeta(sev: InjectSeverity): { Icon: typeof Info; className: string } {
+  switch (sev) {
+    case 'critical': return { Icon: Siren, className: 'text-red-500' };
+    case 'warn': return { Icon: AlertTriangle, className: 'text-amber-500' };
+    case 'info': return { Icon: Info, className: 'text-sky-500' };
+  }
 }
 
 const RHYTHM_OPTIONS = [
@@ -86,9 +123,10 @@ const RHYTHM_OPTIONS = [
 ];
 
 export function InstructorLiveControls({
-  override, setOverride, currentVitals, currentRhythm,
+  override, setOverride, currentVitals, currentRhythm, onInject, activeInjects,
 }: Props) {
   const [open, setOpen] = useState(false);
+  const [customOpen, setCustomOpen] = useState(false);
   // Local draft values — committed on "Apply" so typing doesn't immediately
   // mutate the patient (and broadcast) on every keystroke.
   const [bp, setBp] = useState('');
@@ -156,6 +194,29 @@ export function InstructorLiveControls({
     });
     toast.warning(`Patient crashed to ${to}`);
   };
+
+  // Fire an inject preset. Passes through createInject so it gets a fresh id
+  // + live timestamp (the catalogue entries are timestamp:0 templates).
+  const fireInject = (preset: ClassroomInject) => {
+    if (!onInject) return;
+    const inject = createInject(preset.type, {
+      title: preset.title,
+      description: preset.description,
+      severity: preset.severity,
+      payload: preset.payload,
+    });
+    onInject(inject);
+    toast.success(`Inject sent: ${preset.title}`);
+  };
+
+  const fireCustom = (inject: ClassroomInject) => {
+    if (!onInject) return;
+    onInject(inject);
+    setCustomOpen(false);
+    toast.success(`Inject sent: ${inject.title || INJECT_TYPE_META[inject.type]?.label || 'custom'}`);
+  };
+
+  const sentInjects = (activeInjects ?? []).slice().sort((a, b) => b.timestamp - a.timestamp);
 
   if (!open) {
     // Collapsed — floating chip lower-left, out of the way.
@@ -241,9 +302,211 @@ export function InstructorLiveControls({
             Fill one or more fields and press <strong>Push vitals live</strong>. Students will see the new values on their monitor instantly.
           </p>
         </section>
+
+        {/* --- Injects — case complications --- */}
+        {onInject && (
+          <section>
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <Siren className="w-3.5 h-3.5 text-primary" />
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Injects</span>
+              <Button
+                size="sm" variant="outline"
+                onClick={() => setCustomOpen(true)}
+                className="h-6 ml-auto gap-1 text-[10px] px-2"
+              >
+                <Plus className="w-3 h-3" /> Custom
+              </Button>
+            </div>
+
+            {/* Catalogue grouped by type. */}
+            <div className="space-y-2">
+              {INJECT_TYPES.map((type) => {
+                const presets = INJECT_CATALOGUE.filter(i => i.type === type);
+                if (presets.length === 0) return null;
+                const { label, Icon } = INJECT_TYPE_META[type];
+                return (
+                  <div key={type}>
+                    <div className="flex items-center gap-1 mb-1 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+                      <Icon className="w-2.5 h-2.5" /> {label}
+                    </div>
+                    <div className="grid grid-cols-1 gap-1">
+                      {presets.map((preset) => {
+                        const sm = severityMeta(preset.severity);
+                        return (
+                          <button
+                            key={preset.id}
+                            onClick={() => fireInject(preset)}
+                            className="flex items-start gap-1.5 rounded-md border border-border/60 bg-muted/30 hover:bg-muted px-2 py-1.5 text-left transition-colors"
+                            title={preset.description}
+                          >
+                            <sm.Icon className={`w-3 h-3 mt-0.5 shrink-0 ${sm.className}`} />
+                            <span className="text-[11px] leading-snug font-medium flex-1">{preset.title}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Active injects fired this case, newest first. */}
+            {sentInjects.length > 0 && (
+              <div className="mt-3">
+                <div className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-1">
+                  Sent this case ({sentInjects.length})
+                </div>
+                <div className="space-y-1 max-h-32 overflow-y-auto">
+                  {sentInjects.map((inj) => {
+                    const sm = severityMeta(inj.severity);
+                    return (
+                      <div key={inj.id} className="flex items-start gap-1.5 rounded-md bg-muted/40 px-2 py-1">
+                        <sm.Icon className={`w-3 h-3 mt-0.5 shrink-0 ${sm.className}`} />
+                        <div className="min-w-0">
+                          <div className="text-[10px] font-medium truncate">{inj.title}</div>
+                          <div className="text-[9px] text-muted-foreground">
+                            {new Date(inj.timestamp).toLocaleTimeString()}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </section>
+        )}
       </div>
+
+      {customOpen && <CustomInjectDialog onFire={fireCustom} onClose={() => setCustomOpen(false)} />}
     </aside>
   );
+}
+
+/**
+ * Small form to build a custom inject: pick a type, then fill the
+ * type-specific payload fields. Everything falls back to sensible defaults
+ * via createInject, so a half-filled form still fires a valid inject.
+ */
+function CustomInjectDialog({
+  onFire, onClose,
+}: { onFire: (inject: ClassroomInject) => void; onClose: () => void }) {
+  const [type, setType] = useState<InjectType>('bystander_update');
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [severity, setSeverity] = useState<InjectSeverity>('info');
+  // Generic payload fields — which ones matter depends on `type`.
+  const [f1, setF1] = useState(''); // primary field (message / equipment / what / finding / event / rhythm)
+  const [f2, setF2] = useState(''); // secondary (hospitalName / cause / reason / region / impact)
+
+  const build = (): ClassroomInject => {
+    let payload;
+    switch (type) {
+      case 'bystander_update': payload = { message: f1 }; break;
+      case 'hospital_radio': payload = { message: f1, hospitalName: f2 }; break;
+      case 'equipment_failure': payload = { equipment: f1, cause: f2 }; break;
+      case 'patient_refusal': payload = { what: f1, reason: f2 }; break;
+      case 'new_finding': payload = { finding: f1, region: f2 }; break;
+      case 'rhythm_change': payload = { rhythm: f1, reason: f2 }; break;
+      case 'environmental': payload = { event: f1, impact: f2 }; break;
+      case 'vitals_change':
+        // f1 = "spo2:84, bp:70/palp" style; parse loosely into the vitals shape.
+        payload = { vitals: parseVitals(f1), reason: f2 };
+        break;
+      default: payload = { message: f1 };
+    }
+    return createInject(type, { title, description, severity, payload });
+  };
+
+  const fieldLabels: Record<InjectType, [string, string]> = {
+    bystander_update: ['Message', ''],
+    hospital_radio: ['Message', 'Hospital name'],
+    equipment_failure: ['Equipment', 'Cause'],
+    patient_refusal: ['What is refused', 'Reason'],
+    new_finding: ['Finding', 'Region'],
+    vitals_change: ['Vitals (e.g. spo2:84, bp:70/palp)', 'Reason'],
+    rhythm_change: ['Rhythm', 'Reason'],
+    environmental: ['Event', 'Impact'],
+  };
+  const [l1, l2] = fieldLabels[type];
+
+  return (
+    <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle className="text-sm">Custom inject</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-2">
+            <label className="flex flex-col gap-1">
+              <span className="text-[10px] font-medium text-muted-foreground uppercase">Type</span>
+              <Select value={type} onValueChange={(v) => setType(v as InjectType)}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {INJECT_TYPES.map(t => (
+                    <SelectItem key={t} value={t} className="text-xs">{INJECT_TYPE_META[t].label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-[10px] font-medium text-muted-foreground uppercase">Severity</span>
+              <Select value={severity} onValueChange={(v) => setSeverity(v as InjectSeverity)}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="info" className="text-xs">Info</SelectItem>
+                  <SelectItem value="warn" className="text-xs">Warn</SelectItem>
+                  <SelectItem value="critical" className="text-xs">Critical</SelectItem>
+                </SelectContent>
+              </Select>
+            </label>
+          </div>
+          <label className="flex flex-col gap-1">
+            <span className="text-[10px] font-medium text-muted-foreground uppercase">Title</span>
+            <Input value={title} onChange={e => setTitle(e.target.value)} className="h-8 text-xs" placeholder="Short headline" />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-[10px] font-medium text-muted-foreground uppercase">{l1}</span>
+            <Textarea value={f1} onChange={e => setF1(e.target.value)} className="text-xs min-h-[3rem]" />
+          </label>
+          {l2 && (
+            <label className="flex flex-col gap-1">
+              <span className="text-[10px] font-medium text-muted-foreground uppercase">{l2}</span>
+              <Input value={f2} onChange={e => setF2(e.target.value)} className="h-8 text-xs" />
+            </label>
+          )}
+          <label className="flex flex-col gap-1">
+            <span className="text-[10px] font-medium text-muted-foreground uppercase">Description (optional)</span>
+            <Input value={description} onChange={e => setDescription(e.target.value)} className="h-8 text-xs" />
+          </label>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" size="sm" onClick={onClose} className="h-8 text-xs">Cancel</Button>
+          <Button size="sm" onClick={() => onFire(build())} className="h-8 text-xs gap-1.5">
+            <Siren className="w-3 h-3" /> Send inject
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/**
+ * Parse a loose "key:value, key:value" string into an InjectVitals object.
+ * Recognises the SharedCaseState vitals keys; bp stays a string, the rest
+ * are coerced to numbers. Unknown keys are ignored. ponytail: naive split,
+ * fine for a human-typed instructor field — not a wire format.
+ */
+function parseVitals(raw: string): Record<string, number | string> {
+  const out: Record<string, number | string> = {};
+  const numeric = new Set(['pulse', 'respiration', 'spo2', 'temperature', 'gcs', 'bloodGlucose']);
+  for (const pair of raw.split(',')) {
+    const [k, v] = pair.split(':').map(s => s.trim());
+    if (!k || !v) continue;
+    if (k === 'bp') out.bp = v;
+    else if (numeric.has(k) && !Number.isNaN(Number(v))) out[k] = Number(v);
+  }
+  return out;
 }
 
 // Small labelled input — isolates the repetitive shape.

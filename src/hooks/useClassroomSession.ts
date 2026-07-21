@@ -29,6 +29,7 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 import { getSupabaseClient, isSupabaseConfigured } from '@/lib/supabase';
 import { getSupabaseUrl, getSupabaseAnonKey } from '@/lib/supabaseConfig';
 import type { ClinicalRole } from '@/lib/classroomRoles';
+import type { ClassroomInject } from '@/lib/classroomInjects';
 
 // ============================================================================
 // Types
@@ -160,6 +161,13 @@ export interface SharedCaseState {
    * are orthogonal to the driver_set privilege. Absent = no role assigned.
    */
   clinicalRoles?: Record<string, ClinicalRole>;
+  /**
+   * Instructor-fired case complications this case (bystander updates,
+   * equipment failures, sudden vitals shifts, …). Append-only per case;
+   * cleared on case_started. Newest-last. Students receive these and render
+   * notification overlays; only the instructor sends them.
+   */
+  activeInjects?: ClassroomInject[];
 }
 
 /**
@@ -230,7 +238,12 @@ export type ClassroomBroadcast =
    * role to a participant. Orthogonal to driver_set — a role shapes soft
    * action warnings + badges, not who may mutate the shared state.
    */
-  | { kind: 'role_assigned'; participantKey: string; role: ClinicalRole | null; fromKey: string };
+  | { kind: 'role_assigned'; participantKey: string; role: ClinicalRole | null; fromKey: string }
+  /**
+   * Instructor firing a case complication. Appended to
+   * sharedState.activeInjects on every client; students render an overlay.
+   */
+  | { kind: 'inject'; inject: ClassroomInject; fromKey: string };
 
 // ============================================================================
 // Helpers
@@ -281,6 +294,19 @@ function applyRoleAssignment(
   if (role === null) delete next[participantKey];
   else next[participantKey] = role;
   return next;
+}
+
+/**
+ * Append an inject to the active list, de-duped by id (a re-broadcast of the
+ * same inject is idempotent). Returns a fresh array so React sees a new ref.
+ */
+function appendInject(
+  current: ClassroomInject[] | undefined,
+  inject: ClassroomInject,
+): ClassroomInject[] {
+  const list = current ?? [];
+  if (list.some(i => i.id === inject.id)) return list;
+  return [...list, inject];
 }
 
 /** Generate a 6-digit classroom PIN. Zero-padded, never leading zero. */
@@ -405,6 +431,13 @@ export interface UseClassroomSessionResult {
    * to a participant. Advisory only — orthogonal to driving privileges.
    */
   broadcastRoleAssignment: (participantKey: string, role: ClinicalRole | null) => Promise<void>;
+
+  /**
+   * Instructor: fire a case complication (inject). Broadcasts to every
+   * participant and appends to sharedState.activeInjects. Students receive
+   * injects and render overlays; they never send them.
+   */
+  broadcastInject: (inject: ClassroomInject) => Promise<void>;
 }
 
 export function useClassroomSession(): UseClassroomSessionResult {
@@ -542,6 +575,11 @@ export function useClassroomSession(): UseClassroomSessionResult {
               ...prev,
               clinicalRoles: applyRoleAssignment(prev.clinicalRoles, payload.participantKey, payload.role),
             }));
+          } else if (payload.kind === 'inject') {
+            setSharedState(prev => ({
+              ...prev,
+              activeInjects: appendInject(prev.activeInjects, payload.inject),
+            }));
           } else if (payload.kind === 'case_started') {
             // Durable lifecycle state — ClassroomJoin can gate its case
             // panel on `liveCaseId` without risking the broadcast being
@@ -553,6 +591,8 @@ export function useClassroomSession(): UseClassroomSessionResult {
             //  the state_patch to the useEffect.)
             setLiveCaseId(payload.caseId);
             setLiveCaseStartedAt(payload.startedAt);
+            // New case = fresh injects. Clear any left over from the last case.
+            setSharedState(prev => (prev.activeInjects?.length ? { ...prev, activeInjects: [] } : prev));
           } else if (payload.kind === 'case_ended') {
             // Case boundary — clear shared + timer state so the next case
             // starts with a clean slate on every client.
@@ -861,9 +901,15 @@ export function useClassroomSession(): UseClassroomSessionResult {
         ...prev,
         clinicalRoles: applyRoleAssignment(prev.clinicalRoles, payload.participantKey, payload.role),
       }));
+    } else if (payload.kind === 'inject') {
+      setSharedState(prev => ({
+        ...prev,
+        activeInjects: appendInject(prev.activeInjects, payload.inject),
+      }));
     } else if (payload.kind === 'case_started') {
       setLiveCaseId(payload.caseId);
       setLiveCaseStartedAt(payload.startedAt);
+      setSharedState(prev => (prev.activeInjects?.length ? { ...prev, activeInjects: [] } : prev));
     } else if (payload.kind === 'case_ended') {
       setSharedState({});
       setTimerEndsAtState(null);
@@ -1103,6 +1149,16 @@ export function useClassroomSession(): UseClassroomSessionResult {
     });
   }, [sendBroadcast]);
 
+  const broadcastInject = useCallback(async (inject: ClassroomInject) => {
+    // Optimistic local append so the instructor's active-inject feed updates
+    // at once; students hear about it via the broadcast.
+    setSharedState(prev => ({
+      ...prev,
+      activeInjects: appendInject(prev.activeInjects, inject),
+    }));
+    await sendBroadcast({ kind: 'inject', inject, fromKey: selfKeyRef.current });
+  }, [sendBroadcast]);
+
   const endCase = useCallback(async () => {
     const endedAt = new Date().toISOString();
 
@@ -1297,6 +1353,7 @@ export function useClassroomSession(): UseClassroomSessionResult {
       avFloorOpen,
       setAvFloor,
       broadcastRoleAssignment,
+      broadcastInject,
     }),
     [supported, isPreviewMode, status, error, role, session, participants, lastBroadcast,
       driverKeys, currentDriverKey, isDriver, liveCaseId, liveCaseStartedAt, sharedState,
@@ -1304,6 +1361,6 @@ export function useClassroomSession(): UseClassroomSessionResult {
       broadcastStatePatch, broadcastStateSnapshot, requestStateSnapshot,
       setDrivers, giveControl, addDriver, takeControl,
       chatMessages, sendChat, timerEndsAt, setTimer, avFloorOpen, setAvFloor,
-      broadcastRoleAssignment],
+      broadcastRoleAssignment, broadcastInject],
   );
 }

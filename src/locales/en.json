@@ -230,6 +230,12 @@
       "notFound": "No live session with that PIN. Double-check with your instructor.",
       "realtimeTimeout": "Couldn't connect to the live session (connection timed out). Try again.",
       "realtimeFailed": "Couldn't connect to the live session. Check your network and try again."
+    },
+    "injects": {
+      "vitalsChanged": "Vitals changed",
+      "rhythmChanged": "Rhythm changed",
+      "dismiss": "Dismiss",
+      "feedTitle": "Case updates"
     }
   },
   "attributions": {

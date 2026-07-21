@@ -235,6 +235,8 @@ export function ClassroomHost({ onExit }: Props) {
           setOverride={setInstructorOverride}
           currentVitals={sharedState.vitals}
           currentRhythm={sharedState.currentRhythm}
+          onInject={sessionHook.broadcastInject}
+          activeInjects={sharedState.activeInjects}
         />
       )}
       {markingMode ? (
@@ -257,6 +259,7 @@ export function ClassroomHost({ onExit }: Props) {
           // RECEIVING patches via externalState.
           onClassroomStateChange={isDriver ? broadcastStatePatch : undefined}
           readOnly={!isDriver}
+          activeInjects={sharedState.activeInjects}
           externalState={!isDriver ? {
             vitals: sharedState.vitals,
             appliedTreatments: sharedState.appliedTreatments,

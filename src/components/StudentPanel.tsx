@@ -74,6 +74,11 @@ import {
 } from '@/data/treatmentProtocols';
 import { checkRuntimeContraindications } from '@/lib/runtimeContraindications';
 import { isActionAllowedForRole, getRoleBadgeStyle, CLINICAL_ROLES, type ClinicalRole } from '@/lib/classroomRoles';
+import type {
+  ClassroomInject, VitalsChangePayload, RhythmChangePayload,
+  BystanderUpdatePayload, HospitalRadioPayload, EquipmentFailurePayload,
+  PatientRefusalPayload, NewFindingPayload, EnvironmentalPayload,
+} from '@/lib/classroomInjects';
 import { evaluateTreatmentRealism } from '@/lib/patientRealism';
 import { deriveRealismDirectorState, type RealismDirectorState } from '@/lib/patientRealismDirector';
 import {
@@ -625,6 +630,13 @@ interface StudentPanelProps {
    * block. Undefined in single-player mode.
    */
   clinicalRole?: ClinicalRole | null;
+  /**
+   * Classroom injects fired by the instructor this case (append-only, from
+   * sharedState.activeInjects). The panel watches for new entries and renders
+   * notification overlays; vitals_change / rhythm_change payloads also patch
+   * the live monitor. Undefined in single-player mode.
+   */
+  activeInjects?: ClassroomInject[];
 }
 
 interface TreatmentPracticalityContext {
@@ -1215,6 +1227,7 @@ export function StudentPanel({
   externalState,
   instructorOverride,
   clinicalRole,
+  activeInjects,
 }: StudentPanelProps) {
   const { t, i18n } = useTranslation();
   // Onboarding tour for first-time users
@@ -1525,6 +1538,12 @@ export function StudentPanel({
   }, [bvmVentilationRate]);
   const [hintVisible, setHintVisible] = useState(false);
   const [currentHint, setCurrentHint] = useState<string>('');
+
+  // ---- Classroom injects (instructor-fired complications) ----
+  // Equipment-failure injects stay on screen as a red banner until the
+  // student dismisses them; everything else is a transient toast.
+  const [injectBanner, setInjectBanner] = useState<ClassroomInject | null>(null);
+  const [injectFeedOpen, setInjectFeedOpen] = useState(false);
 
   // Scene toggle & ABCDE row states
   const [showScene, setShowScene] = useState(false);
@@ -2187,6 +2206,89 @@ export function StudentPanel({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [instructorOverride?.nonce]);
+
+  // ---------------- Classroom injects -------------------------------------
+  // Watch sharedState.activeInjects for NEW entries and react: transient
+  // toasts for most types, a sticky red banner for equipment failures, and
+  // a silent monitor patch (plus subtle toast) for vitals/rhythm changes.
+  // A ref of already-seen ids means we only ever fire an inject once, even
+  // though the effect re-runs whenever the list grows.
+  const seenInjectIdsRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!activeInjects || activeInjects.length === 0) return;
+    for (const inject of activeInjects) {
+      if (seenInjectIdsRef.current.has(inject.id)) continue;
+      seenInjectIdsRef.current.add(inject.id);
+
+      switch (inject.type) {
+        case 'bystander_update': {
+          const p = inject.payload as BystanderUpdatePayload;
+          toast.info(inject.title, { description: p.message, duration: 8000 });
+          break;
+        }
+        case 'hospital_radio': {
+          const p = inject.payload as HospitalRadioPayload;
+          toast.info(`📻 ${p.hospitalName}`, { description: p.message, duration: 8000 });
+          break;
+        }
+        case 'patient_refusal': {
+          const p = inject.payload as PatientRefusalPayload;
+          toast.warning(inject.title, { description: p.reason, duration: 8000 });
+          break;
+        }
+        case 'environmental': {
+          const p = inject.payload as EnvironmentalPayload;
+          toast.info(p.event, { description: p.impact, duration: 8000 });
+          break;
+        }
+        case 'new_finding': {
+          const p = inject.payload as NewFindingPayload;
+          toast.info(inject.title, { description: `${p.finding} (${p.region})`, duration: 10000 });
+          break;
+        }
+        case 'equipment_failure': {
+          // Sticky — sets a banner that persists until dismissed.
+          setInjectBanner(inject);
+          break;
+        }
+        case 'vitals_change': {
+          const p = inject.payload as VitalsChangePayload;
+          const v = p.vitals;
+          setCurrentVitals(prev => {
+            const base = (prev || {}) as VitalSigns;
+            const merged: VitalSigns = { ...base };
+            if (v.bp !== undefined) merged.bp = v.bp;
+            if (v.pulse !== undefined) merged.pulse = v.pulse;
+            if (v.respiration !== undefined) merged.respiration = v.respiration;
+            if (v.spo2 !== undefined) merged.spo2 = v.spo2;
+            if (v.temperature !== undefined) merged.temperature = v.temperature;
+            if (v.bloodGlucose !== undefined) merged.bloodGlucose = v.bloodGlucose;
+            if (v.gcs !== undefined) merged.gcs = { total: v.gcs } as unknown as VitalSigns['gcs'];
+            return merged;
+          });
+          setPatientState(prev => {
+            const b = prev ?? (currentCase ? createInitialPatientState(currentCase) : null);
+            if (!b) return prev;
+            return { ...b, vitals: { ...b.vitals, ...v } };
+          });
+          toast.warning(t('classroom.injects.vitalsChanged', 'Vitals changed'), { description: p.reason });
+          break;
+        }
+        case 'rhythm_change': {
+          const p = inject.payload as RhythmChangePayload;
+          setPatientState(prev => {
+            const b = prev ?? (currentCase ? createInitialPatientState(currentCase) : null);
+            if (!b) return prev;
+            const arrestish = ['Asystole', 'PEA', 'Ventricular Fibrillation'].includes(p.rhythm);
+            return { ...b, currentRhythm: p.rhythm, isInArrest: arrestish ? true : b.isInArrest };
+          });
+          toast.warning(t('classroom.injects.rhythmChanged', 'Rhythm changed'), { description: p.reason });
+          break;
+        }
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeInjects]);
 
   // Inactivity coaching — nudge students who are stuck
   useEffect(() => {
@@ -4400,6 +4502,62 @@ export function StudentPanel({
             visible whether the instructor is pre-briefing, running the
             case, or on the post-case summary. */}
         {topBanner}
+
+        {/* Sticky equipment-failure inject banner — stays until dismissed. */}
+        {injectBanner && (
+          <div className="mb-3 flex items-start gap-2 rounded-lg border border-red-500/50 bg-red-500/10 px-3 py-2 text-red-700 dark:text-red-300">
+            <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 animate-pulse" />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold">{injectBanner.title}</p>
+              <p className="text-xs opacity-90">
+                {(injectBanner.payload as EquipmentFailurePayload).equipment}: {(injectBanner.payload as EquipmentFailurePayload).cause}
+              </p>
+            </div>
+            <button
+              onClick={() => setInjectBanner(null)}
+              className="shrink-0 text-red-600 hover:text-red-800 dark:hover:text-red-100"
+              aria-label={t('classroom.injects.dismiss', 'Dismiss')}
+            >
+              <XCircle className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+
+        {/* Collapsible inject feed — every complication fired this case. */}
+        {activeInjects && activeInjects.length > 0 && (
+          <div className="mb-3 rounded-lg border border-border/60 bg-muted/30">
+            <button
+              onClick={() => setInjectFeedOpen(o => !o)}
+              className="flex w-full items-center gap-2 px-3 py-2 text-left"
+            >
+              <ListChecks className="h-3.5 w-3.5 text-primary" />
+              <span className="text-xs font-semibold">
+                {t('classroom.injects.feedTitle', 'Case updates')} ({activeInjects.length})
+              </span>
+              {injectFeedOpen
+                ? <ChevronUp className="h-3.5 w-3.5 ml-auto text-muted-foreground" />
+                : <ChevronDown className="h-3.5 w-3.5 ml-auto text-muted-foreground" />}
+            </button>
+            {injectFeedOpen && (
+              <ul className="px-3 pb-2 space-y-1.5">
+                {activeInjects.slice().sort((a, b) => b.timestamp - a.timestamp).map((inj) => (
+                  <li key={inj.id} className="flex items-start gap-2 text-xs">
+                    <span
+                      className={`mt-1 h-1.5 w-1.5 shrink-0 rounded-full ${
+                        inj.severity === 'critical' ? 'bg-red-500'
+                          : inj.severity === 'warn' ? 'bg-amber-500' : 'bg-sky-500'
+                      }`}
+                    />
+                    <div className="min-w-0">
+                      <span className="font-medium">{inj.title}</span>
+                      <span className="text-muted-foreground"> · {new Date(inj.timestamp).toLocaleTimeString()}</span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
 
         {/* Classroom clinical-role badge — shown when the instructor has
             assigned this student a team role. Colour-coded per role. */}
