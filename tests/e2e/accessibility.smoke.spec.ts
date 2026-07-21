@@ -1,0 +1,57 @@
+import { test, expect } from '@playwright/test';
+
+// ponytail: lightweight a11y sanity checks, no axe dependency —
+// upgrade to @axe-core/playwright if a real audit is ever needed.
+
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem('paramedic-studio-tour-completed', 'true');
+  });
+});
+
+test('landing page: headings, named buttons, alt text', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByRole('button', { name: /Start Training/i }).first()).toBeVisible();
+
+  // At least one heading present.
+  expect(await page.getByRole('heading').count()).toBeGreaterThan(0);
+
+  // Every visible button has an accessible name.
+  const unnamedButtons = await page.locator('button:visible').evaluateAll(buttons =>
+    buttons.filter(
+      b =>
+        !(
+          b.textContent?.trim() ||
+          b.getAttribute('aria-label') ||
+          b.getAttribute('title')
+        ),
+    ).length,
+  );
+  expect(unnamedButtons).toBe(0);
+
+  // Every image has alt text (empty alt = decorative, acceptable).
+  const missingAlt = await page.locator('img:visible').evaluateAll(imgs =>
+    imgs.filter(img => img.getAttribute('alt') === null).length,
+  );
+  expect(missingAlt).toBe(0);
+});
+
+test('keyboard navigation reaches case selection', async ({ page }) => {
+  await page.goto('/');
+
+  // Enter student mode via keyboard.
+  const start = page.getByRole('button', { name: /Start Training/i }).first();
+  await start.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByText(/Training mission board/i)).toBeVisible();
+
+  // Tab moves focus between interactive controls on the mission board.
+  await page.keyboard.press('Tab');
+  const first = await page.evaluate(() => document.activeElement?.tagName);
+  await page.keyboard.press('Tab');
+  const second = await page.evaluate(
+    () => `${document.activeElement?.tagName}:${(document.activeElement as HTMLElement)?.innerText?.slice(0, 40)}`,
+  );
+  expect(['BUTTON', 'A', 'INPUT', 'SELECT', 'TEXTAREA']).toContain(first);
+  expect(second).toBeTruthy();
+});

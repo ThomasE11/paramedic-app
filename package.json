@@ -14,7 +14,8 @@
     "audit:cases": "node scripts/audit-cases.mjs",
     "audit:clinical": "node scripts/audit-clinical-regressions.mjs",
     "audit:scene-assets": "node scripts/audit-scene-assets.mjs",
-    "verify:pdf": "node scripts/run-verify-pdf-export.mjs"
+    "verify:pdf": "node scripts/run-verify-pdf-export.mjs",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@babel/runtime": "^7.22.0",
@@ -78,6 +79,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@playwright/test": "^1.61.1",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
