@@ -21,12 +21,14 @@
  */
 
 import { Suspense, lazy, useEffect, useRef, useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useClassroomSession } from '@/hooks/useClassroomSession';
 import { useClassroomVoice } from '@/hooks/useClassroomVoice';
 import { ClassroomLobby } from './ClassroomLobby';
-import { InstructorLiveControls, type InstructorOverride } from './InstructorLiveControls';
+import { type InstructorOverride } from './InstructorLiveControls';
+import { ControlTower } from './ControlTower';
 import { ClassroomBroadcastBar } from './ClassroomBroadcastBar';
 import { MarkingView } from './MarkingView';
 import { ClassroomChatSidebar } from './ClassroomChatSidebar';
@@ -67,6 +69,7 @@ export function ClassroomHost({ onExit }: Props) {
     lastBroadcast,
     avFloorOpen,
     setAvFloor,
+    broadcastRoleAssignment,
   } = sessionHook;
 
   // Instructor "puppet-master" override state. The InstructorLiveControls
@@ -78,6 +81,12 @@ export function ClassroomHost({ onExit }: Props) {
   // 'marking' = lean pre-brief + checklist for a manikin sim while students
   // still join on the same code. The instructor toggles this in the lobby.
   const [markingMode, setMarkingMode] = useState(false);
+  // Patient Bay overlay — the full 3D case surface (StudentPanel). It stays
+  // MOUNTED whenever the instructor is driving (that's what generates + broadcasts
+  // the shared state); the `bayOpen` flag only controls whether it's visible on
+  // top of the ControlTower. When the instructor isn't driving, the bay is a
+  // read-only spectator view they open on demand.
+  const [bayOpen, setBayOpen] = useState(false);
 
   // Voice-chat mesh. The instructor is allowed to broadcast whenever they
   // are currently driving (which is the default). When they hand control to
@@ -156,6 +165,13 @@ export function ClassroomHost({ onExit }: Props) {
     });
   }, [caseSnapshot, isDriver, session?.id, voice]);
 
+  // When the instructor holds the driver seat, open the Patient Bay by default
+  // so the case surface mounts and starts broadcasting immediately — matches the
+  // pre-tower behaviour where the instructor landed straight on the case.
+  useEffect(() => {
+    if (caseSnapshot && isDriver) setBayOpen(true);
+  }, [caseSnapshot, isDriver]);
+
   if (!caseSnapshot) {
     return (
       <>
@@ -225,20 +241,6 @@ export function ClassroomHost({ onExit }: Props) {
         selfKey={selfKey}
         driverKeys={driverKeys}
       />
-      {/* Instructor-only live controls — lets the educator steer the live
-          case (force rhythm change, override vitals, flip to/from arrest)
-          without editing the case script. Only rendered on the driver
-          (instructor) side; students never see this panel. */}
-      {isDriver && (
-        <InstructorLiveControls
-          override={instructorOverride}
-          setOverride={setInstructorOverride}
-          currentVitals={sharedState.vitals}
-          currentRhythm={sharedState.currentRhythm}
-          onInject={sessionHook.broadcastInject}
-          activeInjects={sharedState.activeInjects}
-        />
-      )}
       {markingMode ? (
         <>
           {broadcastBar}
@@ -250,34 +252,68 @@ export function ClassroomHost({ onExit }: Props) {
           />
         </>
       ) : (
-        <StudentPanel
-          onExit={handleEndSession}
-          preloadedCase={caseSnapshot}
-          instructorOverride={isDriver ? instructorOverride ?? undefined : undefined}
-          // Only the current driver broadcasts state changes. When control is
-          // handed to a student, the instructor stops broadcasting and starts
-          // RECEIVING patches via externalState.
-          onClassroomStateChange={isDriver ? broadcastStatePatch : undefined}
-          readOnly={!isDriver}
-          activeInjects={sharedState.activeInjects}
-          externalState={!isDriver ? {
-            vitals: sharedState.vitals,
-            appliedTreatments: sharedState.appliedTreatments,
-            completedItems: sharedState.completedItems,
-            assessmentPerformed: sharedState.assessmentPerformed,
-            caseStartedAt: sharedState.caseStartedAt,
-            monitorRevealedVitals: sharedState.monitorRevealedVitals,
-            currentRhythm: sharedState.currentRhythm,
-            isInArrest: sharedState.isInArrest,
-            arrestState: sharedState.arrestState,
-            ventilatorSettings: sharedState.ventilatorSettings,
-            bvmVentilationRate: sharedState.bvmVentilationRate,
-            arrestTimeline: sharedState.arrestTimeline,
-            transportDecision: sharedState.transportDecision,
-            pacerState: sharedState.pacerState,
-          } : undefined}
-          topBanner={broadcastBar}
-        />
+        <>
+          {/* Unified instructor dashboard. The case surface itself lives in the
+              Patient Bay overlay below — ControlTower is the always-on
+              observatory + override deck around it. */}
+          <ControlTower
+            caseData={caseSnapshot}
+            sharedState={sharedState}
+            participants={participants}
+            override={instructorOverride}
+            setOverride={setInstructorOverride}
+            onInject={sessionHook.broadcastInject}
+            onAssignRole={broadcastRoleAssignment}
+            onOpenPatientBay={() => setBayOpen(true)}
+            topBar={broadcastBar}
+          />
+
+          {/* Patient Bay overlay — the full 3D case surface. Kept MOUNTED while
+              the instructor drives (so it keeps broadcasting) and merely hidden
+              when the bay is closed; when not driving it mounts on open as a
+              read-only spectator view. */}
+          {(isDriver || bayOpen) && (
+            <div className={bayOpen ? 'fixed inset-0 z-30 bg-background overflow-auto' : 'hidden'} aria-hidden={!bayOpen}>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => setBayOpen(false)}
+                className="fixed right-3 top-3 z-[60] h-8 gap-1.5 text-xs shadow-lg"
+                aria-label="Close Patient Bay"
+              >
+                <X className="w-3.5 h-3.5" /> Close bay
+              </Button>
+              <StudentPanel
+                onExit={handleEndSession}
+                preloadedCase={caseSnapshot}
+                instructorOverride={isDriver ? instructorOverride ?? undefined : undefined}
+                // Only the current driver broadcasts state changes. When control is
+                // handed to a student, the instructor stops broadcasting and starts
+                // RECEIVING patches via externalState.
+                onClassroomStateChange={isDriver ? broadcastStatePatch : undefined}
+                readOnly={!isDriver}
+                activeInjects={sharedState.activeInjects}
+                externalState={!isDriver ? {
+                  vitals: sharedState.vitals,
+                  appliedTreatments: sharedState.appliedTreatments,
+                  completedItems: sharedState.completedItems,
+                  assessmentPerformed: sharedState.assessmentPerformed,
+                  caseStartedAt: sharedState.caseStartedAt,
+                  monitorRevealedVitals: sharedState.monitorRevealedVitals,
+                  currentRhythm: sharedState.currentRhythm,
+                  isInArrest: sharedState.isInArrest,
+                  arrestState: sharedState.arrestState,
+                  ventilatorSettings: sharedState.ventilatorSettings,
+                  bvmVentilationRate: sharedState.bvmVentilationRate,
+                  arrestTimeline: sharedState.arrestTimeline,
+                  transportDecision: sharedState.transportDecision,
+                  pacerState: sharedState.pacerState,
+                } : undefined}
+                topBanner={broadcastBar}
+              />
+            </div>
+          )}
+        </>
       )}
     </Suspense>
   );

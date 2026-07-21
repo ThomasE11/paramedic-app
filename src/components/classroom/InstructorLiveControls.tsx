@@ -9,17 +9,16 @@
  *
  * Architecture
  * ------------
- * - Rendered alongside the live StudentPanel on the INSTRUCTOR side only
- *   (ClassroomHost), never on the student side.
- * - Produces an `InstructorOverride` object with a bumping `nonce` every
- *   time the instructor commits a change. StudentPanel watches the nonce
- *   and merges the payload into its local patientState. That in turn
- *   trips the existing broadcast effects, so every student screen
- *   updates in real time — same wire we already use for rhythm / vitals
- *   / arrest-state sync.
- * - Completely dismissible (collapsed-by-default chip in the corner),
- *   because it's an instructor tool and must never distract from the
- *   clinical surface during demonstrations.
+ * - The three levers are split into standalone panels — VitalsOverridePanel,
+ *   RhythmOverridePanel, InjectPanel — so ControlTower can drop each into its
+ *   own tab. InstructorLiveControls stays as a thin floating-chip wrapper that
+ *   composes all three, for any surface that still wants the old collapsible
+ *   corner widget (and so external imports don't break).
+ * - Each panel produces an `InstructorOverride` object with a bumping `nonce`
+ *   every time the instructor commits a change. StudentPanel watches the nonce
+ *   and merges the payload into its local patientState. That in turn trips the
+ *   existing broadcast effects, so every student screen updates in real time —
+ *   same wire we already use for rhythm / vitals / arrest-state sync.
  */
 
 import { useState } from 'react';
@@ -66,20 +65,15 @@ export interface InstructorOverride {
   reason?: string;
 }
 
-interface Props {
+/** Shared shape: current driver-side vitals shown as placeholders. */
+export interface CurrentVitals {
+  bp?: string; pulse?: number; respiration?: number;
+  spo2?: number; temperature?: number; gcs?: number; bloodGlucose?: number;
+}
+
+interface OverrideProps {
   override: InstructorOverride | null;
   setOverride: (next: InstructorOverride) => void;
-  /** Current driver-side values — shown as placeholders so the instructor
-   *  can see what they're editing away from. */
-  currentVitals?: {
-    bp?: string; pulse?: number; respiration?: number;
-    spo2?: number; temperature?: number; gcs?: number; bloodGlucose?: number;
-  };
-  currentRhythm?: string;
-  /** Fire an inject to every participant. Wired to hook.broadcastInject. */
-  onInject?: (inject: ClassroomInject) => void;
-  /** Injects fired this case (from sharedState.activeInjects), any order. */
-  activeInjects?: ClassroomInject[];
 }
 
 /** Lucide icon + short label per inject type. Static so Tailwind JIT sees it. */
@@ -122,13 +116,99 @@ const RHYTHM_OPTIONS = [
   'Inferior STEMI',
 ];
 
-export function InstructorLiveControls({
-  override, setOverride, currentVitals, currentRhythm, onInject, activeInjects,
-}: Props) {
-  const [open, setOpen] = useState(false);
-  const [customOpen, setCustomOpen] = useState(false);
-  // Local draft values — committed on "Apply" so typing doesn't immediately
-  // mutate the patient (and broadcast) on every keystroke.
+/** Bump helper shared by the override panels. */
+function bumpOverride(
+  { override, setOverride }: OverrideProps,
+  patch: Omit<InstructorOverride, 'nonce'>,
+) {
+  setOverride({ nonce: (override?.nonce ?? 0) + 1, ...patch });
+}
+
+// ===========================================================================
+// RhythmOverridePanel — pick a rhythm, force arrest / ROSC quick actions.
+// ===========================================================================
+
+export function RhythmOverridePanel({
+  override, setOverride, currentRhythm,
+}: OverrideProps & { currentRhythm?: string }) {
+  const [rhythm, setRhythm] = useState<string>('');
+
+  const applyRhythm = () => {
+    if (!rhythm) return;
+    const arrestish = ['Asystole', 'PEA', 'Ventricular Fibrillation'].includes(rhythm);
+    bumpOverride({ override, setOverride }, {
+      currentRhythm: rhythm,
+      isInArrest: arrestish,
+      reason: `Instructor rhythm change → ${rhythm}`,
+    });
+    toast.success(`Rhythm set to ${rhythm}`, {
+      description: arrestish ? 'Patient is now in arrest.' : 'Perfusing rhythm restored.',
+    });
+  };
+
+  const forceRosc = () => {
+    bumpOverride({ override, setOverride }, {
+      currentRhythm: 'Sinus Tachycardia',
+      isInArrest: false,
+      vitals: { pulse: 80, bp: '100/65', spo2: 92 },
+      reason: 'Instructor forced ROSC',
+    });
+    toast.success('ROSC forced', { description: 'Sinus Tachycardia @ 80 bpm, BP 100/65, SpO2 92%.' });
+  };
+
+  const forceArrest = (to: string) => {
+    bumpOverride({ override, setOverride }, {
+      currentRhythm: to,
+      isInArrest: true,
+      vitals: { pulse: 0, bp: '0/0', spo2: 60 },
+      reason: `Instructor forced ${to}`,
+    });
+    toast.warning(`Patient crashed to ${to}`);
+  };
+
+  return (
+    <section>
+      <div className="flex items-center gap-1.5 mb-1.5">
+        <HeartPulse className="w-3.5 h-3.5 text-primary" />
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Rhythm</span>
+        {currentRhythm && (
+          <Badge variant="secondary" className="text-[9px] h-4 ml-auto">Now: {currentRhythm}</Badge>
+        )}
+      </div>
+      <div className="flex gap-1.5">
+        <Select value={rhythm} onValueChange={setRhythm}>
+          <SelectTrigger className="h-8 text-xs flex-1"><SelectValue placeholder="Pick rhythm…" /></SelectTrigger>
+          <SelectContent>
+            {RHYTHM_OPTIONS.map(r => <SelectItem key={r} value={r} className="text-xs">{r}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Button size="sm" onClick={applyRhythm} disabled={!rhythm} className="h-8 text-xs px-3 shrink-0">Apply</Button>
+      </div>
+      <div className="grid grid-cols-2 gap-1.5 mt-2">
+        <Button size="sm" variant="outline" onClick={() => forceArrest('Ventricular Fibrillation')} className="h-7 gap-1.5 text-[11px] text-red-600 border-red-300 hover:bg-red-50 dark:hover:bg-red-950">
+          <Zap className="w-3 h-3" /> Force VF
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => forceArrest('Asystole')} className="h-7 gap-1.5 text-[11px] text-slate-600 border-slate-300">
+          <AlertOctagon className="w-3 h-3" /> Force Asystole
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => forceArrest('PEA')} className="h-7 gap-1.5 text-[11px] text-amber-700 border-amber-300">
+          <Heart className="w-3 h-3" /> Force PEA
+        </Button>
+        <Button size="sm" onClick={forceRosc} className="h-7 gap-1.5 text-[11px] bg-emerald-600 hover:bg-emerald-700 text-white">
+          <HeartPulse className="w-3 h-3" /> Force ROSC
+        </Button>
+      </div>
+    </section>
+  );
+}
+
+// ===========================================================================
+// VitalsOverridePanel — draft vitals and push them live.
+// ===========================================================================
+
+export function VitalsOverridePanel({
+  override, setOverride, currentVitals,
+}: OverrideProps & { currentVitals?: CurrentVitals }) {
   const [bp, setBp] = useState('');
   const [pulse, setPulse] = useState('');
   const [rr, setRr] = useState('');
@@ -136,11 +216,6 @@ export function InstructorLiveControls({
   const [temp, setTemp] = useState('');
   const [gcs, setGcs] = useState('');
   const [bgl, setBgl] = useState('');
-  const [rhythm, setRhythm] = useState<string>('');
-
-  const bump = (patch: Omit<InstructorOverride, 'nonce'>) => {
-    setOverride({ nonce: (override?.nonce ?? 0) + 1, ...patch });
-  };
 
   const applyVitalsDraft = () => {
     const v: InstructorOverride['vitals'] = {};
@@ -155,50 +230,49 @@ export function InstructorLiveControls({
       toast.info('Nothing to apply — fill at least one field first.');
       return;
     }
-    bump({ vitals: v, reason: 'Instructor vitals override' });
+    bumpOverride({ override, setOverride }, { vitals: v, reason: 'Instructor vitals override' });
     toast.success('Vitals pushed live', { description: Object.entries(v).map(([k, val]) => `${k}: ${val}`).join(' · ') });
-    // Clear drafts after commit
     setBp(''); setPulse(''); setRr(''); setSpo2(''); setTemp(''); setGcs(''); setBgl('');
   };
 
-  const applyRhythm = () => {
-    if (!rhythm) return;
-    // Arrest rhythms auto-set isInArrest=true; perfusing rhythms false.
-    const arrestish = ['Asystole', 'PEA', 'Ventricular Fibrillation'].includes(rhythm);
-    bump({
-      currentRhythm: rhythm,
-      isInArrest: arrestish ? true : false,
-      reason: `Instructor rhythm change → ${rhythm}`,
-    });
-    toast.success(`Rhythm set to ${rhythm}`, {
-      description: arrestish ? 'Patient is now in arrest.' : 'Perfusing rhythm restored.',
-    });
-  };
+  return (
+    <section>
+      <div className="flex items-center gap-1.5 mb-1.5">
+        <Activity className="w-3.5 h-3.5 text-primary" />
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Override vitals</span>
+      </div>
+      <div className="grid grid-cols-2 gap-1.5">
+        <Field icon={<HeartPulse className="w-3 h-3" />} label="HR" placeholder={currentVitals?.pulse?.toString() ?? '—'} value={pulse} onChange={setPulse} />
+        <Field icon={<Activity className="w-3 h-3" />} label="BP" placeholder={currentVitals?.bp ?? '120/80'} value={bp} onChange={setBp} />
+        <Field icon={<Droplet className="w-3 h-3" />} label="SpO₂" placeholder={currentVitals?.spo2?.toString() ?? '—'} value={spo2} onChange={setSpo2} />
+        <Field icon={<Activity className="w-3 h-3" />} label="RR" placeholder={currentVitals?.respiration?.toString() ?? '—'} value={rr} onChange={setRr} />
+        <Field icon={<ThermometerSun className="w-3 h-3" />} label="Temp" placeholder={currentVitals?.temperature?.toString() ?? '—'} value={temp} onChange={setTemp} />
+        <Field icon={<Brain className="w-3 h-3" />} label="GCS" placeholder={currentVitals?.gcs?.toString() ?? '—'} value={gcs} onChange={setGcs} />
+        <Field icon={<Droplet className="w-3 h-3" />} label="BGL" placeholder={currentVitals?.bloodGlucose?.toString() ?? '—'} value={bgl} onChange={setBgl} />
+      </div>
+      <Button onClick={applyVitalsDraft} className="w-full h-8 text-xs mt-2 gap-1.5">
+        <Activity className="w-3 h-3" /> Push vitals live
+      </Button>
+      <p className="text-[10px] text-muted-foreground mt-1.5 leading-snug">
+        Fill one or more fields and press <strong>Push vitals live</strong>. Students will see the new values on their monitor instantly.
+      </p>
+    </section>
+  );
+}
 
-  const forceRosc = () => {
-    bump({
-      currentRhythm: 'Sinus Tachycardia',
-      isInArrest: false,
-      vitals: { pulse: 80, bp: '100/65', spo2: 92 },
-      reason: 'Instructor forced ROSC',
-    });
-    toast.success('ROSC forced', { description: 'Sinus Tachycardia @ 80 bpm, BP 100/65, SpO2 92%.' });
-  };
+// ===========================================================================
+// InjectPanel — catalogue + custom inject + sent-this-case feed.
+// ===========================================================================
 
-  const forceArrest = (to: string) => {
-    bump({
-      currentRhythm: to,
-      isInArrest: true,
-      vitals: { pulse: 0, bp: '0/0', spo2: 60 },
-      reason: `Instructor forced ${to}`,
-    });
-    toast.warning(`Patient crashed to ${to}`);
-  };
+export function InjectPanel({
+  onInject, activeInjects,
+}: {
+  onInject: (inject: ClassroomInject) => void;
+  activeInjects?: ClassroomInject[];
+}) {
+  const [customOpen, setCustomOpen] = useState(false);
 
-  // Fire an inject preset. Passes through createInject so it gets a fresh id
-  // + live timestamp (the catalogue entries are timestamp:0 templates).
   const fireInject = (preset: ClassroomInject) => {
-    if (!onInject) return;
     const inject = createInject(preset.type, {
       title: preset.title,
       description: preset.description,
@@ -210,7 +284,6 @@ export function InstructorLiveControls({
   };
 
   const fireCustom = (inject: ClassroomInject) => {
-    if (!onInject) return;
     onInject(inject);
     setCustomOpen(false);
     toast.success(`Inject sent: ${inject.title || INJECT_TYPE_META[inject.type]?.label || 'custom'}`);
@@ -218,8 +291,105 @@ export function InstructorLiveControls({
 
   const sentInjects = (activeInjects ?? []).slice().sort((a, b) => b.timestamp - a.timestamp);
 
+  return (
+    <section>
+      <div className="flex items-center gap-1.5 mb-1.5">
+        <Siren className="w-3.5 h-3.5 text-primary" />
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Injects</span>
+        <Button
+          size="sm" variant="outline"
+          onClick={() => setCustomOpen(true)}
+          className="h-6 ml-auto gap-1 text-[10px] px-2"
+        >
+          <Plus className="w-3 h-3" /> Custom
+        </Button>
+      </div>
+
+      {/* Catalogue grouped by type. */}
+      <div className="space-y-2">
+        {INJECT_TYPES.map((type) => {
+          const presets = INJECT_CATALOGUE.filter(i => i.type === type);
+          if (presets.length === 0) return null;
+          const { label, Icon } = INJECT_TYPE_META[type];
+          return (
+            <div key={type}>
+              <div className="flex items-center gap-1 mb-1 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+                <Icon className="w-2.5 h-2.5" /> {label}
+              </div>
+              <div className="grid grid-cols-1 gap-1">
+                {presets.map((preset) => {
+                  const sm = severityMeta(preset.severity);
+                  return (
+                    <button
+                      key={preset.id}
+                      onClick={() => fireInject(preset)}
+                      className="flex items-start gap-1.5 rounded-md border border-border/60 bg-muted/30 hover:bg-muted px-2 py-1.5 text-left transition-colors"
+                      title={preset.description}
+                    >
+                      <sm.Icon className={`w-3 h-3 mt-0.5 shrink-0 ${sm.className}`} />
+                      <span className="text-[11px] leading-snug font-medium flex-1">{preset.title}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Active injects fired this case, newest first. */}
+      {sentInjects.length > 0 && (
+        <div className="mt-3">
+          <div className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-1">
+            Sent this case ({sentInjects.length})
+          </div>
+          <div className="space-y-1 max-h-32 overflow-y-auto">
+            {sentInjects.map((inj) => {
+              const sm = severityMeta(inj.severity);
+              return (
+                <div key={inj.id} className="flex items-start gap-1.5 rounded-md bg-muted/40 px-2 py-1">
+                  <sm.Icon className={`w-3 h-3 mt-0.5 shrink-0 ${sm.className}`} />
+                  <div className="min-w-0">
+                    <div className="text-[10px] font-medium truncate">{inj.title}</div>
+                    <div className="text-[9px] text-muted-foreground">
+                      {new Date(inj.timestamp).toLocaleTimeString()}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {customOpen && <CustomInjectDialog onFire={fireCustom} onClose={() => setCustomOpen(false)} />}
+    </section>
+  );
+}
+
+// ===========================================================================
+// InstructorLiveControls — floating-chip wrapper composing all three panels.
+// Kept so any surface (and external imports) that wants the old collapsible
+// corner widget still works unchanged.
+// ===========================================================================
+
+interface Props {
+  override: InstructorOverride | null;
+  setOverride: (next: InstructorOverride) => void;
+  currentVitals?: CurrentVitals;
+  currentRhythm?: string;
+  /** Fire an inject to every participant. Wired to hook.broadcastInject. */
+  onInject?: (inject: ClassroomInject) => void;
+  /** Injects fired this case (from sharedState.activeInjects), any order. */
+  activeInjects?: ClassroomInject[];
+}
+
+export function InstructorLiveControls({
+  override, setOverride, currentVitals, currentRhythm, onInject, activeInjects,
+}: Props) {
+  const [open, setOpen] = useState(false);
+
   if (!open) {
-    // Collapsed — floating chip lower-left, out of the way.
     return (
       <button
         onClick={() => setOpen(true)}
@@ -246,139 +416,10 @@ export function InstructorLiveControls({
       </header>
 
       <div className="p-3 space-y-3 max-h-[70vh] overflow-y-auto">
-        {/* --- Rhythm + arrest quick actions --- */}
-        <section>
-          <div className="flex items-center gap-1.5 mb-1.5">
-            <HeartPulse className="w-3.5 h-3.5 text-primary" />
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Rhythm</span>
-            {currentRhythm && (
-              <Badge variant="secondary" className="text-[9px] h-4 ml-auto">Now: {currentRhythm}</Badge>
-            )}
-          </div>
-          <div className="flex gap-1.5">
-            <Select value={rhythm} onValueChange={setRhythm}>
-              <SelectTrigger className="h-8 text-xs flex-1"><SelectValue placeholder="Pick rhythm…" /></SelectTrigger>
-              <SelectContent>
-                {RHYTHM_OPTIONS.map(r => <SelectItem key={r} value={r} className="text-xs">{r}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            <Button size="sm" onClick={applyRhythm} disabled={!rhythm} className="h-8 text-xs px-3 shrink-0">Apply</Button>
-          </div>
-          <div className="grid grid-cols-2 gap-1.5 mt-2">
-            <Button size="sm" variant="outline" onClick={() => forceArrest('Ventricular Fibrillation')} className="h-7 gap-1.5 text-[11px] text-red-600 border-red-300 hover:bg-red-50 dark:hover:bg-red-950">
-              <Zap className="w-3 h-3" /> Force VF
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => forceArrest('Asystole')} className="h-7 gap-1.5 text-[11px] text-slate-600 border-slate-300">
-              <AlertOctagon className="w-3 h-3" /> Force Asystole
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => forceArrest('PEA')} className="h-7 gap-1.5 text-[11px] text-amber-700 border-amber-300">
-              <Heart className="w-3 h-3" /> Force PEA
-            </Button>
-            <Button size="sm" onClick={forceRosc} className="h-7 gap-1.5 text-[11px] bg-emerald-600 hover:bg-emerald-700 text-white">
-              <HeartPulse className="w-3 h-3" /> Force ROSC
-            </Button>
-          </div>
-        </section>
-
-        {/* --- Vitals override --- */}
-        <section>
-          <div className="flex items-center gap-1.5 mb-1.5">
-            <Activity className="w-3.5 h-3.5 text-primary" />
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Override vitals</span>
-          </div>
-          <div className="grid grid-cols-2 gap-1.5">
-            <Field icon={<HeartPulse className="w-3 h-3" />} label="HR" placeholder={currentVitals?.pulse?.toString() ?? '—'} value={pulse} onChange={setPulse} />
-            <Field icon={<Activity className="w-3 h-3" />} label="BP" placeholder={currentVitals?.bp ?? '120/80'} value={bp} onChange={setBp} />
-            <Field icon={<Droplet className="w-3 h-3" />} label="SpO₂" placeholder={currentVitals?.spo2?.toString() ?? '—'} value={spo2} onChange={setSpo2} />
-            <Field icon={<Activity className="w-3 h-3" />} label="RR" placeholder={currentVitals?.respiration?.toString() ?? '—'} value={rr} onChange={setRr} />
-            <Field icon={<ThermometerSun className="w-3 h-3" />} label="Temp" placeholder={currentVitals?.temperature?.toString() ?? '—'} value={temp} onChange={setTemp} />
-            <Field icon={<Brain className="w-3 h-3" />} label="GCS" placeholder={currentVitals?.gcs?.toString() ?? '—'} value={gcs} onChange={setGcs} />
-            <Field icon={<Droplet className="w-3 h-3" />} label="BGL" placeholder={currentVitals?.bloodGlucose?.toString() ?? '—'} value={bgl} onChange={setBgl} />
-          </div>
-          <Button onClick={applyVitalsDraft} className="w-full h-8 text-xs mt-2 gap-1.5">
-            <Activity className="w-3 h-3" /> Push vitals live
-          </Button>
-          <p className="text-[10px] text-muted-foreground mt-1.5 leading-snug">
-            Fill one or more fields and press <strong>Push vitals live</strong>. Students will see the new values on their monitor instantly.
-          </p>
-        </section>
-
-        {/* --- Injects — case complications --- */}
-        {onInject && (
-          <section>
-            <div className="flex items-center gap-1.5 mb-1.5">
-              <Siren className="w-3.5 h-3.5 text-primary" />
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Injects</span>
-              <Button
-                size="sm" variant="outline"
-                onClick={() => setCustomOpen(true)}
-                className="h-6 ml-auto gap-1 text-[10px] px-2"
-              >
-                <Plus className="w-3 h-3" /> Custom
-              </Button>
-            </div>
-
-            {/* Catalogue grouped by type. */}
-            <div className="space-y-2">
-              {INJECT_TYPES.map((type) => {
-                const presets = INJECT_CATALOGUE.filter(i => i.type === type);
-                if (presets.length === 0) return null;
-                const { label, Icon } = INJECT_TYPE_META[type];
-                return (
-                  <div key={type}>
-                    <div className="flex items-center gap-1 mb-1 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-                      <Icon className="w-2.5 h-2.5" /> {label}
-                    </div>
-                    <div className="grid grid-cols-1 gap-1">
-                      {presets.map((preset) => {
-                        const sm = severityMeta(preset.severity);
-                        return (
-                          <button
-                            key={preset.id}
-                            onClick={() => fireInject(preset)}
-                            className="flex items-start gap-1.5 rounded-md border border-border/60 bg-muted/30 hover:bg-muted px-2 py-1.5 text-left transition-colors"
-                            title={preset.description}
-                          >
-                            <sm.Icon className={`w-3 h-3 mt-0.5 shrink-0 ${sm.className}`} />
-                            <span className="text-[11px] leading-snug font-medium flex-1">{preset.title}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Active injects fired this case, newest first. */}
-            {sentInjects.length > 0 && (
-              <div className="mt-3">
-                <div className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-1">
-                  Sent this case ({sentInjects.length})
-                </div>
-                <div className="space-y-1 max-h-32 overflow-y-auto">
-                  {sentInjects.map((inj) => {
-                    const sm = severityMeta(inj.severity);
-                    return (
-                      <div key={inj.id} className="flex items-start gap-1.5 rounded-md bg-muted/40 px-2 py-1">
-                        <sm.Icon className={`w-3 h-3 mt-0.5 shrink-0 ${sm.className}`} />
-                        <div className="min-w-0">
-                          <div className="text-[10px] font-medium truncate">{inj.title}</div>
-                          <div className="text-[9px] text-muted-foreground">
-                            {new Date(inj.timestamp).toLocaleTimeString()}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </section>
-        )}
+        <RhythmOverridePanel override={override} setOverride={setOverride} currentRhythm={currentRhythm} />
+        <VitalsOverridePanel override={override} setOverride={setOverride} currentVitals={currentVitals} />
+        {onInject && <InjectPanel onInject={onInject} activeInjects={activeInjects} />}
       </div>
-
-      {customOpen && <CustomInjectDialog onFire={fireCustom} onClose={() => setCustomOpen(false)} />}
     </aside>
   );
 }

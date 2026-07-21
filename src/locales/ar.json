@@ -236,6 +236,21 @@
       "rhythmChanged": "تغيّر النظم القلبي",
       "dismiss": "إغلاق",
       "feedTitle": "تحديثات الحالة"
+    },
+    "controlTower": {
+      "patientBay": "خليج المريض",
+      "viewPatientBay": "عرض خليج المريض",
+      "activity": "الجدول الزمني للنشاط",
+      "waiting": "في انتظار بدء الحالة…",
+      "jumpToLatest": "الانتقال إلى الأحدث",
+      "rubric": "تقدم التقييم",
+      "noStudents": "لا يوجد طلاب متصلون بعد",
+      "tabs": {
+        "vitals": "العلامات الحيوية",
+        "rhythm": "النظم",
+        "injects": "الأحداث",
+        "roles": "الأدوار"
+      }
     }
   },
   "attributions": {

@@ -236,6 +236,21 @@
       "rhythmChanged": "Rhythm changed",
       "dismiss": "Dismiss",
       "feedTitle": "Case updates"
+    },
+    "controlTower": {
+      "patientBay": "Patient Bay",
+      "viewPatientBay": "View Patient Bay",
+      "activity": "Activity Timeline",
+      "waiting": "Waiting for case to start…",
+      "jumpToLatest": "Jump to latest",
+      "rubric": "Rubric progress",
+      "noStudents": "No students connected yet",
+      "tabs": {
+        "vitals": "Vitals",
+        "rhythm": "Rhythm",
+        "injects": "Injects",
+        "roles": "Roles"
+      }
     }
   },
   "attributions": {
