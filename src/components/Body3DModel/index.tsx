@@ -37,6 +37,7 @@ import { inferInjuries, injuryRegionTo3D, type BodyInjury, type BodyRegion } fro
 import { classifyBodyPoint } from '@/lib/regionClassifier';
 import { hashInjury } from './WoundLayer';
 import type { PatientVisualState, PatientWoundOverlay } from '@/lib/patientVisualState';
+import { deriveIdleCues } from '@/lib/idleCues';
 import {
   deriveAppliedTreatmentRealismCues,
   deriveCaseRealismProfile,
@@ -3741,6 +3742,14 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
     return caseData.abcde?.disability?.avpu === 'U';
   }, [isInArrest, vitals?.gcs, caseData]);
 
+  // Condition-responsive idle motion cues (wince/shiver/gasp/tremor/seizure/
+  // agitation/chest-clutch) — pure derivation, consumed by IdleAnimations
+  // inside BodyMesh.
+  const idleCues = useMemo(
+    () => deriveIdleCues(caseData, vitals, patientVisualState),
+    [caseData, vitals, patientVisualState],
+  );
+
   // Case text used for the text-driven unwellness states (diaphoresis
   // appearance, jaundice). Recomputed only when the case changes.
   const unwellnessCaseText = useMemo(
@@ -4693,6 +4702,10 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 breathRateRpm={isInArrest ? 0 : breathRateRpm}
                 // Procedural life loop — GCS<=8/arrest = still, eyes closed.
                 unconscious={patientUnconscious}
+                // Condition-responsive idle motion; drops non-essential
+                // animations once the quality ladder has degraded resolution.
+                idleCues={idleCues}
+                reduceIdleMotion={qualityTier >= 3}
                 // Live skin perfusion tint — cyanosis from SpO2, pallor from
                 // shock index, jaundice cast when the case is hepatic. null
                 // when nothing applies (no tint).

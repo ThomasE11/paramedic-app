@@ -114,7 +114,9 @@ export function LifeSigns({ scene, unconscious }: LifeSignsProps) {
             a.blinkUntil = a.t + BLINK_SECONDS;
             a.nextBlinkAt = a.t + BLINK_MIN_GAP + Math.random() * BLINK_EXTRA_GAP;
           }
-          wantClosed = a.t < a.blinkUntil;
+          // idleWinceHold: IdleAnimations squeezes the eyes shut during a
+          // wince/chest-clutch peak — reuses this same lid-texture swap.
+          wantClosed = a.t < a.blinkUntil || scene.userData.idleWinceHold === true;
         }
         if (wantClosed !== a.lidsClosed) {
           a.lidsClosed = wantClosed;
