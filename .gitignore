@@ -41,3 +41,12 @@ test-results/
 *_SUMMARY.md
 *_CHECKLIST.md
 TEST_PLAN.md
+
+# iOS / Capacitor / build artifacts
+build/
+ios/
+*.bak.glb
+.DS_Store
+
+# Codegraph
+.codegraph/
