@@ -147,6 +147,32 @@
     "tourBody": "Turn on Guided mode to assess the patient in clinically correct head-to-toe order. Out-of-sequence regions are locked until you complete the previous step."
   },
   "classroom": {
+    "roles": {
+      "none": "No role",
+      "yourRole": "Your role",
+      "assignFor": "Assign clinical role for {{name}}",
+      "actionReserved": "This action is reserved for the {{role}} role",
+      "lead": {
+        "label": "Team Lead",
+        "description": "Primary clinician — directs the team, may perform any action."
+      },
+      "airway": {
+        "label": "Airway",
+        "description": "Airway & breathing — head tilt, jaw thrust, suction, adjuncts, BVM, intubation, oxygen."
+      },
+      "circulation": {
+        "label": "Circulation",
+        "description": "Circulation — CPR, defibrillation, IV access, fluids, haemorrhage control."
+      },
+      "medication": {
+        "label": "Medication",
+        "description": "Drug administration by any route, plus dose calculations."
+      },
+      "scribe": {
+        "label": "Scribe",
+        "description": "Documentation only — records events and timestamps, performs no clinical action."
+      }
+    },
     "hostBadge": "Classroom",
     "hostCta": "Host a classroom session",
     "joinBadge": "Classroom",

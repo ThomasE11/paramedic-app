@@ -37,6 +37,7 @@ import type {
   ClassroomBroadcast,
   ClassroomParticipant,
 } from '@/hooks/useClassroomSession';
+import { CLINICAL_ROLES, getRoleBadgeStyle, type ClinicalRole } from '@/lib/classroomRoles';
 
 interface Props {
   caseData: CaseScenario;
@@ -48,6 +49,8 @@ interface Props {
   driverKeys: string[];
   /** Presence key of this client. */
   selfKey: string;
+  /** This client's assigned clinical role, if any (shown as a badge). */
+  myRole?: ClinicalRole | null;
   onBroadcast: (payload: ClassroomBroadcast) => Promise<void> | void;
   /** Instructor: hand driving to a single student (replaces the set). */
   onGiveControl: (toKey: string) => Promise<void> | void;
@@ -104,7 +107,7 @@ function vitalsToSummary(v: NonNullable<CaseScenario['vitalSignsProgression']['i
 
 export function ClassroomBroadcastBar({
   caseData, participants, pin, timerEndsAt,
-  driverKeys, selfKey,
+  driverKeys, selfKey, myRole,
   onBroadcast,
   onGiveControl, onAddDriver, onOpenFloor, onTakeControl,
   onEndCase, onEndSession,
@@ -220,6 +223,14 @@ export function ClassroomBroadcastBar({
           </div>
 
           <Badge variant="outline" className="gap-1 text-xs font-mono">PIN {pin}</Badge>
+          {myRole && (
+            <span
+              className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${getRoleBadgeStyle(myRole).bg} ${getRoleBadgeStyle(myRole).text} ${getRoleBadgeStyle(myRole).border}`}
+              title={CLINICAL_ROLES[myRole].description}
+            >
+              {CLINICAL_ROLES[myRole].label}
+            </span>
+          )}
           {/* Student roster — show actual names inline instead of a bare
               count. Instructors need to see *who* has joined (and who's
               driving) without opening the Hand-off dropdown. Long rosters

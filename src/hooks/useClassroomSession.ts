@@ -28,6 +28,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { getSupabaseClient, isSupabaseConfigured } from '@/lib/supabase';
 import { getSupabaseUrl, getSupabaseAnonKey } from '@/lib/supabaseConfig';
+import type { ClinicalRole } from '@/lib/classroomRoles';
 
 // ============================================================================
 // Types
@@ -152,6 +153,13 @@ export interface SharedCaseState {
     rate: number;
     output: number;
   };
+  /**
+   * Clinical role assignments — maps a participant's presence key to the
+   * team role the instructor gave them (lead/airway/circulation/…). Roles
+   * are advisory: they drive soft warnings + badges, not hard blocks, and
+   * are orthogonal to the driver_set privilege. Absent = no role assigned.
+   */
+  clinicalRoles?: Record<string, ClinicalRole>;
 }
 
 /**
@@ -216,7 +224,13 @@ export type ClassroomBroadcast =
    * student may broadcast mic + camera for a many-to-many tabletop
    * discussion — not just the current driver.
    */
-  | { kind: 'av_floor'; open: boolean; fromKey: string };
+  | { kind: 'av_floor'; open: boolean; fromKey: string }
+  /**
+   * Instructor assigning (or clearing, with role: null) a clinical team
+   * role to a participant. Orthogonal to driver_set — a role shapes soft
+   * action warnings + badges, not who may mutate the shared state.
+   */
+  | { kind: 'role_assigned'; participantKey: string; role: ClinicalRole | null; fromKey: string };
 
 // ============================================================================
 // Helpers
@@ -250,6 +264,22 @@ function mergePatch(current: SharedCaseState, patch: SharedCaseState): SharedCas
   // ever sets, never mutates, so we don't need smart merging.
   if (patch.arrestTimeline !== undefined) next.arrestTimeline = patch.arrestTimeline;
   if (patch.pacerState !== undefined) next.pacerState = patch.pacerState;
+  if (patch.clinicalRoles !== undefined) next.clinicalRoles = patch.clinicalRoles;
+  return next;
+}
+
+/**
+ * Apply a single role assignment to the clinicalRoles map. `null` clears
+ * the participant's role. Returns a fresh map so React sees a new reference.
+ */
+function applyRoleAssignment(
+  current: Record<string, ClinicalRole> | undefined,
+  participantKey: string,
+  role: ClinicalRole | null,
+): Record<string, ClinicalRole> {
+  const next = { ...(current ?? {}) };
+  if (role === null) delete next[participantKey];
+  else next[participantKey] = role;
   return next;
 }
 
@@ -369,6 +399,12 @@ export interface UseClassroomSessionResult {
   avFloorOpen: boolean;
   /** Instructor: open/close many-to-many mic+camera for the whole room. */
   setAvFloor: (open: boolean) => Promise<void>;
+
+  /**
+   * Instructor: assign (or clear, with `role: null`) a clinical team role
+   * to a participant. Advisory only — orthogonal to driving privileges.
+   */
+  broadcastRoleAssignment: (participantKey: string, role: ClinicalRole | null) => Promise<void>;
 }
 
 export function useClassroomSession(): UseClassroomSessionResult {
@@ -501,6 +537,11 @@ export function useClassroomSession(): UseClassroomSessionResult {
             setTimerEndsAtState(payload.endsAt);
           } else if (payload.kind === 'av_floor') {
             setAvFloorOpenState(payload.open);
+          } else if (payload.kind === 'role_assigned') {
+            setSharedState(prev => ({
+              ...prev,
+              clinicalRoles: applyRoleAssignment(prev.clinicalRoles, payload.participantKey, payload.role),
+            }));
           } else if (payload.kind === 'case_started') {
             // Durable lifecycle state — ClassroomJoin can gate its case
             // panel on `liveCaseId` without risking the broadcast being
@@ -815,6 +856,11 @@ export function useClassroomSession(): UseClassroomSessionResult {
       setTimerEndsAtState(payload.endsAt);
     } else if (payload.kind === 'av_floor') {
       setAvFloorOpenState(payload.open);
+    } else if (payload.kind === 'role_assigned') {
+      setSharedState(prev => ({
+        ...prev,
+        clinicalRoles: applyRoleAssignment(prev.clinicalRoles, payload.participantKey, payload.role),
+      }));
     } else if (payload.kind === 'case_started') {
       setLiveCaseId(payload.caseId);
       setLiveCaseStartedAt(payload.startedAt);
@@ -1043,6 +1089,20 @@ export function useClassroomSession(): UseClassroomSessionResult {
     await sendBroadcast({ kind: 'av_floor', open, fromKey: selfKeyRef.current });
   }, [sendBroadcast]);
 
+  const broadcastRoleAssignment = useCallback(async (participantKey: string, role: ClinicalRole | null) => {
+    // Optimistic local update so the instructor's roster flips at once.
+    setSharedState(prev => ({
+      ...prev,
+      clinicalRoles: applyRoleAssignment(prev.clinicalRoles, participantKey, role),
+    }));
+    await sendBroadcast({
+      kind: 'role_assigned',
+      participantKey,
+      role,
+      fromKey: selfKeyRef.current,
+    });
+  }, [sendBroadcast]);
+
   const endCase = useCallback(async () => {
     const endedAt = new Date().toISOString();
 
@@ -1236,12 +1296,14 @@ export function useClassroomSession(): UseClassroomSessionResult {
       setTimer,
       avFloorOpen,
       setAvFloor,
+      broadcastRoleAssignment,
     }),
     [supported, isPreviewMode, status, error, role, session, participants, lastBroadcast,
       driverKeys, currentDriverKey, isDriver, liveCaseId, liveCaseStartedAt, sharedState,
       createSession, joinSession, startCase, endCase, leaveSession, sendBroadcast, clearError,
       broadcastStatePatch, broadcastStateSnapshot, requestStateSnapshot,
       setDrivers, giveControl, addDriver, takeControl,
-      chatMessages, sendChat, timerEndsAt, setTimer, avFloorOpen, setAvFloor],
+      chatMessages, sendChat, timerEndsAt, setTimer, avFloorOpen, setAvFloor,
+      broadcastRoleAssignment],
   );
 }

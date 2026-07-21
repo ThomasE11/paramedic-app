@@ -286,6 +286,7 @@ export function ClassroomJoin({ onExit }: ClassroomJoinProps) {
           onExit={handleLeave}
           preloadedCase={activeCase}
           readOnly={!isDriver}
+          clinicalRole={sharedState.clinicalRoles?.[sessionHook.selfKey] ?? null}
           externalState={{
             vitals: sharedState.vitals,
             appliedTreatments: sharedState.appliedTreatments,

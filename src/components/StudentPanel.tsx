@@ -73,6 +73,7 @@ import {
   determineSeverityFromVitals,
 } from '@/data/treatmentProtocols';
 import { checkRuntimeContraindications } from '@/lib/runtimeContraindications';
+import { isActionAllowedForRole, getRoleBadgeStyle, CLINICAL_ROLES, type ClinicalRole } from '@/lib/classroomRoles';
 import { evaluateTreatmentRealism } from '@/lib/patientRealism';
 import { deriveRealismDirectorState, type RealismDirectorState } from '@/lib/patientRealismDirector';
 import {
@@ -617,6 +618,13 @@ interface StudentPanelProps {
     isInArrest?: boolean;
     reason?: string;
   };
+  /**
+   * Classroom clinical role assigned to this participant (lead / airway /
+   * circulation / medication / scribe), or null when unassigned. Drives a
+   * role badge in the header and *soft* action warnings — never a hard
+   * block. Undefined in single-player mode.
+   */
+  clinicalRole?: ClinicalRole | null;
 }
 
 interface TreatmentPracticalityContext {
@@ -1206,6 +1214,7 @@ export function StudentPanel({
   readOnly = false,
   externalState,
   instructorOverride,
+  clinicalRole,
 }: StudentPanelProps) {
   const { t, i18n } = useTranslation();
   // Onboarding tour for first-time users
@@ -3073,6 +3082,19 @@ export function StudentPanel({
       toast.info('You are watching — the driver is treating this case.', { duration: 1800 });
       return;
     }
+    // Soft classroom-role gating — warn but never block. The instructor is
+    // always in charge and may override a role's remit. Only warns once the
+    // instructor has actually assigned a role to this student.
+    if (clinicalRole && !isActionAllowedForRole(clinicalRole, treatment.category)) {
+      toast.warning(
+        t('classroom.roles.actionReserved', {
+          role: t(`classroom.roles.${clinicalRole}.label`, CLINICAL_ROLES[clinicalRole].label),
+          defaultValue: `This action is reserved for the ${CLINICAL_ROLES[clinicalRole].label} role`,
+        }),
+        { duration: 2600 },
+      );
+      // Fall through — advisory only.
+    }
     if (!currentVitals || !currentCase || !patientState) return;
     lastActivityRef.current = Date.now();
     setHintVisible(false);
@@ -3379,7 +3401,7 @@ export function StudentPanel({
     // readOnly must be in deps — when control is handed to this student
     // the callback needs to be rebuilt so applyTreatment can actually run
     // instead of hitting the stale "you are watching" toast branch.
-	  }, [currentVitals, currentCase, patientState, startGradualChange, arrestActive, adrenalineDoses, shockCount, readOnly, triggerAdverseReaction, resolveAdverseReaction, speakNarration, appliedTreatmentIds, recordVitalsSample]);
+	  }, [currentVitals, currentCase, patientState, startGradualChange, arrestActive, adrenalineDoses, shockCount, readOnly, triggerAdverseReaction, resolveAdverseReaction, speakNarration, appliedTreatmentIds, recordVitalsSample, clinicalRole, t]);
 
   // Handle defibrillation dialog confirmation
   const handleDefibConfirm = useCallback((params: DefibrillationParams) => {
@@ -4378,6 +4400,20 @@ export function StudentPanel({
             visible whether the instructor is pre-briefing, running the
             case, or on the post-case summary. */}
         {topBanner}
+
+        {/* Classroom clinical-role badge — shown when the instructor has
+            assigned this student a team role. Colour-coded per role. */}
+        {clinicalRole && (
+          <div className="mb-3 flex items-center gap-2">
+            <span
+              className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold uppercase tracking-wide ${getRoleBadgeStyle(clinicalRole).bg} ${getRoleBadgeStyle(clinicalRole).text} ${getRoleBadgeStyle(clinicalRole).border}`}
+              title={t(`classroom.roles.${clinicalRole}.description`, CLINICAL_ROLES[clinicalRole].description)}
+            >
+              <Stethoscope className="h-3.5 w-3.5" />
+              {t('classroom.roles.yourRole', 'Your role')}: {t(`classroom.roles.${clinicalRole}.label`, CLINICAL_ROLES[clinicalRole].label)}
+            </span>
+          </div>
+        )}
 
         {/* ================================================================ */}
         {/* PHASE 1: Case Selection */}

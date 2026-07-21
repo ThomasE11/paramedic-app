@@ -62,6 +62,12 @@ import { AmbientBackground } from '@/components/AmbientBackground';
 import { loadAllCases } from '@/data/caseLibrary';
 import { isCaseAvailableForCohort } from '@/data/caseFilters';
 import type { CaseScenario, StudentYear } from '@/types';
+import {
+  CLINICAL_ROLES,
+  CLINICAL_ROLE_IDS,
+  getRoleBadgeStyle,
+  type ClinicalRole,
+} from '@/lib/classroomRoles';
 
 // Year levels the case library is tagged against. 'all' is a UI-only
 // sentinel meaning "don't filter". Keep this in sync with the
@@ -170,6 +176,9 @@ export function ClassroomLobby({ onExit, sessionHook }: ClassroomLobbyProps) {
     startCase,
     leaveSession,
     clearError,
+    role,
+    sharedState,
+    broadcastRoleAssignment,
     // `endCase` and `sendBroadcast` live on the hook but only the live-case
     // view (ClassroomHost + broadcast bar) needs them — the lobby just
     // picks a case and hands over.
@@ -598,7 +607,12 @@ export function ClassroomLobby({ onExit, sessionHook }: ClassroomLobbyProps) {
                     </Badge>
                   </CardHeader>
                   <CardContent className="pt-0">
-                    <LearnerRoster students={students} />
+                    <LearnerRoster
+                      students={students}
+                      clinicalRoles={sharedState.clinicalRoles}
+                      canAssignRoles={role === 'instructor'}
+                      onAssignRole={broadcastRoleAssignment}
+                    />
                   </CardContent>
                 </Card>
 
@@ -845,7 +859,30 @@ function StatusTile({
   );
 }
 
-function LearnerRoster({ students }: { students: UseClassroomSessionResult['participants'] }) {
+function RoleBadge({ role }: { role: ClinicalRole }) {
+  const { t } = useTranslation();
+  const style = getRoleBadgeStyle(role);
+  return (
+    <span
+      className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${style.bg} ${style.text} ${style.border}`}
+    >
+      {t(`classroom.roles.${role}.label`, CLINICAL_ROLES[role].label)}
+    </span>
+  );
+}
+
+function LearnerRoster({
+  students,
+  clinicalRoles,
+  canAssignRoles,
+  onAssignRole,
+}: {
+  students: UseClassroomSessionResult['participants'];
+  clinicalRoles?: Record<string, ClinicalRole>;
+  canAssignRoles: boolean;
+  onAssignRole: (participantKey: string, role: ClinicalRole | null) => void | Promise<void>;
+}) {
+  const { t } = useTranslation();
   if (students.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-border/70 bg-background/35 px-4 py-5">
@@ -859,28 +896,53 @@ function LearnerRoster({ students }: { students: UseClassroomSessionResult['part
 
   return (
     <ul className="grid gap-2 sm:grid-cols-2">
-      {students.map(p => (
-        <li
-          key={p.key}
-          className="flex items-center gap-3 rounded-xl border border-border/55 bg-background/55 px-3 py-2.5"
-        >
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent text-[13px] font-semibold text-accent-foreground">
-            {getInitials(p.displayName) || '•'}
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-medium leading-tight">
-              {p.displayName}
+      {students.map(p => {
+        const role = clinicalRoles?.[p.key];
+        return (
+          <li
+            key={p.key}
+            className="flex items-center gap-3 rounded-xl border border-border/55 bg-background/55 px-3 py-2.5"
+          >
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent text-[13px] font-semibold text-accent-foreground">
+              {getInitials(p.displayName) || '•'}
             </div>
-            <div className="font-mono text-[11px] text-muted-foreground">
-              joined {new Date(p.joinedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5">
+                <span className="truncate text-sm font-medium leading-tight">
+                  {p.displayName}
+                </span>
+                {role && <RoleBadge role={role} />}
+              </div>
+              {canAssignRoles ? (
+                <select
+                  value={role ?? ''}
+                  onChange={e => {
+                    const v = e.target.value;
+                    void onAssignRole(p.key, v === '' ? null : (v as ClinicalRole));
+                  }}
+                  className="mt-1 w-full rounded-md border border-border/60 bg-background/70 px-1.5 py-0.5 text-[11px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  aria-label={t('classroom.roles.assignFor', { name: p.displayName })}
+                >
+                  <option value="">{t('classroom.roles.none', 'No role')}</option>
+                  {CLINICAL_ROLE_IDS.map(id => (
+                    <option key={id} value={id}>
+                      {t(`classroom.roles.${id}.label`, CLINICAL_ROLES[id].label)}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <div className="font-mono text-[11px] text-muted-foreground">
+                  joined {new Date(p.joinedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </div>
+              )}
             </div>
-          </div>
-          <span className="relative flex h-2 w-2 shrink-0" aria-label="connected">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-60" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-          </span>
-        </li>
-      ))}
+            <span className="relative flex h-2 w-2 shrink-0" aria-label="connected">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-60" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+            </span>
+          </li>
+        );
+      })}
     </ul>
   );
 }

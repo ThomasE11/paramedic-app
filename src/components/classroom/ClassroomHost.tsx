@@ -187,6 +187,7 @@ export function ClassroomHost({ onExit }: Props) {
       timerEndsAt={timerEndsAt}
       driverKeys={driverKeys}
       selfKey={selfKey}
+      myRole={sharedState.clinicalRoles?.[selfKey] ?? null}
       onBroadcast={sendBroadcast}
       onGiveControl={giveControl}
       onAddDriver={addDriver}
