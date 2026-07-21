@@ -11,7 +11,12 @@
  *   - Bloom: deliberately ABSENT. Nothing in-scene is emissive above LDR
  *     range (the vitals monitor is DOM; the only emissives are low-intensity
  *     region-highlight rings) so bloom would only smear UI affordances.
- *   - DoF/film grain: deliberately absent (iPad budget).
+ *   - DepthOfField: gentle world-space bokeh focused on the patient (~2.5 m)
+ *     so the environment room falls off softly. Rides the same ladder — the
+ *     whole composer unmounts on the first degrade rung, so iPads that
+ *     can't afford it never pay for it.
+ *   - Vignette: subtle edge darkening pulling the eye to the patient.
+ *   - Film grain: deliberately absent (iPad budget).
  *
  * AdaptiveQuality — auto-degrade ladder driven by drei's PerformanceMonitor.
  * Sustained low FPS walks DOWN one tier per ~2.5 s decision round; sustained
@@ -32,7 +37,7 @@
 import { useEffect, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { PerformanceMonitor } from '@react-three/drei';
-import { EffectComposer, N8AO, SMAA, ToneMapping } from '@react-three/postprocessing';
+import { DepthOfField, EffectComposer, N8AO, SMAA, ToneMapping, Vignette } from '@react-three/postprocessing';
 import { ToneMappingMode } from 'postprocessing';
 
 export type QualityTier = 0 | 1 | 2 | 3 | 4;
@@ -120,6 +125,11 @@ export function PatientPostEffects() {
         depthAwareUpsampling
       />
       <SMAA />
+      {/* World-space focus on the patient: camera presets orbit ~2–3.5 m out,
+          so a 2.5 m focus with a wide range keeps the whole body sharp while
+          the room walls/props behind melt off. bokehScale stays low — this is
+          depth cueing, not a portrait lens. */}
+      <DepthOfField worldFocusDistance={2.5} worldFocusRange={1.8} bokehScale={2.2} />
       {/* The composer renders the scene into a linear half-float buffer, which
           bypasses three's renderer-level tone mapping — without this final
           pass the skin turns bright wet plastic and the low-contrast backdrop
@@ -127,6 +137,8 @@ export function PatientPostEffects() {
           mode reuses three's tonemapping chunk, so the renderer's
           toneMappingExposure (0.9, tuned against the HDRI) still applies. */}
       <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
+      {/* After tone mapping so the darkening is predictable in LDR. */}
+      <Vignette eskil={false} offset={0.26} darkness={0.55} />
     </EffectComposer>
   );
 }

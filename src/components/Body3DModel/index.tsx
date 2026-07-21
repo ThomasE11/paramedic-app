@@ -8,7 +8,7 @@
  * the patient area so the student stays oriented to the anatomy.
  */
 
-import { useRef, useCallback, useState, useMemo, useEffect, useSyncExternalStore, Suspense } from 'react';
+import { useRef, useCallback, useState, useMemo, useEffect, Suspense } from 'react';
 import type { CSSProperties, ElementRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, ContactShadows, Environment, Html } from '@react-three/drei';
@@ -16,9 +16,11 @@ import * as THREE from 'three';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { RotateCcw, User, Eye, Hand, Activity, Stethoscope, X, ChevronRight, ChevronDown, AlertTriangle, Compass, Unlock, Wind, Shirt } from 'lucide-react';
-import { BodyMesh } from './BodyMesh';
+import { BodyMesh, treatmentBayClinicalToWorld, type BayPatientStage } from './BodyMesh';
+import { deriveScenePatientStage } from '@/lib/patientStaging';
 import type { LimbSide, SurfaceSampler } from './BodyMesh';
 import { AdaptiveQuality, PatientPostEffects, qualityForTier } from './AdaptiveQuality';
+import { TreatmentBayEnvironment, CameraEntrance } from './Environment';
 import type { QualityTier } from './AdaptiveQuality';
 import { AnatomyReferenceLayer } from './AnatomyReferenceLayer';
 import { CLOTHING_PARTING } from './ClothingLayer';
@@ -31,9 +33,10 @@ import type { CaseScenario, CaseCategory, VitalSigns } from '@/types';
 import type { ClinicalSoundState } from '@/data/clinicalSounds';
 import { playBreathSound, playHeartSound, playPercussionSound, playBowelSound, stopAllSounds, getZoneBreathSound } from '@/data/clinicalSounds';
 import type { BowelSoundType, BreathSoundType } from '@/data/clinicalSounds';
-import { inferInjuries, injuryRegionTo3D } from '@/lib/injuryMap';
+import { inferInjuries, injuryRegionTo3D, type BodyInjury, type BodyRegion } from '@/lib/injuryMap';
 import { classifyBodyPoint } from '@/lib/regionClassifier';
 import { hashInjury } from './WoundLayer';
+import type { PatientVisualState, PatientWoundOverlay } from '@/lib/patientVisualState';
 import {
   deriveAppliedTreatmentRealismCues,
   deriveCaseRealismProfile,
@@ -131,6 +134,114 @@ const TREATMENT_ASSET_PATHS = {
   opa: '/treatment-assets/opa.svg',
 } as const;
 
+const BODY_REGION_DIAGRAM_ANCHOR: Record<BodyRegion, { x: number; y: number }> = {
+  head: { x: 50, y: 8 },
+  face: { x: 50, y: 10 },
+  neck: { x: 50, y: 17 },
+  airway: { x: 50, y: 15 },
+  chest: { x: 50, y: 30 },
+  abdomen: { x: 50, y: 44 },
+  pelvis: { x: 50, y: 53 },
+  'right-arm': { x: 28, y: 40 },
+  'left-arm': { x: 72, y: 40 },
+  'right-leg': { x: 43, y: 76 },
+  'left-leg': { x: 57, y: 76 },
+  back: { x: 50, y: 32 },
+};
+
+function visualRegionToBodyRegion(region: PatientWoundOverlay['region']): BodyRegion | null {
+  switch (region) {
+    case 'face':
+    case 'mouth':
+    case 'nose':
+      return 'face';
+    case 'neck':
+      return 'neck';
+    case 'chest':
+      return 'chest';
+    case 'pelvis':
+      return 'pelvis';
+    case 'left-arm':
+    case 'right-arm':
+    case 'left-leg':
+    case 'right-leg':
+      return region;
+    case 'posterior':
+      return 'back';
+    case 'scene':
+      return null;
+    default:
+      return 'chest';
+  }
+}
+
+function buildScenarioBodyInjuries(visualState?: PatientVisualState | null): BodyInjury[] {
+  if (!visualState?.woundOverlays.length) return [];
+
+  return visualState.woundOverlays.flatMap((overlay, index): BodyInjury[] => {
+    const region = visualRegionToBodyRegion(overlay.region);
+    if (!region) return [];
+    const kind: BodyInjury['kind'] | null =
+      overlay.kind === 'open_wound' ? 'wound'
+      : overlay.kind === 'active_bleeding' ? 'bleeding'
+      : overlay.kind === 'blood_pool' ? 'bleeding'
+      : overlay.kind === 'deformity' ? 'deformity'
+      : overlay.kind === 'burn_pattern' ? 'burn'
+      : null;
+    if (!kind) return [];
+
+    const anchor = BODY_REGION_DIAGRAM_ANCHOR[region];
+    const label =
+      overlay.kind === 'open_wound' ? 'Open wound'
+      : overlay.kind === 'active_bleeding' ? 'Bleeding'
+      : overlay.kind === 'blood_pool' ? 'Blood'
+      : overlay.kind === 'deformity' ? 'Deformity'
+      : 'Burn';
+
+    return [{
+      id: `scenario-${overlay.kind}-${overlay.region}-${index}`,
+      region,
+      kind,
+      label,
+      detail: overlay.detail,
+      severity: overlay.kind === 'open_wound' || overlay.kind === 'active_bleeding' || overlay.kind === 'burn_pattern'
+        ? 'critical'
+        : 'major',
+      x: anchor.x,
+      y: anchor.y,
+    }];
+  });
+}
+
+function skinEffectStrength(visualState: PatientVisualState | null | undefined, kind: PatientVisualState['skinEffects'][number]['kind']): number {
+  return Math.max(0, ...((visualState?.skinEffects ?? [])
+    .filter(effect => effect.kind === kind)
+    .map(effect => effect.intensity)));
+}
+
+function applyVisualEyeEffect(base: PupilProfile, visualState?: PatientVisualState | null): PupilProfile {
+  const effect = visualState?.eyeEffects;
+  if (!effect || effect.kind === 'normal') return base;
+  if (effect.kind === 'pinpoint') {
+    return {
+      leftMm: 1,
+      rightMm: 1,
+      leftReaction: 'sluggish',
+      rightReaction: 'sluggish',
+      note: effect.detail || 'Pinpoint pupils. Check toxidrome and ventilation.',
+      abnormal: true,
+    };
+  }
+  return {
+    leftMm: 6,
+    rightMm: 6,
+    leftReaction: 'sluggish',
+    rightReaction: 'sluggish',
+    note: effect.detail || 'Dilated pupils. Correlate with GCS, drugs, hypoxia, and perfusion.',
+    abnormal: true,
+  };
+}
+
 type AbdomenQuadrant = 'ruq' | 'luq' | 'rlq' | 'llq';
 
 const ABDOMEN_QUADRANTS: Array<{ id: AbdomenQuadrant; label: string; full: string; hint: string }> = [
@@ -195,44 +306,122 @@ const EXAM_LANDMARKS: ExamLandmark[] = [
   { id: 'umbilicus-detail', region: 'abdomen', label: 'Umbilicus', sublabel: 'distension / bruising', position: [0, 1.035, 0.255], level: 'detail', actionId: 'abd-inspect', tone: 'abdomen' },
 ];
 
-/** Follow the app's class-based theme so the 3D backdrop matches the UI card. */
-function useIsDarkTheme(): boolean {
-  return useSyncExternalStore(
-    (onChange) => {
-      const observer = new MutationObserver(onChange);
-      observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-      return () => observer.disconnect();
-    },
-    () => document.documentElement.classList.contains('dark'),
+function SceneCable({
+  points,
+  color,
+  opacity = 0.62,
+  radius = 0.005,
+}: {
+  points: Array<[number, number, number]>;
+  color: string;
+  opacity?: number;
+  radius?: number;
+}) {
+  const pointsKey = points.map(point => point.join(',')).join('|');
+  const geometry = useMemo(() => {
+    const curve = new THREE.CatmullRomCurve3(points.map(point => new THREE.Vector3(...point)));
+    return new THREE.TubeGeometry(curve, 28, radius, 8, false);
+    // pointsKey is the stable scalar dependency; `points` is usually an inline array.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pointsKey, radius]);
+
+  useEffect(() => () => geometry.dispose(), [geometry]);
+
+  return (
+    <mesh geometry={geometry} raycast={() => null}>
+      <meshStandardMaterial color={color} roughness={0.38} metalness={0.08} transparent opacity={opacity} />
+    </mesh>
   );
 }
 
-function PatientSceneEnvironment() {
-  // Colour/alpha retuned for the Stage-3 composer: post-processing tone-maps
-  // AFTER alpha blending (premultiplied), so the old near-white planes at
-  // ~0.4 alpha saturated to pure white over the light page and the wall/floor
-  // depth cue vanished. Deeper colours at higher alpha survive the composer
-  // path and still read as the same light clinical backdrop; the difference
-  // when the degrade ladder drops the composer is small.
-  //
-  // Dark mode gets its own palette: the 0.8-alpha light planes read as a
-  // glowing light-box inside the dark UI (the Stage-3 caveat) — deep
-  // blue-grey planes keep the depth cue while sitting naturally in the card.
-  const isDark = useIsDarkTheme();
-  const wall = isDark ? '#2a3440' : '#b2c0cb';
-  const floor = isDark ? '#333e4b' : '#c4cfd8';
+function TreatmentBayImmersionLayer({
+  appliedTreatmentIds,
+  active,
+  stage = 'stretcher',
+}: {
+  appliedTreatmentIds: string[];
+  active: boolean;
+  stage?: BayPatientStage;
+}) {
+  const equipment = useMemo(
+    () => buildTreatmentEquipmentState(appliedTreatmentIds),
+    [appliedTreatmentIds],
+  );
+
+  if (!active) return null;
+
+  const face = treatmentBayClinicalToWorld([0, 1.56, 0.26], stage);
+  const chestLeft = treatmentBayClinicalToWorld([-0.10, 1.27, 0.25], stage);
+  const chestRight = treatmentBayClinicalToWorld([0.11, 1.18, 0.25], stage);
+  const ivSite = treatmentBayClinicalToWorld([-0.23, 0.82, 0.24], stage);
+
   return (
     <group>
-      <mesh position={[0, 0.9, -0.78]} raycast={() => null}>
-        <planeGeometry args={[2.75, 2.25]} />
-        {/* Deeper than the floor: the wall faces the key light head-on, so it
-            needs a lower albedo to avoid clipping white under the composer. */}
-        <meshStandardMaterial color={wall} roughness={0.94} transparent opacity={0.8} />
+      {/* Head pad — bed height on the stretcher, floor level when the patient
+          is staged where they were found. */}
+      <mesh position={[0, stage === 'floor' ? 0.03 : 0.505, -0.84]} rotation={[-Math.PI / 2, 0, 0]} raycast={() => null}>
+        <boxGeometry args={[0.72, 0.36, 0.055]} />
+        <meshStandardMaterial color="#e5edf4" roughness={0.86} metalness={0.02} transparent opacity={0.88} />
       </mesh>
-      <mesh position={[0, -0.04, 0]} rotation={[-Math.PI / 2, 0, 0]} raycast={() => null}>
-        <planeGeometry args={[4.2, 4.2]} />
-        <meshStandardMaterial color={floor} roughness={0.92} transparent opacity={0.8} />
+
+      {/* Stretcher straps, foreground rails, and the foot-end bar were removed
+          deliberately: they rendered as detached bars floating over the body
+          and occluded the anatomy from most camera angles ("3 or 4 bars are
+          blocking the patient"). Reintroduce only as geometry that actually
+          hugs the mesh. */}
+
+      <mesh position={[-0.72, 0.86, -0.58]} raycast={() => null}>
+        <cylinderGeometry args={[0.008, 0.008, 0.88, 12]} />
+        <meshStandardMaterial color="#cbd5e1" roughness={0.32} metalness={0.7} transparent opacity={0.68} />
       </mesh>
+      <mesh position={[-0.72, 1.24, -0.58]} raycast={() => null}>
+        <boxGeometry args={[0.16, 0.22, 0.035]} />
+        <meshStandardMaterial color="#e0f2fe" roughness={0.55} metalness={0.02} transparent opacity={equipment.hasFluids ? 0.64 : 0.18} />
+      </mesh>
+
+      {equipment.oxygen && (
+        <>
+          <SceneCable
+            points={[face, [0.18, 0.83, -0.76], [0.62, 0.82, -0.86], [0.98, 1.04, -0.70]]}
+            color="#6ee7b7"
+            opacity={0.72}
+            radius={0.0045}
+          />
+          <pointLight position={[0.20, 0.86, -0.72]} intensity={0.12} color="#67e8f9" distance={0.8} decay={2} />
+        </>
+      )}
+
+      {equipment.hasDefibPads && (
+        <>
+          <SceneCable points={[chestLeft, [0.18, 0.93, -0.42], [0.74, 1.26, -0.80]]} color="#e2e8f0" opacity={0.58} radius={0.0038} />
+          <SceneCable points={[chestRight, [0.28, 0.88, -0.31], [0.76, 1.22, -0.78]]} color="#e2e8f0" opacity={0.58} radius={0.0038} />
+        </>
+      )}
+
+      {equipment.hasIvAccess && (
+        <SceneCable
+          points={[ivSite, [-0.45, 0.72, 0.02], [-0.70, 0.92, -0.42], [-0.72, 1.12, -0.58]]}
+          color={equipment.hasFluids ? '#a7f3d0' : '#bfdbfe'}
+          opacity={equipment.hasFluids ? 0.7 : 0.48}
+          radius={0.0038}
+        />
+      )}
+
+      <mesh position={[0.82, 1.37, -0.865]} raycast={() => null}>
+        <boxGeometry args={[0.34, 0.18, 0.012]} />
+        <meshStandardMaterial color="#020617" emissive="#22d3ee" emissiveIntensity={0.34} roughness={0.36} transparent opacity={0.88} />
+      </mesh>
+      {[-0.055, 0, 0.055].map((y, index) => (
+        <mesh key={`monitor-trace-${index}`} position={[0.82, 1.37 + y, -0.856]} raycast={() => null}>
+          <boxGeometry args={[0.21, 0.008, 0.006]} />
+          <meshStandardMaterial
+            color={index === 0 ? '#ef4444' : index === 1 ? '#38bdf8' : '#22c55e'}
+            emissive={index === 0 ? '#ef4444' : index === 1 ? '#38bdf8' : '#22c55e'}
+            emissiveIntensity={0.65}
+            roughness={0.3}
+          />
+        </mesh>
+      ))}
     </group>
   );
 }
@@ -246,17 +435,21 @@ function PatientSceneEnvironment() {
  * (top-down, posterior, oblique) — only the surfaces actually facing the
  * viewer show a marker.
  */
+type MarkerPresentation = 'upright' | 'treatment-bay';
+
 function MarkerHtml({
   position,
   distanceFactor,
   zIndexRange,
   interactive = true,
+  presentation = 'upright',
   children,
 }: {
   position: [number, number, number];
   distanceFactor?: number;
   zIndexRange?: [number, number];
   interactive?: boolean;
+  presentation?: MarkerPresentation;
   children: React.ReactNode;
 }) {
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -270,7 +463,11 @@ function MarkerHtml({
     const dz = camera.position.z - z;
     const dl = Math.hypot(dx, dy, dz) || 1;
     // 1 = camera dead-on the surface, 0 = edge / straight above, <0 = behind.
-    const facing = (x / ol) * (dx / dl) + (z / ol) * (dz / dl);
+    // Upright overview uses horizontal outward direction; stretcher overview has
+    // the patient's anterior surface facing upward, so the useful normal is +Y.
+    const facing = presentation === 'treatment-bay'
+      ? dy / dl
+      : (x / ol) * (dx / dl) + (z / ol) * (dz / dl);
     const op = Math.max(0, Math.min(1, (facing - 0.12) / 0.32));
     el.style.opacity = String(op);
     el.style.pointerEvents = interactive && op >= 0.2 ? 'auto' : 'none';
@@ -292,6 +489,7 @@ function LandmarkMarkers({
   onAction,
   onPulse,
   sampler,
+  presentation,
 }: {
   activeRegion: string | null;
   assessedRegions: Set<string>;
@@ -300,6 +498,7 @@ function LandmarkMarkers({
   onAction?: (actionId: string) => void;
   onPulse?: (site: string) => void;
   sampler: SurfaceSampler | null;
+  presentation: MarkerPresentation;
 }) {
   const visibleMarkers = activeRegion
     ? EXAM_LANDMARKS.filter(marker => marker.region === activeRegion && marker.level === 'detail')
@@ -349,7 +548,7 @@ function LandmarkMarkers({
         // cockpit already name the targets, so hover labels would just clutter
         // the patient surface.
         return (
-          <MarkerHtml key={marker.id} position={pos} distanceFactor={isDetail ? (DETAIL_DF[activeRegion ?? ''] ?? 2.0) : 3.0} zIndexRange={[80, 0]}>
+          <MarkerHtml key={marker.id} position={pos} distanceFactor={isDetail ? (DETAIL_DF[activeRegion ?? ''] ?? 2.0) : 3.0} zIndexRange={[80, 0]} presentation={presentation}>
             <button
               type="button"
               onPointerDown={(event) => event.stopPropagation()}
@@ -446,11 +645,13 @@ function RevealedFindingMarkers({
   assessedRegions,
   activeRegion,
   sampler,
+  presentation,
 }: {
   caseData: CaseScenario;
   assessedRegions: Set<string>;
   activeRegion: string | null;
   sampler: SurfaceSampler | null;
+  presentation: MarkerPresentation;
 }) {
   const injuries = useMemo(() => inferInjuries(caseData), [caseData]);
   // Floating injury badges are an OVERVIEW discovery layer. In a focused
@@ -486,7 +687,7 @@ function RevealedFindingMarkers({
           ? sampler(fx, fy)
           : [fx, fy, fallback[2]];
         return (
-          <MarkerHtml key={inj.id} position={anchor} distanceFactor={3.2} zIndexRange={[90, 0]} interactive={false}>
+          <MarkerHtml key={inj.id} position={anchor} distanceFactor={3.2} zIndexRange={[90, 0]} interactive={false} presentation={presentation}>
             <div className="scale-[0.6] pointer-events-none animate-in fade-in zoom-in-50 duration-500">
               <div className={`flex items-center gap-1 rounded-full border px-1.5 py-0.5 backdrop-blur-md ${FINDING_SEVERITY_STYLE[inj.severity] || FINDING_SEVERITY_STYLE.major}`}>
                 <span className="relative flex h-1.5 w-1.5">
@@ -508,11 +709,13 @@ function CaseRealismMarkers({
   assessedRegions,
   activeRegion,
   sampler,
+  presentation,
 }: {
   cues: PatientRealismCue[];
   assessedRegions: Set<string>;
   activeRegion: string | null;
   sampler: SurfaceSampler | null;
+  presentation: MarkerPresentation;
 }) {
   // Cue rings are an OVERVIEW breadcrumb. In a focused region view they
   // ballooned (~90px) over the loupe and exam landmarks — the detail panels
@@ -548,7 +751,7 @@ function CaseRealismMarkers({
           : [fx, fallback[1], fallback[2]];
         const style = REALISM_CUE_STYLE[top.severity];
         return (
-          <MarkerHtml key={top.id} position={anchor} distanceFactor={2.7} zIndexRange={[82 - index, 0]} interactive={false}>
+          <MarkerHtml key={top.id} position={anchor} distanceFactor={2.7} zIndexRange={[82 - index, 0]} interactive={false} presentation={presentation}>
             <div
               className="pointer-events-none relative flex h-3 w-3 items-center justify-center animate-in fade-in zoom-in-75 duration-500"
               aria-hidden="true"
@@ -560,6 +763,82 @@ function CaseRealismMarkers({
                   +{count - 1}
                 </span>
               )}
+            </div>
+          </MarkerHtml>
+        );
+      })}
+    </>
+  );
+}
+
+function ScenarioVisualMarkers({
+  visualState,
+  activeRegion,
+  sampler,
+  presentation,
+}: {
+  visualState?: PatientVisualState | null;
+  activeRegion: string | null;
+  sampler: SurfaceSampler | null;
+  presentation: MarkerPresentation;
+}) {
+  if (!visualState || activeRegion) return null;
+
+  const markers = [
+    ...visualState.skinEffects
+      .filter(effect => !['pallor', 'cyanosis', 'diaphoresis', 'mottling'].includes(effect.kind))
+      .map(effect => ({
+        id: `skin-${effect.kind}-${effect.region}`,
+        kind: effect.kind,
+        region: effect.region,
+        detail: effect.detail,
+        intensity: effect.intensity,
+      })),
+    ...visualState.woundOverlays.map(effect => ({
+      id: `wound-${effect.kind}-${effect.region}`,
+      kind: effect.kind,
+      region: effect.region,
+      detail: effect.detail,
+      intensity: 1,
+    })),
+  ].slice(0, 6);
+
+  if (!markers.length) return null;
+
+  const toneFor = (kind: string): string => {
+    if (/bleeding|wound|blood/.test(kind)) return 'border-rose-200/50 bg-rose-950/66 text-rose-50';
+    if (/burn|soot/.test(kind)) return 'border-orange-200/50 bg-orange-950/66 text-orange-50';
+    if (/rash|swelling/.test(kind)) return 'border-pink-200/50 bg-pink-950/66 text-pink-50';
+    return 'border-cyan-200/45 bg-cyan-950/62 text-cyan-50';
+  };
+
+  const labelFor = (kind: string): string =>
+    kind.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase());
+
+  return (
+    <>
+      {markers.map((marker, index) => {
+        const bodyRegion = visualRegionToBodyRegion(marker.region);
+        if (!bodyRegion) return null;
+        const region3d = injuryRegionTo3D(bodyRegion);
+        const fallback = FINDING_ANCHORS[region3d] || FINDING_ANCHORS.chest;
+        const fx = fallback[0] + 0.24;
+        const fy = fallback[1] - index * 0.035;
+        const anchor: [number, number, number] = sampler && region3d !== 'posterior-logroll'
+          ? sampler(fx, fy)
+          : [fx, fy, fallback[2]];
+        return (
+          <MarkerHtml key={marker.id} position={anchor} distanceFactor={2.9} zIndexRange={[78 - index, 0]} interactive={false} presentation={presentation}>
+            <div className={`pointer-events-none max-w-[8.5rem] rounded-xl border px-2 py-1.5 shadow-xl backdrop-blur-md animate-in fade-in zoom-in-75 duration-500 ${toneFor(marker.kind)}`}>
+              <div className="flex items-center gap-1.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-white/85" />
+                <p className="truncate text-[8px] font-black uppercase tracking-[0.12em] leading-none">
+                  {labelFor(marker.kind)}
+                </p>
+              </div>
+              <p className="mt-1 line-clamp-2 text-[8px] leading-snug text-white/72">
+                {marker.detail}
+              </p>
             </div>
           </MarkerHtml>
         );
@@ -614,7 +893,7 @@ function buildTreatmentEquipmentState(appliedTreatmentIds: string[]): AppliedEqu
 
   return {
     oxygen: oxygenMatch ? { mode: oxygenMatch.mode, label: oxygenMatch.label, detail: oxygenMatch.detail } : null,
-    hasIvAccess: applied.has('iv_access') || hasFluids || hasMedicationLine,
+    hasIvAccess: applied.has('iv_access') || applied.has('iv_cannula') || hasFluids || hasMedicationLine,
     hasFluids,
     hasDefibPads: applied.has('defibrillation') || applied.has('aed') || applied.has('monitor_pads'),
     hasLucas: applied.has('lucas_device'),
@@ -797,9 +1076,13 @@ function OpaGraphic() {
 function TreatmentEquipmentOverlay({
   appliedTreatmentIds,
   sampler,
+  presentation,
+  bayStage = 'stretcher',
 }: {
   appliedTreatmentIds: string[];
   sampler: SurfaceSampler | null;
+  presentation: MarkerPresentation;
+  bayStage?: BayPatientStage;
 }) {
   const equipment = useMemo(
     () => buildTreatmentEquipmentState(appliedTreatmentIds),
@@ -820,25 +1103,25 @@ function TreatmentEquipmentOverlay({
   return (
     <>
       {equipment.oxygen && (
-        <MarkerHtml position={anchor(0, 1.565, 0.215)} distanceFactor={2.45} zIndexRange={[62, 0]} interactive={false}>
+        <MarkerHtml position={anchor(0, 1.565, 0.215)} distanceFactor={2.45} zIndexRange={[62, 0]} interactive={false} presentation={presentation}>
           <OxygenDeviceGraphic equipment={equipment.oxygen} />
         </MarkerHtml>
       )}
 
       {equipment.hasEtTube && equipment.oxygen?.mode !== 'ventilator' && (
-        <MarkerHtml position={anchor(0.02, 1.545, 0.215)} distanceFactor={2.35} zIndexRange={[74, 0]} interactive={false}>
+        <MarkerHtml position={anchor(0.02, 1.545, 0.215)} distanceFactor={2.35} zIndexRange={[74, 0]} interactive={false} presentation={presentation}>
           <EtTubeGraphic />
         </MarkerHtml>
       )}
 
       {equipment.hasOpa && !equipment.hasEtTube && (
-        <MarkerHtml position={anchor(-0.02, 1.54, 0.215)} distanceFactor={2.35} zIndexRange={[73, 0]} interactive={false}>
+        <MarkerHtml position={anchor(-0.02, 1.54, 0.215)} distanceFactor={2.35} zIndexRange={[73, 0]} interactive={false} presentation={presentation}>
           <OpaGraphic />
         </MarkerHtml>
       )}
 
       {equipment.hasIvAccess && (
-        <MarkerHtml position={anchor(-0.205, 0.82, 0.2)} distanceFactor={2.65} zIndexRange={[72, 0]} interactive={false}>
+        <MarkerHtml position={anchor(-0.205, 0.82, 0.2)} distanceFactor={2.65} zIndexRange={[72, 0]} interactive={false} presentation={presentation}>
           <EquipmentPill
             label="IV cannula"
             detail={equipment.hasFluids ? 'Cannula taped down with fluid line attached' : 'Cannula inserted and secured at the forearm'}
@@ -850,19 +1133,19 @@ function TreatmentEquipmentOverlay({
       )}
 
       {equipment.hasFluids && (
-        <MarkerHtml position={[-0.36, 1.08, 0.22]} distanceFactor={2.9} zIndexRange={[70, 0]} interactive={false}>
+        <MarkerHtml position={presentation === 'treatment-bay' ? treatmentBayClinicalToWorld([-0.36, 1.08, 0.22], bayStage) : [-0.36, 1.08, 0.22]} distanceFactor={2.9} zIndexRange={[70, 0]} interactive={false} presentation={presentation}>
           <FluidBagGraphic />
         </MarkerHtml>
       )}
 
       {equipment.hasDefibPads && (
-        <MarkerHtml position={anchor(0.01, 1.24, 0.218)} distanceFactor={2.4} zIndexRange={[68, 0]} interactive={false}>
+        <MarkerHtml position={anchor(0.01, 1.24, 0.218)} distanceFactor={2.4} zIndexRange={[68, 0]} interactive={false} presentation={presentation}>
           <DefibPadsGraphic />
         </MarkerHtml>
       )}
 
       {equipment.hasLucas && (
-        <MarkerHtml position={anchor(0, 1.19, 0.22)} distanceFactor={2.55} zIndexRange={[69, 0]} interactive={false}>
+        <MarkerHtml position={anchor(0, 1.19, 0.22)} distanceFactor={2.55} zIndexRange={[69, 0]} interactive={false} presentation={presentation}>
           <LucasGraphic />
         </MarkerHtml>
       )}
@@ -2492,6 +2775,16 @@ function useCameraAnimation() {
     animationRef.current = requestAnimationFrame(animate);
   }, []);
 
+  // The student grabbing the orbit controls must win instantly — an in-flight
+  // preset animation fighting a drag reads as "the camera keeps rotating and
+  // I can't stop it".
+  const cancelCameraAnimation = useCallback(() => {
+    if (animationRef.current !== null) {
+      cancelAnimationFrame(animationRef.current);
+      animationRef.current = null;
+    }
+  }, []);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -2501,15 +2794,27 @@ function useCameraAnimation() {
     };
   }, []);
 
-  return animateCamera;
+  return { animateCamera, cancelCameraAnimation };
 }
 
 const PERCUSSION_DURATION = 800;
 
 const DEFAULT_CAMERA_FOCUS = {
-  pos: [0, 0.95, 4.25] as [number, number, number],
+  pos: [0, 0.96, 3.55] as [number, number, number],
   target: [0, 0.92, 0] as [number, number, number],
 };
+
+// The treatment-bay model is rotated supine, so clinical Y becomes the
+// scene's depth axis. Aim at the thoraco-abdominal centre of the patient
+// rather than the head-side; floor staging drops the eye-line with the body.
+function getTreatmentBayCameraFocus(stage: BayPatientStage) {
+  return {
+    pos: (stage === 'floor'
+      ? [1.32, 1.05, 1.92]
+      : [1.42, 1.30, 2.12]) as [number, number, number],
+    target: treatmentBayClinicalToWorld([0, 0.96, -0.05], stage),
+  };
+}
 
 const REGION_CAMERA_FOCUS: Record<string, { pos: [number, number, number]; target: [number, number, number] }> = {
   head: { pos: [0, 1.68, 1.72], target: [0, 1.68, 0.06] },
@@ -2577,6 +2882,8 @@ interface Body3DModelProps {
   caseCategory?: string;
   /** Treatments already applied, used to render visible devices on the mannequin. */
   appliedTreatmentIds?: string[];
+  /** Scenario-derived render state: mannequin effects, equipment anchors, and risk flags. */
+  patientVisualState?: PatientVisualState | null;
   /** Whether the patient is currently in cardiac arrest (all pulses absent) */
   isInArrest?: boolean;
   /**
@@ -2587,6 +2894,8 @@ interface Body3DModelProps {
   vitals?: VitalSigns;
   /** Run a pulse check from a mannequin pulse point (radial wrist / carotid neck). */
   onPulse?: (site: string) => void;
+  /** Use stretcher-side treatment presentation in the full-body overview. */
+  treatmentBayMode?: boolean;
 }
 
 // Phase 2 — guided exam mode: persist preference across sessions
@@ -3061,6 +3370,211 @@ function PatientReactionCard({ reaction }: { reaction: PatientReaction | null })
   );
 }
 
+function PatientFirstExamDock({
+  activeRegion,
+  actions,
+  selectedAction,
+  revealedFindings,
+  onAction,
+  caseData,
+  pupilProfile,
+  patientReaction,
+  showRegionalLoupe,
+  playingSound,
+  soundProgress,
+}: {
+  activeRegion: string;
+  actions: ExamAction[];
+  selectedAction: string | null;
+  revealedFindings: Map<string, string>;
+  onAction: (actionId: string) => void;
+  caseData: CaseScenario;
+  pupilProfile: PupilProfile;
+  patientReaction: PatientReaction | null;
+  showRegionalLoupe: boolean;
+  playingSound: string | null;
+  soundProgress: number;
+}) {
+  const grouped = TECHNIQUE_ORDER
+    .map(technique => {
+      const items = actions.filter(action => action.technique === technique);
+      if (items.length === 0) return null;
+      const selected = items.find(action => action.id === selectedAction);
+      const primary = selected ?? items[0];
+      const completed = items.filter(action => revealedFindings.has(action.id)).length;
+      return { technique, items, primary, selected, completed };
+    })
+    .filter((item): item is NonNullable<typeof item> => Boolean(item));
+
+  if (grouped.length === 0) return null;
+
+  const selectedGroup = grouped.find(group => group.items.some(action => action.id === selectedAction)) ?? grouped[0];
+  const completedCount = actions.filter(action => revealedFindings.has(action.id)).length;
+  const selectedActionLabel = actions.find(action => action.id === selectedAction)?.label ?? 'Finding';
+  const activeFinding = selectedAction && revealedFindings.has(selectedAction)
+    ? revealedFindings.get(selectedAction) ?? null
+    : null;
+  const regionFindings = actions
+    .filter(action => revealedFindings.has(action.id) && action.id !== selectedAction)
+    .slice(-4);
+  const hasPatientQuote = Boolean(patientReaction?.quote);
+  const reactionTone: Record<PatientReactionTone, string> = {
+    patient: 'border-cyan-300/35 bg-cyan-400/10 text-cyan-50',
+    coach: 'border-violet-300/35 bg-violet-400/10 text-violet-50',
+    warning: 'border-amber-300/40 bg-amber-400/12 text-amber-50',
+    calm: 'border-emerald-300/35 bg-emerald-400/10 text-emerald-50',
+  };
+
+  return (
+    <div className="patient-first-exam-dock pointer-events-auto relative z-20 mx-2 mb-2 rounded-2xl border border-cyan-200/20 bg-slate-950/88 p-2.5 text-white shadow-[0_28px_70px_-38px_rgba(0,0,0,1)] backdrop-blur-xl sm:mx-3 sm:mb-3">
+      <div className="patient-first-exam-grid">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-2">
+            <div className="min-w-0">
+              <p className="text-[7px] font-semibold uppercase tracking-[0.22em] text-cyan-100/58">Hands-on assessment bay</p>
+              <h3 className="truncate text-sm font-semibold text-white">
+                {REGION_LABELS[activeRegion] || activeRegion}
+              </h3>
+            </div>
+            <div className="flex shrink-0 items-center gap-1.5">
+              <span className="rounded-full border border-cyan-200/20 bg-cyan-300/10 px-2 py-0.5 text-[8px] font-semibold text-cyan-50">
+                Patient visible
+              </span>
+              <span className="rounded-full border border-white/12 bg-white/10 px-2 py-0.5 text-[8px] font-semibold text-white/82">
+                {completedCount}/{actions.length}
+              </span>
+            </div>
+          </div>
+
+          <div className="patient-first-technique-grid mt-2">
+            {grouped.map(group => {
+              const Icon = TECHNIQUE_ICONS[group.technique];
+              const isActive = group.items.some(action => action.id === selectedAction);
+              const meta = TECHNIQUE_META[group.technique];
+              const dock = DOCK_TONE[group.technique];
+              return (
+                <button
+                  key={group.technique}
+                  type="button"
+                  onClick={() => onAction(group.primary.id)}
+                  className={`patient-first-technique-button ${isActive ? dock.active : dock.tone}`}
+                >
+                  <span className="flex items-center justify-between gap-1">
+                    <Icon className={`h-3.5 w-3.5 shrink-0 ${isActive ? 'text-white' : dock.icon}`} />
+                    <span className="rounded-full bg-white/18 px-1.5 py-0.5 text-[7px] font-bold text-white/88">
+                      {group.completed}/{group.items.length}
+                    </span>
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block truncate text-[10px] font-bold leading-tight">{meta.label}</span>
+                    <span className="mt-0.5 block truncate text-[7px] font-semibold leading-tight text-white/72">{meta.hint}</span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mt-2">
+            <p className="px-0.5 text-[7px] font-semibold uppercase tracking-[0.16em] text-white/46">Target points</p>
+            <div className="patient-first-target-track mt-1.5">
+              {selectedGroup.items.map(action => {
+                const isSelected = selectedAction === action.id;
+                const isDone = revealedFindings.has(action.id);
+                const isPlaying = playingSound === action.id;
+                return (
+                  <button
+                    key={action.id}
+                    type="button"
+                    onClick={() => onAction(action.id)}
+                    className={`patient-first-target-chip ${isSelected ? 'is-selected' : ''} ${isDone ? 'is-done' : ''}`}
+                  >
+                    <span className="truncate">{action.label}</span>
+                    {isDone && <span className="shrink-0 text-[10px] font-black text-emerald-200">{'\u2713'}</span>}
+                    {isPlaying && (
+                      <span className="absolute inset-x-2 bottom-0.5 h-0.5 overflow-hidden rounded-full bg-white/16">
+                        <span className="block h-full rounded-full bg-cyan-300" style={{ width: `${soundProgress * 100}%` }} />
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="patient-first-feedback mt-2">
+            {activeFinding ? (
+              <div className="rounded-xl border border-emerald-300/24 bg-emerald-400/10 px-3 py-2">
+                <div className="mb-1 flex items-center gap-1.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_12px_rgba(110,231,183,0.7)]" />
+                  <p className="text-[8px] font-semibold uppercase tracking-[0.18em] text-emerald-50/70">{selectedActionLabel}</p>
+                </div>
+                <p className="text-[11px] leading-relaxed text-white/92">{activeFinding}</p>
+              </div>
+            ) : patientReaction ? (
+              <div className={`rounded-xl border px-3 py-2 ${reactionTone[patientReaction.tone]}`}>
+                <div className="mb-1 flex items-center gap-1.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-current opacity-80" />
+                  <p className="text-[8px] font-semibold uppercase tracking-[0.18em] opacity-75">{patientReaction.title}</p>
+                </div>
+                <p className="text-[11px] leading-relaxed text-white/88">
+                  {hasPatientQuote ? `"${patientReaction.quote}" ` : ''}
+                  {patientReaction.message}
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2">
+                <p className="text-[10px] font-semibold text-white/78">Select a technique, then choose the exact point you are assessing.</p>
+                <p className="mt-0.5 text-[10px] leading-relaxed text-white/52">The patient remains in view so you can relate the finding to the body position and applied equipment.</p>
+              </div>
+            )}
+
+            {patientReaction && activeFinding && (
+              <div className={`rounded-xl border px-3 py-2 ${reactionTone[patientReaction.tone]}`}>
+                <p className="text-[8px] font-semibold uppercase tracking-[0.18em] opacity-75">{patientReaction.title}</p>
+                <p className="mt-0.5 text-[10px] leading-relaxed text-white/82">
+                  {hasPatientQuote ? `"${patientReaction.quote}" ` : ''}
+                  {patientReaction.message}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {regionFindings.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {regionFindings.map(action => (
+                <span key={action.id} className="max-w-full rounded-full border border-white/10 bg-white/[0.07] px-2.5 py-1 text-[8px] font-medium text-white/70">
+                  <span className="font-semibold text-white/88">{action.label}:</span>{' '}
+                  {(revealedFindings.get(action.id) || '').slice(0, 42)}
+                  {(revealedFindings.get(action.id) || '').length > 42 ? '…' : ''}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="patient-first-loupe-column">
+          {showRegionalLoupe ? (
+            <RegionalZoomLoupe
+              activeRegion={activeRegion}
+              selectedAction={selectedAction}
+              caseData={caseData}
+              pupilProfile={pupilProfile}
+            />
+          ) : (
+            <div className="patient-first-context-panel">
+              <p className="text-[7px] font-semibold uppercase tracking-[0.2em] text-cyan-100/52">Scene context</p>
+              <p className="mt-1 text-[11px] font-semibold text-white/86">Body stays clear</p>
+              <p className="mt-1 text-[10px] leading-relaxed text-white/58">
+                Assessment controls are docked here so injuries, equipment, breathing, skin colour, and patient posture stay readable.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function PatientRealismStrip({
   profile,
   cues,
@@ -3080,7 +3594,7 @@ function PatientRealismStrip({
   if (!visibleCues.length && !priorities.length) return null;
 
   return (
-    <div className="border-b border-slate-200/50 bg-gradient-to-r from-white/72 via-cyan-50/50 to-white/55 px-3 py-2 dark:border-white/5 dark:from-slate-950/70 dark:via-cyan-950/20 dark:to-slate-950/55">
+    <div className="patient-realism-strip border-b border-slate-200/50 bg-gradient-to-r from-white/72 via-cyan-50/50 to-white/55 px-3 py-2 dark:border-white/5 dark:from-slate-950/70 dark:via-cyan-950/20 dark:to-slate-950/55">
       <div className="grid gap-2 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,0.85fr)]">
         <div className="min-w-0 rounded-xl border border-white/70 bg-white/68 px-3 py-2 shadow-sm backdrop-blur-md dark:border-white/10 dark:bg-slate-900/55">
           <div className="mb-1.5 flex items-center gap-2">
@@ -3122,7 +3636,7 @@ function PatientRealismStrip({
   );
 }
 
-export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientSounds, caseCategory, appliedTreatmentIds = [], isInArrest = false, vitals, onPulse }: Body3DModelProps) {
+export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientSounds, caseCategory, appliedTreatmentIds = [], patientVisualState = null, isInArrest = false, vitals, onPulse, treatmentBayMode = false }: Body3DModelProps) {
   const { t } = useTranslation();
   const controlsRef = useRef<OrbitControlsHandle | null>(null);
   const [isFlipped, setIsFlipped] = useState(false);
@@ -3175,6 +3689,19 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   const [blockedNudge, setBlockedNudge] = useState<{ attempted: string; expected: string } | null>(null);
   const nudgeTimerRef = useRef<number | null>(null);
   const reactionTimerRef = useRef<number | null>(null);
+  const treatmentBayOverviewEnabled = treatmentBayMode && anatomyLayer !== 'skeleton';
+  const useTreatmentBayPresentation = treatmentBayOverviewEnabled;
+  const patientFirstExamLayout = treatmentBayOverviewEnabled && !!activeRegion;
+  const markerPresentation: MarkerPresentation = useTreatmentBayPresentation ? 'treatment-bay' : 'upright';
+  // Scene-contextual staging: a collapsed/roadside patient renders on the
+  // floor instead of pre-loaded onto the stretcher.
+  const bayStage: BayPatientStage = useMemo(() => deriveScenePatientStage(caseData), [caseData]);
+  // useMemo keeps the pos/target array identities stable — OrbitControls'
+  // `target` prop and several useCallback deps rely on that.
+  const overviewCameraFocus = useMemo(
+    () => (treatmentBayOverviewEnabled ? getTreatmentBayCameraFocus(bayStage) : DEFAULT_CAMERA_FOCUS),
+    [treatmentBayOverviewEnabled, bayStage],
+  );
 
   const nextGuidedStep = useMemo(
     () => (guidedMode ? getNextGuidedStep(assessedRegions) : null),
@@ -3250,6 +3777,11 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
     prevUnwellnessRef.current = unwellness;
   }, [unwellness]);
 
+  const scenarioPallor = skinEffectStrength(patientVisualState, 'pallor');
+  const scenarioCyanosis = skinEffectStrength(patientVisualState, 'cyanosis');
+  const scenarioDiaphoresis = skinEffectStrength(patientVisualState, 'diaphoresis');
+  const scenarioMottling = skinEffectStrength(patientVisualState, 'mottling');
+
   // Live skin colour tint. Composed in a fixed order so the channels layer
   // coherently on top of one another:
   //
@@ -3297,6 +3829,10 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
         touched = true;
       }
     }
+    if (scenarioPallor > 0) {
+      color.lerp(new THREE.Color(0xc9b6a6), Math.min(0.72, 0.24 + scenarioPallor * 0.42));
+      touched = true;
+    }
 
     // 3. Cyanosis — hypoxaemia blues the skin. Applied last so it sits on top
     //    of jaundice/pallor. Strength banded by SpO2 as before.
@@ -3309,18 +3845,30 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
       color.lerp(cyan, strength);
       touched = true;
     }
+    if (scenarioCyanosis > 0) {
+      color.lerp(new THREE.Color(0x7d9bb5), Math.min(0.82, 0.26 + scenarioCyanosis * 0.5));
+      touched = true;
+    }
 
     return touched ? color : null;
-  }, [vitals, caseData.vitalSignsProgression?.initial, unwellness.jaundice]);
+  }, [vitals, caseData.vitalSignsProgression?.initial, unwellness.jaundice, scenarioPallor, scenarioCyanosis]);
 
   // Which finding morphs are REVEALED — a finding's morph activates only
   // once the student has assessed its region. This is the discovery
   // mechanic expressed on the mesh: no JVD bulge until you examine the neck.
   // Case injuries drive the finding morphs AND the wound skin decals.
   const caseInjuries = useMemo(() => inferInjuries(caseData), [caseData]);
+  const scenarioBodyInjuries = useMemo(
+    () => buildScenarioBodyInjuries(patientVisualState),
+    [patientVisualState],
+  );
+  const bodyInjuriesForMesh = useMemo(
+    () => [...caseInjuries, ...scenarioBodyInjuries],
+    [caseInjuries, scenarioBodyInjuries],
+  );
 
   const activeFindingMorphs = useMemo(() => {
-    const injuries = caseInjuries;
+    const injuries = bodyInjuriesForMesh;
     // Map a detected finding to the morph that depicts it.
     const MORPH_FOR_KIND: Record<string, string> = {
       distension: 'finding_abdo_distension', // abdominal distension
@@ -3337,7 +3885,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
       if (morph) out.add(morph);
     }
     return Array.from(out);
-  }, [caseInjuries, assessedRegions]);
+  }, [bodyInjuriesForMesh, assessedRegions]);
 
   const guidedStepIndex = useMemo(() => {
     if (!nextGuidedStep) return -1;
@@ -3383,7 +3931,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
     };
   }, []);
 
-  const animateCamera = useCameraAnimation();
+  const { animateCamera, cancelCameraAnimation } = useCameraAnimation();
 
   // Phase 2B: Determine required regions from assessment profile
   const requiredRegions = useMemo<Set<string>>(() => {
@@ -3434,16 +3982,17 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
       soundTimerRef.current = null;
     }
     stopAllSounds();
-    // Animate camera back to default
+    // Animate camera back to the mode's overview (bay overview included —
+    // otherwise closing a region leaves the student stranded at the zoom).
     if (controlsRef.current) {
       animateCamera(
         controlsRef.current,
-        DEFAULT_CAMERA_FOCUS.pos,
-        DEFAULT_CAMERA_FOCUS.target,
+        overviewCameraFocus.pos,
+        overviewCameraFocus.target,
         400,
       );
     }
-  }, [animateCamera, clearPatientReaction]);
+  }, [animateCamera, clearPatientReaction, overviewCameraFocus.pos, overviewCameraFocus.target]);
 
   // Esc deselects the focused region — alongside the in-frame "Full body"
   // pill and click-on-empty-space (onPointerMissed on the Canvas).
@@ -3466,14 +4015,16 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
     // awake patient that's an intimate act, so the patient audibly consents
     // (as if the student just asked) and the coach reinforces asking first.
     // Once per region per case (component is keyed per case → ref resets).
+    // Speak + coach ONCE per case, not once per region — with ~11 regions the
+    // per-region version had the patient consenting on nearly every click,
+    // which read as a bug ("anywhere you click it says the same line").
     if (anatomyLayer === 'dressed' && (CLOTHING_PARTING[stepId]?.length ?? 0) > 0
-      && !consentedRegionsRef.current.has(stepId)) {
+      && consentedRegionsRef.current.size === 0) {
       consentedRegionsRef.current.add(stepId);
       if (getPatientResponsiveness(caseData).isAwake) {
         const lines = [
           'Yes, that’s fine — go ahead.',
           'Okay… do what you need to do.',
-          'Alright, but please be quick — it’s a bit cold.',
           'Go ahead. Is everything okay?',
         ];
         patientVoice.say(lines[hashInjury(stepId) % lines.length]);
@@ -3500,7 +4051,26 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
     // Zoom camera to a clinically useful close-up. Region presets are more
     // reliable than "current orbit direction" because the student may have
     // rotated to a posterior view before selecting an anterior structure.
-    if (controlsRef.current) {
+    if (controlsRef.current && treatmentBayOverviewEnabled) {
+      // Supine presentation: convert the upright clinical focus through the
+      // stretcher transform and hover the camera above the region, biased to
+      // the patient's side/feet so it never dives under the bed. Without this
+      // the bay had NO camera assist — students had to hand-orbit to reach
+      // the chest, which is the #1 "access to the patient is limited" report.
+      const focus = REGION_CAMERA_FOCUS[stepId] ?? REGION_CAMERA_FOCUS.chest;
+      const target = treatmentBayClinicalToWorld([
+        focus.target[0],
+        focus.target[1],
+        stepId === 'posterior-logroll' ? -0.08 : 0.10,
+      ], bayStage);
+      const pos = fitCameraPos(
+        controlsRef.current,
+        target,
+        [0.38, 0.95, 0.52],
+        REGION_RADIUS[stepId] ?? 0.28,
+      );
+      animateCamera(controlsRef.current, pos, target, 460);
+    } else if (controlsRef.current) {
       const focus = REGION_CAMERA_FOCUS[stepId] ?? REGION_CAMERA_FOCUS.chest;
       const dir: [number, number, number] = [
         focus.pos[0] - focus.target[0],
@@ -3524,7 +4094,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
       animateCamera(controlsRef.current, pos, target, 460);
     }
     setIsFlipped(stepId === 'posterior-logroll');
-  }, [onRegionClick, animateCamera, clearPatientReaction, anatomyLayer, caseData, patientVoice]);
+  }, [onRegionClick, animateCamera, clearPatientReaction, anatomyLayer, bayStage, caseData, patientVoice, treatmentBayOverviewEnabled]);
 
   // Phase 2F: Sound progress animation
   const startSoundProgress = useCallback((actionId: string, durationMs: number) => {
@@ -3554,7 +4124,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
     if (!activeRegion) return;
     setSelectedAction(actionId);
 
-    if (controlsRef.current) {
+    if (controlsRef.current && !treatmentBayOverviewEnabled) {
       const focus: Record<string, { pos: [number, number, number]; target: [number, number, number] }> = {
         'pupils-size': { pos: [0, 1.63, 1.22], target: [0, 1.63, 0.08] },
         'pupils-reactivity': { pos: [0, 1.63, 1.18], target: [0, 1.63, 0.08] },
@@ -3701,7 +4271,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
       playPercussionSound(percType);
       startSoundProgress(actionId, PERCUSSION_DURATION);
     }
-  }, [activeRegion, animateCamera, caseData, patientSounds, patientVoice, revealedFindings, startSoundProgress, isInArrest, surfaceSampler]);
+  }, [activeRegion, animateCamera, caseData, patientSounds, patientVoice, revealedFindings, startSoundProgress, isInArrest, surfaceSampler, treatmentBayOverviewEnabled]);
 
   // Click the ANATOMY, not just the dots: inside an active region, a click on
   // the body fires the nearest detail exam action at that spot — click the
@@ -3748,7 +4318,10 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
     }
     return subRegions.flatMap(sr => sr.actions);
   }, [limbGroups, subRegions]);
-  const pupilProfile = useMemo(() => getPupilProfile(caseData), [caseData]);
+  const pupilProfile = useMemo(
+    () => applyVisualEyeEffect(getPupilProfile(caseData), patientVisualState),
+    [caseData, patientVisualState],
+  );
   const showEyeContext = activeRegion === 'face'
     && !!selectedAction
     && (selectedAction.includes('pupil') || selectedAction.includes('eyes'));
@@ -3821,7 +4394,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
       {/* Teal accent hairline — "hands on patient" phase */}
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-teal-400/40 to-transparent" />
       {/* Header */}
-      <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-slate-200/50 dark:border-white/5">
+      <div className="patient-exam-header flex items-center justify-between px-4 sm:px-5 py-3 border-b border-slate-200/50 dark:border-white/5">
         <div className="flex items-center gap-3">
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-teal-500/10 ring-1 ring-teal-500/15">
             <User className="h-3.5 w-3.5 text-teal-500/80" />
@@ -3961,7 +4534,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
       )}
 
       {!activeRegion && (
-        <div className="grid grid-cols-2 gap-2 px-3 py-2 border-b border-slate-200/50 bg-white/45 text-[10px] dark:border-white/5 dark:bg-slate-950/30 sm:grid-cols-4">
+        <div className="patient-exam-summary grid grid-cols-2 gap-2 px-3 py-2 border-b border-slate-200/50 bg-white/45 text-[10px] dark:border-white/5 dark:bg-slate-950/30 sm:grid-cols-4">
           <div className="rounded-lg border border-slate-200/70 bg-white/70 px-2 py-1.5 dark:border-white/10 dark:bg-slate-900/60">
             <p className="text-[8px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/60">Patient</p>
             <p className="truncate font-medium">{caseData.patientInfo?.age}y {caseData.patientInfo?.gender}</p>
@@ -3991,7 +4564,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
       )}
 
       {!activeRegion && (
-        <div className="border-b border-slate-200/60 bg-white/55 px-3 py-2 dark:border-white/5 dark:bg-slate-950/30">
+        <div className="patient-region-selector border-b border-slate-200/60 bg-white/55 px-3 py-2 dark:border-white/5 dark:bg-slate-950/30">
           <div className="mb-1.5 flex items-center justify-between gap-2">
             <p className="text-[8px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/65">Examine region</p>
             <p className="text-[8px] text-muted-foreground/55">Select here or on the patient</p>
@@ -4029,15 +4602,20 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
         </div>
       )}
 
-      {/* Patient frame. When a region is active, the exam tools live inside
-          this grey mannequin area rather than in an external side panel. */}
-      <div>
-        <div className={`relative min-w-0 overflow-hidden ${activeRegion ? 'bg-slate-100/35 dark:bg-slate-950/20' : 'h-[320px] sm:h-[380px] lg:h-[420px]'}`}>
-          <div className={`relative min-w-0 overflow-hidden ${activeRegion ? 'h-[430px] sm:h-[470px]' : 'h-full'}`}>
+      {/* Patient frame. In treatment-bay mode the mannequin stays as the centre
+          of the scene; controls move to a dock below the patient instead of
+          floating across the anatomy. */}
+      <div className="patient-model-frame">
+        <div className={`patient-model-canvas-shell relative min-w-0 overflow-hidden ${patientFirstExamLayout ? 'patient-first-canvas' : ''} ${activeRegion ? 'bg-slate-100/35 dark:bg-slate-950/20' : 'h-[320px] sm:h-[380px] lg:h-[420px]'}`}>
+          <div className={`patient-model-canvas-stage relative min-w-0 overflow-hidden ${patientFirstExamLayout ? 'patient-first-canvas-stage' : activeRegion ? 'h-[430px] sm:h-[470px]' : 'h-full'}`}>
             <Canvas
-              camera={{ position: [0, 0.95, 4.25], fov: 38 }}
+              camera={{ position: overviewCameraFocus.pos, fov: useTreatmentBayPresentation ? 34 : 34 }}
               dpr={Math.min(window.devicePixelRatio, 2)}
               frameloop="always"
+              // Soft shadow maps for the surgical key light. One 1024px
+              // caster only; disabled on the last quality rung alongside
+              // contact shadows.
+              shadows="soft"
               gl={{
                 antialias: true,
                 alpha: true,
@@ -4079,7 +4657,20 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
               <directionalLight position={[4, 8, 5]} intensity={0.95} color="#fff2e6" />
               <directionalLight position={[0, 4, -5]} intensity={0.5} color="#ffffff" />
 
-              <PatientSceneEnvironment />
+              <TreatmentBayEnvironment
+                hideOverhead={treatmentBayOverviewEnabled}
+                hideBed={treatmentBayOverviewEnabled && bayStage === 'floor'}
+                shadowsEnabled={quality.contactShadows}
+              />
+
+              {/* Cinematic ease-in when entering the treatment bay — slight
+                  pull-back + dutch tilt settling onto the preset framing.
+                  Any pointer interaction cancels it instantly. */}
+              <CameraEntrance
+                active={useTreatmentBayPresentation}
+                focus={overviewCameraFocus}
+                controlsRef={controlsRef}
+              />
 
               <BodyMesh
                 assessedRegions={assessedRegions}
@@ -4089,7 +4680,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 nextGuidedStep={nextGuidedStep}
                 onBlockedClick={handleBlockedClick}
                 onBodyPoint={handleBodyPoint}
-                bodyInjuries={caseInjuries}
+                bodyInjuries={bodyInjuriesForMesh}
                 // See public/models/REALISTIC_ANATOMY.md for the vetted model
                 // sources and the required export/validation path.
                 patientGender={caseData.patientInfo?.gender}
@@ -4110,9 +4701,9 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 // diaphoresis → sweat sheen (material roughness/envMap),
                 // jaundice → scleral yellowing (eye materials), mottling →
                 // late-shock livedo texture overlay.
-                diaphoresis={unwellness.diaphoresis}
+                diaphoresis={Math.max(unwellness.diaphoresis, scenarioDiaphoresis)}
                 jaundice={unwellness.jaundice}
-                mottling={unwellness.mottling}
+                mottling={Math.max(unwellness.mottling, scenarioMottling)}
                 // Receive the surface projector so labels anchor to the real mesh.
                 // Wrap in an arrow so React stores the function rather than calling it.
                 onSurfaceSampler={handleSurfaceSampler}
@@ -4120,6 +4711,14 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 dressedActiveRegion={regionExposed ? activeRegion : null}
                 pupilLeftMm={pupilProfile.leftMm}
                 pupilRightMm={pupilProfile.rightMm}
+                presentation={useTreatmentBayPresentation ? 'treatment-bay' : 'upright'}
+                bayStage={bayStage}
+              />
+
+              <TreatmentBayImmersionLayer
+                appliedTreatmentIds={appliedTreatmentIds}
+                active={useTreatmentBayPresentation}
+                stage={bayStage}
               />
 
               <AnatomyReferenceLayer visible={anatomyLayer === 'skeleton'} />
@@ -4132,31 +4731,47 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 onAction={handleExamAction}
                 onPulse={onPulse}
                 sampler={surfaceSampler}
+                presentation={markerPresentation}
               />
 
-              <CaseRealismMarkers
-                cues={visibleRealismCues}
-                assessedRegions={assessedRegions}
-                activeRegion={activeRegion}
-                sampler={surfaceSampler}
-              />
+              {!useTreatmentBayPresentation && (
+                <>
+                  <CaseRealismMarkers
+                    cues={visibleRealismCues}
+                    assessedRegions={assessedRegions}
+                    activeRegion={activeRegion}
+                    sampler={surfaceSampler}
+                    presentation={markerPresentation}
+                  />
 
-              {/* Findings revealed ON the body, only once their region has
-                  been assessed — the discovery mechanic. */}
-              <RevealedFindingMarkers
-                caseData={caseData}
-                assessedRegions={assessedRegions}
-                activeRegion={activeRegion}
-                sampler={surfaceSampler}
-              />
+                  <ScenarioVisualMarkers
+                    visualState={patientVisualState}
+                    activeRegion={activeRegion}
+                    sampler={surfaceSampler}
+                    presentation={markerPresentation}
+                  />
+
+                  {/* Findings revealed ON the body, only once their region has
+                      been assessed — the discovery mechanic. */}
+                  <RevealedFindingMarkers
+                    caseData={caseData}
+                    assessedRegions={assessedRegions}
+                    activeRegion={activeRegion}
+                    sampler={surfaceSampler}
+                    presentation={markerPresentation}
+                  />
+                </>
+              )}
 
               <TreatmentEquipmentOverlay
                 appliedTreatmentIds={appliedTreatmentIds}
                 sampler={surfaceSampler}
+                presentation={markerPresentation}
+                bayStage={bayStage}
               />
 
               {quality.contactShadows && (
-                <ContactShadows position={[0, -0.01, 0]} opacity={0.4} scale={3} blur={2.5} far={3} />
+                <ContactShadows position={[0, -0.01, 0]} opacity={0.32} scale={3.4} blur={3.4} far={3} />
               )}
 
               {/* Stage 3 post pipeline (N8AO + SMAA — see AdaptiveQuality.tsx
@@ -4173,7 +4788,9 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 maxDistance={7}
                 minPolarAngle={Math.PI * 0.15}
                 maxPolarAngle={Math.PI * 0.85}
-                target={[0, 0.92, 0]}
+                dampingFactor={0.12}
+                target={overviewCameraFocus.target}
+                onStart={cancelCameraAnimation}
               />
             </Canvas>
 
@@ -4188,9 +4805,9 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
               </button>
             )}
 
-            {activeRegion && <PatientReactionCard reaction={patientReaction} />}
+            {activeRegion && !patientFirstExamLayout && <PatientReactionCard reaction={patientReaction} />}
 
-            {activeRegion && (
+            {activeRegion && !patientFirstExamLayout && (
               <AssessmentActionDock
                 activeRegion={activeRegion}
                 actions={allActions}
@@ -4200,7 +4817,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
               />
             )}
 
-            {showRegionalLoupe && (
+            {showRegionalLoupe && !patientFirstExamLayout && (
               <div className={`pointer-events-none absolute right-3 top-3 z-20 ${loupeWidthClass} animate-in fade-in slide-in-from-top-2 duration-300 ${showEyeContext ? '' : 'hidden sm:block'}`}>
                 <RegionalZoomLoupe
                   activeRegion={activeRegion}
@@ -4212,7 +4829,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
             )}
 
             {/* In-frame premium glass findings — replaces the drop-below panel */}
-            {activeRegion && (
+            {activeRegion && !patientFirstExamLayout && (
               <InFrameFindings
                 selectedAction={selectedAction}
                 revealedFindings={revealedFindings}
@@ -4222,7 +4839,23 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
             )}
           </div>
 
-          {activeRegion && (
+          {patientFirstExamLayout && activeRegion && (
+            <PatientFirstExamDock
+              activeRegion={activeRegion}
+              actions={allActions}
+              selectedAction={selectedAction}
+              revealedFindings={revealedFindings}
+              onAction={handleExamAction}
+              caseData={caseData}
+              pupilProfile={pupilProfile}
+              patientReaction={patientReaction}
+              showRegionalLoupe={showRegionalLoupe}
+              playingSound={playingSound}
+              soundProgress={soundProgress}
+            />
+          )}
+
+          {activeRegion && !patientFirstExamLayout && (
             <div className="glass-panel relative z-20 m-2 mt-0 max-h-[290px] overflow-hidden rounded-2xl border border-white/45 shadow-[0_24px_60px_-24px_rgba(15,23,42,0.45)] backdrop-blur-xl dark:border-white/10 sm:m-3 sm:mt-0">
               <div className="flex items-center justify-between gap-3 border-b border-slate-200/70 px-3 py-2 dark:border-white/10">
                 <div className="min-w-0">
