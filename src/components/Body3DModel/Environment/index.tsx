@@ -20,6 +20,8 @@ import { useEffect, useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { getBayTextures } from './textures';
+import { SceneVariantEnvironment } from './SceneVariant';
+import type { EnvironmentVariant } from '@/lib/sceneEnvironment';
 
 const NO_RAYCAST = () => null;
 
@@ -499,20 +501,34 @@ export function TreatmentBayEnvironment({
   hideOverhead = false,
   hideBed = false,
   shadowsEnabled = true,
+  variant = 'clinic',
 }: {
   hideOverhead?: boolean;
   hideBed?: boolean;
   shadowsEnabled?: boolean;
+  variant?: EnvironmentVariant;
 }) {
   return (
     <group>
-      <Room hideOverhead={hideOverhead} />
+      {/* Scene shell + lighting swap per variant; the medical equipment
+          below stays in every scene — the paramedic brings it. */}
+      {variant === 'clinic' ? (
+        <>
+          <Room hideOverhead={hideOverhead} />
+          <BayLighting shadowsEnabled={shadowsEnabled} />
+        </>
+      ) : (
+        <SceneVariantEnvironment
+          variant={variant}
+          hideOverhead={hideOverhead}
+          shadowsEnabled={shadowsEnabled}
+        />
+      )}
       {!hideBed && <Stretcher />}
       <IVStand />
       <MonitorStand />
       <OxygenTank />
       <CrashCart />
-      <BayLighting shadowsEnabled={shadowsEnabled} />
       <DustMotes />
       <SoftGroundShadow />
     </group>

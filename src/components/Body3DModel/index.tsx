@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { RotateCcw, User, Eye, Hand, Activity, Stethoscope, X, ChevronRight, ChevronDown, AlertTriangle, Compass, Unlock, Wind, Shirt } from 'lucide-react';
 import { BodyMesh, treatmentBayClinicalToWorld, type BayPatientStage } from './BodyMesh';
 import { deriveScenePatientStage } from '@/lib/patientStaging';
+import { deriveSceneEnvironment } from '@/lib/sceneEnvironment';
 import type { LimbSide, SurfaceSampler } from './BodyMesh';
 import { AdaptiveQuality, PatientPostEffects, qualityForTier } from './AdaptiveQuality';
 import { TreatmentBayEnvironment, CameraEntrance } from './Environment';
@@ -3697,6 +3698,9 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   // Scene-contextual staging: a collapsed/roadside patient renders on the
   // floor instead of pre-loaded onto the stretcher.
   const bayStage: BayPatientStage = useMemo(() => deriveScenePatientStage(caseData), [caseData]);
+  // Scene-contextual environment: villa cases render in a living room,
+  // street cases at a roadside, mall cases in a public atrium.
+  const bayVariant = useMemo(() => deriveSceneEnvironment(caseData), [caseData]);
   // useMemo keeps the pos/target array identities stable — OrbitControls'
   // `target` prop and several useCallback deps rely on that.
   const overviewCameraFocus = useMemo(
@@ -4670,6 +4674,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 hideOverhead={treatmentBayOverviewEnabled}
                 hideBed={treatmentBayOverviewEnabled && bayStage === 'floor'}
                 shadowsEnabled={quality.contactShadows}
+                variant={bayVariant}
               />
 
               {/* Cinematic ease-in when entering the treatment bay — slight
