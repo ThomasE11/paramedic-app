@@ -109,7 +109,7 @@ import {
   RotateCcw, Zap, Phone, ChevronDown, ChevronUp,
   Wind, Brain, Syringe, Search, Shuffle, Target,
   Flame, Baby, FlaskConical, ListChecks, HeartPulse, Gauge,
-  Eye,
+  Eye, Mic, MicOff,
 } from 'lucide-react';
 import { toast } from 'sonner';
 // AuscultationPanel removed — sounds now play inline from 3D Physical Examination
@@ -129,7 +129,9 @@ import { OnboardingTour, useOnboardingTour } from '@/components/OnboardingTour';
 import { NarrationButton, VoiceToggleButton } from '@/components/NarrationButton';
 import { useVoiceNarration } from '@/hooks/useVoiceNarration';
 import { VoiceCommandButton } from '@/components/VoiceCommandButton';
-import type { VoiceCommand } from '@/hooks/useVoiceInput';
+import type { VoiceCommand, VoiceMatch } from '@/hooks/useVoiceInput';
+import { buildVoiceIntents, type VoiceIntent, type VoicePhase } from '@/lib/voiceIntents';
+import { cn } from '@/lib/utils';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useTranslation } from 'react-i18next';
 import { MedicalControlDialog } from '@/components/MedicalControlDialog';
@@ -1521,6 +1523,23 @@ export function StudentPanel({
   const [, setActiveHistoryStep] = useState<'signs-symptoms' | 'allergies' | 'medications' | 'past-medical' | 'last-meal' | 'events-leading' | null>(null);
   const [activeManagementTab, setActiveManagementTab] = useState<ManagementTab>('airway');
   const [medSearch, setMedSearch] = useState('');
+
+  // Voice-first mode (senior students) — run the whole case hands-free.
+  // Persisted so a student who prefers it doesn't re-toggle every case.
+  const [voiceFirstMode, setVoiceFirstMode] = useState<boolean>(() => {
+    try { return localStorage.getItem('voice-first-mode') === 'true'; } catch { return false; }
+  });
+  const toggleVoiceFirst = useCallback(() => {
+    setVoiceFirstMode(prev => {
+      const next = !prev;
+      try { localStorage.setItem('voice-first-mode', String(next)); } catch { /* private mode */ }
+      return next;
+    });
+  }, []);
+  // Only 3rd/4th year get voice-first — juniors need the tactile checklist.
+  const voiceFirstAllowed = selectedYear === '3rd-year' || selectedYear === '4th-year';
+  // Pending drug confirmation — set when a `requiresConfirm` intent fires.
+  const [pendingVoiceDrug, setPendingVoiceDrug] = useState<{ treatmentId: string; name: string } | null>(null);
   // Care-feed "→ Treat" chip: open the right jump bag with the suggested
   // treatment already in the search box, and bring the kit into view.
   const openSuggestedTreatment = useCallback((suggestion: FindingTreatmentSuggestion) => {
@@ -3541,6 +3560,78 @@ export function StudentPanel({
     }
   }, [currentCase, caseStartTime, handlePerformAssessment]);
 
+  // --------------------------------------------------------------------------
+  // Voice-first mode — full hands-free intent registry
+  // --------------------------------------------------------------------------
+  // Map the student flow's phase onto the voice-intent phase vocabulary.
+  const voicePhase: VoicePhase =
+    phase === 'prebriefing' ? 'briefing'
+    : phase === 'scene-survey' ? 'scene'
+    : phase === 'postcase' ? 'debrief'
+    : 'treatment'; // 'case' / 'vitals' are the live treatment surface
+
+  const voiceIntents: VoiceIntent[] = useMemo(() => {
+    if (!currentCase) return [];
+    return buildVoiceIntents(currentCase, TREATMENTS, voicePhase, {
+      // Exclude any treatment the clinical grader rates 'harmful' for this
+      // patient right now — a student must never be able to voice it.
+      isHarmful: (tx) =>
+        currentVitals != null &&
+        evaluateTreatmentQuality(tx.id, currentVitals, currentCase, selectedYear)?.level === 'harmful',
+    });
+  }, [currentCase, voicePhase, currentVitals, selectedYear]);
+
+  const handleVoiceIntent = useCallback((match: VoiceMatch) => {
+    const intent = voiceIntents.find(i => i.id === match.command.id);
+    if (!intent) return;
+    const { action } = intent;
+
+    switch (action.type) {
+      case 'assess':
+      case 'listen':
+      case 'vital': {
+        const stepId = (action.type === 'assess'
+          ? action.payload.stepId
+          : action.type === 'listen'
+          ? action.payload.region
+          : action.payload.vital) as AssessmentStepId;
+        toast.success(`🎙 ${intent.label}`, { description: match.rawTranscript, duration: 2400 });
+        if (currentCase && caseStartTime && assessmentTrackerRef.current) {
+          handlePerformAssessment(stepId);
+        }
+        return;
+      }
+      case 'treatment': {
+        const tx = TREATMENTS.find(t => t.id === action.payload.treatmentId);
+        if (!tx) return;
+        if (intent.requiresConfirm) {
+          // Confirm beat — hold the drug until the student confirms.
+          setPendingVoiceDrug({ treatmentId: tx.id, name: tx.name });
+          return;
+        }
+        toast.success(`🎙 ${intent.label}`, { description: match.rawTranscript, duration: 2400 });
+        applyTreatment(tx);
+        return;
+      }
+      case 'nav': {
+        const { target, open } = action.payload;
+        if (open && target === 'jump-bag') setActiveManagementTab('airway');
+        toast.success(`🎙 ${intent.label}`, { description: match.rawTranscript, duration: 1800 });
+        return;
+      }
+    }
+  }, [voiceIntents, currentCase, caseStartTime, handlePerformAssessment, applyTreatment]);
+
+  const confirmVoiceDrug = useCallback(() => {
+    setPendingVoiceDrug(prev => {
+      if (prev) {
+        const tx = TREATMENTS.find(t => t.id === prev.treatmentId);
+        if (tx) applyTreatment(tx);
+      }
+      return null;
+    });
+  }, [applyTreatment]);
+
   // Sync assessmentTracker.performed step IDs into session.completedItems
   // so that checklist-based scoring (12-lead ECG, pain assessment, etc.) works
   // during gameplay — not only on PDF export.
@@ -5366,6 +5457,36 @@ export function StudentPanel({
                       <Badge variant="outline" className="border-cyan-300/30 bg-cyan-300/10 text-[9px] uppercase tracking-[0.16em] text-cyan-100">
                         first-person care
                       </Badge>
+                      {/* Voice-first toggle — senior students only. Junior years
+                          see it disabled with an explanatory tooltip. */}
+                      <button
+                        type="button"
+                        onClick={toggleVoiceFirst}
+                        disabled={!voiceFirstAllowed}
+                        aria-pressed={voiceFirstMode}
+                        aria-label={
+                          voiceFirstAllowed
+                            ? t('voice.firstMode', { defaultValue: 'Voice-first mode' })
+                            : t('voice.firstModeGated', { defaultValue: 'Available for 3rd and 4th year students' })
+                        }
+                        title={
+                          voiceFirstAllowed
+                            ? t('voice.firstMode', { defaultValue: 'Voice-first mode' })
+                            : t('voice.firstModeGated', { defaultValue: 'Available for 3rd and 4th year students' })
+                        }
+                        className={cn(
+                          'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.16em] transition-colors',
+                          'focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-1',
+                          !voiceFirstAllowed
+                            ? 'cursor-not-allowed border-white/10 bg-white/5 text-white/30'
+                            : voiceFirstMode
+                            ? 'border-cyan-300/60 bg-cyan-400/20 text-cyan-100'
+                            : 'border-cyan-300/25 bg-cyan-300/5 text-cyan-100/70 hover:bg-cyan-300/10',
+                        )}
+                      >
+                        {voiceFirstMode ? <Mic className="h-3 w-3" /> : <MicOff className="h-3 w-3" />}
+                        {t('voice.firstModeShort', { defaultValue: 'Voice-first' })}
+                      </button>
                     </div>
                   </div>
 
@@ -5480,6 +5601,9 @@ export function StudentPanel({
 
               {/* ===== MANAGEMENT SUPPORT COLUMN (Treatment first, then assessment) ===== */}
               <div className="tactical-assessment-rail order-3 space-y-4">
+                {/* Voice-first mode hides the tap-based jump bag — the student
+                    treats hands-free via the mic. */}
+                {!voiceFirstMode && (
                 <HUDTreatmentBags className="tactical-loadout-dock tactical-management-options">
                   <TreatmentJumpBagPanel
                     currentVitals={currentVitals}
@@ -5494,6 +5618,7 @@ export function StudentPanel({
                     applyTreatment={applyTreatment}
                   />
                 </HUDTreatmentBags>
+                )}
 
                 <RoadmapAnatomyPanel
                   visualState={patientVisualState}
@@ -5507,7 +5632,9 @@ export function StudentPanel({
                     assessed state is a minimal LED dot (emerald) rather than
                     a pill/check; the active state lights up the rail and
                     adds a subtle accent glow. Findings render as a chapter
-                    panel beneath the tiles, not a utility dropdown. */}
+                    panel beneath the tiles, not a utility dropdown.
+                    Hidden in voice-first mode — the student runs ABCDE by voice. */}
+                {!voiceFirstMode && (
                 <HUDAssessment
                   title="Primary Survey"
                   code="SABCDE"
@@ -5588,6 +5715,7 @@ export function StudentPanel({
                     )}
                   </div>
                 </HUDAssessment>
+                )}
 
                 {realismDirector && (
                   <RealismDirectorCard state={realismDirector} />
@@ -7214,16 +7342,48 @@ export function StudentPanel({
         {/* Hands-free voice command — visible only when running a live case.
             Student can tap the mic and say "check airway" / "blood glucose" /
             "examine chest" to trigger the same action as the on-screen button.
-            Hidden on phases where assessment actions aren't meaningful. */}
+            In voice-first mode the full intent set (treatments + navigation)
+            is active and the mic is the primary control surface. */}
         {(phase === 'case' || phase === 'vitals') && currentCase && (
           <VoiceCommandButton
-            commands={voiceCommands}
-            onCommand={handleVoiceCommand}
+            commands={voiceFirstMode ? voiceIntents : voiceCommands}
+            onCommand={voiceFirstMode ? handleVoiceIntent : handleVoiceCommand}
             lang={i18n.language === 'ar' ? 'ar-AE' : 'en-GB'}
             listeningLabel={t('voice.listening', { defaultValue: 'Listening' })}
             idleLabel={t('voice.talk', { defaultValue: 'Voice' })}
+            transcriptPlaceholder={
+              voiceFirstMode
+                ? t('voice.transcriptPlaceholder', { defaultValue: 'Say a command — e.g. "check airway", "give adrenaline"' })
+                : undefined
+            }
           />
         )}
+
+        {/* Drug-administration confirm beat — voice-first requires an explicit
+            confirmation before a medication is pushed. */}
+        <Dialog open={pendingVoiceDrug != null} onOpenChange={(open) => { if (!open) setPendingVoiceDrug(null); }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                {t('voice.confirmDrugTitle', { defaultValue: 'Confirm administration' })}
+              </DialogTitle>
+              <DialogDescription>
+                {t('voice.confirmDrugPrompt', {
+                  drug: pendingVoiceDrug?.name ?? '',
+                  defaultValue: `Confirm: administer ${pendingVoiceDrug?.name ?? ''}?`,
+                })}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setPendingVoiceDrug(null)}>
+                {t('common.cancel', { defaultValue: 'Cancel' })}
+              </Button>
+              <Button onClick={confirmVoiceDrug}>
+                {t('voice.confirmDrugConfirm', { defaultValue: 'Confirm' })}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );

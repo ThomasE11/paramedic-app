@@ -118,7 +118,14 @@
     "listening": "أستمع",
     "micHint": "اضغط وقل \"افحص المجرى الهوائي\"، \"افحص الصدر\"، \"سكر الدم\"...",
     "micDenied": "تم حظر الوصول إلى الميكروفون. فعّله في إعدادات المتصفح لاستخدام الأوامر الصوتية.",
-    "unsupported": "تتطلب الأوامر الصوتية Chrome أو Edge أو Safari."
+    "unsupported": "تتطلب الأوامر الصوتية Chrome أو Edge أو Safari.",
+    "firstMode": "وضع الصوت أولاً",
+    "firstModeShort": "الصوت أولاً",
+    "firstModeGated": "متاح لطلاب السنة الثالثة والرابعة",
+    "transcriptPlaceholder": "قل أمرًا — مثل \"افحص المجرى الهوائي\"، \"أعطِ أدرينالين\"",
+    "confirmDrugTitle": "تأكيد الإعطاء",
+    "confirmDrugPrompt": "تأكيد: إعطاء {{drug}}؟",
+    "confirmDrugConfirm": "تأكيد"
   },
   "common": {
     "loading": "جارٍ تحميل بيانات الحالة...",
@@ -126,7 +133,8 @@
     "save": "حفظ",
     "reset": "إعادة تعيين",
     "yes": "نعم",
-    "no": "لا"
+    "no": "لا",
+    "cancel": "إلغاء"
   },
   "guidedExam": {
     "on": "موجّه",

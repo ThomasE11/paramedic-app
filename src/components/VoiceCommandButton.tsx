@@ -32,6 +32,8 @@ interface VoiceCommandButtonProps {
   listeningLabel?: string;
   /** Label shown when idle. Default: "Voice". */
   idleLabel?: string;
+  /** Placeholder shown in the transcript line before anything is heard. */
+  transcriptPlaceholder?: string;
 }
 
 export function VoiceCommandButton({
@@ -43,8 +45,9 @@ export function VoiceCommandButton({
   className,
   listeningLabel = 'Listening',
   idleLabel = 'Voice',
+  transcriptPlaceholder,
 }: VoiceCommandButtonProps) {
-  const { isSupported, isListening, interimTranscript, lastMatch, error, toggle } = useVoiceInput({
+  const { isSupported, isListening, interimTranscript, finalTranscript, lastMatch, error, toggle } = useVoiceInput({
     commands,
     onCommand,
     wakeWord,
@@ -119,6 +122,17 @@ export function VoiceCommandButton({
       <span className="hidden text-[10px] font-medium uppercase tracking-wider text-muted-foreground sm:block">
         {isListening ? listeningLabel : idleLabel}
       </span>
+      {/* Persistent transcript line — shows the last heard utterance (or a
+          placeholder) so voice-first users get feedback even after the interim
+          pill fades. aria-live so screen readers announce recognised commands. */}
+      {(transcriptPlaceholder || finalTranscript) && (
+        <span
+          aria-live="polite"
+          className="hidden max-w-xs truncate text-[11px] italic text-muted-foreground sm:block"
+        >
+          {finalTranscript || transcriptPlaceholder}
+        </span>
+      )}
     </div>
   );
 }

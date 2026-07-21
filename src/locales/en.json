@@ -118,7 +118,14 @@
     "listening": "Listening",
     "micHint": "Tap and say \"check airway\", \"examine chest\", \"blood glucose\"…",
     "micDenied": "Microphone access blocked. Enable it in browser settings to use voice commands.",
-    "unsupported": "Voice commands require Chrome, Edge, or Safari."
+    "unsupported": "Voice commands require Chrome, Edge, or Safari.",
+    "firstMode": "Voice-first mode",
+    "firstModeShort": "Voice-first",
+    "firstModeGated": "Available for 3rd and 4th year students",
+    "transcriptPlaceholder": "Say a command — e.g. \"check airway\", \"give adrenaline\"",
+    "confirmDrugTitle": "Confirm administration",
+    "confirmDrugPrompt": "Confirm: administer {{drug}}?",
+    "confirmDrugConfirm": "Confirm"
   },
   "common": {
     "loading": "Loading case data...",
@@ -126,7 +133,8 @@
     "save": "Save",
     "reset": "Reset",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "cancel": "Cancel"
   },
   "guidedExam": {
     "on": "Guided",
