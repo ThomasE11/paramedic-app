@@ -19,8 +19,21 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
+import { getBayTextures } from './textures';
 
 const NO_RAYCAST = () => null;
+
+/** Shared brushed-steel material props — the near-white metal map is tinted
+ *  by each mesh's existing color. Reflections come from the scene HDRI. */
+function steelProps(): {
+  map: THREE.CanvasTexture;
+  normalMap: THREE.CanvasTexture;
+  roughness: number;
+  metalness: number;
+} {
+  const { metal } = getBayTextures();
+  return { map: metal.map, normalMap: metal.normalMap, roughness: 0.4, metalness: 0.8 };
+}
 
 // ---------------------------------------------------------------------------
 // Palette — one fixed clinical palette. The room lives behind ACES tone
@@ -42,24 +55,44 @@ const PALETTE = {
 // Room shell
 // ---------------------------------------------------------------------------
 function Room({ hideOverhead }: { hideOverhead: boolean }) {
+  const tex = getBayTextures();
   return (
     <group>
-      {/* Floor — large enough that the orbit camera never sees its edge. */}
+      {/* Floor — large enough that the orbit camera never sees its edge.
+          Linoleum map carries the hue; slight gloss picks up the key light. */}
       <mesh position={[0, -0.05, 0.1]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow raycast={NO_RAYCAST}>
         <planeGeometry args={[7.2, 7.2]} />
-        <meshStandardMaterial color={PALETTE.floor} roughness={0.82} metalness={0.05} />
+        <meshStandardMaterial
+          map={tex.floor.map}
+          normalMap={tex.floor.normalMap}
+          normalScale={[0.7, 0.7]}
+          roughness={0.3}
+          metalness={0.1}
+        />
       </mesh>
 
       {/* Back wall */}
       <mesh position={[0, 1.05, -1.05]} receiveShadow raycast={NO_RAYCAST}>
         <boxGeometry args={[4.2, 2.3, 0.05]} />
-        <meshStandardMaterial color={PALETTE.wallBack} roughness={0.88} metalness={0.02} />
+        <meshStandardMaterial
+          map={tex.wallBack.map}
+          normalMap={tex.wallBack.normalMap}
+          normalScale={[0.5, 0.5]}
+          roughness={0.9}
+          metalness={0}
+        />
       </mesh>
       {/* Side walls */}
       {[-2.05, 2.05].map((x) => (
         <mesh key={`side-${x}`} position={[x, 1.05, 0.4]} receiveShadow raycast={NO_RAYCAST}>
           <boxGeometry args={[0.05, 2.3, 3.0]} />
-          <meshStandardMaterial color={PALETTE.wall} roughness={0.88} metalness={0.02} />
+          <meshStandardMaterial
+            map={tex.wall.map}
+            normalMap={tex.wall.normalMap}
+            normalScale={[0.5, 0.5]}
+            roughness={0.9}
+            metalness={0}
+          />
         </mesh>
       ))}
 
@@ -68,12 +101,12 @@ function Room({ hideOverhead }: { hideOverhead: boolean }) {
       {[-2.02, 2.02].map((x) => (
         <mesh key={`skirt-${x}`} position={[x, 0.03, 0.4]} raycast={NO_RAYCAST}>
           <boxGeometry args={[0.02, 0.12, 3.0]} />
-          <meshStandardMaterial color={PALETTE.metal} roughness={0.35} metalness={0.6} />
+          <meshStandardMaterial color={PALETTE.metal} {...steelProps()} />
         </mesh>
       ))}
       <mesh position={[0, 0.03, -1.02]} raycast={NO_RAYCAST}>
         <boxGeometry args={[4.2, 0.12, 0.02]} />
-        <meshStandardMaterial color={PALETTE.metal} roughness={0.35} metalness={0.6} />
+        <meshStandardMaterial color={PALETTE.metal} {...steelProps()} />
       </mesh>
 
       {/* Window on the left wall — motivates the cool rim light. */}
@@ -121,7 +154,13 @@ function Room({ hideOverhead }: { hideOverhead: boolean }) {
         <>
           <mesh position={[0, 2.3, 0.1]} rotation={[Math.PI / 2, 0, 0]} raycast={NO_RAYCAST}>
             <planeGeometry args={[4.2, 3.2]} />
-            <meshStandardMaterial color={PALETTE.ceiling} roughness={0.7} metalness={0.05} />
+            <meshStandardMaterial
+              map={tex.ceiling.map}
+              normalMap={tex.ceiling.normalMap}
+              normalScale={[0.5, 0.5]}
+              roughness={0.7}
+              metalness={0.05}
+            />
           </mesh>
           {[-0.85, 0.85].map((x) => (
             <mesh key={`panel-${x}`} position={[x, 2.28, -0.2]} rotation={[Math.PI / 2, 0, 0]} raycast={NO_RAYCAST}>
@@ -143,7 +182,7 @@ function SurgicalLampHead() {
     <group position={[0.25, 0, 0.3]}>
       <mesh position={[0, 2.05, 0]} raycast={NO_RAYCAST}>
         <cylinderGeometry args={[0.02, 0.02, 0.5, 10]} />
-        <meshStandardMaterial color={PALETTE.metal} roughness={0.3} metalness={0.7} />
+        <meshStandardMaterial color={PALETTE.metal} {...steelProps()} />
       </mesh>
       <mesh position={[0, 1.78, 0]} castShadow raycast={NO_RAYCAST}>
         <cylinderGeometry args={[0.19, 0.24, 0.09, 24]} />
@@ -162,12 +201,19 @@ function SurgicalLampHead() {
 // frame, undercarriage and wheels.
 // ---------------------------------------------------------------------------
 function Stretcher() {
+  const { fabric } = getBayTextures();
   return (
     <group position={[0, 0, 0.02]}>
       {/* Mattress + sheet (footprint is load-bearing — see file header) */}
       <mesh position={[0, 0.45, 0]} castShadow receiveShadow raycast={NO_RAYCAST}>
         <boxGeometry args={[1.18, 0.08, 2.38]} />
-        <meshStandardMaterial color={PALETTE.bed} roughness={0.75} metalness={0.02} />
+        <meshStandardMaterial
+          map={fabric.map}
+          normalMap={fabric.normalMap}
+          normalScale={[0.6, 0.6]}
+          roughness={0.95}
+          metalness={0}
+        />
       </mesh>
       <mesh position={[0, 0.495, 0]} raycast={NO_RAYCAST}>
         <boxGeometry args={[1.0, 0.015, 2.14]} />
@@ -177,7 +223,7 @@ function Stretcher() {
       {[-0.62, 0.62].map((x) => (
         <mesh key={`rail-${x}`} position={[x, 0.56, 0]} rotation={[Math.PI / 2, 0, 0]} raycast={NO_RAYCAST}>
           <cylinderGeometry args={[0.013, 0.013, 1.9, 12]} />
-          <meshStandardMaterial color={PALETTE.steel} roughness={0.3} metalness={0.7} />
+          <meshStandardMaterial color={PALETTE.steel} {...steelProps()} />
         </mesh>
       ))}
       {/* Undercarriage + legs + wheels */}
@@ -189,7 +235,7 @@ function Stretcher() {
         <group key={`leg-${x}-${z}`} position={[x, 0, z]}>
           <mesh position={[0, 0.2, 0]} castShadow raycast={NO_RAYCAST}>
             <cylinderGeometry args={[0.016, 0.016, 0.34, 10]} />
-            <meshStandardMaterial color={PALETTE.steel} roughness={0.3} metalness={0.7} />
+            <meshStandardMaterial color={PALETTE.steel} {...steelProps()} />
           </mesh>
           <mesh position={[0, 0.0, 0]} rotation={[0, 0, Math.PI / 2]} raycast={NO_RAYCAST}>
             <cylinderGeometry args={[0.045, 0.045, 0.03, 14]} />
@@ -210,17 +256,17 @@ function IVStand() {
     <group position={[-1.15, 0, 0.9]}>
       <mesh position={[0, 0.02, 0]} castShadow raycast={NO_RAYCAST}>
         <cylinderGeometry args={[0.17, 0.19, 0.03, 5]} />
-        <meshStandardMaterial color={PALETTE.steel} roughness={0.3} metalness={0.75} />
+        <meshStandardMaterial color={PALETTE.steel} {...steelProps()} />
       </mesh>
       <mesh position={[0, 0.95, 0]} castShadow raycast={NO_RAYCAST}>
         <cylinderGeometry args={[0.012, 0.012, 1.85, 10]} />
-        <meshStandardMaterial color={PALETTE.steel} roughness={0.25} metalness={0.8} />
+        <meshStandardMaterial color={PALETTE.steel} {...steelProps()} />
       </mesh>
       {/* Hook cross */}
       {[0, Math.PI / 2].map((rot) => (
         <mesh key={`hook-${rot}`} position={[0, 1.86, 0]} rotation={[Math.PI / 2, 0, rot]} raycast={NO_RAYCAST}>
           <cylinderGeometry args={[0.008, 0.008, 0.36, 8]} />
-          <meshStandardMaterial color={PALETTE.steel} roughness={0.25} metalness={0.8} />
+          <meshStandardMaterial color={PALETTE.steel} {...steelProps()} />
         </mesh>
       ))}
       {/* Saline bag */}
@@ -301,14 +347,14 @@ function CrashCart() {
           </mesh>
           <mesh position={[0, 0, 0.015]} raycast={NO_RAYCAST}>
             <boxGeometry args={[0.3, 0.02, 0.015]} />
-            <meshStandardMaterial color={PALETTE.steel} roughness={0.3} metalness={0.7} />
+            <meshStandardMaterial color={PALETTE.steel} {...steelProps()} />
           </mesh>
         </group>
       ))}
       {/* Top tray rim */}
       <mesh position={[0, 0.88, 0]} raycast={NO_RAYCAST}>
         <boxGeometry args={[0.54, 0.03, 0.44]} />
-        <meshStandardMaterial color={PALETTE.steel} roughness={0.3} metalness={0.7} />
+        <meshStandardMaterial color={PALETTE.steel} {...steelProps()} />
       </mesh>
       {([[-0.2, -0.15], [0.2, -0.15], [-0.2, 0.15], [0.2, 0.15]] as const).map(([x, z]) => (
         <mesh key={`wheel-${x}-${z}`} position={[x, 0.035, z]} rotation={[0, 0, Math.PI / 2]} raycast={NO_RAYCAST}>
