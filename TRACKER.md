@@ -141,7 +141,7 @@
 - [x] In-app Attributions screen (CC0/CC-BY statements drafted in research doc + commits) — DONE 2026-07-21, AttributionsDialog.tsx, stale RPM CC BY-NC credit removed, MPFB2 CC0 + LITFL CC BY-NC-SA + Open3D MIT documented
 - [x] Split `cases.ts` chunk per year-level (1.2MB loads on first case entry) — DONE 2026-07-21, 6 lazy chunks (cases-core/year1/year2/enhanced/litfl/variants), 0 case data in entry or StudentPanel, 328 tests green
 - [ ] E2E playwright suite in CI (probes exist ad-hoc; formalize the case-flow smoke test)
-- [ ] 12-lead/ECG deep fidelity pass (iSimulate benchmark from research)
+- [x] 12-lead/ECG deep fidelity pass (iSimulate benchmark from research) — DONE 2026-07-21, TwelveLeadReport.tsx print-style ECG with pink grid/cal pulses/axis/intervals/machine interp, measureRhythm() in ecgRhythms.ts, LITFL image dependency dropped, 13 tests
 - [ ] cmi5/xAPI telemetry for LMS integration (research §4)
 - [ ] `public/scene-assets` (145MB in git) → CDN/Blob if it grows
 - [ ] Wound decals: exposure-gated reveal once Blender garments land (currently visible on uncovered skin — correct for current clothing coverage)
