@@ -33,6 +33,7 @@ import { ClassroomBroadcastBar } from './ClassroomBroadcastBar';
 import { MarkingView } from './MarkingView';
 import { ClassroomChatSidebar } from './ClassroomChatSidebar';
 import { ClassroomVideoTiles } from './ClassroomVideoTiles';
+import { DebriefReplaySync } from './DebriefReplaySync';
 import type { CaseScenario } from '@/types';
 
 // Reuse the student panel — it contains the full case-running UI.
@@ -70,6 +71,9 @@ export function ClassroomHost({ onExit }: Props) {
     avFloorOpen,
     setAvFloor,
     broadcastRoleAssignment,
+    activeDebrief,
+    debriefSeekPosition,
+    broadcastDebriefSeek,
   } = sessionHook;
 
   // Instructor "puppet-master" override state. The InstructorLiveControls
@@ -172,6 +176,12 @@ export function ClassroomHost({ onExit }: Props) {
     if (caseSnapshot && isDriver) setBayOpen(true);
   }, [caseSnapshot, isDriver]);
 
+  // Synchronized debrief — shown after a case ends (the hook auto-broadcasts
+  // debrief_started on endCase). The instructor scrubs; every student follows.
+  // Rendered above the lobby so the instructor can still pick the next case
+  // underneath, and dismiss the debrief when done.
+  const studentCount = participants.filter(p => p.role === 'student').length;
+
   if (!caseSnapshot) {
     return (
       <>
@@ -179,6 +189,17 @@ export function ClassroomHost({ onExit }: Props) {
           mode={markingMode ? 'marking' : 'live'}
           onChange={(m) => setMarkingMode(m === 'marking')}
         />
+        {activeDebrief && (
+          <div className="mx-auto w-full max-w-3xl px-4 pt-20 pb-4">
+            <DebriefReplaySync
+              timelineSnapshot={activeDebrief}
+              seekPosition={debriefSeekPosition}
+              onSeek={broadcastDebriefSeek}
+              isInstructor
+              studentCount={studentCount}
+            />
+          </div>
+        )}
         <ClassroomLobby onExit={onExit} sessionHook={sessionHook} />
       </>
     );

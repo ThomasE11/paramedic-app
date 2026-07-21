@@ -51,6 +51,7 @@ import type { CaseScenario } from '@/types';
 import { ClassroomWatchBanner } from './ClassroomWatchBanner';
 import { ClassroomChatSidebar } from './ClassroomChatSidebar';
 import { ClassroomVideoTiles } from './ClassroomVideoTiles';
+import { DebriefReplaySync } from './DebriefReplaySync';
 
 // Students run the SAME StudentPanel the instructor drives — just with
 // `readOnly` flipped on and live state piped in from broadcasts. Lazy-load
@@ -87,6 +88,8 @@ export function ClassroomJoin({ onExit }: ClassroomJoinProps) {
     avFloorOpen,
     sendBroadcast,
     liveCaseId,
+    activeDebrief,
+    debriefSeekPosition,
   } = sessionHook;
 
   // Voice-chat mesh. Students can only transmit if the instructor has
@@ -320,6 +323,31 @@ export function ClassroomJoin({ onExit }: ClassroomJoinProps) {
           }
         />
       </Suspense>
+    );
+  }
+
+  // ------------------------------------------------------------
+  // Synchronized debrief — the instructor ended the case and is now
+  // playing the timeline for the class. The student follows the
+  // instructor's scrubber, can detach to explore, and re-sync. Shown
+  // instead of the waiting room until the next case_started clears it.
+  // ------------------------------------------------------------
+  if (session && activeDebrief) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="mx-auto w-full max-w-3xl px-4 pt-6 pb-4">
+          <DebriefReplaySync
+            timelineSnapshot={activeDebrief}
+            seekPosition={debriefSeekPosition}
+            onSeek={() => { /* students don't broadcast seeks */ }}
+            isInstructor={false}
+          />
+          <Button variant="outline" onClick={handleLeave} className="mt-4 gap-2">
+            <LogOut className="h-4 w-4" />
+            {t('classroom.leaveSession')}
+          </Button>
+        </div>
+      </div>
     );
   }
 

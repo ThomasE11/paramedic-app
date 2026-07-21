@@ -237,6 +237,13 @@
       "dismiss": "إغلاق",
       "feedTitle": "تحديثات الحالة"
     },
+    "debrief": {
+      "following": "متابعة المدرّب",
+      "detached": "منفصل",
+      "reSync": "إعادة المزامنة",
+      "reSyncHint": "العودة إلى موضع المدرّب",
+      "broadcasting": "بثّ إلى {{count}} طلاب"
+    },
     "controlTower": {
       "patientBay": "خليج المريض",
       "viewPatientBay": "عرض خليج المريض",

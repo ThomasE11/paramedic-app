@@ -112,9 +112,22 @@ function buildSeries(
 export interface DebriefReplayProps extends ReplayTimelineInput {
   /** Optional extra classes on the outer card. */
   className?: string;
+  /**
+   * Controlled playhead in seconds. When provided, the scrubber tracks it
+   * (used by the synchronized classroom debrief so students follow the
+   * instructor). Undefined = fully self-driven (the solo default).
+   */
+  controlledSeek?: number | null;
+  /**
+   * Fired whenever the user moves the scrubber / clicks a marker. Lets a
+   * parent broadcast the new position. Undefined = no external listener.
+   */
+  onUserSeek?: (t: number) => void;
+  /** Force the card open (classroom debrief renders expanded, not collapsed). */
+  defaultOpen?: boolean;
 }
 
-export function DebriefReplay({ className, ...input }: DebriefReplayProps) {
+export function DebriefReplay({ className, controlledSeek, onUserSeek, defaultOpen, ...input }: DebriefReplayProps) {
   const timeline = useMemo(
     () =>
       buildReplayTimeline({
@@ -138,7 +151,7 @@ export function DebriefReplay({ className, ...input }: DebriefReplayProps) {
     ],
   );
 
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen ?? false);
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState<1 | 4>(1);
   const [t, setT] = useState(0);
@@ -152,6 +165,17 @@ export function DebriefReplay({ className, ...input }: DebriefReplayProps) {
     tRef.current = next;
     setT(next);
   }, []);
+
+  // Controlled-seek follow: when a parent drives the playhead (classroom
+  // sync), mirror it here. Guard on a near-equality check so we don't loop
+  // when our own onUserSeek round-trips back as controlledSeek.
+  useEffect(() => {
+    if (controlledSeek == null) return;
+    if (Math.abs(controlledSeek - tRef.current) < 0.05) return;
+    setPlaying(false);
+    tRef.current = controlledSeek;
+    setT(controlledSeek);
+  }, [controlledSeek]);
 
   // Single interval drives playback at ~10fps; advances a ref then mirrors to state.
   useEffect(() => {
@@ -364,7 +388,9 @@ export function DebriefReplay({ className, ...input }: DebriefReplayProps) {
                 value={t}
                 onChange={e => {
                   setPlaying(false);
-                  seek(Number(e.target.value));
+                  const next = Number(e.target.value);
+                  seek(next);
+                  onUserSeek?.(next);
                 }}
                 className="w-full accent-primary cursor-pointer"
                 aria-label="Scrub through the case timeline"
@@ -380,6 +406,7 @@ export function DebriefReplay({ className, ...input }: DebriefReplayProps) {
                     onClick={() => {
                       setPlaying(false);
                       seek(ev.t);
+                      onUserSeek?.(ev.t);
                     }}
                     className={`absolute top-0 h-3 w-[3px] -translate-x-1/2 rounded-full transition-colors ${KIND_STYLES[ev.kind].marker}`}
                     style={{ left: `${timeline.tEnd > 0 ? (ev.t / timeline.tEnd) * 100 : 0}%` }}
@@ -412,6 +439,7 @@ export function DebriefReplay({ className, ...input }: DebriefReplayProps) {
                       onClick={() => {
                         setPlaying(false);
                         seek(ev.t);
+                        onUserSeek?.(ev.t);
                       }}
                       className={`w-full flex items-start gap-2 rounded-lg border px-2.5 py-1.5 text-left text-xs transition-colors ${
                         active ? style.row : 'border-transparent hover:bg-muted/40'

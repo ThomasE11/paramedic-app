@@ -237,6 +237,13 @@
       "dismiss": "Dismiss",
       "feedTitle": "Case updates"
     },
+    "debrief": {
+      "following": "Following instructor",
+      "detached": "Detached",
+      "reSync": "Re-sync",
+      "reSyncHint": "Jump back to the instructor's position",
+      "broadcasting": "Broadcasting to {{count}} students"
+    },
     "controlTower": {
       "patientBay": "Patient Bay",
       "viewPatientBay": "View Patient Bay",

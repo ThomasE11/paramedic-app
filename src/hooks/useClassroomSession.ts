@@ -171,6 +171,26 @@ export interface SharedCaseState {
 }
 
 /**
+ * Serializable snapshot of a finished case timeline. Broadcast once on
+ * case_ended so every participant can render the synchronized debrief from
+ * the same data. Deliberately flat + JSON-safe (no functions, no refs) —
+ * it travels through Supabase Realtime broadcast.
+ */
+export interface DebriefTimelineSnapshot {
+  caseId: string | null;
+  caseTitle: string;
+  caseCategory: string;
+  /** Epoch ms. */
+  caseStartedAt: number | null;
+  /** Epoch ms. */
+  caseEndedAt: number;
+  appliedTreatments: NonNullable<SharedCaseState['appliedTreatments']>;
+  assessmentPerformed: string[];
+  activeInjects: ClassroomInject[];
+  arrestTimeline: NonNullable<SharedCaseState['arrestTimeline']>;
+}
+
+/**
  * Broadcast event vocabulary. Everything that moves through the session
  * goes through this union so both sides stay in lockstep.
  */
@@ -243,7 +263,18 @@ export type ClassroomBroadcast =
    * Instructor firing a case complication. Appended to
    * sharedState.activeInjects on every client; students render an overlay.
    */
-  | { kind: 'inject'; inject: ClassroomInject; fromKey: string };
+  | { kind: 'inject'; inject: ClassroomInject; fromKey: string }
+  /**
+   * Instructor opening the synchronized debrief. Carries the full case
+   * timeline snapshot so every student renders the same replay. Auto-sent
+   * right after case_ended.
+   */
+  | { kind: 'debrief_started'; timelineSnapshot: DebriefTimelineSnapshot; fromKey: string }
+  /**
+   * Instructor moving the debrief playhead. `timestamp` is seconds since
+   * case start. Students who haven't detached follow it. Throttled ~100ms.
+   */
+  | { kind: 'debrief_seek'; timestamp: number; fromKey: string };
 
 // ============================================================================
 // Helpers
@@ -307,6 +338,29 @@ function appendInject(
   const list = current ?? [];
   if (list.some(i => i.id === inject.id)) return list;
   return [...list, inject];
+}
+
+/**
+ * Build a serializable debrief snapshot from the driver's shared state plus
+ * the case metadata. Everything is copied into plain JSON-safe values so it
+ * survives a Supabase broadcast round-trip.
+ */
+function buildDebriefSnapshot(
+  state: SharedCaseState,
+  caseMeta: { id: string | null; title: string; category: string },
+  caseEndedAt: number,
+): DebriefTimelineSnapshot {
+  return {
+    caseId: caseMeta.id,
+    caseTitle: caseMeta.title,
+    caseCategory: caseMeta.category,
+    caseStartedAt: state.caseStartedAt ? Date.parse(state.caseStartedAt) : null,
+    caseEndedAt,
+    appliedTreatments: state.appliedTreatments ?? [],
+    assessmentPerformed: state.assessmentPerformed ?? [],
+    activeInjects: state.activeInjects ?? [],
+    arrestTimeline: state.arrestTimeline ?? [],
+  };
 }
 
 /** Generate a 6-digit classroom PIN. Zero-padded, never leading zero. */
@@ -438,6 +492,22 @@ export interface UseClassroomSessionResult {
    * injects and render overlays; they never send them.
    */
   broadcastInject: (inject: ClassroomInject) => Promise<void>;
+
+  /**
+   * Synchronized debrief: the timeline snapshot the instructor broadcast on
+   * case end, or null when no debrief is live. Both sides render
+   * DebriefReplaySync off this.
+   */
+  activeDebrief: DebriefTimelineSnapshot | null;
+  /**
+   * Instructor's current debrief playhead in seconds since case start, or
+   * null before the first seek. Students follow this unless they've detached.
+   */
+  debriefSeekPosition: number | null;
+  /** Instructor: open the synchronized debrief with a timeline snapshot. */
+  broadcastDebriefStarted: (snapshot: DebriefTimelineSnapshot) => Promise<void>;
+  /** Instructor: move the debrief playhead. Throttled to ~100ms internally. */
+  broadcastDebriefSeek: (timestamp: number) => Promise<void>;
 }
 
 export function useClassroomSession(): UseClassroomSessionResult {
@@ -468,6 +538,12 @@ export function useClassroomSession(): UseClassroomSessionResult {
   // True when the instructor has opened the floor so every student can
   // broadcast mic + camera (collaborative tabletop), not just the driver.
   const [avFloorOpen, setAvFloorOpenState] = useState<boolean>(false);
+  // Synchronized debrief: the timeline snapshot the instructor broadcast on
+  // case end (null when no debrief is live), plus the instructor's current
+  // playhead in seconds (null before the first seek). Every client mirrors
+  // these; students follow the seek unless they've detached locally.
+  const [activeDebrief, setActiveDebrief] = useState<DebriefTimelineSnapshot | null>(null);
+  const [debriefSeekPosition, setDebriefSeekPosition] = useState<number | null>(null);
 
   // Mutable refs so callbacks don't capture stale state.
   const channelRef = useRef<RealtimeChannel | null>(null);
@@ -580,6 +656,11 @@ export function useClassroomSession(): UseClassroomSessionResult {
               ...prev,
               activeInjects: appendInject(prev.activeInjects, payload.inject),
             }));
+          } else if (payload.kind === 'debrief_started') {
+            setActiveDebrief(payload.timelineSnapshot);
+            setDebriefSeekPosition(0);
+          } else if (payload.kind === 'debrief_seek') {
+            setDebriefSeekPosition(payload.timestamp);
           } else if (payload.kind === 'case_started') {
             // Durable lifecycle state — ClassroomJoin can gate its case
             // panel on `liveCaseId` without risking the broadcast being
@@ -593,6 +674,9 @@ export function useClassroomSession(): UseClassroomSessionResult {
             setLiveCaseStartedAt(payload.startedAt);
             // New case = fresh injects. Clear any left over from the last case.
             setSharedState(prev => (prev.activeInjects?.length ? { ...prev, activeInjects: [] } : prev));
+            // A new case supersedes any lingering debrief from the previous one.
+            setActiveDebrief(null);
+            setDebriefSeekPosition(null);
           } else if (payload.kind === 'case_ended') {
             // Case boundary — clear shared + timer state so the next case
             // starts with a clean slate on every client.
@@ -906,10 +990,17 @@ export function useClassroomSession(): UseClassroomSessionResult {
         ...prev,
         activeInjects: appendInject(prev.activeInjects, payload.inject),
       }));
+    } else if (payload.kind === 'debrief_started') {
+      setActiveDebrief(payload.timelineSnapshot);
+      setDebriefSeekPosition(0);
+    } else if (payload.kind === 'debrief_seek') {
+      setDebriefSeekPosition(payload.timestamp);
     } else if (payload.kind === 'case_started') {
       setLiveCaseId(payload.caseId);
       setLiveCaseStartedAt(payload.startedAt);
       setSharedState(prev => (prev.activeInjects?.length ? { ...prev, activeInjects: [] } : prev));
+      setActiveDebrief(null);
+      setDebriefSeekPosition(null);
     } else if (payload.kind === 'case_ended') {
       setSharedState({});
       setTimerEndsAtState(null);
@@ -1159,8 +1250,47 @@ export function useClassroomSession(): UseClassroomSessionResult {
     await sendBroadcast({ kind: 'inject', inject, fromKey: selfKeyRef.current });
   }, [sendBroadcast]);
 
+  const broadcastDebriefStarted = useCallback(async (snapshot: DebriefTimelineSnapshot) => {
+    // Local mirror first so the instructor's own debrief opens immediately.
+    setActiveDebrief(snapshot);
+    setDebriefSeekPosition(0);
+    await sendBroadcast({ kind: 'debrief_started', timelineSnapshot: snapshot, fromKey: selfKeyRef.current });
+  }, [sendBroadcast]);
+
+  // Instructor scrubber → students. Throttled to ~100ms so a fast drag
+  // doesn't flood the channel. The trailing edge always fires so the final
+  // resting position is broadcast. Local position updates optimistically on
+  // every call via the DebriefReplaySync component's own state.
+  const debriefSeekPendingRef = useRef<number | null>(null);
+  const debriefSeekTimerRef = useRef<number | null>(null);
+  const broadcastDebriefSeek = useCallback(async (timestamp: number) => {
+    setDebriefSeekPosition(timestamp);
+    debriefSeekPendingRef.current = timestamp;
+    if (debriefSeekTimerRef.current != null) return;
+    debriefSeekTimerRef.current = window.setTimeout(() => {
+      debriefSeekTimerRef.current = null;
+      const ts = debriefSeekPendingRef.current;
+      debriefSeekPendingRef.current = null;
+      if (ts == null) return;
+      void sendBroadcast({ kind: 'debrief_seek', timestamp: ts, fromKey: selfKeyRef.current });
+    }, 100);
+  }, [sendBroadcast]);
+
   const endCase = useCallback(async () => {
     const endedAt = new Date().toISOString();
+    // Capture the timeline snapshot BEFORE case_ended clears sharedState,
+    // then auto-open the synchronized debrief for everyone. The instructor
+    // owns the authoritative shared state at end-time.
+    const caseSnap = sessionRef.current?.case_snapshot as { id?: string; title?: string; category?: string } | null;
+    const debriefSnapshot = buildDebriefSnapshot(
+      sharedStateRef.current,
+      {
+        id: caseSnap?.id ?? sessionRef.current?.case_id ?? null,
+        title: caseSnap?.title ?? '',
+        category: caseSnap?.category ?? '',
+      },
+      Date.parse(endedAt),
+    );
 
     if (isPreviewMode) {
       setSharedState({});
@@ -1174,6 +1304,8 @@ export function useClassroomSession(): UseClassroomSessionResult {
       setAvFloorOpenState(false);
       setLiveCaseId(null);
       setLiveCaseStartedAt(null);
+      // Auto-open the synchronized debrief so the instructor lands on it.
+      await broadcastDebriefStarted(debriefSnapshot);
       return;
     }
 
@@ -1186,6 +1318,11 @@ export function useClassroomSession(): UseClassroomSessionResult {
 
     // Broadcast first so every student sees the case wind down in real time.
     await sendBroadcast({ kind: 'case_ended', endedAt });
+
+    // Then open the synchronized debrief with the timeline snapshot we
+    // captured before the state wipe. Every participant follows the
+    // instructor's scrubber from here.
+    await broadcastDebriefStarted(debriefSnapshot);
 
     // Flip the DB row back to 'lobby' so late-joiners don't get re-hydrated
     // with a running case that already ended, and so the instructor view
@@ -1200,7 +1337,7 @@ export function useClassroomSession(): UseClassroomSessionResult {
       if (data) setSession(data as ClassroomSessionRow);
     }
     setStatus('lobby'); // back to lobby — instructor can run another case
-  }, [isPreviewMode, sendBroadcast]);
+  }, [isPreviewMode, sendBroadcast, broadcastDebriefStarted]);
 
   const leaveSession = useCallback(async () => {
     const supa = getSupabaseClient();
@@ -1236,6 +1373,8 @@ export function useClassroomSession(): UseClassroomSessionResult {
     setLiveCaseId(null);
     setLiveCaseStartedAt(null);
     setChatMessages([]);
+    setActiveDebrief(null);
+    setDebriefSeekPosition(null);
   }, [sendBroadcast]);
 
   // Cleanup on unmount — prevents dangling channels.
@@ -1354,6 +1493,10 @@ export function useClassroomSession(): UseClassroomSessionResult {
       setAvFloor,
       broadcastRoleAssignment,
       broadcastInject,
+      activeDebrief,
+      debriefSeekPosition,
+      broadcastDebriefStarted,
+      broadcastDebriefSeek,
     }),
     [supported, isPreviewMode, status, error, role, session, participants, lastBroadcast,
       driverKeys, currentDriverKey, isDriver, liveCaseId, liveCaseStartedAt, sharedState,
@@ -1361,6 +1504,7 @@ export function useClassroomSession(): UseClassroomSessionResult {
       broadcastStatePatch, broadcastStateSnapshot, requestStateSnapshot,
       setDrivers, giveControl, addDriver, takeControl,
       chatMessages, sendChat, timerEndsAt, setTimer, avFloorOpen, setAvFloor,
-      broadcastRoleAssignment, broadcastInject],
+      broadcastRoleAssignment, broadcastInject,
+      activeDebrief, debriefSeekPosition, broadcastDebriefStarted, broadcastDebriefSeek],
   );
 }
