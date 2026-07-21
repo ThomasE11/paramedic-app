@@ -135,15 +135,19 @@ export default defineConfig(({ mode }) => {
             // import the whole 588KB PDF bundle just to reach a ~1KB helper.
             // Pin it to its own tiny chunk so the entry stays lean.
             if (id.includes('vite/preload-helper')) return 'preload-helper'
-            if (id.includes('/src/data/cases.ts')
-              || id.includes('/src/data/enhancedCases.ts')
-              || id.includes('/src/data/additionalCases.ts')
-              || id.includes('/src/data/firstYearCases.ts')
-              || id.includes('/src/data/secondYearCases.ts')
-              || id.includes('/src/data/litflCases.ts')
-              || id.includes('/src/data/severityVariantCases.ts')) {
-              return 'cases'
+            // Split the case bundle per source file so each streams as its
+            // own lazy chunk (kept out of modulePreload above). The core
+            // aggregator (cases.ts) still pulls them all in via loadAllCases,
+            // but the browser fetches them in parallel instead of one 1.2 MB blob.
+            if (id.includes('/src/data/cases.ts')) return 'cases-core'
+            if (id.includes('/src/data/firstYearCases.ts')) return 'cases-year1'
+            if (id.includes('/src/data/secondYearCases.ts')) return 'cases-year2'
+            if (id.includes('/src/data/enhancedCases.ts')
+              || id.includes('/src/data/additionalCases.ts')) {
+              return 'cases-enhanced'
             }
+            if (id.includes('/src/data/litflCases.ts')) return 'cases-litfl'
+            if (id.includes('/src/data/severityVariantCases.ts')) return 'cases-variants'
             if (!id.includes('node_modules')) return undefined
             if (id.includes('/three/') || id.includes('node_modules/three')) return 'vendor-three'
             if (id.includes('jspdf') || id.includes('html2canvas')) return 'vendor-pdf'

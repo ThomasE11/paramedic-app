@@ -20,7 +20,7 @@
  * layered on top later without changing this contract.
  */
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft,
@@ -59,7 +59,8 @@ import { toast } from 'sonner';
 import { useClassroomSession } from '@/hooks/useClassroomSession';
 import type { UseClassroomSessionResult } from '@/hooks/useClassroomSession';
 import { AmbientBackground } from '@/components/AmbientBackground';
-import { allCases } from '@/data/cases';
+import { loadAllCases } from '@/data/caseLibrary';
+import { isCaseAvailableForCohort } from '@/data/caseFilters';
 import type { CaseScenario, StudentYear } from '@/types';
 
 // Year levels the case library is tagged against. 'all' is a UI-only
@@ -175,6 +176,14 @@ export function ClassroomLobby({ onExit, sessionHook }: ClassroomLobbyProps) {
   } = sessionHook ?? localHook;
   const { setTimer } = sessionHook ?? localHook;
 
+  // Case bundle streams in lazily — empty until loadAllCases resolves.
+  const [allCases, setAllCases] = useState<CaseScenario[]>([]);
+  useEffect(() => {
+    let alive = true;
+    void loadAllCases().then(cases => { if (alive) setAllCases(cases); });
+    return () => { alive = false; };
+  }, []);
+
   const [instructorName, setInstructorName] = useState('');
   const [selectedCaseId, setSelectedCaseId] = useState<string>('');
   const [yearFilter, setYearFilter] = useState<YearFilter>('all');
@@ -188,8 +197,8 @@ export function ClassroomLobby({ onExit, sessionHook }: ClassroomLobbyProps) {
   // so changing the text query doesn't invalidate an already-selected case.
   const yearFilteredCases = useMemo(() => {
     if (yearFilter === 'all') return allCases;
-    return allCases.filter(c => c.yearLevels?.includes(yearFilter));
-  }, [yearFilter]);
+    return allCases.filter(c => isCaseAvailableForCohort(c.yearLevels, yearFilter));
+  }, [yearFilter, allCases]);
 
   const filteredCases = useMemo(() => {
     const q = caseSearch.trim().toLowerCase();
@@ -238,7 +247,7 @@ export function ClassroomLobby({ onExit, sessionHook }: ClassroomLobbyProps) {
 
   const selectedCase = useMemo(
     () => allCases.find(c => c.id === selectedCaseId) || null,
-    [selectedCaseId],
+    [selectedCaseId, allCases],
   );
 
   const activeFlowStep = !session
@@ -625,7 +634,7 @@ export function ClassroomLobby({ onExit, sessionHook }: ClassroomLobbyProps) {
                             setSelectedCaseId(prev => {
                               if (v === 'all') return prev;
                               const stillValid = allCases.some(
-                                c => c.id === prev && c.yearLevels?.includes(v as StudentYear),
+      c => c.id === prev && isCaseAvailableForCohort(c.yearLevels, v as StudentYear),
                               );
                               return stillValid ? prev : '';
                             });
@@ -957,7 +966,7 @@ function SelectedCasePreview({
   yearFilter,
   durationMinutes,
 }: {
-  selectedCase: (typeof allCases)[number] | null;
+  selectedCase: CaseScenario | null;
   yearFilter: YearFilter;
   durationMinutes: number;
 }) {

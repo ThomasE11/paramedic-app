@@ -8,6 +8,9 @@ import { secondYearCases } from './secondYearCases';
 import { litflCaseDatabase } from './litflCases';
 import { severityVariantCases } from './severityVariantCases';
 
+// Cohort rule + year metadata live in caseFilters.ts (pure, bundle-free).
+import { isCaseAvailableForCohort, isStudentYear, type CohortMode } from './caseFilters';
+
 // Import visual resources
 import { getTraumaResourcesByCondition } from './traumaVisualResources';
 
@@ -11517,10 +11520,21 @@ export const caseDatabase: CaseScenario[] = [
 // This allows for backward compatibility while adding new detailed cases
 export const allCases: CaseScenario[] = [...caseDatabase, ...enhancedCaseDatabase, ...additionalCaseDatabase, ...firstYearCases, ...secondYearCases, ...litflCaseDatabase, ...severityVariantCases];
 
+// Re-export the cohort rule so existing importers of '@/data/cases' keep working.
+export { isCaseAvailableForCohort, isStudentYear, type CohortMode };
+
+export const getCasesForCohort = (
+  yearLevel: string | undefined,
+  options?: { mode?: CohortMode },
+): CaseScenario[] => {
+  if (!yearLevel || !isStudentYear(yearLevel)) return allCases;
+  return allCases.filter(c => isCaseAvailableForCohort(c.yearLevels, yearLevel, options?.mode ?? 'progressive'));
+};
+
 // Export function to get cases by filter
-export const getCasesByFilter = (filter: { yearLevel?: string; category?: string; priority?: string; complexity?: string; subcategory?: string }) => {
-  return allCases.filter(c => {
-    if (filter.yearLevel && !c.yearLevels?.includes(filter.yearLevel as any)) return false;
+export const getCasesByFilter = (filter: { yearLevel?: string; category?: string; priority?: string; complexity?: string; subcategory?: string; cohortMode?: CohortMode }) => {
+  const source = filter.yearLevel ? getCasesForCohort(filter.yearLevel, { mode: filter.cohortMode ?? 'exact' }) : allCases;
+  return source.filter(c => {
     if (filter.category && c.category !== filter.category) return false;
     if (filter.priority && c.priority !== filter.priority) return false;
     if (filter.complexity && c.complexity !== filter.complexity) return false;
@@ -11530,13 +11544,12 @@ export const getCasesByFilter = (filter: { yearLevel?: string; category?: string
 };
 
 // Export function to get random case with better fallback logic
-export const getRandomCase = (filters?: { yearLevel?: string; category?: string; complexity?: string; subcategory?: string }) => {
+export const getRandomCase = (filters?: { yearLevel?: string; category?: string; complexity?: string; subcategory?: string; cohortMode?: CohortMode }) => {
   let cases = allCases;
 
   // Filter by year level first
   if (filters?.yearLevel) {
-    const yearFilter = filters.yearLevel as any;
-    cases = cases.filter(c => c.yearLevels?.includes(yearFilter));
+    cases = getCasesForCohort(filters.yearLevel, { mode: filters.cohortMode ?? 'exact' });
   }
 
   // Filter by category
@@ -11682,11 +11695,19 @@ export const allConditionNames: string[] = [...conditionsIndex.keys()].sort((a, 
 );
 
 /** Get cases matching a specific condition (as primary or differential) filtered by year */
-export const getCasesByCondition = (condition: string, yearLevel?: string): CaseScenario[] => {
+export const getCasesByCondition = (
+  condition: string,
+  yearLevel?: string,
+  options?: { cohortMode?: CohortMode },
+): CaseScenario[] => {
   const caseIds = conditionsIndex.get(condition) || [];
   let cases = caseIds.map(id => allCases.find(c => c.id === id)).filter(Boolean) as CaseScenario[];
   if (yearLevel) {
-    cases = cases.filter(c => c.yearLevels?.includes(yearLevel as any));
+    if (isStudentYear(yearLevel)) {
+      cases = cases.filter(c => isCaseAvailableForCohort(c.yearLevels, yearLevel, options?.cohortMode ?? 'exact'));
+    } else {
+      cases = [];
+    }
   }
   return cases;
 };

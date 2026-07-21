@@ -46,7 +46,7 @@ import { toast } from 'sonner';
 import { useClassroomSession } from '@/hooks/useClassroomSession';
 import { useClassroomVoice } from '@/hooks/useClassroomVoice';
 import { AmbientBackground } from '@/components/AmbientBackground';
-import { allCases } from '@/data/cases';
+import { loadAllCases } from '@/data/caseLibrary';
 import type { CaseScenario } from '@/types';
 import { ClassroomWatchBanner } from './ClassroomWatchBanner';
 import { ClassroomChatSidebar } from './ClassroomChatSidebar';
@@ -105,6 +105,13 @@ export function ClassroomJoin({ onExit }: ClassroomJoinProps) {
   const [pinInput, setPinInput] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [activeCase, setActiveCase] = useState<CaseScenario | null>(null);
+  // Case bundle streams in lazily — used only to resolve a live case by id.
+  const [allCases, setAllCases] = useState<CaseScenario[]>([]);
+  useEffect(() => {
+    let alive = true;
+    void loadAllCases().then(cases => { if (alive) setAllCases(cases); });
+    return () => { alive = false; };
+  }, []);
 
   // Gate the case panel on the hook's durable `liveCaseId` state rather
   // than the fragile `lastBroadcast` field. `lastBroadcast` only surfaces
@@ -137,7 +144,7 @@ export function ClassroomJoin({ onExit }: ClassroomJoinProps) {
     // treatments the instructor has already touched between their click
     // on "Start case" and our subscription being ready.
     void requestStateSnapshot();
-  }, [liveCaseId, session, t, requestStateSnapshot]);
+  }, [liveCaseId, session, t, requestStateSnapshot, allCases]);
 
   // Session / instructor-message side-effects still flow via the
   // one-shot broadcast channel. These are rare and idempotent, so the
@@ -175,7 +182,7 @@ export function ClassroomJoin({ onExit }: ClassroomJoinProps) {
         void requestStateSnapshot();
       }
     }
-  }, [session, activeCase, requestStateSnapshot]);
+  }, [session, activeCase, requestStateSnapshot, allCases]);
 
   const pinValid = useMemo(() => /^\d{6}$/.test(pinInput.trim()), [pinInput]);
   const students = useMemo(

@@ -12,6 +12,8 @@
  * audit script (scripts/audit-cases.mjs) will surface any case that
  * references a category not in this list.
  */
+import type { StudentYear } from '@/types';
+
 export const yearLevels = [
   { value: 'diploma', label: 'Diploma' },
   { value: '1st-year', label: '1st Year' },
@@ -59,3 +61,60 @@ export const caseCategories = [
   { value: 'toxicology', label: 'Toxicology', color: 'bg-violet-500' },
   { value: 'trauma', label: 'Trauma', color: 'bg-orange-500' },
 ] as const;
+
+// ============================================================================
+// COHORT VISIBILITY RULE
+// Pure — depends only on year metadata, not on any case data. Lives here so
+// StudentPanel / ClassroomLobby can gate cases by cohort without loading the
+// ~1.2 MB case bundle. Re-exported from cases.ts for tests/back-compat.
+// ============================================================================
+
+export type CohortMode = 'exact' | 'progressive';
+
+const DEGREE_YEAR_RANK: Partial<Record<StudentYear, number>> = {
+  '1st-year': 1,
+  '2nd-year': 2,
+  '3rd-year': 3,
+  '4th-year': 4,
+};
+
+export const isStudentYear = (year: string): year is StudentYear => (
+  year === 'diploma' ||
+  year === '1st-year' ||
+  year === '2nd-year' ||
+  year === '3rd-year' ||
+  year === '4th-year'
+);
+
+/**
+ * Progressive cohort rule for student-facing case selection.
+ *
+ * Junior learners never see senior cases. Senior learners keep access to
+ * prerequisite cases for review and mixed practice. Diploma follows a practical
+ * core scope: explicit diploma cases plus Year 1/2 fundamentals, while Year 3/4
+ * advanced material stays hidden unless a case is explicitly tagged diploma.
+ */
+export const isCaseAvailableForCohort = (
+  caseYearLevels: readonly StudentYear[] | undefined,
+  selectedYear: StudentYear,
+  mode: CohortMode = 'progressive',
+): boolean => {
+  if (!caseYearLevels?.length) return false;
+  if (mode === 'exact') return caseYearLevels.includes(selectedYear);
+
+  if (selectedYear === 'diploma') {
+    return caseYearLevels.some(year =>
+      year === 'diploma' ||
+      year === '1st-year' ||
+      year === '2nd-year'
+    );
+  }
+
+  const selectedRank = DEGREE_YEAR_RANK[selectedYear];
+  if (!selectedRank) return caseYearLevels.includes(selectedYear);
+
+  return caseYearLevels.some(year => {
+    const caseRank = DEGREE_YEAR_RANK[year];
+    return typeof caseRank === 'number' && caseRank <= selectedRank;
+  });
+};
