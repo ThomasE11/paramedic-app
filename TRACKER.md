@@ -131,7 +131,7 @@
 ## 🔜 Next build rounds
 - [ ] **"Masculinize the male patient"** — Blender pass (jaw, brow, shoulders); root cause of the "male shows female" report (re-confirmed in field QA 2026-07-14: `patient.glb` male fallback is the legacy feminine-reading body; not a routing bug — resp-001 correctly requests 'male')
 - [ ] **Scene-contextual patient staging** — stage the patient where the scene says they are (floor/bed/chair/roadside) instead of always on the stretcher; reuse Scene Survey posture + `initialPresentation`. This is the "game structure" ask (2026-07-14) — staging layer only, no engine rewrite needed
-- [ ] **Frontier classroom from design proposal** — instructor control tower, role assignments, injects, synchronized debrief
+- [x] **Frontier classroom from design proposal** — instructor control tower, role assignments, injects, synchronized debrief — DONE 2026-07-21, 4 sub-phases: 5a roles (lead/airway/circulation/medication/scribe), 5b inject library (8 types, 16 presets), 5c control tower (3-column dashboard), 5d synchronized debrief (instructor scrub-sync with follow/detach/re-sync)
 - [ ] **Sentinel case polish (Round 5)** — pick 8 premium cases (one per family) and verify each: clinical consistency, finding visibility, treatment attachment, wrong-action behavior, gradual vitals, reassessment requirement
 - [ ] Blender-authored garments (only if field test says runtime fabric isn't enough)
 - [x] Tiered input: voice-first mode for senior students (OMS pattern B) — DONE 2026-07-21, voiceIntents.ts with assessment/treatment/nav intents, alias resolution, confirm-gated drugs, 3rd/4th year gating, 9 tests
