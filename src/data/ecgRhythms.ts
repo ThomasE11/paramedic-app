@@ -1076,6 +1076,157 @@ export function getRhythmForCase(category: string, subcategory?: string, heartRa
   return normalSinusRhythm;
 }
 
+// ============================================================================
+// RHYTHM MEASUREMENTS — machine-interpretation style intervals + axis
+// ============================================================================
+
+export interface RhythmMeasurements {
+  rate: number;
+  prIntervalMs: number | null; // null = no consistent P-QRS relationship (AF, VT, arrest)
+  qrsDurationMs: number;
+  qtIntervalMs: number;
+  qtcMs: number;
+  axisDegrees: number;
+  axisLabel: 'Normal axis' | 'Left axis deviation' | 'Right axis deviation' | 'Extreme axis' | 'Indeterminate';
+  interpretation: string[];
+}
+
+// Peak-to-trough amplitude of a lead's QRS, sampled across one beat cycle.
+// The frontal-plane axis comes from the net QRS deflection in I and aVF —
+// the standard clinical two-lead quadrant method.
+function netQrsDeflection(wfn: WaveformFn, heartRate: number): number {
+  let maxUp = 0;
+  let maxDown = 0;
+  // QRS lives roughly in t=0.1..0.35 across our rhythms; sample the whole beat
+  // to stay robust to rhythms that shift the complex.
+  for (let i = 0; i <= 100; i++) {
+    const t = i / 100;
+    const v = wfn(t, { heartRate, beatIndex: 0 });
+    if (v > maxUp) maxUp = v;
+    if (v < maxDown) maxDown = v;
+  }
+  // Net deflection = dominant direction (R height minus S depth).
+  return maxUp + maxDown; // maxDown is negative
+}
+
+// Fixed per-rhythm clinical intervals in ms. Derived from the morphology each
+// waveform encodes (PR delay, QRS width, QT). Sampling the normalized-t
+// waveforms can't recover real ms (t is 0-1 per beat regardless of rate), so
+// intervals are the clinically-correct values for each rhythm pattern.
+// ponytail: lookup table, not waveform inversion — the numbers are the point, not re-deriving them.
+const RHYTHM_INTERVALS: Record<string, { pr: number | null; qrs: number; qt: number }> = {
+  nsr: { pr: 160, qrs: 88, qt: 380 },
+  'sinus-tachy': { pr: 150, qrs: 88, qt: 320 },
+  'sinus-brady': { pr: 180, qrs: 90, qt: 440 },
+  afib: { pr: null, qrs: 88, qt: 380 },
+  aflutter: { pr: null, qrs: 88, qt: 360 },
+  svt: { pr: null, qrs: 84, qt: 300 },
+  vt: { pr: null, qrs: 160, qt: 400 },
+  vfib: { pr: null, qrs: 0, qt: 0 },
+  'vfib-fine': { pr: null, qrs: 0, qt: 0 },
+  asystole: { pr: null, qrs: 0, qt: 0 },
+  'anterior-stemi': { pr: 160, qrs: 90, qt: 400 },
+  'inferior-stemi': { pr: 170, qrs: 90, qt: 420 },
+  'lateral-stemi': { pr: 160, qrs: 90, qt: 400 },
+  nstemi: { pr: 160, qrs: 90, qt: 400 },
+  chb: { pr: null, qrs: 140, qt: 460 },
+  wenckebach: { pr: 220, qrs: 90, qt: 400 },
+  mobitz2: { pr: 180, qrs: 110, qt: 400 },
+  torsades: { pr: null, qrs: 200, qt: 600 },
+  pea: { pr: 160, qrs: 90, qt: 380 },
+  'first-degree-block': { pr: 240, qrs: 90, qt: 400 },
+  junctional: { pr: null, qrs: 88, qt: 400 },
+  idioventricular: { pr: null, qrs: 160, qt: 460 },
+  aivr: { pr: null, qrs: 150, qt: 440 },
+  wpw: { pr: 100, qrs: 130, qt: 380 },
+  lbbb: { pr: 160, qrs: 150, qt: 440 },
+  rbbb: { pr: 160, qrs: 130, qt: 420 },
+  pacs: { pr: 160, qrs: 88, qt: 380 },
+  pvcs: { pr: 160, qrs: 88, qt: 380 },
+  hyperkalemia: { pr: 220, qrs: 150, qt: 400 },
+};
+
+const STEMI_TERRITORY: Record<string, string> = {
+  'anterior-stemi': 'ANTERIOR (LAD)',
+  'inferior-stemi': 'INFERIOR (RCA)',
+  'lateral-stemi': 'LATERAL (LCx)',
+};
+
+function classifyAxis(deg: number): RhythmMeasurements['axisLabel'] {
+  if (deg >= -30 && deg <= 90) return 'Normal axis';
+  if (deg > 90 && deg <= 180) return 'Right axis deviation';
+  if (deg < -30 && deg >= -90) return 'Left axis deviation';
+  return 'Extreme axis'; // -90..-180 / >180 (NW quadrant)
+}
+
+/**
+ * Machine-style interpretation of a rhythm at a given heart rate.
+ * Axis is computed from the frontal-plane QRS (leads I + aVF); intervals come
+ * from the encoded morphology; interpretation[] is a human-readable summary.
+ */
+export function measureRhythm(rhythm: ECGRhythm, heartRate: number): RhythmMeasurements {
+  const rate = Math.max(0, Math.round(heartRate));
+  const iv = RHYTHM_INTERVALS[rhythm.id] ?? { pr: 160, qrs: 90, qt: 400 };
+
+  // Frontal-plane axis from I and aVF net QRS deflection.
+  const netI = netQrsDeflection(rhythm.leads.I, rate || 60);
+  const netAVF = netQrsDeflection(rhythm.leads.aVF, rate || 60);
+  let axisDegrees: number;
+  if (Math.abs(netI) < 0.02 && Math.abs(netAVF) < 0.02) {
+    axisDegrees = 0; // no organised QRS (arrest) — report 0, label handles it
+  } else {
+    axisDegrees = Math.round((Math.atan2(netAVF, netI) * 180) / Math.PI);
+  }
+
+  const isArrest = rhythm.category === 'arrest' || rate === 0;
+  const axisLabel: RhythmMeasurements['axisLabel'] = isArrest ? 'Indeterminate' : classifyAxis(axisDegrees);
+
+  // QTc via Bazett: QT / sqrt(RR in seconds). RR = 60/rate.
+  const rrSec = rate > 0 ? 60 / rate : 1;
+  const qtcMs = iv.qt > 0 ? Math.round(iv.qt / Math.sqrt(rrSec)) : 0;
+
+  const interpretation: string[] = [];
+
+  if (isArrest) {
+    if (rhythm.id === 'asystole') interpretation.push('ASYSTOLE — flatline, no organised activity');
+    else if (rhythm.id === 'vfib' || rhythm.id === 'vfib-fine') interpretation.push('VENTRICULAR FIBRILLATION — shockable');
+    else if (rhythm.id === 'torsades') interpretation.push('TORSADES DE POINTES — polymorphic VT');
+    else if (rhythm.id === 'pea') interpretation.push('Organised rhythm — check pulse (PEA if pulseless)');
+    interpretation.push('Rate 0/min');
+    return { rate, prIntervalMs: null, qrsDurationMs: iv.qrs, qtIntervalMs: iv.qt, qtcMs, axisDegrees, axisLabel, interpretation };
+  }
+
+  // Rhythm label
+  interpretation.push(rhythm.name);
+  interpretation.push(`Rate ${rate}/min`);
+
+  if (iv.pr === null) {
+    if (rhythm.id === 'afib') interpretation.push('No P waves — irregularly irregular');
+    else if (rhythm.id === 'aflutter') interpretation.push('Flutter waves — no discrete P');
+    else if (rhythm.category === 'arrhythmia' && iv.qrs >= 120) interpretation.push('No P waves — wide complex');
+    else interpretation.push('No consistent P–QRS relationship');
+  } else {
+    interpretation.push(`PR ${iv.pr} ms${iv.pr > 200 ? ' (prolonged)' : ''}`);
+  }
+
+  interpretation.push(`QRS ${iv.qrs} ms${iv.qrs >= 120 ? ' (wide)' : ''}`);
+  interpretation.push(`QT/QTc ${iv.qt}/${qtcMs} ms${qtcMs > 460 ? ' (prolonged)' : ''}`);
+  interpretation.push(`${axisLabel} ${axisDegrees >= 0 ? '+' : ''}${axisDegrees}°`);
+
+  if (rhythm.category === 'stemi' && STEMI_TERRITORY[rhythm.id]) {
+    interpretation.push(`*** ACUTE MI SUSPECTED — ${STEMI_TERRITORY[rhythm.id]} ***`);
+  } else if (rhythm.id === 'nstemi') {
+    interpretation.push('ST depression / T-wave inversion — ISCHAEMIA');
+  }
+
+  return { rate, prIntervalMs: iv.pr, qrsDurationMs: iv.qrs, qtIntervalMs: iv.qt, qtcMs, axisDegrees, axisLabel, interpretation };
+}
+
+/** STEMI territory string for a rhythm, or null if not a territorial STEMI. */
+export function stemiTerritory(rhythmId: string): string | null {
+  return STEMI_TERRITORY[rhythmId] ?? null;
+}
+
 /**
  * Get the LITFL ECG data for a given rhythm (for 12-lead display details)
  */

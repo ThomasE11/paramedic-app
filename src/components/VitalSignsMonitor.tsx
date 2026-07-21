@@ -18,7 +18,7 @@ import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from "@/components/ui/progress";
 import {
-  Timer, Zap, FileHeart, X, TrendingUp,
+  Timer, Zap, X, TrendingUp,
 } from 'lucide-react';
 import type { VitalSigns } from '@/types';
 import {
@@ -27,8 +27,6 @@ import {
 } from '@/data/deteriorationSystem';
 import {
   getRhythmForCase,
-  getLitflDataForRhythm,
-  ALL_LEADS,
   ALL_RHYTHMS,
   RHYTHM_MAP,
   type ECGRhythm,
@@ -36,67 +34,7 @@ import {
   type WaveformFn,
   type WaveformContext,
 } from '@/data/ecgRhythms';
-// LITFL ECG library — image URLs are mapped in RHYTHM_TO_LITFL_IMAGE below
-
-// Map rhythm IDs to local 12-lead ECG reference images.
-// Sourced from Life in the Fast Lane (litfl.com) ECG Library under their
-// Creative Commons educational licence. Stored locally to avoid cross-origin
-// blocking and ensure instant loading.
-// When a LITFL image is not available, the system falls back to the
-// programmatically generated 12-lead canvas display.
-// Use Vite's BASE_URL so paths work on GitHub Pages or any subpath deployment
-const BASE = import.meta.env.BASE_URL;
-
-// Map rhythm IDs to local 12-lead ECG reference images from LITFL.
-// Only rhythms with verified 12-lead images are mapped here.
-// Unmapped rhythms fall back to the programmatic TwelveLeadECG canvas.
-const RHYTHM_TO_LITFL_IMAGE: Record<string, string> = {
-  // ----- Normal / Rate-based -----
-  // 'nsr' — LITFL only has single strip; use canvas 12-lead
-  'sinus-tachy': `${BASE}images/ecg/sinus-tachy.jpg`,
-  'sinus-brady': `${BASE}images/ecg/sinus-brady.jpg`,
-  // 'pea' — use canvas (shows organized rhythm without pulse)
-
-  // ----- Arrhythmias -----
-  'afib': `${BASE}images/ecg/afib.jpg`,
-  'aflutter': `${BASE}images/ecg/aflutter.jpg`,
-  'svt': `${BASE}images/ecg/svt.jpg`,
-  'vt': `${BASE}images/ecg/vt.jpg`,
-  'vfib': `${BASE}images/ecg/vfib.jpg`,
-  'vfib-fine': `${BASE}images/ecg/vfib-fine.jpg`,
-  // 'torsades' — LITFL only has single strip; use canvas
-  'pacs': `${BASE}images/ecg/pacs.jpg`,
-  'pvcs': `${BASE}images/ecg/pvcs.jpg`,
-
-  // ----- STEMI / ACS -----
-  'anterior-stemi': `${BASE}images/ecg/anterior-stemi.jpg`,
-  'inferior-stemi': `${BASE}images/ecg/inferior-stemi.jpg`,
-  'lateral-stemi': `${BASE}images/ecg/lateral-stemi.jpg`,
-  'posterior-stemi': `${BASE}images/ecg/posterior-stemi.jpg`,
-  'nstemi': `${BASE}images/ecg/nstemi.jpg`,
-
-  // ----- Heart blocks -----
-  // 'first-degree-block' — LITFL only has single strip; use canvas
-  'wenckebach': `${BASE}images/ecg/wenckebach.jpg`,
-  // 'mobitz2' — LITFL only has single strip; use canvas
-  'chb': `${BASE}images/ecg/chb.jpg`,
-
-  // ----- Escape / slow rhythms -----
-  'junctional': `${BASE}images/ecg/junctional.jpg`,
-  'aivr': `${BASE}images/ecg/aivr.jpg`,
-
-  // ----- Conduction / Other -----
-  'wpw': `${BASE}images/ecg/wpw.jpg`,
-  'lbbb': `${BASE}images/ecg/lbbb.jpg`,
-  'rbbb': `${BASE}images/ecg/rbbb.png`,
-
-  // ----- Metabolic -----
-  'hyperkalemia': `${BASE}images/ecg/hyperkalemia.jpg`,
-};
-
-function getLitflImageForRhythm(rhythmId: string): string | null {
-  return RHYTHM_TO_LITFL_IMAGE[rhythmId] || null;
-}
+import { TwelveLeadReport } from './TwelveLeadReport';
 
 interface VitalSignsMonitorProps {
   initialVitals: VitalSigns;
@@ -1061,587 +999,6 @@ function ECGWaveform({ heartRate, color, height = 80, isVisible, waveformFn, sho
   );
 }
 
-// ============================================================================
-// 12-LEAD ECG DISPLAY COMPONENT
-// ============================================================================
-
-// Paced ventricular complex — LBBB-like wide QRS with a discordant T wave.
-// Used for the 12-lead when transcutaneous pacing is capturing: the intrinsic
-// rhythm (e.g. complete heart block) is overridden by the paced ventricular
-// complexes. The leading spike is drawn separately on top of the trace.
-function pacedComplexWave(t: number): number {
-  // Wide QRS: negative deflection (LBBB-like) centred around t=0.18
-  let v = 0;
-  if (t >= 0.12 && t <= 0.34) {
-    const pos = (t - 0.12) / 0.22;
-    // Sharp negative trough then slow return — classic "wide bizarre" paced QRS
-    v = -0.95 * Math.sin(pos * Math.PI);
-  }
-  // Discordant T wave (opposite polarity to QRS — positive here)
-  if (t >= 0.40 && t <= 0.70) {
-    const pos = (t - 0.40) / 0.30;
-    v += 0.28 * Math.sin(pos * Math.PI);
-  }
-  return v;
-}
-
-function TwelveLeadECG({ rhythm, heartRate, onClose, isPaced = false }: { rhythm: ECGRhythm; heartRate: number; onClose: () => void; onExport?: () => void; isPaced?: boolean }) {
-  const canvasRefs = useRef<Record<string, HTMLCanvasElement | null>>({});
-  const animRef = useRef<number>(0);
-  const posRef = useRef(0);
-  const exportContainerRef = useRef<HTMLDivElement>(null);
-  const [showPreview, setShowPreview] = useState(false);
-  const [previewDataUrl, setPreviewDataUrl] = useState<string | null>(null);
-
-  const litflData = getLitflDataForRhythm(rhythm.id);
-
-  useEffect(() => {
-    let lastTime = performance.now();
-    // Constant 25mm/s sweep speed — same as main monitor
-    const pixelsPerSec = 87.5;
-    const beatsPerSec = heartRate / 60;
-    // Match the fix in the main ECGWaveform: when HR=0 (arrest), fall back
-    // to a synthetic 200 ms period so waveform functions that depend on t
-    // (VF's vfibWave) actually tick. Without this, arrest 12-leads render
-    // as a flatline regardless of underlying rhythm.
-    const pixelsPerBeat = heartRate <= 0
-      ? pixelsPerSec * 0.2
-      : pixelsPerSec / beatsPerSec;
-
-    const draw = (now: number) => {
-      const dt = (now - lastTime) / 1000;
-      lastTime = now;
-      posRef.current += pixelsPerSec * dt;
-
-      for (const key of [...ALL_LEADS, 'rhythm-strip']) {
-        const canvas = canvasRefs.current[key];
-        if (!canvas) continue;
-
-        const ctx = canvas.getContext('2d');
-        if (!ctx) continue;
-
-        const w = canvas.width;
-        const h = canvas.height;
-        const midY = h / 2;
-
-        // Clear
-        ctx.fillStyle = '#000800';
-        ctx.fillRect(0, 0, w, h);
-
-        // Grid (ECG paper style)
-        ctx.strokeStyle = 'rgba(0, 50, 0, 0.2)';
-        ctx.lineWidth = 0.5;
-        for (let y = 0; y < h; y += h / 4) {
-          ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
-        }
-        for (let x = 0; x < w; x += w / 8) {
-          ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
-        }
-
-        // Determine waveform function - rhythm strip uses Lead II.
-        // When pacing is capturing, override with the paced-complex waveform
-        // so the 12-lead actually reflects what the banner describes
-        // (wide-QRS paced complexes). Without this, the 12-lead still drew
-        // the underlying rhythm (e.g. CHB) while the text said "paced".
-        const leadName = key === 'rhythm-strip' ? 'II' : key;
-        const wfn = isPaced
-          ? pacedComplexWave
-          : (rhythm.leads[leadName as LeadName] || rhythm.leads['II']);
-
-        ctx.strokeStyle = '#00ff41';
-        ctx.lineWidth = 1.5;
-        ctx.shadowColor = '#00ff41';
-        ctx.shadowBlur = 2;
-
-        ctx.beginPath();
-        let prevBeatProgress = 0;
-        let viewerBeatIndex = 0;
-        const spikeXs: number[] = [];
-        for (let x = 0; x < w; x++) {
-          const adjustedX = (x + posRef.current) % (w * 2);
-          const beatProgress = (adjustedX / pixelsPerBeat) % 1;
-          if (beatProgress < prevBeatProgress && prevBeatProgress > 0.5) {
-            viewerBeatIndex++;
-          }
-          prevBeatProgress = beatProgress;
-          // Capture the x-coord where the pacing spike should land (~10% of beat)
-          if (isPaced && Math.abs(beatProgress - 0.10) < 0.008) {
-            spikeXs.push(x);
-          }
-          const ctx12: WaveformContext = { heartRate, beatIndex: viewerBeatIndex };
-          const y = midY - wfn(beatProgress, ctx12) * (h * 0.35);
-          if (x === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        }
-        ctx.stroke();
-        ctx.shadowBlur = 0;
-
-        // Overlay pacing spikes — tall thin vertical marks in cyan so they
-        // clearly stand out from the trace and read as artifacts, not QRS.
-        if (isPaced && spikeXs.length > 0) {
-          ctx.strokeStyle = '#00ccff';
-          ctx.lineWidth = 1.25;
-          ctx.shadowColor = '#00ccff';
-          ctx.shadowBlur = 2;
-          for (const sx of spikeXs) {
-            ctx.beginPath();
-            ctx.moveTo(sx, midY + h * 0.30);
-            ctx.lineTo(sx, midY - h * 0.40);
-            ctx.stroke();
-          }
-          ctx.shadowBlur = 0;
-        }
-
-        // Sweep cursor for rhythm strip
-        if (key === 'rhythm-strip') {
-          const eraseWidth = 15;
-          const eraseX = posRef.current % w;
-          ctx.fillStyle = '#000800';
-          ctx.fillRect(eraseX, 0, eraseWidth, h);
-          ctx.fillStyle = '#00ff41';
-          ctx.globalAlpha = 0.5;
-          ctx.fillRect(eraseX + eraseWidth - 2, 0, 2, h);
-          ctx.globalAlpha = 1.0;
-        }
-      }
-
-      animRef.current = requestAnimationFrame(draw);
-    };
-
-    animRef.current = requestAnimationFrame(draw);
-    return () => cancelAnimationFrame(animRef.current);
-  }, [rhythm, heartRate, isPaced]);
-
-  const setRef = (lead: string) => (el: HTMLCanvasElement | null) => {
-    canvasRefs.current[lead] = el;
-  };
-
-  // Generate 12-lead ECG image as data URL — proper ECG paper with mm grid
-  const generateImage = (): string | null => {
-    const exportCanvas = document.createElement('canvas');
-
-    // ECG paper standard: 25mm/s, 10mm/mV
-    // 1 small square = 1mm = 0.04s (time) = 0.1mV (voltage)
-    // 1 large square = 5mm = 0.2s (time) = 0.5mV (voltage)
-    const pxPerMm = 4; // 4 pixels per millimeter
-    const smallSq = pxPerMm; // 1mm = 4px
-    const largeSq = smallSq * 5; // 5mm = 20px
-
-    // Each lead strip: 2.5 seconds wide = 62.5mm = 250px
-    const leadDurationSec = 2.5;
-    const leadW = Math.round(leadDurationSec * 25 * pxPerMm); // 25mm/s * 4px/mm * 2.5s = 250px
-    const leadH = Math.round(20 * pxPerMm); // 20mm tall = 80px (±1mV range)
-    const cols = 4;
-    const rows = 3;
-    const labelW = 40; // space for lead labels
-    const gapX = 2; // tiny gap between columns
-    const headerH = 50;
-    const rhythmStripH = leadH;
-    const footerH = 70;
-    const calPulseW = Math.round(5 * pxPerMm); // 5mm calibration pulse width
-
-    const totalW = labelW + (leadW + calPulseW + gapX) * cols;
-    const totalH = headerH + (leadH) * rows + 8 + rhythmStripH + footerH;
-
-    exportCanvas.width = totalW;
-    exportCanvas.height = totalH;
-
-    const ctx = exportCanvas.getContext('2d');
-    if (!ctx) return null;
-
-    // White ECG paper background
-    ctx.fillStyle = '#fff8f0';
-    ctx.fillRect(0, 0, totalW, totalH);
-
-    // Draw ECG grid on the paper area
-    const gridStartY = headerH;
-    const gridH = (leadH) * rows + 8 + rhythmStripH;
-
-    // Small squares (1mm) - light pink/red
-    ctx.strokeStyle = 'rgba(255, 180, 180, 0.5)';
-    ctx.lineWidth = 0.5;
-    for (let y = gridStartY; y <= gridStartY + gridH; y += smallSq) {
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(totalW, y); ctx.stroke();
-    }
-    for (let x = 0; x <= totalW; x += smallSq) {
-      ctx.beginPath(); ctx.moveTo(x, gridStartY); ctx.lineTo(x, gridStartY + gridH); ctx.stroke();
-    }
-
-    // Large squares (5mm) - darker red
-    ctx.strokeStyle = 'rgba(220, 120, 120, 0.6)';
-    ctx.lineWidth = 1;
-    for (let y = gridStartY; y <= gridStartY + gridH; y += largeSq) {
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(totalW, y); ctx.stroke();
-    }
-    for (let x = 0; x <= totalW; x += largeSq) {
-      ctx.beginPath(); ctx.moveTo(x, gridStartY); ctx.lineTo(x, gridStartY + gridH); ctx.stroke();
-    }
-
-    // Header info (black text on white paper)
-    ctx.fillStyle = '#000';
-    ctx.font = 'bold 14px monospace';
-    ctx.fillText('12-LEAD ECG', 8, 18);
-    ctx.font = '10px monospace';
-    ctx.fillStyle = '#333';
-    const dateStr = new Date().toLocaleString('en-GB');
-    ctx.fillText(`${rhythm.name}  |  HR: ${heartRate} bpm  |  25mm/s  |  10mm/mV  |  ${dateStr}`, 8, 34);
-
-    // Calibration info
-    ctx.font = '9px monospace';
-    ctx.fillStyle = '#666';
-    ctx.fillText('1 small box = 0.04s / 0.1mV  |  1 large box = 0.2s / 0.5mV', 8, 46);
-
-    // R-R interval at current HR
-    const beatsPerSec = heartRate / 60;
-    const mmPerBeat = 25 / beatsPerSec; // mm per beat at 25mm/s
-    const pxPerBeat = mmPerBeat * pxPerMm;
-
-    // Draw each lead
-    const layout = [
-      ['I', 'aVR', 'V1', 'V4'],
-      ['II', 'aVL', 'V2', 'V5'],
-      ['III', 'aVF', 'V3', 'V6'],
-    ];
-
-    layout.forEach((rowLeads, rowIdx) => {
-      rowLeads.forEach((lead, colIdx) => {
-        const x = labelW + colIdx * (leadW + calPulseW + gapX);
-        const y = headerH + rowIdx * leadH;
-        const midY = y + leadH / 2;
-
-        // Calibration pulse (1mV = 10mm square wave at start)
-        const calH = 10 * pxPerMm; // 10mm = 1mV
-        ctx.strokeStyle = '#000';
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(x, midY);
-        ctx.lineTo(x + smallSq, midY);        // baseline
-        ctx.lineTo(x + smallSq, midY - calH); // up 1mV
-        ctx.lineTo(x + calPulseW - smallSq, midY - calH); // plateau
-        ctx.lineTo(x + calPulseW - smallSq, midY); // back to baseline
-        ctx.lineTo(x + calPulseW, midY);       // continue baseline
-        ctx.stroke();
-
-        // Lead label (in the left margin)
-        if (colIdx === 0) {
-          ctx.fillStyle = '#000';
-          ctx.font = 'bold 11px monospace';
-          ctx.fillText(lead, 4, midY + 4);
-        }
-
-        // Lead label above the trace
-        ctx.fillStyle = '#000';
-        ctx.font = 'bold 9px monospace';
-        ctx.fillText(lead, x + calPulseW + 2, y + 10);
-
-        // Waveform — heart-rate-appropriate R-R intervals
-        const wfn = rhythm.leads[lead as LeadName];
-        const waveStartX = x + calPulseW;
-
-        ctx.strokeStyle = '#000';
-        ctx.lineWidth = 1.2;
-        ctx.beginPath();
-        let first = true;
-        let expPrevBP = 0;
-        let expBeatIdx = 0;
-        for (let px = 0; px < leadW; px++) {
-          const beatProgress = (px / pxPerBeat) % 1;
-          if (beatProgress < expPrevBP && expPrevBP > 0.5) expBeatIdx++;
-          expPrevBP = beatProgress;
-          // 1mV = 10mm = 40px; waveform returns values roughly -0.2 to 1.0
-          const amplitude = wfn(beatProgress, { heartRate, beatIndex: expBeatIdx }) * (10 * pxPerMm);
-          const wy = midY - amplitude;
-          if (first) { ctx.moveTo(waveStartX + px, wy); first = false; }
-          else ctx.lineTo(waveStartX + px, wy);
-        }
-        ctx.stroke();
-      });
-    });
-
-    // Rhythm strip (Lead II, full width, bottom)
-    const rsY = headerH + rows * leadH + 8;
-    const rsW = totalW - labelW;
-    const rsMidY = rsY + rhythmStripH / 2;
-
-    // Label
-    ctx.fillStyle = '#000';
-    ctx.font = 'bold 9px monospace';
-    ctx.fillText('II', 4, rsMidY + 4);
-    ctx.font = '8px monospace';
-    ctx.fillText('Rhythm', 4, rsMidY + 14);
-
-    // Calibration pulse for rhythm strip
-    const rsStartX = labelW;
-    const calH2 = 10 * pxPerMm;
-    ctx.strokeStyle = '#000';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.moveTo(rsStartX, rsMidY);
-    ctx.lineTo(rsStartX + smallSq, rsMidY);
-    ctx.lineTo(rsStartX + smallSq, rsMidY - calH2);
-    ctx.lineTo(rsStartX + calPulseW - smallSq, rsMidY - calH2);
-    ctx.lineTo(rsStartX + calPulseW - smallSq, rsMidY);
-    ctx.lineTo(rsStartX + calPulseW, rsMidY);
-    ctx.stroke();
-
-    // Rhythm strip waveform
-    const wfn2 = rhythm.leads['II'];
-    const rsWaveStart = rsStartX + calPulseW;
-    const rsTraceW = rsW - calPulseW;
-    ctx.strokeStyle = '#000';
-    ctx.lineWidth = 1.2;
-    ctx.beginPath();
-    let first2 = true;
-    let rsPrevBP = 0;
-    let rsBeatIdx = 0;
-    for (let px = 0; px < rsTraceW; px++) {
-      const beatProgress = (px / pxPerBeat) % 1;
-      if (beatProgress < rsPrevBP && rsPrevBP > 0.5) rsBeatIdx++;
-      rsPrevBP = beatProgress;
-      const amplitude = wfn2(beatProgress, { heartRate, beatIndex: rsBeatIdx }) * (10 * pxPerMm);
-      const wy = rsMidY - amplitude;
-      if (first2) { ctx.moveTo(rsWaveStart + px, wy); first2 = false; }
-      else ctx.lineTo(rsWaveStart + px, wy);
-    }
-    ctx.stroke();
-
-    // Footer - interpretation
-    const ftY = rsY + rhythmStripH + 8;
-    ctx.fillStyle = '#000';
-    ctx.font = 'bold 10px monospace';
-    ctx.fillText(`INTERPRETATION: ${rhythm.description}`, 8, ftY + 12);
-
-    if (litflData.teachingPoints.length > 0) {
-      ctx.fillStyle = '#444';
-      ctx.font = '9px monospace';
-      litflData.teachingPoints.slice(0, 3).forEach((pt, i) => {
-        ctx.fillText(`• ${pt}`, 8, ftY + 26 + i * 12);
-      });
-    }
-
-    // Bottom edge markers
-    ctx.fillStyle = '#888';
-    ctx.font = '8px monospace';
-    ctx.fillText('UAE Paramedic Case Generator — Monitor Simulator', 8, totalH - 6);
-    ctx.fillText(dateStr, totalW - 150, totalH - 6);
-
-    return exportCanvas.toDataURL('image/png');
-  };
-
-  const handleDownload = () => {
-    // Prefer LITFL image for download (clinically accurate), fall back to generated
-    const litflImage = getLitflImageForRhythm(rhythm.id);
-    if (litflImage) {
-      // Open LITFL image in new tab for saving (cross-origin prevents direct download)
-      window.open(litflImage, '_blank');
-      return;
-    }
-    const dataUrl = generateImage();
-    if (!dataUrl) return;
-    const link = document.createElement('a');
-    link.download = `12-Lead-ECG-${rhythm.name.replace(/\s+/g, '-')}-${new Date().toISOString().slice(0,10)}.png`;
-    link.href = dataUrl;
-    link.click();
-  };
-
-  const handlePreview = () => {
-    // Use LITFL 12-lead ECG image if available (clinically accurate reference ECGs)
-    // Falls back to generated image only if LITFL doesn't have this rhythm
-    const litflImage = getLitflImageForRhythm(rhythm.id);
-    if (litflImage) {
-      setPreviewDataUrl(litflImage);
-      setShowPreview(true);
-    } else {
-      const dataUrl = generateImage();
-      if (dataUrl) {
-        setPreviewDataUrl(dataUrl);
-        setShowPreview(true);
-      }
-    }
-  };
-
-  // Determine which leads have ST changes for highlighting
-  const getLeadHighlight = (lead: LeadName): string => {
-    if (rhythm.id === 'anterior-stemi' && ['V1','V2','V3','V4'].includes(lead)) return 'border-red-500/60';
-    if (rhythm.id === 'anterior-stemi' && ['II','III','aVF'].includes(lead)) return 'border-blue-500/40';
-    if (rhythm.id === 'inferior-stemi' && ['II','III','aVF'].includes(lead)) return 'border-red-500/60';
-    if (rhythm.id === 'inferior-stemi' && ['I','aVL'].includes(lead)) return 'border-blue-500/40';
-    if (rhythm.id === 'lateral-stemi' && ['I','aVL','V5','V6'].includes(lead)) return 'border-red-500/60';
-    return 'border-gray-700/40';
-  };
-
-  return (
-    <div ref={exportContainerRef} className="rounded-xl overflow-hidden border-2 border-gray-700"
-      style={{ background: 'linear-gradient(145deg, #2a2d31 0%, #1e2024 100%)' }}>
-      {/* Header */}
-      <div className="px-4 py-2 flex items-center justify-between border-b border-gray-700/50"
-        style={{ background: 'linear-gradient(180deg, #3a3d42 0%, #2e3136 100%)' }}>
-        <div className="flex items-center gap-3">
-          <FileHeart className="h-4 w-4 text-green-400" />
-          <span className="text-[11px] font-mono font-bold text-green-400 tracking-wider">12-LEAD ECG</span>
-          <Badge variant="outline" className="text-[8px] border-green-600/50 text-green-400 h-4">
-            {rhythm.name}
-          </Badge>
-          <span className="text-[9px] font-mono text-gray-400">{heartRate} bpm</span>
-          <span className="text-[8px] font-mono text-gray-500">25mm/s | 10mm/mV</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <button
-            onClick={handlePreview}
-            className="px-2 py-1 rounded text-[8px] font-mono font-bold text-cyan-400 bg-cyan-900/30 hover:bg-cyan-800/40 border border-cyan-700/50 transition-colors"
-          >
-            VIEW STRIP
-          </button>
-          <button
-            onClick={handleDownload}
-            className="px-2 py-1 rounded text-[8px] font-mono font-bold text-green-400 bg-green-900/30 hover:bg-green-800/40 border border-green-700/50 transition-colors"
-          >
-            DOWNLOAD
-          </button>
-          <button onClick={onClose} className="p-1 rounded hover:bg-gray-700/50 text-gray-400 hover:text-white transition-colors">
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-      </div>
-
-      {/* 12-Lead Grid */}
-      <div className="p-2" style={{ background: '#000800' }}>
-        <div className="grid grid-cols-4 gap-1">
-          {[
-            ['I', 'aVR', 'V1', 'V4'],
-            ['II', 'aVL', 'V2', 'V5'],
-            ['III', 'aVF', 'V3', 'V6'],
-          ].map((row) => (
-            row.map((lead) => (
-              <div key={lead} className={`relative rounded border ${getLeadHighlight(lead as LeadName)}`}>
-                <span className="absolute top-0.5 left-1 text-[8px] font-mono font-bold text-green-500/80 z-10">{lead}</span>
-                <canvas
-                  ref={setRef(lead)}
-                  width={200}
-                  height={60}
-                  className="w-full"
-                  style={{ height: '60px', background: '#000800' }}
-                />
-              </div>
-            ))
-          ))}
-        </div>
-
-        {/* Rhythm Strip (Lead II full width) - animated sweep */}
-        <div className="mt-1 relative rounded border border-gray-700/40">
-          <span className="absolute top-0.5 left-1 text-[8px] font-mono font-bold text-green-500/80 z-10">II - Rhythm Strip</span>
-          <canvas
-            ref={setRef('rhythm-strip')}
-            width={800}
-            height={60}
-            className="w-full"
-            style={{ height: '60px', background: '#000800' }}
-          />
-        </div>
-      </div>
-
-      {/* Interpretation & Teaching Points */}
-      <div className="px-3 py-2 space-y-2 border-t border-gray-700/30" style={{ background: 'rgba(0,0,0,0.3)' }}>
-        <div className="flex items-start gap-2">
-          <span className="text-[9px] font-mono text-green-400 font-bold shrink-0">INTERP:</span>
-          <span className="text-[9px] font-mono text-gray-300">{rhythm.description}</span>
-        </div>
-
-        {rhythm.category === 'stemi' && (
-          <div className="flex items-center gap-3 text-[8px] font-mono">
-            <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-red-500/60" />
-              <span className="text-red-400">ST Elevation</span>
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-blue-500/40" />
-              <span className="text-blue-400">Reciprocal Changes</span>
-            </span>
-          </div>
-        )}
-
-        {litflData.teachingPoints.length > 0 && (
-          <div>
-            <span className="text-[8px] font-mono text-amber-400 font-bold block mb-0.5">KEY POINTS:</span>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-0.5">
-              {litflData.teachingPoints.slice(0, 4).map((point, i) => (
-                <span key={i} className="text-[8px] font-mono text-gray-400 flex items-start gap-1">
-                  <span className="text-amber-500 shrink-0">-</span>
-                  {point}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {litflData.litflUrl && (
-          <div className="text-[8px] font-mono text-cyan-500/70">
-            LITFL: {litflData.litflUrl}
-          </div>
-        )}
-      </div>
-
-      {/* ============================================================ */}
-      {/* PRINT PREVIEW OVERLAY - Full-screen ECG strip view          */}
-      {/* ============================================================ */}
-      {showPreview && previewDataUrl && (
-        <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-start"
-          style={{ background: 'rgba(0,0,0,0.92)', backdropFilter: 'blur(6px)' }}
-          onClick={() => setShowPreview(false)}
-        >
-          {/* Toolbar at top */}
-          <div className="w-full max-w-5xl flex items-center justify-between px-4 py-2 mt-2"
-            onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center gap-3">
-              <FileHeart className="h-4 w-4 text-green-400" />
-              <span className="text-sm font-mono font-bold text-white">12-Lead ECG Strip</span>
-              <span className="text-xs font-mono text-gray-400">{rhythm.name} | {heartRate} bpm</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleDownload}
-                className="px-4 py-2 rounded text-xs font-mono font-bold text-white bg-green-700 hover:bg-green-600 transition-colors"
-              >
-                ⬇ Download PNG
-              </button>
-              <button
-                onClick={() => setShowPreview(false)}
-                className="p-2 rounded hover:bg-gray-700 text-gray-400 hover:text-white transition-colors"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-          </div>
-          {/* ECG strip image — flush at top, scrollable */}
-          <div className="flex-1 w-full max-w-5xl overflow-auto px-4 pb-4"
-            onClick={(e) => e.stopPropagation()}>
-            <img
-              src={previewDataUrl}
-              alt="12-Lead ECG Strip"
-              className="w-full h-auto rounded shadow-2xl border border-gray-600"
-              style={{ imageRendering: 'crisp-edges' }}
-            />
-            {/* Interpretation below image */}
-            <div className="mt-3 p-3 rounded bg-gray-900/80 border border-gray-700">
-              <div className="flex items-start gap-3">
-                <div className="flex-1">
-                  <span className="text-xs font-mono text-green-400 font-bold">INTERPRETATION: </span>
-                  <span className="text-xs font-mono text-gray-300">{rhythm.description}</span>
-                </div>
-                {litflData.litflUrl && (
-                  <a href={litflData.litflUrl} target="_blank" rel="noopener noreferrer"
-                    className="text-xs font-mono text-cyan-400 hover:text-cyan-300 underline shrink-0">
-                    LITFL Reference
-                  </a>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
 
 // ============================================================================
 // SpO2 PLETH WAVEFORM - Clean buffer-based rendering
@@ -2197,7 +1554,6 @@ export function VitalSignsMonitor({
   const [showCodeSummary, setShowCodeSummary] = useState(false);
   const [aedMode, setAedMode] = useState(false);
   const [, setShowNibpMenu] = useState(false);
-  const [show12LeadImage, setShow12LeadImage] = useState(false); // Show LITFL image-based 12-lead
 
   // Deterioration state (must be declared before any useEffect).
   // Severity is re-evaluated as currentVitals change (see effect below) so
@@ -3245,7 +2601,7 @@ export function VitalSignsMonitor({
   const handleHomeScreen = useCallback(() => {
     setShow12Lead(false); setPrintMode(false); setShowOptions(false);
     setShowAnalyze(false); setShowCodeSummary(false); setShowAssessPanel(false);
-    setAedMode(false); setShow12LeadImage(false); setShowNibpMenu(false);
+    setAedMode(false); setShowNibpMenu(false);
   }, []);
 
   const isCurrentRhythmShockable = currentRhythm.id === 'vfib' || currentRhythm.id === 'vfib-fine' || currentRhythm.id === 'vt';
@@ -3260,27 +2616,20 @@ export function VitalSignsMonitor({
   }, [currentRhythm, isCurrentRhythmShockable, logIntervention]);
 
   const handlePrint = useCallback(() => {
-    setShow12LeadImage(true);
+    if (!show12Lead) onAssessmentPerformed?.('12-lead-ecg');
+    setShow12Lead(true);
     logIntervention('PRINT', '12-Lead ECG printed');
     if (audioEnabled && audioEngineRef.current) audioEngineRef.current.playPrintingSound(3000);
-  }, [logIntervention, audioEnabled]);
+  }, [logIntervention, audioEnabled, show12Lead, onAssessmentPerformed]);
 
   const handleGainCycle = useCallback(() => {
     const gains: (0.5 | 1.0 | 1.5 | 2.0)[] = [0.5, 1.0, 1.5, 2.0];
     setWaveformGain(gains[(gains.indexOf(waveformGain) + 1) % gains.length]);
   }, [waveformGain]);
 
-  // LITFL static image is only valid when the UNDERLYING rhythm is what the
-  // 12-lead captures. If the pacer is active and capturing, the ECG actually
-  // shows wide-QRS paced complexes with pacing spikes — NOT the underlying
-  // rhythm (e.g. complete heart block). Force the canvas fallback in that
-  // case so the strip draws pacing spikes instead of a misleading static
-  // image of the underlying block.
+  // When pacing is capturing, the 12-lead report shows the underlying rhythm
+  // with an explanatory banner (pacing overrides but doesn't fix the block).
   const isPacedRhythm = pacerActive && pacerOutput >= 60;
-  const litflImageUrl = useMemo(
-    () => (isPacedRhythm ? null : getLitflImageForRhythm(currentRhythm.id)),
-    [currentRhythm.id, isPacedRhythm],
-  );
 
   return (
     <div className="select-none">
@@ -3339,7 +2688,7 @@ export function VitalSignsMonitor({
               <span className="block text-[8px] font-mono font-bold tracking-[0.2em] text-emerald-300">TRANSPORT</span>
               <span className="block text-[7px] font-mono tracking-[0.18em] text-gray-400">ALS MONITOR</span>
             </div>
-            <SideButton label="PRINT" onClick={handlePrint} active={show12LeadImage} />
+            <SideButton label="PRINT" onClick={handlePrint} active={show12Lead} />
             <SideButton label="CODE" onClick={() => setShowCodeSummary(!showCodeSummary)} active={showCodeSummary} />
             <SideButton label="12 LEAD" onClick={() => {
               if (!show12Lead) onAssessmentPerformed?.('12-lead-ecg');
@@ -3960,66 +3309,23 @@ export function VitalSignsMonitor({
           </div>
         )}
 
-        {/* 12-Lead ECG */}
+        {/* 12-Lead ECG — print-style report */}
         {show12Lead && (
           <div className="mx-3 mb-2">
-            {litflImageUrl ? (
-              /* LITFL reference ECG — no diagnosis label, just the ECG image */
-              <div className="rounded-lg border border-gray-600/50 overflow-hidden" style={{ background: 'rgba(0,0,0,0.6)' }}>
-                <div className="flex items-center justify-between px-3 py-1.5 border-b border-gray-700/50">
-                  <div className="flex items-center gap-2">
-                    <FileHeart className="h-3.5 w-3.5 text-green-400" />
-                    <span className="text-[10px] font-mono font-bold text-green-400">12-LEAD ECG</span>
-                  </div>
-                  <button onClick={() => setShow12Lead(false)} className="text-gray-400 hover:text-white"><X className="h-4 w-4" /></button>
-                </div>
-                <div className="p-2">
-                  <img src={litflImageUrl} alt="12-Lead ECG"
-                    className="w-full h-auto rounded border border-gray-700" style={{ maxHeight: '400px', objectFit: 'contain' }} />
-                </div>
-              </div>
-            ) : (
-              /* Fallback: generated 12-lead. When pacing is active we also
-                 show a banner explaining the displayed rhythm is paced, so
-                 the student doesn't mis-read "still shows CHB" — the ECG
-                 shows the paced complexes; the underlying block hasn't
-                 gone anywhere and is still the diagnosis under the pacing. */
-              <>
-                {isPacedRhythm && (
-                  <div className="mb-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-[11px] leading-snug">
-                    <span className="font-semibold text-amber-700 dark:text-amber-400">
-                      Paced rhythm — TCP capturing at {pacerRate} bpm.
-                    </span>{' '}
-                    <span className="text-amber-700/80 dark:text-amber-400/80">
-                      The 12-lead shows wide-QRS paced complexes with pacing spikes. The underlying rhythm ({currentRhythm.name}) is unchanged — pacing doesn't fix the block, it overrides it.
-                    </span>
-                  </div>
-                )}
-                <TwelveLeadECG rhythm={currentRhythm} heartRate={hrValue} onClose={() => setShow12Lead(false)} isPaced={isPacedRhythm} />
-              </>
-            )}
-          </div>
-        )}
-
-        {/* 12-Lead ECG Image from LITFL (shown on PRINT) */}
-        {show12LeadImage && (
-          <div className="mx-3 mb-2 rounded-lg border border-gray-600/50 overflow-hidden" style={{ background: 'rgba(0,0,0,0.6)' }}>
-            <div className="flex items-center justify-between px-3 py-1.5 border-b border-gray-700/50">
-              <span className="text-[10px] font-mono font-bold text-green-400">12-LEAD ECG — {currentRhythm.name}</span>
-              <button onClick={() => setShow12LeadImage(false)} className="text-gray-400 hover:text-white"><X className="h-4 w-4" /></button>
-            </div>
-            {litflImageUrl ? (
-              <div className="p-2">
-                <img src={litflImageUrl} alt={`12-Lead ECG: ${currentRhythm.name}`}
-                  className="w-full h-auto rounded border border-gray-700" style={{ maxHeight: '300px', objectFit: 'contain' }}
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                <div className="mt-1 text-[8px] font-mono text-gray-500">Source: Life in the Fast Lane (LITFL) ECG Library</div>
-              </div>
-            ) : (
-              <div className="p-4 text-center text-[10px] font-mono text-gray-500">
-                No LITFL image available for this rhythm. Use 12 LEAD button for generated ECG.
+            {/* When pacing is capturing, the report shows the underlying rhythm
+                with a banner explaining pacing overrides but doesn't fix the
+                block — so the student doesn't mis-read "still shows CHB". */}
+            {isPacedRhythm && (
+              <div className="mb-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-[11px] leading-snug">
+                <span className="font-semibold text-amber-700 dark:text-amber-400">
+                  Paced rhythm — TCP capturing at {pacerRate} bpm.
+                </span>{' '}
+                <span className="text-amber-700/80 dark:text-amber-400/80">
+                  The underlying rhythm ({currentRhythm.name}) is unchanged — pacing overrides the block, it doesn't fix it.
+                </span>
               </div>
             )}
+            <TwelveLeadReport rhythm={currentRhythm} heartRate={hrValue} onClose={() => setShow12Lead(false)} />
           </div>
         )}
 
