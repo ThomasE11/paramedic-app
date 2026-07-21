@@ -134,11 +134,11 @@
 - [ ] **Frontier classroom from design proposal** — instructor control tower, role assignments, injects, synchronized debrief
 - [ ] **Sentinel case polish (Round 5)** — pick 8 premium cases (one per family) and verify each: clinical consistency, finding visibility, treatment attachment, wrong-action behavior, gradual vitals, reassessment requirement
 - [ ] Blender-authored garments (only if field test says runtime fabric isn't enough)
-- [ ] Tiered input: voice-first mode for senior students (OMS pattern B)
+- [x] Tiered input: voice-first mode for senior students (OMS pattern B) — DONE 2026-07-21, voiceIntents.ts with assessment/treatment/nav intents, alias resolution, confirm-gated drugs, 3rd/4th year gating, 9 tests
 
 ## 📋 Backlog (valuable, not urgent)
 - [ ] Move repo out of iCloud-synced Desktop (`~/Projects/`) — kills the SIGBUS/duplicate-file class permanently
-- [ ] In-app Attributions screen (CC0/CC-BY statements drafted in research doc + commits)
+- [x] In-app Attributions screen (CC0/CC-BY statements drafted in research doc + commits) — DONE 2026-07-21, AttributionsDialog.tsx, stale RPM CC BY-NC credit removed, MPFB2 CC0 + LITFL CC BY-NC-SA + Open3D MIT documented
 - [x] Split `cases.ts` chunk per year-level (1.2MB loads on first case entry) — DONE 2026-07-21, 6 lazy chunks (cases-core/year1/year2/enhanced/litfl/variants), 0 case data in entry or StudentPanel, 328 tests green
 - [ ] E2E playwright suite in CI (probes exist ad-hoc; formalize the case-flow smoke test)
 - [ ] 12-lead/ECG deep fidelity pass (iSimulate benchmark from research)
