@@ -37,6 +37,8 @@ export interface SmartGradeInput {
   inappropriateTreatmentCount: number;
   /** Number of treatments likely to worsen or distress the patient. */
   harmfulTreatmentCount: number;
+  /** Number of high-impact treatments applied without documented reassessment. */
+  unreassessedTreatmentCount: number;
   /** Allergy / adverse-reaction outcomes. */
   adverseInduced: number;
   adverseRescued: number;
@@ -100,12 +102,15 @@ export function computeSmartGrade(input: SmartGradeInput): SmartGrade {
   management = clamp(management - input.contraindicationCount * 12);
   management = clamp(management - input.inappropriateTreatmentCount * 5);
   management = clamp(management - input.harmfulTreatmentCount * 12);
+  management = clamp(management - input.unreassessedTreatmentCount * 4);
   const managementSummary = input.harmfulTreatmentCount > 0
     ? `Management included ${input.harmfulTreatmentCount} intervention${input.harmfulTreatmentCount > 1 ? 's' : ''} likely to cause harm or distress.`
     : input.contraindicationCount > 0
     ? `Management undermined by ${input.contraindicationCount} contraindicated treatment${input.contraindicationCount > 1 ? 's' : ''}.`
     : input.inappropriateTreatmentCount > 0
       ? `${input.inappropriateTreatmentCount} intervention${input.inappropriateTreatmentCount > 1 ? 's did' : ' did'} not fit the presentation.`
+    : input.unreassessedTreatmentCount > 0
+      ? `${input.unreassessedTreatmentCount} high-impact treatment${input.unreassessedTreatmentCount > 1 ? 's were' : ' was'} applied without documented reassessment.`
     : management >= 80
       ? 'Appropriate, well-targeted interventions for this presentation.'
       : input.treatmentCount === 0
@@ -136,6 +141,7 @@ export function computeSmartGrade(input: SmartGradeInput): SmartGrade {
   safety -= input.contraindicationCount * 20;
   safety -= input.inappropriateTreatmentCount * 8;
   safety -= input.harmfulTreatmentCount * 20;
+  safety -= input.unreassessedTreatmentCount * 4;
   safety -= input.adverseInduced * 45;
   safety += input.adverseRescued * 18; // recognising + treating the reaction
   safety -= input.adverseArrests * 15;
@@ -151,6 +157,8 @@ export function computeSmartGrade(input: SmartGradeInput): SmartGrade {
       ? 'A contraindicated drug was given — check vitals/history before administering.'
       : input.inappropriateTreatmentCount > 0
         ? 'Some interventions did not fit the presentation.'
+      : input.unreassessedTreatmentCount > 0
+        ? 'Treatments were applied but not followed up — reassessment is part of patient safety.'
       : safety >= 90
         ? 'Safe practice — no contraindicated or allergenic drugs given.'
         : 'Some safety concerns at case end.';
@@ -177,6 +185,7 @@ export function computeSmartGrade(input: SmartGradeInput): SmartGrade {
   if (input.contraindicationCount > 0) improvements.push('Re-check contraindications against current vitals before administering.');
   if (input.inappropriateTreatmentCount > 0) improvements.push('Match each intervention to a confirmed indication before applying it.');
   if (input.harmfulTreatmentCount > 0) improvements.push('Avoid interventions likely to worsen physiology or distress an alert patient.');
+  if (input.unreassessedTreatmentCount > 0) improvements.push('After every high-impact treatment, reassess the expected response and any harm it could cause.');
   if (input.finalVitalsDangerous) improvements.push('Do not stop until vitals are stabilised or handed over.');
   if (improvements.length === 0) improvements.push('Maintain this standard and push for speed and reassessment.');
 
@@ -198,7 +207,9 @@ export function computeSmartGrade(input: SmartGradeInput): SmartGrade {
     : input.contraindicationCount > 0
       ? ' Watch contraindications — a drug was given that this presentation does not tolerate.'
       : input.inappropriateTreatmentCount > 0
-        ? ' Some care did not match the presentation; make the indication explicit before treating.'
+      ? ' Some care did not match the presentation; make the indication explicit before treating.'
+    : input.unreassessedTreatmentCount > 0
+      ? ' Several treatments were started without documented reassessment; close the loop by checking response, tolerance, and new risks.'
       : '';
   const focus = improvements[0] ? ` Focus next on: ${improvements[0].toLowerCase()}` : '';
   const narrative = `${lead} ${assessmentSummary}${safetyNote}${focus}`.replace(/\s+/g, ' ').trim();

@@ -27,6 +27,7 @@ const StudentPanel = lazy(() => import('@/components/StudentPanel'));
 const ClassroomHost = lazy(() => import('@/components/classroom/ClassroomHost'));
 const ClassroomJoin = lazy(() => import('@/components/classroom/ClassroomJoin'));
 const ClinicalReferenceDialog = lazy(() => import('@/components/ClinicalReferenceDialog').then(m => ({ default: m.ClinicalReferenceDialog })));
+const AttributionsDialog = lazy(() => import('@/components/AttributionsDialog').then(m => ({ default: m.AttributionsDialog })));
 const ObjectiveSetupPanel = lazy(() => import('@/components/ObjectiveSetupPanel').then(m => ({ default: m.ObjectiveSetupPanel })));
 const WorkspaceLayout = lazy(() => import('@/components/Workspace').then(m => ({ default: m.WorkspaceLayout })));
 
@@ -57,6 +58,23 @@ function LazyLoad({ children, name }: { children: React.ReactNode; name: string 
 
 function App() {
   const ep = useEducatorPanel();
+  const devLiveCaseId = import.meta.env.DEV && typeof window !== 'undefined'
+    ? new URLSearchParams(window.location.search).get('devLiveCase')
+    : null;
+  const devLiveCase = devLiveCaseId
+    ? ep.allCases.find(caseItem => caseItem.id === devLiveCaseId)
+    : null;
+
+  if (devLiveCaseId && import.meta.env.DEV) {
+    if (!devLiveCase) return suspenseFallback;
+    return (
+      <LazyLoad name="StudentPanel">
+        <StudentPanel onExit={ep.handleRoleExit} preloadedCase={devLiveCase} />
+        <CommandPalette onSwitchRole={ep.handleRoleExit} />
+        <Toaster position="top-right" richColors closeButton />
+      </LazyLoad>
+    );
+  }
 
   // Landing page
   if (ep.userRole === 'none') {
@@ -632,20 +650,11 @@ function Footer({ currentCase }: { currentCase: CaseScenario | null }) {
             </div>
           )}
         </div>
-        {/* Anatomy mesh attribution — required by Ready Player Me's
-            CC BY-NC 4.0 license on the female base mesh (brunette-t).
-            The male MPFB body is CC0 so we credit it as a courtesy. */}
-        <p className="mt-2 text-[10px] text-muted-foreground/70">
-          Anatomical meshes:{' '}
-          <a href="https://readyplayer.me/" target="_blank" rel="noopener noreferrer" className="underline-offset-2 hover:underline">
-            Ready Player Me
-          </a>
-          {' '}(CC BY-NC 4.0) ·{' '}
-          <a href="https://static.makehumancommunity.org/" target="_blank" rel="noopener noreferrer" className="underline-offset-2 hover:underline">
-            MakeHuman / MPFB community
-          </a>
-          {' '}(CC0).
-        </p>
+        <div className="mt-2 text-[10px] text-muted-foreground/70">
+          <Suspense fallback={null}>
+            <AttributionsDialog />
+          </Suspense>
+        </div>
       </div>
     </footer>
   );

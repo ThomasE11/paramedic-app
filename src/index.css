@@ -1068,6 +1068,1733 @@ body {
     hsl(var(--background));
 }
 
+.live-management-shell {
+  position: relative;
+}
+
+.live-patient-banner,
+.live-scene-toggle,
+.live-progress-card {
+  transition: border-color 180ms ease, background 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.tactical-treatment-bay {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 1.25rem;
+  border: 1px solid rgba(125, 211, 252, 0.20);
+  background:
+    radial-gradient(circle at 50% 14%, rgba(14, 165, 233, 0.24), transparent 34rem),
+    radial-gradient(circle at 16% 85%, rgba(34, 197, 94, 0.11), transparent 28rem),
+    radial-gradient(circle at 86% 82%, rgba(251, 146, 60, 0.12), transparent 25rem),
+    linear-gradient(180deg, rgba(2, 6, 23, 0.95), rgba(8, 13, 27, 0.98) 52%, rgba(2, 6, 23, 0.96));
+  color: rgba(248, 250, 252, 0.94);
+  box-shadow:
+    0 32px 90px -46px rgba(2, 6, 23, 0.92),
+    inset 0 1px 0 rgba(255, 255, 255, 0.10),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.035);
+}
+
+.tactical-treatment-bay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(103, 232, 249, 0.08) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(103, 232, 249, 0.06) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 18%, rgba(0, 0, 0, 0.24));
+  background-size: 38px 38px, 38px 38px, auto;
+  mask-image: linear-gradient(180deg, black, rgba(0,0,0,0.8) 42%, rgba(0,0,0,0.45));
+}
+
+.tactical-treatment-bay::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(2, 6, 23, 0.76), transparent 22%, transparent 78%, rgba(2, 6, 23, 0.72)),
+    radial-gradient(circle at 50% 50%, transparent 45%, rgba(0, 0, 0, 0.34) 100%);
+}
+
+.tactical-treatment-bay .glass-panel,
+.tactical-treatment-bay .glass-control,
+.tactical-treatment-bay .bg-card {
+  background: rgba(8, 13, 27, 0.68);
+  border-color: rgba(148, 163, 184, 0.18);
+  color: rgba(248, 250, 252, 0.92);
+  box-shadow:
+    0 22px 60px -42px rgba(0, 0, 0, 0.95),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+}
+
+.tactical-treatment-bay .text-foreground {
+  color: rgba(248, 250, 252, 0.94);
+}
+
+.tactical-treatment-bay .text-muted-foreground {
+  color: rgba(203, 213, 225, 0.70);
+}
+
+.tactical-treatment-bay .border-border,
+.tactical-treatment-bay .border-slate-200,
+.tactical-treatment-bay .dark\:border-slate-800 {
+  border-color: rgba(148, 163, 184, 0.18);
+}
+
+.tactical-bay-workspace {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 0.75rem;
+}
+
+.tactical-patient-stage,
+.tactical-assessment-rail,
+.tactical-monitor-rail,
+.tactical-loadout-rail {
+  min-width: 0;
+}
+
+.tactical-assessment-rail,
+.tactical-monitor-rail,
+.tactical-loadout-rail {
+  scrollbar-color: rgba(45, 212, 191, 0.42) rgba(15, 23, 42, 0.32);
+}
+
+.tactical-monitor-rail,
+.tactical-loadout-rail {
+  display: flex;
+  flex-direction: column;
+}
+
+.tactical-monitor-rail {
+  gap: 0.75rem;
+}
+
+.tactical-loadout-rail {
+  gap: 0.82rem;
+}
+
+.tactical-assessment-rail .bg-card,
+.tactical-monitor-rail .bg-card,
+.tactical-loadout-rail .bg-card {
+  border-radius: 0.95rem;
+}
+
+.roadmap-panel {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1rem;
+  border: 1px solid rgba(125, 211, 252, 0.30);
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.78), rgba(2, 6, 23, 0.58)),
+    radial-gradient(circle at 0% 0%, rgba(20, 184, 166, 0.16), transparent 17rem);
+  padding: 0.82rem;
+  color: rgba(248, 250, 252, 0.94);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.08),
+    0 22px 48px -36px rgba(0,0,0,0.95);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+}
+
+.roadmap-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 0.62rem;
+  min-width: 0;
+  margin-bottom: 0.72rem;
+}
+
+.roadmap-panel-title h3 {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.095em;
+  text-transform: uppercase;
+  color: rgba(248, 250, 252, 0.96);
+}
+
+.roadmap-step-badge {
+  display: grid;
+  width: 1.72rem;
+  height: 1.72rem;
+  flex: none;
+  place-items: center;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 35% 25%, rgba(255,255,255,0.32), transparent 38%),
+    linear-gradient(135deg, #2dd4bf, #0891b2);
+  color: white;
+  font-size: 0.78rem;
+  font-weight: 950;
+  box-shadow: 0 0 0 4px rgba(45, 212, 191, 0.12), 0 0 24px rgba(45, 212, 191, 0.34);
+}
+
+.roadmap-scene-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.78fr) minmax(0, 1.22fr);
+  gap: 0.62rem;
+}
+
+.roadmap-dispatch-card {
+  min-width: 0;
+  border-radius: 0.78rem;
+  border: 1px solid rgba(45, 212, 191, 0.28);
+  background: rgba(2, 6, 23, 0.58);
+  padding: 0.68rem;
+}
+
+.roadmap-dispatch-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.54rem;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #2dd4bf;
+}
+
+.roadmap-dispatch-card p {
+  display: -webkit-box;
+  margin: 0.5rem 0 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  font-size: 0.74rem;
+  font-weight: 760;
+  line-height: 1.35;
+}
+
+.roadmap-dispatch-card > span {
+  display: -webkit-box;
+  margin-top: 0.42rem;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: 0.58rem;
+  color: rgba(203, 213, 225, 0.72);
+}
+
+.roadmap-dispatch-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.38rem;
+  margin-top: 0.62rem;
+  border-top: 1px solid rgba(125, 211, 252, 0.16);
+  padding-top: 0.48rem;
+  font-size: 0.62rem;
+  color: rgba(224, 242, 254, 0.88);
+}
+
+.roadmap-scene-image {
+  width: 100%;
+  min-height: 9.2rem;
+  max-height: 11.5rem;
+  border-radius: 0.82rem;
+  border: 1px solid rgba(255,255,255,0.12);
+  object-fit: cover;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+.roadmap-scene-image-empty {
+  display: grid;
+  place-items: center;
+  background: rgba(15, 23, 42, 0.62);
+  color: rgba(186, 230, 253, 0.72);
+}
+
+.roadmap-context-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.4rem;
+  margin-top: 0.66rem;
+}
+
+.roadmap-context-row span {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 0.32rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: rgba(2, 6, 23, 0.44);
+  padding: 0.42rem 0.48rem;
+  font-size: 0.54rem;
+  font-weight: 780;
+  color: rgba(226, 232, 240, 0.82);
+}
+
+.roadmap-anatomy-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.48rem;
+}
+
+.roadmap-anatomy-tile {
+  display: flex;
+  min-width: 0;
+  min-height: 4.4rem;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 0.78rem;
+  border: 1px solid rgba(45, 212, 191, 0.20);
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.62), rgba(2, 6, 23, 0.46));
+  padding: 0.62rem;
+}
+
+.roadmap-anatomy-tile svg {
+  flex: none;
+  color: #2dd4bf;
+}
+
+.roadmap-anatomy-tile p,
+.roadmap-equipment-board > p,
+.roadmap-key-actions p {
+  margin: 0;
+  font-size: 0.54rem;
+  font-weight: 900;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: rgba(186, 230, 253, 0.70);
+}
+
+.roadmap-anatomy-tile span {
+  display: -webkit-box;
+  margin-top: 0.18rem;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: 0.58rem;
+  line-height: 1.25;
+  color: rgba(248, 250, 252, 0.86);
+}
+
+.roadmap-anatomy-progress {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-top: 0.62rem;
+  font-size: 0.58rem;
+  color: rgba(203, 213, 225, 0.70);
+}
+
+.roadmap-anatomy-progress strong {
+  color: #2dd4bf;
+}
+
+.roadmap-bag-strip {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.48rem;
+}
+
+.roadmap-bag-tile {
+  min-width: 0;
+  border-radius: 0.76rem;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: rgba(2, 6, 23, 0.42);
+  padding: 0.38rem;
+  text-align: center;
+  opacity: 0.78;
+  transition: transform 180ms ease, opacity 180ms ease, border-color 180ms ease;
+}
+
+.roadmap-bag-tile[data-active="true"] {
+  transform: translateY(-0.08rem);
+  border-color: rgba(45, 212, 191, 0.54);
+  opacity: 1;
+  box-shadow: 0 0 0 1px rgba(45, 212, 191, 0.16), 0 16px 28px -22px rgba(45, 212, 191, 0.50);
+}
+
+.roadmap-bag-tile img {
+  width: 100%;
+  height: 2.7rem;
+  object-fit: contain;
+  filter: saturate(1.12) contrast(1.06);
+}
+
+.roadmap-bag-tile span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.45rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(248, 250, 252, 0.84);
+}
+
+.roadmap-equipment-board {
+  margin-top: 0.72rem;
+  border-radius: 0.86rem;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: rgba(2, 6, 23, 0.32);
+  padding: 0.62rem;
+}
+
+.roadmap-equipment-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.48rem;
+  margin-top: 0.5rem;
+}
+
+.roadmap-equipment-tile {
+  min-width: 0;
+  border-radius: 0.7rem;
+  border: 1px solid rgba(125, 211, 252, 0.14);
+  background: rgba(15, 23, 42, 0.54);
+  padding: 0.42rem;
+  text-align: center;
+}
+
+.roadmap-equipment-tile img {
+  width: 100%;
+  height: 2.86rem;
+  object-fit: contain;
+  filter: saturate(1.08) contrast(1.05);
+}
+
+.roadmap-equipment-tile span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.5rem;
+  font-weight: 850;
+  color: rgba(248, 250, 252, 0.82);
+}
+
+.roadmap-mini-timeline {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.42rem;
+  border-bottom: 1px solid rgba(125, 211, 252, 0.15);
+  padding-bottom: 0.62rem;
+}
+
+.roadmap-mini-event {
+  position: relative;
+  min-width: 0;
+  text-align: center;
+}
+
+.roadmap-mini-event::after {
+  content: '';
+  display: block;
+  width: 0.52rem;
+  height: 0.52rem;
+  margin: 0.26rem auto 0;
+  border-radius: 999px;
+  background: #2dd4bf;
+  box-shadow: 0 0 0 4px rgba(45, 212, 191, 0.10);
+}
+
+.roadmap-mini-event[data-tone="alert"]::after {
+  background: #fb7185;
+  box-shadow: 0 0 0 4px rgba(251, 113, 133, 0.10);
+}
+
+.roadmap-mini-event[data-tone="reassess"]::after {
+  background: #fbbf24;
+  box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.10);
+}
+
+.roadmap-mini-event span {
+  display: block;
+  font-family: 'IBM Plex Mono', 'Geist Mono', monospace;
+  font-size: 0.52rem;
+  color: rgba(224, 242, 254, 0.82);
+}
+
+.roadmap-mini-event p {
+  display: -webkit-box;
+  margin: 0.22rem 0 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: 0.5rem;
+  line-height: 1.12;
+  color: rgba(248, 250, 252, 0.84);
+}
+
+.roadmap-debrief-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1fr) minmax(5rem, 0.52fr);
+  gap: 0.55rem;
+  margin-top: 0.62rem;
+}
+
+.roadmap-vitals-stack,
+.roadmap-key-actions,
+.roadmap-outcome-score {
+  min-width: 0;
+  border-radius: 0.76rem;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: rgba(2, 6, 23, 0.42);
+  padding: 0.56rem;
+}
+
+.roadmap-vitals-stack {
+  display: grid;
+  gap: 0.26rem;
+}
+
+.roadmap-vitals-stack div {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 0.35rem;
+}
+
+.roadmap-vitals-stack span {
+  font-size: 0.56rem;
+  font-weight: 900;
+  color: #2dd4bf;
+}
+
+.roadmap-vitals-stack strong {
+  font-family: 'IBM Plex Mono', 'Geist Mono', monospace;
+  font-size: 0.78rem;
+}
+
+.roadmap-vitals-stack em {
+  font-size: 0.5rem;
+  font-style: normal;
+  color: rgba(203, 213, 225, 0.62);
+}
+
+.roadmap-key-actions {
+  display: grid;
+  gap: 0.34rem;
+}
+
+.roadmap-key-actions span {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.34rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.58rem;
+  color: rgba(248, 250, 252, 0.84);
+}
+
+.roadmap-key-actions svg {
+  flex: none;
+  color: #2dd4bf;
+}
+
+.roadmap-outcome-score {
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
+
+.roadmap-outcome-score strong {
+  font-family: 'IBM Plex Mono', 'Geist Mono', monospace;
+  font-size: 1.72rem;
+  line-height: 1;
+}
+
+.roadmap-outcome-score span {
+  margin-top: -0.18rem;
+  font-size: 0.58rem;
+  color: rgba(203, 213, 225, 0.62);
+}
+
+.roadmap-outcome-score p {
+  margin: 0.18rem 0 0;
+  font-size: 0.58rem;
+  font-weight: 850;
+  color: #2dd4bf;
+}
+
+.primary-survey-compact-grid {
+  align-items: stretch;
+}
+
+.tactical-hud-tile {
+  min-height: 3.65rem;
+  border-radius: 0.7rem;
+  border: 1px solid rgba(125, 211, 252, 0.18);
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.88), rgba(2, 6, 23, 0.62)),
+    radial-gradient(circle at 50% 0%, rgba(34, 211, 238, 0.18), transparent 80%);
+  padding: 0.55rem 0.65rem;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.10), 0 18px 34px -28px rgba(0,0,0,0.95);
+}
+
+.tactical-hud-tile span,
+.tactical-hud-tile em {
+  display: block;
+  font-size: 0.48rem;
+  font-style: normal;
+  font-weight: 800;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+  color: rgba(186, 230, 253, 0.62);
+}
+
+.tactical-hud-tile strong {
+  display: block;
+  margin-top: 0.08rem;
+  font-family: 'IBM Plex Mono', 'Geist Mono', monospace;
+  font-size: 1.16rem;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.97);
+  text-shadow: 0 0 16px rgba(34, 211, 238, 0.26);
+}
+
+.tactical-hud-warning strong {
+  color: #fbbf24;
+  text-shadow: 0 0 16px rgba(251, 191, 36, 0.38);
+}
+
+.tactical-hud-clear strong {
+  color: #34d399;
+  text-shadow: 0 0 16px rgba(52, 211, 153, 0.34);
+}
+
+.tactical-objective-chip {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.45rem;
+  border-radius: 999px;
+  border: 1px solid rgba(125, 211, 252, 0.16);
+  background: rgba(2, 6, 23, 0.44);
+  padding: 0.48rem 0.68rem;
+  color: rgba(226, 232, 240, 0.82);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+.tactical-objective-chip span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tactical-coaching-strip {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.55rem;
+  border-radius: 0.9rem;
+  border: 1px solid rgba(125, 211, 252, 0.18);
+  background:
+    linear-gradient(90deg, rgba(14, 165, 233, 0.18), rgba(2, 6, 23, 0.34)),
+    rgba(2, 6, 23, 0.44);
+  padding: 0.56rem 0.64rem;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.07), 0 18px 40px -34px rgba(0,0,0,0.92);
+}
+
+.tactical-care-feed {
+  margin-top: 0.75rem;
+  border-radius: 0.95rem;
+  border: 1px solid rgba(125, 211, 252, 0.16);
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.64), rgba(2, 6, 23, 0.46)),
+    radial-gradient(circle at 100% 0%, rgba(34, 211, 238, 0.10), transparent 16rem);
+  padding: 0.62rem;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.07), 0 18px 42px -34px rgba(0,0,0,0.95);
+}
+
+.tactical-care-feed-head {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: rgba(186, 230, 253, 0.70);
+}
+
+.tactical-care-feed-head span {
+  font-size: 0.5rem;
+  font-weight: 900;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.tactical-care-feed-grid {
+  margin-top: 0.5rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(13rem, 100%), 1fr));
+  gap: 0.45rem;
+}
+
+.tactical-care-feed-item {
+  display: flex;
+  min-width: 0;
+  min-height: 3.15rem;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 0.72rem;
+  border: 1px solid rgba(148, 163, 184, 0.13);
+  background: rgba(2, 6, 23, 0.38);
+  padding: 0.48rem 0.58rem;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.045);
+}
+
+.tactical-care-feed-item svg {
+  flex: none;
+  color: rgba(186, 230, 253, 0.76);
+}
+
+.tactical-care-feed-item p {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.62rem;
+  font-weight: 850;
+  line-height: 1.05;
+  color: rgba(248, 250, 252, 0.94);
+}
+
+.tactical-care-feed-item span {
+  display: block;
+  margin-top: 0.12rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.53rem;
+  color: rgba(203, 213, 225, 0.68);
+}
+
+/* One-tap game actions on feed items: treat this finding / reassess this loop */
+.tactical-care-feed-action {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-top: 0.28rem;
+  padding: 0.18rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid rgba(103, 232, 249, 0.38);
+  background: rgba(8, 47, 73, 0.55);
+  font-size: 0.55rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(165, 243, 252, 0.95);
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.tactical-care-feed-action:hover {
+  background: rgba(8, 47, 73, 0.9);
+  border-color: rgba(103, 232, 249, 0.7);
+}
+
+.tactical-care-feed-item[data-tone="critical"] {
+  border-color: rgba(251, 113, 133, 0.30);
+  background: linear-gradient(180deg, rgba(127, 29, 29, 0.34), rgba(2, 6, 23, 0.34));
+}
+
+.tactical-care-feed-item[data-tone="critical"] svg {
+  color: #fb7185;
+}
+
+.tactical-care-feed-item[data-tone="warning"],
+.tactical-care-feed-item[data-tone="loop"] {
+  border-color: rgba(251, 191, 36, 0.28);
+  background: linear-gradient(180deg, rgba(69, 48, 11, 0.36), rgba(2, 6, 23, 0.34));
+}
+
+.tactical-care-feed-item[data-tone="warning"] svg,
+.tactical-care-feed-item[data-tone="loop"] svg {
+  color: #fbbf24;
+}
+
+.tactical-care-feed-item[data-tone="normal"] {
+  border-color: rgba(52, 211, 153, 0.26);
+}
+
+.tactical-care-feed-item[data-tone="normal"] svg {
+  color: #34d399;
+}
+
+.tactical-care-feed-item[data-tone="visual"] svg {
+  color: #67e8f9;
+}
+
+.tactical-monitor-card {
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 1.05rem;
+  border: 1px solid rgba(74, 222, 128, 0.22);
+  background:
+    linear-gradient(180deg, rgba(2, 6, 23, 0.72), rgba(2, 6, 23, 0.46)),
+    radial-gradient(circle at 50% 0%, rgba(34, 197, 94, 0.14), transparent 16rem);
+  box-shadow:
+    0 20px 46px -34px rgba(0, 0, 0, 0.95),
+    inset 0 1px 0 rgba(255,255,255,0.07);
+}
+
+.tactical-bay-timeline {
+  order: 5;
+  min-width: 0;
+  border-radius: 1rem;
+  border: 1px solid rgba(125, 211, 252, 0.16);
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.74), rgba(2, 6, 23, 0.54)),
+    linear-gradient(90deg, rgba(20, 184, 166, 0.12), rgba(99, 102, 241, 0.08), rgba(251, 191, 36, 0.08));
+  padding: 0.68rem;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.07), 0 20px 46px -34px rgba(0,0,0,0.95);
+}
+
+.tactical-bay-timeline-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.tactical-bay-timeline-head p {
+  margin: 0;
+  font-size: 0.5rem;
+  font-weight: 900;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(186, 230, 253, 0.62);
+}
+
+.tactical-bay-timeline-head strong {
+  display: block;
+  margin-top: 0.04rem;
+  font-family: 'IBM Plex Mono', 'Geist Mono', monospace;
+  font-size: 0.9rem;
+  color: rgba(248, 250, 252, 0.94);
+}
+
+.tactical-bay-timeline-head > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.55rem;
+  font-weight: 850;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(203, 213, 225, 0.58);
+}
+
+.tactical-bay-timeline-track {
+  margin-top: 0.62rem;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(12.5rem, 1fr);
+  gap: 0.5rem;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  padding-bottom: 0.15rem;
+  scrollbar-color: rgba(45, 212, 191, 0.42) rgba(15, 23, 42, 0.28);
+}
+
+.tactical-bay-timeline-item,
+.tactical-bay-timeline-empty {
+  display: grid;
+  min-width: 0;
+  min-height: 4.2rem;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 0.78rem;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  background: rgba(2, 6, 23, 0.42);
+  padding: 0.55rem 0.62rem;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.045);
+}
+
+.tactical-bay-timeline-item {
+  grid-template-columns: auto auto minmax(0, 1fr);
+}
+
+.tactical-bay-timeline-empty {
+  display: flex;
+  grid-column: 1 / -1;
+  color: rgba(226, 232, 240, 0.76);
+}
+
+.tactical-bay-timeline-time {
+  min-width: 2.35rem;
+  font-family: 'IBM Plex Mono', 'Geist Mono', monospace;
+  font-size: 0.58rem;
+  font-weight: 850;
+  color: rgba(186, 230, 253, 0.60);
+}
+
+.tactical-bay-timeline-dot {
+  display: grid;
+  width: 1.75rem;
+  height: 1.75rem;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.75);
+  color: rgba(186, 230, 253, 0.78);
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.14);
+}
+
+.tactical-bay-timeline-item p {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.66rem;
+  font-weight: 850;
+  line-height: 1.05;
+  color: rgba(248, 250, 252, 0.94);
+}
+
+.tactical-bay-timeline-item span,
+.tactical-bay-timeline-empty span {
+  display: block;
+  margin-top: 0.12rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.54rem;
+  color: rgba(203, 213, 225, 0.68);
+}
+
+.tactical-bay-timeline-item[data-tone="treatment"] .tactical-bay-timeline-dot {
+  color: #a78bfa;
+}
+
+.tactical-bay-timeline-item[data-tone="assessment"] .tactical-bay-timeline-dot,
+.tactical-bay-timeline-item[data-tone="vitals"] .tactical-bay-timeline-dot {
+  color: #67e8f9;
+}
+
+.tactical-bay-timeline-item[data-tone="reassess"] {
+  border-color: rgba(251, 191, 36, 0.26);
+  background: rgba(69, 48, 11, 0.32);
+}
+
+.tactical-bay-timeline-item[data-tone="reassess"] .tactical-bay-timeline-dot {
+  color: #fbbf24;
+}
+
+.tactical-bay-timeline-item[data-tone="alert"] {
+  border-color: rgba(251, 113, 133, 0.30);
+  background: rgba(127, 29, 29, 0.30);
+}
+
+.tactical-bay-timeline-item[data-tone="alert"] .tactical-bay-timeline-dot {
+  color: #fb7185;
+}
+
+.tactical-corner {
+  position: absolute;
+  z-index: 2;
+  width: 2.2rem;
+  height: 2.2rem;
+  pointer-events: none;
+  border-color: rgba(103, 232, 249, 0.62);
+}
+
+.tactical-corner-tl { left: 0.75rem; top: 0.75rem; border-left: 1px solid; border-top: 1px solid; }
+.tactical-corner-tr { right: 0.75rem; top: 0.75rem; border-right: 1px solid; border-top: 1px solid; }
+.tactical-corner-bl { left: 0.75rem; bottom: 0.75rem; border-left: 1px solid; border-bottom: 1px solid; }
+.tactical-corner-br { right: 0.75rem; bottom: 0.75rem; border-right: 1px solid; border-bottom: 1px solid; }
+
+.tactical-patient-viewport {
+  position: relative;
+  overflow: hidden;
+  min-height: min(74vh, 47rem);
+  border-radius: 1.1rem;
+  border: 1px solid rgba(125, 211, 252, 0.18);
+  background:
+    radial-gradient(circle at 50% 28%, rgba(125, 211, 252, 0.14), transparent 26rem),
+    linear-gradient(180deg, rgba(15, 23, 42, 0.80), rgba(2, 6, 23, 0.92));
+  box-shadow:
+    0 26px 80px -48px rgba(0, 0, 0, 1),
+    inset 0 0 0 1px rgba(255,255,255,0.04);
+}
+
+.tactical-patient-viewport > .glass-panel {
+  min-height: inherit;
+  border: 0;
+  border-radius: 1.1rem;
+  background: transparent;
+  box-shadow: none;
+}
+
+.tactical-patient-viewport .patient-exam-header {
+  position: absolute;
+  top: 0.72rem;
+  right: 0.72rem;
+  left: 0.72rem;
+  z-index: 24;
+  border: 1px solid rgba(125, 211, 252, 0.18);
+  border-radius: 0.95rem;
+  background:
+    linear-gradient(180deg, rgba(2, 6, 23, 0.72), rgba(2, 6, 23, 0.42)),
+    radial-gradient(circle at 0% 0%, rgba(45, 212, 191, 0.14), transparent 16rem);
+  padding: 0.58rem 0.78rem;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 16px 34px -28px rgba(0, 0, 0, 0.95), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+.tactical-patient-viewport .patient-exam-header > div:first-child {
+  min-width: 0;
+}
+
+.tactical-patient-viewport .patient-exam-header h2 {
+  max-width: 16rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: rgba(248, 250, 252, 0.96);
+}
+
+.tactical-patient-viewport .patient-exam-header .rounded-lg,
+.tactical-patient-viewport .patient-exam-header .rounded-full {
+  border-color: rgba(125, 211, 252, 0.18);
+  background-color: rgba(15, 23, 42, 0.54);
+}
+
+.tactical-patient-viewport .patient-exam-summary,
+.tactical-patient-viewport .patient-realism-strip,
+.tactical-patient-viewport .patient-region-selector {
+  position: absolute;
+  right: 0.72rem;
+  left: 0.72rem;
+  z-index: 23;
+  border: 1px solid rgba(125, 211, 252, 0.14);
+  border-radius: 0.85rem;
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.62), rgba(2, 6, 23, 0.42)) !important;
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+}
+
+.tactical-patient-viewport .patient-exam-summary {
+  top: 4.85rem;
+  padding: 0.42rem;
+}
+
+.tactical-patient-viewport .patient-exam-summary > div {
+  border-color: rgba(148, 163, 184, 0.16);
+  background: rgba(2, 6, 23, 0.42);
+  padding: 0.42rem 0.5rem;
+}
+
+.tactical-patient-viewport .patient-exam-summary p:first-child {
+  font-size: 0.46rem;
+  letter-spacing: 0.12em;
+}
+
+.tactical-patient-viewport .patient-realism-strip {
+  top: 7.58rem;
+  padding: 0.44rem;
+}
+
+.tactical-patient-viewport .patient-realism-strip > div {
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  gap: 0.44rem;
+}
+
+.tactical-patient-viewport .patient-realism-strip > div > div {
+  border-color: rgba(148, 163, 184, 0.16);
+  background: rgba(2, 6, 23, 0.40);
+  padding: 0.42rem 0.54rem;
+}
+
+.tactical-patient-viewport .patient-realism-strip p,
+.tactical-patient-viewport .patient-region-selector p {
+  color: rgba(186, 230, 253, 0.72);
+}
+
+.tactical-patient-viewport .patient-region-selector {
+  right: 1rem;
+  bottom: 1rem;
+  left: 1rem;
+  padding: 0.5rem;
+}
+
+.tactical-patient-viewport .patient-region-selector > div:first-child {
+  display: none;
+}
+
+.tactical-patient-viewport .patient-region-selector button {
+  min-height: 2.6rem;
+  border-radius: 0.7rem;
+  border-color: rgba(125, 211, 252, 0.14);
+  background: rgba(2, 6, 23, 0.54);
+  color: rgba(248, 250, 252, 0.88);
+}
+
+.tactical-patient-viewport .patient-model-frame {
+  min-height: inherit;
+  padding-top: 0;
+}
+
+.tactical-patient-viewport .patient-model-canvas-shell {
+  min-height: min(66vh, 41rem);
+  height: min(66vh, 41rem);
+  background:
+    radial-gradient(circle at 50% 36%, rgba(148, 163, 184, 0.12), transparent 20rem),
+    linear-gradient(180deg, rgba(15, 23, 42, 0.18), rgba(2, 6, 23, 0.34));
+}
+
+.tactical-patient-viewport .patient-model-canvas-shell.patient-first-canvas {
+  display: flex;
+  min-height: min(74vh, 50rem);
+  height: auto;
+  flex-direction: column;
+}
+
+.tactical-patient-viewport .patient-model-canvas-stage.patient-first-canvas-stage {
+  min-height: 25rem;
+  height: min(54vh, 38rem);
+  flex: 1 1 auto;
+}
+
+.tactical-patient-viewport canvas {
+  filter: contrast(1.05) saturate(1.08);
+}
+
+.patient-first-exam-dock {
+  background:
+    linear-gradient(180deg, rgba(2, 6, 23, 0.92), rgba(8, 17, 30, 0.84)),
+    radial-gradient(circle at 12% 0%, rgba(45, 212, 191, 0.14), transparent 18rem),
+    radial-gradient(circle at 90% 20%, rgba(56, 189, 248, 0.12), transparent 16rem);
+  box-shadow:
+    0 24px 56px -38px rgba(0, 0, 0, 1),
+    inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+.patient-first-exam-grid {
+  display: grid;
+  gap: 0.72rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.patient-first-technique-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.42rem;
+}
+
+.patient-first-technique-button {
+  display: flex;
+  min-height: 3.9rem;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.38rem;
+  border-radius: 0.78rem;
+  border-width: 1px;
+  padding: 0.5rem 0.48rem;
+  text-align: left;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+  transition: transform 160ms ease, border-color 160ms ease, background-color 160ms ease;
+}
+
+.patient-first-technique-button:hover {
+  transform: translateY(-1px);
+}
+
+.patient-first-target-track {
+  display: flex;
+  gap: 0.4rem;
+  overflow-x: auto;
+  padding-bottom: 0.12rem;
+  scrollbar-color: rgba(45, 212, 191, 0.45) rgba(15, 23, 42, 0.35);
+}
+
+.patient-first-target-chip {
+  position: relative;
+  display: inline-flex;
+  min-height: 1.95rem;
+  max-width: 13rem;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(15, 23, 42, 0.64);
+  padding: 0.44rem 0.7rem;
+  color: rgba(226, 232, 240, 0.86);
+  font-size: 0.58rem;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.patient-first-target-chip.is-selected {
+  border-color: rgba(125, 211, 252, 0.48);
+  background: rgba(14, 116, 144, 0.44);
+  color: #fff;
+  box-shadow: 0 0 20px -12px rgba(34, 211, 238, 0.95);
+}
+
+.patient-first-target-chip.is-done {
+  border-color: rgba(52, 211, 153, 0.34);
+  background: rgba(6, 78, 59, 0.42);
+  color: rgba(236, 253, 245, 0.96);
+}
+
+.patient-first-feedback {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.patient-first-loupe-column {
+  min-width: 0;
+}
+
+.patient-first-context-panel {
+  min-height: 100%;
+  border-radius: 0.95rem;
+  border: 1px solid rgba(125, 211, 252, 0.14);
+  background: rgba(2, 6, 23, 0.34);
+  padding: 0.75rem;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+@media (min-width: 980px) {
+  .patient-first-exam-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(13.5rem, 0.42fr);
+  }
+}
+
+.tactical-reticle {
+  position: absolute;
+  left: 50%;
+  top: 49%;
+  z-index: 8;
+  width: 7rem;
+  height: 7rem;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  opacity: 0.22;
+  background:
+    linear-gradient(rgba(103,232,249,0.8), rgba(103,232,249,0.8)) 50% 0 / 1px 1.15rem no-repeat,
+    linear-gradient(rgba(103,232,249,0.8), rgba(103,232,249,0.8)) 50% 100% / 1px 1.15rem no-repeat,
+    linear-gradient(90deg, rgba(103,232,249,0.8), rgba(103,232,249,0.8)) 0 50% / 1.15rem 1px no-repeat,
+    linear-gradient(90deg, rgba(103,232,249,0.8), rgba(103,232,249,0.8)) 100% 50% / 1.15rem 1px no-repeat;
+  border: 1px solid rgba(103, 232, 249, 0.18);
+  border-radius: 999px;
+}
+
+.tactical-viewport-label {
+  position: absolute;
+  left: 0.85rem;
+  bottom: 0.85rem;
+  z-index: 20;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border-radius: 999px;
+  border: 1px solid rgba(125, 211, 252, 0.22);
+  background: rgba(2, 6, 23, 0.64);
+  padding: 0.38rem 0.58rem;
+  color: rgba(224, 242, 254, 0.88);
+  box-shadow: 0 14px 32px -22px rgba(0,0,0,0.95);
+  backdrop-filter: blur(14px);
+}
+
+.tactical-viewport-label span {
+  font-size: 0.5rem;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(186, 230, 253, 0.58);
+}
+
+.tactical-viewport-label strong {
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+}
+
+.tactical-equipment-ribbon {
+  position: absolute;
+  right: 0.85rem;
+  bottom: 0.85rem;
+  z-index: 21;
+  width: min(27rem, calc(100% - 8rem));
+  pointer-events: none;
+  border-radius: 1rem;
+  border: 1px solid rgba(125, 211, 252, 0.18);
+  background:
+    linear-gradient(180deg, rgba(2, 6, 23, 0.76), rgba(2, 6, 23, 0.54)),
+    radial-gradient(circle at 12% 0%, rgba(45, 212, 191, 0.16), transparent 14rem);
+  padding: 0.62rem;
+  color: rgba(241, 245, 249, 0.92);
+  box-shadow: 0 22px 44px -30px rgba(0, 0, 0, 0.95), inset 0 1px 0 rgba(255,255,255,0.08);
+  backdrop-filter: blur(18px) saturate(145%);
+  -webkit-backdrop-filter: blur(18px) saturate(145%);
+}
+
+.tactical-equipment-ribbon.is-empty {
+  width: auto;
+  max-width: min(18rem, calc(100% - 7rem));
+  padding: 0.42rem 0.55rem;
+  opacity: 0.82;
+}
+
+.tactical-equipment-ribbon.is-empty .tactical-gear-track {
+  display: none;
+}
+
+.tactical-equipment-ribbon.is-empty .tactical-equipment-ribbon-head {
+  gap: 0.55rem;
+}
+
+.tactical-equipment-ribbon.is-empty .tactical-equipment-ribbon-head p {
+  font-size: 0.42rem;
+}
+
+.tactical-equipment-ribbon.is-empty .tactical-equipment-ribbon-head strong {
+  max-width: 12rem;
+  font-size: 0.58rem;
+}
+
+.tactical-patient-viewport:has(.patient-first-exam-dock) .tactical-viewport-label,
+.tactical-patient-viewport:has(.patient-first-exam-dock) .tactical-equipment-ribbon.is-empty {
+  display: none;
+}
+
+.tactical-patient-viewport:has(.patient-first-exam-dock) .tactical-equipment-ribbon:not(.is-empty) {
+  top: 4.75rem;
+  bottom: auto;
+  width: min(21rem, calc(100% - 2rem));
+}
+
+.tactical-equipment-ribbon-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.tactical-equipment-ribbon-head p {
+  margin: 0;
+  font-size: 0.48rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(186, 230, 253, 0.62);
+}
+
+.tactical-equipment-ribbon-head strong {
+  display: block;
+  margin-top: 0.08rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.68rem;
+  letter-spacing: 0.03em;
+}
+
+.tactical-equipment-ribbon-head > span {
+  width: 0.58rem;
+  height: 0.58rem;
+  flex: none;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.56);
+  box-shadow: 0 0 0 4px rgba(148, 163, 184, 0.08);
+}
+
+.tactical-equipment-ribbon-head > span.is-pending {
+  background: #fbbf24;
+  box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.12), 0 0 18px rgba(251, 191, 36, 0.42);
+}
+
+.tactical-equipment-ribbon-head > span.is-confirmed {
+  background: #34d399;
+  box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.12), 0 0 18px rgba(52, 211, 153, 0.36);
+}
+
+.tactical-gear-track {
+  margin-top: 0.5rem;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.tactical-gear-chip,
+.tactical-gear-empty {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.45rem;
+  border-radius: 0.72rem;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  background: rgba(15, 23, 42, 0.62);
+  padding: 0.42rem 0.5rem;
+}
+
+.tactical-gear-chip svg,
+.tactical-gear-empty svg {
+  flex: none;
+  color: rgba(186, 230, 253, 0.72);
+}
+
+.tactical-gear-chip p {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.64rem;
+  font-weight: 800;
+  line-height: 1.05;
+}
+
+.tactical-gear-chip span,
+.tactical-gear-empty span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.52rem;
+  color: rgba(203, 213, 225, 0.68);
+}
+
+.tactical-gear-chip[data-status="needs-recheck"] {
+  border-color: rgba(251, 191, 36, 0.30);
+  background: rgba(69, 48, 11, 0.42);
+}
+
+.tactical-gear-chip[data-status="confirmed"] {
+  border-color: rgba(52, 211, 153, 0.30);
+  background: rgba(6, 78, 59, 0.36);
+}
+
+.tactical-gear-chip[data-tone="airway"] svg { color: #67e8f9; }
+.tactical-gear-chip[data-tone="circulation"] svg { color: #fb7185; }
+.tactical-gear-chip[data-tone="medication"] svg { color: #a78bfa; }
+.tactical-gear-chip[data-tone="transport"] svg { color: #fbbf24; }
+.tactical-gear-chip[data-tone="exposure"] svg { color: #34d399; }
+
+.tactical-gear-empty {
+  color: rgba(226, 232, 240, 0.76);
+}
+
+.tactical-loadout-dock .glass-panel {
+  border-color: rgba(52, 211, 153, 0.18);
+  background:
+    linear-gradient(180deg, rgba(6, 18, 31, 0.86), rgba(3, 10, 22, 0.82)),
+    radial-gradient(circle at 20% 0%, rgba(16, 185, 129, 0.14), transparent 24rem);
+}
+
+.tactical-loadout-dock .tactical-loadout-panel {
+  display: flex;
+  max-height: min(74vh, 52rem);
+  min-height: min(48rem, 70vh);
+  flex-direction: column;
+}
+
+.tactical-loadout-dock .tactical-loadout-panel > div:last-child {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: rgba(45, 212, 191, 0.48) rgba(15, 23, 42, 0.36);
+}
+
+.tactical-loadout-dock .jump-bag-button {
+  min-height: 8.55rem;
+  background: rgba(2, 6, 23, 0.50);
+  border-color: rgba(148, 163, 184, 0.16);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 18px 40px -34px rgba(0,0,0,0.95);
+}
+
+.tactical-loadout-dock .jump-bag-button:hover,
+.tactical-loadout-dock .jump-bag-button[aria-pressed="true"] {
+  background: rgba(8, 47, 73, 0.46);
+  border-color: rgba(125, 211, 252, 0.36);
+}
+
+.tactical-loadout-dock .equipment-replica,
+.tactical-loadout-dock .product-miniature {
+  filter: saturate(1.08) contrast(1.04);
+}
+
+.tactical-loadout-dock .jump-bag-illustration {
+  height: 4.95rem;
+  min-width: 6.2rem;
+}
+
+.tactical-loadout-dock .equipment-board {
+  max-height: 24rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+@media (min-width: 1180px) {
+  .live-management-shell {
+    margin-top: -0.35rem;
+  }
+
+  .live-patient-banner {
+    position: relative;
+    z-index: 14;
+    border-color: rgba(125, 211, 252, 0.20);
+    background:
+      linear-gradient(90deg, rgba(2, 6, 23, 0.86), rgba(8, 18, 32, 0.74), rgba(2, 6, 23, 0.78));
+    color: rgba(248, 250, 252, 0.96);
+    box-shadow:
+      0 24px 56px -42px rgba(2, 6, 23, 0.94),
+      inset 0 1px 0 rgba(255,255,255,0.08);
+  }
+
+  .live-patient-banner h2 {
+    color: rgba(248, 250, 252, 0.98);
+  }
+
+  .live-patient-banner .text-muted-foreground {
+    color: rgba(203, 213, 225, 0.72);
+  }
+
+  .live-patient-banner > div:first-child {
+    gap: 0.85rem;
+  }
+
+  .live-patient-banner > div:last-child {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.45rem;
+  }
+
+  .live-patient-banner button {
+    height: 1.9rem;
+    border-color: rgba(125, 211, 252, 0.20);
+    background: rgba(2, 6, 23, 0.34);
+    color: rgba(224, 242, 254, 0.90);
+  }
+
+  .live-scene-toggle,
+  .live-scene-details,
+  .live-progress-grid {
+    display: none;
+  }
+
+  .tactical-treatment-bay {
+    width: min(calc(100vw - 2rem), 1680px);
+    margin-left: calc(50% - min(calc(100vw - 2rem), 1680px) / 2);
+  }
+
+  .tactical-bay-workspace {
+    display: grid;
+    grid-template-columns: minmax(17rem, 0.68fr) minmax(0, 2.25fr) minmax(19rem, 0.82fr);
+    grid-template-areas:
+      "assessment patient monitor"
+      "assessment patient monitor"
+      "timeline timeline timeline";
+    align-items: start;
+    gap: 0.82rem;
+    padding: 0.82rem;
+  }
+
+  .tactical-bay-command {
+    padding-block: 0.68rem !important;
+  }
+
+  .tactical-bay-command > div:first-child {
+    gap: 0.65rem;
+  }
+
+  .tactical-bay-command .tactical-hud-tile {
+    min-height: 3.05rem;
+    padding: 0.52rem 0.7rem;
+  }
+
+  .tactical-bay-command .tactical-hud-tile strong {
+    font-size: 1rem;
+  }
+
+  .tactical-bay-command .tactical-objective-chip {
+    padding: 0.38rem 0.58rem;
+  }
+
+  .tactical-patient-stage {
+    grid-area: patient;
+  }
+
+  .tactical-patient-viewport .patient-exam-summary,
+  .tactical-patient-viewport .patient-realism-strip {
+    display: none;
+  }
+
+  .tactical-patient-viewport .patient-exam-header {
+    right: 1rem;
+    left: 1rem;
+    width: min(31rem, calc(100% - 2rem));
+    padding: 0.5rem 0.68rem;
+  }
+
+  .tactical-patient-viewport .patient-exam-header h2 {
+    max-width: 13.5rem;
+  }
+
+  .tactical-patient-viewport .patient-model-canvas-shell {
+    background:
+      radial-gradient(circle at 50% 18%, rgba(34, 211, 238, 0.12), transparent 24rem),
+      radial-gradient(circle at 50% 74%, rgba(15, 23, 42, 0.86), transparent 30rem),
+      linear-gradient(180deg, rgba(4, 10, 20, 0.96), rgba(11, 20, 31, 0.9) 50%, rgba(2, 6, 23, 0.96));
+  }
+
+  .tactical-patient-viewport .patient-region-selector {
+    right: 1.25rem;
+    bottom: 1.15rem;
+    left: 1.25rem;
+    background:
+      linear-gradient(180deg, rgba(2, 6, 23, 0.42), rgba(2, 6, 23, 0.30)) !important;
+  }
+
+  .tactical-assessment-rail {
+    grid-area: assessment;
+    max-height: min(92vh, 64rem);
+    overflow-y: auto;
+    padding-right: 0.18rem;
+  }
+
+  .tactical-assessment-rail .roadmap-scene-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tactical-assessment-rail .roadmap-scene-image {
+    min-height: 7.6rem;
+    max-height: 8.4rem;
+  }
+
+  .tactical-assessment-rail .primary-survey-compact-grid {
+    gap: 0.35rem;
+  }
+
+  .tactical-assessment-rail .primary-survey-button {
+    min-height: 3.25rem;
+    border-radius: 0.72rem;
+    padding: 0.64rem 0.12rem 0.32rem;
+  }
+
+  .tactical-assessment-rail .primary-survey-letter {
+    font-size: 1.08rem;
+  }
+
+  .tactical-assessment-rail .primary-survey-label {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: clip;
+    white-space: nowrap;
+    font-size: 0.42rem;
+    letter-spacing: 0.035em;
+  }
+
+  .tactical-monitor-rail {
+    grid-area: monitor;
+    max-height: min(92vh, 64rem);
+    overflow-y: auto;
+    padding-right: 0.12rem;
+  }
+
+  .tactical-monitor-card {
+    height: min(42vh, 25rem);
+  }
+
+  .tactical-monitor-card > .select-none {
+    width: calc(100% / 0.74);
+    transform: scale(0.74);
+    transform-origin: top left;
+  }
+
+  .tactical-monitor-rail .tactical-care-feed {
+    margin-top: 0;
+  }
+
+  .tactical-monitor-rail .tactical-care-feed-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tactical-monitor-rail .tactical-care-feed-item {
+    min-height: 2.75rem;
+  }
+
+  .tactical-loadout-rail {
+    grid-area: loadout;
+    max-height: min(92vh, 64rem);
+    overflow-y: auto;
+    padding-right: 0.12rem;
+  }
+
+  .tactical-loadout-rail .roadmap-treatment-panel,
+  .tactical-loadout-rail .roadmap-debrief-panel {
+    flex: none;
+  }
+
+  .tactical-loadout-dock {
+    min-height: 0;
+  }
+
+  .tactical-loadout-dock .tactical-loadout-panel {
+    min-height: 22rem;
+    max-height: 31rem;
+  }
+
+  .tactical-management-options .tactical-loadout-panel {
+    max-height: min(68vh, 46rem);
+  }
+
+  .tactical-monitor-rail > .glass-panel {
+    max-height: min(58vh, 42rem);
+    overflow: hidden;
+  }
+
+  .tactical-bay-timeline {
+    grid-area: timeline;
+  }
+}
+
+@media (min-width: 1280px) {
+  .tactical-treatment-bay {
+    min-height: calc(100vh - 8.5rem);
+  }
+
+  .tactical-patient-viewport {
+    min-height: min(82vh, 58rem);
+  }
+
+  .tactical-patient-viewport .patient-model-canvas-shell {
+    min-height: min(76vh, 53rem);
+    height: min(76vh, 53rem);
+  }
+}
+
+@media (max-width: 640px) {
+  .tactical-equipment-ribbon {
+    left: 0.75rem;
+    right: 0.75rem;
+    bottom: 3.35rem;
+    width: auto;
+  }
+
+  .tactical-equipment-ribbon .tactical-gear-track {
+    grid-template-columns: 1fr;
+  }
+}
+
 .dark .clinical-shell {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.012)),
@@ -1160,5 +2887,186 @@ body {
   .frosted {
     backdrop-filter: blur(14px) saturate(140%);
     -webkit-backdrop-filter: blur(14px) saturate(140%);
+  }
+}
+
+/* ===== Game HUD component library (src/components/hud/) =====
+   Glassmorphic panels with corner brackets, scan-lines, glow states,
+   and monitor-style value readouts. Presentational only. */
+
+.hud-panel,
+.hud-frame {
+  position: relative;
+  isolation: isolate;
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+
+.hud-panel {
+  overflow: hidden;
+  border-radius: 0.95rem;
+  border: 1px solid rgba(125, 211, 252, 0.22);
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.72), rgba(2, 6, 23, 0.58)),
+    radial-gradient(circle at 50% 0%, rgba(34, 211, 238, 0.10), transparent 18rem);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  box-shadow:
+    0 22px 60px -42px rgba(0, 0, 0, 0.95),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* iPad / older WebKit without backdrop-filter: solid fallback */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .hud-panel {
+    background: rgba(8, 13, 27, 0.96);
+  }
+}
+
+.hud-panel:hover,
+.hud-panel.hud-active {
+  border-color: rgba(103, 232, 249, 0.45);
+  box-shadow:
+    0 0 0 1px rgba(103, 232, 249, 0.14),
+    0 0 26px -6px rgba(34, 211, 238, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.hud-frame:hover,
+.hud-frame.hud-active {
+  box-shadow: 0 0 26px -6px rgba(34, 211, 238, 0.30);
+}
+
+.hud-frame:hover > .hud-bracket,
+.hud-active > .hud-bracket {
+  border-color: rgba(103, 232, 249, 0.95);
+}
+
+.hud-alarm {
+  animation: hud-alarm-pulse 1.2s ease-in-out infinite;
+}
+
+.hud-alarm > .hud-bracket {
+  border-color: rgba(248, 113, 113, 0.85);
+}
+
+.hud-bracket {
+  position: absolute;
+  z-index: 6;
+  width: 1.05rem;
+  height: 1.05rem;
+  pointer-events: none;
+  border-color: rgba(103, 232, 249, 0.62);
+  transition: border-color 200ms ease;
+}
+
+.hud-bracket-tl { left: 0.35rem; top: 0.35rem; border-left: 1.5px solid; border-top: 1.5px solid; }
+.hud-bracket-tr { right: 0.35rem; top: 0.35rem; border-right: 1.5px solid; border-top: 1.5px solid; }
+.hud-bracket-bl { left: 0.35rem; bottom: 0.35rem; border-left: 1.5px solid; border-bottom: 1.5px solid; }
+.hud-bracket-br { right: 0.35rem; bottom: 0.35rem; border-right: 1.5px solid; border-bottom: 1.5px solid; }
+
+.hud-scanlines {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  overflow: hidden;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(148, 197, 255, 0.045) 0 1px,
+    transparent 1px 3px
+  );
+  border-radius: inherit;
+}
+
+.hud-scanlines::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -40%;
+  height: 34%;
+  background: linear-gradient(180deg, transparent, rgba(103, 232, 249, 0.07), transparent);
+  animation: hud-scan-sweep 7s linear infinite;
+}
+
+.hud-head {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.85rem 0.5rem;
+  border-bottom: 1px solid rgba(125, 211, 252, 0.14);
+}
+
+.hud-title {
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(186, 230, 253, 0.88);
+}
+
+.hud-tag,
+.hud-code {
+  font-family: 'IBM Plex Mono', 'Geist Mono', monospace;
+  font-size: 0.56rem;
+  letter-spacing: 0.16em;
+  color: rgba(103, 232, 249, 0.80);
+}
+
+.hud-tag {
+  margin-left: auto;
+  border: 1px solid rgba(103, 232, 249, 0.30);
+  border-radius: 0.35rem;
+  padding: 0.12rem 0.42rem;
+  background: rgba(8, 47, 73, 0.35);
+}
+
+.hud-code {
+  color: rgba(148, 163, 184, 0.55);
+}
+
+.hud-objective-diamond {
+  width: 0.5rem;
+  height: 0.5rem;
+  flex-shrink: 0;
+  transform: rotate(45deg);
+  border: 1.5px solid rgba(103, 232, 249, 0.85);
+  background: rgba(34, 211, 238, 0.22);
+  box-shadow: 0 0 10px rgba(34, 211, 238, 0.45);
+}
+
+.hud-value-critical {
+  color: #f87171 !important;
+  text-shadow: 0 0 16px rgba(239, 68, 68, 0.55) !important;
+  animation: hud-critical-flash 0.9s ease-in-out infinite;
+}
+
+.hud-value-warning {
+  color: #fbbf24 !important;
+  text-shadow: 0 0 16px rgba(251, 191, 36, 0.42) !important;
+}
+
+@keyframes hud-scan-sweep {
+  from { top: -40%; }
+  to { top: 110%; }
+}
+
+@keyframes hud-critical-flash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes hud-alarm-pulse {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(248, 113, 113, 0.22), 0 0 30px -6px rgba(239, 68, 68, 0.40); }
+  50% { box-shadow: 0 0 0 1px rgba(248, 113, 113, 0.40), 0 0 44px -4px rgba(239, 68, 68, 0.62); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hud-scanlines::after,
+  .hud-value-critical,
+  .hud-alarm {
+    animation: none;
   }
 }

@@ -193,7 +193,8 @@ export function useEducatorPanel() {
       if (params.has('case') && pendingUrlCaseRef.current) return;
       params.delete('case');
       pendingUrlCaseRef.current = false;
-      window.history.replaceState({}, '', window.location.pathname);
+      const next = params.toString();
+      window.history.replaceState({}, '', next ? `${window.location.pathname}?${next}` : window.location.pathname);
     }
   }, [currentCase]);
 

@@ -197,5 +197,17 @@
       "realtimeTimeout": "Couldn't connect to the live session (connection timed out). Try again.",
       "realtimeFailed": "Couldn't connect to the live session. Check your network and try again."
     }
+  },
+  "attributions": {
+    "title": "Attributions & Licensing",
+    "trigger": "Attributions",
+    "sections": {
+      "patientModels": "Patient 3D Models",
+      "ecgImages": "ECG Reference Images",
+      "clinicalContent": "Clinical Reference Content",
+      "skeleton": "3D Skeleton",
+      "hdri": "HDRI Lighting",
+      "libraries": "Software Libraries"
+    }
   }
 }

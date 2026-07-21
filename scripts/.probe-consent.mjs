@@ -1,0 +1,20 @@
+import { chromium } from 'playwright';
+const browser = await chromium.launch();
+const page = await browser.newPage({ viewport: { width: 1200, height: 900 } });
+await page.addInitScript(() => localStorage.setItem('paramedic-studio-tour-completed', 'true'));
+await page.goto('http://localhost:5173/?capture');
+await page.waitForTimeout(3500);
+const clickIf = async (re) => { const b = page.getByRole('button', { name: re }).first(); if (await b.count()) { try { await b.click({ timeout: 3000 }); } catch {} } };
+await clickIf(/Start Training/i); await page.waitForTimeout(1500);
+await clickIf(/Launch smart case/i); await page.waitForTimeout(4000);
+await clickIf(/Begin Scene Survey/i); await page.waitForTimeout(1200);
+await clickIf(/^Next/i); await page.waitForTimeout(800);
+await clickIf(/None identified/i); await page.waitForTimeout(400);
+await clickIf(/Scene is safe/i); await page.waitForTimeout(400);
+for (let i = 0; i < 5; i++) { const e = page.getByRole('button', { name: /Enter Scene/i }); if (await e.count() && await e.isEnabled()) { await e.click(); break; } await page.waitForTimeout(500); }
+await page.waitForTimeout(7000);
+await clickIf(/^Chest$/); await page.waitForTimeout(2500);
+const consent = await page.getByText(/Exposure with consent/i).count();
+console.log('consentCardVisible:', consent > 0);
+await page.screenshot({ path: 'test-results/consent-beat.png' });
+await browser.close();

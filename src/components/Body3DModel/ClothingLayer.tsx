@@ -330,6 +330,10 @@ export function buildScrubs(body: THREE.Mesh): THREE.Group | null {
     // cuffs, hem) the viewer sees the dark interior — the thickness cue a
     // single DoubleSide shell can never give.
     const fabric = getFabricNormal();
+    // polygonOffset pulls the cloth toward the camera in the depth buffer:
+    // the shell rides only ~1-2.6cm off the skin and both carry the SAME
+    // breathing morph, so without the bias the depth test flickers between
+    // skin and fabric every frame — the reported "clothes keep fluttering".
     const outerMat = new THREE.MeshPhysicalMaterial({
       color: spec.color,
       roughness: 0.82,
@@ -338,6 +342,9 @@ export function buildScrubs(body: THREE.Mesh): THREE.Group | null {
       sheenRoughness: 0.65,
       sheenColor: new THREE.Color('#cfd6e0'),
       side: THREE.FrontSide,
+      polygonOffset: true,
+      polygonOffsetFactor: -1,
+      polygonOffsetUnits: -1,
       ...(fabric ? { normalMap: fabric, normalScale: new THREE.Vector2(0.35, 0.35) } : {}),
     });
     const innerMat = new THREE.MeshStandardMaterial({
@@ -345,6 +352,9 @@ export function buildScrubs(body: THREE.Mesh): THREE.Group | null {
       roughness: 0.96,
       metalness: 0,
       side: THREE.BackSide,
+      polygonOffset: true,
+      polygonOffsetFactor: -1,
+      polygonOffsetUnits: -1,
     });
 
     const garment = new THREE.Mesh(g, outerMat);
