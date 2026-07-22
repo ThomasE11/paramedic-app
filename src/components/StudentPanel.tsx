@@ -58,7 +58,7 @@ function seededShuffle<T>(array: T[], seed: string): T[] {
 }
 import { loadAllCases } from '@/data/caseLibrary';
 import { yearLevels, caseCategories, isCaseAvailableForCohort, isStudentYear, type CohortMode } from '@/data/caseFilters';
-import { ensureCompleteVitals, buildInitialVitalsFromCase } from '@/data/treatmentEffects';
+import { ensureCompleteVitals, vitalsEqual, buildInitialVitalsFromCase } from '@/data/treatmentEffects';
 import { type Treatment, TREATMENTS } from '@/data/enhancedTreatmentEffects';
 import {
   type PatientState,
@@ -79,7 +79,8 @@ import type {
   BystanderUpdatePayload, HospitalRadioPayload, EquipmentFailurePayload,
   PatientRefusalPayload, NewFindingPayload, EnvironmentalPayload,
 } from '@/lib/classroomInjects';
-import { evaluateTreatmentRealism } from '@/lib/patientRealism';
+// patientRealism.ts was removed in the merge; evaluateTreatmentRealism now lives in clinicalRealism.
+import { evaluateTreatmentRealism } from '@/data/clinicalRealism';
 import { deriveRealismDirectorState, type RealismDirectorState } from '@/lib/patientRealismDirector';
 import {
   deriveClinicalManagementDebrief,
@@ -135,7 +136,7 @@ import { OnboardingTour, useOnboardingTour } from '@/components/OnboardingTour';
 import { NarrationButton, VoiceToggleButton } from '@/components/NarrationButton';
 import { useVoiceNarration } from '@/hooks/useVoiceNarration';
 import { VoiceCommandButton } from '@/components/VoiceCommandButton';
-import type { VoiceCommand, VoiceMatch } from '@/hooks/useVoiceInput';
+import type { VoiceMatch } from '@/hooks/useVoiceInput';
 import { buildVoiceIntents, type VoiceIntent, type VoicePhase } from '@/lib/voiceIntents';
 import { cn } from '@/lib/utils';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
@@ -1609,22 +1610,56 @@ export function StudentPanel({
     lastActivityRef.current = Date.now();
     const where = site === 'pulse-carotid' ? 'carotid' : site === 'pulse-radial' ? 'radial' : 'central';
     setTimeout(() => {
-      const hasPulse = !!currentVitals && currentVitals.pulse > 0 && !(patientState?.isInArrest);
-      setPulseCheckResult(hasPulse ? 'present' : 'absent');
-      setPulseCheckInProgress(false);
-      if (!hasPulse) {
+      const inArrest = !!patientState?.isInArrest;
+      const pulse = currentVitals?.pulse || 0;
+      const sbp = parseInt(String(currentVitals?.bp ?? '').split('/')[0], 10) || 0;
+      // Peripheral pulses are lost before central ones as perfusion falls: the
+      // radial typically disappears below ~80 mmHg systolic while the carotid
+      // persists to ~60 — so a hypotensive patient can have an absent radial
+      // but a present carotid. That contrast is the teachable, realistic cue.
+      // sbp === 0 means the case carries no BP — don't fabricate an absent
+      // radial from a missing value; only call it absent when we KNOW SBP<80.
+      const sitePalpable = inArrest || pulse <= 0 ? false
+        : where === 'radial' ? (sbp === 0 || sbp >= 80)
+          : true;
+      const Where = `${where.charAt(0).toUpperCase()}${where.slice(1)}`;
+      if (inArrest || pulse <= 0) {
+        setPulseCheckResult('absent');
+        setPulseCheckInProgress(false);
         toast.error('No pulse detected', {
           description: `No ${where} pulse palpable — patient is pulseless. Consider the cardiac arrest protocol.`,
           duration: 8000,
         });
-      } else {
-        toast.success('Pulse present', {
-          description: `${where.charAt(0).toUpperCase()}${where.slice(1)} pulse palpable — rate approximately ${currentVitals?.pulse || '?'} bpm.`,
-          duration: 5000,
-        });
+        return;
       }
+      if (!sitePalpable) {
+        // Radial gone but a central pulse is still there — classic shock finding.
+        setPulseCheckResult('absent');
+        setPulseCheckInProgress(false);
+        toast('Radial pulse absent', {
+          description: `No radial pulse — suggests systolic BP under ~80 mmHg. Palpate a central (carotid) pulse and treat for shock.`,
+          duration: 8000,
+        });
+        return;
+      }
+      // Pulse character + capillary refill — what you actually feel on the finger.
+      const rhythm = String(patientState?.currentRhythm ?? '');
+      const irregular = /fib|flutter|irregular|ectopic|bigemin|\baf\b/i.test(rhythm);
+      const character = (sbp > 0 && sbp < 90) || pulse > 130 ? 'weak and thready'
+        : sbp >= 160 || (pulse < 55 && sbp >= 110) ? 'strong and bounding'
+          : 'good volume';
+      const crt = currentCase?.abcde?.circulation?.capillaryRefill;
+      const crtTxt = where === 'radial' && typeof crt === 'number'
+        ? ` Capillary refill ${crt}s at the fingertip — ${crt > 2 ? 'delayed, poor peripheral perfusion' : 'normal'}.`
+        : '';
+      setPulseCheckResult('present');
+      setPulseCheckInProgress(false);
+      toast.success(`${Where} pulse present`, {
+        description: `Rate ~${pulse} bpm, ${irregular ? 'irregular' : 'regular'}, ${character}.${crtTxt}`,
+        duration: 6000,
+      });
     }, 5000);
-  }, [pulseCheckInProgress, currentVitals, patientState]);
+  }, [pulseCheckInProgress, currentVitals, patientState, currentCase]);
   const [cprCycleTimer, setCprCycleTimer] = useState(120); // 2 min countdown
   const [cprCycleNumber, setCprCycleNumber] = useState(0);
   const [cprRunning, setCprRunning] = useState(false);
@@ -2480,7 +2515,11 @@ export function StudentPanel({
       : allConditionNames;
     const withCases = pool.filter(c => getCasesByCondition(c, selectedYear, { cohortMode: 'progressive' }).length > 0);
     const withoutCases = pool.filter(c => getCasesByCondition(c, selectedYear, { cohortMode: 'progressive' }).length === 0);
-    return [...withCases, ...withoutCases].slice(0, 30);
+    // The list scrolls (max-h-52 container), so don't cap the browse: a
+    // `.slice(0, 30)` over the ALPHABETICAL condition list meant only "A…"
+    // conditions ever appeared when no search was typed. When browsing (no
+    // query) show every playable condition; when searching, keep a generous cap.
+    return q ? [...withCases, ...withoutCases].slice(0, 50) : withCases;
   }, [conditionSearch, selectedYear, allConditionNames, getCasesByCondition]);
 
   const availableCategories = useMemo(() => (
@@ -2775,6 +2814,26 @@ export function StudentPanel({
         if (!prev || !currentCase) return prev;
         if (activeReactionRef.current) return prev; // reaction owns vitals — pause deterioration
         const newState = applyDeterioration(prev, currentCase, 30);
+        // Treatment-aware deterioration. applyDeterioration models the UNTREATED
+        // decline and can drag a vital BELOW what active treatment is currently
+        // holding it at. That fight — treatment pushes SpO2 up, the next
+        // deterioration tick slams it back down, treatment pushes up again — was
+        // the SpO2/BP "sawtooth" that read as a buggy, flickering monitor. While
+        // the sustaining treatment for a vital is running, hold the line (don't
+        // let deterioration worsen it). Arrest still progresses (SpO2 must fall).
+        const tx = Object.keys(prev.treatmentCounts || {}).join(' ').toLowerCase();
+        if (!prev.isInArrest) {
+          if (/oxygen|rebreather|nasal|_mask|cpap|bipap|bvm|ventilat|nebuli[sz]|salbutamol|ipratropium|high.?flow/.test(tx)) {
+            newState.vitals.spo2 = Math.max(newState.vitals.spo2, prev.vitals.spo2);
+          }
+          if (/fluid|saline|hartmann|crystalloid|bolus|blood|plasma/.test(tx)) {
+            const sysOf = (b: string) => parseInt(String(b).split('/')[0], 10) || 0;
+            if (sysOf(newState.vitals.bp) < sysOf(prev.vitals.bp)) newState.vitals.bp = prev.vitals.bp;
+          }
+        }
+        if (/glucose|dextrose|glucagon/.test(tx) && prev.vitals.bloodGlucose != null && newState.vitals.bloodGlucose != null) {
+          newState.vitals.bloodGlucose = Math.max(newState.vitals.bloodGlucose, prev.vitals.bloodGlucose);
+        }
         if (newState.vitals.spo2 !== prev.vitals.spo2 || newState.vitals.pulse !== prev.vitals.pulse) {
           setCurrentVitals(ensureCompleteVitals(newState.vitals));
         }
@@ -3641,48 +3700,9 @@ export function StudentPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentCase, caseStartTime, readOnly, monitorRevealedVitals, appliedTreatmentIds, reassessedTreatmentIds, appliedTreatments]); // assessmentTracker read via ref — always current. readOnly MUST stay in deps so handing control to a student rebuilds this callback with readOnly=false; otherwise every click silently hits the "you are watching" toast from the stale closure.
 
-  // --------------------------------------------------------------------------
-  // Hands-free voice commands
-  // --------------------------------------------------------------------------
-  // Maps spoken phrases to assessment step IDs so a student can run through
-  // ABCDE + secondary survey without touching the screen. Aliases cover the
-  // common rephrasings paramedic students actually use in-scenario, plus the
-  // misrecognitions browsers produce for clinical words.
-  const voiceCommands: VoiceCommand[] = useMemo(() => [
-    { id: 'scene-safety', label: 'scene safety', aliases: ['check the scene', 'scene safe', 'assess scene', 'bsi', 'ppe'] },
-    { id: 'airway', label: 'check airway', aliases: ['assess airway', 'open airway', 'airway', 'a'] },
-    { id: 'breathing', label: 'check breathing', aliases: ['assess breathing', 'breathing', 'listen to chest', 'auscultate chest', 'b'] },
-    { id: 'circulation', label: 'check circulation', aliases: ['assess circulation', 'pulse', 'capillary refill', 'circulation', 'c'] },
-    { id: 'disability', label: 'check disability', aliases: ['neuro assessment', 'gcs', 'assess neuro', 'pupils', 'avpu', 'd'] },
-    { id: 'exposure', label: 'expose patient', aliases: ['exposure', 'head to toe', 'e'] },
-    { id: 'head', label: 'examine head', aliases: ['check head', 'head assessment', 'head', 'face', 'scalp'] },
-    { id: 'neck-cspine', label: 'examine neck', aliases: ['check neck', 'cspine', 'c spine', 'cervical spine'] },
-    { id: 'chest', label: 'examine chest', aliases: ['check chest', 'palpate chest', 'chest'] },
-    { id: 'abdomen', label: 'examine abdomen', aliases: ['check abdomen', 'palpate abdomen', 'belly', 'tummy'] },
-    { id: 'pelvis', label: 'examine pelvis', aliases: ['check pelvis', 'pelvis'] },
-    { id: 'extremities', label: 'examine extremities', aliases: ['check limbs', 'limbs', 'arms and legs'] },
-    { id: 'posterior-logroll', label: 'log roll', aliases: ['log-roll', 'check back', 'examine posterior'] },
-    { id: 'blood-glucose', label: 'check glucose', aliases: ['blood sugar', 'bm', 'bgl', 'sugar'] },
-    { id: 'temperature', label: 'check temperature', aliases: ['temp', 'take temperature'] },
-    { id: 'pain-assessment', label: 'pain assessment', aliases: ['assess pain', 'pain score', 'ask about pain', 'pqrst', 'ocqrsta'] },
-    { id: 'sample-history', label: 'sample history', aliases: ['take history', 'history', 'sample'] },
-    { id: 'allergies', label: 'ask allergies', aliases: ['allergy', 'any allergies'] },
-    { id: 'medications', label: 'ask medications', aliases: ['current medications', 'medication list', 'meds'] },
-  ], []);
-
-  const handleVoiceCommand = useCallback((match: { command: VoiceCommand; score: number; rawTranscript: string }) => {
-    // The command id is a canonical assessment step id — cast once.
-    const stepId = match.command.id as AssessmentStepId;
-    // Light feedback so the user sees the recognised intent.
-    toast.success(`🎙 ${match.command.label}`, {
-      description: match.rawTranscript,
-      duration: 2400,
-    });
-    // Run the same code path as tapping the button.
-    if (currentCase && caseStartTime && assessmentTrackerRef.current) {
-      handlePerformAssessment(stepId);
-    }
-  }, [currentCase, caseStartTime, handlePerformAssessment]);
+  // Hands-free voice-command mic removed (2026-06-18) — it was unused and
+  // cluttered the assessment view. The kept voice feature is patient
+  // communication during history taking (VoiceHistoryPanel / usePatientVoice).
 
   // --------------------------------------------------------------------------
   // Voice-first mode — full hands-free intent registry
@@ -5923,6 +5943,9 @@ export function StudentPanel({
                     InjuryMap component is retained for a future debrief/
                     instructor summary surface. */}
 
+                {/* 3D physical examination is rendered above in the tactical
+                    viewport (single Body3DModel instance) — the older inline
+                    placement here was removed to avoid a duplicate 3D model. */}
                 {/* --- HISTORY (voice-driven) ---
                     The old SAMPLE letter grid was replaced with a live
                     spoken conversation: student presses mic, asks any
@@ -6122,7 +6145,10 @@ export function StudentPanel({
                       deteriorationVitals={currentCase.vitalSignsProgression.deterioration ? ensureCompleteVitals(currentCase.vitalSignsProgression.deterioration) : undefined}
                       onVitalChange={(vitals) => {
                         const completeVitals = ensureCompleteVitals(vitals);
-                        setCurrentVitals(completeVitals);
+                        // Ignore echoes that don't change the displayed numbers —
+                        // otherwise every tween frame mints a new object, re-renders
+                        // the monitor, and grows vitalsHistory without bound.
+                        setCurrentVitals(prev => (vitalsEqual(prev, completeVitals) ? prev : completeVitals));
                         recordVitalsSample(completeVitals);
                       }}
                       onAssessmentPerformed={(stepId) => handlePerformAssessment(stepId as AssessmentStepId)}
@@ -6133,7 +6159,8 @@ export function StudentPanel({
                       // The management bay is a live working station: keep the
                       // monitor readable beside treatment on entry. Students
                       // can still use the physical controls, alarms, NIBP and
-                      // lead actions throughout the case.
+                      // lead actions throughout the case. Classroom spectators
+                      // (readOnly) can't press ON, so force power-on for them too.
                       autoPowerOn
                       caseCategory={currentCase.category}
                       caseSubcategory={currentCase.subcategory}
@@ -6996,11 +7023,19 @@ export function StudentPanel({
                   <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Response Timing</h4>
                   <div className="grid grid-cols-2 gap-2 sm:gap-3 text-sm">
                     <div className="p-2.5 sm:p-3.5 rounded-xl bg-muted/30 border border-border/30">
-                      <span className="text-[10px] sm:text-[11px] text-muted-foreground uppercase tracking-wider font-medium">Total Duration</span>
+                      <span className="text-[10px] sm:text-[11px] text-muted-foreground uppercase tracking-wider font-medium">Arrival on scene</span>
+                      <p className="font-bold text-base sm:text-lg mt-0.5 sm:mt-1 font-mono">{caseStartTime ? new Date(caseStartTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '—'}</p>
+                    </div>
+                    <div className="p-2.5 sm:p-3.5 rounded-xl bg-muted/30 border border-border/30">
+                      <span className="text-[10px] sm:text-[11px] text-muted-foreground uppercase tracking-wider font-medium">Departed (handover)</span>
+                      <p className="font-bold text-base sm:text-lg mt-0.5 sm:mt-1 font-mono">{caseEndTime ? new Date(caseEndTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '—'}</p>
+                    </div>
+                    <div className="p-2.5 sm:p-3.5 rounded-xl bg-muted/30 border border-border/30">
+                      <span className="text-[10px] sm:text-[11px] text-muted-foreground uppercase tracking-wider font-medium">On-scene time</span>
                       <p className="font-bold text-base sm:text-lg mt-0.5 sm:mt-1 font-mono">{formatTime(performanceMetrics.totalTime)}</p>
                     </div>
                     <div className="p-2.5 sm:p-3.5 rounded-xl bg-muted/30 border border-border/30">
-                      <span className="text-[10px] sm:text-[11px] text-muted-foreground uppercase tracking-wider font-medium">First Treatment</span>
+                      <span className="text-[10px] sm:text-[11px] text-muted-foreground uppercase tracking-wider font-medium">Time to first Rx</span>
                       <p className="font-bold text-base sm:text-lg mt-0.5 sm:mt-1 font-mono">
                         {performanceMetrics.timeToFirstTreatment
                           ? formatTime(performanceMetrics.timeToFirstTreatment)
@@ -7515,6 +7550,14 @@ export function StudentPanel({
                       },
                       assessmentItems: performanceMetrics.assessmentDebrief?.items,
                       managementDebrief: performanceMetrics.managementDebrief,
+                      smartGrade: performanceMetrics.smartGrade,
+                      transport: transportDecisions ?? undefined,
+                      times: {
+                        arrival: caseStartTime ? new Date(caseStartTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : null,
+                        departed: caseEndTime ? new Date(caseEndTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : null,
+                        onScene: formatTime(performanceMetrics.totalTime),
+                        firstIntervention: performanceMetrics.timeToFirstTreatment ? formatTime(performanceMetrics.timeToFirstTreatment) : null,
+                      },
                     });
                     toast.dismiss();
                     toast.success('PDF report downloaded');
@@ -7533,22 +7576,19 @@ export function StudentPanel({
             </div>
           </div>
         )}
-        {/* Hands-free voice command — visible only when running a live case.
-            Student can tap the mic and say "check airway" / "blood glucose" /
-            "examine chest" to trigger the same action as the on-screen button.
-            In voice-first mode the full intent set (treatments + navigation)
-            is active and the mic is the primary control surface. */}
-        {(phase === 'case' || phase === 'vitals') && currentCase && (
+        {/* Hands-free voice-first mic — the legacy tap-to-command mic was
+            removed (origin), so this surfaces ONLY in voice-first mode, where
+            the full intent set (treatments + navigation) is the primary
+            control surface for 3rd/4th-year students. */}
+        {voiceFirstMode && (phase === 'case' || phase === 'vitals') && currentCase && (
           <VoiceCommandButton
-            commands={voiceFirstMode ? voiceIntents : voiceCommands}
-            onCommand={voiceFirstMode ? handleVoiceIntent : handleVoiceCommand}
+            commands={voiceIntents}
+            onCommand={handleVoiceIntent}
             lang={i18n.language === 'ar' ? 'ar-AE' : 'en-GB'}
             listeningLabel={t('voice.listening', { defaultValue: 'Listening' })}
             idleLabel={t('voice.talk', { defaultValue: 'Voice' })}
             transcriptPlaceholder={
-              voiceFirstMode
-                ? t('voice.transcriptPlaceholder', { defaultValue: 'Say a command — e.g. "check airway", "give adrenaline"' })
-                : undefined
+              t('voice.transcriptPlaceholder', { defaultValue: 'Say a command — e.g. "check airway", "give adrenaline"' })
             }
           />
         )}

@@ -31,6 +31,12 @@ export function useGradualVitalChanges() {
   const [isAnimating, setIsAnimating] = useState(false);
   const [progress, setProgress] = useState(0);
   const animationRef = useRef<number | null>(null);
+  // Throttle the per-frame state commits. The rAF runs at ~60fps, but each
+  // setCurrentVitals re-renders the whole patient view + monitor; committing
+  // every frame saturated the main thread and froze the monitor. We commit at
+  // most ~12fps and skip frames where the (integer) vital numbers didn't change.
+  const lastCommitTimeRef = useRef(0);
+  const lastCommittedKeyRef = useRef('');
   const changeConfigRef = useRef<{
     duration: number;
     startTime: number;
@@ -66,6 +72,8 @@ export function useGradualVitalChanges() {
     setTargetVitals(toVitals);
     setIsAnimating(true);
     setProgress(0);
+    lastCommitTimeRef.current = 0;
+    lastCommittedKeyRef.current = '';
 
     const animate = (currentTime: number) => {
       const config = changeConfigRef.current;
@@ -77,8 +85,6 @@ export function useGradualVitalChanges() {
       // Ease out cubic for smooth deceleration
       const easedProgress = 1 - Math.pow(1 - rawProgress, 3);
       
-      setProgress(easedProgress);
-
       // Interpolate all vital signs
       const newVitals: VitalSigns = {
         bp: lerpBP(config.startVitals.bp, config.targetVitals.bp, easedProgress),
@@ -103,8 +109,19 @@ export function useGradualVitalChanges() {
         time: new Date().toISOString(),
       };
 
-      setCurrentVitals(newVitals);
-      config.onUpdate?.(newVitals);
+      // Commit at most ~12fps, and only when the displayed (integer) vitals
+      // actually changed. Frames in between are skipped so we don't re-render
+      // the whole patient view + monitor 60×/s — the cause of the monitor
+      // flickering and freezing once vitals start moving.
+      const key = `${newVitals.pulse}|${newVitals.respiration}|${newVitals.spo2}|${newVitals.bp}`;
+      const isFinal = rawProgress >= 1;
+      if (isFinal || (currentTime - lastCommitTimeRef.current >= 80 && key !== lastCommittedKeyRef.current)) {
+        lastCommitTimeRef.current = currentTime;
+        lastCommittedKeyRef.current = key;
+        setProgress(easedProgress);
+        setCurrentVitals(newVitals);
+        config.onUpdate?.(newVitals);
+      }
 
       if (rawProgress < 1) {
         animationRef.current = requestAnimationFrame(animate);

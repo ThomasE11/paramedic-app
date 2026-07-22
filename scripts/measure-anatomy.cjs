@@ -97,4 +97,41 @@ function readDracoBytes(path) {
   const fa = lateralFront(0.78, 0.98, -1); console.log('  R forearm   (y0.78-0.98,-x): maxAbsX', fa.maxAbsX.toFixed(3), 'pt', p(fa.point));
   const th = lateralFront(0.45, 0.75, -1); console.log('  R thigh     (y0.45-0.75,-x): maxAbsX', th.maxAbsX.toFixed(3), 'pt', p(th.point));
   const sh = lateralFront(0.10, 0.42, -1); console.log('  R shin      (y0.10-0.42,-x): maxAbsX', sh.maxAbsX.toFixed(3), 'pt', p(sh.point));
+  console.log('');
+  // Front-facing surface of the ARM at each joint height (verts lateral to the
+  // torso, i.e. |x|>0.13, max-z = camera-facing). This is where a dot should
+  // sit to land ON the arm rather than floating beside it.
+  function armFront(yLo, yHi, side) {
+    let best = null;
+    for (let i = 0; i < n; i++) { const f = V[i]; if (f[1] >= yLo && f[1] <= yHi && f[0] * side > 0.13) { if (!best || f[2] > best[2]) best = f; } }
+    return best;
+  }
+  console.log("R ARM camera-facing surface per joint (dot should match x,y):");
+  console.log('  shoulder (y1.32-1.40):', p(armFront(1.32, 1.40, -1)));
+  console.log('  humerus  (y1.08-1.20):', p(armFront(1.08, 1.20, -1)));
+  console.log('  elbow    (y0.94-1.02):', p(armFront(0.94, 1.02, -1)));
+  console.log('  forearm  (y0.82-0.90):', p(armFront(0.82, 0.90, -1)));
+  console.log('  wrist    (y0.74-0.82):', p(armFront(0.74, 0.82, -1)));
+  console.log('  hand     (y0.64-0.74):', p(armFront(0.64, 0.74, -1)));
+  console.log('');
+  // Carotid: lateral to the trachea at thyroid-cartilage level. Find neck
+  // surface ~x=-0.06..-0.13 (right side) in the upper-neck band.
+  let car = null;
+  for (let i = 0; i < n; i++) { const f = V[i]; if (f[1] >= 1.42 && f[1] <= 1.50 && f[0] < -0.04 && f[0] > -0.14) { if (!car || f[2] > car[2]) car = f; } }
+  console.log('  carotid  (y1.42-1.50, right neck):', p(car));
+  console.log('');
+  // Front-facing surface of the LEG centerline at each joint (verts over the
+  // leg, |x| 0.06..0.22, max-z). Mirror for the left leg.
+  function legFront(yLo, yHi, side) {
+    let best = null;
+    for (let i = 0; i < n; i++) { const f = V[i]; const xs = f[0] * side; if (f[1] >= yLo && f[1] <= yHi && xs > 0.05 && xs < 0.22) { if (!best || f[2] > best[2]) best = f; } }
+    return best;
+  }
+  console.log('R LEG camera-facing surface per joint:');
+  console.log('  hip   (y0.84-0.92):', p(legFront(0.84, 0.92, -1)));
+  console.log('  thigh (y0.66-0.74):', p(legFront(0.66, 0.74, -1)));
+  console.log('  knee  (y0.43-0.51):', p(legFront(0.43, 0.51, -1)));
+  console.log('  shin  (y0.26-0.34):', p(legFront(0.26, 0.34, -1)));
+  console.log('  ankle (y0.11-0.19):', p(legFront(0.11, 0.19, -1)));
+  console.log('  foot  (y0.02-0.10):', p(legFront(0.02, 0.10, -1)));
 })();

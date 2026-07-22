@@ -15,6 +15,7 @@ import {
   Ambulance,
   Brain,
   CheckCircle2,
+  ChevronDown,
   ClipboardCheck,
   Clock,
   Droplets,
@@ -305,6 +306,104 @@ const EQUIPMENT_ASSET_PATHS = {
   tractionSplint: '/equipment-assets/traction-splint.webp',
 } as const;
 
+// ---------------------------------------------------------------------------
+// Medication pouch — generated from the FULL drug formulary in the treatment
+// engine (every `category: 'medication'` treatment) so the pouch always shows
+// every drug the simulator supports, not a hardcoded handful. Bespoke product
+// photos are used where we have them; the rest fall back to a tone-coloured CSS
+// vial / syringe / tablet chosen by route. Drugs are grouped clinically so the
+// common resus/anaphylaxis/cardiac agents lead the list.
+// ---------------------------------------------------------------------------
+const MED_ASSET_BY_ID: Record<string, string> = {
+  adrenaline_1mg: EQUIPMENT_ASSET_PATHS.adrenaline,
+  adrenaline_im: EQUIPMENT_ASSET_PATHS.adrenaline,
+  adrenaline_im_child: EQUIPMENT_ASSET_PATHS.adrenaline,
+  adrenaline_im_older: EQUIPMENT_ASSET_PATHS.adrenaline,
+  adrenaline_im_infant: EQUIPMENT_ASSET_PATHS.adrenaline,
+  adrenaline_infusion: EQUIPMENT_ASSET_PATHS.adrenaline,
+  aspirin: EQUIPMENT_ASSET_PATHS.aspirin,
+  gtn_spray: EQUIPMENT_ASSET_PATHS.gtn,
+  fentanyl_50mcg: EQUIPMENT_ASSET_PATHS.analgesia,
+  fentanyl_infusion: EQUIPMENT_ASSET_PATHS.analgesia,
+  morphine_5mg: EQUIPMENT_ASSET_PATHS.analgesia,
+  txa_1g: EQUIPMENT_ASSET_PATHS.txa,
+  hydrocortisone_200mg: EQUIPMENT_ASSET_PATHS.hydrocortisone,
+  naloxone_04mg: EQUIPMENT_ASSET_PATHS.naloxone,
+  ondansetron_4mg: EQUIPMENT_ASSET_PATHS.ondansetron,
+  glucose_10g: EQUIPMENT_ASSET_PATHS.glucose,
+  dextrose_10: EQUIPMENT_ASSET_PATHS.dextrose,
+  dextrose_10_250ml: EQUIPMENT_ASSET_PATHS.dextrose,
+  midazolam_5mg: EQUIPMENT_ASSET_PATHS.midazolam,
+  midazolam_buccal: EQUIPMENT_ASSET_PATHS.midazolam,
+  midazolam_infusion: EQUIPMENT_ASSET_PATHS.midazolam,
+  mannitol_20: EQUIPMENT_ASSET_PATHS.mannitol,
+};
+
+const MED_GROUP_ORDER = [
+  'resus', 'anaphylaxis', 'cardiac', 'respiratory', 'analgesia', 'sedation',
+  'glycaemic', 'antiemetic', 'tox', 'rsi', 'infusion', 'other',
+] as const;
+
+const MED_GROUP_TONE: Record<string, string> = {
+  resus: '#ef4444', anaphylaxis: '#f97316', cardiac: '#2563eb', respiratory: '#06b6d4',
+  analgesia: '#0ea5e9', sedation: '#7c3aed', glycaemic: '#f59e0b', antiemetic: '#64748b',
+  tox: '#0f766e', rsi: '#9333ea', infusion: '#475569', other: '#64748b',
+};
+
+const MED_GROUP_LABEL: Record<string, string> = {
+  resus: 'Resuscitation', anaphylaxis: 'Anaphylaxis', cardiac: 'Cardiac', respiratory: 'Respiratory',
+  analgesia: 'Analgesia', sedation: 'Sedation', glycaemic: 'Glycaemic', antiemetic: 'Antiemetic',
+  tox: 'Toxicology / antidotes', rsi: 'RSI', infusion: 'Infusions', other: 'Other',
+};
+
+function medGroup(id: string, name: string): string {
+  const s = `${id} ${name}`.toLowerCase();
+  if (/anaphyl|adrenaline_im|chlorphenamine/.test(s)) return 'anaphylaxis';
+  if (/adrenaline_1mg|amiodarone|atropine|adenosine|calcium|bicarb|magnesium|vasopressor|noradrenaline_infusion|sodium_bicarbonate/.test(s)) return 'resus';
+  if (/aspirin|clopidogrel|gtn|nitro|enoxaparin|heparin|metoprolol|diltiazem|labetalol|furosemide|ticagrelor/.test(s)) return 'cardiac';
+  if (/salbutamol|ipratropium|nebuli|hydrocortisone|dexamethasone|magnesium_2g/.test(s)) return 'respiratory';
+  if (/morphine|fentanyl|paracetamol|ibuprofen|entonox|ketamine_analg|analges/.test(s)) return 'analgesia';
+  if (/midazolam|diazepam|lorazepam|propofol|droperidol|haloperidol|ketamine_sedat|ketamine_iv|sedation/.test(s)) return 'sedation';
+  if (/glucose|dextrose|glucagon|insulin/.test(s)) return 'glycaemic';
+  if (/ondansetron|metoclopramide|antiemetic/.test(s)) return 'antiemetic';
+  if (/naloxone|flumazenil|charcoal|intralipid|acetylcysteine|pralidoxime|sugammadex|antidote/.test(s)) return 'tox';
+  if (/suxamethonium|rocuronium|post_rsi|\brsi\b/.test(s)) return 'rsi';
+  if (/infusion/.test(s)) return 'infusion';
+  return 'other';
+}
+
+function medArt(id: string, name: string): EquipmentArtKind {
+  const s = `${id} ${name}`.toLowerCase();
+  if (/glucose|dextrose|\bgel\b/.test(s)) return 'glucose';
+  if (/oral|tablet|aspirin|clopidogrel|ibuprofen|charcoal|chewed|buccal|sublingual/.test(s)) return 'tablet';
+  if (/spray|gtn|nitro/.test(s)) return 'vial';
+  if (/\bim\b|\biv\b|\bio\b|\bin\b|infusion|injection|push|syringe/.test(s)) return 'syringe';
+  return 'vial';
+}
+
+function buildMedicationInventory(): EquipmentInventoryItem[] {
+  return TREATMENTS
+    .filter(treatment => treatment.category === 'medication')
+    .map(treatment => {
+      const group = medGroup(treatment.id, treatment.name);
+      return {
+        id: `med-${treatment.id}`,
+        label: treatment.name,
+        caption: treatment.description,
+        treatmentId: treatment.id,
+        assetPath: MED_ASSET_BY_ID[treatment.id],
+        art: medArt(treatment.id, treatment.name),
+        tone: MED_GROUP_TONE[group] ?? '#2563eb',
+      } satisfies EquipmentInventoryItem;
+    })
+    .sort((a, b) => {
+      const ga = MED_GROUP_ORDER.indexOf(medGroup(a.treatmentId!, a.label) as typeof MED_GROUP_ORDER[number]);
+      const gb = MED_GROUP_ORDER.indexOf(medGroup(b.treatmentId!, b.label) as typeof MED_GROUP_ORDER[number]);
+      if (ga !== gb) return ga - gb;
+      return a.label.localeCompare(b.label);
+    });
+}
+
 const BAG_EQUIPMENT: Record<ManagementTab, EquipmentInventoryItem[]> = {
   airway: [
     { id: 'airway-oxygen-cylinder', label: 'Oxygen Cylinder', caption: 'High pressure O2 supply', assetPath: EQUIPMENT_ASSET_PATHS.oxygenCylinder, tone: '#16a34a' },
@@ -338,16 +437,7 @@ const BAG_EQUIPMENT: Record<ManagementTab, EquipmentInventoryItem[]> = {
     { id: 'circ-chest-seal', label: 'Vented Chest Seal', caption: 'Open chest wound', treatmentId: 'chest_seal_vented', assetPath: EQUIPMENT_ASSET_PATHS.bandages, tone: '#f97316' },
     { id: 'circ-lucas', label: 'Mechanical CPR', caption: 'LUCAS device', treatmentId: 'lucas_device', assetPath: PRODUCT_ASSET_PATHS.lucas, tone: '#64748b' },
   ],
-  medications: [
-    { id: 'med-adrenaline', label: 'Adrenaline', caption: 'Arrest / anaphylaxis', treatmentId: 'adrenaline_1mg', assetPath: EQUIPMENT_ASSET_PATHS.adrenaline, tone: '#ef4444' },
-    { id: 'med-aspirin', label: 'Aspirin', caption: 'ACS loading dose', treatmentId: 'aspirin', assetPath: EQUIPMENT_ASSET_PATHS.aspirin, tone: '#f59e0b' },
-    { id: 'med-gtn', label: 'GTN Spray', caption: 'Chest pain if BP safe', treatmentId: 'gtn_spray', assetPath: EQUIPMENT_ASSET_PATHS.gtn, tone: '#2563eb' },
-    { id: 'med-analgesia', label: 'Analgesia', caption: 'Morphine / fentanyl', treatmentId: 'fentanyl_50mcg', assetPath: EQUIPMENT_ASSET_PATHS.analgesia, tone: '#0ea5e9' },
-    { id: 'med-txa', label: 'TXA', caption: 'Major haemorrhage', treatmentId: 'txa_1g', assetPath: EQUIPMENT_ASSET_PATHS.txa, tone: '#dc2626' },
-    { id: 'med-hydrocort', label: 'Hydrocortisone', caption: 'Asthma / anaphylaxis', treatmentId: 'hydrocortisone_200mg', assetPath: EQUIPMENT_ASSET_PATHS.hydrocortisone, tone: '#22c55e' },
-    { id: 'med-naloxone', label: 'Naloxone', caption: 'Opioid reversal', treatmentId: 'naloxone_04mg', assetPath: EQUIPMENT_ASSET_PATHS.naloxone, tone: '#0f766e' },
-    { id: 'med-antiemetic', label: 'Antiemetic', caption: 'Ondansetron', treatmentId: 'ondansetron_4mg', assetPath: EQUIPMENT_ASSET_PATHS.ondansetron, tone: '#64748b' },
-  ],
+  medications: buildMedicationInventory(),
   disability: [
     { id: 'neuro-glucose', label: 'Glucose Gel', caption: 'Awake hypoglycaemia', treatmentId: 'glucose_10g', assetPath: EQUIPMENT_ASSET_PATHS.glucose, tone: '#f59e0b' },
     { id: 'neuro-dextrose', label: 'Dextrose 10%', caption: 'IV hypoglycaemia', treatmentId: 'dextrose_10', assetPath: EQUIPMENT_ASSET_PATHS.dextrose, tone: '#f97316' },
@@ -807,6 +897,11 @@ export function TreatmentJumpBagPanel({
   const revealTreatments = () => {
     requestAnimationFrame(() => treatmentPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   };
+  // Per-clinical-group expand/collapse override for the medication pouch (68
+  // drugs is overwhelming as a flat list). Undefined = use the auto rule
+  // (expand only groups holding a suggested/applied drug); a boolean = the
+  // student explicitly toggled that group.
+  const [medGroupOverride, setMedGroupOverride] = useState<Record<string, boolean>>({});
   const activeBag = TREATMENT_JUMP_BAGS.find(bag => bag.key === activeManagementTab) ?? TREATMENT_JUMP_BAGS[0];
   const equipmentItems = BAG_EQUIPMENT[activeBag.key] ?? [];
   const stagedEquipment = equipmentItems.find(item => item.id === stagedEquipmentId) ?? null;
@@ -852,29 +947,34 @@ export function TreatmentJumpBagPanel({
       || treatment.category.toLowerCase().includes(query)
       || treatment.effects.some(effect => String(effect.vitalSign).toLowerCase().includes(query));
 
-    const sortFn = (a: Treatment, b: Treatment) => {
-      const aSuggested = suggestedIds.has(a.id) ? 1 : 0;
-      const bSuggested = suggestedIds.has(b.id) ? 1 : 0;
-      if (aSuggested !== bSuggested) return bSuggested - aSuggested;
+    // Search the OPEN bag first ("open the pouch → search it"), so typing
+    // filters the current bag in place instead of dumping every bag's items.
+    // Only fall back to all bags when nothing in this bag matches, so a
+    // treatment is always findable without losing your place.
+    const inBag = TREATMENTS.filter(treatment => treatmentBelongsToBag(treatment, activeBag));
+    const inBagMatches = query ? inBag.filter(matchesQuery) : inBag;
+    // Widen to every bag only when the open bag had no match — `global` tells
+    // the header the search escaped the open bag.
+    const global = Boolean(query) && inBagMatches.length === 0;
+    const pool = global ? TREATMENTS.filter(matchesQuery) : inBagMatches;
+    const items = pool
+      .sort((a, b) => {
+        const aSuggested = suggestedIds.has(a.id) ? 1 : 0;
+        const bSuggested = suggestedIds.has(b.id) ? 1 : 0;
+        if (aSuggested !== bSuggested) return bSuggested - aSuggested;
 
-      const aApplied = appliedTreatmentIds.includes(a.id) ? 1 : 0;
-      const bApplied = appliedTreatmentIds.includes(b.id) ? 1 : 0;
-      if (aApplied !== bApplied) return bApplied - aApplied;
+        const aApplied = appliedTreatmentIds.includes(a.id) ? 1 : 0;
+        const bApplied = appliedTreatmentIds.includes(b.id) ? 1 : 0;
+        if (aApplied !== bApplied) return bApplied - aApplied;
 
-      if (query) {
-        const aStarts = a.name.toLowerCase().startsWith(query) ? 1 : 0;
-        const bStarts = b.name.toLowerCase().startsWith(query) ? 1 : 0;
-        if (aStarts !== bStarts) return bStarts - aStarts;
-      }
-      return a.name.localeCompare(b.name);
-    };
-
-    if (!query) {
-      return { items: TREATMENTS.filter(t => treatmentBelongsToBag(t, activeBag)).sort(sortFn), global: false };
-    }
-    const inBag = TREATMENTS.filter(t => treatmentBelongsToBag(t, activeBag) && matchesQuery(t));
-    if (inBag.length > 0) return { items: inBag.sort(sortFn), global: false };
-    return { items: TREATMENTS.filter(matchesQuery).sort(sortFn), global: true };
+        if (query) {
+          const aStarts = a.name.toLowerCase().startsWith(query) ? 1 : 0;
+          const bStarts = b.name.toLowerCase().startsWith(query) ? 1 : 0;
+          if (aStarts !== bStarts) return bStarts - aStarts;
+        }
+        return a.name.localeCompare(b.name);
+      });
+    return { items, global };
   }, [activeBag, appliedTreatmentIds, query, suggestedIds]);
 
   const filteredTreatments = searchResult.items;
@@ -907,6 +1007,45 @@ export function TreatmentJumpBagPanel({
     const treatment = TREATMENTS.find(candidate => candidate.id === item.treatmentId);
     if (treatment) applyTreatment(treatment);
   };
+
+  // The medication pouch holds ~68 drugs — a flat list is overwhelming. When
+  // browsing it (not searching), fold the drugs into collapsible clinical
+  // groups, auto-expanding only the ones holding a suggested or already-given
+  // drug so the relevant agents are visible and the rest stay tucked away.
+  // Other bags (≤20 items) and any active search render as a flat list.
+  type RowEntry =
+    | { type: 'row'; treatment: Treatment }
+    | { type: 'header'; key: string; label: string; tone: string; count: number; given: number; expanded: boolean };
+  const isMedGrouped = activeBag.key === 'medications' && !query && filteredTreatments.length > 1;
+  const displayEntries: RowEntry[] = [];
+  if (isMedGrouped) {
+    const byGroup = new Map<string, Treatment[]>();
+    for (const treatment of filteredTreatments) {
+      const group = medGroup(treatment.id, treatment.name);
+      const bucket = byGroup.get(group) ?? byGroup.set(group, []).get(group)!;
+      bucket.push(treatment);
+    }
+    const ordered = MED_GROUP_ORDER.filter(group => byGroup.has(group));
+    const isRelevant = (items: Treatment[]) =>
+      items.some(treatment => suggestedIds.has(treatment.id) || appliedTreatmentIds.includes(treatment.id));
+    const anyRelevant = ordered.some(group => isRelevant(byGroup.get(group)!));
+    ordered.forEach((group, index) => {
+      const items = byGroup.get(group)!;
+      const expanded = medGroupOverride[group] ?? (isRelevant(items) || (!anyRelevant && index === 0));
+      displayEntries.push({
+        type: 'header',
+        key: group,
+        label: MED_GROUP_LABEL[group] ?? group,
+        tone: MED_GROUP_TONE[group] ?? '#64748b',
+        count: items.length,
+        given: items.filter(treatment => appliedTreatmentIds.includes(treatment.id)).length,
+        expanded,
+      });
+      if (expanded) for (const treatment of items) displayEntries.push({ type: 'row', treatment });
+    });
+  } else {
+    for (const treatment of filteredTreatments) displayEntries.push({ type: 'row', treatment });
+  }
 
   return (
     <Card className="tactical-loadout-panel glass-panel relative overflow-hidden rounded-2xl border shadow-[0_12px_34px_-24px_rgba(15,23,42,0.45)]">
@@ -1627,7 +1766,7 @@ export function TreatmentJumpBagPanel({
             type="text"
             value={medSearch}
             onChange={event => { setMedSearch(event.target.value); if (event.target.value) revealTreatments(); }}
-            placeholder={`Search ${activeBag.shortLabel} loadout — e.g. oxygen, adrenaline, IV...`}
+            placeholder={`Search ${activeBag.label} — drug or device…`}
             className="glass-control h-10 w-full rounded-lg border border-border pl-8 pr-9 text-xs font-medium outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/15"
           />
           {medSearch && (
@@ -1672,7 +1811,7 @@ export function TreatmentJumpBagPanel({
 
       <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
           {TREATMENT_JUMP_BAGS.map(bag => {
-            const isActive = activeBag.key === bag.key && !query;
+            const isActive = activeBag.key === bag.key;
             const treatmentCount = TREATMENTS.filter(treatment => treatmentBelongsToBag(treatment, bag)).length;
             const appliedCount = appliedTreatments.filter(applied => {
               const treatment = TREATMENTS.find(item => item.id === applied.id);
@@ -1753,7 +1892,28 @@ export function TreatmentJumpBagPanel({
               </div>
             ) : (
               <div className="space-y-2">
-                {filteredTreatments.map(treatment => {
+                {displayEntries.map(entry => {
+                  if (entry.type === 'header') {
+                    return (
+                      <button
+                        key={`group-${entry.key}`}
+                        type="button"
+                        onClick={() => setMedGroupOverride(prev => ({ ...prev, [entry.key]: !entry.expanded }))}
+                        className="flex w-full items-center justify-between gap-2 rounded-lg border border-slate-200 bg-muted/40 px-2.5 py-1.5 text-left transition hover:bg-muted/70 dark:border-slate-800"
+                      >
+                        <span className="flex min-w-0 items-center gap-2">
+                          <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: entry.tone }} />
+                          <span className="truncate text-[11px] font-bold">{entry.label}</span>
+                          <Badge variant="outline" className="h-4 shrink-0 px-1.5 text-[8px]">{entry.count}</Badge>
+                          {entry.given > 0 && (
+                            <Badge className="h-4 shrink-0 bg-green-600 px-1.5 text-[8px]">{entry.given} given</Badge>
+                          )}
+                        </span>
+                        <ChevronDown className={`h-3.5 w-3.5 shrink-0 transition-transform ${entry.expanded ? 'rotate-180' : ''}`} />
+                      </button>
+                    );
+                  }
+                  const treatment = entry.treatment;
                   const isApplied = appliedTreatmentIds.includes(treatment.id);
                   const isCurrentlyApplying = applyingTreatmentId === treatment.id;
                   const coreTemp = currentVitals.temperature ?? 37;

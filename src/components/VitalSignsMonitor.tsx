@@ -15,6 +15,7 @@
  */
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { vitalsEqual } from '@/data/treatmentEffects';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from "@/components/ui/progress";
 import {
@@ -768,6 +769,9 @@ function ECGWaveform({ heartRate, color, height = 80, isVisible, waveformFn, sho
   const bufferRef = useRef<Float32Array | null>(null);
   const writeHeadRef = useRef(0);
   const phaseRef = useRef(0);
+  // Live HR read inside the rAF loop so a changing rate never restarts the
+  // sweep (which made the trace stutter/blank whenever the number twitched).
+  const hrRef = useRef(heartRate); hrRef.current = heartRate;
   const pacingSpikeRef = useRef<Set<number>>(new Set());
   const syncMarkerRef = useRef<Set<number>>(new Set());
   const beatIndexRef = useRef(0);
@@ -801,23 +805,11 @@ function ECGWaveform({ heartRate, color, height = 80, isVisible, waveformFn, sho
     // This means at HR 60 (1 beat/s), one beat spans ~87.5px → ~8 beats visible
     // At HR 200 (3.33 beats/s), beats are tightly spaced → ~26 beats visible
     const pixelsPerSec = 87.5; // constant sweep speed (25mm/s equivalent)
-    const beatsPerSec = heartRate / 60;
-    // When HR = 0 (arrest), beatsPerSec = 0 and pixelsPerBeat = Infinity —
-    // beatProgress stays pinned at 0 and the waveform function is called
-    // with the same t every pixel. VF then renders as a flatline because
-    // vfibWave(0) is constant. Use a synthetic "beat period" for arrest
-    // rhythms that's short enough to let the chaotic generator tick
-    // (120 ms ≈ 500 bpm equivalent — not a real rate, just drives `t`
-    // through the waveform so it modulates). Asystole's random-noise
-    // generator works either way.
-    const isArrestNoPulse = heartRate <= 0;
-    // Arrest rhythms with HR=0 need a synthetic "t-period" to drive their
-    // waveform generators; VF's vfibWave modulates with t and otherwise
-    // freezes to a flat value. ~0.2 s period → 5 cycles/sec ≈ coarse VF
-    // at ~300 bpm-equivalent electrical activity (real VF 150-500/min).
-    const pixelsPerBeat = isArrestNoPulse
-      ? pixelsPerSec * 0.2
-      : pixelsPerSec / beatsPerSec;
+    // beatsPerSec / pixelsPerBeat are derived from the LIVE heart rate INSIDE
+    // the draw loop (see hrRef) so a changing HR advances the sweep smoothly
+    // instead of restarting the canvas. HR = 0 (arrest) uses a synthetic
+    // ~0.2 s "beat period" so VF/chaotic generators still modulate `t` rather
+    // than freezing to a flatline; asystole's noise generator works either way.
 
     // Default PQRST waveform if none provided
     const ecgWave = waveformFn || ((t: number): number => {
@@ -836,6 +828,12 @@ function ECGWaveform({ heartRate, color, height = 80, isVisible, waveformFn, sho
     const draw = (now: number) => {
       const dt = Math.min((now - lastTime) / 1000, 0.05); // Cap to avoid jumps
       lastTime = now;
+
+      // Live HR read from a ref each frame (see comment above the waveform fn).
+      const hr = hrRef.current;
+      const beatsPerSec = hr / 60;
+      const isArrestNoPulse = hr <= 0;
+      const pixelsPerBeat = isArrestNoPulse ? pixelsPerSec * 0.2 : pixelsPerSec / beatsPerSec;
 
       // Calculate how many pixels to advance
       const advance = pixelsPerSec * dt;
@@ -856,7 +854,7 @@ function ECGWaveform({ heartRate, color, height = 80, isVisible, waveformFn, sho
         lastBeatPhaseRef.current = beatProgress;
 
         const waveformContext: WaveformContext = {
-          heartRate: heartRate,
+          heartRate: hr,
           beatIndex: beatIndexRef.current,
         };
         let val = ecgWave(beatProgress, waveformContext);
@@ -984,7 +982,7 @@ function ECGWaveform({ heartRate, color, height = 80, isVisible, waveformFn, sho
 
     return () => cancelAnimationFrame(animRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [heartRate, color, height, isVisible, waveformFn, !!showPacingSpikes, !!showShockArtifact, !!showSyncMarkers, !!showCprArtifact]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [color, height, isVisible, waveformFn, !!showPacingSpikes, !!showShockArtifact, !!showSyncMarkers, !!showCprArtifact]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!isVisible) return null;
 
@@ -1011,6 +1009,10 @@ function PlethWaveform({ heartRate, spo2, color, height = 50, isVisible }: { hea
   const bufferRef = useRef<Float32Array | null>(null);
   const writeHeadRef = useRef(0);
   const phaseRef = useRef(0);
+  // Live values read inside the rAF loop so a changing SpO2/HR updates the
+  // sweep smoothly instead of restarting the canvas (which blanked the trace).
+  const hrRef = useRef(heartRate); hrRef.current = heartRate;
+  const spo2Ref = useRef(spo2); spo2Ref.current = spo2;
 
   useEffect(() => {
     if (!isVisible) return;
@@ -1033,8 +1035,6 @@ function PlethWaveform({ heartRate, spo2, color, height = 50, isVisible }: { hea
 
     // Constant sweep speed matching ECG (25mm/s equivalent)
     const pixelsPerSec = 87.5;
-    const beatsPerSec = heartRate / 60;
-    const pixelsPerBeat = pixelsPerSec / beatsPerSec;
 
     // Realistic pleth waveform: sharp systolic upstroke, dicrotic notch, diastolic decay
     const plethWave = (t: number): number => {
@@ -1052,12 +1052,17 @@ function PlethWaveform({ heartRate, spo2, color, height = 50, isVisible }: { hea
       return 0.50 * Math.exp(-0.4 * 3.5) * Math.max(0, 1 - (t - 0.85) / 0.15);
     };
 
-    const amplitude = Math.max(0.4, Math.min(0.85, (spo2 / 100) * 0.85));
     let lastTime = performance.now();
 
     const draw = (now: number) => {
       const dt = Math.min((now - lastTime) / 1000, 0.05);
       lastTime = now;
+
+      // Recomputed per frame from refs — keeps the sweep continuous as HR/SpO2
+      // change rather than tearing the canvas down on every value update.
+      const beatsPerSec = (hrRef.current > 0 ? hrRef.current : 60) / 60;
+      const pixelsPerBeat = pixelsPerSec / beatsPerSec;
+      const amplitude = Math.max(0.4, Math.min(0.85, ((spo2Ref.current || 98) / 100) * 0.85));
 
       const advance = pixelsPerSec * dt;
       const startIdx = Math.floor(writeHeadRef.current);
@@ -1113,7 +1118,7 @@ function PlethWaveform({ heartRate, spo2, color, height = 50, isVisible }: { hea
     animRef.current = requestAnimationFrame(draw);
 
     return () => cancelAnimationFrame(animRef.current);
-  }, [heartRate, spo2, color, height, isVisible]);
+  }, [color, height, isVisible]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!isVisible) return null;
 
@@ -1139,6 +1144,10 @@ function CapnographyWaveform({ respiratoryRate, etco2, color, height = 45, isVis
   const bufferRef = useRef<Float32Array | null>(null);
   const writeHeadRef = useRef(0);
   const phaseRef = useRef(0);
+  // Live RR/EtCO2 read inside the rAF loop so a changing value updates the
+  // capnogram smoothly instead of restarting the canvas.
+  const rrRef = useRef(respiratoryRate); rrRef.current = respiratoryRate;
+  const etco2Ref = useRef(etco2); etco2Ref.current = etco2;
 
   useEffect(() => {
     if (!isVisible) return;
@@ -1161,8 +1170,6 @@ function CapnographyWaveform({ respiratoryRate, etco2, color, height = 45, isVis
 
     // Constant sweep speed matching ECG (25mm/s equivalent)
     const pixelsPerSec = 87.5;
-    const breathsPerSec = respiratoryRate / 60;
-    const pixelsPerBreath = pixelsPerSec / breathsPerSec;
 
     // Realistic 4-phase capnogram
     const capnoWave = (t: number): number => {
@@ -1179,12 +1186,17 @@ function CapnographyWaveform({ respiratoryRate, etco2, color, height = 45, isVis
       return 0;
     };
 
-    const amplitude = Math.min(1, (etco2 || 35) / 50) * 0.75;
     let lastTime = performance.now();
 
     const draw = (now: number) => {
       const dt = Math.min((now - lastTime) / 1000, 0.05);
       lastTime = now;
+
+      // Recomputed per frame from refs — keeps the capnogram continuous as
+      // RR/EtCO2 change rather than restarting the canvas on every update.
+      const breathsPerSec = (rrRef.current > 0 ? rrRef.current : 16) / 60;
+      const pixelsPerBreath = pixelsPerSec / breathsPerSec;
+      const amplitude = Math.min(1, ((etco2Ref.current || 35)) / 50) * 0.75;
 
       const advance = pixelsPerSec * dt;
       const startIdx = Math.floor(writeHeadRef.current);
@@ -1240,7 +1252,7 @@ function CapnographyWaveform({ respiratoryRate, etco2, color, height = 45, isVis
     animRef.current = requestAnimationFrame(draw);
 
     return () => cancelAnimationFrame(animRef.current);
-  }, [respiratoryRate, etco2, color, height, isVisible]);
+  }, [color, height, isVisible]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!isVisible) return null;
 
@@ -1425,15 +1437,53 @@ export function VitalSignsMonitor({
   // so BP/SpO2/etc. don't change on-screen until the student re-assesses
   const [assessedVitals, setAssessedVitals] = useState<Partial<VitalSigns>>({});
 
+  // Tracks the last vitals we pushed UP to the parent or pulled DOWN from it,
+  // so the onVitalChange echo effect below never ping-pongs with the parent.
+  const prevVitalsRef = useRef(currentVitals);
+  // Set by live-sync in the flush where it adopts a new parent value; the echo
+  // effect (which runs later in the SAME flush with a stale `currentVitals`)
+  // reads it to skip bouncing that stale value back up. Without this the two
+  // effects leap-frog at render speed and SpO2/HR/RR twitch (root cause).
+  const syncedRef = useRef(false);
+
+  // CASE RESET — only when the case itself changes (caseTitle), NOT on every
+  // vitals tween. This used to also depend on `initialVitals`, but the parent
+  // rebinds initialVitals to its LIVE vitals every change, so it re-ran on
+  // every tween: it wiped the assessed/visible vitals each tick AND, via
+  // setCurrentVitals → onVitalChange → parent setState → new initialVitals,
+  // drove an infinite update loop that froze the monitor ("times out").
   useEffect(() => {
     setCurrentVitals(initialVitals);
+    prevVitalsRef.current = initialVitals; // case load is parent-originated — don't echo
     setVisibleVitals(new Set());
     setActiveAssessments(new Map());
     setAssessmentProgress(new Map());
     setActiveAlarms(new Set());
     setAssessedVitals({});
     reportedAssessmentsRef.current.clear();
-  }, [caseTitle, initialVitals]);
+    committedAlarmsRef.current = new Set();
+    alarmClearAtRef.current.clear();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [caseTitle]);
+
+  // LIVE SYNC — mirror the parent's deteriorating/treated vitals into the
+  // monitor WITHOUT clearing assessment state and WITHOUT echoing back through
+  // onVitalChange: we advance prevVitalsRef so the echo effect sees no change.
+  // Monitor-ORIGINATED changes (assessment defaults, pacer) still propagate up
+  // because they don't touch prevVitalsRef.
+  useEffect(() => {
+    // Only adopt the parent's vitals when the displayed VALUES differ. The
+    // parent re-binds initialVitals to a fresh object (with a new `time`) on
+    // every tween tick; blindly re-setting it drove a render loop that made
+    // SpO2/RR/HR twitch and restarted the waveform sweep. prevVitalsRef still
+    // advances so the echo effect below never bounces parent-originated values
+    // back up (no ping-pong).
+    if (!vitalsEqual(currentVitals, initialVitals)) {
+      syncedRef.current = true;
+      setCurrentVitals(initialVitals);
+    }
+    prevVitalsRef.current = initialVitals;
+  }, [initialVitals]);
 
   // Auto-refresh continuous-monitor vitals (SpO2, pulse, RR) whenever the
   // underlying currentVitals changes. Real SpO2 probes read continuously,
@@ -1444,11 +1494,12 @@ export function VitalSignsMonitor({
   // real practice.
   useEffect(() => {
     setAssessedVitals(prev => {
+      let changed = false;
       const next = { ...prev };
-      if (visibleVitals.has('spo2') && prev.spo2 !== currentVitals.spo2) next.spo2 = currentVitals.spo2;
-      if (visibleVitals.has('pulse') && prev.pulse !== currentVitals.pulse) next.pulse = currentVitals.pulse;
-      if (visibleVitals.has('respiration') && prev.respiration !== currentVitals.respiration) next.respiration = currentVitals.respiration;
-      return next;
+      if (visibleVitals.has('spo2') && prev.spo2 !== currentVitals.spo2) { next.spo2 = currentVitals.spo2; changed = true; }
+      if (visibleVitals.has('pulse') && prev.pulse !== currentVitals.pulse) { next.pulse = currentVitals.pulse; changed = true; }
+      if (visibleVitals.has('respiration') && prev.respiration !== currentVitals.respiration) { next.respiration = currentVitals.respiration; changed = true; }
+      return changed ? next : prev; // don't churn a new object (and re-render) when nothing changed
     });
   }, [currentVitals.spo2, currentVitals.pulse, currentVitals.respiration, visibleVitals]);
 
@@ -1567,6 +1618,19 @@ export function VitalSignsMonitor({
   // Refs
   const assessmentIntervalRef = useRef<number | null>(null);
   const lastAlarmAnnunciationRef = useRef<{ level: 'none' | 'warning' | 'critical'; at: number }>({ level: 'none', at: 0 });
+  // Debounce the raw threshold level → an "effective" level that must persist
+  // before it counts. Vitals tween continuously, so without this a value sitting
+  // on a limit flickers none↔warning↔critical every tick and machine-guns the
+  // alarm. Quick to raise (catch real deterioration), slow to clear.
+  const alarmCandidateRef = useRef<{ level: 'none' | 'warning' | 'critical'; since: number }>({ level: 'none', since: 0 });
+  const effectiveAlarmRef = useRef<'none' | 'warning' | 'critical'>('none');
+  // Visual alarm latching: the committed set shown on the monitor, plus the time
+  // each alarm last LEFT the raw set. New alarms show immediately; a cleared
+  // alarm lingers ALARM_LATCH_MS so a vital blipping back and forth across a
+  // threshold keeps the indicator STEADY instead of flickering (and stops the
+  // monitor re-rendering every tween).
+  const committedAlarmsRef = useRef<Set<string>>(new Set());
+  const alarmClearAtRef = useRef<Map<string, number>>(new Map());
   const deteriorationTimerRef = useRef<number | null>(null);
   const audioEngineRef = useRef<ClinicalAudioEngine | null>(null);
   const codeTimerRef = useRef<number | null>(null);
@@ -1688,10 +1752,18 @@ export function VitalSignsMonitor({
     };
   }, []);
 
-  // Sync currentVitals to parent via onVitalChange - avoids setState-during-render errors
-  const prevVitalsRef = useRef(currentVitals);
+  // Push MONITOR-ORIGINATED vitals changes (assessment defaults, pacer) UP to
+  // the parent. Parent-originated changes don't reach here because the live-sync
+  // effect advances prevVitalsRef, so this never echoes them back (no loop).
   useEffect(() => {
-    if (onVitalChange && currentVitals !== prevVitalsRef.current) {
+    // Skip the flush in which live-sync just adopted a parent value: this
+    // closure's `currentVitals` is the stale pre-sync value, and echoing it
+    // would bounce it straight back to the parent (the leap-frog loop).
+    if (syncedRef.current) {
+      syncedRef.current = false;
+      return;
+    }
+    if (onVitalChange && !vitalsEqual(currentVitals, prevVitalsRef.current)) {
       prevVitalsRef.current = currentVitals;
       onVitalChange(currentVitals);
     }
@@ -1807,39 +1879,86 @@ export function VitalSignsMonitor({
     if (checkAlarm(glucose, ALARM_THRESHOLDS.bloodGlucose).isCritical) newAlarms.add('glucose-critical');
     else if (checkAlarm(glucose, ALARM_THRESHOLDS.bloodGlucose).isWarning) newAlarms.add('glucose-warning');
 
-    // Only commit when membership actually changed — vitals tween every few
-    // seconds and a fresh Set each tick re-rendered the whole monitor.
-    setActiveAlarms(prev => {
-      if (prev.size === newAlarms.size && [...newAlarms].every(a => prev.has(a))) return prev;
-      return newAlarms;
-    });
+    // Latch the VISUAL alarm set so it doesn't flicker. New alarm conditions
+    // show at once, but one that clears lingers for ALARM_LATCH_MS — a vital
+    // tweening across a threshold re-enters before the timer expires, so the
+    // indicator stays steady. A genuinely resolved alarm clears after the
+    // window. We commit only on a real membership change, so a stable patient
+    // no longer re-renders the monitor every vitals tween.
+    {
+      const nowV = Date.now();
+      const ALARM_LATCH_MS = 2000;
+      const committed = committedAlarmsRef.current;
+      const next = new Set(newAlarms); // additions appear immediately
+      committed.forEach(a => {
+        if (newAlarms.has(a)) { alarmClearAtRef.current.delete(a); return; }
+        let leftAt = alarmClearAtRef.current.get(a);
+        if (leftAt === undefined) { leftAt = nowV; alarmClearAtRef.current.set(a, nowV); }
+        if (nowV - leftAt < ALARM_LATCH_MS) next.add(a); // still latched — keep showing
+      });
+      for (const a of [...alarmClearAtRef.current.keys()]) {
+        if (!next.has(a)) alarmClearAtRef.current.delete(a);
+      }
+      const changed = next.size !== committed.size || [...next].some(a => !committed.has(a));
+      if (changed) {
+        committedAlarmsRef.current = next;
+        setActiveAlarms(next);
+      }
+    }
 
     // Real monitors annunciate on a cadence (IEC 60601-1-8 burst-interburst),
     // they do not replay the alarm pattern every time a value updates. High
     // priority repeats every 10s, medium every 25s; a NEW alarm condition
     // (or escalation) annunciates immediately.
     if (audioEnabled && audioEngineRef.current && alarmsEnabled) {
+      const rank = { none: 0, warning: 1, critical: 2 } as const;
       const hasCritical = Array.from(newAlarms).some(a => a.includes('critical'));
       const hasWarning = Array.from(newAlarms).some(a => a.includes('warning'));
-      const level = hasCritical ? 'critical' : hasWarning ? 'warning' : 'none';
+      const rawLevel: 'none' | 'warning' | 'critical' = hasCritical ? 'critical' : hasWarning ? 'warning' : 'none';
       const now = Date.now();
+
+      // 1) Debounce raw → effective. A new raw level must HOLD before it takes
+      //    effect: ~1.2s to rise (still catches real deterioration), 4s to clear.
+      //    Threshold flicker from tweening vitals never holds long enough, so it
+      //    no longer triggers the alarm at all.
+      if (rawLevel !== alarmCandidateRef.current.level) {
+        alarmCandidateRef.current = { level: rawLevel, since: now };
+      }
+      const eff = effectiveAlarmRef.current;
+      if (rawLevel !== eff) {
+        const rising = rank[rawLevel] > rank[eff];
+        const holdNeeded = rising ? 1200 : 4000;
+        if (now - alarmCandidateRef.current.since >= holdNeeded) {
+          effectiveAlarmRef.current = rawLevel;
+        }
+      }
+      const level = effectiveAlarmRef.current;
+
+      // 2) Annunciate (IEC 60601-1-8 burst) only when meaningful: on a genuine
+      //    WORSENING (rank rises), or the steady-state repeat cadence (critical
+      //    10s, warning 25s). Improvement (critical→warning) switches cadence
+      //    silently — it never sounds the alarm.
       const last = lastAlarmAnnunciationRef.current;
       // Only annunciate immediately on a genuine ESCALATION to a higher urgency.
       // A vital tweening across a threshold boundary flips warning<->critical
       // repeatedly; treating every flip as "escalated" replayed the alarm each
-      // tick (the spam bug). Rank the levels so lateral/downward flips fall back
-      // to the interval throttle instead.
-      const rank: Record<string, number> = { none: 0, warning: 1, critical: 2 };
-      const escalated = rank[level] > rank[last.level];
+      // tick (the spam bug). Rank the levels (defined above) so lateral/downward
+      // flips fall back to the interval throttle instead.
+      const worsened = rank[level] > rank[last.level];
       const interval = level === 'critical' ? 10000 : 25000;
       if (level === 'none') {
-        lastAlarmAnnunciationRef.current = { level, at: 0 };
-      } else if (escalated || now - last.at >= interval) {
+        lastAlarmAnnunciationRef.current = { level: 'none', at: 0 };
+      } else if (worsened || now - last.at >= interval) {
         audioEngineRef.current.playAlarm(level === 'critical');
         lastAlarmAnnunciationRef.current = { level, at: now };
+      } else if (level !== last.level) {
+        // de-escalation within the cadence window — track level, keep timer, no sound
+        lastAlarmAnnunciationRef.current = { level, at: last.at };
       }
     } else {
       lastAlarmAnnunciationRef.current = { level: 'none', at: 0 };
+      effectiveAlarmRef.current = 'none';
+      alarmCandidateRef.current = { level: 'none', since: 0 };
     }
   }, [currentVitals, audioEnabled, alarmsEnabled]);
 

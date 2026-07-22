@@ -1,0 +1,17 @@
+<svg viewBox="0 0 96 112" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="IV pole with fluid bag and line to patient">
+  <!-- pole -->
+  <line x1="34" y1="7" x2="34" y2="92" stroke="#94a3b8" stroke-width="4" stroke-linecap="round"/>
+  <!-- top hook -->
+  <path d="M34 7 q10 0 10 9" fill="none" stroke="#94a3b8" stroke-width="4" stroke-linecap="round"/>
+  <!-- base legs -->
+  <path d="M16 100 L34 90 L52 100" fill="none" stroke="#94a3b8" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <line x1="34" y1="90" x2="34" y2="100" stroke="#94a3b8" stroke-width="4"/>
+  <!-- fluid bag hanging from the hook -->
+  <path d="M34 18 h22 a4 4 0 0 1 4 4 v28 a4 4 0 0 1 -4 4 h-22 a4 4 0 0 1 -4 -4 v-28 a4 4 0 0 1 4 -4 Z"
+        fill="#bae6fd" fill-opacity="0.9" stroke="#0284c7" stroke-width="3"/>
+  <line x1="45" y1="24" x2="45" y2="46" stroke="#0284c7" stroke-width="2" opacity="0.45"/>
+  <!-- drip chamber -->
+  <rect x="42" y="56" width="8" height="12" rx="3" fill="#e0f2fe" stroke="#0284c7" stroke-width="2"/>
+  <!-- IV line running down to the patient -->
+  <path d="M46 68 q3 22 22 28 q11 4 21 -1" fill="none" stroke="#22c55e" stroke-width="4" stroke-linecap="round"/>
+</svg>

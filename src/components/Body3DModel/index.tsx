@@ -34,7 +34,7 @@ import type { CaseScenario, CaseCategory, VitalSigns } from '@/types';
 import type { ClinicalSoundState } from '@/data/clinicalSounds';
 import { playBreathSound, playHeartSound, playPercussionSound, playBowelSound, stopAllSounds, getZoneBreathSound } from '@/data/clinicalSounds';
 import type { BowelSoundType, BreathSoundType } from '@/data/clinicalSounds';
-import { inferInjuries, injuryRegionTo3D, type BodyInjury, type BodyRegion } from '@/lib/injuryMap';
+import { inferInjuries, injuryRegionTo3D, type BodyInjury, type BodyRegion, type InjuryKind, type InjurySeverity } from '@/lib/injuryMap';
 import { classifyBodyPoint } from '@/lib/regionClassifier';
 import { hashInjury } from './WoundLayer';
 import type { PatientVisualState, PatientWoundOverlay } from '@/lib/patientVisualState';
@@ -46,7 +46,7 @@ import {
   type PatientRealismCue,
   type PatientRealismProfile,
   type RealismSeverity,
-} from '@/lib/patientRealism';
+} from '@/data/clinicalRealism';
 import {
   deriveUnwellness,
   collectUnwellnessText,
@@ -134,6 +134,7 @@ const TREATMENT_ASSET_PATHS = {
   lucas: '/treatment-assets/lucas-device.svg',
   etTube: '/treatment-assets/et-tube.svg',
   opa: '/treatment-assets/opa.svg',
+  ivPole: '/treatment-assets/iv-pole.svg',
 } as const;
 
 const BODY_REGION_DIAGRAM_ANCHOR: Record<BodyRegion, { x: number; y: number }> = {
@@ -257,20 +258,25 @@ const ABDOMEN_QUADRANTS: Array<{ id: AbdomenQuadrant; label: string; full: strin
 // in the exact in-app frame: feet Y=0, head Y≈1.8, centred on X/Z, anatomical
 // front at +Z (camera side). The body's front surface sits at only z ≈ 0.16
 // (face/chest) to 0.22 (belly) — NOT 0.3+ — so anything past ~0.25 floats in
-// the air in front of the patient. Torso half-width is ~0.15 and the forearm/
-// wrist sits at x ≈ ±0.18 (the upper arm bulges out to ±0.49). These positions
-// sit just proud of the real camera-facing surface.
+// the air in front of the patient. The arms hang at the sides: although the
+// upper arm's OUTER edge reaches ±0.49, the camera-FACING surface of the whole
+// arm (shoulder→hand) sits at only x ≈ ±0.13–0.15, so arm dots belong there,
+// not splayed out to ±0.3. The legs are slightly apart — the leg front runs
+// from x ≈ ±0.15 (thigh) out to ±0.20 (ankle/foot). These positions sit just
+// proud of the real camera-facing surface; the surface sampler then snaps z
+// (and lightly rescales x for non-reference models).
 const EXAM_LANDMARKS: ExamLandmark[] = [
   { id: 'eyes-overview', region: 'face', label: 'Face / eyes', sublabel: 'pupils, lips, speech', position: [0.0, 1.62, 0.20], level: 'overview', tone: 'neuro' },
   { id: 'airway-overview', region: 'neck-cspine', label: 'Airway / neck', sublabel: 'mouth, trachea, JVD', position: [0.0, 1.46, 0.22], level: 'overview', tone: 'airway' },
   { id: 'chest-overview', region: 'chest', label: 'Chest', sublabel: 'rise, wall, lungs, heart', position: [0.02, 1.27, 0.20], level: 'overview', tone: 'breathing' },
   { id: 'abdomen-overview', region: 'abdomen', label: 'Abdomen', sublabel: 'quadrants, guarding', position: [0.03, 1.02, 0.24], level: 'overview', tone: 'abdomen' },
-  { id: 'radial-overview', region: 'right-arm', label: 'Radial pulse', sublabel: 'CRT / motor', position: [-0.18, 0.82, 0.20], level: 'overview', tone: 'circulation' },
   // Minimal anatomical pulse points — click to check (works from any view).
-  { id: 'pulse-carotid', region: 'neck-cspine', label: 'Carotid', sublabel: 'central pulse', position: [-0.12, 1.39, 0.20], level: 'overview', actionId: 'pulse-carotid', tone: 'circulation' },
-  { id: 'pulse-radial-r', region: 'right-arm', label: 'Radial', sublabel: 'wrist pulse', position: [-0.20, 0.80, 0.18], level: 'overview', actionId: 'pulse-radial', tone: 'circulation' },
-  { id: 'pulse-radial-l', region: 'left-arm', label: 'Radial', sublabel: 'wrist pulse', position: [0.20, 0.80, 0.18], level: 'overview', actionId: 'pulse-radial', tone: 'circulation' },
-  { id: 'pedal-overview', region: 'right-leg', label: 'Pedal pulse', sublabel: 'DP / PT', position: [-0.13, 0.14, 0.20], level: 'overview', tone: 'circulation' },
+  // (Removed the duplicate 'radial-overview' dot that sat ~2 cm from
+  // 'pulse-radial-r' on the same wrist — it created the cluttered arm cluster.)
+  { id: 'pulse-carotid', region: 'neck-cspine', label: 'Carotid', sublabel: 'central pulse', position: [-0.11, 1.42, 0.19], level: 'overview', actionId: 'pulse-carotid', tone: 'circulation' },
+  { id: 'pulse-radial-r', region: 'right-arm', label: 'Radial', sublabel: 'wrist pulse', position: [-0.135, 0.81, 0.18], level: 'overview', actionId: 'pulse-radial', tone: 'circulation' },
+  { id: 'pulse-radial-l', region: 'left-arm', label: 'Radial', sublabel: 'wrist pulse', position: [0.135, 0.81, 0.18], level: 'overview', actionId: 'pulse-radial', tone: 'circulation' },
+  { id: 'pedal-overview', region: 'right-leg', label: 'Pedal pulse', sublabel: 'DP / PT', position: [-0.20, 0.13, 0.18], level: 'overview', tone: 'circulation' },
   { id: 'posterior-overview', region: 'posterior-logroll', label: 'Posterior', sublabel: 'log roll / spine', position: [0.0, 1.10, -0.20], level: 'overview', tone: 'neutral' },
 
   // Facial landmarks: x/y are tuned to sit ON the painted features (eyes/lips)
@@ -306,6 +312,49 @@ const EXAM_LANDMARKS: ExamLandmark[] = [
   { id: 'rlq-detail', region: 'abdomen', label: 'RLQ', sublabel: 'appendix / pelvis', position: [-0.095, 0.985, 0.245], level: 'detail', actionId: 'abd-rlq-auscultate', tone: 'abdomen' },
   { id: 'llq-detail', region: 'abdomen', label: 'LLQ', sublabel: 'colon / pelvis', position: [0.095, 0.985, 0.245], level: 'detail', actionId: 'abd-llq-auscultate', tone: 'abdomen' },
   { id: 'umbilicus-detail', region: 'abdomen', label: 'Umbilicus', sublabel: 'distension / bruising', position: [0, 1.035, 0.255], level: 'detail', actionId: 'abd-inspect', tone: 'abdomen' },
+
+  // ===== HEAD (cranium — face/eyes/mouth live on the separate 'face' region) =====
+  { id: 'scalp-detail', region: 'head', label: 'Scalp', sublabel: 'lacerations, haematoma', position: [-0.02, 1.79, 0.12], level: 'detail', actionId: 'scalp-inspect', tone: 'warning' },
+  { id: 'skull-detail', region: 'head', label: 'Skull', sublabel: 'deformity, step, boggy', position: [0.03, 1.73, 0.16], level: 'detail', actionId: 'scalp-palpate', tone: 'warning' },
+  { id: 'ear-right-detail', region: 'head', label: 'R ear', sublabel: 'Battle sign, CSF otorrhoea', position: [-0.135, 1.66, 0.05], level: 'detail', actionId: 'ears-inspect', tone: 'neutral' },
+  { id: 'ear-left-detail', region: 'head', label: 'L ear', sublabel: 'Battle sign, CSF otorrhoea', position: [0.135, 1.66, 0.05], level: 'detail', actionId: 'ears-inspect', tone: 'neutral' },
+
+  // ===== RIGHT ARM (patient's right = camera-left = negative X) =====
+  { id: 'r-shoulder-detail', region: 'right-arm', label: 'Shoulder', sublabel: 'clavicle, ROM', position: [-0.15, 1.39, 0.18], level: 'detail', actionId: 'r-shoulder-palpate', tone: 'warning' },
+  { id: 'r-humerus-detail', region: 'right-arm', label: 'Upper arm', sublabel: 'humerus, deformity', position: [-0.145, 1.12, 0.16], level: 'detail', actionId: 'r-humerus-palpate', tone: 'warning' },
+  { id: 'r-elbow-detail', region: 'right-arm', label: 'Elbow', sublabel: 'effusion, ROM', position: [-0.14, 0.95, 0.19], level: 'detail', actionId: 'r-elbow-palpate', tone: 'warning' },
+  { id: 'r-forearm-detail', region: 'right-arm', label: 'Forearm', sublabel: 'radius / ulna', position: [-0.145, 0.88, 0.19], level: 'detail', actionId: 'r-forearm-palpate', tone: 'warning' },
+  { id: 'r-wrist-detail', region: 'right-arm', label: 'Wrist', sublabel: 'radial pulse, CRT', position: [-0.135, 0.81, 0.18], level: 'detail', actionId: 'r-arm-pulses', tone: 'circulation' },
+  { id: 'r-hand-detail', region: 'right-arm', label: 'Hand', sublabel: 'grip, sensation, digits', position: [-0.15, 0.72, 0.17], level: 'detail', actionId: 'r-hand-palpate', tone: 'neuro' },
+
+  // ===== LEFT ARM (patient's left = camera-right = positive X) =====
+  { id: 'l-shoulder-detail', region: 'left-arm', label: 'Shoulder', sublabel: 'clavicle, ROM', position: [0.15, 1.39, 0.18], level: 'detail', actionId: 'l-shoulder-palpate', tone: 'warning' },
+  { id: 'l-humerus-detail', region: 'left-arm', label: 'Upper arm', sublabel: 'humerus, deformity', position: [0.145, 1.12, 0.16], level: 'detail', actionId: 'l-humerus-palpate', tone: 'warning' },
+  { id: 'l-elbow-detail', region: 'left-arm', label: 'Elbow', sublabel: 'effusion, ROM', position: [0.14, 0.95, 0.19], level: 'detail', actionId: 'l-elbow-palpate', tone: 'warning' },
+  { id: 'l-forearm-detail', region: 'left-arm', label: 'Forearm', sublabel: 'radius / ulna', position: [0.145, 0.88, 0.19], level: 'detail', actionId: 'l-forearm-palpate', tone: 'warning' },
+  { id: 'l-wrist-detail', region: 'left-arm', label: 'Wrist', sublabel: 'radial pulse, CRT', position: [0.135, 0.81, 0.18], level: 'detail', actionId: 'l-arm-pulses', tone: 'circulation' },
+  { id: 'l-hand-detail', region: 'left-arm', label: 'Hand', sublabel: 'grip, sensation, digits', position: [0.15, 0.72, 0.17], level: 'detail', actionId: 'l-hand-palpate', tone: 'neuro' },
+
+  // ===== RIGHT LEG (upper thigh → foot) =====
+  { id: 'r-hip-detail', region: 'right-leg', label: 'Hip', sublabel: 'shortening, rotation', position: [-0.14, 0.88, 0.19], level: 'detail', actionId: 'r-hip-palpate', tone: 'warning' },
+  { id: 'r-thigh-detail', region: 'right-leg', label: 'Upper thigh', sublabel: 'femur, quadriceps', position: [-0.15, 0.70, 0.18], level: 'detail', actionId: 'r-femur-palpate', tone: 'warning' },
+  { id: 'r-knee-detail', region: 'right-leg', label: 'Knee', sublabel: 'patella, effusion', position: [-0.165, 0.46, 0.18], level: 'detail', actionId: 'r-knee-palpate', tone: 'warning' },
+  { id: 'r-shin-detail', region: 'right-leg', label: 'Lower leg', sublabel: 'tibia, compartments', position: [-0.18, 0.31, 0.19], level: 'detail', actionId: 'r-tibia-palpate', tone: 'warning' },
+  { id: 'r-ankle-detail', region: 'right-leg', label: 'Ankle', sublabel: 'malleoli, oedema', position: [-0.20, 0.17, 0.18], level: 'detail', actionId: 'r-ankle-palpate', tone: 'warning' },
+  { id: 'r-foot-detail', region: 'right-leg', label: 'Foot', sublabel: 'pedal pulse, CRT', position: [-0.20, 0.06, 0.18], level: 'detail', actionId: 'r-leg-pulses', tone: 'circulation' },
+
+  // ===== LEFT LEG (upper thigh → foot) =====
+  { id: 'l-hip-detail', region: 'left-leg', label: 'Hip', sublabel: 'shortening, rotation', position: [0.14, 0.88, 0.19], level: 'detail', actionId: 'l-hip-palpate', tone: 'warning' },
+  { id: 'l-thigh-detail', region: 'left-leg', label: 'Upper thigh', sublabel: 'femur, quadriceps', position: [0.15, 0.70, 0.18], level: 'detail', actionId: 'l-femur-palpate', tone: 'warning' },
+  { id: 'l-knee-detail', region: 'left-leg', label: 'Knee', sublabel: 'patella, effusion', position: [0.165, 0.46, 0.18], level: 'detail', actionId: 'l-knee-palpate', tone: 'warning' },
+  { id: 'l-shin-detail', region: 'left-leg', label: 'Lower leg', sublabel: 'tibia, compartments', position: [0.18, 0.31, 0.19], level: 'detail', actionId: 'l-tibia-palpate', tone: 'warning' },
+  { id: 'l-ankle-detail', region: 'left-leg', label: 'Ankle', sublabel: 'malleoli, oedema', position: [0.20, 0.17, 0.18], level: 'detail', actionId: 'l-ankle-palpate', tone: 'warning' },
+  { id: 'l-foot-detail', region: 'left-leg', label: 'Foot', sublabel: 'pedal pulse, CRT', position: [0.20, 0.06, 0.18], level: 'detail', actionId: 'l-leg-pulses', tone: 'circulation' },
+
+  // ===== PELVIS =====
+  { id: 'pelvis-right-detail', region: 'pelvis', label: 'R iliac crest', sublabel: 'spring test', position: [-0.14, 0.93, 0.18], level: 'detail', actionId: 'pelvis-palpate', tone: 'warning' },
+  { id: 'pelvis-left-detail', region: 'pelvis', label: 'L iliac crest', sublabel: 'spring test', position: [0.14, 0.93, 0.18], level: 'detail', actionId: 'pelvis-palpate', tone: 'warning' },
+  { id: 'pelvis-symphysis-detail', region: 'pelvis', label: 'Symphysis', sublabel: 'deformity, bruising', position: [0, 0.86, 0.21], level: 'detail', actionId: 'pelvis-inspect', tone: 'abdomen' },
 ];
 
 function SceneCable({
@@ -568,10 +617,10 @@ function LandmarkMarkers({
                 }
                 onSelect(marker.region);
               }}
-              className={`group pointer-events-auto relative flex items-center justify-center ${isDetail ? 'h-3 w-3' : 'h-4 w-4'}`}
+              className={`group pointer-events-auto relative flex items-center justify-center ${isDetail ? 'h-2.5 w-2.5' : 'h-3 w-3'}`}
               title={`${marker.label} — ${marker.sublabel}`}
             >
-              <span className={`block rounded-full ring-[1.5px] ring-white/85 shadow-md transition-transform duration-150 group-hover:scale-125 ${isDetail ? 'h-1 w-1' : 'h-2.5 w-2.5'} ${dotColor}`} />
+              <span className={`block rounded-full ring-1 ring-white/80 shadow-md transition-transform duration-150 group-hover:scale-150 ${isDetail ? 'h-1 w-1' : 'h-1.5 w-1.5'} ${dotColor}`} />
               {!isDetail && (
                 <span className={`pointer-events-none absolute left-1/2 top-[125%] z-10 -translate-x-1/2 whitespace-nowrap rounded-md border px-1.5 py-0.5 text-[8px] font-semibold leading-none opacity-0 shadow-lg backdrop-blur-md transition-opacity duration-150 group-hover:opacity-100 ${toneClasses[marker.tone ?? 'neutral']}`}>
                   {marker.label}
@@ -596,10 +645,10 @@ const FINDING_ANCHORS: Record<string, [number, number, number]> = {
   'chest': [0.0, 1.27, 0.20],
   'abdomen': [0.0, 1.02, 0.24],
   'pelvis': [0.0, 0.90, 0.24],
-  'right-arm': [-0.34, 1.08, 0.12],
-  'left-arm': [0.34, 1.08, 0.12],
-  'right-leg': [-0.14, 0.48, 0.20],
-  'left-leg': [0.14, 0.48, 0.20],
+  'right-arm': [-0.145, 1.10, 0.16],
+  'left-arm': [0.145, 1.10, 0.16],
+  'right-leg': [-0.165, 0.46, 0.18],
+  'left-leg': [0.165, 0.46, 0.18],
   'posterior-logroll': [0.0, 1.10, -0.20],
 };
 
@@ -699,6 +748,76 @@ function RevealedFindingMarkers({
                 <span className="whitespace-nowrap text-[8px] font-bold uppercase tracking-[0.1em] leading-none">{inj.label}</span>
               </div>
             </div>
+          </MarkerHtml>
+        );
+      })}
+    </>
+  );
+}
+
+// Visible wounds painted on the skin — blood, bruising, burns — at the injured
+// region, sized by severity and coloured by kind. Unlike the text badges these
+// stay visible when you zoom INTO a region, so a described injury is actually
+// THERE on the mannequin to inspect. Shape-only findings (deformity, rotation,
+// fracture, distension) are conveyed by badges/morphs, not a skin mark.
+const WOUND_STYLE: Partial<Record<InjuryKind, { core: string; edge: string }>> = {
+  bleeding: { core: 'rgba(150,16,22,0.92)', edge: 'rgba(120,10,14,0)' },
+  wound: { core: 'rgba(140,14,20,0.92)', edge: 'rgba(110,8,12,0)' },
+  amputation: { core: 'rgba(105,8,10,0.96)', edge: 'rgba(80,4,6,0)' },
+  burn: { core: 'rgba(92,42,20,0.9)', edge: 'rgba(150,60,30,0)' },
+  bruising: { core: 'rgba(74,28,104,0.8)', edge: 'rgba(60,20,90,0)' },
+  flail: { core: 'rgba(80,32,96,0.72)', edge: 'rgba(60,22,80,0)' },
+  swelling: { core: 'rgba(176,132,110,0.62)', edge: 'rgba(176,132,110,0)' },
+};
+const WOUND_SIZE: Record<InjurySeverity, number> = { critical: 42, major: 31, minor: 23 };
+
+function InjuryWoundMarkers({
+  caseData,
+  assessedRegions,
+  activeRegion,
+  sampler,
+}: {
+  caseData: CaseScenario;
+  assessedRegions: Set<string>;
+  activeRegion: string | null;
+  sampler: ((x: number, y: number) => [number, number, number]) | null;
+}) {
+  const injuries = useMemo(() => inferInjuries(caseData), [caseData]);
+  if (!injuries.length) return null;
+  const slots: Record<string, number> = {};
+  return (
+    <>
+      {injuries.map((inj) => {
+        const style = WOUND_STYLE[inj.kind];
+        if (!style) return null; // shape-only finding — no skin mark
+        const region3d = injuryRegionTo3D(inj.region);
+        const revealed = assessedRegions.has(region3d)
+          || (isLimbRegion(region3d) && assessedRegions.has('extremities'))
+          || activeRegion === region3d;
+        if (!revealed) return null;
+        const base = FINDING_ANCHORS[region3d];
+        if (!base) return null;
+        const n = (slots[region3d] = (slots[region3d] ?? -1) + 1);
+        // Small fan so several wounds in one region don't stack dead-centre.
+        const bx = base[0] + (n % 2 === 0 ? 0.03 : -0.03) * Math.ceil(n / 2);
+        const by = base[1] - 0.04 * n;
+        const anchor: [number, number, number] = sampler && region3d !== 'posterior-logroll'
+          ? sampler(bx, by)
+          : [bx, by, base[2]];
+        const d = WOUND_SIZE[inj.severity] ?? 26;
+        return (
+          <MarkerHtml key={`wound-${inj.id}`} position={anchor} distanceFactor={2.4} zIndexRange={[60, 0]} interactive={false}>
+            <div
+              aria-hidden
+              className="pointer-events-none animate-in fade-in duration-700"
+              style={{
+                width: d,
+                height: d,
+                borderRadius: '50%',
+                background: `radial-gradient(circle at 42% 40%, ${style.core} 0%, ${style.core} 26%, ${style.edge} 80%)`,
+                filter: 'blur(1px)',
+              }}
+            />
           </MarkerHtml>
         );
       })}
@@ -904,176 +1023,74 @@ function buildTreatmentEquipmentState(appliedTreatmentIds: string[]): AppliedEqu
   };
 }
 
-function EquipmentPill({
-  label,
-  detail,
-  tone,
-  children,
-}: {
-  label: string;
-  detail: string;
-  tone: 'oxygen' | 'iv' | 'defib' | 'device';
-  children: React.ReactNode;
-}) {
-  const toneClass = {
-    oxygen: 'border-cyan-200/45 bg-cyan-950/58 text-cyan-50 shadow-cyan-950/35',
-    iv: 'border-emerald-200/45 bg-emerald-950/58 text-emerald-50 shadow-emerald-950/35',
-    defib: 'border-rose-200/45 bg-rose-950/58 text-rose-50 shadow-rose-950/35',
-    device: 'border-slate-200/40 bg-slate-950/62 text-slate-50 shadow-slate-950/40',
-  }[tone];
+type EquipTone = 'oxygen' | 'iv' | 'defib' | 'device';
 
-  return (
-    <div className={`pointer-events-none flex min-w-[142px] max-w-[176px] items-center gap-2 rounded-2xl border px-2.5 py-2 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-75 duration-300 ${toneClass}`}>
-      <div className="relative h-14 w-16 shrink-0">{children}</div>
-      <div className="min-w-0">
-        <p className="text-[9px] font-bold uppercase tracking-[0.12em] leading-tight text-white/92">{label}</p>
-        <p className="mt-0.5 text-[8px] leading-snug text-white/70">{detail}</p>
+const OXYGEN_SRC: Record<OxygenEquipmentVisual['mode'], string> = {
+  nasal: TREATMENT_ASSET_PATHS.nasal,
+  'simple-mask': TREATMENT_ASSET_PATHS.simpleMask,
+  nonrebreather: TREATMENT_ASSET_PATHS.nonrebreather,
+  nebulizer: TREATMENT_ASSET_PATHS.nebulizer,
+  bvm: TREATMENT_ASSET_PATHS.bvm,
+  cpap: TREATMENT_ASSET_PATHS.cpap,
+  ventilator: TREATMENT_ASSET_PATHS.ventilator,
+};
+
+const EQUIP_PIN_RING: Record<EquipTone, string> = {
+  oxygen: 'border-cyan-300/70',
+  iv: 'border-emerald-300/70',
+  defib: 'border-rose-300/70',
+  device: 'border-slate-300/60',
+};
+
+// Small icon-only marker pinned to the relevant body part. Replaced the old
+// large labelled cards that crowded the assessment view — the human-readable
+// labels now live in the compact AppliedEquipmentTray below the model.
+function EquipmentPin({ tone, src, bare = false }: { tone: EquipTone; src: string; bare?: boolean }) {
+  // Bare = sits directly on the patient (the oxygen mask on the face), no badge
+  // chrome, so it reads as a worn device rather than an icon button.
+  if (bare) {
+    return (
+      <div className="pointer-events-none h-8 w-8 animate-in fade-in zoom-in-75 duration-200 drop-shadow-[0_3px_5px_rgba(8,47,73,0.4)]">
+        <img src={src} alt="" className="h-full w-full object-contain" draggable={false} />
       </div>
+    );
+  }
+  return (
+    <div className={`pointer-events-none flex h-8 w-8 items-center justify-center rounded-xl border ${EQUIP_PIN_RING[tone]} bg-slate-950/70 p-1 shadow-lg backdrop-blur-sm animate-in fade-in zoom-in-75 duration-200`}>
+      <img src={src} alt="" className="h-full w-full object-contain" draggable={false} />
     </div>
   );
 }
 
-function OxygenDeviceGraphic({ equipment }: { equipment: OxygenEquipmentVisual }) {
-  const src = {
-    nasal: TREATMENT_ASSET_PATHS.nasal,
-    'simple-mask': TREATMENT_ASSET_PATHS.simpleMask,
-    nonrebreather: TREATMENT_ASSET_PATHS.nonrebreather,
-    nebulizer: TREATMENT_ASSET_PATHS.nebulizer,
-    bvm: TREATMENT_ASSET_PATHS.bvm,
-    cpap: TREATMENT_ASSET_PATHS.cpap,
-    ventilator: TREATMENT_ASSET_PATHS.ventilator,
-  }[equipment.mode];
-
-  const sizeClass = {
-    nasal: 'h-12 w-[4.4rem] -translate-y-1',
-    'simple-mask': 'h-[4.4rem] w-[5rem]',
-    nonrebreather: 'h-[6.4rem] w-[5.6rem] translate-y-4',
-    nebulizer: 'h-[5.8rem] w-[5.7rem] translate-y-3',
-    bvm: 'h-[5rem] w-[6.8rem] translate-y-4',
-    cpap: 'h-[5.2rem] w-[5.6rem] translate-y-2',
-    ventilator: 'h-[4.8rem] w-[6.8rem] translate-y-3',
-  }[equipment.mode];
-
-  const label = {
-    nasal: 'O2',
-    'simple-mask': 'O2',
-    nonrebreather: '15 L',
-    nebulizer: 'Mist',
-    bvm: 'BVM',
-    cpap: 'CPAP',
-    ventilator: 'Vent',
-  }[equipment.mode];
-
+// Compact, fixed corner list of everything currently applied — restores the
+// labels the on-body pins omit, without floating cards over the patient.
+function AppliedEquipmentTray({ appliedTreatmentIds }: { appliedTreatmentIds: string[] }) {
+  const equipment = useMemo(() => buildTreatmentEquipmentState(appliedTreatmentIds), [appliedTreatmentIds]);
+  const chips: Array<{ src: string; label: string }> = [];
+  if (equipment.oxygen) chips.push({ src: OXYGEN_SRC[equipment.oxygen.mode], label: equipment.oxygen.label });
+  if (equipment.hasEtTube && equipment.oxygen?.mode !== 'ventilator') chips.push({ src: TREATMENT_ASSET_PATHS.etTube, label: 'ET tube' });
+  if (equipment.hasOpa && !equipment.hasEtTube) chips.push({ src: TREATMENT_ASSET_PATHS.opa, label: 'OPA inserted' });
+  if (equipment.hasFluids) chips.push({ src: TREATMENT_ASSET_PATHS.ivPole, label: 'Fluids running' });
+  else if (equipment.hasIvAccess) chips.push({ src: TREATMENT_ASSET_PATHS.ivCannula, label: 'IV access' });
+  if (equipment.hasDefibPads) chips.push({ src: TREATMENT_ASSET_PATHS.defibPads, label: 'Defib pads on' });
+  if (equipment.hasLucas) chips.push({ src: TREATMENT_ASSET_PATHS.lucas, label: 'LUCAS running' });
+  if (chips.length === 0) return null;
   return (
-    <div className={`pointer-events-none relative ${sizeClass} animate-in fade-in zoom-in-75 duration-300`} aria-hidden="true">
-      <img
-        src={src}
-        alt=""
-        className="absolute inset-0 h-full w-full object-contain drop-shadow-[0_10px_12px_rgba(8,47,73,0.24)]"
-        draggable={false}
-      />
-      {(equipment.mode === 'nonrebreather' || equipment.mode === 'simple-mask' || equipment.mode === 'nasal') && (
-        <div className="absolute -right-1 bottom-1 flex items-center gap-0.5">
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-cyan-200 shadow-[0_0_10px_rgba(103,232,249,0.9)]" />
-          <span className="h-1 w-1 rounded-full bg-cyan-100/80" />
+    <div className="pointer-events-none absolute bottom-3 right-3 z-20 flex max-w-[44%] flex-col items-end gap-1.5">
+      {chips.map((chip, i) => (
+        <div key={i} className="flex items-center gap-1.5 rounded-full border border-white/15 bg-slate-950/70 py-0.5 pl-0.5 pr-2.5 text-[10px] font-medium text-white/90 shadow-md backdrop-blur-md">
+          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/10">
+            <img src={chip.src} alt="" className="h-3.5 w-3.5 object-contain" draggable={false} />
+          </span>
+          {chip.label}
         </div>
-      )}
-      {equipment.mode === 'nebulizer' && (
-        <>
-          <span className="absolute left-1/2 top-[18%] h-2 w-2 -translate-x-1/2 animate-ping rounded-full bg-cyan-100/60" />
-          <span className="absolute left-[58%] top-[30%] h-1.5 w-1.5 animate-pulse rounded-full bg-cyan-50/80" />
-          <span className="absolute left-[42%] top-[36%] h-1 w-1 rounded-full bg-cyan-50/75" />
-        </>
-      )}
-      {(equipment.mode === 'bvm' || equipment.mode === 'cpap' || equipment.mode === 'ventilator') && (
-        <span className="absolute left-1/2 top-[58%] h-2 w-2 -translate-x-1/2 animate-pulse rounded-full bg-sky-100 shadow-[0_0_12px_rgba(186,230,253,0.9)]" />
-      )}
-      <span className="absolute -right-1 -top-1 rounded-full border border-white/30 bg-slate-950/62 px-1.5 py-0.5 text-[7px] font-black uppercase tracking-[0.08em] text-cyan-50 shadow-lg backdrop-blur-md">
-        {label}
-      </span>
+      ))}
     </div>
   );
 }
 
-function IvCannulaGraphic({ hasFluids }: { hasFluids: boolean }) {
-  return (
-    <>
-      <img
-        src={TREATMENT_ASSET_PATHS.ivCannula}
-        alt=""
-        className="absolute inset-0 h-full w-full object-contain drop-shadow-[0_10px_12px_rgba(6,78,59,0.24)]"
-        draggable={false}
-      />
-      {hasFluids && (
-        <div className="absolute left-[49px] top-[37px] h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-100" />
-      )}
-    </>
-  );
-}
-
-function FluidBagGraphic() {
-  return (
-    <div className="pointer-events-none flex min-w-[118px] items-center gap-2 rounded-2xl border border-emerald-100/45 bg-slate-950/60 px-2.5 py-2 text-white shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-75 duration-300">
-      <div className="relative h-16 w-11 shrink-0">
-        <img src={TREATMENT_ASSET_PATHS.fluidBag} alt="" className="absolute inset-0 h-full w-full object-contain" draggable={false} />
-      </div>
-      <div>
-        <p className="text-[9px] font-bold uppercase tracking-[0.12em] leading-tight">Fluid running</p>
-        <p className="mt-0.5 text-[8px] leading-snug text-white/70">Bag and line connected to IV cannula</p>
-      </div>
-    </div>
-  );
-}
-
-function DefibPadsGraphic() {
-  return (
-    <div className="pointer-events-none relative h-28 w-32 animate-in fade-in zoom-in-75 duration-300">
-      <img src={TREATMENT_ASSET_PATHS.defibPads} alt="" className="absolute inset-0 h-full w-full object-contain drop-shadow-[0_12px_14px_rgba(136,19,55,0.28)]" draggable={false} />
-      <div className="absolute left-[54px] top-[22px] rounded-full border border-rose-200/45 bg-rose-950/60 px-2 py-0.5 text-[8px] font-bold uppercase tracking-[0.12em] text-rose-50 backdrop-blur">
-        Pads on
-      </div>
-    </div>
-  );
-}
-
-function LucasGraphic() {
-  return (
-    <div className="pointer-events-none relative h-20 w-36 animate-in fade-in zoom-in-75 duration-300">
-      <img src={TREATMENT_ASSET_PATHS.lucas} alt="" className="absolute inset-0 h-full w-full object-contain drop-shadow-[0_12px_14px_rgba(15,23,42,0.32)]" draggable={false} />
-      <div className="absolute left-[48px] top-0 rounded-full border border-slate-100/35 bg-slate-950/62 px-2 py-0.5 text-[8px] font-bold uppercase tracking-[0.12em] text-slate-50 backdrop-blur">
-        LUCAS
-      </div>
-    </div>
-  );
-}
-
-function EtTubeGraphic() {
-  return (
-    <div className="pointer-events-none flex min-w-[124px] items-center gap-2 rounded-2xl border border-sky-100/45 bg-slate-950/62 px-2.5 py-2 text-white shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-75 duration-300">
-      <div className="relative h-14 w-16 shrink-0">
-        <img src={TREATMENT_ASSET_PATHS.etTube} alt="" className="absolute inset-0 h-full w-full object-contain" draggable={false} />
-      </div>
-      <div>
-        <p className="text-[9px] font-bold uppercase tracking-[0.12em] leading-tight">ET tube</p>
-        <p className="mt-0.5 text-[8px] leading-snug text-white/70">Airway secured and tube visible at mouth</p>
-      </div>
-    </div>
-  );
-}
-
-function OpaGraphic() {
-  return (
-    <div className="pointer-events-none flex min-w-[124px] items-center gap-2 rounded-2xl border border-orange-100/45 bg-slate-950/62 px-2.5 py-2 text-white shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-75 duration-300">
-      <div className="relative h-14 w-16 shrink-0">
-        <img src={TREATMENT_ASSET_PATHS.opa} alt="" className="absolute inset-0 h-full w-full object-contain" draggable={false} />
-      </div>
-      <div>
-        <p className="text-[9px] font-bold uppercase tracking-[0.12em] leading-tight">OPA inserted</p>
-        <p className="mt-0.5 text-[8px] leading-snug text-white/70">Only appropriate without gag reflex</p>
-      </div>
-    </div>
-  );
-}
+// Per-device graphic components removed — the overlay now renders small
+// EquipmentPin markers driven directly by TREATMENT_ASSET_PATHS / OXYGEN_SRC.
 
 function TreatmentEquipmentOverlay({
   appliedTreatmentIds,
@@ -1105,50 +1122,44 @@ function TreatmentEquipmentOverlay({
   return (
     <>
       {equipment.oxygen && (
-        <MarkerHtml position={anchor(0, 1.565, 0.215)} distanceFactor={2.45} zIndexRange={[62, 0]} interactive={false} presentation={presentation}>
-          <OxygenDeviceGraphic equipment={equipment.oxygen} />
+        <MarkerHtml position={anchor(0.05, 1.52, 0.215)} distanceFactor={1.5} zIndexRange={[76, 0]} interactive={false} presentation={presentation}>
+          <EquipmentPin tone="oxygen" src={OXYGEN_SRC[equipment.oxygen.mode]} bare />
         </MarkerHtml>
       )}
 
       {equipment.hasEtTube && equipment.oxygen?.mode !== 'ventilator' && (
-        <MarkerHtml position={anchor(0.02, 1.545, 0.215)} distanceFactor={2.35} zIndexRange={[74, 0]} interactive={false} presentation={presentation}>
-          <EtTubeGraphic />
+        <MarkerHtml position={anchor(0.07, 1.55, 0.215)} distanceFactor={2.4} zIndexRange={[74, 0]} interactive={false} presentation={presentation}>
+          <EquipmentPin tone="oxygen" src={TREATMENT_ASSET_PATHS.etTube} />
         </MarkerHtml>
       )}
 
       {equipment.hasOpa && !equipment.hasEtTube && (
-        <MarkerHtml position={anchor(-0.02, 1.54, 0.215)} distanceFactor={2.35} zIndexRange={[73, 0]} interactive={false} presentation={presentation}>
-          <OpaGraphic />
+        <MarkerHtml position={anchor(-0.07, 1.55, 0.215)} distanceFactor={2.4} zIndexRange={[73, 0]} interactive={false} presentation={presentation}>
+          <EquipmentPin tone="device" src={TREATMENT_ASSET_PATHS.opa} />
         </MarkerHtml>
       )}
 
       {equipment.hasIvAccess && (
-        <MarkerHtml position={anchor(-0.205, 0.82, 0.2)} distanceFactor={2.65} zIndexRange={[72, 0]} interactive={false} presentation={presentation}>
-          <EquipmentPill
-            label="IV cannula"
-            detail={equipment.hasFluids ? 'Cannula taped down with fluid line attached' : 'Cannula inserted and secured at the forearm'}
-            tone="iv"
-          >
-            <IvCannulaGraphic hasFluids={equipment.hasFluids} />
-          </EquipmentPill>
+        <MarkerHtml position={anchor(-0.205, 0.82, 0.2)} distanceFactor={2.5} zIndexRange={[72, 0]} interactive={false} presentation={presentation}>
+          <EquipmentPin tone="iv" src={TREATMENT_ASSET_PATHS.ivCannula} />
         </MarkerHtml>
       )}
 
       {equipment.hasFluids && (
-        <MarkerHtml position={presentation === 'treatment-bay' ? treatmentBayClinicalToWorld([-0.36, 1.08, 0.22], bayStage) : [-0.36, 1.08, 0.22]} distanceFactor={2.9} zIndexRange={[70, 0]} interactive={false} presentation={presentation}>
-          <FluidBagGraphic />
+        <MarkerHtml position={presentation === 'treatment-bay' ? treatmentBayClinicalToWorld([-0.46, 1.16, 0.12], bayStage) : [-0.46, 1.16, 0.12]} distanceFactor={3.0} zIndexRange={[71, 0]} interactive={false} presentation={presentation}>
+          <EquipmentPin tone="iv" src={TREATMENT_ASSET_PATHS.ivPole} />
         </MarkerHtml>
       )}
 
       {equipment.hasDefibPads && (
-        <MarkerHtml position={anchor(0.01, 1.24, 0.218)} distanceFactor={2.4} zIndexRange={[68, 0]} interactive={false} presentation={presentation}>
-          <DefibPadsGraphic />
+        <MarkerHtml position={anchor(0.01, 1.24, 0.218)} distanceFactor={2.5} zIndexRange={[68, 0]} interactive={false} presentation={presentation}>
+          <EquipmentPin tone="defib" src={TREATMENT_ASSET_PATHS.defibPads} />
         </MarkerHtml>
       )}
 
       {equipment.hasLucas && (
-        <MarkerHtml position={anchor(0, 1.19, 0.22)} distanceFactor={2.55} zIndexRange={[69, 0]} interactive={false} presentation={presentation}>
-          <LucasGraphic />
+        <MarkerHtml position={anchor(0, 1.19, 0.22)} distanceFactor={2.6} zIndexRange={[69, 0]} interactive={false} presentation={presentation}>
+          <EquipmentPin tone="device" src={TREATMENT_ASSET_PATHS.lucas} />
         </MarkerHtml>
       )}
     </>
@@ -2894,6 +2905,10 @@ interface Body3DModelProps {
    * the body falls back to the case's initial vitals (no live tint).
    */
   vitals?: VitalSigns;
+  /** Live respiratory rate from the monitor (breaths/min). Drives the visible
+   *  chest-rise so the mannequin breathes IN SYNC with the monitor — fast when
+   *  tachypnoeic, absent at 0. Falls back to the case rate when undefined. */
+  liveRespiration?: number;
   /** Run a pulse check from a mannequin pulse point (radial wrist / carotid neck). */
   onPulse?: (site: string) => void;
   /** Use stretcher-side treatment presentation in the full-body overview. */
@@ -3109,22 +3124,9 @@ function RegionalZoomLoupe({
 
   if (isEyeFocused) return <PupilCloseUp profile={pupilProfile} />;
 
-  if (activeRegion === 'chest') {
-    return (
-      <div className="max-h-[15rem] overflow-y-auto rounded-2xl border border-sky-100/35 bg-slate-950/58 p-2 shadow-2xl backdrop-blur-xl">
-        <div className="mb-2 flex items-center justify-between gap-2 px-1">
-          <div>
-            <p className="text-[8px] font-semibold uppercase tracking-[0.22em] text-sky-100/55">Zoom loupe</p>
-            <p className="text-[11px] font-semibold text-white/92">Chest exam map</p>
-          </div>
-          <span className="rounded-full border border-sky-200/25 bg-sky-300/12 px-2 py-0.5 text-[8px] font-semibold text-sky-100">
-            lungs + heart
-          </span>
-        </div>
-        <ChestAssessmentMap selectedAction={selectedAction} caseData={caseData} />
-      </div>
-    );
-  }
+  // Chest "zoom loupe" intentionally removed — it duplicated the full chest
+  // map already shown in the bottom Hands-On Exam Station. Chest detail now
+  // lives in exactly one place to keep the assessment view uncluttered.
 
   if (activeRegion === 'abdomen') {
     return (
@@ -3638,7 +3640,7 @@ function PatientRealismStrip({
   );
 }
 
-export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientSounds, caseCategory, appliedTreatmentIds = [], patientVisualState = null, isInArrest = false, vitals, onPulse, treatmentBayMode = false }: Body3DModelProps) {
+export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientSounds, caseCategory, appliedTreatmentIds = [], patientVisualState = null, isInArrest = false, vitals, liveRespiration, onPulse, treatmentBayMode = false }: Body3DModelProps) {
   const { t } = useTranslation();
   const controlsRef = useRef<OrbitControlsHandle | null>(null);
   const [isFlipped, setIsFlipped] = useState(false);
@@ -3731,11 +3733,23 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   // the patient deteriorates/responds to treatment), falling back to the
   // case's authored initial rate for surfaces without a live feed.
   const breathRateRpm = useMemo(() => {
-    const rr = vitals?.respiration
+    const rr = typeof liveRespiration === 'number'
+      ? liveRespiration
+      : vitals?.respiration
       ?? caseData.abcde?.breathing?.rate
       ?? caseData.vitalSignsProgression?.initial?.respiration;
-    return typeof rr === 'number' ? rr : 0;
-  }, [vitals?.respiration, caseData]);
+    return typeof rr === 'number' && rr > 0 ? rr : 0;
+  }, [vitals?.respiration, caseData, liveRespiration]);
+
+  // Depth factor for the chest-rise amplitude so SHALLOW breathing (opioid tox,
+  // exhaustion, agonal) looks visibly shallow and DEEP/laboured breathing (DKA
+  // Kussmaul, severe distress) looks visibly deep — not just faster/slower.
+  const breathDepthFactor = useMemo(() => {
+    const depth = String(caseData.abcde?.breathing?.depth ?? '').toLowerCase();
+    if (/shallow|reduced|poor|agonal|gasp|minimal/.test(depth)) return 0.45;
+    if (/deep|laboured|labored|kussmaul|increased|heav/.test(depth)) return 1.2;
+    return 1.0;
+  }, [caseData]);
 
   // Unconscious patients (GCS <= 8, AVPU 'U', or arrest) lie still: the
   // procedural life loop suppresses head sway and keeps the eyelids closed.
@@ -4705,6 +4719,8 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 // Breathing morph driven at the case respiratory rate (0 when
                 // apnoeic / in arrest — stillness is itself a finding).
                 breathRateRpm={isInArrest ? 0 : breathRateRpm}
+                // Breathing depth — shallow vs deep laboured.
+                breathDepthFactor={breathDepthFactor}
                 // Procedural life loop — GCS<=8/arrest = still, eyes closed.
                 unconscious={patientUnconscious}
                 // Condition-responsive idle motion; drops non-essential
@@ -4781,6 +4797,13 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 </>
               )}
 
+              <InjuryWoundMarkers
+                caseData={caseData}
+                assessedRegions={assessedRegions}
+                activeRegion={activeRegion}
+                sampler={surfaceSampler}
+              />
+
               <TreatmentEquipmentOverlay
                 appliedTreatmentIds={appliedTreatmentIds}
                 sampler={surfaceSampler}
@@ -4811,6 +4834,9 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 onStart={cancelCameraAnimation}
               />
             </Canvas>
+
+            {/* Compact list of applied equipment — labels for the on-body pins */}
+            <AppliedEquipmentTray appliedTreatmentIds={appliedTreatmentIds} />
 
             {/* Floating deselect — effortless "back to full body" while focused */}
             {activeRegion && (
