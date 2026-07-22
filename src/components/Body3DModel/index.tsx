@@ -3768,6 +3768,27 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
     [caseData, vitals, patientVisualState],
   );
 
+  // Posture morph target (male mesh). Respiratory-distress cases sit in the
+  // tripod position (hands on knees, accessory-muscle use) and ease to a
+  // relaxed recovery posture as SpO2 climbs back to normal; an unconscious /
+  // arrested patient lies supine. null = A-pose (no posture morph). The BodyMesh
+  // crossfades between whichever morph this names; breathing + idle ride on top.
+  const patientPosture = useMemo<'tripod' | 'supine' | 'recovery' | null>(() => {
+    if (patientUnconscious) return 'supine';
+    const source = vitals ?? caseData.vitalSignsProgression?.initial;
+    const spo2 = typeof source?.spo2 === 'number' ? source.spo2 : null;
+    const rr = caseData.abcde?.breathing?.rate ?? source?.respiration ?? null;
+    const respiratoryDistress =
+      (typeof rr === 'number' && rr >= 22) ||
+      /asthma|copd|respiratory|breath|wheez|dyspn/i.test(
+        `${caseData.category ?? ''} ${caseData.title ?? ''} ${caseData.dispatchInfo?.callReason ?? ''}`,
+      );
+    if (!respiratoryDistress) return null;
+    // Ease tripod → recovery as sats recover through the 92–96 band.
+    if (spo2 !== null && spo2 >= 95) return 'recovery';
+    return 'tripod';
+  }, [patientUnconscious, vitals, caseData]);
+
   // Case text used for the text-driven unwellness states (diaphoresis
   // appearance, jaundice). Recomputed only when the case changes.
   const unwellnessCaseText = useMemo(
@@ -4747,6 +4768,13 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 pupilRightMm={pupilProfile.rightMm}
                 presentation={useTreatmentBayPresentation ? 'treatment-bay' : 'upright'}
                 bayStage={bayStage}
+                // SSS skin (male mesh only) — shed with the composer on the
+                // adaptive ladder so iPad falls back to plain PBR.
+                sss={qualityTier < 1}
+                // Work-of-breathing posture; eases to recovery as SpO2 climbs.
+                posture={patientPosture}
+                // Lip-sync drive from the patient's TTS analyser.
+                mouthOpenRef={patientVoice.mouthOpenRef}
               />
 
               <TreatmentBayImmersionLayer

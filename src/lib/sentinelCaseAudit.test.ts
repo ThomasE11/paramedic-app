@@ -32,7 +32,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { matchRealismScenarios, deriveScenarioVisuals, deriveRealismScenarioState } from '@/lib/patientRealismScenarios';
-import { deriveCaseRealismProfile } from '@/lib/patientRealism';
+import { deriveCaseRealismProfile } from '@/data/clinicalRealism';
 import { deriveTreatmentLoopStates } from '@/lib/patientRealismDirector';
 
 /**

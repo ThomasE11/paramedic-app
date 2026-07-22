@@ -36,7 +36,7 @@ const {
   createInitialPatientState,
 } = jiti('./src/data/dynamicTreatmentEngine.ts');
 const { buildInitialVitalsFromCase } = jiti('./src/data/treatmentEffects.ts');
-const { evaluateTreatmentRealism } = jiti('./src/lib/patientRealism.ts');
+const { evaluateTreatmentRealism } = jiti('./src/data/clinicalRealism.ts');
 
 const args = process.argv.slice(2);
 const flag = (name) => args.includes(name);

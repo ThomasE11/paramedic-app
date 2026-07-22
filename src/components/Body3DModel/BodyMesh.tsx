@@ -9,6 +9,7 @@
 
 import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import type { JSX } from 'react';
+import type React from 'react';
 import { useGLTF } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
@@ -168,6 +169,27 @@ interface BodyMeshProps {
   presentation?: 'upright' | 'treatment-bay';
   /** Where the supine patient is staged in treatment-bay presentation. */
   bayStage?: BayPatientStage;
+  /**
+   * Subsurface-scattering skin. When true (and the male GLB is loaded) the
+   * skin uses MeshPhysicalMaterial with thickness/attenuation/sheen + a tiled
+   * pore detail-normal so ears/nostrils glow warm under the key light. Gated
+   * OFF by the adaptive quality ladder (composer-shed tier) so iPad falls back
+   * to plain PBR. Female/legacy meshes ignore it (no baked thickness map).
+   */
+  sss?: boolean;
+  /**
+   * Target posture morph — 'tripod' (asthma work-of-breathing), 'supine',
+   * 'recovery', or null (A-pose). Crossfaded via morph influence; breathing +
+   * idle motion ride on top. resp-001 defaults to 'tripod' and eases to
+   * 'recovery' as SpO2 improves.
+   */
+  posture?: 'tripod' | 'supine' | 'recovery' | null;
+  /**
+   * Lip-sync drive: a 0..1 ref written by the voice analyser (per-frame RMS of
+   * the patient's TTS). Applied to the viseme_open morph so the jaw moves in
+   * time with speech. null = mouth stays shut.
+   */
+  mouthOpenRef?: React.MutableRefObject<number> | null;
 }
 
 /**
@@ -291,9 +313,127 @@ const REQUIRED_UNASSESSED_COLOR = '#f59e0b';
 // each eye parents its iris + pupil discs so saccade rotations carry them.
 const EYE_NODE_NAMES = ['eyeL', 'eyeR', 'irisL', 'irisR', 'pupilL', 'pupilR'] as const;
 
+// Posture mixer: the `posture` prop maps to a Blender-authored morph target.
+// POSTURE_MORPHS is the exclusion/crossfade set (all zeroed except the active
+// one). A mesh without these morphs simply no-ops — the lookups miss.
+// ponytail: name convention only; add real GLB morphs when the pose bake lands.
+const POSTURE_MORPH_BY_NAME: Record<'tripod' | 'supine' | 'recovery', string> = {
+  tripod: 'posture_tripod',
+  supine: 'posture_supine',
+  recovery: 'posture_recovery',
+};
+const POSTURE_MORPHS = Object.values(POSTURE_MORPH_BY_NAME);
+
 /** Case pupil mm -> pupil disc scale. Discs are authored at 5mm diameter. */
 function pupilScale(mm: number): number {
   return Math.min(1.8, Math.max(0.4, mm / 5));
+}
+
+// ---------------------------------------------------------------------------
+// SSS skin maps (male mesh only) — lazy-loaded, cached module-wide.
+// ---------------------------------------------------------------------------
+// Baked in Phase A (scripts/anatomy-models/bake-skin-maps.py):
+//   thickness — greyscale, drives translucency at ears/nostrils/fingers.
+//   detail    — tiled micro-normal, adds pore-scale surface detail.
+// The 2.4MB AO map is baked into the diffuse already, so we don't sample it
+// here. Loaded on first male render; female/legacy cases never fetch these.
+interface SssMaps {
+  thickness: THREE.Texture;
+  detail: THREE.Texture;
+}
+let sssMapsPromise: Promise<SssMaps | null> | null = null;
+function loadSssMaps(): Promise<SssMaps | null> {
+  if (sssMapsPromise) return sssMapsPromise;
+  sssMapsPromise = (async () => {
+    const loader = new THREE.TextureLoader();
+    const load = (url: string) =>
+      new Promise<THREE.Texture>((resolve, reject) => loader.load(url, resolve, undefined, reject));
+    try {
+      const [thickness, detail] = await Promise.all([
+        load('/models/patient-male-skin-thickness.png'),
+        load('/models/patient-male-skin-detail-normal.png'),
+      ]);
+      thickness.flipY = false; // GLB UV convention
+      detail.flipY = false;
+      detail.wrapS = detail.wrapT = THREE.RepeatWrapping;
+      return { thickness, detail };
+    } catch {
+      return null; // maps missing → material stays plain PBR
+    }
+  })();
+  return sssMapsPromise;
+}
+
+// Pore detail-normal blend: three has no second-normal slot, so inject a
+// tiled detail normal into the standard normal_fragment_maps chunk. The base
+// normalMap (if any) still applies; this adds high-frequency pore detail on
+// top. Tiling is fixed (DETAIL_TILES across the UV) — the map is a seamless
+// micro-normal, so a repeat count is all it needs.
+// The male skin GLB is diffuse-only (no authored normalMap/tangents), so the
+// stock tangent-space chunk (`tbn`, `vNormalMapUv`) isn't compiled in. We
+// derive a cotangent frame from screen-space derivatives (Mikkelsen's
+// derivative-maps method) — self-contained, needs only vMapUv (present because
+// the material has a diffuse map) and vViewPosition. Injected after
+// normal_fragment_begin so `normal` and `vViewPosition` are in scope.
+const DETAIL_TILES = 12;
+function injectDetailNormal(mat: THREE.MeshPhysicalMaterial, detail: THREE.Texture): void {
+  mat.userData.detailNormalInjected = true;
+  mat.onBeforeCompile = (shader) => {
+    shader.uniforms.detailNormalMap = { value: detail };
+    shader.uniforms.detailNormalTiles = { value: DETAIL_TILES };
+    shader.uniforms.detailNormalScale = { value: 0.6 };
+    shader.fragmentShader = shader.fragmentShader
+      .replace(
+        '#include <normal_pars_fragment>',
+        `#include <normal_pars_fragment>
+         uniform sampler2D detailNormalMap;
+         uniform float detailNormalTiles;
+         uniform float detailNormalScale;`,
+      )
+      .replace(
+        '#include <normal_fragment_begin>',
+        `#include <normal_fragment_begin>
+         #ifdef USE_MAP
+         {
+           vec2 detailUv = vMapUv * detailNormalTiles;
+           vec3 dN = texture2D(detailNormalMap, detailUv).xyz * 2.0 - 1.0;
+           // derivative cotangent frame (no vertex tangents required)
+           vec3 q0 = dFdx(-vViewPosition);
+           vec3 q1 = dFdy(-vViewPosition);
+           vec2 st0 = dFdx(detailUv);
+           vec2 st1 = dFdy(detailUv);
+           vec3 S = normalize(q0 * st1.t - q1 * st0.t);
+           vec3 T = normalize(-q0 * st1.s + q1 * st0.s);
+           normal = normalize(normal + (dN.x * S + dN.y * T) * detailNormalScale);
+         }
+         #endif`,
+      );
+  };
+  mat.needsUpdate = true;
+}
+
+// Apply / toggle the subsurface channels. `on` gates the expensive path so the
+// adaptive ladder can shed SSS to plain PBR under 30fps.
+function applySssToMaterial(mat: THREE.MeshPhysicalMaterial, maps: SssMaps, on: boolean): void {
+  if (on) {
+    mat.thicknessMap = maps.thickness;
+    mat.thickness = 0.5;
+    mat.attenuationColor = new THREE.Color(0x883333); // warm subsurface red
+    mat.attenuationDistance = 0.5;
+    mat.sheen = 0.4;                                   // peach-fuzz rim
+    mat.sheenRoughness = 0.8;
+    mat.sheenColor = new THREE.Color(0xffd9c0);
+    if (!mat.userData.detailNormalInjected) injectDetailNormal(mat, maps.detail);
+  } else {
+    mat.thickness = 0;
+    mat.thicknessMap = null;
+    mat.sheen = 0;
+    if (mat.userData.detailNormalInjected) {
+      mat.onBeforeCompile = () => {};
+      mat.userData.detailNormalInjected = false;
+    }
+  }
+  mat.needsUpdate = true;
 }
 
 // Track which specific limb was clicked for exam panel filtering
@@ -573,7 +713,7 @@ function buildSurfaceSampler(root: THREE.Object3D | null, presentationRoot?: THR
   };
 }
 
-export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guidedMode = false, nextGuidedStep = null, onBlockedClick, onBodyPoint, bodyInjuries, patientGender, surfaceOpacity = 1, activeFindingMorphs, breathRateRpm = 0, breathDepthFactor = 1, onSurfaceSampler, dressed = false, dressedActiveRegion = null, pupilLeftMm = 3.5, pupilRightMm = 3.5, skinTint = null, skinDiaphoretic = false, diaphoresis = 0, jaundice = 0, mottling = 0, unconscious = false, idleCues = null, reduceIdleMotion = false, presentation = 'upright', bayStage = 'stretcher' }: BodyMeshProps) {
+export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guidedMode = false, nextGuidedStep = null, onBlockedClick, onBodyPoint, bodyInjuries, patientGender, surfaceOpacity = 1, activeFindingMorphs, breathRateRpm = 0, breathDepthFactor = 1, onSurfaceSampler, dressed = false, dressedActiveRegion = null, pupilLeftMm = 3.5, pupilRightMm = 3.5, skinTint = null, skinDiaphoretic = false, diaphoresis = 0, jaundice = 0, mottling = 0, unconscious = false, idleCues = null, reduceIdleMotion = false, presentation = 'upright', bayStage = 'stretcher', sss = false, posture = null, mouthOpenRef = null }: BodyMeshProps) {
   // The path is recomputed per render so a `caseData.patientInfo.gender`
   // change (e.g. user picks a different case) swaps the mesh without
   // remounting the parent. useGLTF caches by URL.
@@ -640,7 +780,8 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
   // bindings. A regular deep clone can detach limbs on some exported GLBs.
   const clonedScene = useMemo(() => {
     const clone = cloneSkeleton(scene) as THREE.Group;
-    const useSolidMaleBodyMaterial = modelPath.includes('patient-male');
+    const isMaleMesh = modelPath.includes('patient-male');
+    const useSolidMaleBodyMaterial = isMaleMesh;
     // Both active exam meshes are normalised to face the default camera (+Z).
     // Rotating the legacy patient here shows the posterior surface first while
     // landmarks still describe anterior anatomy, so keep the loaded orientation.
@@ -676,6 +817,24 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
         // tint never blues the sclera. The mesh-level flag stays unset so the
         // skeleton-view opacity fade still applies to them with the skin.
         const isEyeMesh = (EYE_NODE_NAMES as readonly string[]).includes(mesh.name);
+        // SSS skin: promote the male body skin material to MeshPhysicalMaterial
+        // so the runtime effect can wire thickness/attenuation/sheen. Physical
+        // extends Standard, so every per-frame path that treats materials as
+        // MeshStandardMaterial (tint, diaphoresis, mottling) keeps working. The
+        // heavy SSS channels stay at 0 until the `sss` effect turns them on, so
+        // when the quality ladder sheds SSS this collapses to plain PBR cost.
+        if (isMaleMesh && !isEyeMesh) {
+          const src = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+          const promoted = src.map((m) => {
+            const s = m as THREE.MeshStandardMaterial;
+            if (!s.isMeshStandardMaterial || m instanceof THREE.MeshPhysicalMaterial) return m;
+            const phys = new THREE.MeshPhysicalMaterial();
+            phys.copy(s);            // carries map, color, normalMap, etc.
+            phys.userData = { ...s.userData, isSssSkin: true };
+            return phys;
+          });
+          mesh.material = Array.isArray(mesh.material) ? promoted : promoted[0];
+        }
         const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
         materials.forEach((material) => {
           // Physically sensible dielectric skin response under the HDRI
@@ -844,6 +1003,32 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
     // effect below; the eyes are baked once (live pupil reading is the 2D panel).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scene, modelPath, bodyInjuries, garmentScenes]); // bodyInjuries: stable per case (memoised upstream + per-case key)
+
+  // ---- SSS skin material (male mesh only) --------------------------------
+  // Wire the baked thickness map + tiled pore detail-normal onto the promoted
+  // MeshPhysicalMaterial and toggle the subsurface channels with `sss`. When
+  // sss is off (adaptive ladder shed it, or female/legacy mesh) the material
+  // stays plain PBR. Textures load lazily on first male render and are cached
+  // module-wide so female cases never fetch them.
+  const isMaleMesh = modelPath.includes('patient-male');
+  useEffect(() => {
+    if (!isMaleMesh) return;
+    let cancelled = false;
+    loadSssMaps().then((maps) => {
+      if (cancelled || !maps) return;
+      clonedScene.traverse((child) => {
+        const mesh = child as THREE.Mesh;
+        if (!mesh.isMesh) return;
+        const list = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+        for (const m of list) {
+          const phys = m as THREE.MeshPhysicalMaterial;
+          if (!phys.userData?.isSssSkin || !phys.isMeshPhysicalMaterial) continue;
+          applySssToMaterial(phys, maps, sss);
+        }
+      });
+    });
+    return () => { cancelled = true; };
+  }, [clonedScene, isMaleMesh, sss]);
 
   // Region state is now communicated with anatomical overlays and landmarks,
   // not by recolouring the whole patient. Keep this callback for the pointer
@@ -1039,14 +1224,38 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
       const active = activeFindingMorphs ?? [];
 
       // Findings: ramp active morphs toward 1, inactive toward 0 (~0.6s).
+      // breathe_chest_rise, the posture morphs, and viseme_open are driven
+      // separately below, so they're excluded here or the zero-ramp would
+      // fight them.
       for (const name of Object.keys(dict)) {
         if (name === 'breathe_chest_rise') continue; // handled below
+        if (name === 'viseme_open') continue;        // lip-sync, below
+        if (POSTURE_MORPHS.includes(name)) continue; // posture mixer, below
         const target = active.includes(name) ? 1 : 0;
         const cur = morphInfluenceRef.current[name] ?? 0;
         const next = cur + (target - cur) * Math.min(1, delta * 4);
         morphInfluenceRef.current[name] = next;
         const idx = dict[name];
         if (idx !== undefined) infl[idx] = next;
+      }
+
+      // Posture mixer: crossfade the target posture morph toward 1 and the
+      // others toward 0 (~0.5s). No-op when the mesh carries no posture morphs.
+      for (const name of POSTURE_MORPHS) {
+        const idx = dict[name];
+        if (idx === undefined) continue;
+        const target = posture && POSTURE_MORPH_BY_NAME[posture] === name ? 1 : 0;
+        const cur = morphInfluenceRef.current[name] ?? 0;
+        const next = cur + (target - cur) * Math.min(1, delta * 4);
+        morphInfluenceRef.current[name] = next;
+        infl[idx] = next;
+      }
+
+      // Lip-sync: drive viseme_open from the voice analyser's 0..1 amplitude.
+      // The ref is already EMA-smoothed in the hook, so read it straight.
+      {
+        const idx = dict['viseme_open'];
+        if (idx !== undefined) infl[idx] = mouthOpenRef?.current ?? 0;
       }
 
       // Breathing: continuous sine at the case respiratory rate. Apnoea

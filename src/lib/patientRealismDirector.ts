@@ -5,7 +5,7 @@ import {
   deriveCaseRealismProfile,
   type PatientRealismCue,
   type RealismSeverity,
-} from '@/lib/patientRealism';
+} from '@/data/clinicalRealism';
 import {
   deriveRealismScenarioState,
   type EquipmentAnchorSpec,

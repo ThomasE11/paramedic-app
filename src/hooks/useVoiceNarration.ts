@@ -26,6 +26,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import type { MutableRefObject } from 'react';
 
 const VOICE_PREF_KEY = 'paramedic-studio-voice-enabled';
 
@@ -154,6 +155,95 @@ function registerQueueTimer(id: number): void {
 function setActiveAudio(audio: HTMLAudioElement | null): void {
   if (globalActiveAudio && globalActiveAudio !== audio) stopActiveAudio();
   globalActiveAudio = audio;
+  if (audio) attachAnalyser(audio);
+}
+
+// --- Lip-sync analyser ------------------------------------------------------
+// A single shared AudioContext + AnalyserNode taps the currently-playing TTS
+// clip and publishes a smoothed 0..1 "mouth open" amplitude that the 3D patient
+// reads per-frame to drive the viseme_open morph. The analyser sits inline
+// (source → analyser → destination); an AnalyserNode is a pass-through, so it
+// adds no audible latency and never blocks playback. RMS is EMA-smoothed to
+// stop the jaw juddering on every syllable transient.
+//
+// Web Speech (SpeechSynthesis) has no media element to tap, so lip-sync only
+// tracks the ElevenLabs/Supertonic HTMLAudioElement paths — those are the
+// primary voices; Web Speech is the offline fallback and simply leaves the
+// mouth shut.
+let globalAudioCtx: AudioContext | null = null;
+let globalAnalyser: AnalyserNode | null = null;
+let analyserData: Uint8Array<ArrayBuffer> | null = null;
+// createMediaElementSource throws if called twice on the same element, so cache
+// the source per element via a WeakMap.
+const elementSources = new WeakMap<HTMLAudioElement, MediaElementAudioSourceNode>();
+let globalMouthOpen = 0;
+let rafId: number | null = null;
+const mouthOpenListeners = new Set<MutableRefObject<number>>();
+
+function ensureAudioGraph(): boolean {
+  if (typeof window === 'undefined') return false;
+  const Ctor = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  if (!Ctor) return false;
+  if (!globalAudioCtx) {
+    try {
+      globalAudioCtx = new Ctor();
+      globalAnalyser = globalAudioCtx.createAnalyser();
+      globalAnalyser.fftSize = 512;
+      globalAnalyser.smoothingTimeConstant = 0.5;
+      globalAnalyser.connect(globalAudioCtx.destination);
+      analyserData = new Uint8Array(globalAnalyser.fftSize) as Uint8Array<ArrayBuffer>;
+    } catch {
+      globalAudioCtx = null;
+      globalAnalyser = null;
+      return false;
+    }
+  }
+  return !!globalAnalyser;
+}
+
+function attachAnalyser(audio: HTMLAudioElement): void {
+  if (!ensureAudioGraph() || !globalAudioCtx || !globalAnalyser) return;
+  // Autoplay policies can leave the context suspended until a gesture.
+  if (globalAudioCtx.state === 'suspended') { globalAudioCtx.resume().catch(() => {}); }
+  try {
+    let src = elementSources.get(audio);
+    if (!src) {
+      src = globalAudioCtx.createMediaElementSource(audio);
+      elementSources.set(audio, src);
+      src.connect(globalAnalyser);
+    }
+    startMouthLoop();
+  } catch {
+    // createMediaElementSource can throw on cross-origin/tainted media; the
+    // clip still plays via its own element, we just skip lip-sync for it.
+  }
+}
+
+function startMouthLoop(): void {
+  if (rafId !== null || typeof window === 'undefined') return;
+  const tick = () => {
+    if (globalAnalyser && analyserData && globalIsSpeaking) {
+      globalAnalyser.getByteTimeDomainData(analyserData);
+      let sumSq = 0;
+      for (let i = 0; i < analyserData.length; i++) {
+        const v = (analyserData[i] - 128) / 128; // -1..1
+        sumSq += v * v;
+      }
+      const rms = Math.sqrt(sumSq / analyserData.length); // ~0..1
+      // Scale up (speech RMS is small) and clamp, then EMA-smooth.
+      const target = Math.min(1, rms * 3.2);
+      globalMouthOpen += (target - globalMouthOpen) * 0.35;
+    } else {
+      globalMouthOpen += (0 - globalMouthOpen) * 0.35; // ease shut when idle
+    }
+    mouthOpenListeners.forEach(ref => { ref.current = globalMouthOpen; });
+    if (globalIsSpeaking || globalMouthOpen > 0.01) {
+      rafId = window.requestAnimationFrame(tick);
+    } else {
+      rafId = null;
+    }
+  };
+  rafId = window.requestAnimationFrame(tick);
 }
 
 type VoiceRole = 'dispatcher' | 'patient' | 'narrator';
@@ -417,6 +507,13 @@ export function useVoiceNarration() {
     }
   });
   const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
+  // Per-frame lip-sync amplitude (0..1), written by the shared analyser loop.
+  const mouthOpenRef = useRef(0);
+  useEffect(() => {
+    const ref = mouthOpenRef;
+    mouthOpenListeners.add(ref);
+    return () => { mouthOpenListeners.delete(ref); };
+  }, []);
 
   // Attach the one-time audio-unlock gesture listeners as early as possible
   // so the page is audio-unlocked before the dispatch narration fires.
@@ -794,5 +891,7 @@ export function useVoiceNarration() {
     toggleEnabled,
     isSupported,
     voicesReady,
+    /** Per-frame 0..1 lip-sync amplitude (RMS of the playing TTS clip). */
+    mouthOpenRef,
   };
 }

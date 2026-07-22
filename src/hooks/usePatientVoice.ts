@@ -89,6 +89,8 @@ export function usePatientVoice(caseData: CaseScenario) {
     canVocalize,
     /** True while the patient's voice is currently playing. */
     isSpeaking: narration.isSpeaking,
+    /** Per-frame 0..1 lip-sync amplitude — feed to BodyMesh's mouthOpenRef. */
+    mouthOpenRef: narration.mouthOpenRef,
     say,
     react,
     stop: narration.stop,
