@@ -13,7 +13,13 @@ import { useGLTF } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js';
-import { buildScrubs, CLOTHING_PARTING } from './ClothingLayer';
+import {
+  buildScrubs,
+  buildBlendedGarments,
+  CLOTHING_PARTING,
+  CLOTHING_MODE,
+  GARMENT_GLBS,
+} from './ClothingLayer';
 import { paintEyesOnTexture } from './EyesLayer';
 import { buildMottledTextures } from './MottlingLayer';
 import { applyWoundsToTextures } from './WoundLayer';
@@ -573,6 +579,18 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
   // remounting the parent. useGLTF caches by URL.
   const modelPath = resolveModelPath(patientGender);
   const { scene } = useGLTF(modelPath);
+  // Blender-authored garment GLBs (blended-garment mode). Loaded here so the
+  // clone build has them synchronously; Suspense holds render until ready.
+  // Array form of useGLTF returns results positionally.
+  const garmentGltfs = useGLTF(GARMENT_GLBS.map((g) => g.url));
+  const garmentScenes = useMemo(() => {
+    const map = new Map<string, THREE.Object3D>();
+    GARMENT_GLBS.forEach((g, i) => {
+      const s = garmentGltfs[i]?.scene;
+      if (s) map.set(g.name, s);
+    });
+    return map;
+  }, [garmentGltfs]);
   const [hoveredRegion, setHoveredRegion] = useState<RegionRange | null>(null);
   const meshRef = useRef<THREE.Group>(null);
   // For pulsing animation on required regions
@@ -727,7 +745,13 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
         }
       });
       if (bodyMesh) {
-        const scrubs = buildScrubs(bodyMesh as THREE.Mesh);
+        // Prefer Blender-authored garments (blended-garment mode); fall back to
+        // the runtime cut-from-skin scrubs if the GLBs didn't load or the piece
+        // build came back empty.
+        const scrubs =
+          (CLOTHING_MODE === 'blended-garment'
+            ? buildBlendedGarments(bodyMesh as THREE.Mesh, garmentScenes)
+            : null) ?? buildScrubs(bodyMesh as THREE.Mesh);
         // Child of the body mesh at identity → inherits its exact placement.
         if (scrubs) (bodyMesh as THREE.Mesh).add(scrubs);
         // Eyes — the skin texture paints the sockets bright red (a placeholder).
@@ -819,7 +843,7 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
     // scrubs + 2048² eye texture repaint). Opacity is applied live by the
     // effect below; the eyes are baked once (live pupil reading is the 2D panel).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scene, modelPath, bodyInjuries]); // bodyInjuries: stable per case (memoised upstream + per-case key)
+  }, [scene, modelPath, bodyInjuries, garmentScenes]); // bodyInjuries: stable per case (memoised upstream + per-case key)
 
   // Region state is now communicated with anatomical overlays and landmarks,
   // not by recolouring the whole patient. Keep this callback for the pointer
@@ -1460,3 +1484,4 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
 useGLTF.preload('/models/patient.glb');
 useGLTF.preload('/models/patient-male.glb');
 useGLTF.preload('/models/patient-female.glb');
+GARMENT_GLBS.forEach((g) => useGLTF.preload(g.url));

@@ -43,7 +43,7 @@ try {
   await page.goto(`${base}/?capture${modelQuery}`, { waitUntil: 'networkidle' });
   await page.getByRole('button', { name: /Start Training/i }).first().click();
   await page.getByRole('button', { name: /Skip Tour/i }).click({ timeout: 5000 }).catch(() => {});
-  await page.getByRole('button', { name: /Generate Case/i }).first().click();
+  await page.getByRole('button', { name: /Launch smart case|Generate Case/i }).first().click();
   await page.getByRole('button', { name: /Begin Scene Survey/i }).click();
   await page.getByRole('button', { name: /^Next$/i }).click();
   await page.getByRole('button', { name: /None identified/i }).click();

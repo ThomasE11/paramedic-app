@@ -78,8 +78,12 @@ try {
   const skipTour = page.getByRole('button', { name: /Skip Tour/i });
   await skipTour.click({ timeout: 5000 }).catch(() => {});
 
-  // Generate a deterministic-ish case (first available)
-  await page.getByRole('button', { name: /Generate Case/i }).first().click();
+  // Generate a deterministic-ish case (first available). The primary CTA was
+  // renamed "Launch smart case"; keep the old label as a fallback for older UI.
+  await page
+    .getByRole('button', { name: /Launch smart case|Generate Case/i })
+    .first()
+    .click();
 
   // Scene survey gauntlet
   await page.getByRole('button', { name: /Begin Scene Survey/i }).click();

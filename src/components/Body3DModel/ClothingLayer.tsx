@@ -75,6 +75,22 @@ function getFabricNormal(): THREE.CanvasTexture | null {
   return fabricNormalTex;
 }
 
+/**
+ * Clothing source:
+ *   'blended-garment' — GLBs authored in Blender FROM the body mesh
+ *     (scripts/anatomy-models/blender-garment-bake.py): real draped topology,
+ *     with the body's 11 morph targets baked in by matching NAME. Preferred.
+ *   'procedural' — the runtime cut-from-skin fallback below (buildScrubs).
+ * Blended mode auto-falls-back to procedural if the GLBs aren't loaded yet.
+ */
+export const CLOTHING_MODE: 'procedural' | 'blended-garment' = 'blended-garment';
+
+/** Garment GLB URL → piece name the hide map (CLOTHING_PARTING) keys on. */
+export const GARMENT_GLBS: Array<{ url: string; name: string; color: string; offset: number }> = [
+  { url: '/models/garment-shirt.glb', name: 'scrub-top', color: TOP_COLOR, offset: 0.026 },
+  { url: '/models/garment-trousers.glb', name: 'scrub-trousers', color: TROUSER_COLOR, offset: 0.012 },
+];
+
 /** Region id → garment pieces that part (hide) while that region is focused. */
 export const CLOTHING_PARTING: Record<string, string[]> = {
   chest: ['scrub-top'],
@@ -388,6 +404,156 @@ export function buildScrubs(body: THREE.Mesh): THREE.Group | null {
     garment.castShadow = true;
     garment.receiveShadow = true;
     // Clicks must reach the patient: the garment is invisible to the raycaster.
+    garment.raycast = () => {};
+    garment.userData.skipRecolor = true;
+    group.add(garment);
+  }
+
+  return group.children.length ? group : null;
+}
+
+/**
+ * Blended-garment build: assemble the clothing-layer Group from Blender-authored
+ * garment GLBs instead of cutting it from the skin at runtime. Each garment GLB
+ * was duplicated from THIS body mesh in Blender, so it already carries the same
+ * 11 morph targets by NAME (breathe_chest_rise, finding_*, the demographic
+ * shape blends). Here we:
+ *   - clone each garment mesh, rename it to the piece name the hide map expects
+ *     (scrub-top / scrub-trousers) so CLOTHING_PARTING + the parting effect work
+ *     unchanged,
+ *   - remap its morph influence array to the BODY's dictionary order and mirror
+ *     the body's influences every frame (onBeforeRender), so the fabric breathes
+ *     and reveals findings exactly like the procedural layer did,
+ *   - give it the flat fabric material (the GLB ships no texture), a dark
+ *     BackSide lining for edge thickness, disable raycast, and offset along
+ *     normals for skin clearance.
+ *
+ * `garmentScenes` maps piece name → the loaded GLB scene (from useGLTF).
+ * Returns null if no garment loaded (caller falls back to procedural).
+ */
+export function buildBlendedGarments(
+  body: THREE.Mesh,
+  garmentScenes: Map<string, THREE.Object3D>,
+): THREE.Group | null {
+  const bodyDict = body.morphTargetDictionary;
+  const bodyInfl = body.morphTargetInfluences;
+
+  body.updateWorldMatrix(true, false);
+  const scl = new THREE.Vector3();
+  body.matrixWorld.decompose(new THREE.Vector3(), new THREE.Quaternion(), scl);
+  const worldScale = (Math.abs(scl.x) + Math.abs(scl.y) + Math.abs(scl.z)) / 3 || 1;
+
+  const group = new THREE.Group();
+  group.name = 'clothing-layer';
+  group.visible = false;
+
+  const fabric = getFabricNormal();
+
+  for (const spec of GARMENT_GLBS) {
+    const gscene = garmentScenes.get(spec.name);
+    if (!gscene) continue;
+    // The garment GLB has a single mesh (the exported piece).
+    let src: THREE.Mesh | null = null;
+    gscene.traverse((o) => {
+      const m = o as THREE.Mesh;
+      if (!src && m.isMesh && m.geometry) src = m;
+    });
+    if (!src) continue;
+    const srcMesh = src as THREE.Mesh;
+
+    const g = (srcMesh.geometry as THREE.BufferGeometry).clone();
+    // Offset the base positions along the vertex normal for skin clearance so
+    // the fabric rides just off the body (the Blender bake already lifted it a
+    // little; this matches the procedural layer's per-piece proud/tucked read).
+    g.computeVertexNormals();
+    const p = g.attributes.position as THREE.BufferAttribute;
+    const n = g.attributes.normal as THREE.BufferAttribute;
+    const local = spec.offset / worldScale;
+    for (let i = 0; i < p.count; i++) {
+      p.setXYZ(
+        i,
+        p.getX(i) + n.getX(i) * local,
+        p.getY(i) + n.getY(i) * local,
+        p.getZ(i) + n.getZ(i) * local,
+      );
+    }
+    p.needsUpdate = true;
+    g.computeVertexNormals();
+
+    // Box-projected UVs for the fabric weave normal map (the GLB shipped no UVs).
+    const M = p.count;
+    const uvArr = new Float32Array(M * 2);
+    for (let m = 0; m < M; m++) {
+      uvArr[m * 2] = (p.getX(m) + p.getZ(m)) * 14;
+      uvArr[m * 2 + 1] = p.getY(m) * 14;
+    }
+    g.setAttribute('uv', new THREE.BufferAttribute(uvArr, 2));
+
+    const outerMat = new THREE.MeshPhysicalMaterial({
+      color: spec.color,
+      roughness: 0.82,
+      metalness: 0,
+      sheen: 0.5,
+      sheenRoughness: 0.65,
+      sheenColor: new THREE.Color('#cfd6e0'),
+      side: THREE.FrontSide,
+      polygonOffset: true,
+      polygonOffsetFactor: -1,
+      polygonOffsetUnits: -1,
+      ...(fabric ? { normalMap: fabric, normalScale: new THREE.Vector2(0.35, 0.35) } : {}),
+    });
+    const innerMat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(spec.color).multiplyScalar(0.45),
+      roughness: 0.96,
+      metalness: 0,
+      side: THREE.BackSide,
+      polygonOffset: true,
+      polygonOffsetFactor: -1,
+      polygonOffsetUnits: -1,
+    });
+
+    const garment = new THREE.Mesh(g, outerMat);
+    garment.name = spec.name;
+    const lining = new THREE.Mesh(g, innerMat);
+    lining.name = `${spec.name}-lining`;
+    lining.raycast = () => {};
+    lining.userData.skipRecolor = true;
+    garment.add(lining);
+
+    // Morph sync by NAME. The garment's own dictionary maps its morph names to
+    // ITS influence-array slots; the body's maps the same names to the body's
+    // slots. Build a garment-slot → body-slot map so we copy influences across
+    // even if the exporter reordered them. (In practice they match, but the
+    // name lookup makes the sync robust to a re-bake.)
+    const gDict = srcMesh.morphTargetDictionary;
+    const gInflLen = srcMesh.morphTargetInfluences?.length ?? 0;
+    if (gDict && gInflLen && bodyDict && bodyInfl) {
+      garment.morphTargetDictionary = { ...gDict };
+      garment.morphTargetInfluences = new Array(gInflLen).fill(0);
+      lining.morphTargetDictionary = { ...gDict };
+      lining.morphTargetInfluences = new Array(gInflLen).fill(0);
+      // garmentSlot -> bodySlot for each shared morph name.
+      const slotMap: Array<number> = new Array(gInflLen).fill(-1);
+      for (const [name, gSlot] of Object.entries(gDict)) {
+        const bSlot = bodyDict[name];
+        if (bSlot !== undefined) slotMap[gSlot] = bSlot;
+      }
+      garment.onBeforeRender = () => {
+        const mine = garment.morphTargetInfluences;
+        const lin = lining.morphTargetInfluences;
+        const bi = body.morphTargetInfluences;
+        if (!mine || !bi) return;
+        for (let k = 0; k < mine.length; k++) {
+          const b = slotMap[k];
+          const val = b >= 0 ? bi[b] ?? 0 : 0;
+          mine[k] = val;
+          if (lin) lin[k] = val;
+        }
+      };
+    }
+
+    garment.castShadow = true;
+    garment.receiveShadow = true;
     garment.raycast = () => {};
     garment.userData.skipRecolor = true;
     group.add(garment);
