@@ -12,9 +12,11 @@
  * - medical equipment (IV stand, monitor, crash cart, O2) is composed by
  *   index.tsx in every variant — the paramedic brings it to the scene
  */
-import { useMemo } from 'react';
+import { Suspense, useMemo } from 'react';
+import { useTexture } from '@react-three/drei';
 import * as THREE from 'three';
 import type { EnvironmentVariant } from '@/lib/sceneEnvironment';
+import { getVillaTextures } from './textures';
 
 const NO_RAYCAST = () => null;
 
@@ -59,89 +61,201 @@ function KeyLight({
 }
 
 // ---------------------------------------------------------------------------
-// Home — villa/apartment living room. Warm cream walls, wood floor, rug,
-// sofa + coffee table silhouettes, a window pouring in daylight.
+// Home — villa/apartment living room, built as a real enclosed room (not a
+// backdrop). Room box ~5m (x) x 4m (z) x 2.7m (y): back wall at z=-2, two
+// side walls at x=±2.5, floor + ceiling. Patient sits on the floor at origin.
+// Props (sofa, coffee table, rug, floor lamp, AC, window) are low-poly boxes;
+// fidelity comes from the procedural villa PBR set + the light rig.
 // ---------------------------------------------------------------------------
+
+const ROOM = {
+  halfW: 2.5, // x half-extent → 5m wide
+  backZ: -2.0, // back wall
+  frontZ: 2.0, // room depth → 4m front-to-back
+  height: 2.7,
+} as const;
+
+/** Window daylight far-plane. Uses the case scene photo as an emissive image
+ *  behind the glass — parallax view of the UAE villa exterior. Suspends while
+ *  the PNG loads; the caller wraps it in Suspense with a plain-glow fallback. */
+function WindowView() {
+  const tex = useTexture('/scene-assets/asthma-villa-male-uae.png');
+  return (
+    <mesh raycast={NO_RAYCAST}>
+      <planeGeometry args={[1.9, 1.25]} />
+      <meshBasicMaterial map={tex} toneMapped={false} />
+    </mesh>
+  );
+}
+
 function HomeScene({ hideOverhead, shadowsEnabled }: { hideOverhead: boolean; shadowsEnabled: boolean }) {
+  const tex = getVillaTextures();
   return (
     <group>
-      {/* Wood floor */}
-      <mesh position={[0, -0.05, 0.1]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow raycast={NO_RAYCAST}>
-        <planeGeometry args={[7.2, 7.2]} />
-        <meshStandardMaterial color="#7a5a3d" roughness={0.55} metalness={0.05} />
+      {/* Oak floor */}
+      <mesh position={[0, -0.05, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow raycast={NO_RAYCAST}>
+        <planeGeometry args={[ROOM.halfW * 2, ROOM.frontZ - ROOM.backZ]} />
+        <meshStandardMaterial
+          map={tex.wood.map}
+          normalMap={tex.wood.normalMap}
+          normalScale={[0.7, 0.7]}
+          roughness={0.45}
+          metalness={0.05}
+        />
       </mesh>
-      {/* Rug under the patient */}
-      <mesh position={[0, -0.04, 0.1]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow raycast={NO_RAYCAST}>
-        <planeGeometry args={[3.4, 2.4]} />
-        <meshStandardMaterial color="#8c4a3a" roughness={0.95} />
+
+      {/* Rug under the patient — flat plane, soft weave */}
+      <mesh position={[0, -0.043, 0.1]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow raycast={NO_RAYCAST}>
+        <planeGeometry args={[3.2, 2.3]} />
+        <meshStandardMaterial color="#8c4436" roughness={0.98} />
       </mesh>
-      {/* Walls — warm cream */}
-      <mesh position={[0, 1.05, -1.05]} receiveShadow raycast={NO_RAYCAST}>
-        <boxGeometry args={[4.2, 2.3, 0.05]} />
-        <meshStandardMaterial color="#e6d9c2" roughness={0.9} />
+      <mesh position={[0, -0.042, 0.1]} rotation={[-Math.PI / 2, 0, 0]} raycast={NO_RAYCAST}>
+        <planeGeometry args={[2.7, 1.9]} />
+        <meshStandardMaterial color="#a15a44" roughness={0.98} />
       </mesh>
-      {[-2.05, 2.05].map((x) => (
-        <mesh key={`wall-${x}`} position={[x, 1.05, 0.4]} receiveShadow raycast={NO_RAYCAST}>
-          <boxGeometry args={[0.05, 2.3, 3.0]} />
-          <meshStandardMaterial color="#dccbb0" roughness={0.9} />
+
+      {/* Back wall */}
+      <mesh position={[0, ROOM.height / 2 - 0.05, ROOM.backZ]} receiveShadow raycast={NO_RAYCAST}>
+        <boxGeometry args={[ROOM.halfW * 2, ROOM.height, 0.06]} />
+        <meshStandardMaterial map={tex.plaster.map} normalMap={tex.plaster.normalMap} normalScale={[0.5, 0.5]} roughness={0.92} />
+      </mesh>
+      {/* Side walls */}
+      {[-ROOM.halfW, ROOM.halfW].map((x) => (
+        <mesh key={`wall-${x}`} position={[x, ROOM.height / 2 - 0.05, 0]} receiveShadow raycast={NO_RAYCAST}>
+          <boxGeometry args={[0.06, ROOM.height, ROOM.frontZ - ROOM.backZ]} />
+          <meshStandardMaterial map={tex.plaster.map} normalMap={tex.plaster.normalMap} normalScale={[0.5, 0.5]} roughness={0.92} />
         </mesh>
       ))}
-      {/* Skirting board */}
-      <mesh position={[0, 0.05, -1.02]} raycast={NO_RAYCAST}>
-        <boxGeometry args={[4.2, 0.14, 0.02]} />
-        <meshStandardMaterial color="#8a6b4a" roughness={0.6} />
+
+      {/* Skirting boards — back + both sides */}
+      <mesh position={[0, 0.05, ROOM.backZ + 0.04]} raycast={NO_RAYCAST}>
+        <boxGeometry args={[ROOM.halfW * 2, 0.14, 0.02]} />
+        <meshStandardMaterial color="#e8ddc8" roughness={0.7} />
       </mesh>
-      {/* Window on the left wall — warm daylight */}
-      <group position={[-2.02, 1.35, 0.55]}>
+      {[-ROOM.halfW + 0.04, ROOM.halfW - 0.04].map((x) => (
+        <mesh key={`skirt-${x}`} position={[x, 0.05, 0]} raycast={NO_RAYCAST}>
+          <boxGeometry args={[0.02, 0.14, ROOM.frontZ - ROOM.backZ]} />
+          <meshStandardMaterial color="#e8ddc8" roughness={0.7} />
+        </mesh>
+      ))}
+
+      {/* Window on the back wall — glass + parallax exterior + frame.
+          The far-plane sits a little behind the glass so it reads as depth. */}
+      <group position={[-0.75, 1.5, ROOM.backZ + 0.04]}>
+        {/* Exterior view (emissive photo). Falls back to a warm glow plane. */}
+        <group position={[0, 0, -0.12]}>
+          <Suspense
+            fallback={
+              <mesh raycast={NO_RAYCAST}>
+                <planeGeometry args={[1.9, 1.25]} />
+                <meshBasicMaterial color="#ffe9c4" toneMapped={false} />
+              </mesh>
+            }
+          >
+            <WindowView />
+          </Suspense>
+        </group>
+        {/* Glass pane — faint, slightly reflective */}
         <mesh raycast={NO_RAYCAST}>
-          <boxGeometry args={[0.03, 0.9, 1.3]} />
-          <meshStandardMaterial color="#ffe6b8" emissive="#ffddA0" emissiveIntensity={0.9} roughness={0.15} />
+          <planeGeometry args={[1.9, 1.25]} />
+          <meshStandardMaterial color="#eaf3ff" transparent opacity={0.12} roughness={0.05} metalness={0.1} />
         </mesh>
-        <mesh position={[0.015, 0, 0]} raycast={NO_RAYCAST}>
-          <boxGeometry args={[0.035, 1.0, 0.06]} />
-          <meshStandardMaterial color="#8a6b4a" roughness={0.6} />
+        {/* Frame: outer border + cross mullions */}
+        {([[0, 0.66, 2.02, 0.08], [0, -0.66, 2.02, 0.08], [-0.99, 0, 0.08, 1.34], [0.99, 0, 0.08, 1.34], [0, 0, 0.05, 1.3], [0, 0, 2.0, 0.05]] as const).map(
+          ([fx, fy, fw, fh], i) => (
+            <mesh key={`frame-${i}`} position={[fx, fy, 0.02]} raycast={NO_RAYCAST}>
+              <boxGeometry args={[fw, fh, 0.05]} />
+              <meshStandardMaterial color="#f5efe2" roughness={0.5} />
+            </mesh>
+          ),
+        )}
+      </group>
+
+      {/* Wall-mounted AC unit — top of the back wall, right side */}
+      <group position={[1.5, 2.25, ROOM.backZ + 0.09]}>
+        <mesh castShadow raycast={NO_RAYCAST}>
+          <boxGeometry args={[0.95, 0.3, 0.18]} />
+          <meshStandardMaterial color="#f4f6f8" roughness={0.55} metalness={0.05} />
+        </mesh>
+        {/* Vent louvre strip */}
+        <mesh position={[0, -0.11, 0.07]} raycast={NO_RAYCAST}>
+          <boxGeometry args={[0.82, 0.05, 0.06]} />
+          <meshStandardMaterial color="#334155" roughness={0.6} />
         </mesh>
       </group>
+
       {/* Sofa against the back wall */}
-      <group position={[1.15, 0, -0.8]}>
-        <mesh position={[0, 0.22, 0]} castShadow raycast={NO_RAYCAST}>
-          <boxGeometry args={[1.5, 0.36, 0.65]} />
-          <meshStandardMaterial color="#5c6b5e" roughness={0.95} />
+      <group position={[1.35, 0, ROOM.backZ + 0.55]}>
+        {/* Seat base */}
+        <mesh position={[0, 0.24, 0]} castShadow receiveShadow raycast={NO_RAYCAST}>
+          <boxGeometry args={[1.7, 0.34, 0.75]} />
+          <meshStandardMaterial map={tex.sofa.map} normalMap={tex.sofa.normalMap} normalScale={[0.6, 0.6]} roughness={0.98} />
         </mesh>
-        <mesh position={[0, 0.55, -0.26]} castShadow raycast={NO_RAYCAST}>
-          <boxGeometry args={[1.5, 0.5, 0.14]} />
-          <meshStandardMaterial color="#546256" roughness={0.95} />
+        {/* Backrest */}
+        <mesh position={[0, 0.6, -0.3]} castShadow raycast={NO_RAYCAST}>
+          <boxGeometry args={[1.7, 0.55, 0.16]} />
+          <meshStandardMaterial map={tex.sofa.map} normalMap={tex.sofa.normalMap} normalScale={[0.6, 0.6]} roughness={0.98} />
         </mesh>
-        {[-0.72, 0.72].map((x) => (
-          <mesh key={`arm-${x}`} position={[x, 0.4, 0]} castShadow raycast={NO_RAYCAST}>
-            <boxGeometry args={[0.14, 0.42, 0.65]} />
-            <meshStandardMaterial color="#546256" roughness={0.95} />
+        {/* Arms */}
+        {[-0.82, 0.82].map((x) => (
+          <mesh key={`arm-${x}`} position={[x, 0.42, 0]} castShadow raycast={NO_RAYCAST}>
+            <boxGeometry args={[0.16, 0.46, 0.75]} />
+            <meshStandardMaterial map={tex.sofa.map} normalMap={tex.sofa.normalMap} normalScale={[0.6, 0.6]} roughness={0.98} />
+          </mesh>
+        ))}
+        {/* Seat cushions */}
+        {[-0.42, 0.42].map((x) => (
+          <mesh key={`cush-${x}`} position={[x, 0.44, 0.03]} castShadow raycast={NO_RAYCAST}>
+            <boxGeometry args={[0.72, 0.14, 0.66]} />
+            <meshStandardMaterial color="#6b7758" roughness={0.98} />
           </mesh>
         ))}
       </group>
+
       {/* Coffee table, pushed aside to make room for the crew */}
-      <group position={[-1.35, 0, 1.25]} rotation={[0, 0.4, 0]}>
-        <mesh position={[0, 0.32, 0]} castShadow raycast={NO_RAYCAST}>
-          <boxGeometry args={[0.85, 0.04, 0.5]} />
-          <meshStandardMaterial color="#6b4a2f" roughness={0.4} />
+      <group position={[-1.55, 0, 1.25]} rotation={[0, 0.4, 0]}>
+        <mesh position={[0, 0.33, 0]} castShadow receiveShadow raycast={NO_RAYCAST}>
+          <boxGeometry args={[0.95, 0.05, 0.55]} />
+          <meshStandardMaterial color="#5a3d25" roughness={0.35} metalness={0.05} />
         </mesh>
-        {([[-0.38, -0.2], [0.38, -0.2], [-0.38, 0.2], [0.38, 0.2]] as const).map(([x, z]) => (
-          <mesh key={`leg-${x}-${z}`} position={[x, 0.15, z]} raycast={NO_RAYCAST}>
-            <cylinderGeometry args={[0.02, 0.02, 0.3, 8]} />
-            <meshStandardMaterial color="#4a3320" roughness={0.5} />
+        {([[-0.42, -0.22], [0.42, -0.22], [-0.42, 0.22], [0.42, 0.22]] as const).map(([x, z]) => (
+          <mesh key={`ct-leg-${x}-${z}`} position={[x, 0.16, z]} castShadow raycast={NO_RAYCAST}>
+            <boxGeometry args={[0.05, 0.32, 0.05]} />
+            <meshStandardMaterial color="#3f2a19" roughness={0.5} />
           </mesh>
         ))}
       </group>
+
+      {/* Floor lamp in the far corner — pole + emissive shade, own point light */}
+      <group position={[-2.05, 0, -1.6]}>
+        <mesh position={[0, 0.02, 0]} raycast={NO_RAYCAST}>
+          <cylinderGeometry args={[0.16, 0.18, 0.04, 16]} />
+          <meshStandardMaterial color="#3f3a33" roughness={0.5} metalness={0.4} />
+        </mesh>
+        <mesh position={[0, 0.75, 0]} raycast={NO_RAYCAST}>
+          <cylinderGeometry args={[0.016, 0.016, 1.5, 10]} />
+          <meshStandardMaterial color="#4a453d" roughness={0.4} metalness={0.5} />
+        </mesh>
+        <mesh position={[0, 1.55, 0]} raycast={NO_RAYCAST}>
+          <cylinderGeometry args={[0.16, 0.22, 0.28, 20, 1, true]} />
+          <meshStandardMaterial color="#fff2d4" emissive="#ffe6ad" emissiveIntensity={1.3} roughness={0.6} side={THREE.DoubleSide} />
+        </mesh>
+        <pointLight position={[0, 1.5, 0]} intensity={2.4} distance={4} decay={2} color="#ffdca0" />
+      </group>
+
       {!hideOverhead && (
-        <mesh position={[0, 2.3, 0.1]} rotation={[Math.PI / 2, 0, 0]} raycast={NO_RAYCAST}>
-          <planeGeometry args={[4.2, 3.2]} />
-          <meshStandardMaterial color="#efe6d6" roughness={0.9} />
+        <mesh position={[0, ROOM.height - 0.05, 0]} rotation={[Math.PI / 2, 0, 0]} raycast={NO_RAYCAST}>
+          <planeGeometry args={[ROOM.halfW * 2, ROOM.frontZ - ROOM.backZ]} />
+          <meshStandardMaterial color="#f1e9da" roughness={0.9} />
         </mesh>
       )}
-      {/* Warm domestic lighting */}
-      <KeyLight color="#ffe2c0" intensity={7} position={[0.4, 2.5, 0.5]} shadowsEnabled={shadowsEnabled} />
-      <pointLight position={[-1.85, 1.4, 0.55]} intensity={4} distance={6} decay={2} color="#ffdca6" />
-      <pointLight position={[1.2, 1.0, 1.5]} intensity={1.2} distance={4.5} decay={2} color="#ffd9b0" />
+
+      {/* Light rig — warm window key (shadow caster) + cool AC fill + soft
+          camera-side fill so shadowed faces never go dead. */}
+      <KeyLight color="#ffe4bd" intensity={7} position={[-0.75, 2.4, ROOM.backZ + 0.6]} shadowsEnabled={shadowsEnabled} />
+      <pointLight position={[-0.75, 1.6, ROOM.backZ + 0.3]} intensity={3.5} distance={6} decay={2} color="#fff0d2" />
+      <pointLight position={[1.5, 2.2, ROOM.backZ + 0.4]} intensity={0.9} distance={4} decay={2} color="#cfe0ff" />
+      <pointLight position={[1.0, 1.0, 1.6]} intensity={1.1} distance={4.5} decay={2} color="#ffd9b0" />
     </group>
   );
 }

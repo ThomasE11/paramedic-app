@@ -339,3 +339,155 @@ export function getBayTextures(): BayTextures {
   }
   return cache;
 }
+
+// ===========================================================================
+// Villa living-room PBR set — home variant. Same procedural approach as the
+// bay: color map + height-derived normal, seeded, tileable. Warm domestic
+// palette (cream plaster, oak floor, olive woven sofa).
+// ===========================================================================
+
+// --- Wall plaster: warm cream with soft trowel blotches + fine grain. -------
+function makePlaster(): SurfaceMaps {
+  const size = 512;
+  const rand = rng(711);
+  const { canvas, ctx } = makeCanvas(size);
+  const height = makeCanvas(size);
+
+  if (ctx && height.ctx) {
+    ctx.fillStyle = '#e7dcc6';
+    ctx.fillRect(0, 0, size, size);
+    height.ctx.fillStyle = '#808080';
+    height.ctx.fillRect(0, 0, size, size);
+
+    // Broad trowel sweeps — low-frequency tonal drift, inset from seams.
+    for (let i = 0; i < 30; i++) {
+      const x = 90 + rand() * (size - 180);
+      const y = 90 + rand() * (size - 180);
+      const r = 50 + rand() * 90;
+      const light = rand() > 0.5;
+      const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, light ? 'rgba(255,250,235,0.05)' : 'rgba(120,100,70,0.06)');
+      g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(x - r, y - r, r * 2, r * 2);
+      const hg = height.ctx.createRadialGradient(x, y, 0, x, y, r);
+      hg.addColorStop(0, light ? 'rgba(150,150,150,0.4)' : 'rgba(96,96,96,0.4)');
+      hg.addColorStop(1, 'rgba(128,128,128,0)');
+      height.ctx.fillStyle = hg;
+      height.ctx.fillRect(x - r, y - r, r * 2, r * 2);
+    }
+    speckle(ctx, size, 6000, rand, 0.03);
+    speckle(height.ctx, size, 6000, rand, 0.06);
+  }
+
+  return {
+    map: toTexture(canvas, 2, 1, true),
+    normalMap: toTexture(heightToNormal(height.canvas, 1.4), 2, 1, false),
+  };
+}
+
+// --- Wood floor: oak planks. Vertical plank seams + horizontal grain streaks.
+function makeWood(): SurfaceMaps {
+  const size = 512;
+  const rand = rng(712);
+  const plankW = size / 4; // 4 planks per tile, seams coincide under wrap
+  const { canvas, ctx } = makeCanvas(size);
+  const height = makeCanvas(size);
+
+  if (ctx && height.ctx) {
+    ctx.fillStyle = '#8a6239';
+    ctx.fillRect(0, 0, size, size);
+    height.ctx.fillStyle = '#808080';
+    height.ctx.fillRect(0, 0, size, size);
+
+    // Per-plank base tint.
+    for (let p = 0; p < 4; p++) {
+      const d = (rand() - 0.5) * 26;
+      ctx.fillStyle = `rgba(${138 + d},${98 + d},${57 + d},0.5)`;
+      ctx.fillRect(p * plankW, 0, plankW, size);
+    }
+
+    // Grain streaks — thin horizontal lines confined per-plank, wavy.
+    for (let i = 0; i < 520; i++) {
+      const p = Math.floor(rand() * 4);
+      const y = Math.floor(rand() * size);
+      const x0 = p * plankW + 4;
+      const w = plankW - 8;
+      const dark = rand() > 0.5;
+      ctx.strokeStyle = dark ? 'rgba(60,40,22,0.10)' : 'rgba(180,150,110,0.08)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x0, y);
+      ctx.bezierCurveTo(x0 + w * 0.33, y + (rand() - 0.5) * 6, x0 + w * 0.66, y + (rand() - 0.5) * 6, x0 + w, y);
+      ctx.stroke();
+    }
+
+    // Plank seams — recessed grooves at every plankW boundary (incl. 0/size).
+    for (let p = 0; p <= 4; p++) {
+      const x = (p % 4) * plankW;
+      ctx.fillStyle = 'rgba(30,20,12,0.6)';
+      ctx.fillRect(x - 1, 0, 2, size);
+      height.ctx.fillStyle = '#4a4a4a';
+      height.ctx.fillRect(x - 1, 0, 2, size);
+    }
+    speckle(height.ctx, size, 5000, rand, 0.05);
+  }
+
+  return {
+    map: toTexture(canvas, 3, 3, true),
+    normalMap: toTexture(heightToNormal(height.canvas, 1.8), 3, 3, false),
+  };
+}
+
+// --- Sofa fabric: olive woven weave, coarser than the mattress cover. -------
+function makeWovenFabric(): SurfaceMaps {
+  const size = 256;
+  const rand = rng(713);
+  const { canvas, ctx } = makeCanvas(size);
+  const height = makeCanvas(size);
+
+  if (ctx && height.ctx) {
+    ctx.fillStyle = '#5e6a4d';
+    ctx.fillRect(0, 0, size, size);
+    height.ctx.fillStyle = '#808080';
+    height.ctx.fillRect(0, 0, size, size);
+
+    // Coarse basket weave: 6px period, offset warp/weft for a woven look.
+    for (let p = 0; p < size; p += 6) {
+      ctx.fillStyle = 'rgba(0,0,0,0.06)';
+      ctx.fillRect(p, 0, 3, size);
+      ctx.fillStyle = 'rgba(255,255,255,0.05)';
+      ctx.fillRect(0, p + 3, size, 3);
+      height.ctx.fillStyle = 'rgba(96,96,96,0.6)';
+      height.ctx.fillRect(p, 0, 3, size);
+      height.ctx.fillStyle = 'rgba(168,168,168,0.6)';
+      height.ctx.fillRect(0, p + 3, size, 3);
+    }
+    speckle(ctx, size, 3000, rand, 0.04);
+    speckle(height.ctx, size, 3000, rand, 0.08);
+  }
+
+  return {
+    map: toTexture(canvas, 3, 2, true),
+    normalMap: toTexture(heightToNormal(height.canvas, 1.6), 3, 2, false),
+  };
+}
+
+export interface VillaTextures {
+  plaster: SurfaceMaps;
+  wood: SurfaceMaps;
+  sofa: SurfaceMaps;
+}
+
+let villaCache: VillaTextures | null = null;
+
+export function getVillaTextures(): VillaTextures {
+  if (!villaCache) {
+    villaCache = {
+      plaster: makePlaster(),
+      wood: makeWood(),
+      sofa: makeWovenFabric(),
+    };
+  }
+  return villaCache;
+}
