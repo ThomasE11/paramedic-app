@@ -8,13 +8,19 @@
  *   - SMAA: the composer bypasses the default framebuffer, which disables
  *     MSAA (`antialias: true` on the context no longer applies) — SMAA
  *     restores edge quality on the silhouette/limb edges.
- *   - Bloom: deliberately ABSENT. Nothing in-scene is emissive above LDR
- *     range (the vitals monitor is DOM; the only emissives are low-intensity
- *     region-highlight rings) so bloom would only smear UI affordances.
- *   - DepthOfField: gentle world-space bokeh focused on the patient (~2.5 m)
- *     so the environment room falls off softly. Rides the same ladder — the
- *     whole composer unmounts on the first degrade rung, so iPads that
- *     can't afford it never pay for it.
+ *   - Bloom: GATED. High luminance threshold (1.1) so only genuine HDR
+ *     sources bloom — the villa window wash, the key-light specular on skin,
+ *     monitor glow. LDR emissives (region-highlight rings) stay below the
+ *     gate and never smear. Unmounts with the composer on the first degrade
+ *     rung, so weak devices never pay for it.
+ *   - DepthOfField: gentle world-space bokeh focused on the patient. The
+ *     focus distance is driven per-frame from the shared focusRig — the
+ *     camera entrance writes a rack focus (wide/deep -> patient) into it,
+ *     and a driver effect inside the composer applies it as a uniform write
+ *     (no React re-render at 60 Hz).
+ *   - Warm grade: HueSaturation pass after tone mapping — a small positive
+ *     saturation lift plus a hair of hue rotation toward amber. Reads as
+ *     late-afternoon villa light, keeps skin out of the clinical-grey zone.
  *   - Vignette: subtle edge darkening pulling the eye to the patient.
  *   - Film grain: deliberately absent (iPad budget).
  *
@@ -37,8 +43,9 @@
 import { useEffect, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { PerformanceMonitor } from '@react-three/drei';
-import { DepthOfField, EffectComposer, N8AO, SMAA, ToneMapping, Vignette } from '@react-three/postprocessing';
-import { ToneMappingMode } from 'postprocessing';
+import { DepthOfField, EffectComposer, Bloom, HueSaturation, N8AO, SMAA, ToneMapping, Vignette } from '@react-three/postprocessing';
+import { ToneMappingMode, type DepthOfFieldEffect } from 'postprocessing';
+import { focusRig } from '@/lib/focusRig';
 
 export type QualityTier = 0 | 1 | 2 | 3 | 4;
 const MAX_TIER: QualityTier = 4;
@@ -99,14 +106,34 @@ function readCapturePin(): boolean {
   }
 }
 
+/** Drives the DepthOfField effect's focus uniforms from the shared focusRig.
+ *  Runs inside the composer subtree (still under Canvas, so useFrame is live).
+ *  The camera entrance writes the rig from its own raf loop; here we just
+ *  flush it onto the effect — direct property setters, no React re-render.
+ *  focusDistance/focusRange live on the circle-of-confusion material
+ *  (world units, uniform-backed setters); the effect's `target` stays null
+ *  so auto-focus never fights these writes. */
+function DofDriver({ effectRef }: { effectRef: React.RefObject<DepthOfFieldEffect | null> }) {
+  useFrame(() => {
+    const effect = effectRef.current;
+    if (!effect) return;
+    effect.cocMaterial.focusDistance = focusRig.worldDistance;
+    effect.cocMaterial.focusRange = focusRig.range;
+    effect.bokehScale = focusRig.bokehScale;
+  });
+  return null;
+}
+
 /** Post-processing stack. Mount only while the quality tier allows it —
  *  unmounting (rather than `enabled={false}`) frees the N8AO/SMAA GPU buffers
  *  outright, which is the point of the first degrade rung on an iPad. */
 export function PatientPostEffects() {
+  const dofRef = useRef<DepthOfFieldEffect | null>(null);
   return (
     // multisampling=0: SMAA replaces MSAA — paying for both would double the
     // AA cost for no visible gain at this scene scale.
     <EffectComposer multisampling={0}>
+      <DofDriver effectRef={dofRef} />
       <N8AO
         // World-units. The patient stands 1.8 m in a ~3 unit camera frame;
         // n8ao's guidance is 1–2 magnitudes below scene scale, so ~0.1–0.3.
@@ -125,11 +152,24 @@ export function PatientPostEffects() {
         depthAwareUpsampling
       />
       <SMAA />
-      {/* World-space focus on the patient: camera presets orbit ~2–3.5 m out,
-          so a 2.5 m focus with a wide range keeps the whole body sharp while
-          the room walls/props behind melt off. bokehScale stays low — this is
-          depth cueing, not a portrait lens. */}
-      <DepthOfField worldFocusDistance={2.5} worldFocusRange={1.8} bokehScale={2.2} />
+      {/* World-space focus on the patient, driven per-frame by DofDriver from
+          the focusRig: resting values keep the whole body sharp at ~2.5 m
+          while the room walls/props melt off; the camera entrance sweeps the
+          distance from a deep doorway focus down to the patient (rack focus).
+          bokehScale stays low at rest — this is depth cueing, not a portrait
+          lens. Props here are just the initial state; the driver owns it. */}
+      <DepthOfField
+        ref={dofRef}
+        focusDistance={focusRig.worldDistance}
+        focusRange={focusRig.range}
+        bokehScale={focusRig.bokehScale}
+      />
+      {/* Gated bloom: threshold above LDR white (1.1) so only true HDR sources
+          bloom — window wash, key-light specular, monitor glow. The region-
+          highlight rings sit in LDR and never smear. mipmapBlur keeps the
+          falloff soft and cheap. Must run BEFORE ToneMapping so the bloom
+          energy is in HDR and compresses naturally under ACES. */}
+      <Bloom luminanceThreshold={1.1} luminanceSmoothing={0.2} intensity={0.35} mipmapBlur />
       {/* The composer renders the scene into a linear half-float buffer, which
           bypasses three's renderer-level tone mapping — without this final
           pass the skin turns bright wet plastic and the low-contrast backdrop
@@ -137,6 +177,11 @@ export function PatientPostEffects() {
           mode reuses three's tonemapping chunk, so the renderer's
           toneMappingExposure (0.9, tuned against the HDRI) still applies. */}
       <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
+      {/* Warm grade, in LDR after tone mapping where the shift is predictable:
+          a small saturation lift plus a hair of hue rotation toward amber.
+          Reads as late-afternoon villa light; keeps skin out of the clinical
+          grey zone the ACES curve alone tends toward at this exposure. */}
+      <HueSaturation hue={0.02} saturation={0.08} />
       {/* After tone mapping so the darkening is predictable in LDR. */}
       <Vignette eskil={false} offset={0.26} darkness={0.55} />
     </EffectComposer>

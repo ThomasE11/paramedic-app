@@ -22,6 +22,7 @@ import * as THREE from 'three';
 import { getBayTextures } from './textures';
 import { SceneVariantEnvironment } from './SceneVariant';
 import type { EnvironmentVariant } from '@/lib/sceneEnvironment';
+import { focusRig, resetFocusRig, FOCUS_REST, FOCUS_WIDE } from '@/lib/focusRig';
 
 const NO_RAYCAST = () => null;
 
@@ -572,6 +573,8 @@ export function CameraEntrance({
     const finish = (controls: EntranceControls) => {
       controls.object.up.set(0, 1, 0);
       controls.update();
+      // Rack focus lands on the resting portrait focus with the camera.
+      resetFocusRig();
     };
 
     const cancel = () => {
@@ -592,6 +595,14 @@ export function CameraEntrance({
       const { pos, target } = focusRef.current;
       const rawT = Math.min((performance.now() - start) / ENTRANCE_MS, 1);
       const t = easeOutCubic(rawT);
+      // Rack focus (Phase D2): start with a deep, soft doorway focus and pull
+      // down onto the patient as the camera settles. Written into the shared
+      // focusRig; DofDriver in the composer flushes it to the DoF uniforms
+      // every render frame. When the composer is unmounted (degraded tier)
+      // these writes are harmlessly unread.
+      focusRig.worldDistance = FOCUS_WIDE.worldDistance + (FOCUS_REST.worldDistance - FOCUS_WIDE.worldDistance) * t;
+      focusRig.range = FOCUS_WIDE.range + (FOCUS_REST.range - FOCUS_WIDE.range) * t;
+      focusRig.bokehScale = FOCUS_WIDE.bokehScale + (FOCUS_REST.bokehScale - FOCUS_WIDE.bokehScale) * t;
       // Start pulled back and slightly high, ease down onto the preset.
       const pullback = 1 + 0.3 * (1 - t);
       controls.object.position.set(
