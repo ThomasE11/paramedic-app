@@ -26,6 +26,8 @@ dist
 !public/images/placeholders/*.png
 !public/scene-assets/
 !public/scene-assets/*.png
+# baked skin maps (Phase A) — consumed by the Phase B SSS material
+!public/models/patient-*-skin-*.png
 # Old agent framework + AI tooling caches
 .gstack/
 .bmad/
