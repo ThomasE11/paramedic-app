@@ -22,6 +22,8 @@ import { deriveSceneEnvironment } from '@/lib/sceneEnvironment';
 import type { LimbSide, SurfaceSampler } from './BodyMesh';
 import { AdaptiveQuality, PatientPostEffects, qualityForTier } from './AdaptiveQuality';
 import { TreatmentBayEnvironment, CameraEntrance } from './Environment';
+import { AmbientAudioLayer } from './AmbientAudioLayer';
+import type { AmbientBreathKind } from '@/lib/ambientAudio';
 import type { QualityTier } from './AdaptiveQuality';
 import { AnatomyReferenceLayer } from './AnatomyReferenceLayer';
 import { CLOTHING_PARTING } from './ClothingLayer';
@@ -3760,6 +3762,31 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
     return caseData.abcde?.disability?.avpu === 'U';
   }, [isInArrest, vitals?.gcs, caseData]);
 
+  // Ambient breath loop (Phase C3): the audible room breath derives from the
+  // same respiratory rate that drives the chest-rise morph and from the
+  // case's auscultation findings — stridor/wheeze zones or "audible without
+  // stethoscope" notes win; otherwise only genuinely respiratory cases get a
+  // quiet vesicular rustle. Arrest/unconscious patients breathe nothing.
+  const ambientBreath = useMemo<{ kind: AmbientBreathKind; rpm: number }>(() => {
+    const rpm = isInArrest ? 0 : breathRateRpm;
+    if (rpm <= 0 || patientUnconscious) return { kind: 'none', rpm: 0 };
+    const zones: (string | undefined)[] = [
+      patientSounds?.leftLung,
+      patientSounds?.rightLung,
+      patientSounds?.leftUpperLung,
+      patientSounds?.leftLowerLung,
+      patientSounds?.rightUpperLung,
+      patientSounds?.rightLowerLung,
+    ];
+    const audible = (patientSounds?.additionalSounds ?? []).join(' ').toLowerCase();
+    if (zones.includes('stridor') || /stridor/.test(audible)) return { kind: 'stridor', rpm };
+    if (zones.includes('wheeze') || /wheez/.test(audible)) return { kind: 'wheeze', rpm };
+    const context = `${caseData.category ?? ''} ${caseData.title ?? ''} ${caseData.dispatchInfo?.callReason ?? ''}`.toLowerCase();
+    const respiratory =
+      rpm >= 22 || /asthma|copd|respiratory|breath|dyspn|pneumonia|bronch|wheez/.test(context);
+    return { kind: respiratory ? 'clear' : 'none', rpm };
+  }, [patientSounds, breathRateRpm, isInArrest, patientUnconscious, caseData]);
+
   // Condition-responsive idle motion cues (wince/shiver/gasp/tremor/seizure/
   // agitation/chest-clutch) — pure derivation, consumed by IdleAnimations
   // inside BodyMesh.
@@ -4725,6 +4752,15 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 active={useTreatmentBayPresentation}
                 focus={overviewCameraFocus}
                 controlsRef={controlsRef}
+              />
+
+              {/* Phase C3 ambience: procedural room tone + AC hum + patient
+                  breath, positional and vitals-driven (home variant only). */}
+              <AmbientAudioLayer
+                active={useTreatmentBayPresentation}
+                variant={bayVariant}
+                breathKind={ambientBreath.kind}
+                breathRpm={ambientBreath.rpm}
               />
 
               <BodyMesh
