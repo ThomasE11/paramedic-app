@@ -4692,7 +4692,13 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                   separation; the old 4-directional + strong ambient rig flattened
                   every surface to the same value. */}
               <Suspense fallback={null}>
-                <Environment files="/hdri/studio_small_08_1k.hdr" />
+                {/* Villa scenes carry their own window/lamp/AC rig; keep the
+                    studio HDRI as a low-level bounce only so the room lights
+                    sell the place. Clinic/roadside keep the full HDRI. */}
+                <Environment
+                  files="/hdri/studio_small_08_1k.hdr"
+                  environmentIntensity={bayVariant === 'home' ? 0.22 : 1}
+                />
               </Suspense>
 
               {/* Stage 3: FPS watchdog + degrade ladder (composer → dpr →
@@ -4701,9 +4707,9 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                   below can derive from it. */}
               <AdaptiveQuality tier={qualityTier} onTierChange={setQualityTier} />
 
-              <ambientLight intensity={0.1} />
-              <directionalLight position={[4, 8, 5]} intensity={0.95} color="#fff2e6" />
-              <directionalLight position={[0, 4, -5]} intensity={0.5} color="#ffffff" />
+              <ambientLight intensity={bayVariant === 'home' ? 0.06 : 0.1} />
+              <directionalLight position={[4, 8, 5]} intensity={bayVariant === 'home' ? 0.22 : 0.95} color="#fff2e6" />
+              <directionalLight position={[0, 4, -5]} intensity={bayVariant === 'home' ? 0.12 : 0.5} color="#ffffff" />
 
               <TreatmentBayEnvironment
                 hideOverhead={treatmentBayOverviewEnabled}

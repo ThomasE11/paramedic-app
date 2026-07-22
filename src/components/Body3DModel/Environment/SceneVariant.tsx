@@ -12,13 +12,24 @@
  * - medical equipment (IV stand, monitor, crash cart, O2) is composed by
  *   index.tsx in every variant — the paramedic brings it to the scene
  */
-import { Suspense, useMemo } from 'react';
+import { Suspense, useEffect, useMemo, useRef } from 'react';
+import { useFrame } from '@react-three/fiber';
 import { useTexture } from '@react-three/drei';
 import * as THREE from 'three';
+import { RectAreaLightUniformsLib } from 'three/examples/jsm/lights/RectAreaLightUniformsLib.js';
 import type { EnvironmentVariant } from '@/lib/sceneEnvironment';
 import { getVillaTextures } from './textures';
 
 const NO_RAYCAST = () => null;
+
+// RectAreaLight needs its LTC uniforms initialised once for WebGLRenderer.
+// No-op after the first call; safe at module scope in the browser build.
+let rectAreaLightUniformsReady = false;
+function ensureRectAreaLightUniforms(): void {
+  if (rectAreaLightUniformsReady) return;
+  RectAreaLightUniformsLib.init();
+  rectAreaLightUniformsReady = true;
+}
 
 /** Shadow-casting key spot aimed at the patient — shared rig, per-scene color. */
 function KeyLight({
@@ -85,6 +96,81 @@ function WindowView() {
       <planeGeometry args={[1.9, 1.25]} />
       <meshBasicMaterial map={tex} toneMapped={false} />
     </mesh>
+  );
+}
+
+/** Warm UAE daylight entering through the villa window. A RectAreaLight gives
+ *  the broad, soft window wash; the existing spot remains the single shadow
+ *  caster so the patient still gets a readable key shadow on the floor. */
+function WindowAreaLight() {
+  const ref = useRef<THREE.RectAreaLight>(null);
+  useEffect(() => {
+    ensureRectAreaLightUniforms();
+    // RectAreaLight is a Light, so lookAt points its emitting face (-Z) at
+    // the patient rather than out through the glass.
+    ref.current?.lookAt(0, 0.9, 0);
+  }, []);
+  return (
+    <rectAreaLight
+      ref={ref}
+      args={['#ffd7a6', 4.2, 1.9, 1.25]}
+      position={[-0.75, 1.58, ROOM.backZ + 0.1]}
+    />
+  );
+}
+
+// Dust motes drifting through the window beam. Kept separate from the bay
+// motes so the villa beam reads as daylight, not surgical-light dust.
+const HOME_DUST_COUNT = 90;
+const HOME_DUST_HEIGHT = 1.9;
+function HomeDustMotes() {
+  const pointsRef = useRef<THREE.Points>(null);
+  const data = useMemo(() => {
+    const base = new Float32Array(HOME_DUST_COUNT * 3);
+    const seed = new Float32Array(HOME_DUST_COUNT * 2);
+    for (let i = 0; i < HOME_DUST_COUNT; i++) {
+      base[i * 3] = -0.75 + (Math.random() - 0.5) * 1.5;
+      base[i * 3 + 1] = 0.25 + Math.random() * HOME_DUST_HEIGHT;
+      base[i * 3 + 2] = ROOM.backZ + 0.35 + Math.random() * 1.8;
+      seed[i * 2] = Math.random() * Math.PI * 2;
+      seed[i * 2 + 1] = 0.01 + Math.random() * 0.03;
+    }
+    return { base, seed, positions: base.slice() };
+  }, []);
+
+  useFrame(({ clock }) => {
+    const points = pointsRef.current;
+    if (!points) return;
+    const attr = points.geometry.attributes.position as THREE.BufferAttribute;
+    const arr = attr.array as Float32Array;
+    const t = clock.elapsedTime;
+    const { base, seed } = data;
+    for (let i = 0; i < HOME_DUST_COUNT; i++) {
+      const phase = seed[i * 2];
+      const fall = seed[i * 2 + 1];
+      const y = base[i * 3 + 1] - t * fall;
+      arr[i * 3 + 1] = 0.25 + ((y % HOME_DUST_HEIGHT) + HOME_DUST_HEIGHT) % HOME_DUST_HEIGHT;
+      arr[i * 3] = base[i * 3] + Math.sin(t * 0.25 + phase) * 0.045;
+      arr[i * 3 + 2] = base[i * 3 + 2] + Math.cos(t * 0.2 + phase) * 0.05;
+    }
+    attr.needsUpdate = true;
+  });
+
+  return (
+    <points ref={pointsRef} raycast={NO_RAYCAST}>
+      <bufferGeometry>
+        <bufferAttribute attach="attributes-position" args={[data.positions, 3]} />
+      </bufferGeometry>
+      <pointsMaterial
+        size={0.012}
+        sizeAttenuation
+        color="#ffe9c4"
+        transparent
+        opacity={0.26}
+        blending={THREE.AdditiveBlending}
+        depthWrite={false}
+      />
+    </points>
   );
 }
 
@@ -250,12 +336,17 @@ function HomeScene({ hideOverhead, shadowsEnabled }: { hideOverhead: boolean; sh
         </mesh>
       )}
 
-      {/* Light rig — warm window key (shadow caster) + cool AC fill + soft
-          camera-side fill so shadowed faces never go dead. */}
-      <KeyLight color="#ffe4bd" intensity={7} position={[-0.75, 2.4, ROOM.backZ + 0.6]} shadowsEnabled={shadowsEnabled} />
-      <pointLight position={[-0.75, 1.6, ROOM.backZ + 0.3]} intensity={3.5} distance={6} decay={2} color="#fff0d2" />
-      <pointLight position={[1.5, 2.2, ROOM.backZ + 0.4]} intensity={0.9} distance={4} decay={2} color="#cfe0ff" />
-      <pointLight position={[1.0, 1.0, 1.6]} intensity={1.1} distance={4.5} decay={2} color="#ffd9b0" />
+      {/* Light rig — window daylight does the soft wash (RectAreaLight) while
+          a warm spot remains the single shadow caster; the floor lamp adds a
+          practical pool and the AC gives a cool top-fill so the room reads
+          like a villa interior instead of a clinic bay. */}
+      <WindowAreaLight />
+      <HomeDustMotes />
+      <KeyLight color="#ffe0b8" intensity={5.6} position={[-0.75, 2.35, ROOM.backZ + 0.55]} shadowsEnabled={shadowsEnabled} />
+      <pointLight position={[-0.75, 1.6, ROOM.backZ + 0.3]} intensity={2.6} distance={6} decay={2} color="#fff0d2" />
+      <pointLight position={[1.5, 2.18, ROOM.backZ + 0.35]} intensity={1.15} distance={4.5} decay={2} color="#cfe0ff" />
+      <pointLight position={[1.0, 1.0, 1.6]} intensity={0.85} distance={4.5} decay={2} color="#ffd9b0" />
+      <hemisphereLight args={['#fff1dc', '#4a382c', 0.16]} />
     </group>
   );
 }
