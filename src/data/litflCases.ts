@@ -53,6 +53,9 @@ export const litflCaseDatabase: CaseScenario[] = [
       hazards: ['Active construction site — hard hat zone'],
       bystanders: '3 colleagues present, one is a trained first-aider',
       environment: 'Indoor air-conditioned office, ambient 22°C',
+      environmentVariant: 'public',
+      sceneImagePath: '/scene-assets/office-female-palpitations-syncope-dubai.png',
+      sceneImageCaption: 'Scene — Indoor air-conditioned office, ambient 22°C',
       accessIssues: ['Security gate requires badge', 'Narrow corridors in portacabin'],
       extricationNeeded: false
     },
@@ -1000,6 +1003,9 @@ export const litflCaseDatabase: CaseScenario[] = [
       hazards: [],
       bystanders: '4 colleagues, office first-aider with AED',
       environment: 'Air-conditioned office, 5th floor',
+      environmentVariant: 'public',
+      sceneImagePath: '/scene-assets/office-female-palpitations-syncope-dubai.png',
+      sceneImageCaption: 'Scene — Air-conditioned office, 5th floor',
       accessIssues: ['Elevator access', 'Narrow office corridors'],
       extricationNeeded: false
     },
@@ -1223,6 +1229,7 @@ export const litflCaseDatabase: CaseScenario[] = [
       hazards: ['Slippery bathroom floor'],
       bystanders: 'Roommate present, anxious',
       environment: 'Indoor, small bathroom, warm',
+      environmentVariant: 'home',
       accessIssues: ['Small bathroom — limited working space', 'Need to move patient to larger area'],
       extricationNeeded: false
     },

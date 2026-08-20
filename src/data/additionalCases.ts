@@ -4147,7 +4147,10 @@ export const additionalTraumaCases: CaseScenario[] = [
       description: 'Factory floor, patient sitting',
       hazards: ['Industrial machinery', 'Blood', 'Sharp objects'],
       bystanders: 'Coworkers, first aider present',
-      environment: 'Industrial, noisy'
+      environment: 'Industrial, noisy',
+      environmentVariant: 'public',
+      sceneImagePath: '/scene-assets/industrial-workshop-male-uae.png',
+      sceneImageCaption: 'Scene — Industrial, noisy',
     },
     initialPresentation: {
       generalImpression: 'Young male, pale, holding stump of right forearm',
@@ -4718,7 +4721,10 @@ export const additionalBurnsCases: CaseScenario[] = [
       description: 'Building site, patient near electrical panel',
       hazards: ['Live electrical hazard', 'Entrance and exit wounds'],
       bystanders: 'Coworkers',
-      environment: 'Indoor construction site'
+      environment: 'Indoor construction site',
+      environmentVariant: 'public',
+      sceneImagePath: '/scene-assets/construction-anaphylaxis-male-uae.png',
+      sceneImageCaption: 'Scene — Indoor construction site',
     },
     initialPresentation: {
       generalImpression: 'Young male, unresponsive, no breathing',
@@ -5243,7 +5249,10 @@ export const additionalLevelBandedCases: CaseScenario[] = [
       description: 'Mall walkway, patient laid flat by first aider, AED pads available nearby',
       hazards: ['Crowd', 'Hard floor'],
       bystanders: 'Mall first aider giving handover',
-      environment: 'Cool indoor mall'
+      environment: 'Cool indoor mall',
+      environmentVariant: 'public',
+      sceneImagePath: '/scene-assets/mall-foodcourt-chestpain-male-65.png',
+      sceneImageCaption: 'Scene — Cool indoor mall',
     },
     initialPresentation: {
       generalImpression: 'Grey, clammy older man, barely rousable, profoundly bradycardic',
@@ -5508,7 +5517,10 @@ export const additionalLevelBandedCases: CaseScenario[] = [
       description: 'Restaurant, patient on the floor, one auto-injector already used ~8 minutes ago',
       hazards: ['Crowd', 'Food allergen still on table'],
       bystanders: 'Manager and a first-aider',
-      environment: 'Busy restaurant'
+      environment: 'Busy restaurant',
+      environmentVariant: 'roadside',
+      sceneImagePath: '/scene-assets/restaurant-anaphylaxis-female-abu-dhabi.png',
+      sceneImageCaption: 'Scene — Busy restaurant',
     },
     initialPresentation: {
       generalImpression: 'Distressed man with facial/lip swelling, audible wheeze and stridor, becoming exhausted',

@@ -1305,7 +1305,10 @@ export const secondYearCases: CaseScenario[] = [
       description: 'Industrial workshop, welding equipment present, patient sitting on floor against wall',
       hazards: ['Hot surfaces', 'Welding equipment still powered', 'Chemical solvents nearby'],
       bystanders: '4 colleagues present, one first-aider applying wet towels',
-      environment: 'Indoor workshop, warm ambient temperature, well ventilated'
+      environment: 'Indoor workshop, warm ambient temperature, well ventilated',
+      environmentVariant: 'public',
+      sceneImagePath: '/scene-assets/industrial-workshop-male-uae.png',
+      sceneImageCaption: 'Scene — Indoor workshop, warm ambient temperature, well ventilated',
     },
     initialPresentation: {
       generalImpression: 'Adult male, alert, in significant pain, visible burns to face and anterior chest',
@@ -1727,7 +1730,10 @@ export const secondYearCases: CaseScenario[] = [
       description: 'Modern office, patient lying on the floor of the break room, colleagues have placed a blanket over her',
       hazards: ['None identified'],
       bystanders: '3 colleagues present, concerned and willing to help',
-      environment: 'Indoor, air conditioned office environment'
+      environment: 'Indoor, air conditioned office environment',
+      environmentVariant: 'public',
+      sceneImagePath: '/scene-assets/office-female-palpitations-syncope-dubai.png',
+      sceneImageCaption: 'Scene — Indoor, air conditioned office environment',
     },
     initialPresentation: {
       generalImpression: 'Young female, pale, diaphoretic, guarding lower abdomen, appears in significant pain',
@@ -2504,7 +2510,8 @@ export const secondYearCases: CaseScenario[] = [
       description: 'Student flat, patient sitting on bed, appears calm. Two empty blister packs of paracetamol 500mg on bedside table',
       hazards: ['Check for other medications or substances', 'Assess mental state and self-harm risk'],
       bystanders: 'Flatmate present and supportive, visibly upset',
-      environment: 'Small student bedroom, tidy, no other concerning items visible'
+      environment: 'Small student bedroom, tidy, no other concerning items visible',
+      environmentVariant: 'home',
     },
     initialPresentation: {
       generalImpression: 'Young female, alert, calm, appears physically well. Empty medication packets visible.',
@@ -3303,7 +3310,10 @@ export const secondYearCases: CaseScenario[] = [
       description: 'Patient found on floor of site office, morning briefing was in progress. Hot day, patient had been outside supervising prior to coming inside.',
       hazards: ['Construction site environment', 'No AED on site', 'Limited space in office'],
       bystanders: '8 co-workers present, no one trained in CPR',
-      environment: 'Indoor office on construction site, air conditioned but patient was outside in heat prior'
+      environment: 'Indoor office on construction site, air conditioned but patient was outside in heat prior',
+      environmentVariant: 'public',
+      sceneImagePath: '/scene-assets/construction-anaphylaxis-male-uae.png',
+      sceneImageCaption: 'Scene — Indoor office on construction site, air conditioned but patient was outside in heat prior',
     },
     initialPresentation: {
       generalImpression: 'Elderly male, unresponsive, on floor, no signs of life',

@@ -576,7 +576,10 @@ export const caseDatabase: CaseScenario[] = [
       description: 'Office environment, patient at desk',
       hazards: [],
       bystanders: 'Several colleagues',
-      environment: 'Air-conditioned office'
+      environment: 'Air-conditioned office',
+      environmentVariant: 'public',
+      sceneImagePath: '/scene-assets/office-female-palpitations-syncope-dubai.png',
+      sceneImageCaption: 'Scene — Air-conditioned office',
     },
     initialPresentation: {
       generalImpression: 'Middle-aged female, anxious, uncomfortable',
@@ -4577,7 +4580,8 @@ export const caseDatabase: CaseScenario[] = [
       description: 'Bathroom floor, wet surface',
       hazards: ['Wet floor', 'Narrow space'],
       bystanders: 'Daughter',
-      environment: 'Small bathroom, rug bunched up'
+      environment: 'Small bathroom, rug bunched up',
+      environmentVariant: 'home',
     },
     initialPresentation: {
       generalImpression: 'Elderly female, supine on bathroom floor, distressed',
@@ -5220,7 +5224,10 @@ export const caseDatabase: CaseScenario[] = [
       description: 'Office floor, patient on chair',
       hazards: [],
       bystanders: 'Several colleagues',
-      environment: 'Air-conditioned office'
+      environment: 'Air-conditioned office',
+      environmentVariant: 'public',
+      sceneImagePath: '/scene-assets/office-female-palpitations-syncope-dubai.png',
+      sceneImageCaption: 'Scene — Air-conditioned office',
     },
     initialPresentation: {
       generalImpression: 'Young female, pale, recovering from syncope',
@@ -6005,6 +6012,7 @@ export const caseDatabase: CaseScenario[] = [
       hazards: [],
       bystanders: 'Mother, grandmother, 2 siblings watching',
       environment: 'Air-conditioned but warm (AC set to 24°C)',
+      environmentVariant: 'home',
       accessIssues: [],
       extricationNeeded: false
     },
@@ -6558,6 +6566,9 @@ export const caseDatabase: CaseScenario[] = [
       hazards: ['CHEMICAL CONTAMINATION - PPE required', 'Other workers potentially affected'],
       bystanders: '3 other workers with symptoms, farm supervisor',
       environment: 'Outdoor farm, hot sun, chemical smell in air',
+      environmentVariant: 'public',
+      sceneImagePath: '/scene-assets/farm-toxicology-male-35-alawir.png',
+      sceneImageCaption: 'Scene — Outdoor farm, hot sun, chemical smell in air',
       accessIssues: ['Remote location', 'Decontamination needed'],
       extricationNeeded: false
     },
@@ -8166,6 +8177,9 @@ export const caseDatabase: CaseScenario[] = [
       hazards: [],
       bystanders: 'Hotel receptionist',
       environment: 'Air-conditioned hotel room',
+      environmentVariant: 'public',
+      sceneImagePath: '/scene-assets/hotel-room-medical-uae.png',
+      sceneImageCaption: 'Scene — Air-conditioned hotel room',
       accessIssues: ['Need key card access'],
       extricationNeeded: false
     },
@@ -10006,6 +10020,9 @@ export const caseDatabase: CaseScenario[] = [
       hazards: ['Heavy weights and barbells around patient — clear area', 'Loud music — communication difficult'],
       bystanders: 'Gym staff (2 performing CPR rotation), several gym members watching',
       environment: 'Air-conditioned indoor gym, well-lit, 22°C',
+      environmentVariant: 'public',
+      sceneImagePath: '/scene-assets/gym-cardiac-arrest-male-dubai.png',
+      sceneImageCaption: 'Scene — Air-conditioned indoor gym, well-lit, 22°C',
       accessIssues: ['Stretcher access through main entrance — wide enough', 'Equipment may need moving to create space for mechanical CPR device'],
       extricationNeeded: false
     },
@@ -10321,6 +10338,7 @@ export const caseDatabase: CaseScenario[] = [
       hazards: ['Wet pool deck — slip risk', 'Child is soaking wet and cold — risk of hypothermia to rescuers unlikely but note'],
       bystanders: 'Mother (hysterical, being comforted by hotel staff), hotel duty manager, two housekeeping staff',
       environment: 'Outdoor poolside, morning, air temperature 20°C, breezy. Child soaking wet, estimated core temperature significantly below normal.',
+      environmentVariant: 'public',
       accessIssues: ['Pool area accessible through hotel lobby', 'Stretcher access via service entrance — hotel staff to guide'],
       extricationNeeded: false
     },
@@ -10670,6 +10688,9 @@ export const caseDatabase: CaseScenario[] = [
       hazards: ['Active construction site', 'Overhead hazards', 'Possible further bee exposure', 'Hot environment (40°C+)'],
       bystanders: 'Multiple co-workers, site foreman, first aid officer',
       environment: 'Outdoor, hot (42°C), dusty, limited shade',
+      environmentVariant: 'public',
+      sceneImagePath: '/scene-assets/construction-anaphylaxis-male-uae.png',
+      sceneImageCaption: 'Scene — Outdoor, hot (42°C), dusty, limited shade',
       accessIssues: ['Construction site access — security gate', 'Uneven ground for stretcher'],
       extricationNeeded: false
     },

@@ -55,6 +55,9 @@ export const moreTraumaCases: CaseScenario[] = [
       hazards: ['Assailant may still be nearby', 'Broken glass'],
       bystanders: 'Multiple bystanders, one applying pressure',
       environment: 'Outdoor, nighttime, poor lighting',
+      environmentVariant: 'public',
+      sceneImagePath: '/scene-assets/trauma-005-trapped-driver-flail-chest.png',
+      sceneImageCaption: 'Scene — Outdoor, nighttime, poor lighting',
       accessIssues: ['Crowd control needed'],
       extricationNeeded: false
     },
@@ -541,6 +544,9 @@ export const moreTraumaCases: CaseScenario[] = [
       hazards: ['Fuel leak', 'Risk of vehicle fire', 'Unstable vehicle', 'Glass and debris'],
       bystanders: 'Police and fire personnel on scene',
       environment: 'Hot day, asphalt road',
+      environmentVariant: 'roadside',
+      sceneImagePath: '/scene-assets/trauma-005-trapped-driver-flail-chest.png',
+      sceneImageCaption: 'Scene — Hot day, asphalt road',
       accessIssues: ['Patient trapped', 'Extrication required'],
       extricationNeeded: true
     },
@@ -1127,6 +1133,9 @@ export const moreTraumaCases: CaseScenario[] = [
       hazards: ['ACTIVE SHOOTER SCENE - unsafe!', 'Multiple weapons', 'Panic'],
       bystanders: 'Multiple casualties and bystanders',
       environment: 'Indoor nightclub, loud music, flashing lights',
+      environmentVariant: 'public',
+      sceneImagePath: '/scene-assets/nightclub-stabbing-male-dubai.png',
+      sceneImageCaption: 'Scene — Indoor nightclub, loud music, flashing lights',
       accessIssues: ['Scene safety - must wait for police'],
       extricationNeeded: false
     },
@@ -2087,6 +2096,9 @@ export const moreTraumaCases: CaseScenario[] = [
       hazards: ['Live traffic (two lanes still open)', 'Poor lighting beyond streetlamp pool', 'Glass and vehicle debris on road'],
       bystanders: 'Security guard from adjacent hotel directing traffic; ~6 bystanders crowding; English-speaking witness who saw the impact',
       environment: 'Nighttime, street lighting from overhead lamp ~3m away; warm and humid; asphalt road surface dry',
+      environmentVariant: 'roadside',
+      sceneImagePath: '/scene-assets/nightclub-stabbing-male-dubai.png',
+      sceneImageCaption: 'Scene — Nighttime, street lighting from overhead lamp ~3m away; warm and humid; asphalt road surface dry',
       accessIssues: ['Patient lying on hot road surface', 'Crew approach from upstream traffic side carries risk if oncoming lane not closed'],
       extricationNeeded: false,
     },
@@ -2988,7 +3000,7 @@ export const moreTraumaCases: CaseScenario[] = [
       description: 'Beach, patient supine in shallow water',
       hazards: ['Water rescue', 'Crowd on beach'],
       bystanders: 'Lifeguards, multiple bystanders',
-      environment: 'Hot sunny day, sand, water'
+      environment: 'Hot sunny day, sand, water',
     },
     initialPresentation: {
       generalImpression: 'Young male, alert but unable to move extremities',

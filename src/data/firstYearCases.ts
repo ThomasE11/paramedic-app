@@ -445,7 +445,10 @@ export const firstYearCases: CaseScenario[] = [
       description: 'Private office, patient sitting in chair holding abdomen',
       hazards: ['None identified'],
       bystanders: 'Receptionist nearby',
-      environment: 'Air conditioned office'
+      environment: 'Air conditioned office',
+      environmentVariant: 'public',
+      sceneImagePath: '/scene-assets/office-female-palpitations-syncope-dubai.png',
+      sceneImageCaption: 'Scene — Air conditioned office',
     },
     initialPresentation: {
       generalImpression: 'Young male, appears uncomfortable but not distressed',
@@ -2221,7 +2224,10 @@ export const firstYearCases: CaseScenario[] = [
       description: 'Two-vehicle rear-end collision on main road, minor vehicle damage, patient still in driver seat',
       hazards: ['Moving traffic nearby', 'Broken glass on road', 'Risk of further collision'],
       bystanders: 'Other driver standing by their vehicle, uninjured',
-      environment: 'Roadside, dry conditions, good visibility'
+      environment: 'Roadside, dry conditions, good visibility',
+      environmentVariant: 'roadside',
+      sceneImagePath: '/scene-assets/road-traffic-male-dubai.png',
+      sceneImageCaption: 'Scene — Roadside, dry conditions, good visibility',
     },
     initialPresentation: {
       generalImpression: 'Adult male sitting in driver seat, holding back of neck, alert and talking',
@@ -2425,7 +2431,10 @@ export const firstYearCases: CaseScenario[] = [
       description: 'School medical room, patient brought from exam hall by nurse',
       hazards: ['None identified'],
       bystanders: 'School nurse present',
-      environment: 'Quiet medical room, comfortable temperature'
+      environment: 'Quiet medical room, comfortable temperature',
+      environmentVariant: 'public',
+      sceneImagePath: '/scene-assets/campus-student-uae.png',
+      sceneImageCaption: 'Scene — Quiet medical room, comfortable temperature',
     },
     initialPresentation: {
       generalImpression: 'Young male, breathing very rapidly, anxious, complaining of tingling and dizziness',
@@ -2620,7 +2629,10 @@ export const firstYearCases: CaseScenario[] = [
       description: 'Private office, patient sitting at desk, looks uncomfortable',
       hazards: ['None identified'],
       bystanders: 'Security guard who let ambulance in',
-      environment: 'Air-conditioned office, quiet evening'
+      environment: 'Air-conditioned office, quiet evening',
+      environmentVariant: 'public',
+      sceneImagePath: '/scene-assets/office-female-palpitations-syncope-dubai.png',
+      sceneImageCaption: 'Scene — Air-conditioned office, quiet evening',
     },
     initialPresentation: {
       generalImpression: 'Middle-aged male at desk, alert, anxious, hand on chest feeling pulse',
@@ -2825,7 +2837,10 @@ export const firstYearCases: CaseScenario[] = [
       description: 'Food court area of shopping mall, patient supine on floor, security guard performing CPR, AED retrieved from wall mount nearby',
       hazards: ['Crowd of onlookers', 'Wet floor near food court', 'Limited space between tables'],
       bystanders: 'Security guard performing CPR, multiple bystanders watching, mall staff managing crowd',
-      environment: 'Air-conditioned mall, well-lit food court area'
+      environment: 'Air-conditioned mall, well-lit food court area',
+      environmentVariant: 'public',
+      sceneImagePath: '/scene-assets/mall-foodcourt-chestpain-male-65.png',
+      sceneImageCaption: 'Scene — Air-conditioned mall, well-lit food court area',
     },
     initialPresentation: {
       generalImpression: 'Adult male supine on floor, unresponsive, security guard performing chest compressions',
@@ -3016,7 +3031,10 @@ export const firstYearCases: CaseScenario[] = [
       description: 'Busy restaurant, patient seated at table, other diners watching',
       hazards: ['Crowded environment', 'Limited space around table'],
       bystanders: 'Partner and restaurant staff present, other diners observing',
-      environment: 'Air-conditioned restaurant, allergen exposure from prawns'
+      environment: 'Air-conditioned restaurant, allergen exposure from prawns',
+      environmentVariant: 'public',
+      sceneImagePath: '/scene-assets/restaurant-anaphylaxis-female-abu-dhabi.png',
+      sceneImageCaption: 'Scene — Air-conditioned restaurant, allergen exposure from prawns',
     },
     initialPresentation: {
       generalImpression: 'Young female, visibly distressed, urticarial rash on face and arms, audible wheeze',
@@ -3394,7 +3412,10 @@ export const firstYearCases: CaseScenario[] = [
       description: 'Open-plan office, patient on floor beside desk, colleagues cleared space',
       hazards: ['Desk corners nearby', 'Chair moved aside'],
       bystanders: 'Colleague witnessed the event',
-      environment: 'Air-conditioned office'
+      environment: 'Air-conditioned office',
+      environmentVariant: 'public',
+      sceneImagePath: '/scene-assets/office-female-palpitations-syncope-dubai.png',
+      sceneImageCaption: 'Scene — Air-conditioned office',
     },
     initialPresentation: {
       generalImpression: 'Young man on the floor, drowsy and confused, post-ictal',
@@ -3541,7 +3562,10 @@ export const firstYearCases: CaseScenario[] = [
       description: 'Driver slumped in the seat of his parked taxi, colleagues gathered',
       hazards: ['Roadside — traffic', 'Vehicle to be secured'],
       bystanders: 'Other drivers, helpful',
-      environment: 'Hot afternoon, parked in shade'
+      environment: 'Hot afternoon, parked in shade',
+      environmentVariant: 'roadside',
+      sceneImagePath: '/scene-assets/parking-garage-opioid-od-uae.png',
+      sceneImageCaption: 'Scene — Hot afternoon, parked in shade',
     },
     initialPresentation: {
       generalImpression: 'Middle-aged man, clammy and drowsy, confused speech',
@@ -3793,7 +3817,10 @@ export const firstYearCases: CaseScenario[] = [
       description: 'Astroturf pitch, patient on the ground holding right lower leg, teammates around',
       hazards: ['Other players', 'Evening floodlights'],
       bystanders: 'PE teacher and teammates',
-      environment: 'Outdoor pitch, warm evening'
+      environment: 'Outdoor pitch, warm evening',
+      environmentVariant: 'public',
+      sceneImagePath: '/scene-assets/gym-cardiac-arrest-male-dubai.png',
+      sceneImageCaption: 'Scene — Outdoor pitch, warm evening',
     },
     initialPresentation: {
       generalImpression: 'Distressed teenager in severe pain, holding a visibly deformed right lower leg',

@@ -393,10 +393,12 @@ function TreatmentBayImmersionLayer({
   appliedTreatmentIds,
   active,
   stage = 'stretcher',
+  patientWeight = 70,
 }: {
   appliedTreatmentIds: string[];
   active: boolean;
   stage?: BayPatientStage;
+  patientWeight?: number;
 }) {
   const equipment = useMemo(
     () => buildTreatmentEquipmentState(appliedTreatmentIds),
@@ -478,10 +480,25 @@ function TreatmentBayImmersionLayer({
         </mesh>
       ))}
       {equipment.hasCollar && (
-        <mesh position={[0, 1.46, 0.19]} rotation={[Math.PI / 2, 0, 0]} raycast={() => null}>
-          <torusGeometry args={[0.13, 0.04, 8, 18]} />
-          <meshStandardMaterial color="#f5f5f4" roughness={0.45} metalness={0.15} />
-        </mesh>
+        <group position={[0, 1.46, 0.19]} rotation={[Math.PI / 2, 0, 0]}>
+          {/* Main collar ring */}
+          <mesh
+            scale={[
+              Math.min(1.22, Math.max(0.78, patientWeight / 70)),
+              Math.min(1.22, Math.max(0.78, patientWeight / 70)),
+              1.0,
+            ]}
+            raycast={() => null}
+          >
+            <torusGeometry args={[0.13, 0.04, 8, 18]} />
+            <meshStandardMaterial color="#f5f5f4" roughness={0.45} metalness={0.15} />
+          </mesh>
+          {/* Posterior C-spine pad — extends rearward for log-roll view */}
+          <mesh position={[0, -0.08, -0.01]} raycast={() => null}>
+            <boxGeometry args={[0.18, 0.06, 0.05]} />
+            <meshStandardMaterial color="#e7e5e4" roughness={0.5} />
+          </mesh>
+        </group>
       )}
     </group>
   );
@@ -4844,6 +4861,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 appliedTreatmentIds={appliedTreatmentIds}
                 active={useTreatmentBayPresentation}
                 stage={bayStage}
+                patientWeight={caseData?.patientInfo?.weight ?? 70}
               />
 
               <AnatomyReferenceLayer visible={anatomyLayer === 'skeleton'} />
