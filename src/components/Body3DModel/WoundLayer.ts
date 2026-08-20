@@ -57,9 +57,11 @@ const SEVERITY_SIZE: Record<BodyInjury['severity'], number> = {
  * the student actually looks; 'back' wants posterior torso. */
 function vertexMatchesRegion(x: number, y: number, z: number, region3d: string): boolean {
   if (region3d === 'posterior-logroll') {
-    return z < -0.03 && y > 0.8 && y < 1.45;
+    return z < -0.01 && y > 0.8 && y < 1.45;
   }
-  if (z < 0.02) return false; // front-facing skin only
+  // Anterior wounds: accept any non-posterior vertex (z > -0.05) so wounds
+  // render reliably on all patient models regardless of rest pose depth.
+  if (z < -0.05) return false;
   const hit = classifyBodyPoint(x, y, z);
   if (region3d === 'head') return hit.region === 'head' || hit.region === 'face';
   return hit.region === region3d;

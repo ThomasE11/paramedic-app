@@ -2321,7 +2321,10 @@ export const caseDatabase: CaseScenario[] = [
       description: 'Busy highway, motorcycle lying on side, car with front damage',
       hazards: ['Traffic', 'Fuel leak', 'Broken glass', 'Unstable motorcycle'],
       bystanders: 'Several people gathered, police arriving',
-      environment: 'Hot weather, asphalt surface'
+      environment: 'Hot weather, asphalt surface',
+      environmentVariant: 'roadside',
+      sceneImagePath: '/scene-assets/road-traffic-male-dubai.png',
+      sceneImageCaption: 'Motorcycle vs car collision on Sheikh Zayed Road',
     },
     initialPresentation: {
       generalImpression: 'Young male, supine on road, helmet removed by bystanders',
@@ -7163,6 +7166,9 @@ export const caseDatabase: CaseScenario[] = [
       ],
       bystanders: 'Approximately 40 people: uninjured bus passengers, passing motorists, mall security',
       environment: 'Highway, exposed to sun, high ambient noise, chaotic',
+      environmentVariant: 'roadside',
+      sceneImagePath: '/scene-assets/mci-highway-uae.png',
+      sceneImageCaption: 'Major RTC — bus vs car collision on highway',
       accessIssues: ['Limited ambulance access due to wreckage', 'Need helicopter landing zone', 'Traffic management required'],
       extricationNeeded: true
     },

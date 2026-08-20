@@ -1526,22 +1526,6 @@ export function VitalSignsMonitor({
     });
   }, [revealedVitals, currentVitals]);
 
-  // Classroom spectators can't tap-to-connect the SpO2/ECG leads (read-only),
-  // so auto-reveal the standard waveforms + pulse the moment autoPowerOn flips
-  // true. Without this the spectator sees a lit monitor with every tile stuck
-  // on "LEADS OFF — TAP TO CONNECT", which defeats the point of mirroring.
-  useEffect(() => {
-    if (!autoPowerOn) return;
-    setVisibleVitals(prev => {
-      const next = new Set(prev);
-      let changed = false;
-      for (const k of ['pulse', 'spo2', 'respiration', 'bp']) {
-        if (!next.has(k)) { next.add(k); changed = true; }
-      }
-      return changed ? next : prev;
-    });
-  }, [autoPowerOn]);
-
   // TLC Monitor-specific states
   const [monitorMode, setMonitorMode] = useState<'monitor' | 'defib' | 'pacer'>('monitor');
   const [selectedEnergy, setSelectedEnergy] = useState(200);
@@ -1605,6 +1589,23 @@ export function VitalSignsMonitor({
   const [showCodeSummary, setShowCodeSummary] = useState(false);
   const [aedMode, setAedMode] = useState(false);
   const [, setShowNibpMenu] = useState(false);
+
+  // Classroom spectators can't tap-to-connect the SpO2/ECG leads (read-only),
+  // so auto-reveal the standard waveforms + pulse the moment the monitor is
+  // powered on and ready. Gate on `powerOn && bootPhase === 'ready'` so a
+  // power-off doesn't re-add vitals and silently restart the heartbeat.
+  useEffect(() => {
+    if (!autoPowerOn) return;
+    if (!(powerOn && bootPhase === 'ready')) return;
+    setVisibleVitals(prev => {
+      const next = new Set(prev);
+      let changed = false;
+      for (const k of ['pulse', 'spo2', 'respiration', 'bp']) {
+        if (!next.has(k)) { next.add(k); changed = true; }
+      }
+      return changed ? next : prev;
+    });
+  }, [autoPowerOn, powerOn, bootPhase]);
 
   // Deterioration state (must be declared before any useEffect).
   // Severity is re-evaluated as currentVitals change (see effect below) so
@@ -1805,13 +1806,16 @@ export function VitalSignsMonitor({
   }, [codeTimerRunning]);
 
   // Manage heartbeat sound — pitch varies with SpO2 when probe connected (like real pulse ox)
+  // Heartbeat sound — only when monitor is ON and booted. Otherwise a power-off
+  // followed by any vitals change would silently restart the beep (the effect
+  // re-fires but never saw `powerOn` flip because it wasn't in the dep array).
   useEffect(() => {
     if (!audioEngineRef.current) return;
 
-    // Set SpO2 pitch: when SpO2 probe is connected, heartbeat beep pitch varies with saturation
-    audioEngineRef.current._currentSpo2 = visibleVitals.has('spo2') ? (currentVitals.spo2 || 98) : null;
+    const monitorReady = powerOn && bootPhase === 'ready';
+    audioEngineRef.current._currentSpo2 = monitorReady && visibleVitals.has('spo2') ? (currentVitals.spo2 || 98) : null;
 
-    if (audioEnabled && visibleVitals.has('pulse') && currentRhythm.category !== 'arrest') {
+    if (monitorReady && audioEnabled && visibleVitals.has('pulse') && currentRhythm.category !== 'arrest') {
       const hr = parseInt(String(currentVitals.pulse)) || 80;
       if (hr > 0) {
         audioEngineRef.current.updateHeartbeatRate(hr);
@@ -1824,7 +1828,7 @@ export function VitalSignsMonitor({
     } else {
       audioEngineRef.current.stopHeartbeat();
     }
-  }, [audioEnabled, visibleVitals, currentVitals.pulse, currentVitals.spo2, currentRhythm.category]);
+  }, [powerOn, bootPhase, audioEnabled, visibleVitals, currentVitals.pulse, currentVitals.spo2, currentRhythm.category]);
 
   // Available vitals
   const availableVitals = useMemo(() => {
@@ -2755,7 +2759,7 @@ export function VitalSignsMonitor({
       {/* ================================================================ */}
       {/* TLC MONITOR — FULL REDESIGN                                      */}
       {/* ================================================================ */}
-      <div className="relative rounded-[22px] overflow-hidden"
+      <div className="relative rounded-[22px] overflow-hidden w-full min-w-0"
         style={{
           background: 'linear-gradient(145deg, #53595f 0%, #2d3237 28%, #15191e 58%, #30363b 100%)',
           boxShadow: '0 22px 55px rgba(0,0,0,0.58), inset 0 2px 0 rgba(255,255,255,0.08), inset 0 -10px 20px rgba(0,0,0,0.28)',

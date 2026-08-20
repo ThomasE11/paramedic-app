@@ -829,7 +829,14 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
             const s = m as THREE.MeshStandardMaterial;
             if (!s.isMeshStandardMaterial || m instanceof THREE.MeshPhysicalMaterial) return m;
             const phys = new THREE.MeshPhysicalMaterial();
-            phys.copy(s);            // carries map, color, normalMap, etc.
+            // phys.copy(s) crashes here: MeshPhysicalMaterial.copy assumes the
+            // source is also physical and reads physical-only Vector2/Color
+            // channels (clearcoatNormalScale et al.) that a plain
+            // MeshStandardMaterial doesn't have. Invoke the parent
+            // (standard) copy explicitly — physical channels stay at their
+            // defaults, which is correct: SSS is gated at 0 until the effect
+            // turns it on.
+            Reflect.apply(THREE.MeshStandardMaterial.prototype.copy, phys, [s]);
             phys.userData = { ...s.userData, isSssSkin: true };
             return phys;
           });
@@ -855,7 +862,10 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
           }
           material.transparent = surfaceOpacity < 1;
           material.opacity = surfaceOpacity;
-          material.depthWrite = surfaceOpacity >= 1;
+          // Patient body resting in bed or standing must always write depth.
+          // Otherwise transparency < 1 turns off depthWrite, causing the bed
+          // mattress to draw over/through the patient mesh.
+          material.depthWrite = surfaceOpacity > 0.05;
           material.needsUpdate = true;
         });
       }
@@ -1129,7 +1139,7 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
       for (const mat of mats) {
         mat.transparent = surfaceOpacity < 1;
         mat.opacity = surfaceOpacity;
-        mat.depthWrite = surfaceOpacity >= 1;
+        mat.depthWrite = surfaceOpacity > 0.05;
         mat.needsUpdate = true;
       }
     });

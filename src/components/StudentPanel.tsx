@@ -116,7 +116,7 @@ import {
   RotateCcw, Zap, Phone, ChevronDown, ChevronUp,
   Wind, Brain, Syringe, Search, Shuffle, Target,
   Flame, Baby, FlaskConical, ListChecks, HeartPulse, Gauge,
-  Eye, Mic, MicOff,
+  Eye, Mic, MicOff, Image as ImageIcon,
 } from 'lucide-react';
 import { toast } from 'sonner';
 // AuscultationPanel removed — sounds now play inline from 3D Physical Examination
@@ -418,20 +418,20 @@ function RealismDirectorCard({ state }: { state: RealismDirectorState }) {
         </div>
 
         <div className="mt-4 grid gap-2 md:grid-cols-3">
-          <div className="rounded-xl border border-white/50 bg-white/55 p-3 dark:border-white/[0.06] dark:bg-slate-950/25">
-            <div className="mb-2 flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/60">
+          <div className="rounded-xl border border-slate-200 bg-white/90 p-3 dark:border-slate-700 dark:bg-slate-800/90">
+            <div className="mb-2 flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-600 dark:text-slate-300">
               <Shield className="h-3.5 w-3.5" />
               Scene
             </div>
             <div className="space-y-1.5">
               {(sceneItems.length ? sceneItems : ['No special access constraints documented']).map(item => (
-                <p key={item} className="line-clamp-2 text-[11px] leading-relaxed text-foreground/75">{item}</p>
+                <p key={item} className="line-clamp-2 text-[11px] leading-relaxed text-slate-900 dark:text-slate-100">{item}</p>
               ))}
             </div>
           </div>
 
-          <div className="rounded-xl border border-white/50 bg-white/55 p-3 dark:border-white/[0.06] dark:bg-slate-950/25">
-            <div className="mb-2 flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/60">
+          <div className="rounded-xl border border-slate-200 bg-white/90 p-3 dark:border-slate-700 dark:bg-slate-800/90">
+            <div className="mb-2 flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-600 dark:text-slate-300">
               <Target className="h-3.5 w-3.5" />
               Patient cues
             </div>
@@ -444,16 +444,16 @@ function RealismDirectorCard({ state }: { state: RealismDirectorState }) {
                     item.severity === 'observe' ? 'bg-cyan-500' :
                     'bg-emerald-500'
                   }`} />
-                  <p className="line-clamp-2 text-[11px] leading-relaxed text-foreground/75">
-                    <span className="font-semibold text-foreground/85">{item.label}:</span> {item.detail}
+                  <p className="line-clamp-2 text-[11px] leading-relaxed text-slate-900 dark:text-slate-100">
+                    <span className="font-semibold text-slate-700 dark:text-slate-200">{item.label}:</span> {item.detail}
                   </p>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="rounded-xl border border-white/50 bg-white/55 p-3 dark:border-white/[0.06] dark:bg-slate-950/25">
-            <div className="mb-2 flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/60">
+          <div className="rounded-xl border border-slate-200 bg-white/90 p-3 dark:border-slate-700 dark:bg-slate-800/90">
+            <div className="mb-2 flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-600 dark:text-slate-300">
               <ClipboardCheck className="h-3.5 w-3.5" />
               Reassess
             </div>
@@ -5146,6 +5146,31 @@ export function StudentPanel({
                     {currentCase.initialPresentation.position && (
                       <p className="text-muted-foreground"><span className="font-medium text-foreground/70">Position:</span> {currentCase.initialPresentation.position}</p>
                     )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Dispatch scene image — what dispatch says the scene looks like.
+                  Shown alongside expected presentation so the student has a
+                  single reference tile before entering. */}
+              {currentCase.sceneInfo?.sceneImagePath && (
+                <Card className="rounded-2xl border border-border/60 bg-card overflow-hidden">
+                  <CardHeader className="pb-2 px-4 pt-4">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground font-semibold">Scene overview</p>
+                      <ImageIcon className="h-3.5 w-3.5 text-muted-foreground/50" />
+                    </div>
+                    {currentCase.sceneInfo.sceneImageCaption && (
+                      <p className="text-[10px] text-muted-foreground/70 leading-snug">{currentCase.sceneInfo.sceneImageCaption}</p>
+                    )}
+                  </CardHeader>
+                  <CardContent className="p-2 sm:p-3">
+                    <img
+                      src={currentCase.sceneInfo.sceneImagePath}
+                      alt={currentCase.sceneInfo.sceneImageCaption || 'Scene overview'}
+                      className="w-full rounded-lg border border-border/40 object-cover"
+                      style={{ maxHeight: '22rem' }}
+                    />
                   </CardContent>
                 </Card>
               )}

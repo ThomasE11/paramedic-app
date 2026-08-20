@@ -402,6 +402,14 @@ export interface CaseScenario {
     environment: string;
     accessIssues?: string[];
     extricationNeeded?: boolean;
+    /**
+     * Visual the student sees when the scene loads — the 3D environment
+     * should match this backdrop. Optional so existing cases stay valid.
+     */
+    sceneImagePath?: string;
+    sceneImageCaption?: string;
+    /** Explicit environment override so a crash always renders as roadside. */
+    environmentVariant?: 'clinic' | 'home' | 'public' | 'roadside';
   };
 
   // Initial Presentation

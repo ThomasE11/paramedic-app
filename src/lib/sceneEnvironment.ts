@@ -21,6 +21,13 @@ const ROADSIDE_PATTERN = new RegExp(
     '\\brta\\b',
     '\\bmvc\\b',
     'collision',
+    'car crash',
+    'vehicle crash',
+    'motorcycle',
+    'motorbike',
+    'pedestrian',
+    'struck',
+    'run over',
     'construction site',
     'car park',
     'parking lot',
@@ -80,6 +87,10 @@ const PUBLIC_PATTERN = new RegExp(
  * public so "hotel room" doesn't render as a mall atrium.
  */
 export function deriveSceneEnvironment(caseData: CaseScenario): EnvironmentVariant {
+  // Explicit per-case override always wins when authored.
+  if (caseData.sceneInfo?.environmentVariant) {
+    return caseData.sceneInfo.environmentVariant;
+  }
   const text = [
     caseData.dispatchInfo?.location,
     caseData.dispatchInfo?.callReason,

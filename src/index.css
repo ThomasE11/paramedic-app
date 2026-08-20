@@ -1841,7 +1841,8 @@ body {
 
 .tactical-monitor-card {
   min-width: 0;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
   border-radius: 1.05rem;
   border: 1px solid rgba(74, 222, 128, 0.22);
   background:
@@ -2711,12 +2712,13 @@ body {
   }
 
   .tactical-monitor-card {
-    height: min(42vh, 25rem);
+    height: auto;
+    min-height: 26rem;
   }
 
   .tactical-monitor-card > .select-none {
-    width: calc(100% / 0.74);
-    transform: scale(0.74);
+    width: 100%;
+    transform: none;
     transform-origin: top left;
   }
 

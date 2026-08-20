@@ -619,10 +619,14 @@ function LandmarkMarkers({
                 }
                 onSelect(marker.region);
               }}
-              className={`group pointer-events-auto relative flex items-center justify-center ${isDetail ? 'h-2.5 w-2.5' : 'h-3 w-3'}`}
+              className={`group pointer-events-auto relative flex items-center justify-center ${isDetail ? 'h-4 w-4' : 'h-4 w-4'}`}
               title={`${marker.label} — ${marker.sublabel}`}
             >
-              <span className={`block rounded-full ring-1 ring-white/80 shadow-md transition-transform duration-150 group-hover:scale-150 ${isDetail ? 'h-1 w-1' : 'h-1.5 w-1.5'} ${dotColor}`} />
+              {/* Invisible touch target — keeps the patient surface clean. The
+                  dot itself is hidden (opacity 0); only the invisible 16px hit
+                  zone stays clickable so tapping the face/eyes/chest of the
+                  model triggers the region's assessment zoom + actions. */}
+              <span className={`pointer-events-none absolute inset-0 ${dotColor}`} style={{ opacity: 0 }} />
               {!isDetail && (
                 <span className={`pointer-events-none absolute left-1/2 top-[125%] z-10 -translate-x-1/2 whitespace-nowrap rounded-md border px-1.5 py-0.5 text-[8px] font-semibold leading-none opacity-0 shadow-lg backdrop-blur-md transition-opacity duration-150 group-hover:opacity-100 ${toneClasses[marker.tone ?? 'neutral']}`}>
                   {marker.label}
@@ -2983,7 +2987,7 @@ function InFrameFindings({
   const dotTone = { crit: 'bg-red-400', warn: 'bg-amber-300', ok: 'bg-emerald-400' } as const;
 
   return (
-    <div className={`pointer-events-none absolute right-3 z-10 flex w-[min(18rem,calc(100%-1.5rem))] flex-col items-stretch gap-1.5 ${offsetForEyeContext ? 'top-[20.5rem]' : 'top-14'}`}>
+    <div className={`pointer-events-none absolute right-3 z-30 flex w-[min(18rem,calc(100%-1.5rem))] flex-col items-stretch gap-1.5 ${offsetForEyeContext ? 'top-[20.5rem]' : 'top-14'}`}>
       {active && (() => {
         const sv = severity(active.text);
         return (
@@ -3437,7 +3441,7 @@ function PatientFirstExamDock({
         <div className="min-w-0">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-2">
             <div className="min-w-0">
-              <p className="text-[7px] font-semibold uppercase tracking-[0.22em] text-cyan-100/58">Hands-on assessment bay</p>
+              <p className="text-[7px] font-semibold uppercase tracking-[0.22em] text-cyan-100/90">Hands-on assessment bay</p>
               <h3 className="truncate text-sm font-semibold text-white">
                 {REGION_LABELS[activeRegion] || activeRegion}
               </h3>
@@ -4486,12 +4490,12 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
             </h2>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           {/* ONE view switch (skin ↔ skeleton). Previously labelled
               "Surface | Anatomy", which read as two unrelated controls —
               renamed so it is obviously a single mutually-exclusive toggle. */}
-          <div className="hidden items-center gap-1 rounded-lg border border-slate-200/70 bg-white/70 p-0.5 dark:border-white/10 dark:bg-slate-900/60 sm:flex" role="group" aria-label="Model view layer">
-            <span className="pl-1 text-[8px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/50">View</span>
+          <div className="flex items-center gap-1 rounded-lg border border-slate-200/70 bg-white/70 p-0.5 dark:border-white/10 dark:bg-slate-900/60" role="group" aria-label="Model view layer">
+            <span className="pl-1 text-[8px] font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">View</span>
             <button
               type="button"
               onClick={() => setAnatomyLayer('surface')}
@@ -4684,7 +4688,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
         <div className={`patient-model-canvas-shell relative min-w-0 overflow-hidden ${patientFirstExamLayout ? 'patient-first-canvas' : ''} ${activeRegion ? 'bg-slate-100/35 dark:bg-slate-950/20' : 'h-[320px] sm:h-[380px] lg:h-[420px]'}`}>
           <div className={`patient-model-canvas-stage relative min-w-0 overflow-hidden ${patientFirstExamLayout ? 'patient-first-canvas-stage' : activeRegion ? 'h-[430px] sm:h-[470px]' : 'h-full'}`}>
             <Canvas
-              camera={{ position: overviewCameraFocus.pos, fov: useTreatmentBayPresentation ? 34 : 34 }}
+              camera={{ position: overviewCameraFocus.pos, fov: useTreatmentBayPresentation ? 34 : 34, near: 0.05, far: 200 }}
               dpr={Math.min(window.devicePixelRatio, 2)}
               frameloop="always"
               // Soft shadow maps for the surgical key light. One 1024px
@@ -4701,7 +4705,11 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 toneMappingExposure: 0.9,
               }}
               style={{ background: 'transparent' }}
-              onPointerMissed={() => { if (activeRegion) handleCloseRegion(); }}
+              onPointerMissed={(e) => {
+                // Ignore pointer clicks that originated on UI overlays or buttons
+                if (e.defaultPrevented) return;
+                if (activeRegion && activeRegion !== 'posterior-logroll') handleCloseRegion();
+              }}
               onCreated={(state) => {
                 // ponytail: dev-only calibration hook — lets a script reach the
                 // live scene/camera to compute exact facial-landmark positions

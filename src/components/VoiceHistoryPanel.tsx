@@ -177,7 +177,7 @@ export function VoiceHistoryPanel({ caseData, onCategoryObtained, footer }: Voic
             </div>
             History Taking — Ask the Patient
           </CardTitle>
-          <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground/70">
+          <div className="text-[10px] uppercase tracking-[0.18em] font-semibold text-slate-300 dark:text-slate-200">
             SAMPLE {sampleCovered.length}/6
           </div>
         </div>
@@ -191,9 +191,9 @@ export function VoiceHistoryPanel({ caseData, onCategoryObtained, footer }: Voic
               <Badge
                 key={cat}
                 variant={got ? 'default' : 'outline'}
-                className={`text-[10px] ${got ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/15' : 'text-muted-foreground'}`}
+                className={`text-[10px] ${got ? 'bg-emerald-500/25 text-emerald-200 dark:text-emerald-100 border-emerald-400/40 hover:bg-emerald-500/25' : 'text-slate-300 dark:text-slate-200 border-slate-600'}`}
               >
-                {got && <CheckCircle2 className="h-2.5 w-2.5 mr-1" />}
+                {got && <CheckCircle2 className="h-2.5 w-2.5 mr-1 text-emerald-400" />}
                 {CATEGORY_LABELS[cat]}
               </Badge>
             );
@@ -203,12 +203,12 @@ export function VoiceHistoryPanel({ caseData, onCategoryObtained, footer }: Voic
         {/* Conversation thread */}
         <div
           ref={scrollRef}
-          className="px-4 py-4 min-h-[260px] max-h-[420px] overflow-y-auto space-y-3 bg-muted/20"
+          className="px-4 py-4 min-h-[260px] max-h-[420px] overflow-y-auto space-y-3 bg-slate-900/40"
         >
           {turns.length === 0 && !voice.isListening && !voice.interimTranscript && (
             <div className="flex flex-col items-center justify-center py-8 text-center">
-              <History className="h-8 w-8 text-muted-foreground/40 mb-2" />
-              <p className="text-sm text-muted-foreground/70 max-w-md leading-relaxed">
+              <History className="h-8 w-8 text-slate-400 mb-2" />
+              <p className="text-sm font-medium text-slate-200 dark:text-slate-100 max-w-md leading-relaxed">
                 Press the mic and ask the patient a history question — anything you'd
                 ask in real practice. The patient will answer in their own voice.
               </p>

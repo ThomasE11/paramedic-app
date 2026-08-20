@@ -106,22 +106,26 @@ export function IdleAnimations({ scene, unconscious, cues, reduced = false }: Id
       // ---- Seizure / tremor (mutually exclusive amplitudes) ----------------
       if (cues.seizure) {
         // Regular rhythmic shaking — NOT gated on consciousness.
+        // Damped: was 0.011 → 0.006, rz 0.02 → 0.012, keeps seizure read
+        // without the mesh rattling off its play.
         const f = a.t * TAU * 4.5;
-        px += Math.sin(f) * 0.011 + Math.sin(f * 1.7) * 0.004;
-        pz += Math.sin(f * 0.8) * 0.005;
-        rz += Math.sin(f * 0.9) * 0.02;
-        rx += Math.sin(f * 1.3) * 0.008;
+        px += Math.sin(f) * 0.006 + Math.sin(f * 1.7) * 0.002;
+        pz += Math.sin(f * 0.8) * 0.003;
+        rz += Math.sin(f * 0.9) * 0.012;
+        rx += Math.sin(f * 1.3) * 0.005;
       } else if (cues.tremor) {
         const f = a.t * TAU * 5.5;
-        px += Math.sin(f) * 0.004 * c;
-        rz += Math.sin(f * 1.1) * 0.007 * c;
+        px += Math.sin(f) * 0.003 * c;
+        rz += Math.sin(f * 1.1) * 0.005 * c;
       }
 
       // ---- Shiver (shock / cold) — fine, fast, irregular -------------------
+      // Heavily damped so it reads as tremble, not vibration. Amplitude was
+      // 0.0016 → 0.0007 and the harmonic (1.31) term halved.
       if (!reduced && cues.shivering && !cues.seizure) {
         const f = a.t * TAU * 10;
-        px += (Math.sin(f) + Math.sin(f * 1.31) * 0.6) * 0.0016 * c;
-        pz += Math.sin(f * 0.87) * 0.0012 * c;
+        px += (Math.sin(f) + Math.sin(f * 1.31) * 0.3) * 0.0007 * c;
+        pz += Math.sin(f * 0.87) * 0.0006 * c;
       }
 
       // ---- Wince (pain events) ---------------------------------------------
@@ -156,15 +160,18 @@ export function IdleAnimations({ scene, unconscious, cues, reduced = false }: Id
         }
       }
       const clutchE = pulse(a.t, a.clutchStart, CLUTCH_S) * c;
-      rx += clutchE * 0.045; // ~2.6° forward curl at peak
-      rz += clutchE * 0.015;
+      rx += clutchE * 0.025; // damped: was 0.045 → 0.025
+      rz += clutchE * 0.008; // damped: was 0.015 → 0.008
       winceHold = winceHold || clutchE > 0.5;
 
       // ---- Agitation — restless positional shifting ------------------------
+      // Damped amplitude: was ±0.014/±0.01 → ±0.008/±0.006. Keeps visible
+      // restless shifting without compounding into vibration when combined
+      // with wince + clutch.
       if (!reduced && cues.agitated && c > 0.5) {
         if (a.t >= a.nextAgitateAt) {
-          a.agTargetX = (Math.random() - 0.5) * 0.014;
-          a.agTargetZ = (Math.random() - 0.5) * 0.01;
+          a.agTargetX = (Math.random() - 0.5) * 0.008;
+          a.agTargetZ = (Math.random() - 0.5) * 0.006;
           a.nextAgitateAt = a.t + 2.5 + Math.random() * 3.5;
         }
       } else {

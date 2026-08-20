@@ -833,27 +833,27 @@ function EquipmentInventoryBoard({
               onClick={() => onSelect(item)}
               disabled={isApplying}
               aria-label={`${isApplied ? 'Connected' : 'Select'} ${item.label}`}
-              className={`equipment-tile group relative min-h-[106px] rounded-lg border p-1.5 text-left transition disabled:cursor-wait ${
+              className={`equipment-tile group relative flex flex-col justify-between min-h-[122px] rounded-xl border p-2 text-left transition disabled:cursor-wait ${
                 isApplied
-                  ? 'border-emerald-300/70 bg-emerald-400/15'
+                  ? 'border-emerald-300/80 bg-emerald-400/20'
                   : isStaged
-                    ? 'border-cyan-300/80 bg-cyan-300/15'
-                    : 'border-white/10 bg-white/[0.065] hover:border-white/25 hover:bg-white/[0.11]'
+                    ? 'border-cyan-300/90 bg-cyan-300/20'
+                    : 'border-white/15 bg-white/[0.08] hover:border-white/35 hover:bg-white/[0.14]'
               }`}
             >
               <EquipmentReplica item={item} bag={bag} isApplied={isApplied} />
-              <div className="mt-2 min-w-0">
+              <div className="mt-1.5 min-w-0 flex-1">
                 <p className="truncate text-[11px] font-bold text-white">{item.label}</p>
-                <p className="line-clamp-2 text-[9px] leading-snug text-cyan-100/70">{item.caption}</p>
+                <p className="line-clamp-2 text-[9px] leading-snug text-cyan-100/85">{item.caption}</p>
               </div>
-              <span className={`mt-2 inline-flex h-5 items-center rounded px-1.5 text-[8px] font-bold uppercase tracking-[0.08em] ${
+              <span className={`mt-2 inline-flex h-6 items-center justify-center rounded-md px-2 text-[9px] font-bold uppercase tracking-[0.08em] shadow-sm ${
                 isApplied
-                  ? 'bg-emerald-400/20 text-emerald-100'
+                  ? 'bg-emerald-400/25 text-emerald-100 border border-emerald-300/40'
                   : isApplying
-                    ? 'bg-amber-400/20 text-amber-100'
+                    ? 'bg-amber-400/25 text-amber-100 border border-amber-300/40'
                     : canApply
-                      ? 'bg-white/12 text-white'
-                      : 'bg-white/7 text-white/45'
+                      ? 'bg-white/20 text-white border border-white/30 hover:bg-white/30'
+                      : 'bg-white/10 text-white/50 border border-white/10'
               }`}>
                 {isApplied ? 'Connected' : isApplying ? 'Applying' : item.treatmentId ? currentVitals ? 'Apply' : 'Vitals first' : 'Inspect'}
               </span>
@@ -1826,10 +1826,15 @@ export function TreatmentJumpBagPanel({
                 aria-label={`Open ${bag.label}`}
                 title={`Open ${bag.label}`}
                 onClick={() => {
-                  setActiveManagementTab(bag.key);
-                  setMedSearch('');
-                  setStagedEquipmentId(null);
-                  revealTreatments();
+                  if (isActive) {
+                    // Clicking an open bag closes it (toggles off)
+                    setActiveManagementTab('' as ManagementTab);
+                  } else {
+                    setActiveManagementTab(bag.key);
+                    setMedSearch('');
+                    setStagedEquipmentId(null);
+                    revealTreatments();
+                  }
                 }}
                 className={`jump-bag-button group relative min-h-[164px] overflow-hidden rounded-lg border p-2 text-left transition hover:border-slate-300 hover:bg-white/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40 dark:hover:bg-white/[0.08] ${
                   isActive ? bag.selectedClass : 'glass-control border-slate-200 dark:border-slate-800'
