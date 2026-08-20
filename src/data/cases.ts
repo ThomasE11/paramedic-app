@@ -2502,7 +2502,10 @@ export const caseDatabase: CaseScenario[] = [
       description: 'Construction site, patient on ground',
       hazards: ['Heavy machinery', 'Uneven ground', 'Construction materials'],
       bystanders: 'Coworkers',
-      environment: 'Outdoor, hot'
+      environment: 'Outdoor, hot',
+      environmentVariant: 'public',
+      sceneImagePath: '/scene-assets/construction-fall-male-29-dubaihills.png',
+      sceneImageCaption: 'Construction site fall — Dubai Hills',
     },
     initialPresentation: {
       generalImpression: 'Young male, supine, blood around head',
@@ -2674,7 +2677,10 @@ export const caseDatabase: CaseScenario[] = [
       description: 'Street corner, police present',
       hazards: ['Police incident'],
       bystanders: 'Police officers',
-      environment: 'Outdoor'
+      environment: 'Outdoor',
+      environmentVariant: 'public',
+      sceneImagePath: '/scene-assets/trauma-003-deira-chest-wound.png',
+      sceneImageCaption: 'Stab wound — Deira street',
     },
     initialPresentation: {
       generalImpression: 'Young male, sitting, holding chest',

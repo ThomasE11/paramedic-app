@@ -120,6 +120,7 @@ interface AppliedEquipmentVisualState {
   hasLucas: boolean;
   hasEtTube: boolean;
   hasOpa: boolean;
+  hasCollar: boolean;
 }
 
 const TREATMENT_ASSET_PATHS = {
@@ -137,6 +138,7 @@ const TREATMENT_ASSET_PATHS = {
   etTube: '/treatment-assets/et-tube.svg',
   opa: '/treatment-assets/opa.svg',
   ivPole: '/treatment-assets/iv-pole.svg',
+  collar: '/equipment-assets/cervical-collar.webp',
 } as const;
 
 const BODY_REGION_DIAGRAM_ANCHOR: Record<BodyRegion, { x: number; y: number }> = {
@@ -475,6 +477,12 @@ function TreatmentBayImmersionLayer({
           />
         </mesh>
       ))}
+      {equipment.hasCollar && (
+        <mesh position={[0, 1.46, 0.19]} rotation={[Math.PI / 2, 0, 0]} raycast={() => null}>
+          <torusGeometry args={[0.13, 0.04, 8, 18]} />
+          <meshStandardMaterial color="#f5f5f4" roughness={0.45} metalness={0.15} />
+        </mesh>
+      )}
     </group>
   );
 }
@@ -1026,6 +1034,10 @@ function buildTreatmentEquipmentState(appliedTreatmentIds: string[]): AppliedEqu
     hasLucas: applied.has('lucas_device'),
     hasEtTube,
     hasOpa: applied.has('opa_insert'),
+    hasCollar: applied.has('cervical_collar')
+      || applied.has('c-collar')
+      || applied.has('cspine_protection')
+      || applied.has('immobilisation'),
   };
 }
 
@@ -1080,6 +1092,7 @@ function AppliedEquipmentTray({ appliedTreatmentIds }: { appliedTreatmentIds: st
   else if (equipment.hasIvAccess) chips.push({ src: TREATMENT_ASSET_PATHS.ivCannula, label: 'IV access' });
   if (equipment.hasDefibPads) chips.push({ src: TREATMENT_ASSET_PATHS.defibPads, label: 'Defib pads on' });
   if (equipment.hasLucas) chips.push({ src: TREATMENT_ASSET_PATHS.lucas, label: 'LUCAS running' });
+  if (equipment.hasCollar) chips.push({ src: TREATMENT_ASSET_PATHS.collar, label: 'C-collar applied' });
   if (chips.length === 0) return null;
   return (
     <div className="pointer-events-none absolute bottom-3 right-3 z-20 flex max-w-[44%] flex-col items-end gap-1.5">

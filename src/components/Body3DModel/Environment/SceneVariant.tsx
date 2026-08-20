@@ -457,6 +457,124 @@ function RoadsideScene({ shadowsEnabled }: { shadowsEnabled: boolean }) {
           <meshStandardMaterial color="#fffbe8" emissive="#fff6d0" emissiveIntensity={2.2} side={THREE.DoubleSide} />
         </mesh>
       ))}
+      {/* Wrecked car — low-poly silhouette, front damage, pushed to the
+          right side of the scene. Body + cabin + two wheels visible. */}
+      <group position={[1.8, 0, -0.3]} rotation={[0, -0.35, 0]}>
+        {/* Body shell */}
+        <mesh position={[0, 0.48, 0]} castShadow receiveShadow raycast={NO_RAYCAST}>
+          <boxGeometry args={[3.6, 0.7, 1.7]} />
+          <meshStandardMaterial color="#5a6068" roughness={0.7} metalness={0.4} />
+        </mesh>
+        {/* Hood crumpled — rotated box */}
+        <mesh position={[-1.6, 0.42, 0]} castShadow raycast={NO_RAYCAST} rotation={[0, 0, 0.08]}>
+          <boxGeometry args={[0.8, 0.12, 1.6]} />
+          <meshStandardMaterial color="#4a5056" roughness={0.7} metalness={0.4} />
+        </mesh>
+        {/* Cabin (windows) */}
+        <mesh position={[0.3, 0.92, 0]} castShadow raycast={NO_RAYCAST}>
+          <boxGeometry args={[1.8, 0.55, 1.5]} />
+          <meshStandardMaterial color="#2a3540" roughness={0.12} metalness={0.6} transparent opacity={0.65} />
+        </mesh>
+        {/* Roof */}
+        <mesh position={[0.3, 1.18, 0]} castShadow raycast={NO_RAYCAST}>
+          <boxGeometry args={[1.8, 0.12, 1.6]} />
+          <meshStandardMaterial color="#5a6068" roughness={0.7} metalness={0.4} />
+        </mesh>
+        {/* Wheels */}
+        {[-1.3, 1.3].map(wx => (
+          <group key={`car-wheel-${wx}`}>
+            <mesh position={[wx, 0.28, 0.82]} castShadow raycast={NO_RAYCAST}>
+              <cylinderGeometry args={[0.28, 0.28, 0.18, 16]} />
+              <meshStandardMaterial color="#1a1a1a" roughness={0.85} />
+            </mesh>
+            <mesh position={[wx, 0.28, -0.82]} castShadow raycast={NO_RAYCAST}>
+              <cylinderGeometry args={[0.28, 0.28, 0.18, 16]} />
+              <meshStandardMaterial color="#1a1a1a" roughness={0.85} />
+            </mesh>
+          </group>
+        ))}
+        {/* Headlight glass cracked — emissive chip */}
+        <mesh position={[-1.95, 0.5, 0.55]} raycast={NO_RAYCAST}>
+          <boxGeometry args={[0.05, 0.18, 0.3]} />
+          <meshStandardMaterial color="#d4d4d4" emissive="#fff0c4" emissiveIntensity={0.4} roughness={0.2} />
+        </mesh>
+        <mesh position={[-1.95, 0.5, -0.55]} raycast={NO_RAYCAST}>
+          <boxGeometry args={[0.05, 0.18, 0.3]} />
+          <meshStandardMaterial color="#d4d4d4" roughness={0.2} metalness={0.3} />
+        </mesh>
+      </group>
+
+      {/* Downed motorcycle — lying on its side, left of the patient */}
+      <group position={[-1.6, 0, 0.9]} rotation={[0, 1.1, Math.PI / 2 - 0.1]}>
+        {/* Frame */}
+        <mesh position={[0, 0.15, 0]} castShadow raycast={NO_RAYCAST}>
+          <cylinderGeometry args={[0.06, 0.06, 1.8, 10]} />
+          <meshStandardMaterial color="#2a2a2a" metalness={0.7} roughness={0.3} />
+        </mesh>
+        {/* Seat */}
+        <mesh position={[0.5, 0.22, 0]} castShadow raycast={NO_RAYCAST}>
+          <boxGeometry args={[0.6, 0.12, 0.22]} />
+          <meshStandardMaterial color="#1a1a1a" roughness={0.85} />
+        </mesh>
+        {/* Wheels */}
+        {[-0.7, 0.7].map(wx => (
+          <mesh key={`moto-wheel-${wx}`} position={[wx, 0.15, 0]} castShadow raycast={NO_RAYCAST} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[0.32, 0.06, 8, 20]} />
+            <meshStandardMaterial color="#1a1a1a" roughness={0.85} />
+          </mesh>
+        ))}
+        {/* Handlebar */}
+        <mesh position={[-0.75, 0.35, 0]} castShadow raycast={NO_RAYCAST} rotation={[0, 0, 0.3]}>
+          <cylinderGeometry args={[0.025, 0.025, 0.5, 8]} />
+          <meshStandardMaterial color="#3a3a3a" metalness={0.6} roughness={0.4} />
+        </mesh>
+      </group>
+
+      {/* Debris scattered across the road — small low-poly shards */}
+      {[
+        [-0.4, 0.01, -0.8], [0.3, 0.01, -1.4], [0.8, 0.01, 0.6],
+        [-0.9, 0.01, 1.2], [1.2, 0.01, -1.6], [0.1, 0.01, 1.8],
+      ].map(([dx, dy, dz], i) => (
+        <mesh
+          key={`debris-${i}`}
+          position={[dx, dy, dz]}
+          rotation={[Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI]}
+          castShadow
+          raycast={NO_RAYCAST}
+        >
+          <boxGeometry args={[0.12 + Math.random() * 0.1, 0.02, 0.08 + Math.random() * 0.06]} />
+          <meshStandardMaterial color="#4a4a4a" roughness={0.8} metalness={0.3} />
+        </mesh>
+      ))}
+
+      {/* Broken glass shards — translucent sparkles near the car */}
+      {[
+        [1.2, 0.0, -0.6], [1.5, 0.0, -0.9], [2.1, 0.0, -0.4], [1.0, 0.0, -1.1],
+      ].map(([gx, gy, gz], i) => (
+        <mesh
+          key={`glass-${i}`}
+          position={[gx, gy + 0.005, gz]}
+          rotation={[-Math.PI / 2, 0, Math.random() * Math.PI]}
+          raycast={NO_RAYCAST}
+        >
+          <planeGeometry args={[0.1 + Math.random() * 0.08, 0.1 + Math.random() * 0.08]} />
+          <meshStandardMaterial
+            color="#a8c0d8"
+            transparent
+            opacity={0.5}
+            roughness={0.05}
+            metalness={0.3}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+      ))}
+
+      {/* Fuel spill — dark glossy patch under the car */}
+      <mesh position={[1.6, -0.045, -0.3]} rotation={[-Math.PI / 2, 0, 0]} raycast={NO_RAYCAST}>
+        <circleGeometry args={[1.1, 24]} />
+        <meshStandardMaterial color="#1a1a1a" roughness={0.08} metalness={0.6} transparent opacity={0.7} />
+      </mesh>
+
       {/* Daylight: blue sky ambient + sun key. The headlights add warm rake. */}
       <hemisphereLight args={['#bcd7ff', '#3a3d42', 0.75]} />
       <KeyLight color="#fff4de" intensity={7} position={[2.2, 3.2, 1.6]} shadowsEnabled={shadowsEnabled} angle={0.5} />
