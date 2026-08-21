@@ -3496,18 +3496,19 @@ function PatientFirstExamDock({
                 <button
                   key={group.technique}
                   type="button"
+                  title={`${meta.label} — ${meta.hint}`}
+                  aria-label={meta.label}
                   onClick={() => onAction(group.primary.id)}
                   className={`patient-first-technique-button ${isActive ? dock.active : dock.tone}`}
                 >
-                  <span className="flex items-center justify-between gap-1">
-                    <Icon className={`h-3.5 w-3.5 shrink-0 ${isActive ? 'text-white' : dock.icon}`} />
+                  <span className="flex w-full items-center justify-center">
+                    <Icon className={`h-5 w-5 shrink-0 ${isActive ? 'text-white' : dock.icon}`} />
+                  </span>
+                  <span className="flex w-full items-center justify-between gap-1">
+                    <span className="min-w-0 truncate text-[9px] font-bold leading-tight">{meta.label}</span>
                     <span className="rounded-full bg-white/18 px-1.5 py-0.5 text-[7px] font-bold text-white/88">
                       {group.completed}/{group.items.length}
                     </span>
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block truncate text-[10px] font-bold leading-tight">{meta.label}</span>
-                    <span className="mt-0.5 block truncate text-[7px] font-semibold leading-tight text-white/72">{meta.hint}</span>
                   </span>
                 </button>
               );
@@ -3694,6 +3695,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
     [],
   );
   const [activeRegion, setActiveRegion] = useState<string | null>(null);
+  const [showLimbDropdown, setShowLimbDropdown] = useState(false);
   const [activeLimb, setActiveLimb] = useState<LimbSide>(null);
   // Stage-3 auto-degrade ladder: single tier number, everything derived.
   // 0 = full (composer+dpr2+shadows) … 4 = minimal (see AdaptiveQuality.tsx).
@@ -4081,6 +4083,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   // Phase 2E: Consolidated close handler
   const handleCloseRegion = useCallback(() => {
     setActiveRegion(null);
+    setShowLimbDropdown(false);
     setRegionExposed(false);
     setSelectedAction(null);
     clearPatientReaction();
@@ -4672,11 +4675,10 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
         />
       )}
 
-      {!activeRegion && (
-        <div className="patient-region-selector border-b border-slate-200/60 bg-white/55 px-3 py-2 dark:border-white/5 dark:bg-slate-950/30">
+      <div className="patient-region-selector border-b border-slate-200/60 bg-white/55 px-3 py-2 dark:border-white/5 dark:bg-slate-950/30">
           <div className="mb-1.5 flex items-center justify-between gap-2">
             <p className="text-[8px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/65">Examine region</p>
-            <p className="text-[8px] text-muted-foreground/55">Select here or on the patient</p>
+            <p className="text-[8px] text-muted-foreground/55">Select region or tap patient directly</p>
           </div>
           <div className="grid grid-cols-5 gap-1.5">
             {[
@@ -4684,20 +4686,31 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
               { id: 'neck-cspine', label: 'Neck', Icon: User },
               { id: 'chest', label: 'Chest', Icon: Stethoscope },
               { id: 'abdomen', label: 'Abdomen', Icon: Activity },
-              { id: 'right-arm', label: 'Limbs', Icon: Hand },
+              { id: 'extremities', label: 'Limbs', Icon: Hand },
             ].map(({ id, label, Icon }) => {
               const assessed = isRegionAssessed(id);
               const required = requiredRegions.has(id);
+              const isActive = activeRegion === id || (id === 'extremities' && !!activeRegion && isLimbRegion(activeRegion));
+              const isSelected = (id === 'extremities' && showLimbDropdown) || isActive;
               return (
                 <button
                   key={id}
                   type="button"
                   aria-label={`Examine ${label}`}
-                  onClick={() => handleRegionClick(id)}
-                  className={`relative flex min-h-11 flex-col items-center justify-center gap-1 rounded-lg border px-1.5 py-1.5 text-[8px] font-semibold transition-colors ${
-                    assessed
-                      ? 'border-emerald-300/70 bg-emerald-50/80 text-emerald-700 dark:border-emerald-700/50 dark:bg-emerald-950/30 dark:text-emerald-300'
-                      : 'border-slate-200/80 bg-white/75 text-slate-700 hover:border-cyan-300 hover:bg-cyan-50/70 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:border-cyan-700/60 dark:hover:bg-cyan-950/25'
+                  onClick={() => {
+                    if (id === 'extremities') {
+                      setShowLimbDropdown(!showLimbDropdown);
+                    } else {
+                      setShowLimbDropdown(false);
+                      handleRegionClick(id);
+                    }
+                  }}
+                  className={`relative flex min-h-11 flex-col items-center justify-center gap-1 rounded-lg border px-1.5 py-1.5 text-[8px] font-semibold transition-all ${
+                    isSelected
+                      ? 'border-cyan-400 bg-cyan-500/25 text-cyan-900 dark:border-cyan-400 dark:bg-cyan-950/65 dark:text-cyan-100 shadow-md ring-2 ring-cyan-400/50 scale-[1.02]'
+                      : assessed
+                        ? 'border-emerald-300/70 bg-emerald-50/80 text-emerald-700 dark:border-emerald-700/50 dark:bg-emerald-950/30 dark:text-emerald-300'
+                        : 'border-slate-200/80 bg-white/75 text-slate-700 hover:border-cyan-300 hover:bg-cyan-50/70 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:border-cyan-700/60 dark:hover:bg-cyan-950/25'
                   }`}
                 >
                   {required && !assessed && <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-amber-400" />}
@@ -4708,8 +4721,57 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
               );
             })}
           </div>
+
+          {/* Extremities limb selector dropdown / segment control */}
+          {showLimbDropdown && (
+            <div className="mt-2 animate-in fade-in slide-in-from-top-1 duration-200 rounded-xl border border-cyan-300/40 bg-slate-900/90 p-2 text-white shadow-xl backdrop-blur-md">
+              <div className="mb-1.5 flex items-center justify-between gap-2 px-1">
+                <p className="text-[8px] font-bold uppercase tracking-[0.16em] text-cyan-200">Select extremity</p>
+                <button
+                  type="button"
+                  onClick={() => setShowLimbDropdown(false)}
+                  className="rounded px-1 text-[10px] text-white/50 hover:text-white"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
+                {[
+                  { id: 'right-arm', label: 'R Arm', sub: 'Brachial / Radial' },
+                  { id: 'left-arm', label: 'L Arm', sub: 'Brachial / Radial' },
+                  { id: 'right-leg', label: 'R Leg', sub: 'Femoral / Pedal' },
+                  { id: 'left-leg', label: 'L Leg', sub: 'Femoral / Pedal' },
+                ].map((limb) => {
+                  const limbAssessed = isRegionAssessed(limb.id);
+                  const limbActive = activeRegion === limb.id;
+                  return (
+                    <button
+                      key={limb.id}
+                      type="button"
+                      onClick={() => {
+                        setShowLimbDropdown(false);
+                        handleRegionClick(limb.id);
+                      }}
+                      className={`flex flex-col items-start rounded-lg border p-2 text-left transition-all ${
+                        limbActive
+                          ? 'border-cyan-300 bg-cyan-500/30 text-white ring-2 ring-cyan-300/60'
+                          : limbAssessed
+                            ? 'border-emerald-400/50 bg-emerald-950/40 text-emerald-100 hover:bg-emerald-900/50'
+                            : 'border-cyan-400/30 bg-slate-800/80 text-white hover:border-cyan-300 hover:bg-cyan-950/60'
+                      }`}
+                    >
+                      <span className="flex w-full items-center justify-between text-[10px] font-bold">
+                        {limb.label}
+                        {limbAssessed && <span className="text-[10px] text-emerald-300">✓</span>}
+                      </span>
+                      <span className="text-[7px] text-white/60">{limb.sub}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
-      )}
 
       {/* Patient frame. In treatment-bay mode the mannequin stays as the centre
           of the scene; controls move to a dock below the patient instead of
