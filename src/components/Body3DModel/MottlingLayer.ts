@@ -119,7 +119,9 @@ export function buildMottledTextures(body: THREE.Mesh): MottleTwin | null {
   }
 }
 
-/** Vertex test helpers for local cyanosis (lips + nailbeds). */
+/** Vertex test helpers for local cyanosis (lips + nailbeds).
+ *  Coordinates are geometry-local (the GLB attribute), not world /
+ *  presentation-rotated. Y=0 feet, Y≈1.73 crown, +Z faces camera. */
 export function isCyanoticLipVertex(x: number, y: number, z: number): boolean {
   return y >= 1.56 && y <= 1.59 && Math.abs(x) < 0.06 && z >= 0.08;
 }
@@ -145,29 +147,23 @@ export function buildCyanosisLocalTwin(body: THREE.Mesh): CyanosisLocalTwin | nu
     const th = srcImg.height;
     const flipY = openTex.flipY;
 
-    // Measure vertices in the normalised clone frame (before presentation
-    // rotation), where Y=0 is feet, Y=1.8 is crown, +Z faces the camera.
-    let root: THREE.Object3D = body;
-    while (root.parent && root.parent.type !== 'Scene') root = root.parent;
-    root.updateMatrixWorld(true);
-    body.updateMatrixWorld(true);
-    const mw = root.matrixWorld;
+    // Geometry-local: presentation rotation lives on the group, not the
+    // attribute. World/root-inverse puts the mouth at z≈0.02 and the
+    // original lip band (z>=0.08) never fires.
     const v = new THREE.Vector3();
     const blotches: Blotch[] = [];
-    const step = Math.max(1, Math.floor(pos.count / 3000));
+    const step = Math.max(1, Math.floor(pos.count / 4000));
     for (let i = 0; i < pos.count; i += step) {
-      v.fromBufferAttribute(pos, i).applyMatrix4(body.matrixWorld);
-      // Transform to root (normalised clone) space
-      const localV = v.clone().applyMatrix4(mw.clone().invert());
-      const isLip = isCyanoticLipVertex(localV.x, localV.y, localV.z);
-      const isNail = isCyanoticNailVertex(localV.x, localV.y, localV.z);
+      v.fromBufferAttribute(pos, i);
+      const isLip = isCyanoticLipVertex(v.x, v.y, v.z);
+      const isNail = isCyanoticNailVertex(v.x, v.y, v.z);
       if (!isLip && !isNail) continue;
       const u = uv.getX(i);
       const vv = uv.getY(i);
       const px = u * tw;
       const py = (flipY ? 1 - vv : vv) * th;
-      const r = Math.max(4, (0.012 + Math.random() * 0.024) * tw);
-      blotches.push({ x: px, y: py, r, alpha: 0.35 });
+      const r = Math.max(6, (isLip ? 0.018 : 0.010) * tw);
+      blotches.push({ x: px, y: py, r, alpha: isLip ? 0.55 : 0.45 });
     }
     if (blotches.length === 0) return null;
 
@@ -189,11 +185,15 @@ export function buildCyanosisLocalTwin(body: THREE.Mesh): CyanosisLocalTwin | nu
       const ctx = canvas.getContext('2d');
       if (!ctx) return null;
       ctx.drawImage(src, 0, 0, tw, th);
-      ctx.globalCompositeOperation = 'multiply';
+      // Central cyanosis tints lips/nailbeds toward a dusky blue-grey while
+      // preserving skin tone texturing. Multiply crushes the tan lip texels
+      // to near-black; source-over desaturates toward clinical cyanosis.
+      ctx.globalCompositeOperation = 'source-over';
       for (const b of blotches) {
         const g = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r);
-        g.addColorStop(0, `rgba(96, 111, 128, ${b.alpha})`);
-        g.addColorStop(0.6, `rgba(138, 151, 163, ${b.alpha * 0.5})`);
+        const cyan = b.alpha > 0.5 ? 'rgba(96, 111, 128, ' : 'rgba(112, 126, 142, ';
+        g.addColorStop(0, `${cyan}${b.alpha})`);
+        g.addColorStop(0.6, `${cyan}${b.alpha * 0.5})`);
         g.addColorStop(1, 'rgba(255, 255, 255, 0)');
         ctx.fillStyle = g;
         ctx.beginPath();

@@ -1498,6 +1498,8 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
               bodyMesh.userData.cleanClosedTex = cleanClosed ?? null;
               bodyMesh.userData.cyanosisOpenTex = twin.open;
               bodyMesh.userData.cyanosisClosedTex = twin.closed ?? cleanClosed ?? null;
+              bodyMesh.userData.eyesOpenTex = twin.open;
+              bodyMesh.userData.eyesClosedTex = twin.closed ?? cleanClosed ?? null;
               const showingClosed = mat.map === cleanClosed;
               mat.map = showingClosed ? (twin.closed ?? twin.open) : twin.open;
               mat.needsUpdate = true;
