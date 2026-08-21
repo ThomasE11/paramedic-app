@@ -119,6 +119,7 @@ import {
   Eye, Mic, MicOff, Image as ImageIcon,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { motion, AnimatePresence } from 'framer-motion';
 // AuscultationPanel removed — sounds now play inline from 3D Physical Examination
 import { DebriefingResourcesPanel } from '@/components/DebriefingResourcesPanel';
 import { DebriefReplay } from '@/components/DebriefReplay';
@@ -4594,9 +4595,19 @@ export function StudentPanel({
         )}
 
         {/* ================================================================ */}
-        {/* PHASE 1: Case Selection */}
+        {/* PHASE SUBTREES (animated transition) */}
         {/* ================================================================ */}
-        {phase === 'select' && (
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={phase === 'vitals' || phase === 'case' ? 'live-treatment' : phase}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.28, ease: 'easeOut' }}
+            className="w-full"
+          >
+            {/* PHASE 1: Case Selection */}
+            {phase === 'select' && (
           <div className="mx-auto max-w-6xl animate-fade-in space-y-5 sm:space-y-6">
             <div className="flex flex-col gap-4 rounded-[28px] border border-white/60 bg-white/70 p-4 shadow-[0_24px_80px_-50px_rgba(15,23,42,0.45)] backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/55 sm:p-5 lg:flex-row lg:items-end lg:justify-between">
               <div className="space-y-3">
@@ -7601,6 +7612,8 @@ export function StudentPanel({
             </div>
           </div>
         )}
+          </motion.div>
+        </AnimatePresence>
         {/* Hands-free voice-first mic — the legacy tap-to-command mic was
             removed (origin), so this surfaces ONLY in voice-first mode, where
             the full intent set (treatments + navigation) is the primary

@@ -190,6 +190,10 @@ interface BodyMeshProps {
    * time with speech. null = mouth stays shut.
    */
   mouthOpenRef?: React.MutableRefObject<number> | null;
+  /** Local cyanosis overlay strength 0..1 — applied only to lip/nailbed
+   *  vertices so those sites read as the primary cyanosis sign while the
+   *  rest of the skin clears as SpO2 recovers. */
+  cyanosisLocalStrength?: number;
 }
 
 /**

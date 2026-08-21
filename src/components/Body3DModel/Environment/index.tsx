@@ -549,19 +549,24 @@ interface EntranceControls {
 
 const ENTRANCE_MS = 1500;
 const DUTCH_TILT_RAD = 0.07; // ~4 degrees of roll, eased out to level
+const SCENE_ENTRANCE_MS = ENTRANCE_MS * 2.2;
 
 export function CameraEntrance({
   active,
   focus,
   controlsRef,
+  origin,
 }: {
   active: boolean;
   focus: { pos: [number, number, number]; target: [number, number, number] };
   controlsRef: React.RefObject<EntranceControls | null>;
+  origin?: [number, number, number];
 }) {
   const gl = useThree((s) => s.gl);
   const focusRef = useRef(focus);
   focusRef.current = focus;
+  const originRef = useRef<[number, number, number] | null>(null);
+  originRef.current = origin ?? null;
 
   useEffect(() => {
     if (!active) return;
@@ -593,7 +598,9 @@ export function CameraEntrance({
         return;
       }
       const { pos, target } = focusRef.current;
-      const rawT = Math.min((performance.now() - start) / ENTRANCE_MS, 1);
+      const origin = originRef.current;
+      const duration = origin ? SCENE_ENTRANCE_MS : ENTRANCE_MS;
+      const rawT = Math.min((performance.now() - start) / duration, 1);
       const t = easeOutCubic(rawT);
       // Rack focus (Phase D2): start with a deep, soft doorway focus and pull
       // down onto the patient as the camera settles. Written into the shared
@@ -603,14 +610,25 @@ export function CameraEntrance({
       focusRig.worldDistance = FOCUS_WIDE.worldDistance + (FOCUS_REST.worldDistance - FOCUS_WIDE.worldDistance) * t;
       focusRig.range = FOCUS_WIDE.range + (FOCUS_REST.range - FOCUS_WIDE.range) * t;
       focusRig.bokehScale = FOCUS_WIDE.bokehScale + (FOCUS_REST.bokehScale - FOCUS_WIDE.bokehScale) * t;
-      // Start pulled back and slightly high, ease down onto the preset.
-      const pullback = 1 + 0.3 * (1 - t);
-      controls.object.position.set(
-        target[0] + (pos[0] - target[0]) * pullback,
-        pos[1] + 0.35 * (1 - t) + (pos[1] - target[1]) * (pullback - 1),
-        target[2] + (pos[2] - target[2]) * pullback,
-      );
-      controls.target.set(target[0], target[1], target[2]);
+      if (origin) {
+        // Full scene-entry dolly: start outside the room at `origin`, looking
+        // at the patient the whole way, glide onto the resting preset.
+        controls.object.position.lerpVectors(
+          new THREE.Vector3(...origin),
+          new THREE.Vector3(pos[0], pos[1], pos[2]),
+          t,
+        );
+        controls.target.set(target[0], target[1], target[2]);
+      } else {
+        // Start pulled back and slightly high, ease down onto the preset.
+        const pullback = 1 + 0.3 * (1 - t);
+        controls.object.position.set(
+          target[0] + (pos[0] - target[0]) * pullback,
+          pos[1] + 0.35 * (1 - t) + (pos[1] - target[1]) * (pullback - 1),
+          target[2] + (pos[2] - target[2]) * pullback,
+        );
+        controls.target.set(target[0], target[1], target[2]);
+      }
       // Dutch tilt: roll the up-vector, easing back to vertical.
       const roll = DUTCH_TILT_RAD * (1 - t);
       controls.object.up.set(Math.sin(roll), Math.cos(roll), 0);
@@ -630,7 +648,7 @@ export function CameraEntrance({
       dom.removeEventListener('pointerdown', cancel);
       cancel();
     };
-  }, [active, controlsRef, gl]);
+  }, [active, controlsRef, gl, origin]);
 
   return null;
 }

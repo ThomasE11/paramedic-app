@@ -155,3 +155,4 @@ The reference is Compact Medic and Call of Duty — not literally, but in terms 
 9. **No status reports or markdown files** — code is the deliverable
 10. **Arabic support** — all UI text must remain translatable
 11. **Build incrementally** — one feature at a time, test it, verify it, commit it
+12. **Realism loop** — standing done-condition is `GOAL_CONTRACT.md`, not a green `npm run check`. Phases A–C and D1/D2 already shipped; remaining work is D3 + slice acceptance. Do not delete `GOAL_CONTRACT.md` or `REALISM_OVERHAUL_PLAN.md`.

@@ -54,6 +54,7 @@ import {
   collectUnwellnessText,
   type UnwellnessState,
 } from '@/lib/unwellnessStates';
+import { deriveSkinTint } from './skinTint';
 
 const TOTAL_REGIONS = 11;
 type OrbitControlsHandle = ElementRef<typeof OrbitControls>;
@@ -3912,56 +3913,13 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   // Falls back to the case's initial vitals when no live `vitals` prop is
   // supplied, so non-StudentPanel surfaces keep the case-presentation tone.
   const skinTint = useMemo<THREE.Color | null>(() => {
-    const source = vitals ?? caseData.vitalSignsProgression?.initial;
-    const spo2 = typeof source?.spo2 === 'number' ? source.spo2 : null;
-    const pulse = typeof source?.pulse === 'number' ? source.pulse : null;
-    // Parse "120/80" → 120. Tolerant of "120/80 mmHg", "120", missing.
-    const bpStr = typeof source?.bp === 'string' ? source.bp : '';
-    const bpMatch = bpStr.match(/(\d{2,3})\s*\/\s*(\d{2,3})/);
-    const systolic = bpMatch ? parseInt(bpMatch[1], 10) : null;
-
-    const color = new THREE.Color(0xffffff); // base = untinted texture
-    let touched = false;
-
-    // 1. Jaundice — blend an ochre-yellow cast into the base. Text-driven and
-    //    constant across the case (unwellness.jaundice is 0 or 1).
-    if (unwellness.jaundice > 0) {
-      color.lerp(new THREE.Color(0xd6bd6a), 0.45 * unwellness.jaundice);
-      touched = true;
-    }
-
-    // 2. Pallor — shock index >0.8 desaturates toward a grey-ochre. Same
-    //    colour + strength curve as the original perfusion tint.
-    if (pulse !== null && systolic !== null && systolic > 0) {
-      const shockIndex = pulse / systolic;
-      if (shockIndex > 0.8) {
-        const p = Math.min(0.7, 0.3 + (shockIndex - 0.8) * 0.4);
-        color.lerp(new THREE.Color(0xc9b6a6), p);
-        touched = true;
-      }
-    }
-    if (scenarioPallor > 0) {
-      color.lerp(new THREE.Color(0xc9b6a6), Math.min(0.72, 0.24 + scenarioPallor * 0.42));
-      touched = true;
-    }
-
-    // 3. Cyanosis — hypoxaemia blues the skin. Applied last so it sits on top
-    //    of jaundice/pallor. Strength banded by SpO2 as before.
-    if (spo2 !== null && spo2 < 95) {
-      const cyan =
-        spo2 >= 90 ? new THREE.Color(0xa8b8c8) // faint
-        : spo2 >= 85 ? new THREE.Color(0x7d9bb5) // noticeable
-        : new THREE.Color(0x5b7a99);            // strong
-      const strength = spo2 >= 90 ? 0.45 : spo2 >= 85 ? 0.7 : 0.9;
-      color.lerp(cyan, strength);
-      touched = true;
-    }
-    if (scenarioCyanosis > 0) {
-      color.lerp(new THREE.Color(0x7d9bb5), Math.min(0.82, 0.26 + scenarioCyanosis * 0.5));
-      touched = true;
-    }
-
-    return touched ? color : null;
+    return deriveSkinTint({
+      vitals,
+      initialVitals: caseData.vitalSignsProgression?.initial,
+      jaundice: unwellness.jaundice,
+      scenarioPallor,
+      scenarioCyanosis,
+    });
   }, [vitals, caseData.vitalSignsProgression?.initial, unwellness.jaundice, scenarioPallor, scenarioCyanosis]);
 
   // Which finding morphs are REVEALED — a finding's morph activates only
@@ -4852,10 +4810,9 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 active={useTreatmentBayPresentation}
                 focus={overviewCameraFocus}
                 controlsRef={controlsRef}
+                origin={bayVariant === 'home' ? [0, 1.8, 2.8] : undefined}
               />
 
-              {/* Phase C3 ambience: procedural room tone + AC hum + patient
-                  breath, positional and vitals-driven (home variant only). */}
               <AmbientAudioLayer
                 active={useTreatmentBayPresentation}
                 variant={bayVariant}

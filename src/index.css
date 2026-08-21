@@ -2336,7 +2336,8 @@ body {
   position: absolute;
   left: 0.85rem;
   bottom: 0.85rem;
-  z-index: 20;
+  z-index: 10;
+  pointer-events: none;
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
@@ -2980,6 +2981,25 @@ body {
 /* ===== Game HUD component library (src/components/hud/) =====
    Glassmorphic panels with corner brackets, scan-lines, glow states,
    and monitor-style value readouts. Presentational only. */
+
+.hud-monitor-readout {
+  box-shadow:
+    0 0 0 1px rgba(34, 211, 238, 0.28),
+    0 24px 64px -20px rgba(0, 0, 0, 0.95),
+    inset 0 0 32px rgba(34, 211, 238, 0.08);
+}
+
+/* Device chrome over the LIFEPAK card — overlay, not a layout strip. */
+.hud-monitor-readout > .hud-head {
+  position: absolute;
+  top: 0.42rem;
+  left: 0.85rem;
+  right: 0.85rem;
+  z-index: 7;
+  padding: 0;
+  border: none;
+  pointer-events: none;
+}
 
 .hud-panel,
 .hud-frame {
