@@ -54,7 +54,7 @@ import {
   collectUnwellnessText,
   type UnwellnessState,
 } from '@/lib/unwellnessStates';
-import { deriveSkinTint } from './skinTint';
+import { deriveSkinTint, deriveCyanosisLocalStrength } from './skinTint';
 
 const TOTAL_REGIONS = 11;
 type OrbitControlsHandle = ElementRef<typeof OrbitControls>;
@@ -79,6 +79,19 @@ function readForcedUnwell(): string | null {
   }
 }
 const CAPTURE_FORCED_UNWELL: string | null = readForcedUnwell();
+
+function readForcedSpo2(): number | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const live = new URLSearchParams(window.location.search).get('spo2');
+    if (live) return Number(live);
+    const seed = window.sessionStorage.getItem('captureSpo2');
+    return seed ? Number(seed) : null;
+  } catch {
+    return null;
+  }
+}
+const CAPTURE_FORCED_SPO2: number | null = readForcedSpo2();
 
 /** Helper: is this a limb region ID? */
 const isLimbRegion = (id: string): boolean =>
@@ -3832,6 +3845,17 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
     [caseData, vitals, patientVisualState],
   );
 
+  // Capture/dev-only SpO2 override so the harness can pin 85 vs 94 without
+  // mutating the live treatment engine. Production builds never set the
+  // snapshot (CAPTURE_FORCED_SPO2 stays null).
+  const effectiveVitals = useMemo<Partial<VitalSigns> | undefined>(() => {
+    const base = vitals ?? caseData.vitalSignsProgression?.initial;
+    if (import.meta.env.DEV && CAPTURE_FORCED_SPO2 != null && Number.isFinite(CAPTURE_FORCED_SPO2)) {
+      return { ...base, spo2: CAPTURE_FORCED_SPO2 };
+    }
+    return base;
+  }, [vitals, caseData.vitalSignsProgression?.initial]);
+
   // Posture morph target (male mesh). Respiratory-distress cases sit in the
   // tripod position (hands on knees, accessory-muscle use) and ease to a
   // relaxed recovery posture as SpO2 climbs back to normal; an unconscious /
@@ -3839,7 +3863,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   // crossfades between whichever morph this names; breathing + idle ride on top.
   const patientPosture = useMemo<'tripod' | 'supine' | 'recovery' | null>(() => {
     if (patientUnconscious) return 'supine';
-    const source = vitals ?? caseData.vitalSignsProgression?.initial;
+    const source = effectiveVitals;
     const spo2 = typeof source?.spo2 === 'number' ? source.spo2 : null;
     const rr = caseData.abcde?.breathing?.rate ?? source?.respiration ?? null;
     const respiratoryDistress =
@@ -3851,7 +3875,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
     // Ease tripod → recovery as sats recover through the 92–96 band.
     if (spo2 !== null && spo2 >= 95) return 'recovery';
     return 'tripod';
-  }, [patientUnconscious, vitals, caseData]);
+  }, [patientUnconscious, effectiveVitals, caseData]);
 
   // Case text used for the text-driven unwellness states (diaphoresis
   // appearance, jaundice). Recomputed only when the case changes.
@@ -3868,7 +3892,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   // LAST committed state, which is exactly what the effect stores.
   const prevUnwellnessRef = useRef<UnwellnessState>({ diaphoresis: 0, jaundice: 0, mottling: 0 });
   const unwellness = useMemo<UnwellnessState>(() => {
-    const source = vitals ?? caseData.vitalSignsProgression?.initial;
+    const source = effectiveVitals;
     const derived = deriveUnwellness({
       vitals: source,
       caseText: unwellnessCaseText,
@@ -3884,7 +3908,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
     }
     return derived;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vitals, caseData.vitalSignsProgression?.initial, unwellnessCaseText]);
+  }, [effectiveVitals, unwellnessCaseText]);
   useEffect(() => {
     prevUnwellnessRef.current = unwellness;
   }, [unwellness]);
@@ -3914,13 +3938,20 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   // supplied, so non-StudentPanel surfaces keep the case-presentation tone.
   const skinTint = useMemo<THREE.Color | null>(() => {
     return deriveSkinTint({
-      vitals,
+      vitals: effectiveVitals,
       initialVitals: caseData.vitalSignsProgression?.initial,
       jaundice: unwellness.jaundice,
       scenarioPallor,
-      scenarioCyanosis,
     });
-  }, [vitals, caseData.vitalSignsProgression?.initial, unwellness.jaundice, scenarioPallor, scenarioCyanosis]);
+  }, [effectiveVitals, caseData.vitalSignsProgression?.initial, unwellness.jaundice, scenarioPallor]);
+
+  const cyanosisLocalStrength = useMemo<number>(() => {
+    return deriveCyanosisLocalStrength(
+      effectiveVitals,
+      caseData.vitalSignsProgression?.initial,
+      scenarioCyanosis,
+    );
+  }, [effectiveVitals, caseData.vitalSignsProgression?.initial, scenarioCyanosis]);
 
   // Which finding morphs are REVEALED — a finding's morph activates only
   // once the student has assessed its region. This is the discovery
@@ -4851,6 +4882,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 // shock index, jaundice cast when the case is hepatic. null
                 // when nothing applies (no tint).
                 skinTint={skinTint}
+                cyanosisLocalStrength={cyanosisLocalStrength}
                 // OMS-style visible unwellness states, orthogonal to the tint:
                 // diaphoresis → sweat sheen (material roughness/envMap),
                 // jaundice → scleral yellowing (eye materials), mottling →

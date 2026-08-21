@@ -1,31 +1,62 @@
 import { describe, it, expect } from 'vitest';
-import * as THREE from 'three';
-import { deriveSkinTint } from './skinTint';
+import { deriveSkinTint, deriveCyanosisLocalStrength } from './skinTint';
+import { isCyanoticLipVertex, isCyanoticNailVertex } from './MottlingLayer';
 
-describe('deriveSkinTint', () => {
-  it('returns null when SpO2 >= 94 and no other shock/jaundice indicators present', () => {
-    const tint = deriveSkinTint({ vitals: { spo2: 94, pulse: 75, bp: '120/80' } });
-    expect(tint).toBeNull();
+describe('skinTint functions', () => {
+  describe('deriveSkinTint', () => {
+    it('returns null when no jaundice, shock, or scenario pallor present', () => {
+      const tint = deriveSkinTint({ vitals: { spo2: 94, pulse: 75, bp: '120/80' } });
+      expect(tint).toBeNull();
+    });
+
+    it('returns pale tint when shock index > 0.8', () => {
+      const tint = deriveSkinTint({ vitals: { pulse: 120, bp: '100/70' } });
+      expect(tint).not.toBeNull();
+    });
   });
 
-  it('returns dusky tint at SpO2 = 85', () => {
-    const tint = deriveSkinTint({ vitals: { spo2: 85, pulse: 110, bp: '130/80' } });
-    expect(tint).not.toBeNull();
-    expect(tint).toBeInstanceOf(THREE.Color);
-    // Should have significant blue/cyan component relative to pure white lerp
-    expect(tint!.b).toBeGreaterThan(tint!.r);
+  describe('deriveCyanosisLocalStrength', () => {
+    it('returns 0 when SpO2 >= 94', () => {
+      expect(deriveCyanosisLocalStrength({ spo2: 94 })).toBe(0);
+      expect(deriveCyanosisLocalStrength({ spo2: 98 })).toBe(0);
+    });
+
+    it('returns 0.7 dusky strength for SpO2 85-89', () => {
+      expect(deriveCyanosisLocalStrength({ spo2: 88 })).toBe(0.7);
+      expect(deriveCyanosisLocalStrength({ spo2: 85 })).toBe(0.7);
+    });
+
+    it('returns 0.9 strong strength for SpO2 < 85', () => {
+      expect(deriveCyanosisLocalStrength({ spo2: 80 })).toBe(0.9);
+    });
+
+    it('uses live SpO2 over scenario cyanosis', () => {
+      expect(deriveCyanosisLocalStrength({ spo2: 96 }, null, 0.8)).toBe(0);
+    });
+  });
+});
+
+describe('cyanosis vertex predicates', () => {
+  describe('isCyanoticLipVertex', () => {
+    it('matches lip band measured from patient-male.glb', () => {
+      expect(isCyanoticLipVertex(0, 1.57, 0.16)).toBe(true);
+      expect(isCyanoticLipVertex(0.05, 1.58, 0.15)).toBe(true);
+      expect(isCyanoticLipVertex(0.06, 1.57, 0.16)).toBe(false);
+      expect(isCyanoticLipVertex(0, 1.55, 0.16)).toBe(false);
+      expect(isCyanoticLipVertex(0, 1.60, 0.16)).toBe(false);
+      expect(isCyanoticLipVertex(0, 1.57, 0.07)).toBe(false);
+    });
   });
 
-  it('returns null at SpO2 = 94 after treatment recovery', () => {
-    const tintBefore = deriveSkinTint({ vitals: { spo2: 85, pulse: 120, bp: '130/80' } });
-    const tintAfter = deriveSkinTint({ vitals: { spo2: 94, pulse: 90, bp: '120/80' } });
-    expect(tintBefore).not.toBeNull();
-    expect(tintAfter).toBeNull();
-  });
-
-  it('handles scenario cyanosis overrides', () => {
-    const tint = deriveSkinTint({ vitals: { spo2: 98 }, scenarioCyanosis: 0.8 });
-    expect(tint).not.toBeNull();
-    expect(tint!.b).toBeGreaterThan(tint!.r);
+  describe('isCyanoticNailVertex', () => {
+    it('matches nail band measured from patient-male.glb', () => {
+      expect(isCyanoticNailVertex(0.12, 0.79, 0.20)).toBe(true);
+      expect(isCyanoticNailVertex(0.21, 0.82, 0.20)).toBe(true);
+      expect(isCyanoticNailVertex(0.07, 0.79, 0.20)).toBe(false);
+      expect(isCyanoticNailVertex(0.23, 0.79, 0.20)).toBe(false);
+      expect(isCyanoticNailVertex(0.12, 0.74, 0.20)).toBe(false);
+      expect(isCyanoticNailVertex(0.12, 0.86, 0.20)).toBe(false);
+      expect(isCyanoticNailVertex(0.12, 0.79, 0.07)).toBe(false);
+    });
   });
 });

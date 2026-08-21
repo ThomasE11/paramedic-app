@@ -22,7 +22,7 @@ import {
   GARMENT_GLBS,
 } from './ClothingLayer';
 import { paintEyesOnTexture } from './EyesLayer';
-import { buildMottledTextures } from './MottlingLayer';
+import { buildMottledTextures, buildCyanosisLocalTwin } from './MottlingLayer';
 import { applyWoundsToTextures } from './WoundLayer';
 import { injuryRegionTo3D, type BodyInjury } from '@/lib/injuryMap';
 import { LifeSigns } from './LifeSigns';
@@ -717,7 +717,7 @@ function buildSurfaceSampler(root: THREE.Object3D | null, presentationRoot?: THR
   };
 }
 
-export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guidedMode = false, nextGuidedStep = null, onBlockedClick, onBodyPoint, bodyInjuries, patientGender, surfaceOpacity = 1, activeFindingMorphs, breathRateRpm = 0, breathDepthFactor = 1, onSurfaceSampler, dressed = false, dressedActiveRegion = null, pupilLeftMm = 3.5, pupilRightMm = 3.5, skinTint = null, skinDiaphoretic = false, diaphoresis = 0, jaundice = 0, mottling = 0, unconscious = false, idleCues = null, reduceIdleMotion = false, presentation = 'upright', bayStage = 'stretcher', sss = false, posture = null, mouthOpenRef = null }: BodyMeshProps) {
+export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guidedMode = false, nextGuidedStep = null, onBlockedClick, onBodyPoint, bodyInjuries, patientGender, surfaceOpacity = 1, activeFindingMorphs, breathRateRpm = 0, breathDepthFactor = 1, onSurfaceSampler, dressed = false, dressedActiveRegion = null, pupilLeftMm = 3.5, pupilRightMm = 3.5, skinTint = null, skinDiaphoretic = false, diaphoresis = 0, jaundice = 0, mottling = 0, unconscious = false, idleCues = null, reduceIdleMotion = false, presentation = 'upright', bayStage = 'stretcher', sss = false, posture = null, mouthOpenRef = null, cyanosisLocalStrength = 0 }: BodyMeshProps) {
   // The path is recomputed per render so a `caseData.patientInfo.gender`
   // change (e.g. user picks a different case) swaps the mesh without
   // remounting the parent. useGLTF caches by URL.
@@ -779,6 +779,10 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
   const mottleRootRef = useRef<THREE.Object3D | null>(null);
   const mottleAppliedRef = useRef(false);
   const mottleBodyRef = useRef<THREE.Mesh | null>(null);
+  // Local cyanosis twin refs — same lifecycle as mottling (clone reset).
+  const cyanosisLocalRootRef = useRef<THREE.Object3D | null>(null);
+  const cyanosisLocalAppliedRef = useRef(false);
+  const cyanosisLocalBodyRef = useRef<THREE.Mesh | null>(null);
 
   // Clone the rig with SkeletonUtils so skinned meshes keep their own bone
   // bindings. A regular deep clone can detach limbs on some exported GLBs.
@@ -805,12 +809,30 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
           // patchily after compression in Safari/Chromium. Use a solid clinical
           // skin material for the body mesh while preserving the separate eye
           // mesh material, so the patient never appears as disconnected limbs.
+          // Generate a flat skin atlas matching the solid colour so local
+          // cyanosis overlay (`buildCyanosisLocalTwin`) has texels to paint
+          // onto at the lip/nail UVs — a 1×1 atlas would map the whole body
+          // to a single texel and the local blotch would tint everything.
+          const ATLAS = 512;
+          const baseCanvas = document.createElement('canvas');
+          baseCanvas.width = ATLAS;
+          baseCanvas.height = ATLAS;
+          const bctx = baseCanvas.getContext('2d');
+          if (bctx) {
+            bctx.fillStyle = '#c58f72';
+            bctx.fillRect(0, 0, ATLAS, ATLAS);
+          }
+          const baseTex = new THREE.CanvasTexture(baseCanvas);
+          baseTex.colorSpace = THREE.SRGBColorSpace;
+          baseTex.anisotropy = 4;
           mesh.material = new THREE.MeshStandardMaterial({
-            color: '#c58f72',
+            map: baseTex,
             roughness: 0.68,
             metalness: 0,
             side: THREE.DoubleSide,
           });
+          mesh.userData.eyesOpenTex = baseTex;
+          mesh.userData.eyesClosedTex = null;
         } else {
           mesh.material = Array.isArray(mesh.material)
             ? mesh.material.map(material => material.clone())
@@ -1435,6 +1457,67 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
             if (mottledOpen instanceof THREE.CanvasTexture && mottledOpen !== cleanOpen) mottledOpen.dispose();
             if (mottledClosed instanceof THREE.CanvasTexture && mottledClosed !== cleanClosed) mottledClosed.dispose();
             mottleAppliedRef.current = false;
+          }
+        }
+      }
+    }
+
+    // ---- Local cyanosis (lips + nailbeds) — state-crossing texture swap ----
+    // Composite overlay twin swapped onto the body diffuse map at the lip/nail
+    // vertex bands when cyanosisLocalStrength crosses 0.5. Evaluated in the
+    // frame loop so the swap self-heals as soon as the painted atlas is ready.
+    {
+      if (cyanosisLocalRootRef.current !== clonedScene) {
+        cyanosisLocalRootRef.current = clonedScene;
+        cyanosisLocalAppliedRef.current = false;
+        cyanosisLocalBodyRef.current = null;
+      }
+      const want = cyanosisLocalStrength > 0.5;
+      if (want !== cyanosisLocalAppliedRef.current) {
+        if (!cyanosisLocalBodyRef.current) {
+          let found: THREE.Mesh | null = null;
+          clonedScene.traverse((o) => {
+            const m = o as THREE.Mesh;
+            if (!found && m.isMesh && m.userData?.eyesOpenTex) found = m;
+          });
+          cyanosisLocalBodyRef.current = found;
+        }
+        const bodyMesh = cyanosisLocalBodyRef.current;
+        const mat = bodyMesh
+          ? ((Array.isArray(bodyMesh.material) ? bodyMesh.material[0] : bodyMesh.material) as
+              | THREE.MeshStandardMaterial
+              | undefined)
+          : undefined;
+        if (bodyMesh && mat) {
+          if (want) {
+            const twin = buildCyanosisLocalTwin(bodyMesh);
+            if (twin) {
+              const cleanOpen = bodyMesh.userData.eyesOpenTex as THREE.Texture | undefined;
+              const cleanClosed = bodyMesh.userData.eyesClosedTex as THREE.Texture | null | undefined;
+              bodyMesh.userData.cleanOpenTex = cleanOpen ?? null;
+              bodyMesh.userData.cleanClosedTex = cleanClosed ?? null;
+              bodyMesh.userData.cyanosisOpenTex = twin.open;
+              bodyMesh.userData.cyanosisClosedTex = twin.closed ?? cleanClosed ?? null;
+              const showingClosed = mat.map === cleanClosed;
+              mat.map = showingClosed ? (twin.closed ?? twin.open) : twin.open;
+              mat.needsUpdate = true;
+              cyanosisLocalAppliedRef.current = true;
+            }
+          } else {
+            const cleanOpen = (bodyMesh.userData.cleanOpenTex as THREE.Texture | null) ?? null;
+            const cleanClosed = (bodyMesh.userData.cleanClosedTex as THREE.Texture | null) ?? null;
+            const cyanosedOpen = bodyMesh.userData.cyanosisOpenTex as THREE.Texture | undefined;
+            const cyanosedClosed = bodyMesh.userData.cyanosisClosedTex as THREE.Texture | null | undefined;
+            const showingClosed = mat.map === cyanosedClosed;
+            bodyMesh.userData.eyesOpenTex = cleanOpen;
+            bodyMesh.userData.eyesClosedTex = cleanClosed;
+            if (cleanOpen) {
+              mat.map = showingClosed && cleanClosed ? cleanClosed : cleanOpen;
+              mat.needsUpdate = true;
+            }
+            if (cyanosedOpen instanceof THREE.CanvasTexture && cyanosedOpen !== cleanOpen) cyanosedOpen.dispose();
+            if (cyanosedClosed instanceof THREE.CanvasTexture && cyanosedClosed !== cleanClosed) cyanosedClosed.dispose();
+            cyanosisLocalAppliedRef.current = false;
           }
         }
       }
