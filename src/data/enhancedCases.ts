@@ -1630,7 +1630,9 @@ export const moreTraumaCases: CaseScenario[] = [
       description: 'Vehicle with front-end damage, driver out of vehicle',
       hazards: ['Fluid spill', 'Debris'],
       bystanders: 'Police on scene',
-      environment: 'Hot day'
+      environment: 'Hot day',
+      sceneImagePath: '/scene-assets/trauma-007-mvc-splenic-luq.png',
+      sceneImageCaption: 'Motor vehicle collision — Al Khail Road',
     },
     initialPresentation: {
       generalImpression: 'Male, pale, clutching abdomen',

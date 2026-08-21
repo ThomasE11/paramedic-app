@@ -55,6 +55,8 @@ export const caseDatabase: CaseScenario[] = [
       hazards: [],
       bystanders: 'Wife present, anxious',
       environment: 'Air-conditioned, comfortable temperature',
+      sceneImagePath: '/scene-assets/home-medical-male-dubai-apartment.png',
+      sceneImageCaption: 'Private villa apartment — Al Barsha, Dubai',
       accessIssues: ['Security gate - code provided'],
       extricationNeeded: false
     },
@@ -291,6 +293,8 @@ export const caseDatabase: CaseScenario[] = [
       hazards: ['Cluttered floor'],
       bystanders: 'Wife and adult son present',
       environment: 'Dim lighting, warm',
+      sceneImagePath: '/scene-assets/cardiac-002-home-cardiac-arrest-deira.png',
+      sceneImageCaption: 'Apartment interior — Deira, Dubai',
       accessIssues: ['Narrow hallway', 'Patient on bed']
     },
     initialPresentation: {
@@ -864,7 +868,9 @@ export const caseDatabase: CaseScenario[] = [
       description: 'Luxury villa, patient in study',
       hazards: [],
       bystanders: 'Housekeeper',
-      environment: 'Well-lit, comfortable'
+      environment: 'Well-lit, comfortable',
+      sceneImagePath: '/scene-assets/cardiac-004-hypertensive-headache-villa.png',
+      sceneImageCaption: 'Family villa — Jumeirah, Dubai',
     },
     initialPresentation: {
       generalImpression: 'Middle-aged male, distressed, holding head',
@@ -1150,7 +1156,9 @@ export const caseDatabase: CaseScenario[] = [
       description: 'Bedroom, patient sitting on edge of bed',
       hazards: [],
       bystanders: 'Parents present',
-      environment: 'Dust visible, carpeted room'
+      environment: 'Dust visible, carpeted room',
+      sceneImagePath: '/scene-assets/asthma-villa-male-uae.png',
+      sceneImageCaption: 'Villa living room — Al Ain',
     },
     initialPresentation: {
       generalImpression: 'Young male, tripod position, severe respiratory distress',
@@ -1446,7 +1454,9 @@ export const caseDatabase: CaseScenario[] = [
       description: 'Outdoor construction site',
       hazards: ['Heavy machinery', 'Uneven ground'],
       bystanders: 'Coworkers',
-      environment: 'Hot, dusty'
+      environment: 'Hot, dusty',
+      sceneImagePath: '/scene-assets/resp-002-construction-tension-pneumothorax.png',
+      sceneImageCaption: 'Construction site — Dubai',
     },
     initialPresentation: {
       generalImpression: 'Young male, severe distress, cyanotic',
@@ -1724,7 +1734,9 @@ export const caseDatabase: CaseScenario[] = [
       description: 'Small apartment, patient in armchair',
       hazards: ['Oxygen cylinder present'],
       bystanders: 'Wife',
-      environment: 'Warm, stuffy'
+      environment: 'Warm, stuffy',
+      sceneImagePath: '/scene-assets/home-copd-male-68-sharjah.png',
+      sceneImageCaption: 'Apartment — Sharjah',
     },
     initialPresentation: {
       generalImpression: 'Elderly male, barrel chest, using accessory muscles',
@@ -2506,7 +2518,7 @@ export const caseDatabase: CaseScenario[] = [
       hazards: ['Heavy machinery', 'Uneven ground', 'Construction materials'],
       bystanders: 'Coworkers',
       environment: 'Outdoor, hot',
-      environmentVariant: 'public',
+      environmentVariant: 'roadside',
       sceneImagePath: '/scene-assets/construction-fall-male-29-dubaihills.png',
       sceneImageCaption: 'Construction site fall — Dubai Hills',
     },
@@ -2681,7 +2693,7 @@ export const caseDatabase: CaseScenario[] = [
       hazards: ['Police incident'],
       bystanders: 'Police officers',
       environment: 'Outdoor',
-      environmentVariant: 'public',
+      environmentVariant: 'roadside',
       sceneImagePath: '/scene-assets/trauma-003-deira-chest-wound.png',
       sceneImageCaption: 'Stab wound — Deira street',
     },
@@ -2858,7 +2870,9 @@ export const caseDatabase: CaseScenario[] = [
       description: 'Living room, patient in armchair',
       hazards: [],
       bystanders: 'Wife',
-      environment: 'Clean, well-lit apartment'
+      environment: 'Clean, well-lit apartment',
+      sceneImagePath: '/scene-assets/home-stroke-elderly-male-uae.png',
+      sceneImageCaption: 'Home — elderly patient',
     },
     initialPresentation: {
       generalImpression: 'Elderly male, slumped in chair, facial droop obvious',
@@ -3825,7 +3839,9 @@ export const caseDatabase: CaseScenario[] = [
       description: 'Bedroom, patient on floor beside bed',
       hazards: [],
       bystanders: 'Wife and son',
-      environment: 'Normal bedroom'
+      environment: 'Normal bedroom',
+      sceneImagePath: '/scene-assets/metab-001-hypoglycemia-male-villa.png',
+      sceneImageCaption: 'Villa — hypoglycaemic episode',
     },
     initialPresentation: {
       generalImpression: 'Middle-aged male, diaphoretic, confused',
@@ -5456,7 +5472,9 @@ export const caseDatabase: CaseScenario[] = [
       description: 'Outdoor construction site, direct sun',
       hazards: ['Construction equipment', 'Heat'],
       bystanders: 'Coworkers',
-      environment: 'Outdoor, 42°C, high humidity'
+      environment: 'Outdoor, 42°C, high humidity',
+      sceneImagePath: '/scene-assets/outdoor-heat-illness-uae.png',
+      sceneImageCaption: 'Construction site in summer heat — Dubai',
     },
     initialPresentation: {
       generalImpression: 'Young male, profuse sweating, weak',
@@ -6566,7 +6584,7 @@ export const caseDatabase: CaseScenario[] = [
       hazards: ['CHEMICAL CONTAMINATION - PPE required', 'Other workers potentially affected'],
       bystanders: '3 other workers with symptoms, farm supervisor',
       environment: 'Outdoor farm, hot sun, chemical smell in air',
-      environmentVariant: 'public',
+      environmentVariant: 'roadside',
       sceneImagePath: '/scene-assets/farm-toxicology-male-35-alawir.png',
       sceneImageCaption: 'Scene — Outdoor farm, hot sun, chemical smell in air',
       accessIssues: ['Remote location', 'Decontamination needed'],
@@ -6920,6 +6938,8 @@ export const caseDatabase: CaseScenario[] = [
       hazards: ['ACTIVE FIRE', 'Smoke-filled environment', 'Structural collapse risk', 'Chemical exposure risk'],
       bystanders: 'Other workers being evacuated',
       environment: 'Smoke-filled, hot, chaotic',
+      sceneImagePath: '/scene-assets/burn-001-jebel-ali-industrial-fire-burns.png',
+      sceneImageCaption: 'Industrial fire — Jebel Ali',
       accessIssues: ['Fire department needed for access'],
       extricationNeeded: false
     },
@@ -9057,6 +9077,8 @@ export const caseDatabase: CaseScenario[] = [
       hazards: [],
       bystanders: 'Store manager and several customers',
       environment: 'Public area, safe',
+      sceneImagePath: '/scene-assets/cardiac-010-supermarket-syncope-female.png',
+      sceneImageCaption: 'Supermarket aisle — syncope',
       accessIssues: [],
       extricationNeeded: false
     },
@@ -10338,7 +10360,7 @@ export const caseDatabase: CaseScenario[] = [
       hazards: ['Wet pool deck — slip risk', 'Child is soaking wet and cold — risk of hypothermia to rescuers unlikely but note'],
       bystanders: 'Mother (hysterical, being comforted by hotel staff), hotel duty manager, two housekeeping staff',
       environment: 'Outdoor poolside, morning, air temperature 20°C, breezy. Child soaking wet, estimated core temperature significantly below normal.',
-      environmentVariant: 'public',
+      environmentVariant: 'roadside',
       accessIssues: ['Pool area accessible through hotel lobby', 'Stretcher access via service entrance — hotel staff to guide'],
       extricationNeeded: false
     },
@@ -10688,7 +10710,7 @@ export const caseDatabase: CaseScenario[] = [
       hazards: ['Active construction site', 'Overhead hazards', 'Possible further bee exposure', 'Hot environment (40°C+)'],
       bystanders: 'Multiple co-workers, site foreman, first aid officer',
       environment: 'Outdoor, hot (42°C), dusty, limited shade',
-      environmentVariant: 'public',
+      environmentVariant: 'roadside',
       sceneImagePath: '/scene-assets/construction-anaphylaxis-male-uae.png',
       sceneImageCaption: 'Scene — Outdoor, hot (42°C), dusty, limited shade',
       accessIssues: ['Construction site access — security gate', 'Uneven ground for stretcher'],
