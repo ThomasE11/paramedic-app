@@ -2842,8 +2842,8 @@ export function VitalSignsMonitor({
         {/* ================================================================ */}
         {/* LCD SCREEN — Full width, no sidebar                             */}
         {/* ================================================================ */}
-        <div className="relative mx-3 my-3 rounded-[12px] overflow-hidden border-[3px] border-black"
-          style={{ background: '#001000', boxShadow: '0 4px 0 rgba(0,0,0,0.35), inset 0 2px 16px rgba(0,0,0,0.9), 0 0 0 1px rgba(255,255,255,0.05)' }}>
+        <div className="relative mx-3 my-3 rounded-[12px] overflow-hidden border-[3px] border-[#162816]"
+          style={{ background: '#001400', boxShadow: '0 4px 0 rgba(0,0,0,0.35), inset 0 2px 16px rgba(0,0,0,0.9), 0 0 0 1px rgba(120,255,140,0.08)' }}>
 
           {!powerOn && (
             <div className="h-[280px] flex flex-col items-center justify-center gap-3" style={{ background: '#0a0a0a' }}>

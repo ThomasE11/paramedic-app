@@ -509,11 +509,13 @@ export function TreatmentBayEnvironment({
   shadowsEnabled?: boolean;
   variant?: EnvironmentVariant;
 }) {
+  const isClinic = variant === 'clinic';
   return (
     <group>
-      {/* Scene shell + lighting swap per variant; the medical equipment
-          below stays in every scene — the paramedic brings it. */}
-      {variant === 'clinic' ? (
+      {/* Scene shell + lighting swap per variant: non-clinic variants replace
+          the room box entirely so outdoor/home/public scenes don't render
+          hospital walls behind the scene. */}
+      {isClinic ? (
         <>
           <Room hideOverhead={hideOverhead} />
           <BayLighting shadowsEnabled={shadowsEnabled} />
@@ -525,7 +527,9 @@ export function TreatmentBayEnvironment({
           shadowsEnabled={shadowsEnabled}
         />
       )}
-      {!hideBed && <Stretcher />}
+      {/* Clinic/home scenes show the bed; roadside/floor staging hides it. */}
+      {!hideBed && isClinic && <Stretcher />}
+      {/* Medical equipment is brought to the scene by the paramedic in every variant */}
       <IVStand />
       <MonitorStand />
       <OxygenTank />

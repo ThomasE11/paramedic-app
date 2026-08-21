@@ -229,46 +229,20 @@ function getRegionConfig(regionId: string): RegionConfig | null {
         icon: Activity,
         subRegions: [
           {
-            id: 'abd-general',
-            label: 'General Inspection',
+            id: 'abd-inspection',
+            label: 'Inspection & Auscultation',
             actions: [
-              { id: 'abd-inspect', label: 'Distension, bruising (Grey Turner / Cullen), scars, visible peristalsis', technique: 'inspect', icon: Eye },
+              { id: 'abd-inspect', label: 'Inspect — distension, bruising (Cullen / Grey Turner), scars, pulsating mass', technique: 'inspect', icon: Eye },
+              { id: 'abd-auscultate', label: 'Auscultate bowel sounds (4 quadrants)', technique: 'auscultate', icon: Stethoscope },
             ],
           },
           {
-            id: 'ruq',
-            label: 'Right Upper Quadrant',
+            id: 'abd-palpation',
+            label: 'Palpation & Percussion',
             actions: [
-              { id: 'ruq-auscultate', label: 'Bowel sounds', technique: 'auscultate', icon: Stethoscope },
-              { id: 'ruq-palpate', label: 'Tenderness, guarding, hepatomegaly, Murphy sign', technique: 'palpate', icon: Hand },
-              { id: 'ruq-percuss', label: 'Percussion — liver span, shifting dullness', technique: 'percuss', icon: Activity },
-            ],
-          },
-          {
-            id: 'luq',
-            label: 'Left Upper Quadrant',
-            actions: [
-              { id: 'luq-auscultate', label: 'Bowel sounds', technique: 'auscultate', icon: Stethoscope },
-              { id: 'luq-palpate', label: 'Tenderness, splenomegaly', technique: 'palpate', icon: Hand },
-              { id: 'luq-percuss', label: 'Percussion', technique: 'percuss', icon: Activity },
-            ],
-          },
-          {
-            id: 'rlq',
-            label: 'Right Lower Quadrant',
-            actions: [
-              { id: 'rlq-auscultate', label: 'Bowel sounds', technique: 'auscultate', icon: Stethoscope },
-              { id: 'rlq-palpate', label: 'Tenderness, rebound (appendicitis), Rovsing sign', technique: 'palpate', icon: Hand },
-              { id: 'rlq-percuss', label: 'Percussion', technique: 'percuss', icon: Activity },
-            ],
-          },
-          {
-            id: 'llq',
-            label: 'Left Lower Quadrant',
-            actions: [
-              { id: 'llq-auscultate', label: 'Bowel sounds', technique: 'auscultate', icon: Stethoscope },
-              { id: 'llq-palpate', label: 'Tenderness, diverticular signs', technique: 'palpate', icon: Hand },
-              { id: 'llq-percuss', label: 'Percussion', technique: 'percuss', icon: Activity },
+              { id: 'abd-palpate-light', label: 'Light palpation — soft vs rigid, tenderness, guarding', technique: 'palpate', icon: Hand },
+              { id: 'abd-palpate-deep', label: 'Deep palpation — masses, organomegaly, rebound tenderness', technique: 'palpate', icon: Hand },
+              { id: 'abd-percuss', label: 'Percuss — tympanic vs dull (ascites, organomegaly)', technique: 'percuss', icon: Activity },
             ],
           },
         ],

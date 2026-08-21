@@ -2873,7 +2873,7 @@ const DEFAULT_CAMERA_FOCUS = {
 function getTreatmentBayCameraFocus(stage: BayPatientStage) {
   return {
     pos: (stage === 'floor'
-      ? [1.32, 1.05, 1.92]
+      ? [0.4, 2.4, 4.2]  // pulled back so wrecked car + motorcycle stay in frame
       : [1.42, 1.30, 2.12]) as [number, number, number],
     target: treatmentBayClinicalToWorld([0, 0.96, -0.05], stage),
   };
