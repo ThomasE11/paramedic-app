@@ -1,24 +1,3 @@
-/**
- * Measure real rendering FPS of the 3D patient view via rAF deltas.
- *
- * Usage:  node scripts/measure-fps.mjs [baseUrl] [--seconds=10] [--headless]
- *                                      [--force-degrade] [--model=male|female]
- *   e.g.  node scripts/measure-fps.mjs http://localhost:5173 --seconds=10
- *
- * Drives the same student flow as capture-model.mjs (Start Training → Generate
- * Case → Scene Survey → Enter Scene), lets the GLB/HDRI settle, then samples
- * requestAnimationFrame deltas for N seconds and prints avg / p5-low / min FPS.
- *
- * Runs HEADED by default — headless Chromium is not vsync-tied the same way,
- * so headed numbers are the honest ones. Pass --headless for CI smoke only.
- *
- * --force-degrade seeds sessionStorage BEFORE any app script runs (the app
- * strips query params on mount and the patient view is a lazy chunk — same
- * timing trap capture-model.mjs documents), which makes the dev-only
- * AdaptiveQuality override report ~10fps to the PerformanceMonitor so the
- * degrade ladder demonstrably trips. The script then polls the dev hook
- * window.__adaptiveQuality and prints each tier transition it observes.
- */
 import { chromium } from 'playwright';
 
 const args = process.argv.slice(2);
@@ -33,6 +12,15 @@ const browser = await chromium.launch({ headless });
 const page = await browser.newPage({ viewport: { width: 1440, height: 960 } });
 page.setDefaultTimeout(30_000);
 
+// At forced ~10fps the UI animations never settle, so Playwright's default
+// actionability checks ("element is not stable", overlay intercepts) time out.
+// Force-click every step when degrading — the flow is already proven by the
+// normal run; this run only exists to film the ladder.
+async function clickStep(locator) {
+  if (forceDegrade) await locator.click({ force: true, timeout: 60_000 });
+  else await locator.click();
+}
+
 if (forceDegrade) {
   await page.addInitScript(() => {
     try { window.sessionStorage.setItem('captureForceDegrade', '1'); } catch { /* ignore */ }
@@ -41,14 +29,17 @@ if (forceDegrade) {
 
 try {
   await page.goto(`${base}/?capture${modelQuery}`, { waitUntil: 'networkidle' });
-  await page.getByRole('button', { name: /Start Training/i }).first().click();
-  await page.getByRole('button', { name: /Skip Tour/i }).click({ timeout: 5000 }).catch(() => {});
-  await page.getByRole('button', { name: /Launch smart case|Generate Case/i }).first().click();
-  await page.getByRole('button', { name: /Begin Scene Survey/i }).click();
-  await page.getByRole('button', { name: /^Next$/i }).click();
-  await page.getByRole('button', { name: /None identified/i }).click();
-  await page.getByRole('button', { name: /Scene is safe/i }).click();
-  await page.getByRole('button', { name: /Enter Scene/i }).click();
+  await clickStep(page.getByRole('button', { name: /Start Training/i }).first());
+  await page
+    .getByRole('button', { name: /Skip Tour/i })
+    .click({ force: forceDegrade, timeout: forceDegrade ? 60_000 : 5_000 })
+    .catch(() => {});
+  await clickStep(page.getByRole('button', { name: /Launch smart case|Generate Case/i }).first());
+  await clickStep(page.getByRole('button', { name: /Begin Scene Survey/i }));
+  await clickStep(page.getByRole('button', { name: /^Next$/i }));
+  await clickStep(page.getByRole('button', { name: /None identified/i }));
+  await clickStep(page.getByRole('button', { name: /Scene is safe/i }));
+  await clickStep(page.getByRole('button', { name: /Enter Scene/i }));
 
   const canvas = page.locator('canvas').first();
   await canvas.waitFor({ state: 'visible' });

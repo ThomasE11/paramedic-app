@@ -320,11 +320,13 @@ const EYE_NODE_NAMES = ['eyeL', 'eyeR', 'irisL', 'irisR', 'pupilL', 'pupilR'] as
 // Posture mixer: the `posture` prop maps to a Blender-authored morph target.
 // POSTURE_MORPHS is the exclusion/crossfade set (all zeroed except the active
 // one). A mesh without these morphs simply no-ops — the lookups miss.
-// ponytail: name convention only; add real GLB morphs when the pose bake lands.
+// Morph names in patient-male.glb use the `pose_` prefix (authored by
+// scripts/anatomy-models/add-viseme-morph.py: pose_tripod / pose_supine /
+// pose_recovery).
 const POSTURE_MORPH_BY_NAME: Record<'tripod' | 'supine' | 'recovery', string> = {
-  tripod: 'posture_tripod',
-  supine: 'posture_supine',
-  recovery: 'posture_recovery',
+  tripod: 'pose_tripod',
+  supine: 'pose_supine',
+  recovery: 'pose_recovery',
 };
 const POSTURE_MORPHS = Object.values(POSTURE_MORPH_BY_NAME);
 
