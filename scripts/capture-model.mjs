@@ -33,6 +33,9 @@ const unwellArg = process.argv.find((a) => a.startsWith('--unwell='));
 const unwellQuery = unwellArg ? `&unwell=${unwellArg.split('=')[1]}` : '';
 const spo2Arg = process.argv.find((a) => a.startsWith('--spo2='));
 const spo2Query = spo2Arg ? `&spo2=${Number(spo2Arg.split('=')[1])}` : '';
+const caseArg = process.argv.find((a) => a.startsWith('--case='));
+const caseId = caseArg ? caseArg.split('=')[1] : (spo2Arg ? 'resp-001' : null);
+const caseQuery = caseId ? `&devLiveCase=${caseId}` : '';
 // --fov=N: narrow the camera fov before the shot (telephoto close-up without
 // fighting OrbitControls' min-distance clamp). Default fov is 38.
 const fovArg = process.argv.find((a) => a.startsWith('--fov='));
@@ -77,10 +80,31 @@ await page.addInitScript(() => {
 });
 
 try {
-  // Pin resp-001 via the DEV live-case hook so the slice (not a random case)
-  // is what the cyanosis stills photograph. StudentPanel skips landing /
-  // survey and boots straight into the live case view.
-  await page.goto(`${base}/?capture${modelQuery}${unwellQuery}${spo2Query}&devLiveCase=resp-001`, { waitUntil: 'networkidle' });
+  await page.goto(`${base}/?capture${modelQuery}${unwellQuery}${spo2Query}${caseQuery}`, { waitUntil: 'networkidle' });
+
+  if (!caseId) {
+    // Landing → training
+    await page.getByRole('button', { name: /Start Training/i }).first().click();
+
+    // First-run welcome tour modal — dismiss if it shows up
+    const skipTour = page.getByRole('button', { name: /Skip Tour/i });
+    await skipTour.click({ timeout: 5000 }).catch(() => {});
+
+    // Generate a deterministic-ish case (first available). The primary CTA was
+    // renamed "Launch smart case"; keep the old label as a fallback for older UI.
+    await page
+      .getByRole('button', { name: /Launch smart case|Generate Case/i })
+      .first()
+      .click();
+
+    // Scene survey gauntlet
+    await page.getByRole('button', { name: /Begin Scene Survey/i }).click();
+    await page.getByRole('button', { name: /^Next$/i }).click();
+    await page.getByRole('button', { name: /None identified/i }).click();
+    await page.getByRole('button', { name: /Scene is safe/i }).click();
+    // gloves are preselected on the PPE step
+    await page.getByRole('button', { name: /Enter Scene/i }).click();
+  }
 
   // Wait for the 3D canvas + GLB load + first frames
   const canvas = page.locator('canvas').first();
