@@ -150,13 +150,18 @@ export function buildCyanosisLocalTwin(body: THREE.Mesh): CyanosisLocalTwin | nu
     // Geometry-local: presentation rotation lives on the group, not the
     // attribute. World/root-inverse puts the mouth at z≈0.02 and the
     // original lip band (z>=0.08) never fires.
+    // NAILS: full-resolution scan (no stride). The nailbed bands are tiny
+    // (~46 verts on this mesh); stride sampling skipped most of them and the
+    // nail blotches landed too sparsely to read at gameplay zoom.
     const v = new THREE.Vector3();
     const blotches: Blotch[] = [];
     const step = Math.max(1, Math.floor(pos.count / 4000));
-    for (let i = 0; i < pos.count; i += step) {
+    for (let i = 0; i < pos.count; i++) {
       v.fromBufferAttribute(pos, i);
+      const inLipStride = i % step === 0;
+      if (!inLipStride && !isCyanoticNailVertex(v.x, v.y, v.z)) continue;
       const isLip = isCyanoticLipVertex(v.x, v.y, v.z);
-      const isNail = isCyanoticNailVertex(v.x, v.y, v.z);
+      const isNail = !isLip && isCyanoticNailVertex(v.x, v.y, v.z);
       if (!isLip && !isNail) continue;
       const u = uv.getX(i);
       const vv = uv.getY(i);
