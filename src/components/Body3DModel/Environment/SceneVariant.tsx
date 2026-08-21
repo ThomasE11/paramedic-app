@@ -459,11 +459,11 @@ function RoadsideScene({ shadowsEnabled }: { shadowsEnabled: boolean }) {
       ))}
       {/* Wrecked car — low-poly silhouette, front damage, pushed to the
           right side of the scene. Body + cabin + two wheels visible. */}
-      <group position={[1.8, 0, -0.3]} rotation={[0, -0.35, 0]}>
+      <group name="wrecked-car" position={[1.8, 0, -0.3]} rotation={[0, -0.35, 0]}>
         {/* Body shell */}
         <mesh position={[0, 0.48, 0]} castShadow receiveShadow raycast={NO_RAYCAST}>
           <boxGeometry args={[3.6, 0.7, 1.7]} />
-          <meshStandardMaterial color="#5a6068" roughness={0.7} metalness={0.4} />
+          <meshStandardMaterial color="#8b1e1e" roughness={0.7} metalness={0.4} />
         </mesh>
         {/* Hood crumpled — rotated box */}
         <mesh position={[-1.6, 0.42, 0]} castShadow raycast={NO_RAYCAST} rotation={[0, 0, 0.08]}>

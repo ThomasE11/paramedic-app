@@ -529,11 +529,18 @@ export function TreatmentBayEnvironment({
       )}
       {/* Clinic/home scenes show the bed; roadside/floor staging hides it. */}
       {!hideBed && isClinic && <Stretcher />}
-      {/* Medical equipment is brought to the scene by the paramedic in every variant */}
-      <IVStand />
+      {/* Medical equipment is brought by the paramedic in every scene, but the
+          red crash cart, IV stand, and O2 tank belong inside a bay — hide them for
+          outdoor roadside variants so the wrecked car + motorcycle aren't visually
+          buried under clinic furniture. */}
       <MonitorStand />
-      <OxygenTank />
-      <CrashCart />
+      {isClinic && (
+        <>
+          <IVStand />
+          <OxygenTank />
+          <CrashCart />
+        </>
+      )}
       <DustMotes />
       <SoftGroundShadow />
     </group>
