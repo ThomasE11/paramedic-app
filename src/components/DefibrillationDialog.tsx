@@ -8,7 +8,7 @@
  * - Warns about inappropriate settings
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -19,7 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { AlertTriangle, Zap, Activity, Shield } from 'lucide-react';
+import { AlertTriangle, Zap, Activity, Shield, Check, Circle } from 'lucide-react';
 import type { DefibrillationParams } from '@/data/dynamicTreatmentEngine';
 
 interface DefibrillationDialogProps {
@@ -29,6 +29,7 @@ interface DefibrillationDialogProps {
   currentRhythm: string;
   currentPulse: number;
   isInArrest?: boolean;
+  padsAttached: boolean;
 }
 
 const ENERGY_LEVELS = [50, 100, 150, 200, 360] as const;
@@ -40,9 +41,18 @@ export function DefibrillationDialog({
   currentRhythm,
   currentPulse,
   isInArrest = false,
+  padsAttached,
 }: DefibrillationDialogProps) {
   const [selectedEnergy, setSelectedEnergy] = useState<number>(150);
   const [synchronized, setSynchronized] = useState(false);
+  const [charged, setCharged] = useState(false);
+  const [allClear, setAllClear] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    setCharged(false);
+    setAllClear(false);
+  }, [open]);
 
   // During arrest (VF/pulseless VT/asystole), pulse is 0 despite residual state values
   const hasPulse = currentPulse > 0 && !isInArrest;
@@ -67,6 +77,7 @@ export function DefibrillationDialog({
   }
 
   const handleConfirm = () => {
+    if (!padsAttached || !charged || !allClear) return;
     onConfirm({
       energy: selectedEnergy,
       synchronized,
@@ -114,7 +125,7 @@ export function DefibrillationDialog({
               {ENERGY_LEVELS.map((energy) => (
                 <button
                   key={energy}
-                  onClick={() => setSelectedEnergy(energy)}
+                  onClick={() => { setSelectedEnergy(energy); setCharged(false); setAllClear(false); }}
                   className={`py-2.5 rounded-lg text-sm font-bold transition-all ${
                     selectedEnergy === energy
                       ? 'bg-yellow-500 text-white shadow-lg scale-105'
@@ -132,7 +143,7 @@ export function DefibrillationDialog({
             <label className="text-sm font-medium mb-2 block">Mode</label>
             <div className="grid grid-cols-2 gap-2">
               <button
-                onClick={() => setSynchronized(false)}
+                onClick={() => { setSynchronized(false); setCharged(false); setAllClear(false); }}
                 className={`p-3 rounded-lg text-left transition-all border ${
                   !synchronized
                     ? 'bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-700 ring-2 ring-red-500/30'
@@ -151,7 +162,7 @@ export function DefibrillationDialog({
               </button>
 
               <button
-                onClick={() => setSynchronized(true)}
+                onClick={() => { setSynchronized(true); setCharged(false); setAllClear(false); }}
                 className={`p-3 rounded-lg text-left transition-all border ${
                   synchronized
                     ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700 ring-2 ring-blue-500/30'
@@ -169,6 +180,39 @@ export function DefibrillationDialog({
                 </p>
               </button>
             </div>
+          </div>
+
+          <div className="space-y-2 rounded-xl border border-border/60 bg-muted/20 p-3">
+            <p className="text-sm font-semibold">Shock safety sequence</p>
+            <div className="flex items-start gap-2 text-xs">
+              {padsAttached ? <Check className="mt-0.5 h-4 w-4 text-emerald-600" /> : <Circle className="mt-0.5 h-4 w-4 text-red-500" />}
+              <div>
+                <p className="font-medium">Pads attached and connected</p>
+                <p className="text-muted-foreground">Anterior-lateral contact confirmed with a clean rhythm trace.</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-2 text-xs">
+              {charged ? <Check className="mt-0.5 h-4 w-4 text-emerald-600" /> : <Circle className="mt-0.5 h-4 w-4 text-muted-foreground" />}
+              <div className="flex min-w-0 flex-1 items-center justify-between gap-2">
+                <div>
+                  <p className="font-medium">Device charged to {selectedEnergy}J</p>
+                  <p className="text-muted-foreground">Charge only after confirming the rhythm and selected mode.</p>
+                </div>
+                <Button size="sm" variant={charged ? 'secondary' : 'outline'} disabled={!padsAttached || charged} onClick={() => setCharged(true)}>
+                  <Zap className="mr-1 h-3.5 w-3.5" /> {charged ? 'Charged' : 'Charge'}
+                </Button>
+              </div>
+            </div>
+            <button
+              type="button"
+              disabled={!charged}
+              onClick={() => setAllClear(value => !value)}
+              className={`flex w-full items-start gap-2 rounded-lg border p-2 text-left text-xs transition ${allClear ? 'border-emerald-500/40 bg-emerald-500/10' : 'border-border/60'} disabled:cursor-not-allowed disabled:opacity-45`}
+            >
+              {allClear ? <Check className="mt-0.5 h-4 w-4 text-emerald-600" /> : <Circle className="mt-0.5 h-4 w-4 text-muted-foreground" />}
+              <span><strong>ALL CLEAR confirmed.</strong> Hands off, no one touching the patient, and oxygen moved clear of the chest.</span>
+            </button>
+            {!padsAttached && <p className="rounded-lg bg-red-500/10 p-2 text-xs font-medium text-red-700 dark:text-red-300">Shock locked: attach and connect defibrillator pads first.</p>}
           </div>
 
           {/* Warnings */}
@@ -191,6 +235,7 @@ export function DefibrillationDialog({
           <Button
             variant="destructive"
             onClick={handleConfirm}
+            disabled={!padsAttached || !charged || !allClear}
             className="bg-yellow-600 hover:bg-yellow-700"
           >
             <Zap className="h-4 w-4 mr-1" />

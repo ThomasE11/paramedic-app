@@ -452,6 +452,18 @@ export const TREATMENTS: Treatment[] = [
     ],
   },
   {
+    id: 'monitor_pads',
+    name: 'Attach Defibrillator Pads',
+    description: 'Expose and prepare the chest, place pads, then connect the monitor lead',
+    category: 'circulation',
+    onset: 'immediate',
+    onsetTimeSeconds: 0,
+    durationSeconds: 1,
+    icon: 'Activity',
+    color: 'yellow',
+    effects: [],
+  },
+  {
     id: 'defibrillation',
     name: 'Defibrillation',
     description: 'Unsynchronized electrical shock for VF/pulseless VT. NOT the same as synchronized cardioversion.',
@@ -471,17 +483,14 @@ export const TREATMENTS: Treatment[] = [
   {
     id: 'aed',
     name: 'Automated External Defibrillator (AED)',
-    description: 'Attach AED pads, follow voice prompts, deliver shock if advised',
+    description: 'Legacy AED pad workflow; shock delivery remains a separate clinical action',
     category: 'circulation',
     onset: 'immediate',
     onsetTimeSeconds: 0,
     durationSeconds: 1,
     icon: 'Zap',
     color: 'yellow',
-    effects: [
-      { vitalSign: 'pulse', changeType: 'set', value: 80 },
-      { vitalSign: 'spo2', changeType: 'increase', value: 10, maxValue: 98 },
-    ],
+    effects: [],
   },
 
   // ===== MEDICATIONS =====

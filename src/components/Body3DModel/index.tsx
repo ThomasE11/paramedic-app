@@ -137,6 +137,7 @@ interface AppliedEquipmentVisualState {
   hasEtTube: boolean;
   hasOpa: boolean;
   hasCollar: boolean;
+  siteControls: Array<{ treatmentId: string; target: BodyRegion }>;
   /** Bleeding wound ids considered under source control (tourniquet /
    *  pressure dressing / haemostatic / chest seal applied). */
   controlledBleedIds: Set<string>;
@@ -158,6 +159,8 @@ const TREATMENT_ASSET_PATHS = {
   opa: '/treatment-assets/opa.svg',
   ivPole: '/treatment-assets/iv-pole.svg',
   collar: '/equipment-assets/cervical-collar.webp',
+  bandage: '/equipment-assets/bandages.webp',
+  tourniquet: '/equipment-assets/tourniquet.webp',
 } as const;
 
 const BODY_REGION_DIAGRAM_ANCHOR: Record<BodyRegion, { x: number; y: number }> = {
@@ -1068,12 +1071,17 @@ function buildTreatmentEquipmentState(appliedTreatmentIds: string[]): AppliedEqu
   // Source control for active bleeding: any haemorrhage-control treatment
   // lands here. Wound ids are matched by region suffix in ActiveBleedSprites.
   const BLEED_CONTROL_IDS = new Set([
+    'bleeding_control',
     'tourniquet', 'tourniquet_application', 'pressure_dressing', 'pressure_bandage',
     'haemostatic', 'hemostatic', 'chest_seal', 'wound_packing', 'direct_pressure',
   ]);
   const controlledBleedIds = new Set<string>(
-    [...applied].filter(id => [...BLEED_CONTROL_IDS].some(ctl => id.includes(ctl))),
+    [...applied].filter(id => id.startsWith('site:') || [...BLEED_CONTROL_IDS].some(ctl => id.includes(ctl))),
   );
+  const siteControls = appliedTreatmentIds.flatMap(id => {
+    const match = id.match(/^site:([^:]+):(.+)$/);
+    return match ? [{ treatmentId: match[1], target: match[2] as BodyRegion }] : [];
+  });
 
   return {
     oxygen: oxygenMatch ? { mode: oxygenMatch.mode, label: oxygenMatch.label, detail: oxygenMatch.detail } : null,
@@ -1087,6 +1095,7 @@ function buildTreatmentEquipmentState(appliedTreatmentIds: string[]): AppliedEqu
       || applied.has('c-collar')
       || applied.has('cspine_protection')
       || applied.has('immobilisation'),
+    siteControls,
     controlledBleedIds,
   };
 }
@@ -1143,6 +1152,10 @@ function AppliedEquipmentTray({ appliedTreatmentIds }: { appliedTreatmentIds: st
   if (equipment.hasDefibPads) chips.push({ src: TREATMENT_ASSET_PATHS.defibPads, label: 'Defib pads on' });
   if (equipment.hasLucas) chips.push({ src: TREATMENT_ASSET_PATHS.lucas, label: 'LUCAS running' });
   if (equipment.hasCollar) chips.push({ src: TREATMENT_ASSET_PATHS.collar, label: 'C-collar applied' });
+  equipment.siteControls.forEach(control => chips.push({
+    src: control.treatmentId.includes('tourniquet') ? TREATMENT_ASSET_PATHS.tourniquet : TREATMENT_ASSET_PATHS.bandage,
+    label: `${control.treatmentId.includes('tourniquet') ? 'Tourniquet' : 'Dressing'} · ${control.target.replace('-', ' ')}`,
+  }));
   if (chips.length === 0) return null;
   return (
     <div className="pointer-events-none absolute bottom-3 right-3 z-20 flex max-w-[44%] flex-col items-end gap-1.5">
@@ -1181,7 +1194,8 @@ function TreatmentEquipmentOverlay({
     || equipment.hasDefibPads
     || equipment.hasLucas
     || equipment.hasEtTube
-    || equipment.hasOpa;
+    || equipment.hasOpa
+    || equipment.siteControls.length > 0;
 
   if (!hasVisibleEquipment) return null;
 
@@ -1231,6 +1245,24 @@ function TreatmentEquipmentOverlay({
           <EquipmentPin tone="device" src={TREATMENT_ASSET_PATHS.lucas} />
         </MarkerHtml>
       )}
+
+      {equipment.siteControls.map(control => {
+        const siteAnchor: Record<BodyRegion, [number, number, number]> = {
+          head: [0, 1.63, 0.22], face: [0, 1.58, 0.23], neck: [0, 1.47, 0.22], airway: [0, 1.52, 0.22],
+          chest: [0, 1.25, 0.23], abdomen: [0, 1.02, 0.25], pelvis: [0, 0.9, 0.24],
+          'right-arm': [-0.2, 1.08, 0.2], 'left-arm': [0.2, 1.08, 0.2],
+          'right-leg': [-0.16, 0.43, 0.2], 'left-leg': [0.16, 0.43, 0.2], back: [0, 1.12, -0.2],
+        };
+        const point = siteAnchor[control.target] ?? siteAnchor.chest;
+        return (
+          <MarkerHtml key={`${control.treatmentId}-${control.target}`} position={anchor(...point)} distanceFactor={2.5} zIndexRange={[70, 0]} interactive={false} presentation={presentation}>
+            <EquipmentPin
+              tone="device"
+              src={control.treatmentId.includes('tourniquet') ? TREATMENT_ASSET_PATHS.tourniquet : TREATMENT_ASSET_PATHS.bandage}
+            />
+          </MarkerHtml>
+        );
+      })}
     </>
   );
 }

@@ -3429,3 +3429,49 @@ body {
     animation: none;
   }
 }
+/* Hands-on treatment rehearsal: the hands converge on the selected procedure
+   field, then adapt their motion to pressure, placement, wrapping or airway work. */
+.procedure-hands {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.procedure-hand {
+  position: absolute;
+  top: 45%;
+  width: 44px;
+  height: 44px;
+  color: rgb(253 186 116);
+  filter: drop-shadow(0 5px 4px rgb(0 0 0 / 0.45));
+}
+
+.procedure-hand-left {
+  left: 8%;
+  transform: rotate(55deg);
+  animation: procedure-hand-left 0.78s ease-in-out infinite alternate;
+}
+
+.procedure-hand-right {
+  right: 8%;
+  transform: scaleX(-1) rotate(55deg);
+  animation: procedure-hand-right 0.78s ease-in-out infinite alternate;
+}
+
+.procedure-motion-press .procedure-hand,
+.procedure-motion-ventilate .procedure-hand { animation-duration: 0.48s; }
+.procedure-motion-wrap .procedure-hand,
+.procedure-motion-tighten .procedure-hand { animation-duration: 0.62s; }
+.procedure-motion-laryngoscopy .procedure-hand-left { top: 18%; }
+.procedure-motion-laryngoscopy .procedure-hand-right { top: 30%; }
+
+@keyframes procedure-hand-left {
+  from { translate: 0 20px; }
+  to { translate: 54px -4px; }
+}
+
+@keyframes procedure-hand-right {
+  from { translate: 0 20px; }
+  to { translate: -54px -4px; }
+}

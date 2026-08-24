@@ -432,7 +432,7 @@ const BAG_EQUIPMENT: Record<ManagementTab, EquipmentInventoryItem[]> = {
     { id: 'circ-fluids', label: 'Fluid Bag', caption: 'Small bolus first', treatmentId: 'fluids_250ml', assetPath: PRODUCT_ASSET_PATHS.fluidBag, tone: '#059669', wide: true },
     { id: 'circ-io', label: 'IO Drill', caption: 'Intraosseous access', treatmentId: 'io_access', assetPath: PRODUCT_ASSET_PATHS.ivCannula, tone: '#14b8a6' },
     { id: 'circ-aed', label: 'AED / Defib', caption: 'Pads and shock lead', treatmentId: 'defibrillation', assetPath: EQUIPMENT_ASSET_PATHS.aedDefib, tone: '#eab308' },
-    { id: 'circ-pads', label: 'Defib Pads', caption: 'Attach to chest', treatmentId: 'aed', assetPath: PRODUCT_ASSET_PATHS.defibPads, tone: '#e11d48' },
+    { id: 'circ-pads', label: 'Defib Pads', caption: 'Expose, place and connect', treatmentId: 'monitor_pads', assetPath: PRODUCT_ASSET_PATHS.defibPads, tone: '#e11d48' },
     { id: 'circ-tourniquet', label: 'Tourniquet', caption: 'Major limb bleed', treatmentId: 'tourniquet', assetPath: EQUIPMENT_ASSET_PATHS.tourniquet, tone: '#111827' },
     { id: 'circ-chest-seal', label: 'Vented Chest Seal', caption: 'Open chest wound', treatmentId: 'chest_seal_vented', assetPath: EQUIPMENT_ASSET_PATHS.bandages, tone: '#f97316' },
     { id: 'circ-lucas', label: 'Mechanical CPR', caption: 'LUCAS device', treatmentId: 'lucas_device', assetPath: PRODUCT_ASSET_PATHS.lucas, tone: '#64748b' },

@@ -299,6 +299,8 @@ function getCohortScopeLabel(year: StudentYear): string {
   return `${year} + prerequisite review`;
 }
 import { DefibrillationDialog } from '@/components/DefibrillationDialog';
+import { HandsOnProcedureDialog } from '@/components/HandsOnProcedureDialog';
+import { isHandsOnTreatment, procedureSiteToken, type ProcedureTarget } from '@/lib/handsOnProcedures';
 import { VentilatorSetupDialog, type VentilatorSettings } from '@/components/VentilatorSetupDialog';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 // ClinicalAssessmentPanel removed — replaced by inline ABCDE Primary Survey + 3D Physical Exam
@@ -1356,6 +1358,8 @@ export function StudentPanel({
   }, [appliedTreatments, realismDirector]);
   const [showDefibDialog, setShowDefibDialog] = useState(false);
   const [pendingDefibTreatment, setPendingDefibTreatment] = useState<Treatment | null>(null);
+  const [pendingHandsOnTreatment, setPendingHandsOnTreatment] = useState<Treatment | null>(null);
+  const handsOnProcedureBypassRef = useRef<Set<string>>(new Set());
   const [showVentilatorDialog, setShowVentilatorDialog] = useState(false);
   const [ventilatorSettings, setVentilatorSettings] = useState<VentilatorSettings | null>(null);
   // BVM bag-valve-mask ventilation rate the student picked (breaths / min).
@@ -3270,6 +3274,30 @@ export function StudentPanel({
     lastActivityRef.current = Date.now();
     setHintVisible(false);
 
+    // Physical procedures are not instant menu effects. They must be carried
+    // out on the patient, in order, before any physiological response applies.
+    // A one-use bypass lets the completed procedure re-enter this callback.
+    if (isHandsOnTreatment(treatment.id) && !handsOnProcedureBypassRef.current.has(treatment.id)) {
+      setPendingHandsOnTreatment(treatment);
+      return;
+    }
+    handsOnProcedureBypassRef.current.delete(treatment.id);
+
+    // Defibrillation is a separate action from pad placement. Never open the
+    // energy selector (or deliver a shock) without physically attached pads.
+    if (treatment.id === 'defibrillation' && !defibParams) {
+      const padsAttached = appliedTreatmentIds.includes('monitor_pads') || appliedTreatmentIds.includes('aed');
+      if (!padsAttached) {
+        const pads = TREATMENTS.find(item => item.id === 'monitor_pads');
+        if (pads) setPendingHandsOnTreatment(pads);
+        toast.error('Attach defibrillator pads first', {
+          description: 'Expose and prepare the chest, place both pads, connect the lead, then analyse the rhythm.',
+          duration: 6000,
+        });
+        return;
+      }
+    }
+
     // Active anaphylaxis + adrenaline = the rescue. Resolve the reaction
     // (animate recovery, stand down any arrest) instead of the normal effect.
     if (activeReactionRef.current && isDefinitiveRescue(treatment.id)) {
@@ -3581,6 +3609,18 @@ export function StudentPanel({
       setPendingDefibTreatment(null);
     }
   }, [pendingDefibTreatment, applyTreatment]);
+
+  const handleHandsOnProcedureComplete = useCallback((target: ProcedureTarget | null) => {
+    const treatment = pendingHandsOnTreatment;
+    if (!treatment) return;
+    if (target) {
+      const token = procedureSiteToken(treatment.id, target.id);
+      setAppliedTreatmentIds(previous => previous.includes(token) ? previous : [...previous, token]);
+    }
+    handsOnProcedureBypassRef.current.add(treatment.id);
+    setPendingHandsOnTreatment(null);
+    applyTreatment(treatment);
+  }, [applyTreatment, pendingHandsOnTreatment]);
 
   // Keep ref in sync with state so rapid calls always read the latest tracker
   useEffect(() => { assessmentTrackerRef.current = assessmentTracker; }, [assessmentTracker]);
@@ -6361,6 +6401,16 @@ export function StudentPanel({
               </div>
             </div>
 
+            {pendingHandsOnTreatment && currentCase && (
+              <HandsOnProcedureDialog
+                open
+                treatment={pendingHandsOnTreatment}
+                caseData={currentCase}
+                onCancel={() => setPendingHandsOnTreatment(null)}
+                onComplete={handleHandsOnProcedureComplete}
+              />
+            )}
+
             {/* Defibrillation Dialog */}
             {showDefibDialog && patientState && (
               <DefibrillationDialog
@@ -6373,6 +6423,7 @@ export function StudentPanel({
                 currentRhythm={patientState.currentRhythm}
                 currentPulse={currentVitals?.pulse || 0}
                 isInArrest={patientState.isInArrest}
+                padsAttached={appliedTreatmentIds.includes('monitor_pads') || appliedTreatmentIds.includes('aed')}
               />
             )}
 

@@ -18,6 +18,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { PatientWoundOverlay } from '@/lib/patientVisualState';
+import { isBleedRegionControlled } from '@/lib/bleedControl';
 import type { SurfaceSampler } from './BodyMesh';
 
 const ANCHORS: Record<string, [number, number, number]> = {
@@ -128,28 +129,6 @@ export function ActiveBleedSprites({
     });
   }, [siteSignature, texture]);
 
-  const controlTokens = useMemo(() => [...controlledIds].map(id => id.toLowerCase()), [controlledIds]);
-
-  const siteIsControlled = (region: string) => {
-    const generalControl = controlTokens.some(id =>
-      id.includes('direct_pressure')
-      || id.includes('pressure_dressing')
-      || id.includes('pressure_bandage')
-      || id.includes('wound_packing')
-      || id.includes('haemostatic')
-      || id.includes('hemostatic')
-      || id.includes('bandage'),
-    );
-    if (generalControl) return true;
-    if (region === 'chest') {
-      return controlTokens.some(id => id.includes('chest_seal') || id.includes('occlusive_dressing'));
-    }
-    if (region.includes('arm') || region.includes('leg')) {
-      return controlTokens.some(id => id.includes('tourniquet'));
-    }
-    return false;
-  };
-
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime();
     const freq = Math.min(180, Math.max(30, bpm || 80)) / 60;
@@ -159,7 +138,7 @@ export function ActiveBleedSprites({
       const mat = sprite.material as THREE.SpriteMaterial;
       // Follow chest/limb movement without replacing the animated material.
       sprite.position.set(site.pos[0], site.pos[1], site.pos[2]);
-      const controlled = siteIsControlled(site.region);
+      const controlled = isBleedRegionControlled(controlledIds, site.region);
       if (controlled) {
         mat.opacity = 0;
         sprite.scale.setScalar(0.4);
