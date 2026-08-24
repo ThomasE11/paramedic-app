@@ -32,4 +32,30 @@ describe('hands-on treatment procedures', () => {
     const plan = getHandsOnProcedurePlan('rsi_intubation', caseData);
     expect(plan?.steps.some(step => step.id === 'capnography')).toBe(true);
   });
+
+  it('provides physical application workflows for reusable patient equipment', () => {
+    const equipmentTreatments = [
+      'bvm_ventilation', 'suction', 'opa_insert', 'nebulizer_salbutamol', 'cpap_niv',
+      'iv_access', 'io_access', 'fluids_250ml', 'chest_seal_vented', 'needle_decompression',
+      'sam_splint', 'box_splint', 'vacuum_limb_splint', 'air_splint', 'traction_splint',
+      'cervical_collar', 'warming_blanket', 'active_cooling', 'spinal_board',
+      'scoop_stretcher', 'vacuum_mattress', 'head_blocks', 'ked', 'lucas_device',
+      'ventilator_setup',
+    ];
+    for (const treatmentId of equipmentTreatments) {
+      const plan = getHandsOnProcedurePlan(treatmentId, caseData);
+      expect(plan?.steps.length, `${treatmentId} should have a complete application workflow`).toBeGreaterThanOrEqual(4);
+      expect(plan?.equipmentAsset, `${treatmentId} should identify its real equipment`).toMatch(/^\/equipment-assets\//);
+    }
+  });
+
+  it('binds fracture immobilisation to the injured limb', () => {
+    const fractureCase = {
+      ...caseData,
+      secondarySurvey: { extremities: ['Right femur deformity and shortening'] },
+    } as CaseScenario;
+    const plan = getHandsOnProcedurePlan('traction_splint', fractureCase);
+    expect(plan?.requiresTarget).toBe(true);
+    expect(plan?.targets[0]).toMatchObject({ id: 'right-leg', priority: 'injury' });
+  });
 });

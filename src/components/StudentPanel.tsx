@@ -3274,15 +3274,6 @@ export function StudentPanel({
     lastActivityRef.current = Date.now();
     setHintVisible(false);
 
-    // Physical procedures are not instant menu effects. They must be carried
-    // out on the patient, in order, before any physiological response applies.
-    // A one-use bypass lets the completed procedure re-enter this callback.
-    if (isHandsOnTreatment(treatment.id) && !handsOnProcedureBypassRef.current.has(treatment.id)) {
-      setPendingHandsOnTreatment(treatment);
-      return;
-    }
-    handsOnProcedureBypassRef.current.delete(treatment.id);
-
     // Defibrillation is a separate action from pad placement. Never open the
     // energy selector (or deliver a shock) without physically attached pads.
     if (treatment.id === 'defibrillation' && !defibParams) {
@@ -3333,6 +3324,44 @@ export function StudentPanel({
       return;
     }
 
+    const hasVascularAccess = appliedTreatmentIds.includes('iv_access') || appliedTreatmentIds.includes('io_access');
+    if (treatment.id.startsWith('fluids_') && !hasVascularAccess) {
+      const access = TREATMENTS.find(item => item.id === 'iv_access');
+      if (access) setPendingHandsOnTreatment(access);
+      toast.error('Establish vascular access first', {
+        description: 'A fluid bag can be prepared, but it cannot be connected or infused until IV or IO placement is confirmed.',
+        duration: 5500,
+      });
+      return;
+    }
+    if (treatment.id === 'ventilator_setup' && !appliedTreatmentIds.some(id => ['intubation', 'rsi_intubation', 'endotracheal_intubation'].includes(id))) {
+      toast.error('Secure and confirm the airway first', {
+        description: 'Do not connect a ventilator circuit until ETT position is confirmed with sustained waveform capnography.',
+        duration: 5500,
+      });
+      return;
+    }
+    if (treatment.id === 'head_blocks') {
+      const hasCollar = appliedTreatmentIds.includes('cervical_collar');
+      const hasBase = appliedTreatmentIds.some(id => ['spinal_board', 'vacuum_mattress'].includes(id));
+      if (!hasCollar || !hasBase) {
+        toast.error('Collar and support surface required first', {
+          description: 'Head blocks are fitted after a sized cervical collar, once the patient is on a board or vacuum mattress.',
+          duration: 5500,
+        });
+        return;
+      }
+    }
+
+    // Physical procedures are not instant menu effects. Practicality and
+    // prerequisite checks happen first; only a completed hands-on sequence
+    // can re-enter this callback through the one-use bypass.
+    if (isHandsOnTreatment(treatment.id) && !handsOnProcedureBypassRef.current.has(treatment.id)) {
+      setPendingHandsOnTreatment(treatment);
+      return;
+    }
+    if (isHandsOnTreatment(treatment.id)) handsOnProcedureBypassRef.current.delete(treatment.id);
+
     // Defibrillation requires energy/mode selection
     if (treatment.id === 'defibrillation' && !defibParams) {
       setPendingDefibTreatment(treatment);
@@ -3381,7 +3410,7 @@ export function StudentPanel({
     }
 
     // IV prerequisite check — student must establish IV access before giving IV drugs/fluids
-    if (treatment.requiresIVAccess && !appliedTreatmentIds.includes('iv_access')) {
+    if (treatment.requiresIVAccess && !hasVascularAccess) {
       setPendingIVTreatment(treatment);
       return;
     }

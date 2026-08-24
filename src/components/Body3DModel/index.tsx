@@ -137,6 +137,11 @@ interface AppliedEquipmentVisualState {
   hasEtTube: boolean;
   hasOpa: boolean;
   hasCollar: boolean;
+  hasChestSeal: boolean;
+  hasNeedleDecompression: boolean;
+  hasWarmingBlanket: boolean;
+  hasActiveCooling: boolean;
+  immobilisationDevice: 'spinal-board' | 'scoop' | 'vacuum-mattress' | 'head-blocks' | 'ked' | null;
   siteControls: Array<{ treatmentId: string; target: BodyRegion }>;
   /** Bleeding wound ids considered under source control (tourniquet /
    *  pressure dressing / haemostatic / chest seal applied). */
@@ -161,6 +166,15 @@ const TREATMENT_ASSET_PATHS = {
   collar: '/equipment-assets/cervical-collar.webp',
   bandage: '/equipment-assets/bandages.webp',
   tourniquet: '/equipment-assets/tourniquet.webp',
+  suction: '/equipment-assets/portable-suction.webp',
+  needle: '/equipment-assets/needle-decompression.webp',
+  warmingBlanket: '/equipment-assets/warming-blanket.webp',
+  coolingPack: '/equipment-assets/cooling-pack.webp',
+  spineBoard: '/equipment-assets/spine-board.webp',
+  scoop: '/equipment-assets/scoop-stretcher.webp',
+  vacuumMattress: '/equipment-assets/vacuum-mattress.webp',
+  headBlocks: '/equipment-assets/head-blocks.webp',
+  ked: '/equipment-assets/ked-extrication-device.webp',
 } as const;
 
 const BODY_REGION_DIAGRAM_ANCHOR: Record<BodyRegion, { x: number; y: number }> = {
@@ -1057,7 +1071,7 @@ const IV_MEDICATION_LINE_IDS = new Set([
 
 function buildTreatmentEquipmentState(appliedTreatmentIds: string[]): AppliedEquipmentVisualState {
   const applied = new Set(appliedTreatmentIds);
-  const oxygenMatch = OXYGEN_VISUAL_PRIORITY.find(option => option.ids.some(id => applied.has(id)));
+  const rawOxygenMatch = OXYGEN_VISUAL_PRIORITY.find(option => option.ids.some(id => applied.has(id)));
   const hasFluids = appliedTreatmentIds.some(id => id.startsWith('fluids_'));
   const hasMedicationLine = appliedTreatmentIds.some(id =>
     IV_MEDICATION_LINE_IDS.has(id) || id.endsWith('_iv') || id.includes('_infusion'),
@@ -1067,6 +1081,9 @@ function buildTreatmentEquipmentState(appliedTreatmentIds: string[]): AppliedEqu
     || applied.has('rsi_intubation')
     || applied.has('mechanical_ventilation')
     || applied.has('ventilator_setup');
+  const oxygenMatch = hasEtTube && rawOxygenMatch && ['nasal', 'simple-mask', 'nonrebreather', 'nebulizer', 'cpap'].includes(rawOxygenMatch.mode)
+    ? undefined
+    : rawOxygenMatch;
 
   // Source control for active bleeding: any haemorrhage-control treatment
   // lands here. Wound ids are matched by region suffix in ActiveBleedSprites.
@@ -1082,6 +1099,13 @@ function buildTreatmentEquipmentState(appliedTreatmentIds: string[]): AppliedEqu
     const match = id.match(/^site:([^:]+):(.+)$/);
     return match ? [{ treatmentId: match[1], target: match[2] as BodyRegion }] : [];
   });
+  const immobilisationDevice: AppliedEquipmentVisualState['immobilisationDevice'] =
+    applied.has('vacuum_mattress') ? 'vacuum-mattress'
+      : applied.has('scoop_stretcher') ? 'scoop'
+        : applied.has('spinal_board') ? 'spinal-board'
+          : applied.has('ked') ? 'ked'
+            : applied.has('head_blocks') ? 'head-blocks'
+              : null;
 
   return {
     oxygen: oxygenMatch ? { mode: oxygenMatch.mode, label: oxygenMatch.label, detail: oxygenMatch.detail } : null,
@@ -1095,6 +1119,11 @@ function buildTreatmentEquipmentState(appliedTreatmentIds: string[]): AppliedEqu
       || applied.has('c-collar')
       || applied.has('cspine_protection')
       || applied.has('immobilisation'),
+    hasChestSeal: applied.has('chest_seal_vented') || applied.has('vented_chest_seal') || applied.has('occlusive_dressing_3sided'),
+    hasNeedleDecompression: applied.has('needle_decompression'),
+    hasWarmingBlanket: applied.has('warming_blanket'),
+    hasActiveCooling: applied.has('active_cooling'),
+    immobilisationDevice,
     siteControls,
     controlledBleedIds,
   };
@@ -1139,6 +1168,116 @@ function EquipmentPin({ tone, src, bare = false }: { tone: EquipTone; src: strin
   );
 }
 
+function WornFaceEquipment({ equipment }: { equipment: OxygenEquipmentVisual }) {
+  const large = equipment.mode === 'bvm' || equipment.mode === 'cpap' || equipment.mode === 'ventilator';
+  return (
+    <div data-applied-equipment={equipment.mode} className={`pointer-events-none relative flex items-center justify-center drop-shadow-[0_5px_6px_rgba(2,44,58,0.55)] animate-in fade-in zoom-in-75 duration-300 ${large ? 'h-16 w-20' : 'h-12 w-14'}`}>
+      <img src={OXYGEN_SRC[equipment.mode]} alt="" className="h-full w-full object-contain" draggable={false} />
+      <span className="absolute left-[62%] top-[68%] h-0.5 w-14 origin-left rotate-[28deg] rounded-full bg-cyan-100/80 shadow-[0_0_2px_rgba(8,145,178,0.8)]" />
+      {(equipment.mode === 'nonrebreather' || equipment.mode === 'bvm') && (
+        <span className="absolute right-0 top-[72%] h-5 w-4 rounded-b-full border border-cyan-100/70 bg-white/30" />
+      )}
+    </div>
+  );
+}
+
+function AppliedDefibPads() {
+  return (
+    <div data-applied-equipment="defibrillator-pads" className="pointer-events-none relative h-16 w-20 animate-in fade-in zoom-in-75 duration-300">
+      <span className="absolute left-2 top-1 h-7 w-5 -rotate-6 rounded-md border border-slate-300 bg-slate-50 shadow-md after:absolute after:left-1/2 after:top-1 after:h-3 after:w-px after:-translate-x-1/2 after:bg-rose-500" />
+      <span className="absolute bottom-1 right-2 h-7 w-5 rotate-6 rounded-md border border-slate-300 bg-slate-50 shadow-md after:absolute after:left-1/2 after:top-1 after:h-3 after:w-px after:-translate-x-1/2 after:bg-rose-500" />
+      <span className="absolute left-5 top-6 h-px w-10 rotate-[38deg] bg-slate-300" />
+      <span className="absolute left-[62px] top-11 h-px w-12 rotate-[24deg] bg-slate-300" />
+    </div>
+  );
+}
+
+function AppliedIvDressing() {
+  return (
+    <div data-applied-equipment="vascular-access" className="pointer-events-none relative h-10 w-14 -rotate-12 animate-in fade-in zoom-in-75 duration-300">
+      <span className="absolute left-2 top-2 h-6 w-8 rounded-sm border border-white/90 bg-white/40 shadow-sm backdrop-blur-[1px]" />
+      <span className="absolute left-5 top-4 h-1.5 w-6 rounded-full bg-teal-500 shadow" />
+      <span className="absolute left-10 top-[18px] h-0.5 w-12 origin-left bg-slate-100 shadow-sm" />
+    </div>
+  );
+}
+
+function AppliedLimbEquipment({ treatmentId }: { treatmentId: string }) {
+  if (treatmentId.includes('tourniquet')) {
+    return <div data-applied-equipment="tourniquet" className="pointer-events-none relative h-12 w-12 animate-in fade-in zoom-in-75"><span className="absolute left-1 top-5 h-3 w-10 rounded-sm bg-slate-950 shadow-md" /><span className="absolute left-5 top-0 h-8 w-1.5 rounded bg-slate-700 shadow" /></div>;
+  }
+  if (treatmentId === 'bleeding_control') {
+    return <div data-applied-equipment="pressure-dressing" className="pointer-events-none h-10 w-14 -rotate-6 rounded-xl border-4 border-dashed border-stone-200 bg-stone-50/90 shadow-md animate-in fade-in zoom-in-75" />;
+  }
+  if (treatmentId === 'iv_access' || treatmentId === 'io_access') return <AppliedIvDressing />;
+  const traction = treatmentId === 'traction_splint';
+  const air = treatmentId === 'air_splint';
+  const vacuum = treatmentId === 'vacuum_limb_splint';
+  return (
+    <div data-applied-equipment={traction ? 'traction-splint' : air ? 'air-splint' : vacuum ? 'vacuum-splint' : 'limb-splint'} className={`pointer-events-none relative h-24 w-12 animate-in fade-in zoom-in-75 duration-300 ${air ? 'rounded-2xl border-2 border-cyan-100/80 bg-cyan-100/25 backdrop-blur-[1px]' : vacuum ? 'rounded-2xl border border-blue-800 bg-blue-700/85' : 'rounded-lg bg-orange-500/90'} shadow-lg`}>
+      {traction && <><span className="absolute left-1 top-0 h-full w-1.5 rounded bg-slate-300" /><span className="absolute right-1 top-0 h-full w-1.5 rounded bg-slate-300" /></>}
+      {[20, 48, 76].map(top => <span key={top} className="absolute left-0 h-2 w-full rounded bg-slate-900/85" style={{ top: `${top}%` }} />)}
+    </div>
+  );
+}
+
+function AppliedTorsoCover({ cooling }: { cooling: boolean }) {
+  return (
+    <div data-applied-equipment={cooling ? 'active-cooling' : 'warming-blanket'} className={`pointer-events-none h-40 w-28 rounded-[28px] border shadow-xl animate-in fade-in zoom-in-95 duration-500 ${cooling ? 'border-cyan-100/80 bg-gradient-to-b from-cyan-100/55 via-sky-300/45 to-cyan-100/50' : 'border-amber-100/70 bg-[linear-gradient(125deg,rgba(254,243,199,.88),rgba(180,83,9,.62),rgba(254,243,199,.82))]'}`}>
+      <div className="h-full w-full rounded-[inherit] bg-[repeating-linear-gradient(100deg,transparent_0,transparent_13px,rgba(255,255,255,.24)_14px,transparent_16px)]" />
+    </div>
+  );
+}
+
+function AppliedImmobilisationDevice({ mode }: { mode: NonNullable<AppliedEquipmentVisualState['immobilisationDevice']> }) {
+  if (mode === 'head-blocks') {
+    return <div data-applied-equipment="head-blocks" className="pointer-events-none relative h-20 w-28 animate-in fade-in zoom-in-95"><span className="absolute left-1 top-2 h-16 w-7 rounded-lg bg-orange-500 shadow-lg" /><span className="absolute right-1 top-2 h-16 w-7 rounded-lg bg-orange-500 shadow-lg" /><span className="absolute left-4 top-8 h-3 w-20 rounded bg-slate-900/80" /></div>;
+  }
+  if (mode === 'ked') {
+    return <div data-applied-equipment="ked" className="pointer-events-none relative h-36 w-28 rounded-[30px] border-4 border-amber-500 bg-amber-400/55 shadow-xl animate-in fade-in zoom-in-95">{[22, 48, 74].map(top => <span key={top} className="absolute left-0 h-3 w-full bg-slate-900/80" style={{ top: `${top}%` }} />)}</div>;
+  }
+  if (mode === 'scoop') {
+    return <div data-applied-equipment="scoop" className="pointer-events-none relative h-52 w-24 animate-in fade-in zoom-in-95"><span className="absolute left-1 top-0 h-full w-8 rounded-full border-4 border-slate-300 bg-slate-500/50 shadow-xl" /><span className="absolute right-1 top-0 h-full w-8 rounded-full border-4 border-slate-300 bg-slate-500/50 shadow-xl" />{[18, 42, 66, 84].map(top => <span key={top} className="absolute left-5 h-2 w-14 bg-slate-800" style={{ top: `${top}%` }} />)}</div>;
+  }
+  const vacuum = mode === 'vacuum-mattress';
+  return (
+    <div data-applied-equipment={vacuum ? 'vacuum-mattress' : 'spinal-board'} className={`pointer-events-none relative h-52 w-28 rounded-[38px] border-4 shadow-xl animate-in fade-in zoom-in-95 ${vacuum ? 'border-blue-800 bg-blue-600/70' : 'border-yellow-500 bg-yellow-400/75'}`}>
+      {[22, 46, 70].map(top => <span key={top} className="absolute left-0 h-3 w-full bg-slate-900/80" style={{ top: `${top}%` }} />)}
+      {vacuum && <div className="absolute inset-2 rounded-[30px] bg-[radial-gradient(circle,rgba(255,255,255,.28)_1px,transparent_2px)] [background-size:10px_10px]" />}
+    </div>
+  );
+}
+
+function AppliedChestDevice({ needle = false }: { needle?: boolean }) {
+  return needle ? (
+    <div data-applied-equipment="decompression-catheter" className="pointer-events-none relative h-12 w-12 animate-in fade-in zoom-in-75"><span className="absolute left-5 top-0 h-9 w-1 rotate-12 rounded bg-orange-400 shadow" /><span className="absolute left-[17px] top-0 h-3 w-2 rotate-12 rounded-sm bg-cyan-400" /><span className="absolute left-6 top-8 h-px w-14 rotate-[20deg] bg-slate-100" /></div>
+  ) : (
+    <div data-applied-equipment="chest-seal" className="pointer-events-none relative h-14 w-14 animate-in fade-in zoom-in-75"><span className="absolute inset-1 rotate-6 rounded-lg border-2 border-white/90 bg-slate-100/65 shadow-lg backdrop-blur-[1px]" /><span className="absolute left-[23px] top-[18px] h-5 w-2 rounded-full border border-slate-400 bg-white/70" /></div>
+  );
+}
+
+function siteEquipmentLabel(treatmentId: string): string {
+  if (treatmentId.includes('tourniquet')) return 'Tourniquet';
+  if (treatmentId === 'bleeding_control') return 'Pressure dressing';
+  if (treatmentId === 'iv_access') return 'IV access';
+  if (treatmentId === 'io_access') return 'IO access';
+  if (treatmentId === 'traction_splint') return 'Traction splint';
+  if (treatmentId.includes('splint')) return 'Limb splint';
+  return treatmentId.replaceAll('_', ' ');
+}
+
+function siteEquipmentAsset(treatmentId: string): string {
+  if (treatmentId.includes('tourniquet')) return TREATMENT_ASSET_PATHS.tourniquet;
+  if (treatmentId === 'bleeding_control') return TREATMENT_ASSET_PATHS.bandage;
+  if (treatmentId === 'iv_access' || treatmentId === 'io_access') return TREATMENT_ASSET_PATHS.ivCannula;
+  if (treatmentId === 'traction_splint') return '/equipment-assets/traction-splint.webp';
+  if (treatmentId === 'vacuum_limb_splint') return '/equipment-assets/vacuum-limb-splint.webp';
+  if (treatmentId === 'air_splint') return '/equipment-assets/air-splint.webp';
+  if (treatmentId === 'box_splint') return '/equipment-assets/box-splint.webp';
+  if (treatmentId === 'sam_splint') return '/equipment-assets/sam-splint.webp';
+  return '/equipment-assets/splints.webp';
+}
+
 // Compact, fixed corner list of everything currently applied — restores the
 // labels the on-body pins omit, without floating cards over the patient.
 function AppliedEquipmentTray({ appliedTreatmentIds }: { appliedTreatmentIds: string[] }) {
@@ -1152,9 +1291,17 @@ function AppliedEquipmentTray({ appliedTreatmentIds }: { appliedTreatmentIds: st
   if (equipment.hasDefibPads) chips.push({ src: TREATMENT_ASSET_PATHS.defibPads, label: 'Defib pads on' });
   if (equipment.hasLucas) chips.push({ src: TREATMENT_ASSET_PATHS.lucas, label: 'LUCAS running' });
   if (equipment.hasCollar) chips.push({ src: TREATMENT_ASSET_PATHS.collar, label: 'C-collar applied' });
+  if (equipment.hasChestSeal) chips.push({ src: TREATMENT_ASSET_PATHS.bandage, label: 'Chest seal adhered' });
+  if (equipment.hasNeedleDecompression) chips.push({ src: TREATMENT_ASSET_PATHS.needle, label: 'Decompression catheter' });
+  if (equipment.hasWarmingBlanket) chips.push({ src: TREATMENT_ASSET_PATHS.warmingBlanket, label: 'Warming blanket' });
+  if (equipment.hasActiveCooling) chips.push({ src: TREATMENT_ASSET_PATHS.coolingPack, label: 'Active cooling' });
+  if (equipment.immobilisationDevice) {
+    const assets = { 'spinal-board': TREATMENT_ASSET_PATHS.spineBoard, scoop: TREATMENT_ASSET_PATHS.scoop, 'vacuum-mattress': TREATMENT_ASSET_PATHS.vacuumMattress, 'head-blocks': TREATMENT_ASSET_PATHS.headBlocks, ked: TREATMENT_ASSET_PATHS.ked };
+    chips.push({ src: assets[equipment.immobilisationDevice], label: equipment.immobilisationDevice.replace('-', ' ') });
+  }
   equipment.siteControls.forEach(control => chips.push({
-    src: control.treatmentId.includes('tourniquet') ? TREATMENT_ASSET_PATHS.tourniquet : TREATMENT_ASSET_PATHS.bandage,
-    label: `${control.treatmentId.includes('tourniquet') ? 'Tourniquet' : 'Dressing'} · ${control.target.replace('-', ' ')}`,
+    src: siteEquipmentAsset(control.treatmentId),
+    label: `${siteEquipmentLabel(control.treatmentId)} · ${control.target.replace('-', ' ')}`,
   }));
   if (chips.length === 0) return null;
   return (
@@ -1195,36 +1342,43 @@ function TreatmentEquipmentOverlay({
     || equipment.hasLucas
     || equipment.hasEtTube
     || equipment.hasOpa
+    || equipment.hasCollar
+    || equipment.hasChestSeal
+    || equipment.hasNeedleDecompression
+    || equipment.hasWarmingBlanket
+    || equipment.hasActiveCooling
+    || equipment.immobilisationDevice
     || equipment.siteControls.length > 0;
 
   if (!hasVisibleEquipment) return null;
 
   const anchor = (x: number, y: number, z: number): [number, number, number] =>
     sampler ? sampler(x, y) : [x, y, z];
+  const hasSiteAccess = equipment.siteControls.some(control => control.treatmentId === 'iv_access' || control.treatmentId === 'io_access');
 
   return (
     <>
       {equipment.oxygen && (
         <MarkerHtml position={anchor(0.05, 1.52, 0.215)} distanceFactor={1.5} zIndexRange={[76, 0]} interactive={false} presentation={presentation}>
-          <EquipmentPin tone="oxygen" src={OXYGEN_SRC[equipment.oxygen.mode]} bare />
+          <WornFaceEquipment equipment={equipment.oxygen} />
         </MarkerHtml>
       )}
 
       {equipment.hasEtTube && equipment.oxygen?.mode !== 'ventilator' && (
         <MarkerHtml position={anchor(0.07, 1.55, 0.215)} distanceFactor={2.4} zIndexRange={[74, 0]} interactive={false} presentation={presentation}>
-          <EquipmentPin tone="oxygen" src={TREATMENT_ASSET_PATHS.etTube} />
+          <EquipmentPin tone="oxygen" src={TREATMENT_ASSET_PATHS.etTube} bare />
         </MarkerHtml>
       )}
 
       {equipment.hasOpa && !equipment.hasEtTube && (
         <MarkerHtml position={anchor(-0.07, 1.55, 0.215)} distanceFactor={2.4} zIndexRange={[73, 0]} interactive={false} presentation={presentation}>
-          <EquipmentPin tone="device" src={TREATMENT_ASSET_PATHS.opa} />
+          <EquipmentPin tone="device" src={TREATMENT_ASSET_PATHS.opa} bare />
         </MarkerHtml>
       )}
 
-      {equipment.hasIvAccess && (
+      {equipment.hasIvAccess && !hasSiteAccess && (
         <MarkerHtml position={anchor(-0.205, 0.82, 0.2)} distanceFactor={2.5} zIndexRange={[72, 0]} interactive={false} presentation={presentation}>
-          <EquipmentPin tone="iv" src={TREATMENT_ASSET_PATHS.ivCannula} />
+          <AppliedIvDressing />
         </MarkerHtml>
       )}
 
@@ -1236,13 +1390,43 @@ function TreatmentEquipmentOverlay({
 
       {equipment.hasDefibPads && (
         <MarkerHtml position={anchor(0.01, 1.24, 0.218)} distanceFactor={2.5} zIndexRange={[68, 0]} interactive={false} presentation={presentation}>
-          <EquipmentPin tone="defib" src={TREATMENT_ASSET_PATHS.defibPads} />
+          <AppliedDefibPads />
         </MarkerHtml>
       )}
 
       {equipment.hasLucas && (
         <MarkerHtml position={anchor(0, 1.19, 0.22)} distanceFactor={2.6} zIndexRange={[69, 0]} interactive={false} presentation={presentation}>
-          <EquipmentPin tone="device" src={TREATMENT_ASSET_PATHS.lucas} />
+          <div className="h-20 w-20 drop-shadow-xl animate-in fade-in zoom-in-75"><img src={TREATMENT_ASSET_PATHS.lucas} alt="" className="h-full w-full object-contain" /></div>
+        </MarkerHtml>
+      )}
+
+      {equipment.hasCollar && (
+        <MarkerHtml position={anchor(0, 1.45, 0.22)} distanceFactor={2.0} zIndexRange={[72, 0]} interactive={false} presentation={presentation}>
+          <div data-applied-equipment="cervical-collar" className="h-10 w-16 drop-shadow-lg animate-in fade-in zoom-in-75"><img src={TREATMENT_ASSET_PATHS.collar} alt="" className="h-full w-full object-contain" /></div>
+        </MarkerHtml>
+      )}
+
+      {equipment.hasChestSeal && (
+        <MarkerHtml position={anchor(-0.08, 1.25, 0.225)} distanceFactor={2.2} zIndexRange={[72, 0]} interactive={false} presentation={presentation}>
+          <AppliedChestDevice />
+        </MarkerHtml>
+      )}
+
+      {equipment.hasNeedleDecompression && (
+        <MarkerHtml position={anchor(0.13, 1.24, 0.225)} distanceFactor={2.3} zIndexRange={[73, 0]} interactive={false} presentation={presentation}>
+          <AppliedChestDevice needle />
+        </MarkerHtml>
+      )}
+
+      {(equipment.hasWarmingBlanket || equipment.hasActiveCooling) && (
+        <MarkerHtml position={anchor(0, 1.02, 0.27)} distanceFactor={2.5} zIndexRange={[60, 0]} interactive={false} presentation={presentation}>
+          <AppliedTorsoCover cooling={equipment.hasActiveCooling} />
+        </MarkerHtml>
+      )}
+
+      {equipment.immobilisationDevice && (
+        <MarkerHtml position={anchor(0, 0.9, 0.08)} distanceFactor={3.0} zIndexRange={[54, 0]} interactive={false} presentation={presentation}>
+          <AppliedImmobilisationDevice mode={equipment.immobilisationDevice} />
         </MarkerHtml>
       )}
 
@@ -1256,10 +1440,7 @@ function TreatmentEquipmentOverlay({
         const point = siteAnchor[control.target] ?? siteAnchor.chest;
         return (
           <MarkerHtml key={`${control.treatmentId}-${control.target}`} position={anchor(...point)} distanceFactor={2.5} zIndexRange={[70, 0]} interactive={false} presentation={presentation}>
-            <EquipmentPin
-              tone="device"
-              src={control.treatmentId.includes('tourniquet') ? TREATMENT_ASSET_PATHS.tourniquet : TREATMENT_ASSET_PATHS.bandage}
-            />
+            <AppliedLimbEquipment treatmentId={control.treatmentId} />
           </MarkerHtml>
         );
       })}

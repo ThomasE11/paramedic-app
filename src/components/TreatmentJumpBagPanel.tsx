@@ -447,7 +447,7 @@ const BAG_EQUIPMENT: Record<ManagementTab, EquipmentInventoryItem[]> = {
     { id: 'neuro-antiemetic', label: 'Antiemetic', caption: 'Nausea control', treatmentId: 'ondansetron_4mg', assetPath: EQUIPMENT_ASSET_PATHS.ondansetron, tone: '#64748b' },
   ],
   exposure: [
-    { id: 'exposure-collar', label: 'Cervical Collar', caption: 'C-spine support', assetPath: EQUIPMENT_ASSET_PATHS.collar, tone: '#0ea5e9' },
+    { id: 'exposure-collar', label: 'Cervical Collar', caption: 'Size and fit with MILS', treatmentId: 'cervical_collar', assetPath: EQUIPMENT_ASSET_PATHS.collar, tone: '#0ea5e9' },
     { id: 'exposure-sam-splint', label: 'SAM Splint', caption: 'Malleable limb splint', treatmentId: 'sam_splint', assetPath: EQUIPMENT_ASSET_PATHS.samSplint, tone: '#f97316' },
     { id: 'exposure-box-splint', label: 'Box Splint', caption: 'Rigid cardboard channel', treatmentId: 'box_splint', assetPath: EQUIPMENT_ASSET_PATHS.boxSplint, tone: '#d6a15f' },
     { id: 'exposure-vacuum-splint', label: 'Vacuum Splint', caption: 'Moulds around limb', treatmentId: 'vacuum_limb_splint', assetPath: EQUIPMENT_ASSET_PATHS.vacuumLimbSplint, tone: '#2563eb', wide: true },
