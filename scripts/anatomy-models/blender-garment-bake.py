@@ -4,7 +4,7 @@ headless via Blender, with the body's morph targets baked into the garment.
 
     /Applications/Blender.app/Contents/MacOS/blender --background \
         --python scripts/anatomy-models/blender-garment-bake.py -- \
-        public/models/patient.glb public/models/
+        public/models/patient.glb public/models/ [variant]
 
 Why author from the body (not model garments standalone):
   The patient GLBs are a single baked mesh with NO skeleton. The runtime
@@ -21,6 +21,10 @@ Why author from the body (not model garments standalone):
 Output:
     public/models/garment-shirt.glb
     public/models/garment-trousers.glb
+
+Passing `female` as the optional variant writes garment-shirt-female.glb and
+garment-trousers-female.glb so sex-matched body topology is never mixed with
+the male garment shell at runtime.
 
 Notes / deliberate simplifications:
   - Cloth SIMULATION is not run. Headless cloth sim on a masked body-derived
@@ -39,6 +43,7 @@ from mathutils import Vector
 argv = sys.argv[sys.argv.index("--") + 1:]
 SRC = argv[0] if argv else "public/models/patient.glb"
 OUT_DIR = argv[1] if len(argv) > 1 else "public/models/"
+VARIANT = argv[2].strip("-") if len(argv) > 2 else ""
 
 # Cloth clearance off the skin (metres) and fabric thickness (metres).
 # Clearance lifts the outer face just off the skin so it never z-fights;
@@ -260,8 +265,9 @@ def main():
     scoop_y = SHIRT_SCOOP_Y
 
     os.makedirs(OUT_DIR, exist_ok=True)
-    shirt_path = os.path.join(OUT_DIR, "garment-shirt.glb")
-    trouser_path = os.path.join(OUT_DIR, "garment-trousers.glb")
+    suffix = f"-{VARIANT}" if VARIANT else ""
+    shirt_path = os.path.join(OUT_DIR, f"garment-shirt{suffix}.glb")
+    trouser_path = os.path.join(OUT_DIR, f"garment-trousers{suffix}.glb")
 
     ok_shirt = mask_and_offset(
         body, "garment-shirt",
@@ -277,7 +283,7 @@ def main():
     if not (ok_shirt and ok_trouser):
         print("ERROR: one or more garments failed to export")
         sys.exit(1)
-    print("DONE: garment-shirt.glb + garment-trousers.glb")
+    print(f"DONE: garment-shirt{suffix}.glb + garment-trousers{suffix}.glb")
 
 
 main()

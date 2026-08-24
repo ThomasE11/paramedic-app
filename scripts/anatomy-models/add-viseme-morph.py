@@ -6,6 +6,10 @@ Headless:
     /Applications/Blender.app/Contents/MacOS/blender --background \
         --python scripts/anatomy-models/add-viseme-morph.py
 
+Optional target (defaults to the male model):
+    ... --python scripts/anatomy-models/add-viseme-morph.py -- \
+        public/models/patient-female.glb
+
 Why morph targets and not baked skeletal clips (the plan's §2.3 wording):
 patient-male.glb is UN-RIGGED (skins:0, no armature). Skeletal AnimationMixer
 clips need a skinned skeleton that doesn't exist; building+skinning one would
@@ -39,8 +43,10 @@ stays as the revert point.
 import bpy
 import os
 import math
+import sys
 
-SRC = os.path.abspath("public/models/patient-male.glb")
+SCRIPT_ARGS = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
+SRC = os.path.abspath(SCRIPT_ARGS[0] if SCRIPT_ARGS else "public/models/patient-male.glb")
 
 REQUIRED_EXISTING = ["breathe_chest_rise", "finding_abdo_distension", "finding_jvd"]
 NEW_MORPHS = [

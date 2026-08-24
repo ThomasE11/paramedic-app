@@ -19,7 +19,8 @@ import {
   buildBlendedGarments,
   CLOTHING_PARTING,
   CLOTHING_MODE,
-  GARMENT_GLBS,
+  ALL_GARMENT_GLBS,
+  garmentGlbsForModel,
 } from './ClothingLayer';
 import { paintEyesOnTexture } from './EyesLayer';
 import { buildMottledTextures, buildCyanosisLocalTwin } from './MottlingLayer';
@@ -745,15 +746,16 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
   // Blender-authored garment GLBs (blended-garment mode). Loaded here so the
   // clone build has them synchronously; Suspense holds render until ready.
   // Array form of useGLTF returns results positionally.
-  const garmentGltfs = useGLTF(GARMENT_GLBS.map((g) => g.url));
+  const garmentGltfs = useGLTF(ALL_GARMENT_GLBS.map((g) => g.url));
   const garmentScenes = useMemo(() => {
     const map = new Map<string, THREE.Object3D>();
-    GARMENT_GLBS.forEach((g, i) => {
+    ALL_GARMENT_GLBS.forEach((g, i) => {
       const s = garmentGltfs[i]?.scene;
-      if (s) map.set(g.name, s);
+      if (s) map.set(g.url, s);
     });
     return map;
   }, [garmentGltfs]);
+  const garmentSpecs = garmentGlbsForModel(modelPath);
   const [hoveredRegion, setHoveredRegion] = useState<RegionRange | null>(null);
   const meshRef = useRef<THREE.Group>(null);
   // For pulsing animation on required regions
@@ -964,7 +966,7 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
         // build came back empty.
         const scrubs =
           (CLOTHING_MODE === 'blended-garment'
-            ? buildBlendedGarments(bodyMesh as THREE.Mesh, garmentScenes)
+            ? buildBlendedGarments(bodyMesh as THREE.Mesh, garmentScenes, garmentSpecs)
             : null) ?? buildScrubs(bodyMesh as THREE.Mesh);
         // Child of the body mesh at identity → inherits its exact placement.
         if (scrubs) (bodyMesh as THREE.Mesh).add(scrubs);
@@ -1057,7 +1059,7 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
     // scrubs + 2048² eye texture repaint). Opacity is applied live by the
     // effect below; the eyes are baked once (live pupil reading is the 2D panel).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scene, modelPath, bodyInjuries, garmentScenes]); // bodyInjuries: stable per case (memoised upstream + per-case key)
+  }, [scene, modelPath, bodyInjuries, garmentScenes, garmentSpecs]); // bodyInjuries: stable per case (memoised upstream + per-case key)
 
   // ---- SSS skin material (male mesh only) --------------------------------
   // Wire the baked thickness map + tiled pore detail-normal onto the promoted
@@ -1825,4 +1827,4 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
 useGLTF.preload('/models/patient.glb');
 useGLTF.preload('/models/patient-male.glb');
 useGLTF.preload('/models/patient-female.glb');
-GARMENT_GLBS.forEach((g) => useGLTF.preload(g.url));
+ALL_GARMENT_GLBS.forEach((g) => useGLTF.preload(g.url));

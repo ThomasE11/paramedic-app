@@ -1,6 +1,7 @@
 import { chromium } from 'playwright';
 
 const base = process.argv[2] ?? 'http://localhost:5173';
+const model = process.argv[3] === 'female' ? 'female' : 'male';
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
 const errors = [];
@@ -10,7 +11,7 @@ page.on('console', message => {
 });
 
 try {
-  await page.goto(`${base}/?devLiveCase=resp-001&capture`, {
+  await page.goto(`${base}/?devLiveCase=resp-001&capture&model=${model}`, {
     waitUntil: 'networkidle',
     timeout: 60_000,
   });
@@ -73,7 +74,7 @@ try {
     errors,
   };
 
-  await page.screenshot({ path: 'test-results/patient-motion-verified.png' });
+  await page.screenshot({ path: `test-results/patient-motion-${model}-verified.png` });
   console.log(JSON.stringify(result, null, 2));
 
   if (result.rootPositionRange.some(range => range > 1e-6)) {

@@ -86,12 +86,30 @@ function getFabricNormal(): THREE.CanvasTexture | null {
 export const CLOTHING_MODE: 'procedural' | 'blended-garment' = 'blended-garment';
 
 /** Garment GLB URL → piece name the hide map (CLOTHING_PARTING) keys on. */
-export const GARMENT_GLBS: Array<{ url: string; name: string; color: string; offset: number }> = [
+export interface GarmentGlbSpec {
+  url: string;
+  name: string;
+  color: string;
+  offset: number;
+}
+
+export const GARMENT_GLBS: GarmentGlbSpec[] = [
   // Garments are already lifted from the body in Blender. Runtime offset is
   // millimetric—only enough to prevent z-fighting, not a second inflated shell.
   { url: '/models/garment-shirt.glb', name: 'scrub-top', color: TOP_COLOR, offset: 0.001 },
   { url: '/models/garment-trousers.glb', name: 'scrub-trousers', color: TROUSER_COLOR, offset: 0.001 },
 ];
+
+export const FEMALE_GARMENT_GLBS: GarmentGlbSpec[] = [
+  { url: '/models/garment-shirt-female.glb', name: 'scrub-top', color: TOP_COLOR, offset: 0.001 },
+  { url: '/models/garment-trousers-female.glb', name: 'scrub-trousers', color: TROUSER_COLOR, offset: 0.001 },
+];
+
+export const ALL_GARMENT_GLBS = [...GARMENT_GLBS, ...FEMALE_GARMENT_GLBS];
+
+export function garmentGlbsForModel(modelPath: string): GarmentGlbSpec[] {
+  return modelPath.includes('patient-female') ? FEMALE_GARMENT_GLBS : GARMENT_GLBS;
+}
 
 /** Region id → garment pieces that part (hide) while that region is focused. */
 export const CLOTHING_PARTING: Record<string, string[]> = {
@@ -436,6 +454,7 @@ export function buildScrubs(body: THREE.Mesh): THREE.Group | null {
 export function buildBlendedGarments(
   body: THREE.Mesh,
   garmentScenes: Map<string, THREE.Object3D>,
+  garmentSpecs: GarmentGlbSpec[] = GARMENT_GLBS,
 ): THREE.Group | null {
   const bodyDict = body.morphTargetDictionary;
   const bodyInfl = body.morphTargetInfluences;
@@ -451,8 +470,8 @@ export function buildBlendedGarments(
 
   const fabric = getFabricNormal();
 
-  for (const spec of GARMENT_GLBS) {
-    const gscene = garmentScenes.get(spec.name);
+  for (const spec of garmentSpecs) {
+    const gscene = garmentScenes.get(spec.url);
     if (!gscene) continue;
     // The garment GLB has a single mesh (the exported piece).
     let src: THREE.Mesh | null = null;
