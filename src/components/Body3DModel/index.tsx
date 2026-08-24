@@ -2889,10 +2889,23 @@ const DEFAULT_CAMERA_FOCUS = {
 // The treatment-bay model is rotated supine, so clinical Y becomes the
 // scene's depth axis. Aim at the thoraco-abdominal centre of the patient
 // rather than the head-side; floor staging drops the eye-line with the body.
-function getTreatmentBayCameraFocus(stage: BayPatientStage) {
+function getTreatmentBayCameraFocus(
+  stage: BayPatientStage,
+  posture: 'tripod' | 'supine' | 'recovery' | null,
+) {
+  if (posture === 'tripod') {
+    const stageLift = stage === 'stretcher' ? 0.55 : 0;
+    return {
+      pos: [0.38, 1.42 + stageLift, 3.52] as [number, number, number],
+      target: [0, 1.02 + stageLift, 0] as [number, number, number],
+    };
+  }
   return {
     pos: (stage === 'floor'
-      ? [0.4, 2.4, 4.2]  // pulled back so wrecked car + motorcycle stay in frame
+      // Scene context is established before the student enters treatment.
+      // Once care starts, frame the patient large enough to read breathing,
+      // bleeding and skin colour without making the student zoom first.
+      ? [0.55, 2.85, 2.15]
       : [1.42, 1.30, 2.12]) as [number, number, number],
     target: treatmentBayClinicalToWorld([0, 0.96, -0.05], stage),
   };
@@ -3713,6 +3726,7 @@ function PatientRealismStrip({
 export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientSounds, caseCategory, appliedTreatmentIds = [], patientVisualState = null, isInArrest = false, vitals, liveRespiration, onPulse, treatmentBayMode = false }: Body3DModelProps) {
   const { t } = useTranslation();
   const controlsRef = useRef<OrbitControlsHandle | null>(null);
+  const patientFrameRef = useRef<HTMLDivElement | null>(null);
   const [isFlipped, setIsFlipped] = useState(false);
   // Surface projector emitted by BodyMesh once the patient mesh loads — used to
   // anchor every floating label/finding onto the real body surface (works for
@@ -3774,11 +3788,62 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   // Scene-contextual environment: villa cases render in a living room,
   // street cases at a roadside, mall cases in a public atrium.
   const bayVariant = useMemo(() => deriveSceneEnvironment(caseData), [caseData]);
+
+  // Region buttons may sit below the initial viewport. When selecting one
+  // changes the patient panel from overview to the focused cockpit, preserve
+  // orientation by bringing the whole patient frame back into view. Without
+  // this correction the browser retained the old document scroll position and
+  // the newly opened assessment dock could start above the visible viewport.
+  useEffect(() => {
+    if (!patientFirstExamLayout || !patientFrameRef.current) return;
+    const frame = patientFrameRef.current;
+    const frameId = window.requestAnimationFrame(() => {
+      const rect = frame.getBoundingClientRect();
+      const safeTop = 16;
+      if (rect.top < safeTop || rect.top > window.innerHeight * 0.42) {
+        window.scrollBy({ top: rect.top - safeTop, behavior: 'auto' });
+      }
+    });
+    return () => window.cancelAnimationFrame(frameId);
+  }, [patientFirstExamLayout, activeRegion]);
+
+  const patientUnconscious = useMemo(() => {
+    if (isInArrest) return true;
+    const gcs = vitals?.gcs ?? caseData.abcde?.disability?.gcs?.total;
+    if (typeof gcs === 'number' && gcs <= 8) return true;
+    return caseData.abcde?.disability?.avpu === 'U';
+  }, [isInArrest, vitals?.gcs, caseData]);
+
+  // Capture/dev-only SpO2 override so the harness can pin 85 vs 94 without
+  // mutating the live treatment engine. Production builds never set it.
+  const effectiveVitals = useMemo<Partial<VitalSigns> | undefined>(() => {
+    const base = vitals ?? caseData.vitalSignsProgression?.initial;
+    if (import.meta.env.DEV && CAPTURE_FORCED_SPO2 != null && Number.isFinite(CAPTURE_FORCED_SPO2)) {
+      return { ...base, spo2: CAPTURE_FORCED_SPO2 };
+    }
+    return base;
+  }, [vitals, caseData.vitalSignsProgression?.initial]);
+
+  // The posture must be known before the overview camera is created. Upright
+  // tripod and supine bodies occupy different world volumes; using the supine
+  // target for a respiratory patient cropped the head out of the viewport.
+  const patientPosture = useMemo<'tripod' | 'supine' | 'recovery' | null>(() => {
+    if (patientUnconscious) return 'supine';
+    const source = effectiveVitals;
+    const rr = caseData.abcde?.breathing?.rate ?? source?.respiration ?? null;
+    const respiratoryDistress =
+      (typeof rr === 'number' && rr >= 22) ||
+      /asthma|copd|respiratory|breath|wheez|dyspn/i.test(
+        `${caseData.category ?? ''} ${caseData.title ?? ''} ${caseData.dispatchInfo?.callReason ?? ''}`,
+      );
+    return respiratoryDistress ? 'tripod' : 'supine';
+  }, [patientUnconscious, effectiveVitals, caseData]);
+
   // useMemo keeps the pos/target array identities stable — OrbitControls'
   // `target` prop and several useCallback deps rely on that.
   const overviewCameraFocus = useMemo(
-    () => (treatmentBayOverviewEnabled ? getTreatmentBayCameraFocus(bayStage) : DEFAULT_CAMERA_FOCUS),
-    [treatmentBayOverviewEnabled, bayStage],
+    () => (treatmentBayOverviewEnabled ? getTreatmentBayCameraFocus(bayStage, patientPosture) : DEFAULT_CAMERA_FOCUS),
+    [treatmentBayOverviewEnabled, bayStage, patientPosture],
   );
 
   // OrbitControls target is imperative state. Initialise/reset it only for the
@@ -3830,15 +3895,6 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
     return 1.0;
   }, [caseData]);
 
-  // Unconscious patients (GCS <= 8, AVPU 'U', or arrest) lie still: the
-  // procedural life loop suppresses head sway and keeps the eyelids closed.
-  const patientUnconscious = useMemo(() => {
-    if (isInArrest) return true;
-    const gcs = vitals?.gcs ?? caseData.abcde?.disability?.gcs?.total;
-    if (typeof gcs === 'number' && gcs <= 8) return true;
-    return caseData.abcde?.disability?.avpu === 'U';
-  }, [isInArrest, vitals?.gcs, caseData]);
-
   // Ambient breath loop (Phase C3): the audible room breath derives from the
   // same respiratory rate that drives the chest-rise morph and from the
   // case's auscultation findings — stridor/wheeze zones or "audible without
@@ -3871,39 +3927,6 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
     () => deriveIdleCues(caseData, vitals, patientVisualState),
     [caseData, vitals, patientVisualState],
   );
-
-  // Capture/dev-only SpO2 override so the harness can pin 85 vs 94 without
-  // mutating the live treatment engine. Production builds never set the
-  // snapshot (CAPTURE_FORCED_SPO2 stays null).
-  const effectiveVitals = useMemo<Partial<VitalSigns> | undefined>(() => {
-    const base = vitals ?? caseData.vitalSignsProgression?.initial;
-    if (import.meta.env.DEV && CAPTURE_FORCED_SPO2 != null && Number.isFinite(CAPTURE_FORCED_SPO2)) {
-      return { ...base, spo2: CAPTURE_FORCED_SPO2 };
-    }
-    return base;
-  }, [vitals, caseData.vitalSignsProgression?.initial]);
-
-  // Posture morph target (male mesh). Respiratory-distress cases sit in the
-  // tripod position (hands on knees, accessory-muscle use); an unconscious /
-  // arrested patient lies supine. A changing vital must never switch the whole
-  // body's support transform: SpO2 can oscillate around a threshold and caused
-  // the patient to repeatedly lift/roll through the air. Recovery positioning
-  // must be an explicit clinical movement, not an automatic vital-sign effect.
-  // Supine is also the neutral live-case posture;
-  // the raw A-pose is reserved for the standalone anatomy viewer. The BodyMesh
-  // crossfades between whichever morph this names; breathing + idle ride on top.
-  const patientPosture = useMemo<'tripod' | 'supine' | 'recovery' | null>(() => {
-    if (patientUnconscious) return 'supine';
-    const source = effectiveVitals;
-    const rr = caseData.abcde?.breathing?.rate ?? source?.respiration ?? null;
-    const respiratoryDistress =
-      (typeof rr === 'number' && rr >= 22) ||
-      /asthma|copd|respiratory|breath|wheez|dyspn/i.test(
-        `${caseData.category ?? ''} ${caseData.title ?? ''} ${caseData.dispatchInfo?.callReason ?? ''}`,
-      );
-    if (!respiratoryDistress) return 'supine';
-    return 'tripod';
-  }, [patientUnconscious, effectiveVitals, caseData]);
 
   // Case text used for the text-driven unwellness states (diaphoresis
   // appearance, jaundice). Recomputed only when the case changes.
@@ -4533,7 +4556,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   };
 
   return (
-    <div className="glass-panel relative rounded-2xl overflow-hidden border border-white/45 dark:border-white/[0.06] shadow-[0_4px_20px_-8px_rgba(0,0,0,0.1)] dark:shadow-[0_8px_40px_-16px_rgba(0,0,0,0.7)] backdrop-blur-xl">
+    <div ref={patientFrameRef} className="glass-panel relative rounded-2xl overflow-hidden border border-white/45 dark:border-white/[0.06] shadow-[0_4px_20px_-8px_rgba(0,0,0,0.1)] dark:shadow-[0_8px_40px_-16px_rgba(0,0,0,0.7)] backdrop-blur-xl">
       {/* Teal accent hairline — "hands on patient" phase */}
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-teal-400/40 to-transparent" />
       {/* Header */}
