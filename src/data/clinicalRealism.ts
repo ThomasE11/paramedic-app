@@ -3786,6 +3786,11 @@ export function evaluateTreatmentRealism({
   }
 
   if (treatment.id === 'aspirin') {
+    if (/\b(tia|transient isch(?:a)?emic attack)\b|resolved (?:focal )?neurolog|facial droop[^.]{0,60}resolved|slurred speech[^.]{0,60}resolved/.test(text)) {
+      return result('matched', 'TIA antiplatelet pathway', 'Aspirin supports the suspected TIA pathway once active bleeding, allergy, anticoagulant history, and haemorrhagic mimic concerns are checked.', 'Aspirin matched to suspected TIA after contraindication screening.', {
+        visibleCue: makeTreatmentCue('aspirin-tia-started', 'TIA pathway', 'Confirm symptom resolution, bleeding risk, glucose, FAST findings, and urgent specialist assessment.', 'face', 'observe'),
+      });
+    }
     if (/chest pain|acs|stemi|nstemi|myocardial|angina/.test(text)) {
       return result('matched', 'Aspirin given', 'This supports the cardiac pathway, but pain, ECG, BP, and contraindications still need reassessment.', 'Aspirin matched to suspected ACS.', {
         visibleCue: makeTreatmentCue('aspirin-started', 'Cardiac pathway', 'Continue ECG, pain, BP, and transport decisions.', 'chest', 'observe'),

@@ -185,12 +185,13 @@ export function IdleAnimations({ scene, unconscious, cues, reduced = false }: Id
       pz += a.agZ * c;
     }
 
-    // Absolute position against the captured base (sole per-frame writer);
-    // additive rotation on top of LifeSigns' absolute base+sway write.
-    scene.position.x = base.x + px;
-    scene.position.z = base.z + pz;
-    scene.rotation.x += rx;
-    scene.rotation.z += rz;
+    // Never move the whole unrigged patient root. Positional jitter and
+    // additive rotation make a collapsed/supine patient detach from the floor
+    // or mattress. Preserve clinical motion through chest morphs, blinking,
+    // eye closure and facial cues until a properly rigged skeleton can animate
+    // individual limbs without breaking support contact.
+    scene.position.x = base.x;
+    scene.position.z = base.z;
     scene.userData.idleGaspBoost = gaspBoost;
     scene.userData.idleWinceHold = winceHold;
   });

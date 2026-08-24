@@ -13,7 +13,7 @@ describe('spriteKindFor', () => {
   it('generic wound falls back to laceration; abrasions detected from text', () => {
     expect(spriteKindFor({ kind: 'wound', label: 'Wound', detail: 'Deep cut to the forearm' })).toBe('laceration');
     expect(spriteKindFor({ kind: 'bleeding', label: 'Road rash', detail: 'Extensive road rash to the flank' })).toBe('abrasion');
-    expect(spriteKindFor({ kind: 'bleeding', label: 'Bleeding', detail: 'Active bleeding from scalp' })).toBe('laceration');
+    expect(spriteKindFor({ kind: 'bleeding', label: 'Bleeding', detail: 'Active bleeding from scalp' })).toBe('active-bleeding');
   });
   it('burns and bruises map directly; shape findings produce no decal', () => {
     expect(spriteKindFor({ kind: 'burn', label: 'Burn', detail: 'Partial thickness burn' })).toBe('burn');

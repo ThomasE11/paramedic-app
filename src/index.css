@@ -1084,6 +1084,8 @@ body {
   overflow: hidden;
   border-radius: 1.25rem;
   border: 1px solid rgba(125, 211, 252, 0.20);
+  display: flex;
+  flex-direction: column;
   background:
     radial-gradient(circle at 50% 14%, rgba(14, 165, 233, 0.24), transparent 34rem),
     radial-gradient(circle at 16% 85%, rgba(34, 197, 94, 0.11), transparent 28rem),
@@ -1094,6 +1096,65 @@ body {
     0 32px 90px -46px rgba(2, 6, 23, 0.92),
     inset 0 1px 0 rgba(255, 255, 255, 0.10),
     inset 0 0 0 1px rgba(255, 255, 255, 0.035);
+}
+/* The patient stage is the tallest element — on any layout where the rails
+   would overflow the bay's own height, the bay scrolls as a whole so nothing
+   is clipped behind `overflow:hidden` (the radars/clips need the hidden
+   corners, so clip the bay itself, not the patient column). */
+.tactical-treatment-bay .tactical-bay-workspace {
+  min-height: 0;
+}
+
+@media (min-width: 641px) and (max-width: 1279px) {
+  .tactical-treatment-bay {
+    overflow-y: auto;
+  }
+  .tactical-treatment-bay .tactical-bay-workspace {
+    display: flex;
+    flex-direction: column;
+  }
+  .tactical-treatment-bay .tactical-bay-workspace > * {
+    flex: none;
+  }
+
+  /* Scene survey and progress are already available through Case Details and
+     inside the treatment bay. Removing the duplicate stack keeps the patient
+     in the first compact/tablet viewport. */
+  .live-scene-toggle,
+  .live-scene-details,
+  .live-progress-grid {
+    display: none !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .live-scene-toggle,
+  .live-scene-details,
+  .live-progress-grid {
+    display: none !important;
+  }
+
+  .live-patient-banner {
+    padding: 0.65rem !important;
+  }
+
+  .tactical-bay-command .tactical-objective-chip {
+    display: none;
+  }
+
+  .tactical-bay-vitals {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 0.32rem !important;
+  }
+
+  .tactical-bay-vitals .tactical-hud-tile {
+    min-height: 2.65rem;
+    padding: 0.42rem 0.3rem;
+  }
+
+  .tactical-bay-vitals .tactical-hud-tile strong {
+    font-size: 0.82rem;
+  }
 }
 
 .tactical-treatment-bay::before {
@@ -1165,7 +1226,130 @@ body {
 .tactical-assessment-rail,
 .tactical-monitor-rail,
 .tactical-loadout-rail {
-  scrollbar-color: rgba(45, 212, 191, 0.42) rgba(15, 23, 42, 0.32);
+  scrollbar-color: rgba(45, 212, 191, 0.72) rgba(15, 23, 42, 0.32);
+  scrollbar-width: thin;
+}
+
+.care-rail-mode-switch {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.3rem;
+  padding: 0.35rem;
+  border: 1px solid rgba(103, 232, 249, 0.24);
+  border-radius: 0.9rem;
+  background: rgba(2, 6, 23, 0.96);
+  box-shadow: 0 12px 28px -18px rgba(0, 0, 0, 0.95), inset 0 1px 0 rgba(255,255,255,0.08);
+  backdrop-filter: blur(14px);
+}
+
+.care-rail-mode-switch button {
+  min-height: 2.35rem;
+  border: 1px solid rgba(100, 116, 139, 0.72);
+  border-radius: 0.65rem;
+  background: rgba(15, 23, 42, 0.82);
+  color: #e2e8f0;
+  font-size: 0.68rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: border-color 160ms ease, background 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+
+.care-rail-mode-switch button:hover,
+.care-rail-mode-switch button:focus-visible {
+  border-color: rgba(103, 232, 249, 0.42);
+  color: white;
+  outline: none;
+}
+
+.care-rail-mode-switch .care-rail-mode-active {
+  border-color: rgba(45, 212, 191, 0.8);
+  background: linear-gradient(135deg, rgba(20, 184, 166, 0.5), rgba(8, 145, 178, 0.4));
+  color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 0 20px rgba(45, 212, 191, 0.4);
+  font-weight: 900;
+}
+
+.transport-decision-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(2, 6, 23, 0.78);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.transport-decision-dialog {
+  width: min(42rem, 100%);
+  max-height: min(90vh, 52rem);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
+}
+
+.clinical-reality-disclosure {
+  overflow: hidden;
+  border: 1px solid rgba(248, 113, 113, 0.28);
+  border-radius: 0.85rem;
+  background: rgba(69, 10, 10, 0.34);
+}
+
+.clinical-reality-disclosure > summary {
+  min-height: 2.8rem;
+  cursor: pointer;
+  list-style-position: inside;
+  padding: 0.8rem;
+  color: #fecaca;
+  font-size: 0.64rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.clinical-reality-disclosure > summary:hover,
+.clinical-reality-disclosure > summary:focus-visible {
+  background: rgba(127, 29, 29, 0.34);
+  color: white;
+  outline: none;
+}
+
+.focused-wound-callout {
+  position: relative;
+  display: grid;
+  width: 7.5rem;
+  place-items: center;
+  filter: drop-shadow(0 8px 16px rgba(69, 10, 10, 0.72));
+  pointer-events: none;
+  user-select: none;
+}
+
+.focused-wound-callout img {
+  display: block;
+  width: 6rem;
+  height: 6rem;
+  object-fit: contain;
+}
+
+.focused-wound-callout span {
+  margin-top: -0.55rem;
+  max-width: 7.5rem;
+  border: 1px solid rgba(254, 202, 202, 0.46);
+  border-radius: 999px;
+  background: rgba(69, 10, 10, 0.88);
+  padding: 0.24rem 0.48rem;
+  color: #fff1f2;
+  font-size: 0.55rem;
+  font-weight: 850;
+  line-height: 1.15;
+  letter-spacing: 0.05em;
+  text-align: center;
+  text-transform: uppercase;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.10);
+  backdrop-filter: blur(8px);
 }
 
 .tactical-monitor-rail,
@@ -1180,6 +1364,7 @@ body {
 
 .tactical-loadout-rail {
   gap: 0.82rem;
+  padding-bottom: 2rem; /* Prevent clipping at the bottom */
 }
 
 .tactical-assessment-rail .bg-card,
@@ -1842,7 +2027,7 @@ body {
 .tactical-monitor-card {
   min-width: 0;
   overflow-x: auto;
-  overflow-y: hidden;
+  overflow-y: visible;
   border-radius: 1.05rem;
   border: 1px solid rgba(74, 222, 128, 0.22);
   background:
@@ -2042,20 +2227,22 @@ body {
 }
 
 .tactical-patient-viewport .patient-exam-header {
-  position: absolute;
-  top: 0.72rem;
-  right: 0.72rem;
-  left: 0.72rem;
+  position: relative;
+  top: auto;
+  right: auto;
+  left: auto;
   z-index: 24;
-  border: 1px solid rgba(125, 211, 252, 0.18);
-  border-radius: 0.95rem;
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid rgba(125, 211, 252, 0.18);
+  border-radius: 0;
   background:
-    linear-gradient(180deg, rgba(2, 6, 23, 0.72), rgba(2, 6, 23, 0.42)),
+    linear-gradient(180deg, rgba(2, 6, 23, 0.92), rgba(2, 6, 23, 0.72)),
     radial-gradient(circle at 0% 0%, rgba(45, 212, 191, 0.14), transparent 16rem);
   padding: 0.58rem 0.78rem;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  box-shadow: 0 16px 34px -28px rgba(0, 0, 0, 0.95), inset 0 1px 0 rgba(255,255,255,0.08);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
 }
 
 .tactical-patient-viewport .patient-exam-header > div:first-child {
@@ -2074,6 +2261,11 @@ body {
 .tactical-patient-viewport .patient-exam-header .rounded-full {
   border-color: rgba(125, 211, 252, 0.18);
   background-color: rgba(15, 23, 42, 0.54);
+}
+
+.tactical-patient-viewport .patient-exam-summary,
+.tactical-patient-viewport .patient-realism-strip {
+  display: none;
 }
 
 .tactical-patient-viewport .patient-exam-summary,
@@ -2672,9 +2864,9 @@ body {
   }
 
   .tactical-patient-viewport .patient-exam-header {
-    right: 1rem;
-    left: 1rem;
-    width: min(31rem, calc(100% - 2rem));
+    right: auto;
+    left: auto;
+    width: 100%;
     padding: 0.5rem 0.68rem;
   }
 
@@ -2702,6 +2894,23 @@ body {
     max-height: min(92vh, 64rem);
     overflow-y: auto;
     padding-right: 0.18rem;
+  }
+
+  .tactical-assessment-rail .roadmap-anatomy-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tactical-assessment-rail .roadmap-anatomy-tile {
+    min-height: 3.6rem;
+    align-items: flex-start;
+  }
+
+  .tactical-assessment-rail .roadmap-anatomy-tile span {
+    display: block;
+    overflow: visible;
+    -webkit-line-clamp: unset;
+    font-size: 0.64rem;
+    line-height: 1.4;
   }
 
   .tactical-assessment-rail .roadmap-scene-grid {
@@ -2745,7 +2954,7 @@ body {
 
   .tactical-monitor-card {
     height: auto;
-    min-height: 26rem;
+    min-height: 37.25rem;
   }
 
   .tactical-monitor-card > .select-none {
@@ -2792,8 +3001,8 @@ body {
   }
 
   .tactical-monitor-rail > .glass-panel {
-    max-height: min(58vh, 42rem);
-    overflow: hidden;
+    max-height: none;
+    overflow: visible;
   }
 
   .tactical-bay-timeline {

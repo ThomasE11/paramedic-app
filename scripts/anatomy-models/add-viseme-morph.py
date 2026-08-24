@@ -32,6 +32,7 @@ stays as the revert point.
 
 import bpy
 import os
+import math
 
 SRC = os.path.abspath("public/models/patient-male.glb")
 
@@ -70,24 +71,29 @@ def import_glb():
 
 
 def add_viseme_open(obj, ax, lo, span):
-    """Jaw drop: lower-face front vertices move down + slightly back to open the
-    mouth. Face front is +z on this asset (from A1 masculinize: z>0 = front)."""
+    """Lip part for speech: split the mouth band (y fraction ~0.86..0.92) at its
+    vertical midline — vertices ABOVE the midline (upper lip) go UP (+y), vertices
+    BELOW (lower lip) go DOWN (−y, + slight back). A uniform jaw drop moved the
+    whole band together and never parted the lips (chin droop only). Face front
+    is +z on this asset (A1 masculinize: z>0 = front)."""
     key = obj.shape_key_add(name="viseme_open", from_mix=False)
     mesh = obj.data
     moved = 0
-    # jaw band: chin..mouth, roughly 0.82..0.90 of height, front hemisphere
+    mouth_lo, mouth_hi = 0.86, 0.925
+    mid = mouth_lo + (mouth_hi - mouth_lo) * 0.5  # lip line fraction
     for i, v in enumerate(mesh.vertices):
         f = (v.co[ax] - lo) / span
-        jaw = smoothstep(0.80, 0.855, f) * (1.0 - smoothstep(0.895, 0.92, f))
-        if jaw <= 0 or v.co.z <= 0.0:
+        # taper in from both edges of the mouth band
+        band = smoothstep(mouth_lo, mouth_lo + 0.025, f) * (1.0 - smoothstep(mouth_hi - 0.03, mouth_hi, f))
+        if band <= 0 or v.co.z <= 0.0:
             continue
-        front = smoothstep(0.0, 0.04, v.co.z)  # more open at the very front
-        w = jaw * front
+        front = smoothstep(0.0, 0.05, v.co.z)  # more open at the very front
+        w = band * front
+        side = 1.0 if f >= mid else -1.0       # +1 below lip line (lower lip down)
         p = key.data[i].co
-        # drop along height axis, pull slightly back (−z)
         newco = p.copy()
-        newco[ax] = p[ax] - 0.018 * w
-        newco.z = p.z - 0.006 * w
+        newco[ax] = p[ax] + 0.15 * side * w    # part: lower lip down 15cm-scale, upper lip up
+        newco.z = p.z - 0.05 * w               # slight back on the lower lip
         key.data[i].co = newco
         moved += 1
     key.value = 0.0
@@ -109,12 +115,27 @@ def add_pose(obj, name, ax, lo, span, mode):
         p = key.data[i].co.copy()
         d = 0.0
         if mode == "tripod":
-            # forward lean grows above the hips (f>0.5); shoulders (f~0.8) lift
+            # Forward lean grows above the hips; shoulders lift with visible
+            # accessory-muscle effort. The source mesh is an A-pose, so rotate
+            # each arm down around its shoulder instead of leaving it horizontal.
             lean = smoothstep(0.5, 0.95, f)
-            p.z += 0.05 * lean                       # torso forward
+            p.y += 0.18 * lean
             sh = smoothstep(0.74, 0.84, f) * (1.0 - smoothstep(0.86, 0.92, f))
-            p[ax] += 0.018 * sh                      # shoulders up
-            d = lean + sh
+            p[ax] += 0.022 * sh
+            scale = span / 1.8
+            if 0.48 <= f <= 0.84 and abs(v.co.x) > 0.18 * scale:
+                side = 1.0 if v.co.x > 0 else -1.0
+                pivot_x = side * 0.19 * scale
+                pivot_h = lo + 0.79 * span
+                dx = v.co.x - pivot_x
+                dh = v.co[ax] - pivot_h
+                theta = side * math.radians(58)
+                p.x = pivot_x + math.cos(theta) * dx + math.sin(theta) * dh
+                p[ax] = pivot_h - math.sin(theta) * dx + math.cos(theta) * dh
+                distal = min(1.0, abs(dx) / max(0.001, 0.42 * scale))
+                p.y += 0.30 * distal
+                d += distal
+            d += lean + sh
         elif mode == "supine":
             # gentle settle: whole upper body eases back + shoulders relax down
             up = smoothstep(0.4, 1.0, f)
@@ -166,6 +187,21 @@ def main():
 
     ax, lo, hi, span = height_axis(mesh)
     log(f"height axis={'xyz'[ax]} lo={lo:.3f} hi={hi:.3f} span={span:.3f}")
+
+    # Idempotent: remove previously-authored targets so a re-run REPLACES them
+    # (Blender would otherwise append .001 duplicates that three.js indexes first).
+    have_set = set(have)
+    if mesh.shape_keys:
+        for name in NEW_MORPHS:
+            if name in have_set:
+                key = mesh.shape_keys.key_blocks.get(name)
+                obj.shape_key_remove(key)
+                log(f"removed existing '{name}' for re-author")
+        # any leftover .00N duplicates from earlier non-idempotent runs
+        for name in [k.name for k in mesh.shape_keys.key_blocks]:
+            if any(name.startswith(m + '.') for m in NEW_MORPHS):
+                obj.shape_key_remove(mesh.shape_keys.key_blocks.get(name))
+                log(f"removed stale duplicate '{name}'")
 
     add_viseme_open(obj, ax, lo, span)
     add_pose(obj, "pose_tripod", ax, lo, span, "tripod")

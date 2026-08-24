@@ -12,19 +12,19 @@
  * the doorway view) and pulls it in as the camera settles — the rack focus.
  */
 export const focusRig = {
-  /** World-space focus distance (m). Resting: 2.5 (the patient). */
+  /** Clinical treatment view keeps the whole patient and nearby scene sharp. */
   worldDistance: 2.5,
-  /** World-space sharp zone around the focus point (m). */
-  range: 1.8,
-  /** Bokeh blur scale. Higher during the entrance, settles to resting. */
-  bokehScale: 2.2,
+  /** Broad sharp zone: face, torso and limbs must remain simultaneously readable. */
+  range: 12,
+  /** No cinematic bokeh during hands-on assessment. */
+  bokehScale: 0,
 };
 
-/** Resting values — CameraEntrance restores these when it finishes/cancels. */
-export const FOCUS_REST = { worldDistance: 2.5, range: 1.8, bokehScale: 2.2 } as const;
+/** Resting clinical values — CameraEntrance restores these when it finishes/cancels. */
+export const FOCUS_REST = { worldDistance: 2.5, range: 12, bokehScale: 0 } as const;
 
-/** Entrance start values — deep, soft focus on the wider room. */
-export const FOCUS_WIDE = { worldDistance: 6.0, range: 1.2, bokehScale: 3.4 } as const;
+/** Entrance remains sharp too; camera movement supplies the transition. */
+export const FOCUS_WIDE = { worldDistance: 6.0, range: 12, bokehScale: 0 } as const;
 
 export function resetFocusRig(): void {
   focusRig.worldDistance = FOCUS_REST.worldDistance;

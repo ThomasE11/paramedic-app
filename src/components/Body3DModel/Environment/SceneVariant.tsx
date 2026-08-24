@@ -459,7 +459,7 @@ function RoadsideScene({ shadowsEnabled }: { shadowsEnabled: boolean }) {
       ))}
       {/* Wrecked car — low-poly silhouette, front damage, pushed to the
           right side of the scene. Body + cabin + two wheels visible. */}
-      <group name="wrecked-car" position={[1.8, 0, -0.3]} rotation={[0, -0.35, 0]}>
+      <group name="wrecked-car" position={[3.8, 0, -1.6]} rotation={[0, -0.35, 0]}>
         {/* Body shell */}
         <mesh position={[0, 0.48, 0]} castShadow receiveShadow raycast={NO_RAYCAST}>
           <boxGeometry args={[3.6, 0.7, 1.7]} />
@@ -505,7 +505,7 @@ function RoadsideScene({ shadowsEnabled }: { shadowsEnabled: boolean }) {
       </group>
 
       {/* Downed motorcycle — lying on its side, left of the patient */}
-      <group position={[-1.6, 0, 0.9]} rotation={[0, 1.1, Math.PI / 2 - 0.1]}>
+      <group name="downed-motorcycle" position={[-3.6, 0, 1.6]} rotation={[0, 1.1, Math.PI / 2 - 0.1]}>
         {/* Frame */}
         <mesh position={[0, 0.15, 0]} castShadow raycast={NO_RAYCAST}>
           <cylinderGeometry args={[0.06, 0.06, 1.8, 10]} />
@@ -538,11 +538,11 @@ function RoadsideScene({ shadowsEnabled }: { shadowsEnabled: boolean }) {
         <mesh
           key={`debris-${i}`}
           position={[dx, dy, dz]}
-          rotation={[Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI]}
+          rotation={[i * 0.73, i * 1.17, i * 0.41]}
           castShadow
           raycast={NO_RAYCAST}
         >
-          <boxGeometry args={[0.12 + Math.random() * 0.1, 0.02, 0.08 + Math.random() * 0.06]} />
+          <boxGeometry args={[0.12 + (i % 3) * 0.035, 0.02, 0.08 + (i % 2) * 0.04]} />
           <meshStandardMaterial color="#4a4a4a" roughness={0.8} metalness={0.3} />
         </mesh>
       ))}
@@ -554,10 +554,10 @@ function RoadsideScene({ shadowsEnabled }: { shadowsEnabled: boolean }) {
         <mesh
           key={`glass-${i}`}
           position={[gx, gy + 0.005, gz]}
-          rotation={[-Math.PI / 2, 0, Math.random() * Math.PI]}
+          rotation={[-Math.PI / 2, 0, i * 0.83]}
           raycast={NO_RAYCAST}
         >
-          <planeGeometry args={[0.1 + Math.random() * 0.08, 0.1 + Math.random() * 0.08]} />
+          <planeGeometry args={[0.1 + (i % 3) * 0.025, 0.1 + (i % 2) * 0.035]} />
           <meshStandardMaterial
             color="#a8c0d8"
             transparent

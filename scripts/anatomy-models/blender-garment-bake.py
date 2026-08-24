@@ -43,8 +43,8 @@ OUT_DIR = argv[1] if len(argv) > 1 else "public/models/"
 # Cloth clearance off the skin (metres) and fabric thickness (metres).
 # Clearance lifts the outer face just off the skin so it never z-fights;
 # the shirt rides a touch prouder than trousers so a tucked waistband layers.
-SHIRT_CLEARANCE = 0.010
-TROUSER_CLEARANCE = 0.006
+SHIRT_CLEARANCE = 0.002
+TROUSER_CLEARANCE = 0.002
 FABRIC_THICKNESS = 0.004
 
 # Garment regions as FRACTIONS of mesh height (Blender Z-up: feet=0, head=1),

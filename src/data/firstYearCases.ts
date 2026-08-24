@@ -3818,7 +3818,7 @@ export const firstYearCases: CaseScenario[] = [
       hazards: ['Other players', 'Evening floodlights'],
       bystanders: 'PE teacher and teammates',
       environment: 'Outdoor pitch, warm evening',
-      environmentVariant: 'public',
+      environmentVariant: 'roadside',
       sceneImagePath: '/scene-assets/gym-cardiac-arrest-male-dubai.png',
       sceneImageCaption: 'Scene — Outdoor pitch, warm evening',
     },

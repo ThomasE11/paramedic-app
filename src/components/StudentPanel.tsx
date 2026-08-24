@@ -360,25 +360,25 @@ const realismSeverityStyles: Record<RealismDirectorState['severity'], {
     rail: 'from-emerald-400 to-cyan-400',
     icon: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-300',
     badge: 'border-emerald-400/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
-    panel: 'border-emerald-400/20 bg-emerald-50/50 dark:bg-emerald-950/10',
+    panel: 'border-emerald-400/30 bg-emerald-950/55',
   },
   observe: {
     rail: 'from-cyan-400 to-blue-400',
     icon: 'bg-cyan-500/10 text-cyan-700 dark:text-cyan-300',
     badge: 'border-cyan-400/40 bg-cyan-500/10 text-cyan-800 dark:text-cyan-200',
-    panel: 'border-cyan-400/20 bg-cyan-50/50 dark:bg-cyan-950/10',
+    panel: 'border-cyan-400/30 bg-cyan-950/55',
   },
   warning: {
     rail: 'from-amber-400 to-orange-500',
     icon: 'bg-amber-500/10 text-amber-700 dark:text-amber-300',
     badge: 'border-amber-400/50 bg-amber-500/10 text-amber-800 dark:text-amber-200',
-    panel: 'border-amber-400/25 bg-amber-50/60 dark:bg-amber-950/15',
+    panel: 'border-amber-400/35 bg-amber-950/55',
   },
   critical: {
     rail: 'from-rose-400 to-red-500',
     icon: 'bg-red-500/10 text-red-700 dark:text-red-300',
     badge: 'border-red-400/50 bg-red-500/10 text-red-800 dark:text-red-200',
-    panel: 'border-red-400/25 bg-red-50/60 dark:bg-red-950/15',
+    panel: 'border-red-400/35 bg-red-950/58',
   },
 };
 
@@ -405,10 +405,10 @@ function RealismDirectorCard({ state }: { state: RealismDirectorState }) {
               <Activity className="h-4 w-4" />
             </div>
             <div className="min-w-0">
-              <p className="text-[9px] font-semibold uppercase tracking-[0.24em] text-muted-foreground/60">
+              <p className="text-[9px] font-semibold uppercase tracking-[0.24em] text-slate-300">
                 Clinical reality
               </p>
-              <h3 className="mt-1 text-sm font-semibold leading-snug text-foreground/90">
+              <h3 className="mt-1 text-sm font-semibold leading-snug text-white">
                 {state.headline}
               </h3>
             </div>
@@ -418,7 +418,7 @@ function RealismDirectorCard({ state }: { state: RealismDirectorState }) {
           </Badge>
         </div>
 
-        <div className="mt-4 grid gap-2 md:grid-cols-3">
+        <div className="mt-4 grid grid-cols-1 gap-2">
           <div className="rounded-xl border border-slate-200 bg-white/90 p-3 dark:border-slate-700 dark:bg-slate-800/90">
             <div className="mb-2 flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-600 dark:text-slate-300">
               <Shield className="h-3.5 w-3.5" />
@@ -426,7 +426,7 @@ function RealismDirectorCard({ state }: { state: RealismDirectorState }) {
             </div>
             <div className="space-y-1.5">
               {(sceneItems.length ? sceneItems : ['No special access constraints documented']).map(item => (
-                <p key={item} className="line-clamp-2 text-[11px] leading-relaxed text-slate-900 dark:text-slate-100">{item}</p>
+                <p key={item} className="text-[11px] leading-relaxed text-slate-900 dark:text-slate-100">{item}</p>
               ))}
             </div>
           </div>
@@ -445,7 +445,7 @@ function RealismDirectorCard({ state }: { state: RealismDirectorState }) {
                     item.severity === 'observe' ? 'bg-cyan-500' :
                     'bg-emerald-500'
                   }`} />
-                  <p className="line-clamp-2 text-[11px] leading-relaxed text-slate-900 dark:text-slate-100">
+                  <p className="text-[11px] leading-relaxed text-slate-900 dark:text-slate-100">
                     <span className="font-semibold text-slate-700 dark:text-slate-200">{item.label}:</span> {item.detail}
                   </p>
                 </div>
@@ -1552,6 +1552,7 @@ export function StudentPanel({
   const [activePrimarySurvey, setActivePrimarySurvey] = useState<'scene-safety' | 'airway' | 'breathing' | 'circulation' | 'disability' | 'exposure' | null>(null);
   const [, setActiveHistoryStep] = useState<'signs-symptoms' | 'allergies' | 'medications' | 'past-medical' | 'last-meal' | 'events-leading' | null>(null);
   const [activeManagementTab, setActiveManagementTab] = useState<ManagementTab>('airway');
+  const [careRailMode, setCareRailMode] = useState<'treat' | 'assess' | 'history'>('treat');
   const [medSearch, setMedSearch] = useState('');
 
   // Voice-first mode (senior students) — run the whole case hands-free.
@@ -1602,14 +1603,22 @@ export function StudentPanel({
   const [pulseCheckInProgress, setPulseCheckInProgress] = useState(false);
   const [pulseCheckResult, setPulseCheckResult] = useState<string | null>(null);
   // Pulse check — now triggered by tapping the carotid (neck) / radial (wrist)
-  // points on the mannequin. 5s palpation delay; present iff a perfusing pulse
-  // exists and the patient isn't in arrest. Feeds the arrest-confirm prompt.
+  // points on the mannequin. 2s palpation interval with immediate feedback;
+  // present iff a perfusing pulse exists and the patient isn't in arrest.
   const runPulseCheck = useCallback((site?: string) => {
     if (pulseCheckInProgress) return;
     setPulseCheckInProgress(true);
     setPulseCheckResult(null);
     lastActivityRef.current = Date.now();
-    const where = site === 'pulse-carotid' ? 'carotid' : site === 'pulse-radial' ? 'radial' : 'central';
+    const where = site?.startsWith('pulse-carotid')
+      ? 'carotid'
+      : site?.startsWith('pulse-radial')
+        ? 'radial'
+        : 'central';
+    toast(`Checking ${where} pulse…`, {
+      description: 'Maintain fingertip contact while assessing rate, rhythm and character.',
+      duration: 1800,
+    });
     setTimeout(() => {
       const inArrest = !!patientState?.isInArrest;
       const pulse = currentVitals?.pulse || 0;
@@ -1659,7 +1668,7 @@ export function StudentPanel({
         description: `Rate ~${pulse} bpm, ${irregular ? 'irregular' : 'regular'}, ${character}.${crtTxt}`,
         duration: 6000,
       });
-    }, 5000);
+    }, 2000);
   }, [pulseCheckInProgress, currentVitals, patientState, currentCase]);
   const [cprCycleTimer, setCprCycleTimer] = useState(120); // 2 min countdown
   const [cprCycleNumber, setCprCycleNumber] = useState(0);
@@ -5419,7 +5428,8 @@ export function StudentPanel({
             {/* Transport Decision Dialog */}
             {/* Transport Decision Wizard — Step-by-step */}
             {showTransportDecision && (
-              <Card className="border-2 border-amber-400 bg-amber-50/50 dark:bg-amber-950/20 rounded-2xl overflow-hidden animate-fade-in">
+              <div className="transport-decision-backdrop" role="dialog" aria-modal="true" aria-label="Transport and end-care decision">
+              <Card className="transport-decision-dialog border-2 border-amber-400 bg-amber-50 dark:bg-amber-950 rounded-2xl overflow-y-auto animate-fade-in">
                 <CardHeader className="pb-2 border-b border-amber-200 dark:border-amber-800">
                   <CardTitle className="flex flex-col gap-2">
                     <div className="flex items-center gap-2 text-base sm:text-lg font-bold">
@@ -5685,6 +5695,7 @@ export function StudentPanel({
 
                 </CardContent>
               </Card>
+              </div>
             )}
 
             {/* ===== SPLIT LAYOUT =====
@@ -5740,7 +5751,7 @@ export function StudentPanel({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:min-w-[34rem]">
+                  <div className="tactical-bay-vitals grid grid-cols-2 gap-2 sm:grid-cols-4 xl:min-w-[34rem]">
                     <div className="tactical-hud-tile">
                       <HUDValue
                         label="HR"
@@ -5851,9 +5862,27 @@ export function StudentPanel({
 
               {/* ===== MANAGEMENT SUPPORT COLUMN (Treatment first, then assessment) ===== */}
               <div className="tactical-assessment-rail order-3 space-y-4">
+                <div className="care-rail-mode-switch" role="tablist" aria-label="Patient management mode">
+                  {([
+                    ['treat', 'Treat'],
+                    ['assess', 'Assess'],
+                    ['history', 'History'],
+                  ] as const).map(([mode, label]) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      role="tab"
+                      aria-selected={careRailMode === mode}
+                      onClick={() => setCareRailMode(mode)}
+                      className={careRailMode === mode ? 'care-rail-mode-active' : ''}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
                 {/* Voice-first mode hides the tap-based jump bag — the student
                     treats hands-free via the mic. */}
-                {!voiceFirstMode && (
+                {!voiceFirstMode && careRailMode === 'treat' && (
                 <HUDTreatmentBags className="tactical-loadout-dock tactical-management-options">
                   <TreatmentJumpBagPanel
                     currentVitals={currentVitals}
@@ -5870,6 +5899,8 @@ export function StudentPanel({
                 </HUDTreatmentBags>
                 )}
 
+                {careRailMode === 'assess' && (
+                  <>
                 <RoadmapAnatomyPanel
                   visualState={patientVisualState}
                   activeFindings={activeFindings}
@@ -5891,15 +5922,15 @@ export function StudentPanel({
                   progress={`${['airway', 'breathing', 'circulation', 'disability', 'exposure'].filter(stepId => assessmentTracker?.performed.some(p => p.stepId === stepId)).length}/5`}
                 >
                   <div className="p-3 sm:p-4 space-y-3">
-                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                    <div className="grid grid-cols-1 gap-2">
                       {[
                         { label: 'First Look', value: currentCase.initialPresentation?.generalImpression || currentCase.dispatchInfo?.callReason || 'Form a general impression' },
                         { label: 'Position', value: currentCase.initialPresentation?.position || 'Observe patient position' },
                         { label: 'Visible Cues', value: currentCase.initialPresentation?.appearance || 'Scan skin, work of breathing, bleeding' },
                       ].map(item => (
-                        <div key={item.label} className="rounded-xl border border-slate-200/70 bg-white/65 px-3 py-2 dark:border-white/[0.06] dark:bg-slate-900/45">
-                          <p className="text-[8px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/60">{item.label}</p>
-                          <p className="mt-0.5 line-clamp-2 text-[11px] font-medium leading-relaxed text-foreground/80">{item.value}</p>
+                        <div key={item.label} className="rounded-xl border border-slate-600/70 bg-slate-900/90 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+                          <p className="text-[8px] font-semibold uppercase tracking-[0.18em] text-cyan-200">{item.label}</p>
+                          <p className="mt-0.5 text-[11px] font-medium leading-relaxed text-white">{item.value}</p>
                         </div>
                       ))}
                     </div>
@@ -5927,18 +5958,18 @@ export function StudentPanel({
                               handlePerformAssessment(item.stepId);
                               setActivePrimarySurvey(isActive ? null : item.key);
                             }}
-                            className={`primary-survey-button group relative flex flex-col items-center justify-center min-h-[54px] sm:min-h-[68px] pt-3 pb-2 px-1 rounded-xl bg-white/50 dark:bg-slate-900/40 backdrop-blur-sm border border-slate-200/60 dark:border-white/[0.04] transition-all duration-300 touch-manipulation hover:-translate-y-0.5 hover:border-white/10 ${isActive ? `${item.glow} border-white/10` : ''}`}
+                            className={`primary-survey-button group relative flex flex-col items-center justify-center min-h-[58px] sm:min-h-[70px] pt-3 pb-2 px-1 rounded-xl bg-slate-900/95 backdrop-blur-sm border border-slate-600/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition-all duration-300 touch-manipulation hover:-translate-y-0.5 hover:border-cyan-300/70 ${isActive ? `${item.glow} border-cyan-300/80 bg-slate-800` : ''}`}
                           >
                             {/* Jewel-tone rail: visible at low opacity at rest, bright when active */}
-                            <span className={`absolute inset-x-3 top-0 h-[2px] rounded-full bg-gradient-to-r ${item.rail} transition-opacity duration-300 ${isActive ? 'opacity-100' : isAssessed ? 'opacity-60' : 'opacity-20 group-hover:opacity-50'}`} />
+                            <span className={`absolute inset-x-3 top-0 h-[2px] rounded-full bg-gradient-to-r ${item.rail} transition-opacity duration-300 ${isActive ? 'opacity-100' : isAssessed ? 'opacity-80' : 'opacity-65 group-hover:opacity-100'}`} />
                             {/* Status LED */}
                             <span className={`absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full transition-colors ${isAssessed ? 'bg-emerald-400 shadow-[0_0_6px_rgb(52_211_153/0.8)]' : 'bg-white/[0.08] dark:bg-white/[0.06]'}`} />
                              {/* Letter — thin, large, premium */}
-                             <span className={`primary-survey-letter text-xl sm:text-2xl font-light tracking-tight leading-none ${isActive ? item.text : 'text-foreground/90'}`}>
+                             <span className={`primary-survey-letter text-xl sm:text-2xl font-light tracking-tight leading-none ${isActive ? item.text : 'text-white'}`}>
                                {item.letter}
                              </span>
                              {/* Label — tiny spaced-out uppercase */}
-                             <span className={`primary-survey-label text-[8px] sm:text-[9px] font-semibold tracking-[0.12em] uppercase mt-1 ${isActive ? item.text : 'text-foreground/70'}`}>{item.label}</span>
+                             <span className={`primary-survey-label text-[8px] sm:text-[9px] font-semibold tracking-[0.12em] uppercase mt-1 ${isActive ? item.text : 'text-slate-200'}`}>{item.label}</span>
                           </button>
                         );
                       })}
@@ -5968,7 +5999,14 @@ export function StudentPanel({
                 )}
 
                 {realismDirector && (
-                  <RealismDirectorCard state={realismDirector} />
+                  <details className="clinical-reality-disclosure">
+                    <summary>Clinical reality and reassessment cues</summary>
+                    <div className="mt-2">
+                      <RealismDirectorCard state={realismDirector} />
+                    </div>
+                  </details>
+                )}
+                  </>
                 )}
 
                 {/* Injury Map (up-front findings list) intentionally REMOVED
@@ -5989,6 +6027,8 @@ export function StudentPanel({
                     patient (or bystander when unconscious) answers via
                     Supertonic. Coverage chips track which SAMPLE letters
                     have been obtained for debrief scoring. */}
+                {careRailMode === 'history' && (
+                  <>
                 {currentCase && (
                   <VoiceHistoryPanel
                     caseData={currentCase}
@@ -6043,7 +6083,7 @@ export function StudentPanel({
                           }
                           if (!canSelfReport) {
                             return (
-                              <p className="text-[11px] text-muted-foreground/70">
+                              <p className="text-[11px] text-slate-300">
                                 Patient cannot self-report pain (GCS {gcs}). Look for non-verbal cues — guarding, grimacing, restlessness.
                               </p>
                             );
@@ -6165,6 +6205,8 @@ export function StudentPanel({
                     </Card>
                   );
                 })()}
+                  </>
+                )}
 
                 {/* Clinical Assessment Panel removed — replaced by inline ABCDE Primary Survey + 3D Physical Exam above */}
               </div>

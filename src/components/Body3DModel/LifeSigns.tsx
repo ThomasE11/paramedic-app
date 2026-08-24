@@ -86,16 +86,17 @@ export function LifeSigns({ scene, unconscious }: LifeSignsProps) {
     const a = anim.current;
     a.t += delta;
 
-    // ---- Micro idle sway ---------------------------------------------------
+    // ---- Stable patient root -----------------------------------------------
+    // The patient GLB is unrigged and is commonly supine, collapsed, or
+    // supported by a stretcher. Rotating the entire scene as "idle sway"
+    // pivots the body through its support surface and reads as bouncing.
+    // Keep the root at its authored/staged transform; breathing is driven by
+    // the chest morph in BodyMesh and eyes retain their independent motion.
     const target = unconscious ? 0 : 1;
     a.sway += (target - a.sway) * Math.min(1, delta * 1.5);
-    const s = a.sway;
-    // Sub-degree amplitudes around the feet; incommensurate frequencies so
-    // the pattern never visibly repeats. When s → 0 this writes the exact
-    // base pose, so hit-testing/landmark anchors stay honest.
-    scene.rotation.x = nodes.baseRotX + Math.sin(a.t * 0.43) * 0.0022 * s;
-    scene.rotation.y = nodes.baseRotY + (Math.sin(a.t * 0.31) * 0.006 + Math.sin(a.t * 0.83) * 0.0025) * s;
-    scene.rotation.z = nodes.baseRotZ + Math.sin(a.t * 0.57) * 0.0028 * s;
+    scene.rotation.x = nodes.baseRotX;
+    scene.rotation.y = nodes.baseRotY;
+    scene.rotation.z = nodes.baseRotZ;
 
     // ---- Blink / GCS-coupled lids -----------------------------------------
     const eyeMesh = nodes.eyeMesh;

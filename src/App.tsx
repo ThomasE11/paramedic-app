@@ -65,12 +65,23 @@ function App() {
     ? ep.allCases.find(caseItem => caseItem.id === devLiveCaseId)
     : null;
 
+  const exitDevLiveCase = () => {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('devLiveCase');
+    url.searchParams.delete('capture');
+    // The diagnostic route can be entered while userRole is already `none`, so
+    // handleRoleExit may be a React no-op and leave the overridden case mounted.
+    // A clean replacement guarantees the override is torn down and cannot
+    // immediately restart the same case.
+    window.location.replace(`${url.pathname}${url.search}${url.hash}`);
+  };
+
   if (devLiveCaseId && import.meta.env.DEV) {
     if (!devLiveCase) return suspenseFallback;
     return (
       <LazyLoad name="StudentPanel">
-        <StudentPanel onExit={ep.handleRoleExit} preloadedCase={devLiveCase} />
-        <CommandPalette onSwitchRole={ep.handleRoleExit} />
+        <StudentPanel onExit={exitDevLiveCase} preloadedCase={devLiveCase} />
+        <CommandPalette onSwitchRole={exitDevLiveCase} />
         <Toaster position="top-right" richColors closeButton />
       </LazyLoad>
     );

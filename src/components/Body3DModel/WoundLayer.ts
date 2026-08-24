@@ -29,7 +29,7 @@ export function spriteKindFor(injury: Pick<BodyInjury, 'kind' | 'detail' | 'labe
   switch (injury.kind) {
     case 'burn': return 'burn';
     case 'bruising': return 'bruise';
-    case 'bleeding': return /abrasion|graze|road rash/.test(text) ? 'abrasion' : 'laceration';
+    case 'bleeding': return /abrasion|graze|road rash/.test(text) ? 'abrasion' : 'active-bleeding';
     case 'wound':
       if (/infect|drain|pus|purulent|erythema|red and/.test(text)) return 'infected-incision';
       if (/surgic|incision|post-op|postoperative|sutur/.test(text)) return 'surgical-incision';

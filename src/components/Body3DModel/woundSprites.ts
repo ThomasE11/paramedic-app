@@ -1,4 +1,4 @@
-export type WoundKind = 'surgical-incision' | 'infected-incision' | 'laceration' | 'abrasion' | 'bruise' | 'burn';
+export type WoundKind = 'surgical-incision' | 'infected-incision' | 'laceration' | 'abrasion' | 'bruise' | 'burn' | 'active-bleeding';
 
 function drawWound(ctx: CanvasRenderingContext2D, kind: WoundKind, cx: number, cy: number, sizePx: number, rotationRad?: number): void {
   ctx.save();
@@ -126,6 +126,54 @@ function drawWound(ctx: CanvasRenderingContext2D, kind: WoundKind, cx: number, c
       ctx.ellipse(0, 0, sizePx * 0.6, sizePx * 0.8, 0, 0, Math.PI * 2);
       ctx.fill();
       break;
+
+    case 'active-bleeding': {
+      // A distinct, unmistakable "this wound is bleeding NOW" sprite: a dark
+      // red core with bright fresnel edge, plus drip droplets trailing DOWN the
+      // body (negative canvas Y = up in UV space after flipY, so we nudge the
+      // drips toward +Y to read as gravity for the standard front view).
+      const core = ctx.createRadialGradient(0, 0, 0, 0, 0, sizePx * 0.55);
+      core.addColorStop(0, 'rgba(120, 8, 12, 0.95)');
+      core.addColorStop(0.72, 'rgba(150, 16, 22, 0.85)');
+      core.addColorStop(1, 'rgba(180, 30, 30, 0)');
+      ctx.fillStyle = core;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, sizePx * 0.55, sizePx * 0.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      const halo = ctx.createRadialGradient(0, 0, sizePx * 0.5, 0, 0, sizePx * 1.1);
+      halo.addColorStop(0, 'rgba(190, 34, 34, 0.60)');
+      halo.addColorStop(1, 'rgba(190, 34, 34, 0)');
+      ctx.fillStyle = halo;
+      ctx.beginPath();
+      ctx.arc(0, 0, sizePx * 1.1, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Wet shine on the wound face.
+      ctx.strokeStyle = 'rgba(255, 140, 120, 0.55)';
+      ctx.lineWidth = sizePx * 0.04;
+      ctx.beginPath();
+      ctx.ellipse(-sizePx * 0.08, -sizePx * 0.16, sizePx * 0.22, sizePx * 0.09, -0.4, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Drips down the limb — gravity direction.
+      for (let i = 0; i < 6; i++) {
+        const dx = (rand() - 0.5) * sizePx * 0.9;
+        const len = sizePx * (0.3 + rand() * 0.75);
+        ctx.strokeStyle = `rgba(110, 8, 12, ${0.55 + rand() * 0.35})`;
+        ctx.lineWidth = sizePx * (0.06 + rand() * 0.05);
+        ctx.beginPath();
+        ctx.moveTo(dx, sizePx * 0.2);
+        ctx.lineTo(dx + (rand() - 0.5) * sizePx * 0.25, sizePx * 0.2 + len);
+        ctx.stroke();
+        // Drop at the drip tip.
+        ctx.beginPath();
+        ctx.arc(dx + (rand() - 0.5) * sizePx * 0.2, sizePx * 0.2 + len + sizePx * 0.06, sizePx * 0.07, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(120, 12, 14, 0.9)';
+        ctx.fill();
+      }
+      break;
+    }
 
     case 'burn':
       // Irregular seeded blob with blister circles

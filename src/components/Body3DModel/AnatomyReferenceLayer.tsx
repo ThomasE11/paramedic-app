@@ -1,34 +1,57 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js';
+import { getTreatmentBayTransform, type BayPatientStage } from './BodyMesh';
 
 interface AnatomyReferenceLayerProps {
   visible: boolean;
+  presentation?: 'upright' | 'treatment-bay';
+  stage?: BayPatientStage;
+  activeRegion?: string | null;
 }
 
-export function AnatomyReferenceLayer({ visible }: AnatomyReferenceLayerProps) {
+function boneMatchesRegion(name: string, region: string | null): boolean {
+  if (!region) return true;
+  const value = name.toLowerCase();
+  if (region === 'face' || region === 'head') {
+    return /frontal|parietal|occipital|temporal|sphenoid|ethmoid|maxilla|mandible|zygom|nasal|lacrimal|vomer|concha|tooth|incisor|molar|premolar|canine/.test(value);
+  }
+  if (region === 'neck-cspine') return /cervical|atlas|axis|hyoid/.test(value);
+  if (region === 'chest') return /rib|sternum|thoracic|clavicle|scapula/.test(value);
+  if (region === 'abdomen') return /lumbar|rib_?(8|9|10|11|12)|rib.*(8|9|10|11|12)/.test(value);
+  if (region === 'pelvis') return /pelvi|hip_bone|sacrum|coccyx/.test(value);
+  if (region === 'right-arm') return /humerus|radius|ulna|carpal|metacarpal|phalanx|scaphoid|lunate|triquet|pisiform|trapez|capitate|hamate/.test(value) && /r$|right/.test(value);
+  if (region === 'left-arm') return /humerus|radius|ulna|carpal|metacarpal|phalanx|scaphoid|lunate|triquet|pisiform|trapez|capitate|hamate/.test(value) && /l$|left/.test(value);
+  if (region === 'right-leg') return /femur|tibia|fibula|patella|tarsal|metatarsal|calcaneus|talus|cuboid|cuneiform|phalanx/.test(value) && /r$|right/.test(value);
+  if (region === 'left-leg') return /femur|tibia|fibula|patella|tarsal|metatarsal|calcaneus|talus|cuboid|cuneiform|phalanx/.test(value) && /l$|left/.test(value);
+  if (region === 'posterior-logroll') return /vertebra|sacrum|coccyx|scapula|rib/.test(value);
+  return true;
+}
+
+export function AnatomyReferenceLayer({ visible, presentation = 'upright', stage = 'stretcher', activeRegion = null }: AnatomyReferenceLayerProps) {
   const { scene } = useGLTF('/models/open3d-skeleton.glb');
 
   const anatomyScene = useMemo(() => {
     const clone = cloneSkeleton(scene) as THREE.Group;
 
     clone.traverse((child) => {
+      child.visible = true;
       if (!(child as THREE.Mesh).isMesh) return;
       const mesh = child as THREE.Mesh;
       mesh.castShadow = false;
       mesh.receiveShadow = false;
+      mesh.frustumCulled = false;
       mesh.raycast = () => null;
-      mesh.material = new THREE.MeshStandardMaterial({
-        color: '#f6ead7',
-        roughness: 0.62,
-        metalness: 0.02,
-        transparent: true,
-        opacity: 0.62,
+      mesh.material = new THREE.MeshBasicMaterial({
+        color: '#fff3dc',
+        transparent: false,
+        opacity: 1,
+        depthTest: false,
         depthWrite: false,
         side: THREE.DoubleSide,
       });
-      mesh.renderOrder = 2;
+      mesh.renderOrder = 50;
     });
 
     clone.updateMatrixWorld(true);
@@ -50,10 +73,25 @@ export function AnatomyReferenceLayer({ visible }: AnatomyReferenceLayerProps) {
     return clone;
   }, [scene]);
 
+  useEffect(() => {
+    anatomyScene.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) child.visible = boneMatchesRegion(child.name, activeRegion);
+    });
+  }, [activeRegion, anatomyScene]);
+
   if (!visible) return null;
 
+  const bayTransform = presentation === 'treatment-bay'
+    ? getTreatmentBayTransform(stage)
+    : { position: [0, 0, 0] as [number, number, number], rotation: [0, 0, 0] as [number, number, number], scale: 1 };
+  const groupPosition: [number, number, number] = [
+    bayTransform.position[0],
+    bayTransform.position[1],
+    bayTransform.position[2] + (presentation === 'treatment-bay' && (activeRegion === 'face' || activeRegion === 'head') ? 0.10 : 0),
+  ];
+
   return (
-    <group>
+    <group name="anatomy-reference" position={groupPosition} rotation={bayTransform.rotation} scale={bayTransform.scale}>
       <primitive object={anatomyScene} />
     </group>
   );

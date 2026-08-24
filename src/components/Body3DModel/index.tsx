@@ -39,6 +39,8 @@ import type { BowelSoundType, BreathSoundType } from '@/data/clinicalSounds';
 import { inferInjuries, injuryRegionTo3D, type BodyInjury, type BodyRegion, type InjuryKind, type InjurySeverity } from '@/lib/injuryMap';
 import { classifyBodyPoint } from '@/lib/regionClassifier';
 import { hashInjury } from './WoundLayer';
+import { ActiveBleedSprites } from './ActiveBleedLayer';
+import { FocusedWoundLayer } from './FocusedWoundLayer';
 import type { PatientVisualState, PatientWoundOverlay } from '@/lib/patientVisualState';
 import { deriveIdleCues } from '@/lib/idleCues';
 import {
@@ -135,6 +137,9 @@ interface AppliedEquipmentVisualState {
   hasEtTube: boolean;
   hasOpa: boolean;
   hasCollar: boolean;
+  /** Bleeding wound ids considered under source control (tourniquet /
+   *  pressure dressing / haemostatic / chest seal applied). */
+  controlledBleedIds: Set<string>;
 }
 
 const TREATMENT_ASSET_PATHS = {
@@ -204,7 +209,7 @@ function buildScenarioBodyInjuries(visualState?: PatientVisualState | null): Bod
     if (!region) return [];
     const kind: BodyInjury['kind'] | null =
       overlay.kind === 'open_wound' ? 'wound'
-      : overlay.kind === 'active_bleeding' ? 'bleeding'
+      : overlay.kind === 'active_bleeding' ? null
       : overlay.kind === 'blood_pool' ? 'bleeding'
       : overlay.kind === 'deformity' ? 'deformity'
       : overlay.kind === 'burn_pattern' ? 'burn'
@@ -428,12 +433,15 @@ function TreatmentBayImmersionLayer({
 
   return (
     <group>
-      {/* Head pad — bed height on the stretcher, floor level when the patient
-          is staged where they were found. */}
-      <mesh position={[0, stage === 'floor' ? 0.03 : 0.505, -0.84]} rotation={[-Math.PI / 2, 0, 0]} raycast={() => null}>
-        <boxGeometry args={[0.72, 0.36, 0.055]} />
-        <meshStandardMaterial color="#e5edf4" roughness={0.86} metalness={0.02} transparent opacity={0.88} />
-      </mesh>
+      {/* Head pad exists only on the stretcher. Floor/roadside patients are
+          treated where found; rendering a pad there obscures the face and can
+          look like vehicle geometry crossing the body. */}
+      {stage === 'stretcher' && (
+        <mesh position={[0, 0.505, -0.84]} rotation={[-Math.PI / 2, 0, 0]} raycast={() => null}>
+          <boxGeometry args={[0.72, 0.36, 0.055]} />
+          <meshStandardMaterial color="#e5edf4" roughness={0.86} metalness={0.02} transparent opacity={0.88} />
+        </mesh>
+      )}
 
       {/* Stretcher straps, foreground rails, and the foot-end bar were removed
           deliberately: they rendered as detached bars floating over the body
@@ -658,12 +666,12 @@ function LandmarkMarkers({
                 }
                 onSelect(marker.region);
               }}
-              className={`group pointer-events-auto relative flex items-center justify-center ${isDetail ? 'h-4 w-4' : 'h-4 w-4'}`}
+              className={`group pointer-events-auto relative flex items-center justify-center ${isDetail ? 'h-6 w-6' : 'h-7 w-7'}`}
               title={`${marker.label} — ${marker.sublabel}`}
             >
               {/* Invisible touch target — keeps the patient surface clean. The
-                  dot itself is hidden (opacity 0); only the invisible 16px hit
-                  zone stays clickable so tapping the face/eyes/chest of the
+                  dot itself is hidden (opacity 0); only the enlarged hit zone stays
+                  clickable so tapping the face/eyes/chest of the
                   model triggers the region's assessment zoom + actions. */}
               <span className={`pointer-events-none absolute inset-0 ${dotColor}`} style={{ opacity: 0 }} />
               {!isDetail && (
@@ -1057,6 +1065,16 @@ function buildTreatmentEquipmentState(appliedTreatmentIds: string[]): AppliedEqu
     || applied.has('mechanical_ventilation')
     || applied.has('ventilator_setup');
 
+  // Source control for active bleeding: any haemorrhage-control treatment
+  // lands here. Wound ids are matched by region suffix in ActiveBleedSprites.
+  const BLEED_CONTROL_IDS = new Set([
+    'tourniquet', 'tourniquet_application', 'pressure_dressing', 'pressure_bandage',
+    'haemostatic', 'hemostatic', 'chest_seal', 'wound_packing', 'direct_pressure',
+  ]);
+  const controlledBleedIds = new Set<string>(
+    [...applied].filter(id => [...BLEED_CONTROL_IDS].some(ctl => id.includes(ctl))),
+  );
+
   return {
     oxygen: oxygenMatch ? { mode: oxygenMatch.mode, label: oxygenMatch.label, detail: oxygenMatch.detail } : null,
     hasIvAccess: applied.has('iv_access') || applied.has('iv_cannula') || hasFluids || hasMedicationLine,
@@ -1069,6 +1087,7 @@ function buildTreatmentEquipmentState(appliedTreatmentIds: string[]): AppliedEqu
       || applied.has('c-collar')
       || applied.has('cspine_protection')
       || applied.has('immobilisation'),
+    controlledBleedIds,
   };
 }
 
@@ -3745,7 +3764,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   const [blockedNudge, setBlockedNudge] = useState<{ attempted: string; expected: string } | null>(null);
   const nudgeTimerRef = useRef<number | null>(null);
   const reactionTimerRef = useRef<number | null>(null);
-  const treatmentBayOverviewEnabled = treatmentBayMode && anatomyLayer !== 'skeleton';
+  const treatmentBayOverviewEnabled = treatmentBayMode;
   const useTreatmentBayPresentation = treatmentBayOverviewEnabled;
   const patientFirstExamLayout = treatmentBayOverviewEnabled && !!activeRegion;
   const markerPresentation: MarkerPresentation = useTreatmentBayPresentation ? 'treatment-bay' : 'upright';
@@ -3761,6 +3780,14 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
     () => (treatmentBayOverviewEnabled ? getTreatmentBayCameraFocus(bayStage) : DEFAULT_CAMERA_FOCUS),
     [treatmentBayOverviewEnabled, bayStage],
   );
+
+  // OrbitControls target is imperative state. Initialise/reset it only for the
+  // overview; region-click camera animations own it while a region is active.
+  useEffect(() => {
+    if (activeRegion || !controlsRef.current) return;
+    controlsRef.current.target.set(...overviewCameraFocus.target);
+    controlsRef.current.update();
+  }, [activeRegion, overviewCameraFocus.target]);
 
   const nextGuidedStep = useMemo(
     () => (guidedMode ? getNextGuidedStep(assessedRegions) : null),
@@ -3857,23 +3884,24 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   }, [vitals, caseData.vitalSignsProgression?.initial]);
 
   // Posture morph target (male mesh). Respiratory-distress cases sit in the
-  // tripod position (hands on knees, accessory-muscle use) and ease to a
-  // relaxed recovery posture as SpO2 climbs back to normal; an unconscious /
-  // arrested patient lies supine. null = A-pose (no posture morph). The BodyMesh
+  // tripod position (hands on knees, accessory-muscle use); an unconscious /
+  // arrested patient lies supine. A changing vital must never switch the whole
+  // body's support transform: SpO2 can oscillate around a threshold and caused
+  // the patient to repeatedly lift/roll through the air. Recovery positioning
+  // must be an explicit clinical movement, not an automatic vital-sign effect.
+  // Supine is also the neutral live-case posture;
+  // the raw A-pose is reserved for the standalone anatomy viewer. The BodyMesh
   // crossfades between whichever morph this names; breathing + idle ride on top.
   const patientPosture = useMemo<'tripod' | 'supine' | 'recovery' | null>(() => {
     if (patientUnconscious) return 'supine';
     const source = effectiveVitals;
-    const spo2 = typeof source?.spo2 === 'number' ? source.spo2 : null;
     const rr = caseData.abcde?.breathing?.rate ?? source?.respiration ?? null;
     const respiratoryDistress =
       (typeof rr === 'number' && rr >= 22) ||
       /asthma|copd|respiratory|breath|wheez|dyspn/i.test(
         `${caseData.category ?? ''} ${caseData.title ?? ''} ${caseData.dispatchInfo?.callReason ?? ''}`,
       );
-    if (!respiratoryDistress) return null;
-    // Ease tripod → recovery as sats recover through the 92–96 band.
-    if (spo2 !== null && spo2 >= 95) return 'recovery';
+    if (!respiratoryDistress) return 'supine';
     return 'tripod';
   }, [patientUnconscious, effectiveVitals, caseData]);
 
@@ -4163,13 +4191,27 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
         focus.target[0],
         focus.target[1],
         stepId === 'posterior-logroll' ? -0.08 : 0.10,
-      ], bayStage);
+      ], bayStage, patientPosture);
+      const clinicalDirection: [number, number, number] = patientPosture === 'tripod'
+        ? (stepId === 'face' || stepId === 'head' || stepId === 'neck-cspine'
+            ? [0.04, 0.48, 1]
+            : [0.10, 0.10, 1])
+        : stepId === 'face' || stepId === 'head' || stepId === 'neck-cspine'
+          ? [0, 1, 0.02]
+          : stepId === 'chest' || stepId === 'abdomen'
+            ? [0.14, 1, 0.18]
+            : [0.38, 0.95, 0.52];
       const pos = fitCameraPos(
         controlsRef.current,
         target,
-        [0.38, 0.95, 0.52],
+        clinicalDirection,
         REGION_RADIUS[stepId] ?? 0.28,
       );
+      if (import.meta.env.DEV) {
+        (window as Window & { __lastRegionCamera?: unknown }).__lastRegionCamera = {
+          stepId, patientPosture, bayStage, target, pos, clinicalDirection,
+        };
+      }
       animateCamera(controlsRef.current, pos, target, 460);
     } else if (controlsRef.current) {
       const focus = REGION_CAMERA_FOCUS[stepId] ?? REGION_CAMERA_FOCUS.chest;
@@ -4195,7 +4237,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
       animateCamera(controlsRef.current, pos, target, 460);
     }
     setIsFlipped(stepId === 'posterior-logroll');
-  }, [onRegionClick, animateCamera, clearPatientReaction, anatomyLayer, bayStage, caseData, patientVoice, treatmentBayOverviewEnabled]);
+  }, [onRegionClick, animateCamera, clearPatientReaction, anatomyLayer, bayStage, caseData, patientVoice, patientPosture, treatmentBayOverviewEnabled]);
 
   // Phase 2F: Sound progress animation
   const startSoundProgress = useCallback((actionId: string, durationMs: number) => {
@@ -4495,7 +4537,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
       {/* Teal accent hairline — "hands on patient" phase */}
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-teal-400/40 to-transparent" />
       {/* Header */}
-      <div className="patient-exam-header flex items-center justify-between px-4 sm:px-5 py-3 border-b border-slate-200/50 dark:border-white/5">
+      <div className="patient-exam-header flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5 border-b border-slate-200/50 dark:border-white/5">
         <div className="flex items-center gap-3">
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-teal-500/10 ring-1 ring-teal-500/15">
             <User className="h-3.5 w-3.5 text-teal-500/80" />
@@ -4567,7 +4609,11 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
               variant={regionExposed ? 'default' : 'ghost'}
               size="sm"
               className={`h-6 gap-1 px-2 text-[9px] rounded-lg ${regionExposed ? 'bg-teal-600 hover:bg-teal-700 text-white' : 'border border-teal-500/30 text-teal-600 dark:text-teal-300'}`}
-              onClick={() => setRegionExposed(v => !v)}
+              onPointerDown={(event) => event.stopPropagation()}
+              onClick={(event) => {
+                event.stopPropagation();
+                setRegionExposed(value => !value);
+              }}
               aria-pressed={regionExposed}
               title={regionExposed ? 'Re-dress this region' : 'Expose this region for examination'}
             >
@@ -4786,9 +4832,16 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 toneMappingExposure: 0.9,
               }}
               style={{ background: 'transparent' }}
-              onPointerMissed={(e) => {
-                // Ignore pointer clicks that originated on UI overlays or buttons
-                if (e.defaultPrevented) return;
+              onPointerMissed={(event) => {
+                // UI controls layered over the Canvas are not patient-surface
+                // misses. Never close a focused region because the student
+                // pressed Expose, a technique, a tab, a pulse site or a form
+                // control.
+                const target = event.target as Element | null;
+                if (
+                  event.defaultPrevented
+                  || target?.closest('button, a, input, textarea, select, [role="button"], [role="tab"], [data-patient-ui]')
+                ) return;
                 if (activeRegion && activeRegion !== 'posterior-logroll') handleCloseRegion();
               }}
               onCreated={(state) => {
@@ -4838,7 +4891,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                   pull-back + dutch tilt settling onto the preset framing.
                   Any pointer interaction cancels it instantly. */}
               <CameraEntrance
-                active={useTreatmentBayPresentation}
+                active={useTreatmentBayPresentation && !activeRegion}
                 focus={overviewCameraFocus}
                 controlsRef={controlsRef}
                 origin={bayVariant === 'home' ? [0, 1.8, 2.8] : undefined}
@@ -4863,7 +4916,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 // See public/models/REALISTIC_ANATOMY.md for the vetted model
                 // sources and the required export/validation path.
                 patientGender={caseData.patientInfo?.gender}
-                surfaceOpacity={anatomyLayer === 'skeleton' ? 0.28 : 1}
+                surfaceOpacity={anatomyLayer === 'skeleton' ? 0 : 1}
                 // Finding morphs reveal ONLY once their region is assessed —
                 // the discovery mechanic, now expressed on the mesh itself.
                 activeFindingMorphs={activeFindingMorphs}
@@ -4915,7 +4968,30 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 patientWeight={caseData?.patientInfo?.weight ?? 70}
               />
 
-              <AnatomyReferenceLayer visible={anatomyLayer === 'skeleton'} />
+              {/* Active bleed overlay — pulsing red glow at bleeding wounds,
+                  collapses when source control (tourniquet / dressing /
+                  chest seal) is applied. */}
+              <ActiveBleedSprites
+                overlays={patientVisualState?.woundOverlays ?? []}
+                controlledIds={buildTreatmentEquipmentState(appliedTreatmentIds).controlledBleedIds}
+                sampler={surfaceSampler}
+                bpm={isInArrest ? 0 : (vitals?.pulse ?? 80)}
+              />
+
+              <FocusedWoundLayer
+                injuries={bodyInjuriesForMesh}
+                activeRegion={activeRegion}
+                exposed={regionExposed}
+                assessedRegions={assessedRegions}
+                sampler={surfaceSampler}
+              />
+
+              <AnatomyReferenceLayer
+                visible={anatomyLayer === 'skeleton'}
+                presentation={treatmentBayMode ? 'treatment-bay' : 'upright'}
+                stage={bayStage}
+                activeRegion={activeRegion}
+              />
 
               <LandmarkMarkers
                 activeRegion={activeRegion}
@@ -4980,17 +5056,20 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                   object above renders through it; the drei <Html> markers are
                   DOM, portalled outside the canvas, and sit on top untouched.
                   Unmounts entirely on the first degrade rung. */}
-              {quality.composerEnabled && <PatientPostEffects />}
+              {quality.composerEnabled && anatomyLayer !== 'skeleton' && <PatientPostEffects />}
 
               <OrbitControls
                 ref={controlsRef}
+                makeDefault
                 enablePan={false}
+                enableDamping
+                dampingFactor={0.07}
+                rotateSpeed={0.55}
+                zoomSpeed={0.65}
                 minDistance={activeRegion ? 0.7 : 2}
                 maxDistance={7}
                 minPolarAngle={Math.PI * 0.15}
                 maxPolarAngle={Math.PI * 0.85}
-                dampingFactor={0.12}
-                target={overviewCameraFocus.target}
                 onStart={cancelCameraAnimation}
               />
             </Canvas>

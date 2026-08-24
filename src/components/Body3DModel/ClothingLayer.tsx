@@ -87,8 +87,10 @@ export const CLOTHING_MODE: 'procedural' | 'blended-garment' = 'blended-garment'
 
 /** Garment GLB URL → piece name the hide map (CLOTHING_PARTING) keys on. */
 export const GARMENT_GLBS: Array<{ url: string; name: string; color: string; offset: number }> = [
-  { url: '/models/garment-shirt.glb', name: 'scrub-top', color: TOP_COLOR, offset: 0.026 },
-  { url: '/models/garment-trousers.glb', name: 'scrub-trousers', color: TROUSER_COLOR, offset: 0.012 },
+  // Garments are already lifted from the body in Blender. Runtime offset is
+  // millimetric—only enough to prevent z-fighting, not a second inflated shell.
+  { url: '/models/garment-shirt.glb', name: 'scrub-top', color: TOP_COLOR, offset: 0.001 },
+  { url: '/models/garment-trousers.glb', name: 'scrub-trousers', color: TROUSER_COLOR, offset: 0.001 },
 ];
 
 /** Region id → garment pieces that part (hide) while that region is focused. */

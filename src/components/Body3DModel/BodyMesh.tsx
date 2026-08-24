@@ -54,12 +54,25 @@ export type SurfaceSampler = (
 // the room floor for found-on-the-ground scenes ("treat them where they lie").
 export type BayPatientStage = 'stretcher' | 'floor';
 
-const BAY_STAGE_Y: Record<BayPatientStage, number> = { stretcher: 0.58, floor: 0.08 };
+// Grounding is calibrated from the final exported male mesh's world-space
+// bounds. The road is y=-0.05 and the stretcher sheet top is y=0.5025; these
+// stage origins place the active posture against those support planes.
+const BAY_STAGE_Y: Record<BayPatientStage, number> = { stretcher: 0.94, floor: 0.39 };
 
-export function getTreatmentBayTransform(stage: BayPatientStage = 'stretcher') {
+export function getTreatmentBayTransform(stage: BayPatientStage = 'stretcher', posture: string | null = null) {
+  const baseRotation = -Math.PI / 2;
+  // Tripod remains upright—the authored morph supplies forward lean and braced
+  // arms. Adding only 0.65rad to a supine rotation produced a reclined patient.
+  const pitchUp = posture === 'tripod' ? Math.PI / 2 - 0.35 : 0;
+  // Upright tripod feet are at the model origin, so cancel the stage's supine
+  // body-thickness calibration while retaining the support-surface height.
+  // Recovery is independently calibrated after its side-roll transform.
+  const yOffset = posture === 'tripod' ? -0.28 : 0;
+  const rollSide = posture === 'recovery' ? Math.PI / 2 : 0;
+  const tiltSide = posture === 'recovery' ? 0.1 : 0;
   return {
-    position: [0, BAY_STAGE_Y[stage], 0.78] as [number, number, number],
-    rotation: [-Math.PI / 2, 0, 0] as [number, number, number],
+    position: [0, BAY_STAGE_Y[stage] + yOffset, 0.78] as [number, number, number],
+    rotation: [baseRotation + pitchUp, rollSide, tiltSide] as [number, number, number],
     scale: 1.04,
   };
 }
@@ -67,14 +80,14 @@ export function getTreatmentBayTransform(stage: BayPatientStage = 'stretcher') {
 export function treatmentBayClinicalToWorld(
   point: [number, number, number],
   stage: BayPatientStage = 'stretcher',
+  posture: string | null = null,
 ): [number, number, number] {
-  const [x, y, z] = point;
-  const { position, scale } = getTreatmentBayTransform(stage);
-  return [
-    position[0] + x * scale,
-    position[1] + z * scale,
-    position[2] - y * scale,
-  ];
+  const transform = getTreatmentBayTransform(stage, posture);
+  const projected = new THREE.Vector3(...point)
+    .multiplyScalar(transform.scale)
+    .applyEuler(new THREE.Euler(...transform.rotation))
+    .add(new THREE.Vector3(...transform.position));
+  return [projected.x, projected.y, projected.z];
 }
 
 interface BodyMeshProps {
@@ -1309,11 +1322,14 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
           // the four states unmistakable: fast (high hz), shallow (low amp), deep
           // (high amp), absent (rpm 0 → no movement, handled below).
           const fastTaper = breathRateRpm >= 34 ? 0.7 : breathRateRpm >= 26 ? 0.85 : 1.0;
-          const amp = Math.min(1.35, Math.max(0.25, breathDepthFactor * fastTaper));
+          // The authored morph contains a small whole-silhouette delta in addition
+          // to chest expansion. Keep its influence in a clinical range so breathing
+          // remains visible without making a supine patient rise/sink as a loop.
+          const amp = Math.min(0.42, Math.max(0.08, breathDepthFactor * fastTaper * 0.32));
           // IdleAnimations publishes an occasional sharp extra rise (hypoxic
-          // gasp) via userData — additive on the regular cycle, clamped.
-          const gaspBoost = (clonedScene.userData.idleGaspBoost as number | undefined) ?? 0;
-          infl[idx] = Math.min(1.35, (0.5 - 0.5 * Math.cos(breathPhaseRef.current)) * amp + gaspBoost);
+          // gasp) via userData — additive on the regular cycle, tightly capped.
+          const gaspBoost = Math.min(0.14, (clonedScene.userData.idleGaspBoost as number | undefined) ?? 0);
+          infl[idx] = Math.min(0.5, (0.5 - 0.5 * Math.cos(breathPhaseRef.current)) * amp + gaspBoost);
         } else {
           infl[idx] = 0;
         }
@@ -1730,10 +1746,11 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
 
   return (
     <group
+      name="TreatmentBayPatientRoot"
       ref={meshRef}
-      position={treatmentBayPresentation ? getTreatmentBayTransform(bayStage).position : [0, 0, 0]}
-      rotation={treatmentBayPresentation ? getTreatmentBayTransform(bayStage).rotation : [0, 0, 0]}
-      scale={treatmentBayPresentation ? getTreatmentBayTransform(bayStage).scale : 1}
+      position={treatmentBayPresentation ? getTreatmentBayTransform(bayStage, posture).position : [0, 0, 0]}
+      rotation={treatmentBayPresentation ? getTreatmentBayTransform(bayStage, posture).rotation : [0, 0, 0]}
+      scale={treatmentBayPresentation ? getTreatmentBayTransform(bayStage, posture).scale : 1}
     >
       {/* Invisible "catch-all" plane behind the body. r3f only fires
           onPointerMove on the mesh the raycast hits, so moving the pointer

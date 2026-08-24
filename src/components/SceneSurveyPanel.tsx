@@ -1869,13 +1869,17 @@ export function SceneSurveyPanel({ caseData, onEnterScene, onBack }: SceneSurvey
                       key={id}
                       type="button"
                       onClick={() => togglePpe(id)}
+                      aria-pressed={selected}
                       className={`flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl border text-sm transition-all ${
                         selected
                           ? 'border-emerald-500 bg-emerald-500/10'
                           : 'border-border hover:border-border/80 hover:bg-muted/40 text-muted-foreground'
                       }`}
                     >
-                      <span>{label}</span>
+                      <span className="flex items-center gap-1.5">
+                        {selected && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />}
+                        {label}
+                      </span>
                       {required && <Badge variant="outline" className="text-[10px] py-0 px-1.5">Min</Badge>}
                     </button>
                   );

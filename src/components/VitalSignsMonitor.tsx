@@ -1345,6 +1345,7 @@ function LP20Button({
   disabled = false,
   size = 'normal',
   className = '',
+  ariaLabel,
 }: {
   label: string;
   sublabel?: string;
@@ -1354,6 +1355,7 @@ function LP20Button({
   disabled?: boolean;
   size?: 'normal' | 'small' | 'large';
   className?: string;
+  ariaLabel?: string;
 }) {
   const baseClasses = 'relative font-mono font-bold tracking-wider uppercase transition-all duration-150 select-none';
   const sizeClasses = size === 'large' ? 'px-4 py-2 text-[10px]' : size === 'small' ? 'px-2 py-1 text-[8px]' : 'px-3 py-1.5 text-[9px]';
@@ -1385,6 +1387,7 @@ function LP20Button({
     <button
       onClick={onClick}
       disabled={disabled}
+      aria-label={ariaLabel}
       className={`${baseClasses} ${sizeClasses} ${variantClasses[variant]} rounded
                   ${active ? 'ring-2 ring-white/40' : ''}
                   ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}
@@ -1430,7 +1433,7 @@ export function VitalSignsMonitor({
   const [assessmentProgress, setAssessmentProgress] = useState<Map<string, number>>(new Map());
   const [alarmsEnabled, setAlarmsEnabled] = useState(true); // Alarms ON by default
   const [activeAlarms, setActiveAlarms] = useState<Set<string>>(new Set());
-  const [audioEnabled, setAudioEnabled] = useState(true); // Audio ON by default for realistic experience
+  const [audioEnabled, setAudioEnabled] = useState(false); // Quiet by default; student can explicitly enable AUDIO
   // Track which assessment step IDs have already been reported to prevent repeated calls
   const reportedAssessmentsRef = useRef(new Set<string>());
   // Snapshot of vitals at last assessment — display these instead of live values
@@ -1483,6 +1486,9 @@ export function VitalSignsMonitor({
       setCurrentVitals(initialVitals);
     }
     prevVitalsRef.current = initialVitals;
+    // currentVitals is intentionally omitted: including it reopens the
+    // parent/monitor echo loop documented above.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialVitals]);
 
   // Auto-refresh continuous-monitor vitals (SpO2, pulse, RR) whenever the
@@ -2822,7 +2828,7 @@ export function VitalSignsMonitor({
           {/* Right: mode selector + branding */}
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {assessmentMode && (
-              <Badge variant="outline" className="text-[7px] border-amber-600/50 text-amber-400 h-4 bg-amber-950/30">ASSESS</Badge>
+              <Badge variant="outline" className="text-[7px] border-amber-600/50 text-amber-300 h-4 bg-amber-950/50">ASSESS MODE</Badge>
             )}
             <div className="flex rounded-sm overflow-hidden border border-gray-600/50">
               {(['monitor', 'defib', 'pacer'] as const).map(mode => (
@@ -3398,6 +3404,7 @@ export function VitalSignsMonitor({
                 {Math.floor(cprState.timerSeconds / 60)}:{String(cprState.timerSeconds % 60).padStart(2, '0')}
               </div>
               <LP20Button label={cprState.running ? 'PAUSE' : 'START'} sublabel="CPR"
+                ariaLabel={cprState.running ? 'Pause CPR' : 'Start CPR'}
                 onClick={() => cprState.running ? cprState.onPauseCPR() : cprState.onStartCPR()}
                 variant={cprState.running ? 'red' : 'green'} active={cprState.running} size="large" />
               <LP20Button label="DEFIB" sublabel={`#${cprState.shockCount}`}

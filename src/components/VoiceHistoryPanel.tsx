@@ -212,7 +212,7 @@ export function VoiceHistoryPanel({ caseData, onCategoryObtained, footer }: Voic
                 Press the mic and ask the patient a history question — anything you'd
                 ask in real practice. The patient will answer in their own voice.
               </p>
-              <p className="text-[11px] text-muted-foreground/50 mt-3">
+              <p className="text-[11px] text-slate-300 mt-3">
                 Try: <em>"What medications do you take?"</em> · <em>"Any allergies?"</em> ·
                 <em>"What were you doing when this started?"</em>
               </p>

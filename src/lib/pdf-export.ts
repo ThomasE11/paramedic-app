@@ -310,7 +310,7 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<Blob> 
   if (vitals.temperature !== undefined) vitalSignsParts.push(`Temp: ${vitals.temperature}C`);
   if (vitals.bloodGlucose !== undefined) vitalSignsParts.push(`Glucose: ${vitals.bloodGlucose} mmol/L`);
 
-  addWrappedText(vitalSignsParts.join('    '), FONT.BODY, LINE_HEIGHT.BODY);
+  addWrappedText(vitalSignsParts.join('   |   '), FONT.BODY, LINE_HEIGHT.BODY);
 
   // ========== PERFORMANCE SUMMARY ==========
   addSectionHeader('Performance Summary');
@@ -408,8 +408,9 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<Blob> 
     addStrokeRoundedRect(margin, penaltyBoxTop, contentWidth, penaltyBoxHeight, 2, COLOR.YELLOW);
     addTextAt(`Base score: ${basePercentage}%`, margin + 4, penaltyBoxTop + 6, FONT.LABEL, 'normal', COLOR.MUTED);
     let penaltyRowY = penaltyBoxTop + 11;
-    penaltyReasons.forEach(r => {
-      addTextAt(`-${r.amount}%  ${r.label}`, margin + 4, penaltyRowY, FONT.LABEL, 'normal', COLOR.RED);
+    penaltyReasons.forEach(reason => {
+      addTextAt(`-${reason.amount}%`, margin + 4, penaltyRowY, FONT.LABEL, 'bold', COLOR.RED);
+      addTextAt(reason.label, margin + 18, penaltyRowY, FONT.LABEL, 'normal', COLOR.RED);
       penaltyRowY += 5;
     });
     addTextAt(`Adjusted score: ${percentage}%`, margin + 4, penaltyBoxTop + penaltyBoxHeight - 3, FONT.LABEL, 'bold', COLOR.BODY_TEXT);
@@ -1243,7 +1244,7 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<Blob> 
       doc.setFontSize(FONT.BODY);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(COLOR.BLACK[0], COLOR.BLACK[1], COLOR.BLACK[2]);
-      const qLines = doc.splitTextToSize(`? ${topic.question}`, contentWidth) as string[];
+      const qLines = doc.splitTextToSize(`Clinical question: ${topic.question}`, contentWidth) as string[];
       for (const line of qLines) {
         checkPageBreak(6);
         doc.text(line, margin, yPosition);

@@ -306,6 +306,15 @@ export function inferInjuries(caseData: CaseScenario): BodyInjury[] {
   if (has(/\b(abdomen|abdominal)\b[\s\w]*\b(distend|rigid|guard|periton)\b/) || has(/\b(distended|rigid|guarded) abdomen\b/) || has(/\bperitonism\b/)) {
     push('abdomen', 'distension', 'Abdominal distension', 'Distended / rigid abdomen — intra-abdominal bleeding or peritonitis.');
   }
+  // Infected post-operative incision: cases often author the incision and
+  // infection signs in separate structured clauses (e.g. "Midline incision"
+  // plus "Purulent drainage"), so require both signals across the case rather
+  // than forcing them into one clause.
+  const hasSurgicalIncision = has(/\b(surgical wound|surgical incision|midline incision|post[- ]?op(?:erative)? wound|incision|sutur(?:e|ed))\b/);
+  const hasWoundInfection = has(/\b(infect(?:ed|ion)|erythema|cellulitis|purulent|pus|drain(?:age|ing)|seropurulent|wound swelling)\b/);
+  if (hasSurgicalIncision && hasWoundInfection) {
+    push('abdomen', 'wound', 'Infected surgical wound', 'Midline surgical incision with erythema, cellulitis, swelling and purulent drainage.');
+  }
   if (has(/\b(penetrating|stab|gsw|gunshot|eviscerat|open)\b[\s\w]*\b(abdomen|abdominal)\b/) || has(/\babdominal evisc|\bevisceration\b/)) {
     push('abdomen', 'wound', 'Abdominal wound', 'Penetrating abdominal trauma / evisceration.', 8, 0);
   }

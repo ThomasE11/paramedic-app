@@ -1846,7 +1846,10 @@ export function TreatmentJumpBagPanel({
                   <div className="glass-control w-full rounded-md px-2 py-1.5 ring-1 ring-slate-200/70 dark:ring-slate-800">
                     <div className="flex items-center justify-between gap-1">
                       <p className="truncate text-[11px] font-bold">{bag.label}</p>
-                      <Badge variant={isActive ? 'default' : 'outline'} className="h-4 rounded px-1 text-[8px]">
+                      <Badge
+                        variant={isActive ? 'default' : 'outline'}
+                        className={`h-4 rounded px-1 text-[8px] ${isActive ? '' : 'border-slate-500 bg-slate-800 text-slate-100'}`}
+                      >
                         {isActive ? 'Open' : 'Closed'}
                       </Badge>
                     </div>
