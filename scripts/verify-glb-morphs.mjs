@@ -2,7 +2,8 @@
 // Checks: male morph targets present, bone count, mesh primitives.
 import { readFileSync } from 'node:fs';
 
-const buf = readFileSync('public/models/patient-male.glb');
+const path = process.argv[2] ?? 'public/models/patient-male.glb';
+const buf = readFileSync(path);
 const jsonLen = buf.readUInt32LE(12);
 const json = JSON.parse(buf.subarray(20, 20 + jsonLen).toString('utf8'));
 
@@ -32,3 +33,24 @@ console.log('materials:', (json.materials ?? []).map(m => m.name));
 const maleMarkers = ['muscle', 'broad', 'jaw', 'brow', 'shoulder', 'chest', 'breath', 'viseme', 'belly'];
 const found = targetNames.filter(n => maleMarkers.some(k => n.toLowerCase().includes(k)));
 console.log('masculinity/clinical markers found:', found);
+
+const requiredTargets = [
+  'breathe_chest_rise',
+  'viseme_open',
+  'pose_tripod',
+  'pose_supine',
+  'pose_recovery',
+  'motion_gasp',
+  'motion_wince',
+  'motion_clutch',
+  'motion_seizure',
+  'motion_tremor',
+  'motion_agitation',
+];
+const missing = requiredTargets.filter(name => !targetNames.includes(name));
+if (missing.length) {
+  console.error('missing required morph targets:', missing);
+  process.exitCode = 1;
+} else {
+  console.log(`required morph targets: ${requiredTargets.length}/${requiredTargets.length}`);
+}

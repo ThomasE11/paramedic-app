@@ -28,6 +28,10 @@ import { injuryRegionTo3D, type BodyInjury } from '@/lib/injuryMap';
 import { LifeSigns } from './LifeSigns';
 import { IdleAnimations, type IdleCues } from './IdleAnimations';
 import { setBreathClock } from '@/lib/breathClock';
+import {
+  PATIENT_MOTION_MORPHS,
+  type PatientMotionSignals,
+} from '@/lib/patientMotion';
 import type { ThreeEvent } from '@react-three/fiber';
 import { HOVER_COLOR, ASSESSED_COLOR, GUIDED_NEXT_COLOR, GUIDED_LOCKED_COLOR } from './bodyRegions';
 import type { SecondaryAssessmentStep } from '@/data/assessmentFramework';
@@ -1282,6 +1286,7 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
         if (name === 'breathe_chest_rise') continue; // handled below
         if (name === 'viseme_open') continue;        // lip-sync, below
         if (POSTURE_MORPHS.includes(name)) continue; // posture mixer, below
+        if (PATIENT_MOTION_MORPHS.includes(name as typeof PATIENT_MOTION_MORPHS[number])) continue;
         const target = active.includes(name) ? 1 : 0;
         const cur = morphInfluenceRef.current[name] ?? 0;
         const next = cur + (target - cur) * Math.min(1, delta * 4);
@@ -1300,6 +1305,15 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
         const next = cur + (target - cur) * Math.min(1, delta * 4);
         morphInfluenceRef.current[name] = next;
         infl[idx] = next;
+      }
+
+      // Condition-responsive LOCAL movement. IdleAnimations publishes these
+      // weights without translating or rotating the scene root, so collapsed
+      // patients remain grounded while shoulders and limbs still move.
+      const motion = clonedScene.userData.patientMotion as PatientMotionSignals | undefined;
+      for (const name of PATIENT_MOTION_MORPHS) {
+        const motionIdx = dict[name];
+        if (motionIdx !== undefined) infl[motionIdx] = motion?.[name] ?? 0;
       }
 
       // Lip-sync: drive viseme_open from the voice analyser's 0..1 amplitude.
@@ -1783,9 +1797,9 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
           texture swap). Unconscious patients lie still, eyes closed. */}
       <LifeSigns scene={clonedScene} unconscious={unconscious} />
 
-      {/* Condition-responsive idle motion — wince, shiver, gasp, tremor,
-          seizure, agitation, chest clutch. Mounted AFTER LifeSigns: its
-          additive rotation writes layer on LifeSigns' absolute base+sway. */}
+      {/* Condition-responsive local morph motion — wince, shiver, gasp,
+          tremor, seizure, agitation and chest clutch. The patient root is
+          deliberately left planted on its support surface. */}
       <IdleAnimations
         scene={clonedScene}
         unconscious={unconscious}

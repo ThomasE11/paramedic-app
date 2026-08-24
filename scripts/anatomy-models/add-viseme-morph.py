@@ -24,6 +24,12 @@ Morphs added (default value 0 → model unchanged until driven):
   • pose_tripod   — torso forward-lean + shoulder raise (accessory-muscle look)
   • pose_supine   — slight overall settle/flatten (lie-back lean)
   • pose_recovery — asymmetric roll toward one side
+  • motion_gasp    — local shoulder / upper-chest effort without moving the root
+  • motion_wince   — protective torso curl and shoulder draw-in
+  • motion_clutch  — one forearm guards the chest in cardiac pain
+  • motion_seizure — asymmetric limb flexion for rhythmic convulsive movement
+  • motion_tremor  — small distal hand movement for tremor / shivering
+  • motion_agitation — head and upper-torso restless shift
 
 Runs on the OUTPUT of A1 (already masculinized) and re-exports in place, so the
 masculinization + existing 3 clinical morphs are preserved. Backup .bak from A1
@@ -37,7 +43,11 @@ import math
 SRC = os.path.abspath("public/models/patient-male.glb")
 
 REQUIRED_EXISTING = ["breathe_chest_rise", "finding_abdo_distension", "finding_jvd"]
-NEW_MORPHS = ["viseme_open", "pose_tripod", "pose_supine", "pose_recovery"]
+NEW_MORPHS = [
+    "viseme_open", "pose_tripod", "pose_supine", "pose_recovery",
+    "motion_gasp", "motion_wince", "motion_clutch", "motion_seizure",
+    "motion_tremor", "motion_agitation",
+]
 
 
 def log(m):
@@ -116,24 +126,22 @@ def add_pose(obj, name, ax, lo, span, mode):
         d = 0.0
         if mode == "tripod":
             # Forward lean grows above the hips; shoulders lift with visible
-            # accessory-muscle effort. The source mesh is an A-pose, so rotate
-            # each arm down around its shoulder instead of leaving it horizontal.
+            # accessory-muscle effort. Blender's imported forward axis is -Y.
+            # The source mesh is an A-pose, so bring each distal arm inward and
+            # forward until the hands brace on the upper thighs.
             lean = smoothstep(0.5, 0.95, f)
-            p.y += 0.18 * lean
+            p.y -= 0.18 * lean
             sh = smoothstep(0.74, 0.84, f) * (1.0 - smoothstep(0.86, 0.92, f))
             p[ax] += 0.022 * sh
             scale = span / 1.8
             if 0.48 <= f <= 0.84 and abs(v.co.x) > 0.18 * scale:
                 side = 1.0 if v.co.x > 0 else -1.0
-                pivot_x = side * 0.19 * scale
-                pivot_h = lo + 0.79 * span
-                dx = v.co.x - pivot_x
-                dh = v.co[ax] - pivot_h
-                theta = side * math.radians(58)
-                p.x = pivot_x + math.cos(theta) * dx + math.sin(theta) * dh
-                p[ax] = pivot_h - math.sin(theta) * dx + math.cos(theta) * dh
-                distal = min(1.0, abs(dx) / max(0.001, 0.42 * scale))
-                p.y += 0.30 * distal
+                distal = smoothstep(0.18 * scale, 0.54 * scale, abs(v.co.x))
+                target_x = side * 0.20 * scale
+                p.x += (target_x - v.co.x) * distal
+                p.y -= 0.34 * distal
+                target_h = lo + 0.43 * span
+                p[ax] += (target_h - v.co[ax]) * 0.92 * distal
                 d += distal
             d += lean + sh
         elif mode == "supine":
@@ -152,6 +160,81 @@ def add_pose(obj, name, ax, lo, span, mode):
         if d > 0:
             key.data[i].co = p
             moved += 1
+    key.value = 0.0
+    log(f"{name} ({mode}): {moved} verts")
+
+
+def add_motion(obj, name, ax, lo, span, mode):
+    """Author local clinical motion while keeping support points planted.
+
+    Animating the root makes a collapsed patient detach from the floor or
+    stretcher. These targets move only the anatomy involved in the cue.
+    """
+    key = obj.shape_key_add(name=name, from_mix=False)
+    mesh = obj.data
+    scale = span / 1.8
+    moved = 0
+
+    for i, v in enumerate(mesh.vertices):
+        f = (v.co[ax] - lo) / span
+        p = key.data[i].co.copy()
+        changed = False
+
+        if mode == "gasp":
+            upper = smoothstep(0.62, 0.80, f) * (1.0 - smoothstep(0.89, 0.96, f))
+            shoulder = smoothstep(0.73, 0.80, f) * (1.0 - smoothstep(0.84, 0.90, f))
+            if upper > 0:
+                p.y += 0.030 * upper
+                p[ax] += 0.018 * shoulder
+                changed = True
+
+        elif mode == "wince":
+            torso = smoothstep(0.50, 0.72, f) * (1.0 - smoothstep(0.92, 0.99, f))
+            if torso > 0:
+                lateral = smoothstep(0.12 * scale, 0.42 * scale, abs(v.co.x))
+                p.y += 0.035 * torso
+                p.x -= math.copysign(0.018 * torso * lateral, v.co.x)
+                changed = True
+
+        elif mode == "clutch":
+            # Patient-left arm (x>0) guards the sternum. Keep the arc modest so
+            # additive posture blending cannot fold the limb through the torso.
+            if 0.48 <= f <= 0.84 and v.co.x > 0.18 * scale:
+                distal = smoothstep(0.18 * scale, 0.52 * scale, v.co.x)
+                p.x -= 0.22 * distal
+                p.y += 0.16 * distal
+                p[ax] += 0.055 * distal
+                changed = True
+
+        elif mode == "seizure":
+            lateral = abs(v.co.x) > 0.18 * scale
+            if f < 0.55 or (0.48 <= f <= 0.84 and lateral):
+                side = 1.0 if v.co.x >= 0 else -1.0
+                distal = smoothstep(0.16 * scale, 0.52 * scale, abs(v.co.x))
+                lower = 1.0 - smoothstep(0.50, 0.66, f)
+                amount = max(distal, lower * 0.7)
+                p.y += side * 0.055 * amount
+                p[ax] += side * 0.028 * amount
+                changed = True
+
+        elif mode == "tremor":
+            if 0.42 <= f <= 0.72 and abs(v.co.x) > 0.42 * scale:
+                side = 1.0 if v.co.x >= 0 else -1.0
+                p.y += side * 0.018
+                p[ax] += 0.009
+                changed = True
+
+        elif mode == "agitation":
+            upper = smoothstep(0.68, 0.90, f)
+            if upper > 0:
+                p.x += 0.020 * upper
+                p.y += 0.012 * upper
+                changed = True
+
+        if changed:
+            key.data[i].co = p
+            moved += 1
+
     key.value = 0.0
     log(f"{name} ({mode}): {moved} verts")
 
@@ -207,6 +290,12 @@ def main():
     add_pose(obj, "pose_tripod", ax, lo, span, "tripod")
     add_pose(obj, "pose_supine", ax, lo, span, "supine")
     add_pose(obj, "pose_recovery", ax, lo, span, "recovery")
+    add_motion(obj, "motion_gasp", ax, lo, span, "gasp")
+    add_motion(obj, "motion_wince", ax, lo, span, "wince")
+    add_motion(obj, "motion_clutch", ax, lo, span, "clutch")
+    add_motion(obj, "motion_seizure", ax, lo, span, "seizure")
+    add_motion(obj, "motion_tremor", ax, lo, span, "tremor")
+    add_motion(obj, "motion_agitation", ax, lo, span, "agitation")
 
     # post-check: existing + new all present
     keys = [k.name for k in mesh.shape_keys.key_blocks]
