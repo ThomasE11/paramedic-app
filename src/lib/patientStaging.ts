@@ -7,6 +7,8 @@ import type { CaseScenario } from '@/types';
  * This drives the 3D presentation only. It never changes clinical state.
  */
 export type PatientStage = 'stretcher' | 'floor';
+export type PatientMobility = 'recumbent' | 'seated' | 'standing' | 'pacing';
+export type PatientSkeletalAction = 'idle' | 'walk' | null;
 
 // ponytail: keyword staging over authored per-case data — explicit ground
 // words only, so an ambiguous scene stays on the stretcher (clinically fine:
@@ -51,4 +53,45 @@ export function deriveScenePatientStage(caseData: CaseScenario): PatientStage {
     .join(' ')
     .toLowerCase();
   return FLOOR_PATTERN.test(text) ? 'floor' : 'stretcher';
+}
+
+/**
+ * Translate authored free-text positions into a small, renderable movement
+ * contract.  This deliberately uses the initial-presentation position only:
+ * a location containing words such as "street" must not make a supine trauma
+ * patient walk, and a differential mentioning agitation must not override the
+ * pose the crew actually finds.
+ */
+export function derivePatientMobility(
+  caseData: CaseScenario,
+  unconscious = false,
+): PatientMobility {
+  if (unconscious) return 'recumbent';
+  const position = (caseData.initialPresentation?.position ?? '').toLowerCase();
+
+  if (/\bpacing\b|\bwalking\b|\bwandering\b|\bambulatory\b/.test(position)) {
+    return 'pacing';
+  }
+  if (/\bstanding\b|\bstood\b|\bon (?:their|his|her) feet\b/.test(position)) {
+    return 'standing';
+  }
+  if (
+    /\bsitting\b|\bseated\b|\bchair\b|\bdriver(?:'s)? seat\b|\blap\b|\bbeing held\b|\btripod\b|\bleaning against\b/.test(
+      position,
+    )
+  ) {
+    return 'seated';
+  }
+  return 'recumbent';
+}
+
+/** Only ambulatory patients receive whole-skeleton locomotion. */
+export function patientSkeletalAction(
+  mobility: PatientMobility,
+  unconscious = false,
+): PatientSkeletalAction {
+  if (unconscious) return null;
+  if (mobility === 'pacing') return 'walk';
+  if (mobility === 'standing') return 'idle';
+  return null;
 }

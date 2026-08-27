@@ -156,9 +156,9 @@ surfaces.
 
 ## SHIPPED 2026-05-29 — MPFB photographic-skin patients (CC0)
 
-`patient.glb` (male) and `patient-female.glb` are now **MPFB-generated humans with
-real photographic skin**, replacing the old game avatars. This also removed the
-CC BY-NC licence problem (old female was Ready Player Me, non-commercial).
+`patient-male.glb` and `patient-female.glb` are **MPFB-generated humans with real
+photographic skin**, replacing the old game avatars. This also removed the CC
+BY-NC licence problem (old female was Ready Player Me, non-commercial).
 
 - **Base mesh:** MPFB2 `HumanService.create_human` (CC0), helper geometry stripped
   to the `body` vertex group (13,380 verts).
@@ -179,9 +179,29 @@ CC BY-NC licence problem (old female was Ready Player Me, non-commercial).
 - **Backups:** `patient.glb.orig` (Mixamo), `patient-mpfb-untextured.bak.glb`,
   `patient-female-rpm.bak.glb`.
 
+## SHIPPED 2026-08-27 — fitted movement rigs
+
+Both active patients now include a fitted 52-bone MPFB Mixamo armature while
+retaining all 13 clinical morph targets and the separate eye hierarchy. The
+runtime selects movement from the authored scene position: recumbent/seated
+patients remain planted; standing patients idle; pacing/ambulatory patients use
+the retargeted walk loop. Procedural clothing copies the same skin indices and
+weights, so it follows the body rather than floating through moving limbs.
+
+The reproducible/idempotent Blender pipeline is:
+
+```
+Blender --background --python scripts/anatomy-models/rig-patient.py -- \
+  male public/models/patient-male.glb \
+  public/models/patient.glb.orig /tmp/patient-male-rigged.glb
+```
+
+The pipeline rejects missing morphs, incomplete weight coverage, poor
+anatomical weight alignment and animation clips without articulated limb
+motion. It exports only patient/eyes/rig: no Blender camera, light or helper
+geometry.
+
 ### Still to improve (future)
 - Skin has no normal/SSS maps (diffuse only) — could bake MPFB's procedural pore
   detail to a normal map (Cycles bake works headless) for more realism.
 - No hair; bald. Add a hair card asset if desired (must not occlude scalp/airway exam).
-- A rig is NOT included (static exam mesh + shape-key morphs). Add a rig if
-  bone-driven limb-deformity findings are wired later.

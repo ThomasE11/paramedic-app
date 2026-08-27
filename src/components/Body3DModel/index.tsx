@@ -17,7 +17,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { RotateCcw, User, Eye, Hand, Activity, Stethoscope, X, ChevronRight, ChevronDown, AlertTriangle, Compass, Unlock, Wind, Shirt } from 'lucide-react';
 import { BodyMesh, treatmentBayClinicalToWorld, type BayPatientStage } from './BodyMesh';
-import { deriveScenePatientStage } from '@/lib/patientStaging';
+import {
+  derivePatientMobility,
+  deriveScenePatientStage,
+  type PatientMobility,
+} from '@/lib/patientStaging';
 import { deriveSceneEnvironment } from '@/lib/sceneEnvironment';
 import type { LimbSide, SurfaceSampler } from './BodyMesh';
 import { AdaptiveQuality, PatientPostEffects, qualityForTier } from './AdaptiveQuality';
@@ -429,11 +433,15 @@ function TreatmentBayImmersionLayer({
   appliedTreatmentIds,
   active,
   stage = 'stretcher',
+  posture = null,
+  mobility = 'recumbent',
   patientWeight = 70,
 }: {
   appliedTreatmentIds: string[];
   active: boolean;
   stage?: BayPatientStage;
+  posture?: 'tripod' | 'supine' | 'recovery' | null;
+  mobility?: PatientMobility;
   patientWeight?: number;
 }) {
   const equipment = useMemo(
@@ -443,17 +451,17 @@ function TreatmentBayImmersionLayer({
 
   if (!active) return null;
 
-  const face = treatmentBayClinicalToWorld([0, 1.56, 0.26], stage);
-  const chestLeft = treatmentBayClinicalToWorld([-0.10, 1.27, 0.25], stage);
-  const chestRight = treatmentBayClinicalToWorld([0.11, 1.18, 0.25], stage);
-  const ivSite = treatmentBayClinicalToWorld([-0.23, 0.82, 0.24], stage);
+  const face = treatmentBayClinicalToWorld([0, 1.56, 0.26], stage, posture, mobility);
+  const chestLeft = treatmentBayClinicalToWorld([-0.10, 1.27, 0.25], stage, posture, mobility);
+  const chestRight = treatmentBayClinicalToWorld([0.11, 1.18, 0.25], stage, posture, mobility);
+  const ivSite = treatmentBayClinicalToWorld([-0.23, 0.82, 0.24], stage, posture, mobility);
 
   return (
     <group>
       {/* Head pad exists only on the stretcher. Floor/roadside patients are
           treated where found; rendering a pad there obscures the face and can
           look like vehicle geometry crossing the body. */}
-      {stage === 'stretcher' && (
+      {stage === 'stretcher' && mobility === 'recumbent' && (
         <mesh position={[0, 0.505, -0.84]} rotation={[-Math.PI / 2, 0, 0]} raycast={() => null}>
           <boxGeometry args={[0.72, 0.36, 0.055]} />
           <meshStandardMaterial color="#e5edf4" roughness={0.86} metalness={0.02} transparent opacity={0.88} />
@@ -1326,11 +1334,15 @@ function TreatmentEquipmentOverlay({
   sampler,
   presentation,
   bayStage = 'stretcher',
+  posture = null,
+  mobility = 'recumbent',
 }: {
   appliedTreatmentIds: string[];
   sampler: SurfaceSampler | null;
   presentation: MarkerPresentation;
   bayStage?: BayPatientStage;
+  posture?: 'tripod' | 'supine' | 'recovery' | null;
+  mobility?: PatientMobility;
 }) {
   const equipment = useMemo(
     () => buildTreatmentEquipmentState(appliedTreatmentIds),
@@ -1383,7 +1395,7 @@ function TreatmentEquipmentOverlay({
       )}
 
       {equipment.hasFluids && (
-        <MarkerHtml position={presentation === 'treatment-bay' ? treatmentBayClinicalToWorld([-0.46, 1.16, 0.12], bayStage) : [-0.46, 1.16, 0.12]} distanceFactor={3.0} zIndexRange={[71, 0]} interactive={false} presentation={presentation}>
+        <MarkerHtml position={presentation === 'treatment-bay' ? treatmentBayClinicalToWorld([-0.46, 1.16, 0.12], bayStage, posture, mobility) : [-0.46, 1.16, 0.12]} distanceFactor={3.0} zIndexRange={[71, 0]} interactive={false} presentation={presentation}>
           <EquipmentPin tone="iv" src={TREATMENT_ASSET_PATHS.ivPole} />
         </MarkerHtml>
       )}
@@ -3105,9 +3117,10 @@ const DEFAULT_CAMERA_FOCUS = {
 function getTreatmentBayCameraFocus(
   stage: BayPatientStage,
   posture: 'tripod' | 'supine' | 'recovery' | null,
+  mobility: PatientMobility = 'recumbent',
 ) {
-  if (posture === 'tripod') {
-    const stageLift = stage === 'stretcher' ? 0.55 : 0;
+  if (posture === 'tripod' || mobility === 'standing' || mobility === 'pacing') {
+    const stageLift = posture === 'tripod' && stage === 'stretcher' ? 0.55 : 0;
     return {
       pos: [0.38, 1.42 + stageLift, 3.52] as [number, number, number],
       target: [0, 1.02 + stageLift, 0] as [number, number, number],
@@ -3120,7 +3133,7 @@ function getTreatmentBayCameraFocus(
       // bleeding and skin colour without making the student zoom first.
       ? [0.55, 2.85, 2.15]
       : [1.42, 1.30, 2.12]) as [number, number, number],
-    target: treatmentBayClinicalToWorld([0, 0.96, -0.05], stage),
+    target: treatmentBayClinicalToWorld([0, 0.96, -0.05], stage, posture, mobility),
   };
 }
 
@@ -4027,6 +4040,11 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
     return caseData.abcde?.disability?.avpu === 'U';
   }, [isInArrest, vitals?.gcs, caseData]);
 
+  const patientMobility = useMemo(
+    () => derivePatientMobility(caseData, patientUnconscious),
+    [caseData, patientUnconscious],
+  );
+
   // Capture/dev-only SpO2 override so the harness can pin 85 vs 94 without
   // mutating the live treatment engine. Production builds never set it.
   const effectiveVitals = useMemo<Partial<VitalSigns> | undefined>(() => {
@@ -4042,6 +4060,15 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   // target for a respiratory patient cropped the head out of the viewport.
   const patientPosture = useMemo<'tripod' | 'supine' | 'recovery' | null>(() => {
     if (patientUnconscious) return 'supine';
+    const authoredPosition = caseData.initialPresentation?.position?.toLowerCase() ?? '';
+    if (/recovery position|curled on (?:their |his |her )?side|lying on (?:their |his |her )?side/.test(authoredPosition)) {
+      return 'recovery';
+    }
+    // Position is authoritative. A tachypnoeic patient documented as supine
+    // must not be silently stood into a tripod merely because RR reaches 22.
+    if (patientMobility === 'recumbent') return 'supine';
+    if (patientMobility === 'seated') return 'tripod';
+    if (patientMobility === 'standing' || patientMobility === 'pacing') return null;
     const source = effectiveVitals;
     const rr = caseData.abcde?.breathing?.rate ?? source?.respiration ?? null;
     const respiratoryDistress =
@@ -4050,13 +4077,13 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
         `${caseData.category ?? ''} ${caseData.title ?? ''} ${caseData.dispatchInfo?.callReason ?? ''}`,
       );
     return respiratoryDistress ? 'tripod' : 'supine';
-  }, [patientUnconscious, effectiveVitals, caseData]);
+  }, [patientUnconscious, patientMobility, effectiveVitals, caseData]);
 
   // useMemo keeps the pos/target array identities stable — OrbitControls'
   // `target` prop and several useCallback deps rely on that.
   const overviewCameraFocus = useMemo(
-    () => (treatmentBayOverviewEnabled ? getTreatmentBayCameraFocus(bayStage, patientPosture) : DEFAULT_CAMERA_FOCUS),
-    [treatmentBayOverviewEnabled, bayStage, patientPosture],
+    () => (treatmentBayOverviewEnabled ? getTreatmentBayCameraFocus(bayStage, patientPosture, patientMobility) : DEFAULT_CAMERA_FOCUS),
+    [treatmentBayOverviewEnabled, bayStage, patientPosture, patientMobility],
   );
 
   // OrbitControls target is imperative state. Initialise/reset it only for the
@@ -4427,8 +4454,8 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
         focus.target[0],
         focus.target[1],
         stepId === 'posterior-logroll' ? -0.08 : 0.10,
-      ], bayStage, patientPosture);
-      const clinicalDirection: [number, number, number] = patientPosture === 'tripod'
+      ], bayStage, patientPosture, patientMobility);
+      const clinicalDirection: [number, number, number] = patientPosture === 'tripod' || patientMobility === 'standing' || patientMobility === 'pacing'
         ? (stepId === 'face' || stepId === 'head' || stepId === 'neck-cspine'
             ? [0.04, 0.48, 1]
             : [0.10, 0.10, 1])
@@ -4473,7 +4500,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
       animateCamera(controlsRef.current, pos, target, 460);
     }
     setIsFlipped(stepId === 'posterior-logroll');
-  }, [onRegionClick, animateCamera, clearPatientReaction, anatomyLayer, bayStage, caseData, patientVoice, patientPosture, treatmentBayOverviewEnabled]);
+  }, [onRegionClick, animateCamera, clearPatientReaction, anatomyLayer, bayStage, caseData, patientVoice, patientPosture, patientMobility, treatmentBayOverviewEnabled]);
 
   // Phase 2F: Sound progress animation
   const startSoundProgress = useCallback((actionId: string, durationMs: number) => {
@@ -5054,10 +5081,11 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
               camera={{ position: overviewCameraFocus.pos, fov: useTreatmentBayPresentation ? 34 : 34, near: 0.05, far: 200 }}
               dpr={Math.min(window.devicePixelRatio, 2)}
               frameloop="always"
-              // Soft shadow maps for the surgical key light. One 1024px
-              // caster only; disabled on the last quality rung alongside
-              // contact shadows.
-              shadows="soft"
+              // One standard PCF shadow map for the surgical key light;
+              // disabled on the last quality rung alongside contact shadows.
+              // `shadows="soft"` now selects Three's deprecated
+              // PCFSoftShadowMap and flooded the console on every remount.
+              shadows={quality.contactShadows ? { type: THREE.PCFShadowMap } : false}
               gl={{
                 antialias: true,
                 alpha: true,
@@ -5193,6 +5221,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 sss={qualityTier < 1}
                 // Work-of-breathing posture; eases to recovery as SpO2 climbs.
                 posture={patientPosture}
+                mobility={patientMobility}
                 // Lip-sync drive from the patient's TTS analyser.
                 mouthOpenRef={patientVoice.mouthOpenRef}
               />
@@ -5201,6 +5230,8 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 appliedTreatmentIds={appliedTreatmentIds}
                 active={useTreatmentBayPresentation}
                 stage={bayStage}
+                posture={patientPosture}
+                mobility={patientMobility}
                 patientWeight={caseData?.patientInfo?.weight ?? 70}
               />
 
@@ -5226,6 +5257,8 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 visible={anatomyLayer === 'skeleton'}
                 presentation={treatmentBayMode ? 'treatment-bay' : 'upright'}
                 stage={bayStage}
+                posture={patientPosture}
+                mobility={patientMobility}
                 activeRegion={activeRegion}
               />
 
@@ -5281,6 +5314,8 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 sampler={surfaceSampler}
                 presentation={markerPresentation}
                 bayStage={bayStage}
+                posture={patientPosture}
+                mobility={patientMobility}
               />
 
               {quality.contactShadows && (

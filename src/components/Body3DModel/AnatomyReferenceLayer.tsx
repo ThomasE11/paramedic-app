@@ -3,11 +3,14 @@ import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { getTreatmentBayTransform, type BayPatientStage } from './BodyMesh';
+import type { PatientMobility } from '@/lib/patientStaging';
 
 interface AnatomyReferenceLayerProps {
   visible: boolean;
   presentation?: 'upright' | 'treatment-bay';
   stage?: BayPatientStage;
+  posture?: 'tripod' | 'supine' | 'recovery' | null;
+  mobility?: PatientMobility;
   activeRegion?: string | null;
 }
 
@@ -29,7 +32,7 @@ function boneMatchesRegion(name: string, region: string | null): boolean {
   return true;
 }
 
-export function AnatomyReferenceLayer({ visible, presentation = 'upright', stage = 'stretcher', activeRegion = null }: AnatomyReferenceLayerProps) {
+export function AnatomyReferenceLayer({ visible, presentation = 'upright', stage = 'stretcher', posture = null, mobility = 'recumbent', activeRegion = null }: AnatomyReferenceLayerProps) {
   const { scene } = useGLTF('/models/open3d-skeleton.glb');
 
   const anatomyScene = useMemo(() => {
@@ -82,7 +85,7 @@ export function AnatomyReferenceLayer({ visible, presentation = 'upright', stage
   if (!visible) return null;
 
   const bayTransform = presentation === 'treatment-bay'
-    ? getTreatmentBayTransform(stage)
+    ? getTreatmentBayTransform(stage, posture, mobility)
     : { position: [0, 0, 0] as [number, number, number], rotation: [0, 0, 0] as [number, number, number], scale: 1 };
   const groupPosition: [number, number, number] = [
     bayTransform.position[0],

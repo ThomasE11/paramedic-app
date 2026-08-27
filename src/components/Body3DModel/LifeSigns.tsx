@@ -4,10 +4,10 @@
  * One useFrame, ref mutations only (no setState, no per-frame allocations):
  *   • Micro idle sway  — two incommensurate sines rotate the model root a
  *     fraction of a degree around the feet, the gentle weight-shift real
- *     standing humans can't suppress. (The active patient GLBs ship as a
- *     single unrigged mesh — no head bone exists — so the sway lives on the
- *     model root rather than the head.) Eases to a perfectly still base pose
- *     when the patient is unconscious (GCS ≤ 8 / AVPU 'U' / arrest).
+ *     standing humans can't suppress. Whole-skeleton idle/walk clips are now
+ *     selected by BodyMesh for ambulatory cases; this layer keeps the staged
+ *     root planted and supplies eyes/lids for every posture. Unconscious
+ *     patients remain still (GCS ≤ 8 / AVPU 'U' / arrest).
  *   • Blink            — swaps `material.map` between two PRE-RENDERED canvas
  *     textures (eyes open / skin-toned lids, built once in EyesLayer). A swap
  *     is a sampler-uniform update, not a texture re-upload, so blinking costs
@@ -87,11 +87,10 @@ export function LifeSigns({ scene, unconscious }: LifeSignsProps) {
     a.t += delta;
 
     // ---- Stable patient root -----------------------------------------------
-    // The patient GLB is unrigged and is commonly supine, collapsed, or
-    // supported by a stretcher. Rotating the entire scene as "idle sway"
-    // pivots the body through its support surface and reads as bouncing.
-    // Keep the root at its authored/staged transform; breathing is driven by
-    // the chest morph in BodyMesh and eyes retain their independent motion.
+    // Rotating the entire scene as "idle sway" pivots a supine/collapsed body
+    // through its support surface and also fights the fitted skeleton's
+    // ambulatory clips. Keep the root at its authored/staged transform;
+    // breathing is driven by the chest morph and eyes move independently.
     const target = unconscious ? 0 : 1;
     a.sway += (target - a.sway) * Math.min(1, delta * 1.5);
     scene.rotation.x = nodes.baseRotX;

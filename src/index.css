@@ -1105,7 +1105,7 @@ body {
   min-height: 0;
 }
 
-@media (min-width: 641px) and (max-width: 1279px) {
+@media (min-width: 641px) and (max-width: 1179px) {
   .tactical-treatment-bay {
     overflow-y: auto;
   }
@@ -2823,11 +2823,16 @@ body {
 
   .tactical-bay-workspace {
     display: grid;
-    grid-template-columns: minmax(17rem, 0.68fr) minmax(0, 2.25fr) minmax(19rem, 0.82fr);
+    /* A 12–13 inch laptop cannot give the patient, assessment rail and a
+       full bedside monitor honest widths in one row.  Keep the patient and
+       assessment controls together, then let the monitor use the complete
+       second row.  This removes the narrow "folded monitor" state and the
+       nested scroll area that hid its lower controls. */
+    grid-template-columns: minmax(17rem, 0.72fr) minmax(0, 2.1fr);
     grid-template-areas:
-      "assessment patient monitor"
-      "assessment patient monitor"
-      "timeline timeline timeline";
+      "assessment patient"
+      "monitor monitor"
+      "timeline timeline";
     align-items: start;
     gap: 0.82rem;
     padding: 0.82rem;
@@ -2990,9 +2995,9 @@ body {
 
   .tactical-monitor-rail {
     grid-area: monitor;
-    max-height: min(92vh, 64rem);
-    overflow-y: auto;
-    padding-right: 0.12rem;
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
   }
 
   .tactical-monitor-card {
@@ -3011,7 +3016,7 @@ body {
   }
 
   .tactical-monitor-rail .tactical-care-feed-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .tactical-monitor-rail .tactical-care-feed-item {
@@ -3050,6 +3055,23 @@ body {
 
   .tactical-bay-timeline {
     grid-area: timeline;
+  }
+}
+
+/* Wide workstations can support the full three-column clinical cockpit.  The
+   monitor keeps a 25rem minimum so waveforms, values and device controls do
+   not collapse into each other. */
+@media (min-width: 1440px) {
+  .tactical-bay-workspace {
+    grid-template-columns: minmax(17rem, 0.68fr) minmax(0, 2.25fr) minmax(25rem, 0.94fr);
+    grid-template-areas:
+      "assessment patient monitor"
+      "assessment patient monitor"
+      "timeline timeline timeline";
+  }
+
+  .tactical-monitor-rail .tactical-care-feed-grid {
+    grid-template-columns: 1fr;
   }
 }
 

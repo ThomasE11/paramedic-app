@@ -8,9 +8,9 @@
  * exactly like the body they cover, so it reads as fabric worn by THIS
  * patient — and it works unchanged on any normalised GLB we load.
  *
- * The patient GLBs are a single baked mesh with NO skeleton (the exam's bone
- * hit-test falls back to Y-ranges on them too), so vertices are classified
- * geometrically + topologically:
+ * Vertices are classified geometrically + topologically, which keeps the
+ * garment builder compatible with both the legacy unrigged fallback and the
+ * active rigged male/female patients:
  *
  *   1. Cut heights (hem, waistband, sleeve, neckline, cuff) are FRACTIONS of
  *      the measured body height — no per-model tuning.
@@ -341,6 +341,29 @@ export function buildScrubs(body: THREE.Mesh): THREE.Group | null {
       g.morphTargetsRelative = geom.morphTargetsRelative;
     }
 
+    // Rigged patients need their clothing to deform with the same bones. Copy
+    // the four joint indices/weights for each retained body vertex into the
+    // cut garment geometry. This preserves the exact anatomical binding while
+    // still letting the garment carry the clinical morph targets above.
+    const srcSkinIndex = geom.getAttribute('skinIndex') as THREE.BufferAttribute | undefined;
+    const srcSkinWeight = geom.getAttribute('skinWeight') as THREE.BufferAttribute | undefined;
+    if ((body as THREE.SkinnedMesh).isSkinnedMesh && srcSkinIndex && srcSkinWeight) {
+      const skinIndices = new Uint16Array(M * 4);
+      const skinWeights = new Float32Array(M * 4);
+      remap.forEach((m, original) => {
+        skinIndices[m * 4] = srcSkinIndex.getX(original);
+        skinIndices[m * 4 + 1] = srcSkinIndex.getY(original);
+        skinIndices[m * 4 + 2] = srcSkinIndex.getZ(original);
+        skinIndices[m * 4 + 3] = srcSkinIndex.getW(original);
+        skinWeights[m * 4] = srcSkinWeight.getX(original);
+        skinWeights[m * 4 + 1] = srcSkinWeight.getY(original);
+        skinWeights[m * 4 + 2] = srcSkinWeight.getZ(original);
+        skinWeights[m * 4 + 3] = srcSkinWeight.getW(original);
+      });
+      g.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(skinIndices, 4));
+      g.setAttribute('skinWeight', new THREE.Float32BufferAttribute(skinWeights, 4));
+    }
+
     const n = g.attributes.normal as THREE.BufferAttribute;
     const local = spec.offset / worldScale;
     for (let m = 0; m < M; m++) {
@@ -393,9 +416,20 @@ export function buildScrubs(body: THREE.Mesh): THREE.Group | null {
       polygonOffsetUnits: -1,
     });
 
-    const garment = new THREE.Mesh(g, outerMat);
+    const createGarmentMesh = (material: THREE.Material): THREE.Mesh => {
+      const skinnedBody = body as THREE.SkinnedMesh;
+      if (skinnedBody.isSkinnedMesh && g.getAttribute('skinIndex') && g.getAttribute('skinWeight')) {
+        const mesh = new THREE.SkinnedMesh(g, material);
+        mesh.bindMode = skinnedBody.bindMode;
+        mesh.bind(skinnedBody.skeleton, skinnedBody.bindMatrix);
+        return mesh;
+      }
+      return new THREE.Mesh(g, material);
+    };
+
+    const garment = createGarmentMesh(outerMat);
     garment.name = spec.name;
-    const lining = new THREE.Mesh(g, innerMat);
+    const lining = createGarmentMesh(innerMat);
     lining.name = `${spec.name}-lining`;
     lining.raycast = () => {};
     lining.userData.skipRecolor = true;

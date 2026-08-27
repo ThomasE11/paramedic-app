@@ -1,10 +1,9 @@
 /**
  * Realistic 3D human body mesh loaded from GLB model.
  *
- * Female cases use a gender-matched GLB. Male cases deliberately fall back to
- * the legacy patient mesh until a complete, browser-safe male GLB is added.
- * We do not render a stylised procedural mannequin in clinical mode because it
- * breaks assessment realism.
+ * Male and female cases use their own MPFB clinical shell. Both active assets
+ * carry a fitted Mixamo skeleton, case-finding morphs and real eye meshes; the
+ * legacy patient remains only as a neutral fallback when gender is unknown.
  */
 
 import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
@@ -29,6 +28,10 @@ import { injuryRegionTo3D, type BodyInjury } from '@/lib/injuryMap';
 import { LifeSigns } from './LifeSigns';
 import { IdleAnimations, type IdleCues } from './IdleAnimations';
 import { setBreathClock } from '@/lib/breathClock';
+import {
+  patientSkeletalAction,
+  type PatientMobility,
+} from '@/lib/patientStaging';
 import {
   PATIENT_MOTION_MORPHS,
   type PatientMotionSignals,
@@ -64,7 +67,21 @@ export type BayPatientStage = 'stretcher' | 'floor';
 // stage origins place the active posture against those support planes.
 const BAY_STAGE_Y: Record<BayPatientStage, number> = { stretcher: 0.94, floor: 0.39 };
 
-export function getTreatmentBayTransform(stage: BayPatientStage = 'stretcher', posture: string | null = null) {
+export function getTreatmentBayTransform(
+  stage: BayPatientStage = 'stretcher',
+  posture: string | null = null,
+  mobility: PatientMobility = 'recumbent',
+) {
+  if (mobility === 'standing' || mobility === 'pacing') {
+    return {
+      // The environment floor is y=-0.05. The normalised rig has its soles at
+      // y=0, so this keeps an ambulatory patient planted instead of hovering
+      // at stretcher height.
+      position: [0, -0.045, 0.22] as [number, number, number],
+      rotation: [0, 0, 0] as [number, number, number],
+      scale: 1.04,
+    };
+  }
   const baseRotation = -Math.PI / 2;
   // Tripod remains upright—the authored morph supplies forward lean and braced
   // arms. Adding only 0.65rad to a supine rotation produced a reclined patient.
@@ -86,8 +103,9 @@ export function treatmentBayClinicalToWorld(
   point: [number, number, number],
   stage: BayPatientStage = 'stretcher',
   posture: string | null = null,
+  mobility: PatientMobility = 'recumbent',
 ): [number, number, number] {
-  const transform = getTreatmentBayTransform(stage, posture);
+  const transform = getTreatmentBayTransform(stage, posture, mobility);
   const projected = new THREE.Vector3(...point)
     .multiplyScalar(transform.scale)
     .applyEuler(new THREE.Euler(...transform.rotation))
@@ -202,6 +220,10 @@ interface BodyMeshProps {
    * 'recovery' as SpO2 improves.
    */
   posture?: 'tripod' | 'supine' | 'recovery' | null;
+  /** Authored scene mobility. Only standing/pacing presentations play the
+   *  skeletal idle/walk clips; recumbent patients retain local clinical
+   *  movement without sliding around the scene. */
+  mobility?: PatientMobility;
   /**
    * Lip-sync drive: a 0..1 ref written by the voice analyser (per-frame RMS of
    * the patient's TTS). Applied to the viseme_open morph so the jaw moves in
@@ -218,12 +240,14 @@ interface BodyMeshProps {
  * Resolve which GLB to load. The meshes in `public/models/`:
  *   • patient-female.glb — MPFB2/MakeHuman-generated female (CC0), A-pose,
  *     female shape baked into the basis, real eye meshes + AO-baked skin
- *     (scripts/blender-mpfb-female-bake.py + blender-stage2-eyes-ao.py,
- *     ~6.1 MB). Replaced the old Ready Player Me mesh (CC BY-NC — kept
+ *     (scripts/blender-mpfb-female-bake.py + blender-stage2-eyes-ao.py), then
+ *     fitted to the 52-bone runtime rig by rig-patient.py. Replaced the old
+ *     Ready Player Me mesh (CC BY-NC — kept
  *     untracked as patient-female-rpm.bak.glb).
  *   • patient-male.glb   — MPFB2/MakeHuman-generated male (CC0), A-pose,
  *     male shape baked into the basis (scripts/blender-mpfb-male-bake.py +
- *     blender-stage2-eyes-ao.py), real eye meshes + AO-baked skin (~5.2 MB)
+ *     blender-stage2-eyes-ao.py), real eye meshes + AO-baked skin, then fitted
+ *     to the same 52-bone runtime rig by rig-patient.py.
  *   • patient.glb        — legacy androgynous MakeHuman basis (CC0); the male
  *     macro morphs it carries never rendered because the app zeroes
  *     non-finding morphs. Kept as the neutral fallback.
@@ -231,9 +255,8 @@ interface BodyMeshProps {
  * Why dropping the new meshes in works without retuning the Y-range
  * hit-test table: the primary hit-test path in `getRegionAtPoint`
  * uses weighted nearest-bone against the `mixamorig:*` skeleton, and
- * we re-prefixed the joint names on both new meshes (see
- * `/tmp/prefix-bones.mjs`) so they slot straight into the existing
- * `BONE_REGION_MAP`. The Y-range table is only consulted when the
+ * both fitted rigs use those joint names, so they slot straight into the
+ * existing `BONE_REGION_MAP`. The Y-range table is only consulted when the
  * rig isn't traversable, and even then the new meshes are within ±5%
  * of the legacy 1.81m height (1.77m female, 1.92m male) so the
  * Y-band assignments still land in the right region for midline
@@ -468,7 +491,7 @@ export function getLastClickedLimb(): LimbSide { return lastClickedLimb; }
 // ---------------------------------------------------------------------------
 // Bone-based anatomical hit-testing
 // ---------------------------------------------------------------------------
-// The mesh is a Mixamo Beta rig with 67 named skeletal bones (Head, Neck,
+// The active patient is an MPFB Mixamo rig with 52 deform bones (Head, Neck,
 // Spine/Spine1/Spine2, Hips, L/R Shoulder/Arm/ForeArm/Hand/UpLeg/Leg/Foot).
 // We use those bones as anatomical anchors — every hit-point is assigned to
 // the region whose anchor(s) it sits closest to.
@@ -558,7 +581,10 @@ function updateSkeleton(root: THREE.Object3D | null): void {
 
   anchors = BONE_REGION_MAP
     .map(({ bone, region, weight }) => {
-      const node = byName.get(bone);
+      // GLTFLoader sanitises ':' out of node names for AnimationMixer path
+      // compatibility (`mixamorig:Head` becomes `mixamorigHead`). Accept both
+      // forms so the rig remains useful for anatomical hit-testing too.
+      const node = byName.get(bone) ?? byName.get(bone.replace(/:/g, ''));
       if (!node) return null;
       const pos = new THREE.Vector3();
       node.getWorldPosition(pos);
@@ -737,12 +763,12 @@ function buildSurfaceSampler(root: THREE.Object3D | null, presentationRoot?: THR
   };
 }
 
-export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guidedMode = false, nextGuidedStep = null, onBlockedClick, onBodyPoint, bodyInjuries, patientGender, surfaceOpacity = 1, activeFindingMorphs, breathRateRpm = 0, breathDepthFactor = 1, onSurfaceSampler, dressed = false, dressedActiveRegion = null, pupilLeftMm = 3.5, pupilRightMm = 3.5, skinTint = null, skinDiaphoretic = false, diaphoresis = 0, jaundice = 0, mottling = 0, unconscious = false, idleCues = null, reduceIdleMotion = false, presentation = 'upright', bayStage = 'stretcher', sss = false, posture = null, mouthOpenRef = null, cyanosisLocalStrength = 0 }: BodyMeshProps) {
+export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guidedMode = false, nextGuidedStep = null, onBlockedClick, onBodyPoint, bodyInjuries, patientGender, surfaceOpacity = 1, activeFindingMorphs, breathRateRpm = 0, breathDepthFactor = 1, onSurfaceSampler, dressed = false, dressedActiveRegion = null, pupilLeftMm = 3.5, pupilRightMm = 3.5, skinTint = null, skinDiaphoretic = false, diaphoresis = 0, jaundice = 0, mottling = 0, unconscious = false, idleCues = null, reduceIdleMotion = false, presentation = 'upright', bayStage = 'stretcher', sss = false, posture = null, mobility = 'recumbent', mouthOpenRef = null, cyanosisLocalStrength = 0 }: BodyMeshProps) {
   // The path is recomputed per render so a `caseData.patientInfo.gender`
   // change (e.g. user picks a different case) swaps the mesh without
   // remounting the parent. useGLTF caches by URL.
   const modelPath = resolveModelPath(patientGender);
-  const { scene } = useGLTF(modelPath);
+  const { scene, animations } = useGLTF(modelPath);
   // Blender-authored garment GLBs (blended-garment mode). Loaded here so the
   // clone build has them synchronously; Suspense holds render until ready.
   // Array form of useGLTF returns results positionally.
@@ -775,6 +801,7 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
   const morphRootRef = useRef<THREE.Object3D | null>(null);
   const morphInfluenceRef = useRef<Record<string, number>>({});
   const breathPhaseRef = useRef(0);
+  const skeletalMixerRef = useRef<THREE.AnimationMixer | null>(null);
   // Reusable temp colour for the per-frame skin-tint lerp so we don't allocate
   // a THREE.Color every frame (GC pressure under 60fps useFrame).
   const tintTmpRef = useRef(new THREE.Color());
@@ -966,7 +993,7 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
         // the runtime cut-from-skin scrubs if the GLBs didn't load or the piece
         // build came back empty.
         const scrubs =
-          (CLOTHING_MODE === 'blended-garment'
+          (CLOTHING_MODE === 'blended-garment' && !(bodyMesh as THREE.SkinnedMesh).isSkinnedMesh
             ? buildBlendedGarments(bodyMesh as THREE.Mesh, garmentScenes, garmentSpecs)
             : null) ?? buildScrubs(bodyMesh as THREE.Mesh);
         // Child of the body mesh at identity → inherits its exact placement.
@@ -1061,6 +1088,36 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
     // effect below; the eyes are baked once (live pupil reading is the 2D panel).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scene, modelPath, bodyInjuries, garmentScenes, garmentSpecs]); // bodyInjuries: stable per case (memoised upstream + per-case key)
+
+  // Whole-skeleton movement is reserved for genuinely ambulatory cases. The
+  // source clips are in-place Mixamo loops, so the patient remains inside the
+  // scene while stepping/pacing rather than drifting through equipment.
+  useEffect(() => {
+    const actionName = patientSkeletalAction(mobility, unconscious);
+    const clip = actionName
+      ? THREE.AnimationClip.findByName(animations, actionName)
+      : null;
+    if (!clip) {
+      skeletalMixerRef.current = null;
+      return;
+    }
+
+    const mixer = new THREE.AnimationMixer(clonedScene);
+    const action = mixer.clipAction(clip);
+    action.reset();
+    action.enabled = true;
+    action.setLoop(THREE.LoopRepeat, Infinity);
+    action.timeScale = actionName === 'walk' ? 0.78 : 0.68;
+    action.fadeIn(0.3).play();
+    skeletalMixerRef.current = mixer;
+
+    return () => {
+      action.fadeOut(0.18);
+      mixer.stopAllAction();
+      mixer.uncacheRoot(clonedScene);
+      if (skeletalMixerRef.current === mixer) skeletalMixerRef.current = null;
+    };
+  }, [animations, clonedScene, mobility, unconscious]);
 
   // ---- SSS skin material (male mesh only) --------------------------------
   // Wire the baked thickness map + tiled pore detail-normal onto the promoted
@@ -1258,6 +1315,7 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
   // Drive continuous rendering for pulse animation when required regions exist
   // or when guided mode is active (next-step ring needs to pulse).
   useFrame((_, delta) => {
+    skeletalMixerRef.current?.update(Math.min(delta, 0.05));
     if ((requiredRegions && requiredRegions.size > 0) || (guidedMode && nextGuidedStep)) {
       pulseRef.current += delta;
     }
@@ -1781,9 +1839,9 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
     <group
       name="TreatmentBayPatientRoot"
       ref={meshRef}
-      position={treatmentBayPresentation ? getTreatmentBayTransform(bayStage, posture).position : [0, 0, 0]}
-      rotation={treatmentBayPresentation ? getTreatmentBayTransform(bayStage, posture).rotation : [0, 0, 0]}
-      scale={treatmentBayPresentation ? getTreatmentBayTransform(bayStage, posture).scale : 1}
+      position={treatmentBayPresentation ? getTreatmentBayTransform(bayStage, posture, mobility).position : [0, 0, 0]}
+      rotation={treatmentBayPresentation ? getTreatmentBayTransform(bayStage, posture, mobility).rotation : [0, 0, 0]}
+      scale={treatmentBayPresentation ? getTreatmentBayTransform(bayStage, posture, mobility).scale : 1}
     >
       {/* Invisible "catch-all" plane behind the body. r3f only fires
           onPointerMove on the mesh the raycast hits, so moving the pointer
