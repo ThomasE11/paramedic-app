@@ -22,7 +22,7 @@ describe('scene image demographic consistency', () => {
     const caseData = allCases.find(({ id }) => id === 'litfl-001');
     expect(caseData).toBeDefined();
     const image = inferSceneImage(caseData!);
-    expect(image).toBe('/scene-assets/office-medical-dubai.png');
+    expect(image).toBe('/scene-assets/y2-009-construction-office-arrest.png');
     expect(sceneImagePatientGender(image)).toBe('male');
   });
 });

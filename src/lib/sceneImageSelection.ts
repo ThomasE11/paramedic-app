@@ -121,7 +121,7 @@ export const PROMPT_SCENE_IMAGE_OVERRIDES: Record<string, string> = {
   'cardiac-007': '/scene-assets/hotel-room-medical-uae.png',
   'resp-004': '/scene-assets/hotel-room-medical-uae.png',
   'litfl-007': '/scene-assets/airport-pe-female-uae.png',
-  'litfl-001': '/scene-assets/office-medical-dubai.png',
+  'litfl-001': '/scene-assets/y2-009-construction-office-arrest.png',
   'litfl-003': '/scene-assets/litfl-003-renal-failure-hyperkalemia-apartment.png',
   'litfl-010': '/scene-assets/litfl-010-balcony-hypothermia-fujairah.png',
   'cardiac-011': '/scene-assets/home-pulmonary-oedema-male-uae.png',

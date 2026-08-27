@@ -23,6 +23,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useVoiceNarration } from '@/hooks/useVoiceNarration';
 import { inferSceneImage } from '@/lib/sceneImageSelection';
+import { dispatchAccessNotes, mandatoryScenePpe, visibleSceneHazards } from '@/lib/sceneSafety';
 import {
   Shield, AlertTriangle, Eye, HardHat, Stethoscope, ArrowRight,
   ArrowLeft, CheckCircle2, Volume2, VolumeX, Flame, Zap, CloudRain,
@@ -64,8 +65,8 @@ const HAZARD_OPTIONS: Array<{ id: string; label: string; icon: ComponentType<{ c
   { id: 'animals', label: 'Animals / pests', icon: Bug },
 ];
 
-const PPE_OPTIONS: Array<{ id: string; label: string; required?: boolean }> = [
-  { id: 'gloves', label: 'Gloves', required: true },
+const PPE_OPTIONS: Array<{ id: string; label: string }> = [
+  { id: 'gloves', label: 'Gloves' },
   { id: 'mask', label: 'Surgical mask' },
   { id: 'n95', label: 'N95 respirator' },
   { id: 'eye', label: 'Eye protection' },
@@ -208,17 +209,6 @@ function getInjuryScenePosition(injury: BodyInjury, index: number): { x: number;
     default:
       return fallback;
   }
-}
-
-// Suggest PPE defaults from case category so the most common selection is
-// already half-done. Students still confirm; we just save them a few clicks.
-function suggestedPPE(category: string): string[] {
-  const c = (category || '').toLowerCase();
-  if (c.includes('resp') || c.includes('infect')) return ['gloves', 'n95', 'eye'];
-  if (c.includes('trauma') || c.includes('burn')) return ['gloves', 'eye', 'gown'];
-  if (c.includes('obstet')) return ['gloves', 'mask', 'eye', 'gown'];
-  if (c.includes('tox') || c.includes('chem')) return ['gloves', 'mask', 'eye', 'gown'];
-  return ['gloves'];
 }
 
 /**
@@ -422,6 +412,15 @@ function buildSceneCallouts(caseData: CaseScenario, tone: SceneTone, sceneImage:
   const appearance = caseData.initialPresentation?.appearance || caseData.initialPresentation?.generalImpression || 'First look';
   const bystanders = caseData.sceneInfo?.bystanders || 'Bystanders';
   const hazards = (caseData.sceneInfo?.hazards || []).filter(h => !isNoHazardLabel(h));
+
+  if (sceneImage.includes('y2-009-construction-office-arrest')) {
+    return [
+      { id: 'patient', label: 'Patient', value: patientCue || position, icon: Eye, x: 54, y: 63, align: 'right' },
+      { id: 'worksite', label: 'Active worksite', value: hazards[0] || 'Hard-hat zone beyond the site office', icon: Construction, x: 46, y: 18 },
+      { id: 'coworkers', label: 'Colleagues', value: bystanders, icon: Users, x: 78, y: 33, align: 'right' },
+      { id: 'first-look', label: 'First look', value: appearance, icon: Search, x: 61, y: 48, align: 'right' },
+    ];
+  }
 
   if (sceneImage.includes('restaurant-anaphylaxis')) {
     return [
@@ -931,6 +930,11 @@ function getHotspotPosition(
 ): { x: number; y: number } {
   if (!sceneImage) return { x: hotspot.x, y: hotspot.y };
 
+  if (sceneImage.includes('y2-009-construction-office-arrest')) {
+    if (/construction|active site|hard hat|worksite/i.test(hotspot.label)) return { x: 45, y: 17 };
+    return HOTSPOT_POSITIONS[index % HOTSPOT_POSITIONS.length];
+  }
+
   if (sceneImage.includes('mall-foodcourt')) {
     if (hotspot.kind === 'access') return { x: 36, y: 68 };
     return HOTSPOT_POSITIONS[index % HOTSPOT_POSITIONS.length];
@@ -1087,19 +1091,7 @@ function classifyHazard(label: string): string {
 }
 
 function buildHazardHotspots(caseData: CaseScenario): HazardHotspot[] {
-  const seen = new Set<string>();
-  const visibleHazards = [
-    ...(caseData.sceneInfo?.hazards || []),
-    ...(caseData.sceneInfo?.accessIssues || []),
-  ];
-  return visibleHazards
-    .filter(h => h && !isNoHazardLabel(h))
-    .filter(h => {
-      const key = h.trim().toLowerCase();
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    })
+  return visibleSceneHazards(caseData)
     .map((hazard, index) => {
       const kind = classifyHazard(hazard);
       const option = HAZARD_OPTIONS.find(o => o.id === kind) || HAZARD_OPTIONS[0];
@@ -1428,7 +1420,6 @@ function SceneArrivalVisual({
               />
               <div className={`absolute inset-0 bg-gradient-to-r ${focus === 'approach' ? 'from-black/20 via-transparent to-black/5' : 'from-black/45 via-black/10 to-black/20'}`} />
               <div className={`absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t to-transparent ${focus === 'approach' ? 'from-black/35' : 'from-black/65'}`} />
-              {focus !== 'approach' && <div className={`absolute inset-0 mix-blend-multiply ${temporal.overlayClass}`} />}
               <div className={`absolute inset-0 ${focus === 'approach' ? 'shadow-[inset_0_0_60px_rgba(2,6,23,0.18)]' : 'shadow-[inset_0_0_90px_rgba(2,6,23,0.42)]'}`} />
             </>
           ) : (
@@ -1444,7 +1435,7 @@ function SceneArrivalVisual({
               {visualModeLabel}
             </div>
           )}
-          {focus !== 'approach' && (
+          {focus !== 'approach' && !sceneImage && (
             <div className={`absolute right-4 top-4 z-10 max-w-[210px] rounded-xl border px-3 py-2 text-[10px] leading-tight shadow-xl backdrop-blur-md ${temporal.chipClass}`}>
               <span className="block font-semibold uppercase tracking-[0.16em]">Lighting</span>
               <span className="mt-1 block text-white/75">{temporal.note}</span>
@@ -1590,11 +1581,13 @@ export function SceneSurveyPanel({ caseData, onEnterScene, onBack }: SceneSurvey
   const { speak, stop, enabled: voiceEnabled, toggleEnabled: toggleVoice, isSpeaking } = useVoiceNarration();
 
   const hazardHotspots = useMemo(() => buildHazardHotspots(caseData), [caseData]);
+  const accessNotes = useMemo(() => dispatchAccessNotes(caseData), [caseData]);
+  const mandatoryPpe = useMemo(() => mandatoryScenePpe(caseData), [caseData]);
   const [step, setStep] = useState<Step>('approach');
   const [hazardsIdentified, setHazardsIdentified] = useState<string[]>([]);
   const [sceneSafe, setSceneSafe] = useState<boolean | null>(null);
   const [resourcesRequested, setResourcesRequested] = useState<string[]>([]);
-  const [ppeSelected, setPpeSelected] = useState<string[]>(() => suggestedPPE(caseData.category));
+  const [ppeSelected, setPpeSelected] = useState<string[]>(() => mandatoryScenePpe(caseData));
 
   // Narrate each step on entry. Dep array gates re-runs to step/caseData
   // changes only - state changes within a step won't re-fire. StrictMode's
@@ -1642,16 +1635,16 @@ export function SceneSurveyPanel({ caseData, onEnterScene, onBack }: SceneSurvey
       case 'approach':
         return true;
       case 'hazards': {
-        // Combined hazards + PPE gate: gloves are the minimum PPE, AND the
-        // scene must be either declared safe (with hazards reviewed) or
-        // declared unsafe with hazards identified + resources requested.
-        if (!ppeSelected.includes('gloves')) return false;
+        // Combined hazards + PPE gate: every scene-mandatory PPE item is on,
+        // AND the scene has either been declared safe after review or declared
+        // unsafe with a hazard identified and extra resources requested.
+        if (!mandatoryPpe.every((id) => ppeSelected.includes(id))) return false;
         if (sceneSafe === true) return hazardsIdentified.length > 0;
         if (sceneSafe === false) return hazardsIdentified.filter(h => h !== 'none').length > 0 && resourcesRequested.length > 0;
         return false;
       }
     }
-  }, [step, hazardsIdentified, sceneSafe, resourcesRequested, ppeSelected]);
+  }, [step, hazardsIdentified, sceneSafe, resourcesRequested, ppeSelected, mandatoryPpe]);
 
   const goNext = () => {
     if (!canAdvance) return;
@@ -1774,6 +1767,22 @@ export function SceneSurveyPanel({ caseData, onEnterScene, onBack }: SceneSurvey
               onHazardToggle={toggleHazard}
               focus="hazards"
             />
+            {accessNotes.length > 0 && (
+              <div className="rounded-xl border border-sky-200/60 bg-sky-50/70 px-3.5 py-3 dark:border-sky-900/60 dark:bg-sky-950/20">
+                <div className="flex items-center gap-2 text-xs font-semibold text-sky-900 dark:text-sky-100">
+                  <Radio className="h-3.5 w-3.5" /> Dispatch access notes
+                </div>
+                <p className="mt-1 text-[11px] text-muted-foreground">Known before arrival; these are not visual hazard hotspots.</p>
+                <ul className="mt-2 grid gap-1.5 sm:grid-cols-2">
+                  {accessNotes.map((note) => (
+                    <li key={note} className="flex items-start gap-1.5 text-xs text-foreground/80">
+                      <MapPin className="mt-0.5 h-3 w-3 shrink-0 text-sky-600" />
+                      <span>{note}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <div className="grid gap-2 sm:grid-cols-2">
               {hazardHotspots.map(({ id, label, kind, icon: Icon }) => {
                 const selected = hazardsIdentified.includes(id);
@@ -1860,10 +1869,11 @@ export function SceneSurveyPanel({ caseData, onEnterScene, onBack }: SceneSurvey
                 <HardHat className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                 <p className="text-sm font-medium">Don personal protective equipment</p>
               </div>
-              <p className="text-xs text-muted-foreground">Select your PPE before patient contact — gloves are required at minimum.</p>
+              <p className="text-xs text-muted-foreground">Select your PPE before patient contact. Required items reflect this scene, not only the clinical category.</p>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {PPE_OPTIONS.map(({ id, label, required }) => {
+                {PPE_OPTIONS.map(({ id, label }) => {
                   const selected = ppeSelected.includes(id);
+                  const required = mandatoryPpe.includes(id);
                   return (
                     <button
                       key={id}
@@ -1880,7 +1890,7 @@ export function SceneSurveyPanel({ caseData, onEnterScene, onBack }: SceneSurvey
                         {selected && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />}
                         {label}
                       </span>
-                      {required && <Badge variant="outline" className="text-[10px] py-0 px-1.5">Min</Badge>}
+                      {required && <Badge variant="outline" className="text-[10px] py-0 px-1.5">Required</Badge>}
                     </button>
                   );
                 })}
@@ -1917,7 +1927,7 @@ export function SceneSurveyPanel({ caseData, onEnterScene, onBack }: SceneSurvey
           {sceneSafe === null && 'Declare scene safety to continue.'}
           {sceneSafe === false && hazardsIdentified.filter(h => h !== 'none').length === 0 && 'Identify the hazards on this scene.'}
           {sceneSafe === false && resourcesRequested.length === 0 && hazardsIdentified.filter(h => h !== 'none').length > 0 && 'Request at least one additional resource.'}
-          {sceneSafe !== null && !ppeSelected.includes('gloves') && 'Gloves are required at minimum.'}
+          {sceneSafe !== null && mandatoryPpe.some((id) => !ppeSelected.includes(id)) && 'Select every scene-required PPE item.'}
         </p>
       )}
     </div>
