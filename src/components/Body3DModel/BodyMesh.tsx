@@ -803,6 +803,7 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
   // Local cyanosis twin refs — same lifecycle as mottling (clone reset).
   const cyanosisLocalRootRef = useRef<THREE.Object3D | null>(null);
   const cyanosisLocalAppliedRef = useRef(false);
+  const cyanosisLocalLevelRef = useRef(0);
   const cyanosisLocalBodyRef = useRef<THREE.Mesh | null>(null);
 
   // Clone the rig with SkeletonUtils so skinned meshes keep their own bone
@@ -1496,18 +1497,20 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
       }
     }
 
-    // ---- Local cyanosis (lips + nailbeds) — state-crossing texture swap ----
-    // Composite overlay twin swapped onto the body diffuse map at the lip/nail
-    // vertex bands when cyanosisLocalStrength crosses 0.5. Evaluated in the
-    // frame loop so the swap self-heals as soon as the painted atlas is ready.
+    // ---- Local cyanosis (lips + nailbeds) — graded texture swap ----
+    // Four clinical levels avoid rebuilding the 2K atlas every frame while
+    // still letting lips/nailbeds deepen and clear as SpO2 changes. The base
+    // texture is retained separately so repeated level changes never paint
+    // cyanosis on top of cyanosis.
     {
       if (cyanosisLocalRootRef.current !== clonedScene) {
         cyanosisLocalRootRef.current = clonedScene;
         cyanosisLocalAppliedRef.current = false;
+        cyanosisLocalLevelRef.current = 0;
         cyanosisLocalBodyRef.current = null;
       }
-      const want = cyanosisLocalStrength > 0.5;
-      if (want !== cyanosisLocalAppliedRef.current) {
+      const nextLevel = Math.min(4, Math.max(0, Math.round(cyanosisLocalStrength * 4)));
+      if (nextLevel !== cyanosisLocalLevelRef.current) {
         if (!cyanosisLocalBodyRef.current) {
           let found: THREE.Mesh | null = null;
           clonedScene.traverse((o) => {
@@ -1523,25 +1526,36 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
               | undefined)
           : undefined;
         if (bodyMesh && mat) {
-          if (want) {
-            const twin = buildCyanosisLocalTwin(bodyMesh);
+          if (nextLevel > 0) {
+            const activeOpen = bodyMesh.userData.eyesOpenTex as THREE.CanvasTexture | undefined;
+            const activeClosed = bodyMesh.userData.eyesClosedTex as THREE.CanvasTexture | null | undefined;
+            const baseOpen = (bodyMesh.userData.cyanosisBaseOpenTex as THREE.CanvasTexture | undefined) ?? activeOpen;
+            const baseClosed = bodyMesh.userData.cyanosisBaseClosedTex === undefined
+              ? (activeClosed ?? null)
+              : (bodyMesh.userData.cyanosisBaseClosedTex as THREE.CanvasTexture | null);
+            if (!cyanosisLocalAppliedRef.current) {
+              bodyMesh.userData.cyanosisBaseOpenTex = baseOpen ?? null;
+              bodyMesh.userData.cyanosisBaseClosedTex = baseClosed;
+            }
+            const twin = buildCyanosisLocalTwin(bodyMesh, nextLevel / 4, baseOpen, baseClosed);
             if (twin) {
-              const cleanOpen = bodyMesh.userData.eyesOpenTex as THREE.Texture | undefined;
-              const cleanClosed = bodyMesh.userData.eyesClosedTex as THREE.Texture | null | undefined;
-              bodyMesh.userData.cleanOpenTex = cleanOpen ?? null;
-              bodyMesh.userData.cleanClosedTex = cleanClosed ?? null;
+              const previousOpen = bodyMesh.userData.cyanosisOpenTex as THREE.Texture | undefined;
+              const previousClosed = bodyMesh.userData.cyanosisClosedTex as THREE.Texture | null | undefined;
               bodyMesh.userData.cyanosisOpenTex = twin.open;
-              bodyMesh.userData.cyanosisClosedTex = twin.closed ?? cleanClosed ?? null;
+              bodyMesh.userData.cyanosisClosedTex = twin.closed ?? baseClosed ?? null;
               bodyMesh.userData.eyesOpenTex = twin.open;
-              bodyMesh.userData.eyesClosedTex = twin.closed ?? cleanClosed ?? null;
-              const showingClosed = mat.map === cleanClosed;
+              bodyMesh.userData.eyesClosedTex = twin.closed ?? baseClosed ?? null;
+              const showingClosed = mat.map === activeClosed || mat.map === previousClosed;
               mat.map = showingClosed ? (twin.closed ?? twin.open) : twin.open;
               mat.needsUpdate = true;
               cyanosisLocalAppliedRef.current = true;
+              cyanosisLocalLevelRef.current = nextLevel;
+              if (previousOpen instanceof THREE.CanvasTexture && previousOpen !== baseOpen && previousOpen !== twin.open) previousOpen.dispose();
+              if (previousClosed instanceof THREE.CanvasTexture && previousClosed !== baseClosed && previousClosed !== twin.closed) previousClosed.dispose();
             }
           } else {
-            const cleanOpen = (bodyMesh.userData.cleanOpenTex as THREE.Texture | null) ?? null;
-            const cleanClosed = (bodyMesh.userData.cleanClosedTex as THREE.Texture | null) ?? null;
+            const cleanOpen = (bodyMesh.userData.cyanosisBaseOpenTex as THREE.Texture | null) ?? null;
+            const cleanClosed = (bodyMesh.userData.cyanosisBaseClosedTex as THREE.Texture | null) ?? null;
             const cyanosedOpen = bodyMesh.userData.cyanosisOpenTex as THREE.Texture | undefined;
             const cyanosedClosed = bodyMesh.userData.cyanosisClosedTex as THREE.Texture | null | undefined;
             const showingClosed = mat.map === cyanosedClosed;
@@ -1554,6 +1568,9 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
             if (cyanosedOpen instanceof THREE.CanvasTexture && cyanosedOpen !== cleanOpen) cyanosedOpen.dispose();
             if (cyanosedClosed instanceof THREE.CanvasTexture && cyanosedClosed !== cleanClosed) cyanosedClosed.dispose();
             cyanosisLocalAppliedRef.current = false;
+            cyanosisLocalLevelRef.current = 0;
+            bodyMesh.userData.cyanosisBaseOpenTex = null;
+            bodyMesh.userData.cyanosisBaseClosedTex = null;
           }
         }
       }

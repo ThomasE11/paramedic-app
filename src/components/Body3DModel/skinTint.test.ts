@@ -21,13 +21,16 @@ describe('skinTint functions', () => {
       expect(deriveCyanosisLocalStrength({ spo2: 98 })).toBe(0);
     });
 
-    it('returns 0.7 dusky strength for SpO2 85-89', () => {
-      expect(deriveCyanosisLocalStrength({ spo2: 88 })).toBe(0.7);
+    it('deepens cyanosis progressively between SpO2 94 and 85', () => {
+      expect(deriveCyanosisLocalStrength({ spo2: 93 })).toBeCloseTo(0.078, 2);
+      expect(deriveCyanosisLocalStrength({ spo2: 88 })).toBeCloseTo(0.467, 2);
       expect(deriveCyanosisLocalStrength({ spo2: 85 })).toBe(0.7);
     });
 
-    it('returns 0.9 strong strength for SpO2 < 85', () => {
-      expect(deriveCyanosisLocalStrength({ spo2: 80 })).toBe(0.9);
+    it('progresses to a capped 0.9 strength below SpO2 85', () => {
+      expect(deriveCyanosisLocalStrength({ spo2: 83 })).toBeCloseTo(0.78, 2);
+      expect(deriveCyanosisLocalStrength({ spo2: 80 })).toBeCloseTo(0.9);
+      expect(deriveCyanosisLocalStrength({ spo2: 70 })).toBe(0.9);
     });
 
     it('uses live SpO2 over scenario cyanosis', () => {

@@ -131,10 +131,17 @@ export function isCyanoticNailVertex(x: number, y: number, z: number): boolean {
 }
 
 /** Local cyanosis (lips + nailbeds). */
-export function buildCyanosisLocalTwin(body: THREE.Mesh): CyanosisLocalTwin | null {
+export function buildCyanosisLocalTwin(
+  body: THREE.Mesh,
+  strength = 1,
+  sourceOpen?: THREE.CanvasTexture,
+  sourceClosed?: THREE.CanvasTexture | null,
+): CyanosisLocalTwin | null {
   try {
-    const openTex = body.userData?.eyesOpenTex as THREE.CanvasTexture | undefined;
-    const closedTex = (body.userData?.eyesClosedTex as THREE.CanvasTexture | null | undefined) ?? null;
+    const openTex = sourceOpen ?? (body.userData?.eyesOpenTex as THREE.CanvasTexture | undefined);
+    const closedTex = sourceClosed === undefined
+      ? ((body.userData?.eyesClosedTex as THREE.CanvasTexture | null | undefined) ?? null)
+      : sourceClosed;
     const srcImg = openTex?.image as HTMLCanvasElement | undefined;
     if (!openTex || !srcImg?.width) return null;
 
@@ -167,8 +174,13 @@ export function buildCyanosisLocalTwin(body: THREE.Mesh): CyanosisLocalTwin | nu
       const vv = uv.getY(i);
       const px = u * tw;
       const py = (flipY ? 1 - vv : vv) * th;
-      const r = Math.max(6, (isLip ? 0.018 : 0.010) * tw);
-      blotches.push({ x: px, y: py, r, alpha: isLip ? 0.55 : 0.45 });
+      // Dense lip UVs need small marks. The previous 1.8%-of-atlas radius
+      // caused hundreds of overlapping discs to spread over the moustache and
+      // chin area. These tighter marks remain inside the authored lip/nail
+      // islands and scale their opacity with the live hypoxia channel.
+      const r = Math.max(3, (isLip ? 0.0045 : 0.0035) * tw);
+      const scaledStrength = Math.min(1, Math.max(0, strength));
+      blotches.push({ x: px, y: py, r, alpha: (isLip ? 0.38 : 0.34) * scaledStrength });
     }
     if (blotches.length === 0) return null;
 

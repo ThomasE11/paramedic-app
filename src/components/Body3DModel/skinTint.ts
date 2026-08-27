@@ -66,8 +66,8 @@ export function deriveCyanosisLocalStrength(
   const spo2 = typeof source?.spo2 === 'number' ? source.spo2 : null;
   if (spo2 !== null) {
     if (spo2 >= 94) return 0;
-    if (spo2 >= 85) return 0.7;
-    return 0.9;
+    if (spo2 >= 85) return ((94 - spo2) / 9) * 0.7;
+    return Math.min(0.9, 0.7 + ((85 - spo2) / 5) * 0.2);
   }
   if (scenarioCyanosis > 0) {
     return Math.min(0.82, 0.26 + scenarioCyanosis * 0.5);
