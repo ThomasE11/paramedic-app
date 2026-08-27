@@ -162,15 +162,26 @@ export function buildScrubs(body: THREE.Mesh): THREE.Group | null {
   // (hip-hem, waistband, mid-biceps, neck scoop, shoulder cap, ankle cuff).
   const TOP_HEM = yf(0.522);
   const WAISTBAND = yf(0.539);
-  const SLEEVE_HEM = yf(0.644);
   const SCOOP_Y = yf(0.806);
   const TOP_CAP = yf(0.844);
   const CUFF = yf(0.1);
   const SCOOP_HALF_W = 0.085 * (H / 1.8);
-  // Sleeves are bounded LATERALLY, not by height — this model holds its arms
-  // in a wide A-pose, so a horizontal cut would slice the diagonal arm
-  // lengthwise (ragged half-sleeve to the wrist). |x| beyond this = bare arm.
-  const SLEEVE_MAX_X = 0.31 * (H / 1.8);
+  // Cuffs are cut PERPENDICULAR to the upper-arm axis. A vertical |x| plane
+  // looks acceptable in the base A-pose but collapses to a long triangular
+  // point after the tripod morph brings the arms inward. Projecting each
+  // vertex along the shoulder→elbow line gives a short, level sleeve in every
+  // posture while keeping the torso as one connected garment component.
+  const bodyScale = H / 1.8;
+  const TORSO_HALF_W = 0.215 * bodyScale;
+  const SHOULDER_X = 0.19 * bodyScale;
+  const SHOULDER_Y = yf(0.82);
+  const SLEEVE_LENGTH = 0.21 * bodyScale;
+  const isShirtVertex = (i: number) => {
+    if (wy[i] < TOP_HEM || wy[i] > TOP_CAP || inScoop(i)) return false;
+    if (Math.abs(wx[i]) <= TORSO_HALF_W) return true;
+    const alongArm = (Math.abs(wx[i]) - SHOULDER_X) * 0.62 + (SHOULDER_Y - wy[i]) * 0.78;
+    return wy[i] >= yf(0.66) && alongArm <= SLEEVE_LENGTH;
+  };
 
   // Shared triangle accessors.
   const index = geom.index;
@@ -253,20 +264,11 @@ export function buildScrubs(body: THREE.Mesh): THREE.Group | null {
 
   const inScoop = (i: number) => wy[i] > SCOOP_Y && Math.abs(wx[i]) < SCOOP_HALF_W;
 
-  // Top, lower band [hem → sleeve hem]: the trunk is the giant component;
-  // forearm tube slices passing through this band are islands → dropped.
-  const lowerMask = new Uint8Array(N);
-  for (let i = 0; i < N; i++) {
-    if (wy[i] >= TOP_HEM && wy[i] <= SLEEVE_HEM && Math.abs(wx[i]) <= SLEEVE_MAX_X) lowerMask[i] = 1;
-  }
-  const lowerKeep = largestComponent(lowerMask);
-
-  // Top, full: upper band (torso + upper arms, joined at the shoulders →
-  // short sleeves end exactly at the sleeve-hem cut) + surviving trunk band.
+  // Top: torso plus a shoulder-axis sleeve. Largest-component filtering drops
+  // any hand/forearm islands that happen to intersect the height band.
   const topMask = new Uint8Array(N);
   for (let i = 0; i < N; i++) {
-    if (inScoop(i)) continue;
-    if ((wy[i] > SLEEVE_HEM && wy[i] <= TOP_CAP && Math.abs(wx[i]) <= SLEEVE_MAX_X) || lowerKeep[i]) topMask[i] = 1;
+    if (isShirtVertex(i)) topMask[i] = 1;
   }
   const topKeep = largestComponent(topMask);
 

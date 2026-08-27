@@ -58,11 +58,13 @@ FABRIC_THICKNESS = 0.004
 #   shirt:    hem  -> shoulder cap, short sleeves bounded by |x|
 #   trousers: cuff -> waistband
 SHIRT_HEM = 0.522
-SHIRT_SLEEVE_HEM = 0.644
 SHIRT_CAP = 0.844
 SHIRT_SCOOP_Y = 0.806          # neck scoop: bare above this near centreline
 SHIRT_SCOOP_HALF_W = 0.085     # scaled by height/1.8 below
-SLEEVE_MAX_X = 0.31            # |x| beyond this = bare arm (scaled)
+TORSO_HALF_W = 0.215           # torso shell before the shoulder axis starts
+SHOULDER_X = 0.19              # upper-arm origin in normalised body metres
+SHOULDER_Z = 0.82              # body-height fraction
+SLEEVE_LENGTH = 0.21           # distance projected down the upper-arm axis
 TROUSER_CUFF = 0.10
 TROUSER_WAISTBAND = 0.539
 
@@ -84,16 +86,23 @@ def measure(mesh):
     return z_min, z_max, (z_max - z_min)
 
 
-def keep_shirt(co, z_min, H, half_scale, lat_max_local, scoop_y, scoop_half_local):
+def keep_shirt(co, z_min, H, half_scale, scoop_y, scoop_half_local):
     zf = (co.z - z_min) / H
-    # Short-sleeve band: torso + upper arms, bounded laterally.
-    in_band = SHIRT_HEM <= zf <= SHIRT_CAP and abs(co.x) <= lat_max_local
-    if not in_band:
+    if not SHIRT_HEM <= zf <= SHIRT_CAP:
         return False
     # Neck scoop: drop verts high + near centreline so the collar opens.
     if zf > scoop_y and abs(co.x) < scoop_half_local:
         return False
-    return True
+    torso_half = TORSO_HALF_W * half_scale
+    if abs(co.x) <= torso_half:
+        return True
+    # Cut the cuff perpendicular to the A-pose upper-arm axis. The old
+    # vertical x-plane became a pointed/torn-looking sleeve after the arms
+    # morphed into the tripod brace.
+    shoulder_x = SHOULDER_X * half_scale
+    shoulder_z = z_min + SHOULDER_Z * H
+    along_arm = (abs(co.x) - shoulder_x) * 0.62 + (shoulder_z - co.z) * 0.78
+    return zf >= 0.66 and along_arm <= SLEEVE_LENGTH * half_scale
 
 
 def keep_trouser(co, z_min, H):
@@ -118,7 +127,6 @@ def mask_and_offset(body, name, keep_fn, clearance, out_path):
     scale = g.matrix_world.to_scale().x or 1.0
     half_w = max(abs(v.co.x) for v in mesh.vertices)
     half_scale = H / 1.8
-    lat_max_local = SLEEVE_MAX_X * half_scale
     scoop_half_local = SHIRT_SCOOP_HALF_W * half_scale
 
     # Which verts to KEEP (garment region).
@@ -260,7 +268,6 @@ def main():
 
     z_min, z_max, H = measure(mesh)
     half_scale = H / 1.8
-    lat_max_local = SLEEVE_MAX_X * half_scale
     scoop_half_local = SHIRT_SCOOP_HALF_W * half_scale
     scoop_y = SHIRT_SCOOP_Y
 
@@ -271,7 +278,7 @@ def main():
 
     ok_shirt = mask_and_offset(
         body, "garment-shirt",
-        lambda co: keep_shirt(co, z_min, H, half_scale, lat_max_local, scoop_y, scoop_half_local),
+        lambda co: keep_shirt(co, z_min, H, half_scale, scoop_y, scoop_half_local),
         SHIRT_CLEARANCE, shirt_path,
     )
     ok_trouser = mask_and_offset(

@@ -155,8 +155,8 @@ interface AppliedEquipmentVisualState {
 const TREATMENT_ASSET_PATHS = {
   nasal: '/equipment-assets/nasal-cannula.webp',
   simpleMask: '/equipment-assets/oxygen-mask.webp',
-  nonrebreather: '/equipment-assets/nonrebreather-mask.webp',
-  nebulizer: '/equipment-assets/nebulizer-mask.webp',
+  nonrebreather: '/equipment-assets/nonrebreather-mask-v2.webp',
+  nebulizer: '/equipment-assets/nebulizer-mask-v2.webp',
   bvm: '/equipment-assets/bvm.webp',
   cpap: '/equipment-assets/cpap-circuit.webp',
   ventilator: '/equipment-assets/ventilator-circuit.webp',
@@ -451,7 +451,7 @@ function TreatmentBayImmersionLayer({
 
   if (!active) return null;
 
-  const face = treatmentBayClinicalToWorld([0, 1.56, 0.26], stage, posture, mobility);
+  const face = treatmentBayClinicalToWorld([0.01, 1.64, 0.24], stage, posture, mobility);
   const chestLeft = treatmentBayClinicalToWorld([-0.10, 1.27, 0.25], stage, posture, mobility);
   const chestRight = treatmentBayClinicalToWorld([0.11, 1.18, 0.25], stage, posture, mobility);
   const ivSite = treatmentBayClinicalToWorld([-0.23, 0.82, 0.24], stage, posture, mobility);
@@ -1178,11 +1178,14 @@ function EquipmentPin({ tone, src, bare = false }: { tone: EquipTone; src: strin
 
 function WornFaceEquipment({ equipment }: { equipment: OxygenEquipmentVisual }) {
   const large = equipment.mode === 'bvm' || equipment.mode === 'cpap' || equipment.mode === 'ventilator';
+  const nonrebreather = equipment.mode === 'nonrebreather';
+  const nebulizer = equipment.mode === 'nebulizer';
+  const fittedPhotorealisticMask = nonrebreather || nebulizer;
   return (
-    <div data-applied-equipment={equipment.mode} className={`pointer-events-none relative flex items-center justify-center drop-shadow-[0_5px_6px_rgba(2,44,58,0.55)] animate-in fade-in zoom-in-75 duration-300 ${large ? 'h-16 w-20' : 'h-12 w-14'}`}>
+    <div data-applied-equipment={equipment.mode} className={`pointer-events-none relative flex items-center justify-center drop-shadow-[0_5px_6px_rgba(2,44,58,0.55)] animate-in fade-in zoom-in-75 duration-300 ${nonrebreather ? 'h-28 w-24 translate-y-[24%]' : nebulizer ? 'h-24 w-20 translate-y-[20%]' : large ? 'h-16 w-20' : 'h-12 w-14'}`}>
       <img src={OXYGEN_SRC[equipment.mode]} alt="" className="h-full w-full object-contain" draggable={false} />
-      <span className="absolute left-[62%] top-[68%] h-0.5 w-14 origin-left rotate-[28deg] rounded-full bg-cyan-100/80 shadow-[0_0_2px_rgba(8,145,178,0.8)]" />
-      {(equipment.mode === 'nonrebreather' || equipment.mode === 'bvm') && (
+      {!fittedPhotorealisticMask && <span className="absolute left-[62%] top-[68%] h-0.5 w-14 origin-left rotate-[28deg] rounded-full bg-cyan-100/80 shadow-[0_0_2px_rgba(8,145,178,0.8)]" />}
+      {equipment.mode === 'bvm' && (
         <span className="absolute right-0 top-[72%] h-5 w-4 rounded-b-full border border-cyan-100/70 bg-white/30" />
       )}
     </div>
@@ -1366,24 +1369,32 @@ function TreatmentEquipmentOverlay({
 
   const anchor = (x: number, y: number, z: number): [number, number, number] =>
     sampler ? sampler(x, y) : [x, y, z];
+  // Treatment-bay patients are root-transformed and may be posed by morphs.
+  // The surface sampler is derived from the un-morphed geometry, which put
+  // face equipment on a tripod patient's clavicle. Use the clinical head
+  // frame for airway devices so masks remain fitted after the posture changes.
+  const faceAnchor = (x: number, y: number, z: number): [number, number, number] =>
+    presentation === 'treatment-bay'
+      ? treatmentBayClinicalToWorld([x, y, z], bayStage, posture, mobility)
+      : anchor(x, y, z);
   const hasSiteAccess = equipment.siteControls.some(control => control.treatmentId === 'iv_access' || control.treatmentId === 'io_access');
 
   return (
     <>
       {equipment.oxygen && (
-        <MarkerHtml position={anchor(0.05, 1.52, 0.215)} distanceFactor={1.5} zIndexRange={[76, 0]} interactive={false} presentation={presentation}>
+        <MarkerHtml position={faceAnchor(0.01, 1.66, 0.24)} distanceFactor={1.5} zIndexRange={[76, 0]} interactive={false} presentation={posture === 'tripod' ? 'upright' : presentation}>
           <WornFaceEquipment equipment={equipment.oxygen} />
         </MarkerHtml>
       )}
 
       {equipment.hasEtTube && equipment.oxygen?.mode !== 'ventilator' && (
-        <MarkerHtml position={anchor(0.07, 1.55, 0.215)} distanceFactor={2.4} zIndexRange={[74, 0]} interactive={false} presentation={presentation}>
+        <MarkerHtml position={faceAnchor(0.04, 1.64, 0.24)} distanceFactor={2.4} zIndexRange={[74, 0]} interactive={false} presentation={posture === 'tripod' ? 'upright' : presentation}>
           <EquipmentPin tone="oxygen" src={TREATMENT_ASSET_PATHS.etTube} bare />
         </MarkerHtml>
       )}
 
       {equipment.hasOpa && !equipment.hasEtTube && (
-        <MarkerHtml position={anchor(-0.07, 1.55, 0.215)} distanceFactor={2.4} zIndexRange={[73, 0]} interactive={false} presentation={presentation}>
+        <MarkerHtml position={faceAnchor(-0.04, 1.64, 0.24)} distanceFactor={2.4} zIndexRange={[73, 0]} interactive={false} presentation={posture === 'tripod' ? 'upright' : presentation}>
           <EquipmentPin tone="device" src={TREATMENT_ASSET_PATHS.opa} bare />
         </MarkerHtml>
       )}
@@ -3120,10 +3131,17 @@ function getTreatmentBayCameraFocus(
   mobility: PatientMobility = 'recumbent',
 ) {
   if (posture === 'tripod' || mobility === 'standing' || mobility === 'pacing') {
-    const stageLift = posture === 'tripod' && stage === 'stretcher' ? 0.55 : 0;
+    // The seated tripod morph is now grounded at the feet; its head occupies
+    // the normal upright frame, so it no longer needs the legacy high camera
+    // that was compensating for a floating, straight-legged patient.
+    const stageLift = 0;
     return {
-      pos: [0.38, 1.42 + stageLift, 3.52] as [number, number, number],
-      target: [0, 1.02 + stageLift, 0] as [number, number, number],
+      // A slight three-quarter arrival angle makes the forward trunk lean and
+      // hands-on-thigh bracing readable immediately; the previous near-frontal
+      // view flattened the depth of a genuine tripod pose back into a standing
+      // silhouette.
+      pos: [1.05, 1.36 + stageLift, 3.18] as [number, number, number],
+      target: [0, 1.02 + stageLift, 0.18] as [number, number, number],
     };
   }
   return {

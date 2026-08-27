@@ -83,13 +83,17 @@ export function getTreatmentBayTransform(
     };
   }
   const baseRotation = -Math.PI / 2;
-  // Tripod remains upright—the authored morph supplies forward lean and braced
-  // arms. Adding only 0.65rad to a supine rotation produced a reclined patient.
-  const pitchUp = posture === 'tripod' ? Math.PI / 2 - 0.35 : 0;
+  // Tripod remains upright—the authored morph supplies the forward lean and
+  // braced arms. A residual -0.35rad root pitch was cancelling that lean and
+  // making the seated patient look bolt upright from the arrival camera.
+  const pitchUp = posture === 'tripod' ? Math.PI / 2 : 0;
   // Upright tripod feet are at the model origin, so cancel the stage's supine
   // body-thickness calibration while retaining the support-surface height.
   // Recovery is independently calibrated after its side-roll transform.
-  const yOffset = posture === 'tripod' ? -0.28 : 0;
+  // The refined tripod morph raises the knees and hangs the lower legs from
+  // the seat. Ground the soles on the same support plane as the room instead
+  // of retaining the old straight-legged morph's stretcher-height offset.
+  const yOffset = posture === 'tripod' ? -1.23 : 0;
   const rollSide = posture === 'recovery' ? Math.PI / 2 : 0;
   const tiltSide = posture === 'recovery' ? 0.1 : 0;
   return {
@@ -992,8 +996,15 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
         // Prefer Blender-authored garments (blended-garment mode); fall back to
         // the runtime cut-from-skin scrubs if the GLBs didn't load or the piece
         // build came back empty.
+        //
+        // Seated/recumbent patients are driven by the shared clinical morphs,
+        // so the authored shell tracks them exactly and gives us clean collar,
+        // sleeve and trouser hems. Genuinely ambulatory patients still need the
+        // procedural skinned shell so their clothing follows the whole-body
+        // idle/walk skeleton.
+        const needsSkeletalGarment = mobility === 'standing' || mobility === 'pacing';
         const scrubs =
-          (CLOTHING_MODE === 'blended-garment' && !(bodyMesh as THREE.SkinnedMesh).isSkinnedMesh
+          (CLOTHING_MODE === 'blended-garment' && !needsSkeletalGarment
             ? buildBlendedGarments(bodyMesh as THREE.Mesh, garmentScenes, garmentSpecs)
             : null) ?? buildScrubs(bodyMesh as THREE.Mesh);
         // Child of the body mesh at identity → inherits its exact placement.
@@ -1087,7 +1098,7 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
     // scrubs + 2048² eye texture repaint). Opacity is applied live by the
     // effect below; the eyes are baked once (live pupil reading is the 2D panel).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scene, modelPath, bodyInjuries, garmentScenes, garmentSpecs]); // bodyInjuries: stable per case (memoised upstream + per-case key)
+  }, [scene, modelPath, bodyInjuries, garmentScenes, garmentSpecs, mobility]); // bodyInjuries: stable per case (memoised upstream + per-case key)
 
   // Whole-skeleton movement is reserved for genuinely ambulatory cases. The
   // source clips are in-place Mixamo loops, so the patient remains inside the
@@ -1478,9 +1489,13 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
         }
         const e = diaphoresisEaseRef.current;
         for (const entry of skinMatsRef.current) {
-          // roughness 0.5 → 0.18 (wet), envMapIntensity 0.65 → 1.0.
-          entry.mat.roughness = entry.roughness + (0.18 - entry.roughness) * e;
-          entry.mat.envMapIntensity = entry.envMapIntensity + (1.0 - entry.envMapIntensity) * e;
+          // A wet patient needs a broad, broken sheen—not a lacquered plastic
+          // body. Keep enough microsurface roughness to retain the skin read,
+          // and lift the environment reflection only modestly. This is still
+          // visibly clammy under the villa key light without turning every
+          // limb into a white specular strip.
+          entry.mat.roughness = entry.roughness + (0.34 - entry.roughness) * e;
+          entry.mat.envMapIntensity = entry.envMapIntensity + (0.78 - entry.envMapIntensity) * e;
         }
       }
     }

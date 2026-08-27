@@ -74,8 +74,10 @@ function KeyLight({
 // ---------------------------------------------------------------------------
 // Home — villa/apartment living room, built as a real enclosed room (not a
 // backdrop). Room box ~5m (x) x 4m (z) x 2.7m (y): back wall at z=-2, two
-// side walls at x=±2.5, floor + ceiling. Patient sits on the floor at origin.
-// Props (sofa, coffee table, rug, floor lamp, AC, window) are low-poly boxes;
+// side walls at x=±2.5, floor + ceiling. The patient sits forward on a low
+// upholstered bench at the scene origin so a tripod posture is
+// physically supported while both knees remain accessible to the student.
+// Props (sofa, bench, coffee table, rug, floor lamp, AC, window) are low-poly boxes;
 // fidelity comes from the procedural villa PBR set + the light rig.
 // ---------------------------------------------------------------------------
 
@@ -294,6 +296,24 @@ function HomeScene({ hideOverhead, shadowsEnabled }: { hideOverhead: boolean; sh
           <mesh key={`cush-${x}`} position={[x, 0.44, 0.03]} castShadow raycast={NO_RAYCAST}>
             <boxGeometry args={[0.72, 0.14, 0.66]} />
             <meshStandardMaterial color="#6b7758" roughness={0.98} />
+          </mesh>
+        ))}
+      </group>
+
+      {/* Patient bench — deliberately backless/armless so the student's view
+          of the chest, forearms and knees stays unobstructed. Its front edge sits
+          directly beneath the grounded tripod pelvis; without a support the
+          newly flexed seated pose correctly planted its feet but appeared to
+          hover in the middle of the room. */}
+      <group position={[0, 0, 0.34]}>
+        <mesh position={[0, 0.53, -0.08]} castShadow receiveShadow raycast={NO_RAYCAST}>
+          <boxGeometry args={[0.78, 0.16, 0.5]} />
+          <meshStandardMaterial color="#68745a" roughness={0.94} />
+        </mesh>
+        {[-0.29, 0.29].map((x) => (
+          <mesh key={`patient-chair-leg-${x}`} position={[x, 0.255, -0.08]} castShadow raycast={NO_RAYCAST}>
+            <boxGeometry args={[0.055, 0.51, 0.055]} />
+            <meshStandardMaterial color="#3f2f22" roughness={0.55} metalness={0.08} />
           </mesh>
         ))}
       </group>
