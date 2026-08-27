@@ -4249,9 +4249,24 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   // mechanic expressed on the mesh: no JVD bulge until you examine the neck.
   // Case injuries drive the finding morphs AND the wound skin decals.
   const caseInjuries = useMemo(() => inferInjuries(caseData), [caseData]);
+  // The realism director is recalculated as live vitals ease toward a
+  // treatment response, so `patientVisualState` gets a fresh object even when
+  // its authored wounds have not changed. Rebuilding the SkeletonUtils clone
+  // for every one of those ticks briefly mounts the garment layer at its
+  // default hidden state; in the browser that reads as clothes flickering off
+  // (and can expose the whole patient between frames). Key the expensive
+  // injury/mesh path to wound content only. Skin, breathing and equipment
+  // channels continue updating live through their own props and effects.
+  const scenarioWoundSignature = (patientVisualState?.woundOverlays ?? [])
+    .map(overlay => `${overlay.kind}\u001f${overlay.region}\u001f${overlay.detail}`)
+    .join('\u001e');
   const scenarioBodyInjuries = useMemo(
     () => buildScenarioBodyInjuries(patientVisualState),
-    [patientVisualState],
+    // The signature fully represents the only visual-state channel consumed
+    // by buildScenarioBodyInjuries. Depending on the parent object would
+    // reintroduce a clone on every vital-sign animation tick.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [scenarioWoundSignature],
   );
   const bodyInjuriesForMesh = useMemo(
     () => [...caseInjuries, ...scenarioBodyInjuries],

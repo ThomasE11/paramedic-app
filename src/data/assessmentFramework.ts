@@ -120,6 +120,35 @@ export interface AssessmentTracker {
   earnedPoints: number;
 }
 
+/**
+ * Match an authored clinical finding without treating a negated observation as
+ * pathology. Case text commonly contains phrases such as "non-tender", "no
+ * stridor or gurgling" and "tenderness absent". Plain `includes()` checks turn
+ * those reassuring findings into false alarms, so severity heuristics should
+ * pass through this negation-aware matcher.
+ */
+function hasAffirmedClinicalFinding(text: string, pattern: RegExp): boolean {
+  const flags = pattern.flags.replace(/[gy]/g, '');
+  const clauses = text
+    .toLowerCase()
+    .split(/[.;]|\b(?:but|however|although|yet)\b/i)
+    .map(clause => clause.trim())
+    .filter(Boolean);
+
+  return clauses.some(clause => {
+    const matcher = new RegExp(pattern.source, `${flags}g`);
+    return [...clause.matchAll(matcher)].some(match => {
+      if (match.index == null) return false;
+      const before = clause.slice(0, match.index);
+      const after = clause.slice(match.index + match[0].length);
+      const negatedPrefix = /(?:\b(?:no|not|without|denies?|negative for|absence of|free of)\b[^.;:]{0,48}|\bnon[-\s]?)$/.test(before);
+      const negatedSuffix = /^(?:\s|:|-)*(?:(?:is|are|was|were)\s+)?(?:absent|negative|not present|none|nil|free)\b/.test(after);
+
+      return !negatedPrefix && !negatedSuffix;
+    });
+  });
+}
+
 // ============================================================================
 // STEP DEFINITIONS
 // ============================================================================
@@ -870,9 +899,9 @@ export function getStepFindings(stepId: AssessmentStepId, caseData: CaseScenario
         significance: airway.patent ? undefined : 'Immediate airway management required.',
       });
       airway.findings.forEach(f => {
-        const sev = f.toLowerCase().includes('obstruct') || f.toLowerCase().includes('stridor') || f.toLowerCase().includes('snoring')
+        const sev = hasAffirmedClinicalFinding(f, /\b(?:obstruct(?:ed|ion|ing)?|stridor|snoring)\b/i)
           ? 'critical' as const
-          : f.toLowerCase().includes('short sentence') || f.toLowerCase().includes('gurgling')
+          : hasAffirmedClinicalFinding(f, /\b(?:short sentences?|gurgling)\b/i)
             ? 'abnormal' as const
             : 'normal' as const;
         findings.push({ label: 'Finding', value: f, severity: sev });
@@ -958,7 +987,7 @@ export function getStepFindings(stepId: AssessmentStepId, caseData: CaseScenario
       findings.push({
         label: 'Skin',
         value: circ.skin,
-        severity: circ.skin.toLowerCase().includes('pale') || circ.skin.toLowerCase().includes('clammy') || circ.skin.toLowerCase().includes('mottled') ? 'abnormal' : 'normal',
+        severity: hasAffirmedClinicalFinding(circ.skin, /\b(?:pale|clammy|mottled)\b/i) ? 'abnormal' : 'normal',
       });
       circ.findings.forEach(f => {
         const lower = f.toLowerCase();
@@ -968,9 +997,9 @@ export function getStepFindings(stepId: AssessmentStepId, caseData: CaseScenario
           /\b\d+\s*bpm\b/.test(lower) || /\bbp\s*\d/.test(lower) ||
           (lower.includes('rate') && /\d+\/min/.test(lower));
         if (isVitalValue) return;
-        const sev = lower.includes('shock') || lower.includes('haemorrhag') || lower.includes('hemorrhag')
+        const sev = hasAffirmedClinicalFinding(f, /\b(?:shock|ha?emorrhag\w*)\b/i)
           ? 'critical' as const
-          : lower.includes('tachycard') || lower.includes('hypotens')
+          : hasAffirmedClinicalFinding(f, /\b(?:tachycard\w*|hypotens\w*)\b/i)
             ? 'abnormal' as const
             : 'normal' as const;
         findings.push({ label: 'Finding', value: f, severity: sev });
@@ -1002,8 +1031,10 @@ export function getStepFindings(stepId: AssessmentStepId, caseData: CaseScenario
       findings.push({
         label: 'Pupils',
         value: Array.isArray(dis.pupils) ? dis.pupils.join('; ') : dis.pupils,
-        severity: (Array.isArray(dis.pupils) ? dis.pupils.join(' ') : dis.pupils).toLowerCase().includes('unequal') ||
-          (Array.isArray(dis.pupils) ? dis.pupils.join(' ') : dis.pupils).toLowerCase().includes('fixed')
+        severity: hasAffirmedClinicalFinding(
+          Array.isArray(dis.pupils) ? dis.pupils.join('; ') : dis.pupils,
+          /\b(?:unequal|fixed)\b/i,
+        )
           ? 'critical' : 'normal',
       });
       if (dis.bloodGlucose !== undefined) {
@@ -1028,7 +1059,7 @@ export function getStepFindings(stepId: AssessmentStepId, caseData: CaseScenario
         });
       }
       exp.findings.forEach(f => {
-        const sev = f.toLowerCase().includes('burn') || f.toLowerCase().includes('wound') || f.toLowerCase().includes('bleeding')
+        const sev = hasAffirmedClinicalFinding(f, /\b(?:burn\w*|wound\w*|bleed\w*|bleeding)\b/i)
           ? 'abnormal' as const : 'normal' as const;
         findings.push({ label: 'Finding', value: f, severity: sev });
       });
@@ -1049,9 +1080,9 @@ export function getStepFindings(stepId: AssessmentStepId, caseData: CaseScenario
       const headData = caseData.secondarySurvey?.head || [];
       if (headData.length > 0) {
         headData.forEach(f => {
-          const sev = f.toLowerCase().includes('laceration') || f.toLowerCase().includes('depress') || f.toLowerCase().includes('battle') || f.toLowerCase().includes('raccoon')
+          const sev = hasAffirmedClinicalFinding(f, /\b(?:laceration|depress\w*|battle\w*|raccoon\w*)\b/i)
             ? 'critical' as const
-            : f.toLowerCase().includes('tender') || f.toLowerCase().includes('swelling') || f.toLowerCase().includes('haematoma')
+            : hasAffirmedClinicalFinding(f, /\b(?:tender\w*|swelling|ha?ematoma)\b/i)
               ? 'abnormal' as const
               : 'normal' as const;
           findings.push({ label: 'Head', value: f, severity: sev });
@@ -1073,7 +1104,7 @@ export function getStepFindings(stepId: AssessmentStepId, caseData: CaseScenario
       const faceData = caseData.secondarySurvey?.headDetailed?.face || [];
       if (faceData.length > 0) {
         faceData.forEach(f => {
-          const sev = f.toLowerCase().includes('fracture') || f.toLowerCase().includes('unstable')
+          const sev = hasAffirmedClinicalFinding(f, /\b(?:fracture\w*|unstable)\b/i)
             ? 'critical' as const : 'normal' as const;
           findings.push({ label: 'Face', value: f, severity: sev });
         });
@@ -1087,9 +1118,9 @@ export function getStepFindings(stepId: AssessmentStepId, caseData: CaseScenario
       const neckData = caseData.secondarySurvey?.neck || [];
       if (neckData.length > 0) {
         neckData.forEach(f => {
-          const sev = f.toLowerCase().includes('jvd') || f.toLowerCase().includes('tracheal deviation') || f.toLowerCase().includes('emphysema')
+          const sev = hasAffirmedClinicalFinding(f, /\b(?:jvd|tracheal deviation|emphysema)\b/i)
             ? 'critical' as const
-            : f.toLowerCase().includes('tender') || f.toLowerCase().includes('midline')
+            : hasAffirmedClinicalFinding(f, /\btender\w*\b/i)
               ? 'abnormal' as const
               : 'normal' as const;
           findings.push({ label: 'Neck/C-Spine', value: f, severity: sev });
@@ -1107,9 +1138,9 @@ export function getStepFindings(stepId: AssessmentStepId, caseData: CaseScenario
       const inspectionPalpationFindings = chestData.filter(f => !auscultationTerms.test(f));
       if (inspectionPalpationFindings.length > 0) {
         inspectionPalpationFindings.forEach(f => {
-          const sev = f.toLowerCase().includes('flail') || f.toLowerCase().includes('crepitus') || f.toLowerCase().includes('open wound') || f.toLowerCase().includes('sucking')
+          const sev = hasAffirmedClinicalFinding(f, /\b(?:flail|crepitus|open wound|sucking)\b/i)
             ? 'critical' as const
-            : f.toLowerCase().includes('tender') || f.toLowerCase().includes('decreased') || f.toLowerCase().includes('asymmetr')
+            : hasAffirmedClinicalFinding(f, /\b(?:tender\w*|decreased|asymmetr\w*)\b/i)
               ? 'abnormal' as const
               : 'normal' as const;
           findings.push({ label: 'Chest', value: f, severity: sev });
@@ -1128,9 +1159,9 @@ export function getStepFindings(stepId: AssessmentStepId, caseData: CaseScenario
       const abdInspectionPalpation = abdData.filter(f => !bowelSoundTerms.test(f));
       if (abdInspectionPalpation.length > 0) {
         abdInspectionPalpation.forEach(f => {
-          const sev = f.toLowerCase().includes('rigid') || f.toLowerCase().includes('guarding') || f.toLowerCase().includes('distended')
+          const sev = hasAffirmedClinicalFinding(f, /\b(?:rigid\w*|guarding|distend\w*)\b/i)
             ? 'critical' as const
-            : f.toLowerCase().includes('tender')
+            : hasAffirmedClinicalFinding(f, /\btender\w*\b/i)
               ? 'abnormal' as const
               : 'normal' as const;
           findings.push({ label: 'Abdomen', value: f, severity: sev });
@@ -1146,9 +1177,9 @@ export function getStepFindings(stepId: AssessmentStepId, caseData: CaseScenario
       const pelvData = caseData.secondarySurvey?.pelvis || [];
       if (pelvData.length > 0) {
         pelvData.forEach(f => {
-          const sev = f.toLowerCase().includes('unstable') || f.toLowerCase().includes('crepitus') || f.toLowerCase().includes('open book')
+          const sev = hasAffirmedClinicalFinding(f, /\b(?:unstable|crepitus|open book)\b/i)
             ? 'critical' as const
-            : f.toLowerCase().includes('tender')
+            : hasAffirmedClinicalFinding(f, /\btender\w*\b/i)
               ? 'abnormal' as const
               : 'normal' as const;
           findings.push({ label: 'Pelvis', value: f, severity: sev });
@@ -1163,9 +1194,9 @@ export function getStepFindings(stepId: AssessmentStepId, caseData: CaseScenario
       const extData = caseData.secondarySurvey?.extremities || [];
       if (extData.length > 0) {
         extData.forEach(f => {
-          const sev = f.toLowerCase().includes('open fracture') || f.toLowerCase().includes('absent pulse') || f.toLowerCase().includes('amputation')
+          const sev = hasAffirmedClinicalFinding(f, /\b(?:open fracture|absent pulse|amputation)\b/i)
             ? 'critical' as const
-            : f.toLowerCase().includes('deform') || f.toLowerCase().includes('swelling') || f.toLowerCase().includes('fracture')
+            : hasAffirmedClinicalFinding(f, /\b(?:deform\w*|swelling|fracture\w*)\b/i)
               ? 'abnormal' as const
               : 'normal' as const;
           findings.push({ label: 'Extremities', value: f, severity: sev });
@@ -1181,9 +1212,9 @@ export function getStepFindings(stepId: AssessmentStepId, caseData: CaseScenario
       const spineData = caseData.secondarySurvey?.spine || [];
       if (postData.length > 0) {
         postData.forEach(f => {
-          const sev = f.toLowerCase().includes('step') || f.toLowerCase().includes('deformity')
+          const sev = hasAffirmedClinicalFinding(f, /\b(?:step\w*|deform\w*)\b/i)
             ? 'critical' as const
-            : f.toLowerCase().includes('tender') || f.toLowerCase().includes('bruising')
+            : hasAffirmedClinicalFinding(f, /\b(?:tender\w*|bruising)\b/i)
               ? 'abnormal' as const
               : 'normal' as const;
           findings.push({ label: 'Posterior', value: f, severity: sev });
@@ -1192,7 +1223,11 @@ export function getStepFindings(stepId: AssessmentStepId, caseData: CaseScenario
         findings.push({ label: 'Posterior', value: 'No spinal tenderness, no bruising', severity: 'normal' });
       }
       if (spineData.length > 0) {
-        spineData.forEach(f => findings.push({ label: 'Spine', value: f, severity: f.toLowerCase().includes('tender') ? 'abnormal' : 'normal' }));
+        spineData.forEach(f => findings.push({
+          label: 'Spine',
+          value: f,
+          severity: hasAffirmedClinicalFinding(f, /\btender\w*\b/i) ? 'abnormal' : 'normal',
+        }));
       }
       break;
     }
@@ -1305,7 +1340,7 @@ export function getStepFindings(stepId: AssessmentStepId, caseData: CaseScenario
         });
       }
       neuro.forEach(f => {
-        const sev = f.toLowerCase().includes('weakness') || f.toLowerCase().includes('droop') || f.toLowerCase().includes('slur')
+        const sev = hasAffirmedClinicalFinding(f, /\b(?:weakness|droop\w*|slur\w*)\b/i)
           ? 'critical' as const : 'normal' as const;
         findings.push({ label: 'Neuro', value: f, severity: sev });
       });
@@ -1340,7 +1375,7 @@ export function getStepFindings(stepId: AssessmentStepId, caseData: CaseScenario
         exp.wounds.forEach(w => findings.push({ label: 'Burn/Wound', value: w, severity: 'critical' }));
       }
       exp.findings.forEach(f => {
-        if (f.toLowerCase().includes('burn')) {
+        if (hasAffirmedClinicalFinding(f, /\bburn\w*\b/i)) {
           findings.push({ label: 'Burns Finding', value: f, severity: 'critical' });
         }
       });
@@ -1385,9 +1420,9 @@ export function getStepFindings(stepId: AssessmentStepId, caseData: CaseScenario
       const ecg = caseData.abcde.circulation.ecgFindings || [];
       if (ecg.length > 0) {
         ecg.forEach(e => {
-          const sev = e.toLowerCase().includes('st elevation') || e.toLowerCase().includes('vt') || e.toLowerCase().includes('vf')
+          const sev = hasAffirmedClinicalFinding(e, /\b(?:st elevation|ventricular tachycardia|ventricular fibrillation|v-?tach|v-?fib|vt|vf)\b/i)
             ? 'critical' as const
-            : e.toLowerCase().includes('st depression') || e.toLowerCase().includes('abnormal')
+            : hasAffirmedClinicalFinding(e, /\b(?:st depression|abnormal)\b/i)
               ? 'abnormal' as const
               : 'normal' as const;
           findings.push({ label: 'ECG', value: e, severity: sev });
