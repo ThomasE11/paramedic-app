@@ -147,6 +147,7 @@ import { generateNarrativeReport } from '@/lib/narrativeReport';
 import { generateEDOutcome } from '@/lib/edOutcome';
 import { exportSessionToPDF } from '@/lib/pdf-export';
 import { getResourcesForDebriefing } from '@/data/diversifiedResources';
+import { inferSceneImage } from '@/lib/sceneImageSelection';
 
 /**
  * Generate a student-friendly case title that doesn't reveal the diagnosis.
@@ -1269,6 +1270,13 @@ export function StudentPanel({
     _setPhase(prev);
   }, [phaseHistory]);
   const [currentCase, setCurrentCase] = useState<CaseScenario | null>(null);
+  // Pre-brief and Scene Survey must use the same demographic-aware resolver.
+  // Rendering sceneInfo.sceneImagePath directly here previously let a stale
+  // female image contradict a male patient before the next phase corrected it.
+  const prebriefSceneImage = useMemo(
+    () => currentCase ? inferSceneImage(currentCase) : null,
+    [currentCase],
+  );
   // Case bundle streams in lazily (see caseLibrary.loadAllCases). Until it
   // resolves, allCases is empty and the mission board shows its skeleton.
   const [allCases, setAllCases] = useState<CaseScenario[]>([]);
@@ -5123,9 +5131,6 @@ export function StudentPanel({
                 <h2 className="mt-4 text-xl sm:text-3xl font-semibold tracking-tight leading-tight text-white">
                   {getStudentCaseTitle(currentCase)}
                 </h2>
-                <p className="mt-1.5 text-sm text-white/70 leading-relaxed max-w-2xl">
-                  {currentCase.dispatchInfo.callReason}
-                </p>
 
                 {/* Dispatch tiles — only what the radio actually tells you */}
                 <div className="mt-5 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
@@ -5177,93 +5182,80 @@ export function StudentPanel({
               </div>
             </div>
 
-            {/* ---- DEMOGRAPHICS + PRESENTATION ----
-                Sober white card under the dark hero. Two columns: who the
-                patient is (demographic block) and the dispatch-conveyed
-                first impression. Scene Information removed entirely — it
-                belongs in Scene Survey, which is literally the next click. */}
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-3">
-              {/* Patient demographics */}
-              <Card className="rounded-2xl border border-border/60 bg-card overflow-hidden">
-                <CardHeader className="pb-2 px-4 pt-4">
-                  <div className="flex items-center justify-between">
-                    <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground font-semibold">Patient</p>
-                    <Heart className="h-3.5 w-3.5 text-muted-foreground/50" />
+            {/* ---- ONE SCENE BRIEF ----
+                Dispatch facts live in the hero above. This card adds only new
+                information: the canonical scene visual, expected first look,
+                and useful patient context. Keeping it together avoids the old
+                three-card repetition and the empty fourth grid cell. */}
+            <Card className="rounded-2xl border border-border/60 bg-card overflow-hidden">
+              <CardHeader className="px-4 sm:px-5 pt-4 pb-3 border-b border-border/40">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground font-semibold">Scene brief</p>
+                    {currentCase.sceneInfo?.sceneImageCaption && (
+                      <p className="mt-1 text-xs text-muted-foreground leading-snug">{currentCase.sceneInfo.sceneImageCaption}</p>
+                    )}
                   </div>
-                </CardHeader>
-                <CardContent className="px-4 pb-4 pt-1">
-                  <div className="flex items-baseline gap-2 mb-3">
-                    <span className="text-3xl font-extralight tracking-tight tabular-nums">{currentCase.patientInfo.age}</span>
-                    <span className="text-xs text-muted-foreground uppercase tracking-wider">{currentCase.patientInfo.gender}</span>
-                    <span className="text-xs text-muted-foreground/60 ml-auto">{currentCase.patientInfo.weight} kg</span>
-                  </div>
-                  <dl className="grid grid-cols-2 gap-x-3 gap-y-2 text-[11px]">
-                    <div>
-                      <dt className="text-muted-foreground/60 uppercase tracking-wider text-[9px]">Language</dt>
-                      <dd className="font-medium mt-0.5">{currentCase.patientInfo.language}</dd>
-                    </div>
-                    {currentCase.patientInfo.occupation && (
-                      <div>
-                        <dt className="text-muted-foreground/60 uppercase tracking-wider text-[9px]">Occupation</dt>
-                        <dd className="font-medium mt-0.5">{currentCase.patientInfo.occupation}</dd>
-                      </div>
-                    )}
-                  </dl>
-                  {currentCase.patientInfo.culturalConsiderations && currentCase.patientInfo.culturalConsiderations.length > 0 && (
-                    <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground border-t border-border/30 pt-2.5">
-                      <span className="font-medium text-foreground/70">Cultural note —</span> {currentCase.patientInfo.culturalConsiderations.join('. ')}
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Initial impression — what dispatch can tell you about the
-                  pre-arrival look. Frame it as "what to expect" so it's
-                  clearly second-hand info, not direct observation. */}
-              {currentCase.initialPresentation && (
-                <Card className="rounded-2xl border border-border/60 bg-card overflow-hidden">
-                  <CardHeader className="pb-2 px-4 pt-4">
-                    <div className="flex items-center justify-between">
-                      <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground font-semibold">Expected presentation</p>
-                      <Stethoscope className="h-3.5 w-3.5 text-muted-foreground/50" />
-                    </div>
-                  </CardHeader>
-                  <CardContent className="px-4 pb-4 pt-1 space-y-1.5 text-xs leading-relaxed">
-                    <p className="text-foreground/85">
-                      <span className="text-muted-foreground/70">What dispatch can tell you —</span> {currentCase.initialPresentation.generalImpression}
-                    </p>
-                    {currentCase.initialPresentation.position && (
-                      <p className="text-muted-foreground"><span className="font-medium text-foreground/70">Position:</span> {currentCase.initialPresentation.position}</p>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Dispatch scene image — what dispatch says the scene looks like.
-                  Shown alongside expected presentation so the student has a
-                  single reference tile before entering. */}
-              {currentCase.sceneInfo?.sceneImagePath && (
-                <Card className="rounded-2xl border border-border/60 bg-card overflow-hidden">
-                  <CardHeader className="pb-2 px-4 pt-4">
-                    <div className="flex items-center justify-between">
-                      <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground font-semibold">Scene overview</p>
-                      <ImageIcon className="h-3.5 w-3.5 text-muted-foreground/50" />
-                    </div>
-                    {currentCase.sceneInfo.sceneImageCaption && (
-                      <p className="text-[10px] text-muted-foreground/70 leading-snug">{currentCase.sceneInfo.sceneImageCaption}</p>
-                    )}
-                  </CardHeader>
-                  <CardContent className="p-2 sm:p-3">
+                  <ImageIcon className="h-4 w-4 text-muted-foreground/50 shrink-0" />
+                </div>
+              </CardHeader>
+              <CardContent className="p-3 sm:p-4">
+                <div className={`grid gap-4 ${prebriefSceneImage ? 'lg:grid-cols-[minmax(0,1.3fr)_minmax(280px,0.9fr)]' : ''}`}>
+                  {prebriefSceneImage && (
                     <img
-                      src={currentCase.sceneInfo.sceneImagePath}
-                      alt={currentCase.sceneInfo.sceneImageCaption || 'Scene overview'}
-                      className="w-full rounded-lg border border-border/40 object-cover"
-                      style={{ maxHeight: '22rem' }}
+                      src={prebriefSceneImage}
+                      alt={currentCase.sceneInfo?.sceneImageCaption || 'Scene overview'}
+                      className="h-full max-h-[23rem] min-h-[15rem] w-full rounded-xl border border-border/40 object-cover"
                     />
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+                  )}
+
+                  <div className="flex flex-col gap-4 rounded-xl bg-muted/25 p-4">
+                    {currentCase.initialPresentation && (
+                      <section>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Stethoscope className="h-3.5 w-3.5 text-primary/70" />
+                          <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-semibold">Expected on arrival</p>
+                        </div>
+                        <p className="text-sm leading-relaxed text-foreground/90">{currentCase.initialPresentation.generalImpression}</p>
+                        {currentCase.initialPresentation.position && (
+                          <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+                            <span className="font-medium text-foreground/70">Position:</span> {currentCase.initialPresentation.position}
+                          </p>
+                        )}
+                      </section>
+                    )}
+
+                    <section className="border-t border-border/50 pt-3">
+                      <div className="flex items-center gap-2 mb-2.5">
+                        <Heart className="h-3.5 w-3.5 text-primary/70" />
+                        <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-semibold">Patient context</p>
+                      </div>
+                      <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
+                        <div>
+                          <dt className="text-[9px] uppercase tracking-wider text-muted-foreground/70">Language</dt>
+                          <dd className="mt-0.5 font-medium">{currentCase.patientInfo.language}</dd>
+                        </div>
+                        <div>
+                          <dt className="text-[9px] uppercase tracking-wider text-muted-foreground/70">Weight</dt>
+                          <dd className="mt-0.5 font-medium">{currentCase.patientInfo.weight} kg</dd>
+                        </div>
+                        {currentCase.patientInfo.occupation && (
+                          <div className="col-span-2">
+                            <dt className="text-[9px] uppercase tracking-wider text-muted-foreground/70">Occupation</dt>
+                            <dd className="mt-0.5 font-medium">{currentCase.patientInfo.occupation}</dd>
+                          </div>
+                        )}
+                      </dl>
+                      {currentCase.patientInfo.culturalConsiderations && currentCase.patientInfo.culturalConsiderations.length > 0 && (
+                        <p className="mt-3 border-t border-border/40 pt-2.5 text-[11px] leading-relaxed text-muted-foreground">
+                          <span className="font-medium text-foreground/70">Cultural note —</span> {currentCase.patientInfo.culturalConsiderations.join('. ')}
+                        </p>
+                      )}
+                    </section>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
             {/* ---- ACTION BAR ----
                 Single dominant CTA + subtle secondary back link. The Begin

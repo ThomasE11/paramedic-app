@@ -8,6 +8,29 @@ type SceneImageEntry = {
   maxAge?: number;
 };
 
+const SCENE_ASSET_GENDER_OVERRIDES: Record<string, 'male' | 'female'> = {
+  // These neutral filenames still contain a clearly gendered patient. Keep
+  // the metadata beside the resolver so every UI phase and audit agrees.
+  '/scene-assets/office-medical-dubai.png': 'male',
+  '/scene-assets/cardiac-002-home-cardiac-arrest-deira.png': 'male',
+  '/scene-assets/cardiac-004-hypertensive-headache-villa.png': 'male',
+  '/scene-assets/cardiac-012-rehab-dizziness-pacemaker.png': 'male',
+  '/scene-assets/cardiac-ecg-001-epigastric-mi-burdubai.png': 'male',
+  '/scene-assets/litfl-003-renal-failure-hyperkalemia-apartment.png': 'male',
+  '/scene-assets/metab-003-clinic-hyperkalemia-renal.png': 'male',
+  '/scene-assets/y2-009-construction-office-arrest.png': 'male',
+};
+
+/** Patient gender visibly represented by a scene asset, when it is known. */
+export function sceneImagePatientGender(src: string): 'male' | 'female' | undefined {
+  const override = SCENE_ASSET_GENDER_OVERRIDES[src];
+  if (override) return override;
+  const file = src.split('/').pop()?.toLowerCase() ?? '';
+  if (/female|woman|obstetric|eclamptic|ectopic/.test(file)) return 'female';
+  if (/male/.test(file)) return 'male';
+  return undefined;
+}
+
 export const KNOWN_SCENE_ASSETS = new Set<string>([
   '/scene-assets/asthma-villa-male-uae.png',
   '/scene-assets/burn-001-jebel-ali-industrial-fire-burns.png',
@@ -177,6 +200,7 @@ export const SCENE_IMAGE_REGISTRY: SceneImageEntry[] = [
   {
     src: '/scene-assets/seizure-bedroom-female-uae.png',
     match: /seizure|postictal|post-ictal|tonic[-\s]?clonic|convulsion|jerking limbs/,
+    gender: 'female',
   },
   {
     src: '/scene-assets/psychiatric-apartment-safety-uae.png',
@@ -262,7 +286,9 @@ function selectTemplateSceneImage(
   const isFemale = gender === 'female' || /\bfemale\b|pregnan|woman|mother/.test(haystack);
   const isMale = gender === 'male' || /\bmale\b|man|worker|father/.test(haystack);
 
-  if (/pregnan|obstetric|eclampsia|delivery|ectopic|labou?r|postpartum/.test(haystack)) {
+  // "Labour accommodation" is a common UAE scene location and must never be
+  // mistaken for obstetric labour. Require an actual obstetric context.
+  if (/pregnan|obstetric|eclampsia|delivery|ectopic|postpartum|\b(?:in|active|preterm) labou?r\b|labou?r pains?|contractions?/.test(haystack)) {
     return '/scene-assets/obstetric-home-female-uae.png';
   }
 
@@ -289,7 +315,10 @@ function selectTemplateSceneImage(
   }
 
   if (/seizure|postictal|post-ictal|tonic[-\s]?clonic|convulsion|jerking limbs/.test(haystack)) {
-    return '/scene-assets/seizure-bedroom-female-uae.png';
+    if (isFemale) return '/scene-assets/seizure-bedroom-female-uae.png';
+    return /office|workplace|corporate/.test(haystack)
+      ? '/scene-assets/office-medical-dubai.png'
+      : '/scene-assets/home-medical-male-dubai-apartment.png';
   }
 
   if (/psychosis|psychotic|psychiatric|behaviou?r|agitated|aggressive|bizarre|talking to unseen/.test(haystack)) {
