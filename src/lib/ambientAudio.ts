@@ -183,6 +183,8 @@ export function createAmbientAudio(): AmbientAudioState {
   roomTone.play();
 
   const ac = new THREE.PositionalAudio(listener);
+  ac.name = 'villa-ac-hum';
+  ac.userData.audioRole = 'environment-ac';
   ac.setBuffer(makeAcHumBuffer(ctx));
   ac.setLoop(true);
   ac.setRefDistance(0.9);
@@ -195,6 +197,8 @@ export function createAmbientAudio(): AmbientAudioState {
   ac.play();
 
   const patient = new THREE.PositionalAudio(listener);
+  patient.name = 'patient-breath';
+  patient.userData.audioRole = 'patient-breath';
   patient.setRefDistance(0.55);
   patient.setRolloffFactor(1.8);
   patient.setDistanceModel('inverse');
@@ -244,6 +248,10 @@ export function createAmbientAudio(): AmbientAudioState {
       try {
         if (audio.isPlaying) audio.stop();
         audio.disconnect();
+        // React Strict Mode mounts effects twice in development. Detach each
+        // emitter as well as disconnecting its WebAudio nodes, otherwise the
+        // stopped first pair remains in the R3F scene beside the live pair.
+        audio.removeFromParent();
       } catch {
         // Best-effort teardown — a never-played node may have nothing to
         // disconnect; that is fine.

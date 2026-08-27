@@ -4,12 +4,18 @@ const args = process.argv.slice(2);
 const base = args.find((a) => !a.startsWith('--')) ?? 'http://localhost:5173';
 const seconds = Number((args.find((a) => a.startsWith('--seconds=')) ?? '--seconds=10').split('=')[1]);
 const headless = args.includes('--headless');
+const ipad = args.includes('--ipad');
 const forceDegrade = args.includes('--force-degrade');
 const modelArg = args.find((a) => a.startsWith('--model='));
 const modelQuery = modelArg ? `&model=${modelArg.split('=')[1]}` : '';
 
-const browser = await chromium.launch({ headless });
-const page = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+// Playwright's lightweight headless shell is present in CI, while the full
+// bundled Chromium may not be. Hardware desktop runs use the installed Chrome
+// channel so the acceptance number reflects the real GPU path.
+const browser = await chromium.launch(headless ? { headless: true } : { headless: false, channel: 'chrome' });
+const page = await browser.newPage(ipad
+  ? { viewport: { width: 1180, height: 820 }, deviceScaleFactor: 2, hasTouch: true, isMobile: true }
+  : { viewport: { width: 1440, height: 960 } });
 page.setDefaultTimeout(30_000);
 
 // At forced ~10fps the UI animations never settle, so Playwright's default
@@ -28,7 +34,11 @@ if (forceDegrade) {
 }
 
 try {
-  await page.goto(`${base}/?capture${modelQuery}`, { waitUntil: 'networkidle' });
+  // FPS must be measured on the normal renderer path. `?capture` enables
+  // preserveDrawingBuffer and deliberately pins AdaptiveQuality at tier 0 for
+  // deterministic screenshots; measuring that path reported ~5 FPS and hid
+  // whether the production degrade ladder was actually protecting devices.
+  await page.goto(`${base}/?fpsProbe=1${modelQuery}`, { waitUntil: 'networkidle' });
   await clickStep(page.getByRole('button', { name: /Start Training/i }).first());
   await page
     .getByRole('button', { name: /Skip Tour/i })
@@ -67,7 +77,8 @@ try {
     for (const t of transitions) console.log('  ' + t);
   }
 
-  const result = await page.evaluate(async (secs) => {
+  const profile = ipad ? 'ipad-proxy' : headless ? 'headless-software' : 'desktop-hardware';
+  const result = await page.evaluate(async ({ secs, profile: measuredProfile }) => {
     const deltas = [];
     let last = performance.now();
     await new Promise((resolve) => {
@@ -90,8 +101,10 @@ try {
       avgFps: Number(avg.toFixed(1)),
       p5LowFps: Number((1000 / p95Delta).toFixed(1)),
       minFps: Number((1000 / worst).toFixed(1)),
+      quality: window.__adaptiveQuality ?? null,
+      profile: measuredProfile,
     };
-  }, seconds);
+  }, { secs: seconds, profile });
 
   console.log(JSON.stringify(result));
 } catch (err) {

@@ -257,21 +257,60 @@ export function AdaptiveQuality({ tier, onTierChange }: AdaptiveQualityProps) {
     onTierChange(next);
   };
 
+  const emergencyDrop = () => {
+    if (tierRef.current >= MAX_TIER) return;
+    tierRef.current = MAX_TIER;
+    lastDirectionRef.current = 1;
+    lastChangeAtRef.current = performance.now();
+    onTierChange(MAX_TIER);
+  };
+
   // Forced-degrade (ladder demo) beats the capture pin beats live adaptation.
   const forced = readForcedDegrade();
   if (!forced && readCapturePin()) return null;
 
   return (
-    <PerformanceMonitor
-      // Decision round = iterations x ms = 10 x 250 ms = 2.5 s of averages;
-      // >75% of them must sit past a bound to trigger — "sustained", not spikes.
-      bounds={(refreshRate) => [45, Math.max(50, Math.round(refreshRate * 0.75))]}
-      onDecline={() => move(1)}
-      onIncline={() => move(-1)}
-    >
-      {forced ? <ForcedDegradeBurner /> : null}
-    </PerformanceMonitor>
+    <>
+      <EmergencyQualityDrop tier={tier} onEmergency={emergencyDrop} />
+      <PerformanceMonitor
+        // Decision round = iterations x ms = 10 x 250 ms = 2.5 s of averages;
+        // >75% of them must sit past a bound to trigger — "sustained", not spikes.
+        bounds={(refreshRate) => [45, Math.max(50, Math.round(refreshRate * 0.75))]}
+        onDecline={() => move(1)}
+        onIncline={() => move(-1)}
+      >
+        {forced ? <ForcedDegradeBurner /> : null}
+      </PerformanceMonitor>
+    </>
   );
+}
+
+/**
+ * PerformanceMonitor's factor event is intentionally gradual, but that means
+ * a device rendering in single digits can remain at tier 1 for many seconds.
+ * This allocation-free watchdog observes one 2.5 s window after warm-up and
+ * jumps directly to the fully shed tier below 24 FPS. It never runs in capture
+ * mode and recovery remains governed by the conservative monitor above.
+ */
+function EmergencyQualityDrop({ tier, onEmergency }: { tier: QualityTier; onEmergency: () => void }) {
+  const elapsedRef = useRef(0);
+  const framesRef = useRef(0);
+  const warmupRef = useRef(0);
+
+  useFrame((_, delta) => {
+    if (tier >= MAX_TIER) return;
+    warmupRef.current += delta;
+    if (warmupRef.current < 2) return;
+    elapsedRef.current += delta;
+    framesRef.current += 1;
+    if (elapsedRef.current < 2.5) return;
+    const fps = framesRef.current / elapsedRef.current;
+    elapsedRef.current = 0;
+    framesRef.current = 0;
+    if (fps < 24) onEmergency();
+  });
+
+  return null;
 }
 
 /**
