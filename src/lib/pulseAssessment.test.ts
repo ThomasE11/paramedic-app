@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { firstYearCases } from '@/data/firstYearCases';
 import { additionalTraumaCases } from '@/data/additionalCases';
-import { assessPulseAtSite, parsePulseSite } from '@/lib/pulseAssessment';
+import { assessPulseAtSite, derivePulseReassessedTreatmentIds, parsePulseSite } from '@/lib/pulseAssessment';
 
 const stableFracture = firstYearCases.find(caseData => caseData.id === 'y1-020')!;
 const amputation = additionalTraumaCases.find(caseData => caseData.id === 'trauma-011')!;
@@ -40,6 +40,14 @@ describe('anatomical pulse assessment', () => {
     });
     expect(result.palpable).toBe(false);
     expect(result.summary).toContain('Expected distal to the applied tourniquet');
+  });
+
+  it('credits only the matching limb pulse check as tourniquet reassessment', () => {
+    const applied = ['tourniquet', 'site:tourniquet:right-leg'];
+
+    expect(derivePulseReassessedTreatmentIds('pedal-right', applied)).toEqual(['tourniquet']);
+    expect(derivePulseReassessedTreatmentIds('pedal-left', applied)).toEqual([]);
+    expect(derivePulseReassessedTreatmentIds('radial-right', applied)).toEqual([]);
   });
 
   it('reports no central pulse during arrest', () => {

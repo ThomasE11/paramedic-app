@@ -183,6 +183,32 @@ describe('matchRealismScenarios', () => {
     expect(anaScenario!.activeProblems).toContain('anaphylaxis');
   });
 
+  it('does not mistake road rash in a trauma case for systemic anaphylaxis', () => {
+    const scenario = baseCase({
+      id: 'test-road-rash',
+      title: 'Motorcycle collision with open femur fracture',
+      category: 'trauma',
+      subcategory: 'polytrauma',
+      dispatchInfo: { callReason: 'Rider on road after collision', timeOfDay: 'afternoon', location: 'Roadside', callerInfo: 'Bystander' },
+      initialPresentation: { generalImpression: 'Shocked trauma patient', appearance: 'Road rash, open right femur wound', position: 'Supine', consciousness: 'Unresponsive' },
+      abcde: {
+        ...baseCase({ id: 'base', title: 'base' }).abcde,
+        exposure: { findings: ['Open right femur fracture', 'Road rash'], interventions: [], wounds: ['Open femur wound'] },
+      },
+      expectedFindings: {
+        keyObservations: ['Haemorrhagic shock'],
+        redFlags: [],
+        differentialDiagnoses: [],
+        mostLikelyDiagnosis: 'Polytrauma with open femur fracture',
+      },
+    });
+
+    const matched = matchRealismScenarios(scenario);
+    expect(matched.some(item => item.id === 'trauma-haemorrhage-open-chest')).toBe(true);
+    expect(matched.some(item => item.id === 'anaphylaxis-systemic')).toBe(false);
+    expect(matched.some(item => item.id === 'toxicology-opioid-hypoventilation')).toBe(false);
+  });
+
   it('maps opioid overdose to toxicology scenario', () => {
     const scenario = baseCase({
       id: 'test-opioid',

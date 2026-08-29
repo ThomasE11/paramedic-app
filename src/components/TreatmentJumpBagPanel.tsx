@@ -69,6 +69,16 @@ export function recommendedManagementTabForCase(caseData: CaseScenario): Managem
     || /\b(asystole|ventricular fibrillation|pulseless|pea|cardiac arrest)\b/.test(`${rhythm} ${text}`)
   ) return 'circulation';
 
+  // In MARCH trauma, an immediately exsanguinating external source precedes
+  // airway work. Do not open an airway deck over a shocked patient whose
+  // authored first action is a tourniquet or catastrophic haemorrhage control.
+  if (
+    caseData.category === 'trauma'
+    && Number.isFinite(systolic)
+    && systolic < 90
+    && /\b(catastrophic haemorrhage|catastrophic hemorrhage|uncontrolled bleeding|arterial bleed|active bleeding|open femur|amputation|tourniquet)\b/.test(text)
+  ) return 'circulation';
+
   if (
     caseData.abcde?.airway?.patent === false
     || gcs <= 8
@@ -175,16 +185,21 @@ export function suggestedTreatmentIdsForCase(
     if (currentVitals.bloodGlucose !== undefined && currentVitals.bloodGlucose < 4) add('glucose_10g');
   }
 
-  const pathwayText = [
+  const pathwaySegments = [
     ...(caseData.managementPathway?.immediate ?? []),
     ...(caseData.equipmentNeeded ?? []),
     ...(caseData.abcde?.airway?.interventions ?? []),
     ...(caseData.abcde?.breathing?.interventions ?? []),
     ...(caseData.abcde?.circulation?.interventions ?? []),
     ...(caseData.abcde?.exposure?.interventions ?? []),
-  ].join(' ').toLowerCase();
-  for (const route of CASE_PATHWAY_TREATMENTS) {
-    if (route.pattern.test(pathwayText)) add(...route.treatmentIds);
+  ].map(item => item.toLowerCase());
+  // Preserve the author's clinical sequence. A first-line tourniquet must not
+  // disappear behind a later traction-splint mention simply because the
+  // keyword table happens to list splints first.
+  for (const segment of pathwaySegments) {
+    for (const route of CASE_PATHWAY_TREATMENTS) {
+      if (route.pattern.test(segment)) add(...route.treatmentIds);
+    }
   }
 
   return ids.slice(0, 6);

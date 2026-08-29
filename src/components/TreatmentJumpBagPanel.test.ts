@@ -92,4 +92,37 @@ describe('initial treatment-kit recommendation', () => {
     });
     expect(recommendedManagementTabForCase(fracture)).toBe('transport');
   });
+
+  it('prioritises catastrophic haemorrhage before airway support and later splinting', () => {
+    const polytrauma = caseFor({
+      title: 'Motorcycle collision with open femur fracture',
+      category: 'trauma',
+      initialPresentation: { generalImpression: 'Shocked trauma patient', position: 'Supine', appearance: 'Open femur wound with active bleeding', consciousness: 'Unresponsive' },
+      abcde: {
+        ...caseFor({}).abcde,
+        disability: { ...caseFor({}).abcde.disability, gcs: { eye: 1, verbal: 1, motor: 3, total: 5 } },
+      },
+      vitalSignsProgression: { initial: { bp: '80/50', pulse: 125, respiration: 8, spo2: 85, gcs: 5 } },
+      managementPathway: {
+        immediate: [
+          'Catastrophic haemorrhage first — apply a tourniquet and control major bleeding',
+          'High-flow oxygen and BVM if needed',
+          'Establish IV access and give a small fluid bolus',
+          'Apply a traction splint to the femur fracture',
+        ],
+        definitive: [],
+        monitoring: [],
+      },
+    });
+
+    expect(recommendedManagementTabForCase(polytrauma)).toBe('circulation');
+    expect(suggestedTreatmentIdsForCase(polytrauma, polytrauma.vitalSignsProgression.initial)).toEqual([
+      'oxygen_nonrebreather',
+      'bvm_ventilation',
+      'iv_access',
+      'fluids_250ml',
+      'tourniquet',
+      'bleeding_control',
+    ]);
+  });
 });

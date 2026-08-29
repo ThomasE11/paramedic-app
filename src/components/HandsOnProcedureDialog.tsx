@@ -224,6 +224,60 @@ function ThermalProcedurePreview({
   );
 }
 
+const TOURNIQUET_PLACEMENT: Record<string, { left: string; top: string; rotate: string }> = {
+  'right-arm': { left: '31%', top: '30%', rotate: '9deg' },
+  'left-arm': { left: '69%', top: '30%', rotate: '-9deg' },
+  'right-leg': { left: '43%', top: '63%', rotate: '3deg' },
+  'left-leg': { left: '57%', top: '63%', rotate: '-3deg' },
+};
+
+function TourniquetProcedurePreview({
+  treatmentId,
+  selectedTarget,
+  completedSteps,
+  animatingStep,
+}: {
+  treatmentId: string;
+  selectedTarget: ProcedureTarget | null;
+  completedSteps: string[];
+  animatingStep: string | null;
+}) {
+  if (!treatmentId.includes('tourniquet') || !selectedTarget) return null;
+  const placement = TOURNIQUET_PLACEMENT[selectedTarget.id];
+  if (!placement) return null;
+
+  const reached = (stepId: string) => completedSteps.includes(stepId) || animatingStep === stepId;
+  const strapPositioned = reached('place');
+  const slackRemoved = reached('tighten');
+  const windlassTurned = reached('windlass');
+  const secured = reached('secure');
+
+  if (!strapPositioned) return null;
+
+  return (
+    <div
+      data-procedure-preview="tourniquet"
+      aria-label={`Tourniquet positioned proximal to the wound on ${selectedTarget.label}`}
+      className="pointer-events-none absolute z-30 h-12 w-14 -translate-x-1/2 -translate-y-1/2 animate-in fade-in zoom-in-75 duration-300"
+      style={{ left: placement.left, top: placement.top, rotate: placement.rotate }}
+    >
+      <span className={`absolute left-0 top-5 h-3 w-full rounded-full border border-slate-400 bg-slate-950 shadow-[0_3px_5px_rgba(0,0,0,.8)] ${slackRemoved ? 'scale-x-95' : ''}`} />
+      {windlassTurned && (
+        <>
+          <span className="absolute left-1/2 top-1 h-7 w-1.5 -translate-x-1/2 rotate-[68deg] rounded-full border border-slate-200 bg-slate-500 shadow" />
+          <span className="absolute left-[18px] top-[15px] h-3 w-5 rounded border border-slate-300 bg-slate-800" />
+        </>
+      )}
+      {secured && (
+        <>
+          <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded bg-amber-100 px-1 py-0.5 text-[6px] font-black tracking-wide text-slate-950 shadow">TIME</span>
+          <span className="absolute -right-9 top-3 w-max rounded-full border border-emerald-300/50 bg-emerald-950/95 px-2 py-1 text-[7px] font-black uppercase tracking-[0.08em] text-emerald-200 shadow-lg">Bleeding stopped</span>
+        </>
+      )}
+    </div>
+  );
+}
+
 export function HandsOnProcedureDialog({
   open,
   treatment,
@@ -377,6 +431,13 @@ export function HandsOnProcedureDialog({
               <ThermalProcedurePreview
                 treatmentId={plan.treatmentId}
                 equipmentAsset={plan.equipmentAsset}
+                completedSteps={completedSteps}
+                animatingStep={animatingStep}
+              />
+
+              <TourniquetProcedurePreview
+                treatmentId={plan.treatmentId}
+                selectedTarget={selectedTarget}
                 completedSteps={completedSteps}
                 animatingStep={animatingStep}
               />

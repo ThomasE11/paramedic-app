@@ -312,7 +312,7 @@ import { hasAttachedDefibrillatorPads } from '@/lib/defibrillatorSafety';
 import { isBleedRegionControlled } from '@/lib/bleedControl';
 import { assessTractionSplintSafety } from '@/lib/tractionSplintSafety';
 import { assessLimbSplintSafety, type LimbSplintTreatmentId } from '@/lib/limbSplintSafety';
-import { assessPulseAtSite, parsePulseSite, type PulseAssessmentResult } from '@/lib/pulseAssessment';
+import { assessPulseAtSite, derivePulseReassessedTreatmentIds, parsePulseSite, type PulseAssessmentResult } from '@/lib/pulseAssessment';
 import { assessAmbulationSafety } from '@/lib/ambulationSafety';
 import { VentilatorSetupDialog, type VentilatorSettings } from '@/components/VentilatorSetupDialog';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -1723,10 +1723,24 @@ export function StudentPanel({
     setTimeout(() => {
       setPulseCheckInProgress(false);
       setLastPulseAssessment(assessment);
+      const pulseReassessedTreatmentIds = derivePulseReassessedTreatmentIds(
+        assessment.site,
+        appliedTreatmentIds,
+      );
+      if (pulseReassessedTreatmentIds.length > 0) {
+        setReassessedTreatmentIds(previous => [
+          ...new Set([...previous, ...pulseReassessedTreatmentIds]),
+        ]);
+      }
       if (assessment.palpable) {
         toast.success(`${assessment.label} pulse present`, { description: assessment.summary, duration: 7000 });
       } else if (assessment.site.startsWith('carotid')) {
         toast.error(`${assessment.label} pulse absent`, { description: assessment.summary, duration: 9000 });
+      } else if (pulseReassessedTreatmentIds.length > 0) {
+        toast.success('Tourniquet reassessment documented', {
+          description: assessment.summary,
+          duration: 9000,
+        });
       } else {
         toast.warning(`${assessment.label} pulse absent`, { description: assessment.summary, duration: 9000 });
       }

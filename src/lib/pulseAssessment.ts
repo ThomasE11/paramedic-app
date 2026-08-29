@@ -96,6 +96,22 @@ function hasTourniquetAtSite(appliedTreatmentIds: Iterable<string>, site: PulseS
   });
 }
 
+/**
+ * A tourniquet is not clinically complete until the treated limb has been
+ * checked again. The procedure flow already records haemorrhage control and
+ * application time; a matching distal pulse check supplies the remaining
+ * site-specific reassessment evidence for the treatment loop.
+ */
+export function derivePulseReassessedTreatmentIds(
+  site: PulseSite,
+  appliedTreatmentIds: Iterable<string>,
+): string[] {
+  const ids = [...appliedTreatmentIds];
+  if (!hasTourniquetAtSite(ids, site)) return [];
+
+  return ids.filter(id => !id.startsWith('site:') && id.toLowerCase().includes('tourniquet'));
+}
+
 export function assessPulseAtSite({
   site,
   caseData,

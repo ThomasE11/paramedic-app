@@ -235,15 +235,64 @@ function scenarioMatchesCase(scenario: RealismScenarioSpec, caseData: CaseScenar
   }
 
   if (scenario.id === 'anaphylaxis-systemic') {
-    // Stridor, facial swelling, and rash are airway/skin signs SHARED with
-    // burns/inhalation injury ("stridor possible", facial oedema). A burn-family
-    // case must show a true allergic cue before it presents as anaphylaxis.
-    const burnContext = /\bburn|thermal|scald|inhalation|smoke\b/.test(
-      [caseData.category, caseData.subcategory].filter(Boolean).join(' ').toLowerCase(),
-    );
-    if (burnContext) {
-      return /\b(anaphylaxis|anaphylactic|allerg\w*|urticaria|hives|sting)\b/.test(text);
-    }
+    // Rash, stridor and facial swelling are not specific to allergy. In
+    // particular, "road rash" in an RTC used to outrank the trauma scenario
+    // and label a shocked fracture patient as anaphylaxis. Require a current
+    // allergic diagnosis, trigger or urticarial finding; remote history and
+    // unrelated injury descriptions must not activate this systemic scenario.
+    const currentAllergyText = [
+      caseData.id,
+      caseData.title,
+      caseData.category,
+      caseData.subcategory,
+      caseData.dispatchInfo?.callReason,
+      ...(caseData.dispatchInfo?.additionalInfo ?? []),
+      caseData.initialPresentation?.generalImpression,
+      caseData.initialPresentation?.appearance,
+      ...(caseData.abcde?.airway?.findings ?? []),
+      ...(caseData.abcde?.breathing?.findings ?? []),
+      caseData.abcde?.circulation?.skin,
+      ...(caseData.abcde?.circulation?.findings ?? []),
+      ...(caseData.abcde?.exposure?.findings ?? []),
+      ...(caseData.abcde?.exposure?.rashes ?? []),
+      caseData.expectedFindings?.mostLikelyDiagnosis,
+      caseData.history?.eventsLeading,
+    ]
+      .filter(Boolean)
+      .map(value => stripNegatedClauses(String(value)))
+      .join(' ')
+      .toLowerCase();
+
+    return /\b(anaphylaxis|anaphylactic|allerg\w*|urticaria|urticarial|hives|angioedema|bee sting|insect sting|shellfish|prawns?|peanuts?|nut[- ]containing)\b/.test(currentAllergyText);
+  }
+
+  if (scenario.id === 'toxicology-opioid-hypoventilation') {
+    // Unconsciousness and slow breathing also occur in head injury and shock.
+    // Require an actual opioid/overdose clue before adding pinpoint pupils,
+    // naloxone behaviour and an opioid label to the patient.
+    const currentToxicologyText = [
+      caseData.id,
+      caseData.title,
+      caseData.category,
+      caseData.subcategory,
+      caseData.dispatchInfo?.callReason,
+      ...(caseData.dispatchInfo?.additionalInfo ?? []),
+      caseData.initialPresentation?.generalImpression,
+      caseData.initialPresentation?.appearance,
+      ...(caseData.abcde?.airway?.findings ?? []),
+      ...(caseData.abcde?.breathing?.findings ?? []),
+      ...list(caseData.abcde?.disability?.pupils),
+      ...(caseData.abcde?.disability?.findings ?? []),
+      ...(caseData.abcde?.exposure?.findings ?? []),
+      caseData.expectedFindings?.mostLikelyDiagnosis,
+      caseData.history?.eventsLeading,
+    ]
+      .filter(Boolean)
+      .map(value => stripNegatedClauses(String(value)))
+      .join(' ')
+      .toLowerCase();
+
+    return /\b(opioid|opiate|heroin|fentanyl|morphine|methadone|oxycodone|codeine|naloxone|narcan|pinpoint pupils?|miosis|needle tracks?|drug overdose)\b/.test(currentToxicologyText);
   }
 
   if (scenario.id === 'neurology-stroke-seizure') {
