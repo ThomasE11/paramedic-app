@@ -150,6 +150,80 @@ function AirwayProcedurePreview({
   );
 }
 
+const THERMAL_PREVIEW_TREATMENTS = new Set(['active_cooling', 'warming_blanket']);
+
+function ThermalProcedurePreview({
+  treatmentId,
+  equipmentAsset,
+  completedSteps,
+  animatingStep,
+}: {
+  treatmentId: string;
+  equipmentAsset: string;
+  completedSteps: string[];
+  animatingStep: string | null;
+}) {
+  if (!THERMAL_PREVIEW_TREATMENTS.has(treatmentId)) return null;
+
+  const reached = (stepId: string) => completedSteps.includes(stepId) || animatingStep === stepId;
+  const cooling = treatmentId === 'active_cooling';
+  const prepared = reached('prepare');
+  const applied = reached('apply');
+  const protectedLines = reached('protect');
+  const confirmed = reached('confirm');
+
+  return (
+    <div data-procedure-preview={treatmentId} className="pointer-events-none absolute inset-0 z-20">
+      {prepared && (
+        <span className="absolute left-1/2 top-[74px] h-[112px] w-[78px] -translate-x-1/2 rounded-[40px] border border-amber-100/45 bg-[#9a6d55]/45 shadow-[inset_0_0_18px_rgba(255,255,255,.12)]" aria-label="Torso exposed for temperature treatment" />
+      )}
+
+      {applied && cooling && (
+        <>
+          <span className="absolute left-1/2 top-[78px] h-[108px] w-[82px] -translate-x-1/2 rounded-[38px] border border-cyan-200/50 bg-cyan-300/20 shadow-[0_0_22px_rgba(34,211,238,.32)] animate-in fade-in duration-500" aria-label="Cool wet sheet applied over torso" />
+          {[
+            { left: '48px', top: '89px', rotate: '-18deg' },
+            { left: '118px', top: '89px', rotate: '18deg' },
+            { left: '69px', top: '176px', rotate: '-8deg' },
+            { left: '99px', top: '176px', rotate: '8deg' },
+          ].map((position, index) => (
+            <img
+              key={index}
+              src={equipmentAsset}
+              alt=""
+              draggable={false}
+              className="absolute h-8 w-8 rounded-md object-contain drop-shadow-[0_3px_6px_rgba(0,0,0,.7)] animate-in zoom-in-75 duration-300"
+              style={{ left: position.left, top: position.top, rotate: position.rotate }}
+            />
+          ))}
+          <span className="absolute left-1/2 top-[210px] -translate-x-1/2 rounded-full border border-cyan-200/50 bg-cyan-950/90 px-2 py-1 text-[8px] font-black uppercase tracking-[0.08em] text-cyan-100">
+            Axillae + groins cooled
+          </span>
+        </>
+      )}
+
+      {applied && !cooling && (
+        <div className="absolute left-1/2 top-[73px] h-[205px] w-[108px] -translate-x-1/2 overflow-hidden rounded-[38px_38px_22px_22px] border border-amber-200/55 bg-gradient-to-b from-amber-200/90 via-orange-300/85 to-amber-500/80 shadow-[0_8px_24px_rgba(245,158,11,.35)] animate-in fade-in duration-500" aria-label="Warming blanket covering torso and legs">
+          <img src={equipmentAsset} alt="" draggable={false} className="h-full w-full object-cover opacity-55 mix-blend-multiply" />
+        </div>
+      )}
+
+      {protectedLines && (
+        <>
+          <span className="absolute left-[17px] top-[134px] h-0.5 w-[72px] -rotate-6 rounded-full bg-emerald-200/90 shadow-[0_0_5px_rgba(52,211,153,.7)]" />
+          <span className="absolute right-[17px] top-[146px] h-0.5 w-[72px] rotate-6 rounded-full bg-cyan-200/90 shadow-[0_0_5px_rgba(34,211,238,.7)]" />
+        </>
+      )}
+
+      {confirmed && (
+        <span className="absolute bottom-3 left-1/2 w-max max-w-[174px] -translate-x-1/2 rounded-full border border-emerald-300/50 bg-emerald-950/95 px-2 py-1 text-center text-[8px] font-black uppercase tracking-[0.08em] text-emerald-200 shadow-lg">
+          {cooling ? 'Cooling active · trend core temperature' : 'Insulated · continue temperature checks'}
+        </span>
+      )}
+    </div>
+  );
+}
+
 export function HandsOnProcedureDialog({
   open,
   treatment,
@@ -294,6 +368,13 @@ export function HandsOnProcedureDialog({
               )}
 
               <AirwayProcedurePreview
+                treatmentId={plan.treatmentId}
+                equipmentAsset={plan.equipmentAsset}
+                completedSteps={completedSteps}
+                animatingStep={animatingStep}
+              />
+
+              <ThermalProcedurePreview
                 treatmentId={plan.treatmentId}
                 equipmentAsset={plan.equipmentAsset}
                 completedSteps={completedSteps}

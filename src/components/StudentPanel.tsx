@@ -126,7 +126,12 @@ import { DebriefingResourcesPanel } from '@/components/DebriefingResourcesPanel'
 import { DebriefReplay } from '@/components/DebriefReplay';
 import { SceneSurveyPanel, type SceneSurveyResult } from '@/components/SceneSurveyPanel';
 import { VoiceHistoryPanel } from '@/components/VoiceHistoryPanel';
-import { TreatmentJumpBagPanel, bagKeyForTreatment, type ManagementTab } from '@/components/TreatmentJumpBagPanel';
+import {
+  TreatmentJumpBagPanel,
+  bagKeyForTreatment,
+  recommendedManagementTabForCase,
+  type ManagementTab,
+} from '@/components/TreatmentJumpBagPanel';
 import { HUDValue } from '@/components/hud/HUDPanel';
 import { HUDVitals } from '@/components/hud/HUDVitals';
 import { HUDTreatmentBags } from '@/components/hud/HUDTreatmentBags';
@@ -2636,6 +2641,9 @@ export function StudentPanel({
   const initializeCase = useCallback((newCase: CaseScenario, conditionMode: boolean, condition?: string) => {
     stopNarration();
     setCurrentCase(newCase);
+    setActiveManagementTab(recommendedManagementTabForCase(newCase));
+    setCareRailMode('treat');
+    setMedSearch('');
     const initialVitals = buildInitialVitalsFromCase(newCase);
     setCurrentVitals(initialVitals);
     setVitalsHistory([initialVitals]);
@@ -5997,6 +6005,7 @@ export function StudentPanel({
                 {!voiceFirstMode && careRailMode === 'treat' && (
                 <HUDTreatmentBags className="tactical-loadout-dock tactical-management-options">
                   <TreatmentJumpBagPanel
+                    caseData={currentCase}
                     currentVitals={currentVitals}
                     appliedTreatments={appliedTreatments}
                     appliedTreatmentIds={appliedTreatmentIds}

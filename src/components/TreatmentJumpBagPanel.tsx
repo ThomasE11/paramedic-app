@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState, type ComponentType, type CSSProperties } from 'react';
-import type { AppliedTreatment, VitalSigns } from '@/types';
+import type { AppliedTreatment, CaseScenario, VitalSigns } from '@/types';
 import {
   type Treatment,
   type TreatmentCategory,
@@ -33,6 +33,162 @@ import {
 } from 'lucide-react';
 
 export type ManagementTab = 'airway' | 'breathing' | 'circulation' | 'disability' | 'exposure' | 'medications' | 'transport';
+
+/**
+ * Open the kit that best matches the presentation when a case starts.
+ *
+ * The simulator previously opened the airway bag for every patient, which
+ * made heat illness, fractures and cardiac cases begin with a deck full of
+ * clinically unrelated actions. This is deliberately presentation-led: an
+ * immediate ABC threat wins, then the authored case category and management
+ * pathway choose the working kit.
+ */
+export function recommendedManagementTabForCase(caseData: CaseScenario): ManagementTab {
+  const vitals = caseData.vitalSignsProgression.initial;
+  const gcs = typeof vitals.gcs === 'number'
+    ? vitals.gcs
+    : caseData.abcde?.disability?.gcs?.total ?? 15;
+  const systolic = Number.parseInt(vitals.bp?.split('/')[0] ?? '', 10);
+  const rhythm = caseData.initialRhythm?.toLowerCase() ?? '';
+  const text = [
+    caseData.title,
+    caseData.category,
+    caseData.subcategory,
+    caseData.dispatchInfo?.callReason,
+    caseData.initialPresentation?.generalImpression,
+    caseData.initialPresentation?.appearance,
+    caseData.expectedFindings?.mostLikelyDiagnosis,
+    ...(caseData.managementPathway?.immediate ?? []),
+    ...(caseData.equipmentNeeded ?? []),
+  ].filter(Boolean).join(' ').toLowerCase();
+
+  // Cardiac arrest is a circulation problem even when the apnoeic patient
+  // also needs airway support. Pads/CPR/defibrillation must be reachable first.
+  if (
+    vitals.pulse <= 0
+    || /\b(asystole|ventricular fibrillation|pulseless|pea|cardiac arrest)\b/.test(`${rhythm} ${text}`)
+  ) return 'circulation';
+
+  if (
+    caseData.abcde?.airway?.patent === false
+    || gcs <= 8
+    || /\b(choking|airway obstruction|stridor|cannot protect (?:his|her|their) airway)\b/.test(text)
+  ) return 'airway';
+
+  if (
+    vitals.spo2 < 94
+    || vitals.respiration <= 8
+    || vitals.respiration >= 30
+    || caseData.category === 'respiratory'
+    || caseData.category === 'thoracic'
+    || /\b(asthma|copd|bronchospasm|pneumothorax|respiratory failure)\b/.test(text)
+  ) return 'breathing';
+
+  if (
+    caseData.category === 'environmental'
+    || caseData.category === 'burns'
+    || /\b(heat exhaustion|heat stroke|hyperthermia|hypothermia|active cooling|active rewarming|burns?)\b/.test(text)
+  ) return 'exposure';
+
+  if (
+    caseData.category === 'neurological'
+    || caseData.category === 'metabolic'
+    || caseData.category === 'psychiatric'
+    || caseData.category === 'anxiety-related'
+    || (vitals.bloodGlucose != null && vitals.bloodGlucose < 4)
+    || /\b(seizure|stroke|hypoglycaemia|hypoglycemia|altered mental status|overdose)\b/.test(text)
+  ) return 'disability';
+
+  if (
+    caseData.category === 'trauma'
+    && /\b(fracture|dislocation|spinal|c-spine|immobili[sz]|extricat|traction splint)\b/.test(text)
+  ) return 'transport';
+
+  if (
+    caseData.category === 'cardiac'
+    || caseData.category === 'cardiac-ecg'
+    || Number.isFinite(systolic) && systolic < 100
+    || vitals.pulse >= 120
+    || /\b(haemorrhage|hemorrhage|major bleeding|shock|chest pain|acute coronary|stemi|nstemi)\b/.test(text)
+  ) return 'circulation';
+
+  if (
+    caseData.category === 'toxicology'
+    || caseData.category === 'toxicological'
+    || /\b(antidote|adrenaline|epinephrine|naloxone|aspirin|glyceryl trinitrate|gtn)\b/.test(text)
+  ) return 'medications';
+
+  return 'exposure';
+}
+
+const CASE_PATHWAY_TREATMENTS: Array<{ pattern: RegExp; treatmentIds: string[] }> = [
+  { pattern: /\b(active cooling|cooling measures?|ice packs?|heat stroke|heat exhaustion)\b/, treatmentIds: ['active_cooling'] },
+  { pattern: /\b(active rewarming|rewarming|prevent hypothermia|warming blanket)\b/, treatmentIds: ['warming_blanket'] },
+  { pattern: /\b(iv access|intravenous access|cannulat)\b/, treatmentIds: ['iv_access'] },
+  { pattern: /\b(fluid bolus|iv fluids?|normal saline|hartmann|crystalloid)\b/, treatmentIds: ['fluids_250ml'] },
+  { pattern: /\b(traction splint)\b/, treatmentIds: ['traction_splint'] },
+  { pattern: /\b(cervical collar|c-spine|spinal precautions?)\b/, treatmentIds: ['cervical_collar'] },
+  { pattern: /\b(splint|immobili[sz]e (?:the )?(?:injured )?limb)\b/, treatmentIds: ['splinting'] },
+  { pattern: /\b(tourniquet)\b/, treatmentIds: ['tourniquet'] },
+  { pattern: /\b(control (?:major )?bleeding|direct pressure|wound dressing)\b/, treatmentIds: ['bleeding_control'] },
+  { pattern: /\b(needle decompression|thoracostomy)\b/, treatmentIds: ['needle_decompression'] },
+  { pattern: /\b(chest seal|occlusive dressing)\b/, treatmentIds: ['chest_seal_vented'] },
+  { pattern: /\b(non[- ]?rebreather|high-flow oxygen)\b/, treatmentIds: ['oxygen_nonrebreather'] },
+  { pattern: /\b(nebulis|nebuliz|salbutamol)\b/, treatmentIds: ['nebulizer_salbutamol'] },
+  { pattern: /\b(bag[- ]valve[- ]mask|bvm|assisted ventilation)\b/, treatmentIds: ['bvm_ventilation'] },
+  { pattern: /\b(defibrillat|deliver shock)\b/, treatmentIds: ['monitor_pads', 'defibrillation'] },
+  { pattern: /\b(cpr|chest compressions?)\b/, treatmentIds: ['cpr'] },
+  { pattern: /\b(im adrenaline|intramuscular adrenaline|im epinephrine)\b/, treatmentIds: ['adrenaline_im'] },
+  { pattern: /\b(aspirin)\b/, treatmentIds: ['aspirin'] },
+  { pattern: /\b(gtn|glyceryl trinitrate|nitroglycerin)\b/, treatmentIds: ['gtn_spray'] },
+  { pattern: /\b(naloxone)\b/, treatmentIds: ['naloxone_04mg'] },
+  { pattern: /\b(oral glucose|glucose gel)\b/, treatmentIds: ['glucose_10g'] },
+  { pattern: /\b(dextrose)\b/, treatmentIds: ['dextrose_10'] },
+  { pattern: /\b(left lateral tilt)\b/, treatmentIds: ['left_lateral_tilt'] },
+];
+
+/** Rank executable actions using both the live physiology and the authored
+ * case pathway. Vitals alone cannot surface cooling for a heat-exhaustion
+ * patient or a traction splint for an isolated femur fracture. */
+export function suggestedTreatmentIdsForCase(
+  caseData: CaseScenario,
+  currentVitals: VitalSigns | null,
+  isInArrest = false,
+): string[] {
+  const ids: string[] = [];
+  const add = (...nextIds: string[]) => {
+    for (const id of nextIds) {
+      if (!ids.includes(id) && TREATMENTS.some(treatment => treatment.id === id)) ids.push(id);
+    }
+  };
+
+  if (isInArrest) add('cpr', 'monitor_pads', 'defibrillation', 'iv_access');
+
+  if (currentVitals) {
+    const systolic = getSystolicFromBp(currentVitals.bp);
+    if (currentVitals.spo2 < 90) add('oxygen_nonrebreather');
+    else if (currentVitals.spo2 < 94) add('oxygen_mask');
+    if (currentVitals.respiration <= 8) add('bvm_ventilation');
+    if (currentVitals.respiration >= 26 && currentVitals.spo2 < 94) add('cpap_niv');
+    if (systolic < 100 || currentVitals.pulse > 120 || (currentVitals.gcs ?? 15) < 15) add('iv_access');
+    if (systolic < 90) add('fluids_250ml');
+    if (currentVitals.bloodGlucose !== undefined && currentVitals.bloodGlucose < 4) add('glucose_10g');
+  }
+
+  const pathwayText = [
+    ...(caseData.managementPathway?.immediate ?? []),
+    ...(caseData.equipmentNeeded ?? []),
+    ...(caseData.abcde?.airway?.interventions ?? []),
+    ...(caseData.abcde?.breathing?.interventions ?? []),
+    ...(caseData.abcde?.circulation?.interventions ?? []),
+    ...(caseData.abcde?.exposure?.interventions ?? []),
+  ].join(' ').toLowerCase();
+  for (const route of CASE_PATHWAY_TREATMENTS) {
+    if (route.pattern.test(pathwayText)) add(...route.treatmentIds);
+  }
+
+  return ids.slice(0, 6);
+}
 
 interface TreatmentJumpBag {
   key: ManagementTab;
@@ -871,6 +1027,7 @@ function EquipmentInventoryBoard({
 }
 
 interface TreatmentJumpBagPanelProps {
+  caseData: CaseScenario;
   currentVitals: VitalSigns | null;
   appliedTreatments: AppliedTreatment[];
   appliedTreatmentIds: string[];
@@ -884,6 +1041,7 @@ interface TreatmentJumpBagPanelProps {
 }
 
 export function TreatmentJumpBagPanel({
+  caseData,
   currentVitals,
   appliedTreatments,
   appliedTreatmentIds,
@@ -908,38 +1066,27 @@ export function TreatmentJumpBagPanel({
   // student explicitly toggled that group.
   const [medGroupOverride, setMedGroupOverride] = useState<Record<string, boolean>>({});
   const activeBag = TREATMENT_JUMP_BAGS.find(bag => bag.key === activeManagementTab) ?? TREATMENT_JUMP_BAGS[0];
-  const equipmentItems = BAG_EQUIPMENT[activeBag.key] ?? [];
-  const stagedEquipment = equipmentItems.find(item => item.id === stagedEquipmentId) ?? null;
+  const equipmentItems = useMemo(() => BAG_EQUIPMENT[activeBag.key] ?? [], [activeBag.key]);
   const query = medSearch.trim().toLowerCase();
-  const systolic = getSystolicFromBp(currentVitals?.bp);
 
   const suggestedTreatments = useMemo(() => {
-    const ids: string[] = [];
-    if (!currentVitals) return [];
-
-    if (patientState?.isInArrest) {
-      ids.push('cpr', 'defibrillation', 'iv_access');
-    }
-
-    if (currentVitals.spo2 < 90) ids.push('oxygen_nonrebreather');
-    else if (currentVitals.spo2 < 94) ids.push('oxygen_mask');
-
-    if (currentVitals.respiration <= 8) ids.push('bvm_ventilation');
-    if (currentVitals.respiration >= 26 && currentVitals.spo2 < 94) ids.push('cpap_niv');
-    if (systolic < 100 || currentVitals.pulse > 120 || (currentVitals.gcs ?? 15) < 15) ids.push('iv_access');
-    if (systolic < 90) ids.push('fluids_250ml');
-    if (currentVitals.bloodGlucose !== undefined && currentVitals.bloodGlucose < 4) ids.push('glucose_10g');
-
-    return Array.from(new Set(ids))
+    return suggestedTreatmentIdsForCase(caseData, currentVitals, patientState?.isInArrest)
       .map(id => TREATMENTS.find(treatment => treatment.id === id))
       .filter((treatment): treatment is Treatment => Boolean(treatment))
-      .slice(0, 5);
-  }, [currentVitals, patientState?.isInArrest, systolic]);
+      .slice(0, 6);
+  }, [caseData, currentVitals, patientState?.isInArrest]);
 
   const suggestedIds = useMemo(
     () => new Set(suggestedTreatments.map(treatment => treatment.id)),
     [suggestedTreatments],
   );
+  const orderedEquipmentItems = useMemo(
+    () => [...equipmentItems].sort(
+      (a, b) => Number(suggestedIds.has(b.treatmentId ?? '')) - Number(suggestedIds.has(a.treatmentId ?? '')),
+    ),
+    [equipmentItems, suggestedIds],
+  );
+  const stagedEquipment = equipmentItems.find(item => item.id === stagedEquipmentId) ?? null;
 
   // Search is scoped to the OPEN bag first (what the student asked for: "search
   // in the bag I opened"). Only if nothing in the open bag matches do we widen
@@ -1790,7 +1937,7 @@ export function TreatmentJumpBagPanel({
           <div className="glass-panel rounded-xl border border-emerald-500/20 p-2">
             <div className="mb-2 flex items-center justify-between gap-2">
               <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-emerald-800 dark:text-emerald-200">Priority actions</p>
-              <span className="text-[9px] text-muted-foreground">based on current vitals</span>
+              <span className="text-[9px] text-muted-foreground">vitals + case pathway</span>
             </div>
             <div className="flex flex-wrap gap-1.5">
               {suggestedTreatments.map(treatment => (
@@ -1814,7 +1961,7 @@ export function TreatmentJumpBagPanel({
           <span>Immediate action: choose the kit that matches the life threat, then confirm the response.</span>
         </div>
 
-      <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+      <div className="jump-bag-grid grid grid-cols-2 gap-1.5 sm:grid-cols-3">
           {TREATMENT_JUMP_BAGS.map(bag => {
             const isActive = activeBag.key === bag.key;
             const treatmentCount = TREATMENTS.filter(treatment => treatmentBelongsToBag(treatment, bag)).length;
@@ -1831,10 +1978,7 @@ export function TreatmentJumpBagPanel({
                 aria-label={`Open ${bag.label}`}
                 title={`Open ${bag.label}`}
                 onClick={() => {
-                  if (isActive) {
-                    // Clicking an open bag closes it (toggles off)
-                    setActiveManagementTab('' as ManagementTab);
-                  } else {
+                  if (!isActive) {
                     setActiveManagementTab(bag.key);
                     setMedSearch('');
                     setStagedEquipmentId(null);
@@ -2032,7 +2176,7 @@ export function TreatmentJumpBagPanel({
         {!query && (
           <EquipmentInventoryBoard
             bag={activeBag}
-            items={equipmentItems}
+            items={orderedEquipmentItems}
             appliedTreatmentIds={appliedTreatmentIds}
             applyingTreatmentId={applyingTreatmentId}
             stagedItemId={stagedEquipmentId}

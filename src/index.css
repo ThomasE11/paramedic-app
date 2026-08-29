@@ -2970,6 +2970,13 @@ body {
     padding-right: 0.18rem;
   }
 
+  /* The kit cards were forced into three 80–90px columns inside the care
+     rail, truncating their names, purpose and option counts. Two columns keep
+     each physical bag recognisable and its clinical label readable. */
+  .tactical-loadout-dock .jump-bag-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .tactical-assessment-rail .roadmap-anatomy-grid {
     grid-template-columns: 1fr;
   }
