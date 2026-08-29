@@ -540,6 +540,22 @@ const HANDS_ON_TREATMENTS = new Set([
 export const isHandsOnTreatment = (treatmentId: string): boolean =>
   HANDS_ON_TREATMENTS.has(treatmentId) || treatmentId.startsWith('fluids_');
 
+const LIMB_SPLINT_TREATMENTS = new Set([
+  'splinting',
+  'sam_splint',
+  'box_splint',
+  'vacuum_limb_splint',
+  'air_splint',
+  'traction_splint',
+]);
+
+/**
+ * These procedures cannot be completed until their final CSM-after step has
+ * run, so closing the dialog is itself evidence of post-treatment review.
+ */
+export const procedureIncludesIntegratedReassessment = (treatmentId: string): boolean =>
+  LIMB_SPLINT_TREATMENTS.has(treatmentId);
+
 export function procedureSiteToken(treatmentId: string, target: BodyRegion): string {
   return `site:${treatmentId}:${target}`;
 }

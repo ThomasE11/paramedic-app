@@ -348,4 +348,21 @@ describe('deriveRealismDirectorState — Round 4 treatment loop integration', ()
     expect(state.fullyRealizedTreatmentIds).not.toContain('iv_cannula');
     expect(state.fullyRealizedTreatmentIds).not.toContain('splinting');
   });
+
+  it('tracks traction splint application and its documented post-application CSM check', () => {
+    const pending = deriveRealismDirectorState({
+      caseData: minimalCase('test-loop-traction', 'Right femoral shaft fracture', 'trauma'),
+      vitals: { bp: '100/60', pulse: 110, respiration: 22, spo2: 95, gcs: 15, bloodGlucose: 5.0 },
+      appliedTreatmentIds: ['traction_splint'],
+    });
+    expect(pending.pendingReassessmentIds).toContain('traction_splint');
+
+    const reassessed = deriveRealismDirectorState({
+      caseData: minimalCase('test-loop-traction', 'Right femoral shaft fracture', 'trauma'),
+      vitals: { bp: '100/60', pulse: 110, respiration: 22, spo2: 95, gcs: 15, bloodGlucose: 5.0 },
+      appliedTreatmentIds: ['traction_splint'],
+      reassessedTreatmentIds: ['traction_splint'],
+    });
+    expect(reassessed.fullyRealizedTreatmentIds).toContain('traction_splint');
+  });
 });

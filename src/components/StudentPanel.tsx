@@ -307,7 +307,12 @@ function getCohortScopeLabel(year: StudentYear): string {
 }
 import { DefibrillationDialog } from '@/components/DefibrillationDialog';
 import { HandsOnProcedureDialog } from '@/components/HandsOnProcedureDialog';
-import { isHandsOnTreatment, procedureSiteToken, type ProcedureTarget } from '@/lib/handsOnProcedures';
+import {
+  isHandsOnTreatment,
+  procedureIncludesIntegratedReassessment,
+  procedureSiteToken,
+  type ProcedureTarget,
+} from '@/lib/handsOnProcedures';
 import { hasAttachedDefibrillatorPads } from '@/lib/defibrillatorSafety';
 import { isBleedRegionControlled } from '@/lib/bleedControl';
 import { assessTractionSplintSafety } from '@/lib/tractionSplintSafety';
@@ -3721,6 +3726,11 @@ export function StudentPanel({
     if (target) {
       const token = procedureSiteToken(treatment.id, target.id);
       setAppliedTreatmentIds(previous => previous.includes(token) ? previous : [...previous, token]);
+    }
+    if (procedureIncludesIntegratedReassessment(treatment.id)) {
+      setReassessedTreatmentIds(previous => previous.includes(treatment.id)
+        ? previous
+        : [...previous, treatment.id]);
     }
     handsOnProcedureBypassRef.current.add(treatment.id);
     setPendingHandsOnTreatment(null);

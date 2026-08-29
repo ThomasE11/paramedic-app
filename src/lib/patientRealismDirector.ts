@@ -257,6 +257,7 @@ const HIGH_IMPACT_TREATMENT_CATEGORIES: Record<string, { label: string; prompt: 
   box_splint:            { label: 'Box splint', prompt: 'Recheck pain, alignment, distal pulse and sensation',       pendingNote: 'Box splint applied — reassess distal neurovascular status' },
   vacuum_limb_splint:    { label: 'Vacuum splint', prompt: 'Recheck pain, alignment, distal pulse and sensation',    pendingNote: 'Vacuum splint applied — reassess distal neurovascular status' },
   air_splint:            { label: 'Air splint', prompt: 'Recheck pain, alignment, distal pulse and sensation',       pendingNote: 'Air splint applied — reassess distal neurovascular status' },
+  traction_splint:       { label: 'Traction splint', prompt: 'Recheck pain, traction, alignment, distal pulse and sensation', pendingNote: 'Traction splint applied — reassess traction and distal neurovascular status' },
   cervical_collar:       { label: 'C-collar',   prompt: 'Recheck alignment, comfort, and distal neuro status',       pendingNote: 'C-collar applied — reassess comfort and neurological status' },
   head_blocks:           { label: 'Head blocks', prompt: 'Recheck immobilisation, airway access, comfort, and distal neuro status', pendingNote: 'Head blocks applied — reassess immobilisation and neurological status' },
   spinal_board:          { label: 'Spinal board', prompt: 'Recheck alignment, pressure areas, comfort, and distal neuro status', pendingNote: 'Spinal board used — reassess immobilisation and neurological status' },

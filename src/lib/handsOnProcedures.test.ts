@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { getHandsOnProcedurePlan, isHandsOnTreatment, parseProcedureSiteToken, procedureSiteToken } from '@/lib/handsOnProcedures';
+import {
+  getHandsOnProcedurePlan,
+  isHandsOnTreatment,
+  parseProcedureSiteToken,
+  procedureIncludesIntegratedReassessment,
+  procedureSiteToken,
+} from '@/lib/handsOnProcedures';
 import type { CaseScenario } from '@/types';
 
 const caseData = {
@@ -65,5 +71,13 @@ describe('hands-on treatment procedures', () => {
     const plan = getHandsOnProcedurePlan('traction_splint', fractureCase);
     expect(plan?.requiresTarget).toBe(true);
     expect(plan?.targets[0]).toMatchObject({ id: 'right-leg', priority: 'injury' });
+  });
+
+  it('credits the mandatory CSM-after step for every limb splint procedure', () => {
+    for (const treatmentId of ['splinting', 'sam_splint', 'box_splint', 'vacuum_limb_splint', 'air_splint', 'traction_splint']) {
+      expect(getHandsOnProcedurePlan(treatmentId, caseData)?.steps.at(-1)?.id).toBe('csm-after');
+      expect(procedureIncludesIntegratedReassessment(treatmentId)).toBe(true);
+    }
+    expect(procedureIncludesIntegratedReassessment('tourniquet')).toBe(false);
   });
 });
