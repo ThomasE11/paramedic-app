@@ -1608,20 +1608,6 @@ export function StudentPanel({
       });
     }
 
-    if (items.length < 3) {
-      (realismDirector?.visibleCues ?? [])
-        .filter(cue => !items.some(item => item.detail.trim().toLowerCase() === cue.detail.trim().toLowerCase()))
-        .slice(0, 3 - items.length)
-        .forEach(cue => {
-          items.push({
-            id: `cue-${cue.id}`,
-            label: cue.label,
-            detail: cue.detail,
-            tone: cue.severity === 'critical' ? 'critical' : cue.severity === 'warning' ? 'warning' : 'visual',
-          });
-        });
-    }
-
     const seen = new Set<string>();
     return items
       .filter(item => {
