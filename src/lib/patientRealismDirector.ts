@@ -25,6 +25,7 @@ export interface RealismDirectorState {
   /** @since Round 2 — scenario layer integration */
   matchedScenarioIds: string[];
   activeProblems: string[];
+  activeVisualEffects: RealismVisualEffect[];
   visualEffects: RealismVisualEffect[];
   equipmentAnchors: EquipmentAnchorSpec[];
   patientBehavior: PatientBehaviorRule[];
@@ -405,6 +406,7 @@ export function deriveRealismDirectorState(input: RealismDirectorInput): Realism
     debriefTargets: profile.debriefEndpoints.slice(0, 4),
     matchedScenarioIds: scenarioState.matchedScenarioIds,
     activeProblems: scenarioState.activeProblems,
+    activeVisualEffects: scenarioState.activeVisualEffects,
     visualEffects: scenarioState.visualEffects,
     equipmentAnchors: scenarioState.equipmentAnchors,
     patientBehavior: scenarioState.patientBehavior,

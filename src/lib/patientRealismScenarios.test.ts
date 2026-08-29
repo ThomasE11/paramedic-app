@@ -355,6 +355,49 @@ describe('deriveScenarioVisuals', () => {
     expect(visuals.some(v => v.kind === 'diaphoresis')).toBe(true);
   });
 
+  it('clears respiratory distress visuals when live breathing objectively improves', () => {
+    const scenario = baseCase({
+      id: 'test-visuals-asthma-response',
+      title: 'Life-threatening asthma attack',
+      category: 'respiratory',
+      subcategory: 'asthma',
+      initialPresentation: {
+        generalImpression: 'Tripod position with accessory muscle use',
+        appearance: 'Diaphoretic, distressed and cyanosed',
+        position: 'Sitting upright, tripod',
+        consciousness: 'Alert',
+      },
+      abcde: {
+        patent: true,
+        airway: { patent: true, findings: ['Wheeze'], interventions: [] },
+        breathing: { rate: 32, rhythm: 'rapid', depth: 'shallow', spo2: 88, findings: ['Expiratory wheeze', 'Accessory muscle use'], interventions: [], auscultation: ['Reduced air entry', 'Diffuse expiratory wheeze'] },
+        circulation: { pulseRate: 120, pulseQuality: 'normal', bp: { systolic: 130, diastolic: 80 }, capillaryRefill: 2, skin: 'Diaphoretic', findings: [], interventions: [] },
+        disability: { avpu: 'A', gcs: { eye: 4, verbal: 5, motor: 6, total: 15 }, pupils: 'equal and reactive', findings: [], interventions: [] },
+        exposure: { findings: [] },
+      } as any,
+      vitalSignsProgression: {
+        initial: { bp: '130/80', pulse: 120, respiration: 32, spo2: 88, gcs: 15, bloodGlucose: 5.0 },
+      },
+    });
+    const improvedVitals = {
+      ...scenario.vitalSignsProgression.initial,
+      pulse: 140,
+      respiration: 16,
+      spo2: 97,
+    };
+    const clearedKinds = ['accessory_muscle_use', 'cyanosis', 'diaphoresis'];
+
+    const visuals = deriveScenarioVisuals(scenario, improvedVitals, ['nebulizer_salbutamol']);
+    expect(visuals.filter(effect => clearedKinds.includes(effect.kind))).toEqual([]);
+
+    const state = deriveRealismScenarioState({
+      caseData: scenario,
+      vitals: improvedVitals,
+      appliedTreatmentIds: ['nebulizer_salbutamol'],
+    });
+    expect(state.activeVisualEffects.filter(effect => clearedKinds.includes(effect.kind))).toEqual([]);
+  });
+
   it('anchors limb haemorrhage to the authored limb without inventing chest trauma', () => {
     const scenario = additionalTraumaCases.find(item => item.id === 'trauma-011');
     expect(scenario).toBeDefined();

@@ -130,7 +130,7 @@ const chestAsymmetryFromVisuals = (visuals: RealismVisualEffect[]): ChestRiseAsy
 /* ------------------------------------------------------------------ */
 
 export function derivePatientVisualState(director: RealismDirectorState): PatientVisualState {
-  const visuals = director.visualEffects ?? [];
+  const visuals = director.activeVisualEffects ?? director.visualEffects ?? [];
 
   // Skin effects — filter to skin-relevant kinds
   const skinEffects: SkinEffect[] = visuals

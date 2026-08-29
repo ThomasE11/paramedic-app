@@ -107,6 +107,9 @@ export interface ScenarioRealismState {
   matchedScenarioIds: string[];
   families: ProblemFamily[];
   activeProblems: string[];
+  /** Effects that are physically present on the patient at this live moment. */
+  activeVisualEffects: RealismVisualEffect[];
+  /** Full scenario visual context retained for coaching and debrief. */
   visualEffects: RealismVisualEffect[];
   equipmentAnchors: EquipmentAnchorSpec[];
   patientBehavior: PatientBehaviorRule[];
@@ -431,14 +434,37 @@ function isVisualCleared(
   };
 
   const physiologyHasImproved = (lower: string): boolean => {
-    const source = sourceVitals(caseData, vitals);
-    if (!source) return false;
+    const source = vitals ?? undefined;
+    const initial = caseData.vitalSignsProgression?.initial;
+    if (!source || !initial) return false;
 
     if (lower.includes('oxygenation')) {
-      return typeof source.spo2 === 'number' && source.spo2 >= 94;
+      return typeof initial.spo2 === 'number'
+        && initial.spo2 < 94
+        && typeof source.spo2 === 'number'
+        && source.spo2 >= 94;
     }
     if (lower.includes('respiratory drive') || lower.includes('ventilation')) {
       return (
+        (
+          (typeof initial.respiration === 'number' && (initial.respiration < 10 || initial.respiration > 24))
+          || (typeof initial.spo2 === 'number' && initial.spo2 < 94)
+        )
+        &&
+        typeof source.respiration === 'number'
+        && source.respiration >= 10
+        && source.respiration <= 24
+        && typeof source.spo2 === 'number'
+        && source.spo2 >= 94
+      );
+    }
+    if (lower.includes('work of breathing')) {
+      return (
+        (
+          (typeof initial.respiration === 'number' && initial.respiration > 24)
+          || (typeof initial.spo2 === 'number' && initial.spo2 < 94)
+        )
+        &&
         typeof source.respiration === 'number'
         && source.respiration >= 10
         && source.respiration <= 24
@@ -457,7 +483,11 @@ function isVisualCleared(
     const lower = condition.toLowerCase();
 
     if (lower.includes('improves')) {
-      if (treatmentMatchesCondition(lower) && physiologyHasImproved(lower)) {
+      const objectivelyMeasured = lower.includes('oxygenation')
+        || lower.includes('respiratory drive')
+        || lower.includes('ventilation')
+        || lower.includes('work of breathing');
+      if (physiologyHasImproved(lower) && (objectivelyMeasured || treatmentMatchesCondition(lower))) {
         return true;
       }
       continue;
@@ -507,9 +537,9 @@ export const REALISM_SCENARIOS: RealismScenarioSpec[] = [
     priority: 80,
     activeProblems: ['bronchospasm', 'increased work of breathing', 'oxygenation risk', 'fatigue risk'],
     immediateVisuals: [
-      { id: 'resp-accessory-muscles', kind: 'accessory_muscle_use', region: 'chest', intensity: 'moderate', showWhen: 'immediate', detail: 'Neck/chest accessory muscle use should be visible before the student checks numbers.' },
+      { id: 'resp-accessory-muscles', kind: 'accessory_muscle_use', region: 'chest', intensity: 'moderate', showWhen: 'immediate', clearsWhen: ['work of breathing improves'], detail: 'Neck/chest accessory muscle use should be visible before the student checks numbers.' },
       { id: 'resp-cyanosis-risk', kind: 'cyanosis', region: 'face', intensity: 'moderate', showWhen: 'if-deteriorating', clearsWhen: ['oxygenation improves'], detail: 'Dusky lips/skin appear when hypoxia persists.' },
-      { id: 'resp-sweat-distress', kind: 'diaphoresis', region: 'face', intensity: 'subtle', showWhen: 'immediate', detail: 'Anxious respiratory distress can show sweat and restlessness.' },
+      { id: 'resp-sweat-distress', kind: 'diaphoresis', region: 'face', intensity: 'subtle', showWhen: 'immediate', clearsWhen: ['work of breathing improves'], detail: 'Anxious respiratory distress can show sweat and restlessness.' },
     ],
     equipmentAnchors: [oxygenFaceAnchor, nebulizerAnchor, {
       treatmentIdFragments: ['cpap', 'niv'],
@@ -1037,6 +1067,7 @@ export function deriveRealismScenarioState({
     matchedScenarioIds: scenarios.map(scenario => scenario.id),
     families: unique(scenarios.map(scenario => scenario.family)),
     activeProblems: unique(scenarios.flatMap(scenario => contextualActiveProblems(scenario, caseData, vitals))),
+    activeVisualEffects,
     visualEffects: uniqueVisualsById([...activeVisualEffects, ...contextualVisualEffects]),
     equipmentAnchors,
     patientBehavior: scenarios.flatMap(scenario => scenario.patientBehavior),

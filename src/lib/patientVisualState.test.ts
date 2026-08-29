@@ -150,10 +150,11 @@ describe('derivePatientVisualState', () => {
     ]);
     const state = derivePatientVisualState(director);
 
-    // Wound overlays
-    expect(state.woundOverlays.some(w => w.kind === 'open_wound')).toBe(true);
-    expect(state.woundOverlays.some(w => w.kind === 'active_bleeding')).toBe(true);
-    expect(state.woundOverlays.some(w => w.kind === 'blood_pool')).toBe(true);
+    // The fitted chest seal plus documented bleeding control clear the active
+    // wound and blood-pool render cues from the live patient state.
+    expect(state.woundOverlays.some(w => w.kind === 'open_wound')).toBe(false);
+    expect(state.woundOverlays.some(w => w.kind === 'active_bleeding')).toBe(false);
+    expect(state.woundOverlays.some(w => w.kind === 'blood_pool')).toBe(false);
 
     // Equipment anchors
     expect(state.equipmentAnchors.some(a => a.region === 'face')).toBe(true);
@@ -211,9 +212,11 @@ describe('derivePatientVisualState', () => {
     const director = directorFor(caseData, ['cooling', 'oxygen_nonrebreather']);
     const state = derivePatientVisualState(director);
 
-    expect(state.skinEffects.some(s => s.kind === 'burn_pattern')).toBe(true);
+    // Cooling/covering removes the exposed-burn overlay; soot remains until
+    // airway/face decontamination is explicitly represented.
+    expect(state.skinEffects.some(s => s.kind === 'burn_pattern')).toBe(false);
     expect(state.skinEffects.some(s => s.kind === 'soot')).toBe(true);
-    expect(state.woundOverlays.some(w => w.kind === 'burn_pattern')).toBe(true);
+    expect(state.woundOverlays.some(w => w.kind === 'burn_pattern')).toBe(false);
   });
 
   it('preserves equipment anchor metadata for 3D consumption', () => {
