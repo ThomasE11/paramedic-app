@@ -1192,22 +1192,33 @@ function EquipmentPin({ tone, src, bare = false }: { tone: EquipTone; src: strin
   );
 }
 
-function WornFaceEquipment({ equipment }: { equipment: OxygenEquipmentVisual }) {
+function WornFaceEquipment({
+  equipment,
+  connectedToEtTube = false,
+}: {
+  equipment: OxygenEquipmentVisual;
+  connectedToEtTube?: boolean;
+}) {
   const large = equipment.mode === 'bvm' || equipment.mode === 'cpap' || equipment.mode === 'ventilator';
   const bvm = equipment.mode === 'bvm';
+  const bvmViaTube = bvm && connectedToEtTube;
   const nonrebreather = equipment.mode === 'nonrebreather';
   const nebulizer = equipment.mode === 'nebulizer';
   const fittedPhotorealisticMask = nonrebreather || nebulizer;
   return (
-    <div data-applied-equipment={equipment.mode} className={`pointer-events-none relative flex items-center justify-center drop-shadow-[0_5px_6px_rgba(2,44,58,0.55)] animate-in fade-in zoom-in-75 duration-300 ${nonrebreather ? 'h-28 w-24 translate-y-[24%]' : nebulizer ? 'h-24 w-20 translate-y-[20%]' : bvm ? 'h-16 w-20 translate-y-[88%]' : large ? 'h-16 w-20' : 'h-12 w-14'}`}>
+    <div data-applied-equipment={equipment.mode} data-airway-connection={bvmViaTube ? 'ett' : 'face'} className={`pointer-events-none relative flex items-center justify-center drop-shadow-[0_5px_6px_rgba(2,44,58,0.55)] animate-in fade-in zoom-in-75 duration-300 ${nonrebreather ? 'h-28 w-24 translate-y-[24%]' : nebulizer ? 'h-24 w-20 translate-y-[20%]' : bvmViaTube ? 'h-12 w-16 -translate-x-[52%] translate-y-[140%]' : bvm ? 'h-16 w-20 translate-y-[88%]' : large ? 'h-16 w-20' : 'h-12 w-14'}`}>
       <img
         src={OXYGEN_SRC[equipment.mode]}
         alt=""
-        className={`h-full w-full object-contain ${bvm ? 'translate-x-[30%] -translate-y-[20%]' : ''}`}
+        className={`h-full w-full object-contain ${bvmViaTube ? '[clip-path:inset(0_0_0_28%)]' : bvm ? 'translate-x-[30%] -translate-y-[20%]' : ''}`}
         draggable={false}
       />
-      {!fittedPhotorealisticMask && <span className="absolute left-[62%] top-[68%] h-0.5 w-14 origin-left rotate-[28deg] rounded-full bg-cyan-100/80 shadow-[0_0_2px_rgba(8,145,178,0.8)]" />}
-      {equipment.mode === 'bvm' && (
+      {bvmViaTube ? (
+        <span className="absolute left-[75%] top-[45%] h-0.5 w-4 origin-left rounded-full bg-cyan-100/90 shadow-[0_0_3px_rgba(8,145,178,0.9)]" />
+      ) : !fittedPhotorealisticMask && (
+        <span className="absolute left-[62%] top-[68%] h-0.5 w-14 origin-left rotate-[28deg] rounded-full bg-cyan-100/80 shadow-[0_0_2px_rgba(8,145,178,0.8)]" />
+      )}
+      {equipment.mode === 'bvm' && !bvmViaTube && (
         <span className="absolute right-0 top-[72%] h-5 w-4 rounded-b-full border border-cyan-100/70 bg-white/30" />
       )}
     </div>
@@ -1456,7 +1467,10 @@ function TreatmentEquipmentOverlay({
     <>
       {equipment.oxygen && (
         <MarkerHtml position={faceAnchor(0.01, 1.66, 0.24)} distanceFactor={1.5} zIndexRange={[76, 0]} interactive={false} presentation={posture === 'tripod' ? 'upright' : presentation}>
-          <WornFaceEquipment equipment={equipment.oxygen} />
+          <WornFaceEquipment
+            equipment={equipment.oxygen}
+            connectedToEtTube={equipment.hasEtTube && equipment.oxygen.mode === 'bvm'}
+          />
         </MarkerHtml>
       )}
 

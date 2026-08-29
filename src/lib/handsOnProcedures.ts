@@ -554,7 +554,9 @@ const LIMB_SPLINT_TREATMENTS = new Set([
  * run, so closing the dialog is itself evidence of post-treatment review.
  */
 export const procedureIncludesIntegratedReassessment = (treatmentId: string): boolean =>
-  LIMB_SPLINT_TREATMENTS.has(treatmentId);
+  LIMB_SPLINT_TREATMENTS.has(treatmentId)
+  || treatmentId === 'intubation'
+  || treatmentId === 'rsi_intubation';
 
 export function procedureSiteToken(treatmentId: string, target: BodyRegion): string {
   return `site:${treatmentId}:${target}`;

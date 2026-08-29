@@ -37,6 +37,9 @@ describe('hands-on treatment procedures', () => {
   it('makes capnography part of intubation completion', () => {
     const plan = getHandsOnProcedurePlan('rsi_intubation', caseData);
     expect(plan?.steps.some(step => step.id === 'capnography')).toBe(true);
+    expect(plan?.steps.at(-1)?.id).toBe('secure');
+    expect(procedureIncludesIntegratedReassessment('rsi_intubation')).toBe(true);
+    expect(procedureIncludesIntegratedReassessment('intubation')).toBe(true);
   });
 
   it('makes patient repositioning a physical, reassessed procedure', () => {
