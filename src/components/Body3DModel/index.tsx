@@ -322,10 +322,11 @@ const EXAM_LANDMARKS: ExamLandmark[] = [
   // Minimal anatomical pulse points — click to check (works from any view).
   // (Removed the duplicate 'radial-overview' dot that sat ~2 cm from
   // 'pulse-radial-r' on the same wrist — it created the cluttered arm cluster.)
-  { id: 'pulse-carotid', region: 'neck-cspine', label: 'Carotid', sublabel: 'central pulse', position: [-0.11, 1.42, 0.19], level: 'overview', actionId: 'pulse-carotid', tone: 'circulation' },
-  { id: 'pulse-radial-r', region: 'right-arm', label: 'Radial', sublabel: 'wrist pulse', position: [-0.135, 0.81, 0.18], level: 'overview', actionId: 'pulse-radial', tone: 'circulation' },
-  { id: 'pulse-radial-l', region: 'left-arm', label: 'Radial', sublabel: 'wrist pulse', position: [0.135, 0.81, 0.18], level: 'overview', actionId: 'pulse-radial', tone: 'circulation' },
-  { id: 'pedal-overview', region: 'right-leg', label: 'Pedal pulse', sublabel: 'DP / PT', position: [-0.20, 0.13, 0.18], level: 'overview', tone: 'circulation' },
+  { id: 'pulse-carotid', region: 'neck-cspine', label: 'Right carotid', sublabel: 'central pulse', position: [-0.11, 1.42, 0.19], level: 'overview', actionId: 'pulse-carotid-right', tone: 'circulation' },
+  { id: 'pulse-radial-r', region: 'right-arm', label: 'Right radial', sublabel: 'wrist pulse + CRT', position: [-0.135, 0.81, 0.18], level: 'overview', actionId: 'pulse-radial-right', tone: 'circulation' },
+  { id: 'pulse-radial-l', region: 'left-arm', label: 'Left radial', sublabel: 'wrist pulse + CRT', position: [0.135, 0.81, 0.18], level: 'overview', actionId: 'pulse-radial-left', tone: 'circulation' },
+  { id: 'pedal-overview-r', region: 'right-leg', label: 'Right pedal', sublabel: 'DP / PT + CRT', position: [-0.20, 0.13, 0.18], level: 'overview', actionId: 'pulse-pedal-right', tone: 'circulation' },
+  { id: 'pedal-overview-l', region: 'left-leg', label: 'Left pedal', sublabel: 'DP / PT + CRT', position: [0.20, 0.13, 0.18], level: 'overview', actionId: 'pulse-pedal-left', tone: 'circulation' },
   { id: 'posterior-overview', region: 'posterior-logroll', label: 'Posterior', sublabel: 'log roll / spine', position: [0.0, 1.10, -0.20], level: 'overview', tone: 'neutral' },
 
   // Facial landmarks: x/y are tuned to sit ON the painted features (eyes/lips)
@@ -341,9 +342,9 @@ const EXAM_LANDMARKS: ExamLandmark[] = [
   { id: 'mouth-detail', region: 'face', label: 'Mouth / lips', sublabel: 'cyanosis, secretions, tongue', position: [0, 1.478, 0.165], level: 'detail', actionId: 'mouth-inspect', tone: 'airway', anchorSpace: 'mesh' },
   // Carotid pulse points sit on the neck, lateral to the midline — tappable
   // from the face zoom so students feel the central pulse on the patient
-  // (not the monitor). actionId 'pulse-carotid' fires onPulse from any view.
-  { id: 'face-carotid-r', region: 'face', label: 'Carotid (R)', sublabel: 'central pulse', position: [-0.048, 1.495, 0.185], level: 'detail', actionId: 'pulse-carotid', tone: 'circulation' },
-  { id: 'face-carotid-l', region: 'face', label: 'Carotid (L)', sublabel: 'central pulse', position: [0.048, 1.495, 0.185], level: 'detail', actionId: 'pulse-carotid', tone: 'circulation' },
+  // (not the monitor). Side-specific carotid actions fire onPulse from either detail view.
+  { id: 'face-carotid-r', region: 'face', label: 'Right carotid', sublabel: 'central pulse', position: [-0.048, 1.495, 0.185], level: 'detail', actionId: 'pulse-carotid-right', tone: 'circulation' },
+  { id: 'face-carotid-l', region: 'face', label: 'Left carotid', sublabel: 'central pulse', position: [0.048, 1.495, 0.185], level: 'detail', actionId: 'pulse-carotid-left', tone: 'circulation' },
 
   { id: 'trachea-detail', region: 'neck-cspine', label: 'Trachea', sublabel: 'midline / deviated', position: [0, 1.44, 0.22], level: 'detail', actionId: 'trachea-palpate', tone: 'airway' },
   { id: 'jvd-detail', region: 'neck-cspine', label: 'JVD', sublabel: 'neck veins', position: [0.09, 1.47, 0.19], level: 'detail', actionId: 'jvd-inspect', tone: 'circulation' },
@@ -641,6 +642,8 @@ function LandmarkMarkers({
       || marker.id === 'pulse-carotid'
       || marker.id === 'pulse-radial-r'
       || marker.id === 'pulse-radial-l'
+      || marker.id === 'pedal-overview-r'
+      || marker.id === 'pedal-overview-l'
     ));
 
   const toneClasses: Record<NonNullable<ExamLandmark['tone']>, string> = {
@@ -669,6 +672,7 @@ function LandmarkMarkers({
           ? sampler(marker.position[0], marker.position[1], { coordinateSpace: marker.anchorSpace ?? 'author' })
           : marker.position;
         const isDetail = marker.level === 'detail';
+        const isPulseMarker = marker.actionId?.startsWith('pulse-') ?? false;
         const dotColor = assessed
           ? 'bg-emerald-400'
           : required
@@ -696,16 +700,23 @@ function LandmarkMarkers({
                 }
                 onSelect(marker.region);
               }}
-              className={`group pointer-events-auto relative flex items-center justify-center ${isDetail ? 'h-6 w-6' : 'h-7 w-7'}`}
+              className={`group pointer-events-auto relative flex items-center justify-center ${isPulseMarker ? 'h-9 w-9' : isDetail ? 'h-6 w-6' : 'h-7 w-7'}`}
+              aria-label={marker.actionId?.startsWith('pulse-') ? `Check ${marker.label.toLowerCase()} pulse` : `${marker.label}: ${marker.sublabel}`}
               title={`${marker.label} — ${marker.sublabel}`}
             >
               {/* Invisible touch target — keeps the patient surface clean. The
                   dot itself is hidden (opacity 0); only the enlarged hit zone stays
                   clickable so tapping the face/eyes/chest of the
                   model triggers the region's assessment zoom + actions. */}
-              <span className={`pointer-events-none absolute inset-0 ${dotColor}`} style={{ opacity: 0 }} />
+              {isPulseMarker ? (
+                <span className="pointer-events-none absolute inset-1 flex items-center justify-center rounded-full border border-rose-200/90 bg-rose-600/90 text-white shadow-[0_0_0_3px_rgba(244,63,94,.18),0_4px_10px_rgba(15,23,42,.45)] motion-safe:animate-pulse">
+                  <Activity className="h-3.5 w-3.5" />
+                </span>
+              ) : (
+                <span className={`pointer-events-none absolute inset-0 ${dotColor}`} style={{ opacity: 0 }} />
+              )}
               {!isDetail && (
-                <span className={`pointer-events-none absolute left-1/2 top-[125%] z-10 -translate-x-1/2 whitespace-nowrap rounded-md border px-1.5 py-0.5 text-[8px] font-semibold leading-none opacity-0 shadow-lg backdrop-blur-md transition-opacity duration-150 group-hover:opacity-100 ${toneClasses[marker.tone ?? 'neutral']}`}>
+                <span className={`pointer-events-none absolute left-1/2 top-[112%] z-10 -translate-x-1/2 whitespace-nowrap rounded-md border px-1.5 py-0.5 text-[8px] font-semibold leading-none shadow-lg backdrop-blur-md transition-opacity duration-150 ${isPulseMarker ? 'opacity-95' : 'opacity-0 group-hover:opacity-100'} ${toneClasses[marker.tone ?? 'neutral']}`}>
                   {marker.label}
                 </span>
               )}

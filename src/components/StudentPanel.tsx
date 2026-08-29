@@ -306,6 +306,7 @@ import { hasAttachedDefibrillatorPads } from '@/lib/defibrillatorSafety';
 import { isBleedRegionControlled } from '@/lib/bleedControl';
 import { assessTractionSplintSafety } from '@/lib/tractionSplintSafety';
 import { assessLimbSplintSafety, type LimbSplintTreatmentId } from '@/lib/limbSplintSafety';
+import { assessPulseAtSite, parsePulseSite, type PulseAssessmentResult } from '@/lib/pulseAssessment';
 import { VentilatorSetupDialog, type VentilatorSettings } from '@/components/VentilatorSetupDialog';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 // ClinicalAssessmentPanel removed — replaced by inline ABCDE Primary Survey + 3D Physical Exam
@@ -1693,75 +1694,40 @@ export function StudentPanel({
   const [arrestActive, setArrestActive] = useState(false);
   // Pulse check state
   const [pulseCheckInProgress, setPulseCheckInProgress] = useState(false);
-  const [pulseCheckResult, setPulseCheckResult] = useState<string | null>(null);
+  const [lastPulseAssessment, setLastPulseAssessment] = useState<PulseAssessmentResult | null>(null);
   // Pulse check — now triggered by tapping the carotid (neck) / radial (wrist)
   // points on the mannequin. 2s palpation interval with immediate feedback;
   // present iff a perfusing pulse exists and the patient isn't in arrest.
   const runPulseCheck = useCallback((site?: string) => {
-    if (pulseCheckInProgress) return;
+    if (pulseCheckInProgress || !currentCase || !currentVitals) return;
     setPulseCheckInProgress(true);
-    setPulseCheckResult(null);
+    setLastPulseAssessment(null);
     lastActivityRef.current = Date.now();
-    const where = site?.startsWith('pulse-carotid')
-      ? 'carotid'
-      : site?.startsWith('pulse-radial')
-        ? 'radial'
-        : 'central';
-    toast(`Checking ${where} pulse…`, {
+    const pulseSite = parsePulseSite(site ?? 'pulse-carotid-right');
+    const assessment = assessPulseAtSite({
+      site: pulseSite,
+      caseData: currentCase,
+      vitals: currentVitals,
+      rhythm: patientState?.currentRhythm,
+      isInArrest: patientState?.isInArrest,
+      appliedTreatmentIds,
+    });
+    toast(`Checking ${assessment.label.toLowerCase()} pulse…`, {
       description: 'Maintain fingertip contact while assessing rate, rhythm and character.',
       duration: 1800,
     });
     setTimeout(() => {
-      const inArrest = !!patientState?.isInArrest;
-      const pulse = currentVitals?.pulse || 0;
-      const sbp = parseInt(String(currentVitals?.bp ?? '').split('/')[0], 10) || 0;
-      // Peripheral pulses are lost before central ones as perfusion falls: the
-      // radial typically disappears below ~80 mmHg systolic while the carotid
-      // persists to ~60 — so a hypotensive patient can have an absent radial
-      // but a present carotid. That contrast is the teachable, realistic cue.
-      // sbp === 0 means the case carries no BP — don't fabricate an absent
-      // radial from a missing value; only call it absent when we KNOW SBP<80.
-      const sitePalpable = inArrest || pulse <= 0 ? false
-        : where === 'radial' ? (sbp === 0 || sbp >= 80)
-          : true;
-      const Where = `${where.charAt(0).toUpperCase()}${where.slice(1)}`;
-      if (inArrest || pulse <= 0) {
-        setPulseCheckResult('absent');
-        setPulseCheckInProgress(false);
-        toast.error('No pulse detected', {
-          description: `No ${where} pulse palpable — patient is pulseless. Consider the cardiac arrest protocol.`,
-          duration: 8000,
-        });
-        return;
-      }
-      if (!sitePalpable) {
-        // Radial gone but a central pulse is still there — classic shock finding.
-        setPulseCheckResult('absent');
-        setPulseCheckInProgress(false);
-        toast('Radial pulse absent', {
-          description: `No radial pulse — suggests systolic BP under ~80 mmHg. Palpate a central (carotid) pulse and treat for shock.`,
-          duration: 8000,
-        });
-        return;
-      }
-      // Pulse character + capillary refill — what you actually feel on the finger.
-      const rhythm = String(patientState?.currentRhythm ?? '');
-      const irregular = /fib|flutter|irregular|ectopic|bigemin|\baf\b/i.test(rhythm);
-      const character = (sbp > 0 && sbp < 90) || pulse > 130 ? 'weak and thready'
-        : sbp >= 160 || (pulse < 55 && sbp >= 110) ? 'strong and bounding'
-          : 'good volume';
-      const crt = currentCase?.abcde?.circulation?.capillaryRefill;
-      const crtTxt = where === 'radial' && typeof crt === 'number'
-        ? ` Capillary refill ${crt}s at the fingertip — ${crt > 2 ? 'delayed, poor peripheral perfusion' : 'normal'}.`
-        : '';
-      setPulseCheckResult('present');
       setPulseCheckInProgress(false);
-      toast.success(`${Where} pulse present`, {
-        description: `Rate ~${pulse} bpm, ${irregular ? 'irregular' : 'regular'}, ${character}.${crtTxt}`,
-        duration: 6000,
-      });
+      setLastPulseAssessment(assessment);
+      if (assessment.palpable) {
+        toast.success(`${assessment.label} pulse present`, { description: assessment.summary, duration: 7000 });
+      } else if (assessment.site.startsWith('carotid')) {
+        toast.error(`${assessment.label} pulse absent`, { description: assessment.summary, duration: 9000 });
+      } else {
+        toast.warning(`${assessment.label} pulse absent`, { description: assessment.summary, duration: 9000 });
+      }
     }, 2000);
-  }, [pulseCheckInProgress, currentVitals, patientState, currentCase]);
+  }, [appliedTreatmentIds, pulseCheckInProgress, currentVitals, patientState, currentCase]);
   const [cprCycleTimer, setCprCycleTimer] = useState(120); // 2 min countdown
   const [cprCycleNumber, setCprCycleNumber] = useState(0);
   const [cprRunning, setCprRunning] = useState(false);
@@ -1922,7 +1888,7 @@ export function StudentPanel({
       setArrestActive(false);
       setArrestConfirmed(false);
       setCprRunning(false);
-      setPulseCheckResult(null);
+      setLastPulseAssessment(null);
       if (cprTimerRef.current) clearInterval(cprTimerRef.current);
       setArrestTimeline(prev => [...prev, { time: Date.now(), event: 'ROSC achieved', type: 'rosc' }]);
       // ROSC EtCO2 spike — a classic sign of return of spontaneous circulation:
@@ -2692,7 +2658,7 @@ export function StudentPanel({
     setArrestConfirmed(false);
     setArrestActive(false);
     setPulseCheckInProgress(false);
-    setPulseCheckResult(null);
+    setLastPulseAssessment(null);
     setCprCycleTimer(120);
     setCprCycleNumber(0);
     setCprRunning(false);
@@ -4536,7 +4502,7 @@ export function StudentPanel({
     setArrestConfirmed(false);
     setArrestActive(false);
     setPulseCheckInProgress(false);
-    setPulseCheckResult(null);
+    setLastPulseAssessment(null);
     setCprCycleTimer(120);
     setCprCycleNumber(0);
     setCprRunning(false);
@@ -6437,21 +6403,20 @@ export function StudentPanel({
                       arrest-confirm prompt below still triggers on 'absent'. */}
                   <div className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] ${
                     pulseCheckInProgress ? 'border-amber-500/50 text-amber-600'
-                    : pulseCheckResult === 'absent' ? 'border-red-500/50 text-red-600'
-                    : pulseCheckResult === 'present' ? 'border-green-500/50 text-green-600'
+                    : lastPulseAssessment && !lastPulseAssessment.palpable ? 'border-red-500/50 text-red-600'
+                    : lastPulseAssessment?.palpable ? 'border-green-500/50 text-green-600'
                     : 'border-border/60 text-muted-foreground'
                   }`}>
                     <Heart className="h-3.5 w-3.5 shrink-0" />
                     <span>
                       {pulseCheckInProgress ? 'Checking pulse…'
-                        : pulseCheckResult === 'absent' ? 'No pulse detected — tap a pulse point to recheck'
-                        : pulseCheckResult === 'present' ? 'Pulse present'
-                        : 'Tap the carotid (neck) or radial (wrist) point on the patient to check a pulse'}
+                        : lastPulseAssessment ? lastPulseAssessment.summary
+                        : 'Tap a labelled carotid, radial or pedal point on the patient to compare pulses'}
                     </span>
                   </div>
 
                   {/* Confirm Cardiac Arrest — only appears when pulse check shows absent AND arrest not yet confirmed */}
-                  {pulseCheckResult === 'absent' && !arrestConfirmed && (
+                  {lastPulseAssessment && !lastPulseAssessment.palpable && lastPulseAssessment.site.startsWith('carotid') && !arrestConfirmed && (
                     <Button
                       variant="destructive"
                       size="sm"
