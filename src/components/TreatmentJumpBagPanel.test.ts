@@ -143,6 +143,70 @@ describe('initial treatment-kit recommendation', () => {
     expect(recommendedManagementTabForCase(fracture)).toBe('transport');
   });
 
+  it('keeps severe-asthma priorities on first-line respiratory care', () => {
+    const asthma = caseFor({
+      title: 'Life-threatening asthma attack',
+      category: 'respiratory',
+      subcategory: 'asthma',
+      initialPresentation: {
+        generalImpression: 'Tripod position with severe respiratory distress',
+        position: 'Sitting upright',
+        appearance: 'Diaphoretic and unable to speak in sentences',
+        consciousness: 'Alert but distressed',
+      },
+      vitalSignsProgression: { initial: { bp: '130/80', pulse: 120, respiration: 32, spo2: 88, gcs: 14 } },
+      managementPathway: {
+        immediate: [
+          'High-flow oxygen via non-rebreather',
+          'Continuous salbutamol nebulizer',
+          'Ipratropium bromide 500mcg nebulizer',
+          'IV hydrocortisone 200mg early',
+          'IV access establishment',
+          'Magnesium sulfate 2g IV for life-threatening features',
+          'IM adrenaline if peri-arrest or not responding',
+        ],
+        definitive: [],
+        monitoring: [],
+      },
+    });
+
+    expect(suggestedTreatmentIdsForCase(asthma, asthma.vitalSignsProgression.initial)).toEqual([
+      'oxygen_nonrebreather',
+      'nebulizer_salbutamol',
+      'nebulizer_ipratropium',
+      'hydrocortisone_200mg',
+      'iv_access',
+      'magnesium_2g',
+    ]);
+    expect(suggestedTreatmentIdsForCase(asthma, asthma.vitalSignsProgression.initial)).not.toContain('adrenaline_im');
+    expect(suggestedTreatmentIdsForCase(asthma, asthma.vitalSignsProgression.initial)).not.toContain('cpap_niv');
+  });
+
+  it('still promotes IM adrenaline when anaphylaxis is the active presentation', () => {
+    const anaphylaxis = caseFor({
+      title: 'Anaphylaxis after a bee sting',
+      category: 'respiratory',
+      subcategory: 'anaphylaxis',
+      initialPresentation: {
+        generalImpression: 'Rapid allergic reaction',
+        position: 'Supine',
+        appearance: 'Widespread hives and facial swelling',
+        consciousness: 'Alert',
+      },
+      managementPathway: {
+        immediate: ['Give IM adrenaline immediately', 'Give high-flow oxygen', 'Establish IV access'],
+        definitive: [],
+        monitoring: [],
+      },
+    });
+
+    expect(suggestedTreatmentIdsForCase(anaphylaxis, anaphylaxis.vitalSignsProgression.initial)).toEqual([
+      'adrenaline_im',
+      'oxygen_nonrebreather',
+      'iv_access',
+    ]);
+  });
+
   it('prioritises catastrophic haemorrhage before airway support and later splinting', () => {
     const polytrauma = caseFor({
       title: 'Motorcycle collision with open femur fracture',
@@ -167,12 +231,12 @@ describe('initial treatment-kit recommendation', () => {
 
     expect(recommendedManagementTabForCase(polytrauma)).toBe('circulation');
     expect(suggestedTreatmentIdsForCase(polytrauma, polytrauma.vitalSignsProgression.initial)).toEqual([
+      'tourniquet',
+      'bleeding_control',
       'oxygen_nonrebreather',
       'bvm_ventilation',
       'iv_access',
       'fluids_250ml',
-      'tourniquet',
-      'bleeding_control',
     ]);
   });
 });

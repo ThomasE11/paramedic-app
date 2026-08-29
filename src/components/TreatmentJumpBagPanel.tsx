@@ -146,6 +146,10 @@ const CASE_PATHWAY_TREATMENTS: Array<{ pattern: RegExp; treatmentIds: string[] }
   { pattern: /\b(chest seal|occlusive dressing)\b/, treatmentIds: ['chest_seal_vented'] },
   { pattern: /\b(non[- ]?rebreather|high-flow oxygen)\b/, treatmentIds: ['oxygen_nonrebreather'] },
   { pattern: /\b(nebulis|nebuliz|salbutamol)\b/, treatmentIds: ['nebulizer_salbutamol'] },
+  { pattern: /\b(ipratropium)\b/, treatmentIds: ['nebulizer_ipratropium'] },
+  { pattern: /\b(hydrocortisone)\b/, treatmentIds: ['hydrocortisone_200mg'] },
+  { pattern: /\b(magnesium sulfate|magnesium sulphate)\b/, treatmentIds: ['magnesium_2g'] },
+  { pattern: /\b(cpap|non[- ]?invasive ventilation|niv|bipap)\b/, treatmentIds: ['cpap_niv'] },
   { pattern: /\b(bag[- ]valve[- ]mask|bvm|assisted ventilation)\b/, treatmentIds: ['bvm_ventilation'] },
   { pattern: /\b(defibrillat|deliver shock)\b/, treatmentIds: ['monitor_pads', 'defibrillation'] },
   { pattern: /\b(cpr|chest compressions?)\b/, treatmentIds: ['cpr'] },
@@ -175,6 +179,17 @@ export function suggestedTreatmentIdsForCase(
   const ventilationRequired = (currentVitals?.respiration ?? 99) <= 4;
   const padsAttached = hasAttachedDefibrillatorPads(appliedIds);
   const shockableRhythm = /\b(ventricular fibrillation|vf|pulseless ventricular tachycardia|pulseless vt)\b/i.test(currentRhythm);
+  const presentationText = [
+    caseData.title,
+    caseData.subcategory,
+    caseData.initialPresentation?.generalImpression,
+    caseData.initialPresentation?.appearance,
+    caseData.expectedFindings?.mostLikelyDiagnosis,
+    caseData.history?.eventsLeading,
+    ...Object.values(caseData.abcde ?? {}).flatMap(section => section?.findings ?? []),
+  ].filter(Boolean).join(' ').toLowerCase();
+  const activeAnaphylaxis = /\b(anaphylaxis|anaphylactic|urticaria|hives|angioedema|allergic reaction|airway swelling|tongue swelling|facial swelling|widespread rash)\b/.test(presentationText);
+  const cpapResponsivePresentation = /\b(copd|pulmonary oedema|pulmonary edema|acute heart failure|cardiogenic)\b/.test(presentationText);
   const add = (...nextIds: string[]) => {
     for (const id of nextIds) {
       if ((arrestPhysiology || ventilationRequired) && ['oxygen_nonrebreather', 'oxygen_mask', 'oxygen_nasal', 'cpap_niv'].includes(id)) continue;
@@ -182,6 +197,10 @@ export function suggestedTreatmentIdsForCase(
       if (id === 'monitor_pads' && padsAttached) continue;
       if (id === 'cpr' && perfusingPulse) continue;
       if (id === 'defibrillation' && (!padsAttached || !shockableRhythm || perfusingPulse)) continue;
+      // The stocked adult IM dose is specifically labelled for anaphylaxis. A
+      // differential diagnosis or a rescue-only asthma note must not promote
+      // it as routine first-line asthma treatment.
+      if (id === 'adrenaline_im' && !activeAnaphylaxis) continue;
       if (!ids.includes(id) && TREATMENTS.some(treatment => treatment.id === id)) ids.push(id);
     }
   };
@@ -191,17 +210,6 @@ export function suggestedTreatmentIdsForCase(
     if (!padsAttached) add('monitor_pads');
     else if (shockableRhythm) add('defibrillation');
     add('bvm_ventilation', 'iv_access');
-  }
-
-  if (currentVitals) {
-    const systolic = getSystolicFromBp(currentVitals.bp);
-    if (!arrestPhysiology && !ventilationRequired && currentVitals.spo2 < 90) add('oxygen_nonrebreather');
-    else if (!arrestPhysiology && !ventilationRequired && currentVitals.spo2 < 94) add('oxygen_mask');
-    if (currentVitals.respiration <= 8) add('bvm_ventilation');
-    if (!arrestPhysiology && currentVitals.respiration >= 26 && currentVitals.spo2 < 94) add('cpap_niv');
-    if (systolic < 100 || currentVitals.pulse > 120 || (currentVitals.gcs ?? 15) < 15) add('iv_access');
-    if (systolic < 90) add('fluids_250ml');
-    if (currentVitals.bloodGlucose !== undefined && currentVitals.bloodGlucose < 4) add('glucose_10g');
   }
 
   const pathwaySegments = [
@@ -219,6 +227,19 @@ export function suggestedTreatmentIdsForCase(
     for (const route of CASE_PATHWAY_TREATMENTS) {
       if (route.pattern.test(segment)) add(...route.treatmentIds);
     }
+  }
+
+  // Use live physiology as a safety net after the authored immediate pathway,
+  // so generic vital-sign rules do not displace case-specific first-line care.
+  if (currentVitals) {
+    const systolic = getSystolicFromBp(currentVitals.bp);
+    if (!arrestPhysiology && !ventilationRequired && currentVitals.spo2 < 90) add('oxygen_nonrebreather');
+    else if (!arrestPhysiology && !ventilationRequired && currentVitals.spo2 < 94) add('oxygen_mask');
+    if (currentVitals.respiration <= 8) add('bvm_ventilation');
+    if (!arrestPhysiology && cpapResponsivePresentation && currentVitals.respiration >= 26 && currentVitals.spo2 < 94) add('cpap_niv');
+    if (systolic < 100 || currentVitals.pulse > 120 || (currentVitals.gcs ?? 15) < 15) add('iv_access');
+    if (systolic < 90) add('fluids_250ml');
+    if (currentVitals.bloodGlucose !== undefined && currentVitals.bloodGlucose < 4) add('glucose_10g');
   }
 
   return ids.slice(0, 6);

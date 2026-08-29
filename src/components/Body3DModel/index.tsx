@@ -1206,7 +1206,7 @@ function WornFaceEquipment({
   const nebulizer = equipment.mode === 'nebulizer';
   const fittedPhotorealisticMask = nonrebreather || nebulizer;
   return (
-    <div data-applied-equipment={equipment.mode} data-airway-connection={bvmViaTube ? 'ett' : 'face'} className={`pointer-events-none relative flex items-center justify-center drop-shadow-[0_5px_6px_rgba(2,44,58,0.55)] animate-in fade-in zoom-in-75 duration-300 ${nonrebreather ? 'h-28 w-24 translate-y-[24%]' : nebulizer ? 'h-24 w-20 translate-y-[20%]' : bvmViaTube ? 'h-12 w-16 -translate-x-[52%] translate-y-[140%]' : bvm ? 'h-16 w-20 translate-y-[88%]' : large ? 'h-16 w-20' : 'h-12 w-14'}`}>
+    <div data-applied-equipment={equipment.mode} data-airway-connection={bvmViaTube ? 'ett' : 'face'} className={`pointer-events-none relative flex items-center justify-center drop-shadow-[0_5px_6px_rgba(2,44,58,0.55)] animate-in fade-in zoom-in-75 duration-300 ${nonrebreather ? 'h-16 w-16 translate-y-[38%]' : nebulizer ? 'h-24 w-20 translate-y-[20%]' : bvmViaTube ? 'h-12 w-16 -translate-x-[52%] translate-y-[140%]' : bvm ? 'h-16 w-20 translate-y-[88%]' : large ? 'h-16 w-20' : 'h-12 w-14'}`}>
       <img
         src={OXYGEN_SRC[equipment.mode]}
         alt=""

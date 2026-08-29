@@ -33,8 +33,8 @@
  *      oscillation), it pins at the more conservative tier and stops.
  *
  * Tiers (cumulative):
- *   0 full quality: composer on, dpr cap 2, contact shadows on
- *   1 composer off (biggest single cost: N8AO + full-frame passes)
+ *   0 stable quality: native renderer, dpr cap 2, contact shadows on
+ *   1 reserved post-processing rung (composer remains quarantined)
  *   2 dpr -> min(base, 1.5)
  *   3 dpr -> 1
  *   4 contact shadows off
@@ -58,7 +58,13 @@ export interface QualitySettings {
 
 export function qualityForTier(tier: QualityTier, baseDpr: number): QualitySettings {
   return {
-    composerEnabled: tier < 1,
+    // The half-resolution composer intermittently published an empty buffer
+    // on Chromium while the focused exam camera was rendering. That made the
+    // patient disappear on alternating frames—the apparent whole-body
+    // "twitch" reported in live care. Keep the native ACES renderer as the
+    // stable path until the full-screen pass can be reintroduced with a
+    // deterministic framebuffer test.
+    composerEnabled: false,
     dpr: tier >= 3 ? 1 : tier >= 2 ? Math.min(baseDpr, 1.5) : baseDpr,
     contactShadows: tier < 4,
   };
