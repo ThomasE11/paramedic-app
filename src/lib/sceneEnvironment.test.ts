@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { deriveSceneEnvironment } from './sceneEnvironment';
 import type { CaseScenario } from '@/types';
+import { allCases } from '@/data/cases';
 
 function fakeCase(location: string, description = ''): CaseScenario {
   return {
@@ -21,11 +22,48 @@ describe('deriveSceneEnvironment', () => {
     expect(deriveSceneEnvironment(fakeCase('Dubai Mall food court'))).toBe('public');
   });
 
-  it('maps outdoor scenes to roadside — and roadside wins over home', () => {
+  it('keeps vehicle incidents roadside — and roadside wins over home', () => {
     expect(deriveSceneEnvironment(fakeCase('Sheikh Zayed Road, Dubai'))).toBe('roadside');
-    expect(deriveSceneEnvironment(fakeCase('Construction site, Dubai'))).toBe('roadside');
     expect(deriveSceneEnvironment(fakeCase('Street in Deira, Dubai'))).toBe('roadside');
     expect(deriveSceneEnvironment(fakeCase('Villa in Jumeirah', 'RTA outside the villa gate'))).toBe('roadside');
+  });
+
+  it('separates construction and machinery scenes from roads', () => {
+    expect(deriveSceneEnvironment(fakeCase('Construction site office, Al Quoz'))).toBe('industrial');
+    expect(deriveSceneEnvironment(fakeCase('Warehouse in Jebel Ali', 'Worker trapped in machinery'))).toBe('industrial');
+    expect(deriveSceneEnvironment(fakeCase('Farm outside Al Ain'))).toBe('industrial');
+  });
+
+  it('gives fire, water, and heat incidents their own environments', () => {
+    expect(deriveSceneEnvironment(fakeCase('Warehouse in Jebel Ali', 'Smoke inhalation after warehouse fire'))).toBe('fire');
+    expect(deriveSceneEnvironment(fakeCase('Jumeirah Beach', 'Near-drowning after sea rescue'))).toBe('water');
+    expect(deriveSceneEnvironment(fakeCase('Desert worksite', 'Heatstroke during outdoor work'))).toBe('heat');
+  });
+
+  it('honours an explicit authored environment', () => {
+    const caseData = fakeCase('Office in Downtown Dubai');
+    caseData.sceneInfo.environmentVariant = 'industrial';
+    expect(deriveSceneEnvironment(caseData)).toBe('industrial');
+  });
+
+  it('migrates stale generic overrides when the incident is unambiguous', () => {
+    const drowning = fakeCase('Hotel poolside', 'Child pulled from water');
+    drowning.title = 'Hypothermic drowning';
+    drowning.sceneInfo.environmentVariant = 'roadside';
+    expect(deriveSceneEnvironment(drowning)).toBe('water');
+
+    const office = fakeCase('Construction site office', 'Patient inside the portacabin office');
+    office.sceneInfo.environmentVariant = 'public';
+    expect(deriveSceneEnvironment(office)).toBe('public');
+  });
+
+  it('keeps representative authored cases in a coherent scene avenue', () => {
+    const variantFor = (id: string) => deriveSceneEnvironment(allCases.find(item => item.id === id)!);
+    expect(variantFor('litfl-001')).toBe('public');
+    expect(variantFor('cardiac-014')).toBe('water');
+    expect(variantFor('trauma-012')).toBe('water');
+    expect(variantFor('env-001')).toBe('heat');
+    expect(variantFor('burn-002')).toBe('industrial');
   });
 
   it('falls back to clinic for ambiguous or missing scene info', () => {

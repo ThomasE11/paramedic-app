@@ -1,8 +1,8 @@
 /**
- * Scene-contextual environment variants — home, public, roadside. The clinic
- * variant stays in index.tsx (Room + BayLighting); these are the alternates
- * swapped in by TreatmentBayEnvironment when the case's scene words say the
- * patient is somewhere else.
+ * Scene-contextual environment variants — home, public, roadside, worksite,
+ * fire, water rescue and heat exposure. The clinic variant stays in index.tsx
+ * (Room + BayLighting); these are the alternates swapped in by
+ * TreatmentBayEnvironment from the case's complete scene contract.
  *
  * Same rules as the clinic bay:
  * - every mesh sets raycast={() => null} so region clicks pass through
@@ -430,6 +430,302 @@ function PublicScene({ hideOverhead, shadowsEnabled }: { hideOverhead: boolean; 
 }
 
 // ---------------------------------------------------------------------------
+// Industrial — construction, warehouse, machinery and farm incidents. The
+// central treatment lane remains clear while scaffold, materials and access
+// control make this read as a worksite instead of a road collision.
+// ---------------------------------------------------------------------------
+function IndustrialScene({ shadowsEnabled }: { shadowsEnabled: boolean }) {
+  return (
+    <group>
+      <mesh position={[0, -0.05, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow raycast={NO_RAYCAST}>
+        <planeGeometry args={[9, 9]} />
+        <meshStandardMaterial color="#777b7d" roughness={0.96} metalness={0.04} />
+      </mesh>
+
+      {/* Corrugated site wall and steel frame. */}
+      <mesh position={[0, 1.15, -2.7]} receiveShadow raycast={NO_RAYCAST}>
+        <boxGeometry args={[7.5, 2.4, 0.08]} />
+        <meshStandardMaterial color="#6f7b82" roughness={0.62} metalness={0.55} />
+      </mesh>
+      {[-3.2, -2.4, -1.6, -0.8, 0, 0.8, 1.6, 2.4, 3.2].map(x => (
+        <mesh key={`corrugation-${x}`} position={[x, 1.15, -2.64]} raycast={NO_RAYCAST}>
+          <boxGeometry args={[0.035, 2.35, 0.045]} />
+          <meshStandardMaterial color="#9aa3a8" roughness={0.5} metalness={0.68} />
+        </mesh>
+      ))}
+      {[-2.65, 2.65].map(x => (
+        <group key={`scaffold-${x}`} position={[x, 0, -0.55]}>
+          {[-0.45, 0.45].map(z => (
+            <mesh key={`upright-${z}`} position={[0, 1.35, z]} castShadow raycast={NO_RAYCAST}>
+              <cylinderGeometry args={[0.035, 0.035, 2.7, 10]} />
+              <meshStandardMaterial color="#c8ced2" roughness={0.36} metalness={0.78} />
+            </mesh>
+          ))}
+          {[0.45, 1.35, 2.25].map(y => (
+            <mesh key={`rail-${y}`} position={[0, y, 0]} rotation={[Math.PI / 2, 0, 0]} raycast={NO_RAYCAST}>
+              <cylinderGeometry args={[0.028, 0.028, 0.9, 10]} />
+              <meshStandardMaterial color="#c8ced2" roughness={0.36} metalness={0.78} />
+            </mesh>
+          ))}
+        </group>
+      ))}
+
+      {/* Hazard-striped exclusion line around the clear treatment lane. */}
+      {[-1.9, 1.9].map(x => (
+        <mesh key={`hazard-line-${x}`} position={[x, -0.042, 0.35]} rotation={[-Math.PI / 2, 0, 0]} raycast={NO_RAYCAST}>
+          <planeGeometry args={[0.12, 4.8]} />
+          <meshStandardMaterial color="#f5c518" roughness={0.72} />
+        </mesh>
+      ))}
+
+      {/* Palletised materials remain to the side, preserving anatomy access. */}
+      <group position={[2.85, 0, 1.55]}>
+        <mesh position={[0, 0.08, 0]} receiveShadow raycast={NO_RAYCAST}>
+          <boxGeometry args={[1.35, 0.16, 0.9]} />
+          <meshStandardMaterial color="#745035" roughness={0.88} />
+        </mesh>
+        {[-0.38, 0, 0.38].map(x => (
+          <mesh key={`material-${x}`} position={[x, 0.48, 0]} castShadow raycast={NO_RAYCAST}>
+            <boxGeometry args={[0.34, 0.7, 0.68]} />
+            <meshStandardMaterial color="#b89361" roughness={0.9} />
+          </mesh>
+        ))}
+      </group>
+      <group position={[-2.85, 0, 1.45]}>
+        <mesh position={[0, 0.85, 0]} castShadow raycast={NO_RAYCAST}>
+          <cylinderGeometry args={[0.33, 0.33, 1.7, 18]} />
+          <meshStandardMaterial color="#d8a51f" roughness={0.7} metalness={0.15} />
+        </mesh>
+        <mesh position={[0, 0.95, 0.31]} raycast={NO_RAYCAST}>
+          <boxGeometry args={[0.36, 0.22, 0.025]} />
+          <meshStandardMaterial color="#111827" emissive="#fbbf24" emissiveIntensity={0.45} roughness={0.5} />
+        </mesh>
+      </group>
+
+      <hemisphereLight args={['#d9e5ed', '#4d4538', 0.48]} />
+      <ambientLight intensity={0.52} color="#e8eef2" />
+      <KeyLight color="#fff0cf" intensity={7.2} position={[2.8, 4.2, 2.2]} shadowsEnabled={shadowsEnabled} angle={0.58} />
+      <pointLight position={[-2.6, 2.1, 1.6]} intensity={2.4} distance={7} decay={2} color="#ffd27a" />
+      <pointLight position={[0, 1.7, 3.2]} intensity={3.2} distance={7} decay={2} color="#f1f5f9" />
+    </group>
+  );
+}
+
+const FIRE_SMOKE_COUNT = 72;
+function FireSmoke() {
+  const ref = useRef<THREE.Points>(null);
+  const positions = useMemo(() => {
+    const values = new Float32Array(FIRE_SMOKE_COUNT * 3);
+    for (let i = 0; i < FIRE_SMOKE_COUNT; i++) {
+      const band = i % 12;
+      values[i * 3] = -3 + band * 0.5 + Math.sin(i * 2.17) * 0.18;
+      values[i * 3 + 1] = 0.25 + ((i * 0.31) % 2.6);
+      values[i * 3 + 2] = -2.35 + Math.cos(i * 1.73) * 0.35;
+    }
+    return values;
+  }, []);
+
+  useFrame(({ clock }) => {
+    if (!ref.current) return;
+    const attribute = ref.current.geometry.attributes.position as THREE.BufferAttribute;
+    const values = attribute.array as Float32Array;
+    for (let i = 0; i < FIRE_SMOKE_COUNT; i++) {
+      values[i * 3] += Math.sin(clock.elapsedTime * 0.18 + i) * 0.0008;
+      values[i * 3 + 1] = 0.2 + ((positions[i * 3 + 1] + clock.elapsedTime * 0.035) % 2.75);
+    }
+    attribute.needsUpdate = true;
+  });
+
+  return (
+    <points ref={ref} raycast={NO_RAYCAST}>
+      <bufferGeometry>
+        <bufferAttribute attach="attributes-position" args={[positions.slice(), 3]} />
+      </bufferGeometry>
+      <pointsMaterial size={0.16} color="#4b5563" transparent opacity={0.25} depthWrite={false} />
+    </points>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Fire — smoke-stained structure with cordon, extinguishing equipment and
+// animated residual smoke. There are no decorative open flames beside the
+// patient: the scene represents the safe treatment zone after extraction.
+// ---------------------------------------------------------------------------
+function FireScene({ shadowsEnabled }: { shadowsEnabled: boolean }) {
+  return (
+    <group>
+      <mesh position={[0, -0.05, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow raycast={NO_RAYCAST}>
+        <planeGeometry args={[9, 9]} />
+        <meshStandardMaterial color="#252728" roughness={0.97} />
+      </mesh>
+      <mesh position={[0, 1.2, -2.65]} receiveShadow raycast={NO_RAYCAST}>
+        <boxGeometry args={[7.8, 2.5, 0.1]} />
+        <meshStandardMaterial color="#383536" roughness={0.94} />
+      </mesh>
+      {[-2.8, -1.4, 0, 1.4, 2.8].map((x, index) => (
+        <mesh key={`charred-stud-${x}`} position={[x, 1.25, -2.52]} rotation={[0, 0, index % 2 ? 0.035 : -0.025]} castShadow raycast={NO_RAYCAST}>
+          <boxGeometry args={[0.16, 2.5, 0.16]} />
+          <meshStandardMaterial color="#161617" roughness={0.99} />
+        </mesh>
+      ))}
+      <mesh position={[0, 0.55, -2.46]} raycast={NO_RAYCAST}>
+        <planeGeometry args={[5.8, 0.9]} />
+        <meshStandardMaterial color="#151516" transparent opacity={0.55} roughness={1} />
+      </mesh>
+
+      {/* Fire service exclusion tape and extinguisher. */}
+      {[-2.1, 2.1].map(x => (
+        <group key={`cordon-${x}`} position={[x, 0, 1.7]}>
+          <mesh position={[0, 0.62, 0]} raycast={NO_RAYCAST}>
+            <cylinderGeometry args={[0.035, 0.045, 1.24, 10]} />
+            <meshStandardMaterial color="#d6d8da" metalness={0.6} roughness={0.38} />
+          </mesh>
+        </group>
+      ))}
+      <mesh position={[0, 0.72, 1.7]} raycast={NO_RAYCAST}>
+        <boxGeometry args={[4.2, 0.08, 0.025]} />
+        <meshStandardMaterial color="#f5c518" emissive="#f59e0b" emissiveIntensity={0.18} roughness={0.62} />
+      </mesh>
+      <group position={[2.75, 0, 0.9]}>
+        <mesh position={[0, 0.45, 0]} castShadow raycast={NO_RAYCAST}>
+          <cylinderGeometry args={[0.16, 0.19, 0.8, 18]} />
+          <meshStandardMaterial color="#b91c1c" roughness={0.5} metalness={0.26} />
+        </mesh>
+        <mesh position={[0, 0.92, 0]} rotation={[0, 0, -0.3]} raycast={NO_RAYCAST}>
+          <boxGeometry args={[0.28, 0.1, 0.08]} />
+          <meshStandardMaterial color="#111827" metalness={0.55} roughness={0.4} />
+        </mesh>
+      </group>
+      <FireSmoke />
+      <hemisphereLight args={['#7f8fa6', '#2b211f', 0.32]} />
+      <ambientLight intensity={0.42} color="#b8c3cf" />
+      <KeyLight color="#f8dcc4" intensity={6.1} position={[2.4, 3.4, 2.0]} shadowsEnabled={shadowsEnabled} angle={0.62} />
+      <pointLight position={[-2.4, 1.1, -1.7]} intensity={2.8} distance={6} decay={2} color="#ff6b35" />
+      <pointLight position={[2.6, 1.5, 1.6]} intensity={1.5} distance={5} decay={2} color="#3b82f6" />
+      <pointLight position={[0, 1.7, 3.1]} intensity={2.8} distance={7} decay={2} color="#f8fafc" />
+    </group>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Water rescue — wet treatment apron beside visible water, with rescue ring,
+// throw line and drainage. The patient remains on dry ground after extraction.
+// ---------------------------------------------------------------------------
+function WaterScene({ shadowsEnabled }: { shadowsEnabled: boolean }) {
+  return (
+    <group>
+      <mesh position={[0, -0.05, 0.3]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow raycast={NO_RAYCAST}>
+        <planeGeometry args={[9, 8]} />
+        <meshStandardMaterial color="#c8b48f" roughness={0.86} />
+      </mesh>
+      <mesh position={[0, -0.035, -2.45]} rotation={[-Math.PI / 2, 0, 0]} raycast={NO_RAYCAST}>
+        <planeGeometry args={[9, 2.4]} />
+        <meshStandardMaterial color="#1886a7" emissive="#0e7490" emissiveIntensity={0.18} roughness={0.13} metalness={0.18} transparent opacity={0.9} />
+      </mesh>
+      {[-3, -1.5, 0, 1.5, 3].map((x, index) => (
+        <mesh key={`water-ripple-${x}`} position={[x, -0.025, -2.15 - (index % 2) * 0.4]} rotation={[-Math.PI / 2, 0, 0.08]} raycast={NO_RAYCAST}>
+          <planeGeometry args={[0.9, 0.035]} />
+          <meshBasicMaterial color="#b9efff" transparent opacity={0.46} />
+        </mesh>
+      ))}
+      <mesh position={[0, 0.01, -1.28]} receiveShadow raycast={NO_RAYCAST}>
+        <boxGeometry args={[9, 0.14, 0.32]} />
+        <meshStandardMaterial color="#e6e2da" roughness={0.74} />
+      </mesh>
+
+      <group position={[2.75, 0.62, -0.85]} rotation={[Math.PI / 2, 0, 0]}>
+        <mesh castShadow raycast={NO_RAYCAST}>
+          <torusGeometry args={[0.38, 0.1, 12, 28]} />
+          <meshStandardMaterial color="#f97316" roughness={0.58} />
+        </mesh>
+        {[0, Math.PI / 2].map(rotation => (
+          <mesh key={`ring-band-${rotation}`} rotation={[0, 0, rotation]} raycast={NO_RAYCAST}>
+            <boxGeometry args={[0.2, 0.74, 0.12]} />
+            <meshStandardMaterial color="#f8fafc" roughness={0.45} />
+          </mesh>
+        ))}
+      </group>
+      <mesh position={[-2.8, 0.02, 1.5]} rotation={[-Math.PI / 2, 0, -0.18]} receiveShadow raycast={NO_RAYCAST}>
+        <planeGeometry args={[1.4, 0.75]} />
+        <meshStandardMaterial color="#f3f4f6" roughness={0.98} />
+      </mesh>
+      <mesh position={[2.35, 0.01, 1.5]} rotation={[-Math.PI / 2, 0, 0]} raycast={NO_RAYCAST}>
+        <circleGeometry args={[0.72, 24]} />
+        <meshStandardMaterial color="#698491" roughness={0.2} metalness={0.16} transparent opacity={0.42} />
+      </mesh>
+
+      <hemisphereLight args={['#caefff', '#735f42', 0.72]} />
+      <ambientLight intensity={0.62} color="#dff7ff" />
+      <KeyLight color="#fff6dd" intensity={7.8} position={[-2.7, 4.2, 2.4]} shadowsEnabled={shadowsEnabled} angle={0.55} />
+      <pointLight position={[0, 0.8, -2.0]} intensity={1.4} distance={7} decay={2} color="#66d9ff" />
+      <pointLight position={[0, 1.6, 3.2]} intensity={3.4} distance={7} decay={2} color="#e6f7ff" />
+    </group>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Heat/outdoor — desert or exposed sports/work scene, with shade canopy,
+// hydration station and high-contrast sun. This avoids placing heat illness
+// beside traffic wreckage merely because it happened outdoors.
+// ---------------------------------------------------------------------------
+function HeatScene({ shadowsEnabled }: { shadowsEnabled: boolean }) {
+  return (
+    <group>
+      <mesh position={[0, -0.05, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow raycast={NO_RAYCAST}>
+        <planeGeometry args={[10, 10]} />
+        <meshStandardMaterial color="#cda66d" roughness={0.99} />
+      </mesh>
+      {[[-3.2, -2.6], [-2.5, 2.6], [2.9, -2.8], [3.4, 2.5]].map(([x, z], index) => (
+        <mesh key={`desert-stone-${index}`} position={[x, 0.02, z]} rotation={[0, index * 0.8, 0]} castShadow raycast={NO_RAYCAST}>
+          <dodecahedronGeometry args={[0.18 + (index % 2) * 0.08, 0]} />
+          <meshStandardMaterial color="#9a744a" roughness={0.98} />
+        </mesh>
+      ))}
+
+      {/* Paramedic shade canopy stays beside the patient so it creates a
+          believable cooling zone without occluding examination lighting. */}
+      {[-3.2, -1.2].map(x => (
+        <mesh key={`canopy-pole-${x}`} position={[x, 1.35, -1.75]} castShadow raycast={NO_RAYCAST}>
+          <cylinderGeometry args={[0.035, 0.045, 2.7, 10]} />
+          <meshStandardMaterial color="#d7dde1" metalness={0.72} roughness={0.35} />
+        </mesh>
+      ))}
+      <mesh position={[-2.2, 2.64, -1.72]} raycast={NO_RAYCAST}>
+        <boxGeometry args={[2.3, 0.045, 1.65]} />
+        <meshBasicMaterial color="#e8dfc8" side={THREE.DoubleSide} />
+      </mesh>
+      {/* Cooler and bottled water on the crew side. */}
+      <group position={[2.75, 0, 1.5]}>
+        <mesh position={[0, 0.28, 0]} castShadow raycast={NO_RAYCAST}>
+          <boxGeometry args={[0.8, 0.56, 0.52]} />
+          <meshStandardMaterial color="#e5edf2" roughness={0.55} />
+        </mesh>
+        <mesh position={[0, 0.58, 0]} raycast={NO_RAYCAST}>
+          <boxGeometry args={[0.84, 0.08, 0.56]} />
+          <meshStandardMaterial color="#38a6c9" roughness={0.48} />
+        </mesh>
+        {[-0.22, 0, 0.22].map(x => (
+          <mesh key={`water-bottle-${x}`} position={[x, 0.88, 0]} castShadow raycast={NO_RAYCAST}>
+            <cylinderGeometry args={[0.045, 0.055, 0.46, 12]} />
+            <meshStandardMaterial color="#bce9f4" transparent opacity={0.62} roughness={0.18} />
+          </mesh>
+        ))}
+      </group>
+
+      {/* A broad, front-biased field light keeps skin and assessment targets
+          legible beneath the canopy. The warm hemisphere still carries the
+          desert palette without turning clinical findings into silhouettes. */}
+      <hemisphereLight args={['#d7edff', '#8b6336', 0.7]} />
+      <ambientLight intensity={1.15} color="#fff1d6" />
+      <KeyLight color="#fff0c4" intensity={8.4} position={[0, 3.1, 1.8]} shadowsEnabled={shadowsEnabled} angle={0.72} />
+      <pointLight position={[-1.5, 2.0, 1.2]} intensity={3.2} distance={7} decay={2} color="#fff4dc" />
+      <pointLight position={[1.5, 2.0, 1.2]} intensity={3.2} distance={7} decay={2} color="#fff4dc" />
+      <pointLight position={[0, 1.2, 2.4]} intensity={2.2} distance={6} decay={2} color="#e8f4ff" />
+    </group>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Roadside — open air. Asphalt with lane markings, kerb, traffic cones, the
 // ambulance's headlights raking in from behind the scene. No walls/ceiling.
 // ---------------------------------------------------------------------------
@@ -604,7 +900,7 @@ function RoadsideScene({ shadowsEnabled }: { shadowsEnabled: boolean }) {
 }
 
 // ---------------------------------------------------------------------------
-// Public: the variant switch. 'clinic' is handled by index.tsx.
+// Variant switch. 'clinic' is handled by index.tsx.
 // ---------------------------------------------------------------------------
 export function SceneVariantEnvironment({
   variant,
@@ -617,5 +913,9 @@ export function SceneVariantEnvironment({
 }) {
   if (variant === 'home') return <HomeScene hideOverhead={hideOverhead} shadowsEnabled={shadowsEnabled} />;
   if (variant === 'public') return <PublicScene hideOverhead={hideOverhead} shadowsEnabled={shadowsEnabled} />;
+  if (variant === 'industrial') return <IndustrialScene shadowsEnabled={shadowsEnabled} />;
+  if (variant === 'fire') return <FireScene shadowsEnabled={shadowsEnabled} />;
+  if (variant === 'water') return <WaterScene shadowsEnabled={shadowsEnabled} />;
+  if (variant === 'heat') return <HeatScene shadowsEnabled={shadowsEnabled} />;
   return <RoadsideScene shadowsEnabled={shadowsEnabled} />;
 }

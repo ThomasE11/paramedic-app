@@ -408,8 +408,16 @@ export interface CaseScenario {
      */
     sceneImagePath?: string;
     sceneImageCaption?: string;
-    /** Explicit environment override so a crash always renders as roadside. */
-    environmentVariant?: 'clinic' | 'home' | 'public' | 'roadside';
+    /** Explicit environment override so the 3D scene matches the authored incident. */
+    environmentVariant?:
+      | 'clinic'
+      | 'home'
+      | 'public'
+      | 'roadside'
+      | 'industrial'
+      | 'fire'
+      | 'water'
+      | 'heat';
   };
 
   // Initial Presentation

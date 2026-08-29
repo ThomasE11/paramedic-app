@@ -90,6 +90,7 @@ import {
   type FindingTreatmentSuggestion,
 } from '@/lib/caseManagementRealism';
 import { derivePatientVisualState } from '@/lib/patientVisualState';
+import { deriveSceneEnvironment, SCENE_ENVIRONMENT_LABELS } from '@/lib/sceneEnvironment';
 import { matchRealismScenarios } from '@/lib/patientRealismScenarios';
 import {
   buildReactionForTreatment,
@@ -1324,6 +1325,10 @@ export function StudentPanel({
     _setPhase(prev);
   }, [phaseHistory]);
   const [currentCase, setCurrentCase] = useState<CaseScenario | null>(null);
+  const sceneEnvironment = useMemo(
+    () => currentCase ? deriveSceneEnvironment(currentCase) : null,
+    [currentCase],
+  );
   // Pre-brief and Scene Survey must use the same demographic-aware resolver.
   // Rendering sceneInfo.sceneImagePath directly here previously let a stale
   // female image contradict a male patient before the next phase corrected it.
@@ -5805,7 +5810,7 @@ export function StudentPanel({
                 Desktop: 2-col grid with Monitor + PulseCheck sticky top-right,
                 Management bottom-right, and Assessment spanning the left.
             */}
-            <div className="tactical-treatment-bay">
+            <div className="tactical-treatment-bay" data-scene-environment={sceneEnvironment ?? undefined}>
               <div className="tactical-corner tactical-corner-tl" aria-hidden="true" />
               <div className="tactical-corner tactical-corner-tr" aria-hidden="true" />
               <div className="tactical-corner tactical-corner-bl" aria-hidden="true" />
@@ -5820,6 +5825,11 @@ export function StudentPanel({
                       <Badge variant="outline" className="border-cyan-300/30 bg-cyan-300/10 text-[9px] uppercase tracking-[0.16em] text-cyan-100">
                         first-person care
                       </Badge>
+                      {sceneEnvironment && (
+                        <Badge variant="outline" className="border-amber-300/30 bg-amber-300/10 text-[9px] uppercase tracking-[0.16em] text-amber-100">
+                          {SCENE_ENVIRONMENT_LABELS[sceneEnvironment]}
+                        </Badge>
+                      )}
                       {/* Voice-first toggle — senior students only. Junior years
                           see it disabled with an explanatory tooltip. */}
                       <button

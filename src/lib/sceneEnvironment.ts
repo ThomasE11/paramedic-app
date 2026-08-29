@@ -6,11 +6,81 @@ import type { CaseScenario } from '@/types';
  *
  * This drives the 3D presentation only. It never changes clinical state.
  */
-export type EnvironmentVariant = 'clinic' | 'home' | 'public' | 'roadside';
+export type EnvironmentVariant =
+  | 'clinic'
+  | 'home'
+  | 'public'
+  | 'roadside'
+  | 'industrial'
+  | 'fire'
+  | 'water'
+  | 'heat';
+
+export const SCENE_ENVIRONMENT_LABELS: Record<EnvironmentVariant, string> = {
+  clinic: 'clinical bay',
+  home: 'home scene',
+  public: 'public venue',
+  roadside: 'road incident',
+  industrial: 'worksite scene',
+  fire: 'fire scene',
+  water: 'water rescue',
+  heat: 'heat exposure',
+};
 
 // ponytail: keyword scene-typing over authored per-case data — mirrors the
 // staging heuristic. Ambiguous scenes fall through to the clinic bay.
 // Upgrade path: an authored `sceneVariant` field per case.
+const FIRE_PATTERN = new RegExp(
+  [
+    '\\bfire\\b',
+    'house fire',
+    'warehouse fire',
+    'industrial fire',
+    'smoke inhalation',
+    '\\bflame(?:s)?\\b',
+    '\\bexplosion\\b',
+  ].join('|'),
+);
+
+const WATER_PATTERN = new RegExp(
+  [
+    '\\bbeach\\b',
+    '\\bpool(?:side)?\\b',
+    '\\bsea\\b',
+    '\\bwater\\b',
+    '\\bdrown(?:ing|ed)?\\b',
+    '\\bsubmersion\\b',
+    '\\bnear-drowning\\b',
+  ].join('|'),
+);
+
+const INDUSTRIAL_PATTERN = new RegExp(
+  [
+    'construction site',
+    'building site',
+    '\\bwarehouse\\b',
+    '\\bfactory\\b',
+    '\\bworkshop\\b',
+    '\\bindustrial\\b',
+    '\\bscaffold(?:ing)?\\b',
+    '\\bmachinery\\b',
+    '\\bfarm\\b',
+    '\\bbarn\\b',
+  ].join('|'),
+);
+
+const HEAT_PATTERN = new RegExp(
+  [
+    '\\bdesert\\b',
+    '\\bheat(?:stroke| exhaustion)?\\b',
+    '\\bhyperthermia\\b',
+    '\\bsun exposure\\b',
+    'direct sun',
+    '\\boutdoor work(?:er|site)?\\b',
+    '\\bsports? (?:field|pitch)\\b',
+  ].join('|'),
+);
+
 const ROADSIDE_PATTERN = new RegExp(
   [
     '\\broad\\b',
@@ -28,18 +98,29 @@ const ROADSIDE_PATTERN = new RegExp(
     'pedestrian',
     'struck',
     'run over',
-    'construction site',
     'car park',
     'parking lot',
     'pavement',
     'sidewalk',
     '\\bkerb\\b',
     '\\bcurb\\b',
-    '\\bbeach\\b',
-    '\\bdesert\\b',
-    '\\bfarm\\b',
     '\\bpitch\\b',
     '\\bfield\\b',
+  ].join('|'),
+);
+
+const VEHICLE_INCIDENT_PATTERN = new RegExp(
+  [
+    '\\brta\\b',
+    '\\bmvc\\b',
+    '\\bcollision\\b',
+    'car crash',
+    'vehicle crash',
+    '\\bmotorcycle\\b',
+    '\\bmotorbike\\b',
+    '\\bpedestrian\\b',
+    '\\bstruck by (?:a )?(?:car|vehicle|truck|lorry)\\b',
+    '\\brun over\\b',
   ].join('|'),
 );
 
@@ -82,16 +163,16 @@ const PUBLIC_PATTERN = new RegExp(
 );
 
 /**
- * Derive the environment variant from the scene's own words. Roadside wins
- * over home/public (an RTA outside a villa is still outdoors); home wins over
- * public so "hotel room" doesn't render as a mall atrium.
+ * Derive the environment variant from the scene's own words. The most
+ * clinically distinctive scenes win first: a warehouse fire must not become
+ * a generic industrial bay, and a beach drowning must not become a road.
+ * Roadside still wins over home/public (an RTA outside a villa is outdoors).
  */
 export function deriveSceneEnvironment(caseData: CaseScenario): EnvironmentVariant {
-  // Explicit per-case override always wins when authored.
-  if (caseData.sceneInfo?.environmentVariant) {
-    return caseData.sceneInfo.environmentVariant;
-  }
+  const authoredVariant = caseData.sceneInfo?.environmentVariant;
   const text = [
+    caseData.title,
+    caseData.subcategory,
     caseData.dispatchInfo?.location,
     caseData.dispatchInfo?.callReason,
     caseData.sceneInfo?.description,
@@ -100,6 +181,27 @@ export function deriveSceneEnvironment(caseData: CaseScenario): EnvironmentVaria
     .filter(Boolean)
     .join(' ')
     .toLowerCase();
+
+  // New, specific authored variants are authoritative. Legacy scene data only
+  // knew clinic/home/public/roadside; incident-defining evidence must be able
+  // to migrate an old generic override (for example, a pool drowning that was
+  // historically marked roadside) without mutating the clinical case record.
+  if (authoredVariant && ['industrial', 'fire', 'water', 'heat'].includes(authoredVariant)) {
+    return authoredVariant;
+  }
+  if (FIRE_PATTERN.test(text)) return 'fire';
+  if (WATER_PATTERN.test(text)) return 'water';
+  if (HEAT_PATTERN.test(text)) return 'heat';
+  if (VEHICLE_INCIDENT_PATTERN.test(text)) return 'roadside';
+  if (
+    INDUSTRIAL_PATTERN.test(text)
+    && (!authoredVariant || ['public', 'roadside'].includes(authoredVariant))
+    && !/\\boffice\\b|portacabin/.test(text)
+  ) {
+    return 'industrial';
+  }
+  if (authoredVariant) return authoredVariant;
+  if (INDUSTRIAL_PATTERN.test(text)) return 'industrial';
   if (ROADSIDE_PATTERN.test(text)) return 'roadside';
   if (HOME_PATTERN.test(text)) return 'home';
   if (PUBLIC_PATTERN.test(text)) return 'public';
