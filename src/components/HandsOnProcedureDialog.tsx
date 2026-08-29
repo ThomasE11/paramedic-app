@@ -21,6 +21,7 @@ interface HandsOnProcedureDialogProps {
   open: boolean;
   treatment: Treatment | null;
   caseData: CaseScenario;
+  appliedTreatmentIds?: string[];
   onCancel: () => void;
   onComplete: (target: ProcedureTarget | null) => void;
 }
@@ -43,12 +44,13 @@ export function HandsOnProcedureDialog({
   open,
   treatment,
   caseData,
+  appliedTreatmentIds = [],
   onCancel,
   onComplete,
 }: HandsOnProcedureDialogProps) {
   const plan = useMemo(
-    () => treatment ? getHandsOnProcedurePlan(treatment.id, caseData) : null,
-    [caseData, treatment],
+    () => treatment ? getHandsOnProcedurePlan(treatment.id, caseData, appliedTreatmentIds) : null,
+    [appliedTreatmentIds, caseData, treatment],
   );
   const [selectedTarget, setSelectedTarget] = useState<ProcedureTarget | null>(null);
   const [completedSteps, setCompletedSteps] = useState<string[]>([]);
@@ -80,11 +82,11 @@ export function HandsOnProcedureDialog({
     && nextStep?.id === 'expose';
   const canStart = !plan.requiresTarget || selectedTarget != null || canExposeBeforeTarget;
   const isDefibrillatorPadProcedure = plan.id === 'defib-pads';
-  const isTractionSplintProcedure = plan.treatmentId === 'traction_splint';
+  const isLimbSplintProcedure = ['splinting', 'sam_splint', 'box_splint', 'vacuum_limb_splint', 'air_splint', 'traction_splint'].includes(plan.treatmentId);
   const chestExposed = completedSteps.includes('expose');
   const bothPadsPlaced = completedSteps.includes('apical');
   const padsConnected = completedSteps.includes('connect');
-  const tractionDevicePositioned = completedSteps.includes('apply')
+  const limbDevicePositioned = completedSteps.includes('apply')
     || completedSteps.includes('secure')
     || completedSteps.includes('csm-after')
     || animatingStep === 'apply';
@@ -161,14 +163,14 @@ export function HandsOnProcedureDialog({
                 </span>
               )}
 
-              {isTractionSplintProcedure && selectedTarget && tractionDevicePositioned && (
+              {isLimbSplintProcedure && selectedTarget && limbDevicePositioned && (
                 <div
-                  data-procedure-equipment="traction-splint"
-                  aria-label={`Traction splint positioned on ${selectedTarget.label}`}
-                  className="pointer-events-none absolute z-20 h-[122px] w-[36px] -translate-x-1/2 -translate-y-1/2 animate-in fade-in zoom-in-75 duration-300"
+                  data-procedure-equipment={plan.treatmentId}
+                  aria-label={`${plan.title} positioned on ${selectedTarget.label}`}
+                  className={`pointer-events-none absolute z-20 -translate-x-1/2 -translate-y-1/2 animate-in fade-in zoom-in-75 duration-300 ${selectedTarget.id.endsWith('leg') ? 'h-[122px] w-[36px]' : 'h-[82px] w-[42px]'}`}
                   style={{
-                    left: selectedTarget.id === 'right-leg' ? '42%' : '58%',
-                    top: '73%',
+                    left: selectedTarget.id.startsWith('right') ? '42%' : '58%',
+                    top: selectedTarget.id.endsWith('leg') ? '73%' : '43%',
                   }}
                 >
                   <img
@@ -177,7 +179,7 @@ export function HandsOnProcedureDialog({
                     draggable={false}
                     className="h-full w-full rotate-[4deg] rounded-md object-cover object-center mix-blend-screen drop-shadow-[0_4px_6px_rgba(0,0,0,0.7)]"
                   />
-                  <span className="absolute -bottom-2 left-1/2 h-5 w-8 -translate-x-1/2 rounded-b-full border-x-2 border-b-2 border-slate-300" />
+                  {plan.treatmentId === 'traction_splint' && <span className="absolute -bottom-2 left-1/2 h-5 w-8 -translate-x-1/2 rounded-b-full border-x-2 border-b-2 border-slate-300" />}
                 </div>
               )}
 

@@ -1242,6 +1242,8 @@ function AppliedLimbEquipment({ treatmentId }: { treatmentId: string }) {
   const traction = treatmentId === 'traction_splint';
   const air = treatmentId === 'air_splint';
   const vacuum = treatmentId === 'vacuum_limb_splint';
+  const sam = treatmentId === 'sam_splint';
+  const box = treatmentId === 'box_splint';
   if (traction) {
     return (
       <div data-applied-equipment="traction-splint" aria-label="Traction splint secured with maintained longitudinal traction" className="pointer-events-none relative h-32 w-16 -rotate-3 animate-in fade-in zoom-in-75 duration-300 drop-shadow-xl">
@@ -1255,8 +1257,28 @@ function AppliedLimbEquipment({ treatmentId }: { treatmentId: string }) {
       </div>
     );
   }
+  if (sam) {
+    return (
+      <div data-applied-equipment="sam-splint" aria-label="Moulded SAM splint secured with distal circulation visible" className="pointer-events-none relative h-24 w-11 -rotate-3 animate-in fade-in zoom-in-75 duration-300 drop-shadow-lg">
+        <span className="absolute inset-x-1 top-0 h-full rounded-[40%] border-2 border-orange-200 bg-orange-500 shadow-inner" />
+        <span className="absolute left-1/2 top-1 h-[88px] w-1 -translate-x-1/2 rounded-full bg-slate-200/90" />
+        {[24, 52, 78].map(top => <span key={top} className="absolute left-0 h-2 w-full rounded bg-slate-900/90 shadow" style={{ top: `${top}%` }} />)}
+      </div>
+    );
+  }
+  if (box) {
+    return (
+      <div data-applied-equipment="box-splint" aria-label="Rigid channel splint secured around the injured limb" className="pointer-events-none relative h-24 w-14 animate-in fade-in zoom-in-75 duration-300 drop-shadow-lg">
+        <span className="absolute left-0 top-0 h-full w-3 rounded-l-md border border-amber-200 bg-amber-600" />
+        <span className="absolute right-0 top-0 h-full w-3 rounded-r-md border border-amber-200 bg-amber-600" />
+        <span className="absolute left-2 top-0 h-full w-10 bg-amber-100/35" />
+        {[22, 50, 78].map(top => <span key={top} className="absolute left-0 h-2.5 w-full rounded bg-slate-900/90 shadow" style={{ top: `${top}%` }} />)}
+      </div>
+    );
+  }
   return (
-    <div data-applied-equipment={air ? 'air-splint' : vacuum ? 'vacuum-splint' : 'limb-splint'} className={`pointer-events-none relative h-24 w-12 animate-in fade-in zoom-in-75 duration-300 ${air ? 'rounded-2xl border-2 border-cyan-100/80 bg-cyan-100/25 backdrop-blur-[1px]' : vacuum ? 'rounded-2xl border border-blue-800 bg-blue-700/85' : 'rounded-lg bg-orange-500/90'} shadow-lg`}>
+    <div data-applied-equipment={air ? 'air-splint' : vacuum ? 'vacuum-splint' : 'limb-splint'} aria-label={air ? 'Clear air splint inflated with distal circulation visible' : vacuum ? 'Vacuum limb splint moulded and evacuated' : 'Limb splint secured'} className={`pointer-events-none relative h-24 w-12 animate-in fade-in zoom-in-75 duration-300 ${air ? 'rounded-2xl border-2 border-cyan-100/80 bg-cyan-100/25 backdrop-blur-[1px]' : vacuum ? 'rounded-2xl border border-blue-800 bg-blue-700/85' : 'rounded-lg bg-orange-500/90'} shadow-lg`}>
+      {vacuum && <span className="absolute inset-1 rounded-xl bg-[radial-gradient(circle,rgba(255,255,255,.55)_1px,transparent_2px)] [background-size:7px_7px]" />}
       {[20, 48, 76].map(top => <span key={top} className="absolute left-0 h-2 w-full rounded bg-slate-900/85" style={{ top: `${top}%` }} />)}
     </div>
   );
@@ -1303,6 +1325,10 @@ function siteEquipmentLabel(treatmentId: string): string {
   if (treatmentId === 'iv_access') return 'IV access';
   if (treatmentId === 'io_access') return 'IO access';
   if (treatmentId === 'traction_splint') return 'Traction splint';
+  if (treatmentId === 'sam_splint') return 'SAM splint';
+  if (treatmentId === 'box_splint') return 'Box splint';
+  if (treatmentId === 'vacuum_limb_splint') return 'Vacuum limb splint';
+  if (treatmentId === 'air_splint') return 'Air splint';
   if (treatmentId.includes('splint')) return 'Limb splint';
   return treatmentId.replaceAll('_', ' ');
 }

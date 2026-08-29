@@ -38,7 +38,7 @@ function strings(value: unknown): string[] {
  * differentials, teaching notes and treatment pathways intentionally stay out:
  * a warning such as "consider pelvic fracture" must never manufacture one.
  */
-function actualClinicalClauses(caseData: CaseScenario): string[] {
+export function collectActualCaseClauses(caseData: CaseScenario): string[] {
   const ss = caseData.secondarySurvey;
   const fields: unknown[] = [
     caseData.title,
@@ -105,7 +105,7 @@ export function assessTractionSplintSafety(
   caseData: CaseScenario,
   appliedTreatmentIds: Iterable<string> = [],
 ): TractionSplintDecision {
-  const clauses = actualClinicalClauses(caseData);
+  const clauses = collectActualCaseClauses(caseData);
   const femurClauses = clauses.filter(clause => FEMUR.test(clause) && FRACTURE.test(clause) && !isNegated(clause, FRACTURE));
 
   if (femurClauses.length === 0) {

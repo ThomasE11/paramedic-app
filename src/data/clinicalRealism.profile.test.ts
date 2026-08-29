@@ -40,4 +40,10 @@ describe('clinical realism profile classification', () => {
 
     expect(deriveCaseRealismProfile(inhalationBurn).observableCues.map(cue => cue.id)).toContain('burn-airway');
   });
+
+  it('does not classify pain-related pallor as haemorrhagic shock', () => {
+    const closedTibialFracture = deriveCaseRealismProfile(caseById('y1-020'));
+    expect(closedTibialFracture.observableCues.map(cue => cue.id)).not.toContain('trauma-shock');
+    expect(closedTibialFracture.observableCues.map(cue => cue.label)).toContain('Deformity / fracture');
+  });
 });

@@ -246,6 +246,13 @@ function scenarioMatchesCase(scenario: RealismScenarioSpec, caseData: CaseScenar
     }
   }
 
+  if (scenario.id === 'neurology-stroke-seizure') {
+    // "FAST" is also ordinary prose (for example "breathing fast from
+    // pain"). Require a genuine focal-neurology, seizure or pupil cue so a
+    // painful fracture cannot acquire stroke eyes or facial asymmetry.
+    return /\b(stroke|facial droop|facial asymmetr\w*|arm drift|slurred speech|gaze deviat\w*|unilateral weakness|hemip\w*|seizure|postictal|post-ictal|unequal pupils|anisocoria|blown pupil|fast positive|positive fast)\b/.test(text);
+  }
+
   return true;
 }
 
@@ -828,6 +835,29 @@ function contextualizeScenarioVisual(
   effect: RealismVisualEffect,
   caseData: CaseScenario,
 ): RealismVisualEffect | null {
+  if (effect.id.startsWith('neuro-')) {
+    const neuroText = [
+      ...list(caseData.abcde?.disability?.pupils),
+      ...(caseData.abcde?.disability?.findings ?? []),
+      ...(caseData.abcde?.disability?.focalDeficits ?? []),
+      caseData.abcde?.disability?.seizureActivity,
+      ...(caseData.secondarySurvey?.neurological ?? []),
+      caseData.initialPresentation?.consciousness,
+    ]
+      .filter(Boolean)
+      .map(value => stripNegatedClauses(String(value)))
+      .join(' ')
+      .toLowerCase();
+    if (effect.id === 'neuro-facial-droop') {
+      return /\b(facial droop|facial asymmetr\w*|face droop)\b/.test(neuroText) ? effect : null;
+    }
+    if (effect.id === 'neuro-gaze-pupil') {
+      return /\b(dilat\w*|blown pupil|unequal pupils|anisocoria|fixed pupil|gaze deviat\w*)\b/.test(neuroText) ? effect : null;
+    }
+    if (effect.id === 'neuro-seizure-state') {
+      return /\b(seizure|seizing|postictal|post-ictal|tonic.?clonic)\b/.test(neuroText) ? effect : null;
+    }
+  }
   if (!effect.id.startsWith('trauma-')) return effect;
 
   const injuries = inferInjuries(caseData);
@@ -893,6 +923,22 @@ function uniqueVisualsById(visuals: RealismVisualEffect[]): RealismVisualEffect[
   });
 }
 
+function contextualActiveProblems(scenario: RealismScenarioSpec, caseData: CaseScenario): string[] {
+  if (scenario.id !== 'trauma-haemorrhage-open-chest') return scenario.activeProblems;
+  const injuries = inferInjuries(caseData);
+  const hasExternalSource = injuries.some(injury => ['bleeding', 'wound', 'amputation'].includes(injury.kind));
+  const vitals = caseData.vitalSignsProgression?.initial;
+  const systolic = parseSystolic(vitals?.bp);
+  const hasShockPhysiology = hasExternalSource
+    || (typeof systolic === 'number' && systolic < 90)
+    || (typeof vitals?.pulse === 'number' && vitals.pulse > 120);
+  return scenario.activeProblems.filter(problem => {
+    if (problem === 'external bleeding or open wound' || problem === 'source control priority') return hasExternalSource;
+    if (problem === 'shock risk') return hasShockPhysiology;
+    return true;
+  });
+}
+
 export function deriveRealismScenarioState({
   caseData,
   vitals,
@@ -909,7 +955,7 @@ export function deriveRealismScenarioState({
   return {
     matchedScenarioIds: scenarios.map(scenario => scenario.id),
     families: unique(scenarios.map(scenario => scenario.family)),
-    activeProblems: unique(scenarios.flatMap(scenario => scenario.activeProblems)),
+    activeProblems: unique(scenarios.flatMap(scenario => contextualActiveProblems(scenario, caseData))),
     visualEffects: uniqueVisualsById([...activeVisualEffects, ...contextualVisualEffects]),
     equipmentAnchors,
     patientBehavior: scenarios.flatMap(scenario => scenario.patientBehavior),

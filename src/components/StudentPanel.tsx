@@ -305,6 +305,7 @@ import { isHandsOnTreatment, procedureSiteToken, type ProcedureTarget } from '@/
 import { hasAttachedDefibrillatorPads } from '@/lib/defibrillatorSafety';
 import { isBleedRegionControlled } from '@/lib/bleedControl';
 import { assessTractionSplintSafety } from '@/lib/tractionSplintSafety';
+import { assessLimbSplintSafety, type LimbSplintTreatmentId } from '@/lib/limbSplintSafety';
 import { VentilatorSetupDialog, type VentilatorSettings } from '@/components/VentilatorSetupDialog';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 // ClinicalAssessmentPanel removed — replaced by inline ABCDE Primary Survey + 3D Physical Exam
@@ -1172,6 +1173,20 @@ function assessTreatmentPracticality({
         patientQuote: vocal ? decision.code === 'uncontrolled-haemorrhage'
           ? 'Please stop the bleeding before you move my leg.'
           : 'That is not where my injury is. Please check me again.' : undefined,
+      };
+    }
+  }
+
+  if (['splinting', 'sam_splint', 'box_splint', 'vacuum_limb_splint', 'air_splint'].includes(id)) {
+    const decision = assessLimbSplintSafety(currentCase, id as LimbSplintTreatmentId, appliedTreatmentIds);
+    if (!decision.allowed) {
+      return {
+        level: 'block',
+        title: decision.title,
+        clinicalReason: decision.reason,
+        patientQuote: vocal ? decision.code === 'uncontrolled-haemorrhage'
+          ? 'Please stop the bleeding before you wrap my limb.'
+          : 'That device does not feel right for this injury. Please check it again.' : undefined,
       };
     }
   }
@@ -6493,6 +6508,7 @@ export function StudentPanel({
                 open
                 treatment={pendingHandsOnTreatment}
                 caseData={currentCase}
+                appliedTreatmentIds={appliedTreatmentIds}
                 onCancel={() => setPendingHandsOnTreatment(null)}
                 onComplete={handleHandsOnProcedureComplete}
               />

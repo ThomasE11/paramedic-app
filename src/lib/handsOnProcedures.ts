@@ -1,6 +1,7 @@
 import type { CaseScenario } from '@/types';
 import { inferInjuries, type BodyInjury, type BodyRegion } from '@/lib/injuryMap';
 import { assessTractionSplintSafety } from '@/lib/tractionSplintSafety';
+import { assessLimbSplintSafety, type LimbSplintTreatmentId } from '@/lib/limbSplintSafety';
 
 export type ProcedureMotion =
   | 'prepare'
@@ -130,6 +131,7 @@ const STEP = (
 export function getHandsOnProcedurePlan(
   treatmentId: string,
   caseData: CaseScenario,
+  appliedTreatmentIds: string[] = [],
 ): HandsOnProcedurePlan | null {
   if (treatmentId === 'aed' || treatmentId === 'monitor_pads') {
     return {
@@ -406,7 +408,10 @@ export function getHandsOnProcedurePlan(
   const splintIds = ['splinting', 'sam_splint', 'box_splint', 'vacuum_limb_splint', 'air_splint', 'traction_splint'];
   if (splintIds.includes(treatmentId)) {
     const traction = treatmentId === 'traction_splint';
-    const tractionTarget = traction ? assessTractionSplintSafety(caseData).target : null;
+    const tractionTarget = traction ? assessTractionSplintSafety(caseData, appliedTreatmentIds).target : null;
+    const compatibleTargets = traction
+      ? tractionTarget ? [tractionTarget] : []
+      : assessLimbSplintSafety(caseData, treatmentId as LimbSplintTreatmentId, appliedTreatmentIds).eligibleTargets;
     const splintTargets = limbInjuryTargets(caseData);
     const title = traction ? 'Apply a traction splint' : `Apply ${treatmentId === 'splinting' ? 'a limb splint' : treatmentId.replaceAll('_', ' ')}`;
     const assetById: Record<string, string> = {
@@ -421,7 +426,7 @@ export function getHandsOnProcedurePlan(
         : 'Immobilise the selected injury and document circulation, sensation and movement before and after.',
       treatmentId,
       requiresTarget: true,
-      targets: tractionTarget ? splintTargets.filter(target => target.id === tractionTarget) : splintTargets,
+      targets: compatibleTargets.length ? splintTargets.filter(target => compatibleTargets.some(region => region === target.id)) : splintTargets,
       equipmentAsset: assetById[treatmentId],
       completionLabel: traction ? 'Traction maintained — distal status documented' : 'Splint secured — distal status documented',
       steps: [

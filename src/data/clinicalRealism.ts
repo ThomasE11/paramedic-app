@@ -3439,7 +3439,7 @@ export function deriveCaseRealismProfile(caseData: CaseScenario): PatientRealism
         injury.kind === 'bleeding' || injury.kind === 'amputation' || injury.kind === 'burn' ? 'immediate' : 'on-assessment',
       ));
     }
-    if (/pale|shock|hypotens|weak pulse|delayed capillary|haemorrh|hemorrh/.test(text) || (typeof sbp === 'number' && sbp < 90) || (typeof pulse === 'number' && pulse > 120)) {
+    if (/shock|hypotens|weak pulse|delayed capillary|haemorrh|hemorrh/.test(text) || (typeof sbp === 'number' && sbp < 90) || (typeof pulse === 'number' && pulse > 120)) {
       add.cue(cue('trauma-shock', 'Shock look', 'Perfusion should deteriorate until the actual source problem is addressed.', 'chest', 'critical'));
     }
     add.assessment('MARCH / ABCDE', 'external bleeding and wounds', 'distal pulses', 'spinal risk', 'pain and mechanism');

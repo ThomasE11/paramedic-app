@@ -325,6 +325,40 @@ describe('deriveScenarioVisuals', () => {
     expect(openWound?.detail).not.toContain('Active haemorrhage');
     expect(visuals.some(visual => visual.kind === 'asymmetric_chest_rise')).toBe(false);
   });
+
+  it('does not turn pain-driven fast breathing into a neurological pupil sign', () => {
+    const fracture = firstYearCases.find(item => item.id === 'y1-020');
+    expect(fracture).toBeDefined();
+    const visuals = deriveScenarioVisuals(fracture!);
+    expect(visuals.some(visual => visual.kind === 'dilated_pupils')).toBe(false);
+    expect(visuals.some(visual => visual.kind === 'facial_droop')).toBe(false);
+    const state = deriveRealismScenarioState({ caseData: fracture! });
+    expect(state.activeProblems).toContain('pain and movement risk');
+    expect(state.activeProblems).not.toContain('external bleeding or open wound');
+    expect(state.activeProblems).not.toContain('source control priority');
+    expect(state.activeProblems).not.toContain('shock risk');
+  });
+
+  it('only renders the neurological sign actually authored', () => {
+    const stroke = baseCase({
+      id: 'test-focal-stroke',
+      title: 'Suspected stroke',
+      category: 'neurological',
+      abcde: {
+        disability: {
+          avpu: 'A',
+          gcs: { eye: 4, verbal: 5, motor: 6, total: 15 },
+          pupils: 'Equal and reactive',
+          findings: ['Left facial droop and slurred speech'],
+          interventions: [],
+        },
+      } as unknown as CaseScenario['abcde'],
+    });
+    const visuals = deriveScenarioVisuals(stroke);
+    expect(visuals.some(visual => visual.kind === 'facial_droop')).toBe(true);
+    expect(visuals.some(visual => visual.kind === 'dilated_pupils')).toBe(false);
+    expect(visuals.some(visual => visual.kind === 'seizure_activity')).toBe(false);
+  });
 });
 
 /* ------------------------------------------------------------------ */

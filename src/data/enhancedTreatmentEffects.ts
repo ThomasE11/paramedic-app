@@ -968,6 +968,7 @@ export const TREATMENTS: Treatment[] = [
     effects: [
       { vitalSign: 'pulse', changeType: 'decrease', value: 10, minValue: 60 },
       { vitalSign: 'bp', changeType: 'decrease', value: 8 }, // Reduced pain
+      { vitalSign: 'painScore', changeType: 'decrease', value: 3, minValue: 0 },
     ],
   },
   {
@@ -983,6 +984,7 @@ export const TREATMENTS: Treatment[] = [
     effects: [
       { vitalSign: 'pulse', changeType: 'decrease', value: 8, minValue: 60 },
       { vitalSign: 'bp', changeType: 'decrease', value: 6 },
+      { vitalSign: 'painScore', changeType: 'decrease', value: 3, minValue: 0 },
     ],
     contraindications: ['Do not force alignment when distal pulse or sensation worsens'],
   },
@@ -999,6 +1001,7 @@ export const TREATMENTS: Treatment[] = [
     effects: [
       { vitalSign: 'pulse', changeType: 'decrease', value: 7, minValue: 60 },
       { vitalSign: 'bp', changeType: 'decrease', value: 5 },
+      { vitalSign: 'painScore', changeType: 'decrease', value: 3, minValue: 0 },
     ],
     contraindications: ['Check circulation, sensation, and movement before and after application'],
   },
@@ -1015,6 +1018,7 @@ export const TREATMENTS: Treatment[] = [
     effects: [
       { vitalSign: 'pulse', changeType: 'decrease', value: 10, minValue: 60 },
       { vitalSign: 'bp', changeType: 'decrease', value: 6 },
+      { vitalSign: 'painScore', changeType: 'decrease', value: 4, minValue: 0 },
     ],
     contraindications: ['Avoid over-tight straps and reassess distal circulation repeatedly'],
   },
@@ -1031,6 +1035,7 @@ export const TREATMENTS: Treatment[] = [
     effects: [
       { vitalSign: 'pulse', changeType: 'decrease', value: 6, minValue: 60 },
       { vitalSign: 'bp', changeType: 'decrease', value: 4 },
+      { vitalSign: 'painScore', changeType: 'decrease', value: 2, minValue: 0 },
     ],
     contraindications: ['Monitor swelling and distal pulses; do not inflate so tightly that the limb is constricted'],
   },
