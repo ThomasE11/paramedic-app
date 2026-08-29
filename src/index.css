@@ -1155,6 +1155,32 @@ body {
   .tactical-bay-vitals .tactical-hud-tile strong {
     font-size: 0.82rem;
   }
+
+  .tactical-bay-workspace {
+    gap: 0.72rem;
+    padding: 0.5rem;
+  }
+
+  .tactical-patient-viewport {
+    min-height: 0;
+  }
+
+  .tactical-patient-viewport .patient-model-frame {
+    min-height: 0;
+  }
+
+  .tactical-patient-viewport .patient-model-canvas-shell:not(.patient-first-canvas) {
+    min-height: clamp(24rem, 52vh, 28rem);
+    height: clamp(24rem, 52vh, 28rem);
+  }
+
+  .tactical-monitor-card {
+    overflow-x: hidden;
+  }
+
+  .tactical-monitor-card > .select-none {
+    width: 100%;
+  }
 }
 
 .tactical-treatment-bay::before {

@@ -61,6 +61,7 @@ import {
   type UnwellnessState,
 } from '@/lib/unwellnessStates';
 import { deriveSkinTint, deriveCyanosisLocalStrength } from './skinTint';
+import { hasAttachedDefibrillatorPads } from '@/lib/defibrillatorSafety';
 
 const TOTAL_REGIONS = 11;
 type OrbitControlsHandle = ElementRef<typeof OrbitControls>;
@@ -163,6 +164,8 @@ const TREATMENT_ASSET_PATHS = {
   ivCannula: '/treatment-assets/iv-cannula.svg',
   fluidBag: '/treatment-assets/fluid-bag.svg',
   defibPads: '/treatment-assets/defib-pads.svg',
+  defibPadSternal: '/equipment-assets/defib-pad-sternal.webp',
+  defibPadApical: '/equipment-assets/defib-pad-apical.webp',
   lucas: '/treatment-assets/lucas-device.svg',
   etTube: '/treatment-assets/et-tube.svg',
   opa: '/treatment-assets/opa.svg',
@@ -1119,7 +1122,7 @@ function buildTreatmentEquipmentState(appliedTreatmentIds: string[]): AppliedEqu
     oxygen: oxygenMatch ? { mode: oxygenMatch.mode, label: oxygenMatch.label, detail: oxygenMatch.detail } : null,
     hasIvAccess: applied.has('iv_access') || applied.has('iv_cannula') || hasFluids || hasMedicationLine,
     hasFluids,
-    hasDefibPads: applied.has('defibrillation') || applied.has('aed') || applied.has('monitor_pads'),
+    hasDefibPads: hasAttachedDefibrillatorPads(appliedTreatmentIds),
     hasLucas: applied.has('lucas_device'),
     hasEtTube,
     hasOpa: applied.has('opa_insert'),
@@ -1192,13 +1195,20 @@ function WornFaceEquipment({ equipment }: { equipment: OxygenEquipmentVisual }) 
   );
 }
 
-function AppliedDefibPads() {
+function AppliedDefibPad({ site }: { site: 'sternal' | 'apical' }) {
   return (
-    <div data-applied-equipment="defibrillator-pads" className="pointer-events-none relative h-16 w-20 animate-in fade-in zoom-in-75 duration-300">
-      <span className="absolute left-2 top-1 h-7 w-5 -rotate-6 rounded-md border border-slate-300 bg-slate-50 shadow-md after:absolute after:left-1/2 after:top-1 after:h-3 after:w-px after:-translate-x-1/2 after:bg-rose-500" />
-      <span className="absolute bottom-1 right-2 h-7 w-5 rotate-6 rounded-md border border-slate-300 bg-slate-50 shadow-md after:absolute after:left-1/2 after:top-1 after:h-3 after:w-px after:-translate-x-1/2 after:bg-rose-500" />
-      <span className="absolute left-5 top-6 h-px w-10 rotate-[38deg] bg-slate-300" />
-      <span className="absolute left-[62px] top-11 h-px w-12 rotate-[24deg] bg-slate-300" />
+    <div
+      data-applied-equipment="defibrillator-pads"
+      data-pad-site={site}
+      aria-label={`${site === 'sternal' ? 'Sternal' : 'Apical'} defibrillator pad attached`}
+      className={`pointer-events-none relative h-10 w-8 animate-in fade-in zoom-in-75 duration-500 drop-shadow-[0_3px_3px_rgba(2,6,23,0.58)] ${site === 'sternal' ? '-rotate-3' : 'rotate-6'}`}
+    >
+      <img
+        src={site === 'sternal' ? TREATMENT_ASSET_PATHS.defibPadSternal : TREATMENT_ASSET_PATHS.defibPadApical}
+        alt=""
+        draggable={false}
+        className="h-full w-full object-contain"
+      />
     </div>
   );
 }
@@ -1412,9 +1422,14 @@ function TreatmentEquipmentOverlay({
       )}
 
       {equipment.hasDefibPads && (
-        <MarkerHtml position={anchor(0.01, 1.24, 0.218)} distanceFactor={2.5} zIndexRange={[68, 0]} interactive={false} presentation={presentation}>
-          <AppliedDefibPads />
-        </MarkerHtml>
+        <>
+          <MarkerHtml position={anchor(-0.075, 1.30, 0.225)} distanceFactor={1.85} zIndexRange={[68, 0]} interactive={false} presentation={presentation}>
+            <AppliedDefibPad site="sternal" />
+          </MarkerHtml>
+          <MarkerHtml position={anchor(0.18, 1.13, 0.223)} distanceFactor={1.85} zIndexRange={[68, 0]} interactive={false} presentation={presentation}>
+            <AppliedDefibPad site="apical" />
+          </MarkerHtml>
+        </>
       )}
 
       {equipment.hasLucas && (
@@ -4008,6 +4023,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   // student exposes regions through the exam (parting per CLOTHING_PARTING),
   // which is itself the clinical skill. Skin/skeleton stay one click away.
   const [anatomyLayer, setAnatomyLayer] = useState<'surface' | 'skeleton' | 'dressed'>('dressed');
+  const defibrillatorPadsAttached = hasAttachedDefibrillatorPads(appliedTreatmentIds);
   // Dressed view: zooming does NOT undress the patient. Exposure is a
   // deliberate clinical act — this flags that the student chose to expose
   // the focused region (reset on every region change/close).
@@ -5244,7 +5260,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 // Wrap in an arrow so React stores the function rather than calling it.
                 onSurfaceSampler={handleSurfaceSampler}
                 dressed={anatomyLayer === 'dressed'}
-                dressedActiveRegion={regionExposed ? activeRegion : null}
+                dressedActiveRegion={regionExposed ? activeRegion : defibrillatorPadsAttached ? 'chest' : null}
                 pupilLeftMm={pupilProfile.leftMm}
                 pupilRightMm={pupilProfile.rightMm}
                 presentation={useTreatmentBayPresentation ? 'treatment-bay' : 'upright'}

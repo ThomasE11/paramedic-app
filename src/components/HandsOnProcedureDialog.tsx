@@ -70,6 +70,10 @@ export function HandsOnProcedureDialog({
   const nextStep = plan.steps.find(step => !completedSteps.includes(step.id));
   const complete = completedSteps.length === plan.steps.length;
   const canStart = !plan.requiresTarget || selectedTarget != null;
+  const isDefibrillatorPadProcedure = plan.id === 'defib-pads';
+  const chestExposed = completedSteps.includes('expose');
+  const bothPadsPlaced = completedSteps.includes('apical');
+  const padsConnected = completedSteps.includes('connect');
 
   const performStep = () => {
     if (!nextStep || animatingStep || !canStart) return;
@@ -110,11 +114,27 @@ export function HandsOnProcedureDialog({
 
             <div className="relative mx-auto h-[300px] w-[190px] overflow-hidden rounded-[36px] border border-white/10 bg-gradient-to-b from-slate-800 to-slate-900">
               <div className="absolute left-1/2 top-4 h-14 w-14 -translate-x-1/2 rounded-full border-2 border-slate-500 bg-slate-700" />
-              <div className="absolute left-1/2 top-[72px] h-[116px] w-20 -translate-x-1/2 rounded-[44px] border-2 border-slate-500 bg-slate-700" />
+              <div className={`absolute left-1/2 top-[72px] h-[116px] w-20 -translate-x-1/2 rounded-[44px] border-2 transition-colors duration-500 ${isDefibrillatorPadProcedure && chestExposed ? 'border-amber-200/55 bg-[#8f654f]' : 'border-slate-500 bg-slate-700'}`} />
               <div className="absolute left-[30px] top-[82px] h-32 w-7 rotate-[8deg] rounded-full border-2 border-slate-500 bg-slate-700" />
               <div className="absolute right-[30px] top-[82px] h-32 w-7 -rotate-[8deg] rounded-full border-2 border-slate-500 bg-slate-700" />
               <div className="absolute left-[62px] top-[178px] h-28 w-7 rotate-[3deg] rounded-full border-2 border-slate-500 bg-slate-700" />
               <div className="absolute right-[62px] top-[178px] h-28 w-7 -rotate-[3deg] rounded-full border-2 border-slate-500 bg-slate-700" />
+
+              {isDefibrillatorPadProcedure && completedSteps.includes('sternal') && !bothPadsPlaced && (
+                <span className="absolute left-[74px] top-[82px] z-10 h-7 w-5 -rotate-6 rounded-md border border-white/80 bg-stone-50 shadow-[0_4px_10px_rgba(0,0,0,0.45)]" aria-label="Sternal pad placed" />
+              )}
+              {isDefibrillatorPadProcedure && bothPadsPlaced && (
+                <img
+                  src="/equipment-assets/defib-pads-applied.webp"
+                  alt="Defibrillator pads placed in anterior-lateral position"
+                  className={`absolute left-1/2 top-[71px] z-10 h-[114px] w-[92px] -translate-x-1/2 scale-x-[-1] object-contain drop-shadow-lg transition ${padsConnected ? 'opacity-100' : 'opacity-90'}`}
+                />
+              )}
+              {isDefibrillatorPadProcedure && padsConnected && (
+                <span className="absolute bottom-3 left-1/2 z-20 -translate-x-1/2 rounded-full border border-emerald-300/50 bg-emerald-950/90 px-2 py-1 text-[8px] font-bold uppercase tracking-[0.12em] text-emerald-200 shadow-lg">
+                  Lead connected
+                </span>
+              )}
 
               {selectedTarget && (
                 <span

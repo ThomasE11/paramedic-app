@@ -36,6 +36,7 @@ import {
   type WaveformContext,
 } from '@/data/ecgRhythms';
 import { TwelveLeadReport } from './TwelveLeadReport';
+import { hasAttachedDefibrillatorPads } from '@/lib/defibrillatorSafety';
 
 interface VitalSignsMonitorProps {
   initialVitals: VitalSigns;
@@ -1426,6 +1427,7 @@ export function VitalSignsMonitor({
   overridePacerState,
   autoPowerOn = false,
 }: VitalSignsMonitorProps) {
+  const padsAttached = hasAttachedDefibrillatorPads(appliedTreatments);
   const [currentVitals, setCurrentVitals] = useState<VitalSigns>(initialVitals);
   const [visibleVitals, setVisibleVitals] = useState<Set<string>>(new Set());
   const [assessmentMode] = useState(true);
@@ -2500,6 +2502,14 @@ export function VitalSignsMonitor({
   // TLC Monitor charge handler
   const handleCharge = () => {
     if (isCharging || monitorMode !== 'defib') return;
+    if (!padsAttached) {
+      setShockFeedbackMessage({
+        text: 'PADS OFF — expose and prepare the chest, attach both pads, then connect the lead.',
+        severity: 'critical',
+      });
+      logIntervention('SAFETY LOCK', 'Charge blocked — defibrillator pads are not attached');
+      return;
+    }
     setIsCharging(true);
     setIsCharged(false);
     if (audioEnabled && audioEngineRef.current) {
@@ -2517,7 +2527,16 @@ export function VitalSignsMonitor({
   };
 
   const handleShock = () => {
-    if (!isCharged) return;
+    if (!padsAttached || !isCharged) {
+      if (!padsAttached) {
+        setShockFeedbackMessage({
+          text: 'SHOCK LOCKED — no attached defibrillator pads.',
+          severity: 'critical',
+        });
+        logIntervention('SAFETY LOCK', 'Shock blocked — defibrillator pads are not attached');
+      }
+      return;
+    }
     if (audioEnabled && audioEngineRef.current) {
       audioEngineRef.current.stopReadyTone();
       audioEngineRef.current.playShockSound();
@@ -2736,13 +2755,22 @@ export function VitalSignsMonitor({
   const isCurrentRhythmShockable = currentRhythm.id === 'vfib' || currentRhythm.id === 'vfib-fine' || currentRhythm.id === 'vt';
 
   const handleAnalyze = useCallback(() => {
-    setAedMode(true);
     setMonitorMode('defib');
+    if (!padsAttached) {
+      setAedMode(false);
+      setShockFeedbackMessage({
+        text: 'PADS OFF — attach and connect both pads before rhythm analysis.',
+        severity: 'critical',
+      });
+      logIntervention('SAFETY LOCK', 'Rhythm analysis blocked — defibrillator pads are not attached');
+      return;
+    }
+    setAedMode(true);
     audioEngineRef.current?.playAnalyzeSound();
     logIntervention('ANALYZE', `AED: ${currentRhythm.name} — ${
       isCurrentRhythmShockable ? 'SHOCK ADVISED' : 'NO SHOCK ADVISED'
     }`);
-  }, [currentRhythm, isCurrentRhythmShockable, logIntervention]);
+  }, [currentRhythm, isCurrentRhythmShockable, logIntervention, padsAttached]);
 
   const handlePrint = useCallback(() => {
     if (!show12Lead) onAssessmentPerformed?.('12-lead-ecg');
@@ -3259,6 +3287,18 @@ export function VitalSignsMonitor({
           {/* ---- DEFIB MODE CONTROLS ---- */}
           {monitorMode === 'defib' && (
             <>
+              <div
+                data-defibrillator-pad-status={padsAttached ? 'connected' : 'disconnected'}
+                aria-live="polite"
+                className={`flex items-center justify-between gap-2 rounded border px-2 py-1.5 font-mono text-[8px] font-bold tracking-[0.08em] ${
+                  padsAttached
+                    ? 'border-emerald-500/45 bg-emerald-950/45 text-emerald-300'
+                    : 'border-red-500/55 bg-red-950/55 text-red-300'
+                }`}
+              >
+                <span>{padsAttached ? 'PADS CONNECTED — ANTERIOR/LATERAL' : 'PADS OFF — SHOCK PATH LOCKED'}</span>
+                <span className="shrink-0">{padsAttached ? 'READY' : 'ATTACH FIRST'}</span>
+              </div>
               <div className="flex items-center gap-1 flex-wrap">
                 <ControlButton label="SYNC" onClick={() => { setSyncMode(!syncMode); }}
                   led={syncMode ? 'green' : 'off'} />
@@ -3305,10 +3345,10 @@ export function VitalSignsMonitor({
 
                 {/* CHARGE */}
                 <ControlButton label="CHARGE" variant="red" className={`!px-3 !py-2 ${isCharged ? 'animate-pulse ring-2 ring-red-400/60' : ''}`}
-                  onClick={() => { handleCharge(); }} disabled={isCharging} />
+                  onClick={() => { handleCharge(); }} disabled={!padsAttached || isCharging} />
 
                 {/* SHOCK — BIG BUTTON */}
-                <button onClick={handleShock} disabled={!isCharged}
+                <button onClick={handleShock} disabled={!padsAttached || !isCharged}
                   className={`px-5 py-2.5 rounded-lg font-mono font-bold text-sm tracking-wider select-none transition-all border-2 flex items-center gap-2
                     ${isCharged
                       ? 'bg-gradient-to-b from-red-500 to-red-700 text-white border-red-400 shadow-[0_0_16px_rgba(239,68,68,0.5)] animate-pulse cursor-pointer hover:brightness-110'

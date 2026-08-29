@@ -302,6 +302,7 @@ function getCohortScopeLabel(year: StudentYear): string {
 import { DefibrillationDialog } from '@/components/DefibrillationDialog';
 import { HandsOnProcedureDialog } from '@/components/HandsOnProcedureDialog';
 import { isHandsOnTreatment, procedureSiteToken, type ProcedureTarget } from '@/lib/handsOnProcedures';
+import { hasAttachedDefibrillatorPads } from '@/lib/defibrillatorSafety';
 import { VentilatorSetupDialog, type VentilatorSettings } from '@/components/VentilatorSetupDialog';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 // ClinicalAssessmentPanel removed — replaced by inline ABCDE Primary Survey + 3D Physical Exam
@@ -724,6 +725,8 @@ function TacticalEquipmentRibbon({
     ? `${pendingCount} reassessment pending`
     : completedCount > 0
       ? `${completedCount} response confirmed`
+      : statuses.length > 0
+        ? `${statuses.length} ${statuses.length === 1 ? 'device' : 'devices'} connected`
       : 'No gear connected yet';
 
   return (
@@ -733,7 +736,7 @@ function TacticalEquipmentRibbon({
           <p>Patient loadout</p>
           <strong>{headline}</strong>
         </div>
-        <span className={pendingCount > 0 ? 'is-pending' : completedCount > 0 ? 'is-confirmed' : ''} />
+        <span className={pendingCount > 0 ? 'is-pending' : completedCount > 0 || statuses.length > 0 ? 'is-confirmed' : ''} />
       </div>
       <div className="tactical-gear-track">
         {statuses.length > 0 ? statuses.map(status => (
@@ -3285,7 +3288,7 @@ export function StudentPanel({
     // Defibrillation is a separate action from pad placement. Never open the
     // energy selector (or deliver a shock) without physically attached pads.
     if (treatment.id === 'defibrillation' && !defibParams) {
-      const padsAttached = appliedTreatmentIds.includes('monitor_pads') || appliedTreatmentIds.includes('aed');
+      const padsAttached = hasAttachedDefibrillatorPads(appliedTreatmentIds);
       if (!padsAttached) {
         const pads = TREATMENTS.find(item => item.id === 'monitor_pads');
         if (pads) setPendingHandsOnTreatment(pads);
@@ -6273,7 +6276,7 @@ export function StudentPanel({
               </div>
 
               {/* ===== MONITOR + PULSE CHECK (sticky top-right on desktop, first on mobile) ===== */}
-              <div className="tactical-monitor-rail order-4 mt-4 space-y-4 lg:mt-0 lg:sticky lg:top-16 lg:self-start">
+              <div className="tactical-monitor-rail order-2 mt-1 space-y-4 lg:mt-0 lg:sticky lg:top-16 lg:self-start">
 
                 {/* --- LIFEPAK MONITOR --- */}
                 <HUDVitals className="tactical-monitor-card" alarm={patientState?.isInArrest ?? false}>
@@ -6444,7 +6447,7 @@ export function StudentPanel({
                 currentRhythm={patientState.currentRhythm}
                 currentPulse={currentVitals?.pulse || 0}
                 isInArrest={patientState.isInArrest}
-                padsAttached={appliedTreatmentIds.includes('monitor_pads') || appliedTreatmentIds.includes('aed')}
+                padsAttached={hasAttachedDefibrillatorPads(appliedTreatmentIds)}
               />
             )}
 
