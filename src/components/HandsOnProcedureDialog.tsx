@@ -40,6 +40,116 @@ const TARGET_POSITION: Record<string, { left: string; top: string }> = {
   back: { left: '50%', top: '34%' },
 };
 
+const AIRWAY_PREVIEW_TREATMENTS = new Set([
+  'oxygen_nonrebreather', 'oxygen_mask', 'oxygen_nasal', 'bvm_ventilation',
+  'intubation', 'rsi_intubation', 'opa_insert', 'suction',
+  'nebulizer_salbutamol', 'nebulizer_ipratropium', 'cpap_niv', 'ventilator_setup',
+]);
+
+function AirwayProcedurePreview({
+  treatmentId,
+  equipmentAsset,
+  completedSteps,
+  animatingStep,
+}: {
+  treatmentId: string;
+  equipmentAsset: string;
+  completedSteps: string[];
+  animatingStep: string | null;
+}) {
+  if (!AIRWAY_PREVIEW_TREATMENTS.has(treatmentId)) return null;
+
+  const reached = (...stepIds: string[]) => stepIds.some(id => completedSteps.includes(id) || animatingStep === id);
+  const oxygenInterface = ['oxygen_nonrebreather', 'oxygen_mask', 'oxygen_nasal'].includes(treatmentId);
+  const bvm = treatmentId === 'bvm_ventilation';
+  const intubation = treatmentId === 'intubation' || treatmentId === 'rsi_intubation';
+  const opa = treatmentId === 'opa_insert';
+  const suction = treatmentId === 'suction';
+  const cpap = treatmentId === 'cpap_niv';
+  const nebuliser = treatmentId.startsWith('nebulizer_');
+  const ventilator = treatmentId === 'ventilator_setup';
+
+  const supplyConnected = oxygenInterface ? reached('connect')
+    : bvm ? reached('prepare')
+      : cpap || nebuliser ? reached('assemble')
+        : suction ? reached('prepare')
+          : ventilator ? reached('assemble')
+            : intubation ? reached('capnography')
+              : false;
+  const interfaceApplied = oxygenInterface ? reached('apply')
+    : bvm ? reached('seal')
+      : intubation ? reached('tube')
+        : opa || suction ? reached('insert')
+          : cpap || nebuliser ? reached('apply')
+            : ventilator ? reached('connect')
+              : false;
+  const treatmentActive = oxygenInterface ? reached('flow')
+    : bvm ? reached('ventilate')
+      : intubation ? reached('capnography')
+        : opa ? reached('seat')
+          : suction ? reached('withdraw')
+            : cpap || nebuliser ? reached('start')
+              : ventilator ? reached('connect')
+                : false;
+
+  const status = treatmentActive
+    ? oxygenInterface
+      ? treatmentId === 'oxygen_nonrebreather' ? '10–15 L/min · reservoir inflated' : treatmentId === 'oxygen_nasal' ? '2–6 L/min · prongs seated' : '6–10 L/min · mask seated'
+      : bvm ? 'Seal held · visible chest rise'
+        : intubation ? 'Sustained waveform EtCO₂'
+          : opa ? 'Flange seated · airway patent'
+            : suction ? 'Suction applied on withdrawal'
+              : cpap ? 'Pressure applied · leak checked'
+                : nebuliser ? 'Aerosol visibly flowing'
+                  : 'Circuit connected · breaths verified'
+    : interfaceApplied ? 'Interface positioned'
+      : supplyConnected ? 'Supply connected'
+        : null;
+
+  return (
+    <div data-procedure-preview={treatmentId} className="pointer-events-none absolute inset-0 z-20">
+      {supplyConnected && (oxygenInterface || bvm || cpap || nebuliser) && (
+        <>
+          <img src="/equipment-assets/oxygen-cylinder.webp" alt="" draggable={false} className="absolute bottom-2 -left-4 h-20 w-20 object-contain drop-shadow-lg animate-in fade-in slide-in-from-left-2" />
+          <span className="absolute bottom-[66px] left-7 h-0.5 w-[188px] origin-left -rotate-[68deg] rounded-full bg-cyan-200/90 shadow-[0_0_5px_rgba(34,211,238,.75)]" />
+        </>
+      )}
+
+      {suction && supplyConnected && (
+        <img src="/equipment-assets/portable-suction.webp" alt="" draggable={false} className="absolute bottom-2 left-1 h-16 w-16 object-contain drop-shadow-lg animate-in fade-in slide-in-from-left-2" />
+      )}
+
+      {interfaceApplied && (
+        <div className={`absolute left-1/2 top-[10px] -translate-x-1/2 drop-shadow-[0_4px_8px_rgba(0,0,0,.8)] animate-in fade-in zoom-in-75 ${treatmentActive ? 'motion-safe:animate-pulse' : ''}`}>
+          <img
+            src={equipmentAsset}
+            alt=""
+            draggable={false}
+            className={`${intubation ? 'h-20 w-10' : opa ? 'h-10 w-12' : suction ? 'h-16 w-10' : ventilator ? 'h-16 w-20' : treatmentId === 'oxygen_nasal' ? 'h-10 w-16' : bvm ? 'h-20 w-20' : 'h-16 w-16'} object-contain`}
+          />
+        </div>
+      )}
+
+      {intubation && interfaceApplied && (
+        <span className="absolute left-[88px] top-[58px] h-16 w-0.5 rotate-6 rounded-full bg-cyan-100/90 shadow-[0_0_4px_rgba(34,211,238,.7)]" />
+      )}
+      {suction && interfaceApplied && (
+        <span className="absolute left-[70px] top-[49px] h-0.5 w-[68px] origin-left rotate-[132deg] rounded-full bg-slate-100/90" />
+      )}
+
+      {treatmentActive && (bvm || ventilator) && (
+        <span aria-label="Visible bilateral chest rise" className="absolute left-1/2 top-[76px] h-[112px] w-[84px] -translate-x-1/2 rounded-[44px] border-2 border-cyan-300/60 shadow-[0_0_16px_rgba(34,211,238,.35)] motion-safe:animate-pulse" />
+      )}
+
+      {status && (
+        <span className={`absolute bottom-3 left-1/2 w-max max-w-[168px] -translate-x-1/2 rounded-full border px-2 py-1 text-center text-[8px] font-black uppercase tracking-[0.09em] shadow-lg ${treatmentActive ? 'border-emerald-300/50 bg-emerald-950/95 text-emerald-200' : 'border-cyan-300/40 bg-cyan-950/95 text-cyan-100'}`}>
+          {status}
+        </span>
+      )}
+    </div>
+  );
+}
+
 export function HandsOnProcedureDialog({
   open,
   treatment,
@@ -124,7 +234,7 @@ export function HandsOnProcedureDialog({
             <div className="flex items-center justify-between gap-2">
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-sky-300">Procedure field</p>
-                <p className="text-xs text-slate-400">The selected site is the only site treated.</p>
+                <p className="text-xs text-slate-400">{plan.requiresTarget ? 'The selected site is the only site treated.' : 'Equipment appears as each physical step is completed.'}</p>
               </div>
               <img src={plan.equipmentAsset} alt="" className="h-12 w-12 object-contain drop-shadow-lg" />
             </div>
@@ -182,6 +292,13 @@ export function HandsOnProcedureDialog({
                   {plan.treatmentId === 'traction_splint' && <span className="absolute -bottom-2 left-1/2 h-5 w-8 -translate-x-1/2 rounded-b-full border-x-2 border-b-2 border-slate-300" />}
                 </div>
               )}
+
+              <AirwayProcedurePreview
+                treatmentId={plan.treatmentId}
+                equipmentAsset={plan.equipmentAsset}
+                completedSteps={completedSteps}
+                animatingStep={animatingStep}
+              />
 
               {animatingStep && nextStep && (
                 <div className={`procedure-hands procedure-motion-${nextStep.motion}`} aria-label={`Performing ${nextStep.label}`}>
