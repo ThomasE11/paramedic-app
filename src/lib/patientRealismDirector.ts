@@ -65,7 +65,7 @@ export interface RealismDirectorInput {
 
 /** Keep the HUD observation tied to the live patient, not the dispatch-time
  * appearance. This is especially important when an arrest transitions to
- * ROSC but ventilation or consciousness is still abnormal. */
+ * ROSC or respiratory treatment changes the patient's work of breathing. */
 export function deriveLivePatientAppearance(
   caseData: CaseScenario,
   vitals?: VitalSigns | null,
@@ -88,6 +88,39 @@ export function deriveLivePatientAppearance(
     if (liveRespiration <= 0) return 'Perfusing rhythm restored; remains unresponsive and apnoeic';
     if (liveRespiration < 8) return 'Perfusing rhythm restored; breathing remains inadequate';
     return 'Perfusing rhythm restored; reassess breathing and neurologic status';
+  }
+
+  const respiratoryContext = [
+    caseData.title,
+    caseData.category,
+    caseData.subcategory,
+    caseData.initialPresentation?.generalImpression,
+    initial,
+    caseData.expectedFindings?.mostLikelyDiagnosis,
+    ...(caseData.abcde?.breathing?.findings ?? []),
+    ...(caseData.abcde?.breathing?.auscultation ?? []),
+  ].filter(Boolean).join(' ');
+  const authoredRespiratoryDistress = /\b(asthma|bronchospasm|copd|respiratory distress|shortness of breath|dyspnoea|wheez|accessory muscle|unable to speak|single words|poor air entry)\b/i.test(respiratoryContext);
+  const initialRespiration = initialVitals?.respiration ?? caseData.abcde?.breathing?.rate;
+  const initialSpo2 = initialVitals?.spo2 ?? caseData.abcde?.breathing?.spo2;
+  const liveSpo2 = vitals?.spo2 ?? initialSpo2;
+  const objectivelyImproved = (
+    (typeof initialRespiration === 'number' && initialRespiration > 24 && liveRespiration >= 12 && liveRespiration <= 24)
+    || (typeof initialSpo2 === 'number' && initialSpo2 < 94 && typeof liveSpo2 === 'number' && liveSpo2 >= 94)
+  );
+
+  if (authoredRespiratoryDistress) {
+    if (liveRespiration <= 0) return 'Apnoeic — no effective breathing';
+    if ((typeof liveSpo2 === 'number' && liveSpo2 < 90) || liveRespiration >= 30) return initial;
+    if ((typeof liveSpo2 === 'number' && liveSpo2 < 94) || liveRespiration > 24) {
+      return 'Breathing remains laboured; reassess air entry, speech tolerance and oxygenation';
+    }
+    if (objectivelyImproved) {
+      if (livePulse >= 130) {
+        return 'Work of breathing improving; marked tachycardia remains — reassess speech tolerance, wheeze and air entry';
+      }
+      return 'Work of breathing improving; reassess speech tolerance, wheeze and air entry';
+    }
   }
 
   return initial;

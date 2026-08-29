@@ -315,6 +315,68 @@ describe('deriveRealismDirectorState — Round 4 treatment loop integration', ()
     })).toBe('Perfusing rhythm restored; remains unresponsive and apnoeic');
   });
 
+  it('replaces severe-asthma arrival cues when live breathing has objectively improved', () => {
+    const asthmaCase = {
+      ...minimalCase('test-live-asthma-appearance', 'Severe asthma attack', 'respiratory'),
+      subcategory: 'asthma',
+      initialPresentation: {
+        generalImpression: 'Severe respiratory distress with accessory muscle use',
+        appearance: 'Diaphoretic, anxious, unable to speak in sentences',
+        position: 'Sitting upright, tripod',
+        consciousness: 'Alert',
+      },
+      abcde: {
+        ...minimalCase('unused', 'Unused', 'respiratory').abcde,
+        breathing: {
+          rate: 32,
+          rhythm: 'Laboured',
+          depth: 'Shallow',
+          spo2: 88,
+          findings: ['Widespread wheeze', 'Accessory muscle use'],
+          interventions: ['Oxygen', 'Nebulised bronchodilator'],
+          auscultation: ['Reduced air entry', 'Widespread expiratory wheeze'],
+        },
+      },
+      vitalSignsProgression: {
+        initial: { bp: '130/80', pulse: 120, respiration: 32, spo2: 88, gcs: 15, bloodGlucose: 5.0 },
+      },
+    } as CaseScenario;
+
+    expect(deriveLivePatientAppearance(asthmaCase, {
+      ...asthmaCase.vitalSignsProgression.initial,
+      pulse: 140,
+      respiration: 16,
+      spo2: 97,
+    })).toBe('Work of breathing improving; marked tachycardia remains — reassess speech tolerance, wheeze and air entry');
+  });
+
+  it('keeps severe respiratory arrival cues until the live observations improve', () => {
+    const asthmaCase = {
+      ...minimalCase('test-ongoing-asthma-appearance', 'Severe asthma attack', 'respiratory'),
+      subcategory: 'asthma',
+      initialPresentation: {
+        generalImpression: 'Severe respiratory distress',
+        appearance: 'Diaphoretic, anxious, unable to speak in sentences',
+        position: 'Sitting upright, tripod',
+        consciousness: 'Alert',
+      },
+      vitalSignsProgression: {
+        initial: { bp: '130/80', pulse: 120, respiration: 32, spo2: 88, gcs: 15, bloodGlucose: 5.0 },
+      },
+    } as CaseScenario;
+
+    expect(deriveLivePatientAppearance(asthmaCase, {
+      ...asthmaCase.vitalSignsProgression.initial,
+      respiration: 30,
+      spo2: 89,
+    })).toBe('Diaphoretic, anxious, unable to speak in sentences');
+    expect(deriveLivePatientAppearance(asthmaCase, {
+      ...asthmaCase.vitalSignsProgression.initial,
+      respiration: 27,
+      spo2: 92,
+    })).toBe('Breathing remains laboured; reassess air entry, speech tolerance and oxygenation');
+  });
+
   it('returns empty loop state when no treatments applied', () => {
     const state = deriveRealismDirectorState({
       caseData: minimalCase('test-empty-loop', 'Routine', 'general'),
