@@ -84,6 +84,56 @@ describe('initial treatment-kit recommendation', () => {
     expect(recommendedManagementTabForCase(arrest)).toBe('circulation');
   });
 
+  it('keeps arrest actions device-led and withholds shock until pads are attached', () => {
+    const arrest = caseFor({
+      title: 'Witnessed cardiac arrest',
+      category: 'cardiac',
+      subcategory: 'cardiac-arrest',
+      initialRhythm: 'Ventricular Fibrillation',
+      vitalSignsProgression: { initial: { bp: '0/0', pulse: 0, respiration: 0, spo2: 0, gcs: 3 } },
+      managementPathway: {
+        immediate: ['Start CPR', 'Apply AED and defibrillate if advised', 'Ventilate with a BVM'],
+        definitive: [],
+        monitoring: [],
+      },
+    });
+
+    expect(suggestedTreatmentIdsForCase(arrest, arrest.vitalSignsProgression.initial, true)).toEqual([
+      'cpr',
+      'monitor_pads',
+      'bvm_ventilation',
+      'iv_access',
+    ]);
+    expect(suggestedTreatmentIdsForCase(
+      arrest,
+      arrest.vitalSignsProgression.initial,
+      true,
+      ['monitor_pads'],
+      'Ventricular Fibrillation',
+    )).toEqual([
+      'cpr',
+      'defibrillation',
+      'bvm_ventilation',
+      'iv_access',
+    ]);
+
+    expect(suggestedTreatmentIdsForCase(
+      arrest,
+      arrest.vitalSignsProgression.initial,
+      true,
+      ['monitor_pads'],
+      'Asystole',
+    )).not.toContain('defibrillation');
+
+    expect(suggestedTreatmentIdsForCase(
+      arrest,
+      { bp: '100/65', pulse: 80, respiration: 0, spo2: 90, gcs: 3 },
+      false,
+      ['monitor_pads', 'defibrillation'],
+      'Sinus Rhythm',
+    )).toEqual(['bvm_ventilation', 'iv_access']);
+  });
+
   it('opens immobilisation equipment for an isolated fracture presentation', () => {
     const fracture = caseFor({
       title: 'Closed femur fracture',

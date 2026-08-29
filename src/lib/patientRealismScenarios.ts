@@ -972,7 +972,39 @@ function uniqueVisualsById(visuals: RealismVisualEffect[]): RealismVisualEffect[
   });
 }
 
-function contextualActiveProblems(scenario: RealismScenarioSpec, caseData: CaseScenario): string[] {
+function contextualActiveProblems(
+  scenario: RealismScenarioSpec,
+  caseData: CaseScenario,
+  liveVitals?: VitalSigns | null,
+): string[] {
+  if (scenario.id === 'cardiac-acs-instability') {
+    const initialVitals = caseData.vitalSignsProgression?.initial;
+    const arrestText = [
+      caseData.title,
+      caseData.subcategory,
+      caseData.initialRhythm,
+      caseData.initialPresentation?.generalImpression,
+      caseData.initialPresentation?.appearance,
+      caseData.expectedFindings?.mostLikelyDiagnosis,
+    ].filter(Boolean).join(' ').toLowerCase();
+    const authoredCardiacArrest = initialVitals?.pulse === 0
+      || /\b(cardiac arrest|pulseless|ventricular fibrillation|\bvf\b|asystole|pea)\b/.test(arrestText);
+    const livePulse = liveVitals?.pulse ?? initialVitals?.pulse ?? 0;
+    if (authoredCardiacArrest && livePulse > 0) {
+      return [
+        'ROSC — perfusing rhythm restored',
+        'support ventilation and oxygenation',
+        'repeat 12-lead, BP, neurologic and temperature assessment',
+      ];
+    }
+    if (authoredCardiacArrest) {
+      return [
+        'cardiac arrest — no pulse or normal breathing',
+        'high-quality CPR and ventilation required',
+        'attach pads, analyse rhythm, then shock only if indicated',
+      ];
+    }
+  }
   if (scenario.id !== 'trauma-haemorrhage-open-chest') return scenario.activeProblems;
   const injuries = inferInjuries(caseData);
   const hasExternalSource = injuries.some(injury => ['bleeding', 'wound', 'amputation'].includes(injury.kind));
@@ -1004,7 +1036,7 @@ export function deriveRealismScenarioState({
   return {
     matchedScenarioIds: scenarios.map(scenario => scenario.id),
     families: unique(scenarios.map(scenario => scenario.family)),
-    activeProblems: unique(scenarios.flatMap(scenario => contextualActiveProblems(scenario, caseData))),
+    activeProblems: unique(scenarios.flatMap(scenario => contextualActiveProblems(scenario, caseData, vitals))),
     visualEffects: uniqueVisualsById([...activeVisualEffects, ...contextualVisualEffects]),
     equipmentAnchors,
     patientBehavior: scenarios.flatMap(scenario => scenario.patientBehavior),

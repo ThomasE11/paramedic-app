@@ -81,7 +81,7 @@ import type {
 } from '@/lib/classroomInjects';
 // patientRealism.ts was removed in the merge; evaluateTreatmentRealism now lives in clinicalRealism.
 import { evaluateTreatmentRealism } from '@/data/clinicalRealism';
-import { deriveRealismDirectorState, type RealismDirectorState } from '@/lib/patientRealismDirector';
+import { deriveLivePatientAppearance, deriveRealismDirectorState, type RealismDirectorState } from '@/lib/patientRealismDirector';
 import {
   deriveClinicalManagementDebrief,
   deriveTreatmentReassessmentMatches,
@@ -5934,7 +5934,7 @@ export function StudentPanel({
 	                <div className="mt-3 grid gap-2 text-[10px] sm:grid-cols-3">
 	                  <div className="tactical-objective-chip">
 	                    <Shield className="h-3.5 w-3.5" />
-                    <span>{currentCase.initialPresentation?.appearance || 'observe patient state'}</span>
+                    <span>{deriveLivePatientAppearance(currentCase, currentVitals, patientState)}</span>
                   </div>
                   <div className="tactical-objective-chip">
                     <Target className="h-3.5 w-3.5" />
@@ -6559,7 +6559,14 @@ export function StudentPanel({
                           setShowBvmRateDialog(false);
                           const t = pendingBvmTreatment;
                           setPendingBvmTreatment(null);
-                          if (t) setTimeout(() => applyTreatment(t), 0);
+                          if (t) {
+                            // The completed physical BVM sequence handed off to
+                            // this rate picker. Preserve that one-use proof for
+                            // the resumed apply call, otherwise the treatment
+                            // loops back to step one instead of ventilating.
+                            handsOnProcedureBypassRef.current.add(t.id);
+                            setTimeout(() => applyTreatment(t), 0);
+                          }
                           toast.success(`Ventilating at ${opt.rate}/min`, { duration: 2500 });
                         }}
                         className="text-left px-3 py-2 rounded-md border border-border hover:border-primary hover:bg-primary/5 transition-colors"

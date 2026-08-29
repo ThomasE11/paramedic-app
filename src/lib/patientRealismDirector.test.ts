@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { AppliedTreatment, CaseScenario, VitalSigns } from '@/types';
-import { deriveRealismDirectorState, deriveTreatmentLoopStates } from './patientRealismDirector';
+import { deriveLivePatientAppearance, deriveRealismDirectorState, deriveTreatmentLoopStates } from './patientRealismDirector';
 
 const SHOCKY_VITALS: VitalSigns = {
   bp: '88/50',
@@ -289,6 +289,32 @@ function minimalCase(id: string, title: string, category: string): any {
 }
 
 describe('deriveRealismDirectorState — Round 4 treatment loop integration', () => {
+  it('replaces dispatch-time arrest appearance after ROSC while preserving ventilation risk', () => {
+    const arrestCase = {
+      ...minimalCase('test-live-arrest-appearance', 'Witnessed cardiac arrest', 'cardiac'),
+      subcategory: 'cardiac-arrest',
+      initialRhythm: 'Ventricular Fibrillation',
+      initialPresentation: {
+        generalImpression: 'No signs of life',
+        appearance: 'Cyanotic, no signs of life, no spontaneous movement',
+        position: 'Supine',
+        consciousness: 'Unresponsive',
+      },
+      vitalSignsProgression: {
+        initial: { bp: '0/0', pulse: 0, respiration: 0, spo2: 0, gcs: 3, bloodGlucose: 5.0 },
+      },
+    } as CaseScenario;
+
+    expect(deriveLivePatientAppearance(arrestCase, arrestCase.vitalSignsProgression.initial))
+      .toBe('Cyanotic, no signs of life, no spontaneous movement');
+    expect(deriveLivePatientAppearance(arrestCase, {
+      ...arrestCase.vitalSignsProgression.initial,
+      bp: '100/65',
+      pulse: 80,
+      spo2: 90,
+    })).toBe('Perfusing rhythm restored; remains unresponsive and apnoeic');
+  });
+
   it('returns empty loop state when no treatments applied', () => {
     const state = deriveRealismDirectorState({
       caseData: minimalCase('test-empty-loop', 'Routine', 'general'),

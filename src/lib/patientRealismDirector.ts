@@ -63,6 +63,36 @@ export interface RealismDirectorInput {
   reassessedTreatmentIds?: string[];
 }
 
+/** Keep the HUD observation tied to the live patient, not the dispatch-time
+ * appearance. This is especially important when an arrest transitions to
+ * ROSC but ventilation or consciousness is still abnormal. */
+export function deriveLivePatientAppearance(
+  caseData: CaseScenario,
+  vitals?: VitalSigns | null,
+  patientState?: PatientState | null,
+): string {
+  const initial = caseData.initialPresentation?.appearance || 'Observe patient state';
+  const initialVitals = caseData.vitalSignsProgression?.initial;
+  const authoredArrest = initialVitals?.pulse === 0
+    || /\b(cardiac arrest|pulseless|ventricular fibrillation|\bvf\b|asystole|pea)\b/i.test([
+      caseData.title,
+      caseData.subcategory,
+      caseData.initialRhythm,
+      caseData.expectedFindings?.mostLikelyDiagnosis,
+    ].filter(Boolean).join(' '));
+  const livePulse = vitals?.pulse ?? initialVitals?.pulse ?? 0;
+  const liveRespiration = vitals?.respiration ?? initialVitals?.respiration ?? 0;
+  const stillInArrest = patientState?.isInArrest || livePulse === 0;
+
+  if (authoredArrest && !stillInArrest && livePulse > 0) {
+    if (liveRespiration <= 0) return 'Perfusing rhythm restored; remains unresponsive and apnoeic';
+    if (liveRespiration < 8) return 'Perfusing rhythm restored; breathing remains inadequate';
+    return 'Perfusing rhythm restored; reassess breathing and neurologic status';
+  }
+
+  return initial;
+}
+
 const severityRank: Record<RealismSeverity, number> = {
   normal: 0,
   observe: 1,

@@ -195,7 +195,9 @@ export function DefibrillationDialog({
               {charged ? <Check className="mt-0.5 h-4 w-4 text-emerald-600" /> : <Circle className="mt-0.5 h-4 w-4 text-muted-foreground" />}
               <div className="flex min-w-0 flex-1 items-center justify-between gap-2">
                 <div>
-                  <p className="font-medium">Device charged to {selectedEnergy}J</p>
+                  <p className="font-medium">
+                    {charged ? `Device charged to ${selectedEnergy}J` : `Charge device to ${selectedEnergy}J`}
+                  </p>
                   <p className="text-muted-foreground">Charge only after confirming the rhythm and selected mode.</p>
                 </div>
                 <Button size="sm" variant={charged ? 'secondary' : 'outline'} disabled={!padsAttached || charged} onClick={() => setCharged(true)}>

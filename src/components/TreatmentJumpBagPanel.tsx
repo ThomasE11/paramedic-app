@@ -7,6 +7,7 @@ import {
   getOnsetDescription,
 } from '@/data/enhancedTreatmentEffects';
 import type { PatientState } from '@/data/dynamicTreatmentEngine';
+import { hasAttachedDefibrillatorPads } from '@/lib/defibrillatorSafety';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -164,22 +165,40 @@ export function suggestedTreatmentIdsForCase(
   caseData: CaseScenario,
   currentVitals: VitalSigns | null,
   isInArrest = false,
+  appliedTreatmentIds: Iterable<string> = [],
+  currentRhythm = caseData.initialRhythm ?? '',
 ): string[] {
   const ids: string[] = [];
+  const appliedIds = [...appliedTreatmentIds];
+  const arrestPhysiology = isInArrest || currentVitals?.pulse === 0;
+  const perfusingPulse = !isInArrest && (currentVitals?.pulse ?? 0) > 0;
+  const ventilationRequired = (currentVitals?.respiration ?? 99) <= 4;
+  const padsAttached = hasAttachedDefibrillatorPads(appliedIds);
+  const shockableRhythm = /\b(ventricular fibrillation|vf|pulseless ventricular tachycardia|pulseless vt)\b/i.test(currentRhythm);
   const add = (...nextIds: string[]) => {
     for (const id of nextIds) {
+      if ((arrestPhysiology || ventilationRequired) && ['oxygen_nonrebreather', 'oxygen_mask', 'oxygen_nasal', 'cpap_niv'].includes(id)) continue;
+      if (arrestPhysiology && id.startsWith('fluids_')) continue;
+      if (id === 'monitor_pads' && padsAttached) continue;
+      if (id === 'cpr' && perfusingPulse) continue;
+      if (id === 'defibrillation' && (!padsAttached || !shockableRhythm || perfusingPulse)) continue;
       if (!ids.includes(id) && TREATMENTS.some(treatment => treatment.id === id)) ids.push(id);
     }
   };
 
-  if (isInArrest) add('cpr', 'monitor_pads', 'defibrillation', 'iv_access');
+  if (arrestPhysiology) {
+    add('cpr');
+    if (!padsAttached) add('monitor_pads');
+    else if (shockableRhythm) add('defibrillation');
+    add('bvm_ventilation', 'iv_access');
+  }
 
   if (currentVitals) {
     const systolic = getSystolicFromBp(currentVitals.bp);
-    if (currentVitals.spo2 < 90) add('oxygen_nonrebreather');
-    else if (currentVitals.spo2 < 94) add('oxygen_mask');
+    if (!arrestPhysiology && !ventilationRequired && currentVitals.spo2 < 90) add('oxygen_nonrebreather');
+    else if (!arrestPhysiology && !ventilationRequired && currentVitals.spo2 < 94) add('oxygen_mask');
     if (currentVitals.respiration <= 8) add('bvm_ventilation');
-    if (currentVitals.respiration >= 26 && currentVitals.spo2 < 94) add('cpap_niv');
+    if (!arrestPhysiology && currentVitals.respiration >= 26 && currentVitals.spo2 < 94) add('cpap_niv');
     if (systolic < 100 || currentVitals.pulse > 120 || (currentVitals.gcs ?? 15) < 15) add('iv_access');
     if (systolic < 90) add('fluids_250ml');
     if (currentVitals.bloodGlucose !== undefined && currentVitals.bloodGlucose < 4) add('glucose_10g');
@@ -1085,11 +1104,17 @@ export function TreatmentJumpBagPanel({
   const query = medSearch.trim().toLowerCase();
 
   const suggestedTreatments = useMemo(() => {
-    return suggestedTreatmentIdsForCase(caseData, currentVitals, patientState?.isInArrest)
+    return suggestedTreatmentIdsForCase(
+      caseData,
+      currentVitals,
+      patientState?.isInArrest,
+      appliedTreatmentIds,
+      patientState?.currentRhythm,
+    )
       .map(id => TREATMENTS.find(treatment => treatment.id === id))
       .filter((treatment): treatment is Treatment => Boolean(treatment))
       .slice(0, 6);
-  }, [caseData, currentVitals, patientState?.isInArrest]);
+  }, [appliedTreatmentIds, caseData, currentVitals, patientState?.currentRhythm, patientState?.isInArrest]);
 
   const suggestedIds = useMemo(
     () => new Set(suggestedTreatments.map(treatment => treatment.id)),

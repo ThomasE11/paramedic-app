@@ -120,6 +120,24 @@ describe('matchRealismScenarios', () => {
     expect(respiratoryScenario!.activeProblems).toContain('bronchospasm');
   });
 
+  it('describes a confirmed arrest as arrest rather than possible ACS', () => {
+    const arrest = firstYearCases.find(caseData => caseData.id === 'y1-014')!;
+    const state = deriveRealismScenarioState({
+      caseData: arrest,
+      vitals: arrest.vitalSignsProgression.initial,
+    });
+
+    expect(state.activeProblems[0]).toBe('cardiac arrest — no pulse or normal breathing');
+    expect(state.activeProblems).toContain('attach pads, analyse rhythm, then shock only if indicated');
+
+    const postRosc = deriveRealismScenarioState({
+      caseData: arrest,
+      vitals: { ...arrest.vitalSignsProgression.initial, bp: '100/65', pulse: 80, spo2: 90 },
+    });
+    expect(postRosc.activeProblems[0]).toBe('ROSC — perfusing rhythm restored');
+    expect(postRosc.activeProblems).toContain('support ventilation and oxygenation');
+  });
+
   it('does not render differential diagnoses as active patient visuals', () => {
     const scenario = baseCase({
       id: 'test-asthma-with-differential',
