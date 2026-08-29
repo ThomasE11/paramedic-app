@@ -4153,9 +4153,9 @@ export const additionalTraumaCases: CaseScenario[] = [
       sceneImageCaption: 'Scene — Industrial, noisy',
     },
     initialPresentation: {
-      generalImpression: 'Young male, pale, holding stump of right forearm',
+      generalImpression: 'Young male, pale, holding the bleeding stump of his right forearm',
       position: 'Sitting',
-      appearance: 'Pale, anxious, bleeding controlled with pressure',
+      appearance: 'Pale, anxious, coworker applying ineffective pressure to active arterial bleeding',
       consciousness: 'Alert'
     },
     abcde: {
@@ -4179,7 +4179,7 @@ export const additionalTraumaCases: CaseScenario[] = [
         bp: { systolic: 90, diastolic: 60 },
         capillaryRefill: 3,
         skin: 'Pale, clammy',
-        findings: ['Significant blood loss', 'Hypotensive', 'Tachycardic'],
+        findings: ['Active arterial bleeding from right wrist stump', 'Significant blood loss', 'Hypotensive', 'Tachycardic'],
         interventions: ['Tourniquet', 'IV access x2', 'Fluid resuscitation']
       },
       disability: {
@@ -4202,7 +4202,7 @@ export const additionalTraumaCases: CaseScenario[] = [
       chest: ['Normal'],
       abdomen: ['Normal'],
       pelvis: ['Normal'],
-      extremities: ['Right hand amputation at wrist', 'Tourniquet in place', 'Distal pulses absent (amputated)'],
+      extremities: ['Right hand amputation at wrist with active bleeding', 'Coworker pressure is not controlling the stump', 'Distal pulse absent beyond the amputation'],
       posterior: ['Normal'],
       neurological: ['Sensation lost distal to amputation']
     },

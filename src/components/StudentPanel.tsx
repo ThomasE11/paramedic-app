@@ -303,6 +303,7 @@ import { DefibrillationDialog } from '@/components/DefibrillationDialog';
 import { HandsOnProcedureDialog } from '@/components/HandsOnProcedureDialog';
 import { isHandsOnTreatment, procedureSiteToken, type ProcedureTarget } from '@/lib/handsOnProcedures';
 import { hasAttachedDefibrillatorPads } from '@/lib/defibrillatorSafety';
+import { isBleedRegionControlled } from '@/lib/bleedControl';
 import { VentilatorSetupDialog, type VentilatorSettings } from '@/components/VentilatorSetupDialog';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 // ClinicalAssessmentPanel removed — replaced by inline ABCDE Primary Survey + 3D Physical Exam
@@ -1520,14 +1521,32 @@ export function StudentPanel({
       });
     }
 
-    patientVisualState?.woundOverlays.slice(0, 2).forEach((overlay, index) => {
-      items.push({
-        id: `visual-wound-${overlay.kind}-${index}`,
-        label: formatClinicalToken(overlay.kind),
-        detail: overlay.detail,
-        tone: overlay.kind === 'active_bleeding' || overlay.kind === 'blood_pool' ? 'critical' : 'visual',
+    const woundPriority: Record<string, number> = {
+      active_bleeding: 0,
+      open_wound: 1,
+      deformity: 2,
+      burn_pattern: 3,
+      blood_pool: 4,
+    };
+    const seenWoundDetails = new Set<string>();
+    [...(patientVisualState?.woundOverlays ?? [])]
+      .sort((a, b) => (woundPriority[a.kind] ?? 9) - (woundPriority[b.kind] ?? 9))
+      .filter(overlay => overlay.kind !== 'active_bleeding' || !isBleedRegionControlled(appliedTreatmentIds, overlay.region))
+      .filter(overlay => {
+        const fingerprint = `${overlay.region}:${overlay.detail}`.toLowerCase();
+        if (seenWoundDetails.has(fingerprint)) return false;
+        seenWoundDetails.add(fingerprint);
+        return true;
+      })
+      .slice(0, 2)
+      .forEach((overlay, index) => {
+        items.push({
+          id: `visual-wound-${overlay.kind}-${index}`,
+          label: formatClinicalToken(overlay.kind),
+          detail: overlay.detail,
+          tone: overlay.kind === 'active_bleeding' || overlay.kind === 'blood_pool' ? 'critical' : 'visual',
+        });
       });
-    });
 
     patientVisualState?.skinEffects.slice(0, 2).forEach((effect, index) => {
       items.push({
@@ -1548,14 +1567,17 @@ export function StudentPanel({
     }
 
     if (items.length < 3) {
-      (realismDirector?.visibleCues ?? []).slice(0, 3 - items.length).forEach(cue => {
-        items.push({
-          id: `cue-${cue.id}`,
-          label: cue.label,
-          detail: cue.detail,
-          tone: cue.severity === 'critical' ? 'critical' : cue.severity === 'warning' ? 'warning' : 'visual',
+      (realismDirector?.visibleCues ?? [])
+        .filter(cue => !items.some(item => item.detail.trim().toLowerCase() === cue.detail.trim().toLowerCase()))
+        .slice(0, 3 - items.length)
+        .forEach(cue => {
+          items.push({
+            id: `cue-${cue.id}`,
+            label: cue.label,
+            detail: cue.detail,
+            tone: cue.severity === 'critical' ? 'critical' : cue.severity === 'warning' ? 'warning' : 'visual',
+          });
         });
-      });
     }
 
     const seen = new Set<string>();

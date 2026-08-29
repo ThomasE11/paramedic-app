@@ -57,7 +57,10 @@ export function HandsOnProcedureDialog({
 
   useEffect(() => {
     if (!open || !plan) return;
-    setSelectedTarget(plan.requiresTarget && plan.targets.length === 1 ? plan.targets[0] : null);
+    // A wound must be exposed before its site can be selected. Even when the
+    // case has only one authored injury, do not silently choose it for the
+    // student—the physical act of locating the source is part of treatment.
+    setSelectedTarget(null);
     setCompletedSteps([]);
     setAnimatingStep(null);
     return () => {
@@ -69,7 +72,13 @@ export function HandsOnProcedureDialog({
 
   const nextStep = plan.steps.find(step => !completedSteps.includes(step.id));
   const complete = completedSteps.length === plan.steps.length;
-  const canStart = !plan.requiresTarget || selectedTarget != null;
+  const targetSelectionUnlocked = !plan.requiresTarget
+    || plan.steps[0]?.id !== 'expose'
+    || completedSteps.includes('expose');
+  const canExposeBeforeTarget = plan.requiresTarget
+    && completedSteps.length === 0
+    && nextStep?.id === 'expose';
+  const canStart = !plan.requiresTarget || selectedTarget != null || canExposeBeforeTarget;
   const isDefibrillatorPadProcedure = plan.id === 'defib-pads';
   const chestExposed = completedSteps.includes('expose');
   const bothPadsPlaced = completedSteps.includes('apical');
@@ -87,6 +96,7 @@ export function HandsOnProcedureDialog({
 
   const reset = () => {
     if (timerRef.current != null) window.clearTimeout(timerRef.current);
+    if (plan.requiresTarget) setSelectedTarget(null);
     setCompletedSteps([]);
     setAnimatingStep(null);
   };
@@ -156,22 +166,30 @@ export function HandsOnProcedureDialog({
 
             {plan.requiresTarget && (
               <div className="space-y-2">
-                <p className="text-xs font-semibold">Choose the treatment site</p>
-                <div className="grid grid-cols-2 gap-2">
-                  {plan.targets.map(target => (
-                    <button
-                      type="button"
-                      key={target.id}
-                      disabled={completedSteps.length > 0 || !!animatingStep}
-                      onClick={() => setSelectedTarget(target)}
-                      className={`rounded-xl border p-2 text-left transition ${selectedTarget?.id === target.id ? 'border-red-400 bg-red-500/20 ring-2 ring-red-500/20' : 'border-white/10 bg-white/5 hover:bg-white/10'}`}
-                    >
-                      <span className="block text-xs font-semibold">{target.label}</span>
-                      <span className="line-clamp-2 text-[10px] text-slate-400">{target.detail}</span>
-                      {target.priority === 'injury' && <Badge className="mt-1 bg-red-500/20 text-[9px] text-red-200">Visible injury</Badge>}
-                    </button>
-                  ))}
-                </div>
+                {targetSelectionUnlocked ? (
+                  <>
+                    <p className="text-xs font-semibold">Choose the exposed treatment site</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {plan.targets.map(target => (
+                        <button
+                          type="button"
+                          key={target.id}
+                          disabled={completedSteps.length > 1 || !!animatingStep}
+                          onClick={() => setSelectedTarget(target)}
+                          className={`rounded-xl border p-2 text-left transition ${selectedTarget?.id === target.id ? 'border-red-400 bg-red-500/20 ring-2 ring-red-500/20' : 'border-white/10 bg-white/5 hover:bg-white/10'}`}
+                        >
+                          <span className="block text-xs font-semibold">{target.label}</span>
+                          <span className="line-clamp-2 text-[10px] text-slate-400">{target.detail}</span>
+                          {target.priority === 'injury' && <Badge className="mt-1 bg-red-500/20 text-[9px] text-red-200">Visible injury</Badge>}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <p className="rounded-xl border border-sky-400/25 bg-sky-400/10 p-3 text-xs text-sky-100">
+                    Expose the patient first. The visible wound site will then become selectable.
+                  </p>
+                )}
               </div>
             )}
           </section>
@@ -208,7 +226,7 @@ export function HandsOnProcedureDialog({
               })}
             </div>
 
-            {!canStart && <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-2 text-xs text-amber-700 dark:text-amber-300">Select the exact injury site before beginning.</p>}
+            {!canStart && <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-2 text-xs text-amber-700 dark:text-amber-300">Select the exact exposed injury site before continuing.</p>}
           </section>
         </div>
 

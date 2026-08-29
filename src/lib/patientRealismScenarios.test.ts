@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { CaseScenario } from '@/types';
 import { firstYearCases } from '@/data/firstYearCases';
+import { additionalTraumaCases } from '@/data/additionalCases';
 import {
   matchRealismScenarios,
   deriveScenarioTreatmentResponses,
@@ -308,6 +309,18 @@ describe('deriveScenarioVisuals', () => {
     expect(visuals.length).toBeGreaterThan(0);
     expect(visuals.some(v => v.kind === 'accessory_muscle_use')).toBe(true);
     expect(visuals.some(v => v.kind === 'diaphoresis')).toBe(true);
+  });
+
+  it('anchors limb haemorrhage to the authored limb without inventing chest trauma', () => {
+    const scenario = additionalTraumaCases.find(item => item.id === 'trauma-011');
+    expect(scenario).toBeDefined();
+
+    const visuals = deriveScenarioVisuals(scenario!);
+    expect(visuals).toEqual(expect.arrayContaining([
+      expect.objectContaining({ kind: 'active_bleeding', region: 'right-arm' }),
+      expect.objectContaining({ kind: 'open_wound', region: 'right-arm' }),
+    ]));
+    expect(visuals.some(visual => visual.kind === 'asymmetric_chest_rise')).toBe(false);
   });
 });
 

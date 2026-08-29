@@ -1,4 +1,5 @@
 import type { CaseScenario, VitalSigns } from '@/types';
+import { inferInjuries, type BodyRegion } from '@/lib/injuryMap';
 
 export type ProblemFamily =
   | 'trauma'
@@ -45,6 +46,7 @@ export type EquipmentAnchorRegion =
   | 'right-arm'
   | 'left-leg'
   | 'right-leg'
+  | 'abdomen'
   | 'pelvis'
   | 'posterior'
   | 'scene';
@@ -799,6 +801,54 @@ export function deriveScenarioTreatmentResponses(
   );
 }
 
+function visualRegionForInjury(region: BodyRegion): EquipmentAnchorRegion {
+  if (region === 'head') return 'face';
+  if (region === 'back') return 'posterior';
+  if (region === 'airway') return 'mouth';
+  return region;
+}
+
+/**
+ * The trauma scenario describes a family of injuries, but its visuals must be
+ * bound to this patient's authored anatomy. A hand amputation must not create
+ * a chest wound or asymmetric chest rise simply because both are "trauma".
+ */
+function contextualizeScenarioVisual(
+  effect: RealismVisualEffect,
+  caseData: CaseScenario,
+): RealismVisualEffect | null {
+  if (!effect.id.startsWith('trauma-')) return effect;
+
+  const injuries = inferInjuries(caseData);
+  const bleeding = injuries.find(injury => injury.kind === 'bleeding' || injury.kind === 'amputation');
+  const openInjury = injuries.find(injury => injury.kind === 'wound' || injury.kind === 'amputation')
+    ?? injuries.find(injury => injury.kind === 'bleeding');
+
+  if (effect.id === 'trauma-open-wound') {
+    return openInjury ? { ...effect, region: visualRegionForInjury(openInjury.region), detail: openInjury.detail } : null;
+  }
+  if (effect.id === 'trauma-active-bleeding') {
+    return bleeding ? { ...effect, region: visualRegionForInjury(bleeding.region), detail: bleeding.detail } : null;
+  }
+  if (effect.id === 'trauma-blood-pool') {
+    return bleeding ? effect : null;
+  }
+  if (effect.id === 'trauma-asym-chest') {
+    const chestInjury = injuries.some(injury => injury.region === 'chest' && ['wound', 'flail', 'bleeding', 'deformity'].includes(injury.kind));
+    const chestText = [
+      ...(caseData.abcde?.breathing?.findings ?? []),
+      ...(caseData.abcde?.breathing?.auscultation ?? []),
+      ...(caseData.secondarySurvey?.chest ?? []),
+    ]
+      .map(item => stripNegatedClauses(String(item)))
+      .join(' ')
+      .toLowerCase();
+    const asymmetricEvidence = /\b(asymmetr|unilateral|flail|paradoxical|pneumothorax|hemothorax|haemothorax)\b|\b(?:reduced|absent|diminished)[^.]{0,45}\b(?:left|right)\b/.test(chestText);
+    return chestInjury || asymmetricEvidence ? effect : null;
+  }
+  return effect;
+}
+
 export function deriveScenarioVisuals(
   caseData: CaseScenario,
   vitals?: VitalSigns | null,
@@ -806,6 +856,8 @@ export function deriveScenarioVisuals(
 ): RealismVisualEffect[] {
   return matchRealismScenarios(caseData)
     .flatMap(scenario => scenario.immediateVisuals)
+    .map(effect => contextualizeScenarioVisual(effect, caseData))
+    .filter((effect): effect is RealismVisualEffect => effect != null)
     .filter(effect => shouldShowVisualEffect(effect, caseData, vitals, appliedTreatmentIds));
 }
 
@@ -816,6 +868,8 @@ function deriveScenarioVisualContext(
 ): RealismVisualEffect[] {
   return matchRealismScenarios(caseData)
     .flatMap(scenario => scenario.immediateVisuals)
+    .map(effect => contextualizeScenarioVisual(effect, caseData))
+    .filter((effect): effect is RealismVisualEffect => effect != null)
     .filter(effect => shouldIncludeVisualContext(effect, caseData, vitals, appliedTreatmentIds));
 }
 

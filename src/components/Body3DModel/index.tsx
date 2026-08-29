@@ -1227,7 +1227,13 @@ function AppliedIvDressing() {
 
 function AppliedLimbEquipment({ treatmentId }: { treatmentId: string }) {
   if (treatmentId.includes('tourniquet')) {
-    return <div data-applied-equipment="tourniquet" className="pointer-events-none relative h-12 w-12 animate-in fade-in zoom-in-75"><span className="absolute left-1 top-5 h-3 w-10 rounded-sm bg-slate-950 shadow-md" /><span className="absolute left-5 top-0 h-8 w-1.5 rounded bg-slate-700 shadow" /></div>;
+    return (
+      <div data-applied-equipment="tourniquet" aria-label="Windlass tourniquet secured" className="pointer-events-none relative h-14 w-16 -rotate-6 animate-in fade-in zoom-in-75 drop-shadow-lg">
+        <span className="absolute left-0 top-6 h-3 w-full rounded-full bg-slate-950 shadow-[0_2px_4px_rgba(0,0,0,0.65)]" />
+        <img src={TREATMENT_ASSET_PATHS.tourniquet} alt="" draggable={false} className="absolute inset-0 h-full w-full object-contain" />
+        <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded bg-amber-100 px-1 py-0.5 text-[6px] font-black tracking-wide text-slate-900 shadow">TIME</span>
+      </div>
+    );
   }
   if (treatmentId === 'bleeding_control') {
     return <div data-applied-equipment="pressure-dressing" className="pointer-events-none h-10 w-14 -rotate-6 rounded-xl border-4 border-dashed border-stone-200 bg-stone-50/90 shadow-md animate-in fade-in zoom-in-75" />;

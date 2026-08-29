@@ -103,7 +103,7 @@ function isNegated(clause: string, re: RegExp): boolean {
 
 // "Bleeding" must be an explicit haemorrhage word — NOT bare "blood", which
 // catches "blood pressure", "blood glucose", "blood sugar", "blood at meatus".
-const BLEED = /\b(bleed(ing)?|haemorrh|hemorrh|blood loss|exsanguinat|active bleed|oozing blood|pooling blood|losing blood)\b/;
+const BLEED = /\b(bleed(?:ing)?|haemorrhag\w*|hemorrhag\w*|blood loss|exsanguinat\w*|active bleed|oozing blood|pooling blood|losing blood)\b/;
 // A leg/limb finding must mention the limb AND an injury word in the SAME clause.
 const isLeg = (s: string) => /\b(leg|thigh|femur|femoral|knee|tibia|fibula|shin|ankle|foot|lower limb|hip)\b/.test(s);
 const isLeftWord = (s: string) => /\bleft\b|\bl\.?\s/.test(s) || /\(l\)/.test(s);
@@ -298,6 +298,9 @@ export function inferInjuries(caseData: CaseScenario): BodyInjury[] {
   if (has(/\b(penetrating|stab(bed| wound)?|gsw|gunshot|sucking|open)\b[\s\w]*\b(chest|thorax|thoracic)\b/) || has(/\b(chest|thorax)\b[\s\w]*\b(stab|gsw|gunshot|penetrat|sucking|open wound)\b/) || has(/\bsucking chest\b|\bopen pneumothorax\b/)) {
     push('chest', 'wound', 'Open chest wound', 'Penetrating / sucking chest wound — needs a chest seal.', 8, -2);
   }
+  if (has(/\b(?:chest|thorax|thoracic)\b[\s\w]*\b(?:bleed(?:ing)?|haemorrhag\w*|hemorrhag\w*)\b|\b(?:bleed(?:ing)?|haemorrhag\w*|hemorrhag\w*)\b[\s\w]*\b(?:chest|thorax|thoracic)\b/)) {
+    push('chest', 'bleeding', 'Chest bleeding', 'Active external haemorrhage from the chest wound.', 6, 3);
+  }
   if (has(/\b(chest|sternum|sternal)\b[\s\w]*\b(bruis|ecchymos|seatbelt)\b/) || has(/\bseatbelt sign\b/)) {
     push('chest', 'bruising', 'Chest bruising', 'Chest-wall bruising / seatbelt sign — suspect underlying injury.', 0, 4);
   }
@@ -332,9 +335,29 @@ export function inferInjuries(caseData: CaseScenario): BodyInjury[] {
   }
 
   // ---- Amputation ----
-  if (has(/\b(amputat|traumatic amput|degloving|deglov)\b/)) {
-    const region: BodyRegion = has(/\b(leg|foot|thigh|lower limb)\b/) ? 'left-leg' : 'left-arm';
+  const amputationClause = clauses.find(clause => /\b(amputat\w*|deglov\w*)\b/.test(clause));
+  if (amputationClause) {
+    const lowerLimb = /\b(leg|foot|thigh|lower limb)\b/.test(amputationClause);
+    const right = isRightWord(amputationClause);
+    const region: BodyRegion = lowerLimb
+      ? right ? 'right-leg' : 'left-leg'
+      : right ? 'right-arm' : 'left-arm';
     push(region, 'amputation', 'Amputation', 'Traumatic amputation — tourniquet, retrieve the part.');
+  }
+
+  // Some cases author the anatomy and the bleeding as adjacent exposure
+  // findings (for example "stab wound left chest", then "moderate bleeding").
+  // When there is exactly one visible open injury, that unscoped haemorrhage
+  // belongs to it; do not fall back to a generic chest bleed for limb wounds.
+  if (has(BLEED) && !injuries.some(injury => injury.kind === 'bleeding')) {
+    const openRegions = [...new Set(
+      injuries
+        .filter(injury => injury.kind === 'wound' || injury.kind === 'amputation')
+        .map(injury => injury.region),
+    )];
+    if (openRegions.length === 1) {
+      push(openRegions[0], 'bleeding', 'Active bleeding', `Active external haemorrhage from the ${openRegions[0].replace('-', ' ')} injury.`, 2, 4);
+    }
   }
 
   return injuries;
