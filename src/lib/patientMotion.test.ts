@@ -76,4 +76,27 @@ describe('patientMotion', () => {
     expect(signals.motion_agitation).toBe(0);
     expect(signals.motion_seizure).toBeGreaterThan(0);
   });
+
+  it('keeps tremor and shivering in a clinically subtle morph range', () => {
+    const tremor = computePatientMotionSignals({
+      time: 0.03125,
+      gate: 1,
+      cues: cues({ tremor: true }),
+      reduced: false,
+      winceStart: -1,
+      gaspStart: -1,
+      clutchStart: -1,
+    });
+    const shiver = computePatientMotionSignals({
+      time: 0.025,
+      gate: 1,
+      cues: cues({ shivering: true }),
+      reduced: false,
+      winceStart: -1,
+      gaspStart: -1,
+      clutchStart: -1,
+    });
+    expect(tremor.motion_tremor).toBeLessThanOrEqual(0.18);
+    expect(shiver.motion_tremor).toBeLessThanOrEqual(0.12);
+  });
 });

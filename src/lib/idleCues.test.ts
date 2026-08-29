@@ -44,9 +44,14 @@ describe('deriveIdleCues', () => {
     expect(deriveIdleCues(fakeCase(), fakeVitals(), fakeVisual({ breathingEffort: 0.66 })).gasping).toBe(true);
   });
 
-  it('shivers in shock (SI > 0.9) or hypothermia', () => {
-    expect(deriveIdleCues(fakeCase(), fakeVitals({ pulse: 130, bp: '90/60' }), fakeVisual()).shivering).toBe(true);
+  it('does not turn haemodynamic shock into arm vibration', () => {
+    expect(deriveIdleCues(fakeCase(), fakeVitals({ pulse: 130, bp: '90/60' }), fakeVisual()).shivering).toBe(false);
+  });
+
+  it('shivers only with hypothermia or an explicit shivering presentation', () => {
     expect(deriveIdleCues(fakeCase(), fakeVitals({ temperature: 34.8 }), fakeVisual()).shivering).toBe(true);
+    const shiveringCase = fakeCase({ initialPresentation: { appearance: 'Shivering after cold exposure' } });
+    expect(deriveIdleCues(shiveringCase, fakeVitals(), fakeVisual()).shivering).toBe(true);
   });
 
   it('forwards seizure/tremor flags from the visual state', () => {

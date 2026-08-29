@@ -69,12 +69,12 @@ export function computePatientMotionSignals({
 
   const consciousGate = Math.max(0, Math.min(1, gate));
   const seizureBeat = cues.seizure
-    ? 0.5 + 0.5 * Math.sin(time * TAU * 4.5)
+    ? (0.5 + 0.5 * Math.sin(time * TAU * 3.5)) * 0.68
     : 0;
   const tremorBeat = !cues.seizure && cues.tremor
-    ? (0.5 + 0.5 * Math.sin(time * TAU * 5.5)) * consciousGate
+    ? (0.5 + 0.5 * Math.sin(time * TAU * 4)) * 0.18 * consciousGate
     : !reduced && cues.shivering
-      ? (0.5 + 0.5 * Math.sin(time * TAU * 10)) * 0.45 * consciousGate
+      ? (0.5 + 0.5 * Math.sin(time * TAU * 5)) * 0.12 * consciousGate
       : 0;
 
   out.motion_gasp = patientMotionPulse(time, gaspStart, PATIENT_MOTION_DURATIONS.gasp) * consciousGate;

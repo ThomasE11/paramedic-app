@@ -376,25 +376,31 @@ function HomeScene({ hideOverhead, shadowsEnabled }: { hideOverhead: boolean; sh
 // columns, bright fluorescent ceiling.
 // ---------------------------------------------------------------------------
 function PublicScene({ hideOverhead, shadowsEnabled }: { hideOverhead: boolean; shadowsEnabled: boolean }) {
+  // A supine patient extends to roughly z=-1.15 at the head. Keep every
+  // storefront element behind a generous examination clearance plane so the
+  // centre mullion cannot pass through the skull from the arrival camera.
+  const backdropZ = -2.7;
   return (
     <group>
       {/* Polished stone floor — low roughness picks up the lights */}
       <mesh position={[0, -0.05, 0.1]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow raycast={NO_RAYCAST}>
         <planeGeometry args={[7.2, 7.2]} />
-        <meshStandardMaterial color="#cdd4da" roughness={0.12} metalness={0.25} />
+        <meshStandardMaterial color="#cdd4da" roughness={0.38} metalness={0.08} />
       </mesh>
       {/* Storefront back wall: dark glass panels with a lit signage band */}
-      <mesh position={[0, 1.05, -1.05]} receiveShadow raycast={NO_RAYCAST}>
+      <mesh position={[0, 1.05, backdropZ]} receiveShadow raycast={NO_RAYCAST}>
         <boxGeometry args={[4.2, 2.3, 0.05]} />
         <meshStandardMaterial color="#1c2a36" roughness={0.1} metalness={0.5} />
       </mesh>
-      <mesh position={[0, 2.0, -1.01]} raycast={NO_RAYCAST}>
+      <mesh position={[0, 2.0, backdropZ + 0.04]} raycast={NO_RAYCAST}>
         <boxGeometry args={[4.2, 0.3, 0.03]} />
         <meshStandardMaterial color="#dbeafe" emissive="#cfe8ff" emissiveIntensity={0.8} roughness={0.3} />
       </mesh>
       {/* Glass mullions */}
-      {[-1.4, 0, 1.4].map((x) => (
-        <mesh key={`mullion-${x}`} position={[x, 1.05, -1.0]} raycast={NO_RAYCAST}>
+      {/* Side mullions frame the storefront; no centre mullion behind the
+          patient, where perspective made it read as a pole through the body. */}
+      {[-1.4, 1.4].map((x) => (
+        <mesh key={`mullion-${x}`} position={[x, 1.05, backdropZ + 0.05]} raycast={NO_RAYCAST}>
           <boxGeometry args={[0.06, 2.3, 0.06]} />
           <meshStandardMaterial color="#8fa1b1" roughness={0.35} metalness={0.7} />
         </mesh>
@@ -413,7 +419,7 @@ function PublicScene({ hideOverhead, shadowsEnabled }: { hideOverhead: boolean; 
             <meshStandardMaterial color="#dde3e9" roughness={0.8} />
           </mesh>
           {[-1.2, -0.4, 0.4, 1.2].map((x) => (
-            <mesh key={`fluoro-${x}`} position={[x, 2.28, 0]} rotation={[Math.PI / 2, 0, 0]} raycast={NO_RAYCAST}>
+            <mesh key={`fluoro-${x}`} position={[x, 2.28, backdropZ + 0.85]} rotation={[Math.PI / 2, 0, 0]} raycast={NO_RAYCAST}>
               <boxGeometry args={[0.35, 1.6, 0.02]} />
               <meshStandardMaterial color="#f0f7ff" roughness={0.2} emissive="#e3f0ff" emissiveIntensity={0.9} />
             </mesh>

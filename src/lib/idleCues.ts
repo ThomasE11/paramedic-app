@@ -26,11 +26,6 @@ export interface IdleCues {
   chestClutch: boolean;
 }
 
-const parseSystolic = (bp: string | undefined): number | null => {
-  const m = typeof bp === 'string' ? bp.match(/(\d{2,3})\s*\/\s*\d{2,3}/) : null;
-  return m ? parseInt(m[1], 10) : null;
-};
-
 export function deriveIdleCues(
   caseData: CaseScenario,
   vitals: VitalSigns | undefined,
@@ -38,8 +33,6 @@ export function deriveIdleCues(
 ): IdleCues {
   const source = vitals ?? caseData.vitalSignsProgression?.initial;
   const spo2 = typeof source?.spo2 === 'number' ? source.spo2 : null;
-  const pulse = typeof source?.pulse === 'number' ? source.pulse : null;
-  const systolic = parseSystolic(source?.bp);
   const temp = typeof source?.temperature === 'number' ? source.temperature : null;
 
   const text = [
@@ -54,13 +47,16 @@ export function deriveIdleCues(
   const painText01 = /severe pain|agony|crushing|excruciating|writh/.test(text) ? 0.85
     : /\bpain|clutch|guard/.test(text) ? 0.55 : 0;
 
-  const shockIndex = pulse !== null && systolic !== null && systolic > 0
-    ? pulse / systolic : 0;
-
   return {
     pain01: Math.max(painScore01, painText01),
     gasping: (spo2 !== null && spo2 < 90) || (visual?.breathingEffort ?? 0) >= 0.5,
-    shivering: shockIndex > 0.9 || (temp !== null && temp < 35.5),
+    // Hypotension/tachycardia alone does not make a patient shiver. The old
+    // shock-index shortcut put a rapid limb tremor on warm indoor STEMI and
+    // haemorrhage cases, which looked like rig vibration. Reserve this cue for
+    // actual thermoregulatory or explicitly-authored shivering.
+    shivering:
+      (temp !== null && temp < 35.5)
+      || /\bshiver(?:ing)?\b|\brigors?\b|\bhypotherm/.test(text),
     seizure: visual?.hasSeizureActivity ?? false,
     tremor: visual?.hasTremor ?? false,
     agitated: /distress|anxious|agitat|restless|panick|frighten/.test(text),
