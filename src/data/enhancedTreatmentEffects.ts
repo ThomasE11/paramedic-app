@@ -1903,8 +1903,9 @@ export const TREATMENTS: Treatment[] = [
     effects: [
       { vitalSign: 'pulse', changeType: 'decrease', value: 10, minValue: 60 },
       { vitalSign: 'bp', changeType: 'increase', value: 8 },
+      { vitalSign: 'painScore', changeType: 'decrease', value: 3, minValue: 0 },
     ],
-    contraindications: ['Fracture near knee or hip joint', 'Pelvic fracture', 'Lower leg fracture on same side'],
+    contraindications: ['Fracture near knee or hip joint', 'Pelvic fracture', 'Lower leg fracture on same side', 'Uncontrolled haemorrhage or distal vascular compromise'],
   },
 
   // ================================================================

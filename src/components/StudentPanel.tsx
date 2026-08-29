@@ -304,6 +304,7 @@ import { HandsOnProcedureDialog } from '@/components/HandsOnProcedureDialog';
 import { isHandsOnTreatment, procedureSiteToken, type ProcedureTarget } from '@/lib/handsOnProcedures';
 import { hasAttachedDefibrillatorPads } from '@/lib/defibrillatorSafety';
 import { isBleedRegionControlled } from '@/lib/bleedControl';
+import { assessTractionSplintSafety } from '@/lib/tractionSplintSafety';
 import { VentilatorSetupDialog, type VentilatorSettings } from '@/components/VentilatorSetupDialog';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 // ClinicalAssessmentPanel removed — replaced by inline ABCDE Primary Survey + 3D Physical Exam
@@ -651,6 +652,7 @@ interface TreatmentPracticalityContext {
   currentVitals: VitalSigns;
   currentCase: CaseScenario;
   patientState: PatientState;
+  appliedTreatmentIds: string[];
 }
 
 interface TreatmentChallenge {
@@ -1148,6 +1150,7 @@ function assessTreatmentPracticality({
   currentVitals,
   currentCase,
   patientState,
+  appliedTreatmentIds,
 }: TreatmentPracticalityContext): TreatmentChallenge | null {
   const id = treatment.id;
   const gcs = getPatientGcsTotal(currentVitals, currentCase, patientState);
@@ -1158,6 +1161,20 @@ function assessTreatmentPracticality({
   const airwayCompromise = hasAirwayCompromise(currentVitals, currentCase, patientState);
   const respiratoryDistress = spo2 < 94 || rr >= 26 || /severe distress|accessory|tripod|wheeze|cyanosis|pulmonary oedema|pulmonary edema/.test(text);
   const systolic = Number.parseInt(String(currentVitals.bp ?? patientState.vitals?.bp ?? '').split('/')[0], 10);
+
+  if (id === 'traction_splint') {
+    const decision = assessTractionSplintSafety(currentCase, appliedTreatmentIds);
+    if (!decision.allowed) {
+      return {
+        level: 'block',
+        title: decision.title,
+        clinicalReason: decision.reason,
+        patientQuote: vocal ? decision.code === 'uncontrolled-haemorrhage'
+          ? 'Please stop the bleeding before you move my leg.'
+          : 'That is not where my injury is. Please check me again.' : undefined,
+      };
+    }
+  }
 
   if (id === 'assisted_ambulation') {
     const unsafeInjury = /spinal|c-?spine|pelvi|femur|lower limb fracture|unstable fracture|open fracture/.test(text);
@@ -3364,6 +3381,7 @@ export function StudentPanel({
       currentVitals,
       currentCase,
       patientState,
+      appliedTreatmentIds,
     });
     if (practicalChallenge && !treatmentChallengeConfirmedRef.current.has(treatment.id)) {
       if (practicalChallenge.patientQuote) {

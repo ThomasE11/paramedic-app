@@ -1,5 +1,6 @@
 import type { CaseScenario } from '@/types';
 import { inferInjuries, type BodyInjury, type BodyRegion } from '@/lib/injuryMap';
+import { assessTractionSplintSafety } from '@/lib/tractionSplintSafety';
 
 export type ProcedureMotion =
   | 'prepare'
@@ -405,6 +406,8 @@ export function getHandsOnProcedurePlan(
   const splintIds = ['splinting', 'sam_splint', 'box_splint', 'vacuum_limb_splint', 'air_splint', 'traction_splint'];
   if (splintIds.includes(treatmentId)) {
     const traction = treatmentId === 'traction_splint';
+    const tractionTarget = traction ? assessTractionSplintSafety(caseData).target : null;
+    const splintTargets = limbInjuryTargets(caseData);
     const title = traction ? 'Apply a traction splint' : `Apply ${treatmentId === 'splinting' ? 'a limb splint' : treatmentId.replaceAll('_', ' ')}`;
     const assetById: Record<string, string> = {
       splinting: '/equipment-assets/splints.webp', sam_splint: '/equipment-assets/sam-splint.webp',
@@ -412,9 +415,15 @@ export function getHandsOnProcedurePlan(
       air_splint: '/equipment-assets/air-splint.webp', traction_splint: '/equipment-assets/traction-splint.webp',
     };
     return {
-      id: `splint-${treatmentId}`, title, subtitle: 'Immobilise the selected injury and document circulation, sensation and movement before and after.',
-      treatmentId, requiresTarget: true, targets: limbInjuryTargets(caseData), equipmentAsset: assetById[treatmentId],
-      completionLabel: 'Splint secured — distal status documented',
+      id: `splint-${treatmentId}`, title,
+      subtitle: traction
+        ? 'Use only for the identified femoral-shaft injury. Measure, apply controlled traction and document circulation, sensation and movement.'
+        : 'Immobilise the selected injury and document circulation, sensation and movement before and after.',
+      treatmentId,
+      requiresTarget: true,
+      targets: tractionTarget ? splintTargets.filter(target => target.id === tractionTarget) : splintTargets,
+      equipmentAsset: assetById[treatmentId],
+      completionLabel: traction ? 'Traction maintained — distal status documented' : 'Splint secured — distal status documented',
       steps: [
         STEP('expose', 'Expose and inspect', 'Remove clothing and jewellery; inspect the whole limb for wounds and deformity.', 'Control bleeding and cover open fractures before splinting.', 'expose'),
         STEP('csm-before', 'Check distal neurovascular status', 'Palpate distal pulse and assess colour, warmth, capillary refill, movement and sensation.', 'Document findings before any manipulation.', 'confirm'),

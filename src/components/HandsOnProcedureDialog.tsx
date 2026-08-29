@@ -80,9 +80,14 @@ export function HandsOnProcedureDialog({
     && nextStep?.id === 'expose';
   const canStart = !plan.requiresTarget || selectedTarget != null || canExposeBeforeTarget;
   const isDefibrillatorPadProcedure = plan.id === 'defib-pads';
+  const isTractionSplintProcedure = plan.treatmentId === 'traction_splint';
   const chestExposed = completedSteps.includes('expose');
   const bothPadsPlaced = completedSteps.includes('apical');
   const padsConnected = completedSteps.includes('connect');
+  const tractionDevicePositioned = completedSteps.includes('apply')
+    || completedSteps.includes('secure')
+    || completedSteps.includes('csm-after')
+    || animatingStep === 'apply';
 
   const performStep = () => {
     if (!nextStep || animatingStep || !canStart) return;
@@ -156,6 +161,26 @@ export function HandsOnProcedureDialog({
                 </span>
               )}
 
+              {isTractionSplintProcedure && selectedTarget && tractionDevicePositioned && (
+                <div
+                  data-procedure-equipment="traction-splint"
+                  aria-label={`Traction splint positioned on ${selectedTarget.label}`}
+                  className="pointer-events-none absolute z-20 h-[122px] w-[36px] -translate-x-1/2 -translate-y-1/2 animate-in fade-in zoom-in-75 duration-300"
+                  style={{
+                    left: selectedTarget.id === 'right-leg' ? '42%' : '58%',
+                    top: '73%',
+                  }}
+                >
+                  <img
+                    src={plan.equipmentAsset}
+                    alt=""
+                    draggable={false}
+                    className="h-full w-full rotate-[4deg] rounded-md object-cover object-center mix-blend-screen drop-shadow-[0_4px_6px_rgba(0,0,0,0.7)]"
+                  />
+                  <span className="absolute -bottom-2 left-1/2 h-5 w-8 -translate-x-1/2 rounded-b-full border-x-2 border-b-2 border-slate-300" />
+                </div>
+              )}
+
               {animatingStep && nextStep && (
                 <div className={`procedure-hands procedure-motion-${nextStep.motion}`} aria-label={`Performing ${nextStep.label}`}>
                   <Hand className="procedure-hand procedure-hand-left" />
@@ -187,7 +212,7 @@ export function HandsOnProcedureDialog({
                   </>
                 ) : (
                   <p className="rounded-xl border border-sky-400/25 bg-sky-400/10 p-3 text-xs text-sky-100">
-                    Expose the patient first. The visible wound site will then become selectable.
+                    Expose the patient first. The visible injury site will then become selectable.
                   </p>
                 )}
               </div>

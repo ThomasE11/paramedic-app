@@ -320,6 +320,9 @@ describe('deriveScenarioVisuals', () => {
       expect.objectContaining({ kind: 'active_bleeding', region: 'right-arm' }),
       expect.objectContaining({ kind: 'open_wound', region: 'right-arm' }),
     ]));
+    const openWound = visuals.find(visual => visual.kind === 'open_wound');
+    expect(openWound?.detail).toContain('remains visible after source control');
+    expect(openWound?.detail).not.toContain('Active haemorrhage');
     expect(visuals.some(visual => visual.kind === 'asymmetric_chest_rise')).toBe(false);
   });
 });

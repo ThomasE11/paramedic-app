@@ -1242,9 +1242,21 @@ function AppliedLimbEquipment({ treatmentId }: { treatmentId: string }) {
   const traction = treatmentId === 'traction_splint';
   const air = treatmentId === 'air_splint';
   const vacuum = treatmentId === 'vacuum_limb_splint';
+  if (traction) {
+    return (
+      <div data-applied-equipment="traction-splint" aria-label="Traction splint secured with maintained longitudinal traction" className="pointer-events-none relative h-32 w-16 -rotate-3 animate-in fade-in zoom-in-75 duration-300 drop-shadow-xl">
+        <span className="absolute left-1 top-1 h-[106px] w-1.5 rounded-full border border-white/60 bg-gradient-to-b from-slate-100 via-slate-400 to-slate-200" />
+        <span className="absolute right-1 top-1 h-[106px] w-1.5 rounded-full border border-white/60 bg-gradient-to-b from-slate-100 via-slate-400 to-slate-200" />
+        <span className="absolute left-0 top-0 h-5 w-full rounded-lg border border-blue-200/60 bg-blue-950 shadow" />
+        {[25, 47, 69].map(top => <span key={top} className="absolute left-0 h-2.5 w-full rounded-md border border-slate-300/60 bg-slate-950 shadow" style={{ top: `${top}%` }} />)}
+        <span className="absolute bottom-4 left-1/2 h-5 w-12 -translate-x-1/2 rounded-b-xl border-x-4 border-b-4 border-slate-300 bg-slate-900/80" />
+        <span className="absolute bottom-0 left-1/2 h-6 w-0.5 -translate-x-1/2 bg-slate-200" />
+        <span className="absolute -bottom-1 left-1/2 h-3 w-6 -translate-x-1/2 rounded-full border-2 border-amber-300 bg-slate-800" />
+      </div>
+    );
+  }
   return (
-    <div data-applied-equipment={traction ? 'traction-splint' : air ? 'air-splint' : vacuum ? 'vacuum-splint' : 'limb-splint'} className={`pointer-events-none relative h-24 w-12 animate-in fade-in zoom-in-75 duration-300 ${air ? 'rounded-2xl border-2 border-cyan-100/80 bg-cyan-100/25 backdrop-blur-[1px]' : vacuum ? 'rounded-2xl border border-blue-800 bg-blue-700/85' : 'rounded-lg bg-orange-500/90'} shadow-lg`}>
-      {traction && <><span className="absolute left-1 top-0 h-full w-1.5 rounded bg-slate-300" /><span className="absolute right-1 top-0 h-full w-1.5 rounded bg-slate-300" /></>}
+    <div data-applied-equipment={air ? 'air-splint' : vacuum ? 'vacuum-splint' : 'limb-splint'} className={`pointer-events-none relative h-24 w-12 animate-in fade-in zoom-in-75 duration-300 ${air ? 'rounded-2xl border-2 border-cyan-100/80 bg-cyan-100/25 backdrop-blur-[1px]' : vacuum ? 'rounded-2xl border border-blue-800 bg-blue-700/85' : 'rounded-lg bg-orange-500/90'} shadow-lg`}>
       {[20, 48, 76].map(top => <span key={top} className="absolute left-0 h-2 w-full rounded bg-slate-900/85" style={{ top: `${top}%` }} />)}
     </div>
   );

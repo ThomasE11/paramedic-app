@@ -808,6 +808,17 @@ function visualRegionForInjury(region: BodyRegion): EquipmentAnchorRegion {
   return region;
 }
 
+function exposedInjuryDetail(injury: ReturnType<typeof inferInjuries>[number]): string {
+  const location = injury.region.replace('-', ' ');
+  if (injury.kind === 'amputation') {
+    return `The exposed traumatic amputation at the ${location} remains visible after source control; protect the stump and reassess the device.`;
+  }
+  if (injury.kind === 'bleeding') {
+    return `The exposed wound at the ${location} remains visible; reassess the dressing or device, distal circulation and tissue protection.`;
+  }
+  return injury.detail;
+}
+
 /**
  * The trauma scenario describes a family of injuries, but its visuals must be
  * bound to this patient's authored anatomy. A hand amputation must not create
@@ -825,7 +836,7 @@ function contextualizeScenarioVisual(
     ?? injuries.find(injury => injury.kind === 'bleeding');
 
   if (effect.id === 'trauma-open-wound') {
-    return openInjury ? { ...effect, region: visualRegionForInjury(openInjury.region), detail: openInjury.detail } : null;
+    return openInjury ? { ...effect, region: visualRegionForInjury(openInjury.region), detail: exposedInjuryDetail(openInjury) } : null;
   }
   if (effect.id === 'trauma-active-bleeding') {
     return bleeding ? { ...effect, region: visualRegionForInjury(bleeding.region), detail: bleeding.detail } : null;
