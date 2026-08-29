@@ -307,6 +307,7 @@ import { isBleedRegionControlled } from '@/lib/bleedControl';
 import { assessTractionSplintSafety } from '@/lib/tractionSplintSafety';
 import { assessLimbSplintSafety, type LimbSplintTreatmentId } from '@/lib/limbSplintSafety';
 import { assessPulseAtSite, parsePulseSite, type PulseAssessmentResult } from '@/lib/pulseAssessment';
+import { assessAmbulationSafety } from '@/lib/ambulationSafety';
 import { VentilatorSetupDialog, type VentilatorSettings } from '@/components/VentilatorSetupDialog';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 // ClinicalAssessmentPanel removed — replaced by inline ABCDE Primary Survey + 3D Physical Exam
@@ -1162,7 +1163,6 @@ function assessTreatmentPracticality({
   const vocal = canPatientVocalize(currentVitals, currentCase, patientState);
   const airwayCompromise = hasAirwayCompromise(currentVitals, currentCase, patientState);
   const respiratoryDistress = spo2 < 94 || rr >= 26 || /severe distress|accessory|tripod|wheeze|cyanosis|pulmonary oedema|pulmonary edema/.test(text);
-  const systolic = Number.parseInt(String(currentVitals.bp ?? patientState.vitals?.bp ?? '').split('/')[0], 10);
 
   if (id === 'traction_splint') {
     const decision = assessTractionSplintSafety(currentCase, appliedTreatmentIds);
@@ -1193,22 +1193,16 @@ function assessTreatmentPracticality({
   }
 
   if (id === 'assisted_ambulation') {
-    const unsafeInjury = /spinal|c-?spine|pelvi|femur|lower limb fracture|unstable fracture|open fracture/.test(text);
-    const unstable = patientState.isInArrest
-      || gcs < 15
-      || !Number.isFinite(systolic)
-      || systolic < 100
-      || spo2 < 94
-      || rr < 10
-      || rr > 24
-      || currentVitals.pulse < 50
-      || currentVitals.pulse > 120
-      || unsafeInjury;
-    if (unstable) {
+    const decision = assessAmbulationSafety({
+      caseData: currentCase,
+      vitals: currentVitals,
+      isInArrest: patientState.isInArrest,
+    });
+    if (!decision.allowed) {
       return {
         level: 'block',
         title: 'Patient is not safe to walk',
-        clinicalReason: 'Assisted ambulation requires a fully alert, haemodynamically stable patient with adequate oxygenation and no injury that makes weight-bearing unsafe.',
+        clinicalReason: decision.reason,
         patientQuote: vocal ? 'I feel too unwell to stand safely.' : undefined,
       };
     }

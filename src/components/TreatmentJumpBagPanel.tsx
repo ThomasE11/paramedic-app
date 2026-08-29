@@ -457,7 +457,12 @@ const BAG_EQUIPMENT: Record<ManagementTab, EquipmentInventoryItem[]> = {
     { id: 'exposure-bandage', label: 'Bandages', caption: 'Dressings and wraps', treatmentId: 'bleeding_control', assetPath: EQUIPMENT_ASSET_PATHS.bandages, tone: '#f8fafc' },
     { id: 'exposure-blanket', label: 'Warming Blanket', caption: 'Prevent hypothermia', treatmentId: 'warming_blanket', assetPath: EQUIPMENT_ASSET_PATHS.blanket, tone: '#f59e0b', wide: true },
     { id: 'exposure-cooling', label: 'Cooling Pack', caption: 'Heat illness burns', treatmentId: 'active_cooling', assetPath: EQUIPMENT_ASSET_PATHS.cooling, tone: '#06b6d4' },
-    { id: 'exposure-position', label: 'Positioning', caption: 'Upright / recovery', treatmentId: 'recovery_position', assetPath: EQUIPMENT_ASSET_PATHS.positioning, tone: '#10b981' },
+    { id: 'exposure-position-recovery', label: 'Recovery Position', caption: 'Lateral airway protection', treatmentId: 'recovery_position', assetPath: EQUIPMENT_ASSET_PATHS.positioning, tone: '#10b981' },
+    { id: 'exposure-position-fowlers', label: "Fowler's Position", caption: 'Supported 45–60° upright', treatmentId: 'fowlers_position', assetPath: EQUIPMENT_ASSET_PATHS.positioning, tone: '#0891b2' },
+    { id: 'exposure-position-supine', label: 'Supine Position', caption: 'Flat, aligned, airway visible', treatmentId: 'supine_position', assetPath: EQUIPMENT_ASSET_PATHS.positioning, tone: '#64748b' },
+    { id: 'exposure-position-left-tilt', label: 'Left Lateral Tilt', caption: 'Relieve aortocaval compression', treatmentId: 'left_lateral_tilt', assetPath: EQUIPMENT_ASSET_PATHS.positioning, tone: '#8b5cf6' },
+    { id: 'exposure-position-legs', label: 'Leg Elevation', caption: 'Support both lower legs', treatmentId: 'leg_elevation', assetPath: EQUIPMENT_ASSET_PATHS.positioning, tone: '#0f766e' },
+    { id: 'exposure-position-walk', label: 'Assisted Walk', caption: 'Stable patient gait check', treatmentId: 'assisted_ambulation', assetPath: EQUIPMENT_ASSET_PATHS.positioning, tone: '#16a34a', wide: true },
   ],
   transport: [
     { id: 'transport-stretcher', label: 'Main Stretcher', caption: 'Wheeled ambulance trolley', assetPath: EQUIPMENT_ASSET_PATHS.ambulanceStretcher, tone: '#facc15', wide: true },
