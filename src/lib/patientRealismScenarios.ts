@@ -168,7 +168,8 @@ function collectCaseText(caseData: CaseScenario): string {
     ...(caseData.secondarySurvey?.posterior || []),
     ...(caseData.secondarySurvey?.neurological || []),
     ...(caseData.expectedFindings?.keyObservations || []),
-    ...(caseData.expectedFindings?.redFlags || []),
+    // Red flags and differentials are teaching prompts, not active findings.
+    // Matching them rendered complications that the current patient did not have.
     caseData.expectedFindings?.mostLikelyDiagnosis,
     caseData.history?.eventsLeading,
     ...(caseData.history?.medicalConditions || []),
@@ -187,7 +188,7 @@ function collectCaseText(caseData: CaseScenario): string {
  * negation word to the end of the clause.
  */
 function stripNegatedClauses(part: string): string {
-  return part.replace(/\b(?:no|denies|denying|without|nil)\b[^,;.]*/gi, ' ');
+  return part.replace(/\b(?:no|denies|denying|without|nil)\b[^.;]*/gi, ' ');
 }
 
 const keywordPatternCache = new Map<string, RegExp>();

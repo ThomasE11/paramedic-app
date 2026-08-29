@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getHandsOnProcedurePlan, parseProcedureSiteToken, procedureSiteToken } from '@/lib/handsOnProcedures';
+import { getHandsOnProcedurePlan, isHandsOnTreatment, parseProcedureSiteToken, procedureSiteToken } from '@/lib/handsOnProcedures';
 import type { CaseScenario } from '@/types';
 
 const caseData = {
@@ -31,6 +31,14 @@ describe('hands-on treatment procedures', () => {
   it('makes capnography part of intubation completion', () => {
     const plan = getHandsOnProcedurePlan('rsi_intubation', caseData);
     expect(plan?.steps.some(step => step.id === 'capnography')).toBe(true);
+  });
+
+  it('makes patient repositioning a physical, reassessed procedure', () => {
+    for (const treatmentId of ['supine_position', 'recovery_position', 'fowlers_position', 'assisted_ambulation']) {
+      const plan = getHandsOnProcedurePlan(treatmentId, caseData);
+      expect(isHandsOnTreatment(treatmentId)).toBe(true);
+      expect(plan?.steps.map(step => step.id)).toEqual(['safety', 'prepare', 'move', 'settle', 'confirm']);
+    }
   });
 
   it('provides physical application workflows for reusable patient equipment', () => {

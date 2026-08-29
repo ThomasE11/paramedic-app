@@ -9,6 +9,22 @@ import type { CaseScenario } from '@/types';
 export type PatientStage = 'stretcher' | 'floor';
 export type PatientMobility = 'recumbent' | 'seated' | 'standing' | 'pacing';
 export type PatientSkeletalAction = 'idle' | 'walk' | null;
+export type PatientPosture = 'tripod' | 'supine' | 'recovery' | null;
+
+export interface PatientPositioningOverride {
+  mobility: PatientMobility;
+  posture: PatientPosture;
+  treatmentId: string;
+}
+
+const TREATMENT_POSITIONING: Record<string, Omit<PatientPositioningOverride, 'treatmentId'>> = {
+  supine_position: { mobility: 'recumbent', posture: 'supine' },
+  recovery_position: { mobility: 'recumbent', posture: 'recovery' },
+  fowlers_position: { mobility: 'seated', posture: 'tripod' },
+  left_lateral_tilt: { mobility: 'recumbent', posture: 'recovery' },
+  leg_elevation: { mobility: 'recumbent', posture: 'supine' },
+  assisted_ambulation: { mobility: 'pacing', posture: null },
+};
 
 // ponytail: keyword staging over authored per-case data — explicit ground
 // words only, so an ambiguous scene stays on the stretcher (clinically fine:
@@ -93,5 +109,21 @@ export function patientSkeletalAction(
   if (unconscious) return null;
   if (mobility === 'pacing') return 'walk';
   if (mobility === 'standing') return 'idle';
+  return null;
+}
+
+/**
+ * The last positioning intervention is the patient's current position. This
+ * closes the treatment-to-visual loop: applying recovery/Fowler's/supine or
+ * assisted ambulation must move the rendered patient, not only change vitals.
+ */
+export function deriveTreatmentPositioningOverride(
+  appliedTreatmentIds: readonly string[],
+): PatientPositioningOverride | null {
+  for (let index = appliedTreatmentIds.length - 1; index >= 0; index -= 1) {
+    const treatmentId = appliedTreatmentIds[index];
+    const positioning = TREATMENT_POSITIONING[treatmentId];
+    if (positioning) return { ...positioning, treatmentId };
+  }
   return null;
 }

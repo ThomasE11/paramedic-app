@@ -20,7 +20,9 @@ import { BodyMesh, treatmentBayClinicalToWorld, type BayPatientStage } from './B
 import {
   derivePatientMobility,
   deriveScenePatientStage,
+  deriveTreatmentPositioningOverride,
   type PatientMobility,
+  type PatientPosture,
 } from '@/lib/patientStaging';
 import { deriveSceneEnvironment } from '@/lib/sceneEnvironment';
 import type { LimbSide, SurfaceSampler } from './BodyMesh';
@@ -4074,10 +4076,14 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
     return caseData.abcde?.disability?.avpu === 'U';
   }, [isInArrest, vitals?.gcs, caseData]);
 
-  const patientMobility = useMemo(
-    () => derivePatientMobility(caseData, patientUnconscious),
-    [caseData, patientUnconscious],
+  const treatmentPositioning = useMemo(
+    () => deriveTreatmentPositioningOverride(appliedTreatmentIds),
+    [appliedTreatmentIds],
   );
+  const patientMobility = useMemo<PatientMobility>(() => {
+    if (isInArrest) return 'recumbent';
+    return treatmentPositioning?.mobility ?? derivePatientMobility(caseData, patientUnconscious);
+  }, [caseData, isInArrest, patientUnconscious, treatmentPositioning]);
 
   // Capture/dev-only SpO2 override so the harness can pin 85 vs 94 without
   // mutating the live treatment engine. Production builds never set it.
@@ -4092,7 +4098,12 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   // The posture must be known before the overview camera is created. Upright
   // tripod and supine bodies occupy different world volumes; using the supine
   // target for a respiratory patient cropped the head out of the viewport.
-  const patientPosture = useMemo<'tripod' | 'supine' | 'recovery' | null>(() => {
+  const patientPosture = useMemo<PatientPosture>(() => {
+    // Cardiac arrest always wins: CPR needs a hard, supine surface. Otherwise
+    // a completed positioning procedure is authoritative—even an unconscious
+    // breathing patient may correctly be placed in the recovery position.
+    if (isInArrest) return 'supine';
+    if (treatmentPositioning) return treatmentPositioning.posture;
     if (patientUnconscious) return 'supine';
     const authoredPosition = caseData.initialPresentation?.position?.toLowerCase() ?? '';
     if (/recovery position|curled on (?:their |his |her )?side|lying on (?:their |his |her )?side/.test(authoredPosition)) {
@@ -4111,7 +4122,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
         `${caseData.category ?? ''} ${caseData.title ?? ''} ${caseData.dispatchInfo?.callReason ?? ''}`,
       );
     return respiratoryDistress ? 'tripod' : 'supine';
-  }, [patientUnconscious, patientMobility, effectiveVitals, caseData]);
+  }, [isInArrest, treatmentPositioning, patientUnconscious, patientMobility, effectiveVitals, caseData]);
 
   // useMemo keeps the pos/target array identities stable — OrbitControls'
   // `target` prop and several useCallback deps rely on that.

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { CaseScenario } from '@/types';
+import { firstYearCases } from '@/data/firstYearCases';
 import {
   matchRealismScenarios,
   deriveScenarioTreatmentResponses,
@@ -149,6 +150,14 @@ describe('matchRealismScenarios', () => {
     const matched = matchRealismScenarios(scenario);
     expect(matched.some(s => s.id === 'respiratory-bronchospasm')).toBe(true);
     expect(matched.some(s => s.id === 'anaphylaxis-systemic')).toBe(false);
+  });
+
+  it('does not turn a panic case red-flag differential into open trauma', () => {
+    const panicCase = firstYearCases.find(item => item.id === 'y1-008');
+    expect(panicCase).toBeDefined();
+
+    const matched = matchRealismScenarios(panicCase!);
+    expect(matched.some(scenario => scenario.id === 'trauma-haemorrhage-open-chest')).toBe(false);
   });
 
   it('maps anaphylaxis case to anaphylaxis scenario', () => {

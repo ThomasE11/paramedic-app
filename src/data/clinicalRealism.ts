@@ -3191,6 +3191,16 @@ function parseSystolic(bp: string | undefined): number | undefined {
   return match ? Number(match[0]) : undefined;
 }
 
+/**
+ * Remove authored pertinent negatives before keyword classification. Without
+ * this, "no trauma", "no wheeze" and "no burns to face, airway or chest"
+ * create injuries that the case explicitly rules out. Keep any positive text
+ * before the negation and discard the remainder of that sentence/clause.
+ */
+function stripNegatedClinicalClauses(value: string): string {
+  return value.replace(/\b(?:no|denies|denying|without|nil)\b[^.;]*/gi, ' ');
+}
+
 function textForCase(caseData: CaseScenario): string {
   return [
     caseData.title,
@@ -3218,10 +3228,17 @@ function textForCase(caseData: CaseScenario): string {
     ...(caseData.secondarySurvey?.pelvis || []),
     ...(caseData.secondarySurvey?.extremities || []),
     ...(caseData.expectedFindings?.keyObservations || []),
-    ...(caseData.expectedFindings?.redFlags || []),
+    // Red flags describe possibilities the learner must watch for, not signs
+    // this patient currently has. Using them as phenotype evidence invented
+    // inhalation injury, shock and other complications in otherwise simple cases.
+    caseData.expectedFindings?.mostLikelyDiagnosis,
     caseData.history?.eventsLeading,
     ...(caseData.history?.medicalConditions || []),
-  ].filter(Boolean).join(' ').toLowerCase();
+  ]
+    .filter(Boolean)
+    .map(value => stripNegatedClinicalClauses(String(value)))
+    .join(' ')
+    .toLowerCase();
 }
 
 function presentationTextForCase(caseData: CaseScenario): string {
@@ -3233,7 +3250,11 @@ function presentationTextForCase(caseData: CaseScenario): string {
     ...(caseData.abcde?.breathing?.auscultation || []),
     ...(caseData.abcde?.circulation?.findings || []),
     ...(caseData.secondarySurvey?.chest || []),
-  ].filter(Boolean).join(' ').toLowerCase();
+  ]
+    .filter(Boolean)
+    .map(value => stripNegatedClinicalClauses(String(value)))
+    .join(' ')
+    .toLowerCase();
 }
 
 function cue(
@@ -3318,7 +3339,8 @@ export function deriveCaseRealismProfile(caseData: CaseScenario): PatientRealism
   const hypoventilationCase = /(opioid|overdose|naloxone|pinpoint|bradypn|slow respir|hypoventilat|respiratory depression)/.test(text);
   const anaphylaxisCase = sub.includes('anaphylaxis') || /(anaphylaxis|allergic reaction|urticaria|hives|facial swelling|lip swelling|tongue swelling|stridor after|wheeze after|prawns|peanuts|bee sting)/.test(text);
   const traumaCase = cat === 'trauma' || cat === 'thoracic' || injuries.length > 0 || /(mvc|collision|fall|stab|gunshot|blast|fracture|deformity|laceration|haemorrh|hemorrh|bleeding|amputation|pelvic|flail|pneumothorax|tamponade)/.test(text);
-  const burnsCase = cat === 'burns' || /(burn|scald|electrical|smoke inhalation|soot|singed|fire|flash)/.test(text);
+  const burnsCase = cat === 'burns'
+    || /\bburn(?:s|ed|ing)?\b|\bscald(?:s|ed|ing)?\b|\belectrical\b|\bsmoke inhalation\b|\bsoot\b|\bsinged\b|\bfire\b|\bflash\b/.test(text);
   const cardiacCase = cat === 'cardiac' || cat === 'cardiac-ecg' || /(chest pain|stemi|nstemi|acs|myocardial|arrhythmia|palpitation|syncope|cardiac arrest|vf|\bvt\b|asystole|\bpea\b)/.test(text);
   const neuroCase = cat === 'neurological' || /(stroke|facial droop|arm drift|slurred speech|seizure|post-ictal|postictal|gaze deviation|unequal pupils|head injury|tbi)/.test(text);
   const metabolicCase = cat === 'metabolic'
@@ -3429,7 +3451,7 @@ export function deriveCaseRealismProfile(caseData: CaseScenario): PatientRealism
     profile.caseFamily = 'burns';
     profile.summary = 'Make burn pattern, airway risk, pain, exposure, cooling, and hypothermia risk visible.';
     add.cue(cue('burn-pattern', 'Burn pattern', 'Burn location and depth should be visible after exposure, not buried in text.', 'chest', 'warning'));
-    if (/soot|singed|smoke|inhalation|facial burn|airway/.test(text)) {
+    if (/\bsoot\b|\bsinged\b|\bsmoke\b|\binhalation\b|\bfacial burn\b|\bairway burn\b/.test(text)) {
       add.cue(cue('burn-airway', 'Inhalation risk', 'Face/mouth view should show soot, swelling risk, and airway vigilance.', 'face', 'critical', 'on-assessment'));
     }
     add.assessment('remove from source', 'airway and inhalation signs', 'burn size/depth', 'pain', 'temperature protection');
@@ -3724,7 +3746,12 @@ export function evaluateTreatmentRealism({
   }
 
   if (treatment.id === 'bvm_ventilation') {
-    if (/apnoea|apnea|agonal|respiratory depression|opioid|arrest|unresponsive/.test(text) || (typeof rr === 'number' && rr < 8) || gcs <= 8) {
+    const impendingVentilatoryFailure = typeof spo2 === 'number'
+      && spo2 < 85
+      && typeof rr === 'number'
+      && rr > 30
+      && gcs < 15;
+    if (/apnoea|apnea|agonal|respiratory depression|opioid|arrest|unresponsive/.test(text) || (typeof rr === 'number' && rr < 8) || gcs <= 8 || impendingVentilatoryFailure) {
       return result('matched', 'Ventilation supported', 'BVM support should produce visible chest rise. Reassess EtCO2, SpO2, mask seal, and gastric inflation risk.', 'Ventilation support matched to poor ventilatory drive.', {
         visibleCue: makeTreatmentCue('bvm-started', 'BVM ventilation', 'Chest rise should be assisted at the selected rate.', 'chest', 'observe'),
       });

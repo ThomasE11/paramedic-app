@@ -1156,6 +1156,29 @@ function assessTreatmentPracticality({
   const vocal = canPatientVocalize(currentVitals, currentCase, patientState);
   const airwayCompromise = hasAirwayCompromise(currentVitals, currentCase, patientState);
   const respiratoryDistress = spo2 < 94 || rr >= 26 || /severe distress|accessory|tripod|wheeze|cyanosis|pulmonary oedema|pulmonary edema/.test(text);
+  const systolic = Number.parseInt(String(currentVitals.bp ?? patientState.vitals?.bp ?? '').split('/')[0], 10);
+
+  if (id === 'assisted_ambulation') {
+    const unsafeInjury = /spinal|c-?spine|pelvi|femur|lower limb fracture|unstable fracture|open fracture/.test(text);
+    const unstable = patientState.isInArrest
+      || gcs < 15
+      || !Number.isFinite(systolic)
+      || systolic < 100
+      || spo2 < 94
+      || rr < 10
+      || rr > 24
+      || currentVitals.pulse < 50
+      || currentVitals.pulse > 120
+      || unsafeInjury;
+    if (unstable) {
+      return {
+        level: 'block',
+        title: 'Patient is not safe to walk',
+        clinicalReason: 'Assisted ambulation requires a fully alert, haemodynamically stable patient with adequate oxygenation and no injury that makes weight-bearing unsafe.',
+        patientQuote: vocal ? 'I feel too unwell to stand safely.' : undefined,
+      };
+    }
+  }
 
   if (id === 'opa_insert' && !patientState.isInArrest && (gcs > 8 || vocal)) {
     return {

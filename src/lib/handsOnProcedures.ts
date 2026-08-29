@@ -456,6 +456,35 @@ export function getHandsOnProcedurePlan(
     };
   }
 
+  if (['supine_position', 'recovery_position', 'fowlers_position', 'left_lateral_tilt', 'leg_elevation', 'assisted_ambulation'].includes(treatmentId)) {
+    const positioning: Record<string, { title: string; destination: string; completion: string }> = {
+      supine_position: { title: 'Position patient supine', destination: 'flat on their back with alignment and airway access maintained', completion: 'Supine position secured — reassess' },
+      recovery_position: { title: 'Place in recovery position', destination: 'lateral with the airway dependent and the upper leg supporting the body', completion: 'Recovery position secured — reassess airway' },
+      fowlers_position: { title: "Move to Fowler's position", destination: 'supported at 45–60 degrees without slumping or losing lines', completion: "Fowler's position secured — reassess breathing" },
+      left_lateral_tilt: { title: 'Apply left lateral tilt', destination: 'tilted 15–30 degrees to relieve aortocaval compression', completion: 'Left tilt secured — reassess perfusion' },
+      leg_elevation: { title: 'Elevate the legs', destination: 'supine with both lower legs supported and pressure points protected', completion: 'Legs supported — reassess perfusion' },
+      assisted_ambulation: { title: 'Assist patient to walk', destination: 'upright with close support for a short observed walk', completion: 'Ambulation observed — reassess tolerance' },
+    };
+    const meta = positioning[treatmentId];
+    return {
+      id: `position-${treatmentId}`,
+      title: meta.title,
+      subtitle: 'Position changes are physical procedures: explain, prepare, move together and reassess immediately.',
+      treatmentId,
+      requiresTarget: false,
+      targets: [],
+      equipmentAsset: '/equipment-assets/positioning.webp',
+      completionLabel: meta.completion,
+      steps: [
+        STEP('safety', 'Check safety and explain', 'Confirm the patient can tolerate movement, explain the plan and obtain consent where possible.', 'Check consciousness, pain, injury pattern, blood pressure, oxygenation, lines and monitoring before moving.', 'prepare'),
+        STEP('prepare', 'Prepare the route and supports', 'Clear obstacles, lock equipment and place pillows, rails or a second clinician where required.', 'Oxygen, monitor cables, IV lines and injured limbs must move with the patient.', 'prepare'),
+        STEP('move', 'Move on a coordinated count', `Support the head, torso and limbs; move the patient ${meta.destination}.`, 'Stop for dizziness, collapse, new pain, dyspnoea or loss of alignment.', 'place', 1300),
+        STEP('settle', 'Support and secure', 'Settle the patient, protect pressure points and make sure they cannot fall or roll.', 'Keep the airway visible and all treatment equipment functional.', 'wrap', 1000),
+        STEP('confirm', 'Reassess after movement', 'Repeat airway, breathing, pulse, BP, SpO2, pain and neurological status.', 'A position is not complete until tolerance and physiological response are confirmed.', 'confirm'),
+      ],
+    };
+  }
+
   if (['spinal_board', 'scoop_stretcher', 'vacuum_mattress', 'head_blocks', 'ked'].includes(treatmentId)) {
     const labels: Record<string, string> = {
       spinal_board: 'long spinal board', scoop_stretcher: 'scoop stretcher', vacuum_mattress: 'vacuum mattress',
@@ -490,7 +519,8 @@ const HANDS_ON_TREATMENTS = new Set([
   'occlusive_dressing_3sided', 'needle_decompression', 'splinting', 'sam_splint', 'box_splint',
   'vacuum_limb_splint', 'air_splint', 'traction_splint', 'cervical_collar', 'warming_blanket',
   'active_cooling', 'spinal_board', 'scoop_stretcher', 'vacuum_mattress', 'head_blocks', 'ked',
-  'lucas_device', 'ventilator_setup',
+  'lucas_device', 'ventilator_setup', 'supine_position', 'recovery_position', 'fowlers_position',
+  'left_lateral_tilt', 'leg_elevation', 'assisted_ambulation',
 ]);
 
 export const isHandsOnTreatment = (treatmentId: string): boolean =>

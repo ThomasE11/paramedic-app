@@ -908,6 +908,20 @@ export const TREATMENTS: Treatment[] = [
       { vitalSign: 'pulse', changeType: 'decrease', value: 8, minValue: 60 },
     ],
   },
+  {
+    id: 'assisted_ambulation',
+    name: 'Assisted Ambulation',
+    description: 'Help a stable, conscious patient stand and walk a few observed steps',
+    category: 'positioning',
+    onset: 'immediate',
+    onsetTimeSeconds: 0,
+    durationSeconds: 10,
+    icon: 'Move',
+    color: 'gray',
+    effects: [],
+    contraindications: ['Haemodynamic instability', 'Reduced consciousness', 'Hypoxia', 'Suspected spinal, pelvic or lower-limb injury'],
+    requiresMonitoring: true,
+  },
 
   // ===== COMFORT/OTHER =====
   {

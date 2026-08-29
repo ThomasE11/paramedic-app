@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   derivePatientMobility,
   deriveScenePatientStage,
+  deriveTreatmentPositioningOverride,
   patientSkeletalAction,
 } from './patientStaging';
 import type { CaseScenario } from '@/types';
@@ -52,5 +53,28 @@ describe('patientSkeletalAction', () => {
     expect(patientSkeletalAction('seated')).toBeNull();
     expect(patientSkeletalAction('recumbent')).toBeNull();
     expect(patientSkeletalAction('pacing', true)).toBeNull();
+  });
+});
+
+describe('deriveTreatmentPositioningOverride', () => {
+  it('uses the latest positioning intervention as the visible patient state', () => {
+    expect(deriveTreatmentPositioningOverride([])).toBeNull();
+    expect(deriveTreatmentPositioningOverride(['recovery_position'])).toMatchObject({
+      mobility: 'recumbent',
+      posture: 'recovery',
+    });
+    expect(deriveTreatmentPositioningOverride(['recovery_position', 'oxygen_mask', 'fowlers_position'])).toMatchObject({
+      mobility: 'seated',
+      posture: 'tripod',
+      treatmentId: 'fowlers_position',
+    });
+  });
+
+  it('turns assisted ambulation into a walk-capable mobility state', () => {
+    expect(deriveTreatmentPositioningOverride(['assisted_ambulation'])).toEqual({
+      mobility: 'pacing',
+      posture: null,
+      treatmentId: 'assisted_ambulation',
+    });
   });
 });

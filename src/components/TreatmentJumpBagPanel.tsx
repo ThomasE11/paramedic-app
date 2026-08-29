@@ -582,7 +582,7 @@ function treatmentBelongsToBag(treatment: Treatment, bag: TreatmentJumpBag): boo
     || (bag.key === 'disability' && (
       treatment.description.toLowerCase().includes('seizure')
       || treatment.description.toLowerCase().includes('glucose')
-      || treatment.description.toLowerCase().includes('conscious')
+      || /consciousness|\bgcs\b|\bavpu\b/.test(treatment.description.toLowerCase())
     ));
 }
 
@@ -1937,6 +1937,7 @@ export function TreatmentJumpBagPanel({
                   return (
                     <div
                       key={treatment.id}
+                      data-treatment-id={treatment.id}
                       className={`grid grid-cols-[1fr_auto] gap-3 rounded-lg border p-3 text-xs transition ${
                         isApplied
                           ? 'border-emerald-500/30 bg-emerald-50/80 dark:bg-emerald-950/15'
