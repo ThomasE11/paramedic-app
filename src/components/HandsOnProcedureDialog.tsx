@@ -200,6 +200,52 @@ function FrontOfNeckAirwayProcedurePreview({
   );
 }
 
+function ForeignBodyRemovalProcedurePreview({
+  treatmentId,
+  completedSteps,
+  animatingStep,
+}: {
+  treatmentId: string;
+  completedSteps: string[];
+  animatingStep: string | null;
+}) {
+  if (treatmentId !== 'magill_forceps') return null;
+  const reached = (stepId: string) => completedSteps.includes(stepId) || animatingStep === stepId;
+  const visualised = reached('visualise');
+  const forcepsInserted = reached('insert');
+  const removed = reached('remove');
+  const confirmed = reached('confirm');
+
+  return (
+    <div data-procedure-preview="magill-forceps" className="pointer-events-none absolute inset-0 z-30">
+      {visualised && (
+        <>
+          <span className="absolute left-1/2 top-[48px] h-11 w-12 -translate-x-1/2 rounded-b-[22px] border-2 border-sky-200/65 bg-slate-950 shadow-[0_0_16px_rgba(125,211,252,.35)]" aria-label="Airway visualised with laryngoscope" />
+          {!removed && <span className="absolute left-1/2 top-[68px] h-3 w-4 -translate-x-1/2 rounded-full border border-amber-200 bg-amber-700 shadow" aria-label="Visible foreign body" />}
+          <span className="absolute left-[66px] top-[46px] h-3 w-16 rotate-[18deg] rounded bg-gradient-to-r from-slate-700 to-slate-200 shadow" />
+        </>
+      )}
+      {forcepsInserted && !removed && (
+        <div className="absolute left-[92px] top-[59px] h-16 w-20 -rotate-6">
+          <span className="absolute left-0 top-5 h-1.5 w-20 origin-left rotate-6 rounded bg-gradient-to-r from-slate-500 to-slate-100" />
+          <span className="absolute left-0 top-8 h-1.5 w-20 origin-left -rotate-6 rounded bg-gradient-to-r from-slate-500 to-slate-100" />
+          <span className="absolute right-0 top-[24px] h-5 w-3 rounded-r-full border-r-2 border-slate-100" />
+        </div>
+      )}
+      {removed && (
+        <>
+          <span className="absolute left-[49px] top-[50px] h-3 w-4 rounded-full border border-amber-200 bg-amber-700 shadow" aria-label="Foreign body withdrawn" />
+          <span className="absolute left-[66px] top-[58px] h-0.5 w-20 rotate-[-12deg] bg-emerald-300" />
+          <span className="absolute left-[58px] top-[43px] rounded-full border border-emerald-300/45 bg-emerald-950/95 px-2 py-1 text-[7px] font-black uppercase tracking-[0.08em] text-emerald-100">Object removed</span>
+        </>
+      )}
+      {confirmed && (
+        <span className="absolute bottom-3 left-1/2 w-max -translate-x-1/2 rounded-full border border-emerald-300/50 bg-emerald-950/95 px-2 py-1 text-[7px] font-black uppercase tracking-[0.08em] text-emerald-100 shadow-lg">Air entry + SpO₂ + EtCO₂ reassessed</span>
+      )}
+    </div>
+  );
+}
+
 const THERMAL_PREVIEW_TREATMENTS = new Set(['active_cooling', 'warming_blanket']);
 
 function ThermalProcedurePreview({
@@ -633,6 +679,12 @@ export function HandsOnProcedureDialog({
               />
 
               <FrontOfNeckAirwayProcedurePreview
+                treatmentId={plan.treatmentId}
+                completedSteps={completedSteps}
+                animatingStep={animatingStep}
+              />
+
+              <ForeignBodyRemovalProcedurePreview
                 treatmentId={plan.treatmentId}
                 completedSteps={completedSteps}
                 animatingStep={animatingStep}

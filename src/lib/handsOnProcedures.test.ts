@@ -81,7 +81,7 @@ describe('hands-on treatment procedures', () => {
       'sam_splint', 'box_splint', 'vacuum_limb_splint', 'air_splint', 'traction_splint',
       'cervical_collar', 'warming_blanket', 'active_cooling', 'spinal_board',
       'scoop_stretcher', 'vacuum_mattress', 'head_blocks', 'ked', 'lucas_device',
-      'ventilator_setup', 'mechanical_ventilation', 'pelvic_binder', 'surgical_cric',
+      'ventilator_setup', 'mechanical_ventilation', 'pelvic_binder', 'surgical_cric', 'magill_forceps',
     ];
     for (const treatmentId of equipmentTreatments) {
       const plan = getHandsOnProcedurePlan(treatmentId, caseData);
@@ -130,6 +130,16 @@ describe('hands-on treatment procedures', () => {
     expect(plan?.steps.at(-1)?.instruction).toContain('sustained waveform EtCO₂');
     expect(isHandsOnTreatment('surgical_cric')).toBe(true);
     expect(procedureIncludesIntegratedReassessment('surgical_cric')).toBe(true);
+  });
+
+  it('requires direct vision throughout Magill forceps foreign-body removal', () => {
+    const plan = getHandsOnProcedurePlan('magill_forceps', caseData);
+
+    expect(plan?.steps.map(step => step.id)).toEqual(['prepare', 'position', 'visualise', 'insert', 'remove', 'confirm']);
+    expect(plan?.steps.find(step => step.id === 'visualise')?.clinicalCue).toContain('directly seen');
+    expect(plan?.steps.find(step => step.id === 'insert')?.instruction).toContain('continuously visible');
+    expect(isHandsOnTreatment('magill_forceps')).toBe(true);
+    expect(procedureIncludesIntegratedReassessment('magill_forceps')).toBe(true);
   });
 
   it('reuses an already fitted nebuliser when adding the second bronchodilator', () => {

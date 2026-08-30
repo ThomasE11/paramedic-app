@@ -534,6 +534,7 @@ const EQUIPMENT_ASSET_PATHS = {
   tractionSplint: '/equipment-assets/traction-splint.webp',
   pelvicBinder: '/equipment-assets/pelvic-binder.svg',
   fonaKit: '/equipment-assets/fona-kit.svg',
+  magillKit: '/equipment-assets/magill-forceps-kit.svg',
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -639,6 +640,7 @@ const BAG_EQUIPMENT: Record<ManagementTab, EquipmentInventoryItem[]> = {
     { id: 'airway-oxygen-cylinder', label: 'Oxygen Cylinder', caption: 'High pressure O2 supply', assetPath: EQUIPMENT_ASSET_PATHS.oxygenCylinder, tone: '#16a34a' },
     { id: 'airway-bvm', label: 'Bag-valve-mask', caption: 'Assisted ventilation', treatmentId: 'bvm_ventilation', assetPath: PRODUCT_ASSET_PATHS.bvm, tone: '#2563eb', wide: true },
     { id: 'airway-suction', label: 'Portable Suction', caption: 'Clear blood or vomit', treatmentId: 'suction', assetPath: EQUIPMENT_ASSET_PATHS.portableSuction, tone: '#64748b' },
+    { id: 'airway-magill', label: 'Magill Forceps', caption: 'Direct-vision foreign-body removal', treatmentId: 'magill_forceps', assetPath: EQUIPMENT_ASSET_PATHS.magillKit, tone: '#0369a1', wide: true },
     { id: 'airway-opa', label: 'OPA Set', caption: 'Unconscious, no gag', treatmentId: 'opa_insert', assetPath: PRODUCT_ASSET_PATHS.opa, tone: '#f59e0b' },
     { id: 'airway-mask', label: 'Oxygen Mask', caption: 'Simple mask oxygen', treatmentId: 'oxygen_mask', assetPath: PRODUCT_ASSET_PATHS.simpleMask, tone: '#0ea5e9' },
     { id: 'airway-nrb', label: 'Non-rebreather', caption: 'High-flow reservoir mask', treatmentId: 'oxygen_nonrebreather', assetPath: PRODUCT_ASSET_PATHS.nonrebreather, tone: '#0284c7' },
@@ -742,6 +744,7 @@ function getProductMiniatureAsset(treatment: Treatment, kind: ProductMiniatureKi
   if (id === 'traction_splint') return EQUIPMENT_ASSET_PATHS.tractionSplint;
   if (id === 'pelvic_binder') return EQUIPMENT_ASSET_PATHS.pelvicBinder;
   if (id === 'surgical_cric') return EQUIPMENT_ASSET_PATHS.fonaKit;
+  if (id === 'magill_forceps') return EQUIPMENT_ASSET_PATHS.magillKit;
   if (kind === 'fluid') return PRODUCT_ASSET_PATHS.fluidBag;
   if (kind === 'iv') return PRODUCT_ASSET_PATHS.ivCannula;
   if (kind === 'pads') return PRODUCT_ASSET_PATHS.defibPads;

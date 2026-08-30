@@ -355,6 +355,27 @@ export function getHandsOnProcedurePlan(
     };
   }
 
+  if (treatmentId === 'magill_forceps') {
+    return {
+      id: 'direct-vision-foreign-body-removal',
+      title: 'Remove visible airway foreign body',
+      subtitle: 'Use laryngoscopy and Magill forceps only under direct vision; never perform a blind sweep.',
+      treatmentId,
+      requiresTarget: false,
+      targets: [],
+      equipmentAsset: '/equipment-assets/magill-forceps-kit.svg',
+      completionLabel: 'Object removed — reoxygenate and reassess',
+      steps: [
+        STEP('prepare', 'Prepare oxygen, suction and rescue airway', 'Call for help, preoxygenate where possible, check suction and open the laryngoscope, Magill forceps, BVM and advanced-airway equipment.', 'The attempt must be brief. Return immediately to oxygenation if saturation or heart rate worsens.', 'prepare'),
+        STEP('position', 'Position and open the airway', 'Place the unresponsive patient supine, optimise head position while maintaining trauma precautions, and open the mouth.', 'Do not attempt this in a conscious patient who can still protect their airway.', 'place'),
+        STEP('visualise', 'Perform direct laryngoscopy', 'Insert the laryngoscope, sweep the tongue and expose the oropharynx and laryngeal inlet.', 'Proceed only when the foreign body is directly seen. Never probe blindly.', 'laryngoscopy', 1300),
+        STEP('insert', 'Advance the forceps under vision', 'Introduce the closed Magill forceps along the blade while keeping the jaws and foreign body continuously visible.', 'Avoid the vocal cords and do not push the object farther into the airway.', 'place', 1100),
+        STEP('remove', 'Grasp and withdraw the object', 'Open around the object, grasp securely and withdraw forceps and foreign body together under direct vision.', 'Stop if the object fragments or resistance suggests it is lodged beyond safe reach.', 'tighten', 1300),
+        STEP('confirm', 'Reoxygenate and reassess', 'Remove loose visible debris, ventilate with BVM, check bilateral air entry, chest rise, SpO₂, EtCO₂ and return of spontaneous breathing.', 'If obstruction persists, continue the failed-airway pathway and prepare definitive rescue access.', 'confirm', 1200),
+      ],
+    };
+  }
+
   if (treatmentId === 'bvm_ventilation') {
     return {
       id: 'bvm-ventilation', title: 'Apply bag-valve-mask ventilation',
@@ -679,6 +700,7 @@ const HANDS_ON_TREATMENTS = new Set([
   'pelvic_binder',
   'back_blows', 'abdominal_thrusts',
   'surgical_cric',
+  'magill_forceps',
 ]);
 
 export const isHandsOnTreatment = (treatmentId: string): boolean =>
@@ -704,7 +726,8 @@ export const procedureIncludesIntegratedReassessment = (treatmentId: string): bo
   || treatmentId === 'pelvic_binder'
   || treatmentId === 'back_blows'
   || treatmentId === 'abdominal_thrusts'
-  || treatmentId === 'surgical_cric';
+  || treatmentId === 'surgical_cric'
+  || treatmentId === 'magill_forceps';
 
 export function procedureSiteToken(treatmentId: string, target: ProcedureSite): string {
   return `site:${treatmentId}:${target}`;

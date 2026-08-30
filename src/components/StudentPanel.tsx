@@ -1286,6 +1286,25 @@ function assessTreatmentPracticality({
     };
   }
 
+  if (id === 'magill_forceps') {
+    const unresponsive = patientState.isInArrest || gcs <= 8 || /(unconscious|unresponsive)/.test(text);
+    if (!unresponsive) {
+      return {
+        level: 'block',
+        title: 'Direct laryngoscopy is not tolerated',
+        clinicalReason: 'Magill forceps removal requires an unresponsive patient and a directly visualised foreign body. Continue conscious choking manoeuvres while the patient remains responsive.',
+        patientQuote: vocal ? 'Stop — I am still awake.' : undefined,
+      };
+    }
+    if (!airwayCompromise) {
+      return {
+        level: 'block',
+        title: 'No current airway obstruction',
+        clinicalReason: 'Do not instrument the airway without evidence of obstruction and a directly visible retrieval target.',
+      };
+    }
+  }
+
   if (id === 'surgical_cric') {
     if ((currentCase.patientInfo?.age ?? 99) < 12) {
       return {
