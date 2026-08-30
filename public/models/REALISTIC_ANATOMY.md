@@ -175,7 +175,7 @@ BY-NC licence problem (old female was Ready Player Me, non-commercial).
 ## SHIPPED 2026-08-27 — fitted movement rigs
 
 Both active patients now include a fitted 52-bone MPFB Mixamo armature while
-retaining all 13 clinical morph targets and the separate eye hierarchy. The
+retaining all 14 clinical morph targets and the separate eye hierarchy. The
 runtime selects movement from the authored scene position: recumbent/seated
 patients remain planted; standing patients idle; pacing/ambulatory patients use
 the retargeted walk loop. Procedural clothing copies the same skin indices and
@@ -189,10 +189,19 @@ Blender --background --python scripts/anatomy-models/rig-patient.py -- \
   public/models/patient.glb.orig /tmp/patient-male-rigged.glb
 ```
 
+The fitter must create MPFB with `detailed_helpers=True`: the named joint cubes
+are how shoulders, elbows, hands, knees and feet are fitted to an age macro.
+Removing those helpers before rig creation silently falls back to an adult-size
+armature, even when the visible body is an infant. The export still strips all
+helper geometry after fitting.
+
 The pipeline rejects missing morphs, incomplete weight coverage, poor
 anatomical weight alignment and animation clips without articulated limb
-motion. It exports only patient/eyes/rig: no Blender camera, light or helper
-geometry.
+motion. `refine-tripod-pose.py` adds a neutral `pose_seated`, shares its
+continuous fitted-leg pose with `pose_tripod`, and strain-limits the medial
+pelvis. Runtime Spine/Spine1 bones supply the tripod lean so the arm sockets do
+not split. `verify-patient-deformation.py` gates armature/body scale and full-
+influence mesh edge stretch.
 
 ## SHIPPED 2026-08-30 — age-proportioned paediatric matrix
 
@@ -203,7 +212,8 @@ as the adult shells:
 
 - 52-bone fitted Mixamo skin with `idle`, `walk`, `agree`, `headShake` and
   `sad_pose` clips;
-- 13 breathing, finding, posture, speech and distress morph targets;
+- 14 breathing, finding, posture, speech and distress morph targets, including
+  distinct neutral seated and respiratory tripod presentation;
 - separate sclera, iris and physical 5 mm baseline pupil geometry;
 - 2048 px CC0 skin atlas; Draco-compressed; each file below 10 MB.
 

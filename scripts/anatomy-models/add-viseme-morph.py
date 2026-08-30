@@ -25,7 +25,9 @@ BodyMesh.tsx already ramps any non-finding morph), not a mixer.
 
 Morphs added (default value 0 → model unchanged until driven):
   • viseme_open   — jaw/lower-lip drop for amplitude-driven lip-sync
-  • pose_tripod   — torso forward-lean + shoulder raise (accessory-muscle look)
+  • pose_seated   — neutral seated base, completed from the fitted rig by
+                    refine-tripod-pose.py
+  • pose_tripod   — seated base + torso forward-lean (accessory-muscle look)
   • pose_supine   — slight overall settle/flatten (lie-back lean)
   • pose_recovery — asymmetric roll toward one side
   • motion_gasp    — local shoulder / upper-chest effort without moving the root
@@ -50,7 +52,7 @@ SRC = os.path.abspath(SCRIPT_ARGS[0] if SCRIPT_ARGS else "public/models/patient-
 
 REQUIRED_EXISTING = ["breathe_chest_rise", "finding_abdo_distension", "finding_jvd"]
 NEW_MORPHS = [
-    "viseme_open", "pose_tripod", "pose_supine", "pose_recovery",
+    "viseme_open", "pose_seated", "pose_tripod", "pose_supine", "pose_recovery",
     "motion_gasp", "motion_wince", "motion_clutch", "motion_seizure",
     "motion_tremor", "motion_agitation",
 ]
@@ -120,6 +122,7 @@ def add_viseme_open(obj, ax, lo, span):
 def add_pose(obj, name, ax, lo, span, mode):
     """Author a posture as a per-vertex bend keyed by height fraction.
     mode:
+      seated   — neutral placeholder completed after rigging
       tripod   — upper body pitches forward (+z) increasing with height, shoulders lift
       supine   — whole body settles: slight uniform −z lean + shoulder drop
       recovery — asymmetric: one side (x<0) rolls, the other stays
@@ -132,24 +135,18 @@ def add_pose(obj, name, ax, lo, span, mode):
         f = (v.co[ax] - lo) / span
         p = key.data[i].co.copy()
         d = 0.0
-        if mode == "tripod":
+        if mode == "seated":
+            # A shape key must exist before rig-patient.py transfers the fitted
+            # skeleton. refine-tripod-pose.py replaces it with the rig-derived
+            # seated legs after skinning is available.
+            d = 0.0
+        elif mode == "tripod":
             # Forward lean grows above the hips; shoulders lift with visible
             # accessory-muscle effort. Blender's imported forward axis is -Y.
-            # The source mesh is an A-pose, so bring each distal arm inward and
-            # forward until the hands brace on the upper thighs.
             lean = smoothstep(0.5, 0.95, f)
             p.y -= 0.18 * scale * lean
             sh = smoothstep(0.74, 0.84, f) * (1.0 - smoothstep(0.86, 0.92, f))
             p[ax] += 0.022 * scale * sh
-            if 0.48 <= f <= 0.84 and abs(v.co.x) > 0.18 * scale:
-                side = 1.0 if v.co.x > 0 else -1.0
-                distal = smoothstep(0.18 * scale, 0.54 * scale, abs(v.co.x))
-                target_x = side * 0.20 * scale
-                p.x += (target_x - v.co.x) * distal
-                p.y -= 0.34 * scale * distal
-                target_h = lo + 0.43 * span
-                p[ax] += (target_h - v.co[ax]) * 0.92 * distal
-                d += distal
             d += lean + sh
         elif mode == "supine":
             # gentle settle: whole upper body eases back + shoulders relax down
@@ -294,6 +291,7 @@ def main():
                 log(f"removed stale duplicate '{name}'")
 
     add_viseme_open(obj, ax, lo, span)
+    add_pose(obj, "pose_seated", ax, lo, span, "seated")
     add_pose(obj, "pose_tripod", ax, lo, span, "tripod")
     add_pose(obj, "pose_supine", ax, lo, span, "supine")
     add_pose(obj, "pose_recovery", ax, lo, span, "recovery")

@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
   derivePatientMobility,
+  derivePatientPosture,
   deriveScenePatientStage,
   deriveTreatmentPositioningOverride,
   patientPacingTransform,
   patientSkeletalAction,
-  standingArmRelaxationRadians,
+  patientArmRestRadians,
+  patientSpineLeanRadians,
 } from './patientStaging';
 import type { CaseScenario } from '@/types';
 
@@ -48,6 +50,45 @@ describe('derivePatientMobility', () => {
   });
 });
 
+describe('derivePatientPosture', () => {
+  it('keeps a stable seated heat-exhaustion patient neutral', () => {
+    const heatCase = fakeCase('Sitting in shade', 'Heat exhaustion after outdoor work');
+    expect(derivePatientPosture(heatCase, {
+      mobility: 'seated',
+      respiration: 22,
+    })).toBe('seated');
+  });
+
+  it('reserves tripod for explicit or physiological respiratory distress', () => {
+    expect(derivePatientPosture(fakeCase('Sitting upright in tripod position'), {
+      mobility: 'seated',
+      respiration: 20,
+    })).toBe('tripod');
+    expect(derivePatientPosture(fakeCase('Sitting upright', 'Severe asthma attack'), {
+      mobility: 'seated',
+      respiration: 30,
+    })).toBe('tripod');
+  });
+
+  it('keeps recumbent, arrest and positioning overrides authoritative', () => {
+    const scenario = fakeCase('Supine on the floor');
+    expect(derivePatientPosture(scenario, { mobility: 'recumbent', respiration: 32 })).toBe('supine');
+    expect(derivePatientPosture(fakeCase('Standing'), { mobility: 'standing' })).toBeNull();
+    expect(derivePatientPosture(fakeCase('Sitting'), {
+      mobility: 'seated',
+      isInArrest: true,
+    })).toBe('supine');
+    expect(derivePatientPosture(fakeCase('Supine'), {
+      mobility: 'recumbent',
+      positioningOverride: {
+        mobility: 'recumbent',
+        posture: 'recovery',
+        treatmentId: 'recovery_position',
+      },
+    })).toBe('recovery');
+  });
+});
+
 describe('patientSkeletalAction', () => {
   it('animates only genuinely ambulatory presentations', () => {
     expect(patientSkeletalAction('pacing')).toBe('walk');
@@ -57,11 +98,24 @@ describe('patientSkeletalAction', () => {
     expect(patientSkeletalAction('pacing', true)).toBeNull();
   });
 
-  it('relaxes only a conscious stationary patient out of the donor A-pose', () => {
-    expect(standingArmRelaxationRadians('standing')).toBeCloseTo(0.65);
-    expect(standingArmRelaxationRadians('pacing')).toBe(0);
-    expect(standingArmRelaxationRadians('recumbent')).toBe(0);
-    expect(standingArmRelaxationRadians('standing', true)).toBe(0);
+  it('uses a stable arm rest appropriate to each mobility state', () => {
+    expect(patientArmRestRadians('standing')).toBeCloseTo(0.65);
+    expect(patientArmRestRadians('seated')).toBeCloseTo(0.72);
+    expect(patientArmRestRadians('recumbent')).toBeCloseTo(0.28);
+    expect(patientArmRestRadians('recumbent', true)).toBeCloseTo(0.28);
+    expect(patientArmRestRadians('pacing')).toBe(0);
+    expect(patientArmRestRadians('standing', true)).toBe(0);
+    expect(patientArmRestRadians('seated', false, 0.5)).toBeCloseTo(0.3528);
+    expect(patientArmRestRadians('seated', false, 4)).toBeCloseTo(0.4536);
+  });
+
+  it('leans only a respiratory tripod posture through the fitted spine', () => {
+    expect(patientSpineLeanRadians('tripod')).toBeCloseTo(0.13);
+    expect(patientSpineLeanRadians('seated')).toBe(0);
+    expect(patientSpineLeanRadians('supine')).toBe(0);
+    expect(patientSpineLeanRadians(null)).toBe(0);
+    expect(patientSpineLeanRadians('tripod', 0.5)).toBeCloseTo(0.08);
+    expect(patientSpineLeanRadians('tripod', 4)).toBeCloseTo(0.1);
   });
 });
 

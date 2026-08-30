@@ -136,12 +136,32 @@ def build_weight_donor(human_service, target_service):
 
     human = human_service.create_human(
         mask_helpers=True,
-        detailed_helpers=False,
+        # MPFB's Mixamo definition locates shoulders, elbows, hands, knees,
+        # and feet from the named joint-helper cubes.  Omitting those helpers
+        # makes the fitter fall back to adult default coordinates, which puts
+        # an adult armature under paediatric skin and tears the mesh as soon as
+        # an animation or seated IK pose runs.
+        detailed_helpers=True,
         extra_vertex_groups=True,
         feet_on_ground=True,
         scale=0.1,
         macro_detail_dict=macro,
     )
+
+    # The donor keeps age/sex as active macro shape keys. Capture evaluated
+    # coordinates for nearest-position weight transfer while leaving the keys
+    # live: MPFB needs them when resolving the joint helpers above. Baking and
+    # deleting them before rig creation makes the helper fitter lose its macro
+    # context and silently return to adult fallback positions.
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    evaluated = human.evaluated_get(depsgraph)
+    evaluated_mesh = evaluated.to_mesh(
+        preserve_all_data_layers=True,
+        depsgraph=depsgraph,
+    )
+    source_positions = [vertex.co.copy() for vertex in evaluated_mesh.vertices]
+    evaluated.to_mesh_clear()
+
     armature = human_service.add_builtin_rig(
         human, "mixamo", import_weights=True
     )
@@ -163,24 +183,6 @@ def build_weight_donor(human_service, target_service):
         for vertex in human.data.vertices
         if any(group.group == body_group_index for group in vertex.groups)
     ]
-    # `human.data.vertices` is the neutral adult Basis. MPFB keeps age/sex as
-    # active shape keys, so an infant target would otherwise receive weights
-    # from adult-space nearest neighbours. Capture the evaluated age-specific
-    # coordinates while preserving stable source vertex indices and weights.
-    shape_keys = human.data.shape_keys
-    basis = shape_keys.key_blocks.get("Basis") if shape_keys else None
-    if basis is None:
-        raise RuntimeError("MPFB weight donor has no Basis shape key")
-    active_keys = [
-        key for key in shape_keys.key_blocks
-        if key.name != "Basis" and key.value
-    ]
-    source_positions = []
-    for index, basis_point in enumerate(basis.data):
-        position = basis_point.co.copy()
-        for key in active_keys:
-            position += (key.data[index].co - basis_point.co) * key.value
-        source_positions.append(position)
     return human, armature, body_indices, source_positions
 
 
@@ -222,6 +224,76 @@ def transfer_weights(source, source_indices, source_positions, target, armature)
         if assigned:
             weighted_vertices += 1
 
+    # Make the medial pelvis follow the hips instead of letting the two upper
+    # legs pull a millimetre-wide centre seam in opposite directions. MPFB's
+    # standard weights are adequate for walking but several perineal vertices
+    # are 100% upper-leg weighted; a deep seated pose then turns connected
+    # triangles inside out. Add a smooth Hips influence only in that small
+    # anatomical patch and renormalise every deform group on the vertex.
+    min_z = min(vertex.co.z for vertex in target.data.vertices)
+    max_z = max(vertex.co.z for vertex in target.data.vertices)
+    patient_height = max_z - min_z
+    hip_z = min_z + patient_height * 0.51
+    hips_group = target_groups.get("mixamorig:Hips")
+    deform_group_indices = {
+        group.index for group in target_groups.values()
+    }
+    pelvis_vertices = 0
+
+    def smoothstep(edge0, edge1, value):
+        if edge0 == edge1:
+            return 1.0 if value >= edge1 else 0.0
+        t = max(0.0, min(1.0, (value - edge0) / (edge1 - edge0)))
+        return t * t * (3.0 - 2.0 * t)
+
+    if hips_group is None:
+        raise RuntimeError("MPFB weight donor has no mixamorig:Hips weights")
+    for vertex in target.data.vertices:
+        centre = 1.0 - smoothstep(
+            patient_height * 0.012,
+            patient_height * 0.085,
+            abs(vertex.co.x),
+        )
+        vertical = 1.0 - smoothstep(
+            patient_height * 0.025,
+            patient_height * 0.105,
+            abs(vertex.co.z - hip_z),
+        )
+        desired_hips = 0.78 * centre * vertical
+        if desired_hips <= 0.01:
+            continue
+        memberships = [
+            membership
+            for membership in vertex.groups
+            if membership.group in deform_group_indices
+        ]
+        current_hips = next(
+            (
+                membership.weight
+                for membership in memberships
+                if membership.group == hips_group.index
+            ),
+            0.0,
+        )
+        if current_hips >= desired_hips:
+            continue
+        other_weight = sum(
+            membership.weight
+            for membership in memberships
+            if membership.group != hips_group.index
+        )
+        if other_weight <= 1e-8:
+            continue
+        other_scale = (1.0 - desired_hips) / other_weight
+        for membership in memberships:
+            if membership.group == hips_group.index:
+                continue
+            target.vertex_groups[membership.group].add(
+                [vertex.index], membership.weight * other_scale, "REPLACE"
+            )
+        hips_group.add([vertex.index], desired_hips, "REPLACE")
+        pelvis_vertices += 1
+
     coverage = weighted_vertices / max(1, len(target.data.vertices))
     if coverage < 0.995:
         raise RuntimeError(f"skin-weight coverage too low: {coverage:.2%}")
@@ -243,7 +315,7 @@ def transfer_weights(source, source_indices, source_positions, target, armature)
     modifier = target.modifiers.new("Patient armature", "ARMATURE")
     modifier.object = armature
     modifier.use_deform_preserve_volume = True
-    return coverage, p99
+    return coverage, p99, pelvis_vertices
 
 
 def parent_eyes_to_head(active_objects, armature):
@@ -479,7 +551,7 @@ def main():
     )
     armature.name = "PatientRig"
     armature.data.name = "PatientRig"
-    coverage, weight_p99 = transfer_weights(
+    coverage, weight_p99, pelvis_vertices = transfer_weights(
         human, body_indices, source_positions, body, armature
     )
     eye_roots = parent_eyes_to_head(active_objects, armature)
@@ -506,6 +578,7 @@ def main():
     log(
         f"exported {OUTPUT_GLB} | bones={len(armature.data.bones)} "
         f"coverage={coverage:.2%} weight-p99={weight_p99:.4f}m "
+        f"pelvis-stabilised={pelvis_vertices} "
         f"morphs={len(morphs)} "
         f"clips={','.join(RUNTIME_CLIPS)}"
     )

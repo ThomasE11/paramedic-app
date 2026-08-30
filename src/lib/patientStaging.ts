@@ -9,7 +9,7 @@ import type { CaseScenario } from '@/types';
 export type PatientStage = 'stretcher' | 'floor';
 export type PatientMobility = 'recumbent' | 'seated' | 'standing' | 'pacing';
 export type PatientSkeletalAction = 'idle' | 'walk' | null;
-export type PatientPosture = 'tripod' | 'supine' | 'recovery' | null;
+export type PatientPosture = 'seated' | 'tripod' | 'supine' | 'recovery' | null;
 
 export interface PatientPacingTransform {
   x: number;
@@ -21,6 +21,14 @@ export interface PatientPositioningOverride {
   mobility: PatientMobility;
   posture: PatientPosture;
   treatmentId: string;
+}
+
+export interface PatientPostureContext {
+  mobility: PatientMobility;
+  isInArrest?: boolean;
+  unconscious?: boolean;
+  positioningOverride?: PatientPositioningOverride | null;
+  respiration?: number | null;
 }
 
 const TREATMENT_POSITIONING: Record<string, Omit<PatientPositioningOverride, 'treatmentId'>> = {
@@ -107,6 +115,43 @@ export function derivePatientMobility(
   return 'recumbent';
 }
 
+/** Derive a clinically plausible authored posture without conflating all seats. */
+export function derivePatientPosture(
+  caseData: CaseScenario,
+  context: PatientPostureContext,
+): PatientPosture {
+  const {
+    mobility,
+    isInArrest = false,
+    unconscious = false,
+    positioningOverride = null,
+    respiration = null,
+  } = context;
+  if (isInArrest) return 'supine';
+  if (positioningOverride) return positioningOverride.posture;
+  if (unconscious) return 'supine';
+
+  const authoredPosition = caseData.initialPresentation?.position?.toLowerCase() ?? '';
+  if (/recovery position|curled on (?:their |his |her )?side|lying on (?:their |his |her )?side/.test(authoredPosition)) {
+    return 'recovery';
+  }
+
+  const respiratoryDistress =
+    (typeof respiration === 'number' && respiration >= 24) ||
+    /asthma|copd|respiratory|breath|wheez|dyspn/i.test(
+      `${caseData.category ?? ''} ${caseData.title ?? ''} ${caseData.dispatchInfo?.callReason ?? ''}`,
+    );
+
+  if (mobility === 'recumbent') return 'supine';
+  if (mobility === 'seated') {
+    return /\btripod\b|leaning forward/.test(authoredPosition) || respiratoryDistress
+      ? 'tripod'
+      : 'seated';
+  }
+  if (mobility === 'standing' || mobility === 'pacing') return null;
+  return respiratoryDistress ? 'tripod' : 'supine';
+}
+
 /** Only ambulatory patients receive whole-skeleton locomotion. */
 export function patientSkeletalAction(
   mobility: PatientMobility,
@@ -119,11 +164,33 @@ export function patientSkeletalAction(
 }
 
 /** Local upper-arm rotation that turns the donor clip's A-pose into rest. */
-export function standingArmRelaxationRadians(
+export function patientArmRestRadians(
   mobility: PatientMobility,
   unconscious = false,
+  ageYears?: number,
 ): number {
-  return mobility === 'standing' && !unconscious ? 0.65 : 0;
+  if (mobility === 'pacing') return 0;
+  const paediatricScale = typeof ageYears === 'number' && ageYears < 2
+    ? 0.49
+    : typeof ageYears === 'number' && ageYears < 6
+      ? 0.63
+      : typeof ageYears === 'number' && ageYears < 12
+        ? 0.78
+        : 1;
+  if (mobility === 'seated') return 0.72 * paediatricScale;
+  if (mobility === 'recumbent') return 0.28 * paediatricScale;
+  return !unconscious ? 0.65 : 0;
+}
+
+/** Per-spine-bone flexion for the respiratory tripod silhouette. */
+export function patientSpineLeanRadians(posture: PatientPosture, ageYears?: number): number {
+  // Split roughly 15° across Spine + Spine1. Applying this through the fitted
+  // rig keeps the abdomen, chest and shoulder sockets continuous; the former
+  // vertex-space torso morph tore at both axillae when the arms were lowered.
+  if (posture !== 'tripod') return 0;
+  if (typeof ageYears === 'number' && ageYears < 2) return 0.08;
+  if (typeof ageYears === 'number' && ageYears < 6) return 0.1;
+  return 0.13;
 }
 
 /**

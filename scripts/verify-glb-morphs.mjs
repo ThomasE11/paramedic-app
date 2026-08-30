@@ -37,6 +37,7 @@ console.log('masculinity/clinical markers found:', found);
 const requiredTargets = [
   'breathe_chest_rise',
   'viseme_open',
+  'pose_seated',
   'pose_tripod',
   'pose_supine',
   'pose_recovery',

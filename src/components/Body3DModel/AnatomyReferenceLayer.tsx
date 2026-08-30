@@ -3,14 +3,14 @@ import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { getTreatmentBayTransform, type BayPatientStage } from './BodyMesh';
-import type { PatientMobility } from '@/lib/patientStaging';
+import type { PatientMobility, PatientPosture } from '@/lib/patientStaging';
 import { patientExpectedHeightMetres } from '@/lib/patientAgePresentation';
 
 interface AnatomyReferenceLayerProps {
   visible: boolean;
   presentation?: 'upright' | 'treatment-bay';
   stage?: BayPatientStage;
-  posture?: 'tripod' | 'supine' | 'recovery' | null;
+  posture?: PatientPosture;
   mobility?: PatientMobility;
   activeRegion?: string | null;
   patientAge?: number;

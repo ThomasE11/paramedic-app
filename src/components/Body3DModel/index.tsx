@@ -19,6 +19,7 @@ import { RotateCcw, User, Eye, Hand, Activity, Stethoscope, X, ChevronRight, Che
 import { BodyMesh, getTreatmentBayTransform, treatmentBayClinicalToWorld, type BayPatientStage } from './BodyMesh';
 import {
   derivePatientMobility,
+  derivePatientPosture,
   deriveScenePatientStage,
   deriveTreatmentPositioningOverride,
   type PatientMobility,
@@ -448,7 +449,7 @@ function TreatmentBayImmersionLayer({
   appliedTreatmentIds: string[];
   active: boolean;
   stage?: BayPatientStage;
-  posture?: 'tripod' | 'supine' | 'recovery' | null;
+  posture?: PatientPosture;
   mobility?: PatientMobility;
   patientWeight?: number;
   patientScale?: number;
@@ -1450,7 +1451,7 @@ function TreatmentEquipmentOverlay({
   sampler: SurfaceSampler | null;
   presentation: MarkerPresentation;
   bayStage?: BayPatientStage;
-  posture?: 'tripod' | 'supine' | 'recovery' | null;
+  posture?: PatientPosture;
   mobility?: PatientMobility;
   patientScale?: number;
 }) {
@@ -1490,7 +1491,7 @@ function TreatmentEquipmentOverlay({
   return (
     <>
       {equipment.oxygen && (
-        <MarkerHtml position={faceAnchor(0.01, 1.66, 0.24)} distanceFactor={1.5} zIndexRange={[76, 0]} interactive={false} presentation={posture === 'tripod' ? 'upright' : presentation} contentScale={equipmentScale}>
+        <MarkerHtml position={faceAnchor(0.01, 1.66, 0.24)} distanceFactor={1.5} zIndexRange={[76, 0]} interactive={false} presentation={posture === 'tripod' || posture === 'seated' ? 'upright' : presentation} contentScale={equipmentScale}>
           <WornFaceEquipment
             equipment={equipment.oxygen}
             connectedToEtTube={equipment.hasEtTube && equipment.oxygen.mode === 'bvm'}
@@ -1499,13 +1500,13 @@ function TreatmentEquipmentOverlay({
       )}
 
       {equipment.hasEtTube && equipment.oxygen?.mode !== 'ventilator' && (
-        <MarkerHtml position={faceAnchor(0.04, 1.64, 0.24)} distanceFactor={2.4} zIndexRange={[74, 0]} interactive={false} presentation={posture === 'tripod' ? 'upright' : presentation} contentScale={equipmentScale}>
+        <MarkerHtml position={faceAnchor(0.04, 1.64, 0.24)} distanceFactor={2.4} zIndexRange={[74, 0]} interactive={false} presentation={posture === 'tripod' || posture === 'seated' ? 'upright' : presentation} contentScale={equipmentScale}>
           <EquipmentPin tone="oxygen" src={TREATMENT_ASSET_PATHS.etTube} bare />
         </MarkerHtml>
       )}
 
       {equipment.hasOpa && !equipment.hasEtTube && (
-        <MarkerHtml position={faceAnchor(-0.04, 1.64, 0.24)} distanceFactor={2.4} zIndexRange={[73, 0]} interactive={false} presentation={posture === 'tripod' ? 'upright' : presentation} contentScale={equipmentScale}>
+        <MarkerHtml position={faceAnchor(-0.04, 1.64, 0.24)} distanceFactor={2.4} zIndexRange={[73, 0]} interactive={false} presentation={posture === 'tripod' || posture === 'seated' ? 'upright' : presentation} contentScale={equipmentScale}>
           <EquipmentPin tone="device" src={TREATMENT_ASSET_PATHS.opa} bare />
         </MarkerHtml>
       )}
@@ -3247,12 +3248,12 @@ function getUprightCameraFocus(patientScale = 1) {
 // rather than the head-side; floor staging drops the eye-line with the body.
 function getTreatmentBayCameraFocus(
   stage: BayPatientStage,
-  posture: 'tripod' | 'supine' | 'recovery' | null,
+  posture: PatientPosture,
   mobility: PatientMobility = 'recumbent',
   patientScale = 1,
 ) {
   const cameraScale = Math.max(0.6, Math.min(1, patientScale));
-  if (posture === 'tripod' || mobility === 'standing' || mobility === 'pacing') {
+  if (posture === 'tripod' || posture === 'seated' || mobility === 'standing' || mobility === 'pacing') {
     // The seated tripod morph is now grounded at the feet; its head occupies
     // the normal upright frame, so it no longer needs the legacy high camera
     // that was compensating for a floating, straight-legged patient.
@@ -4216,29 +4217,13 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   // tripod and supine bodies occupy different world volumes; using the supine
   // target for a respiratory patient cropped the head out of the viewport.
   const patientPosture = useMemo<PatientPosture>(() => {
-    // Cardiac arrest always wins: CPR needs a hard, supine surface. Otherwise
-    // a completed positioning procedure is authoritative—even an unconscious
-    // breathing patient may correctly be placed in the recovery position.
-    if (isInArrest) return 'supine';
-    if (treatmentPositioning) return treatmentPositioning.posture;
-    if (patientUnconscious) return 'supine';
-    const authoredPosition = caseData.initialPresentation?.position?.toLowerCase() ?? '';
-    if (/recovery position|curled on (?:their |his |her )?side|lying on (?:their |his |her )?side/.test(authoredPosition)) {
-      return 'recovery';
-    }
-    // Position is authoritative. A tachypnoeic patient documented as supine
-    // must not be silently stood into a tripod merely because RR reaches 22.
-    if (patientMobility === 'recumbent') return 'supine';
-    if (patientMobility === 'seated') return 'tripod';
-    if (patientMobility === 'standing' || patientMobility === 'pacing') return null;
-    const source = effectiveVitals;
-    const rr = caseData.abcde?.breathing?.rate ?? source?.respiration ?? null;
-    const respiratoryDistress =
-      (typeof rr === 'number' && rr >= 22) ||
-      /asthma|copd|respiratory|breath|wheez|dyspn/i.test(
-        `${caseData.category ?? ''} ${caseData.title ?? ''} ${caseData.dispatchInfo?.callReason ?? ''}`,
-      );
-    return respiratoryDistress ? 'tripod' : 'supine';
+    return derivePatientPosture(caseData, {
+      mobility: patientMobility,
+      isInArrest,
+      unconscious: patientUnconscious,
+      positioningOverride: treatmentPositioning,
+      respiration: caseData.abcde?.breathing?.rate ?? effectiveVitals?.respiration ?? null,
+    });
   }, [isInArrest, treatmentPositioning, patientUnconscious, patientMobility, effectiveVitals, caseData]);
 
   // useMemo keeps the pos/target array identities stable — OrbitControls'
@@ -4634,7 +4619,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
         focus.target[1],
         stepId === 'posterior-logroll' ? -0.08 : 0.10,
       ], bayStage, patientPosture, patientMobility, patientScale);
-      const clinicalDirection: [number, number, number] = patientPosture === 'tripod' || patientMobility === 'standing' || patientMobility === 'pacing'
+      const clinicalDirection: [number, number, number] = patientPosture === 'tripod' || patientPosture === 'seated' || patientMobility === 'standing' || patientMobility === 'pacing'
         ? (stepId === 'face' || stepId === 'head' || stepId === 'neck-cspine'
             ? [0.04, 0.48, 1]
             : [0.10, 0.10, 1])

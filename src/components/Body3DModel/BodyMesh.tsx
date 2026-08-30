@@ -31,7 +31,8 @@ import { setBreathClock } from '@/lib/breathClock';
 import {
   patientPacingTransform,
   patientSkeletalAction,
-  standingArmRelaxationRadians,
+  patientArmRestRadians,
+  patientSpineLeanRadians,
   type PatientMobility,
 } from '@/lib/patientStaging';
 import {
@@ -94,7 +95,8 @@ export function getTreatmentBayTransform(
   // Tripod remains upright—the authored morph supplies the forward lean and
   // braced arms. A residual -0.35rad root pitch was cancelling that lean and
   // making the seated patient look bolt upright from the arrival camera.
-  const pitchUp = posture === 'tripod' ? Math.PI / 2 : 0;
+  const uprightSeated = posture === 'tripod' || posture === 'seated';
+  const pitchUp = uprightSeated ? Math.PI / 2 : 0;
   // Upright tripod feet are at the model origin, so cancel the stage's supine
   // body-thickness calibration while retaining the support-surface height.
   // Recovery is independently calibrated after its side-roll transform.
@@ -109,7 +111,7 @@ export function getTreatmentBayTransform(
   // otherwise a toddler inherits the adult -0.29 m root and sinks through the
   // scene. Tripod always represents a seated/upright patient, not a body lying
   // on either treatment support surface.
-  const positionY = posture === 'tripod'
+  const positionY = uprightSeated
     ? BAY_SUPPORT_Y.floor + (BAY_STAGE_Y.stretcher - 1.23 - BAY_SUPPORT_Y.floor) * patientScale
     : stageY;
   return {
@@ -244,7 +246,7 @@ interface BodyMeshProps {
    * idle motion ride on top. resp-001 defaults to 'tripod' and eases to
    * 'recovery' as SpO2 improves.
    */
-  posture?: 'tripod' | 'supine' | 'recovery' | null;
+  posture?: 'seated' | 'tripod' | 'supine' | 'recovery' | null;
   /** Authored scene mobility. Only standing/pacing presentations play the
    *  skeletal idle/walk clips; recumbent patients retain local clinical
    *  movement without sliding around the scene. */
@@ -387,7 +389,8 @@ const EYE_NODE_NAMES = ['eyeL', 'eyeR', 'irisL', 'irisR', 'pupilL', 'pupilR'] as
 // Morph names in patient-male.glb use the `pose_` prefix (authored by
 // scripts/anatomy-models/add-viseme-morph.py: pose_tripod / pose_supine /
 // pose_recovery).
-const POSTURE_MORPH_BY_NAME: Record<'tripod' | 'supine' | 'recovery', string> = {
+const POSTURE_MORPH_BY_NAME: Record<'seated' | 'tripod' | 'supine' | 'recovery', string> = {
+  seated: 'pose_seated',
   tripod: 'pose_tripod',
   supine: 'pose_supine',
   recovery: 'pose_recovery',
@@ -1143,6 +1146,19 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
       .map(name => clonedScene.getObjectByName(name) ?? clonedScene.getObjectByName(name.replace(/:/g, '')))
       .filter((node): node is THREE.Object3D => node !== undefined)
   ), [clonedScene]);
+  const standingArmRest = useMemo(
+    () => standingArmBones.map(arm => arm.quaternion.clone()),
+    [standingArmBones],
+  );
+  const postureSpineBones = useMemo(() => (
+    ['mixamorig:Spine', 'mixamorig:Spine1']
+      .map(name => clonedScene.getObjectByName(name) ?? clonedScene.getObjectByName(name.replace(/:/g, '')))
+      .filter((node): node is THREE.Object3D => node !== undefined)
+  ), [clonedScene]);
+  const postureSpineRest = useMemo(
+    () => postureSpineBones.map(spine => spine.quaternion.clone()),
+    [postureSpineBones],
+  );
 
   // Whole-skeleton movement is reserved for genuinely ambulatory cases. The
   // source clips are in-place Mixamo loops, so the patient remains inside the
@@ -1380,12 +1396,36 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
   useFrame((_, delta) => {
     const skeletalMixer = skeletalMixerRef.current;
     skeletalMixer?.update(Math.min(delta, 0.05));
-    const armRelaxation = standingArmRelaxationRadians(mobility, unconscious);
+    const armRelaxation = patientArmRestRadians(mobility, unconscious, patientAge);
     if (skeletalMixer && armRelaxation > 0) {
       // The donor's idle action retains its capture A-pose. Apply the
       // Blender-calibrated local-X offset after the mixer writes each frame so
       // hands rest beside the thighs; the walk clip keeps its authored swing.
       for (const arm of standingArmBones) arm.rotateX(armRelaxation);
+    } else if (!skeletalMixer) {
+      // Non-ambulatory patients have no clip to reset the A-pose each frame.
+      // Restore the fitted rest quaternion explicitly before applying the
+      // mobility-specific arm drop so the rotation cannot accumulate into the
+      // high-frequency "vibrating arms" failure reported in seated cases.
+      standingArmBones.forEach((arm, index) => {
+        arm.quaternion.copy(standingArmRest[index]);
+        if (armRelaxation > 0) arm.rotateX(armRelaxation);
+      });
+    }
+    const spineLean = patientSpineLeanRadians(posture, patientAge);
+    if (skeletalMixer && spineLean > 0) {
+      // Mixer first, then a small additive local flex. In normal case data a
+      // tripod patient is seated and has no locomotion mixer, but this keeps a
+      // treatment-driven transition stable if those states briefly overlap.
+      for (const spine of postureSpineBones) spine.rotateX(spineLean);
+    } else if (!skeletalMixer) {
+      // As with the arms, restore before applying. This prevents accumulated
+      // frame-to-frame rotation and returns a recovered tripod patient to an
+      // anatomically neutral seated spine without a remount.
+      postureSpineBones.forEach((spine, index) => {
+        spine.quaternion.copy(postureSpineRest[index]);
+        if (spineLean > 0) spine.rotateX(spineLean);
+      });
     }
     const root = meshRef.current;
     if (root && treatmentBayPresentation && mobility === 'pacing' && !unconscious) {
