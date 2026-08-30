@@ -3525,6 +3525,13 @@ export function StudentPanel({
       });
       return;
     }
+    if (treatment.id === 'orogastric_tube' && !hasSecuredAirway) {
+      toast.error('Secure the airway before gastric decompression', {
+        description: 'This workflow is for post-airway-control decompression. Confirm a cuffed tracheal or front-of-neck airway first.',
+        duration: 5500,
+      });
+      return;
+    }
     if (treatment.id === 'head_blocks') {
       const hasCollar = appliedTreatmentIds.includes('cervical_collar');
       const hasBase = appliedTreatmentIds.some(id => ['spinal_board', 'vacuum_mattress'].includes(id));

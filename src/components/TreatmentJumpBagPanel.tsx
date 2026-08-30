@@ -535,6 +535,7 @@ const EQUIPMENT_ASSET_PATHS = {
   pelvicBinder: '/equipment-assets/pelvic-binder.svg',
   fonaKit: '/equipment-assets/fona-kit.svg',
   magillKit: '/equipment-assets/magill-forceps-kit.svg',
+  gastricTubeKit: '/equipment-assets/gastric-tube-kit.svg',
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -647,6 +648,7 @@ const BAG_EQUIPMENT: Record<ManagementTab, EquipmentInventoryItem[]> = {
     { id: 'airway-et', label: 'ET Tube', caption: 'Advanced airway', treatmentId: 'intubation', assetPath: PRODUCT_ASSET_PATHS.etTube, tone: '#0f766e' },
     { id: 'airway-rsi', label: 'RSI Airway Setup', caption: 'Sedation, paralysis, tube', treatmentId: 'rsi_intubation', assetPath: PRODUCT_ASSET_PATHS.etTube, tone: '#7c3aed' },
     { id: 'airway-fona', label: 'FONA Kit', caption: 'CICO rescue: scalpel, bougie, 6.0 tube', treatmentId: 'surgical_cric', assetPath: EQUIPMENT_ASSET_PATHS.fonaKit, tone: '#dc2626', wide: true },
+    { id: 'airway-og', label: 'Orogastric Tube', caption: 'Post-airway gastric decompression', treatmentId: 'orogastric_tube', assetPath: EQUIPMENT_ASSET_PATHS.gastricTubeKit, tone: '#ca8a04', wide: true },
   ],
   breathing: [
     { id: 'breathing-nasal', label: 'Nasal Cannula', caption: 'Low-flow oxygen', treatmentId: 'oxygen_nasal', assetPath: PRODUCT_ASSET_PATHS.nasal, tone: '#0ea5e9' },
@@ -745,6 +747,7 @@ function getProductMiniatureAsset(treatment: Treatment, kind: ProductMiniatureKi
   if (id === 'pelvic_binder') return EQUIPMENT_ASSET_PATHS.pelvicBinder;
   if (id === 'surgical_cric') return EQUIPMENT_ASSET_PATHS.fonaKit;
   if (id === 'magill_forceps') return EQUIPMENT_ASSET_PATHS.magillKit;
+  if (id === 'orogastric_tube') return EQUIPMENT_ASSET_PATHS.gastricTubeKit;
   if (kind === 'fluid') return PRODUCT_ASSET_PATHS.fluidBag;
   if (kind === 'iv') return PRODUCT_ASSET_PATHS.ivCannula;
   if (kind === 'pads') return PRODUCT_ASSET_PATHS.defibPads;

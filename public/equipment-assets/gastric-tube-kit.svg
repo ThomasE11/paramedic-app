@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 260" role="img" aria-labelledby="title desc">
+  <title id="title">Gastric decompression tube kit</title>
+  <desc id="desc">A marked gastric tube, enteral syringe, pH test strips, lubricant and drainage bag.</desc>
+  <defs>
+    <linearGradient id="tube" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#fbbf24"/><stop offset=".5" stop-color="#fef3c7"/><stop offset="1" stop-color="#d97706"/></linearGradient>
+    <filter id="shadow" x="-20%" y="-25%" width="140%" height="160%"><feDropShadow dx="0" dy="7" stdDeviation="6" flood-color="#020617" flood-opacity=".28"/></filter>
+  </defs>
+  <rect x="12" y="14" width="336" height="232" rx="28" fill="#f8fafc" stroke="#cbd5e1" stroke-width="4"/>
+  <text x="180" y="42" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="900" fill="#854d0e" letter-spacing=".6">GASTRIC DECOMPRESSION KIT</text>
+  <g filter="url(#shadow)">
+    <path d="M67 184c-30-59-8-115 53-118 72-3 110 41 80 86-18 27-59 22-59-7 0-26 35-32 60-17 23 14 42 40 51 68" fill="none" stroke="url(#tube)" stroke-width="9" stroke-linecap="round"/>
+    <path d="M69 182c-27-57-5-108 52-109" fill="none" stroke="#fff" stroke-width="2" stroke-dasharray="3 9" opacity=".8"/>
+    <rect x="252" y="72" width="35" height="89" rx="8" fill="#e0f2fe" stroke="#64748b" stroke-width="3"/>
+    <path d="M258 94h23M258 110h23M258 126h23M258 142h23" stroke="#64748b" stroke-width="2"/>
+    <path d="M269 60v15M258 60h22" stroke="#64748b" stroke-width="5" stroke-linecap="round"/>
+    <path d="M287 146h22v12h-22" fill="#64748b"/>
+    <rect x="224" y="173" width="95" height="42" rx="8" fill="#fff" stroke="#94a3b8" stroke-width="3"/>
+    <path d="M236 186h13v16h-13ZM254 186h13v16h-13ZM272 186h13v16h-13ZM290 186h13v16h-13Z" fill="#fde68a" stroke="#d97706" stroke-width="2"/>
+    <rect x="38" y="64" width="54" height="31" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="3"/>
+    <path d="m47 84 36-11" stroke="#fff" stroke-width="7" stroke-linecap="round"/>
+    <path d="M80 74 96 65" stroke="#2563eb" stroke-width="4" stroke-linecap="round"/>
+    <path d="M103 183h67v32h-67Z" fill="#ecfeff" stroke="#0891b2" stroke-width="3"/>
+    <path d="M113 195h47M113 204h47" stroke="#67e8f9" stroke-width="3"/>
+    <path d="M136 183v-13" stroke="#0891b2" stroke-width="5"/>
+  </g>
+  <g font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="800" fill="#334155" text-anchor="middle">
+    <text x="66" y="110">LUBRICANT</text>
+    <text x="129" y="233">DRAINAGE</text>
+    <text x="270" y="233">pH STRIPS</text>
+    <text x="276" y="174">ENTERAL SYRINGE</text>
+  </g>
+</svg>

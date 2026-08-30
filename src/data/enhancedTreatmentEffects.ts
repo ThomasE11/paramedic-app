@@ -2137,7 +2137,7 @@ export const TREATMENTS: Treatment[] = [
   {
     id: 'orogastric_tube',
     name: 'Orogastric / Nasogastric Tube',
-    description: 'Decompress stomach post-intubation. Prevents aspiration, improves ventilation. Confirm placement with aspiration + auscultation.',
+    description: 'Decompress stomach post-intubation. Confirm gastric placement with aspirate pH in the safe range or an appropriately interpreted X-ray; auscultation is not a valid confirmation method.',
     category: 'airway',
     onset: 'immediate',
     onsetTimeSeconds: 0,

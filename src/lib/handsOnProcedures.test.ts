@@ -82,6 +82,7 @@ describe('hands-on treatment procedures', () => {
       'cervical_collar', 'warming_blanket', 'active_cooling', 'spinal_board',
       'scoop_stretcher', 'vacuum_mattress', 'head_blocks', 'ked', 'lucas_device',
       'ventilator_setup', 'mechanical_ventilation', 'pelvic_binder', 'surgical_cric', 'magill_forceps',
+      'orogastric_tube',
     ];
     for (const treatmentId of equipmentTreatments) {
       const plan = getHandsOnProcedurePlan(treatmentId, caseData);
@@ -140,6 +141,16 @@ describe('hands-on treatment procedures', () => {
     expect(plan?.steps.find(step => step.id === 'insert')?.instruction).toContain('continuously visible');
     expect(isHandsOnTreatment('magill_forceps')).toBe(true);
     expect(procedureIncludesIntegratedReassessment('magill_forceps')).toBe(true);
+  });
+
+  it('uses pH or X-ray rather than auscultation to confirm gastric tube placement', () => {
+    const plan = getHandsOnProcedurePlan('orogastric_tube', caseData, ['intubation']);
+
+    expect(plan?.steps.map(step => step.id)).toEqual(['indication', 'measure', 'prepare', 'insert', 'secure', 'confirm', 'decompress']);
+    expect(plan?.steps.find(step => step.id === 'confirm')?.instruction).toContain('pH 1–5.5');
+    expect(plan?.steps.find(step => step.id === 'confirm')?.clinicalCue).toContain('Do not use air insufflation');
+    expect(isHandsOnTreatment('orogastric_tube')).toBe(true);
+    expect(procedureIncludesIntegratedReassessment('orogastric_tube')).toBe(true);
   });
 
   it('reuses an already fitted nebuliser when adding the second bronchodilator', () => {

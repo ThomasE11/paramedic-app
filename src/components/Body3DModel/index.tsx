@@ -152,6 +152,7 @@ interface AppliedEquipmentVisualState {
   hasNeedleDecompression: boolean;
   hasPelvicBinder: boolean;
   hasSurgicalAirway: boolean;
+  hasGastricTube: boolean;
   hasWarmingBlanket: boolean;
   hasActiveCooling: boolean;
   immobilisationDevice: 'spinal-board' | 'scoop' | 'vacuum-mattress' | 'head-blocks' | 'ked' | null;
@@ -185,6 +186,7 @@ const TREATMENT_ASSET_PATHS = {
   needle: '/equipment-assets/needle-decompression.webp',
   pelvicBinder: '/equipment-assets/pelvic-binder.svg',
   fonaKit: '/equipment-assets/fona-kit.svg',
+  gastricTubeKit: '/equipment-assets/gastric-tube-kit.svg',
   warmingBlanket: '/equipment-assets/warming-blanket.webp',
   coolingPack: '/equipment-assets/cooling-pack.webp',
   spineBoard: '/equipment-assets/spine-board.webp',
@@ -1178,6 +1180,7 @@ function buildTreatmentEquipmentState(appliedTreatmentIds: string[]): AppliedEqu
     hasNeedleDecompression: applied.has('needle_decompression'),
     hasPelvicBinder: applied.has('pelvic_binder'),
     hasSurgicalAirway,
+    hasGastricTube: applied.has('orogastric_tube'),
     hasWarmingBlanket: applied.has('warming_blanket'),
     hasActiveCooling: applied.has('active_cooling'),
     immobilisationDevice,
@@ -1383,6 +1386,23 @@ function AppliedFrontOfNeckAirway() {
   );
 }
 
+function AppliedGastricDecompressionTube() {
+  return (
+    <div
+      data-applied-equipment="orogastric-tube"
+      aria-label="Orogastric tube secured with gastric drainage connected"
+      className="pointer-events-none relative h-36 w-24 animate-in fade-in zoom-in-75 duration-500 drop-shadow-[0_4px_6px_rgba(2,6,23,.72)]"
+    >
+      <span className="absolute left-7 top-0 h-7 w-9 -rotate-6 rounded-lg border-2 border-white/85 bg-white/55 backdrop-blur-[1px]" />
+      <span className="absolute left-[43px] top-3 h-[90px] w-2 rounded-full border border-amber-200 bg-gradient-to-r from-amber-500 via-amber-100 to-amber-600 shadow" />
+      {[29, 43, 57, 71].map(top => <span key={top} className="absolute left-[44px] h-px w-1.5 bg-amber-900/65" style={{ top }} />)}
+      <span className="absolute left-[46px] top-[94px] h-0.5 w-11 origin-left rotate-[34deg] bg-amber-300" />
+      <span className="absolute bottom-0 right-0 h-11 w-12 rounded-lg border-2 border-cyan-200/70 bg-cyan-100/30 shadow-inner" />
+      <span className="absolute bottom-3 right-1 h-2 w-10 rounded-full bg-cyan-400/35" />
+    </div>
+  );
+}
+
 function AppliedTorsoCover({ cooling }: { cooling: boolean }) {
   return (
     <div data-applied-equipment={cooling ? 'active-cooling' : 'warming-blanket'} className={`pointer-events-none h-40 w-28 rounded-[28px] border shadow-xl animate-in fade-in zoom-in-95 duration-500 ${cooling ? 'border-cyan-100/80 bg-gradient-to-b from-cyan-100/55 via-sky-300/45 to-cyan-100/50' : 'border-amber-100/70 bg-[linear-gradient(125deg,rgba(254,243,199,.88),rgba(180,83,9,.62),rgba(254,243,199,.82))]'}`}>
@@ -1466,6 +1486,7 @@ function AppliedEquipmentTray({ appliedTreatmentIds }: { appliedTreatmentIds: st
   if (equipment.hasNeedleDecompression && !siteTreatmentIds.has('needle_decompression')) chips.push({ src: TREATMENT_ASSET_PATHS.needle, label: 'Decompression catheter' });
   if (equipment.hasPelvicBinder) chips.push({ src: TREATMENT_ASSET_PATHS.pelvicBinder, label: 'Pelvic binder secured' });
   if (equipment.hasSurgicalAirway) chips.push({ src: TREATMENT_ASSET_PATHS.fonaKit, label: 'FONA tube secured' });
+  if (equipment.hasGastricTube) chips.push({ src: TREATMENT_ASSET_PATHS.gastricTubeKit, label: 'Gastric decompression active' });
   if (equipment.hasWarmingBlanket) chips.push({ src: TREATMENT_ASSET_PATHS.warmingBlanket, label: 'Warming blanket' });
   if (equipment.hasActiveCooling) chips.push({ src: TREATMENT_ASSET_PATHS.coolingPack, label: 'Active cooling' });
   if (equipment.immobilisationDevice) {
@@ -1526,6 +1547,7 @@ function TreatmentEquipmentOverlay({
     || equipment.hasNeedleDecompression
     || equipment.hasPelvicBinder
     || equipment.hasSurgicalAirway
+    || equipment.hasGastricTube
     || equipment.hasWarmingBlanket
     || equipment.hasActiveCooling
     || equipment.immobilisationDevice
@@ -1627,6 +1649,12 @@ function TreatmentEquipmentOverlay({
       {equipment.hasSurgicalAirway && (
         <MarkerHtml position={faceAnchor(0, 1.47, 0.235)} distanceFactor={1.95} zIndexRange={[74, 0]} interactive={false} presentation={posture === 'tripod' || posture === 'seated' ? 'upright' : presentation} contentScale={equipmentScale}>
           <AppliedFrontOfNeckAirway />
+        </MarkerHtml>
+      )}
+
+      {equipment.hasGastricTube && (
+        <MarkerHtml position={faceAnchor(0.035, 1.61, 0.245)} distanceFactor={2.05} zIndexRange={[73, 0]} interactive={false} presentation={posture === 'tripod' || posture === 'seated' ? 'upright' : presentation} contentScale={equipmentScale}>
+          <AppliedGastricDecompressionTube />
         </MarkerHtml>
       )}
 

@@ -246,6 +246,51 @@ function ForeignBodyRemovalProcedurePreview({
   );
 }
 
+function GastricTubeProcedurePreview({
+  treatmentId,
+  completedSteps,
+  animatingStep,
+}: {
+  treatmentId: string;
+  completedSteps: string[];
+  animatingStep: string | null;
+}) {
+  if (treatmentId !== 'orogastric_tube') return null;
+  const reached = (stepId: string) => completedSteps.includes(stepId) || animatingStep === stepId;
+  const measured = reached('measure');
+  const inserted = reached('insert');
+  const secured = reached('secure');
+  const confirmed = reached('confirm');
+  const decompressing = reached('decompress');
+
+  return (
+    <div data-procedure-preview="orogastric-tube" className="pointer-events-none absolute inset-0 z-30">
+      {measured && !inserted && (
+        <>
+          <span className="absolute left-[97px] top-[48px] h-[152px] w-px border-l border-dashed border-amber-200" />
+          <span className="absolute right-1 top-[115px] rounded-full border border-amber-300/40 bg-amber-950/95 px-2 py-1 text-[7px] font-black uppercase tracking-[0.08em] text-amber-100">Mouth → ear → xiphisternum</span>
+        </>
+      )}
+      {inserted && (
+        <span className="absolute left-[94px] top-[51px] h-[144px] w-2 rounded-full border border-amber-200 bg-gradient-to-r from-amber-500 via-amber-100 to-amber-600 shadow" aria-label="Orogastric tube advanced to measured mark" />
+      )}
+      {secured && (
+        <span className="absolute left-[82px] top-[46px] h-7 w-8 -rotate-6 rounded-md border-2 border-white/85 bg-white/55 shadow backdrop-blur-[1px]" aria-label="Tube secured and external length recorded" />
+      )}
+      {confirmed && (
+        <span className="absolute right-2 top-[91px] rounded-lg border border-emerald-300/50 bg-emerald-950/95 px-2 py-1.5 text-[7px] font-black uppercase tracking-[0.08em] text-emerald-100 shadow-lg">Aspirate pH ≤ 5.5</span>
+      )}
+      {decompressing && (
+        <>
+          <span className="absolute left-[98px] top-[188px] h-0.5 w-12 rotate-[24deg] bg-amber-300" />
+          <span className="absolute bottom-8 right-[29px] h-12 w-14 rounded-lg border-2 border-cyan-200/70 bg-cyan-100/25 shadow-inner" aria-label="Gastric drainage connected" />
+          <span className="absolute bottom-3 left-1/2 w-max -translate-x-1/2 rounded-full border border-emerald-300/50 bg-emerald-950/95 px-2 py-1 text-[7px] font-black uppercase tracking-[0.08em] text-emerald-100 shadow-lg">Confirmed · drainage active</span>
+        </>
+      )}
+    </div>
+  );
+}
+
 const THERMAL_PREVIEW_TREATMENTS = new Set(['active_cooling', 'warming_blanket']);
 
 function ThermalProcedurePreview({
@@ -685,6 +730,12 @@ export function HandsOnProcedureDialog({
               />
 
               <ForeignBodyRemovalProcedurePreview
+                treatmentId={plan.treatmentId}
+                completedSteps={completedSteps}
+                animatingStep={animatingStep}
+              />
+
+              <GastricTubeProcedurePreview
                 treatmentId={plan.treatmentId}
                 completedSteps={completedSteps}
                 animatingStep={animatingStep}

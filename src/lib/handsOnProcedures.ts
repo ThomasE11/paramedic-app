@@ -376,6 +376,28 @@ export function getHandsOnProcedurePlan(
     };
   }
 
+  if (treatmentId === 'orogastric_tube') {
+    return {
+      id: 'orogastric-decompression',
+      title: 'Insert an orogastric decompression tube',
+      subtitle: 'Measure, insert and verify gastric placement before connecting drainage or introducing anything through the tube.',
+      treatmentId,
+      requiresTarget: false,
+      targets: [],
+      equipmentAsset: '/equipment-assets/gastric-tube-kit.svg',
+      completionLabel: 'Placement confirmed — decompression active',
+      steps: [
+        STEP('indication', 'Confirm indication and route', 'Confirm gastric decompression is required after airway control; review facial/base-of-skull injury, oesophageal pathology and bleeding risk.', 'Use the orogastric route for this secured-airway decompression sequence. Do not place a nasal tube through suspected base-of-skull or severe mid-face injury.', 'prepare'),
+        STEP('measure', 'Measure and mark insertion length', 'Measure from the corner of the mouth to the ear lobe and then to the xiphisternum; mark and record the intended external length.', 'An unmeasured tube can remain in the oesophagus or advance too far.', 'prepare'),
+        STEP('prepare', 'Prepare patient and tube', 'Preoxygenate, position safely, lubricate the distal tube with water-soluble gel, keep suction ready and assign one clinician to stabilise the airway tube.', 'Stop for falling SpO₂, bradycardia, resistance, bleeding or airway-tube movement.', 'prepare'),
+        STEP('insert', 'Advance to the measured mark', 'Guide the tube through the mouth and posterior pharynx, advancing gently to the recorded mark without forcing resistance.', 'Watch continuously for coiling in the mouth and protect the existing airway tube.', 'place', 1400),
+        STEP('secure', 'Secure and record external length', 'Fix the tube without pressure injury or traction and document the length at the mouth.', 'A change in external length later means displacement until proven otherwise.', 'wrap'),
+        STEP('confirm', 'Confirm gastric placement', 'Aspirate gastric contents and test with an approved pH strip. Accept pH 1–5.5; if no aspirate or pH is above 5.5, obtain an appropriately interpreted X-ray.', 'Do not use air insufflation, a “whoosh” on auscultation, aspirate appearance or absence of distress to confirm placement.', 'confirm', 1300),
+        STEP('decompress', 'Connect drainage and reassess', 'Only after confirmation, connect free drainage or prescribed suction and monitor output, abdominal distension, ventilation pressures and tube position.', 'Reconfirm placement after movement, coughing, retching or any change in external length.', 'connect', 1100),
+      ],
+    };
+  }
+
   if (treatmentId === 'bvm_ventilation') {
     return {
       id: 'bvm-ventilation', title: 'Apply bag-valve-mask ventilation',
@@ -701,6 +723,7 @@ const HANDS_ON_TREATMENTS = new Set([
   'back_blows', 'abdominal_thrusts',
   'surgical_cric',
   'magill_forceps',
+  'orogastric_tube',
 ]);
 
 export const isHandsOnTreatment = (treatmentId: string): boolean =>
@@ -727,7 +750,8 @@ export const procedureIncludesIntegratedReassessment = (treatmentId: string): bo
   || treatmentId === 'back_blows'
   || treatmentId === 'abdominal_thrusts'
   || treatmentId === 'surgical_cric'
-  || treatmentId === 'magill_forceps';
+  || treatmentId === 'magill_forceps'
+  || treatmentId === 'orogastric_tube';
 
 export function procedureSiteToken(treatmentId: string, target: ProcedureSite): string {
   return `site:${treatmentId}:${target}`;
