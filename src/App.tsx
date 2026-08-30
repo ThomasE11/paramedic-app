@@ -303,8 +303,13 @@ function EducatorPanel(ep: EducatorPanelProps) {
               session={ep.session}
               timelineEvents={ep.timelineEvents}
               onAction={(actionId) => {
+                if (actionId === 'defibrillate') {
+                  toast.info('Use the transport monitor', {
+                    description: 'Attach pads, select DEFIB, analyse the rhythm, choose energy, charge, clear, then shock.',
+                  });
+                  return;
+                }
                 const msgs: Record<string, { title: string; description: string }> = {
-                  defibrillate: { title: 'Defibrillation', description: '200J biphasic shock delivered' },
                   drug: { title: 'Medication', description: 'Protocol medication administered' },
                   airway: { title: 'Airway Management', description: 'Airway secured and managed' },
                   iv: { title: 'IV Access', description: 'Intravenous access established' },

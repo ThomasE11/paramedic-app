@@ -64,7 +64,7 @@ interface VitalSignsMonitorProps {
     lastAdrenalineTime: number | null;
     onStartCPR: () => void;
     onPauseCPR: () => void;
-    onDefibrillate: () => void;
+    onDefibrillate: (delivery: { energy: number; synchronized: boolean; currentRhythm: string }) => void;
   };
   /** Called when a TLC Monitor assessment (BGL, pain, temp, 12-lead) completes — awards scoring credit */
   onAssessmentPerformed?: (stepId: string) => void;
@@ -2556,6 +2556,11 @@ export function VitalSignsMonitor({
     const rhythmName = normalizeRhythmName(currentRhythm.name);
     const energy = selectedEnergy;
     const isSynced = syncMode;
+    cprState?.onDefibrillate({
+      energy,
+      synchronized: isSynced,
+      currentRhythm: rhythmName,
+    });
 
     // --- VF / Fine VF ---
     if (rhythmName === 'Ventricular Fibrillation') {
@@ -3448,7 +3453,18 @@ export function VitalSignsMonitor({
                 onClick={() => cprState.running ? cprState.onPauseCPR() : cprState.onStartCPR()}
                 variant={cprState.running ? 'red' : 'green'} active={cprState.running} size="large" />
               <LP20Button label="DEFIB" sublabel={`#${cprState.shockCount}`}
-                onClick={cprState.onDefibrillate} variant="red" size="large" />
+                onClick={() => {
+                  setMonitorMode('defib');
+                  if (!padsAttached) {
+                    setShockFeedbackMessage({
+                      text: 'PADS OFF — complete pad placement before analysis, charge or shock.',
+                      severity: 'critical',
+                    });
+                    logIntervention('SAFETY LOCK', 'Arrest defibrillation blocked — pads are not attached');
+                    return;
+                  }
+                  handleAnalyze();
+                }} variant="red" size="large" />
             </div>
             <div className="flex gap-1.5">
               <div className={`flex-1 text-center py-1 rounded text-[8px] font-mono ${

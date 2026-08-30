@@ -144,7 +144,7 @@ interface WorkspaceLayoutProps {
     lastAdrenalineTime: number | null;
     onStartCPR: () => void;
     onPauseCPR: () => void;
-    onDefibrillate: () => void;
+    onDefibrillate: (delivery: { energy: number; synchronized: boolean; currentRhythm: string }) => void;
   };
   // Props for Body3DModel
   onRegionClick?: (regionId: string) => void;

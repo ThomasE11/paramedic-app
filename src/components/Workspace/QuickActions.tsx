@@ -23,8 +23,8 @@ interface QuickActionsProps {
 const actions: QuickAction[] = [
   {
     id: 'defibrillate',
-    label: 'Defibrillate',
-    description: '200J biphasic',
+    label: 'Defibrillator',
+    description: 'Pads → analyse → charge',
     icon: <Zap className="w-4 h-4 text-red-500" />,
     color: 'bg-red-50',
     hoverColor: 'hover:bg-red-100',

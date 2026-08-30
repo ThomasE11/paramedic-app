@@ -3342,7 +3342,7 @@ export function StudentPanel({
 
     // Defibrillation is a separate action from pad placement. Never open the
     // energy selector (or deliver a shock) without physically attached pads.
-    if (treatment.id === 'defibrillation' && !defibParams) {
+    if (treatment.id === 'defibrillation') {
       const padsAttached = hasAttachedDefibrillatorPads(appliedTreatmentIds);
       if (!padsAttached) {
         const pads = TREATMENTS.find(item => item.id === 'monitor_pads');
@@ -6392,16 +6392,9 @@ export function StudentPanel({
                           setCprRunning(false);
                           setArrestTimeline(prev => [...prev, { time: Date.now(), event: 'CPR paused', type: 'cpr-pause' }]);
                         },
-                        onDefibrillate: () => {
-                          // Create a defibrillation treatment object for the dialog
-                          setPendingDefibTreatment({
-                            id: 'defibrillation',
-                            name: 'Defibrillation',
-                            category: 'procedure',
-                            description: 'Deliver electrical shock to restore normal rhythm',
-                            effects: [],
-                          } as any);
-                          setShowDefibDialog(true);
+                        onDefibrillate: (delivery) => {
+                          const treatment = TREATMENTS.find(item => item.id === 'defibrillation');
+                          if (treatment) applyTreatment(treatment, delivery);
                           lastActivityRef.current = Date.now();
                         },
                       } : undefined}
