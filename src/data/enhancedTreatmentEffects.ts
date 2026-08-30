@@ -2104,8 +2104,8 @@ export const TREATMENTS: Treatment[] = [
   },
   {
     id: 'targeted_temp_mgmt',
-    name: 'Targeted Temperature Management',
-    description: 'TTM 32-36°C for ≥24hrs post cardiac arrest (AHA 2025). Cold IV fluids 30ml/kg, ice packs to groin/axillae/neck. Avoid shivering (sedation/paralysis).',
+    name: 'Post-ROSC Fever Prevention',
+    description: 'For patients who remain comatose after ROSC: continuously monitor core temperature, target ≤37.5°C and prevent fever for 36–72 hours using a feedback-controlled surface or endovascular system. Do not routinely use large-volume ice-cold IV fluid.',
     category: 'circulation',
     onset: 'gradual',
     onsetTimeSeconds: 15,
@@ -2113,10 +2113,9 @@ export const TREATMENTS: Treatment[] = [
     icon: 'Thermometer',
     color: 'blue',
     effects: [
-      { vitalSign: 'temperature', changeType: 'decrease', value: 2.0, minValue: 33 },
-      { vitalSign: 'pulse', changeType: 'decrease', value: 10, minValue: 45 },
+      { vitalSign: 'temperature', changeType: 'decrease', value: 1.5, minValue: 37.5 },
     ],
-    contraindications: ['Active haemorrhage', 'Already hypothermic (<30°C)'],
+    contraindications: ['No sustained ROSC', 'Patient awake and following commands'],
   },
   {
     id: 'vasopressor_norad',

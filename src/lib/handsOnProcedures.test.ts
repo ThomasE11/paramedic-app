@@ -112,6 +112,7 @@ describe('hands-on treatment procedures', () => {
       'orogastric_tube',
       'airway_open',
       'pericardiocentesis',
+      'targeted_temp_mgmt',
     ];
     for (const treatmentId of equipmentTreatments) {
       const plan = getHandsOnProcedurePlan(treatmentId, caseData);
@@ -201,6 +202,16 @@ describe('hands-on treatment procedures', () => {
     expect(plan?.steps.find(step => step.id === 'drain')?.instruction).toContain('measured aliquots');
     expect(isHandsOnTreatment('pericardiocentesis')).toBe(true);
     expect(procedureIncludesIntegratedReassessment('pericardiocentesis')).toBe(true);
+  });
+
+  it('uses feedback-controlled fever prevention rather than cold-fluid loading after ROSC', () => {
+    const plan = getHandsOnProcedurePlan('targeted_temp_mgmt', caseData);
+
+    expect(plan?.steps.map(step => step.id)).toEqual(['confirm', 'measure', 'target', 'apply', 'connect', 'shivering', 'trend']);
+    expect(plan?.steps.find(step => step.id === 'target')?.instruction).toContain('no higher than 37.5°C');
+    expect(plan?.steps.find(step => step.id === 'apply')?.clinicalCue).toContain('Do not routinely give a large rapid bolus of ice-cold IV fluid');
+    expect(isHandsOnTreatment('targeted_temp_mgmt')).toBe(true);
+    expect(procedureIncludesIntegratedReassessment('targeted_temp_mgmt')).toBe(true);
   });
 
   it('reuses an already fitted nebuliser when adding the second bronchodilator', () => {

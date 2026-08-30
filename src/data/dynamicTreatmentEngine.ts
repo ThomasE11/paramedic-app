@@ -798,7 +798,9 @@ function applyStandardTreatment(
         if (effect.changeType === 'increase') {
           vitals.temperature = Math.round(clamp(oldTemp + adjustedValue, effect.minValue || 34, effect.maxValue || 42) * 10) / 10;
         } else if (effect.changeType === 'decrease') {
-          vitals.temperature = Math.round(clamp(oldTemp - adjustedValue, effect.minValue || 34, effect.maxValue || 42) * 10) / 10;
+          vitals.temperature = treatment.id === 'targeted_temp_mgmt' && oldTemp <= 37.5
+            ? oldTemp
+            : Math.round(clamp(oldTemp - adjustedValue, effect.minValue || 34, effect.maxValue || 42) * 10) / 10;
         }
         if (vitals.temperature !== oldTemp) {
           changes.push({

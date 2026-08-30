@@ -747,6 +747,28 @@ export function getHandsOnProcedurePlan(
     };
   }
 
+  if (treatmentId === 'targeted_temp_mgmt') {
+    return {
+      id: 'post-rosc-fever-prevention',
+      title: 'Establish post-ROSC temperature control',
+      subtitle: 'For a comatose patient after ROSC, monitor core temperature continuously and prevent fever without indiscriminate prehospital cold-fluid loading.',
+      treatmentId,
+      requiresTarget: false,
+      targets: [],
+      equipmentAsset: '/equipment-assets/temperature-control-pads.svg',
+      completionLabel: 'Feedback control active — fever prevention maintained',
+      steps: [
+        STEP('confirm', 'Confirm ROSC and ongoing coma', 'Confirm a sustained pulse and organised circulation, then document neurological response after immediate ABC stabilisation.', 'Temperature control is for patients who remain comatose after ROSC; do not distract from airway, ventilation or perfusion.', 'confirm'),
+        STEP('measure', 'Insert continuous core monitoring', 'Use an appropriate continuous core-temperature probe and record the starting value and route.', 'Peripheral skin temperature is not a reliable control signal for a feedback cooling system.', 'connect'),
+        STEP('target', 'Set the fever-prevention target', 'Set a target no higher than 37.5°C and plan to prevent fever for 36–72 hours in definitive care.', 'Do not actively warm a comatose post-ROSC patient who is already mildly hypothermic at 32–36°C.', 'prepare'),
+        STEP('apply', 'Apply feedback-controlled surface pads', 'Expose only the required skin, dry it, inspect for wounds, then adhere water-circulating torso and thigh pads without covering defibrillator pads or access lines.', 'Do not routinely give a large rapid bolus of ice-cold IV fluid after ROSC.', 'place', 1300),
+        STEP('connect', 'Connect and start feedback control', 'Connect both pad circuits to the controller, confirm flow, enter the core-probe source and start closed-loop temperature control.', 'A device without a valid core-temperature signal can overcool the patient.', 'connect', 1200),
+        STEP('shivering', 'Assess shivering and complications', 'Observe for shivering, skin pressure injury, dysrhythmia, electrolyte change and haemodynamic instability; escalate sedation only through the appropriate critical-care plan.', 'Do not use routine paralysis or mask seizures without adequate monitoring and sedation.', 'confirm'),
+        STEP('trend', 'Trend and hand over the target', 'Record core temperature and device status repeatedly, protect every line during transfer and hand over the ≤37.5°C target and 36–72-hour fever-prevention plan.', 'Avoid fever, unintended deep hypothermia and rapid temperature swings.', 'confirm'),
+      ],
+    };
+  }
+
   if (['supine_position', 'recovery_position', 'fowlers_position', 'left_lateral_tilt', 'leg_elevation', 'assisted_ambulation'].includes(treatmentId)) {
     const positioning: Record<string, { title: string; destination: string; completion: string }> = {
       supine_position: { title: 'Position patient supine', destination: 'flat on their back with alignment and airway access maintained', completion: 'Supine position secured — reassess' },
@@ -809,7 +831,7 @@ const HANDS_ON_TREATMENTS = new Set([
   'nebulizer_ipratropium', 'nebulised_adrenaline', 'cpap_niv', 'iv_access', 'io_access', 'chest_seal_vented', 'vented_chest_seal',
   'occlusive_dressing_3sided', 'needle_decompression', 'splinting', 'sam_splint', 'box_splint',
   'vacuum_limb_splint', 'air_splint', 'traction_splint', 'cervical_collar', 'warming_blanket',
-  'active_cooling', 'spinal_board', 'scoop_stretcher', 'vacuum_mattress', 'head_blocks', 'ked',
+  'active_cooling', 'targeted_temp_mgmt', 'spinal_board', 'scoop_stretcher', 'vacuum_mattress', 'head_blocks', 'ked',
   'lucas_device', 'ventilator_setup', 'mechanical_ventilation', 'supine_position', 'recovery_position', 'fowlers_position',
   'left_lateral_tilt', 'leg_elevation', 'assisted_ambulation',
   'pelvic_binder',
@@ -840,6 +862,7 @@ const LIMB_SPLINT_TREATMENTS = new Set([
 export const procedureIncludesIntegratedReassessment = (treatmentId: string): boolean =>
   LIMB_SPLINT_TREATMENTS.has(treatmentId)
   || treatmentId === 'airway_open'
+  || treatmentId === 'targeted_temp_mgmt'
   || treatmentId === 'intubation'
   || treatmentId === 'rsi_intubation'
   || treatmentId === 'pelvic_binder'

@@ -173,6 +173,26 @@ describe('applyDynamicTreatment — respiratory response classification', () => 
   });
 });
 
+describe('applyDynamicTreatment — post-ROSC fever prevention', () => {
+  const temperatureControl = getTreatment('targeted_temp_mgmt');
+
+  it('reduces fever to the 37.5°C ceiling', () => {
+    const febrileCase = makeCase({ vitalSignsProgression: { initial: vitals({ temperature: 39 }) } });
+    const state = createInitialPatientState(febrileCase);
+    const { newState } = applyDynamicTreatment(temperatureControl, state, febrileCase);
+
+    expect(newState.vitals.temperature).toBe(37.5);
+  });
+
+  it('does not cool or actively warm mild post-ROSC hypothermia', () => {
+    const coolCase = makeCase({ vitalSignsProgression: { initial: vitals({ temperature: 35 }) } });
+    const state = createInitialPatientState(coolCase);
+    const { newState } = applyDynamicTreatment(temperatureControl, state, coolCase);
+
+    expect(newState.vitals.temperature).toBe(35);
+  });
+});
+
 // ---------------------------------------------------------------------------
 // applyDynamicTreatment — wrong-action consequences
 // ---------------------------------------------------------------------------

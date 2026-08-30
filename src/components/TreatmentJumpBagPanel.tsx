@@ -537,6 +537,7 @@ const EQUIPMENT_ASSET_PATHS = {
   magillKit: '/equipment-assets/magill-forceps-kit.svg',
   gastricTubeKit: '/equipment-assets/gastric-tube-kit.svg',
   pericardiocentesisKit: '/equipment-assets/pericardiocentesis-kit.svg',
+  temperatureControlPads: '/equipment-assets/temperature-control-pads.svg',
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -674,6 +675,7 @@ const BAG_EQUIPMENT: Record<ManagementTab, EquipmentInventoryItem[]> = {
     { id: 'circ-tourniquet', label: 'Tourniquet', caption: 'Major limb bleed', treatmentId: 'tourniquet', assetPath: EQUIPMENT_ASSET_PATHS.tourniquet, tone: '#111827' },
     { id: 'circ-pelvic-binder', label: 'Pelvic Binder', caption: 'Suspected unstable pelvic injury', treatmentId: 'pelvic_binder', assetPath: EQUIPMENT_ASSET_PATHS.pelvicBinder, tone: '#dc2626', wide: true },
     { id: 'circ-pericardial-drain', label: 'Pericardial Drain Kit', caption: 'POCUS-guided tamponade rescue', treatmentId: 'pericardiocentesis', assetPath: EQUIPMENT_ASSET_PATHS.pericardiocentesisKit, tone: '#be123c', wide: true },
+    { id: 'circ-temperature-control', label: 'Temperature Controller', caption: 'Feedback fever prevention after ROSC', treatmentId: 'targeted_temp_mgmt', assetPath: EQUIPMENT_ASSET_PATHS.temperatureControlPads, tone: '#0891b2', wide: true },
     { id: 'circ-chest-seal', label: 'Vented Chest Seal', caption: 'Open chest wound', treatmentId: 'chest_seal_vented', assetPath: EQUIPMENT_ASSET_PATHS.bandages, tone: '#f97316' },
     { id: 'circ-lucas', label: 'Mechanical CPR', caption: 'LUCAS device', treatmentId: 'lucas_device', assetPath: PRODUCT_ASSET_PATHS.lucas, tone: '#64748b' },
   ],

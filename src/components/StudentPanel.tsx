@@ -669,6 +669,7 @@ interface TreatmentPracticalityContext {
   currentCase: CaseScenario;
   patientState: PatientState;
   appliedTreatmentIds: string[];
+  hasRosc: boolean;
 }
 
 interface TreatmentChallenge {
@@ -1168,6 +1169,7 @@ function assessTreatmentPracticality({
   currentCase,
   patientState,
   appliedTreatmentIds,
+  hasRosc,
 }: TreatmentPracticalityContext): TreatmentChallenge | null {
   const id = treatment.id;
   const gcs = getPatientGcsTotal(currentVitals, currentCase, patientState);
@@ -1211,6 +1213,24 @@ function assessTreatmentPracticality({
         title: 'No current haemodynamic compromise',
         clinicalReason: 'An effusion alone is not an emergency needle-drainage indication. Continue monitored ultrasound assessment and arrange expert definitive management unless tamponade physiology develops.',
         patientQuote: vocal ? 'Please explain why this cannot wait for the specialist team.' : undefined,
+      };
+    }
+  }
+
+  if (id === 'targeted_temp_mgmt') {
+    if (patientState.isInArrest || !hasRosc) {
+      return {
+        level: 'block',
+        title: 'ROSC not established',
+        clinicalReason: 'Temperature control is post-resuscitation care. Continue the cardiac-arrest algorithm until a sustained pulse and organised circulation are present.',
+      };
+    }
+    if (gcs > 8 && !/comatose|unconscious|unresponsive/.test(text)) {
+      return {
+        level: 'block',
+        title: 'Patient is awake after ROSC',
+        clinicalReason: 'Active post-ROSC fever-prevention devices are recommended for patients who remain comatose. Continue temperature observation and treat fever through the appropriate clinical pathway.',
+        patientQuote: vocal ? 'I am awake. Why are you putting cooling pads on me?' : undefined,
       };
     }
   }
@@ -3503,6 +3523,8 @@ export function StudentPanel({
       currentCase,
       patientState,
       appliedTreatmentIds,
+      hasRosc: arrestTimeline.some(event => event.type === 'rosc')
+        || /post.?rosc|return of spontaneous circulation|resuscitated after cardiac arrest/.test(getCaseClinicalText(currentCase)),
     });
     if (practicalChallenge && !treatmentChallengeConfirmedRef.current.has(treatment.id)) {
       if (practicalChallenge.patientQuote) {
@@ -3859,7 +3881,7 @@ export function StudentPanel({
     // readOnly must be in deps — when control is handed to this student
     // the callback needs to be rebuilt so applyTreatment can actually run
     // instead of hitting the stale "you are watching" toast branch.
-	  }, [currentVitals, currentCase, patientState, startGradualChange, arrestActive, adrenalineDoses, shockCount, readOnly, triggerAdverseReaction, resolveAdverseReaction, speakNarration, appliedTreatmentIds, recordVitalsSample, clinicalRole, t]);
+	  }, [currentVitals, currentCase, patientState, startGradualChange, arrestActive, arrestTimeline, adrenalineDoses, shockCount, readOnly, triggerAdverseReaction, resolveAdverseReaction, speakNarration, appliedTreatmentIds, recordVitalsSample, clinicalRole, t]);
 
   // Handle defibrillation dialog confirmation
   const handleDefibConfirm = useCallback((params: DefibrillationParams) => {

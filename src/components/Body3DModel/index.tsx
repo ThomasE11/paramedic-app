@@ -154,6 +154,7 @@ interface AppliedEquipmentVisualState {
   hasSurgicalAirway: boolean;
   hasGastricTube: boolean;
   hasPericardialDrain: boolean;
+  hasTemperatureControl: boolean;
   hasWarmingBlanket: boolean;
   hasActiveCooling: boolean;
   immobilisationDevice: 'spinal-board' | 'scoop' | 'vacuum-mattress' | 'head-blocks' | 'ked' | null;
@@ -189,6 +190,7 @@ const TREATMENT_ASSET_PATHS = {
   fonaKit: '/equipment-assets/fona-kit.svg',
   gastricTubeKit: '/equipment-assets/gastric-tube-kit.svg',
   pericardiocentesisKit: '/equipment-assets/pericardiocentesis-kit.svg',
+  temperatureControlPads: '/equipment-assets/temperature-control-pads.svg',
   warmingBlanket: '/equipment-assets/warming-blanket.webp',
   coolingPack: '/equipment-assets/cooling-pack.webp',
   spineBoard: '/equipment-assets/spine-board.webp',
@@ -1184,6 +1186,7 @@ function buildTreatmentEquipmentState(appliedTreatmentIds: string[]): AppliedEqu
     hasSurgicalAirway,
     hasGastricTube: applied.has('orogastric_tube'),
     hasPericardialDrain: applied.has('pericardiocentesis'),
+    hasTemperatureControl: applied.has('targeted_temp_mgmt'),
     hasWarmingBlanket: applied.has('warming_blanket'),
     hasActiveCooling: applied.has('active_cooling'),
     immobilisationDevice,
@@ -1423,6 +1426,24 @@ function AppliedPericardialDrain() {
   );
 }
 
+function AppliedTemperatureControlPads() {
+  return (
+    <div
+      data-applied-equipment="temperature-control-pads"
+      aria-label="Feedback-controlled surface temperature pads connected to a core-temperature monitor"
+      className="pointer-events-none relative h-52 w-36 animate-in fade-in zoom-in-95 duration-500 drop-shadow-[0_5px_8px_rgba(2,6,23,.7)]"
+    >
+      <span className="absolute left-1/2 top-0 h-[92px] w-[98px] -translate-x-1/2 rounded-[38px_38px_26px_26px] border-2 border-cyan-100/80 bg-gradient-to-br from-cyan-50/78 via-sky-400/58 to-cyan-700/72 shadow-inner" />
+      <span className="absolute left-[24px] top-[104px] h-[93px] w-[37px] rotate-2 rounded-2xl border-2 border-cyan-100/75 bg-sky-500/58 shadow-inner" />
+      <span className="absolute right-[24px] top-[104px] h-[93px] w-[37px] -rotate-2 rounded-2xl border-2 border-cyan-100/75 bg-sky-500/58 shadow-inner" />
+      <span className="absolute left-[13px] top-[55px] h-1.5 w-[58px] -rotate-[22deg] rounded-full bg-cyan-100" />
+      <span className="absolute right-[13px] top-[55px] h-1.5 w-[58px] rotate-[22deg] rounded-full bg-sky-400" />
+      <span className="absolute -left-[2px] top-[22px] flex h-11 w-12 flex-col items-center justify-center rounded-lg border-2 border-slate-400 bg-slate-950 text-[6px] font-black uppercase tracking-[0.08em] text-cyan-100 shadow-lg"><em className="not-italic text-[12px] leading-none text-white">37.5°</em>target</span>
+      <span className="absolute left-1/2 top-[82px] h-[104px] w-1 -translate-x-1/2 bg-amber-300" aria-hidden="true" />
+    </div>
+  );
+}
+
 function AppliedTorsoCover({ cooling }: { cooling: boolean }) {
   return (
     <div data-applied-equipment={cooling ? 'active-cooling' : 'warming-blanket'} className={`pointer-events-none h-40 w-28 rounded-[28px] border shadow-xl animate-in fade-in zoom-in-95 duration-500 ${cooling ? 'border-cyan-100/80 bg-gradient-to-b from-cyan-100/55 via-sky-300/45 to-cyan-100/50' : 'border-amber-100/70 bg-[linear-gradient(125deg,rgba(254,243,199,.88),rgba(180,83,9,.62),rgba(254,243,199,.82))]'}`}>
@@ -1508,6 +1529,7 @@ function AppliedEquipmentTray({ appliedTreatmentIds }: { appliedTreatmentIds: st
   if (equipment.hasSurgicalAirway) chips.push({ src: TREATMENT_ASSET_PATHS.fonaKit, label: 'FONA tube secured' });
   if (equipment.hasGastricTube) chips.push({ src: TREATMENT_ASSET_PATHS.gastricTubeKit, label: 'Gastric decompression active' });
   if (equipment.hasPericardialDrain) chips.push({ src: TREATMENT_ASSET_PATHS.pericardiocentesisKit, label: 'Pericardial drain secured' });
+  if (equipment.hasTemperatureControl) chips.push({ src: TREATMENT_ASSET_PATHS.temperatureControlPads, label: 'Temperature feedback active' });
   if (equipment.hasWarmingBlanket) chips.push({ src: TREATMENT_ASSET_PATHS.warmingBlanket, label: 'Warming blanket' });
   if (equipment.hasActiveCooling) chips.push({ src: TREATMENT_ASSET_PATHS.coolingPack, label: 'Active cooling' });
   if (equipment.immobilisationDevice) {
@@ -1570,6 +1592,7 @@ function TreatmentEquipmentOverlay({
     || equipment.hasSurgicalAirway
     || equipment.hasGastricTube
     || equipment.hasPericardialDrain
+    || equipment.hasTemperatureControl
     || equipment.hasWarmingBlanket
     || equipment.hasActiveCooling
     || equipment.immobilisationDevice
@@ -1683,6 +1706,12 @@ function TreatmentEquipmentOverlay({
       {equipment.hasPericardialDrain && (
         <MarkerHtml position={anchor(-0.04, 1.14, 0.25)} distanceFactor={2.1} zIndexRange={[73, 0]} interactive={false} presentation={presentation} contentScale={equipmentScale}>
           <AppliedPericardialDrain />
+        </MarkerHtml>
+      )}
+
+      {equipment.hasTemperatureControl && (
+        <MarkerHtml position={anchor(0, 1.03, 0.28)} distanceFactor={2.45} zIndexRange={[69, 0]} interactive={false} presentation={presentation} contentScale={equipmentScale}>
+          <AppliedTemperatureControlPads />
         </MarkerHtml>
       )}
 

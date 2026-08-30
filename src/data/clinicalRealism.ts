@@ -3560,6 +3560,16 @@ export function deriveAppliedTreatmentRealismCues(
     ));
   }
 
+  if (ids.has('targeted_temp_mgmt')) {
+    cues.push(makeTreatmentCue(
+      'post-rosc-temperature-control',
+      'Feedback temperature control',
+      'Core temperature drives the visible surface-pad controller; maintain ≤37.5°C, avoid fever and do not actively warm mild post-ROSC hypothermia.',
+      'chest',
+      'observe',
+    ));
+  }
+
   if (hasAnyId(ids, ['oxygen_nasal', 'oxygen_mask', 'oxygen_nonrebreather'])) {
     cues.push(makeTreatmentCue(
       'oxygen-visible',

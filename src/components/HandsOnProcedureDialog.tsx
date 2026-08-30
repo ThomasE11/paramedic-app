@@ -558,6 +558,65 @@ function ThermalProcedurePreview({
   );
 }
 
+function TemperatureControlProcedurePreview({
+  procedureId,
+  completedSteps,
+  animatingStep,
+}: {
+  procedureId: string;
+  completedSteps: string[];
+  animatingStep: string | null;
+}) {
+  if (procedureId !== 'post-rosc-fever-prevention') return null;
+  const reached = (stepId: string) => completedSteps.includes(stepId) || animatingStep === stepId;
+  const measured = reached('measure');
+  const targetSet = reached('target');
+  const padsApplied = reached('apply');
+  const connected = reached('connect');
+  const shiveringChecked = reached('shivering');
+  const trending = reached('trend');
+
+  return (
+    <div data-procedure-preview="post-rosc-temperature-control" className="pointer-events-none absolute inset-0 z-30">
+      {measured && (
+        <>
+          <span className="absolute left-[92px] top-[172px] h-[73px] w-1.5 rounded-full bg-amber-300 shadow" aria-label="Continuous core-temperature probe connected" />
+          <span className="absolute left-[95px] top-[239px] h-0.5 w-[70px] rotate-[18deg] bg-amber-200" />
+        </>
+      )}
+      {targetSet && (
+        <div className="absolute right-1 top-[15px] h-[49px] w-[77px] rounded-lg border border-cyan-300/60 bg-slate-950/95 p-1 text-center shadow-lg" aria-label="Feedback controller target set to 37.5 degrees Celsius">
+          <span className="block text-[6px] font-black uppercase tracking-[0.08em] text-cyan-200">Core target</span>
+          <strong className="mt-0.5 block text-[15px] leading-none text-white">37.5°C</strong>
+        </div>
+      )}
+      {padsApplied && (
+        <>
+          <span className="absolute left-1/2 top-[79px] h-[96px] w-[82px] -translate-x-1/2 rounded-[30px] border-2 border-cyan-100/80 bg-gradient-to-br from-cyan-100/70 via-sky-400/55 to-cyan-700/70 shadow-[0_0_15px_rgba(34,211,238,.28)]" aria-label="Water-circulating torso temperature pad applied" />
+          <span className="absolute left-[62px] top-[184px] h-[91px] w-[29px] rotate-3 rounded-2xl border-2 border-cyan-100/75 bg-sky-400/60" />
+          <span className="absolute right-[62px] top-[184px] h-[91px] w-[29px] -rotate-3 rounded-2xl border-2 border-cyan-100/75 bg-sky-400/60" />
+        </>
+      )}
+      {connected && (
+        <>
+          <span className="absolute left-[55px] top-[143px] h-1.5 w-[55px] origin-right -rotate-[22deg] rounded-full bg-cyan-200" />
+          <span className="absolute right-[55px] top-[143px] h-1.5 w-[55px] origin-left rotate-[22deg] rounded-full bg-sky-400" />
+          <div className="absolute bottom-3 left-1 h-[55px] w-[48px] rounded-lg border-2 border-slate-400 bg-slate-950 p-1 shadow-lg">
+            <span className="block h-5 rounded border border-cyan-300/50 bg-cyan-950 text-center text-[7px] font-black leading-5 text-cyan-100">37.5</span>
+            <span className="mx-auto mt-2 block h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,.8)]" />
+          </div>
+        </>
+      )}
+      {shiveringChecked && (
+        <span className="absolute bottom-[42px] left-1/2 w-max -translate-x-1/2 rounded-full border border-amber-300/45 bg-amber-950/95 px-2 py-1 text-[7px] font-black uppercase tracking-[0.08em] text-amber-100">Shivering + skin + rhythm checked</span>
+      )}
+      {trending && (
+        <span className="absolute bottom-3 left-1/2 w-max max-w-[178px] -translate-x-1/2 rounded-full border border-emerald-300/50 bg-emerald-950/95 px-2 py-1 text-center text-[7px] font-black uppercase tracking-[0.08em] text-emerald-100 shadow-lg">Feedback active · fever prevention ≤37.5°C</span>
+      )}
+    </div>
+  );
+}
+
 const TOURNIQUET_PLACEMENT: Record<string, { left: string; top: string; rotate: string }> = {
   'right-arm': { left: '31%', top: '30%', rotate: '9deg' },
   'left-arm': { left: '69%', top: '30%', rotate: '-9deg' },
@@ -955,6 +1014,12 @@ export function HandsOnProcedureDialog({
               <ThermalProcedurePreview
                 treatmentId={plan.treatmentId}
                 equipmentAsset={plan.equipmentAsset}
+                completedSteps={completedSteps}
+                animatingStep={animatingStep}
+              />
+
+              <TemperatureControlProcedurePreview
+                procedureId={plan.id}
                 completedSteps={completedSteps}
                 animatingStep={animatingStep}
               />

@@ -285,7 +285,7 @@ export function deriveTreatmentReassessmentMatches(
       return stepMatches(stepId, 'pelvis');
     }
 
-    if (includesAny(id, ['warming_blanket', 'active_cooling', 'cooling'])) {
+    if (includesAny(id, ['warming_blanket', 'active_cooling', 'targeted_temp_mgmt', 'cooling'])) {
       return stepMatches(stepId, 'temperature');
     }
 

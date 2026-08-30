@@ -48,7 +48,7 @@ describe('deriveTreatmentReassessmentMatches', () => {
   });
 
   it('marks splints, spinal devices, pelvic binders, and temperature care by matching follow-up exams', () => {
-    const applied = ['splinting', 'sam_splint', 'cervical_collar', 'pelvic_binder', 'warming_blanket', 'active_cooling'];
+    const applied = ['splinting', 'sam_splint', 'cervical_collar', 'pelvic_binder', 'warming_blanket', 'active_cooling', 'targeted_temp_mgmt'];
 
     expect(deriveTreatmentReassessmentMatches('extremities', applied)).toEqual([
       'splinting',
@@ -57,7 +57,7 @@ describe('deriveTreatmentReassessmentMatches', () => {
       'pelvic_binder',
     ]);
     expect(deriveTreatmentReassessmentMatches('pelvis', applied)).toEqual(['pelvic_binder']);
-    expect(deriveTreatmentReassessmentMatches('temperature', applied)).toEqual(['warming_blanket', 'active_cooling']);
+    expect(deriveTreatmentReassessmentMatches('temperature', applied)).toEqual(['warming_blanket', 'active_cooling', 'targeted_temp_mgmt']);
   });
 });
 
@@ -71,6 +71,7 @@ describe('deriveReassessmentStepForTreatment', () => {
       ['splinting', 'extremities'],
       ['gtn_spray', 'circulation'],
       ['warming_blanket', 'temperature'],
+      ['targeted_temp_mgmt', 'temperature'],
       ['pelvic_binder', 'extremities'],
     ];
     for (const [treatmentId, expectedStep] of cases) {
