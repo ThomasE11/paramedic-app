@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 260" role="img" aria-labelledby="title desc">
+  <title id="title">Prehospital pelvic binder</title>
+  <desc id="desc">A broad circumferential pelvic compression belt with a central tension buckle and pull strap.</desc>
+  <defs>
+    <linearGradient id="belt" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f8fafc"/>
+      <stop offset="0.48" stop-color="#dbe4ea"/>
+      <stop offset="1" stop-color="#aebdc7"/>
+    </linearGradient>
+    <linearGradient id="edge" x1="0" y1="0" x2="1" y2="0">
+      <stop stop-color="#243541"/>
+      <stop offset="0.5" stop-color="#5b6d78"/>
+      <stop offset="1" stop-color="#1f303b"/>
+    </linearGradient>
+    <linearGradient id="pull" x1="0" y1="0" x2="1" y2="0">
+      <stop stop-color="#c61f31"/>
+      <stop offset="0.5" stop-color="#ef3340"/>
+      <stop offset="1" stop-color="#9d1423"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-30%" width="140%" height="170%">
+      <feDropShadow dx="0" dy="9" stdDeviation="9" flood-color="#07111a" flood-opacity=".34"/>
+    </filter>
+    <pattern id="weave" width="8" height="8" patternUnits="userSpaceOnUse">
+      <path d="M0 1h8M0 5h8" stroke="#fff" stroke-opacity=".13"/>
+      <path d="M1 0v8M5 0v8" stroke="#111827" stroke-opacity=".08"/>
+    </pattern>
+  </defs>
+  <ellipse cx="180" cy="216" rx="139" ry="17" fill="#0f172a" opacity=".17"/>
+  <g filter="url(#shadow)">
+    <path d="M42 81c0-17 14-31 31-31h214c17 0 31 14 31 31v88c0 17-14 31-31 31H73c-17 0-31-14-31-31Z" fill="url(#belt)" stroke="#42535f" stroke-width="5"/>
+    <path d="M42 83h276v17H42ZM42 153h276v17H42Z" fill="url(#edge)" opacity=".96"/>
+    <path d="M47 101h266v51H47Z" fill="url(#weave)"/>
+    <path d="M72 68h81v113H72c-7 0-12-5-12-12V80c0-7 5-12 12-12Z" fill="#eef3f6" stroke="#768995" stroke-width="3"/>
+    <path d="M207 68h81c7 0 12 5 12 12v89c0 7-5 12-12 12h-81Z" fill="#eef3f6" stroke="#768995" stroke-width="3"/>
+    <rect x="146" y="91" width="68" height="69" rx="12" fill="#2a3a44" stroke="#0f172a" stroke-width="4"/>
+    <rect x="156" y="101" width="48" height="49" rx="7" fill="#d6e0e5" stroke="#6b7e89" stroke-width="3"/>
+    <rect x="166" y="109" width="28" height="33" rx="4" fill="#172832"/>
+    <path d="M180 111v28M169 125h22" stroke="#f8fafc" stroke-width="4" stroke-linecap="round" opacity=".8"/>
+    <path d="M205 112h82c15 0 27 12 27 27v12h-26v-7c0-5-4-9-9-9h-74Z" fill="url(#pull)" stroke="#7f1d2d" stroke-width="4"/>
+    <path d="M229 116v15M246 116v15M263 116v15" stroke="#fff" stroke-width="3" opacity=".4"/>
+    <path d="M312 137l27-20v52l-27-17Z" fill="#ef3340" stroke="#7f1d2d" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M100 91v69M260 91v69" stroke="#60737e" stroke-width="3" stroke-dasharray="5 5" opacity=".65"/>
+  </g>
+  <g font-family="DejaVu Sans, sans-serif" text-anchor="middle">
+    <text x="109" y="125" font-size="15" font-weight="800" fill="#253844" letter-spacing="1">PELVIC</text>
+    <text x="109" y="143" font-size="13" font-weight="700" fill="#506572">BINDER</text>
+    <text x="257" y="125" font-size="10" font-weight="800" fill="#fff" letter-spacing=".4">PULL TO</text>
+    <text x="257" y="139" font-size="10" font-weight="800" fill="#fff" letter-spacing=".4">TENSION</text>
+  </g>
+</svg>

@@ -227,6 +227,26 @@ export function getHandsOnProcedurePlan(
     };
   }
 
+  if (treatmentId === 'pelvic_binder') {
+    return {
+      id: 'pelvic-binder',
+      title: 'Apply pelvic binder',
+      subtitle: 'Stabilise a suspected unstable pelvic injury at the greater trochanters with minimal patient movement.',
+      treatmentId,
+      requiresTarget: false,
+      targets: [],
+      equipmentAsset: '/equipment-assets/pelvic-binder.svg',
+      completionLabel: 'Binder secured — trend perfusion',
+      steps: [
+        STEP('assess', 'Confirm the indication', 'Use the mechanism, pain, deformity and shock pattern to suspect pelvic ring injury. Explain the procedure if the patient is conscious.', 'Do not repeatedly spring or rock the pelvis: a single gentle assessment is enough and may already have occurred.', 'prepare'),
+        STEP('prepare', 'Prepare with minimal movement', 'Expose only enough to identify both greater trochanters, empty bulky pockets and keep the legs aligned. Assign one clinician to control movement.', 'The binder belongs at hip level, not around the waist or iliac crests.', 'expose'),
+        STEP('position', 'Position at the trochanters', 'Slide the open binder beneath the knees and work it proximally to centre over both greater trochanters without lifting or rolling the pelvis unnecessarily.', 'Confirm the broad belt is level and its centre line crosses the most prominent lateral points of both upper femurs.', 'place', 1300),
+        STEP('close', 'Close and tension', 'Overlap the binder and pull the tension strap smoothly while a second clinician maintains alignment; secure the fastening at the device indicator.', 'Use controlled circumferential compression. Do not release the binder to recheck pelvic instability.', 'tighten', 1300),
+        STEP('reassess', 'Reassess and document', 'Repeat distal pulses, motor and sensation, pain, skin, heart rate and blood pressure. Record time, position and response before rapid transport.', 'Keep the binder visible, protect skin and pressure points, and leave it secured unless directed by definitive care.', 'confirm'),
+      ],
+    };
+  }
+
   if (treatmentId === 'oxygen_nonrebreather' || treatmentId === 'oxygen_mask' || treatmentId === 'oxygen_nasal') {
     const nonRebreather = treatmentId === 'oxygen_nonrebreather';
     const nasal = treatmentId === 'oxygen_nasal';
@@ -593,6 +613,7 @@ const HANDS_ON_TREATMENTS = new Set([
   'active_cooling', 'spinal_board', 'scoop_stretcher', 'vacuum_mattress', 'head_blocks', 'ked',
   'lucas_device', 'ventilator_setup', 'mechanical_ventilation', 'supine_position', 'recovery_position', 'fowlers_position',
   'left_lateral_tilt', 'leg_elevation', 'assisted_ambulation',
+  'pelvic_binder',
 ]);
 
 export const isHandsOnTreatment = (treatmentId: string): boolean =>
@@ -614,7 +635,8 @@ const LIMB_SPLINT_TREATMENTS = new Set([
 export const procedureIncludesIntegratedReassessment = (treatmentId: string): boolean =>
   LIMB_SPLINT_TREATMENTS.has(treatmentId)
   || treatmentId === 'intubation'
-  || treatmentId === 'rsi_intubation';
+  || treatmentId === 'rsi_intubation'
+  || treatmentId === 'pelvic_binder';
 
 export function procedureSiteToken(treatmentId: string, target: ProcedureSite): string {
   return `site:${treatmentId}:${target}`;

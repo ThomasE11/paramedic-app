@@ -532,6 +532,7 @@ const EQUIPMENT_ASSET_PATHS = {
   vacuumMattress: '/equipment-assets/vacuum-mattress.webp',
   ked: '/equipment-assets/ked-extrication-device.webp',
   tractionSplint: '/equipment-assets/traction-splint.webp',
+  pelvicBinder: '/equipment-assets/pelvic-binder.svg',
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -662,6 +663,7 @@ const BAG_EQUIPMENT: Record<ManagementTab, EquipmentInventoryItem[]> = {
     { id: 'circ-aed', label: 'AED / Defib', caption: 'Pads and shock lead', treatmentId: 'defibrillation', assetPath: EQUIPMENT_ASSET_PATHS.aedDefib, tone: '#eab308' },
     { id: 'circ-pads', label: 'Defib Pads', caption: 'Expose, place and connect', treatmentId: 'monitor_pads', assetPath: PRODUCT_ASSET_PATHS.defibPads, tone: '#e11d48' },
     { id: 'circ-tourniquet', label: 'Tourniquet', caption: 'Major limb bleed', treatmentId: 'tourniquet', assetPath: EQUIPMENT_ASSET_PATHS.tourniquet, tone: '#111827' },
+    { id: 'circ-pelvic-binder', label: 'Pelvic Binder', caption: 'Suspected unstable pelvic injury', treatmentId: 'pelvic_binder', assetPath: EQUIPMENT_ASSET_PATHS.pelvicBinder, tone: '#dc2626', wide: true },
     { id: 'circ-chest-seal', label: 'Vented Chest Seal', caption: 'Open chest wound', treatmentId: 'chest_seal_vented', assetPath: EQUIPMENT_ASSET_PATHS.bandages, tone: '#f97316' },
     { id: 'circ-lucas', label: 'Mechanical CPR', caption: 'LUCAS device', treatmentId: 'lucas_device', assetPath: PRODUCT_ASSET_PATHS.lucas, tone: '#64748b' },
   ],
@@ -736,6 +738,7 @@ function getProductMiniatureAsset(treatment: Treatment, kind: ProductMiniatureKi
   if (id === 'vacuum_limb_splint') return EQUIPMENT_ASSET_PATHS.vacuumLimbSplint;
   if (id === 'air_splint') return EQUIPMENT_ASSET_PATHS.airSplint;
   if (id === 'traction_splint') return EQUIPMENT_ASSET_PATHS.tractionSplint;
+  if (id === 'pelvic_binder') return EQUIPMENT_ASSET_PATHS.pelvicBinder;
   if (kind === 'fluid') return PRODUCT_ASSET_PATHS.fluidBag;
   if (kind === 'iv') return PRODUCT_ASSET_PATHS.ivCannula;
   if (kind === 'pads') return PRODUCT_ASSET_PATHS.defibPads;

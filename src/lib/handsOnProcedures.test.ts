@@ -81,7 +81,7 @@ describe('hands-on treatment procedures', () => {
       'sam_splint', 'box_splint', 'vacuum_limb_splint', 'air_splint', 'traction_splint',
       'cervical_collar', 'warming_blanket', 'active_cooling', 'spinal_board',
       'scoop_stretcher', 'vacuum_mattress', 'head_blocks', 'ked', 'lucas_device',
-      'ventilator_setup', 'mechanical_ventilation',
+      'ventilator_setup', 'mechanical_ventilation', 'pelvic_binder',
     ];
     for (const treatmentId of equipmentTreatments) {
       const plan = getHandsOnProcedurePlan(treatmentId, caseData);
@@ -96,6 +96,16 @@ describe('hands-on treatment procedures', () => {
     expect(isHandsOnTreatment('mechanical_ventilation')).toBe(true);
     expect(plan?.title).toBe('Prepare the transport ventilator');
     expect(plan?.steps.map(step => step.id)).toEqual(['assemble', 'test', 'airway', 'connect', 'confirm']);
+  });
+
+  it('positions a pelvic binder at the greater trochanters and reassesses perfusion', () => {
+    const plan = getHandsOnProcedurePlan('pelvic_binder', caseData);
+
+    expect(isHandsOnTreatment('pelvic_binder')).toBe(true);
+    expect(plan?.steps.map(step => step.id)).toEqual(['assess', 'prepare', 'position', 'close', 'reassess']);
+    expect(plan?.steps.find(step => step.id === 'position')?.instruction).toContain('greater trochanters');
+    expect(plan?.steps.find(step => step.id === 'assess')?.clinicalCue).toContain('Do not repeatedly spring');
+    expect(procedureIncludesIntegratedReassessment('pelvic_binder')).toBe(true);
   });
 
   it('reuses an already fitted nebuliser when adding the second bronchodilator', () => {

@@ -150,6 +150,7 @@ interface AppliedEquipmentVisualState {
   hasCollar: boolean;
   hasChestSeal: boolean;
   hasNeedleDecompression: boolean;
+  hasPelvicBinder: boolean;
   hasWarmingBlanket: boolean;
   hasActiveCooling: boolean;
   immobilisationDevice: 'spinal-board' | 'scoop' | 'vacuum-mattress' | 'head-blocks' | 'ked' | null;
@@ -181,6 +182,7 @@ const TREATMENT_ASSET_PATHS = {
   tourniquet: '/equipment-assets/tourniquet.webp',
   suction: '/equipment-assets/portable-suction.webp',
   needle: '/equipment-assets/needle-decompression.webp',
+  pelvicBinder: '/equipment-assets/pelvic-binder.svg',
   warmingBlanket: '/equipment-assets/warming-blanket.webp',
   coolingPack: '/equipment-assets/cooling-pack.webp',
   spineBoard: '/equipment-assets/spine-board.webp',
@@ -1169,6 +1171,7 @@ function buildTreatmentEquipmentState(appliedTreatmentIds: string[]): AppliedEqu
       || applied.has('immobilisation'),
     hasChestSeal: applied.has('chest_seal_vented') || applied.has('vented_chest_seal') || applied.has('occlusive_dressing_3sided'),
     hasNeedleDecompression: applied.has('needle_decompression'),
+    hasPelvicBinder: applied.has('pelvic_binder'),
     hasWarmingBlanket: applied.has('warming_blanket'),
     hasActiveCooling: applied.has('active_cooling'),
     immobilisationDevice,
@@ -1338,6 +1341,25 @@ function AppliedLimbEquipment({ treatmentId }: { treatmentId: string }) {
   );
 }
 
+function AppliedPelvicBinder() {
+  return (
+    <div
+      data-applied-equipment="pelvic-binder"
+      aria-label="Pelvic binder secured over the greater trochanters"
+      className="pointer-events-none relative h-12 w-32 -rotate-1 animate-in fade-in zoom-in-75 duration-500 drop-shadow-[0_5px_7px_rgba(2,6,23,0.72)]"
+    >
+      <span className="absolute inset-x-0 top-1.5 h-9 rounded-[13px] border-2 border-slate-500 bg-gradient-to-b from-slate-50 via-slate-200 to-slate-400 shadow-inner" />
+      <span className="absolute inset-x-0 top-1.5 h-2 rounded-t-[12px] bg-slate-700/90" />
+      <span className="absolute inset-x-0 bottom-1.5 h-2 rounded-b-[12px] bg-slate-700/90" />
+      <span className="absolute left-1/2 top-0 h-12 w-10 -translate-x-1/2 rounded-lg border-2 border-slate-800 bg-slate-600 shadow-md" />
+      <span className="absolute left-1/2 top-2.5 h-7 w-5 -translate-x-1/2 rounded border-2 border-slate-300 bg-slate-950" />
+      <span className="absolute left-[61%] top-[18px] h-3 w-14 rounded-r-md border border-red-950 bg-gradient-to-r from-red-700 to-red-500 shadow" />
+      <span className="absolute -right-2 top-[15px] h-5 w-5 rotate-45 rounded-sm border border-red-950 bg-red-600" />
+      <span className="absolute left-3 top-[17px] text-[6px] font-black tracking-[0.08em] text-slate-700">TROCHANTERS</span>
+    </div>
+  );
+}
+
 function AppliedTorsoCover({ cooling }: { cooling: boolean }) {
   return (
     <div data-applied-equipment={cooling ? 'active-cooling' : 'warming-blanket'} className={`pointer-events-none h-40 w-28 rounded-[28px] border shadow-xl animate-in fade-in zoom-in-95 duration-500 ${cooling ? 'border-cyan-100/80 bg-gradient-to-b from-cyan-100/55 via-sky-300/45 to-cyan-100/50' : 'border-amber-100/70 bg-[linear-gradient(125deg,rgba(254,243,199,.88),rgba(180,83,9,.62),rgba(254,243,199,.82))]'}`}>
@@ -1419,6 +1441,7 @@ function AppliedEquipmentTray({ appliedTreatmentIds }: { appliedTreatmentIds: st
   if (equipment.hasCollar) chips.push({ src: TREATMENT_ASSET_PATHS.collar, label: 'C-collar applied' });
   if (equipment.hasChestSeal && ![...siteTreatmentIds].some(id => id.includes('chest_seal') || id.includes('occlusive'))) chips.push({ src: TREATMENT_ASSET_PATHS.bandage, label: 'Chest seal adhered' });
   if (equipment.hasNeedleDecompression && !siteTreatmentIds.has('needle_decompression')) chips.push({ src: TREATMENT_ASSET_PATHS.needle, label: 'Decompression catheter' });
+  if (equipment.hasPelvicBinder) chips.push({ src: TREATMENT_ASSET_PATHS.pelvicBinder, label: 'Pelvic binder secured' });
   if (equipment.hasWarmingBlanket) chips.push({ src: TREATMENT_ASSET_PATHS.warmingBlanket, label: 'Warming blanket' });
   if (equipment.hasActiveCooling) chips.push({ src: TREATMENT_ASSET_PATHS.coolingPack, label: 'Active cooling' });
   if (equipment.immobilisationDevice) {
@@ -1477,6 +1500,7 @@ function TreatmentEquipmentOverlay({
     || equipment.hasCollar
     || equipment.hasChestSeal
     || equipment.hasNeedleDecompression
+    || equipment.hasPelvicBinder
     || equipment.hasWarmingBlanket
     || equipment.hasActiveCooling
     || equipment.immobilisationDevice
@@ -1566,6 +1590,12 @@ function TreatmentEquipmentOverlay({
       {equipment.hasNeedleDecompression && !hasSiteNeedleDecompression && (
         <MarkerHtml position={anchor(0.13, 1.24, 0.225)} distanceFactor={2.3} zIndexRange={[73, 0]} interactive={false} presentation={presentation} contentScale={equipmentScale}>
           <AppliedChestDevice needle />
+        </MarkerHtml>
+      )}
+
+      {equipment.hasPelvicBinder && (
+        <MarkerHtml position={anchor(0, 0.88, 0.245)} distanceFactor={2.15} zIndexRange={[71, 0]} interactive={false} presentation={presentation} contentScale={equipmentScale}>
+          <AppliedPelvicBinder />
         </MarkerHtml>
       )}
 

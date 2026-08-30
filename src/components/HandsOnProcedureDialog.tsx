@@ -321,6 +321,58 @@ function TourniquetProcedurePreview({
   );
 }
 
+function PelvicBinderProcedurePreview({
+  treatmentId,
+  completedSteps,
+  animatingStep,
+}: {
+  treatmentId: string;
+  completedSteps: string[];
+  animatingStep: string | null;
+}) {
+  if (treatmentId !== 'pelvic_binder') return null;
+  const reached = (stepId: string) => completedSteps.includes(stepId) || animatingStep === stepId;
+  const prepared = reached('prepare');
+  const positioned = reached('position');
+  const tensioned = reached('close');
+  const reassessed = reached('reassess');
+
+  return (
+    <div data-procedure-preview="pelvic-binder" className="pointer-events-none absolute inset-0 z-20">
+      {prepared && !positioned && (
+        <>
+          <span className="absolute left-[20px] top-[159px] h-px w-[150px] border-t border-dashed border-amber-200/80" />
+          <span className="absolute left-1/2 top-[145px] -translate-x-1/2 rounded-full border border-amber-300/40 bg-amber-950/95 px-2 py-1 text-[7px] font-black uppercase tracking-[0.08em] text-amber-100">Greater trochanter level</span>
+        </>
+      )}
+      {positioned && (
+        <div
+          className="absolute left-1/2 top-[151px] h-[34px] w-[106px] -translate-x-1/2 animate-in fade-in zoom-in-75 duration-500"
+          aria-label="Pelvic binder positioned level over both greater trochanters"
+        >
+          <span className="absolute inset-x-0 top-1 h-7 rounded-lg border-2 border-slate-400 bg-gradient-to-b from-slate-50 via-slate-200 to-slate-400 shadow-[0_4px_8px_rgba(0,0,0,.7)]" />
+          <span className="absolute inset-x-0 top-1 h-1.5 rounded-t-lg bg-slate-700" />
+          <span className="absolute inset-x-0 bottom-0.5 h-1.5 rounded-b-lg bg-slate-700" />
+          <span className="absolute left-1/2 top-0 h-9 w-8 -translate-x-1/2 rounded-md border-2 border-slate-800 bg-slate-600 shadow" />
+          <span className="absolute left-1/2 top-2 h-5 w-4 -translate-x-1/2 rounded-sm border border-slate-300 bg-slate-950" />
+          {tensioned && (
+            <>
+              <span className="absolute left-[62px] top-[12px] h-2.5 w-48 origin-left scale-x-[0.27] rounded-r bg-gradient-to-r from-red-800 to-red-500 shadow" />
+              <span className="absolute right-[-6px] top-[9px] h-4 w-4 rotate-45 rounded-sm border border-red-950 bg-red-600" />
+            </>
+          )}
+        </div>
+      )}
+      {tensioned && !reassessed && (
+        <span className="absolute left-1/2 top-[192px] w-max -translate-x-1/2 rounded-full border border-red-300/40 bg-red-950/95 px-2 py-1 text-[7px] font-black uppercase tracking-[0.08em] text-red-100">Closed · do not loosen</span>
+      )}
+      {reassessed && (
+        <span className="absolute bottom-3 left-1/2 w-max -translate-x-1/2 rounded-full border border-emerald-300/50 bg-emerald-950/95 px-2 py-1 text-[7px] font-black uppercase tracking-[0.08em] text-emerald-100 shadow-lg">Distal CSM + perfusion reassessed</span>
+      )}
+    </div>
+  );
+}
+
 export function HandsOnProcedureDialog({
   open,
   treatment,
@@ -481,6 +533,12 @@ export function HandsOnProcedureDialog({
               <TourniquetProcedurePreview
                 treatmentId={plan.treatmentId}
                 selectedTarget={selectedTarget}
+                completedSteps={completedSteps}
+                animatingStep={animatingStep}
+              />
+
+              <PelvicBinderProcedurePreview
+                treatmentId={plan.treatmentId}
                 completedSteps={completedSteps}
                 animatingStep={animatingStep}
               />
