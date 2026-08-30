@@ -1427,6 +1427,15 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
   // or when guided mode is active (next-step ring needs to pulse).
   useFrame((_, delta) => {
     const skeletalMixer = skeletalMixerRef.current;
+    if (skeletalMixer) {
+      // Start every ambulatory frame from the fitted bind pose before the
+      // animation mixer writes its keyed tracks. Some donor clips omit a
+      // shoulder or spine track; applying our clinical pose correction on top
+      // of an unkeyed bone would otherwise accumulate rotation frame by frame
+      // and present as vibrating or progressively splayed arms.
+      standingArmBones.forEach((arm, index) => arm.quaternion.copy(standingArmRest[index]));
+      postureSpineBones.forEach((spine, index) => spine.quaternion.copy(postureSpineRest[index]));
+    }
     skeletalMixer?.update(Math.min(delta, 0.05));
     const armRelaxation = patientArmRestRadians(mobility, unconscious, patientAge);
     if (skeletalMixer && armRelaxation > 0) {
