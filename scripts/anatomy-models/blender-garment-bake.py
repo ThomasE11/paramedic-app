@@ -4,19 +4,15 @@ headless via Blender, with the body's morph targets baked into the garment.
 
     /Applications/Blender.app/Contents/MacOS/blender --background \
         --python scripts/anatomy-models/blender-garment-bake.py -- \
-        public/models/patient.glb public/models/ [variant]
+        public/models/patient-male.glb public/models/ [variant]
 
 Why author from the body (not model garments standalone):
-  The patient GLBs are a single baked mesh with NO skeleton. The runtime
-  ClothingLayer works because it cuts the garment out of the body's own
-  vertices and mirrors the body's morph influences by index. A standalone
-  garment GLB has different topology, so it cannot inherit body morphs by
-  index. This script solves that the durable way: it DUPLICATES the body
-  mesh, so every garment vertex keeps the body's shape-key deltas verbatim,
-  masks to garment regions, offsets for cloth clearance + thickness, splits
-  into named pieces the hide map already knows, and exports GLBs whose morph
-  target NAMES match the body's exactly. At runtime the garment's morph i is
-  the body's morph i for the SAME name — sync is a name lookup, not luck.
+  The runtime patient GLBs carry a skeleton plus clinical and posture morphs.
+  A standalone garment has different topology, so this script duplicates the
+  current body mesh before masking it to garment regions. Every garment vertex
+  therefore keeps the body's shape-key deltas verbatim. Runtime code syncs
+  morphs by name and remaps the preserved bone weights by bone name, letting
+  these clean authored pieces follow skeletal animation and morph deformation.
 
 Output:
     public/models/garment-shirt.glb
@@ -37,7 +33,7 @@ Notes / deliberate simplifications:
     clearance and thickness are done by direct vertex math (same technique as
     add-clinical-morphs.py), which preserves the shape keys.
 """
-import bpy, bmesh, sys, os
+import bpy, sys, os
 from mathutils import Vector
 
 argv = sys.argv[sys.argv.index("--") + 1:]
@@ -48,8 +44,8 @@ VARIANT = argv[2].strip("-") if len(argv) > 2 else ""
 # Cloth clearance off the skin (metres) and fabric thickness (metres).
 # Clearance lifts the outer face just off the skin so it never z-fights;
 # the shirt rides a touch prouder than trousers so a tucked waistband layers.
-SHIRT_CLEARANCE = 0.002
-TROUSER_CLEARANCE = 0.002
+SHIRT_CLEARANCE = 0.010
+TROUSER_CLEARANCE = 0.010
 FABRIC_THICKNESS = 0.004
 
 # Garment regions as FRACTIONS of mesh height (Blender Z-up: feet=0, head=1),
@@ -59,8 +55,8 @@ FABRIC_THICKNESS = 0.004
 #   trousers: cuff -> waistband
 SHIRT_HEM = 0.522
 SHIRT_CAP = 0.844
-SHIRT_SCOOP_Y = 0.806          # neck scoop: bare above this near centreline
-SHIRT_SCOOP_HALF_W = 0.085     # scaled by height/1.8 below
+SHIRT_SCOOP_BOTTOM = 0.795     # deepest point of the curved neck opening
+SHIRT_SCOOP_HALF_W = 0.105     # scaled by height/1.8 below
 TORSO_HALF_W = 0.215           # torso shell before the shoulder axis starts
 SHOULDER_X = 0.19              # upper-arm origin in normalised body metres
 SHOULDER_Z = 0.82              # body-height fraction
@@ -86,13 +82,17 @@ def measure(mesh):
     return z_min, z_max, (z_max - z_min)
 
 
-def keep_shirt(co, z_min, H, half_scale, scoop_y, scoop_half_local):
+def keep_shirt(co, z_min, H, half_scale, scoop_half_local):
     zf = (co.z - z_min) / H
     if not SHIRT_HEM <= zf <= SHIRT_CAP:
         return False
-    # Neck scoop: drop verts high + near centreline so the collar opens.
-    if zf > scoop_y and abs(co.x) < scoop_half_local:
-        return False
+    # Curved scoop follows the clavicles. The old fixed-height rectangular cut
+    # left a visibly stepped, torn-looking collar in the exam close-up.
+    normalised_x = abs(co.x) / scoop_half_local
+    if normalised_x < 1.0:
+        neckline = SHIRT_SCOOP_BOTTOM + (SHIRT_CAP - SHIRT_SCOOP_BOTTOM) * normalised_x ** 2
+        if zf > neckline:
+            return False
     torso_half = TORSO_HALF_W * half_scale
     if abs(co.x) <= torso_half:
         return True
@@ -111,73 +111,156 @@ def keep_trouser(co, z_min, H):
 
 
 def mask_and_offset(body, name, keep_fn, clearance, out_path):
-    """Duplicate body, delete non-garment verts (shape keys ride along),
-    offset outer face for cloth clearance, add a back shell for thickness,
-    export GLB. Returns True on success."""
-    # Full-scene duplicate of just the body object.
-    bpy.ops.object.select_all(action='DESELECT')
-    body.select_set(True)
-    bpy.context.view_layer.objects.active = body
-    bpy.ops.object.duplicate()
-    g = bpy.context.view_layer.objects.active
-    g.name = name
-    mesh = g.data
-
-    z_min, z_max, H = measure(mesh)
-    scale = g.matrix_world.to_scale().x or 1.0
-    half_w = max(abs(v.co.x) for v in mesh.vertices)
+    """Extract a garment by original body index, preserve keys and skinning,
+    offset every morph for cloth clearance, then export the rigged GLB."""
+    source_mesh = body.data
+    z_min, z_max, H = measure(source_mesh)
+    scale = body.matrix_world.to_scale().x or 1.0
     half_scale = H / 1.8
-    scoop_half_local = SHIRT_SCOOP_HALF_W * half_scale
 
     # Which verts to KEEP (garment region).
-    keep = [keep_fn(v.co) for v in mesh.vertices]
+    keep = [keep_fn(v.co) for v in source_mesh.vertices]
     n_keep = sum(keep)
-    print(f"[{name}] verts={len(mesh.vertices)} keep={n_keep} scale={scale:.4f} H={H:.3f}")
+    print(f"[{name}] verts={len(source_mesh.vertices)} keep={n_keep} scale={scale:.4f} H={H:.3f}")
     if n_keep < 50:
         print(f"[{name}] ERROR: too few garment verts ({n_keep})")
-        bpy.data.objects.remove(g, do_unlink=True)
         return False
 
-    # Delete the non-kept verts with bmesh (shape-key data for surviving verts
-    # is preserved — bmesh remaps shape layers by vertex).
-    bm = bmesh.new()
-    bm.from_mesh(mesh)
-    bm.verts.ensure_lookup_table()
-    to_del = [bm.verts[i] for i in range(len(bm.verts)) if not keep[i]]
-    bmesh.ops.delete(bm, geom=to_del, context='VERTS')
-    bm.to_mesh(mesh)
-    bm.free()
-    mesh.update()
-    if len(mesh.vertices) < 30 or len(mesh.polygons) < 10:
-        print(f"[{name}] ERROR: garment mesh empty after cut")
-        bpy.data.objects.remove(g, do_unlink=True)
-        return False
+    # Build the garment explicitly from original body indices. Deleting verts
+    # from a shape-key mesh through bmesh can silently remap key-block rows,
+    # which made pose_seated pull random trouser triangles across the legs.
+    # Explicit old-index -> new-index copying preserves every morph exactly.
+    candidate_faces = [
+        tuple(poly.vertices)
+        for poly in source_mesh.polygons
+        if all(keep[index] for index in poly.vertices)
+    ]
+    parent = list(range(len(source_mesh.vertices)))
 
-    # Largest connected component only — drops the forearm/hand islands that
-    # pass through the torso band and the ankle/hand islands in the trouser
-    # band (they connect to the body only outside the band). This is what
-    # keeps wrists/hands/ankles bare without a rig.
-    keep_largest_component(mesh)
-    if len(mesh.vertices) < 30:
+    def find(index):
+        while parent[index] != index:
+            parent[index] = parent[parent[index]]
+            index = parent[index]
+        return index
+
+    def union(a, b):
+        ra, rb = find(a), find(b)
+        if ra != rb:
+            parent[rb] = ra
+
+    active = set()
+    for face in candidate_faces:
+        active.update(face)
+        for index in face[1:]:
+            union(face[0], index)
+    # Draco/UV seams duplicate vertices at the same physical position. Weld
+    # those duplicates for component detection only; otherwise a narrow front
+    # trouser strip can be mistaken for a separate island and deleted, leaving
+    # a skin-coloured line down the shin even though the cloth fits correctly.
+    coincident = {}
+    for index in active:
+        coordinate = source_mesh.vertices[index].co
+        key = (
+            round(coordinate.x, 5),
+            round(coordinate.y, 5),
+            round(coordinate.z, 5),
+        )
+        first = coincident.get(key)
+        if first is None:
+            coincident[key] = index
+        else:
+            union(first, index)
+    sizes = {}
+    for index in active:
+        root = find(index)
+        sizes[root] = sizes.get(root, 0) + 1
+    if not sizes:
+        print(f"[{name}] ERROR: no garment faces after cut")
+        return False
+    best_root = max(sizes, key=sizes.get)
+    source_indices = sorted(index for index in active if find(index) == best_root)
+    source_index_set = set(source_indices)
+    source_faces = [face for face in candidate_faces if all(index in source_index_set for index in face)]
+    if len(source_indices) < 30 or len(source_faces) < 10:
         print(f"[{name}] ERROR: empty after component filter")
-        bpy.data.objects.remove(g, do_unlink=True)
         return False
 
-    # Recompute normals for the cut shell, then offset the Basis + every shape
-    # key along the vertex normal for cloth clearance. Offsetting shape keys by
-    # the SAME per-vertex amount keeps the garment riding the skin as it morphs.
-    mesh.calc_normals_split() if hasattr(mesh, "calc_normals_split") else None
-    normals = [v.normal.copy() for v in mesh.vertices]
+    remap = {source_index: new_index for new_index, source_index in enumerate(source_indices)}
+    mesh = bpy.data.meshes.new(f"{name}-mesh")
+    mesh.from_pydata(
+        [source_mesh.vertices[index].co.copy() for index in source_indices],
+        [],
+        [[remap[index] for index in face] for face in source_faces],
+    )
+    # from_pydata defaults every polygon to flat shading. The exporter then
+    # duplicates vertices per triangle; offsetting those split vertices along
+    # face normals opens visible wire-like cracks. Clothing is a continuous
+    # surface, so preserve shared smooth normals across each garment piece.
+    for polygon in mesh.polygons:
+        polygon.use_smooth = True
+    mesh.update()
+    g = bpy.data.objects.new(name, mesh)
+    bpy.context.collection.objects.link(g)
+    g.parent = body.parent
+    g.matrix_world = body.matrix_world.copy()
+
+    # Preserve exact Blender vertex-group weights. Exporting the armature with
+    # the garment keeps JOINTS_0/WEIGHTS_0 so runtime only remaps bone names.
+    group_map = {group.index: g.vertex_groups.new(name=group.name) for group in body.vertex_groups}
+    for new_index, source_index in enumerate(source_indices):
+        for membership in source_mesh.vertices[source_index].groups:
+            group = group_map.get(membership.group)
+            if group:
+                group.add([new_index], membership.weight, 'REPLACE')
+    for source_modifier in body.modifiers:
+        if source_modifier.type != 'ARMATURE':
+            continue
+        modifier = g.modifiers.new(name=source_modifier.name, type='ARMATURE')
+        modifier.object = source_modifier.object
+        modifier.use_deform_preserve_volume = source_modifier.use_deform_preserve_volume
+
+    # Rebuild every shape key by the same source index. This includes posture,
+    # breathing, findings, viseme and condition-motion channels.
+    if source_mesh.shape_keys:
+        for source_key in source_mesh.shape_keys.key_blocks:
+            target_key = g.shape_key_add(name=source_key.name, from_mix=False)
+            target_key.slider_min = source_key.slider_min
+            target_key.slider_max = source_key.slider_max
+            for new_index, source_index in enumerate(source_indices):
+                target_key.data[new_index].co = source_key.data[source_index].co.copy()
+
+    # Offset every key along THAT DEFORMED SURFACE'S smooth normals. Reusing
+    # standing normals for pose_seated points the knee clearance sideways and
+    # lets skin cut through the trousers. Per-key normals keep the garment
+    # outside the patient through seated, supine, recovery and motion morphs.
     clearance_local = clearance / scale
 
-    # Offset the Basis (rest) shape and every shape key by clearance along normal.
+    def smooth_normals(coords):
+        normals = [Vector((0.0, 0.0, 0.0)) for _ in coords]
+        for polygon in mesh.polygons:
+            vertices = list(polygon.vertices)
+            for corner in range(1, len(vertices) - 1):
+                ia, ib, ic = vertices[0], vertices[corner], vertices[corner + 1]
+                face_normal = (coords[ib] - coords[ia]).cross(coords[ic] - coords[ia])
+                normals[ia] += face_normal
+                normals[ib] += face_normal
+                normals[ic] += face_normal
+        for index, normal in enumerate(normals):
+            if normal.length_squared > 1e-12:
+                normals[index] = normal.normalized()
+        return normals
+
     if mesh.shape_keys:
         for kb in mesh.shape_keys.key_blocks:
+            coords = [point.co.copy() for point in kb.data]
+            normals = smooth_normals(coords)
             for i in range(len(kb.data)):
-                kb.data[i].co = kb.data[i].co + normals[i] * clearance_local
+                kb.data[i].co = coords[i] + normals[i] * clearance_local
     else:
+        coords = [vertex.co.copy() for vertex in mesh.vertices]
+        normals = smooth_normals(coords)
         for i, v in enumerate(mesh.vertices):
-            v.co = v.co + normals[i] * clearance_local
+            v.co = coords[i] + normals[i] * clearance_local
 
     # Fabric thickness: a back shell. Solidify modifier is blocked with shape
     # keys, so extrude the boundary + build an inner offset shell manually is
@@ -195,42 +278,6 @@ def mask_and_offset(body, name, keep_fn, clearance, out_path):
     return True
 
 
-def keep_largest_component(mesh):
-    """Delete all but the largest connected vertex component."""
-    bm = bmesh.new()
-    bm.from_mesh(mesh)
-    bm.verts.ensure_lookup_table()
-    # Union-find over edges.
-    parent = list(range(len(bm.verts)))
-
-    def find(a):
-        while parent[a] != a:
-            parent[a] = parent[parent[a]]
-            a = parent[a]
-        return a
-
-    def union(a, b):
-        ra, rb = find(a), find(b)
-        if ra != rb:
-            parent[rb] = ra
-
-    for e in bm.edges:
-        union(e.verts[0].index, e.verts[1].index)
-    sizes = {}
-    for v in bm.verts:
-        r = find(v.index)
-        sizes[r] = sizes.get(r, 0) + 1
-    if not sizes:
-        bm.free()
-        return
-    best = max(sizes, key=sizes.get)
-    to_del = [v for v in bm.verts if find(v.index) != best]
-    bmesh.ops.delete(bm, geom=to_del, context='VERTS')
-    bm.to_mesh(mesh)
-    bm.free()
-    mesh.update()
-
-
 def export_single(obj, out_path):
     # Drop the inherited skin material + its 2048² atlas — a garment is a flat
     # fabric coloured in the app (like the procedural layer). Keeping it makes
@@ -240,6 +287,12 @@ def export_single(obj, out_path):
         obj.data.uv_layers.remove(obj.data.uv_layers[0])
     bpy.ops.object.select_all(action='DESELECT')
     obj.select_set(True)
+    # Keep the armature in the garment GLB so JOINTS_0 / WEIGHTS_0 survive the
+    # export. The app remaps this source skeleton by bone name onto the active
+    # patient skeleton, then discards the garment's duplicate rig.
+    armature = obj.find_armature()
+    if armature:
+        armature.select_set(True)
     bpy.context.view_layer.objects.active = obj
     bpy.ops.export_scene.gltf(
         filepath=out_path,
@@ -249,7 +302,8 @@ def export_single(obj, out_path):
         export_draco_mesh_compression_level=6,
         export_morph=True,
         export_morph_normal=False,
-        export_skins=False,
+        export_skins=True,
+        export_animations=False,
         export_yup=True,
         export_materials='NONE',
     )
@@ -269,7 +323,6 @@ def main():
     z_min, z_max, H = measure(mesh)
     half_scale = H / 1.8
     scoop_half_local = SHIRT_SCOOP_HALF_W * half_scale
-    scoop_y = SHIRT_SCOOP_Y
 
     os.makedirs(OUT_DIR, exist_ok=True)
     suffix = f"-{VARIANT}" if VARIANT else ""
@@ -278,7 +331,7 @@ def main():
 
     ok_shirt = mask_and_offset(
         body, "garment-shirt",
-        lambda co: keep_shirt(co, z_min, H, half_scale, scoop_y, scoop_half_local),
+        lambda co: keep_shirt(co, z_min, H, half_scale, scoop_half_local),
         SHIRT_CLEARANCE, shirt_path,
     )
     ok_trouser = mask_and_offset(

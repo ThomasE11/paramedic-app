@@ -1038,20 +1038,24 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
         // the runtime cut-from-skin scrubs if the GLBs didn't load or the piece
         // build came back empty.
         //
-        // Every active sex/age patient carries the fitted skeleton, and even a
-        // seated/recumbent presentation receives small bone-space arm or spine
-        // offsets after its posture morph. The Blender-authored garment shells
-        // carry morph targets but no skin weights, so combining those shells
-        // with a rigged body leaves the shirt behind at the shoulders: it looks
-        // like duplicated/vibrating arms or a patient held on a pole. Use the
-        // cut-from-this-body skinned shell whenever the body is rigged; the
-        // authored static garments remain the higher-quality fallback for the
-        // legacy unrigged body only.
-        const needsSkeletalGarment = (bodyMesh as THREE.SkinnedMesh).isSkinnedMesh;
-        const scrubs =
-          (CLOTHING_MODE === 'blended-garment' && !needsSkeletalGarment
-            ? buildBlendedGarments(bodyMesh as THREE.Mesh, garmentScenes, garmentSpecs)
-            : null) ?? buildScrubs(bodyMesh as THREE.Mesh);
+        const authoredGarments = CLOTHING_MODE === 'blended-garment'
+          ? buildBlendedGarments(bodyMesh as THREE.Mesh, garmentScenes, garmentSpecs)
+          : null;
+        const scrubs = authoredGarments ?? buildScrubs(bodyMesh as THREE.Mesh);
+        if (authoredGarments) {
+          // A body-indexed fabric underlay closes any sub-pixel/open-boundary
+          // seam in the authored outer shell. It shares the exact patient
+          // topology, morphs and bone weights, sits just above skin, and uses
+          // the same piece names so it parts with the outer garment during
+          // chest/abdomen/limb examination.
+          const underlay = buildScrubs(bodyMesh as THREE.Mesh, { top: 0.0015, trousers: 0.0015 });
+          if (underlay) {
+            for (const piece of [...underlay.children]) {
+              piece.userData.garmentUnderlay = true;
+              authoredGarments.add(piece);
+            }
+          }
+        }
         // Child of the body mesh at identity → inherits its exact placement.
         if (scrubs) (bodyMesh as THREE.Mesh).add(scrubs);
         // Eyes — the skin texture paints the sockets bright red (a placeholder).

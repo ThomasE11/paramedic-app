@@ -94,15 +94,16 @@ export interface GarmentGlbSpec {
 }
 
 export const GARMENT_GLBS: GarmentGlbSpec[] = [
-  // Garments are already lifted from the body in Blender. Runtime offset is
-  // millimetric—only enough to prevent z-fighting, not a second inflated shell.
-  { url: '/models/garment-shirt.glb', name: 'scrub-top', color: TOP_COLOR, offset: 0.001 },
-  { url: '/models/garment-trousers.glb', name: 'scrub-trousers', color: TROUSER_COLOR, offset: 0.001 },
+  // Morph + skin interpolation can move the underlying surface a few
+  // millimetres past the Blender clearance. A light garment-scale stand-off
+  // prevents skin/lining z-fighting without reading as a second body shell.
+  { url: '/models/garment-shirt.glb', name: 'scrub-top', color: TOP_COLOR, offset: 0.002 },
+  { url: '/models/garment-trousers.glb', name: 'scrub-trousers', color: TROUSER_COLOR, offset: 0.002 },
 ];
 
 export const FEMALE_GARMENT_GLBS: GarmentGlbSpec[] = [
-  { url: '/models/garment-shirt-female.glb', name: 'scrub-top', color: TOP_COLOR, offset: 0.001 },
-  { url: '/models/garment-trousers-female.glb', name: 'scrub-trousers', color: TROUSER_COLOR, offset: 0.001 },
+  { url: '/models/garment-shirt-female.glb', name: 'scrub-top', color: TOP_COLOR, offset: 0.002 },
+  { url: '/models/garment-trousers-female.glb', name: 'scrub-trousers', color: TROUSER_COLOR, offset: 0.002 },
 ];
 
 export const ALL_GARMENT_GLBS = [...GARMENT_GLBS, ...FEMALE_GARMENT_GLBS];
@@ -123,7 +124,10 @@ export const CLOTHING_PARTING: Record<string, string[]> = {
   'right-leg': ['scrub-trousers'],
 };
 
-export function buildScrubs(body: THREE.Mesh): THREE.Group | null {
+export function buildScrubs(
+  body: THREE.Mesh,
+  offsets: { top?: number; trousers?: number } = {},
+): THREE.Group | null {
   const geom = body.geometry as THREE.BufferGeometry | undefined;
   const pos = geom?.attributes?.position as THREE.BufferAttribute | undefined;
   if (!geom || !pos) {
@@ -288,8 +292,8 @@ export function buildScrubs(body: THREE.Mesh): THREE.Group | null {
   const trouserKeep = largestComponent(trouserMask);
 
   const pieces = [
-    { name: 'scrub-top', color: TOP_COLOR, offset: 0.026, keep: topKeep },
-    { name: 'scrub-trousers', color: TROUSER_COLOR, offset: 0.012, keep: trouserKeep },
+    { name: 'scrub-top', color: TOP_COLOR, offset: offsets.top ?? 0.026, keep: topKeep },
+    { name: 'scrub-trousers', color: TROUSER_COLOR, offset: offsets.trousers ?? 0.012, keep: trouserKeep },
   ];
 
   const group = new THREE.Group();
@@ -501,6 +505,61 @@ export function buildBlendedGarments(
 ): THREE.Group | null {
   const bodyDict = body.morphTargetDictionary;
   const bodyInfl = body.morphTargetInfluences;
+  const skinnedBody = body as THREE.SkinnedMesh;
+  const bodyGeometry = body.geometry as THREE.BufferGeometry;
+  const bodyPositions = bodyGeometry.getAttribute('position') as THREE.BufferAttribute | undefined;
+  const bodySkinIndex = bodyGeometry.getAttribute('skinIndex') as THREE.BufferAttribute | undefined;
+  const bodySkinWeight = bodyGeometry.getAttribute('skinWeight') as THREE.BufferAttribute | undefined;
+  const canSkinGarments = Boolean(
+    skinnedBody.isSkinnedMesh && bodyPositions && bodySkinIndex && bodySkinWeight,
+  );
+
+  // Blender's garment bake intentionally keeps the clothing as lightweight
+  // standalone meshes. Transfer the closest body vertex's four bone weights
+  // at runtime so those clean, authored hems and sleeves follow the same rig.
+  // A small spatial hash keeps this linear-time at case load instead of doing
+  // garmentVertices × bodyVertices distance checks for every patient.
+  const skinCellSize = 0.04;
+  const bodyVertexBuckets = new Map<string, number[]>();
+  const bucketKey = (x: number, y: number, z: number) => (
+    `${Math.floor(x / skinCellSize)}:${Math.floor(y / skinCellSize)}:${Math.floor(z / skinCellSize)}`
+  );
+  if (canSkinGarments && bodyPositions) {
+    for (let i = 0; i < bodyPositions.count; i++) {
+      const key = bucketKey(bodyPositions.getX(i), bodyPositions.getY(i), bodyPositions.getZ(i));
+      const bucket = bodyVertexBuckets.get(key);
+      if (bucket) bucket.push(i);
+      else bodyVertexBuckets.set(key, [i]);
+    }
+  }
+
+  const closestBodyVertex = (x: number, y: number, z: number): number => {
+    if (!bodyPositions) return -1;
+    const cx = Math.floor(x / skinCellSize);
+    const cy = Math.floor(y / skinCellSize);
+    const cz = Math.floor(z / skinCellSize);
+    let best = -1;
+    let bestDistanceSq = Infinity;
+    for (let dx = -2; dx <= 2; dx++) {
+      for (let dy = -2; dy <= 2; dy++) {
+        for (let dz = -2; dz <= 2; dz++) {
+          const bucket = bodyVertexBuckets.get(`${cx + dx}:${cy + dy}:${cz + dz}`);
+          if (!bucket) continue;
+          for (const index of bucket) {
+            const px = bodyPositions.getX(index) - x;
+            const py = bodyPositions.getY(index) - y;
+            const pz = bodyPositions.getZ(index) - z;
+            const distanceSq = px * px + py * py + pz * pz;
+            if (distanceSq < bestDistanceSq) {
+              bestDistanceSq = distanceSq;
+              best = index;
+            }
+          }
+        }
+      }
+    }
+    return best;
+  };
 
   body.updateWorldMatrix(true, false);
   const scl = new THREE.Vector3();
@@ -544,6 +603,54 @@ export function buildBlendedGarments(
     p.needsUpdate = true;
     g.computeVertexNormals();
 
+    if (canSkinGarments && bodySkinIndex && bodySkinWeight) {
+      const sourceSkinned = srcMesh as THREE.SkinnedMesh;
+      const sourceSkinIndex = g.getAttribute('skinIndex') as THREE.BufferAttribute | undefined;
+      const sourceSkinWeight = g.getAttribute('skinWeight') as THREE.BufferAttribute | undefined;
+      const skinIndices = new Uint16Array(p.count * 4);
+      const skinWeights = new Float32Array(p.count * 4);
+      const sourceComponents = (attribute: THREE.BufferAttribute, i: number) => [
+        attribute.getX(i),
+        attribute.getY(i),
+        attribute.getZ(i),
+        attribute.getW(i),
+      ];
+
+      if (sourceSkinned.isSkinnedMesh && sourceSkinIndex && sourceSkinWeight) {
+        const targetBoneByName = new Map<string, number>();
+        skinnedBody.skeleton.bones.forEach((bone, index) => {
+          targetBoneByName.set(bone.name, index);
+          targetBoneByName.set(bone.name.replace(/:/g, ''), index);
+        });
+        const sourceToTarget = sourceSkinned.skeleton.bones.map((bone) => (
+          targetBoneByName.get(bone.name)
+          ?? targetBoneByName.get(bone.name.replace(/:/g, ''))
+          ?? -1
+        ));
+        for (let i = 0; i < p.count; i++) {
+          const sourceIndices = sourceComponents(sourceSkinIndex, i);
+          const sourceWeights = sourceComponents(sourceSkinWeight, i);
+          for (let component = 0; component < 4; component++) {
+            const targetIndex = sourceToTarget[sourceIndices[component]] ?? -1;
+            skinIndices[i * 4 + component] = targetIndex >= 0 ? targetIndex : 0;
+            skinWeights[i * 4 + component] = targetIndex >= 0 ? sourceWeights[component] : 0;
+          }
+        }
+      } else {
+        // Compatibility for an older garment bake: infer weights from the
+        // closest patient surface. Current production assets preserve their
+        // exact Blender weights and take the branch above.
+        for (let i = 0; i < p.count; i++) {
+          const nearest = closestBodyVertex(p.getX(i), p.getY(i), p.getZ(i));
+          if (nearest < 0) continue;
+          skinIndices.set(sourceComponents(bodySkinIndex, nearest), i * 4);
+          skinWeights.set(sourceComponents(bodySkinWeight, nearest), i * 4);
+        }
+      }
+      g.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(skinIndices, 4));
+      g.setAttribute('skinWeight', new THREE.Float32BufferAttribute(skinWeights, 4));
+    }
+
     // Box-projected UVs for the fabric weave normal map (the GLB shipped no UVs).
     const M = p.count;
     const uvArr = new Float32Array(M * 2);
@@ -576,9 +683,19 @@ export function buildBlendedGarments(
       polygonOffsetUnits: -1,
     });
 
-    const garment = new THREE.Mesh(g, outerMat);
+    const createGarmentMesh = (material: THREE.Material): THREE.Mesh => {
+      if (canSkinGarments && g.getAttribute('skinIndex') && g.getAttribute('skinWeight')) {
+        const mesh = new THREE.SkinnedMesh(g, material);
+        mesh.bindMode = skinnedBody.bindMode;
+        mesh.bind(skinnedBody.skeleton, skinnedBody.bindMatrix);
+        return mesh;
+      }
+      return new THREE.Mesh(g, material);
+    };
+
+    const garment = createGarmentMesh(outerMat);
     garment.name = spec.name;
-    const lining = new THREE.Mesh(g, innerMat);
+    const lining = createGarmentMesh(innerMat);
     lining.name = `${spec.name}-lining`;
     lining.raycast = () => {};
     lining.userData.skipRecolor = true;

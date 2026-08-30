@@ -91,7 +91,54 @@ try {
     errors,
   };
 
-  await page.screenshot({ path: `test-results/patient-motion-${model}-verified.png` });
+  // A pacing patient exercises the full locomotion path: skeletal walk clip,
+  // arm swing, real root displacement and the Blender outer garment plus its
+  // body-indexed seam underlay. Every visible clothing mesh must remain bound
+  // to the same skeleton as the patient while the root moves across the bay.
+  await page.goto(`${base}/?devLiveCase=psych-003&capture&model=${model}`, {
+    waitUntil: 'networkidle',
+    timeout: 60_000,
+  });
+  await page.locator('canvas').first().waitFor({ state: 'visible', timeout: 30_000 });
+  await page.waitForTimeout(2_500);
+  const walkingSamples = [];
+  for (let index = 0; index < 32; index += 1) {
+    walkingSamples.push(await page.evaluate(() => {
+      const scene = window.__r3f?.scene;
+      const body = scene?.getObjectByName('Patient');
+      let motionRoot = null;
+      scene?.traverse(object => {
+        if (!motionRoot && object.userData?.patientMotion) motionRoot = object;
+      });
+      if (!scene || !body || !motionRoot || !body.isSkinnedMesh) return null;
+      const walkingRoot = motionRoot.parent ?? motionRoot;
+      const garments = [];
+      scene.traverse(object => {
+        if (object.name === 'scrub-top' || object.name === 'scrub-trousers') garments.push(object);
+      });
+      return {
+        position: walkingRoot.position.toArray(),
+        garmentCount: garments.length,
+        garmentsSkinned: garments.every(garment => garment.isSkinnedMesh),
+        sharedSkeleton: garments.every(garment => garment.skeleton === body.skeleton),
+      };
+    }));
+    await page.waitForTimeout(250);
+  }
+  const validWalking = walkingSamples.filter(Boolean);
+  const walkingRootRange = [0, 1, 2].map(axis => {
+    const values = validWalking.map(sample => sample.position[axis]);
+    return Math.max(...values) - Math.min(...values);
+  });
+  result.walking = {
+    samples: validWalking.length,
+    rootPositionRange: walkingRootRange,
+    garmentCount: Math.min(...validWalking.map(sample => sample.garmentCount)),
+    garmentsSkinned: validWalking.every(sample => sample.garmentsSkinned),
+    sharedSkeleton: validWalking.every(sample => sample.sharedSkeleton),
+  };
+
+  await page.screenshot({ path: `test-results/patient-motion-${model}-walking-verified.png` });
   console.log(JSON.stringify(result, null, 2));
 
   if (result.rootPositionRange.some(range => range > 1e-6)) {
@@ -116,6 +163,12 @@ try {
   }
   if (result.gasp.max < 0.3) {
     throw new Error('Hypoxic gasp morph did not activate');
+  }
+  if (validWalking.length !== 32 || walkingRootRange[0] < 0.25) {
+    throw new Error(`Pacing patient did not walk across the bay: ${walkingRootRange.join(', ')}`);
+  }
+  if (result.walking.garmentCount < 4 || !result.walking.garmentsSkinned || !result.walking.sharedSkeleton) {
+    throw new Error(`Walking garment lost its patient skeleton: ${JSON.stringify(result.walking)}`);
   }
   if (errors.length) throw new Error(errors.join('\n'));
 } finally {
