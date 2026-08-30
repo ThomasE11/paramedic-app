@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="420" viewBox="0 0 640 420" role="img" aria-labelledby="title desc">
+  <title id="title">Post-ROSC care board</title>
+  <desc id="desc">A structured post-resuscitation care board showing airway, oxygen, capnography, blood pressure, twelve-lead ECG, glucose, temperature and critical-care transfer targets.</desc>
+  <defs>
+    <linearGradient id="board" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#1e293b"/><stop offset="1" stop-color="#020617"/></linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#020617" flood-opacity=".36"/></filter>
+  </defs>
+  <rect x="24" y="28" width="592" height="364" rx="38" fill="url(#board)" stroke="#475569" stroke-width="6" filter="url(#shadow)"/>
+  <rect x="53" y="56" width="534" height="61" rx="20" fill="#064e3b" stroke="#34d399" stroke-width="4"/>
+  <path d="M82 87h41l13-20 19 40 18-28 14 8h89" fill="none" stroke="#a7f3d0" stroke-width="5" stroke-linejoin="round"/>
+  <text x="432" y="96" text-anchor="middle" font-family="Arial,sans-serif" font-size="29" font-weight="900" fill="#ecfdf5">ROSC CONFIRMED</text>
+  <g font-family="Arial,sans-serif" font-weight="800" font-size="17" fill="#e2e8f0">
+    <g transform="translate(54 141)"><rect width="164" height="86" rx="18" fill="#0c4a6e" stroke="#38bdf8" stroke-width="3"/><circle cx="31" cy="31" r="16" fill="#38bdf8"/><path d="M21 32h20M31 22v20" stroke="#ecfeff" stroke-width="4"/><text x="58" y="31">AIRWAY</text><text x="19" y="64" font-size="14" fill="#bae6fd">SpO₂ 94–98%</text></g>
+    <g transform="translate(238 141)"><rect width="164" height="86" rx="18" fill="#064e3b" stroke="#34d399" stroke-width="3"/><path d="M18 54h20V25h35v29h20V25h35v29h18" fill="none" stroke="#6ee7b7" stroke-width="4"/><text x="82" y="74" text-anchor="middle" font-size="13" fill="#a7f3d0">EtCO₂ 35–45</text></g>
+    <g transform="translate(422 141)"><rect width="164" height="86" rx="18" fill="#4c1d95" stroke="#a78bfa" stroke-width="3"/><text x="82" y="36" text-anchor="middle">PERFUSION</text><text x="82" y="66" text-anchor="middle" font-size="14" fill="#ddd6fe">SBP &gt;100</text></g>
+    <g transform="translate(54 246)"><rect width="164" height="102" rx="18" fill="#7f1d1d" stroke="#fb7185" stroke-width="3"/><path d="M25 36h25l8-15 13 29 14-20 12 6h42" fill="none" stroke="#fecdd3" stroke-width="4"/><text x="82" y="78" text-anchor="middle">12-LEAD ECG</text></g>
+    <g transform="translate(238 246)"><rect width="164" height="102" rx="18" fill="#78350f" stroke="#fbbf24" stroke-width="3"/><path d="M82 17c-18 22-27 37-27 51a27 27 0 0 0 54 0c0-14-9-29-27-51Z" fill="#fde68a"/><text x="82" y="91" text-anchor="middle" font-size="14" fill="#fef3c7">GLUCOSE + NEURO</text></g>
+    <g transform="translate(422 246)"><rect width="164" height="102" rx="18" fill="#164e63" stroke="#22d3ee" stroke-width="3"/><path d="M82 16v49a20 20 0 1 1-18 0V16a9 9 0 0 1 18 0Z" fill="#cffafe"/><circle cx="73" cy="72" r="11" fill="#06b6d4"/><text x="12" y="91" text-anchor="start" font-size="12" fill="#cffafe">≤37.5°C</text><text x="152" y="91" text-anchor="end" font-size="10" fill="#cffafe">COMATOSE</text></g>
+  </g>
+</svg>

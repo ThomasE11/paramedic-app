@@ -3570,6 +3570,16 @@ export function deriveAppliedTreatmentRealismCues(
     ));
   }
 
+  if (ids.has('post_rosc_bundle')) {
+    cues.push(makeTreatmentCue(
+      'post-rosc-bundle-complete',
+      'Post-ROSC targets verified',
+      'Airway, oxygenation, normocapnia, perfusion, 12-lead ECG, neurological status, glucose and the temperature plan have been consolidated for transfer.',
+      'chest',
+      'observe',
+    ));
+  }
+
   if (hasAnyId(ids, ['oxygen_nasal', 'oxygen_mask', 'oxygen_nonrebreather'])) {
     cues.push(makeTreatmentCue(
       'oxygen-visible',

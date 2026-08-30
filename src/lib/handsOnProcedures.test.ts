@@ -113,6 +113,7 @@ describe('hands-on treatment procedures', () => {
       'airway_open',
       'pericardiocentesis',
       'targeted_temp_mgmt',
+      'post_rosc_bundle',
     ];
     for (const treatmentId of equipmentTreatments) {
       const plan = getHandsOnProcedurePlan(treatmentId, caseData);
@@ -212,6 +213,17 @@ describe('hands-on treatment procedures', () => {
     expect(plan?.steps.find(step => step.id === 'apply')?.clinicalCue).toContain('Do not routinely give a large rapid bolus of ice-cold IV fluid');
     expect(isHandsOnTreatment('targeted_temp_mgmt')).toBe(true);
     expect(procedureIncludesIntegratedReassessment('targeted_temp_mgmt')).toBe(true);
+  });
+
+  it('requires every physiological target in the structured post-ROSC bundle', () => {
+    const plan = getHandsOnProcedurePlan('post_rosc_bundle', caseData);
+
+    expect(plan?.steps.map(step => step.id)).toEqual(['rosc', 'airway', 'oxygen', 'ventilation', 'circulation', 'ecg', 'disability', 'temperature', 'transfer']);
+    expect(plan?.steps.find(step => step.id === 'oxygen')?.instruction).toContain('94–98%');
+    expect(plan?.steps.find(step => step.id === 'ventilation')?.instruction).toContain('35–45 mmHg');
+    expect(plan?.steps.find(step => step.id === 'circulation')?.instruction).toContain('SBP above 100 mmHg or MAP 60–65 mmHg');
+    expect(isHandsOnTreatment('post_rosc_bundle')).toBe(true);
+    expect(procedureIncludesIntegratedReassessment('post_rosc_bundle')).toBe(true);
   });
 
   it('reuses an already fitted nebuliser when adding the second bronchodilator', () => {

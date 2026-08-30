@@ -769,6 +769,30 @@ export function getHandsOnProcedurePlan(
     };
   }
 
+  if (treatmentId === 'post_rosc_bundle') {
+    return {
+      id: 'structured-post-rosc-care',
+      title: 'Complete the post-ROSC care bundle',
+      subtitle: 'Consolidate the interventions already performed, verify every physiological target and hand over a coherent plan without losing the patient during transfer.',
+      treatmentId,
+      requiresTarget: false,
+      targets: [],
+      equipmentAsset: '/equipment-assets/post-rosc-board.svg',
+      completionLabel: 'Post-ROSC targets verified — transfer ready',
+      steps: [
+        STEP('rosc', 'Verify sustained ROSC', 'Confirm a central pulse, organised rhythm and abrupt EtCO₂ rise; stop compressions only after circulation is verified.', 'A monitor rhythm alone is not ROSC. Recheck immediately if pulse, pressure or EtCO₂ falls.', 'confirm'),
+        STEP('airway', 'Protect and confirm the airway', 'Reassess airway patency and consciousness; if an advanced airway is required, confirm depth, bilateral ventilation and sustained waveform capnography.', 'Use an ABC approach and do not intubate an awake patient solely because an arrest occurred.', 'confirm'),
+        STEP('oxygen', 'Titrate oxygenation', 'Use maximum available oxygen until SpO₂ is reliable, then titrate inspired oxygen to maintain 94–98%.', 'Avoid both hypoxaemia and continued unnecessary hyperoxaemia.', 'connect'),
+        STEP('ventilation', 'Target normocapnia', 'Use waveform EtCO₂ and controlled ventilation to target 35–45 mmHg; obtain blood gas confirmation when available.', 'Avoid hyperventilation, which can reduce cerebral blood flow after ROSC.', 'ventilate'),
+        STEP('circulation', 'Optimise perfusion and access', 'Confirm IV or IO access, repeat BP frequently, treat the cause and use measured fluid or vasoactive support to target SBP above 100 mmHg or MAP 60–65 mmHg.', 'Individualise perfusion to organ function and avoid uncontrolled fluid loading.', 'connect'),
+        STEP('ecg', 'Acquire and interpret a 12-lead ECG', 'Record a diagnostic 12-lead ECG, look for coronary occlusion and repeat it if the first tracing is equivocal or physiology changes.', 'Prioritise an appropriate cardiac-arrest centre and urgent angiography when persistent ST elevation or strong occlusion evidence is present.', 'confirm'),
+        STEP('disability', 'Reassess neurology and glucose', 'Document pupils, motor response, GCS and blood glucose; identify and treat seizures without premature prognostication.', 'Sedation and paralysis can confound examination. Record exactly what was given and when.', 'confirm'),
+        STEP('temperature', 'Set the temperature plan', 'Measure core temperature continuously. If the patient remains comatose, prevent fever at ≤37.5°C for 36–72 hours using feedback control.', 'Do not actively warm mild 32–36°C hypothermia and do not routinely use rapid large-volume cold IV fluid.', 'connect'),
+        STEP('transfer', 'Secure, document and pre-alert', 'Protect every line and circuit, trend vitals through movement, state the arrest timeline and treatments, and pre-alert the receiving critical-care/cardiac-arrest centre.', 'ROSC is a high-risk transition, not the end of resuscitation; anticipate re-arrest throughout transport.', 'wrap'),
+      ],
+    };
+  }
+
   if (['supine_position', 'recovery_position', 'fowlers_position', 'left_lateral_tilt', 'leg_elevation', 'assisted_ambulation'].includes(treatmentId)) {
     const positioning: Record<string, { title: string; destination: string; completion: string }> = {
       supine_position: { title: 'Position patient supine', destination: 'flat on their back with alignment and airway access maintained', completion: 'Supine position secured — reassess' },
@@ -833,7 +857,7 @@ const HANDS_ON_TREATMENTS = new Set([
   'vacuum_limb_splint', 'air_splint', 'traction_splint', 'cervical_collar', 'warming_blanket',
   'active_cooling', 'targeted_temp_mgmt', 'spinal_board', 'scoop_stretcher', 'vacuum_mattress', 'head_blocks', 'ked',
   'lucas_device', 'ventilator_setup', 'mechanical_ventilation', 'supine_position', 'recovery_position', 'fowlers_position',
-  'left_lateral_tilt', 'leg_elevation', 'assisted_ambulation',
+  'left_lateral_tilt', 'leg_elevation', 'assisted_ambulation', 'post_rosc_bundle',
   'pelvic_binder',
   'back_blows', 'abdominal_thrusts',
   'surgical_cric',
@@ -863,6 +887,7 @@ export const procedureIncludesIntegratedReassessment = (treatmentId: string): bo
   LIMB_SPLINT_TREATMENTS.has(treatmentId)
   || treatmentId === 'airway_open'
   || treatmentId === 'targeted_temp_mgmt'
+  || treatmentId === 'post_rosc_bundle'
   || treatmentId === 'intubation'
   || treatmentId === 'rsi_intubation'
   || treatmentId === 'pelvic_binder'

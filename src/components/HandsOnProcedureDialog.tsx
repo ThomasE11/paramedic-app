@@ -617,6 +617,49 @@ function TemperatureControlProcedurePreview({
   );
 }
 
+function PostRoscProcedurePreview({
+  procedureId,
+  completedSteps,
+  animatingStep,
+}: {
+  procedureId: string;
+  completedSteps: string[];
+  animatingStep: string | null;
+}) {
+  if (procedureId !== 'structured-post-rosc-care') return null;
+  const reached = (stepId: string) => completedSteps.includes(stepId) || animatingStep === stepId;
+  const statusClass = 'rounded-md border border-emerald-300/50 bg-emerald-950/95 px-1.5 py-1 text-[6px] font-black uppercase tracking-[0.06em] text-emerald-100 shadow-lg animate-in fade-in zoom-in-90';
+
+  return (
+    <div data-procedure-preview="post-rosc-care" className="pointer-events-none absolute inset-0 z-30">
+      {reached('rosc') && <span className="absolute left-1/2 top-2 w-max -translate-x-1/2 rounded-full border border-emerald-300/60 bg-emerald-950/95 px-2 py-1 text-[7px] font-black uppercase tracking-[0.09em] text-emerald-100 shadow-lg">Pulse + rhythm + EtCO₂ · ROSC</span>}
+      {reached('airway') && (
+        <>
+          <span className="absolute left-[85px] top-[44px] h-9 w-5 rounded-b-xl border-2 border-cyan-100/80 bg-cyan-100/45" />
+          <span className={`absolute left-1 top-[52px] ${statusClass}`}>Airway confirmed</span>
+        </>
+      )}
+      {reached('oxygen') && <span className={`absolute right-1 top-[82px] ${statusClass}`}>SpO₂ 94–98%</span>}
+      {reached('ventilation') && (
+        <div className="absolute left-1 top-[91px] h-[37px] w-[71px] rounded-md border border-emerald-300/50 bg-slate-950/95 p-1 shadow-lg" aria-label="Waveform capnography target 35 to 45 millimetres of mercury">
+          <svg viewBox="0 0 70 22" className="h-5 w-full"><path d="M0 19h8l3-12h17l3 12h8l3-12h17l3 12h8" fill="none" stroke="#34d399" strokeWidth="2" /></svg>
+          <span className="absolute right-1 top-0 text-[5px] font-black text-emerald-100">35–45</span>
+        </div>
+      )}
+      {reached('circulation') && <span className={`absolute right-1 top-[127px] ${statusClass}`}>SBP &gt;100 · access</span>}
+      {reached('ecg') && (
+        <div className="absolute left-1 top-[139px] h-[39px] w-[74px] rounded-md border border-rose-300/50 bg-slate-950/95 p-1 shadow-lg" aria-label="Diagnostic twelve lead ECG acquired">
+          <svg viewBox="0 0 70 22" className="h-5 w-full"><path d="M0 15h12l4-7 6 14 7-11 5 4h36" fill="none" stroke="#fb7185" strokeWidth="2" /></svg>
+          <span className="absolute bottom-0.5 right-1 text-[5px] font-black text-rose-100">12-LEAD</span>
+        </div>
+      )}
+      {reached('disability') && <span className={`absolute right-1 top-[181px] ${statusClass}`}>GCS · pupils · BGL</span>}
+      {reached('temperature') && <span className={`absolute left-1 top-[206px] ${statusClass}`}>Core temp ≤37.5°C</span>}
+      {reached('transfer') && <span className="absolute bottom-3 left-1/2 w-max max-w-[179px] -translate-x-1/2 rounded-full border border-sky-300/55 bg-sky-950/95 px-2 py-1 text-center text-[7px] font-black uppercase tracking-[0.08em] text-sky-100 shadow-lg">Lines secured · arrest centre pre-alerted</span>}
+    </div>
+  );
+}
+
 const TOURNIQUET_PLACEMENT: Record<string, { left: string; top: string; rotate: string }> = {
   'right-arm': { left: '31%', top: '30%', rotate: '9deg' },
   'left-arm': { left: '69%', top: '30%', rotate: '-9deg' },
@@ -1019,6 +1062,12 @@ export function HandsOnProcedureDialog({
               />
 
               <TemperatureControlProcedurePreview
+                procedureId={plan.id}
+                completedSteps={completedSteps}
+                animatingStep={animatingStep}
+              />
+
+              <PostRoscProcedurePreview
                 procedureId={plan.id}
                 completedSteps={completedSteps}
                 animatingStep={animatingStep}

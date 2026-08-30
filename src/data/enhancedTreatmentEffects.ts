@@ -2092,7 +2092,7 @@ export const TREATMENTS: Treatment[] = [
   {
     id: 'post_rosc_bundle',
     name: 'Post-ROSC Care Bundle',
-    description: 'Target SpO2 94-98% (avoid hyperoxia). Avoid hyperventilation (RR 10-12). 12-lead ECG. Temperature management 32-36°C for 24-36hrs. MAP >65mmHg.',
+    description: 'Structured ABC care after sustained ROSC: confirm airway and waveform capnography, titrate SpO₂ to 94–98%, target normocapnia, SBP >100 mmHg or MAP 60–65 mmHg, acquire a 12-lead ECG, reassess neurology/glucose and prevent fever ≤37.5°C if comatose.',
     category: 'circulation',
     onset: 'immediate',
     onsetTimeSeconds: 0,

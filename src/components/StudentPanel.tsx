@@ -1235,6 +1235,14 @@ function assessTreatmentPracticality({
     }
   }
 
+  if (id === 'post_rosc_bundle' && (patientState.isInArrest || !hasRosc)) {
+    return {
+      level: 'block',
+      title: 'ROSC not established',
+      clinicalReason: 'A post-ROSC bundle cannot be completed during cardiac arrest. Continue high-quality CPR, rhythm management and treatment of reversible causes until sustained circulation is confirmed.',
+    };
+  }
+
   if (id === 'traction_splint') {
     const decision = assessTractionSplintSafety(currentCase, appliedTreatmentIds);
     if (!decision.allowed) {
@@ -3517,14 +3525,15 @@ export function StudentPanel({
       return;
     }
 
+    const hasRosc = arrestTimeline.some(event => event.type === 'rosc')
+      || /post.?rosc|return of spontaneous circulation|resuscitated after cardiac arrest/.test(getCaseClinicalText(currentCase));
     const practicalChallenge = assessTreatmentPracticality({
       treatment,
       currentVitals,
       currentCase,
       patientState,
       appliedTreatmentIds,
-      hasRosc: arrestTimeline.some(event => event.type === 'rosc')
-        || /post.?rosc|return of spontaneous circulation|resuscitated after cardiac arrest/.test(getCaseClinicalText(currentCase)),
+      hasRosc,
     });
     if (practicalChallenge && !treatmentChallengeConfirmedRef.current.has(treatment.id)) {
       if (practicalChallenge.patientQuote) {
@@ -3539,6 +3548,30 @@ export function StudentPanel({
       }
       setPendingTreatmentChallenge({ treatment, challenge: practicalChallenge, defibParams });
       return;
+    }
+
+    if (treatment.id === 'post_rosc_bundle') {
+      const performed = new Set(assessmentTrackerRef.current?.performed.map(item => item.stepId) ?? []);
+      const gcs = getPatientGcsTotal(currentVitals, currentCase, patientState);
+      const needsAdvancedAirway = gcs <= 8;
+      const hasAdvancedAirway = appliedTreatmentIds.some(id => ['intubation', 'rsi_intubation', 'endotracheal_intubation', 'surgical_cric'].includes(id));
+      const hasVentilationSupport = appliedTreatmentIds.some(id => ['bvm_ventilation', 'mechanical_ventilation', 'ventilator_setup'].includes(id));
+      const hasOxygenSupport = hasVentilationSupport || appliedTreatmentIds.some(id => ['oxygen_nasal', 'oxygen_mask', 'oxygen_nonrebreather'].includes(id));
+      const hasAccess = appliedTreatmentIds.includes('iv_access') || appliedTreatmentIds.includes('io_access');
+      const missing: string[] = [];
+      if (needsAdvancedAirway && !hasAdvancedAirway) missing.push('protect and confirm the airway');
+      if (needsAdvancedAirway && !hasVentilationSupport) missing.push('establish controlled ventilation with waveform EtCO₂');
+      if ((currentVitals.spo2 ?? 0) < 94 && !hasOxygenSupport) missing.push('support and titrate oxygenation');
+      if (!hasAccess) missing.push('establish IV or IO access');
+      if (!performed.has('12-lead-ecg')) missing.push('acquire a 12-lead ECG');
+      if (needsAdvancedAirway && !appliedTreatmentIds.includes('targeted_temp_mgmt')) missing.push('start feedback-controlled fever prevention');
+      if (missing.length > 0) {
+        toast.error('Post-ROSC bundle is incomplete', {
+          description: `Complete the outstanding care first: ${missing.join('; ')}.`,
+          duration: 8500,
+        });
+        return;
+      }
     }
 
     if (treatment.id === 'pacing_transcutaneous') {
