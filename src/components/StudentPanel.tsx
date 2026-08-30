@@ -3351,8 +3351,8 @@ export function StudentPanel({
           next.deteriorationLevel = 2;
           toast.success('ROSC — Return of Spontaneous Circulation', {
             description: isSevereHypothermia
-              ? 'Sinus rhythm restored with rewarming. Continue active rewarming to 32–36 °C, titrate O2 94–98%, 12-lead ECG, handle gently (arrhythmia risk).'
-              : 'Sinus tachycardia restored. Begin post-ROSC care: 12-lead ECG, titrate O2 to 94–98%, targeted temperature management.',
+              ? 'Sinus rhythm restored with rewarming. Continue controlled rewarming toward normothermia, titrate O2 to 94–98%, obtain a 12-lead ECG and handle gently (arrhythmia risk).'
+              : 'Sinus tachycardia restored. Begin post-ROSC care: 12-lead ECG, titrate O2 to 94–98%, continuously monitor core temperature and prevent fever.',
             duration: 12000,
           });
         }

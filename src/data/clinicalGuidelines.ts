@@ -286,7 +286,7 @@ export const cardiacArrestGuideline: AssessmentGuideline = {
     'Airway management with ventilations (30:2 ratio — AHA 2025 recommends breaths WITH compressions)',
     'IV access (AHA 2025: IV preferred over IO in adult cardiac arrest; IO is second-line)',
     'Epinephrine 1mg IV q3-5min',
-    'Temperature control post-ROSC: 32-36°C for at least 36 hours if unresponsive (AHA 2025)'
+    'Post-ROSC fever prevention if comatose: continuously monitor core temperature, target ≤37.5°C and prevent fever for 36-72 hours (RCUK 2025)'
   ],
   guidelines: [
     {
@@ -303,11 +303,23 @@ export const cardiacArrestGuideline: AssessmentGuideline = {
         'IV access preferred over IO in adult cardiac arrest (IO is second-line)',
         'Breaths WITH compressions (30:2) for both HCPs and trained lay rescuers',
         'Single unified Chain of Survival for all ages and settings',
-        'Temperature control 32-36°C for at least 36 hours post-ROSC if unresponsive',
         'DSED for refractory VF: Class 2b — usefulness NOT established',
         'FBAO: alternate 5 back blows then 5 abdominal thrusts (adults); 5 back blows then 5 chest thrusts (infants)',
         'Children aged 12+ can be taught effective CPR',
         'Pediatric: pauses in compressions should be <10 seconds'
+      ]
+    },
+    {
+      id: 'rcuk-post-rosc-2025',
+      source: 'RCUK',
+      title: 'Resuscitation Council UK 2025 Post-resuscitation Care',
+      year: 2025,
+      keyPoints: [
+        'Continuously monitor core temperature in adults who remain comatose after ROSC',
+        'Actively prevent fever by targeting a core temperature no higher than 37.5°C',
+        'Maintain fever prevention for 36-72 hours',
+        'Do not actively warm a comatose patient with mild hypothermia (32-36°C) after ROSC',
+        'Do not routinely use large-volume ice-cold IV fluid after ROSC'
       ]
     },
     {

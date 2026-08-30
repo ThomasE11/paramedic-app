@@ -364,15 +364,15 @@ export const EVIDENCE_LIBRARY: EvidenceTopic[] = [
   },
 
   // ---------------------------------------------------------------------------
-  // 6. Post-arrest targeted temperature management
+  // 6. Post-arrest fever prevention
   // ---------------------------------------------------------------------------
   {
     id: 'ttm-post-rosc',
-    question: 'Why do we target 32-36 °C after ROSC rather than normothermia?',
+    question: 'Why do we continuously monitor temperature and prevent fever after ROSC?',
     practiceStatement:
-      'After ROSC from OHCA, actively prevent fever and target 32-36 °C core temp for at least 24 h. Active cooling is not clearly superior to normothermia but fever must be prevented.',
+      'For adults who remain comatose after ROSC, continuously monitor core temperature, target no higher than 37.5 °C and prevent fever for 36-72 h. Do not routinely give rapid large-volume ice-cold IV fluid or actively warm mild 32-36 °C hypothermia.',
     topics: ['cardiac-arrest', 'rosc', 'post-arrest'],
-    treatmentIds: ['targeted_temperature_management', 'cooling', 'warming_blanket'],
+    treatmentIds: ['targeted_temp_mgmt', 'targeted_temperature_management', 'cooling', 'warming_blanket'],
     channel: 'D',
     minYearLevel: '4th-year',
     papers: [
@@ -389,7 +389,7 @@ export const EVIDENCE_LIBRARY: EvidenceTopic[] = [
         why: 'The 2013 TTM trial showed 33 °C vs 36 °C were equivalent — but neither was compared to pure fever control. Does any cooling help?',
         how: 'Multicenter RCT. Target 33 °C for 28 h vs normothermia (strict fever control <37.8 °C). Primary: death at 6 months. Secondary: poor functional outcome (mRS 4-6).',
         findings: '6-month mortality 50% (33 °C) vs 48% (normothermia) — no difference. Functional outcome also equivalent. More arrhythmias with active cooling.',
-        meaning: 'Aggressive hypothermia is NOT required — fever prevention is what matters. Current practice: maintain 36-37 °C strictly, treat any spike aggressively. Simplifies protocols — you don\'t need specialist cooling equipment, just good fever control.',
+        meaning: 'Routine induced hypothermia is not required — reliable fever prevention is what matters. Use continuous core-temperature monitoring and a feedback-controlled strategy when active temperature control is needed.',
       },
       {
         id: 'bernard-2002',

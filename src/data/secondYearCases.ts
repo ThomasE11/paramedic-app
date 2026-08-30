@@ -3512,7 +3512,7 @@ export const secondYearCases: CaseScenario[] = [
         'Post-ROSC: 12-lead ECG immediately',
         'Maintain SpO2 94-98% (avoid hyperoxia)',
         'IV fluid bolus for post-ROSC hypotension',
-        'Post-ROSC temperature control: target 32-36°C for at least 36 hours if patient remains unresponsive (AHA 2025)',
+        'If the patient remains comatose after ROSC: continuously monitor core temperature, prevent fever at ≤37.5°C for 36-72 hours, avoid routine large-volume ice-cold IV fluid and do not actively warm mild 32-36°C hypothermia (RCUK 2025)',
         'Rapid transport to cardiac catheterisation facility',
         'Pre-alert receiving hospital: ROSC post VF arrest, ?STEMI'
       ],
@@ -3667,7 +3667,7 @@ export const secondYearCases: CaseScenario[] = [
       'Adrenaline 1mg IV after 3rd shock in shockable rhythms (every 3-5 minutes thereafter)',
       'Amiodarone 300mg IV after 3rd shock for refractory VF (150mg can be repeated)',
       'Reversible causes (4H\'s: Hypoxia, Hypovolaemia, Hypo/Hyperkalaemia, Hypothermia; 4T\'s: Tension pneumothorax, Tamponade, Toxins, Thrombosis)',
-      'Post-ROSC care (AHA 2025): 12-lead ECG immediately, maintain SpO2 94-98%, do not hyperventilate. Temperature control at 32-36°C for at least 36 hours in adults who remain unresponsive',
+      'Post-ROSC care: obtain a 12-lead ECG immediately, maintain SpO2 94-98% and avoid hyperventilation. If the adult remains comatose, continuously monitor core temperature and prevent fever at ≤37.5°C for 36-72 hours (RCUK 2025)',
       'AHA 2025: Single unified Chain of Survival for all ages and settings (replaces separate IHCA/OHCA chains)',
       'Airway management in arrest: suction first, OPA, consider iGel/LMA - do not delay CPR for intubation',
       'Rotate compressors every 2 minutes to maintain CPR quality',
@@ -3691,7 +3691,7 @@ export const secondYearCases: CaseScenario[] = [
     references: [
       'ACLS Cardiac Arrest Algorithm - AHA 2025 Guidelines for CPR and ECC',
       'Resuscitation Council UK - Adult Advanced Life Support',
-      'Post-Resuscitation Care Guidelines (AHA 2025 update)',
+      'Resuscitation Council UK 2025 Post-resuscitation Care Guidelines',
       'Defibrillation and Cardioversion in Pre-Hospital Care'
     ]
   })
