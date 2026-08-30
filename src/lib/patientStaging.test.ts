@@ -3,6 +3,7 @@ import {
   derivePatientMobility,
   deriveScenePatientStage,
   deriveTreatmentPositioningOverride,
+  patientPacingTransform,
   patientSkeletalAction,
 } from './patientStaging';
 import type { CaseScenario } from '@/types';
@@ -53,6 +54,28 @@ describe('patientSkeletalAction', () => {
     expect(patientSkeletalAction('seated')).toBeNull();
     expect(patientSkeletalAction('recumbent')).toBeNull();
     expect(patientSkeletalAction('pacing', true)).toBeNull();
+  });
+});
+
+describe('patientPacingTransform', () => {
+  it('moves through a bounded examination-zone path', () => {
+    const samples = Array.from({ length: 65 }, (_, index) => patientPacingTransform(index * 0.05));
+
+    expect(Math.max(...samples.map(sample => Math.abs(sample.x)))).toBeLessThanOrEqual(0.32);
+    expect(Math.max(...samples.map(sample => sample.z))).toBeLessThanOrEqual(0.05);
+    expect(Math.max(...samples.map(sample => Math.abs(sample.yaw)))).toBeLessThan(0.4);
+    expect(samples.some(sample => sample.x > 0.25)).toBe(true);
+    expect(samples.some(sample => sample.x < -0.25)).toBe(true);
+  });
+
+  it('loops without a root-position snap and rejects invalid time', () => {
+    const start = patientPacingTransform(0);
+    const end = patientPacingTransform(3.2);
+
+    expect(end.x).toBeCloseTo(start.x, 8);
+    expect(end.z).toBeCloseTo(start.z, 8);
+    expect(end.yaw).toBeCloseTo(start.yaw, 8);
+    expect(patientPacingTransform(Number.NaN)).toEqual(start);
   });
 });
 

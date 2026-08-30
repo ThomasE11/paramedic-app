@@ -11,6 +11,12 @@ export type PatientMobility = 'recumbent' | 'seated' | 'standing' | 'pacing';
 export type PatientSkeletalAction = 'idle' | 'walk' | null;
 export type PatientPosture = 'tripod' | 'supine' | 'recovery' | null;
 
+export interface PatientPacingTransform {
+  x: number;
+  z: number;
+  yaw: number;
+}
+
 export interface PatientPositioningOverride {
   mobility: PatientMobility;
   posture: PatientPosture;
@@ -110,6 +116,30 @@ export function patientSkeletalAction(
   if (mobility === 'pacing') return 'walk';
   if (mobility === 'standing') return 'idle';
   return null;
+}
+
+/**
+ * Compact out-and-back path for an observed walk in the treatment bay.
+ *
+ * A Mixamo walk clip is intentionally in-place; without a matching root path
+ * the feet move but the patient remains fixed like a treadmill mannequin.
+ * This path adds real displacement, a gentle turn into the direction of
+ * travel and a few centimetres of depth variation while keeping the patient
+ * inside the examination zone. The trigonometric loop is continuous at the
+ * turnaround points, so there is no root snap for students to notice.
+ */
+export function patientPacingTransform(timeSeconds: number): PatientPacingTransform {
+  const safeTime = Number.isFinite(timeSeconds) ? Math.max(0, timeSeconds) : 0;
+  const phase = safeTime * ((Math.PI * 2) / 3.2);
+  const direction = Math.cos(phase);
+
+  return {
+    x: Math.sin(phase) * 0.32,
+    z: (1 - Math.cos(phase * 2)) * 0.025,
+    // Face partly into the path rather than sliding sideways. atan keeps the
+    // turn smooth as direction reverses at each end of the short walk.
+    yaw: Math.atan(direction * 2.4) * 0.3,
+  };
 }
 
 /**

@@ -570,6 +570,7 @@ type MarkerPresentation = 'upright' | 'treatment-bay';
 
 function MarkerHtml({
   position,
+  followPosition,
   distanceFactor,
   zIndexRange,
   interactive = true,
@@ -577,6 +578,7 @@ function MarkerHtml({
   children,
 }: {
   position: [number, number, number];
+  followPosition?: () => [number, number, number];
   distanceFactor?: number;
   zIndexRange?: [number, number];
   interactive?: boolean;
@@ -584,10 +586,13 @@ function MarkerHtml({
   children: React.ReactNode;
 }) {
   const wrapRef = useRef<HTMLDivElement>(null);
+  const anchorRef = useRef<THREE.Group>(null);
   useFrame(({ camera }) => {
     const el = wrapRef.current;
-    if (!el) return;
-    const [x, y, z] = position;
+    const anchor = anchorRef.current;
+    if (!el || !anchor) return;
+    const [x, y, z] = followPosition?.() ?? position;
+    anchor.position.set(x, y, z);
     const ol = Math.hypot(x, z) || 1;            // outward (horizontal) magnitude
     const dx = camera.position.x - x;
     const dy = camera.position.y - y;
@@ -604,11 +609,13 @@ function MarkerHtml({
     el.style.pointerEvents = interactive && op >= 0.2 ? 'auto' : 'none';
   });
   return (
-    <Html position={position} center distanceFactor={distanceFactor} zIndexRange={zIndexRange}>
-      <div ref={wrapRef} style={{ transition: 'opacity 120ms linear' }}>
-        {children}
-      </div>
-    </Html>
+    <group ref={anchorRef} position={position}>
+      <Html position={[0, 0, 0]} center distanceFactor={distanceFactor} zIndexRange={zIndexRange}>
+        <div ref={wrapRef} style={{ transition: 'opacity 120ms linear' }}>
+          {children}
+        </div>
+      </Html>
+    </group>
   );
 }
 
@@ -668,9 +675,10 @@ function LandmarkMarkers({
         // Project the label's intended (x, y) onto the real patient surface.
         // 'posterior' lives on the back, which the front-facing sampler can't
         // resolve, so it keeps its authored anchor.
-        const pos: [number, number, number] = sampler && marker.region !== 'posterior-logroll'
-          ? sampler(marker.position[0], marker.position[1], { coordinateSpace: marker.anchorSpace ?? 'author' })
-          : marker.position;
+        const sampleMarkerPosition = sampler && marker.region !== 'posterior-logroll'
+          ? () => sampler(marker.position[0], marker.position[1], { coordinateSpace: marker.anchorSpace ?? 'author' })
+          : undefined;
+        const pos: [number, number, number] = sampleMarkerPosition?.() ?? marker.position;
         const isDetail = marker.level === 'detail';
         const isPulseMarker = marker.actionId?.startsWith('pulse-') ?? false;
         const dotColor = assessed
@@ -682,7 +690,7 @@ function LandmarkMarkers({
         // cockpit already name the targets, so hover labels would just clutter
         // the patient surface.
         return (
-          <MarkerHtml key={marker.id} position={pos} distanceFactor={isDetail ? (DETAIL_DF[activeRegion ?? ''] ?? 2.0) : 3.0} zIndexRange={[80, 0]} presentation={presentation}>
+          <MarkerHtml key={marker.id} position={pos} followPosition={sampleMarkerPosition} distanceFactor={isDetail ? (DETAIL_DF[activeRegion ?? ''] ?? 2.0) : 3.0} zIndexRange={[80, 0]} presentation={presentation}>
             <button
               type="button"
               onPointerDown={(event) => event.stopPropagation()}

@@ -29,6 +29,7 @@ import { LifeSigns } from './LifeSigns';
 import { IdleAnimations, type IdleCues } from './IdleAnimations';
 import { setBreathClock } from '@/lib/breathClock';
 import {
+  patientPacingTransform,
   patientSkeletalAction,
   type PatientMobility,
 } from '@/lib/patientStaging';
@@ -762,7 +763,13 @@ function buildSurfaceSampler(root: THREE.Object3D | null, presentationRoot?: THR
     };
     const z = scan(0.07 * s, 0.05 * s) ?? scan(0.16 * s, 0.11 * s) ?? scan(0.30 * s, 0.18 * s);
     const projected = new THREE.Vector3(x, y, (z ?? maxZ) + PROUD);
-    if (presentationRoot) projected.applyMatrix4(presentationRoot.matrixWorld);
+    if (presentationRoot) {
+      // The ambulatory root can move every frame. Refresh its world matrix at
+      // sample time so pulse targets and assessment labels travel with the
+      // patient instead of remaining behind at the start of the walk.
+      presentationRoot.updateMatrixWorld(true);
+      projected.applyMatrix4(presentationRoot.matrixWorld);
+    }
     return [projected.x, projected.y, projected.z];
   };
 }
@@ -806,10 +813,15 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
   const morphInfluenceRef = useRef<Record<string, number>>({});
   const breathPhaseRef = useRef(0);
   const skeletalMixerRef = useRef<THREE.AnimationMixer | null>(null);
+  const locomotionTimeRef = useRef(0);
   // Reusable temp colour for the per-frame skin-tint lerp so we don't allocate
   // a THREE.Color every frame (GC pressure under 60fps useFrame).
   const tintTmpRef = useRef(new THREE.Color());
   const treatmentBayPresentation = presentation === 'treatment-bay';
+  const treatmentBayTransform = useMemo(
+    () => getTreatmentBayTransform(bayStage, posture, mobility),
+    [bayStage, mobility, posture],
+  );
 
   // Diaphoresis (sweat sheen): the eased 0..1 scalar the frame loop drives
   // toward the `diaphoresis` prop (fast up ~10 s, slow dry-out ~60 s), plus a
@@ -1118,7 +1130,7 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
     action.reset();
     action.enabled = true;
     action.setLoop(THREE.LoopRepeat, Infinity);
-    action.timeScale = actionName === 'walk' ? 0.78 : 0.68;
+    action.timeScale = actionName === 'walk' ? 0.58 : 0.68;
     action.fadeIn(0.3).play();
     skeletalMixerRef.current = mixer;
 
@@ -1129,6 +1141,14 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
       if (skeletalMixerRef.current === mixer) skeletalMixerRef.current = null;
     };
   }, [animations, clonedScene, mobility, unconscious]);
+
+  useEffect(() => {
+    locomotionTimeRef.current = 0;
+    const root = meshRef.current;
+    if (!root || !treatmentBayPresentation) return;
+    root.position.set(...treatmentBayTransform.position);
+    root.rotation.set(...treatmentBayTransform.rotation);
+  }, [mobility, treatmentBayPresentation, treatmentBayTransform]);
 
   // ---- SSS skin material (male mesh only) --------------------------------
   // Wire the baked thickness map + tiled pore detail-normal onto the promoted
@@ -1327,6 +1347,21 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
   // or when guided mode is active (next-step ring needs to pulse).
   useFrame((_, delta) => {
     skeletalMixerRef.current?.update(Math.min(delta, 0.05));
+    const root = meshRef.current;
+    if (root && treatmentBayPresentation && mobility === 'pacing' && !unconscious) {
+      locomotionTimeRef.current += Math.min(delta, 0.05);
+      const pace = patientPacingTransform(locomotionTimeRef.current);
+      root.position.set(
+        treatmentBayTransform.position[0] + pace.x,
+        treatmentBayTransform.position[1],
+        treatmentBayTransform.position[2] + pace.z,
+      );
+      root.rotation.set(
+        treatmentBayTransform.rotation[0],
+        treatmentBayTransform.rotation[1] + pace.yaw,
+        treatmentBayTransform.rotation[2],
+      );
+    }
     if ((requiredRegions && requiredRegions.size > 0) || (guidedMode && nextGuidedStep)) {
       pulseRef.current += delta;
     }
@@ -1854,9 +1889,9 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
     <group
       name="TreatmentBayPatientRoot"
       ref={meshRef}
-      position={treatmentBayPresentation ? getTreatmentBayTransform(bayStage, posture, mobility).position : [0, 0, 0]}
-      rotation={treatmentBayPresentation ? getTreatmentBayTransform(bayStage, posture, mobility).rotation : [0, 0, 0]}
-      scale={treatmentBayPresentation ? getTreatmentBayTransform(bayStage, posture, mobility).scale : 1}
+      position={treatmentBayPresentation ? treatmentBayTransform.position : [0, 0, 0]}
+      rotation={treatmentBayPresentation ? treatmentBayTransform.rotation : [0, 0, 0]}
+      scale={treatmentBayPresentation ? treatmentBayTransform.scale : 1}
     >
       {/* Invisible "catch-all" plane behind the body. r3f only fires
           onPointerMove on the mesh the raycast hits, so moving the pointer
