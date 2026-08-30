@@ -470,7 +470,7 @@ export function getHandsOnProcedurePlan(
     return {
       id: 'bvm-ventilation', title: 'Apply bag-valve-mask ventilation',
       subtitle: 'A visible chest rise requires airway position, a connected oxygen supply and a two-handed mask seal.',
-      treatmentId, requiresTarget: false, targets: [], equipmentAsset: '/equipment-assets/bvm.webp',
+      treatmentId, requiresTarget: false, targets: [], equipmentAsset: '/equipment-assets/bvm-face-seal-v2.png',
       completionLabel: 'Seal confirmed — begin timed ventilation',
       steps: [
         STEP('prepare', 'Prepare the circuit', 'Connect mask, bag, reservoir and oxygen tubing; set 15 L/min.', 'The reservoir should inflate before the first assisted breath.', 'connect'),

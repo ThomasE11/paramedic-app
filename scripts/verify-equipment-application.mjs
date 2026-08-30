@@ -98,6 +98,20 @@ await page.screenshot({ path: 'test-results/oxygen-mask-face-closeup-verified.pn
 await page.getByRole('button', { name: /Back to full body/i }).click();
 await page.waitForTimeout(500);
 
+await openCase('cardiac-002');
+await page.getByRole('button', { name: 'BVM Ventilation', exact: true }).click();
+results.bvmSteps = await completeProcedure(/Apply bag-valve-mask ventilation/i);
+const ventilationRateDialog = page.getByRole('dialog').filter({ hasText: 'BVM ventilation rate' }).last();
+await ventilationRateDialog.getByRole('button', { name: /10 \/ min — arrest/i }).click();
+await page.waitForTimeout(700);
+const bvmOnFace = page.locator('[data-applied-equipment="bvm"][data-airway-connection="face"]');
+results.bvmHeldOnFace = await bvmOnFace.count() > 0;
+results.bvmSealLabelVisible = /two-handed face seal/i.test(await bvmOnFace.first().getAttribute('aria-label') ?? '');
+await page.screenshot({ path: 'test-results/bvm-connected-verified.png' });
+await page.getByRole('button', { name: 'Examine Face' }).click();
+await page.waitForTimeout(800);
+await page.screenshot({ path: 'test-results/bvm-face-closeup-verified.png' });
+
 await openCase('trauma-001');
 await openKit('Exposure Pack');
 await selectEquipment('Bandages');
@@ -111,6 +125,7 @@ results.siteLabelVisible = /Traction splint · right leg/i.test(await page.locat
 results.errors = errors;
 
 if (results.maskSteps < 4 || !results.maskFittedToPatient
+  || results.bvmSteps < 5 || !results.bvmHeldOnFace || !results.bvmSealLabelVisible
   || results.haemorrhageSteps < 5 || !results.pressureDressingOnInjuredLimb
   || results.tractionSteps < 6
   || !results.tractionSplintOnInjuredLimb || !results.siteLabelVisible || errors.length) {

@@ -170,6 +170,7 @@ const TREATMENT_ASSET_PATHS = {
   nonrebreather: '/equipment-assets/nonrebreather-mask-v2.webp',
   nebulizer: '/equipment-assets/nebulizer-mask-v2.webp',
   bvm: '/equipment-assets/bvm.webp',
+  bvmFaceSeal: '/equipment-assets/bvm-face-seal-v2.png',
   cpap: '/equipment-assets/cpap-circuit.webp',
   ventilator: '/equipment-assets/ventilator-circuit.webp',
   ivCannula: '/treatment-assets/iv-cannula.svg',
@@ -1247,6 +1248,23 @@ function WornFaceEquipment({
   const nonrebreather = equipment.mode === 'nonrebreather';
   const nebulizer = equipment.mode === 'nebulizer';
   const fittedPhotorealisticMask = nonrebreather || nebulizer;
+  if (bvm && !bvmViaTube) {
+    return (
+      <div
+        data-applied-equipment="bvm"
+        data-airway-connection="face"
+        aria-label="Bag-valve-mask held with a two-handed face seal"
+        className="pointer-events-none relative h-16 w-24 translate-x-[28%] translate-y-[120%] animate-in fade-in zoom-in-75 duration-300 drop-shadow-[0_6px_7px_rgba(2,44,58,0.48)]"
+      >
+        <img
+          src={TREATMENT_ASSET_PATHS.bvmFaceSeal}
+          alt=""
+          draggable={false}
+          className="h-full w-full object-contain"
+        />
+      </div>
+    );
+  }
   if (equipment.mode === 'simple-mask') {
     return (
       <div
@@ -1271,9 +1289,6 @@ function WornFaceEquipment({
         <span className="absolute left-[75%] top-[45%] h-0.5 w-4 origin-left rounded-full bg-cyan-100/90 shadow-[0_0_3px_rgba(8,145,178,0.9)]" />
       ) : !fittedPhotorealisticMask && (
         <span className="absolute left-[62%] top-[68%] h-0.5 w-14 origin-left rotate-[28deg] rounded-full bg-cyan-100/80 shadow-[0_0_2px_rgba(8,145,178,0.8)]" />
-      )}
-      {equipment.mode === 'bvm' && !bvmViaTube && (
-        <span className="absolute right-0 top-[72%] h-5 w-4 rounded-b-full border border-cyan-100/70 bg-white/30" />
       )}
     </div>
   );

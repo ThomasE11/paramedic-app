@@ -123,12 +123,14 @@ function AirwayProcedurePreview({
       )}
 
       {interfaceApplied && (
-        <div className={`absolute left-1/2 top-[10px] -translate-x-1/2 drop-shadow-[0_4px_8px_rgba(0,0,0,.8)] animate-in fade-in zoom-in-75 ${treatmentActive ? 'motion-safe:animate-pulse' : ''}`}>
+        <div className={bvm
+          ? `absolute left-[65px] top-[4px] h-[92px] w-[138px] origin-[22%_48%] drop-shadow-[0_4px_8px_rgba(0,0,0,.8)] animate-in fade-in zoom-in-75 ${animatingStep === 'ventilate' ? 'procedure-bvm-deliver' : ''}`
+          : `absolute left-1/2 top-[10px] -translate-x-1/2 drop-shadow-[0_4px_8px_rgba(0,0,0,.8)] animate-in fade-in zoom-in-75 ${treatmentActive ? 'motion-safe:animate-pulse' : ''}`}>
           <img
             src={equipmentAsset}
             alt=""
             draggable={false}
-            className={`${intubation ? 'h-20 w-10' : opa ? 'h-10 w-12' : suction ? 'h-16 w-10' : ventilator ? 'h-16 w-20' : treatmentId === 'oxygen_nasal' ? 'h-10 w-16' : bvm ? 'h-20 w-20' : 'h-16 w-16'} object-contain`}
+            className={`${bvm ? 'h-full w-full' : intubation ? 'h-20 w-10' : opa ? 'h-10 w-12' : suction ? 'h-16 w-10' : ventilator ? 'h-16 w-20' : treatmentId === 'oxygen_nasal' ? 'h-10 w-16' : 'h-16 w-16'} object-contain`}
           />
         </div>
       )}
@@ -1100,7 +1102,7 @@ export function HandsOnProcedureDialog({
                 animatingStep={animatingStep}
               />
 
-              {animatingStep && nextStep && (
+              {animatingStep && nextStep && plan.treatmentId !== 'bvm_ventilation' && (
                 <div className={`procedure-hands procedure-motion-${nextStep.motion}`} aria-label={`Performing ${nextStep.label}`}>
                   <Hand className="procedure-hand procedure-hand-left" />
                   <Hand className="procedure-hand procedure-hand-right" />

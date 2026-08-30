@@ -3521,6 +3521,18 @@ body {
 .procedure-motion-laryngoscopy .procedure-hand-left { top: 18%; }
 .procedure-motion-laryngoscopy .procedure-hand-right { top: 30%; }
 
+/* The BVM preview is a single connected assembly. Compress it once during the
+   learner's one-second test breath, then leave the applied equipment still so
+   it cannot read as the patient or mask vibrating. */
+.procedure-bvm-deliver {
+  animation: procedure-bvm-deliver 1.2s ease-in-out 1;
+}
+
+@keyframes procedure-bvm-deliver {
+  0%, 100% { transform: scaleX(1); }
+  48%, 62% { transform: scaleX(0.9); }
+}
+
 @keyframes procedure-hand-left {
   from { translate: 0 20px; }
   to { translate: 54px -4px; }
@@ -3529,4 +3541,10 @@ body {
 @keyframes procedure-hand-right {
   from { translate: 0 20px; }
   to { translate: -54px -4px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .procedure-bvm-deliver {
+    animation: none;
+  }
 }
