@@ -99,4 +99,19 @@ describe('patientMotion', () => {
     expect(tremor.motion_tremor).toBeLessThanOrEqual(0.18);
     expect(shiver.motion_tremor).toBeLessThanOrEqual(0.12);
   });
+
+  it('keeps agitation subtle enough to preserve a braced clinical posture', () => {
+    const signals = computePatientMotionSignals({
+      time: 1.5625,
+      gate: 1,
+      cues: cues({ agitated: true }),
+      reduced: false,
+      winceStart: -1,
+      gaspStart: -1,
+      clutchStart: -1,
+    });
+
+    expect(signals.motion_agitation).toBeGreaterThan(0);
+    expect(signals.motion_agitation).toBeLessThanOrEqual(0.16);
+  });
 });

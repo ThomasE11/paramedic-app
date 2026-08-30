@@ -85,7 +85,10 @@ export function computePatientMotionSignals({
   out.motion_seizure = seizureBeat;
   out.motion_tremor = tremorBeat;
   out.motion_agitation = !reduced && cues.agitated
-    ? (0.5 + 0.5 * Math.sin(time * TAU * 0.22)) * 0.55 * consciousGate
+    // Keep conscious restlessness readable without dragging the tripod arms
+    // away from their braced position. The authored morph has a broad limb
+    // delta, so the old 0.55 peak read as repetitive arm vibration.
+    ? (0.5 + 0.5 * Math.sin(time * TAU * 0.16)) * 0.16 * consciousGate
     : 0;
   return out;
 }

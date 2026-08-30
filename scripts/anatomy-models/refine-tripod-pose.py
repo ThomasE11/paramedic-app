@@ -10,7 +10,9 @@ authored upper-body distress pose and rebuilds only the lower-limb component:
 * lower legs hang vertically below the knees;
 * feet remain aligned beneath the knees;
 * the already-authored forearms settle back onto the raised knees instead of
-  hanging in front of them.
+  hanging in front of them;
+* the trunk visibly hinges forward from the hips so the silhouette reads as
+  respiratory tripod bracing rather than an upright seated mannequin.
 
 The lower limbs are idempotent because every coordinate is recomputed from
 ``Basis`` rather than from the previous tripod key. The small forearm contact
@@ -52,6 +54,108 @@ def smoothstep(edge0: float, edge1: float, value: float) -> float:
         return 1.0 if value >= edge1 else 0.0
     t = max(0.0, min(1.0, (value - edge0) / (edge1 - edge0)))
     return t * t * (3.0 - 2.0 * t)
+
+
+def bake_rigged_seated_legs(body, basis, tripod, hip_z, knee_z, knee_blend):
+    """Replace the analytic leg bend with the fitted armature's deformation.
+
+    The earlier coordinate-only pass moved each lower-limb vertex in isolation.
+    It produced the right gross silhouette but stretched calves and feet at the
+    knee blend. The shipped patient now has a complete Mixamo-weighted rig, so
+    let Blender's IK + linear-blend skinning preserve volume and joint shape.
+    """
+    armature_modifier = next(
+        (modifier for modifier in body.modifiers if modifier.type == "ARMATURE" and modifier.object),
+        None,
+    )
+    if armature_modifier is None:
+        raise RuntimeError("patient body is missing its armature modifier")
+    armature = armature_modifier.object
+
+    leg_group_names = {
+        "mixamorig:LeftUpLeg", "mixamorig:LeftLeg", "mixamorig:LeftFoot", "mixamorig:LeftToeBase",
+        "mixamorig:RightUpLeg", "mixamorig:RightLeg", "mixamorig:RightFoot", "mixamorig:RightToeBase",
+    }
+    leg_group_indices = {
+        group.index for group in body.vertex_groups if group.name in leg_group_names
+    }
+    if len(leg_group_indices) < 8:
+        raise RuntimeError("patient body is missing complete fitted leg weights")
+
+    created_objects = []
+    created_constraints = []
+
+    def make_target(name, position):
+        target = bpy.data.objects.new(name, None)
+        target.empty_display_type = "PLAIN_AXES"
+        target.location = position
+        bpy.context.scene.collection.objects.link(target)
+        created_objects.append(target)
+        return target
+
+    def add_leg_ik(side, x):
+        lower_leg = armature.pose.bones.get(f"mixamorig:{side}Leg")
+        if lower_leg is None:
+            raise RuntimeError(f"patient rig is missing mixamorig:{side}Leg")
+        constraint = lower_leg.constraints.new("IK")
+        constraint.name = f"Paramedic tripod {side} leg"
+        # The treatment-bay tripod root is lowered to seat the pelvis on the
+        # bench. Raising the local ankle/toe here keeps the soles on the room
+        # floor under that calibrated root instead of burying them below it.
+        constraint.target = make_target(f"tripod-{side.lower()}-ankle", (x, -0.34, 0.42))
+        constraint.pole_target = make_target(f"tripod-{side.lower()}-knee", (x, -1.0, 0.68))
+        constraint.chain_count = 2
+        constraint.pole_angle = math.pi
+        created_constraints.append((lower_leg, constraint))
+
+    # Shape keys must be neutral while the evaluated armature result is read.
+    previous_values = {key.name: key.value for key in body.data.shape_keys.key_blocks}
+    for key in body.data.shape_keys.key_blocks:
+        key.value = 0.0
+
+    add_leg_ik("Left", 0.105)
+    add_leg_ik("Right", -0.105)
+    bpy.context.view_layer.update()
+
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    evaluated_body = body.evaluated_get(depsgraph)
+    evaluated_mesh = evaluated_body.to_mesh(preserve_all_data_layers=True, depsgraph=depsgraph)
+    if len(evaluated_mesh.vertices) != len(body.data.vertices):
+        evaluated_body.to_mesh_clear()
+        raise RuntimeError("evaluated patient topology changed during tripod leg bake")
+
+    changed = 0
+    max_forward = 0.0
+    max_knee_lift = float("-inf")
+    for index, vertex in enumerate(body.data.vertices):
+        leg_weight = min(1.0, sum(
+            membership.weight
+            for membership in vertex.groups
+            if membership.group in leg_group_indices
+        ))
+        if leg_weight <= 0.0001:
+            continue
+        source = basis.data[index].co
+        skinned = evaluated_mesh.vertices[index].co
+        authored = tripod.data[index].co
+        authored.x = source.x + (skinned.x - source.x) * leg_weight
+        authored.y = source.y + (skinned.y - source.y) * leg_weight
+        authored.z = source.z + (skinned.z - source.z) * leg_weight
+        changed += 1
+        max_forward = max(max_forward, source.y - authored.y)
+        if abs(source.z - knee_z) <= knee_blend:
+            max_knee_lift = max(max_knee_lift, authored.z - source.z)
+
+    evaluated_body.to_mesh_clear()
+    for pose_bone, constraint in created_constraints:
+        pose_bone.constraints.remove(constraint)
+    for target in created_objects:
+        bpy.data.objects.remove(target, do_unlink=True)
+    for key in body.data.shape_keys.key_blocks:
+        key.value = previous_values[key.name]
+    bpy.context.view_layer.update()
+
+    return changed, max_forward, max_knee_lift
 
 
 def refine_tripod(body) -> tuple[int, float, float]:
@@ -137,6 +241,13 @@ def refine_tripod(body) -> tuple[int, float, float]:
         if abs(source.z - knee_z) <= knee_blend:
             min_knee_lift = min(min_knee_lift, authored.z - source.z)
 
+    # The fitted rig is now authoritative for the legs. This deliberately
+    # overwrites the analytic coordinates above while preserving the authored
+    # torso and arm component of the same morph target.
+    changed, max_forward, min_knee_lift = bake_rigged_seated_legs(
+        body, basis, tripod, hip_z, knee_z, knee_blend,
+    )
+
     # The earlier upper-body morph correctly brought both arms forward, but
     # overshot the knees by roughly 25 cm and left the fingers dangling beside
     # the thighs in the camera view. Pull the distal forearms back/up as one
@@ -164,6 +275,32 @@ def refine_tripod(body) -> tuple[int, float, float]:
             authored.y += height * 0.135 * weight
             authored.z += height * 0.058 * weight
         body["paramedic_tripod_arm_revision"] = 1
+
+    # Revision 2: the original upper-body key translated the chest forward but
+    # did not rotate the head/shoulder line enough to read as a true tripod in
+    # the treatment-bay camera. Hinge the already-authored upper body another
+    # 12 degrees around the hips. Hands below the hinge remain planted on the
+    # knees while the shoulders and head travel forward, producing the braced
+    # elbow/torso relationship students expect to recognise immediately.
+    torso_revision = int(body.get("paramedic_tripod_torso_revision", 0))
+    if torso_revision < 2:
+        hinge_start = hip_z - height * 0.015
+        hinge_full = hip_z + height * 0.22
+        max_hinge = math.radians(12.0)
+        for index, basis_point in enumerate(basis.data):
+            source = basis_point.co
+            hinge_weight = smoothstep(hinge_start, hinge_full, source.z)
+            if hinge_weight <= 0.0001:
+                continue
+            authored = tripod.data[index].co
+            angle = max_hinge * hinge_weight
+            cos_angle = math.cos(angle)
+            sin_angle = math.sin(angle)
+            rel_y = authored.y
+            rel_z = authored.z - hip_z
+            authored.y = cos_angle * rel_y - sin_angle * rel_z
+            authored.z = hip_z + sin_angle * rel_y + cos_angle * rel_z
+        body["paramedic_tripod_torso_revision"] = 2
 
     if changed < 2500:
         raise RuntimeError(f"tripod leg mask captured too few vertices: {changed}")

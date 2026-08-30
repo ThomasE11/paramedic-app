@@ -77,6 +77,26 @@ describe('deriveIdleCues', () => {
     expect(deriveIdleCues(agitated, fakeVitals(), fakeVisual()).agitated).toBe(true);
   });
 
+  it('clears arrival-only anxiety after respiratory physiology normalises', () => {
+    const respiratoryDistress = fakeCase({
+      initialPresentation: {
+        appearance: 'diaphoretic and anxious',
+        generalImpression: 'severe respiratory distress',
+      },
+    });
+
+    expect(deriveIdleCues(
+      respiratoryDistress,
+      fakeVitals({ respiration: 32, spo2: 88 }),
+      fakeVisual(),
+    ).agitated).toBe(true);
+    expect(deriveIdleCues(
+      respiratoryDistress,
+      fakeVitals({ respiration: 16, spo2: 97 }),
+      fakeVisual(),
+    ).agitated).toBe(false);
+  });
+
   it('never crashes on missing vitals and visual state', () => {
     expect(() => deriveIdleCues(fakeCase(), undefined, null)).not.toThrow();
   });

@@ -34,6 +34,7 @@ export function deriveIdleCues(
   const source = vitals ?? caseData.vitalSignsProgression?.initial;
   const spo2 = typeof source?.spo2 === 'number' ? source.spo2 : null;
   const temp = typeof source?.temperature === 'number' ? source.temperature : null;
+  const respiration = typeof source?.respiration === 'number' ? source.respiration : null;
 
   const text = [
     caseData.title,
@@ -46,6 +47,11 @@ export function deriveIdleCues(
     ? Math.min(1, Math.max(0, source.painScore / 10)) : 0;
   const painText01 = /severe pain|agony|crushing|excruciating|writh/.test(text) ? 0.85
     : /\bpain|clutch|guard/.test(text) ? 0.55 : 0;
+  const distressedPresentation = /distress|anxious|agitat|restless|panick|frighten/.test(text);
+  const ongoingPhysiologicalDistress =
+    (spo2 !== null && spo2 < 94)
+    || (respiration !== null && (respiration < 10 || respiration >= 24));
+  const explicitlyRestless = /agitat|restless|panick/.test(text);
 
   return {
     pain01: Math.max(painScore01, painText01),
@@ -59,7 +65,10 @@ export function deriveIdleCues(
       || /\bshiver(?:ing)?\b|\brigors?\b|\bhypotherm/.test(text),
     seizure: visual?.hasSeizureActivity ?? false,
     tremor: visual?.hasTremor ?? false,
-    agitated: /distress|anxious|agitat|restless|panick|frighten/.test(text),
+    // Authored arrival text is historical once live treatment has improved
+    // oxygenation and respiratory rate. Do not keep an asthma patient in a
+    // perpetual arm-sway loop merely because the opening prose said anxious.
+    agitated: distressedPresentation && (ongoingPhysiologicalDistress || explicitlyRestless),
     chestClutch:
       caseData.category === 'cardiac' &&
       /chest (pain|tightness|pressure|discomfort)|crushing|myocardial|infarct|angina|acs\b/.test(text),

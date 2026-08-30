@@ -659,7 +659,12 @@ export function CameraEntrance({
       dom.removeEventListener('pointerdown', cancel);
       cancel();
     };
-  }, [active, controlsRef, gl, origin]);
+    // `origin` is commonly supplied as a tuple literal. Depending on its
+    // object identity restarted this effect on every parent render, sending
+    // the camera back to the doorway over and over while live vitals changed.
+    // originRef already carries the latest coordinates without restarting the
+    // entrance; only an actual active-state transition should replay it.
+  }, [active, controlsRef, gl]);
 
   return null;
 }
