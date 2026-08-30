@@ -479,8 +479,8 @@ function TreatmentBayImmersionLayer({
   if (!active) return null;
 
   const face = treatmentBayClinicalToWorld([0.01, 1.64, 0.24], stage, posture, mobility, patientScale);
-  const chestLeft = treatmentBayClinicalToWorld([-0.10, 1.27, 0.25], stage, posture, mobility, patientScale);
-  const chestRight = treatmentBayClinicalToWorld([0.11, 1.18, 0.25], stage, posture, mobility, patientScale);
+  const chestLeft = treatmentBayClinicalToWorld([-0.03, 1.23, 0.25], stage, posture, mobility, patientScale);
+  const chestRight = treatmentBayClinicalToWorld([0.15, 1.15, 0.25], stage, posture, mobility, patientScale);
   const ivSite = treatmentBayClinicalToWorld([-0.23, 0.82, 0.24], stage, posture, mobility, patientScale);
   const headPadZ = treatmentBayClinicalToWorld([0, 1.56, 0], stage, posture, mobility, patientScale)[2];
 
@@ -1736,10 +1736,10 @@ function TreatmentEquipmentOverlay({
 
       {equipment.hasDefibPads && (
         <>
-          <MarkerHtml position={anchor(-0.075, 1.30, 0.225)} distanceFactor={1.85} zIndexRange={[68, 0]} interactive={false} presentation={presentation} contentScale={equipmentScale}>
+          <MarkerHtml position={anchor(-0.03, 1.23, 0.225)} distanceFactor={1.85} zIndexRange={[68, 0]} interactive={false} presentation={presentation} contentScale={equipmentScale}>
             <AppliedDefibPad site="sternal" />
           </MarkerHtml>
-          <MarkerHtml position={anchor(0.15, 1.20, 0.223)} distanceFactor={1.85} zIndexRange={[68, 0]} interactive={false} presentation={presentation} contentScale={equipmentScale}>
+          <MarkerHtml position={anchor(0.15, 1.15, 0.223)} distanceFactor={1.85} zIndexRange={[68, 0]} interactive={false} presentation={presentation} contentScale={equipmentScale}>
             <AppliedDefibPad site="apical" />
           </MarkerHtml>
         </>
