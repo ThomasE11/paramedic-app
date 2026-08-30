@@ -27,11 +27,18 @@ try {
 
       let motionRoot = null;
       let morphMesh = null;
+      let garmentTop = null;
+      let leftArm = null;
+      let rightArm = null;
       scene.traverse(object => {
         if (!motionRoot && object.userData?.patientMotion) motionRoot = object;
         if (!morphMesh && object.morphTargetDictionary?.motion_gasp != null) morphMesh = object;
+        if (!garmentTop && object.name === 'scrub-top') garmentTop = object;
+        const normalisedName = object.name.replace(/:/g, '').toLowerCase();
+        if (!leftArm && normalisedName === 'mixamorigleftarm') leftArm = object;
+        if (!rightArm && normalisedName === 'mixamorigrightarm') rightArm = object;
       });
-      if (!motionRoot || !morphMesh) return null;
+      if (!motionRoot || !morphMesh || !garmentTop || !leftArm || !rightArm) return null;
 
       const influences = {};
       for (const [name, slot] of Object.entries(morphMesh.morphTargetDictionary)) {
@@ -42,6 +49,9 @@ try {
       return {
         position: motionRoot.position.toArray(),
         rotation: motionRoot.rotation.toArray().slice(0, 3),
+        leftArm: leftArm.quaternion.toArray(),
+        rightArm: rightArm.quaternion.toArray(),
+        garmentSkinned: garmentTop.isSkinnedMesh === true,
         influences,
       };
     }));
@@ -63,11 +73,18 @@ try {
     const values = valid.map(sample => sample.rotation[axis]);
     return Math.max(...values) - Math.min(...values);
   };
+  const quaternionRange = (side, component) => {
+    const values = valid.map(sample => sample[side][component]);
+    return Math.max(...values) - Math.min(...values);
+  };
 
   const result = {
     samples: valid.length,
     rootPositionRange: [rootRange(0), rootRange(1), rootRange(2)],
     rootRotationRange: [rotationRange(0), rotationRange(1), rotationRange(2)],
+    leftArmQuaternionRange: [0, 1, 2, 3].map(component => quaternionRange('leftArm', component)),
+    rightArmQuaternionRange: [0, 1, 2, 3].map(component => quaternionRange('rightArm', component)),
+    garmentSkinned: valid.every(sample => sample.garmentSkinned),
     breathing: maxRange('breathe_chest_rise'),
     gasp: maxRange('motion_gasp'),
     agitation: maxRange('motion_agitation'),
@@ -82,6 +99,17 @@ try {
   }
   if (result.rootRotationRange.some(range => range > 1e-6)) {
     throw new Error(`Patient root rotated during local motion: ${result.rootRotationRange.join(', ')}`);
+  }
+  if ([...result.leftArmQuaternionRange, ...result.rightArmQuaternionRange].some(range => range > 1e-6)) {
+    throw new Error(
+      `Patient upper arms accumulated unstable rotation: ${[
+        ...result.leftArmQuaternionRange,
+        ...result.rightArmQuaternionRange,
+      ].join(', ')}`,
+    );
+  }
+  if (!result.garmentSkinned) {
+    throw new Error('Patient garment is not bound to the clinical skeleton');
   }
   if (result.breathing.max - result.breathing.min < 0.04) {
     throw new Error('Respiratory morph did not visibly change');

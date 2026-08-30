@@ -1038,12 +1038,16 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
         // the runtime cut-from-skin scrubs if the GLBs didn't load or the piece
         // build came back empty.
         //
-        // Seated/recumbent patients are driven by the shared clinical morphs,
-        // so the authored shell tracks them exactly and gives us clean collar,
-        // sleeve and trouser hems. Genuinely ambulatory patients still need the
-        // procedural skinned shell so their clothing follows the whole-body
-        // idle/walk skeleton.
-        const needsSkeletalGarment = mobility === 'standing' || mobility === 'pacing' || patientHeight < 1.8;
+        // Every active sex/age patient carries the fitted skeleton, and even a
+        // seated/recumbent presentation receives small bone-space arm or spine
+        // offsets after its posture morph. The Blender-authored garment shells
+        // carry morph targets but no skin weights, so combining those shells
+        // with a rigged body leaves the shirt behind at the shoulders: it looks
+        // like duplicated/vibrating arms or a patient held on a pole. Use the
+        // cut-from-this-body skinned shell whenever the body is rigged; the
+        // authored static garments remain the higher-quality fallback for the
+        // legacy unrigged body only.
+        const needsSkeletalGarment = (bodyMesh as THREE.SkinnedMesh).isSkinnedMesh;
         const scrubs =
           (CLOTHING_MODE === 'blended-garment' && !needsSkeletalGarment
             ? buildBlendedGarments(bodyMesh as THREE.Mesh, garmentScenes, garmentSpecs)

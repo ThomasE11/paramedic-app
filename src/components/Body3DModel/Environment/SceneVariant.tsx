@@ -690,16 +690,33 @@ function HeatScene({ shadowsEnabled }: { shadowsEnabled: boolean }) {
 
       {/* Paramedic shade canopy stays beside the patient so it creates a
           believable cooling zone without occluding examination lighting. */}
-      {[-3.2, -1.2].map(x => (
+      {/* Keep both uprights well outside the patient silhouette. The former
+          inner pole at x=-1.2 projected directly through a seated patient's
+          head from the treatment camera and made the body look impaled. */}
+      {[-4.1, -2.7].map(x => (
         <mesh key={`canopy-pole-${x}`} position={[x, 1.35, -1.75]} castShadow raycast={NO_RAYCAST}>
           <cylinderGeometry args={[0.035, 0.045, 2.7, 10]} />
           <meshStandardMaterial color="#d7dde1" metalness={0.72} roughness={0.35} />
         </mesh>
       ))}
-      <mesh position={[-2.2, 2.64, -1.72]} raycast={NO_RAYCAST}>
-        <boxGeometry args={[2.3, 0.045, 1.65]} />
+      <mesh position={[-3.4, 2.64, -1.72]} raycast={NO_RAYCAST}>
+        <boxGeometry args={[1.65, 0.045, 1.65]} />
         <meshBasicMaterial color="#e8dfc8" side={THREE.DoubleSide} />
       </mesh>
+      {/* Backless field bench supports a seated heat-illness patient without
+          covering the chest, arms or legs students need to examine. */}
+      <group position={[0, 0, 0.34]}>
+        <mesh position={[0, 0.53, -0.08]} castShadow receiveShadow raycast={NO_RAYCAST}>
+          <boxGeometry args={[0.82, 0.12, 0.5]} />
+          <meshStandardMaterial color="#6b563f" roughness={0.9} />
+        </mesh>
+        {[-0.3, 0.3].map(x => (
+          <mesh key={`heat-bench-leg-${x}`} position={[x, 0.255, -0.08]} castShadow raycast={NO_RAYCAST}>
+            <boxGeometry args={[0.055, 0.51, 0.055]} />
+            <meshStandardMaterial color="#454a4e" roughness={0.52} metalness={0.48} />
+          </mesh>
+        ))}
+      </group>
       {/* Cooler and bottled water on the crew side. */}
       <group position={[2.75, 0, 1.5]}>
         <mesh position={[0, 0.28, 0]} castShadow raycast={NO_RAYCAST}>

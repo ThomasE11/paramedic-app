@@ -162,10 +162,10 @@ export function buildScrubs(body: THREE.Mesh): THREE.Group | null {
   // (hip-hem, waistband, mid-biceps, neck scoop, shoulder cap, ankle cuff).
   const TOP_HEM = yf(0.522);
   const WAISTBAND = yf(0.539);
-  const SCOOP_Y = yf(0.806);
+  const SCOOP_BOTTOM = yf(0.795);
   const TOP_CAP = yf(0.844);
   const CUFF = yf(0.1);
-  const SCOOP_HALF_W = 0.085 * (H / 1.8);
+  const SCOOP_HALF_W = 0.105 * (H / 1.8);
   // Cuffs are cut PERPENDICULAR to the upper-arm axis. A vertical |x| plane
   // looks acceptable in the base A-pose but collapses to a long triangular
   // point after the tripod morph brings the arms inward. Projecting each
@@ -262,7 +262,14 @@ export function buildScrubs(body: THREE.Mesh): THREE.Group | null {
     return keep;
   };
 
-  const inScoop = (i: number) => wy[i] > SCOOP_Y && Math.abs(wx[i]) < SCOOP_HALF_W;
+  // A curved neckline follows the clavicles and avoids the old rectangular
+  // vertex cut, whose long zig-zag edge read as torn clothing at exam zoom.
+  const inScoop = (i: number) => {
+    const normalisedX = Math.abs(wx[i]) / SCOOP_HALF_W;
+    if (normalisedX >= 1) return false;
+    const necklineY = SCOOP_BOTTOM + (TOP_CAP - SCOOP_BOTTOM) * normalisedX * normalisedX;
+    return wy[i] > necklineY;
+  };
 
   // Top: torso plus a shoulder-axis sleeve. Largest-component filtering drops
   // any hand/forearm islands that happen to intersect the height band.
