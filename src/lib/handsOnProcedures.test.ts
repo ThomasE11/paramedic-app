@@ -66,6 +66,32 @@ describe('hands-on treatment procedures', () => {
     expect(procedureIncludesIntegratedReassessment('intubation')).toBe(true);
   });
 
+  it('turns airway opening into a maintained, trauma-aware physical manoeuvre', () => {
+    const medicalCase = {
+      ...caseData,
+      category: 'neurological',
+      dispatchInfo: { callReason: 'Reduced consciousness after a seizure' },
+      sceneInfo: { description: 'Patient found unresponsive in bed' },
+      initialPresentation: { generalImpression: 'Post-ictal', position: 'Supine' },
+      abcde: { airway: { patent: false, findings: ['Snoring'] }, exposure: { findings: [], interventions: [] } },
+      secondarySurvey: { head: [], neck: [], posterior: [] },
+    } as unknown as CaseScenario;
+    const medicalPlan = getHandsOnProcedurePlan('airway_open', medicalCase);
+    const traumaPlan = getHandsOnProcedurePlan('airway_open', {
+      ...caseData,
+      category: 'trauma',
+      dispatchInfo: { ...caseData.dispatchInfo, callReason: 'Motorcycle collision with reduced consciousness' },
+    } as CaseScenario);
+
+    expect(medicalPlan?.id).toBe('airway-head-tilt-chin-lift');
+    expect(medicalPlan?.steps.map(step => step.id)).toEqual(['assess', 'position', 'manoeuvre', 'clear', 'confirm']);
+    expect(traumaPlan?.id).toBe('airway-jaw-thrust');
+    expect(traumaPlan?.steps.map(step => step.id)).toEqual(['assess', 'align', 'manoeuvre', 'clear', 'confirm']);
+    expect(traumaPlan?.steps.find(step => step.id === 'manoeuvre')?.instruction).toContain('mandibular angles');
+    expect(isHandsOnTreatment('airway_open')).toBe(true);
+    expect(procedureIncludesIntegratedReassessment('airway_open')).toBe(true);
+  });
+
   it('makes patient repositioning a physical, reassessed procedure', () => {
     for (const treatmentId of ['supine_position', 'recovery_position', 'fowlers_position', 'assisted_ambulation']) {
       const plan = getHandsOnProcedurePlan(treatmentId, caseData);
@@ -84,6 +110,7 @@ describe('hands-on treatment procedures', () => {
       'scoop_stretcher', 'vacuum_mattress', 'head_blocks', 'ked', 'lucas_device',
       'ventilator_setup', 'mechanical_ventilation', 'pelvic_binder', 'surgical_cric', 'magill_forceps',
       'orogastric_tube',
+      'airway_open',
     ];
     for (const treatmentId of equipmentTreatments) {
       const plan = getHandsOnProcedurePlan(treatmentId, caseData);

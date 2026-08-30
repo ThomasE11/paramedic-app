@@ -153,6 +153,65 @@ function AirwayProcedurePreview({
   );
 }
 
+function AirwayOpeningProcedurePreview({
+  procedureId,
+  completedSteps,
+  animatingStep,
+}: {
+  procedureId: string;
+  completedSteps: string[];
+  animatingStep: string | null;
+}) {
+  const jawThrust = procedureId === 'airway-jaw-thrust';
+  const headTiltChinLift = procedureId === 'airway-head-tilt-chin-lift';
+  if (!jawThrust && !headTiltChinLift) return null;
+  const reached = (stepId: string) => completedSteps.includes(stepId) || animatingStep === stepId;
+  const positioned = jawThrust ? reached('align') : reached('position');
+  const manoeuvre = reached('manoeuvre');
+  const inspected = reached('clear');
+  const confirmed = reached('confirm');
+
+  return (
+    <div data-procedure-preview={procedureId} className="pointer-events-none absolute inset-0 z-30">
+      {positioned && jawThrust && (
+        <>
+          <span className="absolute left-1/2 top-[10px] h-[63px] w-[66px] -translate-x-1/2 rounded-[34px] border-2 border-sky-300/65 shadow-[0_0_14px_rgba(125,211,252,.45)]" aria-label="Head held in manual in-line stabilisation" />
+          <span className="absolute right-1 top-[74px] rounded-full border border-sky-300/40 bg-sky-950/95 px-2 py-1 text-[7px] font-black uppercase tracking-[0.08em] text-sky-100">Neutral alignment</span>
+        </>
+      )}
+      {positioned && headTiltChinLift && (
+        <>
+          <Hand className="absolute left-[48px] top-[7px] h-12 w-12 rotate-[62deg] text-amber-100 drop-shadow-lg" aria-label="Hand supporting forehead" />
+          <span className="absolute left-[114px] top-[13px] h-10 w-10 rounded-full border-r-2 border-t-2 border-sky-300 after:absolute after:right-0 after:top-0 after:h-2 after:w-2 after:rotate-12 after:border-r-2 after:border-t-2 after:border-sky-200" />
+        </>
+      )}
+      {manoeuvre && jawThrust && (
+        <>
+          <Hand className="absolute left-[44px] top-[43px] h-12 w-12 -rotate-[16deg] scale-x-[-1] text-amber-100 drop-shadow-lg" />
+          <Hand className="absolute right-[44px] top-[43px] h-12 w-12 rotate-[16deg] text-amber-100 drop-shadow-lg" />
+          <span className="absolute left-[76px] top-[50px] h-8 w-8 -rotate-12 border-l-2 border-t-2 border-emerald-300" />
+          <span className="absolute right-[76px] top-[50px] h-8 w-8 rotate-12 border-r-2 border-t-2 border-emerald-300" />
+        </>
+      )}
+      {manoeuvre && headTiltChinLift && (
+        <>
+          <Hand className="absolute left-[86px] top-[45px] h-10 w-10 -rotate-[52deg] text-amber-100 drop-shadow-lg" aria-label="Fingers lifting the bony chin" />
+          <span className="absolute left-[111px] top-[58px] h-7 w-0.5 bg-emerald-300 after:absolute after:-left-[4px] after:-top-0.5 after:h-2.5 after:w-2.5 after:rotate-45 after:border-l-2 after:border-t-2 after:border-emerald-200" />
+        </>
+      )}
+      {inspected && (
+        <span className="absolute left-1/2 top-[48px] h-7 w-10 -translate-x-1/2 rounded-b-[18px] border-2 border-emerald-200/75 bg-slate-950 shadow-[0_0_12px_rgba(52,211,153,.45)]" aria-label="Opened airway inspected for visible contamination" />
+      )}
+      {confirmed && (
+        <>
+          <span className="absolute left-1/2 top-[81px] h-[102px] w-[83px] -translate-x-1/2 rounded-[42px] border-2 border-cyan-300/60 shadow-[0_0_16px_rgba(34,211,238,.35)] motion-safe:animate-pulse" aria-label="Air movement and chest movement confirmed" />
+          <span className="absolute bottom-3 left-1/2 w-max -translate-x-1/2 rounded-full border border-emerald-300/50 bg-emerald-950/95 px-2 py-1 text-[7px] font-black uppercase tracking-[0.08em] text-emerald-100 shadow-lg">Air moving · manoeuvre maintained</span>
+        </>
+      )}
+    </div>
+  );
+}
+
 function FrontOfNeckAirwayProcedurePreview({
   treatmentId,
   completedSteps,
@@ -778,6 +837,12 @@ export function HandsOnProcedureDialog({
               <AirwayProcedurePreview
                 treatmentId={plan.treatmentId}
                 equipmentAsset={plan.equipmentAsset}
+                completedSteps={completedSteps}
+                animatingStep={animatingStep}
+              />
+
+              <AirwayOpeningProcedurePreview
+                procedureId={plan.id}
                 completedSteps={completedSteps}
                 animatingStep={animatingStep}
               />

@@ -1178,6 +1178,15 @@ function assessTreatmentPracticality({
   const airwayCompromise = hasAirwayCompromise(currentVitals, currentCase, patientState);
   const respiratoryDistress = spo2 < 94 || rr >= 26 || /severe distress|accessory|tripod|wheeze|cyanosis|pulmonary oedema|pulmonary edema/.test(text);
 
+  if (id === 'airway_open' && vocal && !airwayCompromise) {
+    return {
+      level: 'block',
+      title: 'Airway manoeuvre not indicated',
+      clinicalReason: 'The patient is alert, speaking and currently maintaining their own airway. Continue assessment and intervene only if patency or protective reflexes deteriorate.',
+      patientQuote: 'I can speak and breathe. Please tell me what you need to check.',
+    };
+  }
+
   if (id === 'traction_splint') {
     const decision = assessTractionSplintSafety(currentCase, appliedTreatmentIds);
     if (!decision.allowed) {

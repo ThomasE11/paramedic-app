@@ -638,6 +638,7 @@ function buildMedicationInventory(): EquipmentInventoryItem[] {
 
 const BAG_EQUIPMENT: Record<ManagementTab, EquipmentInventoryItem[]> = {
   airway: [
+    { id: 'airway-manoeuvre', label: 'Airway Manoeuvre', caption: 'Jaw thrust or head tilt–chin lift', treatmentId: 'airway_open', assetPath: EQUIPMENT_ASSET_PATHS.positioning, tone: '#0ea5e9', wide: true },
     { id: 'airway-oxygen-cylinder', label: 'Oxygen Cylinder', caption: 'High pressure O2 supply', assetPath: EQUIPMENT_ASSET_PATHS.oxygenCylinder, tone: '#16a34a' },
     { id: 'airway-bvm', label: 'Bag-valve-mask', caption: 'Assisted ventilation', treatmentId: 'bvm_ventilation', assetPath: PRODUCT_ASSET_PATHS.bvm, tone: '#2563eb', wide: true },
     { id: 'airway-suction', label: 'Portable Suction', caption: 'Clear blood or vomit', treatmentId: 'suction', assetPath: EQUIPMENT_ASSET_PATHS.portableSuction, tone: '#64748b' },

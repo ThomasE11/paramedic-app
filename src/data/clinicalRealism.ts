@@ -3536,6 +3536,18 @@ export function deriveAppliedTreatmentRealismCues(
   const cues: PatientRealismCue[] = [];
   const text = textForCase(caseData);
 
+  if (ids.has('airway_open')) {
+    cues.push(makeTreatmentCue(
+      'airway-manoeuvre-maintained',
+      'Airway manoeuvre maintained',
+      caseData.category === 'trauma' || /collision|fall|spinal|c[ -]?spine|head injury|neck injury/.test(text)
+        ? 'Jaw support is maintained with cervical alignment; reassess air movement and airway sounds continuously.'
+        : 'Head and chin position are maintained; reassess air movement and airway sounds continuously.',
+      'head',
+      'observe',
+    ));
+  }
+
   if (hasAnyId(ids, ['oxygen_nasal', 'oxygen_mask', 'oxygen_nonrebreather'])) {
     cues.push(makeTreatmentCue(
       'oxygen-visible',

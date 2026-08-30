@@ -153,6 +153,24 @@ function thoracicTargets(
   }));
 }
 
+function requiresSpinalAirwayPrecautions(caseData: CaseScenario): boolean {
+  const text = [
+    caseData.category,
+    caseData.subcategory,
+    caseData.dispatchInfo?.callReason,
+    caseData.sceneInfo?.description,
+    caseData.initialPresentation?.generalImpression,
+    caseData.initialPresentation?.position,
+    ...(caseData.abcde?.exposure?.findings ?? []),
+    ...(caseData.secondarySurvey?.head ?? []),
+    ...(caseData.secondarySurvey?.neck ?? []),
+    ...(caseData.secondarySurvey?.posterior ?? []),
+  ].filter(Boolean).join(' ').toLowerCase();
+
+  return caseData.category === 'trauma'
+    || /\b(collision|crash|fall|fallen|struck|blunt|penetrating|spinal|c[ -]?spine|neck injury|head injury|polytrauma|extricat)/.test(text);
+}
+
 const STEP = (
   id: string,
   label: string,
@@ -183,6 +201,35 @@ export function getHandsOnProcedurePlan(
         STEP('sternal', 'Place sternal pad', 'Apply below the right clavicle, lateral to the sternum.', 'Do not place over bone, breast tissue, wounds or implanted devices.', 'place'),
         STEP('apical', 'Place apical pad', 'Apply on the left lateral chest, below the axilla.', 'Pads must be separated and form an anterior-lateral vector through the heart.', 'place'),
         STEP('connect', 'Connect and verify', 'Connect the pad lead to the monitor/AED and confirm a clean rhythm trace.', 'Pads attached. Nobody touches the patient during rhythm analysis.', 'connect'),
+      ],
+    };
+  }
+
+  if (treatmentId === 'airway_open') {
+    const spinalPrecautions = requiresSpinalAirwayPrecautions(caseData);
+    return {
+      id: spinalPrecautions ? 'airway-jaw-thrust' : 'airway-head-tilt-chin-lift',
+      title: spinalPrecautions ? 'Open the airway with a jaw thrust' : 'Open the airway with head tilt–chin lift',
+      subtitle: spinalPrecautions
+        ? 'Maintain manual in-line stabilisation and advance the mandible without deliberately extending the neck.'
+        : 'Position the head and lift the bony chin to relieve soft-tissue obstruction.',
+      treatmentId,
+      requiresTarget: false,
+      targets: [],
+      equipmentAsset: '/equipment-assets/positioning.webp',
+      completionLabel: 'Airway patent — manoeuvre maintained',
+      steps: spinalPrecautions ? [
+        STEP('assess', 'Confirm the airway needs support', 'Check response, visible obstruction, airway sounds and spontaneous air movement while a second clinician maintains alignment.', 'A talking patient has a patent airway. Treat the cause rather than forcing a manoeuvre they do not need.', 'prepare'),
+        STEP('align', 'Hold manual in-line stabilisation', 'Support the head in the position found and keep the neck aligned without traction while preparing to open the airway.', 'Airway takes priority, but avoid unnecessary cervical movement in suspected trauma.', 'place'),
+        STEP('manoeuvre', 'Apply a bilateral jaw thrust', 'Place fingers behind both mandibular angles and lift the mandible forward; use the thumbs to open the mouth if required.', 'Lift the jaw itself. Do not press into the soft tissues beneath the chin or force neck extension.', 'place', 1200),
+        STEP('clear', 'Inspect the opened airway', 'Look for blood, vomit, secretions or a visible foreign body and suction or remove only what can be seen safely.', 'The manoeuvre relieves tongue obstruction; it does not clear contamination.', 'expose'),
+        STEP('confirm', 'Confirm and maintain patency', 'Look for chest movement, listen and feel for air movement, reassess airway sounds and monitor SpO₂ while maintaining the jaw thrust.', 'If patency cannot be maintained manually, escalate to suction, an appropriate adjunct and ventilation support.', 'confirm', 1100),
+      ] : [
+        STEP('assess', 'Confirm the airway needs support', 'Check response, visible obstruction, airway sounds and spontaneous air movement.', 'A talking patient has a patent airway. Treat the cause rather than forcing a manoeuvre they do not need.', 'prepare'),
+        STEP('position', 'Position the head', 'Place one hand on the forehead and gently tilt the head while preserving a safe, stable body position.', 'Do not use head tilt when trauma or cervical injury is suspected.', 'place'),
+        STEP('manoeuvre', 'Lift the bony chin', 'Place fingertips under the bony point of the chin and lift anteriorly to move the tongue away from the posterior pharynx.', 'Do not compress the soft tissue beneath the chin; that can worsen obstruction.', 'place', 1200),
+        STEP('clear', 'Inspect the opened airway', 'Look for blood, vomit, secretions or a visible foreign body and suction or remove only what can be seen safely.', 'Never perform a blind finger sweep.', 'expose'),
+        STEP('confirm', 'Confirm and maintain patency', 'Look for chest movement, listen and feel for air movement, reassess airway sounds and monitor SpO₂ while maintaining position.', 'If patency cannot be maintained manually, escalate to suction, an appropriate adjunct and ventilation support.', 'confirm', 1100),
       ],
     };
   }
@@ -733,7 +780,7 @@ export function getHandsOnProcedurePlan(
 }
 
 const HANDS_ON_TREATMENTS = new Set([
-  'aed', 'monitor_pads', 'bleeding_control', 'tourniquet', 'oxygen_nonrebreather', 'oxygen_mask', 'oxygen_nasal',
+  'aed', 'monitor_pads', 'airway_open', 'bleeding_control', 'tourniquet', 'oxygen_nonrebreather', 'oxygen_mask', 'oxygen_nasal',
   'intubation', 'rsi_intubation', 'bvm_ventilation', 'suction', 'opa_insert', 'nebulizer_salbutamol',
   'nebulizer_ipratropium', 'nebulised_adrenaline', 'cpap_niv', 'iv_access', 'io_access', 'chest_seal_vented', 'vented_chest_seal',
   'occlusive_dressing_3sided', 'needle_decompression', 'splinting', 'sam_splint', 'box_splint',
@@ -767,6 +814,7 @@ const LIMB_SPLINT_TREATMENTS = new Set([
  */
 export const procedureIncludesIntegratedReassessment = (treatmentId: string): boolean =>
   LIMB_SPLINT_TREATMENTS.has(treatmentId)
+  || treatmentId === 'airway_open'
   || treatmentId === 'intubation'
   || treatmentId === 'rsi_intubation'
   || treatmentId === 'pelvic_binder'
