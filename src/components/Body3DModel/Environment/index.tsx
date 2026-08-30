@@ -251,36 +251,9 @@ function Stretcher() {
 }
 
 // ---------------------------------------------------------------------------
-// Props — IV stand, monitor stand, oxygen tank, crash cart. All placed
+// Props — monitor stand, oxygen tank, crash cart. All placed
 // outside the patient/stretcher footprint, all castShadow.
 // ---------------------------------------------------------------------------
-function IVStand() {
-  return (
-    <group position={[-1.15, 0, 0.9]}>
-      <mesh position={[0, 0.02, 0]} castShadow raycast={NO_RAYCAST}>
-        <cylinderGeometry args={[0.17, 0.19, 0.03, 5]} />
-        <meshStandardMaterial color={PALETTE.steel} {...steelProps()} />
-      </mesh>
-      <mesh position={[0, 0.95, 0]} castShadow raycast={NO_RAYCAST}>
-        <cylinderGeometry args={[0.012, 0.012, 1.85, 10]} />
-        <meshStandardMaterial color={PALETTE.steel} {...steelProps()} />
-      </mesh>
-      {/* Hook cross */}
-      {[0, Math.PI / 2].map((rot) => (
-        <mesh key={`hook-${rot}`} position={[0, 1.86, 0]} rotation={[Math.PI / 2, 0, rot]} raycast={NO_RAYCAST}>
-          <cylinderGeometry args={[0.008, 0.008, 0.36, 8]} />
-          <meshStandardMaterial color={PALETTE.steel} {...steelProps()} />
-        </mesh>
-      ))}
-      {/* Saline bag */}
-      <mesh position={[0.15, 1.68, 0]} castShadow raycast={NO_RAYCAST}>
-        <boxGeometry args={[0.1, 0.17, 0.035]} />
-        <meshStandardMaterial color="#dbeafe" roughness={0.2} transparent opacity={0.8} />
-      </mesh>
-    </group>
-  );
-}
-
 function MonitorStand() {
   return (
     <group position={[1.3, 0, 0.7]} rotation={[0, -0.5, 0]}>
@@ -533,13 +506,12 @@ export function TreatmentBayEnvironment({
       {/* Clinic/home scenes show the bed; roadside/floor staging hides it. */}
       {!hideBed && isClinic && <Stretcher />}
       {/* Medical equipment is brought by the paramedic in every scene, but the
-          red crash cart, IV stand, and O2 tank belong inside a bay — hide them for
+          red crash cart and O2 tank belong inside a bay — hide them for
           outdoor roadside variants so the wrecked car + motorcycle aren't visually
           buried under clinic furniture. */}
       <MonitorStand />
       {isClinic && (
         <>
-          <IVStand />
           <OxygenTank />
           <CrashCart />
         </>

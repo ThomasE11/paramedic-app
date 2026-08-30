@@ -505,15 +505,6 @@ function TreatmentBayImmersionLayer({
           blocking the patient"). Reintroduce only as geometry that actually
           hugs the mesh. */}
 
-      <mesh position={[-0.72, 0.86, -0.58]} raycast={() => null}>
-        <cylinderGeometry args={[0.008, 0.008, 0.88, 12]} />
-        <meshStandardMaterial color="#cbd5e1" roughness={0.32} metalness={0.7} transparent opacity={0.68} />
-      </mesh>
-      <mesh position={[-0.72, 1.24, -0.58]} raycast={() => null}>
-        <boxGeometry args={[0.16, 0.22, 0.035]} />
-        <meshStandardMaterial color="#e0f2fe" roughness={0.55} metalness={0.02} transparent opacity={equipment.hasFluids ? 0.64 : 0.18} />
-      </mesh>
-
       {equipment.oxygen && (
         <>
           <SceneCable
@@ -533,13 +524,49 @@ function TreatmentBayImmersionLayer({
         </>
       )}
 
-      {equipment.hasIvAccess && (
-        <SceneCable
-          points={[ivSite, [-0.45, 0.72, 0.02], [-0.70, 0.92, -0.42], [-0.72, 1.12, -0.58]]}
-          color={equipment.hasFluids ? '#a7f3d0' : '#bfdbfe'}
-          opacity={equipment.hasFluids ? 0.7 : 0.48}
-          radius={0.0038}
-        />
+      {equipment.hasFluids && (
+        <group name="active-iv-fluid-stand">
+          {/* A single active stand appears only once fluid is connected. The
+              old always-on half pole (and its translucent ghost bag) could sit
+              behind an untreated patient's head and read as a pole through
+              the body. */}
+          <mesh position={[-0.92, 0.76, -0.62]} castShadow raycast={() => null}>
+            <cylinderGeometry args={[0.009, 0.011, 1.56, 12]} />
+            <meshStandardMaterial color="#cbd5e1" roughness={0.3} metalness={0.76} />
+          </mesh>
+          <mesh position={[-0.92, -0.02, -0.62]} rotation={[0, 0, Math.PI / 2]} raycast={() => null}>
+            <cylinderGeometry args={[0.012, 0.012, 0.42, 10]} />
+            <meshStandardMaterial color="#94a3b8" roughness={0.34} metalness={0.72} />
+          </mesh>
+          <mesh position={[-0.92, -0.02, -0.62]} rotation={[Math.PI / 2, 0, 0]} raycast={() => null}>
+            <cylinderGeometry args={[0.012, 0.012, 0.42, 10]} />
+            <meshStandardMaterial color="#94a3b8" roughness={0.34} metalness={0.72} />
+          </mesh>
+          {[0, Math.PI / 2].map(rotation => (
+            <mesh key={`active-iv-hook-${rotation}`} position={[-0.92, 1.54, -0.62]} rotation={[Math.PI / 2, 0, rotation]} raycast={() => null}>
+              <cylinderGeometry args={[0.006, 0.006, 0.34, 8]} />
+              <meshStandardMaterial color="#cbd5e1" roughness={0.3} metalness={0.76} />
+            </mesh>
+          ))}
+          <mesh position={[-0.78, 1.39, -0.62]} castShadow raycast={() => null}>
+            <boxGeometry args={[0.14, 0.24, 0.035]} />
+            <meshPhysicalMaterial color="#e0f2fe" transmission={0.18} transparent opacity={0.78} roughness={0.2} metalness={0} />
+          </mesh>
+          <mesh position={[-0.78, 1.34, -0.599]} raycast={() => null}>
+            <boxGeometry args={[0.12, 0.11, 0.005]} />
+            <meshStandardMaterial color="#bfdbfe" transparent opacity={0.58} roughness={0.15} />
+          </mesh>
+          <mesh position={[-0.78, 1.2, -0.62]} raycast={() => null}>
+            <cylinderGeometry args={[0.013, 0.009, 0.07, 10]} />
+            <meshPhysicalMaterial color="#e0f2fe" transparent opacity={0.72} roughness={0.16} />
+          </mesh>
+          <SceneCable
+            points={[[-0.78, 1.165, -0.62], [-0.72, 0.92, -0.44], [-0.46, 0.72, 0.02], ivSite]}
+            color="#dbeafe"
+            opacity={0.78}
+            radius={0.0034}
+          />
+        </group>
       )}
 
       <mesh position={[0.82, 1.37, -0.865]} raycast={() => null}>
@@ -1370,7 +1397,7 @@ function AppliedDefibPad({ site }: { site: 'sternal' | 'apical' }) {
 
 function AppliedIvDressing() {
   return (
-    <div data-applied-equipment="vascular-access" className="pointer-events-none relative h-10 w-14 -rotate-12 animate-in fade-in zoom-in-75 duration-300">
+    <div data-applied-equipment="vascular-access" aria-label="Transparent cannula dressing secured at the forearm" className="pointer-events-none relative h-10 w-14 -rotate-12 animate-in fade-in zoom-in-75 duration-300">
       <span className="absolute left-2 top-2 h-6 w-8 rounded-sm border border-white/90 bg-white/40 shadow-sm backdrop-blur-[1px]" />
       <span className="absolute left-5 top-4 h-1.5 w-6 rounded-full bg-teal-500 shadow" />
       <span className="absolute left-10 top-[18px] h-0.5 w-12 origin-left bg-slate-100 shadow-sm" />
@@ -1724,12 +1751,6 @@ function TreatmentEquipmentOverlay({
       {equipment.hasIvAccess && !hasSiteAccess && (
         <MarkerHtml position={anchor(-0.205, 0.82, 0.2)} distanceFactor={2.5} zIndexRange={[72, 0]} interactive={false} presentation={presentation} contentScale={equipmentScale}>
           <AppliedIvDressing />
-        </MarkerHtml>
-      )}
-
-      {equipment.hasFluids && (
-        <MarkerHtml position={presentation === 'treatment-bay' ? treatmentBayClinicalToWorld([-0.46, 1.16, 0.12], bayStage, posture, mobility) : [-0.46, 1.16, 0.12]} distanceFactor={3.0} zIndexRange={[71, 0]} interactive={false} presentation={presentation}>
-          <EquipmentPin tone="iv" src={TREATMENT_ASSET_PATHS.ivPole} />
         </MarkerHtml>
       )}
 
