@@ -163,7 +163,10 @@ await openCase('trauma-001');
 await openKit('Exposure Pack');
 await selectEquipment('Bandages');
 results.haemorrhageSteps = await completeProcedure(/Control external haemorrhage/i, 'right leg');
-results.pressureDressingOnInjuredLimb = await page.locator('[data-applied-equipment="pressure-dressing"]').count() > 0;
+const pressureDressing = page.locator('[data-applied-equipment="pressure-dressing"][data-haemorrhage-control="direct-pressure-and-wrap"]');
+results.pressureDressingOnInjuredLimb = await pressureDressing.count() > 0;
+results.pressureDressingLabelVisible = /wrapped firmly over the bleeding site/i.test(await pressureDressing.first().getAttribute('aria-label') ?? '');
+results.pressureDressingUsesFittedAsset = (await pressureDressing.first().locator('img').getAttribute('src')) === '/equipment-assets/pressure-dressing-fitted-front-v2.png';
 await openKit('Exposure Pack');
 await selectEquipment('Traction Splint');
 results.tractionSteps = await completeProcedure(/Apply a traction splint/i, 'right leg');
@@ -187,7 +190,7 @@ if (results.maskSteps < 4 || !results.maskFittedToPatient
   || results.opaSteps < 5 || !results.opaAtLips || !results.opaFlangeLabelVisible || !results.opaUsesFittedAsset || !results.noDiagramOpa
   || results.intubationSteps < 6 || !results.etTubeSecuredAtMouth || !results.etTubePilotBalloonVisible || !results.noDiagramEtTube
   || results.ventilatorSteps < 5 || !results.ventilatorConnectedToEtTube || !results.ventilatorConnectionLabelVisible
-  || results.haemorrhageSteps < 5 || !results.pressureDressingOnInjuredLimb
+  || results.haemorrhageSteps < 5 || !results.pressureDressingOnInjuredLimb || !results.pressureDressingLabelVisible || !results.pressureDressingUsesFittedAsset
   || results.tractionSteps < 6
   || !results.tractionSplintOnInjuredLimb || !results.siteLabelVisible
   || results.collarSteps < 5 || !results.collarFittedAtNeck || !results.collarFitLabelVisible || !results.collarUsesFittedAsset

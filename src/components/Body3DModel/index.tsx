@@ -189,6 +189,7 @@ const TREATMENT_ASSET_PATHS = {
   collar: '/equipment-assets/cervical-collar.webp',
   collarFitted: '/equipment-assets/cervical-collar-fitted-front-v2.png',
   bandage: '/equipment-assets/bandages.webp',
+  pressureDressing: '/equipment-assets/pressure-dressing-fitted-front-v2.png',
   tourniquet: '/equipment-assets/tourniquet.webp',
   suction: '/equipment-assets/portable-suction.webp',
   needle: '/equipment-assets/needle-decompression.webp',
@@ -1400,7 +1401,16 @@ function AppliedLimbEquipment({ treatmentId }: { treatmentId: string }) {
     );
   }
   if (treatmentId === 'bleeding_control') {
-    return <div data-applied-equipment="pressure-dressing" className="pointer-events-none h-10 w-14 -rotate-6 rounded-xl border-4 border-dashed border-stone-200 bg-stone-50/90 shadow-md animate-in fade-in zoom-in-75" />;
+    return (
+      <div
+        data-applied-equipment="pressure-dressing"
+        data-haemorrhage-control="direct-pressure-and-wrap"
+        aria-label="Layered pressure dressing wrapped firmly over the bleeding site"
+        className="pointer-events-none relative h-12 w-16 -rotate-6 animate-in fade-in zoom-in-75 duration-300 drop-shadow-[0_4px_5px_rgba(28,25,23,0.46)]"
+      >
+        <img src={TREATMENT_ASSET_PATHS.pressureDressing} alt="" draggable={false} className="h-full w-full object-contain" />
+      </div>
+    );
   }
   if (treatmentId === 'iv_access' || treatmentId === 'io_access') return <AppliedIvDressing />;
   if (treatmentId === 'needle_decompression') return <AppliedChestDevice needle />;

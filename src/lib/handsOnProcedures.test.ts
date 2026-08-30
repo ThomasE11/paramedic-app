@@ -139,6 +139,10 @@ describe('hands-on treatment procedures', () => {
     expect(getHandsOnProcedurePlan('cervical_collar', caseData)?.equipmentAsset).toBe('/equipment-assets/cervical-collar-fitted-front-v2.png');
   });
 
+  it('shows the completed wrapped pressure dressing during haemorrhage control', () => {
+    expect(getHandsOnProcedurePlan('bleeding_control', caseData)?.equipmentAsset).toBe('/equipment-assets/pressure-dressing-fitted-front-v2.png');
+  });
+
   it('routes the transport ventilator through physical circuit setup', () => {
     const plan = getHandsOnProcedurePlan('mechanical_ventilation', caseData);
 

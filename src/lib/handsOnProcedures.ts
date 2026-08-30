@@ -242,7 +242,7 @@ export function getHandsOnProcedurePlan(
       treatmentId,
       requiresTarget: true,
       targets: injuryTargets(caseData, false),
-      equipmentAsset: '/equipment-assets/bandages.webp',
+      equipmentAsset: '/equipment-assets/pressure-dressing-fitted-front-v2.png',
       completionLabel: 'Secure dressing and reassess',
       steps: [
         STEP('expose', 'Expose the wound', 'Cut clothing away and identify the exact bleeding source.', 'Look for spurting, pooling, deep cavities and foreign bodies.', 'expose'),
