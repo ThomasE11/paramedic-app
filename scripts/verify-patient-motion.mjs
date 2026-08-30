@@ -81,6 +81,8 @@ try {
       let garmentTop = null;
       let leftArm = null;
       let rightArm = null;
+      let leftForearm = null;
+      let rightForearm = null;
       scene.traverse(object => {
         if (!motionRoot && object.userData?.patientMotion) motionRoot = object;
         if (!morphMesh && object.morphTargetDictionary?.motion_gasp != null) morphMesh = object;
@@ -88,8 +90,13 @@ try {
         const normalisedName = object.name.replace(/:/g, '').toLowerCase();
         if (!leftArm && normalisedName === 'mixamorigleftarm') leftArm = object;
         if (!rightArm && normalisedName === 'mixamorigrightarm') rightArm = object;
+        if (!leftForearm && normalisedName === 'mixamorigleftforearm') leftForearm = object;
+        if (!rightForearm && normalisedName === 'mixamorigrightforearm') rightForearm = object;
       });
-      if (!motionRoot || !morphMesh || !garmentTop || !leftArm || !rightArm) return null;
+      if (
+        !motionRoot || !morphMesh || !garmentTop
+        || !leftArm || !rightArm || !leftForearm || !rightForearm
+      ) return null;
 
       const influences = {};
       for (const [name, slot] of Object.entries(morphMesh.morphTargetDictionary)) {
@@ -102,6 +109,8 @@ try {
         rotation: motionRoot.rotation.toArray().slice(0, 3),
         leftArm: leftArm.quaternion.toArray(),
         rightArm: rightArm.quaternion.toArray(),
+        leftForearm: leftForearm.quaternion.toArray(),
+        rightForearm: rightForearm.quaternion.toArray(),
         garmentSkinned: garmentTop.isSkinnedMesh === true,
         eyesVisible: scene.getObjectByName('eyeL')?.visible === true
           && scene.getObjectByName('eyeR')?.visible === true,
@@ -137,6 +146,8 @@ try {
     rootRotationRange: [rotationRange(0), rotationRange(1), rotationRange(2)],
     leftArmQuaternionRange: [0, 1, 2, 3].map(component => quaternionRange('leftArm', component)),
     rightArmQuaternionRange: [0, 1, 2, 3].map(component => quaternionRange('rightArm', component)),
+    leftForearmQuaternionRange: [0, 1, 2, 3].map(component => quaternionRange('leftForearm', component)),
+    rightForearmQuaternionRange: [0, 1, 2, 3].map(component => quaternionRange('rightForearm', component)),
     garmentSkinned: valid.every(sample => sample.garmentSkinned),
     eyeOpenSamples: valid.filter(sample => sample.eyesVisible).length,
     eyeCues,
@@ -194,7 +205,49 @@ try {
     sharedSkeleton: validWalking.every(sample => sample.sharedSkeleton),
   };
 
-  await page.screenshot({ path: `test-results/patient-motion-${model}-walking-verified.png` });
+  // A paediatric case must use the surface-derived garment rather than the
+  // adult Blender shell. Besides counting the expected two procedural pieces,
+  // verify that the top stays below the head and overlaps the trouser waist.
+  await page.goto(`${base}/?devLiveCase=trauma-012&capture`, {
+    waitUntil: 'networkidle',
+    timeout: 60_000,
+  });
+  await page.locator('canvas').first().waitFor({ state: 'visible', timeout: 30_000 });
+  await page.waitForTimeout(2_500);
+  result.paediatricGarment = await page.evaluate(() => {
+    const scene = window.__r3f?.scene;
+    const body = scene?.getObjectByName('Patient');
+    const bodyPosition = body?.geometry?.attributes?.position;
+    if (!scene || !body || !bodyPosition) return null;
+
+    let bodyMinY = Infinity;
+    let bodyMaxY = -Infinity;
+    for (let index = 0; index < bodyPosition.count; index += 1) {
+      bodyMinY = Math.min(bodyMinY, bodyPosition.getY(index));
+      bodyMaxY = Math.max(bodyMaxY, bodyPosition.getY(index));
+    }
+    const bodyHeight = bodyMaxY - bodyMinY;
+    const garments = [];
+    scene.traverse(object => {
+      if (object.name !== 'scrub-top' && object.name !== 'scrub-trousers') return;
+      const position = object.geometry?.attributes?.position;
+      let minY = Infinity;
+      let maxY = -Infinity;
+      for (let index = 0; position && index < position.count; index += 1) {
+        minY = Math.min(minY, position.getY(index));
+        maxY = Math.max(maxY, position.getY(index));
+      }
+      garments.push({
+        name: object.name,
+        minHeightFraction: (minY - bodyMinY) / bodyHeight,
+        maxHeightFraction: (maxY - bodyMinY) / bodyHeight,
+        sharedSkeleton: object.isSkinnedMesh === true && object.skeleton === body.skeleton,
+      });
+    });
+    return { garments };
+  });
+
+  await page.screenshot({ path: `test-results/patient-motion-${model}-paediatric-verified.png` });
   console.log(JSON.stringify(result, null, 2));
 
   if (result.rootPositionRange.some(range => range > 1e-6)) {
@@ -208,6 +261,17 @@ try {
       `Patient upper arms accumulated unstable rotation: ${[
         ...result.leftArmQuaternionRange,
         ...result.rightArmQuaternionRange,
+      ].join(', ')}`,
+    );
+  }
+  if (
+    [...result.leftForearmQuaternionRange, ...result.rightForearmQuaternionRange]
+      .some(range => range > 1e-6)
+  ) {
+    throw new Error(
+      `Patient forearms accumulated unstable rotation: ${[
+        ...result.leftForearmQuaternionRange,
+        ...result.rightForearmQuaternionRange,
       ].join(', ')}`,
     );
   }
@@ -267,6 +331,23 @@ try {
   }
   if (result.walking.garmentCount < 4 || !result.walking.garmentsSkinned || !result.walking.sharedSkeleton) {
     throw new Error(`Walking garment lost its patient skeleton: ${JSON.stringify(result.walking)}`);
+  }
+  const paediatricGarments = result.paediatricGarment?.garments ?? [];
+  const paediatricTop = paediatricGarments.find(garment => garment.name === 'scrub-top');
+  const paediatricTrousers = paediatricGarments.find(garment => garment.name === 'scrub-trousers');
+  if (
+    paediatricGarments.length !== 2
+    || !paediatricGarments.every(garment => garment.sharedSkeleton)
+    || !paediatricTop || !paediatricTrousers
+  ) {
+    throw new Error(`Paediatric garment did not use the fitted procedural pair: ${JSON.stringify(paediatricGarments)}`);
+  }
+  if (
+    paediatricTop.maxHeightFraction > 0.93
+    || paediatricTop.minHeightFraction > 0.51
+    || paediatricTrousers.maxHeightFraction < 0.54
+  ) {
+    throw new Error(`Paediatric garment left the intended torso/waist region: ${JSON.stringify(paediatricGarments)}`);
   }
   if (errors.length) throw new Error(errors.join('\n'));
 } finally {

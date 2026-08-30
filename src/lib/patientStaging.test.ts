@@ -7,6 +7,8 @@ import {
   patientPacingTransform,
   patientSkeletalAction,
   patientArmRestRadians,
+  patientForearmRestRadians,
+  patientForearmSweepRadians,
   patientSpineLeanRadians,
 } from './patientStaging';
 import type { CaseScenario } from '@/types';
@@ -101,13 +103,27 @@ describe('patientSkeletalAction', () => {
   it('uses a stable arm rest appropriate to each mobility state', () => {
     expect(patientArmRestRadians('standing')).toBeCloseTo(0.65);
     expect(patientArmRestRadians('seated')).toBeCloseTo(0.72);
-    expect(patientArmRestRadians('recumbent')).toBeCloseTo(0.28);
-    expect(patientArmRestRadians('recumbent', true)).toBeCloseTo(0.28);
+    expect(patientArmRestRadians('recumbent')).toBeCloseTo(0.58);
+    expect(patientArmRestRadians('recumbent', true)).toBeCloseTo(0.58);
     expect(patientArmRestRadians('pacing')).toBeCloseTo(0.42);
     expect(patientArmRestRadians('pacing', false, 4)).toBeCloseTo(0.2646);
     expect(patientArmRestRadians('standing', true)).toBe(0);
     expect(patientArmRestRadians('seated', false, 0.5)).toBeCloseTo(0.3528);
     expect(patientArmRestRadians('seated', false, 4)).toBeCloseTo(0.4536);
+  });
+
+  it('settles recumbent forearms onto the support plane without altering ambulatory poses', () => {
+    expect(patientForearmRestRadians('recumbent')).toBeCloseTo(-1.4);
+    expect(patientForearmRestRadians('recumbent', 8)).toBeCloseTo(-1.3);
+    expect(patientForearmRestRadians('recumbent', 4)).toBeCloseTo(-1.2);
+    expect(patientForearmRestRadians('recumbent', 0.5)).toBeCloseTo(-1.1);
+    expect(patientForearmRestRadians('seated')).toBe(0);
+    expect(patientForearmRestRadians('standing')).toBe(0);
+    expect(patientForearmRestRadians('pacing')).toBe(0);
+    expect(patientForearmSweepRadians('recumbent', 'left')).toBeCloseTo(-1);
+    expect(patientForearmSweepRadians('recumbent', 'right')).toBeCloseTo(1);
+    expect(patientForearmSweepRadians('recumbent', 'left', 4)).toBeCloseTo(-0.8);
+    expect(patientForearmSweepRadians('standing', 'right')).toBe(0);
   });
 
   it('leans only a respiratory tripod posture through the fitted spine', () => {

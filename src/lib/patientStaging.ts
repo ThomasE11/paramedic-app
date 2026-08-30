@@ -181,8 +181,47 @@ export function patientArmRestRadians(
   // hands into a natural gait envelope without flattening the authored swing.
   if (mobility === 'pacing') return 0.42 * paediatricScale;
   if (mobility === 'seated') return 0.72 * paediatricScale;
-  if (mobility === 'recumbent') return 0.28 * paediatricScale;
+  // A recumbent patient needs almost the same shoulder adduction as a seated
+  // patient. The old 0.28 offset only removed part of the donor A-pose, so a
+  // supine patient appeared to hold both arms tensely above the floor instead
+  // of letting their upper arms settle beside the torso. Keep a little more
+  // clearance than the seated pose for radial-pulse access and attached kit.
+  if (mobility === 'recumbent') return 0.58 * paediatricScale;
   return !unconscious ? 0.65 : 0;
+}
+
+/** Local forearm correction that lets a recumbent patient's hands settle. */
+export function patientForearmRestRadians(
+  mobility: PatientMobility,
+  ageYears?: number,
+): number {
+  if (mobility !== 'recumbent') return 0;
+  // The fitted Mixamo bind pose bends both forearms forward by roughly 20 cm.
+  // Once the patient is rotated supine that depth becomes vertical height,
+  // leaving both hands suspended above the floor. Rotate the forearms back to
+  // the upper-arm support plane. Use a slightly softer angle for very small
+  // children to preserve clearance around the proportionally larger torso.
+  if (typeof ageYears === 'number' && ageYears < 2) return -1.1;
+  if (typeof ageYears === 'number' && ageYears < 6) return -1.2;
+  if (typeof ageYears === 'number' && ageYears < 12) return -1.3;
+  return -1.4;
+}
+
+/** Mirrored in-plane sweep that brings recumbent hands down beside the hips. */
+export function patientForearmSweepRadians(
+  mobility: PatientMobility,
+  side: 'left' | 'right',
+  ageYears?: number,
+): number {
+  if (mobility !== 'recumbent') return 0;
+  const ageScale = typeof ageYears === 'number' && ageYears < 2
+    ? 0.7
+    : typeof ageYears === 'number' && ageYears < 6
+      ? 0.8
+      : typeof ageYears === 'number' && ageYears < 12
+        ? 0.9
+        : 1;
+  return (side === 'left' ? -1 : 1) * ageScale;
 }
 
 /** Per-spine-bone flexion for the respiratory tripod silhouette. */

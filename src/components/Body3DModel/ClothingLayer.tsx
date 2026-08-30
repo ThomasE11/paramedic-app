@@ -109,6 +109,13 @@ export const FEMALE_GARMENT_GLBS: GarmentGlbSpec[] = [
 export const ALL_GARMENT_GLBS = [...GARMENT_GLBS, ...FEMALE_GARMENT_GLBS];
 
 export function garmentGlbsForModel(modelPath: string): GarmentGlbSpec[] {
+  // The Blender garments are adult male/female shells. Rebinding their bones
+  // to a paediatric skeleton does not change the adult garment geometry: on a
+  // toddler it balloons over the neck and can cover the face entirely. The
+  // procedural garment is cut from the mounted patient's own surface, so it
+  // is the honest fit for every developmental model until dedicated child
+  // garment assets exist.
+  if (/patient-(?:infant|toddler|child|adolescent)-/.test(modelPath)) return [];
   return modelPath.includes('-female.glb') ? FEMALE_GARMENT_GLBS : GARMENT_GLBS;
 }
 
@@ -164,8 +171,11 @@ export function buildScrubs(
 
   // Anthropometric cut lines as fractions of head-to-heel height
   // (hip-hem, waistband, mid-biceps, neck scoop, shoulder cap, ankle cuff).
-  const TOP_HEM = yf(0.522);
-  const WAISTBAND = yf(0.539);
+  // Let the shirt overlap the trouser waistband instead of exposing a strip
+  // of abdomen. The old cut lines left a 1.7%-of-height gap, which was subtle
+  // on an adult but conspicuous on the shorter paediatric models.
+  const TOP_HEM = yf(0.495);
+  const WAISTBAND = yf(0.55);
   // Keep the cap above the complete shoulder girdle. The previous cut crossed
   // deltoid/trapezius triangles and became a torn-looking saw edge when the
   // rig brought the arms down from its source A-pose. Only the shallow crew
@@ -295,9 +305,23 @@ export function buildScrubs(
   }
   const trouserKeep = largestComponent(trouserMask);
 
+  // Default cloth clearance must scale with the patient's height. Fixed adult
+  // centimetre offsets made a toddler's top look inflated. Explicit offsets
+  // are authored seam-underlay values and intentionally remain unchanged.
+  const garmentScale = Math.max(0.5, bodyScale);
   const pieces = [
-    { name: 'scrub-top', color: TOP_COLOR, offset: offsets.top ?? 0.026, keep: topKeep },
-    { name: 'scrub-trousers', color: TROUSER_COLOR, offset: offsets.trousers ?? 0.012, keep: trouserKeep },
+    {
+      name: 'scrub-top',
+      color: TOP_COLOR,
+      offset: offsets.top ?? 0.026 * garmentScale,
+      keep: topKeep,
+    },
+    {
+      name: 'scrub-trousers',
+      color: TROUSER_COLOR,
+      offset: offsets.trousers ?? 0.012 * garmentScale,
+      keep: trouserKeep,
+    },
   ];
 
   const group = new THREE.Group();

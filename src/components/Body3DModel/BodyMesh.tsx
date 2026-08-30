@@ -33,6 +33,8 @@ import {
   patientPacingTransform,
   patientSkeletalAction,
   patientArmRestRadians,
+  patientForearmRestRadians,
+  patientForearmSweepRadians,
   patientSpineLeanRadians,
   type PatientMobility,
 } from '@/lib/patientStaging';
@@ -1164,6 +1166,15 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
     () => standingArmBones.map(arm => arm.quaternion.clone()),
     [standingArmBones],
   );
+  const recumbentForearmBones = useMemo(() => (
+    ['mixamorig:LeftForeArm', 'mixamorig:RightForeArm']
+      .map(name => clonedScene.getObjectByName(name) ?? clonedScene.getObjectByName(name.replace(/:/g, '')))
+      .filter((node): node is THREE.Object3D => node !== undefined)
+  ), [clonedScene]);
+  const recumbentForearmRest = useMemo(
+    () => recumbentForearmBones.map(forearm => forearm.quaternion.clone()),
+    [recumbentForearmBones],
+  );
   const postureSpineBones = useMemo(() => (
     ['mixamorig:Spine', 'mixamorig:Spine1']
       .map(name => clonedScene.getObjectByName(name) ?? clonedScene.getObjectByName(name.replace(/:/g, '')))
@@ -1432,6 +1443,14 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
       standingArmBones.forEach((arm, index) => {
         arm.quaternion.copy(standingArmRest[index]);
         if (armRelaxation > 0) arm.rotateX(armRelaxation);
+      });
+      const forearmRelaxation = patientForearmRestRadians(mobility, patientAge);
+      recumbentForearmBones.forEach((forearm, index) => {
+        forearm.quaternion.copy(recumbentForearmRest[index]);
+        if (forearmRelaxation !== 0) forearm.rotateX(forearmRelaxation);
+        const side = forearm.name.toLowerCase().includes('left') ? 'left' : 'right';
+        const sweep = patientForearmSweepRadians(mobility, side, patientAge);
+        if (sweep !== 0) forearm.rotateZ(sweep);
       });
     }
     const spineLean = patientSpineLeanRadians(posture, patientAge);
