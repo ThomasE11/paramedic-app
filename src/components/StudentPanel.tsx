@@ -897,11 +897,11 @@ const ROADMAP_BAGS = [
 
 const ROADMAP_EQUIPMENT_ASSETS: Record<string, string> = {
   oxygen_nasal: '/equipment-assets/nasal-cannula.webp',
-  oxygen_mask: '/equipment-assets/oxygen-mask.webp',
-  oxygen_nonrebreather: '/equipment-assets/nonrebreather-mask.webp',
-  nebulizer_salbutamol: '/equipment-assets/nebulizer-mask.webp',
-  bvm_ventilation: '/equipment-assets/bvm.webp',
-  cpap_niv: '/equipment-assets/cpap-circuit.webp',
+  oxygen_mask: '/equipment-assets/oxygen-mask-front.webp',
+  oxygen_nonrebreather: '/equipment-assets/nonrebreather-mask-v2.webp',
+  nebulizer_salbutamol: '/equipment-assets/nebulizer-mask-v2.webp',
+  bvm_ventilation: '/equipment-assets/bvm-face-seal-v2.png',
+  cpap_niv: '/equipment-assets/cpap-mask-front-v2.png',
   mechanical_ventilation: '/equipment-assets/portable-transport-ventilator.webp',
   iv_access: '/equipment-assets/iv-cannula.webp',
   iv_cannula: '/equipment-assets/iv-cannula.webp',

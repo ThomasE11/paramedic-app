@@ -130,7 +130,7 @@ function AirwayProcedurePreview({
             src={equipmentAsset}
             alt=""
             draggable={false}
-            className={`${bvm ? 'h-full w-full' : intubation ? 'h-20 w-10' : opa ? 'h-10 w-12' : suction ? 'h-16 w-10' : ventilator ? 'h-16 w-20' : treatmentId === 'oxygen_nasal' ? 'h-10 w-16' : 'h-16 w-16'} object-contain`}
+            className={`${bvm ? 'h-full w-full' : intubation ? 'h-20 w-10' : opa ? 'h-10 w-12' : suction ? 'h-16 w-10' : ventilator ? 'h-16 w-20' : cpap ? 'h-20 w-24' : treatmentId === 'oxygen_nasal' ? 'h-10 w-16' : 'h-16 w-16'} object-contain`}
           />
         </div>
       )}

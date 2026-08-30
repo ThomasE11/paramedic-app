@@ -171,7 +171,7 @@ const TREATMENT_ASSET_PATHS = {
   nebulizer: '/equipment-assets/nebulizer-mask-v2.webp',
   bvm: '/equipment-assets/bvm.webp',
   bvmFaceSeal: '/equipment-assets/bvm-face-seal-v2.png',
-  cpap: '/equipment-assets/cpap-circuit.webp',
+  cpap: '/equipment-assets/cpap-mask-front-v2.png',
   ventilator: '/equipment-assets/ventilator-circuit.webp',
   ivCannula: '/treatment-assets/iv-cannula.svg',
   fluidBag: '/treatment-assets/fluid-bag.svg',
@@ -1247,7 +1247,8 @@ function WornFaceEquipment({
   const bvmViaTube = bvm && connectedToEtTube;
   const nonrebreather = equipment.mode === 'nonrebreather';
   const nebulizer = equipment.mode === 'nebulizer';
-  const fittedPhotorealisticMask = nonrebreather || nebulizer;
+  const cpap = equipment.mode === 'cpap';
+  const fittedPhotorealisticMask = nonrebreather || nebulizer || cpap;
   if (bvm && !bvmViaTube) {
     return (
       <div
@@ -1262,6 +1263,18 @@ function WornFaceEquipment({
           draggable={false}
           className="h-full w-full object-contain"
         />
+      </div>
+    );
+  }
+  if (cpap) {
+    return (
+      <div
+        data-applied-equipment="cpap"
+        data-airway-connection="face"
+        aria-label="CPAP full-face mask sealed with a four-point harness"
+        className="pointer-events-none relative h-12 w-16 -translate-y-[28%] animate-in fade-in zoom-in-75 duration-300 drop-shadow-[0_5px_6px_rgba(2,44,58,0.5)]"
+      >
+        <img src={OXYGEN_SRC.cpap} alt="" draggable={false} className="h-full w-full object-contain" />
       </div>
     );
   }

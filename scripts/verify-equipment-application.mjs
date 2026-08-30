@@ -97,6 +97,17 @@ await page.waitForTimeout(800);
 await page.screenshot({ path: 'test-results/oxygen-mask-face-closeup-verified.png' });
 await page.getByRole('button', { name: /Back to full body/i }).click();
 await page.waitForTimeout(500);
+await openKit('Breathing Bag');
+const cpapTile = page.getByRole('button', { name: /^Select CPAP Circuit$/i }).first();
+results.cpapBagUsesFittedAsset = (await cpapTile.locator('img').getAttribute('src')) === '/equipment-assets/cpap-mask-front-v2.png';
+await cpapTile.click();
+results.cpapSteps = await completeProcedure(/Apply CPAP circuit/i);
+const cpapOnFace = page.locator('[data-applied-equipment="cpap"][data-airway-connection="face"]');
+results.cpapSealedOnFace = await cpapOnFace.count() > 0;
+results.cpapHarnessLabelVisible = /four-point harness/i.test(await cpapOnFace.first().getAttribute('aria-label') ?? '');
+await page.getByRole('button', { name: 'Examine Face' }).click();
+await page.waitForTimeout(800);
+await page.screenshot({ path: 'test-results/cpap-face-closeup-verified.png' });
 
 await openCase('cardiac-002');
 await page.getByRole('button', { name: 'BVM Ventilation', exact: true }).click();
@@ -125,6 +136,7 @@ results.siteLabelVisible = /Traction splint · right leg/i.test(await page.locat
 results.errors = errors;
 
 if (results.maskSteps < 4 || !results.maskFittedToPatient
+  || results.cpapSteps < 5 || !results.cpapBagUsesFittedAsset || !results.cpapSealedOnFace || !results.cpapHarnessLabelVisible
   || results.bvmSteps < 5 || !results.bvmHeldOnFace || !results.bvmSealLabelVisible
   || results.haemorrhageSteps < 5 || !results.pressureDressingOnInjuredLimb
   || results.tractionSteps < 6

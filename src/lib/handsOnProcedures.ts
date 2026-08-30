@@ -577,7 +577,7 @@ export function getHandsOnProcedurePlan(
       title: cpap ? 'Apply CPAP circuit' : 'Apply nebuliser mask',
       subtitle: cpap ? 'A sealed, pressurised circuit requires cooperation and continuous monitoring.' : 'The chamber must remain upright with visible aerosol output.',
       treatmentId, requiresTarget: false, targets: [],
-      equipmentAsset: cpap ? '/equipment-assets/cpap-circuit.webp' : '/equipment-assets/nebulizer-mask-v2.webp',
+      equipmentAsset: cpap ? '/equipment-assets/cpap-mask-front-v2.png' : '/equipment-assets/nebulizer-mask-v2.webp',
       completionLabel: cpap ? 'Pressure stable — monitor continuously' : treatmentId === 'nebulised_adrenaline' ? 'Aerosol flowing — reassess stridor' : 'Aerosol flowing — reassess wheeze',
       steps: [
         STEP('assemble', 'Assemble and connect', cpap ? 'Connect mask, circuit, filter, valve and oxygen/driver.' : 'Add the prescribed drug, close the chamber and connect driving gas.', 'Check every connection before placing the mask.', 'connect'),

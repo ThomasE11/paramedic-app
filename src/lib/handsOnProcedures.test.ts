@@ -29,6 +29,7 @@ describe('hands-on treatment procedures', () => {
     expect(getHandsOnProcedurePlan('oxygen_nonrebreather', caseData)?.equipmentAsset).toBe('/equipment-assets/nonrebreather-mask-v2.webp');
     expect(getHandsOnProcedurePlan('nebulizer_salbutamol', caseData)?.equipmentAsset).toBe('/equipment-assets/nebulizer-mask-v2.webp');
     expect(getHandsOnProcedurePlan('bvm_ventilation', caseData)?.equipmentAsset).toBe('/equipment-assets/bvm-face-seal-v2.png');
+    expect(getHandsOnProcedurePlan('cpap_niv', caseData)?.equipmentAsset).toBe('/equipment-assets/cpap-mask-front-v2.png');
   });
 
   it('prioritises the actual bleeding limb as the tourniquet target', () => {
