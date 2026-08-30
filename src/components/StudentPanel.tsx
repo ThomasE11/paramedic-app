@@ -1222,6 +1222,52 @@ function assessTreatmentPracticality({
     }
   }
 
+  if (id === 'back_blows' || id === 'abdominal_thrusts') {
+    const severeFbao = /(unable to speak|cannot speak|ineffective cough|absent cough|complete obstruction|severe.*obstruction|universal choking|cyanosis|apnoeic|apneic)/.test(text);
+    const unresponsive = patientState.isInArrest || /(unconscious|unresponsive)/.test(text);
+    if (unresponsive) {
+      return {
+        level: 'block',
+        title: 'Patient is unresponsive',
+        clinicalReason: 'Do not continue standing choking manoeuvres. Lower the patient safely, begin CPR with compressions, and look only for a visible object before breaths.',
+      };
+    }
+    if (!severeFbao) {
+      return {
+        level: 'challenge',
+        title: 'Confirm severe airway obstruction',
+        clinicalReason: 'Back blows and thrusts are for an ineffective cough or inability to speak/breathe. If the cough is effective, encourage coughing and monitor closely.',
+        patientQuote: vocal ? 'I can still cough. Let me try to clear it.' : undefined,
+        proceedLabel: 'Treat as severe obstruction',
+      };
+    }
+  }
+
+  if (id === 'abdominal_thrusts') {
+    if ((currentCase.patientInfo?.age ?? 99) < 1) {
+      return {
+        level: 'block',
+        title: 'No abdominal thrusts for an infant',
+        clinicalReason: 'For severe foreign-body airway obstruction in an infant, alternate five back blows with five chest thrusts. Abdominal thrusts can injure abdominal organs.',
+      };
+    }
+    if (/late pregnancy|third trimester|heavily pregnant/.test(text)) {
+      return {
+        level: 'block',
+        title: 'Use chest thrusts in late pregnancy',
+        clinicalReason: 'When the abdomen should not or cannot be encircled, alternate five back blows with five chest thrusts instead.',
+        patientQuote: vocal ? 'Please be careful — I am pregnant.' : undefined,
+      };
+    }
+    if (!appliedTreatmentIds.includes('back_blows')) {
+      return {
+        level: 'block',
+        title: 'Give back blows first',
+        clinicalReason: 'For a conscious adult with severe foreign-body airway obstruction, begin with five back blows, then give five abdominal thrusts if the obstruction persists.',
+      };
+    }
+  }
+
   if (id === 'opa_insert' && !patientState.isInArrest && (gcs > 8 || vocal)) {
     return {
       level: 'block',

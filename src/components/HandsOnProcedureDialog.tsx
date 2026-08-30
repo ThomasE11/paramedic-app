@@ -373,6 +373,68 @@ function PelvicBinderProcedurePreview({
   );
 }
 
+function ChokingProcedurePreview({
+  treatmentId,
+  completedSteps,
+  animatingStep,
+}: {
+  treatmentId: string;
+  completedSteps: string[];
+  animatingStep: string | null;
+}) {
+  const backBlows = treatmentId === 'back_blows';
+  const abdominalThrusts = treatmentId === 'abdominal_thrusts';
+  if (!backBlows && !abdominalThrusts) return null;
+  const reached = (stepId: string) => completedSteps.includes(stepId) || animatingStep === stepId;
+  const positioned = reached('position');
+  const firstBlows = reached('blow-1-2');
+  const allBackBlows = reached('blow-3-5');
+  const handsPlaced = reached('hands');
+  const thrustsDelivered = reached('thrusts');
+  const reassessed = reached('reassess');
+  const completedAttempts = backBlows ? (allBackBlows ? 5 : firstBlows ? 2 : 0) : thrustsDelivered ? 5 : 0;
+
+  return (
+    <div data-procedure-preview={backBlows ? 'back-blows' : 'abdominal-thrusts'} className="pointer-events-none absolute inset-0 z-20">
+      {positioned && backBlows && (
+        <>
+          <span className="absolute left-[54px] top-[78px] h-[104px] w-[82px] origin-bottom -rotate-6 rounded-[44px] border-2 border-sky-300/40" />
+          <span className="absolute left-1/2 top-[190px] w-max -translate-x-1/2 rounded-full border border-sky-300/40 bg-sky-950/95 px-2 py-1 text-[7px] font-black uppercase tracking-[0.08em] text-sky-100">Supported · leaned forward</span>
+        </>
+      )}
+      {(firstBlows || allBackBlows) && backBlows && (
+        <>
+          <Hand className="absolute left-[18px] top-[102px] h-14 w-14 rotate-[82deg] text-amber-200 drop-shadow-[0_3px_6px_rgba(0,0,0,.8)]" />
+          <span className="absolute left-[82px] top-[111px] h-12 w-12 rounded-full border-2 border-red-300/65 shadow-[0_0_18px_rgba(248,113,113,.65)]" />
+        </>
+      )}
+      {positioned && abdominalThrusts && (
+        <>
+          <span className="absolute left-[22px] top-[124px] h-3 w-[58px] rotate-6 rounded-full bg-slate-300/80 shadow" />
+          <span className="absolute right-[22px] top-[124px] h-3 w-[58px] -rotate-6 rounded-full bg-slate-300/80 shadow" />
+          <span className="absolute left-1/2 top-[188px] w-max -translate-x-1/2 rounded-full border border-sky-300/40 bg-sky-950/95 px-2 py-1 text-[7px] font-black uppercase tracking-[0.08em] text-sky-100">Rescuer behind · patient forward</span>
+        </>
+      )}
+      {handsPlaced && abdominalThrusts && (
+        <>
+          <span className="absolute left-1/2 top-[132px] h-8 w-8 -translate-x-1/2 rounded-full border-4 border-amber-100 bg-amber-700 shadow-[0_4px_10px_rgba(0,0,0,.75)]" aria-label="Fist placed between umbilicus and lower sternum" />
+          <span className="absolute left-1/2 top-[104px] h-8 w-0.5 -translate-x-1/2 bg-red-400 after:absolute after:-left-[4px] after:-top-0.5 after:h-2.5 after:w-2.5 after:rotate-45 after:border-l-2 after:border-t-2 after:border-red-300" />
+        </>
+      )}
+      {completedAttempts > 0 && (
+        <div className="absolute bottom-12 left-1/2 flex -translate-x-1/2 gap-1" aria-label={`${completedAttempts} of 5 attempts delivered`}>
+          {[1, 2, 3, 4, 5].map(attempt => (
+            <span key={attempt} className={`flex h-5 w-5 items-center justify-center rounded-full border text-[8px] font-black ${attempt <= completedAttempts ? 'border-red-300 bg-red-600 text-white' : 'border-slate-500 bg-slate-900 text-slate-500'}`}>{attempt}</span>
+          ))}
+        </div>
+      )}
+      {reassessed && (
+        <span className="absolute bottom-3 left-1/2 w-max -translate-x-1/2 rounded-full border border-emerald-300/50 bg-emerald-950/95 px-2 py-1 text-[7px] font-black uppercase tracking-[0.08em] text-emerald-100 shadow-lg">Airway + consciousness reassessed</span>
+      )}
+    </div>
+  );
+}
+
 export function HandsOnProcedureDialog({
   open,
   treatment,
@@ -538,6 +600,12 @@ export function HandsOnProcedureDialog({
               />
 
               <PelvicBinderProcedurePreview
+                treatmentId={plan.treatmentId}
+                completedSteps={completedSteps}
+                animatingStep={animatingStep}
+              />
+
+              <ChokingProcedurePreview
                 treatmentId={plan.treatmentId}
                 completedSteps={completedSteps}
                 animatingStep={animatingStep}

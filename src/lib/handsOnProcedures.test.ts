@@ -108,6 +108,20 @@ describe('hands-on treatment procedures', () => {
     expect(procedureIncludesIntegratedReassessment('pelvic_binder')).toBe(true);
   });
 
+  it('turns adult choking care into alternating, counted physical manoeuvres', () => {
+    const backBlows = getHandsOnProcedurePlan('back_blows', caseData);
+    const abdominalThrusts = getHandsOnProcedurePlan('abdominal_thrusts', caseData, ['back_blows']);
+
+    expect(backBlows?.steps.map(step => step.id)).toEqual(['recognise', 'position', 'blow-1-2', 'blow-3-5', 'reassess']);
+    expect(backBlows?.steps.find(step => step.id === 'blow-3-5')?.instruction).toContain('up to five total');
+    expect(abdominalThrusts?.steps.map(step => step.id)).toEqual(['recheck', 'position', 'hands', 'thrusts', 'reassess']);
+    expect(abdominalThrusts?.steps.find(step => step.id === 'hands')?.instruction).toContain('between the umbilicus and lower end of the sternum');
+    expect(isHandsOnTreatment('back_blows')).toBe(true);
+    expect(isHandsOnTreatment('abdominal_thrusts')).toBe(true);
+    expect(procedureIncludesIntegratedReassessment('back_blows')).toBe(true);
+    expect(procedureIncludesIntegratedReassessment('abdominal_thrusts')).toBe(true);
+  });
+
   it('reuses an already fitted nebuliser when adding the second bronchodilator', () => {
     const initial = getHandsOnProcedurePlan('nebulizer_ipratropium', caseData);
     expect(initial?.steps.map(step => step.label)).toContain('Fit the mask');

@@ -247,6 +247,47 @@ export function getHandsOnProcedurePlan(
     };
   }
 
+  if (treatmentId === 'back_blows') {
+    const repeatedCycle = appliedTreatmentIds.includes('abdominal_thrusts');
+    return {
+      id: 'adult-fbao-back-blows',
+      title: repeatedCycle ? 'Repeat five back blows' : 'Give five back blows',
+      subtitle: 'Treat severe foreign-body airway obstruction one deliberate blow at a time, checking whether the object clears.',
+      treatmentId,
+      requiresTarget: false,
+      targets: [],
+      equipmentAsset: '/equipment-assets/choking-manoeuvres.svg',
+      completionLabel: 'Five delivered — reassess airway',
+      steps: [
+        STEP('recognise', 'Confirm severe obstruction', 'Ask “Are you choking?” and look for an ineffective or absent cough, inability to speak, cyanosis or deteriorating consciousness.', 'If the patient can cough effectively, encourage coughing instead. Activate the emergency response for severe obstruction.', 'prepare'),
+        STEP('position', 'Lean and support forward', 'Stand to the side and slightly behind. Support the chest with one hand and lean the patient well forward.', 'Forward positioning helps an expelled object leave the mouth rather than travel deeper.', 'place'),
+        STEP('blow-1-2', 'Deliver blows 1 and 2', 'Strike firmly between the shoulder blades with the heel of your free hand, then check the mouth and response after each blow.', 'Each blow is a separate attempt; stop immediately if the airway clears.', 'press', 1200),
+        STEP('blow-3-5', 'Deliver blows 3 to 5', 'Continue up to five total firm back blows, checking effectiveness after every strike.', 'Do not deliver all five automatically if the object is expelled earlier.', 'press', 1300),
+        STEP('reassess', 'Reassess the airway', 'Check speech, cough, air movement, colour and consciousness without delaying the next manoeuvre.', 'If still conscious with severe obstruction, move immediately to five abdominal thrusts. If unresponsive, start CPR.', 'confirm'),
+      ],
+    };
+  }
+
+  if (treatmentId === 'abdominal_thrusts') {
+    return {
+      id: 'adult-fbao-abdominal-thrusts',
+      title: 'Give five abdominal thrusts',
+      subtitle: 'Follow ineffective back blows with correctly positioned inward-and-upward thrusts.',
+      treatmentId,
+      requiresTarget: false,
+      targets: [],
+      equipmentAsset: '/equipment-assets/choking-manoeuvres.svg',
+      completionLabel: 'Five delivered — reassess airway',
+      steps: [
+        STEP('recheck', 'Reconfirm severe obstruction', 'Verify that back blows have not cleared the obstruction and that the patient remains conscious.', 'If the patient becomes unresponsive, lower them safely and begin CPR. Do not continue standing thrusts.', 'confirm'),
+        STEP('position', 'Position behind the patient', 'Stand behind, lean the patient slightly forward and pass both arms around the upper abdomen.', 'Use chest thrusts instead for late pregnancy or when the abdomen cannot be encircled.', 'place'),
+        STEP('hands', 'Place the hands correctly', 'Make a fist and place its thumb side between the umbilicus and lower end of the sternum; grasp it with the other hand.', 'Keep the fist off the xiphoid process and lower ribs to reduce injury.', 'place'),
+        STEP('thrusts', 'Deliver five thrusts', 'Pull sharply inward and upward up to five times, releasing between attempts and checking after each one.', 'Each thrust is a distinct attempt. Stop as soon as the object is expelled.', 'press', 1400),
+        STEP('reassess', 'Reassess and choose the next action', 'Check speech, cough, air movement, colour and consciousness.', 'If obstruction persists and the patient remains conscious, return to five back blows. If unresponsive, start CPR and look only for a visible object before breaths.', 'confirm'),
+      ],
+    };
+  }
+
   if (treatmentId === 'oxygen_nonrebreather' || treatmentId === 'oxygen_mask' || treatmentId === 'oxygen_nasal') {
     const nonRebreather = treatmentId === 'oxygen_nonrebreather';
     const nasal = treatmentId === 'oxygen_nasal';
@@ -614,6 +655,7 @@ const HANDS_ON_TREATMENTS = new Set([
   'lucas_device', 'ventilator_setup', 'mechanical_ventilation', 'supine_position', 'recovery_position', 'fowlers_position',
   'left_lateral_tilt', 'leg_elevation', 'assisted_ambulation',
   'pelvic_binder',
+  'back_blows', 'abdominal_thrusts',
 ]);
 
 export const isHandsOnTreatment = (treatmentId: string): boolean =>
@@ -636,7 +678,9 @@ export const procedureIncludesIntegratedReassessment = (treatmentId: string): bo
   LIMB_SPLINT_TREATMENTS.has(treatmentId)
   || treatmentId === 'intubation'
   || treatmentId === 'rsi_intubation'
-  || treatmentId === 'pelvic_binder';
+  || treatmentId === 'pelvic_binder'
+  || treatmentId === 'back_blows'
+  || treatmentId === 'abdominal_thrusts';
 
 export function procedureSiteToken(treatmentId: string, target: ProcedureSite): string {
   return `site:${treatmentId}:${target}`;

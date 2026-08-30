@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 260" role="img" aria-labelledby="title desc">
+  <title id="title">Adult choking manoeuvres</title>
+  <desc id="desc">Training diagram showing a forward-leaning patient receiving back blows and correct abdominal thrust hand placement.</desc>
+  <defs>
+    <linearGradient id="patient" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#dbeafe"/><stop offset="1" stop-color="#60a5fa"/>
+    </linearGradient>
+    <linearGradient id="rescuer" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#e2e8f0"/><stop offset="1" stop-color="#64748b"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="6" stdDeviation="5" flood-color="#020617" flood-opacity=".28"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 10 5 0 10Z" fill="#ef4444"/>
+    </marker>
+  </defs>
+  <rect x="8" y="12" width="344" height="236" rx="28" fill="#f8fafc" stroke="#cbd5e1" stroke-width="4"/>
+  <path d="M180 28v204" stroke="#cbd5e1" stroke-width="3" stroke-dasharray="7 8"/>
+
+  <g filter="url(#shadow)">
+    <circle cx="96" cy="70" r="24" fill="url(#patient)" stroke="#1e3a8a" stroke-width="4"/>
+    <path d="M82 93c-16 25-22 51-15 86h55c3-33-2-58-17-82Z" fill="url(#patient)" stroke="#1e3a8a" stroke-width="4" transform="rotate(19 94 133)"/>
+    <path d="M78 174 51 220M111 177l8 49" fill="none" stroke="#1e3a8a" stroke-width="15" stroke-linecap="round"/>
+    <circle cx="147" cy="93" r="18" fill="url(#rescuer)" stroke="#334155" stroke-width="4"/>
+    <path d="M142 111c-4 22-1 44 8 66h32c4-27-2-48-17-65Z" fill="url(#rescuer)" stroke="#334155" stroke-width="4"/>
+    <path d="m149 126-44 12" fill="none" stroke="#475569" stroke-width="13" stroke-linecap="round"/>
+    <path d="M112 116c-11 8-19 17-23 30" fill="none" stroke="#ef4444" stroke-width="7" stroke-linecap="round" marker-end="url(#arrow)"/>
+    <circle cx="99" cy="137" r="15" fill="none" stroke="#f97316" stroke-width="4" opacity=".75"/>
+  </g>
+  <text x="94" y="39" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="15" font-weight="800" fill="#0f172a">5 BACK BLOWS</text>
+  <text x="94" y="232" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="9" font-weight="700" fill="#475569">LEAN FORWARD</text>
+  <text x="94" y="244" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="9" font-weight="700" fill="#475569">BETWEEN SCAPULAE</text>
+
+  <g filter="url(#shadow)">
+    <circle cx="267" cy="66" r="24" fill="url(#patient)" stroke="#1e3a8a" stroke-width="4"/>
+    <path d="M241 92c-8 27-7 56 3 91h49c10-35 11-64 3-91Z" fill="url(#patient)" stroke="#1e3a8a" stroke-width="4"/>
+    <path d="M252 180 242 226M285 180l11 46" fill="none" stroke="#1e3a8a" stroke-width="15" stroke-linecap="round"/>
+    <path d="M217 120c16 8 31 15 49 21 17-8 34-14 54-19" fill="none" stroke="#475569" stroke-width="13" stroke-linecap="round"/>
+    <circle cx="267" cy="142" r="13" fill="#ef4444" stroke="#991b1b" stroke-width="4"/>
+    <path d="M267 169v-36" fill="none" stroke="#ef4444" stroke-width="7" stroke-linecap="round" marker-end="url(#arrow)"/>
+    <path d="M247 154c8-6 14-9 20-10M287 154c-8-6-14-9-20-10" fill="none" stroke="#ef4444" stroke-width="5" stroke-linecap="round" marker-end="url(#arrow)"/>
+    <path d="M254 111h27" stroke="#f8fafc" stroke-width="4" stroke-linecap="round"/>
+    <path d="M267 101v19" stroke="#f8fafc" stroke-width="4" stroke-linecap="round"/>
+  </g>
+  <text x="267" y="39" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="14" font-weight="800" fill="#0f172a">5 ABDOMINAL THRUSTS</text>
+  <text x="267" y="232" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="9" font-weight="700" fill="#475569">ABOVE NAVEL</text>
+  <text x="267" y="244" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="9" font-weight="700" fill="#475569">INWARD + UPWARD</text>
+</svg>
