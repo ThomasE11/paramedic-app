@@ -910,6 +910,7 @@ const ROADMAP_EQUIPMENT_ASSETS: Record<string, string> = {
   fluids_500ml: '/equipment-assets/fluid-bag.webp',
   defibrillation: '/equipment-assets/defib-pads.webp',
   aed: '/equipment-assets/defib-pads.webp',
+  lucas_device: '/equipment-assets/lucas-device.webp',
   tourniquet: '/equipment-assets/tourniquet.webp',
   bleeding_control: '/equipment-assets/pressure-dressing-fitted-front-v2.png',
   dressing: '/equipment-assets/pressure-dressing-fitted-front-v2.png',

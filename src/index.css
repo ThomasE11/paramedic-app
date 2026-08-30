@@ -3543,8 +3543,21 @@ body {
   to { translate: -54px -4px; }
 }
 
+/* Only the mechanical-CPR piston moves. The frame and patient remain planted,
+   avoiding the whole-device bob that reads as mannequin vibration. 545 ms is
+   approximately 110 compressions/minute. */
+.applied-lucas-piston {
+  animation: applied-lucas-compression 545ms cubic-bezier(0.55, 0.02, 0.45, 0.98) infinite;
+}
+
+@keyframes applied-lucas-compression {
+  0%, 100% { translate: -50% 0; }
+  42%, 58% { translate: -50% 6px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .procedure-bvm-deliver {
+  .procedure-bvm-deliver,
+  .applied-lucas-piston {
     animation: none;
   }
 }

@@ -180,7 +180,7 @@ const TREATMENT_ASSET_PATHS = {
   defibPads: '/treatment-assets/defib-pads.svg',
   defibPadSternal: '/equipment-assets/defib-pad-sternal.webp',
   defibPadApical: '/equipment-assets/defib-pad-apical.webp',
-  lucas: '/treatment-assets/lucas-device.svg',
+  lucas: '/equipment-assets/lucas-device.webp',
   etTube: '/equipment-assets/et-tube.webp',
   etTubeSecured: '/equipment-assets/ett-secured-front-v2.png',
   opa: '/equipment-assets/opa-set.webp',
@@ -1362,6 +1362,21 @@ function AppliedCervicalCollar() {
   );
 }
 
+function AppliedMechanicalCprDevice() {
+  return (
+    <div
+      data-applied-equipment="mechanical-cpr-device"
+      data-compression-rate="110-per-minute"
+      aria-label="Mechanical CPR frame secured with the piston cycling at 110 compressions per minute"
+      className="pointer-events-none relative h-20 w-20 animate-in fade-in zoom-in-75 duration-500 drop-shadow-[0_6px_7px_rgba(2,6,23,0.7)]"
+    >
+      <img src={TREATMENT_ASSET_PATHS.lucas} alt="" draggable={false} className="h-full w-full object-contain" />
+      <span className="applied-lucas-piston absolute left-1/2 top-[36%] h-7 w-2 -translate-x-1/2 rounded-b-full border border-slate-400 bg-gradient-to-b from-slate-300 via-slate-100 to-slate-500 shadow" />
+      <span className="absolute left-1/2 top-[69%] h-2.5 w-6 -translate-x-1/2 rounded-full border border-slate-600 bg-slate-200/95 shadow" />
+    </div>
+  );
+}
+
 function AppliedDefibPad({ site }: { site: 'sternal' | 'apical' }) {
   return (
     <div
@@ -1761,7 +1776,7 @@ function TreatmentEquipmentOverlay({
 
       {equipment.hasLucas && (
         <MarkerHtml position={anchor(0, 1.19, 0.22)} distanceFactor={2.6} zIndexRange={[69, 0]} interactive={false} presentation={presentation} contentScale={equipmentScale}>
-          <div className="h-20 w-20 drop-shadow-xl animate-in fade-in zoom-in-75"><img src={TREATMENT_ASSET_PATHS.lucas} alt="" className="h-full w-full object-contain" /></div>
+          <AppliedMechanicalCprDevice />
         </MarkerHtml>
       )}
 

@@ -95,7 +95,7 @@ await page.screenshot({ path: 'test-results/oxygen-mask-connected-verified.png' 
 await page.getByRole('button', { name: 'Examine Face' }).click();
 await page.waitForTimeout(800);
 await page.screenshot({ path: 'test-results/oxygen-mask-face-closeup-verified.png' });
-await page.getByRole('button', { name: /Back to full body/i }).click();
+await page.getByRole('button', { name: /Back to full body/i }).click({ force: true });
 await page.waitForTimeout(500);
 await openKit('Breathing Bag');
 const cpapTile = page.getByRole('button', { name: /^Select CPAP Circuit$/i }).first();
@@ -122,6 +122,16 @@ await page.screenshot({ path: 'test-results/bvm-connected-verified.png' });
 await page.getByRole('button', { name: 'Examine Face' }).click();
 await page.waitForTimeout(800);
 await page.screenshot({ path: 'test-results/bvm-face-closeup-verified.png' });
+await page.getByRole('button', { name: /Back to full body/i }).click({ force: true });
+await page.waitForTimeout(500);
+await openKit('Circulation Kit');
+await selectEquipment('Mechanical CPR');
+results.lucasSteps = await completeProcedure(/mechanical CPR device/i);
+const mechanicalCpr = page.locator('[data-applied-equipment="mechanical-cpr-device"][data-compression-rate="110-per-minute"]');
+results.lucasSecuredOnChest = await mechanicalCpr.count() > 0;
+results.lucasRateLabelVisible = /110 compressions per minute/i.test(await mechanicalCpr.first().getAttribute('aria-label') ?? '');
+results.noDiagramLucas = await page.locator('img[src="/treatment-assets/lucas-device.svg"]').count() === 0;
+await page.screenshot({ path: 'test-results/lucas-mechanical-cpr-verified.png' });
 
 await openCase('cardiac-002');
 await openKit('Airway Bag');
@@ -187,6 +197,7 @@ results.errors = errors;
 if (results.maskSteps < 4 || !results.maskFittedToPatient
   || results.cpapSteps < 5 || !results.cpapBagUsesFittedAsset || !results.cpapSealedOnFace || !results.cpapHarnessLabelVisible
   || results.bvmSteps < 5 || !results.bvmHeldOnFace || !results.bvmSealLabelVisible
+  || results.lucasSteps < 5 || !results.lucasSecuredOnChest || !results.lucasRateLabelVisible || !results.noDiagramLucas
   || results.opaSteps < 5 || !results.opaAtLips || !results.opaFlangeLabelVisible || !results.opaUsesFittedAsset || !results.noDiagramOpa
   || results.intubationSteps < 6 || !results.etTubeSecuredAtMouth || !results.etTubePilotBalloonVisible || !results.noDiagramEtTube
   || results.ventilatorSteps < 5 || !results.ventilatorConnectedToEtTube || !results.ventilatorConnectionLabelVisible
