@@ -533,7 +533,7 @@ export function getHandsOnProcedurePlan(
     return {
       id: 'opa-insertion', title: 'Insert an oropharyngeal airway',
       subtitle: 'Correct sizing and absence of a gag reflex are essential.',
-      treatmentId, requiresTarget: false, targets: [], equipmentAsset: '/equipment-assets/opa-set.webp',
+      treatmentId, requiresTarget: false, targets: [], equipmentAsset: '/equipment-assets/opa-flange-front-v2.png',
       completionLabel: 'OPA seated — reassess airway',
       steps: [
         STEP('size', 'Select and measure', 'Measure from incisors or corner of mouth to the angle of the mandible.', 'Too small can push the tongue backward; too large can injure the larynx.', 'prepare'),

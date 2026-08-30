@@ -123,6 +123,19 @@ await page.getByRole('button', { name: 'Examine Face' }).click();
 await page.waitForTimeout(800);
 await page.screenshot({ path: 'test-results/bvm-face-closeup-verified.png' });
 
+await openCase('cardiac-002');
+await openKit('Airway Bag');
+await selectEquipment('OPA Set');
+results.opaSteps = await completeProcedure(/oropharyngeal airway/i);
+const opaAtLips = page.locator('[data-applied-equipment="oropharyngeal-airway"][data-airway-connection="oral"]');
+results.opaAtLips = await opaAtLips.count() > 0;
+results.opaFlangeLabelVisible = /flange seated at the lips/i.test(await opaAtLips.first().getAttribute('aria-label') ?? '');
+results.opaUsesFittedAsset = (await opaAtLips.first().locator('img').getAttribute('src')) === '/equipment-assets/opa-flange-front-v2.png';
+results.noDiagramOpa = await page.locator('img[src="/treatment-assets/opa.svg"]').count() === 0;
+await page.getByRole('button', { name: 'Examine Face' }).click();
+await page.waitForTimeout(800);
+await page.screenshot({ path: 'test-results/opa-face-closeup-verified.png' });
+
 await openCase('resp-001');
 await openKit('Airway Bag');
 await selectEquipment('ET Tube');
@@ -161,6 +174,7 @@ results.errors = errors;
 if (results.maskSteps < 4 || !results.maskFittedToPatient
   || results.cpapSteps < 5 || !results.cpapBagUsesFittedAsset || !results.cpapSealedOnFace || !results.cpapHarnessLabelVisible
   || results.bvmSteps < 5 || !results.bvmHeldOnFace || !results.bvmSealLabelVisible
+  || results.opaSteps < 5 || !results.opaAtLips || !results.opaFlangeLabelVisible || !results.opaUsesFittedAsset || !results.noDiagramOpa
   || results.intubationSteps < 6 || !results.etTubeSecuredAtMouth || !results.etTubePilotBalloonVisible || !results.noDiagramEtTube
   || results.ventilatorSteps < 5 || !results.ventilatorConnectedToEtTube || !results.ventilatorConnectionLabelVisible
   || results.haemorrhageSteps < 5 || !results.pressureDressingOnInjuredLimb

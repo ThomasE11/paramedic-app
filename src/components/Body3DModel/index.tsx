@@ -181,7 +181,8 @@ const TREATMENT_ASSET_PATHS = {
   lucas: '/treatment-assets/lucas-device.svg',
   etTube: '/equipment-assets/et-tube.webp',
   etTubeSecured: '/equipment-assets/ett-secured-front-v2.png',
-  opa: '/treatment-assets/opa.svg',
+  opa: '/equipment-assets/opa-set.webp',
+  opaFlange: '/equipment-assets/opa-flange-front-v2.png',
   ivPole: '/treatment-assets/iv-pole.svg',
   collar: '/equipment-assets/cervical-collar.webp',
   bandage: '/equipment-assets/bandages.webp',
@@ -1334,6 +1335,19 @@ function AppliedEndotrachealTube() {
   );
 }
 
+function AppliedOropharyngealAirway() {
+  return (
+    <div
+      data-applied-equipment="oropharyngeal-airway"
+      data-airway-connection="oral"
+      aria-label="OPA flange seated at the lips with the airway opening visible"
+      className="pointer-events-none relative h-3 w-3 translate-y-[325%] animate-in fade-in zoom-in-75 duration-300 drop-shadow-[0_3px_4px_rgba(2,44,58,0.5)]"
+    >
+      <img src={TREATMENT_ASSET_PATHS.opaFlange} alt="" draggable={false} className="h-full w-full object-contain" />
+    </div>
+  );
+}
+
 function AppliedDefibPad({ site }: { site: 'sternal' | 'apical' }) {
   return (
     <div
@@ -1700,8 +1714,8 @@ function TreatmentEquipmentOverlay({
       )}
 
       {equipment.hasOpa && !equipment.hasEtTube && (
-        <MarkerHtml position={faceAnchor(-0.04, 1.64, 0.24)} distanceFactor={2.4} zIndexRange={[73, 0]} interactive={false} presentation={posture === 'tripod' || posture === 'seated' ? 'upright' : presentation} contentScale={equipmentScale}>
-          <EquipmentPin tone="device" src={TREATMENT_ASSET_PATHS.opa} bare />
+        <MarkerHtml position={faceAnchor(0, 1.64, 0.24)} distanceFactor={2.4} zIndexRange={[73, 0]} interactive={false} presentation={posture === 'tripod' || posture === 'seated' ? 'upright' : presentation} contentScale={equipmentScale}>
+          <AppliedOropharyngealAirway />
         </MarkerHtml>
       )}
 

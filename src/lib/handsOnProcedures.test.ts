@@ -131,6 +131,10 @@ describe('hands-on treatment procedures', () => {
     }
   });
 
+  it('shows only the visible OPA flange once the airway is seated', () => {
+    expect(getHandsOnProcedurePlan('opa_insert', caseData)?.equipmentAsset).toBe('/equipment-assets/opa-flange-front-v2.png');
+  });
+
   it('routes the transport ventilator through physical circuit setup', () => {
     const plan = getHandsOnProcedurePlan('mechanical_ventilation', caseData);
 

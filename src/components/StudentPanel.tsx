@@ -902,6 +902,7 @@ const ROADMAP_EQUIPMENT_ASSETS: Record<string, string> = {
   nebulizer_salbutamol: '/equipment-assets/nebulizer-mask-v2.webp',
   bvm_ventilation: '/equipment-assets/bvm-face-seal-v2.png',
   cpap_niv: '/equipment-assets/cpap-mask-front-v2.png',
+  opa_insert: '/equipment-assets/opa-flange-front-v2.png',
   mechanical_ventilation: '/equipment-assets/portable-transport-ventilator.webp',
   iv_access: '/equipment-assets/iv-cannula.webp',
   iv_cannula: '/equipment-assets/iv-cannula.webp',
