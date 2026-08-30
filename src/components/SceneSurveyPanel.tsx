@@ -271,7 +271,8 @@ function shortComplaint(callReason?: string): string {
 function isVerbLedComplaint(complaint: string): boolean {
   const first = (complaint.split(/\s+/)[0] || '').toLowerCase();
   const verbs = new Set(['fell', 'fallen', 'collapsed', 'took', 'taken', 'struck', 'hit', 'stabbed', 'burned', 'burnt', 'found', 'cut', 'crashed', 'ingested', 'overdosed', 'swallowed', 'choking', 'choked', 'struggling', 'passed', 'slipped', 'tripped', 'fitting', 'seizing', 'unable', 'feels', 'feeling']);
-  return verbs.has(first) || (/ed$/.test(first) && first.length > 3);
+  const stateLed = /^(?:increasingly|progressively|suddenly|acutely|becoming|appears?|unwell|confused|drowsy|lethargic|unresponsive|agitated)\b/i.test(complaint);
+  return verbs.has(first) || stateLed || (/ed$/.test(first) && first.length > 3);
 }
 
 /**
@@ -279,7 +280,7 @@ function isVerbLedComplaint(complaint: string): boolean {
  * difficulty breathing." This is what the student should SEE and HEAR on
  * arrival — not a wall of scene metadata.
  */
-function buildArrivalSentence(c: CaseScenario): string {
+export function buildArrivalSentence(c: CaseScenario): string {
   const who = getScenePatientDescriptor(c);
   const complaint = shortComplaint(c.dispatchInfo?.callReason);
   if (!complaint) return `On arrival, you find a ${who} on scene.`;
@@ -414,6 +415,15 @@ function buildSceneCallouts(caseData: CaseScenario, tone: SceneTone, sceneImage:
   const bystanders = caseData.sceneInfo?.bystanders || 'Bystanders';
   const hazards = (caseData.sceneInfo?.hazards || []).filter(h => !isNoHazardLabel(h));
 
+  if (sceneImage.includes('y1-020-school-football')) {
+    return [
+      { id: 'patient', label: 'Patient', value: patientCue || position, icon: Eye, x: 58, y: 66, align: 'right' },
+      { id: 'injury', label: 'Right lower leg', value: appearance, icon: Search, x: 52, y: 74 },
+      { id: 'bystanders', label: 'PE teacher / teammates', value: bystanders, icon: Users, x: 22, y: 47 },
+      { id: 'mechanism', label: 'Football / artificial turf', value: caseData.sceneInfo?.environment || 'Warm evening pitch', icon: AlertTriangle, x: 78, y: 35, align: 'right' },
+    ];
+  }
+
   if (sceneImageNeedsPatientOverlay(sceneImage)) {
     const patientPosition = sceneImage.includes('y1-010-park-bicycle')
       ? { x: 62, y: 57 }
@@ -431,6 +441,15 @@ function buildSceneCallouts(caseData: CaseScenario, tone: SceneTone, sceneImage:
       { id: 'mechanism', label: mechanismLabel, value: hazards[0] || caseData.sceneInfo?.environment || 'Inspect the immediate scene', icon: AlertTriangle, x: 29, y: 38 },
       { id: 'first-look', label: 'First look', value: appearance, icon: Search, x: 76, y: 23, align: 'right' },
       { id: 'bystanders', label: 'Bystanders', value: bystanders, icon: Users, x: 24, y: 70 },
+    ];
+  }
+
+  if (sceneImage.includes('sepsis-001-assisted-living-urosepsis')) {
+    return [
+      { id: 'patient', label: 'Patient', value: patientCue || position, icon: Eye, x: 80, y: 49, align: 'right' },
+      { id: 'first-look', label: 'First look', value: appearance, icon: Search, x: 77, y: 27, align: 'right' },
+      { id: 'carer', label: 'Care assistant', value: bystanders, icon: Users, x: 53, y: 31 },
+      { id: 'room', label: 'Care room', value: caseData.sceneInfo?.environment || 'Warm assisted-living bedroom', icon: Building2, x: 24, y: 69 },
     ];
   }
 
@@ -953,6 +972,13 @@ function getHotspotPosition(
 
   if (sceneImage.includes('y2-009-construction-office-arrest')) {
     if (/construction|active site|hard hat|worksite/i.test(hotspot.label)) return { x: 45, y: 17 };
+    return HOTSPOT_POSITIONS[index % HOTSPOT_POSITIONS.length];
+  }
+
+  if (sceneImage.includes('y1-020-school-football')) {
+    if (/player|teammate|bystander|crowd/i.test(hotspot.label)) return { x: 21, y: 47 };
+    if (/light|floodlight|evening/i.test(hotspot.label)) return { x: 63, y: 17 };
+    if (/access|pitch|turf|ground/i.test(hotspot.label)) return { x: 55, y: 78 };
     return HOTSPOT_POSITIONS[index % HOTSPOT_POSITIONS.length];
   }
 

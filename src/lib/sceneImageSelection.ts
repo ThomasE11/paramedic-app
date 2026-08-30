@@ -18,6 +18,8 @@ const SCENE_ASSET_GENDER_OVERRIDES: Record<string, 'male' | 'female'> = {
   '/scene-assets/cardiac-ecg-001-epigastric-mi-burdubai.png': 'male',
   '/scene-assets/litfl-003-renal-failure-hyperkalemia-apartment.png': 'male',
   '/scene-assets/metab-003-clinic-hyperkalemia-renal.png': 'male',
+  '/scene-assets/resp-012-mall-restaurant-anaphylaxis-male.png': 'male',
+  '/scene-assets/sepsis-001-assisted-living-urosepsis.png': 'female',
   '/scene-assets/y2-009-construction-office-arrest.png': 'male',
 };
 
@@ -89,9 +91,11 @@ export const KNOWN_SCENE_ASSETS = new Set<string>([
   '/scene-assets/resp-008-female-pulmonary-oedema-villa.png',
   '/scene-assets/resp-009-restaurant-choking-dubai.png',
   '/scene-assets/resp-011-pneumonia-deira-apartment.png',
+  '/scene-assets/resp-012-mall-restaurant-anaphylaxis-male.png',
   '/scene-assets/restaurant-anaphylaxis-female-abu-dhabi.png',
   '/scene-assets/road-traffic-male-dubai.png',
   '/scene-assets/seizure-bedroom-female-uae.png',
+  '/scene-assets/sepsis-001-assisted-living-urosepsis.png',
   '/scene-assets/staff-accommodation-collapse-sharjah.png',
   '/scene-assets/trauma-003-deira-chest-wound.png',
   '/scene-assets/trauma-004-park-stabbing-tamponade.png',
@@ -101,6 +105,7 @@ export const KNOWN_SCENE_ASSETS = new Set<string>([
   '/scene-assets/water-beach-drowning-dubai.png',
   '/scene-assets/y1-008-university-library-panic-female.png',
   '/scene-assets/y1-010-park-bicycle-wrist-fall.png',
+  '/scene-assets/y1-020-school-football-tibial-fracture-male.png',
   '/scene-assets/y2-004-workshop-flash-burn.png',
   '/scene-assets/y2-005-office-ectopic-lower-abdo.png',
   '/scene-assets/y2-009-construction-office-arrest.png',
@@ -146,6 +151,7 @@ export const PROMPT_SCENE_IMAGE_OVERRIDES: Record<string, string> = {
   'resp-006': '/scene-assets/resp-002-construction-tension-pneumothorax.png',
   'resp-009': '/scene-assets/resp-009-restaurant-choking-dubai.png',
   'resp-011': '/scene-assets/resp-011-pneumonia-deira-apartment.png',
+  'resp-012': '/scene-assets/resp-012-mall-restaurant-anaphylaxis-male.png',
   'y2-001': '/scene-assets/female-asthma-student-sharjah.png',
   'asthma-mild-001': '/scene-assets/female-asthma-student-sharjah.png',
   'asthma-sev-001': '/scene-assets/female-asthma-home-severe-uae.png',
@@ -169,11 +175,13 @@ export const PROMPT_SCENE_IMAGE_OVERRIDES: Record<string, string> = {
   'y1-005': '/scene-assets/home-pediatric-uae-family.png',
   'y1-008': '/scene-assets/y1-008-university-library-panic-female.png',
   'y1-010': '/scene-assets/y1-010-park-bicycle-wrist-fall.png',
+  'y1-020': '/scene-assets/y1-020-school-football-tibial-fracture-male.png',
   'y2-005': '/scene-assets/y2-005-office-ectopic-lower-abdo.png',
   'y2-009': '/scene-assets/y2-009-construction-office-arrest.png',
   'y2-004': '/scene-assets/y2-004-workshop-flash-burn.png',
   'litfl-012': '/scene-assets/staff-accommodation-collapse-sharjah.png',
   'multi-001': '/scene-assets/mci-highway-uae.png',
+  'sepsis-001': '/scene-assets/sepsis-001-assisted-living-urosepsis.png',
 };
 
 const PATIENT_OVERLAY_SCENE_ASSETS = new Set<string>([
