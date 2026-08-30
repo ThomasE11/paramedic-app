@@ -55,3 +55,30 @@ test('keyboard navigation reaches case selection', async ({ page }) => {
   expect(['BUTTON', 'A', 'INPUT', 'SELECT', 'TEXTAREA']).toContain(first);
   expect(second).toBeTruthy();
 });
+
+test('mobile treatment header and monitor do not collide or clip', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/?devLiveCase=trauma-001&capture');
+  await expect(page.locator('canvas').first()).toBeVisible({ timeout: 20_000 });
+
+  const brand = page.locator('[data-student-header-brand]');
+  const controls = page.locator('[data-student-header-controls]');
+  await expect(brand).toBeHidden();
+  await expect(controls).toBeVisible();
+
+  const layout = await page.evaluate(() => {
+    const monitor = document.querySelector('.tactical-monitor-card');
+    return {
+      bodyWidth: document.body.scrollWidth,
+      viewportWidth: window.innerWidth,
+      monitorClientWidth: monitor?.clientWidth ?? 0,
+      monitorScrollWidth: monitor?.scrollWidth ?? 0,
+      monitorClientHeight: monitor?.clientHeight ?? 0,
+      monitorScrollHeight: monitor?.scrollHeight ?? 0,
+    };
+  });
+
+  expect(layout.bodyWidth).toBeLessThanOrEqual(layout.viewportWidth + 1);
+  expect(layout.monitorScrollWidth).toBeLessThanOrEqual(layout.monitorClientWidth + 1);
+  expect(layout.monitorScrollHeight).toBeLessThanOrEqual(layout.monitorClientHeight + 1);
+});

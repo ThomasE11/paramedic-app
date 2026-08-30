@@ -4808,7 +4808,10 @@ export function StudentPanel({
       <header className="sticky top-0 z-50 nav-blur border-b border-black/5 safe-top">
         <div className="container mx-auto px-3 sm:px-4 py-2 sm:py-3">
           <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <div
+              data-student-header-brand
+              className={`flex items-center gap-2 sm:gap-3 min-w-0 ${phase !== 'select' ? 'max-[439px]:hidden' : ''}`}
+            >
               <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 to-emerald-600 shadow-md shadow-cyan-500/20 shrink-0">
                 <GraduationCap className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
               </div>
@@ -4821,7 +4824,7 @@ export function StudentPanel({
               </div>
             </div>
 
-            <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+            <div data-student-header-controls className="flex items-center gap-1.5 sm:gap-3 shrink-0">
               {/* Language switcher */}
               <LanguageSwitcher />
               {/* Voice toggle */}
