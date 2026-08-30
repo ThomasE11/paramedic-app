@@ -166,10 +166,14 @@ export function buildScrubs(
   // (hip-hem, waistband, mid-biceps, neck scoop, shoulder cap, ankle cuff).
   const TOP_HEM = yf(0.522);
   const WAISTBAND = yf(0.539);
-  const SCOOP_BOTTOM = yf(0.795);
-  const TOP_CAP = yf(0.844);
+  // Keep the cap above the complete shoulder girdle. The previous cut crossed
+  // deltoid/trapezius triangles and became a torn-looking saw edge when the
+  // rig brought the arms down from its source A-pose. Only the shallow crew
+  // neck is cut away now, so the shoulder remains a continuous garment shell.
+  const SCOOP_BOTTOM = yf(0.835);
+  const TOP_CAP = yf(0.902);
   const CUFF = yf(0.1);
-  const SCOOP_HALF_W = 0.105 * (H / 1.8);
+  const SCOOP_HALF_W = 0.180 * (H / 1.8);
   // Cuffs are cut PERPENDICULAR to the upper-arm axis. A vertical |x| plane
   // looks acceptable in the base A-pose but collapses to a long triangular
   // point after the tripod morph brings the arms inward. Projecting each
@@ -329,6 +333,48 @@ export function buildScrubs(
       p[m * 3 + 2] = pos.getZ(original);
     });
 
+    // Triangle masking selects the last complete body row below the curved
+    // neckline, which otherwise leaves a staircase around the throat. Snap
+    // only that open boundary to the same authored crew-neck parabola used by
+    // the Blender assets. Relative morph deltas remain unchanged, so this
+    // underlay continues to follow every posture and breathing morph exactly.
+    if (spec.name === 'scrub-top') {
+      const edgeUse = new Map<string, number>();
+      for (let j = 0; j < tris.length; j += 3) {
+        const triangle = [tris[j], tris[j + 1], tris[j + 2]];
+        for (let corner = 0; corner < 3; corner++) {
+          const a = triangle[corner];
+          const b = triangle[(corner + 1) % 3];
+          const key = a < b ? `${a}:${b}` : `${b}:${a}`;
+          edgeUse.set(key, (edgeUse.get(key) ?? 0) + 1);
+        }
+      }
+      const boundary = new Uint8Array(M);
+      edgeUse.forEach((count, key) => {
+        if (count !== 1) return;
+        const [a, b] = key.split(':').map(Number);
+        boundary[a] = 1;
+        boundary[b] = 1;
+      });
+      const inverseWorld = mw.clone().invert();
+      const projected = new THREE.Vector3();
+      remap.forEach((m, original) => {
+        if (!boundary[m]) return;
+        const normalisedX = Math.abs(wx[original]) / SCOOP_HALF_W;
+        // Runtime is Y-up/Z-forward; project only the visible anterior collar.
+        // Posterior UV seams are topological boundaries too and must not be
+        // mistaken for the neckline or they stretch into shoulder spikes.
+        if (wz[original] <= 0.015 || normalisedX > 1 || wy[original] < SCOOP_BOTTOM - H * 0.035) return;
+        const targetY = SCOOP_BOTTOM + (TOP_CAP - SCOOP_BOTTOM) * normalisedX * normalisedX;
+        const adjustment = targetY - wy[original];
+        if (adjustment < -H * 0.005 || adjustment > H * 0.035) return;
+        projected.fromBufferAttribute(pos, original).applyMatrix4(mw);
+        projected.y = targetY;
+        projected.applyMatrix4(inverseWorld);
+        p[m * 3 + 1] = projected.y;
+      });
+    }
+
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(p, 3));
     g.setIndex(new THREE.BufferAttribute(tris, 1));
@@ -420,7 +466,9 @@ export function buildScrubs(
       ...(fabric ? { normalMap: fabric, normalScale: new THREE.Vector2(0.35, 0.35) } : {}),
     });
     const innerMat = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(spec.color).multiplyScalar(0.45),
+      // A subtle inside-face value suggests fabric thickness without turning
+      // open collar/shoulder angles into black holes.
+      color: new THREE.Color(spec.color).multiplyScalar(0.72),
       roughness: 0.96,
       metalness: 0,
       side: THREE.BackSide,
@@ -674,7 +722,9 @@ export function buildBlendedGarments(
       ...(fabric ? { normalMap: fabric, normalScale: new THREE.Vector2(0.35, 0.35) } : {}),
     });
     const innerMat = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(spec.color).multiplyScalar(0.45),
+      // Keep the lining close to the outer cloth value. A near-black back face
+      // made legitimate collar openings read as torn geometry in close-up.
+      color: new THREE.Color(spec.color).multiplyScalar(0.72),
       roughness: 0.96,
       metalness: 0,
       side: THREE.BackSide,

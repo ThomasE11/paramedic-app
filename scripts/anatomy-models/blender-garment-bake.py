@@ -54,9 +54,14 @@ FABRIC_THICKNESS = 0.004
 #   shirt:    hem  -> shoulder cap, short sleeves bounded by |x|
 #   trousers: cuff -> waistband
 SHIRT_HEM = 0.522
-SHIRT_CAP = 0.844
-SHIRT_SCOOP_BOTTOM = 0.795     # deepest point of the curved neck opening
-SHIRT_SCOOP_HALF_W = 0.105     # scaled by height/1.8 below
+# The cap must sit above the full shoulder girdle. Cutting it at 0.844 ran
+# through the deltoid/trapezius triangles; once the arms came down from the
+# authored A-pose, the open boundary looked like a torn, saw-toothed shirt.
+# A shallow crew neck then removes only the throat opening while leaving an
+# unbroken shoulder shell, as a real T-shirt would.
+SHIRT_CAP = 0.902
+SHIRT_SCOOP_BOTTOM = 0.835     # deepest point of the curved crew-neck opening
+SHIRT_SCOOP_HALF_W = 0.180     # scaled by height/1.8 below
 TORSO_HALF_W = 0.215           # torso shell before the shoulder axis starts
 SHOULDER_X = 0.19              # upper-arm origin in normalised body metres
 SHOULDER_Z = 0.82              # body-height fraction
@@ -117,6 +122,7 @@ def mask_and_offset(body, name, keep_fn, clearance, out_path):
     z_min, z_max, H = measure(source_mesh)
     scale = body.matrix_world.to_scale().x or 1.0
     half_scale = H / 1.8
+    scoop_half_local = SHIRT_SCOOP_HALF_W * half_scale
 
     # Which verts to KEEP (garment region).
     keep = [keep_fn(v.co) for v in source_mesh.vertices]
@@ -185,10 +191,48 @@ def mask_and_offset(body, name, keep_fn, clearance, out_path):
         print(f"[{name}] ERROR: empty after component filter")
         return False
 
+    # Snap only the open crew-neck boundary to the authored parabola. Triangle
+    # masking necessarily picks the last complete row *below* the mathematical
+    # cut; without this correction that row stair-steps around the throat at
+    # exam distance. The same small basis delta is copied into every shape key
+    # below, preserving breathing/posture deformation while giving the shirt a
+    # clean, intentional neckline.
+    edge_counts = {}
+    for face in source_faces:
+        for corner in range(len(face)):
+            edge = tuple(sorted((face[corner], face[(corner + 1) % len(face)])))
+            edge_counts[edge] = edge_counts.get(edge, 0) + 1
+    boundary_sources = {
+        index
+        for edge, count in edge_counts.items()
+        if count == 1
+        for index in edge
+    }
+    basis_adjustment_z = {}
+    if name == "garment-shirt":
+        for source_index in boundary_sources:
+            co = source_mesh.vertices[source_index].co
+            normalised_x = abs(co.x) / scoop_half_local
+            zf = (co.z - z_min) / H
+            # The front of this imported body faces Blender -Y. Do not project
+            # the posterior collar: UV seams there also look like boundaries
+            # topologically and stretching them produces shoulder spikes.
+            if co.y >= -0.015 or normalised_x > 1.0 or zf < SHIRT_SCOOP_BOTTOM - 0.035:
+                continue
+            neckline_zf = SHIRT_SCOOP_BOTTOM + (SHIRT_CAP - SHIRT_SCOOP_BOTTOM) * normalised_x ** 2
+            adjustment = z_min + neckline_zf * H - co.z
+            if -0.005 * H <= adjustment <= 0.035 * H:
+                basis_adjustment_z[source_index] = adjustment
+
     remap = {source_index: new_index for new_index, source_index in enumerate(source_indices)}
+    basis_coords = []
+    for source_index in source_indices:
+        co = source_mesh.vertices[source_index].co.copy()
+        co.z += basis_adjustment_z.get(source_index, 0.0)
+        basis_coords.append(co)
     mesh = bpy.data.meshes.new(f"{name}-mesh")
     mesh.from_pydata(
-        [source_mesh.vertices[index].co.copy() for index in source_indices],
+        basis_coords,
         [],
         [[remap[index] for index in face] for face in source_faces],
     )
@@ -227,7 +271,9 @@ def mask_and_offset(body, name, keep_fn, clearance, out_path):
             target_key.slider_min = source_key.slider_min
             target_key.slider_max = source_key.slider_max
             for new_index, source_index in enumerate(source_indices):
-                target_key.data[new_index].co = source_key.data[source_index].co.copy()
+                co = source_key.data[source_index].co.copy()
+                co.z += basis_adjustment_z.get(source_index, 0.0)
+                target_key.data[new_index].co = co
 
     # Offset every key along THAT DEFORMED SURFACE'S smooth normals. Reusing
     # standing normals for pose_seated points the knee clearance sideways and
