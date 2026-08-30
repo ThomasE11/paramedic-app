@@ -488,7 +488,7 @@ const PRODUCT_ASSET_PATHS = {
   cpap: '/equipment-assets/cpap-mask-front-v2.png',
   ventilator: '/equipment-assets/portable-transport-ventilator.webp',
   compactVentilator: '/equipment-assets/compact-mechanical-ventilator.webp',
-  ventilatorCircuit: '/equipment-assets/ventilator-circuit.webp',
+  ventilatorCircuit: '/equipment-assets/ett-ventilator-connected-v3.png',
   ivCannula: '/equipment-assets/iv-cannula.webp',
   fluidBag: '/equipment-assets/fluid-bag.webp',
   defibPads: '/equipment-assets/defib-pads.webp',

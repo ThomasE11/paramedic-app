@@ -172,7 +172,7 @@ const TREATMENT_ASSET_PATHS = {
   bvm: '/equipment-assets/bvm.webp',
   bvmFaceSeal: '/equipment-assets/bvm-face-seal-v2.png',
   cpap: '/equipment-assets/cpap-mask-front-v2.png',
-  ventilator: '/equipment-assets/ventilator-circuit.webp',
+  ventilator: '/equipment-assets/ett-ventilator-connected-v3.png',
   ivCannula: '/treatment-assets/iv-cannula.svg',
   fluidBag: '/treatment-assets/fluid-bag.svg',
   defibPads: '/treatment-assets/defib-pads.svg',
@@ -1249,6 +1249,7 @@ function WornFaceEquipment({
   const nonrebreather = equipment.mode === 'nonrebreather';
   const nebulizer = equipment.mode === 'nebulizer';
   const cpap = equipment.mode === 'cpap';
+  const ventilator = equipment.mode === 'ventilator';
   const fittedPhotorealisticMask = nonrebreather || nebulizer || cpap;
   if (bvm && !bvmViaTube) {
     return (
@@ -1276,6 +1277,18 @@ function WornFaceEquipment({
         className="pointer-events-none relative h-12 w-16 -translate-y-[28%] animate-in fade-in zoom-in-75 duration-300 drop-shadow-[0_5px_6px_rgba(2,44,58,0.5)]"
       >
         <img src={OXYGEN_SRC.cpap} alt="" draggable={false} className="h-full w-full object-contain" />
+      </div>
+    );
+  }
+  if (ventilator) {
+    return (
+      <div
+        data-applied-equipment="ventilator-circuit"
+        data-airway-connection="ett"
+        aria-label="Ventilator circuit connected to the secured endotracheal tube through an HME and capnography elbow"
+        className="pointer-events-none relative h-10 w-14 translate-y-[23%] animate-in fade-in zoom-in-75 duration-300 drop-shadow-[0_5px_6px_rgba(2,44,58,0.5)]"
+      >
+        <img src={OXYGEN_SRC.ventilator} alt="" draggable={false} className="h-full w-full object-contain" />
       </div>
     );
   }

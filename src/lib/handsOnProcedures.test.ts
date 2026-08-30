@@ -136,6 +136,7 @@ describe('hands-on treatment procedures', () => {
 
     expect(isHandsOnTreatment('mechanical_ventilation')).toBe(true);
     expect(plan?.title).toBe('Prepare the transport ventilator');
+    expect(plan?.equipmentAsset).toBe('/equipment-assets/ett-ventilator-connected-v3.png');
     expect(plan?.steps.map(step => step.id)).toEqual(['assemble', 'test', 'airway', 'connect', 'confirm']);
   });
 

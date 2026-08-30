@@ -502,7 +502,7 @@ export function getHandsOnProcedurePlan(
     return {
       id: 'ventilator-circuit', title: treatmentId === 'mechanical_ventilation' ? 'Prepare the transport ventilator' : 'Connect the ventilator circuit',
       subtitle: 'A secured airway must be confirmed before the tested circuit is connected.', treatmentId,
-      requiresTarget: false, targets: [], equipmentAsset: '/equipment-assets/ventilator-circuit.webp', completionLabel: 'Circuit connected — verify delivered ventilation',
+      requiresTarget: false, targets: [], equipmentAsset: '/equipment-assets/ett-ventilator-connected-v3.png', completionLabel: 'Circuit connected — verify delivered ventilation',
       steps: [
         STEP('assemble', 'Assemble the circuit', 'Connect tubing, filter/HME, catheter mount and capnography sampling line.', 'Keep every connection visible and tight.', 'connect'),
         STEP('test', 'Run pre-use test', 'Check the ventilator battery, oxygen supply, leak test and alarm function.', 'Never connect an untested circuit to the patient.', 'prepare'),

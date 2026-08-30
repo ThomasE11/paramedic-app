@@ -134,6 +134,17 @@ results.noDiagramEtTube = await page.locator('img[src="/treatment-assets/et-tube
 await page.getByRole('button', { name: 'Examine Face' }).click();
 await page.waitForTimeout(800);
 await page.screenshot({ path: 'test-results/ett-face-closeup-verified.png' });
+await page.getByRole('button', { name: /Back to full body/i }).click();
+await page.waitForTimeout(500);
+await openKit('Breathing Bag');
+await selectEquipment('Ventilator Circuit');
+results.ventilatorSteps = await completeProcedure(/ventilator circuit/i);
+const connectedVentilator = page.locator('[data-applied-equipment="ventilator-circuit"][data-airway-connection="ett"]');
+results.ventilatorConnectedToEtTube = await connectedVentilator.count() > 0;
+results.ventilatorConnectionLabelVisible = /HME and capnography elbow/i.test(await connectedVentilator.first().getAttribute('aria-label') ?? '');
+await page.getByRole('button', { name: 'Examine Face' }).click();
+await page.waitForTimeout(800);
+await page.screenshot({ path: 'test-results/ett-ventilator-face-closeup-verified.png' });
 
 await openCase('trauma-001');
 await openKit('Exposure Pack');
@@ -151,6 +162,7 @@ if (results.maskSteps < 4 || !results.maskFittedToPatient
   || results.cpapSteps < 5 || !results.cpapBagUsesFittedAsset || !results.cpapSealedOnFace || !results.cpapHarnessLabelVisible
   || results.bvmSteps < 5 || !results.bvmHeldOnFace || !results.bvmSealLabelVisible
   || results.intubationSteps < 6 || !results.etTubeSecuredAtMouth || !results.etTubePilotBalloonVisible || !results.noDiagramEtTube
+  || results.ventilatorSteps < 5 || !results.ventilatorConnectedToEtTube || !results.ventilatorConnectionLabelVisible
   || results.haemorrhageSteps < 5 || !results.pressureDressingOnInjuredLimb
   || results.tractionSteps < 6
   || !results.tractionSplintOnInjuredLimb || !results.siteLabelVisible || errors.length) {
