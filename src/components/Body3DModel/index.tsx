@@ -153,6 +153,7 @@ interface AppliedEquipmentVisualState {
   hasPelvicBinder: boolean;
   hasSurgicalAirway: boolean;
   hasGastricTube: boolean;
+  hasPericardialDrain: boolean;
   hasWarmingBlanket: boolean;
   hasActiveCooling: boolean;
   immobilisationDevice: 'spinal-board' | 'scoop' | 'vacuum-mattress' | 'head-blocks' | 'ked' | null;
@@ -187,6 +188,7 @@ const TREATMENT_ASSET_PATHS = {
   pelvicBinder: '/equipment-assets/pelvic-binder.svg',
   fonaKit: '/equipment-assets/fona-kit.svg',
   gastricTubeKit: '/equipment-assets/gastric-tube-kit.svg',
+  pericardiocentesisKit: '/equipment-assets/pericardiocentesis-kit.svg',
   warmingBlanket: '/equipment-assets/warming-blanket.webp',
   coolingPack: '/equipment-assets/cooling-pack.webp',
   spineBoard: '/equipment-assets/spine-board.webp',
@@ -1181,6 +1183,7 @@ function buildTreatmentEquipmentState(appliedTreatmentIds: string[]): AppliedEqu
     hasPelvicBinder: applied.has('pelvic_binder'),
     hasSurgicalAirway,
     hasGastricTube: applied.has('orogastric_tube'),
+    hasPericardialDrain: applied.has('pericardiocentesis'),
     hasWarmingBlanket: applied.has('warming_blanket'),
     hasActiveCooling: applied.has('active_cooling'),
     immobilisationDevice,
@@ -1403,6 +1406,23 @@ function AppliedGastricDecompressionTube() {
   );
 }
 
+function AppliedPericardialDrain() {
+  return (
+    <div
+      data-applied-equipment="pericardial-drain"
+      aria-label="Pigtail pericardial drain secured to a closed collection system"
+      className="pointer-events-none relative h-28 w-28 animate-in fade-in zoom-in-75 duration-500 drop-shadow-[0_4px_7px_rgba(2,6,23,.78)]"
+    >
+      <span className="absolute left-[38px] top-2 h-12 w-12 rotate-6 rounded-xl border-2 border-white/90 bg-white/65 shadow backdrop-blur-[1px]" />
+      <span className="absolute left-[54px] top-[18px] h-5 w-5 rounded-full border-4 border-cyan-200 border-l-transparent" />
+      <span className="absolute left-[58px] top-[42px] h-1 w-14 origin-left rotate-[38deg] rounded-full bg-cyan-100 shadow" />
+      <span className="absolute bottom-0 right-0 h-12 w-14 rounded-lg border-2 border-rose-200/75 bg-rose-950/75 shadow-inner" />
+      <span className="absolute bottom-2 right-1 h-5 w-12 rounded bg-rose-600/50" />
+      <span className="absolute bottom-3 right-2 text-[6px] font-black uppercase tracking-[0.08em] text-rose-100">Measured</span>
+    </div>
+  );
+}
+
 function AppliedTorsoCover({ cooling }: { cooling: boolean }) {
   return (
     <div data-applied-equipment={cooling ? 'active-cooling' : 'warming-blanket'} className={`pointer-events-none h-40 w-28 rounded-[28px] border shadow-xl animate-in fade-in zoom-in-95 duration-500 ${cooling ? 'border-cyan-100/80 bg-gradient-to-b from-cyan-100/55 via-sky-300/45 to-cyan-100/50' : 'border-amber-100/70 bg-[linear-gradient(125deg,rgba(254,243,199,.88),rgba(180,83,9,.62),rgba(254,243,199,.82))]'}`}>
@@ -1487,6 +1507,7 @@ function AppliedEquipmentTray({ appliedTreatmentIds }: { appliedTreatmentIds: st
   if (equipment.hasPelvicBinder) chips.push({ src: TREATMENT_ASSET_PATHS.pelvicBinder, label: 'Pelvic binder secured' });
   if (equipment.hasSurgicalAirway) chips.push({ src: TREATMENT_ASSET_PATHS.fonaKit, label: 'FONA tube secured' });
   if (equipment.hasGastricTube) chips.push({ src: TREATMENT_ASSET_PATHS.gastricTubeKit, label: 'Gastric decompression active' });
+  if (equipment.hasPericardialDrain) chips.push({ src: TREATMENT_ASSET_PATHS.pericardiocentesisKit, label: 'Pericardial drain secured' });
   if (equipment.hasWarmingBlanket) chips.push({ src: TREATMENT_ASSET_PATHS.warmingBlanket, label: 'Warming blanket' });
   if (equipment.hasActiveCooling) chips.push({ src: TREATMENT_ASSET_PATHS.coolingPack, label: 'Active cooling' });
   if (equipment.immobilisationDevice) {
@@ -1548,6 +1569,7 @@ function TreatmentEquipmentOverlay({
     || equipment.hasPelvicBinder
     || equipment.hasSurgicalAirway
     || equipment.hasGastricTube
+    || equipment.hasPericardialDrain
     || equipment.hasWarmingBlanket
     || equipment.hasActiveCooling
     || equipment.immobilisationDevice
@@ -1655,6 +1677,12 @@ function TreatmentEquipmentOverlay({
       {equipment.hasGastricTube && (
         <MarkerHtml position={faceAnchor(0.035, 1.61, 0.245)} distanceFactor={2.05} zIndexRange={[73, 0]} interactive={false} presentation={posture === 'tripod' || posture === 'seated' ? 'upright' : presentation} contentScale={equipmentScale}>
           <AppliedGastricDecompressionTube />
+        </MarkerHtml>
+      )}
+
+      {equipment.hasPericardialDrain && (
+        <MarkerHtml position={anchor(-0.04, 1.14, 0.25)} distanceFactor={2.1} zIndexRange={[73, 0]} interactive={false} presentation={presentation} contentScale={equipmentScale}>
+          <AppliedPericardialDrain />
         </MarkerHtml>
       )}
 

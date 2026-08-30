@@ -658,6 +658,30 @@ export function getHandsOnProcedurePlan(
     };
   }
 
+  if (treatmentId === 'pericardiocentesis') {
+    return {
+      id: 'ultrasound-guided-pericardiocentesis',
+      title: 'Perform ultrasound-guided pericardiocentesis',
+      subtitle: 'Rescue decompression requires confirmed tamponade physiology, continuous monitoring, a sterile image-guided path and controlled drainage.',
+      treatmentId,
+      requiresTarget: false,
+      targets: [],
+      equipmentAsset: '/equipment-assets/pericardiocentesis-kit.svg',
+      completionLabel: 'Pericardial drain secured — perfusion reassessed',
+      steps: [
+        STEP('confirm', 'Confirm decompensated tamponade', 'Correlate shock or arrest with focused cardiac ultrasound showing pericardial fluid and tamponade physiology; consider traumatic haemopericardium and aortic dissection.', 'POCUS supports the diagnosis. An effusion without haemodynamic compromise is not an emergency needle-drainage indication.', 'confirm'),
+        STEP('prepare', 'Prepare the monitored rescue field', 'Call for expert and definitive surgical support, apply continuous ECG and blood-pressure monitoring, expose the chest and open the sterile drainage kit with resuscitation equipment ready.', 'In traumatic arrest, follow the resuscitative thoracotomy pathway when the required team and setting are available.', 'prepare'),
+        STEP('window', 'Select the safest ultrasound window', 'Scan subcostal, apical and parasternal views. Choose the point where the fluid is closest to the probe with the widest pocket and no lung, liver or vessel in the planned path.', 'Do not default blindly to a subxiphoid route; the effusion and safe trajectory determine the entry site.', 'prepare', 1200),
+        STEP('sterile', 'Prepare skin, probe and anaesthesia', 'Disinfect widely, apply sterile drapes, cover the cardiac probe with sterile gel and infiltrate local anaesthetic if the situation allows.', 'Keep the selected window visible and maintain asepsis throughout wire and catheter placement.', 'expose'),
+        STEP('needle', 'Advance while aspirating under ultrasound', 'Attach a saline-filled syringe to the sheathed needle and advance slowly along the imaged trajectory while aspirating and continuously tracking the needle tip.', 'Stop for ectopy, loss of tip visibility, resistance or unexpected bright blood; never advance blindly toward the heart.', 'place', 1400),
+        STEP('confirm-space', 'Confirm pericardial position', 'Confirm the tip and aspirate are in the pericardial space; use agitated saline contrast on ultrasound when position is uncertain.', 'Blood that clots or intracardiac microbubbles suggests chamber puncture—stop and seek immediate expert support.', 'confirm', 1200),
+        STEP('catheter', 'Place the pigtail catheter', 'Advance a J-tip guidewire under ultrasound, withdraw the needle, dilate the tract and pass the pigtail catheter using a controlled Seldinger technique.', 'Keep the guidewire controlled at all times and verify it remains in the pericardial space before dilating.', 'connect', 1400),
+        STEP('drain', 'Drain only to restore perfusion', 'Aspirate in measured aliquots while trending BP, pulse, ECG, symptoms and the effusion on ultrasound.', 'In haemopericardium or possible aortic pathology, avoid uncontrolled decompression; drain the minimum required as a bridge to surgery.', 'press', 1200),
+        STEP('secure', 'Secure, document and reassess', 'Secure a closed drainage system, record volume and character, repeat focused ultrasound and haemodynamics, and expedite definitive care.', 'Watch for re-accumulation, dysrhythmia, myocardial or coronary injury, pneumothorax and drain blockage.', 'wrap'),
+      ],
+    };
+  }
+
   const splintIds = ['splinting', 'sam_splint', 'box_splint', 'vacuum_limb_splint', 'air_splint', 'traction_splint'];
   if (splintIds.includes(treatmentId)) {
     const traction = treatmentId === 'traction_splint';
@@ -794,6 +818,7 @@ const HANDS_ON_TREATMENTS = new Set([
   'magill_forceps',
   'orogastric_tube',
   'ett_confirmation',
+  'pericardiocentesis',
 ]);
 
 export const isHandsOnTreatment = (treatmentId: string): boolean =>
@@ -823,7 +848,8 @@ export const procedureIncludesIntegratedReassessment = (treatmentId: string): bo
   || treatmentId === 'surgical_cric'
   || treatmentId === 'magill_forceps'
   || treatmentId === 'orogastric_tube'
-  || treatmentId === 'ett_confirmation';
+  || treatmentId === 'ett_confirmation'
+  || treatmentId === 'pericardiocentesis';
 
 export function procedureSiteToken(treatmentId: string, target: ProcedureSite): string {
   return `site:${treatmentId}:${target}`;

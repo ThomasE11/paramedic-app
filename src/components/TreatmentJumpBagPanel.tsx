@@ -536,6 +536,7 @@ const EQUIPMENT_ASSET_PATHS = {
   fonaKit: '/equipment-assets/fona-kit.svg',
   magillKit: '/equipment-assets/magill-forceps-kit.svg',
   gastricTubeKit: '/equipment-assets/gastric-tube-kit.svg',
+  pericardiocentesisKit: '/equipment-assets/pericardiocentesis-kit.svg',
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -672,6 +673,7 @@ const BAG_EQUIPMENT: Record<ManagementTab, EquipmentInventoryItem[]> = {
     { id: 'circ-pads', label: 'Defib Pads', caption: 'Expose, place and connect', treatmentId: 'monitor_pads', assetPath: PRODUCT_ASSET_PATHS.defibPads, tone: '#e11d48' },
     { id: 'circ-tourniquet', label: 'Tourniquet', caption: 'Major limb bleed', treatmentId: 'tourniquet', assetPath: EQUIPMENT_ASSET_PATHS.tourniquet, tone: '#111827' },
     { id: 'circ-pelvic-binder', label: 'Pelvic Binder', caption: 'Suspected unstable pelvic injury', treatmentId: 'pelvic_binder', assetPath: EQUIPMENT_ASSET_PATHS.pelvicBinder, tone: '#dc2626', wide: true },
+    { id: 'circ-pericardial-drain', label: 'Pericardial Drain Kit', caption: 'POCUS-guided tamponade rescue', treatmentId: 'pericardiocentesis', assetPath: EQUIPMENT_ASSET_PATHS.pericardiocentesisKit, tone: '#be123c', wide: true },
     { id: 'circ-chest-seal', label: 'Vented Chest Seal', caption: 'Open chest wound', treatmentId: 'chest_seal_vented', assetPath: EQUIPMENT_ASSET_PATHS.bandages, tone: '#f97316' },
     { id: 'circ-lucas', label: 'Mechanical CPR', caption: 'LUCAS device', treatmentId: 'lucas_device', assetPath: PRODUCT_ASSET_PATHS.lucas, tone: '#64748b' },
   ],

@@ -111,6 +111,7 @@ describe('hands-on treatment procedures', () => {
       'ventilator_setup', 'mechanical_ventilation', 'pelvic_binder', 'surgical_cric', 'magill_forceps',
       'orogastric_tube',
       'airway_open',
+      'pericardiocentesis',
     ];
     for (const treatmentId of equipmentTreatments) {
       const plan = getHandsOnProcedurePlan(treatmentId, caseData);
@@ -189,6 +190,17 @@ describe('hands-on treatment procedures', () => {
     expect(plan?.steps.find(step => step.id === 'auscultate')?.instruction).toContain('both upper and lower lateral chest fields');
     expect(isHandsOnTreatment('ett_confirmation')).toBe(true);
     expect(procedureIncludesIntegratedReassessment('ett_confirmation')).toBe(true);
+  });
+
+  it('requires image-guided access, controlled drainage and reassessment for pericardiocentesis', () => {
+    const plan = getHandsOnProcedurePlan('pericardiocentesis', caseData);
+
+    expect(plan?.steps.map(step => step.id)).toEqual(['confirm', 'prepare', 'window', 'sterile', 'needle', 'confirm-space', 'catheter', 'drain', 'secure']);
+    expect(plan?.steps.find(step => step.id === 'window')?.clinicalCue).toContain('Do not default blindly');
+    expect(plan?.steps.find(step => step.id === 'needle')?.instruction).toContain('continuously tracking the needle tip');
+    expect(plan?.steps.find(step => step.id === 'drain')?.instruction).toContain('measured aliquots');
+    expect(isHandsOnTreatment('pericardiocentesis')).toBe(true);
+    expect(procedureIncludesIntegratedReassessment('pericardiocentesis')).toBe(true);
   });
 
   it('reuses an already fitted nebuliser when adding the second bronchodilator', () => {

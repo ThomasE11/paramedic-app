@@ -409,6 +409,81 @@ function TubeConfirmationProcedurePreview({
   );
 }
 
+function PericardiocentesisProcedurePreview({
+  procedureId,
+  completedSteps,
+  animatingStep,
+}: {
+  procedureId: string;
+  completedSteps: string[];
+  animatingStep: string | null;
+}) {
+  if (procedureId !== 'ultrasound-guided-pericardiocentesis') return null;
+  const reached = (stepId: string) => completedSteps.includes(stepId) || animatingStep === stepId;
+  const confirmedTamponade = reached('confirm');
+  const prepared = reached('prepare');
+  const windowSelected = reached('window');
+  const sterile = reached('sterile');
+  const needlePlaced = reached('needle');
+  const spaceConfirmed = reached('confirm-space');
+  const catheterPlaced = reached('catheter');
+  const draining = reached('drain');
+  const secured = reached('secure');
+
+  return (
+    <div data-procedure-preview="pericardiocentesis" className="pointer-events-none absolute inset-0 z-30">
+      {confirmedTamponade && (
+        <div className="absolute right-1 top-[13px] h-[61px] w-[84px] overflow-hidden rounded-lg border border-sky-300/60 bg-slate-950/95 p-1 shadow-lg" aria-label="Focused cardiac ultrasound confirms pericardial fluid and tamponade physiology">
+          <svg viewBox="0 0 80 52" role="img" aria-label="Cardiac ultrasound with pericardial fluid" className="h-full w-full">
+            <path d="M8 4L39 48 72 4Z" fill="#334155" stroke="#94a3b8" strokeWidth="1.5" />
+            <ellipse cx="41" cy="31" rx="16" ry="10" fill="#64748b" stroke="#cbd5e1" strokeWidth="1.5" />
+            <path d="M21 31c9-19 32-20 42 0-8-9-15-13-22-13s-14 4-20 13Z" fill="#0ea5e9" fillOpacity=".72" />
+          </svg>
+          <span className="absolute bottom-0.5 right-1 text-[6px] font-black uppercase text-sky-100">Effusion + collapse</span>
+        </div>
+      )}
+      {prepared && (
+        <span className="absolute left-1/2 top-[74px] h-[113px] w-[91px] -translate-x-1/2 rounded-[35px] border-2 border-sky-200/55 bg-sky-100/10 shadow-inner" aria-label="Chest exposed with continuous monitoring attached" />
+      )}
+      {sterile && (
+        <span className="absolute left-1/2 top-[82px] h-[99px] w-[82px] -translate-x-1/2 rounded-2xl border-4 border-cyan-100/80 bg-cyan-200/12 shadow-[0_0_15px_rgba(165,243,252,.28)]" aria-label="Sterile drape and ultrasound probe cover applied" />
+      )}
+      {windowSelected && (
+        <>
+          <span className="absolute left-[112px] top-[129px] h-9 w-5 -rotate-[38deg] rounded-b-xl rounded-t-md border-2 border-slate-400 bg-slate-100 shadow" aria-label="Sterile cardiac ultrasound probe over selected drainage window" />
+          <span className="absolute left-[92px] top-[137px] h-6 w-6 rounded-full border-2 border-amber-200 shadow-[0_0_14px_rgba(251,191,36,.7)]" />
+        </>
+      )}
+      {needlePlaced && !catheterPlaced && (
+        <span className="absolute left-[59px] top-[154px] h-1 w-[62px] origin-left -rotate-[18deg] rounded-full bg-gradient-to-r from-slate-500 via-white to-cyan-300 shadow" aria-label="Needle advanced along the continuously imaged trajectory" />
+      )}
+      {spaceConfirmed && !catheterPlaced && (
+        <span className="absolute left-[42px] top-[144px] rounded-full border border-emerald-300/50 bg-emerald-950/95 px-2 py-1 text-[6px] font-black uppercase tracking-[0.07em] text-emerald-100">Tip in pericardial space</span>
+      )}
+      {catheterPlaced && (
+        <>
+          <span className="absolute left-[72px] top-[148px] h-1.5 w-[51px] origin-left -rotate-[15deg] rounded-full bg-cyan-200 shadow" />
+          <span className="absolute left-[116px] top-[132px] h-6 w-6 rounded-full border-4 border-cyan-200 border-l-transparent" aria-label="Pigtail catheter positioned in pericardial space" />
+          <span className="absolute left-[41px] top-[133px] h-1 w-[51px] -rotate-[16deg] rounded-full bg-amber-300" aria-label="Guidewire remains controlled during catheter placement" />
+        </>
+      )}
+      {draining && (
+        <>
+          <span className="absolute left-[38px] top-[142px] h-1 w-[66px] -rotate-[17deg] rounded-full bg-rose-300" />
+          <span className="absolute left-[9px] top-[117px] h-14 w-12 rounded-lg border-2 border-rose-200/70 bg-rose-950/75 shadow-inner" aria-label="Measured pericardial aspirate collected" />
+          <span className="absolute left-[13px] top-[129px] h-6 w-10 rounded bg-rose-600/55" />
+        </>
+      )}
+      {secured && (
+        <>
+          <span className="absolute left-[84px] top-[133px] h-10 w-10 rotate-6 rounded-lg border-2 border-white/90 bg-white/60 shadow" aria-label="Pericardial drain secured with a closed drainage system" />
+          <span className="absolute bottom-3 left-1/2 w-max max-w-[178px] -translate-x-1/2 rounded-full border border-emerald-300/50 bg-emerald-950/95 px-2 py-1 text-center text-[7px] font-black uppercase tracking-[0.08em] text-emerald-100 shadow-lg">Drain secured · BP + ECG + POCUS trending</span>
+        </>
+      )}
+    </div>
+  );
+}
+
 const THERMAL_PREVIEW_TREATMENTS = new Set(['active_cooling', 'warming_blanket']);
 
 function ThermalProcedurePreview({
@@ -867,6 +942,12 @@ export function HandsOnProcedureDialog({
 
               <TubeConfirmationProcedurePreview
                 treatmentId={plan.treatmentId}
+                completedSteps={completedSteps}
+                animatingStep={animatingStep}
+              />
+
+              <PericardiocentesisProcedurePreview
+                procedureId={plan.id}
                 completedSteps={completedSteps}
                 animatingStep={animatingStep}
               />

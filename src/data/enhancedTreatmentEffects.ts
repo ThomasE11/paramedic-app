@@ -2150,7 +2150,7 @@ export const TREATMENTS: Treatment[] = [
   {
     id: 'pericardiocentesis',
     name: 'Pericardiocentesis',
-    description: 'Emergency needle aspiration of pericardial fluid for cardiac tamponade. Subxiphoid approach, aim toward left shoulder.',
+    description: 'Ultrasound-guided emergency drainage for decompensated cardiac tamponade. Select the safest window from the effusion anatomy, place a pigtail catheter and drain only enough to restore perfusion while arranging definitive care.',
     category: 'circulation',
     onset: 'immediate',
     onsetTimeSeconds: 0,

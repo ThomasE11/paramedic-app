@@ -3548,6 +3548,18 @@ export function deriveAppliedTreatmentRealismCues(
     ));
   }
 
+  if (ids.has('pericardiocentesis')) {
+    cues.push(makeTreatmentCue(
+      'pericardial-drain-response',
+      'Pericardial drain secured',
+      /tamponade|pericardial effusion|haemopericard|hemopericard/.test(text)
+        ? 'A closed drain remains secured; trend BP, pulse, ECG and focused ultrasound for immediate perfusion response or re-accumulation.'
+        : 'A pericardial drain is visible despite weak diagnostic support; reassess for procedural complications immediately.',
+      'chest',
+      /tamponade|pericardial effusion|haemopericard|hemopericard/.test(text) ? 'observe' : 'warning',
+    ));
+  }
+
   if (hasAnyId(ids, ['oxygen_nasal', 'oxygen_mask', 'oxygen_nonrebreather'])) {
     cues.push(makeTreatmentCue(
       'oxygen-visible',

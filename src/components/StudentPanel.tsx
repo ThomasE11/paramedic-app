@@ -1187,6 +1187,34 @@ function assessTreatmentPracticality({
     };
   }
 
+  if (id === 'pericardiocentesis') {
+    const systolic = Number.parseInt(String(currentVitals.bp ?? patientState.vitals?.bp ?? '').split('/')[0], 10);
+    const tamponadeEvidence = /cardiac tamponade|pericardial effusion|haemopericard|hemopericard|pericardial fluid|beck.?s triad|right ventricular collapse/.test(text);
+    if (/aortic dissection|dissecting aortic/.test(text)) {
+      return {
+        level: 'block',
+        title: 'Needle drainage unsafe in suspected aortic dissection',
+        clinicalReason: 'Rapid pericardial decompression can worsen bleeding from aortic rupture. Prioritise controlled perfusion and immediate surgical transfer; only an expert-directed minimal bridge drainage strategy is considered when the patient cannot reach surgery alive.',
+      };
+    }
+    if (!tamponadeEvidence) {
+      return {
+        level: 'block',
+        title: 'No tamponade to drain',
+        clinicalReason: 'Pericardiocentesis is a high-risk rescue procedure. Confirm pericardial fluid with focused cardiac ultrasound and correlate it with obstructive shock or arrest before puncturing the chest.',
+        patientQuote: vocal ? 'Why are you preparing a needle for my chest?' : undefined,
+      };
+    }
+    if (!patientState.isInArrest && Number.isFinite(systolic) && systolic >= 100 && (currentVitals.pulse ?? 0) < 120) {
+      return {
+        level: 'block',
+        title: 'No current haemodynamic compromise',
+        clinicalReason: 'An effusion alone is not an emergency needle-drainage indication. Continue monitored ultrasound assessment and arrange expert definitive management unless tamponade physiology develops.',
+        patientQuote: vocal ? 'Please explain why this cannot wait for the specialist team.' : undefined,
+      };
+    }
+  }
+
   if (id === 'traction_splint') {
     const decision = assessTractionSplintSafety(currentCase, appliedTreatmentIds);
     if (!decision.allowed) {
