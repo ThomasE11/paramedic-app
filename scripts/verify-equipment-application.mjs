@@ -33,19 +33,38 @@ async function selectEquipment(name) {
 }
 
 async function completeProcedure(title, target) {
-  await page.getByRole('heading', { name: title }).waitFor({ timeout: 6000 });
+  const dialog = page.getByRole('dialog').filter({ has: page.getByRole('heading', { name: title }) }).last();
+  const completionName = /reassess|monitor|documented|ventilation|secured|running/i;
+  await dialog.waitFor({ timeout: 6000 });
   let steps = 0;
   console.log(`Verifying procedure: ${title}`);
 
+  const advance = async perform => {
+    const previousLabel = (await perform.textContent())?.trim() ?? '';
+    await perform.click();
+    // Procedure timing is deliberately animated. Wait for the active step to
+    // advance instead of assuming a fixed wall-clock duration, because the
+    // WebGL scene can make timers settle later on slower CI machines.
+    for (let attempt = 0; attempt < 60; attempt += 1) {
+      await page.waitForTimeout(100);
+      const next = dialog.getByRole('button', { name: /^Perform:/i }).first();
+      if (await next.isVisible().catch(() => false)) {
+        if ((await next.textContent())?.trim() !== previousLabel) return;
+      } else if (await dialog.getByRole('button', { name: completionName }).last().isVisible().catch(() => false)) {
+        return;
+      }
+    }
+    throw new Error(`Procedure step did not advance from “${previousLabel}”`);
+  };
+
   if (target) {
-    const targetButton = page.getByRole('button', { name: new RegExp(target, 'i') }).first();
+    const targetButton = dialog.getByRole('button', { name: new RegExp(target, 'i') }).first();
     if (!await targetButton.isVisible().catch(() => false)) {
       // Wound-care sites deliberately remain hidden until the learner exposes
       // the injury. Follow that sequence before choosing the anatomical site.
-      const expose = page.getByRole('button', { name: /^Perform: Expose/i });
+      const expose = dialog.getByRole('button', { name: /^Perform: Expose/i });
       if (!await expose.count()) throw new Error(`${target} was not selectable and no exposure step was available`);
-      await expose.click();
-      await page.waitForTimeout(1550);
+      await advance(expose);
       steps += 1;
       await targetButton.waitFor({ state: 'visible', timeout: 6000 });
     }
@@ -53,14 +72,13 @@ async function completeProcedure(title, target) {
   }
 
   while (steps < 10) {
-    const perform = page.getByRole('button', { name: /^Perform:/i }).first();
+    const perform = dialog.getByRole('button', { name: /^Perform:/i }).first();
     if (!await perform.isVisible().catch(() => false)) break;
-    await perform.click();
-    await page.waitForTimeout(1550);
+    await advance(perform);
     steps += 1;
   }
-  const finish = page.getByRole('button', { name: /reassess|monitor|documented|ventilation|secured|running/i }).last();
-  await finish.waitFor({ timeout: 5000 });
+  const finish = dialog.getByRole('button', { name: completionName }).last();
+  await finish.waitFor({ timeout: 15000 });
   await finish.click();
   await page.waitForTimeout(1000);
   return steps;
@@ -73,6 +91,12 @@ await openKit('Airway Bag');
 await selectEquipment('Oxygen Mask');
 results.maskSteps = await completeProcedure(/Apply oxygen mask/i);
 results.maskFittedToPatient = await page.locator('[data-applied-equipment="simple-mask"]').count() > 0;
+await page.screenshot({ path: 'test-results/oxygen-mask-connected-verified.png' });
+await page.getByRole('button', { name: 'Examine Face' }).click();
+await page.waitForTimeout(800);
+await page.screenshot({ path: 'test-results/oxygen-mask-face-closeup-verified.png' });
+await page.getByRole('button', { name: /Back to full body/i }).click();
+await page.waitForTimeout(500);
 
 await openCase('trauma-001');
 await openKit('Exposure Pack');

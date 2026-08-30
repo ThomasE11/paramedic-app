@@ -166,7 +166,7 @@ interface AppliedEquipmentVisualState {
 
 const TREATMENT_ASSET_PATHS = {
   nasal: '/equipment-assets/nasal-cannula.webp',
-  simpleMask: '/equipment-assets/oxygen-mask.webp',
+  simpleMask: '/equipment-assets/oxygen-mask-front.webp',
   nonrebreather: '/equipment-assets/nonrebreather-mask-v2.webp',
   nebulizer: '/equipment-assets/nebulizer-mask-v2.webp',
   bvm: '/equipment-assets/bvm.webp',
@@ -1247,6 +1247,18 @@ function WornFaceEquipment({
   const nonrebreather = equipment.mode === 'nonrebreather';
   const nebulizer = equipment.mode === 'nebulizer';
   const fittedPhotorealisticMask = nonrebreather || nebulizer;
+  if (equipment.mode === 'simple-mask') {
+    return (
+      <div
+        data-applied-equipment={equipment.mode}
+        data-airway-connection="face"
+        className="pointer-events-none relative h-12 w-12 translate-y-[30%] animate-in fade-in zoom-in-75 duration-300 drop-shadow-[0_5px_6px_rgba(2,44,58,0.55)]"
+      >
+        <img src={OXYGEN_SRC[equipment.mode]} alt="" draggable={false} className="h-full w-full object-contain" />
+        <span className="absolute left-[53%] top-[84%] h-0.5 w-14 origin-left rotate-[28deg] rounded-full bg-cyan-100/85 shadow-[0_0_2px_rgba(8,145,178,0.85)]" />
+      </div>
+    );
+  }
   return (
     <div data-applied-equipment={equipment.mode} data-airway-connection={bvmViaTube ? 'ett' : 'face'} className={`pointer-events-none relative flex items-center justify-center drop-shadow-[0_5px_6px_rgba(2,44,58,0.55)] animate-in fade-in zoom-in-75 duration-300 ${nonrebreather ? 'h-16 w-16 translate-y-[38%]' : nebulizer ? 'h-16 w-16 translate-y-[15%]' : bvmViaTube ? 'h-12 w-16 -translate-x-[52%] translate-y-[140%]' : bvm ? 'h-16 w-20 translate-y-[88%]' : large ? 'h-16 w-20' : 'h-12 w-14'}`}>
       <img
