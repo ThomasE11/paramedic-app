@@ -21,6 +21,7 @@ import {
   ALL_GARMENT_GLBS,
   garmentGlbsForModel,
 } from './ClothingLayer';
+import { buildHairLayer } from './HairLayer';
 import { paintEyesOnTexture } from './EyesLayer';
 import { buildMottledTextures, buildCyanosisLocalTwin } from './MottlingLayer';
 import { applyWoundsToTextures } from './WoundLayer';
@@ -1058,6 +1059,11 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
         }
         // Child of the body mesh at identity → inherits its exact placement.
         if (scrubs) (bodyMesh as THREE.Mesh).add(scrubs);
+        // Hair and eyebrows are derived from this exact body surface and reuse
+        // its skin weights/morphs, preventing the universal bald mannequin
+        // presentation without adding an independent rig that could detach.
+        const hairLayer = buildHairLayer(bodyMesh as THREE.Mesh, patientGender, patientAge);
+        if (hairLayer) (bodyMesh as THREE.Mesh).add(hairLayer);
         // Eyes — the skin texture paints the sockets bright red (a placeholder).
         // Models WITH real eyeball meshes (Stage 2: getObjectByName('eyeL'))
         // only need the red texels recoloured to sclera behind the 3D eyes;
@@ -1147,7 +1153,7 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
     // scrubs + 2048² eye texture repaint). Opacity is applied live by the
     // effect below; the eyes are baked once (live pupil reading is the 2D panel).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scene, modelPath, bodyInjuries, garmentScenes, garmentSpecs, mobility, patientHeight]); // bodyInjuries: stable per case (memoised upstream + per-case key)
+  }, [scene, modelPath, bodyInjuries, garmentScenes, garmentSpecs, mobility, patientHeight, patientGender, patientAge]); // bodyInjuries: stable per case (memoised upstream + per-case key)
 
   const standingArmBones = useMemo(() => (
     ['mixamorig:LeftArm', 'mixamorig:RightArm']

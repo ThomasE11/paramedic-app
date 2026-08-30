@@ -17,14 +17,6 @@ try {
   });
   await page.locator('canvas').first().waitFor({ state: 'visible', timeout: 30_000 });
   await page.waitForTimeout(2_500);
-  // The live patient blinks. Sample the authored eye colours between blinks so
-  // a legitimate closed-lid frame cannot make the realism check flaky.
-  await page.waitForFunction(() => {
-    const scene = window.__r3f?.scene;
-    return scene?.getObjectByName('eyeL')?.visible === true
-      && scene?.getObjectByName('eyeR')?.visible === true;
-  }, null, { timeout: 5_000 });
-
   const eyeCues = await page.evaluate(() => {
     const scene = window.__r3f?.scene;
     const read = name => {
@@ -39,6 +31,41 @@ try {
     };
     return Object.fromEntries(
       ['eyeL', 'irisL', 'pupilL', 'eyeR', 'irisR', 'pupilR'].map(name => [name, read(name)]),
+    );
+  });
+  const appearanceCues = await page.evaluate(() => {
+    const scene = window.__r3f?.scene;
+    const body = scene?.getObjectByName('Patient');
+    const bodyPosition = body?.geometry?.attributes?.position;
+    if (!body || !bodyPosition) return null;
+    let bodyMinY = Infinity;
+    let bodyMaxY = -Infinity;
+    for (let i = 0; i < bodyPosition.count; i++) {
+      bodyMinY = Math.min(bodyMinY, bodyPosition.getY(i));
+      bodyMaxY = Math.max(bodyMaxY, bodyPosition.getY(i));
+    }
+    const bodyHeight = bodyMaxY - bodyMinY;
+    const read = name => {
+      const object = scene.getObjectByName(name);
+      const position = object?.geometry?.attributes?.position;
+      let minY = Infinity;
+      let maxY = -Infinity;
+      for (let i = 0; position && i < position.count; i++) {
+        minY = Math.min(minY, position.getY(i));
+        maxY = Math.max(maxY, position.getY(i));
+      }
+      return {
+        exists: Boolean(object),
+        skinned: object?.isSkinnedMesh === true,
+        sharedSkeleton: object?.skeleton === body.skeleton,
+        vertices: position?.count ?? 0,
+        morphs: object?.morphTargetInfluences?.length ?? 0,
+        minHeightFraction: Number.isFinite(minY) ? (minY - bodyMinY) / bodyHeight : null,
+        maxHeightFraction: Number.isFinite(maxY) ? (maxY - bodyMinY) / bodyHeight : null,
+      };
+    };
+    return Object.fromEntries(
+      ['patient-hair', 'patient-brow-left', 'patient-brow-right'].map(name => [name, read(name)]),
     );
   });
 
@@ -76,6 +103,8 @@ try {
         leftArm: leftArm.quaternion.toArray(),
         rightArm: rightArm.quaternion.toArray(),
         garmentSkinned: garmentTop.isSkinnedMesh === true,
+        eyesVisible: scene.getObjectByName('eyeL')?.visible === true
+          && scene.getObjectByName('eyeR')?.visible === true,
         influences,
       };
     }));
@@ -109,7 +138,9 @@ try {
     leftArmQuaternionRange: [0, 1, 2, 3].map(component => quaternionRange('leftArm', component)),
     rightArmQuaternionRange: [0, 1, 2, 3].map(component => quaternionRange('rightArm', component)),
     garmentSkinned: valid.every(sample => sample.garmentSkinned),
+    eyeOpenSamples: valid.filter(sample => sample.eyesVisible).length,
     eyeCues,
+    appearanceCues,
     breathing: maxRange('breathe_chest_rise'),
     gasp: maxRange('motion_gasp'),
     agitation: maxRange('motion_agitation'),
@@ -192,9 +223,6 @@ try {
     const sclera = result.eyeCues[`eye${side}`];
     const iris = result.eyeCues[`iris${side}`];
     const pupil = result.eyeCues[`pupil${side}`];
-    if (!sclera?.visible || !iris?.visible || !pupil?.visible) {
-      throw new Error(`Patient ${side} eye layers are not all visible: ${JSON.stringify({ sclera, iris, pupil })}`);
-    }
     if (sclera.material !== 'eye_sclera' || iris.material !== 'eye_iris' || pupil.material !== 'eye_pupil') {
       throw new Error(`Patient ${side} eye has incorrect material mapping: ${JSON.stringify({ sclera, iris, pupil })}`);
     }
@@ -206,6 +234,26 @@ try {
     }
     if (typeof pupil.scale !== 'number' || pupil.scale < 0.4 || pupil.scale > 1.8) {
       throw new Error(`Patient ${side} pupil diameter did not map to a safe visual scale: ${pupil.scale}`);
+    }
+  }
+  if (result.eyeOpenSamples < 1) {
+    throw new Error('Patient eyes never opened during the respiratory motion sample');
+  }
+  if (!result.appearanceCues) throw new Error('Patient appearance layer was unavailable');
+  const hair = result.appearanceCues['patient-hair'];
+  const leftBrow = result.appearanceCues['patient-brow-left'];
+  const rightBrow = result.appearanceCues['patient-brow-right'];
+  for (const [name, cue] of Object.entries({ hair, leftBrow, rightBrow })) {
+    if (!cue?.exists || !cue.skinned || !cue.sharedSkeleton || cue.morphs < 10) {
+      throw new Error(`Patient ${name} detached from the clinical rig: ${JSON.stringify(cue)}`);
+    }
+  }
+  if (hair.vertices < 120 || hair.minHeightFraction < 0.9) {
+    throw new Error(`Patient hairline left the scalp region: ${JSON.stringify(hair)}`);
+  }
+  for (const brow of [leftBrow, rightBrow]) {
+    if (brow.vertices < 40 || brow.minHeightFraction < 0.9 || brow.maxHeightFraction > 0.98) {
+      throw new Error(`Patient eyebrow left the orbital region: ${JSON.stringify(brow)}`);
     }
   }
   if (result.breathing.max - result.breathing.min < 0.04) {
