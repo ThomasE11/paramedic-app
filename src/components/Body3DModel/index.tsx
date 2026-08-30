@@ -1199,8 +1199,6 @@ function buildTreatmentEquipmentState(appliedTreatmentIds: string[]): AppliedEqu
   };
 }
 
-type EquipTone = 'oxygen' | 'iv' | 'defib' | 'device';
-
 const OXYGEN_SRC: Record<OxygenEquipmentVisual['mode'], string> = {
   nasal: TREATMENT_ASSET_PATHS.nasal,
   'simple-mask': TREATMENT_ASSET_PATHS.simpleMask,
@@ -1210,33 +1208,6 @@ const OXYGEN_SRC: Record<OxygenEquipmentVisual['mode'], string> = {
   cpap: TREATMENT_ASSET_PATHS.cpap,
   ventilator: TREATMENT_ASSET_PATHS.ventilator,
 };
-
-const EQUIP_PIN_RING: Record<EquipTone, string> = {
-  oxygen: 'border-cyan-300/70',
-  iv: 'border-emerald-300/70',
-  defib: 'border-rose-300/70',
-  device: 'border-slate-300/60',
-};
-
-// Small icon-only marker pinned to the relevant body part. Replaced the old
-// large labelled cards that crowded the assessment view — the human-readable
-// labels now live in the compact AppliedEquipmentTray below the model.
-function EquipmentPin({ tone, src, bare = false }: { tone: EquipTone; src: string; bare?: boolean }) {
-  // Bare = sits directly on the patient (the oxygen mask on the face), no badge
-  // chrome, so it reads as a worn device rather than an icon button.
-  if (bare) {
-    return (
-      <div className="pointer-events-none h-8 w-8 animate-in fade-in zoom-in-75 duration-200 drop-shadow-[0_3px_5px_rgba(8,47,73,0.4)]">
-        <img src={src} alt="" className="h-full w-full object-contain" draggable={false} />
-      </div>
-    );
-  }
-  return (
-    <div className={`pointer-events-none flex h-8 w-8 items-center justify-center rounded-xl border ${EQUIP_PIN_RING[tone]} bg-slate-950/70 p-1 shadow-lg backdrop-blur-sm animate-in fade-in zoom-in-75 duration-200`}>
-      <img src={src} alt="" className="h-full w-full object-contain" draggable={false} />
-    </div>
-  );
-}
 
 function WornFaceEquipment({
   equipment,
