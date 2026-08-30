@@ -66,6 +66,27 @@ describe('hands-on treatment procedures', () => {
     }
   });
 
+  it('reuses an already fitted nebuliser when adding the second bronchodilator', () => {
+    const initial = getHandsOnProcedurePlan('nebulizer_ipratropium', caseData);
+    expect(initial?.steps.map(step => step.label)).toContain('Fit the mask');
+
+    const combined = getHandsOnProcedurePlan(
+      'nebulizer_ipratropium',
+      caseData,
+      ['nebulizer_salbutamol'],
+    );
+
+    expect(combined?.title).toBe('Add ipratropium to connected nebuliser');
+    expect(combined?.steps.map(step => step.label)).toEqual([
+      'Pause and isolate the chamber',
+      'Verify ipratropium 500 mcg',
+      'Load and reconnect',
+      'Restart aerosol flow',
+      'Reassess combined response',
+    ]);
+    expect(combined?.steps.map(step => step.label)).not.toContain('Fit the mask');
+  });
+
   it('binds fracture immobilisation to the injured limb', () => {
     const fractureCase = {
       ...caseData,

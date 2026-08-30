@@ -151,6 +151,28 @@ describe('applyDynamicTreatment — repeated dosing', () => {
   });
 });
 
+describe('applyDynamicTreatment — respiratory response classification', () => {
+  it('does not label a respiratory rate that remains normal as an adverse response', () => {
+    const stableRespiratoryCase = makeCase({
+      category: 'respiratory',
+      subcategory: 'asthma',
+      vitalSignsProgression: { initial: vitals({ respiration: 16, spo2: 96 }) },
+    });
+
+    const { newState, response } = applyDynamicTreatment(
+      getTreatment('nebulizer_ipratropium'),
+      createInitialPatientState(stableRespiratoryCase),
+      stableRespiratoryCase,
+    );
+
+    expect(newState.vitals.respiration).toBeGreaterThanOrEqual(12);
+    expect(newState.vitals.respiration).toBeLessThanOrEqual(20);
+    expect(response.vitalChanges.find(change => change.vital === 'RR')?.direction).toBe('unchanged');
+    expect(response.description).toMatch(/Stable clinical response/);
+    expect(response.description).not.toMatch(/Adverse response/);
+  });
+});
+
 // ---------------------------------------------------------------------------
 // applyDynamicTreatment — wrong-action consequences
 // ---------------------------------------------------------------------------

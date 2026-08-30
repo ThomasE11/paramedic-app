@@ -319,12 +319,36 @@ export function getHandsOnProcedurePlan(
 
   if (treatmentId === 'nebulizer_salbutamol' || treatmentId === 'nebulizer_ipratropium' || treatmentId === 'cpap_niv') {
     const cpap = treatmentId === 'cpap_niv';
+    const connectedNebuliser = !cpap && appliedTreatmentIds.some(id =>
+      id === 'nebulizer_salbutamol' || id === 'nebulizer_ipratropium',
+    );
+    if (connectedNebuliser) {
+      const ipratropium = treatmentId === 'nebulizer_ipratropium';
+      const medicine = ipratropium ? 'ipratropium 500 mcg' : 'salbutamol 5 mg';
+      return {
+        id: 'connected-nebulizer-medication',
+        title: ipratropium ? 'Add ipratropium to connected nebuliser' : 'Reload connected salbutamol nebuliser',
+        subtitle: 'Keep the fitted interface available while the chamber is safely paused, loaded and restarted.',
+        treatmentId,
+        requiresTarget: false,
+        targets: [],
+        equipmentAsset: '/equipment-assets/nebulizer-mask-v2.webp',
+        completionLabel: 'Combined aerosol flowing — reassess wheeze and pulse',
+        steps: [
+          STEP('assemble', 'Pause and isolate the chamber', 'Stop the driving gas, keep the patient upright and disconnect the medication chamber without pulling the fitted mask.', 'Do not open a pressurised or actively misting chamber.', 'connect'),
+          STEP('verify', `Verify ${medicine}`, 'Read the medicine, dose, expiry and route aloud; confirm it matches the prescription and is suitable for nebulisation.', 'Use a single-patient ampoule and maintain asepsis.', 'prepare'),
+          STEP('apply', 'Load and reconnect', 'Open the chamber, add the medicine, close it securely and reconnect it beneath the mask while keeping it upright.', 'Avoid contaminating the chamber or spilling the dose.', 'place', 1000),
+          STEP('start', 'Restart aerosol flow', 'Restart at 6–8 L/min and confirm a consistent visible mist without a circuit leak.', 'Keep the chamber upright until sputtering stops.', 'connect'),
+          STEP('confirm', 'Reassess combined response', 'Recheck work of breathing, air entry, SpO₂, pulse and patient tolerance after the combined bronchodilator dose.', 'Escalate if fatigue, silent chest, falling consciousness or marked tachycardia develops.', 'confirm'),
+        ],
+      };
+    }
     return {
       id: cpap ? 'cpap-application' : 'nebulizer-application',
       title: cpap ? 'Apply CPAP circuit' : 'Apply nebuliser mask',
       subtitle: cpap ? 'A sealed, pressurised circuit requires cooperation and continuous monitoring.' : 'The chamber must remain upright with visible aerosol output.',
       treatmentId, requiresTarget: false, targets: [],
-      equipmentAsset: cpap ? '/equipment-assets/cpap-circuit.webp' : '/equipment-assets/nebulizer-mask.webp',
+      equipmentAsset: cpap ? '/equipment-assets/cpap-circuit.webp' : '/equipment-assets/nebulizer-mask-v2.webp',
       completionLabel: cpap ? 'Pressure stable — monitor continuously' : 'Aerosol flowing — reassess wheeze',
       steps: [
         STEP('assemble', 'Assemble and connect', cpap ? 'Connect mask, circuit, filter, valve and oxygen/driver.' : 'Add the prescribed drug, close the chamber and connect driving gas.', 'Check every connection before placing the mask.', 'connect'),

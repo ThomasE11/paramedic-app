@@ -721,9 +721,15 @@ function applyStandardTreatment(
           else if (vitals.respiration < 10) vitals.respiration += Math.round((12 - vitals.respiration) * 0.3 * effectMultiplier);
         }
         if (vitals.respiration !== oldRR) {
+          const wasInTargetRange = oldRR >= 12 && oldRR <= 20;
+          const isInTargetRange = vitals.respiration >= 12 && vitals.respiration <= 20;
           changes.push({
             vital: 'RR', oldValue: oldRR, newValue: vitals.respiration,
-            direction: Math.abs(vitals.respiration - 16) < Math.abs(oldRR - 16) ? 'improved' : 'worsened'
+            direction: wasInTargetRange && isInTargetRange
+              ? 'unchanged'
+              : Math.abs(vitals.respiration - 16) < Math.abs(oldRR - 16)
+                ? 'improved'
+                : 'worsened'
           });
         }
         break;
@@ -866,6 +872,8 @@ function applyStandardTreatment(
     description = `${treatment.name} applied. Good clinical response — ${changes.map(c => `${c.vital}: ${c.oldValue} → ${c.newValue}`).join(', ')}.${synergyNote}`;
   } else if (worsenedCount > 0 && improvementCount === 0) {
     description = `${treatment.name} applied. Adverse response noted — ${changes.map(c => `${c.vital}: ${c.oldValue} → ${c.newValue}`).join(', ')}.`;
+  } else if (improvementCount === 0 && worsenedCount === 0) {
+    description = `${treatment.name} applied. Stable clinical response — ${changes.map(c => `${c.vital}: ${c.oldValue} → ${c.newValue}`).join(', ')} remains within target range.${synergyNote}`;
   } else {
     description = `${treatment.name} applied. Mixed response — ${changes.map(c => `${c.vital}: ${c.oldValue} → ${c.newValue}`).join(', ')}.${synergyNote}`;
   }
