@@ -4817,10 +4817,17 @@ export function StudentPanel({
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <h1 className="text-xs sm:text-sm font-bold tracking-tight heading-premium truncate">{t('role.student')}</h1>
-                  <Badge variant="outline" className="text-[8px] sm:text-[9px] px-1 sm:px-1.5 py-0 h-3.5 sm:h-4 border-cyan-500/30 text-cyan-700 dark:text-cyan-300 font-medium shrink-0 hidden xs:inline-flex">{t('role.studentBadge')}</Badge>
+                  <h1
+                    className="text-xs sm:text-sm font-bold tracking-tight heading-premium whitespace-nowrap"
+                    aria-label={t('role.student')}
+                    title={t('role.student')}
+                  >
+                    <span className="lg:hidden">{t('role.studentBadge')}</span>
+                    <span className="hidden lg:inline">{t('role.student')}</span>
+                  </h1>
+                  <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 border-cyan-500/30 text-cyan-700 dark:text-cyan-300 font-medium shrink-0 hidden lg:inline-flex">{t('role.studentBadge')}</Badge>
                 </div>
-                <p className="text-[9px] sm:text-[10px] text-muted-foreground hidden sm:block">{t('app.name')}</p>
+                <p className="text-[10px] text-muted-foreground hidden lg:block">{t('app.name')}</p>
               </div>
             </div>
 
