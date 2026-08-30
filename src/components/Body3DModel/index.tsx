@@ -137,6 +137,8 @@ interface OxygenEquipmentVisual {
   detail: string;
 }
 
+type AppliedProcedureSite = BodyRegion | 'right-chest' | 'left-chest';
+
 interface AppliedEquipmentVisualState {
   oxygen: OxygenEquipmentVisual | null;
   hasIvAccess: boolean;
@@ -151,7 +153,7 @@ interface AppliedEquipmentVisualState {
   hasWarmingBlanket: boolean;
   hasActiveCooling: boolean;
   immobilisationDevice: 'spinal-board' | 'scoop' | 'vacuum-mattress' | 'head-blocks' | 'ked' | null;
-  siteControls: Array<{ treatmentId: string; target: BodyRegion }>;
+  siteControls: Array<{ treatmentId: string; target: AppliedProcedureSite }>;
   /** Bleeding wound ids considered under source control (tourniquet /
    *  pressure dressing / haemostatic / chest seal applied). */
   controlledBleedIds: Set<string>;
@@ -1143,7 +1145,7 @@ function buildTreatmentEquipmentState(appliedTreatmentIds: string[]): AppliedEqu
   );
   const siteControls = appliedTreatmentIds.flatMap(id => {
     const match = id.match(/^site:([^:]+):(.+)$/);
-    return match ? [{ treatmentId: match[1], target: match[2] as BodyRegion }] : [];
+    return match ? [{ treatmentId: match[1], target: match[2] as AppliedProcedureSite }] : [];
   });
   const immobilisationDevice: AppliedEquipmentVisualState['immobilisationDevice'] =
     applied.has('vacuum_mattress') ? 'vacuum-mattress'
@@ -1289,6 +1291,8 @@ function AppliedLimbEquipment({ treatmentId }: { treatmentId: string }) {
     return <div data-applied-equipment="pressure-dressing" className="pointer-events-none h-10 w-14 -rotate-6 rounded-xl border-4 border-dashed border-stone-200 bg-stone-50/90 shadow-md animate-in fade-in zoom-in-75" />;
   }
   if (treatmentId === 'iv_access' || treatmentId === 'io_access') return <AppliedIvDressing />;
+  if (treatmentId === 'needle_decompression') return <AppliedChestDevice needle />;
+  if (treatmentId.includes('chest_seal') || treatmentId.includes('occlusive')) return <AppliedChestDevice />;
   const traction = treatmentId === 'traction_splint';
   const air = treatmentId === 'air_splint';
   const vacuum = treatmentId === 'vacuum_limb_splint';
@@ -1374,6 +1378,8 @@ function siteEquipmentLabel(treatmentId: string): string {
   if (treatmentId === 'bleeding_control') return 'Pressure dressing';
   if (treatmentId === 'iv_access') return 'IV access';
   if (treatmentId === 'io_access') return 'IO access';
+  if (treatmentId === 'needle_decompression') return 'Decompression catheter';
+  if (treatmentId.includes('chest_seal') || treatmentId.includes('occlusive')) return 'Chest seal';
   if (treatmentId === 'traction_splint') return 'Traction splint';
   if (treatmentId === 'sam_splint') return 'SAM splint';
   if (treatmentId === 'box_splint') return 'Box splint';
@@ -1387,6 +1393,8 @@ function siteEquipmentAsset(treatmentId: string): string {
   if (treatmentId.includes('tourniquet')) return TREATMENT_ASSET_PATHS.tourniquet;
   if (treatmentId === 'bleeding_control') return TREATMENT_ASSET_PATHS.bandage;
   if (treatmentId === 'iv_access' || treatmentId === 'io_access') return TREATMENT_ASSET_PATHS.ivCannula;
+  if (treatmentId === 'needle_decompression') return TREATMENT_ASSET_PATHS.needle;
+  if (treatmentId.includes('chest_seal') || treatmentId.includes('occlusive')) return TREATMENT_ASSET_PATHS.bandage;
   if (treatmentId === 'traction_splint') return '/equipment-assets/traction-splint.webp';
   if (treatmentId === 'vacuum_limb_splint') return '/equipment-assets/vacuum-limb-splint.webp';
   if (treatmentId === 'air_splint') return '/equipment-assets/air-splint.webp';
@@ -1399,6 +1407,7 @@ function siteEquipmentAsset(treatmentId: string): string {
 // labels the on-body pins omit, without floating cards over the patient.
 function AppliedEquipmentTray({ appliedTreatmentIds }: { appliedTreatmentIds: string[] }) {
   const equipment = useMemo(() => buildTreatmentEquipmentState(appliedTreatmentIds), [appliedTreatmentIds]);
+  const siteTreatmentIds = new Set(equipment.siteControls.map(control => control.treatmentId));
   const chips: Array<{ src: string; label: string }> = [];
   if (equipment.oxygen) chips.push({ src: OXYGEN_SRC[equipment.oxygen.mode], label: equipment.oxygen.label });
   if (equipment.hasEtTube && equipment.oxygen?.mode !== 'ventilator') chips.push({ src: TREATMENT_ASSET_PATHS.etTube, label: 'ET tube' });
@@ -1408,8 +1417,8 @@ function AppliedEquipmentTray({ appliedTreatmentIds }: { appliedTreatmentIds: st
   if (equipment.hasDefibPads) chips.push({ src: TREATMENT_ASSET_PATHS.defibPads, label: 'Defib pads on' });
   if (equipment.hasLucas) chips.push({ src: TREATMENT_ASSET_PATHS.lucas, label: 'LUCAS running' });
   if (equipment.hasCollar) chips.push({ src: TREATMENT_ASSET_PATHS.collar, label: 'C-collar applied' });
-  if (equipment.hasChestSeal) chips.push({ src: TREATMENT_ASSET_PATHS.bandage, label: 'Chest seal adhered' });
-  if (equipment.hasNeedleDecompression) chips.push({ src: TREATMENT_ASSET_PATHS.needle, label: 'Decompression catheter' });
+  if (equipment.hasChestSeal && ![...siteTreatmentIds].some(id => id.includes('chest_seal') || id.includes('occlusive'))) chips.push({ src: TREATMENT_ASSET_PATHS.bandage, label: 'Chest seal adhered' });
+  if (equipment.hasNeedleDecompression && !siteTreatmentIds.has('needle_decompression')) chips.push({ src: TREATMENT_ASSET_PATHS.needle, label: 'Decompression catheter' });
   if (equipment.hasWarmingBlanket) chips.push({ src: TREATMENT_ASSET_PATHS.warmingBlanket, label: 'Warming blanket' });
   if (equipment.hasActiveCooling) chips.push({ src: TREATMENT_ASSET_PATHS.coolingPack, label: 'Active cooling' });
   if (equipment.immobilisationDevice) {
@@ -1487,6 +1496,8 @@ function TreatmentEquipmentOverlay({
       : anchor(x, y, z);
   const equipmentScale = Math.max(0.62, Math.min(1, 0.55 + patientScale * 0.45));
   const hasSiteAccess = equipment.siteControls.some(control => control.treatmentId === 'iv_access' || control.treatmentId === 'io_access');
+  const hasSiteChestSeal = equipment.siteControls.some(control => control.treatmentId.includes('chest_seal') || control.treatmentId.includes('occlusive'));
+  const hasSiteNeedleDecompression = equipment.siteControls.some(control => control.treatmentId === 'needle_decompression');
 
   return (
     <>
@@ -1546,13 +1557,13 @@ function TreatmentEquipmentOverlay({
         </MarkerHtml>
       )}
 
-      {equipment.hasChestSeal && (
+      {equipment.hasChestSeal && !hasSiteChestSeal && (
         <MarkerHtml position={anchor(-0.08, 1.25, 0.225)} distanceFactor={2.2} zIndexRange={[72, 0]} interactive={false} presentation={presentation} contentScale={equipmentScale}>
           <AppliedChestDevice />
         </MarkerHtml>
       )}
 
-      {equipment.hasNeedleDecompression && (
+      {equipment.hasNeedleDecompression && !hasSiteNeedleDecompression && (
         <MarkerHtml position={anchor(0.13, 1.24, 0.225)} distanceFactor={2.3} zIndexRange={[73, 0]} interactive={false} presentation={presentation} contentScale={equipmentScale}>
           <AppliedChestDevice needle />
         </MarkerHtml>
@@ -1571,9 +1582,10 @@ function TreatmentEquipmentOverlay({
       )}
 
       {equipment.siteControls.map(control => {
-        const siteAnchor: Record<BodyRegion, [number, number, number]> = {
+        const siteAnchor: Record<AppliedProcedureSite, [number, number, number]> = {
           head: [0, 1.63, 0.22], face: [0, 1.58, 0.23], neck: [0, 1.47, 0.22], airway: [0, 1.52, 0.22],
-          chest: [0, 1.25, 0.23], abdomen: [0, 1.02, 0.25], pelvis: [0, 0.9, 0.24],
+          chest: [0, 1.25, 0.23], 'right-chest': [-0.1, 1.25, 0.23], 'left-chest': [0.1, 1.25, 0.23],
+          abdomen: [0, 1.02, 0.25], pelvis: [0, 0.9, 0.24],
           'right-arm': [-0.2, 1.08, 0.2], 'left-arm': [0.2, 1.08, 0.2],
           'right-leg': [-0.16, 0.43, 0.2], 'left-leg': [0.16, 0.43, 0.2], back: [0, 1.12, -0.2],
         };

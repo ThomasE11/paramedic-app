@@ -17,4 +17,11 @@ describe('site-specific bleeding control', () => {
   it('preserves legacy broad controls for existing scenarios', () => {
     expect(isBleedRegionControlled(['pressure_dressing'], 'abdomen')).toBe(true);
   });
+
+  it('normalises a lateral chest-seal site to the chest wound region', () => {
+    const controls = ['chest_seal_vented', 'site:chest_seal_vented:left-chest'];
+
+    expect(isBleedRegionControlled(controls, 'chest')).toBe(true);
+    expect(isBleedRegionControlled(controls, 'right-arm')).toBe(false);
+  });
 });

@@ -15,6 +15,8 @@ export type ProcedureMotion =
   | 'laryngoscopy'
   | 'confirm';
 
+export type ProcedureSite = BodyRegion | 'right-chest' | 'left-chest';
+
 export interface HandsOnProcedureStep {
   id: string;
   label: string;
@@ -25,7 +27,7 @@ export interface HandsOnProcedureStep {
 }
 
 export interface ProcedureTarget {
-  id: BodyRegion;
+  id: ProcedureSite;
   label: string;
   detail: string;
   priority: 'injury' | 'available';
@@ -116,6 +118,38 @@ function accessTargets(kind: 'iv' | 'io'): ProcedureTarget[] {
     label: REGION_LABELS[region],
     detail: kind === 'iv' ? 'Choose a suitable peripheral vein.' : 'Choose an age-appropriate IO landmark without fracture or infection.',
     priority: 'available',
+  }));
+}
+
+function thoracicTargets(
+  caseData: CaseScenario,
+  treatment: 'seal' | 'decompression',
+): ProcedureTarget[] {
+  const strings = [
+    caseData.dispatchInfo?.callReason,
+    caseData.sceneInfo?.description,
+    caseData.initialPresentation?.appearance,
+    ...(caseData.secondarySurvey?.chest ?? []),
+    ...(caseData.abcde?.breathing?.findings ?? []),
+    ...(caseData.abcde?.circulation?.findings ?? []),
+    ...(caseData.abcde?.exposure?.findings ?? []),
+  ].filter((value): value is string => Boolean(value));
+  const relevant = strings
+    .flatMap(value => value.toLowerCase().split(/[.;,]|\band\b/))
+    .filter(clause => /chest|thorax|pneumo|breath sound|air entry|sucking|penetrat|stab|gunshot|decompress/.test(clause));
+  const authoredSides = (['right', 'left'] as const).filter(side =>
+    relevant.some(clause => new RegExp(`\\b${side}(?:-sided)?\\b`).test(clause)),
+  );
+  const sides = authoredSides.length > 0 ? authoredSides : (['right', 'left'] as const);
+  const procedure = treatment === 'seal' ? 'open chest wound' : 'tension physiology';
+
+  return sides.map(side => ({
+    id: `${side}-chest` as ProcedureSite,
+    label: `${side[0].toUpperCase()}${side.slice(1)} chest`,
+    detail: authoredSides.includes(side)
+      ? `Case findings localise the ${procedure} to this side.`
+      : `Select only after assessment localises the ${procedure} to this side.`,
+    priority: authoredSides.includes(side) ? 'injury' : 'available',
   }));
 }
 
@@ -403,7 +437,7 @@ export function getHandsOnProcedurePlan(
     return {
       id: 'chest-seal', title: improvised ? 'Apply three-sided occlusive dressing' : 'Apply a vented chest seal',
       subtitle: 'Expose, dry and seal the actual open chest wound; inspect for an exit wound.', treatmentId,
-      requiresTarget: false, targets: [], equipmentAsset: '/equipment-assets/bandages.webp', completionLabel: 'Seal adhered — monitor for tension',
+      requiresTarget: true, targets: thoracicTargets(caseData, 'seal'), equipmentAsset: '/equipment-assets/bandages.webp', completionLabel: 'Seal adhered — monitor for tension',
       steps: [
         STEP('expose', 'Expose the chest', 'Cut clothing away and identify the sucking wound without probing it.', 'Look and listen for air movement, bubbling and impaired ventilation.', 'expose'),
         STEP('posterior', 'Inspect for an exit wound', 'Check the corresponding posterior and axillary surfaces while maintaining spinal precautions.', 'Seal every open thoracic wound that communicates with the pleural space.', 'prepare'),
@@ -418,7 +452,7 @@ export function getHandsOnProcedurePlan(
     return {
       id: 'needle-decompression', title: 'Perform needle thoracostomy',
       subtitle: 'Confirm tension physiology and use an anatomically correct site before decompression.', treatmentId,
-      requiresTarget: false, targets: [], equipmentAsset: '/equipment-assets/needle-decompression.webp', completionLabel: 'Catheter secured — reassess for re-tensioning',
+      requiresTarget: true, targets: thoracicTargets(caseData, 'decompression'), equipmentAsset: '/equipment-assets/needle-decompression.webp', completionLabel: 'Catheter secured — reassess for re-tensioning',
       steps: [
         STEP('confirm', 'Confirm clinical indication', 'Correlate severe distress or shock with unilateral absent sounds and tension signs.', 'Do not decompress a simple pneumothorax solely from mechanism.', 'confirm'),
         STEP('landmark', 'Identify and clean the site', 'Locate 4th/5th intercostal space anterior to mid-axillary line on the affected side and clean it.', 'Insert just above the upper border of the rib to avoid the neurovascular bundle.', 'prepare'),
@@ -582,12 +616,12 @@ export const procedureIncludesIntegratedReassessment = (treatmentId: string): bo
   || treatmentId === 'intubation'
   || treatmentId === 'rsi_intubation';
 
-export function procedureSiteToken(treatmentId: string, target: BodyRegion): string {
+export function procedureSiteToken(treatmentId: string, target: ProcedureSite): string {
   return `site:${treatmentId}:${target}`;
 }
 
-export function parseProcedureSiteToken(token: string): { treatmentId: string; target: BodyRegion } | null {
+export function parseProcedureSiteToken(token: string): { treatmentId: string; target: ProcedureSite } | null {
   const match = token.match(/^site:([^:]+):(.+)$/);
   if (!match) return null;
-  return { treatmentId: match[1], target: match[2] as BodyRegion };
+  return { treatmentId: match[1], target: match[2] as ProcedureSite };
 }

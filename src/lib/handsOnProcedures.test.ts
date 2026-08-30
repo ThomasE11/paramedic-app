@@ -34,6 +34,30 @@ describe('hands-on treatment procedures', () => {
     expect(parseProcedureSiteToken(token)).toEqual({ treatmentId: 'bleeding_control', target: 'right-leg' });
   });
 
+  it('localises thoracic procedures to the affected side', () => {
+    const thoracicCase = {
+      ...caseData,
+      dispatchInfo: { callReason: 'Penetrating injury to left chest' },
+      abcde: {
+        ...caseData.abcde,
+        breathing: { findings: ['Absent breath sounds on left with tension pneumothorax'] },
+        exposure: { findings: ['Sucking wound left chest'], interventions: [] },
+      },
+      secondarySurvey: { chest: ['Open wound over left lateral chest'] },
+    } as unknown as CaseScenario;
+
+    const seal = getHandsOnProcedurePlan('chest_seal_vented', thoracicCase);
+    const decompression = getHandsOnProcedurePlan('needle_decompression', thoracicCase);
+
+    expect(seal?.requiresTarget).toBe(true);
+    expect(seal?.targets).toEqual([expect.objectContaining({ id: 'left-chest', priority: 'injury' })]);
+    expect(decompression?.targets).toEqual([expect.objectContaining({ id: 'left-chest', priority: 'injury' })]);
+    expect(parseProcedureSiteToken(procedureSiteToken('chest_seal_vented', 'left-chest'))).toEqual({
+      treatmentId: 'chest_seal_vented',
+      target: 'left-chest',
+    });
+  });
+
   it('makes capnography part of intubation completion', () => {
     const plan = getHandsOnProcedurePlan('rsi_intubation', caseData);
     expect(plan?.steps.some(step => step.id === 'capnography')).toBe(true);

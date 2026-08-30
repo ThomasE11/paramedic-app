@@ -31,7 +31,8 @@ export function isBleedRegionControlled(controlIds: Iterable<string>, region: st
   const siteControls = ids.map(parseSiteControl).filter((value): value is SiteControl => value != null);
 
   const exactSiteControl = siteControls.some(({ treatmentId, region: target }) => {
-    if (target !== region) return false;
+    const anatomicalTarget = target === 'left-chest' || target === 'right-chest' ? 'chest' : target;
+    if (anatomicalTarget !== region) return false;
     if (treatmentId.includes('tourniquet')) return LIMB_REGIONS.includes(region);
     if (treatmentId.includes('chest_seal') || treatmentId.includes('occlusive')) return region === 'chest';
     return GENERAL_CONTROL.some(control => treatmentId.includes(control));

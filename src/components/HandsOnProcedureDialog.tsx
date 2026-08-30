@@ -31,6 +31,8 @@ const TARGET_POSITION: Record<string, { left: string; top: string }> = {
   neck: { left: '50%', top: '18%' },
   airway: { left: '50%', top: '15%' },
   chest: { left: '50%', top: '31%' },
+  'right-chest': { left: '43%', top: '31%' },
+  'left-chest': { left: '57%', top: '31%' },
   abdomen: { left: '50%', top: '43%' },
   pelvis: { left: '50%', top: '52%' },
   'right-arm': { left: '28%', top: '39%' },
@@ -231,6 +233,46 @@ const TOURNIQUET_PLACEMENT: Record<string, { left: string; top: string; rotate: 
   'right-leg': { left: '43%', top: '63%', rotate: '3deg' },
   'left-leg': { left: '57%', top: '63%', rotate: '-3deg' },
 };
+
+function ThoracicProcedurePreview({
+  treatmentId,
+  selectedTarget,
+  equipmentAsset,
+  completedSteps,
+  animatingStep,
+}: {
+  treatmentId: string;
+  selectedTarget: ProcedureTarget | null;
+  equipmentAsset: string;
+  completedSteps: string[];
+  animatingStep: string | null;
+}) {
+  const seal = ['chest_seal_vented', 'vented_chest_seal', 'occlusive_dressing_3sided'].includes(treatmentId);
+  const needle = treatmentId === 'needle_decompression';
+  if ((!seal && !needle) || !selectedTarget?.id.endsWith('-chest')) return null;
+  const reached = (...stepIds: string[]) => stepIds.some(id => completedSteps.includes(id) || animatingStep === id);
+  const applied = seal ? reached('apply', 'confirm') : reached('insert', 'secure', 'reassess');
+  if (!applied) return null;
+  const patientRight = selectedTarget.id === 'right-chest';
+
+  return (
+    <div
+      data-procedure-preview={needle ? 'needle-decompression' : 'chest-seal'}
+      className={`pointer-events-none absolute top-[81px] z-20 -translate-x-1/2 animate-in fade-in zoom-in-75 ${patientRight ? 'left-[43%]' : 'left-[57%]'}`}
+      aria-label={`${needle ? 'Decompression catheter' : 'Chest seal'} applied to ${selectedTarget.label}`}
+    >
+      <img
+        src={equipmentAsset}
+        alt=""
+        draggable={false}
+        className={`${needle ? 'h-14 w-7 rotate-12' : 'h-12 w-12 rotate-3 rounded-lg'} object-contain drop-shadow-[0_4px_8px_rgba(0,0,0,.75)]`}
+      />
+      <span className="absolute left-1/2 top-full mt-1 w-max -translate-x-1/2 rounded-full border border-emerald-300/45 bg-emerald-950/95 px-1.5 py-0.5 text-[7px] font-black uppercase tracking-[0.08em] text-emerald-100">
+        {selectedTarget.label}
+      </span>
+    </div>
+  );
+}
 
 function TourniquetProcedurePreview({
   treatmentId,
@@ -439,6 +481,14 @@ export function HandsOnProcedureDialog({
               <TourniquetProcedurePreview
                 treatmentId={plan.treatmentId}
                 selectedTarget={selectedTarget}
+                completedSteps={completedSteps}
+                animatingStep={animatingStep}
+              />
+
+              <ThoracicProcedurePreview
+                treatmentId={plan.treatmentId}
+                selectedTarget={selectedTarget}
+                equipmentAsset={plan.equipmentAsset}
                 completedSteps={completedSteps}
                 animatingStep={animatingStep}
               />
