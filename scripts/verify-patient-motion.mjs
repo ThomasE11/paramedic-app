@@ -17,6 +17,30 @@ try {
   });
   await page.locator('canvas').first().waitFor({ state: 'visible', timeout: 30_000 });
   await page.waitForTimeout(2_500);
+  // The live patient blinks. Sample the authored eye colours between blinks so
+  // a legitimate closed-lid frame cannot make the realism check flaky.
+  await page.waitForFunction(() => {
+    const scene = window.__r3f?.scene;
+    return scene?.getObjectByName('eyeL')?.visible === true
+      && scene?.getObjectByName('eyeR')?.visible === true;
+  }, null, { timeout: 5_000 });
+
+  const eyeCues = await page.evaluate(() => {
+    const scene = window.__r3f?.scene;
+    const read = name => {
+      const object = scene?.getObjectByName(name);
+      const material = Array.isArray(object?.material) ? object.material[0] : object?.material;
+      return {
+        visible: object?.visible === true,
+        colour: material?.color?.getHexString?.() ?? null,
+        material: material?.name ?? null,
+        scale: object?.scale?.x ?? null,
+      };
+    };
+    return Object.fromEntries(
+      ['eyeL', 'irisL', 'pupilL', 'eyeR', 'irisR', 'pupilR'].map(name => [name, read(name)]),
+    );
+  });
 
   const samples = [];
   for (let index = 0; index < 48; index += 1) {
@@ -85,6 +109,7 @@ try {
     leftArmQuaternionRange: [0, 1, 2, 3].map(component => quaternionRange('leftArm', component)),
     rightArmQuaternionRange: [0, 1, 2, 3].map(component => quaternionRange('rightArm', component)),
     garmentSkinned: valid.every(sample => sample.garmentSkinned),
+    eyeCues,
     breathing: maxRange('breathe_chest_rise'),
     gasp: maxRange('motion_gasp'),
     agitation: maxRange('motion_agitation'),
@@ -157,6 +182,31 @@ try {
   }
   if (!result.garmentSkinned) {
     throw new Error('Patient garment is not bound to the clinical skeleton');
+  }
+  const eyeLuminance = hex => {
+    if (!hex || !/^[0-9a-f]{6}$/i.test(hex)) return Infinity;
+    const channels = [0, 2, 4].map(offset => Number.parseInt(hex.slice(offset, offset + 2), 16) / 255);
+    return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
+  };
+  for (const side of ['L', 'R']) {
+    const sclera = result.eyeCues[`eye${side}`];
+    const iris = result.eyeCues[`iris${side}`];
+    const pupil = result.eyeCues[`pupil${side}`];
+    if (!sclera?.visible || !iris?.visible || !pupil?.visible) {
+      throw new Error(`Patient ${side} eye layers are not all visible: ${JSON.stringify({ sclera, iris, pupil })}`);
+    }
+    if (sclera.material !== 'eye_sclera' || iris.material !== 'eye_iris' || pupil.material !== 'eye_pupil') {
+      throw new Error(`Patient ${side} eye has incorrect material mapping: ${JSON.stringify({ sclera, iris, pupil })}`);
+    }
+    if (eyeLuminance(iris.colour) >= eyeLuminance(sclera.colour) * 0.65) {
+      throw new Error(`Patient ${side} iris is not visibly darker than the sclera: ${JSON.stringify({ sclera, iris })}`);
+    }
+    if (eyeLuminance(pupil.colour) >= eyeLuminance(iris.colour) * 0.45) {
+      throw new Error(`Patient ${side} pupil is not visibly darker than the iris: ${JSON.stringify({ iris, pupil })}`);
+    }
+    if (typeof pupil.scale !== 'number' || pupil.scale < 0.4 || pupil.scale > 1.8) {
+      throw new Error(`Patient ${side} pupil diameter did not map to a safe visual scale: ${pupil.scale}`);
+    }
   }
   if (result.breathing.max - result.breathing.min < 0.04) {
     throw new Error('Respiratory morph did not visibly change');

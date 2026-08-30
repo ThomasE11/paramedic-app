@@ -1348,7 +1348,14 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
       const mats = Array.isArray(m.material) ? m.material : m.material ? [m.material] : [];
       for (const mat of mats) {
         const std = mat as THREE.MeshStandardMaterial;
-        if (!std.color) continue;
+        // Eyes are child meshes of the patient model, so they intentionally
+        // remain in this traversal for opacity/blink handling. Their authored
+        // iris, pupil and sclera colours are protected on the material (rather
+        // than the mesh) because LifeSigns still needs to control the eye mesh
+        // itself. Respect that material flag here: whitening the initial skin
+        // multiplier used to turn all three eye materials into sclera white,
+        // leaving the patient with blank mannequin eyes.
+        if (!std.color || mat.userData.skipRecolor) continue;
         std.color.set(skinTint ?? '#ffffff');
         if (std.userData.baseRoughness === undefined && typeof std.roughness === 'number') {
           std.userData.baseRoughness = std.roughness;
