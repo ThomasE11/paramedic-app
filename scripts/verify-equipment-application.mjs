@@ -123,6 +123,18 @@ await page.getByRole('button', { name: 'Examine Face' }).click();
 await page.waitForTimeout(800);
 await page.screenshot({ path: 'test-results/bvm-face-closeup-verified.png' });
 
+await openCase('resp-001');
+await openKit('Airway Bag');
+await selectEquipment('ET Tube');
+results.intubationSteps = await completeProcedure(/Endotracheal intubation/i);
+const securedEtTube = page.locator('[data-applied-equipment="endotracheal-tube"]');
+results.etTubeSecuredAtMouth = await securedEtTube.count() > 0;
+results.etTubePilotBalloonVisible = /pilot balloon visible/i.test(await securedEtTube.first().getAttribute('aria-label') ?? '');
+results.noDiagramEtTube = await page.locator('img[src="/treatment-assets/et-tube.svg"]').count() === 0;
+await page.getByRole('button', { name: 'Examine Face' }).click();
+await page.waitForTimeout(800);
+await page.screenshot({ path: 'test-results/ett-face-closeup-verified.png' });
+
 await openCase('trauma-001');
 await openKit('Exposure Pack');
 await selectEquipment('Bandages');
@@ -138,6 +150,7 @@ results.errors = errors;
 if (results.maskSteps < 4 || !results.maskFittedToPatient
   || results.cpapSteps < 5 || !results.cpapBagUsesFittedAsset || !results.cpapSealedOnFace || !results.cpapHarnessLabelVisible
   || results.bvmSteps < 5 || !results.bvmHeldOnFace || !results.bvmSealLabelVisible
+  || results.intubationSteps < 6 || !results.etTubeSecuredAtMouth || !results.etTubePilotBalloonVisible || !results.noDiagramEtTube
   || results.haemorrhageSteps < 5 || !results.pressureDressingOnInjuredLimb
   || results.tractionSteps < 6
   || !results.tractionSplintOnInjuredLimb || !results.siteLabelVisible || errors.length) {

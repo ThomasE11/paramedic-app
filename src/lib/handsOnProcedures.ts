@@ -366,7 +366,7 @@ export function getHandsOnProcedurePlan(
       treatmentId,
       requiresTarget: false,
       targets: [],
-      equipmentAsset: '/equipment-assets/et-tube.webp',
+      equipmentAsset: '/equipment-assets/ett-secured-front-v2.png',
       completionLabel: 'Tube secured — ventilate and monitor',
       steps: [
         STEP('prepare', 'Prepare and preoxygenate', 'Check suction, BVM, laryngoscope, tube, stylet, bougie and rescue airway. Preoxygenate.', 'State a failed-airway plan before induction.', 'prepare', 1200),

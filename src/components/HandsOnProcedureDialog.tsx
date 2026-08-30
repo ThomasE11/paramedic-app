@@ -71,6 +71,8 @@ function AirwayProcedurePreview({
   const cpap = treatmentId === 'cpap_niv';
   const nebuliser = treatmentId.startsWith('nebulizer_') || treatmentId === 'nebulised_adrenaline';
   const ventilator = treatmentId === 'ventilator_setup' || treatmentId === 'mechanical_ventilation';
+  const intubationSecured = intubation && reached('secure');
+  const laryngoscopePlaced = intubation && reached('visualise') && !reached('tube');
 
   const supplyConnected = oxygenInterface ? reached('connect')
     : bvm ? reached('prepare')
@@ -127,11 +129,19 @@ function AirwayProcedurePreview({
           ? `absolute left-[65px] top-[4px] h-[92px] w-[138px] origin-[22%_48%] drop-shadow-[0_4px_8px_rgba(0,0,0,.8)] animate-in fade-in zoom-in-75 ${animatingStep === 'ventilate' ? 'procedure-bvm-deliver' : ''}`
           : `absolute left-1/2 top-[10px] -translate-x-1/2 drop-shadow-[0_4px_8px_rgba(0,0,0,.8)] animate-in fade-in zoom-in-75 ${treatmentActive ? 'motion-safe:animate-pulse' : ''}`}>
           <img
-            src={equipmentAsset}
+            src={intubation && !intubationSecured ? '/equipment-assets/et-tube.webp' : equipmentAsset}
             alt=""
             draggable={false}
-            className={`${bvm ? 'h-full w-full' : intubation ? 'h-20 w-10' : opa ? 'h-10 w-12' : suction ? 'h-16 w-10' : ventilator ? 'h-16 w-20' : cpap ? 'h-20 w-24' : treatmentId === 'oxygen_nasal' ? 'h-10 w-16' : 'h-16 w-16'} object-contain`}
+            className={`${bvm ? 'h-full w-full' : intubationSecured ? 'h-16 w-24' : intubation ? 'h-20 w-10' : opa ? 'h-10 w-12' : suction ? 'h-16 w-10' : ventilator ? 'h-16 w-20' : cpap ? 'h-20 w-24' : treatmentId === 'oxygen_nasal' ? 'h-10 w-16' : 'h-16 w-16'} object-contain`}
           />
+        </div>
+      )}
+
+      {laryngoscopePlaced && (
+        <div className="absolute left-[68px] top-[28px] h-20 w-20 -rotate-[18deg] drop-shadow-[0_5px_5px_rgba(0,0,0,.65)]" aria-label="Laryngoscope blade positioned to visualise the cords">
+          <span className="absolute left-1 top-1 h-16 w-5 rounded-md border border-slate-300 bg-gradient-to-r from-slate-700 via-slate-300 to-slate-600" />
+          <span className="absolute left-[16px] top-[50px] h-4 w-14 origin-left -rotate-[22deg] rounded-r-full border border-slate-300 bg-gradient-to-b from-slate-100 via-slate-400 to-slate-700" />
+          <span className="absolute left-[58px] top-[38px] h-2 w-2 rounded-full bg-cyan-100 shadow-[0_0_8px_rgba(165,243,252,.9)]" />
         </div>
       )}
 

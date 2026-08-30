@@ -68,6 +68,7 @@ describe('hands-on treatment procedures', () => {
 
   it('makes capnography part of intubation completion', () => {
     const plan = getHandsOnProcedurePlan('rsi_intubation', caseData);
+    expect(plan?.equipmentAsset).toBe('/equipment-assets/ett-secured-front-v2.png');
     expect(plan?.steps.some(step => step.id === 'capnography')).toBe(true);
     expect(plan?.steps.at(-1)?.id).toBe('secure');
     expect(procedureIncludesIntegratedReassessment('rsi_intubation')).toBe(true);

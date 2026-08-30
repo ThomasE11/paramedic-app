@@ -179,7 +179,8 @@ const TREATMENT_ASSET_PATHS = {
   defibPadSternal: '/equipment-assets/defib-pad-sternal.webp',
   defibPadApical: '/equipment-assets/defib-pad-apical.webp',
   lucas: '/treatment-assets/lucas-device.svg',
-  etTube: '/treatment-assets/et-tube.svg',
+  etTube: '/equipment-assets/et-tube.webp',
+  etTubeSecured: '/equipment-assets/ett-secured-front-v2.png',
   opa: '/treatment-assets/opa.svg',
   ivPole: '/treatment-assets/iv-pole.svg',
   collar: '/equipment-assets/cervical-collar.webp',
@@ -1307,6 +1308,19 @@ function WornFaceEquipment({
   );
 }
 
+function AppliedEndotrachealTube() {
+  return (
+    <div
+      data-applied-equipment="endotracheal-tube"
+      data-airway-connection="oral"
+      aria-label="Endotracheal tube secured at the mouth with pilot balloon visible"
+      className="pointer-events-none relative h-6 w-8 translate-y-[8%] animate-in fade-in zoom-in-75 duration-300 drop-shadow-[0_4px_5px_rgba(2,44,58,0.55)]"
+    >
+      <img src={TREATMENT_ASSET_PATHS.etTubeSecured} alt="" draggable={false} className="h-full w-full object-contain" />
+    </div>
+  );
+}
+
 function AppliedDefibPad({ site }: { site: 'sternal' | 'apical' }) {
   return (
     <div
@@ -1667,8 +1681,8 @@ function TreatmentEquipmentOverlay({
       )}
 
       {equipment.hasEtTube && equipment.oxygen?.mode !== 'ventilator' && (
-        <MarkerHtml position={faceAnchor(0.04, 1.64, 0.24)} distanceFactor={2.4} zIndexRange={[74, 0]} interactive={false} presentation={posture === 'tripod' || posture === 'seated' ? 'upright' : presentation} contentScale={equipmentScale}>
-          <EquipmentPin tone="oxygen" src={TREATMENT_ASSET_PATHS.etTube} bare />
+        <MarkerHtml position={faceAnchor(0, 1.64, 0.24)} distanceFactor={2.4} zIndexRange={[74, 0]} interactive={false} presentation={posture === 'tripod' || posture === 'seated' ? 'upright' : presentation} contentScale={equipmentScale}>
+          <AppliedEndotrachealTube />
         </MarkerHtml>
       )}
 
