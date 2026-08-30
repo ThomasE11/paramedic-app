@@ -1,6 +1,6 @@
 import { chromium } from 'playwright';
 
-const baseUrl = process.env.APP_URL ?? 'http://localhost:5173';
+const baseUrl = process.argv[2] ?? process.env.APP_URL ?? 'http://localhost:5173';
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
 const errors = [];

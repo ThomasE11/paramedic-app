@@ -1273,7 +1273,7 @@ function AppliedDefibPad({ site }: { site: 'sternal' | 'apical' }) {
       data-applied-equipment="defibrillator-pads"
       data-pad-site={site}
       aria-label={`${site === 'sternal' ? 'Sternal' : 'Apical'} defibrillator pad attached`}
-      className={`pointer-events-none relative h-10 w-8 animate-in fade-in zoom-in-75 duration-500 drop-shadow-[0_3px_3px_rgba(2,6,23,0.58)] ${site === 'sternal' ? '-rotate-3' : 'rotate-6'}`}
+      className={`pointer-events-none relative h-11 w-9 animate-in fade-in zoom-in-75 duration-500 drop-shadow-[0_4px_3px_rgba(2,6,23,0.85)] ${site === 'sternal' ? '-rotate-3' : 'rotate-6'}`}
     >
       <img
         src={site === 'sternal' ? TREATMENT_ASSET_PATHS.defibPadSternal : TREATMENT_ASSET_PATHS.defibPadApical}
@@ -1655,7 +1655,7 @@ function TreatmentEquipmentOverlay({
           <MarkerHtml position={anchor(-0.075, 1.30, 0.225)} distanceFactor={1.85} zIndexRange={[68, 0]} interactive={false} presentation={presentation} contentScale={equipmentScale}>
             <AppliedDefibPad site="sternal" />
           </MarkerHtml>
-          <MarkerHtml position={anchor(0.18, 1.13, 0.223)} distanceFactor={1.85} zIndexRange={[68, 0]} interactive={false} presentation={presentation} contentScale={equipmentScale}>
+          <MarkerHtml position={anchor(0.15, 1.20, 0.223)} distanceFactor={1.85} zIndexRange={[68, 0]} interactive={false} presentation={presentation} contentScale={equipmentScale}>
             <AppliedDefibPad site="apical" />
           </MarkerHtml>
         </>
