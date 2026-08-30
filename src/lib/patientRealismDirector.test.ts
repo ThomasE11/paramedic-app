@@ -193,6 +193,19 @@ describe('deriveTreatmentLoopStates', () => {
     expect(loops[0].reassessmentPrompt).toContain('SpO2');
   });
 
+  it('tracks one care loop for repeat doses of the same treatment', () => {
+    const loops = deriveTreatmentLoopStates(
+      ['nebulizer_ipratropium', 'nebulizer_ipratropium'],
+      ['nebulizer_ipratropium'],
+    );
+
+    expect(loops).toHaveLength(1);
+    expect(loops[0]).toMatchObject({
+      treatmentId: 'nebulizer_ipratropium',
+      state: 'reassessed',
+    });
+  });
+
   it('returns reassessed state when reassessment has been performed', () => {
     const loops = deriveTreatmentLoopStates(['oxygen_nonrebreather'], ['oxygen_nonrebreather']);
     expect(loops).toHaveLength(1);

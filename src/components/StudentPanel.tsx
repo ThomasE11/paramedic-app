@@ -1417,7 +1417,7 @@ export function StudentPanel({
       (realismDirector?.treatmentLoopStates ?? []).map(loop => [loop.treatmentId, loop]),
     );
 
-    return appliedTreatments.slice(-5).reverse().map((applied): TacticalGearStatus => {
+    return latestUniqueAppliedTreatments(appliedTreatments, 5).map((applied): TacticalGearStatus => {
       const treatment = TREATMENTS.find(item => item.id === applied.id);
       const loop = loopByTreatmentId.get(applied.id);
       const status: TacticalGearStatus['status'] =
@@ -2164,7 +2164,7 @@ export function StudentPanel({
           effects: [],
         }) as unknown as AppliedTreatment),
       );
-      setAppliedTreatmentIds(externalState.appliedTreatments.map(t => t.id));
+      setAppliedTreatmentIds([...new Set(externalState.appliedTreatments.map(t => t.id))]);
     }
 
     // Revealed monitor vitals — as the driver reveals them via ABCDE
@@ -3598,7 +3598,7 @@ export function StudentPanel({
     };
 
     setAppliedTreatments(prev => [...prev, newTreatment]);
-    setAppliedTreatmentIds(prev => [...prev, treatment.id]);
+    setAppliedTreatmentIds(prev => prev.includes(treatment.id) ? prev : [...prev, treatment.id]);
 
     // Animate vital sign changes
     const targetVitals = ensureCompleteVitals(newState.vitals);

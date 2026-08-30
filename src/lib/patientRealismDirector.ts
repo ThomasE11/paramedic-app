@@ -345,7 +345,7 @@ export function deriveTreatmentLoopStates(
   const reassessedSet = new Set(reassessedTreatmentIds);
   const loops: TreatmentLoopState[] = [];
 
-  for (const txId of appliedTreatmentIds) {
+  for (const txId of new Set(appliedTreatmentIds)) {
     const matchedKey = Object.keys(HIGH_IMPACT_TREATMENT_CATEGORIES).find(key =>
       txId === key || txId.startsWith(key) || key.startsWith(txId),
     );
