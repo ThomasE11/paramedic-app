@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
+  deriveAppliedPatientStage,
   derivePatientMobility,
   derivePatientPosture,
   deriveScenePatientStage,
   deriveTreatmentPositioningOverride,
+  patientLoadedOnStretcher,
   patientPacingTransform,
   patientSkeletalAction,
   patientArmRestRadians,
@@ -152,6 +154,36 @@ describe('mobility-aware scene support', () => {
     expect(shouldHideTreatmentStretcher('stretcher', 'seated')).toBe(true);
     expect(shouldHideTreatmentStretcher('stretcher', 'standing')).toBe(true);
     expect(shouldHideTreatmentStretcher('stretcher', 'pacing')).toBe(true);
+  });
+
+  it('shows the trolley after the crew loads a floor-found patient', () => {
+    expect(shouldHideTreatmentStretcher('floor', 'recumbent', true)).toBe(false);
+    expect(shouldHideTreatmentStretcher('floor', 'seated', true)).toBe(false);
+    expect(shouldShowPatientSeat('seated', true)).toBe(false);
+    expect(shouldHideTreatmentStretcher('floor', 'standing', true)).toBe(true);
+  });
+});
+
+describe('stretcher loading', () => {
+  it('treats main stretcher, scoop, board and vacuum mattress as load devices', () => {
+    expect(patientLoadedOnStretcher([])).toBe(false);
+    expect(patientLoadedOnStretcher(['oxygen_mask'])).toBe(false);
+    expect(patientLoadedOnStretcher(['main_stretcher'])).toBe(true);
+    expect(patientLoadedOnStretcher(['oxygen_mask', 'scoop_stretcher'])).toBe(true);
+  });
+
+  it('lifts a floor-staged patient onto the trolley once loaded', () => {
+    expect(deriveAppliedPatientStage('floor', [])).toBe('floor');
+    expect(deriveAppliedPatientStage('floor', ['main_stretcher'])).toBe('stretcher');
+    expect(deriveAppliedPatientStage('stretcher', ['main_stretcher'])).toBe('stretcher');
+  });
+
+  it('turns stretcher load into a recumbent visual override', () => {
+    expect(deriveTreatmentPositioningOverride(['main_stretcher'])).toMatchObject({
+      mobility: 'recumbent',
+      posture: 'supine',
+      treatmentId: 'main_stretcher',
+    });
   });
 });
 

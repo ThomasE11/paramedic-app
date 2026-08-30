@@ -297,4 +297,12 @@ describe('hands-on treatment procedures', () => {
     }
     expect(procedureIncludesIntegratedReassessment('tourniquet')).toBe(false);
   });
+
+  it('turns the main stretcher tile into a load-and-secure procedure', () => {
+    const plan = getHandsOnProcedurePlan('main_stretcher', caseData);
+    expect(isHandsOnTreatment('main_stretcher')).toBe(true);
+    expect(plan?.title).toBe('Load onto ambulance stretcher');
+    expect(plan?.equipmentAsset).toBe('/equipment-assets/ambulance-stretcher.webp');
+    expect(plan?.steps.map(step => step.id)).toEqual(['brief', 'prepare', 'move', 'secure', 'confirm']);
+  });
 });

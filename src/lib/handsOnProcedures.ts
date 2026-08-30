@@ -822,6 +822,26 @@ export function getHandsOnProcedurePlan(
     };
   }
 
+  if (treatmentId === 'main_stretcher') {
+    return {
+      id: 'load-main-stretcher',
+      title: 'Load onto ambulance stretcher',
+      subtitle: 'Bring the trolley to the patient, lift as a team, secure, then reassess.',
+      treatmentId,
+      requiresTarget: false,
+      targets: [],
+      equipmentAsset: '/equipment-assets/ambulance-stretcher.webp',
+      completionLabel: 'Patient loaded — reassess after movement',
+      steps: [
+        STEP('brief', 'Brief and lock the trolley', 'Park the stretcher alongside, lock the wheels and assign head, torso and limb roles.', 'Never lift without a count and a locked trolley.', 'prepare'),
+        STEP('prepare', 'Prepare straps and height', 'Lower or raise the trolley to a safe lifting height and open the straps.', 'Remove obstacles and protect injured limbs and lines.', 'prepare'),
+        STEP('move', 'Lift on a coordinated count', 'Move the patient onto the mattress as one team, keeping the airway visible.', 'Stop for pain, dyspnoea, loss of alignment or a dropped limb.', 'place', 1300),
+        STEP('secure', 'Secure and set the height', 'Fasten torso then limbs, raise side rails and set transport height.', 'Do not leave an unstrapped patient on a raised trolley.', 'wrap', 1200),
+        STEP('confirm', 'Reassess after loading', 'Repeat airway, breathing, distal pulses, pain and strap tension.', 'Loading is not complete until the patient is secured and reassessed.', 'confirm'),
+      ],
+    };
+  }
+
   if (['spinal_board', 'scoop_stretcher', 'vacuum_mattress', 'head_blocks', 'ked'].includes(treatmentId)) {
     const labels: Record<string, string> = {
       spinal_board: 'long spinal board', scoop_stretcher: 'scoop stretcher', vacuum_mattress: 'vacuum mattress',
@@ -855,7 +875,7 @@ const HANDS_ON_TREATMENTS = new Set([
   'nebulizer_ipratropium', 'nebulised_adrenaline', 'cpap_niv', 'iv_access', 'io_access', 'chest_seal_vented', 'vented_chest_seal',
   'occlusive_dressing_3sided', 'needle_decompression', 'splinting', 'sam_splint', 'box_splint',
   'vacuum_limb_splint', 'air_splint', 'traction_splint', 'cervical_collar', 'warming_blanket',
-  'active_cooling', 'targeted_temp_mgmt', 'spinal_board', 'scoop_stretcher', 'vacuum_mattress', 'head_blocks', 'ked',
+  'active_cooling', 'targeted_temp_mgmt', 'spinal_board', 'scoop_stretcher', 'vacuum_mattress', 'head_blocks', 'ked', 'main_stretcher',
   'lucas_device', 'ventilator_setup', 'mechanical_ventilation', 'supine_position', 'recovery_position', 'fowlers_position',
   'left_lateral_tilt', 'leg_elevation', 'assisted_ambulation', 'post_rosc_bundle',
   'pelvic_binder',

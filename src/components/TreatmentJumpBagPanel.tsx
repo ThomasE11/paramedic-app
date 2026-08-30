@@ -325,6 +325,7 @@ const DISABILITY_TREATMENT_IDS = [
 ];
 
 const TRANSPORT_TREATMENT_IDS = [
+  'main_stretcher',
   'cervical_collar',
   'head_blocks',
   'spinal_board',
@@ -709,7 +710,7 @@ const BAG_EQUIPMENT: Record<ManagementTab, EquipmentInventoryItem[]> = {
     { id: 'exposure-position-walk', label: 'Assisted Walk', caption: 'Stable patient gait check', treatmentId: 'assisted_ambulation', assetPath: EQUIPMENT_ASSET_PATHS.positioning, tone: '#16a34a', wide: true },
   ],
   transport: [
-    { id: 'transport-stretcher', label: 'Main Stretcher', caption: 'Wheeled ambulance trolley', assetPath: EQUIPMENT_ASSET_PATHS.ambulanceStretcher, tone: '#facc15', wide: true },
+    { id: 'transport-stretcher', label: 'Main Stretcher', caption: 'Wheeled ambulance trolley', treatmentId: 'main_stretcher', assetPath: EQUIPMENT_ASSET_PATHS.ambulanceStretcher, tone: '#facc15', wide: true },
     { id: 'transport-spine-board', label: 'Long Spine Board', caption: 'Extrication and transfer', treatmentId: 'spinal_board', assetPath: EQUIPMENT_ASSET_PATHS.spineBoard, tone: '#facc15' },
     { id: 'transport-scoop', label: 'Scoop Stretcher', caption: 'Split under patient', treatmentId: 'scoop_stretcher', assetPath: EQUIPMENT_ASSET_PATHS.scoopStretcher, tone: '#94a3b8', wide: true },
     { id: 'transport-head-blocks', label: 'Head Blocks', caption: 'Immobilise head after collar', treatmentId: 'head_blocks', assetPath: EQUIPMENT_ASSET_PATHS.headBlocks, tone: '#f97316' },

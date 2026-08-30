@@ -503,8 +503,9 @@ export function TreatmentBayEnvironment({
           showPatientSeat={showPatientSeat}
         />
       )}
-      {/* Clinic/home scenes show the bed; roadside/floor staging hides it. */}
-      {!hideBed && isClinic && <Stretcher />}
+      {/* Arrival scenes hide the trolley until the crew loads the patient —
+          including outdoor variants, otherwise stretcher-load is invisible. */}
+      {!hideBed && <Stretcher />}
       {/* Medical equipment is brought by the paramedic in every scene, but the
           red crash cart and O2 tank belong inside a bay — hide them for
           outdoor roadside variants so the wrecked car + motorcycle aren't visually

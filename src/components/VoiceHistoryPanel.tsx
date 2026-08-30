@@ -25,13 +25,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
-  Mic, MicOff, MessageCircle, AlertCircle, User, Stethoscope,
+  Mic, MicOff, MessageCircle, AlertCircle, User, Users, Stethoscope,
   CheckCircle2, History, Volume2, Send,
 } from 'lucide-react';
 import {
   classifyQuestion,
   generatePatientResponse,
   generateCollateralResponse,
+  sceneHasAskableBystander,
   CATEGORY_LABELS,
   SAMPLE_CATEGORIES,
   type HistoryCategory,
@@ -54,18 +55,31 @@ export function VoiceHistoryPanel({ caseData, onCategoryObtained, footer }: Voic
   const [turns, setTurns] = useState<HistoryTurn[]>([]);
   const [obtained, setObtained] = useState<Set<HistoryCategory>>(new Set());
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const canAskBystander = sceneHasAskableBystander(caseData);
+  const [askTarget, setAskTarget] = useState<'patient' | 'bystander'>(
+    patientVoice.canVocalize ? 'patient' : 'bystander',
+  );
 
   // Derive the patient's mental status once — drives the response generator.
   const responseContext = useMemo(() => {
     const gcs = caseData.abcde?.disability?.gcs?.total ?? caseData.vitalSignsProgression?.initial?.gcs;
     const spo2 = caseData.abcde?.breathing?.spo2 ?? caseData.vitalSignsProgression?.initial?.spo2;
     const sbp = caseData.abcde?.circulation?.bp?.systolic;
+    const rr = caseData.abcde?.breathing?.rate ?? caseData.vitalSignsProgression?.initial?.respiration;
+    const appearance = [
+      caseData.initialPresentation?.appearance,
+      caseData.abcde?.breathing?.findings?.join(' '),
+    ].filter(Boolean).join(' ');
     const severe = (typeof spo2 === 'number' && spo2 < 88)
       || (typeof gcs === 'number' && gcs >= 9 && gcs <= 12)
       || (typeof sbp === 'number' && sbp < 90);
+    const breathless = (typeof rr === 'number' && rr >= 28)
+      || (typeof spo2 === 'number' && spo2 < 90)
+      || /can't speak|unable to speak|single words|two[- ]word|tripod|severe (asthma|dyspn)|gasping/i.test(appearance);
     return {
       severity: (severe ? 'severe' : 'mild') as 'severe' | 'mild',
       altered: typeof gcs === 'number' && gcs >= 9 && gcs <= 12,
+      breathless,
     };
   }, [caseData]);
 
@@ -85,7 +99,11 @@ export function VoiceHistoryPanel({ caseData, onCategoryObtained, footer }: Voic
 
     let answer: string | null;
     let attribution: 'patient' | 'system' = 'patient';
-    if (patientVoice.canVocalize) {
+    const askingBystander = askTarget === 'bystander' && canAskBystander;
+    if (askingBystander) {
+      answer = generateCollateralResponse(caseData, category);
+      attribution = 'system';
+    } else if (patientVoice.canVocalize) {
       answer = generatePatientResponse(caseData, category, responseContext);
     } else {
       answer = generateCollateralResponse(caseData, category);
@@ -123,7 +141,7 @@ export function VoiceHistoryPanel({ caseData, onCategoryObtained, footer }: Voic
     // For collateral / system messages we deliberately don't speak — the
     // attribution makes more sense as a written note than a synthesised
     // bystander voice (we don't have a voice per bystander).
-  }, [caseData, responseContext, patientVoice]);
+  }, [askTarget, canAskBystander, caseData, responseContext, patientVoice]);
 
   // Report newly-obtained categories to the parent from an EFFECT (not during
   // render). A ref tracks what's already been reported so each fires once.
@@ -175,10 +193,35 @@ export function VoiceHistoryPanel({ caseData, onCategoryObtained, footer }: Voic
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-500/15">
               <MessageCircle className="h-4 w-4 text-blue-500" />
             </div>
-            History Taking — Ask the Patient
+            History Taking — {askTarget === 'bystander' && canAskBystander ? 'Ask a Bystander' : 'Ask the Patient'}
           </CardTitle>
-          <div className="text-[10px] uppercase tracking-[0.18em] font-semibold text-slate-300 dark:text-slate-200">
-            SAMPLE {sampleCovered.length}/6
+          <div className="flex items-center gap-2">
+            {canAskBystander && (
+              <div className="flex rounded-full border border-slate-600/80 p-0.5 text-[10px] font-semibold uppercase tracking-[0.12em]">
+                <button
+                  type="button"
+                  onClick={() => setAskTarget('patient')}
+                  disabled={!patientVoice.canVocalize}
+                  className={`flex items-center gap-1 rounded-full px-2.5 py-1 ${askTarget === 'patient' ? 'bg-blue-500/25 text-blue-100' : 'text-slate-400'}`}
+                  title={patientVoice.canVocalize ? 'Ask the patient' : 'Patient cannot answer'}
+                >
+                  <User className="h-3 w-3" />
+                  Patient
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAskTarget('bystander')}
+                  className={`flex items-center gap-1 rounded-full px-2.5 py-1 ${askTarget === 'bystander' ? 'bg-amber-500/25 text-amber-100' : 'text-slate-400'}`}
+                  title="Ask a bystander for collateral history"
+                >
+                  <Users className="h-3 w-3" />
+                  Bystander
+                </button>
+              </div>
+            )}
+            <div className="text-[10px] uppercase tracking-[0.18em] font-semibold text-slate-300 dark:text-slate-200">
+              SAMPLE {sampleCovered.length}/6
+            </div>
           </div>
         </div>
       </CardHeader>
@@ -209,8 +252,9 @@ export function VoiceHistoryPanel({ caseData, onCategoryObtained, footer }: Voic
             <div className="flex flex-col items-center justify-center py-8 text-center">
               <History className="h-8 w-8 text-slate-400 mb-2" />
               <p className="text-sm font-medium text-slate-200 dark:text-slate-100 max-w-md leading-relaxed">
-                Press the mic and ask the patient a history question — anything you'd
-                ask in real practice. The patient will answer in their own voice.
+                {askTarget === 'bystander' && canAskBystander
+                  ? 'Ask the bystander what they saw, when it started, and what they know about the patient.'
+                  : "Press the mic and ask the patient a history question — anything you'd ask in real practice. The patient will answer in their own voice."}
               </p>
               <p className="text-[11px] text-slate-300 mt-3">
                 Try: <em>"What medications do you take?"</em> · <em>"Any allergies?"</em> ·

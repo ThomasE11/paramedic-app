@@ -38,7 +38,25 @@ const TREATMENT_POSITIONING: Record<string, Omit<PatientPositioningOverride, 'tr
   left_lateral_tilt: { mobility: 'recumbent', posture: 'recovery' },
   leg_elevation: { mobility: 'recumbent', posture: 'supine' },
   assisted_ambulation: { mobility: 'pacing', posture: null },
+  main_stretcher: { mobility: 'recumbent', posture: 'supine' },
+  scoop_stretcher: { mobility: 'recumbent', posture: 'supine' },
+  spinal_board: { mobility: 'recumbent', posture: 'supine' },
+  vacuum_mattress: { mobility: 'recumbent', posture: 'supine' },
 };
+
+/** Devices that physically load the patient onto a trolley or transfer board. */
+export const STRETCHER_LOAD_TREATMENT_IDS = [
+  'main_stretcher',
+  'scoop_stretcher',
+  'spinal_board',
+  'vacuum_mattress',
+] as const;
+
+export function patientLoadedOnStretcher(appliedTreatmentIds: readonly string[]): boolean {
+  return appliedTreatmentIds.some(id =>
+    (STRETCHER_LOAD_TREATMENT_IDS as readonly string[]).includes(id),
+  );
+}
 
 // ponytail: keyword staging over authored per-case data — explicit ground
 // words only, so an ambiguous scene stays on the stretcher (clinically fine:
@@ -164,7 +182,12 @@ export function patientSkeletalAction(
 }
 
 /** Scene support furniture must match the patient's rendered mobility. */
-export function shouldShowPatientSeat(mobility: PatientMobility): boolean {
+export function shouldShowPatientSeat(
+  mobility: PatientMobility,
+  loadedOnStretcher = false,
+): boolean {
+  // Once loaded, the trolley is the seat — do not keep a scene chair under them.
+  if (loadedOnStretcher) return false;
   return mobility === 'seated';
 }
 
@@ -172,8 +195,22 @@ export function shouldShowPatientSeat(mobility: PatientMobility): boolean {
 export function shouldHideTreatmentStretcher(
   stage: PatientStage,
   mobility: PatientMobility,
+  loadedOnStretcher = false,
 ): boolean {
+  if (mobility === 'standing' || mobility === 'pacing') return true;
+  if (loadedOnStretcher) return false;
   return stage === 'floor' || mobility !== 'recumbent';
+}
+
+/**
+ * Applying a stretcher / scoop / board moves the patient off the floor they
+ * were found on. Scene staging still decides the arrival pose.
+ */
+export function deriveAppliedPatientStage(
+  sceneStage: PatientStage,
+  appliedTreatmentIds: readonly string[] = [],
+): PatientStage {
+  return patientLoadedOnStretcher(appliedTreatmentIds) ? 'stretcher' : sceneStage;
 }
 
 /** Local upper-arm rotation that turns the donor clip's A-pose into rest. */

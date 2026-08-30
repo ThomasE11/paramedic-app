@@ -18,10 +18,12 @@ import { Badge } from '@/components/ui/badge';
 import { RotateCcw, User, Eye, Hand, Activity, Stethoscope, X, ChevronRight, ChevronDown, AlertTriangle, Compass, Unlock, Wind, Shirt } from 'lucide-react';
 import { BodyMesh, treatmentBayClinicalToWorld, type BayPatientStage } from './BodyMesh';
 import {
+  deriveAppliedPatientStage,
   derivePatientMobility,
   derivePatientPosture,
   deriveScenePatientStage,
   deriveTreatmentPositioningOverride,
+  patientLoadedOnStretcher,
   shouldHideTreatmentStretcher,
   shouldShowPatientSeat,
   type PatientMobility,
@@ -4416,8 +4418,17 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   const patientFirstExamLayout = treatmentBayOverviewEnabled && !!activeRegion;
   const markerPresentation: MarkerPresentation = useTreatmentBayPresentation ? 'treatment-bay' : 'upright';
   // Scene-contextual staging: a collapsed/roadside patient renders on the
-  // floor instead of pre-loaded onto the stretcher.
-  const bayStage: BayPatientStage = useMemo(() => deriveScenePatientStage(caseData), [caseData]);
+  // floor instead of pre-loaded onto the stretcher. Loading kit later lifts
+  // them onto the trolley without rewriting the authored arrival pose.
+  const sceneStage: BayPatientStage = useMemo(() => deriveScenePatientStage(caseData), [caseData]);
+  const loadedOnStretcher = useMemo(
+    () => patientLoadedOnStretcher(appliedTreatmentIds),
+    [appliedTreatmentIds],
+  );
+  const bayStage: BayPatientStage = useMemo(
+    () => deriveAppliedPatientStage(sceneStage, appliedTreatmentIds),
+    [sceneStage, appliedTreatmentIds],
+  );
   // MCI uses age/weight zero as an aggregate sentinel and has no single body
   // until a casualty is selected. Do not render that metadata as a newborn.
   const activePatientAge = caseData.mci?.isMCI ? undefined : caseData.patientInfo?.age;
@@ -5572,8 +5583,8 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
 
               <TreatmentBayEnvironment
                 hideOverhead={treatmentBayOverviewEnabled}
-                hideBed={treatmentBayOverviewEnabled && shouldHideTreatmentStretcher(bayStage, patientMobility)}
-                showPatientSeat={treatmentBayOverviewEnabled && shouldShowPatientSeat(patientMobility)}
+                hideBed={treatmentBayOverviewEnabled && shouldHideTreatmentStretcher(bayStage, patientMobility, loadedOnStretcher)}
+                showPatientSeat={treatmentBayOverviewEnabled && shouldShowPatientSeat(patientMobility, loadedOnStretcher)}
                 shadowsEnabled={quality.contactShadows}
                 variant={bayVariant}
               />

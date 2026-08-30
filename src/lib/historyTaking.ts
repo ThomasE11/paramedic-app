@@ -46,6 +46,18 @@ export interface HistoryTurn {
   timestamp: number;
 }
 
+const ABSENT_BYSTANDER_PATTERN = /\b(none|nil|nobody|no[- ]one|no bystander|unattended|alone)\b/i;
+
+/**
+ * Scene witnesses are askable when the authored bystander field names a
+ * person. "None" / empty / missing stays silent — there is nobody to ask.
+ */
+export function sceneHasAskableBystander(caseData: CaseScenario): boolean {
+  const bystanders = caseData.sceneInfo?.bystanders?.trim();
+  if (!bystanders) return false;
+  return !ABSENT_BYSTANDER_PATTERN.test(bystanders);
+}
+
 /**
  * Map a transcribed question to a SAMPLE/OPQRST category. Returns 'unknown'
  * when no pattern fires. Order matters — more specific patterns first.
@@ -164,6 +176,8 @@ interface ResponseContext {
   severity: 'mild' | 'severe';
   /** True when GCS ≤ 12 — patient gives partial/slurred answers. */
   altered: boolean;
+  /** True when the patient is fighting for air — answers fragment. */
+  breathless?: boolean;
 }
 
 function joinList(items: string[], conjunction: 'and' | 'or' = 'and'): string {
@@ -237,6 +251,15 @@ export function generatePatientResponse(
   // allergy or regular tablet. Long narrative answers (events/timeline) DO
   // degrade, because recalling a sequence is exactly what's impaired.
   const hesitate = (s: string): string => {
+    if (ctx.breathless) {
+      const firstClause = s.split(/[.,;]/)[0].trim();
+      const body = firstClause.length > 42 ? `${firstClause.slice(0, 38).trim()}...` : firstClause;
+      return pick([
+        `${body}... can't... talk...`,
+        `${body}... I... I can't... get a breath...`,
+        `Can't... ${body.charAt(0).toLowerCase() + body.slice(1)}...`,
+      ]);
+    }
     if (!ctx.altered) return s;
     const opener = pick(['Mm... ', 'Uh... ', 'I think... ', 'Sorry, I... ']);
     // Lowercase the first letter so it flows after the opener — but NOT when
@@ -245,6 +268,10 @@ export function generatePatientResponse(
     return opener + body;
   };
   const degradeNarrative = (s: string): string => {
+    if (ctx.breathless) {
+      const firstClause = s.split(/[.,;]/)[0].trim();
+      return `Can't... talk much... ${firstClause.charAt(0).toLowerCase() + firstClause.slice(1)}...`;
+    }
     if (!ctx.altered) return s;
     const firstClause = s.split(/[.,;]/)[0].trim();
     return `Uh... ${firstClause.charAt(0).toLowerCase() + firstClause.slice(1)}... it’s all a bit of a blur, sorry.`;
@@ -254,11 +281,11 @@ export function generatePatientResponse(
 
   switch (category) {
     case 'introduction':
-      return pick([
+      return hesitate(pick([
         `Hello... yes, I can hear you.`,
         `Hi... thank you for coming.`,
         `Oh, thank god you're here.`,
-      ]);
+      ]));
 
     case 'orientation':
       if (ctx.altered) return pick([`I... I'm not sure where... what year is it?`, `Where... where am I? I feel funny.`]);
@@ -267,7 +294,7 @@ export function generatePatientResponse(
     case 'allergies': {
       const real = hasRealAllergies(h?.allergies);
       if (real.length === 0) {
-        return pick([`No, none that I know of.`, `No allergies, no.`, `Not that I'm aware of.`]);
+        return hesitate(pick([`No, none that I know of.`, `No allergies, no.`, `Not that I'm aware of.`]));
       }
       return hesitate(pick([
         `Yes, I'm allergic to ${joinList(real)}.`,
@@ -278,7 +305,7 @@ export function generatePatientResponse(
 
     case 'medications': {
       const meds = h?.medications || [];
-      if (!meds.length) return pick([`No, I'm not on any regular medication.`, `Nothing regular, no.`, `I don't take any tablets.`]);
+      if (!meds.length) return hesitate(pick([`No, I'm not on any regular medication.`, `Nothing regular, no.`, `I don't take any tablets.`]));
       const named = meds.map(m => formatMedication(m));
       return hesitate(pick([
         `I take ${joinList(named)}.`,
@@ -291,7 +318,7 @@ export function generatePatientResponse(
       const conds = h?.medicalConditions || [];
       const surg = h?.surgicalHistory || [];
       const prev = h?.previousSimilarEpisodes || [];
-      if (!conds.length && !surg.length && !prev.length) return pick([`No, I've been pretty healthy.`, `Nothing really — I keep well.`, `No medical problems to speak of.`]);
+      if (!conds.length && !surg.length && !prev.length) return hesitate(pick([`No, I've been pretty healthy.`, `Nothing really — I keep well.`, `No medical problems to speak of.`]));
       const parts: string[] = [];
       if (conds.length) parts.push(`I've got ${joinList(conds.map(c => c.toLowerCase()))}`);
       if (surg.length) parts.push(`I had ${joinList(surg.map(s => s.toLowerCase()))}`);
@@ -303,7 +330,7 @@ export function generatePatientResponse(
       return hesitate(h?.lastMeal ? pick([`I had ${h.lastMeal.toLowerCase()}.`, `Last thing I ate was ${h.lastMeal.toLowerCase()}.`]) : `I can't remember exactly... sometime earlier, I think.`);
 
     case 'events':
-      if (!h?.eventsLeading) return pick([`I'm not sure. It just... happened.`, `One minute I was fine, then this.`]);
+      if (!h?.eventsLeading) return degradeNarrative(pick([`I'm not sure. It just... happened.`, `One minute I was fine, then this.`]));
       return degradeNarrative(h.eventsLeading);
 
     case 'opqrst-onset':
@@ -430,10 +457,10 @@ export function generateCollateralResponse(
   category: HistoryCategory,
 ): string | null {
   const bystanders = caseData.sceneInfo?.bystanders;
-  if (!bystanders) {
-    return `The patient is unresponsive and there's no-one here to give collateral history.`;
+  if (!sceneHasAskableBystander(caseData)) {
+    return `There's no-one here to give collateral history.`;
   }
-  const who = pickCollateralVoice(bystanders);
+  const who = pickCollateralVoice(bystanders!);
   const h = caseData.history;
 
   switch (category) {
@@ -472,13 +499,13 @@ export function generateCollateralResponse(
     case 'opqrst-radiation':
     case 'opqrst-time':
     case 'pain-current':
-      return `${who} can't speak to the pain — the patient hasn't been responsive.`;
+      return `${who} can only describe what they saw — they can't speak to the pain itself.`;
     case 'social':
       return h?.socialHistory ? `${who} confirms: ${describeSocial(h.socialHistory)}` : `${who} doesn't have details on lifestyle.`;
     case 'family':
       return h?.familyHistory?.conditions?.length ? `${who} mentions a family history of ${joinList(h.familyHistory.conditions.map(c => c.toLowerCase()))}.` : `${who} says nothing significant in the family.`;
     case 'orientation':
-      return `The patient isn't responding to questions. ${who} confirms they were last seen alert ${recentTimeHint(caseData)}.`;
+      return `${who} says they were last seen alert ${recentTimeHint(caseData)}.`;
     case 'signs-symptoms':
       return `${who} found them like this. Chief problem: ${caseData.dispatchInfo?.callReason || 'unwell, cannot get more from them'}.`;
     case 'unknown':
