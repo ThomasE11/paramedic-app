@@ -1286,6 +1286,28 @@ function assessTreatmentPracticality({
     };
   }
 
+  if (id === 'surgical_cric') {
+    if ((currentCase.patientInfo?.age ?? 99) < 12) {
+      return {
+        level: 'block',
+        title: 'Surgical cricothyrotomy not appropriate for this age',
+        clinicalReason: 'This simulator reserves scalpel–bougie–tube front-of-neck access for patients aged 12 years or older. Use the age-specific paediatric failed-airway pathway.',
+      };
+    }
+    const attemptedUpperAirway = appliedTreatmentIds.some(treatmentId => [
+      'intubation', 'rsi_intubation', 'endotracheal_intubation', 'magill_forceps',
+    ].includes(treatmentId));
+    const attemptedOxygenation = appliedTreatmentIds.includes('bvm_ventilation');
+    const cannotOxygenate = spo2 < 90 || rr <= 0;
+    if (!attemptedUpperAirway || !attemptedOxygenation || !cannotOxygenate) {
+      return {
+        level: 'block',
+        title: 'Cannot-intubate/cannot-oxygenate not established',
+        clinicalReason: 'Emergency front-of-neck access is a last-resort rescue. Attempt and optimise upper-airway oxygenation and an appropriate advanced-airway strategy first; proceed only if oxygenation still fails.',
+      };
+    }
+  }
+
   if (id === 'bvm_ventilation' && vocal && rr >= 10 && spo2 >= 90 && !airwayCompromise) {
     return {
       level: 'block',
@@ -3475,6 +3497,7 @@ export function StudentPanel({
       'intubation',
       'rsi_intubation',
       'endotracheal_intubation',
+      'surgical_cric',
     ].includes(id));
     if (['ventilator_setup', 'mechanical_ventilation'].includes(treatment.id) && !hasSecuredAirway) {
       toast.error('Secure and confirm the airway first', {

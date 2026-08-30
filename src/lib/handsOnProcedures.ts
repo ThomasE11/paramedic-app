@@ -333,6 +333,28 @@ export function getHandsOnProcedurePlan(
     };
   }
 
+  if (treatmentId === 'surgical_cric') {
+    return {
+      id: 'surgical-front-of-neck-airway',
+      title: 'Emergency front-of-neck airway',
+      subtitle: 'A scalpel–bougie–tube rescue for a declared cannot-intubate/cannot-oxygenate emergency.',
+      treatmentId,
+      requiresTarget: false,
+      targets: [],
+      equipmentAsset: '/equipment-assets/fona-kit.svg',
+      completionLabel: 'FONA secured — ventilate and monitor',
+      steps: [
+        STEP('declare', 'Declare CICO and call for help', 'State that intubation and oxygenation have failed, summon the airway/resuscitation team, continue 100% oxygen from above and assign roles.', 'This is a last-resort trained-rescuer intervention. Do not delay once cannot-intubate/cannot-oxygenate is declared.', 'prepare'),
+        STEP('position', 'Position and identify the membrane', 'Extend the neck when safe and use a laryngeal handshake to stabilise the larynx and identify the cricothyroid membrane.', 'If landmarks are impalpable, use a vertical skin incision and blunt dissection to identify the membrane.', 'place'),
+        STEP('prepare', 'Prepare scalpel, bougie and tube', 'Open a number 10 scalpel, coude-tip bougie, lubricated cuffed 6.0 mm tracheal tube, syringe, circuit and waveform capnography.', 'Keep the blade visible and confirm the bougie tip orientation before cutting.', 'prepare'),
+        STEP('incise', 'Open the cricothyroid membrane', 'Stabilise the larynx, incise the membrane, rotate the blade with its sharp edge caudally and maintain the opening.', 'Expect bleeding; keep the tract open and do not direct the blade cephalad.', 'press', 1300),
+        STEP('bougie', 'Pass the bougie', 'Slide the coude tip along the blade into the trachea, then remove the scalpel while maintaining bougie control.', 'Tracheal clicks and distal hold-up support tracheal placement; never force against resistance.', 'place', 1200),
+        STEP('tube', 'Railroad and cuff the tube', 'Pass the lubricated 6.0 cuffed tube over the bougie, remove the bougie, inflate the cuff and connect the ventilation circuit.', 'Avoid advancing too deeply; support the tube throughout connection.', 'connect', 1300),
+        STEP('confirm', 'Ventilate, confirm and secure', 'Deliver a breath, observe chest rise and confirm a sustained waveform EtCO₂ trace; auscultate, secure the tube and document depth/time.', 'No sustained capnography means placement is unconfirmed. Reassess after every movement and arrange urgent surgical review.', 'confirm', 1200),
+      ],
+    };
+  }
+
   if (treatmentId === 'bvm_ventilation') {
     return {
       id: 'bvm-ventilation', title: 'Apply bag-valve-mask ventilation',
@@ -656,6 +678,7 @@ const HANDS_ON_TREATMENTS = new Set([
   'left_lateral_tilt', 'leg_elevation', 'assisted_ambulation',
   'pelvic_binder',
   'back_blows', 'abdominal_thrusts',
+  'surgical_cric',
 ]);
 
 export const isHandsOnTreatment = (treatmentId: string): boolean =>
@@ -680,7 +703,8 @@ export const procedureIncludesIntegratedReassessment = (treatmentId: string): bo
   || treatmentId === 'rsi_intubation'
   || treatmentId === 'pelvic_binder'
   || treatmentId === 'back_blows'
-  || treatmentId === 'abdominal_thrusts';
+  || treatmentId === 'abdominal_thrusts'
+  || treatmentId === 'surgical_cric';
 
 export function procedureSiteToken(treatmentId: string, target: ProcedureSite): string {
   return `site:${treatmentId}:${target}`;

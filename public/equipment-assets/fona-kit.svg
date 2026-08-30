@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 260" role="img" aria-labelledby="title desc">
+  <title id="title">Emergency front-of-neck airway kit</title>
+  <desc id="desc">A number 10 scalpel, bougie, cuffed 6 millimetre tracheal tube, syringe and securing tape.</desc>
+  <defs>
+    <linearGradient id="tray" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#f8fafc"/><stop offset="1" stop-color="#cbd5e1"/></linearGradient>
+    <linearGradient id="steel" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#64748b"/><stop offset=".45" stop-color="#f8fafc"/><stop offset="1" stop-color="#475569"/></linearGradient>
+    <filter id="shadow" x="-20%" y="-25%" width="140%" height="160%"><feDropShadow dx="0" dy="7" stdDeviation="6" flood-color="#020617" flood-opacity=".3"/></filter>
+  </defs>
+  <rect x="13" y="15" width="334" height="230" rx="27" fill="#fff" stroke="#cbd5e1" stroke-width="4"/>
+  <rect x="28" y="51" width="304" height="164" rx="20" fill="url(#tray)" stroke="#94a3b8" stroke-width="3"/>
+  <text x="180" y="40" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="900" fill="#991b1b" letter-spacing="1">EMERGENCY FONA KIT</text>
+  <g filter="url(#shadow)">
+    <path d="M55 76h27v104H55Z" fill="#1e293b" stroke="#020617" stroke-width="3"/>
+    <path d="m60 77 8-31 9 31Z" fill="url(#steel)" stroke="#475569" stroke-width="2"/>
+    <path d="M62 95h13M62 115h13M62 135h13M62 155h13" stroke="#94a3b8" stroke-width="3"/>
+    <path d="M111 184c2-62 12-108 44-126 36-21 61 0 69 32" fill="none" stroke="#eab308" stroke-width="10" stroke-linecap="round"/>
+    <path d="m219 84 16 13-21 7" fill="none" stroke="#ca8a04" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M169 187v-70c0-14 11-25 25-25s25 11 25 25v70" fill="none" stroke="#f8fafc" stroke-width="19" stroke-linecap="round"/>
+    <path d="M169 187v-70c0-14 11-25 25-25s25 11 25 25v70" fill="none" stroke="#38bdf8" stroke-width="3" opacity=".8"/>
+    <rect x="158" y="177" width="73" height="17" rx="8" fill="#0f766e" stroke="#134e4a" stroke-width="3"/>
+    <path d="M212 112h25v23h-25" fill="#e0f2fe" stroke="#0284c7" stroke-width="3"/>
+    <path d="M237 117h26v13h-26" fill="#f8fafc" stroke="#64748b" stroke-width="3"/>
+    <rect x="267" y="72" width="27" height="87" rx="8" fill="#e0f2fe" stroke="#64748b" stroke-width="3"/>
+    <path d="M272 94h17M272 110h17M272 126h17M272 142h17" stroke="#64748b" stroke-width="2"/>
+    <path d="M281 61v15M272 60h18" stroke="#64748b" stroke-width="5" stroke-linecap="round"/>
+    <path d="M295 151h20v9h-20" fill="#64748b"/>
+    <rect x="253" y="171" width="65" height="25" rx="7" fill="#fef3c7" stroke="#d97706" stroke-width="3"/>
+    <path d="M260 179h51M260 188h51" stroke="#d97706" stroke-width="2" stroke-dasharray="5 3"/>
+  </g>
+  <g font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="800" fill="#334155" text-anchor="middle">
+    <text x="69" y="207">#10 SCALPEL</text>
+    <text x="130" y="207">BOUGIE</text>
+    <text x="201" y="207">6.0 TUBE</text>
+    <text x="283" y="207">SYRINGE + TIE</text>
+  </g>
+</svg>

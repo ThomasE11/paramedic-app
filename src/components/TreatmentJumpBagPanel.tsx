@@ -533,6 +533,7 @@ const EQUIPMENT_ASSET_PATHS = {
   ked: '/equipment-assets/ked-extrication-device.webp',
   tractionSplint: '/equipment-assets/traction-splint.webp',
   pelvicBinder: '/equipment-assets/pelvic-binder.svg',
+  fonaKit: '/equipment-assets/fona-kit.svg',
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -643,6 +644,7 @@ const BAG_EQUIPMENT: Record<ManagementTab, EquipmentInventoryItem[]> = {
     { id: 'airway-nrb', label: 'Non-rebreather', caption: 'High-flow reservoir mask', treatmentId: 'oxygen_nonrebreather', assetPath: PRODUCT_ASSET_PATHS.nonrebreather, tone: '#0284c7' },
     { id: 'airway-et', label: 'ET Tube', caption: 'Advanced airway', treatmentId: 'intubation', assetPath: PRODUCT_ASSET_PATHS.etTube, tone: '#0f766e' },
     { id: 'airway-rsi', label: 'RSI Airway Setup', caption: 'Sedation, paralysis, tube', treatmentId: 'rsi_intubation', assetPath: PRODUCT_ASSET_PATHS.etTube, tone: '#7c3aed' },
+    { id: 'airway-fona', label: 'FONA Kit', caption: 'CICO rescue: scalpel, bougie, 6.0 tube', treatmentId: 'surgical_cric', assetPath: EQUIPMENT_ASSET_PATHS.fonaKit, tone: '#dc2626', wide: true },
   ],
   breathing: [
     { id: 'breathing-nasal', label: 'Nasal Cannula', caption: 'Low-flow oxygen', treatmentId: 'oxygen_nasal', assetPath: PRODUCT_ASSET_PATHS.nasal, tone: '#0ea5e9' },
@@ -739,6 +741,7 @@ function getProductMiniatureAsset(treatment: Treatment, kind: ProductMiniatureKi
   if (id === 'air_splint') return EQUIPMENT_ASSET_PATHS.airSplint;
   if (id === 'traction_splint') return EQUIPMENT_ASSET_PATHS.tractionSplint;
   if (id === 'pelvic_binder') return EQUIPMENT_ASSET_PATHS.pelvicBinder;
+  if (id === 'surgical_cric') return EQUIPMENT_ASSET_PATHS.fonaKit;
   if (kind === 'fluid') return PRODUCT_ASSET_PATHS.fluidBag;
   if (kind === 'iv') return PRODUCT_ASSET_PATHS.ivCannula;
   if (kind === 'pads') return PRODUCT_ASSET_PATHS.defibPads;

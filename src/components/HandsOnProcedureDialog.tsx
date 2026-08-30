@@ -153,6 +153,53 @@ function AirwayProcedurePreview({
   );
 }
 
+function FrontOfNeckAirwayProcedurePreview({
+  treatmentId,
+  completedSteps,
+  animatingStep,
+}: {
+  treatmentId: string;
+  completedSteps: string[];
+  animatingStep: string | null;
+}) {
+  if (treatmentId !== 'surgical_cric') return null;
+  const reached = (stepId: string) => completedSteps.includes(stepId) || animatingStep === stepId;
+  const landmarked = reached('position');
+  const incised = reached('incise');
+  const bougiePassed = reached('bougie');
+  const tubePassed = reached('tube');
+  const confirmed = reached('confirm');
+
+  return (
+    <div data-procedure-preview="front-of-neck-airway" className="pointer-events-none absolute inset-0 z-30">
+      {landmarked && (
+        <>
+          <span className="absolute left-1/2 top-[61px] h-5 w-8 -translate-x-1/2 rounded-full border-2 border-amber-300/80 shadow-[0_0_14px_rgba(251,191,36,.65)]" aria-label="Cricothyroid membrane identified" />
+          <span className="absolute left-[116px] top-[62px] h-px w-11 bg-amber-200" />
+          <span className="absolute right-2 top-[53px] rounded-full border border-amber-300/40 bg-amber-950/95 px-2 py-1 text-[7px] font-black uppercase tracking-[0.08em] text-amber-100">CT membrane</span>
+        </>
+      )}
+      {incised && (
+        <span className="absolute left-1/2 top-[68px] h-1 w-8 -translate-x-1/2 rounded-full bg-red-700 shadow-[0_0_5px_rgba(248,113,113,.8)]" aria-label="Cricothyroid membrane opened" />
+      )}
+      {bougiePassed && !tubePassed && (
+        <span className="absolute left-1/2 top-[65px] h-24 w-2 -translate-x-1/2 rounded-full border border-yellow-200 bg-yellow-400 shadow" aria-label="Bougie passed into trachea" />
+      )}
+      {tubePassed && (
+        <div className="absolute left-1/2 top-[61px] h-20 w-14 -translate-x-1/2 animate-in fade-in zoom-in-75">
+          <span className="absolute left-1/2 top-0 h-7 w-10 -translate-x-1/2 rounded-lg border-2 border-white bg-slate-100/85 shadow" />
+          <span className="absolute left-1/2 top-[8px] h-3 w-5 -translate-x-1/2 rounded-full border-2 border-teal-900 bg-teal-400" />
+          <span className="absolute left-1/2 top-[18px] h-12 w-3 -translate-x-1/2 rounded-b-full border-2 border-cyan-100 bg-cyan-100/70" />
+          <span className="absolute left-[30px] top-[56px] h-0.5 w-14 origin-left rotate-[24deg] bg-cyan-100" />
+        </div>
+      )}
+      {confirmed && (
+        <span className="absolute bottom-3 left-1/2 w-max -translate-x-1/2 rounded-full border border-emerald-300/50 bg-emerald-950/95 px-2 py-1 text-[7px] font-black uppercase tracking-[0.08em] text-emerald-100 shadow-lg">Sustained waveform EtCO₂ · tube secured</span>
+      )}
+    </div>
+  );
+}
+
 const THERMAL_PREVIEW_TREATMENTS = new Set(['active_cooling', 'warming_blanket']);
 
 function ThermalProcedurePreview({
@@ -581,6 +628,12 @@ export function HandsOnProcedureDialog({
               <AirwayProcedurePreview
                 treatmentId={plan.treatmentId}
                 equipmentAsset={plan.equipmentAsset}
+                completedSteps={completedSteps}
+                animatingStep={animatingStep}
+              />
+
+              <FrontOfNeckAirwayProcedurePreview
+                treatmentId={plan.treatmentId}
                 completedSteps={completedSteps}
                 animatingStep={animatingStep}
               />

@@ -81,7 +81,7 @@ describe('hands-on treatment procedures', () => {
       'sam_splint', 'box_splint', 'vacuum_limb_splint', 'air_splint', 'traction_splint',
       'cervical_collar', 'warming_blanket', 'active_cooling', 'spinal_board',
       'scoop_stretcher', 'vacuum_mattress', 'head_blocks', 'ked', 'lucas_device',
-      'ventilator_setup', 'mechanical_ventilation', 'pelvic_binder',
+      'ventilator_setup', 'mechanical_ventilation', 'pelvic_binder', 'surgical_cric',
     ];
     for (const treatmentId of equipmentTreatments) {
       const plan = getHandsOnProcedurePlan(treatmentId, caseData);
@@ -120,6 +120,16 @@ describe('hands-on treatment procedures', () => {
     expect(isHandsOnTreatment('abdominal_thrusts')).toBe(true);
     expect(procedureIncludesIntegratedReassessment('back_blows')).toBe(true);
     expect(procedureIncludesIntegratedReassessment('abdominal_thrusts')).toBe(true);
+  });
+
+  it('makes emergency front-of-neck access a confirmed scalpel-bougie-tube sequence', () => {
+    const plan = getHandsOnProcedurePlan('surgical_cric', caseData);
+
+    expect(plan?.steps.map(step => step.id)).toEqual(['declare', 'position', 'prepare', 'incise', 'bougie', 'tube', 'confirm']);
+    expect(plan?.steps.find(step => step.id === 'prepare')?.instruction).toContain('6.0 mm');
+    expect(plan?.steps.at(-1)?.instruction).toContain('sustained waveform EtCO₂');
+    expect(isHandsOnTreatment('surgical_cric')).toBe(true);
+    expect(procedureIncludesIntegratedReassessment('surgical_cric')).toBe(true);
   });
 
   it('reuses an already fitted nebuliser when adding the second bronchodilator', () => {

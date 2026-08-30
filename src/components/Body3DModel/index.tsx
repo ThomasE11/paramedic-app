@@ -151,6 +151,7 @@ interface AppliedEquipmentVisualState {
   hasChestSeal: boolean;
   hasNeedleDecompression: boolean;
   hasPelvicBinder: boolean;
+  hasSurgicalAirway: boolean;
   hasWarmingBlanket: boolean;
   hasActiveCooling: boolean;
   immobilisationDevice: 'spinal-board' | 'scoop' | 'vacuum-mattress' | 'head-blocks' | 'ked' | null;
@@ -183,6 +184,7 @@ const TREATMENT_ASSET_PATHS = {
   suction: '/equipment-assets/portable-suction.webp',
   needle: '/equipment-assets/needle-decompression.webp',
   pelvicBinder: '/equipment-assets/pelvic-binder.svg',
+  fonaKit: '/equipment-assets/fona-kit.svg',
   warmingBlanket: '/equipment-assets/warming-blanket.webp',
   coolingPack: '/equipment-assets/cooling-pack.webp',
   spineBoard: '/equipment-assets/spine-board.webp',
@@ -1126,11 +1128,14 @@ function buildTreatmentEquipmentState(appliedTreatmentIds: string[]): AppliedEqu
   const hasMedicationLine = appliedTreatmentIds.some(id =>
     IV_MEDICATION_LINE_IDS.has(id) || id.endsWith('_iv') || id.includes('_infusion'),
   );
-  const hasEtTube = applied.has('intubation')
-    || applied.has('endotracheal_intubation')
-    || applied.has('rsi_intubation')
-    || applied.has('mechanical_ventilation')
-    || applied.has('ventilator_setup');
+  const hasSurgicalAirway = applied.has('surgical_cric');
+  const hasEtTube = !hasSurgicalAirway && (
+    applied.has('intubation')
+      || applied.has('endotracheal_intubation')
+      || applied.has('rsi_intubation')
+      || applied.has('mechanical_ventilation')
+      || applied.has('ventilator_setup')
+  );
   const oxygenMatch = hasEtTube && rawOxygenMatch && ['nasal', 'simple-mask', 'nonrebreather', 'nebulizer', 'cpap'].includes(rawOxygenMatch.mode)
     ? undefined
     : rawOxygenMatch;
@@ -1172,6 +1177,7 @@ function buildTreatmentEquipmentState(appliedTreatmentIds: string[]): AppliedEqu
     hasChestSeal: applied.has('chest_seal_vented') || applied.has('vented_chest_seal') || applied.has('occlusive_dressing_3sided'),
     hasNeedleDecompression: applied.has('needle_decompression'),
     hasPelvicBinder: applied.has('pelvic_binder'),
+    hasSurgicalAirway,
     hasWarmingBlanket: applied.has('warming_blanket'),
     hasActiveCooling: applied.has('active_cooling'),
     immobilisationDevice,
@@ -1360,6 +1366,23 @@ function AppliedPelvicBinder() {
   );
 }
 
+function AppliedFrontOfNeckAirway() {
+  return (
+    <div
+      data-applied-equipment="front-of-neck-airway"
+      aria-label="Cuffed front-of-neck airway secured and connected"
+      className="pointer-events-none relative h-16 w-16 animate-in fade-in zoom-in-75 duration-500 drop-shadow-[0_4px_6px_rgba(2,6,23,.8)]"
+    >
+      <span className="absolute left-1/2 top-4 h-7 w-11 -translate-x-1/2 rounded-lg border-2 border-white/90 bg-slate-100/80 shadow backdrop-blur-[1px]" />
+      <span className="absolute left-1/2 top-[23px] h-3 w-5 -translate-x-1/2 rounded-full border-2 border-teal-950 bg-teal-500" />
+      <span className="absolute left-1/2 top-[28px] h-8 w-3 -translate-x-1/2 rounded-b-full border-2 border-cyan-100 bg-cyan-100/75" />
+      <span className="absolute left-[34px] top-[48px] h-0.5 w-11 origin-left rotate-[24deg] rounded bg-cyan-100 shadow-[0_0_4px_rgba(34,211,238,.75)]" />
+      <span className="absolute left-[17px] top-[31px] h-0.5 w-8 -rotate-[22deg] bg-amber-100" />
+      <span className="absolute right-[17px] top-[31px] h-0.5 w-8 rotate-[22deg] bg-amber-100" />
+    </div>
+  );
+}
+
 function AppliedTorsoCover({ cooling }: { cooling: boolean }) {
   return (
     <div data-applied-equipment={cooling ? 'active-cooling' : 'warming-blanket'} className={`pointer-events-none h-40 w-28 rounded-[28px] border shadow-xl animate-in fade-in zoom-in-95 duration-500 ${cooling ? 'border-cyan-100/80 bg-gradient-to-b from-cyan-100/55 via-sky-300/45 to-cyan-100/50' : 'border-amber-100/70 bg-[linear-gradient(125deg,rgba(254,243,199,.88),rgba(180,83,9,.62),rgba(254,243,199,.82))]'}`}>
@@ -1442,6 +1465,7 @@ function AppliedEquipmentTray({ appliedTreatmentIds }: { appliedTreatmentIds: st
   if (equipment.hasChestSeal && ![...siteTreatmentIds].some(id => id.includes('chest_seal') || id.includes('occlusive'))) chips.push({ src: TREATMENT_ASSET_PATHS.bandage, label: 'Chest seal adhered' });
   if (equipment.hasNeedleDecompression && !siteTreatmentIds.has('needle_decompression')) chips.push({ src: TREATMENT_ASSET_PATHS.needle, label: 'Decompression catheter' });
   if (equipment.hasPelvicBinder) chips.push({ src: TREATMENT_ASSET_PATHS.pelvicBinder, label: 'Pelvic binder secured' });
+  if (equipment.hasSurgicalAirway) chips.push({ src: TREATMENT_ASSET_PATHS.fonaKit, label: 'FONA tube secured' });
   if (equipment.hasWarmingBlanket) chips.push({ src: TREATMENT_ASSET_PATHS.warmingBlanket, label: 'Warming blanket' });
   if (equipment.hasActiveCooling) chips.push({ src: TREATMENT_ASSET_PATHS.coolingPack, label: 'Active cooling' });
   if (equipment.immobilisationDevice) {
@@ -1501,6 +1525,7 @@ function TreatmentEquipmentOverlay({
     || equipment.hasChestSeal
     || equipment.hasNeedleDecompression
     || equipment.hasPelvicBinder
+    || equipment.hasSurgicalAirway
     || equipment.hasWarmingBlanket
     || equipment.hasActiveCooling
     || equipment.immobilisationDevice
@@ -1525,7 +1550,7 @@ function TreatmentEquipmentOverlay({
 
   return (
     <>
-      {equipment.oxygen && (
+      {equipment.oxygen && !equipment.hasSurgicalAirway && (
         <MarkerHtml position={faceAnchor(0.01, 1.66, 0.24)} distanceFactor={1.5} zIndexRange={[76, 0]} interactive={false} presentation={posture === 'tripod' || posture === 'seated' ? 'upright' : presentation} contentScale={equipmentScale}>
           <WornFaceEquipment
             equipment={equipment.oxygen}
@@ -1596,6 +1621,12 @@ function TreatmentEquipmentOverlay({
       {equipment.hasPelvicBinder && (
         <MarkerHtml position={anchor(0, 0.88, 0.245)} distanceFactor={2.15} zIndexRange={[71, 0]} interactive={false} presentation={presentation} contentScale={equipmentScale}>
           <AppliedPelvicBinder />
+        </MarkerHtml>
+      )}
+
+      {equipment.hasSurgicalAirway && (
+        <MarkerHtml position={faceAnchor(0, 1.47, 0.235)} distanceFactor={1.95} zIndexRange={[74, 0]} interactive={false} presentation={posture === 'tripod' || posture === 'seated' ? 'upright' : presentation} contentScale={equipmentScale}>
+          <AppliedFrontOfNeckAirway />
         </MarkerHtml>
       )}
 
