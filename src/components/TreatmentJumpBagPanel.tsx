@@ -655,6 +655,7 @@ const BAG_EQUIPMENT: Record<ManagementTab, EquipmentInventoryItem[]> = {
     { id: 'breathing-nrb', label: 'Non-rebreather', caption: 'High-flow oxygen', treatmentId: 'oxygen_nonrebreather', assetPath: PRODUCT_ASSET_PATHS.nonrebreather, tone: '#0284c7', wide: true },
     { id: 'breathing-bvm', label: 'BVM', caption: 'Ventilate poor effort', treatmentId: 'bvm_ventilation', assetPath: PRODUCT_ASSET_PATHS.bvm, tone: '#2563eb' },
     { id: 'breathing-neb', label: 'Nebuliser Mask', caption: 'Bronchodilator delivery', treatmentId: 'nebulizer_salbutamol', assetPath: PRODUCT_ASSET_PATHS.nebulizer, tone: '#06b6d4' },
+    { id: 'breathing-neb-adrenaline', label: 'Nebulised Adrenaline', caption: 'Croup, stridor, upper-airway oedema', treatmentId: 'nebulised_adrenaline', assetPath: PRODUCT_ASSET_PATHS.nebulizer, tone: '#dc2626', wide: true },
     { id: 'breathing-cpap', label: 'CPAP Circuit', caption: 'NIV support', treatmentId: 'cpap_niv', assetPath: PRODUCT_ASSET_PATHS.cpap, tone: '#0891b2' },
     { id: 'breathing-vent-portable', label: 'Transport Ventilator', caption: 'Full ventilator setup', treatmentId: 'mechanical_ventilation', assetPath: PRODUCT_ASSET_PATHS.ventilator, tone: '#2563eb', wide: true },
     { id: 'breathing-vent-compact', label: 'Compact Ventilator', caption: 'Portable mechanical option', treatmentId: 'mechanical_ventilation', assetPath: PRODUCT_ASSET_PATHS.compactVentilator, tone: '#475569' },

@@ -477,29 +477,30 @@ export function getHandsOnProcedurePlan(
     };
   }
 
-  if (treatmentId === 'nebulizer_salbutamol' || treatmentId === 'nebulizer_ipratropium' || treatmentId === 'cpap_niv') {
+  if (treatmentId === 'nebulizer_salbutamol' || treatmentId === 'nebulizer_ipratropium' || treatmentId === 'nebulised_adrenaline' || treatmentId === 'cpap_niv') {
     const cpap = treatmentId === 'cpap_niv';
     const connectedNebuliser = !cpap && appliedTreatmentIds.some(id =>
-      id === 'nebulizer_salbutamol' || id === 'nebulizer_ipratropium',
+      id === 'nebulizer_salbutamol' || id === 'nebulizer_ipratropium' || id === 'nebulised_adrenaline',
     );
     if (connectedNebuliser) {
       const ipratropium = treatmentId === 'nebulizer_ipratropium';
-      const medicine = ipratropium ? 'ipratropium 500 mcg' : 'salbutamol 5 mg';
+      const adrenaline = treatmentId === 'nebulised_adrenaline';
+      const medicine = adrenaline ? 'adrenaline 5 mg/5 mL (1:1,000)' : ipratropium ? 'ipratropium 500 mcg' : 'salbutamol 5 mg';
       return {
         id: 'connected-nebulizer-medication',
-        title: ipratropium ? 'Add ipratropium to connected nebuliser' : 'Reload connected salbutamol nebuliser',
+        title: adrenaline ? 'Load adrenaline into connected nebuliser' : ipratropium ? 'Add ipratropium to connected nebuliser' : 'Reload connected salbutamol nebuliser',
         subtitle: 'Keep the fitted interface available while the chamber is safely paused, loaded and restarted.',
         treatmentId,
         requiresTarget: false,
         targets: [],
         equipmentAsset: '/equipment-assets/nebulizer-mask-v2.webp',
-        completionLabel: 'Combined aerosol flowing — reassess wheeze and pulse',
+        completionLabel: adrenaline ? 'Adrenaline mist flowing — reassess stridor' : 'Combined aerosol flowing — reassess wheeze and pulse',
         steps: [
           STEP('assemble', 'Pause and isolate the chamber', 'Stop the driving gas, keep the patient upright and disconnect the medication chamber without pulling the fitted mask.', 'Do not open a pressurised or actively misting chamber.', 'connect'),
           STEP('verify', `Verify ${medicine}`, 'Read the medicine, dose, expiry and route aloud; confirm it matches the prescription and is suitable for nebulisation.', 'Use a single-patient ampoule and maintain asepsis.', 'prepare'),
           STEP('apply', 'Load and reconnect', 'Open the chamber, add the medicine, close it securely and reconnect it beneath the mask while keeping it upright.', 'Avoid contaminating the chamber or spilling the dose.', 'place', 1000),
           STEP('start', 'Restart aerosol flow', 'Restart at 6–8 L/min and confirm a consistent visible mist without a circuit leak.', 'Keep the chamber upright until sputtering stops.', 'connect'),
-          STEP('confirm', 'Reassess combined response', 'Recheck work of breathing, air entry, SpO₂, pulse and patient tolerance after the combined bronchodilator dose.', 'Escalate if fatigue, silent chest, falling consciousness or marked tachycardia develops.', 'confirm'),
+          STEP('confirm', adrenaline ? 'Reassess response' : 'Reassess combined response', adrenaline ? 'Recheck stridor at rest, air entry, work of breathing, SpO₂, pulse and patient tolerance.' : 'Recheck work of breathing, air entry, SpO₂, pulse and patient tolerance after the combined bronchodilator dose.', adrenaline ? 'Nebulised adrenaline is temporary support; prepare for rebound oedema and escalate a failing airway.' : 'Escalate if fatigue, silent chest, falling consciousness or marked tachycardia develops.', 'confirm'),
         ],
       };
     }
@@ -509,7 +510,7 @@ export function getHandsOnProcedurePlan(
       subtitle: cpap ? 'A sealed, pressurised circuit requires cooperation and continuous monitoring.' : 'The chamber must remain upright with visible aerosol output.',
       treatmentId, requiresTarget: false, targets: [],
       equipmentAsset: cpap ? '/equipment-assets/cpap-circuit.webp' : '/equipment-assets/nebulizer-mask-v2.webp',
-      completionLabel: cpap ? 'Pressure stable — monitor continuously' : 'Aerosol flowing — reassess wheeze',
+      completionLabel: cpap ? 'Pressure stable — monitor continuously' : treatmentId === 'nebulised_adrenaline' ? 'Aerosol flowing — reassess stridor' : 'Aerosol flowing — reassess wheeze',
       steps: [
         STEP('assemble', 'Assemble and connect', cpap ? 'Connect mask, circuit, filter, valve and oxygen/driver.' : 'Add the prescribed drug, close the chamber and connect driving gas.', 'Check every connection before placing the mask.', 'connect'),
         STEP('explain', 'Explain and coach', 'Let the conscious patient hold the mask initially and coach slow breathing.', 'Claustrophobia and agitation can worsen respiratory distress.', 'prepare'),
@@ -713,7 +714,7 @@ export function getHandsOnProcedurePlan(
 const HANDS_ON_TREATMENTS = new Set([
   'aed', 'monitor_pads', 'bleeding_control', 'tourniquet', 'oxygen_nonrebreather', 'oxygen_mask', 'oxygen_nasal',
   'intubation', 'rsi_intubation', 'bvm_ventilation', 'suction', 'opa_insert', 'nebulizer_salbutamol',
-  'nebulizer_ipratropium', 'cpap_niv', 'iv_access', 'io_access', 'chest_seal_vented', 'vented_chest_seal',
+  'nebulizer_ipratropium', 'nebulised_adrenaline', 'cpap_niv', 'iv_access', 'io_access', 'chest_seal_vented', 'vented_chest_seal',
   'occlusive_dressing_3sided', 'needle_decompression', 'splinting', 'sam_splint', 'box_splint',
   'vacuum_limb_splint', 'air_splint', 'traction_splint', 'cervical_collar', 'warming_blanket',
   'active_cooling', 'spinal_board', 'scoop_stretcher', 'vacuum_mattress', 'head_blocks', 'ked',

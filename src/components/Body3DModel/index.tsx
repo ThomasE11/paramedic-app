@@ -1101,7 +1101,7 @@ const OXYGEN_VISUAL_PRIORITY: Array<{
   { ids: ['mechanical_ventilation', 'ventilator_setup'], mode: 'ventilator', label: 'Ventilator circuit', detail: 'Secured airway with circuit attached' },
   { ids: ['bvm_ventilation'], mode: 'bvm', label: 'BVM ventilation', detail: 'Mask seal and bag-valve device in use' },
   { ids: ['cpap_niv'], mode: 'cpap', label: 'CPAP mask', detail: 'Strapped mask with pressure circuit' },
-  { ids: ['nebulizer_salbutamol', 'nebulizer_ipratropium'], mode: 'nebulizer', label: 'Nebulizer mask', detail: 'Aerosol chamber attached to mask' },
+  { ids: ['nebulizer_salbutamol', 'nebulizer_ipratropium', 'nebulised_adrenaline'], mode: 'nebulizer', label: 'Nebulizer mask', detail: 'Aerosol chamber attached to mask' },
   { ids: ['oxygen_nonrebreather'], mode: 'nonrebreather', label: 'Non-rebreather', detail: 'Reservoir mask with high-flow oxygen' },
   { ids: ['oxygen_mask'], mode: 'simple-mask', label: 'Simple oxygen mask', detail: 'Mask and oxygen tubing connected' },
   { ids: ['oxygen_nasal'], mode: 'nasal', label: 'Nasal cannula', detail: 'Nasal prongs and tubing fitted' },

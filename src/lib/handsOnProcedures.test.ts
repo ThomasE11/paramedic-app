@@ -77,6 +77,7 @@ describe('hands-on treatment procedures', () => {
   it('provides physical application workflows for reusable patient equipment', () => {
     const equipmentTreatments = [
       'bvm_ventilation', 'suction', 'opa_insert', 'nebulizer_salbutamol', 'cpap_niv',
+      'nebulised_adrenaline',
       'iv_access', 'io_access', 'fluids_250ml', 'chest_seal_vented', 'needle_decompression',
       'sam_splint', 'box_splint', 'vacuum_limb_splint', 'air_splint', 'traction_splint',
       'cervical_collar', 'warming_blanket', 'active_cooling', 'spinal_board',
@@ -172,6 +173,17 @@ describe('hands-on treatment procedures', () => {
       'Reassess combined response',
     ]);
     expect(combined?.steps.map(step => step.label)).not.toContain('Fit the mask');
+  });
+
+  it('routes nebulised adrenaline through the fitted chamber and mask', () => {
+    const initial = getHandsOnProcedurePlan('nebulised_adrenaline', caseData);
+    const connected = getHandsOnProcedurePlan('nebulised_adrenaline', caseData, ['nebulizer_salbutamol']);
+
+    expect(isHandsOnTreatment('nebulised_adrenaline')).toBe(true);
+    expect(initial?.steps.map(step => step.label)).toContain('Fit the mask');
+    expect(initial?.completionLabel).toContain('stridor');
+    expect(connected?.title).toBe('Load adrenaline into connected nebuliser');
+    expect(connected?.steps.find(step => step.id === 'verify')?.label).toContain('adrenaline 5 mg/5 mL');
   });
 
   it('binds fracture immobilisation to the injured limb', () => {

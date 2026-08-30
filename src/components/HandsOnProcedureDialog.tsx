@@ -46,7 +46,7 @@ const AIRWAY_PREVIEW_TREATMENTS = new Set([
   'oxygen_nonrebreather', 'oxygen_mask', 'oxygen_nasal', 'bvm_ventilation',
   'intubation', 'rsi_intubation', 'opa_insert', 'suction',
   'nebulizer_salbutamol', 'nebulizer_ipratropium', 'cpap_niv', 'ventilator_setup',
-  'mechanical_ventilation',
+  'mechanical_ventilation', 'nebulised_adrenaline',
 ]);
 
 function AirwayProcedurePreview({
@@ -69,7 +69,7 @@ function AirwayProcedurePreview({
   const opa = treatmentId === 'opa_insert';
   const suction = treatmentId === 'suction';
   const cpap = treatmentId === 'cpap_niv';
-  const nebuliser = treatmentId.startsWith('nebulizer_');
+  const nebuliser = treatmentId.startsWith('nebulizer_') || treatmentId === 'nebulised_adrenaline';
   const ventilator = treatmentId === 'ventilator_setup' || treatmentId === 'mechanical_ventilation';
 
   const supplyConnected = oxygenInterface ? reached('connect')
