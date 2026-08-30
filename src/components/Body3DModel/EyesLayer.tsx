@@ -24,10 +24,11 @@
  *
  * Real-eye models (Stage 2): GLBs that ship actual eyeball meshes (nodes
  * eyeL/eyeR with iris/pupil disc children — see scripts/blender-stage2-eyes-
- * ao.py) pass `hasEyeMeshes: true`. We then still recolour the red socket
- * texels to sclera — that cleans the red rim that would otherwise peek out
- * around the eyeballs — but SKIP painting the flat iris/pupil discs (the 3D
- * meshes render those), while keeping the closed-lid twin for blinking.
+ * ao.py) pass `hasEyeMeshes: true`. We recolour the red socket to sclera and
+ * add a smaller, texture-level iris backing beneath the 3D discs. A physically
+ * sized 12mm iris is sub-pixel in the full-body treatment view; without that
+ * backing the patient reads as blank-eyed even though the close-up geometry is
+ * correct. The live 3D pupil remains authoritative for size and anisocoria.
  */
 
 import * as THREE from 'three';
@@ -115,24 +116,24 @@ export function paintEyesOnTexture(
     blobs.sort((a, b) => b.n - a.n);
     const eyes = blobs.slice(0, 2);
     eyes.sort((a, b) => a.cx - b.cx); // left atlas-x → index 0
-    // With real eyeball meshes in the scene the sclera recolour above is all
-    // the texture needs — the 3D iris/pupil discs replace the painted ones.
-    if (!hasEyeMeshes) {
-      eyes.forEach((e, idx) => {
-        // Use the smaller half-extent so a tall/wide socket still gives a round
-        // iris that fills it (covering the red), leaving just a thin sclera rim.
-        const rEye = Math.min(e.w, e.h) / 2;
-        const irisR = Math.max(2, rEye * 1.05);
+    eyes.forEach((e, idx) => {
+      // Use the smaller half-extent so a tall/wide socket still gives a round
+      // iris. Real-eye meshes receive a restrained backing iris: large enough
+      // to preserve gaze at overview distance, but smaller than the opening so
+      // the 3D iris/pupil remain crisp and clinically authoritative up close.
+      const rEye = Math.min(e.w, e.h) / 2;
+      const irisR = Math.max(2, rEye * (hasEyeMeshes ? 0.68 : 1.05));
+      ctx.fillStyle = IRIS;
+      ctx.beginPath(); ctx.arc(e.cx, e.cy, irisR, 0, Math.PI * 2); ctx.fill();
+      if (!hasEyeMeshes) {
         const pupilMm = idx === 0 ? pupilLeftMm : pupilRightMm;
         const pupilR = Math.max(irisR * 0.32, Math.min(irisR * 0.9, irisR * (pupilMm / 5)));
-        ctx.fillStyle = IRIS;
-        ctx.beginPath(); ctx.arc(e.cx, e.cy, irisR, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = PUPIL;
         ctx.beginPath(); ctx.arc(e.cx, e.cy, pupilR, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = 'rgba(255,255,255,0.75)';
         ctx.beginPath(); ctx.arc(e.cx - irisR * 0.28, e.cy - irisR * 0.28, Math.max(1, irisR * 0.14), 0, Math.PI * 2); ctx.fill();
-      });
-    }
+      }
+    });
 
     const adoptSettings = (t: THREE.CanvasTexture) => {
       t.flipY = tex.flipY;
