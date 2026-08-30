@@ -481,9 +481,9 @@ type ProductMiniatureKind = 'mask' | 'iv' | 'fluid' | 'pads' | 'vial' | 'tube' |
 
 const PRODUCT_ASSET_PATHS = {
   nasal: '/equipment-assets/nasal-cannula.webp',
-  simpleMask: '/equipment-assets/oxygen-mask.webp',
-  nonrebreather: '/equipment-assets/nonrebreather-mask.webp',
-  nebulizer: '/equipment-assets/nebulizer-mask.webp',
+  simpleMask: '/equipment-assets/oxygen-mask-front.webp',
+  nonrebreather: '/equipment-assets/nonrebreather-mask-v2.webp',
+  nebulizer: '/equipment-assets/nebulizer-mask-v2.webp',
   bvm: '/equipment-assets/bvm.webp',
   cpap: '/equipment-assets/cpap-circuit.webp',
   ventilator: '/equipment-assets/portable-transport-ventilator.webp',

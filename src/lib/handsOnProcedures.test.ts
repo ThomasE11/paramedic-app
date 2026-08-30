@@ -24,6 +24,12 @@ describe('hands-on treatment procedures', () => {
     expect(plan?.steps.map(step => step.id)).toEqual(['expose', 'prepare', 'sternal', 'apical', 'connect']);
   });
 
+  it('uses the same front-facing oxygen interfaces shown on the patient', () => {
+    expect(getHandsOnProcedurePlan('oxygen_mask', caseData)?.equipmentAsset).toBe('/equipment-assets/oxygen-mask-front.webp');
+    expect(getHandsOnProcedurePlan('oxygen_nonrebreather', caseData)?.equipmentAsset).toBe('/equipment-assets/nonrebreather-mask-v2.webp');
+    expect(getHandsOnProcedurePlan('nebulizer_salbutamol', caseData)?.equipmentAsset).toBe('/equipment-assets/nebulizer-mask-v2.webp');
+  });
+
   it('prioritises the actual bleeding limb as the tourniquet target', () => {
     const plan = getHandsOnProcedurePlan('tourniquet', caseData);
     expect(plan?.targets[0]).toMatchObject({ id: 'right-leg', priority: 'injury' });

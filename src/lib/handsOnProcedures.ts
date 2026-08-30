@@ -345,7 +345,7 @@ export function getHandsOnProcedurePlan(
       treatmentId,
       requiresTarget: false,
       targets: [],
-      equipmentAsset: nasal ? '/equipment-assets/nasal-cannula.webp' : nonRebreather ? '/equipment-assets/nonrebreather-mask.webp' : '/equipment-assets/oxygen-mask.webp',
+      equipmentAsset: nasal ? '/equipment-assets/nasal-cannula.webp' : nonRebreather ? '/equipment-assets/nonrebreather-mask-v2.webp' : '/equipment-assets/oxygen-mask-front.webp',
       completionLabel: 'Oxygen running — reassess SpO₂',
       steps: [
         STEP('connect', 'Connect oxygen tubing', 'Attach tubing to the regulator outlet and open the cylinder.', 'Confirm adequate cylinder pressure and listen for flow.', 'connect'),
