@@ -90,6 +90,7 @@ import {
   type FindingTreatmentSuggestion,
 } from '@/lib/caseManagementRealism';
 import { derivePatientVisualState } from '@/lib/patientVisualState';
+import { deduplicateCareFeedItems } from '@/lib/careFeed';
 import { deriveSceneEnvironment, SCENE_ENVIRONMENT_LABELS } from '@/lib/sceneEnvironment';
 import { matchRealismScenarios } from '@/lib/patientRealismScenarios';
 import {
@@ -1610,14 +1611,7 @@ export function StudentPanel({
       });
     }
 
-    const seen = new Set<string>();
-    return items
-      .filter(item => {
-        if (seen.has(item.id)) return false;
-        seen.add(item.id);
-        return true;
-      })
-      .slice(0, 4);
+    return deduplicateCareFeedItems(items).slice(0, 4);
   }, [activeFindings, activeReaction, appliedTreatmentIds, currentCase, patientVisualState, realismDirector]);
   const [monitorRevealedVitals, setMonitorRevealedVitals] = useState<Set<string>>(new Set());
 
