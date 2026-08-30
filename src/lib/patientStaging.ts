@@ -163,6 +163,19 @@ export function patientSkeletalAction(
   return null;
 }
 
+/** Scene support furniture must match the patient's rendered mobility. */
+export function shouldShowPatientSeat(mobility: PatientMobility): boolean {
+  return mobility === 'seated';
+}
+
+/** A stretcher should never intersect a patient who is upright or on scene ground. */
+export function shouldHideTreatmentStretcher(
+  stage: PatientStage,
+  mobility: PatientMobility,
+): boolean {
+  return stage === 'floor' || mobility !== 'recumbent';
+}
+
 /** Local upper-arm rotation that turns the donor clip's A-pose into rest. */
 export function patientArmRestRadians(
   mobility: PatientMobility,

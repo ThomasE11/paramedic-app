@@ -501,11 +501,13 @@ function SoftGroundShadow() {
 export function TreatmentBayEnvironment({
   hideOverhead = false,
   hideBed = false,
+  showPatientSeat = false,
   shadowsEnabled = true,
   variant = 'clinic',
 }: {
   hideOverhead?: boolean;
   hideBed?: boolean;
+  showPatientSeat?: boolean;
   shadowsEnabled?: boolean;
   variant?: EnvironmentVariant;
 }) {
@@ -525,6 +527,7 @@ export function TreatmentBayEnvironment({
           variant={variant}
           hideOverhead={hideOverhead}
           shadowsEnabled={shadowsEnabled}
+          showPatientSeat={showPatientSeat}
         />
       )}
       {/* Clinic/home scenes show the bed; roadside/floor staging hides it. */}

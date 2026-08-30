@@ -22,6 +22,8 @@ import {
   derivePatientPosture,
   deriveScenePatientStage,
   deriveTreatmentPositioningOverride,
+  shouldHideTreatmentStretcher,
+  shouldShowPatientSeat,
   type PatientMobility,
   type PatientPosture,
 } from '@/lib/patientStaging';
@@ -5554,7 +5556,8 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
 
               <TreatmentBayEnvironment
                 hideOverhead={treatmentBayOverviewEnabled}
-                hideBed={treatmentBayOverviewEnabled && bayStage === 'floor'}
+                hideBed={treatmentBayOverviewEnabled && shouldHideTreatmentStretcher(bayStage, patientMobility)}
+                showPatientSeat={treatmentBayOverviewEnabled && shouldShowPatientSeat(patientMobility)}
                 shadowsEnabled={quality.contactShadows}
                 variant={bayVariant}
               />

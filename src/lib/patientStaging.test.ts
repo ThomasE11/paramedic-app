@@ -7,6 +7,8 @@ import {
   patientPacingTransform,
   patientSkeletalAction,
   patientArmRestRadians,
+  shouldHideTreatmentStretcher,
+  shouldShowPatientSeat,
   patientForearmRestRadians,
   patientForearmSweepRadians,
   patientSpineLeanRadians,
@@ -133,6 +135,23 @@ describe('patientSkeletalAction', () => {
     expect(patientSpineLeanRadians(null)).toBe(0);
     expect(patientSpineLeanRadians('tripod', 0.5)).toBeCloseTo(0.08);
     expect(patientSpineLeanRadians('tripod', 4)).toBeCloseTo(0.1);
+  });
+});
+
+describe('mobility-aware scene support', () => {
+  it('shows a patient seat only for a seated presentation', () => {
+    expect(shouldShowPatientSeat('seated')).toBe(true);
+    expect(shouldShowPatientSeat('standing')).toBe(false);
+    expect(shouldShowPatientSeat('pacing')).toBe(false);
+    expect(shouldShowPatientSeat('recumbent')).toBe(false);
+  });
+
+  it('keeps the stretcher only for a recumbent patient staged on it', () => {
+    expect(shouldHideTreatmentStretcher('stretcher', 'recumbent')).toBe(false);
+    expect(shouldHideTreatmentStretcher('floor', 'recumbent')).toBe(true);
+    expect(shouldHideTreatmentStretcher('stretcher', 'seated')).toBe(true);
+    expect(shouldHideTreatmentStretcher('stretcher', 'standing')).toBe(true);
+    expect(shouldHideTreatmentStretcher('stretcher', 'pacing')).toBe(true);
   });
 });
 

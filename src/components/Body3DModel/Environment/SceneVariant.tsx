@@ -218,7 +218,7 @@ function HomeDustMotes() {
   );
 }
 
-function HomeScene({ hideOverhead, shadowsEnabled }: { hideOverhead: boolean; shadowsEnabled: boolean }) {
+function HomeScene({ hideOverhead, shadowsEnabled, showPatientSeat }: { hideOverhead: boolean; shadowsEnabled: boolean; showPatientSeat: boolean }) {
   const tex = getVillaTextures();
   return (
     <group>
@@ -347,18 +347,20 @@ function HomeScene({ hideOverhead, shadowsEnabled }: { hideOverhead: boolean; sh
           directly beneath the grounded tripod pelvis; without a support the
           newly flexed seated pose correctly planted its feet but appeared to
           hover in the middle of the room. */}
-      <group position={[0, 0, 0.34]}>
-        <mesh position={[0, 0.53, -0.08]} castShadow receiveShadow raycast={NO_RAYCAST}>
-          <boxGeometry args={[0.78, 0.16, 0.5]} />
-          <meshStandardMaterial color="#68745a" roughness={0.94} />
-        </mesh>
-        {[-0.29, 0.29].map((x) => (
-          <mesh key={`patient-chair-leg-${x}`} position={[x, 0.255, -0.08]} castShadow raycast={NO_RAYCAST}>
-            <boxGeometry args={[0.055, 0.51, 0.055]} />
-            <meshStandardMaterial color="#3f2f22" roughness={0.55} metalness={0.08} />
+      {showPatientSeat && (
+        <group position={[0, 0, 0.34]}>
+          <mesh position={[0, 0.53, -0.08]} castShadow receiveShadow raycast={NO_RAYCAST}>
+            <boxGeometry args={[0.78, 0.16, 0.5]} />
+            <meshStandardMaterial color="#68745a" roughness={0.94} />
           </mesh>
-        ))}
-      </group>
+          {[-0.29, 0.29].map((x) => (
+            <mesh key={`patient-chair-leg-${x}`} position={[x, 0.255, -0.08]} castShadow raycast={NO_RAYCAST}>
+              <boxGeometry args={[0.055, 0.51, 0.055]} />
+              <meshStandardMaterial color="#3f2f22" roughness={0.55} metalness={0.08} />
+            </mesh>
+          ))}
+        </group>
+      )}
 
       {/* Coffee table, pushed aside to make room for the crew */}
       <group position={[-1.55, 0, 1.25]} rotation={[0, 0.4, 0]}>
@@ -719,7 +721,7 @@ function WaterScene({ shadowsEnabled }: { shadowsEnabled: boolean }) {
 // hydration station and high-contrast sun. This avoids placing heat illness
 // beside traffic wreckage merely because it happened outdoors.
 // ---------------------------------------------------------------------------
-function HeatScene({ shadowsEnabled }: { shadowsEnabled: boolean }) {
+function HeatScene({ shadowsEnabled, showPatientSeat }: { shadowsEnabled: boolean; showPatientSeat: boolean }) {
   return (
     <group>
       <OutdoorSky zenith="#78b9e4" horizon="#dbe8ea" />
@@ -749,18 +751,20 @@ function HeatScene({ shadowsEnabled }: { shadowsEnabled: boolean }) {
       </mesh>
       {/* Backless field bench supports a seated heat-illness patient without
           covering the chest, arms or legs students need to examine. */}
-      <group position={[0, 0, 0.34]}>
-        <mesh position={[0, 0.53, -0.08]} castShadow receiveShadow raycast={NO_RAYCAST}>
-          <boxGeometry args={[0.82, 0.12, 0.5]} />
-          <meshStandardMaterial color="#6b563f" roughness={0.9} />
-        </mesh>
-        {[-0.3, 0.3].map(x => (
-          <mesh key={`heat-bench-leg-${x}`} position={[x, 0.255, -0.08]} castShadow raycast={NO_RAYCAST}>
-            <boxGeometry args={[0.055, 0.51, 0.055]} />
-            <meshStandardMaterial color="#454a4e" roughness={0.52} metalness={0.48} />
+      {showPatientSeat && (
+        <group position={[0, 0, 0.34]}>
+          <mesh position={[0, 0.53, -0.08]} castShadow receiveShadow raycast={NO_RAYCAST}>
+            <boxGeometry args={[0.82, 0.12, 0.5]} />
+            <meshStandardMaterial color="#6b563f" roughness={0.9} />
           </mesh>
-        ))}
-      </group>
+          {[-0.3, 0.3].map(x => (
+            <mesh key={`heat-bench-leg-${x}`} position={[x, 0.255, -0.08]} castShadow raycast={NO_RAYCAST}>
+              <boxGeometry args={[0.055, 0.51, 0.055]} />
+              <meshStandardMaterial color="#454a4e" roughness={0.52} metalness={0.48} />
+            </mesh>
+          ))}
+        </group>
+      )}
       {/* Cooler and bottled water on the crew side. */}
       <group position={[2.75, 0, 1.5]}>
         <mesh position={[0, 0.28, 0]} castShadow raycast={NO_RAYCAST}>
@@ -974,16 +978,18 @@ export function SceneVariantEnvironment({
   variant,
   hideOverhead,
   shadowsEnabled,
+  showPatientSeat,
 }: {
   variant: Exclude<EnvironmentVariant, 'clinic'>;
   hideOverhead: boolean;
   shadowsEnabled: boolean;
+  showPatientSeat: boolean;
 }) {
-  if (variant === 'home') return <HomeScene hideOverhead={hideOverhead} shadowsEnabled={shadowsEnabled} />;
+  if (variant === 'home') return <HomeScene hideOverhead={hideOverhead} shadowsEnabled={shadowsEnabled} showPatientSeat={showPatientSeat} />;
   if (variant === 'public') return <PublicScene hideOverhead={hideOverhead} shadowsEnabled={shadowsEnabled} />;
   if (variant === 'industrial') return <IndustrialScene shadowsEnabled={shadowsEnabled} />;
   if (variant === 'fire') return <FireScene shadowsEnabled={shadowsEnabled} />;
   if (variant === 'water') return <WaterScene shadowsEnabled={shadowsEnabled} />;
-  if (variant === 'heat') return <HeatScene shadowsEnabled={shadowsEnabled} />;
+  if (variant === 'heat') return <HeatScene shadowsEnabled={shadowsEnabled} showPatientSeat={showPatientSeat} />;
   return <RoadsideScene shadowsEnabled={shadowsEnabled} />;
 }
