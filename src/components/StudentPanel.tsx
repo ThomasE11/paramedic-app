@@ -3518,6 +3518,18 @@ export function StudentPanel({
       'endotracheal_intubation',
       'surgical_cric',
     ].includes(id));
+    const hasEndotrachealTube = appliedTreatmentIds.some(id => [
+      'intubation',
+      'rsi_intubation',
+      'endotracheal_intubation',
+    ].includes(id));
+    if (treatment.id === 'ett_confirmation' && !hasEndotrachealTube) {
+      toast.error('No endotracheal tube to confirm', {
+        description: 'Place a cuffed tracheal tube first, then confirm depth, sustained waveform capnography, bilateral ventilation and security.',
+        duration: 5500,
+      });
+      return;
+    }
     if (['ventilator_setup', 'mechanical_ventilation'].includes(treatment.id) && !hasSecuredAirway) {
       toast.error('Secure and confirm the airway first', {
         description: 'Do not connect a ventilator circuit until ETT position is confirmed with sustained waveform capnography.',

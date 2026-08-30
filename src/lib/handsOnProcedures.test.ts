@@ -154,6 +154,16 @@ describe('hands-on treatment procedures', () => {
     expect(procedureIncludesIntegratedReassessment('orogastric_tube')).toBe(true);
   });
 
+  it('requires sustained capnography and bilateral checks for ETT confirmation', () => {
+    const plan = getHandsOnProcedurePlan('ett_confirmation', caseData, ['intubation']);
+
+    expect(plan?.steps.map(step => step.id)).toEqual(['depth', 'capnography', 'chest', 'auscultate', 'secure', 'trend']);
+    expect(plan?.steps.find(step => step.id === 'capnography')?.clinicalCue).toContain('sustained EtCO₂ waveform');
+    expect(plan?.steps.find(step => step.id === 'auscultate')?.instruction).toContain('both upper and lower lateral chest fields');
+    expect(isHandsOnTreatment('ett_confirmation')).toBe(true);
+    expect(procedureIncludesIntegratedReassessment('ett_confirmation')).toBe(true);
+  });
+
   it('reuses an already fitted nebuliser when adding the second bronchodilator', () => {
     const initial = getHandsOnProcedurePlan('nebulizer_ipratropium', caseData);
     expect(initial?.steps.map(step => step.label)).toContain('Fit the mask');

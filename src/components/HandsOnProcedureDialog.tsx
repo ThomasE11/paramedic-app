@@ -291,6 +291,65 @@ function GastricTubeProcedurePreview({
   );
 }
 
+function TubeConfirmationProcedurePreview({
+  treatmentId,
+  completedSteps,
+  animatingStep,
+}: {
+  treatmentId: string;
+  completedSteps: string[];
+  animatingStep: string | null;
+}) {
+  if (treatmentId !== 'ett_confirmation') return null;
+  const reached = (stepId: string) => completedSteps.includes(stepId) || animatingStep === stepId;
+  const depthChecked = reached('depth');
+  const capnographyAttached = reached('capnography');
+  const chestChecked = reached('chest');
+  const auscultated = reached('auscultate');
+  const secured = reached('secure');
+  const trending = reached('trend');
+
+  return (
+    <div data-procedure-preview="ett-confirmation" className="pointer-events-none absolute inset-0 z-30">
+      {depthChecked && (
+        <>
+          <img src="/equipment-assets/et-tube.webp" alt="" draggable={false} className="absolute left-1/2 top-[33px] h-[79px] w-10 -translate-x-1/2 object-contain drop-shadow-lg animate-in fade-in zoom-in-75" />
+          <span className="absolute left-[105px] top-[49px] rounded border border-amber-200/60 bg-amber-950/95 px-1.5 py-0.5 text-[7px] font-black uppercase text-amber-100 shadow" aria-label="Tube depth read at the lips">Depth recorded</span>
+        </>
+      )}
+      {capnographyAttached && (
+        <div className="absolute right-1 top-[80px] h-[46px] w-[82px] overflow-hidden rounded-lg border border-emerald-300/55 bg-slate-950/95 p-1 shadow-lg" aria-label="Sustained waveform capnography present">
+          <svg viewBox="0 0 80 30" role="img" aria-label="Repeated square capnography waveform" className="h-full w-full">
+            <path d="M0 25 L8 25 L10 22 L13 8 L28 8 L31 12 L33 25 L41 25 L44 21 L47 8 L63 8 L66 12 L68 25 L80 25" fill="none" stroke="#34d399" strokeWidth="2.2" strokeLinejoin="round" />
+          </svg>
+          <span className="absolute right-1 top-0.5 text-[6px] font-black text-emerald-200">EtCO₂</span>
+        </div>
+      )}
+      {chestChecked && (
+        <>
+          <span className="absolute left-[56px] top-[83px] h-[94px] w-[38px] rounded-[28px] border-2 border-cyan-300/65 shadow-[0_0_16px_rgba(34,211,238,.35)] motion-safe:animate-pulse" />
+          <span className="absolute right-[56px] top-[83px] h-[94px] w-[38px] rounded-[28px] border-2 border-cyan-300/65 shadow-[0_0_16px_rgba(34,211,238,.35)] motion-safe:animate-pulse" />
+        </>
+      )}
+      {auscultated && (
+        <div aria-label="Five-point auscultation completed">
+          {[
+            ['72px', '103px'], ['112px', '103px'], ['70px', '139px'], ['114px', '139px'], ['93px', '174px'],
+          ].map(([left, top], index) => (
+            <span key={index} className={`absolute h-3 w-3 rounded-full border-2 ${index === 4 ? 'border-amber-100 bg-amber-500' : 'border-emerald-100 bg-emerald-500'} shadow-[0_0_7px_rgba(52,211,153,.7)]`} style={{ left, top }} />
+          ))}
+        </div>
+      )}
+      {secured && (
+        <span className="absolute left-[81px] top-[46px] h-7 w-9 -rotate-6 rounded-md border-2 border-white/90 bg-white/60 shadow" aria-label="Endotracheal tube secured at recorded depth" />
+      )}
+      {trending && (
+        <span className="absolute bottom-3 left-1/2 w-max max-w-[178px] -translate-x-1/2 rounded-full border border-emerald-300/50 bg-emerald-950/95 px-2 py-1 text-center text-[7px] font-black uppercase tracking-[0.08em] text-emerald-100 shadow-lg">Depth recorded · bilateral rise · sustained EtCO₂</span>
+      )}
+    </div>
+  );
+}
+
 const THERMAL_PREVIEW_TREATMENTS = new Set(['active_cooling', 'warming_blanket']);
 
 function ThermalProcedurePreview({
@@ -736,6 +795,12 @@ export function HandsOnProcedureDialog({
               />
 
               <GastricTubeProcedurePreview
+                treatmentId={plan.treatmentId}
+                completedSteps={completedSteps}
+                animatingStep={animatingStep}
+              />
+
+              <TubeConfirmationProcedurePreview
                 treatmentId={plan.treatmentId}
                 completedSteps={completedSteps}
                 animatingStep={animatingStep}

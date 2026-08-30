@@ -398,6 +398,27 @@ export function getHandsOnProcedurePlan(
     };
   }
 
+  if (treatmentId === 'ett_confirmation') {
+    return {
+      id: 'ett-placement-confirmation',
+      title: 'Confirm endotracheal tube placement',
+      subtitle: 'A tube is not secured until placement, depth and ventilation are clinically confirmed and continuously monitored.',
+      treatmentId,
+      requiresTarget: false,
+      targets: [],
+      equipmentAsset: '/equipment-assets/et-tube.webp',
+      completionLabel: 'ETT confirmed and secured',
+      steps: [
+        STEP('depth', 'Check tube depth and cuff', 'Visualise the tube passing the cords when possible, read the depth at the teeth/lips and verify cuff inflation without excessive pressure.', 'A depth number is a baseline for detecting later migration; document it clearly.', 'prepare'),
+        STEP('capnography', 'Attach waveform capnography', 'Connect the capnography adapter and ventilate while observing for a sustained waveform over consecutive breaths.', 'A sustained EtCO₂ waveform is the primary confirmation. Colour change or misting alone is insufficient.', 'connect', 1200),
+        STEP('chest', 'Inspect bilateral chest movement', 'Observe equal chest rise and look for neck or abdominal distension during controlled ventilation.', 'Unilateral rise may indicate mainstem placement; absent rise may indicate obstruction or oesophageal placement.', 'ventilate'),
+        STEP('auscultate', 'Perform five-point auscultation', 'Listen at both upper and lower lateral chest fields, then over the epigastrium while ventilating.', 'Bilateral air entry with no epigastric insufflation supports—not replaces—waveform confirmation.', 'confirm', 1200),
+        STEP('secure', 'Secure and record', 'Secure the tube, record depth, EtCO₂, chest findings and time, then protect the circuit from traction.', 'Reconfirm after every move, transfer, disconnection or unexplained physiological change.', 'wrap'),
+        STEP('trend', 'Trend ventilation continuously', 'Monitor waveform EtCO₂, SpO₂, airway pressures, chest movement and tube depth continuously.', 'A previously confirmed tube can dislodge; confirmation is an ongoing process.', 'confirm'),
+      ],
+    };
+  }
+
   if (treatmentId === 'bvm_ventilation') {
     return {
       id: 'bvm-ventilation', title: 'Apply bag-valve-mask ventilation',
@@ -725,6 +746,7 @@ const HANDS_ON_TREATMENTS = new Set([
   'surgical_cric',
   'magill_forceps',
   'orogastric_tube',
+  'ett_confirmation',
 ]);
 
 export const isHandsOnTreatment = (treatmentId: string): boolean =>
@@ -752,7 +774,8 @@ export const procedureIncludesIntegratedReassessment = (treatmentId: string): bo
   || treatmentId === 'abdominal_thrusts'
   || treatmentId === 'surgical_cric'
   || treatmentId === 'magill_forceps'
-  || treatmentId === 'orogastric_tube';
+  || treatmentId === 'orogastric_tube'
+  || treatmentId === 'ett_confirmation';
 
 export function procedureSiteToken(treatmentId: string, target: ProcedureSite): string {
   return `site:${treatmentId}:${target}`;
