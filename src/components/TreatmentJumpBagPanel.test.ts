@@ -3,6 +3,7 @@ import { TREATMENTS } from '@/data/enhancedTreatmentEffects';
 import type { CaseScenario } from '@/types';
 import {
   bagKeyForTreatment,
+  latestUniqueAppliedTreatments,
   recommendedManagementTabForCase,
   suggestedTreatmentIdsForCase,
 } from '@/components/TreatmentJumpBagPanel';
@@ -12,6 +13,30 @@ describe('treatment jump-bag routing', () => {
     const treatment = TREATMENTS.find(item => item.id === 'assisted_ambulation');
     expect(treatment).toBeDefined();
     expect(bagKeyForTreatment(treatment!)).toBe('exposure');
+  });
+});
+
+describe('compact treatment presentation', () => {
+  it('shows one latest row per intervention while preserving most-recent order', () => {
+    const application = (id: string, appliedAt: string) => ({
+      id,
+      name: id,
+      description: id,
+      appliedAt,
+      effects: [],
+      category: 'breathing' as const,
+      isActive: true,
+    });
+    const treatments = [
+      application('nebulizer_salbutamol', '2026-08-30T00:00:00.000Z'),
+      application('nebulizer_ipratropium', '2026-08-30T00:01:00.000Z'),
+      application('nebulizer_ipratropium', '2026-08-30T00:02:00.000Z'),
+    ];
+
+    expect(latestUniqueAppliedTreatments(treatments, 4).map(treatment => [treatment.id, treatment.appliedAt])).toEqual([
+      ['nebulizer_ipratropium', '2026-08-30T00:02:00.000Z'],
+      ['nebulizer_salbutamol', '2026-08-30T00:00:00.000Z'],
+    ]);
   });
 });
 

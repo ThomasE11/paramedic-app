@@ -35,6 +35,23 @@ import {
 
 export type ManagementTab = 'airway' | 'breathing' | 'circulation' | 'disability' | 'exposure' | 'medications' | 'transport';
 
+/** Keep the latest application of each intervention for compact equipment and
+ * resuscitation-card summaries. Dose history remains intact in the timeline. */
+export function latestUniqueAppliedTreatments(
+  appliedTreatments: AppliedTreatment[],
+  limit = Number.POSITIVE_INFINITY,
+): AppliedTreatment[] {
+  const seen = new Set<string>();
+  return [...appliedTreatments]
+    .reverse()
+    .filter(treatment => {
+      if (seen.has(treatment.id)) return false;
+      seen.add(treatment.id);
+      return true;
+    })
+    .slice(0, limit);
+}
+
 /**
  * Open the kit that best matches the presentation when a case starts.
  *
@@ -1193,6 +1210,10 @@ export function TreatmentJumpBagPanel({
   const filteredTreatments = searchResult.items;
 
   const lastTreatment = appliedTreatments[appliedTreatments.length - 1];
+  const recentDistinctTreatments = useMemo(
+    () => latestUniqueAppliedTreatments(appliedTreatments, 4),
+    [appliedTreatments],
+  );
   const lastBag = lastTreatment ? TREATMENT_JUMP_BAGS.find(bag => {
     const treatment = TREATMENTS.find(item => item.id === lastTreatment.id);
     return treatment ? treatmentBelongsToBag(treatment, bag) : false;
@@ -2279,8 +2300,8 @@ export function TreatmentJumpBagPanel({
               </p>
             ) : (
               <div className="space-y-1.5">
-                {appliedTreatments.slice(-4).reverse().map((treatment, index) => (
-                  <div key={`${treatment.id}-${index}`} className="glass-control flex items-center gap-2 rounded-md px-2 py-1.5">
+                {recentDistinctTreatments.map(treatment => (
+                  <div key={treatment.id} className="glass-control flex items-center gap-2 rounded-md px-2 py-1.5">
                     <CheckCircle2 className="h-3 w-3 shrink-0 text-emerald-600" />
                     <span className="min-w-0 flex-1 truncate font-semibold">{treatment.name}</span>
                     {patientState && patientState.treatmentCounts[treatment.id] > 1 && (

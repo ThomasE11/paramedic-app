@@ -129,6 +129,7 @@ import { VoiceHistoryPanel } from '@/components/VoiceHistoryPanel';
 import {
   TreatmentJumpBagPanel,
   bagKeyForTreatment,
+  latestUniqueAppliedTreatments,
   recommendedManagementTabForCase,
   type ManagementTab,
 } from '@/components/TreatmentJumpBagPanel';
@@ -1004,7 +1005,8 @@ function RoadmapTreatmentInterventionsPanel({
   activeBag: ManagementTab;
 }) {
   const stagedEquipment = appliedTreatments.length > 0
-    ? appliedTreatments.slice(-6).reverse().map(item => ({ id: item.id, name: item.name || formatClinicalToken(item.id) }))
+    ? latestUniqueAppliedTreatments(appliedTreatments, 6)
+      .map(item => ({ id: item.id, name: item.name || formatClinicalToken(item.id) }))
     : ROADMAP_FALLBACK_EQUIPMENT;
 
   return (
