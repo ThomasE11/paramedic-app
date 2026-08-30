@@ -1440,6 +1440,10 @@ export function StudentPanel({
   const [pendingDefibTreatment, setPendingDefibTreatment] = useState<Treatment | null>(null);
   const [pendingHandsOnTreatment, setPendingHandsOnTreatment] = useState<Treatment | null>(null);
   const handsOnProcedureBypassRef = useRef<Set<string>>(new Set());
+  // Pacing is awarded only by the physical monitor after the student has
+  // started TCP and palpated a pulse. This one-use proof prevents the
+  // treatment drawer from bypassing pads, output titration and capture.
+  const pacingCaptureBypassRef = useRef(false);
   const [showVentilatorDialog, setShowVentilatorDialog] = useState(false);
   const [ventilatorSettings, setVentilatorSettings] = useState<VentilatorSettings | null>(null);
   // The settings dialog confirms asynchronously, then re-enters the normal
@@ -3389,6 +3393,26 @@ export function StudentPanel({
       }
       setPendingTreatmentChallenge({ treatment, challenge: practicalChallenge, defibParams });
       return;
+    }
+
+    if (treatment.id === 'pacing_transcutaneous') {
+      if (!pacingCaptureBypassRef.current) {
+        if (!hasAttachedDefibrillatorPads(appliedTreatmentIds)) {
+          const pads = TREATMENTS.find(item => item.id === 'monitor_pads');
+          if (pads) setPendingHandsOnTreatment(pads);
+          toast.error('Attach multifunction pads first', {
+            description: 'Expose the chest, apply and connect the anterior/lateral pads before transcutaneous pacing.',
+            duration: 6000,
+          });
+          return;
+        }
+        toast.info('Use the physical PACER controls', {
+          description: 'Select PACER on the monitor, set the rate, increase mA until electrical capture, then press CHECK PULSE to confirm mechanical capture.',
+          duration: 7500,
+        });
+        return;
+      }
+      pacingCaptureBypassRef.current = false;
     }
 
     const hasVascularAccess = appliedTreatmentIds.includes('iv_access') || appliedTreatmentIds.includes('io_access');
@@ -6358,6 +6382,20 @@ export function StudentPanel({
                       onAssessmentPerformed={(stepId) => handlePerformAssessment(stepId as AssessmentStepId)}
                       onPacerStateChange={(state) => {
                         if (onClassroomStateChange) onClassroomStateChange({ pacerState: state });
+                      }}
+                      onPacingCaptureConfirmed={(state) => {
+                        if (readOnly) return;
+                        if (appliedTreatmentIds.includes('pacing_transcutaneous')) {
+                          toast.success('Mechanical capture reconfirmed', {
+                            description: `${state.rate}/min palpable at ${state.output} mA. Continue BP and perfusion reassessment.`,
+                            duration: 3500,
+                          });
+                          return;
+                        }
+                        const pacing = TREATMENTS.find(treatment => treatment.id === 'pacing_transcutaneous');
+                        if (!pacing) return;
+                        pacingCaptureBypassRef.current = true;
+                        applyTreatment(pacing);
                       }}
                       overridePacerState={externalState?.pacerState}
                       // The management bay is a live working station: keep the

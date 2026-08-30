@@ -37,6 +37,10 @@ import {
 } from '@/data/ecgRhythms';
 import { TwelveLeadReport } from './TwelveLeadReport';
 import { hasAttachedDefibrillatorPads } from '@/lib/defibrillatorSafety';
+import {
+  assessPacingCapture,
+  MODELLED_PACING_CAPTURE_THRESHOLD_MA,
+} from '@/lib/pacingSafety';
 
 interface VitalSignsMonitorProps {
   initialVitals: VitalSigns;
@@ -70,6 +74,8 @@ interface VitalSignsMonitorProps {
   onAssessmentPerformed?: (stepId: string) => void;
   /** Fired when pacer state changes — classroom broadcast uses this. */
   onPacerStateChange?: (state: { active: boolean; rate: number; output: number }) => void;
+  /** Fired only after the learner palpates a pulse and confirms mechanical capture. */
+  onPacingCaptureConfirmed?: (state: { active: true; rate: number; output: number }) => void;
   /** When set, writes into local pacer state — lets a spectator mirror the
    *  instructor's pacer (active / rate / output). Bumps on every broadcast. */
   overridePacerState?: { active: boolean; rate: number; output: number };
@@ -1424,6 +1430,7 @@ export function VitalSignsMonitor({
   cprState,
   onAssessmentPerformed,
   onPacerStateChange,
+  onPacingCaptureConfirmed,
   overridePacerState,
   autoPowerOn = false,
 }: VitalSignsMonitorProps) {
@@ -1555,7 +1562,15 @@ export function VitalSignsMonitor({
   const [interventionLog, setInterventionLog] = useState<Array<{ time: string; action: string; detail: string }>>([]);
   const [pacerActive, setPacerActive] = useState(false);
   const [pacerRate, setPacerRate] = useState(60);
-  const [pacerOutput, setPacerOutput] = useState(80);
+  const [pacerOutput, setPacerOutput] = useState(30);
+  const [pacingCaptureConfirmed, setPacingCaptureConfirmed] = useState(false);
+
+  // Changing rate/output or stopping the pacer invalidates the previous pulse
+  // check. Electrical spikes can remain visible, but perfusion must be
+  // confirmed again at the new settings.
+  useEffect(() => {
+    setPacingCaptureConfirmed(false);
+  }, [pacerActive, pacerRate, pacerOutput]);
 
   // Broadcast pacer state on every change — classroom spectators mirror.
   useEffect(() => {
@@ -1645,10 +1660,10 @@ export function VitalSignsMonitor({
   const codeTimerRef = useRef<number | null>(null);
   const nibpIntervalRef = useRef<number | null>(null);
 
-  // Pacemaker capture enforcement - continuously enforce pacer rate while active
-  // This prevents other vital updates (deterioration, treatment effects) from overriding the paced rate
+  // Enforce a paced pulse only after the learner has palpated and confirmed
+  // mechanical capture. Pacing spikes alone do not prove perfusion.
   useEffect(() => {
-    if (!pacerActive || pacerOutput < 60) return;
+    if (!pacerActive || !pacingCaptureConfirmed || pacerOutput < MODELLED_PACING_CAPTURE_THRESHOLD_MA) return;
 
     // Check every 2 seconds if the HR has drifted from the pacer rate
     const interval = setInterval(() => {
@@ -1661,7 +1676,7 @@ export function VitalSignsMonitor({
     }, 2000);
 
     return () => clearInterval(interval);
-  }, [pacerActive, pacerRate, pacerOutput]);
+  }, [pacerActive, pacerRate, pacerOutput, pacingCaptureConfirmed]);
 
   // Stop ready tone when leaving defib mode or when charge is cancelled
   useEffect(() => {
@@ -2791,7 +2806,7 @@ export function VitalSignsMonitor({
 
   // When pacing is capturing, the 12-lead report shows the underlying rhythm
   // with an explanatory banner (pacing overrides but doesn't fix the block).
-  const isPacedRhythm = pacerActive && pacerOutput >= 60;
+  const isPacedRhythm = pacerActive && pacingCaptureConfirmed;
 
   return (
     <div className="select-none">
@@ -3424,8 +3439,31 @@ export function VitalSignsMonitor({
                   onClick={() => {
                     const ns = !pacerActive; setPacerActive(ns);
                     logIntervention('PACER', ns ? `Started ${pacerRate}ppm/${pacerOutput}mA` : 'Stopped');
-                    if (ns && pacerOutput >= 60) setCurrentVitals(prev => ({ ...prev, pulse: pacerRate }));
                   }} />
+                <ControlButton
+                  label={pacingCaptureConfirmed ? 'PULSE ✓' : 'CHECK PULSE'}
+                  variant={pacingCaptureConfirmed ? 'green' : 'orange'}
+                  led={pacingCaptureConfirmed ? 'green' : pacerActive ? 'orange' : 'off'}
+                  onClick={() => {
+                    const assessment = assessPacingCapture({
+                      padsAttached,
+                      active: pacerActive,
+                      rate: pacerRate,
+                      output: pacerOutput,
+                    });
+                    const severity = assessment.canCreditTreatment
+                      ? 'success'
+                      : assessment.status === 'electrical-only' || assessment.status === 'pads-required'
+                        ? 'critical'
+                        : 'warning';
+                    setShockFeedbackMessage({ text: assessment.message, severity });
+                    logIntervention('PACE CHECK', assessment.message);
+                    if (!assessment.canCreditTreatment) return;
+                    setPacingCaptureConfirmed(true);
+                    setCurrentVitals(prev => ({ ...prev, pulse: pacerRate }));
+                    onPacingCaptureConfirmed?.({ active: true, rate: pacerRate, output: pacerOutput });
+                  }}
+                />
               </div>
             </>
           )}
@@ -3587,7 +3625,7 @@ export function VitalSignsMonitor({
           <div className="mx-3 mb-2 p-2 rounded border border-blue-500/60 bg-blue-950/40">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-mono font-bold text-blue-400"><Zap className="h-3 w-3 inline animate-pulse" /> PACING ACTIVE</span>
-              <span className="text-[9px] font-mono text-blue-300">{pacerRate}ppm / {pacerOutput}mA — {pacerOutput >= 60 ? 'CAPTURE' : 'NO CAPTURE'}</span>
+              <span className="text-[9px] font-mono text-blue-300">{pacerRate}ppm / {pacerOutput}mA — {pacingCaptureConfirmed ? 'MECHANICAL CAPTURE' : pacerOutput >= MODELLED_PACING_CAPTURE_THRESHOLD_MA ? 'CHECK PULSE' : 'NO CAPTURE'}</span>
             </div>
           </div>
         )}
