@@ -3,9 +3,10 @@
  * LifeSigns' baseline sway + blink. One useFrame, ref mutations only, no
  * per-frame allocations (same discipline as LifeSigns).
  *
- * The active patient GLBs ship as UNRIGGED meshes (no head/arm bones — see
- * LifeSigns), so every animation here is expressed through Blender-authored
- * local morph targets. The patient root is never moved or rotated:
+ * The active patient GLBs carry fitted skeletons for standing/walking, while
+ * every condition-specific movement here remains a Blender-authored local
+ * morph target. That lets distress cues layer onto any skeletal pose without
+ * moving the patient root away from the floor, stretcher or attached kit:
  *
  *   • Shiver   (shock / hypothermia) — fine irregular distal-limb movement.
  *   • Tremor   (scenario flag)       — regular local distal-limb movement.

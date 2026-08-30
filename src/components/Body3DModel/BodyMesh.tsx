@@ -31,6 +31,7 @@ import { setBreathClock } from '@/lib/breathClock';
 import {
   patientPacingTransform,
   patientSkeletalAction,
+  standingArmRelaxationRadians,
   type PatientMobility,
 } from '@/lib/patientStaging';
 import {
@@ -822,7 +823,6 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
     () => getTreatmentBayTransform(bayStage, posture, mobility),
     [bayStage, mobility, posture],
   );
-
   // Diaphoresis (sweat sheen): the eased 0..1 scalar the frame loop drives
   // toward the `diaphoresis` prop (fast up ~10 s, slow dry-out ~60 s), plus a
   // lazily-resolved cache of the skin materials + their authored roughness /
@@ -1112,6 +1112,12 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scene, modelPath, bodyInjuries, garmentScenes, garmentSpecs, mobility]); // bodyInjuries: stable per case (memoised upstream + per-case key)
 
+  const standingArmBones = useMemo(() => (
+    ['mixamorig:LeftArm', 'mixamorig:RightArm']
+      .map(name => clonedScene.getObjectByName(name) ?? clonedScene.getObjectByName(name.replace(/:/g, '')))
+      .filter((node): node is THREE.Object3D => node !== undefined)
+  ), [clonedScene]);
+
   // Whole-skeleton movement is reserved for genuinely ambulatory cases. The
   // source clips are in-place Mixamo loops, so the patient remains inside the
   // scene while stepping/pacing rather than drifting through equipment.
@@ -1346,7 +1352,15 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
   // Drive continuous rendering for pulse animation when required regions exist
   // or when guided mode is active (next-step ring needs to pulse).
   useFrame((_, delta) => {
-    skeletalMixerRef.current?.update(Math.min(delta, 0.05));
+    const skeletalMixer = skeletalMixerRef.current;
+    skeletalMixer?.update(Math.min(delta, 0.05));
+    const armRelaxation = standingArmRelaxationRadians(mobility, unconscious);
+    if (skeletalMixer && armRelaxation > 0) {
+      // The donor's idle action retains its capture A-pose. Apply the
+      // Blender-calibrated local-X offset after the mixer writes each frame so
+      // hands rest beside the thighs; the walk clip keeps its authored swing.
+      for (const arm of standingArmBones) arm.rotateX(armRelaxation);
+    }
     const root = meshRef.current;
     if (root && treatmentBayPresentation && mobility === 'pacing' && !unconscious) {
       locomotionTimeRef.current += Math.min(delta, 0.05);

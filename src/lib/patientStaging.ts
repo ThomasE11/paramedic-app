@@ -118,6 +118,14 @@ export function patientSkeletalAction(
   return null;
 }
 
+/** Local upper-arm rotation that turns the donor clip's A-pose into rest. */
+export function standingArmRelaxationRadians(
+  mobility: PatientMobility,
+  unconscious = false,
+): number {
+  return mobility === 'standing' && !unconscious ? 0.65 : 0;
+}
+
 /**
  * Compact out-and-back path for an observed walk in the treatment bay.
  *

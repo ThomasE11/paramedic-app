@@ -5,6 +5,7 @@ import {
   deriveTreatmentPositioningOverride,
   patientPacingTransform,
   patientSkeletalAction,
+  standingArmRelaxationRadians,
 } from './patientStaging';
 import type { CaseScenario } from '@/types';
 
@@ -54,6 +55,13 @@ describe('patientSkeletalAction', () => {
     expect(patientSkeletalAction('seated')).toBeNull();
     expect(patientSkeletalAction('recumbent')).toBeNull();
     expect(patientSkeletalAction('pacing', true)).toBeNull();
+  });
+
+  it('relaxes only a conscious stationary patient out of the donor A-pose', () => {
+    expect(standingArmRelaxationRadians('standing')).toBeCloseTo(0.65);
+    expect(standingArmRelaxationRadians('pacing')).toBe(0);
+    expect(standingArmRelaxationRadians('recumbent')).toBe(0);
+    expect(standingArmRelaxationRadians('standing', true)).toBe(0);
   });
 });
 
