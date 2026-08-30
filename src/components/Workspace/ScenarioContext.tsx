@@ -8,7 +8,6 @@
 import { AlertTriangle, MapPin, Activity } from 'lucide-react';
 
 interface ScenarioContextProps {
-  title: string;
   category: string;
   difficulty: string;
   patientAge: number;
@@ -20,7 +19,6 @@ interface ScenarioContextProps {
 }
 
 export function ScenarioContext({
-  title,
   category,
   difficulty,
   patientAge,
@@ -39,17 +37,17 @@ export function ScenarioContext({
         <div className="flex-1">
           <div className="flex flex-wrap items-center gap-2 mb-1">
             <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-            <span className="text-xs font-semibold text-red-600 uppercase tracking-wider">Live Case</span>
+            <span className="text-xs font-semibold text-red-600 uppercase tracking-wider">Scene briefing</span>
             <span className="text-surface-300">·</span>
             <span className="text-xs text-surface-500">{category}</span>
             <span className="text-surface-300">·</span>
             <span className="text-xs text-surface-500">{difficulty}</span>
           </div>
           
-          <h3 className="text-lg font-bold text-surface-900 mb-1">{title}</h3>
+          <h3 className="text-lg font-bold text-surface-900 mb-1">{patientAge}-year-old {patientGender}</h3>
           <p className="text-xs text-surface-400 mb-2 flex items-center gap-1">
             <MapPin className="w-3 h-3" />
-            {location} · {patientAge}-year-old {patientGender}
+            {location}
           </p>
           
           <p className="text-sm text-surface-600 leading-relaxed">{description}</p>

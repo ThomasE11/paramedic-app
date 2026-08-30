@@ -57,13 +57,21 @@ describe('hands-on treatment procedures', () => {
       'sam_splint', 'box_splint', 'vacuum_limb_splint', 'air_splint', 'traction_splint',
       'cervical_collar', 'warming_blanket', 'active_cooling', 'spinal_board',
       'scoop_stretcher', 'vacuum_mattress', 'head_blocks', 'ked', 'lucas_device',
-      'ventilator_setup',
+      'ventilator_setup', 'mechanical_ventilation',
     ];
     for (const treatmentId of equipmentTreatments) {
       const plan = getHandsOnProcedurePlan(treatmentId, caseData);
       expect(plan?.steps.length, `${treatmentId} should have a complete application workflow`).toBeGreaterThanOrEqual(4);
       expect(plan?.equipmentAsset, `${treatmentId} should identify its real equipment`).toMatch(/^\/equipment-assets\//);
     }
+  });
+
+  it('routes the transport ventilator through physical circuit setup', () => {
+    const plan = getHandsOnProcedurePlan('mechanical_ventilation', caseData);
+
+    expect(isHandsOnTreatment('mechanical_ventilation')).toBe(true);
+    expect(plan?.title).toBe('Prepare the transport ventilator');
+    expect(plan?.steps.map(step => step.id)).toEqual(['assemble', 'test', 'airway', 'connect', 'confirm']);
   });
 
   it('reuses an already fitted nebuliser when adding the second bronchodilator', () => {

@@ -270,9 +270,9 @@ export function getHandsOnProcedurePlan(
     };
   }
 
-  if (treatmentId === 'ventilator_setup') {
+  if (treatmentId === 'ventilator_setup' || treatmentId === 'mechanical_ventilation') {
     return {
-      id: 'ventilator-circuit', title: 'Connect the ventilator circuit',
+      id: 'ventilator-circuit', title: treatmentId === 'mechanical_ventilation' ? 'Prepare the transport ventilator' : 'Connect the ventilator circuit',
       subtitle: 'A secured airway must be confirmed before the tested circuit is connected.', treatmentId,
       requiresTarget: false, targets: [], equipmentAsset: '/equipment-assets/ventilator-circuit.webp', completionLabel: 'Circuit connected — verify delivered ventilation',
       steps: [
@@ -557,7 +557,7 @@ const HANDS_ON_TREATMENTS = new Set([
   'occlusive_dressing_3sided', 'needle_decompression', 'splinting', 'sam_splint', 'box_splint',
   'vacuum_limb_splint', 'air_splint', 'traction_splint', 'cervical_collar', 'warming_blanket',
   'active_cooling', 'spinal_board', 'scoop_stretcher', 'vacuum_mattress', 'head_blocks', 'ked',
-  'lucas_device', 'ventilator_setup', 'supine_position', 'recovery_position', 'fowlers_position',
+  'lucas_device', 'ventilator_setup', 'mechanical_ventilation', 'supine_position', 'recovery_position', 'fowlers_position',
   'left_lateral_tilt', 'leg_elevation', 'assisted_ambulation',
 ]);
 

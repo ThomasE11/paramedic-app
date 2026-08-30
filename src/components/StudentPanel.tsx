@@ -1442,6 +1442,10 @@ export function StudentPanel({
   const handsOnProcedureBypassRef = useRef<Set<string>>(new Set());
   const [showVentilatorDialog, setShowVentilatorDialog] = useState(false);
   const [ventilatorSettings, setVentilatorSettings] = useState<VentilatorSettings | null>(null);
+  // The settings dialog confirms asynchronously, then re-enters the normal
+  // treatment engine. A ref carries that one confirmed configuration through
+  // the callback without reopening the dialog or replaying the circuit setup.
+  const confirmedVentilatorSettingsRef = useRef<VentilatorSettings | null>(null);
   // BVM bag-valve-mask ventilation rate the student picked (breaths / min).
   // Separate from full mechanical ventilation because BVM is the common
   // prehospital airway intervention and deserves a lighter-weight picker.
@@ -3397,7 +3401,12 @@ export function StudentPanel({
       });
       return;
     }
-    if (treatment.id === 'ventilator_setup' && !appliedTreatmentIds.some(id => ['intubation', 'rsi_intubation', 'endotracheal_intubation'].includes(id))) {
+    const hasSecuredAirway = appliedTreatmentIds.some(id => [
+      'intubation',
+      'rsi_intubation',
+      'endotracheal_intubation',
+    ].includes(id));
+    if (['ventilator_setup', 'mechanical_ventilation'].includes(treatment.id) && !hasSecuredAirway) {
       toast.error('Secure and confirm the airway first', {
         description: 'Do not connect a ventilator circuit until ETT position is confirmed with sustained waveform capnography.',
         duration: 5500,
@@ -3419,11 +3428,17 @@ export function StudentPanel({
     // Physical procedures are not instant menu effects. Practicality and
     // prerequisite checks happen first; only a completed hands-on sequence
     // can re-enter this callback through the one-use bypass.
-    if (isHandsOnTreatment(treatment.id) && !handsOnProcedureBypassRef.current.has(treatment.id)) {
+    const isReconfiguringConnectedVentilator = treatment.id === 'mechanical_ventilation'
+      && appliedTreatmentIds.includes('mechanical_ventilation');
+    if (isHandsOnTreatment(treatment.id)
+      && !isReconfiguringConnectedVentilator
+      && !handsOnProcedureBypassRef.current.has(treatment.id)) {
       setPendingHandsOnTreatment(treatment);
       return;
     }
-    if (isHandsOnTreatment(treatment.id)) handsOnProcedureBypassRef.current.delete(treatment.id);
+    if (handsOnProcedureBypassRef.current.has(treatment.id)) {
+      handsOnProcedureBypassRef.current.delete(treatment.id);
+    }
 
     // Defibrillation requires energy/mode selection
     if (treatment.id === 'defibrillation' && !defibParams) {
@@ -3432,32 +3447,16 @@ export function StudentPanel({
       return;
     }
 
-    // Mechanical ventilation requires an RSI / secured airway first.
-    // You can't put a conscious, un-paralysed patient on a ventilator —
-    // they'll fight it, desaturate, and aspirate. Gate the dialog on
-    // proof of RSI (rsi_intubation treatment) or at minimum a secured
-    // airway. GCS <= 3 (unresponsive) is an alternative clinical path
-    // (e.g. in-arrest already intubated) — allow that too.
-    //
-    // The dialog is reusable: clicking mechanical_ventilation again
-    // opens it with the current settings so the student can adjust
-    // FiO2 / PEEP / RR / TV without tearing down and re-intubating.
+    // The secured-airway gate above runs before the hands-on circuit sequence.
+    // Once the sequence is complete, open the settings dialog. Re-selecting
+    // the treatment reopens it so settings can be adjusted without repeating
+    // intubation or pretending the circuit has been removed.
     if (treatment.id === 'mechanical_ventilation') {
-      const hasRsi = appliedTreatmentIds.includes('rsi_intubation');
-      const hasIntubation = appliedTreatmentIds.includes('intubation') || appliedTreatmentIds.includes('endotracheal_intubation');
-      const gcsTotal = (patientState?.vitals?.gcs as number | undefined)
-        ?? (currentCase?.vitalSignsProgression?.initial?.gcs as number | undefined)
-        ?? 15;
-      const profoundlyUnresponsive = gcsTotal <= 3;
-      if (!hasRsi && !hasIntubation && !profoundlyUnresponsive) {
-        toast.error('RSI required first', {
-          description: 'A mechanical ventilator can only be started once the airway is secured. Perform RSI (rapid sequence intubation) or confirm ETT placement first.',
-          duration: 6000,
-        });
+      if (!confirmedVentilatorSettingsRef.current) {
+        setShowVentilatorDialog(true);
         return;
       }
-      setShowVentilatorDialog(true);
-      return;
+      confirmedVentilatorSettingsRef.current = null;
     }
 
     // BVM needs a ventilation rate — light-weight prompt (10/12/20) so the
@@ -6569,11 +6568,14 @@ export function StudentPanel({
                 onClose={() => setShowVentilatorDialog(false)}
                 onConfirm={(settings) => {
                   setVentilatorSettings(settings);
+                  confirmedVentilatorSettingsRef.current = settings;
                   setShowVentilatorDialog(false);
-                  // Apply the treatment now that settings exist; the second call
-                  // skips the dialog gate above because ventilatorSettings is set.
+                  // Re-enter once with a confirmed configuration. The bypass
+                  // is required on first connection; later setting changes are
+                  // recognised as reconfiguration and also skip the procedure.
                   const ventTreatment = TREATMENTS.find(t => t.id === 'mechanical_ventilation');
                   if (ventTreatment) {
+                    handsOnProcedureBypassRef.current.add(ventTreatment.id);
                     setTimeout(() => applyTreatment(ventTreatment), 0);
                   }
                   toast.success('Ventilator initiated', {

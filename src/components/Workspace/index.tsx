@@ -253,9 +253,6 @@ export function WorkspaceLayout({
               <div className="hidden h-4 w-px bg-black/10 sm:block"></div>
               <div className="min-w-0">
                 <h1 className="truncate text-base font-bold text-surface-900 sm:text-lg">{caseData.title}</h1>
-                <p className="text-xs text-surface-400">
-                  {caseData.patientInfo.age}-year-old {caseData.patientInfo.gender} · Category: {caseData.category} · Difficulty: {caseData.complexity}
-                </p>
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
@@ -278,18 +275,16 @@ export function WorkspaceLayout({
         </div>
       </div>
 
-      {/* Workspace Grid — Kimi 3-6-3 of 12 columns at xl+. Below xl we
-          collapse to one column so the mobile/tablet experience stays
-          readable. */}
+      {/* The transport monitor needs roughly 380px before its screen and
+          physical controls stop folding over one another. Keep it full-width
+          through the large-tablet range, then give it four columns on desktop
+          instead of squeezing it into the former three-column rail. */}
       <div className="max-w-[1536px] mx-auto px-4 sm:px-6 py-5 relative z-10">
         <div className="grid grid-cols-12 gap-5 items-start">
           
-          {/* LEFT (3 of 12): Patient Monitor + Quick Actions. Kimi mockup
-              order: monitor first, actions below — mirrors the way a
-              paramedic glances at the screen on arrival. */}
-          <div className="col-span-12 lg:col-span-3 space-y-4 min-w-0">
-            <QuickActions onAction={onAction} />
-
+          {/* MONITOR (4 of 12 on desktop): monitor first, actions below —
+              mirrors the way a paramedic glances at the screen on arrival. */}
+          <div data-workspace-panel="monitor" className="col-span-12 space-y-4 min-w-0 xl:col-span-4">
             <Suspense fallback={<LoadingCard />}>
               <VitalSignsMonitor
                 initialVitals={vitals || caseData.vitalSignsProgression.initial}
@@ -311,6 +306,8 @@ export function WorkspaceLayout({
               />
             </Suspense>
 
+            <QuickActions onAction={onAction} />
+
             {activeComplications.length > 0 && onResolveComplication && onIgnoreComplication && (
               <ComplicationPanel
                 activeComplications={activeComplications}
@@ -320,14 +317,13 @@ export function WorkspaceLayout({
             )}
           </div>
 
-          {/* CENTER (6 of 12): Scenario context + Clinical Timeline.
+          {/* CASE (5 of 12 on desktop): Scenario context + Clinical Timeline.
               This IS the primary workspace surface — the timeline drives
               the case forward via Primary Survey -> findings -> decision
               points -> interventions, instead of the rigid ABCDE step
               gate the old layout used. */}
-          <div className="col-span-12 lg:col-span-6 space-y-4 min-w-0">
+          <div data-workspace-panel="case" className="col-span-12 space-y-4 min-w-0 lg:col-span-8 xl:col-span-5">
             <ScenarioContext
-              title={caseData.title}
               category={caseData.category}
               difficulty={caseData.complexity}
               patientAge={caseData.patientInfo.age}
@@ -344,9 +340,9 @@ export function WorkspaceLayout({
             />
           </div>
 
-          {/* RIGHT (3 of 12): 3D anatomy explorer + Patient profile +
+          {/* PATIENT (3 of 12 on desktop): 3D anatomy explorer + history +
               Performance score ring + Clinical guidelines. */}
-          <div className="col-span-12 lg:col-span-3 space-y-4 min-w-0">
+          <div data-workspace-panel="patient" className="col-span-12 space-y-4 min-w-0 lg:col-span-4 xl:col-span-3">
             <Suspense fallback={<LoadingCard />}>
               <Body3DModel
                 onRegionClick={onRegionClick ?? (() => {})}
@@ -359,16 +355,10 @@ export function WorkspaceLayout({
               />
             </Suspense>
             
-            {/* Patient Demographics */}
+            {/* History details not already shown in the scene briefing. */}
             <div className="glass rounded-xl p-4">
-              <h4 className="text-xs font-semibold text-surface-500 uppercase tracking-wider mb-3">Patient Profile</h4>
+              <h4 className="text-xs font-semibold text-surface-500 uppercase tracking-wider mb-3">History essentials</h4>
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-surface-500">Age/Gender</span>
-                  <span className="text-xs font-medium text-surface-800">
-                    {caseData.patientInfo.age}y / {caseData.patientInfo.gender}
-                  </span>
-                </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-surface-500">Weight</span>
                   <span className="text-xs font-medium text-surface-800">{caseData.patientInfo.weight} kg</span>
@@ -376,6 +366,19 @@ export function WorkspaceLayout({
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-surface-500">Language</span>
                   <span className="text-xs font-medium text-surface-800">{caseData.patientInfo.language}</span>
+                </div>
+                <div className="flex items-start justify-between gap-3">
+                  <span className="text-xs text-surface-500">Allergies</span>
+                  <div className="flex flex-wrap justify-end gap-1">
+                    {(caseData.history.allergies.length > 0 ? caseData.history.allergies : ['None known']).slice(0, 3).map(allergy => (
+                      <span
+                        key={allergy}
+                        className={`rounded px-1.5 py-0.5 text-[9px] font-medium ${caseData.history.allergies.length > 0 ? 'border border-red-200 bg-red-50 text-red-700' : 'border border-surface-200 bg-surface-100 text-surface-600'}`}
+                      >
+                        {allergy}
+                      </span>
+                    ))}
+                  </div>
                 </div>
                 {caseData.history.medicalConditions.length > 0 && (
                   <div className="flex items-center justify-between">
