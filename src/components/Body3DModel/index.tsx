@@ -4109,12 +4109,24 @@ function PatientFirstExamDock({
     })
     .filter((item): item is NonNullable<typeof item> => Boolean(item));
 
+  const selectedActionTechnique = actions.find(action => action.id === selectedAction)?.technique ?? null;
+  const defaultTechnique = grouped[0]?.technique ?? 'inspect';
+  const [selectedTechnique, setSelectedTechnique] = useState<ExamTechnique>(
+    selectedActionTechnique ?? defaultTechnique,
+  );
+
+  useEffect(() => {
+    setSelectedTechnique(selectedActionTechnique ?? defaultTechnique);
+  }, [activeRegion, defaultTechnique, selectedActionTechnique]);
+
   if (grouped.length === 0) return null;
 
-  const selectedGroup = grouped.find(group => group.items.some(action => action.id === selectedAction)) ?? grouped[0];
+  const selectedGroup = grouped.find(group => group.technique === selectedTechnique) ?? grouped[0];
   const completedCount = actions.filter(action => revealedFindings.has(action.id)).length;
   const selectedActionLabel = actions.find(action => action.id === selectedAction)?.label ?? 'Finding';
-  const activeFinding = selectedAction && revealedFindings.has(selectedAction)
+  const activeFinding = selectedAction
+    && selectedActionTechnique === selectedTechnique
+    && revealedFindings.has(selectedAction)
     ? revealedFindings.get(selectedAction) ?? null
     : null;
   const regionFindings = actions
@@ -4152,7 +4164,7 @@ function PatientFirstExamDock({
           <div className="patient-first-technique-grid mt-2">
             {grouped.map(group => {
               const Icon = TECHNIQUE_ICONS[group.technique];
-              const isActive = group.items.some(action => action.id === selectedAction);
+              const isActive = group.technique === selectedTechnique;
               const meta = TECHNIQUE_META[group.technique];
               const dock = DOCK_TONE[group.technique];
               return (
@@ -4161,7 +4173,7 @@ function PatientFirstExamDock({
                   type="button"
                   title={`${meta.label} — ${meta.hint}`}
                   aria-label={meta.label}
-                  onClick={() => onAction(group.primary.id)}
+                  onClick={() => setSelectedTechnique(group.technique)}
                   className={`patient-first-technique-button ${isActive ? dock.active : dock.tone}`}
                 >
                   <span className="flex w-full items-center justify-center">
@@ -4189,7 +4201,10 @@ function PatientFirstExamDock({
                   <button
                     key={action.id}
                     type="button"
-                    onClick={() => onAction(action.id)}
+                    onClick={() => {
+                      setSelectedTechnique(action.technique);
+                      onAction(action.id);
+                    }}
                     className={`patient-first-target-chip ${isSelected ? 'is-selected' : ''} ${isDone ? 'is-done' : ''}`}
                   >
                     <span className="truncate">{action.label}</span>
