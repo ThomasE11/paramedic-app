@@ -26,42 +26,36 @@ npm install @gltf-transform/core @gltf-transform/extensions @gltf-transform/func
 node strip-glb.mjs in.glb out.glb
 ```
 
-## Historical MPFB pipeline (not active for male cases)
+## Active patient pipeline
 
-The pipeline below was tested against the TalkingHead `mpfb.glb`, but that
-source reads visually female in the current examination scene and should not
-be used as the male patient shell without a fresh MakeHuman/MPFB export and
-visual QA. `BodyMesh.tsx` currently routes male patients to `patient.glb`
-until a validated male GLB replaces `public/models/patient-male.glb`.
+The shipped adult and age-specific models now use MPFB body geometry with a
+fitted 52-bone Mixamo armature, five runtime clips and fourteen clinical
+morphs. `generate-mpfb-age-patient.py` creates the sex/age shell,
+`rig-patient.py` transfers the fitted weights and animation clips, and
+`refine-tripod-pose.py` bakes the neutral seated legs used by both seated and
+tripod presentations. The rig step must keep MPFB's detailed joint helpers
+enabled; they are what fit the armature to infant, toddler and child macros.
 
 ```bash
-# 1. Source: CC0 MPFB body (35 MB, hair + clothing + textures)
-curl -L -o mpfb-source.glb \
-  https://github.com/met4citizen/TalkingHead/raw/main/avatars/mpfb.glb
-
-# 2. Optimize textures + meshopt geometry → 1.2 MB
-npx --yes @gltf-transform/cli@latest optimize \
-  mpfb-source.glb step1.glb \
-  --texture-compress webp --texture-size 1024 \
-  --simplify-error 0.001
-
-# 3. Strip hair / clothing / eyelashes / teeth / tongue → ~290 KB
-node strip-glb.mjs step1.glb step2.glb
-
-# 4. Prefix bones to mixamorig:* so BodyMesh.tsx finds them
-node prefix-bones.mjs step2.glb step3.glb
-
-# 5. Translate so feet sit at Y=0
-node translate-glb.mjs step3.glb ../../public/models/patient-male-unvalidated.glb
+# Example: rebuild a female toddler shell, fit its rig, then bake its seat.
+Blender --background --python generate-mpfb-age-patient.py -- \
+  female 0.10 ../../public/models/patient-female.glb /tmp/toddler-raw.glb
+Blender --background --python rig-patient.py -- \
+  female /tmp/toddler-raw.glb ../../public/models/patient.glb.orig \
+  /tmp/toddler-rigged.glb 0.10
+Blender --background --python refine-tripod-pose.py -- \
+  /tmp/toddler-rigged.glb ../../public/models/patient-toddler-female.glb
 ```
 
-## Reproducing the current `patient-female.glb`
+## Verification
+
+Run both geometry gates after rebuilding any patient. The first verifies rig
+scale and seated/tripod continuity. The second evaluates the exported walk at
+four phases, proving that the limbs move without a centimetre-scale mesh tear.
 
 ```bash
-# 1. Source: Ready Player Me brunette-t (CC BY-NC, 2.7 MB, lean)
-curl -L -o brunette-t.glb \
-  https://github.com/met4citizen/TalkingHead/raw/main/avatars/brunette-t.glb
-
-# 2. Just the bone prefix — already lean + feet at Y=0
-node prefix-bones.mjs brunette-t.glb ../../public/models/patient-female.glb
+Blender --background --python verify-patient-deformation.py -- \
+  ../../public/models/patient-male.glb ../../public/models/patient-infant-female.glb
+Blender --background --python verify-patient-animation.py -- \
+  ../../public/models/patient-male.glb ../../public/models/patient-infant-female.glb
 ```

@@ -103,7 +103,8 @@ describe('patientSkeletalAction', () => {
     expect(patientArmRestRadians('seated')).toBeCloseTo(0.72);
     expect(patientArmRestRadians('recumbent')).toBeCloseTo(0.28);
     expect(patientArmRestRadians('recumbent', true)).toBeCloseTo(0.28);
-    expect(patientArmRestRadians('pacing')).toBe(0);
+    expect(patientArmRestRadians('pacing')).toBeCloseTo(0.42);
+    expect(patientArmRestRadians('pacing', false, 4)).toBeCloseTo(0.2646);
     expect(patientArmRestRadians('standing', true)).toBe(0);
     expect(patientArmRestRadians('seated', false, 0.5)).toBeCloseTo(0.3528);
     expect(patientArmRestRadians('seated', false, 4)).toBeCloseTo(0.4536);

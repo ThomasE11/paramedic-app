@@ -1400,7 +1400,8 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
     if (skeletalMixer && armRelaxation > 0) {
       // The donor's idle action retains its capture A-pose. Apply the
       // Blender-calibrated local-X offset after the mixer writes each frame so
-      // hands rest beside the thighs; the walk clip keeps its authored swing.
+      // hands rest beside the thighs. Pacing uses a smaller offset, preserving
+      // the walk clip's authored opposing swing while removing its broad pose.
       for (const arm of standingArmBones) arm.rotateX(armRelaxation);
     } else if (!skeletalMixer) {
       // Non-ambulatory patients have no clip to reset the A-pose each frame.

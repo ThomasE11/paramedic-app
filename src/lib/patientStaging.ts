@@ -169,7 +169,6 @@ export function patientArmRestRadians(
   unconscious = false,
   ageYears?: number,
 ): number {
-  if (mobility === 'pacing') return 0;
   const paediatricScale = typeof ageYears === 'number' && ageYears < 2
     ? 0.49
     : typeof ageYears === 'number' && ageYears < 6
@@ -177,6 +176,10 @@ export function patientArmRestRadians(
       : typeof ageYears === 'number' && ageYears < 12
         ? 0.78
         : 1;
+  // The source walk keeps useful opposing arm swing, but its shoulders retain
+  // too much of the capture A-pose. This smaller additive offset brings the
+  // hands into a natural gait envelope without flattening the authored swing.
+  if (mobility === 'pacing') return 0.42 * paediatricScale;
   if (mobility === 'seated') return 0.72 * paediatricScale;
   if (mobility === 'recumbent') return 0.28 * paediatricScale;
   return !unconscious ? 0.65 : 0;
