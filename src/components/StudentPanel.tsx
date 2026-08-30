@@ -924,7 +924,7 @@ const ROADMAP_EQUIPMENT_ASSETS: Record<string, string> = {
   box_splint: '/equipment-assets/box-splint.webp',
   vacuum_limb_splint: '/equipment-assets/vacuum-limb-splint.webp',
   traction_splint: '/equipment-assets/traction-splint.webp',
-  cervical_collar: '/equipment-assets/cervical-collar.webp',
+  cervical_collar: '/equipment-assets/cervical-collar-fitted-front-v2.png',
   spinal_board: '/equipment-assets/spine-board.webp',
   scoop_stretcher: '/equipment-assets/scoop-stretcher.webp',
 };

@@ -720,7 +720,7 @@ export function getHandsOnProcedurePlan(
   if (treatmentId === 'cervical_collar') {
     return {
       id: 'cervical-collar', title: 'Apply a cervical collar', subtitle: 'Manual in-line stabilisation continues while the collar is sized and fitted.',
-      treatmentId, requiresTarget: false, targets: [], equipmentAsset: '/equipment-assets/cervical-collar.webp', completionLabel: 'Collar fitted — maintain spinal precautions',
+      treatmentId, requiresTarget: false, targets: [], equipmentAsset: '/equipment-assets/cervical-collar-fitted-front-v2.png', completionLabel: 'Collar fitted — maintain spinal precautions',
       steps: [
         STEP('mils', 'Maintain manual stabilisation', 'A second clinician holds the head neutral without traction.', 'Do not force neutral alignment against pain, resistance or neurological change.', 'place'),
         STEP('size', 'Measure and size', 'Measure shoulder-to-mandible height and select the matching collar setting.', 'An oversized collar extends the neck; an undersized collar allows flexion.', 'prepare'),

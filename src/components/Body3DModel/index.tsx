@@ -16,7 +16,7 @@ import * as THREE from 'three';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { RotateCcw, User, Eye, Hand, Activity, Stethoscope, X, ChevronRight, ChevronDown, AlertTriangle, Compass, Unlock, Wind, Shirt } from 'lucide-react';
-import { BodyMesh, getTreatmentBayTransform, treatmentBayClinicalToWorld, type BayPatientStage } from './BodyMesh';
+import { BodyMesh, treatmentBayClinicalToWorld, type BayPatientStage } from './BodyMesh';
 import {
   derivePatientMobility,
   derivePatientPosture,
@@ -187,6 +187,7 @@ const TREATMENT_ASSET_PATHS = {
   opaFlange: '/equipment-assets/opa-flange-front-v2.png',
   ivPole: '/treatment-assets/iv-pole.svg',
   collar: '/equipment-assets/cervical-collar.webp',
+  collarFitted: '/equipment-assets/cervical-collar-fitted-front-v2.png',
   bandage: '/equipment-assets/bandages.webp',
   tourniquet: '/equipment-assets/tourniquet.webp',
   suction: '/equipment-assets/portable-suction.webp',
@@ -460,7 +461,6 @@ function TreatmentBayImmersionLayer({
   stage = 'stretcher',
   posture = null,
   mobility = 'recumbent',
-  patientWeight = 70,
   patientScale = 1,
 }: {
   appliedTreatmentIds: string[];
@@ -468,7 +468,6 @@ function TreatmentBayImmersionLayer({
   stage?: BayPatientStage;
   posture?: PatientPosture;
   mobility?: PatientMobility;
-  patientWeight?: number;
   patientScale?: number;
 }) {
   const equipment = useMemo(
@@ -483,9 +482,6 @@ function TreatmentBayImmersionLayer({
   const chestRight = treatmentBayClinicalToWorld([0.11, 1.18, 0.25], stage, posture, mobility, patientScale);
   const ivSite = treatmentBayClinicalToWorld([-0.23, 0.82, 0.24], stage, posture, mobility, patientScale);
   const headPadZ = treatmentBayClinicalToWorld([0, 1.56, 0], stage, posture, mobility, patientScale)[2];
-  const collarAnchor = treatmentBayClinicalToWorld([0, 1.46, 0.19], stage, posture, mobility, patientScale);
-  const bayRotation = getTreatmentBayTransform(stage, posture, mobility, patientScale).rotation;
-  const equipmentScale = Math.max(0.48, Math.min(1, patientScale));
 
   return (
     <group>
@@ -584,31 +580,6 @@ function TreatmentBayImmersionLayer({
           />
         </mesh>
       ))}
-      {equipment.hasCollar && (
-        <group
-          position={collarAnchor}
-          rotation={[Math.PI / 2 + bayRotation[0], bayRotation[1], bayRotation[2]]}
-          scale={equipmentScale}
-        >
-          {/* Main collar ring */}
-          <mesh
-            scale={[
-              Math.min(1.22, Math.max(0.78, patientWeight / 70)),
-              Math.min(1.22, Math.max(0.78, patientWeight / 70)),
-              1.0,
-            ]}
-            raycast={() => null}
-          >
-            <torusGeometry args={[0.13, 0.04, 8, 18]} />
-            <meshStandardMaterial color="#f5f5f4" roughness={0.45} metalness={0.15} />
-          </mesh>
-          {/* Posterior C-spine pad — extends rearward for log-roll view */}
-          <mesh position={[0, -0.08, -0.01]} raycast={() => null}>
-            <boxGeometry args={[0.18, 0.06, 0.05]} />
-            <meshStandardMaterial color="#e7e5e4" roughness={0.5} />
-          </mesh>
-        </group>
-      )}
     </group>
   );
 }
@@ -1377,6 +1348,19 @@ function AppliedOropharyngealAirway() {
   );
 }
 
+function AppliedCervicalCollar() {
+  return (
+    <div
+      data-applied-equipment="cervical-collar"
+      data-spinal-support="sized-and-fitted"
+      aria-label="Sized rigid cervical collar fitted with the chin centred and tracheal opening visible"
+      className="pointer-events-none relative h-9 w-16 translate-y-[20%] animate-in fade-in zoom-in-75 duration-300 drop-shadow-[0_4px_5px_rgba(2,44,58,0.52)]"
+    >
+      <img src={TREATMENT_ASSET_PATHS.collarFitted} alt="" draggable={false} className="h-full w-full object-contain" />
+    </div>
+  );
+}
+
 function AppliedDefibPad({ site }: { site: 'sternal' | 'apical' }) {
   return (
     <div
@@ -1772,8 +1756,8 @@ function TreatmentEquipmentOverlay({
       )}
 
       {equipment.hasCollar && (
-        <MarkerHtml position={anchor(0, 1.45, 0.22)} distanceFactor={2.0} zIndexRange={[72, 0]} interactive={false} presentation={presentation} contentScale={equipmentScale}>
-          <div data-applied-equipment="cervical-collar" className="h-10 w-16 drop-shadow-lg animate-in fade-in zoom-in-75"><img src={TREATMENT_ASSET_PATHS.collar} alt="" className="h-full w-full object-contain" /></div>
+        <MarkerHtml position={faceAnchor(0, 1.47, 0.22)} distanceFactor={2.0} zIndexRange={[72, 0]} interactive={false} presentation={posture === 'tripod' || posture === 'seated' ? 'upright' : presentation} contentScale={equipmentScale}>
+          <AppliedCervicalCollar />
         </MarkerHtml>
       )}
 
@@ -5665,7 +5649,6 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 stage={bayStage}
                 posture={patientPosture}
                 mobility={patientMobility}
-                patientWeight={caseData?.patientInfo?.weight ?? 70}
                 patientScale={patientScale}
               />
 

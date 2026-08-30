@@ -135,6 +135,10 @@ describe('hands-on treatment procedures', () => {
     expect(getHandsOnProcedurePlan('opa_insert', caseData)?.equipmentAsset).toBe('/equipment-assets/opa-flange-front-v2.png');
   });
 
+  it('uses the fitted anterior collar rather than a second loose product image', () => {
+    expect(getHandsOnProcedurePlan('cervical_collar', caseData)?.equipmentAsset).toBe('/equipment-assets/cervical-collar-fitted-front-v2.png');
+  });
+
   it('routes the transport ventilator through physical circuit setup', () => {
     const plan = getHandsOnProcedurePlan('mechanical_ventilation', caseData);
 

@@ -34,7 +34,7 @@ async function selectEquipment(name) {
 
 async function completeProcedure(title, target) {
   const dialog = page.getByRole('dialog').filter({ has: page.getByRole('heading', { name: title }) }).last();
-  const completionName = /reassess|monitor|documented|ventilation|secured|running/i;
+  const completionName = /reassess|monitor|documented|ventilation|secured|running|fitted/i;
   await dialog.waitFor({ timeout: 6000 });
   let steps = 0;
   console.log(`Verifying procedure: ${title}`);
@@ -169,6 +169,16 @@ await selectEquipment('Traction Splint');
 results.tractionSteps = await completeProcedure(/Apply a traction splint/i, 'right leg');
 results.tractionSplintOnInjuredLimb = await page.locator('[data-applied-equipment="traction-splint"]').count() > 0;
 results.siteLabelVisible = /Traction splint · right leg/i.test(await page.locator('body').innerText());
+await openKit('Exposure Pack');
+await selectEquipment('Cervical Collar');
+results.collarSteps = await completeProcedure(/Apply a cervical collar/i);
+const fittedCollar = page.locator('[data-applied-equipment="cervical-collar"][data-spinal-support="sized-and-fitted"]');
+results.collarFittedAtNeck = await fittedCollar.count() > 0;
+results.collarFitLabelVisible = /chin centred and tracheal opening visible/i.test(await fittedCollar.first().getAttribute('aria-label') ?? '');
+results.collarUsesFittedAsset = (await fittedCollar.first().locator('img').getAttribute('src')) === '/equipment-assets/cervical-collar-fitted-front-v2.png';
+await page.getByRole('button', { name: 'Examine Neck' }).click();
+await page.waitForTimeout(800);
+await page.screenshot({ path: 'test-results/cervical-collar-neck-closeup-verified.png' });
 results.errors = errors;
 
 if (results.maskSteps < 4 || !results.maskFittedToPatient
@@ -179,7 +189,9 @@ if (results.maskSteps < 4 || !results.maskFittedToPatient
   || results.ventilatorSteps < 5 || !results.ventilatorConnectedToEtTube || !results.ventilatorConnectionLabelVisible
   || results.haemorrhageSteps < 5 || !results.pressureDressingOnInjuredLimb
   || results.tractionSteps < 6
-  || !results.tractionSplintOnInjuredLimb || !results.siteLabelVisible || errors.length) {
+  || !results.tractionSplintOnInjuredLimb || !results.siteLabelVisible
+  || results.collarSteps < 5 || !results.collarFittedAtNeck || !results.collarFitLabelVisible || !results.collarUsesFittedAsset
+  || errors.length) {
   console.error(JSON.stringify(results, null, 2));
   process.exitCode = 1;
 } else {
