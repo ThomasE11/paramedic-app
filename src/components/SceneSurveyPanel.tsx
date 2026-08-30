@@ -22,7 +22,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useVoiceNarration } from '@/hooks/useVoiceNarration';
-import { inferSceneImage } from '@/lib/sceneImageSelection';
+import { inferSceneImage, sceneImageNeedsPatientOverlay } from '@/lib/sceneImageSelection';
+import { patientAgeBand, patientAgeScale } from '@/lib/patientAgePresentation';
 import { dispatchAccessNotes, mandatoryScenePpe, visibleSceneHazards } from '@/lib/sceneSafety';
 import {
   Shield, AlertTriangle, Eye, HardHat, Stethoscope, ArrowRight,
@@ -412,6 +413,26 @@ function buildSceneCallouts(caseData: CaseScenario, tone: SceneTone, sceneImage:
   const appearance = caseData.initialPresentation?.appearance || caseData.initialPresentation?.generalImpression || 'First look';
   const bystanders = caseData.sceneInfo?.bystanders || 'Bystanders';
   const hazards = (caseData.sceneInfo?.hazards || []).filter(h => !isNoHazardLabel(h));
+
+  if (sceneImageNeedsPatientOverlay(sceneImage)) {
+    const patientPosition = sceneImage.includes('y1-010-park-bicycle')
+      ? { x: 62, y: 57 }
+      : sceneImage.includes('paediatric-pool-rescue')
+        ? { x: 63, y: 62 }
+        : { x: 66, y: 54 };
+    const mechanismLabel = sceneImage.includes('y1-010-park-bicycle')
+      ? 'Bicycle / pathway'
+      : sceneImage.includes('paediatric-pool-rescue')
+        ? 'Pool / wet deck'
+        : 'Cot / access';
+
+    return [
+      { id: 'patient', label: 'Patient', value: patientCue || position, icon: Eye, ...patientPosition, align: 'right' },
+      { id: 'mechanism', label: mechanismLabel, value: hazards[0] || caseData.sceneInfo?.environment || 'Inspect the immediate scene', icon: AlertTriangle, x: 29, y: 38 },
+      { id: 'first-look', label: 'First look', value: appearance, icon: Search, x: 76, y: 23, align: 'right' },
+      { id: 'bystanders', label: 'Bystanders', value: bystanders, icon: Users, x: 24, y: 70 },
+    ];
+  }
 
   if (sceneImage.includes('y2-009-construction-office-arrest')) {
     return [
@@ -1190,8 +1211,39 @@ function inferPatientVisualCue(caseData: CaseScenario): string {
 // Procedural patient figure that mirrors the case's actual injuries — leg
 // rotation, deformity, pallor, etc. Falls back to a generic posture when no
 // anatomical findings are present in the case data.
-function ProceduralPatient({ caseData, tone }: { caseData: CaseScenario; tone: SceneTone }) {
+function ProceduralPatient({
+  caseData,
+  tone,
+  sceneImage = null,
+}: {
+  caseData: CaseScenario;
+  tone: SceneTone;
+  sceneImage?: string | null;
+}) {
   const anatomy = inferAnatomy(caseData);
+  const ageBand = patientAgeBand(caseData.patientInfo?.age);
+  const ageScale = patientAgeScale(caseData.patientInfo?.age);
+  const headSize = ageBand === 'infant'
+    ? 'h-14 w-14 -top-11'
+    : ageBand === 'toddler'
+      ? 'h-12 w-12 -top-9'
+      : ageBand === 'child'
+        ? 'h-11 w-11 -top-8'
+        : ageBand === 'adolescent'
+          ? 'h-10 w-10 -top-8'
+          : 'h-9 w-9 -top-7';
+  const presentationText = [
+    caseData.initialPresentation?.position,
+    caseData.initialPresentation?.generalImpression,
+  ].filter(Boolean).join(' ');
+  const recumbent = /supine|lying|on (?:the )?(?:ground|floor|deck|towel|bed|cot)|unresponsive/i.test(presentationText);
+  const placement = sceneImage?.includes('y1-010-park-bicycle')
+    ? { left: '62%', bottom: '11%' }
+    : sceneImage?.includes('paediatric-pool-rescue')
+      ? { left: '63%', bottom: '28%' }
+      : sceneImage?.includes('infant-nursery')
+        ? { left: '66%', bottom: '42%' }
+        : { left: '50%', bottom: '3rem' };
 
   // Skin tone reflects pallor / cyanosis when reported
   const torsoSkin = anatomy.cyanotic
@@ -1243,7 +1295,17 @@ function ProceduralPatient({ caseData, tone }: { caseData: CaseScenario; tone: S
   const rightL = legStyle('right');
 
   return (
-    <div className={`absolute bottom-12 left-1/2 -translate-x-1/2 ${tone.patientPose}`}>
+    <div
+      className="absolute z-[6]"
+      data-patient-age-band={ageBand}
+      style={{
+        left: placement.left,
+        bottom: placement.bottom,
+        transform: `translateX(-50%) rotate(${recumbent ? 88 : 0}deg) scale(${ageScale})`,
+        transformOrigin: 'bottom center',
+      }}
+    >
+      <div className={`relative ${tone.patientPose}`}>
       {/* Torso — breathes at the case's respiratory rate. Apneic patients
           stay perfectly still, which reads as "something is very wrong"
           even before the student reads the vitals. */}
@@ -1252,7 +1314,7 @@ function ProceduralPatient({ caseData, tone }: { caseData: CaseScenario; tone: S
         style={breathStyle}
       >
         {/* Head */}
-        <div className={`absolute -top-7 left-1/2 h-9 w-9 -translate-x-1/2 rounded-full bg-gradient-to-b ${torsoSkin} ${anatomy.facialInjury ? 'ring-2 ring-rose-500/70 ring-offset-1 ring-offset-transparent' : ''}`} />
+        <div className={`absolute left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-b ${torsoSkin} ${headSize} ${anatomy.facialInjury ? 'ring-2 ring-rose-500/70 ring-offset-1 ring-offset-transparent' : ''}`} />
         {/* Arms */}
         <div className={`absolute -left-7 top-7 h-3 w-12 rounded-full ${tone.accent} opacity-70 rotate-[-22deg] ${anatomy.leftArm.deformed ? 'ring-2 ring-rose-500/70' : ''}`} />
         <div className={`absolute -right-7 top-7 h-3 w-12 rounded-full ${tone.accent} opacity-70 rotate-[22deg] ${anatomy.rightArm.deformed ? 'ring-2 ring-rose-500/70' : ''}`} />
@@ -1276,6 +1338,7 @@ function ProceduralPatient({ caseData, tone }: { caseData: CaseScenario; tone: S
           {leftL.externallyRotated || rightL.externallyRotated ? 'Ext. rotation' : leftL.shortened || rightL.shortened ? 'Shortened' : 'Deformity'}
         </div>
       )}
+      </div>
     </div>
   );
 }
@@ -1429,6 +1492,9 @@ function SceneArrivalVisual({
               <SceneSettingDetail tone={tone} />
               <ProceduralPatient caseData={caseData} tone={tone} />
             </>
+          )}
+          {sceneImageNeedsPatientOverlay(sceneImage) && (
+            <ProceduralPatient caseData={caseData} tone={tone} sceneImage={sceneImage} />
           )}
           {sceneImage && (
             <div className="absolute left-4 top-4 z-10 rounded-full border border-white/15 bg-black/50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/85 shadow-xl backdrop-blur-md">

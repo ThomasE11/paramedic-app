@@ -59,6 +59,7 @@ export const KNOWN_SCENE_ASSETS = new Set<string>([
   '/scene-assets/home-medical-male-dubai-apartment.png',
   '/scene-assets/home-meningitis-young-adult-uae.png',
   '/scene-assets/home-pediatric-uae-family.png',
+  '/scene-assets/infant-nursery-environment.png',
   '/scene-assets/home-pulmonary-oedema-male-uae.png',
   '/scene-assets/home-stroke-elderly-male-uae.png',
   '/scene-assets/hotel-room-medical-uae.png',
@@ -77,6 +78,7 @@ export const KNOWN_SCENE_ASSETS = new Set<string>([
   '/scene-assets/office-abdominal-male-uae.png',
   '/scene-assets/office-medical-dubai.png',
   '/scene-assets/outdoor-heat-illness-uae.png',
+  '/scene-assets/paediatric-pool-rescue-environment.png',
   '/scene-assets/parking-garage-opioid-od-uae.png',
   '/scene-assets/postd-001-post-op-wound-infection-ajman.png',
   '/scene-assets/pedestrian-road-night-female-45.png',
@@ -98,6 +100,7 @@ export const KNOWN_SCENE_ASSETS = new Set<string>([
   '/scene-assets/trauma-011-industrial-hand-amputation.png',
   '/scene-assets/water-beach-drowning-dubai.png',
   '/scene-assets/y1-008-university-library-panic-female.png',
+  '/scene-assets/y1-010-park-bicycle-wrist-fall.png',
   '/scene-assets/y2-004-workshop-flash-burn.png',
   '/scene-assets/y2-005-office-ectopic-lower-abdo.png',
   '/scene-assets/y2-009-construction-office-arrest.png',
@@ -115,8 +118,8 @@ export const PROMPT_SCENE_IMAGE_OVERRIDES: Record<string, string> = {
   'cardiac-012': '/scene-assets/cardiac-012-rehab-dizziness-pacemaker.png',
   'cardiac-ecg-001': '/scene-assets/cardiac-ecg-001-epigastric-mi-burdubai.png',
   'cardiac-013': '/scene-assets/gym-cardiac-arrest-male-dubai.png',
-  'cardiac-014': '/scene-assets/water-beach-drowning-dubai.png',
-  'cardiac-017': '/scene-assets/home-pediatric-uae-family.png',
+  'cardiac-014': '/scene-assets/paediatric-pool-rescue-environment.png',
+  'cardiac-017': '/scene-assets/infant-nursery-environment.png',
   'tox-002': '/scene-assets/parking-garage-opioid-od-uae.png',
   'cardiac-007': '/scene-assets/hotel-room-medical-uae.png',
   'resp-004': '/scene-assets/hotel-room-medical-uae.png',
@@ -162,15 +165,29 @@ export const PROMPT_SCENE_IMAGE_OVERRIDES: Record<string, string> = {
   'trauma-007': '/scene-assets/trauma-007-mvc-splenic-luq.png',
   'trauma-010': '/scene-assets/beach-spinal-injury-uae.png',
   'trauma-011': '/scene-assets/trauma-011-industrial-hand-amputation.png',
-  'trauma-012': '/scene-assets/water-beach-drowning-dubai.png',
+  'trauma-012': '/scene-assets/paediatric-pool-rescue-environment.png',
   'y1-005': '/scene-assets/home-pediatric-uae-family.png',
   'y1-008': '/scene-assets/y1-008-university-library-panic-female.png',
+  'y1-010': '/scene-assets/y1-010-park-bicycle-wrist-fall.png',
   'y2-005': '/scene-assets/y2-005-office-ectopic-lower-abdo.png',
   'y2-009': '/scene-assets/y2-009-construction-office-arrest.png',
   'y2-004': '/scene-assets/y2-004-workshop-flash-burn.png',
   'litfl-012': '/scene-assets/staff-accommodation-collapse-sharjah.png',
   'multi-001': '/scene-assets/mci-highway-uae.png',
 };
+
+const PATIENT_OVERLAY_SCENE_ASSETS = new Set<string>([
+  // These are deliberately patient-free environment plates. The scene survey
+  // adds the case-driven procedural patient at the correct age and posture,
+  // avoiding an adult stock patient in paediatric/infant scenarios.
+  '/scene-assets/infant-nursery-environment.png',
+  '/scene-assets/paediatric-pool-rescue-environment.png',
+  '/scene-assets/y1-010-park-bicycle-wrist-fall.png',
+]);
+
+export function sceneImageNeedsPatientOverlay(src: string | null): boolean {
+  return Boolean(src && PATIENT_OVERLAY_SCENE_ASSETS.has(src));
+}
 
 const CURRENT_CONTEXT_OVERRIDES: Record<string, string> = {
   // Closest currently available images while the exact prompt targets above
