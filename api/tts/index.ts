@@ -57,8 +57,8 @@ export default async function handler(req: BodyCarrier, res: ServerResponse) {
     return;
   }
 
-  const key = process.env.ELEVENLABS_API_KEY;
-  if (!key) {
+  const key = process.env.ELEVENLABS_API_KEY?.trim();
+  if (!key || !/^sk_[A-Za-z0-9_-]{20,}$/.test(key)) {
     sendText(res, 503, 'ELEVENLABS_API_KEY not configured');
     return;
   }

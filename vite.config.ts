@@ -21,7 +21,12 @@ import { defineConfig, loadEnv, type Plugin } from "vite"
  *   ELEVENLABS_VOICE_NARRATOR=<voiceId>
  */
 function elevenLabsTtsProxy(env: Record<string, string>): Plugin {
-  const KEY = env.ELEVENLABS_API_KEY || process.env.ELEVENLABS_API_KEY || ''
+  const KEY = (env.ELEVENLABS_API_KEY || process.env.ELEVENLABS_API_KEY || '').trim()
+  // ElevenLabs account/key IDs are easy to paste into .env by mistake. They
+  // are non-empty but cannot authenticate; advertising them as healthy makes
+  // every narration generate a noisy 400 before falling back. Real secret
+  // keys use the documented sk_ prefix and are substantially longer.
+  const HAS_PLAUSIBLE_KEY = /^sk_[A-Za-z0-9_-]{20,}$/.test(KEY)
   const MODEL = env.ELEVENLABS_MODEL || process.env.ELEVENLABS_MODEL || 'eleven_turbo_v2_5'
   const VOICES: Record<string, string> = {
     // Long-standing ElevenLabs default voices (overridable via env).
@@ -33,17 +38,37 @@ function elevenLabsTtsProxy(env: Record<string, string>): Plugin {
   return {
     name: 'elevenlabs-tts-proxy',
     configureServer(server) {
+      // Browser probes to a missing localhost service produce an unavoidable
+      // ERR_CONNECTION_REFUSED console entry even when fetch() is caught. Do
+      // the optional Supertonic health check from the Vite process instead and
+      // return a clean same-origin result; actual synthesis remains direct once
+      // the service has been confirmed reachable.
+      server.middlewares.use('/api/supertonic/health', async (_req, res) => {
+        try {
+          const upstream = await fetch('http://127.0.0.1:7788/v1/health', {
+            signal: AbortSignal.timeout(800),
+          })
+          res.statusCode = 200
+          res.setHeader('Content-Type', 'application/json')
+          res.end(JSON.stringify({ ok: upstream.ok, provider: 'supertonic' }))
+        } catch {
+          res.statusCode = 200
+          res.setHeader('Content-Type', 'application/json')
+          res.end(JSON.stringify({ ok: false, provider: 'supertonic' }))
+        }
+      })
+
       // Health/config probe — the client uses this to decide whether to route
       // narration through ElevenLabs. Registered before /api/tts so the more
       // specific path wins.
       server.middlewares.use('/api/tts/health', (_req, res) => {
         res.setHeader('Content-Type', 'application/json')
-        res.end(JSON.stringify({ ok: !!KEY, provider: 'elevenlabs', model: MODEL }))
+        res.end(JSON.stringify({ ok: HAS_PLAUSIBLE_KEY, provider: 'elevenlabs', model: MODEL }))
       })
 
       server.middlewares.use('/api/tts', (req, res) => {
         if (req.method !== 'POST') { res.statusCode = 405; res.end('Method Not Allowed'); return }
-        if (!KEY) { res.statusCode = 503; res.end('ELEVENLABS_API_KEY not set'); return }
+        if (!HAS_PLAUSIBLE_KEY) { res.statusCode = 503; res.end('ELEVENLABS_API_KEY not configured'); return }
         let body = ''
         req.on('data', (chunk) => { body += chunk })
         req.on('end', async () => {

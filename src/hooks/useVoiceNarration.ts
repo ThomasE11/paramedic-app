@@ -40,7 +40,11 @@ const VOICE_PREF_KEY = 'paramedic-studio-voice-enabled';
 // We synthesise sentence-by-sentence with one-ahead prefetch, so the FIRST
 // words start in ~1.5s instead of waiting for the whole paragraph.
 const SUPERTONIC_URL = 'http://127.0.0.1:7788/v1/tts';
-const SUPERTONIC_HEALTH = 'http://127.0.0.1:7788/v1/health';
+// The dev server performs this optional localhost probe on the browser's
+// behalf. A caught browser fetch to a missing port still emits a red
+// ERR_CONNECTION_REFUSED resource error; the same-origin proxy can degrade
+// quietly to Web Speech while preserving automatic Supertonic discovery.
+const SUPERTONIC_HEALTH = '/api/supertonic/health';
 // Diffusion steps — quality/speed tradeoff. The server is SERIAL (~50ms/char
 // at steps 4), so to keep latency reasonable on a one-shot whole-utterance
 // synth we run at 3 (still clean, ~25-35% faster than 4).
@@ -450,11 +454,12 @@ function probeSupertonic(): Promise<boolean> {
     try {
       const ctrl = new AbortController();
       const timer = setTimeout(() => ctrl.abort(), 800);
-      // /v1/health is the real health route — checking it (rather than /)
-      // keeps the devtools console clean of 404s during the probe.
+      // Same-origin dev proxy checks Supertonic's real /v1/health route.
       const res = await fetch(SUPERTONIC_HEALTH, { method: 'GET', signal: ctrl.signal });
       clearTimeout(timer);
-      return res.ok;
+      if (!res.ok) return false;
+      const json = await res.json().catch(() => ({} as { ok?: boolean }));
+      return json.ok === true;
     } catch {
       return false;
     }
