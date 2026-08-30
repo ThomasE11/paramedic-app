@@ -7,18 +7,11 @@ clear.
 
 ## Active policy
 
-- `patient.glb` - current known-good fallback for unknown and male patients.
-  It is not the final visual standard, but it is safer than showing a weak
-  procedural mannequin or a female-looking male model.
-- `patient-female.glb` - active for female cases. Source: Ready Player Me
-  `brunette-t.glb` distributed through the TalkingHead repository. License:
-  CC BY-NC 4.0, so keep the non-commercial constraint visible before any
-  commercial deployment.
-- `patient-male.glb` - intentionally absent from `public/models` until a
-  validated male export exists. The rejected TalkingHead/MPFB candidate has
-  female/casual-suit mesh names and reads incorrectly for male examination.
-  Do not route male cases to this filename until a validated male export
-  replaces it.
+- `patient.glb` - neutral legacy fallback only when sex/age are unavailable.
+- `patient-male.glb` and `patient-female.glb` - active CC0 MPFB adult shells.
+- `patient-{infant,toddler,child,adolescent}-{male,female}.glb` - active CC0
+  MPFB developmental shells. These carry true age-proportioned geometry; the
+  runtime also normalises each to an interpolated real-world standing height.
 - `open3d-skeleton.glb` - active anatomy reference layer. Source:
   AnatomyTOOL/Open3DModel overview skeleton GLB. It is used as a transparent
   skeletal reference in the exam canvas, not as the patient skin.
@@ -45,10 +38,9 @@ clear.
 
 ## Replacement route for the patient shell
 
-1. Generate sex-specific patient shells in MakeHuman or MPFB:
-   - adult male base body for male cases
-   - adult female base body for female cases
-   - optional elderly and paediatric variants later
+1. Generate sex- and age-specific patient shells in MakeHuman or MPFB. The
+   shipped matrix covers male/female infant, toddler, child, adolescent and
+   adult patients.
 2. Export GLB with an A-pose or relaxed neutral stance, no stylised clothing,
    no hair geometry that hides scalp/face exam, and body proportions that read
    clearly as the intended sex and age group.
@@ -94,8 +86,9 @@ Hand the finished `.glb` to the app and it drops in behind the existing
 - Textures **≤ 2048²**, baked PBR (base colour + normal + ORM). No 4K skin.
 - **A-pose or relaxed neutral stance**, feet translated to **Y = 0**.
 - No stylised clothing; no hair geometry that occludes scalp/face/airway exam.
-- One model per sex (`patient-male.glb`, `patient-female.glb`); elderly/paediatric
-  variants later.
+- One model per sex and developmental band. The path convention is
+  `patient-{infant,toddler,child,adolescent}-{male,female}.glb`, with adult
+  paths remaining `patient-male.glb` and `patient-female.glb`.
 
 ### Rig
 - Humanoid skeleton, bones prefixed **`mixamorig:*`** (the app's camera + region
@@ -200,6 +193,33 @@ The pipeline rejects missing morphs, incomplete weight coverage, poor
 anatomical weight alignment and animation clips without articulated limb
 motion. It exports only patient/eyes/rig: no Blender camera, light or helper
 geometry.
+
+## SHIPPED 2026-08-30 — age-proportioned paediatric matrix
+
+The live patient now resolves both sex and developmental band. Every one of
+the eight paediatric GLBs is generated from a baked MPFB macro body—not an
+adult uniformly shrunk in the browser—and includes the same runtime contract
+as the adult shells:
+
+- 52-bone fitted Mixamo skin with `idle`, `walk`, `agree`, `headShake` and
+  `sad_pose` clips;
+- 13 breathing, finding, posture, speech and distress morph targets;
+- separate sclera, iris and physical 5 mm baseline pupil geometry;
+- 2048 px CC0 skin atlas; Draco-compressed; each file below 10 MB.
+
+Reproduce a band with the age macro (`0.0` infant, `0.08` toddler, `0.18`
+child, `0.42` adolescent), then run the same clinical-morph, viseme, eye and
+rig passes used for the adults:
+
+```
+Blender --background --python scripts/anatomy-models/generate-mpfb-age-patient.py -- \
+  female 0.18 public/models/patient-female.glb /tmp/patient-child-female-raw.glb
+```
+
+Runtime clothing for paediatric bodies is cut from and skinned to the actual
+age-specific mesh so adult garment geometry cannot float around a child.
+Assessment hit coordinates, cameras, body-attached equipment, cables, pads,
+collars and head supports are scaled from the same physical-height value.
 
 ### Still to improve (future)
 - Skin has no normal/SSS maps (diffuse only) — could bake MPFB's procedural pore

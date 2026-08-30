@@ -35,13 +35,14 @@ from mathutils.kdtree import KDTree
 
 
 argv = sys.argv[sys.argv.index("--") + 1 :] if "--" in sys.argv else []
-if len(argv) != 4:
+if len(argv) not in {4, 5}:
     raise SystemExit(
         "usage: rig-patient.py <male|female> <active.glb> "
-        "<animation-donor.glb> <output.glb>"
+        "<animation-donor.glb> <output.glb> [age-macro]"
     )
 
-SEX, ACTIVE_GLB, ANIMATION_DONOR_GLB, OUTPUT_GLB = argv
+SEX, ACTIVE_GLB, ANIMATION_DONOR_GLB, OUTPUT_GLB = argv[:4]
+AGE_MACRO = float(argv[4]) if len(argv) == 5 else 0.55
 SEX = SEX.lower()
 if SEX not in {"male", "female"}:
     raise SystemExit("sex must be 'male' or 'female'")
@@ -130,7 +131,7 @@ def enable_mpfb():
 def build_weight_donor(human_service, target_service):
     macro = target_service.get_default_macro_info_dict()
     macro["gender"] = 1.0 if SEX == "male" else 0.0
-    macro["age"] = 0.55
+    macro["age"] = AGE_MACRO
     macro["height"] = 0.55 if SEX == "male" else 0.45
 
     human = human_service.create_human(
@@ -162,10 +163,28 @@ def build_weight_donor(human_service, target_service):
         for vertex in human.data.vertices
         if any(group.group == body_group_index for group in vertex.groups)
     ]
-    return human, armature, body_indices
+    # `human.data.vertices` is the neutral adult Basis. MPFB keeps age/sex as
+    # active shape keys, so an infant target would otherwise receive weights
+    # from adult-space nearest neighbours. Capture the evaluated age-specific
+    # coordinates while preserving stable source vertex indices and weights.
+    shape_keys = human.data.shape_keys
+    basis = shape_keys.key_blocks.get("Basis") if shape_keys else None
+    if basis is None:
+        raise RuntimeError("MPFB weight donor has no Basis shape key")
+    active_keys = [
+        key for key in shape_keys.key_blocks
+        if key.name != "Basis" and key.value
+    ]
+    source_positions = []
+    for index, basis_point in enumerate(basis.data):
+        position = basis_point.co.copy()
+        for key in active_keys:
+            position += (key.data[index].co - basis_point.co) * key.value
+        source_positions.append(position)
+    return human, armature, body_indices, source_positions
 
 
-def transfer_weights(source, source_indices, target, armature):
+def transfer_weights(source, source_indices, source_positions, target, armature):
     # glTF splits MPFB vertices at UV/material seams (13,380 Blender body
     # vertices become ~14,500 runtime vertices), so exported vertex indices
     # are no longer one-to-one.  Positions remain stable.  A nearest-vertex
@@ -173,7 +192,7 @@ def transfer_weights(source, source_indices, target, armature):
     # tolerates the male shell's later jaw/shoulder silhouette refinement.
     tree = KDTree(len(source_indices))
     for source_index in source_indices:
-        tree.insert(source.data.vertices[source_index].co, source_index)
+        tree.insert(source_positions[source_index], source_index)
     tree.balance()
 
     source_group_names = {
@@ -263,7 +282,15 @@ def attach_animation_clips(armature, donor_objects):
     # into long spikes. Retarget each sampled pose in armature space instead:
     # apply the donor's global rotation/position delta to the fitted bone's own
     # rest matrix, then bake the resulting local transforms onto a fresh action.
-    translation_scale = donor_armature.scale.x / max(armature.scale.x, 1e-8)
+    def rig_world_height(rig):
+        points = [
+            rig.matrix_world @ point
+            for bone in rig.data.bones
+            for point in (bone.head_local, bone.tail_local)
+        ]
+        return max(point.z for point in points) - min(point.z for point in points)
+
+    translation_scale = rig_world_height(armature) / max(rig_world_height(donor_armature), 1e-8)
     shared_bones = [
         bone.name for bone in armature.data.bones
         if bone.name in donor_armature.data.bones
@@ -447,13 +474,13 @@ def main():
         raise RuntimeError(f"active patient is missing morphs: {missing_morphs}")
     strip_existing_rig(body)
 
-    human, armature, body_indices = build_weight_donor(
+    human, armature, body_indices, source_positions = build_weight_donor(
         human_service, target_service
     )
     armature.name = "PatientRig"
     armature.data.name = "PatientRig"
     coverage, weight_p99 = transfer_weights(
-        human, body_indices, body, armature
+        human, body_indices, source_positions, body, armature
     )
     eye_roots = parent_eyes_to_head(active_objects, armature)
 

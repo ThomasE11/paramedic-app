@@ -94,6 +94,7 @@ def add_viseme_open(obj, ax, lo, span):
     is +z on this asset (A1 masculinize: z>0 = front)."""
     key = obj.shape_key_add(name="viseme_open", from_mix=False)
     mesh = obj.data
+    scale = span / 1.8
     moved = 0
     mouth_lo, mouth_hi = 0.86, 0.925
     mid = mouth_lo + (mouth_hi - mouth_lo) * 0.5  # lip line fraction
@@ -108,8 +109,8 @@ def add_viseme_open(obj, ax, lo, span):
         side = 1.0 if f >= mid else -1.0       # +1 below lip line (lower lip down)
         p = key.data[i].co
         newco = p.copy()
-        newco[ax] = p[ax] + 0.15 * side * w    # part: lower lip down 15cm-scale, upper lip up
-        newco.z = p.z - 0.05 * w               # slight back on the lower lip
+        newco[ax] = p[ax] + 0.15 * scale * side * w
+        newco.z = p.z - 0.05 * scale * w
         key.data[i].co = newco
         moved += 1
     key.value = 0.0
@@ -125,6 +126,7 @@ def add_pose(obj, name, ax, lo, span, mode):
     """
     key = obj.shape_key_add(name=name, from_mix=False)
     mesh = obj.data
+    scale = span / 1.8
     moved = 0
     for i, v in enumerate(mesh.vertices):
         f = (v.co[ax] - lo) / span
@@ -136,16 +138,15 @@ def add_pose(obj, name, ax, lo, span, mode):
             # The source mesh is an A-pose, so bring each distal arm inward and
             # forward until the hands brace on the upper thighs.
             lean = smoothstep(0.5, 0.95, f)
-            p.y -= 0.18 * lean
+            p.y -= 0.18 * scale * lean
             sh = smoothstep(0.74, 0.84, f) * (1.0 - smoothstep(0.86, 0.92, f))
-            p[ax] += 0.022 * sh
-            scale = span / 1.8
+            p[ax] += 0.022 * scale * sh
             if 0.48 <= f <= 0.84 and abs(v.co.x) > 0.18 * scale:
                 side = 1.0 if v.co.x > 0 else -1.0
                 distal = smoothstep(0.18 * scale, 0.54 * scale, abs(v.co.x))
                 target_x = side * 0.20 * scale
                 p.x += (target_x - v.co.x) * distal
-                p.y -= 0.34 * distal
+                p.y -= 0.34 * scale * distal
                 target_h = lo + 0.43 * span
                 p[ax] += (target_h - v.co[ax]) * 0.92 * distal
                 d += distal
@@ -153,15 +154,15 @@ def add_pose(obj, name, ax, lo, span, mode):
         elif mode == "supine":
             # gentle settle: whole upper body eases back + shoulders relax down
             up = smoothstep(0.4, 1.0, f)
-            p.z -= 0.02 * up
-            p[ax] -= 0.010 * up
+            p.z -= 0.02 * scale * up
+            p[ax] -= 0.010 * scale * up
             d = up
         elif mode == "recovery":
             # roll toward patient's right (x<0): lateral shift growing with height
             up = smoothstep(0.45, 1.0, f)
             side = 1.0 if v.co.x < 0 else 0.3
-            p.x -= 0.03 * up * side
-            p.z += 0.015 * up * side
+            p.x -= 0.03 * scale * up * side
+            p.z += 0.015 * scale * up * side
             d = up
         if d > 0:
             key.data[i].co = p
@@ -190,16 +191,16 @@ def add_motion(obj, name, ax, lo, span, mode):
             upper = smoothstep(0.62, 0.80, f) * (1.0 - smoothstep(0.89, 0.96, f))
             shoulder = smoothstep(0.73, 0.80, f) * (1.0 - smoothstep(0.84, 0.90, f))
             if upper > 0:
-                p.y += 0.030 * upper
-                p[ax] += 0.018 * shoulder
+                p.y += 0.030 * scale * upper
+                p[ax] += 0.018 * scale * shoulder
                 changed = True
 
         elif mode == "wince":
             torso = smoothstep(0.50, 0.72, f) * (1.0 - smoothstep(0.92, 0.99, f))
             if torso > 0:
                 lateral = smoothstep(0.12 * scale, 0.42 * scale, abs(v.co.x))
-                p.y += 0.035 * torso
-                p.x -= math.copysign(0.018 * torso * lateral, v.co.x)
+                p.y += 0.035 * scale * torso
+                p.x -= math.copysign(0.018 * scale * torso * lateral, v.co.x)
                 changed = True
 
         elif mode == "clutch":
@@ -207,9 +208,9 @@ def add_motion(obj, name, ax, lo, span, mode):
             # additive posture blending cannot fold the limb through the torso.
             if 0.48 <= f <= 0.84 and v.co.x > 0.18 * scale:
                 distal = smoothstep(0.18 * scale, 0.52 * scale, v.co.x)
-                p.x -= 0.22 * distal
-                p.y += 0.16 * distal
-                p[ax] += 0.055 * distal
+                p.x -= 0.22 * scale * distal
+                p.y += 0.16 * scale * distal
+                p[ax] += 0.055 * scale * distal
                 changed = True
 
         elif mode == "seizure":
@@ -219,22 +220,22 @@ def add_motion(obj, name, ax, lo, span, mode):
                 distal = smoothstep(0.16 * scale, 0.52 * scale, abs(v.co.x))
                 lower = 1.0 - smoothstep(0.50, 0.66, f)
                 amount = max(distal, lower * 0.7)
-                p.y += side * 0.055 * amount
-                p[ax] += side * 0.028 * amount
+                p.y += side * 0.055 * scale * amount
+                p[ax] += side * 0.028 * scale * amount
                 changed = True
 
         elif mode == "tremor":
             if 0.42 <= f <= 0.72 and abs(v.co.x) > 0.42 * scale:
                 side = 1.0 if v.co.x >= 0 else -1.0
-                p.y += side * 0.018
-                p[ax] += 0.009
+                p.y += side * 0.018 * scale
+                p[ax] += 0.009 * scale
                 changed = True
 
         elif mode == "agitation":
             upper = smoothstep(0.68, 0.90, f)
             if upper > 0:
-                p.x += 0.020 * upper
-                p.y += 0.012 * upper
+                p.x += 0.020 * scale * upper
+                p.y += 0.012 * scale * upper
                 changed = True
 
         if changed:

@@ -36,12 +36,14 @@ AO_STRENGTH = float(argv[argv.index("--ao-strength") + 1]) if "--ao-strength" in
 AO_SAMPLES = int(argv[argv.index("--ao-samples") + 1]) if "--ao-samples" in argv else 32
 SKIP_AO = "--skip-ao" in argv
 
-EYE_RADIUS = 0.011      # raw/glTF metres (~22mm eyeball)
-EYE_RECESS = 0.0095     # centre this far behind the socket surface
-IRIS_RADIUS = 0.006     # ~12mm iris
-IRIS_OFFSET = 0.0115    # iris plane, from eye centre toward the front
+# Adult reference dimensions. Age-specific meshes scale these after import;
+# pupil diameter remains a real millimetre measurement at every age.
+ADULT_EYE_RADIUS = 0.011
+ADULT_EYE_RECESS = 0.0095
+ADULT_IRIS_RADIUS = 0.006
+ADULT_IRIS_OFFSET = 0.0115
 PUPIL_RADIUS = 0.0025   # 5mm pupil at scale 1 (case baseline)
-PUPIL_OFFSET = 0.0122   # slightly in front of the iris (no z-fighting)
+ADULT_PUPIL_OFFSET = 0.0122
 
 
 def srgb_to_linear(c):
@@ -128,6 +130,20 @@ mesh = body.data
 mesh.calc_loop_triangles()
 uv_layer = mesh.uv_layers.active.data
 verts = mesh.vertices
+body_min_z = min(vertex.co.z for vertex in verts)
+body_max_z = max(vertex.co.z for vertex in verts)
+body_height = body_max_z - body_min_z
+head_floor = body_min_z + body_height * 0.78
+# Newborn eyeballs are already roughly three quarters of adult diameter and
+# approach adult size through childhood; do not uniformly shrink them with the
+# body or an infant reads as a miniature adult.
+eye_scale = max(0.74, min(1.0, 0.74 + 0.26 * ((body_height - 0.65) / 1.08)))
+EYE_RADIUS = ADULT_EYE_RADIUS * eye_scale
+EYE_RECESS = ADULT_EYE_RECESS * eye_scale
+IRIS_RADIUS = ADULT_IRIS_RADIUS * max(0.84, eye_scale)
+IRIS_OFFSET = ADULT_IRIS_OFFSET * eye_scale
+PUPIL_OFFSET = ADULT_PUPIL_OFFSET * eye_scale
+print(f"body height={body_height:.3f}m eye scale={eye_scale:.3f}")
 
 
 def uv_to_surface(u, v):
@@ -148,8 +164,9 @@ def uv_to_surface(u, v):
         p = wa * verts[i0].co + wb * verts[i1].co + wc * verts[i2].co
         n = (wa * verts[i0].normal + wb * verts[i1].normal + wc * verts[i2].normal).normalized()
         candidates.append((p, n))
-    # Eyes live on the head (Blender z ~1.5) on the face front (most -Y).
-    head = [c for c in candidates if c[0].z > 1.3]
+    # Eyes live in the upper 22% of the patient, whether this is a 66cm infant
+    # or a 1.8m adult, and on the face front (most -Y).
+    head = [c for c in candidates if c[0].z > head_floor]
     if not head:
         raise RuntimeError(f"UV ({u:.4f},{v:.4f}) found no head triangle (candidates: {candidates})")
     return min(head, key=lambda c: c[0].y)

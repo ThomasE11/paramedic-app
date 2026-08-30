@@ -41,6 +41,10 @@ import {
 import type { ThreeEvent } from '@react-three/fiber';
 import { HOVER_COLOR, ASSESSED_COLOR, GUIDED_NEXT_COLOR, GUIDED_LOCKED_COLOR } from './bodyRegions';
 import type { SecondaryAssessmentStep } from '@/data/assessmentFramework';
+import {
+  patientExpectedHeightMetres,
+  patientModelPath,
+} from '@/lib/patientAgePresentation';
 
 export type SurfaceSamplerSpace = 'author' | 'mesh';
 
@@ -68,11 +72,13 @@ export type BayPatientStage = 'stretcher' | 'floor';
 // bounds. The road is y=-0.05 and the stretcher sheet top is y=0.5025; these
 // stage origins place the active posture against those support planes.
 const BAY_STAGE_Y: Record<BayPatientStage, number> = { stretcher: 0.94, floor: 0.39 };
+const BAY_SUPPORT_Y: Record<BayPatientStage, number> = { stretcher: 0.5025, floor: -0.05 };
 
 export function getTreatmentBayTransform(
   stage: BayPatientStage = 'stretcher',
   posture: string | null = null,
   mobility: PatientMobility = 'recumbent',
+  patientScale = 1,
 ) {
   if (mobility === 'standing' || mobility === 'pacing') {
     return {
@@ -95,11 +101,19 @@ export function getTreatmentBayTransform(
   // The refined tripod morph raises the knees and hangs the lower legs from
   // the seat. Ground the soles on the same support plane as the room instead
   // of retaining the old straight-legged morph's stretcher-height offset.
-  const yOffset = posture === 'tripod' ? -1.23 : 0;
   const rollSide = posture === 'recovery' ? Math.PI / 2 : 0;
   const tiltSide = posture === 'recovery' ? 0.1 : 0;
+  const stageY = BAY_SUPPORT_Y[stage] + (BAY_STAGE_Y[stage] - BAY_SUPPORT_Y[stage]) * patientScale;
+  // The tripod morph raises the soles about 0.23 m above its authoring origin.
+  // Calibrate that offset around the room floor and scale it with the body;
+  // otherwise a toddler inherits the adult -0.29 m root and sinks through the
+  // scene. Tripod always represents a seated/upright patient, not a body lying
+  // on either treatment support surface.
+  const positionY = posture === 'tripod'
+    ? BAY_SUPPORT_Y.floor + (BAY_STAGE_Y.stretcher - 1.23 - BAY_SUPPORT_Y.floor) * patientScale
+    : stageY;
   return {
-    position: [0, BAY_STAGE_Y[stage] + yOffset, 0.78] as [number, number, number],
+    position: [0, positionY, 0.78] as [number, number, number],
     rotation: [baseRotation + pitchUp, rollSide, tiltSide] as [number, number, number],
     scale: 1.04,
   };
@@ -110,9 +124,11 @@ export function treatmentBayClinicalToWorld(
   stage: BayPatientStage = 'stretcher',
   posture: string | null = null,
   mobility: PatientMobility = 'recumbent',
+  patientScale = 1,
 ): [number, number, number] {
-  const transform = getTreatmentBayTransform(stage, posture, mobility);
+  const transform = getTreatmentBayTransform(stage, posture, mobility, patientScale);
   const projected = new THREE.Vector3(...point)
+    .multiplyScalar(patientScale)
     .multiplyScalar(transform.scale)
     .applyEuler(new THREE.Euler(...transform.rotation))
     .add(new THREE.Vector3(...transform.position));
@@ -143,6 +159,9 @@ interface BodyMeshProps {
   /** Optional patient gender — switches to a sex-matched mesh when the
    * project has a complete, browser-safe asset for that sex. */
   patientGender?: 'male' | 'female';
+  /** Patient age in years, including decimals for infants. Selects a
+   * developmentally proportioned mesh and its real-world standing height. */
+  patientAge?: number;
   /** Fade the surface patient when an internal anatomy reference is shown. */
   surfaceOpacity?: number;
   /** Names of finding morph targets that should be ACTIVE (revealed) — e.g.
@@ -272,7 +291,7 @@ interface BodyMeshProps {
  * Tier-1 multi-layer anatomy (Z-Anatomy skin/muscle/skeleton toggles)
  * is a separate component — see `public/models/REALISTIC_ANATOMY.md`.
  */
-function resolveModelPath(gender?: 'male' | 'female'): string {
+function resolveModelPath(gender?: 'male' | 'female', age?: number): string {
   // Capture/testing hook: `?model=male|female` forces a specific mesh so
   // before/after screenshots (scripts/capture-model.mjs) compare the same GLB
   // regardless of the randomly generated case's gender.
@@ -281,9 +300,7 @@ function resolveModelPath(gender?: 'male' | 'female'): string {
     if (forced === 'male') return '/models/patient-male.glb';
     if (forced === 'female') return '/models/patient-female.glb';
   }
-  if (gender === 'male') return '/models/patient-male.glb';
-  if (gender === 'female') return '/models/patient-female.glb';
-  return '/models/patient.glb';
+  return patientModelPath(gender, age);
 }
 
 /**
@@ -613,7 +630,11 @@ function updateSkeleton(root: THREE.Object3D | null): void {
  * depending on the GLB exporter). The fallback keeps the feature working
  * in that case; the primary path still wins when the bones are available.
  */
-function getRegionAtPoint(point: THREE.Vector3, useBoneAnchors = true): RegionRange | null {
+function getRegionAtPoint(
+  point: THREE.Vector3,
+  useBoneAnchors = true,
+  patientScale = 1,
+): RegionRange | null {
   // Strategy:
   //   Limbs (arms, legs) — use the bone rig when available (pose-agnostic,
   //     correct for patient's-left vs patient's-right) with an X-threshold
@@ -627,8 +648,11 @@ function getRegionAtPoint(point: THREE.Vector3, useBoneAnchors = true): RegionRa
   //   Posterior — z < -0.05 on torso returns the log-roll region.
 
   // --- 1. Posterior first -------------------------------------------------
-  if (point.z < -0.05) {
-    const posterior = REGION_RANGES.find(r => r.condition === 'back' && point.y >= r.yMin && point.y < r.yMax);
+  const safeScale = Number.isFinite(patientScale) && patientScale > 0 ? patientScale : 1;
+  const referencePoint = point.clone().multiplyScalar(1 / safeScale);
+
+  if (referencePoint.z < -0.05) {
+    const posterior = REGION_RANGES.find(r => r.condition === 'back' && referencePoint.y >= r.yMin && referencePoint.y < r.yMax);
     if (posterior) { lastClickedLimb = null; return posterior; }
   }
 
@@ -660,23 +684,23 @@ function getRegionAtPoint(point: THREE.Vector3, useBoneAnchors = true): RegionRa
   }
 
   // --- 3. X-threshold limb fallback (when rig isn't available) -----------
-  const absX = Math.abs(point.x);
-  const armXThreshold = point.y >= 1.16 ? 0.15 : 0.20;
-  if (absX > armXThreshold && point.y >= 0.40 && point.y < 1.46) {
+  const absX = Math.abs(referencePoint.x);
+  const armXThreshold = referencePoint.y >= 1.16 ? 0.15 : 0.20;
+  if (absX > armXThreshold && referencePoint.y >= 0.40 && referencePoint.y < 1.46) {
     // Mixamo convention: character faces +Z, +X = patient's left side.
-    const limbId = point.x > 0 ? 'left-arm' : 'right-arm';
+    const limbId = referencePoint.x > 0 ? 'left-arm' : 'right-arm';
     lastClickedLimb = limbId;
     const r = REGION_RANGES.find(rr => rr.id === limbId);
     return r || { id: limbId, label: limbId, description: '', yMin: 0.40, yMax: 1.46 };
   }
-  if (point.y < 0.83) {
-    if (absX > 0.20 && point.y >= 0.40) {
-      const limbId = point.x > 0 ? 'left-arm' : 'right-arm';
+  if (referencePoint.y < 0.83) {
+    if (absX > 0.20 && referencePoint.y >= 0.40) {
+      const limbId = referencePoint.x > 0 ? 'left-arm' : 'right-arm';
       lastClickedLimb = limbId;
       const r = REGION_RANGES.find(rr => rr.id === limbId);
       return r || { id: limbId, label: limbId, description: '', yMin: 0.40, yMax: 1.46 };
     }
-    const limbId = point.x > 0 ? 'left-leg' : 'right-leg';
+    const limbId = referencePoint.x > 0 ? 'left-leg' : 'right-leg';
     lastClickedLimb = limbId;
     const r = REGION_RANGES.find(rr => rr.id === limbId);
     return r || { id: limbId, label: limbId, description: '', yMin: 0.0, yMax: 0.83 };
@@ -684,7 +708,7 @@ function getRegionAtPoint(point: THREE.Vector3, useBoneAnchors = true): RegionRa
 
   // --- 4. Anterior midline via anatomically-tuned Y-range ----------------
   lastClickedLimb = null;
-  return REGION_RANGES.find(r => !r.condition && point.y >= r.yMin && point.y < r.yMax) || null;
+  return REGION_RANGES.find(r => !r.condition && referencePoint.y >= r.yMin && referencePoint.y < r.yMax) || null;
 }
 
 // ---------------------------------------------------------------------------
@@ -775,11 +799,13 @@ function buildSurfaceSampler(root: THREE.Object3D | null, presentationRoot?: THR
   };
 }
 
-export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guidedMode = false, nextGuidedStep = null, onBlockedClick, onBodyPoint, bodyInjuries, patientGender, surfaceOpacity = 1, activeFindingMorphs, breathRateRpm = 0, breathDepthFactor = 1, onSurfaceSampler, dressed = false, dressedActiveRegion = null, pupilLeftMm = 3.5, pupilRightMm = 3.5, skinTint = null, skinDiaphoretic = false, diaphoresis = 0, jaundice = 0, mottling = 0, unconscious = false, idleCues = null, reduceIdleMotion = false, presentation = 'upright', bayStage = 'stretcher', sss = false, posture = null, mobility = 'recumbent', mouthOpenRef = null, cyanosisLocalStrength = 0 }: BodyMeshProps) {
+export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guidedMode = false, nextGuidedStep = null, onBlockedClick, onBodyPoint, bodyInjuries, patientGender, patientAge, surfaceOpacity = 1, activeFindingMorphs, breathRateRpm = 0, breathDepthFactor = 1, onSurfaceSampler, dressed = false, dressedActiveRegion = null, pupilLeftMm = 3.5, pupilRightMm = 3.5, skinTint = null, skinDiaphoretic = false, diaphoresis = 0, jaundice = 0, mottling = 0, unconscious = false, idleCues = null, reduceIdleMotion = false, presentation = 'upright', bayStage = 'stretcher', sss = false, posture = null, mobility = 'recumbent', mouthOpenRef = null, cyanosisLocalStrength = 0 }: BodyMeshProps) {
   // The path is recomputed per render so a `caseData.patientInfo.gender`
   // change (e.g. user picks a different case) swaps the mesh without
   // remounting the parent. useGLTF caches by URL.
-  const modelPath = resolveModelPath(patientGender);
+  const modelPath = resolveModelPath(patientGender, patientAge);
+  const patientHeight = patientExpectedHeightMetres(patientAge);
+  const patientScale = patientHeight / 1.8;
   const { scene, animations } = useGLTF(modelPath);
   // Blender-authored garment GLBs (blended-garment mode). Loaded here so the
   // clone build has them synchronously; Suspense holds render until ready.
@@ -820,8 +846,8 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
   const tintTmpRef = useRef(new THREE.Color());
   const treatmentBayPresentation = presentation === 'treatment-bay';
   const treatmentBayTransform = useMemo(
-    () => getTreatmentBayTransform(bayStage, posture, mobility),
-    [bayStage, mobility, posture],
+    () => getTreatmentBayTransform(bayStage, posture, mobility, patientScale),
+    [bayStage, mobility, posture, patientScale],
   );
   // Diaphoresis (sweat sheen): the eased 0..1 scalar the frame loop drives
   // toward the `diaphoresis` prop (fast up ~10 s, slow dry-out ~60 s), plus a
@@ -853,8 +879,8 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
   // bindings. A regular deep clone can detach limbs on some exported GLBs.
   const clonedScene = useMemo(() => {
     const clone = cloneSkeleton(scene) as THREE.Group;
-    const isMaleMesh = modelPath.includes('patient-male');
-    const useSolidMaleBodyMaterial = isMaleMesh;
+    const isMaleMesh = modelPath.includes('-male.glb');
+    const useSolidMaleBodyMaterial = modelPath === '/models/patient-male.glb';
     // Both active exam meshes are normalised to face the default camera (+Z).
     // Rotating the legacy patient here shows the posterior surface first while
     // landmarks still describe anterior anatomy, so keep the loaded orientation.
@@ -974,7 +1000,7 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
     const box = new THREE.Box3().setFromObject(clone);
     const height = box.max.y - box.min.y;
     if (Number.isFinite(height) && height > 0.5) {
-      const targetHeight = 1.8;
+      const targetHeight = patientHeight;
       const modelScale = targetHeight / height;
       const center = box.getCenter(new THREE.Vector3());
       clone.scale.setScalar(modelScale);
@@ -1014,7 +1040,7 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
         // sleeve and trouser hems. Genuinely ambulatory patients still need the
         // procedural skinned shell so their clothing follows the whole-body
         // idle/walk skeleton.
-        const needsSkeletalGarment = mobility === 'standing' || mobility === 'pacing';
+        const needsSkeletalGarment = mobility === 'standing' || mobility === 'pacing' || patientHeight < 1.8;
         const scrubs =
           (CLOTHING_MODE === 'blended-garment' && !needsSkeletalGarment
             ? buildBlendedGarments(bodyMesh as THREE.Mesh, garmentScenes, garmentSpecs)
@@ -1110,7 +1136,7 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
     // scrubs + 2048² eye texture repaint). Opacity is applied live by the
     // effect below; the eyes are baked once (live pupil reading is the 2D panel).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scene, modelPath, bodyInjuries, garmentScenes, garmentSpecs, mobility]); // bodyInjuries: stable per case (memoised upstream + per-case key)
+  }, [scene, modelPath, bodyInjuries, garmentScenes, garmentSpecs, mobility, patientHeight]); // bodyInjuries: stable per case (memoised upstream + per-case key)
 
   const standingArmBones = useMemo(() => (
     ['mixamorig:LeftArm', 'mixamorig:RightArm']
@@ -1708,14 +1734,14 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
   const handlePointerMove = useCallback((e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
     const point = toClinicalPoint(e.point);
-    const region = getRegionAtPoint(point, !treatmentBayPresentation);
+    const region = getRegionAtPoint(point, !treatmentBayPresentation, patientScale);
 
     if (region !== hoveredRegion) {
       setHoveredRegion(region);
       updateMeshColors(region);
       document.body.style.cursor = region ? 'pointer' : 'auto';
     }
-  }, [hoveredRegion, updateMeshColors, toClinicalPoint, treatmentBayPresentation]);
+  }, [hoveredRegion, updateMeshColors, toClinicalPoint, treatmentBayPresentation, patientScale]);
 
   const handlePointerOut = useCallback(() => {
     setHoveredRegion(null);
@@ -1737,12 +1763,13 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
         return;
       }
       const clinicalPoint = toClinicalPoint(e.point);
-      if (onBodyPoint?.(clinicalPoint, limbHit)) return;
+      const referencePoint = clinicalPoint.clone().multiplyScalar(1 / patientScale);
+      if (onBodyPoint?.(referencePoint, limbHit)) return;
       onRegionClick(limbHit);
       return;
     }
     const clinicalPoint = toClinicalPoint(e.point);
-    const region = getRegionAtPoint(clinicalPoint, !treatmentBayPresentation);
+    const region = getRegionAtPoint(clinicalPoint, !treatmentBayPresentation, patientScale);
     if (!region) return;
 
     // Phase 2 — in guided mode, block clicks on anything other than the
@@ -1752,9 +1779,10 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
       return;
     }
 
-    if (onBodyPoint?.(clinicalPoint, region.id)) return;
+    const referencePoint = clinicalPoint.clone().multiplyScalar(1 / patientScale);
+    if (onBodyPoint?.(referencePoint, region.id)) return;
     onRegionClick(region.id);
-  }, [onRegionClick, guidedMode, nextGuidedStep, onBlockedClick, onBodyPoint, toClinicalPoint, treatmentBayPresentation]);
+  }, [onRegionClick, guidedMode, nextGuidedStep, onBlockedClick, onBodyPoint, toClinicalPoint, treatmentBayPresentation, patientScale]);
 
   // Render region highlight overlays using transparent cylinders
   const regionHighlights = useMemo(() => {
@@ -1959,10 +1987,9 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
   );
 }
 
-// Preload all candidate models. The browser parallelises the requests
-// during the initial paint so the first case-open doesn't pay the GLB
-// download cost. drei's loader is idempotent — preloading a URL that's
-// never used costs ~one HEAD request and nothing else.
+// Preload only the compact legacy/adult baseline. Paediatric files are
+// texture-rich 7–8 MB variants and load on demand through `useGLTF(modelPath)`;
+// preloading the full age/sex matrix would add roughly 63 MB to every launch.
 useGLTF.preload('/models/patient.glb');
 useGLTF.preload('/models/patient-male.glb');
 useGLTF.preload('/models/patient-female.glb');

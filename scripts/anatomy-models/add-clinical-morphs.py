@@ -93,12 +93,13 @@ def main():
     # Convert displacement metres to LOCAL units. matrix_world is a uniform
     # 0.01 scale on this asset, so local = world / scale.
     scale = obj.matrix_world.to_scale().x or 1.0
+    patient_scale = height / 1.8
     print(f"scale={scale:.4f} (local disp = metres/{scale:.4f})")
 
     for name, p in MORPHS.items():
         key = obj.shape_key_add(name=name, from_mix=False)
-        lateral_max_local = p["lateral_max"] / scale
-        disp_local = p["disp"] / scale
+        lateral_max_local = p["lateral_max"] * patient_scale / scale
+        disp_local = p["disp"] * patient_scale / scale
         moved = 0
         for i, v in enumerate(mesh.vertices):
             zf = (v.co.z - z_min) / height

@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { getTreatmentBayTransform, type BayPatientStage } from './BodyMesh';
 import type { PatientMobility } from '@/lib/patientStaging';
+import { patientExpectedHeightMetres } from '@/lib/patientAgePresentation';
 
 interface AnatomyReferenceLayerProps {
   visible: boolean;
@@ -12,6 +13,7 @@ interface AnatomyReferenceLayerProps {
   posture?: 'tripod' | 'supine' | 'recovery' | null;
   mobility?: PatientMobility;
   activeRegion?: string | null;
+  patientAge?: number;
 }
 
 function boneMatchesRegion(name: string, region: string | null): boolean {
@@ -32,8 +34,9 @@ function boneMatchesRegion(name: string, region: string | null): boolean {
   return true;
 }
 
-export function AnatomyReferenceLayer({ visible, presentation = 'upright', stage = 'stretcher', posture = null, mobility = 'recumbent', activeRegion = null }: AnatomyReferenceLayerProps) {
+export function AnatomyReferenceLayer({ visible, presentation = 'upright', stage = 'stretcher', posture = null, mobility = 'recumbent', activeRegion = null, patientAge }: AnatomyReferenceLayerProps) {
   const { scene } = useGLTF('/models/open3d-skeleton.glb');
+  const patientScale = patientExpectedHeightMetres(patientAge) / 1.8;
 
   const anatomyScene = useMemo(() => {
     const clone = cloneSkeleton(scene) as THREE.Group;
@@ -61,7 +64,7 @@ export function AnatomyReferenceLayer({ visible, presentation = 'upright', stage
     const box = new THREE.Box3().setFromObject(clone);
     const height = box.max.y - box.min.y;
     if (Number.isFinite(height) && height > 0.5) {
-      const targetHeight = 1.8;
+      const targetHeight = patientExpectedHeightMetres(patientAge);
       const modelScale = targetHeight / height;
       const center = box.getCenter(new THREE.Vector3());
       clone.scale.setScalar(modelScale);
@@ -74,7 +77,7 @@ export function AnatomyReferenceLayer({ visible, presentation = 'upright', stage
     }
 
     return clone;
-  }, [scene]);
+  }, [scene, patientAge]);
 
   useEffect(() => {
     anatomyScene.traverse((child) => {
@@ -85,7 +88,7 @@ export function AnatomyReferenceLayer({ visible, presentation = 'upright', stage
   if (!visible) return null;
 
   const bayTransform = presentation === 'treatment-bay'
-    ? getTreatmentBayTransform(stage, posture, mobility)
+    ? getTreatmentBayTransform(stage, posture, mobility, patientScale)
     : { position: [0, 0, 0] as [number, number, number], rotation: [0, 0, 0] as [number, number, number], scale: 1 };
   const groupPosition: [number, number, number] = [
     bayTransform.position[0],

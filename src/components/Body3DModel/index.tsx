@@ -16,7 +16,7 @@ import * as THREE from 'three';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { RotateCcw, User, Eye, Hand, Activity, Stethoscope, X, ChevronRight, ChevronDown, AlertTriangle, Compass, Unlock, Wind, Shirt } from 'lucide-react';
-import { BodyMesh, treatmentBayClinicalToWorld, type BayPatientStage } from './BodyMesh';
+import { BodyMesh, getTreatmentBayTransform, treatmentBayClinicalToWorld, type BayPatientStage } from './BodyMesh';
 import {
   derivePatientMobility,
   deriveScenePatientStage,
@@ -64,6 +64,7 @@ import {
 } from '@/lib/unwellnessStates';
 import { deriveSkinTint, deriveCyanosisLocalStrength } from './skinTint';
 import { hasAttachedDefibrillatorPads } from '@/lib/defibrillatorSafety';
+import { patientExpectedHeightMetres } from '@/lib/patientAgePresentation';
 
 const TOTAL_REGIONS = 11;
 type OrbitControlsHandle = ElementRef<typeof OrbitControls>;
@@ -442,6 +443,7 @@ function TreatmentBayImmersionLayer({
   posture = null,
   mobility = 'recumbent',
   patientWeight = 70,
+  patientScale = 1,
 }: {
   appliedTreatmentIds: string[];
   active: boolean;
@@ -449,6 +451,7 @@ function TreatmentBayImmersionLayer({
   posture?: 'tripod' | 'supine' | 'recovery' | null;
   mobility?: PatientMobility;
   patientWeight?: number;
+  patientScale?: number;
 }) {
   const equipment = useMemo(
     () => buildTreatmentEquipmentState(appliedTreatmentIds),
@@ -457,10 +460,14 @@ function TreatmentBayImmersionLayer({
 
   if (!active) return null;
 
-  const face = treatmentBayClinicalToWorld([0.01, 1.64, 0.24], stage, posture, mobility);
-  const chestLeft = treatmentBayClinicalToWorld([-0.10, 1.27, 0.25], stage, posture, mobility);
-  const chestRight = treatmentBayClinicalToWorld([0.11, 1.18, 0.25], stage, posture, mobility);
-  const ivSite = treatmentBayClinicalToWorld([-0.23, 0.82, 0.24], stage, posture, mobility);
+  const face = treatmentBayClinicalToWorld([0.01, 1.64, 0.24], stage, posture, mobility, patientScale);
+  const chestLeft = treatmentBayClinicalToWorld([-0.10, 1.27, 0.25], stage, posture, mobility, patientScale);
+  const chestRight = treatmentBayClinicalToWorld([0.11, 1.18, 0.25], stage, posture, mobility, patientScale);
+  const ivSite = treatmentBayClinicalToWorld([-0.23, 0.82, 0.24], stage, posture, mobility, patientScale);
+  const headPadZ = treatmentBayClinicalToWorld([0, 1.56, 0], stage, posture, mobility, patientScale)[2];
+  const collarAnchor = treatmentBayClinicalToWorld([0, 1.46, 0.19], stage, posture, mobility, patientScale);
+  const bayRotation = getTreatmentBayTransform(stage, posture, mobility, patientScale).rotation;
+  const equipmentScale = Math.max(0.48, Math.min(1, patientScale));
 
   return (
     <group>
@@ -468,8 +475,8 @@ function TreatmentBayImmersionLayer({
           treated where found; rendering a pad there obscures the face and can
           look like vehicle geometry crossing the body. */}
       {stage === 'stretcher' && mobility === 'recumbent' && (
-        <mesh position={[0, 0.505, -0.84]} rotation={[-Math.PI / 2, 0, 0]} raycast={() => null}>
-          <boxGeometry args={[0.72, 0.36, 0.055]} />
+        <mesh position={[0, 0.505, headPadZ]} rotation={[-Math.PI / 2, 0, 0]} raycast={() => null}>
+          <boxGeometry args={[0.72 * Math.max(0.58, patientScale), 0.36 * Math.max(0.58, patientScale), 0.055]} />
           <meshStandardMaterial color="#e5edf4" roughness={0.86} metalness={0.02} transparent opacity={0.88} />
         </mesh>
       )}
@@ -533,7 +540,11 @@ function TreatmentBayImmersionLayer({
         </mesh>
       ))}
       {equipment.hasCollar && (
-        <group position={[0, 1.46, 0.19]} rotation={[Math.PI / 2, 0, 0]}>
+        <group
+          position={collarAnchor}
+          rotation={[Math.PI / 2 + bayRotation[0], bayRotation[1], bayRotation[2]]}
+          scale={equipmentScale}
+        >
           {/* Main collar ring */}
           <mesh
             scale={[
@@ -575,6 +586,7 @@ function MarkerHtml({
   zIndexRange,
   interactive = true,
   presentation = 'upright',
+  contentScale = 1,
   children,
 }: {
   position: [number, number, number];
@@ -583,6 +595,7 @@ function MarkerHtml({
   zIndexRange?: [number, number];
   interactive?: boolean;
   presentation?: MarkerPresentation;
+  contentScale?: number;
   children: React.ReactNode;
 }) {
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -611,7 +624,7 @@ function MarkerHtml({
   return (
     <group ref={anchorRef} position={position}>
       <Html position={[0, 0, 0]} center distanceFactor={distanceFactor} zIndexRange={zIndexRange}>
-        <div ref={wrapRef} style={{ transition: 'opacity 120ms linear' }}>
+        <div ref={wrapRef} style={{ transition: 'opacity 120ms linear', transform: `scale(${contentScale})` }}>
           {children}
         </div>
       </Html>
@@ -1431,6 +1444,7 @@ function TreatmentEquipmentOverlay({
   bayStage = 'stretcher',
   posture = null,
   mobility = 'recumbent',
+  patientScale = 1,
 }: {
   appliedTreatmentIds: string[];
   sampler: SurfaceSampler | null;
@@ -1438,6 +1452,7 @@ function TreatmentEquipmentOverlay({
   bayStage?: BayPatientStage;
   posture?: 'tripod' | 'supine' | 'recovery' | null;
   mobility?: PatientMobility;
+  patientScale?: number;
 }) {
   const equipment = useMemo(
     () => buildTreatmentEquipmentState(appliedTreatmentIds),
@@ -1467,14 +1482,15 @@ function TreatmentEquipmentOverlay({
   // frame for airway devices so masks remain fitted after the posture changes.
   const faceAnchor = (x: number, y: number, z: number): [number, number, number] =>
     presentation === 'treatment-bay'
-      ? treatmentBayClinicalToWorld([x, y, z], bayStage, posture, mobility)
+      ? treatmentBayClinicalToWorld([x, y, z], bayStage, posture, mobility, patientScale)
       : anchor(x, y, z);
+  const equipmentScale = Math.max(0.62, Math.min(1, 0.55 + patientScale * 0.45));
   const hasSiteAccess = equipment.siteControls.some(control => control.treatmentId === 'iv_access' || control.treatmentId === 'io_access');
 
   return (
     <>
       {equipment.oxygen && (
-        <MarkerHtml position={faceAnchor(0.01, 1.66, 0.24)} distanceFactor={1.5} zIndexRange={[76, 0]} interactive={false} presentation={posture === 'tripod' ? 'upright' : presentation}>
+        <MarkerHtml position={faceAnchor(0.01, 1.66, 0.24)} distanceFactor={1.5} zIndexRange={[76, 0]} interactive={false} presentation={posture === 'tripod' ? 'upright' : presentation} contentScale={equipmentScale}>
           <WornFaceEquipment
             equipment={equipment.oxygen}
             connectedToEtTube={equipment.hasEtTube && equipment.oxygen.mode === 'bvm'}
@@ -1483,19 +1499,19 @@ function TreatmentEquipmentOverlay({
       )}
 
       {equipment.hasEtTube && equipment.oxygen?.mode !== 'ventilator' && (
-        <MarkerHtml position={faceAnchor(0.04, 1.64, 0.24)} distanceFactor={2.4} zIndexRange={[74, 0]} interactive={false} presentation={posture === 'tripod' ? 'upright' : presentation}>
+        <MarkerHtml position={faceAnchor(0.04, 1.64, 0.24)} distanceFactor={2.4} zIndexRange={[74, 0]} interactive={false} presentation={posture === 'tripod' ? 'upright' : presentation} contentScale={equipmentScale}>
           <EquipmentPin tone="oxygen" src={TREATMENT_ASSET_PATHS.etTube} bare />
         </MarkerHtml>
       )}
 
       {equipment.hasOpa && !equipment.hasEtTube && (
-        <MarkerHtml position={faceAnchor(-0.04, 1.64, 0.24)} distanceFactor={2.4} zIndexRange={[73, 0]} interactive={false} presentation={posture === 'tripod' ? 'upright' : presentation}>
+        <MarkerHtml position={faceAnchor(-0.04, 1.64, 0.24)} distanceFactor={2.4} zIndexRange={[73, 0]} interactive={false} presentation={posture === 'tripod' ? 'upright' : presentation} contentScale={equipmentScale}>
           <EquipmentPin tone="device" src={TREATMENT_ASSET_PATHS.opa} bare />
         </MarkerHtml>
       )}
 
       {equipment.hasIvAccess && !hasSiteAccess && (
-        <MarkerHtml position={anchor(-0.205, 0.82, 0.2)} distanceFactor={2.5} zIndexRange={[72, 0]} interactive={false} presentation={presentation}>
+        <MarkerHtml position={anchor(-0.205, 0.82, 0.2)} distanceFactor={2.5} zIndexRange={[72, 0]} interactive={false} presentation={presentation} contentScale={equipmentScale}>
           <AppliedIvDressing />
         </MarkerHtml>
       )}
@@ -1508,47 +1524,47 @@ function TreatmentEquipmentOverlay({
 
       {equipment.hasDefibPads && (
         <>
-          <MarkerHtml position={anchor(-0.075, 1.30, 0.225)} distanceFactor={1.85} zIndexRange={[68, 0]} interactive={false} presentation={presentation}>
+          <MarkerHtml position={anchor(-0.075, 1.30, 0.225)} distanceFactor={1.85} zIndexRange={[68, 0]} interactive={false} presentation={presentation} contentScale={equipmentScale}>
             <AppliedDefibPad site="sternal" />
           </MarkerHtml>
-          <MarkerHtml position={anchor(0.18, 1.13, 0.223)} distanceFactor={1.85} zIndexRange={[68, 0]} interactive={false} presentation={presentation}>
+          <MarkerHtml position={anchor(0.18, 1.13, 0.223)} distanceFactor={1.85} zIndexRange={[68, 0]} interactive={false} presentation={presentation} contentScale={equipmentScale}>
             <AppliedDefibPad site="apical" />
           </MarkerHtml>
         </>
       )}
 
       {equipment.hasLucas && (
-        <MarkerHtml position={anchor(0, 1.19, 0.22)} distanceFactor={2.6} zIndexRange={[69, 0]} interactive={false} presentation={presentation}>
+        <MarkerHtml position={anchor(0, 1.19, 0.22)} distanceFactor={2.6} zIndexRange={[69, 0]} interactive={false} presentation={presentation} contentScale={equipmentScale}>
           <div className="h-20 w-20 drop-shadow-xl animate-in fade-in zoom-in-75"><img src={TREATMENT_ASSET_PATHS.lucas} alt="" className="h-full w-full object-contain" /></div>
         </MarkerHtml>
       )}
 
       {equipment.hasCollar && (
-        <MarkerHtml position={anchor(0, 1.45, 0.22)} distanceFactor={2.0} zIndexRange={[72, 0]} interactive={false} presentation={presentation}>
+        <MarkerHtml position={anchor(0, 1.45, 0.22)} distanceFactor={2.0} zIndexRange={[72, 0]} interactive={false} presentation={presentation} contentScale={equipmentScale}>
           <div data-applied-equipment="cervical-collar" className="h-10 w-16 drop-shadow-lg animate-in fade-in zoom-in-75"><img src={TREATMENT_ASSET_PATHS.collar} alt="" className="h-full w-full object-contain" /></div>
         </MarkerHtml>
       )}
 
       {equipment.hasChestSeal && (
-        <MarkerHtml position={anchor(-0.08, 1.25, 0.225)} distanceFactor={2.2} zIndexRange={[72, 0]} interactive={false} presentation={presentation}>
+        <MarkerHtml position={anchor(-0.08, 1.25, 0.225)} distanceFactor={2.2} zIndexRange={[72, 0]} interactive={false} presentation={presentation} contentScale={equipmentScale}>
           <AppliedChestDevice />
         </MarkerHtml>
       )}
 
       {equipment.hasNeedleDecompression && (
-        <MarkerHtml position={anchor(0.13, 1.24, 0.225)} distanceFactor={2.3} zIndexRange={[73, 0]} interactive={false} presentation={presentation}>
+        <MarkerHtml position={anchor(0.13, 1.24, 0.225)} distanceFactor={2.3} zIndexRange={[73, 0]} interactive={false} presentation={presentation} contentScale={equipmentScale}>
           <AppliedChestDevice needle />
         </MarkerHtml>
       )}
 
       {(equipment.hasWarmingBlanket || equipment.hasActiveCooling) && (
-        <MarkerHtml position={anchor(0, 1.02, 0.27)} distanceFactor={2.5} zIndexRange={[60, 0]} interactive={false} presentation={presentation}>
+        <MarkerHtml position={anchor(0, 1.02, 0.27)} distanceFactor={2.5} zIndexRange={[60, 0]} interactive={false} presentation={presentation} contentScale={equipmentScale}>
           <AppliedTorsoCover cooling={equipment.hasActiveCooling} />
         </MarkerHtml>
       )}
 
       {equipment.immobilisationDevice && (
-        <MarkerHtml position={anchor(0, 0.9, 0.08)} distanceFactor={3.0} zIndexRange={[54, 0]} interactive={false} presentation={presentation}>
+        <MarkerHtml position={anchor(0, 0.9, 0.08)} distanceFactor={3.0} zIndexRange={[54, 0]} interactive={false} presentation={presentation} contentScale={equipmentScale}>
           <AppliedImmobilisationDevice mode={equipment.immobilisationDevice} />
         </MarkerHtml>
       )}
@@ -1562,7 +1578,7 @@ function TreatmentEquipmentOverlay({
         };
         const point = siteAnchor[control.target] ?? siteAnchor.chest;
         return (
-          <MarkerHtml key={`${control.treatmentId}-${control.target}`} position={anchor(...point)} distanceFactor={2.5} zIndexRange={[70, 0]} interactive={false} presentation={presentation}>
+          <MarkerHtml key={`${control.treatmentId}-${control.target}`} position={anchor(...point)} distanceFactor={2.5} zIndexRange={[70, 0]} interactive={false} presentation={presentation} contentScale={equipmentScale}>
             <AppliedLimbEquipment treatmentId={control.treatmentId} />
           </MarkerHtml>
         );
@@ -3217,10 +3233,14 @@ function useCameraAnimation() {
 
 const PERCUSSION_DURATION = 800;
 
-const DEFAULT_CAMERA_FOCUS = {
-  pos: [0, 0.96, 3.55] as [number, number, number],
-  target: [0, 0.92, 0] as [number, number, number],
-};
+function getUprightCameraFocus(patientScale = 1) {
+  const cameraScale = Math.max(0.6, Math.min(1, patientScale));
+  const target: [number, number, number] = [0, 0.92 * patientScale, 0];
+  return {
+    pos: [0, target[1] + 0.04 * cameraScale, 3.55 * cameraScale] as [number, number, number],
+    target,
+  };
+}
 
 // The treatment-bay model is rotated supine, so clinical Y becomes the
 // scene's depth axis. Aim at the thoraco-abdominal centre of the patient
@@ -3229,29 +3249,39 @@ function getTreatmentBayCameraFocus(
   stage: BayPatientStage,
   posture: 'tripod' | 'supine' | 'recovery' | null,
   mobility: PatientMobility = 'recumbent',
+  patientScale = 1,
 ) {
+  const cameraScale = Math.max(0.6, Math.min(1, patientScale));
   if (posture === 'tripod' || mobility === 'standing' || mobility === 'pacing') {
     // The seated tripod morph is now grounded at the feet; its head occupies
     // the normal upright frame, so it no longer needs the legacy high camera
     // that was compensating for a floating, straight-legged patient.
     const stageLift = 0;
+    const target: [number, number, number] = [0, 1.02 * patientScale + stageLift, 0.18];
     return {
       // A slight three-quarter arrival angle makes the forward trunk lean and
       // hands-on-thigh bracing readable immediately; the previous near-frontal
       // view flattened the depth of a genuine tripod pose back into a standing
       // silhouette.
-      pos: [1.05, 1.36 + stageLift, 3.18] as [number, number, number],
-      target: [0, 1.02 + stageLift, 0.18] as [number, number, number],
+      pos: [1.05 * cameraScale, target[1] + 0.34 * cameraScale, target[2] + 3 * cameraScale] as [number, number, number],
+      target,
     };
   }
+  const target = treatmentBayClinicalToWorld([0, 0.96, -0.05], stage, posture, mobility, patientScale);
+  const adultOffset = stage === 'floor'
+    ? [0.55, 2.85 - 0.338, 2.15 - (-0.218)]
+    : [1.42, 1.30 - 0.888, 2.12 - (-0.218)];
   return {
-    pos: (stage === 'floor'
-      // Scene context is established before the student enters treatment.
-      // Once care starts, frame the patient large enough to read breathing,
-      // bleeding and skin colour without making the student zoom first.
-      ? [0.55, 2.85, 2.15]
-      : [1.42, 1.30, 2.12]) as [number, number, number],
-    target: treatmentBayClinicalToWorld([0, 0.96, -0.05], stage, posture, mobility),
+    // Scene context is established before the student enters treatment. Once
+    // care starts, scale the adult camera offset around the patient's real
+    // thoraco-abdominal centre so an infant remains legible rather than a tiny
+    // figure at the far end of an adult frame.
+    pos: [
+      target[0] + adultOffset[0] * cameraScale,
+      target[1] + adultOffset[1] * cameraScale,
+      target[2] + adultOffset[2] * cameraScale,
+    ] as [number, number, number],
+    target,
   };
 }
 
@@ -4130,6 +4160,10 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   // Scene-contextual staging: a collapsed/roadside patient renders on the
   // floor instead of pre-loaded onto the stretcher.
   const bayStage: BayPatientStage = useMemo(() => deriveScenePatientStage(caseData), [caseData]);
+  // MCI uses age/weight zero as an aggregate sentinel and has no single body
+  // until a casualty is selected. Do not render that metadata as a newborn.
+  const activePatientAge = caseData.mci?.isMCI ? undefined : caseData.patientInfo?.age;
+  const patientScale = patientExpectedHeightMetres(activePatientAge) / 1.8;
   // Scene-contextual environment: villa cases render in a living room,
   // street cases at a roadside, mall cases in a public atrium.
   const bayVariant = useMemo(() => deriveSceneEnvironment(caseData), [caseData]);
@@ -4210,8 +4244,10 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   // useMemo keeps the pos/target array identities stable — OrbitControls'
   // `target` prop and several useCallback deps rely on that.
   const overviewCameraFocus = useMemo(
-    () => (treatmentBayOverviewEnabled ? getTreatmentBayCameraFocus(bayStage, patientPosture, patientMobility) : DEFAULT_CAMERA_FOCUS),
-    [treatmentBayOverviewEnabled, bayStage, patientPosture, patientMobility],
+    () => (treatmentBayOverviewEnabled
+      ? getTreatmentBayCameraFocus(bayStage, patientPosture, patientMobility, patientScale)
+      : getUprightCameraFocus(patientScale)),
+    [treatmentBayOverviewEnabled, bayStage, patientPosture, patientMobility, patientScale],
   );
 
   // OrbitControls target is imperative state. Initialise/reset it only for the
@@ -4597,7 +4633,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
         focus.target[0],
         focus.target[1],
         stepId === 'posterior-logroll' ? -0.08 : 0.10,
-      ], bayStage, patientPosture, patientMobility);
+      ], bayStage, patientPosture, patientMobility, patientScale);
       const clinicalDirection: [number, number, number] = patientPosture === 'tripod' || patientMobility === 'standing' || patientMobility === 'pacing'
         ? (stepId === 'face' || stepId === 'head' || stepId === 'neck-cspine'
             ? [0.04, 0.48, 1]
@@ -4611,7 +4647,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
         controlsRef.current,
         target,
         clinicalDirection,
-        REGION_RADIUS[stepId] ?? 0.28,
+        (REGION_RADIUS[stepId] ?? 0.28) * Math.max(0.5, patientScale),
       );
       if (import.meta.env.DEV) {
         (window as Window & { __lastRegionCamera?: unknown }).__lastRegionCamera = {
@@ -4621,10 +4657,11 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
       animateCamera(controlsRef.current, pos, target, 460);
     } else if (controlsRef.current) {
       const focus = REGION_CAMERA_FOCUS[stepId] ?? REGION_CAMERA_FOCUS.chest;
+      const cameraScale = Math.max(0.5, Math.min(1, patientScale));
       const dir: [number, number, number] = [
-        focus.pos[0] - focus.target[0],
-        focus.pos[1] - focus.target[1],
-        focus.pos[2] - focus.target[2],
+        (focus.pos[0] - focus.target[0]) * cameraScale,
+        (focus.pos[1] - focus.target[1]) * cameraScale,
+        (focus.pos[2] - focus.target[2]) * cameraScale,
       ];
       // HUD-aware framing. Chest/abdomen show the zoom loupe (top-right) and the
       // assessment cockpit (bottom-left). Bias the patient LEFT of the loupe (x),
@@ -4638,12 +4675,16 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
       const X_BIAS: Record<string, number> = { chest: 0.13, abdomen: 0.13 };
       const xBias = wide ? (X_BIAS[stepId] ?? 0) : 0;
       const yBias = wide ? (Y_LIFT[stepId] ?? 0) : 0;
-      const target: [number, number, number] = [focus.target[0] + xBias, focus.target[1] + yBias, focus.target[2]];
-      const pos = fitCameraPos(controlsRef.current, target, dir, REGION_RADIUS[stepId] ?? 0.28);
+      const target: [number, number, number] = [
+        (focus.target[0] + xBias) * patientScale,
+        (focus.target[1] + yBias) * patientScale,
+        focus.target[2] * patientScale,
+      ];
+      const pos = fitCameraPos(controlsRef.current, target, dir, (REGION_RADIUS[stepId] ?? 0.28) * cameraScale);
       animateCamera(controlsRef.current, pos, target, 460);
     }
     setIsFlipped(stepId === 'posterior-logroll');
-  }, [onRegionClick, animateCamera, clearPatientReaction, anatomyLayer, bayStage, caseData, patientVoice, patientPosture, patientMobility, treatmentBayOverviewEnabled]);
+  }, [onRegionClick, animateCamera, clearPatientReaction, anatomyLayer, bayStage, caseData, patientVoice, patientPosture, patientMobility, treatmentBayOverviewEnabled, patientScale]);
 
   // Phase 2F: Sound progress animation
   const startSoundProgress = useCallback((actionId: string, durationMs: number) => {
@@ -5323,6 +5364,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 // See public/models/REALISTIC_ANATOMY.md for the vetted model
                 // sources and the required export/validation path.
                 patientGender={caseData.patientInfo?.gender}
+                patientAge={activePatientAge}
                 surfaceOpacity={anatomyLayer === 'skeleton' ? 0 : 1}
                 // Finding morphs reveal ONLY once their region is assessed —
                 // the discovery mechanic, now expressed on the mesh itself.
@@ -5376,6 +5418,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 posture={patientPosture}
                 mobility={patientMobility}
                 patientWeight={caseData?.patientInfo?.weight ?? 70}
+                patientScale={patientScale}
               />
 
               {/* Active bleed overlay — pulsing red glow at bleeding wounds,
@@ -5403,6 +5446,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 posture={patientPosture}
                 mobility={patientMobility}
                 activeRegion={activeRegion}
+                patientAge={activePatientAge}
               />
 
               <LandmarkMarkers
@@ -5459,6 +5503,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 bayStage={bayStage}
                 posture={patientPosture}
                 mobility={patientMobility}
+                patientScale={patientScale}
               />
 
               {quality.contactShadows && (

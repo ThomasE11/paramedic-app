@@ -108,7 +108,7 @@ export const FEMALE_GARMENT_GLBS: GarmentGlbSpec[] = [
 export const ALL_GARMENT_GLBS = [...GARMENT_GLBS, ...FEMALE_GARMENT_GLBS];
 
 export function garmentGlbsForModel(modelPath: string): GarmentGlbSpec[] {
-  return modelPath.includes('patient-female') ? FEMALE_GARMENT_GLBS : GARMENT_GLBS;
+  return modelPath.includes('-female.glb') ? FEMALE_GARMENT_GLBS : GARMENT_GLBS;
 }
 
 /** Region id → garment pieces that part (hide) while that region is focused. */

@@ -1,5 +1,7 @@
 export type PatientAgeBand = 'infant' | 'toddler' | 'child' | 'adolescent' | 'adult';
 
+export type PatientModelGender = 'male' | 'female';
+
 export function patientAgeBand(age?: number | null): PatientAgeBand {
   if (age == null || !Number.isFinite(age) || age >= 18) return 'adult';
   if (age < 1) return 'infant';
@@ -17,4 +19,35 @@ export function patientAgeScale(age?: number | null): number {
     case 'adolescent': return 0.86;
     case 'adult': return 1;
   }
+}
+
+/**
+ * Approximate physical standing height used to keep the live 3D patient,
+ * assessment landmarks and attached equipment in the same scale. Values are
+ * deliberately interpolated between broad developmental anchors rather than
+ * snapping every child in an age band to one height.
+ */
+export function patientExpectedHeightMetres(age?: number | null): number {
+  if (age == null || !Number.isFinite(age) || age >= 18) return 1.8;
+  const safeAge = Math.max(0, age);
+  if (safeAge < 1) return 0.5 + safeAge * 0.28;
+  if (safeAge < 5) return 0.75 + (safeAge - 1) * 0.0825;
+  if (safeAge < 13) return 1.08 + (safeAge - 5) * 0.065;
+  return 1.6 + (safeAge - 13) * 0.03;
+}
+
+/**
+ * Select an age- and sex-proportioned rigged patient. Every developmental band
+ * has both male and female validated assets, so the simulator never substitutes
+ * an adult body merely because the patient is young.
+ */
+export function patientModelPath(
+  gender?: PatientModelGender,
+  age?: number | null,
+): string {
+  const band = patientAgeBand(age);
+  if (band !== 'adult' && gender) return `/models/patient-${band}-${gender}.glb`;
+  if (gender === 'male') return '/models/patient-male.glb';
+  if (gender === 'female') return '/models/patient-female.glb';
+  return '/models/patient.glb';
 }
