@@ -27,6 +27,27 @@ export const SCENE_ENVIRONMENT_LABELS: Record<EnvironmentVariant, string> = {
   heat: 'heat exposure',
 };
 
+const WORKSITE_OFFICE_PATTERN = /\b(?:construction|building|work)site office\b|\bportacabin\b/;
+
+/**
+ * Human-facing scene label. The rendered avenue can stay a public interior,
+ * while the student-facing chip preserves the operational context from
+ * dispatch (for example a construction-site office is not a generic venue).
+ */
+export function sceneEnvironmentLabel(caseData: CaseScenario, variant: EnvironmentVariant): string {
+  const sceneText = [
+    caseData.dispatchInfo?.location,
+    caseData.sceneInfo?.description,
+    caseData.sceneInfo?.environment,
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+
+  if (WORKSITE_OFFICE_PATTERN.test(sceneText)) return 'worksite office';
+  return SCENE_ENVIRONMENT_LABELS[variant];
+}
+
 // ponytail: keyword scene-typing over authored per-case data — mirrors the
 // staging heuristic. Ambiguous scenes fall through to the clinic bay.
 // Upgrade path: an authored `sceneVariant` field per case.

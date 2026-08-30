@@ -91,7 +91,7 @@ import {
 } from '@/lib/caseManagementRealism';
 import { derivePatientVisualState } from '@/lib/patientVisualState';
 import { deduplicateCareFeedItems } from '@/lib/careFeed';
-import { deriveSceneEnvironment, SCENE_ENVIRONMENT_LABELS } from '@/lib/sceneEnvironment';
+import { deriveSceneEnvironment, sceneEnvironmentLabel } from '@/lib/sceneEnvironment';
 import { matchRealismScenarios } from '@/lib/patientRealismScenarios';
 import {
   buildReactionForTreatment,
@@ -6075,7 +6075,7 @@ export function StudentPanel({
                       </Badge>
                       {sceneEnvironment && (
                         <Badge variant="outline" className="border-amber-300/30 bg-amber-300/10 text-[9px] uppercase tracking-[0.16em] text-amber-100">
-                          {SCENE_ENVIRONMENT_LABELS[sceneEnvironment]}
+                          {currentCase ? sceneEnvironmentLabel(currentCase, sceneEnvironment) : null}
                         </Badge>
                       )}
                       {/* Voice-first toggle — senior students only. Junior years
