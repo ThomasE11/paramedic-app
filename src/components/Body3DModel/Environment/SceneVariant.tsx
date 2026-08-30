@@ -71,6 +71,48 @@ function KeyLight({
   );
 }
 
+/**
+ * Lightweight daylight dome for open-air scenes. The Canvas is deliberately
+ * transparent so the cockpit can frame it, but that used to expose the dark
+ * HUD background beyond the floor plane and made heat/water/worksite calls
+ * look as though they happened at night. One back-faced sphere restores a
+ * readable horizon without an HDR sky texture or another network asset.
+ */
+function OutdoorSky({ zenith, horizon }: { zenith: string; horizon: string }) {
+  const uniforms = useMemo(() => ({
+    zenithColour: { value: new THREE.Color(zenith) },
+    horizonColour: { value: new THREE.Color(horizon) },
+  }), [horizon, zenith]);
+
+  return (
+    <mesh renderOrder={-1000} frustumCulled={false} raycast={NO_RAYCAST}>
+      <sphereGeometry args={[18, 32, 16]} />
+      <shaderMaterial
+        side={THREE.BackSide}
+        depthWrite={false}
+        toneMapped={false}
+        uniforms={uniforms}
+        vertexShader={/* glsl */ `
+          varying float vSkyHeight;
+          void main() {
+            vSkyHeight = normalize(position).y;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `}
+        fragmentShader={/* glsl */ `
+          uniform vec3 zenithColour;
+          uniform vec3 horizonColour;
+          varying float vSkyHeight;
+          void main() {
+            float blend = smoothstep(-0.12, 0.72, vSkyHeight);
+            gl_FragColor = vec4(mix(horizonColour, zenithColour, blend), 1.0);
+          }
+        `}
+      />
+    </mesh>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Home — villa/apartment living room, built as a real enclosed room (not a
 // backdrop). Room box ~5m (x) x 4m (z) x 2.7m (y): back wall at z=-2, two
@@ -443,6 +485,7 @@ function PublicScene({ hideOverhead, shadowsEnabled }: { hideOverhead: boolean; 
 function IndustrialScene({ shadowsEnabled }: { shadowsEnabled: boolean }) {
   return (
     <group>
+      <OutdoorSky zenith="#9fc8e7" horizon="#e8dcc4" />
       <mesh position={[0, -0.05, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow raycast={NO_RAYCAST}>
         <planeGeometry args={[9, 9]} />
         <meshStandardMaterial color="#777b7d" roughness={0.96} metalness={0.04} />
@@ -560,6 +603,7 @@ function FireSmoke() {
 function FireScene({ shadowsEnabled }: { shadowsEnabled: boolean }) {
   return (
     <group>
+      <OutdoorSky zenith="#596979" horizon="#a78b78" />
       <mesh position={[0, -0.05, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow raycast={NO_RAYCAST}>
         <planeGeometry args={[9, 9]} />
         <meshStandardMaterial color="#252728" roughness={0.97} />
@@ -620,6 +664,7 @@ function FireScene({ shadowsEnabled }: { shadowsEnabled: boolean }) {
 function WaterScene({ shadowsEnabled }: { shadowsEnabled: boolean }) {
   return (
     <group>
+      <OutdoorSky zenith="#7bc7e3" horizon="#d9f2ed" />
       <mesh position={[0, -0.05, 0.3]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow raycast={NO_RAYCAST}>
         <planeGeometry args={[9, 8]} />
         <meshStandardMaterial color="#c8b48f" roughness={0.86} />
@@ -677,6 +722,7 @@ function WaterScene({ shadowsEnabled }: { shadowsEnabled: boolean }) {
 function HeatScene({ shadowsEnabled }: { shadowsEnabled: boolean }) {
   return (
     <group>
+      <OutdoorSky zenith="#78b9e4" horizon="#dbe8ea" />
       <mesh position={[0, -0.05, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow raycast={NO_RAYCAST}>
         <planeGeometry args={[10, 10]} />
         <meshStandardMaterial color="#cda66d" roughness={0.99} />
@@ -688,20 +734,18 @@ function HeatScene({ shadowsEnabled }: { shadowsEnabled: boolean }) {
         </mesh>
       ))}
 
-      {/* Paramedic shade canopy stays beside the patient so it creates a
-          believable cooling zone without occluding examination lighting. */}
-      {/* Keep both uprights well outside the patient silhouette. The former
-          inner pole at x=-1.2 projected directly through a seated patient's
-          head from the treatment camera and made the body look impaled. */}
-      {[-4.1, -2.7].map(x => (
-        <mesh key={`canopy-pole-${x}`} position={[x, 1.35, -1.75]} castShadow raycast={NO_RAYCAST}>
+      {/* The case presentation says the worker is sitting in shade. Centre the
+          canopy over the treatment lane, with four corner uprights outside
+          the examination silhouette so no pole projects through the patient. */}
+      {([[-2.8, -2], [2.8, -2], [-2.8, 2], [2.8, 2]] as const).map(([x, z]) => (
+        <mesh key={`canopy-pole-${x}-${z}`} position={[x, 1.35, z]} castShadow raycast={NO_RAYCAST}>
           <cylinderGeometry args={[0.035, 0.045, 2.7, 10]} />
           <meshStandardMaterial color="#d7dde1" metalness={0.72} roughness={0.35} />
         </mesh>
       ))}
-      <mesh position={[-3.4, 2.64, -1.72]} raycast={NO_RAYCAST}>
-        <boxGeometry args={[1.65, 0.045, 1.65]} />
-        <meshBasicMaterial color="#e8dfc8" side={THREE.DoubleSide} />
+      <mesh position={[0, 2.64, 0]} castShadow receiveShadow raycast={NO_RAYCAST}>
+        <boxGeometry args={[5.75, 0.045, 4.15]} />
+        <meshStandardMaterial color="#e8dfc8" roughness={0.92} side={THREE.DoubleSide} />
       </mesh>
       {/* Backless field bench supports a seated heat-illness patient without
           covering the chest, arms or legs students need to examine. */}
@@ -755,6 +799,7 @@ function HeatScene({ shadowsEnabled }: { shadowsEnabled: boolean }) {
 function RoadsideScene({ shadowsEnabled }: { shadowsEnabled: boolean }) {
   return (
     <group>
+      <OutdoorSky zenith="#8cb6d4" horizon="#e8d3ba" />
       {/* Asphalt */}
       <mesh position={[0, -0.05, 0.1]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow raycast={NO_RAYCAST}>
         <planeGeometry args={[9, 9]} />
