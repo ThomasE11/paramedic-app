@@ -78,6 +78,11 @@ export type BayPatientStage = 'stretcher' | 'floor';
 // stage origins place the active posture against those support planes.
 const BAY_STAGE_Y: Record<BayPatientStage, number> = { stretcher: 0.94, floor: 0.39 };
 const BAY_SUPPORT_Y: Record<BayPatientStage, number> = { stretcher: 0.5025, floor: -0.05 };
+const BAY_PATIENT_SCALE = 1.04;
+// The final seated assets place their soles 0.289–0.321 m above the morph
+// origin across adult female/male bodies. The midpoint keeps either sex within
+// roughly 2 cm of the room floor, then scales continuously for younger bodies.
+const SEATED_SOLE_LIFT = 0.305;
 
 export function getTreatmentBayTransform(
   stage: BayPatientStage = 'stretcher',
@@ -110,13 +115,11 @@ export function getTreatmentBayTransform(
   // longitudinal axis before the root is laid onto the support surface.
   const rollSide = posture === 'recovery' ? THREE.MathUtils.degToRad(75) : 0;
   const stageY = BAY_SUPPORT_Y[stage] + (BAY_STAGE_Y[stage] - BAY_SUPPORT_Y[stage]) * patientScale;
-  // The tripod morph raises the soles about 0.23 m above its authoring origin.
-  // Calibrate that offset around the room floor and scale it with the body;
-  // otherwise a toddler inherits the adult -0.29 m root and sinks through the
-  // scene. Tripod always represents a seated/upright patient, not a body lying
-  // on either treatment support surface.
+  // Ground the Blender-authored seated soles directly on the room floor.
+  // Tripod always represents a seated/upright patient, not a body lying on
+  // either treatment support surface.
   const positionY = uprightSeated
-    ? BAY_SUPPORT_Y.floor + (BAY_STAGE_Y.stretcher - 1.23 - BAY_SUPPORT_Y.floor) * patientScale
+    ? BAY_SUPPORT_Y.floor - SEATED_SOLE_LIFT * BAY_PATIENT_SCALE * patientScale
     // A lateral patient rests on the shoulder/hip contour, roughly 0.33 m
     // from the rig origin—not on the 0.44 m posterior depth used for supine.
     // Keeping the supine height here is what made recovery patients hover.
@@ -126,7 +129,7 @@ export function getTreatmentBayTransform(
   return {
     position: [0, positionY, 0.78] as [number, number, number],
     rotation: [baseRotation + pitchUp, rollSide, 0] as [number, number, number],
-    scale: 1.04,
+    scale: BAY_PATIENT_SCALE,
   };
 }
 

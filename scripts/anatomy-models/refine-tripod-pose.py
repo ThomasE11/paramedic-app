@@ -111,7 +111,7 @@ def bake_rigged_seated_legs(body, basis, target_key, hip_z, knee_z, knee_blend, 
     # feet, so the full adult counter-rotation over-stretches their sparse skin
     # weights. Scale the correction continuously by fitted body height: enough
     # to unpoint an infant's toes, reaching a flat adult foot at 1.7 m.
-    foot_plant_strength = 0.56 + 0.24 * min(
+    foot_plant_strength = 0.45 + 0.15 * min(
         1.0,
         max(0.0, (height - 0.65) / 1.05),
     )
@@ -139,7 +139,10 @@ def bake_rigged_seated_legs(body, basis, target_key, hip_z, knee_z, knee_blend, 
             (x * patient_scale, -1.0 * patient_scale, min_z + 0.68 * patient_scale),
         )
         constraint.chain_count = 2
-        constraint.pole_angle = math.pi
+        # Keep both fitted knees in the sagittal plane. The former pi-radian
+        # pole angle drove one shin through the midline and splayed the other
+        # laterally; a quarter turn makes both lower legs hang vertically.
+        constraint.pole_angle = math.pi / 2
         created_constraints.append((lower_leg, constraint))
         planted_feet.append(foot)
 
@@ -241,7 +244,7 @@ def limit_pelvic_edge_strain(body, basis, target_key, hip_z, height):
     # Infants carry their perineal seam proportionally lower than the adult
     # 51%-height landmark used above. Include the lower medial-groin patch so
     # paediatric left/right upper-leg weights cannot pull it apart.
-    lower_z = hip_z - height * 0.18
+    lower_z = hip_z - height * 0.22
     upper_z = hip_z + height * 0.10
     constraints = []
     for edge in body.data.edges:
@@ -269,7 +272,10 @@ def limit_pelvic_edge_strain(body, basis, target_key, hip_z, height):
     max_stretch = 1.8
     # Gauss-Seidel distance constraints converge quickly on this small pelvic
     # patch and preserve the authored boundary better than broad mesh smoothing.
-    for _ in range(160):
+    # The mirrored left-leg solve exposes more of the small paediatric groin
+    # seam to this constraint graph. Give the densest child/toddler meshes
+    # enough passes to converge instead of exporting a locally stretched hip.
+    for _ in range(320):
         for first, second, rest_length in constraints:
             first_point = target_key.data[first].co
             second_point = target_key.data[second].co
@@ -349,6 +355,7 @@ def refine_tripod(body) -> tuple[int, float, float]:
     body["paramedic_tripod_torso_revision"] = 4
     body["paramedic_seated_pelvis_revision"] = 2
     body["paramedic_seated_foot_revision"] = 1
+    body["paramedic_seated_leg_revision"] = 1
 
     if changed < 2500:
         raise RuntimeError(f"tripod leg mask captured too few vertices: {changed}")
