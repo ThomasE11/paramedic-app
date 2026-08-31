@@ -341,6 +341,7 @@ const HIGH_IMPACT_TREATMENT_CATEGORIES: Record<string, { label: string; prompt: 
 export function deriveTreatmentLoopStates(
   appliedTreatmentIds: string[],
   reassessedTreatmentIds: string[] = [],
+  caseData?: CaseScenario,
 ): TreatmentLoopState[] {
   const reassessedSet = new Set(reassessedTreatmentIds);
   const loops: TreatmentLoopState[] = [];
@@ -351,7 +352,17 @@ export function deriveTreatmentLoopStates(
     );
     if (!matchedKey) continue;
 
-    const cat = HIGH_IMPACT_TREATMENT_CATEGORIES[matchedKey];
+    const localBurnCooling = matchedKey === 'active_cooling'
+      && caseData != null
+      && (caseData.category === 'burns'
+        || /\b(?:burns?|scald|flash[- ]burn)\b/i.test(`${caseData.subcategory} ${caseData.dispatchInfo?.callReason}`));
+    const cat = localBurnCooling
+      ? {
+          label: 'Burn dressing',
+          prompt: 'Recheck pain, burn depth/TBSA, distal circulation, core temperature, and airway signs',
+          pendingNote: 'Burn cooled and covered — reassess pain, tissue, circulation, and temperature',
+        }
+      : HIGH_IMPACT_TREATMENT_CATEGORIES[matchedKey];
     // Check reassessment against exact treatment ID, matched key, or prefix match
     const isReassessed = reassessedSet.has(txId)
       || reassessedSet.has(matchedKey)
@@ -387,6 +398,7 @@ export function deriveRealismDirectorState(input: RealismDirectorInput): Realism
   const loopStates = deriveTreatmentLoopStates(
     input.appliedTreatmentIds || [],
     input.reassessedTreatmentIds || [],
+    input.caseData,
   );
   const pendingReassessmentIds = loopStates
     .filter(l => l.state === 'applied')
