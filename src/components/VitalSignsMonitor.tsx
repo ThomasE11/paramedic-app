@@ -39,6 +39,7 @@ import { TwelveLeadReport } from './TwelveLeadReport';
 import { hasAttachedDefibrillatorPads } from '@/lib/defibrillatorSafety';
 import {
   assessPacingCapture,
+  assessPacingStart,
   MODELLED_PACING_CAPTURE_THRESHOLD_MA,
 } from '@/lib/pacingSafety';
 
@@ -3400,6 +3401,16 @@ export function VitalSignsMonitor({
                 <ControlButton label="ALARMS" variant={alarmStatus.hasCritical ? 'orange' : 'dark'}
                   onClick={() => setAlarmsEnabled(!alarmsEnabled)}
                   led={alarmsEnabled ? (alarmStatus.hasCritical ? 'red' : alarmStatus.hasWarning ? 'orange' : 'green') : 'off'} />
+                <div
+                  data-pacer-pad-status={padsAttached ? 'connected' : 'disconnected'}
+                  className={`px-2 py-1 rounded-sm border font-mono text-[7px] font-bold tracking-wide ${
+                    padsAttached
+                      ? 'border-green-500/50 bg-green-950/40 text-green-300'
+                      : 'border-red-500/60 bg-red-950/50 text-red-300'
+                  }`}
+                >
+                  {padsAttached ? 'PADS CONNECTED · OUTPUT AVAILABLE' : 'PADS OFF · OUTPUT LOCKED'}
+                </div>
               </div>
               <div className="flex items-center gap-1.5 flex-wrap">
                 {/* Lead 1/2/3 */}
@@ -3434,10 +3445,19 @@ export function VitalSignsMonitor({
                 </div>
 
                 {/* START/STOP PACE */}
-                <ControlButton label={pacerActive ? 'STOP PACE' : 'START PACE'} variant={pacerActive ? 'red' : 'green'}
+                <ControlButton label={pacerActive ? 'STOP PACE' : padsAttached ? 'START PACE' : 'PADS FIRST'} variant={pacerActive ? 'red' : padsAttached ? 'green' : 'dark'}
                   led={pacerActive ? 'green' : 'off'}
                   onClick={() => {
-                    const ns = !pacerActive; setPacerActive(ns);
+                    const ns = !pacerActive;
+                    if (ns) {
+                      const startAssessment = assessPacingStart(padsAttached);
+                      if (!startAssessment.canStart) {
+                        setShockFeedbackMessage({ text: startAssessment.message, severity: 'critical' });
+                        logIntervention('SAFETY LOCK', 'Pacing blocked — multifunction pads are not attached');
+                        return;
+                      }
+                    }
+                    setPacerActive(ns);
                     logIntervention('PACER', ns ? `Started ${pacerRate}ppm/${pacerOutput}mA` : 'Stopped');
                   }} />
                 <ControlButton

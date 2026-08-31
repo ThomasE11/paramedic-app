@@ -13,6 +13,30 @@ export interface PacingCaptureAssessment {
   message: string;
 }
 
+export interface PacingStartAssessment {
+  canStart: boolean;
+  message: string;
+}
+
+/**
+ * A transcutaneous pacer cannot deliver current until multifunction pads are
+ * connected. Keep this check separate from capture: pads permit output, while
+ * a palpable pulse is still required to prove mechanical capture.
+ */
+export function assessPacingStart(padsAttached: boolean): PacingStartAssessment {
+  if (!padsAttached) {
+    return {
+      canStart: false,
+      message: 'PADS OFF — attach and connect multifunction pads before starting pacing.',
+    };
+  }
+
+  return {
+    canStart: true,
+    message: 'Multifunction pads connected — pacing output available.',
+  };
+}
+
 /**
  * Keeps electrical pacing separate from clinical capture. The simulator uses
  * a modelled current threshold, but the learner must still palpate a pulse:
