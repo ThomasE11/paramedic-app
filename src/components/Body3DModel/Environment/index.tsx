@@ -385,6 +385,65 @@ function MonitorStand() {
   );
 }
 
+/** Rugged portable monitor/defibrillator for pre-hospital scenes. Unlike the
+ * clinic stand, this sits beside the jump bags and stays below the patient's
+ * limbs throughout the orbit camera. */
+function PortableMonitor() {
+  return (
+    <group position={[1.75, 0, -0.82]} rotation={[0, -0.35, 0]}>
+      {/* Rubberised chassis and feet */}
+      <mesh position={[0, 0.2, 0]} castShadow raycast={NO_RAYCAST}>
+        <boxGeometry args={[0.5, 0.34, 0.2]} />
+        <meshStandardMaterial color="#1e293b" roughness={0.72} metalness={0.18} />
+      </mesh>
+      {[-0.18, 0.18].map(x => (
+        <mesh key={`portable-monitor-foot-${x}`} position={[x, 0.035, 0]} castShadow raycast={NO_RAYCAST}>
+          <boxGeometry args={[0.1, 0.07, 0.16]} />
+          <meshStandardMaterial color="#0f172a" roughness={0.9} />
+        </mesh>
+      ))}
+
+      {/* Carry handle */}
+      {[-0.17, 0.17].map(x => (
+        <mesh key={`portable-monitor-handle-upright-${x}`} position={[x, 0.47, 0]} castShadow raycast={NO_RAYCAST}>
+          <boxGeometry args={[0.035, 0.22, 0.045]} />
+          <meshStandardMaterial color="#334155" roughness={0.48} metalness={0.35} />
+        </mesh>
+      ))}
+      <mesh position={[0, 0.57, 0]} castShadow raycast={NO_RAYCAST}>
+        <boxGeometry args={[0.37, 0.045, 0.045]} />
+        <meshStandardMaterial color="#334155" roughness={0.48} metalness={0.35} />
+      </mesh>
+
+      {/* Recessed waveform display */}
+      <mesh position={[-0.055, 0.23, 0.106]} raycast={NO_RAYCAST}>
+        <planeGeometry args={[0.31, 0.2]} />
+        <meshStandardMaterial
+          color="#020617"
+          emissive={PALETTE.screenGlow}
+          emissiveIntensity={0.72}
+          roughness={0.28}
+        />
+      </mesh>
+      {[0.12, 0.19, 0.26, 0.33].map((y, index) => (
+        <mesh
+          key={`portable-monitor-control-${y}`}
+          position={[0.18, y, 0.111]}
+          rotation={[Math.PI / 2, 0, 0]}
+          raycast={NO_RAYCAST}
+        >
+          <cylinderGeometry args={[0.018 + (index === 3 ? 0.005 : 0), 0.018 + (index === 3 ? 0.005 : 0), 0.012, 12]} />
+          <meshStandardMaterial
+            color={index === 3 ? '#f59e0b' : '#cbd5e1'}
+            roughness={0.48}
+            metalness={0.18}
+          />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
 function OxygenTank() {
   return (
     <group position={[1.55, 0, -0.6]}>
@@ -615,7 +674,7 @@ export function TreatmentBayEnvironment({
           red crash cart and O2 tank belong inside a bay — hide them for
           outdoor roadside variants so the wrecked car + motorcycle aren't visually
           buried under clinic furniture. */}
-      <MonitorStand />
+      {isClinic ? <MonitorStand /> : <PortableMonitor />}
       {isClinic && (
         <>
           <OxygenTank />
