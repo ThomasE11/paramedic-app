@@ -188,7 +188,9 @@ export function derivePatientPosture(
   if (mobility === 'recumbent') return 'supine';
   if (mobility === 'seated') {
     if (/\bsemi[- ]recumbent\b|\bsemi[- ]reclined\b/.test(authoredPosition)) return 'seated';
-    return /\btripod\b|leaning forward/.test(authoredPosition) || respiratoryDistress
+    const explicitTripod = /\btripod\b/.test(authoredPosition)
+      || (!tachypnoeaWithoutTripod && /leaning forward/.test(authoredPosition));
+    return explicitTripod || respiratoryDistress
       ? 'tripod'
       : 'seated';
   }
