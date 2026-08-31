@@ -2970,6 +2970,17 @@ body {
     padding-right: 0.18rem;
   }
 
+  /* The assessment rail is intentionally compact on laptop workstations.
+     Keep treatment metadata at a readable width and move its action onto a
+     dedicated row instead of squeezing status chips beside the button. */
+  .tactical-assessment-rail .treatment-action-card {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tactical-assessment-rail .treatment-action-card > button {
+    width: 100%;
+  }
+
   /* The kit cards were forced into three 80–90px columns inside the care
      rail, truncating their names, purpose and option counts. Two columns keep
      each physical bag recognisable and its clinical label readable. */

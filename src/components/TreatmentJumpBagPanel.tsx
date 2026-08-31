@@ -2306,7 +2306,7 @@ export function TreatmentJumpBagPanel({
                     <div
                       key={treatment.id}
                       data-treatment-id={treatment.id}
-                      className={`grid grid-cols-[1fr_auto] gap-3 rounded-lg border p-3 text-xs transition ${
+                      className={`treatment-action-card grid grid-cols-[1fr_auto] gap-3 rounded-lg border p-3 text-xs transition ${
                         isApplied
                           ? 'border-emerald-500/30 bg-emerald-50/80 dark:bg-emerald-950/15'
                           : gateReason
@@ -2335,32 +2335,32 @@ export function TreatmentJumpBagPanel({
                                 <Badge className="h-4 rounded bg-green-600 px-1.5 text-[8px]">Given</Badge>
                               )}
                             </div>
-                            <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[9px] text-muted-foreground">
-                              <span className="inline-flex items-center gap-1 rounded-md bg-muted/70 px-1.5 py-0.5">
-                                <Clock className="h-2.5 w-2.5" />
-                                {getOnsetDescription(treatment.onset)}
-                              </span>
-                              <span className="inline-flex items-center gap-1 rounded-md bg-muted/70 px-1.5 py-0.5">
-                                <Activity className="h-2.5 w-2.5" />
-                                {getTreatmentEffectSummary(treatment, caseData)}
-                              </span>
-                              {treatment.requiresIVAccess && (
-                                <span className="inline-flex items-center gap-1 rounded-md bg-cyan-500/10 px-1.5 py-0.5 text-cyan-700 dark:text-cyan-300">
-                                  <Syringe className="h-2.5 w-2.5" />
-                                  IV first
-                                </span>
-                              )}
-                            </div>
-                            {gateReason && (
-                              <div className="mt-2 rounded-md border border-amber-500/25 bg-amber-500/10 px-2 py-1 text-[10px] leading-relaxed text-amber-800 dark:text-amber-200">
-                                {gateReason}
-                              </div>
-                            )}
-                            <p className="mt-1.5 line-clamp-2 text-[10px] leading-relaxed text-muted-foreground">
-                              {presentation.description}
-                            </p>
                           </div>
                         </div>
+                        <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[9px] text-muted-foreground">
+                          <span className="inline-flex items-center gap-1 rounded-md bg-muted/70 px-1.5 py-0.5">
+                            <Clock className="h-2.5 w-2.5" />
+                            {getOnsetDescription(treatment.onset)}
+                          </span>
+                          <span className="inline-flex items-center gap-1 rounded-md bg-muted/70 px-1.5 py-0.5">
+                            <Activity className="h-2.5 w-2.5" />
+                            {getTreatmentEffectSummary(treatment, caseData)}
+                          </span>
+                          {treatment.requiresIVAccess && (
+                            <span className="inline-flex items-center gap-1 rounded-md bg-cyan-500/10 px-1.5 py-0.5 text-cyan-700 dark:text-cyan-300">
+                              <Syringe className="h-2.5 w-2.5" />
+                              IV first
+                            </span>
+                          )}
+                        </div>
+                        {gateReason && (
+                          <div className="mt-2 rounded-md border border-amber-500/25 bg-amber-500/10 px-2 py-1 text-[10px] leading-relaxed text-amber-800 dark:text-amber-200">
+                            {gateReason}
+                          </div>
+                        )}
+                        <p className="mt-1.5 line-clamp-2 text-[10px] leading-relaxed text-muted-foreground">
+                          {presentation.description}
+                        </p>
                       </div>
                       <Button
                         size="sm"
