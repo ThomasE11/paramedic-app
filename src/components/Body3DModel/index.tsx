@@ -3575,17 +3575,18 @@ function getTreatmentBayCameraFocus(
 ) {
   const cameraScale = Math.max(0.6, Math.min(1, patientScale));
   if (posture === 'tripod' || posture === 'seated' || mobility === 'standing' || mobility === 'pacing') {
-    // The seated tripod morph is now grounded at the feet; its head occupies
-    // the normal upright frame, so it no longer needs the legacy high camera
-    // that was compensating for a floating, straight-legged patient.
+    // Keep the whole seated body inside the unobstructed part of the viewport.
+    // The bottom care ribbon consumes part of the Canvas, so a torso-centred
+    // portrait cropped both feet and made pedal assessment impossible from the
+    // overview. A slightly lower target and longer three-quarter view retain
+    // the face while showing knees, ankles, soles and their interaction sites.
     const stageLift = 0;
-    const target: [number, number, number] = [0, 1.02 * patientScale + stageLift, 0.18];
+    const target: [number, number, number] = [0, 0.70 * patientScale + stageLift, 0.18];
     return {
       // A slight three-quarter arrival angle makes the forward trunk lean and
-      // hands-on-thigh bracing readable immediately; the previous near-frontal
-      // view flattened the depth of a genuine tripod pose back into a standing
-      // silhouette.
-      pos: [1.05 * cameraScale, target[1] + 0.34 * cameraScale, target[2] + 3 * cameraScale] as [number, number, number],
+      // hands-on-thigh bracing readable immediately. The extra stand-off also
+      // keeps the distal legs visible below the persistent care controls.
+      pos: [1.1 * cameraScale, target[1] + 0.36 * cameraScale, target[2] + 3.55 * cameraScale] as [number, number, number],
       target,
     };
   }
