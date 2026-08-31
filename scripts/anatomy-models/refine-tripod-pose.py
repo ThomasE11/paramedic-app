@@ -8,7 +8,7 @@ authored upper-body distress pose and rebuilds only the lower-limb component:
 * thighs flex forward from the hips;
 * knees stay together at seat height;
 * lower legs hang vertically below the knees;
-* feet remain aligned beneath the knees;
+* feet remain aligned beneath the knees with the soles planted;
 * the runtime fitted spine and arm bones supply the forward respiratory lean
   and relaxed arms without tearing the shoulder sockets.
 
@@ -107,11 +107,24 @@ def bake_rigged_seated_legs(body, basis, target_key, hip_z, knee_z, knee_blend, 
         return target
 
     patient_scale = height / 1.8
+    # Small paediatric ankles carry fewer edge rings and proportionally larger
+    # feet, so the full adult counter-rotation over-stretches their sparse skin
+    # weights. Scale the correction continuously by fitted body height: enough
+    # to unpoint an infant's toes, reaching a flat adult foot at 1.7 m.
+    foot_plant_strength = 0.56 + 0.24 * min(
+        1.0,
+        max(0.0, (height - 0.65) / 1.05),
+    )
+
+    planted_feet = []
 
     def add_leg_ik(side, x):
         lower_leg = armature.pose.bones.get(f"mixamorig:{side}Leg")
+        foot = armature.pose.bones.get(f"mixamorig:{side}Foot")
         if lower_leg is None:
             raise RuntimeError(f"patient rig is missing mixamorig:{side}Leg")
+        if foot is None:
+            raise RuntimeError(f"patient rig is missing mixamorig:{side}Foot")
         constraint = lower_leg.constraints.new("IK")
         constraint.name = f"Paramedic tripod {side} leg"
         # The treatment-bay tripod root is lowered to seat the pelvis on the
@@ -128,14 +141,38 @@ def bake_rigged_seated_legs(body, basis, target_key, hip_z, knee_z, knee_blend, 
         constraint.chain_count = 2
         constraint.pole_angle = math.pi
         created_constraints.append((lower_leg, constraint))
+        planted_feet.append(foot)
 
     # Shape keys must be neutral while the evaluated armature result is read.
     previous_values = {key.name: key.value for key in body.data.shape_keys.key_blocks}
     for key in body.data.shape_keys.key_blocks:
         key.value = 0.0
 
-    add_leg_ik("Left", 0.105)
-    add_leg_ik("Right", -0.105)
+    # A little space between the ankles prevents the feet and medial calves
+    # intersecting in the three-quarter treatment-bay camera.
+    add_leg_ik("Left", 0.125)
+    add_leg_ik("Right", -0.125)
+    bpy.context.view_layer.update()
+
+    # The two-bone IK correctly seats the hips and hangs each lower leg, but a
+    # foot left at identity inherits the shin's near-vertical rotation. That is
+    # why seated patients appeared to balance on pointed toes. Keep the solved
+    # ankle position and restore each foot's bind-space world orientation so
+    # its sole remains parallel to the floor; the toe child then follows the
+    # planted foot without a second counter-rotation.
+    for foot in planted_feet:
+        ankle_position = foot.matrix.translation.copy()
+        # Blend rather than snapping all the way to the rest orientation. The
+        # fitted ankle weights need a little plantar flexion to preserve joint
+        # volume at a ninety-degree knee bend, while the majority correction is
+        # enough to remove the pointed-toe silhouette.
+        planted_rotation = foot.matrix.to_quaternion().slerp(
+            foot.bone.matrix_local.to_quaternion(),
+            foot_plant_strength,
+        )
+        planted_matrix = planted_rotation.to_matrix().to_4x4()
+        planted_matrix.translation = ankle_position
+        foot.matrix = planted_matrix
     bpy.context.view_layer.update()
 
     depsgraph = bpy.context.evaluated_depsgraph_get()
@@ -310,7 +347,8 @@ def refine_tripod(body) -> tuple[int, float, float]:
 
     body["paramedic_tripod_arm_revision"] = 2
     body["paramedic_tripod_torso_revision"] = 4
-    body["paramedic_seated_pelvis_revision"] = 1
+    body["paramedic_seated_pelvis_revision"] = 2
+    body["paramedic_seated_foot_revision"] = 1
 
     if changed < 2500:
         raise RuntimeError(f"tripod leg mask captured too few vertices: {changed}")
