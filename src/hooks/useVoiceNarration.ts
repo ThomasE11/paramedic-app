@@ -102,6 +102,7 @@ let globalVoiceSessionId = 0;
 let globalActiveAudio: HTMLAudioElement | null = null;
 let globalQueueTimers: number[] = [];
 let globalIsSpeaking = false;
+let globalSyntheticMouthActive = false;
 const globalSpeakingListeners = new Set<(speaking: boolean) => void>();
 
 function setGlobalSpeaking(next: boolean): void {
@@ -128,6 +129,7 @@ function stopActiveAudio(): void {
 }
 
 function stopCurrentPlayback(): void {
+  globalSyntheticMouthActive = false;
   if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
     window.speechSynthesis.cancel();
   }
@@ -170,10 +172,10 @@ function setActiveAudio(audio: HTMLAudioElement | null): void {
 // adds no audible latency and never blocks playback. RMS is EMA-smoothed to
 // stop the jaw juddering on every syllable transient.
 //
-// Web Speech (SpeechSynthesis) has no media element to tap, so lip-sync only
-// tracks the ElevenLabs/Supertonic HTMLAudioElement paths — those are the
-// primary voices; Web Speech is the offline fallback and simply leaves the
-// mouth shut.
+// Web Speech (SpeechSynthesis) has no media element to tap. Its utterance
+// lifecycle therefore enables a conservative syllabic envelope below, so an
+// offline patient still moves their mouth while talking instead of speaking
+// through a frozen face.
 let globalAudioCtx: AudioContext | null = null;
 let globalAnalyser: AnalyserNode | null = null;
 let analyserData: Uint8Array<ArrayBuffer> | null = null;
@@ -183,6 +185,21 @@ const elementSources = new WeakMap<HTMLAudioElement, MediaElementAudioSourceNode
 let globalMouthOpen = 0;
 let rafId: number | null = null;
 const mouthOpenListeners = new Set<MutableRefObject<number>>();
+
+const SPEECH_TAU = Math.PI * 2;
+
+/**
+ * Procedural lip opening for SpeechSynthesis, whose audio samples cannot be
+ * connected to an AnalyserNode. It supplies frequent closures for consonants
+ * and a slower phrase envelope, avoiding both a static open jaw and rapid
+ * high-frequency chatter.
+ */
+export function fallbackSpeechMouthTarget(timeSeconds: number): number {
+  const time = Number.isFinite(timeSeconds) ? Math.max(0, timeSeconds) : 0;
+  const syllable = Math.max(0, Math.sin(time * SPEECH_TAU * 4.6));
+  const phrase = 0.68 + 0.32 * Math.pow(Math.sin(time * SPEECH_TAU * 1.15 + 0.7), 2);
+  return 0.055 + Math.pow(syllable, 1.25) * phrase * 0.62;
+}
 
 function ensureAudioGraph(): boolean {
   if (typeof window === 'undefined') return false;
@@ -226,7 +243,10 @@ function attachAnalyser(audio: HTMLAudioElement): void {
 function startMouthLoop(): void {
   if (rafId !== null || typeof window === 'undefined') return;
   const tick = () => {
-    if (globalAnalyser && analyserData && globalIsSpeaking) {
+    if (globalSyntheticMouthActive && globalIsSpeaking) {
+      const target = fallbackSpeechMouthTarget(performance.now() / 1000);
+      globalMouthOpen += (target - globalMouthOpen) * 0.32;
+    } else if (globalAnalyser && analyserData && globalIsSpeaking) {
       globalAnalyser.getByteTimeDomainData(analyserData);
       let sumSq = 0;
       for (let i = 0; i < analyserData.length; i++) {
@@ -770,8 +790,15 @@ export function useVoiceNarration() {
       utterance.pitch = Math.max(0.6, Math.min(1.4, jitter(basePitch, 0.03)));
       utterance.volume = 1;
 
+      utterance.onstart = () => {
+        if (!isCurrentNarrationSession(mySession)) return;
+        globalSyntheticMouthActive = true;
+        startMouthLoop();
+      };
+
       utterance.onend = () => {
         if (!isCurrentNarrationSession(mySession)) return;
+        globalSyntheticMouthActive = false;
         const gap = chunk.terminal ? profile.interSentenceGapMs : profile.interClauseGapMs;
         const gapWithJitter = gap + Math.random() * 80 - 40;
         const t = window.setTimeout(speakNext, Math.max(30, gapWithJitter));
@@ -779,6 +806,7 @@ export function useVoiceNarration() {
       };
       utterance.onerror = () => {
         if (!isCurrentNarrationSession(mySession)) return;
+        globalSyntheticMouthActive = false;
         const t = window.setTimeout(speakNext, 60);
         registerQueueTimer(t);
       };
