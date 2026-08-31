@@ -6,6 +6,10 @@ export type AmbulationSafetyCode =
   | 'consciousness'
   | 'weight-bearing-injury'
   | 'gait-symptoms'
+  | 'internal-bleeding'
+  | 'active-labour'
+  | 'acute-neurological'
+  | 'cardiac-ischaemia'
   | 'haemodynamic-instability'
   | 'hypoxia'
   | 'respiratory-instability'
@@ -20,6 +24,10 @@ export interface AmbulationSafetyDecision {
 
 const WEIGHT_BEARING_RISK = /\b(spinal|c-?spine|pelvi[cs]|hip (?:pain\w*|tender\w*|injur\w*)|femur|thigh (?:pain\w*|tender\w*|injur\w*)|knee (?:pain\w*|tender\w*|injur\w*)|leg (?:pain\w*|tender\w*|injur\w*)|ankle (?:pain\w*|tender\w*|injur\w*)|foot (?:pain\w*|tender\w*|injur\w*)|lower[- ]limb|unstable fracture|open fracture|unable to (?:stand|walk|get up|bear weight)|non[- ]weight[- ]bearing|back pain)\b/i;
 const GAIT_RISK = /\b(dizz|vertigo|syncope|syncopal|faint|collapse|unsteady|ataxi|new weakness|loss of balance)\w*/i;
+const INTERNAL_BLEEDING_RISK = /\b(internal (?:haemorrhage|hemorrhage|bleeding)|splenic (?:injury|laceration|rupture)|haemoperitoneum|hemoperitoneum|FAST positive (?:for )?(?:LUQ|RUQ|pelvic|free )?fluid|rebound tenderness)\b/i;
+const ACTIVE_LABOUR_RISK = /\b(active (?:second stage of )?labour|crowning|urge to push|delivery imminent|imminent (?:vaginal )?delivery)\b/i;
+const ACUTE_NEUROLOGICAL_RISK = /\b(stroke|transient isch(?:a)?emic attack|TIA|FAST positive|focal neurological deficit|facial droop|slurred speech|dysarthria|hemiparesis|unilateral weakness)\b/i;
+const CARDIAC_ISCHAEMIA_RISK = /\b(STEMI|NSTEMI|acute coronary syndrome|Wellens(?: syndrome)?|de Winter|angina|myocardial infarction|cardiogenic shock)\b/i;
 
 export function assessAmbulationSafety({
   caseData,
@@ -46,6 +54,18 @@ export function assessAmbulationSafety({
   }
   if (GAIT_RISK.test(clinicalText)) {
     return { allowed: false, code: 'gait-symptoms', reason: 'Collapse, dizziness or impaired balance makes a walking trial unsafe until the cause is assessed and the patient is stable.' };
+  }
+  if (INTERNAL_BLEEDING_RISK.test(clinicalText)) {
+    return { allowed: false, code: 'internal-bleeding', reason: 'Suspected internal bleeding or evolving shock requires supine management, haemorrhage care and rapid transport — do not stand the patient.' };
+  }
+  if (ACTIVE_LABOUR_RISK.test(clinicalText)) {
+    return { allowed: false, code: 'active-labour', reason: 'Active second-stage labour or crowning requires a supported delivery position and immediate birth preparation, not an assisted walking trial.' };
+  }
+  if (ACUTE_NEUROLOGICAL_RISK.test(clinicalText)) {
+    return { allowed: false, code: 'acute-neurological', reason: 'A suspected stroke or TIA carries weakness, balance and deterioration risk. Keep the patient supported and prioritise time-critical neurological care.' };
+  }
+  if (CARDIAC_ISCHAEMIA_RISK.test(clinicalText)) {
+    return { allowed: false, code: 'cardiac-ischaemia', reason: 'Suspected myocardial ischaemia must be managed at rest with monitoring and time-critical treatment; exertional walking is unsafe.' };
   }
 
   const systolic = Number.parseInt(String(vitals.bp ?? '').split('/')[0], 10);
