@@ -824,6 +824,26 @@ export const TREATMENTS: Treatment[] = [
       { vitalSign: 'respiration', changeType: 'decrease', value: 2, minValue: 12 },
     ],
   },
+  {
+    id: 'paced_breathing',
+    name: 'Coach Paced Breathing',
+    description: 'Guide slow diaphragmatic breathing with a longer exhalation after excluding organic respiratory or cardiac causes',
+    category: 'breathing',
+    onset: 'gradual',
+    onsetTimeSeconds: 10,
+    durationSeconds: 40,
+    icon: 'Wind',
+    color: 'cyan',
+    effects: [
+      { vitalSign: 'respiration', changeType: 'decrease', value: 12, minValue: 12 },
+      { vitalSign: 'pulse', changeType: 'decrease', value: 14, minValue: 60 },
+    ],
+    contraindications: [
+      'Do not assume anxiety before excluding hypoxia, asthma, pulmonary embolism, acute coronary syndrome and metabolic causes',
+      'Never use paper-bag rebreathing',
+    ],
+    requiresMonitoring: true,
+  },
 
   // ===== POSITIONING =====
   {

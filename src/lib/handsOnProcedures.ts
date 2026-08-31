@@ -342,6 +342,27 @@ export function getHandsOnProcedurePlan(
     };
   }
 
+  if (treatmentId === 'paced_breathing') {
+    return {
+      id: 'paced-breathing-coaching',
+      title: 'Coach paced breathing',
+      subtitle: 'Use a calm, patient-led cadence only after checking that the fast breathing is not an untreated organic emergency.',
+      treatmentId,
+      requiresTarget: false,
+      targets: [],
+      equipmentAsset: '/equipment-assets/positioning.webp',
+      completionLabel: 'Cycle complete — reassess cause and response',
+      steps: [
+        STEP('exclude', 'Check for an organic emergency', 'Confirm SpO₂, chest expansion and sounds, pulse, ECG when indicated, blood glucose and red flags such as chest pain, wheeze, syncope, fever or thromboembolic risk.', 'Hyperventilation is a diagnosis of exclusion. Treat hypoxia, bronchospasm, cardiac or metabolic illness first.', 'confirm'),
+        STEP('engage', 'Gain permission and set the pace', 'Sit at eye level, validate the distress and ask the patient to follow your hand or voice. Keep the scene quiet and avoid crowding.', 'Do not tell the patient to “just calm down”; give one simple task at a time.', 'prepare'),
+        STEP('inhale', 'Guide a four-count inhale', 'Model a gentle diaphragmatic breath in through the nose for four counts without forcing a maximal inspiration.', 'Shoulders should soften; large repeated gasps can perpetuate symptoms.', 'ventilate', 1200),
+        STEP('exhale', 'Guide a six-count exhale', 'Coach a relaxed breath out through pursed lips for six counts, making the exhalation longer than the inhalation.', 'Never use paper-bag rebreathing; it can worsen unrecognised hypoxia.', 'ventilate', 1300),
+        STEP('cycles', 'Repeat five observed cycles', 'Continue the 4-in/6-out cadence, allowing a brief natural pause and adjusting to what the patient can comfortably follow.', 'Stay with the patient and watch speech, work of breathing, colour and cooperation rather than staring only at the monitor.', 'ventilate', 1400),
+        STEP('reassess', 'Reassess symptoms and physiology', 'Repeat respiratory rate, pulse, SpO₂, chest findings and symptom severity; ask about tingling, dizziness, chest discomfort and sense of control.', 'A failure to improve or any new red flag means reopen the differential and escalate assessment or transport.', 'confirm'),
+      ],
+    };
+  }
+
   if (treatmentId === 'back_blows') {
     const repeatedCycle = appliedTreatmentIds.includes('abdominal_thrusts');
     return {
@@ -947,6 +968,7 @@ const HANDS_ON_TREATMENTS = new Set([
   'left_lateral_tilt', 'leg_elevation', 'assisted_ambulation', 'post_rosc_bundle',
   'pelvic_binder',
   'assist_delivery',
+  'paced_breathing',
   'back_blows', 'abdominal_thrusts',
   'surgical_cric',
   'magill_forceps',

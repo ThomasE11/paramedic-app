@@ -5143,9 +5143,8 @@ export const TREATMENT_PROTOCOLS: TreatmentProtocol[] = [
           additionalSounds: ['Deep, sighing, rapid respirations', 'NO wheeze', 'Perioral/peripheral tingling', 'Carpopedal spasm possible'],
           description: 'Clear lungs bilaterally with good air entry — fast deep breathing, NO wheeze or crackles. Tachycardic from anxiety. SpO2 high-normal (often 99-100%). The chest is clinically normal; this is a behavioural/anxiety presentation.',
         },
-        // Coached breathing is delivered via reassurance (no breathing_coaching id exists).
-        essentialTreatments: ['reassurance'],
-        optimalTreatments: ['reassurance', 'calm_environment', 'therapeutic_rapport'],
+        essentialTreatments: ['paced_breathing', 'reassurance'],
+        optimalTreatments: ['paced_breathing', 'reassurance', 'calm_environment', 'therapeutic_rapport'],
         beneficialTreatments: ['calm_environment', 'therapeutic_rapport', 'verbal_deescalation'],
         // HARM: applying high-flow O2 to a patient already at 99-100% is unnecessary,
         // reinforces illness behaviour and escalates anxiety; over-investigation (and
@@ -5157,12 +5156,12 @@ export const TREATMENT_PROTOCOLS: TreatmentProtocol[] = [
         deteriorationRate: 'slow',
         synergies: [
           {
-            treatments: ['reassurance', 'calm_environment'],
+            treatments: ['paced_breathing', 'reassurance', 'calm_environment'],
             synergyMultiplier: 1.5,
             description: 'Calm, low-stimulus environment + steady reassurance and paced/coached breathing breaks the hyperventilation cycle — the definitive prehospital treatment',
           },
           {
-            treatments: ['reassurance', 'therapeutic_rapport', 'calm_environment'],
+            treatments: ['paced_breathing', 'reassurance', 'therapeutic_rapport', 'calm_environment'],
             synergyMultiplier: 1.7,
             description: 'Rapport + reassurance + controlled environment: full non-pharmacological panic management, normalises respiratory rate without any drug or oxygen',
           },

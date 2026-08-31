@@ -134,6 +134,7 @@ export const TREATMENT_YEAR_ACCESS: Record<string, StudentYear[]> = {
   leg_elevation:        ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
 
   // ----- COMFORT/OTHER (all years) -----
+  paced_breathing:       ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
   assist_delivery:       ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
   warming_blanket:      ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
   active_cooling:       ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
@@ -3745,6 +3746,21 @@ export function evaluateTreatmentRealism({
   const spo2 = vitals?.spo2 ?? caseData.abcde?.breathing?.spo2;
   const rr = vitals?.respiration ?? caseData.abcde?.breathing?.rate;
   const sbp = parseSystolic(vitals?.bp) ?? caseData.abcde?.circulation?.bp?.systolic;
+
+  if (treatment.id === 'paced_breathing') {
+    const anxietyHyperventilation = /panic|anxiety|hyperventilat|carpopedal|perioral|tingling|sense of impending doom/.test(text);
+    const reassuringOxygenation = typeof spo2 !== 'number' || spo2 >= 97;
+    if (anxietyHyperventilation && reassuringOxygenation) {
+      return result('matched', 'Breathing cycle coached', 'Keep the cadence slow and patient-led. Reassess respiratory rate, pulse, chest findings, tingling and distress while remaining alert for an organic cause.', 'Paced breathing matched to a normoxic anxiety/hyperventilation presentation.', {
+        patientQuote: gcs >= 13 ? 'I can follow you... in slowly, then a longer breath out.' : undefined,
+        visibleCue: makeTreatmentCue('paced-breathing-started', 'Paced breathing', 'Watch the breathing rate, peripheral tingling and distress settle over repeated cycles.', 'chest', 'observe'),
+      });
+    }
+    return result('partial', 'Keep excluding an organic cause', 'Breathing coaching may support a distressed patient, but it must not delay treatment of hypoxia, bronchospasm, chest pain, pulmonary embolism or metabolic illness.', 'Paced breathing started without a clear normoxic hyperventilation pattern.', {
+      patientQuote: gcs >= 13 ? 'I am trying, but something still feels wrong.' : undefined,
+      visibleCue: makeTreatmentCue('paced-breathing-caution', 'Breathing coached', 'Reassess oxygenation, chest findings, ECG and the cause of tachypnoea.', 'chest', 'warning'),
+    });
+  }
 
   if (/oxygen_(nasal|mask|nonrebreather)/.test(treatment.id)) {
     if ((typeof spo2 === 'number' && spo2 < 94) || /hypoxia|hypoxic|cyanosis|respiratory distress|shock|chest pain|anaphylaxis|sepsis/.test(text)) {

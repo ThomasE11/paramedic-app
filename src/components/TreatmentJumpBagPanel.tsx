@@ -156,6 +156,7 @@ export function recommendedManagementTabForCase(caseData: CaseScenario): Managem
 
 const CASE_PATHWAY_TREATMENTS: Array<{ pattern: RegExp; treatmentIds: string[] }> = [
   { pattern: /\b(crowning|prepare for delivery|delivery on scene|support (?:a )?natural delivery|guide,? do not pull|warm towels? (?:ready )?for (?:the )?newborn)\b/, treatmentIds: ['assist_delivery'] },
+  { pattern: /\b(breathing coach(?:ing)?|coach(?:ing)? (?:slow|controlled) breathing|paced breathing|breathe (?:in|with me)|in for 4.{0,24}out for 6)\b/, treatmentIds: ['paced_breathing'] },
   { pattern: /\b(active cooling|cooling measures?|heat stroke|heat exhaustion|cool running water|cool (?:the )?burns?|burn cooling)\b/, treatmentIds: ['active_cooling'] },
   { pattern: /\b(active rewarming|rewarming|prevent hypothermia|warming blanket)\b/, treatmentIds: ['warming_blanket'] },
   { pattern: /\b(open (?:the )?airway|airway opening|jaw thrust|head tilt[-– ]chin lift)\b/, treatmentIds: ['airway_open'] },
@@ -240,7 +241,7 @@ export function suggestedTreatmentIdsForCase(
   const cpapResponsivePresentation = /\b(copd|pulmonary oedema|pulmonary edema|acute heart failure|cardiogenic)\b/.test(presentationText);
   const add = (...nextIds: string[]) => {
     for (const id of nextIds) {
-      if (id === 'assist_delivery' && appliedIds.includes(id)) continue;
+      if (['assist_delivery', 'paced_breathing'].includes(id) && appliedIds.includes(id)) continue;
       if ((arrestPhysiology || ventilationRequired) && ['oxygen_nonrebreather', 'oxygen_mask', 'oxygen_nasal', 'cpap_niv'].includes(id)) continue;
       if (arrestPhysiology && id.startsWith('fluids_')) continue;
       if (id === 'monitor_pads' && padsAttached) continue;
@@ -829,6 +830,7 @@ function getProductMiniatureAsset(treatment: Treatment, kind: ProductMiniatureKi
   if (id === 'oxygen_mask') return PRODUCT_ASSET_PATHS.simpleMask;
   if (id.includes('nebulizer') || id.includes('nebuliser')) return PRODUCT_ASSET_PATHS.nebulizer;
   if (id === 'bvm_ventilation') return PRODUCT_ASSET_PATHS.bvm;
+  if (id === 'paced_breathing') return EQUIPMENT_ASSET_PATHS.positioning;
   if (id === 'cpap_niv') return PRODUCT_ASSET_PATHS.cpap;
   if (id === 'mechanical_ventilation' || id === 'ventilator_setup') return PRODUCT_ASSET_PATHS.ventilator;
   if (id === 'opa_insert') return PRODUCT_ASSET_PATHS.opa;
@@ -1346,6 +1348,8 @@ export function TreatmentJumpBagPanel({
 
   const reassessmentFocus = lastTreatment?.id === 'assist_delivery'
     ? 'Maternal bleeding, BP and pulse · newborn breathing, HR, tone, colour, warmth and APGAR'
+    : lastTreatment?.id === 'paced_breathing'
+      ? 'Respiratory rate, pulse, SpO₂, chest findings, tingling, distress and organic red flags'
     : lastBag?.key === 'airway' || lastBag?.key === 'breathing'
       ? 'SpO2, respiratory rate, work of breathing'
     : lastBag?.key === 'circulation'

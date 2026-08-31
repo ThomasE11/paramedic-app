@@ -937,6 +937,55 @@ function DeliveryProcedurePreview({
   );
 }
 
+function PacedBreathingProcedurePreview({
+  treatmentId,
+  completedSteps,
+  animatingStep,
+}: {
+  treatmentId: string;
+  completedSteps: string[];
+  animatingStep: string | null;
+}) {
+  if (treatmentId !== 'paced_breathing') return null;
+  const reached = (stepId: string) => completedSteps.includes(stepId) || animatingStep === stepId;
+  const organicCausesChecked = reached('exclude');
+  const engaged = reached('engage');
+  const inhaled = reached('inhale');
+  const exhaled = reached('exhale');
+  const cyclesComplete = reached('cycles');
+  const reassessed = reached('reassess');
+
+  return (
+    <div data-procedure-preview="paced-breathing" className="pointer-events-none absolute inset-0 z-20 overflow-hidden rounded-[36px]">
+      {organicCausesChecked && (
+        <span className="absolute left-1/2 top-3 w-max -translate-x-1/2 rounded-full border border-emerald-300/45 bg-emerald-950/95 px-2 py-1 text-[7px] font-black uppercase tracking-[0.08em] text-emerald-100">SpO₂ · chest · pulse · ECG · BGL checked</span>
+      )}
+      {engaged && (
+        <>
+          <span className="absolute left-[18px] top-[92px] h-0.5 w-[62px] rotate-[18deg] bg-sky-200/85" />
+          <Hand className="absolute left-[5px] top-[72px] h-12 w-12 rotate-[72deg] text-amber-100 drop-shadow-lg" />
+          <span className="absolute left-1/2 top-[56px] -translate-x-1/2 rounded-full border border-sky-300/40 bg-sky-950/95 px-2 py-1 text-[7px] font-black uppercase tracking-[0.08em] text-sky-100">Eye level · one calm cue</span>
+        </>
+      )}
+      {(inhaled || exhaled) && (
+        <div className="absolute left-1/2 top-[91px] h-[104px] w-[104px] -translate-x-1/2 rounded-full border border-cyan-200/35 bg-cyan-300/8 shadow-[0_0_24px_rgba(34,211,238,.22)]">
+          <span className={`absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 transition-all duration-700 ${exhaled ? 'h-12 w-12 border-violet-200 bg-violet-400/20' : 'h-20 w-20 border-cyan-100 bg-cyan-300/18'}`}>
+            <span className="whitespace-pre-line text-center text-[9px] font-black uppercase tracking-[0.12em] text-white">{exhaled ? 'Out\n6' : 'In\n4'}</span>
+          </span>
+        </div>
+      )}
+      {cyclesComplete && (
+        <div className="absolute left-1/2 top-[210px] flex -translate-x-1/2 gap-1" aria-label="Five paced breathing cycles completed">
+          {[1, 2, 3, 4, 5].map(cycle => <span key={cycle} className="flex h-5 w-5 items-center justify-center rounded-full border border-cyan-200/70 bg-cyan-500/35 text-[7px] font-black text-cyan-50">{cycle}</span>)}
+        </div>
+      )}
+      {reassessed && (
+        <span className="absolute bottom-3 left-1/2 w-max max-w-[178px] -translate-x-1/2 rounded-full border border-emerald-300/50 bg-emerald-950/95 px-2 py-1 text-center text-[7px] font-black uppercase tracking-[0.08em] text-emerald-100 shadow-lg">RR + pulse + SpO₂ + symptoms reassessed</span>
+      )}
+    </div>
+  );
+}
+
 function ChokingProcedurePreview({
   treatmentId,
   completedSteps,
@@ -1220,6 +1269,12 @@ export function HandsOnProcedureDialog({
               />
 
               <DeliveryProcedurePreview
+                treatmentId={plan.treatmentId}
+                completedSteps={completedSteps}
+                animatingStep={animatingStep}
+              />
+
+              <PacedBreathingProcedurePreview
                 treatmentId={plan.treatmentId}
                 completedSteps={completedSteps}
                 animatingStep={animatingStep}

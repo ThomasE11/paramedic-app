@@ -178,11 +178,12 @@ export function derivePatientPosture(
     return 'recovery';
   }
 
-  const respiratoryDistress =
+  const breathingContext = `${caseData.category ?? ''} ${caseData.subcategory ?? ''} ${caseData.title ?? ''} ${caseData.dispatchInfo?.callReason ?? ''}`;
+  const tachypnoeaWithoutTripod = /panic|anxiety|hyperventilat|labour|labor|kussmaul|metabolic/i.test(breathingContext);
+  const respiratoryDistress = !tachypnoeaWithoutTripod && (
     (typeof respiration === 'number' && respiration >= 24) ||
-    /asthma|copd|respiratory|breath|wheez|dyspn/i.test(
-      `${caseData.category ?? ''} ${caseData.title ?? ''} ${caseData.dispatchInfo?.callReason ?? ''}`,
-    );
+    /asthma|copd|respiratory failure|shortness of breath|wheez|dyspn/i.test(breathingContext)
+  );
 
   if (mobility === 'recumbent') return 'supine';
   if (mobility === 'seated') {
