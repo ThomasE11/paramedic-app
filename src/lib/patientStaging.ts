@@ -37,6 +37,22 @@ export interface PatientLivePositionContext {
   posture: PatientPosture;
 }
 
+export type PatientLivePositionKey =
+  | 'pacing'
+  | 'standing'
+  | 'tripod'
+  | 'seated'
+  | 'recoveryFloor'
+  | 'recoveryStretcher'
+  | 'supineFloor'
+  | 'supineStretcher'
+  | 'caregiverTransfer';
+
+export interface PatientLivePositionPresentation {
+  key: PatientLivePositionKey;
+  fallback: string;
+}
+
 const TREATMENT_POSITIONING: Record<string, Omit<PatientPositioningOverride, 'treatmentId'>> = {
   supine_position: { mobility: 'recumbent', posture: 'supine' },
   recovery_position: { mobility: 'recumbent', posture: 'recovery' },
@@ -183,24 +199,39 @@ export function derivePatientPosture(
  * onto the trolley for an immediate hands-on assessment; call that transition
  * out explicitly so the live model does not appear to contradict dispatch.
  */
+export function patientLivePositionPresentation(
+  caseData: CaseScenario,
+  context: PatientLivePositionContext,
+): PatientLivePositionPresentation {
+  const { stage, mobility, posture } = context;
+  if (mobility === 'pacing') return { key: 'pacing', fallback: 'Walking / pacing in scene' };
+  if (mobility === 'standing') return { key: 'standing', fallback: 'Standing at scene' };
+  if (mobility === 'seated') {
+    return posture === 'tripod'
+      ? { key: 'tripod', fallback: 'Seated in tripod position' }
+      : { key: 'seated', fallback: 'Seated with support' };
+  }
+
+  const surface = stage === 'floor' ? 'scene floor' : 'ambulance stretcher';
+  if (posture === 'recovery') {
+    return stage === 'floor'
+      ? { key: 'recoveryFloor', fallback: `Recovery position on ${surface}` }
+      : { key: 'recoveryStretcher', fallback: `Recovery position on ${surface}` };
+  }
+  const base = `Supine on ${surface}`;
+  const arrivalPosition = caseData.initialPresentation?.position?.toLowerCase() ?? '';
+  return /\bheld by\b|\bbeing held\b|\bon .+ lap\b/.test(arrivalPosition)
+    ? { key: 'caregiverTransfer', fallback: `${base} — transferred from caregiver for assessment` }
+    : stage === 'floor'
+      ? { key: 'supineFloor', fallback: base }
+      : { key: 'supineStretcher', fallback: base };
+}
+
 export function patientLivePositionLabel(
   caseData: CaseScenario,
   context: PatientLivePositionContext,
 ): string {
-  const { stage, mobility, posture } = context;
-  if (mobility === 'pacing') return 'Walking / pacing in scene';
-  if (mobility === 'standing') return 'Standing at scene';
-  if (mobility === 'seated') {
-    return posture === 'tripod' ? 'Seated in tripod position' : 'Seated with support';
-  }
-
-  const surface = stage === 'floor' ? 'scene floor' : 'ambulance stretcher';
-  if (posture === 'recovery') return `Recovery position on ${surface}`;
-  const base = `Supine on ${surface}`;
-  const arrivalPosition = caseData.initialPresentation?.position?.toLowerCase() ?? '';
-  return /\bheld by\b|\bbeing held\b|\bon .+ lap\b/.test(arrivalPosition)
-    ? `${base} — transferred from caregiver for assessment`
-    : base;
+  return patientLivePositionPresentation(caseData, context).fallback;
 }
 
 /** Only ambulatory patients receive whole-skeleton locomotion. */

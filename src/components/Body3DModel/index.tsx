@@ -24,7 +24,7 @@ import {
   deriveScenePatientStage,
   deriveTreatmentPositioningOverride,
   patientLoadedOnStretcher,
-  patientLivePositionLabel,
+  patientLivePositionPresentation,
   shouldHideTreatmentStretcher,
   shouldShowPatientSeat,
   type PatientMobility,
@@ -4515,14 +4515,17 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
     });
   }, [isInArrest, treatmentPositioning, patientUnconscious, patientMobility, effectiveVitals, caseData]);
 
-  const livePositionLabel = useMemo(
-    () => patientLivePositionLabel(caseData, {
+  const livePositionPresentation = useMemo(
+    () => patientLivePositionPresentation(caseData, {
       stage: bayStage,
       mobility: patientMobility,
       posture: patientPosture,
     }),
     [bayStage, caseData, patientMobility, patientPosture],
   );
+  const livePositionLabel = t(`patientPosition.${livePositionPresentation.key}`, {
+    defaultValue: livePositionPresentation.fallback,
+  });
 
   // useMemo keeps the pos/target array identities stable — OrbitControls'
   // `target` prop and several useCallback deps rely on that.

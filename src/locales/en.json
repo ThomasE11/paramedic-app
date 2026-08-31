@@ -146,6 +146,17 @@
     "tourTitle": "Guided Exam Mode",
     "tourBody": "Turn on Guided mode to assess the patient in clinically correct head-to-toe order. Out-of-sequence regions are locked until you complete the previous step."
   },
+  "patientPosition": {
+    "pacing": "Walking / pacing in scene",
+    "standing": "Standing at scene",
+    "tripod": "Seated in tripod position",
+    "seated": "Seated with support",
+    "recoveryFloor": "Recovery position on scene floor",
+    "recoveryStretcher": "Recovery position on ambulance stretcher",
+    "supineFloor": "Supine on scene floor",
+    "supineStretcher": "Supine on ambulance stretcher",
+    "caregiverTransfer": "Supine on ambulance stretcher — transferred from caregiver for assessment"
+  },
   "classroom": {
     "roles": {
       "none": "No role",
