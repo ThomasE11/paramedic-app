@@ -150,13 +150,17 @@ export function recommendedManagementTabForCase(caseData: CaseScenario): Managem
 }
 
 const CASE_PATHWAY_TREATMENTS: Array<{ pattern: RegExp; treatmentIds: string[] }> = [
-  { pattern: /\b(active cooling|cooling measures?|ice packs?|heat stroke|heat exhaustion|cool running water|cool (?:the )?burn|burn cooling)\b/, treatmentIds: ['active_cooling'] },
+  { pattern: /\b(active cooling|cooling measures?|heat stroke|heat exhaustion|cool running water|cool (?:the )?burn|burn cooling)\b/, treatmentIds: ['active_cooling'] },
   { pattern: /\b(active rewarming|rewarming|prevent hypothermia|warming blanket)\b/, treatmentIds: ['warming_blanket'] },
   { pattern: /\b(iv access|intravenous access|cannulat)\b/, treatmentIds: ['iv_access'] },
   { pattern: /\b(fluid bolus|iv fluids?|normal saline|hartmann|crystalloid)\b/, treatmentIds: ['fluids_250ml'] },
   { pattern: /\b(traction splint)\b/, treatmentIds: ['traction_splint'] },
   { pattern: /\b(cervical collar|c-spine|spinal precautions?)\b/, treatmentIds: ['cervical_collar'] },
-  { pattern: /\b(splint|immobili[sz]e (?:the )?(?:injured )?limb)\b/, treatmentIds: ['splinting'] },
+  { pattern: /\b(sam splint)\b/, treatmentIds: ['sam_splint'] },
+  { pattern: /\b(box splint)\b/, treatmentIds: ['box_splint'] },
+  { pattern: /\b(vacuum (?:limb )?splint)\b/, treatmentIds: ['vacuum_limb_splint'] },
+  { pattern: /\b(air splint)\b/, treatmentIds: ['air_splint'] },
+  { pattern: /\b(splint|immobili[sz](?:e|ation)\b.{0,24}\b(?:injured )?(?:limb|fracture)|support (?:the )?injured limb)\b/, treatmentIds: ['splinting'] },
   { pattern: /\b(tourniquet)\b/, treatmentIds: ['tourniquet'] },
   { pattern: /\b(control (?:major )?bleeding|direct pressure|wound dressing)\b/, treatmentIds: ['bleeding_control'] },
   { pattern: /\b(needle decompression|thoracostomy)\b/, treatmentIds: ['needle_decompression'] },
@@ -232,6 +236,9 @@ export function suggestedTreatmentIdsForCase(
 
   const pathwaySegments = [
     ...(caseData.managementPathway?.immediate ?? []),
+    ...(caseData.managementPathway?.definitive ?? []),
+    ...(caseData.managementPathway?.monitoring ?? []),
+    ...(caseData.managementPathway?.transportConsiderations ?? []),
     ...(caseData.equipmentNeeded ?? []),
     ...(caseData.abcde?.airway?.interventions ?? []),
     ...(caseData.abcde?.breathing?.interventions ?? []),
@@ -258,6 +265,7 @@ export function suggestedTreatmentIdsForCase(
     if (systolic < 100 || currentVitals.pulse > 120 || (currentVitals.gcs ?? 15) < 15) add('iv_access');
     if (systolic < 90) add('fluids_250ml');
     if (currentVitals.bloodGlucose !== undefined && currentVitals.bloodGlucose < 4) add('glucose_10g');
+    if (currentVitals.temperature !== undefined && currentVitals.temperature >= 38.5) add('active_cooling');
   }
 
   return ids.slice(0, 6);
@@ -334,6 +342,11 @@ const TRANSPORT_TREATMENT_IDS = [
   'vacuum_mattress',
   'ked',
   'traction_splint',
+  'splinting',
+  'sam_splint',
+  'box_splint',
+  'vacuum_limb_splint',
+  'air_splint',
 ] as const;
 
 const BAG_ASSET_PATHS = {
@@ -712,12 +725,6 @@ const BAG_EQUIPMENT: Record<ManagementTab, EquipmentInventoryItem[]> = {
   ],
   exposure: [
     { id: 'exposure-collar', label: 'Cervical Collar', caption: 'Size and fit with MILS', treatmentId: 'cervical_collar', assetPath: EQUIPMENT_ASSET_PATHS.collar, tone: '#0ea5e9' },
-    { id: 'exposure-sam-splint', label: 'SAM Splint', caption: 'Malleable limb splint', treatmentId: 'sam_splint', assetPath: EQUIPMENT_ASSET_PATHS.samSplint, tone: '#f97316' },
-    { id: 'exposure-box-splint', label: 'Box Splint', caption: 'Rigid cardboard channel', treatmentId: 'box_splint', assetPath: EQUIPMENT_ASSET_PATHS.boxSplint, tone: '#d6a15f' },
-    { id: 'exposure-vacuum-splint', label: 'Vacuum Splint', caption: 'Moulds around limb', treatmentId: 'vacuum_limb_splint', assetPath: EQUIPMENT_ASSET_PATHS.vacuumLimbSplint, tone: '#2563eb', wide: true },
-    { id: 'exposure-air-splint', label: 'Air Splint', caption: 'Inflatable limb support', treatmentId: 'air_splint', assetPath: EQUIPMENT_ASSET_PATHS.airSplint, tone: '#38bdf8' },
-    { id: 'exposure-traction', label: 'Traction Splint', caption: 'Isolated femur fracture', treatmentId: 'traction_splint', assetPath: EQUIPMENT_ASSET_PATHS.tractionSplint, tone: '#2563eb', wide: true },
-    { id: 'exposure-splint-roll', label: 'Splint Roll', caption: 'General limb support', treatmentId: 'splinting', assetPath: EQUIPMENT_ASSET_PATHS.splints, tone: '#64748b' },
     { id: 'exposure-bandage', label: 'Bandages', caption: 'Dressings and wraps', treatmentId: 'bleeding_control', assetPath: EQUIPMENT_ASSET_PATHS.bandages, tone: '#f8fafc' },
     { id: 'exposure-blanket', label: 'Warming Blanket', caption: 'Prevent hypothermia', treatmentId: 'warming_blanket', assetPath: EQUIPMENT_ASSET_PATHS.blanket, tone: '#f59e0b', wide: true },
     { id: 'exposure-cooling', label: 'Cooling Pack', caption: 'Heat illness burns', treatmentId: 'active_cooling', assetPath: EQUIPMENT_ASSET_PATHS.cooling, tone: '#06b6d4' },
@@ -730,6 +737,12 @@ const BAG_EQUIPMENT: Record<ManagementTab, EquipmentInventoryItem[]> = {
   ],
   transport: [
     { id: 'transport-stretcher', label: 'Main Stretcher', caption: 'Wheeled ambulance trolley', treatmentId: 'main_stretcher', assetPath: EQUIPMENT_ASSET_PATHS.ambulanceStretcher, tone: '#facc15', wide: true },
+    { id: 'transport-sam-splint', label: 'SAM Splint', caption: 'Malleable limb splint', treatmentId: 'sam_splint', assetPath: EQUIPMENT_ASSET_PATHS.samSplint, tone: '#f97316' },
+    { id: 'transport-box-splint', label: 'Box Splint', caption: 'Rigid cardboard channel', treatmentId: 'box_splint', assetPath: EQUIPMENT_ASSET_PATHS.boxSplint, tone: '#d6a15f' },
+    { id: 'transport-vacuum-splint', label: 'Vacuum Splint', caption: 'Moulds around limb', treatmentId: 'vacuum_limb_splint', assetPath: EQUIPMENT_ASSET_PATHS.vacuumLimbSplint, tone: '#2563eb', wide: true },
+    { id: 'transport-air-splint', label: 'Air Splint', caption: 'Inflatable limb support', treatmentId: 'air_splint', assetPath: EQUIPMENT_ASSET_PATHS.airSplint, tone: '#38bdf8' },
+    { id: 'transport-traction', label: 'Traction Splint', caption: 'Isolated femur fracture', treatmentId: 'traction_splint', assetPath: EQUIPMENT_ASSET_PATHS.tractionSplint, tone: '#2563eb', wide: true },
+    { id: 'transport-splint-roll', label: 'Splint Roll', caption: 'General limb support', treatmentId: 'splinting', assetPath: EQUIPMENT_ASSET_PATHS.splints, tone: '#64748b' },
     { id: 'transport-spine-board', label: 'Long Spine Board', caption: 'Extrication and transfer', treatmentId: 'spinal_board', assetPath: EQUIPMENT_ASSET_PATHS.spineBoard, tone: '#facc15' },
     { id: 'transport-scoop', label: 'Scoop Stretcher', caption: 'Split under patient', treatmentId: 'scoop_stretcher', assetPath: EQUIPMENT_ASSET_PATHS.scoopStretcher, tone: '#94a3b8', wide: true },
     { id: 'transport-head-blocks', label: 'Head Blocks', caption: 'Immobilise head after collar', treatmentId: 'head_blocks', assetPath: EQUIPMENT_ASSET_PATHS.headBlocks, tone: '#f97316' },
