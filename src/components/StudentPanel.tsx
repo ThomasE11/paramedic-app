@@ -2928,9 +2928,10 @@ export function StudentPanel({
     await new Promise(resolve => setTimeout(resolve, 400));
 
     try {
-      const newCase = missionCandidateCases.length > 0
-        ? missionCandidateCases[Math.floor(Math.random() * missionCandidateCases.length)]
-        : null;
+      // The launch preview is a clinical handover, not a generic example. Launch
+      // the exact case the student has just reviewed so demographics, dispatch
+      // details, scene and expected presentation remain continuous.
+      const newCase = missionPreviewCase;
 
       if (!newCase) {
         setIsGenerating(false);
@@ -2952,7 +2953,7 @@ export function StudentPanel({
         description: err instanceof Error ? err.message : 'An unexpected error occurred. Try a different category.',
       });
     }
-  }, [missionCandidateCases, selectedYear, selectedCategory, cohortScopeLabel, missionCategoryLabel, missionDurationLabel, initializeCase]);
+  }, [missionPreviewCase, selectedYear, selectedCategory, cohortScopeLabel, missionCategoryLabel, missionDurationLabel, initializeCase]);
 
   // Generate case — random by category mode
   const generateCaseByCategory = useCallback(async (category: string) => {
