@@ -1305,24 +1305,30 @@ export function HandsOnProcedureDialog({
             {plan.requiresTarget && (
               <div className="space-y-2">
                 {targetSelectionUnlocked ? (
-                  <>
-                    <p className="text-xs font-semibold">Choose the exposed treatment site</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      {plan.targets.map(target => (
-                        <button
-                          type="button"
-                          key={target.id}
-                          disabled={completedSteps.length > 1 || !!animatingStep}
-                          onClick={() => setSelectedTarget(target)}
-                          className={`rounded-xl border p-2 text-left transition ${selectedTarget?.id === target.id ? 'border-red-400 bg-red-500/20 ring-2 ring-red-500/20' : 'border-white/10 bg-white/5 hover:bg-white/10'}`}
-                        >
-                          <span className="block text-xs font-semibold">{target.label}</span>
-                          <span className="line-clamp-2 text-[10px] text-slate-400">{target.detail}</span>
-                          {target.priority === 'injury' && <Badge className="mt-1 bg-red-500/20 text-[9px] text-red-200">Visible injury</Badge>}
-                        </button>
-                      ))}
-                    </div>
-                  </>
+                  plan.targets.length > 0 ? (
+                    <>
+                      <p className="text-xs font-semibold">Choose the exposed treatment site</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {plan.targets.map(target => (
+                          <button
+                            type="button"
+                            key={target.id}
+                            disabled={completedSteps.length > 1 || !!animatingStep}
+                            onClick={() => setSelectedTarget(target)}
+                            className={`rounded-xl border p-2 text-left transition ${selectedTarget?.id === target.id ? 'border-red-400 bg-red-500/20 ring-2 ring-red-500/20' : 'border-white/10 bg-white/5 hover:bg-white/10'}`}
+                          >
+                            <span className="block text-xs font-semibold">{target.label}</span>
+                            <span className="line-clamp-2 text-[10px] text-slate-400">{target.detail}</span>
+                            {target.priority === 'injury' && <Badge className="mt-1 bg-red-500/20 text-[9px] text-red-200">Visible injury</Badge>}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <p className="rounded-xl border border-amber-300/30 bg-amber-400/10 p-3 text-xs text-amber-100" role="status">
+                      No compatible injury site is documented for this case. Complete the assessment and choose a treatment that matches the findings.
+                    </p>
+                  )
                 ) : (
                   <p className="rounded-xl border border-sky-400/25 bg-sky-400/10 p-3 text-xs text-sky-100">
                     Expose the patient first. The visible injury site will then become selectable.

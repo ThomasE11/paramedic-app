@@ -80,13 +80,7 @@ function injuryTargets(caseData: CaseScenario, limbOnly: boolean): ProcedureTarg
       priority: 'injury',
     });
   }
-  if (unique.size) return [...unique.values()];
-  return allowed.map(region => ({
-    id: region,
-    label: REGION_LABELS[region],
-    detail: limbOnly ? 'Select the limb with life-threatening haemorrhage.' : 'Select the visible bleeding wound.',
-    priority: 'available',
-  }));
+  return [...unique.values()];
 }
 
 function limbInjuryTargets(caseData: CaseScenario): ProcedureTarget[] {
