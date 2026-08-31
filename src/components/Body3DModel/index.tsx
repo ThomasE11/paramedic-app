@@ -660,6 +660,7 @@ function LandmarkMarkers({
   onPulse,
   sampler,
   presentation,
+  patientScale = 1,
 }: {
   activeRegion: string | null;
   assessedRegions: Set<string>;
@@ -669,7 +670,9 @@ function LandmarkMarkers({
   onPulse?: (site: string) => void;
   sampler: SurfaceSampler | null;
   presentation: MarkerPresentation;
+  patientScale?: number;
 }) {
+  const compactPatient = patientScale < 0.55;
   const visibleMarkers = activeRegion
     ? EXAM_LANDMARKS.filter(marker => marker.region === activeRegion && marker.level === 'detail')
     : EXAM_LANDMARKS.filter(marker => marker.level === 'overview' && (
@@ -741,6 +744,7 @@ function LandmarkMarkers({
                 onSelect(marker.region);
               }}
               className={`group pointer-events-auto relative flex items-center justify-center ${isPulseMarker ? 'h-9 w-9' : isDetail ? 'h-6 w-6' : 'h-7 w-7'}`}
+              data-compact-patient={compactPatient || undefined}
               aria-label={marker.actionId?.startsWith('pulse-') ? `Check ${marker.label.toLowerCase()} pulse` : `${marker.label}: ${marker.sublabel}`}
               title={`${marker.label} — ${marker.sublabel}`}
             >
@@ -749,13 +753,13 @@ function LandmarkMarkers({
                   clickable so tapping the face/eyes/chest of the
                   model triggers the region's assessment zoom + actions. */}
               {isPulseMarker ? (
-                <span className="pointer-events-none absolute inset-1 flex items-center justify-center rounded-full border border-rose-200/90 bg-rose-600/90 text-white shadow-[0_0_0_3px_rgba(244,63,94,.18),0_4px_10px_rgba(15,23,42,.45)] motion-safe:animate-pulse">
-                  <Activity className="h-3.5 w-3.5" />
+                <span className={`pointer-events-none absolute flex items-center justify-center rounded-full border border-rose-200/90 bg-rose-600/90 text-white shadow-[0_0_0_3px_rgba(244,63,94,.18),0_4px_10px_rgba(15,23,42,.45)] motion-safe:animate-pulse ${compactPatient ? 'inset-2.5' : 'inset-1'}`}>
+                  <Activity className={compactPatient ? 'h-2.5 w-2.5' : 'h-3.5 w-3.5'} />
                 </span>
               ) : (
                 <span className={`pointer-events-none absolute inset-0 ${dotColor}`} style={{ opacity: 0 }} />
               )}
-              {!isDetail && (
+              {!isDetail && !(compactPatient && isPulseMarker) && (
                 <span className={`pointer-events-none absolute left-1/2 top-[112%] z-10 -translate-x-1/2 whitespace-nowrap rounded-md border px-1.5 py-0.5 text-[8px] font-semibold leading-none shadow-lg backdrop-blur-md transition-opacity duration-150 ${isPulseMarker ? 'opacity-95' : 'opacity-0 group-hover:opacity-100'} ${toneClasses[marker.tone ?? 'neutral']}`}>
                   {marker.label}
                 </span>
@@ -5711,6 +5715,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 onPulse={onPulse}
                 sampler={surfaceSampler}
                 presentation={markerPresentation}
+                patientScale={patientScale}
               />
 
               {!useTreatmentBayPresentation && (
