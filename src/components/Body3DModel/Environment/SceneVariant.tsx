@@ -504,7 +504,15 @@ function HomeScene({ hideOverhead, shadowsEnabled, showPatientSeat }: { hideOver
 // Public — mall/office space. Polished pale floor, glass storefront backdrop,
 // columns, bright fluorescent ceiling.
 // ---------------------------------------------------------------------------
-function PublicScene({ hideOverhead, shadowsEnabled }: { hideOverhead: boolean; shadowsEnabled: boolean }) {
+function PublicScene({
+  hideOverhead,
+  shadowsEnabled,
+  showPatientSeat,
+}: {
+  hideOverhead: boolean;
+  shadowsEnabled: boolean;
+  showPatientSeat: boolean;
+}) {
   // A supine patient extends to roughly z=-1.15 at the head. Keep every
   // storefront element behind a generous examination clearance plane so the
   // centre mullion cannot pass through the skull from the arrival camera.
@@ -541,6 +549,37 @@ function PublicScene({ hideOverhead, shadowsEnabled }: { hideOverhead: boolean; 
           <meshStandardMaterial color="#e2e8f0" roughness={0.35} metalness={0.2} />
         </mesh>
       ))}
+      {/* A seated public-venue patient must have a real support surface. The
+          dining chair is intentionally narrow, so its silhouette confirms the
+          restaurant context without hiding the thighs, arms or chest targets. */}
+      {showPatientSeat && (
+        <group position={[0, 0, 0.34]}>
+          <mesh position={[0, 0.52, -0.08]} castShadow receiveShadow raycast={NO_RAYCAST}>
+            <boxGeometry args={[0.72, 0.13, 0.5]} />
+            <meshStandardMaterial color="#7d5138" roughness={0.82} />
+          </mesh>
+          {([-0.28, 0.28] as const).flatMap(x =>
+            ([-0.26, 0.12] as const).map(z => (
+              <mesh key={`public-chair-leg-${x}-${z}`} position={[x, 0.255, z]} castShadow raycast={NO_RAYCAST}>
+                <boxGeometry args={[0.045, 0.51, 0.045]} />
+                <meshStandardMaterial color="#3b2a22" roughness={0.5} metalness={0.08} />
+              </mesh>
+            )),
+          )}
+          {[-0.29, 0.29].map(x => (
+            <mesh key={`public-chair-back-post-${x}`} position={[x, 0.9, -0.29]} castShadow raycast={NO_RAYCAST}>
+              <boxGeometry args={[0.045, 0.82, 0.045]} />
+              <meshStandardMaterial color="#3b2a22" roughness={0.5} metalness={0.08} />
+            </mesh>
+          ))}
+          {[0.71, 0.94, 1.16].map(y => (
+            <mesh key={`public-chair-back-rail-${y}`} position={[0, y, -0.29]} castShadow raycast={NO_RAYCAST}>
+              <boxGeometry args={[0.62, 0.07, 0.045]} />
+              <meshStandardMaterial color="#7d5138" roughness={0.78} />
+            </mesh>
+          ))}
+        </group>
+      )}
       {!hideOverhead && (
         <>
           <mesh position={[0, 2.3, 0.1]} rotation={[Math.PI / 2, 0, 0]} raycast={NO_RAYCAST}>
@@ -1071,7 +1110,7 @@ export function SceneVariantEnvironment({
   showPatientSeat: boolean;
 }) {
   if (variant === 'home') return <HomeScene hideOverhead={hideOverhead} shadowsEnabled={shadowsEnabled} showPatientSeat={showPatientSeat} />;
-  if (variant === 'public') return <PublicScene hideOverhead={hideOverhead} shadowsEnabled={shadowsEnabled} />;
+  if (variant === 'public') return <PublicScene hideOverhead={hideOverhead} shadowsEnabled={shadowsEnabled} showPatientSeat={showPatientSeat} />;
   if (variant === 'industrial') return <IndustrialScene shadowsEnabled={shadowsEnabled} />;
   if (variant === 'fire') return <FireScene shadowsEnabled={shadowsEnabled} />;
   if (variant === 'water') return <WaterScene shadowsEnabled={shadowsEnabled} />;
