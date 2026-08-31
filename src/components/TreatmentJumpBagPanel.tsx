@@ -8,6 +8,7 @@ import {
 } from '@/data/enhancedTreatmentEffects';
 import type { PatientState } from '@/data/dynamicTreatmentEngine';
 import { hasAttachedDefibrillatorPads } from '@/lib/defibrillatorSafety';
+import { equipmentCompletionState } from '@/lib/tacticalCarePresentation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -374,6 +375,10 @@ interface EquipmentInventoryItem {
   tone?: string;
   wide?: boolean;
 }
+
+const TREATMENT_CATEGORY_BY_ID = new Map(
+  TREATMENTS.map(treatment => [treatment.id, treatment.category] as const),
+);
 
 const DISABILITY_TREATMENT_IDS = [
   'glucose_10g',
@@ -1174,6 +1179,10 @@ function EquipmentInventoryBoard({
           const isApplying = item.treatmentId === applyingTreatmentId;
           const isStaged = item.id === stagedItemId;
           const canApply = Boolean(currentVitals && item.treatmentId && !isApplied);
+          const treatmentCategory = item.treatmentId
+            ? TREATMENT_CATEGORY_BY_ID.get(item.treatmentId)
+            : undefined;
+          const completionState = equipmentCompletionState({ treatmentId: item.treatmentId, treatmentCategory });
 
           return (
             <button
@@ -1181,7 +1190,7 @@ function EquipmentInventoryBoard({
               type="button"
               onClick={() => onSelect(item)}
               disabled={isApplying}
-              aria-label={`${isApplied ? 'Connected' : 'Select'} ${item.label}`}
+              aria-label={`${isApplied ? completionState.label : 'Select'} ${item.label}`}
               className={`equipment-tile group relative flex flex-col justify-between min-h-[122px] rounded-xl border p-2 text-left transition disabled:cursor-wait ${
                 isApplied
                   ? 'border-emerald-300/80 bg-emerald-400/20'
@@ -1204,7 +1213,7 @@ function EquipmentInventoryBoard({
                       ? 'bg-white/20 text-white border border-white/30 hover:bg-white/30'
                       : 'bg-white/10 text-white/50 border border-white/10'
               }`}>
-                {isApplied ? 'Connected' : isApplying ? 'Applying' : item.treatmentId ? currentVitals ? 'Apply' : 'Vitals first' : 'Inspect'}
+                {isApplied ? completionState.label : isApplying ? 'Applying' : item.treatmentId ? currentVitals ? 'Apply' : 'Vitals first' : 'Inspect'}
               </span>
             </button>
           );
@@ -1295,6 +1304,15 @@ export function TreatmentJumpBagPanel({
     [equipmentItems, suggestedIds],
   );
   const stagedEquipment = equipmentItems.find(item => item.id === stagedEquipmentId) ?? null;
+  const isStagedEquipmentApplied = Boolean(
+    stagedEquipment?.treatmentId && appliedTreatmentIds.includes(stagedEquipment.treatmentId),
+  );
+  const stagedEquipmentCompletion = equipmentCompletionState({
+    treatmentId: stagedEquipment?.treatmentId,
+    treatmentCategory: stagedEquipment?.treatmentId
+      ? TREATMENT_CATEGORY_BY_ID.get(stagedEquipment.treatmentId)
+      : undefined,
+  });
 
   // Search is scoped to the OPEN bag first (what the student asked for: "search
   // in the bag I opened"). Only if nothing in the open bag matches do we widen
@@ -2411,15 +2429,15 @@ export function TreatmentJumpBagPanel({
                 <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Selected equipment</p>
                 <p className="truncate font-semibold">{stagedEquipment.label}</p>
                 <p className="text-[10px] leading-relaxed text-muted-foreground">
-                  {stagedEquipment.treatmentId && appliedTreatmentIds.includes(stagedEquipment.treatmentId)
-                    ? 'Connected to the patient model and recorded on the resuscitation card.'
+                  {isStagedEquipmentApplied
+                    ? stagedEquipmentCompletion.description
                     : stagedEquipment.treatmentId
                       ? 'Staged for treatment selection once the patient is ready.'
                       : 'Inspected from the bag; no linked patient action yet.'}
                 </p>
               </div>
               <Badge variant="outline" className="h-5 shrink-0 text-[9px]">
-                {stagedEquipment.treatmentId && appliedTreatmentIds.includes(stagedEquipment.treatmentId) ? 'Connected' : 'Staged'}
+                {isStagedEquipmentApplied ? stagedEquipmentCompletion.label : 'Staged'}
               </Badge>
             </div>
           </div>
