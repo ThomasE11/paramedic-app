@@ -41,6 +41,7 @@ import {
   assessPacingCapture,
   assessPacingStart,
   MODELLED_PACING_CAPTURE_THRESHOLD_MA,
+  safePacingActive,
 } from '@/lib/pacingSafety';
 
 interface VitalSignsMonitorProps {
@@ -1473,6 +1474,11 @@ export function VitalSignsMonitor({
     setAssessmentProgress(new Map());
     setActiveAlarms(new Set());
     setAssessedVitals({});
+    setMonitorMode('monitor');
+    setPacerActive(false);
+    setPacerRate(60);
+    setPacerOutput(30);
+    setPacingCaptureConfirmed(false);
     reportedAssessmentsRef.current.clear();
     committedAlarmsRef.current = new Set();
     alarmClearAtRef.current.clear();
@@ -1573,22 +1579,36 @@ export function VitalSignsMonitor({
     setPacingCaptureConfirmed(false);
   }, [pacerActive, pacerRate, pacerOutput]);
 
+  // The physical pad connection is authoritative even when state arrives
+  // through classroom synchronisation or disappears during a case reset.
+  // Never leave pacing current active on a patient with no connected pads.
+  useEffect(() => {
+    if (safePacingActive(pacerActive, padsAttached) === pacerActive) return;
+    setPacerActive(false);
+    setPacingCaptureConfirmed(false);
+    setShockFeedbackMessage({
+      text: 'PACING STOPPED — multifunction pads are not connected.',
+      severity: 'critical',
+    });
+  }, [pacerActive, padsAttached]);
+
   // Broadcast pacer state on every change — classroom spectators mirror.
   useEffect(() => {
-    onPacerStateChange?.({ active: pacerActive, rate: pacerRate, output: pacerOutput });
+    onPacerStateChange?.({ active: safePacingActive(pacerActive, padsAttached), rate: pacerRate, output: pacerOutput });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pacerActive, pacerRate, pacerOutput]);
+  }, [pacerActive, pacerRate, pacerOutput, padsAttached]);
 
   // Mirror pacer state when a spectator receives the driver's pacer.
   // The override prop is bumped on every broadcast; we compare to our
   // current local state and apply only what's different to avoid loops.
   useEffect(() => {
     if (!overridePacerState) return;
-    if (overridePacerState.active !== pacerActive) setPacerActive(overridePacerState.active);
+    const safeActive = safePacingActive(overridePacerState.active, padsAttached);
+    if (safeActive !== pacerActive) setPacerActive(safeActive);
     if (overridePacerState.rate !== pacerRate) setPacerRate(overridePacerState.rate);
     if (overridePacerState.output !== pacerOutput) setPacerOutput(overridePacerState.output);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [overridePacerState?.active, overridePacerState?.rate, overridePacerState?.output]);
+  }, [overridePacerState?.active, overridePacerState?.rate, overridePacerState?.output, padsAttached]);
   const [shockArtifact, setShockArtifact] = useState(false);
   // Rhythm override from shock outcomes (takes priority over parent prop)
   const [localRhythmOverride, setLocalRhythmOverride] = useState<string | null>(null);

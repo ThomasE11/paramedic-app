@@ -37,6 +37,11 @@ export function assessPacingStart(padsAttached: boolean): PacingStartAssessment 
   };
 }
 
+/** Normalise local or classroom-synchronised pacer state through the same pad lock. */
+export function safePacingActive(requestedActive: boolean, padsAttached: boolean): boolean {
+  return requestedActive && assessPacingStart(padsAttached).canStart;
+}
+
 /**
  * Keeps electrical pacing separate from clinical capture. The simulator uses
  * a modelled current threshold, but the learner must still palpate a pulse:
