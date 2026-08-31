@@ -536,17 +536,50 @@ export function getHandsOnProcedurePlan(
   }
 
   if (treatmentId === 'bvm_ventilation') {
+    const ageYears = caseData.patientInfo?.age;
+    const weightKg = caseData.patientInfo?.weight;
+    const singlePatient = !caseData.mci?.isMCI && typeof weightKg === 'number' && weightKg > 0;
+    const newborn = singlePatient && typeof ageYears === 'number' && ageYears < (1 / 12);
+    const infant = singlePatient && typeof ageYears === 'number' && ageYears < 1;
+    const child = singlePatient && typeof ageYears === 'number' && ageYears < 12;
+    const patientGroup = newborn ? 'newborn' : infant ? 'infant' : child ? 'child' : 'adult';
+    const title = patientGroup === 'adult'
+      ? 'Apply bag-valve-mask ventilation'
+      : `Apply ${patientGroup} bag-valve-mask ventilation`;
+    const sizeInstruction = newborn
+      ? 'Select a neonatal bag or T-piece and a mask that covers the chin, mouth and nose without covering the eyes; connect the prescribed gas supply.'
+      : infant
+        ? 'Select a paediatric self-inflating bag and an infant mask that covers the chin, mouth and nose without covering the eyes; connect reservoir and oxygen tubing.'
+        : child
+          ? 'Select a paediatric bag and the smallest mask that seals from the bridge of the nose to the cleft of the chin; connect reservoir and oxygen tubing.'
+          : 'Connect the correctly sized mask, bag, reservoir and oxygen tubing; set 15 L/min.';
+    const positionInstruction = newborn || infant
+      ? 'Place the head in a neutral position, using a small shoulder roll if the occiput flexes the neck; use a jaw thrust when trauma is suspected.'
+      : child
+        ? 'Position the head neutrally or in a gentle sniffing position; use a jaw thrust when trauma is suspected.'
+        : 'Use head tilt–chin lift or jaw thrust when trauma is suspected.';
+    const sealInstruction = newborn || infant
+      ? 'Seat the mask chin-first over the mouth and nose, lift the mandible into the mask and use a two-person seal if one hand cannot prevent a leak.'
+      : child
+        ? 'Seat the mask from chin to nose, lift the mandible into it and use a two-person thenar-eminent seal if ventilation is ineffective.'
+        : 'Seat the mask bridge-first and use a two-person thenar-eminent grip where possible.';
+    const ventilationCue = newborn
+      ? 'Use 30–60 inflations/min and reassess chest movement and heart rate; excessive pressure or volume can injure newborn lungs.'
+      : infant || child
+        ? 'Use 20–30 breaths/min when providing breaths with a pulse; reassess pulse and ventilation every 2 minutes and avoid excessive volume.'
+        : 'Excess rate or volume causes gastric inflation and reduces venous return.';
+
     return {
-      id: 'bvm-ventilation', title: 'Apply bag-valve-mask ventilation',
-      subtitle: 'A visible chest rise requires airway position, a connected oxygen supply and a two-handed mask seal.',
+      id: 'bvm-ventilation', title,
+      subtitle: `${patientGroup === 'adult' ? 'Adult' : `${patientGroup[0].toUpperCase()}${patientGroup.slice(1)}`} ventilation requires a correctly sized interface, airway position and the smallest breath that produces visible chest rise.`,
       treatmentId, requiresTarget: false, targets: [], equipmentAsset: '/equipment-assets/bvm-face-seal-v2.png',
       completionLabel: 'Seal confirmed — begin timed ventilation',
       steps: [
-        STEP('prepare', 'Prepare the circuit', 'Connect mask, bag, reservoir and oxygen tubing; set 15 L/min.', 'The reservoir should inflate before the first assisted breath.', 'connect'),
-        STEP('position', 'Position the airway', 'Use head tilt–chin lift or jaw thrust when trauma is suspected.', 'Suction visible contamination before ventilating.', 'place'),
-        STEP('seal', 'Create a two-handed seal', 'Seat the mask bridge-first and use a two-person thenar-eminent grip where possible.', 'Do not push the mask into the face or compress the soft tissues of the neck.', 'place', 1100),
+        STEP('prepare', `Prepare the ${patientGroup} circuit`, sizeInstruction, 'Confirm the mask size and reservoir inflation before the first assisted breath.', 'connect'),
+        STEP('position', 'Position the airway', positionInstruction, 'Suction visible contamination before ventilating and avoid unnecessary cervical movement.', 'place'),
+        STEP('seal', 'Create an effective mask seal', sealInstruction, 'Lift the mandible into the mask; do not press into the eyes or compress the soft tissues beneath the chin.', 'place', 1100),
         STEP('ventilate', 'Deliver a test breath', 'Squeeze over one second, just enough to produce visible chest rise.', 'Excess rate or volume causes gastric inflation and reduces venous return.', 'ventilate', 1200),
-        STEP('confirm', 'Reassess ventilation', 'Check bilateral rise, SpO₂ and waveform capnography when available.', 'Correct the seal and airway position before increasing force.', 'confirm'),
+        STEP('confirm', 'Set cadence and reassess', 'Check bilateral rise, SpO₂ and waveform capnography when available, then select the patient-appropriate ventilation rate.', ventilationCue, 'confirm'),
       ],
     };
   }

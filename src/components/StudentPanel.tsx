@@ -6775,8 +6775,8 @@ export function StudentPanel({
                     {[
                       { rate: 10, label: '10 / min — arrest (asynchronous with CPR)', sub: 'Adult in cardiac arrest; 1 breath every 6 s.' },
                       { rate: 12, label: '12 / min — adult respiratory failure', sub: 'Apnoeic adult with pulse; 1 breath every 5 s.' },
-                      { rate: 20, label: '20 / min — paediatric', sub: 'Infant / child in respiratory distress or arrest.' },
-                      { rate: 50, label: '50 / min — neonate / newborn', sub: 'Neonatal ventilation target 40–60/min; begin near the middle and reassess chest rise and heart rate.' },
+                      { rate: 20, label: '20 / min — paediatric starting rate', sub: 'Infant / child range 20–30/min; reassess pulse and visible chest rise.' },
+                      { rate: 50, label: '50 / min — neonate / newborn', sub: 'Newborn range 30–60/min; reassess chest rise and heart rate.' },
                     ].map(opt => (
                       <button
                         key={opt.rate}
