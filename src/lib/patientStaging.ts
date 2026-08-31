@@ -42,6 +42,7 @@ export type PatientLivePositionKey =
   | 'standing'
   | 'tripod'
   | 'seated'
+  | 'semiRecumbent'
   | 'recoveryFloor'
   | 'recoveryStretcher'
   | 'supineFloor'
@@ -60,6 +61,7 @@ const TREATMENT_POSITIONING: Record<string, Omit<PatientPositioningOverride, 'tr
   left_lateral_tilt: { mobility: 'recumbent', posture: 'recovery' },
   leg_elevation: { mobility: 'recumbent', posture: 'supine' },
   assisted_ambulation: { mobility: 'pacing', posture: null },
+  assist_delivery: { mobility: 'seated', posture: 'seated' },
   main_stretcher: { mobility: 'recumbent', posture: 'supine' },
   scoop_stretcher: { mobility: 'recumbent', posture: 'supine' },
   spinal_board: { mobility: 'recumbent', posture: 'supine' },
@@ -146,7 +148,7 @@ export function derivePatientMobility(
     return 'standing';
   }
   if (
-    /\bsitting\b|\bseated\b|\bchair\b|\bdriver(?:'s)? seat\b|\blap\b|\bbeing held\b|\btripod\b|\bleaning against\b/.test(
+    /\bsitting\b|\bseated\b|\bsemi[- ]recumbent\b|\bsemi[- ]reclined\b|\bchair\b|\bdriver(?:'s)? seat\b|\blap\b|\bbeing held\b|\btripod\b|\bleaning against\b/.test(
       position,
     )
   ) {
@@ -184,6 +186,7 @@ export function derivePatientPosture(
 
   if (mobility === 'recumbent') return 'supine';
   if (mobility === 'seated') {
+    if (/\bsemi[- ]recumbent\b|\bsemi[- ]reclined\b/.test(authoredPosition)) return 'seated';
     return /\btripod\b|leaning forward/.test(authoredPosition) || respiratoryDistress
       ? 'tripod'
       : 'seated';
@@ -207,6 +210,10 @@ export function patientLivePositionPresentation(
   if (mobility === 'pacing') return { key: 'pacing', fallback: 'Walking / pacing in scene' };
   if (mobility === 'standing') return { key: 'standing', fallback: 'Standing at scene' };
   if (mobility === 'seated') {
+    const arrivalPosition = caseData.initialPresentation?.position?.toLowerCase() ?? '';
+    if (/\bsemi[- ]recumbent\b|\bsemi[- ]reclined\b/.test(arrivalPosition)) {
+      return { key: 'semiRecumbent', fallback: 'Supported semi-recumbent position' };
+    }
     return posture === 'tripod'
       ? { key: 'tripod', fallback: 'Seated in tripod position' }
       : { key: 'seated', fallback: 'Seated with support' };

@@ -5940,15 +5940,15 @@ export const TREATMENT_PROTOCOLS: TreatmentProtocol[] = [
           additionalSounds: ['Contraction-timed breathing effort', 'Fetal heart to be auscultated between contractions'],
           description: 'Clear maternal chest; breathing effort follows contractions. Auscultate the fetal heart between contractions.',
         },
-        essentialTreatments: ['fowlers_position'],
-        optimalTreatments: ['fowlers_position', 'calm_environment'],
+        essentialTreatments: ['assist_delivery', 'fowlers_position'],
+        optimalTreatments: ['assist_delivery', 'fowlers_position', 'calm_environment'],
         beneficialTreatments: ['reassurance', 'warming_blanket'], // warming blanket = dry & warm the newborn
         // Flat supine in term pregnancy → aortocaval compression.
         contraindicatedTreatments: ['supine_position'],
         deteriorationRate: 'slow',
         synergies: [
           {
-            treatments: ['fowlers_position', 'calm_environment'],
+            treatments: ['assist_delivery', 'fowlers_position', 'calm_environment'],
             synergyMultiplier: 1.3,
             description: 'Upright-supported position plus calm coaching lets maternal effort work with the contraction — midwifery, not medicine',
           },

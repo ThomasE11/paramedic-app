@@ -328,6 +328,7 @@ const HIGH_IMPACT_TREATMENT_CATEGORIES: Record<string, { label: string; prompt: 
   scoop_stretcher:       { label: 'Scoop stretcher', prompt: 'Recheck alignment, pain, straps, and distal neuro status', pendingNote: 'Scoop stretcher used — reassess alignment and neurological status' },
   vacuum_mattress:       { label: 'Vacuum mattress', prompt: 'Recheck alignment, pressure areas, comfort, and distal neuro status', pendingNote: 'Vacuum mattress used — reassess immobilisation and neurological status' },
   pelvic_binder:         { label: 'Pelvic binder', prompt: 'Recheck alignment, distal pulses, and perfusion',         pendingNote: 'Pelvic binder applied — reassess perfusion and distal pulses' },
+  assist_delivery:       { label: 'Mother and newborn', prompt: 'Recheck maternal bleeding and vitals, then newborn breathing, heart rate, tone, colour, warmth and APGAR', pendingNote: 'Birth assisted — reassess both mother and newborn' },
   warming_blanket:       { label: 'Warming',    prompt: 'Recheck temperature, skin, and perfusion',                  pendingNote: 'Warming blanket applied — reassess temperature and perfusion' },
   active_cooling:        { label: 'Cooling',    prompt: 'Recheck temperature, mental status, skin, and perfusion',    pendingNote: 'Active cooling started — reassess temperature and neurological status' },
 };

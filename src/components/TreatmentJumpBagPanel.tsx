@@ -113,6 +113,11 @@ export function recommendedManagementTabForCase(caseData: CaseScenario): Managem
   ) return 'breathing';
 
   if (
+    caseData.category === 'obstetric'
+    || /\b(labour|labor|delivery|crowning|pregnan(?:t|cy))\b/.test(text)
+  ) return 'exposure';
+
+  if (
     caseData.category === 'environmental'
     || caseData.category === 'burns'
     || /\b(heat exhaustion|heat stroke|hyperthermia|hypothermia|active cooling|active rewarming|burns?)\b/.test(text)
@@ -150,6 +155,7 @@ export function recommendedManagementTabForCase(caseData: CaseScenario): Managem
 }
 
 const CASE_PATHWAY_TREATMENTS: Array<{ pattern: RegExp; treatmentIds: string[] }> = [
+  { pattern: /\b(crowning|prepare for delivery|delivery on scene|support (?:a )?natural delivery|guide,? do not pull|warm towels? (?:ready )?for (?:the )?newborn)\b/, treatmentIds: ['assist_delivery'] },
   { pattern: /\b(active cooling|cooling measures?|heat stroke|heat exhaustion|cool running water|cool (?:the )?burns?|burn cooling)\b/, treatmentIds: ['active_cooling'] },
   { pattern: /\b(active rewarming|rewarming|prevent hypothermia|warming blanket)\b/, treatmentIds: ['warming_blanket'] },
   { pattern: /\b(open (?:the )?airway|airway opening|jaw thrust|head tilt[-– ]chin lift)\b/, treatmentIds: ['airway_open'] },
@@ -234,6 +240,7 @@ export function suggestedTreatmentIdsForCase(
   const cpapResponsivePresentation = /\b(copd|pulmonary oedema|pulmonary edema|acute heart failure|cardiogenic)\b/.test(presentationText);
   const add = (...nextIds: string[]) => {
     for (const id of nextIds) {
+      if (id === 'assist_delivery' && appliedIds.includes(id)) continue;
       if ((arrestPhysiology || ventilationRequired) && ['oxygen_nonrebreather', 'oxygen_mask', 'oxygen_nasal', 'cpap_niv'].includes(id)) continue;
       if (arrestPhysiology && id.startsWith('fluids_')) continue;
       if (id === 'monitor_pads' && padsAttached) continue;
@@ -604,6 +611,7 @@ const EQUIPMENT_ASSET_PATHS = {
   mannitol: '/equipment-assets/mannitol-bag.webp',
   ondansetron: '/equipment-assets/ondansetron-vial.webp',
   cooling: '/equipment-assets/cooling-pack.webp',
+  deliveryKit: '/equipment-assets/delivery-kit.webp',
   positioning: '/equipment-assets/positioning.webp',
   needle: '/equipment-assets/needle-decompression.webp',
   ambulanceStretcher: '/equipment-assets/ambulance-stretcher.webp',
@@ -772,6 +780,7 @@ const BAG_EQUIPMENT: Record<ManagementTab, EquipmentInventoryItem[]> = {
     { id: 'neuro-antiemetic', label: 'Antiemetic', caption: 'Nausea control', treatmentId: 'ondansetron_4mg', assetPath: EQUIPMENT_ASSET_PATHS.ondansetron, tone: '#64748b' },
   ],
   exposure: [
+    { id: 'exposure-delivery-kit', label: 'Emergency Delivery Kit', caption: 'Clean field, cord clamps, newborn warmth', treatmentId: 'assist_delivery', assetPath: EQUIPMENT_ASSET_PATHS.deliveryKit, tone: '#7c3aed', wide: true },
     { id: 'exposure-collar', label: 'Cervical Collar', caption: 'Size and fit with MILS', treatmentId: 'cervical_collar', assetPath: EQUIPMENT_ASSET_PATHS.collar, tone: '#0ea5e9' },
     { id: 'exposure-bandage', label: 'Bandages', caption: 'Dressings and wraps', treatmentId: 'bleeding_control', assetPath: EQUIPMENT_ASSET_PATHS.bandages, tone: '#f8fafc' },
     { id: 'exposure-blanket', label: 'Warming Blanket', caption: 'Prevent hypothermia', treatmentId: 'warming_blanket', assetPath: EQUIPMENT_ASSET_PATHS.blanket, tone: '#f59e0b', wide: true },
@@ -834,6 +843,7 @@ function getProductMiniatureAsset(treatment: Treatment, kind: ProductMiniatureKi
   if (id === 'air_splint') return EQUIPMENT_ASSET_PATHS.airSplint;
   if (id === 'traction_splint') return EQUIPMENT_ASSET_PATHS.tractionSplint;
   if (id === 'pelvic_binder') return EQUIPMENT_ASSET_PATHS.pelvicBinder;
+  if (id === 'assist_delivery') return EQUIPMENT_ASSET_PATHS.deliveryKit;
   if (id === 'surgical_cric') return EQUIPMENT_ASSET_PATHS.fonaKit;
   if (id === 'magill_forceps') return EQUIPMENT_ASSET_PATHS.magillKit;
   if (id === 'orogastric_tube') return EQUIPMENT_ASSET_PATHS.gastricTubeKit;
@@ -1334,8 +1344,10 @@ export function TreatmentJumpBagPanel({
     return treatment ? treatmentBelongsToBag(treatment, bag) : false;
   }) : null;
 
-  const reassessmentFocus = lastBag?.key === 'airway' || lastBag?.key === 'breathing'
-    ? 'SpO2, respiratory rate, work of breathing'
+  const reassessmentFocus = lastTreatment?.id === 'assist_delivery'
+    ? 'Maternal bleeding, BP and pulse · newborn breathing, HR, tone, colour, warmth and APGAR'
+    : lastBag?.key === 'airway' || lastBag?.key === 'breathing'
+      ? 'SpO2, respiratory rate, work of breathing'
     : lastBag?.key === 'circulation'
       ? 'BP, pulse, rhythm, perfusion'
       : lastBag?.key === 'disability'

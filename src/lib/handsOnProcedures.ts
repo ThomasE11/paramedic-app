@@ -319,6 +319,29 @@ export function getHandsOnProcedurePlan(
     };
   }
 
+  if (treatmentId === 'assist_delivery') {
+    return {
+      id: 'imminent-normal-delivery',
+      title: 'Assist imminent normal delivery',
+      subtitle: 'Protect dignity, support physiology and make the newborn transition visible without pulling or rushing the birth.',
+      treatmentId,
+      requiresTarget: false,
+      targets: [],
+      equipmentAsset: '/equipment-assets/delivery-kit.webp',
+      completionLabel: 'Mother and newborn stable — continue reassessment',
+      steps: [
+        STEP('confirm-imminent', 'Confirm delivery is imminent', 'Gain consent, expose only the perineum with a dignity sheet, identify crowning and ask about parity, gestation, membrane rupture, liquor and complications.', 'Visible crowning means remain on scene. Check for cord prolapse, abnormal presentation, meconium or major bleeding before proceeding.', 'expose'),
+        STEP('prepare', 'Prepare the delivery field', 'Use PPE, place a clean absorbent underpad, open the delivery kit and position two warm dry towels, neonatal cap, cord clamps, suction and resuscitation equipment within reach.', 'Call for appropriate backup and record the time. Routine suction is not required for a vigorous newborn.', 'prepare'),
+        STEP('position', 'Support the mother', 'Maintain a supported semi-recumbent position with knees flexed, preserve warmth and privacy, and coach controlled breathing between contractions.', 'Do not place a term patient flat supine; avoid aortocaval compression.', 'place'),
+        STEP('support-head', 'Support the emerging head', 'With a clean gloved hand, support controlled extension of the head and protect the perineum as the mother pushes with contractions.', 'Guide only. Never pull on the head or attempt to delay a normal birth.', 'place', 1300),
+        STEP('cord', 'Check for a nuchal cord', 'After the head delivers, feel gently around the neck. Slip a loose loop over the head; if too tight to reduce, clamp twice and cut between clamps.', 'Allow restitution and check that the airway is clear. Do not perform blind or routine suction.', 'expose'),
+        STEP('birth', 'Guide shoulders and body', 'Support the head as the anterior shoulder delivers, then lift the newborn securely with both hands as the posterior shoulder and body follow.', 'Expect a slippery newborn. Keep the body level, apply no traction and record the birth time.', 'place', 1400),
+        STEP('newborn', 'Dry, stimulate and keep warm', 'Place the vigorous newborn skin-to-skin on the mother, dry thoroughly, remove wet towels, apply a cap and cover both. Assess breathing, heart rate, tone and colour.', 'Start the newborn resuscitation pathway if apnoeic, gasping or heart rate is below 100/min. Record APGAR at 1 and 5 minutes.', 'wrap', 1300),
+        STEP('placenta', 'Protect the third stage', 'Do not pull the cord. Observe for placental delivery, retain it for inspection, massage the uterus only according to local protocol and quantify blood loss.', 'Monitor maternal pulse, blood pressure, uterine tone and bleeding continuously; treat postpartum haemorrhage immediately if it develops.', 'confirm'),
+      ],
+    };
+  }
+
   if (treatmentId === 'back_blows') {
     const repeatedCycle = appliedTreatmentIds.includes('abdominal_thrusts');
     return {
@@ -923,6 +946,7 @@ const HANDS_ON_TREATMENTS = new Set([
   'lucas_device', 'ventilator_setup', 'mechanical_ventilation', 'supine_position', 'recovery_position', 'fowlers_position',
   'left_lateral_tilt', 'leg_elevation', 'assisted_ambulation', 'post_rosc_bundle',
   'pelvic_binder',
+  'assist_delivery',
   'back_blows', 'abdominal_thrusts',
   'surgical_cric',
   'magill_forceps',

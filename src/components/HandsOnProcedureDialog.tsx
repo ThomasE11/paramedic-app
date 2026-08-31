@@ -868,6 +868,75 @@ function PelvicBinderProcedurePreview({
   );
 }
 
+function DeliveryProcedurePreview({
+  treatmentId,
+  completedSteps,
+  animatingStep,
+}: {
+  treatmentId: string;
+  completedSteps: string[];
+  animatingStep: string | null;
+}) {
+  if (treatmentId !== 'assist_delivery') return null;
+  const reached = (stepId: string) => completedSteps.includes(stepId) || animatingStep === stepId;
+  const assessed = reached('confirm-imminent');
+  const prepared = reached('prepare');
+  const positioned = reached('position');
+  const headSupported = reached('support-head');
+  const cordChecked = reached('cord');
+  const born = reached('birth');
+  const warmed = reached('newborn');
+  const thirdStageObserved = reached('placenta');
+
+  return (
+    <div data-procedure-preview="imminent-normal-delivery" className="pointer-events-none absolute inset-0 z-20 overflow-hidden rounded-[36px]">
+      {assessed && (
+        <>
+          <span className="absolute left-1/2 top-[116px] h-[76px] w-[94px] -translate-x-1/2 rounded-[50%] border-2 border-fuchsia-200/60 bg-gradient-to-b from-fuchsia-200/18 to-violet-400/25 shadow-[inset_0_0_20px_rgba(255,255,255,.12)]" aria-label="Term gravid abdomen assessed" />
+          {!born && <span className="absolute left-1/2 top-[87px] -translate-x-1/2 rounded-full border border-fuchsia-200/40 bg-violet-950/95 px-2 py-1 text-[7px] font-black uppercase tracking-[0.08em] text-fuchsia-100">Crowning confirmed · stay on scene</span>}
+        </>
+      )}
+      {prepared && (
+        <>
+          <span className="absolute left-[45px] top-[168px] h-[98px] w-[100px] rounded-[26px_26px_18px_18px] border border-sky-100/60 bg-sky-200/40 shadow-lg" aria-label="Clean absorbent underpad and dignity drape prepared" />
+          <span className="absolute left-2 top-[205px] h-14 w-14 overflow-hidden rounded-xl border border-white/35 bg-white/90 shadow-lg">
+            <img src="/equipment-assets/delivery-kit.webp" alt="" className="h-full w-full object-cover" />
+          </span>
+        </>
+      )}
+      {positioned && (
+        <>
+          <span className="absolute left-[49px] top-[59px] h-[135px] w-[22px] -rotate-[16deg] rounded-xl border border-sky-200/45 bg-sky-700/55" aria-label="Mother supported semi-recumbent" />
+          {!born && <span className="absolute left-1/2 bottom-4 -translate-x-1/2 rounded-full border border-sky-300/40 bg-sky-950/95 px-2 py-1 text-[7px] font-black uppercase tracking-[0.08em] text-sky-100">Semi-recumbent · warm · dignity preserved</span>}
+        </>
+      )}
+      {headSupported && !born && (
+        <>
+          <span className="absolute left-[77px] top-[203px] h-8 w-8 rounded-full border-2 border-amber-100 bg-[#a96f51] shadow-[0_0_12px_rgba(251,191,36,.35)]" aria-label="Emerging head supported without traction" />
+          <Hand className="absolute left-[52px] top-[199px] h-9 w-9 rotate-[35deg] text-amber-100 drop-shadow-lg" />
+          <Hand className="absolute right-[50px] top-[199px] h-9 w-9 -rotate-[35deg] scale-x-[-1] text-amber-100 drop-shadow-lg" />
+        </>
+      )}
+      {cordChecked && !born && (
+        <span className="absolute left-[73px] top-[198px] h-10 w-10 rounded-full border-2 border-cyan-200/90 shadow-[0_0_10px_rgba(103,232,249,.5)]" aria-label="Nuchal cord checked" />
+      )}
+      {born && (
+        <div className={`absolute z-30 h-[72px] w-[54px] transition-all duration-500 ${warmed ? 'left-[69px] top-[93px] -rotate-[18deg]' : 'left-[69px] top-[198px] rotate-[6deg]'}`} aria-label={warmed ? 'Newborn dried and placed skin-to-skin' : 'Newborn supported securely after birth'}>
+          <span className="absolute left-[17px] top-0 h-7 w-7 rounded-full border border-amber-100 bg-[#ad7355] shadow" />
+          <span className={`absolute left-[7px] top-[22px] h-12 w-11 rounded-[22px_22px_16px_16px] border ${warmed ? 'border-sky-100 bg-gradient-to-b from-sky-100 to-sky-300' : 'border-amber-100/70 bg-[#a96f51]'}`} />
+          {warmed && <span className="absolute left-[15px] -top-1 h-3 w-9 rounded-t-full bg-sky-300" aria-label="Newborn cap applied" />}
+        </div>
+      )}
+      {warmed && (
+        <span className="absolute right-2 top-[61px] rounded-full border border-emerald-300/45 bg-emerald-950/95 px-2 py-1 text-[7px] font-black uppercase tracking-[0.08em] text-emerald-100">Dry · warm · breathing + HR checked</span>
+      )}
+      {thirdStageObserved && (
+        <span className="absolute bottom-3 left-1/2 w-max max-w-[178px] -translate-x-1/2 rounded-full border border-emerald-300/50 bg-emerald-950/95 px-2 py-1 text-center text-[7px] font-black uppercase tracking-[0.08em] text-emerald-100 shadow-lg">No cord traction · maternal blood loss trending</span>
+      )}
+    </div>
+  );
+}
+
 function ChokingProcedurePreview({
   treatmentId,
   completedSteps,
@@ -1009,7 +1078,7 @@ export function HandsOnProcedureDialog({
           <DialogDescription>{plan.subtitle}</DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-4 lg:grid-cols-[0.82fr_1.18fr]">
+        <div className="grid gap-4 md:grid-cols-[0.82fr_1.18fr]">
           <section className="space-y-3 rounded-2xl border border-border/60 bg-slate-950 p-4 text-white">
             <div className="flex items-center justify-between gap-2">
               <div>
@@ -1150,6 +1219,12 @@ export function HandsOnProcedureDialog({
                 animatingStep={animatingStep}
               />
 
+              <DeliveryProcedurePreview
+                treatmentId={plan.treatmentId}
+                completedSteps={completedSteps}
+                animatingStep={animatingStep}
+              />
+
               <ChokingProcedurePreview
                 treatmentId={plan.treatmentId}
                 completedSteps={completedSteps}
@@ -1211,7 +1286,7 @@ export function HandsOnProcedureDialog({
               <div className="h-full bg-sky-500 transition-all duration-500" style={{ width: `${(completedSteps.length / plan.steps.length) * 100}%` }} />
             </div>
 
-            <div className="space-y-2">
+            <div className="max-h-[min(48vh,430px)] space-y-2 overflow-y-auto pr-1">
               {plan.steps.map((step, index) => {
                 const done = completedSteps.includes(step.id);
                 const active = nextStep?.id === step.id;

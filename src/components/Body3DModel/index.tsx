@@ -162,6 +162,7 @@ interface AppliedEquipmentVisualState {
   hasTemperatureControl: boolean;
   hasWarmingBlanket: boolean;
   hasActiveCooling: boolean;
+  hasCompletedDelivery: boolean;
   immobilisationDevice: 'spinal-board' | 'scoop' | 'vacuum-mattress' | 'head-blocks' | 'ked' | null;
   siteControls: Array<{ treatmentId: string; target: AppliedProcedureSite }>;
   /** Bleeding wound ids considered under source control (tourniquet /
@@ -203,6 +204,8 @@ const TREATMENT_ASSET_PATHS = {
   temperatureControlPads: '/equipment-assets/temperature-control-pads.svg',
   warmingBlanket: '/equipment-assets/warming-blanket.webp',
   coolingPack: '/equipment-assets/cooling-pack.webp',
+  deliveryKit: '/equipment-assets/delivery-kit.webp',
+  newbornSwaddled: '/equipment-assets/newborn-swaddled.webp',
   spineBoard: '/equipment-assets/spine-board.webp',
   scoop: '/equipment-assets/scoop-stretcher.webp',
   vacuumMattress: '/equipment-assets/vacuum-mattress.webp',
@@ -1212,6 +1215,7 @@ function buildTreatmentEquipmentState(appliedTreatmentIds: string[]): AppliedEqu
     hasWarmingBlanket: applied.has('warming_blanket'),
     hasActiveCooling: applied.has('active_cooling')
       && !siteControls.some(control => control.treatmentId === 'active_cooling'),
+    hasCompletedDelivery: applied.has('assist_delivery'),
     immobilisationDevice,
     siteControls,
     controlledBleedIds,
@@ -1607,6 +1611,23 @@ function AppliedChestDevice({ needle = false }: { needle?: boolean }) {
   );
 }
 
+function AppliedNewbornSkinToSkin() {
+  return (
+    <div
+      data-applied-equipment="newborn-skin-to-skin"
+      aria-label="Newborn dried, capped, swaddled and positioned skin-to-skin"
+      className="pointer-events-none relative flex h-24 w-16 items-center justify-center -rotate-6 animate-in fade-in zoom-in-75 duration-500 drop-shadow-[0_7px_8px_rgba(2,6,23,.58)]"
+    >
+      <img
+        src={TREATMENT_ASSET_PATHS.newbornSwaddled}
+        alt=""
+        draggable={false}
+        className="h-full w-full object-contain"
+      />
+    </div>
+  );
+}
+
 function siteEquipmentLabel(treatmentId: string): string {
   if (treatmentId === 'active_cooling') return 'Cooled burn dressing';
   if (treatmentId.includes('tourniquet')) return 'Tourniquet';
@@ -1662,6 +1683,7 @@ function AppliedEquipmentTray({ appliedTreatmentIds }: { appliedTreatmentIds: st
   if (equipment.hasTemperatureControl) chips.push({ src: TREATMENT_ASSET_PATHS.temperatureControlPads, label: 'Temperature feedback active' });
   if (equipment.hasWarmingBlanket) chips.push({ src: TREATMENT_ASSET_PATHS.warmingBlanket, label: 'Warming blanket' });
   if (equipment.hasActiveCooling) chips.push({ src: TREATMENT_ASSET_PATHS.coolingPack, label: 'Active cooling' });
+  if (equipment.hasCompletedDelivery) chips.push({ src: TREATMENT_ASSET_PATHS.deliveryKit, label: 'Birth assisted · mother + newborn' });
   if (equipment.immobilisationDevice) {
     const assets = { 'spinal-board': TREATMENT_ASSET_PATHS.spineBoard, scoop: TREATMENT_ASSET_PATHS.scoop, 'vacuum-mattress': TREATMENT_ASSET_PATHS.vacuumMattress, 'head-blocks': TREATMENT_ASSET_PATHS.headBlocks, ked: TREATMENT_ASSET_PATHS.ked };
     chips.push({ src: assets[equipment.immobilisationDevice], label: equipment.immobilisationDevice.replace('-', ' ') });
@@ -1725,6 +1747,7 @@ function TreatmentEquipmentOverlay({
     || equipment.hasTemperatureControl
     || equipment.hasWarmingBlanket
     || equipment.hasActiveCooling
+    || equipment.hasCompletedDelivery
     || equipment.immobilisationDevice
     || equipment.siteControls.length > 0;
 
@@ -1759,6 +1782,20 @@ function TreatmentEquipmentOverlay({
       {equipment.hasEtTube && equipment.oxygen?.mode !== 'ventilator' && (
         <MarkerHtml position={faceAnchor(0, 1.64, 0.24)} distanceFactor={2.4} zIndexRange={[74, 0]} interactive={false} presentation={posture === 'tripod' || posture === 'seated' ? 'upright' : presentation} contentScale={equipmentScale} surfaceAware={false}>
           <AppliedEndotrachealTube />
+        </MarkerHtml>
+      )}
+
+      {equipment.hasCompletedDelivery && (
+        <MarkerHtml
+          position={faceAnchor(0.03, 1.3, 0.27)}
+          distanceFactor={2.25}
+          zIndexRange={[77, 0]}
+          interactive={false}
+          presentation={posture === 'tripod' || posture === 'seated' ? 'upright' : presentation}
+          contentScale={equipmentScale}
+          surfaceAware={false}
+        >
+          <AppliedNewbornSkinToSkin />
         </MarkerHtml>
       )}
 

@@ -151,6 +151,7 @@
     "standing": "Standing at scene",
     "tripod": "Seated in tripod position",
     "seated": "Seated with support",
+    "semiRecumbent": "Supported semi-recumbent position",
     "recoveryFloor": "Recovery position on scene floor",
     "recoveryStretcher": "Recovery position on ambulance stretcher",
     "supineFloor": "Supine on scene floor",

@@ -134,6 +134,7 @@ export const TREATMENT_YEAR_ACCESS: Record<string, StudentYear[]> = {
   leg_elevation:        ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
 
   // ----- COMFORT/OTHER (all years) -----
+  assist_delivery:       ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
   warming_blanket:      ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
   active_cooling:       ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
   splinting:            ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],

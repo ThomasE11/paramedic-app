@@ -925,6 +925,24 @@ export const TREATMENTS: Treatment[] = [
 
   // ===== COMFORT/OTHER =====
   {
+    id: 'assist_delivery',
+    name: 'Assist Imminent Delivery',
+    description: 'Prepare a clean delivery field, support a natural birth, then dry, warm and assess the newborn',
+    category: 'comfort',
+    onset: 'immediate',
+    onsetTimeSeconds: 0,
+    durationSeconds: 10,
+    icon: 'Baby',
+    color: 'violet',
+    effects: [],
+    contraindications: [
+      'Do not pull on the baby or umbilical cord',
+      'Do not attempt transport when crowning is visible',
+      'Escalate abnormal presentation, cord prolapse or uncontrolled postpartum haemorrhage',
+    ],
+    requiresMonitoring: true,
+  },
+  {
     id: 'warming_blanket',
     name: 'Warming Blanket',
     description: 'Prevent hypothermia',
