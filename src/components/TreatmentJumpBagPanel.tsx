@@ -94,7 +94,7 @@ export function recommendedManagementTabForCase(caseData: CaseScenario): Managem
     caseData.category === 'trauma'
     && Number.isFinite(systolic)
     && systolic < 90
-    && /\b(catastrophic haemorrhage|catastrophic hemorrhage|uncontrolled bleeding|arterial bleed|active bleeding|open femur|amputation|tourniquet)\b/.test(text)
+    && /\b(catastrophic haemorrhage|catastrophic hemorrhage|uncontrolled bleeding|arterial bleed|active bleeding|open femur|amputation|tourniquet|pelvic fracture|unstable pelvis|pelvic binder)\b/.test(text)
   ) return 'circulation';
 
   if (
@@ -253,6 +253,16 @@ export function suggestedTreatmentIdsForCase(
     else if (shockableRhythm) add('defibrillation');
     add('bvm_ventilation', 'iv_access');
   }
+
+  const shockWithPelvicInjury = !arrestPhysiology
+    && getSystolicFromBp(currentVitals?.bp) < 90
+    && /\b(pelvic fracture|unstable pelvis|pelvic ring|pelvic binder)\b/.test([
+      presentationText,
+      ...(caseData.managementPathway?.immediate ?? []),
+      ...(caseData.abcde?.circulation?.interventions ?? []),
+      ...(caseData.abcde?.exposure?.interventions ?? []),
+    ].join(' ').toLowerCase());
+  if (shockWithPelvicInjury) add('pelvic_binder');
 
   const pathwaySegments = [
     ...(caseData.managementPathway?.immediate ?? []),
