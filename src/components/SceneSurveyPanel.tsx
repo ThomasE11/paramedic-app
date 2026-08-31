@@ -22,7 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useVoiceNarration } from '@/hooks/useVoiceNarration';
-import { inferSceneImage, sceneImageNeedsPatientOverlay } from '@/lib/sceneImageSelection';
+import { caseSceneNeedsPatientOverlay, inferSceneImage } from '@/lib/sceneImageSelection';
 import { patientAgeBand, patientAgeScale } from '@/lib/patientAgePresentation';
 import { dispatchAccessNotes, mandatoryScenePpe, visibleSceneHazards } from '@/lib/sceneSafety';
 import {
@@ -221,9 +221,9 @@ function getInjuryScenePosition(injury: BodyInjury, index: number): { x: number;
 // Leading demographic / filler tokens to peel off a complaint clause. Looped
 // so multi-word leads ("Elderly man …", "32-year-old female …") fully clear.
 const COMPLAINT_LEAD_STRIPPERS: RegExp[] = [
-  /^\s*\d+\s*[-\s]?\s*(?:year|yr)s?[-\s]?old\b\s*/i,
+  /^\s*\d+\s*[-\s]?\s*(?:year|yr|month|mo)s?[-\s]?old\b\s*/i,
   /^\s*\d+\s*(?:yo|y\/o|y)\b\s*/i,
-  /^\s*(?:male|female|man|woman|boy|girl|patient|pt|adult|elderly|young|older|old|teenage|teenager|infant|toddler|child|baby)\b\s*/i,
+  /^\s*(?:male|female|man|woman|boy|girl|patient|pt|adult|elderly|young|older|old|teenage|teenager|infant|toddler|child|baby|parents?|mother|father|caller)\b\s*/i,
   // grammatical fillers that would double up with the sentence's "with"
   /^\s*(?:with|having|complaining of|c\/o|reports?|reporting|presents? with|presenting with|now|new|sudden onset of)\b\s*/i,
 ];
@@ -260,7 +260,7 @@ function shortComplaint(callReason?: string): string {
     prev = s;
     for (const re of COMPLAINT_LEAD_STRIPPERS) s = s.replace(re, '');
   } while (s !== prev);
-  return s.replace(/[.!?]+$/, '').trim();
+  return s.replace(/["“”]/g, '').replace(/[.!?]+$/, '').trim();
 }
 
 /**
@@ -271,7 +271,7 @@ function shortComplaint(callReason?: string): string {
 function isVerbLedComplaint(complaint: string): boolean {
   const first = (complaint.split(/\s+/)[0] || '').toLowerCase();
   const verbs = new Set(['fell', 'fallen', 'collapsed', 'took', 'taken', 'struck', 'hit', 'stabbed', 'burned', 'burnt', 'found', 'cut', 'crashed', 'ingested', 'overdosed', 'swallowed', 'choking', 'choked', 'struggling', 'passed', 'slipped', 'tripped', 'fitting', 'seizing', 'unable', 'feels', 'feeling']);
-  const stateLed = /^(?:increasingly|progressively|suddenly|acutely|becoming|appears?|unwell|confused|drowsy|lethargic|unresponsive|agitated)\b/i.test(complaint);
+  const stateLed = /^(?:increasingly|progressively|suddenly|acutely|becoming|appears?|unwell|confused|drowsy|lethargic|unresponsive|agitated|not breathing)\b/i.test(complaint);
   return verbs.has(first) || stateLed || (/ed$/.test(first) && first.length > 3);
 }
 
@@ -424,7 +424,15 @@ function buildSceneCallouts(caseData: CaseScenario, tone: SceneTone, sceneImage:
     ];
   }
 
-  if (sceneImageNeedsPatientOverlay(sceneImage)) {
+  if (caseData.id === 'cardiac-017') {
+    return [
+      { id: 'patient', label: 'Patient', value: position, icon: Eye, x: 31, y: 37 },
+      { id: 'family', label: 'Mother', value: bystanders, icon: Users, x: 18, y: 54 },
+      { id: 'cot', label: 'Cot and access', value: caseData.sceneInfo?.environment || 'Warm nursery', icon: Search, x: 68, y: 54, align: 'right' },
+    ];
+  }
+
+  if (caseSceneNeedsPatientOverlay(caseData, sceneImage)) {
     const patientPosition = sceneImage.includes('y1-010-park-bicycle')
       ? { x: 62, y: 57 }
       : sceneImage.includes('paediatric-pool-rescue')
@@ -1187,7 +1195,7 @@ function inferPatientVisualCue(caseData: CaseScenario): string {
     caseData.abcde?.disability?.findings?.join(' '),
   ].filter(Boolean).join(' ').toLowerCase();
 
-  if (/cardiac arrest|not breathing|no normal breathing|apneic|apnoeic|pulseless/.test(text)) {
+  if (/cardiac arrest|not breathing(?!\s+properly)|no normal breathing|apneic|apnoeic|pulseless/.test(text)) {
     return 'Supine and unresponsive; no normal breathing visible';
   }
   if (/right upper quadrant|ruq|liver|paracetamol|acetaminophen/.test(text)) {
@@ -1519,7 +1527,7 @@ function SceneArrivalVisual({
               <ProceduralPatient caseData={caseData} tone={tone} />
             </>
           )}
-          {sceneImageNeedsPatientOverlay(sceneImage) && (
+          {caseSceneNeedsPatientOverlay(caseData, sceneImage) && (
             <ProceduralPatient caseData={caseData} tone={tone} sceneImage={sceneImage} />
           )}
           {sceneImage && (

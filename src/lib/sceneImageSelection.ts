@@ -197,6 +197,16 @@ export function sceneImageNeedsPatientOverlay(src: string | null): boolean {
   return Boolean(src && PATIENT_OVERLAY_SCENE_ASSETS.has(src));
 }
 
+/**
+ * Case-aware overlay decision for scene rendering. The cardiac-017 nursery
+ * plate now contains the age-correct infant held by her mother, so adding the
+ * legacy procedural figure would duplicate the patient. The one-argument
+ * asset predicate remains available for registry validation.
+ */
+export function caseSceneNeedsPatientOverlay(caseData: CaseScenario, src: string | null): boolean {
+  return caseData.id !== 'cardiac-017' && sceneImageNeedsPatientOverlay(src);
+}
+
 const CURRENT_CONTEXT_OVERRIDES: Record<string, string> = {
   // Closest currently available images while the exact prompt targets above
   // are being generated. These remove obvious scene/context contradictions.
