@@ -157,6 +157,9 @@ export function recommendedManagementTabForCase(caseData: CaseScenario): Managem
 const CASE_PATHWAY_TREATMENTS: Array<{ pattern: RegExp; treatmentIds: string[] }> = [
   { pattern: /\b(crowning|prepare for delivery|delivery on scene|support (?:a )?natural delivery|guide,? do not pull|warm towels? (?:ready )?for (?:the )?newborn)\b/, treatmentIds: ['assist_delivery'] },
   { pattern: /\b(breathing coach(?:ing)?|coach(?:ing)? (?:slow|controlled) breathing|paced breathing|breathe (?:in|with me)|in for 4.{0,24}out for 6)\b/, treatmentIds: ['paced_breathing'] },
+  { pattern: /\b(calm reassurance|reassuring manner|provide reassurance|reassurance)\b/, treatmentIds: ['reassurance'] },
+  { pattern: /\b(calm,? quiet environment|calm environment|quieter area|quiet area|reduce noise|low[- ]stimulus)\b/, treatmentIds: ['calm_environment'] },
+  { pattern: /\btransport (?:to (?:hospital|ed) )?for (?:x-?rays?|imaging)\b/, treatmentIds: ['main_stretcher'] },
   { pattern: /\b(active cooling|cooling measures?|heat stroke|heat exhaustion|cool running water|cool (?:the )?burns?|burn cooling)\b/, treatmentIds: ['active_cooling'] },
   { pattern: /\b(active rewarming|rewarming|prevent hypothermia|warming blanket)\b/, treatmentIds: ['warming_blanket'] },
   { pattern: /\b(open (?:the )?airway|airway opening|jaw thrust|head tilt[-– ]chin lift)\b/, treatmentIds: ['airway_open'] },
