@@ -157,6 +157,11 @@ import { exportSessionToPDF } from '@/lib/pdf-export';
 import { getResourcesForDebriefing } from '@/data/diversifiedResources';
 import { inferSceneImage } from '@/lib/sceneImageSelection';
 import { patientAgeShortLabel } from '@/lib/patientAgePresentation';
+import {
+  estimatedBvmTidalVolumeLitres,
+  projectedEtco2Target,
+  targetMinuteVentilationLitres,
+} from '@/lib/ventilationPhysiology';
 
 /**
  * Generate a student-friendly case title that doesn't reveal the diagnosis.
@@ -3231,13 +3236,15 @@ export function StudentPanel({
         // effect and never moved, so students saw it stuck low forever
         // despite normalised ventilation.
         const weightKg = currentCase?.patientInfo?.weight ?? 70;
-        const targetMv = weightKg * 0.1; // ≈100 mL/kg/min
+        const targetMv = targetMinuteVentilationLitres(weightKg);
         let providedMv: number | null = null;
         if (onVentilator) {
           providedMv = (ventilatorSettings!.tidalVolumeMl / 1000) * ventilatorSettings!.respiratoryRate;
         } else if (onBvm) {
-          // Adult BVM squeeze ≈500 mL; paediatric ≈250 mL if weight<30kg.
-          const assumedTvLitres = weightKg < 30 ? 0.25 : 0.5;
+          // A visible chest-rise breath scales with the patient. A fixed
+          // 250 mL "paediatric" squeeze is dangerously excessive for a
+          // newborn and made the simulated EtCO₂ response meaningless.
+          const assumedTvLitres = estimatedBvmTidalVolumeLitres(weightKg);
           providedMv = assumedTvLitres * bvmVentilationRate!;
         }
         if (providedMv != null) {
@@ -3246,12 +3253,7 @@ export function StudentPanel({
           // Over-ventilated patient drifts EtCO2 toward 25; under-ventilated
           // drifts toward 55. Tick moves EtCO2 one step per second toward
           // the predicted steady state.
-          const ratio = providedMv / targetMv;
-          const targetEtco2 = ratio >= 1.5 ? 25
-            : ratio >= 1.1 ? 32
-            : ratio >= 0.85 ? 40
-            : ratio >= 0.6 ? 50
-            : 60;
+          const targetEtco2 = projectedEtco2Target(providedMv, targetMv);
           if (Math.abs(currentEtco2 - targetEtco2) > 0.5) {
             const step = currentEtco2 < targetEtco2 ? 1 : -1;
             v.etco2 = Math.max(15, Math.min(80, currentEtco2 + step));
@@ -6774,7 +6776,7 @@ export function StudentPanel({
                       { rate: 10, label: '10 / min — arrest (asynchronous with CPR)', sub: 'Adult in cardiac arrest; 1 breath every 6 s.' },
                       { rate: 12, label: '12 / min — adult respiratory failure', sub: 'Apnoeic adult with pulse; 1 breath every 5 s.' },
                       { rate: 20, label: '20 / min — paediatric', sub: 'Infant / child in respiratory distress or arrest.' },
-                      { rate: 25, label: '25 / min — neonate / newborn', sub: '40-60 / min for true neonates; start 25 for infants.' },
+                      { rate: 50, label: '50 / min — neonate / newborn', sub: 'Neonatal ventilation target 40–60/min; begin near the middle and reassess chest rise and heart rate.' },
                     ].map(opt => (
                       <button
                         key={opt.rate}
