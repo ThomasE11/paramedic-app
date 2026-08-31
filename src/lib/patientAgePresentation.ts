@@ -2,6 +2,17 @@ export type PatientAgeBand = 'infant' | 'toddler' | 'child' | 'adolescent' | 'ad
 
 export type PatientModelGender = 'male' | 'female';
 
+/**
+ * Format the numeric case age without exposing storage decimals to students.
+ * Case data stores age in years, so infants use a decimal (for example 0.67).
+ * Present those patients in whole months, as clinicians and dispatchers do.
+ */
+export function patientAgeShortLabel(age?: number | null): string {
+  if (age == null || !Number.isFinite(age) || age < 0) return 'Age not stated';
+  if (age < 1) return `${Math.max(1, Math.round(age * 12))}mo`;
+  return `${Math.round(age)}yo`;
+}
+
 export function patientAgeBand(age?: number | null): PatientAgeBand {
   if (age == null || !Number.isFinite(age) || age >= 18) return 'adult';
   if (age < 1) return 'infant';

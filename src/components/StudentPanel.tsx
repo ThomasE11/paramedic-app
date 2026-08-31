@@ -156,6 +156,7 @@ import { generateEDOutcome } from '@/lib/edOutcome';
 import { exportSessionToPDF } from '@/lib/pdf-export';
 import { getResourcesForDebriefing } from '@/data/diversifiedResources';
 import { inferSceneImage } from '@/lib/sceneImageSelection';
+import { patientAgeShortLabel } from '@/lib/patientAgePresentation';
 
 /**
  * Generate a student-friendly case title that doesn't reveal the diagnosis.
@@ -168,8 +169,8 @@ function getStudentCaseTitle(caseData: CaseScenario): string {
 
   // Build patient description
   let patient = '';
-  if (age && gender) {
-    patient = `${age}yo ${gender === 'male' ? 'Male' : gender === 'female' ? 'Female' : 'Patient'}`;
+  if (age != null && gender) {
+    patient = `${patientAgeShortLabel(age)} ${gender === 'male' ? 'Male' : gender === 'female' ? 'Female' : 'Patient'}`;
   } else {
     patient = 'Patient';
   }
