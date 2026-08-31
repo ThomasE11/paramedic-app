@@ -31,6 +31,12 @@ export interface PatientPostureContext {
   respiration?: number | null;
 }
 
+export interface PatientLivePositionContext {
+  stage: PatientStage;
+  mobility: PatientMobility;
+  posture: PatientPosture;
+}
+
 const TREATMENT_POSITIONING: Record<string, Omit<PatientPositioningOverride, 'treatmentId'>> = {
   supine_position: { mobility: 'recumbent', posture: 'supine' },
   recovery_position: { mobility: 'recumbent', posture: 'recovery' },
@@ -168,6 +174,33 @@ export function derivePatientPosture(
   }
   if (mobility === 'standing' || mobility === 'pacing') return null;
   return respiratoryDistress ? 'tripod' : 'supine';
+}
+
+/**
+ * Describe the patient's CURRENT rendered position, not merely the arrival
+ * prose.  This keeps the cockpit truthful after a transfer, a recovery roll,
+ * Fowler positioning or an assisted walk.  Caregiver-held infants are moved
+ * onto the trolley for an immediate hands-on assessment; call that transition
+ * out explicitly so the live model does not appear to contradict dispatch.
+ */
+export function patientLivePositionLabel(
+  caseData: CaseScenario,
+  context: PatientLivePositionContext,
+): string {
+  const { stage, mobility, posture } = context;
+  if (mobility === 'pacing') return 'Walking / pacing in scene';
+  if (mobility === 'standing') return 'Standing at scene';
+  if (mobility === 'seated') {
+    return posture === 'tripod' ? 'Seated in tripod position' : 'Seated with support';
+  }
+
+  const surface = stage === 'floor' ? 'scene floor' : 'ambulance stretcher';
+  if (posture === 'recovery') return `Recovery position on ${surface}`;
+  const base = `Supine on ${surface}`;
+  const arrivalPosition = caseData.initialPresentation?.position?.toLowerCase() ?? '';
+  return /\bheld by\b|\bbeing held\b|\bon .+ lap\b/.test(arrivalPosition)
+    ? `${base} — transferred from caregiver for assessment`
+    : base;
 }
 
 /** Only ambulatory patients receive whole-skeleton locomotion. */

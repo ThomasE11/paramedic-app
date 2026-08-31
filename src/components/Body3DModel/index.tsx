@@ -24,6 +24,7 @@ import {
   deriveScenePatientStage,
   deriveTreatmentPositioningOverride,
   patientLoadedOnStretcher,
+  patientLivePositionLabel,
   shouldHideTreatmentStretcher,
   shouldShowPatientSeat,
   type PatientMobility,
@@ -4514,6 +4515,15 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
     });
   }, [isInArrest, treatmentPositioning, patientUnconscious, patientMobility, effectiveVitals, caseData]);
 
+  const livePositionLabel = useMemo(
+    () => patientLivePositionLabel(caseData, {
+      stage: bayStage,
+      mobility: patientMobility,
+      posture: patientPosture,
+    }),
+    [bayStage, caseData, patientMobility, patientPosture],
+  );
+
   // useMemo keeps the pos/target array identities stable — OrbitControls'
   // `target` prop and several useCallback deps rely on that.
   const overviewCameraFocus = useMemo(
@@ -5272,6 +5282,15 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 </span>
               )}
             </h2>
+            {!activeRegion && (
+              <p
+                className="mt-0.5 max-w-[17rem] truncate text-[9px] text-muted-foreground/70 sm:max-w-[22rem]"
+                title={livePositionLabel}
+                data-current-patient-position
+              >
+                {livePositionLabel}
+              </p>
+            )}
           </div>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -5408,7 +5427,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
           </div>
           <div className="rounded-lg border border-slate-200/70 bg-white/70 px-2 py-1.5 dark:border-white/10 dark:bg-slate-900/60">
             <p className="text-[8px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/60">Posture</p>
-            <p className="truncate font-medium">{caseData.initialPresentation?.position || 'Supine for exam'}</p>
+            <p className="truncate font-medium" title={livePositionLabel}>{livePositionLabel}</p>
           </div>
           <div className="rounded-lg border border-slate-200/70 bg-white/70 px-2 py-1.5 dark:border-white/10 dark:bg-slate-900/60">
             <p className="text-[8px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/60">Appearance</p>
