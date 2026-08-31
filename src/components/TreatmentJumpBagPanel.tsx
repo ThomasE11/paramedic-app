@@ -166,7 +166,7 @@ const CASE_PATHWAY_TREATMENTS: Array<{ pattern: RegExp; treatmentIds: string[] }
   { pattern: /\b(box splint)\b/, treatmentIds: ['box_splint'] },
   { pattern: /\b(vacuum (?:limb )?splint)\b/, treatmentIds: ['vacuum_limb_splint'] },
   { pattern: /\b(air splint)\b/, treatmentIds: ['air_splint'] },
-  { pattern: /\b(splint|immobili[sz](?:e|ation)\b.{0,24}\b(?:injured )?(?:limb|fracture)|support (?:the )?injured limb)\b/, treatmentIds: ['splinting'] },
+  { pattern: /(?<!traction )(?<!sam )(?<!box )(?<!air )(?<!vacuum )(?<!limb )\bsplint(?:ing)?\b|\bimmobili[sz](?:e|ation)\b.{0,24}\b(?:injured )?(?:limb|fracture)\b|\bsupport (?:the )?injured limb\b/, treatmentIds: ['splinting'] },
   { pattern: /\b(tourniquet)\b/, treatmentIds: ['tourniquet'] },
   { pattern: /\b(pelvic binder)\b/, treatmentIds: ['pelvic_binder'] },
   { pattern: /\b(control (?:major )?bleeding|direct pressure|wound dressing)\b/, treatmentIds: ['bleeding_control'] },
@@ -275,11 +275,27 @@ export function suggestedTreatmentIdsForCase(
     ...(caseData.abcde?.circulation?.interventions ?? []),
     ...(caseData.abcde?.exposure?.interventions ?? []),
   ].map(item => item.toLowerCase());
+  const confirmedFemurFracture = /\b(?:femur|femoral|mid[- ]shaft thigh)\b.{0,32}\b(?:fracture|deformity|shorten)|\b(?:fracture|deformity|shorten)\b.{0,32}\b(?:femur|femoral|thigh)\b/.test(presentationText);
+  const confirmedExtremityInjury = /\b(?:femur|femoral|tibia|fibula|wrist|radius|ulna|humerus|ankle|forearm|upper limb|lower limb|extremity)\b.{0,40}\b(?:fracture|injury|deformity|shorten)|\b(?:fracture|injury|deformity|shorten)\b.{0,40}\b(?:femur|femoral|tibia|fibula|wrist|radius|ulna|humerus|ankle|forearm|upper limb|lower limb|extremity)\b/.test(presentationText);
+  const negatedDeviceInstruction = /\b(?:contraindicat(?:e|ed|ion)?|do not use|avoid|not indicated|withhold)\b/;
+  const hasSpecificSplintDevice = pathwaySegments.some(segment =>
+    /\b(?:traction|sam|box|air|vacuum(?: limb)?) splint\b/.test(segment)
+      && !negatedDeviceInstruction.test(segment),
+  );
   // Preserve the author's clinical sequence. A first-line tourniquet must not
   // disappear behind a later traction-splint mention simply because the
   // keyword table happens to list splints first.
   for (const segment of pathwaySegments) {
     for (const route of CASE_PATHWAY_TREATMENTS) {
+      if (route.treatmentIds.includes('traction_splint')
+        && negatedDeviceInstruction.test(segment)) continue;
+      if (route.treatmentIds.includes('traction_splint')
+        && /\bif\b/.test(segment)
+        && !confirmedFemurFracture) continue;
+      if (route.treatmentIds.includes('splinting') && hasSpecificSplintDevice) continue;
+      if (route.treatmentIds.includes('splinting')
+        && /\bconcurrent extremity injuries\b/.test(segment)
+        && !confirmedExtremityInjury) continue;
       if (route.pattern.test(segment)) add(...route.treatmentIds);
     }
   }
