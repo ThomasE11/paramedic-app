@@ -281,7 +281,13 @@ function isVerbLedComplaint(complaint: string): boolean {
  * arrival — not a wall of scene metadata.
  */
 export function buildArrivalSentence(c: CaseScenario): string {
-  const who = getScenePatientDescriptor(c);
+  const detailedWho = getScenePatientDescriptor(c);
+  // The visual arrival narration already shows the exact infant age in the
+  // patient summary. Keep the spoken sentence natural ("a female infant")
+  // while the scene brief and clinical handovers retain "8-month-old".
+  const who = detailedWho === 'multiple patients'
+    ? detailedWho
+    : detailedWho.replace(/^\d+-month-old\s+/, '');
   const complaint = shortComplaint(c.dispatchInfo?.callReason);
   if (!complaint) return `On arrival, you find a ${who} on scene.`;
   // "with" for symptom phrases ("…with difficulty breathing"); an em-dash for
