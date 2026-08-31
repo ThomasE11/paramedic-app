@@ -162,6 +162,7 @@ import {
   projectedEtco2Target,
   targetMinuteVentilationLitres,
 } from '@/lib/ventilationPhysiology';
+import { tacticalCareHeadline } from '@/lib/tacticalCarePresentation';
 
 /**
  * Generate a student-friendly case title that doesn't reveal the diagnosis.
@@ -747,19 +748,17 @@ function TacticalEquipmentRibbon({
   completedCount: number;
   activeProblem: string;
 }) {
-  const headline = pendingCount > 0
-    ? `${pendingCount} reassessment pending`
-    : completedCount > 0
-      ? `${completedCount} response confirmed`
-      : statuses.length > 0
-        ? `${statuses.length} ${statuses.length === 1 ? 'device' : 'devices'} connected`
-      : 'No gear connected yet';
+  const headline = tacticalCareHeadline({
+    pendingCount,
+    completedCount,
+    activeCount: statuses.length,
+  });
 
   return (
     <div className={`tactical-equipment-ribbon ${statuses.length === 0 ? 'is-empty' : ''}`} aria-live="polite">
       <div className="tactical-equipment-ribbon-head">
         <div>
-          <p>Patient loadout</p>
+          <p>Care in place</p>
           <strong>{headline}</strong>
         </div>
         <span className={pendingCount > 0 ? 'is-pending' : completedCount > 0 || statuses.length > 0 ? 'is-confirmed' : ''} />
