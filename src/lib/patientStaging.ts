@@ -105,6 +105,8 @@ const FLOOR_PATTERN = new RegExp(
     '\\bfield\\b',
     '\\bbeach\\b',
     '\\bpoolside\\b',
+    '\\bpool deck\\b',
+    '\\bat (?:the )?base of (?:the )?steps\\b',
   ].join('|'),
 );
 
@@ -174,7 +176,7 @@ export function derivePatientPosture(
   if (unconscious) return 'supine';
 
   const authoredPosition = caseData.initialPresentation?.position?.toLowerCase() ?? '';
-  if (/recovery position|curled on (?:their |his |her )?side|lying on (?:their |his |her )?side/.test(authoredPosition)) {
+  if (/recovery position|curled on (?:their |his |her )?side|lying on (?:their |his |her )?side|lying on (?:the )?(?:left|right) lateral side/.test(authoredPosition)) {
     return 'recovery';
   }
 

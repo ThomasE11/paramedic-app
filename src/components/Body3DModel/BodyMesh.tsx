@@ -102,12 +102,12 @@ export function getTreatmentBayTransform(
   const pitchUp = uprightSeated ? Math.PI / 2 : 0;
   // Upright tripod feet are at the model origin, so cancel the stage's supine
   // body-thickness calibration while retaining the support-surface height.
-  // Recovery is independently calibrated after its side-roll transform.
   // The refined tripod morph raises the knees and hangs the lower legs from
   // the seat. Ground the soles on the same support plane as the room instead
   // of retaining the old straight-legged morph's stretcher-height offset.
-  const rollSide = posture === 'recovery' ? Math.PI / 2 : 0;
-  const tiltSide = posture === 'recovery' ? 0.1 : 0;
+  // The rig is authored standing along local Y, so recovery rolls around that
+  // longitudinal axis before the root is laid onto the support surface.
+  const rollSide = posture === 'recovery' ? THREE.MathUtils.degToRad(75) : 0;
   const stageY = BAY_SUPPORT_Y[stage] + (BAY_STAGE_Y[stage] - BAY_SUPPORT_Y[stage]) * patientScale;
   // The tripod morph raises the soles about 0.23 m above its authoring origin.
   // Calibrate that offset around the room floor and scale it with the body;
@@ -116,10 +116,15 @@ export function getTreatmentBayTransform(
   // on either treatment support surface.
   const positionY = uprightSeated
     ? BAY_SUPPORT_Y.floor + (BAY_STAGE_Y.stretcher - 1.23 - BAY_SUPPORT_Y.floor) * patientScale
+    // A lateral patient rests on the shoulder/hip contour, roughly 0.33 m
+    // from the rig origin—not on the 0.44 m posterior depth used for supine.
+    // Keeping the supine height here is what made recovery patients hover.
+    : posture === 'recovery'
+      ? BAY_SUPPORT_Y[stage] + 0.332 * patientScale
     : stageY;
   return {
     position: [0, positionY, 0.78] as [number, number, number],
-    rotation: [baseRotation + pitchUp, rollSide, tiltSide] as [number, number, number],
+    rotation: [baseRotation + pitchUp, rollSide, 0] as [number, number, number],
     scale: 1.04,
   };
 }
@@ -399,6 +404,32 @@ const POSTURE_MORPH_BY_NAME: Record<'seated' | 'tripod' | 'supine' | 'recovery',
   recovery: 'pose_recovery',
 };
 const POSTURE_MORPHS = Object.values(POSTURE_MORPH_BY_NAME);
+
+// Additional fitted-rig articulation for a recognisable recovery position.
+// The authored recovery morph only softens the lateral torso contour; without
+// joint work the root roll stacks two straight legs and leaves both arms beside
+// the hips. These local rotations were calibrated against the live skinned
+// mesh: lower arm beneath the head, upper hand toward the cheek, upper knee
+// flexed to prevent the patient rolling prone. Values are additive to the
+// stable recumbent arm/forearm rest pose applied in the frame loop.
+const RECOVERY_BONE_ADJUSTMENTS = {
+  leftArm: [-1.08, 0.74, 1.42] as const,
+  leftForeArm: [-1.89, 0, 0.67] as const,
+  rightArm: [1.74, 1.35, -0.57] as const,
+  rightForeArm: [-1.29, 0, 1.09] as const,
+  rightUpLeg: [0.87, 0, 0] as const,
+  rightLeg: [-1.4, 0, 0] as const,
+};
+
+function applyLocalBoneAdjustment(
+  bone: THREE.Object3D | null | undefined,
+  [x, y, z]: readonly [number, number, number],
+) {
+  if (!bone) return;
+  if (x) bone.rotateX(x);
+  if (y) bone.rotateY(y);
+  if (z) bone.rotateZ(z);
+}
 
 /** Case pupil mm -> pupil disc scale. Discs are authored at 5mm diameter. */
 function pupilScale(mm: number): number {
@@ -1184,6 +1215,23 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
     () => postureSpineBones.map(spine => spine.quaternion.clone()),
     [postureSpineBones],
   );
+  const recoveryPoseBones = useMemo(() => {
+    const find = (name: string) => (
+      clonedScene.getObjectByName(name) ?? clonedScene.getObjectByName(name.replace(/:/g, '')) ?? null
+    );
+    return {
+      leftArm: find('mixamorig:LeftArm'),
+      leftForeArm: find('mixamorig:LeftForeArm'),
+      rightArm: find('mixamorig:RightArm'),
+      rightForeArm: find('mixamorig:RightForeArm'),
+      rightUpLeg: find('mixamorig:RightUpLeg'),
+      rightLeg: find('mixamorig:RightLeg'),
+    };
+  }, [clonedScene]);
+  const recoveryLegRest = useMemo(() => ({
+    rightUpLeg: recoveryPoseBones.rightUpLeg?.quaternion.clone() ?? null,
+    rightLeg: recoveryPoseBones.rightLeg?.quaternion.clone() ?? null,
+  }), [recoveryPoseBones]);
 
   // Whole-skeleton movement is reserved for genuinely ambulatory cases. The
   // source clips are in-place Mixamo loops, so the patient remains inside the
@@ -1461,6 +1509,23 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
         const sweep = patientForearmSweepRadians(mobility, side, patientAge);
         if (sweep !== 0) forearm.rotateZ(sweep);
       });
+      // Legs are otherwise static in recumbent presentations, so explicitly
+      // restore them before applying the recovery bend. This also makes a
+      // later move back to supine deterministic instead of retaining a knee.
+      if (recoveryPoseBones.rightUpLeg && recoveryLegRest.rightUpLeg) {
+        recoveryPoseBones.rightUpLeg.quaternion.copy(recoveryLegRest.rightUpLeg);
+      }
+      if (recoveryPoseBones.rightLeg && recoveryLegRest.rightLeg) {
+        recoveryPoseBones.rightLeg.quaternion.copy(recoveryLegRest.rightLeg);
+      }
+      if (posture === 'recovery') {
+        applyLocalBoneAdjustment(recoveryPoseBones.leftArm, RECOVERY_BONE_ADJUSTMENTS.leftArm);
+        applyLocalBoneAdjustment(recoveryPoseBones.leftForeArm, RECOVERY_BONE_ADJUSTMENTS.leftForeArm);
+        applyLocalBoneAdjustment(recoveryPoseBones.rightArm, RECOVERY_BONE_ADJUSTMENTS.rightArm);
+        applyLocalBoneAdjustment(recoveryPoseBones.rightForeArm, RECOVERY_BONE_ADJUSTMENTS.rightForeArm);
+        applyLocalBoneAdjustment(recoveryPoseBones.rightUpLeg, RECOVERY_BONE_ADJUSTMENTS.rightUpLeg);
+        applyLocalBoneAdjustment(recoveryPoseBones.rightLeg, RECOVERY_BONE_ADJUSTMENTS.rightLeg);
+      }
     }
     const spineLean = patientSpineLeanRadians(posture, patientAge);
     if (skeletalMixer && spineLean > 0) {

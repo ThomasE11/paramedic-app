@@ -3588,6 +3588,23 @@ function getTreatmentBayCameraFocus(
     };
   }
   const target = treatmentBayClinicalToWorld([0, 0.96, -0.05], stage, posture, mobility, patientScale);
+  if (posture === 'recovery') {
+    const recoveryOffset = stage === 'floor'
+      ? [-1.45, 2.25, 1.95]
+      : [-2.05, 0.56, 1.37];
+    return {
+      // Look across the patient's side instead of down the long axis. The
+      // lateral view makes the flexed upper knee and airway-protecting arm
+      // position immediately legible, while the negative-X side avoids the
+      // trolley monitor that blocks the opposite lateral approach.
+      pos: [
+        target[0] + recoveryOffset[0] * cameraScale,
+        target[1] + recoveryOffset[1] * cameraScale,
+        target[2] + recoveryOffset[2] * cameraScale,
+      ] as [number, number, number],
+      target,
+    };
+  }
   const adultOffset = stage === 'floor'
     ? [0.55, 2.85 - 0.338, 2.15 - (-0.218)]
     : [1.42, 1.30 - 0.888, 2.12 - (-0.218)];
