@@ -70,7 +70,7 @@ import {
 } from '@/lib/unwellnessStates';
 import { deriveSkinTint, deriveCyanosisLocalStrength } from './skinTint';
 import { hasAttachedDefibrillatorPads } from '@/lib/defibrillatorSafety';
-import { patientExpectedHeightMetres } from '@/lib/patientAgePresentation';
+import { patientAgeShortLabel, patientExpectedHeightMetres } from '@/lib/patientAgePresentation';
 
 const TOTAL_REGIONS = 11;
 type OrbitControlsHandle = ElementRef<typeof OrbitControls>;
@@ -5426,7 +5426,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
         <div className="patient-exam-summary grid grid-cols-2 gap-2 px-3 py-2 border-b border-slate-200/50 bg-white/45 text-[10px] dark:border-white/5 dark:bg-slate-950/30 sm:grid-cols-4">
           <div className="rounded-lg border border-slate-200/70 bg-white/70 px-2 py-1.5 dark:border-white/10 dark:bg-slate-900/60">
             <p className="text-[8px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/60">Patient</p>
-            <p className="truncate font-medium">{caseData.patientInfo?.age}y {caseData.patientInfo?.gender}</p>
+            <p className="truncate font-medium">{patientAgeShortLabel(caseData.patientInfo?.age)} {caseData.patientInfo?.gender}</p>
           </div>
           <div className="rounded-lg border border-slate-200/70 bg-white/70 px-2 py-1.5 dark:border-white/10 dark:bg-slate-900/60">
             <p className="text-[8px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/60">Posture</p>

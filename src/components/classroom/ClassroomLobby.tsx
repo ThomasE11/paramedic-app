@@ -62,6 +62,7 @@ import { AmbientBackground } from '@/components/AmbientBackground';
 import { loadAllCases } from '@/data/caseLibrary';
 import { isCaseAvailableForCohort } from '@/data/caseFilters';
 import type { CaseScenario, StudentYear } from '@/types';
+import { patientAgeShortLabel } from '@/lib/patientAgePresentation';
 import {
   CLINICAL_ROLES,
   CLINICAL_ROLE_IDS,
@@ -142,7 +143,7 @@ function caseSearchText(c: CaseScenario): string {
 }
 
 function caseSubtitle(c: CaseScenario): string {
-  const age = c.patientInfo?.age ? `${c.patientInfo.age}y` : '';
+  const age = patientAgeShortLabel(c.patientInfo?.age);
   const reason = c.dispatchInfo?.callReason;
   return [age, reason].filter(Boolean).join(' · ');
 }

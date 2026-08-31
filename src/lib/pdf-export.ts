@@ -4,6 +4,7 @@ import { getVideosByFindings, getVideosByCategory, referenceArticles, getYouTube
 import { getRelevantEvidence } from '@/data/evidenceLibrary';
 import type { AssessmentDebriefItem } from '@/data/assessmentFramework';
 import type { ClinicalManagementDebrief } from '@/lib/caseManagementRealism';
+import { patientAgeShortLabel } from '@/lib/patientAgePresentation';
 
 interface ExportOptions {
   session: CaseSession;
@@ -242,7 +243,7 @@ export async function exportSessionToPDF(options: ExportOptions): Promise<Blob> 
     ['Priority:', caseData.priority.toUpperCase()],
     ['Complexity:', caseData.complexity.toUpperCase()],
     ['Year Level:', session.studentYear],
-    ['Patient:', `${caseData.patientInfo.age}y ${caseData.patientInfo.gender}`],
+    ['Patient:', `${patientAgeShortLabel(caseData.patientInfo.age)} ${caseData.patientInfo.gender}`],
     ['Location:', sanitizeText(caseData.dispatchInfo.location)],
   ];
 
