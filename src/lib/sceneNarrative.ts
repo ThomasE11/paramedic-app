@@ -1,5 +1,6 @@
 import type { CaseScenario } from '@/types';
 import { inferGeneralAppearance, inferInjuries } from '@/lib/injuryMap';
+import { patientAgeLongLabel } from '@/lib/patientAgePresentation';
 
 export interface SceneVisualBrief {
   patientDescriptor: string;
@@ -61,7 +62,7 @@ export function getScenePatientDescriptor(caseData: CaseScenario): string {
       : gender || 'patient';
 
   if (typeof age !== 'number') return genderWord === 'patient' ? 'patient' : `${genderWord} patient`;
-  if (age < 1) return `${genderWord} infant`;
+  if (age < 1) return `${patientAgeLongLabel(age)} ${genderWord} infant`;
   if (age < 5) return `${age}-year-old ${genderWord} toddler`;
   if (age < 13) return `${age}-year-old ${genderWord} child`;
   if (age < 18) return `${age}-year-old ${genderWord} adolescent`;

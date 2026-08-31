@@ -13,6 +13,13 @@ export function patientAgeShortLabel(age?: number | null): string {
   return `${Math.round(age)}yo`;
 }
 
+/** Sentence-form age for dispatch, radio and clinical handover prose. */
+export function patientAgeLongLabel(age?: number | null): string {
+  if (age == null || !Number.isFinite(age) || age < 0) return 'age not stated';
+  if (age < 1) return `${Math.max(1, Math.round(age * 12))}-month-old`;
+  return `${Math.round(age)}-year-old`;
+}
+
 export function patientAgeBand(age?: number | null): PatientAgeBand {
   if (age == null || !Number.isFinite(age) || age >= 18) return 'adult';
   if (age < 1) return 'infant';

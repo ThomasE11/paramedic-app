@@ -11,6 +11,7 @@
  */
 
 import type { CaseScenario, VitalSigns } from '@/types';
+import { patientAgeLongLabel } from '@/lib/patientAgePresentation';
 
 export interface EDOutcome {
   arrivalHandover: string;             // What you handed over
@@ -264,7 +265,7 @@ export function generateEDOutcome(inputs: EDOutcomeInputs): EDOutcome {
   }
 
   // Arrival handover template
-  const arrivalHandover = `${caseData.patientInfo?.age}-year-old ${caseData.patientInfo?.gender}, ${caseData.dispatchInfo?.callReason}. On examination: ${caseData.initialPresentation?.generalImpression || 'see notes'}. Treatments given: ${appliedTreatmentIds.length > 0 ? appliedTreatmentIds.slice(0, 5).join(', ') : 'supportive care only'}. Current vitals as handover.`;
+  const arrivalHandover = `${patientAgeLongLabel(caseData.patientInfo?.age)} ${caseData.patientInfo?.gender}, ${caseData.dispatchInfo?.callReason}. On examination: ${caseData.initialPresentation?.generalImpression || 'see notes'}. Treatments given: ${appliedTreatmentIds.length > 0 ? appliedTreatmentIds.slice(0, 5).join(', ') : 'supportive care only'}. Current vitals as handover.`;
 
   const edAssessment = `ED assessment: ${confirmedDiagnosis}. Priority ${disposition === 'cath-lab' || disposition === 'stroke-unit' || disposition === 'theatre' ? '1 — immediate' : disposition === 'icu' ? '1 — critical care' : '2 — urgent'}. Team activated, investigations initiated.`;
 

@@ -14,6 +14,7 @@
  */
 
 import type { CaseScenario, VitalSigns } from '@/types';
+import { patientAgeLongLabel } from '@/lib/patientAgePresentation';
 
 export interface MedicalControlAdvice {
   greeting: string;           // Opening line from med control
@@ -104,7 +105,9 @@ export function callMedicalControl(inputs: MedicalControlInputs): MedicalControl
   // ============================================================================
   // BUILD CASE-SPECIFIC SITREP (different framing per category)
   // ============================================================================
-  const patientDesc = age && gender ? `${age}-year-old ${gender}` : 'patient';
+  const patientDesc = typeof age === 'number' && gender
+    ? `${patientAgeLongLabel(age)} ${gender}`
+    : 'patient';
   const vitalSummary = `B P ${currentVitals.bp}, heart rate ${hr}, resps ${rr}, sats ${spo2} percent, G C S ${gcs}${temp < 36 || temp > 38 ? `, temp ${temp} degrees` : ''}${bgl !== null ? `, B G L ${bgl}` : ''}`;
   const treatmentSummary = treatmentCount === 0
     ? `Nothing given yet.`
