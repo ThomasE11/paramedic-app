@@ -150,9 +150,15 @@ export function recommendedManagementTabForCase(caseData: CaseScenario): Managem
 }
 
 const CASE_PATHWAY_TREATMENTS: Array<{ pattern: RegExp; treatmentIds: string[] }> = [
-  { pattern: /\b(active cooling|cooling measures?|heat stroke|heat exhaustion|cool running water|cool (?:the )?burn|burn cooling)\b/, treatmentIds: ['active_cooling'] },
+  { pattern: /\b(active cooling|cooling measures?|heat stroke|heat exhaustion|cool running water|cool (?:the )?burns?|burn cooling)\b/, treatmentIds: ['active_cooling'] },
   { pattern: /\b(active rewarming|rewarming|prevent hypothermia|warming blanket)\b/, treatmentIds: ['warming_blanket'] },
+  { pattern: /\b(open (?:the )?airway|airway opening|jaw thrust|head tilt[-– ]chin lift)\b/, treatmentIds: ['airway_open'] },
+  { pattern: /\b(suction|clear (?:blood|vomit|secretions) from (?:the )?airway)\b/, treatmentIds: ['suction'] },
+  { pattern: /\b(oropharyngeal airway|opa)\b/, treatmentIds: ['opa_insert'] },
+  { pattern: /\b(rsi|rapid sequence intubation)\b/, treatmentIds: ['rsi_intubation'] },
+  { pattern: /\b(intubat(?:e|ion)|endotracheal tube|ett)\b/, treatmentIds: ['intubation'] },
   { pattern: /\b(iv access|intravenous access|cannulat)\b/, treatmentIds: ['iv_access'] },
+  { pattern: /\b(io access|intraosseous access)\b/, treatmentIds: ['io_access'] },
   { pattern: /\b(fluid bolus|iv fluids?|normal saline|hartmann|crystalloid)\b/, treatmentIds: ['fluids_250ml'] },
   { pattern: /\b(traction splint)\b/, treatmentIds: ['traction_splint'] },
   { pattern: /\b(cervical collar|c-spine|spinal precautions?)\b/, treatmentIds: ['cervical_collar'] },
@@ -162,8 +168,10 @@ const CASE_PATHWAY_TREATMENTS: Array<{ pattern: RegExp; treatmentIds: string[] }
   { pattern: /\b(air splint)\b/, treatmentIds: ['air_splint'] },
   { pattern: /\b(splint|immobili[sz](?:e|ation)\b.{0,24}\b(?:injured )?(?:limb|fracture)|support (?:the )?injured limb)\b/, treatmentIds: ['splinting'] },
   { pattern: /\b(tourniquet)\b/, treatmentIds: ['tourniquet'] },
+  { pattern: /\b(pelvic binder)\b/, treatmentIds: ['pelvic_binder'] },
   { pattern: /\b(control (?:major )?bleeding|direct pressure|wound dressing)\b/, treatmentIds: ['bleeding_control'] },
   { pattern: /\b(needle decompression|thoracostomy)\b/, treatmentIds: ['needle_decompression'] },
+  { pattern: /\b(pericardiocentesis|pericardial drain)\b/, treatmentIds: ['pericardiocentesis'] },
   { pattern: /\b(chest seal|occlusive dressing)\b/, treatmentIds: ['chest_seal_vented'] },
   { pattern: /\b(non[- ]?rebreather|high-flow oxygen)\b/, treatmentIds: ['oxygen_nonrebreather'] },
   { pattern: /\b(nebulis|nebuliz|salbutamol)\b/, treatmentIds: ['nebulizer_salbutamol'] },
@@ -172,6 +180,9 @@ const CASE_PATHWAY_TREATMENTS: Array<{ pattern: RegExp; treatmentIds: string[] }
   { pattern: /\b(magnesium sulfate|magnesium sulphate)\b/, treatmentIds: ['magnesium_2g'] },
   { pattern: /\b(cpap|non[- ]?invasive ventilation|niv|bipap)\b/, treatmentIds: ['cpap_niv'] },
   { pattern: /\b(bag[- ]valve[- ]mask|bvm|assisted ventilation)\b/, treatmentIds: ['bvm_ventilation'] },
+  { pattern: /\b(back blows?)\b/, treatmentIds: ['back_blows'] },
+  { pattern: /\b(abdominal thrusts?|heimlich)\b/, treatmentIds: ['abdominal_thrusts'] },
+  { pattern: /\b(magill forceps|remove (?:the )?visible foreign body)\b/, treatmentIds: ['magill_forceps'] },
   { pattern: /\b(defibrillat|deliver shock)\b/, treatmentIds: ['monitor_pads', 'defibrillation'] },
   { pattern: /\b(transcutaneous pac(?:e|ing)|external pac(?:e|ing)|tcp)\b/, treatmentIds: ['monitor_pads', 'pacing_transcutaneous'] },
   { pattern: /\b(cpr|chest compressions?)\b/, treatmentIds: ['cpr'] },
@@ -182,6 +193,15 @@ const CASE_PATHWAY_TREATMENTS: Array<{ pattern: RegExp; treatmentIds: string[] }
   { pattern: /\b(oral glucose|glucose gel)\b/, treatmentIds: ['glucose_10g'] },
   { pattern: /\b(dextrose)\b/, treatmentIds: ['dextrose_10'] },
   { pattern: /\b(left lateral tilt)\b/, treatmentIds: ['left_lateral_tilt'] },
+  { pattern: /\b(recovery position)\b/, treatmentIds: ['recovery_position'] },
+  { pattern: /\b(supine position(?:ing)?|position (?:the )?patient supine|supine or semi-reclined)\b/, treatmentIds: ['supine_position'] },
+  { pattern: /\b(legs? elevated|elevate (?:the )?legs?)\b/, treatmentIds: ['leg_elevation'] },
+  { pattern: /\b(fowler'?s?|sit (?:the )?patient upright|position upright|upright immediately|keep upright|seated upright)\b/, treatmentIds: ['fowlers_position'] },
+  { pattern: /\b(scoop stretcher)\b/, treatmentIds: ['scoop_stretcher'] },
+  { pattern: /\b(head blocks?)\b/, treatmentIds: ['head_blocks'] },
+  { pattern: /\b(vacuum mattress)\b/, treatmentIds: ['vacuum_mattress'] },
+  { pattern: /\b(spinal board|long board)\b/, treatmentIds: ['spinal_board'] },
+  { pattern: /\b(ked|kendrick extrication device)\b/, treatmentIds: ['ked'] },
 ];
 
 /** Rank executable actions using both the live physiology and the authored
@@ -265,7 +285,9 @@ export function suggestedTreatmentIdsForCase(
     if (systolic < 100 || currentVitals.pulse > 120 || (currentVitals.gcs ?? 15) < 15) add('iv_access');
     if (systolic < 90) add('fluids_250ml');
     if (currentVitals.bloodGlucose !== undefined && currentVitals.bloodGlucose < 4) add('glucose_10g');
-    if (currentVitals.temperature !== undefined && currentVitals.temperature >= 38.5) add('active_cooling');
+    const hyperthermiaPresentation = caseData.category === 'environmental'
+      || /\b(?:heat stroke|heat exhaustion|hyperthermia)\b/i.test(`${caseData.title} ${caseData.subcategory} ${caseData.dispatchInfo?.callReason}`);
+    if (hyperthermiaPresentation && currentVitals.temperature !== undefined && currentVitals.temperature >= 38.5) add('active_cooling');
   }
 
   return ids.slice(0, 6);
