@@ -107,6 +107,8 @@ export const FEMALE_GARMENT_GLBS: GarmentGlbSpec[] = [
 ];
 
 export const ALL_GARMENT_GLBS = [...GARMENT_GLBS, ...FEMALE_GARMENT_GLBS];
+export const ADOLESCENT_MALE_GARMENT_GLBS = [GARMENT_GLBS[1]];
+export const ADOLESCENT_FEMALE_GARMENT_GLBS = [FEMALE_GARMENT_GLBS[1]];
 
 export function garmentGlbsForModel(modelPath: string): GarmentGlbSpec[] {
   // The Blender garments are adult male/female shells. Rebinding their bones
@@ -117,6 +119,19 @@ export function garmentGlbsForModel(modelPath: string): GarmentGlbSpec[] {
   // garment assets exist.
   if (/patient-(?:infant|toddler|child|adolescent)-/.test(modelPath)) return [];
   return modelPath.includes('-female.glb') ? FEMALE_GARMENT_GLBS : GARMENT_GLBS;
+}
+
+/**
+ * Adolescents share enough pelvic/leg topology with the adult shell for the
+ * authored trousers to fit, but not enough shoulder breadth for the adult
+ * shirt. Pair the fitted trouser with a body-derived top instead of accepting
+ * torn procedural thighs or an oversized adult upper garment.
+ */
+export function adolescentGarmentGlbsForModel(modelPath: string): GarmentGlbSpec[] {
+  if (!/patient-adolescent-/.test(modelPath)) return [];
+  return modelPath.includes('-female.glb')
+    ? ADOLESCENT_FEMALE_GARMENT_GLBS
+    : ADOLESCENT_MALE_GARMENT_GLBS;
 }
 
 /** Region id → garment pieces that part (hide) while that region is focused. */

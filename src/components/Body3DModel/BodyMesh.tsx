@@ -19,6 +19,7 @@ import {
   CLOTHING_PARTING,
   CLOTHING_MODE,
   ALL_GARMENT_GLBS,
+  adolescentGarmentGlbsForModel,
   garmentGlbsForModel,
 } from './ClothingLayer';
 import { buildHairLayer } from './HairLayer';
@@ -856,7 +857,10 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
     });
     return map;
   }, [garmentGltfs]);
-  const garmentSpecs = garmentGlbsForModel(modelPath);
+  const fittedGarmentSpecs = garmentGlbsForModel(modelPath);
+  const garmentSpecs = fittedGarmentSpecs.length
+    ? fittedGarmentSpecs
+    : adolescentGarmentGlbsForModel(modelPath);
   const [hoveredRegion, setHoveredRegion] = useState<RegionRange | null>(null);
   const meshRef = useRef<THREE.Group>(null);
   // For pulsing animation on required regions
@@ -1077,6 +1081,17 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
           : null;
         const scrubs = authoredGarments ?? buildScrubs(bodyMesh as THREE.Mesh);
         if (authoredGarments) {
+          const authoredPieceNames = new Set(garmentSpecs.map(spec => spec.name));
+          // A partial authored set is deliberate for adolescents: retain the
+          // fitted trouser shell, then supply the top from the patient's own
+          // surface so adult shoulders are never stretched over a teen body.
+          const proceduralComplements = buildScrubs(bodyMesh as THREE.Mesh);
+          if (proceduralComplements) {
+            for (const piece of [...proceduralComplements.children]) {
+              if (authoredPieceNames.has(piece.name)) continue;
+              authoredGarments.add(piece);
+            }
+          }
           // A body-indexed fabric underlay closes any sub-pixel/open-boundary
           // seam in the authored outer shell. It shares the exact patient
           // topology, morphs and bone weights, sits just above skin, and uses
@@ -1085,6 +1100,7 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
           const underlay = buildScrubs(bodyMesh as THREE.Mesh, { top: 0.0015, trousers: 0.0015 });
           if (underlay) {
             for (const piece of [...underlay.children]) {
+              if (!authoredPieceNames.has(piece.name)) continue;
               piece.userData.garmentUnderlay = true;
               authoredGarments.add(piece);
             }
