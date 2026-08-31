@@ -1210,7 +1210,8 @@ function buildTreatmentEquipmentState(appliedTreatmentIds: string[]): AppliedEqu
     hasPericardialDrain: applied.has('pericardiocentesis'),
     hasTemperatureControl: applied.has('targeted_temp_mgmt'),
     hasWarmingBlanket: applied.has('warming_blanket'),
-    hasActiveCooling: applied.has('active_cooling'),
+    hasActiveCooling: applied.has('active_cooling')
+      && !siteControls.some(control => control.treatmentId === 'active_cooling'),
     immobilisationDevice,
     siteControls,
     controlledBleedIds,
@@ -1400,6 +1401,20 @@ function AppliedIvDressing() {
 }
 
 function AppliedLimbEquipment({ treatmentId }: { treatmentId: string }) {
+  if (treatmentId === 'active_cooling') {
+    return (
+      <div
+        data-applied-equipment="cooled-burn-dressing"
+        aria-label="Burn cooled and covered with a loose non-adherent dressing"
+        className="pointer-events-none relative h-14 w-16 -rotate-3 animate-in fade-in zoom-in-75 duration-500 drop-shadow-[0_4px_5px_rgba(8,47,73,0.5)]"
+      >
+        <span className="absolute inset-1 rounded-xl border-2 border-cyan-100/90 bg-gradient-to-br from-white/90 via-cyan-100/80 to-sky-200/75 shadow-inner" />
+        <span className="absolute left-2 top-3 h-1 w-12 -rotate-6 rounded-full bg-cyan-300/75" />
+        <span className="absolute left-2 top-7 h-1 w-12 rotate-3 rounded-full bg-sky-300/70" />
+        <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 rounded bg-sky-950/90 px-1 py-0.5 text-[6px] font-black tracking-wide text-cyan-100">LOOSE</span>
+      </div>
+    );
+  }
   if (treatmentId.includes('tourniquet')) {
     return (
       <div data-applied-equipment="tourniquet" aria-label="Windlass tourniquet secured" className="pointer-events-none relative h-14 w-16 -rotate-6 animate-in fade-in zoom-in-75 drop-shadow-lg">
@@ -1593,6 +1608,7 @@ function AppliedChestDevice({ needle = false }: { needle?: boolean }) {
 }
 
 function siteEquipmentLabel(treatmentId: string): string {
+  if (treatmentId === 'active_cooling') return 'Cooled burn dressing';
   if (treatmentId.includes('tourniquet')) return 'Tourniquet';
   if (treatmentId === 'bleeding_control') return 'Pressure dressing';
   if (treatmentId === 'iv_access') return 'IV access';
@@ -1609,6 +1625,7 @@ function siteEquipmentLabel(treatmentId: string): string {
 }
 
 function siteEquipmentAsset(treatmentId: string): string {
+  if (treatmentId === 'active_cooling') return TREATMENT_ASSET_PATHS.coolingPack;
   if (treatmentId.includes('tourniquet')) return TREATMENT_ASSET_PATHS.tourniquet;
   if (treatmentId === 'bleeding_control') return TREATMENT_ASSET_PATHS.bandage;
   if (treatmentId === 'iv_access' || treatmentId === 'io_access') return TREATMENT_ASSET_PATHS.ivCannula;

@@ -150,7 +150,7 @@ export function recommendedManagementTabForCase(caseData: CaseScenario): Managem
 }
 
 const CASE_PATHWAY_TREATMENTS: Array<{ pattern: RegExp; treatmentIds: string[] }> = [
-  { pattern: /\b(active cooling|cooling measures?|ice packs?|heat stroke|heat exhaustion)\b/, treatmentIds: ['active_cooling'] },
+  { pattern: /\b(active cooling|cooling measures?|ice packs?|heat stroke|heat exhaustion|cool running water|cool (?:the )?burn|burn cooling)\b/, treatmentIds: ['active_cooling'] },
   { pattern: /\b(active rewarming|rewarming|prevent hypothermia|warming blanket)\b/, treatmentIds: ['warming_blanket'] },
   { pattern: /\b(iv access|intravenous access|cannulat)\b/, treatmentIds: ['iv_access'] },
   { pattern: /\b(fluid bolus|iv fluids?|normal saline|hartmann|crystalloid)\b/, treatmentIds: ['fluids_250ml'] },
@@ -463,7 +463,24 @@ function getSystolicFromBp(bp?: string): number {
   return Number.isFinite(systolic) ? systolic : 120;
 }
 
-function getTreatmentEffectSummary(treatment: Treatment): string {
+function isLocalBurnCooling(treatment: Treatment, caseData: CaseScenario): boolean {
+  return treatment.id === 'active_cooling'
+    && (caseData.category === 'burns'
+      || /\b(?:burns?|scald|flash[- ]burn)\b/i.test(`${caseData.subcategory} ${caseData.dispatchInfo?.callReason}`));
+}
+
+function treatmentPresentation(treatment: Treatment, caseData: CaseScenario): { name: string; description: string } {
+  if (isLocalBurnCooling(treatment, caseData)) {
+    return {
+      name: 'Burn Cooling & Dressing',
+      description: 'Cool the selected burn under running water for 20 minutes, keep the patient warm, then cover the injury loosely.',
+    };
+  }
+  return { name: treatment.name, description: treatment.description };
+}
+
+function getTreatmentEffectSummary(treatment: Treatment, caseData: CaseScenario): string {
+  if (isLocalBurnCooling(treatment, caseData)) return 'Pain relief · core temp protected';
   if (treatment.effects.length === 0) return 'Response depends on scenario';
 
   return treatment.effects.slice(0, 3).map(effect => {
@@ -1161,7 +1178,21 @@ export function TreatmentJumpBagPanel({
   // student explicitly toggled that group.
   const [medGroupOverride, setMedGroupOverride] = useState<Record<string, boolean>>({});
   const activeBag = TREATMENT_JUMP_BAGS.find(bag => bag.key === activeManagementTab) ?? TREATMENT_JUMP_BAGS[0];
-  const equipmentItems = useMemo(() => BAG_EQUIPMENT[activeBag.key] ?? [], [activeBag.key]);
+  const equipmentItems = useMemo(() => {
+    const items = BAG_EQUIPMENT[activeBag.key] ?? [];
+    if (caseData.category !== 'burns'
+      && !/\b(?:burns?|scald|flash[- ]burn)\b/i.test(`${caseData.subcategory} ${caseData.dispatchInfo?.callReason}`)) {
+      return items;
+    }
+    return items.map(item => item.treatmentId === 'active_cooling'
+      ? {
+          ...item,
+          label: 'Burn Cooling & Dressing',
+          caption: 'Running water, loose cover, hypothermia protection',
+          assetPath: EQUIPMENT_ASSET_PATHS.bandages,
+        }
+      : item);
+  }, [activeBag.key, caseData]);
   const query = medSearch.trim().toLowerCase();
 
   const suggestedTreatments = useMemo(() => {
@@ -2054,7 +2085,9 @@ export function TreatmentJumpBagPanel({
                   onClick={() => applyTreatment(treatment)}
                   disabled={applyingTreatmentId === treatment.id}
                 >
-                  {applyingTreatmentId === treatment.id ? <Loader2 className="h-3 w-3 animate-spin" /> : treatment.name}
+                  {applyingTreatmentId === treatment.id
+                    ? <Loader2 className="h-3 w-3 animate-spin" />
+                    : treatmentPresentation(treatment, caseData).name}
                 </Button>
               ))}
             </div>
@@ -2176,6 +2209,7 @@ export function TreatmentJumpBagPanel({
                     );
                   }
                   const treatment = entry.treatment;
+                  const presentation = treatmentPresentation(treatment, caseData);
                   const isApplied = appliedTreatmentIds.includes(treatment.id);
                   const isCurrentlyApplying = applyingTreatmentId === treatment.id;
                   const coreTemp = currentVitals.temperature ?? 37;
@@ -2210,7 +2244,7 @@ export function TreatmentJumpBagPanel({
                           />
                           <div className="min-w-0 flex-1">
                             <div className="flex flex-wrap items-center gap-1.5">
-                              <span className="font-semibold leading-tight text-foreground">{treatment.name}</span>
+                              <span className="font-semibold leading-tight text-foreground">{presentation.name}</span>
                               <Badge variant="outline" className="h-4 rounded px-1.5 text-[8px]">
                                 {rowBag.shortLabel}
                               </Badge>
@@ -2228,7 +2262,7 @@ export function TreatmentJumpBagPanel({
                               </span>
                               <span className="inline-flex items-center gap-1 rounded-md bg-muted/70 px-1.5 py-0.5">
                                 <Activity className="h-2.5 w-2.5" />
-                                {getTreatmentEffectSummary(treatment)}
+                                {getTreatmentEffectSummary(treatment, caseData)}
                               </span>
                               {treatment.requiresIVAccess && (
                                 <span className="inline-flex items-center gap-1 rounded-md bg-cyan-500/10 px-1.5 py-0.5 text-cyan-700 dark:text-cyan-300">
@@ -2243,7 +2277,7 @@ export function TreatmentJumpBagPanel({
                               </div>
                             )}
                             <p className="mt-1.5 line-clamp-2 text-[10px] leading-relaxed text-muted-foreground">
-                              {treatment.description}
+                              {presentation.description}
                             </p>
                           </div>
                         </div>

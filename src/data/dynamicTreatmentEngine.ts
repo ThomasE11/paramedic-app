@@ -413,6 +413,8 @@ function applyStandardTreatment(
   let requiresRepeat = false;
   let warningMessage: string | undefined;
   let criticalEvent: CriticalEvent | undefined;
+  const localBurnCooling = treatment.id === 'active_cooling'
+    && (caseCategory === 'burns' || /\b(?:burns?|scald|flash[- ]burn)\b/i.test(caseSubcategory));
 
   // ===== DOSE-DEPENDENT EFFECTIVENESS =====
   // Diminishing returns on repeated doses of same treatment
@@ -652,7 +654,13 @@ function applyStandardTreatment(
 
   treatment.effects.forEach(effect => {
     if (skipPerfusingEffects && (effect.vitalSign === 'pulse' || effect.vitalSign === 'bp')) return;
-    const adjustedValue = effect.value * effectMultiplier;
+    // In burn scenarios this treatment means twenty minutes of local running
+    // water followed by a loose dressing. It must not behave like whole-body
+    // heat-stroke cooling by lowering core temperature or raising BP.
+    if (localBurnCooling && (effect.vitalSign === 'temperature' || effect.vitalSign === 'bp')) return;
+    const adjustedValue = localBurnCooling && effect.vitalSign === 'pulse'
+      ? Math.min(8, effect.value * effectMultiplier)
+      : effect.value * effectMultiplier;
 
     switch (effect.vitalSign) {
       case 'bp': {
@@ -848,6 +856,17 @@ function applyStandardTreatment(
       }
     }
   });
+
+  if (localBurnCooling && (vitals.painScore ?? 0) > 0) {
+    const oldPain = vitals.painScore ?? 0;
+    vitals.painScore = Math.max(0, oldPain - 2);
+    changes.push({
+      vital: 'Pain',
+      oldValue: `${oldPain}/10`,
+      newValue: `${vitals.painScore}/10`,
+      direction: 'improved',
+    });
+  }
 
   // Build response description
   const improvementCount = changes.filter(c => c.direction === 'improved').length;

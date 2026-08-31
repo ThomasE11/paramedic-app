@@ -499,19 +499,69 @@ function PericardiocentesisProcedurePreview({
 const THERMAL_PREVIEW_TREATMENTS = new Set(['active_cooling', 'warming_blanket']);
 
 function ThermalProcedurePreview({
+  procedureId,
   treatmentId,
   equipmentAsset,
+  selectedTarget,
   completedSteps,
   animatingStep,
 }: {
+  procedureId: string;
   treatmentId: string;
   equipmentAsset: string;
+  selectedTarget: ProcedureTarget | null;
   completedSteps: string[];
   animatingStep: string | null;
 }) {
   if (!THERMAL_PREVIEW_TREATMENTS.has(treatmentId)) return null;
 
   const reached = (stepId: string) => completedSteps.includes(stepId) || animatingStep === stepId;
+  if (procedureId === 'burn-cooling') {
+    const positions: Record<string, { left: string; top: string; rotate: string }> = {
+      face: { left: '79px', top: '29px', rotate: '0deg' },
+      chest: { left: '76px', top: '101px', rotate: '0deg' },
+      'right-arm': { left: '25px', top: '111px', rotate: '8deg' },
+      'left-arm': { left: '132px', top: '111px', rotate: '-8deg' },
+      'right-leg': { left: '59px', top: '211px', rotate: '3deg' },
+      'left-leg': { left: '105px', top: '211px', rotate: '-3deg' },
+    };
+    const position = selectedTarget ? positions[selectedTarget.id] ?? positions.chest : positions.chest;
+    const exposed = reached('expose');
+    const irrigated = reached('irrigate');
+    const protectedPatient = reached('protect');
+    const covered = reached('cover');
+    const confirmed = reached('confirm');
+    return (
+      <div data-procedure-preview="burn-cooling" className="pointer-events-none absolute inset-0 z-20">
+        {exposed && (
+          <span
+            className="absolute h-12 w-10 rounded-[45%] border-2 border-rose-300/85 bg-gradient-to-br from-rose-500/80 via-red-300/65 to-amber-100/70 shadow-[0_0_14px_rgba(248,113,113,.45)]"
+            style={position}
+            aria-label="Selected burn exposed for cooling"
+          />
+        )}
+        {irrigated && (
+          <>
+            <span className="absolute left-[82px] top-1 h-20 w-5 rounded-b-full bg-gradient-to-b from-cyan-100/10 via-cyan-200/70 to-sky-400/65 blur-[1px]" />
+            <span className="absolute left-1/2 top-3 -translate-x-1/2 rounded-full border border-cyan-200/50 bg-sky-950/90 px-2 py-1 text-[7px] font-black uppercase tracking-[0.08em] text-cyan-100">Cool water · 20 min</span>
+          </>
+        )}
+        {protectedPatient && (
+          <span className="absolute left-1/2 top-[158px] h-[126px] w-[92px] -translate-x-1/2 rounded-[22px] border border-amber-200/60 bg-amber-300/28" aria-label="Uninjured areas kept warm during local burn cooling" />
+        )}
+        {covered && (
+          <span
+            className="absolute h-12 w-10 rounded-xl border-2 border-white/90 bg-gradient-to-br from-white/90 via-cyan-100/80 to-sky-200/75 shadow-lg"
+            style={position}
+            aria-label="Loose non-adherent dressing covers the cooled burn"
+          />
+        )}
+        {confirmed && (
+          <span className="absolute bottom-3 left-1/2 w-max max-w-[178px] -translate-x-1/2 rounded-full border border-emerald-300/50 bg-emerald-950/95 px-2 py-1 text-center text-[7px] font-black uppercase tracking-[0.08em] text-emerald-100 shadow-lg">Burn covered · pain + TBSA + temperature rechecked</span>
+        )}
+      </div>
+    );
+  }
   const cooling = treatmentId === 'active_cooling';
   const prepared = reached('prepare');
   const applied = reached('apply');
@@ -1067,8 +1117,10 @@ export function HandsOnProcedureDialog({
               />
 
               <ThermalProcedurePreview
+                procedureId={plan.id}
                 treatmentId={plan.treatmentId}
                 equipmentAsset={plan.equipmentAsset}
+                selectedTarget={selectedTarget ?? plan.targets.find(target => target.priority === 'injury') ?? null}
                 completedSteps={completedSteps}
                 animatingStep={animatingStep}
               />

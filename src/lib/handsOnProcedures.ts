@@ -109,6 +109,31 @@ function limbInjuryTargets(caseData: CaseScenario): ProcedureTarget[] {
   }));
 }
 
+function burnInjuryTargets(caseData: CaseScenario): ProcedureTarget[] {
+  const unique = new Map<BodyRegion, ProcedureTarget>();
+  for (const injury of inferInjuries(caseData)) {
+    if (injury.kind !== 'burn') continue;
+    unique.set(injury.region, {
+      id: injury.region,
+      label: REGION_LABELS[injury.region],
+      detail: injury.detail,
+      priority: 'injury',
+    });
+  }
+  if (unique.size) return [...unique.values()];
+  return ['face', 'chest', 'right-arm', 'left-arm', 'right-leg', 'left-leg'].map(region => ({
+    id: region as BodyRegion,
+    label: REGION_LABELS[region as BodyRegion],
+    detail: 'Select the burn identified during exposure and TBSA assessment.',
+    priority: 'available' as const,
+  }));
+}
+
+function isBurnCoolingCase(caseData: CaseScenario): boolean {
+  return caseData.category === 'burns'
+    || /\b(?:burns?|scald|flash[- ]burn)\b/i.test(`${caseData.subcategory} ${caseData.dispatchInfo?.callReason}`);
+}
+
 function accessTargets(kind: 'iv' | 'io'): ProcedureTarget[] {
   const regions: BodyRegion[] = kind === 'iv'
     ? ['right-arm', 'left-arm']
@@ -733,6 +758,25 @@ export function getHandsOnProcedurePlan(
 
   if (treatmentId === 'warming_blanket' || treatmentId === 'active_cooling') {
     const cooling = treatmentId === 'active_cooling';
+    if (cooling && isBurnCoolingCase(caseData)) {
+      return {
+        id: 'burn-cooling',
+        title: 'Cool and cover the burn',
+        subtitle: 'Cool the injured tissue—not the whole patient—then protect it while preventing systemic hypothermia.',
+        treatmentId,
+        requiresTarget: true,
+        targets: burnInjuryTargets(caseData),
+        equipmentAsset: '/equipment-assets/bandages.webp',
+        completionLabel: 'Burn cooled and loosely covered — keep the patient warm',
+        steps: [
+          STEP('expose', 'Stop the burning process and expose', 'Remove the patient from the source. Remove jewellery, watches and loose clothing near the burn, but do not pull away material stuck to skin.', 'Expose enough to assess location, depth and TBSA while preserving dignity.', 'expose'),
+          STEP('irrigate', 'Cool with running water', 'Irrigate the selected burn with cool running water for 20 minutes as soon as possible after injury.', 'Use cool—not ice-cold—water. Do not apply ice, creams or hydrogel in place of adequate irrigation.', 'press', 1400),
+          STEP('protect', 'Keep the rest of the patient warm', 'Dry and cover uninjured areas while the burn is cooled, especially in children or larger burns.', 'Local burn cooling must not create systemic hypothermia. Recheck core temperature.', 'wrap'),
+          STEP('cover', 'Cover the cooled burn loosely', 'Apply a sterile non-adherent dressing or longitudinal strips of clean cling film. Separate burned fingers or toes individually.', 'Do not wrap circumferentially or apply an adhesive dressing directly to damaged skin.', 'wrap', 1200),
+          STEP('confirm', 'Reassess after cooling', 'Repeat pain score, distal circulation, burn depth/TBSA, temperature and airway signs where relevant.', 'Escalate facial burns, circumferential burns, large TBSA or any inhalation features.', 'confirm'),
+        ],
+      };
+    }
     return {
       id: treatmentId, title: cooling ? 'Apply active cooling' : 'Apply a warming blanket',
       subtitle: cooling ? 'Cool the patient while preserving airway access and continuously tracking temperature.' : 'Dry, cover and insulate the patient while preserving access for reassessment.',
