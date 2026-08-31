@@ -251,6 +251,40 @@ function Stretcher() {
   );
 }
 
+/** Backless clinical examination stool for tripod/seated presentations. It
+ * supports the pelvis without covering the torso, forearms, knees or distal
+ * pulse targets students need to inspect and treat. */
+function ClinicalPatientSeat() {
+  return (
+    <group name="clinical-patient-seat" position={[0, 0, 0.34]}>
+      <mesh position={[0, 0.52, -0.08]} castShadow receiveShadow raycast={NO_RAYCAST}>
+        <cylinderGeometry args={[0.42, 0.42, 0.13, 28]} />
+        <meshStandardMaterial color="#31566f" roughness={0.84} />
+      </mesh>
+      <mesh position={[0, 0.27, -0.08]} castShadow raycast={NO_RAYCAST}>
+        <cylinderGeometry args={[0.045, 0.055, 0.5, 14]} />
+        <meshStandardMaterial color={PALETTE.steel} {...steelProps()} />
+      </mesh>
+      <mesh position={[0, 0.08, -0.08]} raycast={NO_RAYCAST}>
+        <cylinderGeometry args={[0.3, 0.3, 0.055, 20]} />
+        <meshStandardMaterial color={PALETTE.metal} {...steelProps()} />
+      </mesh>
+      {([0, Math.PI / 2, Math.PI, (Math.PI * 3) / 2] as const).map(angle => (
+        <group key={`clinical-seat-caster-${angle}`} rotation={[0, angle, 0]}>
+          <mesh position={[0, 0.055, 0.32]} rotation={[Math.PI / 2, 0, 0]} raycast={NO_RAYCAST}>
+            <cylinderGeometry args={[0.035, 0.035, 0.045, 12]} />
+            <meshStandardMaterial color="#111827" roughness={0.7} />
+          </mesh>
+          <mesh position={[0, 0.08, 0.17]} rotation={[Math.PI / 2, 0, 0]} raycast={NO_RAYCAST}>
+            <cylinderGeometry args={[0.016, 0.016, 0.3, 10]} />
+            <meshStandardMaterial color={PALETTE.steel} {...steelProps()} />
+          </mesh>
+        </group>
+      ))}
+    </group>
+  );
+}
+
 /** Scene-authored recumbent support. The top plane matches the stretcher
  * sheet at y=0.5025, so the fitted patient remains grounded while the scene
  * changes from a clinical trolley to the bed or sofa described at dispatch. */
@@ -573,6 +607,7 @@ export function TreatmentBayEnvironment({
       {/* Arrival scenes hide the trolley until the crew loads the patient —
           including outdoor variants, otherwise stretcher-load is invisible. */}
       {patientSupportSurface === 'stretcher' && <Stretcher />}
+      {isClinic && showPatientSeat && <ClinicalPatientSeat />}
       {(patientSupportSurface === 'bed' || patientSupportSurface === 'sofa') && (
         <ScenePatientSupport kind={patientSupportSurface} />
       )}
