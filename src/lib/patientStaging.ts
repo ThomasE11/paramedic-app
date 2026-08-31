@@ -10,6 +10,7 @@ export type PatientStage = 'stretcher' | 'floor';
 export type PatientMobility = 'recumbent' | 'seated' | 'standing' | 'pacing';
 export type PatientSkeletalAction = 'idle' | 'walk' | null;
 export type PatientPosture = 'seated' | 'tripod' | 'supine' | 'recovery' | null;
+export type PatientSupportSurface = 'stretcher' | 'floor' | 'bed' | 'sofa' | 'seat' | 'none';
 
 export interface PatientPacingTransform {
   x: number;
@@ -35,6 +36,7 @@ export interface PatientLivePositionContext {
   stage: PatientStage;
   mobility: PatientMobility;
   posture: PatientPosture;
+  supportSurface?: PatientSupportSurface;
 }
 
 export type PatientLivePositionKey =
@@ -42,11 +44,18 @@ export type PatientLivePositionKey =
   | 'standing'
   | 'tripod'
   | 'seated'
+  | 'seatedBed'
+  | 'seatedSofa'
   | 'semiRecumbent'
+  | 'semiRecumbentBed'
   | 'recoveryFloor'
   | 'recoveryStretcher'
+  | 'recoveryBed'
+  | 'recoverySofa'
   | 'supineFloor'
   | 'supineStretcher'
+  | 'supineBed'
+  | 'supineSofa'
   | 'caregiverTransfer';
 
 export interface PatientLivePositionPresentation {
@@ -212,31 +221,39 @@ export function patientLivePositionPresentation(
   context: PatientLivePositionContext,
 ): PatientLivePositionPresentation {
   const { stage, mobility, posture } = context;
+  const supportSurface = context.supportSurface ?? (stage === 'floor' ? 'floor' : 'stretcher');
   if (mobility === 'pacing') return { key: 'pacing', fallback: 'Walking / pacing in scene' };
   if (mobility === 'standing') return { key: 'standing', fallback: 'Standing at scene' };
   if (mobility === 'seated') {
     const arrivalPosition = caseData.initialPresentation?.position?.toLowerCase() ?? '';
     if (/\bsemi[- ]recumbent\b|\bsemi[- ]reclined\b/.test(arrivalPosition)) {
+      if (supportSurface === 'bed') return { key: 'semiRecumbentBed', fallback: 'Supported semi-recumbent on scene bed' };
       return { key: 'semiRecumbent', fallback: 'Supported semi-recumbent position' };
     }
+    if (supportSurface === 'bed') return { key: 'seatedBed', fallback: 'Seated on scene bed' };
+    if (supportSurface === 'sofa') return { key: 'seatedSofa', fallback: 'Seated on scene sofa' };
     return posture === 'tripod'
       ? { key: 'tripod', fallback: 'Seated in tripod position' }
       : { key: 'seated', fallback: 'Seated with support' };
   }
 
-  const surface = stage === 'floor' ? 'scene floor' : 'ambulance stretcher';
   if (posture === 'recovery') {
-    return stage === 'floor'
-      ? { key: 'recoveryFloor', fallback: `Recovery position on ${surface}` }
-      : { key: 'recoveryStretcher', fallback: `Recovery position on ${surface}` };
+    if (supportSurface === 'floor') return { key: 'recoveryFloor', fallback: 'Recovery position on scene floor' };
+    if (supportSurface === 'bed') return { key: 'recoveryBed', fallback: 'Recovery position on scene bed' };
+    if (supportSurface === 'sofa') return { key: 'recoverySofa', fallback: 'Recovery position on scene sofa' };
+    return { key: 'recoveryStretcher', fallback: 'Recovery position on ambulance stretcher' };
   }
-  const base = `Supine on ${surface}`;
+  const position = supportSurface === 'floor'
+    ? { key: 'supineFloor' as const, label: 'Supine on scene floor' }
+    : supportSurface === 'bed'
+      ? { key: 'supineBed' as const, label: 'Supine on scene bed' }
+      : supportSurface === 'sofa'
+        ? { key: 'supineSofa' as const, label: 'Supine on scene sofa' }
+        : { key: 'supineStretcher' as const, label: 'Supine on ambulance stretcher' };
   const arrivalPosition = caseData.initialPresentation?.position?.toLowerCase() ?? '';
-  return /\bheld by\b|\bbeing held\b|\bon .+ lap\b/.test(arrivalPosition)
-    ? { key: 'caregiverTransfer', fallback: `${base} — transferred from caregiver for assessment` }
-    : stage === 'floor'
-      ? { key: 'supineFloor', fallback: base }
-      : { key: 'supineStretcher', fallback: base };
+  return supportSurface === 'stretcher' && /\bheld by\b|\bbeing held\b|\bon .+ lap\b/.test(arrivalPosition)
+    ? { key: 'caregiverTransfer', fallback: `${position.label} — transferred from caregiver for assessment` }
+    : { key: position.key, fallback: position.label };
 }
 
 export function patientLivePositionLabel(
@@ -287,6 +304,31 @@ export function deriveAppliedPatientStage(
   appliedTreatmentIds: readonly string[] = [],
 ): PatientStage {
   return patientLoadedOnStretcher(appliedTreatmentIds) ? 'stretcher' : sceneStage;
+}
+
+/**
+ * The support under the patient must match the authored scene until the crew
+ * deliberately transfers them. `stretcher` remains the safe fallback for
+ * ambiguous recumbent cases, while explicit beds and sofas stay visible.
+ */
+export function derivePatientSupportSurface(
+  caseData: CaseScenario,
+  context: {
+    stage: PatientStage;
+    mobility: PatientMobility;
+    loadedOnStretcher?: boolean;
+  },
+): PatientSupportSurface {
+  const { stage, mobility, loadedOnStretcher = false } = context;
+  if (loadedOnStretcher) return 'stretcher';
+  if (stage === 'floor') return 'floor';
+  if (mobility === 'standing' || mobility === 'pacing') return 'none';
+
+  const position = caseData.initialPresentation?.position?.toLowerCase() ?? '';
+  if (/\b(?:bed|examination couch)\b/.test(position)) return 'bed';
+  if (/\b(?:sofa|couch)\b/.test(position)) return 'sofa';
+  if (mobility === 'seated') return 'seat';
+  return 'stretcher';
 }
 
 /** Local upper-arm rotation that turns the donor clip's A-pose into rest. */

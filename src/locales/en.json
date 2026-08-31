@@ -151,11 +151,18 @@
     "standing": "Standing at scene",
     "tripod": "Seated in tripod position",
     "seated": "Seated with support",
+    "seatedBed": "Seated on scene bed",
+    "seatedSofa": "Seated on scene sofa",
     "semiRecumbent": "Supported semi-recumbent position",
+    "semiRecumbentBed": "Supported semi-recumbent on scene bed",
     "recoveryFloor": "Recovery position on scene floor",
     "recoveryStretcher": "Recovery position on ambulance stretcher",
+    "recoveryBed": "Recovery position on scene bed",
+    "recoverySofa": "Recovery position on scene sofa",
     "supineFloor": "Supine on scene floor",
     "supineStretcher": "Supine on ambulance stretcher",
+    "supineBed": "Supine on scene bed",
+    "supineSofa": "Supine on scene sofa",
     "caregiverTransfer": "Supine on ambulance stretcher — transferred from caregiver for assessment"
   },
   "classroom": {

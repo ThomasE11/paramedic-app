@@ -21,14 +21,14 @@ import {
   deriveAppliedPatientStage,
   derivePatientMobility,
   derivePatientPosture,
+  derivePatientSupportSurface,
   deriveScenePatientStage,
   deriveTreatmentPositioningOverride,
   patientLoadedOnStretcher,
   patientLivePositionPresentation,
-  shouldHideTreatmentStretcher,
-  shouldShowPatientSeat,
   type PatientMobility,
   type PatientPosture,
+  type PatientSupportSurface,
 } from '@/lib/patientStaging';
 import { deriveSceneEnvironment } from '@/lib/sceneEnvironment';
 import type { LimbSide, SurfaceSampler } from './BodyMesh';
@@ -466,6 +466,7 @@ function TreatmentBayImmersionLayer({
   appliedTreatmentIds,
   active,
   stage = 'stretcher',
+  supportSurface = 'stretcher',
   posture = null,
   mobility = 'recumbent',
   patientScale = 1,
@@ -473,6 +474,7 @@ function TreatmentBayImmersionLayer({
   appliedTreatmentIds: string[];
   active: boolean;
   stage?: BayPatientStage;
+  supportSurface?: PatientSupportSurface;
   posture?: PatientPosture;
   mobility?: PatientMobility;
   patientScale?: number;
@@ -495,7 +497,7 @@ function TreatmentBayImmersionLayer({
       {/* Head pad exists only on the stretcher. Floor/roadside patients are
           treated where found; rendering a pad there obscures the face and can
           look like vehicle geometry crossing the body. */}
-      {stage === 'stretcher' && mobility === 'recumbent' && (
+      {supportSurface === 'stretcher' && stage === 'stretcher' && mobility === 'recumbent' && (
         <mesh position={[0, 0.505, headPadZ]} rotation={[-Math.PI / 2, 0, 0]} raycast={() => null}>
           <boxGeometry args={[0.72 * Math.max(0.58, patientScale), 0.36 * Math.max(0.58, patientScale), 0.055]} />
           <meshStandardMaterial color="#e5edf4" roughness={0.86} metalness={0.02} transparent opacity={0.88} />
@@ -4586,13 +4588,23 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
     });
   }, [isInArrest, treatmentPositioning, patientUnconscious, patientMobility, effectiveVitals, caseData]);
 
+  const patientSupportSurface = useMemo(
+    () => derivePatientSupportSurface(caseData, {
+      stage: bayStage,
+      mobility: patientMobility,
+      loadedOnStretcher,
+    }),
+    [bayStage, caseData, loadedOnStretcher, patientMobility],
+  );
+
   const livePositionPresentation = useMemo(
     () => patientLivePositionPresentation(caseData, {
       stage: bayStage,
       mobility: patientMobility,
       posture: patientPosture,
+      supportSurface: patientSupportSurface,
     }),
-    [bayStage, caseData, patientMobility, patientPosture],
+    [bayStage, caseData, patientMobility, patientPosture, patientSupportSurface],
   );
   const livePositionLabel = t(`patientPosition.${livePositionPresentation.key}`, {
     defaultValue: livePositionPresentation.fallback,
@@ -5696,8 +5708,8 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
 
               <TreatmentBayEnvironment
                 hideOverhead={treatmentBayOverviewEnabled}
-                hideBed={treatmentBayOverviewEnabled && shouldHideTreatmentStretcher(bayStage, patientMobility, loadedOnStretcher)}
-                showPatientSeat={treatmentBayOverviewEnabled && shouldShowPatientSeat(patientMobility, loadedOnStretcher)}
+                patientSupportSurface={treatmentBayOverviewEnabled ? patientSupportSurface : 'stretcher'}
+                showPatientSeat={treatmentBayOverviewEnabled && patientSupportSurface === 'seat'}
                 shadowsEnabled={quality.contactShadows}
                 variant={bayVariant}
               />
@@ -5782,6 +5794,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 appliedTreatmentIds={appliedTreatmentIds}
                 active={useTreatmentBayPresentation}
                 stage={bayStage}
+                supportSurface={patientSupportSurface}
                 posture={patientPosture}
                 mobility={patientMobility}
                 patientScale={patientScale}

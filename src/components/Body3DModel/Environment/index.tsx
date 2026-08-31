@@ -22,6 +22,7 @@ import * as THREE from 'three';
 import { getBayTextures } from './textures';
 import { SceneVariantEnvironment } from './SceneVariant';
 import type { EnvironmentVariant } from '@/lib/sceneEnvironment';
+import type { PatientSupportSurface } from '@/lib/patientStaging';
 import { focusRig, resetFocusRig, FOCUS_REST, FOCUS_WIDE } from '@/lib/focusRig';
 
 const NO_RAYCAST = () => null;
@@ -250,6 +251,72 @@ function Stretcher() {
   );
 }
 
+/** Scene-authored recumbent support. The top plane matches the stretcher
+ * sheet at y=0.5025, so the fitted patient remains grounded while the scene
+ * changes from a clinical trolley to the bed or sofa described at dispatch. */
+function ScenePatientSupport({ kind }: { kind: 'bed' | 'sofa' }) {
+  if (kind === 'sofa') {
+    return (
+      <group name="scene-patient-support-sofa" position={[0, 0, 0.02]}>
+        <mesh position={[0, 0.40, 0]} castShadow receiveShadow raycast={NO_RAYCAST}>
+          <boxGeometry args={[1.18, 0.20, 2.32]} />
+          <meshStandardMaterial color="#647052" roughness={0.96} />
+        </mesh>
+        <mesh position={[0.55, 0.69, 0]} castShadow raycast={NO_RAYCAST}>
+          <boxGeometry args={[0.18, 0.48, 2.32]} />
+          <meshStandardMaterial color="#566247" roughness={0.98} />
+        </mesh>
+        {[-1.10, 1.10].map(z => (
+          <mesh key={`sofa-arm-${z}`} position={[0, 0.58, z]} castShadow raycast={NO_RAYCAST}>
+            <boxGeometry args={[1.18, 0.34, 0.16]} />
+            <meshStandardMaterial color="#566247" roughness={0.98} />
+          </mesh>
+        ))}
+        {[-0.72, 0, 0.72].map(z => (
+          <mesh key={`sofa-seam-${z}`} position={[-0.03, 0.503, z]} raycast={NO_RAYCAST}>
+            <boxGeometry args={[1.0, 0.008, 0.015]} />
+            <meshStandardMaterial color="#879175" roughness={0.92} />
+          </mesh>
+        ))}
+        {[-0.43, 0.43].flatMap(x => [-0.92, 0.92].map(z => (
+          <mesh key={`sofa-leg-${x}-${z}`} position={[x, 0.16, z]} castShadow raycast={NO_RAYCAST}>
+            <boxGeometry args={[0.055, 0.30, 0.055]} />
+            <meshStandardMaterial color="#3f2f22" roughness={0.55} metalness={0.08} />
+          </mesh>
+        )))}
+      </group>
+    );
+  }
+
+  const { fabric } = getBayTextures();
+  return (
+    <group name="scene-patient-support-bed" position={[0, 0, 0.02]}>
+      <mesh position={[0, 0.31, 0]} castShadow receiveShadow raycast={NO_RAYCAST}>
+        <boxGeometry args={[1.38, 0.28, 2.34]} />
+        <meshStandardMaterial color="#7c5f45" roughness={0.72} />
+      </mesh>
+      <mesh position={[0, 0.455, 0]} castShadow receiveShadow raycast={NO_RAYCAST}>
+        <boxGeometry args={[1.30, 0.09, 2.26]} />
+        <meshStandardMaterial map={fabric.map} normalMap={fabric.normalMap} normalScale={[0.5, 0.5]} roughness={0.96} />
+      </mesh>
+      <mesh position={[0, 0.503, 0]} receiveShadow raycast={NO_RAYCAST}>
+        <boxGeometry args={[1.22, 0.012, 2.18]} />
+        <meshStandardMaterial color="#e8eef2" roughness={0.94} />
+      </mesh>
+      <mesh position={[0, 0.73, -1.14]} castShadow raycast={NO_RAYCAST}>
+        <boxGeometry args={[1.48, 0.68, 0.08]} />
+        <meshStandardMaterial color="#6b4f38" roughness={0.66} />
+      </mesh>
+      {[-0.58, 0.58].flatMap(x => [-0.96, 0.96].map(z => (
+        <mesh key={`bed-leg-${x}-${z}`} position={[x, 0.12, z]} castShadow raycast={NO_RAYCAST}>
+          <boxGeometry args={[0.07, 0.24, 0.07]} />
+          <meshStandardMaterial color="#3e2f25" roughness={0.58} />
+        </mesh>
+      )))}
+    </group>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Props — monitor stand, oxygen tank, crash cart. All placed
 // outside the patient/stretcher footprint, all castShadow.
@@ -473,13 +540,13 @@ function SoftGroundShadow() {
 // ---------------------------------------------------------------------------
 export function TreatmentBayEnvironment({
   hideOverhead = false,
-  hideBed = false,
+  patientSupportSurface = 'stretcher',
   showPatientSeat = false,
   shadowsEnabled = true,
   variant = 'clinic',
 }: {
   hideOverhead?: boolean;
-  hideBed?: boolean;
+  patientSupportSurface?: PatientSupportSurface;
   showPatientSeat?: boolean;
   shadowsEnabled?: boolean;
   variant?: EnvironmentVariant;
@@ -505,7 +572,10 @@ export function TreatmentBayEnvironment({
       )}
       {/* Arrival scenes hide the trolley until the crew loads the patient —
           including outdoor variants, otherwise stretcher-load is invisible. */}
-      {!hideBed && <Stretcher />}
+      {patientSupportSurface === 'stretcher' && <Stretcher />}
+      {(patientSupportSurface === 'bed' || patientSupportSurface === 'sofa') && (
+        <ScenePatientSupport kind={patientSupportSurface} />
+      )}
       {/* Medical equipment is brought by the paramedic in every scene, but the
           red crash cart and O2 tank belong inside a bay — hide them for
           outdoor roadside variants so the wrecked car + motorcycle aren't visually
