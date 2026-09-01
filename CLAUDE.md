@@ -5,7 +5,7 @@
 ParaMedic Studio is a UAE-focused paramedic training simulator built as a 3D web application. Students interact with a 3D patient body model, perform assessments, apply treatments, and receive clinical debriefing. The goal is to make paramedic training feel like a premium game experience — not a checklist web app.
 
 **Owner:** Elias Thomas (elias@twetemo.com) — HCT clinical instructor, paramedic, MSc Critical Care (Edinburgh)
-**GitHub:** ThomasE11/paramedic-app.git
+**GitHub:** ThomasE11/3d-case-simulator.git
 **Local path:** /Users/eliastlcthomas/Projects/app
 **Running dev server:** http://localhost:5173 (Vite)
 
