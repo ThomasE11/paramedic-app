@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import type { CaseScenario, StudentYear, CaseSession, VitalSigns, SimulationObjective } from '@/types';
 import { usePersistentState, removePersistedState } from '@/hooks/usePersistentState';
-import { caseCategories } from '@/data/caseFilters';
+import { caseCategories, isCaseAvailableForCohort } from '@/data/caseFilters';
 import { matchObjectiveToCase } from '@/data/simulationObjectives';
 import { buildInitialVitalsFromCase } from '@/data/treatmentEffects';
 import { determineSeverity } from '@/data/deteriorationSystem';
@@ -250,8 +250,12 @@ export function useEducatorPanel() {
 
     if (objective) {
       const scoredCases = matchObjectiveToCase(objective, mod.allCases);
-      newCase = scoredCases.length > 0
-        ? scoredCases[Math.floor(Math.random() * Math.min(3, scoredCases.length))]
+      const yearMatched = scoredCases.filter(caseData =>
+        isCaseAvailableForCohort(caseData.yearLevels, selectedYear),
+      );
+      const pool = yearMatched.length > 0 ? yearMatched : scoredCases;
+      newCase = pool.length > 0
+        ? pool[Math.floor(Math.random() * pool.length)]
         : mod.getRandomCase({
             yearLevel: selectedYear,
             category: objective.relatedCategories[0] || (selectedCategory !== 'all' ? selectedCategory : undefined),

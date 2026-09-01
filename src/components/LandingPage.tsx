@@ -13,7 +13,7 @@ const ClinicalReferenceDialog = lazy(() =>
 );
 
 interface LandingPageProps {
-  onRoleSelect: (role: 'educator' | 'student' | 'classroom-host' | 'classroom-join') => void;
+  onRoleSelect: (role: 'educator' | 'student' | 'classroom-host' | 'classroom-join', category?: string) => void;
   caseCount: number;
 }
 
@@ -486,7 +486,7 @@ export function LandingPage({ onRoleSelect, caseCount }: LandingPageProps) {
               return (
                 <button
                   key={cat.name}
-                  onClick={() => onRoleSelect('student')}
+                  onClick={() => onRoleSelect('student', cat.name.toLowerCase())}
                   aria-label={`Start ${cat.name} training cases`}
                   className="group relative min-h-[220px] overflow-hidden rounded-xl border border-white/60 bg-white/70 p-4 text-left shadow-[0_18px_45px_-34px_rgba(15,23,42,0.5)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-cyan-200/80 hover:bg-white/82 hover:shadow-[0_24px_54px_-34px_rgba(15,23,42,0.62)] dark:border-white/10 dark:bg-white/[0.055] dark:hover:bg-white/[0.085]"
                 >

@@ -324,8 +324,12 @@ export function matchObjectiveToCase(
     score: scoreCaseForObjective(c, objective),
   }));
 
-  return scored
-    .filter(s => s.score > 0)
+  const categoryLocked = objective.relatedCategories?.length
+    ? scored.filter(s => objective.relatedCategories.includes(s.case.category as CaseCategory))
+    : [];
+  const pool = (categoryLocked.length > 0 ? categoryLocked : scored).filter(s => s.score > 0);
+
+  return pool
     .sort((a, b) => b.score - a.score)
     .map(s => s.case);
 }

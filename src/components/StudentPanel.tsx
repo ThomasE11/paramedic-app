@@ -58,6 +58,7 @@ function seededShuffle<T>(array: T[], seed: string): T[] {
 }
 import { loadAllCases } from '@/data/caseLibrary';
 import { yearLevels, caseCategories, isCaseAvailableForCohort, isStudentYear, type CohortMode } from '@/data/caseFilters';
+import { pickRandomFromPool, skillFocusForCategory } from '@/lib/missionCasePick';
 import { ensureCompleteVitals, vitalsEqual, buildInitialVitalsFromCase } from '@/data/treatmentEffects';
 import { type Treatment, TREATMENTS } from '@/data/enhancedTreatmentEffects';
 import {
@@ -541,6 +542,8 @@ interface StudentPanelProps {
    * the exact same full case experience (LIFEPAK, 3D body, ABCDE,
    * treatments, etc.) that students see in single-player mode.
    */
+  /** Landing-page category cards pass this so Trauma (etc.) is already selected. */
+  initialCategory?: string;
   preloadedCase?: CaseScenario;
   /**
    * Optional banner rendered above the case header — typically the
@@ -1452,6 +1455,7 @@ function assessTreatmentPracticality({
 
 export function StudentPanel({
   onExit,
+  initialCategory,
   preloadedCase,
   topBanner,
   onClassroomStateChange,
@@ -1522,14 +1526,21 @@ export function StudentPanel({
     return () => { alive = false; };
   }, []);
   const [selectedYear, setSelectedYear] = useState<StudentYear>('3rd-year');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedCategory, setSelectedCategory] = useState<string>(
+    initialCategory && initialCategory !== 'all' ? initialCategory : 'all',
+  );
   const [selectionMode, setSelectionMode] = useState<'standard' | 'random-category' | 'condition'>('standard');
-  const [skillFocus, setSkillFocus] = useState<MissionSkillFocus>('any');
+  const [skillFocus, setSkillFocus] = useState<MissionSkillFocus>(
+    (initialCategory && skillFocusForCategory[initialCategory]) || 'any',
+  );
   const [equipmentFocus, setEquipmentFocus] = useState<MissionEquipmentFocus>('any');
   const [timebox, setTimebox] = useState<MissionTimebox>('15');
   const [conditionSearch, setConditionSearch] = useState('');
   const [, setSelectedCondition] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [missionPreviewCase, setMissionPreviewCase] = useState<CaseScenario | null>(null);
+  const [previewEpoch, setPreviewEpoch] = useState(0);
+  const lastLaunchedCaseIdRef = useRef<string | null>(null);
 
   // Session tracking
   const [session, setSession] = useState<CaseSession | null>(null);
@@ -2770,10 +2781,11 @@ export function StudentPanel({
 
   useEffect(() => {
     if (selectedCategory === 'all') return;
+    if (!casesLoaded) return;
     if (!availableCategories.some(cat => cat.value === selectedCategory)) {
       setSelectedCategory('all');
     }
-  }, [availableCategories, selectedCategory]);
+  }, [availableCategories, selectedCategory, casesLoaded]);
 
   const baseMissionCases = useMemo(() => (
     allCases.filter(c => {
@@ -2791,10 +2803,12 @@ export function StudentPanel({
   }, [baseMissionCases, skillFocus, equipmentFocus]);
 
   const missionCandidateCases = strictMissionCases.length > 0 ? strictMissionCases : baseMissionCases;
-  const missionPreviewCase = useMemo(() => {
-    if (missionCandidateCases.length === 0) return null;
-    return seededShuffle(missionCandidateCases, `${selectedYear}-${selectedCategory}-${skillFocus}-${equipmentFocus}`)[0];
-  }, [missionCandidateCases, selectedYear, selectedCategory, skillFocus, equipmentFocus]);
+
+  useEffect(() => {
+    setMissionPreviewCase(pickRandomFromPool(missionCandidateCases, {
+      excludeId: lastLaunchedCaseIdRef.current,
+    }));
+  }, [missionCandidateCases, previewEpoch]);
   const missionCategoryLabel = selectedCategory === 'all'
     ? 'all presentations'
     : caseCategories.find(cat => cat.value === selectedCategory)?.label.toLowerCase() ?? selectedCategory;
@@ -2946,6 +2960,7 @@ export function StudentPanel({
         return;
       }
 
+      lastLaunchedCaseIdRef.current = newCase.id;
       initializeCase(newCase, false);
       setIsGenerating(false);
       toast.success(`Smart case generated: ${getStudentCaseTitle(newCase)}`, {
@@ -2975,6 +2990,8 @@ export function StudentPanel({
         return;
       }
 
+      lastLaunchedCaseIdRef.current = newCase.id;
+      setSelectedCategory(category);
       initializeCase(newCase, false);
       setIsGenerating(false);
       toast.success(`Random ${category} case: ${getStudentCaseTitle(newCase)}`);
@@ -4720,6 +4737,8 @@ export function StudentPanel({
     setActiveFindings(null);
     setMonitorRevealedVitals(new Set());
     setPhase('select');
+    lastLaunchedCaseIdRef.current = currentCase?.id ?? lastLaunchedCaseIdRef.current;
+    setPreviewEpoch(epoch => epoch + 1);
     medicationConfirmedRef.current = new Set();
     treatmentChallengeConfirmedRef.current = new Set();
     setPendingTreatmentChallenge(null);
@@ -5093,9 +5112,14 @@ export function StudentPanel({
                         </div>
                         <Badge variant="secondary" className="rounded-full">{baseMissionCases.length} available</Badge>
                       </div>
-                      <div className="flex max-h-44 flex-wrap gap-2 overflow-y-auto pr-1">
+                      <div className="flex flex-wrap gap-2">
                         <button
-                          onClick={() => setSelectedCategory('all')}
+                          type="button"
+                          aria-pressed={selectedCategory === 'all'}
+                          onClick={() => {
+                            setSelectedCategory('all');
+                            setSkillFocus('any');
+                          }}
                           className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-semibold transition-all ${
                             selectedCategory === 'all'
                               ? 'border-brand-500 bg-brand-500 text-white shadow-md shadow-brand-500/20'
@@ -5107,17 +5131,25 @@ export function StudentPanel({
                         </button>
                         {availableCategories.map(cat => {
                           const count = allCases.filter(c => c.category === cat.value && isCaseAvailableForCohort(c.yearLevels, selectedYear)).length;
+                          const isSelected = selectedCategory === cat.value;
                           return (
                             <button
                               key={cat.value}
-                              onClick={() => setSelectedCategory(cat.value)}
+                              type="button"
+                              aria-pressed={isSelected}
+                              onClick={() => {
+                                setSelectedCategory(cat.value);
+                                const alignedSkill = skillFocusForCategory[cat.value];
+                                if (alignedSkill) setSkillFocus(alignedSkill);
+                                if (isSelected) setPreviewEpoch(epoch => epoch + 1);
+                              }}
                               className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-semibold transition-all ${
-                                selectedCategory === cat.value
+                                isSelected
                                   ? 'border-brand-500 bg-brand-500 text-white shadow-md shadow-brand-500/20'
                                   : 'border-border/50 bg-white/55 text-muted-foreground hover:border-brand-400/50 hover:text-foreground dark:bg-white/[0.04]'
                               }`}
                             >
-                              <span className={`h-2.5 w-2.5 rounded-full ${selectedCategory === cat.value ? 'bg-white' : cat.color}`} />
+                              <span className={`h-2.5 w-2.5 rounded-full ${isSelected ? 'bg-white' : cat.color}`} />
                               {cat.label}
                               <span className="text-[10px] opacity-65">{count}</span>
                             </button>
@@ -5283,8 +5315,21 @@ export function StudentPanel({
                     <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-cyan-200/70">Launch preview</p>
                     <h3 className="mt-1 text-xl font-bold tracking-tight">Your next call</h3>
                   </div>
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-400/15 text-cyan-200 ring-1 ring-cyan-300/20">
-                    <Ambulance className="h-5 w-5" />
+                  <div className="flex items-center gap-2">
+                    {selectionMode === 'standard' && missionCandidateCases.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => setPreviewEpoch(epoch => epoch + 1)}
+                        className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 text-cyan-100 ring-1 ring-white/15 transition-colors hover:bg-white/15"
+                        aria-label="Shuffle to another matching case"
+                        title="Shuffle to another matching case"
+                      >
+                        <Shuffle className="h-5 w-5" />
+                      </button>
+                    )}
+                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-400/15 text-cyan-200 ring-1 ring-cyan-300/20">
+                      <Ambulance className="h-5 w-5" />
+                    </div>
                   </div>
                 </div>
 

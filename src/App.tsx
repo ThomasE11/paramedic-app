@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useCallback } from 'react';
+import { lazy, Suspense, useEffect, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { CaseScenario, StudentYear, VitalSigns } from '@/types';
 import { yearLevels, caseCategories, priorities } from '@/data/caseFilters';
@@ -58,6 +58,7 @@ function LazyLoad({ children, name }: { children: React.ReactNode; name: string 
 
 function App() {
   const ep = useEducatorPanel();
+  const [pendingStudentCategory, setPendingStudentCategory] = useState('all');
   const devLiveCaseId = import.meta.env.DEV && typeof window !== 'undefined'
     ? new URLSearchParams(window.location.search).get('devLiveCase')
     : null;
@@ -92,7 +93,10 @@ function App() {
     return (
       <>
         <LandingPage
-          onRoleSelect={(role) => ep.setUserRole(role)}
+          onRoleSelect={(role, category) => {
+            setPendingStudentCategory(category ?? 'all');
+            ep.setUserRole(role);
+          }}
           caseCount={ep.allCases.length}
         />
         <CommandPalette onCaseSelect={() => ep.setUserRole('educator')} />
@@ -129,7 +133,7 @@ function App() {
   if (ep.userRole === 'student') {
     return (
       <LazyLoad name="StudentPanel">
-        <StudentPanel onExit={ep.handleRoleExit} />
+        <StudentPanel onExit={ep.handleRoleExit} initialCategory={pendingStudentCategory} />
         <CommandPalette onSwitchRole={ep.handleRoleExit} />
         <Toaster position="top-right" richColors closeButton />
       </LazyLoad>
