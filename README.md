@@ -1,6 +1,6 @@
-# ParaMedic Studio (3D case simulator)
+# 3D Case Simulator
 
-**GitHub repo:** [`ThomasE11/paramedic-app`](https://github.com/ThomasE11/paramedic-app)
+**GitHub repo:** [`ThomasE11/3d-case-simulator`](https://github.com/ThomasE11/3d-case-simulator)
 **Live:** https://app-three-gamma-88.vercel.app
 **Local path:** `~/Projects/app`
 
@@ -10,11 +10,11 @@ This is the **3D UAE paramedic case simulator**. Students enter a scene, examine
 
 | Product | Repo | What it is |
 | --- | --- | --- |
-| **ParaMedic Studio (this repo)** | [`paramedic-app`](https://github.com/ThomasE11/paramedic-app) | 3D case simulator with a live patient, monitor, and treatment bay |
-| EMS Training Studio | [`paramedic-studio`](https://github.com/ThomasE11/paramedic-studio) | HCT LMS: modules, PCR, skills tracking, student accounts |
-| Pocket Paramedic | [`remedy-road`](https://github.com/ThomasE11/remedy-road) | Mobile clinical protocols / assessment guide (PWA) |
+| **3D Case Simulator (this repo)** | [`3d-case-simulator`](https://github.com/ThomasE11/3d-case-simulator) | Live 3D patient, monitor, and treatment bay |
+| EMS Training Studio | [`ems-training-studio`](https://github.com/ThomasE11/ems-training-studio) | HCT LMS: modules, PCR, skills tracking, student accounts |
+| Pocket Paramedic | [`pocket-paramedic`](https://github.com/ThomasE11/pocket-paramedic) | Mobile clinical protocols / assessment guide (PWA) |
 
-If you opened this repo looking for protocols, go to [`remedy-road`](https://github.com/ThomasE11/remedy-road). If you want the student LMS, go to [`paramedic-studio`](https://github.com/ThomasE11/paramedic-studio).
+If you opened this repo looking for protocols, go to [`pocket-paramedic`](https://github.com/ThomasE11/pocket-paramedic). If you want the student LMS, go to [`ems-training-studio`](https://github.com/ThomasE11/ems-training-studio).
 
 ## Stack
 
