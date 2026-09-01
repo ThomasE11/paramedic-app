@@ -1,73 +1,39 @@
-# React + TypeScript + Vite
+# ParaMedic Studio (3D case simulator)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**GitHub repo:** [`ThomasE11/paramedic-app`](https://github.com/ThomasE11/paramedic-app)
+**Live:** https://app-three-gamma-88.vercel.app
+**Local path:** `~/Projects/app`
 
-Currently, two official plugins are available:
+This is the **3D UAE paramedic case simulator**. Students enter a scene, examine a 3D patient, apply treatments, and get a clinical debrief. It is a training sim, not a protocol handbook and not a course LMS.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## This is not the other two products
 
-## React Compiler
+| Product | Repo | What it is |
+| --- | --- | --- |
+| **ParaMedic Studio (this repo)** | [`paramedic-app`](https://github.com/ThomasE11/paramedic-app) | 3D case simulator with a live patient, monitor, and treatment bay |
+| EMS Training Studio | [`paramedic-studio`](https://github.com/ThomasE11/paramedic-studio) | HCT LMS: modules, PCR, skills tracking, student accounts |
+| Pocket Paramedic | [`remedy-road`](https://github.com/ThomasE11/remedy-road) | Mobile clinical protocols / assessment guide (PWA) |
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+If you opened this repo looking for protocols, go to [`remedy-road`](https://github.com/ThomasE11/remedy-road). If you want the student LMS, go to [`paramedic-studio`](https://github.com/ThomasE11/paramedic-studio).
 
-## Expanding the ESLint configuration
+## Stack
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+React + TypeScript + Vite, Three.js / React Three Fiber, Tailwind + shadcn/ui, Supabase, i18next (English + Arabic).
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Run locally
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+cd ~/Projects/app
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Dev server is Vite (port 5173, or 5174 if 5173 is taken).
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run check      # typecheck + lint + tests + case audits
+npm test
+npm run build
 ```
+
+Owner: Elias Thomas (`elias@twetemo.com`).
