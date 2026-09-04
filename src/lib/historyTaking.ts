@@ -214,21 +214,50 @@ function hasRealAllergies(allergies?: string[]): string[] {
  * diagnosis and chief complaint. Region (the "R" in OPQRST) is a real exam
  * step that was previously unanswerable.
  */
-function inferPainRegion(caseData: CaseScenario): string {
-  const hay = [
-    caseData.expectedFindings?.mostLikelyDiagnosis,
+function authoredClinicalFacts(caseData: CaseScenario): string[] {
+  return [
+    caseData.history?.eventsLeading,
     caseData.dispatchInfo?.callReason,
     caseData.initialPresentation?.generalImpression,
-    caseData.abcde?.disability?.findings?.join(' '),
-  ].filter(Boolean).join(' ').toLowerCase();
-  if (/chest|cardiac|stemi|\bmi\b|angina|pleur|pulmonary embol|pneumo/.test(hay)) return pick(['It’s right here, in the centre of my chest.', 'Here — across my chest.', 'In my chest, kind of behind the breastbone.']);
-  if (/abdom|appendic|cholecyst|pancreat|gastr|bowel|stomach/.test(hay)) return pick(['Down here, in my belly.', 'It’s in my tummy — around here.', 'My stomach, mostly the lower part.']);
+    caseData.initialPresentation?.appearance,
+    ...Object.values(caseData.abcde ?? {}).flatMap(section => section?.findings ?? []),
+    ...Object.values(caseData.secondarySurvey ?? {}).flatMap(findings => findings ?? []),
+    ...(caseData.expectedFindings?.keyObservations ?? []),
+  ].filter((fact): fact is string => Boolean(fact));
+}
+
+function inferPainRegion(caseData: CaseScenario): string {
+  const hay = authoredClinicalFacts(caseData).join(' ').toLowerCase();
+  const sidedRegion = hay.match(/\b(left|right)[ -](hip|leg|thigh|knee|ankle|foot|arm|shoulder|wrist|hand|flank|chest)\b/);
+  if (sidedRegion) return `It’s my ${sidedRegion[1]} ${sidedRegion[2]} — right here.`;
+  if (/\b(rlq|right lower quadrant)\b/.test(hay)) return `It’s low down on the right side of my abdomen.`;
+  if (/\b(llq|left lower quadrant)\b/.test(hay)) return `It’s low down on the left side of my abdomen.`;
+  if (/\b(epigastr|upper central abdomen)\b/.test(hay)) return `It’s high in the middle of my abdomen.`;
+  if (/\b(central|centre|middle|substernal|retrosternal) (?:of (?:my|the) )?chest\b|\bbehind (?:my|the) breastbone\b/.test(hay)) return `It’s right here, in the centre of my chest.`;
+  if (/chest pain|cardiac|stemi|\bmi\b|angina|pleur|pulmonary embol|pneumo/.test(hay)) return pick(['It’s right here, in my chest.', 'Here — across my chest.']);
+  if (/abdom|appendic|cholecyst|pancreat|gastr|bowel|stomach/.test(hay)) return pick(['Down here, in my abdomen.', 'It’s in my abdomen — around here.']);
   if (/head|migraine|stroke|sah|meningitis/.test(hay)) return pick(['In my head.', 'All over my head, mostly the front.']);
-  if (/back|renal|kidney|aort/.test(hay)) return pick(['In my back.', 'Round my back, on the side.']);
-  if (/leg|hip|femur|pelvi|ankle|knee/.test(hay)) return pick(['My leg — here.', 'Down my leg.']);
-  if (/arm|shoulder|wrist|elbow/.test(hay)) return pick(['My arm.', 'Up here, in my shoulder and arm.']);
-  if (/throat|airway|neck/.test(hay)) return pick(['My throat — here.', 'In my neck and throat.']);
+  if (/back pain|renal|kidney|aort/.test(hay)) return pick(['In my back.', 'Round my back, on the side.']);
+  if (/leg pain|hip pain|femur|pelvi|ankle|knee/.test(hay)) return pick(['My leg — here.', 'Down my leg.']);
+  if (/arm pain|shoulder pain|wrist|elbow/.test(hay)) return pick(['My arm.', 'Up here, in my shoulder and arm.']);
+  if (/throat|airway|neck pain/.test(hay)) return pick(['My throat — here.', 'In my neck and throat.']);
   return pick(['It’s hard to point to exactly — sort of all over.', 'Around here, mostly.']);
+}
+
+function inferPainRadiation(caseData: CaseScenario): string {
+  const facts = authoredClinicalFacts(caseData);
+  if (facts.some(fact => /\b(no radiation|non[- ]radiating|does(?: not|n't) radiate|stays? (?:in|at) (?:the )?(?:same|one) (?:place|spot))\b/i.test(fact))) {
+    return `No — it stays in the one spot.`;
+  }
+
+  for (const fact of facts) {
+    const radiation = fact.match(/\b(?:radiat(?:es?|ing|ed)|spreads?|travels?|shoots?|goes?)\s+(?:through\s+|down\s+|up\s+|into\s+|to\s+)(?:my\s+|the\s+)?([^.;,]+)/i);
+    if (!radiation) continue;
+    const destination = radiation[1].replace(/\b(?:with|but|and then)\b.*$/i, '').trim().toLowerCase();
+    if (destination) return `Yes — it goes to my ${destination}.`;
+  }
+
+  return `No — it stays in the one spot.`;
 }
 
 /**
@@ -365,12 +394,7 @@ export function generatePatientResponse(
       return inferPainRegion(caseData);
 
     case 'opqrst-radiation': {
-      if (/cardiac|stemi|\bmi\b|inferior|angina/.test(dx)) return `Yes... it goes down my left arm, and up into my jaw.`;
-      if (/aortic|dissection/.test(dx)) return `Yes — it's tearing through to my back, between the shoulder blades.`;
-      if (/renal|kidney|ureter/.test(dx)) return `Yes, it shoots down into my groin.`;
-      if (/cholecyst|gallbl|biliary/.test(dx)) return `Yes — up to my right shoulder blade.`;
-      if (/pancreat/.test(dx)) return `It bores straight through to my back.`;
-      return pick([`No, it stays in the one spot.`, `No — just here.`]);
+      return inferPainRadiation(caseData);
     }
 
     case 'opqrst-severity': {

@@ -105,4 +105,48 @@ describe('generatePatientResponse', () => {
     expect(answer).toMatch(/\.\.\./);
     expect(answer).not.toMatch(/eight|nine|\b[2-9]\s*out of 10/i);
   });
+
+  it('answers pain location from the authored examination, including laterality', () => {
+    const answer = generatePatientResponse(fakeCase({
+      dispatchInfo: { callReason: 'Older patient fallen and unable to get up' },
+      secondarySurvey: {
+        head: [], neck: [], chest: [], abdomen: [], pelvis: [], posterior: ['Mild lower back pain'],
+        extremities: ['Right hip pain', 'Movement possible but painful at right hip'], neurological: [],
+      },
+      history: {
+        allergies: [], medications: [], medicalConditions: [], surgicalHistory: [],
+        eventsLeading: 'Tripped on a rug and landed on the right hip.',
+      },
+    } as unknown as Partial<CaseScenario>), 'opqrst-region', {
+      severity: 'mild', altered: false, breathless: false,
+    });
+
+    expect(answer).toMatch(/right hip/i);
+    expect(answer).not.toMatch(/all over/i);
+  });
+
+  it('reports only authored pain radiation instead of inferring it from a cardiac label', () => {
+    const withoutRadiation = generatePatientResponse(fakeCase({
+      expectedFindings: { mostLikelyDiagnosis: 'Stable angina' },
+      history: {
+        allergies: [], medications: [], medicalConditions: [], surgicalHistory: [],
+        eventsLeading: 'Central chest pressure began while walking and improved with rest.',
+      },
+    } as unknown as Partial<CaseScenario>), 'opqrst-radiation', {
+      severity: 'mild', altered: false, breathless: false,
+    });
+    const withRadiation = generatePatientResponse(fakeCase({
+      expectedFindings: { mostLikelyDiagnosis: 'Anterior STEMI' },
+      history: {
+        allergies: [], medications: [], medicalConditions: [], surgicalHistory: [],
+        eventsLeading: 'Crushing central chest pressure radiating to left arm and jaw.',
+      },
+    } as unknown as Partial<CaseScenario>), 'opqrst-radiation', {
+      severity: 'severe', altered: false, breathless: false,
+    });
+
+    expect(withoutRadiation).toMatch(/stays in the one spot/i);
+    expect(withoutRadiation).not.toMatch(/left arm|jaw/i);
+    expect(withRadiation).toMatch(/left arm and jaw/i);
+  });
 });
