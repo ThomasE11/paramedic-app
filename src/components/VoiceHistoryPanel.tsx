@@ -359,7 +359,7 @@ export function VoiceHistoryPanel({ caseData, onCategoryObtained, footer }: Voic
               value={typed}
               onChange={(e) => setTyped(e.target.value)}
               placeholder='e.g. "Any allergies?" · "Where is the pain?" · "What happened?"'
-              className="flex-1 min-w-0 rounded-full border border-border/60 bg-background px-3.5 py-2 text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-blue-400"
+              className="glass-control flex-1 min-w-0 rounded-full border border-border/60 px-3.5 py-2 text-sm text-foreground caret-slate-100 placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-blue-400"
             />
             <Button type="submit" size="icon" variant="outline" disabled={!typed.trim()} className="rounded-full shrink-0 h-9 w-9" title="Send question">
               <Send className="h-4 w-4" />
