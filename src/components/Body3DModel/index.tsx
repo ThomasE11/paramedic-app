@@ -39,6 +39,10 @@ import { AmbientAudioLayer } from './AmbientAudioLayer';
 import type { AmbientBreathKind } from '@/lib/ambientAudio';
 import type { QualityTier } from './AdaptiveQuality';
 import { AnatomyReferenceLayer } from './AnatomyReferenceLayer';
+import {
+  resolveTreatmentBayActionTarget,
+  treatmentBayActionFramingRadius,
+} from './cameraFraming';
 import { recommendedManagementTabForCase, type ManagementTab } from '@/components/TreatmentJumpBagPanel';
 import { CLOTHING_PARTING } from './ClothingLayer';
 import { usePatientVoice } from '@/hooks/usePatientVoice';
@@ -5470,7 +5474,6 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
         const sampled = surfaceSampler
           ? surfaceSampler(exactFocus.target[0], exactFocus.target[1])
           : null;
-        const clinicalTarget = sampled ?? exactFocus.target;
         const actionRadius =
           /pupil|eyes/.test(actionId) ? 0.045 :
           /nose|lips|mouth|tongue/.test(actionId) ? 0.065 :
@@ -5481,12 +5484,16 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
           // Keep camera assist in the treatment bay so a revealed finding stays
           // framed on the patient — convert upright clinical focus through the
           // stretcher / posture transform used by region zooms.
-          const target = treatmentBayClinicalToWorld(
-            [clinicalTarget[0], clinicalTarget[1], clinicalTarget[2]],
-            bayStage,
-            patientPosture,
-            patientMobility,
-            patientScale,
+          const target = resolveTreatmentBayActionTarget(
+            sampled,
+            exactFocus.target,
+            point => treatmentBayClinicalToWorld(
+              point,
+              bayStage,
+              patientPosture,
+              patientMobility,
+              patientScale,
+            ),
           );
           const clinicalDirection: [number, number, number] =
             patientPosture === 'tripod' || patientPosture === 'seated' || patientMobility === 'standing' || patientMobility === 'pacing'
@@ -5502,7 +5509,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
             controlsRef.current,
             target,
             clinicalDirection,
-            actionRadius * Math.max(0.5, patientScale) * 4.2,
+            treatmentBayActionFramingRadius(actionRadius, patientScale),
           );
           animateCamera(controlsRef.current, pos, target, 500);
         } else {
