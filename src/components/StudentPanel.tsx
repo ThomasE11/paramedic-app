@@ -1817,6 +1817,7 @@ export function StudentPanel({
   const [activePrimarySurvey, setActivePrimarySurvey] = useState<'scene-safety' | 'airway' | 'breathing' | 'circulation' | 'disability' | 'exposure' | null>(null);
   const [, setActiveHistoryStep] = useState<'signs-symptoms' | 'allergies' | 'medications' | 'past-medical' | 'last-meal' | 'events-leading' | null>(null);
   const [activeManagementTab, setActiveManagementTab] = useState<ManagementTab>('airway');
+  const [openManagementBag, setOpenManagementBag] = useState<ManagementTab | null>('airway');
   const [careRailMode, setCareRailMode] = useState<'treat' | 'assess' | 'history'>('treat');
   const [medSearch, setMedSearch] = useState('');
 
@@ -1842,7 +1843,9 @@ export function StudentPanel({
     const treatment = TREATMENTS.find(item => item.id === suggestion.treatmentId);
     if (!treatment) return;
     setCareRailMode('treat');
-    setActiveManagementTab(bagKeyForTreatment(treatment));
+    const bagKey = bagKeyForTreatment(treatment);
+    setActiveManagementTab(bagKey);
+    setOpenManagementBag(bagKey);
     setMedSearch(treatment.name);
     requestAnimationFrame(() => {
       document.querySelector('.tactical-management-options')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -2827,7 +2830,9 @@ export function StudentPanel({
   const initializeCase = useCallback((newCase: CaseScenario, conditionMode: boolean, condition?: string) => {
     stopNarration();
     setCurrentCase(newCase);
-    setActiveManagementTab(recommendedManagementTabForCase(newCase));
+    const recommendedBag = recommendedManagementTabForCase(newCase);
+    setActiveManagementTab(recommendedBag);
+    setOpenManagementBag(recommendedBag);
     setCareRailMode('treat');
     setMedSearch('');
     const initialVitals = buildInitialVitalsFromCase(newCase);
@@ -4154,7 +4159,10 @@ export function StudentPanel({
       }
       case 'nav': {
         const { target, open } = action.payload;
-        if (open && target === 'jump-bag') setActiveManagementTab('airway');
+        if (open && target === 'jump-bag') {
+          setActiveManagementTab('airway');
+          setOpenManagementBag('airway');
+        }
         toast.success(`🎙 ${intent.label}`, { description: match.rawTranscript, duration: 1800 });
         return;
       }
@@ -6274,16 +6282,15 @@ export function StudentPanel({
                         setCareRailMode('treat');
                         const reason = hint?.reason ?? '';
                         const tab = hint?.managementTab;
-                        if (tab === 'breathing' || tab === 'airway' || tab === 'circulation' || tab === 'disability' || tab === 'exposure' || tab === 'medications' || tab === 'transport') {
-                          setActiveManagementTab(tab);
-                        } else if (reason.startsWith('bay:')) {
-                          const focus = reason.slice(4) as BayEquipmentFocus;
-                          setActiveManagementTab(managementTabForBayEquipment(focus));
-                        } else if (currentCase) {
-                          setActiveManagementTab(recommendedManagementTabForCase(currentCase));
-                        } else {
-                          setActiveManagementTab('breathing');
-                        }
+                        const requestedBag = tab === 'breathing' || tab === 'airway' || tab === 'circulation' || tab === 'disability' || tab === 'exposure' || tab === 'medications' || tab === 'transport'
+                          ? tab
+                          : reason.startsWith('bay:')
+                            ? managementTabForBayEquipment(reason.slice(4) as BayEquipmentFocus)
+                            : currentCase
+                              ? recommendedManagementTabForCase(currentCase)
+                              : 'breathing';
+                        setActiveManagementTab(requestedBag);
+                        setOpenManagementBag(requestedBag);
 
                         if (typeof hint?.search === 'string' && hint.search.length > 0) {
                           setMedSearch(hint.search);
@@ -6346,6 +6353,8 @@ export function StudentPanel({
                     patientState={patientState}
                     activeManagementTab={activeManagementTab}
                     setActiveManagementTab={setActiveManagementTab}
+                    openManagementBag={openManagementBag}
+                    setOpenManagementBag={setOpenManagementBag}
                     medSearch={medSearch}
                     setMedSearch={setMedSearch}
                     applyTreatment={applyTreatment}

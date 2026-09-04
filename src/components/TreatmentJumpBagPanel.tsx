@@ -1284,6 +1284,8 @@ interface TreatmentJumpBagPanelProps {
   patientState: PatientState | null;
   activeManagementTab: ManagementTab;
   setActiveManagementTab: (tab: ManagementTab) => void;
+  openManagementBag: ManagementTab | null;
+  setOpenManagementBag: (tab: ManagementTab | null) => void;
   medSearch: string;
   setMedSearch: (value: string) => void;
   applyTreatment: (treatment: Treatment) => void;
@@ -1305,6 +1307,8 @@ export function TreatmentJumpBagPanel({
   patientState,
   activeManagementTab,
   setActiveManagementTab,
+  openManagementBag,
+  setOpenManagementBag,
   medSearch,
   setMedSearch,
   applyTreatment,
@@ -2260,7 +2264,7 @@ export function TreatmentJumpBagPanel({
       </CardHeader>
 
       <CardContent className="space-y-3 px-3 pb-3 sm:px-4">
-        <div className="relative">
+        {openManagementBag && <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
@@ -2279,7 +2283,7 @@ export function TreatmentJumpBagPanel({
               <XCircle className="h-3.5 w-3.5" />
             </button>
           )}
-        </div>
+        </div>}
 
         {suggestedTreatments.length > 0 && (
           <div className="glass-panel rounded-xl border border-emerald-500/20 p-2">
@@ -2296,7 +2300,9 @@ export function TreatmentJumpBagPanel({
                   className="h-7 rounded-md border-emerald-500/25 px-2 text-[10px] font-semibold hover:bg-emerald-50 dark:hover:bg-emerald-950/25"
                   title={`Open ${bagKeyForTreatment(treatment)} bag and stage ${treatmentPresentation(treatment, caseData).name}`}
                   onClick={() => {
-                    setActiveManagementTab(bagKeyForTreatment(treatment));
+                    const bagKey = bagKeyForTreatment(treatment);
+                    setActiveManagementTab(bagKey);
+                    setOpenManagementBag(bagKey);
                     setMedSearch(treatment.name);
                     setStagedEquipmentId(null);
                     revealTreatments();
@@ -2316,7 +2322,8 @@ export function TreatmentJumpBagPanel({
 
       <div className="jump-bag-grid grid grid-cols-2 gap-1.5 sm:grid-cols-3">
           {TREATMENT_JUMP_BAGS.map(bag => {
-            const isActive = activeBag.key === bag.key;
+            const isSelected = activeBag.key === bag.key;
+            const isOpen = openManagementBag === bag.key;
             const treatmentCount = TREATMENTS.filter(treatment => treatmentBelongsToBag(treatment, bag)).length;
             const appliedCount = appliedTreatments.filter(applied => {
               const treatment = TREATMENTS.find(item => item.id === applied.id);
@@ -2327,19 +2334,24 @@ export function TreatmentJumpBagPanel({
               <button
                 key={bag.key}
                 type="button"
-                aria-pressed={isActive}
-                aria-label={`Open ${bag.label}`}
-                title={`Open ${bag.label}`}
+                aria-pressed={isOpen}
+                aria-expanded={isOpen}
+                aria-label={`${isOpen ? 'Close' : 'Open'} ${bag.label}`}
+                title={`${isOpen ? 'Close' : 'Open'} ${bag.label}`}
                 onClick={() => {
-                  if (!isActive) {
-                    setActiveManagementTab(bag.key);
-                    setMedSearch('');
+                  if (isOpen) {
+                    setOpenManagementBag(null);
                     setStagedEquipmentId(null);
-                    revealTreatments();
+                    return;
                   }
+                  setActiveManagementTab(bag.key);
+                  setOpenManagementBag(bag.key);
+                  if (!isSelected) setMedSearch('');
+                  setStagedEquipmentId(null);
+                  revealTreatments();
                 }}
                 className={`jump-bag-button group relative min-h-[164px] overflow-hidden rounded-lg border p-2 text-left transition hover:border-slate-300 hover:bg-white/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40 dark:hover:bg-white/[0.08] ${
-                  isActive
+                  isOpen
                     ? bag.selectedClass
                     : bag.key === recommendedBagKey
                       ? 'glass-control border-emerald-400/55 ring-1 ring-emerald-400/35 dark:border-emerald-500/45'
@@ -2347,24 +2359,25 @@ export function TreatmentJumpBagPanel({
                 }`}
                 data-recommended={bag.key === recommendedBagKey ? 'true' : undefined}
                 data-bag-key={bag.key}
+                data-bag-state={isOpen ? 'open' : 'closed'}
               >
-                <span className={`absolute inset-x-3 top-2 h-1 rounded-full ${bag.railClass} ${isActive ? 'opacity-100' : 'opacity-35'}`} />
+                <span className={`absolute inset-x-3 top-2 h-1 rounded-full ${bag.railClass} ${isOpen ? 'opacity-100' : 'opacity-35'}`} />
                 <div className="flex h-full flex-col items-center justify-between gap-2 pt-2">
-                  <JumpBagIllustration bag={bag} isOpen={isActive} appliedCount={appliedCount} />
+                  <JumpBagIllustration bag={bag} isOpen={isOpen} appliedCount={appliedCount} />
                   <div className="glass-control w-full rounded-md px-2 py-1.5 ring-1 ring-slate-200/70 dark:ring-slate-800">
                     <div className="flex items-center justify-between gap-1">
                       <p className="truncate text-[11px] font-bold">{bag.label}</p>
                       <Badge
-                        variant={isActive ? 'default' : 'outline'}
+                        variant={isOpen ? 'default' : 'outline'}
                         className={`h-4 rounded px-1 text-[8px] ${
-                          isActive
+                          isOpen
                             ? ''
                             : bag.key === recommendedBagKey
                               ? 'border-emerald-500/50 bg-emerald-600/90 text-white'
                               : 'border-slate-500 bg-slate-800 text-slate-100'
                         }`}
                       >
-                        {isActive ? 'Open' : bag.key === recommendedBagKey ? 'Start here' : 'Closed'}
+                        {isOpen ? 'Open' : bag.key === recommendedBagKey ? 'Start here' : 'Closed'}
                       </Badge>
                     </div>
                     <p className="mt-0.5 line-clamp-2 text-[9px] leading-snug text-muted-foreground">{bag.description}</p>
@@ -2379,7 +2392,7 @@ export function TreatmentJumpBagPanel({
         </div>
 
         {/* FIND EQUIPMENT: inventory under the open kit — spot → open → apply. */}
-        {!query && (
+        {openManagementBag && !query && (
           <div className="space-y-2" data-equipment-inventory="true" data-anchor-cues={openBagAnchorCues.length}>
             <EquipmentInventoryBoard
               bag={activeBag}
@@ -2407,7 +2420,7 @@ export function TreatmentJumpBagPanel({
           </div>
         )}
 
-        <div ref={treatmentPanelRef} className="glass-panel overflow-hidden rounded-xl border border-slate-200 scroll-mt-2 dark:border-slate-800">
+        {openManagementBag && <div ref={treatmentPanelRef} className="glass-panel overflow-hidden rounded-xl border border-slate-200 scroll-mt-2 dark:border-slate-800">
           <div className="flex items-center justify-between border-b border-slate-200 px-3 py-2 dark:border-slate-800">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
@@ -2563,9 +2576,9 @@ export function TreatmentJumpBagPanel({
               </div>
             )}
           </div>
-        </div>
+        </div>}
 
-        {stagedEquipment && !query && (
+        {openManagementBag && stagedEquipment && !query && (
           <div className="glass-control rounded-xl border border-cyan-500/20 px-3 py-2 text-xs">
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
