@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { qualityForTier, type QualityTier } from './AdaptiveQuality';
 
 describe('patient render quality ladder', () => {
-  it('keeps the unstable full-screen composer quarantined at every tier', () => {
-    for (const tier of [0, 1, 2, 3, 4] satisfies QualityTier[]) {
+  it('enables the full-screen composer only on the top quality rung', () => {
+    expect(qualityForTier(0, 2).composerEnabled).toBe(true);
+    for (const tier of [1, 2, 3, 4] satisfies QualityTier[]) {
       expect(qualityForTier(tier, 2).composerEnabled).toBe(false);
     }
   });

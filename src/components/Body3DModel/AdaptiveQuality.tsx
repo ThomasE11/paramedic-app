@@ -2,7 +2,7 @@
  * Stage-3 rendering polish: post-processing pipeline + auto-degrade ladder.
  *
  * PatientPostEffects — the EffectComposer stack for the patient scene:
- *   - N8AO (half-res): grounded contact/crease darkening (chin/neck, axillae,
+ *   - N8AO (full-res): grounded contact/crease darkening (chin/neck, axillae,
  *     costal margin, between fingers) beyond the AO already baked into the
  *     diffuse. World-space radius tuned for a 1.8 m human in a ~3 unit frame.
  *   - SMAA: the composer bypasses the default framebuffer, which disables
@@ -33,8 +33,8 @@
  *      oscillation), it pins at the more conservative tier and stops.
  *
  * Tiers (cumulative):
- *   0 stable quality: native renderer, dpr cap 2, contact shadows on
- *   1 reserved post-processing rung (composer remains quarantined)
+ *   0 full quality: composer on (full-res N8AO — no halfRes), dpr cap 2, contact shadows on
+ *   1 composer off (biggest single cost: N8AO + full-frame passes) — iPad shed rung
  *   2 dpr -> min(base, 1.5)
  *   3 dpr -> 1
  *   4 contact shadows off
@@ -58,13 +58,13 @@ export interface QualitySettings {
 
 export function qualityForTier(tier: QualityTier, baseDpr: number): QualitySettings {
   return {
-    // The half-resolution composer intermittently published an empty buffer
-    // on Chromium while the focused exam camera was rendering. That made the
-    // patient disappear on alternating frames—the apparent whole-body
-    // "twitch" reported in live care. Keep the native ACES renderer as the
-    // stable path until the full-screen pass can be reintroduced with a
-    // deterministic framebuffer test.
-    composerEnabled: false,
+    // Tier 0 mounts the full-screen EffectComposer. The prior Chromium
+    // empty-buffer "twitch" came from N8AO halfRes publishing an uncleared
+    // upsample while the exam camera resized — PatientPostEffects now runs
+    // full-res AO (no halfRes) so the desktop Chromium path stays stable.
+    // Tier >= 1 still sheds the whole composer under the adaptive ladder
+    // (PerformanceMonitor <45 fps / emergency <24 fps) for iPad survival.
+    composerEnabled: tier < 1,
     dpr: tier >= 3 ? 1 : tier >= 2 ? Math.min(baseDpr, 1.5) : baseDpr,
     contactShadows: tier < 4,
   };
@@ -154,7 +154,9 @@ export function PatientPostEffects() {
         // skin tones to grey.
         intensity={1.8}
         quality="performance"
-        halfRes
+        // Full-res AO on purpose: halfRes + Chromium + exam-camera resize
+        // intermittently presented an empty upsample buffer (whole-body twitch).
+        // Cost is shed entirely when the ladder unmounts this composer at tier 1.
         depthAwareUpsampling
       />
       <SMAA />
