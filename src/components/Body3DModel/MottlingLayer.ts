@@ -127,7 +127,23 @@ export function isCyanoticLipVertex(x: number, y: number, z: number): boolean {
 }
 
 export function isCyanoticNailVertex(x: number, y: number, z: number): boolean {
-  return y >= 0.75 && y <= 0.85 && Math.abs(x) >= 0.08 && Math.abs(x) <= 0.22 && z >= 0.08;
+  // Distal finger tips / nailbeds on patient-male.glb (geometry-local).
+  // All five digits: pinky at |x|≈0.55, index/middle nearer |x|≈0.50,
+  // forward tips at z≈0.34–0.37. buildCyanosisLocalTwin further gates by
+  // nail-plate UV+normal (isCyanoticNailPlateSample) and UV-cell dedupe so
+  // fingertip pads / mid-phalanx stay clear.
+  // Legacy groin band (|x|≤0.22, y≤0.85) never reached the hand atlas.
+  const lateralTip = Math.abs(x) >= 0.53 && y >= 0.915 && y <= 0.96 && z >= 0.30;
+  const forwardTip = Math.abs(x) >= 0.49 && y >= 0.95 && y <= 0.985 && z >= 0.34;
+  return lateralTip || forwardTip;
+}
+
+/** Nail-plate UV/normal gate on distal tip verts.
+ *  Tip islands share high V for both nail and pad; pad-facing verts have
+ *  negative/near-zero geometry-local normal.z while dorsal nail plates sit
+ *  at nz≳0.15 and V≳0.945 (probe nail-plate-uv-normal-probe.json). */
+export function isCyanoticNailPlateSample(uvV: number, normalZ: number): boolean {
+  return uvV >= 0.945 && normalZ >= 0.15;
 }
 
 /** Local cyanosis (lips + nailbeds). */
@@ -148,6 +164,7 @@ export function buildCyanosisLocalTwin(
     const geom = body.geometry as THREE.BufferGeometry;
     const pos = geom.attributes.position as THREE.BufferAttribute | undefined;
     const uv = geom.attributes.uv as THREE.BufferAttribute | undefined;
+    const nrm = geom.attributes.normal as THREE.BufferAttribute | undefined;
     if (!pos || !uv) return null;
 
     const tw = srcImg.width;
@@ -157,11 +174,12 @@ export function buildCyanosisLocalTwin(
     // Geometry-local: presentation rotation lives on the group, not the
     // attribute. World/root-inverse puts the mouth at z≈0.02 and the
     // original lip band (z>=0.08) never fires.
-    // NAILS: full-resolution scan (no stride). The nailbed bands are tiny
-    // (~46 verts on this mesh); stride sampling skipped most of them and the
-    // nail blotches landed too sparsely to read at gameplay zoom.
+    // NAILS: full-resolution scan (no stride). Distal fingertip islands are
+    // dense on the atlas; stride sampling thinned them and made gameplay
+    // nailbed cyanosis unreadable at exam zoom.
     const v = new THREE.Vector3();
     const blotches: Blotch[] = [];
+    const nailKeys = new Set<string>();
     const step = Math.max(1, Math.floor(pos.count / 4000));
     for (let i = 0; i < pos.count; i++) {
       v.fromBufferAttribute(pos, i);
@@ -172,15 +190,29 @@ export function buildCyanosisLocalTwin(
       if (!isLip && !isNail) continue;
       const u = uv.getX(i);
       const vv = uv.getY(i);
+      // Nail-plate only: high-V distal UV + dorsal-facing normal.z.
+      // Tip islands put pad-facing flesh at the same V band; without nz the
+      // cyan blotch reads as fingertip-pad peripheral bleed.
+      if (isNail) {
+        const nz = nrm ? nrm.getZ(i) : 1;
+        if (!isCyanoticNailPlateSample(vv, nz)) continue;
+      }
       const px = u * tw;
       const py = (flipY ? 1 - vv : vv) * th;
+      if (isNail) {
+        // One blotch per ~10px UV cell — full-res fingertip verts otherwise
+        // stack into an opaque milky slab instead of a dusky nail tint.
+        const key = `${Math.round(px / 10)}_${Math.round(py / 10)}`;
+        if (nailKeys.has(key)) continue;
+        nailKeys.add(key);
+      }
       // Dense lip UVs need small marks. The previous 1.8%-of-atlas radius
       // caused hundreds of overlapping discs to spread over the moustache and
-      // chin area. These tighter marks remain inside the authored lip/nail
-      // islands and scale their opacity with the live hypoxia channel.
-      const r = Math.max(3, (isLip ? 0.0045 : 0.0035) * tw);
+      // chin area. Nail marks stay inside the dorsal nail-plate island and
+      // scale with the live hypoxia channel without flooding the finger pad.
+      const r = Math.max(3, (isLip ? 0.0045 : 0.0028) * tw);
       const scaledStrength = Math.min(1, Math.max(0, strength));
-      blotches.push({ x: px, y: py, r, alpha: (isLip ? 0.38 : 0.34) * scaledStrength });
+      blotches.push({ x: px, y: py, r, alpha: (isLip ? 0.38 : 0.48) * scaledStrength });
     }
     if (blotches.length === 0) return null;
 

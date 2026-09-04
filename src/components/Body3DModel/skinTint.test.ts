@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { deriveSkinTint, deriveCyanosisLocalStrength } from './skinTint';
-import { isCyanoticLipVertex, isCyanoticNailVertex } from './MottlingLayer';
+import { isCyanoticLipVertex, isCyanoticNailVertex, isCyanoticNailPlateSample } from './MottlingLayer';
 
 describe('skinTint functions', () => {
   describe('deriveSkinTint', () => {
@@ -52,14 +52,34 @@ describe('cyanosis vertex predicates', () => {
   });
 
   describe('isCyanoticNailVertex', () => {
-    it('matches nail band measured from patient-male.glb', () => {
-      expect(isCyanoticNailVertex(0.12, 0.79, 0.20)).toBe(true);
-      expect(isCyanoticNailVertex(0.21, 0.82, 0.20)).toBe(true);
-      expect(isCyanoticNailVertex(0.07, 0.79, 0.20)).toBe(false);
-      expect(isCyanoticNailVertex(0.23, 0.79, 0.20)).toBe(false);
-      expect(isCyanoticNailVertex(0.12, 0.74, 0.20)).toBe(false);
-      expect(isCyanoticNailVertex(0.12, 0.86, 0.20)).toBe(false);
-      expect(isCyanoticNailVertex(0.12, 0.79, 0.07)).toBe(false);
+    it('matches distal fingertip / nailbed band on patient-male.glb', () => {
+      // lateral pinky-side tips
+      expect(isCyanoticNailVertex(0.55, 0.93, 0.31)).toBe(true);
+      expect(isCyanoticNailVertex(-0.55, 0.94, 0.32)).toBe(true);
+      // forward index/middle tips
+      expect(isCyanoticNailVertex(0.50, 0.97, 0.36)).toBe(true);
+      expect(isCyanoticNailVertex(-0.51, 0.97, 0.37)).toBe(true);
+      // old groin-band coords must NOT match
+      expect(isCyanoticNailVertex(0.12, 0.79, 0.20)).toBe(false);
+      expect(isCyanoticNailVertex(0.21, 0.82, 0.20)).toBe(false);
+      // mid-finger / too proximal
+      expect(isCyanoticNailVertex(0.50, 0.93, 0.31)).toBe(false);
+      expect(isCyanoticNailVertex(0.55, 0.90, 0.31)).toBe(false);
+      expect(isCyanoticNailVertex(0.55, 0.93, 0.28)).toBe(false);
+    });
+  });
+
+  describe('isCyanoticNailPlateSample', () => {
+    it('keeps dorsal high-V nail plate and rejects pad-facing / mid-finger UV', () => {
+      // dorsal nail plate (probe: V≳0.945, nz≳0.15)
+      expect(isCyanoticNailPlateSample(0.98, 0.78)).toBe(true);
+      expect(isCyanoticNailPlateSample(0.945, 0.15)).toBe(true);
+      // pad-facing tip flesh shares high V but negative/near-zero nz
+      expect(isCyanoticNailPlateSample(0.98, -0.4)).toBe(false);
+      expect(isCyanoticNailPlateSample(0.97, 0.05)).toBe(false);
+      // mid-finger / lower tip UV even with dorsal normal
+      expect(isCyanoticNailPlateSample(0.935, 0.8)).toBe(false);
+      expect(isCyanoticNailPlateSample(0.94, 0.8)).toBe(false);
     });
   });
 });
