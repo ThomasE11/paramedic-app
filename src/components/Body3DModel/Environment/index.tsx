@@ -444,6 +444,45 @@ function PortableMonitor() {
   );
 }
 
+/** Floor jump bags the crew brings to every scene. Visual anchors for
+ *  FIND EQUIPMENT — the interactive open-kit controls live in the bay
+ *  hotspot strip (DOM) so OrbitControls never fight bag clicks. */
+function SceneJumpBags() {
+  const bags: Array<{ key: string; label: string; color: string; position: [number, number, number]; rotation: number }> = [
+    { key: 'airway', label: 'A', color: '#f59e0b', position: [1.35, 0, -1.05], rotation: 0.35 },
+    { key: 'breathing', label: 'B', color: '#0ea5e9', position: [1.62, 0, -1.18], rotation: -0.15 },
+    { key: 'circulation', label: 'C', color: '#f43f5e', position: [1.90, 0, -1.05], rotation: 0.45 },
+  ];
+  return (
+    <group name="scene-jump-bags">
+      {bags.map(bag => (
+        <group key={bag.key} position={bag.position} rotation={[0, bag.rotation, 0]}>
+          {/* Soft case body */}
+          <mesh position={[0, 0.11, 0]} castShadow raycast={NO_RAYCAST}>
+            <boxGeometry args={[0.34, 0.18, 0.22]} />
+            <meshStandardMaterial color={bag.color} roughness={0.72} metalness={0.08} />
+          </mesh>
+          {/* Lid seam */}
+          <mesh position={[0, 0.205, 0]} raycast={NO_RAYCAST}>
+            <boxGeometry args={[0.34, 0.02, 0.22]} />
+            <meshStandardMaterial color="#0f172a" roughness={0.55} metalness={0.15} />
+          </mesh>
+          {/* Carry handle */}
+          <mesh position={[0, 0.255, 0]} raycast={NO_RAYCAST}>
+            <torusGeometry args={[0.07, 0.012, 8, 16, Math.PI]} />
+            <meshStandardMaterial color="#1e293b" roughness={0.45} metalness={0.25} />
+          </mesh>
+          {/* Kit letter badge */}
+          <mesh position={[0, 0.14, 0.112]} raycast={NO_RAYCAST}>
+            <planeGeometry args={[0.08, 0.08]} />
+            <meshBasicMaterial color="#0f172a" transparent opacity={0.55} />
+          </mesh>
+        </group>
+      ))}
+    </group>
+  );
+}
+
 function OxygenTank() {
   return (
     <group position={[1.55, 0, -0.6]}>
@@ -675,6 +714,9 @@ export function TreatmentBayEnvironment({
           outdoor roadside variants so the wrecked car + motorcycle aren't visually
           buried under clinic furniture. */}
       {isClinic ? <MonitorStand /> : <PortableMonitor />}
+      {/* Crew jump bags — always on scene so clinicians can spot gear before
+          opening the Treat rail kit panel (FIND EQUIPMENT path). */}
+      <SceneJumpBags />
       {isClinic && (
         <>
           <OxygenTank />

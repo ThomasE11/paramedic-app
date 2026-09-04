@@ -1050,6 +1050,14 @@ function contextualActiveProblems(
   });
 }
 
+
+/** Prospective kit placement cues for FIND EQUIPMENT — where gear will sit
+ *  once applied. Unlike deriveRealismScenarioState.equipmentAnchors, these are
+ *  NOT filtered to already-applied treatments. */
+export function prospectiveEquipmentAnchorsForCase(caseData: CaseScenario): EquipmentAnchorSpec[] {
+  return matchRealismScenarios(caseData).flatMap(scenario => scenario.equipmentAnchors);
+}
+
 export function deriveRealismScenarioState({
   caseData,
   vitals,

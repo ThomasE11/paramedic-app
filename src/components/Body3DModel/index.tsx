@@ -38,6 +38,7 @@ import { AmbientAudioLayer } from './AmbientAudioLayer';
 import type { AmbientBreathKind } from '@/lib/ambientAudio';
 import type { QualityTier } from './AdaptiveQuality';
 import { AnatomyReferenceLayer } from './AnatomyReferenceLayer';
+import { recommendedManagementTabForCase, type ManagementTab } from '@/components/TreatmentJumpBagPanel';
 import { CLOTHING_PARTING } from './ClothingLayer';
 import { usePatientVoice } from '@/hooks/usePatientVoice';
 import { getNextGuidedStep, EXAM_SEQUENCE } from './bodyRegions';
@@ -342,10 +343,10 @@ const ABDOMEN_QUADRANTS: Array<{ id: AbdomenQuadrant; label: string; full: strin
 // proud of the real camera-facing surface; the surface sampler then snaps z
 // (and lightly rescales x for non-reference models).
 const EXAM_LANDMARKS: ExamLandmark[] = [
-  { id: 'eyes-overview', region: 'face', label: 'Face / eyes', sublabel: 'pupils, lips, speech', position: [0.0, 1.62, 0.20], level: 'overview', tone: 'neuro' },
-  { id: 'airway-overview', region: 'neck-cspine', label: 'Airway / neck', sublabel: 'mouth, trachea, JVD', position: [0.0, 1.46, 0.22], level: 'overview', tone: 'airway' },
-  { id: 'chest-overview', region: 'chest', label: 'Chest', sublabel: 'rise, wall, lungs, heart', position: [0.02, 1.27, 0.20], level: 'overview', tone: 'breathing' },
-  { id: 'abdomen-overview', region: 'abdomen', label: 'Abdomen', sublabel: 'quadrants, guarding', position: [0.03, 1.02, 0.24], level: 'overview', tone: 'abdomen' },
+  { id: 'eyes-overview', region: 'face', label: 'Face / eyes', sublabel: 'Look — pupils, lips, speech', position: [0.0, 1.62, 0.20], level: 'overview', tone: 'neuro' },
+  { id: 'airway-overview', region: 'neck-cspine', label: 'Airway / neck', sublabel: 'Look & listen — mouth, trachea, JVD', position: [0.0, 1.46, 0.22], level: 'overview', tone: 'airway' },
+  { id: 'chest-overview', region: 'chest', label: 'Chest', sublabel: 'Look · Listen · Feel — rise, lungs, wall', position: [0.02, 1.27, 0.20], level: 'overview', tone: 'breathing' },
+  { id: 'abdomen-overview', region: 'abdomen', label: 'Abdomen', sublabel: 'Look · Listen · Feel — quadrants', position: [0.03, 1.02, 0.24], level: 'overview', tone: 'abdomen' },
   // Minimal anatomical pulse points — click to check (works from any view).
   // (Removed the duplicate 'radial-overview' dot that sat ~2 cm from
   // 'pulse-radial-r' on the same wrist — it created the cluttered arm cluster.)
@@ -1660,6 +1661,70 @@ function siteEquipmentAsset(treatmentId: string): string {
   if (treatmentId === 'box_splint') return '/equipment-assets/box-splint.webp';
   if (treatmentId === 'sam_splint') return '/equipment-assets/sam-splint.webp';
   return '/equipment-assets/splints.webp';
+}
+
+/** Scene/bay kit hotspots — spot gear beside the patient, then open that jump
+ *  bag in the Treat rail. Complements the 3D SceneJumpBags props with reliable
+ *  DOM hit targets (OrbitControls-safe). */
+function BayKitHotspots({
+  recommendedTab,
+  onOpenKit,
+}: {
+  recommendedTab: ManagementTab;
+  onOpenKit?: (tab: ManagementTab, search?: string) => void;
+}) {
+  if (!onOpenKit) return null;
+  const kits: Array<{ key: ManagementTab; label: string; image: string; hint: string; search?: string }> = [
+    { key: 'airway', label: 'Airway', image: '/bag-assets/airway-bag.webp', hint: 'OPA · suction · tube' },
+    { key: 'breathing', label: 'Breathing', image: '/bag-assets/breathing-bag.webp', hint: 'O₂ · neb · BVM' },
+    { key: 'breathing', label: 'Oxygen', image: '/equipment-assets/oxygen-cylinder.webp', hint: 'Cylinder → NRB', search: 'Non-Rebreather' },
+    { key: 'circulation', label: 'Circulation', image: '/bag-assets/circulation-kit.webp', hint: 'IV · CPR · pads' },
+    { key: 'medications', label: 'Meds', image: '/bag-assets/medication-pouch.webp', hint: 'Drugs · doses' },
+  ];
+  return (
+    <div
+      className="bay-kit-hotspots pointer-events-auto absolute bottom-3 left-3 z-20 flex max-w-[52%] flex-col gap-1.5"
+      data-bay-hotspot-strip="true"
+      role="group"
+      aria-label="Scene kits — spot gear, open kit, treat"
+    >
+      <div className="flex items-center gap-1.5 rounded-full border border-white/15 bg-slate-950/70 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-cyan-100/80 shadow-md backdrop-blur-md">
+        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgb(52_211_153/0.85)]" />
+        Spot gear · open kit
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {kits.map(kit => {
+          const isRecommended = kit.key === recommendedTab && !kit.search;
+          return (
+            <button
+              key={`${kit.key}-${kit.label}`}
+              type="button"
+              data-bay-hotspot={kit.label.toLowerCase().replace(/\s+/g, '-')}
+              data-recommended={isRecommended ? 'true' : 'false'}
+              aria-label={`Open ${kit.label} kit from scene`}
+              title={`${kit.label} kit — ${kit.hint}${isRecommended ? ' · matches this case' : ''}`}
+              onClick={() => onOpenKit(kit.key, kit.search)}
+              className={`group flex items-center gap-1.5 rounded-xl border py-1 pl-1 pr-2.5 text-left shadow-md backdrop-blur-md transition hover:-translate-y-0.5 active:scale-95 ${
+                isRecommended
+                  ? 'border-emerald-300/55 bg-emerald-500/25 ring-1 ring-emerald-300/40'
+                  : 'border-white/15 bg-slate-950/70 hover:border-white/35 hover:bg-slate-900/80'
+              }`}
+            >
+              <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg bg-white/10">
+                <img src={kit.image} alt="" className="h-8 w-8 object-contain" draggable={false} />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-[10px] font-bold text-white">{kit.label}</span>
+                <span className="block truncate text-[8px] text-cyan-100/70">
+                  {isRecommended ? 'For this case · tap to open' : kit.hint}
+                </span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 // Compact, fixed corner list of everything currently applied — restores the
@@ -3709,6 +3774,11 @@ interface Body3DModelProps {
   onPulse?: (site: string) => void;
   /** Use stretcher-side treatment presentation in the full-body overview. */
   treatmentBayMode?: boolean;
+  /**
+   * Tiny bridge to the care rail Treat tab after a finding (does not open jump-bag
+   * internals — StudentPanel owns bag selection). Used for "listen → then treat".
+   */
+  onRequestTreat?: (hint?: { reason?: string; managementTab?: string; search?: string }) => void;
 }
 
 // Phase 2 — guided exam mode: persist preference across sessions
@@ -4170,6 +4240,72 @@ function PatientReactionCard({ reaction }: { reaction: PatientReaction | null })
   );
 }
 
+function ObserveQuickActions({
+  onCue,
+}: {
+  onCue: (cue: 'look' | 'listen' | 'feel') => void;
+}) {
+  const cues: Array<{
+    id: 'look' | 'listen' | 'feel';
+    label: string;
+    hint: string;
+    Icon: typeof Eye;
+    tone: string;
+  }> = [
+    {
+      id: 'look',
+      label: 'Look',
+      hint: 'Chest rise & colour',
+      Icon: Eye,
+      tone: 'border-sky-300/45 bg-sky-500/25 text-sky-50 hover:bg-sky-500/40',
+    },
+    {
+      id: 'listen',
+      label: 'Listen',
+      hint: 'Auscultate lungs',
+      Icon: Stethoscope,
+      tone: 'border-emerald-300/45 bg-emerald-500/25 text-emerald-50 hover:bg-emerald-500/40',
+    },
+    {
+      id: 'feel',
+      label: 'Feel',
+      hint: 'Chest wall & pulse',
+      Icon: Hand,
+      tone: 'border-amber-300/45 bg-amber-500/25 text-amber-50 hover:bg-amber-500/40',
+    },
+  ];
+
+  return (
+    <div
+      className="patient-observe-quick-actions pointer-events-auto absolute left-1/2 top-3 z-30 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-white/15 bg-slate-950/72 px-2 py-1.5 shadow-[0_18px_40px_-24px_rgba(0,0,0,0.95)] backdrop-blur-xl"
+      role="group"
+      aria-label="Observe the patient — Look, Listen, Feel"
+    >
+      <span className="hidden px-1.5 text-[8px] font-semibold uppercase tracking-[0.18em] text-cyan-100/70 sm:inline">
+        Observe
+      </span>
+      {cues.map(cue => {
+        const Icon = cue.Icon;
+        return (
+          <button
+            key={cue.id}
+            type="button"
+            onClick={() => onCue(cue.id)}
+            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-semibold transition hover:-translate-y-0.5 active:scale-95 ${cue.tone}`}
+            title={`${cue.label} — ${cue.hint}`}
+            aria-label={`${cue.label}: ${cue.hint}`}
+            data-observe-cue={cue.id}
+          >
+            <Icon className="h-3.5 w-3.5 shrink-0" />
+            <span>{cue.label}</span>
+            <span className="hidden text-[8px] font-medium opacity-75 sm:inline">{cue.hint}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function PatientFirstExamDock({
   activeRegion,
   actions,
@@ -4182,6 +4318,7 @@ function PatientFirstExamDock({
   showRegionalLoupe,
   playingSound,
   soundProgress,
+  onRequestTreat,
 }: {
   activeRegion: string;
   actions: ExamAction[];
@@ -4194,6 +4331,7 @@ function PatientFirstExamDock({
   showRegionalLoupe: boolean;
   playingSound: string | null;
   soundProgress: number;
+  onRequestTreat?: (hint?: { reason?: string; managementTab?: string; search?: string }) => void;
 }) {
   const grouped = TECHNIQUE_ORDER
     .map(technique => {
@@ -4226,6 +4364,21 @@ function PatientFirstExamDock({
     && revealedFindings.has(selectedAction)
     ? revealedFindings.get(selectedAction) ?? null
     : null;
+  const nextAction = actions.find(action => !revealedFindings.has(action.id) && action.id !== selectedAction)
+    ?? actions.find(action => !revealedFindings.has(action.id))
+    ?? null;
+  const findingSuggestsTreat = Boolean(
+    activeFinding
+    && (
+      (selectedAction?.includes('auscultate') ?? false)
+      || /wheez|crackle|stridor|diminished|absent|air entry|cyanosis|accessory|tripod|silent chest/i.test(activeFinding)
+    ),
+  );
+  const treatTab = activeRegion === 'chest' || activeRegion === 'face' || activeRegion === 'neck-cspine'
+    ? 'breathing'
+    : activeRegion === 'abdomen'
+      ? 'circulation'
+      : 'airway';
   const regionFindings = actions
     .filter(action => revealedFindings.has(action.id) && action.id !== selectedAction)
     .slice(-4);
@@ -4353,6 +4506,40 @@ function PatientFirstExamDock({
                 </p>
               </div>
             )}
+
+            {activeFinding && (nextAction || findingSuggestsTreat) && (
+              <div className="rounded-xl border border-cyan-300/25 bg-cyan-400/10 px-3 py-2">
+                <p className="text-[8px] font-semibold uppercase tracking-[0.18em] text-cyan-100/75">Next step</p>
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                  {nextAction && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedTechnique(nextAction.technique);
+                        onAction(nextAction.id);
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/12 px-2.5 py-1 text-[10px] font-semibold text-white hover:bg-white/20"
+                      data-exam-next-step={nextAction.id}
+                    >
+                      {TECHNIQUE_META[nextAction.technique].label}: {nextAction.label}
+                    </button>
+                  )}
+                  {findingSuggestsTreat && onRequestTreat && (
+                    <button
+                      type="button"
+                      onClick={() => onRequestTreat({ reason: selectedAction ?? 'finding', managementTab: treatTab })}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/40 bg-emerald-500/25 px-2.5 py-1 text-[10px] font-semibold text-emerald-50 hover:bg-emerald-500/40"
+                      data-exam-next-treat="true"
+                    >
+                      Then treat → open {treatTab === 'breathing' ? 'Breathing' : treatTab === 'circulation' ? 'Circulation' : 'Airway'} bag
+                    </button>
+                  )}
+                </div>
+                <p className="mt-1 text-[9px] leading-relaxed text-cyan-50/65">
+                  Camera stays on this region — relate the finding to the body, then act.
+                </p>
+              </div>
+            )}
           </div>
 
           {regionFindings.length > 0 && (
@@ -4452,7 +4639,7 @@ function PatientRealismStrip({
   );
 }
 
-export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientSounds, caseCategory, appliedTreatmentIds = [], patientVisualState = null, isInArrest = false, vitals, liveRespiration, onPulse, treatmentBayMode = false }: Body3DModelProps) {
+export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientSounds, caseCategory, appliedTreatmentIds = [], patientVisualState = null, isInArrest = false, vitals, liveRespiration, onPulse, treatmentBayMode = false, onRequestTreat }: Body3DModelProps) {
   const { t } = useTranslation();
   const controlsRef = useRef<OrbitControlsHandle | null>(null);
   const patientFrameRef = useRef<HTMLDivElement | null>(null);
@@ -4502,6 +4689,9 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   const [playingSound, setPlayingSound] = useState<string | null>(null);
   const [soundProgress, setSoundProgress] = useState(0);
   const soundTimerRef = useRef<number | null>(null);
+  // Observe cues (Look / Listen / Feel) queue an exam action for the region
+  // once handleRegionClick has finished opening the side rail.
+  const pendingObserveActionRef = useRef<string | null>(null);
 
   // Phase 2 — guided exam mode state + transient "blocked" flash
   const [guidedMode, setGuidedMode] = useState<boolean>(loadGuidedModePreference);
@@ -5084,7 +5274,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
     if (!activeRegion) return;
     setSelectedAction(actionId);
 
-    if (controlsRef.current && !treatmentBayOverviewEnabled) {
+    if (controlsRef.current) {
       const focus: Record<string, { pos: [number, number, number]; target: [number, number, number] }> = {
         'pupils-size': { pos: [0, 1.63, 1.22], target: [0, 1.63, 0.08] },
         'pupils-reactivity': { pos: [0, 1.63, 1.18], target: [0, 1.63, 0.08] },
@@ -5125,22 +5315,53 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
         const sampled = surfaceSampler
           ? surfaceSampler(exactFocus.target[0], exactFocus.target[1])
           : null;
-        const projected = sampled
-          ? { pos: exactFocus.pos, target: sampled }
-          : exactFocus;
+        const clinicalTarget = sampled ?? exactFocus.target;
         const actionRadius =
           /pupil|eyes/.test(actionId) ? 0.045 :
           /nose|lips|mouth|tongue/.test(actionId) ? 0.065 :
           /chest/.test(actionId) ? 0.18 :
           (abdomenQuadrant || /abd/.test(actionId)) ? 0.14 :
           0.10;
-        const dir: [number, number, number] = [
-          exactFocus.pos[0] - exactFocus.target[0],
-          exactFocus.pos[1] - exactFocus.target[1],
-          exactFocus.pos[2] - exactFocus.target[2],
-        ];
-        const pos = fitCameraPos(controlsRef.current, projected.target, dir, actionRadius);
-        animateCamera(controlsRef.current, pos, projected.target, 500);
+        if (treatmentBayOverviewEnabled) {
+          // Keep camera assist in the treatment bay so a revealed finding stays
+          // framed on the patient — convert upright clinical focus through the
+          // stretcher / posture transform used by region zooms.
+          const target = treatmentBayClinicalToWorld(
+            [clinicalTarget[0], clinicalTarget[1], clinicalTarget[2]],
+            bayStage,
+            patientPosture,
+            patientMobility,
+            patientScale,
+          );
+          const clinicalDirection: [number, number, number] =
+            patientPosture === 'tripod' || patientPosture === 'seated' || patientMobility === 'standing' || patientMobility === 'pacing'
+              ? (/pupil|eyes|lips|mouth|nose|face/.test(actionId)
+                  ? [0.04, 0.48, 1]
+                  : [0.10, 0.12, 1])
+              : (/pupil|eyes|lips|mouth|nose/.test(actionId)
+                  ? [0, 1, 0.02]
+                  : /chest|abd/.test(actionId)
+                    ? [0.14, 1, 0.18]
+                    : [0.2, 0.95, 0.45]);
+          const pos = fitCameraPos(
+            controlsRef.current,
+            target,
+            clinicalDirection,
+            actionRadius * Math.max(0.5, patientScale) * 4.2,
+          );
+          animateCamera(controlsRef.current, pos, target, 500);
+        } else {
+          const projected = sampled
+            ? { pos: exactFocus.pos, target: sampled }
+            : exactFocus;
+          const dir: [number, number, number] = [
+            exactFocus.pos[0] - exactFocus.target[0],
+            exactFocus.pos[1] - exactFocus.target[1],
+            exactFocus.pos[2] - exactFocus.target[2],
+          ];
+          const pos = fitCameraPos(controlsRef.current, projected.target, dir, actionRadius);
+          animateCamera(controlsRef.current, pos, projected.target, 500);
+        }
       }
     }
 
@@ -5231,7 +5452,40 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
       playPercussionSound(percType);
       startSoundProgress(actionId, PERCUSSION_DURATION);
     }
-  }, [activeRegion, animateCamera, caseData, patientSounds, patientVoice, revealedFindings, startSoundProgress, isInArrest, surfaceSampler, treatmentBayOverviewEnabled]);
+  }, [activeRegion, animateCamera, bayStage, caseData, patientMobility, patientPosture, patientScale, patientSounds, patientVoice, revealedFindings, startSoundProgress, isInArrest, surfaceSampler, treatmentBayOverviewEnabled]);
+  const handleExamActionRef = useRef(handleExamAction);
+  handleExamActionRef.current = handleExamAction;
+
+  const handleObserveCue = useCallback((cue: 'look' | 'listen' | 'feel') => {
+    // Novice-facing Observe strip: jump straight into the high-yield technique
+    // without hunting through region → technique → target.
+    const plan: Record<'look' | 'listen' | 'feel', { region: string; action: string }> = {
+      look: { region: 'chest', action: 'chest-inspect' },
+      listen: { region: 'chest', action: 'chest-auscultate-lungs' },
+      feel: { region: 'chest', action: 'chest-palpate' },
+    };
+    const next = plan[cue];
+    if (activeRegion === next.region) {
+      handleExamActionRef.current(next.action);
+      return;
+    }
+    pendingObserveActionRef.current = next.action;
+    handleRegionClick(next.region);
+  }, [activeRegion, handleRegionClick]);
+
+  // After an Observe cue opens a region, fire the queued technique once the
+  // side rail + action list are mounted for that region.
+  useEffect(() => {
+    if (!activeRegion) return;
+    const queued = pendingObserveActionRef.current;
+    if (!queued) return;
+    pendingObserveActionRef.current = null;
+    const timer = window.setTimeout(() => {
+      handleExamActionRef.current(queued);
+    }, 30);
+    return () => window.clearTimeout(timer);
+  }, [activeRegion]);
+
 
   // Click the ANATOMY, not just the dots: inside an active region, a click on
   // the body fires the nearest detail exam action at that spot — click the
@@ -5917,6 +6171,19 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
             {/* Compact list of applied equipment — labels for the on-body pins */}
             <AppliedEquipmentTray appliedTreatmentIds={appliedTreatmentIds} />
 
+            {treatmentBayOverviewEnabled && !activeRegion && (
+              <BayKitHotspots
+                recommendedTab={recommendedManagementTabForCase(caseData)}
+                onOpenKit={onRequestTreat
+                  ? (tab, search) => onRequestTreat({ reason: 'scene-kit', managementTab: tab, search })
+                  : undefined}
+              />
+            )}
+
+            {treatmentBayOverviewEnabled && !activeRegion && (
+              <ObserveQuickActions onCue={handleObserveCue} />
+            )}
+
             {/* Floating deselect — effortless "back to full body" while focused */}
             {activeRegion && (
               <button
@@ -5975,6 +6242,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
               showRegionalLoupe={showRegionalLoupe}
               playingSound={playingSound}
               soundProgress={soundProgress}
+              onRequestTreat={onRequestTreat}
             />
           )}
 
@@ -6064,7 +6332,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
         <p className="text-[9px] text-muted-foreground">
           {activeRegion
             ? 'Work inside the patient frame: choose a technique, watch the anatomy, then reassess.'
-            : '🔊 Click the chest, heart, or abdomen to listen — breath, heart & bowel sounds play live'}
+            : 'Observe the patient — Look / Listen / Feel, or tap a body region to examine'}
         </p>
         <div className="flex gap-1.5">
           {activeRegion && (

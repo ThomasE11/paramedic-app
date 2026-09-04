@@ -4,7 +4,9 @@ import type { CaseScenario } from '@/types';
 import {
   bagKeyForTreatment,
   latestUniqueAppliedTreatments,
+  managementTabForBayEquipment,
   recommendedManagementTabForCase,
+  searchHintForBayEquipment,
   suggestedTreatmentIdsForCase,
 } from '@/components/TreatmentJumpBagPanel';
 
@@ -13,6 +15,24 @@ describe('treatment jump-bag routing', () => {
     const treatment = TREATMENTS.find(item => item.id === 'assisted_ambulation');
     expect(treatment).toBeDefined();
     expect(bagKeyForTreatment(treatment!)).toBe('exposure');
+  });
+
+  it('routes oxygen and nebulisers to the Breathing bag for find→bag→treat', () => {
+    const nrb = TREATMENTS.find(item => item.id === 'oxygen_nonrebreather');
+    const neb = TREATMENTS.find(item => item.id === 'nebulizer_salbutamol');
+    expect(nrb).toBeDefined();
+    expect(neb).toBeDefined();
+    expect(bagKeyForTreatment(nrb!)).toBe('breathing');
+    expect(bagKeyForTreatment(neb!)).toBe('breathing');
+  });
+
+  it('still opens airway for true airway interventions', () => {
+    const opa = TREATMENTS.find(item => item.id === 'opa_insert');
+    const suction = TREATMENTS.find(item => item.id === 'suction');
+    expect(opa).toBeDefined();
+    expect(suction).toBeDefined();
+    expect(bagKeyForTreatment(opa!)).toBe('airway');
+    expect(bagKeyForTreatment(suction!)).toBe('airway');
   });
 });
 
@@ -263,5 +283,35 @@ describe('initial treatment-kit recommendation', () => {
       'iv_access',
       'fluids_250ml',
     ]);
+  });
+});
+
+describe('bay equipment kit discovery', () => {
+  it('maps scene gear hotspots to the jump bag a paramedic would open', () => {
+    expect(managementTabForBayEquipment('oxygen')).toBe('breathing');
+    expect(managementTabForBayEquipment('breathing-bag')).toBe('breathing');
+    expect(managementTabForBayEquipment('airway-bag')).toBe('airway');
+    expect(managementTabForBayEquipment('circulation-kit')).toBe('circulation');
+    expect(managementTabForBayEquipment('monitor')).toBe('circulation');
+    expect(managementTabForBayEquipment('medications')).toBe('medications');
+  });
+
+  it('prefills oxygen search when the scene O₂ cylinder is tapped', () => {
+    expect(searchHintForBayEquipment('oxygen')).toMatch(/rebreather/i);
+    expect(searchHintForBayEquipment('breathing-bag')).toBe('');
+  });
+
+  it('opens Breathing as the start-here kit for severe asthma (resp-001 shape)', () => {
+    const caseData = {
+      id: 'resp-001',
+      title: 'Severe Asthma',
+      category: 'respiratory',
+      subcategory: 'asthma',
+      dispatchInfo: { callReason: 'Son cannot breathe, using inhaler repeatedly' },
+      vitalSignsProgression: { initial: { pulse: 120, bp: '130/80', spo2: 88, respiration: 32, gcs: 15 } },
+      equipmentNeeded: ['oxygen', 'nebuliser'],
+      managementPathway: { immediate: ['high-flow oxygen', 'salbutamol nebuliser'] },
+    } as any;
+    expect(recommendedManagementTabForCase(caseData)).toBe('breathing');
   });
 });

@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type ComponentType, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, useState, type ComponentType, type CSSProperties } from 'react';
 import type { AppliedTreatment, CaseScenario, VitalSigns } from '@/types';
 import {
   type Treatment,
@@ -430,7 +430,9 @@ const TREATMENT_JUMP_BAGS: TreatmentJumpBag[] = [
     shortLabel: 'Airway',
     description: 'Open, clear, position, secure',
     categories: ['airway'],
-    treatmentIds: ['oxygen_nasal', 'oxygen_mask', 'oxygen_nonrebreather', 'nebulizer_salbutamol'],
+    // Oxygen / nebuliser remain on the airway equipment board as carried kit,
+    // but treatment routing prefers the Breathing bag (see bagKeyForTreatment).
+    treatmentIds: [],
     Icon: Wind,
     railClass: 'bg-amber-400',
     selectedClass: 'border-amber-400/55 bg-amber-50/80 text-amber-950 dark:bg-amber-950/20 dark:text-amber-100',
@@ -941,9 +943,59 @@ function treatmentBelongsToBag(treatment: Treatment, bag: TreatmentJumpBag): boo
 }
 
 /** Which jump bag (management tab) holds this treatment — used by deep-links
- *  from the care feed's finding→treatment bridge. */
+ *  from the care feed's finding→treatment bridge and scene bay hotspots.
+ *
+ * Prefer the bag whose clinical category owns the treatment so oxygen /
+ * nebulisers open Breathing (not Airway) even when also pictured on the
+ * airway equipment board. Fall back to explicit treatmentIds / heuristics.
+ */
 export function bagKeyForTreatment(treatment: Treatment): ManagementTab {
+  const explicitlyPacked = TREATMENT_JUMP_BAGS.find(
+    bag => bag.treatmentIds?.includes(treatment.id),
+  );
+  if (explicitlyPacked) return explicitlyPacked.key;
+
+  const byCategory = TREATMENT_JUMP_BAGS.find(bag => bag.categories.includes(treatment.category));
+  if (byCategory) return byCategory.key;
   return TREATMENT_JUMP_BAGS.find(bag => treatmentBelongsToBag(treatment, bag))?.key ?? 'medications';
+}
+
+/** Scene bay equipment → which jump bag to open (paramedic kit layout). */
+export type BayEquipmentFocus =
+  | 'oxygen'
+  | 'airway-bag'
+  | 'breathing-bag'
+  | 'circulation-kit'
+  | 'monitor'
+  | 'medications';
+
+export function managementTabForBayEquipment(focus: BayEquipmentFocus): ManagementTab {
+  switch (focus) {
+    case 'oxygen':
+    case 'breathing-bag':
+      return 'breathing';
+    case 'airway-bag':
+      return 'airway';
+    case 'circulation-kit':
+    case 'monitor':
+      return 'circulation';
+    case 'medications':
+      return 'medications';
+  }
+}
+
+/** Optional search prefill when a scene anchor is tapped. */
+export function searchHintForBayEquipment(focus: BayEquipmentFocus): string {
+  switch (focus) {
+    case 'oxygen':
+      return 'Non-Rebreather';
+    case 'monitor':
+      return 'Defib Pads';
+    case 'medications':
+      return '';
+    default:
+      return '';
+  }
 }
 
 function bagStyleVars(bag: TreatmentJumpBag): CSSProperties {
@@ -1165,7 +1217,7 @@ function EquipmentInventoryBoard({
             <p className="truncate text-[10px] font-black uppercase tracking-[0.18em] text-white/90">
               {bag.key === 'airway' ? 'Airway & Oxygen' : bag.label}
             </p>
-            <p className="truncate text-[9px] text-cyan-100/70">Open kit inventory · tap equipment to apply</p>
+            <p className="truncate text-[9px] text-cyan-100/70">Open kit · tap gear to apply on the patient</p>
           </div>
         </div>
         <Badge variant="outline" className="h-5 border-white/20 bg-white/10 text-[9px] text-white">
@@ -1235,6 +1287,13 @@ interface TreatmentJumpBagPanelProps {
   medSearch: string;
   setMedSearch: (value: string) => void;
   applyTreatment: (treatment: Treatment) => void;
+  /** Realism-director anchors — where open-kit gear will sit once applied. */
+  equipmentAnchors?: Array<{
+    region: string;
+    appearance: string;
+    treatmentIdFragments: string[];
+    reassess: string[];
+  }>;
 }
 
 export function TreatmentJumpBagPanel({
@@ -1249,6 +1308,7 @@ export function TreatmentJumpBagPanel({
   medSearch,
   setMedSearch,
   applyTreatment,
+  equipmentAnchors = [],
 }: TreatmentJumpBagPanelProps) {
   const [stagedEquipmentId, setStagedEquipmentId] = useState<string | null>(null);
   // Scroll the treatment list into view when a bag opens — students didn't
@@ -1303,6 +1363,23 @@ export function TreatmentJumpBagPanel({
     ),
     [equipmentItems, suggestedIds],
   );
+  const openBagAnchorCues = useMemo(() => {
+    if (!equipmentAnchors.length) return [];
+    const bagItems = BAG_EQUIPMENT[activeBag.key] ?? [];
+    const bagTreatmentIds = bagItems
+      .map(item => item.treatmentId)
+      .filter((id): id is string => Boolean(id));
+    const bagHaystack = bagItems
+      .map(item => `${item.treatmentId ?? ''} ${item.label} ${item.caption}`.toLowerCase())
+      .join(' | ');
+    return equipmentAnchors
+      .filter(anchor => anchor.treatmentIdFragments.some(fragment => {
+        const f = fragment.toLowerCase();
+        return bagTreatmentIds.some(id => id.toLowerCase().includes(f) || f.includes(id.toLowerCase()))
+          || bagHaystack.includes(f);
+      }))
+      .slice(0, 3);
+  }, [activeBag.key, equipmentAnchors]);
   const stagedEquipment = equipmentItems.find(item => item.id === stagedEquipmentId) ?? null;
   const isStagedEquipmentApplied = Boolean(
     stagedEquipment?.treatmentId && appliedTreatmentIds.includes(stagedEquipment.treatmentId),
@@ -1313,6 +1390,43 @@ export function TreatmentJumpBagPanel({
       ? TREATMENT_CATEGORY_BY_ID.get(stagedEquipment.treatmentId)
       : undefined,
   });
+
+  const recommendedBagKey = useMemo(
+    () => recommendedManagementTabForCase(caseData),
+    [caseData],
+  );
+
+  // Finding → bag → treat: when a deep-link / bay hotspot pre-fills search,
+  // stage the matching product tile and scroll the treatment card into view
+  // so the student sees the kit path rather than a blank deck.
+  useEffect(() => {
+    const q = medSearch.trim().toLowerCase();
+    if (!q) return;
+
+    const matchingEquipment = equipmentItems.find(item => {
+      if (!item.treatmentId) return false;
+      const treatment = TREATMENTS.find(candidate => candidate.id === item.treatmentId);
+      const haystack = `${item.label} ${item.caption} ${item.treatmentId} ${treatment?.name ?? ''}`.toLowerCase();
+      return haystack.includes(q) || q.split(/\s+/).every(token => token.length > 2 && haystack.includes(token));
+    });
+    if (matchingEquipment) setStagedEquipmentId(matchingEquipment.id);
+
+    const matchingTreatment = TREATMENTS.find(treatment => {
+      if (!treatmentBelongsToBag(treatment, activeBag) && !matchingEquipment) return false;
+      const haystack = `${treatment.id} ${treatment.name} ${treatment.description}`.toLowerCase();
+      return haystack.includes(q) || treatment.id === matchingEquipment?.treatmentId;
+    });
+    const targetId = matchingEquipment?.treatmentId ?? matchingTreatment?.id;
+    if (!targetId) return;
+
+    const frame = requestAnimationFrame(() => {
+      treatmentPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      document
+        .querySelector(`[data-treatment-id="${targetId}"]`)
+        ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [medSearch, activeBag.key, equipmentItems]);
 
   // Search is scoped to the OPEN bag first (what the student asked for: "search
   // in the bag I opened"). Only if nothing in the open bag matches do we widen
@@ -2122,7 +2236,7 @@ export function TreatmentJumpBagPanel({
           </div>
           <div className="min-w-0">
             <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-muted-foreground/65">Treatment loadout</p>
-            <span className="block truncate font-semibold">Open kit, deploy, reassess</span>
+            <span className="block truncate font-semibold">Spot kit → open → treat</span>
           </div>
           <Badge variant="secondary" className="ml-auto text-[9px] sm:text-[10px]">
             {appliedTreatments.length} deployed
@@ -2170,8 +2284,8 @@ export function TreatmentJumpBagPanel({
         {suggestedTreatments.length > 0 && (
           <div className="glass-panel rounded-xl border border-emerald-500/20 p-2">
             <div className="mb-2 flex items-center justify-between gap-2">
-              <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-emerald-800 dark:text-emerald-200">Priority actions</p>
-              <span className="text-[9px] text-muted-foreground">vitals + case pathway</span>
+              <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-emerald-800 dark:text-emerald-200">Find in kit</p>
+              <span className="text-[9px] text-muted-foreground">opens the right bag · then Apply</span>
             </div>
             <div className="flex flex-wrap gap-1.5">
               {suggestedTreatments.map(treatment => (
@@ -2180,12 +2294,15 @@ export function TreatmentJumpBagPanel({
                   size="sm"
                   variant="outline"
                   className="h-7 rounded-md border-emerald-500/25 px-2 text-[10px] font-semibold hover:bg-emerald-50 dark:hover:bg-emerald-950/25"
-                  onClick={() => applyTreatment(treatment)}
-                  disabled={applyingTreatmentId === treatment.id}
+                  title={`Open ${bagKeyForTreatment(treatment)} bag and stage ${treatmentPresentation(treatment, caseData).name}`}
+                  onClick={() => {
+                    setActiveManagementTab(bagKeyForTreatment(treatment));
+                    setMedSearch(treatment.name);
+                    setStagedEquipmentId(null);
+                    revealTreatments();
+                  }}
                 >
-                  {applyingTreatmentId === treatment.id
-                    ? <Loader2 className="h-3 w-3 animate-spin" />
-                    : treatmentPresentation(treatment, caseData).name}
+                  {treatmentPresentation(treatment, caseData).name}
                 </Button>
               ))}
             </div>
@@ -2194,7 +2311,7 @@ export function TreatmentJumpBagPanel({
 
         <div className="flex items-center gap-1.5 rounded-lg border border-emerald-500/25 bg-emerald-50/70 px-2.5 py-1.5 text-[10px] font-medium text-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-100">
           <Lightbulb className="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-300" />
-          <span>Immediate action: choose the kit that matches the life threat, then confirm the response.</span>
+          <span>Find the kit that matches the life threat, stage the device or drug, then apply and reassess.</span>
         </div>
 
       <div className="jump-bag-grid grid grid-cols-2 gap-1.5 sm:grid-cols-3">
@@ -2222,8 +2339,14 @@ export function TreatmentJumpBagPanel({
                   }
                 }}
                 className={`jump-bag-button group relative min-h-[164px] overflow-hidden rounded-lg border p-2 text-left transition hover:border-slate-300 hover:bg-white/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40 dark:hover:bg-white/[0.08] ${
-                  isActive ? bag.selectedClass : 'glass-control border-slate-200 dark:border-slate-800'
+                  isActive
+                    ? bag.selectedClass
+                    : bag.key === recommendedBagKey
+                      ? 'glass-control border-emerald-400/55 ring-1 ring-emerald-400/35 dark:border-emerald-500/45'
+                      : 'glass-control border-slate-200 dark:border-slate-800'
                 }`}
+                data-recommended={bag.key === recommendedBagKey ? 'true' : undefined}
+                data-bag-key={bag.key}
               >
                 <span className={`absolute inset-x-3 top-2 h-1 rounded-full ${bag.railClass} ${isActive ? 'opacity-100' : 'opacity-35'}`} />
                 <div className="flex h-full flex-col items-center justify-between gap-2 pt-2">
@@ -2233,9 +2356,15 @@ export function TreatmentJumpBagPanel({
                       <p className="truncate text-[11px] font-bold">{bag.label}</p>
                       <Badge
                         variant={isActive ? 'default' : 'outline'}
-                        className={`h-4 rounded px-1 text-[8px] ${isActive ? '' : 'border-slate-500 bg-slate-800 text-slate-100'}`}
+                        className={`h-4 rounded px-1 text-[8px] ${
+                          isActive
+                            ? ''
+                            : bag.key === recommendedBagKey
+                              ? 'border-emerald-500/50 bg-emerald-600/90 text-white'
+                              : 'border-slate-500 bg-slate-800 text-slate-100'
+                        }`}
                       >
-                        {isActive ? 'Open' : 'Closed'}
+                        {isActive ? 'Open' : bag.key === recommendedBagKey ? 'Start here' : 'Closed'}
                       </Badge>
                     </div>
                     <p className="mt-0.5 line-clamp-2 text-[9px] leading-snug text-muted-foreground">{bag.description}</p>
@@ -2248,6 +2377,35 @@ export function TreatmentJumpBagPanel({
             );
           })}
         </div>
+
+        {/* FIND EQUIPMENT: inventory under the open kit — spot → open → apply. */}
+        {!query && (
+          <div className="space-y-2" data-equipment-inventory="true" data-anchor-cues={openBagAnchorCues.length}>
+            <EquipmentInventoryBoard
+              bag={activeBag}
+              items={orderedEquipmentItems}
+              appliedTreatmentIds={appliedTreatmentIds}
+              applyingTreatmentId={applyingTreatmentId}
+              stagedItemId={stagedEquipmentId}
+              currentVitals={currentVitals}
+              onSelect={handleEquipmentSelect}
+            />
+            {openBagAnchorCues.length > 0 && (
+              <div className="rounded-xl border border-cyan-500/25 bg-cyan-950/30 px-3 py-2 text-[10px] text-cyan-50/90">
+                <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-cyan-200/80">Where it sits on the patient</p>
+                <ul className="mt-1.5 space-y-1">
+                  {openBagAnchorCues.map(cue => (
+                    <li key={`${cue.region}-${cue.appearance.slice(0, 32)}`} className="leading-snug">
+                      <span className="font-semibold text-cyan-100">{cue.region.replace(/-/g, ' ')}</span>
+                      {' — '}
+                      {cue.appearance}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
 
         <div ref={treatmentPanelRef} className="glass-panel overflow-hidden rounded-xl border border-slate-200 scroll-mt-2 dark:border-slate-800">
           <div className="flex items-center justify-between border-b border-slate-200 px-3 py-2 dark:border-slate-800">
@@ -2318,7 +2476,7 @@ export function TreatmentJumpBagPanel({
                     : hypothermiaBlock
                       ? `Withhold: core temp ${coreTemp}°C`
                       : null;
-                  const rowBag = TREATMENT_JUMP_BAGS.find(bag => treatmentBelongsToBag(treatment, bag)) ?? activeBag;
+                  const rowBag = TREATMENT_JUMP_BAGS.find(bag => bag.key === bagKeyForTreatment(treatment)) ?? activeBag;
 
                   return (
                     <div
@@ -2406,21 +2564,6 @@ export function TreatmentJumpBagPanel({
             )}
           </div>
         </div>
-
-        {/* Physical equipment inventory sits BELOW the treatment list so opening
-            a bag surfaces the medications/actions first (no hunting past the
-            equipment board). */}
-        {!query && (
-          <EquipmentInventoryBoard
-            bag={activeBag}
-            items={orderedEquipmentItems}
-            appliedTreatmentIds={appliedTreatmentIds}
-            applyingTreatmentId={applyingTreatmentId}
-            stagedItemId={stagedEquipmentId}
-            currentVitals={currentVitals}
-            onSelect={handleEquipmentSelect}
-          />
-        )}
 
         {stagedEquipment && !query && (
           <div className="glass-control rounded-xl border border-cyan-500/20 px-3 py-2 text-xs">

@@ -93,7 +93,7 @@ import {
 import { derivePatientVisualState } from '@/lib/patientVisualState';
 import { deduplicateCareFeedItems } from '@/lib/careFeed';
 import { deriveSceneEnvironment, sceneEnvironmentLabel } from '@/lib/sceneEnvironment';
-import { matchRealismScenarios } from '@/lib/patientRealismScenarios';
+import { matchRealismScenarios, prospectiveEquipmentAnchorsForCase } from '@/lib/patientRealismScenarios';
 import {
   buildReactionForTreatment,
   projectReactionVitals,
@@ -130,6 +130,9 @@ import { SceneSurveyPanel, type SceneSurveyResult } from '@/components/SceneSurv
 import { VoiceHistoryPanel } from '@/components/VoiceHistoryPanel';
 import {
   TreatmentJumpBagPanel,
+  managementTabForBayEquipment,
+  searchHintForBayEquipment,
+  type BayEquipmentFocus,
   bagKeyForTreatment,
   latestUniqueAppliedTreatments,
   recommendedManagementTabForCase,
@@ -1838,6 +1841,7 @@ export function StudentPanel({
   const openSuggestedTreatment = useCallback((suggestion: FindingTreatmentSuggestion) => {
     const treatment = TREATMENTS.find(item => item.id === suggestion.treatmentId);
     if (!treatment) return;
+    setCareRailMode('treat');
     setActiveManagementTab(bagKeyForTreatment(treatment));
     setMedSearch(treatment.name);
     requestAnimationFrame(() => {
@@ -6263,6 +6267,47 @@ export function StudentPanel({
                       vitals={currentVitals ?? undefined}
                       onPulse={runPulseCheck}
                       treatmentBayMode
+                      onRequestTreat={(hint) => {
+                        // FIND EQUIPMENT: open the matching jump bag. Scene kit
+                        // taps show the open inventory; O₂ / search hints stage
+                        // the device so find → bag → treat stays one gesture.
+                        setCareRailMode('treat');
+                        const reason = hint?.reason ?? '';
+                        const tab = hint?.managementTab;
+                        if (tab === 'breathing' || tab === 'airway' || tab === 'circulation' || tab === 'disability' || tab === 'exposure' || tab === 'medications' || tab === 'transport') {
+                          setActiveManagementTab(tab);
+                        } else if (reason.startsWith('bay:')) {
+                          const focus = reason.slice(4) as BayEquipmentFocus;
+                          setActiveManagementTab(managementTabForBayEquipment(focus));
+                        } else if (currentCase) {
+                          setActiveManagementTab(recommendedManagementTabForCase(currentCase));
+                        } else {
+                          setActiveManagementTab('breathing');
+                        }
+
+                        if (typeof hint?.search === 'string' && hint.search.length > 0) {
+                          setMedSearch(hint.search);
+                        } else if (reason.startsWith('bay:')) {
+                          setMedSearch(searchHintForBayEquipment(reason.slice(4) as BayEquipmentFocus));
+                        } else if (reason === 'scene-kit') {
+                          setMedSearch('');
+                        } else if (
+                          (tab === 'breathing' || !tab)
+                          && currentCase
+                          && (currentCase.category === 'respiratory' || currentCase.category === 'thoracic')
+                        ) {
+                          // Stage first-line bronchodilator; oxygen remains one tap away in Find in kit.
+                          setMedSearch('Salbutamol');
+                        }
+
+                        requestAnimationFrame(() => {
+                          document.querySelector('.tactical-management-options')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                          if (!(typeof hint?.search === 'string' && hint.search.length > 0)) {
+                            document.querySelector('[data-equipment-inventory="true"]')
+                              ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                          }
+                        });
+                      }}
                     />
                   </Suspense>
                 </div>
@@ -6304,6 +6349,7 @@ export function StudentPanel({
                     medSearch={medSearch}
                     setMedSearch={setMedSearch}
                     applyTreatment={applyTreatment}
+                    equipmentAnchors={currentCase ? prospectiveEquipmentAnchorsForCase(currentCase) : []}
                   />
                 </HUDTreatmentBags>
                 )}

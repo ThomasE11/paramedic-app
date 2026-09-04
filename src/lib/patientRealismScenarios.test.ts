@@ -7,6 +7,7 @@ import {
   deriveScenarioTreatmentResponses,
   deriveScenarioVisuals,
   deriveRealismScenarioState,
+  prospectiveEquipmentAnchorsForCase,
   REALISM_SCENARIOS,
 } from './patientRealismScenarios';
 
@@ -592,5 +593,22 @@ describe('deriveRealismScenarioState', () => {
     const state = deriveRealismScenarioState({ caseData: scenario, appliedTreatmentIds: ['oxygen_nonrebreather'] });
     expect(state.equipmentAnchors.length).toBeGreaterThan(0);
     expect(state.equipmentAnchors.some(a => a.region === 'face')).toBe(true);
+  });
+});
+
+describe('prospectiveEquipmentAnchorsForCase', () => {
+  it('returns placement cues for asthma before treatments are applied', () => {
+    const caseData = {
+      id: 'resp-001',
+      title: 'Severe Asthma',
+      category: 'respiratory',
+      subcategory: 'asthma',
+      dispatchInfo: { callReason: 'cannot breathe wheeze' },
+      vitalSignsProgression: { initial: { pulse: 120, bp: '130/80', spo2: 88, respiration: 32 } },
+    } as any;
+    const anchors = prospectiveEquipmentAnchorsForCase(caseData);
+    expect(anchors.length).toBeGreaterThan(0);
+    expect(anchors.some(a => a.region === 'face')).toBe(true);
+    expect(anchors.some(a => a.treatmentIdFragments.some(f => f.includes('oxygen') || f.includes('nebulizer') || f.includes('salbutamol')))).toBe(true);
   });
 });
