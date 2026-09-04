@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getStepFindings } from '@/data/assessmentFramework';
+import { getOxygenationAppearanceFinding, getStepFindings } from '@/data/assessmentFramework';
 import { litflCaseDatabase } from '@/data/litflCases';
 
 const baseCase = litflCaseDatabase.find(caseItem => caseItem.id === 'litfl-001')!;
@@ -58,5 +58,30 @@ describe('assessment finding severity', () => {
       expect.objectContaining({ severity: 'normal', value: 'No burns identified' }),
     ]);
     expect(getStepFindings('12-lead-ecg', caseData).find(finding => finding.label === 'ECG')?.severity).toBe('normal');
+  });
+
+  it('records visible cyanosis at hypoxic SpO2 and clears it with recovery', () => {
+    const hypoxic = getOxygenationAppearanceFinding({ spo2: 85 });
+    const recovered = getOxygenationAppearanceFinding({ spo2: 94 });
+
+    expect(hypoxic).toMatchObject({
+      label: 'Lips / nail beds',
+      severity: 'critical',
+    });
+    expect(hypoxic?.value).toMatch(/lips.*nail-bed cyanosis/i);
+    expect(recovered).toMatchObject({
+      severity: 'normal',
+      value: expect.stringMatching(/pink.*no visible.*cyanosis/i),
+    });
+  });
+
+  it('puts the live oxygenation finding first in the recorded face assessment', () => {
+    const findings = getStepFindings('face', baseCase, { spo2: 88 });
+
+    expect(findings[0]).toMatchObject({
+      label: 'Lips / nail beds',
+      severity: 'critical',
+    });
+    expect(findings.some(finding => finding.value === 'No facial abnormalities')).toBe(false);
   });
 });

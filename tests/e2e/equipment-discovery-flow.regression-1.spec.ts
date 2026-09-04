@@ -38,6 +38,12 @@ test('scene gear opens the matching jump bag and leaves the selected device fitt
   await procedure.getByRole('button', { name: /Oxygen running — reassess SpO₂/i }).click();
 
   await expect(procedure).toBeHidden();
-  await expect(page.locator('[data-applied-equipment="nonrebreather"][data-airway-connection="face"]')).toBeVisible();
+  const fittedNrb = page.locator(
+    '[data-applied-equipment="nonrebreather"]'
+      + '[data-airway-connection="face"]'
+      + '[data-oxygen-connected="true"]'
+      + '[data-patient-anchored="true"]',
+  );
+  await expect(fittedNrb).toBeVisible();
   await expect(page.getByText('1 deployed', { exact: true })).toBeVisible();
 });

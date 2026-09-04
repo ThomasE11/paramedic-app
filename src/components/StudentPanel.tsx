@@ -4001,6 +4001,7 @@ export function StudentPanel({
       stepId,
       currentCase,
       caseStartTime,
+      currentVitals,
     );
 
     // Update ref immediately so back-to-back calls read the right state
@@ -4055,6 +4056,7 @@ export function StudentPanel({
             extra,
             currentCase,
             caseStartTime,
+            currentVitals,
           );
           assessmentTrackerRef.current = extraTracker;
           setAssessmentTracker(extraTracker);
@@ -4102,7 +4104,7 @@ export function StudentPanel({
       // Normal findings — no toast needed, findings panel shows them
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentCase, caseStartTime, readOnly, monitorRevealedVitals, appliedTreatmentIds, reassessedTreatmentIds, appliedTreatments]); // assessmentTracker read via ref — always current. readOnly MUST stay in deps so handing control to a student rebuilds this callback with readOnly=false; otherwise every click silently hits the "you are watching" toast from the stale closure.
+  }, [currentCase, caseStartTime, currentVitals, readOnly, monitorRevealedVitals, appliedTreatmentIds, reassessedTreatmentIds, appliedTreatments]); // assessmentTracker read via ref — always current. readOnly MUST stay in deps so handing control to a student rebuilds this callback with readOnly=false; otherwise every click silently hits the "you are watching" toast from the stale closure.
 
   // Hands-free voice-command mic removed (2026-06-18) — it was unused and
   // cluttered the assessment view. The kept voice feature is patient

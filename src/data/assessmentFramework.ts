@@ -12,7 +12,7 @@
  * 4. Special Assessments — case-specific (stroke screen, obstetric, burns, etc.)
  */
 
-import type { CaseScenario, CaseCategory } from '@/types';
+import type { CaseScenario, CaseCategory, VitalSigns } from '@/types';
 
 // ============================================================================
 // TYPES
@@ -118,6 +118,40 @@ export interface AssessmentTracker {
   totalPoints: number;
   /** Points earned from assessments performed */
   earnedPoints: number;
+}
+
+/**
+ * Keep the documented face finding aligned with the live cyanosis rendered on
+ * the patient. The visual layer begins clearing at SpO2 94%, so the language
+ * uses that same boundary instead of allowing the chart and patient to
+ * contradict one another.
+ */
+export function getOxygenationAppearanceFinding(
+  vitals?: Partial<VitalSigns> | null,
+): AssessmentFinding | null {
+  const spo2 = typeof vitals?.spo2 === 'number' ? vitals.spo2 : null;
+  if (spo2 === null) return null;
+  if (spo2 <= 89) {
+    return {
+      label: 'Lips / nail beds',
+      value: 'Dusky blue-grey discolouration around the lips with peripheral nail-bed cyanosis.',
+      severity: 'critical',
+      significance: `Visible hypoxaemia at SpO2 ${spo2}% — correlate with work of breathing and treat promptly.`,
+    };
+  }
+  if (spo2 < 94) {
+    return {
+      label: 'Lips / nail beds',
+      value: 'Subtle blue-grey duskiness at the lips and nail beds.',
+      severity: 'abnormal',
+      significance: `Persistent hypoxaemia at SpO2 ${spo2}% — reassess oxygen delivery and ventilation.`,
+    };
+  }
+  return {
+    label: 'Lips / nail beds',
+    value: 'Lips and nail beds pink; no visible central or peripheral cyanosis.',
+    severity: 'normal',
+  };
 }
 
 /**
@@ -837,16 +871,16 @@ export function getRequiredSteps(caseData: CaseScenario, yearLevel?: string): {
 /**
  * Extract findings for a specific assessment step from case data.
  *
- * KNOWN LIMITATION: Findings are always derived from the static initial case
- * data (caseData.abcde, caseData.secondarySurvey, etc.). They do NOT update
- * dynamically based on treatment effects or current vital signs. For example,
- * if treatment improves SpO2 from 82% to 92%, auscultation findings will still
- * reflect the initial presentation (e.g., "silent chest"). Implementing
- * dynamic findings would require a significant refactor to pass current
- * patient state into this function and define state-dependent finding rules
- * for each case.
+ * Most findings remain derived from static authored case data. Live vitals are
+ * accepted for observations that genuinely change at the bedside (currently
+ * lip/nail-bed oxygenation); structural findings and auscultation continue to
+ * reflect the case unless a specific dynamic rule is defined.
  */
-export function getStepFindings(stepId: AssessmentStepId, caseData: CaseScenario): AssessmentFinding[] {
+export function getStepFindings(
+  stepId: AssessmentStepId,
+  caseData: CaseScenario,
+  liveVitals?: Partial<VitalSigns> | null,
+): AssessmentFinding[] {
   const findings: AssessmentFinding[] = [];
 
   switch (stepId) {
@@ -1102,6 +1136,10 @@ export function getStepFindings(stepId: AssessmentStepId, caseData: CaseScenario
 
     case 'face': {
       const faceData = caseData.secondarySurvey?.headDetailed?.face || [];
+      const oxygenationFinding = getOxygenationAppearanceFinding(
+        liveVitals ?? caseData.vitalSignsProgression?.initial,
+      );
+      if (oxygenationFinding) findings.push(oxygenationFinding);
       if (faceData.length > 0) {
         faceData.forEach(f => {
           const sev = hasAffirmedClinicalFinding(f, /\b(?:fracture\w*|unstable)\b/i)
@@ -1109,7 +1147,7 @@ export function getStepFindings(stepId: AssessmentStepId, caseData: CaseScenario
           findings.push({ label: 'Face', value: f, severity: sev });
         });
       } else {
-        findings.push({ label: 'Face', value: 'No facial abnormalities', severity: 'normal' });
+        findings.push({ label: 'Face', value: 'No facial trauma, swelling, burns, or deformity.', severity: 'normal' });
       }
       break;
     }
@@ -1554,19 +1592,20 @@ export function performAssessment(
   stepId: AssessmentStepId,
   caseData: CaseScenario,
   caseStartTime: number,
+  liveVitals?: Partial<VitalSigns> | null,
 ): { tracker: AssessmentTracker; findings: AssessmentFinding[] } {
   // Map individual limb IDs to the 'extremities' step for scoring purposes
   const effectiveStepId = LIMB_TO_EXTREMITIES[stepId] || stepId;
 
   // Don't record duplicates (check both the specific limb and the effective step)
   if (tracker.performed.some(p => p.stepId === stepId || p.stepId === effectiveStepId)) {
-    return { tracker, findings: getStepFindings(effectiveStepId, caseData) };
+    return { tracker, findings: getStepFindings(effectiveStepId, caseData, liveVitals) };
   }
 
   const step = ALL_STEPS[effectiveStepId];
   if (!step) return { tracker, findings: [] };
 
-  const findings = getStepFindings(effectiveStepId, caseData);
+  const findings = getStepFindings(effectiveStepId, caseData, liveVitals);
   const now = Date.now();
 
   // Record the effective step ID so that 'extremities' shows as performed

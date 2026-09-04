@@ -11,12 +11,12 @@
 import { useRef, useCallback, useState, useMemo, useEffect, Suspense } from 'react';
 import type { CSSProperties, ElementRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, ContactShadows, Environment, Html } from '@react-three/drei';
+import { OrbitControls, ContactShadows, Environment, Html, useTexture } from '@react-three/drei';
 import * as THREE from 'three';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { RotateCcw, User, Eye, Hand, Activity, Stethoscope, X, ChevronRight, ChevronDown, AlertTriangle, Compass, Unlock, Wind, Shirt } from 'lucide-react';
-import { BodyMesh, treatmentBayClinicalToWorld, type BayPatientStage } from './BodyMesh';
+import { BodyMesh, getTreatmentBayTransform, treatmentBayClinicalToWorld, type BayPatientStage } from './BodyMesh';
 import {
   deriveAppliedPatientStage,
   derivePatientMobility,
@@ -45,7 +45,7 @@ import { usePatientVoice } from '@/hooks/usePatientVoice';
 import { getNextGuidedStep, EXAM_SEQUENCE } from './bodyRegions';
 import { useTranslation } from 'react-i18next';
 import type { AssessmentStepId, SecondaryAssessmentStep } from '@/data/assessmentFramework';
-import { getAssessmentProfile } from '@/data/assessmentFramework';
+import { getAssessmentProfile, getOxygenationAppearanceFinding } from '@/data/assessmentFramework';
 import type { CaseScenario, CaseCategory, VitalSigns } from '@/types';
 import type { ClinicalSoundState } from '@/data/clinicalSounds';
 import { playBreathSound, playHeartSound, playPercussionSound, playBowelSound, stopAllSounds, getZoneBreathSound } from '@/data/clinicalSounds';
@@ -372,8 +372,8 @@ const EXAM_LANDMARKS: ExamLandmark[] = [
   // Carotid pulse points sit on the neck, lateral to the midline — tappable
   // from the face zoom so students feel the central pulse on the patient
   // (not the monitor). Side-specific carotid actions fire onPulse from either detail view.
-  { id: 'face-carotid-r', region: 'face', label: 'Right carotid', sublabel: 'central pulse', position: [-0.048, 1.495, 0.185], level: 'detail', actionId: 'pulse-carotid-right', tone: 'circulation' },
-  { id: 'face-carotid-l', region: 'face', label: 'Left carotid', sublabel: 'central pulse', position: [0.048, 1.495, 0.185], level: 'detail', actionId: 'pulse-carotid-left', tone: 'circulation' },
+  { id: 'face-carotid-r', region: 'face', label: 'Right carotid', sublabel: 'central pulse', position: [-0.082, 1.505, 0.175], level: 'detail', actionId: 'pulse-carotid-right', tone: 'circulation' },
+  { id: 'face-carotid-l', region: 'face', label: 'Left carotid', sublabel: 'central pulse', position: [0.082, 1.505, 0.175], level: 'detail', actionId: 'pulse-carotid-left', tone: 'circulation' },
 
   { id: 'trachea-detail', region: 'neck-cspine', label: 'Trachea', sublabel: 'midline / deviated', position: [0, 1.44, 0.22], level: 'detail', actionId: 'trachea-palpate', tone: 'airway' },
   { id: 'jvd-detail', region: 'neck-cspine', label: 'JVD', sublabel: 'neck veins', position: [0.09, 1.47, 0.19], level: 'detail', actionId: 'jvd-inspect', tone: 'circulation' },
@@ -488,7 +488,19 @@ function TreatmentBayImmersionLayer({
 
   if (!active) return null;
 
-  const face = treatmentBayClinicalToWorld([0.01, 1.64, 0.24], stage, posture, mobility, patientScale);
+  const clinicalPoint = (point: [number, number, number]) =>
+    treatmentBayClinicalToWorld(point, stage, posture, mobility, patientScale);
+  // The photo texture already contains the short length from the mask port
+  // to its right edge. Continue the world-space tube from that exact exit so
+  // the patient sees one connected circuit rather than two overlapping lines.
+  const nrbTubeExit = clinicalPoint([0.073, 1.54, 0.18]);
+  const legacyOxygenFace = clinicalPoint([0.01, 1.64, 0.24]);
+  const oxygenJawRoute = clinicalPoint([0.13, 1.46, 0.165]);
+  const oxygenShoulderRoute = clinicalPoint([0.27, 1.30, 0.14]);
+  const uprightPatient = posture === 'tripod' || posture === 'seated' || mobility === 'standing' || mobility === 'pacing';
+  const oxygenCylinderZ = uprightPatient ? 0.72 : nrbTubeExit[2] + 0.16;
+  const oxygenCylinderBase: [number, number, number] = [0.66, -0.045, oxygenCylinderZ];
+  const oxygenRegulator: [number, number, number] = [0.66, 0.43, oxygenCylinderZ];
   const chestLeft = treatmentBayClinicalToWorld([-0.03, 1.23, 0.25], stage, posture, mobility, patientScale);
   const chestRight = treatmentBayClinicalToWorld([0.15, 1.15, 0.25], stage, posture, mobility, patientScale);
   const ivSite = treatmentBayClinicalToWorld([-0.23, 0.82, 0.24], stage, posture, mobility, patientScale);
@@ -512,16 +524,50 @@ function TreatmentBayImmersionLayer({
           blocking the patient"). Reintroduce only as geometry that actually
           hugs the mesh. */}
 
-      {equipment.oxygen && equipment.oxygen.mode !== 'bvm' && (
+      {equipment.oxygen?.mode === 'nonrebreather' && (
         <>
           <SceneCable
-            points={[face, [0.18, 0.83, -0.76], [0.62, 0.82, -0.86], [0.98, 1.04, -0.70]]}
-            color="#6ee7b7"
-            opacity={0.72}
-            radius={0.0045}
+            points={[nrbTubeExit, oxygenJawRoute, oxygenShoulderRoute, [0.46, 0.56, oxygenCylinderZ + 0.06], oxygenRegulator]}
+            color="#d9f7ef"
+            opacity={0.82}
+            radius={0.0028}
           />
-          <pointLight position={[0.20, 0.86, -0.72]} intensity={0.12} color="#67e8f9" distance={0.8} decay={2} />
+          <group name="active-oxygen-cylinder" position={oxygenCylinderBase} raycast={() => null}>
+            <mesh position={[0, 0.19, 0]} castShadow>
+              <cylinderGeometry args={[0.064, 0.068, 0.38, 18]} />
+              <meshStandardMaterial color="#16664f" roughness={0.48} metalness={0.18} />
+            </mesh>
+            <mesh position={[0, 0.385, 0]} castShadow scale={[1, 0.72, 1]}>
+              <sphereGeometry args={[0.064, 18, 12]} />
+              <meshStandardMaterial color="#1d765d" roughness={0.44} metalness={0.16} />
+            </mesh>
+            <mesh position={[0, 0.435, 0]} castShadow>
+              <cylinderGeometry args={[0.025, 0.034, 0.065, 14]} />
+              <meshStandardMaterial color="#cbd5e1" roughness={0.3} metalness={0.7} />
+            </mesh>
+            <mesh position={[0, 0.475, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+              <torusGeometry args={[0.04, 0.009, 8, 18]} />
+              <meshStandardMaterial color="#334155" roughness={0.36} metalness={0.58} />
+            </mesh>
+            <mesh position={[-0.055, 0.47, 0]} rotation={[0, Math.PI / 2, 0]}>
+              <cylinderGeometry args={[0.031, 0.031, 0.018, 18]} />
+              <meshStandardMaterial color="#eef2f7" roughness={0.28} metalness={0.16} />
+            </mesh>
+            <mesh position={[0, 0.20, 0.069]}>
+              <boxGeometry args={[0.078, 0.11, 0.004]} />
+              <meshStandardMaterial color="#f8fafc" roughness={0.74} metalness={0} />
+            </mesh>
+          </group>
         </>
+      )}
+
+      {equipment.oxygen && !['bvm', 'nonrebreather'].includes(equipment.oxygen.mode) && (
+        <SceneCable
+          points={[legacyOxygenFace, [0.18, 0.83, -0.76], [0.62, 0.82, -0.86], [0.98, 1.04, -0.70]]}
+          color="#6ee7b7"
+          opacity={0.72}
+          radius={0.0045}
+        />
       )}
 
       {equipment.hasDefibPads && (
@@ -762,7 +808,7 @@ function LandmarkMarkers({
                 }
                 onSelect(marker.region);
               }}
-              className={`group pointer-events-auto relative flex items-center justify-center ${isPulseMarker ? 'h-9 w-9' : isDetail ? 'h-6 w-6' : 'h-7 w-7'}`}
+              className={`group pointer-events-auto relative flex items-center justify-center ${isPulseMarker && !isDetail ? 'h-9 w-9' : isDetail ? 'h-6 w-6' : 'h-7 w-7'}`}
               data-compact-patient={compactPatient || undefined}
               aria-label={marker.actionId?.startsWith('pulse-') ? `Check ${marker.label.toLowerCase()} pulse` : `${marker.label}: ${marker.sublabel}`}
               title={`${marker.label} — ${marker.sublabel}`}
@@ -772,8 +818,8 @@ function LandmarkMarkers({
                   clickable so tapping the face/eyes/chest of the
                   model triggers the region's assessment zoom + actions. */}
               {isPulseMarker ? (
-                <span className={`pointer-events-none absolute flex items-center justify-center rounded-full border border-rose-200/90 bg-rose-600/90 text-white shadow-[0_0_0_3px_rgba(244,63,94,.18),0_4px_10px_rgba(15,23,42,.45)] motion-safe:animate-pulse ${compactPatient ? 'inset-2.5' : 'inset-1'}`}>
-                  <Activity className={compactPatient ? 'h-2.5 w-2.5' : 'h-3.5 w-3.5'} />
+                <span className={`pointer-events-none absolute flex items-center justify-center rounded-full border border-rose-200/90 bg-rose-600/90 text-white shadow-[0_0_0_3px_rgba(244,63,94,.18),0_4px_10px_rgba(15,23,42,.45)] motion-safe:animate-pulse ${compactPatient ? 'inset-2.5' : isDetail ? 'inset-1.5' : 'inset-1'}`}>
+                  <Activity className={compactPatient || isDetail ? 'h-2.5 w-2.5' : 'h-3.5 w-3.5'} />
                 </span>
               ) : (
                 <span className={`pointer-events-none absolute inset-0 ${dotColor}`} style={{ opacity: 0 }} />
@@ -1327,6 +1373,46 @@ function WornFaceEquipment({
   );
 }
 
+function AppliedNonRebreather3D({
+  position,
+  rotation,
+  scale,
+}: {
+  position: [number, number, number];
+  rotation: [number, number, number];
+  scale: number;
+}) {
+  const texture = useTexture(OXYGEN_SRC.nonrebreather);
+
+  useEffect(() => {
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.anisotropy = Math.max(texture.anisotropy, 4);
+    texture.needsUpdate = true;
+  }, [texture]);
+
+  return (
+    <group
+      name="applied-nonrebreather-mask"
+      position={position}
+      rotation={rotation}
+      scale={scale}
+      raycast={() => null}
+    >
+      <mesh renderOrder={18}>
+        <planeGeometry args={[0.16, 0.24]} />
+        <meshBasicMaterial
+          map={texture}
+          transparent
+          alphaTest={0.025}
+          depthWrite={false}
+          side={THREE.DoubleSide}
+          toneMapped={false}
+        />
+      </mesh>
+    </group>
+  );
+}
+
 function AppliedEndotrachealTube() {
   return (
     <div
@@ -1832,6 +1918,22 @@ function TreatmentEquipmentOverlay({
     presentation === 'treatment-bay'
       ? treatmentBayClinicalToWorld([x, y, z], bayStage, posture, mobility, patientScale)
       : anchor(x, y, z);
+  const faceRotation: [number, number, number] = presentation === 'treatment-bay'
+    ? getTreatmentBayTransform(bayStage, posture, mobility, patientScale).rotation
+    : [0, 0, 0];
+  const faceEquipmentScale = presentation === 'treatment-bay'
+    ? getTreatmentBayTransform(bayStage, posture, mobility, patientScale).scale * patientScale
+    : 1;
+  // The NRB is rendered in the patient's 3D head frame, so its harness must
+  // share the same anchors. Other mask types still use the legacy HTML visual;
+  // giving those a world-space strap would split at oblique camera angles.
+  const oxygenMaskNeedsHarness = equipment.oxygen?.mode === 'nonrebreather';
+  const faceHarnessPoints: Array<[number, number, number]> = [
+    faceAnchor(-0.072, 1.585, 0.165),
+    faceAnchor(-0.092, 1.60, 0.035),
+    faceAnchor(0.092, 1.60, 0.035),
+    faceAnchor(0.072, 1.585, 0.165),
+  ];
   const equipmentScale = Math.max(0.62, Math.min(1, 0.55 + patientScale * 0.45));
   const hasSiteAccess = equipment.siteControls.some(control => control.treatmentId === 'iv_access' || control.treatmentId === 'io_access');
   const hasSiteChestSeal = equipment.siteControls.some(control => control.treatmentId.includes('chest_seal') || control.treatmentId.includes('occlusive'));
@@ -1839,8 +1941,51 @@ function TreatmentEquipmentOverlay({
 
   return (
     <>
-      {equipment.oxygen && !equipment.hasSurgicalAirway && (
-        <MarkerHtml position={faceAnchor(0.01, 1.66, 0.24)} distanceFactor={1.5} zIndexRange={[76, 0]} interactive={false} presentation={posture === 'tripod' || posture === 'seated' ? 'upright' : presentation} contentScale={equipmentScale} surfaceAware={false}>
+      {oxygenMaskNeedsHarness && (
+        <SceneCable
+          points={faceHarnessPoints}
+          color="#0f7158"
+          opacity={0.82}
+          radius={0.0032}
+        />
+      )}
+
+      {equipment.oxygen?.mode === 'nonrebreather' && !equipment.hasSurgicalAirway && (
+        <>
+          <AppliedNonRebreather3D
+            position={faceAnchor(0.005, 1.57, 0.175)}
+            rotation={faceRotation}
+            scale={faceEquipmentScale}
+          />
+          <MarkerHtml
+            position={faceAnchor(0.005, 1.57, 0.175)}
+            zIndexRange={[0, 0]}
+            interactive={false}
+            surfaceAware={false}
+          >
+            <span
+              data-applied-equipment="nonrebreather"
+              data-airway-connection="face"
+              data-oxygen-connected="true"
+              data-patient-anchored="true"
+              className="sr-only"
+            >
+              Non-rebreather mask fitted over the nose and mouth
+            </span>
+          </MarkerHtml>
+        </>
+      )}
+
+      {equipment.oxygen && equipment.oxygen.mode !== 'nonrebreather' && !equipment.hasSurgicalAirway && (
+        <MarkerHtml
+          position={faceAnchor(0.01, 1.66, 0.24)}
+          distanceFactor={1.5}
+          zIndexRange={[76, 0]}
+          interactive={false}
+          presentation={posture === 'tripod' || posture === 'seated' ? 'upright' : presentation}
+          contentScale={equipmentScale}
+          surfaceAware={false}
+        >
           <WornFaceEquipment
             equipment={equipment.oxygen}
             connectedToEtTube={equipment.hasEtTube && equipment.oxygen.mode === 'bvm'}
@@ -3102,7 +3247,12 @@ function getSubRegions(regionId: string): SubRegion[] {
 // Finding generator — case-specific
 // ============================================================================
 
-function getFinding(caseData: CaseScenario, actionId: string, isInArrest = false): string {
+function getFinding(
+  caseData: CaseScenario,
+  actionId: string,
+  isInArrest = false,
+  liveVitals?: Partial<VitalSigns> | null,
+): string {
   // During cardiac arrest, all pulses are absent
   if (actionId.includes('pulse') && (isInArrest || caseData.vitalSignsProgression?.initial?.pulse === 0)) {
     return 'No pulse detected.';
@@ -3227,8 +3377,17 @@ function getFinding(caseData: CaseScenario, actionId: string, isInArrest = false
   if (actionId === 'lips-inspect') {
     const appearance = `${caseData.initialPresentation?.appearance || ''} ${caseData.initialPresentation?.generalImpression || ''}`.toLowerCase();
     const mouth = ss?.headDetailed?.mouth || [];
-    const matched = mouth.filter(f => /lip|cyan|pale|dry|mucosa|dehydrat/.test(f.toLowerCase()));
-    if (matched.length) return matched.join('. ');
+    const oxygenation = getOxygenationAppearanceFinding(liveVitals);
+    // Live oxygenation replaces stale authored colour words after treatment,
+    // while structural mouth findings (dryness, burns, swelling) remain true.
+    const matched = mouth.filter(f => {
+      const text = f.toLowerCase();
+      if (liveVitals && /cyan|blue|dusky|pink|pale|colour|color/.test(text)) return false;
+      return /lip|cyan|pale|dry|mucosa|dehydrat|burn|swelling|laceration/.test(text);
+    });
+    if (oxygenation || matched.length) {
+      return [oxygenation?.value, ...matched].filter(Boolean).join(' ');
+    }
     if (appearance.includes('cyan')) return 'Lips cyanotic with bluish discoloration — correlate with SpO2 and work of breathing.';
     if (appearance.includes('pale')) return 'Lips pale. Oral mucosa appears less perfused.';
     return 'Lips pink. No cyanosis, swelling, burns, or laceration.';
@@ -5361,7 +5520,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
       }
     }
 
-    const finding = getFinding(caseData, actionId, isInArrest);
+    const finding = getFinding(caseData, actionId, isInArrest, effectiveVitals);
     const reaction = getPatientReaction(caseData, activeRegion, actionId, finding, revealedFindings);
     if (reactionTimerRef.current !== null) {
       window.clearTimeout(reactionTimerRef.current);
@@ -5448,7 +5607,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
       playPercussionSound(percType);
       startSoundProgress(actionId, PERCUSSION_DURATION);
     }
-  }, [activeRegion, animateCamera, bayStage, caseData, patientMobility, patientPosture, patientScale, patientSounds, patientVoice, revealedFindings, startSoundProgress, isInArrest, surfaceSampler, treatmentBayOverviewEnabled]);
+  }, [activeRegion, animateCamera, bayStage, caseData, effectiveVitals, patientMobility, patientPosture, patientScale, patientSounds, patientVoice, revealedFindings, startSoundProgress, isInArrest, surfaceSampler, treatmentBayOverviewEnabled]);
   const handleExamActionRef = useRef(handleExamAction);
   handleExamActionRef.current = handleExamAction;
 
