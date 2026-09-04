@@ -42,12 +42,12 @@ describe('skinTint functions', () => {
 describe('cyanosis vertex predicates', () => {
   describe('isCyanoticLipVertex', () => {
     it('matches lip band measured from patient-male.glb', () => {
-      expect(isCyanoticLipVertex(0, 1.57, 0.16)).toBe(true);
-      expect(isCyanoticLipVertex(0.05, 1.58, 0.15)).toBe(true);
-      expect(isCyanoticLipVertex(0.06, 1.57, 0.16)).toBe(false);
-      expect(isCyanoticLipVertex(0, 1.55, 0.16)).toBe(false);
-      expect(isCyanoticLipVertex(0, 1.60, 0.16)).toBe(false);
-      expect(isCyanoticLipVertex(0, 1.57, 0.07)).toBe(false);
+      expect(isCyanoticLipVertex(0, 1.545, 0.15)).toBe(true);
+      expect(isCyanoticLipVertex(0.05, 1.54, 0.14)).toBe(true);
+      expect(isCyanoticLipVertex(0.06, 1.545, 0.15)).toBe(false);
+      expect(isCyanoticLipVertex(0, 1.53, 0.15)).toBe(false);
+      expect(isCyanoticLipVertex(0, 1.56, 0.15)).toBe(false);
+      expect(isCyanoticLipVertex(0, 1.545, 0.11)).toBe(false);
     });
   });
 
@@ -71,15 +71,15 @@ describe('cyanosis vertex predicates', () => {
 
   describe('isCyanoticNailPlateSample', () => {
     it('keeps dorsal high-V nail plate and rejects pad-facing / mid-finger UV', () => {
-      // dorsal nail plate (probe: V≳0.945, nz≳0.15)
+      // dorsal nail plate (probe: V≳0.975, nz≳0.65)
       expect(isCyanoticNailPlateSample(0.98, 0.78)).toBe(true);
-      expect(isCyanoticNailPlateSample(0.945, 0.15)).toBe(true);
+      expect(isCyanoticNailPlateSample(0.975, 0.65)).toBe(true);
       // pad-facing tip flesh shares high V but negative/near-zero nz
       expect(isCyanoticNailPlateSample(0.98, -0.4)).toBe(false);
-      expect(isCyanoticNailPlateSample(0.97, 0.05)).toBe(false);
+      expect(isCyanoticNailPlateSample(0.98, 0.6)).toBe(false);
       // mid-finger / lower tip UV even with dorsal normal
-      expect(isCyanoticNailPlateSample(0.935, 0.8)).toBe(false);
-      expect(isCyanoticNailPlateSample(0.94, 0.8)).toBe(false);
+      expect(isCyanoticNailPlateSample(0.97, 0.8)).toBe(false);
+      expect(isCyanoticNailPlateSample(0.974, 0.8)).toBe(false);
     });
   });
 });

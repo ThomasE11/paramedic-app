@@ -23,6 +23,27 @@ interface Blotch {
   alpha: number;
 }
 
+export type CyanosisSite = 'lip' | 'nail';
+
+/**
+ * Perceptual tuning for the two clinically useful cyanosis sites.
+ *
+ * A linear, low-alpha wash was technically present in the atlas but disappeared
+ * under the warm skin texture and scene lighting. The eased curve makes moderate
+ * hypoxia readable at examination distance while still fading continuously to
+ * zero as oxygenation recovers. Nail marks remain a little smaller and lighter
+ * so the distal pads do not look bruised.
+ */
+export function getCyanosisBlotchAppearance(site: CyanosisSite, strength: number) {
+  const scaled = Math.min(1, Math.max(0, strength));
+  const eased = Math.pow(scaled, 0.72);
+  const alphaCap = site === 'lip' ? 0.58 : 0.56;
+  return {
+    radiusScale: site === 'lip' ? 0.0042 : 0.0024,
+    alpha: alphaCap * eased,
+  };
+}
+
 function legWeight(h: number): number {
   if (h >= 0.55) return 0;
   const base = (0.55 - h) / 0.55;
@@ -123,7 +144,11 @@ export function buildMottledTextures(body: THREE.Mesh): MottleTwin | null {
  *  Coordinates are geometry-local (the GLB attribute), not world /
  *  presentation-rotated. Y=0 feet, Y≈1.73 crown, +Z faces camera. */
 export function isCyanoticLipVertex(x: number, y: number, z: number): boolean {
-  return y >= 1.56 && y <= 1.59 && Math.abs(x) < 0.06 && z >= 0.08;
+  // Measured against the rendered patient-male.glb rather than the face's
+  // overall Y band: 1.535–1.555 projects onto the vermilion border. The old
+  // 1.56–1.59 range sits across the philtrum, nostrils and upper cheeks, which
+  // made any clinically legible tint look like facial bruising.
+  return y >= 1.535 && y <= 1.555 && Math.abs(x) < 0.055 && z >= 0.12;
 }
 
 export function isCyanoticNailVertex(x: number, y: number, z: number): boolean {
@@ -139,11 +164,11 @@ export function isCyanoticNailVertex(x: number, y: number, z: number): boolean {
 }
 
 /** Nail-plate UV/normal gate on distal tip verts.
- *  Tip islands share high V for both nail and pad; pad-facing verts have
- *  negative/near-zero geometry-local normal.z while dorsal nail plates sit
- *  at nz≳0.15 and V≳0.945 (probe nail-plate-uv-normal-probe.json). */
+ *  Tip islands share high V for both nail and pad; the actual dorsal plates
+ *  occupy the narrow V≥0.975 / normal.z≥0.65 cap. The looser historical gate
+ *  reached the distal phalanx and made hypoxia resemble fingertip bruising. */
 export function isCyanoticNailPlateSample(uvV: number, normalZ: number): boolean {
-  return uvV >= 0.945 && normalZ >= 0.15;
+  return uvV >= 0.975 && normalZ >= 0.65;
 }
 
 /** Local cyanosis (lips + nailbeds). */
@@ -172,8 +197,7 @@ export function buildCyanosisLocalTwin(
     const flipY = openTex.flipY;
 
     // Geometry-local: presentation rotation lives on the group, not the
-    // attribute. World/root-inverse puts the mouth at z≈0.02 and the
-    // original lip band (z>=0.08) never fires.
+    // position attribute, so these gates must stay in the source mesh frame.
     // NAILS: full-resolution scan (no stride). Distal fingertip islands are
     // dense on the atlas; stride sampling thinned them and made gameplay
     // nailbed cyanosis unreadable at exam zoom.
@@ -206,13 +230,12 @@ export function buildCyanosisLocalTwin(
         if (nailKeys.has(key)) continue;
         nailKeys.add(key);
       }
-      // Dense lip UVs need small marks. The previous 1.8%-of-atlas radius
-      // caused hundreds of overlapping discs to spread over the moustache and
-      // chin area. Nail marks stay inside the dorsal nail-plate island and
-      // scale with the live hypoxia channel without flooding the finger pad.
-      const r = Math.max(3, (isLip ? 0.0045 : 0.0028) * tw);
-      const scaledStrength = Math.min(1, Math.max(0, strength));
-      blotches.push({ x: px, y: py, r, alpha: (isLip ? 0.38 : 0.48) * scaledStrength });
+      // Dense lip UVs need small marks so the vermilion edge remains soft.
+      // Nail marks stay inside the dorsal nail-plate island and scale with the
+      // live hypoxia channel without flooding the distal finger pad.
+      const appearance = getCyanosisBlotchAppearance(isLip ? 'lip' : 'nail', strength);
+      const r = Math.max(3, appearance.radiusScale * tw);
+      blotches.push({ x: px, y: py, r, alpha: appearance.alpha });
     }
     if (blotches.length === 0) return null;
 
@@ -240,7 +263,7 @@ export function buildCyanosisLocalTwin(
       ctx.globalCompositeOperation = 'source-over';
       for (const b of blotches) {
         const g = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r);
-        const cyan = b.alpha > 0.5 ? 'rgba(96, 111, 128, ' : 'rgba(112, 126, 142, ';
+        const cyan = b.alpha > 0.5 ? 'rgba(72, 84, 116, ' : 'rgba(88, 102, 132, ';
         g.addColorStop(0, `${cyan}${b.alpha})`);
         g.addColorStop(0.6, `${cyan}${b.alpha * 0.5})`);
         g.addColorStop(1, 'rgba(255, 255, 255, 0)');
