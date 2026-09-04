@@ -279,6 +279,7 @@ export function generatePatientResponse(
 
   const dx = String(caseData.expectedFindings?.mostLikelyDiagnosis || '').toLowerCase();
 
+  const answer: string | null = (() => {
   switch (category) {
     case 'introduction':
       return hesitate(pick([
@@ -378,6 +379,15 @@ export function generatePatientResponse(
       const findingPain = caseData.abcde?.disability?.findings?.join(' ').match(/(\d+)\s*\/\s*10/)?.[1];
       const num = (typeof vitalsPain === 'number' ? String(vitalsPain) : undefined) ?? findingPain;
       if (num) return `It's about ${num} out of 10.`;
+      // Critical physiology is not evidence of pain. Severe asthma, stroke,
+      // hypoglycaemia, and syncope must not acquire an invented 8–9/10 score
+      // simply because the global response context is severe.
+      const diagnosisSuggestsPain = /pain|stemi|\bmi\b|angina|infarct|fracture|appendic|colic|biliary|renal|burn|scald|trauma|injur|dissection|periton|ischaem/.test(dx);
+      if (!diagnosisSuggestsPain) {
+        return ctx.breathless
+          ? `No pain... I just... can't get enough air.`
+          : pick([`No pain as such... I just feel very unwell.`, `No — it isn't pain. Something just feels wrong.`]);
+      }
       return ctx.severity === 'severe'
         ? pick([`Nine out of ten — it's the worst I've ever felt.`, `Easily an eight or nine. It's bad.`])
         : pick([`Maybe a four or five out of ten.`, `It's there but bearable — a three, four maybe.`]);
@@ -438,6 +448,17 @@ export function generatePatientResponse(
       // Generic re-prompts — randomised so it doesn't feel scripted
       return pick(PATIENT_REPROMPTS);
   }
+  return null;
+  })();
+
+  if (answer == null) return null;
+  // OPQRST / symptom paths historically returned full sentences. Severe asthma
+  // (and any breathless patient) must still fragment — Criterion 4 requires
+  // broken speech, not a fluent monologue while "unable to speak in sentences".
+  if (ctx.breathless && !/\.\.\./.test(answer)) {
+    return hesitate(answer);
+  }
+  return answer;
 }
 
 const PATIENT_REPROMPTS = [

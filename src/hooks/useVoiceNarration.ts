@@ -255,7 +255,14 @@ function startMouthLoop(): void {
       }
       const rms = Math.sqrt(sumSq / analyserData.length); // ~0..1
       // Scale up (speech RMS is small) and clamp, then EMA-smooth.
-      const target = Math.min(1, rms * 3.2);
+      // Gain is intentionally hot so jaw travel reads at conversational distance.
+      let target = Math.min(1, rms * 5.5);
+      // Autoplay / decode can leave the media element silent while
+      // globalIsSpeaking stays true — fall back to the syllabic envelope so
+      // viseme_open still animates in time with the "speaking" state.
+      if (target < 0.03) {
+        target = fallbackSpeechMouthTarget(performance.now() / 1000);
+      }
       globalMouthOpen += (target - globalMouthOpen) * 0.35;
     } else {
       globalMouthOpen += (0 - globalMouthOpen) * 0.35; // ease shut when idle

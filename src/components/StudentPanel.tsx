@@ -6513,11 +6513,11 @@ export function StudentPanel({
                       })();
                       if (stepId) handlePerformAssessment(stepId);
                     }}
-                    footer={(
+                    footer={(voiceApi) => (
                       // Pain severity (OPQRST "S") folded INTO history-taking —
                       // a compact row in the history card footer rather than a
-                      // separate card. Voice history can also set it when the
-                      // student asks the patient to rate their pain.
+                      // separate card. Asking MUST drive patient speech + jaw
+                      // (viseme_open) — silent score reveal failed Criterion 4.
                       <div className="border-t border-border/40 px-4 py-3">
                         <p className="mb-2 text-[9px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/60">Pain · OPQRST severity</p>
                         {(() => {
@@ -6536,6 +6536,15 @@ export function StudentPanel({
                               </p>
                             );
                           }
+                          if (revealed && p === undefined) {
+                            return (
+                              <p className="text-[11px] text-foreground/75">
+                                {voiceApi.responseContext.breathless
+                                  ? 'Patient too breathless to give a clear number — single words / gasping only.'
+                                  : 'Patient could not give a numeric pain score.'}
+                              </p>
+                            );
+                          }
                           if (!canSelfReport) {
                             return (
                               <p className="text-[11px] text-slate-300">
@@ -6546,11 +6555,14 @@ export function StudentPanel({
                           return (
                             <button
                               onClick={() => {
-                                if (readOnly) return;
-                                const reported = currentVitals?.painScore
-                                  ?? currentCase?.vitalSignsProgression?.initial?.painScore
-                                  ?? 0;
-                                setCurrentVitals(prev => prev ? { ...prev, painScore: reported } : prev);
+                                if (readOnly || !currentCase) return;
+                                const authored = currentVitals?.painScore
+                                  ?? currentCase.vitalSignsProgression?.initial?.painScore;
+                                // Full history pipeline: bubble + broken speech + viseme.
+                                voiceApi.askQuestion('What is your pain out of 10?');
+                                if (typeof authored === 'number') {
+                                  setCurrentVitals(prev => prev ? { ...prev, painScore: authored } : prev);
+                                }
                                 handlePerformAssessment('pain-assessment');
                               }}
                               className="w-full rounded-md border border-slate-200/60 dark:border-white/[0.06] bg-white/60 dark:bg-slate-900/40 px-3 py-2 text-[11px] font-medium text-foreground/75 transition-colors hover:border-primary/40 hover:text-foreground touch-manipulation"

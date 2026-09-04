@@ -1588,7 +1588,10 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
       let found: THREE.Mesh | null = null;
       clonedScene.traverse((o) => {
         const m = o as THREE.Mesh;
-        if (!found && m.isMesh && m.morphTargetDictionary && m.morphTargetInfluences) found = m;
+        if (!(m.isMesh && m.morphTargetDictionary && m.morphTargetInfluences)) return;
+        // Prefer the Patient body mesh so lip-sync drives the face jaw, not a
+        // clothing/hair mesh that also inherited the same morph dictionary.
+        if (!found || m.name === 'Patient') found = m;
       });
       morphMeshRef.current = found;
       morphRootRef.current = clonedScene;

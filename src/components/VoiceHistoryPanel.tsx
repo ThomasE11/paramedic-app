@@ -39,6 +39,21 @@ import {
   type HistoryTurn,
 } from '@/lib/historyTaking';
 
+export interface VoiceHistoryFooterApi {
+  /** Speak a line as the patient (no-ops if they cannot vocalise). */
+  say: (text: string) => void;
+  /** Run the full history ask pipeline (classify → answer bubble → speak). */
+  askQuestion: (text: string) => void;
+  canVocalize: boolean;
+  isSpeaking: boolean;
+  /** Same severity/breathless context used for SAMPLE answers. */
+  responseContext: {
+    severity: "mild" | "severe";
+    altered: boolean;
+    breathless: boolean;
+  };
+}
+
 interface VoiceHistoryPanelProps {
   caseData: CaseScenario;
   /** Called whenever a new category is successfully obtained. Lets the
@@ -46,8 +61,9 @@ interface VoiceHistoryPanelProps {
   onCategoryObtained?: (category: HistoryCategory) => void;
   /** Optional content rendered inside the history card's footer — used to fold
    *  the pain-severity (OPQRST "S") control into history-taking rather than a
-   *  separate card. */
-  footer?: ReactNode;
+   *  separate card. May be a node or a render prop that receives patient-voice
+   *  helpers so the parent can drive jaw-synced speech (e.g. pain scale ask). */
+  footer?: ReactNode | ((api: VoiceHistoryFooterApi) => ReactNode);
 }
 
 export function VoiceHistoryPanel({ caseData, onCategoryObtained, footer }: VoiceHistoryPanelProps) {
@@ -70,12 +86,13 @@ export function VoiceHistoryPanel({ caseData, onCategoryObtained, footer }: Voic
       caseData.initialPresentation?.appearance,
       caseData.abcde?.breathing?.findings?.join(' '),
     ].filter(Boolean).join(' ');
-    const severe = (typeof spo2 === 'number' && spo2 < 88)
+    const breathless = (typeof rr === 'number' && rr >= 28)
+      || (typeof spo2 === 'number' && spo2 < 92)
+      || /can't speak|unable to speak|single words|two[- ]word|tripod|severe (asthma|dyspn)|gasping/i.test(appearance);
+    const severe = breathless
+      || (typeof spo2 === 'number' && spo2 < 92)
       || (typeof gcs === 'number' && gcs >= 9 && gcs <= 12)
       || (typeof sbp === 'number' && sbp < 90);
-    const breathless = (typeof rr === 'number' && rr >= 28)
-      || (typeof spo2 === 'number' && spo2 < 90)
-      || /can't speak|unable to speak|single words|two[- ]word|tripod|severe (asthma|dyspn)|gasping/i.test(appearance);
     return {
       severity: (severe ? 'severe' : 'mild') as 'severe' | 'mild',
       altered: typeof gcs === 'number' && gcs >= 9 && gcs <= 12,
@@ -373,7 +390,15 @@ export function VoiceHistoryPanel({ caseData, onCategoryObtained, footer }: Voic
           </div>
         )}
 
-        {footer}
+        {typeof footer === 'function'
+          ? footer({
+              say: patientVoice.say,
+              askQuestion: processQuestion,
+              canVocalize: patientVoice.canVocalize,
+              isSpeaking: patientVoice.isSpeaking,
+              responseContext,
+            })
+          : footer}
       </CardContent>
     </Card>
   );

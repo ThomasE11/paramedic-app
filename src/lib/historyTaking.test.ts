@@ -74,4 +74,35 @@ describe('generatePatientResponse', () => {
     expect(answer).toMatch(/hello|hi|thank/i);
     expect(answer).not.toMatch(/can't\.\.\. talk/i);
   });
+
+  it('fragments OPQRST severity when breathless (severe asthma)', () => {
+    const answer = generatePatientResponse(fakeCase({
+      vitalSignsProgression: {
+        initial: { bp: '120/80', pulse: 100, respiration: 32, spo2: 88, gcs: 14, painScore: 8 },
+      },
+    } as Partial<CaseScenario>), 'opqrst-severity', {
+      severity: 'severe',
+      altered: false,
+      breathless: true,
+    });
+    expect(answer).toMatch(/\.\.\./);
+    expect(answer?.toLowerCase()).toMatch(/can't|breath|out of 10|nine|eight/);
+  });
+
+  it('does not invent a pain score for severe asthma with no authored pain', () => {
+    const answer = generatePatientResponse(fakeCase({
+      expectedFindings: { mostLikelyDiagnosis: 'Life-threatening asthma' },
+      vitalSignsProgression: {
+        initial: { bp: '130/80', pulse: 120, respiration: 32, spo2: 88, gcs: 14 },
+      },
+    } as Partial<CaseScenario>), 'opqrst-severity', {
+      severity: 'severe',
+      altered: false,
+      breathless: true,
+    });
+
+    expect(answer).toMatch(/no pain/i);
+    expect(answer).toMatch(/\.\.\./);
+    expect(answer).not.toMatch(/eight|nine|\b[2-9]\s*out of 10/i);
+  });
 });
