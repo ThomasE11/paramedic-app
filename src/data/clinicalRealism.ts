@@ -42,6 +42,7 @@ export const TREATMENT_YEAR_ACCESS: Record<string, StudentYear[]> = {
   // ----- BREATHING (O2 devices — all years) -----
   oxygen_nasal:         ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
   oxygen_mask:          ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
+  oxygen_venturi:       ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
   oxygen_nonrebreather: ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma'],
 
   // ----- BREATHING (BVM — all years, core CPR skill taught in Year 1) -----
@@ -406,10 +407,16 @@ export const PATHOLOGY_MODIFIERS: Record<string, PathologyModifier[]> = {
   // --- COPD EXACERBATION ---
   'copd': [
     {
+      treatmentId: 'oxygen_venturi',
+      effectivenessMultiplier: 1.0,
+      spo2Ceiling: 92,
+      rationale: 'Fixed-performance Venturi oxygen supports oxygenation while preserving the acute COPD target of 88-92%.',
+    },
+    {
       treatmentId: 'oxygen_nonrebreather',
       effectivenessMultiplier: 0.5,
       spo2Ceiling: 92,
-      rationale: 'High-flow O2 in COPD risks abolishing hypoxic drive, causing CO2 retention and narcosis. Target 88-92%.',
+      rationale: 'Uncontrolled high-concentration oxygen can worsen hypercapnia in COPD through V/Q mismatch and the Haldane effect. Target 88-92%.',
     },
     {
       treatmentId: 'oxygen_mask',
@@ -1128,13 +1135,13 @@ export const CASE_DETERIORATION_TIMELINES: Record<string, DeteriorationStage[]> 
       triggerMinutes: 5,
       vitalChanges: { respiration: 34, spo2: 75, pulse: 115 },
       clinicalSigns: 'Pursed lip breathing, barrel chest, prolonged expiration, use of accessory muscles',
-      driverTreatments: ['oxygen_nasal', 'oxygen_mask', 'nebulizer_salbutamol', 'nebulizer_ipratropium', 'hydrocortisone_200mg'],
+      driverTreatments: ['oxygen_venturi', 'nebulizer_salbutamol', 'nebulizer_ipratropium', 'hydrocortisone_200mg'],
     },
     {
       triggerMinutes: 12,
       vitalChanges: { respiration: 38, spo2: 70, pulse: 125, bpSystolicDelta: 10 },
       clinicalSigns: 'CO2 retention — drowsiness, confusion, flapping tremor (asterixis)',
-      driverTreatments: ['oxygen_nasal', 'oxygen_mask', 'nebulizer_salbutamol', 'nebulizer_ipratropium', 'hydrocortisone_200mg', 'bvm_ventilation', 'cpap_niv'],
+      driverTreatments: ['oxygen_venturi', 'nebulizer_salbutamol', 'nebulizer_ipratropium', 'hydrocortisone_200mg', 'bvm_ventilation', 'cpap_niv'],
       isCritical: true,
     },
     {
@@ -2603,7 +2610,7 @@ const TREATMENT_QUALITY_RULES: TreatmentQualityRule[] = [
       yearLevelNote: year === '1st-year'
         ? 'Oxygen management in COPD is a concept you will learn in Year 2. The key principle: some patients can be harmed by too much oxygen.'
         : year === '3rd-year' || year === '4th-year' || year === 'diploma'
-          ? 'You should know the target SpO2 for COPD patients (88-92%) and the pathophysiology of hypoxic drive. This is a critical knowledge gap.'
+          ? 'You should know the target SpO2 for COPD patients (88-92%) and why uncontrolled oxygen can worsen hypercapnia. This is a critical knowledge gap.'
           : undefined,
     }),
   },
@@ -3582,7 +3589,7 @@ export function deriveAppliedTreatmentRealismCues(
     ));
   }
 
-  if (hasAnyId(ids, ['oxygen_nasal', 'oxygen_mask', 'oxygen_nonrebreather'])) {
+  if (hasAnyId(ids, ['oxygen_nasal', 'oxygen_mask', 'oxygen_venturi', 'oxygen_nonrebreather'])) {
     cues.push(makeTreatmentCue(
       'oxygen-visible',
       'Oxygen connected',

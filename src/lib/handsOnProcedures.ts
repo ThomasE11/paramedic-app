@@ -398,24 +398,25 @@ export function getHandsOnProcedurePlan(
     };
   }
 
-  if (treatmentId === 'oxygen_nonrebreather' || treatmentId === 'oxygen_mask' || treatmentId === 'oxygen_nasal') {
+  if (treatmentId === 'oxygen_nonrebreather' || treatmentId === 'oxygen_mask' || treatmentId === 'oxygen_nasal' || treatmentId === 'oxygen_venturi') {
     const nonRebreather = treatmentId === 'oxygen_nonrebreather';
     const nasal = treatmentId === 'oxygen_nasal';
+    const venturi = treatmentId === 'oxygen_venturi';
     return {
       id: `oxygen-${treatmentId}`,
-      title: nasal ? 'Apply nasal cannula' : nonRebreather ? 'Apply non-rebreather mask' : 'Apply oxygen mask',
-      subtitle: 'Oxygen delivery requires a connected supply, selected flow and a fitted interface.',
+      title: nasal ? 'Apply nasal cannula' : nonRebreather ? 'Apply non-rebreather mask' : venturi ? 'Apply 28% Venturi mask' : 'Apply oxygen mask',
+      subtitle: venturi ? 'Controlled oxygen requires the prescribed Venturi valve, exact driving flow and an 88–92% target.' : 'Oxygen delivery requires a connected supply, selected flow and a fitted interface.',
       treatmentId,
       requiresTarget: false,
       targets: [],
       equipmentAsset: nasal ? '/equipment-assets/nasal-cannula.webp' : nonRebreather ? '/equipment-assets/nonrebreather-mask-v2.webp' : '/equipment-assets/oxygen-mask-front.webp',
-      completionLabel: 'Oxygen running — reassess SpO₂',
+      completionLabel: venturi ? 'Controlled O₂ running — target 88–92%' : 'Oxygen running — reassess SpO₂',
       steps: [
-        STEP('connect', 'Connect oxygen tubing', 'Attach tubing to the regulator outlet and open the cylinder.', 'Confirm adequate cylinder pressure and listen for flow.', 'connect'),
+        STEP('connect', venturi ? 'Select valve and connect oxygen' : 'Connect oxygen tubing', venturi ? 'Select the prescribed 28% Venturi valve, attach the tubing to the regulator outlet and open the cylinder.' : 'Attach tubing to the regulator outlet and open the cylinder.', venturi ? 'Verify the valve percentage and the manufacturer flow printed on it before use.' : 'Confirm adequate cylinder pressure and listen for flow.', 'connect'),
         ...(nonRebreather ? [STEP('reservoir', 'Pre-inflate reservoir', 'Set 10–15 L/min and occlude the valve until the reservoir fills.', 'Never place a collapsed reservoir mask on the patient.', 'ventilate', 1100)] : []),
-        STEP('apply', nasal ? 'Position the prongs' : 'Seat the mask', nasal ? 'Insert prongs in the nares and route tubing over the ears.' : 'Place over nose and mouth, then position the elastic strap.', 'Check comfort, seal and skin pressure points.', 'place'),
-        STEP('flow', 'Set prescribed flow', nasal ? 'Set 2–6 L/min according to target saturation.' : nonRebreather ? 'Maintain 10–15 L/min so the bag stays inflated during inspiration.' : 'Set 6–10 L/min to prevent CO₂ rebreathing.', 'Use the case-specific SpO₂ target; avoid uncontrolled oxygen in known CO₂ retainers.', 'connect'),
-        STEP('confirm', 'Confirm response', 'Observe chest movement, work of breathing, SpO₂ trend and patient tolerance.', 'A number improving does not replace reassessment of the patient.', 'confirm'),
+        STEP('apply', nasal ? 'Position the prongs' : 'Seat the mask', nasal ? 'Insert prongs in the nares and route tubing over the ears.' : venturi ? 'Place the mask over nose and mouth, secure the strap and keep both entrainment ports unobstructed.' : 'Place over nose and mouth, then position the elastic strap.', venturi ? 'Clothing, bedding and the patient’s hand must not cover the Venturi ports.' : 'Check comfort, seal and skin pressure points.', 'place'),
+        STEP('flow', 'Set prescribed flow', nasal ? 'Set 2–6 L/min according to target saturation.' : nonRebreather ? 'Maintain 10–15 L/min so the bag stays inflated during inspiration.' : venturi ? 'Set the exact minimum flow printed on the 28% valve; do not estimate FiO₂ by turning the flow down.' : 'Set 6–10 L/min to prevent CO₂ rebreathing.', venturi ? 'Titrate the device to an SpO₂ target of 88–92%; do not substitute uncontrolled high-flow oxygen.' : 'Use the case-specific SpO₂ target; avoid uncontrolled oxygen in known CO₂ retainers.', 'connect'),
+        STEP('confirm', 'Confirm response', venturi ? 'Trend SpO₂ toward 88–92% and reassess work of breathing, respiratory rate, mental status and signs of CO₂ retention.' : 'Observe chest movement, work of breathing, SpO₂ trend and patient tolerance.', venturi ? 'Escalate ventilatory support for fatigue or falling consciousness; do not chase a normal 98% saturation.' : 'A number improving does not replace reassessment of the patient.', 'confirm'),
       ],
     };
   }
@@ -985,7 +986,7 @@ export function getHandsOnProcedurePlan(
 }
 
 const HANDS_ON_TREATMENTS = new Set([
-  'aed', 'monitor_pads', 'airway_open', 'bleeding_control', 'tourniquet', 'oxygen_nonrebreather', 'oxygen_mask', 'oxygen_nasal',
+  'aed', 'monitor_pads', 'airway_open', 'bleeding_control', 'tourniquet', 'oxygen_nonrebreather', 'oxygen_mask', 'oxygen_nasal', 'oxygen_venturi',
   'intubation', 'rsi_intubation', 'bvm_ventilation', 'suction', 'opa_insert', 'nebulizer_salbutamol',
   'nebulizer_ipratropium', 'nebulised_adrenaline', 'cpap_niv', 'iv_access', 'io_access', 'chest_seal_vented', 'vented_chest_seal',
   'occlusive_dressing_3sided', 'needle_decompression', 'splinting', 'sam_splint', 'box_splint',

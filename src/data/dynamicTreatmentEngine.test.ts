@@ -116,6 +116,25 @@ describe('applyDynamicTreatment — oxygen therapy', () => {
     expect(response.vitalChanges.find(c => c.vital === 'SpO2')?.direction).toBe('improved');
   });
 
+  it('keeps controlled Venturi oxygen at or below the COPD target without high-flow harm', () => {
+    const copdCase = makeCase({
+      title: 'COPD exacerbation',
+      category: 'respiratory',
+      subcategory: 'copd',
+      vitalSignsProgression: { initial: vitals({ spo2: 89, pulse: 105, respiration: 28 }) },
+    });
+    const state = createInitialPatientState(copdCase);
+    const { newState, response } = applyDynamicTreatment(getTreatment('oxygen_venturi'), state, copdCase);
+
+    expect(newState.vitals.spo2).toBeGreaterThanOrEqual(89);
+    expect(newState.vitals.spo2).toBeLessThanOrEqual(92);
+    expect(newState.vitals.respiration).toBeGreaterThanOrEqual(26);
+    expect(response.warningMessage ?? '').not.toMatch(/high-flow|contraindicated|hypoxic drive/i);
+
+    const bronchodilator = applyDynamicTreatment(getTreatment('nebulizer_salbutamol'), newState, copdCase);
+    expect(bronchodilator.newState.vitals.spo2).toBe(92);
+  });
+
   it('an "increase" effect never LOWERS SpO2 when already above the cap', () => {
     const satCase = makeCase({
       vitalSignsProgression: { initial: vitals({ spo2: 99 }) },

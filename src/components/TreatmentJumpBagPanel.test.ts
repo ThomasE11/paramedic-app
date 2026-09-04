@@ -19,10 +19,13 @@ describe('treatment jump-bag routing', () => {
 
   it('routes oxygen and nebulisers to the Breathing bag for find→bag→treat', () => {
     const nrb = TREATMENTS.find(item => item.id === 'oxygen_nonrebreather');
+    const venturi = TREATMENTS.find(item => item.id === 'oxygen_venturi');
     const neb = TREATMENTS.find(item => item.id === 'nebulizer_salbutamol');
     expect(nrb).toBeDefined();
+    expect(venturi).toBeDefined();
     expect(neb).toBeDefined();
     expect(bagKeyForTreatment(nrb!)).toBe('breathing');
+    expect(bagKeyForTreatment(venturi!)).toBe('breathing');
     expect(bagKeyForTreatment(neb!)).toBe('breathing');
   });
 
@@ -225,6 +228,31 @@ describe('initial treatment-kit recommendation', () => {
     ]);
     expect(suggestedTreatmentIdsForCase(asthma, asthma.vitalSignsProgression.initial)).not.toContain('adrenaline_im');
     expect(suggestedTreatmentIdsForCase(asthma, asthma.vitalSignsProgression.initial)).not.toContain('cpap_niv');
+  });
+
+  it('recommends controlled Venturi oxygen for COPD instead of an NRB', () => {
+    const copd = caseFor({
+      title: 'COPD exacerbation',
+      category: 'respiratory',
+      subcategory: 'copd',
+      initialPresentation: {
+        generalImpression: 'Barrel chest with severe breathlessness',
+        position: 'Tripod',
+        appearance: 'Cyanosed with pursed-lip breathing',
+        consciousness: 'Alert',
+      },
+      vitalSignsProgression: { initial: { bp: '150/85', pulse: 105, respiration: 28, spo2: 85, gcs: 15 } },
+      managementPathway: {
+        immediate: ['Controlled oxygen 24–28% via Venturi mask targeting SpO2 88–92%', 'Nebulized salbutamol'],
+        definitive: [],
+        monitoring: ['Watch for CO2 retention'],
+      },
+    });
+
+    const suggested = suggestedTreatmentIdsForCase(copd, copd.vitalSignsProgression.initial);
+    expect(suggested).toContain('oxygen_venturi');
+    expect(suggested).toContain('nebulizer_salbutamol');
+    expect(suggested).not.toContain('oxygen_nonrebreather');
   });
 
   it('still promotes IM adrenaline when anaphylaxis is the active presentation', () => {

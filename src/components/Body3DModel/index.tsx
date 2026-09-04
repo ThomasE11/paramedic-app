@@ -1136,6 +1136,7 @@ const OXYGEN_VISUAL_PRIORITY: Array<{
   { ids: ['cpap_niv'], mode: 'cpap', label: 'CPAP mask', detail: 'Strapped mask with pressure circuit' },
   { ids: ['nebulizer_salbutamol', 'nebulizer_ipratropium', 'nebulised_adrenaline'], mode: 'nebulizer', label: 'Nebulizer mask', detail: 'Aerosol chamber attached to mask' },
   { ids: ['oxygen_nonrebreather'], mode: 'nonrebreather', label: 'Non-rebreather', detail: 'Reservoir mask with high-flow oxygen' },
+  { ids: ['oxygen_venturi'], mode: 'simple-mask', label: 'Venturi mask · 28%', detail: 'Controlled oxygen targeting SpO₂ 88–92%' },
   { ids: ['oxygen_mask'], mode: 'simple-mask', label: 'Simple oxygen mask', detail: 'Mask and oxygen tubing connected' },
   { ids: ['oxygen_nasal'], mode: 'nasal', label: 'Nasal cannula', detail: 'Nasal prongs and tubing fitted' },
 ];

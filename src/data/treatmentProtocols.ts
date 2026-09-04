@@ -399,8 +399,8 @@ export const TREATMENT_PROTOCOLS: TreatmentProtocol[] = [
           additionalSounds: ['Productive cough', 'Barrel chest', 'Pursed lip breathing'],
           description: 'Bilateral rhonchi with poor air entry at bases. Barrel chest noted. Pursed lip breathing.',
         },
-        essentialTreatments: ['nebulizer_salbutamol', 'oxygen_nasal'],
-        optimalTreatments: ['nebulizer_salbutamol', 'oxygen_nasal', 'nebulizer_ipratropium', 'fowlers_position'],
+        essentialTreatments: ['oxygen_venturi', 'nebulizer_salbutamol'],
+        optimalTreatments: ['oxygen_venturi', 'nebulizer_salbutamol', 'nebulizer_ipratropium', 'fowlers_position'],
         beneficialTreatments: ['reassurance', 'fowlers_position'],
         contraindicatedTreatments: [],
         deteriorationRate: 'slow',
@@ -442,10 +442,10 @@ export const TREATMENT_PROTOCOLS: TreatmentProtocol[] = [
           additionalSounds: ['Mixed wheeze and rhonchi', 'Accessory muscle use', 'Prolonged expiration', 'Pursed lip breathing'],
           description: 'Mixed wheeze and rhonchi bilaterally. Prolonged expiration with accessory muscle use. Poor air entry at bases.',
         },
-        essentialTreatments: ['nebulizer_salbutamol', 'nebulizer_ipratropium', 'oxygen_nasal'],
-        optimalTreatments: ['nebulizer_salbutamol', 'nebulizer_ipratropium', 'oxygen_nasal', 'hydrocortisone_200mg', 'fowlers_position', 'iv_access'],
+        essentialTreatments: ['oxygen_venturi', 'nebulizer_salbutamol', 'nebulizer_ipratropium'],
+        optimalTreatments: ['oxygen_venturi', 'nebulizer_salbutamol', 'nebulizer_ipratropium', 'hydrocortisone_200mg', 'fowlers_position', 'iv_access'],
         beneficialTreatments: ['reassurance', 'fowlers_position', 'iv_access'],
-        contraindicatedTreatments: ['oxygen_nonrebreather'], // Caution: high-flow O2 may suppress hypoxic drive in COPD
+        contraindicatedTreatments: ['oxygen_nonrebreather'], // Uncontrolled high-concentration O2 can worsen hypercapnia; target 88–92%.
         deteriorationRate: 'moderate',
         synergies: [
           {
@@ -491,8 +491,8 @@ export const TREATMENT_PROTOCOLS: TreatmentProtocol[] = [
           additionalSounds: ['Severely diminished air entry', 'Exhaustion', 'Cyanosis', 'CO2 narcosis risk'],
           description: 'Severely diminished air entry bilaterally with scattered wheeze. Patient tiring. Signs of CO2 retention.',
         },
-        essentialTreatments: ['nebulizer_salbutamol', 'nebulizer_ipratropium', 'oxygen_nasal', 'iv_access', 'hydrocortisone_200mg'],
-        optimalTreatments: ['nebulizer_salbutamol', 'nebulizer_ipratropium', 'oxygen_nasal', 'iv_access', 'hydrocortisone_200mg', 'cpap_niv', 'fowlers_position'],
+        essentialTreatments: ['oxygen_venturi', 'nebulizer_salbutamol', 'nebulizer_ipratropium', 'iv_access', 'hydrocortisone_200mg'],
+        optimalTreatments: ['oxygen_venturi', 'nebulizer_salbutamol', 'nebulizer_ipratropium', 'iv_access', 'hydrocortisone_200mg', 'cpap_niv', 'fowlers_position'],
         beneficialTreatments: ['cpap_niv', 'fowlers_position', 'reassurance'],
         contraindicatedTreatments: ['oxygen_nonrebreather', 'morphine_5mg', 'fentanyl_50mcg', 'midazolam_5mg'],
         deteriorationRate: 'fast',
@@ -540,8 +540,9 @@ export const TREATMENT_PROTOCOLS: TreatmentProtocol[] = [
           additionalSounds: ['No air movement', 'Obtunded', 'Cyanotic', 'Agonal breathing'],
           description: 'Absent breath sounds — complete respiratory failure. Patient obtunded. Prepare for intubation.',
         },
-        // NRB is contraindicated at moderate COPD (hypoxic drive risk) but in life-threatening respiratory failure,
-        // aggressive oxygenation takes priority — accept CO2 retention risk to prevent death from hypoxia
+        // NRB is inappropriate for routine controlled oxygen in COPD, but in
+        // life-threatening respiratory failure oxygenation and ventilation take
+        // priority over the longer-horizon hypercapnia risk.
         essentialTreatments: ['bvm_ventilation', 'oxygen_nonrebreather', 'iv_access', 'nebulizer_salbutamol', 'nebulizer_ipratropium', 'hydrocortisone_200mg'],
         optimalTreatments: ['bvm_ventilation', 'oxygen_nonrebreather', 'iv_access', 'nebulizer_salbutamol', 'nebulizer_ipratropium', 'hydrocortisone_200mg', 'intubation', 'adrenaline_im'],
         beneficialTreatments: ['intubation', 'cpap_niv', 'adrenaline_im'],

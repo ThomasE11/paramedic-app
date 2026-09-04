@@ -209,6 +209,22 @@ export const TREATMENTS: Treatment[] = [
     ],
   },
   {
+    id: 'oxygen_venturi',
+    name: 'Venturi Mask (28%)',
+    description: 'Controlled oxygen via fixed-performance Venturi mask — target SpO₂ 88–92% in COPD',
+    category: 'breathing',
+    onset: 'gradual',
+    onsetTimeSeconds: 10,
+    durationSeconds: 60,
+    icon: 'Droplets',
+    color: 'cyan',
+    effects: [
+      { vitalSign: 'spo2', changeType: 'increase', value: 6, minValue: 85, maxValue: 92 },
+      { vitalSign: 'respiration', changeType: 'decrease', value: 1, minValue: 12 },
+      { vitalSign: 'pulse', changeType: 'decrease', value: 4, minValue: 60 },
+    ],
+  },
+  {
     id: 'oxygen_mask',
     name: 'Simple Face Mask',
     description: 'Medium-flow oxygen (6-10L/min)',

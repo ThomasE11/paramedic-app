@@ -365,6 +365,19 @@ function applyBeneficialResponseCeiling(
 ): void {
   if (state.isInArrest || response.criticalEvent?.type === 'adverse-reaction') return;
 
+  // While fixed-performance oxygen is running in an acute COPD pathway, later
+  // bronchodilator and positioning effects must not silently drive the monitor
+  // beyond the prescribed 88–92% range. This also makes treatment order
+  // clinically meaningful: oxygen is established first, then adjuncts are
+  // layered on while its target remains active.
+  if ((state.treatmentCounts.oxygen_venturi ?? 0) > 0
+    && vitalsBefore.spo2 <= 92
+    && state.vitals.spo2 > 92) {
+    state.vitals.spo2 = 92;
+    const spo2Change = response.vitalChanges.find(change => change.vital === 'SpO2');
+    if (spo2Change) spo2Change.newValue = '92%';
+  }
+
   const targetBP = caseData.vitalSignsProgression.afterIntervention?.bp;
   if (!targetBP || !treatment.effects.some(effect => effect.vitalSign === 'bp' && effect.changeType === 'increase')) return;
 
@@ -1581,8 +1594,9 @@ function applyCrossSystemPhysiology(
     warnings.push(`Fluid bolus in heart failure — SpO2 dropped from ${oldSpO2}% to ${vitals.spo2}% as you've pushed the patient into worsening pulmonary oedema. Avoid IV fluids in CHF unless hypotensive.`);
   }
 
-  // --- 2. HIGH-FLOW OXYGEN IN COPD ---
-  // 100% O2 in a hypercapnic COPD patient can drop respiratory drive (CO2 retention)
+  // --- 2. UNCONTROLLED HIGH-CONCENTRATION OXYGEN IN COPD ---
+  // Excess oxygen can worsen hypercapnia through V/Q mismatch and the Haldane
+  // effect. Keep fixed-performance Venturi oxygen out of this adverse branch.
   // Real treatment IDs from enhancedTreatmentEffects.ts — the earlier
   // `oxygen_15l`/`oxygen_nrb` names don't exist and the high-flow COPD
   // adverse-event branch never fired.
@@ -1592,7 +1606,7 @@ function applyCrossSystemPhysiology(
     const oldRR = vitals.respiration;
     vitals.respiration = Math.max(8, vitals.respiration - 2);
     vitals.gcs = Math.max(10, (vitals.gcs ?? 15) - 1);
-    warnings.push(`High-flow O2 in COPD — respiratory rate dropped from ${oldRR} to ${vitals.respiration} as CO2 retention reduces respiratory drive. Target SpO2 88-92% with controlled O2 (nasal cannula 2-4L or 28% Venturi).`);
+    warnings.push(`Uncontrolled oxygen in COPD — respiratory rate dropped from ${oldRR} to ${vitals.respiration} as hypercapnia worsened. Target SpO2 88–92% with a fixed-performance Venturi mask.`);
   }
 
   // --- 3. ADRENALINE IN INTACT CIRCULATION ---
@@ -1888,12 +1902,13 @@ function applyContraindicatedHarm(
     warnings.push(`${name} is contraindicated in ${conditionName} — SpO2 fell ${oldSpO2}→${vitals.spo2} as volume tipped the patient toward pulmonary oedema. Stop fluids and sit them up.`);
     return;
   }
-  // High-flow oxygen → loss of hypoxic drive in CO2 retainers
+  // Uncontrolled oxygen can worsen hypercapnia in CO2 retainers through V/Q
+  // mismatch and the Haldane effect. Venturi oxygen is intentionally excluded.
   if (id === 'oxygen_nonrebreather' || id === 'oxygen_mask') {
     const oldRR = vitals.respiration;
     vitals.respiration = Math.max(6, vitals.respiration - 3);
     vitals.gcs = Math.max(8, (vitals.gcs ?? 15) - 1);
-    warnings.push(`${name} is contraindicated in ${conditionName} — RR fell ${oldRR}→${vitals.respiration} from loss of hypoxic drive. Titrate to SpO2 88–92% with controlled O2.`);
+    warnings.push(`${name} is contraindicated in ${conditionName} — RR fell ${oldRR}→${vitals.respiration} as hypercapnia worsened. Titrate to SpO2 88–92% with fixed-performance Venturi oxygen.`);
     return;
   }
   // Supine positioning → worsens respiratory distress / aspiration risk

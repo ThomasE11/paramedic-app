@@ -144,6 +144,7 @@ export function generateNarrativeReport(inputs: NarrativeInputs): NarrativeRepor
     const o2 = appliedTreatmentIds.includes('oxygen_nonrebreather')
       || appliedTreatmentIds.includes('oxygen_mask')
       || appliedTreatmentIds.includes('oxygen_nasal')
+      || appliedTreatmentIds.includes('oxygen_venturi')
       || appliedTreatmentIds.includes('cpap_niv')
       || appliedTreatmentIds.includes('bvm_ventilation')
       || appliedTreatmentIds.includes('mechanical_ventilation');

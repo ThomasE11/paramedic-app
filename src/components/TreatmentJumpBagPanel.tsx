@@ -184,6 +184,7 @@ const CASE_PATHWAY_TREATMENTS: Array<{ pattern: RegExp; treatmentIds: string[] }
   { pattern: /\b(needle decompression|thoracostomy)\b/, treatmentIds: ['needle_decompression'] },
   { pattern: /\b(pericardiocentesis|pericardial drain)\b/, treatmentIds: ['pericardiocentesis'] },
   { pattern: /\b(chest seal|occlusive dressing)\b/, treatmentIds: ['chest_seal_vented'] },
+  { pattern: /\b(controlled oxygen|venturi(?: mask)?|target(?:ing)? spo2 88.?92%)\b/, treatmentIds: ['oxygen_venturi'] },
   { pattern: /\b(non[- ]?rebreather|high-flow oxygen)\b/, treatmentIds: ['oxygen_nonrebreather'] },
   { pattern: /\b(nebulis|nebuliz|salbutamol)\b/, treatmentIds: ['nebulizer_salbutamol'] },
   { pattern: /\b(ipratropium)\b/, treatmentIds: ['nebulizer_ipratropium'] },
@@ -243,10 +244,11 @@ export function suggestedTreatmentIdsForCase(
   ].filter(Boolean).join(' ').toLowerCase();
   const activeAnaphylaxis = /\b(anaphylaxis|anaphylactic|urticaria|hives|angioedema|allergic reaction|airway swelling|tongue swelling|facial swelling|widespread rash)\b/.test(presentationText);
   const cpapResponsivePresentation = /\b(copd|pulmonary oedema|pulmonary edema|acute heart failure|cardiogenic)\b/.test(presentationText);
+  const controlledOxygenPresentation = /\b(copd|chronic obstructive|type 2 respiratory failure|co2 retain|co₂ retain)\b/.test(presentationText);
   const add = (...nextIds: string[]) => {
     for (const id of nextIds) {
       if (['assist_delivery', 'paced_breathing'].includes(id) && appliedIds.includes(id)) continue;
-      if ((arrestPhysiology || ventilationRequired) && ['oxygen_nonrebreather', 'oxygen_mask', 'oxygen_nasal', 'cpap_niv'].includes(id)) continue;
+      if ((arrestPhysiology || ventilationRequired) && ['oxygen_nonrebreather', 'oxygen_mask', 'oxygen_nasal', 'oxygen_venturi', 'cpap_niv'].includes(id)) continue;
       if (arrestPhysiology && id.startsWith('fluids_')) continue;
       if (id === 'monitor_pads' && padsAttached) continue;
       if (id === 'cpr' && perfusingPulse) continue;
@@ -316,7 +318,8 @@ export function suggestedTreatmentIdsForCase(
   // so generic vital-sign rules do not displace case-specific first-line care.
   if (currentVitals) {
     const systolic = getSystolicFromBp(currentVitals.bp);
-    if (!arrestPhysiology && !ventilationRequired && currentVitals.spo2 < 90) add('oxygen_nonrebreather');
+    if (!arrestPhysiology && !ventilationRequired && controlledOxygenPresentation && currentVitals.spo2 < 92) add('oxygen_venturi');
+    else if (!arrestPhysiology && !ventilationRequired && currentVitals.spo2 < 90) add('oxygen_nonrebreather');
     else if (!arrestPhysiology && !ventilationRequired && currentVitals.spo2 < 94) add('oxygen_mask');
     if (currentVitals.respiration <= 8) add('bvm_ventilation');
     if (!arrestPhysiology && cpapResponsivePresentation && currentVitals.respiration >= 26 && currentVitals.spo2 < 94) add('cpap_niv');
@@ -549,6 +552,12 @@ function isLocalBurnCooling(treatment: Treatment, caseData: CaseScenario): boole
 }
 
 function treatmentPresentation(treatment: Treatment, caseData: CaseScenario): { name: string; description: string } {
+  if (treatment.id === 'oxygen_venturi') {
+    return {
+      name: 'Venturi Mask · 28%',
+      description: 'Controlled fixed-performance oxygen. Set the valve flow exactly and titrate to SpO₂ 88–92%.',
+    };
+  }
   if (isLocalBurnCooling(treatment, caseData)) {
     return {
       name: 'Burn Cooling & Dressing',
@@ -756,6 +765,7 @@ const BAG_EQUIPMENT: Record<ManagementTab, EquipmentInventoryItem[]> = {
   ],
   breathing: [
     { id: 'breathing-nasal', label: 'Nasal Cannula', caption: 'Low-flow oxygen', treatmentId: 'oxygen_nasal', assetPath: PRODUCT_ASSET_PATHS.nasal, tone: '#0ea5e9' },
+    { id: 'breathing-venturi', label: 'Venturi Mask 28%', caption: 'Controlled O₂ · target 88–92%', treatmentId: 'oxygen_venturi', assetPath: PRODUCT_ASSET_PATHS.simpleMask, tone: '#06b6d4' },
     { id: 'breathing-nrb', label: 'Non-rebreather', caption: 'High-flow oxygen', treatmentId: 'oxygen_nonrebreather', assetPath: PRODUCT_ASSET_PATHS.nonrebreather, tone: '#0284c7', wide: true },
     { id: 'breathing-bvm', label: 'BVM', caption: 'Ventilate poor effort', treatmentId: 'bvm_ventilation', assetPath: PRODUCT_ASSET_PATHS.bvm, tone: '#2563eb' },
     { id: 'breathing-neb', label: 'Nebuliser Mask', caption: 'Bronchodilator delivery', treatmentId: 'nebulizer_salbutamol', assetPath: PRODUCT_ASSET_PATHS.nebulizer, tone: '#06b6d4' },
@@ -836,6 +846,7 @@ function getProductMiniatureKind(treatment: Treatment): ProductMiniatureKind {
 function getProductMiniatureAsset(treatment: Treatment, kind: ProductMiniatureKind): string {
   const id = treatment.id.toLowerCase();
   if (id === 'oxygen_nasal') return PRODUCT_ASSET_PATHS.nasal;
+  if (id === 'oxygen_venturi') return PRODUCT_ASSET_PATHS.simpleMask;
   if (id === 'oxygen_nonrebreather') return PRODUCT_ASSET_PATHS.nonrebreather;
   if (id === 'oxygen_mask') return PRODUCT_ASSET_PATHS.simpleMask;
   if (id.includes('nebulizer') || id.includes('nebuliser')) return PRODUCT_ASSET_PATHS.nebulizer;

@@ -43,7 +43,7 @@ const TARGET_POSITION: Record<string, { left: string; top: string }> = {
 };
 
 const AIRWAY_PREVIEW_TREATMENTS = new Set([
-  'oxygen_nonrebreather', 'oxygen_mask', 'oxygen_nasal', 'bvm_ventilation',
+  'oxygen_nonrebreather', 'oxygen_mask', 'oxygen_nasal', 'oxygen_venturi', 'bvm_ventilation',
   'intubation', 'rsi_intubation', 'opa_insert', 'suction',
   'nebulizer_salbutamol', 'nebulizer_ipratropium', 'cpap_niv', 'ventilator_setup',
   'mechanical_ventilation', 'nebulised_adrenaline',
@@ -63,7 +63,7 @@ function AirwayProcedurePreview({
   if (!AIRWAY_PREVIEW_TREATMENTS.has(treatmentId)) return null;
 
   const reached = (...stepIds: string[]) => stepIds.some(id => completedSteps.includes(id) || animatingStep === id);
-  const oxygenInterface = ['oxygen_nonrebreather', 'oxygen_mask', 'oxygen_nasal'].includes(treatmentId);
+  const oxygenInterface = ['oxygen_nonrebreather', 'oxygen_mask', 'oxygen_nasal', 'oxygen_venturi'].includes(treatmentId);
   const bvm = treatmentId === 'bvm_ventilation';
   const intubation = treatmentId === 'intubation' || treatmentId === 'rsi_intubation';
   const opa = treatmentId === 'opa_insert';

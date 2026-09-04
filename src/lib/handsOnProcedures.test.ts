@@ -26,10 +26,21 @@ describe('hands-on treatment procedures', () => {
 
   it('uses the same front-facing oxygen interfaces shown on the patient', () => {
     expect(getHandsOnProcedurePlan('oxygen_mask', caseData)?.equipmentAsset).toBe('/equipment-assets/oxygen-mask-front.webp');
+    expect(getHandsOnProcedurePlan('oxygen_venturi', caseData)?.equipmentAsset).toBe('/equipment-assets/oxygen-mask-front.webp');
     expect(getHandsOnProcedurePlan('oxygen_nonrebreather', caseData)?.equipmentAsset).toBe('/equipment-assets/nonrebreather-mask-v2.webp');
     expect(getHandsOnProcedurePlan('nebulizer_salbutamol', caseData)?.equipmentAsset).toBe('/equipment-assets/nebulizer-mask-v2.webp');
     expect(getHandsOnProcedurePlan('bvm_ventilation', caseData)?.equipmentAsset).toBe('/equipment-assets/bvm-face-seal-v2.png');
     expect(getHandsOnProcedurePlan('cpap_niv', caseData)?.equipmentAsset).toBe('/equipment-assets/cpap-mask-front-v2.png');
+  });
+
+  it('teaches the fixed-performance Venturi workflow and COPD target', () => {
+    const plan = getHandsOnProcedurePlan('oxygen_venturi', caseData);
+    expect(plan?.title).toBe('Apply 28% Venturi mask');
+    expect(plan?.steps.map(step => step.id)).toEqual(['connect', 'apply', 'flow', 'confirm']);
+    expect(plan?.steps.map(step => `${step.instruction} ${step.clinicalCue}`).join(' ')).toMatch(/entrainment ports/i);
+    expect(plan?.steps.map(step => `${step.instruction} ${step.clinicalCue}`).join(' ')).toMatch(/88–92%/);
+    expect(plan?.completionLabel).toMatch(/target 88–92%/);
+    expect(isHandsOnTreatment('oxygen_venturi')).toBe(true);
   });
 
   it('prioritises the actual bleeding limb as the tourniquet target', () => {

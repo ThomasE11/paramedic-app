@@ -287,6 +287,7 @@ const HIGH_IMPACT_TREATMENT_CATEGORIES: Record<string, { label: string; prompt: 
   oxygen_nonrebreather:  { label: 'Oxygen',  prompt: 'Recheck RR, SpO2, work of breathing, and speech tolerance',  pendingNote: 'Oxygen applied — reassess SpO2 and work of breathing for full credit' },
   oxygen_mask:           { label: 'Oxygen',  prompt: 'Recheck RR, SpO2, work of breathing, and speech tolerance',  pendingNote: 'Oxygen applied — reassess SpO2 and work of breathing for full credit' },
   oxygen_nasal:          { label: 'Oxygen',  prompt: 'Recheck RR, SpO2, and nasal cannula tolerance',               pendingNote: 'Oxygen applied — reassess SpO2 for full credit' },
+  oxygen_venturi:        { label: 'Controlled oxygen', prompt: 'Recheck RR, SpO2 against the 88–92% target, mental status, and work of breathing', pendingNote: 'Venturi oxygen applied — reassess SpO2 and signs of CO2 retention for full credit' },
   nebulizer_salbutamol:  { label: 'Nebuliser', prompt: 'Recheck wheeze, air entry, RR, and SpO2',                   pendingNote: 'Nebuliser given — reassess wheeze and air entry for full credit' },
   nebulizer_ipratropium: { label: 'Nebuliser', prompt: 'Recheck wheeze, air entry, RR, and SpO2',                   pendingNote: 'Nebuliser given — reassess wheeze and air entry for full credit' },
   cpap_niv:              { label: 'CPAP/NIV', prompt: 'Recheck mask tolerance, SpO2, BP, and work of breathing',     pendingNote: 'CPAP applied — reassess tolerance and respiratory response for full credit' },

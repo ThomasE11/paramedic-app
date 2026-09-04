@@ -3973,7 +3973,7 @@ export const firstYearCases: CaseScenario[] = [
     },
     vitalSignsProgression: {
       initial: { bp: '148/86', pulse: 104, respiration: 26, spo2: 90, gcs: 15, temperature: 37.9 },
-      afterIntervention: { bp: '142/82', pulse: 108, respiration: 15, spo2: 93, gcs: 15, temperature: 37.9 },
+      afterIntervention: { bp: '142/82', pulse: 108, respiration: 18, spo2: 92, gcs: 15, temperature: 37.9 },
       deterioration: { bp: '160/94', pulse: 122, respiration: 8, spo2: 84, gcs: 12, temperature: 37.9 }
     },
     expectedFindings: {

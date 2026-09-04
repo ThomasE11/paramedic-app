@@ -909,6 +909,7 @@ const ROADMAP_BAGS = [
 const ROADMAP_EQUIPMENT_ASSETS: Record<string, string> = {
   oxygen_nasal: '/equipment-assets/nasal-cannula.webp',
   oxygen_mask: '/equipment-assets/oxygen-mask-front.webp',
+  oxygen_venturi: '/equipment-assets/oxygen-mask-front.webp',
   oxygen_nonrebreather: '/equipment-assets/nonrebreather-mask-v2.webp',
   nebulizer_salbutamol: '/equipment-assets/nebulizer-mask-v2.webp',
   bvm_ventilation: '/equipment-assets/bvm-face-seal-v2.png',
@@ -3178,6 +3179,7 @@ export function StudentPanel({
           appliedTreatmentIds.includes('oxygen_nonrebreather') ||
           appliedTreatmentIds.includes('oxygen_mask') ||
           appliedTreatmentIds.includes('oxygen_nasal') ||
+          appliedTreatmentIds.includes('oxygen_venturi') ||
           appliedTreatmentIds.includes('cpap_niv') ||
           appliedTreatmentIds.includes('bvm_ventilation') ||
           appliedTreatmentIds.includes('mechanical_ventilation') ||
@@ -3185,13 +3187,15 @@ export function StudentPanel({
         // CPAP/NIV physiologically reverses hypoxia faster than passive
         // O2 because it recruits alveoli — bump the per-tick step.
         const hasCpap = appliedTreatmentIds.includes('cpap_niv');
+        const hasControlledVenturi = appliedTreatmentIds.includes('oxygen_venturi');
 
         // SpO2 recovery toward target while O2 therapy is active. CPAP
         // climbs faster than simple O2 because it recruits collapsed
         // alveoli (cardiogenic pulm oedema, severe asthma, etc.).
         // Mechanical ventilation scales further with FiO2 + PEEP: 100%
         // FiO2 + 10 PEEP is a very different patient from 40% + 5.
-        if (hasO2 && (v.spo2 ?? 0) < 96) {
+        const oxygenTarget = hasControlledVenturi ? 92 : 98;
+        if (hasO2 && (v.spo2 ?? 0) < oxygenTarget) {
           let step = (v.spo2 ?? 70) < 92 ? 3 : 2;
           if (hasCpap) step += 2;
           // Mechanical ventilator bonus — scales with FiO2 and PEEP.
@@ -3200,7 +3204,7 @@ export function StudentPanel({
             const peepBonus = Math.max(0, (ventilatorSettings.peepCmH2O - 5) / 5);     // 0 at 5, 3 at 20
             step += Math.round(fio2Bonus + peepBonus);
           }
-          v.spo2 = Math.min(98, (v.spo2 ?? 70) + step);
+          v.spo2 = Math.min(oxygenTarget, (v.spo2 ?? 70) + step);
           changed = true;
         }
 
@@ -3587,7 +3591,7 @@ export function StudentPanel({
       const needsAdvancedAirway = gcs <= 8;
       const hasAdvancedAirway = appliedTreatmentIds.some(id => ['intubation', 'rsi_intubation', 'endotracheal_intubation', 'surgical_cric'].includes(id));
       const hasVentilationSupport = appliedTreatmentIds.some(id => ['bvm_ventilation', 'mechanical_ventilation', 'ventilator_setup'].includes(id));
-      const hasOxygenSupport = hasVentilationSupport || appliedTreatmentIds.some(id => ['oxygen_nasal', 'oxygen_mask', 'oxygen_nonrebreather'].includes(id));
+      const hasOxygenSupport = hasVentilationSupport || appliedTreatmentIds.some(id => ['oxygen_nasal', 'oxygen_mask', 'oxygen_venturi', 'oxygen_nonrebreather'].includes(id));
       const hasAccess = appliedTreatmentIds.includes('iv_access') || appliedTreatmentIds.includes('io_access');
       const missing: string[] = [];
       if (needsAdvancedAirway && !hasAdvancedAirway) missing.push('protect and confirm the airway');

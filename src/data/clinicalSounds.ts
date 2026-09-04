@@ -1003,6 +1003,7 @@ export function updateSoundsAfterTreatment(
 
     case 'oxygen_nonrebreather':
     case 'oxygen_mask':
+    case 'oxygen_venturi':
     case 'oxygen_nasal': {
       // Oxygen doesn't change lung sounds directly, but update description
       sounds.description = `${sounds.description} Supplemental oxygen applied.`;

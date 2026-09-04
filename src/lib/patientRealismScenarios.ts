@@ -502,7 +502,7 @@ function isVisualCleared(
 }
 
 const oxygenFaceAnchor: EquipmentAnchorSpec = {
-  treatmentIdFragments: ['oxygen_mask', 'oxygen_nonrebreather', 'nonrebreather', 'simple_mask'],
+  treatmentIdFragments: ['oxygen_mask', 'oxygen_venturi', 'oxygen_nonrebreather', 'nonrebreather', 'simple_mask'],
   region: 'face',
   appearance: 'Transparent oxygen mask sits over nose and mouth with tubing routed away from the eyes.',
   fitRule: 'Mask must seal around nose and mouth, leave eyes visible, and avoid covering neck landmarks.',

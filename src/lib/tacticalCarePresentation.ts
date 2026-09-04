@@ -27,6 +27,7 @@ const CONNECTED_TREATMENT_IDS = new Set([
   'nebulizer_salbutamol',
   'oxygen_mask',
   'oxygen_nasal',
+  'oxygen_venturi',
   'oxygen_nonrebreather',
   'targeted_temp_mgmt',
   'ventilator_setup',

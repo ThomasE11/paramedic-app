@@ -164,7 +164,7 @@ const RESCUE_IDS = [
 /** Supportive measures that partially improve the reaction. */
 const ADJUNCT_IDS = [
   'fluids_250ml', 'fluids_500ml', 'fluids_1000ml',
-  'oxygen_mask', 'oxygen_nonrebreather', 'oxygen_nasal',
+  'oxygen_mask', 'oxygen_nonrebreather', 'oxygen_nasal', 'oxygen_venturi',
   'nebulizer_salbutamol', 'salbutamol_iv', 'nebulised_adrenaline',
   'chlorphenamine_10mg', 'hydrocortisone_200mg',
 ];
