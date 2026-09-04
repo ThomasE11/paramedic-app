@@ -31,6 +31,7 @@ import {
   type PatientSupportSurface,
 } from '@/lib/patientStaging';
 import { deriveSceneEnvironment } from '@/lib/sceneEnvironment';
+import { cameraOrbitSafetyForEnvironment } from '@/lib/cameraOrbitSafety';
 import type { LimbSide, SurfaceSampler } from './BodyMesh';
 import { AdaptiveQuality, PatientPostEffects, qualityForTier } from './AdaptiveQuality';
 import { TreatmentBayEnvironment, CameraEntrance } from './Environment';
@@ -4643,7 +4644,6 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   const { t } = useTranslation();
   const controlsRef = useRef<OrbitControlsHandle | null>(null);
   const patientFrameRef = useRef<HTMLDivElement | null>(null);
-  const [isFlipped, setIsFlipped] = useState(false);
   // Surface projector emitted by BodyMesh once the patient mesh loads — used to
   // anchor every floating label/finding onto the real body surface (works for
   // the male, female, or any future GLB without per-model coordinate tuning).
@@ -4721,6 +4721,10 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   // Scene-contextual environment: villa cases render in a living room,
   // street cases at a roadside, mall cases in a public atrium.
   const bayVariant = useMemo(() => deriveSceneEnvironment(caseData), [caseData]);
+  const cameraOrbitSafety = useMemo(
+    () => cameraOrbitSafetyForEnvironment(bayVariant),
+    [bayVariant],
+  );
 
   // Region buttons may sit below the initial viewport. When selecting one
   // changes the patient panel from overview to the focused cockpit, preserve
@@ -5091,14 +5095,6 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   const requiredTotal = requiredRegions.size;
   const requiredDone = regionIds.filter(id => requiredRegions.has(id) && isRegionAssessed(id)).length;
 
-  const handleToggleView = useCallback(() => {
-    if (!controlsRef.current) return;
-    const targetAzimuth = isFlipped ? 0 : Math.PI;
-    controlsRef.current.setAzimuthalAngle(targetAzimuth);
-    controlsRef.current.update();
-    setIsFlipped(!isFlipped);
-  }, [isFlipped]);
-
   // Phase 2E: Consolidated close handler
   const handleCloseRegion = useCallback(() => {
     setActiveRegion(null);
@@ -5243,7 +5239,6 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
       const pos = fitCameraPos(controlsRef.current, target, dir, (REGION_RADIUS[stepId] ?? 0.28) * cameraScale);
       animateCamera(controlsRef.current, pos, target, 460);
     }
-    setIsFlipped(stepId === 'posterior-logroll');
   }, [onRegionClick, animateCamera, clearPatientReaction, anatomyLayer, bayStage, caseData, patientVoice, patientPosture, patientMobility, treatmentBayOverviewEnabled, patientScale]);
 
   // Phase 2F: Sound progress animation
@@ -6161,7 +6156,9 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 rotateSpeed={0.55}
                 zoomSpeed={0.65}
                 minDistance={activeRegion ? 0.7 : 2}
-                maxDistance={7}
+                maxDistance={cameraOrbitSafety.maxDistance}
+                minAzimuthAngle={cameraOrbitSafety.minAzimuthAngle}
+                maxAzimuthAngle={cameraOrbitSafety.maxAzimuthAngle}
                 minPolarAngle={Math.PI * 0.15}
                 maxPolarAngle={Math.PI * 0.85}
                 onStart={cancelCameraAnimation}
@@ -6328,7 +6325,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
       </div>
 
       {/* Controls + footer */}
-      <div className="flex items-center justify-between px-3 py-1.5 bg-white/50 dark:bg-black/20 border-t border-border/30">
+      <div className="relative z-30 flex items-center justify-between px-3 py-1.5 bg-white/50 dark:bg-black/20 border-t border-border/30">
         <p className="text-[9px] text-muted-foreground">
           {activeRegion
             ? 'Work inside the patient frame: choose a technique, watch the anatomy, then reassess.'
@@ -6345,27 +6342,10 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
             variant="secondary"
             size="sm"
             className="h-7 gap-1 text-[9px] rounded-lg"
-            onClick={() => {
-              handleRegionClick('posterior-logroll');
-              // Also flip to posterior view
-              if (controlsRef.current && !isFlipped) {
-                controlsRef.current.setAzimuthalAngle(Math.PI);
-                controlsRef.current.update();
-                setIsFlipped(true);
-              }
-            }}
+            onClick={() => handleRegionClick('posterior-logroll')}
           >
             <RotateCcw className="h-2.5 w-2.5" />
             Log Roll
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            className="h-7 gap-1 text-[9px] rounded-lg"
-            onClick={handleToggleView}
-          >
-            <RotateCcw className="h-2.5 w-2.5" />
-            {isFlipped ? 'Anterior' : 'Posterior'}
           </Button>
         </div>
       </div>
