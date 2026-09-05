@@ -52,3 +52,9 @@ ios/
 
 # Codegraph
 .codegraph/
+
+# One-off Playwright probes dumped at the repo root during debugging.
+# Real, reusable probes belong in scripts/ and are checked in there.
+/probe-*.mjs
+/record-*.mjs
+/analyse_*.py
