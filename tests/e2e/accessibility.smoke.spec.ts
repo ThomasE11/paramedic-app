@@ -82,3 +82,19 @@ test('mobile treatment header and monitor do not collide or clip', async ({ page
   expect(layout.monitorScrollWidth).toBeLessThanOrEqual(layout.monitorClientWidth + 1);
   expect(layout.monitorScrollHeight).toBeLessThanOrEqual(layout.monitorClientHeight + 1);
 });
+
+test('laptop monitor shortcut reveals an un-stretched complete device', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1276, height: 900 });
+  await page.goto('/?devLiveCase=resp-001');
+  const monitor = page.getByRole('region', { name: 'Vital signs monitor', exact: true });
+  await expect(monitor).toBeVisible({ timeout: 30_000 });
+  await page.getByRole('button', { name: 'View bedside monitor', exact: true }).click();
+  await expect.poll(() => monitor.evaluate(el => Math.abs(el.getBoundingClientRect().top))).toBeLessThan(2);
+  const box = (await monitor.boundingBox())!;
+  expect(box.width).toBeLessThanOrEqual(768);
+  expect(box.height).toBeGreaterThan(400);
+  expect(box.y + box.height).toBeLessThanOrEqual(900);
+  const overflow = await monitor.evaluate(el => el.scrollWidth - el.clientWidth);
+  expect(overflow).toBeLessThanOrEqual(1);
+  await page.screenshot({ path: testInfo.outputPath('laptop-bedside-monitor.png') });
+});

@@ -205,16 +205,16 @@ export function VoiceHistoryPanel({ caseData, currentVitals, isInArrest, applied
   const sampleCovered = SAMPLE_CATEGORIES.filter(c => obtained.has(c));
 
   return (
-    <Card className="border border-border/60 bg-card overflow-hidden" data-history-panel="true">
-      <CardHeader className="pb-3 border-b border-border/40">
-        <div className="flex items-center justify-between gap-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-500/15">
+    <Card className="min-w-0 w-full border border-border/60 bg-card overflow-hidden" data-history-panel="true">
+      <CardHeader className="p-3 border-b border-border/40">
+        <div className="flex min-w-0 flex-col items-start gap-3">
+          <CardTitle className="flex min-w-0 items-center gap-2 text-sm leading-snug">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-500/15">
               <MessageCircle className="h-4 w-4 text-blue-500" />
             </div>
             History Taking — {askTarget === 'bystander' && canAskBystander ? 'Ask a Bystander' : 'Ask the Patient'}
           </CardTitle>
-          <div className="flex items-center gap-2">
+          <div className="flex w-full flex-wrap items-center justify-between gap-2">
             {canAskBystander && (
               <div className="flex rounded-full border border-slate-600/80 p-0.5 text-[10px] font-semibold uppercase tracking-[0.12em]">
                 <button
@@ -364,7 +364,7 @@ export function VoiceHistoryPanel({ caseData, currentVitals, isInArrest, applied
         </div>
 
         {/* Mic + typed-input bar */}
-        <div className="px-4 py-3 flex items-center gap-2 bg-card">
+        <div className="px-3 py-3 flex min-w-0 flex-col items-stretch gap-2 bg-card">
           <Button
             onClick={() => {
               if (answerTimer.current) clearTimeout(answerTimer.current);
@@ -373,15 +373,16 @@ export function VoiceHistoryPanel({ caseData, currentVitals, isInArrest, applied
               voice.toggle();
             }}
             disabled={!voice.isSupported}
-            size="icon"
+            size="sm"
             variant={voice.isListening ? 'destructive' : 'default'}
-            className="rounded-full shrink-0 h-10 w-10"
+            className="rounded-full shrink-0 h-9 gap-2"
             title={voice.isSupported ? (voice.isListening ? 'Stop listening' : 'Ask by voice') : 'Mic not supported — type instead'}
           >
             {voice.isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+            {voice.isListening ? 'Stop listening' : 'Ask by voice'}
           </Button>
           <form
-            className="flex-1 flex items-center gap-2"
+            className="order-first flex min-w-0 w-full items-center gap-2"
             onSubmit={(e) => { e.preventDefault(); submitTyped(); }}
           >
             <input

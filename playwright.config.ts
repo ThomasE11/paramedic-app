@@ -10,6 +10,10 @@ export default defineConfig({
   use: {
     baseURL: 'http://localhost:5173',
     headless: true,
+    // macOS headless shell defaults to software WebGL. Use the native Metal
+    // renderer so full-quality patient/composer regressions exercise the same
+    // graphics path as the local app; other platforms keep their defaults.
+    launchOptions: { args: process.platform === 'darwin' ? ['--use-angle=metal'] : [] },
     viewport: { width: 1440, height: 960 },
     trace: 'retain-on-failure',
   },

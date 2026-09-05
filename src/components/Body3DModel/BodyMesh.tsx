@@ -28,6 +28,7 @@ import { buildMottledTextures, buildCyanosisLocalTwin } from './MottlingLayer';
 import { applyWoundsToTextures } from './WoundLayer';
 import { injuryRegionTo3D, type BodyInjury } from '@/lib/injuryMap';
 import { LifeSigns } from './LifeSigns';
+import { createFaceAttachment } from './patientAttachments';
 import { IdleAnimations, type IdleCues } from './IdleAnimations';
 import { setBreathClock } from '@/lib/breathClock';
 import {
@@ -197,6 +198,7 @@ interface BodyMeshProps {
    *  real body regardless of which GLB (male/female/future) is loaded. Emits
    *  null on unmount/model-swap. */
   onSurfaceSampler?: (sampler: SurfaceSampler | null) => void;
+  onFaceAttachment?: (frame: THREE.Group | null) => void;
   /** Dressed view on/off — shows the scrubs layer derived from this mesh (see ClothingLayer). */
   dressed?: boolean;
   /** Focused region id — the garment piece covering it parts so the skin can be assessed. */
@@ -840,7 +842,7 @@ function buildSurfaceSampler(root: THREE.Object3D | null, presentationRoot?: THR
   };
 }
 
-export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guidedMode = false, nextGuidedStep = null, onBlockedClick, onBodyPoint, bodyInjuries, patientGender, patientAge, surfaceOpacity = 1, activeFindingMorphs, breathRateRpm = 0, breathDepthFactor = 1, onSurfaceSampler, dressed = false, dressedActiveRegion = null, pupilLeftMm = 3.5, pupilRightMm = 3.5, skinTint = null, skinDiaphoretic = false, diaphoresis = 0, jaundice = 0, mottling = 0, unconscious = false, idleCues = null, reduceIdleMotion = false, presentation = 'upright', bayStage = 'stretcher', sss = false, posture = null, mobility = 'recumbent', mouthOpenRef = null, cyanosisLocalStrength = 0 }: BodyMeshProps) {
+export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guidedMode = false, nextGuidedStep = null, onBlockedClick, onBodyPoint, bodyInjuries, patientGender, patientAge, surfaceOpacity = 1, activeFindingMorphs, breathRateRpm = 0, breathDepthFactor = 1, onSurfaceSampler, onFaceAttachment, dressed = false, dressedActiveRegion = null, pupilLeftMm = 3.5, pupilRightMm = 3.5, skinTint = null, skinDiaphoretic = false, diaphoresis = 0, jaundice = 0, mottling = 0, unconscious = false, idleCues = null, reduceIdleMotion = false, presentation = 'upright', bayStage = 'stretcher', sss = false, posture = null, mobility = 'recumbent', mouthOpenRef = null, cyanosisLocalStrength = 0 }: BodyMeshProps) {
   // The path is recomputed per render so a `caseData.patientInfo.gender`
   // change (e.g. user picks a different case) swaps the mesh without
   // remounting the parent. useGLTF caches by URL.
@@ -1095,19 +1097,9 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
               authoredGarments.add(piece);
             }
           }
-          // A body-indexed fabric underlay closes any sub-pixel/open-boundary
-          // seam in the authored outer shell. It shares the exact patient
-          // topology, morphs and bone weights, sits just above skin, and uses
-          // the same piece names so it parts with the outer garment during
-          // chest/abdomen/limb examination.
-          const underlay = buildScrubs(bodyMesh as THREE.Mesh, { top: 0.0015, trousers: 0.0015 });
-          if (underlay) {
-            for (const piece of [...underlay.children]) {
-              if (!authoredPieceNames.has(piece.name)) continue;
-              piece.userData.garmentUnderlay = true;
-              authoredGarments.add(piece);
-            }
-          }
+          // Current garments carry the current body's posture morphs. Do not
+          // layer a second, differently cut shirt underneath to cover an old
+          // bake: its longer hem and collar protrude as tears and hanging flaps.
         }
         // Child of the body mesh at identity → inherits its exact placement.
         if (scrubs) (bodyMesh as THREE.Mesh).add(scrubs);
@@ -1199,6 +1191,7 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
     } catch {
       // dressing is cosmetic; the exam continues undressed
     }
+    createFaceAttachment(clone, patientScale);
     return clone;
     // surfaceOpacity & pupil sizes are deliberately omitted from deps: a
     // Skin/Skeleton toggle or pupil change must NOT rebuild the clone (mesh +
@@ -1339,6 +1332,12 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
     // working. The fallback getRegionAtPoint() still works regardless.
     if (anchors.length === 0 && before > 0) updateSkeleton(clonedScene);
   }, [clonedScene]);
+
+  useEffect(() => {
+    const frame = clonedScene.getObjectByName('PatientFaceAttachment');
+    onFaceAttachment?.(frame instanceof THREE.Group ? frame : null);
+    return () => onFaceAttachment?.(null);
+  }, [clonedScene, onFaceAttachment]);
 
   // Emit a surface-projection sampler built from the actual mounted mesh, so
   // the parent can anchor every floating label/finding marker onto the real
@@ -1928,6 +1927,9 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
 
   const handleClick = useCallback((e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
+    // OrbitControls also ends a drag with a click. Rotating the patient is
+    // not an examination and must not award assessment credit or move focus.
+    if (e.delta > 5) return;
     // A tagged limb hit-box beats coordinate guessing — thin forearms are
     // nearly impossible to ray-hit honestly at the overview zoom.
     const limbHit = (e.intersections ?? [])

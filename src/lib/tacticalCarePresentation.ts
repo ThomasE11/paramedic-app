@@ -1,3 +1,5 @@
+import { respiratoryEquipmentReplaced } from './respiratoryEquipment';
+
 export function tacticalCareHeadline({
   pendingCount,
   completedCount,
@@ -14,7 +16,7 @@ export function tacticalCareHeadline({
 }
 
 export type EquipmentCompletionState = {
-  label: 'Applied' | 'Administered' | 'Connected' | 'Positioned';
+  label: 'Applied' | 'Administered' | 'Connected' | 'Positioned' | 'Replaced';
   description: string;
 };
 
@@ -25,6 +27,7 @@ const CONNECTED_TREATMENT_IDS = new Set([
   'monitor_pads',
   'nebulised_adrenaline',
   'nebulizer_salbutamol',
+  'nebulizer_ipratropium',
   'oxygen_mask',
   'oxygen_nasal',
   'oxygen_venturi',
@@ -41,10 +44,18 @@ const CONNECTED_TREATMENT_IDS = new Set([
 export function equipmentCompletionState({
   treatmentId,
   treatmentCategory,
+  appliedTreatmentIds,
 }: {
   treatmentId?: string;
   treatmentCategory?: string;
+  appliedTreatmentIds?: readonly string[];
 }): EquipmentCompletionState {
+  if (appliedTreatmentIds && respiratoryEquipmentReplaced(treatmentId, appliedTreatmentIds)) {
+    return {
+      label: 'Replaced',
+      description: 'Replaced by the current respiratory interface. The earlier treatment remains in the resuscitation record.',
+    };
+  }
   if (treatmentCategory === 'medication') {
     return {
       label: 'Administered',

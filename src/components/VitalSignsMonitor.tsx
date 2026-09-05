@@ -55,6 +55,9 @@ interface VitalSignsMonitorProps {
   caseTitle?: string;
   ecgFindings?: string[];
   appliedTreatments?: string[];
+  /** Live encounters own physiology in the case engine. Standalone monitor
+   * demos may simulate treatments locally; never run both engines together. */
+  physiologyMode?: 'standalone' | 'external';
   /** Override rhythm from patient state — updates when treatment changes rhythm */
   overrideRhythm?: string;
   /** Vitals revealed by ABCDE assessment — auto-show on monitor without tap-to-connect */
@@ -1428,6 +1431,7 @@ export function VitalSignsMonitor({
   caseTitle,
   ecgFindings,
   appliedTreatments = [],
+  physiologyMode = 'standalone',
   overrideRhythm,
   revealedVitals,
   cprState,
@@ -2223,7 +2227,7 @@ export function VitalSignsMonitor({
   // Treatment effect: gradually modify vitals when treatments are applied
   // Scans ALL applied treatments to determine cumulative effects
   useEffect(() => {
-    if (appliedTreatments.length === 0) return;
+    if (physiologyMode === 'external' || appliedTreatments.length === 0) return;
 
     // Build a combined treatment profile from all applied treatments
     const allTx = appliedTreatments.map(t => t.toLowerCase()).join(' ');
@@ -2473,7 +2477,7 @@ export function VitalSignsMonitor({
       clearTimeout(t1);
       clearInterval(interval);
     };
-  }, [appliedTreatments.length, caseCategory, caseSubcategory, caseTitle, cprState?.active]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [physiologyMode, appliedTreatments.length, caseCategory, caseSubcategory, caseTitle, cprState?.active]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ============================================================================
   // CARDIAC ARREST PHYSIOLOGY — EtCO2 and SpO2 alignment
@@ -2483,6 +2487,7 @@ export function VitalSignsMonitor({
   // ============================================================================
   const prevArrestActiveRef = useRef(cprState?.active ?? false);
   useEffect(() => {
+    if (physiologyMode === 'external') return;
     const arrestActive = cprState?.active === true;
     const cprRunning = cprState?.running === true;
     const justAchievedROSC = prevArrestActiveRef.current && !arrestActive;
@@ -2537,7 +2542,7 @@ export function VitalSignsMonitor({
     }));
 
     return () => clearInterval(arrestPhysiologyInterval);
-  }, [cprState?.active, cprState?.running]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [physiologyMode, cprState?.active, cprState?.running]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // TLC Monitor charge handler
   const handleCharge = () => {

@@ -1,10 +1,13 @@
 import { expect, test } from '@playwright/test';
+import { renderedSceneFraction } from './helpers/renderedScene';
 
 // Regression: a new useTexture request in the equipment layer suspended the
 // complete patient view, hiding controls and applied-equipment confirmation.
-test('a slow device texture does not hide the patient or bedside controls', async ({ page }) => {
-  test.setTimeout(120_000);
+test('a slow device texture does not hide the patient or bedside controls', async ({ page }, testInfo) => {
+  test.setTimeout(180_000);
+  await page.setViewportSize({ width: 1440, height: 720 });
   await page.goto('/?devLiveCase=resp-001&capture');
+  await expect.poll(() => renderedSceneFraction(page), { timeout: 90_000 }).toBeGreaterThan(0.25);
   await page.getByRole('button', { name: 'Select Non-rebreather', exact: true }).click();
   const procedure = page.getByRole('dialog', { name: /Apply non-rebreather mask/i });
   for (const step of [
@@ -32,8 +35,12 @@ test('a slow device texture does not hide the patient or bedside controls', asyn
     await expect(page.locator('.patient-model-canvas-stage')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Open Airway kit from scene' })).toBeVisible();
     await expect(page.getByText('1 deployed', { exact: true })).toBeVisible();
+    await expect.poll(() => renderedSceneFraction(page), { timeout: 30_000 }).toBeGreaterThan(0.25);
   } finally {
     releaseTexture();
     await page.unrouteAll({ behavior: 'wait' });
   }
+  await expect(page.getByText('Non-rebreather fitted over the nose and mouth', { exact: true })).toBeVisible({ timeout: 30_000 });
+  await expect.poll(() => renderedSceneFraction(page), { timeout: 10_000 }).toBeGreaterThan(0.25);
+  await page.screenshot({ path: testInfo.outputPath('oxygen-patient-render.png') });
 });

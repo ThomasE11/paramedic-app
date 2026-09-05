@@ -1244,7 +1244,7 @@ function EquipmentInventoryBoard({
           const treatmentCategory = item.treatmentId
             ? TREATMENT_CATEGORY_BY_ID.get(item.treatmentId)
             : undefined;
-          const completionState = equipmentCompletionState({ treatmentId: item.treatmentId, treatmentCategory });
+          const completionState = equipmentCompletionState({ treatmentId: item.treatmentId, treatmentCategory, appliedTreatmentIds });
 
           return (
             <button
@@ -1254,7 +1254,7 @@ function EquipmentInventoryBoard({
               disabled={isApplying}
               aria-label={`${isApplied ? completionState.label : 'Select'} ${item.label}`}
               className={`equipment-tile group relative flex flex-col justify-between min-h-[122px] rounded-xl border p-2 text-left transition disabled:cursor-wait ${
-                isApplied
+                isApplied && completionState.label !== 'Replaced'
                   ? 'border-emerald-300/80 bg-emerald-400/20'
                   : isStaged
                     ? 'border-cyan-300/90 bg-cyan-300/20'
@@ -1267,7 +1267,7 @@ function EquipmentInventoryBoard({
                 <p className="line-clamp-2 text-[9px] leading-snug text-cyan-100/85">{item.caption}</p>
               </div>
               <span className={`mt-2 inline-flex h-6 items-center justify-center rounded-md px-2 text-[9px] font-bold uppercase tracking-[0.08em] shadow-sm ${
-                isApplied
+                isApplied && completionState.label !== 'Replaced'
                   ? 'bg-emerald-400/25 text-emerald-100 border border-emerald-300/40'
                   : isApplying
                     ? 'bg-amber-400/25 text-amber-100 border border-amber-300/40'
@@ -1376,6 +1376,7 @@ export function TreatmentJumpBagPanel({
   );
   const stagedEquipmentCompletion = equipmentCompletionState({
     treatmentId: stagedEquipment?.treatmentId,
+    appliedTreatmentIds,
     treatmentCategory: stagedEquipment?.treatmentId
       ? TREATMENT_CATEGORY_BY_ID.get(stagedEquipment.treatmentId)
       : undefined,

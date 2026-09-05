@@ -9,7 +9,7 @@
  */
 
 import { useRef, useCallback, useState, useMemo, useEffect, Suspense } from 'react';
-import type { CSSProperties, ElementRef } from 'react';
+import type { CSSProperties, ElementRef, ReactNode } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, ContactShadows, Environment, Html, useTexture } from '@react-three/drei';
 import * as THREE from 'three';
@@ -17,6 +17,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { RotateCcw, User, Eye, Hand, Activity, Stethoscope, X, ChevronRight, ChevronDown, AlertTriangle, Compass, Unlock, Wind, Shirt } from 'lucide-react';
 import { BodyMesh, getTreatmentBayTransform, treatmentBayClinicalToWorld, type BayPatientStage } from './BodyMesh';
+import { getBreathingPattern, liveBreathingDepth } from '@/lib/breathingPresentation';
+import { activeRespiratoryInterface, type OxygenVisualMode } from '@/lib/respiratoryEquipment';
 import {
   deriveAppliedPatientStage,
   derivePatientMobility,
@@ -33,7 +35,7 @@ import {
 import { deriveSceneEnvironment } from '@/lib/sceneEnvironment';
 import { cameraOrbitSafetyForEnvironment } from '@/lib/cameraOrbitSafety';
 import type { LimbSide, SurfaceSampler } from './BodyMesh';
-import { AdaptiveQuality, PatientPostEffects, qualityForTier } from './AdaptiveQuality';
+import { AdaptiveQuality, qualityForTier } from './AdaptiveQuality';
 import { TreatmentBayEnvironment, CameraEntrance } from './Environment';
 import { AmbientAudioLayer } from './AmbientAudioLayer';
 import type { AmbientBreathKind } from '@/lib/ambientAudio';
@@ -43,6 +45,10 @@ import {
   resolveTreatmentBayActionTarget,
   treatmentBayActionFramingRadius,
 } from './cameraFraming';
+import {
+  getFittedFaceEquipmentSpec,
+  type FittedFaceEquipmentMode,
+} from './faceEquipment';
 import { recommendedManagementTabForCase, type ManagementTab } from '@/components/TreatmentJumpBagPanel';
 import { CLOTHING_PARTING } from './ClothingLayer';
 import { usePatientVoice } from '@/hooks/usePatientVoice';
@@ -140,8 +146,6 @@ interface PupilProfile {
   note: string;
   abnormal: boolean;
 }
-
-type OxygenVisualMode = 'nasal' | 'simple-mask' | 'nonrebreather' | 'nebulizer' | 'bvm' | 'cpap' | 'ventilator';
 
 interface OxygenEquipmentVisual {
   mode: OxygenVisualMode;
@@ -446,13 +450,21 @@ function SceneCable({
   color,
   opacity = 0.62,
   radius = 0.005,
+  anchor,
 }: {
   points: Array<[number, number, number]>;
   color: string;
   opacity?: number;
   radius?: number;
+  anchor?: { frame: THREE.Object3D; points: Array<[number, number, number] | null> };
 }) {
+  const meshRef = useRef<THREE.Mesh>(null);
+  const dynamicGeometry = useRef<THREE.TubeGeometry | null>(null);
+  const elapsed = useRef(0);
+  const lastAnchorMatrix = useRef(new THREE.Matrix4());
+  const lastPathKey = useRef('');
   const pointsKey = points.map(point => point.join(',')).join('|');
+  const pathKey = `${pointsKey}:${radius}:${anchor?.points.map(point => point?.join(',') ?? 'world').join('|') ?? ''}`;
   const geometry = useMemo(() => {
     const curve = new THREE.CatmullRomCurve3(points.map(point => new THREE.Vector3(...point)));
     return new THREE.TubeGeometry(curve, 28, radius, 8, false);
@@ -461,9 +473,30 @@ function SceneCable({
   }, [pointsKey, radius]);
 
   useEffect(() => () => geometry.dispose(), [geometry]);
+  useEffect(() => () => { dynamicGeometry.current?.dispose(); }, []);
+
+  useFrame((_, delta) => {
+    if (!anchor || !meshRef.current) return;
+    elapsed.current += delta;
+    if (elapsed.current < 1 / 15) return;
+    elapsed.current = 0;
+    anchor.frame.updateWorldMatrix(true, false);
+    // Replacing a mask changes the circuit exit even when the patient's head
+    // has not moved. Comparing only the matrix leaves the new tube unposed.
+    if (lastPathKey.current === pathKey && lastAnchorMatrix.current.equals(anchor.frame.matrixWorld)) return;
+    lastPathKey.current = pathKey;
+    lastAnchorMatrix.current.copy(anchor.frame.matrixWorld);
+    const path = points.map((point, index) => anchor.points[index]
+      ? new THREE.Vector3(...anchor.points[index]!).applyMatrix4(anchor.frame.matrixWorld)
+      : new THREE.Vector3(...point));
+    const next = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(path), 28, radius, 8, false);
+    dynamicGeometry.current?.dispose();
+    dynamicGeometry.current = next;
+    meshRef.current.geometry = next;
+  });
 
   return (
-    <mesh geometry={geometry} raycast={() => null}>
+    <mesh name={anchor ? 'patient-anchored-circuit' : undefined} ref={meshRef} geometry={geometry} raycast={() => null} userData={{ skipRecolor: true }}>
       <meshStandardMaterial color={color} roughness={0.38} metalness={0.08} transparent opacity={opacity} />
     </mesh>
   );
@@ -477,6 +510,7 @@ function TreatmentBayImmersionLayer({
   posture = null,
   mobility = 'recumbent',
   patientScale = 1,
+  faceAttachment = null,
 }: {
   appliedTreatmentIds: string[];
   active: boolean;
@@ -485,6 +519,7 @@ function TreatmentBayImmersionLayer({
   posture?: PatientPosture;
   mobility?: PatientMobility;
   patientScale?: number;
+  faceAttachment?: THREE.Group | null;
 }) {
   const equipment = useMemo(
     () => buildTreatmentEquipmentState(appliedTreatmentIds),
@@ -495,15 +530,18 @@ function TreatmentBayImmersionLayer({
 
   const clinicalPoint = (point: [number, number, number]) =>
     treatmentBayClinicalToWorld(point, stage, posture, mobility, patientScale);
-  // The photo texture already contains the short length from the mask port
-  // to its right edge. Continue the world-space tube from that exact exit so
-  // the patient sees one connected circuit rather than two overlapping lines.
-  const nrbTubeExit = clinicalPoint([0.073, 1.54, 0.18]);
+  const fittedFaceSpec = getFittedFaceEquipmentSpec(equipment.oxygen?.mode);
+  // Each fitted photo texture already contains a short circuit tail. Continue
+  // the world-space tube from that device-specific exit so it reads as one
+  // connected circuit rather than two overlapping lines.
+  const fittedTubeExit = fittedFaceSpec
+    ? clinicalPoint(fittedFaceSpec.tubeExit)
+    : null;
   const legacyOxygenFace = clinicalPoint([0.01, 1.64, 0.24]);
-  const oxygenJawRoute = clinicalPoint([0.13, 1.46, 0.165]);
+  const oxygenJawRoute = clinicalPoint([0.14, 1.42, 0.165]);
   const oxygenShoulderRoute = clinicalPoint([0.27, 1.30, 0.14]);
   const uprightPatient = posture === 'tripod' || posture === 'seated' || mobility === 'standing' || mobility === 'pacing';
-  const oxygenCylinderZ = uprightPatient ? 0.72 : nrbTubeExit[2] + 0.16;
+  const oxygenCylinderZ = uprightPatient ? 0.72 : (fittedTubeExit?.[2] ?? legacyOxygenFace[2]) + 0.16;
   const oxygenCylinderBase: [number, number, number] = [0.66, -0.045, oxygenCylinderZ];
   const oxygenRegulator: [number, number, number] = [0.66, 0.43, oxygenCylinderZ];
   const chestLeft = treatmentBayClinicalToWorld([-0.03, 1.23, 0.25], stage, posture, mobility, patientScale);
@@ -529,10 +567,11 @@ function TreatmentBayImmersionLayer({
           blocking the patient"). Reintroduce only as geometry that actually
           hugs the mesh. */}
 
-      {equipment.oxygen?.mode === 'nonrebreather' && (
+      {fittedFaceSpec?.connectsToCylinder && fittedTubeExit && (
         <>
           <SceneCable
-            points={[nrbTubeExit, oxygenJawRoute, oxygenShoulderRoute, [0.46, 0.56, oxygenCylinderZ + 0.06], oxygenRegulator]}
+            points={[fittedTubeExit, oxygenJawRoute, oxygenShoulderRoute, [0.46, 0.56, oxygenCylinderZ + 0.06], oxygenRegulator]}
+            anchor={faceAttachment ? { frame: faceAttachment, points: [fittedFaceSpec.tubeExit, [0.14, 1.42, 0.035], null, null, null] } : undefined}
             color="#d9f7ef"
             opacity={0.82}
             radius={0.0028}
@@ -566,7 +605,7 @@ function TreatmentBayImmersionLayer({
         </>
       )}
 
-      {equipment.oxygen && !['bvm', 'nonrebreather'].includes(equipment.oxygen.mode) && (
+      {equipment.oxygen && !fittedFaceSpec && equipment.oxygen.mode !== 'bvm' && (
         <SceneCable
           points={[legacyOxygenFace, [0.18, 0.83, -0.76], [0.62, 0.82, -0.86], [0.98, 1.04, -0.70]]}
           color="#6ee7b7"
@@ -1176,22 +1215,6 @@ function ScenarioVisualMarkers({
   );
 }
 
-const OXYGEN_VISUAL_PRIORITY: Array<{
-  ids: string[];
-  mode: OxygenVisualMode;
-  label: string;
-  detail: string;
-}> = [
-  { ids: ['mechanical_ventilation', 'ventilator_setup'], mode: 'ventilator', label: 'Ventilator circuit', detail: 'Secured airway with circuit attached' },
-  { ids: ['bvm_ventilation'], mode: 'bvm', label: 'BVM ventilation', detail: 'Mask seal and bag-valve device in use' },
-  { ids: ['cpap_niv'], mode: 'cpap', label: 'CPAP mask', detail: 'Strapped mask with pressure circuit' },
-  { ids: ['nebulizer_salbutamol', 'nebulizer_ipratropium', 'nebulised_adrenaline'], mode: 'nebulizer', label: 'Nebulizer mask', detail: 'Aerosol chamber attached to mask' },
-  { ids: ['oxygen_nonrebreather'], mode: 'nonrebreather', label: 'Non-rebreather', detail: 'Reservoir mask with high-flow oxygen' },
-  { ids: ['oxygen_venturi'], mode: 'simple-mask', label: 'Venturi mask · 28%', detail: 'Controlled oxygen targeting SpO₂ 88–92%' },
-  { ids: ['oxygen_mask'], mode: 'simple-mask', label: 'Simple oxygen mask', detail: 'Mask and oxygen tubing connected' },
-  { ids: ['oxygen_nasal'], mode: 'nasal', label: 'Nasal cannula', detail: 'Nasal prongs and tubing fitted' },
-];
-
 const IV_MEDICATION_LINE_IDS = new Set([
   'adrenaline_1mg',
   'adrenaline_infusion',
@@ -1210,7 +1233,7 @@ const IV_MEDICATION_LINE_IDS = new Set([
 
 function buildTreatmentEquipmentState(appliedTreatmentIds: string[]): AppliedEquipmentVisualState {
   const applied = new Set(appliedTreatmentIds);
-  const rawOxygenMatch = OXYGEN_VISUAL_PRIORITY.find(option => option.ids.some(id => applied.has(id)));
+  const oxygenMatch = activeRespiratoryInterface(appliedTreatmentIds);
   const hasFluids = appliedTreatmentIds.some(id => id.startsWith('fluids_'));
   const hasMedicationLine = appliedTreatmentIds.some(id =>
     IV_MEDICATION_LINE_IDS.has(id) || id.endsWith('_iv') || id.includes('_infusion'),
@@ -1223,10 +1246,6 @@ function buildTreatmentEquipmentState(appliedTreatmentIds: string[]): AppliedEqu
       || applied.has('mechanical_ventilation')
       || applied.has('ventilator_setup')
   );
-  const oxygenMatch = hasEtTube && rawOxygenMatch && ['nasal', 'simple-mask', 'nonrebreather', 'nebulizer', 'cpap'].includes(rawOxygenMatch.mode)
-    ? undefined
-    : rawOxygenMatch;
-
   // Source control for active bleeding: any haemorrhage-control treatment
   // lands here. Wound ids are matched by region suffix in ActiveBleedSprites.
   const BLEED_CONTROL_IDS = new Set([
@@ -1281,6 +1300,7 @@ function buildTreatmentEquipmentState(appliedTreatmentIds: string[]): AppliedEqu
 const OXYGEN_SRC: Record<OxygenEquipmentVisual['mode'], string> = {
   nasal: TREATMENT_ASSET_PATHS.nasal,
   'simple-mask': TREATMENT_ASSET_PATHS.simpleMask,
+  venturi: TREATMENT_ASSET_PATHS.simpleMask,
   nonrebreather: TREATMENT_ASSET_PATHS.nonrebreather,
   nebulizer: TREATMENT_ASSET_PATHS.nebulizer,
   bvm: TREATMENT_ASSET_PATHS.bvm,
@@ -1378,16 +1398,117 @@ function WornFaceEquipment({
   );
 }
 
-function AppliedNonRebreather3D({
+function AppliedCpapMask3D({
   position,
   rotation,
   scale,
+  width,
+  height,
 }: {
   position: [number, number, number];
   rotation: [number, number, number];
   scale: number;
+  width: number;
+  height: number;
 }) {
-  const texture = useTexture(OXYGEN_SRC.nonrebreather);
+  const sealPoints: Array<[number, number, number]> = [
+    [0, height * 0.48, 0.004],
+    [-width * 0.43, height * 0.18, 0.004],
+    [-width * 0.36, -height * 0.34, 0.004],
+    [0, -height * 0.49, 0.004],
+    [width * 0.36, -height * 0.34, 0.004],
+    [width * 0.43, height * 0.18, 0.004],
+    [0, height * 0.48, 0.004],
+  ];
+
+  return (
+    <group
+      name="applied-cpap-mask"
+      position={position}
+      rotation={rotation}
+      scale={scale}
+      raycast={() => null}
+    >
+      {/* A real CPAP interface has volume and a continuous silicone seal. The
+          previous front-view texture looked convincing head-on but exposed a
+          flat rectangular card and baked-on straps as soon as the camera
+          moved. These patient-space parts remain coherent from every angle. */}
+      <SceneCable
+        points={sealPoints}
+        color="#b9d4ed"
+        opacity={0.88}
+        radius={0.0032}
+      />
+      <mesh
+        position={[0, height * 0.015, 0.047]}
+        rotation={[Math.PI / 2, 0, 0]}
+        scale={[width * 0.45, 0.05, height * 0.45]}
+        renderOrder={17}
+      >
+        <cylinderGeometry args={[0.42, 1, 1, 32, 1, true]} />
+        <meshPhysicalMaterial
+          color="#dcecf8"
+          // Thin clear plastic uses alpha, not refraction: transmission here
+          // produced invalid HDR pixels and bloom blacked out the whole room.
+          transparent
+          opacity={0.24}
+          roughness={0.12}
+          metalness={0}
+          depthWrite={false}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+      <mesh
+        position={[0, -height * 0.17, 0.096]}
+        rotation={[Math.PI / 2, 0, 0]}
+        renderOrder={19}
+      >
+        <cylinderGeometry args={[0.012, 0.017, 0.032, 18]} />
+        <meshStandardMaterial color="#d5e4ee" roughness={0.34} metalness={0.08} />
+      </mesh>
+      <SceneCable
+        points={[
+          [0, -height * 0.17, 0.115],
+          [0.022, -height * 0.24, 0.125],
+          [0.065, -height * 0.34, 0.11],
+          [0.12, -height * 0.41, 0.075],
+        ]}
+        color="#dbe7ee"
+        opacity={0.96}
+        radius={0.0058}
+      />
+      {[0.031, 0.052, 0.073, 0.094].map((x, index) => (
+        <mesh
+          key={`cpap-hose-rib-${x}`}
+          position={[x, -height * (0.255 + index * 0.035), 0.119 - index * 0.011]}
+          rotation={[Math.PI / 2, 0.08, -0.45]}
+          scale={[1, 1, 0.7]}
+          renderOrder={20}
+        >
+          <torusGeometry args={[0.0072, 0.0009, 6, 14]} />
+          <meshStandardMaterial color="#aebfca" roughness={0.48} metalness={0.02} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function AppliedTextureFaceEquipment3D({
+  mode,
+  position,
+  rotation,
+  scale,
+  width,
+  height,
+}: {
+  mode: FittedFaceEquipmentMode;
+  position: [number, number, number];
+  rotation: [number, number, number];
+  scale: number;
+  width: number;
+  height: number;
+}) {
+  const texture = useTexture(OXYGEN_SRC[mode]);
 
   useEffect(() => {
     texture.colorSpace = THREE.SRGBColorSpace;
@@ -1397,14 +1518,32 @@ function AppliedNonRebreather3D({
 
   return (
     <group
-      name="applied-nonrebreather-mask"
+      name={`applied-${mode}-mask`}
       position={position}
       rotation={rotation}
       scale={scale}
       raycast={() => null}
     >
+      <mesh
+        position={[0, height * (mode === 'nonrebreather' || mode === 'nebulizer' ? 0.25 : 0.08), 0.015]}
+        rotation={[Math.PI / 2, 0, 0]}
+        scale={[width * 0.34, mode === 'cpap' ? 0.05 : 0.038, height * 0.26]}
+        renderOrder={17}
+      >
+        <cylinderGeometry args={[0.48, 1, 1, 24, 1, true]} />
+        <meshPhysicalMaterial
+          color={mode === 'cpap' ? '#bfd7ef' : '#edfaff'}
+          // Match the stable clear-plastic shell used by the CPAP interface.
+          transparent
+          opacity={mode === 'cpap' ? 0.2 : 0.14}
+          roughness={0.12}
+          metalness={0}
+          depthWrite={false}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
       <mesh renderOrder={18}>
-        <planeGeometry args={[0.16, 0.24]} />
+        <planeGeometry args={[width, height]} />
         <meshBasicMaterial
           map={texture}
           transparent
@@ -1414,8 +1553,33 @@ function AppliedNonRebreather3D({
           toneMapped={false}
         />
       </mesh>
+      {mode === 'venturi' && (
+        <group position={[0, -height * 0.47, 0.028]}>
+          <mesh rotation={[Math.PI / 2, 0, 0]} renderOrder={19}>
+            <cylinderGeometry args={[0.008, 0.011, 0.035, 14]} />
+            <meshStandardMaterial color="#38bdf8" roughness={0.32} metalness={0.08} />
+          </mesh>
+          <mesh position={[0, -0.017, 0]} rotation={[Math.PI / 2, 0, 0]} renderOrder={19}>
+            <cylinderGeometry args={[0.012, 0.012, 0.01, 14]} />
+            <meshStandardMaterial color="#e2e8f0" roughness={0.4} metalness={0.04} />
+          </mesh>
+        </group>
+      )}
     </group>
   );
+}
+
+function AppliedFittedFaceEquipment3D(props: {
+  mode: FittedFaceEquipmentMode;
+  position: [number, number, number];
+  rotation: [number, number, number];
+  scale: number;
+  width: number;
+  height: number;
+}) {
+  return props.mode === 'cpap'
+    ? <AppliedCpapMask3D {...props} />
+    : <AppliedTextureFaceEquipment3D {...props} />;
 }
 
 function AppliedEndotrachealTube() {
@@ -1825,8 +1989,8 @@ function BayKitHotspots({
 function AppliedEquipmentTray({ appliedTreatmentIds }: { appliedTreatmentIds: string[] }) {
   const equipment = useMemo(() => buildTreatmentEquipmentState(appliedTreatmentIds), [appliedTreatmentIds]);
   const siteTreatmentIds = new Set(equipment.siteControls.map(control => control.treatmentId));
-  const chips: Array<{ src: string; label: string }> = [];
-  if (equipment.oxygen) chips.push({ src: OXYGEN_SRC[equipment.oxygen.mode], label: equipment.oxygen.label });
+  const chips: Array<{ src: string; label: string; oxygenMode?: OxygenEquipmentVisual['mode'] }> = [];
+  if (equipment.oxygen) chips.push({ src: OXYGEN_SRC[equipment.oxygen.mode], label: equipment.oxygen.label, oxygenMode: equipment.oxygen.mode });
   if (equipment.hasEtTube && equipment.oxygen?.mode !== 'ventilator') chips.push({ src: TREATMENT_ASSET_PATHS.etTube, label: 'ET tube' });
   if (equipment.hasOpa && !equipment.hasEtTube) chips.push({ src: TREATMENT_ASSET_PATHS.opa, label: 'OPA inserted' });
   if (equipment.hasFluids) chips.push({ src: TREATMENT_ASSET_PATHS.ivPole, label: 'Fluids running' });
@@ -1856,7 +2020,14 @@ function AppliedEquipmentTray({ appliedTreatmentIds }: { appliedTreatmentIds: st
   return (
     <div className="pointer-events-none absolute bottom-3 right-3 z-20 flex max-w-[44%] flex-col items-end gap-1.5">
       {chips.map((chip, i) => (
-        <div key={i} className="flex items-center gap-1.5 rounded-full border border-white/15 bg-slate-950/70 py-0.5 pl-0.5 pr-2.5 text-[10px] font-medium text-white/90 shadow-md backdrop-blur-md">
+        <div
+          key={i}
+          data-applied-equipment={chip.oxygenMode}
+          data-airway-connection={chip.oxygenMode ? 'face' : undefined}
+          data-oxygen-connected={chip.oxygenMode ? 'true' : undefined}
+          data-patient-anchored={chip.oxygenMode && getFittedFaceEquipmentSpec(chip.oxygenMode) ? 'true' : undefined}
+          className="flex items-center gap-1.5 rounded-full border border-white/15 bg-slate-950/70 py-0.5 pl-0.5 pr-2.5 text-[10px] font-medium text-white/90 shadow-md backdrop-blur-md"
+        >
           <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/10">
             <img src={chip.src} alt="" className="h-3.5 w-3.5 object-contain" draggable={false} />
           </span>
@@ -1870,6 +2041,21 @@ function AppliedEquipmentTray({ appliedTreatmentIds }: { appliedTreatmentIds: st
 // Per-device graphic components removed — the overlay now renders small
 // EquipmentPin markers driven directly by TREATMENT_ASSET_PATHS / OXYGEN_SRC.
 
+function FaceEquipmentFrame({ frame, children }: { frame: THREE.Group | null; children: ReactNode }) {
+  const group = useRef<THREE.Group>(null);
+  useFrame(() => {
+    if (!group.current) return;
+    if (frame) {
+      frame.updateWorldMatrix(true, false);
+      group.current.matrix.copy(frame.matrixWorld);
+    } else {
+      group.current.matrix.identity();
+    }
+    group.current.matrixWorldNeedsUpdate = true;
+  });
+  return <group ref={group} name="fitted-face-equipment" matrixAutoUpdate={false}>{children}</group>;
+}
+
 function TreatmentEquipmentOverlay({
   appliedTreatmentIds,
   sampler,
@@ -1878,6 +2064,7 @@ function TreatmentEquipmentOverlay({
   posture = null,
   mobility = 'recumbent',
   patientScale = 1,
+  faceAttachment = null,
 }: {
   appliedTreatmentIds: string[];
   sampler: SurfaceSampler | null;
@@ -1886,6 +2073,7 @@ function TreatmentEquipmentOverlay({
   posture?: PatientPosture;
   mobility?: PatientMobility;
   patientScale?: number;
+  faceAttachment?: THREE.Group | null;
 }) {
   const equipment = useMemo(
     () => buildTreatmentEquipmentState(appliedTreatmentIds),
@@ -1929,59 +2117,86 @@ function TreatmentEquipmentOverlay({
   const faceEquipmentScale = presentation === 'treatment-bay'
     ? getTreatmentBayTransform(bayStage, posture, mobility, patientScale).scale * patientScale
     : 1;
-  // The NRB is rendered in the patient's 3D head frame, so its harness must
-  // share the same anchors. Other mask types still use the legacy HTML visual;
-  // giving those a world-space strap would split at oblique camera angles.
-  const oxygenMaskNeedsHarness = equipment.oxygen?.mode === 'nonrebreather';
-  const faceHarnessPoints: Array<[number, number, number]> = [
-    faceAnchor(-0.072, 1.585, 0.165),
-    faceAnchor(-0.092, 1.60, 0.035),
-    faceAnchor(0.092, 1.60, 0.035),
-    faceAnchor(0.072, 1.585, 0.165),
-  ];
+  const fittedFaceSpec = getFittedFaceEquipmentSpec(equipment.oxygen?.mode);
+  const fittedAnchor = (x: number, y: number, z: number): [number, number, number] =>
+    faceAttachment ? [x, y, z] : faceAnchor(x, y, z);
+  // Texture silhouettes alone collapse edge-on. A patient-space harness keeps
+  // every fitted mask visibly wrapped around the head from oblique views.
+  const oxygenMaskNeedsHarness = fittedFaceSpec != null;
+  const faceHarnessPoints: Array<[number, number, number]> = fittedFaceSpec?.mode === 'cpap'
+    ? [
+        fittedAnchor(-0.068, 1.66, 0.03),
+        fittedAnchor(-0.084, 1.67, -0.08),
+        fittedAnchor(0.084, 1.67, -0.08),
+        fittedAnchor(0.068, 1.66, 0.03),
+      ]
+    : [
+        fittedAnchor(-0.064, 1.635, 0.03),
+        fittedAnchor(-0.082, 1.665, -0.08),
+        fittedAnchor(0.082, 1.665, -0.08),
+        fittedAnchor(0.064, 1.635, 0.03),
+      ];
   const equipmentScale = Math.max(0.62, Math.min(1, 0.55 + patientScale * 0.45));
   const hasSiteAccess = equipment.siteControls.some(control => control.treatmentId === 'iv_access' || control.treatmentId === 'io_access');
   const hasSiteChestSeal = equipment.siteControls.some(control => control.treatmentId.includes('chest_seal') || control.treatmentId.includes('occlusive'));
   const hasSiteNeedleDecompression = equipment.siteControls.some(control => control.treatmentId === 'needle_decompression');
 
-  return (
-    <>
+  const fittedEquipment = <>
       {oxygenMaskNeedsHarness && (
-        <SceneCable
-          points={faceHarnessPoints}
-          color="#0f7158"
-          opacity={0.82}
-          radius={0.0032}
-        />
+        <>
+          <SceneCable
+            points={faceHarnessPoints}
+            color={fittedFaceSpec?.mode === 'cpap' ? '#5c78a4' : '#0f7158'}
+            opacity={0.72}
+            radius={fittedFaceSpec?.mode === 'cpap' ? 0.0036 : 0.0024}
+          />
+          {fittedFaceSpec?.mode === 'cpap' && (
+            <SceneCable
+              points={[
+                fittedAnchor(-0.07, 1.59, 0.03),
+                fittedAnchor(-0.088, 1.60, -0.085),
+                fittedAnchor(0.088, 1.60, -0.085),
+                fittedAnchor(0.07, 1.59, 0.03),
+              ]}
+              color="#5c78a4"
+              opacity={0.82}
+              radius={0.004}
+            />
+          )}
+        </>
       )}
 
-      {equipment.oxygen?.mode === 'nonrebreather' && !equipment.hasSurgicalAirway && (
+      {equipment.oxygen && fittedFaceSpec && !equipment.hasSurgicalAirway && (
         <>
-          <AppliedNonRebreather3D
-            position={faceAnchor(0.005, 1.57, 0.175)}
-            rotation={faceRotation}
-            scale={faceEquipmentScale}
+          <AppliedFittedFaceEquipment3D
+            mode={fittedFaceSpec.mode}
+            position={fittedAnchor(...fittedFaceSpec.centre)}
+            rotation={faceAttachment ? [0, 0, 0] : faceRotation}
+            scale={faceAttachment ? 1 : faceEquipmentScale}
+            width={fittedFaceSpec.width}
+            height={fittedFaceSpec.height}
           />
           <MarkerHtml
-            position={faceAnchor(0.005, 1.57, 0.175)}
+            position={fittedAnchor(...fittedFaceSpec.centre)}
             zIndexRange={[0, 0]}
             interactive={false}
             surfaceAware={false}
           >
             <span
-              data-applied-equipment="nonrebreather"
-              data-airway-connection="face"
-              data-oxygen-connected="true"
-              data-patient-anchored="true"
               className="sr-only"
             >
-              Non-rebreather mask fitted over the nose and mouth
+              {equipment.oxygen.label} fitted over the nose and mouth
             </span>
           </MarkerHtml>
         </>
       )}
 
-      {equipment.oxygen && equipment.oxygen.mode !== 'nonrebreather' && !equipment.hasSurgicalAirway && (
+    </>;
+
+  return (
+    <>
+      <FaceEquipmentFrame frame={faceAttachment}>{fittedEquipment}</FaceEquipmentFrame>
+      {equipment.oxygen && !fittedFaceSpec && !equipment.hasSurgicalAirway && (
         <MarkerHtml
           position={faceAnchor(0.01, 1.66, 0.24)}
           distanceFactor={1.5}
@@ -2373,38 +2588,6 @@ function getQuadrantPalpationFinding(caseData: CaseScenario, quadrant: AbdomenQu
   return `${meta.label}: Soft, non-tender. No guarding, rigidity, rebound tenderness, or palpable mass.`;
 }
 
-function getBreathingPattern(caseData: CaseScenario) {
-  const rr = caseData.vitalSignsProgression?.initial?.respiration ?? 16;
-  const text = [
-    caseData.title,
-    caseData.initialPresentation?.appearance,
-    caseData.initialPresentation?.generalImpression,
-    ...(caseData.initialPresentation?.sounds || []),
-    ...(caseData.abcde?.breathing?.findings || []),
-    ...(caseData.secondarySurvey?.chest || []),
-  ].filter(Boolean).join(' ').toLowerCase();
-
-  if (/apnoea|apnea|not breathing|respiratory arrest/.test(text) || rr === 0) {
-    return { label: 'Apnoeic', rate: 0, detail: 'No visible chest rise. Begin ventilation immediately.', severity: 'critical' as const, asymmetry: null as string | null };
-  }
-  if (/agonal|gasp/.test(text)) {
-    return { label: 'Agonal gasps', rate: rr || 6, detail: 'Irregular gasping respirations with poor tidal volume.', severity: 'critical' as const, asymmetry: null as string | null };
-  }
-  if (/pneumothorax|absent.*right|right.*absent|absent.*left|left.*absent|unequal|asymmetric/.test(text)) {
-    const side = /right/.test(text) && !/left.*absent/.test(text) ? 'right' : /left/.test(text) ? 'left' : 'one side';
-    return { label: 'Asymmetric chest rise', rate: rr, detail: `Reduced movement on the ${side}; compare percussion and breath sounds.`, severity: 'warning' as const, asymmetry: side };
-  }
-  if (rr >= 30 || /severe distress|accessory|tripod|unable to speak|wheeze|asthma|copd/.test(text)) {
-    return { label: 'Tachypnoeic, laboured', rate: rr, detail: 'Fast work of breathing with accessory muscle use and short phrases.', severity: 'warning' as const, asymmetry: null as string | null };
-  }
-  if (rr <= 8 || /shallow|hypoventilat|opioid|reduced respiratory/.test(text)) {
-    return { label: 'Slow / shallow', rate: rr, detail: 'Reduced chest excursion; watch ventilation and consciousness closely.', severity: 'warning' as const, asymmetry: null as string | null };
-  }
-  if (/pain|splint|rib|chest injury|abdominal pain/.test(text)) {
-    return { label: 'Shallow, splinting', rate: rr, detail: 'Smaller chest movement consistent with pain or guarding.', severity: 'observe' as const, asymmetry: null as string | null };
-  }
-  return { label: 'Regular chest rise', rate: rr, detail: 'Symmetrical rise and fall without obvious accessory muscle use.', severity: 'normal' as const, asymmetry: null as string | null };
-}
 
 function PupilCloseUp({ profile }: { profile: PupilProfile }) {
   const pupilStyle = (mm: number): CSSProperties => ({
@@ -2501,8 +2684,8 @@ function AirwayCloseUp({ caseData }: { caseData: CaseScenario }) {
   );
 }
 
-function BreathingPatternPanel({ caseData }: { caseData: CaseScenario }) {
-  const pattern = getBreathingPattern(caseData);
+function BreathingPatternPanel({ caseData, liveVitals }: { caseData: CaseScenario; liveVitals?: Partial<VitalSigns> | null }) {
+  const pattern = getBreathingPattern(caseData, liveVitals);
   const cycleSeconds = pattern.rate > 0 ? Math.max(0.85, Math.min(4, 60 / pattern.rate)) : 2.8;
   const color = pattern.severity === 'critical' ? 'text-red-500 border-red-400/40 bg-red-500/10'
     : pattern.severity === 'warning' ? 'text-amber-500 border-amber-400/40 bg-amber-500/10'
@@ -2551,8 +2734,8 @@ function BreathingPatternPanel({ caseData }: { caseData: CaseScenario }) {
   );
 }
 
-function ChestAssessmentMap({ selectedAction, caseData }: { selectedAction: string | null; caseData: CaseScenario }) {
-  const pattern = getBreathingPattern(caseData);
+function ChestAssessmentMap({ selectedAction, caseData, liveVitals }: { selectedAction: string | null; caseData: CaseScenario; liveVitals?: Partial<VitalSigns> | null }) {
+  const pattern = getBreathingPattern(caseData, liveVitals);
   const chestText = [
     ...(caseData.abcde?.breathing?.findings || []),
     ...(caseData.secondarySurvey?.chest || []),
@@ -2806,10 +2989,11 @@ function AbdominalQuadrantPanel({ selectedAction, caseData, compact = false }: {
   );
 }
 
-function SecondaryAssessmentOutline({ activeRegion, selectedAction, caseData }: {
+function SecondaryAssessmentOutline({ activeRegion, selectedAction, caseData, liveVitals }: {
   activeRegion: string | null;
   selectedAction: string | null;
   caseData: CaseScenario;
+  liveVitals?: Partial<VitalSigns> | null;
 }) {
   const workflow = getWorkflowForRegion(activeRegion);
   const activeWorkflowStep = getWorkflowStepForAction(activeRegion, selectedAction);
@@ -2822,8 +3006,8 @@ function SecondaryAssessmentOutline({ activeRegion, selectedAction, caseData }: 
       {/* Pupil close-up lives in the floating loupe (always shown for the face),
           so we don't repeat it here — it was the third redundant copy. */}
       {shouldShowAirway && <AirwayCloseUp caseData={caseData} />}
-      {shouldShowBreathing && <ChestAssessmentMap selectedAction={selectedAction} caseData={caseData} />}
-      {shouldShowBreathing && <BreathingPatternPanel caseData={caseData} />}
+      {shouldShowBreathing && <ChestAssessmentMap selectedAction={selectedAction} caseData={caseData} liveVitals={liveVitals} />}
+      {shouldShowBreathing && <BreathingPatternPanel caseData={caseData} liveVitals={liveVitals} />}
       {shouldShowAbdomen && <AbdominalQuadrantPanel selectedAction={selectedAction} caseData={caseData} />}
       <div className="rounded-xl border border-border/50 bg-white/80 p-2.5 shadow-sm dark:bg-slate-900/60">
         <div className="flex items-center justify-between gap-2">
@@ -3270,8 +3454,9 @@ function getFinding(
 
   // Chest — consolidated techniques
   if (actionId === 'chest-inspect') {
-    const chestFindings = ss?.chest?.filter(f => !f.toLowerCase().includes('clear') && !f.toLowerCase().includes('wheez') && !f.toLowerCase().includes('breath'));
-    return chestFindings?.length ? chestFindings.join('. ') : 'Equal bilateral chest expansion. No wounds, bruising, or deformity. No paradoxical movement.';
+    const pattern = getBreathingPattern(caseData, isInArrest ? { ...liveVitals, respiration: 0 } : liveVitals);
+    const structural = ss?.chest?.filter(f => /wound|bruis|deform|flail|abrasion|laceration|scar|swelling/i.test(f)) ?? [];
+    return [`${pattern.label}. Respiratory rate ${pattern.rate}/min. ${pattern.detail}`, ...structural].join(' ');
   }
   if (actionId === 'chest-palpate') {
     return ss?.chest?.some(f => f.toLowerCase().includes('crepitus') || f.toLowerCase().includes('tender'))
@@ -4803,6 +4988,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   // anchor every floating label/finding onto the real body surface (works for
   // the male, female, or any future GLB without per-model coordinate tuning).
   const [surfaceSampler, setSurfaceSampler] = useState<SurfaceSampler | null>(null);
+  const [faceAttachment, setFaceAttachment] = useState<THREE.Group | null>(null);
   // Stable callback for BodyMesh — it lives in an effect dependency array, so
   // a fresh inline arrow each render would re-run that effect → setState →
   // re-render every frame (an infinite "Maximum update depth" loop that read
@@ -5012,11 +5198,8 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   // exhaustion, agonal) looks visibly shallow and DEEP/laboured breathing (DKA
   // Kussmaul, severe distress) looks visibly deep — not just faster/slower.
   const breathDepthFactor = useMemo(() => {
-    const depth = String(caseData.abcde?.breathing?.depth ?? '').toLowerCase();
-    if (/shallow|reduced|poor|agonal|gasp|minimal/.test(depth)) return 0.45;
-    if (/deep|laboured|labored|kussmaul|increased|heav/.test(depth)) return 1.2;
-    return 1.0;
-  }, [caseData]);
+    return liveBreathingDepth(String(caseData.abcde?.breathing?.depth ?? ''), caseData.vitalSignsProgression?.initial, effectiveVitals);
+  }, [caseData, effectiveVitals]);
 
   // Ambient breath loop (Phase C3): the audible room breath derives from the
   // same respiratory rate that drives the chest-rise morph and from the
@@ -5340,12 +5523,12 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
       // the bay had NO camera assist — students had to hand-orbit to reach
       // the chest, which is the #1 "access to the patient is limited" report.
       const focus = REGION_CAMERA_FOCUS[stepId] ?? REGION_CAMERA_FOCUS.chest;
-      const target = treatmentBayClinicalToWorld([
+      let target = treatmentBayClinicalToWorld([
         focus.target[0],
         focus.target[1],
         stepId === 'posterior-logroll' ? -0.08 : 0.10,
       ], bayStage, patientPosture, patientMobility, patientScale);
-      const clinicalDirection: [number, number, number] = patientPosture === 'tripod' || patientPosture === 'seated' || patientMobility === 'standing' || patientMobility === 'pacing'
+      let clinicalDirection: [number, number, number] = patientPosture === 'tripod' || patientPosture === 'seated' || patientMobility === 'standing' || patientMobility === 'pacing'
         ? (stepId === 'face' || stepId === 'head' || stepId === 'neck-cspine'
             ? [0.04, 0.48, 1]
             : [0.10, 0.10, 1])
@@ -5354,6 +5537,15 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
           : stepId === 'chest' || stepId === 'abdomen'
             ? [0.14, 1, 0.18]
             : [0.38, 0.95, 0.52];
+      if (faceAttachment && (stepId === 'face' || stepId === 'head')) {
+        // Face the actual tilted head, not the static upright mannequin. The
+        // old above-patient preset mostly showed scalp in a tripod close-up.
+        faceAttachment.updateWorldMatrix(true, false);
+        target = new THREE.Vector3(0, 1.61, 0.06)
+          .applyMatrix4(faceAttachment.matrixWorld).toArray() as [number, number, number];
+        clinicalDirection = new THREE.Vector3(0.04, 0.08, 1)
+          .transformDirection(faceAttachment.matrixWorld).toArray() as [number, number, number];
+      }
       const pos = fitCameraPos(
         controlsRef.current,
         target,
@@ -5394,7 +5586,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
       const pos = fitCameraPos(controlsRef.current, target, dir, (REGION_RADIUS[stepId] ?? 0.28) * cameraScale);
       animateCamera(controlsRef.current, pos, target, 460);
     }
-  }, [onRegionClick, animateCamera, clearPatientReaction, anatomyLayer, bayStage, patientVoice, patientPosture, patientMobility, treatmentBayOverviewEnabled, patientScale]);
+  }, [onRegionClick, animateCamera, clearPatientReaction, anatomyLayer, bayStage, patientVoice, patientPosture, patientMobility, treatmentBayOverviewEnabled, patientScale, faceAttachment]);
 
   // Phase 2F: Sound progress animation
   const startSoundProgress = useCallback((actionId: string, durationMs: number) => {
@@ -6184,6 +6376,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 // Receive the surface projector so labels anchor to the real mesh.
                 // Wrap in an arrow so React stores the function rather than calling it.
                 onSurfaceSampler={handleSurfaceSampler}
+                onFaceAttachment={setFaceAttachment}
                 dressed={anatomyLayer === 'dressed'}
                 dressedActiveRegion={regionExposed ? activeRegion : defibrillatorPadsAttached ? 'chest' : null}
                 pupilLeftMm={pupilProfile.leftMm}
@@ -6201,6 +6394,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
               />
 
               <TreatmentBayImmersionLayer
+                faceAttachment={faceAttachment}
                 appliedTreatmentIds={appliedTreatmentIds}
                 active={useTreatmentBayPresentation}
                 stage={bayStage}
@@ -6290,6 +6484,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                   canvas controls or equipment status while it loads. */}
               <Suspense fallback={null}>
                 <TreatmentEquipmentOverlay
+                  faceAttachment={faceAttachment}
                   appliedTreatmentIds={appliedTreatmentIds}
                   sampler={surfaceSampler}
                   presentation={markerPresentation}
@@ -6304,12 +6499,12 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 <ContactShadows position={[0, -0.01, 0]} opacity={0.32} scale={3.4} blur={3.4} far={3} />
               )}
 
-              {/* Stage 3 post pipeline (N8AO + SMAA — see AdaptiveQuality.tsx
-                  for what's deliberately absent). Mounted last so every scene
-                  object above renders through it; the drei <Html> markers are
-                  DOM, portalled outside the canvas, and sit on top untouched.
-                  Unmounts entirely on the first degrade rung. */}
-              {quality.composerEnabled && anatomyLayer !== 'skeleton' && <PatientPostEffects />}
+              {/* Clinical care uses direct antialiased ACES rendering throughout.
+                  The optional cinematic composer intermittently outputs black
+                  frames after repeated Retina-sized examination transitions,
+                  even when retained across dock resizes. Keep physical lighting,
+                  skin textures and contact shadows without that screen-space
+                  pipeline; colour findings must also match across camera modes. */}
 
               <OrbitControls
                 ref={controlsRef}
@@ -6477,6 +6672,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
 
                 <div className="min-h-0 overflow-y-auto p-2.5">
                   <SecondaryAssessmentOutline
+                    liveVitals={effectiveVitals}
                     activeRegion={activeRegion}
                     selectedAction={selectedAction}
                     caseData={caseData}

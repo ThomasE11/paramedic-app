@@ -40,6 +40,12 @@ test('COPD starts with a 28% Venturi pathway and teaches its fixed-performance s
 
   await procedure.getByRole('button', { name: /Controlled O₂ running — target 88–92%/i }).click();
   await expect(procedure).toBeHidden();
-  await expect(page.locator('[data-applied-equipment="simple-mask"][data-airway-connection="face"]')).toBeVisible();
+  await expect(
+    page.locator(
+      '[data-applied-equipment="venturi"]'
+        + '[data-airway-connection="face"]'
+        + '[data-patient-anchored="true"]',
+    ),
+  ).toBeVisible();
   await expect(page.getByText('1 deployed', { exact: true })).toBeVisible();
 });

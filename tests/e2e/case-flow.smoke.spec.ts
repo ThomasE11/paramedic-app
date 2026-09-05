@@ -24,7 +24,12 @@ test('full case flow: landing → treatment → debrief', async ({ page }) => {
 
   // ── Case selection (mission board) ──
   await expect(page.getByText(/Training mission board/i)).toBeVisible();
-  await page.getByRole('button', { name: /Launch smart case/i }).click();
+  // Choose a repeatable respiratory encounter, not an arbitrary smart case:
+  // blindly applying the first airway item can correctly trigger a warning.
+  await page.getByRole('button', { name: '4th Year', exact: true }).click();
+  await page.getByRole('button', { name: /Condition practice.*Search a diagnosis/i }).click();
+  await page.getByPlaceholder('STEMI, asthma, pneumothorax, anaphylaxis...').fill('Life-threatening asthma');
+  await page.getByRole('button', { name: /Life-threatening asthma.*1 case/i }).click();
 
   // ── Briefing ──
   const beginSurvey = page.getByRole('button', { name: /Begin Scene Survey/i });
@@ -43,18 +48,20 @@ test('full case flow: landing → treatment → debrief', async ({ page }) => {
     page.getByRole('button', { name: /power the monitor|Monitor is on/i }),
   ).toBeVisible();
 
-  // ── Open a jump bag, apply the first available treatment ──
-  await page.getByRole('button', { name: /Open Airway Bag/i }).click();
-  await page.getByRole('button', { name: 'Apply', exact: true }).first().click();
-
-  // Treatment registers: "Given" badge + live care feed has entries.
-  await expect(page.getByText('Given').first()).toBeVisible({ timeout: 10_000 });
+  // ── Apply oxygen through the real hands-on procedure ──
+  await page.getByRole('button', { name: 'Select Non-rebreather', exact: true }).click();
+  const oxygen = page.getByRole('dialog', { name: /Apply non-rebreather mask/i });
+  for (const step of ['Connect oxygen tubing', 'Pre-inflate reservoir', 'Seat the mask', 'Set prescribed flow', 'Confirm response']) {
+    await oxygen.getByRole('button', { name: `Perform: ${step}` }).click();
+  }
+  await oxygen.getByRole('button', { name: /Oxygen running — reassess SpO₂/i }).click();
+  await expect(page.getByRole('button', { name: 'Connected Non-rebreather', exact: true })).toBeVisible();
   await expect(page.getByText(/Live care feed/i)).toBeVisible();
 
   // ── End case: transport & handover wizard ──
   await page.getByRole('button', { name: 'Transport', exact: true }).click();
   await page.getByRole('button', { name: /Lights & Sirens/i }).click();
-  await page.getByRole('button', { name: /^Supine/ }).click();
+  await page.getByRole('button', { name: /Sitting|Upright|Semi.recumbent/i }).first().click();
   await page.getByRole('button', { name: /Yes — Pre-Alert/i }).click();
   await page.getByRole('button', { name: /Nearest ED/i }).click();
   await page.getByRole('button', { name: /^Next$/ }).click();

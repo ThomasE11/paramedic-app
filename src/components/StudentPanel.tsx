@@ -134,7 +134,6 @@ import {
   searchHintForBayEquipment,
   type BayEquipmentFocus,
   bagKeyForTreatment,
-  latestUniqueAppliedTreatments,
   recommendedManagementTabForCase,
   type ManagementTab,
 } from '@/components/TreatmentJumpBagPanel';
@@ -166,7 +165,6 @@ import {
   projectedEtco2Target,
   targetMinuteVentilationLitres,
 } from '@/lib/ventilationPhysiology';
-import { tacticalCareHeadline } from '@/lib/tacticalCarePresentation';
 
 /**
  * Generate a student-friendly case title that doesn't reveal the diagnosis.
@@ -699,14 +697,6 @@ interface PendingTreatmentChallenge {
   defibParams?: DefibrillationParams;
 }
 
-interface TacticalGearStatus {
-  id: string;
-  label: string;
-  status: 'connected' | 'needs-recheck' | 'confirmed';
-  tone: 'airway' | 'circulation' | 'medication' | 'transport' | 'exposure' | 'neutral';
-  detail: string;
-}
-
 interface TacticalCareFeedItem {
   id: string;
   label: string;
@@ -726,72 +716,10 @@ interface TacticalTimelineItem {
   tone: 'assessment' | 'treatment' | 'vitals' | 'alert' | 'reassess';
 }
 
-function getGearTone(treatment?: Treatment): TacticalGearStatus['tone'] {
-  if (!treatment) return 'neutral';
-  const text = `${treatment.id} ${treatment.name} ${treatment.description} ${treatment.category}`.toLowerCase();
-  if (/oxygen|mask|bvm|ventilat|cpap|airway|intubat|suction|nebul/.test(text)) return 'airway';
-  if (/iv|fluid|defib|aed|cpr|tourniquet|bleed|txa|circulation/.test(text)) return 'circulation';
-  if (treatment.category === 'medication' || /drug|adrenaline|aspirin|gtn|midazolam|naloxone|glucose/.test(text)) return 'medication';
-  if (/stretcher|board|scoop|collar|transport|extricat|splint|mattress/.test(text)) return 'transport';
-  if (/blanket|cool|warm|position|exposure|dressing/.test(text)) return 'exposure';
-  return 'neutral';
-}
-
 function formatClinicalToken(value: string): string {
   return value
     .replace(/[_-]+/g, ' ')
     .replace(/\b\w/g, char => char.toUpperCase());
-}
-
-function TacticalEquipmentRibbon({
-  statuses,
-  pendingCount,
-  completedCount,
-  activeProblem,
-}: {
-  statuses: TacticalGearStatus[];
-  pendingCount: number;
-  completedCount: number;
-  activeProblem: string;
-}) {
-  const headline = tacticalCareHeadline({
-    pendingCount,
-    completedCount,
-    activeCount: statuses.length,
-  });
-
-  return (
-    <div className={`tactical-equipment-ribbon ${statuses.length === 0 ? 'is-empty' : ''}`} aria-live="polite">
-      <div className="tactical-equipment-ribbon-head">
-        <div>
-          <p>Care in place</p>
-          <strong>{headline}</strong>
-        </div>
-        <span className={pendingCount > 0 ? 'is-pending' : completedCount > 0 || statuses.length > 0 ? 'is-confirmed' : ''} />
-      </div>
-      <div className="tactical-gear-track">
-        {statuses.length > 0 ? statuses.map(status => (
-          <div
-            key={status.id}
-            className="tactical-gear-chip"
-            data-status={status.status}
-            data-tone={status.tone}
-          >
-            <CheckCircle2 className="h-3 w-3" />
-            <div className="min-w-0">
-              <p>{status.label}</p>
-              <span>{status.detail}</span>
-            </div>
-          </div>
-        )) : (
-          <div className="tactical-gear-empty">
-            <Target className="h-3.5 w-3.5" />
-            <span>{activeProblem || 'Select a kit and treat what you can see.'}</span>
-          </div>
-        )}
-      </div>
-    </div>
-  );
 }
 
 function TacticalCareFeed({
@@ -1488,29 +1416,6 @@ export function StudentPanel({
     () => realismDirector ? derivePatientVisualState(realismDirector) : null,
     [realismDirector],
   );
-  const tacticalGearStatuses = useMemo<TacticalGearStatus[]>(() => {
-    const loopByTreatmentId = new Map(
-      (realismDirector?.treatmentLoopStates ?? []).map(loop => [loop.treatmentId, loop]),
-    );
-
-    return latestUniqueAppliedTreatments(appliedTreatments, 5).map((applied): TacticalGearStatus => {
-      const treatment = TREATMENTS.find(item => item.id === applied.id);
-      const loop = loopByTreatmentId.get(applied.id);
-      const status: TacticalGearStatus['status'] =
-        loop?.state === 'reassessed' ? 'confirmed'
-          : loop ? 'needs-recheck'
-            : 'connected';
-      return {
-        id: `${applied.id}-${applied.appliedAt}`,
-        label: applied.name || treatment?.name || applied.id.replace(/_/g, ' '),
-        status,
-        tone: getGearTone(treatment),
-        detail: status === 'confirmed'
-          ? 'response checked'
-          : loop?.reassessmentPrompt || treatment?.description || 'connected to patient',
-      };
-    });
-  }, [appliedTreatments, realismDirector]);
   const [showDefibDialog, setShowDefibDialog] = useState(false);
   const [pendingDefibTreatment, setPendingDefibTreatment] = useState<Treatment | null>(null);
   const [pendingHandsOnTreatment, setPendingHandsOnTreatment] = useState<Treatment | null>(null);
@@ -2978,10 +2883,15 @@ export function StudentPanel({
 
     setPhase('vitals');
     toast.success('Case started — begin your assessment', { duration: 3000 });
+  }, [currentCase, readOnly, setPhase, stopNarration]);
 
-    // Start deterioration timer — patient deteriorates if not treated
-    if (deteriorationIntervalRef.current) clearInterval(deteriorationIntervalRef.current);
-    deteriorationIntervalRef.current = setInterval(() => {
+  // The live encounter owns this timer, not the scene-survey button. Loaded
+  // classroom/dev encounters enter the same live phase without clicking that
+  // button and previously never deteriorated at all.
+  const encounterRunning = caseStartTime != null && (phase === 'vitals' || phase === 'case');
+  useEffect(() => {
+    if (!encounterRunning || readOnly || !currentCase) return;
+    const interval = setInterval(() => {
       setPatientState(prev => {
         if (!prev || !currentCase) return prev;
         if (activeReactionRef.current) return prev; // reaction owns vitals — pause deterioration
@@ -3006,17 +2916,18 @@ export function StudentPanel({
         if (/glucose|dextrose|glucagon/.test(tx) && prev.vitals.bloodGlucose != null && newState.vitals.bloodGlucose != null) {
           newState.vitals.bloodGlucose = Math.max(newState.vitals.bloodGlucose, prev.vitals.bloodGlucose);
         }
-        if (newState.vitals.spo2 !== prev.vitals.spo2 || newState.vitals.pulse !== prev.vitals.pulse) {
+        if (JSON.stringify(newState.vitals) !== JSON.stringify(prev.vitals)) {
           setCurrentVitals(ensureCompleteVitals(newState.vitals));
         }
         return newState;
       });
     }, 30000); // Check every 30 seconds
-    // readOnly in deps so hand-off to a student rebuilds the callback
-    // with readOnly=false; otherwise the student-as-driver can't actually
-    // start the case (silent `if (readOnly) return;` hit from stale
-    // closure).
-  }, [currentCase, readOnly, setPhase, stopNarration]);
+    deteriorationIntervalRef.current = interval;
+    return () => {
+      clearInterval(interval);
+      if (deteriorationIntervalRef.current === interval) deteriorationIntervalRef.current = null;
+    };
+  }, [currentCase, encounterRunning, readOnly]);
 
   // LUCAS device nudge — if CPR has been running for ≥4 minutes and no
   // mechanical CPR device has been applied yet, offer one via a single,
@@ -3890,13 +3801,6 @@ export function StudentPanel({
     lastActivityRef.current = Date.now();
     setHintVisible(false);
 
-    // First palpation of an injured region hurts — capture whether this step
-    // was already performed so we only bump painScore on the first encounter
-    // (re-palpating the same region doesn't compound the score indefinitely).
-    const wasAlreadyPerformed = assessmentTrackerRef.current.performed.some(
-      p => p.stepId === stepId,
-    );
-
     const { tracker: updatedTracker, findings } = performAssessmentStep(
       assessmentTrackerRef.current,
       stepId,
@@ -3910,22 +3814,10 @@ export function StudentPanel({
     setAssessmentTracker(updatedTracker);
     setActiveFindings({ stepId, findings });
 
-    // Pain bump on first palpation of a region that yields abnormal/critical
-    // findings — examining a tender injury hurts. Skipped for the pain-
-    // assessment step itself (that's asking, not palpating) and for re-
-    // assessments. Scope: v1 per realism plan workstream 2b.
-    if (!wasAlreadyPerformed && stepId !== 'pain-assessment') {
-      const hasCritical = findings.some(f => f.severity === 'critical');
-      const hasAbnormal = findings.some(f => f.severity === 'abnormal');
-      if (hasCritical || hasAbnormal) {
-        const bump = hasCritical ? 3 : 2;
-        setCurrentVitals(prev => {
-          if (!prev) return prev;
-          const cur = prev.painScore ?? 0;
-          return { ...prev, painScore: Math.min(10, cur + bump) };
-        });
-      }
-    }
+    // An abnormal finding is not evidence of pain. This callback also covers
+    // looking at cyanotic lips, listening and taking a history, not only
+    // palpation. Physical reactions belong to the specific interaction; the
+    // reported pain score must come from the patient/case and treatment state.
 
     // Reveal vitals on the LIFEPAK monitor when ABCDE assessment exposes them
     if (currentCase) {
@@ -6034,12 +5926,17 @@ export function StudentPanel({
               <div className="tactical-bay-command relative z-10 border-b border-cyan-300/15 px-3 py-3 sm:px-4">
                 <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
                   <div className="min-w-0">
-                    <p className="text-[9px] font-black uppercase tracking-[0.28em] text-cyan-200/65">Tactical treatment bay</p>
                     <div className="mt-1 flex flex-wrap items-center gap-2">
-                      <h2 className="text-lg font-black uppercase leading-none tracking-[0.08em] text-white sm:text-xl">Patient management</h2>
-                      <Badge variant="outline" className="border-cyan-300/30 bg-cyan-300/10 text-[9px] uppercase tracking-[0.16em] text-cyan-100">
-                        first-person care
-                      </Badge>
+                      <h2 className="text-base font-bold text-white">Assess & treat</h2>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="tactical-monitor-shortcut h-7 text-xs text-cyan-100"
+                        onClick={() => document.querySelector('[aria-label="Vital signs monitor"]')?.scrollIntoView({ block: 'start' })}
+                      >
+                        View bedside monitor
+                      </Button>
                       {sceneEnvironment && (
                         <Badge variant="outline" className="border-amber-300/30 bg-amber-300/10 text-[9px] uppercase tracking-[0.16em] text-amber-100">
                           {currentCase ? sceneEnvironmentLabel(currentCase, sceneEnvironment) : null}
@@ -6078,7 +5975,7 @@ export function StudentPanel({
                     </div>
                   </div>
 
-                  <div className="tactical-bay-vitals grid grid-cols-2 gap-2 sm:grid-cols-4 xl:min-w-[34rem]">
+                  <div className="tactical-bay-vitals grid grid-cols-3 gap-2" role="group" aria-label="Live vital signs summary">
                     <div className="tactical-hud-tile">
                       <HUDValue
                         label="HR"
@@ -6104,45 +6001,24 @@ export function StudentPanel({
                         critical={currentVitals != null && (currentVitals.respiration < 8 || currentVitals.respiration > 30)}
                       />
                     </div>
-                    <div className={`tactical-hud-tile ${realismDirector?.pendingReassessmentIds.length ? 'tactical-hud-warning' : 'tactical-hud-clear'}`}>
-                      <HUDValue
-                        label="Loop"
-                        value={realismDirector?.pendingReassessmentIds.length ?? 0}
-                        unit="pending"
-                      />
-                    </div>
                   </div>
                 </div>
 
-	                <div className="mt-3 grid gap-2 text-[10px] sm:grid-cols-3">
+	                <div className="mt-2 text-[11px]">
 	                  <div className="tactical-objective-chip">
 	                    <Shield className="h-3.5 w-3.5" />
                     <span>{deriveLivePatientAppearance(currentCase, currentVitals, patientState)}</span>
                   </div>
-                  <div className="tactical-objective-chip">
-                    <Target className="h-3.5 w-3.5" />
-                    <span>{realismDirector?.activeProblems[0] || currentCase.dispatchInfo?.callReason || 'identify life threat'}</span>
-                  </div>
-                  <div className="tactical-objective-chip">
-                    <ClipboardCheck className="h-3.5 w-3.5" />
-	                    <span>{realismDirector?.treatmentLoopStates.length ? 'apply -> reassess -> confirm response' : 'open kit, treat, reassess'}</span>
-	                  </div>
 	                </div>
 
 	                {/* Coaching hint — compact in-bay comms strip, so it supports the
 	                    first-person treatment flow without pushing the patient stage
 	                    down the page. */}
 	                {hintVisible && currentHint && (
-	                  <div className="tactical-coaching-strip mt-3">
-	                    <Sparkles className="h-3.5 w-3.5 shrink-0 text-cyan-200" />
-	                    <div className="min-w-0 flex-1">
-	                      <p className="text-[8px] font-black uppercase tracking-[0.22em] text-cyan-200/62">Comms hint</p>
-	                      <p className="mt-0.5 truncate text-[10px] font-medium text-slate-100/86">{currentHint}</p>
-	                    </div>
-	                    <Button variant="ghost" size="sm" className="h-6 w-6 shrink-0 rounded-full p-0 text-cyan-100/70 hover:bg-cyan-300/10 hover:text-white" onClick={() => setHintVisible(false)}>
-	                      <XCircle className="h-3.5 w-3.5" />
-	                    </Button>
-	                  </div>
+	                  <details className="mt-2 text-xs text-cyan-100/85">
+	                    <summary className="w-fit cursor-pointer rounded px-1 py-1 focus-visible:outline focus-visible:outline-2">Clinical coaching hint</summary>
+	                    <p className="mt-1 max-w-3xl leading-relaxed">{currentHint}</p>
+	                  </details>
 	                )}
 
 		              </div>
@@ -6157,12 +6033,6 @@ export function StudentPanel({
 	                    <span>body cam</span>
 	                    <strong>{activeManagementTab.toUpperCase()}</strong>
 	                  </div>
-	                  <TacticalEquipmentRibbon
-	                    statuses={tacticalGearStatuses}
-	                    pendingCount={realismDirector?.pendingReassessmentIds.length ?? 0}
-	                    completedCount={realismDirector?.fullyRealizedTreatmentIds.length ?? 0}
-	                    activeProblem={realismDirector?.activeProblems[0] || currentCase.dispatchInfo?.callReason || ''}
-	                  />
 	                  <Suspense fallback={<LoadingCard />}>
                     <Body3DModel
                       key={currentCase.id}
@@ -6604,6 +6474,7 @@ export function StudentPanel({
                 <HUDVitals className="tactical-monitor-card" alarm={patientState?.isInArrest ?? false}>
                   <Suspense fallback={<LoadingCard />}>
                     <VitalSignsMonitor
+                      physiologyMode="external"
                       initialVitals={currentVitals || buildInitialVitalsFromCase(currentCase)}
                       previousVitals={previousVitals}
                       deteriorationVitals={currentCase.vitalSignsProgression.deterioration ? ensureCompleteVitals(currentCase.vitalSignsProgression.deterioration) : undefined}
