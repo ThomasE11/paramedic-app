@@ -191,10 +191,12 @@ export function derivePatientPosture(
 
   const breathingContext = `${caseData.category ?? ''} ${caseData.subcategory ?? ''} ${caseData.title ?? ''} ${caseData.dispatchInfo?.callReason ?? ''}`;
   const tachypnoeaWithoutTripod = /panic|anxiety|hyperventilat|labour|labor|kussmaul|metabolic/i.test(breathingContext);
-  const respiratoryDistress = !tachypnoeaWithoutTripod && (
-    (typeof respiration === 'number' && respiration >= 24) ||
-    /asthma|copd|respiratory failure|shortness of breath|wheez|dyspn/i.test(breathingContext)
-  );
+  // A fast rate alone does not establish respiratory bracing: pain, bleeding
+  // and heat illness can all raise RR while the authored patient stays seated.
+  // This is a pose-selection cue, not a diagnostic or treatment threshold.
+  const respiratoryDistress = !tachypnoeaWithoutTripod
+    && /asthma|copd|respiratory failure|shortness of breath|wheez|dyspn|breathless|pulmonary (?:oedema|edema)/i.test(breathingContext)
+    && (respiration == null || respiration >= 24);
 
   if (mobility === 'recumbent') return 'supine';
   if (mobility === 'seated') {

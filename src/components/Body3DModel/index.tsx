@@ -4934,7 +4934,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
       isInArrest,
       unconscious: patientUnconscious,
       positioningOverride: treatmentPositioning,
-      respiration: caseData.abcde?.breathing?.rate ?? effectiveVitals?.respiration ?? null,
+      respiration: effectiveVitals?.respiration ?? caseData.abcde?.breathing?.rate ?? null,
     });
   }, [isInArrest, treatmentPositioning, patientUnconscious, patientMobility, effectiveVitals, caseData]);
 
