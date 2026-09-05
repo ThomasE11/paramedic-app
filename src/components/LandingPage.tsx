@@ -4,9 +4,11 @@ import {
   HeartPulse, Bone, Wind, Brain, Baby,
   HeartHandshake, Flame, FlaskConical, ArrowRight,
   BookOpen, Monitor, Users, Search, SlidersHorizontal,
-  Timer, ShieldCheck, ClipboardCheck
+  Timer, ShieldCheck, ClipboardCheck,
+  Waves, PersonStanding, Thermometer, Droplets, UsersRound, House, ScanSearch
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { caseCategories, yearLevels } from '@/data/caseFilters';
 
 const ClinicalReferenceDialog = lazy(() =>
   import('@/components/ClinicalReferenceDialog').then(m => ({ default: m.ClinicalReferenceDialog })),
@@ -15,12 +17,16 @@ const ClinicalReferenceDialog = lazy(() =>
 interface LandingPageProps {
   onRoleSelect: (role: 'educator' | 'student' | 'classroom-host' | 'classroom-join', category?: string) => void;
   caseCount: number;
+  /** Real per-category case counts. Empty until the case library finishes loading. */
+  caseCountsByCategory: Record<string, number>;
 }
 
 type CategoryFilter = 'all' | 'high-acuity' | 'assessment' | 'procedures';
 type CategoryTone = 'red' | 'orange' | 'sky' | 'indigo' | 'teal' | 'rose' | 'amber' | 'emerald';
 
 interface CategoryMeta {
+  /** Matches a `caseCategories` value — this is what the student filter receives. */
+  slug: string;
   name: string;
   count: number;
   icon: typeof HeartPulse;
@@ -30,7 +36,6 @@ interface CategoryMeta {
   signal: string;
   focus: string[];
   filters: CategoryFilter[];
-  difficulty: string[];
 }
 
 const categoryFilters: Array<{ value: CategoryFilter; label: string }> = [
@@ -83,10 +88,13 @@ const categoryToneClass: Record<CategoryTone, { accent: string; icon: string; ch
   },
 };
 
-const categories: CategoryMeta[] = [
-  {
-    name: 'Cardiac',
-    count: 12,
+/**
+ * Editorial copy per category slug. Counts are NOT stored here — they come from
+ * the live case library, so the library grid can never drift from the data again.
+ * Every key must exist in `caseCategories`; a missing key just falls back below.
+ */
+const categoryCopy: Record<string, Omit<CategoryMeta, 'slug' | 'name' | 'count'>> = {
+  cardiac: {
     icon: HeartPulse,
     tone: 'red',
     track: 'High acuity',
@@ -94,11 +102,17 @@ const categories: CategoryMeta[] = [
     signal: 'Rhythm recognition, defib timing, perfusion checks',
     focus: ['ECG', 'Defib', 'Perfusion'],
     filters: ['high-acuity', 'assessment', 'procedures'],
-    difficulty: ['emerald', 'emerald', 'amber', 'gray'],
   },
-  {
-    name: 'Trauma',
-    count: 10,
+  'cardiac-ecg': {
+    icon: Activity,
+    tone: 'red',
+    track: 'Interpretation',
+    summary: '12-lead interpretation and rhythm drills',
+    signal: 'Axis, blocks, ischaemic patterns, STEMI mimics',
+    focus: ['12-lead', 'Rhythm', 'STEMI'],
+    filters: ['assessment'],
+  },
+  trauma: {
     icon: Bone,
     tone: 'orange',
     track: 'Scene control',
@@ -106,11 +120,8 @@ const categories: CategoryMeta[] = [
     signal: 'Catastrophic bleed, spinal motion, rapid transport decisions',
     focus: ['MARCH', 'Splints', 'Transport'],
     filters: ['high-acuity', 'assessment', 'procedures'],
-    difficulty: ['emerald', 'amber', 'amber', 'red'],
   },
-  {
-    name: 'Respiratory',
-    count: 4,
+  respiratory: {
     icon: Wind,
     tone: 'sky',
     track: 'Airway focus',
@@ -118,11 +129,8 @@ const categories: CategoryMeta[] = [
     signal: 'Work of breathing, oxygen choice, escalation to ventilation',
     focus: ['Oxygen', 'BVM', 'CPAP'],
     filters: ['high-acuity', 'assessment', 'procedures'],
-    difficulty: ['emerald', 'emerald', 'amber', 'gray'],
   },
-  {
-    name: 'Neurological',
-    count: 3,
+  neurological: {
     icon: Brain,
     tone: 'indigo',
     track: 'Assessment',
@@ -130,11 +138,8 @@ const categories: CategoryMeta[] = [
     signal: 'GCS, pupils, glucose, time-last-known-well',
     focus: ['FAST', 'GCS', 'Pupils'],
     filters: ['assessment', 'high-acuity'],
-    difficulty: ['emerald', 'amber', 'amber', 'gray'],
   },
-  {
-    name: 'Pediatric',
-    count: 1,
+  pediatric: {
     icon: Baby,
     tone: 'teal',
     track: 'Expert',
@@ -142,11 +147,8 @@ const categories: CategoryMeta[] = [
     signal: 'Weight-based dosing, family communication, pediatric triangle',
     focus: ['Dosing', 'PALS', 'Family'],
     filters: ['assessment', 'procedures'],
-    difficulty: ['amber', 'amber', 'red', 'red'],
   },
-  {
-    name: 'Obstetric',
-    count: 1,
+  obstetric: {
     icon: HeartHandshake,
     tone: 'rose',
     track: 'Expert',
@@ -154,11 +156,8 @@ const categories: CategoryMeta[] = [
     signal: 'Maternal assessment, fetal context, rapid escalation triggers',
     focus: ['Delivery', 'Bleeding', 'Shock'],
     filters: ['high-acuity', 'assessment', 'procedures'],
-    difficulty: ['amber', 'red', 'red', 'gray'],
   },
-  {
-    name: 'Burns',
-    count: 1,
+  burns: {
     icon: Flame,
     tone: 'amber',
     track: 'Advanced',
@@ -166,11 +165,8 @@ const categories: CategoryMeta[] = [
     signal: 'Airway risk, TBSA estimate, cooling and analgesia sequencing',
     focus: ['TBSA', 'Airway', 'Analgesia'],
     filters: ['assessment', 'procedures'],
-    difficulty: ['emerald', 'amber', 'amber', 'gray'],
   },
-  {
-    name: 'Toxicology',
-    count: 1,
+  toxicology: {
     icon: FlaskConical,
     tone: 'emerald',
     track: 'Advanced',
@@ -178,26 +174,120 @@ const categories: CategoryMeta[] = [
     signal: 'Toxidrome recognition, naloxone timing, airway protection',
     focus: ['Toxidrome', 'Antidote', 'Airway'],
     filters: ['assessment', 'procedures'],
-    difficulty: ['amber', 'amber', 'red', 'gray'],
   },
-];
-
-const difficultyDotClass: Record<string, string> = {
-  emerald: 'bg-emerald-400',
-  amber: 'bg-amber-400',
-  red: 'bg-red-400',
-  gray: 'bg-slate-300 dark:bg-slate-600',
+  metabolic: {
+    icon: Droplets,
+    tone: 'emerald',
+    track: 'Assessment',
+    summary: 'Hypoglycaemia, DKA, electrolyte crises',
+    signal: 'BGL trends, dextrose vs glucagon, fluid and insulin context',
+    focus: ['BGL', 'Dextrose', 'Fluids'],
+    filters: ['assessment', 'procedures'],
+  },
+  environmental: {
+    icon: Thermometer,
+    tone: 'amber',
+    track: 'Scene control',
+    summary: 'Heat illness, hypothermia, drowning, envenomation',
+    signal: 'Core temperature, active rewarming or cooling, scene hazards',
+    focus: ['Temp', 'Rewarm', 'Hazards'],
+    filters: ['high-acuity', 'assessment'],
+  },
+  psychiatric: {
+    icon: Brain,
+    tone: 'rose',
+    track: 'Communication',
+    summary: 'Acute behavioural disturbance and crisis presentations',
+    signal: 'De-escalation first, capacity, restraint as a last resort',
+    focus: ['De-escalation', 'Capacity', 'Safety'],
+    filters: ['assessment'],
+  },
+  'anxiety-related': {
+    icon: Waves,
+    tone: 'teal',
+    track: 'Communication',
+    summary: 'Panic, hyperventilation, somatic presentations',
+    signal: 'Excluding organic causes before reassurance and coaching',
+    focus: ['Rule-out', 'Coaching', 'Rapport'],
+    filters: ['assessment'],
+  },
+  'elderly-fall': {
+    icon: PersonStanding,
+    tone: 'indigo',
+    track: 'Assessment',
+    summary: 'Falls, frailty, and silent injury in older patients',
+    signal: 'Cause of the fall, occult fracture, polypharmacy, non-conveyance risk',
+    focus: ['Frailty', 'Silver trauma', 'Meds'],
+    filters: ['assessment'],
+  },
+  'multiple-patients': {
+    icon: UsersRound,
+    tone: 'orange',
+    track: 'Scene control',
+    summary: 'Multi-casualty scenes and triage under pressure',
+    signal: 'Triage sieve, resource requests, command and communication',
+    focus: ['Triage', 'Command', 'Resources'],
+    filters: ['high-acuity', 'procedures'],
+  },
+  'post-discharge': {
+    icon: House,
+    tone: 'sky',
+    track: 'Continuity',
+    summary: 'Deterioration and complications after hospital discharge',
+    signal: 'Recent history, medication changes, re-presentation red flags',
+    focus: ['History', 'Meds', 'Red flags'],
+    filters: ['assessment'],
+  },
+  'rule-out': {
+    icon: ScanSearch,
+    tone: 'sky',
+    track: 'Assessment',
+    summary: 'Undifferentiated presentations needing exclusion',
+    signal: 'Working through differentials without anchoring too early',
+    focus: ['Differentials', 'Red flags', 'Safety net'],
+    filters: ['assessment'],
+  },
+  general: {
+    icon: Stethoscope,
+    tone: 'teal',
+    track: 'Foundations',
+    summary: 'Core assessment and everyday callouts',
+    signal: 'Clean ABCDE, history taking, and appropriate disposition',
+    focus: ['ABCDE', 'History', 'Disposition'],
+    filters: ['assessment'],
+  },
 };
 
-function getDifficultyLabel(difficulty: string[]) {
-  if (difficulty.filter(c => c === 'red').length >= 2) return 'Expert';
-  if (difficulty.filter(c => c === 'amber').length >= 2) return 'Advanced';
-  return 'Mixed';
-}
+const fallbackCopy: Omit<CategoryMeta, 'slug' | 'name' | 'count'> = {
+  icon: Stethoscope,
+  tone: 'teal',
+  track: 'Assessment',
+  summary: 'Clinical scenarios from the case library',
+  signal: 'Structured assessment and treatment decisions',
+  focus: ['ABCDE'],
+  filters: ['assessment'],
+};
 
-export function LandingPage({ onRoleSelect, caseCount }: LandingPageProps) {
+export function LandingPage({ onRoleSelect, caseCount, caseCountsByCategory }: LandingPageProps) {
   const [categoryQuery, setCategoryQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all');
+
+  // The library is lazy-loaded, so counts arrive after first paint. Until they
+  // do, show every category rather than an empty grid.
+  const countsLoaded = caseCount > 0;
+
+  const categories = useMemo<CategoryMeta[]>(() => (
+    caseCategories
+      .map(cat => ({
+        slug: cat.value,
+        name: cat.label,
+        count: caseCountsByCategory[cat.value] ?? 0,
+        ...(categoryCopy[cat.value] ?? fallbackCopy),
+      }))
+      // Never advertise a track with nothing behind it.
+      .filter(cat => !countsLoaded || cat.count > 0)
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+  ), [caseCountsByCategory, countsLoaded]);
 
   const visibleCategories = useMemo(() => {
     const query = categoryQuery.trim().toLowerCase();
@@ -214,7 +304,7 @@ export function LandingPage({ onRoleSelect, caseCount }: LandingPageProps) {
 
       return matchesFilter && matchesQuery;
     });
-  }, [categoryFilter, categoryQuery]);
+  }, [categories, categoryFilter, categoryQuery]);
 
   const visibleCaseCount = visibleCategories.reduce((total, cat) => total + cat.count, 0);
 
@@ -306,14 +396,14 @@ export function LandingPage({ onRoleSelect, caseCount }: LandingPageProps) {
               </div>
               <div className="w-px h-10 bg-border/80" />
               <div className="text-center">
-                <div className="text-3xl font-bold font-mono">18</div>
+                <div className="text-3xl font-bold font-mono">{categories.length}</div>
                 <div className="text-[10px] text-muted-foreground font-medium mt-1 uppercase tracking-wider">
                   Categories
                 </div>
               </div>
               <div className="w-px h-10 bg-border/80" />
               <div className="text-center">
-                <div className="text-3xl font-bold font-mono">4</div>
+                <div className="text-3xl font-bold font-mono">{yearLevels.length}</div>
                 <div className="text-[10px] text-muted-foreground font-medium mt-1 uppercase tracking-wider">
                   Year Levels
                 </div>
@@ -485,8 +575,8 @@ export function LandingPage({ onRoleSelect, caseCount }: LandingPageProps) {
               const tone = categoryToneClass[cat.tone];
               return (
                 <button
-                  key={cat.name}
-                  onClick={() => onRoleSelect('student', cat.name.toLowerCase())}
+                  key={cat.slug}
+                  onClick={() => onRoleSelect('student', cat.slug)}
                   aria-label={`Start ${cat.name} training cases`}
                   className="group relative min-h-[220px] overflow-hidden rounded-xl border border-white/60 bg-white/70 p-4 text-left shadow-[0_18px_45px_-34px_rgba(15,23,42,0.5)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-cyan-200/80 hover:bg-white/82 hover:shadow-[0_24px_54px_-34px_rgba(15,23,42,0.62)] dark:border-white/10 dark:bg-white/[0.055] dark:hover:bg-white/[0.085]"
                 >
@@ -497,7 +587,7 @@ export function LandingPage({ onRoleSelect, caseCount }: LandingPageProps) {
                     </div>
                     <div className="flex flex-col items-end gap-1">
                       <span className="rounded-md bg-slate-900/90 px-2 py-1 text-[10px] font-semibold text-white dark:bg-white/90 dark:text-slate-950">
-                        {cat.count} cases
+                        {cat.count} {cat.count === 1 ? 'case' : 'cases'}
                       </span>
                       <span className={`rounded-full border px-2 py-0.5 text-[9px] font-semibold ${tone.chip}`}>
                         {cat.track}
@@ -529,15 +619,7 @@ export function LandingPage({ onRoleSelect, caseCount }: LandingPageProps) {
                     ))}
                   </div>
 
-                  <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-900/10 pt-3 dark:border-white/10">
-                    <div className="flex items-center gap-1.5">
-                      {cat.difficulty.map((color, i) => (
-                        <span key={i} className={`w-1.5 h-1.5 rounded-full ${difficultyDotClass[color] ?? difficultyDotClass.gray}`} />
-                      ))}
-                      <span className="text-[10px] font-medium text-muted-foreground">
-                        {getDifficultyLabel(cat.difficulty)}
-                      </span>
-                    </div>
+                  <div className="mt-4 flex items-center justify-end gap-3 border-t border-slate-900/10 pt-3 dark:border-white/10">
                     <span className="inline-flex items-center gap-1 text-xs font-semibold text-cyan-800 transition-colors group-hover:text-cyan-600 dark:text-cyan-200 dark:group-hover:text-cyan-100">
                       Start <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
                     </span>

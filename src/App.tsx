@@ -98,6 +98,7 @@ function App() {
             ep.setUserRole(role);
           }}
           caseCount={ep.allCases.length}
+          caseCountsByCategory={ep.caseCountsByCategory}
         />
         <CommandPalette onCaseSelect={() => ep.setUserRole('educator')} />
       </>
