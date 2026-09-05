@@ -37,6 +37,7 @@ import {
 } from '@/data/ecgRhythms';
 import { TwelveLeadReport } from './TwelveLeadReport';
 import { hasAttachedDefibrillatorPads } from '@/lib/defibrillatorSafety';
+import { capnographySignal, plethSignal } from '@/lib/monitorSignals';
 import {
   assessPacingCapture,
   assessPacingStart,
@@ -1069,9 +1070,9 @@ function PlethWaveform({ heartRate, spo2, color, height = 50, isVisible }: { hea
 
       // Recomputed per frame from refs — keeps the sweep continuous as HR/SpO2
       // change rather than tearing the canvas down on every value update.
-      const beatsPerSec = (hrRef.current > 0 ? hrRef.current : 60) / 60;
-      const pixelsPerBeat = pixelsPerSec / beatsPerSec;
-      const amplitude = Math.max(0.4, Math.min(0.85, ((spo2Ref.current || 98) / 100) * 0.85));
+      const signal = plethSignal(hrRef.current, spo2Ref.current);
+      const pixelsPerBeat = signal.cyclesPerSecond > 0 ? pixelsPerSec / signal.cyclesPerSecond : Infinity;
+      const amplitude = signal.amplitude;
 
       const advance = pixelsPerSec * dt;
       const startIdx = Math.floor(writeHeadRef.current);
@@ -1203,9 +1204,9 @@ function CapnographyWaveform({ respiratoryRate, etco2, color, height = 45, isVis
 
       // Recomputed per frame from refs — keeps the capnogram continuous as
       // RR/EtCO2 change rather than restarting the canvas on every update.
-      const breathsPerSec = (rrRef.current > 0 ? rrRef.current : 16) / 60;
-      const pixelsPerBreath = pixelsPerSec / breathsPerSec;
-      const amplitude = Math.min(1, ((etco2Ref.current || 35)) / 50) * 0.75;
+      const signal = capnographySignal(rrRef.current, etco2Ref.current);
+      const pixelsPerBreath = signal.cyclesPerSecond > 0 ? pixelsPerSec / signal.cyclesPerSecond : Infinity;
+      const amplitude = signal.amplitude;
 
       const advance = pixelsPerSec * dt;
       const startIdx = Math.floor(writeHeadRef.current);
@@ -1821,8 +1822,11 @@ export function VitalSignsMonitor({
       setHeartFlash(false);
       return;
     }
-    const hr = parseInt(String(currentVitals.pulse)) || 80;
-    if (hr === 0) return;
+    const hr = Number(currentVitals.pulse);
+    if (!Number.isFinite(hr) || hr <= 0) {
+      setHeartFlash(false);
+      return;
+    }
     const intervalMs = (60 / hr) * 1000;
 
     const flash = () => {
@@ -1857,10 +1861,10 @@ export function VitalSignsMonitor({
     if (!audioEngineRef.current) return;
 
     const monitorReady = powerOn && bootPhase === 'ready';
-    audioEngineRef.current._currentSpo2 = monitorReady && visibleVitals.has('spo2') ? (currentVitals.spo2 || 98) : null;
+    audioEngineRef.current._currentSpo2 = monitorReady && visibleVitals.has('spo2') ? (currentVitals.spo2 ?? null) : null;
 
     if (monitorReady && audioEnabled && visibleVitals.has('pulse') && currentRhythm.category !== 'arrest') {
-      const hr = parseInt(String(currentVitals.pulse)) || 80;
+      const hr = Number(currentVitals.pulse);
       if (hr > 0) {
         audioEngineRef.current.updateHeartbeatRate(hr);
         if (!audioEngineRef.current['isPlaying']) {
@@ -2178,9 +2182,9 @@ export function VitalSignsMonitor({
   // UNLESS arrest has been resolved (ROSC) — check both rhythm category AND cprState
   const rawHrValue = parseInt(String(currentVitals.pulse)) || 0;
   const isArrestRhythm = currentRhythm.category === 'arrest' && cprState?.active !== false;
-  const hrValue = isArrestRhythm ? 0 : (rawHrValue || (currentRhythm.category !== 'arrest' ? 80 : 0));
-  const spo2Value = currentVitals.spo2 || 98;
-  const rrValue = currentVitals.respiration || 16;
+  const hrValue = isArrestRhythm ? 0 : rawHrValue;
+  const spo2Value = currentVitals.spo2 ?? 0;
+  const rrValue = currentVitals.respiration ?? 0;
   const etco2Value = currentVitals.etco2;
 
   // NIBP auto-cycle effect
@@ -2858,7 +2862,8 @@ export function VitalSignsMonitor({
         {/* ================================================================ */}
         {/* TOP BAR — ON button + PRINT/CODE SUMMARY/TRANSMIT/12 LEAD       */}
         {/* ================================================================ */}
-        <div className="relative flex items-center gap-1 sm:gap-2 px-3 sm:px-5 py-2.5 sm:py-3 flex-wrap"
+        <div className="relative grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 gap-y-2 px-3 sm:px-5 py-2.5 sm:py-3"
+          data-monitor-header="true"
           style={{ background: 'linear-gradient(180deg, #3c4146 0%, #292f34 100%)', borderBottom: '1px solid rgba(0,0,0,0.45)' }}>
 
           {/* BIG ON BUTTON
@@ -2881,11 +2886,7 @@ export function VitalSignsMonitor({
           </button>
 
           {/* Side buttons — wrap on mobile */}
-          <div className="flex items-center gap-1 flex-wrap flex-1 min-w-0">
-            <div className="mr-1 hidden min-w-[105px] rounded border border-black/35 bg-black/35 px-2 py-1 shadow-inner md:block">
-              <span className="block text-[8px] font-mono font-bold tracking-[0.2em] text-emerald-300">TRANSPORT</span>
-              <span className="block text-[7px] font-mono tracking-[0.18em] text-gray-400">ALS MONITOR</span>
-            </div>
+          <div className="flex items-center justify-end gap-1 flex-wrap min-w-0">
             <SideButton label="PRINT" onClick={handlePrint} active={show12Lead} />
             <SideButton label="CODE" onClick={() => setShowCodeSummary(!showCodeSummary)} active={showCodeSummary} />
             <SideButton label="12 LEAD" onClick={() => {
@@ -2895,7 +2896,8 @@ export function VitalSignsMonitor({
           </div>
 
           {/* Right: mode selector + branding */}
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <div className="col-span-2 flex items-center justify-between gap-1.5 sm:gap-2 min-w-0">
+            <span className="text-[8px] font-mono font-bold tracking-wider text-emerald-300">ALS MONITOR</span>
             {assessmentMode && (
               <Badge variant="outline" className="text-[7px] border-amber-600/50 text-amber-300 h-4 bg-amber-950/50">ASSESS MODE</Badge>
             )}

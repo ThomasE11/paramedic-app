@@ -93,7 +93,7 @@ import {
 import { derivePatientVisualState } from '@/lib/patientVisualState';
 import { deduplicateCareFeedItems } from '@/lib/careFeed';
 import { deriveSceneEnvironment, sceneEnvironmentLabel } from '@/lib/sceneEnvironment';
-import { matchRealismScenarios, prospectiveEquipmentAnchorsForCase } from '@/lib/patientRealismScenarios';
+import { matchRealismScenarios } from '@/lib/patientRealismScenarios';
 import {
   buildReactionForTreatment,
   projectReactionVitals,
@@ -898,65 +898,6 @@ function TacticalBayTimeline({
   );
 }
 
-const ROADMAP_BAGS = [
-  { id: 'airway', label: 'Airway', image: '/bag-assets/airway-bag.webp' },
-  { id: 'breathing', label: 'Breathing', image: '/bag-assets/breathing-bag.webp' },
-  { id: 'circulation', label: 'Circulation', image: '/bag-assets/circulation-kit.webp' },
-  { id: 'medications', label: 'Medications', image: '/bag-assets/medication-pouch.webp' },
-  { id: 'transport', label: 'Tools', image: '/bag-assets/transport-kit.webp' },
-] as const;
-
-const ROADMAP_EQUIPMENT_ASSETS: Record<string, string> = {
-  oxygen_nasal: '/equipment-assets/nasal-cannula.webp',
-  oxygen_mask: '/equipment-assets/oxygen-mask-front.webp',
-  oxygen_venturi: '/equipment-assets/oxygen-mask-front.webp',
-  oxygen_nonrebreather: '/equipment-assets/nonrebreather-mask-v2.webp',
-  nebulizer_salbutamol: '/equipment-assets/nebulizer-mask-v2.webp',
-  bvm_ventilation: '/equipment-assets/bvm-face-seal-v2.png',
-  cpap_niv: '/equipment-assets/cpap-mask-front-v2.png',
-  opa_insert: '/equipment-assets/opa-flange-front-v2.png',
-  mechanical_ventilation: '/equipment-assets/portable-transport-ventilator.webp',
-  iv_access: '/equipment-assets/iv-cannula.webp',
-  iv_cannula: '/equipment-assets/iv-cannula.webp',
-  fluids_250ml: '/equipment-assets/fluid-bag.webp',
-  fluids_500ml: '/equipment-assets/fluid-bag.webp',
-  defibrillation: '/equipment-assets/defib-pads.webp',
-  aed: '/equipment-assets/defib-pads.webp',
-  lucas_device: '/equipment-assets/lucas-device.webp',
-  tourniquet: '/equipment-assets/tourniquet.webp',
-  bleeding_control: '/equipment-assets/pressure-dressing-fitted-front-v2.png',
-  dressing: '/equipment-assets/pressure-dressing-fitted-front-v2.png',
-  aspirin: '/equipment-assets/aspirin-tablets.webp',
-  gtn_spray: '/equipment-assets/gtn-spray.webp',
-  adrenaline_im: '/equipment-assets/adrenaline-vials.webp',
-  naloxone_04mg: '/equipment-assets/naloxone-vial.webp',
-  glucose_10g: '/equipment-assets/glucose-gel.webp',
-  dextrose_10: '/equipment-assets/dextrose-bag.webp',
-  sam_splint: '/equipment-assets/sam-splint.webp',
-  splinting: '/equipment-assets/splints.webp',
-  box_splint: '/equipment-assets/box-splint.webp',
-  vacuum_limb_splint: '/equipment-assets/vacuum-limb-splint.webp',
-  traction_splint: '/equipment-assets/traction-splint.webp',
-  cervical_collar: '/equipment-assets/cervical-collar-fitted-front-v2.png',
-  spinal_board: '/equipment-assets/spine-board.webp',
-  scoop_stretcher: '/equipment-assets/scoop-stretcher.webp',
-};
-
-const ROADMAP_FALLBACK_EQUIPMENT = [
-  { id: 'oxygen_nonrebreather', name: 'Oxygen Mask' },
-  { id: 'iv_access', name: 'IV Cannula' },
-  { id: 'defibrillation', name: 'Monitor Pads' },
-  { id: 'sam_splint', name: 'Splint' },
-  { id: 'dressing', name: 'Dressing' },
-  { id: 'gtn_spray', name: 'GTN Spray' },
-] as const;
-
-function getRoadmapEquipmentAsset(id: string): string {
-  const exact = ROADMAP_EQUIPMENT_ASSETS[id];
-  if (exact) return exact;
-  const key = Object.keys(ROADMAP_EQUIPMENT_ASSETS).find(assetKey => id.includes(assetKey) || assetKey.includes(id));
-  return key ? ROADMAP_EQUIPMENT_ASSETS[key] : '/equipment-assets/bandages.webp';
-}
 
 function RoadmapStepBadge({ index }: { index: number }) {
   return <span className="roadmap-step-badge">{index}</span>;
@@ -1013,46 +954,6 @@ function RoadmapAnatomyPanel({
   );
 }
 
-function RoadmapTreatmentInterventionsPanel({
-  appliedTreatments,
-  activeBag,
-}: {
-  appliedTreatments: AppliedTreatment[];
-  activeBag: ManagementTab;
-}) {
-  const stagedEquipment = appliedTreatments.length > 0
-    ? latestUniqueAppliedTreatments(appliedTreatments, 6)
-      .map(item => ({ id: item.id, name: item.name || formatClinicalToken(item.id) }))
-    : ROADMAP_FALLBACK_EQUIPMENT;
-
-  return (
-    <section className="roadmap-panel roadmap-treatment-panel">
-      <div className="roadmap-panel-title">
-        <RoadmapStepBadge index={3} />
-        <h3>Treatment bags & interventions</h3>
-      </div>
-      <div className="roadmap-bag-strip">
-        {ROADMAP_BAGS.map(bag => (
-          <div key={bag.id} className="roadmap-bag-tile" data-active={activeBag === bag.id}>
-            <img src={bag.image} alt="" draggable={false} />
-            <span>{bag.label}</span>
-          </div>
-        ))}
-      </div>
-      <div className="roadmap-equipment-board">
-        <p>{appliedTreatments.length > 0 ? 'Equipment applied' : 'Equipment staged'}</p>
-        <div className="roadmap-equipment-grid">
-          {stagedEquipment.map(item => (
-            <div key={`${item.id}-${item.name}`} className="roadmap-equipment-tile">
-              <img src={getRoadmapEquipmentAsset(item.id)} alt="" draggable={false} />
-              <span>{item.name}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
 
 function RoadmapDebriefPanel({
   items,
@@ -4789,7 +4690,7 @@ export function StudentPanel({
     setAmiodaroneDoses(0);
     setArrestStartTime(null);
     setArrestTimeline([]);
-  }, [setPhase, stopNarration]);
+  }, [currentCase?.id, setPhase, stopNarration]);
 
   // ============================================================================
   // RENDER
@@ -6364,7 +6265,6 @@ export function StudentPanel({
                     medSearch={medSearch}
                     setMedSearch={setMedSearch}
                     applyTreatment={applyTreatment}
-                    equipmentAnchors={currentCase ? prospectiveEquipmentAnchorsForCase(currentCase) : []}
                   />
                 </HUDTreatmentBags>
                 )}
@@ -6497,11 +6397,15 @@ export function StudentPanel({
                     patient (or bystander when unconscious) answers via
                     Supertonic. Coverage chips track which SAMPLE letters
                     have been obtained for debrief scoring. */}
-                {careRailMode === 'history' && (
-                  <>
+                <div hidden={careRailMode !== 'history'}>
                 {currentCase && (
                   <VoiceHistoryPanel
+                    key={`${currentCase.id}-${caseStartTime}`}
                     caseData={currentCase}
+                    currentVitals={currentVitals}
+                    isInArrest={patientState?.isInArrest}
+                    appliedTreatmentIds={appliedTreatmentIds}
+                    isActive={careRailMode === 'history'}
                     onCategoryObtained={(cat: HistoryCategory) => {
                       // Map voice categories back to the legacy tracker step IDs
                       // so the existing scoring / progress logic keeps working.
@@ -6517,6 +6421,7 @@ export function StudentPanel({
                           case 'opqrst-onset':
                           case 'opqrst-provocation':
                           case 'opqrst-quality':
+                          case 'opqrst-region':
                           case 'opqrst-radiation':
                           case 'opqrst-severity':
                           case 'opqrst-time':
@@ -6540,7 +6445,7 @@ export function StudentPanel({
                           // it (revealing the case's authored severity). If they can't
                           // self-report (reduced GCS), prompt non-verbal assessment instead.
                           const gcs = currentVitals?.gcs ?? 15;
-                          const canSelfReport = gcs >= 9;
+                          const canSelfReport = voiceApi.canVocalize;
                           const revealed = monitorRevealedVitals.has('painScore');
                           const p = currentVitals?.painScore;
                           if (revealed && p !== undefined) {
@@ -6687,8 +6592,7 @@ export function StudentPanel({
                     </Card>
                   );
                 })()}
-                  </>
-                )}
+                </div>
 
                 {/* Clinical Assessment Panel removed — replaced by inline ABCDE Primary Survey + 3D Physical Exam above */}
               </div>
@@ -6771,11 +6675,6 @@ export function StudentPanel({
                     />
                   </Suspense>
                 </HUDVitals>
-
-                <RoadmapTreatmentInterventionsPanel
-                  appliedTreatments={appliedTreatments}
-                  activeBag={activeManagementTab}
-                />
 
                 {/* --- PULSE CHECK + CONFIRM ARREST BUTTONS --- */}
                 <div className="flex flex-col gap-2">

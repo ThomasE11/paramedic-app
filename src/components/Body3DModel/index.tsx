@@ -46,6 +46,7 @@ import {
 import { recommendedManagementTabForCase, type ManagementTab } from '@/components/TreatmentJumpBagPanel';
 import { CLOTHING_PARTING } from './ClothingLayer';
 import { usePatientVoice } from '@/hooks/usePatientVoice';
+import { derivePatientCommunication, type PatientCommunicationInput } from '@/lib/patientCommunication';
 import { getNextGuidedStep, EXAM_SEQUENCE } from './bodyRegions';
 import { useTranslation } from 'react-i18next';
 import type { AssessmentStepId, SecondaryAssessmentStep } from '@/data/assessmentFramework';
@@ -4191,23 +4192,12 @@ interface PatientReaction {
   actionId: string;
 }
 
-function getPatientResponsiveness(caseData: CaseScenario) {
-  const gcs = caseData.abcde?.disability?.gcs?.total
-    ?? caseData.vitalSignsProgression?.initial?.gcs;
-  const avpu = String(caseData.abcde?.disability?.avpu || '').toUpperCase();
-  const consciousness = String(caseData.initialPresentation?.consciousness || '').toLowerCase();
+function getPatientResponsiveness(caseData: CaseScenario, live: PatientCommunicationInput = {}) {
+  const { canVocalize, isAwake } = derivePatientCommunication(caseData, live);
   const appearance = [
     caseData.initialPresentation?.appearance,
     caseData.initialPresentation?.generalImpression,
   ].filter(Boolean).join(' ').toLowerCase();
-  const apneic = caseData.abcde?.breathing?.rate === 0;
-  const arrest = /asystole|pea|vf|cardiac arrest|unresponsive|no response/.test(consciousness) || avpu === 'U';
-  const canVocalize = !apneic && !arrest && !(typeof gcs === 'number' && gcs <= 8);
-  const isAwake = canVocalize && (
-    avpu === 'A'
-    || (typeof gcs === 'number' && gcs >= 13)
-    || /alert|awake|oriented|talk|speaking|responding|verbal/.test(consciousness)
-  );
 
   return {
     canVocalize,
@@ -4229,8 +4219,9 @@ function getPatientReaction(
   actionId: string,
   finding: string,
   revealedFindings: Map<string, string>,
+  live: PatientCommunicationInput = {},
 ): PatientReaction | null {
-  const patient = getPatientResponsiveness(caseData);
+  const patient = getPatientResponsiveness(caseData, live);
   const lowerFinding = finding.toLowerCase();
   const reactionBase = { regionId, actionId };
 
@@ -4838,7 +4829,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   const consentedRegionsRef = useRef<Set<string>>(new Set());
   // The patient's spoken voice — exam reactions are read aloud through the
   // same ElevenLabs → Supertonic → Web Speech chain as history answers.
-  const patientVoice = usePatientVoice(caseData);
+  const patientVoice = usePatientVoice(caseData, { vitals, isInArrest, appliedTreatmentIds });
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   // Patients present "as you would find them": dressed by default — the
   // student exposes regions through the exam (parting per CLOTHING_PARTING),
@@ -5312,7 +5303,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
     if (anatomyLayer === 'dressed' && (CLOTHING_PARTING[stepId]?.length ?? 0) > 0
       && consentedRegionsRef.current.size === 0) {
       consentedRegionsRef.current.add(stepId);
-      if (getPatientResponsiveness(caseData).isAwake) {
+      if (patientVoice.communication.isAwake) {
         const lines = [
           'Yes, that’s fine — go ahead.',
           'Okay… do what you need to do.',
@@ -5403,7 +5394,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
       const pos = fitCameraPos(controlsRef.current, target, dir, (REGION_RADIUS[stepId] ?? 0.28) * cameraScale);
       animateCamera(controlsRef.current, pos, target, 460);
     }
-  }, [onRegionClick, animateCamera, clearPatientReaction, anatomyLayer, bayStage, caseData, patientVoice, patientPosture, patientMobility, treatmentBayOverviewEnabled, patientScale]);
+  }, [onRegionClick, animateCamera, clearPatientReaction, anatomyLayer, bayStage, patientVoice, patientPosture, patientMobility, treatmentBayOverviewEnabled, patientScale]);
 
   // Phase 2F: Sound progress animation
   const startSoundProgress = useCallback((actionId: string, durationMs: number) => {
@@ -5528,7 +5519,9 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
     }
 
     const finding = getFinding(caseData, actionId, isInArrest, effectiveVitals);
-    const reaction = getPatientReaction(caseData, activeRegion, actionId, finding, revealedFindings);
+    const reaction = getPatientReaction(caseData, activeRegion, actionId, finding, revealedFindings, {
+      vitals: effectiveVitals, isInArrest, appliedTreatmentIds,
+    });
     if (reactionTimerRef.current !== null) {
       window.clearTimeout(reactionTimerRef.current);
       reactionTimerRef.current = null;
@@ -5614,7 +5607,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
       playPercussionSound(percType);
       startSoundProgress(actionId, PERCUSSION_DURATION);
     }
-  }, [activeRegion, animateCamera, bayStage, caseData, effectiveVitals, patientMobility, patientPosture, patientScale, patientSounds, patientVoice, revealedFindings, startSoundProgress, isInArrest, surfaceSampler, treatmentBayOverviewEnabled]);
+  }, [activeRegion, animateCamera, appliedTreatmentIds, bayStage, caseData, effectiveVitals, patientMobility, patientPosture, patientScale, patientSounds, patientVoice, revealedFindings, startSoundProgress, isInArrest, surfaceSampler, treatmentBayOverviewEnabled]);
   const handleExamActionRef = useRef(handleExamAction);
   handleExamActionRef.current = handleExamAction;
 
@@ -6293,15 +6286,19 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 sampler={surfaceSampler}
               />
 
-              <TreatmentEquipmentOverlay
-                appliedTreatmentIds={appliedTreatmentIds}
-                sampler={surfaceSampler}
-                presentation={markerPresentation}
-                bayStage={bayStage}
-                posture={patientPosture}
-                mobility={patientMobility}
-                patientScale={patientScale}
-              />
+              {/* A newly selected texture must not suspend the whole patient,
+                  canvas controls or equipment status while it loads. */}
+              <Suspense fallback={null}>
+                <TreatmentEquipmentOverlay
+                  appliedTreatmentIds={appliedTreatmentIds}
+                  sampler={surfaceSampler}
+                  presentation={markerPresentation}
+                  bayStage={bayStage}
+                  posture={patientPosture}
+                  mobility={patientMobility}
+                  patientScale={patientScale}
+                />
+              </Suspense>
 
               {quality.contactShadows && (
                 <ContactShadows position={[0, -0.01, 0]} opacity={0.32} scale={3.4} blur={3.4} far={3} />

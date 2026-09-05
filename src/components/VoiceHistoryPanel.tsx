@@ -17,8 +17,8 @@
  *      checkbox UX without losing the scoring signal.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import type { CaseScenario } from '@/types';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import type { CaseScenario, VitalSigns } from '@/types';
 import { useVoiceInput } from '@/hooks/useVoiceInput';
 import { usePatientVoice } from '@/hooks/usePatientVoice';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -33,6 +33,7 @@ import {
   generatePatientResponse,
   generateCollateralResponse,
   sceneHasAskableBystander,
+  historyAnswerCanBeObtained,
   CATEGORY_LABELS,
   SAMPLE_CATEGORIES,
   type HistoryCategory,
@@ -56,6 +57,11 @@ export interface VoiceHistoryFooterApi {
 
 interface VoiceHistoryPanelProps {
   caseData: CaseScenario;
+  currentVitals?: VitalSigns | null;
+  isInArrest?: boolean;
+  appliedTreatmentIds?: string[];
+  /** Retain the conversation between tabs, but stop the microphone and voice. */
+  isActive?: boolean;
   /** Called whenever a new category is successfully obtained. Lets the
    *  parent feed this into debrief scoring. */
   onCategoryObtained?: (category: HistoryCategory) => void;
@@ -66,45 +72,28 @@ interface VoiceHistoryPanelProps {
   footer?: ReactNode | ((api: VoiceHistoryFooterApi) => ReactNode);
 }
 
-export function VoiceHistoryPanel({ caseData, onCategoryObtained, footer }: VoiceHistoryPanelProps) {
-  const patientVoice = usePatientVoice(caseData);
+export function VoiceHistoryPanel({ caseData, currentVitals, isInArrest, appliedTreatmentIds, isActive = true, onCategoryObtained, footer }: VoiceHistoryPanelProps) {
+  const patientVoice = usePatientVoice(caseData, { vitals: currentVitals, isInArrest, appliedTreatmentIds });
   const [turns, setTurns] = useState<HistoryTurn[]>([]);
   const [obtained, setObtained] = useState<Set<HistoryCategory>>(new Set());
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const canAskBystander = sceneHasAskableBystander(caseData);
-  const [askTarget, setAskTarget] = useState<'patient' | 'bystander'>(
-    patientVoice.canVocalize ? 'patient' : 'bystander',
-  );
-
-  // Derive the patient's mental status once — drives the response generator.
-  const responseContext = useMemo(() => {
-    const gcs = caseData.abcde?.disability?.gcs?.total ?? caseData.vitalSignsProgression?.initial?.gcs;
-    const spo2 = caseData.abcde?.breathing?.spo2 ?? caseData.vitalSignsProgression?.initial?.spo2;
-    const sbp = caseData.abcde?.circulation?.bp?.systolic;
-    const rr = caseData.abcde?.breathing?.rate ?? caseData.vitalSignsProgression?.initial?.respiration;
-    const appearance = [
-      caseData.initialPresentation?.appearance,
-      caseData.abcde?.breathing?.findings?.join(' '),
-    ].filter(Boolean).join(' ');
-    const breathless = (typeof rr === 'number' && rr >= 28)
-      || (typeof spo2 === 'number' && spo2 < 92)
-      || /can't speak|unable to speak|single words|two[- ]word|tripod|severe (asthma|dyspn)|gasping/i.test(appearance);
-    const severe = breathless
-      || (typeof spo2 === 'number' && spo2 < 92)
-      || (typeof gcs === 'number' && gcs >= 9 && gcs <= 12)
-      || (typeof sbp === 'number' && sbp < 90);
-    return {
-      severity: (severe ? 'severe' : 'mild') as 'severe' | 'mild',
-      altered: typeof gcs === 'number' && gcs >= 9 && gcs <= 12,
-      breathless,
-    };
-  }, [caseData]);
+  const [preferredTarget, setAskTarget] = useState<'patient' | 'bystander'>('patient');
+  const askTarget = !patientVoice.canVocalize && canAskBystander ? 'bystander' : preferredTarget;
+  const responseContext = patientVoice.communication.responseContext;
+  const answerTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const latestVoice = useRef(patientVoice);
+  const stopListening = useRef<() => void>(() => {});
+  useEffect(() => { latestVoice.current = patientVoice; }, [patientVoice]);
 
   // Process an incoming question once — classify, fetch response, push to
   // the conversation, speak via patient voice.
   const processQuestion = useCallback((text: string) => {
     const trimmed = text.trim();
-    if (!trimmed) return;
+    if (!trimmed || !isActive) return;
+    stopListening.current();
+    if (answerTimer.current) clearTimeout(answerTimer.current);
+    patientVoice.stop();
     const category = classifyQuestion(trimmed);
     const studentTurn: HistoryTurn = {
       id: `${Date.now()}-s`,
@@ -140,7 +129,7 @@ export function VoiceHistoryPanel({ caseData, onCategoryObtained, footer }: Voic
     // update so rapid back-to-back questions can't clobber each other. The
     // onCategoryObtained side-effect is fired from an effect (below), NOT here,
     // to avoid setState-in-render warnings in the parent.
-    if (category !== 'unknown') {
+    if (historyAnswerCanBeObtained(caseData, category, attribution === 'patient' ? 'patient' : 'bystander')) {
       setObtained(prev => {
         if (prev.has(category)) return prev;
         const next = new Set(prev);
@@ -153,12 +142,15 @@ export function VoiceHistoryPanel({ caseData, onCategoryObtained, footer }: Voic
     if (answer && attribution === 'patient') {
       // Small delay so the student sees their bubble appear before the
       // voice starts — feels like the patient pausing to think.
-      setTimeout(() => patientVoice.say(answer!), 400);
+      answerTimer.current = setTimeout(() => {
+        answerTimer.current = null;
+        latestVoice.current.say(answer!);
+      }, 400);
     }
     // For collateral / system messages we deliberately don't speak — the
     // attribution makes more sense as a written note than a synthesised
     // bystander voice (we don't have a voice per bystander).
-  }, [askTarget, canAskBystander, caseData, responseContext, patientVoice]);
+  }, [askTarget, canAskBystander, caseData, responseContext, patientVoice, isActive]);
 
   // Report newly-obtained categories to the parent from an EFFECT (not during
   // render). A ref tracks what's already been reported so each fires once.
@@ -179,6 +171,7 @@ export function VoiceHistoryPanel({ caseData, onCategoryObtained, footer }: Voic
     commands: [],
     onFinalTranscript: processQuestion,
   });
+  useEffect(() => { stopListening.current = voice.stop; }, [voice.stop]);
 
   // Typed fallback — works when the mic is unavailable / denied, or the room
   // is too noisy. History-taking must never become unusable.
@@ -197,13 +190,22 @@ export function VoiceHistoryPanel({ caseData, onCategoryObtained, footer }: Voic
     }
   }, [turns.length, voice.interimTranscript]);
 
-  // Stop any in-flight speech when the user leaves the panel
-  useEffect(() => () => { patientVoice.stop(); voice.stop(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // Tabs retain the interview, but no delayed answer or microphone may remain
+  // active while the student is examining the patient or applying equipment.
+  useEffect(() => {
+    if (!isActive) return;
+    return () => {
+      if (answerTimer.current) clearTimeout(answerTimer.current);
+      answerTimer.current = null;
+      latestVoice.current.stop();
+      stopListening.current();
+    };
+  }, [isActive]);
 
   const sampleCovered = SAMPLE_CATEGORIES.filter(c => obtained.has(c));
 
   return (
-    <Card className="border border-border/60 bg-card overflow-hidden">
+    <Card className="border border-border/60 bg-card overflow-hidden" data-history-panel="true">
       <CardHeader className="pb-3 border-b border-border/40">
         <div className="flex items-center justify-between gap-3">
           <CardTitle className="flex items-center gap-2 text-base">
@@ -243,6 +245,9 @@ export function VoiceHistoryPanel({ caseData, onCategoryObtained, footer }: Voic
         </div>
       </CardHeader>
       <CardContent className="p-0">
+        <p className="border-b border-border/40 px-4 py-2 text-xs text-slate-300" role="status">
+          {patientVoice.communication.status}
+        </p>
         {/* Coverage chips */}
         <div className="px-4 pt-3 pb-2 border-b border-border/40 flex flex-wrap gap-1.5">
           {SAMPLE_CATEGORIES.map(cat => {
@@ -263,6 +268,9 @@ export function VoiceHistoryPanel({ caseData, onCategoryObtained, footer }: Voic
         {/* Conversation thread */}
         <div
           ref={scrollRef}
+          role="log"
+          aria-label="Patient history conversation"
+          aria-live="polite"
           className="px-4 py-4 min-h-[260px] max-h-[420px] overflow-y-auto space-y-3 bg-slate-900/40"
         >
           {turns.length === 0 && !voice.isListening && !voice.interimTranscript && (
@@ -358,7 +366,12 @@ export function VoiceHistoryPanel({ caseData, onCategoryObtained, footer }: Voic
         {/* Mic + typed-input bar */}
         <div className="px-4 py-3 flex items-center gap-2 bg-card">
           <Button
-            onClick={voice.toggle}
+            onClick={() => {
+              if (answerTimer.current) clearTimeout(answerTimer.current);
+              answerTimer.current = null;
+              patientVoice.stop();
+              voice.toggle();
+            }}
             disabled={!voice.isSupported}
             size="icon"
             variant={voice.isListening ? 'destructive' : 'default'}
@@ -396,7 +409,7 @@ export function VoiceHistoryPanel({ caseData, onCategoryObtained, footer }: Voic
               askQuestion: processQuestion,
               canVocalize: patientVoice.canVocalize,
               isSpeaking: patientVoice.isSpeaking,
-              responseContext,
+              responseContext: { ...responseContext, breathless: Boolean(responseContext.breathless) },
             })
           : footer}
       </CardContent>

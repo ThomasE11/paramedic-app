@@ -24,7 +24,6 @@ import {
   Gauge,
   HeartPulse,
   Loader2,
-  Lightbulb,
   Pill,
   RotateCcw,
   Search,
@@ -1300,13 +1299,6 @@ interface TreatmentJumpBagPanelProps {
   medSearch: string;
   setMedSearch: (value: string) => void;
   applyTreatment: (treatment: Treatment) => void;
-  /** Realism-director anchors — where open-kit gear will sit once applied. */
-  equipmentAnchors?: Array<{
-    region: string;
-    appearance: string;
-    treatmentIdFragments: string[];
-    reassess: string[];
-  }>;
 }
 
 export function TreatmentJumpBagPanel({
@@ -1323,11 +1315,11 @@ export function TreatmentJumpBagPanel({
   medSearch,
   setMedSearch,
   applyTreatment,
-  equipmentAnchors = [],
 }: TreatmentJumpBagPanelProps) {
   const [stagedEquipmentId, setStagedEquipmentId] = useState<string | null>(null);
-  // Scroll the treatment list into view when a bag opens — students didn't
-  // realise the medications live below the bag grid ("you have to scroll down").
+  // Opening a bag should reveal its equipment, not jump past it to the
+  // second list of dose/repeat actions.
+  const inventoryRef = useRef<HTMLDivElement>(null);
   const treatmentPanelRef = useRef<HTMLDivElement>(null);
   const revealTreatments = () => {
     requestAnimationFrame(() => treatmentPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
@@ -1378,23 +1370,6 @@ export function TreatmentJumpBagPanel({
     ),
     [equipmentItems, suggestedIds],
   );
-  const openBagAnchorCues = useMemo(() => {
-    if (!equipmentAnchors.length) return [];
-    const bagItems = BAG_EQUIPMENT[activeBag.key] ?? [];
-    const bagTreatmentIds = bagItems
-      .map(item => item.treatmentId)
-      .filter((id): id is string => Boolean(id));
-    const bagHaystack = bagItems
-      .map(item => `${item.treatmentId ?? ''} ${item.label} ${item.caption}`.toLowerCase())
-      .join(' | ');
-    return equipmentAnchors
-      .filter(anchor => anchor.treatmentIdFragments.some(fragment => {
-        const f = fragment.toLowerCase();
-        return bagTreatmentIds.some(id => id.toLowerCase().includes(f) || f.includes(id.toLowerCase()))
-          || bagHaystack.includes(f);
-      }))
-      .slice(0, 3);
-  }, [activeBag.key, equipmentAnchors]);
   const stagedEquipment = equipmentItems.find(item => item.id === stagedEquipmentId) ?? null;
   const isStagedEquipmentApplied = Boolean(
     stagedEquipment?.treatmentId && appliedTreatmentIds.includes(stagedEquipment.treatmentId),
@@ -1441,7 +1416,7 @@ export function TreatmentJumpBagPanel({
         ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     });
     return () => cancelAnimationFrame(frame);
-  }, [medSearch, activeBag.key, equipmentItems]);
+  }, [medSearch, activeBag, equipmentItems]);
 
   // Search is scoped to the OPEN bag first (what the student asked for: "search
   // in the bag I opened"). Only if nothing in the open bag matches do we widen
@@ -1563,7 +1538,7 @@ export function TreatmentJumpBagPanel({
   }
 
   return (
-    <Card className="tactical-loadout-panel glass-panel relative overflow-hidden rounded-2xl border shadow-[0_12px_34px_-24px_rgba(15,23,42,0.45)]">
+    <Card className="tactical-loadout-panel glass-panel relative gap-2 py-0 overflow-hidden rounded-2xl border shadow-[0_12px_34px_-24px_rgba(15,23,42,0.45)]">
       <style>{`
         .jump-bag-illustration {
           position: relative;
@@ -2251,27 +2226,13 @@ export function TreatmentJumpBagPanel({
           </div>
           <div className="min-w-0">
             <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-muted-foreground/65">Treatment loadout</p>
-            <span className="block truncate font-semibold">Spot kit → open → treat</span>
+            <span className="block font-semibold">Equipment & medication</span>
           </div>
           <Badge variant="secondary" className="ml-auto text-[9px] sm:text-[10px]">
             {appliedTreatments.length} deployed
           </Badge>
         </CardTitle>
 
-        <div className="mt-3 grid grid-cols-3 gap-2 text-[10px]">
-          <div className="glass-control rounded-lg border px-2 py-1.5">
-            <p className="text-[8px] uppercase tracking-[0.16em] text-muted-foreground/60">Circulation</p>
-            <p className="truncate font-mono font-semibold">{currentVitals ? `${currentVitals.bp} · HR ${currentVitals.pulse}` : 'Pending'}</p>
-          </div>
-          <div className="glass-control rounded-lg border px-2 py-1.5">
-            <p className="text-[8px] uppercase tracking-[0.16em] text-muted-foreground/60">Breathing</p>
-            <p className="truncate font-mono font-semibold">{currentVitals ? `SpO2 ${currentVitals.spo2}% · RR ${currentVitals.respiration}` : 'Pending'}</p>
-          </div>
-          <div className="glass-control rounded-lg border px-2 py-1.5">
-            <p className="text-[8px] uppercase tracking-[0.16em] text-muted-foreground/60">Last action</p>
-            <p className="truncate font-semibold">{lastTreatment?.name || 'None yet'}</p>
-          </div>
-        </div>
       </CardHeader>
 
       <CardContent className="space-y-3 px-3 pb-3 sm:px-4">
@@ -2326,11 +2287,6 @@ export function TreatmentJumpBagPanel({
           </div>
         )}
 
-        <div className="flex items-center gap-1.5 rounded-lg border border-emerald-500/25 bg-emerald-50/70 px-2.5 py-1.5 text-[10px] font-medium text-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-100">
-          <Lightbulb className="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-300" />
-          <span>Find the kit that matches the life threat, stage the device or drug, then apply and reassess.</span>
-        </div>
-
       <div className="jump-bag-grid grid grid-cols-2 gap-1.5 sm:grid-cols-3">
           {TREATMENT_JUMP_BAGS.map(bag => {
             const isSelected = activeBag.key === bag.key;
@@ -2359,7 +2315,7 @@ export function TreatmentJumpBagPanel({
                   setOpenManagementBag(bag.key);
                   if (!isSelected) setMedSearch('');
                   setStagedEquipmentId(null);
-                  revealTreatments();
+                  requestAnimationFrame(() => inventoryRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }));
                 }}
                 className={`jump-bag-button group relative min-h-[164px] overflow-hidden rounded-lg border p-2 text-left transition hover:border-slate-300 hover:bg-white/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40 dark:hover:bg-white/[0.08] ${
                   isOpen
@@ -2375,9 +2331,9 @@ export function TreatmentJumpBagPanel({
                 <span className={`absolute inset-x-3 top-2 h-1 rounded-full ${bag.railClass} ${isOpen ? 'opacity-100' : 'opacity-35'}`} />
                 <div className="flex h-full flex-col items-center justify-between gap-2 pt-2">
                   <JumpBagIllustration bag={bag} isOpen={isOpen} appliedCount={appliedCount} />
-                  <div className="glass-control w-full rounded-md px-2 py-1.5 ring-1 ring-slate-200/70 dark:ring-slate-800">
+                  <div className="jump-bag-label glass-control w-full rounded-md px-2 py-1.5 ring-1 ring-slate-200/70 dark:ring-slate-800">
                     <div className="flex items-center justify-between gap-1">
-                      <p className="truncate text-[11px] font-bold">{bag.label}</p>
+                      <p className="text-[11px] font-bold leading-snug">{bag.label}</p>
                       <Badge
                         variant={isOpen ? 'default' : 'outline'}
                         className={`h-4 rounded px-1 text-[8px] ${
@@ -2391,8 +2347,7 @@ export function TreatmentJumpBagPanel({
                         {isOpen ? 'Open' : bag.key === recommendedBagKey ? 'Start here' : 'Closed'}
                       </Badge>
                     </div>
-                    <p className="mt-0.5 line-clamp-2 text-[9px] leading-snug text-muted-foreground">{bag.description}</p>
-                    <p className="mt-1 text-[8px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/65">
+                    <p className="jump-bag-options mt-1 text-[8px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/65">
                       {treatmentCount} options
                     </p>
                   </div>
@@ -2404,7 +2359,7 @@ export function TreatmentJumpBagPanel({
 
         {/* FIND EQUIPMENT: inventory under the open kit — spot → open → apply. */}
         {openManagementBag && !query && (
-          <div className="space-y-2" data-equipment-inventory="true" data-anchor-cues={openBagAnchorCues.length}>
+          <div ref={inventoryRef} className="space-y-2 scroll-mt-2" data-equipment-inventory="true">
             <EquipmentInventoryBoard
               bag={activeBag}
               items={orderedEquipmentItems}
@@ -2414,20 +2369,6 @@ export function TreatmentJumpBagPanel({
               currentVitals={currentVitals}
               onSelect={handleEquipmentSelect}
             />
-            {openBagAnchorCues.length > 0 && (
-              <div className="rounded-xl border border-cyan-500/25 bg-cyan-950/30 px-3 py-2 text-[10px] text-cyan-50/90">
-                <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-cyan-200/80">Where it sits on the patient</p>
-                <ul className="mt-1.5 space-y-1">
-                  {openBagAnchorCues.map(cue => (
-                    <li key={`${cue.region}-${cue.appearance.slice(0, 32)}`} className="leading-snug">
-                      <span className="font-semibold text-cyan-100">{cue.region.replace(/-/g, ' ')}</span>
-                      {' — '}
-                      {cue.appearance}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
           </div>
         )}
 

@@ -58,6 +58,26 @@ export function sceneHasAskableBystander(caseData: CaseScenario): boolean {
   return !ABSENT_BYSTANDER_PATTERN.test(bystanders);
 }
 
+/** A recognised question is not evidence that its answer was obtained. */
+export function historyAnswerCanBeObtained(
+  caseData: CaseScenario,
+  category: HistoryCategory,
+  source: 'patient' | 'bystander',
+): boolean {
+  if (category === 'unknown') return false;
+  if (source === 'bystander') {
+    if (!sceneHasAskableBystander(caseData)) return false;
+    if (category.startsWith('opqrst-') || category === 'pain-current') return false;
+  }
+  const history = caseData.history;
+  if (category === 'last-meal') return Boolean(history?.lastMeal?.trim());
+  if (category === 'events') return Boolean(history?.eventsLeading?.trim());
+  if (category === 'allergies') return Array.isArray(history?.allergies);
+  if (category === 'medications') return Array.isArray(history?.medications);
+  if (category === 'past-medical') return Array.isArray(history?.medicalConditions);
+  return true;
+}
+
 /**
  * Map a transcribed question to a SAMPLE/OPQRST category. Returns 'unknown'
  * when no pattern fires. Order matters — more specific patterns first.
@@ -171,13 +191,16 @@ export function classifyQuestion(rawText: string): HistoryCategory {
 // and "..." pauses come out humanly.
 // ---------------------------------------------------------------------------
 
-interface ResponseContext {
+export interface ResponseContext {
   /** Severity of patient state — drives how truncated/burdened the speech is. */
   severity: 'mild' | 'severe';
   /** True when GCS ≤ 12 — patient gives partial/slurred answers. */
   altered: boolean;
   /** True when the patient is fighting for air — answers fragment. */
   breathless?: boolean;
+  /** Live self-report after treatment; zero is a valid resolved pain score. */
+  painScore?: number;
+  breathingImproved?: boolean;
 }
 
 function joinList(items: string[], conjunction: 'and' | 'or' = 'and'): string {
@@ -322,6 +345,7 @@ export function generatePatientResponse(
       return `Yes — I know who I am, I know where I am, and I know roughly the time. ${pick(['I feel a bit shaken though.', "I'm just not feeling right."])}`;
 
     case 'allergies': {
+      if (!Array.isArray(h?.allergies)) return hesitate("I can't confirm my allergies right now.");
       const real = hasRealAllergies(h?.allergies);
       if (real.length === 0) {
         return hesitate(pick([`No, none that I know of.`, `No allergies, no.`, `Not that I'm aware of.`]));
@@ -334,6 +358,7 @@ export function generatePatientResponse(
     }
 
     case 'medications': {
+      if (!Array.isArray(h?.medications)) return hesitate("I can't confirm my medications right now.");
       const meds = h?.medications || [];
       if (!meds.length) return hesitate(pick([`No, I'm not on any regular medication.`, `Nothing regular, no.`, `I don't take any tablets.`]));
       const named = meds.map(m => formatMedication(m));
@@ -345,6 +370,7 @@ export function generatePatientResponse(
     }
 
     case 'past-medical': {
+      if (!Array.isArray(h?.medicalConditions)) return hesitate("I can't confirm my medical history right now.");
       const conds = h?.medicalConditions || [];
       const surg = h?.surgicalHistory || [];
       const prev = h?.previousSimilarEpisodes || [];
@@ -399,7 +425,7 @@ export function generatePatientResponse(
 
     case 'opqrst-severity': {
       // Prefer the recorded pain score; else infer from severity context.
-      const vitalsPain = caseData.vitalSignsProgression?.initial?.painScore;
+      const vitalsPain = ctx.painScore ?? caseData.vitalSignsProgression?.initial?.painScore;
       const findingPain = caseData.abcde?.disability?.findings?.join(' ').match(/(\d+)\s*\/\s*10/)?.[1];
       const num = (typeof vitalsPain === 'number' ? String(vitalsPain) : undefined) ?? findingPain;
       if (num) return `It's about ${num} out of 10.`;
@@ -442,6 +468,11 @@ export function generatePatientResponse(
     }
 
     case 'pain-current': {
+      if (typeof ctx.painScore === 'number') {
+        return hesitate(ctx.painScore === 0
+          ? 'No pain at the moment.'
+          : `Yes — it is about ${ctx.painScore} out of 10 now.`);
+      }
       // Don't invent pain. If the case carries no real pain (e.g. syncope,
       // hypoglycaemia) the patient should say so rather than claim soreness.
       const painScore = caseData.vitalSignsProgression?.initial?.painScore;
@@ -461,9 +492,10 @@ export function generatePatientResponse(
     }
 
     case 'signs-symptoms': {
+      if (ctx.breathingImproved) return 'Breathing feels easier now. I can talk more comfortably.';
       const reason = caseData.dispatchInfo?.callReason;
       const impression = ip?.generalImpression;
-      if (reason) return `${reason.replace(/[.!?]$/, '')}... ${pick(["it's been getting worse.", "and it won't settle.", "I just feel awful."])}`;
+      if (reason) return `${reason.replace(/[.!?]$/, '')}.`;
       if (impression) return `${impression.replace(/[.!?]$/, '')}.`;
       return `Something's just not right — I felt it come on, and... here we are.`;
     }
@@ -512,16 +544,19 @@ export function generateCollateralResponse(
     case 'introduction':
       return `${who} responds: "I'm just glad you're here."`;
     case 'allergies': {
+      if (!Array.isArray(h?.allergies)) return `${who} cannot confirm the patient's allergies.`;
       const real = hasRealAllergies(h?.allergies);
       if (real.length === 0) return `${who} says they're not aware of any allergies.`;
       return `${who} says: "Allergic to ${joinList(real)}, as far as I know."`;
     }
     case 'medications': {
+      if (!Array.isArray(h?.medications)) return `${who} cannot confirm the patient's medications.`;
       const meds = h?.medications || [];
       if (!meds.length) return `${who} says they're not on any regular medication.`;
       return `${who} lists: ${joinList(meds.map(m => formatMedication(m)))}.`;
     }
     case 'past-medical': {
+      if (!Array.isArray(h?.medicalConditions)) return `${who} cannot confirm the patient's medical history.`;
       const conds = h?.medicalConditions || [];
       if (!conds.length) return `${who} says they've been generally well — no major medical problems.`;
       return `${who} says: "They've got ${joinList(conds.map(c => c.toLowerCase()))}."`;

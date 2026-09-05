@@ -2773,21 +2773,19 @@ body {
 }
 
 .tactical-loadout-dock .tactical-loadout-panel {
-  display: flex;
-  max-height: min(74vh, 52rem);
-  min-height: min(48rem, 70vh);
-  flex-direction: column;
+  /* The care rail owns scrolling. Nested kit/inventory scroll traps made
+     equipment below the bag selector difficult to discover and reach. */
+  min-height: 0;
 }
 
 .tactical-loadout-dock .tactical-loadout-panel > div:last-child {
   min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  overflow: visible;
   scrollbar-color: rgba(45, 212, 191, 0.48) rgba(15, 23, 42, 0.36);
 }
 
 .tactical-loadout-dock .jump-bag-button {
-  min-height: 8.55rem;
+  min-height: 6.3rem;
   background: rgba(2, 6, 23, 0.50);
   border-color: rgba(148, 163, 184, 0.16);
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 18px 40px -34px rgba(0,0,0,0.95);
@@ -2805,14 +2803,31 @@ body {
 }
 
 .tactical-loadout-dock .jump-bag-illustration {
-  height: 4.95rem;
-  min-width: 6.2rem;
+  height: 2.5rem;
+  min-width: 3.5rem;
+  width: 4rem;
+  flex-shrink: 0;
+}
+
+.tactical-loadout-dock .jump-bag-kit-badge,
+.tactical-loadout-dock .jump-bag-options {
+  display: none;
+}
+
+.tactical-loadout-dock .jump-bag-label {
+  padding: 0.25rem;
+}
+
+.tactical-loadout-dock .jump-bag-label > div {
+  flex-wrap: wrap;
 }
 
 .tactical-loadout-dock .equipment-board {
-  max-height: 24rem;
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  overflow: visible;
+}
+
+.tactical-loadout-dock .equipment-board > .grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 @media (min-width: 1180px) {
@@ -3105,12 +3120,12 @@ body {
   }
 
   .tactical-loadout-dock .tactical-loadout-panel {
-    min-height: 22rem;
-    max-height: 31rem;
+    min-height: 0;
+    max-height: none;
   }
 
   .tactical-management-options .tactical-loadout-panel {
-    max-height: min(68vh, 46rem);
+    max-height: none;
   }
 
   .tactical-monitor-rail > .glass-panel {
