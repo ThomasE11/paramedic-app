@@ -302,3 +302,24 @@ describe('facial droop', () => {
   });
 });
 
+describe('unilateral chest rise', () => {
+  const stateFor = (kind: string) => derivePatientVisualState({
+    activeVisualEffects: [{ id: 'v', kind, region: 'chest', intensity: 'moderate', showWhen: 'immediate', detail: '' }],
+  } as unknown as RealismDirectorState);
+
+  it('flags a genuinely asymmetric rise so the one-sided morph can drive', () => {
+    expect(stateFor('asymmetric_chest_rise').chestRiseUnilateral).toBe(true);
+  });
+
+  it('does NOT flag bilateral reduction as unilateral', () => {
+    // Both report side 'both' on chestRiseAsymmetry, which is exactly why the
+    // dedicated flag exists.
+    const reduced = stateFor('reduced_chest_rise');
+    expect(reduced.chestRiseAsymmetry?.present).toBe(true);
+    expect(reduced.chestRiseUnilateral).toBe(false);
+  });
+
+  it('is false when the scenario declares no chest finding', () => {
+    expect(stateFor('pallor').chestRiseUnilateral).toBe(false);
+  });
+});

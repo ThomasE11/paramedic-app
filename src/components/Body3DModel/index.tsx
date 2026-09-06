@@ -6390,6 +6390,9 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 // alone under-reads cases like severe asthma, where the work
                 // of breathing is visible before the rate looks alarming.
                 breathingEffort={patientVisualState?.breathingEffort ?? 0}
+                // Unilateral chest rise — the look finding for tension
+                // pneumothorax / flail segment, previously text-only.
+                chestRiseUnilateral={patientVisualState?.chestRiseUnilateral ?? false}
                 // Procedural life loop — GCS<=8/arrest = still, eyes closed.
                 unconscious={patientUnconscious}
                 // Condition-responsive idle motion; drops non-essential

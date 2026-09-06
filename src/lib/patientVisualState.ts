@@ -87,6 +87,13 @@ export interface PatientVisualState {
    * Drives the `finding_facial_droop` morph on the patient mesh.
    */
   facialDroop: number;
+  /**
+   * True only for a genuinely UNILATERAL chest rise (tension pneumothorax,
+   * flail segment) — not for bilateral reduction. `chestRiseAsymmetry` cannot
+   * answer this: it reports side 'both' for a chest-region asymmetry AND for
+   * reduced_chest_rise, so the two are indistinguishable there.
+   */
+  chestRiseUnilateral: boolean;
 }
 
 /* ------------------------------------------------------------------ */
@@ -181,6 +188,7 @@ export function derivePatientVisualState(director: RealismDirectorState): Patien
     .reduce((max, v) => Math.max(max, intensityTo01(v.intensity)), 0);
   const reducedChest = visuals.some(v => v.kind === 'reduced_chest_rise') ? 0.5 : 0;
   const breathingEffort = Math.min(1, Math.max(accessoryIntensity, reducedChest));
+  const chestRiseUnilateral = visuals.some(v => v.kind === 'asymmetric_chest_rise');
   const facialDroop = Math.max(0, ...visuals
     .filter(v => v.kind === 'facial_droop')
     .map(v => intensityTo01(v.intensity)));
@@ -197,5 +205,6 @@ export function derivePatientVisualState(director: RealismDirectorState): Patien
     hasAccessoryMuscleUse,
     breathingEffort,
     facialDroop,
+    chestRiseUnilateral,
   };
 }

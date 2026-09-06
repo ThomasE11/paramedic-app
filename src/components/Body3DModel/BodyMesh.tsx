@@ -192,6 +192,9 @@ interface BodyMeshProps {
    *  visible accessory-muscle shoulder recruitment alongside the rate, so a
    *  severe asthmatic looks like hard work even before the rate looks bad. */
   breathingEffort?: number;
+  /** Unilateral chest rise — drives the one-sided chest morph so the student
+   *  can SEE a tension pneumothorax / flail segment, not just read about it. */
+  chestRiseUnilateral?: boolean;
   /** Chest-rise depth multiplier (1 = normal). <1 = shallow (opioid/agonal),
    *  >1 = deep/laboured (Kussmaul). Combined with a fast-breathing taper. */
   breathDepthFactor?: number;
@@ -847,7 +850,15 @@ function buildSurfaceSampler(root: THREE.Object3D | null, presentationRoot?: THR
   };
 }
 
-export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guidedMode = false, nextGuidedStep = null, onBlockedClick, onBodyPoint, bodyInjuries, patientGender, patientAge, surfaceOpacity = 1, activeFindingMorphs, breathRateRpm = 0, breathingEffort = 0, breathDepthFactor = 1, onSurfaceSampler, onFaceAttachment, dressed = false, dressedActiveRegion = null, pupilLeftMm = 3.5, pupilRightMm = 3.5, skinTint = null, skinDiaphoretic = false, diaphoresis = 0, jaundice = 0, mottling = 0, unconscious = false, idleCues = null, reduceIdleMotion = false, presentation = 'upright', bayStage = 'stretcher', sss = false, posture = null, mobility = 'recumbent', mouthOpenRef = null, cyanosisLocalStrength = 0 }: BodyMeshProps) {
+/**
+ * How much excursion the affected hemithorax keeps when the rise is
+ * unilateral. Not 0: in a tension pneumothorax the bad side still moves a
+ * little, and zeroing it reads as a mannequin half rather than a clinical
+ * asymmetry the student has to notice.
+ */
+const ASYMMETRIC_CHEST_RESIDUAL = 0.35;
+
+export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guidedMode = false, nextGuidedStep = null, onBlockedClick, onBodyPoint, bodyInjuries, patientGender, patientAge, surfaceOpacity = 1, activeFindingMorphs, breathRateRpm = 0, breathingEffort = 0, chestRiseUnilateral = false, breathDepthFactor = 1, onSurfaceSampler, onFaceAttachment, dressed = false, dressedActiveRegion = null, pupilLeftMm = 3.5, pupilRightMm = 3.5, skinTint = null, skinDiaphoretic = false, diaphoresis = 0, jaundice = 0, mottling = 0, unconscious = false, idleCues = null, reduceIdleMotion = false, presentation = 'upright', bayStage = 'stretcher', sss = false, posture = null, mobility = 'recumbent', mouthOpenRef = null, cyanosisLocalStrength = 0 }: BodyMeshProps) {
   // The path is recomputed per render so a `caseData.patientInfo.gender`
   // change (e.g. user picks a different case) swaps the mesh without
   // remounting the parent. useGLTF caches by URL.
@@ -1638,6 +1649,7 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
       // fight them.
       for (const name of Object.keys(dict)) {
         if (name === 'breathe_chest_rise') continue; // handled below
+        if (name === 'breathe_chest_rise_unilateral') continue; // handled below
         if (name === 'viseme_open') continue;        // lip-sync, below
         if (POSTURE_MORPHS.includes(name)) continue; // posture mixer, below
         if (PATIENT_MOTION_MORPHS.includes(name as typeof PATIENT_MOTION_MORPHS[number])) continue;
@@ -1697,9 +1709,20 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
           // IdleAnimations publishes an occasional sharp extra rise (hypoxic
           // gasp) via userData — additive on the regular cycle, tightly capped.
           const gaspBoost = Math.min(0.14, (clonedScene.userData.idleGaspBoost as number | undefined) ?? 0);
-          infl[idx] = Math.min(0.5, (0.5 - 0.5 * Math.cos(breathPhaseRef.current)) * amp + gaspBoost);
+          const rise = Math.min(0.5, (0.5 - 0.5 * Math.cos(breathPhaseRef.current)) * amp + gaspBoost);
+          // A unilateral chest rise (tension pneumothorax, flail segment) is
+          // the classic LOOK finding, and the symmetric morph cannot show it.
+          // Split the same waveform: the good hemithorax keeps full excursion
+          // via the one-sided morph while the symmetric morph drops to a
+          // residual, so the affected side moves LESS rather than not at all.
+          const uniIdx = dict['breathe_chest_rise_unilateral'];
+          const asymmetric = chestRiseUnilateral && uniIdx !== undefined;
+          infl[idx] = asymmetric ? rise * ASYMMETRIC_CHEST_RESIDUAL : rise;
+          if (uniIdx !== undefined) infl[uniIdx] = asymmetric ? rise : 0;
         } else {
           infl[idx] = 0;
+          const uniIdx = dict['breathe_chest_rise_unilateral'];
+          if (uniIdx !== undefined) infl[uniIdx] = 0;
         }
         // Publish the phase so auscultation audio can inhale/exhale in sync
         // with the chest the student is watching.
