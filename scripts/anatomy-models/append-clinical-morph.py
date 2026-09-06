@@ -54,10 +54,6 @@ PRESETS = {
         lo=0.880, hi=0.945, peak=0.918, down=0.011, out=0.004, side=1.0, fade=0.28,
         lateral_max=0.0,
     ),
-    # One hemithorax rising while the other stays put — what a tension
-    # pneumothorax or a flail segment actually looks like. Driven INSTEAD of
-    # the symmetric breathe_chest_rise, so only the good side moves.
-    # `down` is negative because this lifts rather than sags.
     # Lip and perioral swelling — the airway-risk half of the anaphylaxis
     # story, which the rash alone does not tell. Bilateral by design:
     # angio-oedema is not a one-sided sign, and making it unilateral would
@@ -66,6 +62,10 @@ PRESETS = {
         lo=0.893, hi=0.938, peak=0.915, down=0.0, out=0.0, side=0.0, fade=0.0,
         lateral_max=0.0, normal=0.013,
     ),
+    # One hemithorax rising while the other stays put — what a tension
+    # pneumothorax or a flail segment actually looks like. Driven INSTEAD of
+    # the symmetric breathe_chest_rise, so only the good side moves.
+    # `down` is negative because this lifts rather than sags.
     "breathe_chest_rise_unilateral": dict(
         lo=0.620, hi=0.820, peak=0.720, down=-0.022, out=0.0, side=1.0, fade=0.18,
         lateral_max=0.22,

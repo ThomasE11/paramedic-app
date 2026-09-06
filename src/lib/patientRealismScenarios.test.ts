@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { CaseScenario } from '@/types';
 import { firstYearCases } from '@/data/firstYearCases';
 import { additionalTraumaCases } from '@/data/additionalCases';
+import { allCases } from '@/data/cases';
 import {
   matchRealismScenarios,
   deriveScenarioTreatmentResponses,
@@ -612,3 +613,63 @@ describe('prospectiveEquipmentAnchorsForCase', () => {
     expect(anchors.some(a => a.treatmentIdFragments.some(f => f.includes('oxygen') || f.includes('nebulizer') || f.includes('salbutamol')))).toBe(true);
   });
 });
+
+/**
+ * Keyword creep regression net.
+ *
+ * These scenarios were added after the coverage audit, and each one initially
+ * stole a case from a scenario that was already right. They are locked here by
+ * the exact clinical overlap that caused it, so a future keyword cannot quietly
+ * re-break them.
+ */
+describe('scenario matching does not hijack correct diagnoses', () => {
+  const topScenarioFor = (id: string) => {
+    const caseData = allCases.find(c => c.id === id);
+    expect(caseData, `case ${id} should exist`).toBeTruthy();
+    return matchRealismScenarios(caseData!)[0]?.id ?? null;
+  };
+
+  it('a dysphasic stroke stays a stroke, not a choking', () => {
+    // Dispatch says "cannot speak" — true of aphasia AND of a blocked airway.
+    expect(topScenarioFor('neuro-001')).toBe('neurology-stroke-seizure');
+  });
+
+  it('severe asthma unable to speak in sentences stays bronchospasm', () => {
+    expect(topScenarioFor('asthma-sev-001')).toBe('respiratory-bronchospasm');
+  });
+
+  it('a subarachnoid haemorrhage is not labelled sepsis by its meningism', () => {
+    // Neck stiffness and photophobia belong to both SAH and meningitis.
+    expect(topScenarioFor('litfl-012')).not.toBe('infection-sepsis');
+  });
+
+  it('anxiety stays a diagnosis of exclusion, below every organic scenario', () => {
+    const anxiety = REALISM_SCENARIOS.find(s => s.id === 'anxiety-hyperventilation')!;
+    const organic = REALISM_SCENARIOS.filter(s => s.id !== 'anxiety-hyperventilation');
+    for (const other of organic) {
+      expect(other.priority, `${other.id} must outrank anxiety`).toBeGreaterThan(anxiety.priority);
+    }
+  });
+
+  it('a blocked airway ranks with the other immediate airway killers', () => {
+    // Ties with anaphylaxis by design — both close an airway in minutes, and
+    // anaphylaxis carries its own hard allergy gate so it cannot over-match.
+    const choking = REALISM_SCENARIOS.find(s => s.id === 'airway-foreign-body-obstruction')!;
+    for (const other of REALISM_SCENARIOS) {
+      if (other.id === choking.id) continue;
+      expect(choking.priority).toBeGreaterThanOrEqual(other.priority);
+    }
+    // What actually matters: it must beat bronchospasm, or a choking patient
+    // gets treated with salbutamol.
+    const bronchospasm = REALISM_SCENARIOS.find(s => s.id === 'respiratory-bronchospasm')!;
+    expect(choking.priority).toBeGreaterThan(bronchospasm.priority);
+  });
+
+  it('the newly covered cases actually match their intended scenario', () => {
+    expect(topScenarioFor('sepsis-001')).toBe('infection-sepsis');
+    expect(topScenarioFor('psych-002')).toBe('behavioural-acute-agitation');
+    expect(topScenarioFor('resp-009')).toBe('airway-foreign-body-obstruction');
+    expect(topScenarioFor('y1-012')).toBe('anxiety-hyperventilation');
+  });
+});
+

@@ -11,7 +11,8 @@ export type ProblemFamily =
   | 'infection'
   | 'burns'
   | 'obstetric'
-  | 'pediatric';
+  | 'pediatric'
+  | 'behavioural';
 
 export type RealismVisualEffectKind =
   | 'cyanosis'
@@ -778,6 +779,110 @@ export const REALISM_SCENARIOS: RealismScenarioSpec[] = [
     ],
     reassessmentRequirements: ['airway', 'pain', 'temperature', 'perfusion', 'burn coverage', 'distal circulation if circumferential'],
     debriefSignals: ['time to cooling and covering', 'airway reassessment', 'hypothermia prevention'],
+  },
+  {
+    // Highest priority in the list: a blocked airway kills faster than anything
+    // else here, and the wheeze/stridor keywords would otherwise let the
+    // bronchospasm scenario claim a choking patient and teach salbutamol.
+    id: 'airway-foreign-body-obstruction',
+    family: 'respiratory',
+    // 'cannot speak' is deliberately NOT a keyword: a stroke patient with
+    // dysphasia and a severe asthmatic unable to finish a sentence both say
+    // exactly that, and at priority 95 this scenario stole both of them.
+    match: ['choking', 'foreign body', 'universal choking sign', 'clutching throat', 'heimlich', 'food bolus'],
+    priority: 95,
+    activeProblems: ['upper airway obstruction', 'imminent hypoxia', 'inability to speak or cough effectively'],
+    immediateVisuals: [
+      { id: 'fb-cyanosis', kind: 'cyanosis', region: 'face', intensity: 'severe', showWhen: 'immediate', clearsWhen: ['obstruction relieved'], detail: 'Dusky lips and face appear fast in complete obstruction — this is the clock the student is racing.' },
+      { id: 'fb-accessory', kind: 'accessory_muscle_use', region: 'chest', intensity: 'severe', showWhen: 'immediate', clearsWhen: ['obstruction relieved'], detail: 'Violent, ineffective respiratory effort against a closed airway.' },
+      { id: 'fb-panic-sweat', kind: 'diaphoresis', region: 'face', intensity: 'moderate', showWhen: 'immediate', clearsWhen: ['obstruction relieved'], detail: 'Terror and effort together — the patient is drenched.' },
+    ],
+    equipmentAnchors: [oxygenFaceAnchor],
+    patientBehavior: [
+      { id: 'fb-cannot-speak', when: 'history questions asked of a completely obstructed patient', responseType: 'silent', debrief: 'A patient who cannot speak cannot answer. Silence IS the assessment finding — act, do not interview.' },
+      { id: 'fb-relief', when: 'back blows and abdominal thrusts delivered', responseType: 'improve', quote: 'cough... I think it moved...', debrief: 'Relief is sudden. Reassess airway, breathing and for thrust-related injury.' },
+    ],
+    treatmentResponses: [
+      { treatmentIdFragments: ['back_blows', 'abdominal_thrust', 'chest_thrust', 'heimlich'], expectedFit: 'matched', visualResult: ['obstruction may clear'], vitalTrajectory: ['SpO2 recovers once air moves'], reassessment: ['air entry', 'voice', 'SpO2', 'thrust injury'], patientBehavior: ['coughing, distressed, then relieved'], debriefSignal: 'obstruction cleared by mechanical means' },
+      { treatmentIdFragments: ['nebulizer', 'salbutamol', 'ipratropium'], expectedFit: 'mismatch', visualResult: ['no change — the drug cannot reach the obstruction'], vitalTrajectory: ['continues to deteriorate'], reassessment: ['air entry', 'ability to speak'], patientBehavior: ['no improvement'], debriefSignal: 'bronchodilator given for a mechanical obstruction' },
+      { treatmentIdFragments: ['oxygen'], expectedFit: 'mismatch', visualResult: ['mask on a blocked airway'], vitalTrajectory: ['no improvement while obstructed'], reassessment: ['air entry', 'chest rise'], patientBehavior: ['still cannot breathe'], debriefSignal: 'oxygen delivered without first clearing the airway' },
+    ],
+    reassessmentRequirements: ['air entry', 'ability to speak or cough', 'SpO2', 'conscious level', 'injury from thrusts'],
+    debriefSignals: ['time to first back blow', 'attempted to interview a patient who could not speak', 'drug given for a mechanical obstruction'],
+  },
+  {
+    id: 'infection-sepsis',
+    family: 'infection',
+    // Meningism ('photophobia', 'neck stiffness') is deliberately NOT a
+    // keyword: subarachnoid haemorrhage presents with both, and matching on
+    // them labelled an SAH as sepsis. Require an infection signal instead.
+    match: ['sepsis', 'septic', 'meningitis', 'infection', 'febrile', 'fever', 'pyrexia', 'wound infection'],
+    priority: 70,
+    activeProblems: ['systemic infection', 'perfusion failure', 'altered mental state', 'source identification'],
+    immediateVisuals: [
+      { id: 'sepsis-flush', kind: 'pallor', region: 'face', intensity: 'moderate', showWhen: 'immediate', clearsWhen: ['perfusion improves'], detail: 'Septic patients look wrong before the numbers do — flushed then grey as perfusion fails.' },
+      { id: 'sepsis-mottling', kind: 'mottling', region: 'left-leg', intensity: 'moderate', showWhen: 'if-deteriorating', clearsWhen: ['perfusion improves'], detail: 'Mottled knees and peripheries are a late, ominous perfusion sign.' },
+      { id: 'sepsis-sweat', kind: 'diaphoresis', region: 'face', intensity: 'moderate', showWhen: 'immediate', clearsWhen: ['fever and perfusion improve'], detail: 'Clammy and febrile together.' },
+    ],
+    equipmentAnchors: [oxygenFaceAnchor, ivAnchor],
+    patientBehavior: [
+      { id: 'sepsis-confused', when: 'history questions asked of a septic elderly patient', responseType: 'agitate', quote: 'I... what day is it? I just felt so tired.', debrief: 'New confusion IS a sepsis red flag, not a communication barrier to work around.' },
+      { id: 'sepsis-fluids-improve', when: 'IV fluids given for septic hypoperfusion', responseType: 'improve', quote: 'I feel a bit less woozy.', debrief: 'Fluids support perfusion but do not treat the source — time-critical transport still applies.' },
+    ],
+    treatmentResponses: [
+      { treatmentIdFragments: ['fluid', 'saline', 'crystalloid'], expectedFit: 'matched', visualResult: ['fluids running'], vitalTrajectory: ['BP and capillary refill may improve'], reassessment: ['BP', 'capillary refill', 'mental status', 'lungs'], patientBehavior: ['may become more lucid'], debriefSignal: 'fluid resuscitation for septic hypoperfusion' },
+      { treatmentIdFragments: ['oxygen'], expectedFit: 'matched', visualResult: ['oxygen visible on face'], vitalTrajectory: ['SpO2 supported'], reassessment: ['SpO2', 'RR', 'work of breathing'], patientBehavior: ['tolerates'], debriefSignal: 'oxygen for septic hypoxia' },
+    ],
+    reassessmentRequirements: ['temperature', 'BP', 'capillary refill', 'mental status', 'RR', 'lactate if available', 'source of infection'],
+    debriefSignals: ['sepsis recognised early', 'new confusion attributed to age rather than infection', 'time-critical transport decision'],
+  },
+  {
+    id: 'behavioural-acute-agitation',
+    family: 'behavioural',
+    match: ['psychosis', 'psychotic', 'acute behavioural', 'agitated', 'aggressive', 'responding to internal stimuli', 'shouting incoherently', 'restraint'],
+    priority: 65,
+    activeProblems: ['acute behavioural disturbance', 'scene and crew safety', 'organic mimic exclusion', 'capacity assessment'],
+    immediateVisuals: [
+      { id: 'behav-agitation', kind: 'tremor', region: 'chest', intensity: 'moderate', showWhen: 'immediate', clearsWhen: ['patient de-escalates'], detail: 'Restless, unsettled movement — the patient will not stay still to be assessed.' },
+      { id: 'behav-sweat', kind: 'diaphoresis', region: 'face', intensity: 'moderate', showWhen: 'immediate', clearsWhen: ['patient de-escalates'], detail: 'Sweating with agitation. Also a stimulant and hypoglycaemia clue — do not assume psychiatric.' },
+      { id: 'behav-pupils', kind: 'dilated_pupils', region: 'face', intensity: 'moderate', showWhen: 'on-assessment', detail: 'Dilated pupils point at a stimulant or organic cause rather than primary psychosis.' },
+    ],
+    equipmentAnchors: [],
+    patientBehavior: [
+      { id: 'behav-refuses-touch', when: 'hands-on assessment attempted before rapport', responseType: 'refuse', quote: 'Do not touch me. Get away from me.', debrief: 'De-escalation and consent come before hands. Rushing the physical exam escalates the scene.' },
+      { id: 'behav-calms', when: 'calm explanation and space offered', responseType: 'cooperate', quote: 'Okay... okay. Just tell me what you are doing.', debrief: 'De-escalation is the intervention. Restraint is a last resort, not a shortcut.' },
+    ],
+    treatmentResponses: [
+      { treatmentIdFragments: ['glucose', 'dextrose'], expectedFit: 'matched', visualResult: ['BGL checked before behaviour is labelled psychiatric'], vitalTrajectory: ['agitation resolves if hypoglycaemic'], reassessment: ['BGL', 'GCS', 'behaviour'], patientBehavior: ['may settle rapidly'], debriefSignal: 'organic mimic excluded before psychiatric attribution' },
+      { treatmentIdFragments: ['restraint', 'sedation'], expectedFit: 'harmful', visualResult: ['escalation and struggle'], vitalTrajectory: ['risk of injury and positional compromise'], reassessment: ['airway', 'breathing', 'circulation while restrained', 'legal justification'], patientBehavior: ['fights harder'], debriefSignal: 'restraint used before de-escalation was attempted' },
+    ],
+    reassessmentRequirements: ['BGL', 'GCS', 'pupils', 'scene safety', 'capacity', 'airway and breathing if restrained'],
+    debriefSignals: ['de-escalation attempted first', 'hypoglycaemia and hypoxia excluded', 'restraint justified and monitored'],
+  },
+  {
+    // Deliberately LOW priority. Anxiety and hyperventilation are diagnoses of
+    // exclusion: every organic scenario above must win when its keywords also
+    // appear, or this teaches students to reassure a PE or a DKA.
+    id: 'anxiety-hyperventilation',
+    family: 'respiratory',
+    match: ['panic attack', 'hyperventilation', 'hyperventilating', 'carpopedal', 'tingling in the fingers', 'anxiety attack'],
+    priority: 25,
+    activeProblems: ['hyperventilation', 'organic cause exclusion', 'reassurance and coaching'],
+    immediateVisuals: [
+      { id: 'anx-sweat', kind: 'diaphoresis', region: 'face', intensity: 'subtle', showWhen: 'immediate', clearsWhen: ['breathing pattern settles'], detail: 'Distress sweat without the work of true respiratory failure.' },
+      { id: 'anx-tremor', kind: 'tremor', region: 'left-arm', intensity: 'subtle', showWhen: 'immediate', clearsWhen: ['breathing pattern settles'], detail: 'Trembling hands; carpopedal spasm if it has gone on long enough.' },
+    ],
+    equipmentAnchors: [],
+    patientBehavior: [
+      { id: 'anx-coaching-helps', when: 'calm breathing coaching given', responseType: 'improve', quote: 'I think... I can slow it down.', debrief: 'Coached breathing works only once organic causes are excluded.' },
+      { id: 'anx-distress', when: 'told to calm down without explanation', responseType: 'refuse', quote: 'I cannot breathe, do not tell me to relax!', debrief: 'Dismissal escalates panic. Acknowledge the symptom, then coach.' },
+    ],
+    treatmentResponses: [
+      { treatmentIdFragments: ['oxygen'], expectedFit: 'mismatch', visualResult: ['mask applied to a patient with normal SpO2'], vitalTrajectory: ['no change — they are not hypoxic'], reassessment: ['SpO2', 'RR', 'air entry'], patientBehavior: ['may feel more trapped by the mask'], debriefSignal: 'oxygen given without hypoxia' },
+      { treatmentIdFragments: ['nebulizer', 'salbutamol'], expectedFit: 'mismatch', visualResult: ['no wheeze to treat'], vitalTrajectory: ['tachycardia may worsen'], reassessment: ['air entry', 'wheeze', 'pulse'], patientBehavior: ['feels more shaky'], debriefSignal: 'bronchodilator given without bronchospasm' },
+    ],
+    reassessmentRequirements: ['SpO2', 'RR', 'air entry', 'BGL', 'ECG', 'symmetry of chest signs'],
+    debriefSignals: ['organic causes excluded before reassurance', 'PE/ACS/DKA considered', 'coaching rather than dismissal'],
   },
 ];
 
