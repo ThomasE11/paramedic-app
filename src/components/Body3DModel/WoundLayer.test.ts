@@ -31,3 +31,15 @@ describe('hashInjury', () => {
     expect(hashInjury('a')).toBeGreaterThanOrEqual(0);
   });
 });
+
+describe('urticaria decals', () => {
+  it('routes a rash injury to the urticaria sprite', () => {
+    expect(spriteKindFor({ kind: 'rash', label: 'Urticaria', detail: 'Raised weals' }))
+      .toBe('urticaria');
+  });
+
+  it('still treats road rash as an abrasion, not urticaria', () => {
+    expect(spriteKindFor({ kind: 'bleeding', label: 'Road rash', detail: 'Graze to forearm' }))
+      .toBe('abrasion');
+  });
+});

@@ -28,6 +28,7 @@ export function spriteKindFor(injury: Pick<BodyInjury, 'kind' | 'detail' | 'labe
   const text = `${injury.label} ${injury.detail}`.toLowerCase();
   switch (injury.kind) {
     case 'burn': return 'burn';
+    case 'rash': return 'urticaria';
     case 'bruising': return 'bruise';
     case 'bleeding': return /abrasion|graze|road rash/.test(text) ? 'abrasion' : 'active-bleeding';
     case 'wound':

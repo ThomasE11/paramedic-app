@@ -28,7 +28,7 @@ function makeRecordingCtx() {
   return ctx;
 }
 
-const KINDS: WoundKind[] = ['surgical-incision', 'infected-incision', 'laceration', 'abrasion', 'bruise', 'burn'];
+const KINDS: WoundKind[] = ['surgical-incision', 'infected-incision', 'laceration', 'abrasion', 'bruise', 'burn', 'urticaria'];
 const DRAW_OPS = new Set(['fill', 'stroke', 'arc', 'ellipse', 'lineTo', 'fillRect']);
 
 describe('drawWound', () => {
@@ -76,5 +76,21 @@ describe('drawWound', () => {
     drawWound(a, 'laceration', 300, 250, 80);
     drawWound(b, 'laceration', 600, 700, 80);
     expect(JSON.stringify(a.__calls)).not.toBe(JSON.stringify(b.__calls));
+  });
+});
+
+describe('urticaria', () => {
+  it('draws multiple discrete weals, not one flat patch', () => {
+    const ctx = makeRecordingCtx();
+    drawWound(ctx, 'urticaria', 256, 256, 80);
+    const weals = ctx.__calls.filter(c => c.method === 'ellipse').length;
+    expect(weals, 'expected a scatter of weals').toBeGreaterThanOrEqual(5);
+  });
+
+  it('lays the erythematous flare down before the weals sit on it', () => {
+    const ctx = makeRecordingCtx();
+    drawWound(ctx, 'urticaria', 256, 256, 80);
+    const methods = ctx.__calls.map(c => c.method);
+    expect(methods.indexOf('fillRect')).toBeLessThan(methods.indexOf('ellipse'));
   });
 });

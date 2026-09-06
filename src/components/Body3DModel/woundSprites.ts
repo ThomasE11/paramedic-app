@@ -1,4 +1,4 @@
-export type WoundKind = 'surgical-incision' | 'infected-incision' | 'laceration' | 'abrasion' | 'bruise' | 'burn' | 'active-bleeding';
+export type WoundKind = 'surgical-incision' | 'infected-incision' | 'laceration' | 'abrasion' | 'bruise' | 'burn' | 'active-bleeding' | 'urticaria';
 
 function drawWound(ctx: CanvasRenderingContext2D, kind: WoundKind, cx: number, cy: number, sizePx: number, rotationRad?: number): void {
   ctx.save();
@@ -171,6 +171,37 @@ function drawWound(ctx: CanvasRenderingContext2D, kind: WoundKind, cx: number, c
         ctx.arc(dx + (rand() - 0.5) * sizePx * 0.2, sizePx * 0.2 + len + sizePx * 0.06, sizePx * 0.07, 0, Math.PI * 2);
         ctx.fillStyle = 'rgba(120, 12, 14, 0.9)';
         ctx.fill();
+      }
+      break;
+    }
+
+    case 'urticaria': {
+      // Urticaria reads as PALE raised wheals sitting on a red flare — not a
+      // uniform red patch. Draw the diffuse erythema first, then scatter
+      // blanched wheals with soft red margins on top of it.
+      const flare = ctx.createRadialGradient(0, 0, 0, 0, 0, sizePx * 1.5);
+      flare.addColorStop(0, 'rgba(214, 74, 74, 0.42)');
+      flare.addColorStop(0.6, 'rgba(214, 74, 74, 0.22)');
+      flare.addColorStop(1, 'rgba(214, 74, 74, 0)');
+      ctx.fillStyle = flare;
+      ctx.fillRect(-sizePx * 1.5, -sizePx * 1.5, sizePx * 3, sizePx * 3);
+
+      const wheals = 7 + Math.floor(rand() * 5);
+      for (let i = 0; i < wheals; i++) {
+        // Bias toward the centre so the patch has a dense core and soft edges.
+        const angle = rand() * Math.PI * 2;
+        const dist = (rand() * 0.55 + rand() * 0.45) * sizePx;
+        const wx = Math.cos(angle) * dist;
+        const wy = Math.sin(angle) * dist * 0.8;
+        const wr = sizePx * (0.12 + rand() * 0.16);
+
+        ctx.beginPath();
+        ctx.ellipse(wx, wy, wr, wr * (0.7 + rand() * 0.5), rand() * Math.PI, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(226, 160, 150, 0.55)';
+        ctx.fill();
+        ctx.lineWidth = sizePx * 0.02;
+        ctx.strokeStyle = 'rgba(190, 60, 60, 0.5)';
+        ctx.stroke();
       }
       break;
     }

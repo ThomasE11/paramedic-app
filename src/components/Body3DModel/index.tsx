@@ -265,10 +265,37 @@ function visualRegionToBodyRegion(region: PatientWoundOverlay['region']): BodyRe
   }
 }
 
-function buildScenarioBodyInjuries(visualState?: PatientVisualState | null): BodyInjury[] {
-  if (!visualState?.woundOverlays.length) return [];
+/**
+ * Urticaria is a skin effect, not a wound, so it never reached the wound
+ * overlays — which meant an anaphylaxis patient showed no rash at all, losing
+ * the sign the diagnosis most obviously hangs on. Paint it through the same
+ * decal path the wounds use.
+ */
+function buildScenarioRashInjuries(visualState?: PatientVisualState | null): BodyInjury[] {
+  return (visualState?.skinEffects ?? [])
+    .filter(effect => effect.kind === 'rash')
+    .flatMap((effect, index): BodyInjury[] => {
+      const region = visualRegionToBodyRegion(effect.region);
+      if (!region) return [];
+      const anchor = BODY_REGION_DIAGRAM_ANCHOR[region];
+      return [{
+        id: `scenario-rash-${effect.region}-${index}`,
+        region,
+        kind: 'rash',
+        label: 'Urticaria',
+        detail: effect.detail || 'Raised weals on an erythematous flare.',
+        severity: effect.intensity >= 0.66 ? 'major' : 'minor',
+        x: anchor.x,
+        y: anchor.y,
+      }];
+    });
+}
 
-  return visualState.woundOverlays.flatMap((overlay, index): BodyInjury[] => {
+function buildScenarioBodyInjuries(visualState?: PatientVisualState | null): BodyInjury[] {
+  const rash = buildScenarioRashInjuries(visualState);
+  if (!visualState?.woundOverlays.length) return rash;
+
+  return rash.concat(visualState.woundOverlays.flatMap((overlay, index): BodyInjury[] => {
     const region = visualRegionToBodyRegion(overlay.region);
     if (!region) return [];
     const kind: BodyInjury['kind'] | null =
@@ -300,7 +327,7 @@ function buildScenarioBodyInjuries(visualState?: PatientVisualState | null): Bod
       x: anchor.x,
       y: anchor.y,
     }];
-  });
+  }));
 }
 
 function skinEffectStrength(visualState: PatientVisualState | null | undefined, kind: PatientVisualState['skinEffects'][number]['kind']): number {
