@@ -30,7 +30,8 @@ import { injuryRegionTo3D, type BodyInjury } from '@/lib/injuryMap';
 import { LifeSigns } from './LifeSigns';
 import { createFaceAttachment } from './patientAttachments';
 import { IdleAnimations, type IdleCues } from './IdleAnimations';
-import { setBreathClock } from '@/lib/breathClock';
+import { getBreathPhase01, setBreathClock } from '@/lib/breathClock';
+import { computeIdleLimbMotion, createIdleLimbMotion } from '@/lib/idleLimbMotion';
 import {
   patientPacingTransform,
   patientSkeletalAction,
@@ -885,6 +886,9 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
   const morphRootRef = useRef<THREE.Object3D | null>(null);
   const morphInfluenceRef = useRef<Record<string, number>>({});
   const breathPhaseRef = useRef(0);
+  const idleLimbRef = useRef(createIdleLimbMotion());
+  const idleLimbTimeRef = useRef(0);
+  const idleLimbGateRef = useRef(0);
   const skeletalMixerRef = useRef<THREE.AnimationMixer | null>(null);
   const locomotionTimeRef = useRef(0);
   // Reusable temp colour for the per-frame skin-tint lerp so we don't allocate
@@ -1515,9 +1519,30 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
       // Restore the fitted rest quaternion explicitly before applying the
       // mobility-specific arm drop so the rotation cannot accumulate into the
       // high-frequency "vibrating arms" failure reported in seated cases.
+      // Baseline "alive" movement. Without this the arms hold one frozen pose
+      // for the whole case and the patient reads as a mannequin. Applied after
+      // the rest-quaternion restore above, so it layers on the posed arm and
+      // still cannot accumulate frame to frame.
+      idleLimbGateRef.current += ((unconscious ? 0 : 1) - idleLimbGateRef.current)
+        * Math.min(1, delta * 1.5);
+      const idleLimb = computeIdleLimbMotion({
+        time: idleLimbTimeRef.current += delta,
+        gate: idleLimbGateRef.current,
+        breathPhase01: getBreathPhase01(),
+        respiratoryRate: breathRateRpm,
+        reduced: reduceIdleMotion,
+      }, idleLimbRef.current);
+
       standingArmBones.forEach((arm, index) => {
         arm.quaternion.copy(standingArmRest[index]);
         if (armRelaxation > 0) arm.rotateX(armRelaxation);
+        const isLeft = arm.name.toLowerCase().includes('left');
+        arm.rotateX(isLeft ? idleLimb.leftArmDrift : idleLimb.rightArmDrift);
+        // Mirrored skeleton: the same sign lifts one shoulder and drops the
+        // other, so the respiratory rise has to flip per side.
+        if (idleLimb.shoulderLift !== 0) {
+          arm.rotateZ(isLeft ? -idleLimb.shoulderLift : idleLimb.shoulderLift);
+        }
       });
       const forearmRelaxation = patientForearmRestRadians(mobility, patientAge);
       recumbentForearmBones.forEach((forearm, index) => {
@@ -1526,6 +1551,7 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
         const side = forearm.name.toLowerCase().includes('left') ? 'left' : 'right';
         const sweep = patientForearmSweepRadians(mobility, side, patientAge);
         if (sweep !== 0) forearm.rotateZ(sweep);
+        forearm.rotateX(side === 'left' ? idleLimb.leftForeArmDrift : idleLimb.rightForeArmDrift);
       });
       // Legs are otherwise static in recumbent presentations, so explicitly
       // restore them before applying the recovery bend. This also makes a
