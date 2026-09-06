@@ -278,3 +278,27 @@ describe('derivePatientVisualState', () => {
     expect(state.skinEffects.some(s => s.kind === 'diaphoresis')).toBe(true); // diaphoresis from hypoglycaemia scenario
   });
 });
+
+describe('facial droop', () => {
+  const droopState = (kinds: string[]) => derivePatientVisualState({
+    activeVisualEffects: kinds.map((kind, i) => ({
+      id: `v${i}`, kind, region: 'face', intensity: 'moderate', showWhen: 'on-assessment', detail: '',
+    })),
+  } as unknown as RealismDirectorState);
+
+  it('surfaces a declared facial droop so the morph has something to drive', () => {
+    expect(droopState(['facial_droop']).facialDroop).toBeGreaterThan(0);
+  });
+
+  it('is absent when the scenario does not declare it', () => {
+    expect(droopState(['pallor']).facialDroop).toBe(0);
+  });
+
+  it('scales with declared intensity', () => {
+    const severe = derivePatientVisualState({
+      activeVisualEffects: [{ id: 'v', kind: 'facial_droop', region: 'face', intensity: 'severe', showWhen: 'on-assessment', detail: '' }],
+    } as unknown as RealismDirectorState);
+    expect(severe.facialDroop).toBeGreaterThan(droopState(['facial_droop']).facialDroop);
+  });
+});
+

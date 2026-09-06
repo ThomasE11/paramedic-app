@@ -82,6 +82,11 @@ export interface PatientVisualState {
   hasAccessoryMuscleUse: boolean;
   /** Breathing effort intensity: 0 (normal) .. 1 (severe distress) */
   breathingEffort: number;
+  /**
+   * Unilateral facial droop, 0 (none) .. 1 (severe) — the F of FAST.
+   * Drives the `finding_facial_droop` morph on the patient mesh.
+   */
+  facialDroop: number;
 }
 
 /* ------------------------------------------------------------------ */
@@ -176,6 +181,9 @@ export function derivePatientVisualState(director: RealismDirectorState): Patien
     .reduce((max, v) => Math.max(max, intensityTo01(v.intensity)), 0);
   const reducedChest = visuals.some(v => v.kind === 'reduced_chest_rise') ? 0.5 : 0;
   const breathingEffort = Math.min(1, Math.max(accessoryIntensity, reducedChest));
+  const facialDroop = Math.max(0, ...visuals
+    .filter(v => v.kind === 'facial_droop')
+    .map(v => intensityTo01(v.intensity)));
 
   return {
     skinEffects,
@@ -188,5 +196,6 @@ export function derivePatientVisualState(director: RealismDirectorState): Patien
     vomitRisk,
     hasAccessoryMuscleUse,
     breathingEffort,
+    facialDroop,
   };
 }

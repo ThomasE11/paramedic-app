@@ -5383,8 +5383,12 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
       const morph = MORPH_FOR_KIND[inj.kind];
       if (morph) out.add(morph);
     }
+    // Facial droop comes from the scenario layer rather than the injury list.
+    // Its showWhen gating is already applied upstream (activeVisualEffects),
+    // so its presence here means it is meant to be visible now.
+    if ((patientVisualState?.facialDroop ?? 0) > 0) out.add('finding_facial_droop');
     return Array.from(out);
-  }, [bodyInjuriesForMesh, assessedRegions]);
+  }, [bodyInjuriesForMesh, assessedRegions, patientVisualState?.facialDroop]);
 
   const guidedStepIndex = useMemo(() => {
     if (!nextGuidedStep) return -1;
