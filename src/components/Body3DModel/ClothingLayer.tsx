@@ -93,6 +93,25 @@ export interface GarmentGlbSpec {
   offset: number;
 }
 
+/**
+ * Waist seam closure, in world metres.
+ *
+ * The bake leaves the shirt hem (y 0.904) and the trouser waistband (y 0.926)
+ * overlapping by only ~22mm. Standing that reads fine; a flexed hip — seated,
+ * tripod, recovery — opens the crease wider than the overlap and bare skin
+ * shows through at the side of the hip. We grow the overlap from both sides.
+ *
+ * Tuning knobs, and they are genuinely touchy: the pose morph deltas are
+ * authored against the ORIGINAL vertex positions, so whatever we add to the
+ * base position is still added on top in every pose. Overshoot the rise and
+ * the waistband floats above the hip when seated and opens a WIDER gap than it
+ * closed (0.09 was visibly worse than 0.05). Keep both values small.
+ */
+const WAISTBAND_RISE = 0.05;
+const WAISTBAND_BAND_FRACTION = 0.12;
+const SHIRT_HEM_DROP = 0.05;
+const SHIRT_HEM_BAND_FRACTION = 0.12;
+
 export const GARMENT_GLBS: GarmentGlbSpec[] = [
   // Morph + skin interpolation can move the underlying surface a few
   // millimetres past the Blender clearance. A light garment-scale stand-off
@@ -688,6 +707,44 @@ export function buildBlendedGarments(
       );
     }
     p.needsUpdate = true;
+
+    // Grow the waist overlap from both sides so the hip crease cannot open onto
+    // bare skin: the trouser waistband rises under the shirt, the shirt hem
+    // drops over the waistband. See the constants above for why both are small.
+    //
+    // Measure the rest pose by scanning positions — computeBoundingBox() expands
+    // over every morph target (pose_supine included), i.e. the whole body.
+    // ponytail: seam bands only. If other seams open up, the real fix is a wider
+    // authored overlap in scripts/anatomy-models/blender-garment-bake.py.
+    const seam = spec.name === 'scrub-trousers'
+      ? { shift: WAISTBAND_RISE, fraction: WAISTBAND_BAND_FRACTION, fromTop: true }
+      : spec.name === 'scrub-top'
+        ? { shift: -SHIRT_HEM_DROP, fraction: SHIRT_HEM_BAND_FRACTION, fromTop: false }
+        : null;
+
+    if (seam) {
+      let minY = Infinity;
+      let maxY = -Infinity;
+      for (let i = 0; i < p.count; i++) {
+        const y = p.getY(i);
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+      const band = (maxY - minY) * seam.fraction;
+      if (band > 0) {
+        const edge = seam.fromTop ? maxY - band : minY + band;
+        const shift = seam.shift / worldScale;
+        for (let i = 0; i < p.count; i++) {
+          const y = p.getY(i);
+          // Ease across the band so the fabric stretches instead of stepping.
+          const t = seam.fromTop ? (y - edge) / band : (edge - y) / band;
+          if (t <= 0) continue;
+          p.setY(i, y + shift * Math.min(t, 1));
+        }
+        p.needsUpdate = true;
+      }
+    }
+
     g.computeVertexNormals();
 
     if (canSkinGarments && bodySkinIndex && bodySkinWeight) {
