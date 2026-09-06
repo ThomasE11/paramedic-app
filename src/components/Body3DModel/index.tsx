@@ -6355,6 +6355,10 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 breathRateRpm={isInArrest ? 0 : breathRateRpm}
                 // Breathing depth — shallow vs deep laboured.
                 breathDepthFactor={breathDepthFactor}
+                // Scenario-declared accessory-muscle recruitment. The rate
+                // alone under-reads cases like severe asthma, where the work
+                // of breathing is visible before the rate looks alarming.
+                breathingEffort={patientVisualState?.breathingEffort ?? 0}
                 // Procedural life loop — GCS<=8/arrest = still, eyes closed.
                 unconscious={patientUnconscious}
                 // Condition-responsive idle motion; drops non-essential

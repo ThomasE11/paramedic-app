@@ -188,6 +188,10 @@ interface BodyMeshProps {
    *  morph as a continuous sine so the patient visibly breathes at the case
    *  rate. 0 / undefined = no breathing animation (e.g. apnoea/arrest). */
   breathRateRpm?: number;
+  /** Scenario-declared work of breathing, 0..1 (`PatientVisualState`). Drives
+   *  visible accessory-muscle shoulder recruitment alongside the rate, so a
+   *  severe asthmatic looks like hard work even before the rate looks bad. */
+  breathingEffort?: number;
   /** Chest-rise depth multiplier (1 = normal). <1 = shallow (opioid/agonal),
    *  >1 = deep/laboured (Kussmaul). Combined with a fast-breathing taper. */
   breathDepthFactor?: number;
@@ -843,7 +847,7 @@ function buildSurfaceSampler(root: THREE.Object3D | null, presentationRoot?: THR
   };
 }
 
-export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guidedMode = false, nextGuidedStep = null, onBlockedClick, onBodyPoint, bodyInjuries, patientGender, patientAge, surfaceOpacity = 1, activeFindingMorphs, breathRateRpm = 0, breathDepthFactor = 1, onSurfaceSampler, onFaceAttachment, dressed = false, dressedActiveRegion = null, pupilLeftMm = 3.5, pupilRightMm = 3.5, skinTint = null, skinDiaphoretic = false, diaphoresis = 0, jaundice = 0, mottling = 0, unconscious = false, idleCues = null, reduceIdleMotion = false, presentation = 'upright', bayStage = 'stretcher', sss = false, posture = null, mobility = 'recumbent', mouthOpenRef = null, cyanosisLocalStrength = 0 }: BodyMeshProps) {
+export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guidedMode = false, nextGuidedStep = null, onBlockedClick, onBodyPoint, bodyInjuries, patientGender, patientAge, surfaceOpacity = 1, activeFindingMorphs, breathRateRpm = 0, breathingEffort = 0, breathDepthFactor = 1, onSurfaceSampler, onFaceAttachment, dressed = false, dressedActiveRegion = null, pupilLeftMm = 3.5, pupilRightMm = 3.5, skinTint = null, skinDiaphoretic = false, diaphoresis = 0, jaundice = 0, mottling = 0, unconscious = false, idleCues = null, reduceIdleMotion = false, presentation = 'upright', bayStage = 'stretcher', sss = false, posture = null, mobility = 'recumbent', mouthOpenRef = null, cyanosisLocalStrength = 0 }: BodyMeshProps) {
   // The path is recomputed per render so a `caseData.patientInfo.gender`
   // change (e.g. user picks a different case) swaps the mesh without
   // remounting the parent. useGLTF caches by URL.
@@ -1530,6 +1534,7 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
         gate: idleLimbGateRef.current,
         breathPhase01: getBreathPhase01(),
         respiratoryRate: breathRateRpm,
+        breathingEffort,
         reduced: reduceIdleMotion,
       }, idleLimbRef.current);
 

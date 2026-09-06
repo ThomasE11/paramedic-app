@@ -32,6 +32,22 @@ describe('accessoryLiftAmplitude', () => {
   it('saturates rather than growing without bound', () => {
     expect(accessoryLiftAmplitude(80)).toBeCloseTo(accessoryLiftAmplitude(34), 6);
   });
+
+  it('lets a scenario show hard work before the rate looks alarming', () => {
+    // Severe asthma: rate not yet dramatic, work of breathing obvious.
+    const rateOnly = accessoryLiftAmplitude(20);
+    const declared = accessoryLiftAmplitude(20, 1);
+    expect(declared).toBeGreaterThan(rateOnly);
+    expect(declared).toBeCloseTo(accessoryLiftAmplitude(34), 6);
+  });
+
+  it('takes the worse of rate and declared effort, never the sum', () => {
+    expect(accessoryLiftAmplitude(34, 1)).toBeCloseTo(accessoryLiftAmplitude(34), 6);
+  });
+
+  it('keeps apnoea still even when a scenario declares effort', () => {
+    expect(accessoryLiftAmplitude(0, 1)).toBe(0);
+  });
 });
 
 describe('computeIdleLimbMotion', () => {

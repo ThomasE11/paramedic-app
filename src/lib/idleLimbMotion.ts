@@ -44,6 +44,13 @@ export interface IdleLimbMotionInput {
   breathPhase01: number;
   /** Live respiratory rate (breaths/min). 0 = apnoea → no respiratory lift. */
   respiratoryRate: number;
+  /**
+   * Scenario-declared work of breathing, 0..1, from `PatientVisualState`.
+   * The rate alone under-reads cases like severe asthma, where accessory
+   * muscle use is obvious before the rate looks alarming — so the scenario
+   * can raise the recruitment independently. Apnoea still overrides both.
+   */
+  breathingEffort?: number;
   /** Adaptive-quality low rung — keep the clinical signal, drop the garnish. */
   reduced?: boolean;
 }
@@ -63,14 +70,22 @@ const FOREARM_DRIFT = 0.01;
 const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
 
 /**
- * How much the shoulders should ride with each breath at this rate.
- * Apnoea returns 0 — still shoulders on a still chest is itself the finding.
+ * How much the shoulders should ride with each breath.
+ *
+ * Recruitment is the WORSE of what the rate implies and what the scenario
+ * declares, so a severe asthmatic at a not-yet-alarming rate still visibly
+ * works to breathe. Apnoea returns 0 regardless — still shoulders on a still
+ * chest is itself the finding.
  */
-export function accessoryLiftAmplitude(respiratoryRate: number): number {
+export function accessoryLiftAmplitude(
+  respiratoryRate: number,
+  breathingEffort = 0,
+): number {
   if (respiratoryRate <= 0) return 0;
-  const recruitment = clamp01(
+  const fromRate = clamp01(
     (respiratoryRate - ACCESSORY_ONSET_RPM) / (ACCESSORY_FULL_RPM - ACCESSORY_ONSET_RPM),
   );
+  const recruitment = Math.max(fromRate, clamp01(breathingEffort));
   return SHOULDER_LIFT_QUIET + (SHOULDER_LIFT_LABOURED - SHOULDER_LIFT_QUIET) * recruitment;
 }
 
@@ -78,7 +93,7 @@ export function computeIdleLimbMotion(
   input: IdleLimbMotionInput,
   out: IdleLimbMotion,
 ): IdleLimbMotion {
-  const { time, gate, breathPhase01, respiratoryRate, reduced = false } = input;
+  const { time, gate, breathPhase01, respiratoryRate, breathingEffort = 0, reduced = false } = input;
 
   if (gate <= 0) {
     out.shoulderLift = 0;
@@ -92,7 +107,7 @@ export function computeIdleLimbMotion(
   // Rise with inhalation, fall with exhalation — same 0..1 curve shape the
   // chest morph uses, so shoulders and chest move as one breath.
   const breathRise = 0.5 - 0.5 * Math.cos(breathPhase01 * Math.PI * 2);
-  out.shoulderLift = accessoryLiftAmplitude(respiratoryRate) * breathRise * gate;
+  out.shoulderLift = accessoryLiftAmplitude(respiratoryRate, breathingEffort) * breathRise * gate;
 
   if (reduced) {
     out.leftArmDrift = 0;
