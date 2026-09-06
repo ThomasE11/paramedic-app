@@ -887,6 +887,63 @@ export const REALISM_SCENARIOS: RealismScenarioSpec[] = [
     debriefSignals: ['organic causes excluded before reassurance', 'PE/ACS/DKA considered', 'coaching rather than dismissal'],
   },
   {
+    // Obstetric haemorrhage outranks the general trauma scenario: a postpartum
+    // haemorrhage and a placenta praevia were both being matched as an OPEN
+    // CHEST WOUND, which is the wrong compartment, the wrong source control
+    // and the wrong destination.
+    id: 'obstetric-haemorrhage',
+    family: 'obstetric',
+    match: ['postpartum haemorrhage', 'postpartum hemorrhage', 'placenta praevia', 'placenta previa', 'antepartum haemorrhage', 'vaginal bleeding', 'bleeding in pregnancy'],
+    priority: 88,
+    activeProblems: ['concealed and revealed blood loss', 'shock in a physiologically compensating patient', 'two patients', 'time-critical obstetric destination'],
+    immediateVisuals: [
+      { id: 'obh-blood', kind: 'blood_pool', region: 'pelvis', intensity: 'severe', showWhen: 'immediate', clearsWhen: ['bleeding controlled'], detail: 'Revealed loss only — a pregnant patient can conceal a great deal more than you can see.' },
+      { id: 'obh-pallor', kind: 'pallor', region: 'face', intensity: 'severe', showWhen: 'immediate', clearsWhen: ['perfusion restored'], detail: 'Pregnancy compensates hard, so pallor and anxiety appear before the BP falls.' },
+      { id: 'obh-sweat', kind: 'diaphoresis', region: 'face', intensity: 'moderate', showWhen: 'immediate', clearsWhen: ['perfusion restored'], detail: 'Clammy and frightened.' },
+      { id: 'obh-mottling', kind: 'mottling', region: 'left-leg', intensity: 'moderate', showWhen: 'if-deteriorating', detail: 'Late decompensation — by this point the reserve is gone.' },
+    ],
+    equipmentAnchors: [oxygenFaceAnchor, ivAnchor],
+    patientBehavior: [
+      { id: 'obh-frightened', when: 'assessment performed without explanation', responseType: 'guard', quote: 'Is the baby okay? Please tell me what is happening.', debrief: 'There are two patients and the mother knows it. Communication is part of the resuscitation.' },
+      { id: 'obh-fluids', when: 'IV fluids given for obstetric haemorrhage', responseType: 'improve', quote: 'I feel a little less faint.', debrief: 'Fluids buy time; definitive care is surgical. Do not let improvement delay transport.' },
+    ],
+    treatmentResponses: [
+      { treatmentIdFragments: ['fluid', 'saline', 'crystalloid', 'blood'], expectedFit: 'matched', visualResult: ['fluids running'], vitalTrajectory: ['BP supported'], reassessment: ['BP', 'HR', 'blood loss', 'conscious level', 'fundal tone'], patientBehavior: ['less faint'], debriefSignal: 'volume replaced for obstetric haemorrhage' },
+      { treatmentIdFragments: ['txa', 'tranexamic'], expectedFit: 'matched', visualResult: ['drug given'], vitalTrajectory: ['reduces ongoing loss'], reassessment: ['blood loss', 'BP'], patientBehavior: ['tolerates'], debriefSignal: 'TXA given for obstetric haemorrhage' },
+      { treatmentIdFragments: ['left_lateral', 'positioning'], expectedFit: 'matched', visualResult: ['patient tilted left off the vena cava'], vitalTrajectory: ['venous return and BP improve'], reassessment: ['BP', 'symptoms'], patientBehavior: ['tolerates'], debriefSignal: 'left lateral tilt applied' },
+    ],
+    reassessmentRequirements: ['BP', 'HR', 'visible blood loss', 'fundal tone', 'conscious level', 'gestation', 'fetal considerations'],
+    debriefSignals: ['recognised concealed loss', 'left lateral tilt', 'time-critical obstetric destination', 'did not delay transport for fluids'],
+  },
+  {
+    // Deliberately below trauma-haemorrhage-open-chest. A genuine open chest
+    // wound must still win; this exists so that the far more common isolated
+    // limb injury and mechanical fall stop presenting as a blank patient.
+    id: 'trauma-limb-injury',
+    family: 'trauma',
+    match: ['fracture', 'deformed', 'deformity', 'mechanical fall', 'fell', 'dislocation', 'long lie', 'twisted', 'wrist', 'ankle'],
+    priority: 50,
+    activeProblems: ['isolated limb injury', 'pain', 'distal neurovascular risk', 'occult injury in the elderly'],
+    immediateVisuals: [
+      { id: 'limb-pain-guard', kind: 'tremor', region: 'chest', intensity: 'subtle', showWhen: 'immediate', clearsWhen: ['analgesia effective'], detail: 'Guarding and reluctance to move — pain is visible before it is scored.' },
+      { id: 'limb-pallor', kind: 'pallor', region: 'face', intensity: 'moderate', showWhen: 'immediate', clearsWhen: ['pain controlled'], detail: 'Pale and clammy with pain; in the elderly it may also be the first sign of occult blood loss.' },
+      { id: 'limb-sweat', kind: 'diaphoresis', region: 'face', intensity: 'subtle', showWhen: 'immediate', clearsWhen: ['pain controlled'], detail: 'Sweating with severe pain.' },
+      { id: 'limb-deformity', kind: 'deformity', region: 'left-leg', intensity: 'moderate', showWhen: 'on-assessment', detail: 'Deformity, shortening or rotation appears where the case authors it.' },
+    ],
+    equipmentAnchors: [ivAnchor],
+    patientBehavior: [
+      { id: 'limb-move-refusal', when: 'limb moved before analgesia', responseType: 'refuse', quote: 'No — please do not move it.', debrief: 'Analgesia and splinting come before movement. Moving first loses trust and worsens the injury.' },
+      { id: 'limb-analgesia-helps', when: 'analgesia given before splinting', responseType: 'improve', quote: 'That is better. I can let you look now.', debrief: 'Effective analgesia makes the rest of the assessment possible.' },
+    ],
+    treatmentResponses: [
+      { treatmentIdFragments: ['analgesia', 'morphine', 'fentanyl', 'methoxyflurane', 'entonox'], expectedFit: 'matched', visualResult: ['patient visibly settles'], vitalTrajectory: ['HR and distress reduce'], reassessment: ['pain score', 'distal pulse', 'sensation', 'RR'], patientBehavior: ['allows assessment'], debriefSignal: 'analgesia before splinting and movement' },
+      { treatmentIdFragments: ['splint', 'traction', 'vacuum', 'sam'], expectedFit: 'matched', visualResult: ['limb immobilised in position'], vitalTrajectory: ['pain reduces once immobilised'], reassessment: ['distal pulse', 'sensation', 'capillary refill', 'pain score'], patientBehavior: ['more comfortable'], debriefSignal: 'splinted with neurovascular checks before and after' },
+      { treatmentIdFragments: ['tourniquet'], expectedFit: 'harmful', visualResult: ['tourniquet on a closed limb injury'], vitalTrajectory: ['ischaemia risk with no bleeding to control'], reassessment: ['distal pulse', 'bleeding'], patientBehavior: ['severe pain'], debriefSignal: 'tourniquet applied without catastrophic haemorrhage' },
+    ],
+    reassessmentRequirements: ['pain score', 'distal pulse', 'sensation', 'capillary refill', 'skin colour', 'mechanism and occult injury in the elderly'],
+    debriefSignals: ['analgesia before movement', 'neurovascular checks before and after splinting', 'cause of the fall considered, not just the injury'],
+  },
+  {
     // Eclampsia was previously matched as HYPOGLYCAEMIA — the seizure keywords
     // collided and nothing obstetric existed to outrank them. A student would
     // have been taught to reach for glucose in a pregnant seizing patient.

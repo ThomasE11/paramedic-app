@@ -79,6 +79,24 @@ students to reach for glucose in a seizing pregnant patient.
   scenario the app would teach students to reassure a PE or a surgical abdomen.
   A test asserts every organic scenario outranks them.
 
+### Third pass: coverage is not the same as visibility
+
+Matching a scenario does not guarantee the patient looks like anything. Ten
+cases matched `trauma-haemorrhage-open-chest` — the only trauma scenario, so it
+caught every fall, fracture and even both obstetric haemorrhages — and then
+showed NOTHING, because its chest-wound visuals are correctly suppressed
+without wound context. A wrist fracture and a hip fracture presented as a blank
+patient.
+
+Two more scenarios fixed that: `obstetric-haemorrhage` (above trauma, because
+placenta praevia and a postpartum haemorrhage are the wrong compartment, source
+control and destination for an open-chest scenario) and `trauma-limb-injury`
+(below it, so a genuine open chest wound still wins).
+
+**Cases showing at least one sign on first look: 113/114.** The one exception
+is a minor RTC with neck pain, where a patient who looks unremarkable IS the
+correct presentation.
+
 ### Keyword creep is the failure mode to watch
 
 Every scenario added here initially STOLE a case from a scenario that was

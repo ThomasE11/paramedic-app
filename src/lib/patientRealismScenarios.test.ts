@@ -720,3 +720,35 @@ describe('every case gets a realism scenario', () => {
   });
 });
 
+describe('trauma is not one undifferentiated scenario', () => {
+  const topScenarioFor = (id: string) => {
+    const caseData = allCases.find(c => c.id === id);
+    expect(caseData, `case ${id} should exist`).toBeTruthy();
+    return matchRealismScenarios(caseData!)[0]?.id ?? null;
+  };
+
+  it('obstetric haemorrhage is not an open chest wound', () => {
+    // Placenta praevia and a postpartum haemorrhage were both matching the
+    // open-chest trauma scenario: wrong compartment, wrong source control,
+    // wrong destination.
+    expect(topScenarioFor('obs-001')).toBe('obstetric-haemorrhage');
+    expect(topScenarioFor('obs-003')).toBe('obstetric-haemorrhage');
+  });
+
+  it('a genuine open chest wound still outranks the limb scenario', () => {
+    const open = REALISM_SCENARIOS.find(s => s.id === 'trauma-haemorrhage-open-chest')!;
+    const limb = REALISM_SCENARIOS.find(s => s.id === 'trauma-limb-injury')!;
+    expect(open.priority).toBeGreaterThan(limb.priority);
+  });
+
+  it('isolated limb injuries and mechanical falls declare their own signs', () => {
+    // These used to match only the open-chest scenario, whose chest visuals
+    // are correctly suppressed without wound context — so the patient showed
+    // nothing at all.
+    for (const id of ['fall-001', 'y1-010', 'y1-020']) {
+      const matched = matchRealismScenarios(allCases.find(c => c.id === id)!).map(s => s.id);
+      expect(matched, `${id} should reach the limb scenario`).toContain('trauma-limb-injury');
+    }
+  });
+});
+
