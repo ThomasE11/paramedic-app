@@ -266,24 +266,38 @@ function visualRegionToBodyRegion(region: PatientWoundOverlay['region']): BodyRe
 }
 
 /**
- * Urticaria is a skin effect, not a wound, so it never reached the wound
- * overlays — which meant an anaphylaxis patient showed no rash at all, losing
- * the sign the diagnosis most obviously hangs on. Paint it through the same
- * decal path the wounds use.
+ * Some scenario signs are painted ON the skin but are not wounds, so they never
+ * reached the wound-overlay path — and the 3D layer only reads pallor,
+ * cyanosis, diaphoresis and mottling out of skinEffects. They were declared,
+ * adapted, and invisible. Route them through the same decal pipeline.
  */
-function buildScenarioRashInjuries(visualState?: PatientVisualState | null): BodyInjury[] {
+const SKIN_DECAL_INJURIES: Record<string, { kind: BodyInjury['kind']; label: string; fallback: string }> = {
+  rash: {
+    kind: 'rash',
+    label: 'Urticaria',
+    fallback: 'Raised weals on an erythematous flare.',
+  },
+  soot: {
+    kind: 'soot',
+    label: 'Soot',
+    fallback: 'Soot deposits around the nose and mouth — suspect inhalation injury.',
+  },
+};
+
+function buildScenarioSkinDecalInjuries(visualState?: PatientVisualState | null): BodyInjury[] {
   return (visualState?.skinEffects ?? [])
-    .filter(effect => effect.kind === 'rash')
     .flatMap((effect, index): BodyInjury[] => {
+      const spec = SKIN_DECAL_INJURIES[effect.kind];
+      if (!spec) return [];
       const region = visualRegionToBodyRegion(effect.region);
       if (!region) return [];
       const anchor = BODY_REGION_DIAGRAM_ANCHOR[region];
       return [{
-        id: `scenario-rash-${effect.region}-${index}`,
+        id: `scenario-${effect.kind}-${effect.region}-${index}`,
         region,
-        kind: 'rash',
-        label: 'Urticaria',
-        detail: effect.detail || 'Raised weals on an erythematous flare.',
+        kind: spec.kind,
+        label: spec.label,
+        detail: effect.detail || spec.fallback,
         severity: effect.intensity >= 0.66 ? 'major' : 'minor',
         x: anchor.x,
         y: anchor.y,
@@ -292,10 +306,10 @@ function buildScenarioRashInjuries(visualState?: PatientVisualState | null): Bod
 }
 
 function buildScenarioBodyInjuries(visualState?: PatientVisualState | null): BodyInjury[] {
-  const rash = buildScenarioRashInjuries(visualState);
-  if (!visualState?.woundOverlays.length) return rash;
+  const decals = buildScenarioSkinDecalInjuries(visualState);
+  if (!visualState?.woundOverlays.length) return decals;
 
-  return rash.concat(visualState.woundOverlays.flatMap((overlay, index): BodyInjury[] => {
+  return decals.concat(visualState.woundOverlays.flatMap((overlay, index): BodyInjury[] => {
     const region = visualRegionToBodyRegion(overlay.region);
     if (!region) return [];
     const kind: BodyInjury['kind'] | null =

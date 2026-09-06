@@ -28,7 +28,7 @@ function makeRecordingCtx() {
   return ctx;
 }
 
-const KINDS: WoundKind[] = ['surgical-incision', 'infected-incision', 'laceration', 'abrasion', 'bruise', 'burn', 'urticaria'];
+const KINDS: WoundKind[] = ['surgical-incision', 'infected-incision', 'laceration', 'abrasion', 'bruise', 'burn', 'urticaria', 'soot'];
 const DRAW_OPS = new Set(['fill', 'stroke', 'arc', 'ellipse', 'lineTo', 'fillRect']);
 
 describe('drawWound', () => {
@@ -94,3 +94,12 @@ describe('urticaria', () => {
     expect(methods.indexOf('fillRect')).toBeLessThan(methods.indexOf('ellipse'));
   });
 });
+
+describe('soot', () => {
+  it('stipples discrete specks rather than one flat grey patch', () => {
+    const ctx = makeRecordingCtx();
+    drawWound(ctx, 'soot', 256, 256, 80);
+    expect(ctx.__calls.filter(c => c.method === 'arc').length).toBeGreaterThanOrEqual(20);
+  });
+});
+

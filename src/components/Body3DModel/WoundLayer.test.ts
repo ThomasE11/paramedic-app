@@ -43,3 +43,11 @@ describe('urticaria decals', () => {
       .toBe('abrasion');
   });
 });
+
+describe('soot decals', () => {
+  it('routes a soot injury to the soot sprite', () => {
+    expect(spriteKindFor({ kind: 'soot', label: 'Soot', detail: 'Around nose and mouth' }))
+      .toBe('soot');
+  });
+});
+

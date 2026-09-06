@@ -40,7 +40,7 @@ invisible to the student.
 | `reduced_chest_rise` | feeds `breathingEffort` → shoulder heave | ✅ *fixed 2026-09-06* |
 | `asymmetric_chest_rise` | `breathe_chest_rise_unilateral` morph | ✅ *fixed 2026-09-06* |
 | `facial_swelling` | none | ❌ |
-| `soot` | none on the patient | ❌ |
+| `soot` | `soot` decal on the face | ✅ *fixed 2026-09-06* |
 | `vomit_risk` | none | ❌ |
 
 ## Open gaps, in the order worth doing them
@@ -55,11 +55,6 @@ the unilateral chest rise.
 Declared for opioid reversal (naloxone) and post-ROSC. Arguably not a 3D
 problem at all: the honest fix is probably a positioning/airway prompt rather
 than a visual.
-
-### 3. `soot` — not rendered on the patient ❌
-`SceneSurveyPanel` mentions soot near the nose and mouth as a scene cue, but
-the patient's face never shows it. This one is cheap — it is a decal, in the
-same family as the urticaria work.
 
 ## Notes for whoever picks this up
 

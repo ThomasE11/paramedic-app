@@ -169,7 +169,7 @@ export type BodyRegion =
 export type InjuryKind =
   | 'deformity' | 'rotation' | 'shortening' | 'fracture'
   | 'bleeding' | 'wound' | 'burn' | 'bruising'
-  | 'flail' | 'swelling' | 'amputation' | 'distension' | 'rash';
+  | 'flail' | 'swelling' | 'amputation' | 'distension' | 'rash' | 'soot';
 
 export type InjurySeverity = 'critical' | 'major' | 'minor';
 

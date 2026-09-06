@@ -1,4 +1,4 @@
-export type WoundKind = 'surgical-incision' | 'infected-incision' | 'laceration' | 'abrasion' | 'bruise' | 'burn' | 'active-bleeding' | 'urticaria';
+export type WoundKind = 'surgical-incision' | 'infected-incision' | 'laceration' | 'abrasion' | 'bruise' | 'burn' | 'active-bleeding' | 'urticaria' | 'soot';
 
 function drawWound(ctx: CanvasRenderingContext2D, kind: WoundKind, cx: number, cy: number, sizePx: number, rotationRad?: number): void {
   ctx.save();
@@ -170,6 +170,36 @@ function drawWound(ctx: CanvasRenderingContext2D, kind: WoundKind, cx: number, c
         ctx.beginPath();
         ctx.arc(dx + (rand() - 0.5) * sizePx * 0.2, sizePx * 0.2 + len + sizePx * 0.06, sizePx * 0.07, 0, Math.PI * 2);
         ctx.fillStyle = 'rgba(120, 12, 14, 0.9)';
+        ctx.fill();
+      }
+      break;
+    }
+
+    case 'soot': {
+      // Carbon deposits around the nose and mouth after smoke exposure — the
+      // sign that turns a burn into a suspected inhalation injury. Reads as a
+      // grubby stipple that thins outward, not a solid grey patch.
+      const smudge = ctx.createRadialGradient(0, 0, 0, 0, 0, sizePx * 1.2);
+      smudge.addColorStop(0, 'rgba(38, 34, 32, 0.5)');
+      smudge.addColorStop(0.55, 'rgba(38, 34, 32, 0.24)');
+      smudge.addColorStop(1, 'rgba(38, 34, 32, 0)');
+      ctx.fillStyle = smudge;
+      ctx.fillRect(-sizePx * 1.2, -sizePx * 1.2, sizePx * 2.4, sizePx * 2.4);
+
+      const specks = 26 + Math.floor(rand() * 14);
+      for (let i = 0; i < specks; i++) {
+        const angle = rand() * Math.PI * 2;
+        // Denser at the centre, sparse at the edges.
+        const dist = rand() * rand() * sizePx * 1.1;
+        ctx.beginPath();
+        ctx.arc(
+          Math.cos(angle) * dist,
+          Math.sin(angle) * dist,
+          sizePx * (0.015 + rand() * 0.045),
+          0,
+          Math.PI * 2,
+        );
+        ctx.fillStyle = `rgba(26, 23, 21, ${0.3 + rand() * 0.45})`;
         ctx.fill();
       }
       break;
