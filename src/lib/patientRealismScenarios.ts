@@ -12,7 +12,9 @@ export type ProblemFamily =
   | 'burns'
   | 'obstetric'
   | 'pediatric'
-  | 'behavioural';
+  | 'behavioural'
+  | 'gastrointestinal'
+  | 'environmental';
 
 export type RealismVisualEffectKind =
   | 'cyanosis'
@@ -884,7 +886,143 @@ export const REALISM_SCENARIOS: RealismScenarioSpec[] = [
     reassessmentRequirements: ['SpO2', 'RR', 'air entry', 'BGL', 'ECG', 'symmetry of chest signs'],
     debriefSignals: ['organic causes excluded before reassurance', 'PE/ACS/DKA considered', 'coaching rather than dismissal'],
   },
+  {
+    // Eclampsia was previously matched as HYPOGLYCAEMIA — the seizure keywords
+    // collided and nothing obstetric existed to outrank them. A student would
+    // have been taught to reach for glucose in a pregnant seizing patient.
+    id: 'obstetric-eclampsia',
+    family: 'obstetric',
+    match: ['eclampsia', 'eclamptic', 'pre-eclampsia', 'preeclampsia', 'seizure in pregnancy', 'pregnant woman having a seizure'],
+    priority: 85,
+    activeProblems: ['seizure control', 'severe hypertension', 'two patients', 'delivery is the definitive treatment'],
+    immediateVisuals: [
+      { id: 'ecl-seizure', kind: 'seizure_activity', region: 'chest', intensity: 'severe', showWhen: 'immediate', clearsWhen: ['seizure terminated'], detail: 'Tonic-clonic activity in a pregnant patient — eclampsia until proven otherwise.' },
+      { id: 'ecl-swelling', kind: 'facial_swelling', region: 'face', intensity: 'moderate', showWhen: 'on-assessment', detail: 'Facial and peripheral oedema supports the pre-eclamptic picture.' },
+      { id: 'ecl-cyanosis', kind: 'cyanosis', region: 'face', intensity: 'moderate', showWhen: 'if-deteriorating', clearsWhen: ['airway and ventilation supported'], detail: 'Hypoxia during a prolonged seizure threatens mother and fetus together.' },
+    ],
+    equipmentAnchors: [oxygenFaceAnchor, ivAnchor],
+    patientBehavior: [
+      { id: 'ecl-postictal', when: 'history questions asked during the post-ictal phase', responseType: 'silent', debrief: 'Post-ictal patients cannot give a history. Get it from bystanders and treat what you see.' },
+    ],
+    treatmentResponses: [
+      { treatmentIdFragments: ['magnesium'], expectedFit: 'matched', visualResult: ['seizure activity settles'], vitalTrajectory: ['seizures controlled; watch for toxicity'], reassessment: ['seizure activity', 'reflexes', 'RR', 'urine output', 'BP'], patientBehavior: ['post-ictal, then rousable'], debriefSignal: 'magnesium given as first-line for eclampsia' },
+      { treatmentIdFragments: ['glucose', 'dextrose'], expectedFit: 'mismatch', visualResult: ['no change'], vitalTrajectory: ['seizure continues if BGL is normal'], reassessment: ['BGL', 'seizure activity'], patientBehavior: ['still seizing'], debriefSignal: 'glucose given for a seizure that was never hypoglycaemic' },
+      { treatmentIdFragments: ['left_lateral', 'positioning'], expectedFit: 'matched', visualResult: ['patient tilted left off the vena cava'], vitalTrajectory: ['maternal BP and placental flow improve'], reassessment: ['BP', 'fetal considerations'], patientBehavior: ['tolerates'], debriefSignal: 'left lateral tilt applied' },
+    ],
+    reassessmentRequirements: ['seizure activity', 'BP', 'BGL', 'SpO2', 'reflexes if magnesium given', 'gestation', 'fetal considerations'],
+    debriefSignals: ['eclampsia recognised rather than treated as hypoglycaemia', 'magnesium as first-line', 'left lateral tilt', 'time-critical obstetric transport'],
+  },
+  {
+    id: 'obstetric-imminent-delivery',
+    family: 'obstetric',
+    match: ['imminent delivery', 'crowning', 'in labour', 'active labour', 'contracting regularly', 'feels need to push'],
+    priority: 75,
+    activeProblems: ['imminent birth', 'two patients', 'postpartum haemorrhage risk', 'neonatal resuscitation readiness'],
+    immediateVisuals: [
+      { id: 'ob-effort-sweat', kind: 'diaphoresis', region: 'face', intensity: 'moderate', showWhen: 'immediate', clearsWhen: ['after delivery'], detail: 'Sweating with the work of labour — effort, not shock.' },
+      { id: 'ob-pph-blood', kind: 'blood_pool', region: 'pelvis', intensity: 'severe', showWhen: 'if-deteriorating', detail: 'Postpartum haemorrhage is the thing that kills after the baby is out.' },
+    ],
+    equipmentAnchors: [ivAnchor],
+    patientBehavior: [
+      { id: 'ob-cannot-move', when: 'transport attempted during active pushing', responseType: 'refuse', quote: 'I cannot walk, it is coming NOW.', debrief: 'An imminent delivery is a stay-and-deliver decision, not a load-and-go.' },
+      { id: 'ob-coaching', when: 'calm delivery coaching given', responseType: 'cooperate', quote: 'Okay... tell me when to push.', debrief: 'Coaching and positioning are the intervention; most deliveries need hands off, not hands on.' },
+    ],
+    treatmentResponses: [
+      { treatmentIdFragments: ['oxygen'], expectedFit: 'partial', visualResult: ['oxygen on face'], vitalTrajectory: ['no change in a normally progressing labour'], reassessment: ['SpO2', 'RR'], patientBehavior: ['may find the mask intrusive'], debriefSignal: 'oxygen given without hypoxia' },
+      { treatmentIdFragments: ['fluid', 'saline', 'crystalloid'], expectedFit: 'matched', visualResult: ['IV access established before delivery'], vitalTrajectory: ['supports BP if haemorrhage follows'], reassessment: ['BP', 'blood loss', 'fundal tone'], patientBehavior: ['tolerates'], debriefSignal: 'access obtained before postpartum haemorrhage risk' },
+    ],
+    reassessmentRequirements: ['contraction timing', 'crowning', 'blood loss after delivery', 'fundal tone', 'newborn breathing and tone', 'maternal BP'],
+    debriefSignals: ['stay-and-deliver decision', 'prepared for two patients', 'postpartum haemorrhage anticipated'],
+  },
+  {
+    id: 'pediatric-stridor-croup',
+    family: 'pediatric',
+    match: ['croup', 'barking cough', 'seal-like cough', 'inspiratory stridor at rest'],
+    priority: 78,
+    activeProblems: ['upper airway narrowing', 'distress-driven deterioration', 'parental anxiety'],
+    immediateVisuals: [
+      { id: 'croup-accessory', kind: 'accessory_muscle_use', region: 'chest', intensity: 'moderate', showWhen: 'immediate', clearsWhen: ['stridor settles'], detail: 'Tracheal tug and intercostal recession — in a small child this is the severity score.' },
+      { id: 'croup-cyanosis', kind: 'cyanosis', region: 'face', intensity: 'severe', showWhen: 'if-deteriorating', clearsWhen: ['airway opens'], detail: 'A late and very bad sign in croup.' },
+    ],
+    equipmentAnchors: [oxygenFaceAnchor, nebulizerAnchor],
+    patientBehavior: [
+      { id: 'croup-distress-worsens', when: 'child separated from parent or examined forcefully', responseType: 'deteriorate', quote: 'crying, stridor louder', debrief: 'Distress worsens dynamic airway narrowing. Keep the child calm and on the parent — that IS treatment.' },
+      { id: 'croup-settles', when: 'child left on parent and given blow-by', responseType: 'improve', quote: 'settles against the parent, stridor quieter', debrief: 'Minimal handling first. Calm is the intervention.' },
+    ],
+    treatmentResponses: [
+      { treatmentIdFragments: ['nebulizer', 'adrenaline', 'epinephrine', 'budesonide', 'dexamethasone'], expectedFit: 'matched', visualResult: ['nebulised mist, child on parent'], vitalTrajectory: ['stridor and recession reduce'], reassessment: ['stridor at rest', 'recession', 'SpO2', 'conscious level'], patientBehavior: ['may resist mask; blow-by is acceptable'], debriefSignal: 'nebulised treatment delivered without distressing the child' },
+      { treatmentIdFragments: ['airway_adjunct', 'opa', 'npa', 'suction'], expectedFit: 'harmful', visualResult: ['child fights the instrument'], vitalTrajectory: ['airway can close completely'], reassessment: ['airway', 'stridor', 'SpO2'], patientBehavior: ['screams, deteriorates'], debriefSignal: 'instrumented a distressed paediatric upper airway' },
+    ],
+    reassessmentRequirements: ['stridor at rest', 'recession', 'SpO2', 'conscious level', 'ability to feed or drink'],
+    debriefSignals: ['kept the child calm and with the parent', 'avoided airway instrumentation', 'severity judged on work of breathing not noise'],
+  },
+  {
+    id: 'environmental-heat-illness',
+    family: 'environmental',
+    match: ['heat exhaustion', 'heat stroke', 'heatstroke', 'hyperthermia', 'heat illness', 'core temperature'],
+    priority: 60,
+    activeProblems: ['thermal load', 'volume depletion', 'progression to heat stroke'],
+    immediateVisuals: [
+      { id: 'heat-sweat', kind: 'diaphoresis', region: 'face', intensity: 'severe', showWhen: 'immediate', clearsWhen: ['cooled and rehydrated'], detail: 'Profuse sweating in heat EXHAUSTION. Sweating STOPPING is the ominous turn toward heat stroke.' },
+      { id: 'heat-flush', kind: 'pallor', region: 'face', intensity: 'moderate', showWhen: 'immediate', clearsWhen: ['cooled and rehydrated'], detail: 'Flushed then grey as circulation is diverted to the skin and volume falls.' },
+    ],
+    equipmentAnchors: [ivAnchor],
+    patientBehavior: [
+      { id: 'heat-weak', when: 'asked to stand or walk to the ambulance', responseType: 'refuse', quote: 'I feel like I am going to pass out.', debrief: 'Standing a volume-depleted, vasodilated patient risks syncope. Move them supine and cooled.' },
+      { id: 'heat-cooling-helps', when: 'active cooling and fluids given', responseType: 'improve', quote: 'That is better. I can think again.', debrief: 'Cooling is the treatment; improving mental state is the endpoint that matters.' },
+    ],
+    treatmentResponses: [
+      { treatmentIdFragments: ['cooling', 'cold_pack', 'ice'], expectedFit: 'matched', visualResult: ['patient moved to shade, clothing loosened, cooling applied'], vitalTrajectory: ['temperature and heart rate fall'], reassessment: ['temperature', 'mental status', 'HR', 'skin'], patientBehavior: ['relief'], debriefSignal: 'active cooling started early' },
+      { treatmentIdFragments: ['fluid', 'saline', 'crystalloid'], expectedFit: 'matched', visualResult: ['fluids running'], vitalTrajectory: ['BP and tachycardia improve'], reassessment: ['BP', 'HR', 'mental status'], patientBehavior: ['feels stronger'], debriefSignal: 'volume replaced alongside cooling' },
+      { treatmentIdFragments: ['warming_blanket'], expectedFit: 'harmful', visualResult: ['patient covered and insulated'], vitalTrajectory: ['temperature climbs'], reassessment: ['temperature'], patientBehavior: ['distress increases'], debriefSignal: 'warming applied to a hyperthermic patient' },
+    ],
+    reassessmentRequirements: ['temperature', 'mental status', 'HR', 'BP', 'skin moisture', 'BGL'],
+    debriefSignals: ['cooling before transport', 'recognised the shift from exhaustion to heat stroke', 'sweating that stops is a red flag'],
+  },
+  {
+    id: 'cardiac-hypertensive-emergency',
+    family: 'cardiac',
+    match: ['hypertensive emergency', 'hypertensive crisis', 'malignant hypertension'],
+    priority: 62,
+    activeProblems: ['end-organ damage', 'stroke and dissection mimics', 'controlled rather than rapid BP reduction'],
+    immediateVisuals: [
+      { id: 'htn-sweat', kind: 'diaphoresis', region: 'face', intensity: 'moderate', showWhen: 'immediate', clearsWhen: ['pain and BP settle'], detail: 'Sweating with severe headache — do not anchor on migraine.' },
+    ],
+    equipmentAnchors: [ivAnchor],
+    patientBehavior: [
+      { id: 'htn-photophobia', when: 'bright light used during assessment', responseType: 'guard', quote: 'Please, the light.', debrief: 'Photophobia belongs to several dangerous causes — subarachnoid haemorrhage included. It is a finding, not an inconvenience.' },
+    ],
+    treatmentResponses: [
+      { treatmentIdFragments: ['glyceryl', 'gtn', 'nitrate'], expectedFit: 'partial', visualResult: ['BP begins to fall'], vitalTrajectory: ['a rapid drop can cause cerebral hypoperfusion'], reassessment: ['BP', 'GCS', 'neurology', 'symptoms'], patientBehavior: ['headache may change'], debriefSignal: 'BP reduced without over-correcting' },
+    ],
+    reassessmentRequirements: ['BP in both arms', 'GCS', 'pupils', 'focal neurology', 'visual symptoms', 'chest and back pain'],
+    debriefSignals: ['considered SAH and dissection', 'avoided rapid BP correction', 'neurological reassessment documented'],
+  },
+  {
+    // Low priority: vomiting, diarrhoea and abdominal pain are the presentation
+    // of a great many more dangerous things. This must never outrank an
+    // organic scenario that also matches.
+    id: 'gastro-dehydration',
+    family: 'gastrointestinal',
+    match: ['gastroenteritis', 'vomiting and diarrhoea', 'diarrhoea', 'abdominal pain'],
+    priority: 30,
+    activeProblems: ['volume depletion', 'electrolyte disturbance', 'exclusion of a surgical or ectopic cause'],
+    immediateVisuals: [
+      { id: 'gastro-pallor', kind: 'pallor', region: 'face', intensity: 'moderate', showWhen: 'immediate', clearsWhen: ['rehydrated'], detail: 'Dry, drawn and pale with volume loss.' },
+    ],
+    equipmentAnchors: [ivAnchor],
+    patientBehavior: [
+      { id: 'gastro-cramp', when: 'abdominal palpation attempted during a cramp', responseType: 'guard', quote: 'Wait — wait, not right now.', debrief: 'Palpate between cramps; guarding that does not settle is a different problem.' },
+    ],
+    treatmentResponses: [
+      { treatmentIdFragments: ['fluid', 'saline', 'crystalloid'], expectedFit: 'matched', visualResult: ['fluids running'], vitalTrajectory: ['HR and BP improve with volume'], reassessment: ['HR', 'BP', 'capillary refill', 'mucous membranes'], patientBehavior: ['feels less lightheaded'], debriefSignal: 'volume replaced for dehydration' },
+      { treatmentIdFragments: ['analgesia', 'morphine', 'fentanyl'], expectedFit: 'partial', visualResult: ['pain settles'], vitalTrajectory: ['no change in the underlying cause'], reassessment: ['pain score', 'abdominal findings', 'vital signs'], patientBehavior: ['more comfortable'], debriefSignal: 'analgesia given without masking a surgical abdomen' },
+    ],
+    reassessmentRequirements: ['HR', 'BP', 'capillary refill', 'BGL', 'abdominal findings', 'pregnancy status where relevant'],
+    debriefSignals: ['dehydration assessed objectively', 'surgical and ectopic causes considered', 'analgesia did not mask reassessment'],
+  },
 ];
+
 
 /**
  * Derive active patient behavior rules that match the current treatment state.

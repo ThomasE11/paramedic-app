@@ -673,3 +673,50 @@ describe('scenario matching does not hijack correct diagnoses', () => {
   });
 });
 
+describe('every case gets a realism scenario', () => {
+  const topScenarioFor = (id: string) => {
+    const caseData = allCases.find(c => c.id === id);
+    expect(caseData, `case ${id} should exist`).toBeTruthy();
+    return matchRealismScenarios(caseData!)[0]?.id ?? null;
+  };
+
+  it('leaves no case presenting generically', () => {
+    // Coverage was 99/114 before the scenario families were completed. A case
+    // that matches nothing has no declared signs, so its patient looks the
+    // same no matter what is wrong with them.
+    const uncovered = allCases.filter(c => matchRealismScenarios(c).length === 0);
+    expect(uncovered.map(c => `${c.id} (${c.category})`)).toEqual([]);
+  });
+
+  it('an eclamptic seizure is eclampsia, not hypoglycaemia', () => {
+    // The seizure keywords collided and nothing obstetric outranked them, so
+    // this case used to teach reaching for glucose in a seizing pregnant
+    // patient.
+    expect(topScenarioFor('obs-002')).toBe('obstetric-eclampsia');
+  });
+
+  it('routes each newly covered presentation to its own family', () => {
+    expect(topScenarioFor('y1-006')).toBe('obstetric-imminent-delivery');
+    expect(topScenarioFor('y1-007')).toBe('pediatric-stridor-croup');
+    expect(topScenarioFor('env-001')).toBe('environmental-heat-illness');
+    expect(topScenarioFor('cardiac-004')).toBe('cardiac-hypertensive-emergency');
+    expect(topScenarioFor('y1-022')).toBe('gastro-dehydration');
+  });
+
+  it('keeps the non-specific presentations below every organic scenario', () => {
+    // Vomiting, diarrhoea and abdominal pain front for a great many dangerous
+    // things; anxiety is a diagnosis of exclusion. Neither may outrank one.
+    const soft = ['gastro-dehydration', 'anxiety-hyperventilation'];
+    const softMax = Math.max(...REALISM_SCENARIOS.filter(s => soft.includes(s.id)).map(s => s.priority));
+    const organic = REALISM_SCENARIOS.filter(s => !soft.includes(s.id));
+    for (const other of organic) {
+      expect(other.priority, `${other.id} must outrank the non-specific scenarios`).toBeGreaterThan(softMax);
+    }
+  });
+
+  it('gives every scenario a unique id', () => {
+    const ids = REALISM_SCENARIOS.map(s => s.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+});
+

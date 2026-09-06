@@ -50,6 +50,49 @@ Declared for opioid reversal (naloxone) and post-ROSC. Arguably not a 3D
 problem at all: the honest fix is probably a positioning/airway prompt rather
 than a visual.
 
+## Second audit: does every case declare anything at all?
+
+The table above asks whether a declared sign renders. The other half of the
+question is whether a case declares anything in the first place — a case that
+matches no scenario has no signs, so its patient presents identically no matter
+what is wrong with them.
+
+**Coverage was 99/114. It is now 114/114.** Nine scenario families were added:
+foreign-body airway obstruction, sepsis, acute behavioural disturbance,
+anxiety/hyperventilation, eclampsia, imminent delivery, croup, heat illness,
+hypertensive emergency and gastroenteritis. `infection`, `obstetric` and
+`pediatric` already existed in the `ProblemFamily` union with nothing behind
+them, which is a fair signal they were always intended.
+
+One pre-existing mismatch was corrected on the way: an **eclamptic seizure at
+34 weeks** was matching `metabolic-hypoglycaemia-seizure`, because the seizure
+keywords collided and nothing obstetric outranked them. That case was teaching
+students to reach for glucose in a seizing pregnant patient.
+
+### Priority is a clinical statement, not a tie-breaker
+
+- `airway-foreign-body-obstruction` sits at the top with anaphylaxis. A blocked
+  airway kills fastest, and without that rank the bronchospasm scenario claims
+  a choking patient and teaches salbutamol.
+- `anxiety-hyperventilation` and `gastro-dehydration` sit at the bottom on
+  purpose. Both are diagnoses of exclusion; if either outranked an organic
+  scenario the app would teach students to reassure a PE or a surgical abdomen.
+  A test asserts every organic scenario outranks them.
+
+### Keyword creep is the failure mode to watch
+
+Every scenario added here initially STOLE a case from a scenario that was
+already correct. All three are now locked into regression tests:
+
+| Keyword | Also true of | Fix |
+|---|---|---|
+| `cannot speak` | dysphasic stroke, severe asthma | dropped from choking |
+| `neck stiffness`, `photophobia` | subarachnoid haemorrhage | dropped from sepsis |
+| `weeks pregnant` | every pregnant patient | dropped from imminent delivery |
+
+A test now asserts no case is left uncovered, so the coverage cannot silently
+regress either.
+
 ## Notes for whoever picks this up
 
 - **`activeVisualEffects` is already `showWhen`-gated.** If a sign reaches the
