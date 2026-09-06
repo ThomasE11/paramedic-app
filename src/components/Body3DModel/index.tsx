@@ -5401,8 +5401,14 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
     // Its showWhen gating is already applied upstream (activeVisualEffects),
     // so its presence here means it is meant to be visible now.
     if ((patientVisualState?.facialDroop ?? 0) > 0) out.add('finding_facial_droop');
+    if ((patientVisualState?.facialSwelling ?? 0) > 0) out.add('finding_facial_swelling');
     return Array.from(out);
-  }, [bodyInjuriesForMesh, assessedRegions, patientVisualState?.facialDroop]);
+  }, [
+    bodyInjuriesForMesh,
+    assessedRegions,
+    patientVisualState?.facialDroop,
+    patientVisualState?.facialSwelling,
+  ]);
 
   const guidedStepIndex = useMemo(() => {
     if (!nextGuidedStep) return -1;

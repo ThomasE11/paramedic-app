@@ -323,3 +323,26 @@ describe('unilateral chest rise', () => {
     expect(stateFor('pallor').chestRiseUnilateral).toBe(false);
   });
 });
+
+describe('facial swelling', () => {
+  const stateFor = (kind: string, intensity = 'moderate') => derivePatientVisualState({
+    activeVisualEffects: [{ id: 'v', kind, region: 'face', intensity, showWhen: 'immediate', detail: '' }],
+  } as unknown as RealismDirectorState);
+
+  it('surfaces declared lip/face swelling for the morph to drive', () => {
+    expect(stateFor('facial_swelling').facialSwelling).toBeGreaterThan(0);
+  });
+
+  it('scales with declared intensity', () => {
+    expect(stateFor('facial_swelling', 'severe').facialSwelling)
+      .toBeGreaterThan(stateFor('facial_swelling', 'subtle').facialSwelling);
+  });
+
+  it('is independent of facial droop — they are different signs', () => {
+    const swelling = stateFor('facial_swelling');
+    expect(swelling.facialDroop).toBe(0);
+    const droop = stateFor('facial_droop');
+    expect(droop.facialSwelling).toBe(0);
+  });
+});
+

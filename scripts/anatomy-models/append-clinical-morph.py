@@ -4,9 +4,10 @@ patient GLB, headless via Blender.
 
     /Applications/Blender.app/Contents/MacOS/Blender --background \
         --python scripts/anatomy-models/append-clinical-morph.py -- \
-        <morph-name> <src.glb> <out.glb> [--inspect]
+        <morph-name> <src.glb> <out.glb> [--inspect] [--replace]
 
     morph names: finding_facial_droop | breathe_chest_rise_unilateral
+                 finding_facial_swelling
 
 This APPENDS to the asset as it ships rather than re-running the original bake
 chain (MPFB generation → rig → clinical morphs → visemes → poses → AO bake),
@@ -25,6 +26,9 @@ import bpy, sys
 argv = sys.argv[sys.argv.index("--") + 1:]
 MORPH_NAME, SRC, OUT = argv[0], argv[1], argv[2]
 INSPECT = "--inspect" in argv
+# Presets are tuning knobs; --replace re-bakes one that is already present so
+# an amplitude can be adjusted without rebuilding the asset from scratch.
+REPLACE = "--replace" in argv
 
 # Bands are FRACTIONS of the mesh's own height (feet=0 → head=1), so a preset
 # keeps working if the base mesh is swapped.
@@ -34,6 +38,9 @@ INSPECT = "--inspect" in argv
 #   side         +1 / -1 = one side of the midline only; 0 = both sides
 #   fade         how far from the midline the effect reaches full strength,
 #                as a fraction of the BAND's own half-width
+#   normal       displace along the vertex NORMAL instead of down/out. Swelling
+#                is tissue pushing outward in every direction, so a fixed axis
+#                reads as the face sliding rather than inflating.
 #   lateral_max  metres from the midline past which the effect is 0. Needed
 #                whenever the band also contains the arms — at chest height
 #                the widest vertices are the HANDS, so a midline fade alone
@@ -51,6 +58,14 @@ PRESETS = {
     # pneumothorax or a flail segment actually looks like. Driven INSTEAD of
     # the symmetric breathe_chest_rise, so only the good side moves.
     # `down` is negative because this lifts rather than sags.
+    # Lip and perioral swelling — the airway-risk half of the anaphylaxis
+    # story, which the rash alone does not tell. Bilateral by design:
+    # angio-oedema is not a one-sided sign, and making it unilateral would
+    # make it look like the facial droop.
+    "finding_facial_swelling": dict(
+        lo=0.893, hi=0.938, peak=0.915, down=0.0, out=0.0, side=0.0, fade=0.0,
+        lateral_max=0.0, normal=0.013,
+    ),
     "breathe_chest_rise_unilateral": dict(
         lo=0.620, hi=0.820, peak=0.720, down=-0.022, out=0.0, side=1.0, fade=0.18,
         lateral_max=0.22,
@@ -94,8 +109,12 @@ def main():
     existing = [k.name for k in mesh.shape_keys.key_blocks] if mesh.shape_keys else []
     print(f"existing shape keys ({len(existing)}): {existing}")
     if MORPH_NAME in existing:
-        print(f"ERROR: '{MORPH_NAME}' already present — refusing to duplicate")
-        sys.exit(1)
+        if not REPLACE:
+            print(f"ERROR: '{MORPH_NAME}' already present — refusing to duplicate."
+                  f" Pass --replace to re-bake it.")
+            sys.exit(1)
+        obj.shape_key_remove(mesh.shape_keys.key_blocks[MORPH_NAME])
+        print(f"--replace: dropped existing '{MORPH_NAME}'")
 
     zs = [v.co.z for v in mesh.vertices]
     z_min, z_max = min(zs), max(zs)
@@ -156,15 +175,19 @@ def main():
     key = obj.shape_key_add(name=MORPH_NAME, from_mix=False)
     down_local = P["down"] * patient_scale / scale
     out_local = P["out"] * patient_scale / scale
+    normal_local = P.get("normal", 0.0) * patient_scale / scale
     moved = 0
     for i, v in enumerate(mesh.vertices):
         w = weight_for(v)
         if w <= 0:
             continue
         co = v.co.copy()
-        co.z -= down_local * w
-        if out_local:
-            co.x += out_local * w * (side or 1.0)
+        if normal_local:
+            co = co + v.normal * (normal_local * w)
+        else:
+            co.z -= down_local * w
+            if out_local:
+                co.x += out_local * w * (side or 1.0)
         key.data[i].co = co
         moved += 1
 

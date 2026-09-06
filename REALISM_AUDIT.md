@@ -39,19 +39,13 @@ invisible to the student.
 | `accessory_muscle_use` | breathing-coupled shoulder heave | ✅ *fixed 2026-09-06* |
 | `reduced_chest_rise` | feeds `breathingEffort` → shoulder heave | ✅ *fixed 2026-09-06* |
 | `asymmetric_chest_rise` | `breathe_chest_rise_unilateral` morph | ✅ *fixed 2026-09-06* |
-| `facial_swelling` | none | ❌ |
+| `facial_swelling` | `finding_facial_swelling` morph | ✅ *fixed 2026-09-06* |
 | `soot` | `soot` decal on the face | ✅ *fixed 2026-09-06* |
 | `vomit_risk` | none | ❌ |
 
 ## Open gaps, in the order worth doing them
 
-### 1. `facial_swelling` — not rendered ❌
-Anaphylaxis now shows its rash but not the lip/face swelling that carries the
-airway-risk story. Needs a Blender shape key — add a preset to
-`append-clinical-morph.py`, which already does exactly this for the droop and
-the unilateral chest rise.
-
-### 2. `vomit_risk` — not rendered ❌
+### 1. `vomit_risk` — not rendered ❌
 Declared for opioid reversal (naloxone) and post-ROSC. Arguably not a 3D
 problem at all: the honest fix is probably a positioning/airway prompt rather
 than a visual.
@@ -66,6 +60,9 @@ than a visual.
 - **Pose morph deltas are authored against original vertex positions**, so any
   base-position shift you add is re-applied in every pose. Shifts that look
   right standing can be badly wrong seated — check both.
+- **Morph amplitudes are tuning knobs, and `--replace` re-bakes one in place.**
+  The first facial-swelling bake was too subtle to teach from; it was retuned
+  without rebuilding the asset.
 - **Adding a morph does not require re-running the bake chain.** Append a shape
   key to the shipped GLB and verify mesh count, vertex count, skin count and
   the existing morph names/order survive the re-export.

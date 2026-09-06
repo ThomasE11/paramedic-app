@@ -94,6 +94,11 @@ export interface PatientVisualState {
    * reduced_chest_rise, so the two are indistinguishable there.
    */
   chestRiseUnilateral: boolean;
+  /**
+   * Lip / perioral swelling, 0 (none) .. 1 (severe) — the airway-risk half of
+   * the anaphylaxis story that the rash alone does not tell.
+   */
+  facialSwelling: number;
 }
 
 /* ------------------------------------------------------------------ */
@@ -189,6 +194,9 @@ export function derivePatientVisualState(director: RealismDirectorState): Patien
   const reducedChest = visuals.some(v => v.kind === 'reduced_chest_rise') ? 0.5 : 0;
   const breathingEffort = Math.min(1, Math.max(accessoryIntensity, reducedChest));
   const chestRiseUnilateral = visuals.some(v => v.kind === 'asymmetric_chest_rise');
+  const facialSwelling = Math.max(0, ...visuals
+    .filter(v => v.kind === 'facial_swelling')
+    .map(v => intensityTo01(v.intensity)));
   const facialDroop = Math.max(0, ...visuals
     .filter(v => v.kind === 'facial_droop')
     .map(v => intensityTo01(v.intensity)));
@@ -206,5 +214,6 @@ export function derivePatientVisualState(director: RealismDirectorState): Patien
     breathingEffort,
     facialDroop,
     chestRiseUnilateral,
+    facialSwelling,
   };
 }
