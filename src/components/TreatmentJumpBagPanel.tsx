@@ -1451,8 +1451,15 @@ export function TreatmentJumpBagPanel({
         if (aApplied !== bApplied) return bApplied - aApplied;
 
         if (query) {
-          const aStarts = a.name.toLowerCase().startsWith(query) ? 1 : 0;
-          const bStarts = b.name.toLowerCase().startsWith(query) ? 1 : 0;
+          // ponytail: exact match → prefix match → contains — three-tier search relevance
+          const aNameLower = a.name.toLowerCase();
+          const bNameLower = b.name.toLowerCase();
+          const aExact = aNameLower === query ? 1 : 0;
+          const bExact = bNameLower === query ? 1 : 0;
+          if (aExact !== bExact) return bExact - aExact;
+
+          const aStarts = aNameLower.startsWith(query) ? 1 : 0;
+          const bStarts = bNameLower.startsWith(query) ? 1 : 0;
           if (aStarts !== bStarts) return bStarts - aStarts;
         }
         return a.name.localeCompare(b.name);

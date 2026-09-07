@@ -563,7 +563,7 @@ export const TREATMENTS: Treatment[] = [
   },
   {
     id: 'fentanyl_50mcg',
-    name: 'Fentanyl 50mcg',
+    name: 'Fentanyl 100mcg',
     description: 'Synthetic opioid analgesic',
     category: 'medication',
     onset: 'fast',
