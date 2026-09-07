@@ -15,6 +15,24 @@ const VOICES: Record<VoiceRole, string> = {
   narrator: process.env.ELEVENLABS_VOICE_NARRATOR || 'EXAVITQu4vr4xnSDxMaL',
 };
 
+// ---------------------------------------------------------------------------
+// Vercel AI Gateway (OpenAI speech) — the mid-tier between ElevenLabs and the
+// client-side fallbacks. Auth uses AI_GATEWAY_API_KEY; on Vercel the OIDC
+// token can also authenticate automatically when the Gateway is attached.
+// https://vercel.com/docs/ai-gateway — OpenAI-compatible /audio/speech.
+// ---------------------------------------------------------------------------
+const GATEWAY_API_KEY = process.env.AI_GATEWAY_API_KEY?.trim() || '';
+const GATEWAY_TTS_MODEL = process.env.AI_GATEWAY_TTS_MODEL || 'openai/tts-1';
+const GATEWAY_BASE_URL =
+  (process.env.AI_GATEWAY_BASE_URL || 'https://ai-gateway.vercel.sh/v1').replace(/\/$/, '');
+// OpenAI speech voices — kept distinct so the role→voice mapping survives the
+// fall-through. 'alloy'/'verse' read neutral-male; 'shimmer'/'nova' female.
+const GATEWAY_VOICES: Record<VoiceRole, string> = {
+  dispatcher: process.env.AI_GATEWAY_VOICE_DISPATCHER || 'alloy',
+  patient: process.env.AI_GATEWAY_VOICE_PATIENT || 'shimmer',
+  narrator: process.env.AI_GATEWAY_VOICE_NARRATOR || 'nova',
+};
+
 type BodyCarrier = IncomingMessage & {
   body?: unknown;
 };
@@ -43,6 +61,69 @@ async function readBody(req: BodyCarrier): Promise<TtsRequestBody> {
   return JSON.parse(raw || '{}') as TtsRequestBody;
 }
 
+function hasPlausibleElevenLabsKey(): boolean {
+  const key = process.env.ELEVENLABS_API_KEY?.trim() || '';
+  return /^sk_[A-Za-z0-9_-]{20,}$/.test(key);
+}
+
+/** Primary engine. Returns the MP3 buffer, or throws/returns null on failure. */
+async function synthesiseWithElevenLabs(text: string, role: VoiceRole): Promise<Buffer | null> {
+  const key = process.env.ELEVENLABS_API_KEY?.trim();
+  if (!key || !/^sk_[A-Za-z0-9_-]{20,}$/.test(key)) return null;
+
+  const voiceId = VOICES[role];
+  const upstream = await fetch(
+    `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream?optimize_streaming_latency=2`,
+    {
+      method: 'POST',
+      headers: {
+        'xi-api-key': key,
+        'Content-Type': 'application/json',
+        Accept: 'audio/mpeg',
+      },
+      body: JSON.stringify({
+        text,
+        model_id: MODEL,
+        voice_settings: {
+          stability: role === 'dispatcher' ? 0.52 : 0.44,
+          similarity_boost: 0.82,
+          style: role === 'patient' ? 0.18 : 0.08,
+          use_speaker_boost: true,
+        },
+      }),
+    },
+  );
+
+  if (!upstream.ok) return null;
+  const audio = Buffer.from(await upstream.arrayBuffer());
+  return audio.byteLength >= 64 ? audio : null;
+}
+
+/** Mid-tier engine: Vercel AI Gateway OpenAI speech. Null when unconfigured/failed. */
+async function synthesiseWithGateway(text: string, role: VoiceRole): Promise<Buffer | null> {
+  if (!GATEWAY_API_KEY) return null;
+  const model = GATEWAY_TTS_MODEL;
+
+  const upstream = await fetch(`${GATEWAY_BASE_URL}/audio/speech`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${GATEWAY_API_KEY}`,
+      'Content-Type': 'application/json',
+      Accept: 'audio/mpeg',
+    },
+    body: JSON.stringify({
+      model,
+      voice: GATEWAY_VOICES[role],
+      input: text,
+      response_format: 'mp3',
+    }),
+  });
+
+  if (!upstream.ok) return null;
+  const audio = Buffer.from(await upstream.arrayBuffer());
+  return audio.byteLength >= 64 ? audio : null;
+}
+
 export default async function handler(req: BodyCarrier, res: ServerResponse) {
   if (req.method === 'OPTIONS') {
     res.statusCode = 204;
@@ -54,12 +135,6 @@ export default async function handler(req: BodyCarrier, res: ServerResponse) {
 
   if (req.method !== 'POST') {
     sendText(res, 405, 'Method Not Allowed');
-    return;
-  }
-
-  const key = process.env.ELEVENLABS_API_KEY?.trim();
-  if (!key || !/^sk_[A-Za-z0-9_-]{20,}$/.test(key)) {
-    sendText(res, 503, 'ELEVENLABS_API_KEY not configured');
     return;
   }
 
@@ -83,49 +158,44 @@ export default async function handler(req: BodyCarrier, res: ServerResponse) {
   }
 
   const role = normaliseRole(body.role);
-  const voiceId = VOICES[role];
 
+  // Fall-through order: ElevenLabs (primary) → Vercel AI Gateway (mid-tier) →
+  // non-2xx so the client reaches Web Speech. Each engine returns null on any
+  // miss (missing/invalid key, 401/429/503, empty audio, hard upstream fail).
   try {
-    const upstream = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream?optimize_streaming_latency=2`,
-      {
-        method: 'POST',
-        headers: {
-          'xi-api-key': key,
-          'Content-Type': 'application/json',
-          Accept: 'audio/mpeg',
-        },
-        body: JSON.stringify({
-          text,
-          model_id: MODEL,
-          voice_settings: {
-            stability: role === 'dispatcher' ? 0.52 : 0.44,
-            similarity_boost: 0.82,
-            style: role === 'patient' ? 0.18 : 0.08,
-            use_speaker_boost: true,
-          },
-        }),
-      },
-    );
-
-    if (!upstream.ok) {
-      const errText = await upstream.text().catch(() => '');
-      sendText(res, upstream.status || 502, `elevenlabs error: ${errText.slice(0, 400)}`);
+    const elevenLabs = await synthesiseWithElevenLabs(text, role).catch(() => null);
+    if (elevenLabs) {
+      res.setHeader('X-TTS-Provider', 'elevenlabs');
+      res.statusCode = 200;
+      res.setHeader('Content-Type', 'audio/mpeg');
+      res.setHeader('Cache-Control', 'no-store');
+      res.setHeader('Content-Length', String(elevenLabs.byteLength));
+      res.end(elevenLabs);
       return;
     }
 
-    const audio = Buffer.from(await upstream.arrayBuffer());
-    if (audio.byteLength < 64) {
-      sendText(res, 502, 'Empty audio returned from ElevenLabs');
+    const gateway = await synthesiseWithGateway(text, role).catch(() => null);
+    if (gateway) {
+      res.setHeader('X-TTS-Provider', 'ai-gateway');
+      res.statusCode = 200;
+      res.setHeader('Content-Type', 'audio/mpeg');
+      res.setHeader('Cache-Control', 'no-store');
+      res.setHeader('Content-Length', String(gateway.byteLength));
+      res.end(gateway);
       return;
     }
-
-    res.statusCode = 200;
-    res.setHeader('Content-Type', 'audio/mpeg');
-    res.setHeader('Cache-Control', 'no-store');
-    res.setHeader('Content-Length', String(audio.byteLength));
-    res.end(audio);
   } catch (error) {
     sendText(res, 500, `tts proxy error: ${(error as Error).message}`);
+    return;
+  }
+
+  // Neither engine configured/reachable — signal the client to fall through to
+  // Supertonic / Web Speech. Keep the message secret-free.
+  const elevenLabsConfigured = hasPlausibleElevenLabsKey();
+  const gatewayConfigured = Boolean(GATEWAY_API_KEY);
+  if (!elevenLabsConfigured && !gatewayConfigured) {
+    sendText(res, 503, 'No TTS provider configured');
+  } else {
+    sendText(res, 502, 'TTS upstream failed');
   }
 }

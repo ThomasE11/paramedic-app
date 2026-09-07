@@ -3,24 +3,25 @@ import react from "@vitejs/plugin-react"
 import { defineConfig, loadEnv, type Plugin } from "vite"
 
 /**
- * Dev-only ElevenLabs TTS proxy.
+ * Dev-only TTS proxy with the same fall-through as production:
+ *   ElevenLabs (primary) → Vercel AI Gateway OpenAI speech (mid-tier) →
+ *   non-2xx so the client falls back to Supertonic → Web Speech.
  *
- * The API key lives ONLY in the dev server's environment (read from .env via
- * loadEnv) and is NEVER bundled into the client. The browser calls the local
- * `/api/tts` endpoint; this middleware forwards to ElevenLabs with the key
- * attached server-side and streams the MP3 back. Production uses the matching
- * Vercel Functions in `api/tts/`. When no key is configured it returns 503 so
- * the client cleanly falls back to Supertonic → Web Speech.
+ * API keys live ONLY in the dev server's environment (read from .env via
+ * loadEnv) and are NEVER bundled into the client. The browser calls the local
+ * `/api/tts` endpoint; this middleware attaches the key server-side and
+ * streams the MP3 back. Production uses the matching Vercel Functions in
+ * `api/tts/`.
  *
  * Configure by adding to `.env.local` (gitignored):
  *   ELEVENLABS_API_KEY=sk-...
+ *   AI_GATEWAY_API_KEY=<vercel-ai-gateway-key>   (mid-tier fallback)
  * Optional overrides:
  *   ELEVENLABS_MODEL=eleven_turbo_v2_5
- *   ELEVENLABS_VOICE_DISPATCHER=<voiceId>
- *   ELEVENLABS_VOICE_PATIENT=<voiceId>
- *   ELEVENLABS_VOICE_NARRATOR=<voiceId>
+ *   ELEVENLABS_VOICE_DISPATCHER / _PATIENT / _NARRATOR=<voiceId>
+ *   AI_GATEWAY_TTS_MODEL=openai/tts-1
  */
-function elevenLabsTtsProxy(env: Record<string, string>): Plugin {
+function ttsProxy(env: Record<string, string>): Plugin {
   const KEY = (env.ELEVENLABS_API_KEY || process.env.ELEVENLABS_API_KEY || '').trim()
   // ElevenLabs account/key IDs are easy to paste into .env by mistake. They
   // are non-empty but cannot authenticate; advertising them as healthy makes
@@ -35,8 +36,71 @@ function elevenLabsTtsProxy(env: Record<string, string>): Plugin {
     narrator: env.ELEVENLABS_VOICE_NARRATOR || 'EXAVITQu4vr4xnSDxMaL',     // Sarah — neutral
   }
 
+  // Vercel AI Gateway (OpenAI speech) mid-tier.
+  const GATEWAY_KEY = (env.AI_GATEWAY_API_KEY || process.env.AI_GATEWAY_API_KEY || '').trim()
+  const GATEWAY_MODEL = env.AI_GATEWAY_TTS_MODEL || process.env.AI_GATEWAY_TTS_MODEL || 'openai/tts-1'
+  const GATEWAY_BASE = (env.AI_GATEWAY_BASE_URL || process.env.AI_GATEWAY_BASE_URL || 'https://ai-gateway.vercel.sh/v1').replace(/\/$/, '')
+  const GATEWAY_VOICES: Record<string, string> = {
+    dispatcher: env.AI_GATEWAY_VOICE_DISPATCHER || 'alloy',
+    patient: env.AI_GATEWAY_VOICE_PATIENT || 'shimmer',
+    narrator: env.AI_GATEWAY_VOICE_NARRATOR || 'nova',
+  }
+  const HAS_GATEWAY = GATEWAY_KEY.length > 0
+
+  async function elevenLabsAudio(text: string, role: string): Promise<Buffer | null> {
+    if (!HAS_PLAUSIBLE_KEY) return null
+    try {
+      const upstream = await fetch(
+        `https://api.elevenlabs.io/v1/text-to-speech/${VOICES[role] || VOICES.narrator}/stream?optimize_streaming_latency=2`,
+        {
+          method: 'POST',
+          headers: {
+            'xi-api-key': KEY,
+            'Content-Type': 'application/json',
+            Accept: 'audio/mpeg',
+          },
+          body: JSON.stringify({
+            text,
+            model_id: MODEL,
+            voice_settings: { stability: 0.4, similarity_boost: 0.8, style: 0, use_speaker_boost: true },
+          }),
+        },
+      )
+      if (!upstream.ok) return null
+      const audio = Buffer.from(await upstream.arrayBuffer())
+      return audio.byteLength >= 64 ? audio : null
+    } catch {
+      return null
+    }
+  }
+
+  async function gatewayAudio(text: string, role: string): Promise<Buffer | null> {
+    if (!HAS_GATEWAY) return null
+    try {
+      const upstream = await fetch(`${GATEWAY_BASE}/audio/speech`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${GATEWAY_KEY}`,
+          'Content-Type': 'application/json',
+          Accept: 'audio/mpeg',
+        },
+        body: JSON.stringify({
+          model: GATEWAY_MODEL,
+          voice: GATEWAY_VOICES[role] || GATEWAY_VOICES.narrator,
+          input: text,
+          response_format: 'mp3',
+        }),
+      })
+      if (!upstream.ok) return null
+      const audio = Buffer.from(await upstream.arrayBuffer())
+      return audio.byteLength >= 64 ? audio : null
+    } catch {
+      return null
+    }
+  }
+
   return {
-    name: 'elevenlabs-tts-proxy',
+    name: 'tts-proxy',
     configureServer(server) {
       // Browser probes to a missing localhost service produce an unavoidable
       // ERR_CONNECTION_REFUSED console entry even when fetch() is caught. Do
@@ -59,55 +123,52 @@ function elevenLabsTtsProxy(env: Record<string, string>): Plugin {
       })
 
       // Health/config probe — the client uses this to decide whether to route
-      // narration through ElevenLabs. Registered before /api/tts so the more
-      // specific path wins.
+      // narration through /api/tts. Reflects BOTH engines without exposing any
+      // secret material. Registered before /api/tts so the more specific path
+      // wins.
       server.middlewares.use('/api/tts/health', (_req, res) => {
         res.setHeader('Content-Type', 'application/json')
-        res.end(JSON.stringify({ ok: HAS_PLAUSIBLE_KEY, provider: 'elevenlabs', model: MODEL }))
+        res.end(JSON.stringify({
+          ok: HAS_PLAUSIBLE_KEY || HAS_GATEWAY,
+          provider: HAS_PLAUSIBLE_KEY ? 'elevenlabs' : HAS_GATEWAY ? 'ai-gateway' : 'none',
+          model: MODEL,
+          engines: { elevenlabs: HAS_PLAUSIBLE_KEY, 'ai-gateway': HAS_GATEWAY },
+          gatewayModel: HAS_GATEWAY ? GATEWAY_MODEL : undefined,
+        }))
       })
 
       server.middlewares.use('/api/tts', (req, res) => {
         if (req.method !== 'POST') { res.statusCode = 405; res.end('Method Not Allowed'); return }
-        if (!HAS_PLAUSIBLE_KEY) { res.statusCode = 503; res.end('ELEVENLABS_API_KEY not configured'); return }
+        if (!HAS_PLAUSIBLE_KEY && !HAS_GATEWAY) { res.statusCode = 503; res.end('No TTS provider configured'); return }
         let body = ''
         req.on('data', (chunk) => { body += chunk })
         req.on('end', async () => {
           try {
             const { text, role } = JSON.parse(body || '{}') as { text?: string; role?: string }
             if (!text || !text.trim()) { res.statusCode = 400; res.end('no text'); return }
-            const voiceId = VOICES[role ?? 'narrator'] || VOICES.narrator
-            const upstream = await fetch(
-              `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream?optimize_streaming_latency=2`,
-              {
-                method: 'POST',
-                headers: {
-                  'xi-api-key': KEY,
-                  'Content-Type': 'application/json',
-                  Accept: 'audio/mpeg',
-                },
-                body: JSON.stringify({
-                  text,
-                  model_id: MODEL,
-                  voice_settings: { stability: 0.4, similarity_boost: 0.8, style: 0, use_speaker_boost: true },
-                }),
-              },
-            )
-            if (!upstream.ok || !upstream.body) {
-              const errTxt = await upstream.text().catch(() => '')
-              res.statusCode = upstream.status || 502
-              res.end(`elevenlabs error: ${errTxt.slice(0, 400)}`)
+            const safeRole = role ?? 'narrator'
+
+            // Fall-through: ElevenLabs → Vercel AI Gateway → 502 (client Web Speech).
+            const elevenLabs = await elevenLabsAudio(text, safeRole)
+            if (elevenLabs) {
+              res.statusCode = 200
+              res.setHeader('Content-Type', 'audio/mpeg')
+              res.setHeader('Cache-Control', 'no-store')
+              res.setHeader('X-TTS-Provider', 'elevenlabs')
+              res.end(elevenLabs)
               return
             }
-            res.statusCode = 200
-            res.setHeader('Content-Type', 'audio/mpeg')
-            res.setHeader('Cache-Control', 'no-store')
-            const reader = (upstream.body as ReadableStream<Uint8Array>).getReader()
-            for (;;) {
-              const { done, value } = await reader.read()
-              if (done) break
-              if (value) res.write(Buffer.from(value))
+            const gateway = await gatewayAudio(text, safeRole)
+            if (gateway) {
+              res.statusCode = 200
+              res.setHeader('Content-Type', 'audio/mpeg')
+              res.setHeader('Cache-Control', 'no-store')
+              res.setHeader('X-TTS-Provider', 'ai-gateway')
+              res.end(gateway)
+              return
             }
-            res.end()
+            res.statusCode = 502
+            res.end('TTS upstream failed')
           } catch (e) {
             res.statusCode = 500
             res.end(`tts proxy error: ${(e as Error).message}`)
@@ -125,7 +186,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   return {
     base: process.env.GITHUB_PAGES ? '/paramedic-app/' : '/',
-    plugins: [react(), elevenLabsTtsProxy(env)],
+    plugins: [react(), ttsProxy(env)],
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "./src"),
