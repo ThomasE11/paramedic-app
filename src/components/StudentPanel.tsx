@@ -5975,33 +5975,48 @@ export function StudentPanel({
                     </div>
                   </div>
 
-                  <div className="tactical-bay-vitals grid grid-cols-3 gap-2" role="group" aria-label="Live vital signs summary">
-                    <div className="tactical-hud-tile">
-                      <HUDValue
-                        label="HR"
-                        value={currentVitals?.pulse ?? '--'}
-                        unit="bpm"
-                        critical={currentVitals != null && (currentVitals.pulse < 50 || currentVitals.pulse > 130)}
-                      />
-                    </div>
-                    <div className="tactical-hud-tile">
-                      <HUDValue
-                        label="SpO2"
-                        value={currentVitals?.spo2 ?? '--'}
-                        unit="%"
-                        critical={currentVitals != null && currentVitals.spo2 < 90}
-                        warning={currentVitals != null && currentVitals.spo2 < 94}
-                      />
-                    </div>
-                    <div className="tactical-hud-tile">
-                      <HUDValue
-                        label="RR"
-                        value={currentVitals?.respiration ?? '--'}
-                        unit="/min"
-                        critical={currentVitals != null && (currentVitals.respiration < 8 || currentVitals.respiration > 30)}
-                      />
-                    </div>
-                  </div>
+                  {/* Header vitals strip — gated. These are bedside monitor
+                      readings (HR/SpO2/RR numbers), not impressions a student
+                      can see at a glance. They only count once the student has
+                      applied the corresponding measurement, and this summary
+                      only exists below 1440px anyway (the full monitor sits
+                      beside the patient at wide widths). Until then we show
+                      the clinical first-look instead. */}
+                  {(() => {
+                    const hrGained = readOnly || monitorRevealedVitals.has('pulse') || !!lastPulseAssessment;
+                    const spo2Gained = readOnly || monitorRevealedVitals.has('spo2');
+                    const rrGained = readOnly || monitorRevealedVitals.has('respiration');
+                    const vitalsWon = hrGained && spo2Gained && rrGained;
+                    return (
+                      <div className="tactical-bay-vitals grid grid-cols-3 gap-2" role="group" aria-label={vitalsWon ? 'Live vital signs summary' : 'Initial impressions — power on the monitor to measure vital signs'}>
+                        <div className="tactical-hud-tile">
+                          <HUDValue
+                            label={vitalsWon ? 'HR' : (lastPulseAssessment ? 'Pulse' : 'Look')}
+                            value={vitalsWon ? (currentVitals?.pulse ?? '--') : (lastPulseAssessment ? (lastPulseAssessment.palpable ? `~${Math.round(currentVitals?.pulse ?? 0)}` : 'Absent') : 'Observe')}
+                            unit={vitalsWon ? 'bpm' : ''}
+                            critical={vitalsWon && currentVitals != null && (currentVitals.pulse < 50 || currentVitals.pulse > 130)}
+                          />
+                        </div>
+                        <div className="tactical-hud-tile">
+                          <HUDValue
+                            label={vitalsWon ? 'SpO2' : 'Breathing'}
+                            value={vitalsWon ? (currentVitals?.spo2 ?? '--') : 'Listen'}
+                            unit={vitalsWon ? '%' : ''}
+                            critical={vitalsWon && currentVitals != null && currentVitals.spo2 < 90}
+                            warning={vitalsWon && currentVitals != null && currentVitals.spo2 < 94}
+                          />
+                        </div>
+                        <div className="tactical-hud-tile">
+                          <HUDValue
+                            label={vitalsWon ? 'RR' : 'Measure'}
+                            value={vitalsWon ? (currentVitals?.respiration ?? '--') : 'Monitor'}
+                            unit={vitalsWon ? '/min' : ''}
+                            critical={vitalsWon && currentVitals != null && (currentVitals.respiration < 8 || currentVitals.respiration > 30)}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
 
 	                <div className="mt-2 text-[11px]">
@@ -6141,20 +6156,10 @@ export function StudentPanel({
 
                 {careRailMode === 'assess' && (
                   <>
-                <RoadmapAnatomyPanel
-                  visualState={patientVisualState}
-                  activeFindings={activeFindings}
-                  assessedCount={assessmentTracker?.performed.filter(p => p.phase === 'secondary').length ?? 0}
-                />
-
-                {/* --- PRIMARY SURVEY (ABCDE) ---
-                    Premium redesign: each system is a glass "channel" with a
-                    jewel-tone gradient rail per clinical hierarchy. The
-                    assessed state is a minimal LED dot (emerald) rather than
-                    a pill/check; the active state lights up the rail and
-                    adds a subtle accent glow. Findings render as a chapter
-                    panel beneath the tiles, not a utility dropdown.
-                    Hidden in voice-first mode — the student runs ABCDE by voice. */}
+                {/* PRIMARY SURVEY FIRST — the ABCDE grid is the clinical spine
+                    of the assessment and must be the first thing the student
+                    sees; the anatomy reference panel is a map, secondary, and
+                    renders beneath it. */}
                 {!voiceFirstMode && (
                 <HUDAssessment
                   title="Primary Survey"
@@ -6198,18 +6203,18 @@ export function StudentPanel({
                               handlePerformAssessment(item.stepId);
                               setActivePrimarySurvey(isActive ? null : item.key);
                             }}
-                            className={`primary-survey-button group relative flex flex-col items-center justify-center min-h-[58px] sm:min-h-[70px] pt-3 pb-2 px-1 rounded-xl bg-slate-900/95 backdrop-blur-sm border border-slate-600/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition-all duration-300 touch-manipulation hover:-translate-y-0.5 hover:border-cyan-300/70 ${isActive ? `${item.glow} border-cyan-300/80 bg-slate-800` : ''}`}
+                            className={`primary-survey-button group relative flex flex-col items-center justify-center min-h-[58px] sm:min-h-[70px] pt-3 pb-2 px-1 rounded-xl bg-slate-900/95 backdrop-blur-sm border transition-all duration-300 touch-manipulation hover:-translate-y-0.5 hover:border-cyan-300/70 ${isActive ? `${item.glow} border-cyan-300/90 bg-slate-800 ring-1 ring-cyan-300/40` : isAssessed ? 'border-emerald-400/50' : 'border-cyan-300/30'}`}
                           >
                             {/* Jewel-tone rail: visible at low opacity at rest, bright when active */}
-                            <span className={`absolute inset-x-3 top-0 h-[2px] rounded-full bg-gradient-to-r ${item.rail} transition-opacity duration-300 ${isActive ? 'opacity-100' : isAssessed ? 'opacity-80' : 'opacity-65 group-hover:opacity-100'}`} />
+                            <span className={`absolute inset-x-3 top-0 h-[3px] rounded-full bg-gradient-to-r ${item.rail} transition-opacity duration-300 ${isActive ? 'opacity-100' : isAssessed ? 'opacity-90' : 'opacity-75 group-hover:opacity-100'}`} />
                             {/* Status LED */}
-                            <span className={`absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full transition-colors ${isAssessed ? 'bg-emerald-400 shadow-[0_0_6px_rgb(52_211_153/0.8)]' : 'bg-white/[0.08] dark:bg-white/[0.06]'}`} />
+                            <span className={`absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full transition-colors ${isAssessed ? 'bg-emerald-400 shadow-[0_0_6px_rgb(52_211_153/0.8)]' : 'bg-white/20'}`} />
                              {/* Letter — thin, large, premium */}
                              <span className={`primary-survey-letter text-xl sm:text-2xl font-light tracking-tight leading-none ${isActive ? item.text : 'text-white'}`}>
                                {item.letter}
                              </span>
                              {/* Label — tiny spaced-out uppercase */}
-                             <span className={`primary-survey-label text-[8px] sm:text-[9px] font-semibold tracking-[0.12em] uppercase mt-1 ${isActive ? item.text : 'text-slate-200'}`}>{item.label}</span>
+                             <span className={`primary-survey-label text-[8px] sm:text-[9px] font-semibold tracking-[0.12em] uppercase mt-1 ${isActive ? item.text : 'text-slate-50'}`}>{item.label}</span>
                           </button>
                         );
                       })}
@@ -6237,6 +6242,12 @@ export function StudentPanel({
                   </div>
                 </HUDAssessment>
                 )}
+
+                <RoadmapAnatomyPanel
+                  visualState={patientVisualState}
+                  activeFindings={activeFindings}
+                  assessedCount={assessmentTracker?.performed.filter(p => p.phase === 'secondary').length ?? 0}
+                />
 
                 {realismDirector && (
                   <details className="clinical-reality-disclosure">
@@ -6505,12 +6516,14 @@ export function StudentPanel({
                         applyTreatment(pacing);
                       }}
                       overridePacerState={externalState?.pacerState}
-                      // The management bay is a live working station: keep the
-                      // monitor readable beside treatment on entry. Students
-                      // can still use the physical controls, alarms, NIBP and
-                      // lead actions throughout the case. Classroom spectators
-                      // (readOnly) can't press ON, so force power-on for them too.
-                      autoPowerOn
+                      // The management bay is a live working station, but the
+                      // bedside monitor is a real device: it must NOT arrive
+                      // already on. The student powers it on and then applies
+                      // each measurement (SpO2, NIBP, ECG) themselves — the
+                      // monitor's own tap-to-connect gates enforce that.
+                      // Only classroom spectators (readOnly) get a lit monitor,
+                      // since they cannot press the ON button.
+                      autoPowerOn={readOnly}
                       caseCategory={currentCase.category}
                       caseSubcategory={currentCase.subcategory}
                       caseTitle={currentCase.title}

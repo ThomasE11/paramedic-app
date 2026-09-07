@@ -2873,8 +2873,24 @@ function ChestAssessmentMap({ selectedAction, caseData, liveVitals }: { selected
   );
 }
 
-function AbdominalQuadrantPanel({ selectedAction, caseData, compact = false }: { selectedAction: string | null; caseData: CaseScenario; compact?: boolean }) {
+function AbdominalQuadrantPanel({ selectedAction, caseData, compact = false, revealedFindings, onAction }: { selectedAction: string | null; caseData: CaseScenario; compact?: boolean; revealedFindings?: Map<string, string>; onAction?: (actionId: string) => void }) {
   const selectedQuadrant = getQuadrantFromAction(selectedAction);
+  const isDone = (id: string) => revealedFindings?.has(id) ?? false;
+  // Each quadrant tile performs that quadrant's full IAPP exam step the
+  // student is currently working on: palpation/percussion/auscultation when
+  // such an action is already selected, auscultation by default (IAPP — the
+  // workflow asks to listen before laying hands on a tender belly).
+  const actionForQuadrant = (q: AbdomenQuadrant): string => {
+    if (selectedAction && getQuadrantFromAction(selectedAction) === q) {
+      return selectedAction; // re-tap = re-examine the same technique
+    }
+    const activeTechnique = selectedAction?.endsWith('-palpate') ? 'palpate'
+      : selectedAction?.endsWith('-percuss') ? 'percuss'
+        : selectedAction?.includes('inspect') ? 'inspect'
+          : null;
+    if (activeTechnique && activeTechnique !== 'inspect') return `abd-${q}-${activeTechnique}`;
+    return `abd-${q}-auscultate`;
+  };
   const bowelType = getBowelSoundTypeForCase(caseData);
   const painText = getAbdomenText(caseData);
   const technique = selectedAction?.includes('palpate')
@@ -2913,14 +2929,21 @@ function AbdominalQuadrantPanel({ selectedAction, caseData, compact = false }: {
             {ABDOMEN_QUADRANTS.map(q => {
               const isActive = selectedQuadrant === q.id;
               const likelyRelevant = isLikelyRelevant(q.id);
+              const done = isDone(`abd-${q.id}-auscultate`) || isDone(`abd-${q.id}-palpate`);
               const position = q.id === 'ruq' ? 'left-[0.95rem] top-[1.4rem]'
                 : q.id === 'luq' ? 'right-[0.95rem] top-[1.4rem]'
                   : q.id === 'rlq' ? 'left-[0.95rem] top-[4.35rem]'
                     : 'right-[0.95rem] top-[4.35rem]';
               return (
-                <div
+                <button
                   key={q.id}
-                  className={`absolute flex h-9 w-9 items-center justify-center rounded-xl border text-[8px] font-bold transition-colors ${position} ${
+                  type="button"
+                  onClick={onAction ? () => onAction(actionForQuadrant(q.id)) : undefined}
+                  disabled={!onAction}
+                  title={`${q.full} — listen, percuss, palpate`}
+                  className={`absolute flex h-9 w-9 items-center justify-center rounded-xl border text-[8px] font-bold transition-colors touch-manipulation ${position} ${
+                    onAction ? 'cursor-pointer hover:border-cyan-300 hover:bg-cyan-400/20 active:scale-95' : ''
+                  } ${
                     isActive
                       ? 'border-emerald-400 bg-emerald-500/25 text-emerald-950 ring-1 ring-emerald-400/40 dark:text-emerald-100'
                       : likelyRelevant
@@ -2928,8 +2951,9 @@ function AbdominalQuadrantPanel({ selectedAction, caseData, compact = false }: {
                         : 'border-slate-300/70 bg-white/72 text-slate-700 dark:border-white/15 dark:bg-slate-900/70 dark:text-slate-100'
                   }`}
                 >
+                  {done && <span className="absolute right-0.5 top-0.5 h-1.5 w-1.5 rounded-full bg-emerald-500" />}
                   {q.label}
-                </div>
+                </button>
               );
             })}
           </div>
@@ -2938,10 +2962,17 @@ function AbdominalQuadrantPanel({ selectedAction, caseData, compact = false }: {
             {ABDOMEN_QUADRANTS.map(q => {
               const isActive = selectedQuadrant === q.id;
               const likelyRelevant = isLikelyRelevant(q.id);
+              const done = isDone(`abd-${q.id}-auscultate`) || isDone(`abd-${q.id}-palpate`);
               return (
-                <div
+                <button
                   key={q.id}
-                  className={`rounded-lg border px-1.5 py-1 text-[8px] leading-tight ${
+                  type="button"
+                  onClick={onAction ? () => onAction(actionForQuadrant(q.id)) : undefined}
+                  disabled={!onAction}
+                  title={`${q.full} — listen, percuss, palpate`}
+                  className={`rounded-lg border px-1.5 py-1 text-left text-[8px] leading-tight transition-colors touch-manipulation ${
+                    onAction ? 'cursor-pointer hover:border-cyan-300/70 hover:bg-cyan-500/10 active:scale-[0.98]' : ''
+                  } ${
                     isActive
                       ? 'border-emerald-400 bg-emerald-500/15 text-emerald-900 dark:text-emerald-100'
                       : likelyRelevant
@@ -2949,9 +2980,12 @@ function AbdominalQuadrantPanel({ selectedAction, caseData, compact = false }: {
                         : 'border-slate-200 bg-slate-50/85 text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-white/65'
                   }`}
                 >
-                  <p className="font-bold">{q.label}</p>
+                  <p className="flex items-center gap-1 font-bold">
+                    {done && <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />}
+                    {q.label}
+                  </p>
                   <p className="mt-0.5 line-clamp-2">{q.hint}</p>
-                </div>
+                </button>
               );
             })}
           </div>
@@ -2990,9 +3024,15 @@ function AbdominalQuadrantPanel({ selectedAction, caseData, compact = false }: {
                 : q.id === 'rlq' ? 'left-[21px] top-[83px]'
                   : 'right-[21px] top-[83px]';
             return (
-              <div
+              <button
                 key={q.id}
-                className={`absolute h-[44px] w-[42px] rounded-2xl border px-1 pt-2 text-center text-[9px] font-bold transition-colors ${position} ${
+                type="button"
+                onClick={onAction ? () => onAction(actionForQuadrant(q.id)) : undefined}
+                disabled={!onAction}
+                title={`${q.full} — listen, percuss, palpate`}
+                className={`absolute h-[44px] w-[42px] rounded-2xl border px-1 pt-2 text-center text-[9px] font-bold transition-colors touch-manipulation ${position} ${
+                  onAction ? 'cursor-pointer hover:border-cyan-300 hover:bg-cyan-400/20 active:scale-95' : ''
+                } ${
                   isActive
                     ? 'border-emerald-400 bg-emerald-500/20 text-emerald-900 ring-1 ring-emerald-400/30 dark:text-emerald-100'
                     : likelyRelevant
@@ -3002,7 +3042,7 @@ function AbdominalQuadrantPanel({ selectedAction, caseData, compact = false }: {
               >
                 {q.label}
                 {isActive && <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.7)]" />}
-              </div>
+              </button>
             );
           })}
         </div>
@@ -3011,9 +3051,15 @@ function AbdominalQuadrantPanel({ selectedAction, caseData, compact = false }: {
             const isActive = selectedQuadrant === q.id;
             const likelyRelevant = isLikelyRelevant(q.id);
             return (
-              <div
+              <button
                 key={q.id}
-                className={`min-h-[58px] rounded-xl border p-2 transition-colors ${
+                type="button"
+                onClick={onAction ? () => onAction(actionForQuadrant(q.id)) : undefined}
+                disabled={!onAction}
+                title={`${q.full} — listen, percuss, palpate`}
+                className={`min-h-[58px] rounded-xl border p-2 text-left transition-colors touch-manipulation ${
+                  onAction ? 'cursor-pointer hover:border-cyan-300/70 hover:bg-cyan-500/10 active:scale-[0.99]' : ''
+                } ${
                   isActive
                     ? 'border-emerald-400 bg-emerald-500/15 ring-1 ring-emerald-400/30'
                     : likelyRelevant
@@ -3023,11 +3069,12 @@ function AbdominalQuadrantPanel({ selectedAction, caseData, compact = false }: {
               >
                 <div className="flex items-center justify-between gap-1">
                   <p className="text-[11px] font-bold">{q.label}</p>
+                  {isDone(`abd-${q.id}-palpate`) && <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />}
                   {likelyRelevant && <span className="rounded-full bg-amber-400/20 px-1 text-[7px] font-semibold text-amber-700 dark:text-amber-300">focus</span>}
                 </div>
                 <p className="mt-0.5 text-[8px] leading-tight text-muted-foreground">{q.full}</p>
                 <p className="mt-1 text-[8px] leading-tight text-muted-foreground/80">{q.hint}</p>
-              </div>
+              </button>
             );
           })}
         </div>
@@ -3036,11 +3083,13 @@ function AbdominalQuadrantPanel({ selectedAction, caseData, compact = false }: {
   );
 }
 
-function SecondaryAssessmentOutline({ activeRegion, selectedAction, caseData, liveVitals }: {
+function SecondaryAssessmentOutline({ activeRegion, selectedAction, caseData, liveVitals, revealedFindings, onAction }: {
   activeRegion: string | null;
   selectedAction: string | null;
   caseData: CaseScenario;
   liveVitals?: Partial<VitalSigns> | null;
+  revealedFindings?: Map<string, string>;
+  onAction?: (actionId: string) => void;
 }) {
   const workflow = getWorkflowForRegion(activeRegion);
   const activeWorkflowStep = getWorkflowStepForAction(activeRegion, selectedAction);
@@ -3055,7 +3104,7 @@ function SecondaryAssessmentOutline({ activeRegion, selectedAction, caseData, li
       {shouldShowAirway && <AirwayCloseUp caseData={caseData} />}
       {shouldShowBreathing && <ChestAssessmentMap selectedAction={selectedAction} caseData={caseData} liveVitals={liveVitals} />}
       {shouldShowBreathing && <BreathingPatternPanel caseData={caseData} liveVitals={liveVitals} />}
-      {shouldShowAbdomen && <AbdominalQuadrantPanel selectedAction={selectedAction} caseData={caseData} />}
+      {shouldShowAbdomen && <AbdominalQuadrantPanel selectedAction={selectedAction} caseData={caseData} revealedFindings={revealedFindings} onAction={onAction} />}
       <div className="rounded-xl border border-border/50 bg-white/80 p-2.5 shadow-sm dark:bg-slate-900/60">
         <div className="flex items-center justify-between gap-2">
           <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Secondary Assessment Flow</p>
@@ -4376,11 +4425,15 @@ function RegionalZoomLoupe({
   selectedAction,
   caseData,
   pupilProfile,
+  revealedFindings,
+  onAction,
 }: {
   activeRegion: string | null;
   selectedAction: string | null;
   caseData: CaseScenario;
   pupilProfile: PupilProfile;
+  revealedFindings?: Map<string, string>;
+  onAction?: (actionId: string) => void;
 }) {
   const isEyeFocused = activeRegion === 'face'
     && !!selectedAction
@@ -4404,7 +4457,7 @@ function RegionalZoomLoupe({
             IAPP order
           </span>
         </div>
-        <AbdominalQuadrantPanel selectedAction={selectedAction} caseData={caseData} compact />
+        <AbdominalQuadrantPanel selectedAction={selectedAction} caseData={caseData} compact revealedFindings={revealedFindings} onAction={onAction} />
       </div>
     );
   }
@@ -4950,6 +5003,8 @@ function PatientFirstExamDock({
               selectedAction={selectedAction}
               caseData={caseData}
               pupilProfile={pupilProfile}
+              revealedFindings={revealedFindings}
+              onAction={onAction}
             />
           ) : (
             <div className="patient-first-context-panel">
@@ -6634,6 +6689,8 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                   selectedAction={selectedAction}
                   caseData={caseData}
                   pupilProfile={pupilProfile}
+                  revealedFindings={revealedFindings}
+                  onAction={handleExamAction}
                 />
               </div>
             )}
@@ -6740,6 +6797,8 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                     activeRegion={activeRegion}
                     selectedAction={selectedAction}
                     caseData={caseData}
+                    revealedFindings={revealedFindings}
+                    onAction={handleExamAction}
                   />
                 </div>
               </div>

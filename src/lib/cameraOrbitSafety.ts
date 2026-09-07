@@ -16,10 +16,8 @@ const OPEN_SCENE: CameraOrbitSafety = {
   maxPolarAngle: Math.PI / 2 + 0.1,
 };
 
-const VILLA_BOUNDARY = {
-  // Villa room front (open) at z=+2.8, back wall at z=-2.6, hall extending to z=-5.4
-  // Side walls: x=±3.25. Floor ~y=0, ceiling ~y=+2.75. Camera eye level ~y=+1.6
-};
+// Villa room front (open) at z=+2.8, back wall at z=-2.6, hall extending to
+// z=-5.4. Side walls: x=±3.25. Floor ~y=0, ceiling ~y=+2.75. Camera eye ~y=1.6.
 
 /**
  * Keep a first-person camera inside authored indoor shells.
