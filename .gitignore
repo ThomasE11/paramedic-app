@@ -58,3 +58,4 @@ ios/
 /probe-*.mjs
 /record-*.mjs
 /analyse_*.py
+.env*.local

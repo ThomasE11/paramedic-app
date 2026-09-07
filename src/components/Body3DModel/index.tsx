@@ -6580,8 +6580,8 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 zoomSpeed={0.65}
                 minDistance={activeRegion ? 0.7 : 2}
                 maxDistance={cameraOrbitSafety.maxDistance}
-                minAzimuthAngle={cameraOrbitSafety.minAzimuthAngle}
-                maxAzimuthAngle={cameraOrbitSafety.maxAzimuthAngle}
+                minAzimuthAngle={cameraOrbitSafety.minAzimuthAngle - 0.2}
+                maxAzimuthAngle={cameraOrbitSafety.maxAzimuthAngle + 0.2}
                 minPolarAngle={Math.PI * 0.15}
                 maxPolarAngle={Math.PI * 0.85}
                 onStart={cancelCameraAnimation}
