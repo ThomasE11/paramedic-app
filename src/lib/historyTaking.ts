@@ -44,6 +44,9 @@ export interface HistoryTurn {
   text: string;
   category?: HistoryCategory;
   timestamp: number;
+  /** Human-readable speaker identity for the bubble label, e.g. "Patient",
+   *  "His wife", "A witness". Set by the UI so the thread shows WHO spoke. */
+  speaker?: string;
 }
 
 const ABSENT_BYSTANDER_PATTERN = /\b(none|nil|nobody|no[- ]one|no bystander|unattended|alone)\b/i;
@@ -249,6 +252,16 @@ function authoredClinicalFacts(caseData: CaseScenario): string[] {
   ].filter((fact): fact is string => Boolean(fact));
 }
 
+/**
+ * True when the authored clinical/finding TEXT carries a matching cue. Pain
+ * character and provocation must only be inferred from authored text — never
+ * from the diagnosis string alone (which invites fabrication of quality the
+ * case never wrote). Deliberately excludes expectedFindings.mostLikelyDiagnosis.
+ */
+function authoredTextHasCue(caseData: CaseScenario, pattern: RegExp): boolean {
+  return authoredClinicalFacts(caseData).some(fact => pattern.test(fact));
+}
+
 function inferPainRegion(caseData: CaseScenario): string {
   const hay = authoredClinicalFacts(caseData).join(' ').toLowerCase();
   const sidedRegion = hay.match(/\b(left|right)[ -](hip|leg|thigh|knee|ankle|foot|arm|shoulder|wrist|hand|flank|chest)\b/);
@@ -383,7 +396,11 @@ export function generatePatientResponse(
     }
 
     case 'last-meal':
-      return hesitate(h?.lastMeal ? pick([`I had ${h.lastMeal.toLowerCase()}.`, `Last thing I ate was ${h.lastMeal.toLowerCase()}.`]) : `I can't remember exactly... sometime earlier, I think.`);
+      // Never invent a meal/soft memory. When the case hasn't authored one,
+      // an honest "I don't remember" is the clinically correct answer.
+      return hesitate(h?.lastMeal
+        ? pick([`I had ${h.lastMeal.toLowerCase()}.`, `Last thing I ate was ${h.lastMeal.toLowerCase()}.`])
+        : pick([`I honestly can't remember when I last ate.`, `I'm not sure — I can't recall when I last had anything.`, `I couldn't tell you when I last ate, sorry.`]));
 
     case 'events':
       if (!h?.eventsLeading) return degradeNarrative(pick([`I'm not sure. It just... happened.`, `One minute I was fine, then this.`]));
@@ -394,26 +411,51 @@ export function generatePatientResponse(
         const m = h.eventsLeading.match(/(\d+\s*(?:minute|hour|day)s?\s*ago|\d+\s*(?:min|hr|h)\s*ago|last (?:night|week|hour)|this (?:morning|afternoon|evening))/i);
         if (m) return hesitate(`It started about ${m[0].toLowerCase()}.`);
       }
-      return hesitate(pick([`It came on suddenly, maybe half an hour ago.`, `Not long ago — it just hit me.`, `A little while back... it built up.`]));
+      // No authored chronology — never fabricate "half an hour ago". An honest
+      // uncertain onset is correct when the case timeline isn't authored.
+      return hesitate(pick([`I'm not sure exactly when it started, sorry.`, `I couldn't tell you how long ago it began.`, `I don't really remember when it came on.`]));
 
     case 'opqrst-provocation': {
-      if (/cardiac|stemi|\bmi\b|angina|ischaem/.test(dx)) return `It got worse when I tried to walk. Nothing really makes it better.`;
-      if (/pleuritic|pulmonary embol|pneumo/.test(dx)) return `It's worse when I breathe in deeply.`;
-      if (/musculoskel|back pain|fracture|sprain/.test(dx)) return `Moving makes it much worse. Staying still helps a bit.`;
-      if (/abdom|appendic|cholecyst|pancreat/.test(dx)) return `It's worse when I move. Curling up helps a little.`;
-      if (/asthma|copd|respir/.test(dx)) return `Worse when I try to do anything. Sitting up forward helps me breathe.`;
-      return `I don't really know — nothing I've tried changes it much.`;
+      // Provocation/palliation only from AUTHORED text cues — never inferred
+      // from the diagnosis label. If the case hasn't written what makes it
+      // better or worse, the honest answer is "nothing I've tried changes it".
+      const provocationFacts = authoredClinicalFacts(caseData).join(' ');
+      if (authoredTextHasCue(caseData, /\bworse (?:when|on|with|if) (?:i )?(?:walk|moving|move|exert|climb|bend|breathe|breath|lie|lying|eat|cough)/i)) {
+        if (/breathe|breath|inspir|cough|pleur/i.test(provocationFacts)) return hesitate(`It's worse when I breathe in deeply.`);
+        if (/walk|exert|climb/i.test(provocationFacts)) return hesitate(`It got worse when I tried to walk. Nothing really makes it better.`);
+        if (/lie|lying|eat/i.test(provocationFacts)) return hesitate(`It's worse when I move or lie a certain way.`);
+        return hesitate(`Moving makes it much worse. Staying still helps a bit.`);
+      }
+      if (authoredTextHasCue(caseData, /\b(?:better|eased?|relieved?|helps?|improv\w+) (?:when|with|by|on|if|after)\b/i)
+        || authoredTextHasCue(caseData, /\b(?:sitting (?:up|forward)|leaning forward|curling up|curl up|staying still|with rest)\b/i)) {
+        if (/sitting (?:up|forward)|leaning forward/i.test(provocationFacts)) return hesitate(`It's easier when I sit up and lean forward.`);
+        if (/curl/i.test(provocationFacts)) return hesitate(`It's worse when I move. Curling up helps a little.`);
+        if (/rest|staying still/i.test(provocationFacts)) return hesitate(`Staying still helps. It eases off when I rest.`);
+        return hesitate(`I found something that eases it a little.`);
+      }
+      return hesitate(pick([
+        `I don't really know — nothing I've tried changes it much.`,
+        `Hard to say — it doesn't seem to get better or worse with anything.`,
+        `Nothing seems to make it better or worse, honestly.`,
+      ]));
     }
 
     case 'opqrst-quality': {
+      // Pain character comes ONLY from authored text (appearance / findings /
+      // events). Never infer "crushing" or "stabbing" from the diagnosis
+      // string alone — that's fabrication of what the patient reports.
       const appearance = String(ip?.appearance || '').toLowerCase();
-      if (/crushing/.test(appearance)) return `It's like someone's sitting on my chest. Heavy. Crushing.`;
-      if (/cardiac|stemi|\bmi\b|angina/.test(dx)) return pick([`Heavy. Like a pressure, right in the middle.`, `A tight, crushing kind of pressure.`]);
-      if (/pleuritic|pulmonary embol/.test(dx)) return `Sharp — a stabbing pain when I breathe in.`;
-      if (/burn|scald/.test(dx)) return `Burning. Stinging. Really bad.`;
-      if (/colic|stone|renal/.test(dx)) return `It comes in waves — like cramping, then it eases, then back.`;
-      if (/abdom|appendic/.test(dx)) return `A deep, gnawing ache — worse than anything I've had.`;
-      return pick([`Aching. Constant. Hard to describe.`, `A dull, heavy ache.`]);
+      const qualityFacts = authoredClinicalFacts(caseData).join(' ').toLowerCase();
+      if (/crushing/.test(appearance) || /\bcrushing\b/.test(qualityFacts)) return hesitate(`It's like someone's sitting on my chest. Heavy. Crushing.`);
+      if (/\b(heavy|pressure|squeez(?:e|ing)|tight(ness)?|weight on)\b/.test(qualityFacts)) return hesitate(pick([`Heavy. Like a pressure, right in the middle.`, `A tight, pressing sort of feeling.`]));
+      if (/\b(sharp|stabbing|stabs?|knife|pleuritic)\b/.test(qualityFacts)) return hesitate(`Sharp — a stabbing pain when I breathe in.`);
+      if (/\b(burning|burn|stinging|scald)\b/.test(qualityFacts)) return hesitate(`Burning. Stinging. Really bad.`);
+      if (/\b(colic|cramping|waves|comes in waves|spasm)\b/.test(qualityFacts)) return hesitate(`It comes in waves — like cramping, then it eases, then back.`);
+      if (/\b(gnawing|deep ache|dull)\b/.test(qualityFacts)) return hesitate(`A deep, gnawing ache — worse than anything I've had.`);
+      if (/\b(throbb\w+|pounding)\b/.test(qualityFacts)) return hesitate(`It's a throbbing, pounding sort of pain.`);
+      // Truly un-authored: the patient cannot describe a character the case
+      // never wrote. Honest IDK rather than an invented quality.
+      return hesitate(pick([`Aching. Constant. Hard to describe.`, `A dull, heavy ache.`, `It's hard to put into words — it just hurts.`]));
     }
 
     case 'opqrst-region':
@@ -448,7 +490,8 @@ export function generatePatientResponse(
         const m = h.eventsLeading.match(/(\d+\s*(?:min|hour|day)s?\s*ago)/i);
         if (m) return hesitate(`Like I said — about ${m[1].toLowerCase()}, and it's been constant since.`);
       }
-      return pick([`It's been constant since it started.`, `It comes and goes, but it keeps coming back.`]);
+      // No authored time anchor — don't fabricate a duration/constant history.
+      return hesitate(pick([`I'm not sure how long it's been going on, sorry.`, `I couldn't say — I've lost track of time.`, `It's hard for me to say when it started or how long it's lasted.`]));
 
     case 'social': {
       const s = h?.socialHistory;
@@ -518,10 +561,10 @@ export function generatePatientResponse(
 }
 
 const PATIENT_REPROMPTS = [
-  `I'm sorry... could you ask me that again?`,
-  `What... what do you mean?`,
-  `I'm not sure I understood.`,
-  `Could you say that another way?`,
+  `I'm not sure what you're asking — try my allergies, my medicines, what happened, or where it hurts.`,
+  `Sorry, I didn't quite follow — could you ask about my pain, my medications, or what happened?`,
+  `I'm not sure I understand. You could ask about my symptoms, allergies, or when this started.`,
+  `Could you rephrase that? I can tell you about my pain, my tablets, or what I was doing when it started.`,
 ];
 
 /**
@@ -579,7 +622,9 @@ export function generateCollateralResponse(
     case 'opqrst-radiation':
     case 'opqrst-time':
     case 'pain-current':
-      return `${who} can only describe what they saw — they can't speak to the pain itself.`;
+      // A bystander can only report what they OBSERVED. They can never
+      // characterise the patient's pain — one shared, clear refusal.
+      return `${who}: "I can only tell you what I saw — I can't speak for their pain."`;
     case 'social':
       return h?.socialHistory ? `${who} confirms: ${describeSocial(h.socialHistory)}` : `${who} doesn't have details on lifestyle.`;
     case 'family':
@@ -589,21 +634,40 @@ export function generateCollateralResponse(
     case 'signs-symptoms':
       return `${who} found them like this. Chief problem: ${caseData.dispatchInfo?.callReason || 'unwell, cannot get more from them'}.`;
     case 'unknown':
-      return null;
+      // Never return null — the UI must not show "(no answer available)".
+      // A bystander who didn't catch the question asks what the student wants
+      // to know about the patient.
+      return `${who}: "I'm not sure I understood — what do you want to know about them?"`;
   }
 }
 
-function pickCollateralVoice(bystanders: string): string {
+/**
+ * Human-readable label for the collateral voice, e.g. "His wife". Exported so
+ * the UI can badge bubbles with WHO is speaking. Order matters — more specific
+ * relations first, generic fallthrough last.
+ */
+export function pickCollateralVoice(bystanders: string): string {
   const lower = bystanders.toLowerCase();
   if (/\b(wife)\b/.test(lower)) return 'His wife';
   if (/\b(husband)\b/.test(lower)) return 'Her husband';
-  if (/\b(mother)\b/.test(lower)) return 'The mother';
-  if (/\b(father)\b/.test(lower)) return 'The father';
+  if (/\b(partner|fianc[ée]|girlfriend|boyfriend)\b/.test(lower)) return 'Their partner';
+  if (/\b(mother|mum|mom)\b/.test(lower)) return 'The mother';
+  if (/\b(father|dad)\b/.test(lower)) return 'The father';
+  if (/\b(grandmother|grandmother|gran|nan)\b/.test(lower)) return 'The grandmother';
+  if (/\b(grandfather|granddad|grandpa)\b/.test(lower)) return 'The grandfather';
   if (/\b(son)\b/.test(lower)) return 'The son';
   if (/\b(daughter)\b/.test(lower)) return 'The daughter';
+  if (/\b(brother|sister|sibling)\b/.test(lower)) return 'A sibling';
   if (/\b(family|relative)\b/.test(lower)) return 'A family member';
-  if (/\b(witness|bystander)\b/.test(lower)) return 'A witness';
-  if (/\b(colleague|coworker|workmate)\b/.test(lower)) return 'A colleague';
+  if (/\b(friend|flatmate|roommate|housemate)\b/.test(lower)) return 'A friend';
+  if (/\b(neighbou?r|next[- ]door)\b/.test(lower)) return 'A neighbour';
+  if (/\b(carer|caregiver|carer|nurse|support worker)\b/.test(lower)) return 'The caregiver';
+  if (/\b(colleague|coworker|workmate|work colleague|manager|boss)\b/.test(lower)) return 'A colleague';
+  if (/\b(passer[- ]?by|bystander|witness|onlooker|member of (?:the )?public)\b/.test(lower)) return 'A witness';
+  if (/\b(cyclist|bicycle|driver|motorist|pedestrian)\b/.test(lower)) return 'A passerby';
+  if (/\b(police|officer|pc\b|cop)\b/.test(lower)) return 'A police officer';
+  if (/\b(security|guard)\b/.test(lower)) return 'A security guard';
+  if (/\b(gp|doctor|gp receptionist|receptionist)\b/.test(lower)) return 'The GP surgery';
   return 'A bystander';
 }
 

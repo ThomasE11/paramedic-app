@@ -3,6 +3,7 @@ import type { CaseScenario } from '@/types';
 import {
   generateCollateralResponse,
   generatePatientResponse,
+  pickCollateralVoice,
   sceneHasAskableBystander,
 } from './historyTaking';
 
@@ -51,6 +52,27 @@ describe('generateCollateralResponse', () => {
       sceneInfo: { bystanders: 'None' },
     } as Partial<CaseScenario>), 'events');
     expect(answer).toMatch(/no-one here/i);
+  });
+
+  it('bystander never invents patient pain and redirects to observed facts', () => {
+    for (const cat of ['opqrst-region', 'opqrst-quality', 'opqrst-severity', 'pain-current'] as const) {
+      const answer = generateCollateralResponse(fakeCase(), cat);
+      expect(answer).toMatch(/can't speak for their pain/i);
+      expect(answer).not.toMatch(/crushing|stabbing|\d+\s*out of 10/i);
+    }
+  });
+
+  it('bystander unknown category yields an honest re-ask, never null', () => {
+    const answer = generateCollateralResponse(fakeCase(), 'unknown');
+    expect(answer).not.toBeNull();
+    expect(answer).toMatch(/what do you want to know about them/i);
+  });
+
+  it('labels collateral voices beyond the generic bystander', () => {
+    expect(pickCollateralVoice('Neighbour heard the fall')).toMatch(/neighbour/i);
+    expect(pickCollateralVoice('Cyclist stopped to help')).toMatch(/passerby|witness/i);
+    expect(pickCollateralVoice('Wife called 999')).toMatch(/his wife/i);
+    expect(pickCollateralVoice('Police officer on scene')).toMatch(/police/i);
   });
 });
 
@@ -123,6 +145,49 @@ describe('generatePatientResponse', () => {
 
     expect(answer).toMatch(/right hip/i);
     expect(answer).not.toMatch(/all over/i);
+  });
+
+  it('does not invent pain quality from the diagnosis when the case authors no quality cues', () => {
+    const answer = generatePatientResponse(fakeCase({
+      expectedFindings: { mostLikelyDiagnosis: 'Inferior STEMI' },
+      initialPresentation: { generalImpression: 'Pale and sweaty', appearance: 'holding chest' },
+      history: {
+        allergies: [], medications: [], medicalConditions: [], surgicalHistory: [],
+        eventsLeading: 'Sudden central chest discomfort.',
+      },
+    } as unknown as Partial<CaseScenario>), 'opqrst-quality', {
+      severity: 'severe', altered: false, breathless: false,
+    });
+    // No authored "crushing/pressure/sharp" word → honest IDK, not a fabricated character
+    expect(answer).toMatch(/hard to (describe|put into words)|aching|dull/i);
+    expect(answer).not.toMatch(/elephant|an elephant|crushing|stabbing/i);
+  });
+
+  it('never fabricates an onset time when eventsLeading has no parseable time', () => {
+    const answer = generatePatientResponse(fakeCase({
+      history: {
+        allergies: [], medications: [], medicalConditions: [], surgicalHistory: [],
+        eventsLeading: 'Gradual worsening of breathlessness.',
+      },
+    } as unknown as Partial<CaseScenario>), 'opqrst-onset', {
+      severity: 'mild', altered: false, breathless: false,
+    });
+    expect(answer).not.toMatch(/half an hour ago/i);
+    expect(answer).toMatch(/not sure|couldn't tell|don't remember|don't really remember/i);
+  });
+
+  it('gives an honest uncertain answer for last meal when not authored', () => {
+    const answer = generatePatientResponse(fakeCase({
+      history: {
+        allergies: [], medications: [], medicalConditions: [], surgicalHistory: [],
+        eventsLeading: 'Felt dizzy.',
+        // lastMeal intentionally absent
+      },
+    } as unknown as Partial<CaseScenario>), 'last-meal', {
+      severity: 'mild', altered: false, breathless: false,
+    });
+    expect(answer).toMatch(/can't remember|not sure|couldn't tell/i);
+    expect(answer).not.toMatch(/sometime earlier/i);
   });
 
   it('reports only authored pain radiation instead of inferring it from a cardiac label', () => {

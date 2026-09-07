@@ -34,6 +34,7 @@ import {
   generateCollateralResponse,
   sceneHasAskableBystander,
   historyAnswerCanBeObtained,
+  pickCollateralVoice,
   CATEGORY_LABELS,
   SAMPLE_CATEGORIES,
   type HistoryCategory,
@@ -105,25 +106,35 @@ export function VoiceHistoryPanel({ caseData, currentVitals, isInArrest, applied
 
     let answer: string | null;
     let attribution: 'patient' | 'system' = 'patient';
+    // WHO is answering — shown as a label on the bubble so the student can see
+    // at a glance whether the line came from the patient or which bystander.
+    const collateralSpeaker = canAskBystander
+      ? pickCollateralVoice(caseData.sceneInfo?.bystanders ?? '')
+      : 'Bystander';
+    let speaker = 'Patient';
     const askingBystander = askTarget === 'bystander' && canAskBystander;
     if (askingBystander) {
       answer = generateCollateralResponse(caseData, category);
       attribution = 'system';
+      speaker = collateralSpeaker;
     } else if (patientVoice.canVocalize) {
       answer = generatePatientResponse(caseData, category, responseContext);
+      speaker = 'Patient';
     } else {
       answer = generateCollateralResponse(caseData, category);
       attribution = 'system';
+      speaker = collateralSpeaker;
     }
 
     const answerTurn: HistoryTurn = {
       id: `${Date.now()}-a`,
       role: attribution,
-      text: answer ?? '(no answer available)',
+      text: answer ?? 'No response available.',
       category,
       timestamp: Date.now() + 1,
+      speaker,
     };
-    setTurns(prev => [...prev, studentTurn, answerTurn]);
+    setTurns(prev => [...prev, { ...studentTurn, speaker: 'You' }, answerTurn]);
 
     // Track coverage — only count classified (non-unknown) questions. Functional
     // update so rapid back-to-back questions can't clobber each other. The
@@ -202,6 +213,24 @@ export function VoiceHistoryPanel({ caseData, currentVitals, isInArrest, applied
     };
   }, [isActive]);
 
+  // When the patient cannot answer but a bystander is present, surface a
+  // one-shot system note so the auto-switch to collateral history is visible
+  // rather than silently redirecting answers to "A bystander".
+  const autoSwitchNoteShown = useRef(false);
+  useEffect(() => {
+    if (autoSwitchNoteShown.current) return;
+    if (!patientVoice.canVocalize && canAskBystander && turns.length === 0) {
+      autoSwitchNoteShown.current = true;
+      setTurns([{
+        id: `${Date.now()}-auto`,
+        role: 'system',
+        text: 'Patient cannot answer — asking the bystander for collateral history.',
+        timestamp: Date.now(),
+        speaker: canAskBystander ? pickCollateralVoice(caseData.sceneInfo?.bystanders ?? '') : 'Bystander',
+      }]);
+    }
+  }, [patientVoice.canVocalize, canAskBystander, turns.length, caseData]);
+
   const sampleCovered = SAMPLE_CATEGORIES.filter(c => obtained.has(c));
 
   return (
@@ -245,9 +274,12 @@ export function VoiceHistoryPanel({ caseData, currentVitals, isInArrest, applied
         </div>
       </CardHeader>
       <CardContent className="p-0">
-        <p className="border-b border-border/40 px-4 py-2 text-xs text-slate-300" role="status">
-          {patientVoice.communication.status}
-        </p>
+        <div className="border-b border-border/40 px-4 py-2 flex items-center justify-between gap-3 text-xs text-slate-300" role="status">
+          <p>{patientVoice.communication.status}</p>
+          <p className="shrink-0 text-[10px] uppercase tracking-[0.14em] text-slate-400">
+            Asking {askTarget === 'bystander' && canAskBystander ? (canAskBystander ? pickCollateralVoice(caseData.sceneInfo?.bystanders ?? '') : 'bystander') : 'patient'} · {askTarget === 'bystander' && canAskBystander ? 'not spoken' : patientVoice.canVocalize ? 'spoken' : 'not spoken'}
+          </p>
+        </div>
         {/* Coverage chips */}
         <div className="px-4 pt-3 pb-2 border-b border-border/40 flex flex-wrap gap-1.5">
           {SAMPLE_CATEGORIES.map(cat => {
@@ -308,11 +340,20 @@ export function VoiceHistoryPanel({ caseData, currentVitals, isInArrest, applied
                       : 'bg-card border border-border rounded-tl-sm'
                 }`}
               >
-                {turn.role === 'student' && turn.category && turn.category !== 'unknown' && (
-                  <p className="text-[9px] uppercase tracking-[0.16em] opacity-70 mb-0.5">
-                    {CATEGORY_LABELS[turn.category]}
-                  </p>
-                )}
+                {/* Speaker identity — the student must always know WHO is
+                    talking: themselves, the Patient, or which collateral voice. */}
+                <p className={`text-[9px] uppercase tracking-[0.16em] mb-0.5 font-semibold ${
+                  turn.role === 'student'
+                    ? 'opacity-70'
+                    : turn.role === 'system'
+                      ? 'text-amber-500'
+                      : 'text-blue-500'
+                }`}>
+                  {turn.speaker ?? (turn.role === 'student' ? 'You' : turn.role === 'system' ? 'Bystander' : 'Patient')}
+                  {turn.role === 'student' && turn.category && turn.category !== 'unknown' && (
+                    <span className="opacity-70 font-normal"> · {CATEGORY_LABELS[turn.category]}</span>
+                  )}
+                </p>
                 <p>{turn.text}</p>
               </div>
               {turn.role === 'student' && (
