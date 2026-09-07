@@ -1697,10 +1697,16 @@ function AppliedDefibPad({ site }: { site: 'sternal' | 'apical' }) {
 
 function AppliedIvDressing() {
   return (
-    <div data-applied-equipment="vascular-access" aria-label="Transparent cannula dressing secured at the forearm" className="pointer-events-none relative h-10 w-14 -rotate-12 animate-in fade-in zoom-in-75 duration-300">
-      <span className="absolute left-2 top-2 h-6 w-8 rounded-sm border border-white/90 bg-white/40 shadow-sm backdrop-blur-[1px]" />
-      <span className="absolute left-5 top-4 h-1.5 w-6 rounded-full bg-teal-500 shadow" />
-      <span className="absolute left-10 top-[18px] h-0.5 w-12 origin-left bg-slate-100 shadow-sm" />
+    <div data-applied-equipment="vascular-access" aria-label="IV cannula secured with transparent dressing, flushed extension and injection port" className="pointer-events-none relative h-12 w-16 -rotate-12 animate-in fade-in zoom-in-75 duration-300 drop-shadow-md">
+      {/* ponytail: insertion site — visible catheter under transparent dressing */}
+      <span className="absolute left-2 top-3 h-7 w-9 rounded-sm border border-white/95 bg-white/35 shadow-sm backdrop-blur-[2px]" />
+      <span className="absolute left-4 top-5 h-1 w-5 rounded-full bg-teal-600 shadow-[0_1px_2px_rgba(13,148,136,0.6)]" />
+      <span className="absolute left-[18px] top-[19px] h-1.5 w-2 rounded-sm bg-cyan-400/90 shadow-sm" />
+      {/* ponytail: extension tubing — realistic IV extension line */}
+      <span className="absolute left-10 top-[21px] h-0.5 w-14 origin-left bg-slate-100/95 shadow-[0_1px_1px_rgba(0,0,0,0.2)]" />
+      {/* ponytail: injection port — visible three-way or needleless connector */}
+      <span className="absolute left-[38px] top-[18px] h-2 w-1.5 rounded-sm border border-cyan-200 bg-cyan-100 shadow-sm" />
+      <span className="absolute left-[37px] top-[21px] h-0.5 w-0.5 rounded-full bg-cyan-400" />
     </div>
   );
 }
