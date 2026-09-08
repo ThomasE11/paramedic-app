@@ -3,12 +3,12 @@ import {
   Activity, Stethoscope,
   HeartPulse, Bone, Wind, Brain, Baby,
   HeartHandshake, Flame, FlaskConical, ArrowRight,
-  BookOpen, Monitor, Users, Search, SlidersHorizontal,
-  Timer, ShieldCheck, ClipboardCheck,
+  Search, SlidersHorizontal,
+  Timer, ShieldCheck,
   Waves, PersonStanding, Thermometer, Droplets, UsersRound, House, ScanSearch
 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { caseCategories, yearLevels } from '@/data/caseFilters';
+import { useTranslation } from 'react-i18next';
+import { caseCategories } from '@/data/caseFilters';
 
 const ClinicalReferenceDialog = lazy(() =>
   import('@/components/ClinicalReferenceDialog').then(m => ({ default: m.ClinicalReferenceDialog })),
@@ -44,49 +44,6 @@ const categoryFilters: Array<{ value: CategoryFilter; label: string }> = [
   { value: 'assessment', label: 'Assessment' },
   { value: 'procedures', label: 'Procedures' },
 ];
-
-const categoryToneClass: Record<CategoryTone, { accent: string; icon: string; chip: string }> = {
-  red: {
-    accent: 'from-red-500 via-rose-400 to-amber-300',
-    icon: 'bg-red-50 border-red-100 text-red-600 dark:bg-red-500/10 dark:border-red-400/20 dark:text-red-300',
-    chip: 'bg-red-50 text-red-700 border-red-100 dark:bg-red-500/10 dark:text-red-200 dark:border-red-400/20',
-  },
-  orange: {
-    accent: 'from-orange-500 via-amber-400 to-red-400',
-    icon: 'bg-orange-50 border-orange-100 text-orange-600 dark:bg-orange-500/10 dark:border-orange-400/20 dark:text-orange-300',
-    chip: 'bg-orange-50 text-orange-700 border-orange-100 dark:bg-orange-500/10 dark:text-orange-200 dark:border-orange-400/20',
-  },
-  sky: {
-    accent: 'from-sky-500 via-cyan-400 to-teal-300',
-    icon: 'bg-sky-50 border-sky-100 text-sky-600 dark:bg-sky-500/10 dark:border-sky-400/20 dark:text-sky-300',
-    chip: 'bg-sky-50 text-sky-700 border-sky-100 dark:bg-sky-500/10 dark:text-sky-200 dark:border-sky-400/20',
-  },
-  indigo: {
-    accent: 'from-indigo-500 via-blue-400 to-cyan-300',
-    icon: 'bg-indigo-50 border-indigo-100 text-indigo-600 dark:bg-indigo-500/10 dark:border-indigo-400/20 dark:text-indigo-300',
-    chip: 'bg-indigo-50 text-indigo-700 border-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-200 dark:border-indigo-400/20',
-  },
-  teal: {
-    accent: 'from-teal-500 via-emerald-400 to-lime-300',
-    icon: 'bg-teal-50 border-teal-100 text-teal-600 dark:bg-teal-500/10 dark:border-teal-400/20 dark:text-teal-300',
-    chip: 'bg-teal-50 text-teal-700 border-teal-100 dark:bg-teal-500/10 dark:text-teal-200 dark:border-teal-400/20',
-  },
-  rose: {
-    accent: 'from-rose-500 via-pink-400 to-orange-300',
-    icon: 'bg-rose-50 border-rose-100 text-rose-600 dark:bg-rose-500/10 dark:border-rose-400/20 dark:text-rose-300',
-    chip: 'bg-rose-50 text-rose-700 border-rose-100 dark:bg-rose-500/10 dark:text-rose-200 dark:border-rose-400/20',
-  },
-  amber: {
-    accent: 'from-amber-500 via-yellow-400 to-orange-300',
-    icon: 'bg-amber-50 border-amber-100 text-amber-600 dark:bg-amber-500/10 dark:border-amber-400/20 dark:text-amber-300',
-    chip: 'bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-500/10 dark:text-amber-200 dark:border-amber-400/20',
-  },
-  emerald: {
-    accent: 'from-emerald-500 via-teal-400 to-cyan-300',
-    icon: 'bg-emerald-50 border-emerald-100 text-emerald-600 dark:bg-emerald-500/10 dark:border-emerald-400/20 dark:text-emerald-300',
-    chip: 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-200 dark:border-emerald-400/20',
-  },
-};
 
 /**
  * Editorial copy per category slug. Counts are NOT stored here — they come from
@@ -269,6 +226,7 @@ const fallbackCopy: Omit<CategoryMeta, 'slug' | 'name' | 'count'> = {
 };
 
 export function LandingPage({ onRoleSelect, caseCount, caseCountsByCategory }: LandingPageProps) {
+  const { t } = useTranslation();
   const [categoryQuery, setCategoryQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all');
 
@@ -309,7 +267,7 @@ export function LandingPage({ onRoleSelect, caseCount, caseCountsByCategory }: L
   const visibleCaseCount = visibleCategories.reduce((total, cat) => total + cat.count, 0);
 
   return (
-    <div className="clinical-shell min-h-screen relative overflow-hidden">
+    <div className="clinical-shell training-landing min-h-screen relative overflow-hidden">
       <div className="clinical-ambient fixed inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true" />
 
       {/* Navigation */}
@@ -334,7 +292,7 @@ export function LandingPage({ onRoleSelect, caseCount, caseCountsByCategory }: L
               onClick={() => onRoleSelect('student')}
               className="px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground rounded-lg hover:bg-white/45 dark:hover:bg-white/10 transition-colors"
             >
-              Progress
+              {t('landing.practice', 'Practice')}
             </button>
             {/* Guidelines opens the in-app clinical reference (drug + guideline
                 library) via its dialog — the trigger is this nav button. */}
@@ -358,151 +316,50 @@ export function LandingPage({ onRoleSelect, caseCount, caseCountsByCategory }: L
               onClick={() => onRoleSelect('educator')}
               className="px-3 py-1.5 text-xs font-medium text-white btn-primary rounded-lg"
             >
-              New Case
+              {t('landing.educatorShort', 'For educators')}
             </button>
           </div>
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <section className="pt-32 pb-16 relative z-10">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="max-w-3xl mx-auto text-center mb-14">
-            {/* Status badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass mb-7 gentle-float">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-xs font-medium text-muted-foreground">{caseCount}+ clinical scenarios available</span>
-            </div>
-
-            {/* Heading */}
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight mb-5 leading-[1.1]">
-              Master emergency<br />
-              <span className="gradient-text">clinical decisions</span>
-            </h1>
-            
-            <p className="text-base text-muted-foreground mb-8 leading-relaxed max-w-lg mx-auto">
-              Generate realistic paramedic training scenarios. From cardiac arrests to multi-casualty incidents — every case builds your clinical reasoning through the ABCDE approach.
-            </p>
-
-            {/* Stats */}
-            <div className="flex items-center justify-center gap-8 mb-10">
-              <div className="text-center">
-                <div className="text-3xl font-bold font-mono">
-                  {caseCount}<span className="text-cyan-600 dark:text-cyan-300">+</span>
-                </div>
-                <div className="text-[10px] text-muted-foreground font-medium mt-1 uppercase tracking-wider">
-                  Scenarios
-                </div>
-              </div>
-              <div className="w-px h-10 bg-border/80" />
-              <div className="text-center">
-                <div className="text-3xl font-bold font-mono">{categories.length}</div>
-                <div className="text-[10px] text-muted-foreground font-medium mt-1 uppercase tracking-wider">
-                  Categories
-                </div>
-              </div>
-              <div className="w-px h-10 bg-border/80" />
-              <div className="text-center">
-                <div className="text-3xl font-bold font-mono">{yearLevels.length}</div>
-                <div className="text-[10px] text-muted-foreground font-medium mt-1 uppercase tracking-wider">
-                  Year Levels
-                </div>
-              </div>
-            </div>
+      <main>
+      <section className="training-hero" aria-labelledby="training-title">
+        <div className="training-hero-copy">
+          <p className="training-eyebrow">{t('landing.eyebrow', 'Practice for the moments that matter')}</p>
+          <h1 id="training-title">{t('landing.title', 'Your next patient. Your next decision.')}</h1>
+          <p className="training-hero-description">{t('landing.description', 'Enter the scene. Listen to your patient, find the signs, and practise the care they need. Then review your decisions before the next call.')}</p>
+          <div className="training-hero-actions">
+            <button className="training-start" onClick={() => onRoleSelect('student')}>
+              {t('landing.start', 'Start training')} <ArrowRight aria-hidden="true" className="h-5 w-5" />
+            </button>
+            <button className="training-join" onClick={() => onRoleSelect('classroom-join')}>
+              {t('landing.join', 'Join a classroom')}
+            </button>
           </div>
-
-          {/* Role Selection Cards */}
-          <div className="max-w-2xl mx-auto mb-16">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Educator Card */}
-              <button 
-                onClick={() => onRoleSelect('educator')}
-                className="glass-strong rounded-2xl p-6 card-premium text-left group"
-              >
-                <div className="w-12 h-12 rounded-xl bg-cyan-500/10 flex items-center justify-center border border-cyan-300/50 mb-4 group-hover:scale-105 transition-transform">
-                  <Stethoscope className="w-6 h-6 text-cyan-700 dark:text-cyan-300" />
-                </div>
-                <h3 className="text-lg font-semibold mb-1">Educator Panel</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Generate cases, set objectives, run simulations, and guide debriefing sessions
-                </p>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
-                  <Badge variant="secondary" className="text-[10px]">Case generation</Badge>
-                  <Badge variant="secondary" className="text-[10px]">Assessment checklist</Badge>
-                </div>
-                <div className="flex items-center gap-1 text-cyan-700 dark:text-cyan-300 text-sm font-medium">
-                  Open Educator Panel <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </div>
-              </button>
-
-              {/* Student Card */}
-              <button 
-                onClick={() => onRoleSelect('student')}
-                className="glass-strong rounded-2xl p-6 card-premium text-left group"
-              >
-                <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-300/50 mb-4 group-hover:scale-105 transition-transform">
-                  <BookOpen className="w-6 h-6 text-emerald-600" />
-                </div>
-                <h3 className="text-lg font-semibold mb-1">Student Training</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Work through real scenarios with live vitals, apply treatments, and get performance feedback
-                </p>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
-                  <Badge variant="secondary" className="text-[10px]">Practice cases</Badge>
-                  <Badge variant="secondary" className="text-[10px]">Performance feedback</Badge>
-                </div>
-                <div className="flex items-center gap-1 text-emerald-600 text-sm font-medium">
-                  Start Training <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </div>
-              </button>
-
-              {/* Classroom Host Card */}
-              <button 
-                onClick={() => onRoleSelect('classroom-host')}
-                className="glass-strong rounded-2xl p-6 card-premium text-left group"
-              >
-                <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center border border-amber-300/50 mb-4 group-hover:scale-105 transition-transform">
-                  <Monitor className="w-6 h-6 text-amber-600" />
-                </div>
-                <h3 className="text-lg font-semibold mb-1">Classroom Host</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Host a live classroom session, broadcast cases to students, and control the simulation in real-time
-                </p>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
-                  <Badge variant="secondary" className="text-[10px]">Live broadcast</Badge>
-                  <Badge variant="secondary" className="text-[10px]">Student roster</Badge>
-                </div>
-                <div className="flex items-center gap-1 text-amber-600 text-sm font-medium">
-                  Host Session <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </div>
-              </button>
-
-              {/* Classroom Join Card */}
-              <button 
-                onClick={() => onRoleSelect('classroom-join')}
-                className="glass-strong rounded-2xl p-6 card-premium text-left group"
-              >
-                <div className="w-12 h-12 rounded-xl bg-sky-500/10 flex items-center justify-center border border-sky-300/50 mb-4 group-hover:scale-105 transition-transform">
-                  <Users className="w-6 h-6 text-sky-600" />
-                </div>
-                <h3 className="text-lg font-semibold mb-1">Join Classroom</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Join an instructor-led session, receive live cases, and participate in group simulations
-                </p>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
-                  <Badge variant="secondary" className="text-[10px]">Real-time sync</Badge>
-                  <Badge variant="secondary" className="text-[10px]">Group chat</Badge>
-                </div>
-                <div className="flex items-center gap-1 text-sky-600 text-sm font-medium">
-                  Join Session <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </div>
-              </button>
-            </div>
-          </div>
-
+          <p className="training-hero-note">{t('landing.note', 'From your first assessment to advanced clinical practice.')}</p>
         </div>
+        <figure className="training-hero-scene">
+          <img src="/scene-assets/asthma-villa-male-uae.png" alt={t('landing.sceneAlt', 'Paramedics approaching a patient in a home scenario')} fetchPriority="high" />
+          <figcaption>
+            <span>{t('landing.preview', 'A scene from the case library')}</span>
+            <strong>{t('landing.sceneCaption', 'Every encounter starts with a patient, not a diagnosis.')}</strong>
+          </figcaption>
+        </figure>
       </section>
-
+      <section className="training-path" aria-label={t('landing.path', 'Your learning journey')}>
+        {[
+          ['01', t('landing.assess', 'Assess'), t('landing.assessDetail', 'Read the scene. Ask, look, listen and feel.')],
+          ['02', t('landing.treat', 'Treat'), t('landing.treatDetail', 'Choose your equipment and deliver care.')],
+          ['03', t('landing.review', 'Reassess & reflect'), t('landing.reviewDetail', 'Follow the response. Learn from your decisions.')],
+        ].map(([number, title, detail]) => (
+          <div key={number}><span className="training-step-number">{number}</span><div><h2>{title}</h2><p>{detail}</p></div></div>
+        ))}
+      </section>
+      <div className="training-teaching">
+        <p>{t('landing.teaching', 'Teaching a group?')}</p>
+        <button onClick={() => onRoleSelect('educator')}>{t('landing.educator', 'Open educator panel')} <ArrowRight aria-hidden="true" className="h-4 w-4" /></button>
+        <button onClick={() => onRoleSelect('classroom-host')}>{t('landing.host', 'Host a classroom')} <ArrowRight aria-hidden="true" className="h-4 w-4" /></button>
+      </div>
       {/* Divider */}
       <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent max-w-6xl mx-auto" />
 
@@ -556,6 +413,7 @@ export function LandingPage({ onRoleSelect, caseCount, caseCountsByCategory }: L
                   <button
                     key={filter.value}
                     onClick={() => setCategoryFilter(filter.value)}
+                    aria-pressed={isActive}
                     className={`rounded-lg border px-3 py-2 text-xs font-semibold transition-all ${
                       isActive
                         ? 'border-slate-900 bg-slate-950 text-white shadow-sm dark:border-cyan-300/40 dark:bg-cyan-300 dark:text-slate-950'
@@ -569,61 +427,16 @@ export function LandingPage({ onRoleSelect, caseCount, caseCountsByCategory }: L
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+          <div className="training-library">
             {visibleCategories.map((cat) => {
               const Icon = cat.icon;
-              const tone = categoryToneClass[cat.tone];
               return (
-                <button
-                  key={cat.slug}
-                  onClick={() => onRoleSelect('student', cat.slug)}
-                  aria-label={`Start ${cat.name} training cases`}
-                  className="group relative min-h-[220px] overflow-hidden rounded-xl border border-white/60 bg-white/70 p-4 text-left shadow-[0_18px_45px_-34px_rgba(15,23,42,0.5)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-cyan-200/80 hover:bg-white/82 hover:shadow-[0_24px_54px_-34px_rgba(15,23,42,0.62)] dark:border-white/10 dark:bg-white/[0.055] dark:hover:bg-white/[0.085]"
-                >
-                  <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${tone.accent}`} />
-                  <div className="flex items-start justify-between gap-3 mb-4">
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center border ${tone.icon}`}>
-                      <Icon className="w-4 h-4" />
-                    </div>
-                    <div className="flex flex-col items-end gap-1">
-                      <span className="rounded-md bg-slate-900/90 px-2 py-1 text-[10px] font-semibold text-white dark:bg-white/90 dark:text-slate-950">
-                        {cat.count} {cat.count === 1 ? 'case' : 'cases'}
-                      </span>
-                      <span className={`rounded-full border px-2 py-0.5 text-[9px] font-semibold ${tone.chip}`}>
-                        {cat.track}
-                      </span>
-                    </div>
-                  </div>
-
-                  <h3 className="text-base font-semibold tracking-tight mb-1">{cat.name}</h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed min-h-[2.25rem]">{cat.summary}</p>
-
-                  <div className="mt-4 border-t border-slate-900/10 pt-3 dark:border-white/10">
-                    <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                      <ClipboardCheck className="w-3.5 h-3.5" />
-                      Practice focus
-                    </div>
-                    <p className="mt-1.5 text-xs leading-relaxed text-foreground/80">
-                      {cat.signal}
-                    </p>
-                  </div>
-
-                  <div className="mt-3 flex flex-wrap gap-1.5">
-                    {cat.focus.map((item) => (
-                      <span
-                        key={item}
-                        className="rounded-md border border-slate-900/10 bg-white/45 px-2 py-1 text-[10px] font-medium text-muted-foreground dark:border-white/10 dark:bg-white/[0.06]"
-                      >
-                        {item}
-                      </span>
-                    ))}
-                  </div>
-
-                  <div className="mt-4 flex items-center justify-end gap-3 border-t border-slate-900/10 pt-3 dark:border-white/10">
-                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-cyan-800 transition-colors group-hover:text-cyan-600 dark:text-cyan-200 dark:group-hover:text-cyan-100">
-                      Start <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
-                    </span>
-                  </div>
+                <button key={cat.slug} onClick={() => onRoleSelect('student', cat.slug)}
+                  aria-label={`Start ${cat.name} training cases`} className="training-library-row">
+                  <Icon aria-hidden="true" className="h-5 w-5" />
+                  <span><strong>{cat.name}</strong><span>{cat.summary}</span></span>
+                  <span className="training-library-count">{countsLoaded ? cat.count : '…'}</span>
+                  <ArrowRight aria-hidden="true" className="h-4 w-4" />
                 </button>
               );
             })}
@@ -647,6 +460,7 @@ export function LandingPage({ onRoleSelect, caseCount, caseCountsByCategory }: L
         </div>
       </section>
 
+      </main>
       {/* Footer */}
       <footer className="py-8 relative z-10 border-t border-white/45 dark:border-white/10">
         <div className="max-w-6xl mx-auto px-6 text-center">

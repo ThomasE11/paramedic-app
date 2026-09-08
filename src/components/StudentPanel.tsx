@@ -1625,7 +1625,7 @@ export function StudentPanel({
   const [, setActiveHistoryStep] = useState<'signs-symptoms' | 'allergies' | 'medications' | 'past-medical' | 'last-meal' | 'events-leading' | null>(null);
   const [activeManagementTab, setActiveManagementTab] = useState<ManagementTab>('airway');
   const [openManagementBag, setOpenManagementBag] = useState<ManagementTab | null>('airway');
-  const [careRailMode, setCareRailMode] = useState<'treat' | 'assess' | 'history'>('treat');
+  const [careRailMode, setCareRailMode] = useState<'treat' | 'assess' | 'history'>('assess');
   const [medSearch, setMedSearch] = useState('');
 
   // Voice-first mode (senior students) — run the whole case hands-free.
@@ -1649,7 +1649,7 @@ export function StudentPanel({
   const openSuggestedTreatment = useCallback((suggestion: FindingTreatmentSuggestion) => {
     const treatment = TREATMENTS.find(item => item.id === suggestion.treatmentId);
     if (!treatment) return;
-    setCareRailMode('treat');
+    setCareRailMode('assess');
     const bagKey = bagKeyForTreatment(treatment);
     setActiveManagementTab(bagKey);
     setOpenManagementBag(bagKey);
@@ -2640,7 +2640,7 @@ export function StudentPanel({
     const recommendedBag = recommendedManagementTabForCase(newCase);
     setActiveManagementTab(recommendedBag);
     setOpenManagementBag(recommendedBag);
-    setCareRailMode('treat');
+    setCareRailMode('assess');
     setMedSearch('');
     const initialVitals = buildInitialVitalsFromCase(newCase);
     setCurrentVitals(initialVitals);
@@ -4826,32 +4826,16 @@ export function StudentPanel({
               <div className="space-y-3">
                 <div className="inline-flex items-center gap-2 rounded-full border border-brand-500/20 bg-brand-500/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.24em] text-brand-700 dark:text-brand-300">
                   <Activity className="h-3.5 w-3.5" />
-                  Training mission board
+                  {t('landing.practice', 'Practice')}
                 </div>
                 <div>
                   <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-4xl">Choose the next patient encounter</h2>
                   <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-                    Build a focused simulation by level, presentation, skill, kit, and time pressure before the radio call starts.
+                    {t('encounter.setup', 'Choose your training level and a presentation. Customise the focus if you need to, then take the call.')}
                   </p>
                 </div>
               </div>
-              <div className="space-y-2 sm:min-w-[360px]">
-                <div className="grid grid-cols-3 gap-2 text-center">
-                  <div className="rounded-2xl border border-border/50 bg-white/65 px-3 py-3 shadow-sm dark:bg-white/[0.04]">
-                    <div className="text-xl font-bold text-foreground">{missionCandidateCases.length}</div>
-                    <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">matched</div>
-                  </div>
-                  <div className="rounded-2xl border border-border/50 bg-white/65 px-3 py-3 shadow-sm dark:bg-white/[0.04]">
-                    <div className="truncate text-sm font-bold text-foreground">{yearLevels.find(year => year.value === selectedYear)?.label}</div>
-                    <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">cohort</div>
-                  </div>
-                  <div className="rounded-2xl border border-border/50 bg-white/65 px-3 py-3 shadow-sm dark:bg-white/[0.04]">
-                    <div className="text-sm font-bold text-foreground">{missionDurationShortLabel}</div>
-                    <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">pace</div>
-                  </div>
-                </div>
-                <p className="text-center text-[11px] font-medium text-muted-foreground">{cohortScopeLabel}</p>
-              </div>
+
             </div>
 
             <div className="grid gap-5 lg:grid-cols-[minmax(0,1.45fr)_minmax(340px,0.85fr)]">
@@ -4868,6 +4852,7 @@ export function StudentPanel({
                     {selectionModeOptions.map(({ mode, label, icon: ModeIcon, desc }) => (
                       <button
                         key={mode}
+                        aria-pressed={selectionMode === mode}
                         onClick={() => setSelectionMode(mode)}
                         className={`group flex min-h-[104px] flex-col items-start justify-between rounded-2xl border p-3 text-left transition-all duration-300 ${
                           selectionMode === mode
@@ -4899,6 +4884,7 @@ export function StudentPanel({
                     {yearLevels.map(year => (
                       <button
                         key={year.value}
+                        aria-pressed={selectedYear === year.value}
                         onClick={() => setSelectedYear(year.value as StudentYear)}
                         className={`flex items-center justify-center gap-2 rounded-2xl border px-3 py-3 text-sm font-semibold transition-all duration-300 ${
                           selectedYear === year.value
@@ -4969,7 +4955,9 @@ export function StudentPanel({
                       </div>
                     </div>
 
-                    <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_280px]">
+                    <details className="practice-customisation rounded-2xl border border-border/60 p-4">
+                      <summary className="cursor-pointer py-2 text-sm font-semibold">{t('encounter.customise', 'Customise practice')} <span className="font-normal text-muted-foreground">· {missionDurationShortLabel}</span></summary>
+                    <div className="mt-4 grid gap-5 xl:grid-cols-[minmax(0,1fr)_280px]">
                       <div className="rounded-[24px] border border-white/60 bg-white/65 p-4 shadow-[0_18px_70px_-55px_rgba(15,23,42,0.5)] backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/50 sm:p-5">
                         <div className="mb-3">
                           <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-muted-foreground">Core skill</p>
@@ -4979,6 +4967,7 @@ export function StudentPanel({
                           {skillFocusOptions.map(({ value, label, desc, icon: SkillIcon }) => (
                             <button
                               key={value}
+                              aria-pressed={skillFocus === value}
                               onClick={() => setSkillFocus(value)}
                               className={`min-h-[86px] rounded-2xl border p-3 text-left transition-all duration-300 ${
                                 skillFocus === value
@@ -5001,6 +4990,7 @@ export function StudentPanel({
                             {equipmentFocusOptions.map(({ value, label, icon: EquipmentIcon }) => (
                               <button
                                 key={value}
+                                aria-pressed={equipmentFocus === value}
                                 onClick={() => setEquipmentFocus(value)}
                                 className={`flex items-center gap-2 rounded-xl border px-2.5 py-2 text-xs font-bold transition-all ${
                                   equipmentFocus === value
@@ -5021,6 +5011,7 @@ export function StudentPanel({
                             {timeboxOptions.map(option => (
                               <button
                                 key={option.value}
+                                aria-pressed={timebox === option.value}
                                 onClick={() => setTimebox(option.value)}
                                 className={`rounded-xl border px-2.5 py-2 text-left transition-all ${
                                   timebox === option.value
@@ -5036,6 +5027,7 @@ export function StudentPanel({
                         </div>
                       </div>
                     </div>
+                    </details>
                   </div>
                 )}
 
@@ -5153,7 +5145,7 @@ export function StudentPanel({
                         <span className="rounded-full bg-cyan-300/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-100">{missionDurationLabel}</span>
                       </div>
                       <h4 className="text-lg font-bold leading-tight text-white">{getStudentCaseTitle(missionPreviewCase)}</h4>
-                      <p className="mt-3 text-sm leading-relaxed text-white/65">{missionPreviewCase.dispatchInfo?.callReason}</p>
+                      <p className="mt-3 text-sm leading-relaxed text-slate-200">{missionPreviewCase.dispatchInfo?.location}</p>
                     </div>
 
                     {selectionMode === 'standard' ? (
@@ -6116,8 +6108,8 @@ export function StudentPanel({
               <div className="tactical-assessment-rail order-3 space-y-4">
                 <div className="care-rail-mode-switch" role="tablist" aria-label="Patient management mode">
                   {([
-                    ['treat', 'Treat'],
                     ['assess', 'Assess'],
+                    ['treat', 'Treat'],
                     ['history', 'History'],
                   ] as const).map(([mode, label]) => (
                     <button

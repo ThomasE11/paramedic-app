@@ -1,4 +1,28 @@
 {
+  "encounter": { "setup": "Choose your training level and a presentation. Customise the focus if you need to, then take the call.", "customise": "Customise practice" },
+  "landing": {
+    "eyebrow": "Practice for the moments that matter",
+    "title": "Your next patient. Your next decision.",
+    "description": "Enter the scene. Listen to your patient, find the signs, and practise the care they need. Then review your decisions before the next call.",
+    "start": "Start training",
+    "join": "Join a classroom",
+    "note": "From your first assessment to advanced clinical practice.",
+    "sceneAlt": "Paramedics approaching a patient in a home scenario",
+    "preview": "A scene from the case library",
+    "sceneCaption": "Every encounter starts with a patient, not a diagnosis.",
+    "path": "Your learning journey",
+    "assess": "Assess",
+    "assessDetail": "Read the scene. Ask, look, listen and feel.",
+    "treat": "Treat",
+    "treatDetail": "Choose your equipment and deliver care.",
+    "review": "Reassess & reflect",
+    "reviewDetail": "Follow the response. Learn from your decisions.",
+    "teaching": "Teaching a group?",
+    "educator": "Open educator panel",
+    "host": "Host a classroom",
+    "practice": "Practice",
+    "educatorShort": "For educators"
+  },
   "app": {
     "name": "ParaMedic Studio",
     "tagline": "UAE Paramedic Case Simulator",

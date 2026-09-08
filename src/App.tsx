@@ -94,6 +94,7 @@ function App() {
       <>
         <LandingPage
           onRoleSelect={(role, category) => {
+            window.scrollTo({ top: 0, behavior: 'instant' });
             setPendingStudentCategory(category ?? 'all');
             ep.setUserRole(role);
           }}
