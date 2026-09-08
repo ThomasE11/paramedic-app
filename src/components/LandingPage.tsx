@@ -268,8 +268,6 @@ export function LandingPage({ onRoleSelect, caseCount, caseCountsByCategory }: L
 
   return (
     <div className="clinical-shell training-landing min-h-screen relative overflow-hidden">
-      <div className="clinical-ambient fixed inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true" />
-
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 nav-blur border-b border-white/45 dark:border-white/10 safe-top">
         <div className="max-w-6xl mx-auto px-6 flex items-center justify-between h-14">
@@ -330,7 +328,7 @@ export function LandingPage({ onRoleSelect, caseCount, caseCountsByCategory }: L
           <p className="training-hero-description">{t('landing.description', 'Enter the scene. Listen to your patient, find the signs, and practise the care they need. Then review your decisions before the next call.')}</p>
           <div className="training-hero-actions">
             <button className="training-start" onClick={() => onRoleSelect('student')}>
-              {t('landing.start', 'Start training')} <ArrowRight aria-hidden="true" className="h-5 w-5" />
+              {t('landing.start', 'Start training')} <ArrowRight aria-hidden="true" className="rtl:rotate-180 h-5 w-5" />
             </button>
             <button className="training-join" onClick={() => onRoleSelect('classroom-join')}>
               {t('landing.join', 'Join a classroom')}
@@ -357,8 +355,8 @@ export function LandingPage({ onRoleSelect, caseCount, caseCountsByCategory }: L
       </section>
       <div className="training-teaching">
         <p>{t('landing.teaching', 'Teaching a group?')}</p>
-        <button onClick={() => onRoleSelect('educator')}>{t('landing.educator', 'Open educator panel')} <ArrowRight aria-hidden="true" className="h-4 w-4" /></button>
-        <button onClick={() => onRoleSelect('classroom-host')}>{t('landing.host', 'Host a classroom')} <ArrowRight aria-hidden="true" className="h-4 w-4" /></button>
+        <button onClick={() => onRoleSelect('educator')}>{t('landing.educator', 'Open educator panel')} <ArrowRight aria-hidden="true" className="rtl:rotate-180 h-4 w-4" /></button>
+        <button onClick={() => onRoleSelect('classroom-host')}>{t('landing.host', 'Host a classroom')} <ArrowRight aria-hidden="true" className="rtl:rotate-180 h-4 w-4" /></button>
       </div>
       {/* Divider */}
       <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent max-w-6xl mx-auto" />
@@ -436,7 +434,7 @@ export function LandingPage({ onRoleSelect, caseCount, caseCountsByCategory }: L
                   <Icon aria-hidden="true" className="h-5 w-5" />
                   <span><strong>{cat.name}</strong><span>{cat.summary}</span></span>
                   <span className="training-library-count">{countsLoaded ? cat.count : '…'}</span>
-                  <ArrowRight aria-hidden="true" className="h-4 w-4" />
+                  <ArrowRight aria-hidden="true" className="rtl:rotate-180 h-4 w-4" />
                 </button>
               );
             })}

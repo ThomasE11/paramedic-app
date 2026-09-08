@@ -15,6 +15,7 @@
  */
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { vitalsEqual } from '@/data/treatmentEffects';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from "@/components/ui/progress";
@@ -1441,6 +1442,7 @@ export function VitalSignsMonitor({
   overridePacerState,
   autoPowerOn = false,
 }: VitalSignsMonitorProps) {
+  const { t } = useTranslation();
   const padsAttached = hasAttachedDefibrillatorPads(appliedTreatments);
   const [currentVitals, setCurrentVitals] = useState<VitalSigns>(initialVitals);
   const [visibleVitals, setVisibleVitals] = useState<Set<string>>(new Set());
@@ -2955,8 +2957,10 @@ export function VitalSignsMonitor({
           {powerOn && bootPhase === 'ready' && (
             <>
               {/* PARAMETER BAR — Click any vital to toggle it on (triggers assessment + sound) */}
-              <div className="flex items-stretch border-b border-gray-800/50 overflow-x-auto scrollbar-hide" style={{ background: 'rgba(0,10,0,0.6)' }}>
+              <div className="monitor-measurement-controls flex items-stretch border-b border-gray-800/50 overflow-x-auto scrollbar-hide" style={{ background: 'rgba(0,10,0,0.6)' }}>
                 <div className="flex-1 px-1.5 py-0.5 border-r border-gray-800/30 text-center cursor-pointer hover:bg-yellow-900/20 transition-colors"
+                  role="button" tabIndex={0} aria-label={t('measurementControls.respiratory_rate', 'Measure respiratory rate')}
+                  onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.currentTarget.click(); } }}
                   onClick={() => {
                     if (!visibleVitals.has('respiration') && !activeAssessments.has('respiration')) {
                       startAssessment('respiration', ASSESSMENT_METHODS.respiration[0]);
@@ -2977,6 +2981,8 @@ export function VitalSignsMonitor({
                   )}
                 </div>
                 <div className="flex-1 px-1.5 py-0.5 border-r border-gray-800/30 text-center cursor-pointer hover:bg-white/5 transition-colors"
+                  role="button" tabIndex={0} aria-label={t('measurementControls.blood_pressure', 'Measure blood pressure')}
+                  onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.currentTarget.click(); } }}
                   onClick={() => {
                     if (!activeAssessments.has('bp')) {
                       startAssessment('bp', ASSESSMENT_METHODS.bp[1], true);
@@ -2997,6 +3003,8 @@ export function VitalSignsMonitor({
                   )}
                 </div>
                 <div className="flex-1 px-1.5 py-0.5 border-r border-gray-800/30 text-center cursor-pointer hover:bg-orange-900/20 transition-colors"
+                  role="button" tabIndex={0} aria-label={t('measurementControls.temperature', 'Measure temperature')}
+                  onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.currentTarget.click(); } }}
                   onClick={() => {
                     if (!visibleVitals.has('temperature') && !activeAssessments.has('temperature') && currentVitals.temperature) {
                       startAssessment('temperature', ASSESSMENT_METHODS.temperature[0]);
@@ -3017,6 +3025,8 @@ export function VitalSignsMonitor({
                   )}
                 </div>
                 <div className="flex-1 px-1.5 py-0.5 border-r border-gray-800/30 text-center cursor-pointer hover:bg-fuchsia-900/20 transition-colors"
+                  role="button" tabIndex={0} aria-label={t('measurementControls.end_tidal_CO2', 'Measure end-tidal CO2')}
+                  onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.currentTarget.click(); } }}
                   onClick={() => {
                     if (!visibleVitals.has('etco2') && etco2Value) {
                       setVisibleVitals(prev => { const next = new Set(prev); next.add('etco2'); return next; });
@@ -3029,6 +3039,8 @@ export function VitalSignsMonitor({
                   </span>
                 </div>
                 <div className="flex-1 px-1.5 py-0.5 border-r border-gray-800/30 text-center cursor-pointer hover:bg-cyan-900/20 transition-colors"
+                  role="button" tabIndex={0} aria-label={t('measurementControls.oxygen_saturation', 'Measure oxygen saturation')}
+                  onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.currentTarget.click(); } }}
                   onClick={() => {
                     // Allow re-assessment even after the probe is connected —
                     // essential for seeing SpO2 respond to oxygen / CPAP /
@@ -3054,6 +3066,8 @@ export function VitalSignsMonitor({
                   )}
                 </div>
                 <div className="px-2 py-0.5 text-center min-w-[55px] cursor-pointer hover:bg-green-900/20 transition-colors"
+                  role="button" tabIndex={0} aria-label={t('measurementControls.heart_rate', 'Measure heart rate')}
+                  onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.currentTarget.click(); } }}
                   onClick={() => {
                     if (!visibleVitals.has('pulse') && !activeAssessments.has('pulse')) {
                       startAssessment('pulse', ASSESSMENT_METHODS.pulse[0]);
@@ -3078,6 +3092,8 @@ export function VitalSignsMonitor({
                 </div>
                 {/* Extra vitals: GCS, BGL — always visible so students can initiate assessment */}
                 <div className="flex-1 px-2 py-0.5 border-l border-gray-800/30 text-center cursor-pointer hover:bg-gray-700/20 transition-colors"
+                  role="button" tabIndex={0} aria-label={t('measurementControls.GCS', 'Measure GCS')}
+                  onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.currentTarget.click(); } }}
                   onClick={() => {
                     if (!visibleVitals.has('gcs') && !activeAssessments.has('gcs')) {
                       startAssessment('gcs', ASSESSMENT_METHODS.gcs[0]);
@@ -3098,6 +3114,8 @@ export function VitalSignsMonitor({
                   )}
                 </div>
                 <div className="flex-1 px-2 py-0.5 border-l border-gray-800/30 text-center cursor-pointer hover:bg-purple-900/20 transition-colors"
+                  role="button" tabIndex={0} aria-label={t('measurementControls.blood_glucose', 'Measure blood glucose')}
+                  onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.currentTarget.click(); } }}
                   onClick={() => {
                     if (!visibleVitals.has('bloodGlucose') && !activeAssessments.has('bloodGlucose')) {
                       startAssessment('bloodGlucose', ASSESSMENT_METHODS.glucose[0]);

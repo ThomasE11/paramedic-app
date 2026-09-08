@@ -918,20 +918,6 @@ function RoadmapDebriefPanel({
         ))}
       </div>
       <div className="roadmap-debrief-grid">
-        <div className="roadmap-vitals-stack">
-          {[
-            { label: 'HR', value: currentVitals?.pulse ? `${currentVitals.pulse}` : '--', unit: 'bpm' },
-            { label: 'SpO2', value: currentVitals?.spo2 ? `${currentVitals.spo2}` : '--', unit: '%' },
-            { label: 'RR', value: currentVitals?.respiration ? `${currentVitals.respiration}` : '--', unit: '/min' },
-            { label: 'BP', value: currentVitals?.bp || '--', unit: 'mmHg' },
-          ].map(vital => (
-            <div key={vital.label}>
-              <span>{vital.label}</span>
-              <strong>{vital.value}</strong>
-              <em>{vital.unit}</em>
-            </div>
-          ))}
-        </div>
         <div className="roadmap-key-actions">
           <p>Key actions</p>
           {[
@@ -1649,7 +1635,7 @@ export function StudentPanel({
   const openSuggestedTreatment = useCallback((suggestion: FindingTreatmentSuggestion) => {
     const treatment = TREATMENTS.find(item => item.id === suggestion.treatmentId);
     if (!treatment) return;
-    setCareRailMode('assess');
+    setCareRailMode('treat');
     const bagKey = bagKeyForTreatment(treatment);
     setActiveManagementTab(bagKey);
     setOpenManagementBag(bagKey);
@@ -3819,49 +3805,17 @@ export function StudentPanel({
     // palpation. Physical reactions belong to the specific interaction; the
     // reported pain score must come from the patient/case and treatment state.
 
-    // Reveal vitals on the LIFEPAK monitor when ABCDE assessment exposes them
-    if (currentCase) {
-      const toReveal = new Set<string>();
-      // Extra assessment step credit: ABCDE D/E expose BGL and TEMP, which blocks the
-      // LIFEPAK assess buttons — award the scoring step credit automatically here instead.
-      const extraSteps: AssessmentStepId[] = [];
-      if (stepId === 'disability') {
-        if (currentCase.abcde?.disability?.gcs) toReveal.add('gcs');
-        if (currentCase.abcde?.disability?.bloodGlucose != null) {
-          toReveal.add('bloodGlucose');
-          extraSteps.push('blood-glucose');
-        }
-      }
-      if (stepId === 'exposure') {
-        if (currentCase.abcde?.exposure?.temperature != null) {
-          toReveal.add('temperature');
-          extraSteps.push('temperature');
-        }
-      }
-      if (stepId === 'pain-assessment' && !monitorRevealedVitals.has('painScore')) {
-        toReveal.add('painScore');
-      }
-      // Award credit for co-assessed steps (BGL, TEMP) found via ABCDE
-      for (const extra of extraSteps) {
-        if (!assessmentTrackerRef.current?.performed.some(p => p.stepId === extra)) {
-          const { tracker: extraTracker } = performAssessmentStep(
-            assessmentTrackerRef.current!,
-            extra,
-            currentCase,
-            caseStartTime,
-            currentVitals,
-          );
-          assessmentTrackerRef.current = extraTracker;
-          setAssessmentTracker(extraTracker);
-        }
-      }
-      if (toReveal.size > 0) {
-        setMonitorRevealedVitals(prev => {
-          const next = new Set(prev);
-          toReveal.forEach(v => next.add(v));
-          return next;
-        });
-      }
+    // Opening an ABCDE section is not a glucose test or a temperature
+    // measurement. Only the specific completed assessment reveals a value;
+    // the bedside monitor keeps its own request/acquisition state.
+    const assessedVitalByStep: Partial<Record<AssessmentStepId, string>> = {
+      'blood-glucose': 'bloodGlucose',
+      temperature: 'temperature',
+      'pain-assessment': 'painScore',
+    };
+    const assessedVital = assessedVitalByStep[stepId];
+    if (assessedVital) {
+      setMonitorRevealedVitals(previous => new Set([...previous, assessedVital]));
     }
 
     const newlyReassessedTreatmentIds = deriveTreatmentReassessmentMatches(stepId, appliedTreatmentIds)
