@@ -861,7 +861,7 @@ function LandmarkMarkers({
         // 'posterior' lives on the back, which the front-facing sampler can't
         // resolve, so it keeps its authored anchor.
         const sampleMarkerPosition = sampler && marker.region !== 'posterior-logroll'
-          ? () => sampler(marker.position[0], marker.position[1], { coordinateSpace: marker.anchorSpace ?? 'author' })
+          ? () => sampler(marker.position[0], marker.position[1], { coordinateSpace: marker.anchorSpace ?? 'author', anatomicalSite: marker.actionId })
           : undefined;
         const pos: [number, number, number] = sampleMarkerPosition?.() ?? marker.position;
         const isDetail = marker.level === 'detail';
@@ -4086,7 +4086,17 @@ function getTreatmentBayCameraFocus(
   patientScale = 1,
 ) {
   const cameraScale = Math.max(0.6, Math.min(1, patientScale));
-  if (posture === 'tripod' || posture === 'seated' || mobility === 'standing' || mobility === 'pacing') {
+  if (mobility === 'pacing') {
+    // Frame the whole walking lane, not just the starting pose. The patient
+    // approaches the camera on each pass; torso-centred seated framing cuts
+    // off the head at that end of the route.
+    const target: [number, number, number] = [0.24, 0.72 * patientScale, 0.55];
+    return {
+      pos: [target[0], target[1] + 0.3 * cameraScale, target[2] + 3.95 * cameraScale] as [number, number, number],
+      target,
+    };
+  }
+  if (posture === 'tripod' || posture === 'seated' || mobility === 'standing') {
     // Keep the whole seated body inside the unobstructed part of the viewport.
     // The bottom care ribbon consumes part of the Canvas, so a torso-centred
     // portrait cropped both feet and made pedal assessment impossible from the
@@ -6354,7 +6364,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
         <div className={`patient-model-canvas-shell relative min-w-0 overflow-hidden ${patientFirstExamLayout ? 'patient-first-canvas' : ''} ${activeRegion ? 'bg-slate-100/35 dark:bg-slate-950/20' : 'h-[320px] sm:h-[380px] lg:h-[420px]'}`}>
           <div className={`patient-model-canvas-stage relative min-w-0 overflow-hidden ${patientFirstExamLayout ? 'patient-first-canvas-stage' : activeRegion ? 'h-[430px] sm:h-[470px]' : 'h-full'}`}>
             <Canvas
-              camera={{ position: overviewCameraFocus.pos, fov: useTreatmentBayPresentation ? 34 : 34, near: 0.05, far: 200 }}
+              camera={{ position: overviewCameraFocus.pos, fov: treatmentBayOverviewEnabled && patientMobility === 'pacing' ? 48 : 34, near: 0.05, far: 200 }}
               dpr={Math.min(window.devicePixelRatio, 2)}
               frameloop="always"
               // One standard PCF shadow map for the surgical key light;
@@ -6635,10 +6645,12 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 zoomSpeed={0.65}
                 minDistance={activeRegion ? 0.7 : 2}
                 maxDistance={cameraOrbitSafety.maxDistance}
-                minAzimuthAngle={cameraOrbitSafety.minAzimuthAngle - 0.2}
-                maxAzimuthAngle={cameraOrbitSafety.maxAzimuthAngle + 0.2}
+                minAzimuthAngle={cameraOrbitSafety.minAzimuthAngle}
+                maxAzimuthAngle={cameraOrbitSafety.maxAzimuthAngle}
                 minPolarAngle={Math.PI * 0.15}
-                maxPolarAngle={Math.PI * 0.85}
+                // The focal point is on the patient, above their support.
+                // Never orbit below that plane into the road/floor underside.
+                maxPolarAngle={Math.PI / 2 - 0.05}
                 onStart={cancelCameraAnimation}
               />
             </Canvas>
@@ -6808,7 +6820,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
       </div>
 
       {/* Controls + footer */}
-      <div className="relative z-30 flex items-center justify-between px-3 py-1.5 bg-white/50 dark:bg-black/20 border-t border-border/30">
+      <div className="patient-exam-footer relative flex flex-wrap items-center justify-between gap-2 px-3 py-2 border-t border-border/30">
         <p className="text-[9px] text-muted-foreground">
           {activeRegion
             ? 'Work inside the patient frame: choose a technique, watch the anatomy, then reassess.'

@@ -705,7 +705,9 @@ export function TreatmentBayEnvironment({
       {/* Arrival scenes hide the trolley until the crew loads the patient —
           including outdoor variants, otherwise stretcher-load is invisible. */}
       {patientSupportSurface === 'stretcher' && <Stretcher />}
-      {isClinic && showPatientSeat && <ClinicalPatientSeat />}
+      {/* Home/public/heat and road scenes author their own seating. Other
+          locations still need a support under a seated patient's pelvis. */}
+      {showPatientSeat && (isClinic || variant === 'industrial' || variant === 'fire' || variant === 'water') && <ClinicalPatientSeat />}
       {(patientSupportSurface === 'bed' || patientSupportSurface === 'sofa') && (
         <ScenePatientSupport kind={patientSupportSurface} />
       )}

@@ -43,8 +43,8 @@ export function cameraOrbitSafetyForEnvironment(variant: EnvironmentVariant): Ca
     // Clamp azimuth to keep camera within room width, clamp distance to stay in front wall
     // and ceiling buffer, use polar-angle limits for floor/ceiling clearance.
     return {
-      minAzimuthAngle: -Math.PI / 2.5,
-      maxAzimuthAngle: Math.PI / 2.5,
+      minAzimuthAngle: -Math.PI / 4,
+      maxAzimuthAngle: Math.PI / 4,
       maxDistance: 4.0,
       minPolarAngle: Math.PI / 2 - 0.12, // slightly below eye level but with buffer
       maxPolarAngle: Math.PI / 2 + 0.1,  // above floor plane

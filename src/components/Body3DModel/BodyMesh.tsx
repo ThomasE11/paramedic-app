@@ -29,11 +29,12 @@ import { applyWoundsToTextures } from './WoundLayer';
 import { injuryRegionTo3D, type BodyInjury } from '@/lib/injuryMap';
 import { LifeSigns } from './LifeSigns';
 import { createFaceAttachment } from './patientAttachments';
+import { createPatientPulseAnchors } from './patientPulseAnchors';
 import { IdleAnimations, type IdleCues } from './IdleAnimations';
 import { getBreathPhase01, setBreathClock } from '@/lib/breathClock';
 import { computeIdleLimbMotion, createIdleLimbMotion } from '@/lib/idleLimbMotion';
+import { patientWalkingPath } from '@/lib/patientWalkingPath';
 import {
-  patientPacingTransform,
   patientSkeletalAction,
   patientArmRestRadians,
   patientForearmRestRadians,
@@ -62,6 +63,7 @@ export interface SurfaceSamplerOptions {
    * must not be scaled a second time.
    */
   coordinateSpace?: SurfaceSamplerSpace;
+  anatomicalSite?: string;
 }
 
 export type SurfaceSampler = (
@@ -789,6 +791,7 @@ function buildSurfaceSampler(root: THREE.Object3D | null, presentationRoot?: THR
     }
   });
   if (!mesh) return null;
+  const pulseAnchor = createPatientPulseAnchors(mesh as THREE.SkinnedMesh);
   const posAttr = ((mesh as THREE.Mesh).geometry as THREE.BufferGeometry).attributes.position as THREE.BufferAttribute;
   const mw = (mesh as THREE.Mesh).matrixWorld;
   const N = posAttr.count;
@@ -823,6 +826,8 @@ function buildSurfaceSampler(root: THREE.Object3D | null, presentationRoot?: THR
   const PROUD = 0.03 * s; // lift the label just off the skin toward the camera
 
   return (xInput: number, yInput: number, options?: SurfaceSamplerOptions): [number, number, number] => {
+    const pulse = options?.anatomicalSite ? pulseAnchor(options.anatomicalSite) : null;
+    if (pulse) return pulse;
     const useMeshSpace = options?.coordinateSpace === 'mesh';
     const x = useMeshSpace ? xInput : cx + xInput * (halfW / AUTHOR_HALFW);
     const y = useMeshSpace ? yInput : minY + (yInput / AUTHOR_H) * H;
@@ -1605,7 +1610,7 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
     const root = meshRef.current;
     if (root && treatmentBayPresentation && mobility === 'pacing' && !unconscious) {
       locomotionTimeRef.current += Math.min(delta, 0.05);
-      const pace = patientPacingTransform(locomotionTimeRef.current);
+      const pace = patientWalkingPath(locomotionTimeRef.current);
       root.position.set(
         treatmentBayTransform.position[0] + pace.x,
         treatmentBayTransform.position[1],

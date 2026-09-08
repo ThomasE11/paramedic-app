@@ -14,7 +14,7 @@
  */
 import { Suspense, useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { useTexture } from '@react-three/drei';
+import { useGLTF, useTexture } from '@react-three/drei';
 import * as THREE from 'three';
 import { RectAreaLightUniformsLib } from 'three/examples/jsm/lights/RectAreaLightUniformsLib.js';
 import type { EnvironmentVariant } from '@/lib/sceneEnvironment';
@@ -924,10 +924,25 @@ function HeatScene({ shadowsEnabled, showPatientSeat }: { shadowsEnabled: boolea
 // Roadside — open air. Asphalt with lane markings, kerb, traffic cones, the
 // ambulance's headlights raking in from behind the scene. No walls/ceiling.
 // ---------------------------------------------------------------------------
-function RoadsideScene({ shadowsEnabled }: { shadowsEnabled: boolean }) {
+function VehiclePatientSeat() {
+  const { scene } = useGLTF('/models/vehicle-patient-seat.glb');
+  const seat = useMemo(() => {
+    const clone = scene.clone(true);
+    clone.traverse(object => {
+      object.raycast = NO_RAYCAST;
+      object.castShadow = true;
+      object.receiveShadow = true;
+    });
+    return clone;
+  }, [scene]);
+  return <primitive name="vehicle-patient-seat" object={seat} />;
+}
+
+function RoadsideScene({ shadowsEnabled, showPatientSeat }: { shadowsEnabled: boolean; showPatientSeat: boolean }) {
   return (
     <group>
       <OutdoorSky zenith="#8cb6d4" horizon="#e8d3ba" />
+      {showPatientSeat && <Suspense fallback={null}><VehiclePatientSeat /></Suspense>}
       {/* Asphalt */}
       <mesh position={[0, -0.05, 0.1]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow raycast={NO_RAYCAST}>
         <planeGeometry args={[9, 9]} />
@@ -1115,5 +1130,5 @@ export function SceneVariantEnvironment({
   if (variant === 'fire') return <FireScene shadowsEnabled={shadowsEnabled} />;
   if (variant === 'water') return <WaterScene shadowsEnabled={shadowsEnabled} />;
   if (variant === 'heat') return <HeatScene shadowsEnabled={shadowsEnabled} showPatientSeat={showPatientSeat} />;
-  return <RoadsideScene shadowsEnabled={shadowsEnabled} />;
+  return <RoadsideScene shadowsEnabled={shadowsEnabled} showPatientSeat={showPatientSeat} />;
 }
