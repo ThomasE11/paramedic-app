@@ -12,9 +12,10 @@
  * blink swap (LifeSigns) and the mottling twins (MottlingLayer, built later
  * from these same atlases) inherit the wounds for free.
  *
- * Site targeting mirrors MottlingLayer: never guess the UV layout — classify
- * each vertex's WORLD position into a body region and paint at the UV of a
- * deterministically-picked matching vertex. Works on any atlas packing.
+ * Site targeting: never guess the UV layout — classify each vertex in bind
+ * (rest) space into a body region and paint at the UV of a deterministically
+ * picked matching vertex. Posed world matrices would map a supine patient
+ * onto the wrong limb. Works on any atlas packing.
  */
 
 import * as THREE from 'three';
@@ -95,7 +96,14 @@ export function applyWoundsToTextures(
     const flipY = openTex.flipY;
 
     body.updateWorldMatrix(true, false);
-    const mw = body.matrixWorld;
+    // Classify in bind/rest space, not the posed world matrix. A seated or
+    // recovery patient has already been rotated onto the support surface, so
+    // world Y no longer maps to the standing atlas the region classifier
+    // expects — wounds then land on the wrong limb or vanish entirely.
+    const skinned = body as THREE.SkinnedMesh;
+    const toBind = skinned.isSkinnedMesh
+      ? skinned.bindMatrix.clone()
+      : new THREE.Matrix4();
     const v = new THREE.Vector3();
 
     let painted = 0;
@@ -110,7 +118,7 @@ export function applyWoundsToTextures(
       // ~15-27k vertex meshes (~milliseconds, runs once per case).
       const candidates: Array<[number, number]> = [];
       for (let i = 0; i < pos.count; i += 2) {
-        v.fromBufferAttribute(pos, i).applyMatrix4(mw);
+        v.fromBufferAttribute(pos, i).applyMatrix4(toBind);
         if (!vertexMatchesRegion(v.x, v.y, v.z, region3d)) continue;
         candidates.push([uv.getX(i), uv.getY(i)]);
       }

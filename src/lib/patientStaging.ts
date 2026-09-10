@@ -271,8 +271,10 @@ export function patientSkeletalAction(
   unconscious = false,
 ): PatientSkeletalAction {
   if (unconscious) return null;
+  // Walk is the only donor clip that earns its keep. Mixamo idle fights the
+  // fitted rest pose and reads as high-frequency jitter on standing patients;
+  // procedural limb drift already supplies the "alive" cue.
   if (mobility === 'pacing') return 'walk';
-  if (mobility === 'standing') return 'idle';
   return null;
 }
 

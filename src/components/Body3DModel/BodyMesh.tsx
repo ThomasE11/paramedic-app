@@ -80,7 +80,7 @@ export type BayPatientStage = 'stretcher' | 'floor';
 // Grounding is calibrated from the final exported male mesh's world-space
 // bounds. The road is y=-0.05 and the stretcher sheet top is y=0.5025; these
 // stage origins place the active posture against those support planes.
-const BAY_STAGE_Y: Record<BayPatientStage, number> = { stretcher: 0.94, floor: 0.39 };
+const BAY_STAGE_Y: Record<BayPatientStage, number> = { stretcher: 0.98, floor: 0.39 };
 const BAY_SUPPORT_Y: Record<BayPatientStage, number> = { stretcher: 0.5025, floor: -0.05 };
 const BAY_PATIENT_SCALE = 1.04;
 // The final seated assets place their soles 0.289–0.321 m above the morph

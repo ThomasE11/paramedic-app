@@ -257,9 +257,13 @@ function Stretcher() {
 function ClinicalPatientSeat() {
   return (
     <group name="clinical-patient-seat" position={[0, 0, 0.34]}>
-      <mesh position={[0, 0.52, -0.08]} castShadow receiveShadow raycast={NO_RAYCAST}>
-        <cylinderGeometry args={[0.42, 0.42, 0.13, 28]} />
+      <mesh position={[0, 0.52, -0.02]} castShadow receiveShadow raycast={NO_RAYCAST}>
+        <cylinderGeometry args={[0.36, 0.36, 0.08, 28]} />
         <meshStandardMaterial color="#31566f" roughness={0.84} />
+      </mesh>
+      <mesh position={[0, 0.88, -0.28]} castShadow raycast={NO_RAYCAST}>
+        <boxGeometry args={[0.52, 0.64, 0.06]} />
+        <meshStandardMaterial color="#3d647c" roughness={0.82} />
       </mesh>
       <mesh position={[0, 0.27, -0.08]} castShadow raycast={NO_RAYCAST}>
         <cylinderGeometry args={[0.045, 0.055, 0.5, 14]} />

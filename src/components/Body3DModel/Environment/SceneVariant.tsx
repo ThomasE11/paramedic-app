@@ -432,14 +432,21 @@ function HomeScene({ hideOverhead, shadowsEnabled, showPatientSeat }: { hideOver
           newly flexed seated pose correctly planted its feet but appeared to
           hover in the middle of the room. */}
       {showPatientSeat && (
-        <group position={[0, 0, 0.34]}>
-          <mesh position={[0, 0.53, -0.08]} castShadow receiveShadow raycast={NO_RAYCAST}>
-            <boxGeometry args={[0.78, 0.16, 0.5]} />
-            <meshStandardMaterial color="#68745a" roughness={0.94} />
+        <group name="home-patient-chair" position={[0, 0, 0.34]}>
+          {/* Seat pan */}
+          <mesh position={[0, 0.53, -0.02]} castShadow receiveShadow raycast={NO_RAYCAST}>
+            <boxGeometry args={[0.62, 0.07, 0.52]} />
+            <meshStandardMaterial color="#5c4634" roughness={0.82} />
           </mesh>
-          {[-0.29, 0.29].map((x) => (
-            <mesh key={`patient-chair-leg-${x}`} position={[x, 0.255, -0.08]} castShadow raycast={NO_RAYCAST}>
-              <boxGeometry args={[0.055, 0.51, 0.055]} />
+          {/* Backrest — this is what makes it read as a chair, not a bench */}
+          <mesh position={[0, 0.92, -0.26]} castShadow raycast={NO_RAYCAST}>
+            <boxGeometry args={[0.62, 0.72, 0.07]} />
+            <meshStandardMaterial color="#6a513c" roughness={0.86} />
+          </mesh>
+          {/* Four legs */}
+          {([[-0.26, -0.20], [0.26, -0.20], [-0.26, 0.18], [0.26, 0.18]] as const).map(([x, z]) => (
+            <mesh key={`patient-chair-leg-${x}-${z}`} position={[x, 0.255, z]} castShadow raycast={NO_RAYCAST}>
+              <boxGeometry args={[0.05, 0.51, 0.05]} />
               <meshStandardMaterial color="#3f2f22" roughness={0.55} metalness={0.08} />
             </mesh>
           ))}
@@ -876,14 +883,18 @@ function HeatScene({ shadowsEnabled, showPatientSeat }: { shadowsEnabled: boolea
       {/* Backless field bench supports a seated heat-illness patient without
           covering the chest, arms or legs students need to examine. */}
       {showPatientSeat && (
-        <group position={[0, 0, 0.34]}>
-          <mesh position={[0, 0.53, -0.08]} castShadow receiveShadow raycast={NO_RAYCAST}>
-            <boxGeometry args={[0.82, 0.12, 0.5]} />
+        <group name="heat-patient-chair" position={[0, 0, 0.34]}>
+          <mesh position={[0, 0.53, -0.02]} castShadow receiveShadow raycast={NO_RAYCAST}>
+            <boxGeometry args={[0.64, 0.08, 0.5]} />
             <meshStandardMaterial color="#6b563f" roughness={0.9} />
           </mesh>
-          {[-0.3, 0.3].map(x => (
-            <mesh key={`heat-bench-leg-${x}`} position={[x, 0.255, -0.08]} castShadow raycast={NO_RAYCAST}>
-              <boxGeometry args={[0.055, 0.51, 0.055]} />
+          <mesh position={[0, 0.9, -0.24]} castShadow raycast={NO_RAYCAST}>
+            <boxGeometry args={[0.64, 0.68, 0.06]} />
+            <meshStandardMaterial color="#7a6248" roughness={0.88} />
+          </mesh>
+          {([[-0.26, -0.18], [0.26, -0.18], [-0.26, 0.16], [0.26, 0.16]] as const).map(([x, z]) => (
+            <mesh key={`heat-chair-leg-${x}-${z}`} position={[x, 0.255, z]} castShadow raycast={NO_RAYCAST}>
+              <boxGeometry args={[0.05, 0.51, 0.05]} />
               <meshStandardMaterial color="#454a4e" roughness={0.52} metalness={0.48} />
             </mesh>
           ))}

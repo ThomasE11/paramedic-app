@@ -98,7 +98,7 @@ describe('derivePatientPosture', () => {
 describe('patientSkeletalAction', () => {
   it('animates only genuinely ambulatory presentations', () => {
     expect(patientSkeletalAction('pacing')).toBe('walk');
-    expect(patientSkeletalAction('standing')).toBe('idle');
+    expect(patientSkeletalAction('standing')).toBeNull();
     expect(patientSkeletalAction('seated')).toBeNull();
     expect(patientSkeletalAction('recumbent')).toBeNull();
     expect(patientSkeletalAction('pacing', true)).toBeNull();

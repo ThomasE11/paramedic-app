@@ -472,7 +472,30 @@ export function ClassroomJoin({ onExit }: ClassroomJoinProps) {
                     autoFocus
                     className="h-14 text-3xl tracking-[0.32em] tabular-nums text-center font-semibold"
                     disabled={status === 'connecting'}
+                    aria-label={t('classroom.pinLabel')}
                   />
+                  <div className="grid grid-cols-3 gap-1.5 pt-1" role="group" aria-label="PIN keypad">
+                    {['1', '2', '3', '4', '5', '6', '7', '8', '9', '⌫', '0', 'C'].map(key => (
+                      <button
+                        key={key}
+                        type="button"
+                        disabled={status === 'connecting'}
+                        onClick={() => {
+                          if (key === '⌫') {
+                            setPinInput(prev => prev.slice(0, -1));
+                          } else if (key === 'C') {
+                            setPinInput('');
+                          } else if (pinInput.length < 6) {
+                            setPinInput(prev => (prev + key).slice(0, 6));
+                          }
+                          if (error) clearError();
+                        }}
+                        className="h-11 rounded-lg border border-border/70 bg-background/80 text-base font-semibold tabular-nums hover:bg-muted/70 disabled:opacity-50"
+                      >
+                        {key}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 <div className="space-y-2">

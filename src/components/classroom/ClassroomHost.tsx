@@ -346,20 +346,22 @@ export function ClassroomHost({ onExit }: Props) {
  */
 function HostModeToggle({ mode, onChange }: { mode: 'live' | 'marking'; onChange: (m: 'live' | 'marking') => void }) {
   return (
-    <div className="fixed top-[4.25rem] left-1/2 z-50 inline-flex -translate-x-1/2 items-center rounded-xl border border-white/55 bg-background/90 p-1 shadow-xl backdrop-blur-xl sm:left-auto sm:right-4 sm:top-4 sm:translate-x-0 dark:border-white/10">
-      {(['live', 'marking'] as const).map((m) => (
-        <button
-          key={m}
-          onClick={() => onChange(m)}
-          className={`rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-colors ${
-            mode === m ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-          }`}
-          aria-pressed={mode === m}
-          title={m === 'live' ? 'Full digital sim — students watch and can take control' : 'Pre-brief + checklist for a manikin sim; students join on the code'}
-        >
-          {m === 'live' ? 'Live sim' : 'Marking'}
-        </button>
-      ))}
+    <div className="pointer-events-none fixed inset-x-0 top-3 z-20 flex justify-end px-4 sm:px-6">
+      <div className="pointer-events-auto inline-flex items-center rounded-xl border border-white/55 bg-background/90 p-1 shadow-xl backdrop-blur-xl dark:border-white/10">
+        {(['live', 'marking'] as const).map((m) => (
+          <button
+            key={m}
+            onClick={() => onChange(m)}
+            className={`rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-colors ${
+              mode === m ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+            }`}
+            aria-pressed={mode === m}
+            title={m === 'live' ? 'Full digital sim — students watch and can take control' : 'Pre-brief + checklist for a manikin sim; students join on the code'}
+          >
+            {m === 'live' ? 'Live sim' : 'Marking'}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

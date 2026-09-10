@@ -782,3 +782,8 @@ End result of first pass:
 - The app has a tested realism scenario catalogue.
 - The current live patient bay director can surface richer active problems, visuals, treatment anchors, behavior rules, reassessment requirements, and debrief signals.
 - Later UI work can consume this state without guessing clinical rules.
+
+
+## Blender authenticity evaluator (Sep 2026)
+
+Independent 9Router combo `blender-eval` / `paramedic-3d` reviews renders; see **BLENDER_EVAL_PIPELINE.md**. Worker coding model stays separate (`cx/gpt-5.6-sol`). Blender: `/Applications/Blender.app/Contents/MacOS/Blender`.

@@ -4131,7 +4131,7 @@ function getTreatmentBayCameraFocus(
     };
   }
   const adultOffset = stage === 'floor'
-    ? [0.55, 2.85 - 0.338, 2.15 - (-0.218)]
+    ? [0.55, 2.15, 3.85]
     : [1.42, 1.30 - 0.888, 2.12 - (-0.218)];
   return {
     // Scene context is established before the student enters treatment. Once
@@ -6429,6 +6429,16 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
               <ambientLight intensity={bayVariant === 'home' ? 0.06 : 0.1} />
               <directionalLight position={[4, 8, 5]} intensity={bayVariant === 'home' ? 0.22 : 0.95} color="#fff2e6" />
               <directionalLight position={[0, 4, -5]} intensity={bayVariant === 'home' ? 0.12 : 0.5} color="#ffffff" />
+              {activeRegion === 'face' && (
+                <pointLight
+                  name="pupil-exam-light"
+                  position={[0, 1.62, 0.55]}
+                  intensity={2.4}
+                  distance={1.4}
+                  decay={2}
+                  color="#fff6e0"
+                />
+              )}
 
               <TreatmentBayEnvironment
                 hideOverhead={treatmentBayOverviewEnabled}
@@ -6445,7 +6455,13 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 active={useTreatmentBayPresentation && !activeRegion}
                 focus={overviewCameraFocus}
                 controlsRef={controlsRef}
-                origin={bayVariant === 'home' ? [0, 1.8, 2.8] : undefined}
+                origin={
+                  bayVariant === 'home'
+                    ? [0, 1.8, 2.8]
+                    : bayVariant === 'roadside'
+                      ? [0.4, 2.4, 4.2]
+                      : undefined
+                }
               />
 
               <AmbientAudioLayer

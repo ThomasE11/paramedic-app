@@ -38,7 +38,7 @@ describe('recovery-position staging regression', () => {
     const supine = getTreatmentBayTransform('stretcher', 'supine', 'recumbent', 1);
 
     expect(supine.rotation).toEqual([-Math.PI / 2, 0, 0]);
-    expect(supine.position[1]).toBeCloseTo(0.94);
+    expect(supine.position[1]).toBeCloseTo(0.98);
   });
 
   it('reports the recovery support surface truthfully', () => {

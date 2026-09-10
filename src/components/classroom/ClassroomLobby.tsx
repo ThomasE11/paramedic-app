@@ -194,7 +194,7 @@ export function ClassroomLobby({ onExit, sessionHook }: ClassroomLobbyProps) {
     return () => { alive = false; };
   }, []);
 
-  const [instructorName, setInstructorName] = useState('');
+  const [instructorName, setInstructorName] = useState('Instructor');
   const [selectedCaseId, setSelectedCaseId] = useState<string>('');
   const [yearFilter, setYearFilter] = useState<YearFilter>('all');
   const [caseSearch, setCaseSearch] = useState('');

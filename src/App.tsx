@@ -17,7 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import {
   Stethoscope, GraduationCap, ClipboardCheck, RotateCcw,
   FileText, Sparkles, Home, ChevronRight, ArrowLeft,
-  History, BarChart3, Loader2, Activity, Target,
+  History, BarChart3, Loader2, Activity, Target, Users,
 } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
 
@@ -256,6 +256,7 @@ function EducatorPanel(ep: EducatorPanelProps) {
               generateCase={ep.generateCase}
               setShowObjectiveSetup={ep.setShowObjectiveSetup}
               loadCaseFromHistory={ep.loadCaseFromHistory}
+              onHostClassroom={() => ep.setUserRole('classroom-host')}
             />
           )}
         </main>
@@ -437,6 +438,7 @@ function HomeScreen({
   selectedYear, setSelectedYear, selectedCategory, setSelectedCategory,
   allCases, caseHistory, caseCountsByCategory, categoryLookup,
   isGenerating, generateCase, setShowObjectiveSetup, loadCaseFromHistory,
+  onHostClassroom,
 }: {
   selectedYear: StudentYear;
   setSelectedYear: (y: StudentYear) => void;
@@ -450,6 +452,7 @@ function HomeScreen({
   generateCase: (objective?: any) => Promise<void>;
   setShowObjectiveSetup: (v: boolean) => void;
   loadCaseFromHistory: (c: CaseScenario) => void;
+  onHostClassroom: () => void;
 }) {
   const { t } = useTranslation();
 
@@ -541,6 +544,10 @@ function HomeScreen({
                 variant="outline" size="lg" className="w-full gap-3 text-base py-6 font-medium border-primary/30 hover:border-primary/60 hover:bg-primary/5 transition-all duration-200">
                 <Target className="h-5 w-5 text-primary" /> {t('generator.guidedSetup')}
                 <Badge variant="secondary" className="ml-2 text-[10px]">INACSL</Badge>
+              </Button>
+              <Button onClick={onHostClassroom} disabled={isGenerating}
+                variant="secondary" size="lg" className="w-full gap-3 text-base py-6 font-medium">
+                <Users className="h-5 w-5" /> Open classroom discussion
               </Button>
             </div>
             {/* Stats */}

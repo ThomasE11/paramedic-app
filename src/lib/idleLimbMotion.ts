@@ -64,8 +64,8 @@ const ACCESSORY_ONSET_RPM = 18;
 /** Rate at which it is fully recruited. */
 const ACCESSORY_FULL_RPM = 34;
 
-const ARM_DRIFT = 0.014;
-const FOREARM_DRIFT = 0.01;
+const ARM_DRIFT = 0.008;
+const FOREARM_DRIFT = 0.006;
 
 const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
 

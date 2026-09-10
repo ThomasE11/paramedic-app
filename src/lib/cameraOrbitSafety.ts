@@ -11,9 +11,9 @@ export interface CameraOrbitSafety {
 const OPEN_SCENE: CameraOrbitSafety = {
   minAzimuthAngle: -Infinity,
   maxAzimuthAngle: Infinity,
-  maxDistance: 7,
-  minPolarAngle: Math.PI / 2 - 0.1,
-  maxPolarAngle: Math.PI / 2 + 0.1,
+  maxDistance: 8.5,
+  minPolarAngle: Math.PI / 2 - 0.28,
+  maxPolarAngle: Math.PI / 2 + 0.22,
 };
 
 // Villa room front (open) at z=+2.8, back wall at z=-2.6, hall extending to

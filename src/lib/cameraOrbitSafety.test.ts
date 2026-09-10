@@ -20,7 +20,7 @@ describe('cameraOrbitSafetyForEnvironment', () => {
       const safety = cameraOrbitSafetyForEnvironment(variant);
       expect(safety.minAzimuthAngle).toBe(-Infinity);
       expect(safety.maxAzimuthAngle).toBe(Infinity);
-      expect(safety.maxDistance).toBe(7);
+      expect(safety.maxDistance).toBe(8.5);
     }
   });
 });
