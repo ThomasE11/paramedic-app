@@ -28,6 +28,8 @@ dist
 !public/scene-assets/*.png
 # baked skin maps (Phase A) — consumed by the Phase B SSS material
 !public/models/patient-*-skin-*.png
+# Kenney CC0 prop colormaps referenced by public/models/props/*.glb
+!public/models/props/**/*.png
 # Old agent framework + AI tooling caches
 .gstack/
 .bmad/

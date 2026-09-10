@@ -8,7 +8,7 @@
  * - every mesh sets raycast={() => null} so region clicks pass through
  * - hideOverhead removes ceiling geometry when the orbit camera is above
  * - exactly ONE shadow-casting light per variant (iPad budget)
- * - primitives only, no external assets
+ * - primitives by default; license-clean GLBs live under public/models/props/
  * - medical equipment (IV stand, monitor, crash cart, O2) is composed by
  *   index.tsx in every variant — the paramedic brings it to the scene
  */
@@ -949,6 +949,55 @@ function VehiclePatientSeat() {
   return <primitive name="vehicle-patient-seat" object={seat} />;
 }
 
+/** License-clean Kenney CC0 GLB, cloned so each mount is independent. */
+function PropGltf({
+  url,
+  name,
+  position,
+  rotation,
+  scale = 1,
+}: {
+  url: string;
+  name: string;
+  position?: [number, number, number];
+  rotation?: [number, number, number];
+  scale?: number | [number, number, number];
+}) {
+  const { scene } = useGLTF(url);
+  const clone = useMemo(() => {
+    const next = scene.clone(true);
+    next.traverse(object => {
+      object.raycast = NO_RAYCAST;
+      object.castShadow = true;
+      object.receiveShadow = true;
+    });
+    return next;
+  }, [scene]);
+  return <primitive name={name} object={clone} position={position} rotation={rotation} scale={scale} />;
+}
+
+function WreckedSedan() {
+  return (
+    <group name="wrecked-car" position={[3.6, 0, -1.7]} rotation={[0, -0.55, 0]}>
+      <PropGltf url="/models/props/kenney-sedan.glb" name="kenney-sedan" scale={1.8} />
+      <PropGltf
+        url="/models/props/kenney-debris-bumper.glb"
+        name="kenney-debris-bumper"
+        position={[-1.7, 0.12, 0.35]}
+        rotation={[0.4, 0.8, 0.2]}
+        scale={1.4}
+      />
+      <PropGltf
+        url="/models/props/kenney-debris-door.glb"
+        name="kenney-debris-door"
+        position={[-0.4, 0.08, 1.15]}
+        rotation={[1.2, 0.3, 0.4]}
+        scale={1.3}
+      />
+    </group>
+  );
+}
+
 function RoadsideScene({ shadowsEnabled, showPatientSeat }: { shadowsEnabled: boolean; showPatientSeat: boolean }) {
   return (
     <group>
@@ -995,52 +1044,10 @@ function RoadsideScene({ shadowsEnabled, showPatientSeat }: { shadowsEnabled: bo
           <meshStandardMaterial color="#fffbe8" emissive="#fff6d0" emissiveIntensity={2.2} side={THREE.DoubleSide} />
         </mesh>
       ))}
-      {/* Wrecked car — low-poly silhouette, front damage, pushed to the
-          right side of the scene. Body + cabin + two wheels visible. */}
-      <group name="wrecked-car" position={[3.8, 0, -1.6]} rotation={[0, -0.35, 0]}>
-        {/* Body shell */}
-        <mesh position={[0, 0.48, 0]} castShadow receiveShadow raycast={NO_RAYCAST}>
-          <boxGeometry args={[3.6, 0.7, 1.7]} />
-          <meshStandardMaterial color="#8b1e1e" roughness={0.7} metalness={0.4} />
-        </mesh>
-        {/* Hood crumpled — rotated box */}
-        <mesh position={[-1.6, 0.42, 0]} castShadow raycast={NO_RAYCAST} rotation={[0, 0, 0.08]}>
-          <boxGeometry args={[0.8, 0.12, 1.6]} />
-          <meshStandardMaterial color="#4a5056" roughness={0.7} metalness={0.4} />
-        </mesh>
-        {/* Cabin (windows) */}
-        <mesh position={[0.3, 0.92, 0]} castShadow raycast={NO_RAYCAST}>
-          <boxGeometry args={[1.8, 0.55, 1.5]} />
-          <meshStandardMaterial color="#2a3540" roughness={0.12} metalness={0.6} transparent opacity={0.65} />
-        </mesh>
-        {/* Roof */}
-        <mesh position={[0.3, 1.18, 0]} castShadow raycast={NO_RAYCAST}>
-          <boxGeometry args={[1.8, 0.12, 1.6]} />
-          <meshStandardMaterial color="#5a6068" roughness={0.7} metalness={0.4} />
-        </mesh>
-        {/* Wheels */}
-        {[-1.3, 1.3].map(wx => (
-          <group key={`car-wheel-${wx}`}>
-            <mesh position={[wx, 0.28, 0.82]} castShadow raycast={NO_RAYCAST}>
-              <cylinderGeometry args={[0.28, 0.28, 0.18, 16]} />
-              <meshStandardMaterial color="#1a1a1a" roughness={0.85} />
-            </mesh>
-            <mesh position={[wx, 0.28, -0.82]} castShadow raycast={NO_RAYCAST}>
-              <cylinderGeometry args={[0.28, 0.28, 0.18, 16]} />
-              <meshStandardMaterial color="#1a1a1a" roughness={0.85} />
-            </mesh>
-          </group>
-        ))}
-        {/* Headlight glass cracked — emissive chip */}
-        <mesh position={[-1.95, 0.5, 0.55]} raycast={NO_RAYCAST}>
-          <boxGeometry args={[0.05, 0.18, 0.3]} />
-          <meshStandardMaterial color="#d4d4d4" emissive="#fff0c4" emissiveIntensity={0.4} roughness={0.2} />
-        </mesh>
-        <mesh position={[-1.95, 0.5, -0.55]} raycast={NO_RAYCAST}>
-          <boxGeometry args={[0.05, 0.18, 0.3]} />
-          <meshStandardMaterial color="#d4d4d4" roughness={0.2} metalness={0.3} />
-        </mesh>
-      </group>
+      {/* Kenney CC0 sedan + debris — reads as a vehicle, not a grey box. */}
+      <Suspense fallback={null}>
+        <WreckedSedan />
+      </Suspense>
 
       {/* Downed motorcycle — lying on its side, left of the patient */}
       <group name="downed-motorcycle" position={[-3.6, 0, 1.6]} rotation={[0, 1.1, Math.PI / 2 - 0.1]}>
@@ -1143,3 +1150,8 @@ export function SceneVariantEnvironment({
   if (variant === 'heat') return <HeatScene shadowsEnabled={shadowsEnabled} showPatientSeat={showPatientSeat} />;
   return <RoadsideScene shadowsEnabled={shadowsEnabled} showPatientSeat={showPatientSeat} />;
 }
+
+useGLTF.preload('/models/props/kenney-sedan.glb');
+useGLTF.preload('/models/props/kenney-debris-bumper.glb');
+useGLTF.preload('/models/props/kenney-debris-door.glb');
+useGLTF.preload('/models/vehicle-patient-seat.glb');
