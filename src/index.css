@@ -1841,6 +1841,36 @@ body {
   color: #2dd4bf;
 }
 
+.primary-survey-priority {
+  border-color: rgba(103, 232, 249, 0.62);
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(3, 15, 30, 0.92)),
+    radial-gradient(circle at 50% 0%, rgba(34, 211, 238, 0.2), transparent 68%);
+  box-shadow:
+    0 0 0 1px rgba(103, 232, 249, 0.16),
+    0 22px 48px -30px rgba(34, 211, 238, 0.8),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.primary-survey-priority > .hud-head {
+  min-height: 2.75rem;
+  border-bottom-color: rgba(103, 232, 249, 0.3);
+  background: linear-gradient(90deg, rgba(8, 145, 178, 0.24), rgba(15, 23, 42, 0.18));
+}
+
+.primary-survey-priority > .hud-head .hud-title {
+  color: #ecfeff;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+}
+
+.primary-survey-priority > .hud-head .hud-code,
+.primary-survey-priority > .hud-head .hud-tag {
+  color: #a5f3fc;
+  border-color: rgba(103, 232, 249, 0.36);
+  background: rgba(8, 47, 73, 0.72);
+}
+
 .primary-survey-compact-grid {
   align-items: stretch;
 }
@@ -3719,8 +3749,25 @@ body {
 .tactical-patient-viewport .patient-exam-footer { background: #10212f; color: #e2e8f0; }
 .tactical-patient-viewport .patient-exam-footer p { color: #cbd5e1; font-size: .75rem; }
 .tactical-patient-viewport .patient-exam-footer button { min-height: 44px; color: #e2e8f0; font-size: .75rem; background: #1e3344; }
+.tactical-assessment-rail .primary-survey-compact-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .5rem;
+}
+.tactical-assessment-rail .primary-survey-compact-grid .primary-survey-button:last-child {
+  grid-column: 1 / -1;
+}
 .tactical-assessment-rail .primary-survey-button { min-height: 64px; color: #f1f5f9; background-color: #182b3c; }
-.tactical-assessment-rail .primary-survey-label { font-size: .7rem; color: #e2e8f0; opacity: 1; }
+.tactical-assessment-rail .primary-survey-label {
+  max-width: 100%;
+  overflow: visible;
+  white-space: normal;
+  text-align: center;
+  font-size: clamp(.48rem, .62vw, .66rem);
+  line-height: 1.05;
+  letter-spacing: .04em;
+  color: #f8fafc;
+  opacity: 1;
+}
 .tactical-assessment-rail .primary-survey-letter { font-size: 1.2rem; color: #f8fafc; opacity: 1; }
 .tactical-assessment-rail .care-rail-mode-switch button { min-height: 44px; font-size: .8rem; }
 .monitor-measurement-controls > [role="button"] { min-height: 44px; min-width: 54px; }

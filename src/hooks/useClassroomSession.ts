@@ -375,6 +375,18 @@ function channelName(pin: string): string {
   return `classroom:${pin}`;
 }
 
+const PREVIEW_SESSION_PREFIX = 'paramedic-studio:classroom-preview:';
+
+function previewSessionKey(pin: string): string {
+  return `${PREVIEW_SESSION_PREFIX}${pin}`;
+}
+
+type PreviewChannelMessage =
+  | { kind: 'classroom_event'; payload: ClassroomBroadcast }
+  | { kind: 'presence_request' }
+  | { kind: 'presence_announce'; participant: ClassroomParticipant }
+  | { kind: 'presence_leave'; participantKey: string };
+
 // ============================================================================
 // Hook
 // ============================================================================
@@ -547,6 +559,9 @@ export function useClassroomSession(): UseClassroomSessionResult {
 
   // Mutable refs so callbacks don't capture stale state.
   const channelRef = useRef<RealtimeChannel | null>(null);
+  const previewChannelRef = useRef<BroadcastChannel | null>(null);
+  const previewParticipantRef = useRef<ClassroomParticipant | null>(null);
+  const previewBroadcastHandlerRef = useRef<(payload: ClassroomBroadcast) => void>(() => undefined);
   const selfKeyRef = useRef<string>(crypto.randomUUID());
   const sessionRef = useRef<ClassroomSessionRow | null>(null);
   const roleRef = useRef<ClassroomRole | null>(null);
@@ -557,6 +572,56 @@ export function useClassroomSession(): UseClassroomSessionResult {
   useEffect(() => { roleRef.current = role; }, [role]);
   useEffect(() => { sharedStateRef.current = sharedState; }, [sharedState]);
   useEffect(() => { driverKeysRef.current = driverKeys; }, [driverKeys]);
+
+  const closePreviewChannel = useCallback(() => {
+    const channel = previewChannelRef.current;
+    const participant = previewParticipantRef.current;
+    if (channel && participant) {
+      channel.postMessage({
+        kind: 'presence_leave',
+        participantKey: participant.key,
+      } satisfies PreviewChannelMessage);
+    }
+    channel?.close();
+    previewChannelRef.current = null;
+    previewParticipantRef.current = null;
+  }, []);
+
+  const attachPreviewChannel = useCallback((pin: string, displayName: string, asRole: ClassroomRole) => {
+    closePreviewChannel();
+    if (typeof BroadcastChannel === 'undefined') return;
+
+    const participant: ClassroomParticipant = {
+      key: selfKeyRef.current,
+      displayName,
+      role: asRole,
+      joinedAt: new Date().toISOString(),
+    };
+    const channel = new BroadcastChannel(channelName(pin));
+    previewChannelRef.current = channel;
+    previewParticipantRef.current = participant;
+
+    channel.onmessage = (event: MessageEvent<PreviewChannelMessage>) => {
+      const message = event.data;
+      if (!message) return;
+      if (message.kind === 'classroom_event') {
+        previewBroadcastHandlerRef.current(message.payload);
+      } else if (message.kind === 'presence_request') {
+        channel.postMessage({ kind: 'presence_announce', participant } satisfies PreviewChannelMessage);
+      } else if (message.kind === 'presence_announce') {
+        setParticipants(current => {
+          const withoutParticipant = current.filter(item => item.key !== message.participant.key);
+          return [...withoutParticipant, message.participant];
+        });
+      } else if (message.kind === 'presence_leave') {
+        setParticipants(current => current.filter(item => item.key !== message.participantKey));
+      }
+    };
+
+    setParticipants([participant]);
+    channel.postMessage({ kind: 'presence_request' } satisfies PreviewChannelMessage);
+    channel.postMessage({ kind: 'presence_announce', participant } satisfies PreviewChannelMessage);
+  }, [closePreviewChannel]);
 
   // --------------------------------------------------------------------------
   // Channel subscription
@@ -779,12 +844,9 @@ export function useClassroomSession(): UseClassroomSessionResult {
         setRole('instructor');
         roleRef.current = 'instructor';
         setSession(created);
-        setParticipants([
-          { key: selfKeyRef.current, displayName: instructorName, role: 'instructor', joinedAt: now },
-          { key: 'preview-learner-1', displayName: 'Aisha Rahman', role: 'student', joinedAt: now },
-          { key: 'preview-learner-2', displayName: 'Omar Al Mansoori', role: 'student', joinedAt: now },
-          { key: 'preview-learner-3', displayName: 'Maya Thomas', role: 'student', joinedAt: now },
-        ]);
+        sessionRef.current = created;
+        localStorage.setItem(previewSessionKey(pin), JSON.stringify(created));
+        attachPreviewChannel(pin, instructorName, 'instructor');
         setChatMessages([]);
         setSharedState({});
         setTimerEndsAtState(null);
@@ -857,7 +919,7 @@ export function useClassroomSession(): UseClassroomSessionResult {
         return null;
       }
     },
-    [isPreviewMode, supabaseConfigured, attachChannel],
+    [isPreviewMode, supabaseConfigured, attachChannel, attachPreviewChannel],
   );
 
   // --------------------------------------------------------------------------
@@ -874,34 +936,42 @@ export function useClassroomSession(): UseClassroomSessionResult {
       }
 
       if (isPreviewMode) {
-        const now = new Date().toISOString();
-        const row: ClassroomSessionRow = {
-          id: `preview-${normalisedPin}`,
-          pin: normalisedPin,
-          instructor_name: 'Preview Instructor',
-          case_id: null,
-          case_snapshot: null,
-          status: 'lobby',
-          created_at: now,
-          started_at: null,
-          ended_at: null,
-        };
-        setStatus('lobby');
+        const stored = localStorage.getItem(previewSessionKey(normalisedPin));
+        if (!stored) {
+          setError('classroom.errors.notFound');
+          setStatus('error');
+          return null;
+        }
+
+        let row: ClassroomSessionRow;
+        try {
+          row = JSON.parse(stored) as ClassroomSessionRow;
+        } catch {
+          localStorage.removeItem(previewSessionKey(normalisedPin));
+          setError('classroom.errors.notFound');
+          setStatus('error');
+          return null;
+        }
+        if (row.status === 'ended') {
+          setError('classroom.errors.notFound');
+          setStatus('error');
+          return null;
+        }
+
+        setStatus(row.status === 'running' ? 'running' : 'lobby');
         setError(null);
         setRole('student');
         roleRef.current = 'student';
         setSession(row);
-        setParticipants([
-          { key: 'preview-instructor', displayName: 'Preview Instructor', role: 'instructor', joinedAt: now },
-          { key: selfKeyRef.current, displayName, role: 'student', joinedAt: now },
-        ]);
+        sessionRef.current = row;
+        attachPreviewChannel(normalisedPin, displayName, 'student');
         setChatMessages([]);
-        setSharedState({});
+        setSharedState(row.started_at ? { caseStartedAt: row.started_at } : {});
         setTimerEndsAtState(null);
         setDriverKeysState([]);
         setAvFloorOpenState(false);
-        setLiveCaseId(null);
-        setLiveCaseStartedAt(null);
+        setLiveCaseId(row.status === 'running' ? row.case_id : null);
+        setLiveCaseStartedAt(row.status === 'running' ? row.started_at : null);
         return row;
       }
 
@@ -935,12 +1005,14 @@ export function useClassroomSession(): UseClassroomSessionResult {
         setStatus(row.status === 'running' ? 'running' : 'lobby');
       } catch (e) {
         setSession(null);
+        sessionRef.current = null;
         setError(e instanceof Error ? e.message : 'classroom.errors.realtimeFailed');
         setStatus('error');
+        return null;
       }
       return row;
     },
-    [isPreviewMode, supabaseConfigured, attachChannel],
+    [isPreviewMode, supabaseConfigured, attachChannel, attachPreviewChannel],
   );
 
   // --------------------------------------------------------------------------
@@ -998,6 +1070,19 @@ export function useClassroomSession(): UseClassroomSessionResult {
     } else if (payload.kind === 'case_started') {
       setLiveCaseId(payload.caseId);
       setLiveCaseStartedAt(payload.startedAt);
+      setStatus('running');
+      setSession(current => {
+        if (!current) return current;
+        const stored = localStorage.getItem(previewSessionKey(current.pin));
+        if (!stored) return current;
+        try {
+          const latest = JSON.parse(stored) as ClassroomSessionRow;
+          sessionRef.current = latest;
+          return latest;
+        } catch {
+          return current;
+        }
+      });
       setSharedState(prev => (prev.activeInjects?.length ? { ...prev, activeInjects: [] } : prev));
       setActiveDebrief(null);
       setDebriefSeekPosition(null);
@@ -1008,16 +1093,26 @@ export function useClassroomSession(): UseClassroomSessionResult {
       setAvFloorOpenState(false);
       setLiveCaseId(null);
       setLiveCaseStartedAt(null);
+      setStatus('lobby');
+      setSession(current => current ? { ...current, status: 'lobby', case_id: null, case_snapshot: null } : current);
     } else if (payload.kind === 'session_ended') {
       setLiveCaseId(null);
       setLiveCaseStartedAt(null);
+      setStatus('ended');
     }
   }, []);
+  previewBroadcastHandlerRef.current = applyLocalBroadcast;
 
   const sendBroadcast = useCallback(async (payload: ClassroomBroadcast) => {
     const channel = channelRef.current;
     if (!channel) {
-      if (isPreviewMode) applyLocalBroadcast(payload);
+      if (isPreviewMode) {
+        applyLocalBroadcast(payload);
+        previewChannelRef.current?.postMessage({
+          kind: 'classroom_event',
+          payload,
+        } satisfies PreviewChannelMessage);
+      }
       return;
     }
     await channel.send({ type: 'broadcast', event: 'classroom', payload });
@@ -1037,6 +1132,8 @@ export function useClassroomSession(): UseClassroomSessionResult {
           started_at: startedAt,
         };
         setSession(nextSession);
+        sessionRef.current = nextSession;
+        localStorage.setItem(previewSessionKey(current.pin), JSON.stringify(nextSession));
         setStatus('running');
         setSharedState({ caseStartedAt: startedAt });
         setLiveCaseId(caseId);
@@ -1293,11 +1390,17 @@ export function useClassroomSession(): UseClassroomSessionResult {
     );
 
     if (isPreviewMode) {
+      const current = sessionRef.current;
+      const nextSession = current
+        ? { ...current, status: 'lobby' as const, case_id: null, case_snapshot: null }
+        : null;
+      if (nextSession) {
+        localStorage.setItem(previewSessionKey(nextSession.pin), JSON.stringify(nextSession));
+        sessionRef.current = nextSession;
+      }
       setSharedState({});
       await sendBroadcast({ kind: 'case_ended', endedAt });
-      setSession(prev => prev
-        ? { ...prev, status: 'lobby', case_id: null, case_snapshot: null }
-        : prev);
+      setSession(nextSession);
       setStatus('lobby');
       setTimerEndsAtState(null);
       setDriverKeysState([]);
@@ -1352,13 +1455,18 @@ export function useClassroomSession(): UseClassroomSessionResult {
     }
 
     // Instructor ends the whole session for everyone. Students just quietly leave.
-    if (currentRole === 'instructor' && current && supa) {
+    if (currentRole === 'instructor' && current) {
       await sendBroadcast({ kind: 'session_ended' });
-      await supa
-        .from('classroom_sessions')
-        .update({ status: 'ended', ended_at: new Date().toISOString() })
-        .eq('id', current.id);
+      if (isPreviewMode) {
+        localStorage.removeItem(previewSessionKey(current.pin));
+      } else if (supa) {
+        await supa
+          .from('classroom_sessions')
+          .update({ status: 'ended', ended_at: new Date().toISOString() })
+          .eq('id', current.id);
+      }
     }
+    closePreviewChannel();
 
     setSession(null);
     setParticipants([]);
@@ -1375,7 +1483,7 @@ export function useClassroomSession(): UseClassroomSessionResult {
     setChatMessages([]);
     setActiveDebrief(null);
     setDebriefSeekPosition(null);
-  }, [sendBroadcast]);
+  }, [closePreviewChannel, isPreviewMode, sendBroadcast]);
 
   // Cleanup on unmount — prevents dangling channels.
   useEffect(() => {
@@ -1385,6 +1493,9 @@ export function useClassroomSession(): UseClassroomSessionResult {
         supa.removeChannel(channelRef.current);
         channelRef.current = null;
       }
+      previewChannelRef.current?.close();
+      previewChannelRef.current = null;
+      previewParticipantRef.current = null;
     };
   }, []);
 

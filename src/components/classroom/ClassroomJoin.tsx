@@ -277,7 +277,6 @@ export function ClassroomJoin({ onExit }: ClassroomJoinProps) {
           participants={sessionHook.participants}
           selfKey={sessionHook.selfKey}
           onStopCamera={voice.stopCamera}
-          spectator
         />
         <ClassroomChatSidebar
           messages={sessionHook.chatMessages}
@@ -398,7 +397,7 @@ export function ClassroomJoin({ onExit }: ClassroomJoinProps) {
                 <div>
                   <div className="text-sm font-semibold text-foreground">Local classroom preview</div>
                   <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                    Enter any six-digit PIN to preview the learner waiting room. Real multi-device sync needs Supabase configured.
+                    Open a demo lobby in another tab, then join its six-digit PIN here. Tabs on this device share the live roster, case launch, and patient state.
                   </p>
                 </div>
               </div>
@@ -474,22 +473,6 @@ export function ClassroomJoin({ onExit }: ClassroomJoinProps) {
                     className="h-14 text-3xl tracking-[0.32em] tabular-nums text-center font-semibold"
                     disabled={status === 'connecting'}
                   />
-                  {isPreviewMode && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        setPinInput('123456');
-                        setDisplayName(prev => prev.trim() ? prev : 'Sara Ahmed');
-                        if (error) clearError();
-                      }}
-                      disabled={status === 'connecting'}
-                      className="h-9 w-full gap-2"
-                    >
-                      <Radio className="h-4 w-4" />
-                      Use demo room
-                    </Button>
-                  )}
                 </div>
 
                 <div className="space-y-2">

@@ -25,23 +25,18 @@ interface Props {
   selfKey: string;
   /** Camera toggle handler (so the tile cluster also offers a quick off). */
   onStopCamera: () => void;
-  /** True when this client is a student waiting to receive instructor
-   *  video — controls whether to show the "waiting for instructor camera"
-   *  placeholder when there's nothing to render yet. */
-  spectator?: boolean;
 }
 
 export function ClassroomVideoTiles({
-  localStream, remoteStreams, participants, selfKey, onStopCamera, spectator = false,
+  localStream, remoteStreams, participants, selfKey, onStopCamera,
 }: Props) {
   const [collapsed, setCollapsed] = useState(false);
 
   const hasAny = Boolean(localStream) || remoteStreams.size > 0;
-  // For spectators, always render the container so we can show a "waiting
-  // for instructor camera" placeholder when no tracks are connected yet.
-  // Previously this component returned null in that state and the student
-  // had zero feedback that they were even listening for video.
-  if (!hasAny && !spectator) return null;
+  // The live banner already exposes the student's Video control. A floating
+  // no-camera placeholder covered the LIFEPAK bezel and controls, so reserve
+  // this overlay for an actual local or remote video stream.
+  if (!hasAny) return null;
 
   const remoteEntries = Array.from(remoteStreams.entries()).filter(([k]) => k !== selfKey);
   const totalCount = (localStream ? 1 : 0) + remoteEntries.length;
@@ -80,17 +75,6 @@ export function ClassroomVideoTiles({
         const name = participants.find(p => p.key === key)?.displayName ?? 'Student';
         return <VideoTile key={key} stream={stream} label={name} />;
       })}
-
-      {/* Student-side placeholder — tells the student they ARE connected
-          and just waiting for the instructor to turn their camera on. */}
-      {spectator && remoteEntries.length === 0 && !localStream && (
-        <div className="rounded-xl overflow-hidden bg-muted/60 border border-dashed border-border aspect-[4/3] w-48 flex flex-col items-center justify-center p-3 text-center">
-          <Video className="w-5 h-5 text-muted-foreground/70 mb-1.5" />
-          <span className="text-[10px] font-medium text-muted-foreground leading-tight">
-            Waiting for instructor to start their camera
-          </span>
-        </div>
-      )}
 
       {/* Local (self) tile — always at the bottom, mirrored preview */}
       {localStream && (

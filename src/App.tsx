@@ -119,15 +119,16 @@ function App() {
     );
   }
 
-  // Classroom student join
+  // Classroom student join stays PIN-first. A learner should never need to
+  // leave the classroom flow for an email magic link; the six-digit room code
+  // is the access credential. Signed-in learners can still save results once
+  // they are inside the case, but authentication is not a join prerequisite.
   if (ep.userRole === 'classroom-join') {
     return (
-      <AuthGate blurb="Sign in to join the classroom." onExit={ep.handleRoleExit}>
-        <LazyLoad name="ClassroomJoin">
-          <ClassroomJoin onExit={ep.handleRoleExit} />
-          <Toaster position="top-right" richColors closeButton />
-        </LazyLoad>
-      </AuthGate>
+      <LazyLoad name="ClassroomJoin">
+        <ClassroomJoin onExit={ep.handleRoleExit} />
+        <Toaster position="top-right" richColors closeButton />
+      </LazyLoad>
     );
   }
 

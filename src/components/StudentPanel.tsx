@@ -6108,9 +6108,10 @@ export function StudentPanel({
                     renders beneath it. */}
                 {!voiceFirstMode && (
                 <HUDAssessment
-                  title="Primary Survey"
-                  code="SABCDE"
+                  title="Primary Survey — tap A–E to assess"
+                  code="ABCDE"
                   progress={`${['airway', 'breathing', 'circulation', 'disability', 'exposure'].filter(stepId => assessmentTracker?.performed.some(p => p.stepId === stepId)).length}/5`}
+                  className="primary-survey-priority"
                 >
                   <div className="p-3 sm:p-4 space-y-3">
                     <div className="grid grid-cols-1 gap-2">
@@ -6167,19 +6168,19 @@ export function StudentPanel({
                     </div>
                     {/* Chapter-style findings reveal */}
                     {activePrimarySurvey && activeFindings && activeFindings.stepId === activePrimarySurvey && (
-                      <div className="relative overflow-hidden rounded-xl border border-white/5 dark:border-white/[0.06] bg-gradient-to-br from-slate-50/80 via-white/40 to-transparent dark:from-slate-900/60 dark:via-slate-900/20 dark:to-transparent backdrop-blur-sm animate-in slide-in-from-top-2 fade-in-50 duration-500">
-                        <div className="px-4 py-3 border-b border-slate-200/50 dark:border-white/5">
-                          <p className="text-[9px] font-medium tracking-[0.25em] uppercase text-muted-foreground/60">Findings</p>
-                          <h3 className="text-base font-light tracking-tight text-foreground/90 mt-0.5 capitalize">
+                      <div className="relative overflow-hidden rounded-xl border border-cyan-300/25 bg-slate-950/82 backdrop-blur-sm shadow-inner animate-in slide-in-from-top-2 fade-in-50 duration-500">
+                        <div className="border-b border-cyan-300/15 bg-cyan-950/20 px-4 py-3">
+                          <p className="text-[9px] font-semibold tracking-[0.25em] uppercase text-cyan-200">Findings</p>
+                          <h3 className="mt-0.5 text-base font-semibold tracking-tight text-white capitalize">
                             {activePrimarySurvey.replace(/-/g, ' ')}
                           </h3>
                         </div>
                         <div className="p-4 space-y-2">
                           {activeFindings.findings.map((f, i) => (
                             <div key={i} className="group relative pl-3">
-                              <span className="absolute left-0 top-1.5 h-1 w-1 rounded-full bg-foreground/20" />
-                              <p className="text-[10px] font-medium tracking-[0.1em] uppercase text-muted-foreground/60">{f.label}</p>
-                              <p className="font-mono text-[11px] sm:text-xs text-foreground/80 leading-relaxed mt-0.5">{f.value}</p>
+                              <span className="absolute left-0 top-1.5 h-1 w-1 rounded-full bg-cyan-300/70" />
+                              <p className="text-[10px] font-semibold tracking-[0.1em] uppercase text-slate-300">{f.label}</p>
+                              <p className="mt-0.5 font-mono text-[11px] leading-relaxed text-white sm:text-xs">{f.value}</p>
                             </div>
                           ))}
                         </div>
