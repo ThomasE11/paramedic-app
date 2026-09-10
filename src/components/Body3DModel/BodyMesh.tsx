@@ -1292,7 +1292,8 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
     skeletalMixerRef.current = mixer;
 
     return () => {
-      action.fadeOut(0.18);
+      // Extended fade-out smooths the transition and reduces residual drift
+      action.fadeOut(0.38);
       mixer.stopAllAction();
       mixer.uncacheRoot(clonedScene);
       if (skeletalMixerRef.current === mixer) skeletalMixerRef.current = null;
