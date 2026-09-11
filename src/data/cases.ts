@@ -6938,6 +6938,7 @@ export const caseDatabase: CaseScenario[] = [
       hazards: ['ACTIVE FIRE', 'Smoke-filled environment', 'Structural collapse risk', 'Chemical exposure risk'],
       bystanders: 'Other workers being evacuated',
       environment: 'Smoke-filled, hot, chaotic',
+      environmentVariant: 'fire',
       sceneImagePath: '/scene-assets/burn-001-jebel-ali-industrial-fire-burns.png',
       sceneImageCaption: 'Industrial fire — Jebel Ali',
       accessIssues: ['Fire department needed for access'],
