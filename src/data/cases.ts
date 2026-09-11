@@ -2518,7 +2518,7 @@ export const caseDatabase: CaseScenario[] = [
       hazards: ['Heavy machinery', 'Uneven ground', 'Construction materials'],
       bystanders: 'Coworkers',
       environment: 'Outdoor, hot',
-      environmentVariant: 'roadside',
+      environmentVariant: 'industrial',
       sceneImagePath: '/scene-assets/construction-fall-male-29-dubaihills.png',
       sceneImageCaption: 'Construction site fall — Dubai Hills',
     },
@@ -10360,7 +10360,7 @@ export const caseDatabase: CaseScenario[] = [
       hazards: ['Wet pool deck — slip risk', 'Child is soaking wet and cold — risk of hypothermia to rescuers unlikely but note'],
       bystanders: 'Mother (hysterical, being comforted by hotel staff), hotel duty manager, two housekeeping staff',
       environment: 'Outdoor poolside, morning, air temperature 20°C, breezy. Child soaking wet, estimated core temperature significantly below normal.',
-      environmentVariant: 'roadside',
+      environmentVariant: 'water',
       accessIssues: ['Pool area accessible through hotel lobby', 'Stretcher access via service entrance — hotel staff to guide'],
       extricationNeeded: false
     },
