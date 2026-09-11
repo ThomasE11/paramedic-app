@@ -417,7 +417,8 @@ export interface CaseScenario {
       | 'industrial'
       | 'fire'
       | 'water'
-      | 'heat';
+      | 'heat'
+      | 'agricultural';
   };
 
   // Initial Presentation

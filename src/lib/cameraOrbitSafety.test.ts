@@ -16,7 +16,7 @@ describe('cameraOrbitSafetyForEnvironment', () => {
   });
 
   it('leaves outdoor incident scenes unrestricted', () => {
-    for (const variant of ['roadside', 'industrial', 'fire', 'water', 'heat'] as const) {
+    for (const variant of ['roadside', 'industrial', 'fire', 'water', 'heat', 'agricultural'] as const) {
       const safety = cameraOrbitSafetyForEnvironment(variant);
       expect(safety.minAzimuthAngle).toBe(-Infinity);
       expect(safety.maxAzimuthAngle).toBe(Infinity);

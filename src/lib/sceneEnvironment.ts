@@ -14,7 +14,8 @@ export type EnvironmentVariant =
   | 'industrial'
   | 'fire'
   | 'water'
-  | 'heat';
+  | 'heat'
+  | 'agricultural';
 
 export const SCENE_ENVIRONMENT_LABELS: Record<EnvironmentVariant, string> = {
   clinic: 'clinical bay',
@@ -25,6 +26,7 @@ export const SCENE_ENVIRONMENT_LABELS: Record<EnvironmentVariant, string> = {
   fire: 'fire scene',
   water: 'water rescue',
   heat: 'heat exposure',
+  agricultural: 'farm field',
 };
 
 const WORKSITE_OFFICE_PATTERN = /\b(?:construction|building|work)site office\b|\bportacabin\b/;
@@ -85,8 +87,20 @@ const INDUSTRIAL_PATTERN = new RegExp(
     '\\bindustrial\\b',
     '\\bscaffold(?:ing)?\\b',
     '\\bmachinery\\b',
+  ].join('|'),
+);
+
+const AGRICULTURAL_PATTERN = new RegExp(
+  [
     '\\bfarm\\b',
-    '\\bbarn\\b',
+    'cotton field',
+    'orchard',
+    'vineyard',
+    'greenhouse',
+    'barn',
+    'agricultural',
+    'pesticide',
+    '\\bsprayer\\b',
   ].join('|'),
 );
 
@@ -207,13 +221,15 @@ export function deriveSceneEnvironment(caseData: CaseScenario): EnvironmentVaria
   // knew clinic/home/public/roadside; incident-defining evidence must be able
   // to migrate an old generic override (for example, a pool drowning that was
   // historically marked roadside) without mutating the clinical case record.
-  if (authoredVariant && ['industrial', 'fire', 'water', 'heat'].includes(authoredVariant)) {
+  if (authoredVariant && ['industrial', 'fire', 'water', 'heat', 'agricultural'].includes(authoredVariant)) {
     return authoredVariant;
   }
   if (FIRE_PATTERN.test(text)) return 'fire';
   if (WATER_PATTERN.test(text)) return 'water';
   if (HEAT_PATTERN.test(text)) return 'heat';
   if (VEHICLE_INCIDENT_PATTERN.test(text)) return 'roadside';
+  if (AUTHORED_AGRI.test(text)) return 'agricultural';
+  if (AGRICULTURAL_PATTERN.test(text) && !authoredVariant) return 'agricultural';
   if (
     INDUSTRIAL_PATTERN.test(text)
     && (!authoredVariant || ['public', 'roadside'].includes(authoredVariant))
@@ -228,3 +244,5 @@ export function deriveSceneEnvironment(caseData: CaseScenario): EnvironmentVaria
   if (PUBLIC_PATTERN.test(text)) return 'public';
   return 'clinic';
 }
+
+const AUTHORED_AGRI = /\b(?:farm|agricultural)\b/i;

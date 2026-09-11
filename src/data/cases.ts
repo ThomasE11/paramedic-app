@@ -6584,7 +6584,7 @@ export const caseDatabase: CaseScenario[] = [
       hazards: ['CHEMICAL CONTAMINATION - PPE required', 'Other workers potentially affected'],
       bystanders: '3 other workers with symptoms, farm supervisor',
       environment: 'Outdoor farm, hot sun, chemical smell in air',
-      environmentVariant: 'roadside',
+      environmentVariant: 'agricultural',
       sceneImagePath: '/scene-assets/farm-toxicology-male-35-alawir.png',
       sceneImageCaption: 'Scene — Outdoor farm, hot sun, chemical smell in air',
       accessIssues: ['Remote location', 'Decontamination needed'],

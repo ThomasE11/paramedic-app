@@ -978,6 +978,79 @@ function HeatScene({ shadowsEnabled, showPatientSeat }: { shadowsEnabled: boolea
 }
 
 // ---------------------------------------------------------------------------
+// Agricultural — farm/field with open sky, crops or irrigation, machinery,
+// and dusty ground for pesticide/toxicology cases. This distinguishes from
+// generic roadside by adding crop textures, farm equipment silhouettes, and
+// an earthy palette that matches pesticide poisoning presentations.
+// ---------------------------------------------------------------------------
+function AgriculturalScene({ shadowsEnabled, showPatientSeat: _showPatientSeat }: { shadowsEnabled: boolean; showPatientSeat: boolean }) {
+  return (
+    <group>
+      {/* Open sky day lighting for outdoor farm */}
+      <OutdoorSky zenith="#8ac2d6" horizon="#e3f4eb" />
+      
+      {/* Dusty brown earth with scattered crop debris */}
+      <mesh position={[0, -0.05, 0.2]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow raycast={NO_RAYCAST}>
+        <planeGeometry args={[8.5, 7.5]} />
+        <meshStandardMaterial color="#9c7c48" roughness={0.92} />
+      </mesh>
+      
+      {/* Row crops along the sides - tall green stalks to frame the treatment area */}
+      {[[ -3.2, -2.5], [ 3.1, -2.5], [-3.2, 2.5], [ 3.1, 2.5]].map(([x, z], i) => (
+        <group key={`crop-row-${i}`} position={[x, 0.01, z]} rotation={[Math.PI / 2, 0, 0]}>
+          {[ -2.8, -2.2, -1.5, -0.8, 0.8, 1.5, 2.2, 2.8].map((cz, j) => (
+            <mesh 
+              key={`crops-${i}-${j}`} 
+              position={[0, 0.05 + (j % 3) * 0.12, cz]} 
+              castShadow 
+              raycast={NO_RAYCAST}
+            >
+              <cylinderGeometry args={[0.04, 0.06, 1.2 + (j % 2) * 0.3, 8]} />
+              <meshStandardMaterial color="#5a7e46" roughness={0.85} />
+            </mesh>
+          ))}
+        </group>
+      ))}
+
+      {/* Farm machinery silhouette - pesticide sprayer on truck */}
+      <group position={[2.2, 0.1, -1.8]}>
+        <mesh position={[0, 0.65, 0]} castShadow receiveShadow raycast={NO_RAYCAST}>
+          <boxGeometry args={[1.6, 0.3, 1.2]} />
+          <meshStandardMaterial color="#2a3d54" roughness={0.4} metalness={0.35} />
+        </mesh>
+      </group>
+
+      {/* Safety signage - pesticide warning sign on post */}
+      <group position={[-2.5, 1.85, -0.6]}>
+        <mesh position={[0, 0.4, 0]} castShadow raycast={NO_RAYCAST}>
+          <cylinderGeometry args={[0.06, 0.06, 3.5, 12]} />
+          <meshStandardMaterial color="#8b7355" roughness={0.5} metalness={0.2} />
+        </mesh>
+      </group>
+
+      {/* Hydration point - water tank on wheel */}
+      <group position={[2.3, 0.15, 1.4]}>
+        <mesh position={[0, 0.65, 0]} castShadow receiveShadow raycast={NO_RAYCAST}>
+          <cylinderGeometry args={[0.5, 0.5, 1.1, 20]} />
+          <meshStandardMaterial color="#e8f4f8" roughness={0.3} metalness={0.2} />
+        </mesh>
+      </group>
+
+      {/* Hemisphere light - warm desert daylight */}
+      <hemisphereLight args={['#d4e2df', '#9c7a4f', 0.68]} />
+      <ambientLight intensity={1.05} color="#fff3dc" />
+      
+      {/* Key spotlight - high sun angle, creating harsh shadows */}
+      <KeyLight color="#fdf5e6" intensity={9.2} position={[0.8, 4.5, 2.8]} shadowsEnabled={shadowsEnabled} angle={0.4} />
+      
+      {/* Fill lights */}
+      <pointLight position={[-1.8, 2.6, 0.6]} intensity={2.0} distance={7} decay={2} color="#e0f0ff" />
+      <pointLight position={[1.8, 2.6, -0.4]} intensity={2.0} distance={7} decay={2} color="#e0f0ff" />
+    </group>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Roadside — open air. Asphalt with lane markings, kerb, traffic cones, the
 // ambulance's headlights raking in from behind the scene. No walls/ceiling.
 // ---------------------------------------------------------------------------
@@ -1194,6 +1267,7 @@ export function SceneVariantEnvironment({
   if (variant === 'fire') return <FireScene shadowsEnabled={shadowsEnabled} />;
   if (variant === 'water') return <WaterScene shadowsEnabled={shadowsEnabled} />;
   if (variant === 'heat') return <HeatScene shadowsEnabled={shadowsEnabled} showPatientSeat={showPatientSeat} />;
+  if (variant === 'agricultural') return <AgriculturalScene shadowsEnabled={shadowsEnabled} showPatientSeat={showPatientSeat} />;
   return <RoadsideScene shadowsEnabled={shadowsEnabled} showPatientSeat={showPatientSeat} />;
 }
 

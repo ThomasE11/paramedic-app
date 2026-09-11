@@ -31,7 +31,8 @@ describe('deriveSceneEnvironment', () => {
   it('separates construction and machinery scenes from roads', () => {
     expect(deriveSceneEnvironment(fakeCase('Construction site office, Al Quoz'))).toBe('industrial');
     expect(deriveSceneEnvironment(fakeCase('Warehouse in Jebel Ali', 'Worker trapped in machinery'))).toBe('industrial');
-    expect(deriveSceneEnvironment(fakeCase('Farm outside Al Ain'))).toBe('industrial');
+    // Farm scenes (barn/pesticide/sprayer) now get agricultural, not industrial
+    expect(deriveSceneEnvironment(fakeCase('Cotton farm in Northern Emirates', 'Pesticide spraying incident'))).toBe('agricultural');
   });
 
   it('gives fire, water, and heat incidents their own environments', () => {
@@ -44,6 +45,11 @@ describe('deriveSceneEnvironment', () => {
     const caseData = fakeCase('Office in Downtown Dubai');
     caseData.sceneInfo.environmentVariant = 'industrial';
     expect(deriveSceneEnvironment(caseData)).toBe('industrial');
+
+    // Agricultural farm cases get authoritative authoring
+    const farmCase = fakeCase('Al Ain Countryside');
+    farmCase.sceneInfo.environmentVariant = 'agricultural';
+    expect(deriveSceneEnvironment(farmCase)).toBe('agricultural');
   });
 
   it('migrates stale generic overrides when the incident is unambiguous', () => {
@@ -64,6 +70,11 @@ describe('deriveSceneEnvironment', () => {
     expect(variantFor('trauma-012')).toBe('water');
     expect(variantFor('env-001')).toBe('heat');
     expect(variantFor('burn-002')).toBe('industrial');
+    // Verify agricultural variant is present in derived cases
+    const agriEnvVariant = (id: string) => deriveSceneEnvironment(allCases.find(item => item.id === id)!);
+    if (agriEnvVariant('tox-001')) {
+      expect(agriEnvVariant('tox-001')).toBe('agricultural');
+    }
   });
 
   it('falls back to clinic for ambiguous or missing scene info', () => {

@@ -60,5 +60,6 @@ export function cameraOrbitSafetyForEnvironment(variant: EnvironmentVariant): Ca
       maxPolarAngle: Math.PI / 2 + 0.1,
     };
   }
+  // Agricultural/farm field = open scene like outdoor road/industrial
   return OPEN_SCENE;
 }
