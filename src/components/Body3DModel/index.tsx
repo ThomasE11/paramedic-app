@@ -581,7 +581,7 @@ function TreatmentBayImmersionLayer({
   const legacyOxygenFace = clinicalPoint([0.01, 1.64, 0.24]);
   const oxygenJawRoute = clinicalPoint([0.14, 1.42, 0.165]);
   const oxygenShoulderRoute = clinicalPoint([0.27, 1.30, 0.14]);
-  const uprightPatient = posture === 'tripod' || posture === 'seated' || mobility === 'standing' || mobility === 'pacing';
+  const uprightPatient = posture === 'tripod' || posture === 'seated' || posture === 'legs-elevated' || mobility === 'standing' || mobility === 'pacing';
   const oxygenCylinderZ = uprightPatient ? 0.72 : (fittedTubeExit?.[2] ?? legacyOxygenFace[2]) + 0.16;
   const oxygenCylinderBase: [number, number, number] = [0.66, -0.045, oxygenCylinderZ];
   const oxygenRegulator: [number, number, number] = [0.66, 0.43, oxygenCylinderZ];
@@ -2249,7 +2249,7 @@ function TreatmentEquipmentOverlay({
           distanceFactor={1.5}
           zIndexRange={[76, 0]}
           interactive={false}
-          presentation={posture === 'tripod' || posture === 'seated' ? 'upright' : presentation}
+          presentation={posture === 'tripod' || posture === 'seated' || posture === 'legs-elevated' ? 'upright' : presentation}
           contentScale={equipmentScale}
           surfaceAware={false}
         >
@@ -2261,7 +2261,7 @@ function TreatmentEquipmentOverlay({
       )}
 
       {equipment.hasEtTube && equipment.oxygen?.mode !== 'ventilator' && (
-        <MarkerHtml position={faceAnchor(0, 1.64, 0.24)} distanceFactor={2.4} zIndexRange={[74, 0]} interactive={false} presentation={posture === 'tripod' || posture === 'seated' ? 'upright' : presentation} contentScale={equipmentScale} surfaceAware={false}>
+        <MarkerHtml position={faceAnchor(0, 1.64, 0.24)} distanceFactor={2.4} zIndexRange={[74, 0]} interactive={false} presentation={posture === 'tripod' || posture === 'seated' || posture === 'legs-elevated' ? 'upright' : presentation} contentScale={equipmentScale} surfaceAware={false}>
           <AppliedEndotrachealTube />
         </MarkerHtml>
       )}
@@ -2272,7 +2272,7 @@ function TreatmentEquipmentOverlay({
           distanceFactor={2.25}
           zIndexRange={[77, 0]}
           interactive={false}
-          presentation={posture === 'tripod' || posture === 'seated' ? 'upright' : presentation}
+          presentation={posture === 'tripod' || posture === 'seated' || posture === 'legs-elevated' ? 'upright' : presentation}
           contentScale={equipmentScale}
           surfaceAware={false}
         >
@@ -2281,7 +2281,7 @@ function TreatmentEquipmentOverlay({
       )}
 
       {equipment.hasOpa && !equipment.hasEtTube && (
-        <MarkerHtml position={faceAnchor(0, 1.64, 0.24)} distanceFactor={2.4} zIndexRange={[73, 0]} interactive={false} presentation={posture === 'tripod' || posture === 'seated' ? 'upright' : presentation} contentScale={equipmentScale} surfaceAware={false}>
+        <MarkerHtml position={faceAnchor(0, 1.64, 0.24)} distanceFactor={2.4} zIndexRange={[73, 0]} interactive={false} presentation={posture === 'tripod' || posture === 'seated' || posture === 'legs-elevated' ? 'upright' : presentation} contentScale={equipmentScale} surfaceAware={false}>
           <AppliedOropharyngealAirway />
         </MarkerHtml>
       )}
@@ -2310,7 +2310,7 @@ function TreatmentEquipmentOverlay({
       )}
 
       {equipment.hasCollar && (
-        <MarkerHtml position={faceAnchor(0, 1.47, 0.22)} distanceFactor={2.0} zIndexRange={[72, 0]} interactive={false} presentation={posture === 'tripod' || posture === 'seated' ? 'upright' : presentation} contentScale={equipmentScale} surfaceAware={false}>
+        <MarkerHtml position={faceAnchor(0, 1.47, 0.22)} distanceFactor={2.0} zIndexRange={[72, 0]} interactive={false} presentation={posture === 'tripod' || posture === 'seated' || posture === 'legs-elevated' ? 'upright' : presentation} contentScale={equipmentScale} surfaceAware={false}>
           <AppliedCervicalCollar />
         </MarkerHtml>
       )}
@@ -2334,13 +2334,13 @@ function TreatmentEquipmentOverlay({
       )}
 
       {equipment.hasSurgicalAirway && (
-        <MarkerHtml position={faceAnchor(0, 1.47, 0.235)} distanceFactor={1.95} zIndexRange={[74, 0]} interactive={false} presentation={posture === 'tripod' || posture === 'seated' ? 'upright' : presentation} contentScale={equipmentScale} surfaceAware={false}>
+        <MarkerHtml position={faceAnchor(0, 1.47, 0.235)} distanceFactor={1.95} zIndexRange={[74, 0]} interactive={false} presentation={posture === 'tripod' || posture === 'seated' || posture === 'legs-elevated' ? 'upright' : presentation} contentScale={equipmentScale} surfaceAware={false}>
           <AppliedFrontOfNeckAirway />
         </MarkerHtml>
       )}
 
       {equipment.hasGastricTube && (
-        <MarkerHtml position={faceAnchor(0.035, 1.61, 0.245)} distanceFactor={2.05} zIndexRange={[73, 0]} interactive={false} presentation={posture === 'tripod' || posture === 'seated' ? 'upright' : presentation} contentScale={equipmentScale} surfaceAware={false}>
+        <MarkerHtml position={faceAnchor(0.035, 1.61, 0.245)} distanceFactor={2.05} zIndexRange={[73, 0]} interactive={false} presentation={posture === 'tripod' || posture === 'seated' || posture === 'legs-elevated' ? 'upright' : presentation} contentScale={equipmentScale} surfaceAware={false}>
           <AppliedGastricDecompressionTube />
         </MarkerHtml>
       )}
@@ -4096,7 +4096,7 @@ function getTreatmentBayCameraFocus(
       target,
     };
   }
-  if (posture === 'tripod' || posture === 'seated' || mobility === 'standing') {
+  if (posture === 'tripod' || posture === 'seated' || posture === 'legs-elevated' || mobility === 'standing') {
     // Keep the whole seated body inside the unobstructed part of the viewport.
     // The bottom care ribbon consumes part of the Canvas, so a torso-centred
     // portrait cropped both feet and made pedal assessment impossible from the

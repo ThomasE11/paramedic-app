@@ -9,7 +9,7 @@ import type { CaseScenario } from '@/types';
 export type PatientStage = 'stretcher' | 'floor';
 export type PatientMobility = 'recumbent' | 'seated' | 'standing' | 'pacing';
 export type PatientSkeletalAction = 'idle' | 'walk' | null;
-export type PatientPosture = 'seated' | 'tripod' | 'supine' | 'recovery' | null;
+export type PatientPosture = 'seated' | 'legs-elevated' | 'tripod' | 'supine' | 'recovery' | null;
 export type PatientSupportSurface = 'stretcher' | 'floor' | 'bed' | 'sofa' | 'seat' | 'none';
 
 export interface PatientPacingTransform {
@@ -44,6 +44,7 @@ export type PatientLivePositionKey =
   | 'standing'
   | 'tripod'
   | 'seated'
+  | 'legsElevated'
   | 'seatedBed'
   | 'seatedSofa'
   | 'semiRecumbent'
@@ -205,6 +206,9 @@ export function derivePatientPosture(
   if (mobility === 'recumbent') return 'supine';
   if (mobility === 'seated') {
     if (/\bsemi[- ]recumbent\b|\bsemi[- ]reclined\b/.test(authoredPosition)) return 'seated';
+    if (/sitting with legs elevated|legs elevated|feet elevated/.test(authoredPosition)) {
+      return 'legs-elevated';
+    }
     const explicitTripod = /\btripod\b/.test(authoredPosition)
       || (!tachypnoeaWithoutTripod && /leaning forward/.test(authoredPosition));
     return explicitTripod || respiratoryDistress
@@ -238,6 +242,9 @@ export function patientLivePositionPresentation(
     }
     if (supportSurface === 'bed') return { key: 'seatedBed', fallback: 'Seated on scene bed' };
     if (supportSurface === 'sofa') return { key: 'seatedSofa', fallback: 'Seated on scene sofa' };
+    if (posture === 'legs-elevated') {
+      return { key: 'legsElevated', fallback: 'Sitting with legs elevated' };
+    }
     return posture === 'tripod'
       ? { key: 'tripod', fallback: 'Seated in tripod position' }
       : { key: 'seated', fallback: 'Seated with support' };

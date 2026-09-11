@@ -176,6 +176,7 @@
     "standing": "Standing at scene",
     "tripod": "Seated in tripod position",
     "seated": "Seated with support",
+    "legsElevated": "Sitting with legs elevated",
     "seatedBed": "Seated on scene bed",
     "seatedSofa": "Seated on scene sofa",
     "semiRecumbent": "Supported semi-recumbent position",

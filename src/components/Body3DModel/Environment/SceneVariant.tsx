@@ -556,36 +556,82 @@ function PublicScene({
           <meshStandardMaterial color="#e2e8f0" roughness={0.35} metalness={0.2} />
         </mesh>
       ))}
-      {/* A seated public-venue patient must have a real support surface. The
-          dining chair is intentionally narrow, so its silhouette confirms the
-          restaurant context without hiding the thighs, arms or chest targets. */}
+      {/* Office task chair + ottoman. A dining chair made Business Bay read as
+          a restaurant, and hanging shins contradicted "sitting with legs
+          elevated". Keep the seat narrow so thighs, chest and pulse sites stay
+          inspectable; the ottoman is the clinical plant for the calves. */}
       {showPatientSeat && (
-        <group position={[0, 0, 0.34]}>
-          <mesh position={[0, 0.52, -0.08]} castShadow receiveShadow raycast={NO_RAYCAST}>
-            <boxGeometry args={[0.72, 0.13, 0.5]} />
-            <meshStandardMaterial color="#7d5138" roughness={0.82} />
-          </mesh>
-          {([-0.28, 0.28] as const).flatMap(x =>
-            ([-0.26, 0.12] as const).map(z => (
-              <mesh key={`public-chair-leg-${x}-${z}`} position={[x, 0.255, z]} castShadow raycast={NO_RAYCAST}>
-                <boxGeometry args={[0.045, 0.51, 0.045]} />
-                <meshStandardMaterial color="#3b2a22" roughness={0.5} metalness={0.08} />
-              </mesh>
-            )),
-          )}
-          {[-0.29, 0.29].map(x => (
-            <mesh key={`public-chair-back-post-${x}`} position={[x, 0.9, -0.29]} castShadow raycast={NO_RAYCAST}>
-              <boxGeometry args={[0.045, 0.82, 0.045]} />
-              <meshStandardMaterial color="#3b2a22" roughness={0.5} metalness={0.08} />
+        <>
+          <group name="public-patient-chair" position={[0, 0, 0.34]}>
+            <mesh position={[0, 0.52, -0.04]} castShadow receiveShadow raycast={NO_RAYCAST}>
+              <boxGeometry args={[0.58, 0.08, 0.50]} />
+              <meshStandardMaterial color="#4b5568" roughness={0.88} />
             </mesh>
-          ))}
-          {[0.71, 0.94, 1.16].map(y => (
-            <mesh key={`public-chair-back-rail-${y}`} position={[0, y, -0.29]} castShadow raycast={NO_RAYCAST}>
-              <boxGeometry args={[0.62, 0.07, 0.045]} />
-              <meshStandardMaterial color="#7d5138" roughness={0.78} />
+            <mesh position={[0, 0.96, -0.26]} castShadow raycast={NO_RAYCAST}>
+              <boxGeometry args={[0.54, 0.72, 0.06]} />
+              <meshStandardMaterial color="#3f4a5a" roughness={0.78} />
             </mesh>
-          ))}
-        </group>
+            <mesh position={[0, 0.27, -0.08]} castShadow raycast={NO_RAYCAST}>
+              <cylinderGeometry args={[0.04, 0.05, 0.48, 12]} />
+              <meshStandardMaterial color="#9aa3ad" roughness={0.32} metalness={0.55} />
+            </mesh>
+            <mesh position={[0, 0.08, -0.08]} raycast={NO_RAYCAST}>
+              <cylinderGeometry args={[0.28, 0.28, 0.045, 18]} />
+              <meshStandardMaterial color="#d5dbe3" roughness={0.28} metalness={0.62} />
+            </mesh>
+            {([0, Math.PI / 2, Math.PI, (Math.PI * 3) / 2] as const).map(angle => (
+              <group key={`public-chair-caster-${angle}`} rotation={[0, angle, 0]}>
+                <mesh position={[0, 0.055, 0.30]} rotation={[Math.PI / 2, 0, 0]} raycast={NO_RAYCAST}>
+                  <cylinderGeometry args={[0.032, 0.032, 0.04, 12]} />
+                  <meshStandardMaterial color="#111827" roughness={0.7} />
+                </mesh>
+                <mesh position={[0, 0.08, 0.16]} rotation={[Math.PI / 2, 0, 0]} raycast={NO_RAYCAST}>
+                  <cylinderGeometry args={[0.014, 0.014, 0.28, 10]} />
+                  <meshStandardMaterial color="#9aa3ad" roughness={0.32} metalness={0.55} />
+                </mesh>
+              </group>
+            ))}
+          </group>
+          <group name="public-patient-ottoman" position={[0, 0, 1.02]}>
+            {/* Top at ~0.24 m — matches the 0.26 m sole lift on pose_legs_elevated
+                after the seated pelvis plant, so calves rest instead of hover. */}
+            <mesh position={[0, 0.19, 0]} castShadow receiveShadow raycast={NO_RAYCAST}>
+              <boxGeometry args={[0.62, 0.10, 0.42]} />
+              <meshStandardMaterial color="#5b6574" roughness={0.9} />
+            </mesh>
+            {([-0.24, 0.24] as const).flatMap(x =>
+              ([-0.14, 0.14] as const).map(z => (
+                <mesh key={`public-ottoman-leg-${x}-${z}`} position={[x, 0.07, z]} castShadow raycast={NO_RAYCAST}>
+                  <boxGeometry args={[0.04, 0.14, 0.04]} />
+                  <meshStandardMaterial color="#d5dbe3" roughness={0.3} metalness={0.55} />
+                </mesh>
+              )),
+            )}
+          </group>
+          {/* Side desk — Business Bay office, not a mall storefront. */}
+          <group name="public-office-desk" position={[1.45, 0, 0.15]}>
+            <mesh position={[0, 0.74, 0]} castShadow receiveShadow raycast={NO_RAYCAST}>
+              <boxGeometry args={[1.15, 0.05, 0.68]} />
+              <meshStandardMaterial color="#d7dbe2" roughness={0.42} metalness={0.08} />
+            </mesh>
+            {([-0.48, 0.48] as const).flatMap(x =>
+              ([-0.26, 0.26] as const).map(z => (
+                <mesh key={`public-desk-leg-${x}-${z}`} position={[x, 0.36, z]} castShadow raycast={NO_RAYCAST}>
+                  <boxGeometry args={[0.045, 0.72, 0.045]} />
+                  <meshStandardMaterial color="#9aa3ad" roughness={0.32} metalness={0.5} />
+                </mesh>
+              )),
+            )}
+            <mesh position={[-0.18, 0.80, -0.04]} castShadow raycast={NO_RAYCAST}>
+              <boxGeometry args={[0.38, 0.018, 0.26]} />
+              <meshStandardMaterial color="#1f2937" roughness={0.45} metalness={0.2} />
+            </mesh>
+            <mesh position={[-0.18, 0.95, -0.14]} rotation={[-0.18, 0, 0]} raycast={NO_RAYCAST}>
+              <boxGeometry args={[0.36, 0.24, 0.012]} />
+              <meshStandardMaterial color="#111827" roughness={0.35} emissive="#1e3a5f" emissiveIntensity={0.35} />
+            </mesh>
+          </group>
+        </>
       )}
       {!hideOverhead && (
         <>

@@ -1,0 +1,1145 @@
+{
+  "sourceCounts": {
+    "core": 42,
+    "enhanced": 9,
+    "additional": 22,
+    "firstYear": 23,
+    "secondYear": 9,
+    "litfl": 6,
+    "severity": 3
+  },
+  "fyIds": [
+    {
+      "id": "y1-001",
+      "title": "Elderly Female - Fall at Home",
+      "category": "general",
+      "yearLevels": [
+        "1st-year",
+        "2nd-year",
+        "diploma"
+      ],
+      "complexity": "basic",
+      "priority": "moderate",
+      "position": "Sitting on floor, leaning against sofa"
+    },
+    {
+      "id": "y1-002",
+      "title": "Young Adult - Abdominal Pain",
+      "category": "general",
+      "yearLevels": [
+        "1st-year",
+        "2nd-year",
+        "diploma"
+      ],
+      "complexity": "basic",
+      "priority": "moderate",
+      "position": "Sitting forward, holding right lower quadrant"
+    },
+    {
+      "id": "y1-003",
+      "title": "Middle-Aged Male - Feeling Unwell (Diabetic)",
+      "category": "metabolic",
+      "yearLevels": [
+        "1st-year",
+        "2nd-year",
+        "diploma"
+      ],
+      "complexity": "basic",
+      "priority": "moderate",
+      "position": "Lying in bed"
+    },
+    {
+      "id": "y1-004",
+      "title": "Young Female - Kitchen Scald Burn",
+      "category": "burns",
+      "yearLevels": [
+        "1st-year",
+        "diploma"
+      ],
+      "complexity": "basic",
+      "priority": "moderate",
+      "position": "Standing near kitchen sink"
+    },
+    {
+      "id": "y1-005",
+      "title": "Toddler - Simple Febrile Seizure",
+      "category": "pediatric",
+      "yearLevels": [
+        "1st-year",
+        "diploma"
+      ],
+      "complexity": "basic",
+      "priority": "moderate",
+      "position": "Lying on sofa in recovery position"
+    },
+    {
+      "id": "y1-006",
+      "title": "Pregnant Female - Imminent Delivery",
+      "category": "obstetric",
+      "yearLevels": [
+        "1st-year",
+        "diploma"
+      ],
+      "complexity": "basic",
+      "priority": "high",
+      "position": "Semi-recumbent on bed, knees drawn up"
+    },
+    {
+      "id": "y1-007",
+      "title": "Toddler - Barking Cough (Croup)",
+      "category": "pediatric",
+      "yearLevels": [
+        "1st-year",
+        "diploma"
+      ],
+      "complexity": "basic",
+      "priority": "moderate",
+      "position": "Sitting upright on father's lap"
+    },
+    {
+      "id": "y1-008",
+      "title": "Young Adult - Panic Attack",
+      "category": "psychiatric",
+      "yearLevels": [
+        "1st-year",
+        "diploma"
+      ],
+      "complexity": "basic",
+      "priority": "moderate",
+      "position": "Sitting on floor against wall, knees drawn up"
+    },
+    {
+      "id": "y1-009",
+      "title": "Toddler - Accidental Ingestion of Household Cleaner",
+      "category": "toxicology",
+      "yearLevels": [
+        "1st-year",
+        "diploma"
+      ],
+      "complexity": "basic",
+      "priority": "high",
+      "position": "Being held by mother"
+    },
+    {
+      "id": "y1-010",
+      "title": "Adolescent - Wrist Fracture from Bicycle Fall",
+      "category": "trauma",
+      "yearLevels": [
+        "1st-year",
+        "diploma"
+      ],
+      "complexity": "basic",
+      "priority": "moderate",
+      "position": "Sitting on grass, supporting left wrist with right hand"
+    },
+    {
+      "id": "y1-011",
+      "title": "Adult - Minor Road Traffic Collision with Neck Pain",
+      "category": "trauma",
+      "yearLevels": [
+        "1st-year",
+        "diploma"
+      ],
+      "complexity": "basic",
+      "priority": "moderate",
+      "position": "Seated in driver seat with seatbelt on"
+    },
+    {
+      "id": "y1-012",
+      "title": "Student - Hyperventilation Syndrome",
+      "category": "respiratory",
+      "yearLevels": [
+        "1st-year",
+        "diploma"
+      ],
+      "complexity": "basic",
+      "priority": "moderate",
+      "position": "Sitting on examination couch, leaning forward"
+    },
+    {
+      "id": "y1-013",
+      "title": "Middle-Aged Adult - Palpitations",
+      "category": "cardiac",
+      "yearLevels": [
+        "1st-year",
+        "diploma"
+      ],
+      "complexity": "basic",
+      "priority": "moderate",
+      "position": "Sitting in office chair"
+    },
+    {
+      "id": "y1-014",
+      "title": "Witnessed Cardiac Arrest - Shopping Mall",
+      "category": "cardiac",
+      "yearLevels": [
+        "1st-year",
+        "diploma"
+      ],
+      "complexity": "basic",
+      "priority": "critical",
+      "position": "Supine on hard floor"
+    },
+    {
+      "id": "y1-015",
+      "title": "Severe Allergic Reaction — Restaurant",
+      "category": "respiratory",
+      "yearLevels": [
+        "1st-year",
+        "2nd-year",
+        "diploma"
+      ],
+      "complexity": "basic",
+      "priority": "critical",
+      "position": "Sitting upright, leaning forward"
+    },
+    {
+      "id": "y1-016",
+      "title": "Elderly Male - Sudden Facial Droop and Arm Weakness",
+      "category": "neurological",
+      "yearLevels": [
+        "diploma",
+        "1st-year",
+        "2nd-year"
+      ],
+      "complexity": "basic",
+      "priority": "high",
+      "position": "Seated upright in armchair"
+    },
+    {
+      "id": "y1-017",
+      "title": "Young Adult - Witnessed Seizure, Now Post-Ictal",
+      "category": "neurological",
+      "yearLevels": [
+        "diploma",
+        "1st-year",
+        "2nd-year"
+      ],
+      "complexity": "basic",
+      "priority": "high",
+      "position": "Supine, being rolled to recovery position"
+    },
+    {
+      "id": "y1-018",
+      "title": "Fasting Diabetic - Drowsy and Sweating",
+      "category": "metabolic",
+      "yearLevels": [
+        "diploma",
+        "1st-year",
+        "2nd-year"
+      ],
+      "complexity": "basic",
+      "priority": "high",
+      "position": "Slumped in driver seat"
+    },
+    {
+      "id": "y1-019",
+      "title": "Older Adult - Simple Mechanical Fall, Low Risk",
+      "category": "elderly-fall",
+      "yearLevels": [
+        "diploma",
+        "1st-year",
+        "2nd-year"
+      ],
+      "complexity": "basic",
+      "priority": "moderate",
+      "position": "On floor, leaning against sofa"
+    },
+    {
+      "id": "y1-020",
+      "title": "Teenager - Deformed Lower Leg After Football Tackle",
+      "category": "trauma",
+      "yearLevels": [
+        "diploma",
+        "1st-year",
+        "2nd-year"
+      ],
+      "complexity": "basic",
+      "priority": "moderate",
+      "position": "Supine, guarding right leg"
+    },
+    {
+      "id": "y1-021",
+      "title": "Older Smoker - Worsening Breathlessness with Green Sputum",
+      "category": "respiratory",
+      "yearLevels": [
+        "1st-year",
+        "2nd-year"
+      ],
+      "complexity": "intermediate",
+      "priority": "high",
+      "position": "Tripod, leaning on knees"
+    },
+    {
+      "id": "y1-022",
+      "title": "Young Adult - Vomiting, Diarrhoea and Cramping Abdominal Pain",
+      "category": "general",
+      "yearLevels": [
+        "diploma",
+        "1st-year",
+        "2nd-year"
+      ],
+      "complexity": "basic",
+      "priority": "moderate",
+      "position": "Curled on side, knees drawn up"
+    },
+    {
+      "id": "y1-023",
+      "title": "Unresponsive Man - Pinpoint Pupils and Slow Breathing",
+      "category": "toxicology",
+      "yearLevels": [
+        "1st-year",
+        "2nd-year"
+      ],
+      "complexity": "intermediate",
+      "priority": "critical",
+      "position": "Supine on bunk"
+    }
+  ],
+  "syIds": [
+    {
+      "id": "y2-001",
+      "title": "Asthma Exacerbation - Systematic Assessment Required",
+      "category": "respiratory",
+      "yearLevels": [
+        "2nd-year",
+        "3rd-year"
+      ],
+      "complexity": "intermediate",
+      "priority": "high"
+    },
+    {
+      "id": "y2-002",
+      "title": "Cardiac Chest Pain - Assessment Focus",
+      "category": "cardiac",
+      "yearLevels": [
+        "2nd-year",
+        "3rd-year"
+      ],
+      "complexity": "intermediate",
+      "priority": "high"
+    },
+    {
+      "id": "y2-003",
+      "title": "Acute Stroke - Neurological Assessment Focus",
+      "category": "neurological",
+      "yearLevels": [
+        "2nd-year",
+        "3rd-year"
+      ],
+      "complexity": "intermediate",
+      "priority": "critical"
+    },
+    {
+      "id": "y2-004",
+      "title": "Workshop Flash Burn - Burns Assessment",
+      "category": "burns",
+      "yearLevels": [
+        "2nd-year",
+        "3rd-year",
+        "4th-year"
+      ],
+      "complexity": "intermediate",
+      "priority": "high"
+    },
+    {
+      "id": "y2-005",
+      "title": "Ectopic Pregnancy - Obstetric Emergency",
+      "category": "obstetric",
+      "yearLevels": [
+        "2nd-year",
+        "3rd-year",
+        "4th-year"
+      ],
+      "complexity": "intermediate",
+      "priority": "critical"
+    },
+    {
+      "id": "y2-006",
+      "title": "TIA (Transient Ischaemic Attack) - Neurological Assessment",
+      "category": "neurological",
+      "yearLevels": [
+        "2nd-year",
+        "3rd-year",
+        "4th-year"
+      ],
+      "complexity": "intermediate",
+      "priority": "high"
+    },
+    {
+      "id": "y2-007",
+      "title": "Paracetamol Overdose - Toxicological Emergency",
+      "category": "toxicology",
+      "yearLevels": [
+        "2nd-year",
+        "3rd-year",
+        "4th-year"
+      ],
+      "complexity": "intermediate",
+      "priority": "high"
+    },
+    {
+      "id": "y2-008",
+      "title": "Acute Psychosis - Psychiatric Emergency",
+      "category": "psychiatric",
+      "yearLevels": [
+        "2nd-year",
+        "3rd-year",
+        "4th-year"
+      ],
+      "complexity": "intermediate",
+      "priority": "high"
+    },
+    {
+      "id": "y2-009",
+      "title": "Cardiac Arrest - Workplace Collapse",
+      "category": "cardiac",
+      "yearLevels": [
+        "2nd-year",
+        "3rd-year"
+      ],
+      "complexity": "intermediate",
+      "priority": "critical"
+    }
+  ],
+  "traumaInjuries": [
+    {
+      "id": "trauma-001",
+      "title": "Multi-Trauma from RTC - Motorcycle vs Car",
+      "yearLevels": [
+        "3rd-year",
+        "4th-year"
+      ],
+      "complexity": "expert",
+      "injuryCount": 3,
+      "injuries": [
+        {
+          "kind": "deformity",
+          "region": "right-leg",
+          "severity": "major",
+          "label": "Deformity",
+          "detail": "Right leg: deformity."
+        },
+        {
+          "kind": "bleeding",
+          "region": "right-leg",
+          "severity": "major",
+          "label": "Bleeding",
+          "detail": "Active haemorrhage from the right lower limb."
+        },
+        {
+          "kind": "flail",
+          "region": "chest",
+          "severity": "critical",
+          "label": "Flail segment",
+          "detail": "Flail chest — paradoxical movement, underlying pulmonary contusion."
+        }
+      ],
+      "sceneImagePath": "/scene-assets/road-traffic-male-dubai.png",
+      "environmentVariant": "roadside",
+      "position": "Supine, head turned to side"
+    },
+    {
+      "id": "trauma-002",
+      "title": "Head Injury with Skull Fracture",
+      "yearLevels": [
+        "3rd-year",
+        "4th-year"
+      ],
+      "complexity": "advanced",
+      "injuryCount": 1,
+      "injuries": [
+        {
+          "kind": "bleeding",
+          "region": "head",
+          "severity": "major",
+          "label": "Base-of-skull signs",
+          "detail": "Blood/CSF from ear or nose, or periorbital/mastoid bruising — base-of-skull frac"
+        }
+      ],
+      "sceneImagePath": "/scene-assets/construction-fall-male-29-dubaihills.png",
+      "environmentVariant": "roadside",
+      "position": "Supine"
+    },
+    {
+      "id": "trauma-003",
+      "title": "Penetrating Chest Wound",
+      "yearLevels": [
+        "2nd-year",
+        "3rd-year",
+        "4th-year"
+      ],
+      "complexity": "advanced",
+      "injuryCount": 2,
+      "injuries": [
+        {
+          "kind": "wound",
+          "region": "chest",
+          "severity": "minor",
+          "label": "Open chest wound",
+          "detail": "Penetrating / sucking chest wound — needs a chest seal."
+        },
+        {
+          "kind": "bleeding",
+          "region": "chest",
+          "severity": "major",
+          "label": "Active bleeding",
+          "detail": "Active external haemorrhage from the chest injury."
+        }
+      ],
+      "sceneImagePath": "/scene-assets/trauma-003-deira-chest-wound.png",
+      "environmentVariant": "roadside",
+      "position": "Sitting, leaning forward"
+    },
+    {
+      "id": "trauma-004",
+      "title": "Penetrating Chest Trauma - Cardiac Tamponade",
+      "yearLevels": [
+        "3rd-year",
+        "4th-year"
+      ],
+      "complexity": "expert",
+      "injuryCount": 1,
+      "injuries": [
+        {
+          "kind": "distension",
+          "region": "neck",
+          "severity": "major",
+          "label": "JVD",
+          "detail": "Distended neck veins — obstructive shock (tension PTX / tamponade)."
+        }
+      ],
+      "sceneImagePath": "/scene-assets/trauma-005-trapped-driver-flail-chest.png",
+      "environmentVariant": "public",
+      "position": "Supine"
+    },
+    {
+      "id": "trauma-005",
+      "title": "Blunt Chest Trauma - Tension Pneumothorax with Flail Chest",
+      "yearLevels": [
+        "3rd-year",
+        "4th-year"
+      ],
+      "complexity": "expert",
+      "injuryCount": 5,
+      "injuries": [
+        {
+          "kind": "deformity",
+          "region": "right-leg",
+          "severity": "major",
+          "label": "Deformity",
+          "detail": "Right leg: deformity."
+        },
+        {
+          "kind": "deformity",
+          "region": "neck",
+          "severity": "major",
+          "label": "Tracheal deviation",
+          "detail": "Trachea deviated — late tension pneumothorax sign."
+        },
+        {
+          "kind": "distension",
+          "region": "neck",
+          "severity": "major",
+          "label": "JVD",
+          "detail": "Distended neck veins — obstructive shock (tension PTX / tamponade)."
+        },
+        {
+          "kind": "flail",
+          "region": "chest",
+          "severity": "critical",
+          "label": "Flail segment",
+          "detail": "Flail chest — paradoxical movement, underlying pulmonary contusion."
+        },
+        {
+          "kind": "bruising",
+          "region": "chest",
+          "severity": "minor",
+          "label": "Chest bruising",
+          "detail": "Chest-wall bruising / seatbelt sign — suspect underlying injury."
+        }
+      ],
+      "sceneImagePath": "/scene-assets/trauma-005-trapped-driver-flail-chest.png",
+      "environmentVariant": "roadside",
+      "position": "Sitting (leaning forward)"
+    },
+    {
+      "id": "trauma-006",
+      "title": "Massive Hemothorax - Penetrating Trauma",
+      "yearLevels": [
+        "3rd-year",
+        "4th-year"
+      ],
+      "complexity": "expert",
+      "injuryCount": 2,
+      "injuries": [
+        {
+          "kind": "wound",
+          "region": "chest",
+          "severity": "minor",
+          "label": "Open chest wound",
+          "detail": "Penetrating / sucking chest wound — needs a chest seal."
+        },
+        {
+          "kind": "bleeding",
+          "region": "chest",
+          "severity": "major",
+          "label": "Active bleeding",
+          "detail": "Active external haemorrhage from the chest injury."
+        }
+      ],
+      "sceneImagePath": "/scene-assets/nightclub-stabbing-male-dubai.png",
+      "environmentVariant": "public",
+      "position": "Supine"
+    },
+    {
+      "id": "trauma-007",
+      "title": "Blunt Abdominal Trauma - Splenic Laceration",
+      "yearLevels": [
+        "3rd-year",
+        "4th-year"
+      ],
+      "complexity": "expert",
+      "injuryCount": 1,
+      "injuries": [
+        {
+          "kind": "bruising",
+          "region": "chest",
+          "severity": "minor",
+          "label": "Chest bruising",
+          "detail": "Chest-wall bruising / seatbelt sign — suspect underlying injury."
+        }
+      ],
+      "sceneImagePath": "/scene-assets/trauma-007-mvc-splenic-luq.png",
+      "environmentVariant": null,
+      "position": "Sitting, leaning forward"
+    },
+    {
+      "id": "trauma-008",
+      "title": "Pelvic Fracture with Hemorrhagic Shock",
+      "yearLevels": [
+        "3rd-year",
+        "4th-year"
+      ],
+      "complexity": "expert",
+      "injuryCount": 2,
+      "injuries": [
+        {
+          "kind": "rotation",
+          "region": "left-leg",
+          "severity": "major",
+          "label": "Ext. rotation",
+          "detail": "Left leg: ext. rotation — classic of proximal femur / pelvic injury."
+        },
+        {
+          "kind": "fracture",
+          "region": "pelvis",
+          "severity": "major",
+          "label": "Unstable pelvis",
+          "detail": "Unstable pelvic ring — apply a binder, do NOT spring the pelvis."
+        }
+      ],
+      "sceneImagePath": "/scene-assets/nightclub-stabbing-male-dubai.png",
+      "environmentVariant": "roadside",
+      "position": "Supine"
+    },
+    {
+      "id": "trauma-009",
+      "title": "Severe Head Injury - Epidural Hematoma",
+      "yearLevels": [
+        "3rd-year",
+        "4th-year"
+      ],
+      "complexity": "expert",
+      "injuryCount": 1,
+      "injuries": [
+        {
+          "kind": "bleeding",
+          "region": "head",
+          "severity": "major",
+          "label": "Base-of-skull signs",
+          "detail": "Blood/CSF from ear or nose, or periorbital/mastoid bruising — base-of-skull frac"
+        }
+      ],
+      "sceneImagePath": null,
+      "environmentVariant": null,
+      "position": "Supine"
+    },
+    {
+      "id": "trauma-010",
+      "title": "Cervical Spinal Cord Injury - Diving Accident",
+      "yearLevels": [
+        "3rd-year",
+        "4th-year"
+      ],
+      "complexity": "expert",
+      "injuryCount": 0,
+      "injuries": [],
+      "sceneImagePath": null,
+      "environmentVariant": null,
+      "position": "Supine in shallow water"
+    },
+    {
+      "id": "resp-006",
+      "title": "Pneumothorax After Chest Trauma",
+      "yearLevels": [
+        "3rd-year",
+        "4th-year"
+      ],
+      "complexity": "advanced",
+      "injuryCount": 2,
+      "injuries": [
+        {
+          "kind": "deformity",
+          "region": "neck",
+          "severity": "major",
+          "label": "Tracheal deviation",
+          "detail": "Trachea deviated — late tension pneumothorax sign."
+        },
+        {
+          "kind": "distension",
+          "region": "neck",
+          "severity": "major",
+          "label": "JVD",
+          "detail": "Distended neck veins — obstructive shock (tension PTX / tamponade)."
+        }
+      ],
+      "sceneImagePath": null,
+      "environmentVariant": null,
+      "position": "Sitting, leaning to right side"
+    },
+    {
+      "id": "trauma-011",
+      "title": "Amputation Injury Industrial Accident",
+      "yearLevels": [
+        "3rd-year",
+        "4th-year"
+      ],
+      "complexity": "advanced",
+      "injuryCount": 2,
+      "injuries": [
+        {
+          "kind": "bleeding",
+          "region": "right-arm",
+          "severity": "major",
+          "label": "Bleeding",
+          "detail": "Active haemorrhage from the right arm."
+        },
+        {
+          "kind": "amputation",
+          "region": "right-arm",
+          "severity": "critical",
+          "label": "Amputation",
+          "detail": "Traumatic amputation — tourniquet, retrieve the part."
+        }
+      ],
+      "sceneImagePath": "/scene-assets/industrial-workshop-male-uae.png",
+      "environmentVariant": "public",
+      "position": "Sitting"
+    },
+    {
+      "id": "y1-010",
+      "title": "Adolescent - Wrist Fracture from Bicycle Fall",
+      "yearLevels": [
+        "1st-year",
+        "diploma"
+      ],
+      "complexity": "basic",
+      "injuryCount": 1,
+      "injuries": [
+        {
+          "kind": "deformity",
+          "region": "left-arm",
+          "severity": "major",
+          "label": "Deformity",
+          "detail": "Left upper limb deformity / fracture."
+        }
+      ],
+      "sceneImagePath": null,
+      "environmentVariant": null,
+      "position": "Sitting on grass, supporting left wrist with right hand"
+    },
+    {
+      "id": "y1-011",
+      "title": "Adult - Minor Road Traffic Collision with Neck Pain",
+      "yearLevels": [
+        "1st-year",
+        "diploma"
+      ],
+      "complexity": "basic",
+      "injuryCount": 1,
+      "injuries": [
+        {
+          "kind": "bruising",
+          "region": "chest",
+          "severity": "minor",
+          "label": "Chest bruising",
+          "detail": "Chest-wall bruising / seatbelt sign — suspect underlying injury."
+        }
+      ],
+      "sceneImagePath": "/scene-assets/road-traffic-male-dubai.png",
+      "environmentVariant": "roadside",
+      "position": "Seated in driver seat with seatbelt on"
+    },
+    {
+      "id": "y1-020",
+      "title": "Teenager - Deformed Lower Leg After Football Tackle",
+      "yearLevels": [
+        "diploma",
+        "1st-year",
+        "2nd-year"
+      ],
+      "complexity": "basic",
+      "injuryCount": 1,
+      "injuries": [
+        {
+          "kind": "deformity",
+          "region": "right-leg",
+          "severity": "major",
+          "label": "Deformity",
+          "detail": "Right leg: deformity."
+        }
+      ],
+      "sceneImagePath": "/scene-assets/gym-cardiac-arrest-male-dubai.png",
+      "environmentVariant": "roadside",
+      "position": "Supine, guarding right leg"
+    }
+  ],
+  "mci": {
+    "id": "multi-001",
+    "yearLevels": [
+      "4th-year"
+    ],
+    "totalPatients": 8,
+    "patientsLength": 2,
+    "patientIds": [
+      {
+        "id": "PT-001-RED",
+        "priority": "red",
+        "name": "Bus Driver",
+        "age": 34
+      },
+      {
+        "id": "PT-002-RED",
+        "priority": "red",
+        "name": "Car Driver",
+        "age": 28
+      }
+    ],
+    "triage": {
+      "red": 2,
+      "yellow": 3,
+      "green": 2,
+      "black": 1
+    },
+    "abcdeIsAggregate": true,
+    "patientAge": 0,
+    "weight": 0
+  },
+  "diplomaProgressiveTrauma": [
+    {
+      "id": "trauma-003",
+      "title": "Penetrating Chest Wound",
+      "yearLevels": [
+        "2nd-year",
+        "3rd-year",
+        "4th-year"
+      ],
+      "complexity": "advanced"
+    },
+    {
+      "id": "y1-010",
+      "title": "Adolescent - Wrist Fracture from Bicycle Fall",
+      "yearLevels": [
+        "1st-year",
+        "diploma"
+      ],
+      "complexity": "basic"
+    },
+    {
+      "id": "y1-011",
+      "title": "Adult - Minor Road Traffic Collision with Neck Pain",
+      "yearLevels": [
+        "1st-year",
+        "diploma"
+      ],
+      "complexity": "basic"
+    },
+    {
+      "id": "y1-020",
+      "title": "Teenager - Deformed Lower Leg After Football Tackle",
+      "yearLevels": [
+        "diploma",
+        "1st-year",
+        "2nd-year"
+      ],
+      "complexity": "basic"
+    }
+  ],
+  "y1ProgressiveTrauma": [
+    "y1-010",
+    "y1-011",
+    "y1-020"
+  ],
+  "y2ProgressiveTrauma": [
+    {
+      "id": "trauma-003",
+      "title": "Penetrating Chest Wound",
+      "yearLevels": [
+        "2nd-year",
+        "3rd-year",
+        "4th-year"
+      ],
+      "complexity": "advanced"
+    },
+    {
+      "id": "y1-010",
+      "title": "Adolescent - Wrist Fracture from Bicycle Fall",
+      "yearLevels": [
+        "1st-year",
+        "diploma"
+      ],
+      "complexity": "basic"
+    },
+    {
+      "id": "y1-011",
+      "title": "Adult - Minor Road Traffic Collision with Neck Pain",
+      "yearLevels": [
+        "1st-year",
+        "diploma"
+      ],
+      "complexity": "basic"
+    },
+    {
+      "id": "y1-020",
+      "title": "Teenager - Deformed Lower Leg After Football Tackle",
+      "yearLevels": [
+        "diploma",
+        "1st-year",
+        "2nd-year"
+      ],
+      "complexity": "basic"
+    }
+  ],
+  "y1MisTags": [
+    {
+      "id": "y1-005",
+      "title": "Toddler - Simple Febrile Seizure",
+      "yearLevels": [
+        "1st-year",
+        "diploma"
+      ],
+      "complexity": "basic",
+      "priority": "moderate",
+      "category": "pediatric"
+    },
+    {
+      "id": "y1-006",
+      "title": "Pregnant Female - Imminent Delivery",
+      "yearLevels": [
+        "1st-year",
+        "diploma"
+      ],
+      "complexity": "basic",
+      "priority": "high",
+      "category": "obstetric"
+    },
+    {
+      "id": "y1-007",
+      "title": "Toddler - Barking Cough (Croup)",
+      "yearLevels": [
+        "1st-year",
+        "diploma"
+      ],
+      "complexity": "basic",
+      "priority": "moderate",
+      "category": "pediatric"
+    },
+    {
+      "id": "y1-009",
+      "title": "Toddler - Accidental Ingestion of Household Cleaner",
+      "yearLevels": [
+        "1st-year",
+        "diploma"
+      ],
+      "complexity": "basic",
+      "priority": "high",
+      "category": "toxicology"
+    },
+    {
+      "id": "y1-014",
+      "title": "Witnessed Cardiac Arrest - Shopping Mall",
+      "yearLevels": [
+        "1st-year",
+        "diploma"
+      ],
+      "complexity": "basic",
+      "priority": "critical",
+      "category": "cardiac"
+    },
+    {
+      "id": "y1-017",
+      "title": "Young Adult - Witnessed Seizure, Now Post-Ictal",
+      "yearLevels": [
+        "diploma",
+        "1st-year",
+        "2nd-year"
+      ],
+      "complexity": "basic",
+      "priority": "high",
+      "category": "neurological"
+    }
+  ],
+  "diplomaLeakAdvanced": [
+    {
+      "id": "cardiac-004",
+      "title": "Hypertensive Emergency",
+      "yearLevels": [
+        "2nd-year",
+        "3rd-year",
+        "4th-year"
+      ],
+      "complexity": "advanced",
+      "category": "cardiac"
+    },
+    {
+      "id": "resp-004",
+      "title": "Pulmonary Embolism",
+      "yearLevels": [
+        "2nd-year",
+        "3rd-year",
+        "4th-year"
+      ],
+      "complexity": "advanced",
+      "category": "respiratory"
+    },
+    {
+      "id": "trauma-003",
+      "title": "Penetrating Chest Wound",
+      "yearLevels": [
+        "2nd-year",
+        "3rd-year",
+        "4th-year"
+      ],
+      "complexity": "advanced",
+      "category": "trauma"
+    },
+    {
+      "id": "neuro-001",
+      "title": "Acute Ischemic Stroke - FAST Positive",
+      "yearLevels": [
+        "2nd-year",
+        "3rd-year",
+        "4th-year"
+      ],
+      "complexity": "advanced",
+      "category": "neurological"
+    },
+    {
+      "id": "neuro-003",
+      "title": "Meningitis",
+      "yearLevels": [
+        "2nd-year",
+        "3rd-year",
+        "4th-year"
+      ],
+      "complexity": "advanced",
+      "category": "neurological"
+    },
+    {
+      "id": "cardiac-011",
+      "title": "Acute Decompensated Heart Failure - \"Crashing Asthma\"",
+      "yearLevels": [
+        "2nd-year",
+        "3rd-year",
+        "4th-year"
+      ],
+      "complexity": "advanced",
+      "category": "cardiac"
+    },
+    {
+      "id": "cardiac-015",
+      "title": "Symptomatic Bradycardia — Medication Induced",
+      "yearLevels": [
+        "2nd-year",
+        "3rd-year",
+        "4th-year"
+      ],
+      "complexity": "advanced",
+      "category": "cardiac"
+    },
+    {
+      "id": "cardiac-016",
+      "title": "Complete Heart Block — Syncope",
+      "yearLevels": [
+        "2nd-year",
+        "3rd-year",
+        "4th-year"
+      ],
+      "complexity": "advanced",
+      "category": "cardiac"
+    },
+    {
+      "id": "resp-005",
+      "title": "Severe COPD Exacerbation",
+      "yearLevels": [
+        "2nd-year",
+        "3rd-year",
+        "4th-year"
+      ],
+      "complexity": "advanced",
+      "category": "respiratory"
+    },
+    {
+      "id": "resp-009",
+      "title": "Foreign Body Aspiration in Adult",
+      "yearLevels": [
+        "2nd-year",
+        "3rd-year",
+        "4th-year"
+      ],
+      "complexity": "advanced",
+      "category": "respiratory"
+    },
+    {
+      "id": "env-002",
+      "title": "Heat Stroke with Altered Consciousness",
+      "yearLevels": [
+        "2nd-year",
+        "3rd-year",
+        "4th-year"
+      ],
+      "complexity": "advanced",
+      "category": "environmental"
+    },
+    {
+      "id": "fall-003",
+      "title": "Long Lie - Fractured Hip, Cold and Shocked",
+      "yearLevels": [
+        "2nd-year",
+        "3rd-year",
+        "4th-year"
+      ],
+      "complexity": "advanced",
+      "category": "elderly-fall"
+    }
+  ],
+  "missingYear": [],
+  "y1ExactCats": {
+    "metabolic": 3,
+    "anxiety-related": 1,
+    "elderly-fall": 2,
+    "rule-out": 1,
+    "general": 4,
+    "environmental": 1,
+    "cardiac": 4,
+    "burns": 1,
+    "pediatric": 2,
+    "obstetric": 1,
+    "psychiatric": 1,
+    "toxicology": 2,
+    "trauma": 3,
+    "respiratory": 4,
+    "neurological": 2
+  }
+}

@@ -54,6 +54,10 @@ describe('derivePatientMobility', () => {
   it('keeps an unconscious patient recumbent regardless of narrative wording', () => {
     expect(derivePatientMobility(fakeCase('Standing at the counter'), true)).toBe('recumbent');
   });
+
+  it('keeps sitting-with-legs-elevated upright rather than recumbent', () => {
+    expect(derivePatientMobility(fakeCase('Sitting with legs elevated'))).toBe('seated');
+  });
 });
 
 describe('derivePatientPosture', () => {
@@ -74,6 +78,13 @@ describe('derivePatientPosture', () => {
       mobility: 'seated',
       respiration: 30,
     })).toBe('tripod');
+  });
+
+  it('selects legs-elevated for an authored syncope first-look', () => {
+    expect(derivePatientPosture(fakeCase('Sitting with legs elevated'), {
+      mobility: 'seated',
+      respiration: 16,
+    })).toBe('legs-elevated');
   });
 
   it('keeps recumbent, arrest and positioning overrides authoritative', () => {

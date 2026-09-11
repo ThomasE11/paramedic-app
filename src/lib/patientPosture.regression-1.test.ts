@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { additionalTraumaCases } from '@/data/additionalCases';
+import { allCases } from '@/data/cases';
 import type { CaseScenario } from '@/types';
 import { derivePatientMobility, derivePatientPosture } from './patientStaging';
 
@@ -34,5 +35,15 @@ describe('scenario-specific seated posture', () => {
     expect(derivePatientPosture(patient, { mobility: 'seated', respiration: 18 })).toBe('seated');
     patient.initialPresentation.position = 'Sitting in tripod position';
     expect(derivePatientPosture(patient, { mobility: 'seated', respiration: 18 })).toBe('tripod');
+  });
+
+  it('keeps general-001 sitting with legs elevated rather than a floor-foot seat', () => {
+    const patient = allCases.find(item => item.id === 'general-001');
+    expect(patient).toBeDefined();
+    expect(derivePatientMobility(patient!)).toBe('seated');
+    expect(derivePatientPosture(patient!, {
+      mobility: 'seated',
+      respiration: patient!.abcde.breathing.rate,
+    })).toBe('legs-elevated');
   });
 });

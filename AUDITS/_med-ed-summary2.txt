@@ -1,0 +1,351 @@
+=== INJURIES FILE KEYS ===
+['sourceCounts', 'fyIds', 'syIds', 'traumaInjuries', 'mci', 'diplomaProgressiveTrauma', 'y1ProgressiveTrauma', 'y2ProgressiveTrauma', 'y1MisTags', 'diplomaLeakAdvanced', 'missingYear', 'y1ExactCats'] len 12
+sourceCounts dict keys ['core', 'enhanced', 'additional', 'firstYear', 'secondYear', 'litfl', 'severity']
+fyIds list 23 sample [{"id": "y1-001", "title": "Elderly Female - Fall at Home", "category": "general", "yearLevels": ["1st-year", "2nd-year", "diploma"], "complexity": "basic", "priority": "moderate", "position": "Sitting on floor, leaning against sofa"}]
+syIds list 9 sample [{"id": "y2-001", "title": "Asthma Exacerbation - Systematic Assessment Required", "category": "respiratory", "yearLevels": ["2nd-year", "3rd-year"], "complexity": "intermediate", "priority": "high"}]
+traumaInjuries list 15 sample [{"id": "trauma-001", "title": "Multi-Trauma from RTC - Motorcycle vs Car", "yearLevels": ["3rd-year", "4th-year"], "complexity": "expert", "injuryCount": 3, "injuries": [{"kind": "deformity", "region": "right-leg", "severity": "major", "label": "Deformity", "detail": "Right leg: deformity."}, {"kind": "bleeding", "region": "right-leg", "severity": "major", "label": "Bleeding", "detail": "Active h
+mci dict keys ['id', 'yearLevels', 'totalPatients', 'patientsLength', 'patientIds', 'triage', 'abcdeIsAggregate', 'patientAge', 'weight']
+diplomaProgressiveTrauma list 4 sample [{"id": "trauma-003", "title": "Penetrating Chest Wound", "yearLevels": ["2nd-year", "3rd-year", "4th-year"], "complexity": "advanced"}]
+y1ProgressiveTrauma list 3 sample ["y1-010"]
+y2ProgressiveTrauma list 4 sample [{"id": "trauma-003", "title": "Penetrating Chest Wound", "yearLevels": ["2nd-year", "3rd-year", "4th-year"], "complexity": "advanced"}]
+y1MisTags list 6 sample [{"id": "y1-005", "title": "Toddler - Simple Febrile Seizure", "yearLevels": ["1st-year", "diploma"], "complexity": "basic", "priority": "moderate", "category": "pediatric"}]
+diplomaLeakAdvanced list 12 sample [{"id": "cardiac-004", "title": "Hypertensive Emergency", "yearLevels": ["2nd-year", "3rd-year", "4th-year"], "complexity": "advanced", "category": "cardiac"}]
+missingYear list 0 sample []
+y1ExactCats dict keys ['metabolic', 'anxiety-related', 'elderly-fall', 'rule-out', 'general', 'environmental', 'cardiac', 'burns', 'pediatric', 'obstetric', 'psychiatric', 'toxicology', 'trauma', 'respiratory', 'neurological']
+
+=== TRAUMA-YEAR-DATA KEYS ===
+['total', 'byCategory', 'byYearTag', 'unknownYear', 'invalidYear', 'cohortExact', 'cohortProgressive', 'year1Only', 'year2Only', 'diplomaTagged', 'year3', 'year4', 'traumaCount', 'burnsCount', 'trauma', 'burns', 'categoryByYearExact', 'basicButNotY1', 'tooHardForY1', 'diplomaOnly', 'mciFlagged', 'multiCat']
+--- total int ---
+114
+--- byCategory dict ---
+{"cardiac": 23, "respiratory": 17, "trauma": 15, "neurological": 9, "metabolic": 6, "anxiety-related": 1, "elderly-fall": 4, "post-discharge": 1, "rule-out": 1, "general": 5, "environmental": 5, "obstetric": 5, "pediatric": 6, "psychiatric": 4, "toxicology": 5, "burns": 4, "multiple-patients": 1, "cardiac-ecg": 2}
+--- byYearTag dict ---
+{"3rd-year": 79, "4th-year": 86, "2nd-year": 58, "1st-year": 32, "diploma": 30}
+--- unknownYear list ---
+[]
+--- invalidYear list ---
+[]
+--- cohortExact dict ---
+{"diploma": 30, "1st-year": 32, "2nd-year": 58, "3rd-year": 79, "4th-year": 86}
+--- cohortProgressive dict ---
+{"diploma": 69, "1st-year": 32, "2nd-year": 69, "3rd-year": 102, "4th-year": 114}
+--- year1Only list ---
+[]
+--- year2Only list ---
+[]
+--- diplomaTagged list ---
+[{"id": "metab-001", "title": "Severe Hypoglycemia", "category": "metabolic", "yearLevels": ["1st-year", "2nd-year", "3rd-year", "4th-year", "diploma"], "complexity": "intermediate"}, {"id": "psych-001", "title": "Panic Attack with Hyperventilation", "category": "anxiety-related", "yearLevels": ["1st-year", "2nd-year", "3rd-year", "4th-year", "diploma"], "complexity": "basic"}, {"id": "fall-001", "title": "Elderly Fall with Hip Fracture", "category": "elderly-fall", "yearLevels": ["1st-year", "2
+--- year3 int ---
+79
+--- year4 int ---
+86
+--- traumaCount int ---
+15
+--- burnsCount int ---
+4
+--- trauma list ---
+[{"id": "trauma-001", "title": "Multi-Trauma from RTC - Motorcycle vs Car", "subcategory": "multi-trauma", "yearLevels": ["3rd-year", "4th-year"], "complexity": "expert", "priority": "critical", "estimatedDuration": null, "location": "Sheikh Zayed Road, Dubai", "callReason": "Motorcycle accident, rider on ground not moving", "sceneDescription": "Busy highway, motorcycle lying on side, car with front damage", "sceneImagePath": "/scene-assets/road-traffic-male-dubai.png", "woundCount": 0, "woundId
+--- burns list ---
+[{"id": "burn-001", "title": "Burns - Industrial Fire with Inhalation Injury", "yearLevels": ["3rd-year", "4th-year"], "complexity": "advanced", "priority": "critical", "subcategory": "thermal-burns", "woundCount": 0, "sceneImagePath": "/scene-assets/burn-001-jebel-ali-industrial-fire-burns.png", "callReason": "Factory fire, multiple people trapped, one with severe burns", "location": "Industrial area in Jebel Ali, Dubai"}, {"id": "burn-002", "title": "Electrical Burn with Cardiac Arrest", "year
+--- categoryByYearExact dict ---
+{"diploma": {"metabolic": 3, "anxiety-related": 1, "elderly-fall": 2, "rule-out": 1, "general": 4, "environmental": 1, "cardiac": 4, "burns": 1, "pediatric": 2, "obstetric": 1, "psychiatric": 1, "toxicology": 1, "trauma": 3, "respiratory": 3, "neurological": 2}, "1st-year": {"metabolic": 3, "anxiety-related": 1, "elderly-fall": 2, "rule-out": 1, "general": 4, "environmental": 1, "cardiac": 4, "burns": 1, "pediatric": 2, "obstetric": 1, "psychiatric": 1, "toxicology": 2, "trauma": 3, "respiratory
+--- basicButNotY1 list ---
+[]
+--- tooHardForY1 list ---
+[]
+--- diplomaOnly list ---
+[]
+--- mciFlagged list ---
+[{"id": "multi-001", "title": "Mass Casualty Incident - Bus vs Car Collision (8 Patients)", "category": "multiple-patients", "yearLevels": ["4th-year"], "complexity": "expert", "hasMci": true, "mciPatientCount": 2, "callReason": "Bus vs car collision, multiple injuries, road blocked, MCI declared", "sceneDescription": "Major RTC: Bus on side with significant damage, car severely damaged, debris scattered 50m across highway. Multiple victims visible. One patient trapped in car. Strong smell of fu
+--- multiCat list ---
+[{"id": "multi-001", "title": "Mass Casualty Incident - Bus vs Car Collision (8 Patients)", "yearLevels": ["4th-year"], "complexity": "expert", "hasMci": true, "mciPatientCount": 2}]
+
+=== ALL TRAUMA WOUND / SCENE HONESTY ===
+trauma-001   wounds=0 scene=    1 path=/scene-assets/road-traffic-male-dubai.png pos=Supine, head turned to side
+trauma-002   wounds=0 scene=    1 path=/scene-assets/construction-fall-male-29-dubaihills.png pos=Supine
+trauma-003   wounds=0 scene=    1 path=/scene-assets/trauma-003-deira-chest-wound.png pos=Sitting, leaning forward
+trauma-004   wounds=0 scene=    1 path=/scene-assets/trauma-005-trapped-driver-flail-chest.png pos=Supine
+trauma-005   wounds=0 scene=    1 path=/scene-assets/trauma-005-trapped-driver-flail-chest.png pos=Sitting (leaning forward)
+trauma-006   wounds=0 scene=    1 path=/scene-assets/nightclub-stabbing-male-dubai.png pos=Supine
+trauma-007   wounds=0 scene=    1 path=/scene-assets/trauma-007-mvc-splenic-luq.png pos=Sitting, leaning forward
+trauma-008   wounds=0 scene=    1 path=/scene-assets/nightclub-stabbing-male-dubai.png pos=Supine
+trauma-009   wounds=0 scene=    0 path=None pos=Supine
+trauma-010   wounds=0 scene=    0 path=None pos=Supine in shallow water
+resp-006     wounds=0 scene=    0 path=None pos=Sitting, leaning to right side
+trauma-011   wounds=0 scene=    1 path=/scene-assets/industrial-workshop-male-uae.png pos=Sitting
+y1-010       wounds=0 scene=    0 path=None pos=Sitting on grass, supporting left wrist with right hand
+y1-011       wounds=0 scene=    1 path=/scene-assets/road-traffic-male-dubai.png pos=Seated in driver seat with seatbelt on
+y1-020       wounds=0 scene=    1 path=/scene-assets/gym-cardiac-arrest-male-dubai.png pos=Supine, guarding right leg
+
+=== DIPLOMA TAGGED (all 30) ===
+metab-001      metabolic          intermediate   ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma']  Severe Hypoglycemia
+psych-001      anxiety-related    basic          ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma']  Panic Attack with Hyperventilation
+fall-001       elderly-fall       intermediate   ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma']  Elderly Fall with Hip Fracture
+ruleout-001    rule-out           intermediate   ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma']  Chest Pain - Rule Out ACS
+general-001    general            basic          ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma']  Syncope - First Episode
+env-001        environmental      basic          ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma']  Heat Exhaustion
+cardiac-005    cardiac            basic          ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma']  Stable Angina - Exertional Chest Pain
+cardiac-010    cardiac            intermediate   ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma']  Syncope - Rule Out Cardiac Cause
+y1-001         general            basic          ['1st-year', '2nd-year', 'diploma']  Elderly Female - Fall at Home
+y1-002         general            basic          ['1st-year', '2nd-year', 'diploma']  Young Adult - Abdominal Pain
+y1-003         metabolic          basic          ['1st-year', '2nd-year', 'diploma']  Middle-Aged Male - Feeling Unwell (Diabetic)
+y1-004         burns              basic          ['1st-year', 'diploma']  Young Female - Kitchen Scald Burn
+y1-005         pediatric          basic          ['1st-year', 'diploma']  Toddler - Simple Febrile Seizure
+y1-006         obstetric          basic          ['1st-year', 'diploma']  Pregnant Female - Imminent Delivery
+y1-007         pediatric          basic          ['1st-year', 'diploma']  Toddler - Barking Cough (Croup)
+y1-008         psychiatric        basic          ['1st-year', 'diploma']  Young Adult - Panic Attack
+y1-009         toxicology         basic          ['1st-year', 'diploma']  Toddler - Accidental Ingestion of Household Cleaner
+y1-010         trauma             basic          ['1st-year', 'diploma']  Adolescent - Wrist Fracture from Bicycle Fall
+y1-011         trauma             basic          ['1st-year', 'diploma']  Adult - Minor Road Traffic Collision with Neck Pain
+y1-012         respiratory        basic          ['1st-year', 'diploma']  Student - Hyperventilation Syndrome
+y1-013         cardiac            basic          ['1st-year', 'diploma']  Middle-Aged Adult - Palpitations
+y1-014         cardiac            basic          ['1st-year', 'diploma']  Witnessed Cardiac Arrest - Shopping Mall
+y1-015         respiratory        basic          ['1st-year', '2nd-year', 'diploma']  Severe Allergic Reaction — Restaurant
+y1-016         neurological       basic          ['diploma', '1st-year', '2nd-year']  Elderly Male - Sudden Facial Droop and Arm Weakness
+y1-017         neurological       basic          ['diploma', '1st-year', '2nd-year']  Young Adult - Witnessed Seizure, Now Post-Ictal
+y1-018         metabolic          basic          ['diploma', '1st-year', '2nd-year']  Fasting Diabetic - Drowsy and Sweating
+y1-019         elderly-fall       basic          ['diploma', '1st-year', '2nd-year']  Older Adult - Simple Mechanical Fall, Low Risk
+y1-020         trauma             basic          ['diploma', '1st-year', '2nd-year']  Teenager - Deformed Lower Leg After Football Tackle
+y1-022         general            basic          ['diploma', '1st-year', '2nd-year']  Young Adult - Vomiting, Diarrhoea and Cramping Abdominal Pai
+asthma-mild-001 respiratory        basic          ['1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma']  Mild Asthma Exacerbation
+
+=== YEAR TAG COMBOS ===
+33 ('3rd-year', '4th-year')
+32 ('2nd-year', '3rd-year', '4th-year')
+12 ('4th-year',)
+11 ('1st-year', 'diploma')
+10 ('1st-year', '2nd-year', 'diploma')
+9 ('1st-year', '2nd-year', '3rd-year', '4th-year', 'diploma')
+5 ('2nd-year', '3rd-year')
+2 ('1st-year', '2nd-year')
+
+=== COMPLEXITY BY YEAR TAG (a case counted in each tagged year) ===
+diploma {'intermediate': 4, 'basic': 26}
+1st-year {'intermediate': 6, 'basic': 26}
+2nd-year {'intermediate': 31, 'advanced': 12, 'basic': 15}
+3rd-year {'advanced': 34, 'intermediate': 29, 'expert': 11, 'basic': 5}
+4th-year {'advanced': 35, 'expert': 22, 'intermediate': 24, 'basic': 5}
+
+=== CASES TAGGED 2ND-YEAR BUT NOT 1ST/DIPLOMA (diploma progressive leak source) ===
+count 37
+  cardiac-003      cardiac            intermediate   high       ['2nd-year', '3rd-year', '4th-year'] Atrial Fibrillation with Rapid Ventricular Response
+  cardiac-004      cardiac            advanced       critical   ['2nd-year', '3rd-year', '4th-year'] Hypertensive Emergency
+  resp-003         respiratory        intermediate   high       ['2nd-year', '3rd-year', '4th-year'] COPD Exacerbation
+  resp-004         respiratory        advanced       critical   ['2nd-year', '3rd-year', '4th-year'] Pulmonary Embolism
+  trauma-003       trauma             advanced       critical   ['2nd-year', '3rd-year', '4th-year'] Penetrating Chest Wound
+  neuro-001        neurological       advanced       critical   ['2nd-year', '3rd-year', '4th-year'] Acute Ischemic Stroke - FAST Positive
+  neuro-002        neurological       intermediate   high       ['2nd-year', '3rd-year', '4th-year'] Generalized Tonic-Clonic Seizure
+  neuro-003        neurological       advanced       critical   ['2nd-year', '3rd-year', '4th-year'] Meningitis
+  postd-001        post-discharge     intermediate   moderate   ['2nd-year', '3rd-year', '4th-year'] Post-Op Wound Infection
+  ped-001          pediatric          intermediate   high       ['2nd-year', '3rd-year', '4th-year'] Pediatric - 3-Year-Old with Fever and Seizure
+  psych-002        psychiatric        intermediate   moderate   ['2nd-year', '3rd-year', '4th-year'] Psychiatric - Acute Psychosis with Aggression
+  cardiac-006      cardiac            intermediate   high       ['2nd-year', '3rd-year', '4th-year'] Supraventricular Tachycardia (SVT) - Young Adult
+  cardiac-009      cardiac            intermediate   high       ['2nd-year', '3rd-year', '4th-year'] Atrial Flutter with 2:1 Block - Elderly Patient
+  cardiac-011      cardiac            advanced       high       ['2nd-year', '3rd-year', '4th-year'] Acute Decompensated Heart Failure - "Crashing Asthma"
+  cardiac-015      cardiac            advanced       high       ['2nd-year', '3rd-year', '4th-year'] Symptomatic Bradycardia — Medication Induced
+  cardiac-016      cardiac            advanced       critical   ['2nd-year', '3rd-year', '4th-year'] Complete Heart Block — Syncope
+  cardiac-017      pediatric          intermediate   critical   ['2nd-year', '3rd-year'] Paediatric Bradycardia — Infant with Poor Perfusion
+  resp-005         respiratory        advanced       high       ['2nd-year', '3rd-year', '4th-year'] Severe COPD Exacerbation
+  resp-007         pediatric          intermediate   high       ['2nd-year', '3rd-year', '4th-year'] Pediatric Croup with Stridor
+  resp-009         respiratory        advanced       critical   ['2nd-year', '3rd-year', '4th-year'] Foreign Body Aspiration in Adult
+  resp-011         respiratory        intermediate   high       ['2nd-year', '3rd-year', '4th-year'] Community Acquired Pneumonia
+  tox-002          toxicology         intermediate   critical   ['2nd-year', '3rd-year', '4th-year'] Opioid Overdose with Severe Respiratory Depression
+  ped-002          pediatric          intermediate   high       ['2nd-year', '3rd-year', '4th-year'] Pediatric Febrile Seizure
+  env-002          environmental      advanced       critical   ['2nd-year', '3rd-year', '4th-year'] Heat Stroke with Altered Consciousness
+  psych-003        psychiatric        intermediate   high       ['2nd-year', '3rd-year', '4th-year'] Acute Psychotic Episode
+  fall-003         elderly-fall       advanced       high       ['2nd-year', '3rd-year', '4th-year'] Long Lie - Fractured Hip, Cold and Shocked
+  y2-001           respiratory        intermediate   high       ['2nd-year', '3rd-year'] Asthma Exacerbation - Systematic Assessment Required
+  y2-002           cardiac            intermediate   high       ['2nd-year', '3rd-year'] Cardiac Chest Pain - Assessment Focus
+  y2-003           neurological       intermediate   critical   ['2nd-year', '3rd-year'] Acute Stroke - Neurological Assessment Focus
+  y2-004           burns              intermediate   high       ['2nd-year', '3rd-year', '4th-year'] Workshop Flash Burn - Burns Assessment
+  y2-005           obstetric          intermediate   critical   ['2nd-year', '3rd-year', '4th-year'] Ectopic Pregnancy - Obstetric Emergency
+  y2-006           neurological       intermediate   high       ['2nd-year', '3rd-year', '4th-year'] TIA (Transient Ischaemic Attack) - Neurological Assessm
+  y2-007           toxicology         intermediate   high       ['2nd-year', '3rd-year', '4th-year'] Paracetamol Overdose - Toxicological Emergency
+  y2-008           psychiatric        intermediate   high       ['2nd-year', '3rd-year', '4th-year'] Acute Psychosis - Psychiatric Emergency
+  y2-009           cardiac            intermediate   critical   ['2nd-year', '3rd-year'] Cardiac Arrest - Workplace Collapse
+  litfl-010        environmental      intermediate   critical   ['2nd-year', '3rd-year', '4th-year'] Severe Hypothermia with Osborn Waves
+  asthma-mod-001   respiratory        intermediate   high       ['2nd-year', '3rd-year', '4th-year'] Moderate Asthma Exacerbation
+
+=== ADVANCED/EXPERT TAGGED 1ST OR DIPLOMA ===
+count 0
+
+=== CRITICAL PRIORITY ON 1ST/DIPLOMA ===
+count 3
+  y1-014           basic      cardiac          ['1st-year', 'diploma'] Witnessed Cardiac Arrest - Shopping Mall
+  y1-015           basic      respiratory      ['1st-year', '2nd-year', 'diploma'] Severe Allergic Reaction — Restaurant
+  y1-023           intermediate toxicology       ['1st-year', '2nd-year'] Unresponsive Man - Pinpoint Pupils and Slow Breathing
+
+=== 3RD/4TH ONLY (hidden from diploma progressive) ===
+count 45
+cats {'cardiac': 10, 'respiratory': 6, 'trauma': 11, 'metabolic': 3, 'obstetric': 3, 'toxicology': 1, 'burns': 2, 'multiple-patients': 1, 'environmental': 2, 'cardiac-ecg': 2, 'neurological': 2, 'elderly-fall': 1, 'general': 1}
+complexity {'advanced': 23, 'expert': 22}
+  cardiac-001      cardiac            advanced       ['3rd-year', '4th-year'] Acute Anterior STEMI
+  cardiac-002      cardiac            expert         ['4th-year'] Out-of-Hospital Cardiac Arrest
+  resp-001         respiratory        advanced       ['3rd-year', '4th-year'] Life-Threatening Asthma Attack
+  resp-002         respiratory        expert         ['4th-year'] Pneumothorax - Tension
+  trauma-001       trauma             expert         ['3rd-year', '4th-year'] Multi-Trauma from RTC - Motorcycle vs Car
+  trauma-002       trauma             advanced       ['3rd-year', '4th-year'] Head Injury with Skull Fracture
+  metab-002        metabolic          advanced       ['3rd-year', '4th-year'] Diabetic Ketoacidosis (DKA)
+  obs-001          obstetric          advanced       ['3rd-year', '4th-year'] Pregnancy - Third Trimester Bleeding (Placenta Pre
+  tox-001          toxicology         expert         ['3rd-year', '4th-year'] Toxicology - Organophosphate Poisoning
+  burn-001         burns              advanced       ['3rd-year', '4th-year'] Burns - Industrial Fire with Inhalation Injury
+  multi-001        multiple-patients  expert         ['4th-year'] Mass Casualty Incident - Bus vs Car Collision (8 P
+  cardiac-007      cardiac            advanced       ['3rd-year', '4th-year'] Acute Inferior STEMI with Right Ventricular Involv
+  cardiac-008      cardiac            expert         ['4th-year'] Chest Pain with Known LBBB - Possible Occlusion MI
+  cardiac-012      cardiac            expert         ['4th-year'] Possible Pacemaker Malfunction - Dizziness and Fat
+  cardiac-013      cardiac            advanced       ['4th-year'] Refractory VF Cardiac Arrest
+  cardiac-014      environmental      advanced       ['3rd-year', '4th-year'] Hypothermic Drowning - Cardiac Arrest
+  resp-010         respiratory        advanced       ['3rd-year', '4th-year'] Refractory Anaphylaxis — Bee Sting
+  trauma-004       trauma             expert         ['3rd-year', '4th-year'] Penetrating Chest Trauma - Cardiac Tamponade
+  trauma-005       trauma             expert         ['3rd-year', '4th-year'] Blunt Chest Trauma - Tension Pneumothorax with Fla
+  trauma-006       trauma             expert         ['3rd-year', '4th-year'] Massive Hemothorax - Penetrating Trauma
+  trauma-007       trauma             expert         ['3rd-year', '4th-year'] Blunt Abdominal Trauma - Splenic Laceration
+  trauma-008       trauma             expert         ['3rd-year', '4th-year'] Pelvic Fracture with Hemorrhagic Shock
+  trauma-009       trauma             expert         ['3rd-year', '4th-year'] Severe Head Injury - Epidural Hematoma
+  trauma-010       trauma             expert         ['3rd-year', '4th-year'] Cervical Spinal Cord Injury - Diving Accident
+  cardiac-ecg-001  cardiac-ecg        expert         ['4th-year'] Acute Inferior STEMI with Right Ventricular Infarc
+  cardiac-ecg-002  cardiac-ecg        expert         ['4th-year'] Wellens Syndrome - Critical LAD Stenosis
+  resp-006         trauma             advanced       ['3rd-year', '4th-year'] Pneumothorax After Chest Trauma
+  resp-008         cardiac            advanced       ['3rd-year', '4th-year'] Acute Pulmonary Edema
+  neuro-004        neurological       advanced       ['3rd-year', '4th-year'] Bacterial Meningitis
+  metab-003        metabolic          expert         ['4th-year'] Severe Hyperkalemia with ECG Changes
+  obs-002          obstetric          expert         ['4th-year'] Eclamptic Seizure in Pregnancy
+  trauma-011       trauma             advanced       ['3rd-year', '4th-year'] Amputation Injury Industrial Accident
+  trauma-012       environmental      advanced       ['3rd-year', '4th-year'] Drowning with Hypothermia
+  burn-002         burns              expert         ['4th-year'] Electrical Burn with Cardiac Arrest
+  fall-002         elderly-fall       expert         ['3rd-year', '4th-year'] Elderly Man on Warfarin - Fall with Declining Cons
+  obs-003          obstetric          advanced       ['3rd-year', '4th-year'] Postpartum Haemorrhage After Home Birth
+  cardiac-018      cardiac            advanced       ['3rd-year', '4th-year'] Peri-Arrest Bradycardia - Syncope and Shock
+  sepsis-001       general            advanced       ['3rd-year', '4th-year'] Elderly Woman - Confusion, Fever and Low Blood Pre
+  resp-012         respiratory        expert         ['3rd-year', '4th-year'] Refractory Anaphylaxis - Worsening After First Adr
+  litfl-001        cardiac            advanced       ['3rd-year', '4th-year'] Inferior STEMI with Right Ventricular Infarction
+  litfl-003        metabolic          advanced       ['3rd-year', '4th-year'] Life-Threatening Hyperkalemia — Renal Failure
+  litfl-007        respiratory        advanced       ['3rd-year', '4th-year'] Massive Pulmonary Embolism with RV Strain
+  litfl-019        cardiac            expert         ['4th-year'] De Winter T-Wave Pattern — LAD Occlusion STEMI Equ
+  litfl-012        neurological       advanced       ['3rd-year', '4th-year'] Subarachnoid Hemorrhage with Cerebral T Waves
+  asthma-sev-001   respiratory        advanced       ['3rd-year', '4th-year'] Severe Asthma — Failing to Respond
+
+=== TRAUMA MISSING FROM Y2 EXACT ===
+Y2 exact trauma: ['trauma-003', 'y1-020']
+Y3 exact trauma: ['trauma-001', 'trauma-002', 'trauma-003', 'trauma-004', 'trauma-005', 'trauma-006', 'trauma-007', 'trauma-008', 'trauma-009', 'trauma-010', 'resp-006', 'trauma-011']
+Y4 exact trauma: ['trauma-001', 'trauma-002', 'trauma-003', 'trauma-004', 'trauma-005', 'trauma-006', 'trauma-007', 'trauma-008', 'trauma-009', 'trauma-010', 'resp-006', 'trauma-011']
+NOT tagged 3rd: ['y1-010', 'y1-011', 'y1-020']
+NOT tagged 4th: ['y1-010', 'y1-011', 'y1-020']
+
+=== CATEGORY HOLES BY COHORT EXACT ===
+diploma missing ['cardiac-ecg', 'multiple-patients', 'post-discharge']
+1st-year missing ['cardiac-ecg', 'multiple-patients', 'post-discharge']
+2nd-year missing ['cardiac-ecg', 'multiple-patients']
+3rd-year missing ['cardiac-ecg', 'multiple-patients']
+4th-year missing []
+
+=== SCENE IMAGE PATH COLLISIONS ===
+shared scene images 9
+  8 /scene-assets/office-female-palpitations-syncope-dubai.png -> ['cardiac-003', 'general-001', 'y1-002', 'y1-013', 'y1-017', 'y2-005', 'litfl-001', 'litfl-019']
+  3 /scene-assets/construction-anaphylaxis-male-uae.png -> ['resp-010', 'burn-002', 'y2-009']
+  2 /scene-assets/road-traffic-male-dubai.png -> ['trauma-001', 'y1-011']
+  2 /scene-assets/gym-cardiac-arrest-male-dubai.png -> ['cardiac-013', 'y1-020']
+  2 /scene-assets/trauma-005-trapped-driver-flail-chest.png -> ['trauma-004', 'trauma-005']
+  2 /scene-assets/nightclub-stabbing-male-dubai.png -> ['trauma-006', 'trauma-008']
+  2 /scene-assets/industrial-workshop-male-uae.png -> ['trauma-011', 'y2-004']
+  2 /scene-assets/mall-foodcourt-chestpain-male-65.png -> ['cardiac-018', 'y1-014']
+  2 /scene-assets/restaurant-anaphylaxis-female-abu-dhabi.png -> ['resp-012', 'y1-015']
+
+=== TRAUMA WITHOUT SCENE IMAGE ===
+  trauma-009 Severe Head Injury - Epidural Hematoma
+  trauma-010 Cervical Spinal Cord Injury - Diving Accident
+  resp-006 Pneumothorax After Chest Trauma
+  y1-010 Adolescent - Wrist Fracture from Bicycle Fall
+
+=== MULTI-001 FULL ===
+{
+  "id": "multi-001",
+  "title": "Mass Casualty Incident - Bus vs Car Collision (8 Patients)",
+  "category": "multiple-patients",
+  "subcategory": "mass-casualty",
+  "priority": "critical",
+  "complexity": "expert",
+  "yearLevels": [
+    "4th-year"
+  ],
+  "estimatedDuration": 60,
+  "sourceGuess": "core-or-enhanced-or-additional",
+  "patientAge": 0,
+  "patientGender": "male",
+  "patientWeight": 0,
+  "location": "Sheikh Zayed Road, near Mall of Emirates, Dubai",
+  "callReason": "Bus vs car collision, multiple injuries, road blocked, MCI declared",
+  "sceneDescription": "Major RTC: Bus on side with significant damage, car severely damaged, debris scattered 50m across highway. Multiple victims visible. One patient trapped in car. Strong smell of fuel.",
+  "sceneImagePath": "/scene-assets/mci-highway-uae.png",
+  "sceneImageCaption": "Major RTC \u2014 bus vs car collision on highway",
+  "hazards": [
+    "Fuel leak from bus tank - fire risk",
+    "Downed street light with exposed wires",
+    "Glass and metal debris across road",
+    "Traffic hazard - vehicles still passing on hard shoulder",
+    "Hot sun - risk of heat exhaustion for patients and responders",
+    "Unstable vehicle wreckage"
+  ],
+  "bystanders": "Approximately 40 people: uninjured bus passengers, passing motorists, mall security",
+  "environment": "Highway, exposed to sun, high ambient noise, chaotic",
+  "extricationNeeded": true,
+  "position": "Various - some ambulatory, some seated, some supine",
+  "appearance": "Variable - from walking wounded to critical trauma",
+  "consciousness": "Range from alert (GCS 15) to unconscious (GCS 3)",
+  "generalImpression": "MCI Scene - 8 patients visible requiring triage. Mixed injury severity. One patient unconscious. One patient trapped.",
+  "woundCount": 0,
+  "woundIds": [],
+  "hasVisualResources": true,
+  "visualImageCount": 0,
+  "visualVideoCount": 2,
+  "equipmentCount": 0,
+  "checklistCount": 13,
+  "interventionCount": 3,
+  "abcdeChecklistCount": 1,
+  "teachingPointCount": 15,
+  "pitfallCount": 12,
+  "equipmentNeededCount": 0,
+  "hasUaeProtocols": false,
+  "hasMci": true,
+  "mciPatientCount": 2,
+  "managementImmediate": [
+    "Scene safety assessment \u2014 fuel leak, downed wires, unstable vehicles; do NOT enter until safe",
+    "Declare MCI immediately \u2014 call dispatch, request additional ambulances, fire, police, HEMS",
+    "Establish Incident Command Structure \u2014 designate Incident Commander, Triage Officer, Treatment Officer, Transport Officer",
+    "START triage \u2014 assess all 8 patients within 60 seconds each: Respiration, Perfusion, Mental Status",
+    "Apply colour-coded triage tags: RED (immediate), YELLOW (delayed), GREEN (minor), BLACK (expectant)",
+    "Life-saving interventions for RED patients only: airway adjuncts, haemorrhage control, chest decompression",
+    "Do NOT perform full ABCDE on each patient during triage \u2014 triage first, treat second",
+    "Establish helicopter landing zone if HEMS required"
+  ],
+  "mostLikelyDiagnosis": "Mass Casualty Incident - Multiple Trauma Patients",
+  "keyObservations": [
+    "MCI with 8 distinct patients requiring individual assessment",
+    "START triage system must be implemented",
+    "RED (Immediate): 2 patients - airway compromise and severe hemorrhage",
+    "YELLOW (Delayed): 3 patients - significant but stable injuries",
+    "GREEN (Minor): 2 patients - walking wounded",
+    "BLACK (Expectant): 1 patient - cardiac arrest",
+    "Scene requires Incident Command structure",
+    "Multiple agencies needed: Ambulance, Fire, Police"
+  ],
+  "redFlags": [
+    "More RED priority patients than immediate transport capacity",
+    "Fuel leak presents fire and explosion risk",
+    "Exposed electrical wires downed",
+    "Hot weather causing heat stress",
+    "One patient trapped requiring prolonged extrication"
+  ],
+  "abcdeAirwayPatent": true,
+  "abcdeRr": 20,
+  "abcdeSpo2": 97,
+  "abcdeHr": 95,
+  "abcdeBp": {
+    "systolic": 120,
+    "diastolic": 75
+  },
+  "abcdeGcs": 15,
+  "abcdeAvpu": "A",
+  "hasSecondarySurvey": true,
+  "hasHistory": true
+}

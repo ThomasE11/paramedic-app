@@ -42,6 +42,10 @@ describe('authored patient support surface regression', () => {
     expect(support('Lying in bed', 'stretcher', 'recumbent', true)).toBe('stretcher');
   });
 
+  it('keeps a Business Bay syncope patient on a seat, not a bed or the floor', () => {
+    expect(support('Sitting with legs elevated', 'stretcher', 'seated')).toBe('seat');
+  });
+
   it('keeps the displayed position label consistent with the rendered surface', () => {
     const bedCase = sceneCase('Lying in bed');
     const sofaCase = sceneCase('Lying on sofa in recovery position');

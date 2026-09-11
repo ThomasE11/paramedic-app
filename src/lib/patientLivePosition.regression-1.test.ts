@@ -28,4 +28,13 @@ describe('live patient position continuity regression', () => {
       posture: null,
     })).toBe('Walking / pacing in scene');
   });
+
+  it('reports sitting with legs elevated instead of a generic seated label', () => {
+    expect(patientLivePositionLabel(caseWithPosition('Sitting with legs elevated'), {
+      stage: 'stretcher',
+      mobility: 'seated',
+      posture: 'legs-elevated',
+      supportSurface: 'seat',
+    })).toBe('Sitting with legs elevated');
+  });
 });

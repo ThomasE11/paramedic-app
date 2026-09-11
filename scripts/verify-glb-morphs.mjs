@@ -48,10 +48,15 @@ const requiredTargets = [
   'motion_tremor',
   'motion_agitation',
 ];
+const optionalTargets = ['pose_legs_elevated'];
 const missing = requiredTargets.filter(name => !targetNames.includes(name));
 if (missing.length) {
   console.error('missing required morph targets:', missing);
   process.exitCode = 1;
 } else {
   console.log(`required morph targets: ${requiredTargets.length}/${requiredTargets.length}`);
+}
+const missingOptional = optionalTargets.filter(name => !targetNames.includes(name));
+if (missingOptional.length) {
+  console.log('optional morph targets missing:', missingOptional.join(', '));
 }

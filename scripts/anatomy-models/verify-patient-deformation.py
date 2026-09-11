@@ -57,9 +57,11 @@ def verify(path: str):
         )
 
     posture_results = []
-    for morph_name in ("pose_seated", "pose_tripod"):
+    for morph_name in ("pose_seated", "pose_tripod", "pose_legs_elevated"):
         target = shape_keys.key_blocks.get(morph_name)
         if target is None:
+            if morph_name == "pose_legs_elevated":
+                continue
             raise RuntimeError(f"patient body is missing {morph_name}")
         if abs(target.value) > 1e-6:
             raise RuntimeError(f"{morph_name} default influence is {target.value}, expected 0")

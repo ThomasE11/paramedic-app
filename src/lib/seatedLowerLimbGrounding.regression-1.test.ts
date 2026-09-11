@@ -32,4 +32,11 @@ describe('seated lower-limb grounding regression', () => {
     expect(seated.position[1]).toBeCloseTo(tripod.position[1]);
     expect(seated.position[1]).toBeCloseTo(-0.3672);
   });
+
+  it('keeps the legs-elevated pelvis on the same chair plant as a hanging seat', () => {
+    const seated = getTreatmentBayTransform('floor', 'seated', 'seated', 1);
+    const elevated = getTreatmentBayTransform('floor', 'legs-elevated', 'seated', 1);
+    expect(elevated.position[1]).toBeCloseTo(seated.position[1]);
+    expect(elevated.rotation[0]).toBeCloseTo(seated.rotation[0]);
+  });
 });

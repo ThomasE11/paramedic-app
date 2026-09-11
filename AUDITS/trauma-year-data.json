@@ -1,0 +1,1688 @@
+{
+  "total": 114,
+  "byCategory": {
+    "cardiac": 23,
+    "respiratory": 17,
+    "trauma": 15,
+    "neurological": 9,
+    "metabolic": 6,
+    "anxiety-related": 1,
+    "elderly-fall": 4,
+    "post-discharge": 1,
+    "rule-out": 1,
+    "general": 5,
+    "environmental": 5,
+    "obstetric": 5,
+    "pediatric": 6,
+    "psychiatric": 4,
+    "toxicology": 5,
+    "burns": 4,
+    "multiple-patients": 1,
+    "cardiac-ecg": 2
+  },
+  "byYearTag": {
+    "3rd-year": 79,
+    "4th-year": 86,
+    "2nd-year": 58,
+    "1st-year": 32,
+    "diploma": 30
+  },
+  "unknownYear": [],
+  "invalidYear": [],
+  "cohortExact": {
+    "diploma": 30,
+    "1st-year": 32,
+    "2nd-year": 58,
+    "3rd-year": 79,
+    "4th-year": 86
+  },
+  "cohortProgressive": {
+    "diploma": 69,
+    "1st-year": 32,
+    "2nd-year": 69,
+    "3rd-year": 102,
+    "4th-year": 114
+  },
+  "year1Only": [],
+  "year2Only": [],
+  "diplomaTagged": [
+    {
+      "id": "metab-001",
+      "title": "Severe Hypoglycemia",
+      "category": "metabolic",
+      "yearLevels": [
+        "1st-year",
+        "2nd-year",
+        "3rd-year",
+        "4th-year",
+        "diploma"
+      ],
+      "complexity": "intermediate"
+    },
+    {
+      "id": "psych-001",
+      "title": "Panic Attack with Hyperventilation",
+      "category": "anxiety-related",
+      "yearLevels": [
+        "1st-year",
+        "2nd-year",
+        "3rd-year",
+        "4th-year",
+        "diploma"
+      ],
+      "complexity": "basic"
+    },
+    {
+      "id": "fall-001",
+      "title": "Elderly Fall with Hip Fracture",
+      "category": "elderly-fall",
+      "yearLevels": [
+        "1st-year",
+        "2nd-year",
+        "3rd-year",
+        "4th-year",
+        "diploma"
+      ],
+      "complexity": "intermediate"
+    },
+    {
+      "id": "ruleout-001",
+      "title": "Chest Pain - Rule Out ACS",
+      "category": "rule-out",
+      "yearLevels": [
+        "1st-year",
+        "2nd-year",
+        "3rd-year",
+        "4th-year",
+        "diploma"
+      ],
+      "complexity": "intermediate"
+    },
+    {
+      "id": "general-001",
+      "title": "Syncope - First Episode",
+      "category": "general",
+      "yearLevels": [
+        "1st-year",
+        "2nd-year",
+        "3rd-year",
+        "4th-year",
+        "diploma"
+      ],
+      "complexity": "basic"
+    },
+    {
+      "id": "env-001",
+      "title": "Heat Exhaustion",
+      "category": "environmental",
+      "yearLevels": [
+        "1st-year",
+        "2nd-year",
+        "3rd-year",
+        "4th-year",
+        "diploma"
+      ],
+      "complexity": "basic"
+    },
+    {
+      "id": "cardiac-005",
+      "title": "Stable Angina - Exertional Chest Pain",
+      "category": "cardiac",
+      "yearLevels": [
+        "1st-year",
+        "2nd-year",
+        "3rd-year",
+        "4th-year",
+        "diploma"
+      ],
+      "complexity": "basic"
+    },
+    {
+      "id": "cardiac-010",
+      "title": "Syncope - Rule Out Cardiac Cause",
+      "category": "cardiac",
+      "yearLevels": [
+        "1st-year",
+        "2nd-year",
+        "3rd-year",
+        "4th-year",
+        "diploma"
+      ],
+      "complexity": "intermediate"
+    },
+    {
+      "id": "y1-001",
+      "title": "Elderly Female - Fall at Home",
+      "category": "general",
+      "yearLevels": [
+        "1st-year",
+        "2nd-year",
+        "diploma"
+      ],
+      "complexity": "basic"
+    },
+    {
+      "id": "y1-002",
+      "title": "Young Adult - Abdominal Pain",
+      "category": "general",
+      "yearLevels": [
+        "1st-year",
+        "2nd-year",
+        "diploma"
+      ],
+      "complexity": "basic"
+    },
+    {
+      "id": "y1-003",
+      "title": "Middle-Aged Male - Feeling Unwell (Diabetic)",
+      "category": "metabolic",
+      "yearLevels": [
+        "1st-year",
+        "2nd-year",
+        "diploma"
+      ],
+      "complexity": "basic"
+    },
+    {
+      "id": "y1-004",
+      "title": "Young Female - Kitchen Scald Burn",
+      "category": "burns",
+      "yearLevels": [
+        "1st-year",
+        "diploma"
+      ],
+      "complexity": "basic"
+    },
+    {
+      "id": "y1-005",
+      "title": "Toddler - Simple Febrile Seizure",
+      "category": "pediatric",
+      "yearLevels": [
+        "1st-year",
+        "diploma"
+      ],
+      "complexity": "basic"
+    },
+    {
+      "id": "y1-006",
+      "title": "Pregnant Female - Imminent Delivery",
+      "category": "obstetric",
+      "yearLevels": [
+        "1st-year",
+        "diploma"
+      ],
+      "complexity": "basic"
+    },
+    {
+      "id": "y1-007",
+      "title": "Toddler - Barking Cough (Croup)",
+      "category": "pediatric",
+      "yearLevels": [
+        "1st-year",
+        "diploma"
+      ],
+      "complexity": "basic"
+    },
+    {
+      "id": "y1-008",
+      "title": "Young Adult - Panic Attack",
+      "category": "psychiatric",
+      "yearLevels": [
+        "1st-year",
+        "diploma"
+      ],
+      "complexity": "basic"
+    },
+    {
+      "id": "y1-009",
+      "title": "Toddler - Accidental Ingestion of Household Cleaner",
+      "category": "toxicology",
+      "yearLevels": [
+        "1st-year",
+        "diploma"
+      ],
+      "complexity": "basic"
+    },
+    {
+      "id": "y1-010",
+      "title": "Adolescent - Wrist Fracture from Bicycle Fall",
+      "category": "trauma",
+      "yearLevels": [
+        "1st-year",
+        "diploma"
+      ],
+      "complexity": "basic"
+    },
+    {
+      "id": "y1-011",
+      "title": "Adult - Minor Road Traffic Collision with Neck Pain",
+      "category": "trauma",
+      "yearLevels": [
+        "1st-year",
+        "diploma"
+      ],
+      "complexity": "basic"
+    },
+    {
+      "id": "y1-012",
+      "title": "Student - Hyperventilation Syndrome",
+      "category": "respiratory",
+      "yearLevels": [
+        "1st-year",
+        "diploma"
+      ],
+      "complexity": "basic"
+    },
+    {
+      "id": "y1-013",
+      "title": "Middle-Aged Adult - Palpitations",
+      "category": "cardiac",
+      "yearLevels": [
+        "1st-year",
+        "diploma"
+      ],
+      "complexity": "basic"
+    },
+    {
+      "id": "y1-014",
+      "title": "Witnessed Cardiac Arrest - Shopping Mall",
+      "category": "cardiac",
+      "yearLevels": [
+        "1st-year",
+        "diploma"
+      ],
+      "complexity": "basic"
+    },
+    {
+      "id": "y1-015",
+      "title": "Severe Allergic Reaction — Restaurant",
+      "category": "respiratory",
+      "yearLevels": [
+        "1st-year",
+        "2nd-year",
+        "diploma"
+      ],
+      "complexity": "basic"
+    },
+    {
+      "id": "y1-016",
+      "title": "Elderly Male - Sudden Facial Droop and Arm Weakness",
+      "category": "neurological",
+      "yearLevels": [
+        "diploma",
+        "1st-year",
+        "2nd-year"
+      ],
+      "complexity": "basic"
+    },
+    {
+      "id": "y1-017",
+      "title": "Young Adult - Witnessed Seizure, Now Post-Ictal",
+      "category": "neurological",
+      "yearLevels": [
+        "diploma",
+        "1st-year",
+        "2nd-year"
+      ],
+      "complexity": "basic"
+    },
+    {
+      "id": "y1-018",
+      "title": "Fasting Diabetic - Drowsy and Sweating",
+      "category": "metabolic",
+      "yearLevels": [
+        "diploma",
+        "1st-year",
+        "2nd-year"
+      ],
+      "complexity": "basic"
+    },
+    {
+      "id": "y1-019",
+      "title": "Older Adult - Simple Mechanical Fall, Low Risk",
+      "category": "elderly-fall",
+      "yearLevels": [
+        "diploma",
+        "1st-year",
+        "2nd-year"
+      ],
+      "complexity": "basic"
+    },
+    {
+      "id": "y1-020",
+      "title": "Teenager - Deformed Lower Leg After Football Tackle",
+      "category": "trauma",
+      "yearLevels": [
+        "diploma",
+        "1st-year",
+        "2nd-year"
+      ],
+      "complexity": "basic"
+    },
+    {
+      "id": "y1-022",
+      "title": "Young Adult - Vomiting, Diarrhoea and Cramping Abdominal Pain",
+      "category": "general",
+      "yearLevels": [
+        "diploma",
+        "1st-year",
+        "2nd-year"
+      ],
+      "complexity": "basic"
+    },
+    {
+      "id": "asthma-mild-001",
+      "title": "Mild Asthma Exacerbation",
+      "category": "respiratory",
+      "yearLevels": [
+        "1st-year",
+        "2nd-year",
+        "3rd-year",
+        "4th-year",
+        "diploma"
+      ],
+      "complexity": "basic"
+    }
+  ],
+  "year3": 79,
+  "year4": 86,
+  "traumaCount": 15,
+  "burnsCount": 4,
+  "trauma": [
+    {
+      "id": "trauma-001",
+      "title": "Multi-Trauma from RTC - Motorcycle vs Car",
+      "subcategory": "multi-trauma",
+      "yearLevels": [
+        "3rd-year",
+        "4th-year"
+      ],
+      "complexity": "expert",
+      "priority": "critical",
+      "estimatedDuration": null,
+      "location": "Sheikh Zayed Road, Dubai",
+      "callReason": "Motorcycle accident, rider on ground not moving",
+      "sceneDescription": "Busy highway, motorcycle lying on side, car with front damage",
+      "sceneImagePath": "/scene-assets/road-traffic-male-dubai.png",
+      "woundCount": 0,
+      "woundIds": [],
+      "hasVisualResources": true,
+      "visualImageCount": 4,
+      "visualVideoCount": 0,
+      "checklistCount": 9,
+      "interventionCount": 4,
+      "abcdeChecklistCount": 4,
+      "teachingPointCount": 4,
+      "hasMci": false,
+      "position": "Supine, head turned to side",
+      "appearance": "Blood on face, right leg deformed, unconscious",
+      "consciousness": "Unresponsive",
+      "mostLikelyDiagnosis": "Multi-trauma with TBI",
+      "managementImmediate": [
+        "Scene safety and PPE",
+        "CATASTROPHIC HAEMORRHAGE FIRST — CAT tourniquet 5-7cm proximal to open femur bleed (not over joint), note time; wound-pack arterial bleeds — this is step 1 of MARCH, before airway (exsanguination kills faster than airway failure in first minutes)",
+        "Manual C-spine stabilisation (selective — rigid collar only if mechanism + midline tenderness + neuro deficit)",
+        "Airway management (suction, jaw thrust, OPA/LMA/ETT)",
+        "High-flow oxygen and BVM if needed — aim SpO2 ≥94% (TBI protective)",
+        "Needle decompression if tension pneumothorax suspected (5th ICS AAL, 14G x 8cm preferred per TCCC 2022)",
+        "IV access x2 large bore (14-16G)",
+        "Small-volume Hartmann's aliquots (250mL) titrated — target SBP ≥110 mmHg if TBI (BTF 4th Ed; old SBP >90 is outdated), SBP 80-90 if penetrating without TBI"
+      ],
+      "abcdeRr": 8,
+      "abcdeSpo2": 85,
+      "abcdeHr": 125,
+      "abcdeBp": {
+        "systolic": 80,
+        "diastolic": 50
+      },
+      "abcdeGcs": 5,
+      "abcdeAvpu": "U",
+      "patientAge": 28,
+      "patientGender": "male",
+      "keyObservations": [
+        "Multiple trauma",
+        "Head injury with unequal pupils",
+        "Hypovolemic shock",
+        "Chest injury"
+      ],
+      "redFlags": [
+        "Tension pneumothorax risk",
+        "Intracranial hemorrhage",
+        "Exsanguination"
+      ],
+      "sourceGuess": "core-or-enhanced-or-additional",
+      "equipmentNeededCount": 12,
+      "hasUaeProtocols": true,
+      "hasSecondarySurvey": true,
+      "hasHistory": true,
+      "hazards": [
+        "Traffic",
+        "Fuel leak",
+        "Broken glass",
+        "Unstable motorcycle"
+      ],
+      "environment": "Hot weather, asphalt surface",
+      "extricationNeeded": null
+    },
+    {
+      "id": "trauma-002",
+      "title": "Head Injury with Skull Fracture",
+      "subcategory": "head-injury",
+      "yearLevels": [
+        "3rd-year",
+        "4th-year"
+      ],
+      "complexity": "advanced",
+      "priority": "critical",
+      "estimatedDuration": null,
+      "location": "Construction site, Dubai",
+      "callReason": "Fall from height, head injury, unconscious",
+      "sceneDescription": "Construction site, patient on ground",
+      "sceneImagePath": "/scene-assets/construction-fall-male-29-dubaihills.png",
+      "woundCount": 0,
+      "woundIds": [],
+      "hasVisualResources": false,
+      "visualImageCount": 0,
+      "visualVideoCount": 0,
+      "checklistCount": 4,
+      "interventionCount": 1,
+      "abcdeChecklistCount": 2,
+      "teachingPointCount": 4,
+      "hasMci": false,
+      "position": "Supine",
+      "appearance": "Blood on face, unconscious",
+      "consciousness": "Unresponsive",
+      "mostLikelyDiagnosis": "Severe TBI with signs of herniation",
+      "managementImmediate": [
+        "C-spine immobilization with rigid collar and blocks",
+        "Airway management with cervical spine precautions (suction, jaw thrust)",
+        "High-flow oxygen",
+        "IV access x2 with isotonic fluids (Normal Saline only)",
+        "Hyperventilation (ETCO2 30-35 mmHg) if signs of herniation",
+        "Head elevated 30 degrees",
+        "Mannitol 0.25-1g/kg or hypertonic saline if herniation suspected"
+      ],
+      "abcdeRr": 8,
+      "abcdeSpo2": 92,
+      "abcdeHr": 48,
+      "abcdeBp": {
+        "systolic": 190,
+        "diastolic": 110
+      },
+      "abcdeGcs": 5,
+      "abcdeAvpu": "U",
+      "patientAge": 35,
+      "patientGender": "male",
+      "keyObservations": [
+        "GCS 5",
+        "Blown pupil",
+        "Basal skull fracture signs"
+      ],
+      "redFlags": [
+        "Signs of herniation",
+        "Expanding extradural hematoma"
+      ],
+      "sourceGuess": "core-or-enhanced-or-additional",
+      "equipmentNeededCount": 12,
+      "hasUaeProtocols": true,
+      "hasSecondarySurvey": true,
+      "hasHistory": true,
+      "hazards": [
+        "Heavy machinery",
+        "Uneven ground",
+        "Construction materials"
+      ],
+      "environment": "Outdoor, hot",
+      "extricationNeeded": null
+    },
+    {
+      "id": "trauma-003",
+      "title": "Penetrating Chest Wound",
+      "subcategory": "chest-trauma",
+      "yearLevels": [
+        "2nd-year",
+        "3rd-year",
+        "4th-year"
+      ],
+      "complexity": "advanced",
+      "priority": "critical",
+      "estimatedDuration": null,
+      "location": "Street in Deira, Dubai",
+      "callReason": "Stab wound to chest, bleeding heavily",
+      "sceneDescription": "Street corner, police present",
+      "sceneImagePath": "/scene-assets/trauma-003-deira-chest-wound.png",
+      "woundCount": 0,
+      "woundIds": [],
+      "hasVisualResources": true,
+      "visualImageCount": 4,
+      "visualVideoCount": 0,
+      "checklistCount": 4,
+      "interventionCount": 3,
+      "abcdeChecklistCount": 1,
+      "teachingPointCount": 4,
+      "hasMci": false,
+      "position": "Sitting, leaning forward",
+      "appearance": "Pale, distressed, blood on chest",
+      "consciousness": "Alert",
+      "mostLikelyDiagnosis": "Open Pneumothorax (Sucking Chest Wound)",
+      "managementImmediate": [
+        "Apply vented chest seal (HyFin Vent / Russell / SAM) — TCCC 2022 / PHTLS 10 standard. Improvised 3-sided taped dressings are unreliable (fail when wet/bloody) and no longer first-line.",
+        "High-flow oxygen 15L/min",
+        "IV access x2 large-bore (14-16G)",
+        "PERMISSIVE HYPOTENSION target SBP 80-90 mmHg (penetrating, no TBI): 250mL Hartmann's aliquots titrated to radial pulse / mentation — avoid large crystalloid volumes (dilutional coagulopathy). Activate Major Haemorrhage Protocol for blood products.",
+        "TRANEXAMIC ACID 1g IV slow push over 10 min within 3h of injury (CRASH-2, JRCALC 2024) — then 1g infusion over 8h in-hospital.",
+        "Position patient with injured side down if possible",
+        "Prepare for tension pneumothorax development — be ready to burp the seal or needle-decompress"
+      ],
+      "abcdeRr": 26,
+      "abcdeSpo2": 90,
+      "abcdeHr": 115,
+      "abcdeBp": {
+        "systolic": 95,
+        "diastolic": 60
+      },
+      "abcdeGcs": 15,
+      "abcdeAvpu": "A",
+      "patientAge": 30,
+      "patientGender": "male",
+      "keyObservations": [
+        "Sucking chest wound",
+        "Hemodynamic compromise",
+        "Open pneumothorax"
+      ],
+      "redFlags": [
+        "Tension pneumothorax risk",
+        "Cardiac tamponade risk"
+      ],
+      "sourceGuess": "core-or-enhanced-or-additional",
+      "equipmentNeededCount": 12,
+      "hasUaeProtocols": true,
+      "hasSecondarySurvey": true,
+      "hasHistory": true,
+      "hazards": [
+        "Police incident"
+      ],
+      "environment": "Outdoor",
+      "extricationNeeded": null
+    },
+    {
+      "id": "trauma-004",
+      "title": "Penetrating Chest Trauma - Cardiac Tamponade",
+      "subcategory": "tamponade",
+      "yearLevels": [
+        "3rd-year",
+        "4th-year"
+      ],
+      "complexity": "expert",
+      "priority": "critical",
+      "estimatedDuration": 30,
+      "location": "Public park in Downtown Dubai",
+      "callReason": "Stabbing to chest, patient unresponsive",
+      "sceneDescription": "Patient supine on ground, blood visible on chest",
+      "sceneImagePath": "/scene-assets/trauma-005-trapped-driver-flail-chest.png",
+      "woundCount": 0,
+      "woundIds": [],
+      "hasVisualResources": true,
+      "visualImageCount": 3,
+      "visualVideoCount": 4,
+      "checklistCount": 9,
+      "interventionCount": 3,
+      "abcdeChecklistCount": 3,
+      "teachingPointCount": 10,
+      "hasMci": false,
+      "position": "Supine",
+      "appearance": "Pale, cyanotic lips, mottled skin",
+      "consciousness": "Unresponsive to verbal, responds only to painful stimulus",
+      "mostLikelyDiagnosis": "Cardiac Tamponade secondary to penetrating chest trauma",
+      "managementImmediate": [
+        "ABC approach with cervical spine protection",
+        "High-flow oxygen",
+        "2x large-bore IV access",
+        "Aggressive fluid resuscitation (NS or blood products)",
+        "Consider pericardiocentesis if patient deteriorating",
+        "Prepare for emergency thoracotomy",
+        "Rapid transport to trauma center"
+      ],
+      "abcdeRr": 32,
+      "abcdeSpo2": 88,
+      "abcdeHr": 140,
+      "abcdeBp": {
+        "systolic": 70,
+        "diastolic": 50
+      },
+      "abcdeGcs": 8,
+      "abcdeAvpu": "P",
+      "patientAge": 32,
+      "patientGender": "male",
+      "keyObservations": [
+        "Beck's Triad: Hypotension, JVD, Muffled heart sounds",
+        "Penetrating wound near heart (precordial region)",
+        "Signs of shock: tachycardia, poor perfusion, altered mental status",
+        "Pulsus paradoxus: >10mmHg drop in BP during inspiration"
+      ],
+      "redFlags": [
+        "Cardiac tamponade - clinical diagnosis, DO NOT wait for confirmation",
+        "Patient rapidly deteriorating toward cardiac arrest",
+        "Possible cardiac injury based on wound location",
+        "Pulsus paradoxus present"
+      ],
+      "sourceGuess": "core-or-enhanced-or-additional",
+      "equipmentNeededCount": 13,
+      "hasUaeProtocols": true,
+      "hasSecondarySurvey": true,
+      "hasHistory": true,
+      "hazards": [
+        "Assailant may still be nearby",
+        "Broken glass"
+      ],
+      "environment": "Outdoor, nighttime, poor lighting",
+      "extricationNeeded": false
+    },
+    {
+      "id": "trauma-005",
+      "title": "Blunt Chest Trauma - Tension Pneumothorax with Flail Chest",
+      "subcategory": "chest-trauma",
+      "yearLevels": [
+        "3rd-year",
+        "4th-year"
+      ],
+      "complexity": "expert",
+      "priority": "critical",
+      "estimatedDuration": 35,
+      "location": "Sheikh Zayed Road, Dubai",
+      "callReason": "MVC - driver trapped, chest injury, difficulty breathing",
+      "sceneDescription": "Vehicle with significant front-end damage, driver pinned by steering wheel",
+      "sceneImagePath": "/scene-assets/trauma-005-trapped-driver-flail-chest.png",
+      "woundCount": 0,
+      "woundIds": [],
+      "hasVisualResources": true,
+      "visualImageCount": 3,
+      "visualVideoCount": 4,
+      "checklistCount": 8,
+      "interventionCount": 3,
+      "abcdeChecklistCount": 3,
+      "teachingPointCount": 14,
+      "hasMci": false,
+      "position": "Sitting (leaning forward)",
+      "appearance": "Diaphoretic, cyanotic, anxious, using accessory muscles",
+      "consciousness": "Alert but distressed",
+      "mostLikelyDiagnosis": "Right-sided Tension Pneumothorax with Flail Chest",
+      "managementImmediate": [
+        "IMMEDIATE needle decompression right 2nd ICS midclavicular",
+        "High-flow oxygen 15L/min",
+        "IV access x2",
+        "Fluid resuscitation",
+        "Consider finger thoracostomy if needle fails",
+        "Coordinate with fire department for safe extrication"
+      ],
+      "abcdeRr": 36,
+      "abcdeSpo2": 85,
+      "abcdeHr": 145,
+      "abcdeBp": {
+        "systolic": 85,
+        "diastolic": 60
+      },
+      "abcdeGcs": 14,
+      "abcdeAvpu": "V",
+      "patientAge": 28,
+      "patientGender": "male",
+      "keyObservations": [
+        "Absent breath sounds on right side",
+        "Tracheal deviation to LEFT (away from affected side)",
+        "Hyperresonance on right percussion",
+        "JVD bilaterally elevated (impaired RV filling from rising intrathoracic pressure — both jugulars distend, not just the contralateral one)",
+        "Flail segment right anterior chest ribs 3-5",
+        "Paradoxical chest wall movement",
+        "Severe respiratory distress",
+        "Hemodynamic compromise"
+      ],
+      "redFlags": [
+        "Tension pneumothorax - clinical diagnosis, decompress immediately!",
+        "Tracheal deviation is LATE sign - do not wait for it!",
+        "Flail chest indicates severe chest wall trauma",
+        "Possible underlying pulmonary contusion",
+        "High risk of deterioration during extrication"
+      ],
+      "sourceGuess": "core-or-enhanced-or-additional",
+      "equipmentNeededCount": 15,
+      "hasUaeProtocols": true,
+      "hasSecondarySurvey": true,
+      "hasHistory": true,
+      "hazards": [
+        "Fuel leak",
+        "Risk of vehicle fire",
+        "Unstable vehicle",
+        "Glass and debris"
+      ],
+      "environment": "Hot day, asphalt road",
+      "extricationNeeded": true
+    },
+    {
+      "id": "trauma-006",
+      "title": "Massive Hemothorax - Penetrating Trauma",
+      "subcategory": "chest-trauma",
+      "yearLevels": [
+        "3rd-year",
+        "4th-year"
+      ],
+      "complexity": "expert",
+      "priority": "critical",
+      "estimatedDuration": 30,
+      "location": "Nightclub in Dubai Marina",
+      "callReason": "Multiple GSW victims, one with chest wounds",
+      "sceneDescription": "Chaotic scene, multiple casualties",
+      "sceneImagePath": "/scene-assets/nightclub-stabbing-male-dubai.png",
+      "woundCount": 0,
+      "woundIds": [],
+      "hasVisualResources": true,
+      "visualImageCount": 3,
+      "visualVideoCount": 4,
+      "checklistCount": 11,
+      "interventionCount": 7,
+      "abcdeChecklistCount": 2,
+      "teachingPointCount": 7,
+      "hasMci": false,
+      "position": "Supine",
+      "appearance": "Pale, diaphoretic, in obvious distress",
+      "consciousness": "Alert but anxious",
+      "mostLikelyDiagnosis": "Right Massive Hemothorax from GSW",
+      "managementImmediate": [
+        "Occlusive dressing for chest wound",
+        "High-flow oxygen",
+        "2x large bore IV",
+        "Tranexamic acid (TXA) 1g IV within 3 hours of injury — CRASH-2 evidence for mortality benefit in bleeding trauma patients",
+        "Permissive hypotension (SBP 80-90 mmHg if no TBI) via small-volume fluid titration + early blood products",
+        "Place large bore chest tube (36-40F)",
+        "Measure output carefully"
+      ],
+      "abcdeRr": 28,
+      "abcdeSpo2": 91,
+      "abcdeHr": 130,
+      "abcdeBp": {
+        "systolic": 90,
+        "diastolic": 65
+      },
+      "abcdeGcs": 15,
+      "abcdeAvpu": "A",
+      "patientAge": 26,
+      "patientGender": "male",
+      "keyObservations": [
+        "Penetrating trauma to right hemithorax",
+        "Signs of hypovolemic shock",
+        "Diminished breath sounds right base",
+        "Dullness to percussion (blood in pleural space)",
+        "Chest tube output >1500mL indicates massive hemothorax"
+      ],
+      "redFlags": [
+        "Massive hemothorax (>1500mL or 1/3 blood volume)",
+        "Initial output >1500mL requires immediate thoracotomy",
+        "Ongoing bleeding >200mL/hour requires thoracotomy",
+        "Hypovolemic shock"
+      ],
+      "sourceGuess": "core-or-enhanced-or-additional",
+      "equipmentNeededCount": 14,
+      "hasUaeProtocols": true,
+      "hasSecondarySurvey": true,
+      "hasHistory": true,
+      "hazards": [
+        "ACTIVE SHOOTER SCENE - unsafe!",
+        "Multiple weapons",
+        "Panic"
+      ],
+      "environment": "Indoor nightclub, loud music, flashing lights",
+      "extricationNeeded": false
+    },
+    {
+      "id": "trauma-007",
+      "title": "Blunt Abdominal Trauma - Splenic Laceration",
+      "subcategory": "abdominal-trauma",
+      "yearLevels": [
+        "3rd-year",
+        "4th-year"
+      ],
+      "complexity": "expert",
+      "priority": "critical",
+      "estimatedDuration": 25,
+      "location": "Al Khail Road, Dubai",
+      "callReason": "MVC - driver complaining of abdominal pain",
+      "sceneDescription": "Vehicle with front-end damage, driver out of vehicle",
+      "sceneImagePath": "/scene-assets/trauma-007-mvc-splenic-luq.png",
+      "woundCount": 0,
+      "woundIds": [],
+      "hasVisualResources": true,
+      "visualImageCount": 3,
+      "visualVideoCount": 4,
+      "checklistCount": 10,
+      "interventionCount": 4,
+      "abcdeChecklistCount": 4,
+      "teachingPointCount": 8,
+      "hasMci": false,
+      "position": "Sitting, leaning forward",
+      "appearance": "Pale, diaphoretic, in pain",
+      "consciousness": "Alert but distracted by pain",
+      "mostLikelyDiagnosis": "Blunt splenic injury with internal hemorrhage",
+      "managementImmediate": [
+        "ABC approach",
+        "IV access x2",
+        "Tranexamic acid (TXA) 1g IV within 3 hours of injury — CRASH-2 mortality benefit for bleeding trauma",
+        "Fluid resuscitation (permissive hypotension if no TBI)",
+        "FAST exam",
+        "Abdominal examination",
+        "Pre-alert trauma center"
+      ],
+      "abcdeRr": 22,
+      "abcdeSpo2": 96,
+      "abcdeHr": 115,
+      "abcdeBp": {
+        "systolic": 100,
+        "diastolic": 70
+      },
+      "abcdeGcs": 15,
+      "abcdeAvpu": "A",
+      "patientAge": 35,
+      "patientGender": "male",
+      "keyObservations": [
+        "Abdominal tenderness LUQ",
+        "Seatbelt sign",
+        "Signs of early shock",
+        "FAST positive for LUQ fluid",
+        "Rebound tenderness"
+      ],
+      "redFlags": [
+        "Solid organ injury - spleen most commonly injured",
+        "Seatbelt sign = high risk for hollow viscus injury",
+        "Hypotension with abdominal pain = concerning",
+        "FAST positive requires urgent surgical consultation"
+      ],
+      "sourceGuess": "core-or-enhanced-or-additional",
+      "equipmentNeededCount": 13,
+      "hasUaeProtocols": true,
+      "hasSecondarySurvey": true,
+      "hasHistory": true,
+      "hazards": [
+        "Fluid spill",
+        "Debris"
+      ],
+      "environment": "Hot day",
+      "extricationNeeded": null
+    },
+    {
+      "id": "trauma-008",
+      "title": "Pelvic Fracture with Hemorrhagic Shock",
+      "subcategory": "pelvic-fracture",
+      "yearLevels": [
+        "3rd-year",
+        "4th-year"
+      ],
+      "complexity": "expert",
+      "priority": "critical",
+      "estimatedDuration": 30,
+      "location": "Mamzar Beach Road, Dubai",
+      "callReason": "Pedestrian struck by car, pelvic pain",
+      "sceneDescription": "Female pedestrian lying supine in the kerbside lane of a four-lane road. Left leg visibly shortened and externally rotated at the hip — foot turned outward roughly 45°. Patient is moaning, conscious but pale. A handbag and one sandal are on the road ~5m up-traffic, marking the impact point. The striking vehicle (silver sedan) is stopped 20m further with hazard lights on; driver standing nearby, visibly shaken. A small blood pool is forming under the left buttock. Bystanders have placed a hi-vis vest beside the patient. No fluid leaking from ears or nose; no head laceration visible.",
+      "sceneImagePath": "/scene-assets/nightclub-stabbing-male-dubai.png",
+      "woundCount": 0,
+      "woundIds": [],
+      "hasVisualResources": true,
+      "visualImageCount": 3,
+      "visualVideoCount": 3,
+      "checklistCount": 11,
+      "interventionCount": 4,
+      "abcdeChecklistCount": 5,
+      "teachingPointCount": 9,
+      "hasMci": false,
+      "position": "Supine",
+      "appearance": "Pale, diaphoretic, distressed",
+      "consciousness": "Alert but in pain",
+      "mostLikelyDiagnosis": "Unstable pelvic fracture with hemorrhagic shock",
+      "managementImmediate": [
+        "ABC approach with spinal precautions",
+        "Apply pelvic binder ASAP",
+        "IV access x2",
+        "Tranexamic acid (TXA) 1g IV within 3 hours of injury — CRASH-2 mortality benefit for haemorrhagic shock",
+        "Permissive hypotension (SBP 80-90 mmHg if no TBI) via small-volume fluid titration + early blood products",
+        "Blood products",
+        "DO NOT insert Foley catheter if blood at meatus",
+        "Pre-alert trauma center"
+      ],
+      "abcdeRr": 26,
+      "abcdeSpo2": 93,
+      "abcdeHr": 135,
+      "abcdeBp": {
+        "systolic": 75,
+        "diastolic": 50
+      },
+      "abcdeGcs": 15,
+      "abcdeAvpu": "A",
+      "patientAge": 45,
+      "patientGender": "female",
+      "keyObservations": [
+        "Unstable pelvic fracture",
+        "Signs of hemorrhagic shock",
+        "Shortened externally rotated leg",
+        "Blood at urethral meatus = urethral injury",
+        "Pelvic instability on compression"
+      ],
+      "redFlags": [
+        "Pelvic fracture can lose 2-3L of blood!",
+        "Blood at meatus = urethral injury - DO NOT insert Foley!",
+        "Pelvic binder reduces bleeding by tamponade effect",
+        "High mortality with unstable pelvic fractures"
+      ],
+      "sourceGuess": "core-or-enhanced-or-additional",
+      "equipmentNeededCount": 13,
+      "hasUaeProtocols": true,
+      "hasSecondarySurvey": true,
+      "hasHistory": true,
+      "hazards": [
+        "Live traffic (two lanes still open)",
+        "Poor lighting beyond streetlamp pool",
+        "Glass and vehicle debris on road"
+      ],
+      "environment": "Nighttime, street lighting from overhead lamp ~3m away; warm and humid; asphalt road surface dry",
+      "extricationNeeded": false
+    },
+    {
+      "id": "trauma-009",
+      "title": "Severe Head Injury - Epidural Hematoma",
+      "subcategory": "head-injury",
+      "yearLevels": [
+        "3rd-year",
+        "4th-year"
+      ],
+      "complexity": "expert",
+      "priority": "critical",
+      "estimatedDuration": 20,
+      "location": "Construction site in Dubai Hills",
+      "callReason": "Fall from height, unconscious",
+      "sceneDescription": "Construction site, patient supine near scaffolding",
+      "sceneImagePath": null,
+      "woundCount": 0,
+      "woundIds": [],
+      "hasVisualResources": true,
+      "visualImageCount": 3,
+      "visualVideoCount": 4,
+      "checklistCount": 5,
+      "interventionCount": 3,
+      "abcdeChecklistCount": 2,
+      "teachingPointCount": 11,
+      "hasMci": false,
+      "position": "Supine",
+      "appearance": "Blood on face, pale",
+      "consciousness": "Unresponsive",
+      "mostLikelyDiagnosis": "Acute Epidural Hematoma with Uncal Herniation",
+      "managementImmediate": [
+        "ABC with spinal precautions",
+        "Secure airway (GCS ≤8)",
+        "Hyperventilate if herniating (target EtCO2 30-35)",
+        "Elevate head 30°",
+        "IV access",
+        "Mannitol 0.5-1g/kg if herniation signs (4th-year scope only)",
+        "Rapid transport to neurosurgical center",
+        "Pre-alert neurosurgeon"
+      ],
+      "abcdeRr": 18,
+      "abcdeSpo2": 90,
+      "abcdeHr": 58,
+      "abcdeBp": {
+        "systolic": 165,
+        "diastolic": 100
+      },
+      "abcdeGcs": 6,
+      "abcdeAvpu": "P",
+      "patientAge": 29,
+      "patientGender": "male",
+      "keyObservations": [
+        "Lucid interval followed by deterioration (classic for EDH)",
+        "Cushing's triad: bradycardia, hypertension, irregular respirations",
+        "Dilated fixed pupil on side of hematoma",
+        "Contralateral hemiparesis",
+        "Scalp laceration overlying skull fracture"
+      ],
+      "redFlags": [
+        "Epidural hematoma - surgical emergency!",
+        "Lucid interval is classic for EDH but absent in 30%",
+        "Rapid deterioration to herniation",
+        "Blown pupil = uncal herniation",
+        "Time is brain - evacuate NOW!"
+      ],
+      "sourceGuess": "core-or-enhanced-or-additional",
+      "equipmentNeededCount": 17,
+      "hasUaeProtocols": true,
+      "hasSecondarySurvey": true,
+      "hasHistory": true,
+      "hazards": [
+        "Construction equipment",
+        "Uneven ground",
+        "Debris"
+      ],
+      "environment": "Dusty, outdoor",
+      "extricationNeeded": null
+    },
+    {
+      "id": "trauma-010",
+      "title": "Cervical Spinal Cord Injury - Diving Accident",
+      "subcategory": "spinal-injury",
+      "yearLevels": [
+        "3rd-year",
+        "4th-year"
+      ],
+      "complexity": "expert",
+      "priority": "critical",
+      "estimatedDuration": 25,
+      "location": "Jumeirah Beach, Dubai",
+      "callReason": "Diving accident, cannot move arms or legs",
+      "sceneDescription": "Beach, patient supine in shallow water",
+      "sceneImagePath": null,
+      "woundCount": 0,
+      "woundIds": [],
+      "hasVisualResources": true,
+      "visualImageCount": 4,
+      "visualVideoCount": 5,
+      "checklistCount": 4,
+      "interventionCount": 2,
+      "abcdeChecklistCount": 2,
+      "teachingPointCount": 11,
+      "hasMci": false,
+      "position": "Supine in shallow water",
+      "appearance": "Alert, anxious, appears unable to move below shoulders",
+      "consciousness": "Alert and oriented",
+      "mostLikelyDiagnosis": "Complete C5 Spinal Cord Injury with Neurogenic Shock",
+      "managementImmediate": [
+        "ABC with strict spinal immobilization",
+        "High-flow oxygen (respiratory compromise risk)",
+        "IV access",
+        "Supportive fluids for neurogenic shock",
+        "Monitor respirations closely",
+        "Rigid cervical collar",
+        "Backboard with full spinal precautions",
+        "Transport to spinal injury center"
+      ],
+      "abcdeRr": 24,
+      "abcdeSpo2": 94,
+      "abcdeHr": 52,
+      "abcdeBp": {
+        "systolic": 95,
+        "diastolic": 60
+      },
+      "abcdeGcs": 15,
+      "abcdeAvpu": "A",
+      "patientAge": 22,
+      "patientGender": "male",
+      "keyObservations": [
+        "Complete spinal cord injury at C5 level",
+        "Diaphragmatic breathing (phrenic nerve C3-C5 intact)",
+        "Paralysis of all extremities (quadriplegia)",
+        "Loss of sensation below clavicle",
+        "Priapism (pathologic sign of cord injury)",
+        "Neurogenic shock (bradycardia, hypotension)"
+      ],
+      "redFlags": [
+        "High cervical injury (C3-C5) = respiratory compromise!",
+        "Neurogenic shock can develop rapidly",
+        "C5 level = biceps present, wrist/hand function absent",
+        "Complete cord injury has poor prognosis for recovery",
+        "Risk of respiratory failure if injury ascends"
+      ],
+      "sourceGuess": "core-or-enhanced-or-additional",
+      "equipmentNeededCount": 17,
+      "hasUaeProtocols": true,
+      "hasSecondarySurvey": true,
+      "hasHistory": true,
+      "hazards": [
+        "Water rescue",
+        "Crowd on beach"
+      ],
+      "environment": "Hot sunny day, sand, water",
+      "extricationNeeded": null
+    },
+    {
+      "id": "resp-006",
+      "title": "Pneumothorax After Chest Trauma",
+      "subcategory": "chest-trauma",
+      "yearLevels": [
+        "3rd-year",
+        "4th-year"
+      ],
+      "complexity": "advanced",
+      "priority": "critical",
+      "estimatedDuration": 20,
+      "location": "Construction site, Dubai Marina",
+      "callReason": "Man fell from ladder, chest pain, difficulty breathing",
+      "sceneDescription": "Construction site, patient on ground near scaffolding",
+      "sceneImagePath": null,
+      "woundCount": 0,
+      "woundIds": [],
+      "hasVisualResources": true,
+      "visualImageCount": 3,
+      "visualVideoCount": 3,
+      "checklistCount": 12,
+      "interventionCount": 4,
+      "abcdeChecklistCount": 6,
+      "teachingPointCount": 3,
+      "hasMci": false,
+      "position": "Sitting, leaning to right side",
+      "appearance": "Diaphoretic, distressed, rapid breathing",
+      "consciousness": "Alert",
+      "mostLikelyDiagnosis": "Tension Pneumothorax",
+      "managementImmediate": [
+        "High-flow oxygen 15L/min via non-rebreather",
+        "Immediate needle decompression — PREFERRED site 4th-5th ICS anterior-to-mid axillary line (TCCC 2022); 2nd ICS mid-clavicular is a valid alternate but fails in >30% of adults (chest-wall thickness, great-vessel proximity)",
+        "Use 14G x 8cm catheter (5cm catheters demonstrably fail in ~1/3 of adults)",
+        "IV access with large-bore cannula",
+        "Small-volume Hartmann's titration if hypotensive — target SBP 80-90 (permissive hypotension if no TBI)",
+        "Selective C-spine per NEXUS/CCR — rigid collar only if mechanism + midline tenderness + neuro deficit",
+        "Vented chest seal (HyFin Vent / Russell) if open pneumothorax"
+      ],
+      "abcdeRr": 28,
+      "abcdeSpo2": 88,
+      "abcdeHr": 120,
+      "abcdeBp": {
+        "systolic": 110,
+        "diastolic": 70
+      },
+      "abcdeGcs": 15,
+      "abcdeAvpu": "A",
+      "patientAge": 34,
+      "patientGender": "male",
+      "keyObservations": [
+        "Tension pneumothorax developing",
+        "Tracheal deviation",
+        "Respiratory distress"
+      ],
+      "redFlags": [
+        "Tension pneumothorax",
+        "Cardiac arrest imminent"
+      ],
+      "sourceGuess": "core-or-enhanced-or-additional",
+      "equipmentNeededCount": 13,
+      "hasUaeProtocols": true,
+      "hasSecondarySurvey": true,
+      "hasHistory": true,
+      "hazards": [
+        "Fallen tools",
+        "Unstable ladder",
+        "Construction materials"
+      ],
+      "environment": "Outdoor, hot, dusty",
+      "extricationNeeded": null
+    },
+    {
+      "id": "trauma-011",
+      "title": "Amputation Injury Industrial Accident",
+      "subcategory": "extremity-trauma",
+      "yearLevels": [
+        "3rd-year",
+        "4th-year"
+      ],
+      "complexity": "advanced",
+      "priority": "critical",
+      "estimatedDuration": 20,
+      "location": "Factory, Industrial Area",
+      "callReason": "Hand caught in machine, hand severed, heavy bleeding",
+      "sceneDescription": "Factory floor, patient sitting",
+      "sceneImagePath": "/scene-assets/industrial-workshop-male-uae.png",
+      "woundCount": 0,
+      "woundIds": [],
+      "hasVisualResources": true,
+      "visualImageCount": 2,
+      "visualVideoCount": 3,
+      "checklistCount": 4,
+      "interventionCount": 4,
+      "abcdeChecklistCount": 0,
+      "teachingPointCount": 4,
+      "hasMci": false,
+      "position": "Sitting",
+      "appearance": "Pale, anxious, coworker applying ineffective pressure to active arterial bleeding",
+      "consciousness": "Alert",
+      "mostLikelyDiagnosis": "Traumatic Amputation of Right Hand",
+      "managementImmediate": [
+        "Haemorrhage control — apply tourniquet 5-7cm proximal to amputation site; apply tight with one-handed windlass; note time applied",
+        "Direct pressure to stump if tourniquet not immediately available — use haemostatic dressing (QuikClot, Celox)",
+        "IV access x2 (14-16G) large bore, antecubital",
+        "Fluid resuscitation 500mL NS bolus — reassess BP; target SBP >90",
+        "Preserve the amputated part: wrap in moist sterile gauze, place in sealed waterproof bag, then place bag in container of ice water — do NOT place directly on ice or submerge in water",
+        "Label the bag with patient name, time of amputation, and time placed on ice",
+        "Analgesia — Morphine 0.1mg/kg IV titrated; Ketamine 0.3mg/kg IV if haemodynamically compromised",
+        "Reassess tourniquet effectiveness — proximal pulse should be absent, bleeding should be controlled"
+      ],
+      "abcdeRr": 24,
+      "abcdeSpo2": 95,
+      "abcdeHr": 120,
+      "abcdeBp": {
+        "systolic": 90,
+        "diastolic": 60
+      },
+      "abcdeGcs": 15,
+      "abcdeAvpu": "A",
+      "patientAge": 30,
+      "patientGender": "male",
+      "keyObservations": [
+        "Complete traumatic amputation",
+        "Hemorrhagic shock",
+        "Amputated part viable"
+      ],
+      "redFlags": [
+        "Reperfusion injury",
+        "Hyperkalemia from cell death"
+      ],
+      "sourceGuess": "core-or-enhanced-or-additional",
+      "equipmentNeededCount": 14,
+      "hasUaeProtocols": true,
+      "hasSecondarySurvey": true,
+      "hasHistory": true,
+      "hazards": [
+        "Industrial machinery",
+        "Blood",
+        "Sharp objects"
+      ],
+      "environment": "Industrial, noisy",
+      "extricationNeeded": null
+    },
+    {
+      "id": "y1-010",
+      "title": "Adolescent - Wrist Fracture from Bicycle Fall",
+      "subcategory": "long-bone-fracture",
+      "yearLevels": [
+        "1st-year",
+        "diploma"
+      ],
+      "complexity": "basic",
+      "priority": "moderate",
+      "estimatedDuration": 15,
+      "location": "Local park pathway",
+      "callReason": "14-year-old fell off bicycle, wrist injury",
+      "sceneDescription": "Park pathway, patient sitting on grass verge beside bicycle, holding left wrist",
+      "sceneImagePath": null,
+      "woundCount": 0,
+      "woundIds": [],
+      "hasVisualResources": false,
+      "visualImageCount": 0,
+      "visualVideoCount": 0,
+      "checklistCount": 16,
+      "interventionCount": 4,
+      "abcdeChecklistCount": 3,
+      "teachingPointCount": 7,
+      "hasMci": false,
+      "position": "Sitting on grass, supporting left wrist with right hand",
+      "appearance": "Pale, guarding injured wrist, some tears but trying to be brave",
+      "consciousness": "Alert and oriented",
+      "mostLikelyDiagnosis": "Closed distal radius fracture (Colles-type) from FOOSH mechanism",
+      "managementImmediate": [
+        "Scene safety - move bicycle off path",
+        "Introduction and consent",
+        "Assess for other injuries (full body check)",
+        "Neurovascular assessment of injured hand: pulses, sensation, movement",
+        "OPQRS pain assessment"
+      ],
+      "abcdeRr": 20,
+      "abcdeSpo2": 99,
+      "abcdeHr": 96,
+      "abcdeBp": {
+        "systolic": 118,
+        "diastolic": 72
+      },
+      "abcdeGcs": 15,
+      "abcdeAvpu": "A",
+      "patientAge": 14,
+      "patientGender": "male",
+      "keyObservations": [
+        "Isolated distal radius fracture (likely Colles-type)",
+        "Closed fracture with dorsal deformity",
+        "FOOSH (Fall On Outstretched Hand) mechanism",
+        "Neurovascularly intact distally",
+        "Low energy mechanism, helmet worn, no other injuries"
+      ],
+      "redFlags": [
+        "Loss of distal pulses (vascular compromise)",
+        "Loss of sensation (nerve injury)",
+        "Open fracture (skin broken over fracture site)",
+        "Compartment syndrome signs (pain out of proportion, pain with passive stretch)"
+      ],
+      "sourceGuess": "core-or-enhanced-or-additional",
+      "equipmentNeededCount": 0,
+      "hasUaeProtocols": false,
+      "hasSecondarySurvey": true,
+      "hasHistory": true,
+      "hazards": [
+        "Bicycle on path",
+        "Passing cyclists/pedestrians"
+      ],
+      "environment": "Outdoor park, dry weather, warm afternoon",
+      "extricationNeeded": null
+    },
+    {
+      "id": "y1-011",
+      "title": "Adult - Minor Road Traffic Collision with Neck Pain",
+      "subcategory": "whiplash",
+      "yearLevels": [
+        "1st-year",
+        "diploma"
+      ],
+      "complexity": "basic",
+      "priority": "moderate",
+      "estimatedDuration": 18,
+      "location": "Main road, vehicles pulled over to hard shoulder",
+      "callReason": "30-year-old male, rear-ended at low speed, complaining of neck pain",
+      "sceneDescription": "Two-vehicle rear-end collision on main road, minor vehicle damage, patient still in driver seat",
+      "sceneImagePath": "/scene-assets/road-traffic-male-dubai.png",
+      "woundCount": 0,
+      "woundIds": [],
+      "hasVisualResources": false,
+      "visualImageCount": 0,
+      "visualVideoCount": 0,
+      "checklistCount": 14,
+      "interventionCount": 3,
+      "abcdeChecklistCount": 3,
+      "teachingPointCount": 7,
+      "hasMci": false,
+      "position": "Seated in driver seat with seatbelt on",
+      "appearance": "Anxious but not distressed, holding posterior neck",
+      "consciousness": "Alert and fully oriented",
+      "mostLikelyDiagnosis": "Cervical muscle strain / whiplash injury",
+      "managementImmediate": [
+        "Scene safety - protect from traffic, hi-vis, cones",
+        "Introduction and consent",
+        "Manual in-line stabilisation of C-spine",
+        "Full neurological assessment: power, sensation, reflexes",
+        "Canadian C-Spine Rules or NEXUS criteria assessment"
+      ],
+      "abcdeRr": 18,
+      "abcdeSpo2": 99,
+      "abcdeHr": 88,
+      "abcdeBp": {
+        "systolic": 135,
+        "diastolic": 82
+      },
+      "abcdeGcs": 15,
+      "abcdeAvpu": "A",
+      "patientAge": 30,
+      "patientGender": "male",
+      "keyObservations": [
+        "Low-speed rear-end collision",
+        "Neck pain with midline tenderness",
+        "No neurological deficit",
+        "Seatbelt worn, no head impact",
+        "No loss of consciousness",
+        "Mobile at scene"
+      ],
+      "redFlags": [
+        "Any neurological deficit (weakness, numbness, tingling)",
+        "Loss of consciousness or amnesia",
+        "Severe mechanism or high-speed impact",
+        "Intoxication (unreliable assessment)",
+        "Distracting injuries",
+        "Age >65 (Canadian C-Spine Rules)"
+      ],
+      "sourceGuess": "core-or-enhanced-or-additional",
+      "equipmentNeededCount": 0,
+      "hasUaeProtocols": false,
+      "hasSecondarySurvey": true,
+      "hasHistory": true,
+      "hazards": [
+        "Moving traffic nearby",
+        "Broken glass on road",
+        "Risk of further collision"
+      ],
+      "environment": "Roadside, dry conditions, good visibility",
+      "extricationNeeded": null
+    },
+    {
+      "id": "y1-020",
+      "title": "Teenager - Deformed Lower Leg After Football Tackle",
+      "subcategory": "long-bone-fracture",
+      "yearLevels": [
+        "diploma",
+        "1st-year",
+        "2nd-year"
+      ],
+      "complexity": "basic",
+      "priority": "moderate",
+      "estimatedDuration": 16,
+      "location": "School sports field, Dubai",
+      "callReason": "17-year-old, twisted leg in football, obvious deformity, severe pain",
+      "sceneDescription": "Astroturf pitch, patient on the ground holding right lower leg, teammates around",
+      "sceneImagePath": "/scene-assets/gym-cardiac-arrest-male-dubai.png",
+      "woundCount": 0,
+      "woundIds": [],
+      "hasVisualResources": false,
+      "visualImageCount": 0,
+      "visualVideoCount": 0,
+      "checklistCount": 7,
+      "interventionCount": 2,
+      "abcdeChecklistCount": 0,
+      "teachingPointCount": 5,
+      "hasMci": false,
+      "position": "Supine, guarding right leg",
+      "appearance": "Pale, sweating with pain, obvious mid-shaft deformity",
+      "consciousness": "Alert and oriented",
+      "mostLikelyDiagnosis": "Isolated closed tibial shaft fracture",
+      "managementImmediate": [
+        "Scene safety",
+        "Expose and assess the limb",
+        "Check and document distal pulses, sensation, capillary refill BEFORE and AFTER any movement",
+        "Analgesia (paracetamol and titrated stronger analgesia per protocol)",
+        "Align and splint in position of comfort"
+      ],
+      "abcdeRr": 20,
+      "abcdeSpo2": 99,
+      "abcdeHr": 104,
+      "abcdeBp": {
+        "systolic": 128,
+        "diastolic": 78
+      },
+      "abcdeGcs": 15,
+      "abcdeAvpu": "A",
+      "patientAge": 17,
+      "patientGender": "male",
+      "keyObservations": [
+        "Isolated closed long-bone fracture",
+        "Distal neurovascular status intact",
+        "Severe pain",
+        "Otherwise well teenager"
+      ],
+      "redFlags": [
+        "Loss of distal pulse (vascular compromise)",
+        "Increasing pain out of proportion (compartment syndrome)",
+        "Open fracture",
+        "Signs of significant blood loss"
+      ],
+      "sourceGuess": "core-or-enhanced-or-additional",
+      "equipmentNeededCount": 0,
+      "hasUaeProtocols": false,
+      "hasSecondarySurvey": true,
+      "hasHistory": true,
+      "hazards": [
+        "Other players",
+        "Evening floodlights"
+      ],
+      "environment": "Outdoor pitch, warm evening",
+      "extricationNeeded": null
+    }
+  ],
+  "burns": [
+    {
+      "id": "burn-001",
+      "title": "Burns - Industrial Fire with Inhalation Injury",
+      "yearLevels": [
+        "3rd-year",
+        "4th-year"
+      ],
+      "complexity": "advanced",
+      "priority": "critical",
+      "subcategory": "thermal-burns",
+      "woundCount": 0,
+      "sceneImagePath": "/scene-assets/burn-001-jebel-ali-industrial-fire-burns.png",
+      "callReason": "Factory fire, multiple people trapped, one with severe burns",
+      "location": "Industrial area in Jebel Ali, Dubai"
+    },
+    {
+      "id": "burn-002",
+      "title": "Electrical Burn with Cardiac Arrest",
+      "yearLevels": [
+        "4th-year"
+      ],
+      "complexity": "expert",
+      "priority": "critical",
+      "subcategory": "cardiac-arrest",
+      "woundCount": 0,
+      "sceneImagePath": "/scene-assets/construction-anaphylaxis-male-uae.png",
+      "callReason": "Electrician shocked, unconscious, not breathing",
+      "location": "Commercial building, Business Bay"
+    },
+    {
+      "id": "y1-004",
+      "title": "Young Female - Kitchen Scald Burn",
+      "yearLevels": [
+        "1st-year",
+        "diploma"
+      ],
+      "complexity": "basic",
+      "priority": "moderate",
+      "subcategory": "scald",
+      "woundCount": 0,
+      "sceneImagePath": null,
+      "callReason": "25-year-old female, boiling water spill on arm",
+      "location": "Residential kitchen"
+    },
+    {
+      "id": "y2-004",
+      "title": "Workshop Flash Burn - Burns Assessment",
+      "yearLevels": [
+        "2nd-year",
+        "3rd-year",
+        "4th-year"
+      ],
+      "complexity": "intermediate",
+      "priority": "high",
+      "subcategory": "flash-burn",
+      "woundCount": 0,
+      "sceneImagePath": "/scene-assets/industrial-workshop-male-uae.png",
+      "callReason": "35-year-old male, flash burn to face and chest from welding accident",
+      "location": "Industrial workshop in Al Quoz, Dubai"
+    }
+  ],
+  "categoryByYearExact": {
+    "diploma": {
+      "metabolic": 3,
+      "anxiety-related": 1,
+      "elderly-fall": 2,
+      "rule-out": 1,
+      "general": 4,
+      "environmental": 1,
+      "cardiac": 4,
+      "burns": 1,
+      "pediatric": 2,
+      "obstetric": 1,
+      "psychiatric": 1,
+      "toxicology": 1,
+      "trauma": 3,
+      "respiratory": 3,
+      "neurological": 2
+    },
+    "1st-year": {
+      "metabolic": 3,
+      "anxiety-related": 1,
+      "elderly-fall": 2,
+      "rule-out": 1,
+      "general": 4,
+      "environmental": 1,
+      "cardiac": 4,
+      "burns": 1,
+      "pediatric": 2,
+      "obstetric": 1,
+      "psychiatric": 1,
+      "toxicology": 2,
+      "trauma": 3,
+      "respiratory": 4,
+      "neurological": 2
+    },
+    "2nd-year": {
+      "cardiac": 11,
+      "respiratory": 10,
+      "trauma": 2,
+      "neurological": 7,
+      "metabolic": 3,
+      "anxiety-related": 1,
+      "elderly-fall": 3,
+      "post-discharge": 1,
+      "rule-out": 1,
+      "general": 4,
+      "environmental": 3,
+      "pediatric": 4,
+      "psychiatric": 3,
+      "toxicology": 3,
+      "burns": 1,
+      "obstetric": 1
+    },
+    "3rd-year": {
+      "cardiac": 16,
+      "respiratory": 13,
+      "trauma": 12,
+      "neurological": 7,
+      "metabolic": 3,
+      "anxiety-related": 1,
+      "elderly-fall": 3,
+      "post-discharge": 1,
+      "rule-out": 1,
+      "general": 2,
+      "environmental": 5,
+      "obstetric": 3,
+      "pediatric": 4,
+      "psychiatric": 3,
+      "toxicology": 3,
+      "burns": 2
+    },
+    "4th-year": {
+      "cardiac": 19,
+      "respiratory": 13,
+      "trauma": 12,
+      "neurological": 6,
+      "metabolic": 4,
+      "anxiety-related": 1,
+      "elderly-fall": 3,
+      "post-discharge": 1,
+      "rule-out": 1,
+      "general": 2,
+      "environmental": 5,
+      "obstetric": 4,
+      "pediatric": 3,
+      "psychiatric": 3,
+      "toxicology": 3,
+      "burns": 3,
+      "multiple-patients": 1,
+      "cardiac-ecg": 2
+    }
+  },
+  "basicButNotY1": [],
+  "tooHardForY1": [],
+  "diplomaOnly": [],
+  "mciFlagged": [
+    {
+      "id": "multi-001",
+      "title": "Mass Casualty Incident - Bus vs Car Collision (8 Patients)",
+      "category": "multiple-patients",
+      "yearLevels": [
+        "4th-year"
+      ],
+      "complexity": "expert",
+      "hasMci": true,
+      "mciPatientCount": 2,
+      "callReason": "Bus vs car collision, multiple injuries, road blocked, MCI declared",
+      "sceneDescription": "Major RTC: Bus on side with significant damage, car severely damaged, debris scattered 50m across highway. Multiple victims visible. One patient trapped in car. Strong smell of fuel.",
+      "checklistCount": 13
+    }
+  ],
+  "multiCat": [
+    {
+      "id": "multi-001",
+      "title": "Mass Casualty Incident - Bus vs Car Collision (8 Patients)",
+      "yearLevels": [
+        "4th-year"
+      ],
+      "complexity": "expert",
+      "hasMci": true,
+      "mciPatientCount": 2
+    }
+  ]
+}

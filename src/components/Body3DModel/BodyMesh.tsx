@@ -41,6 +41,7 @@ import {
   patientForearmSweepRadians,
   patientSpineLeanRadians,
   type PatientMobility,
+  type PatientPosture,
 } from '@/lib/patientStaging';
 import {
   PATIENT_MOTION_MORPHS,
@@ -108,7 +109,7 @@ export function getTreatmentBayTransform(
   // Tripod remains upright—the authored morph supplies the forward lean and
   // braced arms. A residual -0.35rad root pitch was cancelling that lean and
   // making the seated patient look bolt upright from the arrival camera.
-  const uprightSeated = posture === 'tripod' || posture === 'seated';
+  const uprightSeated = posture === 'tripod' || posture === 'seated' || posture === 'legs-elevated';
   const pitchUp = uprightSeated ? Math.PI / 2 : 0;
   // Upright tripod feet are at the model origin, so cancel the stage's supine
   // body-thickness calibration while retaining the support-surface height.
@@ -119,9 +120,9 @@ export function getTreatmentBayTransform(
   // longitudinal axis before the root is laid onto the support surface.
   const rollSide = posture === 'recovery' ? THREE.MathUtils.degToRad(75) : 0;
   const stageY = BAY_SUPPORT_Y[stage] + (BAY_STAGE_Y[stage] - BAY_SUPPORT_Y[stage]) * patientScale;
-  // Ground the Blender-authored seated soles directly on the room floor.
-  // Tripod always represents a seated/upright patient, not a body lying on
-  // either treatment support surface.
+  // Ground hanging seated soles on the room floor. Legs-elevated keeps that
+  // same pelvis plant so the chair still supports the sit; the morph raises
+  // the calves onto the ottoman instead of dropping the whole body.
   const positionY = uprightSeated
     ? BAY_SUPPORT_Y.floor - SEATED_SOLE_LIFT * BAY_PATIENT_SCALE * patientScale
     // A lateral patient rests on the shoulder/hip contour, roughly 0.33 m
@@ -266,11 +267,11 @@ interface BodyMeshProps {
   sss?: boolean;
   /**
    * Target posture morph — 'tripod' (asthma work-of-breathing), 'supine',
-   * 'recovery', or null (A-pose). Crossfaded via morph influence; breathing +
-   * idle motion ride on top. resp-001 defaults to 'tripod' and eases to
-   * 'recovery' as SpO2 improves.
+   * 'recovery', 'legs-elevated', or null (A-pose). Crossfaded via morph
+   * influence; breathing + idle motion ride on top. resp-001 defaults to
+   * 'tripod' and eases to 'recovery' as SpO2 improves.
    */
-  posture?: 'seated' | 'tripod' | 'supine' | 'recovery' | null;
+  posture?: PatientPosture;
   /** Authored scene mobility. Only standing/pacing presentations play the
    *  skeletal idle/walk clips; recumbent patients retain local clinical
    *  movement without sliding around the scene. */
@@ -413,8 +414,9 @@ const EYE_NODE_NAMES = ['eyeL', 'eyeR', 'irisL', 'irisR', 'pupilL', 'pupilR'] as
 // Morph names in patient-male.glb use the `pose_` prefix (authored by
 // scripts/anatomy-models/add-viseme-morph.py: pose_tripod / pose_supine /
 // pose_recovery).
-const POSTURE_MORPH_BY_NAME: Record<'seated' | 'tripod' | 'supine' | 'recovery', string> = {
+const POSTURE_MORPH_BY_NAME: Record<'seated' | 'legs-elevated' | 'tripod' | 'supine' | 'recovery', string> = {
   seated: 'pose_seated',
+  'legs-elevated': 'pose_legs_elevated',
   tripod: 'pose_tripod',
   supine: 'pose_supine',
   recovery: 'pose_recovery',
@@ -1669,10 +1671,18 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
 
       // Posture mixer: crossfade the target posture morph toward 1 and the
       // others toward 0 (~0.5s). No-op when the mesh carries no posture morphs.
+      // A paediatric / older GLB without pose_legs_elevated still sits; the
+      // ottoman does the rest of the clinical read.
+      const requestedMorph = posture ? POSTURE_MORPH_BY_NAME[posture] : undefined;
+      const activeMorph = requestedMorph && dict[requestedMorph] !== undefined
+        ? requestedMorph
+        : posture === 'legs-elevated' && dict.pose_seated !== undefined
+          ? 'pose_seated'
+          : requestedMorph;
       for (const name of POSTURE_MORPHS) {
         const idx = dict[name];
         if (idx === undefined) continue;
-        const target = posture && POSTURE_MORPH_BY_NAME[posture] === name ? 1 : 0;
+        const target = activeMorph === name ? 1 : 0;
         const cur = morphInfluenceRef.current[name] ?? 0;
         const next = cur + (target - cur) * Math.min(1, delta * 4);
         morphInfluenceRef.current[name] = next;
