@@ -6426,17 +6426,28 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                   below can derive from it. */}
               <AdaptiveQuality tier={qualityTier} onTierChange={setQualityTier} />
 
-              <ambientLight intensity={bayVariant === 'home' ? 0.06 : 0.1} />
-              <directionalLight position={[4, 8, 5]} intensity={bayVariant === 'home' ? 0.22 : 0.95} color="#fff2e6" />
-              <directionalLight position={[0, 4, -5]} intensity={bayVariant === 'home' ? 0.12 : 0.5} color="#ffffff" />
+              <ambientLight intensity={bayVariant === 'home' ? 0.12 : 0.1} />
+              <directionalLight position={[4, 8, 5]} intensity={bayVariant === 'home' ? 0.32 : 1.45} color="#fff2e6" />
+              <directionalLight position={[0, 4, -5]} intensity={bayVariant === 'home' ? 0.22 : 0.95} color="#ffffff" />
               {activeRegion === 'face' && (
                 <pointLight
                   name="pupil-exam-light"
-                  position={[0, 1.62, 0.55]}
-                  intensity={2.4}
-                  distance={1.4}
+                  position={[0, 1.88, 0.4]}
+                  intensity={3.0}
+                  distance={1.6}
                   decay={2}
-                  color="#fff6e0"
+                  color="#fffcf5" // warmer exam light for pupil dilation visibility
+                />
+              )}
+              {/* Fill light under chin to eliminate dark shadows during eye assessment */}
+              {activeRegion === 'face' && (
+                <spotLight
+                  name="exam-fill-light"
+                  position={[0, 2.8, -1.2]}
+                  angle={Math.PI * 0.64}
+                  penumbra={0.38}
+                  decay={2}
+                  color="#f5f2ed" // softer fill
                 />
               )}
 
