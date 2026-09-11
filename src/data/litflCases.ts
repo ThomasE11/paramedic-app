@@ -1234,6 +1234,7 @@ export const litflCaseDatabase: CaseScenario[] = [
       bystanders: 'Roommate present, anxious',
       environment: 'Indoor, small bathroom, warm',
       environmentVariant: 'home',
+      sceneImagePath: '/scene-assets/home-medical-female-dubai-apartment.png', // TODO: create dedicated bathroom staff accommodation scene via Blender/compositing
       accessIssues: ['Small bathroom — limited working space', 'Need to move patient to larger area'],
       extricationNeeded: false
     },
