@@ -68,27 +68,37 @@ export function computePatientMotionSignals({
   }
 
   const consciousGate = Math.max(0, Math.min(1, gate));
-  const seizureBeat = cues.seizure
-    ? (0.5 + 0.5 * Math.sin(time * TAU * 3.5)) * 0.68
-    : 0;
-  const tremorBeat = !cues.seizure && cues.tremor
-    ? (0.5 + 0.5 * Math.sin(time * TAU * 4)) * 0.18 * consciousGate
-    : !reduced && cues.shivering
-      ? (0.5 + 0.5 * Math.sin(time * TAU * 5)) * 0.12 * consciousGate
-      : 0;
 
+  // ---- Mutual gating: only ONE high-frequency motion active at once ----
+  let jitterEnabled = false; // flag to prevent shiver-compounding into tremor
+
+  if (cues.seizure) {
+    // Seizure beats take priority when flag is set — no competing vibration.
+    const seizureBeat = (0.5 + 0.5 * Math.sin(time * TAU * 3.5)) * 0.68;
+    out.motion_seizure = seizureBeat;
+    jitterEnabled = true;
+  } else if (!reduced && (cues.tremor || cues.shivering)) {
+    // Tremor or shiver only when not already jittering via another cue.
+    const baseTremor = (0.5 + 0.5 * Math.sin(time * TAU * 4));
+    const tremorBeat = cues.tremor
+      ? baseTremor * 0.18 * consciousGate
+      : !reduced && cues.shivering
+        ? baseTremor * 0.12 * consciousGate
+        : 0;
+    out.motion_tremor = Math.max(0, tremorBeat);
+    jitterEnabled = true;
+  }
+
+  // ---- Agitation doesn't compound with shiver/tremor — it's slow restless motion ----
+  const agitationBeat = !reduced && cues.agitated && !jitterEnabled
+    ? (0.5 + 0.5 * Math.sin(time * TAU * 0.16)) * 0.16 * consciousGate
+    : jitterEnabled ? 0 : 0; // suppress while seizure/tremor/shiver active
+  out.motion_agitation = agitationBeat;
+
+  // ---- Clinical pulses (wince/gasp/clutch) always run on their own schedule ----
   out.motion_gasp = patientMotionPulse(time, gaspStart, PATIENT_MOTION_DURATIONS.gasp) * consciousGate;
   out.motion_wince = patientMotionPulse(time, winceStart, PATIENT_MOTION_DURATIONS.wince) * consciousGate;
   out.motion_clutch = patientMotionPulse(time, clutchStart, PATIENT_MOTION_DURATIONS.clutch) * consciousGate;
-  // Seizure remains visible when unconscious. Other behaviours fade with
-  // responsiveness and stop entirely in cardiac arrest.
-  out.motion_seizure = seizureBeat;
-  out.motion_tremor = tremorBeat;
-  out.motion_agitation = !reduced && cues.agitated
-    // Keep conscious restlessness readable without dragging the tripod arms
-    // away from their braced position. The authored morph has a broad limb
-    // delta, so the old 0.55 peak read as repetitive arm vibration.
-    ? (0.5 + 0.5 * Math.sin(time * TAU * 0.16)) * 0.16 * consciousGate
-    : 0;
+
   return out;
 }
