@@ -518,6 +518,8 @@ export const litflCaseDatabase: CaseScenario[] = [
       hazards: ['Crowded public space', 'Moving baggage carousel nearby'],
       bystanders: 'Airport medical staff x2, multiple public bystanders, husband present',
       environment: 'Indoor air-conditioned terminal, well-lit',
+      sceneImagePath: '/scene-assets/airport-pe-female-uae.png',
+      sceneImageCaption: 'Dubai International Airport Terminal 3 Arrivals Hall',
       accessIssues: ['Need to clear crowd', 'Long distance to ambulance bay'],
       extricationNeeded: false
     },
