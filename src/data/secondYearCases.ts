@@ -2512,7 +2512,7 @@ export const secondYearCases: CaseScenario[] = [
       bystanders: 'Flatmate present and supportive, visibly upset',
       environment: 'Small student bedroom, tidy, no other concerning items visible',
       environmentVariant: 'home',
-      sceneImagePath: '/scene-assets/seizure-bedroom-female-uae.png',
+      sceneImagePath: '/scene-assets/home-medical-female-dubai-apartment.png',
     },
     initialPresentation: {
       generalImpression: 'Young female, alert, calm, appears physically well. Empty medication packets visible.',
