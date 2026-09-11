@@ -158,8 +158,12 @@ export function derivePatientMobility(
   if (/\bstanding\b|\bstood\b|\bon (?:their|his|her) feet\b/.test(position)) {
     return 'standing';
   }
+  // Sitting with legs elevated is a seated pose — patient remains upright despite hypotension
+  if (/\bsitting with legs elevated\b/.test(position)) {
+    return 'seated';
+  }
   if (
-    /\bsitting\b|\bseated\b|\bsemi[- ]recumbent\b|\bsemi[- ]reclined\b|\bchair\b|\bdriver(?:'s)? seat\b|\blap\b|\bbeing held\b|\btripod\b|\bleaning against\b/.test(
+    /\bsitting\b|\bseated\b|\bsemi[- ]recumbent\b|\bsemi[- ]reclined\b|\bchair\b|\bdriver(?:'s)? seat\b|\blap\b|\bbeing held\b|\btripod\b|\bbleaning against\b/.test(
       position,
     )
   ) {
