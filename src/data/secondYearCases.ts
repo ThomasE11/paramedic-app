@@ -2610,6 +2610,7 @@ export const secondYearCases: CaseScenario[] = [
       posterior: ['Not examined'],
       neurological: ['Alert and oriented', 'No focal deficits', 'Emotionally flat']
     },
+
     history: {
       medications: [
         { name: 'Combined oral contraceptive pill', dose: 'Standard', frequency: 'Daily', indication: 'Contraception' }
