@@ -763,6 +763,8 @@ export const litflCaseDatabase: CaseScenario[] = [
       hazards: ['Hypothermia risk to crew in prolonged assessment'],
       bystanders: 'Neighbor who discovered patient',
       environment: 'Outdoor balcony, ambient 14°C, windy. Move patient indoors immediately.',
+      sceneImagePath: '/scene-assets/litfl-010-balcony-hypothermia-fujairah.png',
+      sceneImageCaption: 'Fujairah apartment balcony — early morning hypothermia case',
       accessIssues: ['Ground floor, easy access'],
       extricationNeeded: false
     },
