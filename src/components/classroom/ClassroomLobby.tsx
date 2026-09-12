@@ -397,7 +397,7 @@ export function ClassroomLobby({ onExit, sessionHook }: ClassroomLobbyProps) {
                 <div>
                   <div className="text-sm font-semibold text-foreground">Local classroom preview</div>
                   <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                    Supabase is not configured on this dev server, so this room uses demo learners and local-only state for UI review.
+                    Supabase is not configured, so this room stays on this device. Open Join a classroom in another tab, enter the PIN, and the roster, case launch, and patient state stay in sync.
                   </p>
                 </div>
               </div>
@@ -567,7 +567,10 @@ export function ClassroomLobby({ onExit, sessionHook }: ClassroomLobbyProps) {
                 </CardHeader>
                 <CardContent className="space-y-5">
                   <div className="rounded-2xl border border-primary/15 bg-primary/[0.045] px-3 py-7 text-center shadow-inner">
-                    <div className="whitespace-nowrap font-mono text-[clamp(2.45rem,5.6vw,4.4rem)] font-semibold leading-none tracking-[0.08em] tabular-nums text-primary">
+                    <div
+                      data-testid="classroom-pin"
+                      className="whitespace-nowrap font-mono text-[clamp(2.45rem,5.6vw,4.4rem)] font-semibold leading-none tracking-[0.08em] tabular-nums text-primary"
+                    >
                       {session.pin.slice(0, 3)} {session.pin.slice(3)}
                     </div>
                     <Button
