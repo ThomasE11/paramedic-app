@@ -249,17 +249,17 @@ def add_console_and_plant(materials: dict[str, bpy.types.Material]) -> None:
     cylinder("console_ceramic_bowl", (x - 0.19, 0.70, 0.78), 0.12, 0.055, materials["ceramic"], 32)
 
     # Potted date palm in the hall-side corner, using a small silhouette count.
-    # Tucked between the sofa and left wall, outside the patient's silhouette
-    # and away from the authored standing lamp on the room's opposite side.
+    # Its narrow, raised crown clears the seated patient's head from both side
+    # orbits while the pot stays tucked between the sofa and left wall.
     px, py = -2.64, 1.30
     cylinder("date_palm_pot", (px, py, 0.20), 0.22, 0.40, materials["pot"], 24)
-    cylinder("date_palm_trunk", (px, py, 0.74), 0.045, 0.92, materials["wood_light"], 12)
+    cylinder("date_palm_trunk", (px, py, 0.98), 0.045, 1.40, materials["wood_light"], 12)
     for index in range(9):
         angle = index * (math.tau / 9)
         leaf = uv_sphere(
             f"date_palm_frond_{index}",
-            (px + math.cos(angle) * 0.28, py + math.sin(angle) * 0.28, 1.21 + (index % 2) * 0.08),
-            (0.38, 0.055, 0.10),
+            (px + math.cos(angle) * 0.23, py + math.sin(angle) * 0.23, 1.67 + (index % 2) * 0.08),
+            (0.31, 0.045, 0.075),
             materials["green"],
         )
         leaf.rotation_euler[2] = angle
