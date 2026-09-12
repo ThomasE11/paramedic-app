@@ -930,13 +930,14 @@ export const secondYearCases: CaseScenario[] = [
       culturalConsiderations: ['Family very involved', 'Religious considerations']
     },
     sceneInfo: {
-      description: 'Home, patient in living room, wife present',
+      description: 'Home, living room sofa, patient sitting sideways, wife present',
       hazards: ['None identified'],
       bystanders: 'Wife present and cooperative',
       environment: 'Safe home environment',
       environmentVariant: 'home',
+      patientSupportSurface: 'sofa',
       sceneImagePath: '/scene-assets/home-stroke-elderly-male-uae.png',
-      sceneImageCaption: 'Living room — home, elderly male patient'
+      sceneImageCaption: 'Living room — home, elderly male on sofa'
     },
     initialPresentation: {
       generalImpression: 'Elderly male, alert but with obvious left-sided weakness',

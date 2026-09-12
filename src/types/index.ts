@@ -419,6 +419,7 @@ export interface CaseScenario {
       | 'water'
       | 'heat'
       | 'agricultural';
+    patientSupportSurface?: 'bed' | 'sofa' | 'stretcher';
   };
 
   // Initial Presentation
