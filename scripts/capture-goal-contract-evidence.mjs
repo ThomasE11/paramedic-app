@@ -262,20 +262,20 @@ async function captureFpsReport(browser) {
   const measurePath = resolve(repoRoot, 'scripts/measure-fps.mjs');
   const unavailable = 'scripts/measure-fps.mjs was not present; no command evidence available.';
   const desktopOutput = existsSync(measurePath)
-    ? runCommandEvidence(measurePath, [baseUrl, '--seconds=5', '--model=male'])
+    ? runCommandEvidence(measurePath, [baseUrl, '--seconds=5', '--case=resp-001', '--model=male'])
     : unavailable;
   const ipadOutput = existsSync(measurePath)
-    ? runCommandEvidence(measurePath, [baseUrl, '--seconds=5', '--model=male', '--ipad'])
+    ? runCommandEvidence(measurePath, [baseUrl, '--seconds=5', '--case=resp-001', '--model=male', '--ipad'])
     : unavailable;
   evidence.fps = {
     desktopHardware: parseLastJsonLine(desktopOutput),
     ipadHighDprProxy: parseLastJsonLine(ipadOutput),
   };
   const report = [
-    '$ node scripts/measure-fps.mjs http://localhost:5173 --seconds=5 --model=male',
+    '$ node scripts/measure-fps.mjs http://localhost:5173 --seconds=5 --case=resp-001 --model=male',
     desktopOutput,
     '',
-    '$ node scripts/measure-fps.mjs http://localhost:5173 --seconds=5 --model=male --ipad',
+    '$ node scripts/measure-fps.mjs http://localhost:5173 --seconds=5 --case=resp-001 --model=male --ipad',
     ipadOutput,
   ].join('\n');
 
