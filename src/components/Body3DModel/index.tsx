@@ -53,6 +53,7 @@ import {
   type FittedFaceEquipmentMode,
 } from './faceEquipment';
 import { PilotRespiratoryMask3D } from './PilotRespiratoryMask3D';
+import { PilotMaskStrap3D } from './PilotMaskStrap3D';
 import { pilotRespiratoryMaskGeometry } from './pilotRespiratoryMaskGeometry';
 import { recommendedManagementTabForCase, type ManagementTab } from '@/components/TreatmentJumpBagPanel';
 import { CLOTHING_PARTING } from './ClothingLayer';
@@ -2325,11 +2326,25 @@ function TreatmentEquipmentOverlay({
         fittedAnchor(0.084, 1.67, -0.08),
         fittedAnchor(0.068, 1.66, 0.03),
       ]
-    : [
-        pilotHarnessAnchors?.[0] ?? fittedAnchor(-0.064, 1.635, 0.03),
+    // The pilot's occiput is at z=-0.187 in its clinical head frame.
+    // Wrap the elastic behind it and around the ears, not through the skull.
+    : pilotHarnessAnchors ? [
+        pilotHarnessAnchors[0],
+        fittedAnchor(-0.077, 1.657, -0.045),
+        fittedAnchor(-0.092, 1.665, -0.10),
+        fittedAnchor(-0.071, 1.665, -0.143),
+        fittedAnchor(-0.042, 1.665, -0.177),
+        fittedAnchor(0, 1.665, -0.192),
+        fittedAnchor(0.042, 1.665, -0.177),
+        fittedAnchor(0.071, 1.665, -0.143),
+        fittedAnchor(0.092, 1.665, -0.10),
+        fittedAnchor(0.077, 1.657, -0.045),
+        pilotHarnessAnchors[1],
+      ] : [
+        fittedAnchor(-0.064, 1.635, 0.03),
         fittedAnchor(-0.082, 1.665, -0.08),
         fittedAnchor(0.082, 1.665, -0.08),
-        pilotHarnessAnchors?.[1] ?? fittedAnchor(0.064, 1.635, 0.03),
+        fittedAnchor(0.064, 1.635, 0.03),
       ];
   const equipmentScale = Math.max(0.62, Math.min(1, 0.55 + patientScale * 0.45));
   const hasSiteAccess = equipment.siteControls.some(control => control.treatmentId === 'iv_access' || control.treatmentId === 'io_access');
@@ -2339,12 +2354,16 @@ function TreatmentEquipmentOverlay({
   const fittedEquipment = <>
       {oxygenMaskNeedsHarness && (
         <>
-          <SceneCable
-            points={faceHarnessPoints}
-            color={fittedFaceSpec?.mode === 'cpap' ? '#5c78a4' : '#0f7158'}
-            opacity={0.72}
-            radius={fittedFaceSpec?.mode === 'cpap' ? 0.0036 : 0.0024}
-          />
+          {pilotHarnessAnchors ? (
+            <PilotMaskStrap3D points={faceHarnessPoints} />
+          ) : (
+            <SceneCable
+              points={faceHarnessPoints}
+              color={fittedFaceSpec?.mode === 'cpap' ? '#5c78a4' : '#0f7158'}
+              opacity={0.72}
+              radius={fittedFaceSpec?.mode === 'cpap' ? 0.0036 : 0.0024}
+            />
+          )}
           {fittedFaceSpec?.mode === 'cpap' && (
             <SceneCable
               points={[
