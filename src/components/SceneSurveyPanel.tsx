@@ -223,7 +223,7 @@ function getInjuryScenePosition(injury: BodyInjury, index: number): { x: number;
 const COMPLAINT_LEAD_STRIPPERS: RegExp[] = [
   /^\s*\d+\s*[-\s]?\s*(?:year|yr|month|mo)s?[-\s]?old\b\s*/i,
   /^\s*\d+\s*(?:yo|y\/o|y)\b\s*/i,
-  /^\s*(?:male|female|man|woman|boy|girl|patient|pt|adult|elderly|young|older|old|teenage|teenager|infant|toddler|child|baby|parents?|mother|father|caller)\b\s*/i,
+  /^\s*(?:male|female|man|woman|boy|girl|patient|pt|adult|elderly|young|older|old|teenage|teenager|infant|toddler|child|baby|son|daughter|parents?|mother|father|caller)\b\s*/i,
   // grammatical fillers that would double up with the sentence's "with"
   /^\s*(?:with|having|complaining of|c\/o|reports?|reporting|presents? with|presenting with|now|new|sudden onset of)\b\s*/i,
 ];
@@ -270,7 +270,7 @@ function shortComplaint(callReason?: string): string {
  */
 function isVerbLedComplaint(complaint: string): boolean {
   const first = (complaint.split(/\s+/)[0] || '').toLowerCase();
-  const verbs = new Set(['fell', 'fallen', 'collapsed', 'took', 'taken', 'struck', 'hit', 'stabbed', 'burned', 'burnt', 'found', 'cut', 'crashed', 'ingested', 'overdosed', 'swallowed', 'choking', 'choked', 'struggling', 'passed', 'slipped', 'tripped', 'fitting', 'seizing', 'unable', 'feels', 'feeling']);
+  const verbs = new Set(['fell', 'fallen', 'collapsed', 'took', 'taken', 'struck', 'hit', 'stabbed', 'burned', 'burnt', 'found', 'cut', 'crashed', 'ingested', 'overdosed', 'swallowed', 'choking', 'choked', 'struggling', 'passed', 'slipped', 'tripped', 'fitting', 'seizing', 'unable', 'cannot', 'can’t', 'feels', 'feeling']);
   const stateLed = /^(?:increasingly|progressively|suddenly|acutely|becoming|appears?|unwell|confused|drowsy|lethargic|unresponsive|agitated|not breathing)\b/i.test(complaint);
   return verbs.has(first) || stateLed || (/ed$/.test(first) && first.length > 3);
 }
@@ -290,9 +290,11 @@ export function buildArrivalSentence(c: CaseScenario): string {
     : detailedWho.replace(/^\d+-month-old\s+/, '');
   const complaint = shortComplaint(c.dispatchInfo?.callReason);
   if (!complaint) return `On arrival, you find a ${who} on scene.`;
-  // "with" for symptom phrases ("…with difficulty breathing"); an em-dash for
-  // verb-led ones ("…— fell off bicycle") so the grammar always holds.
-  const connector = isVerbLedComplaint(complaint) ? '—' : 'with';
+  // "with" for symptom phrases, "who" for negative ability clauses, and an
+  // em-dash for other verb-led ones so dispatch shorthand remains grammatical.
+  const connector = /^(?:cannot|can’t|unable)\b/i.test(complaint)
+    ? 'who'
+    : isVerbLedComplaint(complaint) ? '—' : 'with';
   return `On arrival, you find a ${who} ${connector} ${complaint.toLowerCase()}.`;
 }
 

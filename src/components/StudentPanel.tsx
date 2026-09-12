@@ -91,6 +91,7 @@ import {
   type FindingTreatmentSuggestion,
 } from '@/lib/caseManagementRealism';
 import { derivePatientVisualState } from '@/lib/patientVisualState';
+import { phaseMotionVariant, phaseTransitionKey, type CinematicPhase } from '@/lib/cinematicPhase';
 import { deduplicateCareFeedItems } from '@/lib/careFeed';
 import { deriveSceneEnvironment, sceneEnvironmentLabel } from '@/lib/sceneEnvironment';
 import { matchRealismScenarios } from '@/lib/patientRealismScenarios';
@@ -122,7 +123,7 @@ import {
   Eye, Mic, MicOff, Image as ImageIcon,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 // AuscultationPanel removed — sounds now play inline from 3D Physical Examination
 import { DebriefingResourcesPanel } from '@/components/DebriefingResourcesPanel';
 import { DebriefReplay } from '@/components/DebriefReplay';
@@ -1285,6 +1286,7 @@ export function StudentPanel({
   activeInjects,
 }: StudentPanelProps) {
   const { t, i18n } = useTranslation();
+  const reducedMotion = useReducedMotion();
   // Onboarding tour for first-time users
   const { showTour, dismissTour } = useOnboardingTour();
 
@@ -2837,6 +2839,7 @@ export function StudentPanel({
   const startCase = useCallback(() => {
     if (readOnly) return;
     stopNarration();
+    toast.dismiss();
     setPhase('scene-survey');
   }, [readOnly, setPhase, stopNarration]);
 
@@ -4552,6 +4555,9 @@ export function StudentPanel({
   };
   const phaseOrder: StudentPhase[] = ['prebriefing', 'scene-survey', 'vitals', 'case', 'postcase'];
 
+  // D3: phase-specific framer-motion variants (cinematic transitions)
+  const phaseMotion = phaseMotionVariant(phase as CinematicPhase, reducedMotion);
+
   // `educationalResources` isn't part of the CaseScenario type (no case data
   // defines it yet) — read it defensively so the Further Reading card can
   // render if a future case supplies it.
@@ -4764,13 +4770,18 @@ export function StudentPanel({
         {/* ================================================================ */}
         {/* PHASE SUBTREES (animated transition) */}
         {/* ================================================================ */}
+        {/* ponytail: phase-specific motion — prebriefing scale-blurs out,
+            scene-survey slides up tall, live-treatment eases in slow so the 3D
+            camera entrance has room. Collapses to instant under reduced-motion. */}
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
-            key={phase === 'vitals' || phase === 'case' ? 'live-treatment' : phase}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.28, ease: 'easeOut' }}
+            key={phaseTransitionKey(phase as CinematicPhase)}
+            data-testid="cinematic-phase"
+            data-cinematic-phase={phaseTransitionKey(phase as CinematicPhase)}
+            initial={phaseMotion.initial}
+            animate={phaseMotion.animate}
+            exit={phaseMotion.exit}
+            transition={phaseMotion.transition}
             className="w-full"
           >
             {/* PHASE 1: Case Selection */}

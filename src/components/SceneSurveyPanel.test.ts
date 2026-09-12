@@ -19,4 +19,13 @@ describe('scene arrival sentence', () => {
     expect(buildArrivalSentence(caseWith('79-year-old female, severe allergic reaction after eating')))
       .toBe('On arrival, you find a 79-year-old female with severe allergic reaction.');
   });
+
+  it('uses a dash for negative ability descriptions', () => {
+    const pilot = {
+      ...caseWith('Son cannot breathe, using inhaler repeatedly'),
+      patientInfo: { age: 19, gender: 'male' },
+    } as CaseScenario;
+    expect(buildArrivalSentence(pilot))
+      .toBe('On arrival, you find a 19-year-old male who cannot breathe.');
+  });
 });
