@@ -21,6 +21,7 @@ import {
   ALL_GARMENT_GLBS,
   adolescentGarmentGlbsForModel,
   garmentGlbsForModel,
+  RESP001_GARMENT_GLBS,
 } from './ClothingLayer';
 import { buildHairLayer } from './HairLayer';
 import { paintEyesOnTexture } from './EyesLayer';
@@ -879,17 +880,21 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
   // Blender-authored garment GLBs (blended-garment mode). Loaded here so the
   // clone build has them synchronously; Suspense holds render until ready.
   // Array form of useGLTF returns results positionally.
-  const garmentGltfs = useGLTF(ALL_GARMENT_GLBS.map((g) => g.url));
+  const pilotGarment = braceHandsOnKnees && modelPath.includes('patient-male');
+  const loadedGarmentSpecs = useMemo(() => pilotGarment
+    ? ALL_GARMENT_GLBS
+    : ALL_GARMENT_GLBS.filter(spec => spec.url !== RESP001_GARMENT_GLBS[1].url), [pilotGarment]);
+  const garmentGltfs = useGLTF(loadedGarmentSpecs.map((g) => g.url));
   const garmentScenes = useMemo(() => {
     const map = new Map<string, THREE.Object3D>();
-    ALL_GARMENT_GLBS.forEach((g, i) => {
+    loadedGarmentSpecs.forEach((g, i) => {
       const s = garmentGltfs[i]?.scene;
       if (s) map.set(g.url, s);
     });
     return map;
-  }, [garmentGltfs]);
+  }, [garmentGltfs, loadedGarmentSpecs]);
   const fittedGarmentSpecs = garmentGlbsForModel(modelPath);
-  const garmentSpecs = fittedGarmentSpecs.length
+  const garmentSpecs = pilotGarment ? RESP001_GARMENT_GLBS : fittedGarmentSpecs.length
     ? fittedGarmentSpecs
     : adolescentGarmentGlbsForModel(modelPath);
   const [hoveredRegion, setHoveredRegion] = useState<RegionRange | null>(null);
@@ -2272,4 +2277,6 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
 useGLTF.preload('/models/patient.glb');
 useGLTF.preload('/models/patient-male.glb');
 useGLTF.preload('/models/patient-female.glb');
-ALL_GARMENT_GLBS.forEach((g) => useGLTF.preload(g.url));
+// The reference-only corrective is loaded on demand, not by other scenarios.
+ALL_GARMENT_GLBS.filter(g => g.url !== RESP001_GARMENT_GLBS[1].url)
+  .forEach((g) => useGLTF.preload(g.url));

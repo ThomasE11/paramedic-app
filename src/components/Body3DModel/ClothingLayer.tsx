@@ -120,12 +120,27 @@ export const GARMENT_GLBS: GarmentGlbSpec[] = [
   { url: '/models/garment-trousers.glb', name: 'scrub-trousers', color: TROUSER_COLOR, offset: 0.002 },
 ];
 
+/**
+ * resp-001 keeps the standard shirt but uses a separately authored trouser
+ * profile with a bounded medial-thigh corrective for the severe-asthma tripod.
+ * BodyMesh selects this only for that case; all other adults retain GARMENT_GLBS.
+ */
+export const RESP001_GARMENT_GLBS: GarmentGlbSpec[] = [
+  GARMENT_GLBS[0],
+  { url: '/models/garment-trousers-resp001.glb', name: 'scrub-trousers', color: TROUSER_COLOR, offset: 0.002 },
+];
+
 export const FEMALE_GARMENT_GLBS: GarmentGlbSpec[] = [
   { url: '/models/garment-shirt-female.glb', name: 'scrub-top', color: TOP_COLOR, offset: 0.002 },
   { url: '/models/garment-trousers-female.glb', name: 'scrub-trousers', color: TROUSER_COLOR, offset: 0.002 },
 ];
 
-export const ALL_GARMENT_GLBS = [...GARMENT_GLBS, ...FEMALE_GARMENT_GLBS];
+// The profile reuses GARMENT_GLBS[0], so preload only its alternate trouser.
+export const ALL_GARMENT_GLBS = [
+  ...GARMENT_GLBS,
+  ...FEMALE_GARMENT_GLBS,
+  RESP001_GARMENT_GLBS[1],
+];
 export const ADOLESCENT_MALE_GARMENT_GLBS = [GARMENT_GLBS[1]];
 export const ADOLESCENT_FEMALE_GARMENT_GLBS = [FEMALE_GARMENT_GLBS[1]];
 
