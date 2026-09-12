@@ -1814,6 +1814,8 @@ export function SceneSurveyPanel({ caseData, onEnterScene, onBack }: SceneSurvey
           size="sm"
           onClick={() => { if (isSpeaking) stop(); toggleVoice(); }}
           className="gap-1.5"
+          aria-label={voiceEnabled ? 'Disable voice narration' : 'Enable voice narration'}
+          aria-pressed={voiceEnabled}
           title={voiceEnabled ? 'Disable voice narration' : 'Enable voice narration'}
         >
           {voiceEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}

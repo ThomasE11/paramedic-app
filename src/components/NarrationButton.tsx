@@ -75,6 +75,7 @@ export function VoiceToggleButton({ className = '' }: { className?: string }) {
       type="button"
       onClick={toggleEnabled}
       aria-label={enabled ? 'Disable voice narration' : 'Enable voice narration'}
+      aria-pressed={enabled}
       title={enabled ? 'Voice narration on' : 'Voice narration off'}
       className={`inline-flex items-center justify-center h-8 w-8 sm:h-9 sm:w-9 rounded-lg border border-border/50 bg-muted/30 hover:bg-muted/60 active:bg-muted transition-colors touch-manipulation ${className}`}
     >

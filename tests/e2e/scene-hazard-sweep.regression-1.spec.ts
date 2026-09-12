@@ -22,6 +22,13 @@ test('clear scene keeps the photograph unobscured and requires a deliberate swee
   await expect(scene.getByText('Patient', { exact: true })).toHaveCount(0);
   await expect(scene.getByText('No obvious hazards visible', { exact: true })).toBeVisible();
 
+  const cinematicPhase = page.getByTestId('cinematic-phase');
+  const narration = cinematicPhase.getByRole('button', { name: 'Disable voice narration' });
+  await expect(narration).toHaveAttribute('aria-pressed', 'true');
+  await narration.click();
+  await expect(cinematicPhase.getByRole('button', { name: 'Enable voice narration' })).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.getByRole('button', { name: 'Enable voice narration' })).toHaveCount(2);
+
   const clearSweep = page.getByRole('button', { name: 'No obvious hazards after visual sweep' });
   await expect(clearSweep).toHaveAttribute('aria-pressed', 'false');
   await clearSweep.click();
