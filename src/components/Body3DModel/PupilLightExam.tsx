@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import * as THREE from 'three';
 import type { PupilProfile } from '@/lib/pupilExam';
 import { stepPupilLightResponse } from './pupilLightResponse';
+import { withIrisSurfaceUv } from './irisSurface';
 
 type LightSide = 'left' | 'right' | null;
 
@@ -57,28 +58,33 @@ function irisTexture() {
 export function PupilLightExam({ side, profile }: { side: LightSide; profile: PupilProfile }) {
   const scene = useThree(state => state.scene);
   const penlight = useRef<THREE.Group>(null);
-  const light = useRef<THREE.PointLight>(null);
+  const light = useRef<THREE.SpotLight>(null);
+  const lightTarget = useMemo(() => new THREE.Object3D(), []);
   const elapsed = useRef(0);
   const sizes = useRef<[number, number]>([profile.leftMm, profile.rightMm]);
   const vectors = useMemo(() => ({ position: new THREE.Vector3(), normal: new THREE.Vector3(), offset: new THREE.Vector3(), rotation: new THREE.Quaternion() }), []);
   useEffect(() => {
     const texture = irisTexture();
-    const replacements: Array<{ mesh: THREE.Mesh; material: THREE.Material | THREE.Material[]; replacement: THREE.Material }> = [];
+    const replacements: Array<{ mesh: THREE.Mesh; material: THREE.Material | THREE.Material[]; replacement: THREE.Material; geometry: THREE.BufferGeometry }> = [];
     for (const name of ['irisL', 'irisR', 'eyeL', 'eyeR', 'pupilL', 'pupilR']) {
       const mesh = scene.getObjectByName(name) as THREE.Mesh | undefined;
       if (!mesh?.isMesh) continue;
       const replacement = new THREE.MeshPhysicalMaterial({
         color: name.startsWith('pupil') ? '#020202' : name.startsWith('iris') ? '#ffffff' : '#e8e3d8',
         map: name.startsWith('iris') ? texture : null,
-        roughness: name.startsWith('pupil') ? .8 : name.startsWith('iris') ? .52 : .28,
-        clearcoat: name.startsWith('pupil') ? 0 : .55, clearcoatRoughness: .14,
+        roughness: name.startsWith('pupil') ? .3 : name.startsWith('iris') ? .4 : .25,
+        clearcoat: .8, clearcoatRoughness: .1,
       });
       replacement.userData.skipRecolor = true;
-      replacements.push({ mesh, material: mesh.material, replacement });
+      replacements.push({ mesh, material: mesh.material, replacement, geometry: mesh.geometry });
+      if (name.startsWith('iris')) mesh.geometry = withIrisSurfaceUv(mesh.geometry);
       mesh.material = replacement;
     }
     return () => {
-      for (const { mesh, material, replacement } of replacements) { mesh.material = material; replacement.dispose(); }
+      for (const { mesh, material, replacement, geometry } of replacements) {
+        mesh.material = material; replacement.dispose();
+        if (mesh.geometry !== geometry) { mesh.geometry.dispose(); mesh.geometry = geometry; }
+      }
       texture.dispose();
       scene.getObjectByName('pupilL')?.scale.setScalar(Math.min(1.8, Math.max(.4, profile.leftMm / 5)));
       scene.getObjectByName('pupilR')?.scale.setScalar(Math.min(1.8, Math.max(.4, profile.rightMm / 5)));
@@ -94,16 +100,21 @@ export function PupilLightExam({ side, profile }: { side: LightSide; profile: Pu
     });
     if (!penlight.current || !light.current) return;
     penlight.current.visible = !!side;
-    light.current.intensity = side ? .003 : 0;
-    const eye = scene.getObjectByName(side === 'left' ? 'eyeL' : 'eyeR');
+    light.current.intensity = side ? .045 : 0;
+    const eye = scene.getObjectByName(side === 'left' ? 'irisL' : 'irisR');
     if (!side || !eye) return;
     eye.getWorldPosition(vectors.position);
     eye.getWorldQuaternion(vectors.rotation);
-    vectors.normal.set(0, 0, 1).applyQuaternion(vectors.rotation);
-    vectors.offset.set(side === 'left' ? .04 : -.04, -.025, .085).applyQuaternion(vectors.rotation);
+    // Keep the barrel below/temporal to the eye, within the face framing.
+    // The previous broad point light sat near the ear and was imperceptible.
+    vectors.offset.set(side === 'left' ? .018 : -.018, -.024, .055).applyQuaternion(vectors.rotation);
     penlight.current.position.copy(vectors.position).add(vectors.offset);
     penlight.current.lookAt(vectors.position);
-    light.current.position.copy(vectors.position).addScaledVector(vectors.offset, .6);
+    lightTarget.position.copy(vectors.position);
+    lightTarget.updateMatrixWorld();
+    // Place the source at the lens, not at an unrelated point near the face.
+    light.current.position.copy(penlight.current.position)
+      .addScaledVector(vectors.normal.copy(vectors.offset).normalize(), -.028);
   });
   return <>
     <group ref={penlight} name="pilot-penlight" visible={false}>
@@ -115,7 +126,13 @@ export function PupilLightExam({ side, profile }: { side: LightSide; profile: Pu
         <circleGeometry args={[.0035, 16]} />
         <meshBasicMaterial color="#fff5d6" side={THREE.DoubleSide} />
       </mesh>
+      <mesh position={[0, 0, .023]} rotation={[Math.PI / 2, 0, 0]} raycast={() => {}}>
+        <cylinderGeometry args={[.005, .005, .007, 16]} />
+        <meshStandardMaterial color="#334155" metalness={.5} roughness={.3} />
+      </mesh>
     </group>
-    <pointLight ref={light} name="pilot-penlight-illumination" intensity={0} distance={.13} decay={2} color="#fff5df" />
+    <primitive object={lightTarget} />
+    <spotLight ref={light} name="pilot-penlight-illumination" target={lightTarget}
+      intensity={0} distance={.18} angle={.38} penumbra={.65} decay={2} color="#fff5df" />
   </>;
 }
