@@ -339,6 +339,9 @@ export function derivePatientSupportSurface(
   if (stage === 'floor') return 'floor';
   if (mobility === 'standing' || mobility === 'pacing') return 'none';
 
+  const authoredSupport = caseData.sceneInfo?.patientSupportSurface;
+  if (authoredSupport) return authoredSupport;
+
   const position = caseData.initialPresentation?.position?.toLowerCase() ?? '';
   if (/\b(?:bed|examination couch)\b/.test(position)) return 'bed';
   if (/\b(?:sofa|couch)\b/.test(position)) return 'sofa';

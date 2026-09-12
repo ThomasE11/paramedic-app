@@ -8,10 +8,20 @@ import {
   type PatientStage,
 } from './patientStaging';
 
-function sceneCase(position: string): CaseScenario {
+function sceneCase(
+  position: string,
+  patientSupportSurface?: CaseScenario['sceneInfo']['patientSupportSurface'],
+): CaseScenario {
   return {
     id: `support-${position}`,
     title: 'Support-surface test case',
+    sceneInfo: {
+      description: '',
+      hazards: [],
+      bystanders: '',
+      environment: '',
+      patientSupportSurface,
+    },
     initialPresentation: { position, appearance: '', generalImpression: '' },
   } as unknown as CaseScenario;
 }

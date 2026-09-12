@@ -419,7 +419,8 @@ export interface CaseScenario {
       | 'water'
       | 'heat'
       | 'agricultural';
-    patientSupportSurface?: 'bed' | 'sofa' | 'stretcher';
+    /** Explicit furniture supporting the patient before crew transfer. */
+    patientSupportSurface?: 'bed' | 'sofa' | 'seat' | 'stretcher';
   };
 
   // Initial Presentation
