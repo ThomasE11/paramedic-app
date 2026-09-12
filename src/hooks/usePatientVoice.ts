@@ -20,7 +20,7 @@
  * correctly interrupts an in-progress answer, etc.).
  */
 
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect } from 'react';
 import type { CaseScenario } from '@/types';
 import { useVoiceNarration } from '@/hooks/useVoiceNarration';
 import type { PatientVoiceProfile } from '@/hooks/useVoiceNarration';
@@ -68,11 +68,11 @@ export function usePatientVoice(caseData: CaseScenario, live: PatientCommunicati
   const playbackStatus = narration.playbackRole === 'patient'
     ? narration.playbackStatus
     : 'idle';
-  const stopRef = useRef(narration.stop);
-  useEffect(() => { stopRef.current = narration.stop; }, [narration.stop]);
+  const stopRole = narration.stopRole;
+  const stop = useCallback(() => stopRole('patient'), [stopRole]);
   useEffect(() => {
-    if (!canVocalize) stopRef.current();
-  }, [canVocalize]);
+    if (!canVocalize) stop();
+  }, [canVocalize, stop]);
 
   // Speak an arbitrary line as the patient (used for history answers).
   const say = useCallback((text: string) => {
@@ -104,6 +104,6 @@ export function usePatientVoice(caseData: CaseScenario, live: PatientCommunicati
     mouthOpenRef: narration.mouthOpenRef,
     say,
     react,
-    stop: narration.stop,
+    stop,
   };
 }

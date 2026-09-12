@@ -1158,11 +1158,19 @@ export function useVoiceNarration() {
     stopNarrationSession();
   }, []);
 
+  const stopRole = useCallback((role: VoiceRole) => {
+    if (typeof window === 'undefined') return;
+    // Consult the live shared lane, not this hook's last rendered snapshot:
+    // another surface may have started dispatch since this callback was made.
+    if (globalPlaybackState.role === role) stopNarrationSession();
+  }, []);
+
   const isSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
 
   return {
     speak,
     stop,
+    stopRole,
     isSpeaking,
     /** Precise shared-lane lifecycle; unlike isSpeaking, loading is not audible. */
     playbackStatus: playbackState.status,
